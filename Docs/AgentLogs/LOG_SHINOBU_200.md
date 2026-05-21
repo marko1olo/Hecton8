@@ -45,6 +45,73 @@ SELF_AUDIT:
   <compile_status>BLOCKED_BY_CPU_GUARD</compile_status>
 </SELF_AUDIT>
 
+## 2026-05-20 Loop 34 - Explicit Producer Writer Open Route
+
+What was wrong:
+- `SignalBus<T>.ParallelWriter` remained the only explicit public writer-acquisition API and was still used by SHINOBU-owned `GlobalSignals.*SignalWriter` facades.
+- A property can conceal that writer acquisition may initialize lane infrastructure and returns a mutable producer surface.
+
+What was done:
+- Added `SignalBus<T>.OpenParallelWriter()` in `Assets/_Project/Scripts/Core/GlobalSignals.cs`.
+- Repointed all Core `GlobalSignals.*SignalWriter` facades to `OpenParallelWriter()`.
+- Repointed already-touched bridge producers in `Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs` and `Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs`.
+- Left the legacy `ParallelWriter` property as a compatibility facade that delegates to `OpenParallelWriter()`; repo-wide scan shows sibling-domain producer call sites still depend on it.
+
+Cinematic cheats used:
+- No new physical simulation. This is route hygiene only. The existing SHINOBU Dear Lie remains signal coalescence: many same-cell high-frequency signal payloads collapse into one downstream presentation/event fact.
+
+Exact microseconds saved:
+- Not claimed. Runtime profiler proof was not run. Static benefit is removing property-only writer acquisition from SHINOBU-owned maintained routes without widening the compile wall.
+
+Static proof:
+- Touched-file exact scan shows no direct `SignalBus<...>.ParallelWriter` usage in `GlobalSignals.cs`, `SignalWardenRuntime.cs`, `MemorySentinelRuntime.cs`, or `TerminalOsRuntime.cs` except the compatibility property declaration.
+- Stale API scan found no owned `SignalBus<...>.TryReadFrame`, frame snapshot resolver, legacy queue getter, CSV scratch getter, or telemetry ring resolver residue.
+- Build not launched: CPU guard sampled `CPU=100`, `dotnet=0`, `csc=0`.
+
+## 2026-05-20 Loop 35 - Owner Route Vault Fallback Containment
+
+What was wrong:
+- SHINOBU contention producer/scheduler/mutation paths still reached `EnsureInitializedFromRegistry()`.
+- That helper could fall back to `GlobalDataVault.TryGetLatestCreated()` when cached owner Vault injection was absent.
+
+What was done:
+- Replaced producer/scheduler/mutation path initialization with `EnsureInitializedForOwnerRoute()`, which uses cached `_vault` only.
+- Split crash diagnostics to `EnsureInitializedForCrashDumpRoute()`, the only remaining SHINOBU contention route allowed to use `GlobalRegistry.DataVault` and `GlobalDataVault.TryGetLatestCreated()`.
+- Added `GlobalSignals.OpenSignalWriterForProducerPhase<TSignal>()` as the generic explicit Core writer-opening API. Legacy `GlobalSignals.*SignalWriter` properties delegate to it for compatibility.
+
+Cinematic cheats used:
+- No new physical simulation. The existing Dear Lie remains same-cell signal coalescence before downstream consumers see the snapshot.
+
+Exact microseconds saved:
+- Not claimed. This is authority containment and source-contract hardening. Static effect is prevention of accidental Vault bootstrap on normal producer routes.
+
+Static proof:
+- `SignalWardenRuntime.cs` has no `EnsureInitializedFromRegistry` residue.
+- `GlobalDataVault.TryGetLatestCreated()` remains only in `EnsureInitializedForCrashDumpRoute()`.
+- Touched-file braces are balanced.
+- Build not launched: CPU guard sampled `CPU=100`, `dotnet=0`, `csc=0`.
+
+## 2026-05-20 Loop 36 - SignalBus Snapshot And Telemetry Owner Fallback Tightening
+
+What was wrong:
+- Generic `SignalBus<T>.EnsureInitialized()` could acquire frame snapshot storage through a helper that fell back to `GlobalDataVault.TryGetLatestCreated()`.
+- `SignalTelemetryRingBuffer.ReportFrame(...)` could recover from missing cached ring state by polling `GlobalRegistry.DataVault` inside the owner write path.
+
+What was done:
+- `TryFindFrameSnapshotVaultForBootstrap(...)` now returns only `GlobalRegistry.DataVault` and fails closed if the owner did not wire it.
+- `SignalTelemetryRingBuffer.TryOpenRingForOwnerWrite(...)` now uses cached `_vault` and `_initialized` only.
+
+Cinematic cheats used:
+- No new simulation. Existing Dear Lie signal coalescence remains unchanged.
+
+Exact microseconds saved:
+- Not claimed. Static effect is removal of hidden fallback lookup/acquisition from producer-reachable SignalBus initialization and telemetry frame writes.
+
+Static proof:
+- No stale direct `SignalBus<...>.ParallelWriter`, `SignalBus<...>.TryReadFrame`, frame-snapshot resolver, legacy queue getter, CSV scratch getter, telemetry ring resolver, or `EnsureInitializedFromRegistry` residue in touched SHINOBU/Core/Terminal files.
+- `GlobalDataVault.TryGetLatestCreated()` is now limited to the SHINOBU contention crash dump route.
+- Build not launched: CPU guard sampled `CPU=100`, `dotnet=0`, `csc=0`.
+
 ```
 
 ## 2026-05-20 - Ultra Polish Mandate Pass
@@ -259,14 +326,14 @@ Verification:
 ## 2026-05-20 - CSV Vault Scratch And Capacity Asset Patch
 
 What was wrong:
-- `SignalThreadContentionCsvHotSwap` existed, but `Assets/StreamingAssets/signal_corridor_capacities.csv` was absent. Task 19 had parser code without a checked-in human tuning source.
+- `SignalThreadContentionCsvHotSwap` existed, but the capacity source was absent at the time of the original patch. Current authoring truth is `Assets/_SourceData/Signals/signal_corridor_capacities.csv` after the SHINOBU_258 text-runtime migration.
 - The contention parser borrowed `SignalTuningTable` scratch buffer `73042`, which weakened the SHINOBU_200 Vault proof because the final H-Phi report could not list a SHINOBU-owned CSV scratch handle.
 - Platform label hashing was case-sensitive at the byte level.
 
 What was done:
 - Added SHINOBU-owned Vault buffer `73055` as `SignalThreadContentionCsvScratch byte[8192]`, requested with `NativeArrayOptions.UninitializedMemory`.
 - Rewired `SignalThreadContentionCsvHotSwap` to read CSV bytes from `SignalThreadLocalScratchpad.TryGetCsvScratch(...)`.
-- Added `Assets/StreamingAssets/signal_corridor_capacities.csv` and `signal_corridor_capacities.csv.meta`.
+- Added the human-readable capacity source; current path after SHINOBU_258 migration is `Assets/_SourceData/Signals/signal_corridor_capacities.csv` with `.meta`.
 - Lowercased ASCII platform bytes before FNV-1a hashing without allocating normalized strings.
 - Updated `Docs/ARCHITECTURE/SHINOBU_200_SIGNAL_THREAD_CONTENTION_ROUTE_CARD.md`, `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`, `Docs/Tasks/Status_SHINOBU_200.md`, and `Docs/AgentLogs/Rationale_SHINOBU_200.md`.
 
@@ -304,7 +371,7 @@ Verification:
     <task id="16" status="PASS">300-entry telemetry ring and `Dump_SHINOBU_200.bin` path exist.</task>
     <task id="17" status="PASS">SHINOBU jobs use deterministic synchronous Burst flags.</task>
     <task id="18" status="PASS">UI Toolkit Signal Contention tuner exists, editor-only.</task>
-    <task id="19" status="PASS">CSV parser now has checked-in `signal_corridor_capacities.csv` and owned Vault scratch `73055`.</task>
+    <task id="19" status="PASS">CSV parser now has checked-in source-data `signal_corridor_capacities.csv` and owned Vault scratch `73055`; runtime `StreamingAssets` text is not current authority.</task>
     <task id="20" status="PASS">Scene View heatmap draws committed AUP-cell density, editor-only.</task>
   </task_reconciliation>
   <struct_layout name="SignalWardenMockDamageSignal" size="64">
@@ -922,4 +989,713 @@ Verification:
   <owned_file_errors GlobalSignals="0" SignalWardenRuntime="0" />
   <dependency_wall examples="Hecton8.Equipment,Hecton8.Logistics.Grid,SoundEmissionSignal,SocketDefinitionDTO,IDockingAutopilotService,ISceneTransitionAudioBridge,WfcOutpostGridDescriptor,VRAMMonitor,H8BinaryWorldPager" />
   <next_action>Do not repair unrelated domains from SHINOBU_200; integrator must clear the broader Core compile wall before runtime proof.</next_action>
+</SELF_AUDIT>
+
+## 2026-05-20 Loop 30 - Pure Snapshot Read / Explicit Consume Split
+
+What was wrong:
+- `SignalBus<T>.SnapshotCount`, `SnapshotGeneration`, `GetFrameSnapshot()`, and `GetFrameSnapshotArray()` called `TryResolveFrameSnapshot(...)`, which could refresh a Vault generation handle and mutate `_frameSnapshotCount`.
+- `SignalBus<T>.TryReadFrame(out T)` was a destructive cursor consumer; it incremented `_legacyReadCursor` while carrying a read-looking name.
+- `GetQueueForLegacyGlobalSignals()` also hid initialization under a `Get*` name.
+
+What was done:
+- Added pure `TryReadFrameSnapshot(...)` for snapshot inspection. It resolves only the cached generation handle and clamps count locally.
+- Renamed destructive frame iteration to `TryConsumeFrame(...)` and repointed `GlobalSignals.TryDequeue*`, Core determinism, camera juice, terminal command, save chunk dehydration, and atmosphere transition consumers.
+- Renamed mutating helpers to `OpenQueueForLegacyGlobalSignals()`, `TryOpenFrameSnapshotForOwnerWrite(...)`, and `TryFindFrameSnapshotVaultForBootstrap(...)`.
+- Made `SignalBus<T>.LaneHash` a pure property by returning an already configured hash or cold default hash without registering the lane.
+
+Cinematic Cheats used:
+- None. This pass is route-discipline surgery, not simulation or visual fakery.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no Unity profiler proof exists.
+- Static effect: read-looking paths no longer refresh handles or repair counters, and destructive cursor use is explicit in source.
+
+Verification:
+- `rg "SignalBus<[^>]+>\\.TryReadFrame|TryResolveFrameSnapshot|TryResolveFrameSnapshotVault|GetQueueForLegacyGlobalSignals|\\.TryReadFrame\\("` over touched files returned no matches except unrelated `HectonPlayerInputFrame` reader outside SignalBus.
+- Touched-file braces are balanced: `GlobalSignals.cs 834/834`, `CoreDeterminismSignals.cs 21/21`, `CameraJuiceSignals.cs 10/10`, `TerminalOsRuntime.cs 256/256`, `SaveManager.cs 597/597`, `GasDynamicsSolver.cs 200/200`.
+- `git diff --check` reports only LF-to-CRLF normalization warnings.
+- Build not launched. Latest build guard: `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="PURE_SNAPSHOT_READ_EXPLICIT_CONSUME_SPLIT">
+  <read_purity>SnapshotCount, SnapshotGeneration, GetFrameSnapshot, and GetFrameSnapshotArray no longer call a helper that refreshes handles or mutates counters.</read_purity>
+  <destructive_consume_api>TryConsumeFrame is the only SignalBus cursor-advance API in the changed source; SignalBus TryReadFrame residue is zero.</destructive_consume_api>
+  <authority_route>Gameplay facts still flow one route through SignalBus snapshots; no DTO layout, BufferID, save identity, or ownership route changed.</authority_route>
+  <compile_guard>Build not launched because CPU sampled at 100 percent. Prior focused build remains blocked by external Core dependency wall.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-20 Loop 31 - Scratchpad TryGet Purity Gate
+
+What was wrong:
+- SHINOBU scratchpad `TryGet*` read facades called `EnsureInitializedFromRegistry()`.
+- That helper can initialize Vault handles and can fall back to `GlobalDataVault.TryGetLatestCreated()` when the registry slot is absent.
+- The writable committed snapshot was exposed as `TryGetCommittedSignals(...)`, which looked like a pure read but returned mutable storage.
+
+What was done:
+- Added `IsInitializedForRead()` and `TryReadCommittedSignals(...)` for cached-handle, non-mutating reads.
+- Changed `TryGetLatestTelemetry`, `TryGetTelemetryReadOnly`, `TryGetTuning`, `TryGetCsvScratch`, `TryGetThreadHeader`, and `TryGetCommittedSignalsReadOnly` to fail closed when the owner route has not initialized.
+- Renamed writable committed-snapshot access to `TryOpenCommittedSignalsForOwner(...)`.
+- Left `EnsureInitializedFromRegistry()` on explicit owner/writer/scheduler/mutation/crash paths only.
+
+Cinematic Cheats used:
+- None. This is authority-boundary hardening.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: editor/diagnostic read facades no longer trigger hidden Vault bootstrap or `TryGetLatestCreated()` fallback.
+
+Verification:
+- `SignalWardenRuntime.cs` braces `311/311`.
+- Source scan shows `TryGetLatestTelemetry`, `TryGetTelemetryReadOnly`, `TryGetTuning`, `TryGetCsvScratch`, `TryGetThreadHeader`, and `TryGetCommittedSignalsReadOnly` enter through `IsInitializedForRead()`/cached handle resolution; remaining `EnsureInitializedFromRegistry()` calls are writer/scheduler/mutation/crash paths.
+- `rg "TryGetCommittedSignals\\(|TryResolveFrameSnapshot|TryResolveFrameSnapshotVault|GetQueueForLegacyGlobalSignals|SignalBus<[^>]+>\\.TryReadFrame"` over touched source returned no matches.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not launched: latest build guard `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="SCRATCHPAD_TRYGET_PURITY_GATE">
+  <read_purity>Scratchpad TryGet telemetry/tuning/header/CSV/snapshot surfaces no longer initialize or query latest-created Vault.</read_purity>
+  <mutating_routes>Writer acquisition, scheduling, tuning mutation, commit timing mutation, crash dump, and explicit owner-open routes retain initialization authority.</mutating_routes>
+  <authority_route>No BufferID, DTO layout, save identity, or SignalBus payload route changed.</authority_route>
+</SELF_AUDIT>
+
+## 2026-05-20 Loop 32 - Telemetry Ring Read/Open Split And Mutable Scratch Openers
+
+What was wrong:
+- `SignalTelemetryRingBuffer.CopyFrames(...)` used a private `TryResolveRing(...)` helper that could call `Initialize()` through `GlobalRegistry.DataVault`.
+- `SignalTuningTable.TryGetCsvScratch(...)` and `SignalThreadLocalScratchpad.TryGetCsvScratch(...)` returned writable `NativeArray<byte>` scratch buffers for CSV file loading under a read-looking `TryGet*` name.
+
+What was done:
+- `CopyFrames(...)` now uses `TryReadRing(...)`, a cached-handle-only path that fails closed when the telemetry ring owner has not initialized.
+- Owner telemetry write and crash dump paths are explicit: `TryOpenRingForOwnerWrite(...)` and `TryOpenRingForCrashDump(...)`.
+- Mutable CSV scratch accessors are now `TryOpenCsvScratchForLoad(...)`, and both CSV loaders were repointed.
+
+Cinematic Cheats used:
+- None. This pass removes authority ambiguity in Core signal diagnostics and cold tuning bridges.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: diagnostic polling no longer has a hidden Vault bootstrap path, and mutable scratch buffers no longer masquerade as pure reads.
+
+Verification:
+- `SignalWardenRuntime.cs` braces `313/313`.
+- `rg "TryGetCsvScratch|TryResolveRing"` over `SignalWardenRuntime.cs` returned no matches.
+- Exact touched-source scan found no `SignalBus<...>.TryReadFrame`, old CSV scratch accessors, frame-snapshot resolver names, or legacy queue getter residue.
+- Broader `TryResolveRing` matches remain in sibling Core memory contracts; not edited from the SHINOBU SignalBus MPSC lane.
+- Build not launched: latest build guard `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="TELEMETRY_RING_READ_OPEN_SPLIT">
+  <read_purity>SignalTelemetryRingBuffer.CopyFrames resolves only cached handles and does not initialize through GlobalRegistry.</read_purity>
+  <mutating_routes>ReportFrame and DumpToDisk retain explicit owner/crash open routes.</mutating_routes>
+  <csv_scratch>Mutable CSV scratch buffers are exposed only through TryOpenCsvScratchForLoad.</csv_scratch>
+  <authority_route>No BufferID, DTO layout, save identity, or SignalBus payload route changed.</authority_route>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 37 - Adjacent Terminal Bridge Vault Fallback Containment
+
+What was wrong:
+- `TerminalOsRuntime.EnsureNativeResources()` still used `GlobalDataVault.TryGetLatestCreated()` to bind UI native buffers.
+- The file is outside SHINOBU signal ownership, but it was already touched for the explicit SignalBus writer route, so the normal runtime latest-created fallback would remain visible in the same proof set.
+
+What was done:
+- Replaced the TerminalOS latest-created fallback with cached `_vault` or owner-published `GlobalRegistry.DataVault`.
+- Missing owner injection now follows the existing `FaultVaultUnavailable` fail-closed path.
+- Updated the status, rationale, route card, and binary payload ledger to record the containment.
+
+Cinematic Cheats used:
+- None. This is authority-route containment around an adjacent UI bridge, not simulation or presentation work.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: avoids binding TerminalOS native buffers to an arbitrary latest-created Vault and removes the only non-crash `TryGetLatestCreated()` hit from the touched proof set.
+
+Verification:
+- `rg "TryGetLatestCreated\\(|SignalBus<[^>]+>\\.ParallelWriter|EnsureInitializedFromRegistry|TryReadFrame\\(|TryResolveFrameSnapshot|TryGetCsvScratch|TryResolveRing\\("` over the four touched source files leaves one hit: `SignalWardenRuntime.EnsureInitializedForCrashDumpRoute()`.
+- Forbidden scan for `.Complete(`, LINQ, `foreach`, `UnityEngine.Random`, `Random.Range`, `StructLayout(Pack=1)`, and hot `{ get; set; }` returned no matches in the four touched source files.
+- Brace counts: `GlobalSignals.cs 837/837`, `SignalWardenRuntime.cs 314/314`, `MemorySentinelRuntime.cs 143/143`, `TerminalOsRuntime.cs 258/258`.
+- Build not launched: latest build guard `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="ADJACENT_TERMINAL_BRIDGE_VAULT_FALLBACK">
+  <try_get_latest_created>Only the documented SHINOBU crash dump route retains GlobalDataVault.TryGetLatestCreated in the touched proof set.</try_get_latest_created>
+  <domain_boundary>TerminalOS ownership was not expanded; the patch only removes a latest-created fallback from a file already touched for SignalBus producer routing.</domain_boundary>
+  <authority_route>No BufferID, DTO layout, SignalBus payload stride, save identity, rollback exclusion, or gameplay truth owner changed.</authority_route>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 38 - Subagent Read-Accessor Findings Response
+
+What was wrong:
+- The sidecar audit found `MemorySentinelRuntime.TryGetTunerSnapshot(...)` could call `EnsureVaultBuffers(...)` and `ResolveRuntimeState(...)`, so a read-looking editor snapshot could open buffers or write default runtime state.
+- Private owner setup helpers used `TryResolveOrAcquire(...)` and `ResolveNativeBuffer(...)` names while acquiring/opening Vault buffers.
+- `TerminalOsRuntime.GetTerminalStateRef(...)` returned a mutable ref and set a fault bit on failure.
+
+What was done:
+- `TryGetTunerSnapshot(...)` now requires pre-existing handles and reads the runtime DTO without owner setup or default mutation.
+- `TryResolveOrAcquire(...)` was renamed to `OpenOrAcquireVaultBuffer(...)`.
+- `ResolveNativeBuffer(...)` was renamed to `OpenNativeBufferForOwner(...)`.
+- `GetTerminalStateRef(...)` was renamed to `OpenTerminalStateRefForOwner(...)`, with the unchecked helper renamed the same way.
+
+Cinematic Cheats used:
+- None. This is source-contract and authority hygiene in adjacent Core/UI bridge files already touched by the SignalBus producer-route pass.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: editor/tuner reads no longer open MemorySentinel Vault buffers or mutate runtime defaults.
+
+Verification:
+- `rg "GetTerminalStateRef|ResolveNativeBuffer\\(|TryResolveOrAcquire\\(|TryGetTunerSnapshot[\\s\\S]{0,200}EnsureVaultBuffers|TryGetTunerSnapshot[\\s\\S]{0,200}ResolveRuntimeState"` over touched MemorySentinel/Terminal files returned no matches.
+- `rg "TryGetLatestCreated\\(|SignalBus<[^>]+>\\.ParallelWriter|EnsureInitializedFromRegistry|TryReadFrame\\(|TryResolveFrameSnapshot|TryGetCsvScratch|TryResolveRing\\("` over the four touched source files leaves one hit: `SignalWardenRuntime.EnsureInitializedForCrashDumpRoute()`.
+- Forbidden scan for `.Complete(`, LINQ, `foreach`, `UnityEngine.Random`, `Random.Range`, `StructLayout(Pack=1)`, and hot `{ get; set; }` returned no matches in the four touched source files.
+- Brace counts: `GlobalSignals.cs 840/840`, `SignalWardenRuntime.cs 314/314`, `MemorySentinelRuntime.cs 143/143`, `TerminalOsRuntime.cs 258/258`.
+- Build not launched: latest build guard `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="SUBAGENT_READ_ACCESSOR_RESPONSE">
+  <read_purity>MemorySentinel tuner snapshot now resolves existing handles only and does not call owner setup or runtime-state default mutation.</read_purity>
+  <open_routes>Allocation/open-capable helpers use Open* names in touched MemorySentinel and TerminalOS files.</open_routes>
+  <mutable_ref>TerminalOS mutable state ref access is named OpenTerminalStateRefForOwner, not GetTerminalStateRef.</mutable_ref>
+  <authority_route>No BufferID, DTO layout, SignalBus payload stride, save identity, rollback exclusion, or gameplay truth owner changed.</authority_route>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 39 - Adjacent Mutating Resolve Name Eviction
+
+What was wrong:
+- The already-touched TerminalOS bridge still had private mutating methods named `ResolveAttentionCamera(...)`, `TryResolveCameraFrame(...)`, `ResolveComputeKernel(...)`, `ResolveGazeInput(...)`, `ResolveGazePose(...)`, `ResolveStateBuffer(...)`, and `ResolveTerminalStatePointer(...)`.
+- The already-touched MemorySentinel bridge still had `ResolveRuntimeState(...)`, which can write default runtime state and pending mod mask, plus `ResolveTargets(...)`, which mutates target arrays and `_targetCount`.
+- `ResolveCsvPath(...)` performed cold file-system probing under a pure-sounding name.
+
+What was done:
+- TerminalOS private names are now `RefreshAttentionCameraForOwner(...)`, `TryCaptureCameraFrameForOwner(...)`, `EnsureComputeKernelForOwner(...)`, `CaptureGazeInputForOwner(...)`, `CaptureGazePoseForOwner(...)`, `SelectStateBuffer(...)`, and `OpenTerminalStatePointerForOwner(...)`.
+- MemorySentinel private names are now `OpenRuntimeStateForOwner(...)`, `RefreshTargetsForOwner(...)`, and `FindValidationRulesCsvPathCold(...)`.
+- No public API was changed in this pass.
+
+Cinematic Cheats used:
+- None. This pass is source-contract hygiene around owner/cold/mutable paths in adjacent bridge files.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: mutating/open/cold operations no longer present themselves as pure `Resolve*` methods in the touched proof set.
+
+Verification:
+- `rg "ResolveComputeKernel|ResolveStateBuffer|TryResolveCameraFrame|ResolveAttentionCamera|ResolveGazeInput|ResolveGazePose|ResolveTerminalStatePointer|ResolveRuntimeState|ResolveTargets|ResolveCsvPath"` over touched TerminalOS/MemorySentinel files returned no matches.
+- Forbidden hot-pattern scan still leaves only `SignalWardenRuntime.EnsureInitializedForCrashDumpRoute()` as the documented `GlobalDataVault.TryGetLatestCreated()` exception.
+- Brace counts: `GlobalSignals.cs 840/840`, `SignalWardenRuntime.cs 314/314`, `MemorySentinelRuntime.cs 143/143`, `TerminalOsRuntime.cs 258/258`.
+- Build not launched: latest build guard `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="ADJACENT_MUTATING_RESOLVE_NAME_EVICTION">
+  <source_contract>Private mutating/open/cold paths in touched TerminalOS and MemorySentinel files no longer use stale Resolve names.</source_contract>
+  <behavior_change>No runtime behavior, BufferID, DTO layout, SignalBus stride, save identity, rollback exclusion, authority owner, or quality curve changed.</behavior_change>
+  <build_guard>Compile was not launched because CPU sampled at 100 percent and the previous focused build already established an external dependency wall.</build_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 40 - Owner Snapshot Mutation And Editor Blocking Disclosure
+
+What was wrong:
+- `SignalBus<T>.TransformSnapshot(...)` and `SignalBus<T>.FilterSnapshot(...)` mutated snapshot rows through the pure `TryReadFrameSnapshot(...)` helper.
+- The UI Toolkit contention tuner had an editor-only job benchmark named `RunMockContention(...)` even though it force-completes the scheduled mock and commit handles for manual timing.
+
+What was done:
+- Repointed both mutating snapshot methods to `TryOpenFrameSnapshotForOwnerWrite(...)`.
+- Kept pure snapshot reads on `TryReadFrameSnapshot(...)` and destructive cursor iteration on `TryConsumeFrame(...)`.
+- Renamed the editor-only benchmark to `RunMockContentionEditorBlocking(...)` and repointed the button delegate.
+- Recorded the sidecar audit result: no actionable findings; compile/Burst/import proof remains absent by explicit no-build/CPU guard.
+
+Cinematic Cheats used:
+- None. This is source-contract hardening. The Dear Lie coalescence remains the existing AUP-cell fusion in `SignalThreadLocalCommitJob`.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: removes write-path ambiguity and makes the editor-only blocking measurement path explicit. Runtime hot path is unchanged.
+
+Verification:
+- `rg "RunMockContention\\(|RunMockContentionEditorBlocking\\(|TryReadFrameSnapshot\\("` leaves `RunMockContentionEditorBlocking(...)` plus pure reads/destructive consume/helper; mutating transform/filter no longer call the read helper.
+- Stale scan for `SignalBus<...>.TryReadFrame`, `TryResolveFrameSnapshot`, `TryResolveFrameSnapshotVault`, `GetQueueForLegacyGlobalSignals`, and old `RunMockContention(` returned no matches.
+- Brace counts: `GlobalSignals.cs 842/842`, `SignalWardenRuntime.cs 314/314`, `MemorySentinelRuntime.cs 143/143`, `TerminalOsRuntime.cs 258/258`.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not launched: latest build guard `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="OWNER_SNAPSHOT_MUTATION_EDITOR_BLOCKING_DISCLOSURE">
+  <snapshot_mutation>TransformSnapshot and FilterSnapshot now open the frame snapshot through TryOpenFrameSnapshotForOwnerWrite before mutating rows.</snapshot_mutation>
+  <read_purity>TryReadFrameSnapshot remains limited to pure snapshot inspection and explicit destructive cursor consumption remains TryConsumeFrame.</read_purity>
+  <editor_blocking>RunMockContentionEditorBlocking is editor-only and names its force-complete timing behavior.</editor_blocking>
+  <sidecar_result>No actionable subagent findings; compile/Burst/import proof remains pending because build/import were not run.</sidecar_result>
+  <authority_route>No BufferID, DTO layout, SignalBus stride, save identity, rollback exclusion, authority owner, or quality curve changed.</authority_route>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 41 - SPSC ARM Memory Barrier Patch
+
+What was wrong:
+- `SpscSignalRingBuffer<T>` used `Volatile.Write(...)` to publish `_head` and `_tail` mutations.
+- The native-memory mandate requires interlocked mutation for cross-thread indices on weak memory ordering targets.
+
+What was done:
+- `Clear()`, enqueue tail publication, and dequeue head publication now use `Interlocked.Exchange(...)`.
+- Reads remain `Volatile.Read(...)`.
+- `Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md` now documents `Volatile.Read` plus `Interlocked.Exchange` instead of `Volatile.Write`.
+
+Cinematic Cheats used:
+- None. This is cross-thread index barrier hardening for a Core signal fallback wrapper.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: ARM memory-order correctness hardening. No current first-party C# callsite was found for `SpscSignalRingBuffer<T>`, so no runtime speed claim is valid.
+
+Verification:
+- `rg "Volatile\\.Write\\(ref _head|Volatile\\.Write\\(ref _tail"` over `GlobalSignals.cs` returned no matches.
+- `rg "Interlocked\\.Exchange\\(ref _head|Interlocked\\.Exchange\\(ref _tail"` shows the clear/enqueue/dequeue mutation sites.
+- Brace counts: `GlobalSignals.cs 842/842`, `SignalWardenRuntime.cs 314/314`, `MemorySentinelRuntime.cs 143/143`, `TerminalOsRuntime.cs 258/258`.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not launched: latest build guard `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="SPSC_ARM_MEMORY_BARRIER_PATCH">
+  <spsc_indices>Head and tail mutations in SpscSignalRingBuffer now use Interlocked.Exchange.</spsc_indices>
+  <spsc_reads>Head and tail reads remain Volatile.Read.</spsc_reads>
+  <callsite_scan>No current first-party C# source callsite for SpscSignalRingBuffer was found; this is latent fallback hardening.</callsite_scan>
+  <authority_route>No BufferID, DTO layout, SignalBus stride, save identity, rollback exclusion, authority owner, or quality curve changed.</authority_route>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 42 - Legacy MPSC Contract Drift Patch
+
+What was wrong:
+- `GLOBAL_SIGNAL_CORRIDOR.md` still said `NativeQueue<T>.ParallelWriter` was the correct MPSC choice when multiple jobs produce the same event type.
+- That wording contradicted the SHINOBU_200 route: high-frequency producer storms must not return to one shared CAS-backed queue.
+
+What was done:
+- Reworded the corridor document so `ParallelWriter` is a retained low-frequency legacy bridge.
+- Documented the high-frequency route as Vault-backed per-worker scratch, 64-byte payload rows, deterministic commit, AUP-cell coalescence, and telemetry-visible overflow.
+- Hardened comments on `OpenLegacyMpscWriter()`, `OpenParallelWriter()`, and `ParallelWriter` so source and docs carry the same contract.
+
+Cinematic Cheats used:
+- Existing Dear Lie remains AUP-cell signal coalescence in `SignalThreadLocalCommitJob`; this pass stops docs from steering future work back to granular shared-queue traffic.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: prevents future route regression into shared MPSC CAS contention. No runtime speed claim is valid from this docs/source-comment patch.
+
+Verification:
+- `GLOBAL_SIGNAL_CORRIDOR.md` now labels `NativeQueue<T>.ParallelWriter` as legacy/low-frequency and names SHINOBU thread-local scratch for high-frequency same-lane producers.
+- `GlobalSignals.cs` writer comments now call `OpenLegacyMpscWriter()` a low-frequency bridge.
+- Stale corridor scan for `correct choice when multiple jobs`, `NativeQueue<T>.ParallelWriter is the MPSC path`, and `preferred MPSC route for multiple producer jobs` returned no matches.
+- Brace counts stayed balanced: `GlobalSignals.cs 842/842`, `SignalWardenRuntime.cs 314/314`, `MemorySentinelRuntime.cs 143/143`, `TerminalOsRuntime.cs 258/258`.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not launched: latest build guard `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="LEGACY_MPSC_CONTRACT_DRIFT_PATCH">
+  <writer_contract>NativeQueue ParallelWriter is documented as legacy low-frequency bridge only.</writer_contract>
+  <hot_route>Cache-line-critical producers use thread-local scratch, deterministic commit, coalescence, and telemetry overflow.</hot_route>
+  <compile_guard>No build/rebuild launched in this pass.</compile_guard>
+  <authority_route>No BufferID, queue type, payload stride, save identity, rollback exclusion, authority owner, or quality curve changed.</authority_route>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 43 - Writer Property Comment Narrowing
+
+What was wrong:
+- Individual `GlobalSignals.*SignalWriter` XML summaries still said broad `Burst jobs or background producers`.
+- `GLOBAL_SIGNAL_CORRIDOR.md` still described `Publish(in T)` and `TryDequeue*` with pre-snapshot vocabulary.
+
+What was done:
+- Rewrote compatibility writer summaries as low-frequency legacy bridge writers.
+- Updated the corridor doc to distinguish `Publish(in T)` / `SignalBus<T>.Push/TryPush`, `TryConsumeFrame(...)`, retained bridge `TryDequeue*`, and read-only snapshots.
+
+Cinematic Cheats used:
+- Existing Dear Lie remains AUP-cell coalescence; this pass prevents source comments from inviting granular shared-queue producer storms.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: source-contract drift removal only.
+
+Verification:
+- Stale scan for `writer for Burst`, `Burst jobs or background`, `Burst producers`, `Burst-capable`, `correct choice when multiple jobs`, and `only legal runtime consume model` returned no residue in the touched route.
+- Brace counts stayed balanced: `GlobalSignals.cs 842/842`, `SignalWardenRuntime.cs 314/314`, `MemorySentinelRuntime.cs 143/143`, `TerminalOsRuntime.cs 258/258`.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not launched: latest build guard `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="WRITER_PROPERTY_COMMENT_NARROWING">
+  <writer_summaries>All Core compatibility writer properties are documented as low-frequency legacy bridges.</writer_summaries>
+  <consume_vocabulary>TryConsumeFrame is destructive cursor consumption; TryDequeue remains retained bridge drain; snapshots are read-only.</consume_vocabulary>
+  <compile_guard>No build/rebuild launched in this pass.</compile_guard>
+  <authority_route>No BufferID, queue type, payload stride, save identity, rollback exclusion, authority owner, runtime branch, or quality curve changed.</authority_route>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 44 - Typed Writer Open Narrowing
+
+What was wrong:
+- `GlobalSignals.OpenSignalWriterForProducerPhase<TSignal>()` still called broad `GlobalSignals.EnsureInitialized()`.
+- That broad call can initialize tuning, telemetry, SHINOBU scratch lanes, and every direct legacy queue before returning one typed compatibility writer.
+
+What was done:
+- Removed the broad initialization call from `OpenSignalWriterForProducerPhase<TSignal>()`.
+- The method now delegates directly to `SignalBus<TSignal>.OpenLegacyMpscWriter()`, so only the requested typed SignalBus lane opens.
+- Updated the SHINOBU route card, global signal corridor, binary payload ledger, status, and rationale with the narrowed open contract.
+
+Cinematic Cheats used:
+- Existing Dear Lie remains AUP-cell coalescence in `SignalThreadLocalCommitJob`; this pass removes hidden broad queue wake-up from the compatibility writer route.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: prevents one typed legacy-writer acquisition from waking every direct legacy queue and SHINOBU tuning/scratch setup path.
+
+Verification:
+- Source patch is one-line behavior change plus summary text update in `GlobalSignals.cs`.
+- Architecture artifacts now state typed writer open does not prewarm every direct queue.
+- Method-body check shows `OpenSignalWriterForProducerPhase<TSignal>()` now returns `SignalBus<TSignal>.OpenLegacyMpscWriter()` directly.
+- Brace counts stayed balanced: `GlobalSignals.cs 842/842`, `SignalWardenRuntime.cs 314/314`, `MemorySentinelRuntime.cs 143/143`, `TerminalOsRuntime.cs 258/258`.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not launched: latest build guard `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="TYPED_WRITER_OPEN_NARROWING">
+  <writer_route>OpenSignalWriterForProducerPhase delegates directly to SignalBus&lt;TSignal&gt;.OpenLegacyMpscWriter.</writer_route>
+  <global_init>GlobalSignals.InitializeAllQueues is no longer called by this writer-open method.</global_init>
+  <compile_guard>No build/rebuild launched in this pass.</compile_guard>
+  <authority_route>No BufferID, queue type, payload stride, save identity, rollback exclusion, producer phase, authority owner, or quality curve changed.</authority_route>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 45 - Adjacent Core Writer Surface Classification
+
+What was wrong:
+- Read-only sidecar confirmed the SHINOBU SignalBus route is clean except the intended canonical `.AsParallelWriter()` in `SignalBus<T>.OpenLegacyMpscWriter()`.
+- Core helper debt remained: `ThreadSafeCommandQueue.TryGetParallelWriter(...)` initialized queue storage behind a `TryGet*` name, and `BurstCallbackQueue.ParallelWriter` hid writer acquisition behind a property.
+
+What was done:
+- Added `ThreadSafeCommandQueue.OpenLegacyMpscWriter()` and `TryOpenParallelWriter(...)`.
+- Kept `ThreadSafeCommandQueue.AsParallelWriter()` as compatibility alias; made `TryGetParallelWriter(...)` read only already-created storage.
+- Added `BurstCallbackQueue.OpenParallelWriter()` and kept `ParallelWriter` as a documented compatibility alias.
+- Recorded that repo-wide direct `.AsParallelWriter()` hits outside Core/SignalBus remain sibling-owner debt.
+
+Cinematic Cheats used:
+- Existing Dear Lie remains AUP-cell signal coalescence. This pass is source-contract hardening, not a new visual fake.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: removes hidden queue initialization from a `TryGet*` Core helper and makes low-frequency bridge writer acquisition explicit.
+
+Verification:
+- Static caller scan found only the `ThreadSafeCommandQueue.TryGetParallelWriter(...)` declaration and no external first-party call site, so the read-only compatibility behavior change has no visible in-repo caller.
+- `ThreadSafeCommandQueue.TryGetParallelWriter(...)` now delegates to `TryOpenParallelWriterNoInit(...)` without calling `Initialize()`.
+- `BurstCallbackQueue.OpenParallelWriter()` owns the raw queue-to-writer conversion; `ParallelEventWriter` receives the already-open writer.
+- Residual writer-debt scan: `24` raw `.AsParallelWriter()` hits repo-wide; `3` are Core hits now confined to explicit open/helper wrappers. `49` `SignalBus<T>.ParallelWriter` compatibility-property call sites remain in sibling domains and are not SHINOBU_200 route approval.
+- Brace counts: `GlobalSignals.cs 842/842`, `SignalWardenRuntime.cs 314/314`, `MemorySentinelRuntime.cs 143/143`, `TerminalOsRuntime.cs 258/258`, `ThreadSafeCommandQueue.cs 80/80`, `BurstCallback.cs 26/26`.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not launched: latest build guard `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="ADJACENT_CORE_WRITER_SURFACE_CLASSIFICATION">
+  <thread_safe_command_queue>OpenLegacyMpscWriter and TryOpenParallelWriter own initialization/writer acquisition; TryGetParallelWriter no longer initializes storage.</thread_safe_command_queue>
+  <burst_callback_queue>OpenParallelWriter owns callback writer acquisition; ParallelWriter is compatibility alias.</burst_callback_queue>
+  <external_debt>Direct AsParallelWriter hits outside Core/SignalBus are sibling-domain debt, not SHINOBU approval.</external_debt>
+  <compile_guard>No build/rebuild launched in this pass.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 46 - Source-Data Migration Reconciliation
+
+What was wrong:
+- SHINOBU_200 proof files still contained old wording that named the former runtime `StreamingAssets` signal-capacity CSV.
+- SHINOBU_258 intentionally deleted runtime text CSVs from `StreamingAssets` and moved signal authoring data to `Assets/_SourceData/Signals`.
+- Leaving the old wording would make a correct deletion look like SHINOBU data loss and would invite a bad runtime CSV restore.
+
+What was done:
+- Updated SHINOBU_200 status/rationale/log wording to name `Assets/_SourceData/Signals/signal_corridor_capacities.csv` as the current human-readable source-data file.
+- Confirmed `SignalThreadContentionCsvHotSwap.TryLoadDefault()` and `TryLoad(string)` are `UNITY_EDITOR` fenced and return false before file I/O in player/runtime builds.
+- Confirmed `Assets/_SourceData/Signals/signal_corridor_capacities.csv`, `.meta`, `signal_tuning_profiles.csv`, and `.meta` are present.
+
+Cinematic Cheats used:
+- Existing Dear Lie remains AUP-cell coalescence. This pass is authority hygiene for the tuning bridge, not a new simulation path.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: runtime no longer depends on a text CSV under `StreamingAssets`; editor/bake tooling still has designer-readable capacity rows.
+
+Verification:
+- `Test-Path` for the former runtime `StreamingAssets` signal-capacity CSV returned `False`; this matches SHINOBU_258 migration.
+- `Test-Path Assets/_SourceData/Signals/signal_corridor_capacities.csv` and `.meta` returned `True`.
+- Source scan shows the contention CSV loader source path is `_SourceData/Signals/signal_corridor_capacities.csv`.
+- Source scan shows the only runtime call sites route through `TryLoadDefault()`, whose non-editor branch returns `false`.
+- Build not launched; this was a documentation/source-authority reconciliation pass.
+
+<SELF_AUDIT id="SHINOBU_200" pass="SOURCE_DATA_MIGRATION_RECONCILIATION">
+  <task_19_authority>Human tuning source is Assets/_SourceData/Signals/signal_corridor_capacities.csv; runtime StreamingAssets text is not current authority.</task_19_authority>
+  <runtime_text_gate>SignalThreadContentionCsvHotSwap file IO is UNITY_EDITOR fenced; player branch returns false.</runtime_text_gate>
+  <data_monolith>Status remains PENDING VERIFICATION because static_data.h8bin is absent and binary hydration is not proven.</data_monolith>
+  <compile_guard>No build/rebuild launched in this pass.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 47 - BurstCallback Counter H8Memory Ownership
+
+What was wrong:
+- `Assets/_Project/Scripts/Core/BurstCallback.cs` still allocated `_pendingCount` through direct `new NativeArray<int>(1, Allocator.Persistent, ClearMemory)` and disposed it directly.
+- This helper is not the SHINOBU high-frequency event corridor, but it is inside the Core writer surface already touched by the adjacent MPSC audit.
+
+What was done:
+- `_pendingCount` now opens through `H8Memory.Allocate<int>` with owner `SystemID.CoreDiagnostics`.
+- `Dispose()` and `Dispose(JobHandle)` now release `_pendingCount` through the matching H8Memory owner route.
+- Constructor failure now unregisters/disposes the already-created native queue and clears local state if the H8Memory counter allocation fails.
+
+Cinematic Cheats used:
+- No physical simulation added. This is ownership cleanup for a retained low-frequency callback bridge; producer storms still belong to SHINOBU thread-local scratch and deterministic commit.
+
+Exact Microseconds saved:
+- No runtime microsecond claim. Static effect is removal of one direct persistent NativeArray allocation path and one direct raw dispose path from the touched Core writer surface.
+
+Verification:
+- Source scan finds no `new NativeArray<int>(1, Allocator.Persistent` and no `_pendingCount.Dispose` in `BurstCallback.cs`.
+- `BurstCallback.cs` brace count after the source patch is `27/27`.
+- Forbidden scan for direct `new NativeArray`, `TryGetLatestCreated`, `.Complete(`, LINQ, `foreach`, `UnityEngine.Random`, `Random.Range`, and `Pack=1` returns no match in `BurstCallback.cs`.
+- `git diff --check` over the touched source/docs reports only LF-to-CRLF warnings.
+- Build not launched: build guard sampled `CPU=100`, `dotnet=0`, `csc=0`.
+- Unity import, Burst compile, profiler, GCMonitor, and player proof remain pending.
+
+<SELF_AUDIT id="SHINOBU_200" pass="BURST_CALLBACK_COUNTER_H8MEMORY_OWNERSHIP">
+  <counter_owner>SystemID.CoreDiagnostics</counter_owner>
+  <direct_native_array_allocation status="removed">The pending-count lane opens through H8Memory.Allocate&lt;int&gt;.</direct_native_array_allocation>
+  <dispose_route status="owned">Synchronous and job-dependent dispose call H8Memory.Release with CoreDiagnostics owner.</dispose_route>
+  <job_dependency status="chained">Dispose(JobHandle) returns JobHandle.CombineDependencies(eventsDisposeHandle, counterDisposeHandle).</job_dependency>
+  <runtime_proof status="PENDING">No Unity import, Burst compile, profiler, GCMonitor, or player artifact was generated.</runtime_proof>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 48 - Compile-Wall Dead Import Cleanup
+
+What was wrong:
+- `Assets/_Project/Scripts/Core/GlobalSignals.cs` imported `Hecton8.World`.
+- `Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs` imported `Hecton8.Caves`.
+- Static symbol search found those imports were dead; `Hecton8.Core.asmdef` already has no World/Caves runtime assembly references.
+
+What was done:
+- Removed the dead sibling namespace imports only.
+- Left asmdefs untouched because there was no direct World/Caves runtime reference to remove.
+
+Cinematic Cheats used:
+- None. This is compile-wall hygiene, not simulation or visual routing.
+
+Exact Microseconds saved:
+- No runtime microsecond claim. Static effect is reduced misleading source coupling in Core signal/command infrastructure.
+
+Verification:
+- Scan for `using Hecton8.World;` and `using Hecton8.Caves;` in the touched Core files returns no match.
+- `Hecton8.Core.asmdef` scan finds no `Hecton8.World.*` or `Hecton8.Caves.*` runtime reference.
+- Brace counts remain `GlobalSignals.cs 842/842` and `ThreadSafeCommandQueue.cs 80/80`.
+- Focused forbidden scan over the touched Core files returns no match for dead sibling imports, callback-counter direct allocation/dispose, `TryGetLatestCreated`, `.Complete(`, LINQ, `foreach`, `UnityEngine.Random`, `Random.Range`, or `Pack=1`.
+- `git diff --check` over touched source/docs reports only LF-to-CRLF warnings.
+- Build not launched: build guard sampled `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="COMPILE_WALL_DEAD_IMPORT_CLEANUP">
+  <prompt_refresh bytes="24695" task_line_count="20" parser="Task xx line count" />
+  <removed_import file="Assets/_Project/Scripts/Core/GlobalSignals.cs">Hecton8.World</removed_import>
+  <removed_import file="Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs">Hecton8.Caves</removed_import>
+  <asmdef_check>Hecton8.Core.asmdef has no World/Caves runtime references.</asmdef_check>
+  <runtime_proof status="PENDING">No build, Unity import, profiler, or player proof was generated.</runtime_proof>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 49 - Sidecar UI Dependency Route Closure
+
+What was wrong:
+- Sidecar audit found `Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs` dispatching structural PDA undo through `Hecton8.UI.PDAEvents.RaiseUndoRequest(...)`.
+- That was a concrete sibling UI-domain call from Core command infrastructure.
+- The current UI event path for `UndoRequest` only rolls back `UIStateStore`, with a non-positive-frame clamp to `1`.
+
+What was done:
+- Replaced the UI event dispatch with `UIStateStore.TryRollbackPDAState(command.IntValue <= 0 ? 1 : command.IntValue)`.
+- Preserved the clamp semantics from `PDAEvents.ApplySimulationSideEffects(...)`.
+- Left the local `PlayerPDA.RaiseUndoRequest(...)` route intact for UI-owned callers.
+
+Cinematic Cheats used:
+- Existing Dear Lie remains signal coalescence by localized AUP cell. This pass is compile-wall/authority cleanup, not a new physical simulation or visual fake.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: removes one managed sibling-domain event dispatch from a Core structural command branch.
+
+Verification:
+- Scan for `Hecton8.UI`, `PDAEvents.RaiseUndoRequest`, and dead World/Caves imports in touched Core files returns no match.
+- Rollback route scan shows the Core command path now calls `UIStateStore.TryRollbackPDAState(command.IntValue <= 0 ? 1 : command.IntValue)`; remaining `UndoRequest` symbols are local to `PlayerPDA` plus `UIStateStore`.
+- Brace counts: `ThreadSafeCommandQueue.cs 80/80`, `GlobalSignals.cs 842/842`, `BurstCallback.cs 27/27`.
+- Forbidden hot-pattern scan over touched Core files returns no match for direct callback counter allocation/dispose, `TryGetLatestCreated`, `.Complete(`, LINQ, `foreach`, `UnityEngine.Random`, `Random.Range`, or `Pack=1`.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not launched: build guard sampled `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="SIDECAR_UI_DEPENDENCY_ROUTE_CLOSURE">
+  <task_reconciliation>
+    <task id="01" status="PASS">No new NativeQueue producer storm route; this pass removes a managed sibling dispatch from a structural command branch.</task>
+    <task id="02" status="PASS">No DTO layout changed; prior 64-byte SignalBus payload rules remain intact.</task>
+    <task id="03" status="PASS">No thread-index path changed; no atomics added.</task>
+    <task id="04" status="PASS">No hot-path struct property added.</task>
+    <task id="05" status="PASS">Mock contention generator untouched; editor-only benchmark remains explicit.</task>
+    <task id="06" status="PASS">Thread-local signal buffer route unchanged.</task>
+    <task id="07" status="PASS">Deterministic commit route unchanged.</task>
+    <task id="08" status="PASS">Dear Lie coalescence unchanged; no duplicate event fanout added.</task>
+    <task id="09" status="PASS">GlobalQualityWeight authority unchanged; no binary quality switch added.</task>
+    <task id="10" status="PASS">Ping-pong Vault snapshot route unchanged.</task>
+    <task id="11" status="PASS">Async overflow lane unchanged.</task>
+    <task id="12" status="PASS">AUP hash route unchanged.</task>
+    <task id="13" status="PASS">Rollback exclusion unchanged; command undo mutates Core UI state, not signal buffers.</task>
+    <task id="14" status="PASS">Orphan lock autopsy route unchanged.</task>
+    <task id="15" status="PASS">No memory clear or new native allocation added.</task>
+    <task id="16" status="PASS">Telemetry ring unchanged; source proof recorded in this log.</task>
+    <task id="17" status="PASS">No Burst job added or modified.</task>
+    <task id="18" status="PASS">Editor tuner unchanged.</task>
+    <task id="19" status="PASS">Source-data capacity bridge unchanged.</task>
+    <task id="20" status="PASS">Self-audit appended with static evidence and runtime-proof limits.</task>
+  </task_reconciliation>
+  <struct_layout>No runtime DTO changed; no new padding or ABI proof required in this patch.</struct_layout>
+  <scalability_curve>No GlobalQualityWeight branch changed. The command path is quality-invariant authority state, as required.</scalability_curve>
+  <h_phi_vault_status>No private NativeArray/List/HashMap allocation added; no VaultBufferHandle lifecycle changed.</h_phi_vault_status>
+  <dependency_graph>No JobHandle consumed or produced by this patch; no Complete call added.</dependency_graph>
+  <compile_guard>Core command source no longer references Hecton8.UI or PDAEvents; no build/rebuild launched because CPU guard was 100.</compile_guard>
+  <dear_lie>Existing AUP-cell coalescence remains the domain Dear Lie; theoretical downstream signal consume cost remains reduced from O(n duplicate payload fanout) to O(k coalesced cells), where k &lt;= n.</dear_lie>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 50 - Residual Core Sibling Reference Boundary
+
+What was wrong:
+- After the sidecar route fix, a broader Core scan still found concrete sibling references in `SystemDispatcher`, `GlobalRegistry`, `GlobalRegistryContracts`, runtime context services, diagnostics viewers, and player context managers.
+- Those are broad dispatcher/registry/context authority surfaces, not SHINOBU-owned SignalBus/MPSC implementation files.
+
+What was done:
+- Classified the residual references as integrator/core-owner debt.
+- Kept `SystemDispatcher`, `GlobalRegistry`, and runtime context services unedited in this pass to avoid a cross-domain compile-wall migration from the signal surgeon lane.
+- Reconfirmed the touched SHINOBU signal/command proof surface is clean.
+
+Cinematic Cheats used:
+- None added. Existing signal coalescence remains the domain Dear Lie.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: avoids an unsafe mass dispatcher/registry rewrite while preserving the concrete cleanup in `ThreadSafeCommandQueue`.
+
+Verification:
+- Broader scan found residual direct sibling references in non-SHINOBU Core authority surfaces.
+- Focused scan over `ThreadSafeCommandQueue.cs`, `GlobalSignals.cs`, and `BurstCallback.cs` finds no concrete `Hecton8.UI`, no dead World/Caves import, no callback-counter direct allocation/dispose, no `TryGetLatestCreated`, no `.Complete(`, no LINQ, no `foreach`, no `UnityEngine.Random`, no `Random.Range`, and no `Pack=1`.
+- Brace counts remain `ThreadSafeCommandQueue.cs 80/80`, `GlobalSignals.cs 842/842`, `BurstCallback.cs 27/27`.
+- Build not launched: build guard sampled `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="RESIDUAL_CORE_SIBLING_REFERENCE_BOUNDARY">
+  <fixed_surface>ThreadSafeCommandQueue, GlobalSignals, and BurstCallback are clean for this pass's focused sibling-reference and forbidden-pattern gates.</fixed_surface>
+  <residual_debt>SystemDispatcher, GlobalRegistry, contracts, runtime context services, diagnostics viewers, and player context managers still contain direct sibling references and require separate owner-approved migration.</residual_debt>
+  <compile_guard>No build/rebuild launched because CPU guard was 100 and no compiler process was active.</compile_guard>
+  <runtime_proof status="PENDING">No Unity import, Burst Inspector, Play Mode, profiler, GCMonitor, or player proof was generated.</runtime_proof>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 51 - Read-Looking Writer Alias Removal
+
+What was wrong:
+- `ThreadSafeCommandQueue.TryGetParallelWriter(...)` returned a mutable producer writer from a `TryGet*` method.
+- Previous work removed hidden initialization from that method, but the name still violated the read-accessor doctrine and had no first-party caller.
+
+What was done:
+- Deleted `TryGetParallelWriter(...)`.
+- Kept `TryOpenParallelWriter(...)` and `OpenLegacyMpscWriter()` as the explicit producer/open routes.
+- Kept `AsParallelWriter()` as a legacy compatibility alias only.
+
+Cinematic Cheats used:
+- None added. Existing AUP-cell signal coalescence remains the domain Dear Lie.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: removes one read-looking producer API from Core structural-command ingress.
+
+Verification:
+- Repo-wide scan for `TryGetParallelWriter` returns no matches.
+- Focused scan over `ThreadSafeCommandQueue.cs`, `GlobalSignals.cs`, and `BurstCallback.cs` returns no match for concrete `Hecton8.UI`, dead World/Caves import, callback-counter direct allocation/dispose, `TryGetLatestCreated`, `.Complete(`, LINQ, `foreach`, Unity random, `Pack=1`, or `TryGetParallelWriter`.
+- `ThreadSafeCommandQueue.cs` brace count is `79/79`.
+- Build not launched: build guard sampled `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="READ_LOOKING_WRITER_ALIAS_REMOVAL">
+  <removed_api>ThreadSafeCommandQueue.TryGetParallelWriter</removed_api>
+  <remaining_writer_routes>TryOpenParallelWriter and OpenLegacyMpscWriter</remaining_writer_routes>
+  <compatibility_alias>AsParallelWriter remains as legacy explicit writer vocabulary, not a read-looking accessor.</compatibility_alias>
+  <compile_guard>No build/rebuild launched because CPU guard was above threshold at 100.</compile_guard>
+  <runtime_proof status="PENDING">No Unity import, Burst Inspector, Play Mode, profiler, GCMonitor, or player proof was generated.</runtime_proof>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 52 - Sidecar Purity Closure
+
+What was wrong:
+- The corridor had undergone multiple source-contract patches; independent verification was needed for read-accessor purity, writer exposure, Burst flags, `[NoAlias]`, cache-line debt, and `TryGetLatestCreated` scope.
+
+What was done:
+- Consumed and closed the Gauss sidecar audit.
+- Recorded that audited read accessors do not allocate/grow native buffers, publish, complete jobs, mutate global state, or search scene.
+- Recorded that direct `.AsParallelWriter()` remains only inside explicit open/compatibility methods in `GlobalSignals.cs`, `ThreadSafeCommandQueue.cs`, and `BurstCallback.cs`.
+- Recorded that SHINOBU Burst jobs retain deterministic synchronous flags and `[NoAlias]` on relevant `NativeArray` fields.
+- Kept `ToolAcousticSignal` and `TetherTensionSignal` as documented cache-line-critical debt, not silent fixes.
+
+Cinematic Cheats used:
+- None added. Existing AUP-cell coalescence remains the domain Dear Lie.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: audit closure only. No runtime code changed in this loop.
+
+Verification:
+- Sidecar reported clean read-accessor purity in audited SHINOBU signal paths.
+- Sidecar reported clean writer exposure: no direct `SignalBus<T>.ParallelWriter` use outside explicit open/compatibility methods.
+- Sidecar reported clean Burst flags / `[NoAlias]` for `MockRockCollisionAggregationJob`, `GenerateSignalThreadContentionMockJob`, `SignalThreadLocalCommitJob`, and `SignalThreadLocalOrphanedLockAutopsyJob`.
+- Sidecar reported `GlobalDataVault.TryGetLatestCreated()` only in `EnsureInitializedForCrashDumpRoute()`.
+- Focused forbidden scan over touched Core files returned no match.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not launched: build guard sampled `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="SIDECAR_PURITY_CLOSURE">
+  <read_accessor_purity status="PASS">Audited read-looking SHINOBU paths are pure inspection paths; no publish, allocation/grow, job completion, scene search, or global mutation found.</read_accessor_purity>
+  <writer_exposure status="PASS">Writer conversion remains inside explicit open/compatibility methods only.</writer_exposure>
+  <burst_noalias status="PASS">Audited SHINOBU Burst jobs retain deterministic synchronous compile flags and NoAlias on relevant non-overlapping NativeArrays.</burst_noalias>
+  <cache_line_debt status="DOCUMENTED">ToolAcousticSignal and TetherTensionSignal remain documented migration debt; no silent ABI change made.</cache_line_debt>
+  <vault_crash_route status="PASS">TryGetLatestCreated is limited to the crash/fault initialization route in audited scope.</vault_crash_route>
+  <compile_guard>No build/rebuild launched because CPU guard was 100.</compile_guard>
+  <runtime_proof status="PENDING">No Unity import, Burst Inspector, Play Mode, profiler, GCMonitor, or player proof was generated.</runtime_proof>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 53 - Combat Damage Codec Core Boundary Patch
+
+What was wrong:
+- `CombatDamageSignalCodec` still referenced `global::Hecton8.World.AbsoluteUniversePosition` through fully qualified names.
+- The earlier dead-import cleanup did not remove that concrete sibling-domain dependency from the touched Core signal surface.
+
+What was done:
+- Replaced `AbsoluteUniversePosition` reconstruction with private Core math: read `HectonFloatingOrigin.CurrentTotalOffsetDouble`, add the runtime `float3` delta as `double3`, and finite-check the result.
+- Preserved `CombatDamageSignalCodec.FromRuntimePoint(float3)`, `FromRuntimePoint(Vector3)`, and the `CombatDamageSignal` `double3 ImpactAup` ABI.
+- Left retained writer properties and direct `NativeQueue` compatibility bridges as documented legacy debt, not silent migrations.
+
+Cinematic Cheats used:
+- No new physics path was introduced. The conversion remains a cheap coordinate projection, not a terrain/world query or scene lookup.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: one concrete World AUP type dependency removed from the Core signal codec without widening call-site churn.
+
+Verification:
+- Focused scan over touched SHINOBU files returned no `global::Hecton8.World`, no broad `using Hecton8.World;`, and no `OffsetAbsoluteMeters`. The file retains two explicit AUP DTO aliases as documented legacy contract debt.
+- Brace counts: `GlobalSignals.cs 843/843`, `SignalWardenRuntime.cs 316/316`, `ThreadSafeCommandQueue.cs 79/79`, `BurstCallback.cs 27/27`.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not launched: build guard sampled `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="COMBAT_DAMAGE_CODEC_CORE_BOUNDARY">
+  <compile_guard status="PASS_STATIC">Touched SHINOBU Core files no longer contain direct World AUP references found by the sidecar.</compile_guard>
+  <abi_status status="UNCHANGED">CombatDamageSignal remains a double3 AUP signal payload; no DTO layout or BufferID changed.</abi_status>
+  <authority_route status="UNCHANGED">Runtime coordinate projection reads Core floating-origin state; gameplay truth owner and signal route are unchanged.</authority_route>
+  <runtime_proof status="PENDING">No Unity import, Burst Inspector, Play Mode, profiler, GCMonitor, or player proof was generated.</runtime_proof>
+</SELF_AUDIT>
+
+## 2026-05-21 Loop 54 - Legacy AUP Alias Compile Fence
+
+What was wrong:
+- `GlobalSignals.cs` still has many pre-existing AUP-bearing signal DTOs.
+- Removing the broad World import without a replacement made those existing `AbsoluteUniversePosition` and `AbsoluteUniversePositionBlit` symbols compile-risky under normal C# resolution.
+
+What was done:
+- Added explicit aliases for the two legacy AUP DTO types instead of restoring `using Hecton8.World;`.
+- Kept `CombatDamageSignalCodec` on Core floating-origin `double3` projection; it still does not call `OffsetAbsoluteMeters(...)` or `global::Hecton8.World.AbsoluteUniversePosition`.
+
+Cinematic Cheats used:
+- None added. This pass is compile-risk containment and source-boundary hygiene only.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler proof exists.
+- Static effect: avoids a likely import-resolution compile fault while keeping the legacy AUP dependency explicit and narrow.
+
+Verification:
+- Scan finds exactly two AUP aliases in `GlobalSignals.cs`.
+- Scan over touched SHINOBU files finds no `global::Hecton8.World`, no broad `using Hecton8.World;`, and no `OffsetAbsoluteMeters`.
+- Brace counts remain `GlobalSignals.cs 843/843`, `SignalWardenRuntime.cs 316/316`, `ThreadSafeCommandQueue.cs 79/79`, `BurstCallback.cs 27/27`.
+- Build not launched: build guard sampled `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="LEGACY_AUP_ALIAS_COMPILE_FENCE">
+  <legacy_contract status="DOCUMENTED">GlobalSignals retains two explicit aliases to legacy World AUP DTOs because many existing signal contracts already carry that payload type.</legacy_contract>
+  <codec_route status="PASS_STATIC">CombatDamageSignalCodec does not call World AUP construction/offset methods.</codec_route>
+  <broad_import status="PASS_STATIC">No broad using Hecton8.World directive remains in the touched Core signal file.</broad_import>
+  <runtime_proof status="PENDING">No Unity import, Burst Inspector, Play Mode, profiler, GCMonitor, or player proof was generated.</runtime_proof>
 </SELF_AUDIT>

@@ -23,6 +23,16 @@ namespace Hecton8.VFX
     }
 
     [StructLayout(LayoutKind.Explicit, Size = VolumetricFogConstants.ParamsStrideBytes)]
+    public struct FogConstantsDTO
+    {
+        [FieldOffset(0)] public float4 FogColorAndDensity;
+        [FieldOffset(16)] public float4 ScatteringParams;
+        [FieldOffset(32)] public float4 FlowAdvection;
+        [FieldOffset(48)] public float4 QualityAndLimits;
+    }
+
+    [Obsolete("Use FogConstantsDTO. This legacy alias exists only for stale parallel-agent references.", false)]
+    [StructLayout(LayoutKind.Explicit, Size = VolumetricFogConstants.ParamsStrideBytes)]
     public struct VolumetricFogParamsDTO
     {
         [FieldOffset(0)] public float4 FogColorAndDensity;
@@ -76,7 +86,13 @@ namespace Hecton8.VFX
 
         private static bool ComputeIsValid()
         {
-            return UnsafeUtility.SizeOf<VolumetricFogParamsDTO>() == VolumetricFogConstants.ParamsStrideBytes &&
+#pragma warning disable CS0618
+            return UnsafeUtility.SizeOf<FogConstantsDTO>() == VolumetricFogConstants.ParamsStrideBytes &&
+                   OffsetOf<FogConstantsDTO>(nameof(FogConstantsDTO.FogColorAndDensity)) == 0 &&
+                   OffsetOf<FogConstantsDTO>(nameof(FogConstantsDTO.ScatteringParams)) == 16 &&
+                   OffsetOf<FogConstantsDTO>(nameof(FogConstantsDTO.FlowAdvection)) == 32 &&
+                   OffsetOf<FogConstantsDTO>(nameof(FogConstantsDTO.QualityAndLimits)) == 48 &&
+                   UnsafeUtility.SizeOf<VolumetricFogParamsDTO>() == VolumetricFogConstants.ParamsStrideBytes &&
                    OffsetOf<VolumetricFogParamsDTO>(nameof(VolumetricFogParamsDTO.FogColorAndDensity)) == 0 &&
                    OffsetOf<VolumetricFogParamsDTO>(nameof(VolumetricFogParamsDTO.ScatteringParams)) == 16 &&
                    OffsetOf<VolumetricFogParamsDTO>(nameof(VolumetricFogParamsDTO.FlowAdvection)) == 32 &&
@@ -103,22 +119,26 @@ namespace Hecton8.VFX
                    OffsetOf<WaterExtinctionProfileDTO>(nameof(WaterExtinctionProfileDTO.AbsorptionAndScatter)) == 16 &&
                    OffsetOf<WaterExtinctionProfileDTO>(nameof(WaterExtinctionProfileDTO.BiomeWeights)) == 32 &&
                    OffsetOf<WaterExtinctionProfileDTO>(nameof(WaterExtinctionProfileDTO.Reserved)) == 48;
+#pragma warning restore CS0618
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct
         {
-            System.Reflection.FieldInfo field = typeof(T).GetField(fieldName);
-            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
+            return Marshal.OffsetOf<T>(fieldName).ToInt32();
         }
     }
 
     public static class VolumetricFogParamsAccess
     {
-        public static ref VolumetricFogParamsDTO ElementAt(NativeArray<VolumetricFogParamsDTO> values, int index)
+        public static ref FogConstantsDTO ElementAt(NativeArray<FogConstantsDTO> values, int index)
         {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            if (!values.IsCreated || (uint)index >= (uint)values.Length)
+                throw new IndexOutOfRangeException(nameof(FogConstantsDTO));
+#endif
             unsafe
             {
-                return ref ((VolumetricFogParamsDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(values))[index];
+                return ref ((FogConstantsDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(values))[index];
             }
         }
 
@@ -142,14 +162,13 @@ namespace Hecton8.VFX
             float quality = math.isfinite(qualityWeight) ? math.clamp(qualityWeight, 0f, 1f) : 0f;
             float proxyRelease = math.saturate((quality - 0.12f) * (1f / 0.3f));
             float proxyFade = proxyRelease * proxyRelease * (3f - 2f * proxyRelease);
-            float proxySurvivalFloor = 1f - math.step(0.12f, quality);
-            return math.max(proxySurvivalFloor, math.lerp(1f, 0f, proxyFade));
+            return math.lerp(1f, 0f, proxyFade);
         }
 
-        public static VolumetricFogParamsDTO CreateDefaultParams(float qualityWeight)
+        public static FogConstantsDTO CreateDefaultParams(float qualityWeight)
         {
             float quality = math.isfinite(qualityWeight) ? math.clamp(qualityWeight, 0f, 1f) : 0f;
-            return new VolumetricFogParamsDTO
+            return new FogConstantsDTO
             {
                 FogColorAndDensity = new float4(0.015f, 0.045f, 0.065f, 0.045f),
                 ScatteringParams = new float4(0.85f, 0.12f, 0.42f, 0.97f),
@@ -162,7 +181,7 @@ namespace Hecton8.VFX
             };
         }
 
-        public static bool IsUsableParams(in VolumetricFogParamsDTO dto)
+        public static bool IsUsableParams(in FogConstantsDTO dto)
         {
             return math.all(math.isfinite(dto.FogColorAndDensity)) &&
                    math.all(math.isfinite(dto.ScatteringParams)) &&
@@ -198,6 +217,10 @@ namespace Hecton8.VFX
 
         public static ref PointLightDTO LightAt(NativeArray<PointLightDTO> values, int index)
         {
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            if (!values.IsCreated || (uint)index >= (uint)values.Length)
+                throw new IndexOutOfRangeException(nameof(PointLightDTO));
+#endif
             unsafe
             {
                 return ref ((PointLightDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(values))[index];

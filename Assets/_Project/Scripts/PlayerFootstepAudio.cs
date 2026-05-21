@@ -88,7 +88,7 @@ namespace Hecton8.Audio
     }
 
     [DisallowMultipleComponent]
-    public sealed class PlayerFootstepAudio : MonoBehaviour, IUpdatable
+    public sealed class PlayerFootstepAudio : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -180,7 +180,10 @@ namespace Hecton8.Audio
         private int _lastClipIndex = -1;
         private uint _footstepRandomState;
         private uint _lastConsumedFootstepSignalFrame;
+        private IAudioService _audioService;
+        private MapMagicBridge _mapMagic;
         private bool _registeredUpdate;
+        private bool _registeredHotSwapListener;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -200,19 +203,45 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
-            if (_registeredUpdate)
-            {
+            TryRegisterHotSwapListener();
+            RefreshColdRegistryReferences();
+
+            if (!_registeredUpdate)
                 _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-            }
         }
 
         private void OnDisable()
         {
-            if (playerMovement != null)
+            if (_registeredUpdate)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
                 _registeredUpdate = false;
             }
+
+            TryUnregisterHotSwapListener();
+            _audioService = null;
+            _mapMagic = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+            {
+                _audioService = currentService as IAudioService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.MapMagicRuntime)
+            {
+                _mapMagic = currentService as MapMagicBridge;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled && !_registeredUpdate)
+                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -321,7 +350,7 @@ namespace Hecton8.Audio
             float pitch = 1f + locomotionPitchOffset + NextFootstepRange(-pitchVariation, pitchVariation);
             Vector3 playPosition = _surfaceHitValid ? _surfaceHit.point : transform.position;
 
-            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            IAudioService sam = _audioService;
             if (sam != null)
                 sam.PlayAtPoint(clip, playPosition, finalVolume, pitch);
         }
@@ -423,7 +452,7 @@ namespace Hecton8.Audio
 
             if (hitLayer == terrainLayerIndex)
             {
-                MapMagicBridge bridge = GlobalRegistry.MapMagic;
+                MapMagicBridge bridge = _mapMagic;
 
                 if (bridge != null
                     && bridge.TryGetBiomeIndex(
@@ -512,6 +541,29 @@ namespace Hecton8.Audio
 
             hit = default;
             return false;
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _audioService = GlobalRegistry.Audio;
+            _mapMagic = GlobalRegistry.MapMagic;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

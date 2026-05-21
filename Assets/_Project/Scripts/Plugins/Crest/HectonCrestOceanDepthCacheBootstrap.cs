@@ -3,6 +3,7 @@ using Crest;
 using Hecton8.Celestial;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using System.Diagnostics;
 using Unity.Mathematics;
 using UnityEngine;
@@ -58,6 +59,7 @@ namespace Hecton8.World
         private const int RuntimeCameraBufferSize = 8;
         private const int RuntimeTerrainBufferSize = 64;
         private const string DepthDebugOutputPath = "C:/hades/Hecton8/Temp/depth_debug.png";
+        private static readonly bool HectonRuntimeDepthCacheCameraDisabled = true;
         private static int TerrainLayer = int.MinValue;
         private static int TerrainLayerWithTrailingSpace = int.MinValue;
         // COLD ALLOC: Camera[8] - reusable runtime-camera resolve scratch for Crest viewpoint ownership - owner: HectonCrestOceanDepthCacheBootstrap
@@ -156,7 +158,8 @@ namespace Hecton8.World
         private void Start()
         {
             TryRegister();
-            if (Crest.OceanRenderer.Instance == null)
+            TryResolveReferences();
+            if (oceanRenderer == null)
             {
                 UpdateDiagnostics(cacheReady: false, terrainCount: 0, waterLevel: ResolveFallbackWaterLevel());
                 return;
@@ -185,7 +188,8 @@ namespace Hecton8.World
             if (_debugCacheReady && !repopulateOnTerrainChange)
                 return;
 
-            if (Crest.OceanRenderer.Instance == null)
+            TryResolveReferences();
+            if (oceanRenderer == null)
             {
                 UpdateDiagnostics(cacheReady: false, terrainCount: _debugTerrainCount, waterLevel: ResolveFallbackWaterLevel());
                 return;
@@ -212,14 +216,13 @@ namespace Hecton8.World
             if (!TryResolveReferences())
                 return;
 
-            OceanRenderer activeOcean = oceanRenderer != null ? oceanRenderer : Crest.OceanRenderer.Instance;
-            if (activeOcean == null)
+            if (oceanRenderer == null)
                 return;
 
-            activeOcean._lodTransform?.SetOrigin(shiftOffset);
+            oceanRenderer._lodTransform?.SetOrigin(shiftOffset);
 
             _shiftingOriginScratch.Clear();
-            activeOcean.GetComponentsInChildren(includeInactive: true, _shiftingOriginScratch);
+            oceanRenderer.GetComponentsInChildren(includeInactive: true, _shiftingOriginScratch);
             for (int i = 0; i < _shiftingOriginScratch.Count; i++)
             {
                 if (_shiftingOriginScratch[i] is IShiftingOrigin shiftingOrigin)
@@ -227,7 +230,7 @@ namespace Hecton8.World
             }
 
             _sceneRootScratch.Clear();
-            activeOcean.gameObject.scene.GetRootGameObjects(_sceneRootScratch);
+            oceanRenderer.gameObject.scene.GetRootGameObjects(_sceneRootScratch);
             for (int rootIndex = 0; rootIndex < _sceneRootScratch.Count; rootIndex++)
             {
                 GameObject rootObject = _sceneRootScratch[rootIndex];
@@ -241,7 +244,7 @@ namespace Hecton8.World
             }
 
             // Clear persistent Crest simulation state so foam and dynamic waves do not integrate the 5000 m rebase as velocity.
-            activeOcean.ClearLodData();
+            oceanRenderer.ClearLodData();
         }
 
         private void BootstrapDepthCache()
@@ -281,7 +284,6 @@ namespace Hecton8.World
         private bool TryConfigureAndPopulate(bool forcePopulate)
         {
             if (!TryResolveReferences() ||
-                Crest.OceanRenderer.Instance == null ||
                 oceanRenderer == null ||
                 !oceanRenderer.CreateSeaFloorDepthData)
             {
@@ -290,6 +292,15 @@ namespace Hecton8.World
             }
 
             EnsureRuntimeOceanViewOwnership();
+
+            if (HectonRuntimeDepthCacheCameraDisabled)
+            {
+                oceanDepthCache = null;
+                _captureLayerMask = 0;
+                _hasConfiguredBounds = false;
+                UpdateDiagnostics(cacheReady: false, terrainCount: 0, waterLevel: ResolveFallbackWaterLevel());
+                return false;
+            }
 
             if (TryUseAuthoredLocalDepthCaches(forcePopulate))
                 return true;
@@ -434,37 +445,14 @@ namespace Hecton8.World
 
         private OceanDepthCache EnsureDepthCacheComponent()
         {
-            if (oceanDepthCache != null)
-                return oceanDepthCache;
-
-            Transform depthCacheTransform = transform.Find(DepthCacheChildName);
-            if (depthCacheTransform != null)
-                depthCacheTransform.TryGetComponent(out oceanDepthCache);
-
-            if (oceanDepthCache == null)
-                oceanDepthCache = ResolvePreferredDepthCache();
-
-            if (oceanDepthCache != null)
-                return oceanDepthCache;
-
-            // COLD ALLOC: GameObject[1] - restore missing Crest depth-cache authoring child when prefab data is incomplete - owner: HectonCrestOceanDepthCacheBootstrap
-            GameObject depthCacheObject = new GameObject(DepthCacheChildName);
-            depthCacheObject.layer = oceanRenderer != null ? oceanRenderer.Layer : gameObject.layer;
-
-            depthCacheTransform = depthCacheObject.transform;
-            depthCacheTransform.SetParent(transform, false);
-            depthCacheTransform.localRotation = Quaternion.identity;
-            depthCacheTransform.localScale = new Vector3(MinimumCoverageMeters, 1f, MinimumCoverageMeters);
-
-            float waterLevel = ResolveWaterLevel();
-            depthCacheTransform.localPosition = transform.InverseTransformPoint(new Vector3(transform.position.x, waterLevel, transform.position.z));
-
-            oceanDepthCache = depthCacheObject.AddComponent<OceanDepthCache>();
-            return oceanDepthCache;
+            return null;
         }
 
         private void ApplyDepthCacheSettings()
         {
+            if (HectonRuntimeDepthCacheCameraDisabled)
+                return;
+
             if (oceanDepthCache == null)
                 return;
 
@@ -728,9 +716,6 @@ namespace Hecton8.World
 
         private float ResolveFallbackWaterLevel()
         {
-            if (mapMagicBridge == null)
-                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
-
             if (mapMagicBridge != null)
             {
                 float bridgedWaterLevel = mapMagicBridge.WaterSurfaceLevel;
@@ -990,13 +975,42 @@ namespace Hecton8.World
 
         private static Vector3 ResolveAbsoluteUniversePoint(Vector3 runtimePosition)
         {
-            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            if (!TryResolveAupDoubleFromRuntimeOrigin(runtimePosition, out double3 absolute))
+                return runtimePosition;
+
             return new Vector3((float)absolute.x, (float)absolute.y, (float)absolute.z);
         }
 
         private static float ResolveAbsoluteUniverseY(float runtimeY)
         {
-            return (float)(runtimeY + HectonFloatingOrigin.CurrentTotalOffsetDouble.y);
+            if (!TryResolveCurrentRuntimeOriginDouble3(out double3 originAup))
+                return runtimeY;
+
+            return (float)(runtimeY + originAup.y);
+        }
+
+        private static bool TryResolveAupDoubleFromRuntimeOrigin(Vector3 runtimePosition, out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            if (!IsFiniteVector3(runtimePosition))
+                return false;
+
+            if (!TryResolveCurrentRuntimeOriginDouble3(out double3 originAup))
+                return false;
+
+            absoluteAup = originAup + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            return math.all(math.isfinite(absoluteAup));
+        }
+
+        private static bool TryResolveCurrentRuntimeOriginDouble3(out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = originAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
         }
     }
 }

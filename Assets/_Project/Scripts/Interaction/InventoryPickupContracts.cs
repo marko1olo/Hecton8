@@ -1,6 +1,7 @@
 namespace Hecton8.Interaction
 {
     using Hecton8.Inventory;
+    using Hecton8.Items;
     using UnityEngine;
 
     /// <summary>
@@ -18,6 +19,14 @@ namespace Hecton8.Interaction
         /// Returns true when the pickup interaction was handled.
         /// </summary>
         bool TryHandleInventoryPickup(PlayerInventory inventory, Transform interactor);
+    }
+
+    /// <summary>
+    /// Optional read-only pickup preview seam for hover and zero-allocation tool collection.
+    /// </summary>
+    public interface IInventoryPickupPreviewSource
+    {
+        bool TryPeekInventoryPickup(out ItemData itemData, out int quantity);
     }
 
     public static class InventoryPickupSignalConstants

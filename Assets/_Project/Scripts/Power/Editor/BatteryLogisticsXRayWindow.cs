@@ -101,7 +101,7 @@ namespace Hecton8.Power.Editor
             if (_stateLabel == null || _telemetryLabel == null)
                 return;
 
-            if (!BatteryChargerLogisticsRuntime.TryReadEditorState(out int activeCount, out float quality, out float cadenceHz, out float lastScheduleUs))
+            if (!BatteryChargerLogisticsRuntime.TryReadEditorState(out int activeCount, out float quality, out float cadenceHz, out float lastFenceElapsedUs))
             {
                 _stateLabel.text = "runtime: offline";
                 _telemetryLabel.text = "telemetry: none";
@@ -109,7 +109,7 @@ namespace Hecton8.Power.Editor
                 return;
             }
 
-            _stateLabel.text = $"links: {activeCount} | q: {quality:0.000} | cadence: {cadenceHz:0.0} Hz | last: {lastScheduleUs:0.0} us";
+            _stateLabel.text = $"links: {activeCount} | q: {quality:0.000} | cadence: {cadenceHz:0.0} Hz | fence: {lastFenceElapsedUs:0.0} us";
             if (!BatteryChargerLogisticsRuntime.TryGetTelemetryReadOnly(out NativeArray<ChargerTelemetryEntry>.ReadOnly telemetry, out int cursor) ||
                 telemetry.Length == 0)
             {
@@ -120,7 +120,7 @@ namespace Hecton8.Power.Editor
 
             int latest = cursor <= 0 ? 0 : (cursor - 1) % telemetry.Length;
             ChargerTelemetryEntry entry = telemetry[latest];
-            _telemetryLabel.text = $"draw: {entry.TotalEnergyDrawn:0.000} | atomic failures: {entry.AtomicLockFailures} | full: {entry.FullLinks} | unpowered: {entry.UnpoweredLinks}";
+            _telemetryLabel.text = $"draw: {entry.TotalEnergyDrawn:0.000} | atomic failures: {entry.AtomicLockFailures} | skipped: {entry.SkippedCadenceFrames} | full: {entry.FullLinks} | unpowered: {entry.UnpoweredLinks}";
             DrawHistogram(telemetry, cursor);
         }
 
@@ -142,10 +142,14 @@ namespace Hecton8.Power.Editor
                 if (bar == null)
                     continue;
 
+                Color barColor = new Color(0.2f, 0.85f, 0.65f, 1f);
+                if ((entry.Flags & BatteryChargerLogisticsConstants.TelemetryFlagSkippedCadence) != 0u)
+                    barColor = new Color(0.2f, 0.55f, 1f, 1f);
+                if (entry.AtomicLockFailures > 0)
+                    barColor = new Color(1f, 0.35f, 0.18f, 1f);
+
                 bar.style.height = math.max(1f, height);
-                bar.style.backgroundColor = entry.AtomicLockFailures > 0
-                    ? new Color(1f, 0.35f, 0.18f, 1f)
-                    : new Color(0.2f, 0.85f, 0.65f, 1f);
+                bar.style.backgroundColor = barColor;
             }
         }
 

@@ -1,0 +1,1067 @@
+{
+  "agent": "SHINOBU_253",
+  "domain": "E3_FLORA_FAUNA_BIOTA",
+  "report": "WORLD_OPTIMIZATION_REPORT",
+  "scanned_files": 269,
+  "forbidden_hits": 174,
+  "by_pattern": {
+    "runtime_instantiate": 0,
+    "destroy_spike": 57,
+    "static_spawn_point": 4,
+    "mono_enemy_spawner": 0,
+    "managed_hot_random": 0,
+    "managed_hot_collection": 113,
+    "scene_search": 0
+  },
+  "findings": [
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+      "line": 1222,
+      "sample": "Destroy(_runtimeFallbackMesh);"
+    },
+    {
+      "pattern": "static_spawn_point",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+      "line": 94,
+      "sample": "public void SetSpawnPoint(Vector3 spawnPoint)"
+    },
+    {
+      "pattern": "static_spawn_point",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+      "line": 96,
+      "sample": "_spawnPoint = spawnPoint;"
+    },
+    {
+      "pattern": "static_spawn_point",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+      "line": 97,
+      "sample": "if (TryResolveAupFromRuntimeOrigin(spawnPoint, out AbsoluteUniversePosition spawnAup))"
+    },
+    {
+      "pattern": "static_spawn_point",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+      "line": 100,
+      "sample": "_utilityBrain.SetSpawnAnchor(spawnPoint);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+      "line": 458,
+      "sample": "private readonly List<Collider> _logicalLodColliderScratch = new List<Collider>(8);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+      "line": 492,
+      "sample": "private readonly List<Light> _biolumPresentationLightScratch = new List<Light>(MaxBiolumPresentationLights);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+      "line": 494,
+      "sample": "private readonly List<Material> _faunaPresentationMaterialScratch = new List<Material>(4);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+      "line": 496,
+      "sample": "private readonly List<Material> _faunaPresentationOriginalMaterials = new List<Material>(4);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+      "line": 498,
+      "sample": "private readonly List<Material> _faunaPresentationRuntimeMaterials = new List<Material>(4);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+      "line": 500,
+      "sample": "private readonly List<ushort> _faunaPresentationRuntimeMaterialMasks = new List<ushort>(4);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+      "line": 4335,
+      "sample": "Destroy(runtimeMaterial);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaScanRuntimeRegistry.cs",
+      "line": 28,
+      "sample": "private static readonly Dictionary<uint, FaunaScanMetadata> _metadataByEntryHash = new Dictionary<uint, FaunaScanMetadata>(64);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/AbyssalFluidDecalManager.cs",
+      "line": 211,
+      "sample": "Destroy(_quadMesh);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+      "line": 599,
+      "sample": "private readonly List<WorldZoneAnchor> _zoneAnchors = new List<WorldZoneAnchor>(MaxAnchorScanCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+      "line": 601,
+      "sample": "private readonly List<RuntimeVentRegistration> _runtimeVentRegistrations = new List<RuntimeVentRegistration>(MaxVentCapacity);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+      "line": 907,
+      "sample": "Destroy(this);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+      "line": 2503,
+      "sample": "Destroy(_thermalMapTexture);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/BasePollutionManager.cs",
+      "line": 111,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/BasePollutionManager.cs",
+      "line": 150,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "line": 649,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/CullingManager.cs",
+      "line": 129,
+      "sample": "private readonly List<CullableObject> _cullableObjects = new List<CullableObject>(1000);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/CullingManager.cs",
+      "line": 132,
+      "sample": "private readonly HashSet<GameObject> _registeredObjects = new HashSet<GameObject>(1000);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/CullingManager.cs",
+      "line": 140,
+      "sample": "private readonly List<Renderer> _rendererScratch = new List<Renderer>(32);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/CullingManager.cs",
+      "line": 192,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/CullingManager.cs",
+      "line": 255,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+      "line": 347,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+      "line": 657,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/DynamicResolutionScaler.cs",
+      "line": 237,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/DynamicResolutionScaler.cs",
+      "line": 334,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/EmergencyServiceRelay.cs",
+      "line": 57,
+      "sample": "private static readonly List<EmergencyServiceRelay> s_ActiveRelays = new List<EmergencyServiceRelay>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/EmergencyServiceRelayDirector.cs",
+      "line": 48,
+      "sample": "private readonly List<EmergencyServiceRelay> _drivenChainRelays = new List<EmergencyServiceRelay>(8);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/EmergencyServiceRelayDirector.cs",
+      "line": 51,
+      "sample": "new Dictionary<uint, EmergencyServiceRelay>(8);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/EmergencyServiceRelayDirector.cs",
+      "line": 54,
+      "sample": "new Dictionary<int, EmergencyServiceRelay>(8);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/EmergencyServiceRelayDirector.cs",
+      "line": 57,
+      "sample": "new HashSet<uint>(8);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/EmergencyServiceRelayDirector.cs",
+      "line": 60,
+      "sample": "new HashSet<int>(8);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/EmergencyServiceRelayDirector.cs",
+      "line": 98,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/EnvironmentalStrainManager.cs",
+      "line": 105,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/EnvironmentalStrainManager.cs",
+      "line": 156,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
+      "line": 48,
+      "sample": "private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(MaxEntryCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 1480,
+      "sample": "private Dictionary<BaseModule, ModuleParasiteState> _moduleParasiteStateFront = new Dictionary<BaseModule, ModuleParasiteState>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 1481,
+      "sample": "private Dictionary<BaseModule, ModuleParasiteState> _moduleParasiteStateBack = new Dictionary<BaseModule, ModuleParasiteState>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 1482,
+      "sample": "private readonly Dictionary<BaseModule, float> _thermophileDwellSeconds = new Dictionary<BaseModule, float>(8);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 1483,
+      "sample": "private readonly List<BaseModule> _staleParasiticModules = new List<BaseModule>(16);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7396,
+      "sample": "Destroy(texture);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+      "line": 1626,
+      "sample": "Destroy(_depthPyramidTexture);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+      "line": 1638,
+      "sample": "Destroy(_biomeHeatmapTexture);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+      "line": 199,
+      "sample": "Destroy(_runtimeMaterial);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/HectonBiolumController.cs",
+      "line": 95,
+      "sample": "if (registered != null && registered != this) { Destroy(gameObject); return; }"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/HectonBiolumController.cs",
+      "line": 378,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonBrinePoolMeshGenerator.cs",
+      "line": 51,
+      "sample": "private readonly List<ActiveBrinePool> _activePools = new List<ActiveBrinePool>(MaxGeneratedBrinePools);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/HectonBrinePoolMeshGenerator.cs",
+      "line": 203,
+      "sample": "Destroy(poolObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/HectonBrinePoolMeshGenerator.cs",
+      "line": 487,
+      "sample": "Destroy(_sharedPoolMesh);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonCaveVoxelAmbientOcclusionController.cs",
+      "line": 47,
+      "sample": "private readonly List<HectonVoxelVolume> _volumeBuffer = new List<HectonVoxelVolume>(32);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/HectonCaveVoxelLightingVolume.cs",
+      "line": 336,
+      "sample": "Destroy(_voxelDensityTexture);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "line": 1572,
+      "sample": "Destroy(_generatedMesh);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "line": 1578,
+      "sample": "Destroy(_generatedImpostorMesh);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "line": 3330,
+      "sample": "Destroy(_depthPyramidTexture);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1101,
+      "sample": "private static readonly List<DeferredTileCacheDisposal> s_DeferredTileCacheDisposals = new List<DeferredTileCacheDisposal>(8);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1473,
+      "sample": "private readonly Dictionary<long, TileRuntimeState> _tileStates = new Dictionary<long, TileRuntimeState>(InitialTileCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1475,
+      "sample": "private readonly Dictionary<ChunkKey, ChunkPayload> _chunkPayloads = new Dictionary<ChunkKey, ChunkPayload>(InitialChunkCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1477,
+      "sample": "private readonly Dictionary<ChunkKey, ChunkBuildJobState> _chunkBuildJobs = new Dictionary<ChunkKey, ChunkBuildJobState>(InitialChunkCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1479,
+      "sample": "private readonly Dictionary<ChunkKey, ChunkAbyssalNavPayload> _chunkAbyssalNavPayloads = new Dictionary<ChunkKey, ChunkAbyssalNavPayload>(InitialChunkCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1481,
+      "sample": "private readonly Dictionary<ChunkKey, ChunkMegaWreckPayload> _chunkMegaWreckPayloads = new Dictionary<ChunkKey, ChunkMegaWreckPayload>(InitialChunkCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1483,
+      "sample": "private readonly HashSet<ChunkKey> _corruptedChunkKeys = new HashSet<ChunkKey>(InitialCorruptedChunkCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1485,
+      "sample": "private readonly List<ChunkKey> _corruptedChunkOrder = new List<ChunkKey>(InitialChunkArrayCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1487,
+      "sample": "private readonly List<PersistentArtificialStructureRecord> _persistentArtificialStructures = new List<PersistentArtificialStructureRecord>(32);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1489,
+      "sample": "private readonly List<ChunkKey> _evictionKeys = new List<ChunkKey>(InitialChunkArrayCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1491,
+      "sample": "private readonly List<ChunkKey> _jobScratchKeys = new List<ChunkKey>(InitialChunkArrayCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1493,
+      "sample": "private readonly List<TerrainHoleRecord> _terrainHoleEvictionScratch = new List<TerrainHoleRecord>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1495,
+      "sample": "private readonly List<long> _tileStateRemovalScratchKeys = new List<long>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 1556,
+      "sample": "private readonly Dictionary<ChunkKey, int> _densityQueryChunkLookup = new Dictionary<ChunkKey, int>(InitialChunkCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+      "line": 68,
+      "sample": "private readonly Dictionary<long, GameObject> _activeVolumes = new Dictionary<long, GameObject>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+      "line": 69,
+      "sample": "private readonly Dictionary<long, CaveEntranceRequest> _desiredRequests = new Dictionary<long, CaveEntranceRequest>(32);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+      "line": 70,
+      "sample": "private readonly Dictionary<long, PendingRequestState> _pendingRequests = new Dictionary<long, PendingRequestState>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+      "line": 72,
+      "sample": "private readonly Dictionary<long, ChunkFadeState> _chunkFadeStates = new Dictionary<long, ChunkFadeState>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+      "line": 73,
+      "sample": "private readonly List<CaveEntranceRequest> _launchQueue = new List<CaveEntranceRequest>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+      "line": 74,
+      "sample": "private readonly List<long> _keyScratch = new List<long>(16);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+      "line": 450,
+      "sample": "Destroy(state.RuntimeMaterial);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+      "line": 148,
+      "sample": "private readonly Dictionary<EntityId, GameObject> _impostorBillboards = new Dictionary<EntityId, GameObject>(100);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+      "line": 150,
+      "sample": "private readonly List<ImpostorInstance> _activeImpostors = new List<ImpostorInstance>(100);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+      "line": 152,
+      "sample": "private readonly HashSet<GameObject> _registeredCandidates = new HashSet<GameObject>(100);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+      "line": 154,
+      "sample": "private readonly Dictionary<EntityId, ImpostorTextureData> _textureCache = new Dictionary<EntityId, ImpostorTextureData>(100);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+      "line": 156,
+      "sample": "private readonly Dictionary<EntityId, Renderer> _billboardRendererCache = new Dictionary<EntityId, Renderer>(100);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+      "line": 158,
+      "sample": "private readonly List<Renderer> _rendererScratch = new List<Renderer>(32);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+      "line": 211,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+      "line": 495,
+      "sample": "Destroy(failedData.ImpostorMaterial);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+      "line": 520,
+      "sample": "Destroy(data.ImpostorMaterial);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+      "line": 801,
+      "sample": "Destroy(material);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/LODSystemManager.cs",
+      "line": 120,
+      "sample": "private readonly List<LODGroup> _registeredLODGroups = new List<LODGroup>(500);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/LODSystemManager.cs",
+      "line": 123,
+      "sample": "private readonly List<Transform> _lodGroupTransforms = new List<Transform>(500);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/LODSystemManager.cs",
+      "line": 126,
+      "sample": "private readonly List<Vector3> _lodGroupPresentationPositions = new List<Vector3>(500);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/LODSystemManager.cs",
+      "line": 129,
+      "sample": "private readonly HashSet<LODGroup> _registeredLODGroupsSet = new HashSet<LODGroup>(500);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/LODSystemManager.cs",
+      "line": 199,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1060,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1121,
+      "sample": "_hydratedInstancesByRecordIndex = new Dictionary<int, GameObject>(128);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1123,
+      "sample": "_itemLookupByHash = new Dictionary<ulong, ItemData>(1024);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1125,
+      "sample": "_itemCatalogScratch = new List<ItemData>(1024);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1127,
+      "sample": "_worldPrefabPrewarmHashScratch = new List<int>(256);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1129,
+      "sample": "_worldPrefabReleaseScratch = new List<int>(256);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1131,
+      "sample": "_recordIndexScratch = new List<int>(128);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1133,
+      "sample": "_entityStateScratch = new List<EntityDataRecord>(128);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1135,
+      "sample": "_entityStateSectorTargetScratch = new List<EntityDataRecord>(128);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1136,
+      "sample": "_floraSpawnStateScratch = new List<EntityDataRecord>(128); // COLD ALLOC: List<EntityDataRecord>[128] \u00e2\u20ac\u201d standalone flora spawn-state snapshot scratch \u00e2\u20ac\u201d owner: PersistentWorldRe"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1138,
+      "sample": "_pendingEntityStateTempWrites = new List<SectorEntityStateWriteWork>(MaxPendingEntityStateTempWrites);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1140,
+      "sample": "_dueSectorOverrideCommitHashes = new List<long>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1150,
+      "sample": "_indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1152,
+      "sample": "_sectorOverrideStates = new Dictionary<long, SectorOverrideState>(32);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 1154,
+      "sample": "_residentWorldPrefabHashes = new HashSet<int>(256);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 2461,
+      "sample": "_indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3248,
+      "sample": "Dictionary<long, List<PersistentWorldDeltaRecord>> sectors = new Dictionary<long, List<PersistentWorldDeltaRecord>>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3249,
+      "sample": "Dictionary<long, List<EntityDataRecord>> sectorEntityStates = new Dictionary<long, List<EntityDataRecord>>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3263,
+      "sample": "bucket = new List<PersistentWorldDeltaRecord>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3271,
+      "sample": "entityStateBucket = new List<EntityDataRecord>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3294,
+      "sample": "floraBucket = new List<PersistentWorldDeltaRecord>(0);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3300,
+      "sample": "floraStateBucket = new List<EntityDataRecord>(4);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3314,
+      "sample": "List<SectorOverrideWriteResult> writeResults = new List<SectorOverrideWriteResult>(sectors.Count);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3315,
+      "sample": "List<SectorEntityStateWriteWork> entityStateWriteWork = new List<SectorEntityStateWriteWork>(sectorEntityStates.Count);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3501,
+      "sample": "Dictionary<long, List<PersistentWorldDeltaRecord>> sectorBuckets = new Dictionary<long, List<PersistentWorldDeltaRecord>>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3513,
+      "sample": "bucket = new List<PersistentWorldDeltaRecord>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3543,
+      "sample": "List<PersistentWorldDeltaRecord> replacement = new List<PersistentWorldDeltaRecord>(overrideRecords.Length);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "line": 3582,
+      "sample": "stagedEntityStates = new Dictionary<uint, EntityDataRecord>(64);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "line": 4961,
+      "sample": "List<Vector3> vertices = new List<Vector3>(mesh.vertexCount);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+      "line": 104,
+      "sample": "ActiveNodes = new List<ResourceNode>(initialCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+      "line": 426,
+      "sample": "_residentSectors = new Dictionary<long, SectorState>(32);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+      "line": 432,
+      "sample": "_sectorEvictionScratch = new List<long>(32);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+      "line": 434,
+      "sample": "_resourceTombstoneScratch = new List<ResourceNodeTombstoneRecord>(64);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+      "line": 436,
+      "sample": "_metamorphismNodeScratch = new List<ResourceNode>(InitialMetamorphismCapacity);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+      "line": 2751,
+      "sample": "Destroy(temp);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+      "line": 2765,
+      "sample": "Destroy(temp);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/SargassumCrestDampingController.cs",
+      "line": 369,
+      "sample": "Object.Destroy(texture);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/SargassumCrestDampingController.cs",
+      "line": 407,
+      "sample": "Object.Destroy(texture);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/SargassumCutManager.cs",
+      "line": 422,
+      "sample": "Destroy(this);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/SargassumCutManager.cs",
+      "line": 1054,
+      "sample": "Destroy(texture);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/SargassumCutManager.cs",
+      "line": 1403,
+      "sample": "Destroy(texture);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "line": 761,
+      "sample": "private readonly Dictionary<long, CellData> _densityCells = new Dictionary<long, CellData>(InitialCellCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "line": 763,
+      "sample": "private readonly Dictionary<long, CellData> _densityCellsShiftScratch = new Dictionary<long, CellData>(InitialCellCapacity);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "line": 1475,
+      "sample": "Destroy(this);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "line": 3533,
+      "sample": "Destroy(target);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 7182,
+      "sample": "Destroy(_fallbackAbyssalFlowTexture);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
+      "line": 639,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
+      "line": 706,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 64,
+      "sample": "private static readonly Dictionary<int, VolumeRecord> _records = new Dictionary<int, VolumeRecord>(MaxTrackedVolumeRecords);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 66,
+      "sample": "private static readonly List<DirtyVolumeRequest> _dirtyRequestSpill = new List<DirtyVolumeRequest>(32);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 68,
+      "sample": "private static readonly List<DeferredDirtyVolumeRequest> _deferredDirtyVolumes = new List<DeferredDirtyVolumeRequest>(16);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 70,
+      "sample": "private static readonly List<PortalNode> _portalGraphNodes = new List<PortalNode>(MaxPortalGraphNodeCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 72,
+      "sample": "private static readonly List<RouteNodeState> _routeNodeScratch = new List<RouteNodeState>(MaxPortalGraphNodeCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 74,
+      "sample": "private static readonly List<int> _routeOpenSetScratch = new List<int>(MaxPortalGraphNodeCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 76,
+      "sample": "private static readonly List<int> _routePathScratch = new List<int>(MaxPortalGraphNodeCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 78,
+      "sample": "private static readonly List<int> _recordRemovalScratch = new List<int>(MaxTrackedVolumeRecords);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "line": 80,
+      "sample": "private static readonly Dictionary<int, ObstacleRegistration> _registeredObstacles = new Dictionary<int, ObstacleRegistration>(MaxRegisteredObstacleRecords);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldLODSceneBootstrap.cs",
+      "line": 37,
+      "sample": "private readonly List<LODGroup> _trackedLODGroups = new List<LODGroup>(256);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldLODSceneBootstrap.cs",
+      "line": 39,
+      "sample": "private readonly List<GameObject> _sceneRootBuffer = new List<GameObject>(128);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldLODSceneBootstrap.cs",
+      "line": 41,
+      "sample": "private readonly List<LODGroup> _sceneLODGroupBuffer = new List<LODGroup>(512);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldShippingContentFilter.cs",
+      "line": 23,
+      "sample": "private static readonly Dictionary<ulong, HashSet<EntityId>> _suppressedHierarchyIdsByScene = new Dictionary<ulong, HashSet<EntityId>>(4);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldShippingContentFilter.cs",
+      "line": 25,
+      "sample": "private static readonly HashSet<ulong> _primedSceneHandles = new HashSet<ulong>(4);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldShippingContentFilter.cs",
+      "line": 27,
+      "sample": "private static readonly List<GameObject> _cacheRootObjects = new List<GameObject>(64);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldShippingContentFilter.cs",
+      "line": 29,
+      "sample": "private static readonly List<Transform> _cacheTraversalStack = new List<Transform>(512);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldShippingContentFilter.cs",
+      "line": 31,
+      "sample": "private static readonly List<ulong> _staleSceneHandles = new List<ulong>(8);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldShippingContentFilter.cs",
+      "line": 210,
+      "sample": "suppressedHierarchyIds = new HashSet<EntityId>(32);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldShippingSceneRuntimeGuard.cs",
+      "line": 15,
+      "sample": "private static readonly List<GameObject> _rootObjects = new List<GameObject>(64);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldShippingSceneRuntimeGuard.cs",
+      "line": 17,
+      "sample": "private static readonly List<Transform> _traversalStack = new List<Transform>(512);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 227,
+      "sample": "private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(MaxSpatialMaintenanceEntryCapacity);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "line": 229,
+      "sample": "private static readonly Dictionary<ulong, int> _handleByTransformId = new Dictionary<ulong, int>(MaxSpatialMaintenanceEntryCapacity);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+      "line": 549,
+      "sample": "Object.Destroy(_runtimeMaterial);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+      "line": 669,
+      "sample": "Object.Destroy(_runtimeMaterial);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumDiffusionVolume.cs",
+      "line": 724,
+      "sample": "Destroy(_volumeA);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumDiffusionVolume.cs",
+      "line": 734,
+      "sample": "Destroy(_volumeB);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 307,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "line": 1911,
+      "sample": "Destroy(gameObject);"
+    },
+    {
+      "pattern": "managed_hot_collection",
+      "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumZone.cs",
+      "line": 81,
+      "sample": "private static readonly List<HectonBiolumZone> s_ActiveZones = new List<HectonBiolumZone>(MaxTrackedActiveZones);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+      "line": 232,
+      "sample": "Destroy(_runtimeShellMesh);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+      "line": 238,
+      "sample": "Destroy(_runtimeShellMaterial);"
+    },
+    {
+      "pattern": "destroy_spike",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 765,
+      "sample": "Destroy(_noirFogLutTexture);"
+    }
+  ],
+  "policy": {
+    "runtime_spawning": "DTO injection into GlobalDataVault/PredatorCognitionDomain only",
+    "hot_broadcast": "SignalBus<T> or vault snapshot",
+    "quality": "continuous GlobalQualityWeight; no binary tier switch"
+  }
+}

@@ -470,26 +470,34 @@ namespace Hecton8.Modding
         private const long KernelSpikeTicksNumerator = 5L;
         private const long KernelSpikeTicksDenominator = 10000L;
 
-        private static VaultBufferHandle<FutureCommandEnvelope> _pendingRingHandle;
-        private static VaultBufferHandle<FutureCommandEnvelope> _devNullRingHandle;
-        private static VaultBufferHandle<FutureCommandEnvelope> _stagingHandle;
-        private static VaultBufferHandle<FutureCommandValidationStats> _statsHandle;
-        private static VaultBufferHandle<FutureCommandOpcodeRecord> _opcodeRecordsHandle;
-        private static VaultBufferHandle<ModSandboxTelemetryEntry> _telemetryRingHandle;
-        private static VaultBufferHandle<int> _telemetryCursorHandle;
-        private static VaultBufferHandle<byte> _modderBlackboxMemoryHandle;
-        private static VaultBufferHandle<FutureCommandSandboxTuning> _tuningHandle;
-        private static VaultBufferHandle<ModderFrameCounter> _perModCountersHandle;
-        private static VaultBufferHandle<ModderMemoryLease> _memoryLeasesHandle;
-        private static VaultBufferHandle<ApprovedAssetRecord> _approvedAssetManifestHandle;
-        private static VaultBufferHandle<ModSandboxRingState> _ringStateHandle;
-        private static VaultBufferHandle<ModCommandKernelOpcodeRecord> _kernelOpcodeMapHandle;
-        private static VaultBufferHandle<KernelExecutionTelemetryEntry> _kernelTelemetryRingHandle;
-        private static VaultBufferHandle<int> _kernelTelemetryCursorHandle;
-        private static VaultBufferHandle<ModKernelCameraJuiceImpulse> _kernelCameraJuiceImpulseHandle;
-        private static VaultBufferHandle<ModKernelCameraJuiceState> _kernelCameraJuiceStateHandle;
-        private static VaultBufferHandle<ModKernelTuningProfile> _kernelTuningProfilesHandle;
-        private static VaultBufferHandle<byte> _kernelCsvScratchHandle;
+        private struct VaultLane<T> where T : struct
+        {
+            public VaultGenerationHandle<T> Handle;
+            public uint ExpectedBufferID;
+            public int Length;
+        }
+
+        private static IDataVault _dataVault;
+        private static VaultLane<FutureCommandEnvelope> _pendingRingHandle;
+        private static VaultLane<FutureCommandEnvelope> _devNullRingHandle;
+        private static VaultLane<FutureCommandEnvelope> _stagingHandle;
+        private static VaultLane<FutureCommandValidationStats> _statsHandle;
+        private static VaultLane<FutureCommandOpcodeRecord> _opcodeRecordsHandle;
+        private static VaultLane<ModSandboxTelemetryEntry> _telemetryRingHandle;
+        private static VaultLane<int> _telemetryCursorHandle;
+        private static VaultLane<byte> _modderBlackboxMemoryHandle;
+        private static VaultLane<FutureCommandSandboxTuning> _tuningHandle;
+        private static VaultLane<ModderFrameCounter> _perModCountersHandle;
+        private static VaultLane<ModderMemoryLease> _memoryLeasesHandle;
+        private static VaultLane<ApprovedAssetRecord> _approvedAssetManifestHandle;
+        private static VaultLane<ModSandboxRingState> _ringStateHandle;
+        private static VaultLane<ModCommandKernelOpcodeRecord> _kernelOpcodeMapHandle;
+        private static VaultLane<KernelExecutionTelemetryEntry> _kernelTelemetryRingHandle;
+        private static VaultLane<int> _kernelTelemetryCursorHandle;
+        private static VaultLane<ModKernelCameraJuiceImpulse> _kernelCameraJuiceImpulseHandle;
+        private static VaultLane<ModKernelCameraJuiceState> _kernelCameraJuiceStateHandle;
+        private static VaultLane<ModKernelTuningProfile> _kernelTuningProfilesHandle;
+        private static VaultLane<byte> _kernelCsvScratchHandle;
         private static JobHandle _scheduledValidationHandle;
         private static ModSandboxScheduledValidationState _scheduledValidationState;
         private static bool _scheduledValidationActive;
@@ -572,8 +580,8 @@ namespace Hecton8.Modding
         {
             Initialize();
             AcquireVaultBuffers();
-            NativeArray<FutureCommandEnvelope> pendingRing = ResolveBuffer(ref _pendingRingHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveBuffer(ref _ringStateHandle);
+            NativeArray<FutureCommandEnvelope> pendingRing = OpenVaultLane(ref _pendingRingHandle);
+            NativeArray<ModSandboxRingState> ringState = OpenVaultLane(ref _ringStateHandle);
             if (!pendingRing.IsCreated || !ringState.IsCreated || ringState.Length == 0 || pendingRing.Length == 0)
                 return false;
 
@@ -595,8 +603,8 @@ namespace Hecton8.Modding
                 return 0;
 
             AcquireVaultBuffers();
-            NativeArray<FutureCommandEnvelope> pendingRing = ResolveBuffer(ref _pendingRingHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveBuffer(ref _ringStateHandle);
+            NativeArray<FutureCommandEnvelope> pendingRing = OpenVaultLane(ref _pendingRingHandle);
+            NativeArray<ModSandboxRingState> ringState = OpenVaultLane(ref _ringStateHandle);
             if (!pendingRing.IsCreated || !ringState.IsCreated || ringState.Length == 0 || pendingRing.Length == 0)
                 return 0;
 
@@ -626,8 +634,8 @@ namespace Hecton8.Modding
                 return 0;
 
             AcquireVaultBuffers();
-            NativeArray<FutureCommandEnvelope> pendingRing = ResolveBuffer(ref _pendingRingHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveBuffer(ref _ringStateHandle);
+            NativeArray<FutureCommandEnvelope> pendingRing = OpenVaultLane(ref _pendingRingHandle);
+            NativeArray<ModSandboxRingState> ringState = OpenVaultLane(ref _ringStateHandle);
             if (!pendingRing.IsCreated || !ringState.IsCreated || ringState.Length == 0 || pendingRing.Length == 0)
                 return 0;
 
@@ -740,7 +748,7 @@ namespace Hecton8.Modding
         public static bool RegisterApprovedAsset(uint assetHash, uint crc32, uint byteLength)
         {
             Initialize();
-            NativeArray<ApprovedAssetRecord> approvedAssets = ResolveBuffer(ref _approvedAssetManifestHandle);
+            NativeArray<ApprovedAssetRecord> approvedAssets = OpenVaultLane(ref _approvedAssetManifestHandle);
             NativeArray<ModSandboxRingState> ringState = ResolveRingState();
             if (assetHash == 0u || crc32 == 0u || !approvedAssets.IsCreated || !ringState.IsCreated || ringState.Length == 0)
                 return false;
@@ -799,7 +807,7 @@ namespace Hecton8.Modding
         public static bool SetOpcodeEnabled(uint opcodeHash, bool enabled)
         {
             Initialize();
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = ResolveBuffer(ref _opcodeRecordsHandle);
+            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
             NativeArray<ModSandboxRingState> ringState = ResolveRingState();
             if (opcodeHash == 0u || !opcodeRecords.IsCreated || !ringState.IsCreated || ringState.Length == 0)
                 return false;
@@ -838,7 +846,7 @@ namespace Hecton8.Modding
         public static bool IsOpcodeEnabled(uint opcodeHash)
         {
             Initialize();
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = ResolveBuffer(ref _opcodeRecordsHandle);
+            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
             NativeArray<ModSandboxRingState> ringState = ResolveRingState();
             if (opcodeHash == 0u || !opcodeRecords.IsCreated || !ringState.IsCreated || ringState.Length == 0)
                 return false;
@@ -857,7 +865,7 @@ namespace Hecton8.Modding
         public static FutureCommandSandboxTuning GetTuningSnapshot()
         {
             Initialize();
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
+            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
             return ResolveTuning(tuningBuffer);
         }
 
@@ -865,7 +873,7 @@ namespace Hecton8.Modding
         {
             Initialize();
             AcquireVaultBuffers();
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
+            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
             if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
                 return;
 
@@ -881,7 +889,7 @@ namespace Hecton8.Modding
         {
             Initialize();
             AcquireVaultBuffers();
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
+            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
             if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
                 return false;
 
@@ -895,7 +903,7 @@ namespace Hecton8.Modding
         {
             Initialize();
             AcquireVaultBuffers();
-            NativeArray<ModSandboxTelemetryEntry> telemetryRing = ResolveBuffer(ref _telemetryRingHandle);
+            NativeArray<ModSandboxTelemetryEntry> telemetryRing = OpenVaultLane(ref _telemetryRingHandle);
             if (!destination.IsCreated || !telemetryRing.IsCreated)
                 return 0;
 
@@ -909,7 +917,7 @@ namespace Hecton8.Modding
         {
             Initialize();
             AcquireVaultBuffers();
-            NativeArray<ModSandboxTelemetryEntry> telemetryRing = ResolveBuffer(ref _telemetryRingHandle);
+            NativeArray<ModSandboxTelemetryEntry> telemetryRing = OpenVaultLane(ref _telemetryRingHandle);
             if (!telemetryRing.IsCreated || (uint)index >= (uint)telemetryRing.Length)
             {
                 entry = default;
@@ -926,7 +934,7 @@ namespace Hecton8.Modding
             if (!csvBytes.IsCreated || byteLength <= 0)
                 return false;
 
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = ResolveBuffer(ref _opcodeRecordsHandle);
+            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
             NativeArray<ModSandboxRingState> ringState = ResolveRingState();
             if (!opcodeRecords.IsCreated || !ringState.IsCreated || ringState.Length == 0)
                 return false;
@@ -973,7 +981,7 @@ namespace Hecton8.Modding
                 return false;
 
             AcquireVaultBuffers();
-            NativeArray<byte> scratch = ResolveBuffer(ref _kernelCsvScratchHandle);
+            NativeArray<byte> scratch = OpenVaultLane(ref _kernelCsvScratchHandle);
             if (!scratch.IsCreated || scratch.Length == 0)
                 return false;
 
@@ -1007,7 +1015,7 @@ namespace Hecton8.Modding
                 return false;
 
             AcquireVaultBuffers();
-            NativeArray<byte> scratch = ResolveBuffer(ref _kernelCsvScratchHandle);
+            NativeArray<byte> scratch = OpenVaultLane(ref _kernelCsvScratchHandle);
             if (!scratch.IsCreated || scratch.Length == 0)
                 return false;
 
@@ -1038,7 +1046,7 @@ namespace Hecton8.Modding
         public static bool TryIngestKernelTuningProfilesCsv(ReadOnlySpan<byte> csvBytes)
         {
             AcquireVaultBuffers();
-            NativeArray<ModKernelTuningProfile> profiles = ResolveBuffer(ref _kernelTuningProfilesHandle);
+            NativeArray<ModKernelTuningProfile> profiles = OpenVaultLane(ref _kernelTuningProfilesHandle);
             if (!profiles.IsCreated || profiles.Length == 0 || csvBytes.Length == 0)
                 return false;
 
@@ -1088,19 +1096,19 @@ namespace Hecton8.Modding
                 return false;
 
             AcquireVaultBuffers();
-            NativeArray<FutureCommandEnvelope> staging = ResolveBuffer(ref _stagingHandle);
-            NativeArray<FutureCommandValidationStats> statsBuffer = ResolveBuffer(ref _statsHandle);
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = ResolveBuffer(ref _opcodeRecordsHandle);
-            NativeArray<ModderFrameCounter> perModCounters = ResolveBuffer(ref _perModCountersHandle);
-            NativeArray<ModderMemoryLease> memoryLeases = ResolveBuffer(ref _memoryLeasesHandle);
-            NativeArray<ApprovedAssetRecord> approvedAssets = ResolveBuffer(ref _approvedAssetManifestHandle);
-            NativeArray<byte> modderBlackboxMemory = ResolveBuffer(ref _modderBlackboxMemoryHandle);
-            NativeArray<FutureCommandEnvelope> devNullRing = ResolveBuffer(ref _devNullRingHandle);
+            NativeArray<FutureCommandEnvelope> staging = OpenVaultLane(ref _stagingHandle);
+            NativeArray<FutureCommandValidationStats> statsBuffer = OpenVaultLane(ref _statsHandle);
+            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
+            NativeArray<ModderFrameCounter> perModCounters = OpenVaultLane(ref _perModCountersHandle);
+            NativeArray<ModderMemoryLease> memoryLeases = OpenVaultLane(ref _memoryLeasesHandle);
+            NativeArray<ApprovedAssetRecord> approvedAssets = OpenVaultLane(ref _approvedAssetManifestHandle);
+            NativeArray<byte> modderBlackboxMemory = OpenVaultLane(ref _modderBlackboxMemoryHandle);
+            NativeArray<FutureCommandEnvelope> devNullRing = OpenVaultLane(ref _devNullRingHandle);
             NativeArray<ModSandboxRingState> ringState = ResolveRingState();
-            NativeArray<ModKernelCameraJuiceImpulse> cameraJuiceImpulses = ResolveBuffer(ref _kernelCameraJuiceImpulseHandle);
-            NativeArray<ModKernelCameraJuiceState> cameraJuiceState = ResolveBuffer(ref _kernelCameraJuiceStateHandle);
-            NativeArray<ModKernelTuningProfile> kernelProfiles = ResolveBuffer(ref _kernelTuningProfilesHandle);
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
+            NativeArray<ModKernelCameraJuiceImpulse> cameraJuiceImpulses = OpenVaultLane(ref _kernelCameraJuiceImpulseHandle);
+            NativeArray<ModKernelCameraJuiceState> cameraJuiceState = OpenVaultLane(ref _kernelCameraJuiceStateHandle);
+            NativeArray<ModKernelTuningProfile> kernelProfiles = OpenVaultLane(ref _kernelTuningProfilesHandle);
+            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
             if (!staging.IsCreated ||
                 staging.Length < 2 ||
                 !statsBuffer.IsCreated ||
@@ -1771,7 +1779,7 @@ namespace Hecton8.Modding
 
         private static void GenerateEmergencyMockOpcodes()
         {
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = ResolveBuffer(ref _opcodeRecordsHandle);
+            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
             NativeArray<ModSandboxRingState> ringState = ResolveRingState();
             if (!opcodeRecords.IsCreated || !ringState.IsCreated || ringState.Length == 0)
                 return;
@@ -1794,8 +1802,8 @@ namespace Hecton8.Modding
 
         public static void GenerateEmergencyOpcodeMap()
         {
-            NativeArray<ModCommandKernelOpcodeRecord> kernelMap = ResolveBuffer(ref _kernelOpcodeMapHandle);
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = ResolveBuffer(ref _opcodeRecordsHandle);
+            NativeArray<ModCommandKernelOpcodeRecord> kernelMap = OpenVaultLane(ref _kernelOpcodeMapHandle);
+            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
             NativeArray<ModSandboxRingState> ringState = ResolveRingState();
             if (!kernelMap.IsCreated || !opcodeRecords.IsCreated || !ringState.IsCreated || ringState.Length == 0)
                 return;
@@ -1947,7 +1955,7 @@ namespace Hecton8.Modding
 
         private static float ResolveGlobalQualityWeight()
         {
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
+            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
             return ResolveGlobalQualityWeight(tuningBuffer);
         }
 
@@ -2028,8 +2036,12 @@ namespace Hecton8.Modding
             if (_rollbackFreezeOverride)
                 return true;
 
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault) ||
-                !vault.TryGetBuffer((BufferID)RollbackRuntimeStateBufferId, out NativeArray<RollbackRuntimeStateFlagView> rollback) ||
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null ||
+                !TryReadVaultBuffer(
+                    vault,
+                    (BufferID)RollbackRuntimeStateBufferId,
+                    out NativeArray<RollbackRuntimeStateFlagView> rollback) ||
                 !rollback.IsCreated ||
                 rollback.Length <= 0)
             {
@@ -2041,107 +2053,129 @@ namespace Hecton8.Modding
 
         private static void AcquireVaultBuffers()
         {
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
                 return;
 
-            bool coldAcquire = !_ringStateHandle.IsCreated;
+            _dataVault = vault;
+            bool coldAcquire = !IsLaneCreated(in _ringStateHandle);
 
-            _pendingRingHandle = vault.GetBufferHandle<FutureCommandEnvelope>(
+            _pendingRingHandle = AcquireVaultLane<FutureCommandEnvelope>(
+                vault,
                 BufferID.ShinobuModSandboxPendingRing,
                 FutureCommandSandboxConstants.PendingCapacity,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _devNullRingHandle = vault.GetBufferHandle<FutureCommandEnvelope>(
+            _devNullRingHandle = AcquireVaultLane<FutureCommandEnvelope>(
+                vault,
                 BufferID.ShinobuModSandboxDevNullRing,
                 FutureCommandSandboxConstants.PendingCapacity,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _stagingHandle = vault.GetBufferHandle<FutureCommandEnvelope>(
+            _stagingHandle = AcquireVaultLane<FutureCommandEnvelope>(
+                vault,
                 BufferID.ShinobuModSandboxStaging,
                 FutureCommandSandboxConstants.StagingCapacity,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _statsHandle = vault.GetBufferHandle<FutureCommandValidationStats>(
+            _statsHandle = AcquireVaultLane<FutureCommandValidationStats>(
+                vault,
                 BufferID.ShinobuModSandboxStats,
                 1,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _opcodeRecordsHandle = vault.GetBufferHandle<FutureCommandOpcodeRecord>(
+            _opcodeRecordsHandle = AcquireVaultLane<FutureCommandOpcodeRecord>(
+                vault,
                 BufferID.ShinobuModSandboxOpcodeRecords,
                 FutureCommandSandboxConstants.OpcodeRecordCapacity,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _perModCountersHandle = vault.GetBufferHandle<ModderFrameCounter>(
+            _perModCountersHandle = AcquireVaultLane<ModderFrameCounter>(
+                vault,
                 BufferID.ShinobuModSandboxModCounters,
                 FutureCommandSandboxConstants.MaxTrackedModders,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _memoryLeasesHandle = vault.GetBufferHandle<ModderMemoryLease>(
+            _memoryLeasesHandle = AcquireVaultLane<ModderMemoryLease>(
+                vault,
                 BufferID.ShinobuModSandboxMemoryLeases,
                 FutureCommandSandboxConstants.MaxTrackedModders,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _approvedAssetManifestHandle = vault.GetBufferHandle<ApprovedAssetRecord>(
+            _approvedAssetManifestHandle = AcquireVaultLane<ApprovedAssetRecord>(
+                vault,
                 BufferID.ShinobuModSandboxApprovedAssets,
                 FutureCommandSandboxConstants.ApprovedAssetCapacity,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _modderBlackboxMemoryHandle = vault.GetBufferHandle<byte>(
+            _modderBlackboxMemoryHandle = AcquireVaultLane<byte>(
+                vault,
                 BufferID.ShinobuModSandboxBlackboxMemory,
                 DefaultMemoryBytes,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = vault.GetBufferHandle<ModSandboxTelemetryEntry>(
+            _telemetryRingHandle = AcquireVaultLane<ModSandboxTelemetryEntry>(
+                vault,
                 BufferID.ShinobuModSandboxTelemetryRing,
                 FutureCommandSandboxConstants.TelemetryCapacity,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = vault.GetBufferHandle<int>(
+            _telemetryCursorHandle = AcquireVaultLane<int>(
+                vault,
                 BufferID.ShinobuModSandboxTelemetryCursor,
                 1,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetBufferHandle<FutureCommandSandboxTuning>(
+            _tuningHandle = AcquireVaultLane<FutureCommandSandboxTuning>(
+                vault,
                 BufferID.ShinobuModSandboxTuning,
                 1,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _ringStateHandle = vault.GetBufferHandle<ModSandboxRingState>(
+            _ringStateHandle = AcquireVaultLane<ModSandboxRingState>(
+                vault,
                 BufferID.ShinobuModSandboxRingState,
                 1,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _kernelOpcodeMapHandle = vault.GetBufferHandle<ModCommandKernelOpcodeRecord>(
+            _kernelOpcodeMapHandle = AcquireVaultLane<ModCommandKernelOpcodeRecord>(
+                vault,
                 (BufferID)KernelOpcodeMapBufferId,
                 FutureCommandSandboxConstants.KernelOpcodeMapCapacity,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _kernelTelemetryRingHandle = vault.GetBufferHandle<KernelExecutionTelemetryEntry>(
+            _kernelTelemetryRingHandle = AcquireVaultLane<KernelExecutionTelemetryEntry>(
+                vault,
                 (BufferID)KernelTelemetryRingBufferId,
                 FutureCommandSandboxConstants.KernelTelemetryCapacity,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _kernelTelemetryCursorHandle = vault.GetBufferHandle<int>(
+            _kernelTelemetryCursorHandle = AcquireVaultLane<int>(
+                vault,
                 (BufferID)KernelTelemetryCursorBufferId,
                 1,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _kernelCameraJuiceImpulseHandle = vault.GetBufferHandle<ModKernelCameraJuiceImpulse>(
+            _kernelCameraJuiceImpulseHandle = AcquireVaultLane<ModKernelCameraJuiceImpulse>(
+                vault,
                 (BufferID)KernelCameraJuiceImpulseBufferId,
                 FutureCommandSandboxConstants.CameraJuiceImpulseCapacity,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _kernelCameraJuiceStateHandle = vault.GetBufferHandle<ModKernelCameraJuiceState>(
+            _kernelCameraJuiceStateHandle = AcquireVaultLane<ModKernelCameraJuiceState>(
+                vault,
                 (BufferID)KernelCameraJuiceStateBufferId,
                 1,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _kernelTuningProfilesHandle = vault.GetBufferHandle<ModKernelTuningProfile>(
+            _kernelTuningProfilesHandle = AcquireVaultLane<ModKernelTuningProfile>(
+                vault,
                 (BufferID)KernelTuningProfilesBufferId,
                 FutureCommandSandboxConstants.KernelTuningCapacity,
                 SystemID.ModSandbox,
                 NativeArrayOptions.UninitializedMemory);
-            _kernelCsvScratchHandle = vault.GetBufferHandle<byte>(
+            _kernelCsvScratchHandle = AcquireVaultLane<byte>(
+                vault,
                 (BufferID)KernelCsvScratchBufferId,
                 FutureCommandSandboxConstants.KernelCsvScratchBytes,
                 SystemID.ModSandbox,
@@ -2150,24 +2184,24 @@ namespace Hecton8.Modding
             if (!coldAcquire)
                 return;
 
-            NativeArray<FutureCommandEnvelope> pendingRing = _pendingRingHandle.Resolve(vault);
-            NativeArray<FutureCommandEnvelope> devNullRing = _devNullRingHandle.Resolve(vault);
-            NativeArray<FutureCommandEnvelope> staging = _stagingHandle.Resolve(vault);
-            NativeArray<FutureCommandValidationStats> stats = _statsHandle.Resolve(vault);
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = _opcodeRecordsHandle.Resolve(vault);
-            NativeArray<ModderFrameCounter> counters = _perModCountersHandle.Resolve(vault);
-            NativeArray<ModderMemoryLease> leases = _memoryLeasesHandle.Resolve(vault);
-            NativeArray<ApprovedAssetRecord> approvedAssets = _approvedAssetManifestHandle.Resolve(vault);
-            NativeArray<byte> modderBlackboxMemory = _modderBlackboxMemoryHandle.Resolve(vault);
-            NativeArray<ModSandboxTelemetryEntry> telemetryRing = _telemetryRingHandle.Resolve(vault);
-            NativeArray<int> telemetryCursor = _telemetryCursorHandle.Resolve(vault);
-            NativeArray<FutureCommandSandboxTuning> tuning = _tuningHandle.Resolve(vault);
-            NativeArray<ModSandboxRingState> ringState = _ringStateHandle.Resolve(vault);
-            NativeArray<ModCommandKernelOpcodeRecord> kernelOpcodeMap = _kernelOpcodeMapHandle.Resolve(vault);
-            NativeArray<KernelExecutionTelemetryEntry> kernelTelemetryRing = _kernelTelemetryRingHandle.Resolve(vault);
-            NativeArray<int> kernelTelemetryCursor = _kernelTelemetryCursorHandle.Resolve(vault);
-            NativeArray<ModKernelCameraJuiceState> cameraJuiceState = _kernelCameraJuiceStateHandle.Resolve(vault);
-            NativeArray<ModKernelTuningProfile> kernelTuningProfiles = _kernelTuningProfilesHandle.Resolve(vault);
+            NativeArray<FutureCommandEnvelope> pendingRing = OpenVaultLane(ref _pendingRingHandle);
+            NativeArray<FutureCommandEnvelope> devNullRing = OpenVaultLane(ref _devNullRingHandle);
+            NativeArray<FutureCommandEnvelope> staging = OpenVaultLane(ref _stagingHandle);
+            NativeArray<FutureCommandValidationStats> stats = OpenVaultLane(ref _statsHandle);
+            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
+            NativeArray<ModderFrameCounter> counters = OpenVaultLane(ref _perModCountersHandle);
+            NativeArray<ModderMemoryLease> leases = OpenVaultLane(ref _memoryLeasesHandle);
+            NativeArray<ApprovedAssetRecord> approvedAssets = OpenVaultLane(ref _approvedAssetManifestHandle);
+            NativeArray<byte> modderBlackboxMemory = OpenVaultLane(ref _modderBlackboxMemoryHandle);
+            NativeArray<ModSandboxTelemetryEntry> telemetryRing = OpenVaultLane(ref _telemetryRingHandle);
+            NativeArray<int> telemetryCursor = OpenVaultLane(ref _telemetryCursorHandle);
+            NativeArray<FutureCommandSandboxTuning> tuning = OpenVaultLane(ref _tuningHandle);
+            NativeArray<ModSandboxRingState> ringState = OpenVaultLane(ref _ringStateHandle);
+            NativeArray<ModCommandKernelOpcodeRecord> kernelOpcodeMap = OpenVaultLane(ref _kernelOpcodeMapHandle);
+            NativeArray<KernelExecutionTelemetryEntry> kernelTelemetryRing = OpenVaultLane(ref _kernelTelemetryRingHandle);
+            NativeArray<int> kernelTelemetryCursor = OpenVaultLane(ref _kernelTelemetryCursorHandle);
+            NativeArray<ModKernelCameraJuiceState> cameraJuiceState = OpenVaultLane(ref _kernelCameraJuiceStateHandle);
+            NativeArray<ModKernelTuningProfile> kernelTuningProfiles = OpenVaultLane(ref _kernelTuningProfilesHandle);
 
             MemClearArray(pendingRing);
             MemClearArray(devNullRing);
@@ -2225,8 +2259,8 @@ namespace Hecton8.Modding
             uint peakCommandsForSignature,
             uint maxCommandsPerSignature)
         {
-            NativeArray<ModSandboxTelemetryEntry> telemetryRing = ResolveBuffer(ref _telemetryRingHandle);
-            NativeArray<int> telemetryCursor = ResolveBuffer(ref _telemetryCursorHandle);
+            NativeArray<ModSandboxTelemetryEntry> telemetryRing = OpenVaultLane(ref _telemetryRingHandle);
+            NativeArray<int> telemetryCursor = OpenVaultLane(ref _telemetryCursorHandle);
             if (!telemetryRing.IsCreated || !telemetryCursor.IsCreated || telemetryRing.Length == 0 || telemetryCursor.Length == 0)
                 return;
 
@@ -2262,7 +2296,7 @@ namespace Hecton8.Modding
         public static bool TryGetKernelTelemetryEntry(int index, out KernelExecutionTelemetryEntry entry)
         {
             entry = default;
-            NativeArray<KernelExecutionTelemetryEntry> telemetryRing = ResolveBuffer(ref _kernelTelemetryRingHandle);
+            NativeArray<KernelExecutionTelemetryEntry> telemetryRing = OpenVaultLane(ref _kernelTelemetryRingHandle);
             if (!telemetryRing.IsCreated || telemetryRing.Length == 0 || (uint)index >= (uint)telemetryRing.Length)
                 return false;
 
@@ -2278,8 +2312,8 @@ namespace Hecton8.Modding
             float quality,
             uint pendingDepth)
         {
-            NativeArray<KernelExecutionTelemetryEntry> telemetryRing = ResolveBuffer(ref _kernelTelemetryRingHandle);
-            NativeArray<int> telemetryCursor = ResolveBuffer(ref _kernelTelemetryCursorHandle);
+            NativeArray<KernelExecutionTelemetryEntry> telemetryRing = OpenVaultLane(ref _kernelTelemetryRingHandle);
+            NativeArray<int> telemetryCursor = OpenVaultLane(ref _kernelTelemetryCursorHandle);
             if (!telemetryRing.IsCreated || !telemetryCursor.IsCreated || telemetryRing.Length == 0 || telemetryCursor.Length == 0)
                 return;
 
@@ -2323,7 +2357,7 @@ namespace Hecton8.Modding
         private static void DumpKernelTelemetry(uint faultHash)
         {
             int frame = Time.frameCount;
-            NativeArray<KernelExecutionTelemetryEntry> telemetryRing = ResolveBuffer(ref _kernelTelemetryRingHandle);
+            NativeArray<KernelExecutionTelemetryEntry> telemetryRing = OpenVaultLane(ref _kernelTelemetryRingHandle);
             try
             {
                 Directory.CreateDirectory("Docs/AgentLogs");
@@ -2362,7 +2396,7 @@ namespace Hecton8.Modding
             if (ringState.IsCreated && ringState.Length > 0)
                 ringState[0] = state;
 
-            NativeArray<ModSandboxTelemetryEntry> telemetryRing = ResolveBuffer(ref _telemetryRingHandle);
+            NativeArray<ModSandboxTelemetryEntry> telemetryRing = OpenVaultLane(ref _telemetryRingHandle);
             try
             {
                 Directory.CreateDirectory("Docs/AgentLogs");
@@ -2436,17 +2470,76 @@ namespace Hecton8.Modding
             SignalBus<ModInteractionRejectedPayload>.EnsureInitialized();
         }
 
-        private static NativeArray<T> ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct
+        private static VaultLane<T> AcquireVaultLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            SystemID owner,
+            NativeArrayOptions options) where T : struct
         {
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+            if (vault == null || requiredLength <= 0)
                 return default;
 
-            return handle.Resolve(vault);
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                owner,
+                options);
+            uint expectedBufferId = unchecked((uint)(int)bufferId);
+            if (handle.BufferID != expectedBufferId || handle.Generation == 0u)
+                return default;
+
+            return new VaultLane<T>
+            {
+                Handle = handle,
+                ExpectedBufferID = expectedBufferId,
+                Length = requiredLength
+            };
+        }
+
+        private static bool IsLaneCreated<T>(in VaultLane<T> lane) where T : struct
+        {
+            return lane.ExpectedBufferID != 0u &&
+                   lane.Handle.BufferID == lane.ExpectedBufferID &&
+                   lane.Handle.Generation != 0u &&
+                   lane.Length > 0;
+        }
+
+        private static NativeArray<T> OpenVaultLane<T>(ref VaultLane<T> lane) where T : struct
+        {
+            IDataVault vault = _dataVault != null ? _dataVault : GlobalRegistry.DataVault;
+            if (vault == null ||
+                !IsLaneCreated(in lane) ||
+                !vault.TryResolveHandle(in lane.Handle, out NativeArray<T> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < lane.Length)
+            {
+                return default;
+            }
+
+            return buffer;
+        }
+
+        private static bool TryReadVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
+                handle.BufferID != unchecked((uint)(int)bufferId) ||
+                handle.Generation == 0u)
+            {
+                return false;
+            }
+
+            return vault.TryReadHandle(in handle, out buffer) && buffer.IsCreated;
         }
 
         private static NativeArray<ModSandboxRingState> ResolveRingState()
         {
-            return ResolveBuffer(ref _ringStateHandle);
+            return OpenVaultLane(ref _ringStateHandle);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2598,20 +2691,20 @@ namespace Hecton8.Modding
             Initialize();
             AcquireVaultBuffers();
 
-            NativeArray<FutureCommandEnvelope> pendingRing = ResolveBuffer(ref _pendingRingHandle);
-            NativeArray<FutureCommandEnvelope> devNullRing = ResolveBuffer(ref _devNullRingHandle);
-            NativeArray<FutureCommandEnvelope> staging = ResolveBuffer(ref _stagingHandle);
-            NativeArray<FutureCommandValidationStats> statsBuffer = ResolveBuffer(ref _statsHandle);
-            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = ResolveBuffer(ref _opcodeRecordsHandle);
-            NativeArray<ModderFrameCounter> perModCounters = ResolveBuffer(ref _perModCountersHandle);
-            NativeArray<ModderMemoryLease> memoryLeases = ResolveBuffer(ref _memoryLeasesHandle);
-            NativeArray<ApprovedAssetRecord> approvedAssets = ResolveBuffer(ref _approvedAssetManifestHandle);
-            NativeArray<byte> modderBlackboxMemory = ResolveBuffer(ref _modderBlackboxMemoryHandle);
-            NativeArray<ModSandboxRingState> ringState = ResolveBuffer(ref _ringStateHandle);
-            NativeArray<ModKernelCameraJuiceImpulse> cameraJuiceImpulses = ResolveBuffer(ref _kernelCameraJuiceImpulseHandle);
-            NativeArray<ModKernelCameraJuiceState> cameraJuiceState = ResolveBuffer(ref _kernelCameraJuiceStateHandle);
-            NativeArray<ModKernelTuningProfile> kernelProfiles = ResolveBuffer(ref _kernelTuningProfilesHandle);
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
+            NativeArray<FutureCommandEnvelope> pendingRing = OpenVaultLane(ref _pendingRingHandle);
+            NativeArray<FutureCommandEnvelope> devNullRing = OpenVaultLane(ref _devNullRingHandle);
+            NativeArray<FutureCommandEnvelope> staging = OpenVaultLane(ref _stagingHandle);
+            NativeArray<FutureCommandValidationStats> statsBuffer = OpenVaultLane(ref _statsHandle);
+            NativeArray<FutureCommandOpcodeRecord> opcodeRecords = OpenVaultLane(ref _opcodeRecordsHandle);
+            NativeArray<ModderFrameCounter> perModCounters = OpenVaultLane(ref _perModCountersHandle);
+            NativeArray<ModderMemoryLease> memoryLeases = OpenVaultLane(ref _memoryLeasesHandle);
+            NativeArray<ApprovedAssetRecord> approvedAssets = OpenVaultLane(ref _approvedAssetManifestHandle);
+            NativeArray<byte> modderBlackboxMemory = OpenVaultLane(ref _modderBlackboxMemoryHandle);
+            NativeArray<ModSandboxRingState> ringState = OpenVaultLane(ref _ringStateHandle);
+            NativeArray<ModKernelCameraJuiceImpulse> cameraJuiceImpulses = OpenVaultLane(ref _kernelCameraJuiceImpulseHandle);
+            NativeArray<ModKernelCameraJuiceState> cameraJuiceState = OpenVaultLane(ref _kernelCameraJuiceStateHandle);
+            NativeArray<ModKernelTuningProfile> kernelProfiles = OpenVaultLane(ref _kernelTuningProfilesHandle);
+            NativeArray<FutureCommandSandboxTuning> tuningBuffer = OpenVaultLane(ref _tuningHandle);
             if (!pendingRing.IsCreated ||
                 !devNullRing.IsCreated ||
                 !staging.IsCreated ||
@@ -2767,7 +2860,7 @@ namespace Hecton8.Modding
 
         private static void FinalizeValidationTelemetry(in ModSandboxScheduledValidationState validationState)
         {
-            NativeArray<FutureCommandValidationStats> statsBuffer = ResolveBuffer(ref _statsHandle);
+            NativeArray<FutureCommandValidationStats> statsBuffer = OpenVaultLane(ref _statsHandle);
             NativeArray<ModSandboxRingState> ringState = ResolveRingState();
             if (!statsBuffer.IsCreated || statsBuffer.Length == 0 || !ringState.IsCreated || ringState.Length == 0)
                 return;

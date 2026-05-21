@@ -50,14 +50,15 @@ namespace Hecton8.Editor
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.FloraGenomeDtos, out VaultBufferHandle<FloraGenomeDTO> handle))
+                !vault.TryGetGenerationHandle(BufferID.FloraGenomeDtos, out VaultGenerationHandle<FloraGenomeDTO> handle))
             {
                 EditorGUILayout.HelpBox("Vault flora genomes are not bound. Mock preview is available.", MessageType.Info);
                 DrawMockPreviewControls();
                 return;
             }
 
-            NativeArray<FloraGenomeDTO> genomes = handle.Resolve(vault);
+            if (!vault.TryReadHandle(in handle, out NativeArray<FloraGenomeDTO> genomes))
+                genomes = default;
             if (!genomes.IsCreated || genomes.Length == 0)
             {
                 EditorGUILayout.HelpBox("FloraGenomeDTO buffer exists but is empty.", MessageType.Warning);
@@ -93,7 +94,22 @@ namespace Hecton8.Editor
                 genome.MaxIterations = (byte)maxIterations;
                 genome.RuleProfile = (byte)ruleProfile;
                 genome.HazardFlags = (byte)hazardFlags;
-                genomes[_selectedGenomeIndex] = genome;
+                if (TryAcquireEditorWriteView(
+                        vault,
+                        BufferID.FloraGenomeDtos,
+                        out VaultGenerationHandle<FloraGenomeDTO> writeHandle,
+                        out NativeArray<FloraGenomeDTO> writableGenomes))
+                {
+                    try
+                    {
+                        if ((uint)_selectedGenomeIndex < (uint)writableGenomes.Length)
+                            writableGenomes[_selectedGenomeIndex] = genome;
+                    }
+                    finally
+                    {
+                        vault.ReleaseWriteLock(in writeHandle, SystemID.CoreDiagnostics);
+                    }
+                }
             }
 
             _previewRoot = EditorGUILayout.Vector3Field("Preview Root", _previewRoot);
@@ -110,6 +126,29 @@ namespace Hecton8.Editor
                 MockGenomeGenerator.Populate(mockGenomes);
                 BuildPreview(mockGenomes, 0);
             }
+        }
+
+        private static bool TryAcquireEditorWriteView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            handle = default;
+            buffer = default;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle(bufferId, out handle) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            return false;
         }
 
         private void BuildPreview(NativeArray<FloraGenomeDTO> genomes, int genomeIndex)

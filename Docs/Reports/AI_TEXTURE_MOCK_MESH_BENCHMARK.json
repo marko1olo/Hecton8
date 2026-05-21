@@ -1,0 +1,11 @@
+{
+  "schema": "hecton8.ai_texture_mock_mesh_benchmark.v1",
+  "agent": "SHINOBU_269",
+  "assetPath": "",
+  "vertexCount": 0,
+  "quadCount": 0,
+  "jobMilliseconds": "0.000",
+  "geometry": "twisted-irregular-knot-uv-stress",
+  "status": "PENDING_UNITY_MENU_EXECUTION",
+  "reason": "GenerateMockComplexMeshJob is implemented; mock mesh asset generation was not executed in this pass."
+}

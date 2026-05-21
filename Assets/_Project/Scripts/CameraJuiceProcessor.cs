@@ -24,20 +24,20 @@ namespace Hecton8.Gameplay
         public float rollOffset;
         public float pitchOffset;
         public float fovOffset;
-        public bool stepEvent;
+        public byte stepEvent;
     }
 
     public struct CameraJuiceInput
     {
-        public bool isWalking;
+        public byte isWalking;
         public PlayerLocomotionMode locomotionMode;
-        public bool isGrounded;
-        public bool hasMovementInput;
+        public byte isGrounded;
+        public byte hasMovementInput;
         public float inputH;
         public float mouseXDelta;
         public float horizontalSpeed;
         public float verticalVelocity;
-        public bool wasGroundedLastFrame;
+        public byte wasGroundedLastFrame;
         public float deltaTime;
         public float immersionRatio;
         public float speedDelta;
@@ -408,7 +408,7 @@ namespace Hecton8.Gameplay
             _output.rollOffset = 0f;
             _output.pitchOffset = 0f;
             _output.fovOffset = 0f;
-            _output.stepEvent = false;
+            _output.stepEvent = 0;
 
             _submergeChangeThisFrame = false;
             _splashThisFrame = false;
@@ -752,7 +752,7 @@ namespace Hecton8.Gameplay
         {
             if (suit == null || !suit.enableSwimBob) return;
 
-            float targetIntensity = math.max(input.hasMovementInput ? 1f : 0f, input.transportBoost01 * 0.85f);
+            float targetIntensity = math.max(input.hasMovementInput != 0 ? 1f : 0f, input.transportBoost01 * 0.85f);
             float blendT = FastDampingBlendT(suit.swimBobTransitionSpeed, dt);
             _swimBobIntensity = math.lerp(_swimBobIntensity, targetIntensity, blendT);
 
@@ -932,7 +932,7 @@ namespace Hecton8.Gameplay
 
         private void ProcessHeadBob(in CameraJuiceInput input, SuitData suit, float dt, float amplitudeScale, float cadenceScale)
         {
-            float targetIntensity = (input.isGrounded && input.hasMovementInput) ? 1f : 0f;
+            float targetIntensity = (input.isGrounded != 0 && input.hasMovementInput != 0) ? 1f : 0f;
             float blendT = FastDampingBlendT(suit.bobTransitionSpeed, dt);
             _bobIntensity = math.lerp(_bobIntensity, targetIntensity, blendT);
 
@@ -952,7 +952,7 @@ namespace Hecton8.Gameplay
 
             bool inLowPhase = sinVal < BOB_STEP_PHASE_THRESHOLD;
             if (inLowPhase && !_wasInLowPhase && _bobIntensity > 0.5f)
-                _output.stepEvent = true;
+                _output.stepEvent = 1;
             _wasInLowPhase = inLowPhase;
         }
 
@@ -962,7 +962,7 @@ namespace Hecton8.Gameplay
 
         private void ProcessLandingImpact(in CameraJuiceInput input, SuitData suit, float dt, float dipScale)
         {
-            if (input.isGrounded && !input.wasGroundedLastFrame)
+            if (input.isGrounded != 0 && input.wasGroundedLastFrame == 0)
             {
                 float fallSpeed = math.abs(_preLandingVerticalVelocity);
                 if (fallSpeed >= suit.impactVelocityThreshold)
@@ -1002,7 +1002,7 @@ namespace Hecton8.Gameplay
 
             float finalIntensity = intensity;
 
-            if (input.hasMovementInput)
+            if (input.hasMovementInput != 0)
                 finalIntensity *= 0.4f;
 
             _output.localPositionOffset.y += (wave1 + wave2 + wave3) * finalIntensity;
@@ -1018,7 +1018,7 @@ namespace Hecton8.Gameplay
         {
             if (!suit.enableIdleSway) return;
 
-            float targetSwayIntensity = input.hasMovementInput ? 0f : 1f;
+            float targetSwayIntensity = input.hasMovementInput != 0 ? 0f : 1f;
             float swayBlendT = FastDampingBlendT(suit.idleSwayTransitionSpeed, dt);
             _swayIntensity = math.lerp(_swayIntensity, targetSwayIntensity, swayBlendT);
 

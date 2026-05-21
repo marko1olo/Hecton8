@@ -110,7 +110,7 @@ namespace Hecton8.Caves
             ResolvePlayerContext();
             _swayTime += math.max(0f, dt);
 
-            Vector3 playerPosition = _playerTransform != null ? _playerTransform.position : Vector3.zero;
+            Vector3 playerPosition = ResolvePlayerRuntimePosition();
             Vector3 playerVelocity = _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
             float playerSpeedSq = playerVelocity.sqrMagnitude;
             float playerSpeed = playerSpeedSq > 0.0625f ? EstimateLength3D(playerVelocity) : 0f;
@@ -309,6 +309,11 @@ namespace Hecton8.Caves
             _playerTransform = runtimePlayer != null ? runtimePlayer : playerTransformOverride;
             if (_playerTransform != null && (_playerRigidbody == null || _playerRigidbody.transform != _playerTransform))
                 _playerTransform.TryGetComponent(out _playerRigidbody);
+        }
+
+        private Vector3 ResolvePlayerRuntimePosition()
+        {
+            return _playerTransform != null ? _playerTransform.position : Vector3.zero;
         }
 
         private Vector3 ResolvePropWashOffset(Vector3 anchorWS, Vector3 playerPosition, Vector3 playerVelocity, float playerSpeed, float rootLength)

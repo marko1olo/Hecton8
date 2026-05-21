@@ -691,7 +691,7 @@ namespace Hecton8.Core.Data
             };
         }
 
-        public static bool TryGetTelemetryVaultBuffers(
+        public static bool EnsureTelemetryVaultBuffersCold(
             IDataVault vault,
             out NativeArray<BTreeTelemetryEntry> ring,
             out NativeArray<int> cursor,
@@ -703,23 +703,29 @@ namespace Hecton8.Core.Data
             if (vault == null)
                 return false;
 
-            ring = vault.GetBuffer<BTreeTelemetryEntry>(
+            VaultGenerationHandle<BTreeTelemetryEntry> ringHandle = vault.GetGenerationHandle<BTreeTelemetryEntry>(
                 BTreeTelemetryRingBufferId,
                 H8StaticDataFormat.TelemetryFrameCount,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.ClearMemory);
-            cursor = vault.GetBuffer<int>(
+            VaultGenerationHandle<int> cursorHandle = vault.GetGenerationHandle<int>(
                 BTreeTelemetryCursorBufferId,
                 1,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.ClearMemory);
-            accumulator = vault.GetBuffer<BTreeTelemetryAccumulatorDTO>(
+            VaultGenerationHandle<BTreeTelemetryAccumulatorDTO> accumulatorHandle = vault.GetGenerationHandle<BTreeTelemetryAccumulatorDTO>(
                 BTreeTelemetryAccumulatorBufferId,
                 1,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.ClearMemory);
 
-            return ring.IsCreated &&
+            return ringHandle.BufferID == unchecked((uint)(int)BTreeTelemetryRingBufferId) &&
+                   cursorHandle.BufferID == unchecked((uint)(int)BTreeTelemetryCursorBufferId) &&
+                   accumulatorHandle.BufferID == unchecked((uint)(int)BTreeTelemetryAccumulatorBufferId) &&
+                   vault.TryResolveHandle(in ringHandle, out ring) &&
+                   vault.TryResolveHandle(in cursorHandle, out cursor) &&
+                   vault.TryResolveHandle(in accumulatorHandle, out accumulator) &&
+                   ring.IsCreated &&
                    ring.Length >= H8StaticDataFormat.TelemetryFrameCount &&
                    cursor.IsCreated &&
                    cursor.Length > 0 &&
@@ -727,10 +733,57 @@ namespace Hecton8.Core.Data
                    accumulator.Length > 0;
         }
 
-        public static JobHandle ScheduleTelemetryPostSimulationFlush(IDataVault vault, JobHandle dependency)
+        public static bool TryResolveTelemetryVaultBuffers(
+            IDataVault vault,
+            out NativeArray<BTreeTelemetryEntry> ring,
+            out NativeArray<int> cursor,
+            out NativeArray<BTreeTelemetryAccumulatorDTO> accumulator)
         {
-            if (!TryGetTelemetryVaultBuffers(vault, out NativeArray<BTreeTelemetryEntry> ring, out NativeArray<int> cursor, out NativeArray<BTreeTelemetryAccumulatorDTO> accumulator))
+            ring = default;
+            cursor = default;
+            accumulator = default;
+
+            if (vault == null ||
+                !vault.TryGetGenerationHandle<BTreeTelemetryEntry>(BTreeTelemetryRingBufferId, out VaultGenerationHandle<BTreeTelemetryEntry> ringHandle) ||
+                !vault.TryGetGenerationHandle<int>(BTreeTelemetryCursorBufferId, out VaultGenerationHandle<int> cursorHandle) ||
+                !vault.TryGetGenerationHandle<BTreeTelemetryAccumulatorDTO>(BTreeTelemetryAccumulatorBufferId, out VaultGenerationHandle<BTreeTelemetryAccumulatorDTO> accumulatorHandle) ||
+                ringHandle.BufferID != unchecked((uint)(int)BTreeTelemetryRingBufferId) ||
+                cursorHandle.BufferID != unchecked((uint)(int)BTreeTelemetryCursorBufferId) ||
+                accumulatorHandle.BufferID != unchecked((uint)(int)BTreeTelemetryAccumulatorBufferId) ||
+                !vault.TryResolveHandle(in ringHandle, out ring) ||
+                !vault.TryResolveHandle(in cursorHandle, out cursor) ||
+                !vault.TryResolveHandle(in accumulatorHandle, out accumulator) ||
+                !ring.IsCreated ||
+                ring.Length < H8StaticDataFormat.TelemetryFrameCount ||
+                !cursor.IsCreated ||
+                cursor.Length <= 0 ||
+                !accumulator.IsCreated ||
+                accumulator.Length <= 0)
+            {
+                ring = default;
+                cursor = default;
+                accumulator = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        public static JobHandle ScheduleTelemetryPostSimulationFlush(
+            NativeArray<BTreeTelemetryEntry> ring,
+            NativeArray<int> cursor,
+            NativeArray<BTreeTelemetryAccumulatorDTO> accumulator,
+            JobHandle dependency)
+        {
+            if (!ring.IsCreated ||
+                ring.Length < H8StaticDataFormat.TelemetryFrameCount ||
+                !cursor.IsCreated ||
+                cursor.Length <= 0 ||
+                !accumulator.IsCreated ||
+                accumulator.Length <= 0)
+            {
                 return dependency;
+            }
 
             FlushBTreeTelemetryPostSimulationJob job = new FlushBTreeTelemetryPostSimulationJob
             {
@@ -741,18 +794,21 @@ namespace Hecton8.Core.Data
             return job.Schedule(dependency);
         }
 
-        public static bool TryGetTuningProfileVaultBuffer(IDataVault vault, out NativeArray<BTreeTuningProfileDTO> profiles)
+        public static bool EnsureTuningProfileVaultBufferCold(IDataVault vault, out NativeArray<BTreeTuningProfileDTO> profiles)
         {
             profiles = default;
             if (vault == null)
                 return false;
 
-            profiles = vault.GetBuffer<BTreeTuningProfileDTO>(
+            VaultGenerationHandle<BTreeTuningProfileDTO> handle = vault.GetGenerationHandle<BTreeTuningProfileDTO>(
                 BTreeTuningProfilesBufferId,
                 BTreeTuningProfileCapacity,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.ClearMemory);
-            return profiles.IsCreated && profiles.Length >= BTreeTuningProfileCapacity;
+            return handle.BufferID == unchecked((uint)(int)BTreeTuningProfilesBufferId) &&
+                   vault.TryResolveHandle(in handle, out profiles) &&
+                   profiles.IsCreated &&
+                   profiles.Length >= BTreeTuningProfileCapacity;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1210,7 +1266,7 @@ namespace Hecton8.Core.Data
             return value;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public unsafe struct ScanBTreeNodeJob : IJob
         {
             [NoAlias, NativeDisableUnsafePtrRestriction] public BTreeNodeDTO* Node;
@@ -1230,7 +1286,7 @@ namespace Hecton8.Core.Data
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public unsafe struct TraverseBTreeJob : IJob
         {
             [NoAlias, NativeDisableUnsafePtrRestriction] public byte* BasePointer;
@@ -1268,7 +1324,7 @@ namespace Hecton8.Core.Data
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public unsafe struct DispatchBulkBTreeSearchJob : IJobParallelFor
         {
             [NoAlias, NativeDisableUnsafePtrRestriction] public byte* BasePointer;
@@ -1345,7 +1401,7 @@ namespace Hecton8.Core.Data
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public unsafe struct TraceBTreeTraversalJob : IJob
         {
             [NoAlias, NativeDisableUnsafePtrRestriction] public byte* BasePointer;
@@ -1523,7 +1579,7 @@ namespace Hecton8.Core.Data
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public unsafe struct SpatialMortonRangeQueryJob : IJob
         {
             [NoAlias, NativeDisableUnsafePtrRestriction] public byte* BasePointer;
@@ -1971,6 +2027,7 @@ namespace Hecton8.Core.Data
             return HashByte(hash, (byte)(0x80u | (codePoint & 0x3Fu)));
         }
 
+#if UNITY_EDITOR
         public static H8DataBakeResult GenerateHashManifest(string csvPath, string outputPath)
         {
             if (string.IsNullOrEmpty(csvPath) || !System.IO.File.Exists(csvPath))
@@ -2013,6 +2070,7 @@ namespace Hecton8.Core.Data
                 Message = message
             };
         }
+#endif
     }
 
     /// <summary>

@@ -1,15 +1,16 @@
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.World
 {
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct WorldProceduralTerrainFakeOverhangOffsetJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> Heights01;
-        [WriteOnly] public NativeArray<float2> HorizontalOffsetsMeters;
+        [ReadOnly, NoAlias] public NativeArray<float> Heights01;
+        [WriteOnly, NoAlias] public NativeArray<float2> HorizontalOffsetsMeters;
 
         public int Width;
         public int Height;
@@ -22,7 +23,10 @@ namespace Hecton8.World
 
         public void Execute(int index)
         {
-            if (Width <= 2 || Height <= 2 || !Heights01.IsCreated || !HorizontalOffsetsMeters.IsCreated)
+            if (!HorizontalOffsetsMeters.IsCreated)
+                return;
+
+            if (Width <= 2 || Height <= 2 || !Heights01.IsCreated)
             {
                 HorizontalOffsetsMeters[index] = float2.zero;
                 return;

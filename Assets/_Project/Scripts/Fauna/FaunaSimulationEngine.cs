@@ -6,6 +6,7 @@ using Hecton8.World;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -329,24 +330,103 @@ namespace Hecton8.AI
         }
     }
 
+    internal static class FaunaVaultBufferRoutes
+    {
+        internal static VaultGenerationHandle<T> OpenOrAcquire<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            SystemID owner,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0 || vault.IsCompactionFenceActive)
+                return default;
+
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                owner,
+                options);
+
+            return TryOpen(vault, in handle, bufferId, requiredLength, out buffer) ? handle : default;
+        }
+
+        internal static bool TryOpen<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength < 0 ||
+                handle.BufferID != unchecked((uint)(int)bufferId) ||
+                handle.Generation == 0u)
+            {
+                return false;
+            }
+
+            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        internal static void Release<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        internal static ref T ElementAsRef<T>(NativeArray<T> buffer, int index)
+            where T : struct
+        {
+            unsafe
+            {
+                byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
+                return ref UnsafeUtility.AsRef<T>(basePtr + ((long)index * UnsafeUtility.SizeOf<T>()));
+            }
+        }
+    }
+
     /// <summary>
     /// GlobalDataVault-backed fauna residency memory facade.
     /// </summary>
     internal struct FaunaSimulationMemory : IDisposable
     {
         private IDataVault _vault;
-        private VaultBufferHandle<PoolSlotData> _poolSlotsHandle;
-        private VaultBufferHandle<float3> _linearVelocitiesHandle;
-        private VaultBufferHandle<byte> _simulationFlagsHandle;
+        private VaultGenerationHandle<PoolSlotData> _poolSlotsHandle;
+        private VaultGenerationHandle<float3> _linearVelocitiesHandle;
+        private VaultGenerationHandle<byte> _simulationFlagsHandle;
 
         public FaunaSimulationFreeSlotStack FreeSlots;
         public int Capacity;
 
-        public NativeArray<PoolSlotData> PoolSlots => ResolveBuffer(_vault, ref _poolSlotsHandle);
+        public NativeArray<PoolSlotData> PoolSlots =>
+            FaunaVaultBufferRoutes.TryOpen(_vault, in _poolSlotsHandle, BufferID.FaunaSimulationPoolSlots, Capacity, out NativeArray<PoolSlotData> buffer)
+                ? buffer
+                : default;
 
-        public NativeArray<float3> LinearVelocities => ResolveBuffer(_vault, ref _linearVelocitiesHandle);
+        public NativeArray<float3> LinearVelocities =>
+            FaunaVaultBufferRoutes.TryOpen(_vault, in _linearVelocitiesHandle, BufferID.FaunaSimulationLinearVelocities, Capacity, out NativeArray<float3> buffer)
+                ? buffer
+                : default;
 
-        public NativeArray<byte> SimulationFlags => ResolveBuffer(_vault, ref _simulationFlagsHandle);
+        public NativeArray<byte> SimulationFlags =>
+            FaunaVaultBufferRoutes.TryOpen(_vault, in _simulationFlagsHandle, BufferID.FaunaSimulationFlags, Capacity, out NativeArray<byte> buffer)
+                ? buffer
+                : default;
 
         public bool IsCreated =>
             PoolSlots.IsCreated &&
@@ -356,26 +436,29 @@ namespace Hecton8.AI
 
         public ref PoolSlotData GetStateAsRef(int index)
         {
-            if (_vault == null)
+            NativeArray<PoolSlotData> poolSlots = PoolSlots;
+            if (!poolSlots.IsCreated || (uint)index >= (uint)poolSlots.Length)
                 FatalMemoryException.ThrowStaleVaultHandle();
 
-            return ref _poolSlotsHandle.GetElementAsRef(_vault, index);
+            return ref FaunaVaultBufferRoutes.ElementAsRef(poolSlots, index);
         }
 
         public ref float3 GetLinearVelocityAsRef(int index)
         {
-            if (_vault == null)
+            NativeArray<float3> linearVelocities = LinearVelocities;
+            if (!linearVelocities.IsCreated || (uint)index >= (uint)linearVelocities.Length)
                 FatalMemoryException.ThrowStaleVaultHandle();
 
-            return ref _linearVelocitiesHandle.GetElementAsRef(_vault, index);
+            return ref FaunaVaultBufferRoutes.ElementAsRef(linearVelocities, index);
         }
 
         public ref byte GetSimulationFlagAsRef(int index)
         {
-            if (_vault == null)
+            NativeArray<byte> simulationFlags = SimulationFlags;
+            if (!simulationFlags.IsCreated || (uint)index >= (uint)simulationFlags.Length)
                 FatalMemoryException.ThrowStaleVaultHandle();
 
-            return ref _simulationFlagsHandle.GetElementAsRef(_vault, index);
+            return ref FaunaVaultBufferRoutes.ElementAsRef(simulationFlags, index);
         }
 
         public void Allocate(int capacity)
@@ -385,32 +468,36 @@ namespace Hecton8.AI
             if (Capacity <= 0)
                 return;
 
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault) || vault.IsAllocationLocked)
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsAllocationLocked)
             {
                 Capacity = 0;
                 return;
             }
 
             _vault = vault;
-            _poolSlotsHandle = vault.GetBufferHandle<PoolSlotData>(
+            _poolSlotsHandle = FaunaVaultBufferRoutes.OpenOrAcquire(
+                vault,
                 BufferID.FaunaSimulationPoolSlots,
                 Capacity,
                 SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            _linearVelocitiesHandle = vault.GetBufferHandle<float3>(
+                NativeArrayOptions.ClearMemory,
+                out NativeArray<PoolSlotData> poolSlots);
+            _linearVelocitiesHandle = FaunaVaultBufferRoutes.OpenOrAcquire(
+                vault,
                 BufferID.FaunaSimulationLinearVelocities,
                 Capacity,
                 SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            _simulationFlagsHandle = vault.GetBufferHandle<byte>(
+                NativeArrayOptions.ClearMemory,
+                out NativeArray<float3> linearVelocities);
+            _simulationFlagsHandle = FaunaVaultBufferRoutes.OpenOrAcquire(
+                vault,
                 BufferID.FaunaSimulationFlags,
                 Capacity,
                 SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.ClearMemory,
+                out NativeArray<byte> simulationFlags);
 
-            NativeArray<PoolSlotData> poolSlots = PoolSlots;
-            NativeArray<float3> linearVelocities = LinearVelocities;
-            NativeArray<byte> simulationFlags = SimulationFlags;
             if (!poolSlots.IsCreated ||
                 !linearVelocities.IsCreated ||
                 !simulationFlags.IsCreated ||
@@ -451,19 +538,12 @@ namespace Hecton8.AI
             ReleaseVaultAliases();
         }
 
-        private static NativeArray<T> ResolveBuffer<T>(IDataVault vault, ref VaultBufferHandle<T> handle) where T : struct
-        {
-            if (vault == null || !handle.IsCreated)
-                return default;
-
-            return handle.Resolve(vault);
-        }
-
         private void ReleaseVaultAliases()
         {
-            _poolSlotsHandle = default;
-            _linearVelocitiesHandle = default;
-            _simulationFlagsHandle = default;
+            IDataVault vault = _vault;
+            FaunaVaultBufferRoutes.Release(vault, ref _poolSlotsHandle);
+            FaunaVaultBufferRoutes.Release(vault, ref _linearVelocitiesHandle);
+            FaunaVaultBufferRoutes.Release(vault, ref _simulationFlagsHandle);
             FreeSlots.Dispose();
             _vault = null;
             Capacity = 0;
@@ -500,16 +580,21 @@ namespace Hecton8.AI
     internal struct FaunaSimulationFreeSlotStack
     {
         private IDataVault _vault;
-        private VaultBufferHandle<int> _slotsHandle;
+        private VaultGenerationHandle<int> _slotsHandle;
+        private BufferID _bufferId;
         private int _count;
         private int _capacity;
 
-        public bool IsCreated => _slotsHandle.IsCreated && _capacity > 0 && ResolveSlots(_vault, ref _slotsHandle).IsCreated;
+        public bool IsCreated =>
+            _capacity > 0 &&
+            FaunaVaultBufferRoutes.TryOpen(_vault, in _slotsHandle, _bufferId, _capacity, out NativeArray<int> slots) &&
+            slots.IsCreated;
 
         public void Allocate(IDataVault vault, int capacity, BufferID bufferId, SystemID owner)
         {
             Dispose();
             _vault = vault;
+            _bufferId = bufferId;
             _capacity = math.max(0, capacity);
             if (_vault == null || _capacity <= 0)
             {
@@ -517,13 +602,15 @@ namespace Hecton8.AI
                 return;
             }
 
-            _slotsHandle = _vault.GetBufferHandle<int>(
+            _slotsHandle = FaunaVaultBufferRoutes.OpenOrAcquire(
+                _vault,
                 bufferId,
                 _capacity,
                 owner,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.ClearMemory,
+                out NativeArray<int> slots);
 
-            if (!ResolveSlots(_vault, ref _slotsHandle).IsCreated)
+            if (!slots.IsCreated)
             {
                 Dispose();
                 return;
@@ -535,7 +622,7 @@ namespace Hecton8.AI
         public void Reset()
         {
             Clear();
-            NativeArray<int> slots = ResolveSlots(_vault, ref _slotsHandle);
+            NativeArray<int> slots = ResolveSlots(_vault, in _slotsHandle, _bufferId, _capacity);
             if (!slots.IsCreated)
                 return;
 
@@ -555,7 +642,7 @@ namespace Hecton8.AI
         public bool TryDequeue(out int slotIndex)
         {
             slotIndex = -1;
-            NativeArray<int> slots = ResolveSlots(_vault, ref _slotsHandle);
+            NativeArray<int> slots = ResolveSlots(_vault, in _slotsHandle, _bufferId, _capacity);
             if (!slots.IsCreated || _count <= 0)
                 return false;
 
@@ -572,7 +659,7 @@ namespace Hecton8.AI
 
         public void Enqueue(int slotIndex)
         {
-            NativeArray<int> slots = ResolveSlots(_vault, ref _slotsHandle);
+            NativeArray<int> slots = ResolveSlots(_vault, in _slotsHandle, _bufferId, _capacity);
             if (!slots.IsCreated ||
                 (uint)slotIndex >= (uint)_capacity ||
                 _count >= _capacity ||
@@ -587,18 +674,22 @@ namespace Hecton8.AI
 
         public void Dispose()
         {
-            _slotsHandle = default;
+            FaunaVaultBufferRoutes.Release(_vault, ref _slotsHandle);
             _vault = null;
+            _bufferId = default;
             _count = 0;
             _capacity = 0;
         }
 
-        private static NativeArray<int> ResolveSlots(IDataVault vault, ref VaultBufferHandle<int> slotsHandle)
+        private static NativeArray<int> ResolveSlots(
+            IDataVault vault,
+            in VaultGenerationHandle<int> slotsHandle,
+            BufferID bufferId,
+            int capacity)
         {
-            if (vault == null || !slotsHandle.IsCreated)
-                return default;
-
-            return slotsHandle.Resolve(vault);
+            return FaunaVaultBufferRoutes.TryOpen(vault, in slotsHandle, bufferId, capacity, out NativeArray<int> slots)
+                ? slots
+                : default;
         }
     }
 }

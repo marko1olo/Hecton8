@@ -197,6 +197,12 @@ namespace Hecton8.Tools.Editor
             if (_suppressCallbacks)
                 return;
 
+            if (!TryBindRuntimeVault())
+            {
+                _status.text = "DataVault unavailable until runtime bootstrap.";
+                return;
+            }
+
             LaserCutterTuningDTO tuning = new LaserCutterTuningDTO
             {
                 MinimumPower01 = _minimumPower.value,
@@ -219,9 +225,27 @@ namespace Hecton8.Tools.Editor
 
         private void GenerateMockRequests()
         {
-            uint frame = unchecked((uint)Time.frameCount);
+            if (!TryBindRuntimeVault())
+            {
+                _status.text = "DataVault unavailable until runtime bootstrap.";
+                return;
+            }
+
+            uint frame = ResolveCurrentFrameId();
             LaserCutterDodRuntime.GenerateMockCutterTriggers(32, HectonFloatingOrigin.CurrentTotalOffsetDouble, frame, 0x53483232u);
             PullRuntimeState();
+        }
+
+        private static bool TryBindRuntimeVault()
+        {
+            var vault = GlobalRegistry.DataVault;
+            return vault != null && LaserCutterDodRuntime.EnsureInitialized(vault);
+        }
+
+        private static uint ResolveCurrentFrameId()
+        {
+            uint frame = TimeSliceScheduler.CurrentFrameId;
+            return frame != 0u ? frame : 1u;
         }
 
         private void ValidateLayout()

@@ -12,6 +12,7 @@ from DataVaultSovereigntyAudit import (
     aggregate_regression_details_by_surface,
     build_report_payload,
     collect_regression_details,
+    collect_runtime_regression_details,
     extract_domain,
     extract_execution_surface,
 )
@@ -19,7 +20,7 @@ from DataVaultSovereigntyAudit import (
 
 def make_payload() -> dict:
     return {
-        "schema": "hecton8.datavault_sovereignty_audit.v2",
+        "schema": "hecton8.datavault_sovereignty_audit.v3",
         "sourceRoot": "Assets/_Project/Scripts",
         "pattern": "new NativeArray",
         "declarationPattern": "NativeArray field",
@@ -83,6 +84,10 @@ class DataVaultRegressionDrilldownTests(unittest.TestCase):
             extract_execution_surface("Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs"),
             "Dev",
         )
+        self.assertEqual(
+            extract_execution_surface("Assets/_Project/Scripts/World/BiomeWeightMapBaker.cs"),
+            "OfflineBake",
+        )
 
     def test_collect_regression_details_groups_exact_file_deltas(self) -> None:
         payload = make_payload()
@@ -112,6 +117,50 @@ class DataVaultRegressionDrilldownTests(unittest.TestCase):
         self.assertEqual(by_surface[0]["executionSurface"], "Runtime")
         self.assertEqual(by_surface[0]["delta"], 4)
 
+    def test_runtime_regression_gate_filters_editor_offline_surface(self) -> None:
+        payload = {
+            "schema": "hecton8.datavault_sovereignty_audit.v3",
+            "findings": [
+                {
+                    "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker.cs",
+                    "count": 4,
+                    "lines": [10, 11, 12, 13],
+                    "allowed": False,
+                },
+                {
+                    "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+                    "count": 2,
+                    "lines": [20, 21],
+                    "allowed": False,
+                },
+            ],
+            "forbiddenDirectConstructors": 6,
+            "declarationFindings": [],
+            "forbiddenNativeArrayDeclarations": 0,
+        }
+        baseline = {
+            "schema": BASELINE_SCHEMA,
+            "forbiddenDirectConstructors": 2,
+            "forbiddenNativeArrayDeclarations": 0,
+            "forbiddenByFile": {
+                "Assets/_Project/Scripts/World/BiomeWeightMapBaker.cs": 1,
+                "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs": 2,
+            },
+            "forbiddenDeclarationsByFile": {},
+        }
+
+        errors, details = collect_runtime_regression_details(payload, baseline)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(details, [])
+
+        payload["findings"][1]["count"] = 3
+        errors, details = collect_runtime_regression_details(payload, baseline)
+
+        self.assertEqual(len(details), 1)
+        self.assertEqual(details[0]["path"], "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs")
+        self.assertTrue(any("Runtime DataVault native ownership regressions" in error for error in errors))
+
     def test_build_report_payload_keeps_machine_readable_regression_data(self) -> None:
         payload = make_payload()
         baseline = {
@@ -129,7 +178,7 @@ class DataVaultRegressionDrilldownTests(unittest.TestCase):
         errors, details = collect_regression_details(payload, baseline)
         report = build_report_payload(payload, Path("baseline.json"), baseline, errors, details)
 
-        self.assertEqual(report["schema"], "hecton8.datavault_sovereignty_audit_report.v1")
+        self.assertEqual(report["schema"], "hecton8.datavault_sovereignty_audit_report.v2")
         self.assertEqual(report["regressionDetails"][0]["domain"], "Core")
         self.assertEqual(report["regressionDetails"][0]["executionSurface"], "Runtime")
         self.assertEqual(report["regressionByDomain"][0]["domain"], "Core")

@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
@@ -16,20 +15,8 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Audio/Vocal Warning System")]
-    public sealed class VocalWarningSystem : MonoBehaviour, IVocalWarningSystem, IUpdatable, ISlowTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class VocalWarningSystem : MonoBehaviour, IVocalWarningSystem, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
-        [Serializable]
-        private struct VocalWarningLocalizedClipBundle
-        {
-            [Tooltip("Language served by this flat warning clip table.")]
-            [SerializeField] private GameLanguage language;
-            [Tooltip("Flat clip table indexed by VocalWarningId byte. Element 0 is unused.")]
-            [SerializeField] private AudioClip[] clips;
-
-            public GameLanguage Language => language;
-            public AudioClip[] Clips => clips;
-        }
-
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct VwsTelemetryEntry
         {
@@ -47,13 +34,22 @@ namespace Hecton8.Audio
             [FieldOffset(35)] public byte Flags;
         }
 
+        private struct VwsVaultViews
+        {
+            public NativeArray<byte> Queue;
+            public NativeArray<byte> WarningFlags;
+            public NativeArray<float> Cooldowns;
+            public NativeArray<float> WarningSeverity;
+            public NativeArray<uint> WarningSourceIds;
+            public NativeArray<VwsTelemetryEntry> TelemetryRing;
+        }
+
         private const int QueueCapacity = 16;
         private const int WarningStateLength = 6;
         private const int TelemetryCapacity = 300;
         private const float DefaultCooldownSeconds = 4f;
         private const float SlowTickDeltaSeconds = 0.1f;
         private const float DefaultGain = 0.85f;
-        private const string NativeMemoryOwner = nameof(VocalWarningSystem);
         private const SystemID VaultOwner = SystemID.AudioVocalWarning;
 
         private static readonly string[] SubtitleFallbacks =
@@ -66,56 +62,39 @@ namespace Hecton8.Audio
             "Power low"
         };
 
-        [Header("Warning Clips")]
-        [Tooltip("Flat clip table indexed by VocalWarningId byte. Element 0 is unused.")]
-        [SerializeField] private AudioClip[] defaultWarningClips;
-        [Tooltip("Optional flat clip tables for localized Bitchin' Betty voices. Each table uses the same VocalWarningId indexing as defaultWarningClips.")]
-        [SerializeField] private VocalWarningLocalizedClipBundle[] localizedBundles;
-
         [Header("Mix")]
         [Tooltip("Voice gain applied before the procedural renderer safety limiter.")]
         [SerializeField, Range(0f, 1f)] private float voiceGain = DefaultGain;
         [Tooltip("Cooldown used when a producer does not provide a positive finite cooldown.")]
         [SerializeField, Min(0f)] private float fallbackCooldownSeconds = DefaultCooldownSeconds;
 
-        private NativeQueue<byte> _pendingWarningIds;
-        private NativeArray<byte> _vwsQueue; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<byte> _warningFlags; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<float> _cooldowns; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<float> _warningSeverity; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<uint> _warningSourceIds; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<VwsTelemetryEntry> _telemetryRing; // Vault alias; GlobalDataVault owns backing memory.
         private IDataVault _dataVault;
-        private VaultBufferHandle<byte> _vwsQueueHandle;
-        private VaultBufferHandle<byte> _warningFlagsHandle;
-        private VaultBufferHandle<float> _cooldownsHandle;
-        private VaultBufferHandle<float> _warningSeverityHandle;
-        private VaultBufferHandle<uint> _warningSourceIdsHandle;
-        private VaultBufferHandle<VwsTelemetryEntry> _telemetryRingHandle;
-        private AudioClip[] _activeWarningClips;
+        private VaultGenerationHandle<byte> _vwsQueueHandle;
+        private VaultGenerationHandle<byte> _warningFlagsHandle;
+        private VaultGenerationHandle<float> _cooldownsHandle;
+        private VaultGenerationHandle<float> _warningSeverityHandle;
+        private VaultGenerationHandle<uint> _warningSourceIdsHandle;
+        private VaultGenerationHandle<VwsTelemetryEntry> _telemetryRingHandle;
         private int _telemetryCursor;
-        private int _pendingNativeCount;
         private int _queueCount;
         private int _registeredUpdate;
         private int _registeredSlowTick;
-        private int _registeredLocalization;
         private int _registeredHotSwap;
         private int _registeredRuntime;
         private int _nativeAllocated;
         private int _telemetryDumpRequested;
         private int _telemetryDumped;
         private int _lastScalabilitySignalFrame = -4096;
-        private PlayerCriticalProceduralAudioRenderer _renderer;
         private SubtitleManager _subtitles;
-        private LocalizationManager _localization;
         private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
+        private float _warningPlaybackRemainingSeconds;
         private byte _currentWarningId;
 
         /// <inheritdoc />
         public bool IsInitialized => Volatile.Read(ref _nativeAllocated) != 0;
 
         /// <inheritdoc />
-        public int PendingCount => math.max(0, _queueCount) + math.max(0, Volatile.Read(ref _pendingNativeCount));
+        public int PendingCount => math.max(0, _queueCount);
 
         /// <inheritdoc />
         public byte CurrentWarningId => _currentWarningId;
@@ -125,8 +104,7 @@ namespace Hecton8.Audio
         {
             get
             {
-                PlayerCriticalProceduralAudioRenderer renderer = _renderer;
-                return renderer != null && renderer.IsVocalWarningPlaying;
+                return _warningPlaybackRemainingSeconds > 0f;
             }
         }
 
@@ -134,7 +112,6 @@ namespace Hecton8.Audio
         {
             EnsureNativeStorage();
             RefreshCachedServicesCold();
-            SelectActiveClipBundle(ResolveCurrentLanguage());
         }
 
         private void OnEnable()
@@ -142,15 +119,12 @@ namespace Hecton8.Audio
             EnsureNativeStorage();
             TryRegisterHotSwapListener();
             RefreshCachedServicesCold();
-            SelectActiveClipBundle(ResolveCurrentLanguage());
             GlobalRegistry.RegisterVocalWarningRuntime(this);
             Volatile.Write(ref _registeredRuntime, 1);
             if (GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment))
                 _registeredUpdate = 1;
             if (GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment))
                 _registeredSlowTick = 1;
-            LocalizationEvents.RegisterLanguageListener(this);
-            _registeredLocalization = 1;
         }
 
         private void OnDisable()
@@ -167,8 +141,6 @@ namespace Hecton8.Audio
         private void UnregisterRuntime()
         {
             CancelRendererPlaybackAndClearQueues();
-            if (Interlocked.Exchange(ref _registeredLocalization, 0) != 0)
-                LocalizationEvents.UnregisterLanguageListener(this);
             if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
                 GlobalRegistry.UnregisterHotSwapListener(this);
             if (Interlocked.Exchange(ref _registeredSlowTick, 0) != 0)
@@ -177,9 +149,7 @@ namespace Hecton8.Audio
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             if (Interlocked.Exchange(ref _registeredRuntime, 0) != 0)
                 GlobalRegistry.UnregisterVocalWarningRuntime(this);
-            _renderer = null;
             _subtitles = null;
-            _localization = null;
         }
 
         /// <inheritdoc />
@@ -190,6 +160,7 @@ namespace Hecton8.Audio
 
             ConsumeScalabilitySignals();
             DrainSignals();
+            _warningPlaybackRemainingSeconds = math.max(0f, _warningPlaybackRemainingSeconds - math.max(0f, deltaTime));
             PollRendererState();
             WriteTelemetry();
             FlushTelemetryDumpRequest();
@@ -202,12 +173,13 @@ namespace Hecton8.Audio
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 return;
 
-            DecayCooldownsInline(SlowTickDeltaSeconds);
+            if (!TryResolveVwsViews(out VwsVaultViews views))
+                return;
 
-            DrainPendingIdsIntoQueue();
-            SortPriorityQueue();
-            TryStartOrPreemptWarning();
-            WriteTelemetry();
+            DecayCooldownsInline(ref views, SlowTickDeltaSeconds);
+            SortPriorityQueue(ref views);
+            TryStartOrPreemptWarning(ref views);
+            WriteTelemetry(ref views);
         }
 
         /// <inheritdoc />
@@ -223,23 +195,26 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            float cooldown = _cooldowns[normalized];
+            if (!TryResolveVwsViews(out VwsVaultViews views) ||
+                normalized >= views.Cooldowns.Length ||
+                normalized >= views.WarningFlags.Length ||
+                normalized >= views.WarningSeverity.Length ||
+                normalized >= views.WarningSourceIds.Length)
+            {
+                Interlocked.Exchange(ref _telemetryDumpRequested, 1);
+                return false;
+            }
+
+            float cooldown = views.Cooldowns[normalized];
             if (cooldown > 0f)
                 return false;
 
-            _cooldowns[normalized] = ResolveCooldownSeconds(cooldownSeconds);
-            _warningFlags[normalized] = flags;
-            _warningSeverity[normalized] = ResolveSeverity01(severity01);
-            _warningSourceIds[normalized] = sourceId;
+            views.Cooldowns[normalized] = ResolveCooldownSeconds(cooldownSeconds);
+            views.WarningFlags[normalized] = flags;
+            views.WarningSeverity[normalized] = ResolveSeverity01(severity01);
+            views.WarningSourceIds[normalized] = sourceId;
 
-            if (Volatile.Read(ref _pendingNativeCount) >= QueueCapacity)
-            {
-                InsertOrPromote(normalized);
-                return true;
-            }
-
-            _pendingWarningIds.Enqueue(normalized);
-            Interlocked.Increment(ref _pendingNativeCount);
+            InsertOrPromote(ref views, normalized);
             return true;
         }
 
@@ -251,24 +226,12 @@ namespace Hecton8.Audio
 
         private void CancelRendererPlaybackAndClearQueues()
         {
-            PlayerCriticalProceduralAudioRenderer renderer = _renderer;
-            if (renderer != null)
-                renderer.CancelVocalWarningPlayback();
             _currentWarningId = 0;
+            _warningPlaybackRemainingSeconds = 0f;
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 return;
 
             ClearQueuedWarnings();
-        }
-
-        /// <inheritdoc />
-        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
-        {
-            int languageIndex = (int)payload.Language;
-            GameLanguage language = languageIndex >= (int)GameLanguage.English && languageIndex <= (int)GameLanguage.Arabic
-                ? (GameLanguage)languageIndex
-                : GameLanguage.English;
-            SelectActiveClipBundle(language);
         }
 
         private void HandleScalabilityChanged(in ScalabilityChangedEvent payload)
@@ -305,15 +268,8 @@ namespace Hecton8.Audio
 
             switch (serviceSlot)
             {
-                case GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime:
-                    _renderer = currentService as PlayerCriticalProceduralAudioRenderer;
-                    break;
                 case GlobalRegistryServiceSlot.SubtitleRuntime:
                     _subtitles = currentService as SubtitleManager;
-                    break;
-                case GlobalRegistryServiceSlot.LocalizationRuntime:
-                    _localization = currentService as LocalizationManager;
-                    SelectActiveClipBundle(ResolveCurrentLanguage());
                     break;
             }
         }
@@ -324,21 +280,9 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
-            switch (serviceSlot)
-            {
-                case GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime:
-                    if (ReferenceEquals(previousService, currentService))
-                        return;
-
-                    PlayerCriticalProceduralAudioRenderer previousRenderer = previousService as PlayerCriticalProceduralAudioRenderer;
-                    if (previousRenderer != null)
-                        previousRenderer.CancelVocalWarningPlayback();
-                    break;
-                case GlobalRegistryServiceSlot.DataVault:
-                    if (!ReferenceEquals(previousService, currentService))
-                        RebindDataVault(currentService as IDataVault);
-                    break;
-            }
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault &&
+                !ReferenceEquals(previousService, currentService))
+                RebindDataVault(currentService as IDataVault);
         }
 
         private void EnsureNativeStorage()
@@ -350,26 +294,13 @@ namespace Hecton8.Audio
             if (vault == null)
                 return;
 
-            if (!_pendingWarningIds.IsCreated)
-            {
-                _pendingWarningIds = new NativeQueue<byte>(Allocator.Persistent); // COLD ALLOC: NativeQueue<byte>[16] - VWS pending byte IDs; GlobalDataVault has no queue primitive - owner: VocalWarningSystem
-                NativeMemorySentinel.RegisterNativeQueue(_pendingWarningIds, QueueCapacity, NativeMemoryOwner, nameof(_pendingWarningIds), NativeAllocationLifetime.Session);
-            }
-
             BindVaultStorage(vault);
-            if (!_vwsQueue.IsCreated ||
-                !_warningFlags.IsCreated ||
-                !_cooldowns.IsCreated ||
-                !_warningSeverity.IsCreated ||
-                !_warningSourceIds.IsCreated ||
-                !_telemetryRing.IsCreated)
+            if (!TryResolveVwsViews(out _))
             {
-                ClearVaultBackedStorageAliases();
+                ClearVaultDescriptors();
                 return;
             }
 
-            PrewarmPendingQueue();
-            _activeWarningClips = defaultWarningClips;
             Volatile.Write(ref _nativeAllocated, 1);
         }
 
@@ -388,43 +319,36 @@ namespace Hecton8.Audio
         private void BindVaultStorage(IDataVault vault)
         {
             _dataVault = vault;
-            _vwsQueueHandle = vault.GetBufferHandle<byte>(
+            _vwsQueueHandle = vault.GetGenerationHandle<byte>(
                 BufferID.AudioVocalWarningQueue,
                 QueueCapacity,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _warningFlagsHandle = vault.GetBufferHandle<byte>(
+            _warningFlagsHandle = vault.GetGenerationHandle<byte>(
                 BufferID.AudioVocalWarningFlags,
                 WarningStateLength,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _cooldownsHandle = vault.GetBufferHandle<float>(
+            _cooldownsHandle = vault.GetGenerationHandle<float>(
                 BufferID.AudioVocalWarningCooldowns,
                 WarningStateLength,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _warningSeverityHandle = vault.GetBufferHandle<float>(
+            _warningSeverityHandle = vault.GetGenerationHandle<float>(
                 BufferID.AudioVocalWarningSeverity,
                 WarningStateLength,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _warningSourceIdsHandle = vault.GetBufferHandle<uint>(
+            _warningSourceIdsHandle = vault.GetGenerationHandle<uint>(
                 BufferID.AudioVocalWarningSourceIds,
                 WarningStateLength,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _telemetryRingHandle = vault.GetBufferHandle<VwsTelemetryEntry>(
+            _telemetryRingHandle = vault.GetGenerationHandle<VwsTelemetryEntry>(
                 BufferID.AudioVocalWarningTelemetry,
                 TelemetryCapacity,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-
-            _vwsQueue = _vwsQueueHandle.Resolve(vault);
-            _warningFlags = _warningFlagsHandle.Resolve(vault);
-            _cooldowns = _cooldownsHandle.Resolve(vault);
-            _warningSeverity = _warningSeverityHandle.Resolve(vault);
-            _warningSourceIds = _warningSourceIdsHandle.Resolve(vault);
-            _telemetryRing = _telemetryRingHandle.Resolve(vault);
         }
 
         private void RebindDataVault(IDataVault vault)
@@ -436,7 +360,6 @@ namespace Hecton8.Audio
             _dataVault = vault;
             Volatile.Write(ref _nativeAllocated, 0);
             _queueCount = 0;
-            _pendingNativeCount = 0;
             _currentWarningId = 0;
             if (vault != null)
                 EnsureNativeStorage();
@@ -445,20 +368,27 @@ namespace Hecton8.Audio
         private void ReleaseVaultBackedStorage()
         {
             IDataVault vault = _dataVault;
-            if (vault != null)
-                vault.ReleaseOwnerBuffers(VaultOwner, out _);
+            ReleaseVaultBuffer(vault, ref _vwsQueueHandle);
+            ReleaseVaultBuffer(vault, ref _warningFlagsHandle);
+            ReleaseVaultBuffer(vault, ref _cooldownsHandle);
+            ReleaseVaultBuffer(vault, ref _warningSeverityHandle);
+            ReleaseVaultBuffer(vault, ref _warningSourceIdsHandle);
+            ReleaseVaultBuffer(vault, ref _telemetryRingHandle);
 
-            ClearVaultBackedStorageAliases();
+            ClearVaultDescriptors();
         }
 
-        private void ClearVaultBackedStorageAliases()
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
         {
-            _vwsQueue = default;
-            _warningFlags = default;
-            _cooldowns = default;
-            _warningSeverity = default;
-            _warningSourceIds = default;
-            _telemetryRing = default;
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private void ClearVaultDescriptors()
+        {
             _vwsQueueHandle = default;
             _warningFlagsHandle = default;
             _cooldownsHandle = default;
@@ -467,24 +397,36 @@ namespace Hecton8.Audio
             _telemetryRingHandle = default;
         }
 
-        private void PrewarmPendingQueue()
+        private bool TryResolveVwsViews(out VwsVaultViews views)
         {
-            if (!_pendingWarningIds.IsCreated)
-                return;
+            views = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
 
-            for (int i = 0; i < QueueCapacity; i++)
-                _pendingWarningIds.Enqueue(0);
-
-            while (_pendingWarningIds.TryDequeue(out _))
+            if (!vault.TryResolveHandle(in _vwsQueueHandle, out views.Queue) ||
+                !vault.TryResolveHandle(in _warningFlagsHandle, out views.WarningFlags) ||
+                !vault.TryResolveHandle(in _cooldownsHandle, out views.Cooldowns) ||
+                !vault.TryResolveHandle(in _warningSeverityHandle, out views.WarningSeverity) ||
+                !vault.TryResolveHandle(in _warningSourceIdsHandle, out views.WarningSourceIds) ||
+                !vault.TryResolveHandle(in _telemetryRingHandle, out views.TelemetryRing) ||
+                !views.Queue.IsCreated ||
+                !views.WarningFlags.IsCreated ||
+                !views.Cooldowns.IsCreated ||
+                !views.WarningSeverity.IsCreated ||
+                !views.WarningSourceIds.IsCreated ||
+                !views.TelemetryRing.IsCreated)
             {
+                views = default;
+                return false;
             }
+
+            return true;
         }
 
         private void RefreshCachedServicesCold()
         {
-            _renderer = GlobalRegistry.PlayerCriticalAudio;
             _subtitles = GlobalRegistry.Subtitles;
-            _localization = GlobalRegistry.Localization;
             _qualityTier = GlobalRegistry.ScalabilityTier;
         }
 
@@ -500,21 +442,13 @@ namespace Hecton8.Audio
         private void DisposeNativeStorage()
         {
             if (Interlocked.Exchange(ref _nativeAllocated, 0) == 0 &&
-                !_pendingWarningIds.IsCreated &&
                 _dataVault == null)
                 return;
 
-            if (_pendingWarningIds.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_pendingWarningIds));
-                _pendingWarningIds.Dispose();
-            }
-
             ReleaseVaultBackedStorage();
 
-            _pendingWarningIds = default;
+            _dataVault = null;
             _queueCount = 0;
-            _pendingNativeCount = 0;
             _currentWarningId = 0;
         }
 
@@ -548,16 +482,7 @@ namespace Hecton8.Audio
             }
         }
 
-        private void DrainPendingIdsIntoQueue()
-        {
-            while (_pendingWarningIds.TryDequeue(out byte warningId))
-            {
-                Interlocked.Decrement(ref _pendingNativeCount);
-                InsertOrPromote(warningId);
-            }
-        }
-
-        private void InsertOrPromote(byte warningId)
+        private void InsertOrPromote(ref VwsVaultViews views, byte warningId)
         {
             byte normalized = NormalizeWarningId(warningId);
             if (normalized == 0)
@@ -566,24 +491,31 @@ namespace Hecton8.Audio
                 return;
             }
 
-            for (int i = 0; i < _queueCount; i++)
+            NativeArray<byte> queue = views.Queue;
+            if (!queue.IsCreated || queue.Length <= 0)
+                return;
+
+            int capacity = math.min(QueueCapacity, queue.Length);
+            int currentCount = math.clamp(_queueCount, 0, capacity);
+            _queueCount = currentCount;
+            for (int i = 0; i < currentCount; i++)
             {
-                if (_vwsQueue[i] == normalized)
+                if (queue[i] == normalized)
                     return;
             }
 
-            if (_queueCount < QueueCapacity)
+            if (currentCount < capacity)
             {
-                _vwsQueue[_queueCount] = normalized;
-                _queueCount++;
+                queue[currentCount] = normalized;
+                _queueCount = currentCount + 1;
                 return;
             }
 
             int worstIndex = 0;
-            byte worstId = _vwsQueue[0];
-            for (int i = 1; i < QueueCapacity; i++)
+            byte worstId = queue[0];
+            for (int i = 1; i < capacity; i++)
             {
-                byte candidate = _vwsQueue[i];
+                byte candidate = queue[i];
                 if (candidate > worstId)
                 {
                     worstId = candidate;
@@ -592,82 +524,88 @@ namespace Hecton8.Audio
             }
 
             if (normalized < worstId)
-                _vwsQueue[worstIndex] = normalized;
+                queue[worstIndex] = normalized;
         }
 
-        private void SortPriorityQueue()
+        private void SortPriorityQueue(ref VwsVaultViews views)
         {
-            SortPriorityQueueInline();
+            SortPriorityQueueInline(ref views);
         }
 
-        private void DecayCooldownsInline(float deltaSeconds)
+        private void DecayCooldownsInline(ref VwsVaultViews views, float deltaSeconds)
         {
-            if (!_cooldowns.IsCreated)
+            NativeArray<float> cooldowns = views.Cooldowns;
+            if (!cooldowns.IsCreated)
                 return;
 
             float dt = math.max(0f, deltaSeconds);
-            for (int i = 0; i < _cooldowns.Length; i++)
-                _cooldowns[i] = math.max(0f, _cooldowns[i] - dt);
+            for (int i = 0; i < cooldowns.Length; i++)
+                cooldowns[i] = math.max(0f, cooldowns[i] - dt);
         }
 
-        private void SortPriorityQueueInline()
+        private void SortPriorityQueueInline(ref VwsVaultViews views)
         {
-            if (!_vwsQueue.IsCreated)
+            NativeArray<byte> queue = views.Queue;
+            if (!queue.IsCreated)
                 return;
 
-            int count = math.clamp(_queueCount, 0, math.min(QueueCapacity, _vwsQueue.Length));
+            int count = math.clamp(_queueCount, 0, math.min(QueueCapacity, queue.Length));
             for (int i = 1; i < count; i++)
             {
-                byte value = _vwsQueue[i];
+                byte value = queue[i];
                 int j = i - 1;
-                while (j >= 0 && _vwsQueue[j] > value)
+                while (j >= 0 && queue[j] > value)
                 {
-                    _vwsQueue[j + 1] = _vwsQueue[j];
+                    queue[j + 1] = queue[j];
                     j--;
                 }
 
-                _vwsQueue[j + 1] = value;
+                queue[j + 1] = value;
             }
         }
 
-        private void TryStartOrPreemptWarning()
+        private void TryStartOrPreemptWarning(ref VwsVaultViews views)
         {
-            PlayerCriticalProceduralAudioRenderer renderer = _renderer;
-            if (renderer == null || _queueCount <= 0)
+            NativeArray<byte> queue = views.Queue;
+            if (_queueCount <= 0 || !queue.IsCreated || queue.Length <= 0)
                 return;
 
-            bool active = renderer.IsVocalWarningPlaying;
-            byte activeId = active ? renderer.CurrentVocalWarningId : (byte)0;
+            bool active = _warningPlaybackRemainingSeconds > 0f;
+            byte activeId = active ? _currentWarningId : (byte)0;
             if (!active)
                 _currentWarningId = 0;
 
-            byte nextId = _vwsQueue[0];
+            byte nextId = queue[0];
             bool preempt = active && activeId != 0 && nextId < activeId;
             if (active && !preempt)
                 return;
 
-            if (!TryResolveClip(nextId, out AudioClip clip))
+            bool radioDegrade = ShouldUseRadioDegradation(ref views, nextId);
+            float durationSeconds = EstimateWarningDurationSeconds(ref views, nextId);
+            uint hash = VocalWarningHashes.FromWarningId(nextId);
+            if (hash != 0u)
             {
-                RemoveQueueHead();
-                return;
+                VocalCueSignal cue = default;
+                cue.PhraseHashID = hash;
+                cue.Priority = 255 - nextId;
+                cue.VolumeScalar = voiceGain;
+                cue.PlaybackSpeed = 1f;
+                cue.RadioDistortion01 = radioDegrade ? 0.72f : 0.38f;
+                cue.SpatialBlend01 = 0f;
+                cue.Flags = preempt ? 1u : 0u;
+                GlobalSignals.Publish(in cue);
+                _currentWarningId = nextId;
+                _warningPlaybackRemainingSeconds = durationSeconds;
+                EmitSubtitle(nextId, durationSeconds);
             }
 
-            bool radioDegrade = ShouldUseRadioDegradation(nextId);
-            if (renderer.TrySubmitVocalWarningClip(nextId, clip, voiceGain, preempt, radioDegrade, out float durationSeconds))
-            {
-                _currentWarningId = nextId;
-                EmitSubtitle(nextId, durationSeconds);
-                RemoveQueueHead();
-            }
+            RemoveQueueHead(ref views);
         }
 
         private void PollRendererState()
         {
-            PlayerCriticalProceduralAudioRenderer renderer = _renderer;
-            if (renderer == null || !renderer.IsVocalWarningPlaying)
+            if (_warningPlaybackRemainingSeconds <= 0f)
                 _currentWarningId = 0;
-            else
-                _currentWarningId = renderer.CurrentVocalWarningId;
         }
 
         private void EmitSubtitle(byte warningId, float durationSeconds)
@@ -695,42 +633,10 @@ namespace Hecton8.Audio
             subtitles.DisplaySubtitle(unchecked((int)hash), fallback.AsSpan(), duration);
         }
 
-        private bool TryResolveClip(byte warningId, out AudioClip clip)
+        private bool ShouldUseRadioDegradation(ref VwsVaultViews views, byte warningId)
         {
-            clip = null;
-            AudioClip[] clips = _activeWarningClips;
-            if (clips == null || warningId >= clips.Length)
-                return false;
-
-            clip = clips[warningId];
-            return clip != null;
-        }
-
-        private void SelectActiveClipBundle(GameLanguage language)
-        {
-            _activeWarningClips = defaultWarningClips;
-            if (localizedBundles == null)
-                return;
-
-            for (int i = 0; i < localizedBundles.Length; i++)
-            {
-                if (localizedBundles[i].Language != language || localizedBundles[i].Clips == null)
-                    continue;
-
-                _activeWarningClips = localizedBundles[i].Clips;
-                return;
-            }
-        }
-
-        private GameLanguage ResolveCurrentLanguage()
-        {
-            LocalizationManager localization = _localization;
-            return localization != null ? localization.CurrentLanguage : GameLanguage.English;
-        }
-
-        private bool ShouldUseRadioDegradation(byte warningId)
-        {
-            byte flags = warningId < _warningFlags.Length ? _warningFlags[warningId] : (byte)0;
+            NativeArray<byte> warningFlags = views.WarningFlags;
+            byte flags = warningFlags.IsCreated && warningId < warningFlags.Length ? warningFlags[warningId] : (byte)0;
             if ((flags & VocalWarningSignalFlags.HabitatIntegrityCompromised) == 0)
                 return false;
 
@@ -740,35 +646,43 @@ namespace Hecton8.Audio
                    tier != HectonQualityTier.Unknown;
         }
 
-        private void RemoveQueueHead()
+        private float EstimateWarningDurationSeconds(ref VwsVaultViews views, byte warningId)
+        {
+            NativeArray<float> severities = views.WarningSeverity;
+            float severity = severities.IsCreated && warningId < severities.Length ? severities[warningId] : 0.5f;
+            return math.lerp(1.1f, 2.2f, math.saturate(severity));
+        }
+
+        private void RemoveQueueHead(ref VwsVaultViews views)
         {
             if (_queueCount <= 0)
                 return;
 
-            int last = _queueCount - 1;
-            for (int i = 0; i < last; i++)
-                _vwsQueue[i] = _vwsQueue[i + 1];
+            NativeArray<byte> queue = views.Queue;
+            if (!queue.IsCreated || queue.Length <= 0)
+                return;
 
-            _vwsQueue[last] = 0;
+            int count = math.clamp(_queueCount, 0, math.min(QueueCapacity, queue.Length));
+            if (count <= 0)
+                return;
+
+            int last = count - 1;
+            for (int i = 0; i < last; i++)
+                queue[i] = queue[i + 1];
+
+            queue[last] = 0;
             _queueCount = last;
         }
 
         private void ClearQueuedWarnings()
         {
-            if (_pendingWarningIds.IsCreated)
+            if (TryResolveVwsViews(out VwsVaultViews views))
             {
-                while (_pendingWarningIds.TryDequeue(out _))
-                {
-                }
+                NativeArray<byte> queue = views.Queue;
+                for (int i = 0; i < queue.Length; i++)
+                    queue[i] = 0;
             }
 
-            if (_vwsQueue.IsCreated)
-            {
-                for (int i = 0; i < _vwsQueue.Length; i++)
-                    _vwsQueue[i] = 0;
-            }
-
-            Interlocked.Exchange(ref _pendingNativeCount, 0);
             _queueCount = 0;
         }
 
@@ -805,38 +719,61 @@ namespace Hecton8.Audio
 
         private void WriteTelemetry()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveVwsViews(out VwsVaultViews views))
+                return;
+
+            WriteTelemetry(ref views);
+        }
+
+        private void WriteTelemetry(ref VwsVaultViews views)
+        {
+            NativeArray<VwsTelemetryEntry> telemetryRing = views.TelemetryRing;
+            NativeArray<byte> queue = views.Queue;
+            NativeArray<uint> sourceIds = views.WarningSourceIds;
+            NativeArray<float> severity = views.WarningSeverity;
+            NativeArray<float> cooldowns = views.Cooldowns;
+            if (!telemetryRing.IsCreated || telemetryRing.Length <= 0 || !queue.IsCreated)
                 return;
 
             int cursor = _telemetryCursor;
+            if ((uint)cursor >= (uint)telemetryRing.Length)
+                cursor = 0;
+
             byte flags = 0;
-            for (int i = 0; i < _queueCount; i++)
+            int queueCount = math.clamp(_queueCount, 0, math.min(QueueCapacity, queue.Length));
+            for (int i = 0; i < queueCount; i++)
             {
-                if (NormalizeWarningId(_vwsQueue[i]) == 0)
+                if (NormalizeWarningId(queue[i]) == 0)
                     flags |= 1;
             }
 
             if (flags != 0)
                 Interlocked.Exchange(ref _telemetryDumpRequested, 1);
 
-            _telemetryRing[cursor] = new VwsTelemetryEntry
+            byte current = _currentWarningId;
+            int crush = (int)VocalWarningId.CrushDepth;
+            int hull = (int)VocalWarningId.HullBreach;
+            int oxygen = (int)VocalWarningId.OxygenLow;
+            int radiation = (int)VocalWarningId.Radiation;
+            int power = (int)VocalWarningId.PowerLow;
+            telemetryRing[cursor] = new VwsTelemetryEntry
             {
                 Frame = (uint)math.max(0, Time.frameCount),
-                SourceId = _currentWarningId < _warningSourceIds.Length ? _warningSourceIds[_currentWarningId] : 0u,
-                Severity01 = _currentWarningId < _warningSeverity.Length ? _warningSeverity[_currentWarningId] : 0f,
-                CooldownCrush = _cooldowns[(int)VocalWarningId.CrushDepth],
-                CooldownHull = _cooldowns[(int)VocalWarningId.HullBreach],
-                CooldownOxygen = _cooldowns[(int)VocalWarningId.OxygenLow],
-                CooldownRadiation = _cooldowns[(int)VocalWarningId.Radiation],
-                CooldownPower = _cooldowns[(int)VocalWarningId.PowerLow],
-                CurrentWarningId = _currentWarningId,
-                QueueCount = (byte)math.clamp(_queueCount, 0, QueueCapacity),
-                PendingCount = (byte)math.clamp(Volatile.Read(ref _pendingNativeCount), 0, 255),
+                SourceId = sourceIds.IsCreated && current < sourceIds.Length ? sourceIds[current] : 0u,
+                Severity01 = severity.IsCreated && current < severity.Length ? severity[current] : 0f,
+                CooldownCrush = cooldowns.IsCreated && crush < cooldowns.Length ? cooldowns[crush] : 0f,
+                CooldownHull = cooldowns.IsCreated && hull < cooldowns.Length ? cooldowns[hull] : 0f,
+                CooldownOxygen = cooldowns.IsCreated && oxygen < cooldowns.Length ? cooldowns[oxygen] : 0f,
+                CooldownRadiation = cooldowns.IsCreated && radiation < cooldowns.Length ? cooldowns[radiation] : 0f,
+                CooldownPower = cooldowns.IsCreated && power < cooldowns.Length ? cooldowns[power] : 0f,
+                CurrentWarningId = current,
+                QueueCount = (byte)queueCount,
+                PendingCount = 0,
                 Flags = flags
             };
 
             cursor++;
-            if (cursor >= TelemetryCapacity)
+            if (cursor >= telemetryRing.Length)
                 cursor = 0;
             _telemetryCursor = cursor;
         }
@@ -851,7 +788,7 @@ namespace Hecton8.Audio
 
         private void DumpTelemetryCold()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveVwsViews(out VwsVaultViews views))
                 return;
 
             if (Interlocked.Exchange(ref _telemetryDumped, 1) != 0)
@@ -868,9 +805,10 @@ namespace Hecton8.Audio
                 {
                     writer.Write(TelemetryCapacity);
                     writer.Write(_telemetryCursor);
-                    for (int i = 0; i < _telemetryRing.Length; i++)
+                    NativeArray<VwsTelemetryEntry> telemetryRing = views.TelemetryRing;
+                    for (int i = 0; i < telemetryRing.Length; i++)
                     {
-                        VwsTelemetryEntry entry = _telemetryRing[i];
+                        VwsTelemetryEntry entry = telemetryRing[i];
                         writer.Write(entry.Frame);
                         writer.Write(entry.SourceId);
                         writer.Write(entry.Severity01);

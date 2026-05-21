@@ -60,28 +60,23 @@ namespace Hecton8.EditorTools
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !vault.TryGetBuffer(BufferID.ShinobuSomaticTuning, out NativeArray<SomaticKinematicsTuningData> tuningBuffer) ||
-                !tuningBuffer.IsCreated ||
-                tuningBuffer.Length == 0)
+                !TryReadFirst(vault, BufferID.ShinobuSomaticTuning, out SomaticKinematicsTuningData tuning))
             {
                 EditorGUILayout.LabelField("No SHINOBU kinematic tuning buffer.");
                 DrawComfortTuner(vault);
                 return;
             }
 
-            SomaticKinematicsTuningData tuning = tuningBuffer[0];
             EditorGUI.BeginChangeCheck();
             tuning.BaseDrag = EditorGUILayout.Slider("Base Drag", tuning.BaseDrag, 0.01f, 8.0f);
             tuning.StrokeMultiplier = EditorGUILayout.Slider("Stroke Multiplier", tuning.StrokeMultiplier, 0.1f, 30.0f);
             tuning.SeaglideAcceleration = EditorGUILayout.Slider("Seaglide Acceleration", tuning.SeaglideAcceleration, 0.1f, 40.0f);
             tuning.SurfaceBuoyancy = EditorGUILayout.Slider("Surface Buoyancy", tuning.SurfaceBuoyancy, 0.1f, 40.0f);
             if (EditorGUI.EndChangeCheck())
-                tuningBuffer[0] = tuning;
+                TryWriteFirst(vault, BufferID.ShinobuSomaticTuning, tuning);
 
-            if (vault.TryGetBuffer(BufferID.ShinobuSomaticBlackBoxCursor, out NativeArray<int> cursor) &&
-                vault.TryGetBuffer(BufferID.ShinobuSomaticBlackBox, out NativeArray<SomaticKinematicBlackBoxEntry> ring) &&
-                cursor.IsCreated &&
-                ring.IsCreated &&
+            if (TryReadExistingVaultView(vault, BufferID.ShinobuSomaticBlackBoxCursor, out NativeArray<int> cursor) &&
+                TryReadExistingVaultView(vault, BufferID.ShinobuSomaticBlackBox, out NativeArray<SomaticKinematicBlackBoxEntry> ring) &&
                 cursor.Length > 0 &&
                 ring.Length > 0)
             {
@@ -100,10 +95,8 @@ namespace Hecton8.EditorTools
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !vault.TryGetBuffer(BufferID.ShinobuSomaticBlackBoxCursor, out NativeArray<int> cursor) ||
-                !vault.TryGetBuffer(BufferID.ShinobuSomaticBlackBox, out NativeArray<SomaticKinematicBlackBoxEntry> ring) ||
-                !cursor.IsCreated ||
-                !ring.IsCreated ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuSomaticBlackBoxCursor, out NativeArray<int> cursor) ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuSomaticBlackBox, out NativeArray<SomaticKinematicBlackBoxEntry> ring) ||
                 cursor.Length == 0 ||
                 ring.Length == 0)
             {
@@ -130,11 +123,8 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            if (vault.TryGetBuffer(BufferID.ShinobuVRSomaticProfile, out NativeArray<VrComfortProfileDTO> profiles) &&
-                profiles.IsCreated &&
-                profiles.Length > 0)
+            if (TryReadFirst(vault, BufferID.ShinobuVRSomaticProfile, out VrComfortProfileDTO profile))
             {
-                VrComfortProfileDTO profile = profiles[0];
                 EditorGUI.BeginChangeCheck();
                 profile.UserComfortWeight01 = EditorGUILayout.Slider("Comfort Weight", profile.UserComfortWeight01, 0f, 1f);
                 profile.FovAggressiveness = EditorGUILayout.Slider("Tunneling Aggressiveness", profile.FovAggressiveness, 0f, 2f);
@@ -142,28 +132,24 @@ namespace Hecton8.EditorTools
                 profile.FoveatedBaseline = EditorGUILayout.Slider("Foveated Baseline", profile.FoveatedBaseline, 0f, 0.5f);
                 profile.EwmaSharpness = EditorGUILayout.Slider("EWMA Sharpness", profile.EwmaSharpness, 0.1f, 40f);
                 if (EditorGUI.EndChangeCheck())
-                    profiles[0] = profile;
+                    TryWriteFirst(vault, BufferID.ShinobuVRSomaticProfile, profile);
 
                 if (GUILayout.Button("Import vr_comfort_profiles.csv"))
-                    ImportComfortCsv(vault, profiles);
+                    ImportComfortCsv(vault);
             }
             else
             {
                 EditorGUILayout.LabelField("No VR comfort profile buffer.");
             }
 
-            if (vault.TryGetBuffer(BufferID.ShinobuVRSomaticComfortRead, out NativeArray<SomaticComfortStateDTO> stateBuffer) &&
-                stateBuffer.IsCreated &&
-                stateBuffer.Length > 0)
+            if (TryReadFirst(vault, BufferID.ShinobuVRSomaticComfortRead, out SomaticComfortStateDTO state))
             {
-                SomaticComfortStateDTO state = stateBuffer[0];
                 EditorGUILayout.FloatField("FOV Tunnel", state.FovTunnelingIntensity);
                 EditorGUILayout.FloatField("Horizon Lock", state.HorizonLockBlend);
                 EditorGUILayout.FloatField("Foveated Scale", state.FoveatedScaleMultiplier);
             }
 
-            if (vault.TryGetBuffer(BufferID.ShinobuVRSomaticComfortTelemetry, out NativeArray<ComfortTelemetryEntry> telemetry) &&
-                telemetry.IsCreated &&
+            if (TryReadExistingVaultView(vault, BufferID.ShinobuVRSomaticComfortTelemetry, out NativeArray<ComfortTelemetryEntry> telemetry) &&
                 telemetry.Length > 1)
             {
                 Rect rect = GUILayoutUtility.GetRect(320f, 96f, GUILayout.ExpandWidth(true));
@@ -171,31 +157,55 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static unsafe void ImportComfortCsv(IDataVault vault, NativeArray<VrComfortProfileDTO> profiles)
+        private static unsafe void ImportComfortCsv(IDataVault vault)
         {
+            VaultGenerationHandle<byte> scratchHandle = default;
+            VaultGenerationHandle<VrComfortProfileDTO> profilesHandle = default;
+            VaultGenerationHandle<VrComfortProfileLookupSlotDTO> lookupHandle = default;
+            bool scratchLocked = false;
+            bool profilesLocked = false;
+            bool lookupLocked = false;
             if (vault == null ||
-                !profiles.IsCreated ||
-                profiles.Length == 0 ||
                 !File.Exists(ComfortCsvPath) ||
-                !vault.TryGetBuffer(BufferID.ShinobuVRSomaticCsvScratch, out NativeArray<byte> scratch) ||
-                !scratch.IsCreated ||
-                scratch.Length == 0)
-                return;
-
-            int byteCount = ReadFileIntoScratch(ComfortCsvPath, scratch);
-            if (byteCount <= 0)
-                return;
-
-            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-            ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(source, byteCount);
-            if (vault.TryGetBuffer(BufferID.ShinobuVRSomaticProfileLookup, out NativeArray<VrComfortProfileLookupSlotDTO> lookup) &&
-                lookup.IsCreated)
+                !TryAcquireEditorWriteView(vault, BufferID.ShinobuVRSomaticCsvScratch, out scratchHandle, out NativeArray<byte> scratch))
             {
-                VRSomaticProvider.ParseComfortProfilesCsv(csv, profiles, lookup);
                 return;
             }
 
-            VRSomaticProvider.ParseComfortProfilesCsv(csv, profiles);
+            scratchLocked = true;
+            try
+            {
+                int byteCount = ReadFileIntoScratch(ComfortCsvPath, scratch);
+                if (byteCount <= 0)
+                    return;
+
+                if (!TryAcquireEditorWriteView(vault, BufferID.ShinobuVRSomaticProfile, out profilesHandle, out NativeArray<VrComfortProfileDTO> profiles) ||
+                    profiles.Length == 0)
+                {
+                    return;
+                }
+
+                profilesLocked = true;
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
+                ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(source, byteCount);
+                if (TryAcquireEditorWriteView(vault, BufferID.ShinobuVRSomaticProfileLookup, out lookupHandle, out NativeArray<VrComfortProfileLookupSlotDTO> lookup))
+                {
+                    lookupLocked = true;
+                    VRSomaticProvider.ParseComfortProfilesCsv(csv, profiles, lookup);
+                    return;
+                }
+
+                VRSomaticProvider.ParseComfortProfilesCsv(csv, profiles);
+            }
+            finally
+            {
+                if (lookupLocked)
+                    vault.ReleaseWriteLock(in lookupHandle, SystemID.CoreDiagnostics);
+                if (profilesLocked)
+                    vault.ReleaseWriteLock(in profilesHandle, SystemID.CoreDiagnostics);
+                if (scratchLocked)
+                    vault.ReleaseWriteLock(in scratchHandle, SystemID.CoreDiagnostics);
+            }
         }
 
         private static unsafe int ReadFileIntoScratch(string path, NativeArray<byte> scratch)
@@ -259,6 +269,62 @@ namespace Hecton8.EditorTools
                     : Mathf.Clamp01(entry.FovTunnelingIntensity);
                 s_graphPoints[i] = new Vector3(rect.x + (step * i), rect.yMax - (value * rect.height), 0f);
             }
+        }
+
+        private static bool TryReadFirst<T>(IDataVault vault, BufferID bufferId, out T value)
+            where T : struct
+        {
+            value = default;
+            if (!TryReadExistingVaultView(vault, bufferId, out NativeArray<T> buffer) || buffer.Length == 0)
+                return false;
+
+            value = buffer[0];
+            return true;
+        }
+
+        private static bool TryWriteFirst<T>(IDataVault vault, BufferID bufferId, in T value)
+            where T : struct
+        {
+            if (!TryAcquireEditorWriteView(vault, bufferId, out VaultGenerationHandle<T> handle, out NativeArray<T> buffer))
+                return false;
+
+            try
+            {
+                if (buffer.Length == 0)
+                    return false;
+
+                buffer[0] = value;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
+        }
+
+        private static bool TryReadExistingVaultView<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool TryAcquireEditorWriteView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            handle = default;
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out handle) &&
+                   vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer) &&
+                   buffer.IsCreated;
         }
 
         private static int PositiveModulo(int value, int length)

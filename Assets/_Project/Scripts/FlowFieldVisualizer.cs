@@ -258,7 +258,7 @@ namespace Hecton8.Physics
         private uint _calculationShiftSequence;
         private readonly List<CurrentVolume> _volumeScratch = new List<CurrentVolume>(SelectedVolumeCapacity); // COLD ALLOC: List<CurrentVolume>[32] — current-volume job-data gather scratch — owner: FlowFieldVisualizer
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CurrentVolumeJobData
         {
             public int Shape; // 0 = box, 1 = sphere
@@ -498,29 +498,29 @@ namespace Hecton8.Physics
         //  VISUALIZATION LOGIC
         // ══════════════════════════════════════════════════════════
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct FlowSamplingJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float3> SamplePositions;
-            public NativeArray<float3> FlowVectors;
-            [ReadOnly] public NativeArray<CurrentVolumeJobData> VolumeData;
+            [ReadOnly, NoAlias] public NativeArray<float3> SamplePositions;
+            [NoAlias] public NativeArray<float3> FlowVectors;
+            [ReadOnly, NoAlias] public NativeArray<CurrentVolumeJobData> VolumeData;
             public int VolumeCount;
-            public bool ShowGlobalCurrent;
+            public byte ShowGlobalCurrent;
             public float Time;
             public float NoiseScale;
             public float TimeScale;
             public float Strength;
             public float VerticalFactor;
-            public bool ShowLocalCurrents;
+            public byte ShowLocalCurrents;
 
             public void Execute(int index)
             {
                 float3 pos = SamplePositions[index];
-                float3 flow = ShowGlobalCurrent
+                float3 flow = ShowGlobalCurrent != 0
                     ? CurrentManager.SampleCurrent(pos, Time, NoiseScale, TimeScale, Strength, VerticalFactor)
                     : float3.zero;
 
-                if (ShowLocalCurrents && VolumeCount > 0)
+                if (ShowLocalCurrents != 0 && VolumeCount > 0)
                 {
                     for (int v = 0; v < VolumeCount; v++)
                     {
@@ -651,7 +651,7 @@ namespace Hecton8.Physics
             }
             if (!_nativeSamplePositions.IsCreated)
             {
-                _nativeSamplePositions = new NativeArray<float3>(totalPoints, allocator);
+                _nativeSamplePositions = new NativeArray<float3>(totalPoints, allocator, NativeArrayOptions.ClearMemory);
                 NativeMemorySentinel.RegisterNativeArray(
                     _nativeSamplePositions,
                     nameof(FlowFieldVisualizer),
@@ -666,7 +666,7 @@ namespace Hecton8.Physics
             }
             if (!_nativeFlowResults.IsCreated)
             {
-                _nativeFlowResults = new NativeArray<float3>(totalPoints, allocator);
+                _nativeFlowResults = new NativeArray<float3>(totalPoints, allocator, NativeArrayOptions.ClearMemory);
                 NativeMemorySentinel.RegisterNativeArray(
                     _nativeFlowResults,
                     nameof(FlowFieldVisualizer),
@@ -842,13 +842,13 @@ namespace Hecton8.Physics
                 FlowVectors = _nativeFlowResults,
                 VolumeData = _nativeVolumeData,
                 VolumeCount = _nativeVolumeData.IsCreated ? _nativeVolumeData.Length : 0,
-                ShowGlobalCurrent = includeGlobalCurrent,
+                ShowGlobalCurrent = includeGlobalCurrent ? (byte)1 : (byte)0,
                 Time = Time.realtimeSinceStartup,
                 NoiseScale = includeGlobalCurrent ? engine.CurrentNoiseScale : 0f,
                 TimeScale = includeGlobalCurrent ? engine.CurrentTimeScale : 0f,
                 Strength = includeGlobalCurrent ? engine.PhantomCurrentStrength : 0f,
                 VerticalFactor = includeGlobalCurrent ? engine.CurrentVerticalFactor : 0f,
-                ShowLocalCurrents = showLocalCurrents
+                ShowLocalCurrents = showLocalCurrents ? (byte)1 : (byte)0
             };
 
             _calculationJobHandle = job.Schedule(totalPoints, Mathf.Max(1, totalPoints / 8));
@@ -936,8 +936,8 @@ namespace Hecton8.Physics
                     HectonFluidEngine engine = GlobalRegistry.Fluid;
                     bool includeGlobalCurrent = showGlobalCurrent && engine != null;
 
-                    var positions = new NativeArray<float3>(totalPoints, Allocator.TempJob);
-                    var flowResults = new NativeArray<float3>(totalPoints, Allocator.TempJob);
+                    var positions = new NativeArray<float3>(totalPoints, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                    var flowResults = new NativeArray<float3>(totalPoints, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                     var volumeData = BuildVolumeJobData(Allocator.TempJob);
                     NativeMemorySentinel.RegisterNativeArray(positions, nameof(FlowFieldVisualizer), "syncPositions", NativeTempJobLifetime);
                     NativeMemorySentinel.RegisterNativeArray(flowResults, nameof(FlowFieldVisualizer), "syncFlowResults", NativeTempJobLifetime);
@@ -957,13 +957,13 @@ namespace Hecton8.Physics
                             FlowVectors = flowResults,
                             VolumeData = volumeData,
                             VolumeCount = volumeData.IsCreated ? volumeData.Length : 0,
-                            ShowGlobalCurrent = includeGlobalCurrent,
+                            ShowGlobalCurrent = includeGlobalCurrent ? (byte)1 : (byte)0,
                             Time = Time.realtimeSinceStartup,
                             NoiseScale = includeGlobalCurrent ? engine.CurrentNoiseScale : 0f,
                             TimeScale = includeGlobalCurrent ? engine.CurrentTimeScale : 0f,
                             Strength = includeGlobalCurrent ? engine.PhantomCurrentStrength : 0f,
                             VerticalFactor = includeGlobalCurrent ? engine.CurrentVerticalFactor : 0f,
-                            ShowLocalCurrents = showLocalCurrents
+                            ShowLocalCurrents = showLocalCurrents ? (byte)1 : (byte)0
                         };
 
                         for (int i = 0; i < totalPoints; i++)
@@ -1118,7 +1118,7 @@ namespace Hecton8.Physics
             if (_volumeScratch.Count <= 0)
                 return default;
 
-            var volumeData = new NativeArray<CurrentVolumeJobData>(_volumeScratch.Count, allocator);
+            var volumeData = new NativeArray<CurrentVolumeJobData>(_volumeScratch.Count, allocator, NativeArrayOptions.ClearMemory);
 
             for (int i = 0; i < _volumeScratch.Count; i++)
             {

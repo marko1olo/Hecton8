@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Memory;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -18,7 +19,7 @@ namespace Hecton8.Physiology
         public const float MaxAccumulatedDeltaSeconds = 6f;
         public const uint SourceHash = 0x53483135u; // SH15
 
-        public const int MetabolismStateSizeBytes = 32;
+        public const int MetabolismStateSizeBytes = ShinobuMetabolismVaultContract.MetabolicStateSizeBytes;
         public const int SpeciesRuleSizeBytes = 64;
         public const int TuningSizeBytes = 64;
         public const int TelemetrySizeBytes = 64;
@@ -31,7 +32,7 @@ namespace Hecton8.Physiology
         public const int ChemicalGridCellCount = ChemicalGridAxisX * ChemicalGridAxisY * ChemicalGridAxisZ;
         public const float ChemicalDefaultCellSizeMeters = 8f;
 
-        public const BufferID MetabolismStatesBuffer = (BufferID)70265;
+        public const BufferID MetabolismStatesBuffer = (BufferID)ShinobuMetabolismVaultContract.MetabolismStatesBufferId;
         public const BufferID MetabolismEntityAupsBuffer = (BufferID)70266;
         public const BufferID MetabolismExertionBuffer = (BufferID)70267;
         public const BufferID MetabolismSpeciesRulesBuffer = (BufferID)70268;
@@ -56,29 +57,16 @@ namespace Hecton8.Physiology
 
     public static class ShinobuMetabolismFlags
     {
-        public const uint Starving = 1u << 0;
-        public const uint Dehydrated = 1u << 1;
-        public const uint Hypothermia = 1u << 2;
-        public const uint Toxic = 1u << 3;
-        public const uint InvalidMath = 1u << 4;
-        public const uint MockEntity = 1u << 5;
+        public const uint Starving = ShinobuMetabolismVaultContract.FlagStarving;
+        public const uint Dehydrated = ShinobuMetabolismVaultContract.FlagDehydrated;
+        public const uint Hypothermia = ShinobuMetabolismVaultContract.FlagHypothermia;
+        public const uint Toxic = ShinobuMetabolismVaultContract.FlagToxic;
+        public const uint InvalidMath = ShinobuMetabolismVaultContract.FlagInvalidMath;
+        public const uint MockEntity = ShinobuMetabolismVaultContract.FlagMockEntity;
         public const uint ThermalSampled = 1u << 6;
         public const uint CsvProfile = 1u << 7;
         public const uint ChemicalSampled = 1u << 8;
         public const uint NanDetected = 1u << 31;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct MetabolicStateDTO
-    {
-        [FieldOffset(0)] public float Calories;
-        [FieldOffset(4)] public float Hydration;
-        [FieldOffset(8)] public float CoreTemperature;
-        [FieldOffset(12)] public float Toxicity;
-        [FieldOffset(16)] public uint EntityHashID;
-        [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] public uint _pad0;
-        [FieldOffset(28)] public uint _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

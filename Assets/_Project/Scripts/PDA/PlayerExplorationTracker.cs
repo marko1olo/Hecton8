@@ -50,6 +50,7 @@ namespace Hecton8.PDA
         [SerializeField, Min(0.25f)] private float movementSampleDistance = 4f;
         [Tooltip("When enabled, biome changes from MapMagic automatically feed the discovery registry.")]
         [SerializeField] private bool forwardBiomeDiscovery = true;
+        private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
 
         // COLD ALLOC: long[32768] — save DTO word staging for dense Morton exploration mask — owner: PlayerExplorationTracker
         private readonly long[] _saveMaskWordBuffer = new long[MaskWordCount];
@@ -380,7 +381,7 @@ namespace Hecton8.PDA
                      i++)
                 {
                     PersistentWorldDeltaRecord delta = persistentDeltas[i];
-                    if (!delta.IsValid || delta.IsDeleted)
+                    if (!PersistentWorldDeltaRecord.IsValid(in delta) || PersistentWorldDeltaRecord.IsDeleted(in delta))
                         continue;
 
                     AbsoluteUniversePosition position = delta.UnpackPosition(chunkSizeMeters);
@@ -862,7 +863,7 @@ namespace Hecton8.PDA
             // COLD ALLOC: NativeBitArray[2097152 bits / 262144 bytes] — dense Morton exploration mask — owner: PlayerExplorationTracker
             _exploredChunkMask = new NativeBitArray(MaskBitCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeList<int>[ExplorationMapDTO.MaxExploredChunks] — explored bit-index enumeration cache — owner: PlayerExplorationTracker
-            _exploredBitIndices = new NativeList<int>(ExplorationMapDTO.MaxExploredChunks, Allocator.Persistent);
+            _exploredBitIndices = new NativeList<int>(ExplorationMapDTO.MaxExploredChunks, DataVaultExemptSceneScratchAllocator);
             NativeMemorySentinel.RegisterNativeArray(
                 _exploredChunkMask.AsNativeArray<ulong>(),
                 NativeMemoryOwner,
@@ -949,18 +950,40 @@ namespace Hecton8.PDA
                 return false;
             }
 
-            _cartographyUploadPending = false;
+            MarkCartographyUploadJobCompleted();
             packedR8 = buffers.UploadPackedR8;
             return packedR8.IsCreated;
         }
 
         private void CompleteCartographyUploadJobForTeardown()
         {
-            if (!_cartographyUploadPending)
-                return;
+            CompleteCartographyUploadJobBlocking();
+        }
 
-            if (DispatcherJobFence.TryComplete(ref _cartographyUploadHandle, forceComplete: true))
-                _cartographyUploadPending = false;
+        private bool CompleteCartographyUploadJobForStructuralMutation()
+        {
+            return CompleteCartographyUploadJobBlocking();
+        }
+
+        private bool CompleteCartographyUploadJobBlocking()
+        {
+            if (!_cartographyUploadPending)
+                return true;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _cartographyUploadHandle) &&
+                !DispatcherJobFence.TryComplete(ref _cartographyUploadHandle, forceComplete: true))
+            {
+                return false;
+            }
+
+            MarkCartographyUploadJobCompleted();
+            return true;
+        }
+
+        private void MarkCartographyUploadJobCompleted()
+        {
+            _cartographyUploadPending = false;
+            H8Memory.RegisterActiveJob(SystemID.UI, default);
         }
 
         private void ClearDiscoveredSectors()
@@ -968,7 +991,10 @@ namespace Hecton8.PDA
             if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
                 return;
 
-            CompleteCartographyUploadJobForTeardown();
+            // [BLOCKING_SYNC_POINT] Structural mutation of the same Vault buffers must drain the upload writer first.
+            if (!CompleteCartographyUploadJobForStructuralMutation())
+                return;
+
             ExecuteClearCartographyUlongBuffer(buffers.DiscoveryWords);
             ExecuteClearCartographyUlongBuffer(buffers.RollbackSnapshotWords);
             ExecuteClearCartographyUintBuffer(buffers.UploadPackedR8);
@@ -1220,8 +1246,14 @@ namespace Hecton8.PDA
             if (!math.all(math.isfinite(numericPosition)))
                 return false;
 
-            playerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-            return true;
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            playerAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return playerAup.IsFinite();
         }
 
         private bool TryResolveCartographyBuffers(out CartographyVaultBuffers buffers)
@@ -1249,8 +1281,6 @@ namespace Hecton8.PDA
                 return true;
 
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                vault = latestVault;
 
             if (vault == null || !CartographyVault.TryResolve(vault, out _cartographyHandles))
                 return false;
@@ -1269,7 +1299,10 @@ namespace Hecton8.PDA
 
         private void InitializeCartographyVaultBuffers(CartographyVaultBuffers buffers)
         {
-            CompleteCartographyUploadJobForTeardown();
+            // [BLOCKING_SYNC_POINT] Initial buffer clear cannot race the upload writer.
+            if (!CompleteCartographyUploadJobForStructuralMutation())
+                return;
+
             float globalQualityWeight = ResolveHomeostasisQualityWeight();
             ExecuteClearCartographyUlongBuffer(buffers.DiscoveryWords);
             ExecuteClearCartographyUlongBuffer(buffers.SurfaceMaskWords);
@@ -1508,7 +1541,7 @@ namespace Hecton8.PDA
                      i++)
                 {
                     PersistentWorldDeltaRecord delta = persistentDeltas[i];
-                    if (!delta.IsValid || delta.IsDeleted)
+                    if (!PersistentWorldDeltaRecord.IsValid(in delta) || PersistentWorldDeltaRecord.IsDeleted(in delta))
                         continue;
 
                     AbsoluteUniversePosition position = delta.UnpackPosition(chunkSizeMeters);

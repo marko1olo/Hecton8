@@ -7,11 +7,11 @@ using UnityEngine.UIElements;
 
 namespace Hecton8.Editor
 {
-    public sealed unsafe class SubmarineOsTunerWindow : EditorWindow
+    public sealed class SubmarineOsTunerWindow : EditorWindow
     {
         private Label _status;
         private SubmarineOsThermalGridRuntime _runtime;
-        private SubmarineThermalGridTuningDTO* _tuning;
+        private SubmarineThermalGridTuningDTO _tuning;
         private bool _ownsRuntime;
 
         [MenuItem("Hecton8/Submarine/Submarine OS Tuner")]
@@ -28,13 +28,13 @@ namespace Hecton8.Editor
             _status = new Label("Vault unavailable");
             rootVisualElement.Add(_status);
 
-            AddSlider("Base Resistance", 0.001f, 1f, value => _tuning->BaseResistance = value, () => _tuning->BaseResistance);
-            AddSlider("Thermal Dissipation Rate", 0f, 2f, value => _tuning->ThermalDissipationRate = value, () => _tuning->ThermalDissipationRate);
-            AddSlider("Jacobi Tolerance", 0.0001f, 0.05f, value => _tuning->JacobiTolerance = value, () => _tuning->JacobiTolerance);
-            AddSlider("Damage Threshold", 0.05f, 4f, value => _tuning->DamageThreshold = value, () => _tuning->DamageThreshold);
-            AddSlider("Critical Threshold", 0.1f, 8f, value => _tuning->CriticalThermalThreshold = value, () => _tuning->CriticalThermalThreshold);
-            AddSlider("External Heat Scale", 0f, 2f, value => _tuning->ExternalHeatScale = value, () => _tuning->ExternalHeatScale);
-            AddSlider("Visual Overkill", 0f, 1f, value => _tuning->VisualOverkillScalar = value, () => _tuning->VisualOverkillScalar);
+            AddSlider("Base Resistance", 0.001f, 1f, value => _tuning.BaseResistance = value, () => _tuning.BaseResistance);
+            AddSlider("Thermal Dissipation Rate", 0f, 2f, value => _tuning.ThermalDissipationRate = value, () => _tuning.ThermalDissipationRate);
+            AddSlider("Jacobi Tolerance", 0.0001f, 0.05f, value => _tuning.JacobiTolerance = value, () => _tuning.JacobiTolerance);
+            AddSlider("Damage Threshold", 0.05f, 4f, value => _tuning.DamageThreshold = value, () => _tuning.DamageThreshold);
+            AddSlider("Critical Threshold", 0.1f, 8f, value => _tuning.CriticalThermalThreshold = value, () => _tuning.CriticalThermalThreshold);
+            AddSlider("External Heat Scale", 0f, 2f, value => _tuning.ExternalHeatScale = value, () => _tuning.ExternalHeatScale);
+            AddSlider("Visual Overkill", 0f, 1f, value => _tuning.VisualOverkillScalar = value, () => _tuning.VisualOverkillScalar);
 
             Button reloadCsv = new Button(ReloadCsv) { text = "Reload submarine_grid_specs.csv" };
             rootVisualElement.Add(reloadCsv);
@@ -53,7 +53,7 @@ namespace Hecton8.Editor
 
             _runtime?.Dispose();
             _runtime = null;
-            _tuning = null;
+            _tuning = default;
             _ownsRuntime = false;
         }
 
@@ -73,7 +73,7 @@ namespace Hecton8.Editor
                 _ownsRuntime = true;
             }
 
-            if (!_runtime.EnsureInitialized() || !_runtime.TryGetTuningPointer(out _tuning) || _tuning == null)
+            if (!_runtime.EnsureInitialized() || !_runtime.TryReadTuning(out _tuning))
             {
                 _status.text = "GlobalDataVault unavailable";
                 SetControlsEnabled(false);
@@ -91,9 +91,10 @@ namespace Hecton8.Editor
             slider.userData = getter;
             slider.RegisterValueChangedCallback(evt =>
             {
-                if (_tuning == null)
+                if (_runtime == null)
                     return;
                 setter(evt.newValue);
+                _runtime.TryApplyTuning(in _tuning);
             });
             rootVisualElement.Add(slider);
         }
@@ -121,7 +122,7 @@ namespace Hecton8.Editor
         private void ReloadCsv()
         {
             RefreshRuntime();
-            if (_runtime == null || _tuning == null)
+            if (_runtime == null)
                 return;
 
             string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
@@ -131,6 +132,7 @@ namespace Hecton8.Editor
 
             bool loaded = _runtime.TryLoadCsvFromFile(path);
             _status.text = loaded ? "CSV loaded into Vault specs" : "CSV not loaded";
+            _runtime.TryReadTuning(out _tuning);
             RefreshSliders();
         }
     }

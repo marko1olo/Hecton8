@@ -1,0 +1,55 @@
+<SELF_AUDIT agent_id="SHINOBU_260" domain="CREST_VERSION_QUARANTINE_DIRECTOR" date="2026-05-21">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS">Crest 4/5 roots zipped to gitignored Docs archive.</TASK>
+    <TASK id="02" result="PASS">Crest 5 package and Crest 5 first-party tools moved outside Unity visibility; package lock cleaned.</TASK>
+    <TASK id="03" result="PASS">Crest references confined to Hecton8.Crest.Bridge assemblies; scanner breach_count=0.</TASK>
+    <TASK id="04" result="PASS">Strict Environment.Fluids contract added with explicit raw DTO fields and NativeArray submission.</TASK>
+    <TASK id="05" result="PASS">Burst emergency mock adapter added and converted to value type in polish loop.</TASK>
+    <TASK id="06" result="PASS">CrestOceanRuntimeAdapter added in Hecton8.Crest.Bridge; hot submission path uses cached binding/fallback AUP only. Base CrestBridge no longer polls OceanRenderer/UnderwaterRenderer singletons. Legacy Crest4 resolver no longer repairs bindings through TryGetComponent or logs.</TASK>
+    <TASK id="07" result="PASS">Submission returns JobHandle and never blocks with Complete.</TASK>
+    <TASK id="08" result="PASS">Results explicitly encode delayed Dear Lie water samples.</TASK>
+    <TASK id="09" result="PASS">AUP double3 subtraction occurs before local float3 math.</TASK>
+    <TASK id="10" result="PASS">Sample budget is continuous via smoothstep/lerp GlobalQualityWeight.</TASK>
+    <TASK id="11" result="PASS">Global water-level DTO route added to SHINOBU_260 local Vault lane 72964.</TASK>
+    <TASK id="12" result="BLOCKED_BY_DEPENDENCY">Full Crest OnEnable/Start suppression requires vendor-source lifecycle patch, not quarantine wall work.</TASK>
+    <TASK id="13" result="PASS">Wave request/result buffers remain presentation vault lanes, not rollback truth lanes.</TASK>
+    <TASK id="14" result="PASS">Vault request/result/telemetry/profile/csv lanes use UninitializedMemory.</TASK>
+    <TASK id="15" result="PASS">64-byte telemetry DTO and 300-entry vault recording route added.</TASK>
+    <TASK id="16" result="PASS">Bridge editor X-Ray window added.</TASK>
+    <TASK id="17" result="PASS">ReadOnlySpan byte CSV parser added with FNV-1a hashes.</TASK>
+    <TASK id="18" result="PASS">Scene gizmo reads diagnostic ocean vault samples, subtracts floating origin before Vector3 cast, and colors result states.</TASK>
+    <TASK id="19" result="PASS">Crest_Dependency_Scanner emits JSON proof.</TASK>
+    <TASK id="20" result="PASS_WITH_BUILD_GATE">Self-audit written; dotnet/Unity compile skipped because CPU sampled at 100.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION route="strict Hecton8.Environment.Fluids.Contracts only; legacy Crest OceanKinematics DTO names are separate migration debt">
+    <OceanSampleRequestDTO size="32">
+      <field name="RequestAUP" offset="0" size="24"/>
+      <field name="CallerHashID" offset="24" size="4"/>
+      <field name="_pad0" offset="28" size="4"/>
+    </OceanSampleRequestDTO>
+    <OceanSampleResultDTO size="64">
+      <field name="SourceAUP" offset="0" size="24"/>
+      <field name="WaterHeight" offset="24" size="4"/>
+      <field name="SurfaceVelocity" offset="28" size="12"/>
+      <field name="WaveNormal" offset="40" size="12"/>
+      <field name="LatencyMilliseconds" offset="52" size="4"/>
+      <field name="StatusFlags" offset="56" size="4"/>
+      <field name="_pad0" offset="60" size="4"/>
+    </OceanSampleResultDTO>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>GlobalQualityWeight flows through smoothstep and lerp budget curves. Low weight collapses overflow samples to a single sine approximation; middle weight keeps bounded delayed samples; high/ultra weight increases processed budget and detail terms without changing DTO layout or authority route.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Requests=(BufferID)72960; Results=(BufferID)72961; Telemetry=(BufferID)72962; Profiles=(BufferID)72963; WaterLevel=(BufferID)72964; CsvScratch=(BufferID)72965. Shared Atmosphere ShinobuOcean lanes were rejected after type-collision audit.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>NoAlias is applied to request/result NativeArray fields in Burst jobs. Input JobHandle is returned as scheduled output; no hidden Complete calls.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>Hecton8.Core, Hecton8.Plugins, Hecton8.Editor, and Hecton8.Project.Editor have no Crest/WaveHarmonic references. Only Hecton8.Crest.Bridge assemblies reference Crest.</COMPILE_GUARD>
+  <POLISH_STATIC_AUDIT report="Docs/Reports/CREST_QUARANTINE_POLISH_AUDIT.json" failed_count="0">Validated value-type fallback, local Vault IDs 72960..72965, byte-only CSV header parsing, localized AUP gizmo, no hot component lookup in the new runtime adapter, no base bridge Crest singleton polling, cache-only underwater Has/Try reads, no depth-cache OceanRenderer singleton fallback, no HectonUnderwaterVisuals Crest reflection fallback, no legacy Crest4 binding repair through ResolveOceanRenderer, no legacy read-path logging or GlobalRegistry fallback, no Transform.position AUP reconstruction in the strict route, no EasySave3 bridge editor reference.</POLISH_STATIC_AUDIT>
+  <POLISH_LOOP_8 dependency_breach_count="0" dependency_allowed_hit_count="28" rebuild="SKIPPED_CPU_100_PERCENT">`CrestBridge` now reads a concrete adapter's cold-bound renderer. Legacy weather/sea-level/flow/collision reads use cached fields and do not mutate diagnostic log flags. Python polish/dependency validators and py_compile passed; Unity/dotnet compile remains CPU-gated.</POLISH_LOOP_8>
+  <POLISH_LOOP_9 dependency_breach_count="0" dependency_allowed_hit_count="23" reflection_string_hit_count="4" rebuild="SKIPPED_CPU_GATE">Underwater read helpers became cache-only; TryBuildBurstTuning uses cached renderer and no registry fallback; depth-cache bootstrap no longer falls back to Crest.OceanRenderer.Instance; scanner now exposes non-failing Crest reflection strings outside the bridge.</POLISH_LOOP_9>
+  <POLISH_LOOP_10 dependency_breach_count="0" dependency_allowed_hit_count="23" reflection_string_hit_count="0" rebuild="SKIPPED_CPU_90_9_PERCENT">Removed HectonUnderwaterVisuals Crest type-name reflection fallbacks. Runtime/presentation Crest access outside the bridge now routes through IOceanVisualBridge, and scanner proof no longer carries runtime reflection debt.</POLISH_LOOP_10>
+  <POLISH_LOOP_11 dependency_breach_count="0" dependency_allowed_hit_count="23" reflection_string_hit_count="0" rebuild="SKIPPED_CPU_GATE">Moved Crest forensic debuggers under the bridge folder; removed the Crest5 adapter component GUID/fileID from Ocean_Crest.prefab; made IOceanVisualBridge and HectonUnderwaterVisuals use underwater-pass vocabulary; routed dry-volume camera color texture lookup through bridge.CameraColorTextureId; renamed HectonCrestOceanKinematics to HectonOceanKinematicsBridgeBase while preserving its meta GUID. Remaining Player/World Crest-named serialized fields are documented ABI debt, not direct assembly references.</POLISH_LOOP_11>
+  <POLISH_LOOP_12 dependency_breach_count="0" dependency_allowed_hit_count="23" reflection_string_hit_count="0" vocabulary_debt_hit_count="111" rebuild="SKIPPED_CPU_GATE">Low-risk non-bridge comments/tooltips now use ocean/ocean-donor vocabulary. Crest_Dependency_Scanner reports vocabulary_debt_hits separately from hard compile-wall breaches, keeping Player/World serialized ABI debt visible without falsely failing the asmdef wall.</POLISH_LOOP_12>
+  <POLISH_LOOP_13 dependency_breach_count="0" dependency_allowed_hit_count="40" reflection_string_hit_count="0" vocabulary_debt_hit_count="111" active_asset_breach_count="0" polish_failed_count="0" rebuild="SKIPPED_BY_INSTRUCTION_AND_GATE">Moved Crest5 WaveHarmonic settings assets and binary Crest5 sandbox scene outside Unity visibility. Moved Crest-specific sargassum input shaders under the Crest bridge shader folder with metas preserved. Removed direct Crest.UnderwaterRenderer fileID 9079297290110143596 and script GUID 1b0c0a69611596146aceb2f60532940c from Player.prefab. Expanded scanner/audit coverage to active asset, prefab, scene, material, shader, hlsl, and compute surfaces; exact scans show no active Crest5/WaveHarmonic/UnderwaterRenderer serialized hits and only bridge-owned Crest shader references.</POLISH_LOOP_13>
+  <POLISH_LOOP_14 dependency_breach_count="0" dependency_allowed_hit_count="40" reflection_string_hit_count="0" vocabulary_debt_hit_count="111" active_serialized_breach_count="0" polish_failed_count="0" recovery_payload_bytes="1198791785" rebuild="SKIPPED_BY_INSTRUCTION_AND_GATE">Removed Crest/WaveHarmonic assembly names from Easy Save defaults and root InitTestScene TestRunner lists. Moved active Unity-visible Assets/_Recovery plus meta to Docs/Archive/Crest_Version_Quarantine/Assets/_Recovery after binary recovery scenes exposed direct Crest.UnderwaterRenderer and Crest5KinematicsAdapter strings. Scanner now covers Assets, ProjectSettings, and Packages serialized text, catches bare '- Crest' assembly entries, and hard-fails active Packages/com.waveharmonic.crest visibility. Broad serialized exact scan is clean outside allowed donor/bridge paths.</POLISH_LOOP_14>
+  <POLISH_LOOP_15 dependency_breach_count="0" scanner_seconds_before="261.978" scanner_seconds_after="35.51" rebuild="SKIPPED_TOOLING_ONLY">Crest_Dependency_Scanner active serialized search now uses rg --json over Assets, ProjectSettings, and Packages, with Python fallback retained. Python fallback reads bounded prefixes instead of whole Unity asset files. Full scanner proof remains breach_count=0 while saving roughly 226 seconds per full run on this workspace.</POLISH_LOOP_15>
+  <BUFFER_ID_AUDIT report="Docs/Reports/SHINOBU_260_BufferIDSovereigntyAudit.json" duplicate_value_count="3">Global duplicates are unrelated `H8Memory.cs` values 70534..70536. Local numeric casts 72960..72965 are recorded only in OceanAdapterVaultRoute.cs.</BUFFER_ID_AUDIT>
+  <DEAR_LIE_CONFIRMATION before="synchronous Crest/GPU wave truth readback" after="delayed deterministic sine/deferred approximation" complexity_before="O(Crest readback stall + query count)" complexity_after="O(query count) scheduled Burst job, no main-thread stall"/>
+</SELF_AUDIT>

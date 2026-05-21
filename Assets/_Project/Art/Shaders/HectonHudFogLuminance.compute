@@ -6,7 +6,7 @@ RWTexture2D<float> _HectonHudFogLuminanceOutput;
 
 float4 _HectonHudFogLuminanceParams;
 
-groupshared float s_HudLuminance[256];
+groupshared float s_HudLuminance[64];
 
 float SampleHudLuminance(float2 uv)
 {
@@ -18,11 +18,11 @@ float SampleHudLuminance(float2 uv)
     return dot(rgb, float3(0.2126, 0.7152, 0.0722));
 }
 
-[numthreads(16, 16, 1)]
+[numthreads(8, 8, 1)]
 void ResolveHudFogLuminance(uint3 groupThreadId : SV_GroupThreadID)
 {
-    uint localIndex = groupThreadId.y * 16u + groupThreadId.x;
-    float2 sampleCell = (float2(groupThreadId.xy) + 0.5) * (1.0 / 16.0);
+    uint localIndex = groupThreadId.y * 8u + groupThreadId.x;
+    float2 sampleCell = (float2(groupThreadId.xy) + 0.5) * (1.0 / 8.0);
     float2 pixelOffset = _HectonHudFogLuminanceParams.zw * 0.75;
 
     float luminance =
@@ -35,7 +35,7 @@ void ResolveHudFogLuminance(uint3 groupThreadId : SV_GroupThreadID)
     GroupMemoryBarrierWithGroupSync();
 
     [unroll]
-    for (uint stride = 128u; stride > 0u; stride >>= 1u)
+    for (uint stride = 32u; stride > 0u; stride >>= 1u)
     {
         if (localIndex < stride)
             s_HudLuminance[localIndex] += s_HudLuminance[localIndex + stride];
@@ -44,5 +44,5 @@ void ResolveHudFogLuminance(uint3 groupThreadId : SV_GroupThreadID)
     }
 
     if (localIndex == 0u)
-        _HectonHudFogLuminanceOutput[uint2(0u, 0u)] = saturate(s_HudLuminance[0] * (1.0 / 256.0));
+        _HectonHudFogLuminanceOutput[uint2(0u, 0u)] = saturate(s_HudLuminance[0] * (1.0 / 64.0));
 }

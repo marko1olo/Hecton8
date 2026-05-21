@@ -129,6 +129,9 @@ namespace Hecton8.World
         private const float BrownoutFlickerFrequency = 47.3f;
         private const float BrownoutBiasPadeK = 0.32f;
         private const float TwoPi = 6.28318530718f;
+        private const Allocator DataVaultExemptProxyLightDataAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptProxyLightIndexAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptProxyLightFreeSlotAllocator = Allocator.Persistent;
 
         private static NativeParallelHashMap<int, ProxyLightData> _lightsByKey;
         private static NativeParallelHashMap<int, int> _slotByKey;
@@ -157,10 +160,10 @@ namespace Hecton8.World
                 return;
 
             Shutdown();
-            _lightsByKey = new NativeParallelHashMap<int, ProxyLightData>(MaxProxyLights, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<int,ProxyLightData>[128] - proxy light registry storage - owner: ProxyLightRegistry
-            _slotByKey = new NativeParallelHashMap<int, int>(MaxProxyLights, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<int,int>[128] - proxy light key-to-slot recycling map - owner: ProxyLightRegistry
-            _keys = new NativeArray<int>(MaxProxyLights, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[128] - proxy light key iteration buffer - owner: ProxyLightRegistry
-            _freeProxyLightSlots = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[128] - O(1) recycled proxy light slot IDs - owner: ProxyLightRegistry
+            _lightsByKey = new NativeParallelHashMap<int, ProxyLightData>(MaxProxyLights, DataVaultExemptProxyLightDataAllocator); // COLD ALLOC: NativeParallelHashMap<int,ProxyLightData>[128] - proxy light registry storage - owner: ProxyLightRegistry
+            _slotByKey = new NativeParallelHashMap<int, int>(MaxProxyLights, DataVaultExemptProxyLightIndexAllocator); // COLD ALLOC: NativeParallelHashMap<int,int>[128] - proxy light key-to-slot recycling map - owner: ProxyLightRegistry
+            _keys = new NativeArray<int>(MaxProxyLights, DataVaultExemptProxyLightIndexAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[128] - proxy light key iteration buffer - owner: ProxyLightRegistry
+            _freeProxyLightSlots = new NativeQueue<int>(DataVaultExemptProxyLightFreeSlotAllocator); // COLD ALLOC: NativeQueue<int>[128] - O(1) recycled proxy light slot IDs - owner: ProxyLightRegistry
             NativeMemorySentinel.RegisterNativeParallelHashMap(_lightsByKey, nameof(ProxyLightRegistry), nameof(_lightsByKey), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeParallelHashMap(_slotByKey, nameof(ProxyLightRegistry), nameof(_slotByKey), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_keys, nameof(ProxyLightRegistry), nameof(_keys), NativeAllocationLifetime.Session);

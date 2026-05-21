@@ -114,7 +114,7 @@ namespace Hecton8.Interaction
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/Kinematic Terminal Interaction Bridge")]
-    public sealed class KinematicTerminalInteractionBridge : MonoBehaviour, ITickable, IUpdatable
+    public sealed class KinematicTerminalInteractionBridge : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float MinimumTickIntervalSeconds = 0.033333335f;
         private const float MaximumTickIntervalSeconds = 0.5f;
@@ -127,11 +127,6 @@ namespace Hecton8.Interaction
         private const byte TerminalHapticPriority = 1;
         private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
-        private const uint LowTierQualityMask =
-            (1u << (int)HectonQualityTier.Unknown) |
-            (1u << (int)HectonQualityTier.Low) |
-            (1u << (int)HectonQualityTier.Mx350);
-
         [Header("Panel")]
         [SerializeField] private DiegeticPanelController panel;
         [SerializeField] private MonoBehaviour panelReceiver;
@@ -161,7 +156,9 @@ namespace Hecton8.Interaction
         private IKinematicTerminalButtonResolver _buttonResolver;
         private IPhysicalHandIkTargetSink _handIkTargetSink;
         private IInputService _input;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private bool _registered;
+        private bool _registeredHotSwapListener;
         private bool _pressedLastTick;
         private bool _handTargetActive;
         private float _tickAccumulator;
@@ -170,12 +167,15 @@ namespace Hecton8.Interaction
         private void Awake()
         {
             ResolveInterfaces();
+            RefreshColdRegistryReferences();
             _sourceId = panelId != 0 ? panelId : unchecked((int)EntityId.ToULong(gameObject.GetEntityId()));
         }
 
         private void OnEnable()
         {
             ResolveInterfaces();
+            RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -183,6 +183,7 @@ namespace Hecton8.Interaction
         {
             ClearHandTarget();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             _pressedLastTick = false;
             _tickAccumulator = 0f;
         }
@@ -266,9 +267,6 @@ namespace Hecton8.Interaction
         private TerminalActionFlags ResolveTerminalActionFlags(out float2 analogDelta)
         {
             analogDelta = float2.zero;
-            if (_input == null || !_input.IsInitialized)
-                _input = GlobalRegistry.Input;
-
             bool pressed = false;
             if (_input != null && _input.IsInitialized)
             {
@@ -369,8 +367,9 @@ namespace Hecton8.Interaction
             if (originTransform == null || directionTransform == null)
             {
                 Camera camera = interactionCamera;
-                if (camera == null && GlobalRegistry.Player != null)
-                    camera = GlobalRegistry.Player.PlayerCamera;
+                IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
+                if (camera == null && playerRuntimeContext != null)
+                    camera = playerRuntimeContext.PlayerCamera;
                 if (camera == null)
                 {
                     origin = default;
@@ -395,7 +394,6 @@ namespace Hecton8.Interaction
             _panelReceiver = panelReceiver as IPanelInteractable;
             _buttonResolver = buttonResolver as IKinematicTerminalButtonResolver;
             _handIkTargetSink = handIkTargetSink as IPhysicalHandIkTargetSink;
-            _input = GlobalRegistry.Input;
         }
 
         private float ResolveTickInterval()
@@ -405,9 +403,10 @@ namespace Hecton8.Interaction
                 MinimumTickIntervalSeconds,
                 MaximumTickIntervalSeconds);
 
-            int tierIndex = math.min((int)GlobalRegistry.ScalabilityTier, 31);
-            bool lowTier = ((LowTierQualityMask >> tierIndex) & 1u) != 0u;
-            float tierFloor = math.select(MinimumTickIntervalSeconds, LowTierTerminalTickIntervalSeconds, lowTier);
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.saturate(math.select(1f, quality, math.isfinite(quality)));
+            float qualityCurve = math.smoothstep(0f, 1f, quality);
+            float tierFloor = math.lerp(LowTierTerminalTickIntervalSeconds, MinimumTickIntervalSeconds, qualityCurve);
             return math.max(configuredInterval, tierFloor);
         }
 
@@ -418,11 +417,10 @@ namespace Hecton8.Interaction
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -432,6 +430,48 @@ namespace Hecton8.Interaction
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _input = GlobalRegistry.Input;
+            _playerRuntimeContext = GlobalRegistry.Player;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Input:
+                    _input = currentService as IInputService;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegister();
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private static bool IsFinite(Vector3 value)

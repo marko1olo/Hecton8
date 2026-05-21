@@ -51,9 +51,9 @@ namespace Hecton8.Editor
             EditorApplication.Exit(1);
         }
 
-        private static string Bool(bool value)
+        private static string Bool(byte value)
         {
-            return value ? "true" : "false";
+            return value != 0 ? "true" : "false";
         }
 
         private static string D(double value)

@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Core.Contracts",
     "references": [
         "Unity.Collections",
+        "Unity.Jobs",
         "Unity.Mathematics"
     ],
     "includePlatforms": [],

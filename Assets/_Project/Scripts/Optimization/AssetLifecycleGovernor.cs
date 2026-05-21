@@ -4,6 +4,7 @@ using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
+using Hecton8.SaveSystem;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -51,6 +52,7 @@ namespace Hecton8.Optimization
         private const int MaxHardReaperEvictions = 64;
         private const double ColdTickWarningMilliseconds = 0.2d;
         private const float ColdTickWarningCooldownSeconds = 5f;
+        private const SystemID VaultOwnerSystem = SystemID.WorldStreaming;
         private static readonly uint _AssetLifecycleContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor"));
         private static readonly uint _ColdTickOverBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.ColdTickOverBudget"));
         private static readonly uint _DoubleReleaseWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.DoubleRelease"));
@@ -106,13 +108,13 @@ namespace Hecton8.Optimization
         private uint _lastLeakSuspectHash;
         private Mesh _fallbackImpostorMesh;
         private IDataVault _dataVault;
-        private VaultBufferHandle<AssetTrackerDTO> _assetTrackerVaultHandle;
-        private VaultBufferHandle<float> _assetTtlVaultHandle;
-        private VaultBufferHandle<byte> _assetTrackerFlagsVaultHandle;
-        private VaultBufferHandle<AssetHandleMapEntryDTO> _assetHandleMapVaultHandle;
-        private VaultBufferHandle<AssetCacheProfileDTO> _cacheProfileVaultHandle;
-        private VaultBufferHandle<byte> _cacheProfileCsvScratchVaultHandle;
-        private VaultBufferHandle<AssetHeapTelemetryEntry> _heapTelemetryVaultHandle;
+        private VaultGenerationHandle<AssetTrackerDTO> _assetTrackerVaultHandle;
+        private VaultGenerationHandle<float> _assetTtlVaultHandle;
+        private VaultGenerationHandle<byte> _assetTrackerFlagsVaultHandle;
+        private VaultGenerationHandle<AssetHandleMapEntryDTO> _assetHandleMapVaultHandle;
+        private VaultGenerationHandle<AssetCacheProfileDTO> _cacheProfileVaultHandle;
+        private VaultGenerationHandle<byte> _cacheProfileCsvScratchVaultHandle;
+        private VaultGenerationHandle<AssetHeapTelemetryEntry> _heapTelemetryVaultHandle;
         private SystemDispatcher _cachedDispatcher;
         private AssetLoadDispatcher _cachedAssetLoadDispatcher;
         private VRAMPressureMonitor _cachedVramPressure;
@@ -929,8 +931,36 @@ namespace Hecton8.Optimization
             bool needsColdClear = !_nativeStorageInitialized ||
                                   _resolvedHandleCapacity != capacity ||
                                   _resolvedMapCapacity != mapCapacity ||
-                                  !_assetTrackerVaultHandle.IsCreated ||
-                                  !_assetHandleMapVaultHandle.IsCreated;
+                                  !HasHeapSanitizerVaultBuffer(
+                                      _dataVault,
+                                      in _assetTrackerVaultHandle,
+                                      BufferID.AddressableHeapTrackers,
+                                      capacity) ||
+                                  !HasHeapSanitizerVaultBuffer(
+                                      _dataVault,
+                                      in _assetTtlVaultHandle,
+                                      BufferID.AddressableHeapTimeToLive,
+                                      capacity) ||
+                                  !HasHeapSanitizerVaultBuffer(
+                                      _dataVault,
+                                      in _assetTrackerFlagsVaultHandle,
+                                      BufferID.AddressableHeapTrackerFlags,
+                                      capacity) ||
+                                  !HasHeapSanitizerVaultBuffer(
+                                      _dataVault,
+                                      in _assetHandleMapVaultHandle,
+                                      BufferID.AddressableHeapHandleMap,
+                                      mapCapacity) ||
+                                  !HasHeapSanitizerVaultBuffer(
+                                      _dataVault,
+                                      in _cacheProfileVaultHandle,
+                                      BufferID.AddressableHeapCacheProfiles,
+                                      CacheProfileCapacity) ||
+                                  !HasHeapSanitizerVaultBuffer(
+                                      _dataVault,
+                                      in _heapTelemetryVaultHandle,
+                                      BufferID.AddressableHeapTelemetry,
+                                      HeapTelemetryCapacity);
 
             if (!TryResolveHeapSanitizerVaultBuffers(capacity, mapCapacity))
             {
@@ -938,18 +968,36 @@ namespace Hecton8.Optimization
                 return;
             }
 
-            NativeArray<AssetTrackerDTO> trackers = _assetTrackerVaultHandle.Resolve(_dataVault);
-            NativeArray<float> ttl = _assetTtlVaultHandle.Resolve(_dataVault);
-            NativeArray<byte> flags = _assetTrackerFlagsVaultHandle.Resolve(_dataVault);
-            NativeArray<AssetHandleMapEntryDTO> map = _assetHandleMapVaultHandle.Resolve(_dataVault);
-            NativeArray<AssetCacheProfileDTO> profiles = _cacheProfileVaultHandle.Resolve(_dataVault);
-            NativeArray<AssetHeapTelemetryEntry> telemetry = _heapTelemetryVaultHandle.Resolve(_dataVault);
-            if (!trackers.IsCreated ||
-                !ttl.IsCreated ||
-                !flags.IsCreated ||
-                !map.IsCreated ||
-                !profiles.IsCreated ||
-                !telemetry.IsCreated)
+            if (!TryResolveHeapSanitizerVaultBuffer(
+                    ref _assetTrackerVaultHandle,
+                    BufferID.AddressableHeapTrackers,
+                    capacity,
+                    out NativeArray<AssetTrackerDTO> trackers) ||
+                !TryResolveHeapSanitizerVaultBuffer(
+                    ref _assetTtlVaultHandle,
+                    BufferID.AddressableHeapTimeToLive,
+                    capacity,
+                    out NativeArray<float> ttl) ||
+                !TryResolveHeapSanitizerVaultBuffer(
+                    ref _assetTrackerFlagsVaultHandle,
+                    BufferID.AddressableHeapTrackerFlags,
+                    capacity,
+                    out NativeArray<byte> flags) ||
+                !TryResolveHeapSanitizerVaultBuffer(
+                    ref _assetHandleMapVaultHandle,
+                    BufferID.AddressableHeapHandleMap,
+                    mapCapacity,
+                    out NativeArray<AssetHandleMapEntryDTO> map) ||
+                !TryResolveHeapSanitizerVaultBuffer(
+                    ref _cacheProfileVaultHandle,
+                    BufferID.AddressableHeapCacheProfiles,
+                    CacheProfileCapacity,
+                    out NativeArray<AssetCacheProfileDTO> profiles) ||
+                !TryResolveHeapSanitizerVaultBuffer(
+                    ref _heapTelemetryVaultHandle,
+                    BufferID.AddressableHeapTelemetry,
+                    HeapTelemetryCapacity,
+                    out NativeArray<AssetHeapTelemetryEntry> telemetry))
             {
                 EnsureFallbackImpostorMesh();
                 return;
@@ -1022,14 +1070,9 @@ namespace Hecton8.Optimization
             _detachedReleaseHandleCount = 0;
 #endif
             ClearAddressableHeapVaultState(false, false);
+            ReleaseHeapSanitizerVaultHandles(_dataVault);
             _dataVault = null;
-            _assetTrackerVaultHandle = default;
-            _assetTtlVaultHandle = default;
-            _assetTrackerFlagsVaultHandle = default;
-            _assetHandleMapVaultHandle = default;
-            _cacheProfileVaultHandle = default;
-            _cacheProfileCsvScratchVaultHandle = default;
-            _heapTelemetryVaultHandle = default;
+            InvalidateVaultHandleDescriptors();
             _cachedDispatcher = null;
             _cachedAssetLoadDispatcher = null;
             _cachedVramPressure = null;
@@ -1039,9 +1082,6 @@ namespace Hecton8.Optimization
             _ttlEvaluationResultsPending = false;
             _ttlEvaluationFlagsMirrored = false;
             _nativeRefSyncRequired = false;
-            _nativeStorageInitialized = false;
-            _resolvedHandleCapacity = 0;
-            _resolvedMapCapacity = 0;
 
             if (_fallbackImpostorMesh != null)
             {
@@ -1135,24 +1175,36 @@ namespace Hecton8.Optimization
             if (_dataVault == null)
                 return;
 
-            NativeArray<AssetTrackerDTO> trackers = _assetTrackerVaultHandle.IsCreated
-                ? _assetTrackerVaultHandle.Resolve(_dataVault)
-                : default;
-            NativeArray<float> ttl = _assetTtlVaultHandle.IsCreated
-                ? _assetTtlVaultHandle.Resolve(_dataVault)
-                : default;
-            NativeArray<byte> flags = _assetTrackerFlagsVaultHandle.IsCreated
-                ? _assetTrackerFlagsVaultHandle.Resolve(_dataVault)
-                : default;
-            NativeArray<AssetHandleMapEntryDTO> map = _assetHandleMapVaultHandle.IsCreated
-                ? _assetHandleMapVaultHandle.Resolve(_dataVault)
-                : default;
-            NativeArray<AssetCacheProfileDTO> profiles = _cacheProfileVaultHandle.IsCreated
-                ? _cacheProfileVaultHandle.Resolve(_dataVault)
-                : default;
-            NativeArray<AssetHeapTelemetryEntry> telemetry = _heapTelemetryVaultHandle.IsCreated
-                ? _heapTelemetryVaultHandle.Resolve(_dataVault)
-                : default;
+            TryResolveExistingHeapSanitizerVaultBuffer(
+                in _assetTrackerVaultHandle,
+                BufferID.AddressableHeapTrackers,
+                1,
+                out NativeArray<AssetTrackerDTO> trackers);
+            TryResolveExistingHeapSanitizerVaultBuffer(
+                in _assetTtlVaultHandle,
+                BufferID.AddressableHeapTimeToLive,
+                1,
+                out NativeArray<float> ttl);
+            TryResolveExistingHeapSanitizerVaultBuffer(
+                in _assetTrackerFlagsVaultHandle,
+                BufferID.AddressableHeapTrackerFlags,
+                1,
+                out NativeArray<byte> flags);
+            TryResolveExistingHeapSanitizerVaultBuffer(
+                in _assetHandleMapVaultHandle,
+                BufferID.AddressableHeapHandleMap,
+                1,
+                out NativeArray<AssetHandleMapEntryDTO> map);
+            TryResolveExistingHeapSanitizerVaultBuffer(
+                in _cacheProfileVaultHandle,
+                BufferID.AddressableHeapCacheProfiles,
+                1,
+                out NativeArray<AssetCacheProfileDTO> profiles);
+            TryResolveExistingHeapSanitizerVaultBuffer(
+                in _heapTelemetryVaultHandle,
+                BufferID.AddressableHeapTelemetry,
+                1,
+                out NativeArray<AssetHeapTelemetryEntry> telemetry);
 
             ClearAddressableHeapVaultState(
                 trackers,
@@ -1233,14 +1285,28 @@ namespace Hecton8.Optimization
             if (!TryResolveHeapSanitizerVaultBuffers())
                 return false;
 
-            trackers = _assetTrackerVaultHandle.Resolve(_dataVault);
-            ttl = _assetTtlVaultHandle.Resolve(_dataVault);
-            flags = _assetTrackerFlagsVaultHandle.Resolve(_dataVault);
-            handleMap = _assetHandleMapVaultHandle.Resolve(_dataVault);
-            return trackers.IsCreated &&
-                   ttl.IsCreated &&
-                   flags.IsCreated &&
-                   handleMap.IsCreated;
+            int capacity = Mathf.Clamp(maxTrackedAddressableHandles, 1, MaxTrackedAddressableCapacity);
+            int mapCapacity = ResolveHandleMapCapacity(capacity);
+            return TryResolveHeapSanitizerVaultBuffer(
+                       ref _assetTrackerVaultHandle,
+                       BufferID.AddressableHeapTrackers,
+                       capacity,
+                       out trackers) &&
+                   TryResolveHeapSanitizerVaultBuffer(
+                       ref _assetTtlVaultHandle,
+                       BufferID.AddressableHeapTimeToLive,
+                       capacity,
+                       out ttl) &&
+                   TryResolveHeapSanitizerVaultBuffer(
+                       ref _assetTrackerFlagsVaultHandle,
+                       BufferID.AddressableHeapTrackerFlags,
+                       capacity,
+                       out flags) &&
+                   TryResolveHeapSanitizerVaultBuffer(
+                       ref _assetHandleMapVaultHandle,
+                       BufferID.AddressableHeapHandleMap,
+                       mapCapacity,
+                       out handleMap);
         }
 
         private bool TryResolveCacheProfileView(out NativeArray<AssetCacheProfileDTO> profiles)
@@ -1249,8 +1315,11 @@ namespace Hecton8.Optimization
             if (!TryResolveHeapSanitizerVaultBuffers())
                 return false;
 
-            profiles = _cacheProfileVaultHandle.Resolve(_dataVault);
-            return profiles.IsCreated;
+            return TryResolveHeapSanitizerVaultBuffer(
+                ref _cacheProfileVaultHandle,
+                BufferID.AddressableHeapCacheProfiles,
+                CacheProfileCapacity,
+                out profiles);
         }
 
         private bool TryResolveCacheProfileCsvScratch(out NativeArray<byte> scratch)
@@ -1259,8 +1328,11 @@ namespace Hecton8.Optimization
             if (!TryResolveHeapSanitizerVaultBuffers())
                 return false;
 
-            scratch = _cacheProfileCsvScratchVaultHandle.Resolve(_dataVault);
-            return scratch.IsCreated;
+            return TryResolveHeapSanitizerVaultBuffer(
+                ref _cacheProfileCsvScratchVaultHandle,
+                BufferID.AddressableHeapCsvScratch,
+                CacheProfileCsvScratchBytes,
+                out scratch);
         }
 
         private bool TryResolveTelemetryView(out NativeArray<AssetHeapTelemetryEntry> telemetry)
@@ -1269,8 +1341,11 @@ namespace Hecton8.Optimization
             if (!TryResolveHeapSanitizerVaultBuffers())
                 return false;
 
-            telemetry = _heapTelemetryVaultHandle.Resolve(_dataVault);
-            return telemetry.IsCreated;
+            return TryResolveHeapSanitizerVaultBuffer(
+                ref _heapTelemetryVaultHandle,
+                BufferID.AddressableHeapTelemetry,
+                HeapTelemetryCapacity,
+                out telemetry);
         }
 
         private bool TryLockTtlEvaluationVaultBuffers()
@@ -1278,13 +1353,13 @@ namespace Hecton8.Optimization
             if (_dataVault == null)
                 return false;
 
-            bool lockedTrackers = _dataVault.TryLockBuffer(BufferID.AddressableHeapTrackers, SystemID.WorldStreaming);
+            bool lockedTrackers = _dataVault.TryLockBuffer(BufferID.AddressableHeapTrackers, VaultOwnerSystem);
             bool lockedTtl = lockedTrackers &&
-                             _dataVault.TryLockBuffer(BufferID.AddressableHeapTimeToLive, SystemID.WorldStreaming);
+                             _dataVault.TryLockBuffer(BufferID.AddressableHeapTimeToLive, VaultOwnerSystem);
             bool lockedFlags = lockedTtl &&
-                               _dataVault.TryLockBuffer(BufferID.AddressableHeapTrackerFlags, SystemID.WorldStreaming);
+                               _dataVault.TryLockBuffer(BufferID.AddressableHeapTrackerFlags, VaultOwnerSystem);
             bool lockedHandleMap = lockedFlags &&
-                                   _dataVault.TryLockBuffer(BufferID.AddressableHeapHandleMap, SystemID.WorldStreaming);
+                                   _dataVault.TryLockBuffer(BufferID.AddressableHeapHandleMap, VaultOwnerSystem);
             if (lockedTrackers && lockedTtl && lockedFlags && lockedHandleMap)
             {
                 _ttlEvaluationVaultLocksHeld = true;
@@ -1292,13 +1367,13 @@ namespace Hecton8.Optimization
             }
 
             if (lockedHandleMap)
-                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapHandleMap, SystemID.WorldStreaming);
+                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapHandleMap, VaultOwnerSystem);
             if (lockedFlags)
-                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackerFlags, SystemID.WorldStreaming);
+                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackerFlags, VaultOwnerSystem);
             if (lockedTtl)
-                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTimeToLive, SystemID.WorldStreaming);
+                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTimeToLive, VaultOwnerSystem);
             if (lockedTrackers)
-                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackers, SystemID.WorldStreaming);
+                _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackers, VaultOwnerSystem);
             return false;
         }
 
@@ -1310,10 +1385,10 @@ namespace Hecton8.Optimization
                 return;
             }
 
-            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapHandleMap, SystemID.WorldStreaming);
-            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackerFlags, SystemID.WorldStreaming);
-            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTimeToLive, SystemID.WorldStreaming);
-            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackers, SystemID.WorldStreaming);
+            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapHandleMap, VaultOwnerSystem);
+            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackerFlags, VaultOwnerSystem);
+            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTimeToLive, VaultOwnerSystem);
+            _dataVault.TryUnlockBuffer(BufferID.AddressableHeapTrackers, VaultOwnerSystem);
             _ttlEvaluationVaultLocksHeld = false;
         }
 
@@ -2369,17 +2444,18 @@ namespace Hecton8.Optimization
             if (_ttlEvaluationScheduled)
                 return;
 
+            if (!TryLockTtlEvaluationVaultBuffers())
+                return;
+
             if (!TryResolveTrackerViews(
                     out NativeArray<AssetTrackerDTO> trackers,
                     out NativeArray<float> ttl,
                     out NativeArray<byte> trackerFlags,
                     out NativeArray<AssetHandleMapEntryDTO> handleMap))
             {
+                ReleaseTtlEvaluationVaultLocks();
                 return;
             }
-
-            if (!TryLockTtlEvaluationVaultBuffers())
-                return;
 
             MirrorTrackerFlagBytesIntoDto(trackers, trackerFlags);
             bool vramPanic = IsVramPanicReleaseFrame();
@@ -2394,7 +2470,7 @@ namespace Hecton8.Optimization
                 ForceVramPanic = vramPanic ? (byte)1 : (byte)0
             };
             _ttlEvaluationHandle = job.Schedule(handleMap.Length, 16);
-            H8Memory.RegisterActiveJob(SystemID.WorldStreaming, _ttlEvaluationHandle);
+            H8Memory.RegisterActiveJob(VaultOwnerSystem, _ttlEvaluationHandle);
             _ttlEvaluationScheduled = true;
             _ttlEvaluationVramPanic = vramPanic;
             _ttlEvaluationFlagsMirrored = false;
@@ -2841,7 +2917,7 @@ namespace Hecton8.Optimization
         private bool TryResolveHeapSanitizerVaultBuffers(int handleCapacity = -1, int mapCapacity = -1)
         {
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             if (handleCapacity <= 0)
@@ -2849,113 +2925,185 @@ namespace Hecton8.Optimization
             if (mapCapacity <= 0)
                 mapCapacity = ResolveHandleMapCapacity(handleCapacity);
 
-            bool newVaultHandles = !ReferenceEquals(_dataVault, vault) ||
-                                   !_assetTrackerVaultHandle.IsCreated ||
-                                   _assetTrackerVaultHandle.Length < handleCapacity ||
-                                   !_assetTtlVaultHandle.IsCreated ||
-                                   _assetTtlVaultHandle.Length < handleCapacity ||
-                                   !_assetTrackerFlagsVaultHandle.IsCreated ||
-                                   _assetTrackerFlagsVaultHandle.Length < handleCapacity ||
-                                   !_assetHandleMapVaultHandle.IsCreated ||
-                                   _assetHandleMapVaultHandle.Length < mapCapacity ||
-                                   !_cacheProfileVaultHandle.IsCreated ||
-                                   !_cacheProfileCsvScratchVaultHandle.IsCreated ||
-                                   !_heapTelemetryVaultHandle.IsCreated;
-            if (newVaultHandles)
+            return EnsureHeapSanitizerVaultBuffer(
+                       ref _assetTrackerVaultHandle,
+                       BufferID.AddressableHeapTrackers,
+                       handleCapacity,
+                       NativeArrayOptions.UninitializedMemory,
+                       out NativeArray<AssetTrackerDTO> trackers) &&
+                   EnsureHeapSanitizerVaultBuffer(
+                       ref _assetTtlVaultHandle,
+                       BufferID.AddressableHeapTimeToLive,
+                       handleCapacity,
+                       NativeArrayOptions.UninitializedMemory,
+                       out NativeArray<float> ttl) &&
+                   EnsureHeapSanitizerVaultBuffer(
+                       ref _assetTrackerFlagsVaultHandle,
+                       BufferID.AddressableHeapTrackerFlags,
+                       handleCapacity,
+                       NativeArrayOptions.UninitializedMemory,
+                       out NativeArray<byte> trackerFlags) &&
+                   EnsureHeapSanitizerVaultBuffer(
+                       ref _assetHandleMapVaultHandle,
+                       BufferID.AddressableHeapHandleMap,
+                       mapCapacity,
+                       NativeArrayOptions.UninitializedMemory,
+                       out NativeArray<AssetHandleMapEntryDTO> handleMap) &&
+                   EnsureHeapSanitizerVaultBuffer(
+                       ref _cacheProfileVaultHandle,
+                       BufferID.AddressableHeapCacheProfiles,
+                       CacheProfileCapacity,
+                       NativeArrayOptions.UninitializedMemory,
+                       out NativeArray<AssetCacheProfileDTO> profiles) &&
+                   EnsureHeapSanitizerVaultBuffer(
+                       ref _cacheProfileCsvScratchVaultHandle,
+                       BufferID.AddressableHeapCsvScratch,
+                       CacheProfileCsvScratchBytes,
+                       NativeArrayOptions.UninitializedMemory,
+                       out NativeArray<byte> csvScratch) &&
+                   EnsureHeapSanitizerVaultBuffer(
+                       ref _heapTelemetryVaultHandle,
+                       BufferID.AddressableHeapTelemetry,
+                       HeapTelemetryCapacity,
+                       NativeArrayOptions.UninitializedMemory,
+                       out NativeArray<AssetHeapTelemetryEntry> telemetry);
+        }
+
+        private bool EnsureHeapSanitizerVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (TryResolveHeapSanitizerVaultBuffer(ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            return TryResolveHeapSanitizerVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool TryResolveHeapSanitizerVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (IsHeapSanitizerVaultHandle(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
             {
-                _dataVault = vault;
-                _assetTrackerVaultHandle = vault.GetBufferHandle<AssetTrackerDTO>(
-                    BufferID.AddressableHeapTrackers,
-                    handleCapacity,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.UninitializedMemory);
-                _assetTtlVaultHandle = vault.GetBufferHandle<float>(
-                    BufferID.AddressableHeapTimeToLive,
-                    handleCapacity,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.UninitializedMemory);
-                _assetTrackerFlagsVaultHandle = vault.GetBufferHandle<byte>(
-                    BufferID.AddressableHeapTrackerFlags,
-                    handleCapacity,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.UninitializedMemory);
-                _assetHandleMapVaultHandle = vault.GetBufferHandle<AssetHandleMapEntryDTO>(
-                    BufferID.AddressableHeapHandleMap,
-                    mapCapacity,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.UninitializedMemory);
-                _cacheProfileVaultHandle = vault.GetBufferHandle<AssetCacheProfileDTO>(
-                    BufferID.AddressableHeapCacheProfiles,
-                    CacheProfileCapacity,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.UninitializedMemory);
-                _cacheProfileCsvScratchVaultHandle = vault.GetBufferHandle<byte>(
-                    BufferID.AddressableHeapCsvScratch,
-                    CacheProfileCsvScratchBytes,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.UninitializedMemory);
-                _heapTelemetryVaultHandle = vault.GetBufferHandle<AssetHeapTelemetryEntry>(
-                    BufferID.AddressableHeapTelemetry,
-                    HeapTelemetryCapacity,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.UninitializedMemory);
+                return true;
             }
 
-            return _assetTrackerVaultHandle.IsCreated &&
-                   _assetTtlVaultHandle.IsCreated &&
-                   _assetTrackerFlagsVaultHandle.IsCreated &&
-                   _assetHandleMapVaultHandle.IsCreated &&
-                   _cacheProfileVaultHandle.IsCreated &&
-                   _cacheProfileCsvScratchVaultHandle.IsCreated &&
-                   _heapTelemetryVaultHandle.IsCreated;
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !IsHeapSanitizerVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryResolveExistingHeapSanitizerVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsHeapSanitizerVaultHandle(in handle, bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool HasHeapSanitizerVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsHeapSanitizerVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsHeapSanitizerVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
+        private void ReleaseHeapSanitizerVaultHandles(IDataVault vault)
+        {
+            ReleaseHeapSanitizerVaultHandle(vault, ref _assetTrackerVaultHandle);
+            ReleaseHeapSanitizerVaultHandle(vault, ref _assetTtlVaultHandle);
+            ReleaseHeapSanitizerVaultHandle(vault, ref _assetTrackerFlagsVaultHandle);
+            ReleaseHeapSanitizerVaultHandle(vault, ref _assetHandleMapVaultHandle);
+            ReleaseHeapSanitizerVaultHandle(vault, ref _cacheProfileVaultHandle);
+            ReleaseHeapSanitizerVaultHandle(vault, ref _cacheProfileCsvScratchVaultHandle);
+            ReleaseHeapSanitizerVaultHandle(vault, ref _heapTelemetryVaultHandle);
+        }
+
+        private static void ReleaseHeapSanitizerVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private bool TryCopyCacheProfilesFromVault()
         {
-            if (!TryResolveCacheProfileView(out NativeArray<AssetCacheProfileDTO> profiles) ||
-                !TryResolveHeapSanitizerVaultBuffers())
+            if (!TryResolveCacheProfileView(out NativeArray<AssetCacheProfileDTO> profiles))
             {
                 return false;
             }
 
-            NativeArray<AssetCacheProfileDTO> vaultProfiles = _cacheProfileVaultHandle.Resolve(_dataVault);
-            if (!vaultProfiles.IsCreated)
-                return false;
-
-            int count = math.min(profiles.Length, vaultProfiles.Length);
             bool hasAny = false;
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < profiles.Length; i++)
             {
-                AssetCacheProfileDTO profile = vaultProfiles[i];
-                profiles[i] = profile;
+                AssetCacheProfileDTO profile = profiles[i];
                 if (profile.AssetHash != 0u)
                     hasAny = true;
             }
-
-            for (int i = count; i < profiles.Length; i++)
-                profiles[i] = default;
 
             return hasAny;
         }
 
         private void MirrorCacheProfilesToVault()
         {
-            if (!TryResolveCacheProfileView(out NativeArray<AssetCacheProfileDTO> profiles) ||
-                !TryResolveHeapSanitizerVaultBuffers())
-            {
-                return;
-            }
-
-            NativeArray<AssetCacheProfileDTO> vaultProfiles = _cacheProfileVaultHandle.Resolve(_dataVault);
-            if (!vaultProfiles.IsCreated)
-                return;
-
-            int count = math.min(profiles.Length, vaultProfiles.Length);
-            for (int i = 0; i < count; i++)
-                vaultProfiles[i] = profiles[i];
-
-            for (int i = count; i < vaultProfiles.Length; i++)
-                vaultProfiles[i] = default;
+            TryResolveCacheProfileView(out _);
         }
 
         private void EnsureFallbackImpostorMesh()
@@ -3726,8 +3874,21 @@ namespace Hecton8.Optimization
 
         private void CacheDependencies()
         {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, currentVault))
+            {
+                IDataVault previousVault = _dataVault;
+                if (previousVault != null)
+                {
+                    CompleteTtlEvaluationForTeardown();
+                    ClearAddressableHeapVaultState(false, false);
+                    ReleaseHeapSanitizerVaultHandles(previousVault);
+                    InvalidateVaultHandleDescriptors();
+                }
+
+                _dataVault = currentVault;
+            }
+
             if (_cachedDispatcher == null)
                 _cachedDispatcher = GlobalRegistry.Dispatcher;
             if (_cachedAssetLoadDispatcher == null)
@@ -3753,7 +3914,12 @@ namespace Hecton8.Optimization
                     _cachedDispatcher = currentService as SystemDispatcher;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
+                    IDataVault previousVault = previousService as IDataVault;
+                    if (previousVault == null)
+                        previousVault = _dataVault;
                     CompleteTtlEvaluationForTeardown();
+                    ClearAddressableHeapVaultState(false, false);
+                    ReleaseHeapSanitizerVaultHandles(previousVault);
                     _dataVault = currentService as IDataVault;
                     InvalidateVaultHandleDescriptors();
                     if (_dataVault != null)

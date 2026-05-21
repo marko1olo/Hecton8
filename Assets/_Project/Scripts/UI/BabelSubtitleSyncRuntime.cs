@@ -106,8 +106,8 @@ namespace Hecton8.UI
 
         private static readonly DispatcherBridge s_dispatcherBridge = new DispatcherBridge();
         private static IDataVault s_vault;
-        private static VaultBufferHandle<SubtitleCueDTO> s_cueHandle;
-        private static VaultBufferHandle<LocalizationTelemetryEntry> s_telemetryHandle;
+        private static VaultGenerationHandle<SubtitleCueDTO> s_cueHandle;
+        private static VaultGenerationHandle<LocalizationTelemetryEntry> s_telemetryHandle;
         private static JobHandle s_pendingCueEvaluationHandle;
         private static int s_telemetryCursor;
         private static int s_nextCueSlot;
@@ -136,6 +136,8 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            CompletePendingCueEvaluationForTeardown();
+            ReleaseSubtitleBuffers(s_vault);
             s_vault = null;
             s_cueHandle = default;
             s_telemetryHandle = default;
@@ -171,6 +173,13 @@ namespace Hecton8.UI
             if (vault == null)
                 return false;
 
+            if (s_vault != null && !ReferenceEquals(s_vault, vault))
+            {
+                CompletePendingCueEvaluationForTeardown();
+                ReleaseSubtitleBuffers(s_vault);
+                s_initialized = false;
+            }
+
             if (s_initialized &&
                 ReferenceEquals(s_vault, vault) &&
                 TryResolveCueBuffer(out _) &&
@@ -181,12 +190,12 @@ namespace Hecton8.UI
             }
 
             s_vault = vault;
-            s_cueHandle = vault.GetBufferHandle<SubtitleCueDTO>(
+            s_cueHandle = vault.GetGenerationHandle<SubtitleCueDTO>(
                 SubtitleCueStateBufferId,
                 MaxSubtitleCueCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            s_telemetryHandle = vault.GetBufferHandle<LocalizationTelemetryEntry>(
+            s_telemetryHandle = vault.GetGenerationHandle<LocalizationTelemetryEntry>(
                 SubtitleCueTelemetryBufferId,
                 TelemetryFrameCapacity,
                 SystemID.UI,
@@ -338,21 +347,52 @@ namespace Hecton8.UI
         private static bool TryResolveCueBuffer(out NativeArray<SubtitleCueDTO> cues)
         {
             cues = default;
-            if (s_vault == null || !s_cueHandle.IsCreated)
+            if (s_vault == null || !IsVaultHandleCreated(in s_cueHandle))
                 return false;
 
-            cues = s_cueHandle.Resolve(s_vault);
-            return cues.IsCreated && cues.Length >= MaxSubtitleCueCount;
+            return s_vault.TryResolveHandle(in s_cueHandle, out cues) &&
+                   cues.IsCreated &&
+                   cues.Length >= MaxSubtitleCueCount;
         }
 
         private static bool TryResolveTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry> telemetry)
         {
             telemetry = default;
-            if (s_vault == null || !s_telemetryHandle.IsCreated)
+            if (s_vault == null || !IsVaultHandleCreated(in s_telemetryHandle))
                 return false;
 
-            telemetry = s_telemetryHandle.Resolve(s_vault);
-            return telemetry.IsCreated && telemetry.Length >= TelemetryFrameCapacity;
+            return s_vault.TryResolveHandle(in s_telemetryHandle, out telemetry) &&
+                   telemetry.IsCreated &&
+                   telemetry.Length >= TelemetryFrameCapacity;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static void ReleaseSubtitleBuffers(IDataVault vault)
+        {
+            ReleaseVaultBuffer(vault, ref s_cueHandle);
+            ReleaseVaultBuffer(vault, ref s_telemetryHandle);
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static void CompletePendingCueEvaluationForTeardown()
+        {
+            if (!s_pendingCueEvaluationActive)
+                return;
+
+            DispatcherJobFence.TryComplete(ref s_pendingCueEvaluationHandle, forceComplete: true);
+            s_pendingCueEvaluationActive = false;
         }
 
         public static void SetEditorAudioFrameOffset(int offsetFrames)

@@ -45,13 +45,13 @@ namespace Hecton8.Visor
             public RuntimeState(float intensity, bool hasLoot, Vector4 lootSphereAup)
             {
                 Intensity = intensity;
-                HasLoot = hasLoot;
+                HasLoot = hasLoot ? (byte)1 : (byte)0;
                 LootSphereAup = lootSphereAup;
             }
 
-            public float Intensity { get; }
-            public bool HasLoot { get; }
-            public Vector4 LootSphereAup { get; }
+            public readonly float Intensity;
+            public readonly byte HasLoot;
+            public readonly Vector4 LootSphereAup;
         }
 
         private sealed class DiagnosticPass : ScriptableRenderPass
@@ -130,7 +130,7 @@ namespace Hecton8.Visor
             private void UpdateMaterialIfNeeded(Material material, FeatureSettings settings, RuntimeState state)
             {
                 float intensity = math.saturate(state.Intensity);
-                float lootActive = state.HasLoot ? 1f : 0f;
+                float lootActive = state.HasLoot != 0 ? 1f : 0f;
                 float ditherStrength = math.saturate(settings.ditherStrength);
                 float scanlineStrength = math.saturate(settings.scanlineStrength);
 

@@ -308,7 +308,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                     handle);
 
                 // COLD SYNC JOB: MapMagic Generate must publish concrete matrix and object products before returning.
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 PublishSolvePerformanceWarningIfNeeded(Stopwatch.GetTimestamp() - solveStartTicks);
 
                 if (stop != null && stop.stop)

@@ -1,0 +1,80 @@
+<SELF_AUDIT agent="SHINOBU_249" role="BUOYANCY_SLEEP_STATE_INTEGRATOR" task_count="20" status="PENDING_VERIFICATION" evidence="STATIC_SOURCE_STATIC_DOC_UNITY_ATTEMPT_EXTERNAL_BLOCKERS_EDITOR_ASMDEF_ISOLATED">
+  <VERIFICATION_BOUNDARY unity_import="BLOCKED_EXTERNAL_COMPILE_ERRORS" console_compile="BLOCKED_EXTERNAL_COMPILE_ERRORS" burst_inspector="PENDING" play_mode_50000_rows="PENDING" profiler_gcmonitor="PENDING" fault_dump_repro="PENDING" cpu_gate="OPEN_AT_LAUNCH_CPU_12_75_PERCENT" editor_asmdef="ADDED_PENDING_UNITY_REIMPORT" />
+  <UNITY_IMPORT_ATTEMPT log="Docs/AgentLogs/UnityCompile_SHINOBU_249.log" bee_log="Library/Bee/tundra.log.json" shinobu_sources_in_h8core_rsp="TRUE" h8core_csc_result="NOT_REACHED_DUE_UPSTREAM_FAILURES" shinobu_error_hits="0" process_cleanup="OWNED_UNITY_BEE_STOPPED_AFTER_NO_LOG_PROGRESS">
+    <BLOCKER path="Assets/_Project/Scripts/World/Contracts/TerrainChunkGeneratedSignal.cs" error="missing Hecton8.Core and ISignal" />
+    <BLOCKER path="Assets/_Project/Scripts/Core/Contracts/AupPrecisionContracts.cs" error="missing long3" />
+    <BLOCKER path="Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs" error="missing ObjectField" />
+    <BLOCKER path="Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs" error="Mesh.MeshData.GetVertexAttribute unavailable" />
+    <BLOCKER path="Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonMaskChannelPacker.cs" error="missing HectonEditorMeshUtility" />
+    <BLOCKER path="Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs" error="missing Mix" />
+    <BLOCKER path="Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeSelfAudit.cs" error="unsafe address errors" />
+    <BLOCKER path="Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalStructureForgeWindow.cs" error="missing Schedule extension" />
+    <BLOCKER path="Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor" error="MeshUpdateFlags.DontRecalculateNormals unavailable" />
+  </UNITY_IMPORT_ATTEMPT>
+  <EDITOR_ASSEMBLY_ISOLATION path="Assets/_Project/Scripts/Physics/Buoyancy/Editor/Hecton8.Physics.Buoyancy.Editor.asmdef" include_platform="Editor" auto_referenced="false" roslyn_precompiled_references="TRUE" stale_h8core_rsp_before_fix="TRUE" import_status="PENDING_UNITY_REIMPORT_EXTERNAL_BLOCKERS" />
+  <AST_SCANNER_SOURCE status="SOURCE_PATCHED_PENDING_UNITY_EDITOR_RUN" mode="ROSLYN_AST_WITH_TOKEN_FALLBACK" language_version="Preview" current_report_proof="TOKENIZED_TEXT_SCAN_NOT_AST" reason="Unity import/editor scanner run is blocked by external compile errors" />
+  <BURST_DIRECTIVE_SCAN status="PASS_STATIC" scope="BuoyancyDisplacementJobs.cs;KinematicSleepStateJobs.cs" process_buoyancy_wake_triggers="BURST_DETERMINISTIC" />
+  <WAKE_ROUTE_AUDIT status="PASS_STATIC" route="SignalBus&lt;WakeRequestSignal&gt;" contract="Core/Contracts/Signals/WakeRequestSignal" direct_cavitation_force_packet_import="FALSE" cavitation_bridge="Shockwave force events publish WakeRequestSignal" />
+  <FORCE_PACKET_STALE_SLOT_AUDIT status="PASS_STATIC" prepare="counter_reset_only" evaluator="writes_default_for_sleeping_and_out_of_range_candidates" compact="scans_min_scheduled_count_and_capacity" drain="reads_counters_force_packets_only" rejected_full_clear="8192_slots_x_128_bytes_per_fixed_tick" />
+  <VAULT_LOCK_DISCIPLINE_AUDIT status="PASS_STATIC_AFTER_PATCH" fixed_tick_tuning_mutation="AFTER_TRY_LOCK_JOB_BUFFERS" zero_active_return="UNLOCKS_BEFORE_RETURN" completion_compute_micros="WRITTEN_BEFORE_UNLOCK" fault_dump_file_io="AFTER_UNLOCK" />
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="[PASS]">RIGIDBODY_SLEEP_API_PURGE: focused Physics scan excludes scanner source and finds no active PhysX sleep API in SHINOBU-owned Buoyancy/KCC sleep surfaces.</TASK>
+    <TASK id="02" status="[PASS]">ACTIVE_LIST_FRAGMENTATION_ERADICATION: sleep is fixed-row flag mutation; no active/inactive row migration route was added.</TASK>
+    <TASK id="03" status="[PASS]">CS1612_METADATA_STATE_ANNIHILATION: hot DTO fields are raw unmanaged fields; jobs mutate owner rows through direct NativeArray/ref paths.</TASK>
+    <TASK id="04" status="[PASS]">ARM64_STATE_LAYOUT_ASSERTION: KCC `KinematicStateDTO` remains 64 bytes with `Flags@52`; SHINOBU KCC SDF config is explicit 64 bytes.</TASK>
+    <TASK id="05" status="[PASS]">EMERGENCY_MOCK_SETTLING_BENCHMARK: deterministic mock settling jobs seed dense seabed rows without managed collections.</TASK>
+    <TASK id="06" status="[PASS]">BURST_SLEEP_EVALUATION_KERNEL: KCC prompt artifact and active buoyancy evaluator run Burst deterministic sleep evaluation.</TASK>
+    <TASK id="07" status="[PASS]">SDF_GROUNDING_CONFIRMATION: SDF contact requires `abs(signedDistance) &lt;= contactEpsilon`; plane fallback is documented for absent SDF.</TASK>
+    <TASK id="08" status="[PASS]">THE_DEAR_LIE_WAKE_PROPAGATION: wake consumes `SignalBus&lt;WakeRequestSignal&gt;` snapshots; no dormant collider polling is introduced.</TASK>
+    <TASK id="09" status="[PASS]">ABYSSAL_CURRENT_WAKE_POLLING: low-frequency ambient wake polling scans sleeping rows on a continuous quality cadence.</TASK>
+    <TASK id="10" status="[PASS]">CONTINUOUS_SCALABILITY_SLEEP_AGGRESSION: `GlobalQualityWeight` curves thresholds, rest frames, evaluation stride, and current poll cadence without binary hardware switches.</TASK>
+    <TASK id="11" status="[PASS]">STATIC_BATCHING_PROMOTION: deep sleep sets `FlagStaticPromotionPending`; presentation ownership is not mutated from physics.</TASK>
+    <TASK id="12" status="[PASS]">AUP_PRECISION_DELTA_MATH: SDF/wake/flow math subtracts double3 AUP origins before local float math.</TASK>
+    <TASK id="13" status="[PASS]">ROLLBACK_NETCODE_STATE_FENCE: sleep flags live in blittable explicit DTO rows and jobs use deterministic Burst mode.</TASK>
+    <TASK id="14" status="[PASS]">ZERO_INIT_OVERHEAD_BYPASS: persistent native storage is Vault-owned; overwritten buffers use uninitialized memory where safe during cold descriptor allocation.</TASK>
+    <TASK id="15" status="[PASS]">TELEMETRY_SLEEP_STATE_RECORDER: 300-row `SleepStateTelemetryEntry` ring and `Dump_SHINOBU_249.bin` route are declared.</TASK>
+    <TASK id="16" status="[PASS]">KINEMATIC_CULLING_XRAY_WINDOW: UI Toolkit editor window reads sleep telemetry and mutates Vault-backed tuning in editor play mode.</TASK>
+    <TASK id="17" status="[PASS]">CSV_MATERIAL_RESTITUTION_INGESTOR: `material_settling_profiles.csv` exists and cold parser uses `ReadOnlySpan&lt;byte&gt;` without `string.Split`/`float.Parse`.</TASK>
+    <TASK id="18" status="[PASS]">LIVE_SLEEP_STATE_GIZMO: editor gizmo path visualizes raw buoyancy sleep flags without changing runtime truth.</TASK>
+    <TASK id="19" status="[PASS_SOURCE_PENDING_EDITOR_RUN]">ARCHITECTURAL_METRIC_VALIDATOR: `RigidbodySleepScanner` now parses Physics C# source through Roslyn AST with token fallback; current JSON proof remains the older tokenized run until Unity can import and execute the editor scanner.</TASK>
+    <TASK id="20" status="[PASS_STATIC_PENDING_RUNTIME]">SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION: this file, route card, payload ledger, status, rationale, log, and JSON reports carry static proof; Unity/profiler proof remains pending.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DTO name="BuoyancyStateDTO" size="64" alignment="64">
+      <FIELD name="CurrentAUP" offset="0" size="24" />
+      <FIELD name="Velocity" offset="24" size="12" />
+      <FIELD name="VolumeCubicMeters" offset="36" size="4" />
+      <FIELD name="MassKg" offset="40" size="4" />
+      <FIELD name="EntityHashID" offset="44" size="4" />
+      <FIELD name="Flags" offset="48" size="4" />
+      <FIELD name="RestingFrameCount" offset="52" size="1" />
+      <FIELD name="DeepSleepTickCount" offset="53" size="1" />
+      <FIELD name="MaterialSleepProfileIndex" offset="54" size="2" />
+      <FIELD name="AngularSpeedSq" offset="56" size="4" />
+      <FIELD name="_pad1" offset="60" size="4" />
+    </DTO>
+    <DTO name="KinematicStateDTO" size="64" alignment="64" authority="KCC_PROMPT_ARTIFACT" flags_offset="52" />
+    <DTO name="BuoyancySleepSdfConfigDTO" size="64" flags_offset="60" />
+    <DTO name="KinematicSleepSdfConfigDTO" size="64" flags_offset="56" />
+    <DTO name="SleepStateTelemetryEntry" size="64" />
+    <DTO name="BuoyancyMaterialSettlingProfileDTO" size="32" />
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    Low quality inflates sleep thresholds toward cheap early rest, lowers required rest frames, increases evaluator stride, and stretches ambient-current polling cadence. Middle quality interpolates through `smoothstep`/`lerp`. High/ultra keeps stricter settling while the saved CPU can fund presentation/static promotion; quality never changes DTO layout, save identity, owner route, or authority.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS private_native_arrays="0" private_native_lists="0" private_native_hashmaps="0">
+    <BUFFER id="71643" name="ShinobuBuoyancySleepSdfDensity" />
+    <BUFFER id="71644" name="ShinobuBuoyancySleepSdfConfig" />
+    <BUFFER id="71645" name="ShinobuBuoyancySleepTelemetryRing" />
+    <BUFFER id="71646" name="ShinobuBuoyancySleepTelemetryCursor" />
+    <BUFFER id="71647" name="ShinobuBuoyancyMaterialSettlingProfiles" />
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH noalias="PRESENT_ON_DISJOINT_NATIVEARRAY_FIELDS" hidden_complete="NONE_IN_FIXEDTICK">
+    <CONSUMES>SignalBus&lt;WakeRequestSignal&gt; frame snapshot; Vault generation handles; prior dispatcher dependencies.</CONSUMES>
+    <OUTPUTS>Wake prepass JobHandle, ambient wake JobHandle, evaluate JobHandle, compact force packet JobHandle, reduction/telemetry JobHandle returned through `_pendingHandle`.</OUTPUTS>
+    <FORCE_PACKET_INVARIANT>Candidate slots are overwritten by evaluator before compact; compact writes the valid packet count; drain never scans stale capacity outside `Counters[0].ForcePackets`.</FORCE_PACKET_INVARIANT>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD sibling_runtime_reference="NONE_DECLARED_BY_SHINOBU_249" direct_buoyancy_to_kcc_schedule="FALSE" editor_asmdef_isolation="ADDED_PENDING_UNITY_REIMPORT" stale_csproj_coverage="PENDING_UNITY_IMPORT" />
+  <DEAR_LIE before="Dormant rows paying full buoyancy/drag/SDF/current work" after="Flagged sleeping rows zero force candidate and return before heavy math; analytic triangle-wave flow substitutes missing authored current samples" complexity_before="O(N * buoyancy_drag_sdf_flow)" complexity_after="O(N) flag check plus sparse quality-strided evaluation" />
+  <COLD_AUTHORING source="Assets/_Project/Data/Physics/material_settling_profiles.csv" parser="ReadOnlySpan&lt;byte&gt;" data_monolith_claim="FALSE" endian_claim="IN_PROCESS_LITTLE_ENDIAN_ONLY" />
+</SELF_AUDIT>

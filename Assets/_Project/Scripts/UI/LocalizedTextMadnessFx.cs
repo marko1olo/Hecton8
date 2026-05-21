@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// CanvasRenderer does not expose MaterialPropertyBlock, so this owner maintains a per-label material instance.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LocalizedTextMadnessFx : MonoBehaviour, ILateFrameTickable
+    public sealed class LocalizedTextMadnessFx : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static readonly int UnderlayColorId = Shader.PropertyToID("_UnderlayColor");
         private static readonly int UnderlayOffsetXId = Shader.PropertyToID("_UnderlayOffsetX");
@@ -36,8 +36,15 @@ namespace Hecton8.UI
         private Material _materialInstance;
         private Material _sourceMaterial;
         private bool _registered;
+        private bool _hotSwapRegistered;
         private bool _effectActive;
         private float _waveTime;
+
+        private void OnEnable()
+        {
+            TryRegisterHotSwapListener();
+            RegisterToTickManager();
+        }
 
         /// <summary>
         /// Bind the effect owner to a TMP UGUI target.
@@ -66,35 +73,41 @@ namespace Hecton8.UI
             if (_effectActive)
             {
                 EnsureMaterialInstance();
-                RegisterToTickManager();
                 ApplyActiveState(0f);
                 return;
             }
 
             ApplyIdleState();
-            UnregisterFromTickManager();
         }
 
         private void OnDisable()
         {
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             ReleaseMaterialInstance();
         }
 
         private void OnDestroy()
         {
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             ReleaseMaterialInstance();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+                RegisterToTickManager();
         }
 
         /// <inheritdoc />
         public void LateFrameTick()
         {
             if (!_effectActive || _materialInstance == null || _target == null)
-            {
-                UnregisterFromTickManager();
                 return;
-            }
 
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             _waveTime += deltaTime;
@@ -209,9 +222,6 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
@@ -222,6 +232,23 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

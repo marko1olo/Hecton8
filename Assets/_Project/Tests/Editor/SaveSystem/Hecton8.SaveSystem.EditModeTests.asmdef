@@ -1,0 +1,25 @@
+{
+    "name": "Hecton8.SaveSystem.EditModeTests",
+    "rootNamespace": "Hecton8.Tests.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Unity.Collections",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

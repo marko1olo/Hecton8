@@ -1,0 +1,14 @@
+{
+  "schema": "hecton8.ai_texture_ingestion_report.v1",
+  "agent": "SHINOBU_269",
+  "assetPath": "",
+  "mapKind": "None",
+  "maxSize": 0,
+  "formatHash": "0",
+  "flags": "0",
+  "compressionStandalone": "BC7 color/ARM, BC5 normal",
+  "compressionAndroid": "ASTC_6x6",
+  "rollbackFence": "Presentation-only route card emitted; runtime owner verification required",
+  "status": "PENDING_UNITY_IMPORT_EXECUTION",
+  "reason": "AssetPostprocessor route exists, but no AI texture import event was executed in this pass."
+}

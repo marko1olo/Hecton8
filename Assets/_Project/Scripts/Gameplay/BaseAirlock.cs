@@ -50,7 +50,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
     [AddComponentMenu("Hecton/Gameplay/Base Airlock")]
-    public sealed class BaseAirlock : MonoBehaviour, IInteractable, ITickable, IUpdatable, global::Hecton8.Interaction.IInteractionSignalConsumer, global::Hecton8.Interaction.IInteractionVulnerabilitySource, ILocalizationLanguageChangedListener, global::Hecton8.Interaction.IKinematicRepairTarget
+    public sealed class BaseAirlock : MonoBehaviour, IInteractable, ITickable, IUpdatable, IOriginShiftListener, global::Hecton8.Interaction.IInteractionSignalConsumer, global::Hecton8.Interaction.IInteractionVulnerabilitySource, ILocalizationLanguageChangedListener, global::Hecton8.Interaction.IKinematicRepairTarget
     {
         private const float DefaultWeldOverrideDurationSeconds = 5f;
         private const float MaxSignalWeldDeltaSeconds = 0.25f;
@@ -204,6 +204,12 @@ namespace Hecton8.Gameplay
         private int _pressureWhistleFrameOffset;
         private bool _bulkheadContainmentPublishPending;
         private byte _bulkheadContainmentRetryTicks;
+        private AbsoluteUniversePosition _bulkheadPoseCenterAup;
+        private float3 _bulkheadPoseNormal;
+        private float3 _bulkheadPoseUp;
+        private uint _bulkheadPoseShiftSequence;
+        private bool _bulkheadPoseSnapshotValid;
+        private bool _originShiftRegistered;
 
         // Cached references
         private Transform _cachedTransform;
@@ -242,7 +248,8 @@ namespace Hecton8.Gameplay
             get
             {
                 float requiredSeconds = ResolveWeldOverrideDurationSeconds();
-                return requiredSeconds > 0f ? math.saturate(_weldOverrideProgressSeconds / requiredSeconds) : 0f;
+                float progressSeconds = SanitizeNonNegative(_weldOverrideProgressSeconds, 0f);
+                return requiredSeconds > 0f ? Sanitize01(progressSeconds / requiredSeconds, 0f) : 0f;
             }
         }
 
@@ -263,6 +270,7 @@ namespace Hecton8.Gameplay
                 statusLightRenderer = cachedRenderer;
 
             CacheOwningModule();
+            RefreshBulkheadPoseSnapshot();
             _pressureWhistleFrameOffset = unchecked((int)EntityId.ToULong(GetEntityId())) & PressureWhistleFrameMask;
         }
 
@@ -270,6 +278,8 @@ namespace Hecton8.Gameplay
         {
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
+            TryRegisterOriginShiftListener();
+            RefreshBulkheadPoseSnapshot();
             RebuildLocalizedTextCache();
             // Set initial state
             _state = AirlockState.Ready;
@@ -282,6 +292,8 @@ namespace Hecton8.Gameplay
         {
             CacheOwningModule();
             TryRegister();
+            TryRegisterOriginShiftListener();
+            RefreshBulkheadPoseSnapshot();
             PublishBulkheadContainmentState(_emergencyLockedDown);
         }
 
@@ -291,6 +303,7 @@ namespace Hecton8.Gameplay
             ReleaseCycleInputLock();
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
+            TryUnregisterOriginShiftListener();
             ClearInteractorComponentCache();
         }
 
@@ -299,6 +312,15 @@ namespace Hecton8.Gameplay
             CancelPlayerDockingSnap();
             ReleaseCycleInputLock();
             TryUnregister();
+            TryUnregisterOriginShiftListener();
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            _bulkheadPoseSnapshotValid = false;
+            _bulkheadPoseShiftSequence = shiftData.Sequence;
+            _bulkheadContainmentPublishPending = true;
+            _bulkheadContainmentRetryTicks = 0;
         }
 
         private void TryRegister()
@@ -319,6 +341,24 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryRegisterOriginShiftListener()
+        {
+            if (_originShiftRegistered || !Application.isPlaying)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _originShiftRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
+        }
+
+        private void TryUnregisterOriginShiftListener()
+        {
+            if (!_originShiftRegistered)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _originShiftRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -418,7 +458,8 @@ namespace Hecton8.Gameplay
                 return true;
 
             float requiredSeconds = ResolveWeldOverrideDurationSeconds();
-            _weldOverrideProgressSeconds = math.min(requiredSeconds, _weldOverrideProgressSeconds + deltaTime);
+            float progressSeconds = SanitizeNonNegative(_weldOverrideProgressSeconds, 0f);
+            _weldOverrideProgressSeconds = math.min(requiredSeconds, progressSeconds + deltaTime);
             if (_weldOverrideProgressSeconds >= requiredSeconds)
                 ForceEmergencyOverride();
 
@@ -443,9 +484,9 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            leftHandAup = AbsoluteUniversePosition.FromRuntimePosition(leftRuntime);
-            rightHandAup = AbsoluteUniversePosition.FromRuntimePosition(rightRuntime);
-            return IsFinite(toolRotation);
+            return IsFinite(toolRotation) &&
+                   TryResolveAupFromBulkheadPose(leftRuntime, out leftHandAup) &&
+                   TryResolveAupFromBulkheadPose(rightRuntime, out rightHandAup);
         }
 
         private bool TryResolveRepairSnapRuntimePoints(
@@ -460,10 +501,8 @@ namespace Hecton8.Gameplay
             if (!IsFinite(runtimeHitPoint))
                 return false;
 
-            Transform airlockTransform = _cachedTransform != null ? _cachedTransform : transform;
-            Vector3 right = NormalizeFiniteOrFallback(airlockTransform.right, Vector3.right);
-            Vector3 up = NormalizeFiniteOrFallback(airlockTransform.up, Vector3.up);
-            Vector3 forward = NormalizeFiniteOrFallback(airlockTransform.forward, Vector3.forward);
+            if (!TryReadBulkheadRuntimeBasis(out Vector3 forward, out Vector3 up, out Vector3 right))
+                return false;
 
             Vector3 handCenter = runtimeHitPoint + up * RepairHandVerticalBiasMeters;
             leftRuntime = handCenter - right * RepairHandHalfSpanMeters;
@@ -477,8 +516,9 @@ namespace Hecton8.Gameplay
             out global::Hecton8.Interaction.KinematicRepairSnapPoint snapPoint)
         {
             snapPoint = default;
-            float3 runtimeHit = probe.HitAup.ToRuntimeFloat3();
-            Vector3 runtimeHitPoint = new Vector3(runtimeHit.x, runtimeHit.y, runtimeHit.z);
+            if (!TryConvertAupToRuntimePosition(in probe.HitAup, out Vector3 runtimeHitPoint))
+                return false;
+
             if (!TryResolveRepairSnapRuntimePoints(
                     runtimeHitPoint,
                     out Vector3 leftRuntimePoint,
@@ -512,7 +552,7 @@ namespace Hecton8.Gameplay
                 RuntimePosition = runtimeAnchor,
                 SurfaceNormal = surfaceNormal,
                 ToolRotation = toolRotation,
-                HitDistance = math.max(0f, probe.HitDistance),
+                HitDistance = SanitizeNonNegative(probe.HitDistance, 0f),
                 Blend = 1f,
                 ColliderInstanceId = probe.ColliderInstanceId
             };
@@ -526,7 +566,7 @@ namespace Hecton8.Gameplay
             out AbsoluteUniversePosition targetAup)
         {
             targetAup = default;
-            if (!MathGuard.IsFinite(in referenceAup) ||
+            if (!referenceAup.IsFinite() ||
                 !IsFinite(referenceRuntimePosition) ||
                 !IsFinite(targetRuntimePosition))
             {
@@ -538,7 +578,43 @@ namespace Hecton8.Gameplay
                 (double)targetRuntimePosition.y - referenceRuntimePosition.y,
                 (double)targetRuntimePosition.z - referenceRuntimePosition.z);
             targetAup = AbsoluteUniversePosition.OffsetMeters(in referenceAup, localDelta);
-            return MathGuard.IsFinite(in targetAup);
+            return targetAup.IsFinite();
+        }
+
+        private static bool TryConvertAupToRuntimePosition(
+            in AbsoluteUniversePosition positionAup,
+            out Vector3 runtimePosition)
+        {
+            runtimePosition = default;
+            if (HectonFloatingOrigin.IsShiftInProgress || !positionAup.IsFinite())
+                return false;
+
+            double3 absolutePosition = ToBulkheadAbsoluteDouble3(in positionAup);
+            if (!math.all(math.isfinite(absolutePosition)))
+                return false;
+
+            Vector3 candidate = HectonFloatingOrigin.ToRuntimePosition(absolutePosition);
+            if (!IsFinite(candidate))
+                return false;
+
+            runtimePosition = candidate;
+            return true;
+        }
+
+        private static bool TryConvertRuntimePositionToAup(
+            Vector3 runtimePosition,
+            out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (HectonFloatingOrigin.IsShiftInProgress || !IsFinite(runtimePosition))
+                return false;
+
+            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            if (!math.all(math.isfinite(absolutePosition)))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.FromAbsolutePosition(absolutePosition);
+            return positionAup.IsFinite();
         }
 
         /// <inheritdoc />
@@ -590,9 +666,11 @@ namespace Hecton8.Gameplay
             BaseAirlockEvents.RaiseCycleStarted(this, player);
 
             // Play cycle start sound
-            if (cycleStartSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (cycleStartSound != null &&
+                Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio &&
+                TryResolveBulkheadAudioRuntimePosition(out Vector3 audioPosition))
             {
-                audio.PlayAtPoint(cycleStartSound, _cachedTransform.position);
+                audio.PlayAtPoint(cycleStartSound, audioPosition);
             }
 
             // Fire event
@@ -623,9 +701,11 @@ namespace Hecton8.Gameplay
             UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
 
             // Play cycle end sound
-            if (cycleEndSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (cycleEndSound != null &&
+                Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio &&
+                TryResolveBulkheadAudioRuntimePosition(out Vector3 audioPosition))
             {
-                audio.PlayAtPoint(cycleEndSound, _cachedTransform.position);
+                audio.PlayAtPoint(cycleEndSound, audioPosition);
             }
 
             BaseAirlockEvents.RaiseCycleCompleted(this, completedInteractor);
@@ -741,9 +821,9 @@ namespace Hecton8.Gameplay
 
         private void AdvancePlayerDockingSnap(float deltaTime)
         {
-            float safeDeltaTime = math.max(0f, deltaTime);
+            float safeDeltaTime = SanitizeNonNegative(deltaTime, 0f);
             _snapElapsedSeconds = math.min(PlayerDockingSnapDurationSeconds, _snapElapsedSeconds + safeDeltaTime);
-            float normalizedTime = math.saturate(_snapElapsedSeconds * PlayerDockingSnapInverseDuration);
+            float normalizedTime = Sanitize01(_snapElapsedSeconds * PlayerDockingSnapInverseDuration, 0f);
             ApplyPlayerDockingSnapPose(SmoothStep01(normalizedTime));
             if (_snapElapsedSeconds < PlayerDockingSnapCompletionSeconds)
                 return;
@@ -898,7 +978,9 @@ namespace Hecton8.Gameplay
         private void TransitionAirlockAudioSnapshot(bool insideDryVolume)
         {
             AudioMixerSnapshot targetSnapshot = insideDryVolume ? dryInteriorSnapshot : wetExteriorSnapshot;
-            float transitionSeconds = math.max(MinimumEnvironmentSnapshotTransitionSeconds, environmentSnapshotTransitionSeconds);
+            float transitionSeconds = math.max(
+                MinimumEnvironmentSnapshotTransitionSeconds,
+                SanitizePositive(environmentSnapshotTransitionSeconds, MinimumEnvironmentSnapshotTransitionSeconds));
             ApplyOceanRoarLowPass(insideDryVolume);
 
             if (targetSnapshot == null)
@@ -917,59 +999,179 @@ namespace Hecton8.Gameplay
                 insideDryVolume ? DryOceanRoarLowPassHz : WetOceanRoarLowPassHz);
         }
 
-        private static double3 ToBulkheadAbsoluteDouble3(in AbsoluteUniversePosition aup)
-        {
-            double cell = AbsoluteUniversePosition.CellSizeMeters;
-            return new double3(
-                aup.GridX * cell + aup.LocalX,
-                aup.GridY * cell + aup.LocalY,
-                aup.GridZ * cell + aup.LocalZ);
-        }
-
         private bool PublishBulkheadContainmentState(bool lockedDown)
         {
             uint edgeHash = ResolveBulkheadEdgeHash();
-            Transform frame = _cachedTransform != null ? _cachedTransform : transform;
-            if (!TryResolveAupFromRuntimeOrigin(frame.position, out AbsoluteUniversePosition centerAup))
+            if (!IsBulkheadPoseSnapshotCurrent() && !RefreshBulkheadPoseSnapshot())
             {
                 _bulkheadContainmentPublishPending = true;
                 return false;
             }
 
-            float3 normal = (float3)frame.forward;
+            if (!TryReadBulkheadPoseSnapshot(out double3 centerAup, out float3 normal))
+            {
+                _bulkheadContainmentPublishPending = true;
+                return false;
+            }
+
             uint siblingHash = ResolveBulkheadSiblingHash(edgeHash);
             bool published = BulkheadContainmentIntentBus.TryWriteAirlockBulkheadIntent(
                 edgeHash,
                 lockedDown,
-                ToBulkheadAbsoluteDouble3(in centerAup),
+                centerAup,
                 normal,
                 emergencyBulkheadWidthMeters,
                 emergencyBulkheadHeightMeters,
                 ResolveBulkheadParentIntegrity01(),
                 siblingHash,
-                0u);
+                SystemDispatcher.CurrentFrameId);
             _bulkheadContainmentPublishPending = !published;
             if (published)
                 _bulkheadContainmentRetryTicks = 0;
             return published;
         }
 
-        private static bool TryResolveAupFromRuntimeOrigin(
+        private bool TryReadBulkheadPoseSnapshot(out double3 centerAup, out float3 normal)
+        {
+            centerAup = default;
+            normal = new float3(0f, 0f, 1f);
+            if (!IsBulkheadPoseSnapshotCurrent())
+                return false;
+
+            centerAup = ToBulkheadAbsoluteDouble3(in _bulkheadPoseCenterAup);
+            normal = _bulkheadPoseNormal;
+            float normalLengthSq = math.lengthsq(normal);
+            return math.all(math.isfinite(centerAup)) &&
+                   math.all(math.isfinite(normal)) &&
+                   math.isfinite(normalLengthSq) &&
+                   normalLengthSq > MinOverrideSignalDirectionSqr;
+        }
+
+        private static double3 ToBulkheadAbsoluteDouble3(in AbsoluteUniversePosition position)
+        {
+            const double cell = HectonPhysicsContract.AupSectorSizeMetersDouble;
+            return new double3(
+                position.GridX * cell + position.LocalX,
+                position.GridY * cell + position.LocalY,
+                position.GridZ * cell + position.LocalZ);
+        }
+
+        private bool TryReadBulkheadRuntimeBasis(out Vector3 forward, out Vector3 up, out Vector3 right)
+        {
+            forward = Vector3.forward;
+            up = Vector3.up;
+            right = Vector3.right;
+            if (!IsBulkheadPoseSnapshotCurrent())
+                return false;
+
+            float3 forward3 = _bulkheadPoseNormal;
+            float forwardLengthSq = math.lengthsq(forward3);
+            if (!math.all(math.isfinite(forward3)) || forwardLengthSq <= MinOverrideSignalDirectionSqr)
+                return false;
+
+            forward3 *= math.rsqrt(forwardLengthSq);
+            float3 upHint = _bulkheadPoseUp;
+            if (!math.all(math.isfinite(upHint)) || math.lengthsq(upHint) <= 0.000001f)
+            {
+                upHint = math.abs(forward3.y) < 0.85f
+                    ? new float3(0f, 1f, 0f)
+                    : new float3(1f, 0f, 0f);
+            }
+
+            float3 up3 = upHint - forward3 * math.dot(upHint, forward3);
+            float upLengthSq = math.lengthsq(up3);
+            if (!math.all(math.isfinite(up3)) || upLengthSq <= 0.000001f)
+            {
+                up3 = math.abs(forward3.y) < 0.85f
+                    ? new float3(0f, 1f, 0f)
+                    : new float3(1f, 0f, 0f);
+                up3 -= forward3 * math.dot(up3, forward3);
+                upLengthSq = math.lengthsq(up3);
+            }
+
+            if (!math.all(math.isfinite(up3)) || upLengthSq <= 0.000001f)
+                return false;
+
+            up3 *= math.rsqrt(upLengthSq);
+            float3 right3 = math.cross(up3, forward3);
+            float rightLengthSq = math.lengthsq(right3);
+            if (!math.all(math.isfinite(right3)) || rightLengthSq <= 0.000001f)
+                return false;
+
+            right3 *= math.rsqrt(rightLengthSq);
+            up3 = math.cross(forward3, right3);
+            upLengthSq = math.lengthsq(up3);
+            if (!math.all(math.isfinite(up3)) || upLengthSq <= 0.000001f)
+                return false;
+
+            up3 *= math.rsqrt(upLengthSq);
+            forward = new Vector3(forward3.x, forward3.y, forward3.z);
+            up = new Vector3(up3.x, up3.y, up3.z);
+            right = new Vector3(right3.x, right3.y, right3.z);
+            return IsFinite(forward) && IsFinite(up) && IsFinite(right);
+        }
+
+        private bool RefreshBulkheadPoseSnapshot()
+        {
+            if (HectonFloatingOrigin.IsShiftInProgress)
+                return false;
+
+            Transform frame = _cachedTransform != null ? _cachedTransform : transform;
+            if (frame == null ||
+                !IsFinite(frame.position) ||
+                !TryNormalizeFinite(frame.forward, out Vector3 normalizedForward) ||
+                !TryNormalizeFinite(frame.up, out Vector3 normalizedUp))
+            {
+                _bulkheadPoseSnapshotValid = false;
+                return false;
+            }
+
+            if (!TryConvertRuntimePositionToAup(frame.position, out AbsoluteUniversePosition centerAup))
+            {
+                _bulkheadPoseSnapshotValid = false;
+                return false;
+            }
+
+            _bulkheadPoseCenterAup = centerAup;
+            _bulkheadPoseNormal = new float3(normalizedForward.x, normalizedForward.y, normalizedForward.z);
+            _bulkheadPoseUp = new float3(normalizedUp.x, normalizedUp.y, normalizedUp.z);
+            _bulkheadPoseShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            float normalLengthSq = math.lengthsq(_bulkheadPoseNormal);
+            float upLengthSq = math.lengthsq(_bulkheadPoseUp);
+            _bulkheadPoseSnapshotValid = _bulkheadPoseCenterAup.IsFinite() &&
+                                         math.all(math.isfinite(_bulkheadPoseNormal)) &&
+                                         math.isfinite(normalLengthSq) &&
+                                         normalLengthSq > MinOverrideSignalDirectionSqr &&
+                                         math.all(math.isfinite(_bulkheadPoseUp)) &&
+                                         math.isfinite(upLengthSq) &&
+                                         upLengthSq > 0.000001f;
+            return _bulkheadPoseSnapshotValid;
+        }
+
+        private bool IsBulkheadPoseSnapshotCurrent()
+        {
+            return _bulkheadPoseSnapshotValid &&
+                   !HectonFloatingOrigin.IsShiftInProgress &&
+                   _bulkheadPoseShiftSequence == HectonFloatingOrigin.CurrentShiftSequence;
+        }
+
+        private bool TryResolveAupFromBulkheadPose(
             Vector3 runtimePosition,
             out AbsoluteUniversePosition positionAup)
         {
             positionAup = default;
-            if (!IsFinite(runtimePosition))
+            if (!IsBulkheadPoseSnapshotCurrent() ||
+                !IsFinite(runtimePosition) ||
+                !TryResolveBulkheadAudioRuntimePosition(out Vector3 bulkheadRuntimePosition))
+            {
                 return false;
+            }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!MathGuard.IsFinite(in originAup))
-                return false;
-
-            positionAup = AbsoluteUniversePosition.OffsetMeters(
-                in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return MathGuard.IsFinite(in positionAup);
+            return TryOffsetAupByRuntimeDelta(
+                in _bulkheadPoseCenterAup,
+                bulkheadRuntimePosition,
+                runtimePosition,
+                out positionAup);
         }
 
         private void RetryBulkheadContainmentPublish()
@@ -977,6 +1179,12 @@ namespace Hecton8.Gameplay
             if (_bulkheadContainmentRetryTicks > 0)
             {
                 _bulkheadContainmentRetryTicks--;
+                return;
+            }
+
+            if (!IsBulkheadPoseSnapshotCurrent() && !RefreshBulkheadPoseSnapshot())
+            {
+                _bulkheadContainmentRetryTicks = 15;
                 return;
             }
 
@@ -1011,10 +1219,15 @@ namespace Hecton8.Gameplay
         private float ResolveBulkheadParentIntegrity01()
         {
             BaseModule module = owningModule;
-            if (module == null || module.MaxIntegrity <= 0.01f)
+            if (module == null ||
+                !float.IsFinite(module.CurrentIntegrity) ||
+                !float.IsFinite(module.MaxIntegrity) ||
+                module.MaxIntegrity <= 0.01f)
+            {
                 return 1f;
+            }
 
-            return math.saturate(module.CurrentIntegrity / math.max(0.01f, module.MaxIntegrity));
+            return Sanitize01(module.CurrentIntegrity / module.MaxIntegrity, 1f);
         }
 
         private static uint HashBulkheadLane(uint hash, uint value)
@@ -1030,7 +1243,8 @@ namespace Hecton8.Gameplay
             if (!_emergencyLockedDown)
                 return;
 
-            if (((Time.frameCount + _pressureWhistleFrameOffset) & PressureWhistleFrameMask) != 0)
+            uint frame = SystemDispatcher.CurrentFrameId;
+            if ((((int)frame + _pressureWhistleFrameOffset) & PressureWhistleFrameMask) != 0)
                 return;
 
             BaseModule module = owningModule;
@@ -1038,19 +1252,35 @@ namespace Hecton8.Gameplay
                 return;
 
             float pressureDifferentialKPa = math.abs(module.ResolveExternalPressureDeltaKPa());
-            if (pressureDifferentialKPa < PressureWhistleStartDeltaKPa)
+            if (!float.IsFinite(pressureDifferentialKPa) ||
+                pressureDifferentialKPa < PressureWhistleStartDeltaKPa)
+            {
+                return;
+            }
+
+            float pressureSpan = SanitizePositive(PressureWhistleFullDeltaKPa - PressureWhistleStartDeltaKPa, 1f);
+            float intensity01 = Sanitize01(
+                (pressureDifferentialKPa - PressureWhistleStartDeltaKPa) / pressureSpan,
+                0f);
+            if (!TryResolveBulkheadAudioRuntimePosition(out Vector3 audioPosition))
                 return;
 
-            float intensity01 = math.saturate(
-                (pressureDifferentialKPa - PressureWhistleStartDeltaKPa) /
-                math.max(1f, PressureWhistleFullDeltaKPa - PressureWhistleStartDeltaKPa));
             ProceduralAudioEvents.RaiseAudioPingTriggered(
-                _cachedTransform.position,
+                audioPosition,
                 intensity01,
                 math.lerp(0.035f, 0.11f, intensity01),
                 math.lerp(0.18f, 0.52f, intensity01),
                 math.lerp(6200f, 12800f, intensity01),
                 ProceduralAudioPingKind.MechanicalWhirr);
+        }
+
+        private bool TryResolveBulkheadAudioRuntimePosition(out Vector3 runtimePosition)
+        {
+            runtimePosition = default;
+            if (!IsBulkheadPoseSnapshotCurrent())
+                return false;
+
+            return TryConvertAupToRuntimePosition(in _bulkheadPoseCenterAup, out runtimePosition);
         }
 
         /// <summary>
@@ -1075,7 +1305,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveWeldOverrideDurationSeconds()
         {
-            return math.max(0.1f, weldOverrideDurationSeconds);
+            return math.max(0.1f, SanitizePositive(weldOverrideDurationSeconds, DefaultWeldOverrideDurationSeconds));
         }
 
         private float ResolveEqualizationDurationSeconds()
@@ -1111,9 +1341,11 @@ namespace Hecton8.Gameplay
             if (signal.PowerDelivered <= 0f || !float.IsFinite(signal.PowerDelivered))
                 return 0f;
 
-            float sourcePower = math.max(0.001f, signal.Source.Power);
+            float sourcePower = SanitizePositive(signal.Source.Power, 0.001f);
+            if (sourcePower < 0.001f)
+                sourcePower = 0.001f;
             float deltaSeconds = signal.PowerDelivered / sourcePower;
-            return math.clamp(deltaSeconds, 0f, MaxSignalWeldDeltaSeconds);
+            return float.IsFinite(deltaSeconds) ? math.min(deltaSeconds, MaxSignalWeldDeltaSeconds) : 0f;
         }
 
         private bool IsOverrideWeldSignalValid(in global::Hecton8.Interaction.InteractionSignal signal, Vector3 runtimeHitPoint)
@@ -1124,14 +1356,17 @@ namespace Hecton8.Gameplay
             if (!IsFinite(runtimeHitPoint))
                 return false;
 
-            float range = math.max(0f, signal.Source.Range);
+            float range = SanitizePositive(signal.Source.Range, 0f);
             if (range <= 0f)
                 return false;
 
             float3 direction = signal.Source.Direction;
             float directionLengthSq = math.lengthsq(direction);
-            if (directionLengthSq <= MinOverrideSignalDirectionSqr)
+            if (!math.isfinite(directionLengthSq) ||
+                directionLengthSq <= MinOverrideSignalDirectionSqr)
+            {
                 return false;
+            }
 
             Vector3 absoluteOrigin = new Vector3(signal.Source.Origin.x, signal.Source.Origin.y, signal.Source.Origin.z);
             if (!IsFinite(absoluteOrigin))
@@ -1146,11 +1381,17 @@ namespace Hecton8.Gameplay
                 runtimeHitPoint.y - runtimeOrigin.y,
                 runtimeHitPoint.z - runtimeOrigin.z);
             float rangeWithSlack = range + OverrideWeldRangeSlackMeters;
-            if (math.lengthsq(delta) > rangeWithSlack * rangeWithSlack)
+            float deltaLengthSq = math.lengthsq(delta);
+            if (!math.isfinite(deltaLengthSq) ||
+                deltaLengthSq > rangeWithSlack * rangeWithSlack)
+            {
                 return false;
+            }
 
             float forwardMeters = math.dot(delta, direction) * math.rsqrt(directionLengthSq);
-            return forwardMeters >= -OverrideWeldRangeSlackMeters && forwardMeters <= rangeWithSlack;
+            return float.IsFinite(forwardMeters) &&
+                   forwardMeters >= -OverrideWeldRangeSlackMeters &&
+                   forwardMeters <= rangeWithSlack;
         }
 
         private static bool IsFinite(Vector3 value)
@@ -1160,9 +1401,24 @@ namespace Hecton8.Gameplay
                    float.IsFinite(value.z);
         }
 
+        private static float SanitizePositive(float value, float fallback)
+        {
+            return float.IsFinite(value) && value > 0f ? value : fallback;
+        }
+
+        private static float SanitizeNonNegative(float value, float fallback)
+        {
+            return float.IsFinite(value) && value >= 0f ? value : fallback;
+        }
+
+        private static float Sanitize01(float value, float fallback)
+        {
+            return float.IsFinite(value) ? math.saturate(value) : math.saturate(fallback);
+        }
+
         private static float SmoothStep01(float value)
         {
-            float t = math.saturate(value);
+            float t = Sanitize01(value, 0f);
             return t * t * (3f - 2f * t);
         }
 
@@ -1191,8 +1447,14 @@ namespace Hecton8.Gameplay
 
         private static bool TryNormalizeFinite(Vector3 value, out Vector3 normalized)
         {
+            if (!IsFinite(value))
+            {
+                normalized = default;
+                return false;
+            }
+
             float lengthSq = value.sqrMagnitude;
-            if (!IsFinite(value) || lengthSq <= 0.000001f)
+            if (!float.IsFinite(lengthSq) || lengthSq <= 0.000001f)
             {
                 normalized = default;
                 return false;
@@ -1202,29 +1464,27 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static Vector3 NormalizeFiniteOrFallback(Vector3 value, Vector3 fallback)
-        {
-            return TryNormalizeFinite(value, out Vector3 normalized)
-                ? normalized
-                : fallback;
-        }
-
         private static Vector3 LerpUnclampedVector(Vector3 start, Vector3 end, float t)
         {
+            if (!IsFinite(start))
+                start = Vector3.zero;
+            if (!IsFinite(end))
+                end = start;
+
+            float safeT = Sanitize01(t, 0f);
             return new Vector3(
-                math.lerp(start.x, end.x, t),
-                math.lerp(start.y, end.y, t),
-                math.lerp(start.z, end.z, t));
+                math.lerp(start.x, end.x, safeT),
+                math.lerp(start.y, end.y, safeT),
+                math.lerp(start.z, end.z, safeT));
         }
 
         private static Quaternion NlerpQuaternion(Quaternion start, Quaternion end, float t)
         {
-            quaternion startQ = new quaternion(start.x, start.y, start.z, start.w);
-            quaternion endQ = new quaternion(end.x, end.y, end.z, end.w);
-            float4 endValue = math.dot(startQ.value, endQ.value) < 0f ? -endQ.value : endQ.value;
-            float4 blended = math.lerp(startQ.value, endValue, math.saturate(t));
-            float lengthSq = math.dot(blended, blended);
-            blended = lengthSq > 0.000001f ? blended * math.rsqrt(lengthSq) : startQ.value;
+            float4 startValue = NormalizeQuaternionNoSqrt(new float4(start.x, start.y, start.z, start.w));
+            float4 endValue = NormalizeQuaternionNoSqrt(new float4(end.x, end.y, end.z, end.w));
+            endValue = math.dot(startValue, endValue) < 0f ? -endValue : endValue;
+            float4 blended = math.lerp(startValue, endValue, Sanitize01(t, 0f));
+            blended = NormalizeQuaternionNoSqrt(blended);
             return new Quaternion(blended.x, blended.y, blended.z, blended.w);
         }
 
@@ -1279,8 +1539,10 @@ namespace Hecton8.Gameplay
 
         private static float4 NormalizeQuaternionNoSqrt(float4 value)
         {
-            float lenSq = math.max(math.dot(value, value), 0.000001f);
-            return value * math.rsqrt(lenSq);
+            float lenSq = math.dot(value, value);
+            return math.isfinite(lenSq) && lenSq > 0.000001f
+                ? value * math.rsqrt(lenSq)
+                : new float4(0f, 0f, 0f, 1f);
         }
 
         private static bool TryResolveParentComponent<T>(Transform start, out T component) where T : Component
@@ -1315,7 +1577,17 @@ namespace Hecton8.Gameplay
             {
                 owningModule.SetEmergencyBulkheadLockdown(false);
                 if (!owningModule.IsFlooded)
-                    owningModule.ForceFloodFromBulkheadOverride(_cachedTransform.position);
+                {
+                    Vector3 breachAnchor = new Vector3(float.NaN, float.NaN, float.NaN);
+                    if (TryResolveBulkheadAudioRuntimePosition(out Vector3 cachedBreachAnchor) ||
+                        (RefreshBulkheadPoseSnapshot() &&
+                         TryResolveBulkheadAudioRuntimePosition(out cachedBreachAnchor)))
+                    {
+                        breachAnchor = cachedBreachAnchor;
+                    }
+
+                    owningModule.ForceFloodFromBulkheadOverride(breachAnchor);
+                }
                 BaseAirlockEvents.RaiseManualOverrideCompleted(this);
                 return;
             }

@@ -872,3 +872,219 @@ Evidence:
 - Current49 audit artifacts trailing-whitespace scan: `TRAILING_WS_OK` for `.md` and `.json`.
 - `git diff --check -- Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs Tools/SignalBusContractAudit.ps1 Tools/SignalBusContractAuditCli/Program.cs Docs/AgentLogs/SignalBusContractAudit_Current49_SHINOBU_02.json Docs/AgentLogs/SignalBusContractAudit_Current49_SHINOBU_02.md` returned exit 0 with line-ending warnings only.
 - Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT49 CPU=100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-20 - Current50 Foveated Cold-DI Registry Purge And Scanner Root Expansion
+
+Problem: The new global systems doctrine forbids hot `GlobalRegistry` polling. Bernoulli found `FoveatedSimulationManager.BeginDispatcherFrame()` could call `EnsureNativeBuffersAllocated()`, which read `GlobalRegistry.DataVault`. The expanded SHINOBU_140 scanner then exposed a second hidden route: `BeginDispatcherFrame()` called `TryResolveViewCamera()`, and that helper read `GlobalRegistry.Player`. Both are dispatcher-frame reachable, even with retry throttles, and make runtime behavior depend on a service locator instead of an owner-published snapshot/cached interface.
+
+Solution: Added cached `_dataVault` and `_playerContext` fields to `FoveatedSimulationManager`. `InitializeRuntime()` performs the cold dependency bind, and `IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(...)` rebinds `DataVault` and `Player` when the owner slot changes. `EnsureNativeBuffersAllocated()` now fails closed if `_dataVault` is absent; `SetVoxelTeardownBackpressure()` and `TryResolveViewCamera()` use `_playerContext` instead of polling `GlobalRegistry.Player`. Vault handles are released through the cached previous Vault on rebinding/disposal, and buffer aliases are cleared before reuse. `RunShinobu140StaticScanners.py` now treats dispatcher phase names (`BeginDispatcherFrame`, `ReportFrame`, `ScheduleFrameJobs`, `RunMaster*Phase`, etc.) as hot roots so helper-based registry polls do not hide behind non-`Tick` names.
+
+Rejected Alternatives: Leaving the retry timer around `TryResolveViewCamera()` was rejected as proof because a throttled poll is still a poll. Reading `GlobalRegistry.DataVault` only when `_dataVault == null` was rejected because it turns missing DI into hidden runtime recovery. Broadly rewriting SystemDispatcher/InputDispatcher in the same pass was rejected because Bernoulli's remaining findings cross larger ownership surfaces and need separate compile-wall surgery. Running a full `dotnet build` was rejected by the project build guard because CPU sampled at 100%.
+
+Scalability potential: Low = weak CPUs avoid service-locator scans and late Vault handle acquisition from foveated frame phases; missing authority now fails closed instead of doing runtime discovery. Middle = cached hot-swap keeps scene/service replacement behavior without per-frame polling. High/Ultra = foveated scoring and interpolation still use the same DataVault-backed buffers and Burst jobs, so visual-overkill cadence scaling is preserved without changing gameplay truth ownership.
+
+Hardware Impact: 0 measured us. Static/source-only pass. Expected impact is removal of two service locator branches from foveated frame-reachable routes and shifting Vault/player dependency resolution to cold initialization or explicit hot-swap. No DTO layout, save identity, signal payload, or authority owner changed.
+
+Evidence:
+- Bernoulli sidecar identified Foveated `BeginDispatcherFrame -> EnsureNativeBuffersAllocated -> GlobalRegistry.DataVault` as a hot risk and reported the scanner root gap.
+- Targeted post-patch scanner import over `FoveatedSimulationManager.cs`: `hotRegistryCritical=0`, `hotHelperRegistryCritical=0`, `hotHelperCompleteCritical=0`.
+- `rg -n "GlobalRegistry\.DataVault|GlobalRegistry\.Player|Hecton8\.Core\.GlobalRegistry\.Player" Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs` now reports only `InitializeRuntime()` cold binds.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/SignalBusContractAudit.ps1 -ProjectRoot . -Scope SignalCritical -OutputJson Docs/AgentLogs/SignalBusContractAudit_Current50_SHINOBU_02.json -OutputMarkdown Docs/AgentLogs/SignalBusContractAudit_Current50_SHINOBU_02.md -FailOnError` -> files 9 C# / 68 compute, errors 0, warnings 0, infos 17, confirmedErrors 0.
+- `python -m py_compile Tools/RunShinobu140StaticScanners.py` passed.
+- Full SHINOBU_140 scan was attempted once and exceeded the 180s local command budget. The stale partial output was removed; no full repository scanner pass is claimed.
+- `git diff --check -- Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs Tools/RunShinobu140StaticScanners.py Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md Docs/AgentLogs/FoveatedHotRegistryAudit_Current50_SHINOBU_02.json Docs/AgentLogs/SignalBusContractAudit_Current50_SHINOBU_02.json Docs/AgentLogs/SignalBusContractAudit_Current50_SHINOBU_02.md` returned exit 0 with line-ending warnings only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT50 CPU=100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-20 - Current51 System/Input Cold-DI Registry Pass
+
+Problem: Current50 removed foveated hot registry polling, but the same doctrine breach remained in Core dispatcher/input owner routes. `SystemDispatcher.RequestAupPreShiftPause()`, `EnsureMasterDispatcherNativeBuffers()`, and `EnsureH8TimeArray()` could recover `IDataVault` through `GlobalRegistry.DataVault` from frame-reachable paths. `InputDispatcher.PreSimulationInputTick()` and XR capture routes reached lazy `_dataVault = GlobalRegistry.DataVault` fallbacks inside deterministic and XR buffer helpers.
+
+Solution: Removed `SystemDispatcher` self-refresh from AUP pre-shift, master dispatcher buffer ensure, and H8 time ensure paths. Those helpers now use cached `_dataVault` only and fail closed if cold initialization or hot-swap has not provided the owner route. Added `InputDispatcher.RefreshCachedDataVaultCold()` to cold lifecycle setup and added DataVault handling to `OnGlobalRegistryServiceRebound`; `OnGlobalRegistryServiceReplaced` now uses the same `RebindCachedDataVault(...)` helper. Removed all five `InputDispatcher` lazy DataVault registry reads from deterministic/XR buffer helpers.
+
+Rejected Alternatives: Keeping null-only registry recovery was rejected because a missing cold bind should not trigger service-locator discovery from input cadence, AUP, H8 time, raycast, or blackbox routes. Moving these buffers to private `NativeArray` fields was rejected because ownership already belongs to DataVault generation handles. Broadly rewriting input file I/O, managed action events, or unrelated dispatcher topology in the same pass was rejected as a compile-wall risk under concurrent agents.
+
+Scalability potential: Low = weak CPUs avoid late service-locator scans from input and dispatcher frame paths; missing Vault owner route fails closed instead of doing runtime discovery. Middle = hot-swap keeps scene/service replacement semantics without per-frame polling. High/Ultra = DataVault-backed deterministic input, XR command, H8 time, raycast, and dispatcher telemetry buffers remain available for richer visual/runtime coordination once the owner route is bound.
+
+Hardware Impact: 0 measured us. Static/source-only pass. Expected impact is removing hot hidden `GlobalRegistry.DataVault` branches from two Core dispatcher/input surfaces; no DTO layout, save identity, signal payload, gameplay truth owner, or authority route changed.
+
+Evidence:
+- Descartes sidecar confirmed `InputDispatcher` hot route: `PreSimulationInputTick -> EnsureDeterministicInputNativeBuffers -> GlobalRegistry.DataVault`, plus XR resolve/read helpers at the previous lazy fallback rows.
+- Anscombe sidecar was closed after timeout without output; local SystemDispatcher evidence came from direct source scans.
+- Targeted post-patch scanner import over `SystemDispatcher.cs` and `InputDispatcher.cs`: `Hot_Registry_Polling=0`, `Hot_Helper_Registry_Polling=0`, `Mid_Frame_Complete=0`, `Hot_Helper_Complete=0`.
+- `rg -n "GlobalDataVault\.TryGetLatestCreated|GlobalRegistry\.DataVault" Assets/_Project/Scripts/Core/SystemDispatcher.cs Assets/_Project/Scripts/Core/InputDispatcher.cs` now reports only cold bind helpers: `SystemDispatcher.RefreshDataVaultDependency()` and `InputDispatcher.RefreshCachedDataVaultCold()`.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/SignalBusContractAudit.ps1 -ProjectRoot . -Scope SignalCritical -OutputJson Docs/AgentLogs/SignalBusContractAudit_Current51_SHINOBU_02.json -OutputMarkdown Docs/AgentLogs/SignalBusContractAudit_Current51_SHINOBU_02.md -FailOnError` -> files 9 C# / 68 compute, errors 0, warnings 0, infos 17, confirmedErrors 0.
+- `git diff --check -- Assets/_Project/Scripts/Core/SystemDispatcher.cs Assets/_Project/Scripts/Core/InputDispatcher.cs` returned exit 0 with line-ending warnings only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT51 CPU=100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-21 - Current52 XR Read-Accessor Purity Pass
+
+Problem: Current51 removed lazy `GlobalRegistry.DataVault` reads from `InputDispatcher`, but the XR read facade still violated the stronger global systems doctrine. `GetXRInputStatesReadOnly`, `GetXRLookAtRayCommandsReadOnly`, and `TryGetXRInputState` reached `TryResolveXRInputStates` or `TryResolveXRLookAtRayCommands`; those helpers could call `TryResolveOrAcquireInputBuffer`, acquiring/growing DataVault buffers from a method named as a pure resolve/read path.
+
+Solution: Converted both XR resolve helpers to pure cached-handle reads through `TryResolveInputBuffer`. The owner mutation path remains `EnsureXRNativeBuffers`, which runs from cold lifecycle or explicit XR owner refresh before capture/stage methods use the buffers. No BufferID, DTO layout, save identity, signal payload, or authority route changed.
+
+Rejected Alternatives: Keeping acquire in `TryResolveXR*` was rejected because read accessors must not allocate/grow buffers. Adding a new fallback to `GlobalDataVault.TryGetLatestCreated()` was rejected because that route is bootstrap/editor/diagnostic/crash-only. Moving XR buffers to private `NativeArray` fields was rejected because the current ownership model is DataVault generation handles and rollback-friendly snapshot storage. Broadly rewriting XR controller capture and physics ray staging was rejected as unrelated compile-wall risk.
+
+Scalability potential: Low = weak CPUs avoid surprise Vault acquisition from read facades and fail closed if XR owner setup did not run. Middle = existing XR snapshot and look-at ray cadence stays unchanged once the owner buffers are prepared. High/Ultra = richer XR visual coordination can still read the same DataVault-backed buffers without turning read access into hidden ownership mutation.
+
+Hardware Impact: 0 measured us. Static/source-only pass. Expected impact is one less hidden branch from pure XR read facades into DataVault handle acquisition; no runtime profiler, Unity import, IL2CPP, or ARM64 player proof exists for Current52.
+
+Evidence:
+- Resolver proof: `TryResolveXRInputStates acquire=False registry=False pureResolve=True`; `TryResolveXRLookAtRayCommands acquire=False registry=False pureResolve=True`.
+- Targeted scanner import over `SystemDispatcher.cs` and `InputDispatcher.cs`: `{"Hot_Helper_Complete":0,"Hot_Helper_Registry_Polling":0,"Hot_Registry_Polling":0,"Mid_Frame_Complete":0}`.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/SignalBusContractAudit.ps1 -ProjectRoot . -Scope SignalCritical -OutputJson Docs/AgentLogs/SignalBusContractAudit_Current52_SHINOBU_02.json -OutputMarkdown Docs/AgentLogs/SignalBusContractAudit_Current52_SHINOBU_02.md -FailOnError` -> files 9 C# / 67 compute, errors 0, warnings 0, infos 17, confirmedErrors 0.
+- `git diff --check -- Assets/_Project/Scripts/Core/InputDispatcher.cs` returned exit 0 with line-ending warning only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT52 CPU=100 SAMPLES=100,50,92 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-21 - Current53 Late Sidecar Read-Purity And Signal Flush Pass
+
+Problem: Helmholtz returned late with more read-accessor doctrine violations: mutating methods named `Resolve*` in `SystemDispatcher`, `InputDispatcher`, and `FoveatedSimulationManager`. Zeno returned late with two actionable hot-lane defects: `NativeQueue<T>.ParallelWriter` producers bypass `TryPush` finite guards, and coalescence used `Interlocked.Increment(ref _coalescedTotal)` inside the single-owner flush path.
+
+Solution: Renamed the mutating Core helpers to explicit owner-phase verbs: `ClaimBaseStressCascadeSlot`, `BuildMasterDependencyHandleIntoScratch`, `ConsumeFrameTimeDilationScalar`, `RefreshCachedGamepadBinding`, `RefreshCachedXRControllerBindings`, `CaptureXRToolActionBitsAndPublishSignal`, `AdvanceLookHotSwapBlend`, `TryEnsureVaultArray`, `RefreshViewCameraBinding`, and `RefreshListenerBinding`. `FoveatedSimulationManager` camera/listener refresh now reads cached `IPlayerRuntimeContext` only and removed dispatcher-frame `GameBootstrapper`/`TryGetComponent` scene lookup. `SignalBus<T>.FlushPreSimulation` now sanitizes every dequeued payload before coalescence/snapshot append, counts corrupt drops, and commits coalescence/load-shed/corruption totals once per owner flush.
+
+Rejected Alternatives: Deprecating or removing `ParallelWriter` was rejected in this pass because producer migration requires lane-by-lane API coordination. Splitting `TetherTensionSignal` or padding/coalescing `ToolAcousticSignal` was rejected in this pass because it changes signal ABI and consumer contracts; Current53 records it as migration debt instead of making a blind payload split. Leaving mutating `Resolve*` names was rejected because the global doctrine relies on read-named methods being pure and mechanically auditable.
+
+Scalability potential: Low = corrupt payloads from legacy parallel writers are dropped before snapshot/coalesce, and foveated frame binding no longer searches bootstrap/scene components. Middle = coalescence keeps the same behavior but avoids per-signal atomic barriers in the owner flush. High/Ultra = SignalBus can still accept rich producer traffic, but invalid payloads do not poison snapshots and owner flush has lower contention under coalescence storms.
+
+Hardware Impact: 0 measured us. Static/source-only pass. Expected impact is removal of two dispatcher-frame scene/component lookup routes, one corruption bypass, and per-coalesced-signal atomic barriers. No profiler, Unity import, IL2CPP, or ARM64 player proof exists for Current53.
+
+Evidence:
+- Old-name scan over touched files returned no hits for the reported mutating names: `ResolveBaseStressCascadeSlot`, `ResolveMasterDependencyHandle`, `ResolveFrameTimeDilationScalar`, `ResolveCachedGamepad`, `ResolveCachedXRControllers`, `ResolveXRToolActionBitsAndPublishSignal`, `ResolveLookHotSwapBlend`, `TryResolveVaultArray`, `TryResolveViewCamera`, `TryResolveListener`.
+- `FoveatedSimulationManager.cs` focused scan for `GameBootstrapper`, `CurrentPlayerObject`, `TryGetCurrentPlayerTransform`, and `TryGetComponent` returned no hits.
+- Targeted scanner import over `SystemDispatcher.cs`, `InputDispatcher.cs`, `FoveatedSimulationManager.cs`, and `GlobalSignals.cs`: `{"Burst_Job_Directives":0,"Hot_Helper_Complete":0,"Hot_Helper_Registry_Polling":0,"Hot_Registry_Polling":0,"Mid_Frame_Complete":0,"Runtime_Struct_Layout":0}`.
+- Signal flush proof: dequeued payloads pass `SignalPayloadFiniteGuards.Sanitize(ref signal)` before `TryCoalesceOrAppend`; `_coalescedTotal` now uses one `Interlocked.Add` per flush; `_corruptedSignalTotal` now uses one `Interlocked.Add` per flush for parallel-writer bypasses.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/SignalBusContractAudit.ps1 -ProjectRoot . -Scope SignalCritical -OutputJson Docs/AgentLogs/SignalBusContractAudit_Current53_SHINOBU_02.json -OutputMarkdown Docs/AgentLogs/SignalBusContractAudit_Current53_SHINOBU_02.md -FailOnError` -> files 9 C# / 67 compute, errors 0, warnings 0, infos 17, confirmedErrors 0.
+- `git diff --check` over Current53 touched code/docs/log files returned exit 0 with line-ending warnings only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT53 CPU=100 SAMPLES=100,100,100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-21 - Current54 Cache-Line-Critical Signal Telemetry Pass
+
+Problem: Current53 sealed the legacy `ParallelWriter` finite-guard bypass and owner-flush atomic contention, but left the high-frequency lane layout debt invisible. `SignalBus<T>.HasValidPayloadStride()` still accepted 16/32/64/128/192-byte payloads globally, so `ToolAcousticSignal` at 32 bytes and `TetherTensionSignal` at 192 bytes looked equally healthy even when these lanes are high-contention signal traffic that should be reviewed for cache-line stride migration.
+
+Solution: Added `SignalBus<T>.ConfigureCacheLineCritical(...)` as a source-compatible boot-time policy path that preserves the old `Configure(...)` API. Marked only `ToolAcousticSignal` and `TetherTensionSignal` through the new path. Added telemetry evidence instead of ABI mutation: `SignalLaneTelemetry.Flags` bit `32` marks cache-line-critical stride debt, `Reserved0` records the payload stride in bytes, and `Reserved1` records the layout policy flags. The runtime broad stride fence remains unchanged, so existing payload offsets, total sizes, queue types, snapshots, and producers are not broken in a concurrent workspace.
+
+Rejected Alternatives: Padding `ToolAcousticSignal` from 32 to 64 bytes was rejected because it changes signal ABI and every consumer snapshot assumption. Splitting `TetherTensionSignal` into a compact gameplay lane plus visual sidecar was rejected for this pass because it crosses physics/tool ownership and requires a route card. Removing `NativeQueue<T>.ParallelWriter` or changing every producer to a guarded writer was rejected as broad API churn under active multi-agent edits. Tightening `HasValidPayloadStride()` to reject 32/192 bytes was rejected because it would disable currently live lanes at boot.
+
+Scalability potential: Low = telemetry now exposes hot lanes whose payload stride should be simplified before weak CPUs pay repeated cache-line bandwidth. Middle = 32-byte tool acoustic traffic can remain cheap while still being flagged as a future 64-byte/packed-lane migration candidate. High = 192-byte tether payload remains valid for rich physics/visual data, but the telemetry bit proves it needs a split before high-frequency overkill traffic expands. Ultra = visual-overkill systems can consume richer diagnostics without hiding transport debt behind a generic valid-stride result.
+
+Hardware Impact: 0 measured us. Static/source-only pass. Expected impact is diagnostic, not immediate runtime speed: cache-line-critical layout debt becomes visible in the existing 300-frame SignalBus telemetry stream without changing DTO layout or adding hot allocations. Build was skipped by guard: `PRE_BUILD_GUARD_CURRENT54 CPU=100 SAMPLES=100,100,100 PROCS=0`.
+
+Evidence:
+- `SignalBus<ToolAcousticSignal>.ConfigureCacheLineCritical(...)` count: 1; plain `SignalBus<ToolAcousticSignal>.Configure(...)` count: 0.
+- `SignalBus<TetherTensionSignal>.ConfigureCacheLineCritical(...)` count: 1; plain `SignalBus<TetherTensionSignal>.Configure(...)` count: 0.
+- `ToolAcousticSignal` remains explicit-layout 32 bytes; `TetherTensionSignal` remains explicit-layout 192 bytes.
+- SignalCritical Current54 audit: files 9 C# / 67 compute, errors 0, warnings 0, infos 17, confirmed/probable errors 0, runtime signal Pack=1 0, managed event surface 0.
+- `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs Docs/AgentLogs/SignalBusContractAudit_Current54_SHINOBU_02.json Docs/AgentLogs/SignalBusContractAudit_Current54_SHINOBU_02.md` returned exit 0 with line-ending warning only.
+
+## 2026-05-21 - Current55 Legacy MPSC Writer Surface Telemetry Pass
+
+Problem: Current54/Current56 exposed cache-line-critical stride debt, but the retained `NativeQueue<T>.ParallelWriter` surface was still named as if it were the normal producer route. A broad producer rewrite would cross sibling domains and active agents, but leaving the surface invisible lets high-frequency lanes keep opening CAS-backed MPSC writers without telemetry proof.
+
+Solution: Added `SignalBus<T>.OpenLegacyMpscWriter()` as the explicit Core-owned name for the retained bridge. Existing `OpenParallelWriter()`, `ParallelWriter`, `OpenSignalWriterForProducerPhase<TSignal>()`, and `*SignalWriter` properties remain compatibility facades. Each successful legacy writer open increments a per-lane pending counter; owner flush exchanges it into `_legacyWriterOpenLastFlush`. `SignalLaneTelemetry.Flags` bit `64` marks writer-open presence, and `Reserved1` packs layout policy flags in low8 plus saturated writer-open count in high8. This creates a static/runtime-visible migration proof without changing queue type or payload ABI.
+
+Rejected Alternatives: Removing or obsolete-marking `ParallelWriter` was rejected because it would spray compile warnings/errors across sibling-domain producers. Rewriting all producers to `SignalThreadLocalWriteContext` was rejected because it needs lane-by-lane route cards and job ownership proof. Padding `ToolAcousticSignal` or splitting `TetherTensionSignal` was rejected again because Current54 already marked them as telemetry debt and payload ABI mutation needs owner coordination. Counting every `Enqueue` was rejected because the CAS hot path is inside Unity `NativeQueue` and per-signal tracking would add exactly the contention this pass is trying to expose.
+
+Scalability potential: Low = weak devices now expose which lanes still use the slower MPSC bridge, making lane migration priority visible without breaking runtime. Middle = compatibility producers keep functioning while telemetry identifies repeated writer opens. High/Ultra = thread-local scratchpad and visual-overkill lanes can be prioritized by actual writer-surface pressure instead of broad grep counts.
+
+Hardware Impact: 0 measured us. Static/source-only pass. Runtime cost is one `Interlocked.Increment` per successful writer-open and one `Interlocked.Exchange` per lane flush, not per signal. Expected gain is diagnostic routing discipline; no profiler microsecond claim.
+
+Evidence:
+- Writer sidecar recommendation: keep ABI/producers intact, narrow change to Core facade naming and telemetry.
+- Static writer proof: `OpenLegacyMpscWriter=4`, `DirectGenericOldOpen=0`, `LegacyFlag=2`, `Reserved1Pack=2`, contract comments present.
+- SignalCritical Current55 audit: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, runtime signal Pack=1 0, managed event surface 0, cache-line-critical stride debt remains 2 INFO.
+- Build skipped by guard: `PRE_BUILD_GUARD_CURRENT55 CPU=100,100,100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-21 - Current56 Cache-Line-Critical Audit Sidecar
+
+Problem: Current54 made cache-line-critical stride debt visible at runtime telemetry, but the static audit still treated `ConfigureCacheLineCritical(...)` lanes like ordinary valid SignalBus lanes. That let `ToolAcousticSignal` (32 bytes) and `TetherTensionSignal` (192 bytes) pass the SignalCritical audit without an explicit debt row, even though these are the exact high-contention lanes marked for 64/128-byte migration review.
+
+Solution: Mirrored a static INFO classifier in both audit tools. The PowerShell and C# scanners now parse `SignalBus<T>.ConfigureCacheLineCritical(...)`, resolve the same-file `StructLayout(Size = N)` on `T`, and emit `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT` when `N` is not 64 or 128. The finding is INFO, not WARN/ERROR, because Current54 deliberately preserved ABI and uses `SignalLaneTelemetry.Flags` bit `32` as the runtime proof surface. JSON/Markdown summaries now include `cacheLineCriticalStrideDebtHits`.
+
+Rejected Alternatives: Tightening `HasValidPayloadStride()` was rejected because it would disable live 32/192-byte lanes. Padding or splitting `ToolAcousticSignal`/`TetherTensionSignal` was rejected because that is a producer/consumer ABI migration requiring a route card. Reporting only in runtime telemetry was rejected because static gates must expose the same debt before stress testing. Treating the finding as a warning was rejected because the current architecture marks known migration debt without breaking valid runtime lanes.
+
+Scalability potential: Low = weak devices get a static gate that highlights hot lanes before cache bandwidth becomes a hidden frame risk. Middle = teams can keep current ABI while planning 64/128-byte migrations. High = richer overkill telemetry can stay visible without hiding transport debt. Ultra = visual sidecars can split from gameplay truth later with the debt already traceable in audit output.
+
+Hardware Impact: 0 measured us. Tool-only static-source pass. Runtime code and DTO layout unchanged. Expected value is preventing high-contention layout debt from being silently normalized in CI/audit reports.
+
+Sidecar result: Avicenna confirmed the same smallest safe parsing path: `Tools/SignalBusContractAudit.ps1` main scan loop and `Tools/SignalBusContractAuditCli/Program.cs` `CollectStructs`/`ScanCacheLineCriticalLanes`. Regex risk remains: same-file literal `[StructLayout(... Size = N)]` is detected; computed constants, cross-file aliases, or multi-stage generic wrappers may resolve to `payloadSize=0` and still produce an INFO debt instead of a false pass. Both PowerShell and C# tools need mirror changes because teams run both entrypoints.
+
+Evidence:
+- PowerShell Current56 SignalCritical audit: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, `cacheLineCriticalStrideDebtHits=2`.
+- New INFO findings: `ToolAcousticSignal` at `SignalBus<ToolAcousticSignal>.ConfigureCacheLineCritical(...)`, payload size 32; `TetherTensionSignal` at `SignalBus<TetherTensionSignal>.ConfigureCacheLineCritical(...)`, payload size 192.
+- Stale intermediate Current55 audit artifacts were removed because Current55 is now reserved for the legacy MPSC writer visibility pass.
+- `git diff --check` over Current56 audit tool/artifact/docs files returned exit 0 with line-ending warnings only.
+- Dotnet/C# CLI compile was skipped by guard: `PRE_BUILD_GUARD_CURRENT56 CPU=100,100,100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-21 - Current57 Cache-Line-Critical Audit Parser And Debt Ledger
+
+Problem: Current56 static debt detection only matched same-line `SignalBus<T>.ConfigureCacheLineCritical(...)` calls. That was enough for the current two lanes, but it would silently miss qualified or multiline calls once producers or boot code are formatted differently. The two real debt rows also needed an explicit action ledger so the audit does not become normalized noise.
+
+Solution: Hardened both audit entrypoints. `Tools/SignalBusContractAudit.ps1` now builds a bounded forward statement and captures raw statement evidence before applying a qualified `SignalBus<...>.ConfigureCacheLineCritical` matcher. `Tools/SignalBusContractAuditCli/Program.cs` mirrors the same bounded statement scan and uses framework-safe `IndexOf(';')` termination. Both tools now tag cache-line-critical findings with `statementLineSpan`. Added the route-card action ledger for `ToolAcousticSignal` at 32 bytes and `TetherTensionSignal` at 192 bytes without mutating payload ABI, lane ownership, queue type, or producer callsites.
+
+Rejected Alternatives: Padding `ToolAcousticSignal` to 64 bytes was rejected because sibling tool/audio producers and snapshots may depend on the current 32-byte contract. Splitting `TetherTensionSignal` was rejected because it crosses tether gameplay truth and visual presentation ownership. A full Roslyn parser was rejected for this pass because the existing static audit is a lightweight repository tool, and the bounded statement scanner covers the immediate source-shape risk without adding analyzer dependencies. Treating the two debt rows as WARN/ERROR was rejected because Current54 intentionally preserved live ABI and exposes the debt through telemetry bit 32.
+
+Scalability potential: Low = weak CPUs keep the current compact lanes but static audit prevents high-contention 32/192-byte debt from disappearing during formatting changes. Middle = teams can plan 64/128-byte migrations while existing producers run unchanged. High = richer tether/acoustic diagnostics remain possible only with visible debt. Ultra = visual sidecars can be split later from gameplay truth with a documented owner route instead of inflating the hot payload blindly.
+
+Hardware Impact: 0 measured us. Tool/docs-only source pass. Runtime code and DTO layout unchanged. Expected value is CI/static-audit resilience, not immediate frame-time reduction.
+
+Evidence:
+- Pauli sidecar confirmed current source has two same-line cache-line-critical calls and low false-positive risk after forward-statement parsing.
+- Lagrange sidecar ranked the explicit action ledger as the safest next step over ABI mutation.
+- PowerShell SignalCritical Current57 audit: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, `cacheLineCriticalStrideDebtHits=2`.
+- Current57 findings carry `statementLineSpan=1` for `ToolAcousticSignal` and `TetherTensionSignal`; multiline and qualified names are now scanner-supported.
+- `git diff --check` over Current57 audit tool/artifact/docs/log files returned exit 0 with line-ending warnings only.
+- Build skipped by guards: `PRE_BUILD_GUARD_CURRENT57 CPU=100,100,100 PROCS=0` and `PRE_BUILD_GUARD_CURRENT57_FINAL CPU=100,100,100 PROCS=0`. C# audit CLI compile and Core compile remain unproven; last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-21 - Current58 SignalWarden Read Contract And Audit Summary Drift
+
+Problem: A private `SignalThreadLocalScratchpad` helper named `TryReadCommittedSignals(...)` returned a writable `NativeArray<SignalWardenMockDamageSignal>`. The method was private and pure in current behavior, but the name violated the global read-accessor doctrine because `TryRead*` must not imply opening mutable state. Archimedes also found scanner drift: the PowerShell audit emitted local `NativeQueue<Signal|Command|Packet>` findings but did not expose a summary counter matching the C# CLI. Halley found that the cache-line-critical debt ledger lacked exact source anchors for the two known debt lanes.
+
+Solution: Renamed the private mutable helper to `TryOpenCommittedSignalsBuffer(...)`. The owner-facing route remains mutable through `TryOpenCommittedSignalsForOwner(...)`; consumer access remains read-only through `TryGetCommittedSignalsReadOnly(...)` and `.AsReadOnly()`. Added `$localNativeQueueCount`, JSON field `localNativeSignalQueues`, and markdown line `Local native signal queue hits` to `Tools/SignalBusContractAudit.ps1`. Added struct, boot, size-guard, and telemetry anchors to the SHINOBU_200 cache-line-critical debt ledger for `ToolAcousticSignal` and `TetherTensionSignal`.
+
+Rejected Alternatives: Padding `ToolAcousticSignal` from 32 to 64 bytes was rejected because it is a payload ABI migration across tool/audio producers. Splitting or shrinking `TetherTensionSignal` from 192 bytes was rejected because it crosses tether gameplay truth and visual presentation ownership. Retargeting `SignalBusContractAuditCli.csproj` from `net10.0` was rejected in this pass because that is repository toolchain policy, not a SignalBus runtime fix, and no dotnet build was allowed under CPU guard. A broad read-accessor rename sweep was rejected because Current58 had one local writable-read-name defect with bounded evidence.
+
+Scalability potential: Low = read-only consumers keep a pure immutable snapshot path, and local NativeQueue bypass count is visible in audit summaries before weak CPUs inherit hidden queue fragmentation. Middle = existing ABI and SignalBus writer routes stay stable while documentation points directly to known debt anchors. High/Ultra = richer acoustic/tether visual sidecars remain possible later, but payload expansion is blocked behind anchored debt proof and owner route review.
+
+Hardware Impact: 0 measured us. Static/source-only pass. Expected impact is governance and audit fidelity: one mutable-read-name ambiguity removed, one PowerShell/C# summary mismatch repaired, and two cache-line-critical debt rows anchored without runtime payload churn.
+
+Evidence:
+- `rg -n "TryReadCommittedSignals|TryOpenCommittedSignalsBuffer" Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs` returned no `TryReadCommittedSignals` hits and three `TryOpenCommittedSignalsBuffer` hits.
+- PowerShell parse check returned `PS_PARSE_ERRORS=0`.
+- PowerShell SignalCritical Current58 audit: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, `cacheLineCriticalStrideDebtHits=2`, `localNativeSignalQueues=0`.
+- Build skipped by guard: `PRE_BUILD_GUARD_CURRENT58 CPU=100,100,100 PROCS=0`. C# CLI compile and Core compile remain unproven; last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-21 - Current59 Audit CLI SDK Floor Reduction
+
+Problem: `Tools/SignalBusContractAuditCli/SignalBusContractAuditCli.csproj` targeted `net10.0` while the repo has no root `global.json`. That makes the static audit CLI fail before source compile on any CI/agent host below .NET 10, even though the CLI source is a lightweight scanner and does not use observed net10-only APIs.
+
+Solution: Retargeted the tool project to `net8.0` and explicitly pinned `<LangVersion>12.0</LangVersion>` for collection expressions and records. Runtime Core assemblies, SignalBus code, DTO layout, audit scanner logic, and generated audit artifacts are unchanged.
+
+Rejected Alternatives: Adding `global.json` pinning .NET 10 was rejected because it documents the high SDK floor instead of lowering it. Retargeting to `netstandard2.0` was rejected because this is an executable using modern `System.Text.Json` and C# 12 source shape. Rewriting collection expressions or records to older syntax was rejected as unnecessary churn after `LangVersion 12.0` preserves current source semantics.
+
+Scalability potential: Low/CI agents gain a lower SDK floor for static proof generation. Middle/high/ultra runtime behavior is unchanged because this is an offline audit tool project only; the benefit is faster evidence production on more machines without touching player assemblies.
+
+Hardware Impact: 0 measured us. Tool project metadata only. Expected value is compile-wall portability: fewer agents blocked before source compile when running the C# audit CLI.
+
+Evidence:
+- `Test-Path global.json` returned `False`.
+- `Program.cs` scan showed C# 12 source features (`[]`, records) and ordinary `System.Text.Json`/`Regex` APIs; no observed net10-only API requirement.
+- `SignalBusContractAuditCli.csproj` now contains `<TargetFramework>net8.0</TargetFramework>` and `<LangVersion>12.0</LangVersion>`.
+- Build skipped by guard: `PRE_BUILD_GUARD_CURRENT59 CPU=100,100,100 PROCS=0`. C# CLI compile remains unproven.
+
+## 2026-05-21 - Current60 Tuning Read Split And Bootstrap Vault Cache
+
+Problem: `SignalTuningTable.ResolveBuffers(...)` returned mutable profile/count/scratch arrays and was used by both `TryGetProfile(...)` and owner mutation paths. The current code was bounded and Vault-backed, but the helper name and shared mutable output surface weakened the mechanical separation between read-only tuning lookups and owner/editor writes. `SignalThreadLocalScratchpad.ResolveBuffers(...)` was also a readiness check under a stale resolve name. `GlobalSignals.InitializeAllQueues()` read `GlobalRegistry.DataVault` multiple times during bootstrap.
+
+Solution: Split tuning access. `TryGetProfile(...)` now calls `TryReadProfiles(...)`, which exposes `NativeArray<SignalTuningProfile>.ReadOnly` and a copied, clamped count. Initialization and `UpsertProfile(...)` use `TryOpenBuffersForOwner(...)` for mutable Vault rows. Renamed thread scratch readiness validation to `AreVaultBuffersReady(...)`. Cached `IDataVault dataVault = GlobalRegistry.DataVault` once in `InitializeAllQueues()` and passed it into SignalTuningTable and SignalThreadLocalScratchpad.
+
+Rejected Alternatives: Returning mutable arrays from a `TryRead*` helper was rejected because it repeats the defect removed in Current58. Moving tuning rows to private arrays was rejected because the table is already Vault-backed and rollback-friendly. Removing all `GlobalRegistry.DataVault` references from bootstrap was rejected because bootstrap DI is the allowed registry route. Broad SystemDispatcher `TryGetBuffer(...)` rewrites were rejected because those are external `IDataVault` API calls in pre-shift owner code and outside this narrow SignalBus pass.
+
+Scalability potential: Low = weak devices keep pure tuning reads and no extra registry property reads during queue bootstrap. Middle = existing Vault profile data and CSV/source-data editor route remain unchanged. High/Ultra = richer SignalBus tuning can still be added through owner upsert without turning consumer lookups into writable buffer exposure.
+
+Hardware Impact: 0 measured us. Static/source-only pass. Expected impact is mechanical safety: one mutable read surface split, one stale resolve name removed, and duplicate bootstrap registry reads collapsed to a cached local dependency.
+
+Evidence:
+- Targeted scan after patch: no `ResolveBuffers` hits; `TryReadProfiles` has read-only return; `AreVaultBuffersReady` has two owner init callsites plus declaration.
+- Read-name/mutable-array scan over targeted Core files now reports `TryGetCommittedSignalsReadOnly` and `TryGetTelemetryReadOnly` read-only routes plus external `dataVault.TryGetBuffer(...)` calls in `SystemDispatcher`.
+- PowerShell parse check returned `PS_PARSE_ERRORS=0`.
+- PowerShell SignalCritical Current60 audit: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, `cacheLineCriticalStrideDebtHits=2`, `localNativeSignalQueues=0`.
+- Build skipped by guards: `PRE_BUILD_GUARD_CURRENT60 CPU=100,100,100 PROCS=0` and `PRE_BUILD_GUARD_CURRENT60_POST_AUDIT CPU=100,100,100 PROCS=0`. C# CLI compile and Core compile remain unproven.

@@ -4,7 +4,7 @@ Date: 2026-05-18
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,10 +14,8 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL/POWERSHELL_STATIC evidence. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; runtime proof remains absent.
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Verification: PENDING VERIFICATION
 Apply only after production result exists.
@@ -30,7 +28,7 @@ Performance tooling: SYSTEMS_CONTRACTS.md source x-ray. `BenchmarkRunner.cs` is 
 - This stable file is the acceptance-gate authority. Dated reports are evidence/counter snapshots only.
 - This is a gate/checklist contract, not evidence that any asset passed.
 - Do not fill or cite this document as proof without a real prefab/material/scatter profile and fresh validation output.
-- Current authority spine starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, fresh artifacts, then DOC_GLOBAL R47 -> R46 -> R45 -> R44 -> R43 -> R42 -> R41 -> R40 -> R39 -> R38 -> R37 -> R36 -> R35 -> R34 -> R33 -> R32 -> R31 -> R30 -> R29 -> R28 -> R27 -> R26 -> R25 -> R24 -> R23 -> R22 -> subordinate correction reports before May 13 or older evidence.
+- Current authority spine starts at `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, fresh artifacts, then DOC_GLOBAL R50 -> R49 -> R48 -> R47 -> R46 -> R45 -> R44 -> R43 -> R42 -> R41 -> R40 -> R39 -> R38 -> R37 -> R36 -> R35 -> R34 -> R33 -> R32 -> R31 -> R30 -> R29 -> R28 -> R27 -> R26 -> R25 -> R24 -> R23 -> R22 -> subordinate correction reports before May 13 or older evidence.
 - May 11 report text claimed historical Core dependency build evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. This is not current artifact-backed proof in the workspace.
 - Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, scene/prefab gameplay, player build, import, frame-time, memory, and visual quality proof remain absent.
 - Historical unlinked DOC_AUDIT root-project CLI text reported a clean external root-project CLI compile surface under single-project no-restore checks at capture time, but Quality Gates remain `PENDING VERIFICATION` because current Unity import/Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene/prefab, and visual proof are still absent.
@@ -62,6 +60,7 @@ Known historical blocker:
 | Gate | Command | Blocks Merge |
 |---|---|---|
 | no new direct NativeArray constructor or field declaration debt | `python Tools\DataVaultSovereigntyAudit.py --fail-on-regression` | Yes |
+| no new runtime DataVault constructor or field declaration debt | `python Tools\DataVaultSovereigntyAudit.py --fail-on-runtime-regression` | Yes for runtime owner-domain changes |
 | no duplicate central BufferID numeric values | `python Tools\BufferIDSovereigntyAudit.py --fail-on-duplicates` | Yes |
 | final zero local numeric BufferID casts | `python Tools\BufferIDSovereigntyAudit.py --fail-on-local-casts` | Yes when migration is declared complete |
 | final zero-debt authority | `python Tools\DataVaultSovereigntyAudit.py --fail-on-any` | Yes when migration is declared complete |
@@ -98,6 +97,14 @@ Rules:
   forbidden field-like declarations `5151` across `348` files. File-level gross
   regression is Runtime `+38` and Editor `+12`; runtime growth blocks platform
   confidence first.
+- HFI R42 recapture adds constructor surface totals and the runtime-only
+  regression gate. Current v3 candidate comparison still fails globally with
+  forbidden constructors `1141 -> 1232`; current surface split is runtime
+  forbidden constructors `800`, editor/offline `402`, plugin `30`. The
+  runtime-only gate now passes after `ScannerTool` stopped caching a
+  `NativeArray<ScannerBlackBoxEntry>` field and uses only its Vault generation
+  handle for the black-box ring. Remaining regression debt is editor/offline
+  constructor growth and two editor/offline declaration deltas.
 - The zero-debt gate is expected to fail until the remaining cross-domain migrations are complete.
 
 2026-05-20 polish/static mandate gate:
@@ -106,7 +113,9 @@ Rules:
 |---|---|---|
 | exact runtime `Pack=1` attributes | `python Tools\PolishMandateStaticAudit.py --fail-on-pack-one` | Yes |
 | missing Burst flags in changed hot/job files | `python Tools\PolishMandateStaticAudit.py --fail-on-missing-burst-flags` | Yes for changed files only until legacy debt is burned down |
-| direct `.Complete()` in Tick/Update/OnUpdate-like runtime paths | use `PolishMandateStaticAudit` report plus code review | Yes for new/changed hot paths |
+| direct `.Complete()` in Tick/Update/OnUpdate-like runtime paths | `python Tools\JobCompletionAudit.py --fail-on-frame-path` | Yes for new/changed hot paths |
+| raw runtime `JobHandle.Complete()` outside editor/test/teardown | `python Tools\JobCompletionAudit.py --fail-on-raw-runtime-complete` | Yes after R39 owner review |
+| plugin synchronous generator `.Complete()` barriers | `python Tools\JobCompletionAudit.py --fail-on-plugin-sync-complete` | Review-only unless plugin graph lifecycle is being changed |
 | `UnityEngine.Random` / `Random.Range` in gameplay authority | use `PolishMandateStaticAudit` report plus source review | Yes |
 | `Time.deltaTime` in gameplay authority | use `PolishMandateStaticAudit` report plus source review | Yes |
 
@@ -120,6 +129,36 @@ R21 current polish recapture: exact runtime `Pack=1` attributes `0`; missing
 `CompileSynchronously` `350` across `113` files; missing `FloatMode` `41`;
 missing `FloatPrecision` `43`; private native collection fields `1389` across
 `222` files; direct `.Complete()` lines `231` across `104` files.
+
+R42 job completion recapture: `DispatcherJobFence` internal raw completes are
+reported as `DispatcherFenceInternalRawComplete`, not owner-domain blockers.
+Frame-path blockers remain `0`; raw runtime blockers are now `4`, all outside
+the canonical Core fence helper.
+
+R44 job completion recapture: MapMagic generator `Generate` barriers are
+reported as `PluginSynchronousGeneratorRawComplete`, not generic raw runtime
+owner blockers. Frame-path blockers remain `0`; raw runtime blockers are `0`;
+plugin synchronous generator review sites are `4`.
+
+R50 job completion recapture: `python Tools\JobCompletionAudit.py` reports
+schema `hecton8.job_completion_audit.v1`, findings `534`, frame-path blockers
+`0`, raw runtime blockers `0`, and plugin sync completes `4`. This is static
+classification only; it is not profiler or player proof.
+
+R45 DataVault recapture: constructor hits now include allocator split and
+editor/offline bake-session native fields are separated from persistent owner
+fields. Runtime regression gate remains PASS. Global DataVault no-regression
+still FAILS on editor/offline constructor growth and
+`HadalTrenchForgeWindow` static preview cache declarations. Current
+editor/offline constructor allocator split: `Persistent=30`, `Temp=31`,
+`TempJob=317`, `Unknown=24`.
+
+R46 DataVault recapture: `HadalTrenchForgeWindow` static preview cache now
+allocates/releases through `H8Memory` with `SystemID.ContentAuthority` and an
+explicit tracked-editor-preview marker. Runtime regression gate remains PASS.
+Global DataVault no-regression still FAILS on other editor/offline constructor
+growth. Current editor/offline constructor allocator split:
+`Persistent=28`, `Temp=31`, `TempJob=317`, `Unknown=24`.
 
 2026-05-20 assembly dependency / compile-wall gate:
 
@@ -138,7 +177,7 @@ Rules:
 - Historical HFI R21 graph: first-party asmdefs `137`, first-party cycles `0`,
   Core concrete sibling runtime refs `16`, runtime concrete cross-domain refs
   `93`.
-- Current R47 static source asmdef count is `143` (`141` excluding test dirs); R46 was `142/140` and R45 was `141/139`. This is documentation/source orientation only, not Unity import or compile proof.
+- Current R49 static source asmdef count is `154` (`152` excluding test dirs); R48 recorded `152/150` after an earlier `151/149`, R47 was `143/141`, R46 was `142/140`, and R45 was `141/139`. This is documentation/source orientation only, not Unity import or compile proof.
 - Do not remove existing asmdef references blindly. Each burn-down item needs
   source call-site classification, contract/facade route, and Unity import proof.
 
@@ -148,6 +187,12 @@ Rules:
 |---|---|---|
 | platform static proof map | `python Tools\PlatformPortabilityProofAudit.py` | Yes, as required evidence map |
 | XR provider serialized proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-missing-xr-provider` | Yes for Quest/PCVR readiness |
+| Android sustained-performance proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-missing-sustained-performance` | Yes for Android/Quest thermal readiness claim |
+| Quest URP Android quality route | `python Tools\PlatformPortabilityProofAudit.py --fail-on-unwired-quest-urp` | Yes for Quest render readiness |
+| runtime asset compute portability | `python Tools\PlatformPortabilityProofAudit.py --fail-on-runtime-asset-high-risk-compute` | Yes before enabling dormant runtime compute assets on mobile/TBDR |
+| runtime-referenced compute portability | `python Tools\PlatformPortabilityProofAudit.py --fail-on-high-risk-compute` | Yes for active runtime compute routes |
+| runtime compute dispatch sizing proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-runtime-compute-dispatch-without-threadgroup-query` | Yes before claiming mobile/TBDR compute dispatch portability |
+| shader warmup proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-missing-shader-warmup --fail-on-missing-bootstrap-shader-warmup` | Yes for gameplay shader-stutter readiness |
 | Addressables content proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-missing-addressables` | Yes for streaming/content readiness |
 | Data Monolith payload proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-missing-data-monolith` | Yes for static-data runtime readiness |
 | player/build artifact proof | `python Tools\PlatformPortabilityProofAudit.py --fail-on-missing-build-artifact` | Yes for any platform readiness claim |
@@ -157,6 +202,41 @@ lock; Android ARM64-only and IL2CPP are serialized with target SDK `35`;
 Android/Quest scaffold flag is `true`. Blocking gaps remain:
 `xrProviderSerializedProof=false`, Addressables files `0`, Data Monolith
 missing, build artifacts/logs `0`, PICO package candidates `0`.
+
+Current HFI R48 static platform map: schema
+`hecton8.platform_portability_proof_audit.v10`; Android sustained-performance
+is serialized `true`; shader warmup proof is present; runtime-referenced risky
+compute groups are `0`; runtime asset risky compute groups are `3` and now
+fail under `--fail-on-runtime-asset-high-risk-compute`. `Hecton_SonarMap.compute`
+remains a flagged 512-thread runtime asset until dispatch review/mobile variant
+work is done. Quest URP remains unwired to Android default quality; do not
+manually edit `QualitySettings.asset`.
+
+Current HFI R49 static platform map: schema
+`hecton8.platform_portability_proof_audit.v11`; C# compute dispatch surface is
+now tracked. Current static counts are compute dispatch calls `115`, runtime
+compute dispatch calls `111`, dispatch calls without file-level
+`GetKernelThreadGroupSizes` `69`, runtime `65`, caller files without file-level
+query `25`, runtime `23`. The new hard flag
+`--fail-on-runtime-compute-dispatch-without-threadgroup-query` is expected to
+fail until owner domains review dispatch sizing or prove an upstream
+thread-group query route. A Unity batchmode attempt to wire Quest Android
+quality route was blocked before method execution by existing Unity compile
+failures; no manual `QualitySettings.asset` edit was made. Narrow Unity 6000
+editor API blockers in Wreckage, VoxelTerrain, Habitat, and Interior offline
+bake paths were patched after the log capture, but Unity was not rerun because
+CPU preflight later reported `81%`; Quest URP remains unwired until the
+import-aware route method actually executes.
+
+Current HFI R51 compile-wall reducer: MockDomain no longer compiles an empty
+no-op physics callback through `BurstCompiler.CompileFunctionPointer` in a
+static initializer. Static source proof only; Unity import was not rerun
+because CPU preflight reported `100%`.
+
+Current HFI R52 Polish static audit: `python Tools\PolishMandateStaticAudit.py`
+reports `burstMissingCompileSynchronously` reduced from `67` to `53` after a
+leaf Erosion/VFX debris slice. `burstMissingFloatMode` remains `24` and
+`burstMissingFloatPrecision` remains `26`; do not claim global Burst compliance.
 
 2026-05-20 architecture risk hotlist:
 
@@ -283,7 +363,7 @@ Tool: existing AssetValidator.cs if present.
 [ ] GPU Instancing = ON
 [ ] Texture samples <= 8
 [ ] Triplanar projection active
-[ ] Quality keywords declared (_QUALITY_MX350 / _QUALITY_HIGH)
+[ ] Continuous quality inputs declared (`GlobalQualityWeight`, material scalar, or shader keyword only when required by source ABI)
 [ ] No dynamic branch if() in runtime path
 
 ### Textures

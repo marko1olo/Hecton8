@@ -26,7 +26,7 @@ namespace Hecton8.World
             StableHash = stableHash;
             Family = family;
             Profile = profile;
-            FinalVariantActive = finalVariantActive;
+            FinalVariantActive = finalVariantActive ? (byte)1 : (byte)0;
             SlopeDegrees = slopeDegrees;
             Curvature = curvature;
             CaveProximity = caveProximity;
@@ -38,20 +38,20 @@ namespace Hecton8.World
             WorldScale = worldScale;
         }
 
-        public long RuntimeKey { get; }
-        public int StableHash { get; }
-        public WorldPrefabFamilyProfile Family { get; }
-        public WorldGenerativeGeologyProfile Profile { get; }
-        public bool FinalVariantActive { get; }
-        public float SlopeDegrees { get; }
-        public float Curvature { get; }
-        public float CaveProximity { get; }
-        public float RidgeSignal { get; }
-        public float CanyonSignal { get; }
-        public float CompositionPotential { get; }
-        public Vector3 WorldPosition { get; }
-        public Quaternion WorldRotation { get; }
-        public float WorldScale { get; }
+        public readonly long RuntimeKey;
+        public readonly int StableHash;
+        public readonly WorldPrefabFamilyProfile Family;
+        public readonly WorldGenerativeGeologyProfile Profile;
+        public readonly byte FinalVariantActive;
+        public readonly float SlopeDegrees;
+        public readonly float Curvature;
+        public readonly float CaveProximity;
+        public readonly float RidgeSignal;
+        public readonly float CanyonSignal;
+        public readonly float CompositionPotential;
+        public readonly Vector3 WorldPosition;
+        public readonly Quaternion WorldRotation;
+        public readonly float WorldScale;
     }
 
     [DisallowMultipleComponent]
@@ -405,7 +405,7 @@ namespace Hecton8.World
             terrainSeam = ResolveTerrainSeamLabel(request.Profile);
             caveBlend = ResolveCaveBlendLabel(request.Profile);
             lodCount = resolvedLodCount;
-            finalVariantActive = request.FinalVariantActive;
+            finalVariantActive = request.FinalVariantActive != 0;
             slopeDegrees = request.SlopeDegrees;
             curvature = request.Curvature;
             caveProximity = request.CaveProximity;
@@ -554,7 +554,7 @@ namespace Hecton8.World
             if (!Application.isPlaying && !allowEditorGeneration)
                 return false;
 
-            bool useFullDetail = request.FinalVariantActive;
+            bool useFullDetail = request.FinalVariantActive != 0;
             string resolvedComposition = ResolveComposition(request);
             if (!useFullDetail)
                 resolvedComposition = "SingleFeature";
@@ -809,7 +809,7 @@ namespace Hecton8.World
                 hash = (hash * 397) ^ Mathf.RoundToInt(terrainRaise * 100f);
                 hash = (hash * 397) ^ Mathf.RoundToInt(terrainCut * 100f);
                 hash = (hash * 397) ^ debrisCount;
-                hash = (hash * 397) ^ (request.FinalVariantActive ? 1 : 0);
+                hash = (hash * 397) ^ (request.FinalVariantActive != 0 ? 1 : 0);
                 return hash;
             }
         }

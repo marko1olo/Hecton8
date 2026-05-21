@@ -520,7 +520,9 @@ namespace Hecton8.Core.Memory
             config.Version = 1u;
             config.ScalabilityProfile = scalabilityProfile;
             config.Flags = 1;
-            config.StrideAggressiveness = scalabilityProfile == 0 ? 0.75f : 0.25f;
+            float profile01 = GlobalDataVault.DecodeScalabilityProfile01(scalabilityProfile);
+            float curve01 = profile01 * profile01 * (3f - (2f * profile01));
+            config.StrideAggressiveness = math.lerp(0.75f, 0.25f, curve01);
             return config;
         }
 
@@ -1048,8 +1050,18 @@ namespace Hecton8.Core.Memory
         /// <summary>Resolves the arena limit for the active scalability profile.</summary>
         public long ResolveArenaLimitBytes(byte scalabilityProfile)
         {
-            long selected = scalabilityProfile == 0 ? lowArenaLimitBytes : highArenaLimitBytes;
-            return selected > 0L ? selected : GlobalDataVault.ResolveArenaCapacityLimit(scalabilityProfile);
+            long low = lowArenaLimitBytes > 0L
+                ? lowArenaLimitBytes
+                : GlobalDataVault.ResolveArenaCapacityLimit(0);
+            long high = highArenaLimitBytes > 0L
+                ? highArenaLimitBytes
+                : GlobalDataVault.ResolveArenaCapacityLimit(3);
+            if (high < low)
+                high = low;
+
+            float profile01 = GlobalDataVault.DecodeScalabilityProfile01(scalabilityProfile);
+            float curve01 = profile01 * profile01 * (3f - (2f * profile01));
+            return (long)math.round(low + ((double)(high - low) * curve01));
         }
 
         /// <summary>Builds the runtime layout config written into the vault.</summary>

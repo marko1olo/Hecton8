@@ -1,0 +1,103 @@
+{
+  "agent": "SHINOBU_251",
+  "domain": "SUBMARINE_ADDED_MASS_SOLVER",
+  "scanner": "Rigidbody_Drag_Scanner",
+  "summary": "OOP Mass Modifications Purged",
+  "parser": "roslyn AST with comment-stripped token fallback",
+  "sharedReportMerge": "NON_DESTRUCTIVE_TOP_LEVEL_PROPERTY_REPLACE_OR_APPEND",
+  "sharedReport": "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json",
+  "sidecarReport": "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_251.json",
+  "status": "STATIC_SOURCE_ONLY_COMPILE_IMPORT_PROOF_PENDING",
+  "vehicleSourceFilesScanned": 13,
+  "forbiddenRigidbodyMassDragWrites": 0,
+  "oopMassModificationsPurged": true,
+  "layoutAudit": {
+    "addedMassProfileSizeBytes": 128,
+    "addedMassTuningSizeBytes": 64,
+    "linearTensorOffset": 0,
+    "angularTensorOffset": 64,
+    "tuningSourceHashOffset": 32,
+    "layoutPass": true
+  },
+  "vaultDescriptorAudit": {
+    "runtimeDescriptor": "VaultGenerationHandle<T>",
+    "legacyVaultApiHits": 0,
+    "phaseLocalResolve": "TryResolveHandle/TryReadHandle",
+    "rawPointerRuntimeRoute": false,
+    "generationWriteLocks": true,
+    "rawBufferIdLocksInRuntime": 0,
+    "bootWritesUseGenerationLocks": true,
+    "bootMutableResolveWrites": 0
+  },
+  "signalRouteAudit": {
+    "fluidDensityConsumer": "SignalBus<FluidDensityChangedSignal>.GetFrameSnapshot",
+    "cavitationAcousticPublisher": "SignalBus<AcousticPingSignal>.TryPush",
+    "cavitationSourceId": "AM25/SubmarineDynamicsConstants.SourceHashAddedMass",
+    "legacyGlobalSignalsHotBridgeHits": 0,
+    "directWorldDependencyHits": 0,
+    "blockedExternalBridge": "World volcanic updraft force injection pending typed SignalBus/DataVault route",
+    "localBinaryTierCapacityNamePresent": false,
+    "capacityMinimumName": "SurvivalMockSignalCapacity"
+  },
+  "blackBoxAudit": {
+    "proofArtifact": "Docs/AgentLogs/Dump_SHINOBU_251.bin",
+    "telemetrySource": "SubmarineHydrodynamicsTelemetry",
+    "legacyDumpArtifactsInRuntime": 0,
+    "format": "16 byte AM25 header plus raw NativeArray<SubmarineHydrodynamicsTelemetry> bytes",
+    "entrySizeBytes": 128,
+    "binaryWriterInRuntime": false,
+    "rawReadOnlySpanDump": true
+  },
+  "telemetryTimingAudit": {
+    "field": "BurstElapsedUs",
+    "fieldOffset": 88,
+    "measurement": "Stopwatch schedule timestamp patched after DispatcherJobFence.TryComplete",
+    "extraCompleteCalls": 0,
+    "estimatedHydrodynamicsCostFieldPresent": false,
+    "dtoSizeBytes": 128
+  },
+  "jobGranularityAudit": {
+    "tinyMockFloodJobPresent": false,
+    "mockFloodRoute": "quality-weighted deterministic SignalBus<MockFloodSignal>.TryPush without JobHandle edge",
+    "batchedRuntimeJobsOnly": true
+  },
+  "cadenceAudit": {
+    "steppedQualityStridePresent": false,
+    "qualityUpdateFraction": "smoothstep GlobalQualityWeight -> 0.25..1.0",
+    "deterministicDither": "frame/index integer hash",
+    "tensorLodHold": "LowLodHoldSeconds = max(lerp(2,0,updateFraction), decay)",
+    "hardTwoSecondHoldPresent": false,
+    "mockFloodProbability": "smoothstep GlobalQualityWeight -> deterministic 1/96..1/16 frame probability",
+    "vaultTelemetryStride": "smoothstep GlobalQualityWeight -> target 4..1, deterministic frame dither floor/ceil",
+    "newDtoFields": 0
+  },
+  "runtimeRoute": "DataVault -> CalculateAddedMassTensorJob -> Submarine6DIntegratorJob",
+  "compileProof": "BLOCKED_BY_EXISTING_PROJECT_FILE_GAP_AND_CPU_POLICY",
+  "floodScalarZeroAudit": {
+    "tuningZeroPreserved": true,
+    "hullProfileZeroPreservedInBurstJob": true,
+    "regressionGuard": "CalculateAddedMassTensor_FloodScalarZeroDisablesFloodTensorInflation"
+  },
+  "formalSelfAudit": {
+    "logPath": "Docs/AgentLogs/LOG_SHINOBU_251.md",
+    "xmlBlock": "SELF_AUDIT",
+    "taskCount": 20,
+    "tasksPassed": 20,
+    "buildStatus": "PENDING_VERIFICATION",
+    "compileReason": "IBuildPlacementRule.cs missing and CPU/dotnet gate active"
+  },
+  "centralLedgerAudit": {
+    "routeCard": "Docs/ARCHITECTURE/SHINOBU_251_SUBMARINE_ADDED_MASS_ROUTE_CARD.md",
+    "binaryLedger": "Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md",
+    "bufferIdRange": "71730..71734",
+    "telemetryFieldOffset88": "BurstElapsedUs",
+    "rawDumpRouteDocumented": true
+  },
+  "bootInitializationAudit": {
+    "ensureVaultBuffersReadOnlyDecision": true,
+    "defaultTuningWriter": "TryInitializeAddedMassTuning via generation write lock",
+    "defaultProfileWriter": "TryInitializeBootProfiles via generation write locks",
+    "uninitializedAddedMassTouchedAtBoot": false,
+    "uninitializedHydrodynamicsTelemetryTouchedAtBoot": false
+  }
+}

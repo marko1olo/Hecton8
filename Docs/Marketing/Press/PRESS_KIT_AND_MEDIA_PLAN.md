@@ -36,7 +36,7 @@ The press kit becomes buildable only after the Steam page assembly and screensho
 
 | Press kit item | Source now | Required proof before publish | Reject condition |
 |---|---|---|---|
-| Factsheet packet | Factsheet fields below | Contact, Steam URL, presskit URL, build/demo state are real. | Any TBD in public-facing fields. |
+| Factsheet packet | Factsheet fields below | Contact, Steam URL, presskit URL, build/demo state are real. | Any unresolved public-facing placeholder. |
 | Short-description packet | `Steam/STORE_PAGE_COPY_MATRIX.md` | Candidate selected by cold read and no unsupported multiplayer/performance/large-world claim. | Viewers cannot name player verb. |
 | Long-description packet | Steam copy matrix + feature boundaries | Only current-build or clearly scoped public facts. | Future roadmap sold as current feature. |
 | `screenshots/` | `PLAN-SHOT-001` through `PLAN-SHOT-007` | Public shots pass QA, have build IDs, and the lead set includes one readable player decision recorded in AB-009/KPI fields. | AI/concept-looking, unreadable, generic clone frame, or passive anomaly-only set. |
@@ -80,10 +80,10 @@ Do not publish or link a press kit until:
 | Core hook | Pressure, salvage, machinery, and isolation below the light |
 | Multiplayer modes | Outside current public scope |
 | Current state | In development |
-| Contact | TBD |
-| Website | TBD |
-| Steam | TBD |
-| Press assets | TBD |
+| Contact | HOLD_NO_PROJECT_INBOX_CUSTODY - official project email only after `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED`. |
+| Website | HOLD_NO_PUBLIC_SITE_URL - public site only after owner custody, no-link/CTA gate, and current factsheet state pass. |
+| Steam | HOLD_NO_STEAM_PAGE_PUBLICATION - link only after `steam_page_publish_permission_gate` and destination-specific `public_cta_permission_gate`. |
+| Press assets | HOLD_NO_PRESS_RELEASE_PUBLICATION - public presskit/assets only after `press_release_permission_gate` and destination-specific `public_cta_permission_gate`. |
 
 ## Press Angles
 

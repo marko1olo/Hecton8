@@ -13,7 +13,7 @@ namespace Hecton8.World
 
         public struct Result
         {
-            public bool Passed;
+            public byte Passed;
             public float FlatSandWeight;
             public float SteepRockWeight;
             public float SiltWeight;
@@ -64,16 +64,15 @@ namespace Hecton8.World
                 scheduled = true;
 
                 // COLD SYNC JOB: editor smoke test must inspect concrete kernel output.
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 scheduled = false;
 
                 Result result = InspectSmokeOutput(weights, slopeWeights);
-                result.Passed =
-                    result.FlatSandWeight >= 0.85f &&
+                result.Passed = (result.FlatSandWeight >= 0.85f &&
                     result.SteepRockWeight >= 0.55f &&
                     result.SiltWeight >= 0.45f &&
                     result.CavityWeight >= 0.25f &&
-                    result.SlopeWeight >= 0.55f;
+                    result.SlopeWeight >= 0.55f) ? (byte)1 : (byte)0;
                 return result;
             }
             finally
@@ -81,7 +80,7 @@ namespace Hecton8.World
                 if (scheduled)
                 {
                     // COLD SYNC JOB: smoke teardown guard.
-                    handle.Complete();
+                    DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 }
 
                 DisposeTracked(ref heights);

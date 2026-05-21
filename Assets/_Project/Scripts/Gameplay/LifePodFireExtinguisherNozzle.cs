@@ -10,7 +10,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/LifePod Fire Extinguisher Nozzle")]
-    public sealed class LifePodFireExtinguisherNozzle : MonoBehaviour, IUpdatable
+    public sealed class LifePodFireExtinguisherNozzle : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const byte HapticPrioritySpray = 1;
         private const byte BothMotorMask = 0x03;
@@ -64,6 +64,9 @@ namespace Hecton8.Gameplay
         private uint _coldReferenceSearchMask;
         private Transform _cachedTransform;
         private Transform _resolvedNozzleForwardReference;
+        private IPlayerRuntimeContext _playerRuntime;
+        private bool _registeredHotSwapListener;
+        private bool _tickDormant;
 
         /// <summary>
         /// True while the nozzle is actively feeding foam into the visor shader fake.
@@ -74,21 +77,22 @@ namespace Hecton8.Gameplay
         {
             CacheScalarConfig();
             ResolveColdReferences();
+            RefreshColdRegistryReferences();
         }
 
         private void OnEnable()
         {
             CacheScalarConfig();
             ResolveColdReferences();
+            RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
         {
-            _spraying = false;
-            _playerReferenceTransform = null;
-            _nextHapticPulseSeconds = 0f;
-            ResetFoamFlowCache();
+            StopSprayState();
             InvalidateColdReferenceCache();
+            TryUnregisterHotSwapListener();
             TryUnregisterTick();
         }
 
@@ -107,6 +111,7 @@ namespace Hecton8.Gameplay
             CacheScalarConfig();
             _spraying = true;
             _playerReferenceTransform = ResolvePlayerReferenceTransform();
+            _tickDormant = false;
             _nextHapticPulseSeconds = 0f;
             ResetFoamFlowCache();
             RefreshCachedFoamFlowDirection();
@@ -119,10 +124,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void EndSpray()
         {
-            _spraying = false;
-            _playerReferenceTransform = null;
-            _nextHapticPulseSeconds = 0f;
-            ResetFoamFlowCache();
+            StopSprayState();
             TryUnregisterTick();
         }
 
@@ -150,9 +152,12 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            if (_tickDormant)
+                return;
+
             if (!_spraying)
             {
-                TryUnregisterTick();
+                _tickDormant = true;
                 return;
             }
 
@@ -162,7 +167,7 @@ namespace Hecton8.Gameplay
 
             if (targetController == null)
             {
-                EndSpray();
+                StopSprayState();
                 return;
             }
 
@@ -241,9 +246,9 @@ namespace Hecton8.Gameplay
                 _cachedTransform = transform;
         }
 
-        private static Transform ResolvePlayerReferenceTransform()
+        private Transform ResolvePlayerReferenceTransform()
         {
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = _playerRuntime;
             return player != null ? player.PlayerTransform : null;
         }
 
@@ -292,7 +297,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredTick || !Application.isPlaying)
                 return;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
@@ -305,6 +310,59 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredTick = false;
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _playerRuntime = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntime = currentService as IPlayerRuntimeContext;
+                    if (_spraying)
+                        _playerReferenceTransform = ResolvePlayerReferenceTransform();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null && _spraying)
+                    {
+                        _tickDormant = false;
+                        TryRegisterTick();
+                    }
+                    break;
+            }
+        }
+
+        private void StopSprayState()
+        {
+            _spraying = false;
+            _playerReferenceTransform = null;
+            _nextHapticPulseSeconds = 0f;
+            _tickDormant = true;
+            ResetFoamFlowCache();
         }
 
 #if UNITY_EDITOR

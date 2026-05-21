@@ -11,7 +11,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/LifePod Damage System")]
-    public sealed class LifePodDamageSystem : MonoBehaviour, IUpdatable
+    public sealed class LifePodDamageSystem : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const int MaxShortCircuitBits = 16;
         private const int MaxVisibleSparkInstances = 4;
@@ -85,6 +85,8 @@ namespace Hecton8.Gameplay
         private float _resolvedShortCircuitHapticFrequencyHz;
         private int _resolvedRenderLayer;
         private bool _registeredTick;
+        private bool _registeredHotSwapListener;
+        private bool _tickDormant;
 
         /// <summary>
         /// Active short-circuit state. Each bit maps to one possible spark anchor.
@@ -109,15 +111,18 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             CacheScalarConfig();
+            TryRegisterHotSwapListener();
             if (_shortCircuitMask != 0)
             {
                 CacheSparkAnchorPoses(_shortCircuitMask);
+                _tickDormant = false;
                 TryRegisterTick();
             }
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterTick();
         }
 
@@ -184,11 +189,13 @@ namespace Hecton8.Gameplay
             _sparkTimerSeconds = _resolvedSparkLifetimeSeconds;
             if (_shortCircuitMask != 0)
             {
+                _tickDormant = false;
                 TryRegisterTick();
             }
             else
             {
                 _sparkAnchorValidMask = 0;
+                _tickDormant = true;
                 TryUnregisterTick();
             }
         }
@@ -224,10 +231,12 @@ namespace Hecton8.Gameplay
             if (_shortCircuitMask != 0)
             {
                 _sparkTimerSeconds = math.max(_sparkTimerSeconds, _resolvedSparkLifetimeSeconds);
+                _tickDormant = false;
                 TryRegisterTick();
             }
             else
             {
+                _tickDormant = true;
                 TryUnregisterTick();
             }
         }
@@ -237,18 +246,20 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ClearShortCircuits()
         {
-            _shortCircuitMask = 0;
-            _sparkAnchorValidMask = 0;
-            _sparkTimerSeconds = 0f;
+            ClearShortCircuitState();
+            _tickDormant = true;
             TryUnregisterTick();
         }
 
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            if (_tickDormant)
+                return;
+
             if (_shortCircuitMask == 0)
             {
-                TryUnregisterTick();
+                _tickDormant = true;
                 return;
             }
 
@@ -256,7 +267,8 @@ namespace Hecton8.Gameplay
             _sparkTimerSeconds = math.max(0f, _sparkTimerSeconds - safeDeltaTime);
             if (_sparkTimerSeconds <= 0f)
             {
-                ClearShortCircuits();
+                ClearShortCircuitState();
+                _tickDormant = true;
                 return;
             }
 
@@ -451,7 +463,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredTick || !Application.isPlaying)
                 return;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
@@ -464,6 +476,42 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registeredTick = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || _shortCircuitMask == 0)
+                return;
+
+            _tickDormant = false;
+            TryRegisterTick();
+        }
+
+        private void ClearShortCircuitState()
+        {
+            _shortCircuitMask = 0;
+            _sparkAnchorValidMask = 0;
+            _sparkTimerSeconds = 0f;
         }
 
 #if UNITY_EDITOR

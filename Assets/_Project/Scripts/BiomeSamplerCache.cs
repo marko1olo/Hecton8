@@ -14,9 +14,9 @@ namespace Hecton8.World
             public Vector3 position;
             public float terrainHeight;
             public int biomeIndex;
-            public bool hasHeight;
-            public bool hasBiome;
-            public bool isValid;
+            public byte hasHeight;
+            public byte hasBiome;
+            public byte isValid;
         }
 
         [Header("Cache Shape")]
@@ -132,7 +132,7 @@ namespace Hecton8.World
                 return false;
 
             sample = _samples[index];
-            return sample.isValid;
+            return sample.isValid != 0;
         }
 
         public bool TryGetNearestSample(Vector3 position, float maxDistance, out CachedSample sample)
@@ -147,7 +147,7 @@ namespace Hecton8.World
                 return false;
 
             sample = _samples[index];
-            return sample.isValid;
+            return sample.isValid != 0;
         }
 
         private void RebuildCache(bool force)
@@ -187,9 +187,9 @@ namespace Hecton8.World
 
                     CachedSample sample = default;
                     sample.position = samplePosition;
-                    sample.hasHeight = mapMagicBridge.TryGetHeight(samplePosition.x, samplePosition.z, out sample.terrainHeight);
-                    sample.hasBiome = mapMagicBridge.TryGetBiomeIndex(samplePosition.x, samplePosition.z, out sample.biomeIndex);
-                    sample.isValid = sample.hasHeight || sample.hasBiome;
+                    sample.hasHeight = mapMagicBridge.TryGetHeight(samplePosition.x, samplePosition.z, out sample.terrainHeight) ? (byte)1 : (byte)0;
+                    sample.hasBiome = mapMagicBridge.TryGetBiomeIndex(samplePosition.x, samplePosition.z, out sample.biomeIndex) ? (byte)1 : (byte)0;
+                    sample.isValid = sample.hasHeight != 0 || sample.hasBiome != 0 ? (byte)1 : (byte)0;
 
                     _samples[writeIndex] = sample;
                     writeIndex++;
@@ -202,7 +202,7 @@ namespace Hecton8.World
             _debugCacheReady = true;
 
             int centerIndex = (radiusCells * width) + radiusCells;
-            if (centerIndex >= 0 && centerIndex < _sampleCount && _samples[centerIndex].isValid)
+            if (centerIndex >= 0 && centerIndex < _sampleCount && _samples[centerIndex].isValid != 0)
                 _debugLastCenterBiome = _samples[centerIndex].biomeIndex;
             else
                 _debugLastCenterBiome = -1;
@@ -220,7 +220,7 @@ namespace Hecton8.World
             for (int i = 0; i < _sampleCount; i++)
             {
                 CachedSample sample = _samples[i];
-                if (!sample.isValid)
+                if (sample.isValid == 0)
                     continue;
 
                 Vector3 delta = sample.position - position;

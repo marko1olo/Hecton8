@@ -1,16 +1,7 @@
 {
-  "criticalCount": 1,
+  "criticalCount": 0,
   "filesScanned": 13,
-  "findings": [
-    {
-      "detail": "Burst_Job_Directives critical count 656 exceeds baseline 645.",
-      "line": 1,
-      "path": "Docs/Reports/SHINOBU_140_STATIC_GATE_BASELINE.json",
-      "rule": "STATIC_GATE_CRITICAL_REGRESSION",
-      "scanner": "Static_Gate_Regression",
-      "severity": 2
-    }
-  ],
+  "findings": [],
   "scanner": "Static_Gate_Regression",
   "warningCount": 0
 }

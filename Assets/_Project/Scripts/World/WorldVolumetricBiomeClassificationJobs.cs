@@ -1,55 +1,90 @@
 using Hecton8.Environment;
+using System.Runtime.InteropServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct VolumetricBiomeClassificationInput
     {
+        [FieldOffset(0)]
         public float DepthMeters;
+        [FieldOffset(4)]
         public int PrimaryBiomeMatrixDataIndex;
+        [FieldOffset(8)]
         public int PreferredFamilyDataIndex;
+        [FieldOffset(12)]
         public int SecondaryBiomeMatrixDataIndex;
+        [FieldOffset(16)]
         public byte Blend255;
+        [FieldOffset(17)]
         public byte Flags;
+        [FieldOffset(18)]
+        private ushort _pad0;
+        [FieldOffset(20)]
+        private int _pad1;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct VolumetricBiomeClassificationResult
     {
+        [FieldOffset(0)]
         public int PrimaryBiomeMatrixDataIndex;
+        [FieldOffset(4)]
         public int SecondaryBiomeMatrixDataIndex;
+        [FieldOffset(8)]
         public WorldProceduralFieldSampler.BiomeInfluenceCell InfluenceCell;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct VolumetricBiomeStressAuditResult
     {
+        [FieldOffset(0)]
         public int FailureMask;
+        [FieldOffset(4)]
         public int PrimaryBiomeId;
+        [FieldOffset(8)]
         public int ExpectedBiomeId;
+        [FieldOffset(12)]
         public byte Flags;
+        [FieldOffset(13)]
+        private byte _pad0;
+        [FieldOffset(14)]
+        private ushort _pad1;
+        [FieldOffset(16)]
         public uint PackedCell;
+        [FieldOffset(20)]
+        private int _pad2;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct VolumetricBiomeStressBlockSummary
     {
+        [FieldOffset(0)]
         public int FailureCount;
+        [FieldOffset(4)]
         public uint PackedChecksum;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct VolumetricBiomeStressSummaryResult
     {
+        [FieldOffset(0)]
         public int FailureCount;
+        [FieldOffset(4)]
         public uint PackedChecksum;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VolumetricBiomeStressInputBuildJob : IJobParallelFor
     {
-        [WriteOnly] public NativeArray<VolumetricBiomeClassificationInput> Inputs;
-        [WriteOnly] public NativeArray<int> ExpectedBiomeIds;
-        [WriteOnly] public NativeArray<byte> ExpectedFlagMasks;
+        [WriteOnly, NoAlias] public NativeArray<VolumetricBiomeClassificationInput> Inputs;
+        [WriteOnly, NoAlias] public NativeArray<int> ExpectedBiomeIds;
+        [WriteOnly, NoAlias] public NativeArray<byte> ExpectedFlagMasks;
 
         public int ShallowBiomeId;
         public int TwilightBiomeId;
@@ -97,12 +132,12 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VolumetricBiomeClassificationJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<VolumetricBiomeClassificationInput> Inputs;
-        [ReadOnly] public NativeArray<WorldProceduralFieldSampler.BiomeMatrixData> BiomeMatrices;
-        [WriteOnly] public NativeArray<VolumetricBiomeClassificationResult> Results;
+        [ReadOnly, NoAlias] public NativeArray<VolumetricBiomeClassificationInput> Inputs;
+        [ReadOnly, NoAlias] public NativeArray<WorldProceduralFieldSampler.BiomeMatrixData> BiomeMatrices;
+        [WriteOnly, NoAlias] public NativeArray<VolumetricBiomeClassificationResult> Results;
 
         public int BiomeMatrixCount;
 
@@ -202,13 +237,13 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VolumetricBiomeStressAuditJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<VolumetricBiomeClassificationResult> Results;
-        [ReadOnly] public NativeArray<int> ExpectedBiomeIds;
-        [ReadOnly] public NativeArray<byte> ExpectedFlagMasks;
-        [WriteOnly] public NativeArray<VolumetricBiomeStressAuditResult> AuditResults;
+        [ReadOnly, NoAlias] public NativeArray<VolumetricBiomeClassificationResult> Results;
+        [ReadOnly, NoAlias] public NativeArray<int> ExpectedBiomeIds;
+        [ReadOnly, NoAlias] public NativeArray<byte> ExpectedFlagMasks;
+        [WriteOnly, NoAlias] public NativeArray<VolumetricBiomeStressAuditResult> AuditResults;
 
         public void Execute(int index)
         {
@@ -219,17 +254,22 @@ namespace Hecton8.World
             byte expectedFlags = ExpectedFlagMasks[index];
             int failureMask = 0;
 
-            if (cell.PrimaryVisualFamilyId != expectedVisualFamilyId)
+            byte primaryVisualFamilyId = WorldProceduralFieldSampler.BiomeInfluenceCell.ExtractPrimaryVisualFamilyId(in cell);
+            byte secondaryVisualFamilyId = WorldProceduralFieldSampler.BiomeInfluenceCell.ExtractSecondaryVisualFamilyId(in cell);
+            byte blend255 = WorldProceduralFieldSampler.BiomeInfluenceCell.ExtractBlend255(in cell);
+            byte flags = WorldProceduralFieldSampler.BiomeInfluenceCell.ExtractFlags(in cell);
+
+            if (primaryVisualFamilyId != expectedVisualFamilyId)
                 failureMask |= 1;
 
-            if ((cell.Flags & expectedFlags) != expectedFlags)
+            if ((flags & expectedFlags) != expectedFlags)
                 failureMask |= 2;
 
             uint expectedPack = HectonBiomeVisualFamilyUtility.PackCell(
-                cell.PrimaryVisualFamilyId,
-                cell.SecondaryVisualFamilyId,
-                cell.Blend255,
-                cell.Flags);
+                primaryVisualFamilyId,
+                secondaryVisualFamilyId,
+                blend255,
+                flags);
 
             if (cell.Packed != expectedPack)
                 failureMask |= 4;
@@ -237,19 +277,19 @@ namespace Hecton8.World
             AuditResults[index] = new VolumetricBiomeStressAuditResult
             {
                 FailureMask = failureMask,
-                PrimaryBiomeId = cell.PrimaryVisualFamilyId,
+                PrimaryBiomeId = primaryVisualFamilyId,
                 ExpectedBiomeId = expectedVisualFamilyId,
-                Flags = cell.Flags,
+                Flags = flags,
                 PackedCell = cell.Packed
             };
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VolumetricBiomeStressBlockReduceJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<VolumetricBiomeStressAuditResult> AuditResults;
-        [WriteOnly] public NativeArray<VolumetricBiomeStressBlockSummary> BlockSummaries;
+        [ReadOnly, NoAlias] public NativeArray<VolumetricBiomeStressAuditResult> AuditResults;
+        [WriteOnly, NoAlias] public NativeArray<VolumetricBiomeStressBlockSummary> BlockSummaries;
 
         public int SampleCount;
         public int SamplesPerBlock;
@@ -284,11 +324,11 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VolumetricBiomeStressFinalReduceJob : IJob
     {
-        [ReadOnly] public NativeArray<VolumetricBiomeStressBlockSummary> BlockSummaries;
-        [WriteOnly] public NativeArray<VolumetricBiomeStressSummaryResult> Summary;
+        [ReadOnly, NoAlias] public NativeArray<VolumetricBiomeStressBlockSummary> BlockSummaries;
+        [WriteOnly, NoAlias] public NativeArray<VolumetricBiomeStressSummaryResult> Summary;
 
         public int BlockCount;
 

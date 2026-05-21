@@ -62,6 +62,12 @@ namespace Hecton8.World
         private const uint MockScatterDefaultSeed = 0x53484939u;
         private const string ScatterCullDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_09.bin";
         private const string ScatterCullH8DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_09.h8dump";
+        private const Allocator DataVaultExemptVegetationMockScatterAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptVegetationBrgMetadataAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptVegetationAgeLaneAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptVegetationTelemetryAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptVegetationCpuCullingAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptVegetationCpuScratchAllocator = Allocator.Persistent;
 #if UNITY_EDITOR
         private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/FloraCulling.compute";
         private const string AbyssalFlowFieldComputeAssetPath = "Assets/_Project/Art/Shaders/AbyssalFlowField.compute";
@@ -497,6 +503,13 @@ namespace Hecton8.World
         private bool _scatterCullTelemetryReadbackPending;
         private bool _scatterCullTelemetryDumped;
         private bool _lastCullOverdrawWarning;
+        private const byte BindingFlagFalse = 0;
+        private const byte BindingFlagTrue = 1;
+
+        private static byte ToBindingFlag(bool value)
+        {
+            return value ? BindingFlagTrue : BindingFlagFalse;
+        }
 
         private struct MaterialBindingState
         {
@@ -514,15 +527,15 @@ namespace Hecton8.World
             public float TransitionRange;
             public float ImpostorWidth;
             public float ImpostorHeight;
-            public bool UseGpuIndirect;
-            public bool IsValid;
+            public byte UseGpuIndirectFlag;
+            public byte IsValidFlag;
         }
 
         private struct MaterialVectorBindingState
         {
             public Material Material;
             public Vector3 Value;
-            public bool IsValid;
+            public byte IsValidFlag;
         }
 
         private struct ComputeCullBindingState
@@ -536,8 +549,8 @@ namespace Hecton8.World
             public GraphicsBuffer VisibleLod1Buffer;
             public GraphicsBuffer VisibleShadowBuffer;
             public GraphicsBuffer TelemetryCountersBuffer;
-            public bool IsShadowKernel;
-            public bool IsValid;
+            public byte IsShadowKernelFlag;
+            public byte IsValidFlag;
         }
 
         private struct ComputeSnapBindingState
@@ -547,8 +560,8 @@ namespace Hecton8.World
             public GraphicsBuffer MatrixBuffer;
             public GraphicsBuffer InstanceDataBuffer;
             public GraphicsBuffer SnapFlagBuffer;
-            public bool IsClearKernel;
-            public bool IsValid;
+            public byte IsClearKernelFlag;
+            public byte IsValidFlag;
         }
 
         private struct IndirectArgsClearBindingState
@@ -561,7 +574,7 @@ namespace Hecton8.World
             public int IndexCountPerInstance;
             public int StartIndex;
             public int BaseVertexIndex;
-            public bool IsValid;
+            public byte IsValidFlag;
         }
 
         private struct CpuCullingScratchBuffer
@@ -574,72 +587,102 @@ namespace Hecton8.World
             public NativeArray<float4> HeadlightConeData;
             public JobHandle ActiveHandle;
             public int VisibilityCapacity;
-            public bool ActiveHandleValid;
+            public byte ActiveHandleValidFlag;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 40)]
+        [StructLayout(LayoutKind.Explicit, Size = 40)]
         private struct FloraGrowthTelemetryEntry
         {
+            [FieldOffset(0)]
             public int FrameIndex;
+            [FieldOffset(4)]
             public int InstanceCount;
+            [FieldOffset(8)]
             public int SampleCount;
+            [FieldOffset(12)]
             public int NegativeAgeCount;
+            [FieldOffset(16)]
             public int NanAgeCount;
+            [FieldOffset(20)]
             public int DirtyUpload;
+            [FieldOffset(24)]
             public float MinAge01;
+            [FieldOffset(28)]
             public float MaxAge01;
+            [FieldOffset(32)]
             public uint AgeHash;
+            [FieldOffset(36)]
             public int Reserved0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 40)]
+        [StructLayout(LayoutKind.Explicit, Size = 40)]
         public struct VegetationCullTelemetrySnapshot
         {
+            [FieldOffset(0)]
             public int FrameIndex;
+            [FieldOffset(4)]
             public int TotalInstances;
+            [FieldOffset(8)]
             public int FrustumCulledCount;
+            [FieldOffset(12)]
             public int OcclusionCulledCount;
+            [FieldOffset(16)]
             public int VisibleCount;
+            [FieldOffset(20)]
             public int DensityDecimationStep;
+            [FieldOffset(24)]
             public int OverdrawWarning;
+            [FieldOffset(28)]
             public float SystemStress01;
+            [FieldOffset(32)]
             public float MaxDensity01;
+            [FieldOffset(36)]
             public int Reserved0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 40)]
+        [StructLayout(LayoutKind.Explicit, Size = 40)]
         private struct ScatterCullTelemetryEntry
         {
+            [FieldOffset(0)]
             public int FrameIndex;
+            [FieldOffset(4)]
             public int TotalInstances;
+            [FieldOffset(8)]
             public int FrustumCulledCount;
+            [FieldOffset(12)]
             public int OcclusionCulledCount;
+            [FieldOffset(16)]
             public int VisibleCount;
+            [FieldOffset(20)]
             public int DensityDecimationStep;
+            [FieldOffset(24)]
             public int OverdrawWarning;
+            [FieldOffset(28)]
             public float SystemStress01;
+            [FieldOffset(32)]
             public float MaxDensity01;
+            [FieldOffset(36)]
             public int Reserved0;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildVegetationVisibilityMaskJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<Matrix4x4> Matrices;
-            [ReadOnly] public NativeArray<HectonVegetationInstanceData> InstanceData;
-            [ReadOnly] public NativeArray<float4> CullingPlanes;
-            [ReadOnly] public NativeArray<float4> HeadlightPositionsWs;
-            [ReadOnly] public NativeArray<float4> HeadlightDirectionsWs;
-            [ReadOnly] public NativeArray<float4> HeadlightColors;
-            [ReadOnly] public NativeArray<float4> HeadlightConeData;
-            public NativeArray<byte> VisibilityMask;
+            [ReadOnly, NoAlias] public NativeArray<Matrix4x4> Matrices;
+            [ReadOnly, NoAlias] public NativeArray<HectonVegetationInstanceData> InstanceData;
+            [ReadOnly, NoAlias] public NativeArray<float4> CullingPlanes;
+            [ReadOnly, NoAlias] public NativeArray<float4> HeadlightPositionsWs;
+            [ReadOnly, NoAlias] public NativeArray<float4> HeadlightDirectionsWs;
+            [ReadOnly, NoAlias] public NativeArray<float4> HeadlightColors;
+            [ReadOnly, NoAlias] public NativeArray<float4> HeadlightConeData;
+            [WriteOnly, NoAlias] public NativeArray<byte> VisibilityMask;
             public int InstanceCount;
             public int CullingPlaneCount;
             public int HeadlightCount;
-            public bool EnableCpuCulling;
-            public bool UseFarPass;
-            public bool UseShadowPass;
-            public bool BypassDarknessCulling;
+            public byte EnableCpuCullingFlag;
+            public byte UseFarPassFlag;
+            public byte UseShadowPassFlag;
+            public byte BypassDarknessCullingFlag;
             public int DensityDecimationStep;
             public float3 ViewPosition;
             public float3 GlobalOffset;
@@ -659,7 +702,7 @@ namespace Hecton8.World
                 }
 
                 byte instanceVisibility = 0;
-                if (EnableCpuCulling)
+                if (EnableCpuCullingFlag != 0)
                 {
                     Matrix4x4 instanceMatrix = Matrices[index];
                     HectonVegetationInstanceData instanceData = InstanceData[index];
@@ -692,18 +735,18 @@ namespace Hecton8.World
                     if (distanceSq <= Lod0MaxDistanceSq)
                         instanceVisibility |= VisibilityMaskNear;
 
-                    if (UseFarPass && distanceSq >= Lod1MinDistanceSq && distanceSq <= Lod1MaxDistanceSq)
+                    if (UseFarPassFlag != 0 && distanceSq >= Lod1MinDistanceSq && distanceSq <= Lod1MaxDistanceSq)
                         instanceVisibility |= VisibilityMaskFar;
 
-                    if (UseShadowPass)
+                    if (UseShadowPassFlag != 0)
                         instanceVisibility |= VisibilityMaskShadow;
                 }
                 else
                 {
                     instanceVisibility |= VisibilityMaskNear;
-                    if (UseFarPass)
+                    if (UseFarPassFlag != 0)
                         instanceVisibility |= VisibilityMaskFar;
-                    if (UseShadowPass)
+                    if (UseShadowPassFlag != 0)
                         instanceVisibility |= VisibilityMaskShadow;
                 }
 
@@ -712,7 +755,7 @@ namespace Hecton8.World
 
             private bool IsVisibleInDarkness(float3 samplePositionWs)
             {
-                if (BypassDarknessCulling)
+                if (BypassDarknessCullingFlag != 0)
                     return true;
 
                 for (int headlightIndex = 0; headlightIndex < HeadlightCount; headlightIndex++)
@@ -820,11 +863,11 @@ namespace Hecton8.World
         }
 
 #if UNITY_EDITOR
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct MockMatrixGeneratorJob : IJobParallelFor
         {
-            public NativeArray<Matrix4x4> Matrices;
-            public NativeArray<HectonVegetationInstanceData> InstanceData;
+            [NoAlias] public NativeArray<Matrix4x4> Matrices;
+            [NoAlias] public NativeArray<HectonVegetationInstanceData> InstanceData;
             public int CellsX;
             public float Spacing;
             public uint Seed;
@@ -903,19 +946,19 @@ namespace Hecton8.World
         }
 #endif
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct FinalizeVegetationDrawOutputJob : IJob
         {
-            [ReadOnly] public NativeArray<byte> VisibilityMask;
+            [ReadOnly, NoAlias] public NativeArray<byte> VisibilityMask;
             public int InstanceCount;
             public int Layer;
             public int SubMeshIndex;
-            public bool UseFarPass;
-            public bool UseDepthPass;
-            public bool UseDepthFarPass;
-            public bool UseShadowPass;
-            public bool UseMotionPass;
-            public bool UseMotionFarPass;
+            public byte UseFarPassFlag;
+            public byte UseDepthPassFlag;
+            public byte UseDepthFarPassFlag;
+            public byte UseShadowPassFlag;
+            public byte UseMotionPassFlag;
+            public byte UseMotionFarPassFlag;
             public BatchID BatchId;
             public BatchMeshID NearMeshId;
             public BatchMeshID FarMeshId;
@@ -987,7 +1030,7 @@ namespace Hecton8.World
                     false,
                     MotionVectorGenerationMode.Camera);
 
-                if (UseFarPass)
+                if (UseFarPassFlag != 0)
                 {
                     commandIndex = WriteVegetationDrawCommand(
                         commandIndex,
@@ -1000,7 +1043,7 @@ namespace Hecton8.World
                         MotionVectorGenerationMode.Camera);
                 }
 
-                if (UseDepthPass)
+                if (UseDepthPassFlag != 0)
                 {
                     commandIndex = WriteVegetationDrawCommand(
                         commandIndex,
@@ -1012,7 +1055,7 @@ namespace Hecton8.World
                         false,
                         MotionVectorGenerationMode.Camera);
 
-                    if (UseDepthFarPass)
+                    if (UseDepthFarPassFlag != 0)
                     {
                         commandIndex = WriteVegetationDrawCommand(
                             commandIndex,
@@ -1026,7 +1069,7 @@ namespace Hecton8.World
                     }
                 }
 
-                if (UseShadowPass)
+                if (UseShadowPassFlag != 0)
                 {
                     commandIndex = WriteVegetationDrawCommand(
                         commandIndex,
@@ -1039,7 +1082,7 @@ namespace Hecton8.World
                         MotionVectorGenerationMode.Camera);
                 }
 
-                if (UseMotionPass)
+                if (UseMotionPassFlag != 0)
                 {
                     commandIndex = WriteVegetationDrawCommand(
                         commandIndex,
@@ -1051,7 +1094,7 @@ namespace Hecton8.World
                         false,
                         MotionVectorGenerationMode.Object);
 
-                    if (UseMotionFarPass)
+                    if (UseMotionFarPassFlag != 0)
                     {
                         commandIndex = WriteVegetationDrawCommand(
                             commandIndex,
@@ -1311,8 +1354,8 @@ namespace Hecton8.World
 
             _bufferSource = null;
             ReleaseMockScatterBuffers();
-            _mockScatterMatrices = new NativeList<Matrix4x4>(count, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[mockCount] - SHINOBU_09 vacuum scatter matrices - owner: HectonIndirectVegetationRenderer
-            _mockScatterData = new NativeList<HectonVegetationInstanceData>(count, Allocator.Persistent); // COLD ALLOC: NativeList<HectonVegetationInstanceData>[mockCount] - SHINOBU_09 vacuum scatter metadata - owner: HectonIndirectVegetationRenderer
+            _mockScatterMatrices = new NativeList<Matrix4x4>(count, DataVaultExemptVegetationMockScatterAllocator); // COLD ALLOC: NativeList<Matrix4x4>[mockCount] - SHINOBU_09 vacuum scatter matrices - owner: HectonIndirectVegetationRenderer
+            _mockScatterData = new NativeList<HectonVegetationInstanceData>(count, DataVaultExemptVegetationMockScatterAllocator); // COLD ALLOC: NativeList<HectonVegetationInstanceData>[mockCount] - SHINOBU_09 vacuum scatter metadata - owner: HectonIndirectVegetationRenderer
             _mockScatterMatrices.ResizeUninitialized(count);
             _mockScatterData.ResizeUninitialized(count);
             NativeMemorySentinel.RegisterNativeList(_mockScatterMatrices, nameof(HectonIndirectVegetationRenderer), nameof(_mockScatterMatrices), NativeAllocationLifetime.Session);
@@ -1814,8 +1857,7 @@ namespace Hecton8.World
             if (cullCamera != null)
             {
                 Transform cullTransform = cullCamera.transform;
-                cullCameraPosition = cullTransform.position;
-                cullCameraForward = cullTransform.forward;
+                ResolveCullCameraPose(cullTransform, out cullCameraPosition, out cullCameraForward);
                 _cachedCullCameraPosition = cullCameraPosition;
                 _cachedCullCameraForward = cullCameraForward;
             }
@@ -1824,7 +1866,7 @@ namespace Hecton8.World
             Mesh farMesh = FrameTimeWatchdog.IsDistantFloraRenderingEnabled && _farLodDistance > _nearLodDistance
                 ? ResolveImpostorRenderMesh()
                 : null;
-            Vector3 rendererPosition = transform.position;
+            Vector3 rendererPosition = ResolveRendererRuntimePosition();
             Bounds drawBounds = ResolveDrawBounds(rendererPosition);
             if (TryRenderGpuIndirect(cullCamera, nearMesh, farMesh, cullCameraPosition, cullCameraForward, drawBounds))
                 return;
@@ -1871,6 +1913,24 @@ namespace Hecton8.World
                 step = Mathf.Max(step, 2);
 
             return Mathf.Clamp(step, 1, 4);
+        }
+
+        private static void ResolveCullCameraPose(Transform cullTransform, out Vector3 runtimePosition, out Vector3 forward)
+        {
+            if (cullTransform == null)
+            {
+                runtimePosition = Vector3.zero;
+                forward = Vector3.forward;
+                return;
+            }
+
+            runtimePosition = cullTransform.position;
+            forward = cullTransform.forward;
+        }
+
+        private Vector3 ResolveRendererRuntimePosition()
+        {
+            return transform.position;
         }
 
         private Bounds ResolveDrawBounds(Vector3 rendererPosition)
@@ -1930,7 +1990,7 @@ namespace Hecton8.World
                 userContext = IntPtr.Zero
             });
 
-            _batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for vegetation renderer - owner: HectonIndirectVegetationRenderer
+            _batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, DataVaultExemptVegetationBrgMetadataAllocator); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for vegetation renderer - owner: HectonIndirectVegetationRenderer
             NativeMemorySentinel.RegisterNativeArray(_batchMetadata, nameof(HectonIndirectVegetationRenderer), nameof(_batchMetadata), NativeAllocationLifetime.Session);
             _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for vegetation renderer - owner: HectonIndirectVegetationRenderer
             _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
@@ -2068,8 +2128,8 @@ namespace Hecton8.World
                 TransitionRange = _lodTransitionRange,
                 ImpostorWidth = _impostorWidth,
                 ImpostorHeight = _impostorHeight,
-                UseGpuIndirect = useGpuIndirect,
-                IsValid = true
+                UseGpuIndirectFlag = ToBindingFlag(useGpuIndirect),
+                IsValidFlag = BindingFlagTrue
             };
         }
 
@@ -2083,7 +2143,7 @@ namespace Hecton8.World
             GraphicsBuffer visibleIndicesBuffer,
             bool useGpuIndirect)
         {
-            return state.IsValid &&
+            return state.IsValidFlag != 0 &&
                 ReferenceEquals(state.Material, material) &&
                 ReferenceEquals(state.InstanceMatrixBuffer, _instanceMatrixBuffer) &&
                 ReferenceEquals(state.InstanceDataBuffer, activeInstanceDataBuffer) &&
@@ -2101,7 +2161,7 @@ namespace Hecton8.World
                 state.TransitionRange == _lodTransitionRange &&
                 state.ImpostorWidth == _impostorWidth &&
                 state.ImpostorHeight == _impostorHeight &&
-                state.UseGpuIndirect == useGpuIndirect;
+                (state.UseGpuIndirectFlag != 0) == useGpuIndirect;
         }
 
         private void ApplyCullComputeBindings(
@@ -2119,7 +2179,7 @@ namespace Hecton8.World
             GraphicsBuffer visibleShadowBuffer = shadowKernel ? _visibleIndicesShadowBuffer : null;
             GraphicsBuffer telemetryCountersBuffer = _cullTelemetryCountersBuffer;
 
-            if (state.IsValid &&
+            if (state.IsValidFlag != 0 &&
                 ReferenceEquals(state.Shader, _cullingCompute) &&
                 state.Kernel == kernel &&
                 ReferenceEquals(state.MatrixBuffer, _instanceMatrixBuffer) &&
@@ -2129,7 +2189,7 @@ namespace Hecton8.World
                 ReferenceEquals(state.VisibleLod1Buffer, visibleLod1Buffer) &&
                 ReferenceEquals(state.VisibleShadowBuffer, visibleShadowBuffer) &&
                 ReferenceEquals(state.TelemetryCountersBuffer, telemetryCountersBuffer) &&
-                state.IsShadowKernel == shadowKernel)
+                (state.IsShadowKernelFlag != 0) == shadowKernel)
             {
                 return;
             }
@@ -2164,8 +2224,8 @@ namespace Hecton8.World
                 VisibleLod1Buffer = visibleLod1Buffer,
                 VisibleShadowBuffer = visibleShadowBuffer,
                 TelemetryCountersBuffer = telemetryCountersBuffer,
-                IsShadowKernel = shadowKernel,
-                IsValid = true
+                IsShadowKernelFlag = ToBindingFlag(shadowKernel),
+                IsValidFlag = BindingFlagTrue
             };
         }
 
@@ -2183,13 +2243,13 @@ namespace Hecton8.World
             if (!clearKernel && (matrixBuffer == null || instanceDataBuffer == null))
                 return;
 
-            if (state.IsValid &&
+            if (state.IsValidFlag != 0 &&
                 ReferenceEquals(state.Shader, _abyssalFlowFieldCompute) &&
                 state.Kernel == kernel &&
                 ReferenceEquals(state.MatrixBuffer, matrixBuffer) &&
                 ReferenceEquals(state.InstanceDataBuffer, instanceDataBuffer) &&
                 ReferenceEquals(state.SnapFlagBuffer, _floraSnapFlagBuffer) &&
-                state.IsClearKernel == clearKernel)
+                (state.IsClearKernelFlag != 0) == clearKernel)
             {
                 return;
             }
@@ -2208,8 +2268,8 @@ namespace Hecton8.World
                 MatrixBuffer = matrixBuffer,
                 InstanceDataBuffer = instanceDataBuffer,
                 SnapFlagBuffer = _floraSnapFlagBuffer,
-                IsClearKernel = clearKernel,
-                IsValid = true
+                IsClearKernelFlag = ToBindingFlag(clearKernel),
+                IsValidFlag = BindingFlagTrue
             };
         }
 
@@ -2757,7 +2817,7 @@ namespace Hecton8.World
             }
 
             ReleaseFloraAgeResources();
-            _floraAges01 = new NativeArray<float>(requiredCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[NextPowerOfTwo(instanceCount)] - flora age SoA upload lane - owner: HectonIndirectVegetationRenderer
+            _floraAges01 = new NativeArray<float>(requiredCapacity, DataVaultExemptVegetationAgeLaneAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[NextPowerOfTwo(instanceCount)] - flora age SoA upload lane - owner: HectonIndirectVegetationRenderer
             NativeMemorySentinel.RegisterNativeArray(_floraAges01, nameof(HectonIndirectVegetationRenderer), nameof(_floraAges01), NativeAllocationLifetime.Session);
             _floraAgeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] - StructuredBuffer<float> flora age lane - owner: HectonIndirectVegetationRenderer
             _floraAgeCapacity = requiredCapacity;
@@ -2832,7 +2892,7 @@ namespace Hecton8.World
 
             _floraGrowthTelemetry = new NativeArray<FloraGrowthTelemetryEntry>(
                 FloraGrowthTelemetryFrameCount,
-                Allocator.Persistent,
+                DataVaultExemptVegetationTelemetryAllocator,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraGrowthTelemetryEntry>[300] - flora growth black-box circular telemetry - owner: HectonIndirectVegetationRenderer
             NativeMemorySentinel.RegisterNativeArray(_floraGrowthTelemetry, nameof(HectonIndirectVegetationRenderer), nameof(_floraGrowthTelemetry), NativeAllocationLifetime.Session);
         }
@@ -3038,7 +3098,7 @@ namespace Hecton8.World
 
             _scatterCullTelemetry = new NativeArray<ScatterCullTelemetryEntry>(
                 ScatterCullTelemetryFrameCount,
-                Allocator.Persistent,
+                DataVaultExemptVegetationTelemetryAllocator,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ScatterCullTelemetryEntry>[300] - SHINOBU_09 cull black-box circular telemetry - owner: HectonIndirectVegetationRenderer
             NativeMemorySentinel.RegisterNativeArray(_scatterCullTelemetry, nameof(HectonIndirectVegetationRenderer), nameof(_scatterCullTelemetry), NativeAllocationLifetime.Session);
         }
@@ -3161,7 +3221,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            bool sameShaderKernel = _indirectArgsClearBindingState.IsValid &&
+            bool sameShaderKernel = _indirectArgsClearBindingState.IsValidFlag != 0 &&
                                     ReferenceEquals(_indirectArgsClearBindingState.Shader, _cullingCompute) &&
                                     _indirectArgsClearBindingState.Kernel == _clearIndirectArgsKernel;
             bool sameArgsBuffer = sameShaderKernel &&
@@ -3205,7 +3265,7 @@ namespace Hecton8.World
                 IndexCountPerInstance = indexCountPerInstance,
                 StartIndex = startIndex,
                 BaseVertexIndex = baseVertexIndex,
-                IsValid = true
+                IsValidFlag = BindingFlagTrue
             };
             _cullingCompute.Dispatch(_clearIndirectArgsKernel, 1, 1, 1);
             return true;
@@ -3479,7 +3539,7 @@ namespace Hecton8.World
             if (propertyBlock == null || material == null)
                 return;
 
-            if (state.IsValid &&
+            if (state.IsValidFlag != 0 &&
                 ReferenceEquals(state.Material, material) &&
                 state.Value.x == previousCameraPosition.x &&
                 state.Value.y == previousCameraPosition.y &&
@@ -3493,7 +3553,7 @@ namespace Hecton8.World
             {
                 Material = material,
                 Value = previousCameraPosition,
-                IsValid = true
+                IsValidFlag = BindingFlagTrue
             };
         }
 
@@ -3513,8 +3573,8 @@ namespace Hecton8.World
             }
 
             ReleaseCpuCullingData();
-            _cpuCullingMatrices = new NativeArray<Matrix4x4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[NextPowerOfTwo(requiredCount)] - CPU BRG vegetation culling matrices - owner: HectonIndirectVegetationRenderer
-            _cpuCullingData = new NativeArray<HectonVegetationInstanceData>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<HectonVegetationInstanceData>[NextPowerOfTwo(requiredCount)] - CPU BRG vegetation culling metadata - owner: HectonIndirectVegetationRenderer
+            _cpuCullingMatrices = new NativeArray<Matrix4x4>(nextCapacity, DataVaultExemptVegetationCpuCullingAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[NextPowerOfTwo(requiredCount)] - CPU BRG vegetation culling matrices - owner: HectonIndirectVegetationRenderer
+            _cpuCullingData = new NativeArray<HectonVegetationInstanceData>(nextCapacity, DataVaultExemptVegetationCpuCullingAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<HectonVegetationInstanceData>[NextPowerOfTwo(requiredCount)] - CPU BRG vegetation culling metadata - owner: HectonIndirectVegetationRenderer
             NativeMemorySentinel.RegisterNativeArray(_cpuCullingMatrices, nameof(HectonIndirectVegetationRenderer), nameof(_cpuCullingMatrices), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_cpuCullingData, nameof(HectonIndirectVegetationRenderer), nameof(_cpuCullingData), NativeAllocationLifetime.Session);
         }
@@ -3533,13 +3593,13 @@ namespace Hecton8.World
             dependency = default;
             bool hasDependency = false;
 
-            if (_cpuCullingScratchA.ActiveHandleValid)
+            if (_cpuCullingScratchA.ActiveHandleValidFlag != 0)
             {
                 dependency = _cpuCullingScratchA.ActiveHandle;
                 hasDependency = true;
             }
 
-            if (_cpuCullingScratchB.ActiveHandleValid)
+            if (_cpuCullingScratchB.ActiveHandleValidFlag != 0)
             {
                 dependency = hasDependency
                     ? JobHandle.CombineDependencies(dependency, _cpuCullingScratchB.ActiveHandle)
@@ -3599,13 +3659,13 @@ namespace Hecton8.World
             {
                 int candidateIndex = (_cpuCullingScratchCursor + attempt) & 1;
                 ref CpuCullingScratchBuffer candidate = ref GetCpuCullingScratch(candidateIndex);
-                if (candidate.ActiveHandleValid && !candidate.ActiveHandle.IsCompleted)
+                if (candidate.ActiveHandleValidFlag != 0 && !candidate.ActiveHandle.IsCompleted)
                     continue;
 
-                if (candidate.ActiveHandleValid)
+                if (candidate.ActiveHandleValidFlag != 0)
                 {
                     DispatcherJobFence.TryFinalizeCompleted(ref candidate.ActiveHandle);
-                    candidate.ActiveHandleValid = false;
+                    candidate.ActiveHandleValidFlag = BindingFlagFalse;
                 }
 
                 EnsureCpuCullingScratchCapacity(ref candidate, candidateIndex, instanceCount);
@@ -3649,15 +3709,15 @@ namespace Hecton8.World
             }
 
             ReleaseCpuCullingScratch(ref scratch, deferActiveJobs: false);
-            scratch.VisibilityMask = new NativeArray<byte>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[NextPowerOfTwo(instanceCount)] - BRG fallback visibility scratch - owner: HectonIndirectVegetationRenderer
-            scratch.CullingPlanes = new NativeArray<float4>(CpuCullingScratchPlaneCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[16] - BRG fallback culling plane scratch - owner: HectonIndirectVegetationRenderer
-            scratch.HeadlightPositionsWs = new NativeArray<float4>(MaxScooterHeadlights, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight position scratch - owner: HectonIndirectVegetationRenderer
-            scratch.HeadlightDirectionsWs = new NativeArray<float4>(MaxScooterHeadlights, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight direction scratch - owner: HectonIndirectVegetationRenderer
-            scratch.HeadlightColors = new NativeArray<float4>(MaxScooterHeadlights, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight color scratch - owner: HectonIndirectVegetationRenderer
-            scratch.HeadlightConeData = new NativeArray<float4>(MaxScooterHeadlights, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight cone scratch - owner: HectonIndirectVegetationRenderer
+            scratch.VisibilityMask = new NativeArray<byte>(nextCapacity, DataVaultExemptVegetationCpuScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[NextPowerOfTwo(instanceCount)] - BRG fallback visibility scratch - owner: HectonIndirectVegetationRenderer
+            scratch.CullingPlanes = new NativeArray<float4>(CpuCullingScratchPlaneCapacity, DataVaultExemptVegetationCpuScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[16] - BRG fallback culling plane scratch - owner: HectonIndirectVegetationRenderer
+            scratch.HeadlightPositionsWs = new NativeArray<float4>(MaxScooterHeadlights, DataVaultExemptVegetationCpuScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight position scratch - owner: HectonIndirectVegetationRenderer
+            scratch.HeadlightDirectionsWs = new NativeArray<float4>(MaxScooterHeadlights, DataVaultExemptVegetationCpuScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight direction scratch - owner: HectonIndirectVegetationRenderer
+            scratch.HeadlightColors = new NativeArray<float4>(MaxScooterHeadlights, DataVaultExemptVegetationCpuScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight color scratch - owner: HectonIndirectVegetationRenderer
+            scratch.HeadlightConeData = new NativeArray<float4>(MaxScooterHeadlights, DataVaultExemptVegetationCpuScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[2] - BRG fallback headlight cone scratch - owner: HectonIndirectVegetationRenderer
             scratch.VisibilityCapacity = nextCapacity;
             scratch.ActiveHandle = default;
-            scratch.ActiveHandleValid = false;
+            scratch.ActiveHandleValidFlag = BindingFlagFalse;
 
             bool firstScratch = scratchIndex == 0;
             NativeMemorySentinel.RegisterNativeArray(scratch.VisibilityMask, nameof(HectonIndirectVegetationRenderer), firstScratch ? "CpuCullingScratchA.VisibilityMask" : "CpuCullingScratchB.VisibilityMask", NativeAllocationLifetime.Session);
@@ -3679,7 +3739,7 @@ namespace Hecton8.World
         {
             JobHandle disposeDependency = default;
             bool hasDisposeDependency = false;
-            if (scratch.ActiveHandleValid)
+            if (scratch.ActiveHandleValidFlag != 0)
             {
                 if (deferActiveJobs && !scratch.ActiveHandle.IsCompleted)
                 {
@@ -3691,7 +3751,7 @@ namespace Hecton8.World
                     DispatcherJobFence.TryComplete(ref scratch.ActiveHandle, forceComplete: true);
                 }
 
-                scratch.ActiveHandleValid = false;
+                scratch.ActiveHandleValidFlag = BindingFlagFalse;
             }
 
             DisposeCpuCullingScratchArray(ref scratch.VisibilityMask, disposeDependency, hasDisposeDependency);
@@ -4061,10 +4121,10 @@ namespace Hecton8.World
                     InstanceCount = _instanceCount,
                     CullingPlaneCount = cullingPlaneCount,
                     HeadlightCount = headlightCount,
-                    EnableCpuCulling = enableCpuCulling,
-                    UseFarPass = useFarPass,
-                    UseShadowPass = useShadowPass,
-                    BypassDarknessCulling = bypassDarknessCulling,
+                    EnableCpuCullingFlag = enableCpuCulling ? (byte)1 : (byte)0,
+                    UseFarPassFlag = useFarPass ? (byte)1 : (byte)0,
+                    UseShadowPassFlag = useShadowPass ? (byte)1 : (byte)0,
+                    BypassDarknessCullingFlag = bypassDarknessCulling ? (byte)1 : (byte)0,
                     DensityDecimationStep = densityDecimationStep,
                     ViewPosition = _cachedCullCameraPosition,
                     GlobalOffset = new float3(floatingOffset.x, floatingOffset.y, floatingOffset.z),
@@ -4079,12 +4139,12 @@ namespace Hecton8.World
                     InstanceCount = _instanceCount,
                     Layer = gameObject.layer,
                     SubMeshIndex = _subMeshIndex,
-                    UseFarPass = useFarPass,
-                    UseDepthPass = useDepthPass,
-                    UseDepthFarPass = useDepthFarPass,
-                    UseShadowPass = useShadowPass,
-                    UseMotionPass = useMotionPass,
-                    UseMotionFarPass = useMotionFarPass,
+                    UseFarPassFlag = useFarPass ? (byte)1 : (byte)0,
+                    UseDepthPassFlag = useDepthPass ? (byte)1 : (byte)0,
+                    UseDepthFarPassFlag = useDepthFarPass ? (byte)1 : (byte)0,
+                    UseShadowPassFlag = useShadowPass ? (byte)1 : (byte)0,
+                    UseMotionPassFlag = useMotionPass ? (byte)1 : (byte)0,
+                    UseMotionFarPassFlag = useMotionFarPass ? (byte)1 : (byte)0,
                     BatchId = _batchId,
                     NearMeshId = _nearBatchMeshId,
                     FarMeshId = _farBatchMeshId,
@@ -4102,7 +4162,7 @@ namespace Hecton8.World
                 }.Schedule(visibilityHandle);
 
                 scratch.ActiveHandle = finalizeHandle;
-                scratch.ActiveHandleValid = true;
+                scratch.ActiveHandleValidFlag = BindingFlagTrue;
                 return finalizeHandle;
             }
         }
@@ -4410,7 +4470,7 @@ namespace Hecton8.World
             if (_bufferSource is IHectonIndirectVegetationNativeBufferSource nativeBufferSource)
             {
                 if (!nativeBufferSource.TryAcquireNativeReadBuffer(out HectonIndirectVegetationNativeReadBuffer readBuffer) ||
-                    !readBuffer.IsValid)
+                    !HectonIndirectVegetationNativeReadBuffer.IsValid(in readBuffer))
                 {
                     ClearBoundInstanceState();
                     if (_bufferSource.HasExplicitBounds)
@@ -4437,14 +4497,14 @@ namespace Hecton8.World
                 if (!uploadSucceeded)
                 {
                     ClearBoundInstanceState();
-                    if (readBuffer.HasExplicitBounds)
+                    if (HectonIndirectVegetationNativeReadBuffer.HasExplicitBounds(in readBuffer))
                         SetDrawBounds(readBuffer.DrawBounds);
                     else
                         ClearDrawBoundsOverride();
                     return;
                 }
 
-                if (readBuffer.HasExplicitBounds)
+                if (HectonIndirectVegetationNativeReadBuffer.HasExplicitBounds(in readBuffer))
                     SetDrawBounds(readBuffer.DrawBounds);
                 else
                     ClearDrawBoundsOverride();

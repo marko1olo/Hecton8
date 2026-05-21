@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Mathematics;
 using UnityEditor;
@@ -41,7 +42,8 @@ namespace Hecton8.Quest
             EditorGUILayout.LabelField(WindowTitle, EditorStyles.boldLabel);
             EditorGUILayout.Space(4f);
 
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
             {
                 EditorGUILayout.HelpBox("GlobalDataVault is not initialized. Run bootstrap or create a vault-backed test runtime.", MessageType.Warning);
                 if (GUILayout.Button("Reload node_names.csv"))
@@ -64,7 +66,7 @@ namespace Hecton8.Quest
             PollCsvIfNeeded(vault);
         }
 
-        private void DrawToolbar(GlobalDataVault vault, in QuestDagBuffers buffers)
+        private void DrawToolbar(IDataVault vault, in QuestDagBuffers buffers)
         {
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -115,7 +117,7 @@ namespace Hecton8.Quest
             EditorGUILayout.LabelField("Last Compute ms", entry.ResolverComputeTimeMs.ToString("F6"));
         }
 
-        private void DrawNodes(GlobalDataVault vault, in QuestDagBuffers buffers)
+        private void DrawNodes(IDataVault vault, in QuestDagBuffers buffers)
         {
             int nodeCount = math.min(
                 ReadCounter(buffers, QuestDagRuntimeConstants.CounterSlot.NodeCount),
@@ -152,7 +154,7 @@ namespace Hecton8.Quest
             EditorGUILayout.EndScrollView();
         }
 
-        private void PollCsvIfNeeded(GlobalDataVault vault)
+        private void PollCsvIfNeeded(IDataVault vault)
         {
             if (!_autoCsv || EditorApplication.timeSinceStartup < _nextCsvPollTime)
                 return;

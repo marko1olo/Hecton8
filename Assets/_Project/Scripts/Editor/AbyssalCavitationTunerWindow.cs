@@ -19,10 +19,13 @@ namespace Hecton8.Editor
 
     public sealed class AbyssalCavitationTunerWindow : EditorWindow
     {
+        private const int HistogramBinCount = 16;
         private delegate void TuningMutator(ref AbyssalCavitationTuningDTO tuning);
 
         private Label _status;
         private Slider _quality;
+        private Slider _inverseSquare;
+        private Slider _epsilonClamp;
         private Slider _forceScale;
         private Slider _minPressure;
         private Slider _sdfDampening;
@@ -33,6 +36,7 @@ namespace Hecton8.Editor
         private Label _telemetry;
         private double _nextTelemetryRefreshTime;
         private readonly char[] _telemetryScratch = new char[192];
+        private readonly VisualElement[] _histogramBars = new VisualElement[HistogramBinCount];
         private uint _lastTelemetryFrameIndex = uint.MaxValue;
         private uint _lastTelemetryFlags = uint.MaxValue;
         private uint _lastTelemetryPeakPressureBits;
@@ -67,29 +71,55 @@ namespace Hecton8.Editor
             rootVisualElement.style.paddingTop = 10;
             rootVisualElement.style.paddingBottom = 10;
 
-            _status = new Label("SHINOBU_156 cavitation runtime");
+            _status = new Label("SHINOBU_248 cavitation runtime");
             rootVisualElement.Add(_status);
 
             _quality = AddSlider("Global Quality Weight", 0f, 1f, OnQualityChanged);
+            _inverseSquare = AddSlider("Inverse Square Multiplier", 0.0001f, 16f, OnInverseSquareChanged);
+            _epsilonClamp = AddSlider("Epsilon Clamp Value", 0.000001f, 0.01f, OnEpsilonClampChanged);
             _forceScale = AddSlider("Force Scale", 0.00001f, 0.08f, OnForceScaleChanged);
             _minPressure = AddSlider("Minimum Pressure", 0f, 500f, OnMinPressureChanged);
-            _sdfDampening = AddSlider("SDF Hard Dampening", 0f, 1f, OnSdfDampeningChanged);
+            _sdfDampening = AddSlider("SDF Occlusion Dampening", 0f, 1f, OnSdfDampeningChanged);
             _sdfSoftness = AddSlider("SDF Softness Meters", 0.05f, 24f, OnSdfSoftnessChanged);
             _visualIntensity = AddSlider("Visual Intensity", 0f, 4f, OnVisualIntensityChanged);
             _maxForce = AddSlider("Max Force Newton", 100f, 120000f, OnMaxForceChanged);
             _shellMeters = AddSlider("Shell Meters", 0.05f, 12f, OnShellMetersChanged);
 
-            Button loadCsv = new Button(LoadCsv) { text = "Load ordnance_specs.csv" };
+            Button loadCsv = new Button(LoadCsv) { text = "Load ordnance_blast_profiles.csv" };
             Button mock = new Button(InjectMock) { text = "Inject 10 mock detonations" };
+            Button singularity = new Button(InjectSingularity) { text = "Inject singularity mock" };
             Button shader = new Button(SyncShader) { text = "Sync shader buffer" };
             rootVisualElement.Add(loadCsv);
             rootVisualElement.Add(mock);
+            rootVisualElement.Add(singularity);
             rootVisualElement.Add(shader);
             _telemetry = new Label("Telemetry: --");
             rootVisualElement.Add(_telemetry);
+            CreateHistogram();
 
             RefreshFromRuntime();
             RefreshTelemetryReadout(force: true);
+        }
+
+        private void CreateHistogram()
+        {
+            VisualElement row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.FlexEnd;
+            row.style.height = 48;
+            row.style.marginTop = 6;
+            rootVisualElement.Add(row);
+
+            for (int i = 0; i < HistogramBinCount; i++)
+            {
+                VisualElement bar = new VisualElement();
+                bar.style.width = 8;
+                bar.style.height = 2;
+                bar.style.marginRight = 3;
+                bar.style.backgroundColor = new Color(0.3f, 0.75f, 1f, 0.7f);
+                row.Add(bar);
+                _histogramBars[i] = bar;
+            }
         }
 
         private Slider AddSlider(string label, float low, float high, System.Action<float> callback)
@@ -111,9 +141,11 @@ namespace Hecton8.Editor
             }
 
             _quality.SetValueWithoutNotify(math.saturate(HomeostasisBrain.GlobalQualityWeight));
+            _inverseSquare.SetValueWithoutNotify(tuning.InverseSquareMultiplier);
+            _epsilonClamp.SetValueWithoutNotify(tuning.EpsilonClampValue);
             _forceScale.SetValueWithoutNotify(tuning.ForceScale);
             _minPressure.SetValueWithoutNotify(tuning.MinPressure);
-            _sdfDampening.SetValueWithoutNotify(tuning.SdfHardDampening);
+            _sdfDampening.SetValueWithoutNotify(tuning.SdfOcclusionDampening);
             _sdfSoftness.SetValueWithoutNotify(tuning.SdfSoftnessMeters);
             _visualIntensity.SetValueWithoutNotify(tuning.VisualIntensityScale);
             _maxForce.SetValueWithoutNotify(tuning.MaxForceNewton);
@@ -164,6 +196,7 @@ namespace Hecton8.Editor
                 _telemetryUnavailable = false;
                 int length = FormatTelemetry(in telemetry, _telemetryScratch);
                 _telemetry.text = new string(_telemetryScratch, 0, length);
+                RefreshHistogram();
                 return;
             }
 
@@ -171,6 +204,44 @@ namespace Hecton8.Editor
             {
                 _telemetryUnavailable = true;
                 _telemetry.text = "Telemetry: --";
+                ClearHistogram();
+            }
+        }
+
+        private void RefreshHistogram()
+        {
+            for (int i = 0; i < HistogramBinCount; i++)
+            {
+                VisualElement bar = _histogramBars[i];
+                if (bar == null)
+                    continue;
+
+                if (!AbyssalCavitationRuntime.TrySampleTelemetryEntry(HistogramBinCount - 1 - i, out ShockwaveTelemetryEntry telemetry))
+                {
+                    bar.style.height = 2;
+                    bar.style.backgroundColor = new Color(0.08f, 0.12f, 0.14f, 0.6f);
+                    continue;
+                }
+
+                float forceHeight = math.clamp(telemetry.PeakForce * 0.0008f, 2f, 46f);
+                float clampBoost = telemetry.EpsilonClampCount > 0 ? math.min(8f, telemetry.EpsilonClampCount * 2f) : 0f;
+                bar.style.height = math.min(48f, forceHeight + clampBoost);
+                bar.style.backgroundColor = telemetry.EpsilonClampCount > 0
+                    ? new Color(1f, 0.08f, 0.02f, 0.9f)
+                    : new Color(0.3f, 0.75f, 1f, 0.75f);
+            }
+        }
+
+        private void ClearHistogram()
+        {
+            for (int i = 0; i < HistogramBinCount; i++)
+            {
+                VisualElement bar = _histogramBars[i];
+                if (bar == null)
+                    continue;
+
+                bar.style.height = 2;
+                bar.style.backgroundColor = new Color(0.08f, 0.12f, 0.14f, 0.6f);
             }
         }
 
@@ -185,6 +256,10 @@ namespace Hecton8.Editor
             cursor = AppendFixed1(buffer, cursor, telemetry.PeakPressure);
             cursor = AppendLiteral(buffer, cursor, " | Peak force ");
             cursor = AppendFixed1(buffer, cursor, telemetry.PeakForce);
+            cursor = AppendLiteral(buffer, cursor, " | Affected ");
+            cursor = AppendInt(buffer, cursor, telemetry.AffectedEntities);
+            cursor = AppendLiteral(buffer, cursor, " | Eps ");
+            cursor = AppendInt(buffer, cursor, telemetry.EpsilonClampCount);
             cursor = AppendLiteral(buffer, cursor, " | CPU us ");
             cursor = AppendFixed1(buffer, cursor, telemetry.CpuMicroseconds);
             cursor = AppendLiteral(buffer, cursor, " | Flags 0x");
@@ -268,7 +343,8 @@ namespace Hecton8.Editor
 
         private void Mutate(TuningMutator mutator)
         {
-            if (!AbyssalCavitationRuntime.TryGetTuning(out AbyssalCavitationTuningDTO tuning))
+            if (!AbyssalCavitationRuntime.EnsureInitialized() ||
+                !AbyssalCavitationRuntime.TryGetTuning(out AbyssalCavitationTuningDTO tuning))
                 return;
 
             mutator(ref tuning);
@@ -287,6 +363,16 @@ namespace Hecton8.Editor
             Mutate((ref AbyssalCavitationTuningDTO tuning) => tuning.ForceScale = value);
         }
 
+        private void OnInverseSquareChanged(float value)
+        {
+            Mutate((ref AbyssalCavitationTuningDTO tuning) => tuning.InverseSquareMultiplier = value);
+        }
+
+        private void OnEpsilonClampChanged(float value)
+        {
+            Mutate((ref AbyssalCavitationTuningDTO tuning) => tuning.EpsilonClampValue = value);
+        }
+
         private void OnMinPressureChanged(float value)
         {
             Mutate((ref AbyssalCavitationTuningDTO tuning) => tuning.MinPressure = value);
@@ -294,7 +380,11 @@ namespace Hecton8.Editor
 
         private void OnSdfDampeningChanged(float value)
         {
-            Mutate((ref AbyssalCavitationTuningDTO tuning) => tuning.SdfHardDampening = value);
+            Mutate((ref AbyssalCavitationTuningDTO tuning) =>
+            {
+                tuning.SdfOcclusionDampening = value;
+                tuning.SdfHardDampening = value;
+            });
         }
 
         private void OnSdfSoftnessChanged(float value)
@@ -328,6 +418,12 @@ namespace Hecton8.Editor
         {
             bool injected = AbyssalCavitationRuntime.GenerateMockDetonations();
             _status.text = injected ? "Mock detonations injected" : "Mock injection rejected";
+        }
+
+        private void InjectSingularity()
+        {
+            bool injected = AbyssalCavitationRuntime.GenerateMockSingularityExplosion();
+            _status.text = injected ? "Singularity mock injected" : "Singularity injection rejected";
         }
 
         private void SyncShader()

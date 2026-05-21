@@ -51,17 +51,88 @@ namespace Hecton8.Bootstrap
     {
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 4;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint BootstrapListenerOverflowWarningHash = 0x4254564Cu; // BTVL
         private const uint BootstrapListenerContextHash = 0x42545652u; // BTVR
         private const uint BootstrapListenerExceptionWarningHash = 0x42545645u; // BTVE
         private const uint BootstrapListenerExceptionContextHash = 0x42545658u; // BTVX
 
-        // COLD ALLOC: RegistryBucket<IBootstrapEventListener>[16] - bootstrap completion listeners drained by SystemDispatcher - owner: BootstrapEvents
-        private static readonly RegistryBucket<IBootstrapEventListener> _listeners = new RegistryBucket<IBootstrapEventListener>(ListenerCapacity);
-        // COLD ALLOC: IBootstrapEventListener[16] - listener additions deferred while dispatching bootstrap events - owner: BootstrapEvents
-        private static readonly IBootstrapEventListener[] _deferredRegisterListeners = new IBootstrapEventListener[ListenerCapacity];
-        // COLD ALLOC: IBootstrapEventListener[16] - listener removals deferred while dispatching bootstrap events - owner: BootstrapEvents
-        private static readonly IBootstrapEventListener[] _deferredUnregisterListeners = new IBootstrapEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public IBootstrapEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct BootstrapListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public BootstrapListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity]; // COLD ALLOC: ListenerSlot[16] - fixed bootstrap listener slots drained by SystemDispatcher - owner: BootstrapEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IBootstrapEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IBootstrapEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void TryUnregister(IBootstrapEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public IBootstrapEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static BootstrapListenerRegistry _listeners = new BootstrapListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[16] - listener additions deferred while dispatching bootstrap events - owner: BootstrapEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[16] - listener removals deferred while dispatching bootstrap events - owner: BootstrapEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<BootstrapEventPayload> _pendingEvents;
         private static NativeQueue<BootstrapEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -205,14 +276,13 @@ namespace Hecton8.Bootstrap
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IBootstrapEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IBootstrapEventListener listener = rawArray[i];
+                        IBootstrapEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -237,7 +307,7 @@ namespace Hecton8.Bootstrap
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<BootstrapEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BootstrapEventPayload>[4] - deferred bootstrap event lane flushed by SystemDispatcher LateUpdate - owner: BootstrapEvents
+                _pendingEvents = new NativeQueue<BootstrapEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BootstrapEventPayload>[4] - deferred bootstrap event lane flushed by SystemDispatcher LateUpdate - owner: BootstrapEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -249,7 +319,7 @@ namespace Hecton8.Bootstrap
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<BootstrapEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BootstrapEventPayload>[4] - next-frame bootstrap event lane prevents same-frame reentrant dispatch - owner: BootstrapEvents
+                _nextFrameEvents = new NativeQueue<BootstrapEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BootstrapEventPayload>[4] - next-frame bootstrap event lane prevents same-frame reentrant dispatch - owner: BootstrapEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -371,7 +441,7 @@ namespace Hecton8.Bootstrap
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IBootstrapEventListener listener)
@@ -391,19 +461,19 @@ namespace Hecton8.Bootstrap
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IBootstrapEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -414,12 +484,12 @@ namespace Hecton8.Bootstrap
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -428,7 +498,7 @@ namespace Hecton8.Bootstrap
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -439,7 +509,7 @@ namespace Hecton8.Bootstrap
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -450,8 +520,8 @@ namespace Hecton8.Bootstrap
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IBootstrapEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IBootstrapEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -460,8 +530,8 @@ namespace Hecton8.Bootstrap
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IBootstrapEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IBootstrapEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }

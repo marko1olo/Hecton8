@@ -1,10 +1,16 @@
 param(
     [string]$OutputDir = "C:\hades\Hecton8\Docs\Marketing\Data",
-    [int]$MaxTopPage = 300
+    [int]$MaxTopPage = 300,
+    [switch]$ForceRefresh
 )
 
 $ErrorActionPreference = "Continue"
 $ProgressPreference = "SilentlyContinue"
+
+if (-not $ForceRefresh) {
+    Write-Output "HOLD_RAW_LEAD_REFRESH - rerun with -ForceRefresh only after a source-backed raw-lead sprint is opened and output overwrite is recorded in source-ledger/status/rationale."
+    exit 0
+}
 
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 Add-Type -AssemblyName System.Net.Http

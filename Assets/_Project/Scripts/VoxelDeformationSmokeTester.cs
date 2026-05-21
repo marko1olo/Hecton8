@@ -242,7 +242,7 @@ namespace Hecton8.Dev
                     passability.Length,
                     handle);
                 // COLD SYNC JOB: dev smoke tester validates a tiny nav dilation kernel outside gameplay.
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
 
                 for (int i = 0; i < passability.Length; i++)
                 {
@@ -283,7 +283,7 @@ namespace Hecton8.Dev
                     hasContent = hasContent
                 }.Schedule();
                 // COLD SYNC JOB: dev smoke tester validates the eight-corner void early-exit gate outside gameplay.
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 bool pureVoidRejected = hasContent[0] == 0;
 
                 density[7] = 1f;
@@ -296,7 +296,7 @@ namespace Hecton8.Dev
                     hasContent = hasContent
                 }.Schedule();
                 // COLD SYNC JOB: dev smoke tester validates non-void corner admission outside gameplay.
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 return Require(pureVoidRejected && hasContent[0] == 1, "Voxel chunk bounds content gate failed.");
             }
             finally
@@ -349,7 +349,7 @@ namespace Hecton8.Dev
                     ambientOcclusionValues = ambientOcclusion
                 }.Schedule(1, 1);
                 // COLD SYNC JOB: dev smoke tester validates a one-vertex AO bake outside gameplay.
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
 
                 float ao = ambientOcclusion[0];
                 float3 normal = normals[0];

@@ -284,7 +284,7 @@ namespace Hecton8.Gameplay
         {
             if (_resourceNode != null &&
                 _resourceNode.TryGetPersistentAup(out itemAup) &&
-                MathGuard.IsFinite(in itemAup))
+                itemAup.IsFinite())
             {
                 return true;
             }
@@ -298,7 +298,7 @@ namespace Hecton8.Gameplay
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (playerContext != null &&
                 playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                MathGuard.IsFinite(in snapshot.Aup))
+                snapshot.Aup.IsFinite())
             {
                 playerAup = snapshot.Aup;
                 return true;
@@ -308,7 +308,7 @@ namespace Hecton8.Gameplay
             if (playerMovement != null)
             {
                 AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                if (MathGuard.IsFinite(in currentAup))
+                if (currentAup.IsFinite())
                 {
                     playerAup = currentAup;
                     return true;

@@ -24,6 +24,18 @@ HOT_METHODS = {
     "PostSimulationTick",
     "VisualSyncTick",
     "LateFrameTick",
+    "BeginDispatcherFrame",
+    "ScheduleFrameJobs",
+    "TryCompleteFrameJobs",
+    "CompleteFrameJobs",
+    "ReportFrame",
+    "ScheduleImportanceScoringJob",
+    "ScheduleInterpolationJob",
+    "SlowTickInternal",
+    "RunMasterPreSimulationPhase",
+    "RunMasterSimulationPhase",
+    "RunMasterPostSimulationPhase",
+    "RunMasterVisualSyncPhase",
     "Execute",
 }
 
@@ -34,6 +46,13 @@ MID_FRAME_METHODS = {
     "FixedUpdate",
     "PreSimulationTick",
     "ScheduleSimulation",
+    "BeginDispatcherFrame",
+    "ScheduleFrameJobs",
+    "TryCompleteFrameJobs",
+    "ReportFrame",
+    "RunMasterPreSimulationPhase",
+    "RunMasterSimulationPhase",
+    "RunMasterPostSimulationPhase",
     "Execute",
 }
 
@@ -1064,10 +1083,20 @@ def contains_managed_reference_field(masked: str) -> bool:
 
 def is_deterministic_burst_path(file_path: Path) -> bool:
     normalized = file_path.as_posix().lower()
+    segments = tuple(part for part in normalized.split("/") if part)
+    exact_segments = {
+        "net",
+        "netcode",
+        "network",
+    }
+    if any(segment in exact_segments for segment in segments):
+        return True
+
     return any(
         token in normalized
         for token in (
-            "net",
+            "netcode",
+            "network",
             "rollback",
             "determinism",
             "lockstep",
@@ -1077,6 +1106,49 @@ def is_deterministic_burst_path(file_path: Path) -> bool:
             "aup",
             "vaultmemory",
             "signalwarden",
+            "oceankinematics",
+            "radiationhazardgrid",
+            "cartographygridjobs.cs",
+            "hullintegritytypes.cs",
+            "shinobu19economyledger.cs",
+            "buoyancysimdvectorization.cs",
+            "abyssalthermodynamicsjobs.cs",
+            "chemicalinfluencegrid.cs",
+            "submarineosthermalgridruntime.cs",
+            "shinobusocketconstructionjobs.cs",
+            "baseatmospherelogisticsjobs.cs",
+            "cablephysicssolver132.cs",
+            "structuralintegritycalculatortypes.cs",
+            "powergridjacobicontracts.cs",
+            "shinobuphysiologyjobs.cs",
+            "shinobulogisticsrouter.cs",
+            "buoyancydisplacementjobs.cs",
+            "vehiclecomponentdamagejobs.cs",
+            "macroecosystemmathematicianruntime.cs",
+            "sumppumppipegridjobs.cs",
+            "bulkheadcontainmentjobs.cs",
+            "habitatfluidincursionjobs.cs",
+            "thermodynamicshazardgridruntime.cs",
+            "fabricationassemblerruntime.cs",
+            "scavenginglootoracle.cs",
+            "inventorysoautility.cs",
+            "hectonanomalysdfjobs.cs",
+            "submarineautopilotsdfnavigator.cs",
+            "submarinedynamicscontracts.cs",
+            "worldregrowthsimulation.cs",
+            "shinobumetabolismjobs.cs",
+            "spaceengine098terrainkernels.cs",
+            "kcc",
+            "physics/kcc",
+            "exosuitkinematics",
+            "vrinteractionkinematicbridge",
+            "playerkinematicsruntime",
+            "somatickinematicsruntime",
+            "kinematicsleepstate",
+            "savesystem",
+            "save",
+            "wal",
+            "merkle",
         )
     )
 

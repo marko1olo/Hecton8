@@ -87,9 +87,9 @@ R22 static closure: `Signal_Schema.json` schema revision `16` records the `162 /
 - `ContextHash` = previous weather hash.
 - `Scalar0` = clamped strength.
 - `Scalar1` = non-negative flow-field scale.
-- `QualityTier` = source quality tier.
+- `QualityTier` = mod-facing legacy projection derived from `GlobalQualityWeight`; it is not engine authority.
 
-Low-tier samples set `ModEventDto.LowTierSampleFlag`.
+Budget-capped samples set `ModEventDto.LowTierSampleFlag`. The flag means the bridge emitted a reduced cosmetic sample under continuous budget pressure; it must not change gameplay truth.
 
 ## Native Byte Events
 
@@ -280,7 +280,7 @@ Unmanaged structs are mandatory because the mod bridge crosses native queues, Bu
 - no per-event heap allocations
 - direct NativeQueue and Burst compatibility
 - numeric event hashes for telemetry and schema versioning
-- bounded payload sizes for low-tier throttling
+- bounded payload sizes for continuous quality-budget throttling
 
 JSON remains acceptable only for cold mod configuration or mod-owned save text under `HectonAPI.SaveState`. It is not an event transport.
 
@@ -366,7 +366,7 @@ Full payload audit: [Payload_Layout_Audit_Matrix.md](Payload_Layout_Audit_Matrix
 | `ModInteractionRejectedPayload` | sequential | source-defined | Security gate rejection reason. |
 | `ModCriticalMemoryEvictionPayload` | sequential | source-defined | Heap quota eviction warning before quarantine. |
 
-`ModEventDto` byte offsets are fixed in source: `EventHash` 0, `SubjectHash` 4, `ContextHash` 8, `SourceHash` 12, `Frame` 16, `RelativePosition` 20, `Direction` 32, `Scalar0` 44, `Scalar1` 48, `Kind` 52, `Flags` 54, `QualityTier` 56, `Reserved0` 57, `Sequence` 58, `Reserved1` 60.
+`ModEventDto` byte offsets are fixed in source: `EventHash` 0, `SubjectHash` 4, `ContextHash` 8, `SourceHash` 12, `Frame` 16, `RelativePosition` 20, `Direction` 32, `Scalar0` 44, `Scalar1` 48, `Kind` 52, `Flags` 54, `QualityTier` 56, `Reserved0` 57, `Sequence` 58, `Reserved1` 60. The `QualityTier` byte is an API compatibility field. New engine code must use continuous `GlobalQualityWeight` and may only write this byte as a deterministic projection for old mod readers.
 
 ## Signal Extension Gate
 
@@ -374,7 +374,7 @@ Adding another mod-visible signal is not a documentation-only change. Required g
 
 1. Add one `Signal_Schema.json` entry with source payload, size/capacity, event hash, field projection, and security notes.
 2. Add a projection job or copy bridge that clamps non-finite floats and never exposes Unity objects or native handles.
-3. State low-tier/high-tier caps and overflow telemetry.
+3. State the continuous `GlobalQualityWeight` cap curve, projection rule for any legacy tier byte, and overflow telemetry.
 4. Add a 300-frame blackbox path for cull/overflow or explicitly attach to an existing one.
 5. Run Unity callback smoke tests and record GCMonitor/profiler evidence before changing status from `PENDING RUNTIME VERIFICATION`.
 

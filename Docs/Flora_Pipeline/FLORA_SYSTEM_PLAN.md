@@ -53,10 +53,10 @@ Legacy files in repo root are reference-only and must not be treated as the prim
 
 ## Goal
 
-Build one beautiful, universal, optimized flora system for kelp and coral that:
+Build one flora system for kelp and coral that:
 
 - keeps the current HECTON-8 owner stack
-- produces believable underwater organics
+- uses shader-driven motion and authored shape variation for underwater organics
 - stays inside MX350 budgets
 - uses GPU-driven motion only
 - uses world-space/triplanar-friendly shading
@@ -127,10 +127,10 @@ Every final flora asset must converge to this contract:
 - curvature-driven wetness
 - fresnel water film
 - `_NormalScale`
-- HIGH-tier micro-parallax from `Mask.B`
-- quality keywords:
-  - `_QUALITY_MX350`
-  - `_QUALITY_HIGH`
+- High-fidelity micro-parallax from `Mask.B`
+- quality input:
+  - `GlobalQualityWeight` drives material feature weights, sample counts, displacement amplitude, and update cadence
+  - legacy shader keywords may exist only as source ABI labels; they must not be runtime hardware branches
 - one material family per batch
 
 ## Required Runtime Contract
@@ -188,7 +188,7 @@ Follow this order. Do not merge steps.
 - upgrade `Hecton_KelpMaster.shader`
 - upgrade `Hecton_CoralMaster.shader`
 - align materials to the new shader contract
-- default working tier is `_QUALITY_MX350`
+- default working profile uses minimum-budget scalar values until imported texture/material proof exists
 
 ### Phase 4: LOD And Final Intake Alignment
 

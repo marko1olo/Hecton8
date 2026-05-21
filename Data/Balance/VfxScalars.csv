@@ -1,0 +1,3 @@
+id,emission_rate,r,g,b,a,intensity,flags
+propwash_silt,1.00,0.46,0.42,0.35,1.00,1.20,1
+sonar_ping_spark,0.35,0.16,0.62,0.95,1.00,1.60,1

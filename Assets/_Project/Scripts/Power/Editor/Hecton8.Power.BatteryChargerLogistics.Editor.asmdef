@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.Power.BatteryChargerLogistics.Editor",
+    "rootNamespace": "Hecton8.Power.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Power.BatteryChargerLogistics.Runtime",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

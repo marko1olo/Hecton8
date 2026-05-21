@@ -3,6 +3,7 @@ Scope: Batch010
 Source: C:\hades\Hecton8\Docs\Archive\Batch010\Tasks
 FileCount: 110
 Separator: ===== FILE: name =====
+SnapshotNote: Combined SLIM sections are archival snapshots. For SHINOBU_155 after 2026-05-21 Loop 79, use direct mirror Docs/Archive/Batch010/Tasks/Status_SHINOBU_155.md.
 
 ===== FILE: Status_ARCHIVE_BATCH_010.md =====
 Status ARCHIVE_BATCH_010

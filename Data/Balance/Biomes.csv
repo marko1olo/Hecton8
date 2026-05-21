@@ -1,0 +1,3 @@
+id,name,surface_id,min_depth,max_depth,temperature_c,pressure_scalar,fog_density,scatter_r,scatter_g,scatter_b,heatmap_id,radiation_id,flags
+hadal_twilight,Hadal Twilight,silt_basalt,0,600,3.8,1.10,0.018,0.05,0.16,0.24,hadal_twilight_heat,low_background,1
+abyssal_fault,Abyssal Fault,fractured_basalt,600,1800,2.1,1.35,0.034,0.03,0.11,0.19,abyssal_fault_heat,low_background,1

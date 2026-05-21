@@ -43,6 +43,7 @@ namespace Hecton8.Caves
     public static class VoxelChunkModifiedEvents
     {
         private const int Capacity = 64;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const string NativeOwner = nameof(VoxelChunkModifiedEvents);
         private const string QueueLabel = "VoxelChunkModifiedQueue";
 
@@ -144,7 +145,7 @@ namespace Hecton8.Caves
                 return;
             }
 
-            _events = new NativeQueue<VoxelChunkModifiedEvent>(Allocator.Persistent);
+            _events = new NativeQueue<VoxelChunkModifiedEvent>(DataVaultExemptSignalLaneAllocator);
             NativeMemorySentinel.RegisterNativeQueue(
                 _events,
                 Capacity,

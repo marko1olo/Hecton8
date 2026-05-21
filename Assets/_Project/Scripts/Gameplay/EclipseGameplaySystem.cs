@@ -72,10 +72,23 @@ namespace Hecton8.Gameplay
         private const byte BiolumMultiplierEventType = 4;
         private const int ExpectedPendingEventCapacity = 16;
         private const int ListenerCapacity = 8;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        private static readonly RegistryBucket<IEclipseGameplayEventListener> _listeners = new RegistryBucket<IEclipseGameplayEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IEclipseGameplayEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - eclipse gameplay listeners drained without interface array dispatch - owner: EclipseGameplayEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<EclipseGameplayEventPayload> _pendingEvents;
         private static NativeQueue<EclipseGameplayEventPayload> _nextFrameEvents;
+        private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -102,7 +115,10 @@ namespace Hecton8.Gameplay
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
@@ -113,8 +129,8 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static void Register(IEclipseGameplayEventListener listener)
         {
-            if (listener != null && !_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (listener != null)
+                RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -122,14 +138,14 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static void Unregister(IEclipseGameplayEventListener listener)
         {
-            if (listener != null && _listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (listener != null)
+                TryUnregisterImmediate(listener);
         }
 
         /// <summary>Queues an eclipse phase change.</summary>
         public static void RaisePhaseChanged(bool active)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureInitialized();
@@ -202,7 +218,7 @@ namespace Hecton8.Gameplay
 
         private static void EnqueueValue(byte eventType, float value)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureInitialized();
@@ -231,11 +247,10 @@ namespace Hecton8.Gameplay
 
         private static void Dispatch(in EclipseGameplayEventPayload payload)
         {
-            IEclipseGameplayEventListener[] rawListeners = _listeners.RawArray;
-            int listenerCount = _listeners.Count;
+            int listenerCount = _listenerCount;
             for (int i = listenerCount - 1; i >= 0; i--)
             {
-                IEclipseGameplayEventListener listener = rawListeners[i];
+                IEclipseGameplayEventListener listener = _listeners[i].Listener;
                 if (listener == null)
                     continue;
 
@@ -257,11 +272,41 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private static void RegisterImmediate(IEclipseGameplayEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
+        }
+
+        private static bool TryUnregisterImmediate(IEclipseGameplayEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                _listenerCount--;
+                _listeners[i] = _listeners[_listenerCount];
+                _listeners[_listenerCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] — deferred eclipse gameplay lane flushed by SystemDispatcher — owner: EclipseGameplayEvents
+                _pendingEvents = new NativeQueue<EclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] — deferred eclipse gameplay lane flushed by SystemDispatcher — owner: EclipseGameplayEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     ExpectedPendingEventCapacity,
@@ -273,7 +318,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] — next-frame eclipse gameplay lane prevents same-frame reentrant dispatch — owner: EclipseGameplayEvents
+                _nextFrameEvents = new NativeQueue<EclipseGameplayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] — next-frame eclipse gameplay lane prevents same-frame reentrant dispatch — owner: EclipseGameplayEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     ExpectedPendingEventCapacity,

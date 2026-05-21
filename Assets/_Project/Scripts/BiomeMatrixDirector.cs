@@ -6,6 +6,7 @@ using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -37,6 +38,7 @@ namespace Hecton8.Environment
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 32;
         private const int MatrixProfileCacheCapacity = 128;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint ListenerRejectedWarningHash = 0x424D524Au; // BMRJ
         private const uint ListenerExceptionWarningHash = 0x424D4558u; // BMEX
         private const uint ListenerContextHash = 0x424D4C53u; // BMLS
@@ -45,14 +47,26 @@ namespace Hecton8.Environment
         private const uint ProfileSlotOverflowWarningHash = 0x424D5053u; // BMPS
         private const uint ProfileSlotContextHash = 0x424D5043u; // BMPC
 
-        private static readonly RegistryBucket<IBiomeMatrixEventListener> _listeners = new RegistryBucket<IBiomeMatrixEventListener>(ListenerCapacity);
-        // COLD ALLOC: IBiomeMatrixEventListener[16] - listener additions deferred while dispatching biome matrix events - owner: BiomeMatrixEvents
-        private static readonly IBiomeMatrixEventListener[] _deferredRegisterListeners = new IBiomeMatrixEventListener[ListenerCapacity];
-        // COLD ALLOC: IBiomeMatrixEventListener[16] - listener removals deferred while dispatching biome matrix events - owner: BiomeMatrixEvents
-        private static readonly IBiomeMatrixEventListener[] _deferredUnregisterListeners = new IBiomeMatrixEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public IBiomeMatrixEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[16] - live biome matrix listeners drained by SystemDispatcher - owner: BiomeMatrixEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[16] - listener additions deferred while dispatching biome matrix events - owner: BiomeMatrixEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[16] - listener removals deferred while dispatching biome matrix events - owner: BiomeMatrixEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static readonly HectonBiomeMatrixProfile[] _profilesBySlot = new HectonBiomeMatrixProfile[MatrixProfileCacheCapacity]; // COLD ALLOC: HectonBiomeMatrixProfile[128] - stable profile lookup for deferred biome matrix payloads - owner: BiomeMatrixEvents
         private static NativeQueue<BiomeMatrixEventPayload> _pendingEvents;
         private static NativeQueue<BiomeMatrixEventPayload> _nextFrameEvents;
+        private static int _listenerCount;
         private static int _profileSlotCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
@@ -91,10 +105,14 @@ namespace Hecton8.Environment
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
-            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
-            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+            for (int i = 0; i < _deferredRegisterCount; i++)
+                _deferredRegisterListeners[i].Clear();
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+                _deferredUnregisterListeners[i].Clear();
             Array.Clear(_profilesBySlot, 0, _profileSlotCount);
+            _listenerCount = 0;
             _profileSlotCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
@@ -136,12 +154,12 @@ namespace Hecton8.Environment
                 return;
             }
 
-            _listeners.TryUnregister(listener);
+            TryUnregisterImmediate(listener);
         }
 
         public static void RaiseMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureInitialized();
@@ -164,7 +182,7 @@ namespace Hecton8.Environment
 
         public static void RaiseDepthTierChanged(int depthTier, float depthMeters)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureInitialized();
@@ -234,8 +252,7 @@ namespace Hecton8.Environment
 
         private static void Dispatch(in BiomeMatrixEventPayload payload)
         {
-            IBiomeMatrixEventListener[] listenerBuffer = _listeners.RawArray;
-            int listenerCount = _listeners.Count;
+            int listenerCount = _listenerCount;
             if (payload.EventType == MatrixBiomeChangedEventType)
             {
                 HectonBiomeMatrixProfile profile = null;
@@ -244,7 +261,7 @@ namespace Hecton8.Environment
 
                 for (int i = listenerCount - 1; i >= 0; i--)
                 {
-                    IBiomeMatrixEventListener listener = listenerBuffer[i];
+                    IBiomeMatrixEventListener listener = _listeners[i].Listener;
                     if (listener == null || IsDeferredUnregisterPending(listener))
                         continue;
 
@@ -258,7 +275,7 @@ namespace Hecton8.Environment
             {
                 for (int i = listenerCount - 1; i >= 0; i--)
                 {
-                    IBiomeMatrixEventListener listener = listenerBuffer[i];
+                    IBiomeMatrixEventListener listener = _listeners[i].Listener;
                     if (listener == null || IsDeferredUnregisterPending(listener))
                         continue;
 
@@ -271,7 +288,7 @@ namespace Hecton8.Environment
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<BiomeMatrixEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BiomeMatrixEventPayload>[32] - deferred biome matrix event lane flushed by SystemDispatcher - owner: BiomeMatrixEvents
+                _pendingEvents = new NativeQueue<BiomeMatrixEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BiomeMatrixEventPayload>[32] - deferred biome matrix event lane flushed by SystemDispatcher - owner: BiomeMatrixEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -283,7 +300,7 @@ namespace Hecton8.Environment
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<BiomeMatrixEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BiomeMatrixEventPayload>[32] - next-frame biome matrix event lane prevents same-frame reentrant dispatch - owner: BiomeMatrixEvents
+                _nextFrameEvents = new NativeQueue<BiomeMatrixEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BiomeMatrixEventPayload>[32] - next-frame biome matrix event lane prevents same-frame reentrant dispatch - owner: BiomeMatrixEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -381,7 +398,7 @@ namespace Hecton8.Environment
 
         private static void QueueDeferredRegister(IBiomeMatrixEventListener listener)
         {
-            if (_listeners.Contains(listener))
+            if (ContainsImmediate(listener))
             {
                 CancelDeferredUnregister(listener);
                 return;
@@ -396,7 +413,7 @@ namespace Hecton8.Environment
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IBiomeMatrixEventListener listener)
@@ -404,7 +421,7 @@ namespace Hecton8.Environment
             if (CancelDeferredRegister(listener))
                 return;
 
-            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+            if (!ContainsImmediate(listener) || IsDeferredUnregisterPending(listener))
                 return;
 
             if (_deferredUnregisterCount >= ListenerCapacity)
@@ -413,19 +430,19 @@ namespace Hecton8.Environment
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IBiomeMatrixEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -436,12 +453,12 @@ namespace Hecton8.Environment
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -450,7 +467,7 @@ namespace Hecton8.Environment
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -461,7 +478,7 @@ namespace Hecton8.Environment
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -472,18 +489,18 @@ namespace Hecton8.Environment
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IBiomeMatrixEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IBiomeMatrixEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
-                    _listeners.TryUnregister(listener);
+                    TryUnregisterImmediate(listener);
             }
 
             _deferredUnregisterCount = 0;
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IBiomeMatrixEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IBiomeMatrixEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }
@@ -493,11 +510,45 @@ namespace Hecton8.Environment
 
         private static void RegisterImmediate(IBiomeMatrixEventListener listener)
         {
-            if (_listeners.Contains(listener))
+            if (ContainsImmediate(listener))
                 return;
 
-            if (!_listeners.TryRegister(listener))
+            if (_listenerCount >= ListenerCapacity)
+            {
                 ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _listeners[_listenerCount++].Listener = listener;
+        }
+
+        private static bool TryUnregisterImmediate(IBiomeMatrixEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = --_listenerCount;
+                if (i != lastIndex)
+                    _listeners[i].Listener = _listeners[lastIndex].Listener;
+
+                _listeners[lastIndex].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsImmediate(IBiomeMatrixEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void ReportQueueOverflow(byte eventType)
@@ -941,7 +992,9 @@ namespace Hecton8.Environment
                 return true;
             }
 
-            AbsoluteUniversePosition currentAup = AbsoluteUniversePosition.FromRuntimePosition(evaluationPosition);
+            if (!TryResolveAupFromRuntimeOrigin(evaluationPosition, out AbsoluteUniversePosition currentAup))
+                return false;
+
             if (!_hasPendingHysteresisProfile || _pendingHysteresisProfile != next)
             {
                 _pendingHysteresisProfile = next;
@@ -956,6 +1009,23 @@ namespace Hecton8.Environment
 
             ClearPendingBiomeHysteresis();
             return true;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(localRuntime.x, localRuntime.y, localRuntime.z));
+            return positionAup.IsFinite();
         }
 
         private void ClearPendingBiomeHysteresis()

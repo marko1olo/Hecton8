@@ -96,7 +96,7 @@ namespace Hecton8.Gameplay
     }
 
     [DisallowMultipleComponent]
-    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IContinuousPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ICuttable, IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget
+    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IContinuousPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ICuttable, IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget, Hecton8.Interaction.IRepairableModuleTarget, IGlobalRegistryHotSwapListener
     {
         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);
@@ -645,11 +645,13 @@ namespace Hecton8.Gameplay
         private bool _interiorReefInfestationActive;
         private bool _tickRegistered;
         private bool _fixedTickRegistered;
+        private bool _hotSwapRegistered;
         private bool _isUnmoored;
 
         private ModuleMarker _moduleMarker;
         private HabitatIntegrityManager _habitatIntegrityManager;
         private SubmarineAtmosphereSystem _submarineAtmosphereSystem;
+        private HectonAtmosphereManager _atmosphereRuntime;
         private PowerNode _powerNode;
         private HectonVoxelVolume _voxelVolume;
         private bool _breachLatched;
@@ -1281,6 +1283,9 @@ namespace Hecton8.Gameplay
             if (!s_activeModules.Contains(this))
                 s_activeModules.Add(this);
 
+            CacheAtmosphereRuntimeCold();
+            TryRegisterHotSwapListener();
+            LaserCutterTargetRegistry.RegisterModuleTree(this);
             PhysicsEventBus.Register(this);
             TryRegister();
             ResyncInteriorOccupants(true);
@@ -1302,6 +1307,8 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            LaserCutterTargetRegistry.UnregisterModuleTree(this);
+            TryUnregisterHotSwapListener();
             TryUnregisterUpdatable();
             ResetBrownoutShaderState();
             ResetOxygenScrubberHumRuntime(false);
@@ -1323,6 +1330,8 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            LaserCutterTargetRegistry.UnregisterModuleTree(this);
+            TryUnregisterHotSwapListener();
             TryUnregisterUpdatable();
             ResetBrownoutShaderState();
             ResetOxygenScrubberHumRuntime(true);
@@ -1513,6 +1522,28 @@ namespace Hecton8.Gameplay
                 NotifyEmergencyLockdownStateChanged();
             }
             BaseDegradationSystem.SynchronizeIntegrityState(this);
+        }
+
+        bool Hecton8.Interaction.IRepairableModuleTarget.TryReadRepairState(out Hecton8.Interaction.ModuleRepairReadSnapshot snapshot)
+        {
+            snapshot = default;
+            snapshot.CurrentIntegrity = _integrityComponent.CurrentIntegrity;
+            snapshot.MaxIntegrity = _integrityComponent.MaxIntegrity;
+            uint flags = 0u;
+            if (_integrityComponent.IsFlooded)
+                flags |= Hecton8.Interaction.ModuleRepairReadSnapshot.FlagFlooded;
+            if (_integrityComponent.IsDraining)
+                flags |= Hecton8.Interaction.ModuleRepairReadSnapshot.FlagDraining;
+            if (HasOperationalPower)
+                flags |= Hecton8.Interaction.ModuleRepairReadSnapshot.FlagHasPower;
+
+            snapshot.Flags = flags;
+            return true;
+        }
+
+        void Hecton8.Interaction.IRepairableModuleTarget.ApplyRepair(float amount)
+        {
+            Repair(amount);
         }
 
         /// <summary>
@@ -3910,7 +3941,7 @@ namespace Hecton8.Gameplay
             if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) && atmosphereSystem != null)
                 return atmosphereSystem.ResolveExternalDepthMeters();
 
-            HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
+            HectonAtmosphereManager atmosphereManager = _atmosphereRuntime;
             if (atmosphereManager != null)
                 return ResolveExternalDepthMetersAup(atmosphereManager.SeaLevelY);
 
@@ -4559,11 +4590,10 @@ namespace Hecton8.Gameplay
         {
             if (_tickRegistered)
                 return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _tickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -4594,11 +4624,10 @@ namespace Hecton8.Gameplay
         {
             if (_updatableRegistered)
                 return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _updatableRegistered = GlobalRegistry.Updatables.Contains(this);
+            _updatableRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterUpdatable()
@@ -4614,11 +4643,41 @@ namespace Hecton8.Gameplay
         {
             if (_fixedTickRegistered || !_isUnmoored)
                 return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _fixedTickRegistered = GlobalRegistry.FixedTickables.Contains(this);
+            _fixedTickRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+        }
+
+        private void CacheAtmosphereRuntimeCold()
+        {
+            _atmosphereRuntime = Hecton8.Core.GlobalRegistry.Atmosphere;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
+                _atmosphereRuntime = currentService as HectonAtmosphereManager;
         }
 
         private void TryUnregisterFixedTick()
@@ -5013,7 +5072,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveFloodedReefActivationSeconds()
         {
-            HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
+            HectonAtmosphereManager atmosphereManager = _atmosphereRuntime;
             float daySeconds = atmosphereManager != null
                 ? Mathf.Max(1f, atmosphereManager.CycleDuration)
                 : DefaultInGameDaySeconds;
@@ -5387,20 +5446,20 @@ namespace Hecton8.Gameplay
 
         private void HandleLifeSupportSignals(ModuleLifeSupportSignals signals)
         {
-            if (signals.AirQualityWarningRaised)
+            if (signals.AirQualityWarningRaised != 0)
                 RecordCascadeFailure("AIR SCRUBBERS SATURATED", _lifeSupportComponent.BuildAirReserveSummary());
 
-            if (signals.AirReserveDepletedRaised)
+            if (signals.AirReserveDepletedRaised != 0)
             {
                 RecordCascadeFailure(
                     "BREATHABLE RESERVE EXHAUSTED",
                     "Dry shelter air has collapsed into stale reserve. Occupants must evacuate or restore scrubber support.");
             }
 
-            if (signals.Co2CriticalRaised)
+            if (signals.Co2CriticalRaised != 0)
                 RecordCascadeFailure("CO2 SCRUBBER LOCKOUT", _lifeSupportComponent.BuildCo2CriticalSummary());
 
-            if (signals.Co2HypoxiaRaised)
+            if (signals.Co2HypoxiaRaised != 0)
                 TriggerCo2HypoxiaDistortion();
         }
 

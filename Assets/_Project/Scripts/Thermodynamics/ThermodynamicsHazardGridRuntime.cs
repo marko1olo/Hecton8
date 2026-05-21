@@ -19,7 +19,7 @@ namespace Hecton8.Thermodynamics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Thermodynamics/Thermodynamics Hazard Grid Runtime")]
-    public sealed unsafe partial class ThermodynamicsHazardGridRuntime : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener
+    public sealed unsafe partial class ThermodynamicsHazardGridRuntime : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
     {
         public const int HighResolution = 32;
         public const int LowResolution = 16;
@@ -80,7 +80,7 @@ namespace Hecton8.Thermodynamics
         private bool enableMockHazards = true;
 
         [SerializeField]
-        [Tooltip("Polls StreamingAssets/hazard_profiles.csv on a cold cadence and parses into unmanaged constants.")]
+        [Tooltip("Editor-only source-data CSV override. Player builds use baked binary/default constants.")]
         private bool monitorCsvOverrides = true;
 
         [SerializeField]
@@ -91,25 +91,25 @@ namespace Hecton8.Thermodynamics
         [Tooltip("Continuous quality ceiling for designer/debug thermal load shedding; 1 keeps hardware quality unchanged.")]
         private float qualityCeiling = 1f;
 
-        private VaultBufferHandle<float> _temperatureFront;
-        private VaultBufferHandle<float> _temperatureBack;
-        private VaultBufferHandle<float> _radiationFront;
-        private VaultBufferHandle<float> _radiationBack;
-        private VaultBufferHandle<float> _temperatureSources;
-        private VaultBufferHandle<float> _radiationSources;
-        private VaultBufferHandle<HazardSourceDTO> _sources;
-        private VaultBufferHandle<uint> _sourceIds;
-        private VaultBufferHandle<double3> _entityAups;
-        private VaultBufferHandle<uint> _entityIds;
-        private VaultBufferHandle<ThermalUpdraftSignal> _updraftSignals;
-        private VaultBufferHandle<int> _signalCounters;
-        private VaultBufferHandle<ThermodynamicsHazardTelemetryEntry> _telemetryRing;
-        private VaultBufferHandle<ThermodynamicsHazardTelemetryEntry> _telemetryScratch;
-        private VaultBufferHandle<ThermodynamicsHazardConstants> _constants;
-        private VaultBufferHandle<float> _vaultTemperatureFrontMirror;
-        private VaultBufferHandle<float> _vaultRadiationFrontMirror;
-        private VaultBufferHandle<byte> _csvBytes;
-        private VaultBufferHandle<byte> _binaryConstantBytes;
+        private VaultGenerationHandle<float> _temperatureFront;
+        private VaultGenerationHandle<float> _temperatureBack;
+        private VaultGenerationHandle<float> _radiationFront;
+        private VaultGenerationHandle<float> _radiationBack;
+        private VaultGenerationHandle<float> _temperatureSources;
+        private VaultGenerationHandle<float> _radiationSources;
+        private VaultGenerationHandle<HazardSourceDTO> _sources;
+        private VaultGenerationHandle<uint> _sourceIds;
+        private VaultGenerationHandle<double3> _entityAups;
+        private VaultGenerationHandle<uint> _entityIds;
+        private VaultGenerationHandle<ThermalUpdraftSignal> _updraftSignals;
+        private VaultGenerationHandle<int> _signalCounters;
+        private VaultGenerationHandle<ThermodynamicsHazardTelemetryEntry> _telemetryRing;
+        private VaultGenerationHandle<ThermodynamicsHazardTelemetryEntry> _telemetryScratch;
+        private VaultGenerationHandle<ThermodynamicsHazardConstants> _constants;
+        private VaultGenerationHandle<float> _vaultTemperatureFrontMirror;
+        private VaultGenerationHandle<float> _vaultRadiationFrontMirror;
+        private VaultGenerationHandle<byte> _csvBytes;
+        private VaultGenerationHandle<byte> _binaryConstantBytes;
 
         private JobHandle _simulationHandle;
         private IDataVault _vault;
@@ -137,23 +137,29 @@ namespace Hecton8.Thermodynamics
         private bool _registeredLateFrame;
         private bool _registeredOriginShift;
         private bool _registeredScalability;
+        private bool _registeredHotSwap;
+        private bool _pendingDataVaultRebind;
         private bool _mockSeeded;
         private bool _visualDirty;
         private bool _vaultMirrorRequested;
+        private IDataVault _pendingDataVault;
         private uint _shiftSequence;
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
 
         /// <summary>True after native buffers are allocated and the runtime is registered.</summary>
-        public bool IsInitialized => _temperatureFront.IsCreated && _constants.IsCreated;
+        public bool IsInitialized => HasHandle(in _temperatureFront) && HasHandle(in _constants);
 
         private void Awake()
         {
+            CacheRegistryServicesCold();
             EnsureNativeState();
         }
 
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             EnsureNativeState();
             TryRegister();
         }
@@ -169,6 +175,7 @@ namespace Hecton8.Thermodynamics
                 ActiveRuntimeInstance = null;
 
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
@@ -177,6 +184,7 @@ namespace Hecton8.Thermodynamics
                 ActiveRuntimeInstance = null;
 
             TryUnregister();
+            TryUnregisterHotSwapListener();
             StopConfigWorker();
             ReleaseNativeState();
             ReleaseVisualTexture();
@@ -185,9 +193,12 @@ namespace Hecton8.Thermodynamics
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            ApplyPendingDataVaultRebindIfIdle();
             EnsureNativeState();
+            if (!IsInitialized)
+                return;
+
             ApplyPendingConfigLoads();
-            TryRegister();
 
             float dt = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             ConsumeSystemHealthSignals();
@@ -203,6 +214,9 @@ namespace Hecton8.Thermodynamics
         /// <inheritdoc />
         public void SlowTick()
         {
+#if !UNITY_EDITOR
+            return;
+#else
             if (!monitorCsvOverrides)
                 return;
 
@@ -212,6 +226,7 @@ namespace Hecton8.Thermodynamics
 
             _csvPollTimer = CsvPollSeconds;
             TryReloadCsvOverrides();
+#endif
         }
 
         /// <inheritdoc />
@@ -226,6 +241,12 @@ namespace Hecton8.Thermodynamics
             long end = Stopwatch.GetTimestamp();
             _lastCompleteMs = (float)((end - start) * 1000.0 / Stopwatch.Frequency);
             _simulationJobActive = false;
+            H8Memory.RegisterActiveJob(MemoryOwner, default);
+            if (_pendingDataVaultRebind)
+            {
+                ApplyPendingDataVaultRebindIfIdle();
+                return;
+            }
 
             SwapFrontBack();
             _gridVersion++;
@@ -255,16 +276,40 @@ namespace Hecton8.Thermodynamics
             _cachedScalabilityTier = payload.CurrentQualityTier;
         }
 
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                QueueDataVaultRebind(currentService as IDataVault);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher &&
+                currentService != null &&
+                isActiveAndEnabled)
+            {
+                TryRegister();
+            }
+        }
+
         /// <summary>
         /// Registers or updates a mathematical hazard source.
         /// </summary>
         public bool TryUpsertSource(uint sourceId, double3 aup, float intensity, float radiusMeters, uint hazardTypeHash)
         {
-            if (sourceId == 0u || _simulationJobActive || !_sources.IsCreated || !math.all(math.isfinite(aup)))
+            if (sourceId == 0u || _simulationJobActive || !HasHandle(in _sources) || !math.all(math.isfinite(aup)))
                 return false;
 
-            NativeArray<uint> sourceIds = ResolveArray(ref _sourceIds);
-            NativeArray<HazardSourceDTO> sources = ResolveArray(ref _sources);
+            if (!TryOpenArray(in _sourceIds, MaxSourceCount, out NativeArray<uint> sourceIds) ||
+                !TryOpenArray(in _sources, MaxSourceCount, out NativeArray<HazardSourceDTO> sources))
+            {
+                return false;
+            }
+
             float safeIntensity = math.max(0f, math.isfinite(intensity) ? intensity : 0f);
             float safeRadius = math.max(0.5f, math.isfinite(radiusMeters) ? radiusMeters : 0f);
             for (int i = 0; i < _sourceCount; i++)
@@ -304,11 +349,15 @@ namespace Hecton8.Thermodynamics
         /// </summary>
         public bool TryRemoveSource(uint sourceId)
         {
-            if (sourceId == 0u || _simulationJobActive || !_sources.IsCreated)
+            if (sourceId == 0u || _simulationJobActive || !HasHandle(in _sources))
                 return false;
 
-            NativeArray<uint> sourceIds = ResolveArray(ref _sourceIds);
-            NativeArray<HazardSourceDTO> sources = ResolveArray(ref _sources);
+            if (!TryOpenArray(in _sourceIds, MaxSourceCount, out NativeArray<uint> sourceIds) ||
+                !TryOpenArray(in _sources, MaxSourceCount, out NativeArray<HazardSourceDTO> sources))
+            {
+                return false;
+            }
+
             for (int i = 0; i < _sourceCount; i++)
             {
                 if (sourceIds[i] != sourceId)
@@ -331,11 +380,15 @@ namespace Hecton8.Thermodynamics
         /// </summary>
         public bool TryUpsertEntity(uint entityId, double3 aup)
         {
-            if (entityId == 0u || _simulationJobActive || !_entityIds.IsCreated || !math.all(math.isfinite(aup)))
+            if (entityId == 0u || _simulationJobActive || !HasHandle(in _entityIds) || !math.all(math.isfinite(aup)))
                 return false;
 
-            NativeArray<uint> entityIds = ResolveArray(ref _entityIds);
-            NativeArray<double3> entityAups = ResolveArray(ref _entityAups);
+            if (!TryOpenArray(in _entityIds, MaxEntityCount, out NativeArray<uint> entityIds) ||
+                !TryOpenArray(in _entityAups, MaxEntityCount, out NativeArray<double3> entityAups))
+            {
+                return false;
+            }
+
             for (int i = 0; i < _entityCount; i++)
             {
                 if (entityIds[i] != entityId)
@@ -360,12 +413,18 @@ namespace Hecton8.Thermodynamics
         public bool TrySample(double3 aup, out ThermodynamicsHazardSample sample)
         {
             sample = default;
-            if (!_temperatureFront.IsCreated || !_radiationFront.IsCreated || !math.all(math.isfinite(aup)))
+            if (!HasHandle(in _temperatureFront) || !HasHandle(in _radiationFront) || !math.all(math.isfinite(aup)))
                 return false;
 
+            if (!TryOpenReadArray(in _temperatureFront, ActiveCellCount, out NativeArray<float> temperatureFront) ||
+                !TryOpenReadArray(in _radiationFront, ActiveCellCount, out NativeArray<float> radiationFront))
+            {
+                return false;
+            }
+
             ThermodynamicsHazardConstants constants = GetConstantsValue();
-            float* temp = (float*)ResolvePointer(ref _temperatureFront);
-            float* rad = (float*)ResolvePointer(ref _radiationFront);
+            float* temp = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(temperatureFront);
+            float* rad = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(radiationFront);
             sample = SampleTrilinear(
                 temp,
                 rad,
@@ -383,51 +442,42 @@ namespace Hecton8.Thermodynamics
         public bool TryGetUnsafeGridPointers(out ThermodynamicsHazardGridPointers pointers)
         {
             pointers = default;
-            if (!_temperatureFront.IsCreated || !_radiationFront.IsCreated)
+            if (!HasHandle(in _temperatureFront) || !HasHandle(in _radiationFront))
                 return false;
+
+            if (!TryOpenReadArray(in _temperatureFront, ActiveCellCount, out NativeArray<float> temperatureFront) ||
+                !TryOpenReadArray(in _radiationFront, ActiveCellCount, out NativeArray<float> radiationFront))
+            {
+                return false;
+            }
 
             pointers = new ThermodynamicsHazardGridPointers
             {
-                TemperatureFront = (float*)ResolvePointer(ref _temperatureFront),
-                RadiationFront = (float*)ResolvePointer(ref _radiationFront),
+                TemperatureFront = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(temperatureFront),
+                RadiationFront = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(radiationFront),
                 CellCount = ActiveCellCount,
                 Resolution = _activeResolution
             };
             return true;
         }
 
-        private ref HazardSourceDTO GetHazardSourceRef(int index)
+        /// <summary>Reads a copy of the live unmanaged thermodynamics constants.</summary>
+        public bool TryReadConstants(out ThermodynamicsHazardConstants constants)
         {
-            EnsureNativeState();
-            int safeIndex = math.clamp(index, 0, MaxSourceCount - 1);
-            HazardSourceDTO* sources = (HazardSourceDTO*)ResolvePointer(ref _sources);
-            return ref UnsafeUtility.AsRef<HazardSourceDTO>(sources + safeIndex);
-        }
-
-        /// <summary>
-        /// Returns a mutable pointer to unmanaged tuning constants for editor facades.
-        /// </summary>
-        public ThermodynamicsHazardConstants* GetConstantsPointer()
-        {
-            EnsureNativeState();
-            return _constants.IsCreated
-                ? (ThermodynamicsHazardConstants*)ResolvePointer(ref _constants)
-                : null;
-        }
-
-        /// <summary>
-        /// Returns a mutable pointer that is guaranteed to resolve from GlobalDataVault unmanaged memory.
-        /// </summary>
-        public bool TryGetGlobalDataVaultConstantsPointer(out ThermodynamicsHazardConstants* constants)
-        {
-            EnsureNativeState();
-            constants = null;
-
-            if (!_constants.IsCreated)
+            constants = default;
+            if (!TryOpenReadArray(in _constants, 1, out NativeArray<ThermodynamicsHazardConstants> constantsArray))
                 return false;
 
-            constants = (ThermodynamicsHazardConstants*)ResolvePointer(ref _constants);
-            return constants != null;
+            constants = SanitizeConstants(constantsArray[0]);
+            return true;
+        }
+
+        /// <summary>Commits editor-authored thermodynamics constants through an explicit diagnostics writer fence.</summary>
+        public bool TryWriteConstants(in ThermodynamicsHazardConstants constants)
+        {
+            EnsureNativeState();
+            ThermodynamicsHazardConstants sanitized = SanitizeConstants(constants);
+            return TryWriteConstantsWithOwner(in sanitized, SystemID.CoreDiagnostics);
         }
 
         /// <summary>
@@ -435,17 +485,31 @@ namespace Hecton8.Thermodynamics
         /// </summary>
         public bool TryGetGridReadback(out NativeArray<float> temperature, out NativeArray<float> radiation, out int resolution, out double3 originAup, out float cellSize, out int version)
         {
-            temperature = _temperatureFront.IsCreated ? ResolveArray(ref _temperatureFront) : default;
-            radiation = _radiationFront.IsCreated ? ResolveArray(ref _radiationFront) : default;
+            bool hasTemperature = TryOpenReadArray(in _temperatureFront, ActiveCellCount, out temperature);
+            bool hasRadiation = TryOpenReadArray(in _radiationFront, ActiveCellCount, out radiation);
             resolution = _activeResolution;
             originAup = _gridOriginAup;
             cellSize = cellSizeMeters;
             version = _gridVersion;
-            return _temperatureFront.IsCreated && _radiationFront.IsCreated;
+            return hasTemperature && hasRadiation;
         }
 
         /// <summary>
-        /// Copies the live front grid into GlobalDataVault mirrors and returns Vault-backed views for editor visualization.
+        /// Copies the live front grid into GlobalDataVault mirrors for editor visualization.
+        /// </summary>
+        public bool PrepareVaultGridReadback()
+        {
+            EnsureNativeState();
+            _vaultMirrorRequested = true;
+            if (!EnsureVaultGridMirrors())
+                return false;
+
+            MirrorFrontGridToVault();
+            return _vaultMirrorVersion == _gridVersion;
+        }
+
+        /// <summary>
+        /// Reads already prepared Vault-backed mirror views for editor visualization.
         /// </summary>
         public bool TryGetVaultGridReadback(out NativeArray<float> temperature, out NativeArray<float> radiation, out int resolution, out double3 originAup, out float cellSize, out int version)
         {
@@ -456,14 +520,14 @@ namespace Hecton8.Thermodynamics
             cellSize = cellSizeMeters;
             version = _gridVersion;
 
-            EnsureNativeState();
-            _vaultMirrorRequested = true;
-            if (!EnsureVaultGridMirrors())
+            if (!TryOpenReadArray(in _vaultTemperatureFrontMirror, ActiveCellCount, out temperature) ||
+                !TryOpenReadArray(in _vaultRadiationFrontMirror, ActiveCellCount, out radiation))
+            {
+                temperature = default;
+                radiation = default;
                 return false;
+            }
 
-            MirrorFrontGridToVault();
-            temperature = ResolveArray(ref _vaultTemperatureFrontMirror);
-            radiation = ResolveArray(ref _vaultRadiationFrontMirror);
             resolution = _activeResolution;
             originAup = _gridOriginAup;
             cellSize = cellSizeMeters;
@@ -475,11 +539,13 @@ namespace Hecton8.Thermodynamics
 
         private void EnsureNativeState()
         {
-            if (_temperatureFront.IsCreated)
+            if (HasHandle(in _temperatureFront))
                 return;
 
-            _vault = ResolveDataVault();
-            _gridOriginAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);
+            if (_vault == null)
+                return;
+
+            _gridOriginAup = TryResolveCurrentRuntimeOrigin(out double3 originAup) ? originAup : double3.zero;
             _temperatureFront = AcquireBuffer<float>(VaultTemperatureFrontBuffer, MaxCellCount);
             _temperatureBack = AcquireBuffer<float>(VaultTemperatureBackBuffer, MaxCellCount);
             _radiationFront = AcquireBuffer<float>(VaultRadiationFrontBuffer, MaxCellCount);
@@ -499,87 +565,141 @@ namespace Hecton8.Thermodynamics
             _constants = AcquireBuffer<ThermodynamicsHazardConstants>(VaultConstantsBuffer, 1);
 
             ThermodynamicsHazardConstants loadedConstants = LoadConstantsOrEmergency();
-            ref ThermodynamicsHazardConstants constants = ref _constants.GetElementAsRef(EnsureVault(), 0);
-            constants = HasUsableConstants(constants) ? SanitizeConstants(constants) : loadedConstants;
+            if (TryOpenArray(in _constants, 1, out NativeArray<ThermodynamicsHazardConstants> constantsArray))
+            {
+                ThermodynamicsHazardConstants existing = constantsArray[0];
+                constantsArray[0] = HasUsableConstants(existing) ? SanitizeConstants(existing) : loadedConstants;
+            }
+
             StartConfigWorkerIfNeeded();
             RequestBinaryConstantsLoad();
         }
 
-        private VaultBufferHandle<T> AcquireBuffer<T>(BufferID bufferId, int length) where T : struct
+        private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID bufferId, int length) where T : struct
         {
             IDataVault vault = EnsureVault();
-            VaultBufferHandle<T> handle = vault.GetBufferHandle<T>(
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
                 bufferId,
                 length,
                 MemoryOwner,
                 NativeArrayOptions.ClearMemory);
-            if (!handle.IsCreated)
+            if (!TryOpenArray(in handle, length, out _))
                 throw new InvalidOperationException("Thermodynamics vault buffer acquisition failed.");
 
             return handle;
         }
 
+        private static bool TryResolveCurrentRuntimeOrigin(out double3 originAup)
+        {
+            originAup = default;
+            AbsoluteUniversePosition runtimeOriginAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!runtimeOriginAup.IsFinite())
+                return false;
+
+            originAup = runtimeOriginAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(originAup));
+        }
+
         private IDataVault EnsureVault()
         {
-            _vault ??= ResolveDataVault();
             if (_vault == null)
                 throw new InvalidOperationException("Thermodynamics GlobalDataVault unavailable.");
 
             return _vault;
         }
 
-        private static IDataVault ResolveDataVault()
+        private void CacheRegistryServicesCold()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault != null)
-                return vault;
-
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                return latest;
-
-            throw new InvalidOperationException("Thermodynamics GlobalDataVault unavailable.");
+            if (_vault == null)
+                _vault = GlobalRegistry.DataVault;
         }
 
-        private NativeArray<T> ResolveArray<T>(ref VaultBufferHandle<T> handle) where T : struct
+        private static bool HasHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
-            return handle.Resolve(EnsureVault());
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
-        private void* ResolvePointer<T>(ref VaultBufferHandle<T> handle) where T : struct
+        private bool TryOpenArray<T>(in VaultGenerationHandle<T> handle, int requiredLength, out NativeArray<T> buffer) where T : struct
         {
-            return handle.ResolvePointer(EnsureVault());
+            buffer = default;
+            if (!HasHandle(in handle) || requiredLength < 0)
+                return false;
+
+            IDataVault vault = EnsureVault();
+            return vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryOpenReadArray<T>(in VaultGenerationHandle<T> handle, int requiredLength, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (!HasHandle(in handle) || requiredLength < 0)
+                return false;
+
+            IDataVault vault = EnsureVault();
+            return vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
 
         private ThermodynamicsHazardConstants GetConstantsValue()
         {
-            return _constants.IsCreated
-                ? SanitizeConstants(_constants.GetElementAsRef(EnsureVault(), 0))
+            return TryReadConstants(out ThermodynamicsHazardConstants constants)
+                ? constants
                 : GenerateEmergencyMockConstants();
+        }
+
+        private bool TryWriteConstantsWithOwner(in ThermodynamicsHazardConstants constants, SystemID writerSystem)
+        {
+            IDataVault vault = EnsureVault();
+            if (!HasHandle(in _constants) ||
+                !vault.TryAcquireWriteLock(in _constants, writerSystem, out NativeArray<ThermodynamicsHazardConstants> constantsArray))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!constantsArray.IsCreated || constantsArray.Length < 1)
+                    return false;
+
+                constantsArray[0] = SanitizeConstants(constants);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _constants, writerSystem);
+            }
         }
 
         private bool EnsureVaultGridMirrors()
         {
-            if (!_vaultTemperatureFrontMirror.IsCreated || _vaultTemperatureFrontMirror.Length < MaxCellCount)
+            if (!TryOpenArray(in _vaultTemperatureFrontMirror, MaxCellCount, out _))
                 _vaultTemperatureFrontMirror = AcquireBuffer<float>(VaultTemperatureFrontMirror, MaxCellCount);
 
-            if (!_vaultRadiationFrontMirror.IsCreated || _vaultRadiationFrontMirror.Length < MaxCellCount)
+            if (!TryOpenArray(in _vaultRadiationFrontMirror, MaxCellCount, out _))
                 _vaultRadiationFrontMirror = AcquireBuffer<float>(VaultRadiationFrontMirror, MaxCellCount);
 
-            return _vaultTemperatureFrontMirror.IsCreated && _vaultRadiationFrontMirror.IsCreated;
+            return HasHandle(in _vaultTemperatureFrontMirror) && HasHandle(in _vaultRadiationFrontMirror);
         }
 
         private void MirrorFrontGridToVault()
         {
-            if (!_temperatureFront.IsCreated || !_radiationFront.IsCreated || !EnsureVaultGridMirrors())
+            if (!HasHandle(in _temperatureFront) || !HasHandle(in _radiationFront) || !EnsureVaultGridMirrors())
             {
                 return;
             }
 
             int count = ActiveCellCount;
-            NativeArray<float> temperatureFront = ResolveArray(ref _temperatureFront);
-            NativeArray<float> radiationFront = ResolveArray(ref _radiationFront);
-            NativeArray<float> temperatureMirror = ResolveArray(ref _vaultTemperatureFrontMirror);
-            NativeArray<float> radiationMirror = ResolveArray(ref _vaultRadiationFrontMirror);
+            if (!TryOpenReadArray(in _temperatureFront, count, out NativeArray<float> temperatureFront) ||
+                !TryOpenReadArray(in _radiationFront, count, out NativeArray<float> radiationFront) ||
+                !TryOpenArray(in _vaultTemperatureFrontMirror, count, out NativeArray<float> temperatureMirror) ||
+                !TryOpenArray(in _vaultRadiationFrontMirror, count, out NativeArray<float> radiationMirror))
+            {
+                return;
+            }
+
             NativeArray<float>.Copy(temperatureFront, 0, temperatureMirror, 0, count);
             NativeArray<float>.Copy(radiationFront, 0, radiationMirror, 0, count);
             _vaultMirrorVersion = _gridVersion;
@@ -588,7 +708,11 @@ namespace Hecton8.Thermodynamics
         private void ReleaseNativeState()
         {
             if (_simulationJobActive)
+            {
+                // [BLOCKING_SYNC_POINT] Teardown cannot release Vault handles while the simulation writer is active.
                 DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
+                H8Memory.RegisterActiveJob(MemoryOwner, default);
+            }
 
             _temperatureFront = default;
             _temperatureBack = default;
@@ -613,6 +737,46 @@ namespace Hecton8.Thermodynamics
             _binaryConstantBytes = default;
             _simulationHandle = default;
             _simulationJobActive = false;
+            _pendingDataVaultRebind = false;
+            _pendingDataVault = null;
+        }
+
+        private void QueueDataVaultRebind(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault) && !_pendingDataVaultRebind)
+                return;
+
+            if (_simulationJobActive)
+            {
+                _pendingDataVault = vault;
+                _pendingDataVaultRebind = true;
+                return;
+            }
+
+            ApplyDataVaultRebind(vault);
+        }
+
+        private void ApplyPendingDataVaultRebindIfIdle()
+        {
+            if (!_pendingDataVaultRebind || _simulationJobActive)
+                return;
+
+            IDataVault vault = _pendingDataVault;
+            _pendingDataVaultRebind = false;
+            _pendingDataVault = null;
+            ApplyDataVaultRebind(vault);
+        }
+
+        private void ApplyDataVaultRebind(IDataVault vault)
+        {
+            ReleaseNativeState();
+            _vault = vault;
+            if (_vault == null || !isActiveAndEnabled)
+                return;
+
+            EnsureNativeState();
+            _visualDirty = true;
+            _vaultMirrorRequested = true;
         }
 
         private void TryRegister()
@@ -631,7 +795,6 @@ namespace Hecton8.Thermodynamics
 
             if (!_registeredScalability)
             {
-                RefreshScalabilityTierFromRegistry();
                 ScalabilityEvents.Register(this);
                 _registeredScalability = true;
             }
@@ -641,6 +804,14 @@ namespace Hecton8.Thermodynamics
                 HectonFloatingOrigin.RegisterListener(this);
                 _registeredOriginShift = true;
             }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregister()
@@ -674,6 +845,15 @@ namespace Hecton8.Thermodynamics
                 HectonFloatingOrigin.UnregisterListener(this);
                 _registeredOriginShift = false;
             }
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.UnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void ResolveResolutionWithHysteresis(float dt)
@@ -717,11 +897,6 @@ namespace Hecton8.Thermodynamics
             return 0.1f;
         }
 
-        private void RefreshScalabilityTierFromRegistry()
-        {
-            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
-        }
-
         private void ConsumeSystemHealthSignals()
         {
             if (_healthPressureLowTierFrames > 0)
@@ -753,12 +928,16 @@ namespace Hecton8.Thermodynamics
         private void ClearAllGridData()
         {
             int length = MaxCellCount;
-            NativeArray<float> temperatureFront = ResolveArray(ref _temperatureFront);
-            NativeArray<float> temperatureBack = ResolveArray(ref _temperatureBack);
-            NativeArray<float> radiationFront = ResolveArray(ref _radiationFront);
-            NativeArray<float> radiationBack = ResolveArray(ref _radiationBack);
-            NativeArray<float> temperatureSources = ResolveArray(ref _temperatureSources);
-            NativeArray<float> radiationSources = ResolveArray(ref _radiationSources);
+            if (!TryOpenArray(in _temperatureFront, length, out NativeArray<float> temperatureFront) ||
+                !TryOpenArray(in _temperatureBack, length, out NativeArray<float> temperatureBack) ||
+                !TryOpenArray(in _radiationFront, length, out NativeArray<float> radiationFront) ||
+                !TryOpenArray(in _radiationBack, length, out NativeArray<float> radiationBack) ||
+                !TryOpenArray(in _temperatureSources, length, out NativeArray<float> temperatureSources) ||
+                !TryOpenArray(in _radiationSources, length, out NativeArray<float> radiationSources))
+            {
+                return;
+            }
+
             for (int i = 0; i < length; i++)
             {
                 temperatureFront[i] = 0f;
@@ -775,8 +954,18 @@ namespace Hecton8.Thermodynamics
             if (!enableMockHazards || _mockSeeded || _sourceCount > 0 || _simulationJobActive)
                 return;
 
-            ref HazardSourceDTO heat = ref GetHazardSourceRef(0);
-            ref HazardSourceDTO radiation = ref GetHazardSourceRef(1);
+            if (!TryOpenArray(in _sources, MaxSourceCount, out NativeArray<HazardSourceDTO> sources) ||
+                !TryOpenArray(in _sourceIds, MaxSourceCount, out NativeArray<uint> sourceIds))
+            {
+                return;
+            }
+
+            ref HazardSourceDTO heat = ref UnsafeUtility.ArrayElementAsRef<HazardSourceDTO>(
+                NativeArrayUnsafeUtility.GetUnsafePtr(sources),
+                0);
+            ref HazardSourceDTO radiation = ref UnsafeUtility.ArrayElementAsRef<HazardSourceDTO>(
+                NativeArrayUnsafeUtility.GetUnsafePtr(sources),
+                1);
             _sourceCount = MockHazardGenerator.GenerateEmergencyMockSources(
                 ref heat,
                 ref radiation,
@@ -784,7 +973,6 @@ namespace Hecton8.Thermodynamics
                 math.max(1f, cellSizeMeters),
                 HeatHazardHash,
                 RadiationHazardHash);
-            NativeArray<uint> sourceIds = ResolveArray(ref _sourceIds);
             sourceIds[0] = MockHazardGenerator.MockHeatSourceId;
             sourceIds[1] = MockHazardGenerator.MockRadiationSourceId;
             _mockSeeded = true;
@@ -801,16 +989,20 @@ namespace Hecton8.Thermodynamics
             }
 
             int activeCellCount = ActiveCellCount;
-            NativeArray<float> temperatureFront = ResolveArray(ref _temperatureFront);
-            NativeArray<float> temperatureBack = ResolveArray(ref _temperatureBack);
-            NativeArray<float> radiationFront = ResolveArray(ref _radiationFront);
-            NativeArray<float> radiationBack = ResolveArray(ref _radiationBack);
-            NativeArray<float> temperatureSourcesArray = ResolveArray(ref _temperatureSources);
-            NativeArray<float> radiationSourcesArray = ResolveArray(ref _radiationSources);
-            NativeArray<HazardSourceDTO> sources = ResolveArray(ref _sources);
-            NativeArray<ThermalUpdraftSignal> updraftSignals = ResolveArray(ref _updraftSignals);
-            NativeArray<int> signalCounters = ResolveArray(ref _signalCounters);
-            NativeArray<ThermodynamicsHazardTelemetryEntry> telemetryScratch = ResolveArray(ref _telemetryScratch);
+            if (!TryOpenArray(in _temperatureFront, activeCellCount, out NativeArray<float> temperatureFront) ||
+                !TryOpenArray(in _temperatureBack, activeCellCount, out NativeArray<float> temperatureBack) ||
+                !TryOpenArray(in _radiationFront, activeCellCount, out NativeArray<float> radiationFront) ||
+                !TryOpenArray(in _radiationBack, activeCellCount, out NativeArray<float> radiationBack) ||
+                !TryOpenArray(in _temperatureSources, activeCellCount, out NativeArray<float> temperatureSourcesArray) ||
+                !TryOpenArray(in _radiationSources, activeCellCount, out NativeArray<float> radiationSourcesArray) ||
+                !TryOpenArray(in _sources, MaxSourceCount, out NativeArray<HazardSourceDTO> sources) ||
+                !TryOpenArray(in _updraftSignals, MaxSignalsPerFrame, out NativeArray<ThermalUpdraftSignal> updraftSignals) ||
+                !TryOpenArray(in _signalCounters, 4, out NativeArray<int> signalCounters) ||
+                !TryOpenArray(in _telemetryScratch, 1, out NativeArray<ThermodynamicsHazardTelemetryEntry> telemetryScratch))
+            {
+                return;
+            }
+
             ThermodynamicsHazardConstants constants = GetConstantsValue();
             uint simulationFrame = ++_simulationFrame;
             ResetCountersJob resetJob = new ResetCountersJob
@@ -902,19 +1094,23 @@ namespace Hecton8.Thermodynamics
 
         private void SwapFrontBack()
         {
-            VaultBufferHandle<float> temp = _temperatureFront;
+            VaultGenerationHandle<float> temp = _temperatureFront;
             _temperatureFront = _temperatureBack;
             _temperatureBack = temp;
 
-            VaultBufferHandle<float> rad = _radiationFront;
+            VaultGenerationHandle<float> rad = _radiationFront;
             _radiationFront = _radiationBack;
             _radiationBack = rad;
         }
 
         private void PublishQueuedSignals()
         {
-            NativeArray<int> signalCounters = ResolveArray(ref _signalCounters);
-            NativeArray<ThermalUpdraftSignal> updraftSignals = ResolveArray(ref _updraftSignals);
+            if (!TryOpenReadArray(in _signalCounters, 1, out NativeArray<int> signalCounters) ||
+                !TryOpenReadArray(in _updraftSignals, MaxSignalsPerFrame, out NativeArray<ThermalUpdraftSignal> updraftSignals))
+            {
+                return;
+            }
+
             int updraftCount = math.min(MaxSignalsPerFrame, math.max(0, signalCounters[0]));
             for (int i = 0; i < updraftCount; i++)
             {
@@ -926,11 +1122,15 @@ namespace Hecton8.Thermodynamics
 
         private void CommitTelemetryScratch()
         {
-            if (!_telemetryRing.IsCreated || !_telemetryScratch.IsCreated)
+            if (!HasHandle(in _telemetryRing) || !HasHandle(in _telemetryScratch))
                 return;
 
-            NativeArray<ThermodynamicsHazardTelemetryEntry> telemetryRing = ResolveArray(ref _telemetryRing);
-            NativeArray<ThermodynamicsHazardTelemetryEntry> telemetryScratch = ResolveArray(ref _telemetryScratch);
+            if (!TryOpenArray(in _telemetryRing, TelemetryCapacity, out NativeArray<ThermodynamicsHazardTelemetryEntry> telemetryRing) ||
+                !TryOpenReadArray(in _telemetryScratch, 1, out NativeArray<ThermodynamicsHazardTelemetryEntry> telemetryScratch))
+            {
+                return;
+            }
+
             ThermodynamicsHazardTelemetryEntry entry = telemetryScratch[0];
             entry.DiffusionComputeTimeMs = _lastCompleteMs;
             telemetryRing[_telemetryWriteIndex % TelemetryCapacity] = entry;
@@ -959,7 +1159,10 @@ namespace Hecton8.Thermodynamics
                 }; // COLD ALLOC: Texture3D[1] - visual heat distortion scalar field - owner: ThermodynamicsHazardGridRuntime
             }
 
-            NativeArray<float> uploadSlice = ResolveArray(ref _temperatureFront).GetSubArray(0, ActiveCellCount);
+            if (!TryOpenReadArray(in _temperatureFront, ActiveCellCount, out NativeArray<float> temperatureFront))
+                return;
+
+            NativeArray<float> uploadSlice = temperatureFront.GetSubArray(0, ActiveCellCount);
             _temperatureTexture.SetPixelData(uploadSlice, 0);
             _temperatureTexture.Apply(false, false);
             Shader.SetGlobalTexture(HeatTexturePropertyId, _temperatureTexture);
@@ -999,7 +1202,7 @@ namespace Hecton8.Thermodynamics
 
         private void TryReloadCsvOverrides()
         {
-            if (!_csvBytes.IsCreated || !_constants.IsCreated)
+            if (!HasHandle(in _csvBytes) || !HasHandle(in _constants))
                 return;
 
             StartConfigWorkerIfNeeded();
@@ -1095,12 +1298,14 @@ namespace Hecton8.Thermodynamics
 
         private void WriteDump(string fileName)
         {
-            if (!_telemetryRing.IsCreated)
+            if (!HasHandle(in _telemetryRing))
                 return;
 
             try
             {
-                NativeArray<ThermodynamicsHazardTelemetryEntry> telemetryRing = ResolveArray(ref _telemetryRing);
+                if (!TryOpenReadArray(in _telemetryRing, TelemetryCapacity, out NativeArray<ThermodynamicsHazardTelemetryEntry> telemetryRing))
+                    return;
+
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", fileName));
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))

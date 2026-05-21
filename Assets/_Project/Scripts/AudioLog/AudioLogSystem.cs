@@ -65,6 +65,7 @@ namespace Hecton8.Narrative
         private const int EncryptedFragmentStateCapacity = 32;
         private const int ResolvedLogHashCapacity = AudioLogDiscoveryBitMask.MaxLogCount;
         private const uint EncryptedLogCompleteMask = 0xFu;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         // COLD ALLOC: HashSet<uint>[1024] — discovered audio-log hashes per save — owner: AudioLogSystem
         private const string NativeMemoryOwner = nameof(AudioLogSystem);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
@@ -790,7 +791,7 @@ namespace Hecton8.Narrative
             if (!_queuedLogHashes.IsCreated)
             {
                 createdQueue = true;
-                _queuedLogHashes = new NativeQueue<uint>(Allocator.Persistent); // COLD ALLOC: NativeQueue<uint>[16] — hash-only narrative playback queue — owner: AudioLogSystem
+                _queuedLogHashes = new NativeQueue<uint>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<uint>[16] — hash-only narrative playback queue — owner: AudioLogSystem
             }
 
             if (!_queueRegistered)

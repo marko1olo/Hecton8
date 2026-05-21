@@ -8,6 +8,7 @@ using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Scavenging;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -115,6 +116,7 @@ namespace Hecton8.World
         public Rigidbody Rigidbody { get; }
         public Vector3 Position { get; }
         public AbsoluteUniversePosition AbsolutePosition { get; }
+        public AbsoluteUniversePosition PositionAup => AbsolutePosition;
         public bool HasAbsolutePosition { get; }
         public float DistanceSqr { get; }
         public SpatialTargetKind Kind { get; }
@@ -130,7 +132,6 @@ namespace Hecton8.World
     /// </summary>
     internal static class WorldSpatialHashGrid
     {
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct Entry
         {
             public Transform Transform;
@@ -149,7 +150,6 @@ namespace Hecton8.World
             public byte IsResidentInNativeHash;
         }
 
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct TransientSignalEntry
         {
             public Vector3 RuntimePosition;
@@ -159,13 +159,13 @@ namespace Hecton8.World
             public int SourceSpeciesId;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ValidateAupIntegrityJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<double3> AbsolutePositions;
-            [ReadOnly] public NativeArray<float3> RuntimePositions;
+            [ReadOnly, NoAlias] public NativeArray<double3> AbsolutePositions;
+            [ReadOnly, NoAlias] public NativeArray<float3> RuntimePositions;
             public double3 CommittedTotalOffset;
-            [WriteOnly] public NativeArray<byte> InvalidMask;
+            [WriteOnly, NoAlias] public NativeArray<byte> InvalidMask;
 
             public void Execute(int index)
             {
@@ -176,14 +176,14 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct FarUnloadCandidatesJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<double3> AbsolutePositions;
-            [ReadOnly] public NativeArray<byte> EligibilityMask;
+            [ReadOnly, NoAlias] public NativeArray<double3> AbsolutePositions;
+            [ReadOnly, NoAlias] public NativeArray<byte> EligibilityMask;
             public double3 PlayerAbsolutePosition;
             public double MaxDistanceSq;
-            [WriteOnly] public NativeArray<byte> UnloadMask;
+            [WriteOnly, NoAlias] public NativeArray<byte> UnloadMask;
 
             public void Execute(int index)
             {
@@ -217,6 +217,9 @@ namespace Hecton8.World
         private const int SpatialHashCompactionTargetFloor = DefaultEntryCapacity * 4;
         private const int MaxTransientSignalCount = 16;
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const Allocator DataVaultExemptWorldSpatialQueryAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptWorldSpatialMaintenanceAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptWorldSpatialAcousticAllocator = Allocator.Persistent;
 
         private static readonly ProfilerMarker _queryProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Query");
         private static readonly ProfilerMarker _maintenanceProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Maintenance");
@@ -416,6 +419,16 @@ namespace Hecton8.World
             }
 
             UpdateNativeEntry(handle, entry);
+        }
+
+        public static bool TryGetAbsolutePosition(int handle, out AbsoluteUniversePosition position)
+        {
+            position = default;
+            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry) || !IsFiniteAup(in entry.AbsolutePosition))
+                return false;
+
+            position = entry.AbsolutePosition;
+            return true;
         }
 
         public static void SetResourceHalfExtents(int handle, Vector3 halfExtents)
@@ -1177,7 +1190,7 @@ namespace Hecton8.World
 
             if (!_queryHandles.IsCreated)
             {
-                _queryHandles = new NativeList<int>(MaxQueryHandleCapacity, Allocator.Persistent);
+                _queryHandles = new NativeList<int>(MaxQueryHandleCapacity, DataVaultExemptWorldSpatialQueryAllocator);
                 NativeMemorySentinel.RegisterNativeList(
                     _queryHandles,
                     nameof(WorldSpatialHashGrid),
@@ -1672,9 +1685,9 @@ namespace Hecton8.World
                 return;
 
             DisposeValidationBuffers();
-            _validationAbsolutePositions = new NativeArray<double3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _validationRuntimePositions = new NativeArray<float3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _validationInvalidMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _validationAbsolutePositions = new NativeArray<double3>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
+            _validationRuntimePositions = new NativeArray<float3>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
+            _validationInvalidMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(
                 _validationAbsolutePositions,
                 nameof(WorldSpatialHashGrid),
@@ -1774,10 +1787,10 @@ namespace Hecton8.World
                 return;
 
             DisposeFarUnloadBuffers();
-            _farUnloadHandles = new NativeArray<int>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _farUnloadAbsolutePositions = new NativeArray<double3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _farUnloadEligibilityMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _farUnloadResultMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _farUnloadHandles = new NativeArray<int>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
+            _farUnloadAbsolutePositions = new NativeArray<double3>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
+            _farUnloadEligibilityMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
+            _farUnloadResultMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, DataVaultExemptWorldSpatialMaintenanceAllocator, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(
                 _farUnloadHandles,
                 nameof(WorldSpatialHashGrid),
@@ -1894,7 +1907,7 @@ namespace Hecton8.World
 
             DisposeAcousticDensityMap();
             // COLD ALLOC: NativeArray<float>[512] - 8x8x8 transient acoustic density payload - owner: WorldSpatialHashGrid
-            _acousticDensityMap = new NativeArray<float>(AcousticDensityMapCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _acousticDensityMap = new NativeArray<float>(AcousticDensityMapCellCount, DataVaultExemptWorldSpatialAcousticAllocator, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(
                 _acousticDensityMap,
                 nameof(WorldSpatialHashGrid),

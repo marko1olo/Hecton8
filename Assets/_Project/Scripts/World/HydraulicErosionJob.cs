@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -10,20 +12,20 @@ namespace Hecton8.World
     /// <summary>
     /// Blittable hydraulic erosion height/silt delta emitted by droplet slices.
     /// </summary>
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct HydraulicErosionHeightDelta
     {
         /// <summary>Linear heightmap cell index.</summary>
-        public int Index;
+        [FieldOffset(0)] public int Index;
 
         /// <summary>Signed normalized height delta.</summary>
-        public float HeightDelta01;
+        [FieldOffset(4)] public float HeightDelta01;
 
         /// <summary>Positive normalized sediment deposition delta.</summary>
-        public float SedimentDelta01;
+        [FieldOffset(8)] public float SedimentDelta01;
 
         /// <summary>Positive normalized erosion-depth delta.</summary>
-        public float ErosionDepthDelta01;
+        [FieldOffset(12)] public float ErosionDepthDelta01;
     }
 
     /// <summary>
@@ -253,7 +255,7 @@ namespace Hecton8.World
     /// <summary>
     /// Deterministic hydraulic erosion kernel for heightmap buffers.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct HydraulicErosionJob : IJobParallelFor
     {
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
@@ -269,7 +271,7 @@ namespace Hecton8.World
         // Invariant: ScheduleFourPhase writes PhaseX/PhaseZ before each Schedule call, and Execute
         // returns unless its sub-grid parity matches that phase. Each active job clamps erosion and
         // deposition to [writeMin, writeMax) inside its own sub-grid, with a one-cell movement inset.
-        [NativeDisableParallelForRestriction]
+        [NativeDisableParallelForRestriction, NoAlias]
         public NativeArray<float> Heightmap;
 
         /// <summary>Mutable normalized-source sediment accumulation lane. Normalize after the job.</summary>
@@ -285,7 +287,7 @@ namespace Hecton8.World
         // Invariant: every sediment write uses the same writeMin/writeMax bounds passed to the
         // droplet simulation by Execute. The scheduler never runs adjacent sub-grid parities in the
         // same phase, so no two live workers can update one sediment cell.
-        [NativeDisableParallelForRestriction]
+        [NativeDisableParallelForRestriction, NoAlias]
         public NativeArray<float> SedimentMask;
 
         /// <summary>Mutable raw erosion-depth lane used later by vegetation/scatter masks.</summary>
@@ -301,7 +303,7 @@ namespace Hecton8.World
         // Invariant: all erosion-depth writes occur through ErodeBrush using the Execute-owned
         // write bounds. Channel sampling may read nearby cells, but write ownership remains exclusive
         // for the active phase and later phases are chained by JobHandle dependency.
-        [NativeDisableParallelForRestriction]
+        [NativeDisableParallelForRestriction, NoAlias]
         public NativeArray<float> ErosionDepthMask;
 
         /// <summary>Optional queue writer for deferred terrain deltas.</summary>
@@ -1020,20 +1022,20 @@ namespace Hecton8.World
     /// <summary>
     /// Applies queued hydraulic erosion deltas after a sliced droplet pass.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct HydraulicErosionDeltaApplyJob : IJob
     {
         /// <summary>Queued signed height and mask deltas emitted by the droplet job.</summary>
         public NativeQueue<HydraulicErosionHeightDelta> HeightDeltas;
 
         /// <summary>Mutable normalized heightmap target.</summary>
-        public NativeArray<float> Heightmap;
+        [NoAlias] public NativeArray<float> Heightmap;
 
         /// <summary>Mutable normalized sediment accumulation target.</summary>
-        public NativeArray<float> SedimentMask;
+        [NoAlias] public NativeArray<float> SedimentMask;
 
         /// <summary>Mutable normalized erosion-depth target.</summary>
-        public NativeArray<float> ErosionDepthMask;
+        [NoAlias] public NativeArray<float> ErosionDepthMask;
 
         /// <summary>Maximum deltas consumed in this apply pass. Values below one are clamped to one to preserve bounded slicing.</summary>
         public int MaxDeltas;
@@ -1074,17 +1076,17 @@ namespace Hecton8.World
     /// <summary>
     /// Smooths deposition cells into flat sedimentary plains after droplets dump payloads.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SedimentaryFlatSmoothingJob : IJobParallelFor
     {
         /// <summary>Read-only height source.</summary>
-        [ReadOnly] public NativeArray<float> InputHeights01;
+        [ReadOnly, NoAlias] public NativeArray<float> InputHeights01;
 
         /// <summary>Read-only sediment accumulation mask.</summary>
-        [ReadOnly] public NativeArray<float> SedimentMask;
+        [ReadOnly, NoAlias] public NativeArray<float> SedimentMask;
 
         /// <summary>Write-only smoothed output.</summary>
-        [WriteOnly] public NativeArray<float> OutputHeights01;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputHeights01;
 
         /// <summary>Heightmap width.</summary>
         public int Width;
@@ -1110,10 +1112,12 @@ namespace Hecton8.World
         /// <inheritdoc />
         public void Execute(int index)
         {
-            int x = index % Width;
-            int z = index / Width;
+            int safeWidth = math.max(1, Width);
+            int safeHeight = math.max(1, Height);
+            int x = index % safeWidth;
+            int z = index / safeWidth;
             float center = math.saturate(InputHeights01[index]);
-            if (Width < 3 || Height < 3 || x <= 0 || z <= 0 || x >= Width - 1 || z >= Height - 1)
+            if (safeWidth < 3 || safeHeight < 3 || x <= 0 || z <= 0 || x >= safeWidth - 1 || z >= safeHeight - 1)
             {
                 OutputHeights01[index] = center;
                 return;
@@ -1192,17 +1196,17 @@ namespace Hecton8.World
     /// <summary>
     /// Raises immediate banks around deep erosion channels to sharpen canyon walls.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct CanyonWallSteepeningJob : IJobParallelFor
     {
         /// <summary>Read-only height source.</summary>
-        [ReadOnly] public NativeArray<float> InputHeights01;
+        [ReadOnly, NoAlias] public NativeArray<float> InputHeights01;
 
         /// <summary>Read-only erosion-depth mask.</summary>
-        [ReadOnly] public NativeArray<float> ErosionDepthMask;
+        [ReadOnly, NoAlias] public NativeArray<float> ErosionDepthMask;
 
         /// <summary>Write-only bank-steepened output.</summary>
-        [WriteOnly] public NativeArray<float> OutputHeights01;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputHeights01;
 
         /// <summary>Heightmap width.</summary>
         public int Width;
@@ -1222,10 +1226,12 @@ namespace Hecton8.World
         /// <inheritdoc />
         public void Execute(int index)
         {
-            int x = index % Width;
-            int z = index / Width;
+            int safeWidth = math.max(1, Width);
+            int safeHeight = math.max(1, Height);
+            int x = index % safeWidth;
+            int z = index / safeWidth;
             float center = math.saturate(InputHeights01[index]);
-            if (Width < 3 || Height < 3 || x <= 0 || z <= 0 || x >= Width - 1 || z >= Height - 1 || !ErosionDepthMask.IsCreated)
+            if (safeWidth < 3 || safeHeight < 3 || x <= 0 || z <= 0 || x >= safeWidth - 1 || z >= safeHeight - 1 || !ErosionDepthMask.IsCreated)
             {
                 OutputHeights01[index] = center;
                 return;
@@ -1260,13 +1266,13 @@ namespace Hecton8.World
     /// <summary>
     /// Builds a bottom-only silt paint mask from hydraulic deposit and carved-channel evidence.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ErodedChannelSiltMaskJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> Heights01;
-        [ReadOnly] public NativeArray<float> Sediment01;
-        [ReadOnly] public NativeArray<float> Wear01;
-        [WriteOnly] public NativeArray<float> SiltMask01;
+        [ReadOnly, NoAlias] public NativeArray<float> Heights01;
+        [ReadOnly, NoAlias] public NativeArray<float> Sediment01;
+        [ReadOnly, NoAlias] public NativeArray<float> Wear01;
+        [WriteOnly, NoAlias] public NativeArray<float> SiltMask01;
 
         public int Width;
         public int Height;
@@ -1320,11 +1326,11 @@ namespace Hecton8.World
     /// <summary>
     /// Normalizes a mask in-place on a worker thread before managed matrix publication.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct NormalizeMaskInPlaceJob : IJob
     {
         /// <summary>Mutable mask buffer.</summary>
-        public NativeArray<float> Mask;
+        [NoAlias] public NativeArray<float> Mask;
 
         /// <summary>Number of cells to scan and normalize.</summary>
         public int Count;

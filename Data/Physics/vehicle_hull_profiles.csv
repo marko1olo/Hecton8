@@ -1,0 +1,4 @@
+name,base_mass_kg,hull_volume_m3,length_m,radius_m,added_mass_multiplier,flood_volume_scalar
+Scout_Sub,18000,22,13.8,0.72,1.00,1.00
+Freighter_Sub,96000,135,34.0,1.55,1.28,1.18
+Leviathan_Tug,145000,210,42.0,1.82,1.45,1.25

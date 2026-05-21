@@ -111,7 +111,7 @@ namespace Hecton8.Animation.FaunaProcedural
         public bool TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO> tuning)
         {
             tuning = default;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -136,7 +136,7 @@ namespace Hecton8.Animation.FaunaProcedural
             if (_solverScheduled)
                 return false;
 
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -155,7 +155,7 @@ namespace Hecton8.Animation.FaunaProcedural
             if (string.IsNullOrEmpty(csvText) || !TryResolveTuningForEditor(out NativeArray<ProceduralBoneRigTuningDTO> tuning))
                 return false;
 
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -362,7 +362,7 @@ namespace Hecton8.Animation.FaunaProcedural
 
         public bool GenerateEmergencyMockRigs()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || !EnsureVaultBuffers())
                 return false;
 
@@ -497,7 +497,7 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private bool EnsureVaultBuffers()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || !ProceduralBoneBlenderLayout.Validate())
                 return false;
 

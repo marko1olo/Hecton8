@@ -87,16 +87,90 @@ namespace Hecton8.AtlasSignal
     {
         private const int ListenerCapacity = 4;
         private const int PendingEventCapacity = 4;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private static readonly uint _ListenerRejectedWarningHash = unchecked((uint)LocHash.Compute("Atlas6Events.ListenerRejected"));
         private static readonly uint _ListenerExceptionWarningHash = unchecked((uint)LocHash.Compute("Atlas6Events.ListenerException"));
         private static readonly uint _ListenerContextHash = unchecked((uint)LocHash.Compute("Atlas6Events.Listeners"));
 
-        // COLD ALLOC: RegistryBucket<IAtlas6EventListener>[4] - Atlas-6 directive listeners drained on dispatcher LateUpdate - owner: Atlas6Events
-        private static readonly RegistryBucket<IAtlas6EventListener> _listeners = new RegistryBucket<IAtlas6EventListener>(ListenerCapacity);
-        // COLD ALLOC: IAtlas6EventListener[4] - listener additions deferred while dispatching Atlas-6 directive events - owner: Atlas6Events
-        private static readonly IAtlas6EventListener[] _deferredRegisterListeners = new IAtlas6EventListener[ListenerCapacity];
-        // COLD ALLOC: IAtlas6EventListener[4] - listener removals deferred while dispatching Atlas-6 directive events - owner: Atlas6Events
-        private static readonly IAtlas6EventListener[] _deferredUnregisterListeners = new IAtlas6EventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public IAtlas6EventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct Atlas6ListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public Atlas6ListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IAtlas6EventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IAtlas6EventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public bool TryUnregister(IAtlas6EventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return true;
+                }
+
+                return false;
+            }
+
+            public IAtlas6EventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[4] - Atlas-6 directive listeners drained on dispatcher LateUpdate - owner: Atlas6Events
+        private static Atlas6ListenerRegistry _listeners = new Atlas6ListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[4] - listener additions deferred while dispatching Atlas-6 directive events - owner: Atlas6Events
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[4] - listener removals deferred while dispatching Atlas-6 directive events - owner: Atlas6Events
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: Dictionary<uint,string>[8] - hashed directive conflict IDs for cold-path resolution - owner: Atlas6Events
         private static readonly Dictionary<uint, string> _conflictIdsByHash = new Dictionary<uint, string>(8);
         private static NativeQueue<Atlas6EventPayload> _pendingEvents;
@@ -200,14 +274,13 @@ namespace Hecton8.AtlasSignal
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IAtlas6EventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IAtlas6EventListener listener = rawArray[i];
+                        IAtlas6EventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -315,7 +388,7 @@ namespace Hecton8.AtlasSignal
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<Atlas6EventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - deferred Atlas-6 directive lane flushed by SystemDispatcher LateUpdate - owner: Atlas6Events
+                _pendingEvents = new NativeQueue<Atlas6EventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - deferred Atlas-6 directive lane flushed by SystemDispatcher LateUpdate - owner: Atlas6Events
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -327,7 +400,7 @@ namespace Hecton8.AtlasSignal
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<Atlas6EventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - next-frame Atlas-6 directive lane prevents same-frame reentrant dispatch - owner: Atlas6Events
+                _nextFrameEvents = new NativeQueue<Atlas6EventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - next-frame Atlas-6 directive lane prevents same-frame reentrant dispatch - owner: Atlas6Events
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -468,7 +541,7 @@ namespace Hecton8.AtlasSignal
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IAtlas6EventListener listener)
@@ -485,19 +558,19 @@ namespace Hecton8.AtlasSignal
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IAtlas6EventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -508,12 +581,12 @@ namespace Hecton8.AtlasSignal
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -522,7 +595,7 @@ namespace Hecton8.AtlasSignal
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -533,7 +606,7 @@ namespace Hecton8.AtlasSignal
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -544,8 +617,8 @@ namespace Hecton8.AtlasSignal
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IAtlas6EventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IAtlas6EventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -554,8 +627,8 @@ namespace Hecton8.AtlasSignal
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IAtlas6EventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IAtlas6EventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }

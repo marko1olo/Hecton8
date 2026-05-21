@@ -6,7 +6,7 @@ Owner: TECHNICAL_ARTIST_DATA
 Prompt: PBR_MATERIAL_REFACTOR_SCOUT
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -16,10 +16,8 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; runtime proof remains absent.
-
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Audit source: absent in the R17 current filesystem check; rerun `Tools/MaterialAudit.py` before using current results.
 
@@ -50,7 +48,7 @@ Audit source: absent in the R17 current filesystem check; rerun `Tools/MaterialA
 - Surface material migration queue rows: 19 (`BLOCKER` = 2, `MEDIUM` = 9, `LOW` = 8)
 - Channel-packing migration candidates: 19 (`LOW` = 10, `MEDIUM` = 9)
 - Channel-packing candidate model: 126.35 MiB standard -> 56.81 MiB optimized, saving 69.54 MiB (55.0%)
-- Machine-readable GOD_MODE texture override rows: 12
+- Machine-readable maximum-quality texture override rows: 12
 - Machine-readable global detail overlay rows: 10, minimum expected detail gain 20%
 - Issue counts: `NO_PROMPT_ORM_SLOT` = 19, `NO_PACKED_ORM_OR_MASK_SLOT` = 10, `NO_DETAIL_MAP_SLOT` = 19, `UNRESOLVED_TEXTURE_GUID` = 9, `LEGACY_MASK_SLOT_REQUIRES_CHANNEL_REVIEW` = 9
 
@@ -202,7 +200,7 @@ Result:
 
 - VRAM reduction: about 55% per material set under this import model.
 - Detail increase: shared detail overlay tiled at 4x-16x adds visible high-frequency wear without raising unique albedo size.
-- Runtime cost: one extra detail sample only on MED+ or inspection/hero material tiers. Low tier can disable detail normal and keep ORM only.
+- Runtime cost: one extra detail sample only when the quality budget and inspection/hero material state allow it. Minimum-budget rendering can disable detail normal and keep ORM only.
 
 ## NASA-Punk Noir Rationale
 
@@ -212,14 +210,14 @@ Surface rule: everything is functional, everything is worn.
 - Deep Sea Noir means the values stay controlled: dark bases, high grazing response, wet edges, salt/oxidation breakup, and no baked studio highlights in albedo.
 - White albedo is suspect. Brightness belongs in lighting/specular/emission, not diffuse color.
 - Wear should describe use: hand contact, maintenance scrapes, pressure seals, latch arcs, bolt halos, cable abrasion, salt traces, and flood-line stains.
-- On low hardware, material richness comes from packed masks and shared detail, not extra draw passes.
-- On high hardware, saved VRAM buys stronger detail overlays, longer mip residency, richer wetness response, and brushed-metal directionality.
+- On minimum-budget hardware, material richness comes from packed masks and shared detail, not extra draw passes.
+- On high-fidelity hardware, saved VRAM buys stronger detail overlays, longer mip residency, richer wetness response, and brushed-metal directionality.
 
-## GOD_MODE Texture Resolution Overrides
+## Maximum-Quality Texture Resolution Overrides
 
-These are tier overrides, not MX350 defaults. Apply only after hardware tier selection and memory residency checks.
+These are quality-budget overrides, not MX350 defaults. Apply only after hardware classification and memory residency checks.
 
-| Asset class | GOD_MODE max | Format | Notes |
+| Asset class | Maximum-quality max | Format | Notes |
 |---|---:|---|---|
 | Hero cockpit albedo | 4096 | BC7 sRGB | Inspection-radius only. |
 | Hero cockpit normal | 4096 | BC5 linear | Use detail normals before unique 4K normals. |
@@ -236,7 +234,7 @@ These are tier overrides, not MX350 defaults. Apply only after hardware tier sel
 
 Load-shed:
 
-- If VRAM used/total exceeds 0.90, demote GOD_MODE material overrides by one mip tier.
+- If VRAM used/total exceeds 0.90, demote maximum-quality material overrides by one mip tier.
 - If sustained frame time exceeds 25 ms, disable MED+ detail normal overlays before dropping base albedo.
 - If texture upload spikes appear, keep async upload persistent buffer enabled and stage hero material residency behind loading/transition gates.
 
@@ -246,7 +244,7 @@ Load-shed:
 python Tools\MaterialAudit.py --root Assets\_Project --resolve-root Assets\_Project --sample-size 256 --json Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.json --markdown Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA.md --csv-prefix Docs\AgentLogs\MaterialAudit_TECHNICAL_ARTIST_DATA --ci-surface-gates
 ```
 
-Last recorded static MaterialAudit result, artifact absent in the R17 current filesystem check; rerun before treating it as current: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `albedo_candidates=25`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=4`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `materials_with_detail=0`, `detail_map_missing_materials=19`, `channel_packing_candidates=19`, `channel_candidate_saved_mib=69.54`, `god_mode_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `surface_materials_with_unresolved_texture_refs=2`, `surface_unresolved_texture_refs=8`, `surface_unresolved_blocker_materials=2`, `surface_migration_queue_rows=19`, `surface_migration_queue_priority_counts=BLOCKER=2, MEDIUM=9, LOW=8`, `materials_with_issues=26`.
+Last recorded static MaterialAudit result, artifact absent in the R17 current filesystem check; rerun before treating it as current: `ci_surface_gates=enabled`, `active_gate_profiles=surface_safe`, `active_gates=energy_failures,energy_warnings,albedo_read_errors,texture_budget`, `textures=137`, `albedo_candidates=25`, `energy_failures=0`, `energy_warnings=0`, `texture_read_errors=0`, `albedo_read_errors=0`, `import_issue_textures=4`, `estimated_texture_mib=497.565`, `texture_budget_mib=900.0`, `texture_budget_status=PASS`, `materials_with_prompt_orm=0`, `materials_with_legacy_mask=9`, `materials_with_detail=0`, `detail_map_missing_materials=19`, `channel_packing_candidates=19`, `channel_candidate_saved_mib=69.54`, `maximum_quality_override_count=12`, `global_detail_overlay_count=10`, `materials_with_unresolved_texture_refs=9`, `unresolved_texture_refs=27`, `surface_materials_with_unresolved_texture_refs=2`, `surface_unresolved_texture_refs=8`, `surface_unresolved_blocker_materials=2`, `surface_migration_queue_rows=19`, `surface_migration_queue_priority_counts=BLOCKER=2, MEDIUM=9, LOW=8`, `materials_with_issues=26`.
 
 Expected generated CSV artifacts after rerun; absent in the R17 current filesystem check:
 
@@ -260,7 +258,7 @@ Expected generated CSV artifacts after rerun; absent in the R17 current filesyst
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_detail_map_missing_materials.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_channel_packing_candidates.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_texture_memory_hotspots.csv`
-- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_god_mode_texture_overrides.csv`
+- `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_maximum_quality_texture_overrides.csv`
 - `Docs/AgentLogs/MaterialAudit_TECHNICAL_ARTIST_DATA_global_detail_overlay_plan.csv`
 
 CI gate modes:

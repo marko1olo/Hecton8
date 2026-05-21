@@ -207,7 +207,7 @@ namespace Hecton8.Core
     /// </summary>
     public struct StringBuilderScope : System.IDisposable
     {
-        public StringBuilder Value { get; private set; }
+        public StringBuilder Value;
 
         public StringBuilderScope(StringBuilder sb)
         {

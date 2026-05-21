@@ -10,7 +10,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CanvasGroup))]
     [AddComponentMenu("Hecton8/UI/UI Fade Transition")]
-    public sealed class UIFadeTransition : MonoBehaviour, ILateFrameTickable
+    public sealed class UIFadeTransition : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // INSPECTOR
@@ -33,6 +33,7 @@ namespace Hecton8.UI
         private float _targetAlpha;
         private float _startAlpha;
         private bool _registered;
+        private bool _hotSwapRegistered;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // LIFECYCLE
@@ -45,18 +46,29 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            if (_state != State.Idle)
-                TryRegister();
+            TryRegisterHotSwapListener();
+            TryRegister();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             Unregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             Unregister();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+                TryRegister();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -66,10 +78,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (_state == State.Idle || _canvasGroup == null)
-            {
-                Unregister();
                 return;
-            }
 
             float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             _timer += dt;
@@ -82,10 +91,7 @@ namespace Hecton8.UI
             _canvasGroup.alpha = _startAlpha + ((_targetAlpha - _startAlpha) * curveT);
 
             if (t >= 1f)
-            {
                 _state = State.Idle;
-                Unregister();
-            }
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -104,7 +110,6 @@ namespace Hecton8.UI
             _targetAlpha = 1f;
             _timer = 0f;
             _state = State.FadingIn;
-            TryRegister();
         }
 
         /// <summary>
@@ -119,7 +124,6 @@ namespace Hecton8.UI
             _targetAlpha = 0f;
             _timer = 0f;
             _state = State.FadingOut;
-            TryRegister();
         }
 
         /// <summary>
@@ -134,7 +138,6 @@ namespace Hecton8.UI
             _targetAlpha = Mathf.Clamp01(targetAlpha);
             _timer = 0f;
             _state = _targetAlpha > _startAlpha ? State.FadingIn : State.FadingOut;
-            TryRegister();
         }
 
         /// <summary>
@@ -147,7 +150,6 @@ namespace Hecton8.UI
 
             _canvasGroup.alpha = Mathf.Clamp01(alpha);
             _state = State.Idle;
-            Unregister();
         }
 
         /// <summary>
@@ -164,9 +166,6 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
@@ -177,6 +176,23 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

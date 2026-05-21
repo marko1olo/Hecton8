@@ -1,10 +1,9 @@
-using Hecton8.Bootstrap;
-using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Inventory;
 using Hecton8.Interaction;
 using Hecton8.Items;
-using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -14,16 +13,55 @@ namespace Hecton8.Gameplay
 {
     internal static class ToolHitUtility
     {
+        private const int MaxParentResolveDepth = 32;
         private static HUDNotification s_notification;
-        private static Transform s_playerTransform;
         private static PlayerToolManager s_playerToolManager;
+        private static IPhysicsService s_physicsService;
+        private static IPlayerMovementForceSink s_playerMovementForceSink;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             s_notification = null;
-            s_playerTransform = null;
             s_playerToolManager = null;
+            s_physicsService = null;
+            s_playerMovementForceSink = null;
+        }
+
+        internal static void CachePlayerToolManagerCold(PlayerToolManager toolManager)
+        {
+            if (toolManager != null)
+                s_playerToolManager = toolManager;
+        }
+
+        internal static void ClearPlayerToolManagerCold(PlayerToolManager toolManager)
+        {
+            if (ReferenceEquals(s_playerToolManager, toolManager))
+                s_playerToolManager = null;
+        }
+
+        internal static void CachePhysicsServiceCold(IPhysicsService physicsService)
+        {
+            if (physicsService != null)
+                s_physicsService = physicsService;
+        }
+
+        internal static void ClearPhysicsServiceCold(IPhysicsService physicsService)
+        {
+            if (physicsService != null && ReferenceEquals(s_physicsService, physicsService))
+                s_physicsService = null;
+        }
+
+        internal static void CachePlayerMovementForceSinkCold(IPlayerMovementForceSink forceSink)
+        {
+            if (forceSink != null)
+                s_playerMovementForceSink = forceSink;
+        }
+
+        internal static void ClearPlayerMovementForceSinkCold(IPlayerMovementForceSink forceSink)
+        {
+            if (forceSink != null && ReferenceEquals(s_playerMovementForceSink, forceSink))
+                s_playerMovementForceSink = null;
         }
 
         public static bool ApplyDamage(
@@ -33,50 +71,86 @@ namespace Hecton8.Gameplay
             Vector3 forceDirection,
             float impulse)
         {
-            if (hitCollider == null || damage <= 0f)
+            if (hitCollider == null || !math.isfinite(damage) || damage <= 0f)
                 return false;
 
             bool applied = false;
+            float safeImpulse = math.isfinite(impulse) ? math.max(0f, impulse) : 0f;
 
-            if (TryQueueCentralDamage(hitCollider, damage, hitPoint, forceDirection, impulse))
+            if (TryQueueCentralDamage(hitCollider, damage, hitPoint, forceDirection, safeImpulse))
             {
                 applied = true;
             }
-            else if (hitCollider.TryGetComponent(out ICuttable cuttable))
+            else if (TryApplyCuttableDamage(hitCollider, damage, hitPoint))
             {
-                cuttable.ApplyCutDamage(damage, hitPoint);
                 applied = true;
             }
-            else if (hitCollider.TryGetComponent(out FaunaBrain ai))
+            else if (TryApplyUnregisteredDamageReceiverPacket(hitCollider, damage, hitPoint))
             {
-                ai.TakeDamage(damage);
-                if (ai.TryGetComponent(out Hecton8.AI.CreatureDamageManager damageManager))
-                    damageManager.RegisterWoundWS(hitPoint, damage);
-                TryApplyLocalizedMobility(hitCollider, ai);
                 applied = true;
-            }
-            else if (hitCollider.TryGetComponent(out HectonSurvivalSystem survival))
-            {
-                survival.TakeDamage(damage);
-                applied = true;
-            }
-            else
-            {
-                FaunaBrain aiParent = hitCollider.GetComponentInParent<FaunaBrain>();
-                if (aiParent != null)
-                {
-                    aiParent.TakeDamage(damage);
-                    if (aiParent.TryGetComponent(out Hecton8.AI.CreatureDamageManager damageManager))
-                        damageManager.RegisterWoundWS(hitPoint, damage);
-                    TryApplyLocalizedMobility(hitCollider, aiParent);
-                    applied = true;
-                }
             }
 
-            if (impulse > 0f)
-                ApplyImpulse(hitCollider, forceDirection, impulse, hitPoint);
+            if (safeImpulse > 0f)
+                ApplyImpulse(hitCollider, forceDirection, safeImpulse, hitPoint);
 
             return applied;
+        }
+
+        private static bool TryApplyCuttableDamage(Collider hitCollider, float damage, Vector3 hitPoint)
+        {
+            if (!TryFindCuttableTarget(hitCollider, out ICuttable cuttable))
+                return false;
+
+            cuttable.ApplyCutDamage(damage, hitPoint);
+            if (cuttable is Component cuttableComponent)
+                TryApplyLocalizedMobility(hitCollider, cuttableComponent);
+            return true;
+        }
+
+        private static bool TryFindCuttableTarget(Collider hitCollider, out ICuttable cuttable)
+        {
+            cuttable = null;
+            if (hitCollider == null)
+                return false;
+
+            if (hitCollider.TryGetComponent(out cuttable))
+                return true;
+
+            return TryFindParentComponentBounded(hitCollider.transform, out cuttable);
+        }
+
+        private static bool TryFindParentComponentBounded<T>(Transform start, out T component)
+        {
+            component = default;
+            Transform current = start != null ? start.parent : null;
+            int depth = 0;
+            while (current != null && depth < MaxParentResolveDepth)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+                depth++;
+            }
+
+            return false;
+        }
+
+        private static bool TryFindDamageReceiverTarget(
+            Collider hitCollider,
+            out IDamageReceiver receiver,
+            out Component receiverComponent)
+        {
+            receiver = null;
+            receiverComponent = null;
+            if (hitCollider == null)
+                return false;
+
+            if (!hitCollider.TryGetComponent(out receiver))
+                TryFindParentComponentBounded(hitCollider.transform, out receiver);
+
+            receiverComponent = receiver as Component;
+            return receiverComponent != null;
         }
 
         private static bool TryQueueCentralDamage(
@@ -86,26 +160,27 @@ namespace Hecton8.Gameplay
             Vector3 forceDirection,
             float impulse)
         {
-            IDamageReceiver receiver = hitCollider.GetComponent<IDamageReceiver>();
-            if (receiver == null)
-                receiver = hitCollider.GetComponentInParent<IDamageReceiver>();
-
-            if (!(receiver is Component receiverComponent))
+            if (!TryFindDamageReceiverTarget(hitCollider, out _, out Component receiverComponent))
                 return false;
 
             int targetId = CombatDamageRuntime.ResolveTargetId(receiverComponent.gameObject);
             if (!CombatDamageRuntime.IsTargetRegistered(targetId))
                 return false;
 
+            Vector3 normalizedDirection = NormalizeOrForward(forceDirection);
             CombatDamageRuntime.ResolveLocalizedHit(hitCollider, out CombatWeakspotTier weakspotTier, out uint statusBits);
             Vector3 localPoint = receiverComponent.transform.InverseTransformPoint(hitPoint);
+            float3 localPoint3 = new float3(localPoint.x, localPoint.y, localPoint.z);
+            if (!math.all(math.isfinite(localPoint3)))
+                localPoint3 = float3.zero;
+
             CombatDamageRequest signal = new CombatDamageRequest
             {
                 TargetId = targetId,
                 SourceId = DamageSourceIds.EnvironmentHazard,
                 Amount = damage,
                 ImpulseMagnitude = math.max(0f, impulse),
-                Direction = new float3(forceDirection.x, forceDirection.y, forceDirection.z),
+                Direction = new float3(normalizedDirection.x, normalizedDirection.y, normalizedDirection.z),
                 PackedMeta = CombatDamageRuntime.PackSignalMeta(
                     CombatDamageTypes.Impact,
                     statusBits,
@@ -113,12 +188,46 @@ namespace Hecton8.Gameplay
             };
             CombatDamageSignalDetail detail = new CombatDamageSignalDetail
             {
-                LocalPoint = new float3(localPoint.x, localPoint.y, localPoint.z),
-                ArmorNormal = new float3(-forceDirection.x, -forceDirection.y, -forceDirection.z),
+                LocalPoint = localPoint3,
+                ArmorNormal = new float3(-normalizedDirection.x, -normalizedDirection.y, -normalizedDirection.z),
                 LocalTemperatureCelsius = 20f,
                 StatusDurationSeconds = 0f
             };
             return CombatDamageRuntime.TryQueueDamage(in signal, in detail);
+        }
+
+        private static bool TryApplyUnregisteredDamageReceiverPacket(
+            Collider hitCollider,
+            float damage,
+            Vector3 hitPoint)
+        {
+            if (!TryFindDamageReceiverTarget(hitCollider, out IDamageReceiver receiver, out Component receiverComponent))
+                return false;
+
+            int targetId = CombatDamageRuntime.ResolveTargetId(receiverComponent.gameObject);
+            if (CombatDamageRuntime.IsTargetRegistered(targetId))
+                return false;
+
+            Vector3 localPoint = receiverComponent.transform.InverseTransformPoint(hitPoint);
+            float3 localPoint3 = new float3(localPoint.x, localPoint.y, localPoint.z);
+            if (!math.all(math.isfinite(localPoint3)))
+                localPoint3 = float3.zero;
+
+            DamagePacket packet = new DamagePacket
+            {
+                Channel = DamageChannel.Integrity,
+                PreviousValue = 0f,
+                NextValue = 0f,
+                Magnitude = math.max(0f, damage),
+                LocalPoint = localPoint3,
+                DamageType = CombatDamageTypes.Impact,
+                IntegrityDelta = 0,
+                Depth = 0f,
+                SourceId = DamageSourceIds.EnvironmentHazard,
+                TraumaLevel = 0
+            };
+            receiver.ReceiveDamage(in packet);
+            return true;
         }
 
         public static bool TryCollectItem(Collider hitCollider, Transform interactor)
@@ -134,27 +243,13 @@ namespace Hecton8.Gameplay
             if (hitCollider == null)
                 return false;
 
-            HectonItem item = hitCollider.GetComponent<HectonItem>();
-            if (item == null)
-                item = hitCollider.GetComponentInParent<HectonItem>();
+            if (!hitCollider.TryGetComponent(out IInventoryPickupPreviewSource previewSource))
+                TryFindParentComponentBounded(hitCollider.transform, out previewSource);
 
-            if (item != null)
-            {
-                itemData = item.Data;
-                quantity = 1;
-                return itemData != null;
-            }
-
-            PickupItem pickup = hitCollider.GetComponent<PickupItem>();
-            if (pickup == null)
-                pickup = hitCollider.GetComponentInParent<PickupItem>();
-
-            if (pickup == null)
+            if (previewSource == null)
                 return false;
 
-            itemData = pickup.ItemData;
-            quantity = pickup.Quantity;
-            return itemData != null;
+            return previewSource.TryPeekInventoryPickup(out itemData, out quantity);
         }
 
         public static bool TryCollectItem(Collider hitCollider, Transform interactor, out ItemData collectedItem)
@@ -164,27 +259,20 @@ namespace Hecton8.Gameplay
             if (hitCollider == null || interactor == null)
                 return false;
 
-            HectonItem item = hitCollider.GetComponent<HectonItem>();
-            if (item == null)
-                item = hitCollider.GetComponentInParent<HectonItem>();
+            if (!hitCollider.TryGetComponent(out IInventoryPickupSource pickupSource))
+                TryFindParentComponentBounded(hitCollider.transform, out pickupSource);
 
-            if (item != null)
-            {
-                collectedItem = item.Data;
-                item.Interact(interactor);
-                return true;
-            }
-
-            PickupItem pickup = hitCollider.GetComponent<PickupItem>();
-            if (pickup == null)
-                pickup = hitCollider.GetComponentInParent<PickupItem>();
-
-            if (pickup == null)
+            if (pickupSource == null)
                 return false;
 
-            collectedItem = pickup.ItemData;
-            pickup.Interact(interactor);
-            return true;
+            if (pickupSource is IInventoryPickupPreviewSource previewSource)
+                previewSource.TryPeekInventoryPickup(out collectedItem, out _);
+
+            PlayerInventory inventory = null;
+            if (TryResolvePlayerToolManager(out PlayerToolManager toolManager))
+                inventory = toolManager.Inventory;
+
+            return pickupSource.TryHandleInventoryPickup(inventory, interactor);
         }
 
         public static bool TryGetRigidbody(Collider hitCollider, out Rigidbody body)
@@ -197,7 +285,7 @@ namespace Hecton8.Gameplay
             if (body != null)
                 return true;
 
-            body = hitCollider.GetComponentInParent<Rigidbody>();
+            TryFindParentComponentBounded(hitCollider.transform, out body);
             return body != null;
         }
 
@@ -213,7 +301,19 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 normalizedDirection = NormalizeOrForward(direction);
-            PhysicsForceRouter.QueueForce(body, normalizedDirection * impulse, ForceMode.Impulse);
+            if (IsPlayerBody(body))
+            {
+                if (!TryQueuePlayerVelocityChange(normalizedDirection * impulse, body.mass))
+                    return;
+
+                TryApplyRelativeCarrierImpulse(normalizedDirection, impulse);
+                PublishImpactSignal(hitCollider, body, hitPoint, normalizedDirection, impulse);
+                return;
+            }
+
+            if (!TryQueuePhysicsForce(body, normalizedDirection * impulse, ForceMode.Impulse))
+                return;
+
             TryApplyRelativeCarrierImpulse(normalizedDirection, impulse);
             PublishImpactSignal(hitCollider, body, hitPoint, normalizedDirection, impulse);
         }
@@ -231,8 +331,42 @@ namespace Hecton8.Gameplay
             }
 
             Vector3 normalizedDirection = NormalizeOrForward(direction);
-            PhysicsForceRouter.QueueForce(carrierBody, -normalizedDirection * impulse, ForceMode.Impulse);
+            return TryQueuePhysicsForce(carrierBody, -normalizedDirection * impulse, ForceMode.Impulse);
+        }
+
+        private static bool TryQueuePhysicsForce(Rigidbody body, Vector3 force, ForceMode mode)
+        {
+            if (body == null || !math.all(math.isfinite(new float3(force.x, force.y, force.z))))
+                return false;
+
+            IPhysicsService physicsService = s_physicsService;
+            return physicsService != null &&
+                   physicsService.IsInitialized &&
+                   physicsService.QueueForce(body, force, mode);
+        }
+
+        private static bool TryQueuePlayerVelocityChange(Vector3 impulse, float mass)
+        {
+            IPlayerMovementForceSink forceSink = s_playerMovementForceSink;
+            if (forceSink == null || !math.all(math.isfinite(new float3(impulse.x, impulse.y, impulse.z))))
+                return false;
+
+            float safeMass = math.max(math.isfinite(mass) && mass > 0.0001f ? mass : 1f, 0.0001f);
+            Vector3 velocityDelta = impulse / safeMass;
+            if (!math.all(math.isfinite(new float3(velocityDelta.x, velocityDelta.y, velocityDelta.z))))
+                return false;
+
+            forceSink.QueueExternalVelocityChange(velocityDelta);
             return true;
+        }
+
+        private static bool IsPlayerBody(Rigidbody body)
+        {
+            if (body == null || !TryResolvePlayerToolManager(out PlayerToolManager toolManager))
+                return false;
+
+            IPlayerRuntimeContext playerContext = toolManager.PlayerRuntimeContext;
+            return playerContext != null && ReferenceEquals(playerContext.PlayerRigidbody, body);
         }
 
         private static void TryApplyLocalizedMobility(Collider hitCollider, Component targetComponent)
@@ -243,7 +377,7 @@ namespace Hecton8.Gameplay
 
             ICombatMobilityModifierReceiver mobilityReceiver = targetComponent as ICombatMobilityModifierReceiver;
             if (mobilityReceiver == null && hitCollider != null)
-                mobilityReceiver = hitCollider.GetComponentInParent<ICombatMobilityModifierReceiver>();
+                TryFindParentComponentBounded(hitCollider.transform, out mobilityReceiver);
             mobilityReceiver?.SetCombatMobilityScale(
                 CombatDamageRuntime.CrippledMobilitySpeedScale,
                 CombatDamageRuntime.CrippledMobilityDurationSeconds);
@@ -262,14 +396,45 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(new float3(hitPoint.x, hitPoint.y, hitPoint.z))))
                 hitPoint = body != null ? body.position : hitCollider.bounds.center;
 
+            if (!TryResolveImpactPointAup(hitPoint, out AbsoluteUniversePosition pointAup))
+                return;
+
             ImpactSignal signal = default;
-            signal.PointAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint);
+            signal.PointAup = pointAup;
             signal.Force = impulse;
             signal.Intensity = math.saturate(math.log10(1f + (impulse * 0.01f)));
             signal.PrimaryBodyId = ResolveImpactBodyId(hitCollider, body);
             signal.WeightClass = ResolveImpactWeightClass(body);
             signal.Flags = normalizedDirection.y > 0.35f ? (byte)1 : (byte)0;
-            GlobalSignals.Publish(in signal);
+            SignalBus<ImpactSignal>.Push(in signal);
+        }
+
+        private static bool TryResolveImpactPointAup(Vector3 hitPoint, out AbsoluteUniversePosition pointAup)
+        {
+            pointAup = default;
+            float3 localRuntime = new float3(hitPoint.x, hitPoint.y, hitPoint.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            if (!TryResolvePlayerToolManager(out PlayerToolManager toolManager))
+                return false;
+
+            IPlayerRuntimeContext playerContext = toolManager.PlayerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) ||
+                !snapshot.Aup.IsFinite())
+            {
+                return false;
+            }
+
+            double3 deltaMeters = new double3(
+                (double)localRuntime.x - snapshot.RuntimePosition.x,
+                (double)localRuntime.y - snapshot.RuntimePosition.y,
+                (double)localRuntime.z - snapshot.RuntimePosition.z);
+            pointAup = AbsoluteUniversePosition.OffsetMeters(
+                in snapshot.Aup,
+                deltaMeters);
+            return pointAup.IsFinite();
         }
 
         private static byte ResolveImpactWeightClass(Rigidbody body)
@@ -297,42 +462,25 @@ namespace Hecton8.Gameplay
 
         private static Vector3 NormalizeOrForward(Vector3 direction)
         {
-            float sqrMagnitude = direction.sqrMagnitude;
+            float3 direction3 = new float3(direction.x, direction.y, direction.z);
+            if (!math.all(math.isfinite(direction3)))
+                return Vector3.forward;
+
+            float sqrMagnitude = math.lengthsq(direction3);
             if (sqrMagnitude <= 0.0001f)
                 return Vector3.forward;
 
             if (math.abs(sqrMagnitude - 1f) <= 0.02f)
                 return direction;
 
-            return direction * math.rsqrt(sqrMagnitude);
+            float invMagnitude = math.rsqrt(math.max(sqrMagnitude, 0.0001f));
+            return direction * invMagnitude;
         }
 
         private static bool TryResolvePlayerToolManager(out PlayerToolManager toolManager)
         {
-            if (s_playerToolManager != null)
-            {
-                toolManager = s_playerToolManager;
-                return true;
-            }
-
-            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
-            {
-                s_playerTransform = null;
-                toolManager = null;
-                return false;
-            }
-
-            if (!ReferenceEquals(s_playerTransform, playerTransform))
-            {
-                s_playerTransform = playerTransform;
-                s_playerToolManager = null;
-            }
-
-            if (s_playerToolManager == null)
-                playerTransform.TryGetComponent(out s_playerToolManager);
-
             toolManager = s_playerToolManager;
-            return toolManager != null;
+            return toolManager != null && toolManager.isActiveAndEnabled;
         }
 
         public static void ShowInfo(string message)

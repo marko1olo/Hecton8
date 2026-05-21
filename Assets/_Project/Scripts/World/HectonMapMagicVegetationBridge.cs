@@ -23,14 +23,21 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed partial class HectonMapMagicVegetationBridge : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IMapMagicTerrainTileEventListener
     {
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct PredatorFearNodeSnapshot
         {
+            [FieldOffset(0)]
             public float3 Position;
+            [FieldOffset(12)]
             public float Radius;
+            [FieldOffset(16)]
             public float Weight;
+            [FieldOffset(20)]
             public int SpeciesId;
+            [FieldOffset(24)]
             public float Padding;
+            [FieldOffset(28)]
+            private uint _pad0;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -922,8 +929,14 @@ namespace Hecton8.World
             public int Rock;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         private readonly struct ChunkKey : IEquatable<ChunkKey>
         {
+            public readonly int TileX;
+            public readonly int TileZ;
+            public readonly int ChunkX;
+            public readonly int ChunkZ;
+
             public ChunkKey(int tileX, int tileZ, int chunkX, int chunkZ)
             {
                 TileX = tileX;
@@ -931,11 +944,6 @@ namespace Hecton8.World
                 ChunkX = chunkX;
                 ChunkZ = chunkZ;
             }
-
-            public int TileX { get; }
-            public int TileZ { get; }
-            public int ChunkX { get; }
-            public int ChunkZ { get; }
 
             public bool Equals(ChunkKey other)
             {
@@ -1019,24 +1027,26 @@ namespace Hecton8.World
             }
 
             /// <summary>R16 height samples, row-major, resolution squared.</summary>
-            public NativeArray<ushort> HeightSamples { get; }
+            public readonly NativeArray<ushort> HeightSamples;
 
             /// <summary>World-space minimum corner of the terrain tile.</summary>
-            public Vector3 TerrainPosition { get; }
+            public readonly Vector3 TerrainPosition;
 
             /// <summary>World-space size of the terrain tile.</summary>
-            public Vector3 TerrainSize { get; }
+            public readonly Vector3 TerrainSize;
 
             /// <summary>Heightmap resolution used by the active native payload.</summary>
-            public int HeightmapResolution { get; }
+            public readonly int HeightmapResolution;
 
             /// <summary>Authoritative cache revision for the resolved tile.</summary>
-            public int CacheRevision { get; }
+            public readonly int CacheRevision;
 
-            public bool IsValid =>
-                HeightSamples.IsCreated &&
-                HeightmapResolution > 1 &&
-                HeightSamples.Length >= HeightmapResolution * HeightmapResolution;
+            public static bool IsValid(in TerrainHeightSamplePayload payload)
+            {
+                return payload.HeightSamples.IsCreated &&
+                       payload.HeightmapResolution > 1 &&
+                       payload.HeightSamples.Length >= payload.HeightmapResolution * payload.HeightmapResolution;
+            }
         }
 
         private struct TileNativeCacheBuffer
@@ -1077,7 +1087,7 @@ namespace Hecton8.World
             public bool TerrainHolesDirty;
             public bool TerrainHolesJobScheduled;
             public JobHandle TerrainHolesJobHandle;
-            public NativeArray<bool> TerrainHoleMaskNative;
+            public NativeArray<byte> TerrainHoleMaskNative;
             public bool[,] TerrainHoleMaskManaged;
             public TileNativeCacheBuffer PrimaryCacheBuffer;
             public TileNativeCacheBuffer SecondaryCacheBuffer;
@@ -1096,8 +1106,19 @@ namespace Hecton8.World
         /// <summary>
         /// Shared Voronoi/Worley parameters used by vegetation generation and external sargassum systems.
         /// </summary>
+        [StructLayout(LayoutKind.Sequential, Size = 40)]
         public readonly struct FloatingLabyrinthConfig
         {
+            public readonly Vector2 FlowDirection;
+            public readonly float PatchThreshold;
+            public readonly float PatchNoiseScale;
+            public readonly float CellSize;
+            public readonly float SecondaryCellSize;
+            public readonly float WallWidth;
+            public readonly float WarpMeters;
+            public readonly float FlowAnisotropy;
+            private readonly uint _pad0;
+
             public FloatingLabyrinthConfig(
                 float patchThreshold,
                 float patchNoiseScale,
@@ -1116,16 +1137,8 @@ namespace Hecton8.World
                 WarpMeters = warpMeters;
                 FlowDirection = flowDirection;
                 FlowAnisotropy = flowAnisotropy;
+                _pad0 = 0u;
             }
-
-            public float PatchThreshold { get; }
-            public float PatchNoiseScale { get; }
-            public float CellSize { get; }
-            public float SecondaryCellSize { get; }
-            public float WallWidth { get; }
-            public float WarpMeters { get; }
-            public Vector2 FlowDirection { get; }
-            public float FlowAnisotropy { get; }
         }
 
         /// <summary>
@@ -1184,8 +1197,17 @@ namespace Hecton8.World
         /// <summary>
         /// Zero-allocation density query result for gameplay physics, locomotion and audio systems.
         /// </summary>
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         public readonly struct VegetationDensitySample
         {
+            public readonly float Density;
+            public readonly HectonVegetationInstanceType Type;
+            public readonly VegetationSemanticType SemanticType;
+            public readonly VegetationBiomeLayer BiomeLayer;
+            public readonly VegetationAcousticType AcousticType;
+            public readonly byte HasVegetation;
+            private readonly uint _pad0;
+
             public VegetationDensitySample(
                 bool hasVegetation,
                 HectonVegetationInstanceType type,
@@ -1194,20 +1216,14 @@ namespace Hecton8.World
                 VegetationAcousticType acousticType,
                 float density)
             {
-                HasVegetation = hasVegetation;
+                HasVegetation = hasVegetation ? (byte)1 : (byte)0;
                 Type = type;
                 SemanticType = semanticType;
                 BiomeLayer = biomeLayer;
                 AcousticType = acousticType;
                 Density = density;
+                _pad0 = 0u;
             }
-
-            public bool HasVegetation { get; }
-            public HectonVegetationInstanceType Type { get; }
-            public VegetationSemanticType SemanticType { get; }
-            public VegetationBiomeLayer BiomeLayer { get; }
-            public VegetationAcousticType AcousticType { get; }
-            public float Density { get; }
         }
 
         private struct ChunkPayload
@@ -1258,28 +1274,50 @@ namespace Hecton8.World
             public int IsValid;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct TerrainHoleRecord
         {
-            public int HoleId;
-            public float Y;
+            [FieldOffset(0)]
             public float X;
+            [FieldOffset(4)]
+            public float Y;
+            [FieldOffset(8)]
             public float Z;
+            [FieldOffset(12)]
             public float Radius;
+            [FieldOffset(16)]
             public float RadiusSq;
+            [FieldOffset(20)]
+            public int HoleId;
+            [FieldOffset(24)]
             public TerrainHoleSourceType SourceType;
+            [FieldOffset(25)]
+            private byte _pad0;
+            [FieldOffset(26)]
+            private byte _pad1;
+            [FieldOffset(27)]
+            private byte _pad2;
+            [FieldOffset(28)]
+            private byte _pad3;
+            [FieldOffset(29)]
+            private byte _pad4;
+            [FieldOffset(30)]
+            private byte _pad5;
+            [FieldOffset(31)]
+            private byte _pad6;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct TerrainHoleMaskBuildJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<TerrainHoleRecord> TerrainHoles;
+            [ReadOnly, NoAlias] public NativeArray<TerrainHoleRecord> TerrainHoles;
             public int TerrainHoleCount;
             public int Resolution;
             public float TerrainOriginX;
             public float TerrainOriginZ;
             public float TerrainSizeX;
             public float TerrainSizeZ;
-            public NativeArray<bool> Output;
+            [WriteOnly, NoAlias] public NativeArray<byte> Output;
 
             public void Execute(int index)
             {
@@ -1309,7 +1347,7 @@ namespace Hecton8.World
                     break;
                 }
 
-                Output[index] = hasTerrain;
+                Output[index] = (byte)(hasTerrain ? 1 : 0);
             }
         }
 
@@ -2729,7 +2767,7 @@ namespace Hecton8.World
                 state.TerrainSize,
                 state.HeightmapResolution,
                 state.CacheRevision);
-            return payload.IsValid;
+            return TerrainHeightSamplePayload.IsValid(in payload);
         }
 
         /// <summary>
@@ -3025,7 +3063,7 @@ namespace Hecton8.World
         public bool TryGetActiveArtificialInteriorState(out ArtificialInteriorState state)
         {
             state = _activeArtificialInteriorState;
-            return state.IsActive;
+            return state.IsActive != 0;
         }
         /// Samples biomass density immediately on the main thread from the current resident chunk-density snapshot.
         /// </summary>
@@ -4177,7 +4215,7 @@ namespace Hecton8.World
             ShiftHLODRegistrySnapshots(appliedOffset);
             ShiftAbyssalPathSnapshot(appliedOffset);
             ShiftMegaWreckSnapshot(appliedOffset);
-            if (_activeArtificialInteriorState.IsActive)
+            if (_activeArtificialInteriorState.IsActive != 0)
             {
                 Bounds shiftedBounds = _activeArtificialInteriorState.Bounds;
                 shiftedBounds.center += appliedOffset;

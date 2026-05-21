@@ -125,10 +125,23 @@ namespace Hecton8.Celestial
         private const byte PlanetPhaseChangedEventType = 4;
         private const int ExpectedPendingEventCapacity = 8;
         private const int ListenerCapacity = 8;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        private static readonly RegistryBucket<ICelestialEventListener> _listeners = new RegistryBucket<ICelestialEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public ICelestialEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - celestial listeners drained by SystemDispatcher without interface array dispatch - owner: CelestialEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<CelestialEventPayload> _pendingEvents;
         private static NativeQueue<CelestialEventPayload> _nextFrameEvents;
+        private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -159,7 +172,10 @@ namespace Hecton8.Celestial
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
@@ -174,8 +190,8 @@ namespace Hecton8.Celestial
         /// </summary>
         public static void Register(ICelestialEventListener listener)
         {
-            if (listener != null && !_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (listener != null)
+                RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -183,8 +199,8 @@ namespace Hecton8.Celestial
         /// </summary>
         public static void Unregister(ICelestialEventListener listener)
         {
-            if (listener != null && _listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (listener != null)
+                TryUnregisterImmediate(listener);
         }
 
         /// <summary>Queues an eclipse-start signal.</summary>
@@ -202,7 +218,7 @@ namespace Hecton8.Celestial
         /// <summary>Queues or coalesces a sun-angle signal.</summary>
         public static void RaiseSunAngleChanged(float angleDegrees)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             _latestSunAngleDegrees = angleDegrees;
@@ -216,7 +232,7 @@ namespace Hecton8.Celestial
         /// <summary>Queues or coalesces a planet-phase signal.</summary>
         public static void RaisePlanetPhaseChanged(float phase)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             _latestPlanetPhase = phase;
@@ -268,7 +284,7 @@ namespace Hecton8.Celestial
 
         private static bool Enqueue(byte eventType)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return false;
 
             EnsureInitialized();
@@ -290,14 +306,13 @@ namespace Hecton8.Celestial
 
         private static void Dispatch(in CelestialEventPayload payload)
         {
-            ICelestialEventListener[] rawListeners = _listeners.RawArray;
-            int listenerCount = _listeners.Count;
+            int listenerCount = _listenerCount;
             switch (payload.EventType)
             {
                 case EclipseStartedEventType:
                     for (int i = listenerCount - 1; i >= 0; i--)
                     {
-                        ICelestialEventListener listener = rawListeners[i];
+                        ICelestialEventListener listener = _listeners[i].Listener;
                         if (listener != null)
                             listener.OnCelestialEclipseStarted();
                     }
@@ -305,7 +320,7 @@ namespace Hecton8.Celestial
                 case EclipseEndedEventType:
                     for (int i = listenerCount - 1; i >= 0; i--)
                     {
-                        ICelestialEventListener listener = rawListeners[i];
+                        ICelestialEventListener listener = _listeners[i].Listener;
                         if (listener != null)
                             listener.OnCelestialEclipseEnded();
                     }
@@ -314,7 +329,7 @@ namespace Hecton8.Celestial
                     _sunAngleQueued = false;
                     for (int i = listenerCount - 1; i >= 0; i--)
                     {
-                        ICelestialEventListener listener = rawListeners[i];
+                        ICelestialEventListener listener = _listeners[i].Listener;
                         if (listener != null)
                             listener.OnCelestialSunAngleChanged(_latestSunAngleDegrees);
                     }
@@ -323,12 +338,42 @@ namespace Hecton8.Celestial
                     _planetPhaseQueued = false;
                     for (int i = listenerCount - 1; i >= 0; i--)
                     {
-                        ICelestialEventListener listener = rawListeners[i];
+                        ICelestialEventListener listener = _listeners[i].Listener;
                         if (listener != null)
                             listener.OnCelestialPlanetPhaseChanged(_latestPlanetPhase);
                     }
                     break;
             }
+        }
+
+        private static void RegisterImmediate(ICelestialEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
+        }
+
+        private static bool TryUnregisterImmediate(ICelestialEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                _listenerCount--;
+                _listeners[i] = _listeners[_listenerCount];
+                _listeners[_listenerCount].Clear();
+                return true;
+            }
+
+            return false;
         }
 
         private static void EnsureInitialized()
@@ -340,7 +385,7 @@ namespace Hecton8.Celestial
             }
             else
             {
-                _pendingEvents = new NativeQueue<CelestialEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CelestialEventPayload>[8] - deferred celestial event lane flushed by SystemDispatcher - owner: CelestialEvents
+                _pendingEvents = new NativeQueue<CelestialEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<CelestialEventPayload>[8] - deferred celestial event lane flushed by SystemDispatcher - owner: CelestialEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     ExpectedPendingEventCapacity,
@@ -352,7 +397,7 @@ namespace Hecton8.Celestial
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<CelestialEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CelestialEventPayload>[8] - next-frame celestial event lane prevents same-frame reentrant dispatch - owner: CelestialEvents
+                _nextFrameEvents = new NativeQueue<CelestialEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<CelestialEventPayload>[8] - next-frame celestial event lane prevents same-frame reentrant dispatch - owner: CelestialEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     ExpectedPendingEventCapacity,
@@ -450,7 +495,7 @@ namespace Hecton8.Celestial
         public static bool TryGetCurrentAtmosphericLightingState(out AtmosphericLightingState state)
         {
             state = _currentAtmosphericLightingState;
-            return _hasAtmosphericLightingState && state.IsValid;
+            return _hasAtmosphericLightingState && state.IsValid != 0;
         }
         // Configuration
 
@@ -3367,7 +3412,7 @@ namespace Hecton8.Celestial
 
             return new AtmosphericLightingState
             {
-                IsValid = true,
+                IsValid = 1,
                 SunElevationDegrees = _currentSunAngle,
                 SkyExposure = Mathf.Max(0f, exposureBase),
                 FogDensity = fogDensity,
@@ -3445,9 +3490,9 @@ namespace Hecton8.Celestial
         {
             _surfaceAtmosphericLightingState = state;
             _currentAtmosphericLightingState = state;
-            _hasAtmosphericLightingState = state.IsValid;
+            _hasAtmosphericLightingState = state.IsValid != 0;
 
-            if (!state.IsValid)
+            if (state.IsValid == 0)
                 return;
 
             if (!RenderSettings.fog || RenderSettings.fogMode != FogMode.ExponentialSquared)
@@ -4319,7 +4364,7 @@ namespace Hecton8.Celestial
 
         private double ResolveSynchronizedUniverseTimeSeconds()
         {
-            double universeTime = Application.isPlaying ? GlobalRegistry.AbsoluteUniverseTime : Time.timeAsDouble;
+            double universeTime = Time.timeAsDouble;
             if (double.IsNaN(universeTime) || double.IsInfinity(universeTime) || universeTime < 0d)
                 universeTime = 0d;
 
@@ -5099,7 +5144,7 @@ namespace Hecton8.Celestial
 
         private void ApplySkyMaterialHazeProperties(Material targetMaterial)
         {
-            AtmosphericLightingState state = _surfaceAtmosphericLightingState.IsValid
+            AtmosphericLightingState state = _surfaceAtmosphericLightingState.IsValid != 0
                 ? _surfaceAtmosphericLightingState
                 : BuildSurfaceAtmosphericLightingState();
 
@@ -5612,7 +5657,7 @@ namespace Hecton8.Celestial
             if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 playerAup = snapshot.Aup;
-                return MathGuard.IsFinite(in playerAup);
+                return playerAup.IsFinite();
             }
 
             HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
@@ -5620,7 +5665,7 @@ namespace Hecton8.Celestial
                 return false;
 
             playerAup = playerMovement.CurrentAup;
-            return MathGuard.IsFinite(in playerAup);
+            return playerAup.IsFinite();
         }
 
         private bool TryResolvePlayerRuntimePosition(out Vector3 runtimePosition)

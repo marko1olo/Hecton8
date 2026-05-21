@@ -1,4 +1,7 @@
+using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 internal static class VoxelRuntimeIntegrityUtility
@@ -23,11 +26,35 @@ internal static class VoxelRuntimeIntegrityUtility
         Vector3 observerPosition,
         float lodDistanceMeters)
     {
-        AbsoluteUniversePosition worldCenterAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);
-        AbsoluteUniversePosition observerAup = AbsoluteUniversePosition.FromRuntimePosition(observerPosition);
+        if (!TryResolveAupFromRuntimeOrigin(worldCenter, out AbsoluteUniversePosition worldCenterAup) ||
+            !TryResolveAupFromRuntimeOrigin(observerPosition, out AbsoluteUniversePosition observerAup))
+        {
+            return 1;
+        }
+
         double distanceSq = AbsoluteUniversePosition.DistanceSq(in worldCenterAup, in observerAup);
         double thresholdSq = (double)lodDistanceMeters * lodDistanceMeters;
         return distanceSq > thresholdSq ? 1 : 0;
+    }
+
+    private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+    {
+        absoluteAup = default;
+        if (!float.IsFinite(runtimePosition.x) ||
+            !float.IsFinite(runtimePosition.y) ||
+            !float.IsFinite(runtimePosition.z))
+        {
+            return false;
+        }
+
+        AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+        if (!originAup.IsFinite())
+            return false;
+
+        absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+            in originAup,
+            new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+        return absoluteAup.IsFinite();
     }
 
     internal static bool ResolveFixedPoolExhausted(int inUseCount, int capacity)

@@ -1,0 +1,75 @@
+<SELF_AUDIT agent="SHINOBU_235" domain="DEEP_SEA_NOIR_POST_PROCESSOR" status="PENDING_VERIFICATION" evidence="STATIC_SOURCE">
+  <prompt source="Docs/Tasks/CURRENT_BATCH.md" extracted="true" task_count="20" />
+  <task_reconciliation>
+    <task id="01" name="POST_PROCESS_VOLUME_ERADICATION" result="PASS">Scoped prefab/rendering/visor Volume route removed. Project-wide scene/URP/UI Volume residue remains outside SHINOBU_235 scope and is reported as out-of-domain residue.</task>
+    <task id="02" name="STRING_BASED_SHADER_PARAMETER_PURGE" result="PASS">Active Noir route binds one CBuffer; scoped string setter scan reports zero Material.Set*(string) and Shader.SetGlobal*(string) hits.</task>
+    <task id="03" name="CS1612_METADATA_STATE_ANNIHILATION" result="PASS">Noir hot DTOs use explicit raw public fields; no hot mutable properties were introduced.</task>
+    <task id="04" name="ARM64_NOIR_LAYOUT_VALIDATION" result="PASS">Primary Noir DTOs are explicit 64-byte structs with 16-byte float4 lanes.</task>
+    <task id="05" name="EMERGENCY_MOCK_STRESS_DATA" result="PASS">Burst mock input writer fills the same Vault input DTO when owner snapshots are absent.</task>
+    <task id="06" name="BURST_PARAMETER_BLENDING_KERNEL" result="PASS">`CalculateNoirParametersJob` is Burst Fast/Standard and uses NoAlias raw pointers from Vault NativeArray views.</task>
+    <task id="07" name="THE_DEAR_LIE_VISOR_GLITCH" result="PASS">Glitch is a shader-side block/triangle/hash fake, not CPU physics or particles.</task>
+    <task id="08" name="ACES_TONEMAPPING_INTEGRATION" result="PASS">Fitted ACES is in `Hecton_VisorGlitchACES.shader`; URP Volume ACES is bypassed for the active Noir route.</task>
+    <task id="09" name="ASYNCHRONOUS_GPU_BUFFER_UPLOAD" result="PASS">Constants use double GraphicsBuffer CBuffers and dirty-only LockBufferForWrite/MemCpy upload.</task>
+    <task id="10" name="CONTINUOUS_SCALABILITY_ALU_CULLING" result="PASS">GlobalQualityWeight drives continuous curves for grain, chroma, glitch, cadence, and profile lookup; no binary hardware tier switch.</task>
+    <task id="11" name="RENDER_GRAPH_FULLSCREEN_PASS" result="PASS">Noir uses one RenderGraph raster pass, imports the constant buffer, declares UseBuffer(Read), reads source color, and writes camera color.</task>
+    <task id="12" name="AUP_PRECISION_NOISE_WRAPPING" result="PASS">CPU writes wrapped 0..1000 time into CBuffer; shader scan reports `_Time=0`.</task>
+    <task id="13" name="ROLLBACK_NETCODE_ISOLATION" result="PASS">Noir input is presentation-only and documented outside save/rollback authority.</task>
+    <task id="14" name="ZERO_INIT_OVERHEAD_BYPASS" result="PASS">Cold scratch buffers use UninitializedMemory where deterministic zero is not required; telemetry/profile rings are bounded.</task>
+    <task id="15" name="TELEMETRY_RENDERING_RECORDER" result="PASS">300-entry Noir telemetry ring and NaN dump path to `Docs/AgentLogs/Dump_SHINOBU_235.bin` exist.</task>
+    <task id="16" name="NOIR_AESTHETICS_TUNER_WINDOW" result="PASS">Editor tuner exists and updates managed labels only on quantized display change.</task>
+    <task id="17" name="CSV_COLOR_PROFILES_INGESTOR" result="PASS">CSV bridge uses cold byte-cursor parsing into Vault arrays. NativeHashMap was rejected because current IDataVault exposes NativeArray-style ownership only.</task>
+    <task id="18" name="LIVE_A_B_SPLIT_GIZMO" result="PASS">A/B split is a CBuffer scalar consumed branchlessly in shader.</task>
+    <task id="19" name="ARCHITECTURAL_METRIC_VALIDATOR" result="PASS">`Volume_Component_Inquisition` writes `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` and preserves scoped proof fields.</task>
+    <task id="20" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" result="PASS_STATIC_ONLY">This file, Status, Rationale, LOG, route card, ledger, and JSON report carry the proof. Unity import/profiler proof remains pending.</task>
+  </task_reconciliation>
+  <struct_layouts>
+    <struct name="NoirPostProcessDTO" size="64" alignment="16">
+      <field name="GrainParams" offset="0" size="16" />
+      <field name="AberrationParams" offset="16" size="16" />
+      <field name="ColorGrading" offset="32" size="16" />
+      <field name="QualityAndLimits" offset="48" size="16" />
+      <padding bytes="0" proof="4x16=64" />
+    </struct>
+    <struct name="NoirPostProcessInputDTO" size="64" alignment="8">
+      <fields offsets="0:Stress01,4:DepthMeters,8:Toxicity01,12:Narcosis01,16:Supersaturation01,20:GlobalQualityWeight01,24:TimeSecondsWrapped,28:FrameIndex,32:AbSplit01,36:Flags,40:SourceHash,44:Reserved0,48:Reserved1,52:Reserved2,56:Reserved3,60:Reserved4" />
+    </struct>
+    <struct name="NoirPostProcessTuningDTO" size="64" alignment="16">
+      <fields offsets="0:BaseParams,16:GradeParams,32:StressResponse,48:ProfileParams" />
+    </struct>
+    <struct name="NoirTelemetryEntry" size="64" alignment="8">
+      <fields offsets="0:FrameIndex,4:Flags,8:Stress01,12:DepthMeters,16:Toxicity01,20:GlobalQualityWeight01,24:EstimatedGpuMs,28:ConstantsHash,32:WrappedTimeSeconds,36:AbSplit01,40:Reserved0,44:Reserved1,48:Reserved2,52:Reserved3,56:Reserved4,60:Reserved5" />
+    </struct>
+    <struct name="NoirColorProfileDTO" size="64" alignment="16">
+      <fields offsets="0:ProfileHash,4:MinDepthMeters,8:MaxDepthMeters,12:MinStress01,16:MaxStress01,20:MinToxicity01,24:MaxToxicity01,28:Weight,32:GradeParams,48:ResponseParams" />
+    </struct>
+  </struct_layouts>
+  <scalability_curve>
+    Below quality 0.3, highDetail01 smoothly trends to zero, chroma/glitch offsets collapse through polynomial masks, profile lookup cadence stretches toward 18 frames, and the shader keeps one camera sample with cheap hash grain plus ACES/tint/vignette. Mid quality ramps masks without variants. Ultra quality spends more ALU on visible grain/glitch/chroma intensity through the same CBuffer layout.
+  </scalability_curve>
+  <vault_status private_arrays="zero_persistent_runtime">
+    <handle id="71040" name="NoirConstants" owner_tag="SystemID.GraphicsScalability" />
+    <handle id="71041" name="NoirInput" owner_tag="SystemID.GraphicsScalability" />
+    <handle id="71042" name="NoirTuning" owner_tag="SystemID.GraphicsScalability" />
+    <handle id="71043" name="NoirTelemetry" owner_tag="SystemID.GraphicsScalability" count="300" />
+    <handle id="71044" name="NoirCsvScratch" owner_tag="SystemID.GraphicsScalability" />
+    <handle id="71045" name="NoirColorProfiles" owner_tag="SystemID.GraphicsScalability" />
+  </vault_status>
+  <dependency_graph>
+    <consume>Phase-local GlobalDataVault NativeArray views for input, tuning, constants, telemetry, and profiles.</consume>
+    <consume>Cached IPlayerRuntimeContext movement/survival snapshots; `TryGetActiveRuntimeContext` is read-only after patch.</consume>
+    <produce>Imported RenderGraph CBuffer read dependency and camera color output.</produce>
+    <jobs>One-row `IJob.Run()` kernels are immediate to avoid scheduling tiny jobs; NoAlias is applied to non-overlapping raw pointer fields.</jobs>
+  </dependency_graph>
+  <compile_guard>
+    Noir partial carries no `Hecton8.Physics`, `HectonFluidEngine`, `HectonSurvivalSystem`, or `HectonPlayerMovement` references. Legacy non-Noir visor code still has pre-existing Gameplay/Physics references outside the active SHINOBU route.
+  </compile_guard>
+  <dear_lie>
+    Stress/depth visuals are optical shader fakes: fitted ACES, one-hash grain, block/triangle glitch, and channel-phase chroma from one source sample. Rejected physical fog, particles, deformation, and multi-tap chromatic aberration. Complexity moved from CPU/object simulation O(n objects or particles) to O(pixels) single fullscreen shader pass with one texture sample.
+  </dear_lie>
+  <verification>
+    <static_scan shader_if="0" shader_time="0" post_process_volume_in_shader="0" multi_compile="0" shader_feature="0" source_samples="1" hash21_occurrences_including_definition="4" />
+    <static_scan string_shader_setters_in_shinobu_route="0" />
+    <json_report parsed="true" status="SHINOBU_235_SCOPED_MANAGED_POST_PROCESSING_ERADICATED_STATIC_SOURCE_RUNTIME_PENDING" />
+    <build launched="false" reason="CPU_LOAD=100 and unrelated missing Assets/_Project/Scripts/Gameplay/HectonScannerProjectionState.cs blocker" />
+  </verification>
+</SELF_AUDIT>

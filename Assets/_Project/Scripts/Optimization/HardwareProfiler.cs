@@ -38,23 +38,23 @@ namespace Hecton8.Optimization
                 SystemMemoryMegabytes = systemMemoryMegabytes;
                 ProcessorCount = processorCount;
                 HardwareScore = hardwareScore;
-                ForceLowTier = forceLowTier;
+                ForceLowTier = forceLowTier ? (byte)1 : (byte)0;
             }
 
             /// <summary>Detected graphics memory in megabytes.</summary>
-            public int GraphicsMemoryMegabytes { get; }
+            public readonly int GraphicsMemoryMegabytes;
 
             /// <summary>Detected system memory in megabytes.</summary>
-            public int SystemMemoryMegabytes { get; }
+            public readonly int SystemMemoryMegabytes;
 
             /// <summary>Detected logical CPU core count.</summary>
-            public int ProcessorCount { get; }
+            public readonly int ProcessorCount;
 
             /// <summary>Deterministic 0-100 BIOS hardware score.</summary>
-            public int HardwareScore { get; }
+            public readonly int HardwareScore;
 
-            /// <summary>True when the hardware matrix must lock Low tier and Low math precision.</summary>
-            public bool ForceLowTier { get; }
+            /// <summary>1 when the BIOS benchmark requests a conservative startup tier.</summary>
+            public readonly byte ForceLowTier;
         }
 
         /// <summary>

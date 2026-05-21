@@ -6,7 +6,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.Gameplay.Loot.Contracts
 {
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct LootMagnetJob : IJobParallelFor
     {
         public AbsoluteUniversePosition PlayerAup;
@@ -15,14 +15,13 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public float PullStrength;
         public float MaxVelocityMetersPerSecond;
         public uint Frame;
-        public byte LowTierMode;
 
-        public NativeArray<AbsoluteUniversePosition> EntityAups;
-        public NativeArray<uint> EntityFlags;
-        public NativeArray<float3> EntityVelocities;
-        [ReadOnly] public NativeArray<uint> EntityItemHashes;
-        [ReadOnly] public NativeArray<ushort> EntityQuantities;
-        public NativeArray<LootMagnetSignalEvent> SignalEvents;
+        [NoAlias] public NativeArray<AbsoluteUniversePosition> EntityAups;
+        [NoAlias] public NativeArray<uint> EntityFlags;
+        [NoAlias] public NativeArray<float3> EntityVelocities;
+        [ReadOnly, NoAlias] public NativeArray<uint> EntityItemHashes;
+        [ReadOnly, NoAlias] public NativeArray<ushort> EntityQuantities;
+        [WriteOnly, NoAlias] public NativeArray<LootMagnetSignalEvent> SignalEvents;
 
         public void Execute(int index)
         {
@@ -91,49 +90,6 @@ namespace Hecton8.Gameplay.Loot.Contracts
             }
 
             float3 velocity = EntityVelocities[index];
-            if (LowTierMode != 0)
-            {
-                float alpha = math.saturate(LootMagnetConstants.LowTierLerpRate * safeDeltaTime);
-                float3 step = toPlayer * alpha;
-                float maxStep = maxVelocityMetersPerSecond * safeDeltaTime;
-                float stepSq = math.lengthsq(step);
-                if (stepSq > maxStep * maxStep)
-                {
-                    step *= math.rsqrt(math.max(stepSq, LootMagnetConstants.MinRsqrtDistanceSq)) * maxStep;
-                }
-
-                velocity = step * math.rcp(safeDeltaTime);
-                if (!math.all(math.isfinite(velocity)))
-                {
-                    EntityVelocities[index] = float3.zero;
-                    EntityFlags[index] = flags | LootEntityFlags.NonFinite;
-                    return;
-                }
-
-                AbsoluteUniversePosition lowTierAup = OffsetAup(in lootAup, step);
-                if (!IsFiniteAup(in lowTierAup))
-                {
-                    EntityVelocities[index] = float3.zero;
-                    EntityFlags[index] = flags | LootEntityFlags.NonFinite;
-                    return;
-                }
-
-                EntityVelocities[index] = velocity;
-                EntityAups[index] = lowTierAup;
-                EntityFlags[index] = flags | LootEntityFlags.Pulling | LootEntityFlags.LowTierLerp;
-                if ((index & (LootMagnetConstants.PresentationSignalStride - 1)) == 0)
-                {
-                    WriteSignalEvent(
-                        index,
-                        lowTierAup,
-                        velocity,
-                        distSq,
-                        LootMagnetEventFlags.Acoustic | LootMagnetEventFlags.Wake);
-                }
-
-                return;
-            }
-
             float safeRsqrtDistSq = math.max(distSq, LootMagnetConstants.MinRsqrtDistanceSq);
             float safeForceDistSq = math.max(distSq, LootMagnetConstants.MinForceDistanceSq);
             float3 dir = toPlayer * math.rsqrt(safeRsqrtDistSq);

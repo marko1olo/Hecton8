@@ -1213,7 +1213,16 @@ namespace Hecton8.World.Outposts
                 _publishedPowerGridHandle = 0u;
             }
 
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(_generationOrigin.x, _generationOrigin.y, _generationOrigin.z));
+            if (!TryResolveGenerationOriginAup(out AbsoluteUniversePosition originAup))
+            {
+                _publishedPowerGridHandle = 0u;
+                _generatedSignalReplayFrames = 0;
+                _generatedSignalHeartbeatFrames = GeneratedSignalHeartbeatFrames;
+                WriteTelemetry(MarauderOutpostConstants.FaultFlag);
+                DumpBlackBox();
+                return false;
+            }
+
             WfcOutpostGridDescriptor descriptor = new WfcOutpostGridDescriptor
             {
                 OriginAup = new MacroDatabaseAup
@@ -1288,9 +1297,12 @@ namespace Hecton8.World.Outposts
 
         private void PublishGeneratedSignalForHandle()
         {
+            if (!TryResolveGenerationOriginAup(out AbsoluteUniversePosition originAup))
+                return;
+
             WfcOutpostGeneratedSignal signal = new WfcOutpostGeneratedSignal
             {
-                OriginAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(_generationOrigin.x, _generationOrigin.y, _generationOrigin.z)),
+                OriginAup = originAup,
                 SectorHash = _activeSectorHash,
                 GridHandle = _publishedPowerGridHandle,
                 GenerationSequence = _generationSequence,
@@ -1575,6 +1587,29 @@ namespace Hecton8.World.Outposts
         {
             return !float.IsNaN(value.x) && !float.IsNaN(value.y) && !float.IsNaN(value.z) &&
                    !float.IsInfinity(value.x) && !float.IsInfinity(value.y) && !float.IsInfinity(value.z);
+        }
+
+        private bool TryResolveGenerationOriginAup(out AbsoluteUniversePosition originAup)
+        {
+            return TryResolveAupFromRuntimeOrigin(
+                new Vector3(_generationOrigin.x, _generationOrigin.y, _generationOrigin.z),
+                out originAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return aup.IsFinite();
         }
 
         private static bool IsWithinAupShiftLimit(float3 shiftMeters)

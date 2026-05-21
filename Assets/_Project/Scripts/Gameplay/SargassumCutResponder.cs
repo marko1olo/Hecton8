@@ -16,7 +16,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Sargassum Cut Responder")]
-    public sealed class SargassumCutResponder : MonoBehaviour, ITickable, IUpdatable
+    public sealed class SargassumCutResponder : MonoBehaviour
     {
         [Header("── Runtime Bindings ───────────────────")]
         [Tooltip("Legacy renderer list retained for prefab compatibility. Cut response is routed through SargassumCutManager global mask publishing.")]
@@ -47,11 +47,13 @@ namespace Hecton8.Gameplay
         [SerializeField] private Vector3 _debugCutPosition;
         [SerializeField] private float _debugParticleCooldown;
 
-        private bool _registered;
         private float _cutStrength;
         private float _cutRadius;
-        private float _particleCooldownRemaining;
         private Vector3 _cutPositionWS;
+        private SargassumCutManager _cachedCutManager;
+        private AbsoluteUniversePosition _cachedRuntimeOriginAup;
+        private bool _hasCachedRuntimeOriginAup;
+        private uint _nextDebrisFrame;
 
         /// <summary>
         /// Binds the renderers and optional debris particle system used by this responder.
@@ -77,19 +79,16 @@ namespace Hecton8.Gameplay
 
             _cutPositionWS = positionWS;
             _cutRadius = math.lerp(minCutRadius, maxCutRadius, normalizedSpeed);
-            _cutStrength = math.max(_cutStrength, math.lerp(0.5f, 1f, normalizedSpeed));
+            _cutStrength = math.lerp(0.5f, 1f, normalizedSpeed);
             PublishCutMask(positionWS, velocityWS);
 
-            if (_registered)
-                return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-
-            if (_particleCooldownRemaining <= 0f)
+            uint frame = ResolveFrameId();
+            if (frame >= _nextDebrisFrame)
             {
-                double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(positionWS);
+                if (!RefreshCachedRuntimeOriginAup() ||
+                    !TryResolveRuntimeAup(positionWS, out AbsoluteUniversePosition positionAup))
+                    return;
+
                 float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
                 ushort quantity = (ushort)math.clamp(
                     (int)(math.lerp(baseDebrisCount, baseDebrisCount * 2.2f, normalizedSpeed) * math.lerp(0.35f, 1.4f, quality) + 0.5f),
@@ -97,7 +96,7 @@ namespace Hecton8.Gameplay
                     ushort.MaxValue);
                 DebrisSpawnSignal debris = new DebrisSpawnSignal
                 {
-                    PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(absolute),
+                    PositionAup = positionAup,
                     SpeciesHash = 0x53415247u,
                     SourceEntityId = 0u,
                     Intensity01 = normalizedSpeed,
@@ -106,64 +105,77 @@ namespace Hecton8.Gameplay
                     Quantity = quantity
                 };
                 SignalBus<DebrisSpawnSignal>.TryPush(in debris);
-                _particleCooldownRemaining = particleCooldown;
+                _nextDebrisFrame = frame + ResolveCooldownFrames(particleCooldown);
             }
 
             _debugCutStrength = _cutStrength;
             _debugCutRadius = _cutRadius;
             _debugCutPosition = _cutPositionWS;
+            _debugParticleCooldown = EstimateCooldownSeconds(frame, _nextDebrisFrame);
         }
 
-        /// <summary>
-        /// Advances the cut-mask recovery state.
-        /// </summary>
-        /// <param name="deltaTime">Gameplay tick delta time.</param>
-        public void Tick(float deltaTime)
+        private bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
-            if (_particleCooldownRemaining > 0f)
-            {
-                _particleCooldownRemaining -= deltaTime;
-                if (_particleCooldownRemaining < 0f)
-                    _particleCooldownRemaining = 0f;
-            }
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
 
-            if (_cutStrength <= 0.001f)
-            {
-                _cutStrength = 0f;
-                _cutRadius = minCutRadius;
-                ApplyCutState();
-                UnregisterIfNeeded();
-                return;
-            }
+            AbsoluteUniversePosition originAup = _cachedRuntimeOriginAup;
+            if (!_hasCachedRuntimeOriginAup)
+                return false;
 
-            float blendT = FastRecoveryBlend(cutRecoverySpeed, deltaTime);
-            _cutStrength = math.lerp(_cutStrength, 0f, blendT);
-            ApplyCutState();
+            if (!originAup.IsFinite())
+                return false;
 
-            _debugCutStrength = _cutStrength;
-            _debugCutRadius = _cutRadius;
-            _debugCutPosition = _cutPositionWS;
-            _debugParticleCooldown = _particleCooldownRemaining;
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
-        private static float FastRecoveryBlend(float recoverySpeed, float deltaTime)
+        private static uint ResolveFrameId()
         {
-            float x = math.max(0.01f, recoverySpeed) * math.max(0f, deltaTime);
-            return math.saturate((x * (6f + x)) / (6f + (4f * x) + (x * x)));
+            uint currentFrame = TimeSliceScheduler.CurrentFrameId;
+            return currentFrame > 0 ? (uint)currentFrame : 1u;
+        }
+
+        private static uint ResolveCooldownFrames(float cooldownSeconds)
+        {
+            float safeCooldown = math.max(0.01f, cooldownSeconds);
+            return (uint)math.max(1, (int)math.ceil(safeCooldown * 60f));
+        }
+
+        private static float EstimateCooldownSeconds(uint currentFrame, uint nextFrame)
+        {
+            if (nextFrame <= currentFrame)
+                return 0f;
+
+            return (nextFrame - currentFrame) * (1f / 60f);
         }
 
         private void Awake()
         {
+            CacheColdDependencies();
+            RefreshCachedRuntimeOriginAup();
             ApplyCutState();
+        }
+
+        private void OnEnable()
+        {
+            CacheColdDependencies();
+            RefreshCachedRuntimeOriginAup();
         }
 
         private void OnDisable()
         {
             _cutStrength = 0f;
             _cutRadius = minCutRadius;
-            _particleCooldownRemaining = 0f;
+            _nextDebrisFrame = 0u;
             ApplyCutState();
-            UnregisterIfNeeded();
+            ClearColdDependencies();
+            _cachedRuntimeOriginAup = default;
+            _hasCachedRuntimeOriginAup = false;
         }
 
         private void ApplyCutState()
@@ -171,25 +183,41 @@ namespace Hecton8.Gameplay
             _debugCutStrength = _cutStrength;
             _debugCutRadius = _cutRadius;
             _debugCutPosition = _cutPositionWS;
-            _debugParticleCooldown = _particleCooldownRemaining;
+            _debugParticleCooldown = EstimateCooldownSeconds(ResolveFrameId(), _nextDebrisFrame);
         }
 
         private void PublishCutMask(Vector3 positionWS, Vector3 velocityWS)
         {
-            SargassumCutManager cutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
+            SargassumCutManager cutManager = _cachedCutManager;
             if (cutManager == null)
                 return;
 
             cutManager.RegisterExternalCut(positionWS, math.max(minCutRadius, _cutRadius), _cutStrength, velocityWS, 0.45f);
         }
 
-        private void UnregisterIfNeeded()
+        private void CacheColdDependencies()
         {
-            if (!_registered)
-                return;
+            _cachedCutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
+        }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registered = false;
+        private void ClearColdDependencies()
+        {
+            _cachedCutManager = null;
+        }
+
+        private bool RefreshCachedRuntimeOriginAup()
+        {
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(origin)))
+            {
+                _cachedRuntimeOriginAup = default;
+                _hasCachedRuntimeOriginAup = false;
+                return false;
+            }
+
+            _cachedRuntimeOriginAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
+            _hasCachedRuntimeOriginAup = _cachedRuntimeOriginAup.IsFinite();
+            return _hasCachedRuntimeOriginAup;
         }
 
         private static float ResolveNormalizedCutSpeed(float speed, float threshold)

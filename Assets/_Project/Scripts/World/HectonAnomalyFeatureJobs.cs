@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -24,47 +25,68 @@ namespace Hecton8.World
     /// <summary>
     /// Configuration for ridge-derived pillar and fissure detection.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct AnomalyRidgeDetectionSettings
     {
         /// <summary>Heightmap width in samples.</summary>
+        [FieldOffset(0)]
         public int Width;
 
         /// <summary>Heightmap height in samples.</summary>
+        [FieldOffset(4)]
         public int Height;
 
         /// <summary>Heightmap cell size in meters.</summary>
+        [FieldOffset(8)]
         public float CellSizeMeters;
+        [FieldOffset(12)]
+        private uint _pad0;
 
         /// <summary>Absolute-universe origin for the heightmap sample 0,0.</summary>
+        [FieldOffset(16)]
         public double3 OriginAup;
 
         /// <summary>Minimum crossed-ridge prominence required for a pillar candidate.</summary>
+        [FieldOffset(40)]
         public float MinimumPillarProminenceMeters;
 
         /// <summary>Minimum number of descending ridge arms required for a pillar junction.</summary>
+        [FieldOffset(44)]
         public int MinimumPillarRidgeArms;
 
         /// <summary>Minimum local trough depth required for a fissure candidate.</summary>
+        [FieldOffset(48)]
         public float MinimumFissureDepthMeters;
 
         /// <summary>Height comparison epsilon in meters.</summary>
+        [FieldOffset(52)]
         public float EqualHeightEpsilon;
 
         /// <summary>Pre-packed biome influence cell written for fissure candidates.</summary>
+        [FieldOffset(56)]
         public uint FissureInfluencePacked;
 
         /// <summary>One when pillar candidates must sit on sandbox Voronoi tectonic boundaries.</summary>
+        [FieldOffset(60)]
         public byte RequireTectonicBoundary;
+        [FieldOffset(61)]
+        private byte _pad1;
+        [FieldOffset(62)]
+        private ushort _pad2;
 
         /// <summary>Sandbox Voronoi tectonic frequency in reciprocal meters.</summary>
+        [FieldOffset(64)]
         public float TectonicBoundaryFrequency;
 
         /// <summary>Sandbox Voronoi tectonic seed.</summary>
+        [FieldOffset(68)]
         public uint TectonicBoundarySeed;
 
         /// <summary>Minimum sandbox Voronoi boundary mask required for pillar candidates.</summary>
+        [FieldOffset(72)]
         public float MinimumTectonicBoundaryMask;
+        [FieldOffset(76)]
+        private uint _pad3;
 
         /// <summary>Returns a bounded copy of the settings.</summary>
         public AnomalyRidgeDetectionSettings Sanitized()
@@ -106,57 +128,72 @@ namespace Hecton8.World
     /// <summary>
     /// Spawn-ready pillar or fissure anomaly feature.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 56)]
     public struct AnomalyFeatureRecord
     {
         /// <summary>One when the record is valid.</summary>
+        [FieldOffset(0)]
         public byte Valid;
 
         /// <summary>Feature kind as <see cref="AnomalyFeatureKind"/>.</summary>
+        [FieldOffset(1)]
         public byte Kind;
+        [FieldOffset(2)]
+        private ushort _pad0;
 
         /// <summary>Flat heightmap index.</summary>
+        [FieldOffset(4)]
         public int Index;
 
         /// <summary>Heightmap X sample.</summary>
+        [FieldOffset(8)]
         public int X;
 
         /// <summary>Heightmap Z sample.</summary>
+        [FieldOffset(12)]
         public int Z;
 
         /// <summary>Absolute-universe X coordinate in meters.</summary>
+        [FieldOffset(16)]
         public double AupX;
 
         /// <summary>Absolute-universe Y coordinate in meters.</summary>
+        [FieldOffset(24)]
         public double AupY;
 
         /// <summary>Absolute-universe Z coordinate in meters.</summary>
+        [FieldOffset(32)]
         public double AupZ;
 
         /// <summary>Source height in meters.</summary>
+        [FieldOffset(40)]
         public float HeightMeters;
 
         /// <summary>Normalized feature strength.</summary>
+        [FieldOffset(44)]
         public float Strength01;
 
         /// <summary>Packed biome influence id for fog/audio consumers.</summary>
+        [FieldOffset(48)]
         public uint BiomeInfluencePacked;
+        [FieldOffset(52)]
+        private uint _pad1;
     }
 
     /// <summary>
     /// Burst kernel that detects ridge-local maxima for pillars and narrow low troughs for fissures.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Deterministic)]
     public struct AnomalyRidgeFeatureDetectionJob : IJobParallelFor
     {
         /// <summary>Input heightmap in meters.</summary>
-        [ReadOnly] public NativeArray<float> Heightmap;
+        [ReadOnly, NoAlias] public NativeArray<float> Heightmap;
 
         /// <summary>Output feature records indexed by heightmap cell.</summary>
-        [WriteOnly] public NativeArray<AnomalyFeatureRecord> FeatureRecords;
+        [WriteOnly, NoAlias] public NativeArray<AnomalyFeatureRecord> FeatureRecords;
 
         /// <summary>Output fissure mask. One means fissure candidate.</summary>
-        [WriteOnly] public NativeArray<byte> FissureMask;
+        [WriteOnly, NoAlias] public NativeArray<byte> FissureMask;
 
         /// <summary>Detection settings.</summary>
         public AnomalyRidgeDetectionSettings Settings;
@@ -397,14 +434,14 @@ namespace Hecton8.World
     /// <summary>
     /// Burst reduction job that keeps one strongest pillar candidate for bounded SDF injection.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Deterministic)]
     public struct SelectStrongestPillarFeatureJob : IJob
     {
         /// <summary>Detected feature records.</summary>
-        [ReadOnly] public NativeArray<AnomalyFeatureRecord> FeatureRecords;
+        [ReadOnly, NoAlias] public NativeArray<AnomalyFeatureRecord> FeatureRecords;
 
         /// <summary>Selected feature output. Index zero is written.</summary>
-        [WriteOnly] public NativeArray<AnomalyFeatureRecord> SelectedFeature;
+        [WriteOnly, NoAlias] public NativeArray<AnomalyFeatureRecord> SelectedFeature;
 
         /// <inheritdoc />
         public void Execute()

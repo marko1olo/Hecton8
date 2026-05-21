@@ -26,14 +26,12 @@ namespace Hecton8.Gameplay
 {
     using System;
     using Hecton.Localization;
-    using Hecton8.Building;
     using Hecton8.Core;
-    using Hecton8.Construction;
     using Hecton8.Inventory;
     using Hecton8.Items;
     using Hecton8.Input;
     using Hecton8.Interaction;
-    using Hecton8.Physics;
+    using Hecton8.Core.Contracts;
     using Hecton8.Core.Contracts.Signals;
     using Hecton8.Tools;
     using Hecton8.World;
@@ -129,7 +127,8 @@ namespace Hecton8.Gameplay
         private bool _assignedPoolsWarmed;
         private bool _handlingEquippedToolBreak;
         private bool _registeredToTick;
-        private BaseModule _currentInteriorModule;
+        private ulong _currentInteriorModuleEntityId;
+        private bool _isInsideModuleInterior;
         private Rigidbody _currentInteriorCarrierBody;
         private bool _suppressInventoryChangedHandling;
         private bool _suppressToolLoadoutSignal;
@@ -147,9 +146,12 @@ namespace Hecton8.Gameplay
         private float _batterySiphonRemainingSeconds;
         private float _batterySiphonDurationSeconds;
         private IInputService _inputService;
+        private IPhysicsService _physicsService;
+        private IPlayerMovementForceSink _playerMovementForceSink;
         private ObjectPoolManager _objectPool;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private ToolDurabilitySystem _toolDurability;
+        private ISubmarineRuntimeContext _submarineRuntimeContext;
         private bool _hotSwapListenerRegistered;
 
         private const float BatterySiphonLockoutSeconds = 1.5f;
@@ -160,6 +162,7 @@ namespace Hecton8.Gameplay
         private static readonly int _highCapacityBatteryHashId = LocHash.Compute(HighCapacityBatteryPersistentId);
         internal Transform HandAnchor => handAnchor;
         internal PlayerInventory Inventory => playerInventory;
+        internal IPlayerRuntimeContext PlayerRuntimeContext => GlobalRegistry.Player;
 
         // ══════════════════════════════════════════════════════════
         //  SWAP STATE MACHINE
@@ -220,17 +223,23 @@ namespace Hecton8.Gameplay
         {
             ResolveRuntimeContextDependencies();
             CacheRegistryServicesCold(forceRefresh: true);
+            ToolHitUtility.CachePlayerToolManagerCold(this);
+            ToolHitUtility.CachePhysicsServiceCold(_physicsService);
+            ToolHitUtility.CachePlayerMovementForceSinkCold(_playerMovementForceSink);
             TryRegisterHotSwapListener();
             BaselineToolSlotInputSignalSequence();
             TryRegisterToTickManager();
             SubscribeModuleStatusEvents();
-            RefreshInteriorCarrierCache(true);
+            ClearInteriorCarrierCache();
             WarmRuntimePoolsIfNeeded();
             BaselineInventoryChangedSignalRevision();
         }
 
         private void OnDisable()
         {
+            ToolHitUtility.ClearPlayerToolManagerCold(this);
+            ToolHitUtility.ClearPhysicsServiceCold(_physicsService);
+            ToolHitUtility.ClearPlayerMovementForceSinkCold(_playerMovementForceSink);
             TryUnregisterFromTickManager();
             UnsubscribeModuleStatusEvents();
             ClearInteriorCarrierCache();
@@ -655,7 +664,7 @@ namespace Hecton8.Gameplay
             {
                 SourceId = sourceId,
                 Sequence = nextSequence,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = ResolveCurrentToolLoadoutFrame(),
                 ActiveToolHash = _currentActiveToolHash,
                 AssignedSlotMask = ComputeAssignedSlotMask(),
                 ActiveSlot = ResolveActiveSlotSignalValue(),
@@ -664,7 +673,13 @@ namespace Hecton8.Gameplay
                 Flags = ResolveToolLoadoutFlags()
             };
 
-            GlobalSignals.Publish(in signal);
+            SignalBus<ToolLoadoutChangedSignal>.Push(in signal);
+        }
+
+        private static uint ResolveCurrentToolLoadoutFrame()
+        {
+            uint frame = TimeSliceScheduler.CurrentFrameId;
+            return frame != 0u ? frame : 1u;
         }
 
         private uint ResolveToolLoadoutSignalSourceId()
@@ -763,15 +778,8 @@ namespace Hecton8.Gameplay
 
         internal bool TryResolveInteriorCarrierBody(out Rigidbody carrierBody)
         {
-            if (_currentInteriorModule != null && _currentInteriorModule.IsPlayerInsideInterior)
-            {
-                carrierBody = _currentInteriorCarrierBody;
-                return carrierBody != null;
-            }
-
-            RefreshInteriorCarrierCache(true);
             carrierBody = _currentInteriorCarrierBody;
-            return carrierBody != null;
+            return _isInsideModuleInterior && carrierBody != null;
         }
 
         public GameObject GetKnownToolPrefabForItem(ItemData item)
@@ -1004,6 +1012,18 @@ namespace Hecton8.Gameplay
                     _inputService = currentService as IInputService;
                     break;
 
+                case GlobalRegistryServiceSlot.Physics:
+                    ToolHitUtility.ClearPhysicsServiceCold(_physicsService);
+                    _physicsService = currentService as IPhysicsService;
+                    ToolHitUtility.CachePhysicsServiceCold(_physicsService);
+                    break;
+
+                case GlobalRegistryServiceSlot.PlayerMovementContracts:
+                    ToolHitUtility.ClearPlayerMovementForceSinkCold(_playerMovementForceSink);
+                    _playerMovementForceSink = currentService as IPlayerMovementForceSink;
+                    ToolHitUtility.CachePlayerMovementForceSinkCold(_playerMovementForceSink);
+                    break;
+
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPool = currentService as ObjectPoolManager;
                     _assignedPoolsWarmed = false;
@@ -1020,6 +1040,12 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
                     _toolDurability = currentService as ToolDurabilitySystem;
                     break;
+
+                case GlobalRegistryServiceSlot.Submarine:
+                    _submarineRuntimeContext = currentService as ISubmarineRuntimeContext;
+                    if (_isInsideModuleInterior)
+                        CacheInteriorCarrierFromContext();
+                    break;
             }
         }
 
@@ -1027,6 +1053,12 @@ namespace Hecton8.Gameplay
         {
             if (forceRefresh || _inputService == null)
                 _inputService = GlobalRegistry.Input;
+
+            if (forceRefresh || _physicsService == null)
+                _physicsService = GlobalRegistry.Physics;
+
+            if (forceRefresh || _playerMovementForceSink == null)
+                _playerMovementForceSink = GlobalRegistry.PlayerMovementContracts;
 
             if (forceRefresh || _objectPool == null)
             {
@@ -1041,6 +1073,9 @@ namespace Hecton8.Gameplay
 
             if (forceRefresh || _toolDurability == null)
                 _toolDurability = GlobalRegistry.ToolDurability;
+
+            if (forceRefresh || _submarineRuntimeContext == null)
+                _submarineRuntimeContext = GlobalRegistry.Submarine;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1109,89 +1144,58 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void OnModuleStatusEvent(in ModuleStatusEventPayload payload)
         {
-            if (!ModuleStatusEvents.TryResolveModule(in payload, out BaseModule module))
-                return;
-
             if (ModuleStatusEvents.IsEnterEvent(in payload))
-                HandleModuleEnter(module);
+                HandleModuleEnter(in payload);
             else
-                HandleModuleExit(module);
+                HandleModuleExit(in payload);
         }
 
-        private void HandleModuleEnter(BaseModule module)
+        private void HandleModuleEnter(in ModuleStatusEventPayload payload)
         {
-            if (module == null)
+            if (payload.ModuleEntityId == 0ul ||
+                !ModuleStatusEvents.IsPlayerInsideInterior(in payload))
                 return;
 
-            CacheInteriorCarrier(module);
+            _currentInteriorModuleEntityId = payload.ModuleEntityId;
+            _isInsideModuleInterior = true;
+            CacheInteriorCarrierFromContext();
         }
 
-        private void HandleModuleExit(BaseModule module)
+        private void HandleModuleExit(in ModuleStatusEventPayload payload)
         {
-            if (_currentInteriorModule == null || module == null)
+            if (_currentInteriorModuleEntityId == 0ul || payload.ModuleEntityId == 0ul)
                 return;
 
-            if (!ReferenceEquals(_currentInteriorModule, module))
+            if (_currentInteriorModuleEntityId != payload.ModuleEntityId)
                 return;
-
-            RefreshInteriorCarrierCache(true);
-        }
-
-        private void RefreshInteriorCarrierCache(bool allowSceneFallback)
-        {
-            if (_currentInteriorModule != null &&
-                _currentInteriorModule.IsPlayerInsideInterior &&
-                TryResolveInteriorCarrier(module: _currentInteriorModule, out Rigidbody carrierBody))
-            {
-                _currentInteriorCarrierBody = carrierBody;
-                return;
-            }
 
             ClearInteriorCarrierCache();
-            if (!allowSceneFallback)
-                return;
-
-            int moduleCount = BaseModule.ActiveModuleCount;
-            for (int i = 0; i < moduleCount; i++)
-            {
-                BaseModule module = BaseModule.GetActiveModuleAt(i);
-                if (module == null || !module.IsPlayerInsideInterior)
-                    continue;
-
-                CacheInteriorCarrier(module);
-                if (_currentInteriorCarrierBody != null)
-                    return;
-            }
         }
 
-        private void CacheInteriorCarrier(BaseModule module)
+        private void CacheInteriorCarrierFromContext()
         {
-            _currentInteriorModule = module;
             _currentInteriorCarrierBody = null;
-
-            if (module == null || !module.IsPlayerInsideInterior)
+            ISubmarineRuntimeContext submarine = _submarineRuntimeContext;
+            if (submarine == null)
                 return;
 
-            TryResolveInteriorCarrier(module, out _currentInteriorCarrierBody);
+            _currentInteriorCarrierBody = submarine.HullRigidbody;
+            if (_currentInteriorCarrierBody != null)
+                return;
+
+            if (submarine.FluidDynamics != null &&
+                submarine.FluidDynamics.TryGetComponent(out Rigidbody carrierBody) &&
+                carrierBody != null)
+            {
+                _currentInteriorCarrierBody = carrierBody;
+            }
         }
 
         private void ClearInteriorCarrierCache()
         {
-            _currentInteriorModule = null;
+            _currentInteriorModuleEntityId = 0ul;
+            _isInsideModuleInterior = false;
             _currentInteriorCarrierBody = null;
-        }
-
-        private static bool TryResolveInteriorCarrier(BaseModule module, out Rigidbody carrierBody)
-        {
-            carrierBody = null;
-            if (module == null || !module.IsPlayerInsideInterior)
-                return false;
-
-            SubmarineFluidDynamics fluidDynamics = module.GetComponentInParent<SubmarineFluidDynamics>();
-            if (fluidDynamics == null)
-                return false;
-
-            return fluidDynamics.TryGetComponent(out carrierBody) && carrierBody != null;
         }
 
         private bool IsHandheldToolUsageBlocked()

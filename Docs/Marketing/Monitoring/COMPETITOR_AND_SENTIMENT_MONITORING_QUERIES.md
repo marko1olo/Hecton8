@@ -153,6 +153,31 @@ V5 operational read:
 - V4 negative-sample buckets remain usable only as private capture-priority hints until refreshed again; V5 did not sample new review text.
 - Public copy boundary is unchanged: do not mention SN2 pain, do not moralize about EULA, do not imply HECTON has solved unproved systems.
 
+### 2026-05-21 Steam API / Public-Source Refresh V6
+
+Evidence boundary: public Steam review API, appdetails API, Steam store page, PC Gamer/Gematsu launch coverage, PC Gamer multiplayer coverage, and Notebookcheck EULA/privacy coverage checked on 2026-05-21. Counts are volatile. This refresh only updates internal pain freshness and capture-priority logic; it does not authorize public comparison copy, competitor attack language, account/browser action, outreach, or public posting.
+
+| Query | Result | Evidence class | Use |
+|---|---:|---|---|
+| All-language API summary | 70,108 positive / 6,578 negative / 76,686 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&filter=summary&language=all&purchase_type=all&num_per_page=0` | Competitor strength increased after V5. HECTON copy cannot depend on backlash, collapse, or "players are fleeing" framing. |
+| English API summary | 42,855 positive / 2,900 negative / 45,755 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&filter=summary&language=english&purchase_type=all&num_per_page=0` | English creator/audience work still starts from SN2 as the default underwater-survival reference point. |
+| Appdetails feature read | Steam appdetails reports release on 14 May 2026, 71,190 recommendations, and the same broad feature lane: single-player, multiplayer, co-op, online co-op, cross-platform multiplayer, Steam Cloud, Family Sharing, controller/accessibility categories, and Early Access genres. | Official platform API: `https://store.steampowered.com/api/appdetails?appids=1962700&filters=basic,categories,genres,release_date,recommendations` | HECTON should not answer feature breadth with copy. First assets must prove narrower identity: pressure, machinery, salvage, black-water route risk, and single-player scope honesty. |
+| Steam public page read | Steam page shows release date 14 May 2026, English reviews `Very Positive` at 93% of 42,743 visible English reviews, and official copy for play alone or online co-op with up to three friends. | Official platform page: `https://store.steampowered.com/app/1962700/Subnautica_2/` | Do not call SN2 weak. Do not imply HECTON can compete on co-op. Use the comparison only to police clone-risk and proof requirements. |
+| Launch scale coverage | PC Gamer and Gematsu report 2M copies within 12 hours, over 651K peak concurrent players across platforms, and over 467K Steam peak concurrent players. | Press report citing launch announcement / platform counts: `https://www.pcgamer.com/games/survival-crafting/subnautica-2-has-sold-2-million-copies-in-12-hours-with-9x-the-players-as-the-first-and-at-this-point-i-figure-that-krafton-ceo-is-already-on-his-second-bottle/`, `https://www.gematsu.com/2026/05/subnautica-2-early-access-sales-top-two-million-in-12-hours` | SN2 owns launch oxygen. HECTON needs specific identity proof, not generic underwater-survival awareness copy. |
+| Co-op read | PC Gamer says co-op works in flexible ways but still has early-access limitations such as no revive flow in that preview. | Press hands-on: `https://www.pcgamer.com/games/survival-crafting/subnautica-2-multiplayer/` | Keep HECTON public lane single-player-first. Do not use co-op limitations as public pitch material. |
+| EULA/privacy trust read | Notebookcheck reports a negative-review cluster around EULA/privacy/content-use concerns while also noting overall Steam reception remains Very Positive. | Press/community signal: `https://www.notebookcheck.net/Negative-Subnautica-2-Steam-reviews-slam-EULA-for-ownership-and-privacy-concerns.1299090.0.html` | Prepare HECTON's own clear creator/key/disclosure policy later. Do not moralize about SN2 or name the EULA in HECTON copy. |
+| Recent all-language negative sample | 99 recent negatives sampled; rough term hits: `base` 10, `eula` 8, `kill` 6, `building` 5, `bug` 4, `content` 3, `fight` 2, `weapon` 2, `save` 1, `multiplayer` 1. | Official platform API sample | Directional only. Base readability, trust/disclosure, agency, and bug tolerance remain private proof buckets. Term hits are not percentages. |
+| Recent English negative sample | 99 recent negatives sampled; rough term hits: `kill` 24, `eula` 17, `base` 12, `bug` 10, `building` 9, `content` 6, `fight` 6, `weapon` 4, `weapons` 4, `crash` 4, `multiplayer` 3, `fps` 3, `save` 3, `co-op` 1, `performance` 1. | Official platform API sample | Keep agency/threat, base/machinery readability, trust/disclosure, and route-depth proof high only if HECTON assets prove them visually. |
+
+V6 operational read:
+
+- SN2 remains strong and is still gaining review/recommendation volume. Competitor-collapse framing is objectively false.
+- Current pain buckets are useful only as private capture-priority hints. They are not public claims and not creator pitch copy.
+- Agency/no-weapon wording is still visible in English negatives, but HECTON must answer with decision proof, not combat superiority.
+- Base/machinery readability remains the safest HECTON-native capture target because it does not require attacking SN2.
+- Performance/stutter wording is low in this sample; HECTON performance claims remain blocked until build, hardware, settings, and frame-time proof exist.
+- The next HECTON action is still asset proof: same-day pain freshness plus metadata `pain_freshness_source`, `pain_freshness_checked_at`, `viewer_named_decision`, and `capture_verdict` before any first-pack priority, public post, creator send, or Steam movement.
+
 ### Pain Bucket Freshness Rule
 
 Before a HECTON capture packet uses any SN2-derived pain bucket, run a same-day freshness check:
@@ -165,6 +190,8 @@ Before a HECTON capture packet uses any SN2-derived pain bucket, run a same-day 
 If any answer is weak, downgrade the bucket to `MONITOR_ONLY` and do not prioritize an asset from it.
 
 When an asset receives a nonzero pain-proof score, record the monitoring/source row in `pain_freshness_source` and the check date in `pain_freshness_checked_at` inside `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv`. Notes-only freshness proof is invalid.
+
+Current same-day owner row: V6 is the only valid SN2 freshness row after 2026-05-21 for new capture-priority changes. V4/V5 can remain historical context, but they cannot be copied into a new capture packet without a same-day refresh.
 
 Pain buckets from the sample and prior sprint:
 
@@ -197,7 +224,7 @@ Use this only as capture priority logic. It cannot override asset QA or creator 
 
 ### Current Decision
 
-The next SN2-aware task is not another competitor memo. It is to make the first HECTON capture packet answer at least one private pain bucket per public asset while never naming SN2's weakness in public copy. V5 keeps the priority on agency, base/machinery readability, route depth, trust/disclosure, and HECTON-native identity; V4 negative samples remain directional until the next same-day sample refresh. It does not justify public comparison language.
+The next SN2-aware task is not another competitor memo. It is to make the first HECTON capture packet answer at least one private pain bucket per public asset while never naming SN2's weakness in public copy. V6 keeps the priority on agency, base/machinery readability, route depth, trust/disclosure, and HECTON-native identity. Older V4/V5 samples remain historical context only; they cannot drive a new capture packet without another same-day refresh. V6 does not justify public comparison language.
 
 ## Evidence Classes
 

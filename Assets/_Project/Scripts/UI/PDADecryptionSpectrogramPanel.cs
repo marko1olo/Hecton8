@@ -73,12 +73,12 @@ namespace Hecton8.UI
         [SerializeField, Min(0.01f)] private float hardDriftFrequency = 0.17f;
         [SerializeField, Min(0.02f)] private float feedbackIntervalSeconds = 0.1f;
 
-        private VaultBufferHandle<float> _targetWaveHandle;
-        private VaultBufferHandle<float> _playerWaveHandle;
-        private VaultBufferHandle<float> _errorOutputHandle;
-        private VaultBufferHandle<FrequencyTuningWaveGpuSegment> _gpuSegmentsHandle;
-        private VaultBufferHandle<FrequencyTuningStageTarget> _stageTargetsHandle;
-        private VaultBufferHandle<FrequencyTuningTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<float> _targetWaveHandle;
+        private VaultGenerationHandle<float> _playerWaveHandle;
+        private VaultGenerationHandle<float> _errorOutputHandle;
+        private VaultGenerationHandle<FrequencyTuningWaveGpuSegment> _gpuSegmentsHandle;
+        private VaultGenerationHandle<FrequencyTuningStageTarget> _stageTargetsHandle;
+        private VaultGenerationHandle<FrequencyTuningTelemetryEntry> _telemetryRingHandle;
         private GraphicsBuffer _segmentBuffer;
         private GraphicsBuffer _argsBuffer;
         private Material _runtimeMaterial;
@@ -314,24 +314,52 @@ namespace Hecton8.UI
         }
 
         private bool TryResolveVaultBuffer<T>(
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
             out NativeArray<T> buffer) where T : struct
         {
+            buffer = default;
             IDataVault vault = _cachedDataVault;
             if (vault == null || requiredLength <= 0)
             {
-                buffer = default;
                 return false;
             }
 
-            if (!handle.IsCreated || handle.Length < requiredLength)
-                handle = vault.GetBufferHandle<T>(bufferId, requiredLength, SystemID.UI, options);
+            if (IsVaultHandleCreated(in handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated && buffer.Length >= requiredLength;
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.UI, options);
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                return false;
+            }
+
+            handle = acquired;
+            return true;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static void ClearNativeState(
@@ -864,6 +892,13 @@ namespace Hecton8.UI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
+                    IDataVault previousVault = previousService as IDataVault ?? _cachedDataVault;
+                    if (!ReferenceEquals(previousVault, currentService))
+                    {
+                        CompleteWaveJobForTeardown();
+                        ReleaseNativeBuffers(previousVault);
+                    }
+
                     _cachedDataVault = currentService as IDataVault;
                     _nativeReady = false;
                     break;
@@ -960,13 +995,18 @@ namespace Hecton8.UI
             if (_waveJobScheduled)
                 CompleteWaveJobForTeardown();
 
-            _targetWaveHandle = default;
-            _playerWaveHandle = default;
-            _errorOutputHandle = default;
-            _gpuSegmentsHandle = default;
-            _stageTargetsHandle = default;
-            _telemetryRingHandle = default;
+            ReleaseNativeBuffers(_cachedDataVault);
             _nativeReady = false;
+        }
+
+        private void ReleaseNativeBuffers(IDataVault vault)
+        {
+            ReleaseVaultBuffer(vault, ref _targetWaveHandle);
+            ReleaseVaultBuffer(vault, ref _playerWaveHandle);
+            ReleaseVaultBuffer(vault, ref _errorOutputHandle);
+            ReleaseVaultBuffer(vault, ref _gpuSegmentsHandle);
+            ReleaseVaultBuffer(vault, ref _stageTargetsHandle);
+            ReleaseVaultBuffer(vault, ref _telemetryRingHandle);
         }
 
         private void DisposeGraphicsResources()

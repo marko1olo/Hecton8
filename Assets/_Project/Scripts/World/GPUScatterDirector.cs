@@ -1,6 +1,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Data;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -17,7 +18,7 @@ namespace Hecton8.World
     /// Generates and renders seabed scatter entirely on the GPU from the active MapMagic height payload.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class GPUScatterDirector : MonoBehaviour, IUpdatable, IOriginShiftListener
+    public sealed class GPUScatterDirector : MonoBehaviour, IUpdatable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int ThreadGroupSize = 64;
         private const int FrustumPlaneCount = 6;
@@ -48,21 +49,34 @@ namespace Hecton8.World
         private const string ScatterComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_GpuScatter.compute";
         private const string DepthPyramidComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_DepthPyramid.compute";
 #endif
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct ScatterTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint Flags;
+            [FieldOffset(8)]
             public float3 Center;
+            [FieldOffset(20)]
             public float2 AupOffsetXZ;
+            [FieldOffset(28)]
             public float RadiusMeters;
+            [FieldOffset(32)]
             public float CellSizeMeters;
+            [FieldOffset(36)]
             public int GridResolution;
+            [FieldOffset(40)]
             public int CandidateCount;
+            [FieldOffset(44)]
             public uint BiomeHash;
+            [FieldOffset(48)]
             public uint VisibleCount;
+            [FieldOffset(52)]
             public uint StateHash;
+            [FieldOffset(56)]
             public uint OriginShiftSequence;
+            [FieldOffset(60)]
             public uint BlobChecksumLo;
         }
 
@@ -267,6 +281,8 @@ namespace Hecton8.World
         [SerializeField] private Bounds _debugDrawBounds;
 
         private bool _registered;
+        private bool _registeredHotSwapListener;
+        private bool _registeredScalabilityListener;
         private int _clearDensityKernel = -1;
         private int _generateKernel = -1;
         private int _compactKernel = -1;
@@ -316,9 +332,14 @@ namespace Hecton8.World
         private NativeArray<ScatterTelemetryEntry> _scatterTelemetryRing;
         private int _scatterTelemetryCursor;
         private bool _scatterTelemetryDumped;
-        private Vector2 _scatterAupGenerationOffsetXZ;
+        private double2 _scatterAupGenerationOffsetXZDouble;
+        private Vector2 _scatterStableCellBaseXZ;
         private uint _lastOriginShiftSequence;
         private int _lastResolvedScatterBudget = -1;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private ITickDispatcher _dispatcher;
+        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
+        private float _cachedGlobalQualityWeight01 = 1f;
 
         /// <summary>
         /// Attempts to expose the GPU-authored 1D scatter density buffer for vegetation-drag consumers.
@@ -350,6 +371,9 @@ namespace Hecton8.World
 #if UNITY_EDITOR
             TryAutoAssignAssets();
 #endif
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             ResolveDependencies();
             EnsureScatterTelemetryResources();
             EnsureResources();
@@ -365,6 +389,9 @@ namespace Hecton8.World
 #if UNITY_EDITOR
             TryAutoAssignAssets();
 #endif
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             ResolveDependencies();
             EnsureScatterTelemetryResources();
             EnsureResources();
@@ -380,8 +407,12 @@ namespace Hecton8.World
                 _activeInstance = null;
 
             TryUnregister();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             ReleaseResources();
+            _playerRuntimeContext = null;
+            _dispatcher = null;
         }
 
         private void OnDestroy()
@@ -390,8 +421,36 @@ namespace Hecton8.World
                 _activeInstance = null;
 
             TryUnregister();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             ReleaseResources();
+            _playerRuntimeContext = null;
+            _dispatcher = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _dispatcher = currentService as ITickDispatcher;
+                    TryRegister();
+                    break;
+            }
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _cachedQualityTier = payload.CurrentQualityTier;
+            _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01();
+            _lastResolvedScatterBudget = -1;
         }
 
         /// <summary>
@@ -438,13 +497,15 @@ namespace Hecton8.World
             Transform player = playerTransform;
             Transform cameraTransform = viewCamera.transform;
             Vector3 center = player.position;
+            _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01();
             float microScatterCullDistance = ResolveMicroScatterCullDistanceMeters();
             float activeScatterRadius = math.min(math.max(1f, scatterRadiusMeters), microScatterCullDistance);
             float activeCellSizeMeters = ResolveActiveCellSizeMeters(activeScatterRadius);
             float diameter = activeCellSizeMeters * math.max(1, _gridResolution);
             float halfDiameter = diameter * 0.5f;
-            float minX = ResolveAupSnappedAxis(center.x - halfDiameter, _scatterAupGenerationOffsetXZ.x, activeCellSizeMeters);
-            float minZ = ResolveAupSnappedAxis(center.z - halfDiameter, _scatterAupGenerationOffsetXZ.y, activeCellSizeMeters);
+            float minX = ResolveAupSnappedAxis(center.x - halfDiameter, _scatterAupGenerationOffsetXZDouble.x, activeCellSizeMeters);
+            float minZ = ResolveAupSnappedAxis(center.z - halfDiameter, _scatterAupGenerationOffsetXZDouble.y, activeCellSizeMeters);
+            _scatterStableCellBaseXZ = ResolveAupStableCellBaseXZ(minX, minZ, _scatterAupGenerationOffsetXZDouble, activeCellSizeMeters);
             Vector4 fieldRect = new Vector4(minX, minZ, diameter, diameter);
             int candidateCount = _gridResolution * _gridResolution;
             int heightResolution = math.max(1, heightPayload.HeightmapResolution);
@@ -520,7 +581,7 @@ namespace Hecton8.World
             scatterCompute.SetVector(_DitherParamsId, new Vector4(ditherStartSq, invDitherDenominatorSq, frameIndex, 0f));
             scatterCompute.SetVector(_BiomeHeatmapRectId, ResolveBiomeHeatmapRect(in heightPayload));
             scatterCompute.SetVector(_ScatterBiomeParamsId, ResolveScatterBiomeParams());
-            scatterCompute.SetVector(_ScatterAupGridOffsetId, new Vector4(_scatterAupGenerationOffsetXZ.x, _scatterAupGenerationOffsetXZ.y, _lastOriginShiftSequence, 0f));
+            scatterCompute.SetVector(_ScatterAupGridOffsetId, new Vector4(_scatterStableCellBaseXZ.x, _scatterStableCellBaseXZ.y, _lastOriginShiftSequence, 0f));
             if (_biomeHeatmapTexture != null)
                 scatterCompute.SetTexture(_generateKernel, _BiomeHeatmapTexId, _biomeHeatmapTexture);
             scatterCompute.SetFloat(_ScatterFrustumPaddingId, math.max(0f, frustumPaddingMeters));
@@ -606,8 +667,9 @@ namespace Hecton8.World
 
             if (viewCamera == null && playerTransform != null)
             {
-                viewCamera = GlobalRegistry.Player != null && GlobalRegistry.Player.PlayerCamera != null
-                    ? GlobalRegistry.Player.PlayerCamera
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+                viewCamera = playerContext != null && playerContext.PlayerCamera != null
+                    ? playerContext.PlayerCamera
                     : ComponentReferenceUtility.ResolveOwnedComponent<Camera>(playerTransform);
             }
         }
@@ -804,50 +866,51 @@ namespace Hecton8.World
         private float ResolveMinProjectedPixelRadius()
         {
             float configured = math.isfinite(minProjectedPixelRadius) ? minProjectedPixelRadius : 2f;
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350)
-                return math.max(2f, configured);
-
-            if (tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra)
-                return math.max(0.5f, configured * 0.75f);
-
-            return math.max(1f, configured);
+            float q = ResolveScatterQualityCurve01();
+            float survivalRadius = math.max(2f, configured);
+            float overkillRadius = math.max(0.5f, configured * 0.75f);
+            return math.lerp(survivalRadius, overkillRadius, q);
         }
 
         private float ResolveMicroScatterCullDistanceMeters()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350 || tier == HectonQualityTier.Unknown)
-                return MicroScatterLowCullMeters;
-
-            if (tier == HectonQualityTier.Mid)
-                return MicroScatterMidCullMeters;
-
-            return MicroScatterHighCullMeters;
+            float q = ResolveScatterQualityCurve01();
+            return math.lerp(MicroScatterLowCullMeters, MicroScatterHighCullMeters, q);
         }
 
         private int ResolveScatterInstanceBudget()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            int tierBudget;
-            switch (tier)
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Unknown:
-                    tierBudget = MicroScatterLowBudget;
-                    break;
-                case HectonQualityTier.Mx350:
-                    tierBudget = MicroScatterMx350Budget;
-                    break;
-                case HectonQualityTier.Mid:
-                    tierBudget = MicroScatterMidBudget;
-                    break;
-                default:
-                    tierBudget = MicroScatterHighBudget;
-                    break;
-            }
+            float q = ResolveScatterQualityCurve01();
+            float lowToMx350 = math.lerp(
+                MicroScatterLowBudget,
+                MicroScatterMx350Budget,
+                math.smoothstep(0f, 0.35f, q));
+            float mx350ToMid = math.lerp(
+                lowToMx350,
+                MicroScatterMidBudget,
+                math.smoothstep(0.28f, 0.68f, q));
+            float resolvedBudget = math.lerp(
+                mx350ToMid,
+                MicroScatterHighBudget,
+                math.smoothstep(0.62f, 1f, q));
+            int continuousBudget = (int)math.round(resolvedBudget);
+            return math.min(math.max(256, maxScatterInstances), continuousBudget);
+        }
 
-            return math.min(math.max(256, maxScatterInstances), tierBudget);
+        private float ResolveScatterQualityCurve01()
+        {
+            float q = math.saturate(math.isfinite(_cachedGlobalQualityWeight01) ? _cachedGlobalQualityWeight01 : 1f);
+            return q * q * (3f - 2f * q);
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float signalWeight = SignalBusRegistry.GlobalQualityWeight01;
+            if (math.isfinite(signalWeight) && signalWeight > 0f)
+                return math.saturate(signalWeight);
+
+            float brainWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(brainWeight) ? brainWeight : 1f);
         }
 
         private float ResolveActiveCellSizeMeters(float activeScatterRadius)
@@ -858,18 +921,29 @@ namespace Hecton8.World
             return math.max(0.05f, (activeScatterRadius * 2f) * math.rcp(_gridResolution));
         }
 
-        private static float ResolveAupSnappedAxis(float value, float absoluteOffset, float cellSize)
+        private static float ResolveAupSnappedAxis(float value, double absoluteOffset, float cellSize)
         {
-            float safeCellSize = math.max(0.0001f, cellSize);
-            return math.floor((value + absoluteOffset) * math.rcp(safeCellSize)) * safeCellSize - absoluteOffset;
+            double safeCellSize = math.max(0.0001f, cellSize);
+            double snappedAbsolute = math.floor(((double)value + absoluteOffset) / safeCellSize) * safeCellSize;
+            return (float)(snappedAbsolute - absoluteOffset);
+        }
+
+        private static Vector2 ResolveAupStableCellBaseXZ(float minX, float minZ, double2 absoluteOffset, float cellSize)
+        {
+            double safeCellSize = math.max(0.0001f, cellSize);
+            double invCellSize = 1.0 / safeCellSize;
+            return new Vector2(
+                (float)math.floor(((double)minX + absoluteOffset.x) * invCellSize),
+                (float)math.floor(((double)minZ + absoluteOffset.y) * invCellSize));
         }
 
         private void RefreshAupGridOffsetFromOrigin()
         {
             double3 currentOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            _scatterAupGenerationOffsetXZ = new Vector2((float)currentOffset.x, (float)currentOffset.z);
+            _scatterAupGenerationOffsetXZDouble = new double2(currentOffset.x, currentOffset.z);
+            _scatterStableCellBaseXZ = Vector2.zero;
             _lastOriginShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
-            Shader.SetGlobalVector(_ScatterAupGridOffsetId, new Vector4(_scatterAupGenerationOffsetXZ.x, _scatterAupGenerationOffsetXZ.y, _lastOriginShiftSequence, 0f));
+            Shader.SetGlobalVector(_ScatterAupGridOffsetId, new Vector4(_scatterStableCellBaseXZ.x, _scatterStableCellBaseXZ.y, _lastOriginShiftSequence, 0f));
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -877,7 +951,8 @@ namespace Hecton8.World
             if (!isActiveAndEnabled)
                 return;
 
-            _scatterAupGenerationOffsetXZ = new Vector2((float)shiftData.NewTotalOffsetDouble.x, (float)shiftData.NewTotalOffsetDouble.z);
+            _scatterAupGenerationOffsetXZDouble = new double2(shiftData.NewTotalOffsetDouble.x, shiftData.NewTotalOffsetDouble.z);
+            _scatterStableCellBaseXZ = Vector2.zero;
             _lastOriginShiftSequence = shiftData.Sequence;
             _depthPyramidInvalidatedFrame = shiftData.Frame;
             _scatterFrameIndex = 0;
@@ -887,7 +962,7 @@ namespace Hecton8.World
                 _hasFoveatedVisibilitySnapshot = false;
             }
 
-            Shader.SetGlobalVector(_ScatterAupGridOffsetId, new Vector4(_scatterAupGenerationOffsetXZ.x, _scatterAupGenerationOffsetXZ.y, _lastOriginShiftSequence, 0f));
+            Shader.SetGlobalVector(_ScatterAupGridOffsetId, new Vector4(_scatterStableCellBaseXZ.x, _scatterStableCellBaseXZ.y, _lastOriginShiftSequence, 0f));
             Vector3 telemetryCenter = playerTransform != null ? playerTransform.position : Vector3.zero;
             RecordScatterTelemetry(telemetryCenter, 0f, 0f, _gridResolution, 0, _lastCurrentBiomeHash, (uint)math.max(0, _debugVisibleCount), ScatterTelemetryOriginShiftFlag);
         }
@@ -1228,7 +1303,7 @@ namespace Hecton8.World
                 Frame = unchecked((uint)Time.frameCount),
                 Flags = resolvedFlags,
                 Center = center3,
-                AupOffsetXZ = (float2)_scatterAupGenerationOffsetXZ,
+                AupOffsetXZ = (float2)_scatterStableCellBaseXZ,
                 RadiusMeters = radiusMeters,
                 CellSizeMeters = cellSizeMeters,
                 GridResolution = gridResolution,
@@ -1413,11 +1488,58 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying || _dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
+            if (_dispatcher == null)
+                _dispatcher = GlobalRegistry.Dispatcher;
+
+            _cachedQualityTier = GlobalRegistry.ScalabilityTier;
+            _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
         }
 
         private void TryRegisterOriginShiftListener()

@@ -30,11 +30,11 @@ Preferred:
   `PlayHecton8`
   `Hecton8`
 
-Reserve consistent handles before public reveal if possible.
+Keep a consistent candidate-handle list before public reveal. Actual reservation is blocked until `account_registration_permission_gate = ALLOW_ACCOUNT_REGISTRATION_VERIFIED`.
 
 ## 2026 05 19 Handle Reservation Work Order
 
-Do this quietly before public screenshots. Do not post unless an account requires an initial placeholder.
+Do candidate checks quietly before public screenshots. Do not register, reserve, or post unless `account_registration_permission_gate = ALLOW_ACCOUNT_REGISTRATION_VERIFIED`; if a platform requires an initial placeholder before custody is complete, abort instead of creating an orphaned surface.
 
 | Platform | Preferred handle order | Public state now | Required owner record |
 |---|---|---|---|
@@ -103,6 +103,8 @@ Machine gate: `account_registration_permission_gate = HOLD_ACCOUNT_CREATION`. Th
 | Exact public URL destination for vault record | NOT_CREATED | HOLD_ACCOUNT_CREATION |
 
 Current verdict: `HOLD_ACCOUNT_CREATION`; `account_registration_permission_gate = HOLD_ACCOUNT_CREATION`.
+
+Candidate handles are notes only while this verdict holds. They are not reservation permission, posting permission, or proof that a logged-in platform flow will accept the handle.
 
 Allowed agent work while this verdict holds:
 
@@ -220,12 +222,12 @@ Fill one row immediately after each successful registration. Do not record passw
 
 | Platform | Handle | Public URL | Login email alias | Vault item name | Recovery owner checked | 2FA enabled | Backup codes stored | Profile visibility | First public asset gate | Current status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| YouTube | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | private/blank | screenshot pack QA pass | NOT_CREATED |
-| X/Twitter | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | private/blank | screenshot pack QA pass | NOT_CREATED |
-| Bluesky | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | private/blank | screenshot pack QA pass | NOT_CREATED |
-| TikTok | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | private/blank | screenshot pack QA pass | NOT_CREATED |
-| Instagram | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | private/blank | screenshot pack QA pass | NOT_CREATED |
-| Reddit | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | blank/disclosed dev | subreddit rule gate | NOT_CREATED |
+| YouTube | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | private/blank | HOLD_NO_FIRST_PUBLIC_ASSET_POST | NOT_CREATED |
+| X/Twitter | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | private/blank | HOLD_NO_FIRST_PUBLIC_ASSET_POST | NOT_CREATED |
+| Bluesky | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | private/blank | HOLD_NO_FIRST_PUBLIC_ASSET_POST | NOT_CREATED |
+| TikTok | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | private/blank | HOLD_NO_FIRST_PUBLIC_ASSET_POST | NOT_CREATED |
+| Instagram | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | private/blank | HOLD_NO_FIRST_PUBLIC_ASSET_POST | NOT_CREATED |
+| Reddit | UNRESERVED_NOT_CREATED | UNRECORDED_NOT_CREATED | HOLD_OFFICIAL_INBOX_CUSTODY | UNRECORDED_NOT_CREATED | NO | NO | NO | blank/disclosed dev | HOLD_SUBREDDIT_RULE_AND_PUBLIC_POST_GATE | NOT_CREATED |
 
 Allowed `Current status` values:
 
@@ -283,7 +285,7 @@ Paste these fields only after `account_registration_permission_gate = ALLOW_ACCO
 | Avatar | approved logo mark | text only `HECTON-8` mark | Do not use concept art as proof. |
 | Banner | approved in game screenshot/capsule | black water machinery crop | Must pass asset QA. |
 
-If a platform forces a first post, use:
+If a platform forces a first post after registration custody is already allowed, use only this no-link reservation placeholder and log it as a forced account-reservation artifact. If `public_post_permission_gate` is still held and the platform does not allow private/blank setup, abort registration instead.
 
 ```text
 Official HECTON-8 account reserved.
@@ -291,13 +293,13 @@ Official HECTON-8 account reserved.
 Public gameplay assets are not live yet. HECTON-8 is single player deep sea survival about pressure, salvage, machinery, and black water.
 ```
 
-Do not add a Steam link until `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and UTM rules are ready. If this forced reservation post is used, log it as `route_class = no_link_feedback` and do not count replies as anything beyond `consent_provenance = public_comment`.
+Do not add a Steam link until `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and UTM rules are ready. If this forced reservation post is used after custody is allowed, log it as `route_class = forced_reservation_no_link` and do not count replies as anything beyond `consent_provenance = public_comment`.
 
 ## Profile Bio Template
 
 ```text
 HECTON-8   single player deep sea survival about pressure, salvage, machinery, and the Seed Ship anomaly.
-Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
+Steam: HOLD_SOCIAL_STEAM_URL - fill only after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass for this exact profile surface.
 ```
 
 Scope: single player first. No competitor attack copy. No performance claim.
@@ -336,13 +338,13 @@ Use the shortest variant that fits each platform. Do not add claims to fill spac
 
 ### First Three Public Posts
 
-Run only after `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`, `PLAN-SHOT-001`, `PLAN-SHOT-003`, one agency/decision proof clip from `PLAN-CLIP-001` or `PLAN-CLIP-003`, and `PLAN-CAPSULE-001` pass QA, asset metadata claim checks, AB-009/KPI decision-read fields where the post claims gameplay/pressure/route-risk proof, and official link/custody gates. If no decision clip exists, keep the second public post held instead of replacing it with another mood still.
+Run only after `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`, `PLAN-SHOT-001`, `PLAN-SHOT-003`, one agency/decision proof clip from `PLAN-CLIP-001` or `PLAN-CLIP-003`, and `PLAN-CAPSULE-001` pass QA, asset metadata claim checks, non-pending `viewer_named_decision`, valid non-held `capture_verdict`, AB-009/KPI decision-read fields where the post claims gameplay/pressure/route-risk proof, and official link/custody gates. If no decision clip exists, keep the second public post held instead of replacing it with another mood still.
 
 | Order | Platform | Asset | Copy | CTA | Reporting | Kill if |
 |---|---|---|---|---|---|---|
 | 1 | X / Bluesky | `PLAN-SHOT-001` | `First in game look at HECTON-8. Single player deep sea survival about pressure, salvage, machinery, and black water. Blunt read wanted: does this feel like a distinct survival game, or just generic underwater sci fi?` | Feedback question only. | `route_class = no_link_feedback`; `consent_provenance = public_comment` only. | Replies mostly say "what do you do?" or "AI/concept art". |
 | 2 | YouTube Community / Short if available | `PLAN-CLIP-001` or `PLAN-CLIP-003` | `A pressure problem should read before the caption. If this clip needs explanation, it failed.` | Feedback question only. | `route_class = no_link_feedback`; `consent_provenance = public_comment` only. | First 3 seconds do not show action/consequence. |
-| 3 | Steam News / X / Bluesky | `PLAN-CAPSULE-001` winner + Steam URL | `HECTON-8 now has an official Steam page: single player deep sea survival focused on pressure, salvage, machinery, and black water route risk.` | Official Steam link only. | `route_class = public_cta`; requires `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` before post. | Steam URL not live through the publish gate, capsule not cold read, public post gate missing, or copy implies unsupported multiplayer scope or performance. |
+| 3 | Steam News / X / Bluesky | `PLAN-CAPSULE-001` winner + Steam URL | HOLD_SOCIAL_STEAM_PAGE_LIVE_COPY - say HECTON-8 has an official Steam page only after `steam_page_publish_permission_gate`, destination-specific `public_cta_permission_gate`, and this post's `public_post_permission_gate` pass. | HOLD_SOCIAL_STEAM_LINK - official Steam link only after the same gates pass. | `route_class = public_cta`; requires `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` before post. | Steam URL not live through the publish gate, capsule not cold read, public post gate missing, or copy implies unsupported multiplayer scope or performance. |
 
 ### Pinned Post V0
 
@@ -351,8 +353,8 @@ Use only after the official Steam URL exists through `steam_page_publish_permiss
 ```text
 HECTON-8 is a single player deep sea survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
 
-Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
-Presskit: [gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
+Steam: HOLD_SOCIAL_STEAM_URL - fill only after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass.
+Presskit: HOLD_SOCIAL_PRESSKIT_URL - fill only after `press_release_permission_gate` and `public_cta_permission_gate` pass.
 
 Single player first scope. Performance details require measured build/hardware context.
 ```
@@ -371,9 +373,9 @@ Do not paste the same text everywhere. Keep the same facts, but change the ask:
 ```text
 HECTON-8 is a single player first deep sea survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
 
-Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
-Presskit: [gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
-Discord: [gated Discord URL after `discord_open_permission_gate` and `public_cta_permission_gate` pass]
+Steam: HOLD_SOCIAL_STEAM_URL - fill only after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass.
+Presskit: HOLD_SOCIAL_PRESSKIT_URL - fill only after `press_release_permission_gate` and `public_cta_permission_gate` pass.
+Discord: HOLD_SOCIAL_DISCORD_URL - fill only after `discord_open_permission_gate` and `public_cta_permission_gate` pass.
 ```
 
 ## Platform Cadence
@@ -459,4 +461,4 @@ We will publish performance details only with build, hardware, settings, and fra
 
 ## Current HECTON-8 Decision
 
-Reserve handles and prepare profile assets now. Do not start heavy posting until real screenshots exist.
+Maintain candidate handle notes and prepare profile assets now. Do not register handles until `account_registration_permission_gate = ALLOW_ACCOUNT_REGISTRATION_VERIFIED`, and do not post until the exact `public_post_permission_gate` passes.

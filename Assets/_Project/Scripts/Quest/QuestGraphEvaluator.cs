@@ -21,6 +21,7 @@ namespace Hecton8.Quest
         private const float DepthTierThreeMeters = 300f;
         private const float DepthTierFourMeters = 1000f;
         private const int PendingSignalCapacity = 16;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private static readonly uint _deepAbyssZoneHash = QuestFlagHashKernel.ComputeStableHash("zone_deep_abyss");
         private static readonly uint _PendingSignalOverflowWarningHash = unchecked((uint)LocHash.Compute("QuestGraphEvaluator.PendingSignalOverflow"));
         private static readonly uint _ActiveEvaluatorRejectedWarningHash = unchecked((uint)LocHash.Compute("QuestGraphEvaluator.ActiveEvaluatorRejected"));
@@ -57,7 +58,7 @@ namespace Hecton8.Quest
             _stateManager = stateManager;
             _onResultsAvailable = onResultsAvailable;
             _pendingSignalsSentinelLabel = nameof(_pendingSignals) + RuntimeHelpers.GetHashCode(this);
-            _pendingSignals = new NativeQueue<QuestSignalPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<QuestSignalPayload>[16] — quest signal ingress lane drained on event receipt — owner: QuestGraphEvaluator
+            _pendingSignals = new NativeQueue<QuestSignalPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<QuestSignalPayload>[16] — quest signal ingress lane drained on event receipt — owner: QuestGraphEvaluator
             NativeMemorySentinel.RegisterNativeQueue(
                 _pendingSignals,
                 PendingSignalCapacity,

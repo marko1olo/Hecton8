@@ -1,0 +1,307 @@
+{
+  "categories": {
+    "binaryHardwareSwitch": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "burstCompile": {
+      "examples": [
+        {
+          "line": 37,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 129,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 340,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        }
+      ],
+      "files": 1,
+      "matches": 3,
+      "topFiles": [
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs"
+        }
+      ]
+    },
+    "burstMissingCompileSynchronously": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "burstMissingFloatMode": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "burstMissingFloatPrecision": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "globalQualityWeight": {
+      "examples": [
+        {
+          "line": 123,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs",
+          "text": "[FieldOffset(0)] public float GlobalQualityWeight;"
+        },
+        {
+          "line": 143,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs",
+          "text": "tuning.GlobalQualityWeight = AuxiliaryEquipmentMath.Sanitize01(globalQualityWeight, 1f);"
+        },
+        {
+          "line": 189,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs",
+          "text": "[FieldOffset(28)] public float GlobalQualityWeight;"
+        },
+        {
+          "line": 297,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs",
+          "text": "float q = Sanitize01(globalQualityWeight, tuning.GlobalQualityWeight);"
+        },
+        {
+          "line": 144,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "public float GlobalQualityWeight;"
+        },
+        {
+          "line": 191,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "float cadenceHz = AuxiliaryEquipmentMath.ResolveCadenceHz(GlobalQualityWeight, in Tuning);"
+        },
+        {
+          "line": 246,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "math.lerp(0.65f, 1.25f, AuxiliaryEquipmentMath.Sanitize01(GlobalQualityWeight, 1f));"
+        },
+        {
+          "line": 250,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "signal.QualityWeight = AuxiliaryEquipmentMath.Sanitize01(GlobalQualityWeight, 1f);"
+        },
+        {
+          "line": 263,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "float quality = AuxiliaryEquipmentMath.Sanitize01(GlobalQualityWeight, 1f);"
+        },
+        {
+          "line": 348,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "public float GlobalQualityWeight;"
+        },
+        {
+          "line": 372,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "float quality = AuxiliaryEquipmentMath.Sanitize01(GlobalQualityWeight, 1f);"
+        },
+        {
+          "line": 391,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "public float GlobalQualityWeight;"
+        },
+        {
+          "line": 447,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "entry.GlobalQualityWeight = AuxiliaryEquipmentMath.Sanitize01(GlobalQualityWeight, 1f);"
+        },
+        {
+          "line": 329,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+          "text": "GlobalQualityWeight = _lastQualityWeight,"
+        },
+        {
+          "line": 436,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+          "text": "GlobalQualityWeight = _lastQualityWeight"
+        },
+        {
+          "line": 446,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+          "text": "GlobalQualityWeight = _lastQualityWeight,"
+        },
+        {
+          "line": 689,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+          "text": "GlobalQualityWeight = _lastQualityWeight,"
+        },
+        {
+          "line": 1257,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+          "text": "return AuxiliaryEquipmentMath.Sanitize01(tuning.GlobalQualityWeight, 1f);"
+        },
+        {
+          "line": 1259,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+          "text": "float global = HomeostasisBrain.GlobalQualityWeight;"
+        },
+        {
+          "line": 71,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/Editor/AuxiliaryEquipmentEditorTools.cs",
+          "text": "_qualitySlider = new Slider(\"GlobalQualityWeight Override\", 0f, 1f);"
+        }
+      ],
+      "files": 4,
+      "matches": 22,
+      "topFiles": [
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/Editor/AuxiliaryEquipmentEditorTools.cs"
+        }
+      ]
+    },
+    "jobHandleComplete": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "linqSurface": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "noAlias": {
+      "examples": [
+        {
+          "line": 40,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<DeployedAuxiliaryDTO> Deployments;"
+        },
+        {
+          "line": 41,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<AuxiliaryStateDTO> States;"
+        },
+        {
+          "line": 42,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<AuxiliaryTetherAnchorDTO> TetherAnchors;"
+        },
+        {
+          "line": 43,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;"
+        },
+        {
+          "line": 44,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;"
+        },
+        {
+          "line": 45,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<AuxiliaryVfxMatrixDTO> VfxMatrices;"
+        },
+        {
+          "line": 46,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<int> ActiveCount;"
+        },
+        {
+          "line": 132,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<DeployedAuxiliaryDTO> Deployments;"
+        },
+        {
+          "line": 133,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<AuxiliaryStateDTO> States;"
+        },
+        {
+          "line": 134,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<AuxiliaryTetherAnchorDTO> TetherAnchors;"
+        },
+        {
+          "line": 135,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;"
+        },
+        {
+          "line": 137,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;"
+        },
+        {
+          "line": 346,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+          "text": "[NoAlias] public NativeArray<AuxiliaryVfxMatrixDTO> VfxMatrices;"
+        }
+      ],
+      "files": 1,
+      "matches": 13,
+      "topFiles": [
+        {
+          "count": 13,
+          "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs"
+        }
+      ]
+    },
+    "packOne": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "privateNativeCollectionField": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "structAutoProperties": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "unityRandom": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "unityTimeCritical": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "unityUpdateMethod": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    }
+  },
+  "csFileCount": 6,
+  "schema": "hecton8.polish_mandate_static_audit.v1",
+  "sourceRoot": "Assets/_Project/Scripts/Equipment/Auxiliary"
+}

@@ -114,12 +114,8 @@ Shader "Hecton8/Flora/SargassumMaster"
             half _HectonPropWashForce;
             half4 _HectonOceanBiolumColor;
             half _HectonOceanBiolumStrength;
-            float4 _BiolumMasterPhase;
-            float4 _BiolumIntensity;
             float4x4 _GlobalBiolumDearLieGroups;
             float4 _GlobalBiolumParams;
-            float4 _GlobalBiolumClock;
-            float4 _GlobalBiolumAupOffset;
             float _HectonTimeOfDay01;
             float _HectonNightFactor;
             float _SargassumBiolumPhaseMultiplier;
@@ -151,6 +147,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half2 uv : TEXCOORD3;
                 half3 viewDirWS : TEXCOORD4;
                 half fogFactor : TEXCOORD5;
+                float3 biolumLocalAupCoord : TEXCOORD6;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -281,22 +278,37 @@ Shader "Hecton8/Flora/SargassumMaster"
                 return saturate(coarse * 0.46 + fine * 0.34 + wave * 0.20);
             }
 
-            half4 ResolveSargassumGlobalBiolum(float3 positionWS)
+            half3 ResolveSargassumBiolumGroupTint(int stateIndex)
             {
-                if (!all(isfinite(positionWS)))
+                half3 tint0 = half3(0.18h, 0.88h, 1.00h);
+                half3 tint1 = half3(0.32h, 1.00h, 0.62h);
+                half3 tint2 = half3(0.74h, 0.38h, 1.00h);
+                half3 tint3 = half3(1.00h, 0.72h, 0.32h);
+                half idx = (half)stateIndex;
+                half3 lowPair = lerp(tint0, tint1, step(0.5h, idx));
+                half3 highPair = lerp(tint2, tint3, step(2.5h, idx));
+                return lerp(lowPair, highPair, step(1.5h, idx));
+            }
+
+            half4 ResolveSargassumGlobalBiolum(float3 localAupCoord)
+            {
+                if (!all(isfinite(localAupCoord)))
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
                 float4 safeParams = all(isfinite(_GlobalBiolumParams)) ? _GlobalBiolumParams : float4(0.0, 0.0, 0.0, 0.0);
-                float4 safeAupOffset = all(isfinite(_GlobalBiolumAupOffset)) ? _GlobalBiolumAupOffset : float4(0.0, 0.0, 0.0, 0.0);
-                float safeClock = isfinite(_GlobalBiolumClock.x) ? _GlobalBiolumClock.x : 0.0;
+
                 int activeCount = min(max((int)floor(max(safeParams.x, 0.0)), 0), 4);
                 if (activeCount <= 0)
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
-                float selector = frac(abs(positionWS.x * 0.041 + positionWS.z * 0.033 + safeAupOffset.x * 0.0017 + safeAupOffset.z * 0.0013));
+                float selector = frac(abs(localAupCoord.x * 0.041 + localAupCoord.z * 0.033));
                 int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
                 float4 stateRaw = _GlobalBiolumDearLieGroups[stateIndex];
                 float4 state = all(isfinite(stateRaw)) ? stateRaw : float4(0.0, 0.0, 0.0, 0.0);
+                const float invTwoPi = 0.159154943091895;
+                float frequency = max(abs(state.y), 0.0025);
+                float spatialPhase = dot(localAupCoord, float3(0.041, 0.019, 0.033)) + state.w;
+                half primaryPulse = (half)(1.0 - abs(frac(state.x * invTwoPi + spatialPhase * frequency) * 2.0 - 1.0));
                 half strobe = saturate((half)max(safeParams.z, 0.0));
                 half qualityCurve = saturate((half)max(safeParams.y, 0.0));
                 qualityCurve = qualityCurve * qualityCurve * (3.0h - 2.0h * qualityCurve);
@@ -305,19 +317,24 @@ Shader "Hecton8/Flora/SargassumMaster"
                     secondaryIndex = 0;
                 float4 secondaryStateRaw = _GlobalBiolumDearLieGroups[secondaryIndex];
                 float4 secondaryState = all(isfinite(secondaryStateRaw)) ? secondaryStateRaw : float4(0.0, 0.0, 0.0, 0.0);
+                float secondaryFrequency = max(abs(secondaryState.y), 0.0025);
+                float secondarySpatialPhase = dot(localAupCoord, float3(0.031, -0.017, 0.029)) + secondaryState.w;
+                half secondaryPulse = (half)(1.0 - abs(frac(secondaryState.x * invTwoPi + secondarySpatialPhase * secondaryFrequency) * 2.0 - 1.0));
                 half overdrive = 0.0h;
                 half godSpark = 0.0h;
                 half godHaze = 0.0h;
-                half overPulse = (half)(1.0 - abs(frac(safeClock * 0.07 + selector * 3.0) * 2.0 - 1.0));
-                half filament = (half)(1.0 - abs(frac(positionWS.x * 0.127 + positionWS.y * 0.083 + positionWS.z * 0.167 + safeClock * 0.21) * 2.0 - 1.0));
+                half overPulse = secondaryPulse;
+                half filament = (half)(1.0 - abs(frac(state.x * invTwoPi + dot(localAupCoord, float3(0.127, 0.083, 0.167)) * frequency + state.w) * 2.0 - 1.0));
                 godHaze = smoothstep(0.42h, 0.92h, overPulse) * (0.50h + filament * 0.50h) * qualityCurve;
                 godSpark = smoothstep(0.80h, 0.98h, filament) * overPulse * qualityCurve;
                 overdrive = saturate(overPulse * 0.35h + godSpark * 0.22h) * qualityCurve;
-                half3 color = lerp(saturate((half3)state.rgb), half3(1.0h, 1.0h, 1.0h), strobe);
-                half intensity = clamp(max((half)max(state.w, 0.0), strobe * 10.0h), 0.0h, 10.0h);
-                color = lerp(color, saturate((half3)secondaryState.rgb), overdrive);
+                half3 color = lerp(ResolveSargassumBiolumGroupTint(stateIndex), half3(1.0h, 1.0h, 1.0h), strobe);
+                half amplitude = (half)max(state.z, 0.0) * (0.63h + primaryPulse * 0.37h);
+                half secondaryAmplitude = (half)max(secondaryState.z, 0.0) * (0.63h + secondaryPulse * 0.37h);
+                half intensity = clamp(max(amplitude, strobe * 10.0h), 0.0h, 10.0h);
+                color = lerp(color, ResolveSargassumBiolumGroupTint(secondaryIndex), overdrive);
                 color = saturate(color + godHaze * half3(0.04h, 0.16h, 0.19h));
-                intensity = clamp(intensity + (half)max(secondaryState.w, 0.0) * overdrive + godSpark * 0.5h + godHaze * 0.25h, 0.0h, 10.0h);
+                intensity = clamp(intensity + secondaryAmplitude * overdrive + godSpark * 0.5h + godHaze * 0.25h, 0.0h, 10.0h);
                 return half4(color, intensity);
             }
 
@@ -361,6 +378,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 positionOS.y -= _WoundCurlStrength * cutWarp * 0.24h;
 
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
+                float3 biolumOriginWS = TransformObjectToWorld(float3(0.0, 0.0, 0.0)) + _SargassumGlobalDriftOffset.xyz;
                 float3 positionWS = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
                 positionWS.y -= EvaluateBuoyancySinkOffset(positionWS.xz);
                 output.positionCS = TransformWorldToHClip(positionWS);
@@ -370,6 +388,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 output.uv = input.uv;
                 output.viewDirWS = SafeNormalize(GetWorldSpaceViewDir(positionWS));
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
+                output.biolumLocalAupCoord = positionWS - biolumOriginWS;
                 return output;
             }
 
@@ -408,20 +427,21 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half rim = SargassumFastPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower) * _RimStrength;
                 half sss = SargassumFastPower01(saturate(dot(-lightDir, viewDirWS)), _SSSPower) * _SSSStrength * sssMask;
                 half bubbleGlow = isBubble * (_BubbleGlow + backLight * 0.55h);
-                half biolumPhase = (half)(_BiolumMasterPhase.x * 6.28318 * max(_SargassumBiolumPhaseMultiplier, 0.001)) + input.positionWS.x * 0.085h + input.positionWS.z * 0.061h + input.uv.y * 4.2h + input.color.b * 3.7h;
-                half biolumPulse = 1.0h + SargassumTriangleSigned(biolumPhase) * 0.18h;
+                float3 biolumLocalAupCoord = input.biolumLocalAupCoord;
+                half localPulsePhase = biolumLocalAupCoord.x * 0.085h + biolumLocalAupCoord.z * 0.061h + input.uv.y * 4.2h + input.color.b * 3.7h;
+                half biolumPulse = 1.0h + SargassumTriangleSigned(localPulsePhase) * 0.18h;
                 half timeBand = 0.75h + 0.25h * SargassumTriangleSigned(_HectonTimeOfDay01 * 6.28318h + input.color.b * 2.4h);
                 half bubbleBiolumMask = saturate(isBubble * (0.68h + sssMask * 0.24h + bubbleGlow * 0.18h) * _BiolumMaskStrength);
                 half nightFactor = saturate(_HectonNightFactor * _BiolumNightResponse);
                 half oceanBiolumInfluence = saturate(_HectonOceanBiolumStrength);
                 half3 biolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanBiolumInfluence * 0.65h);
-                half4 globalBiolumState = ResolveSargassumGlobalBiolum(input.positionWS);
+                half4 globalBiolumState = ResolveSargassumGlobalBiolum(biolumLocalAupCoord);
                 half globalBiolumMask = step(0.001h, globalBiolumState.w);
                 biolumColor = lerp(biolumColor, globalBiolumState.rgb, globalBiolumMask);
-                half masterBiolum = max(max((half)_BiolumIntensity.x, 0.0h), globalBiolumState.w);
+                half masterBiolum = globalBiolumState.w;
                 half biolumEnergy = clamp(_BiolumStrength * masterBiolum * (1.0h + oceanBiolumInfluence * 0.7h) * bubbleBiolumMask * biolumPulse * timeBand * nightFactor, 0.0h, 10.0h);
                 half3 biolum = biolumColor * biolumEnergy;
-                half signalPhase = dot(input.positionWS.xz, half2(_NoirSignalFlickerScale, _NoirSignalFlickerScale * 1.37h)) + _Time.y * 2.1h + input.color.b * 3.3h;
+                half signalPhase = dot((half2)biolumLocalAupCoord.xz, half2(_NoirSignalFlickerScale, _NoirSignalFlickerScale * 1.37h)) + _Time.y * 2.1h + input.color.b * 3.3h;
                 half signalWave = 1.0h - abs(frac(signalPhase * 0.15915494h) * 2.0h - 1.0h);
                 half signalFlicker = smoothstep(0.18h, 0.92h, signalWave) * saturate(_NoirSignalFlickerStrength);
                 half signalMask = saturate((1.0h - ao) * input.uv.y * (1.0h - isBubble));

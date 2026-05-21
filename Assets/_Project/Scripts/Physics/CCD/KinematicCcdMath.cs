@@ -74,11 +74,5 @@ namespace Hecton8.Physics.CCD
             float3 candidate = NormalizeOrFallback(candidateNormal, primary);
             return math.dot(primary, candidate) <= CornerNormalDotThreshold;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsLowTier(byte scalabilityTierProfileByte)
-        {
-            return scalabilityTierProfileByte == 0;
-        }
     }
 }

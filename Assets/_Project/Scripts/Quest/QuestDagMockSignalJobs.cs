@@ -10,7 +10,7 @@ namespace Hecton8.Quest
     /// <summary>
     /// Blind-dependency mock producer for position, inventory, and story events.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockQuestSignalPushJob : IJob
     {
         public NativeQueue<MockPlayerPositionSignal>.ParallelWriter PlayerPositionWriter;

@@ -15,7 +15,7 @@ namespace Hecton8.Networking
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8850)]
-    public sealed unsafe class HectonRollbackNetcodeRuntime : MonoBehaviour, IDispatcherFixedSystem, IDispatcherFenceDomainProvider, ILateFrameTickable
+    public sealed unsafe class HectonRollbackNetcodeRuntime : MonoBehaviour, IDispatcherFixedSystem, IDispatcherFenceDomainProvider, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const uint FixedSystemHash = 0x4E465852u;
         private const uint PauseSourceHash = 0x4E455452u;
@@ -26,8 +26,8 @@ namespace Hecton8.Networking
         private const float MoveMismatchEpsilon = 0.001f;
         private const float LookMismatchEpsilon = 0.001f;
         private const string LegacyProfileRelativePath = "Docs/Archive/netcode_latency_profiles.h8bin";
-        private const string CsvProfileRelativePath = "netcode_latency_profiles.csv";
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_NETCODE_SURGEON.bin";
+        private const string CsvProfileRelativePath = "netcode_input_profiles.csv";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_278.bin";
         private const uint CsvHashMaxRollbackFrames = 0x09632D65u;
         private const uint CsvHashMaxRollbackDepth = 0x5E49FC48u;
         private const uint CsvHashVisualInterpolationFrames = 0xD47FD347u;
@@ -41,36 +41,67 @@ namespace Hecton8.Networking
         private const uint CsvHashDuplicatePermille = 0x38E0BA0Bu;
         private const uint CsvHashCadenceFrames = 0x155ED66Cu;
         private const uint CsvHashMaxMerkleLeaves = 0x49982615u;
+        private const uint CsvHashExtrapolationDecay = 0x1DEF9A6Cu;
+        private const uint CsvHashExtrapolationDecayPermille = 0xFD28EC45u;
+        private const uint CsvHashPredictionWindow = 0x594C7FE1u;
+        private const uint CsvHashPredictionWindowTicks = 0xFE533844u;
+        private const uint CsvHashBufferCapacity = 0x34F22EE8u;
+        private const uint CsvHashBufferSize = 0xD91F0545u;
+        private const uint CsvHashLatencyThresholdFrames = 0xAB55CC6Cu;
+        private const uint CsvHashLatencyFrames = 0x4F4C0EB0u;
+        private const uint CsvHashActiveProfile = 0xA1F3E155u;
+        private const uint CsvHashDefaultProfile = 0x933B5BDEu;
+        private const uint CsvHashGlobalProfile = 0x1DFF06AEu;
+        private const uint CsvHashGenericProfile = 0x51CCEFFAu;
 
         private static HectonRollbackNetcodeRuntime _activeInstance;
         private static uint _modeFlags;
         private static uint _pauseSequence;
 
         private IDataVault _vault;
-        private VaultBufferHandle<byte> _stateRingHandle;
-        private VaultBufferHandle<FrameSnapshotDTO> _frameSnapshotHandle;
-        private VaultBufferHandle<RollbackRuntimeStateDTO> _runtimeStateHandle;
-        private VaultBufferHandle<RemoteInputFrameDTO> _remoteInputHandle;
-        private VaultBufferHandle<MockTickCommand> _tickCommandHandle;
-        private VaultBufferHandle<VisualStateDTO> _visualStateHandle;
-        private VaultBufferHandle<VisualStateHistoryDTO> _visualHistoryHandle;
-        private VaultBufferHandle<NetTelemetryEntry64> _telemetryHandle;
-        private VaultBufferHandle<RollbackTuningDTO> _tuningHandle;
-        private VaultBufferHandle<RollbackAudioSuppressionDTO> _audioSuppressionHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<RollbackLegacyProfileDTO> _latencyProfileHandle;
-        private VaultBufferHandle<InputStateDTO> _inputJournalHandle;
-        private VaultBufferHandle<RollbackInputJournalSlot64> _rollbackInputJournalHandle;
-        private VaultBufferHandle<H8NetMerkleNodeRecord32> _merkleNodeHandle;
-        private VaultBufferHandle<H8NetMerkleNodeRecord32> _remoteMerkleNodeHandle;
-        private VaultBufferHandle<RollbackVaultBufferDescriptor32> _merkleDescriptorHandle;
-        private VaultBufferHandle<H8NetLeafDeltaRecord64> _leafDeltaHandle;
-        private VaultBufferHandle<MockNetworkJitterPacket64> _mockJitterPacketHandle;
-        private VaultBufferHandle<MockNetworkJitterState64> _mockJitterStateHandle;
+        private VaultGenerationHandle<byte> _stateRingHandle;
+        private VaultGenerationHandle<FrameSnapshotDTO> _frameSnapshotHandle;
+        private VaultGenerationHandle<RollbackRuntimeStateDTO> _runtimeStateHandle;
+        private VaultGenerationHandle<RemoteInputFrameDTO> _remoteInputHandle;
+        private VaultGenerationHandle<MockTickCommand> _tickCommandHandle;
+        private VaultGenerationHandle<VisualStateDTO> _visualStateHandle;
+        private VaultGenerationHandle<VisualStateHistoryDTO> _visualHistoryHandle;
+        private VaultGenerationHandle<NetTelemetryEntry64> _telemetryHandle;
+        private VaultGenerationHandle<RollbackTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<RollbackAudioSuppressionDTO> _audioSuppressionHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<RollbackLegacyProfileDTO> _latencyProfileHandle;
+        private VaultGenerationHandle<InputStateDTO> _inputJournalHandle;
+        private VaultGenerationHandle<PredictedInputDTO> _predictedInputHandle;
+        private VaultGenerationHandle<PredictedInputAupTargetDTO> _predictedInputAupTargetHandle;
+        private VaultGenerationHandle<InputPredictionTelemetryEntry> _inputPredictionTelemetryHandle;
+        private VaultGenerationHandle<RollbackInputJournalSlot64> _rollbackInputJournalHandle;
+        private VaultGenerationHandle<H8NetMerkleNodeRecord32> _merkleNodeHandle;
+        private VaultGenerationHandle<H8NetMerkleNodeRecord32> _remoteMerkleNodeHandle;
+        private VaultGenerationHandle<RollbackVaultBufferDescriptor32> _merkleDescriptorHandle;
+        private VaultGenerationHandle<H8NetLeafDeltaRecord64> _leafDeltaHandle;
+        private VaultGenerationHandle<MockNetworkJitterPacket64> _mockJitterPacketHandle;
+        private VaultGenerationHandle<MockNetworkJitterState64> _mockJitterStateHandle;
+        private VaultGenerationHandle<double3> _rigidbodyAupsLiveHandle;
+        private VaultGenerationHandle<LockstepPlayerKinematicState> _playerStatesLiveHandle;
+        private VaultGenerationHandle<RollbackAup48> _entityAupsLiveHandle;
+        private VaultGenerationHandle<float3> _entityVelocitiesLiveHandle;
+        private VaultGenerationHandle<float> _roomWaterLevelsLiveHandle;
+        private VaultGenerationHandle<uint> _entityFlagsLiveHandle;
+        private VaultGenerationHandle<uint> _entityItemHashesLiveHandle;
+        private VaultGenerationHandle<ushort> _entityQuantitiesLiveHandle;
+        private VaultGenerationHandle<uint> _inventoryHashesLiveHandle;
+        private VaultGenerationHandle<int> _inventoryQuantitiesLiveHandle;
+        private VaultGenerationHandle<float> _inventoryDurabilitiesLiveHandle;
+        private VaultGenerationHandle<ulong> _questMasksLiveHandle;
+        private VaultGenerationHandle<byte> _predatorChosenStatesLiveHandle;
         private int _snapshotStrideBytes;
         private int _registeredFixedDispatcher;
         private int _registeredLateFrame;
+        private int _registeredHotSwapListener;
         private int _buffersReady;
+        private uint _rollbackSignalsReady;
+        private NativeQueue<RollbackRequiredSignal>.ParallelWriter _rollbackSignalWriter;
         private uint _nextCsvPollFrame;
         private int _telemetryWriteIndex;
         private uint _frame;
@@ -119,11 +150,11 @@ namespace Hecton8.Networking
         public static bool TryGetTuning(out RollbackTuningDTO tuning)
         {
             tuning = default;
-            if (_activeInstance == null || !_activeInstance.TryEnsureBuffers())
+            if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            NativeArray<RollbackTuningDTO> tuningBuffer = _activeInstance._tuningHandle.Resolve(_activeInstance._vault);
-            if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+            if (!runtime.TryReadOwned(in runtime._tuningHandle, out NativeArray<RollbackTuningDTO> tuningBuffer) ||
+                tuningBuffer.Length <= 0)
                 return false;
 
             tuning = tuningBuffer[0];
@@ -135,8 +166,8 @@ namespace Hecton8.Networking
             if (_activeInstance == null || !_activeInstance.TryEnsureBuffers())
                 return false;
 
-            NativeArray<RollbackTuningDTO> tuningBuffer = _activeInstance._tuningHandle.Resolve(_activeInstance._vault);
-            if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+            if (!_activeInstance.TryResolveOwned(in _activeInstance._tuningHandle, out NativeArray<RollbackTuningDTO> tuningBuffer) ||
+                tuningBuffer.Length <= 0)
                 return false;
 
             RollbackTuningDTO sanitized = SanitizeTuning(tuning);
@@ -147,11 +178,11 @@ namespace Hecton8.Networking
         public static bool TryGetRuntimeState(out RollbackRuntimeStateDTO state)
         {
             state = default;
-            if (_activeInstance == null || !_activeInstance.TryEnsureBuffers())
+            if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtimeInstance))
                 return false;
 
-            NativeArray<RollbackRuntimeStateDTO> runtime = _activeInstance._runtimeStateHandle.Resolve(_activeInstance._vault);
-            if (!runtime.IsCreated || runtime.Length <= 0)
+            if (!runtimeInstance.TryReadOwned(in runtimeInstance._runtimeStateHandle, out NativeArray<RollbackRuntimeStateDTO> runtime) ||
+                runtime.Length <= 0)
                 return false;
 
             state = runtime[0];
@@ -161,31 +192,82 @@ namespace Hecton8.Networking
         public static bool TryGetVisualStates(out NativeArray<VisualStateDTO> visualStates)
         {
             visualStates = default;
-            if (_activeInstance == null || !_activeInstance.TryEnsureBuffers())
+            if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            visualStates = _activeInstance._visualStateHandle.Resolve(_activeInstance._vault);
-            return visualStates.IsCreated;
+            return runtime.TryReadOwned(in runtime._visualStateHandle, out visualStates);
         }
 
         public static bool TryGetVisualHistory(out NativeArray<VisualStateHistoryDTO> visualHistory)
         {
             visualHistory = default;
-            if (_activeInstance == null || !_activeInstance.TryEnsureBuffers())
+            if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            visualHistory = _activeInstance._visualHistoryHandle.Resolve(_activeInstance._vault);
-            return visualHistory.IsCreated;
+            return runtime.TryReadOwned(in runtime._visualHistoryHandle, out visualHistory);
         }
 
         public static bool TryGetTelemetry(out NativeArray<NetTelemetryEntry64> telemetry)
         {
             telemetry = default;
-            if (_activeInstance == null || !_activeInstance.TryEnsureBuffers())
+            if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
                 return false;
 
-            telemetry = _activeInstance._telemetryHandle.Resolve(_activeInstance._vault);
-            return telemetry.IsCreated;
+            return runtime.TryReadOwned(in runtime._telemetryHandle, out telemetry);
+        }
+
+        public static bool TryGetInputPredictionTelemetry(out NativeArray<InputPredictionTelemetryEntry> telemetry)
+        {
+            telemetry = default;
+            if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
+                return false;
+
+            return runtime.TryReadOwned(in runtime._inputPredictionTelemetryHandle, out telemetry);
+        }
+
+        public static bool TryGetPredictedInputCapacity(out int capacity)
+        {
+            capacity = 0;
+            if (!TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime))
+                return false;
+
+            if (!runtime.TryReadOwned(in runtime._predictedInputHandle, out NativeArray<PredictedInputDTO> predictedInputs))
+                return false;
+
+            capacity = predictedInputs.Length;
+            return capacity > 0;
+        }
+
+        private static bool TryGetReadyActiveInstance(out HectonRollbackNetcodeRuntime runtime)
+        {
+            runtime = _activeInstance;
+            return runtime != null && runtime._buffersReady != 0 && runtime._vault != null;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryResolveOwned<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return _vault != null &&
+                   handle.BufferID != 0u &&
+                   _vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryReadOwned<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return _vault != null &&
+                   handle.BufferID != 0u &&
+                   _vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private NativeArray<T> ResolveOwned<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return TryResolveOwned(in handle, out NativeArray<T> buffer) ? buffer : default;
         }
 
         public static bool TrySetMockJitter(uint latencyFrames, uint packetLossPermille, uint duplicatePermille)
@@ -193,8 +275,8 @@ namespace Hecton8.Networking
             if (_activeInstance == null || !_activeInstance.TryEnsureBuffers())
                 return false;
 
-            NativeArray<RollbackTuningDTO> tuningBuffer = _activeInstance._tuningHandle.Resolve(_activeInstance._vault);
-            if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+            if (!_activeInstance.TryResolveOwned(in _activeInstance._tuningHandle, out NativeArray<RollbackTuningDTO> tuningBuffer) ||
+                tuningBuffer.Length <= 0)
                 return false;
 
             RollbackTuningDTO tuning = tuningBuffer[0];
@@ -212,8 +294,17 @@ namespace Hecton8.Networking
             if (_activeInstance == null || !_activeInstance.TryEnsureBuffers())
                 return false;
 
-            NativeArray<RemoteInputFrameDTO> remote = _activeInstance._remoteInputHandle.Resolve(_activeInstance._vault);
-            if (!remote.IsCreated || remote.Length <= 0)
+            PredictedInputDTO predicted = ToPredictedInput(frame, in input, PredictedInputFlags.Remote | PredictedInputFlags.Authoritative);
+            return InjectRemotePredictedInput(frame, in predicted, flags);
+        }
+
+        public static bool InjectRemotePredictedInput(uint frame, in PredictedInputDTO input, uint flags = RemoteInputFlags.Received)
+        {
+            if (_activeInstance == null || !_activeInstance.TryEnsureBuffers())
+                return false;
+
+            if (!_activeInstance.TryResolveOwned(in _activeInstance._remoteInputHandle, out NativeArray<RemoteInputFrameDTO> remote) ||
+                remote.Length <= 0)
                 return false;
 
             int index = (int)(frame % (uint)remote.Length);
@@ -232,8 +323,8 @@ namespace Hecton8.Networking
             if (_activeInstance == null || !_activeInstance.TryEnsureBuffers())
                 return false;
 
-            NativeArray<RollbackRuntimeStateDTO> runtime = _activeInstance._runtimeStateHandle.Resolve(_activeInstance._vault);
-            if (!runtime.IsCreated || runtime.Length <= 0)
+            if (!_activeInstance.TryResolveOwned(in _activeInstance._runtimeStateHandle, out NativeArray<RollbackRuntimeStateDTO> runtime) ||
+                runtime.Length <= 0)
                 return false;
 
             RollbackRuntimeStateDTO state = runtime[0];
@@ -242,8 +333,7 @@ namespace Hecton8.Networking
             state.LastRemoteBranchHash64 = 0UL;
             runtime[0] = state;
 
-            NativeArray<H8NetMerkleNodeRecord32> remoteNodes = _activeInstance._remoteMerkleNodeHandle.Resolve(_activeInstance._vault);
-            if (remoteNodes.IsCreated)
+            if (_activeInstance.TryResolveOwned(in _activeInstance._remoteMerkleNodeHandle, out NativeArray<H8NetMerkleNodeRecord32> remoteNodes))
             {
                 for (int i = 0; i < remoteNodes.Length; i++)
                     remoteNodes[i] = default;
@@ -259,16 +349,16 @@ namespace Hecton8.Networking
             if ((uint)nodeIndex >= RollbackNetcodeConstants.MerkleNodeCapacity)
                 return false;
 
-            NativeArray<H8NetMerkleNodeRecord32> remoteNodes = _activeInstance._remoteMerkleNodeHandle.Resolve(_activeInstance._vault);
-            if (!remoteNodes.IsCreated || remoteNodes.Length <= nodeIndex)
+            if (!_activeInstance.TryResolveOwned(in _activeInstance._remoteMerkleNodeHandle, out NativeArray<H8NetMerkleNodeRecord32> remoteNodes) ||
+                remoteNodes.Length <= nodeIndex)
                 return false;
 
             remoteNodes[nodeIndex] = node;
             if (nodeIndex != RollbackNetcodeConstants.MerkleRootNodeIndex)
                 return true;
 
-            NativeArray<RollbackRuntimeStateDTO> runtime = _activeInstance._runtimeStateHandle.Resolve(_activeInstance._vault);
-            if (!runtime.IsCreated || runtime.Length <= 0)
+            if (!_activeInstance.TryResolveOwned(in _activeInstance._runtimeStateHandle, out NativeArray<RollbackRuntimeStateDTO> runtime) ||
+                runtime.Length <= 0)
                 return true;
 
             RollbackRuntimeStateDTO state = runtime[0];
@@ -297,6 +387,7 @@ namespace Hecton8.Networking
 
             _activeInstance = this;
             ResolveColdPaths();
+            CacheDataVaultCold(GlobalRegistry.DataVault);
             TryEnsureBuffers();
             ApplyModeFlags(_modeFlags);
         }
@@ -304,6 +395,8 @@ namespace Hecton8.Networking
         private void OnEnable()
         {
             _activeInstance = this;
+            TryRegisterHotSwapListener();
+            CacheDataVaultCold(GlobalRegistry.DataVault);
             TryRegisterDispatch();
         }
 
@@ -321,8 +414,29 @@ namespace Hecton8.Networking
                 _registeredLateFrame = 0;
             }
 
+            TryUnregisterHotSwapListener();
+            _rollbackSignalsReady = 0u;
+            _rollbackSignalWriter = default;
+
             if (_activeInstance == this)
                 _activeInstance = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                CacheDataVaultCold(currentService as IDataVault);
+                if (isActiveAndEnabled)
+                    TryEnsureBuffers();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+                TryRegisterDispatch();
         }
 
         public uint GetFixedSystemIdHash()
@@ -346,8 +460,8 @@ namespace Hecton8.Networking
             _lastScheduledFrame = currentFrame;
             _hasScheduledFrame = 1;
             float quality = ResolveGlobalQualityWeight();
-            NativeArray<RollbackTuningDTO> tuningBuffer = _tuningHandle.Resolve(_vault);
-            NativeArray<RollbackRuntimeStateDTO> runtime = _runtimeStateHandle.Resolve(_vault);
+            NativeArray<RollbackTuningDTO> tuningBuffer = ResolveOwned(in _tuningHandle);
+            NativeArray<RollbackRuntimeStateDTO> runtime = ResolveOwned(in _runtimeStateHandle);
             if (!tuningBuffer.IsCreated || !runtime.IsCreated)
                 return dependsOn;
 
@@ -355,35 +469,37 @@ namespace Hecton8.Networking
             tuning.GlobalQualityWeight = quality;
             tuningBuffer[0] = tuning;
 
-            NativeArray<InputStateDTO> inputJournal = _inputJournalHandle.Resolve(_vault);
-            NativeArray<RemoteInputFrameDTO> remoteInput = _remoteInputHandle.Resolve(_vault);
-            NativeArray<byte> stateRing = _stateRingHandle.Resolve(_vault);
-            NativeArray<FrameSnapshotDTO> snapshots = _frameSnapshotHandle.Resolve(_vault);
-            NativeArray<MockTickCommand> commands = _tickCommandHandle.Resolve(_vault);
-            NativeArray<RollbackAudioSuppressionDTO> audio = _audioSuppressionHandle.Resolve(_vault);
-            NativeArray<VisualStateDTO> visualStates = _visualStateHandle.Resolve(_vault);
-            NativeArray<VisualStateHistoryDTO> visualHistory = _visualHistoryHandle.Resolve(_vault);
-            NativeArray<NetTelemetryEntry64> telemetry = _telemetryHandle.Resolve(_vault);
-            NativeArray<RollbackInputJournalSlot64> rollbackInputJournal = _rollbackInputJournalHandle.Resolve(_vault);
-            NativeArray<H8NetMerkleNodeRecord32> merkleNodes = _merkleNodeHandle.Resolve(_vault);
-            NativeArray<H8NetMerkleNodeRecord32> remoteMerkleNodes = _remoteMerkleNodeHandle.Resolve(_vault);
-            NativeArray<RollbackVaultBufferDescriptor32> merkleDescriptors = _merkleDescriptorHandle.Resolve(_vault);
-            NativeArray<H8NetLeafDeltaRecord64> leafDeltaRecords = _leafDeltaHandle.Resolve(_vault);
-            NativeArray<MockNetworkJitterPacket64> jitterPackets = _mockJitterPacketHandle.Resolve(_vault);
-            NativeArray<MockNetworkJitterState64> jitterState = _mockJitterStateHandle.Resolve(_vault);
-            NativeArray<double3> rigidbodyAups = ResolveLiveBuffer<double3>(BufferID.RigidbodyAUPs);
-            NativeArray<LockstepPlayerKinematicState> playerStates = ResolveLiveBuffer<LockstepPlayerKinematicState>(BufferID.PlayerKinematicState);
-            NativeArray<RollbackAup48> entityAups = ResolveLiveBuffer<RollbackAup48>(BufferID.EntityAUPs);
-            NativeArray<float3> entityVelocities = ResolveLiveBuffer<float3>(BufferID.EntityVelocities);
-            NativeArray<float> roomWaterLevels = ResolveLiveBuffer<float>(BufferID.RoomWaterLevels);
-            NativeArray<uint> entityFlags = ResolveLiveBuffer<uint>(BufferID.EntityFlags);
-            NativeArray<uint> entityItemHashes = ResolveLiveBuffer<uint>(BufferID.EntityItemHashes);
-            NativeArray<ushort> entityQuantities = ResolveLiveBuffer<ushort>(BufferID.EntityQuantities);
-            NativeArray<uint> inventoryHashes = ResolveLiveBuffer<uint>(BufferID.ShinobuInventoryHashes);
-            NativeArray<int> inventoryQuantities = ResolveLiveBuffer<int>(BufferID.ShinobuInventoryQuantities);
-            NativeArray<float> inventoryDurabilities = ResolveLiveBuffer<float>(BufferID.ShinobuInventoryDurabilities);
-            NativeArray<ulong> questMasks = ResolveLiveBuffer<ulong>(BufferID.QuestDagGlobalStateMasks);
-            NativeArray<byte> predatorChosenStates = ResolveLiveBuffer<byte>(BufferID.PredatorCognitionChosenStates);
+            NativeArray<PredictedInputDTO> inputJournal = ResolveBoundBuffer(BufferID.ShinobuPredictedInputRing, ref _predictedInputHandle);
+            NativeArray<PredictedInputAupTargetDTO> inputTargets = ResolveBoundBuffer(BufferID.ShinobuPredictedInputAupTargets, ref _predictedInputAupTargetHandle);
+            NativeArray<RemoteInputFrameDTO> remoteInput = ResolveOwned(in _remoteInputHandle);
+            NativeArray<byte> stateRing = ResolveOwned(in _stateRingHandle);
+            NativeArray<FrameSnapshotDTO> snapshots = ResolveOwned(in _frameSnapshotHandle);
+            NativeArray<MockTickCommand> commands = ResolveOwned(in _tickCommandHandle);
+            NativeArray<RollbackAudioSuppressionDTO> audio = ResolveOwned(in _audioSuppressionHandle);
+            NativeArray<VisualStateDTO> visualStates = ResolveOwned(in _visualStateHandle);
+            NativeArray<VisualStateHistoryDTO> visualHistory = ResolveOwned(in _visualHistoryHandle);
+            NativeArray<NetTelemetryEntry64> telemetry = ResolveOwned(in _telemetryHandle);
+            NativeArray<InputPredictionTelemetryEntry> inputPredictionTelemetry = ResolveOwned(in _inputPredictionTelemetryHandle);
+            NativeArray<RollbackInputJournalSlot64> rollbackInputJournal = ResolveOwned(in _rollbackInputJournalHandle);
+            NativeArray<H8NetMerkleNodeRecord32> merkleNodes = ResolveOwned(in _merkleNodeHandle);
+            NativeArray<H8NetMerkleNodeRecord32> remoteMerkleNodes = ResolveOwned(in _remoteMerkleNodeHandle);
+            NativeArray<RollbackVaultBufferDescriptor32> merkleDescriptors = ResolveOwned(in _merkleDescriptorHandle);
+            NativeArray<H8NetLeafDeltaRecord64> leafDeltaRecords = ResolveOwned(in _leafDeltaHandle);
+            NativeArray<MockNetworkJitterPacket64> jitterPackets = ResolveOwned(in _mockJitterPacketHandle);
+            NativeArray<MockNetworkJitterState64> jitterState = ResolveOwned(in _mockJitterStateHandle);
+            NativeArray<double3> rigidbodyAups = ResolveBoundBuffer(BufferID.RigidbodyAUPs, ref _rigidbodyAupsLiveHandle);
+            NativeArray<LockstepPlayerKinematicState> playerStates = ResolveBoundBuffer(BufferID.PlayerKinematicState, ref _playerStatesLiveHandle);
+            NativeArray<RollbackAup48> entityAups = ResolveBoundBuffer(BufferID.EntityAUPs, ref _entityAupsLiveHandle);
+            NativeArray<float3> entityVelocities = ResolveBoundBuffer(BufferID.EntityVelocities, ref _entityVelocitiesLiveHandle);
+            NativeArray<float> roomWaterLevels = ResolveBoundBuffer(BufferID.RoomWaterLevels, ref _roomWaterLevelsLiveHandle);
+            NativeArray<uint> entityFlags = ResolveBoundBuffer(BufferID.EntityFlags, ref _entityFlagsLiveHandle);
+            NativeArray<uint> entityItemHashes = ResolveBoundBuffer(BufferID.EntityItemHashes, ref _entityItemHashesLiveHandle);
+            NativeArray<ushort> entityQuantities = ResolveBoundBuffer(BufferID.EntityQuantities, ref _entityQuantitiesLiveHandle);
+            NativeArray<uint> inventoryHashes = ResolveBoundBuffer(BufferID.ShinobuInventoryHashes, ref _inventoryHashesLiveHandle);
+            NativeArray<int> inventoryQuantities = ResolveBoundBuffer(BufferID.ShinobuInventoryQuantities, ref _inventoryQuantitiesLiveHandle);
+            NativeArray<float> inventoryDurabilities = ResolveBoundBuffer(BufferID.ShinobuInventoryDurabilities, ref _inventoryDurabilitiesLiveHandle);
+            NativeArray<ulong> questMasks = ResolveBoundBuffer(BufferID.QuestDagGlobalStateMasks, ref _questMasksLiveHandle);
+            NativeArray<byte> predatorChosenStates = ResolveBoundBuffer(BufferID.PredatorCognitionChosenStates, ref _predatorChosenStatesLiveHandle);
 
             int telemetryIndex = _telemetryWriteIndex;
             if (telemetry.IsCreated && telemetry.Length > 0)
@@ -445,6 +561,7 @@ namespace Hecton8.Networking
                 RuntimeState = runtime,
                 PredictedJournal = inputJournal,
                 RemoteInputRing = remoteInput,
+                TargetAups = inputTargets,
                 InputJournalRing = rollbackInputJournal,
                 StateRingBuffer = stateRing,
                 FrameSnapshots = snapshots,
@@ -457,6 +574,7 @@ namespace Hecton8.Networking
                 LeafDeltaRecords = leafDeltaRecords,
                 MockJitterState = jitterState,
                 Telemetry = telemetry,
+                InputPredictionTelemetry = inputPredictionTelemetry,
                 RigidbodyAups = rigidbodyAups,
                 PlayerStates = playerStates,
                 EntityAups = entityAups,
@@ -490,7 +608,9 @@ namespace Hecton8.Networking
                 MoveEpsilon = MoveMismatchEpsilon,
                 LookEpsilon = LookMismatchEpsilon,
                 TelemetryWriteIndex = telemetryIndex,
-                ModQuarantineMask = ResolveModQuarantineMask()
+                ModQuarantineMask = ResolveModQuarantineMask(),
+                RollbackSignals = _rollbackSignalWriter,
+                RollbackSignalsEnabled = _rollbackSignalsReady
             };
 
             JobHandle handle = pipeline.Schedule(merkleHandle);
@@ -503,7 +623,7 @@ namespace Hecton8.Networking
             if (!TryEnsureBuffers())
                 return;
 
-            NativeArray<RollbackRuntimeStateDTO> runtime = _runtimeStateHandle.Resolve(_vault);
+            NativeArray<RollbackRuntimeStateDTO> runtime = ResolveOwned(in _runtimeStateHandle);
             if (!runtime.IsCreated || runtime.Length <= 0)
                 return;
 
@@ -520,7 +640,9 @@ namespace Hecton8.Networking
                 return;
             }
 
-            if ((state.Flags & RollbackNetcodeFlags.ResimBudgetExceeded) != 0u)
+            if ((state.Flags & (RollbackNetcodeFlags.ResimBudgetExceeded |
+                                RollbackNetcodeFlags.InputPredictionSlow |
+                                RollbackNetcodeFlags.InputPredictionNonFinite)) != 0u)
                 DumpNetcodeBlackBox(state.CurrentFrame, state.Flags);
         }
 
@@ -529,8 +651,8 @@ namespace Hecton8.Networking
             if (!TryEnsureBuffers())
                 return;
 
-            NativeArray<VisualStateDTO> visualStates = _visualStateHandle.Resolve(_vault);
-            NativeArray<VisualStateHistoryDTO> visualHistory = _visualHistoryHandle.Resolve(_vault);
+            NativeArray<VisualStateDTO> visualStates = ResolveOwned(in _visualStateHandle);
+            NativeArray<VisualStateHistoryDTO> visualHistory = ResolveOwned(in _visualHistoryHandle);
             BlendVisualStates(visualStates, visualHistory, _frame, ResolveGlobalQualityWeight());
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -548,7 +670,7 @@ namespace Hecton8.Networking
             if (_activeInstance != this || !TryEnsureBuffers())
                 return;
 
-            NativeArray<VisualStateDTO> states = _visualStateHandle.Resolve(_vault);
+            NativeArray<VisualStateDTO> states = ResolveOwned(in _visualStateHandle);
             if (!states.IsCreated)
                 return;
 
@@ -563,6 +685,43 @@ namespace Hecton8.Networking
                 Gizmos.color = new Color(0.05f, 1f, 0.32f, 0.9f);
                 Gizmos.DrawWireSphere(ToVector3(state.InterpolatedLocalMeters), 0.24f);
             }
+
+            NativeArray<PredictedInputDTO> predicted = ResolveBoundBuffer(BufferID.ShinobuPredictedInputRing, ref _predictedInputHandle);
+            NativeArray<RemoteInputFrameDTO> remote = ResolveOwned(in _remoteInputHandle);
+            if (!predicted.IsCreated || predicted.Length <= 0)
+                return;
+
+            uint start = _frame > 16u ? _frame - 16u : 0u;
+            Vector3 predictedCursor = Vector3.zero;
+            Vector3 remoteCursor = Vector3.zero;
+            for (uint tick = start; tick < _frame; tick++)
+            {
+                PredictedInputDTO predictedInput = predicted[(int)(tick % (uint)predicted.Length)];
+                if (predictedInput.TickNumber != tick)
+                    continue;
+
+                Vector3 nextPredicted = predictedCursor + ToVector3(predictedInput.LocalMoveVector) * 0.25f;
+                Gizmos.color = new Color(0.05f, 1f, 0.32f, 0.9f);
+                Gizmos.DrawLine(predictedCursor, nextPredicted);
+                predictedCursor = nextPredicted;
+
+                if (!remote.IsCreated || remote.Length <= 0)
+                    continue;
+
+                RemoteInputFrameDTO remoteInput = remote[(int)(tick % (uint)remote.Length)];
+                if (remoteInput.Frame != tick)
+                    continue;
+
+                Vector3 nextRemote = remoteCursor + ToVector3(remoteInput.Input.LocalMoveVector) * 0.25f;
+                Gizmos.color = new Color(0.12f, 0.35f, 1f, 0.85f);
+                Gizmos.DrawLine(remoteCursor, nextRemote);
+                if (remoteInput.Input.ActionButtonsMask != predictedInput.ActionButtonsMask)
+                {
+                    Gizmos.color = new Color(1f, 0.05f, 0.02f, 0.95f);
+                    Gizmos.DrawWireSphere(nextPredicted, 0.16f);
+                }
+                remoteCursor = nextRemote;
+            }
         }
 #endif
 
@@ -571,7 +730,7 @@ namespace Hecton8.Networking
             if (!TryEnsureBuffers())
                 return false;
 
-            NativeArray<RollbackRuntimeStateDTO> runtime = _runtimeStateHandle.Resolve(_vault);
+            NativeArray<RollbackRuntimeStateDTO> runtime = ResolveOwned(in _runtimeStateHandle);
             if (!runtime.IsCreated || runtime.Length <= 0)
                 return false;
 
@@ -581,12 +740,68 @@ namespace Hecton8.Networking
             return true;
         }
 
+        private void CacheDataVaultCold(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            _vault = vault;
+            ClearBufferHandles();
+        }
+
+        private void ClearBufferHandles()
+        {
+            _stateRingHandle = default;
+            _frameSnapshotHandle = default;
+            _runtimeStateHandle = default;
+            _remoteInputHandle = default;
+            _tickCommandHandle = default;
+            _visualStateHandle = default;
+            _visualHistoryHandle = default;
+            _telemetryHandle = default;
+            _tuningHandle = default;
+            _audioSuppressionHandle = default;
+            _csvScratchHandle = default;
+            _latencyProfileHandle = default;
+            _inputJournalHandle = default;
+            _predictedInputHandle = default;
+            _predictedInputAupTargetHandle = default;
+            _inputPredictionTelemetryHandle = default;
+            _rollbackInputJournalHandle = default;
+            _merkleNodeHandle = default;
+            _remoteMerkleNodeHandle = default;
+            _merkleDescriptorHandle = default;
+            _leafDeltaHandle = default;
+            _mockJitterPacketHandle = default;
+            _mockJitterStateHandle = default;
+            _rigidbodyAupsLiveHandle = default;
+            _playerStatesLiveHandle = default;
+            _entityAupsLiveHandle = default;
+            _entityVelocitiesLiveHandle = default;
+            _roomWaterLevelsLiveHandle = default;
+            _entityFlagsLiveHandle = default;
+            _entityItemHashesLiveHandle = default;
+            _entityQuantitiesLiveHandle = default;
+            _inventoryHashesLiveHandle = default;
+            _inventoryQuantitiesLiveHandle = default;
+            _inventoryDurabilitiesLiveHandle = default;
+            _questMasksLiveHandle = default;
+            _predatorChosenStatesLiveHandle = default;
+            _snapshotStrideBytes = 0;
+            _rollbackSignalsReady = 0u;
+            _rollbackSignalWriter = default;
+            _buffersReady = 0;
+        }
+
         private bool TryEnsureBuffers()
         {
             if (_buffersReady != 0 && _vault != null)
-                return true;
+            {
+                TryBindInputTruthHandles();
+                TryBindBorrowedSnapshotHandles();
+                return TryCacheRollbackSignalWriterCold();
+            }
 
-            _vault = GlobalRegistry.DataVault;
             if (_vault == null)
                 return false;
 
@@ -595,28 +810,32 @@ namespace Hecton8.Networking
 
             _snapshotStrideBytes = RollbackNetcodeConstants.ResolveSnapshotStrideBytes();
             int stateRingBytes = _snapshotStrideBytes * RollbackNetcodeConstants.StateRingFrameCapacity;
-            _stateRingHandle = _vault.GetBufferHandle<byte>(RollbackNetcodeVault.StateRingBuffer, stateRingBytes, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _frameSnapshotHandle = _vault.GetBufferHandle<FrameSnapshotDTO>(RollbackNetcodeVault.FrameSnapshots, RollbackNetcodeConstants.StateRingFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _runtimeStateHandle = _vault.GetBufferHandle<RollbackRuntimeStateDTO>(RollbackNetcodeVault.RuntimeState, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _remoteInputHandle = _vault.GetBufferHandle<RemoteInputFrameDTO>(RollbackNetcodeVault.RemoteInputRing, RollbackNetcodeConstants.InputRingCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _tickCommandHandle = _vault.GetBufferHandle<MockTickCommand>(RollbackNetcodeVault.TickCommands, RollbackNetcodeConstants.CommandCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _visualStateHandle = _vault.GetBufferHandle<VisualStateDTO>(RollbackNetcodeVault.VisualStates, RollbackNetcodeConstants.VisualStateCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _visualHistoryHandle = _vault.GetBufferHandle<VisualStateHistoryDTO>(RollbackNetcodeVault.VisualHistory, RollbackNetcodeConstants.VisualHistoryCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = _vault.GetBufferHandle<NetTelemetryEntry64>(RollbackNetcodeVault.TelemetryRing, RollbackNetcodeConstants.TelemetryFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _tuningHandle = _vault.GetBufferHandle<RollbackTuningDTO>(RollbackNetcodeVault.Tuning, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _audioSuppressionHandle = _vault.GetBufferHandle<RollbackAudioSuppressionDTO>(RollbackNetcodeVault.AudioSuppression, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = _vault.GetBufferHandle<byte>(RollbackNetcodeVault.CsvScratch, RollbackNetcodeConstants.CsvScratchBytes, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _latencyProfileHandle = _vault.GetBufferHandle<RollbackLegacyProfileDTO>(RollbackNetcodeVault.LatencyProfile, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _merkleNodeHandle = _vault.GetBufferHandle<H8NetMerkleNodeRecord32>(RollbackNetcodeVault.MerkleNodes, RollbackNetcodeConstants.MerkleNodeCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _remoteMerkleNodeHandle = _vault.GetBufferHandle<H8NetMerkleNodeRecord32>(RollbackNetcodeVault.RemoteMerkleNodes, RollbackNetcodeConstants.MerkleNodeCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _merkleDescriptorHandle = _vault.GetBufferHandle<RollbackVaultBufferDescriptor32>(RollbackNetcodeVault.MerkleLeafDescriptors, RollbackNetcodeConstants.MerkleLeafCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _leafDeltaHandle = _vault.GetBufferHandle<H8NetLeafDeltaRecord64>(RollbackNetcodeVault.LeafDeltaRecords, RollbackNetcodeConstants.LeafDeltaCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _rollbackInputJournalHandle = _vault.GetBufferHandle<RollbackInputJournalSlot64>(RollbackNetcodeVault.InputJournalRing, RollbackNetcodeConstants.InputRingCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _mockJitterPacketHandle = _vault.GetBufferHandle<MockNetworkJitterPacket64>(RollbackNetcodeVault.MockJitterPackets, RollbackNetcodeConstants.MockJitterPacketCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _mockJitterStateHandle = _vault.GetBufferHandle<MockNetworkJitterState64>(RollbackNetcodeVault.MockJitterState, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _stateRingHandle = _vault.GetGenerationHandle<byte>(RollbackNetcodeVault.StateRingBuffer, stateRingBytes, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _frameSnapshotHandle = _vault.GetGenerationHandle<FrameSnapshotDTO>(RollbackNetcodeVault.FrameSnapshots, RollbackNetcodeConstants.StateRingFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _runtimeStateHandle = _vault.GetGenerationHandle<RollbackRuntimeStateDTO>(RollbackNetcodeVault.RuntimeState, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _remoteInputHandle = _vault.GetGenerationHandle<RemoteInputFrameDTO>(RollbackNetcodeVault.RemoteInputRing, RollbackNetcodeConstants.InputRingCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _tickCommandHandle = _vault.GetGenerationHandle<MockTickCommand>(RollbackNetcodeVault.TickCommands, RollbackNetcodeConstants.CommandCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _visualStateHandle = _vault.GetGenerationHandle<VisualStateDTO>(RollbackNetcodeVault.VisualStates, RollbackNetcodeConstants.VisualStateCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _visualHistoryHandle = _vault.GetGenerationHandle<VisualStateHistoryDTO>(RollbackNetcodeVault.VisualHistory, RollbackNetcodeConstants.VisualHistoryCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _telemetryHandle = _vault.GetGenerationHandle<NetTelemetryEntry64>(RollbackNetcodeVault.TelemetryRing, RollbackNetcodeConstants.TelemetryFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _inputPredictionTelemetryHandle = _vault.GetGenerationHandle<InputPredictionTelemetryEntry>(RollbackNetcodeVault.InputPredictionTelemetry, RollbackNetcodeConstants.TelemetryFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _tuningHandle = _vault.GetGenerationHandle<RollbackTuningDTO>(RollbackNetcodeVault.Tuning, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _audioSuppressionHandle = _vault.GetGenerationHandle<RollbackAudioSuppressionDTO>(RollbackNetcodeVault.AudioSuppression, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _csvScratchHandle = _vault.GetGenerationHandle<byte>(RollbackNetcodeVault.CsvScratch, RollbackNetcodeConstants.CsvScratchBytes, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _latencyProfileHandle = _vault.GetGenerationHandle<RollbackLegacyProfileDTO>(RollbackNetcodeVault.LatencyProfile, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _merkleNodeHandle = _vault.GetGenerationHandle<H8NetMerkleNodeRecord32>(RollbackNetcodeVault.MerkleNodes, RollbackNetcodeConstants.MerkleNodeCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _remoteMerkleNodeHandle = _vault.GetGenerationHandle<H8NetMerkleNodeRecord32>(RollbackNetcodeVault.RemoteMerkleNodes, RollbackNetcodeConstants.MerkleNodeCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _merkleDescriptorHandle = _vault.GetGenerationHandle<RollbackVaultBufferDescriptor32>(RollbackNetcodeVault.MerkleLeafDescriptors, RollbackNetcodeConstants.MerkleLeafCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
+            _leafDeltaHandle = _vault.GetGenerationHandle<H8NetLeafDeltaRecord64>(RollbackNetcodeVault.LeafDeltaRecords, RollbackNetcodeConstants.LeafDeltaCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _rollbackInputJournalHandle = _vault.GetGenerationHandle<RollbackInputJournalSlot64>(RollbackNetcodeVault.InputJournalRing, RollbackNetcodeConstants.InputRingCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _mockJitterPacketHandle = _vault.GetGenerationHandle<MockNetworkJitterPacket64>(RollbackNetcodeVault.MockJitterPackets, RollbackNetcodeConstants.MockJitterPacketCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _mockJitterStateHandle = _vault.GetGenerationHandle<MockNetworkJitterState64>(RollbackNetcodeVault.MockJitterState, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
 
-            if (!_vault.TryGetBufferHandle(BufferID.ShinobuInputJournalRing, out _inputJournalHandle))
-                _inputJournalHandle = _vault.GetBufferHandle<InputStateDTO>(BufferID.ShinobuInputJournalRing, RollbackNetcodeConstants.InputRingCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            TryBindInputTruthHandles();
+            TryBindBorrowedSnapshotHandles();
+
+            if (!TryCacheRollbackSignalWriterCold())
+                return false;
 
             InitializeAuthoritativeMerkleDescriptors();
             EnsureDefaultTuning();
@@ -628,9 +847,35 @@ namespace Hecton8.Networking
             return true;
         }
 
+        private bool TryCacheRollbackSignalWriterCold()
+        {
+            if (_rollbackSignalsReady != 0u)
+                return true;
+
+            if (RollbackNetcodeLayoutGuard.Validate() != 0u)
+                return false;
+
+            SignalBus<RollbackRequiredSignal>.Configure(32, maxFrameSignals: 64, lowTierFrameSignals: 8, laneHash: 0x52425153u);
+            SignalBus<RollbackRequiredSignal>.EnsureInitialized();
+            NativeQueue<RollbackRequiredSignal> rollbackSignalQueue = SignalBus<RollbackRequiredSignal>.OpenQueueForLegacyGlobalSignals();
+            if (!rollbackSignalQueue.IsCreated)
+                return false;
+
+            _rollbackSignalWriter = rollbackSignalQueue.AsParallelWriter();
+            _rollbackSignalsReady = 1u;
+            return true;
+        }
+
+        private void TryBindInputTruthHandles()
+        {
+            TryBindExistingIfMissing(BufferID.ShinobuInputJournalRing, ref _inputJournalHandle);
+            TryBindExistingIfMissing(BufferID.ShinobuPredictedInputRing, ref _predictedInputHandle);
+            TryBindExistingIfMissing(BufferID.ShinobuPredictedInputAupTargets, ref _predictedInputAupTargetHandle);
+        }
+
         private void InitializeAuthoritativeMerkleDescriptors()
         {
-            NativeArray<RollbackVaultBufferDescriptor32> descriptors = _merkleDescriptorHandle.Resolve(_vault);
+            NativeArray<RollbackVaultBufferDescriptor32> descriptors = ResolveOwned(in _merkleDescriptorHandle);
             if (!descriptors.IsCreated || descriptors.Length < RollbackNetcodeConstants.MerkleLeafCapacity)
                 return;
 
@@ -682,7 +927,7 @@ namespace Hecton8.Networking
 
         private void EnsureDefaultTuning()
         {
-            NativeArray<RollbackTuningDTO> tuning = _tuningHandle.Resolve(_vault);
+            NativeArray<RollbackTuningDTO> tuning = ResolveOwned(in _tuningHandle);
             if (!tuning.IsCreated || tuning.Length <= 0)
                 return;
 
@@ -700,6 +945,8 @@ namespace Hecton8.Networking
             defaults.HashCadenceFrames = RollbackNetcodeConstants.DesyncHashCadenceFrames;
             defaults.MaxMerkleLeaves = RollbackNetcodeConstants.MerkleLeafCapacity;
             defaults.RedundancyCount = 1u;
+            defaults.ExtrapolationDecayPermille = RollbackNetcodeConstants.DefaultExtrapolationDecayPermille;
+            defaults.PredictionWindowTicks = 30u;
             defaults.InputDelayFrames = 0u;
             defaults.PacketLossPermille = 0u;
             defaults.DuplicatePermille = 0u;
@@ -711,7 +958,7 @@ namespace Hecton8.Networking
             if (string.IsNullOrEmpty(_legacyProfilePath) || !File.Exists(_legacyProfilePath))
                 return false;
 
-            NativeArray<RollbackLegacyProfileDTO> profileBuffer = _latencyProfileHandle.Resolve(_vault);
+            NativeArray<RollbackLegacyProfileDTO> profileBuffer = ResolveOwned(in _latencyProfileHandle);
             if (!profileBuffer.IsCreated || profileBuffer.Length <= 0)
                 return false;
 
@@ -752,7 +999,7 @@ namespace Hecton8.Networking
                 return false;
 
             profileBuffer[0] = profile;
-            NativeArray<RollbackTuningDTO> tuningBuffer = _tuningHandle.Resolve(_vault);
+            NativeArray<RollbackTuningDTO> tuningBuffer = ResolveOwned(in _tuningHandle);
             if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
             {
                 RollbackTuningDTO tuning = tuningBuffer[0];
@@ -770,7 +1017,7 @@ namespace Hecton8.Networking
 
         private void GenerateEmergencyMockNetcode()
         {
-            NativeArray<RollbackRuntimeStateDTO> runtime = _runtimeStateHandle.Resolve(_vault);
+            NativeArray<RollbackRuntimeStateDTO> runtime = ResolveOwned(in _runtimeStateHandle);
             if (runtime.IsCreated && runtime.Length > 0)
             {
                 RollbackRuntimeStateDTO state = runtime[0];
@@ -778,7 +1025,7 @@ namespace Hecton8.Networking
                 runtime[0] = state;
             }
 
-            NativeArray<RollbackTuningDTO> tuningBuffer = _tuningHandle.Resolve(_vault);
+            NativeArray<RollbackTuningDTO> tuningBuffer = ResolveOwned(in _tuningHandle);
             if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
             {
                 RollbackTuningDTO tuning = tuningBuffer[0];
@@ -788,10 +1035,12 @@ namespace Hecton8.Networking
                 tuning.PacketLossPermille = 50u;
                 tuning.DuplicatePermille = 20u;
                 tuning.RedundancyCount = math.max(1u, tuning.RedundancyCount);
+                tuning.ExtrapolationDecayPermille = RollbackNetcodeConstants.DefaultExtrapolationDecayPermille;
+                tuning.PredictionWindowTicks = RollbackNetcodeMath.ResolvePredictionWindowTicks(in tuning, ResolveGlobalQualityWeight(), tuning.PingSimulatedFrames);
                 tuningBuffer[0] = SanitizeTuning(tuning);
             }
 
-            NativeArray<MockNetworkJitterState64> jitter = _mockJitterStateHandle.Resolve(_vault);
+            NativeArray<MockNetworkJitterState64> jitter = ResolveOwned(in _mockJitterStateHandle);
             if (jitter.IsCreated && jitter.Length > 0)
             {
                 MockNetworkJitterState64 state = jitter[0];
@@ -803,7 +1052,7 @@ namespace Hecton8.Networking
                 jitter[0] = state;
             }
 
-            NativeArray<RemoteInputFrameDTO> remote = _remoteInputHandle.Resolve(_vault);
+            NativeArray<RemoteInputFrameDTO> remote = ResolveOwned(in _remoteInputHandle);
             if (!remote.IsCreated)
                 return;
 
@@ -820,7 +1069,7 @@ namespace Hecton8.Networking
         private bool SimulatePingInternal(int delayedFrames)
         {
             TrySetMockJitter((uint)math.max(0, delayedFrames), 50u, 20u);
-            NativeArray<InputStateDTO> journal = _inputJournalHandle.Resolve(_vault);
+            NativeArray<PredictedInputDTO> journal = ResolveBoundBuffer(BufferID.ShinobuPredictedInputRing, ref _predictedInputHandle);
             if (!journal.IsCreated || journal.Length <= 0)
                 return false;
 
@@ -829,9 +1078,9 @@ namespace Hecton8.Networking
             if (!RollbackNetcodeMath.TryResolveHistoricalFrame(_frame, previousFrame, age, out uint frame))
                 frame = 0u;
 
-            InputStateDTO input = journal[(int)(frame % (uint)journal.Length)];
-            input.ButtonMask ^= 1u;
-            return InjectRemoteInput(frame, in input, RemoteInputFlags.Received);
+            PredictedInputDTO input = journal[(int)(frame % (uint)journal.Length)];
+            input.ActionButtonsMask ^= 1u;
+            return InjectRemotePredictedInput(frame, in input, RemoteInputFlags.Received);
         }
 
         private static void BlendVisualStates(NativeArray<VisualStateDTO> visualStates, NativeArray<VisualStateHistoryDTO> visualHistory, uint frame, float quality)
@@ -849,11 +1098,56 @@ namespace Hecton8.Networking
             job.Execute();
         }
 
-        private NativeArray<T> ResolveLiveBuffer<T>(BufferID bufferId) where T : struct
+        private void TryBindBorrowedSnapshotHandles()
         {
-            return _vault != null && _vault.TryGetBuffer(bufferId, out NativeArray<T> buffer)
-                ? buffer
-                : default;
+            TryBindExistingIfMissing(BufferID.RigidbodyAUPs, ref _rigidbodyAupsLiveHandle);
+            TryBindExistingIfMissing(BufferID.PlayerKinematicState, ref _playerStatesLiveHandle);
+            TryBindExistingIfMissing(BufferID.EntityAUPs, ref _entityAupsLiveHandle);
+            TryBindExistingIfMissing(BufferID.EntityVelocities, ref _entityVelocitiesLiveHandle);
+            TryBindExistingIfMissing(BufferID.RoomWaterLevels, ref _roomWaterLevelsLiveHandle);
+            TryBindExistingIfMissing(BufferID.EntityFlags, ref _entityFlagsLiveHandle);
+            TryBindExistingIfMissing(BufferID.EntityItemHashes, ref _entityItemHashesLiveHandle);
+            TryBindExistingIfMissing(BufferID.EntityQuantities, ref _entityQuantitiesLiveHandle);
+            TryBindExistingIfMissing(BufferID.ShinobuInventoryHashes, ref _inventoryHashesLiveHandle);
+            TryBindExistingIfMissing(BufferID.ShinobuInventoryQuantities, ref _inventoryQuantitiesLiveHandle);
+            TryBindExistingIfMissing(BufferID.ShinobuInventoryDurabilities, ref _inventoryDurabilitiesLiveHandle);
+            TryBindExistingIfMissing(BufferID.QuestDagGlobalStateMasks, ref _questMasksLiveHandle);
+            TryBindExistingIfMissing(BufferID.PredatorCognitionChosenStates, ref _predatorChosenStatesLiveHandle);
+        }
+
+        private bool TryBindExistingIfMissing<T>(BufferID bufferId, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u)
+                return true;
+
+            return _vault != null && _vault.TryGetGenerationHandle<T>(bufferId, out handle);
+        }
+
+        private NativeArray<T> ResolveBoundBuffer<T>(BufferID bufferId, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (_vault == null)
+                return default;
+
+            uint expectedBufferId = unchecked((uint)bufferId);
+            if (handle.BufferID != 0u && handle.BufferID != expectedBufferId)
+            {
+                handle = default;
+                return default;
+            }
+
+            if (handle.BufferID == 0u && !_vault.TryGetGenerationHandle<T>(bufferId, out handle))
+                return default;
+
+            if (_vault.TryResolveHandle(in handle, out NativeArray<T> buffer) && buffer.IsCreated)
+                return buffer;
+
+            if (!_vault.TryGetGenerationHandle<T>(bufferId, out handle))
+            {
+                handle = default;
+                return default;
+            }
+
+            return _vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated ? buffer : default;
         }
 
         private static uint ResolveModQuarantineMask()
@@ -865,6 +1159,24 @@ namespace Hecton8.Networking
         {
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.isfinite(quality) ? quality : 1f);
+        }
+
+        private static PredictedInputDTO ToPredictedInput(uint frame, in InputStateDTO input, uint flags)
+        {
+            PredictedInputDTO predicted = default;
+            predicted.TickNumber = frame;
+            predicted.LocalMoveVector = new float3(input.MoveAxis.x, 0f, input.MoveAxis.y);
+            predicted.LookDelta = input.LookDelta;
+            predicted.ActionButtonsMask = input.ButtonMask;
+            predicted._pad0 = flags | PredictedInputFlags.Valid;
+            if (!math.all(math.isfinite(predicted.LocalMoveVector)) || !math.all(math.isfinite(predicted.LookDelta)))
+            {
+                predicted.LocalMoveVector = float3.zero;
+                predicted.LookDelta = float2.zero;
+                predicted._pad0 |= PredictedInputFlags.NonFiniteSanitized;
+            }
+
+            return predicted;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -884,7 +1196,7 @@ namespace Hecton8.Networking
             tuning.GlobalQualityWeight = math.saturate(math.isfinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : 1f);
             tuning.PacketLossPermille = math.min(tuning.PacketLossPermille, 1000u);
             tuning.DuplicatePermille = math.min(tuning.DuplicatePermille, 1000u);
-            tuning.RedundancyCount = math.min(math.max(1u, tuning.RedundancyCount), 4u);
+            tuning.RedundancyCount = math.min(math.max(1u, tuning.RedundancyCount), 5u);
             tuning.HashCadenceFrames = tuning.HashCadenceFrames == 0u
                 ? RollbackNetcodeConstants.DesyncHashCadenceFrames
                 : math.clamp(tuning.HashCadenceFrames, 15u, 180u);
@@ -893,6 +1205,12 @@ namespace Hecton8.Networking
                 : math.clamp(tuning.MaxMerkleLeaves, 1u, (uint)RollbackNetcodeConstants.MerkleLeafCapacity);
             tuning.InputDelayFrames = math.min(tuning.InputDelayFrames, 30u);
             tuning.PingSimulatedFrames = math.min(tuning.PingSimulatedFrames, 30u);
+            tuning.ExtrapolationDecayPermille = tuning.ExtrapolationDecayPermille == 0u
+                ? RollbackNetcodeConstants.DefaultExtrapolationDecayPermille
+                : math.min(tuning.ExtrapolationDecayPermille, 2000u);
+            tuning.PredictionWindowTicks = tuning.PredictionWindowTicks == 0u
+                ? RollbackNetcodeMath.ResolvePredictionWindowTicks(in tuning, tuning.GlobalQualityWeight, tuning.PingSimulatedFrames)
+                : math.clamp(tuning.PredictionWindowTicks, 5u, 30u);
             return tuning;
         }
 
@@ -905,6 +1223,24 @@ namespace Hecton8.Networking
                 _registeredFixedDispatcher = 1;
             if (_registeredLateFrame == 0 && GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core))
                 _registeredLateFrame = 1;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener != 0)
+                return;
+
+            if (GlobalRegistry.TryRegisterHotSwapListener(this))
+                _registeredHotSwapListener = 1;
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener == 0)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = 0;
         }
 
 #if UNITY_EDITOR
@@ -938,8 +1274,8 @@ namespace Hecton8.Networking
             if (string.IsNullOrEmpty(_csvProfilePath) || !File.Exists(_csvProfilePath))
                 return;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(_vault);
-            NativeArray<RollbackTuningDTO> tuningBuffer = _tuningHandle.Resolve(_vault);
+            NativeArray<byte> scratch = ResolveOwned(in _csvScratchHandle);
+            NativeArray<RollbackTuningDTO> tuningBuffer = ResolveOwned(in _tuningHandle);
             if (!scratch.IsCreated || !tuningBuffer.IsCreated || scratch.Length <= 0 || tuningBuffer.Length <= 0)
                 return;
 
@@ -969,72 +1305,118 @@ namespace Hecton8.Networking
 
         private static void ParseCsvBytes(NativeArray<byte> bytes, int byteCount, ref RollbackTuningDTO tuning)
         {
-            uint keyHash = 2166136261u;
+            uint activeProfileHash = 0u;
+            uint previousTextHash = 0u;
+            uint lastTextHash = 0u;
+            uint tokenHash = 2166136261u;
             int value = 0;
             int decimalDivisor = 0;
-            bool readingValue = false;
             bool negative = false;
-            bool hasValue = false;
+            bool hasText = false;
+            bool hasNumeric = false;
+            bool hasDigits = false;
 
             for (int i = 0; i <= byteCount; i++)
             {
                 byte c = i < byteCount ? bytes[i] : (byte)'\n';
-                if (c == '\r')
-                    continue;
-
-                if (!readingValue)
+                if (c == ',' || c == '=' || c == ';' || c == '\n')
                 {
-                    if (c == ',' || c == '=')
-                    {
-                        readingValue = true;
-                        value = 0;
-                        decimalDivisor = 0;
-                        negative = false;
-                        hasValue = false;
-                        continue;
-                    }
-
                     if (c == '\n')
-                    {
-                        keyHash = 2166136261u;
-                        continue;
-                    }
-
-                    if (c > 32)
-                        keyHash = (keyHash ^ ToLowerAscii(c)) * 16777619u;
+                        FlushCsvToken(ref activeProfileHash, ref previousTextHash, ref lastTextHash, ref tokenHash, ref value, ref decimalDivisor, ref negative, ref hasText, ref hasNumeric, ref hasDigits, ref tuning, true);
+                    else
+                        FlushCsvToken(ref activeProfileHash, ref previousTextHash, ref lastTextHash, ref tokenHash, ref value, ref decimalDivisor, ref negative, ref hasText, ref hasNumeric, ref hasDigits, ref tuning, false);
                     continue;
                 }
 
-                if (c == '-')
-                {
-                    negative = true;
+                if (c == '\r' || c <= 32)
                     continue;
-                }
-
-                if (c == '.')
-                {
-                    decimalDivisor = 1;
-                    continue;
-                }
 
                 if (c >= '0' && c <= '9')
                 {
-                    hasValue = true;
+                    if (hasText)
+                    {
+                        tokenHash = (tokenHash ^ c) * 16777619u;
+                        continue;
+                    }
+
+                    hasNumeric = true;
+                    hasDigits = true;
                     value = (value * 10) + (c - '0');
                     if (decimalDivisor > 0)
                         decimalDivisor *= 10;
                     continue;
                 }
 
-                if (c == '\n' || c == ';')
+                if (c == '-' && !hasText && !hasNumeric)
                 {
-                    if (hasValue)
-                        ApplyCsvValue(keyHash, negative ? -value : value, decimalDivisor, ref tuning);
-
-                    keyHash = 2166136261u;
-                    readingValue = false;
+                    negative = true;
+                    hasNumeric = true;
+                    continue;
                 }
+
+                if (c == '.' && !hasText)
+                {
+                    hasNumeric = true;
+                    if (decimalDivisor == 0)
+                        decimalDivisor = 1;
+                    continue;
+                }
+
+                hasText = true;
+                tokenHash = (tokenHash ^ ToLowerAscii(c)) * 16777619u;
             }
+        }
+
+        private static void FlushCsvToken(
+            ref uint activeProfileHash,
+            ref uint previousTextHash,
+            ref uint lastTextHash,
+            ref uint tokenHash,
+            ref int value,
+            ref int decimalDivisor,
+            ref bool negative,
+            ref bool hasText,
+            ref bool hasNumeric,
+            ref bool hasDigits,
+            ref RollbackTuningDTO tuning,
+            bool endOfLine)
+        {
+            if (hasText)
+            {
+                previousTextHash = lastTextHash;
+                lastTextHash = tokenHash;
+            }
+            else if (hasNumeric && hasDigits && lastTextHash != 0u &&
+                     ProfileMatches(previousTextHash, activeProfileHash))
+            {
+                ApplyCsvValue(lastTextHash, negative ? -value : value, decimalDivisor, ref tuning);
+            }
+
+            tokenHash = 2166136261u;
+            value = 0;
+            decimalDivisor = 0;
+            negative = false;
+            hasText = false;
+            hasNumeric = false;
+            hasDigits = false;
+            if (endOfLine)
+            {
+                if (previousTextHash == CsvHashActiveProfile && lastTextHash != 0u)
+                    activeProfileHash = lastTextHash;
+
+                previousTextHash = 0u;
+                lastTextHash = 0u;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ProfileMatches(uint profileHash, uint activeProfileHash)
+        {
+            return profileHash == 0u ||
+                   profileHash == CsvHashDefaultProfile ||
+                   profileHash == CsvHashGlobalProfile ||
+                   profileHash == CsvHashGenericProfile ||
+                   (activeProfileHash != 0u && profileHash == activeProfileHash);
         }
 
         private static void ApplyCsvValue(uint keyHash, int rawValue, int decimalDivisor, ref RollbackTuningDTO tuning)
@@ -1062,6 +1444,17 @@ namespace Hecton8.Networking
                 tuning.HashCadenceFrames = (uint)math.max(1, (int)value);
             else if (keyHash == CsvHashMaxMerkleLeaves)
                 tuning.MaxMerkleLeaves = (uint)math.max(1, (int)value);
+            else if (keyHash == CsvHashExtrapolationDecay)
+                tuning.ExtrapolationDecayPermille = (uint)math.clamp((int)math.round(math.max(0f, value) * 1000f), 1, 2000);
+            else if (keyHash == CsvHashExtrapolationDecayPermille)
+                tuning.ExtrapolationDecayPermille = (uint)math.clamp((int)value, 1, 2000);
+            else if (keyHash == CsvHashPredictionWindow ||
+                     keyHash == CsvHashPredictionWindowTicks ||
+                     keyHash == CsvHashBufferCapacity ||
+                     keyHash == CsvHashBufferSize)
+                tuning.PredictionWindowTicks = (uint)math.clamp((int)value, 5, 30);
+            else if (keyHash == CsvHashLatencyThresholdFrames || keyHash == CsvHashLatencyFrames)
+                tuning.InputDelayFrames = (uint)math.max(0, (int)value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1094,7 +1487,7 @@ namespace Hecton8.Networking
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                NativeArray<NetTelemetryEntry64> telemetry = _telemetryHandle.Resolve(_vault);
+                NativeArray<NetTelemetryEntry64> telemetry = ResolveOwned(in _telemetryHandle);
                 using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 RollbackBlackBoxDumpHeader32 header = default;
                 header.Magic = RollbackNetcodeConstants.BlackBoxDumpMagic;
@@ -1113,6 +1506,13 @@ namespace Hecton8.Networking
                 void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
                 int telemetryBytes = telemetry.Length * UnsafeUtility.SizeOf<NetTelemetryEntry64>();
                 stream.Write(new ReadOnlySpan<byte>(telemetryPtr, telemetryBytes));
+                NativeArray<InputPredictionTelemetryEntry> inputTelemetry = ResolveOwned(in _inputPredictionTelemetryHandle);
+                if (inputTelemetry.IsCreated)
+                {
+                    void* inputPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputTelemetry);
+                    int inputBytes = inputTelemetry.Length * UnsafeUtility.SizeOf<InputPredictionTelemetryEntry>();
+                    stream.Write(new ReadOnlySpan<byte>(inputPtr, inputBytes));
+                }
             }
             catch (IOException)
             {

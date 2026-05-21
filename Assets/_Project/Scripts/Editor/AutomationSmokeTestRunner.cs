@@ -53,7 +53,7 @@ namespace Hecton8.Editor
             AutomationOmegaSmokeResult result = AutomationOmegaSmokeTester.RunLogisticsRouteStressSmoke();
             Debug.Log(
                 "{\"AutomationOmegaSmokeTester\":{\"pass\":" +
-                (result.Passed ? "true" : "false") +
+                (result.Passed != 0 ? "true" : "false") +
                 ",\"nodes\":" +
                 result.NodeCount +
                 ",\"edges\":" +
@@ -68,7 +68,7 @@ namespace Hecton8.Editor
                 result.InvalidStartRouteNode +
                 "}}");
 
-            if (!result.Passed)
+            if (result.Passed == 0)
                 EditorApplication.Exit(1);
         }
     }

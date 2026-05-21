@@ -75,9 +75,11 @@ namespace Hecton8.Physics
             }
 
             double result = 0d;
+            bool hasDigits = false;
             while (index < token.Length && token[index] >= (byte)'0' && token[index] <= (byte)'9')
             {
                 result = (result * 10d) + (token[index] - (byte)'0');
+                hasDigits = true;
                 index++;
             }
 
@@ -89,9 +91,13 @@ namespace Hecton8.Physics
                 {
                     result += (token[index] - (byte)'0') * scale;
                     scale *= 0.1d;
+                    hasDigits = true;
                     index++;
                 }
             }
+
+            if (!hasDigits || index != token.Length)
+                return false;
 
             value = (float)(negative ? -result : result);
             return math.isfinite(value);

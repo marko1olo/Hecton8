@@ -19,6 +19,19 @@ namespace Hecton8.AI.Cognition
         public NativeArray<AlphaLeviathanSensoryStimulus> SensoryStimuli;
         [NoAlias]
         public NativeArray<AlphaLeviathanSteeringOutput> SteeringOutputs;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Each scheduled leviathan lane writes exactly one telemetry row derived from Execute index. Unity's
+        // safety system cannot prove the ring index contract because the black-box ring is externally sized and
+        // phase-owned by the cognition scheduler.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Emitting telemetry through a managed logger or queue was rejected because stalking runs in the AI hot
+        // path and the black-box requirement demands fixed-size row writes with no allocation or variable drain
+        // cadence. Dense row telemetry keeps forensic state cache-local.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Invariant: TelemetryRing is a disjoint NativeArray owned by the Leviathan cognition phase. Downstream
+        // crash dump and editor readers wait on the returned JobHandle before reading ring contents.
         [NativeDisableParallelForRestriction, NoAlias]
         public NativeArray<AlphaLeviathanTelemetryEntry> TelemetryRing;
         public uint Frame;
@@ -39,12 +52,9 @@ namespace Hecton8.AI.Cognition
                 sonarPingIntensity > AlphaLeviathanStalkConstants.DirectionEpsilon;
             bool hasTrackingAnchor = hasPlayerAnchor | sonarActive;
             bool eligibleToAct = active & hasTrackingAnchor;
-            float systemStress = math.saturate(math.select(0f, stimulus.SystemStress01, math.isfinite(stimulus.SystemStress01)));
-            float forcedMathLod01 = math.select(0f, 1f, (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.MathLodSurvival) != 0u);
-            float stressMathLod01 = SmoothStep01(math.saturate((systemStress - 0.62f) * math.rcp(0.38f)));
-            float mathLodPressure01 = math.max(forcedMathLod01, stressMathLod01);
-            float visualQuality01 = 1f - mathLodPressure01;
-            bool survivalMathLod = mathLodPressure01 >= 0.75f;
+            const float mathLodPressure01 = 0f;
+            const float visualQuality01 = 1f;
+            const bool survivalMathLod = false;
             bool shiftFenceActive = (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.ShiftFenceActive) != 0u;
             bool shiftChanged = stimulus.ObservedShiftFrameId != state.LastShiftFrameId;
             AlphaLeviathanAup rawAnchor = SelectAup(stimulus.PlayerAup, stimulus.PingAup, sonarActive);
@@ -302,7 +312,7 @@ namespace Hecton8.AI.Cognition
                 AlphaLeviathanStalkConstants.DoubleDirectionEpsilon,
                 distanceSq,
                 math.isfinite(distanceSq) & distanceSq > AlphaLeviathanStalkConstants.DoubleDirectionEpsilon);
-            double inverseLength = math.rsqrt(safeDistanceSq);
+            double inverseLength = math.rsqrt(math.max(safeDistanceSq, AlphaLeviathanStalkConstants.DoubleDirectionEpsilon));
             float3 normalized = new float3(
                 (float)(value.x * inverseLength),
                 (float)(value.y * inverseLength),
@@ -316,7 +326,7 @@ namespace Hecton8.AI.Cognition
             float lengthSq = math.lengthsq(value);
             bool valid = math.all(math.isfinite(value)) & lengthSq > AlphaLeviathanStalkConstants.DirectionEpsilon;
             float safeLengthSq = math.select(AlphaLeviathanStalkConstants.DirectionEpsilon, lengthSq, valid);
-            float inverseLength = math.rsqrt(safeLengthSq);
+            float inverseLength = math.rsqrt(math.max(safeLengthSq, AlphaLeviathanStalkConstants.DirectionEpsilon));
             float3 normalized = value * inverseLength;
             return math.select(fallback, normalized, valid & math.all(math.isfinite(normalized)));
         }

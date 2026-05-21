@@ -80,7 +80,8 @@ namespace Hecton8.Core
 
         private static readonly int _AupJitterMaskId = Shader.PropertyToID("_AupJitterMask");
         private const int OriginShiftListenerCapacity = 128;
-        private static readonly RegistryBucket<IOriginShiftListener> _originShiftListeners = new RegistryBucket<IOriginShiftListener>(OriginShiftListenerCapacity);
+        private static readonly ListenerSlot[] _originShiftListeners = new ListenerSlot[OriginShiftListenerCapacity]; // COLD ALLOC: ListenerSlot[128] - non-scene origin-shift listeners - owner: HectonFloatingOrigin
+        private static int _originShiftListenerCount;
         private const int PrecisionWatchdogIntervalFrames = 300;
         private const int ShiftStabilityWatchdogFrames = 1200;
         private const float PrecisionWatchdogSafeRadiusMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
@@ -141,9 +142,11 @@ namespace Hecton8.Core
         private CriticalAupTracker _playerDriftTracker;
         private CriticalAupTracker _submarineDriftTracker;
         private IDataVault _dataVault;
-        private VaultBufferHandle<double3> _driftCheckRuntimePositionsHandle;
-        private VaultBufferHandle<double3> _driftCheckAbsolutePositionsHandle;
-        private VaultBufferHandle<byte> _driftCheckInvalidMaskHandle;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private ISubmarineRuntimeContext _submarineRuntime;
+        private VaultGenerationHandle<double3> _driftCheckRuntimePositionsHandle;
+        private VaultGenerationHandle<double3> _driftCheckAbsolutePositionsHandle;
+        private VaultGenerationHandle<byte> _driftCheckInvalidMaskHandle;
         private JobHandle _driftCheckHandle;
         private int _precisionWatchdogCountdown;
         private int _precisionWatchdogCachedFrame = -1;
@@ -328,7 +331,7 @@ namespace Hecton8.Core
         private static void ResetStaticState()
         {
             _lastShiftEvent = default;
-            _originShiftListeners.Clear();
+            ClearOriginShiftListeners();
             HectonShaderGlobalDataVaultBridge.ResetAupShaderGlobals();
             HectonXRRuntimeState.ResetShaderGlobals();
         }
@@ -445,10 +448,7 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            if (_originShiftListeners.Contains(listener))
-                return;
-
-            _originShiftListeners.Register(listener);
+            TryRegisterOriginShiftListener(listener);
         }
 
         /// <summary>
@@ -458,7 +458,7 @@ namespace Hecton8.Core
         /// <returns>True when the listener is present.</returns>
         internal static bool IsListenerRegistered(IOriginShiftListener listener)
         {
-            return listener != null && _originShiftListeners.Contains(listener);
+            return listener != null && ContainsOriginShiftListener(listener);
         }
 
         /// <summary>
@@ -470,10 +470,7 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            if (!_originShiftListeners.Contains(listener))
-                return;
-
-            _originShiftListeners.Unregister(listener);
+            TryUnregisterOriginShiftListener(listener);
         }
 
         /// <summary>
@@ -542,6 +539,8 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterFloatingOriginRuntime(this);
             _dataVault = GlobalRegistry.DataVault;
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _submarineRuntime = GlobalRegistry.Submarine;
             TryRegisterHotSwapListener();
             RefreshThresholdCache();
             AupOriginShiftCoordinator.GenerateEmergencyMockThresholds(_dataVault);
@@ -581,10 +580,25 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                if (_anchor == null && _playerRuntimeContext != null)
+                    TryResolveAnchor(force: true);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Submarine)
+            {
+                _submarineRuntime = currentService as ISubmarineRuntimeContext;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
             _dataVault = currentService as IDataVault;
+            DisposeDriftCheckState();
             if (_dataVault == null)
                 return;
 
@@ -610,7 +624,7 @@ namespace Hecton8.Core
                     UnityEngine.Physics.simulationMode = _physicsSimulationModeBeforeShift;
                 }
 
-                _originShiftListeners.Clear();
+                ClearOriginShiftListeners();
                 GlobalRegistry.UnregisterFloatingOriginRuntime(this);
             }
         }
@@ -942,7 +956,7 @@ namespace Hecton8.Core
                 ShiftMeters = new float3(shiftData.ShiftOffset.x, shiftData.ShiftOffset.y, shiftData.ShiftOffset.z),
                 ShiftFrameId = shiftData.Sequence,
                 SectorDelta = sectorDelta,
-                Flags = shiftData.IsSafeTeleport ? 1u : 0u
+                Flags = shiftData.IsSafeTeleport != 0 ? 1u : 0u
             };
             GlobalSignals.Publish(in signal);
         }
@@ -1045,10 +1059,10 @@ namespace Hecton8.Core
             PhysicsApplySystem.ResetTrackedBodiesForSafeTeleport();
             PhysicsApplySystem.ArmSafeTeleportSpeculativeCcdForSafeTeleport();
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = origin._playerRuntimeContext;
             playerContext?.PlayerMovement?.ResetKinematicTransientStateForTeleport();
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            ISubmarineRuntimeContext submarine = origin._submarineRuntime;
             MonoBehaviour submarineBehaviour = submarine as MonoBehaviour;
             if (submarineBehaviour != null && submarineBehaviour.TryGetComponent(out VehicleMotor vehicleMotor))
                 vehicleMotor.ResetHydrodynamicPresentationState();
@@ -1253,23 +1267,89 @@ namespace Hecton8.Core
                 listener.OnOriginShift(in shiftData);
         }
 
+        private static bool TryRegisterOriginShiftListener(IOriginShiftListener listener)
+        {
+            if (ContainsOriginShiftListener(listener))
+                return false;
+
+            if (_originShiftListenerCount >= OriginShiftListenerCapacity)
+                return false;
+
+            _originShiftListeners[_originShiftListenerCount].Listener = listener;
+            _originShiftListenerCount++;
+            return true;
+        }
+
+        private static bool TryUnregisterOriginShiftListener(IOriginShiftListener listener)
+        {
+            for (int i = 0; i < _originShiftListenerCount; i++)
+            {
+                if (!ReferenceEquals(_originShiftListeners[i].Listener, listener))
+                    continue;
+
+                RemoveOriginShiftListenerAt(i);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsOriginShiftListener(IOriginShiftListener listener)
+        {
+            for (int i = 0; i < _originShiftListenerCount; i++)
+            {
+                if (ReferenceEquals(_originShiftListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void RemoveOriginShiftListenerAt(int index)
+        {
+            if ((uint)index >= (uint)_originShiftListenerCount)
+                return;
+
+            int lastIndex = _originShiftListenerCount - 1;
+            _originShiftListeners[index] = _originShiftListeners[lastIndex];
+            _originShiftListeners[lastIndex].Clear();
+            _originShiftListenerCount = lastIndex;
+        }
+
+        private static void ClearOriginShiftListeners()
+        {
+            for (int i = 0; i < _originShiftListenerCount; i++)
+                _originShiftListeners[i].Clear();
+
+            _originShiftListenerCount = 0;
+        }
+
+        private struct ListenerSlot
+        {
+            public IOriginShiftListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
         private async Awaitable BroadcastNonSceneOriginShiftListenersAsync(OriginShiftEventData shiftData, CancellationToken cancellationToken)
         {
-            IOriginShiftListener[] listeners = _originShiftListeners.RawArray;
-            for (int i = _originShiftListeners.Count - 1; i >= 0; i--)
+            for (int i = _originShiftListenerCount - 1; i >= 0; i--)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                IOriginShiftListener listener = listeners[i];
+                IOriginShiftListener listener = _originShiftListeners[i].Listener;
                 if (listener == null)
                 {
-                    _originShiftListeners.Unregister(listener);
+                    RemoveOriginShiftListenerAt(i);
                     continue;
                 }
 
                 UnityEngine.Object unityListener = listener as UnityEngine.Object;
                 if (!ReferenceEquals(unityListener, null) && unityListener == null)
                 {
-                    _originShiftListeners.Unregister(listener);
+                    RemoveOriginShiftListenerAt(i);
                     continue;
                 }
 
@@ -1357,7 +1437,8 @@ namespace Hecton8.Core
 
             UpdateCriticalEntityTracker(ref _playerDriftTracker, _anchor);
 
-            Transform submarineTransform = GlobalRegistry.Submarine != null ? GlobalRegistry.Submarine.PlatformTransform : null;
+            ISubmarineRuntimeContext submarine = _submarineRuntime;
+            Transform submarineTransform = submarine != null ? submarine.PlatformTransform : null;
             UpdateCriticalEntityTracker(ref _submarineDriftTracker, submarineTransform);
         }
 
@@ -1611,37 +1692,21 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
-            if (!_driftCheckRuntimePositionsHandle.IsCreated ||
-                _driftCheckRuntimePositionsHandle.Length < DriftCheckEntityCapacity)
-            {
-                _driftCheckRuntimePositionsHandle = vault.GetBufferHandle<double3>(
-                    BufferID.FloatingOriginDriftRuntimePositions,
-                    DriftCheckEntityCapacity,
-                    DriftCheckOwnerSystemId,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_driftCheckAbsolutePositionsHandle.IsCreated ||
-                _driftCheckAbsolutePositionsHandle.Length < DriftCheckEntityCapacity)
-            {
-                _driftCheckAbsolutePositionsHandle = vault.GetBufferHandle<double3>(
-                    BufferID.FloatingOriginDriftAbsolutePositions,
-                    DriftCheckEntityCapacity,
-                    DriftCheckOwnerSystemId,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_driftCheckInvalidMaskHandle.IsCreated ||
-                _driftCheckInvalidMaskHandle.Length < DriftCheckEntityCapacity)
-            {
-                _driftCheckInvalidMaskHandle = vault.GetBufferHandle<byte>(
-                    BufferID.FloatingOriginDriftInvalidMask,
-                    DriftCheckEntityCapacity,
-                    DriftCheckOwnerSystemId,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            return TryResolveDriftCheckBuffers(out runtimePositions, out absolutePositions, out invalidMask);
+            return OpenOrAcquireDriftCheckBuffer(
+                       vault,
+                       ref _driftCheckRuntimePositionsHandle,
+                       BufferID.FloatingOriginDriftRuntimePositions,
+                       out runtimePositions) &&
+                   OpenOrAcquireDriftCheckBuffer(
+                       vault,
+                       ref _driftCheckAbsolutePositionsHandle,
+                       BufferID.FloatingOriginDriftAbsolutePositions,
+                       out absolutePositions) &&
+                   OpenOrAcquireDriftCheckBuffer(
+                       vault,
+                       ref _driftCheckInvalidMaskHandle,
+                       BufferID.FloatingOriginDriftInvalidMask,
+                       out invalidMask);
         }
 
         private bool TryResolveDriftCheckBuffers(
@@ -1653,27 +1718,91 @@ namespace Hecton8.Core
             absolutePositions = default;
             invalidMask = default;
             IDataVault vault = _dataVault;
-            if (vault == null ||
-                !_driftCheckRuntimePositionsHandle.IsCreated ||
-                !_driftCheckAbsolutePositionsHandle.IsCreated ||
-                !_driftCheckInvalidMaskHandle.IsCreated)
+            return TryOpenDriftCheckBuffer(
+                       vault,
+                       ref _driftCheckRuntimePositionsHandle,
+                       BufferID.FloatingOriginDriftRuntimePositions,
+                       out runtimePositions) &&
+                   TryOpenDriftCheckBuffer(
+                       vault,
+                       ref _driftCheckAbsolutePositionsHandle,
+                       BufferID.FloatingOriginDriftAbsolutePositions,
+                       out absolutePositions) &&
+                   TryOpenDriftCheckBuffer(
+                       vault,
+                       ref _driftCheckInvalidMaskHandle,
+                       BufferID.FloatingOriginDriftInvalidMask,
+                       out invalidMask);
+        }
+
+        private static bool OpenOrAcquireDriftCheckBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (TryOpenDriftCheckBuffer(vault, ref handle, bufferId, out buffer))
+                return true;
+
+            if (vault == null)
             {
+                buffer = default;
                 return false;
             }
 
-            runtimePositions = _driftCheckRuntimePositionsHandle.Resolve(vault);
-            absolutePositions = _driftCheckAbsolutePositionsHandle.Resolve(vault);
-            invalidMask = _driftCheckInvalidMaskHandle.Resolve(vault);
-            return runtimePositions.IsCreated &&
-                   absolutePositions.IsCreated &&
-                   invalidMask.IsCreated &&
-                   runtimePositions.Length >= DriftCheckEntityCapacity &&
-                   absolutePositions.Length >= DriftCheckEntityCapacity &&
-                   invalidMask.Length >= DriftCheckEntityCapacity;
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                return TryOpenDriftCheckBuffer(vault, ref handle, bufferId, out buffer);
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                DriftCheckEntityCapacity,
+                DriftCheckOwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            return TryOpenDriftCheckBuffer(vault, ref handle, bufferId, out buffer);
+        }
+
+        private static bool TryOpenDriftCheckBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                !IsDriftCheckHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < DriftCheckEntityCapacity)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsDriftCheckHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)DriftCheckOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private void DisposeDriftCheckState()
         {
+            if (_driftCheckScheduled)
+                DispatcherJobSwap.TryComplete(ref _driftCheckHandle, true);
+
             _driftCheckRuntimePositionsHandle = default;
             _driftCheckAbsolutePositionsHandle = default;
             _driftCheckInvalidMaskHandle = default;

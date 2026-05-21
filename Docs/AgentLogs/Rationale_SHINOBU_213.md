@@ -3,7 +3,7 @@
 Date: 2026-05-20
 Agent: SHINOBU_213
 Domain: OFFLINE_LOD_AND_COLLIDER_BAKER
-Status: PENDING VERIFICATION / PRE-ENDIAN ROSLYN PROBE PASS / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT-STREAM-BOUNDS-HULL-FALLBACK-JOB-GUARDS PROBE GATED BY CPU=73.0 / UNITY IMPORT AND PROFILER PENDING
+Status: PENDING VERIFICATION / PRE-ENDIAN ROSLYN PROBE PASS / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT-STREAM-BOUNDS-HULL-FALLBACK-JOB-GUARDS-LAYOUT-LANES-HULL-CONTAINMENT-TRANSFORM-MESH-FIT-RANGE-BLACKBOX-FINITE-SOURCE-PER-LANE-AUDIT-FAILED-ATTEMPT-HULL-COUNTER-CLEAR-MIN8-PREFAB-SAVE-ASSET-PATH-CSV-ROOT-ATOMIC-WRITE-CSV-SCHEMA-MESH-TRANSFER-RENDERER-BRIDGE-LOD-ASSET-BIND-HULL-FAN-OVERFLOW-SENTINEL-CSV-SHORT-READ-SENTINEL-FAILFAST-LOD-MESH-OWNER-FADE-WIDTH-JSON-ESCAPE-CSV-ROW-STRICT-BLACKBOX-NO-TOSTRING-JOB-PROFILER-FIXEDSTRING-REPORT-HASH-GUARDS PROBE GATED BY CPU=99.8 / UNITY IMPORT AND PROFILER PENDING
 
 ## Decision 001: Editor-only ownership boundary
 
@@ -396,3 +396,227 @@ Solution: Reject invalid mock segment counts before modulo/division, guard mock 
 Rejected Alternatives: Trusting menu constants and schedule lengths was rejected because the offline tool is a fault boundary for CI and future editor callers. Throwing was rejected because invalid editor setup should produce no generated rows, not a Burst exception path.
 Scalability potential: Low/Middle/High/Ultra quality settings still control budgets continuously. These guards do not introduce tier branches; they only close malformed scheduling and denominator faults.
 Hardware Impact: Runtime cost is 0us. Editor normal case adds fixed integer guards and removes divide-by-zero/out-of-bounds failure surfaces on weak developer hardware.
+
+## Decision 050: MeshData vertex lanes must validate offset plus width
+
+Problem: `TryResolveVertexLayout` validated vertex attribute format and dimension, but raw pointer jobs also need proof that each lane fits inside the stream stride before `UnsafeUtility.AsRef<T>` reads `float3` or `float2`.
+Solution: Add `IsStreamLaneValid(stride, offset, laneBytes)` and reject position streams whose `offset + 12` exceeds stride. Optional normal and UV0 streams are disabled if their lanes do not fit.
+Rejected Alternatives: Trusting Unity importer metadata alone was rejected because malformed imported meshes are the fault boundary. Passing invalid optional streams into Burst and relying on read-time defaults was rejected because the pointer arithmetic would still have invalid stride/offset metadata.
+Scalability potential: Low/Middle/High/Ultra keep identical continuous LOD budgets; invalid optional source lanes degrade to face normals or zero UVs without changing quality ownership.
+Hardware Impact: Runtime cost is 0us. Editor cold layout resolution adds three integer checks and prevents unsafe lane reads on weak developer hardware.
+
+## Decision 051: Support hulls must prove containment or become boxes
+
+Problem: A fixed-direction support hull can under-enclose the source mesh when an extreme vertex lies between sampled directions, which would create a convex MeshCollider smaller than the visual geometry.
+Solution: After plane-deduped face generation, validate every finite source vertex against every emitted outward hull plane. If any point is outside or the side test is non-finite, return zero hull indices so the existing conservative BoxCollider fallback is authored.
+Rejected Alternatives: Trusting fixed support directions was rejected because it weakens collision truth. Expanding planes without regenerating mesh topology was rejected because it would desynchronize the authored vertices from the collider faces.
+Scalability potential: Low/Middle/High/Ultra keep primitive-first collision and bounded hull limits. Complex shapes that cannot be safely enclosed by the support hull degrade to the box lie instead of a false precise collider.
+Hardware Impact: Runtime cost is 0us. Editor hull generation adds a bounded `sourceVertexCount * emittedPlaneCount` containment pass only after primitive fitting rejects; it prevents under-sized collision meshes.
+
+## Decision 052: Editor transform and mesh creation must fail closed
+
+Problem: Relative transform copying could feed non-finite, zero-length, or near-parallel basis vectors into `Quaternion.LookRotation`, and a failed `CreateUnityMesh` call after decimation could leave a created raw vertex buffer for the caller to leak on the LOD0 path.
+Solution: Sanitize position and scale lanes, orthogonalize the up vector against the forward vector, select a deterministic fallback axis before `Quaternion.LookRotation`, return null for invalid mesh/range lanes, and dispose created raw vertices immediately when mesh creation fails. Primitive fitting now also finite-guards inverse count, radius, tolerance, and emitted error.
+Rejected Alternatives: Trusting imported transform matrices and Unity warning behavior was rejected because editor tools must survive malformed prefabs without hidden console errors. Throwing on mesh creation failure was rejected because a folder bake should skip the bad asset and continue.
+Scalability potential: Low/Middle/High/Ultra outputs keep identical continuous LOD and collider policy. Malformed source transforms or mesh lanes collapse to skipped static output instead of introducing runtime repair state.
+Hardware Impact: Runtime cost is 0us. Editor normal case adds fixed scalar checks; failure case avoids invalid prefab transforms, leaked native scratch, and NaN collider-fit metrics.
+
+## Decision 053: Descriptor and blackbox proof rows must not hide faults
+
+Problem: `CreateUnityMesh` counted any positive submesh target as valid, even if a malformed range row would produce an index span outside the generated vertex buffer. The mock benchmark also passed a null save path into asset loading if mesh creation failed, and blackbox rows sanitized non-finite metrics before dumping without marking the row itself.
+Solution: Validate submesh range index spans before `SetSubMesh`, fail the mock benchmark before `AssetDatabase.LoadAssetAtPath` when mesh save returns no path, and OR warning bit `0x80000000` into blackbox telemetry before state-hash/dump when any metric lane is non-finite.
+Rejected Alternatives: Trusting locally generated ranges was rejected because future editor callers can mutate this path. Silent blackbox sanitation was rejected because the forensic row must prove the fault, not erase it.
+Scalability potential: Low/Middle/High/Ultra outputs keep the same continuous LOD policy; malformed editor data skips unsafe descriptors and records a proof bit instead of adding runtime corrective state.
+Hardware Impact: Runtime cost is 0us. Editor normal case adds bounded integer checks; failure case avoids invalid submesh descriptors, null asset loads, and unflagged forensic dumps.
+
+## Decision 054: Hull containment proof must require finite source evidence
+
+Problem: `AllSourceVerticesInside` skipped non-finite source vertices and could return true when every source vertex was non-finite, allowing a support hull to survive containment with no valid source evidence.
+Solution: Track `hasFiniteSourceVertex` during containment validation and reject the hull if no finite source vertex was tested against the emitted planes.
+Rejected Alternatives: Trusting earlier source extraction and primitive fitting was rejected because containment is the last collision safety gate before convex MeshCollider authoring.
+Scalability potential: Low/Middle/High/Ultra keep the same primitive-first and bounded-hull policy; invalid source data collapses to the conservative box lie without introducing a quality-tier branch or runtime repair path.
+Hardware Impact: Runtime cost is 0us. Editor normal case adds one boolean write per finite source vertex; failure case prevents accepting a collider hull proven against an empty finite source set.
+
+## Decision 055: Static proof must encode evidence class and fault lane
+
+Problem: The self-audit used unconditional task `PASS` while compile/import/profiler proof is still gated, and black-box non-finite telemetry only set a generic high warning bit after sanitizing metric lanes.
+Solution: Emit task reconciliation as `STATIC_SOURCE_PASS` with explicit pending compile/import/profiler verification, then encode black-box non-finite lanes as `0x40000000` extraction, `0x20000000` serialization, `0x10000000` LOD1 threshold, `0x08000000` LOD2 threshold, `0x04000000` quality, and `0x02000000` depth, with `0x80000000` as the aggregate bit. Fold raw double/float bits for faulted lanes into the telemetry `StateHash` before sanitized row serialization.
+Rejected Alternatives: Leaving task `PASS` was rejected because it conflates source conformance with Unity import and profiler proof. A generic non-finite bit was rejected because it cannot identify the failing lane during dump autopsy.
+Scalability potential: Low/Middle/High/Ultra runtime output remains unchanged; evidence quality improves without runtime owner state or tier branches.
+Hardware Impact: Runtime cost is 0us. Editor black-box recording adds fixed branch/hash work only when metrics are recorded; non-finite rows become attributable without increasing dump row size.
+
+## Decision 056: Architecture proof boundary must match current evidence class
+
+Problem: The SHINOBU_213 architecture note still described the pending post-endian probe as ending at finite-source containment, while the current code/docs now include per-lane blackbox fault encoding and self-audit evidence-class correction.
+Solution: Update the architecture note's compile-boundary paragraph to include blackbox per-lane fault encoding and self-audit evidence-class correction in the same pending probe scope.
+Rejected Alternatives: Leaving the older wording was rejected because it would let future readers treat the architecture document as narrower than the actual modified source surface.
+Scalability potential: No runtime quality-tier change; Low/Middle/High/Ultra output remains governed by the same continuous bake policy and static artifact ownership.
+Hardware Impact: Runtime cost is 0us. Documentation correction prevents false readiness claims and does not widen compile dependencies.
+
+## Decision 057: Failed bake attempts must enter the black-box ring
+
+Problem: `BakeAsset` recorded telemetry only after successful prefab serialization, so missing source prefabs, invalid mesh lanes, failed asset binding, or other mid-bake exits could leave no 300-row forensic trace for the failing attempt.
+Solution: Seed base metrics before source prefab load, record missing-source failures immediately, and record any unrecorded mid-bake failure in the finalizer with `WarningBakeAttemptFailed` while keeping failed attempts out of the manifest/report success list.
+Rejected Alternatives: Adding failed attempts to `LOD_OPTIMIZATION_REPORT.json` and `.h8lod` was rejected because those artifacts describe generated immutable outputs, not failed work. Chat-only failure notes were rejected because the black-box ring is the required proof artifact.
+Scalability potential: Low/Middle/High/Ultra output policy is unchanged; failure telemetry now captures the same continuous quality/depth settings that influenced the attempted bake.
+Hardware Impact: Runtime cost is 0us. Editor failure paths add one fixed 64-byte ring write and no successful-asset manifest pollution.
+
+## Decision 058: Invalid support hulls must not become mesh boxes
+
+Problem: `GenerateConvexHullJob` could synthesize an 8-vertex convex box mesh when support hull topology was underpopulated, under-contained, or sourced from all-nonfinite vertices, while current proof text claimed `BoxCollider` fallback.
+Solution: Clear hull vertex/index counters for invalid support hulls and let `BuildConvexHullMesh` return null, which routes through the existing `AddFallbackBoxCollider` primitive path with warning flags.
+Rejected Alternatives: Binding a convex box `MeshCollider` was rejected because it is still a mesh collision shape when the intended Dear Lie is an O(1) primitive collider. Keeping the documentation weaker was rejected because the code path is now cheaper and more explicit.
+Scalability potential: Low devices avoid a needless convex mesh shape on malformed assets; Middle/High/Ultra still get bounded support hulls only when the topology proves finite-source containment.
+Hardware Impact: Runtime cost is 0us for valid primitive/hull outputs. Malformed fallback removes MeshCollider cooking/contact overhead and keeps the path to a `BoxCollider` primitive.
+
+## Decision 059: Support hull lower bound must match proof text
+
+Problem: Static audit found that the source still accepted four-vertex support hulls while task and architecture proof text promised bounded 8..32 support hulls.
+Solution: Add `MinHullVertexCount = 8` and enforce it in `GenerateConvexHullJob`, `BuildConvexHullMesh`, SceneView preview return, UI clamp, CSV clamp, and hull capacity resolution.
+Rejected Alternatives: Downgrading proof text to `4..32` was rejected because tetrahedral hull acceptance weakens the collider-quality contract and makes malformed sparse support sets look like valid convex MeshCollider output.
+Scalability potential: Low devices now skip sparse mesh-collider hulls and use the primitive BoxCollider lie; Middle/High/Ultra still receive bounded support hulls only after at least eight unique finite supports and containment proof.
+Hardware Impact: Runtime cost is 0us. Failure path avoids convex MeshCollider cooking/contact overhead for sparse support sets; editor normal case adds a constant integer threshold check.
+
+## Decision 060: Prefab save success must be authoritative
+
+Problem: The baker recorded a successful metric row immediately after `PrefabUtility.SaveAsPrefabAsset` without checking the save success flag, so a failed prefab save could pollute reports and the `.h8lod` success manifest.
+Solution: Use the Unity 6 `SaveAsPrefabAsset(..., out prefabSaved)` overload, return false on generated prefab save failure, set `WarningPrefabSaveFailed`, and let the existing failed-attempt blackbox finalizer record the forensic row. The source-prefab repair menu also checks `out saved` and returns zero repairs if the save fails.
+Rejected Alternatives: Trusting the returned prefab object was rejected because asset editing windows can delay import and return null despite success; ignoring the result was rejected because manifest records must describe only generated immutable outputs.
+Scalability potential: Low/Middle/High/Ultra output ownership remains unchanged; failed editor saves produce blackbox-only telemetry rather than runtime payload facts.
+Hardware Impact: Runtime cost is 0us. Editor normal case adds one boolean check per save; failure case prevents a bad generated prefab path from entering manifest/report consumers and prevents a repair count from claiming unsaved source-prefab edits.
+
+## Decision 061: Mesh save paths and CSV roots must fail closed
+
+Problem: `SaveOrReplaceMesh` trusted caller-provided asset paths before deriving the asset folder, and CSV profile loading derived the project root by blindly trimming `/Assets` from `Application.dataPath`.
+Solution: Mesh save now rejects null, empty, folderless, or non-`Assets/` target folders, destroys the transient mesh, and returns null so the existing failed-attempt route owns telemetry. CSV profile loading now verifies the `/Assets` suffix before deriving the project root and falls back to the editor working directory plus default settings if the profile file is absent.
+Rejected Alternatives: Trusting current constants was rejected because editor tooling is a fault boundary for CI and future menu callers. Throwing on bad paths was rejected because a folder bake should fail the current asset without breaking unrelated assets.
+Scalability potential: Low/Middle/High/Ultra output policy is unchanged; invalid authoring paths do not create runtime payload state, dangling mesh references, or shadow ownership.
+Hardware Impact: Runtime cost is 0us. Editor normal case adds a few string/folder checks; failure case prevents native mesh object leaks and invalid manifest/report publication.
+
+## Decision 062: CSV schema must be explicit, not positional faith
+
+Problem: Existing CSV profile files were parsed positionally after skipping the first line, so reordered or malformed headers could silently corrupt LOD ratios, tolerance, hull limits, quality, and depth settings.
+Solution: Add a 1 MiB CSV ceiling, optional UTF-8 BOM skip, and exact ASCII header validation before row parsing. Bad or oversized existing CSV files fail closed to the deterministic default profile.
+Rejected Alternatives: Continuing positional parsing was rejected because authoring CSVs are a binary-configuration source boundary. Throwing from the menu path was rejected because missing/bad tuning should not destroy a folder bake session when a deterministic default profile exists.
+Scalability potential: Low/Middle/High/Ultra profile math remains continuous; malformed tuning cannot silently push weak-device bakes toward accidental visual overkill or bad collision hull limits.
+Hardware Impact: Runtime cost is 0us. Editor normal case adds one bounded header compare; failure case prevents bad generated LOD/collider payloads.
+
+## Decision 063: Generated artifacts must be replaced atomically
+
+Problem: `.h8lod`, JSON/XML reports, and black-box dumps were written directly to final paths, so a crash, domain reload, or disk failure could leave a zero-byte or torn proof/payload artifact.
+Solution: Write to same-volume `.tmp`, flush, validate fixed byte counts for `.h8lod` and the 300-row black-box dump, then replace final files with `.bak` preservation. Import happens only after the manifest replacement succeeds.
+Rejected Alternatives: `FileMode.Create` on the final artifact was rejected because the final path is a proof boundary. Skipping `.bak` preservation was rejected because the previous proof can aid forensic comparison after a failed editor write.
+Scalability potential: Runtime quality tiers are unchanged; artifact integrity is stable for Low/Middle/High/Ultra generated payload consumers.
+Hardware Impact: Runtime cost is 0us. Editor writes add one temp file and one same-volume replace; failure case preserves the last good artifact instead of publishing torn bytes.
+
+## Decision 064: Transient mesh ownership must be explicit
+
+Problem: `CreateUnityMesh` and `BuildConvexHullMesh` created Unity `Mesh` objects before upload/layout/submesh validation completed. Exceptions in those calls could leave transient native mesh objects alive without caller or AssetDatabase ownership.
+Solution: Add `transferred` guards around main LOD mesh and hull mesh construction. The transient mesh is destroyed in `finally` unless the function returns it successfully. `SaveOrReplaceMesh` now also destroys transient meshes after copy-serialize replacement or failed asset creation.
+Rejected Alternatives: Trusting Unity upload calls was rejected because malformed source geometry and import surfaces are the editor fault boundary. Relying on GC/finalizers was rejected because Unity native objects are not normal managed memory.
+Scalability potential: Low/Middle/High/Ultra output policy is unchanged; malformed assets fail closed without accumulating editor-native mesh memory.
+Hardware Impact: Runtime cost is 0us. Editor normal case adds one boolean guard; failure case prevents native mesh memory leaks on weak developer hardware and CI.
+
+## Decision 065: Renderer array bridge must be explicit
+
+Problem: Static scan found three `List<Renderer>.ToArray()` calls in the cold prefab assembly bridge to Unity `LODGroup`, contradicting the zero-LINQ/no-`ToArray` source proof even though the calls were editor-only.
+Solution: Replace the calls with `CopyRenderers`, an explicit indexed copy into the `Renderer[]` array Unity requires for `LOD` construction.
+Rejected Alternatives: Leaving `ToArray()` was rejected because the project proof surface treats that pattern as forbidden. Inventing a runtime LOD wrapper was rejected because generated prefabs must stay static and script-free.
+Scalability potential: Low/Middle/High/Ultra output policy is unchanged; this is a cold editor bridge that preserves the static `LODGroup` artifact route.
+Hardware Impact: Runtime cost is 0us. Editor allocation count remains one required `Renderer[]` per LOD level, but the hidden helper call is removed and the static proof now matches the source.
+
+## Decision 066: LOD asset reload must not accept null paths
+
+Problem: `SaveOrReplaceMesh` correctly fails closed and returns null for invalid asset paths, but the main LOD0/LOD1/LOD2 bake path still sent those paths directly into `AssetDatabase.LoadAssetAtPath`.
+Solution: Require all three saved LOD asset paths to be non-empty before any asset reload, and set `WarningLodAssetBindFailed` if a path or reloaded asset is missing so the failed-attempt blackbox route owns the proof.
+Rejected Alternatives: Trusting constants and Unity's null-path behavior was rejected because the baker is an editor fault boundary and failed mesh saves must not become hidden Unity asset-load warnings.
+Scalability potential: Low/Middle/High/Ultra generated output policy is unchanged; failed authoring paths produce blackbox-only telemetry instead of partial prefab state or manifest success rows.
+Hardware Impact: Runtime cost is 0us. Editor normal case adds three null/empty string checks and one warning-bit branch; failure case prevents invalid asset-load calls and partial generated prefab assembly.
+
+## Decision 067: Hull face fan overflow must fail closed
+
+Problem: Subagent static audit found `BuildConvexFaces` returned the partial `indexCount` when `AppendFaceFan` ran out of `HullIndices` capacity, allowing a truncated convex hull to bypass containment and survive as a MeshCollider.
+Solution: Return zero from the face builder on fan overflow so `GenerateConvexHullJob.Execute` clears hull counters and authoring routes to the primitive BoxCollider fallback.
+Rejected Alternatives: Keeping a partial face fan was rejected because a bounded but open hull is worse than the deliberate collision lie; expanding the index buffer was rejected because the current overflow is a topology validity failure, not a quality target.
+Scalability potential: Low devices get the cheap primitive fallback under overflow; Middle/High/Ultra still receive bounded convex hulls only when the whole face set fits and containment is proven.
+Hardware Impact: Runtime cost is 0us for valid hulls. Overflow failure path avoids invalid MeshCollider cooking/contact behavior and falls back to O(1) BoxCollider.
+
+## Decision 068: NativeMemorySentinel bridge without compile-wall widening
+
+Problem: Subagent static audit found the editor black-box persistent `NativeArray` was not registered with `NativeMemorySentinel`, but directly referencing `Hecton8.Core` from `Hecton8.World.OfflineGeometry.Editor` would widen this domain's assembly references.
+Solution: Register and unregister the 300-row persistent ring through a cold reflection bridge that resolves `Hecton8.Core.NativeMemorySentinel` and `NativeAllocationLifetime` only when the sentinel assembly is already loaded.
+Rejected Alternatives: Adding a direct `Hecton8.Core` asmdef reference was rejected because the compile guard requires no sibling/core assembly coupling from this editor island. Leaving only a waiver was rejected because the persistent allocation can be registered without a hard dependency.
+Scalability potential: Runtime output policy is unchanged. Editor diagnostics gain first-party memory accounting when the sentinel is available while keeping Low/Middle/High/Ultra generated assets identical.
+Hardware Impact: Runtime cost is 0us. Editor allocation path adds one cold assembly/type lookup and reflection invocation at ring allocation/disposal; no per-record hot cost.
+
+## Decision 069: CSV reads fail closed and sentinel is mandatory
+
+Problem: The CSV reader could treat a short `FileStream.Read` as a complete profile file, and a missing or rejected `NativeMemorySentinel` registration would leave the persistent black-box ring outside first-party native allocation accounting.
+Solution: Require the CSV byte read to match the expected stream length before schema parsing, otherwise fall back to the deterministic default profile. The sentinel reflection bridge remains cold and asmdef-decoupled, but registration failure now disposes the ring and throws rather than publishing an untracked persistent allocation.
+Rejected Alternatives: Parsing partial CSV bytes was rejected because authoring profiles are a configuration boundary. Keeping sentinel registration best-effort was rejected after the native-memory mandate was re-read; a persistent allocation without accounting is worse than failing the editor bake setup.
+Scalability potential: Low/Middle/High/Ultra bake policy remains continuous; malformed tuning cannot silently bias weak-device geometry toward heavier settings, and missing Core sentinel availability fails before output assets are presented as verified.
+Hardware Impact: Runtime cost is 0us. Editor normal case adds one integer equality check after file read and one cold reflection registration; failure paths avoid corrupt profile ingestion and untracked native memory.
+
+## Decision 070: Caller-owned LOD mesh lifetime must survive exceptions
+
+Problem: `CreateUnityMesh` and `SaveOrReplaceMesh` had transfer guards, but `BakeAsset` could own LOD0 or LOD1 transient meshes across later LOD builds; an exception before asset transfer could leak Unity native mesh objects.
+Solution: Hoist LOD mesh locals and ownership flags across the multi-mesh bake window. Destroy any caller-owned LOD0/LOD1/LOD2 mesh in `finally` unless `SaveOrReplaceMesh` has already transferred or destroyed it.
+Rejected Alternatives: Trusting the happy-path null cleanup was rejected because malformed source meshes and Unity upload/import faults are the editor fault boundary. Relying on Unity object finalization was rejected because native mesh memory is not a normal managed object.
+Scalability potential: Low/Middle/High/Ultra output policy is unchanged. Long folder bakes on weak editor hardware no longer accumulate native mesh objects after mid-bake exceptions.
+Hardware Impact: Runtime cost is 0us. Editor normal path adds three booleans and null checks; failure path prevents native mesh memory growth during batch bakes.
+
+## Decision 071: Fade width must be continuous if proof claims it
+
+Problem: The self-audit claimed `GlobalQualityWeight` shifted fade widths, but the source used fixed `fadeTransitionWidth` constants.
+Solution: Add `ResolveFadeTransitionWidth` using `math.smoothstep`, `math.lerp`, quality, and depth. Low quality/deep sectors use shorter fades to reduce crossfade overdraw; high quality keeps wider fades for smoother visual transitions.
+Rejected Alternatives: Removing the proof text was rejected because Task 11 explicitly asks for runtime-ready continuous threshold/fade control. Binary low/high fade widths were rejected because quality must be continuous.
+Scalability potential: Low reduces crossfade overdraw and accepts more visible swaps hidden by darkness/thermal pressure; Middle holds moderate fade widths; High/Ultra buys smoother LOD transitions without adding runtime scripts.
+Hardware Impact: Runtime cost is 0us beyond Unity's static LODGroup evaluation. Editor cost is a few scalar math operations per generated prefab.
+
+## Decision 072: JSON report strings must escape control bytes
+
+Problem: Report JSON escaping only covered quote and backslash, so control characters in asset paths or detail fields could corrupt `LOD_OPTIMIZATION_REPORT.json` or `PHYSICS_OPTIMIZATION_REPORT.json`.
+Solution: Extend `Escape` to encode quote, backslash, newline, carriage return, tab, backspace, form-feed, and any character below `0x20` as JSON-safe escapes.
+Rejected Alternatives: Trusting Unity asset paths was rejected because scanner detail strings and future source names are fault inputs. Switching to a managed JSON serializer was rejected to keep the report writer explicit and predictable.
+Scalability potential: All quality tiers keep identical generated assets; proof artifacts remain parseable under malformed authoring strings.
+Hardware Impact: Runtime cost is 0us. Editor normal report writes only allocate a `StringBuilder` when escaping is required; malformed strings no longer poison downstream tooling.
+
+## Decision 073: Static validation before compile-gated probe
+
+Problem: The latest ownership/fade/json/sentinel edits need evidence, but the protocol forbids build/probe work while CPU is above 50 percent.
+Solution: Run scoped `rg`, asmdef, conflict-marker, and `git diff --check` scans against owned SHINOBU_213 files only, then leave Roslyn probe queued behind the CPU/dotnet gate.
+Rejected Alternatives: Launching Roslyn or `dotnet build` at `CPU=100.0` was rejected because it violates the command discipline gate and risks false build failures on the shared workstation.
+Scalability potential: Runtime output is unchanged; this protects the proof surface without widening dependencies or consuming thermal/IO headroom.
+Hardware Impact: Runtime cost is 0us. Editor verification cost is bounded static file scanning; no compiler worker was spawned.
+
+## Decision 074: CSV row schema must fail closed
+
+Problem: Header validation was strict, but individual CSV rows could still fall through with missing or malformed cells and partially defaulted profile fields.
+Solution: Replace fallback cell readers with `TryReadProfileRow`, exact eight-cell parsing, strict integer/float token checks, and whole-file default fallback on any bad row.
+Rejected Alternatives: Per-field fallback defaults were rejected because a malformed profile can silently change generated triangle budgets, primitive tolerance, hull limits, quality, or depth behavior.
+Scalability potential: Low/Middle/High/Ultra quality recipes remain designer-controlled only when the row is structurally valid; malformed rows cannot accidentally push low-tier bakes into visual-overkill density.
+Hardware Impact: Runtime cost is 0us. Editor normal path adds bounded byte-token validation; failure path prevents bad generated mesh/collider payloads.
+
+## Decision 075: Black-box hash and sentinel paths must not allocate or drift
+
+Problem: Black-box telemetry hashed `FixedString` paths through managed `ToString`, and the torn-dump exception also formatted numbers via `ToString`; the sentinel bridge also needed fail-fast proof without widening the asmdef.
+Solution: Hash `FixedString128Bytes` by byte index, remove numeric `ToString` from the torn-dump exception, and keep mandatory `NativeMemorySentinel` register/unregister behind cold reflection with disposal-before-throw on failure.
+Rejected Alternatives: Keeping `ToString` in editor-only black-box code was rejected because the proof surface explicitly claims fixed, unmanaged telemetry rows. Adding a direct `Hecton8.Core` reference was rejected because it widens the compile wall.
+Scalability potential: Runtime output policy is unchanged; Low/Middle/High/Ultra generated assets keep the same immutable payloads while black-box telemetry remains fixed-size and allocation-disciplined.
+Hardware Impact: Runtime cost is 0us. Editor record path avoids managed path-string allocation during telemetry hashing; failure path stops rather than leaking an unregistered persistent ring.
+
+## Decision 076: Same-frame editor fences need profiler evidence hooks
+
+Problem: The baker intentionally schedules and completes editor-only jobs in the same call stack, but those blocking fences had no named profiler markers for later proof.
+Solution: Wrap mock generation, preview fit/hull, decimation, mesh packing, collider primitive fit, and collider hull fences in static `ProfilerMarker` scopes.
+Rejected Alternatives: Removing the same-frame fences was rejected because Unity mesh/prefab authoring needs immediate results in an editor command. Leaving anonymous fences was rejected because the native-jobs mandate requires evidence for blocking sync points.
+Scalability potential: Runtime output policy is unchanged; profiler markers let low-tier editor hardware identify which offline stage must be further reduced or moved to a longer bake window.
+Hardware Impact: Runtime cost is 0us. Editor cost is marker begin/end around already blocking authoring fences; actual fence duration remains profiler-pending.
+
+## Decision 077: Metric path strings should not be materialized for manifest/report hot loops
+
+Problem: After black-box hashing was fixed, the batch report and `.h8lod` manifest path hash still materialized `OfflineBakeMetrics.SourcePath` and `OutputPath` with `FixedString128Bytes.ToString()` inside per-metric loops.
+Solution: Add `StableHash(in FixedString128Bytes)` for manifest hashes and `AppendEscapedFixedString` for JSON item path emission. ASCII asset paths now hash/append by byte index; non-ASCII paths still fall back to the existing escaped string path because report text must preserve authored path meaning.
+Rejected Alternatives: Claiming editor-only status and leaving per-metric `ToString()` was rejected because this path runs across every baked asset and feeds proof/payload artifacts. Replacing all Unity UI/report string materialization was rejected because `DropdownField`, final file writes, debug logs, and exception text are cold managed editor API boundaries.
+Scalability potential: Low/Middle/High/Ultra generated assets are unchanged; large folder bakes avoid avoidable per-metric path-string materialization in the proof and binary-manifest path.
+Hardware Impact: Runtime cost is 0us. Editor saving is bounded to two fixed-string hash conversions and two JSON path conversions per successful metric row; exact microseconds remain profiler-pending.

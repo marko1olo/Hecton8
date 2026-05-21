@@ -192,16 +192,17 @@ namespace Hecton8.EditorTools
                     packHandle = JobHandle.CombineDependencies(packHandle, normalHandle);
                 }
 
+                // Editor serialization boundary: Texture2D.SetPixelData and AssetDatabase need materialized CPU buffers here; runtime is excluded.
                 packHandle.Complete();
                 metrics.JobMilliseconds = stopwatch.Elapsed.TotalMilliseconds;
 
-                string armPath = ResolveUniqueAssetPath(request.OutputFolder, request.OutputName, "_ARM.asset");
+                string armPath = CreateUniqueAssetPath(request.OutputFolder, request.OutputName, "_ARM.asset");
                 armTexture = BuildArmTextureAsset(width, height, armPixels, normalPixels, normalPixels.IsCreated, request, armPath);
                 metrics.OutputPath = armPath;
 
                 if (normalPixels.IsCreated)
                 {
-                    string normalPath = ResolveUniqueAssetPath(request.OutputFolder, request.OutputName, "_N.asset");
+                    string normalPath = CreateUniqueAssetPath(request.OutputFolder, request.OutputName, "_N.asset");
                     normalTexture = BuildNormalTextureAsset(width, height, normalPixels, request, normalPath);
                     metrics.NormalOutputPath = normalPath;
                 }
@@ -347,6 +348,7 @@ namespace Hecton8.EditorTools
                         OutputWidth = width,
                         OutputHeight = height,
                         HasNormalSource = hasNormalPixels ? 1 : 0
+                    // Editor mip materialization boundary: each mip buffer must be complete before Texture2D consumes it.
                     }.Schedule(currentArm.Length, JobBatchSize).Complete();
 
                     texture.SetPixelData(currentArm, mip);
@@ -362,6 +364,7 @@ namespace Hecton8.EditorTools
                             SourceHeight = previousHeight,
                             OutputWidth = width,
                             OutputHeight = height
+                        // Editor mip materialization boundary: normal variance must be finalized before SetPixelData.
                         }.Schedule(currentNormal.Length, JobBatchSize).Complete();
                     }
 
@@ -411,6 +414,7 @@ namespace Hecton8.EditorTools
                         SourceHeight = previousHeight,
                         OutputWidth = width,
                         OutputHeight = height
+                    // Editor mip materialization boundary: generated normal mips are immediately serialized into Texture2D.
                     }.Schedule(current.Length, JobBatchSize).Complete();
                     texture.SetPixelData(current, mip);
                     if (ownsPrevious && previous.IsCreated)
@@ -531,6 +535,7 @@ namespace Hecton8.EditorTools
                     Intensity = math.max(0.001f, config.NormalIntensity)
                 }.Schedule(pixelCount, JobBatchSize, packHandle);
 
+                // Editor benchmark boundary: mock report consumes completed timings and hashes immediately after the stress pass.
                 normalHandle.Complete();
                 stopwatch.Stop();
 
@@ -637,7 +642,7 @@ namespace Hecton8.EditorTools
             }
 
             if (string.IsNullOrEmpty(request.OutputName))
-                request.OutputName = ResolveOutputName(request);
+                request.OutputName = BuildOutputName(request);
 
             if (string.IsNullOrEmpty(request.OutputFolder))
                 request.OutputFolder = OutputFolder;
@@ -649,13 +654,13 @@ namespace Hecton8.EditorTools
             return true;
         }
 
-        private static string ResolveOutputName(TexturePackerRequest request)
+        private static string BuildOutputName(TexturePackerRequest request)
         {
             Texture2D source = request.AoTexture != null ? request.AoTexture : request.RoughnessTexture != null ? request.RoughnessTexture : request.MetallicTexture;
             return source != null ? SanitizeAssetToken(source.name) : "TX_Packed";
         }
 
-        private static string ResolveUniqueAssetPath(string folder, string outputName, string suffix)
+        private static string CreateUniqueAssetPath(string folder, string outputName, string suffix)
         {
             EnsureAssetFolder(folder);
             string cleanName = SanitizeAssetToken(outputName);

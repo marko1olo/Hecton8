@@ -8,11 +8,8 @@
 #endif
 #include "Hecton_WaterExtinction.hlsl"
 #include "Hecton_CustomLightProbeGrid.hlsl"
-
-#if defined(H8_UBERNOIR_SCREEN_REFRACTION)
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
 #include "Post/Hecton_SnellRefractionCore.hlsl"
-#endif
 
 #if defined(H8_UBERNOIR_MOTION_VECTOR_PASS)
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
@@ -27,6 +24,7 @@
 #define H8_UBER_NOIR_MAX_GLOBAL_WAKES 16
 #define H8_UBER_NOIR_MATERIAL_CAPACITY 8192
 #define H8_UBER_NOIR_AGING_CAPACITY 4096
+#define H8_UBER_NOIR_DEGRADATION_INDEX_INVALID 0xFFFFFFFFu
 #define H8_UBER_NOIR_FLAG_TEXTURE_ARRAYS 1u
 #define H8_UBER_NOIR_FLAG_DEBUG_HEATMAP 2u
 
@@ -49,16 +47,11 @@ SAMPLER(sampler_H8UberNoirNormalArray);
 TEXTURE2D_ARRAY(_H8UberNoirMaskArray);
 SAMPLER(sampler_H8UberNoirMaskArray);
 
-#if defined(H8_UBERNOIR_CAUSTICS_TEXTURED)
-TEXTURE2D(_HectonCausticsMap);
-SAMPLER(sampler_HectonCausticsMap);
-#endif
-
 struct H8UberNoirInstanceData
 {
     float4x4 ObjectToWorld;
     float4x4 WorldToObject;
-    float4 SeedFadeFlags; // x=seed, y=fade01, z=feature flags, w=reserved
+    float4 SeedFadeFlags; // x=seed, y=fade01, z=feature flags, w=degradationIndexPlusOne
 };
 
 struct H8UberNoirMaterialStateDTO
@@ -81,6 +74,16 @@ struct H8VisualAgingParamsDTO
     float4 DepthAndPressure;
 };
 
+struct H8InstanceDegradationDTO
+{
+    uint InstanceID;
+    float RustAmount;
+    float ScorchAmount;
+    float BioFouling;
+    float StructuralStress;
+    uint3 Padding;
+};
+
 #if defined(H8_UBERNOIR_USE_INSTANCE_BUFFER)
 StructuredBuffer<H8UberNoirInstanceData> _H8UberNoirInstanceData;
 #endif
@@ -88,6 +91,8 @@ StructuredBuffer<H8UberNoirInstanceData> _H8UberNoirInstanceData;
 StructuredBuffer<H8UberNoirMaterialStateDTO> _H8UberNoirMaterialStates;
 StructuredBuffer<H8VisualAgingParamsDTO> _GlobalBaseAgingParams;
 float4 _GlobalBaseAgingRuntime; // x=active count, y=buffer enabled, z=GlobalQualityWeight, w=flags
+StructuredBuffer<H8InstanceDegradationDTO> _GlobalUberNoirDegradation;
+float4 _GlobalUberNoirDegradationRuntime; // x=active count, y=buffer enabled, z=GlobalQualityWeight, w=flags
 
 struct H8BulkheadStateDTO
 {
@@ -124,18 +129,18 @@ CBUFFER_START(UnityPerMaterial)
     float4 _BiolumHighColor;
     float4 _NoirAbyssFloorColor;
     float4 _NoirFogColor;
-    float4 _UberNoirCausticColor;
-    float4 _UberNoirFeatureFlags;    // x=POM, y=caustics, z=bending, w=dither transparency
+    float4 _UberNoirFeatureFlags;    // x=POM, y=reserved, z=bending, w=dither transparency
     float4 _UberNoirInstanceParams;  // x=buffer offset, y=buffer count, z=use buffer, w=seed bias
+    float _UberNoirInstanceCapacity; // total structured-buffer rows, zero disables external reads
     float4 _UberNoirParallaxParams;  // x=scale, y=min view z, z=height bias, w=reserved
     float4 _UberNoirRustParams;      // x=strength, y=POM threshold, z=normal strength, w=wet smoothness
     float4 _UberNoirBendParams;      // x=local strength, y=grid scale, z=panel bow, w=low scar
-    float4 _UberNoirCausticParams;   // x=intensity, y=max depth, z=shadow weight, w=refraction offset
     float4 _UberNoirBiolumParams;    // x=intensity, y=spectral shift, z=pulse sharpness, w=seed scale
     float4 _UberNoirDitherParams;    // x=cutoff, y=fog alpha, z=temporal strength, w=alpha scale
     float4 _UberNoirLightingParams;  // x=specular, y=roughness floor, z=ambient, w=emission scale
     float4 _UberNoirRefractionParams;// x=strength, y=water density, z=blend, w=chromatic
     float4 _UberNoirIorLut;          // x=air, y=water, z=dense water, w=glass
+    float _HectonHandRadiationMask;
     float _Metallic;
     float _Smoothness;
     float _OcclusionStrength;
@@ -150,13 +155,6 @@ CBUFFER_END
 #ifndef HECTON_CORE_LIT_INCLUDED
 float4 _TotalUniverseOffset;
 float4 _BiolumMasterPhase;
-float4 _HectonProjectedCausticsWorldRect;
-float4 _HectonProjectedCausticsParams;
-float4 _HectonProjectedCausticsColor;
-float4 _HectonCausticsRuntimeParams;
-float4 _HectonCausticsSimulationParamsA;
-float4 _HectonCausticsSimulationParamsB;
-float4 _HectonCausticsSimulationParamsC;
 float4 _HectonSubmarineCrushCenterRadius;
 float4 _HectonSubmarineCrushDepthParams;
 float4 _HectonHabitatStressCenterRadius;
@@ -198,6 +196,9 @@ float4 _HectonPlayerBloodSplatter;
 float _HectonActiveShaderFeatureMask;
 float _HectonEquipmentRust01;
 float _H8GlobalQualityWeight;
+float _HectonHandRadiationDose;
+float _HectonHandRadiationMutation01;
+float4 _HectonHandRadiationTint;
 #endif
 float4 _GlobalWakeBuffer[H8_UBER_NOIR_MAX_GLOBAL_WAKES];
 float4 _GlobalWakeVectors[H8_UBER_NOIR_MAX_GLOBAL_WAKES];
@@ -244,6 +245,7 @@ struct H8UberNoirVaryings
     half dentScar : TEXCOORD10;
     nointerpolation uint materialIndex : TEXCOORD11;
     half3 deformationNormalWS : TEXCOORD12;
+    nointerpolation uint degradationIndex : TEXCOORD13;
     UNITY_VERTEX_INPUT_INSTANCE_ID
     UNITY_VERTEX_OUTPUT_STEREO
 };
@@ -311,18 +313,20 @@ float3 H8UberNoirSafeNormalize(float3 value, float3 fallbackValue)
     float validMask = finiteMask * step(H8_UBER_NOIR_EPS, lenSqRaw);
     float lenSq = max(lenSqRaw, H8_UBER_NOIR_EPS);
 
-#if defined(_MATH_LOD_LOW)
     float3 absValue = abs(safeValue);
     float3 axisX = float3(safeValue.x < 0.0 ? -1.0 : 1.0, 0.0, 0.0);
     float3 axisY = float3(0.0, safeValue.y < 0.0 ? -1.0 : 1.0, 0.0);
     float3 axisZ = float3(0.0, 0.0, safeValue.z < 0.0 ? -1.0 : 1.0);
-    float3 normalizedValue = absValue.x >= absValue.y && absValue.x >= absValue.z
+    float3 axisApprox = absValue.x >= absValue.y && absValue.x >= absValue.z
         ? axisX
         : (absValue.y >= absValue.z ? axisY : axisZ);
+    float3 precise = safeValue * H8UberNoirSafeRsqrt(lenSq);
+    float materialWeight = isfinite(_H8UberNoirCausticSpeed.w) ? saturate(_H8UberNoirCausticSpeed.w) : 0.0;
+    float globalWeight = isfinite(_H8GlobalQualityWeight) ? saturate(_H8GlobalQualityWeight) : 0.0;
+    float q = saturate(max(globalWeight, materialWeight));
+    float axisWeight = (1.0 - q) * (1.0 - q) * (3.0 - 2.0 * (1.0 - q));
+    float3 normalizedValue = H8UberNoirFinite3(lerp(precise, axisApprox, axisWeight * 0.65), precise);
     return lerp(fallbackValue, normalizedValue, validMask);
-#else
-    return lerp(fallbackValue, safeValue * H8UberNoirSafeRsqrt(lenSq), validMask);
-#endif
 }
 
 half3 H8UberNoirSafeNormalizeHalf(half3 value, half3 fallbackValue)
@@ -333,18 +337,21 @@ half3 H8UberNoirSafeNormalizeHalf(half3 value, half3 fallbackValue)
     half validMask = finiteMask * (half)step((half)H8_UBER_NOIR_EPS, lenSqRaw);
     half lenSq = max(lenSqRaw, (half)H8_UBER_NOIR_EPS);
 
-#if defined(_MATH_LOD_LOW)
     half3 absValue = abs(safeValue);
     half3 axisX = half3(safeValue.x < 0.0h ? -1.0h : 1.0h, 0.0h, 0.0h);
     half3 axisY = half3(0.0h, safeValue.y < 0.0h ? -1.0h : 1.0h, 0.0h);
     half3 axisZ = half3(0.0h, 0.0h, safeValue.z < 0.0h ? -1.0h : 1.0h);
-    half3 normalizedValue = absValue.x >= absValue.y && absValue.x >= absValue.z
+    half3 axisApprox = absValue.x >= absValue.y && absValue.x >= absValue.z
         ? axisX
         : (absValue.y >= absValue.z ? axisY : axisZ);
+    half3 precise = safeValue * (half)H8UberNoirSafeRsqrt((float)lenSq);
+    half materialWeight = isfinite(_H8UberNoirCausticSpeed.w) ? (half)saturate(_H8UberNoirCausticSpeed.w) : (half)0.0;
+    half globalWeight = isfinite(_H8GlobalQualityWeight) ? (half)saturate(_H8GlobalQualityWeight) : (half)0.0;
+    half q = (half)saturate(max((float)globalWeight, (float)materialWeight));
+    half inverseQ = (half)1.0 - q;
+    half axisWeight = inverseQ * inverseQ * ((half)3.0 - (half)2.0 * inverseQ);
+    half3 normalizedValue = lerp(precise, axisApprox, axisWeight * (half)0.65);
     return lerp(fallbackValue, normalizedValue, validMask);
-#else
-    return lerp(fallbackValue, safeValue * (half)H8UberNoirSafeRsqrt((float)lenSq), validMask);
-#endif
 }
 
 float H8UberNoirTriangle01(float value)
@@ -361,15 +368,16 @@ float H8UberNoirSmoothRange01(float edge0, float edge1, float value)
 
 float H8UberNoirHighCostAllowed()
 {
-    float globalAllow = isfinite(_HectonUberNoirRuntimeParams.y) ? saturate(_HectonUberNoirRuntimeParams.y) : 1.0;
-    float stress01 = saturate(_HectonUberNoirRuntimeParams.x);
+    float globalAllow = isfinite(_HectonUberNoirRuntimeParams.y) ? saturate(_HectonUberNoirRuntimeParams.y) : 0.0;
+    float stress01 = isfinite(_HectonUberNoirRuntimeParams.x) ? saturate(_HectonUberNoirRuntimeParams.x) : 0.0;
     float stressGate = 1.0 - H8UberNoirSmoothRange01(0.72, 0.88, stress01);
     return globalAllow * stressGate;
 }
 
 float H8UberNoirVisualOverkill01()
 {
-    return saturate(_HectonUberNoirRuntimeParams.w) * H8UberNoirHighCostAllowed();
+    float overkill = isfinite(_HectonUberNoirRuntimeParams.w) ? saturate(_HectonUberNoirRuntimeParams.w) : 0.0;
+    return overkill * H8UberNoirHighCostAllowed();
 }
 
 float H8UberNoirGlobalQualityWeight()
@@ -382,11 +390,13 @@ float H8UberNoirGlobalQualityWeight()
 float3 H8UberNoirApplyBulkheadClosureOS(float3 positionOS, inout float3 normalOS, uint resolvedInstanceID)
 {
     float enabled = isfinite(_GlobalBulkheadParams.y) ? saturate(_GlobalBulkheadParams.y) : 0.0;
-    uint count = (uint)max(_GlobalBulkheadParams.x, 0.0);
+    float rawCount = isfinite(_GlobalBulkheadParams.x) ? _GlobalBulkheadParams.x : 0.0;
+    uint count = (uint)clamp(rawCount, 0.0, (float)H8_UBER_NOIR_MAX_DEFORMATION_STATES);
     if (enabled <= 0.0 || count == 0u)
         return positionOS;
 
-    uint instanceOffset = (uint)max(_UberNoirInstanceParams.x, 0.0);
+    float rawInstanceOffset = isfinite(_UberNoirInstanceParams.x) ? _UberNoirInstanceParams.x : 0.0;
+    uint instanceOffset = (uint)clamp(rawInstanceOffset, 0.0, (float)H8_UBER_NOIR_MAX_DEFORMATION_STATES);
     uint index = (resolvedInstanceID + instanceOffset) % count;
     H8BulkheadStateDTO state = _GlobalBulkheadStates[index];
     if ((state.Flags & 1u) == 0u)
@@ -423,9 +433,22 @@ float4 H8UberNoirFiniteSaturate4(float4 value, float4 fallback)
     return all(isfinite(value)) ? saturate(value) : fallback;
 }
 
+float H8UberNoirFiniteSaturate(float value, float fallback)
+{
+    return isfinite(value) ? saturate(value) : fallback;
+}
+
 float3 H8UberNoirMaterialStablePosition(float3 positionWS)
 {
-    return H8UberNoirFinite3(positionWS - H8UberNoirFinite3(_TotalUniverseOffset.xyz, float3(0.0, 0.0, 0.0)), float3(0.0, 0.0, 0.0));
+    return H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
+}
+
+float3 H8UberNoirVisualAgingStablePosition(float4 uvPack, float4 uvAux, half instanceSeed, H8VisualAgingParamsDTO aging)
+{
+    float3 uvSeed = float3(uvPack.xy * 37.0, uvAux.z * 19.0 + (float)instanceSeed * 11.0);
+    uvSeed = H8UberNoirFinite3(uvSeed, float3(0.0, 0.0, 0.0));
+    float3 localAupSeed = H8UberNoirFinite3(aging.DepthAndPressure.xyz, float3(0.0, 0.0, 0.0)) * 0.001;
+    return H8UberNoirFinite3(uvSeed + localAupSeed, uvSeed);
 }
 
 half H8UberNoirResolveBrownoutPower(float3 positionWS, float instanceSeed, half materialPower)
@@ -437,10 +460,9 @@ half H8UberNoirResolveBrownoutPower(float3 positionWS, float instanceSeed, half 
     float3 stablePosition = H8UberNoirMaterialStablePosition(positionWS);
     float coarsePhase = phase * lerp(3.0, 9.5, quality) + dot(stablePosition.xz, float2(0.019, -0.031)) + instanceSeed * 0.37;
     float flicker01 = H8UberNoirTriangle01(coarsePhase);
-#if !defined(_MATH_LOD_LOW)
     float finePhase = phase * lerp(11.0, 23.0, quality) + dot(stablePosition.xy, float2(-0.047, 0.029)) + instanceSeed * 1.73;
-    flicker01 = lerp(flicker01, flicker01 * 0.72 + H8UberNoirTriangle01(finePhase) * 0.28, H8UberNoirVisualOverkill01());
-#endif
+    float flickerDetail = H8UberNoirVisualOverkill01() * H8UberNoirSmoothRange01(0.28, 0.72, quality);
+    flicker01 = lerp(flicker01, flicker01 * 0.72 + H8UberNoirTriangle01(finePhase) * 0.28, flickerDetail);
     float brownoutFloor = lerp(0.52, 0.24, quality);
     float flickerGain = lerp(1.0, lerp(brownoutFloor, 1.08, flicker01), severity01);
     float supplyGate = lerp(1.0, supply01, severity01);
@@ -450,9 +472,11 @@ half H8UberNoirResolveBrownoutPower(float3 positionWS, float instanceSeed, half 
 H8UberNoirMaterialStateDTO H8UberNoirDefaultMaterialState()
 {
     H8UberNoirMaterialStateDTO state;
-    state.WearAge = saturate(max(_HectonEquipmentRust01, _HectonMaterialDecayRuntime.x));
+    state.WearAge = saturate(max(
+        H8UberNoirFiniteSaturate(_HectonEquipmentRust01, 0.0),
+        H8UberNoirFiniteSaturate(_HectonMaterialDecayRuntime.x, 0.0)));
     state.SaltAccumulation = state.WearAge * 0.35;
-    state.BioGrowthMask = saturate(_BiolumMasterPhase.z);
+    state.BioGrowthMask = H8UberNoirFiniteSaturate(_BiolumMasterPhase.z, 0.0);
     state.TextureSetHash = 0u;
     state.PowerLevel = 1.0;
     state.Depth01 = 0.0;
@@ -469,12 +493,12 @@ H8UberNoirMaterialStateDTO H8UberNoirLoadMaterialState(uint materialIndex)
     if (runtimeActive != 0u)
     {
         state = _H8UberNoirMaterialStates[min(materialIndex, (uint)(H8_UBER_NOIR_MATERIAL_CAPACITY - 1))];
-        state.WearAge = saturate(state.WearAge);
-        state.SaltAccumulation = saturate(state.SaltAccumulation);
-        state.BioGrowthMask = saturate(state.BioGrowthMask);
-        state.PowerLevel = saturate(state.PowerLevel);
-        state.Depth01 = saturate(state.Depth01);
-        state.MossLayer01 = saturate(state.MossLayer01);
+        state.WearAge = H8UberNoirFiniteSaturate(state.WearAge, 0.0);
+        state.SaltAccumulation = H8UberNoirFiniteSaturate(state.SaltAccumulation, 0.0);
+        state.BioGrowthMask = H8UberNoirFiniteSaturate(state.BioGrowthMask, 0.0);
+        state.PowerLevel = H8UberNoirFiniteSaturate(state.PowerLevel, 1.0);
+        state.Depth01 = H8UberNoirFiniteSaturate(state.Depth01, 0.0);
+        state.MossLayer01 = H8UberNoirFiniteSaturate(state.MossLayer01, 0.0);
     }
     return state;
 }
@@ -482,25 +506,92 @@ H8UberNoirMaterialStateDTO H8UberNoirLoadMaterialState(uint materialIndex)
 H8VisualAgingParamsDTO H8UberNoirDefaultVisualAging()
 {
     H8VisualAgingParamsDTO aging;
-    float rust = saturate(max(_HectonEquipmentRust01, _HectonMaterialDecayRuntime.x));
+    float rust = max(
+        H8UberNoirFiniteSaturate(_HectonEquipmentRust01, 0.0),
+        H8UberNoirFiniteSaturate(_HectonMaterialDecayRuntime.x, 0.0));
     aging.RustAndCorrosion = float4(rust, rust * 0.35, rust * 0.22, 0.0);
-    aging.SaltAndBiomass = float4(rust * 0.18, saturate(_BiolumMasterPhase.z) * 0.12, 0.0, 0.0);
-    aging.StressAndMicroFractures = float4(saturate(_HectonUberNoirRuntimeParams.x), 0.0, 0.0, H8UberNoirGlobalQualityWeight());
+    aging.SaltAndBiomass = float4(rust * 0.18, H8UberNoirFiniteSaturate(_BiolumMasterPhase.z, 0.0) * 0.12, 0.0, 0.0);
+    aging.StressAndMicroFractures = float4(H8UberNoirFiniteSaturate(_HectonUberNoirRuntimeParams.x, 0.0), 0.0, 0.0, H8UberNoirGlobalQualityWeight());
     aging.DepthAndPressure = float4(0.0, 0.0, 0.0, 0.0);
     return aging;
 }
 
-H8VisualAgingParamsDTO H8UberNoirLoadVisualAging(uint materialIndex)
+H8InstanceDegradationDTO H8UberNoirDefaultInstanceDegradation()
+{
+    H8InstanceDegradationDTO degradation;
+    float rust = max(
+        H8UberNoirFiniteSaturate(_HectonEquipmentRust01, 0.0),
+        H8UberNoirFiniteSaturate(_HectonMaterialDecayRuntime.x, 0.0));
+    degradation.InstanceID = 0u;
+    degradation.RustAmount = rust;
+    degradation.ScorchAmount = 0.0;
+    degradation.BioFouling = H8UberNoirFiniteSaturate(_BiolumMasterPhase.z, 0.0) * 0.12;
+    degradation.StructuralStress = H8UberNoirFiniteSaturate(_HectonUberNoirRuntimeParams.x, 0.0);
+    degradation.Padding = uint3(0u, 0u, 0u);
+    return degradation;
+}
+
+float H8UberNoirDegradationPayloadBlend()
+{
+    float activeCount = isfinite(_GlobalUberNoirDegradationRuntime.x) ? clamp(_GlobalUberNoirDegradationRuntime.x, 0.0, (float)H8_UBER_NOIR_AGING_CAPACITY) : 0.0;
+    float payloadEnabled = isfinite(_GlobalUberNoirDegradationRuntime.y) ? saturate(_GlobalUberNoirDegradationRuntime.y) : 0.0;
+    return payloadEnabled * H8UberNoirSmoothRange01(0.0, 1.0, activeCount);
+}
+
+uint H8UberNoirResolveDegradationIndex(H8UberNoirInstanceData instanceData, uint resolvedInstanceID)
+{
+    float encodedIndex = instanceData.SeedFadeFlags.w;
+    [branch]
+    if (isfinite(encodedIndex) && encodedIndex >= 1.0)
+        return min((uint)floor(encodedIndex - 1.0 + 0.5), (uint)(H8_UBER_NOIR_AGING_CAPACITY - 1));
+
+    [branch]
+    if (resolvedInstanceID < (uint)H8_UBER_NOIR_AGING_CAPACITY)
+        return resolvedInstanceID;
+
+    return H8_UBER_NOIR_DEGRADATION_INDEX_INVALID;
+}
+
+H8InstanceDegradationDTO H8UberNoirLoadInstanceDegradation(uint degradationIndex)
+{
+    H8InstanceDegradationDTO degradation = H8UberNoirDefaultInstanceDegradation();
+    float activeCountFloat = isfinite(_GlobalUberNoirDegradationRuntime.x) ? clamp(_GlobalUberNoirDegradationRuntime.x, 0.0, (float)H8_UBER_NOIR_AGING_CAPACITY) : 0.0;
+    float payloadEnabled = isfinite(_GlobalUberNoirDegradationRuntime.y) ? saturate(_GlobalUberNoirDegradationRuntime.y) : 0.0;
+    uint activeCount = (uint)activeCountFloat;
+    [branch]
+    if (payloadEnabled > H8_UBER_NOIR_EPS &&
+        degradationIndex != H8_UBER_NOIR_DEGRADATION_INDEX_INVALID &&
+        degradationIndex < activeCount &&
+        degradationIndex < (uint)H8_UBER_NOIR_AGING_CAPACITY)
+    {
+        H8InstanceDegradationDTO payload = _GlobalUberNoirDegradation[degradationIndex];
+        payload.RustAmount = H8UberNoirFiniteSaturate(payload.RustAmount, 0.0);
+        payload.ScorchAmount = H8UberNoirFiniteSaturate(payload.ScorchAmount, 0.0);
+        payload.BioFouling = H8UberNoirFiniteSaturate(payload.BioFouling, 0.0);
+        payload.StructuralStress = H8UberNoirFiniteSaturate(payload.StructuralStress, 0.0);
+        float payloadBlend = H8UberNoirDegradationPayloadBlend();
+        degradation.InstanceID = payload.InstanceID;
+        degradation.RustAmount = lerp(degradation.RustAmount, payload.RustAmount, payloadBlend);
+        degradation.ScorchAmount = lerp(degradation.ScorchAmount, payload.ScorchAmount, payloadBlend);
+        degradation.BioFouling = lerp(degradation.BioFouling, payload.BioFouling, payloadBlend);
+        degradation.StructuralStress = lerp(degradation.StructuralStress, payload.StructuralStress, payloadBlend);
+    }
+    return degradation;
+}
+
+H8VisualAgingParamsDTO H8UberNoirLoadVisualAging(uint degradationIndex)
 {
     H8VisualAgingParamsDTO aging = H8UberNoirDefaultVisualAging();
-    float activeCountFloat = isfinite(_GlobalBaseAgingRuntime.x) ? max(0.0, _GlobalBaseAgingRuntime.x) : 0.0;
+    float activeCountFloat = isfinite(_GlobalBaseAgingRuntime.x) ? clamp(_GlobalBaseAgingRuntime.x, 0.0, (float)H8_UBER_NOIR_AGING_CAPACITY) : 0.0;
     float payloadEnabled = isfinite(_GlobalBaseAgingRuntime.y) ? saturate(_GlobalBaseAgingRuntime.y) : 0.0;
     uint activeCount = (uint)activeCountFloat;
     [branch]
-    if (payloadEnabled > H8_UBER_NOIR_EPS && activeCount > 0u)
+    if (payloadEnabled > H8_UBER_NOIR_EPS &&
+        degradationIndex != H8_UBER_NOIR_DEGRADATION_INDEX_INVALID &&
+        degradationIndex < activeCount &&
+        degradationIndex < (uint)H8_UBER_NOIR_AGING_CAPACITY)
     {
-        uint index = min(materialIndex, min(activeCount - 1u, (uint)(H8_UBER_NOIR_AGING_CAPACITY - 1)));
-        H8VisualAgingParamsDTO payload = _GlobalBaseAgingParams[index];
+        H8VisualAgingParamsDTO payload = _GlobalBaseAgingParams[degradationIndex];
         payload.RustAndCorrosion = H8UberNoirFiniteSaturate4(payload.RustAndCorrosion, float4(0.0, 0.0, 0.0, 0.0));
         payload.SaltAndBiomass = H8UberNoirFiniteSaturate4(payload.SaltAndBiomass, float4(0.0, 0.0, 0.0, 0.0));
         payload.StressAndMicroFractures = H8UberNoirFiniteSaturate4(payload.StressAndMicroFractures, float4(0.0, 0.0, 0.0, H8UberNoirGlobalQualityWeight()));
@@ -512,23 +603,32 @@ H8VisualAgingParamsDTO H8UberNoirLoadVisualAging(uint materialIndex)
         aging.StressAndMicroFractures = lerp(aging.StressAndMicroFractures, payload.StressAndMicroFractures, payloadBlend);
         aging.DepthAndPressure = lerp(aging.DepthAndPressure, payload.DepthAndPressure, payloadBlend);
     }
+
+    H8InstanceDegradationDTO degradation = H8UberNoirLoadInstanceDegradation(degradationIndex);
+    float degradationBlend = H8UberNoirDegradationPayloadBlend();
+    [branch]
+    if (degradationBlend > H8_UBER_NOIR_EPS)
+    {
+        aging.RustAndCorrosion.x = saturate(max(aging.RustAndCorrosion.x, degradation.RustAmount));
+        aging.SaltAndBiomass.y = saturate(max(aging.SaltAndBiomass.y, degradation.BioFouling));
+        aging.SaltAndBiomass.z = saturate(max(aging.SaltAndBiomass.z, degradation.ScorchAmount));
+        aging.StressAndMicroFractures.x = saturate(max(aging.StressAndMicroFractures.x, degradation.StructuralStress));
+    }
     return aging;
 }
 
 float H8UberNoirVisualAgingPayloadBlend()
 {
-    float activeCount = isfinite(_GlobalBaseAgingRuntime.x) ? max(0.0, _GlobalBaseAgingRuntime.x) : 0.0;
+    float activeCount = isfinite(_GlobalBaseAgingRuntime.x) ? clamp(_GlobalBaseAgingRuntime.x, 0.0, (float)H8_UBER_NOIR_AGING_CAPACITY) : 0.0;
     float payloadEnabled = isfinite(_GlobalBaseAgingRuntime.y) ? saturate(_GlobalBaseAgingRuntime.y) : 0.0;
     return payloadEnabled * H8UberNoirSmoothRange01(0.0, 1.0, activeCount);
 }
 
-float H8UberNoirVisualAgingQualityWeight(H8VisualAgingParamsDTO aging)
+float H8UberNoirVisualAgingQualityWeight()
 {
-    float baseQuality = H8UberNoirGlobalQualityWeight();
+    float baseQuality = isfinite(_H8GlobalQualityWeight) ? saturate(_H8GlobalQualityWeight) : 0.0;
     float runtimeQuality = isfinite(_GlobalBaseAgingRuntime.z) ? saturate(_GlobalBaseAgingRuntime.z) : 0.0;
-    float laneQuality = isfinite(aging.StressAndMicroFractures.w) ? saturate(aging.StressAndMicroFractures.w) : runtimeQuality;
-    float payloadQuality = max(runtimeQuality, laneQuality);
-    return saturate(lerp(baseQuality, payloadQuality, H8UberNoirVisualAgingPayloadBlend()));
+    return saturate(lerp(baseQuality, runtimeQuality, H8UberNoirVisualAgingPayloadBlend()));
 }
 
 uint H8UberNoirTextureSlice(uint textureSetHash, uint offset)
@@ -580,10 +680,30 @@ float H8UberNoirValueNoise2(float2 value)
     return lerp(lerp(a, b, smoothValue.x), lerp(c, d, smoothValue.x), smoothValue.y);
 }
 
+float3 H8UberNoirApplyHandRadiationMutationOS(float3 positionOS, inout float3 normalOS, float instanceSeed)
+{
+    float materialMask = H8UberNoirFeatureScalar(_HectonHandRadiationMask);
+    float mutation01 = H8UberNoirFeatureScalar(_HectonHandRadiationMutation01) * materialMask;
+    if (mutation01 <= H8_UBER_NOIR_EPS)
+        return positionOS;
+
+    float q = H8UberNoirGlobalQualityWeight();
+    float3 safePosition = H8UberNoirFinite3(positionOS, float3(0.0, 0.0, 0.0));
+    float3 safeNormal = H8UberNoirSafeNormalize(normalOS, float3(0.0, 1.0, 0.0));
+    float2 scarUv = safePosition.xy * lerp(9.0, 31.0, q) + instanceSeed + _Time.yy * lerp(0.08, 0.22, q);
+    float blisterNoise = H8UberNoirValueNoise2(scarUv);
+    float poreNoise = H8UberNoirValueNoise2(scarUv * 2.37 + 13.17);
+    float blister = saturate((blisterNoise - 0.42) * 2.15) * saturate(0.55 + poreNoise);
+    float pulse = 0.75 + 0.25 * H8UberNoirTriangle01(_Time.y * lerp(0.35, 1.65, q) + instanceSeed);
+    float displacement = blister * mutation01 * pulse * lerp(0.0015, 0.0095, q);
+    normalOS = H8UberNoirSafeNormalize(safeNormal + float3((poreNoise - 0.5) * mutation01 * 0.08, blister * mutation01 * 0.06, 0.0), safeNormal);
+    return H8UberNoirFinite3(safePosition + safeNormal * displacement, positionOS);
+}
+
 float H8UberNoirMaterialMacroNoise(float3 stablePosition, half instanceSeed, float quality)
 {
     float cheapNoise = H8UberNoirTriangle01(dot(stablePosition.xz, float2(0.071, -0.053)));
-    float detailWeight = H8UberNoirSmoothRange01(0.22, 0.44, quality);
+    float detailWeight = H8UberNoirSmoothRange01(0.30, 0.58, quality);
     [branch]
     if (detailWeight <= H8_UBER_NOIR_EPS)
         return cheapNoise;
@@ -596,22 +716,23 @@ float H8UberNoirAgingGrowthMask(float3 stablePosition, H8VisualAgingParamsDTO ag
 {
     float agingActive = saturate(max(max(aging.RustAndCorrosion.x, aging.RustAndCorrosion.y), max(aging.SaltAndBiomass.x, aging.StressAndMicroFractures.y)));
     float3 localAup = aging.DepthAndPressure.xyz;
+    float aupSeed = dot(localAup, float3(0.00031, -0.00017, 0.00023));
     float seed = aging.RustAndCorrosion.w + instanceSeed;
-    float weldBias = saturate(1.0 - abs(frac((stablePosition.y + localAup.y) * 0.19 + seed) * 2.0 - 1.0));
+    float weldBias = saturate(1.0 - abs(frac(stablePosition.y * 0.19 + seed + aupSeed) * 2.0 - 1.0));
     float edgeWeight = H8UberNoirSmoothRange01(0.08, 0.35, quality) * agingActive;
     float edgeBias = 0.0;
     [branch]
     if (edgeWeight > H8_UBER_NOIR_EPS)
         edgeBias = saturate(1.0 - abs((float)dot(H8UberNoirSafeNormalize(stablePosition + 0.001, float3(0.0, 1.0, 0.0)), float3(0.577, 0.577, 0.577))));
     float cheap = saturate((weldBias * (0.62 + 0.18 * (1.0 - edgeWeight)) + edgeBias * 0.38 * edgeWeight) * (0.35 + aging.DepthAndPressure.w));
-    float detailWeight = H8UberNoirSmoothRange01(0.18, 0.72, quality) * saturate(aging.StressAndMicroFractures.w) * agingActive;
+    float detailWeight = H8UberNoirSmoothRange01(0.30, 0.74, quality) * agingActive;
     [branch]
     if (detailWeight <= H8_UBER_NOIR_EPS)
         return cheap;
 
-    float2 p = stablePosition.xz * lerp(0.031, 0.091, detailWeight) + localAup.xz * 0.00073 + seed;
+    float2 p = stablePosition.xz * lerp(0.031, 0.091, detailWeight) + seed + aupSeed;
     float n0 = H8UberNoirValueNoise2(p);
-    float n1 = H8UberNoirValueNoise2(p * 2.17 + localAup.y * 0.0013);
+    float n1 = H8UberNoirValueNoise2(p * 2.17 + aupSeed);
     float rich = saturate((n0 * 0.68 + n1 * 0.32 + weldBias * 0.25) * (0.62 + aging.RustAndCorrosion.x + aging.RustAndCorrosion.y));
     return lerp(cheap, rich, detailWeight);
 }
@@ -632,14 +753,15 @@ void H8UberNoirApplyGlassMicroFracture(
 
     float seed = aging.RustAndCorrosion.w + instanceSeed;
     float3 localAup = aging.DepthAndPressure.xyz;
-    float cheapLine = 1.0 - abs(frac(dot(stablePosition.xz + localAup.xz * 0.01, float2(0.19, -0.27)) + seed) * 2.0 - 1.0);
-    float detailWeight = H8UberNoirSmoothRange01(0.24, 0.82, quality) * fracture01;
+    float aupSeed = dot(localAup, float3(0.00031, -0.00017, 0.00023));
+    float cheapLine = 1.0 - abs(frac(dot(stablePosition.xz, float2(0.19, -0.27)) + seed + aupSeed) * 2.0 - 1.0);
+    float detailWeight = H8UberNoirSmoothRange01(0.30, 0.82, quality) * fracture01;
     float branchMask = cheapLine;
     [branch]
     if (detailWeight > H8_UBER_NOIR_EPS)
     {
-        float2 p0 = stablePosition.xy * lerp(18.0, 58.0, detailWeight) + localAup.xz * 0.0031 + seed;
-        float2 p1 = stablePosition.zy * lerp(25.0, 83.0, saturate(detailWeight * detailWeight)) - localAup.zy * 0.0023 + seed * 1.73;
+        float2 p0 = stablePosition.xy * lerp(18.0, 58.0, detailWeight) + seed + aupSeed;
+        float2 p1 = stablePosition.zy * lerp(25.0, 83.0, saturate(detailWeight * detailWeight)) + seed * 1.73 + aupSeed;
         float n0 = H8UberNoirValueNoise2(p0);
         float n1 = H8UberNoirValueNoise2(p1);
         float radial = 1.0 - saturate(length(frac(stablePosition.xz * 0.071 + seed) - 0.5) * 2.0);
@@ -677,10 +799,7 @@ H8UberNoirWearVitality H8UberNoirResolveWearVitality(
     vitality.SaltCrystalMask = cheapCrystals * dynamicSalt * 0.22h * cheapWeight;
     vitality.WetEdgeMask = saturate((dynamicRust + dynamicSalt) * cheapMask * 0.18h * cheapWeight);
     vitality.NormalWeight = 0.0h;
-#if defined(_MATH_LOD_LOW)
-    return vitality;
-#else
-    float detailWeight = H8UberNoirSmoothRange01(0.24, 0.58, quality) * H8UberNoirHighCostAllowed();
+    float detailWeight = H8UberNoirSmoothRange01(0.30, 0.58, quality) * H8UberNoirHighCostAllowed();
     [branch]
     if (detailWeight <= H8_UBER_NOIR_EPS)
         return vitality;
@@ -703,7 +822,6 @@ H8UberNoirWearVitality H8UberNoirResolveWearVitality(
     vitality.WetEdgeMask = lerp(vitality.WetEdgeMask, richWetEdges * saturate((dynamicRust + dynamicSalt) * 0.45h), w);
     vitality.NormalWeight = saturate(w * (richRustPits + richMossVeins + richSaltCrystals));
     return vitality;
-#endif
 }
 
 void H8UberNoirApplyWearVitalityColor(H8UberNoirWearVitality vitality, inout H8UberNoirSurface surface)
@@ -734,7 +852,6 @@ void H8UberNoirApplyWearVitalityNormal(
     float3 safeBitangentWS,
     inout H8UberNoirSurface surface)
 {
-#if !defined(_MATH_LOD_LOW)
     half normalMask = saturate(vitality.NormalWeight * 0.72h);
     [branch]
     if (normalMask <= 0.001h)
@@ -749,7 +866,6 @@ void H8UberNoirApplyWearVitalityNormal(
         safeTangentWS * microNormalTS.x + safeBitangentWS * microNormalTS.y + baseNormalWS * microNormalTS.z,
         baseNormalWS);
     surface.normalWS = (half3)H8UberNoirSafeNormalize(lerp(baseNormalWS, microNormalWS, normalMask), baseNormalWS);
-#endif
 }
 
 float2 H8UberNoirScreenUV(float4 positionCS)
@@ -768,14 +884,12 @@ half H8UberNoirCheapDither(float4 positionCS)
     return (half)H8WaterExtinctionInterleavedGradientNoise(pixel);
 }
 
-#if !defined(_MATH_LOD_LOW)
 half H8UberNoirBlueNoise(float4 positionCS)
 {
     float2 screenUV = H8UberNoirScreenUV(positionCS);
     float2 r2 = frac(_Time.y * float2(0.75487766, 0.56984029) * max(_UberNoirDitherParams.z, 0.0));
     return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, screenUV * (_ScaledScreenParams.xy * (1.0 / 64.0)) + r2).r;
 }
-#endif
 
 half H8UberNoirFogIgnDither(float4 positionCS, half fogCurve)
 {
@@ -791,16 +905,12 @@ void H8UberNoirClipDitheredTransparency(half alpha, float4 positionCS)
 {
     half threshold = (half)_Cutoff;
     half ditherActive = (half)H8UberNoirFeatureScalar(_UberNoirFeatureFlags.w);
-#if !defined(_MATH_LOD_LOW)
-    half blueNoiseAllowed = ditherActive * (half)H8UberNoirHighCostAllowed();
+    half blueNoiseAllowed = ditherActive * (half)H8UberNoirHighCostAllowed() * (half)H8UberNoirSmoothRange01(0.22, 0.58, H8UberNoirGlobalQualityWeight());
     [branch]
     if (blueNoiseAllowed > (half)H8_UBER_NOIR_EPS)
         threshold = H8UberNoirBlueNoise(positionCS);
     else
         threshold = lerp(threshold, H8UberNoirCheapDither(positionCS), ditherActive);
-#else
-    threshold = lerp(threshold, H8UberNoirCheapDither(positionCS), ditherActive);
-#endif
     half coverage = saturate(alpha * (half)max(_UberNoirDitherParams.w, 0.0));
     clip(coverage - threshold);
 }
@@ -821,16 +931,19 @@ H8UberNoirInstanceData H8UberNoirLoadInstance(uint instanceID)
     float bufferOffsetSource = _UberNoirInstanceParams.x;
     float bufferCountSource = _UberNoirInstanceParams.y;
     float useBufferSource = _UberNoirInstanceParams.z;
+    float bufferCapacitySource = _UberNoirInstanceCapacity;
     uint bufferCount = (uint)(isfinite(bufferCountSource) ? max(bufferCountSource, 0.0) : 0.0);
     uint bufferOffset = (uint)(isfinite(bufferOffsetSource) ? max(bufferOffsetSource, 0.0) : 0.0);
+    uint bufferCapacity = (uint)(isfinite(bufferCapacitySource) ? max(bufferCapacitySource, 0.0) : 0.0);
     float useBuffer = H8UberNoirFeatureScalar(useBufferSource);
     [branch]
-    if ((useBuffer > H8_UBER_NOIR_EPS) && (bufferCount > 0u))
+    if ((useBuffer > H8_UBER_NOIR_EPS) && (bufferCount > 0u) && (bufferCapacity > bufferOffset))
     {
-        uint clampedId = min(instanceID, bufferCount - 1u);
+        uint safeCount = min(bufferCount, bufferCapacity - bufferOffset);
+        uint clampedId = min(instanceID, safeCount - 1u);
         uint bufferIndex = bufferOffset + clampedId;
         [branch]
-        if (bufferIndex >= bufferOffset)
+        if (bufferIndex >= bufferOffset && bufferIndex < bufferCapacity)
             instanceData = _H8UberNoirInstanceData[bufferIndex];
     }
 #endif
@@ -1028,14 +1141,13 @@ float H8UberNoirRadiusMask(float3 positionWS, float4 centerRadius)
 
 float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, half instanceSeed)
 {
-#if defined(_MATH_LOD_LOW)
-    return H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
-#else
     float3 safePositionWS = H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
     float featureSource = _UberNoirFeatureFlags.z;
     float featureMask = H8UberNoirFeatureScalar(featureSource);
+    float quality = H8UberNoirGlobalQualityWeight();
+    float detailWeight = H8UberNoirSmoothRange01(0.16, 0.48, quality) * H8UberNoirHighCostAllowed();
     float localStrengthSource = _UberNoirBendParams.x;
-    float localStrength = isfinite(localStrengthSource) ? max(localStrengthSource, 0.0) : 0.0;
+    float localStrength = (isfinite(localStrengthSource) ? max(localStrengthSource, 0.0) : 0.0) * detailWeight;
     [branch]
     if (featureMask <= 0.0 || localStrength <= H8_UBER_NOIR_EPS)
         return safePositionWS;
@@ -1074,7 +1186,6 @@ float3 H8UberNoirApplyDynamicHullBendingWS(float3 positionWS, float3 normalWS, h
     float displacement = weightedDisplacement * buckle * localStrength * featureMask;
     displacement = isfinite(displacement) ? displacement : 0.0;
     return H8UberNoirFinite3(safePositionWS + H8UberNoirSafeNormalize(normalWS, float3(0.0, 1.0, 0.0)) * displacement, safePositionWS);
-#endif
 }
 
 float H8UberNoirEvaluateHullDentScarOS(float3 positionOS)
@@ -1136,31 +1247,28 @@ float H8UberNoirEvaluateHullDentScarOS(float3 positionOS)
 
 half3 H8UberNoirApplyBentHullNormalBiasWS(half3 normalWS, half3 viewDirWS)
 {
-#if defined(_MATH_LOD_LOW)
-    return normalWS;
-#else
     float featureMask = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.z);
+    float detailWeight = H8UberNoirSmoothRange01(0.18, 0.52, H8UberNoirGlobalQualityWeight()) * H8UberNoirHighCostAllowed();
     float crushDepth = max(_HectonSubmarineCrushDepthParams.y, H8_UBER_NOIR_EPS);
     float crush01 = saturate(max(_HectonSubmarineCrushDepthParams.x, 0.0) * H8UberNoirSafeRcp(crushDepth));
     float habitat01 = saturate(_HectonHabitatStressParams.x);
     float dentScar01 = saturate(_HectonHullDentParams.z);
     float bendBias = saturate(max(crush01, habitat01) * max(_UberNoirBendParams.z, 0.0) + dentScar01 * 0.35);
-    bendBias *= featureMask;
+    bendBias *= featureMask * detailWeight;
 
     float3 safeNormal = H8UberNoirSafeNormalize((float3)normalWS, float3(0.0, 1.0, 0.0));
     float3 safeView = H8UberNoirSafeNormalize((float3)viewDirWS, float3(0.0, 0.0, 1.0));
     float3 biasedNormal = H8UberNoirSafeNormalize(safeNormal + safeView * (bendBias * 0.58), safeNormal);
     return (half3)H8UberNoirSafeNormalize(lerp(safeNormal, biasedNormal, bendBias), safeNormal);
-#endif
 }
 
 void H8UberNoirApplyGlobalWakeWS(inout float3 positionWS, inout float3 normalWS, half instanceSeed)
 {
     float3 safePositionWS = H8UberNoirFinite3(positionWS, float3(0.0, 0.0, 0.0));
     float3 safeNormalWS = H8UberNoirSafeNormalize(normalWS, float3(0.0, 1.0, 0.0));
-    int rawSlotLimit = min((int)max(_GlobalWakeParams.x, 0.0), H8_UBER_NOIR_MAX_GLOBAL_WAKES);
-    int slotLimit = rawSlotLimit;
-    if (slotLimit <= 0)
+    float rawWakeCount = isfinite(_GlobalWakeParams.x) ? max(_GlobalWakeParams.x, 0.0) : 0.0;
+    int rawSlotLimit = min((int)rawWakeCount, H8_UBER_NOIR_MAX_GLOBAL_WAKES);
+    if (rawSlotLimit <= 0)
     {
         positionWS = safePositionWS;
         normalWS = safeNormalWS;
@@ -1171,85 +1279,25 @@ void H8UberNoirApplyGlobalWakeWS(inout float3 positionWS, inout float3 normalWS,
     float3 normalImpulseWS = float3(0.0, 0.0, 0.0);
     float seed = frac((float)instanceSeed * 11.13);
 
-#if defined(_MATH_LOD_LOW)
-    int nearestA = -1;
-    int nearestB = -1;
-    float nearestDistA = 1.0e+20;
-    float nearestDistB = 1.0e+20;
+    float quality = H8UberNoirGlobalQualityWeight();
+    float detailWeight = H8UberNoirSmoothRange01(0.16, 0.66, quality) * H8UberNoirHighCostAllowed();
+    int qualitySlotLimit = max(1, min(H8_UBER_NOIR_MAX_GLOBAL_WAKES, (int)ceil(lerp(1.0, (float)H8_UBER_NOIR_MAX_GLOBAL_WAKES, detailWeight))));
+    int slotLimit = min(rawSlotLimit, qualitySlotLimit);
 
-    [unroll]
-    for (int i = 0; i < H8_UBER_NOIR_MAX_GLOBAL_WAKES; i++)
+    [loop]
+    for (int i = 0; i < slotLimit; i++)
     {
-        if (i >= slotLimit)
-            continue;
-
         float4 wake = _GlobalWakeBuffer[i];
         float4 wakeVector = _GlobalWakeVectors[i];
         float intensity = max(wake.w, 0.0);
         float radius = max(wakeVector.w, 0.0);
-        if (intensity <= H8_UBER_NOIR_EPS || radius <= H8_UBER_NOIR_EPS)
-            continue;
 
         float3 delta = safePositionWS - wake.xyz;
         float distSq = dot(delta, delta);
         float radiusSq = max(radius * radius, H8_UBER_NOIR_EPS);
-        if (distSq >= radiusSq)
-            continue;
-
-        if (distSq < nearestDistA)
-        {
-            nearestDistB = nearestDistA;
-            nearestB = nearestA;
-            nearestDistA = distSq;
-            nearestA = i;
-        }
-        else if (distSq < nearestDistB)
-        {
-            nearestDistB = distSq;
-            nearestB = i;
-        }
-    }
-
-    [unroll]
-    for (int i = 0; i < H8_UBER_NOIR_MAX_GLOBAL_WAKES; i++)
-    {
-        if (i != nearestA && i != nearestB)
-            continue;
-
-        float4 wake = _GlobalWakeBuffer[i];
-        float4 wakeVector = _GlobalWakeVectors[i];
-        float intensity = max(wake.w, 0.0);
-        float radius = max(wakeVector.w, 0.0);
-        float3 delta = safePositionWS - wake.xyz;
-        float distSq = dot(delta, delta);
-        float radiusSq = max(radius * radius, H8_UBER_NOIR_EPS);
-        float3 pushAxisWS = H8UberNoirSafeNormalize(wakeVector.xyz, float3(0.0, 0.0, 1.0));
-        float3 radialWS = H8UberNoirSafeNormalize(delta, pushAxisWS);
-        float falloff = saturate(1.0 - distSq * H8UberNoirSafeRcp(radiusSq));
-        float falloffSq = falloff * falloff;
-        float lowStrength = intensity * falloffSq * 0.035;
-        wakeOffsetWS += radialWS * lowStrength;
-        normalImpulseWS += radialWS * (falloff * intensity * 0.18);
-    }
-#else
-    [unroll]
-    for (int i = 0; i < H8_UBER_NOIR_MAX_GLOBAL_WAKES; i++)
-    {
-        if (i >= slotLimit)
-            continue;
-
-        float4 wake = _GlobalWakeBuffer[i];
-        float4 wakeVector = _GlobalWakeVectors[i];
-        float intensity = max(wake.w, 0.0);
-        float radius = max(wakeVector.w, 0.0);
-        if (intensity <= H8_UBER_NOIR_EPS || radius <= H8_UBER_NOIR_EPS)
-            continue;
-
-        float3 delta = safePositionWS - wake.xyz;
-        float distSq = dot(delta, delta);
-        float radiusSq = max(radius * radius, H8_UBER_NOIR_EPS);
-        if (distSq >= radiusSq)
-            continue;
+        float active = step(H8_UBER_NOIR_EPS, intensity) *
+            step(H8_UBER_NOIR_EPS, radius) *
+            step(distSq, radiusSq);
 
         float3 pushAxisWS = H8UberNoirSafeNormalize(wakeVector.xyz, float3(0.0, 0.0, 1.0));
         float3 radialWS = H8UberNoirSafeNormalize(delta, pushAxisWS);
@@ -1263,12 +1311,12 @@ void H8UberNoirApplyGlobalWakeWS(inout float3 positionWS, inout float3 normalWS,
         float spatialPhase = H8UberNoirTriangle01(dot(safePositionWS.xz + seed, float2(0.173, 0.219)) + (float)i * 0.131);
         float directionalGate = saturate(dot(radialWS, pushAxisWS) * 0.5 + 0.5);
         float overkill = H8UberNoirVisualOverkill01();
-        float curvatureStrength = intensity * falloffSq * (0.055 + spatialPhase * 0.025) * lerp(1.0, 1.45, overkill);
-        float pushStrength = intensity * falloffSq * (0.022 + directionalGate * 0.018);
-        wakeOffsetWS += radialWS * pushStrength + vortexWS * curvatureStrength;
-        normalImpulseWS += radialWS * (falloff * intensity * 0.22) + vortexWS * (curvatureStrength * lerp(3.5, 4.8, overkill));
+        float lowPush = intensity * falloffSq * 0.035;
+        float curvatureStrength = intensity * falloffSq * (0.055 + spatialPhase * 0.025) * lerp(1.0, 1.45, overkill) * detailWeight;
+        float pushStrength = lerp(lowPush, intensity * falloffSq * (0.022 + directionalGate * 0.018), detailWeight);
+        wakeOffsetWS += (radialWS * pushStrength + vortexWS * curvatureStrength) * active;
+        normalImpulseWS += (radialWS * (falloff * intensity * lerp(0.18, 0.22, detailWeight)) + vortexWS * (curvatureStrength * lerp(3.5, 4.8, overkill))) * active;
     }
-#endif
 
     positionWS = H8UberNoirFinite3(safePositionWS + wakeOffsetWS, safePositionWS);
     normalWS = H8UberNoirSafeNormalize(safeNormalWS + normalImpulseWS, safeNormalWS);
@@ -1299,7 +1347,7 @@ float2 H8UberNoirResolveRustPomUv(
     if (rust01 <= (half)H8_UBER_NOIR_EPS)
         return baseUv;
 
-    float rustDetailWeight = H8UberNoirSmoothRange01(0.06, 0.24, quality);
+    float rustDetailWeight = H8UberNoirSmoothRange01(0.30, 0.54, quality);
     [branch]
     if (rustDetailWeight <= H8_UBER_NOIR_EPS)
         return baseUv;
@@ -1325,19 +1373,11 @@ float2 H8UberNoirResolveRustPomUv(
     float3 safeViewWS = H8UberNoirSafeNormalize((float3)viewDirWS, safeNormalWS);
     float3 viewDirTS = float3(dot(safeViewWS, safeTangentWS), dot(safeViewWS, safeBitangentWS), max(dot(safeViewWS, safeNormalWS), max(_UberNoirParallaxParams.y, 0.16)));
     float viewInvZ = H8UberNoirSafeRcp(viewDirTS.z);
-    float parallaxScale = max(_UberNoirParallaxParams.x, 0.0) * rust01;
-    float2 parallaxStep = viewDirTS.xy * viewInvZ * parallaxScale * (1.0 / H8_UBER_NOIR_POM_STEPS);
-    float2 resolvedUv = rustUv;
+    float sampledHeight01 = H8UberNoirFiniteSaturate((float)rustPacked.r, 0.0);
     float layerDepth = max(_UberNoirParallaxParams.z, 0.0);
-
-    [unroll(H8_UBER_NOIR_POM_STEPS)]
-    for (int stepIndex = 0; stepIndex < H8_UBER_NOIR_POM_STEPS; stepIndex++)
-    {
-        half sampledHeight = SAMPLE_TEXTURE2D_LOD(_RustDetailMap, sampler_RustDetailMap, resolvedUv, 0).r;
-        half stepMask = (half)step(layerDepth, sampledHeight) * (half)pomEnabled;
-        resolvedUv -= parallaxStep * stepMask;
-        layerDepth += 1.0 / H8_UBER_NOIR_POM_STEPS;
-    }
+    float heightBias = (sampledHeight01 - layerDepth) * 2.0 - 1.0;
+    float parallaxScale = max(_UberNoirParallaxParams.x, 0.0) * rust01 * pomEnabled;
+    float2 resolvedUv = rustUv - viewDirTS.xy * viewInvZ * parallaxScale * heightBias;
 
     rustPacked = SAMPLE_TEXTURE2D(_RustDetailMap, sampler_RustDetailMap, resolvedUv);
     half pitMask = saturate((rustPacked.r - 0.34h) * 1.85h);
@@ -1355,8 +1395,7 @@ half3 H8UberNoirDecodeRustNormalTS(half4 rustPacked, half strength)
 
 void H8UberNoirApplyRustCorrosion(
     float2 wearUv,
-    float3 positionWS,
-    half3 viewDirWS,
+    float3 agingStablePosition,
     half4 tangentWS,
     half4 rustPacked,
     half rustMask,
@@ -1385,8 +1424,8 @@ void H8UberNoirApplyRustCorrosion(
     surface.roughness = saturate(1.0h - surface.smoothness);
 
     half overkill = (half)H8UberNoirVisualOverkill01();
-    float3 stableMaterialPosition = H8UberNoirMaterialStablePosition(positionWS);
-    half crystalNoise = (half)H8UberNoirHash12(floor(wearUv * 97.0 + stableMaterialPosition.xz * 0.031));
+    float3 stableAgingPosition = H8UberNoirFinite3(agingStablePosition, float3(0.0, 0.0, 0.0));
+    half crystalNoise = (half)H8UberNoirHash12(floor(wearUv * 97.0 + stableAgingPosition.xz * 0.031));
     half crystal = saturate((crystalNoise - 0.82h) * 5.6h) * finalRustMask * overkill;
     surface.albedo = lerp(surface.albedo, max((half3)_NoirAbyssFloorColor.rgb, half3(0.62h, 0.70h, 0.76h)), crystal * 0.26h);
     surface.smoothness = lerp(surface.smoothness, 0.93h, crystal * 0.58h);
@@ -1406,96 +1445,127 @@ void H8UberNoirApplyRustCorrosion(
     surface.roughness = saturate(1.0h - surface.smoothness);
 }
 
+void H8UberNoirApplyScorchDegradation(
+    H8VisualAgingParamsDTO aging,
+    float3 agingStablePosition,
+    half4 rustPacked,
+    float3 safeNormalWS,
+    float3 safeTangentWS,
+    float3 safeBitangentWS,
+    inout H8UberNoirSurface surface)
+{
+    half scorch01 = saturate((half)aging.SaltAndBiomass.z);
+    [branch]
+    if (scorch01 <= (half)H8_UBER_NOIR_EPS)
+        return;
+
+    float quality = H8UberNoirVisualAgingQualityWeight();
+    float3 localAup = aging.DepthAndPressure.xyz;
+    float3 stableAgingPosition = H8UberNoirFinite3(agingStablePosition, float3(0.0, 0.0, 0.0));
+    float aupSeed = dot(localAup, float3(0.00043, 0.00019, -0.00031)) + aging.RustAndCorrosion.w;
+    float cheapChar = H8UberNoirTriangle01(dot(stableAgingPosition.xy, float2(0.113, -0.079)) + aupSeed);
+    float detailWeight = H8UberNoirSmoothRange01(0.30, 0.74, quality);
+    float burnNoise = cheapChar;
+    [branch]
+    if (detailWeight > H8_UBER_NOIR_EPS)
+    {
+        float n0 = H8UberNoirValueNoise2(stableAgingPosition.xy * lerp(0.047, 0.143, detailWeight) + aupSeed);
+        float n1 = H8UberNoirValueNoise2(stableAgingPosition.zy * lerp(0.081, 0.219, detailWeight) - aupSeed);
+        burnNoise = lerp(cheapChar, saturate(n0 * 0.68 + n1 * 0.32), detailWeight);
+    }
+
+    half stress = saturate((half)aging.StressAndMicroFractures.x);
+    half burnMask = saturate(scorch01 * ((half)burnNoise * 0.72h + stress * 0.38h));
+    half3 charTint = max((half3)_NoirAbyssFloorColor.rgb * 0.18h, half3(0.018h, 0.014h, 0.012h));
+    half3 hotEdgeTint = max((half3)_RustPitTint.rgb, half3(0.42h, 0.16h, 0.055h));
+    surface.albedo = lerp(surface.albedo, charTint, burnMask * 0.72h);
+    surface.albedo = lerp(surface.albedo, hotEdgeTint, saturate((half)burnNoise - 0.82h) * scorch01 * 0.18h);
+    surface.smoothness = lerp(surface.smoothness, 0.045h, burnMask * 0.58h);
+    surface.roughness = saturate(1.0h - surface.smoothness);
+    surface.emission += hotEdgeTint * saturate(scorch01 - 0.72h) * saturate((half)burnNoise - 0.66h) * 0.025h;
+
+    float normalDetailWeight = H8UberNoirSmoothRange01(0.30, 0.74, quality);
+    half normalWeight = burnMask * (half)normalDetailWeight * lerp(0.18h, 0.78h, (half)H8UberNoirVisualOverkill01());
+    [branch]
+    if (normalWeight > 0.001h)
+    {
+        half3 scorchNormalTS = H8UberNoirDecodeRustNormalTS(rustPacked, normalWeight);
+        float3 scorchNormalWS = H8UberNoirSafeNormalize(
+            safeTangentWS * scorchNormalTS.x + safeBitangentWS * scorchNormalTS.y + safeNormalWS * scorchNormalTS.z,
+            safeNormalWS);
+        surface.normalWS = (half3)H8UberNoirSafeNormalize(lerp((float3)surface.normalWS, scorchNormalWS, normalWeight), safeNormalWS);
+    }
+}
+
 half3 H8UberNoirResolveBiolumEmission(float3 positionWS, half emissionMask, half instanceSeed)
 {
-#if defined(_MATH_LOD_LOW)
-    return half3(0.0h, 0.0h, 0.0h);
-#else
+    half detailWeight = (half)(H8UberNoirSmoothRange01(0.24, 0.62, H8UberNoirGlobalQualityWeight()) * H8UberNoirHighCostAllowed());
     float phase01 = frac(_BiolumMasterPhase.x + _BiolumMasterPhase.y + instanceSeed * _UberNoirBiolumParams.w + dot(positionWS.xz, float2(0.013, -0.017)));
     half trianglePulse = (half)H8UberNoirTriangle01(phase01);
     half pulse = (half)H8UberNoirSafePow01(trianglePulse, max(_UberNoirBiolumParams.z, 0.25));
     half spectral = saturate(pulse + (pulse - 0.5h) * (half)_UberNoirBiolumParams.y);
     half3 spectralColor = lerp((half3)_BiolumLowColor.rgb, (half3)_BiolumHighColor.rgb, spectral);
-    return spectralColor * (_EmissionColor.rgb * (half)_UberNoirBiolumParams.x * emissionMask);
-#endif
+    return spectralColor * (_EmissionColor.rgb * (half)_UberNoirBiolumParams.x * emissionMask * detailWeight);
 }
 
 float H8UberNoirEvaluateProceduralCaustics(float2 uv)
 {
-    float time = _Time.y + _HectonCausticsSimulationParamsB.z;
-    float2 flowA = float2(_HectonCausticsSimulationParamsA.x, _HectonCausticsSimulationParamsA.y) * 0.001;
-    float2 flowB = float2(_HectonCausticsSimulationParamsC.y, _HectonCausticsSimulationParamsC.z);
-    float layerA = H8UberNoirValueNoise2(uv * 23.0 + time * (float2(0.031, -0.024) + flowA));
-    float layerB = H8UberNoirValueNoise2(uv * 31.0 + time * (float2(-0.019, 0.037) + flowB));
-    float sharpness = 1.0 + saturate(_HectonCausticsRuntimeParams.z) * 3.0;
-    return H8UberNoirSafePow01(layerA * layerB, sharpness);
+    float quality = H8UberNoirGlobalQualityWeight();
+    float detailWeight = H8UberNoirSmoothRange01(0.34, 0.82, quality) * H8UberNoirHighCostAllowed();
+    float speed = isfinite(_H8UberNoirCausticSpeed.x) ? max(_H8UberNoirCausticSpeed.x, 0.001) : 0.025;
+    float phase = _Time.y * speed;
+    float cheapPhase = dot(uv, float2(0.71, -0.43)) + phase;
+    float cheap = H8UberNoirTriangle01(cheapPhase) * H8UberNoirTriangle01(cheapPhase * 1.37 + 0.19);
+    if (detailWeight <= H8_UBER_NOIR_EPS)
+        return cheap;
+
+    float2 uvA = uv * lerp(14.0, 37.0, detailWeight) + phase * float2(0.031, -0.024);
+    float2 uvB = uv * lerp(23.0, 61.0, detailWeight) + phase * float2(-0.019, 0.037);
+    float layerA = H8UberNoirValueNoise2(uvA);
+    float layerB = H8UberNoirValueNoise2(uvB);
+    float sharpness = lerp(1.15, 3.25, H8UberNoirVisualOverkill01() * detailWeight);
+    float rich = H8UberNoirSafePow01(layerA * layerB, sharpness);
+    return lerp(cheap, rich, detailWeight);
 }
 
-half3 H8UberNoirEvaluateAnalyticalCaustics(float3 positionWS, half3 normalWS, Light mainLight)
+half3 H8UberNoirEvaluateDeferredCausticsStub(float3 positionWS, half3 normalWS, Light mainLight)
 {
-    float q = H8UberNoirGlobalQualityWeight();
-    float3 stablePosition = H8UberNoirMaterialStablePosition(positionWS);
-#if defined(_MATH_LOD_LOW)
-    float stablePhase = dot(stablePosition.xz, float2(0.031, -0.023)) + _Time.y * max(_H8UberNoirCausticSpeed.x, 0.01);
-    half caustic = (half)(H8UberNoirTriangle01(stablePhase) * H8UberNoirTriangle01(stablePhase * 1.37 + 0.19));
-    half featureMask = (half)(H8UberNoirFeatureScalar(_UberNoirFeatureFlags.y) * saturate(_UberNoirCausticParams.x * 32.0));
-    half normalMask = saturate(normalWS.y);
-    half3 tint = (half3)max(_UberNoirCausticColor.rgb, _NoirAbyssFloorColor.rgb);
-    return tint * caustic * normalMask * featureMask * (half)(_UberNoirCausticParams.x * _H8UberNoirCausticSpeed.y * lerp(0.05, 0.18, q));
-#else
-    float featureMask = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.y) * saturate(_UberNoirCausticParams.x * 32.0);
-    float normalMask = saturate(normalWS.y);
-    float cheapCaustic = H8UberNoirTriangle01(dot(stablePosition.xz, float2(0.019, 0.031)) + _Time.y * _H8UberNoirCausticSpeed.x);
-    half cheapIntensity = (half)(featureMask * normalMask * _UberNoirCausticParams.x * _H8UberNoirCausticSpeed.y * q * 0.16);
-    half3 cheapTint = (half3)max(_UberNoirCausticColor.rgb, _NoirAbyssFloorColor.rgb);
-    half3 cheapColor = cheapTint * (half)cheapCaustic * cheapIntensity;
-    float detailWeight = H8UberNoirSmoothRange01(0.22, 0.36, q);
-    [branch]
+    float quality = H8UberNoirGlobalQualityWeight();
+    float detailWeight = H8UberNoirSmoothRange01(0.30, 0.70, quality) * H8UberNoirHighCostAllowed();
     if (detailWeight <= H8_UBER_NOIR_EPS)
-        return cheapColor;
+        return half3(0.0h, 0.0h, 0.0h);
 
-    float2 uv = float2(
-        (stablePosition.x - _HectonProjectedCausticsWorldRect.x) * _HectonProjectedCausticsWorldRect.z,
-        (stablePosition.z - _HectonProjectedCausticsWorldRect.y) * _HectonProjectedCausticsWorldRect.w);
-    uv += (float2)normalWS.xz * _UberNoirCausticParams.w;
-    float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0);
-    float depthMeters = max(0.0, _HectonProjectedCausticsParams.y - stablePosition.y);
-    float depthFade = 1.0 - saturate(depthMeters * H8UberNoirSafeRcp(max(_UberNoirCausticParams.y, 1.0)));
-    float attenuation = saturate(mainLight.distanceAttenuation * lerp(1.0, mainLight.shadowAttenuation, saturate(_UberNoirCausticParams.z)));
+    float3 stablePosition = H8UberNoirMaterialStablePosition(positionWS);
+    float normalMask = saturate(normalWS.y);
+    float lightMask = saturate(mainLight.distanceAttenuation * lerp(1.0, mainLight.shadowAttenuation, detailWeight));
+    float intensitySource = isfinite(_H8UberNoirCausticSpeed.y) ? max(_H8UberNoirCausticSpeed.y, 0.0) : 1.0;
+    float intensity = normalMask * lightMask * intensitySource * detailWeight;
+    if (intensity <= H8_UBER_NOIR_EPS)
+        return half3(0.0h, 0.0h, 0.0h);
+
+    float2 uv = stablePosition.xz * lerp(0.014, 0.046, detailWeight) + (float2)normalWS.xz * lerp(0.018, 0.052, detailWeight);
     float caustic = H8UberNoirEvaluateProceduralCaustics(uv);
-
-#if defined(H8_UBERNOIR_CAUSTICS_TEXTURED)
-    float texturedCausticAllowed = H8UberNoirFeatureScalar(_HectonCausticsRuntimeParams.x) * H8UberNoirHighCostAllowed();
-    [branch]
-    if (texturedCausticAllowed > H8_UBER_NOIR_EPS)
-    {
-        float3 sampled = SAMPLE_TEXTURE2D(_HectonCausticsMap, sampler_HectonCausticsMap, uv).rgb;
-        float sampledCaustic = dot(sampled, float3(0.27, 0.54, 0.19));
-        caustic = lerp(caustic, sampledCaustic, texturedCausticAllowed);
-    }
-#endif
-
-    caustic *= lerp(1.0, 1.22, H8UberNoirVisualOverkill01() * normalMask);
-    half intensity = (half)(featureMask * inside * depthFade * normalMask * attenuation * _UberNoirCausticParams.x * _H8UberNoirCausticSpeed.y * max(_HectonProjectedCausticsParams.x, 0.0) * q);
-    half3 tint = (half3)max(_HectonProjectedCausticsColor.rgb + _UberNoirCausticColor.rgb, _NoirAbyssFloorColor.rgb);
-    half3 richColor = tint * (half)caustic * intensity;
-    return lerp(cheapColor, richColor, (half)detailWeight);
-#endif
+    half3 tint = max((half3)_BiolumHighColor.rgb * 0.22h + (half3)_NoirFogColor.rgb * 0.16h, half3(0.018h, 0.052h, 0.064h));
+    half gain = (half)(caustic * intensity * lerp(0.05, 0.24, H8UberNoirVisualOverkill01()));
+    return tint * gain;
 }
 
 H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
 {
     H8UberNoirSurface surface;
     H8UberNoirMaterialStateDTO materialState = H8UberNoirLoadMaterialState(input.materialIndex);
-    H8VisualAgingParamsDTO visualAging = H8UberNoirLoadVisualAging(input.materialIndex);
-    float quality = H8UberNoirVisualAgingQualityWeight(visualAging);
+    H8VisualAgingParamsDTO visualAging = H8UberNoirLoadVisualAging(input.degradationIndex);
+    float quality = H8UberNoirVisualAgingQualityWeight();
     float3 stablePosition = H8UberNoirMaterialStablePosition(input.positionWS);
+    float3 agingStablePosition = H8UberNoirVisualAgingStablePosition(input.uvPack, input.uvAux, input.instanceSeed, visualAging);
     float macroNoise = H8UberNoirMaterialMacroNoise(stablePosition, input.instanceSeed, quality);
-    float wearMultiplier = max(_H8UberNoirGlobalWearMultiplier, (_H8UberNoirMaterialFlags == 0u) ? 1.0 : 0.0);
-    float agingGrowthMask = H8UberNoirAgingGrowthMask(stablePosition, visualAging, input.instanceSeed, quality);
+    float wearMultiplier = max(isfinite(_H8UberNoirGlobalWearMultiplier) ? _H8UberNoirGlobalWearMultiplier : 0.0, (_H8UberNoirMaterialFlags == 0u) ? 1.0 : 0.0);
+    float agingGrowthMask = H8UberNoirAgingGrowthMask(agingStablePosition, visualAging, input.instanceSeed, quality);
+    float saltLinePhase = isfinite(_H8UberNoirCausticSpeed.z) ? _H8UberNoirCausticSpeed.z : 0.0;
     half dynamicRust = saturate((half)(((materialState.WearAge + H8UberNoirResolveRust01()) * (0.35 + macroNoise) * wearMultiplier) + visualAging.RustAndCorrosion.x * agingGrowthMask + visualAging.RustAndCorrosion.y * 0.42));
-    half dynamicSalt = saturate((half)(materialState.SaltAccumulation * (0.45 + H8UberNoirTriangle01(stablePosition.y * 0.012 + _H8UberNoirCausticSpeed.z * 0.01)) + visualAging.SaltAndBiomass.x * (0.35 + agingGrowthMask * 0.65)));
+    half dynamicSalt = saturate((half)(materialState.SaltAccumulation * (0.45 + H8UberNoirTriangle01(stablePosition.y * 0.012 + saltLinePhase * 0.01)) + visualAging.SaltAndBiomass.x * (0.35 + agingGrowthMask * 0.65)));
     half dynamicMoss = saturate((half)(materialState.BioGrowthMask * (0.35 + macroNoise) * lerp(0.35, 1.0, quality) + visualAging.SaltAndBiomass.y * lerp(0.18, 0.84, quality)));
+    half dynamicScorch = saturate((half)(visualAging.SaltAndBiomass.z * (0.42 + agingGrowthMask * 0.58) + visualAging.StressAndMicroFractures.z * 0.08));
     float2 baseUv = input.uvPack.xy;
     float2 rawUv = input.uvPack.zw;
     float2 wearUv = baseUv;
@@ -1516,25 +1586,28 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
     half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, wearUv) * _BaseColor;
     half4 armSample = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, maskUv);
     float textureArrayUse = ((_H8UberNoirMaterialFlags & H8_UBER_NOIR_FLAG_TEXTURE_ARRAYS) != 0u) ? 1.0 : 0.0;
-    float textureArrayBlend = textureArrayUse * saturate((quality - 0.12) * 1.1363636);
+    float textureArrayBlend = textureArrayUse * H8UberNoirSmoothRange01(0.30, 0.74, quality);
     [branch]
     if (textureArrayBlend > H8_UBER_NOIR_EPS)
     {
         uint cleanSlice = H8UberNoirTextureSlice(materialState.TextureSetHash, 0u);
         uint rustSlice = H8UberNoirTextureSlice(materialState.TextureSetHash, 1u);
         uint mossSlice = H8UberNoirTextureSlice(materialState.TextureSetHash, 2u);
+        uint scorchSlice = H8UberNoirTextureSlice(materialState.TextureSetHash, 3u);
         half4 cleanArray = H8UberNoirSampleAlbedoArray(cleanSlice, wearUv, stablePosition, input.normalWS, quality);
         half4 rustArray = H8UberNoirSampleAlbedoArray(rustSlice, wearUv, stablePosition, input.normalWS, quality);
         half4 mossArray = H8UberNoirSampleAlbedoArray(mossSlice, wearUv, stablePosition, input.normalWS, quality);
+        half4 scorchArray = H8UberNoirSampleAlbedoArray(scorchSlice, wearUv, stablePosition, input.normalWS, quality);
         half4 maskArray = SAMPLE_TEXTURE2D_ARRAY(_H8UberNoirMaskArray, sampler_H8UberNoirMaskArray, maskUv, cleanSlice);
         half4 wornArray = lerp(cleanArray, rustArray, dynamicRust);
         wornArray = lerp(wornArray, mossArray, dynamicMoss);
+        wornArray = lerp(wornArray, scorchArray, dynamicScorch);
         baseSample = lerp(baseSample, wornArray * _BaseColor, (half)textureArrayBlend);
         armSample = lerp(armSample, maskArray, (half)textureArrayBlend);
     }
 
     half brownoutPowerLevel = H8UberNoirResolveBrownoutPower(input.positionWS, input.instanceSeed, (half)materialState.PowerLevel);
-    float surfaceDetailWeight = H8UberNoirSmoothRange01(0.06, 0.24, quality);
+    float surfaceDetailWeight = H8UberNoirSmoothRange01(0.30, 0.56, quality);
     [branch]
     if (surfaceDetailWeight <= H8_UBER_NOIR_EPS)
     {
@@ -1545,12 +1618,14 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
         half3 mossTint = max((half3)_BiolumLowColor.rgb * 0.22h, half3(0.04h, 0.11h, 0.07h));
         surface.albedo = lerp(baseSample.rgb, saltTint, saturate((saltCrust + rust01) * 0.42h));
         surface.albedo = lerp(surface.albedo, mossTint, dynamicMoss * 0.32h);
+        surface.albedo = lerp(surface.albedo, max((half3)_NoirAbyssFloorColor.rgb * 0.18h, half3(0.018h, 0.014h, 0.012h)), dynamicScorch * 0.54h);
         surface.normalWS = input.normalWS;
         surface.emission = _EmissionColor.rgb * armSample.a * (half)_UberNoirLightingParams.w * brownoutPowerLevel;
         surface.metallic = 0.0h;
         surface.occlusion = saturate(lerp(1.0h, armSample.r, (half)_OcclusionStrength));
         surface.smoothness = lerp(saturate((1.0h - roughness) * (half)_Smoothness), 0.24h, saltCrust);
-        surface.roughness = roughness;
+        surface.smoothness = lerp(surface.smoothness, 0.05h, dynamicScorch * 0.48h);
+        surface.roughness = max(roughness, saturate(1.0h - surface.smoothness));
         surface.alpha = baseSample.a;
         surface.rustMask = saltCrust;
         surface.orm = armSample;
@@ -1559,7 +1634,7 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
         surface.powerLevel = brownoutPowerLevel;
         H8UberNoirApplyWearVitalityColor(vitality, surface);
         surface.albedo = lerp(surface.albedo, (half3)_RustPitTint.rgb, (half)visualAging.RustAndCorrosion.z * dynamicRust * 0.22h);
-        H8UberNoirApplyGlassMicroFracture(visualAging, stablePosition, surface.normalWS, input.instanceSeed, quality, surface);
+        H8UberNoirApplyGlassMicroFracture(visualAging, agingStablePosition, surface.normalWS, input.instanceSeed, quality, surface);
         surface.normalWS = (half3)H8UberNoirSafeNormalize(
             (float3)surface.normalWS + (float3)input.deformationNormalWS * saturate(input.dentScar),
             (float3)input.normalWS);
@@ -1597,7 +1672,8 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
     surface.powerLevel = brownoutPowerLevel;
     surface.emission = _EmissionColor.rgb * armSample.a * (half)_UberNoirLightingParams.w * surface.powerLevel;
 
-    H8UberNoirApplyRustCorrosion(wearUv, input.positionWS, input.viewDirWS, input.tangentWS, rustPacked, max(rustMask, dynamicRust), surface);
+    H8UberNoirApplyRustCorrosion(wearUv, agingStablePosition, input.tangentWS, rustPacked, max(rustMask, dynamicRust), surface);
+    H8UberNoirApplyScorchDegradation(visualAging, agingStablePosition, rustPacked, safeNormalWS, safeTangentWS, safeBitangentWS, surface);
     surface.albedo = lerp(surface.albedo, max((half3)_BiolumLowColor.rgb * 0.24h, half3(0.035h, 0.10h, 0.055h)), dynamicMoss * 0.45h);
     surface.albedo = lerp(surface.albedo, max((half3)_NoirAbyssFloorColor.rgb, half3(0.72h, 0.78h, 0.82h)), dynamicSalt * 0.28h);
     surface.albedo = lerp(surface.albedo, (half3)_RustPitTint.rgb, (half)visualAging.RustAndCorrosion.z * max(rustMask, dynamicRust) * 0.35h);
@@ -1605,7 +1681,7 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
     surface.roughness = saturate(1.0h - surface.smoothness);
     H8UberNoirApplyWearVitalityColor(vitality, surface);
     H8UberNoirApplyWearVitalityNormal(vitality, safeNormalWS, safeTangentWS, safeBitangentWS, surface);
-    H8UberNoirApplyGlassMicroFracture(visualAging, stablePosition, surface.normalWS, input.instanceSeed, quality, surface);
+    H8UberNoirApplyGlassMicroFracture(visualAging, agingStablePosition, surface.normalWS, input.instanceSeed, quality, surface);
     half dentScar = saturate(input.dentScar);
     if (dentScar > 0.001h)
     {
@@ -1629,62 +1705,71 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
 
 half3 H8UberNoirEvaluateMainLighting(H8UberNoirVaryings input, H8UberNoirSurface surface)
 {
-#if defined(_MATH_LOD_LOW)
-    Light mainLight = GetMainLight();
+    float quality = H8UberNoirGlobalQualityWeight();
+    half q = (half)quality;
+    half detailWeight = (half)(H8UberNoirSmoothRange01(0.20, 0.56, quality) * H8UberNoirHighCostAllowed());
     half3 normalWS = H8UberNoirSafeNormalizeHalf(surface.normalWS, half3(0.0h, 1.0h, 0.0h));
-    half3 lightDir = H8UberNoirSafeNormalizeHalf((half3)mainLight.direction, half3(0.0h, 1.0h, 0.0h));
-    half nDotL = saturate(dot(normalWS, lightDir));
-    half attenuation = saturate((half)mainLight.distanceAttenuation);
-    half attenuationGate = (half)step(0.0001h, nDotL) * (half)step(0.0001h, attenuation);
-    half3 diffuse = surface.albedo * mainLight.color * (nDotL * attenuation * attenuationGate);
-    half3 ambientProbe = H8CustomLightProbeResolveAmbient(input.positionWS, normalWS, max((half3)_NoirFogColor.rgb, half3(0.0h, 0.0h, 0.0h)));
-    half3 ambient = ambientProbe * surface.albedo * surface.occlusion * (half)_UberNoirLightingParams.z;
-    half q = (half)H8UberNoirGlobalQualityWeight();
-    half wrap = lerp(0.12h, 0.42h, (half)_H8UberNoirSubsurfaceColor.w);
-    half wrappedDiffuse = saturate((dot(normalWS, lightDir) + wrap) / (1.0h + wrap)) * attenuation;
-    half3 sss = (half3)_H8UberNoirSubsurfaceColor.rgb * surface.albedo * wrappedDiffuse * surface.sssMask * q * 0.25h;
-    return ambient + diffuse * lerp(0.55h, 1.0h, 1.0h - surface.roughness) + sss + surface.emission;
-#else
+    if (detailWeight <= (half)H8_UBER_NOIR_EPS)
+    {
+        Light mainLight = GetMainLight();
+        half3 lightDir = H8UberNoirSafeNormalizeHalf((half3)mainLight.direction, half3(0.0h, 1.0h, 0.0h));
+        half nDotL = saturate(dot(normalWS, lightDir));
+        half attenuation = saturate((half)mainLight.distanceAttenuation);
+        half attenuationGate = (half)step(0.0001h, nDotL) * (half)step(0.0001h, attenuation);
+        half3 diffuse = surface.albedo * mainLight.color * (nDotL * attenuation * attenuationGate);
+        half3 ambientProbe = H8CustomLightProbeResolveAmbient(input.positionWS, normalWS, max((half3)_NoirFogColor.rgb, half3(0.0h, 0.0h, 0.0h)));
+        half3 ambient = ambientProbe * surface.albedo * surface.occlusion * (half)_UberNoirLightingParams.z;
+        half wrap = lerp(0.12h, 0.42h, (half)_H8UberNoirSubsurfaceColor.w);
+        half wrappedDiffuse = saturate((dot(normalWS, lightDir) + wrap) / (1.0h + wrap)) * attenuation;
+        half thicknessMask = saturate(surface.sssMask * (1.0h - surface.metallic));
+        half3 sss = (half3)_H8UberNoirSubsurfaceColor.rgb * surface.albedo * wrappedDiffuse * thicknessMask * q * 0.25h;
+        half diffuseGain = lerp(0.55h, 1.0h, 1.0h - surface.roughness);
+        return ambient + diffuse * diffuseGain + sss + surface.emission;
+    }
+
     float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
     Light mainLight = GetMainLight(shadowCoord);
-    half3 normalWS = H8UberNoirSafeNormalizeHalf(surface.normalWS, half3(0.0h, 1.0h, 0.0h));
     half3 viewDirWS = H8UberNoirSafeNormalizeHalf(input.viewDirWS, half3(0.0h, 0.0h, 1.0h));
     half3 lightDir = H8UberNoirSafeNormalizeHalf((half3)mainLight.direction, half3(0.0h, 1.0h, 0.0h));
 
     half nDotL = saturate(dot(normalWS, lightDir));
-    half attenuation = saturate((half)(mainLight.distanceAttenuation * mainLight.shadowAttenuation));
+    half attenuationNoShadow = saturate((half)mainLight.distanceAttenuation);
+    half attenuationShadowed = saturate((half)(mainLight.distanceAttenuation * mainLight.shadowAttenuation));
+    half attenuation = lerp(attenuationNoShadow, attenuationShadowed, detailWeight);
     half attenuationGate = (half)step(0.0001h, nDotL) * (half)step(0.0001h, attenuation);
     half3 diffuse = surface.albedo * mainLight.color * (nDotL * attenuation * attenuationGate);
 
     half3 halfDir = H8UberNoirSafeNormalizeHalf(lightDir + viewDirWS, lightDir);
     half nDotH = saturate(dot(normalWS, halfDir));
     half specPower = lerp(4.0h, 64.0h, surface.smoothness);
-    half specular = (half)H8UberNoirSafePow01(nDotH, specPower) * (half)_UberNoirLightingParams.x * attenuationGate;
-    half q = (half)H8UberNoirGlobalQualityWeight();
+    half specular = (half)H8UberNoirSafePow01(nDotH, specPower) * (half)_UberNoirLightingParams.x * attenuationGate * detailWeight;
     half3 tangentDir = H8UberNoirSafeNormalizeHalf(input.tangentWS.xyz, half3(1.0h, 0.0h, 0.0h));
     half tangentDotH = saturate(abs(dot(tangentDir, halfDir)));
     half anisotropicSpec = (half)H8UberNoirSafePow01(saturate(1.0h - tangentDotH * 0.72h + nDotH * 0.28h), lerp(8.0h, 96.0h, surface.smoothness));
-    specular = lerp(specular, anisotropicSpec * (half)_UberNoirLightingParams.x * attenuationGate, surface.anisotropy * q);
+    specular = lerp(specular, anisotropicSpec * (half)_UberNoirLightingParams.x * attenuationGate * detailWeight, surface.anisotropy * q * detailWeight);
     half3 f0 = lerp(half3(0.04h, 0.04h, 0.04h), surface.albedo, surface.metallic);
     half3 ambientProbe = H8CustomLightProbeResolveAmbient(input.positionWS, normalWS, max((half3)_NoirFogColor.rgb, half3(0.0h, 0.0h, 0.0h)));
     half3 ambient = ambientProbe * surface.albedo * surface.occlusion * (half)_UberNoirLightingParams.z;
-    half wrap = lerp(0.12h, 0.72h, (half)_H8UberNoirSubsurfaceColor.w);
+    half wrap = lerp(0.12h, lerp(0.42h, 0.72h, detailWeight), (half)_H8UberNoirSubsurfaceColor.w);
     half wrappedDiffuse = saturate((dot(normalWS, lightDir) + wrap) / (1.0h + wrap)) * attenuation;
     half thicknessMask = saturate(surface.sssMask * (1.0h - surface.metallic));
-    half3 sss = (half3)_H8UberNoirSubsurfaceColor.rgb * surface.albedo * wrappedDiffuse * thicknessMask * q;
+    half sssGain = lerp(0.25h, 1.0h, detailWeight);
+    half3 sss = (half3)_H8UberNoirSubsurfaceColor.rgb * surface.albedo * wrappedDiffuse * thicknessMask * q * sssGain;
 
-    half3 caustics = H8UberNoirEvaluateAnalyticalCaustics(input.positionWS, normalWS, mainLight) * surface.albedo;
-    return ambient + diffuse + f0 * specular + caustics + sss + surface.emission;
-#endif
+    half diffuseGain = lerp(lerp(0.55h, 1.0h, 1.0h - surface.roughness), 1.0h, detailWeight);
+    half3 caustics = H8UberNoirEvaluateDeferredCausticsStub(input.positionWS, normalWS, mainLight) * surface.albedo * detailWeight;
+    return ambient + diffuse * diffuseGain + f0 * specular + caustics + sss + surface.emission;
 }
 
 half3 H8UberNoirResolveExtinctionColor(H8UberNoirVaryings input)
 {
-#if defined(_MATH_LOD_LOW)
-    return max(input.extinctionColor, half3(0.0h, 0.0h, 0.0h));
-#else
-    return H8WaterExtinctionResolveRgbByWorld(input.positionWS, (half)_ExtinctionLUTRuntime.y);
-#endif
+    half3 cheapExtinction = max(input.extinctionColor, half3(0.0h, 0.0h, 0.0h));
+    half detailWeight = (half)H8UberNoirSmoothRange01(0.18, 0.46, H8UberNoirGlobalQualityWeight());
+    if (detailWeight <= (half)H8_UBER_NOIR_EPS)
+        return cheapExtinction;
+
+    half3 richExtinction = H8WaterExtinctionResolveRgbByWorld(input.positionWS, (half)_ExtinctionLUTRuntime.y);
+    return lerp(cheapExtinction, richExtinction, detailWeight);
 }
 
 void H8UberNoirApplyExtinctionToSurface(half3 extinctionColor, inout H8UberNoirSurface surface)
@@ -1710,9 +1795,11 @@ half3 H8UberNoirApplyNoirFog(half3 color, half fogFactor, half3 extinctionColor,
 
 float2 H8UberNoirCavitationRefractionOffset(float3 positionWS, float2 screenUV)
 {
-    int sourceCount = min(_H8CavitationShockwaveCount, (int)_H8CavitationShockwaveParams.z);
-    float quality = saturate(_H8CavitationShockwaveParams.x);
-    int slotLimit = min(sourceCount, (int)lerp(2.0, 18.0, quality * quality * (3.0 - 2.0 * quality)));
+    int sourceCount = max(0, min(_H8CavitationShockwaveCount, (int)max(_H8CavitationShockwaveParams.z, 0.0)));
+    float globalQuality = H8UberNoirGlobalQualityWeight();
+    float featureQuality = saturate(_H8CavitationShockwaveParams.x);
+    float detailWeight = H8UberNoirSmoothRange01(0.42, 0.86, globalQuality) * featureQuality * H8UberNoirHighCostAllowed();
+    int slotLimit = min(sourceCount, max(1, (int)ceil(lerp(1.0, 18.0, detailWeight))));
     float2 offset = float2(0.0, 0.0);
 
     [loop]
@@ -1722,17 +1809,36 @@ float2 H8UberNoirCavitationRefractionOffset(float3 positionWS, float2 screenUV)
         float radius = max(wave.CenterRadius.w, 0.001);
         float3 delta = positionWS - wave.CenterRadius.xyz;
         float distanceSq = max(dot(delta, delta), 0.0001);
-        float distance = sqrt(distanceSq);
         float age = saturate(wave.IntensityAgeQualityFlags.y);
         float intensity = saturate(wave.IntensityAgeQualityFlags.x * _H8CavitationShockwaveParams.y);
-        float shellWidth = max(0.45, radius * lerp(0.10, 0.035, quality));
-        float shell = saturate(1.0 - abs(distance - radius) / shellWidth);
+        float radiusSq = max(radius * radius, 0.0001);
+        float shellWidthSq = max(0.45, radius * lerp(0.18, 0.055, detailWeight));
+        shellWidthSq = max(shellWidthSq * max(radius * 2.0, 0.25), 0.0001);
+        float shellSq = saturate(1.0 - abs(distanceSq - radiusSq) * H8UberNoirSafeRcp(shellWidthSq));
+        float shell = shellSq;
+        [branch]
+        if (detailWeight > H8_UBER_NOIR_EPS)
+        {
+            float distance = distanceSq * H8UberNoirSafeRsqrt(distanceSq);
+            float shellWidth = max(0.45, radius * lerp(0.10, 0.035, detailWeight));
+            float preciseShell = saturate(1.0 - abs(distance - radius) * H8UberNoirSafeRcp(shellWidth));
+            shell = lerp(shellSq, preciseShell, detailWeight);
+        }
+
         float fade = saturate(1.0 - age);
-        float3 radial = delta * rsqrt(distanceSq);
-        float curl = sin((dot(delta.xz, wave.CurlPhase.xy) + wave.CurlPhase.z * 37.0 + _H8CavitationShockwaveParams.w * 0.071) * 0.19);
+        float3 radial = delta * H8UberNoirSafeRsqrt(distanceSq);
+        float cheapCurl = H8UberNoirTriangle01(dot(delta.xz, wave.CurlPhase.xy) * 0.017 + wave.CurlPhase.z * 0.23 + _H8CavitationShockwaveParams.w * 0.011) * 2.0 - 1.0;
+        float curl = cheapCurl;
+        [branch]
+        if (detailWeight > 0.35)
+        {
+            float richCurl = sin((dot(delta.xz, wave.CurlPhase.xy) + wave.CurlPhase.z * 37.0 + _H8CavitationShockwaveParams.w * 0.071) * 0.19);
+            curl = lerp(cheapCurl, richCurl, detailWeight);
+        }
+
         float2 radial2 = H8UberNoirSafeNormalize(float3(radial.x, radial.z, 0.0), float3(1.0, 0.0, 0.0)).xy;
         float2 tangent2 = float2(-radial2.y, radial2.x);
-        offset += (radial2 + tangent2 * curl * 0.42) * (shell * fade * intensity * lerp(0.0011, 0.0048, quality));
+        offset += (radial2 + tangent2 * curl * lerp(0.18, 0.42, detailWeight)) * (shell * fade * intensity * lerp(0.0011, 0.0048, detailWeight));
     }
 
     return clamp(offset, float2(-0.025, -0.025), float2(0.025, 0.025));
@@ -1740,11 +1846,11 @@ float2 H8UberNoirCavitationRefractionOffset(float3 positionWS, float2 screenUV)
 
 half3 H8UberNoirApplyScreenRefraction(H8UberNoirVaryings input, H8UberNoirSurface surface, half3 color)
 {
-#if !defined(_MATH_LOD_LOW) && defined(H8_UBERNOIR_SCREEN_REFRACTION)
     float cavitationActive = saturate((float)_H8CavitationShockwaveCount) * saturate(_H8CavitationShockwaveParams.y);
-    float active = max(
-        saturate(_UberNoirRefractionParams.x * 32.0) * saturate(_UberNoirRefractionParams.z * 32.0),
-        cavitationActive) * H8UberNoirHighCostAllowed();
+    float qualityWeight = H8UberNoirSmoothRange01(0.30, 0.76, H8UberNoirGlobalQualityWeight());
+    float materialRefractionActive = saturate(_UberNoirRefractionParams.x * 32.0) * saturate(_UberNoirRefractionParams.z * 32.0);
+    float cavitationRefractionActive = cavitationActive * saturate(_UberNoirRefractionParams.z * 32.0);
+    float active = max(materialRefractionActive, cavitationRefractionActive) * H8UberNoirHighCostAllowed() * qualityWeight;
     [branch]
     if (active <= H8_UBER_NOIR_EPS)
         return color;
@@ -1775,9 +1881,6 @@ half3 H8UberNoirApplyScreenRefraction(H8UberNoirVaryings input, H8UberNoirSurfac
         refractedColor = lerp(refractedColor, chromaColor, chromatic);
     }
     return lerp(color, max(refractedColor, (half3)_NoirAbyssFloorColor.rgb), saturate(_UberNoirRefractionParams.z) * active);
-#else
-    return color;
-#endif
 }
 
 half3 H8UberNoirApplyRespawnDearLie(H8UberNoirVaryings input, half3 color)
@@ -1816,9 +1919,15 @@ half4 H8UberNoirFragment(H8UberNoirVaryings input) : SV_Target
         return half4((half)debugState.WearAge, (half)debugState.BioGrowthMask, (half)debugState.SaltAccumulation, 1.0h);
     }
     half3 extinctionColor = H8UberNoirResolveExtinctionColor(input);
-    H8UberNoirApplyExtinctionToSurface(extinctionColor, surface);
-
     half3 color = H8UberNoirEvaluateMainLighting(input, surface);
+    Light waterOpticsMainLight = GetMainLight();
+    color = H8WaterOpticsApplyBeerLambert(
+        color,
+        input.positionWS,
+        input.viewDirWS,
+        (half3)waterOpticsMainLight.direction,
+        (half3)waterOpticsMainLight.color,
+        extinctionColor);
     color = H8UberNoirApplyNoirFog(color, input.fogFactor, extinctionColor, input.positionCS);
     color = H8UberNoirApplyScreenRefraction(input, surface, color);
     color = H8UberNoirApplyRespawnDearLie(input, color);
@@ -1858,6 +1967,7 @@ H8UberNoirMotionVaryings H8UberNoirMotionVertex(H8UberNoirAttributes input)
     float safeInstanceFade = isfinite(instanceFadeSource) ? saturate(instanceFadeSource) : 1.0;
     float3 dentedPositionOS = H8UberNoirApplyHullDentsOS(positionOS, normalOS);
     dentedPositionOS = H8UberNoirApplyBulkheadClosureOS(dentedPositionOS, normalOS, resolvedInstanceID);
+    dentedPositionOS = H8UberNoirApplyHandRadiationMutationOS(dentedPositionOS, normalOS, safeInstanceSeed);
 
     float4x4 currentObjectToRuntimeWorld = H8UberNoirObjectToRuntimeWorld(instanceData.ObjectToWorld);
     float4x4 previousObjectToRuntimeWorld = H8UberNoirObjectToRuntimeWorld(UNITY_PREV_MATRIX_M);
@@ -1917,6 +2027,7 @@ H8UberNoirShadowVaryings H8UberNoirShadowVertex(H8UberNoirAttributes input)
 
     float3 dentedPositionOS = H8UberNoirApplyHullDentsOS(positionOS, normalOS);
     dentedPositionOS = H8UberNoirApplyBulkheadClosureOS(dentedPositionOS, normalOS, resolvedInstanceID);
+    dentedPositionOS = H8UberNoirApplyHandRadiationMutationOS(dentedPositionOS, normalOS, safeInstanceSeed);
     float3 positionWS = mul(objectToRuntimeWorld, float4(dentedPositionOS, 1.0)).xyz;
     float3 normalWS = H8UberNoirTransformNormal(normalOS, instanceData.WorldToObject);
     positionWS = H8UberNoirApplyDynamicHullBendingWS(positionWS, normalWS, (half)safeInstanceSeed);
@@ -1967,6 +2078,7 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
     float3 deformationNormalBiasOS = H8UberNoirEvaluateDeformationNormalBiasOS(positionOS, normalOS);
     positionOS = H8UberNoirApplyHullDentsOS(positionOS, normalOS);
     positionOS = H8UberNoirApplyBulkheadClosureOS(positionOS, normalOS, resolvedInstanceID);
+    positionOS = H8UberNoirApplyHandRadiationMutationOS(positionOS, normalOS, safeInstanceSeed);
     float3 positionWS = mul(objectToRuntimeWorld, float4(positionOS, 1.0)).xyz;
     float3 normalWS = H8UberNoirTransformNormal(normalOS, instanceData.WorldToObject);
     float3 deformationNormalBiasWS = H8UberNoirFinite3(mul((float3x3)objectToRuntimeWorld, deformationNormalBiasOS), float3(0.0, 0.0, 0.0));
@@ -1988,13 +2100,10 @@ H8UberNoirVaryings H8UberNoirVertex(H8UberNoirAttributes input)
     output.fogFactor = ComputeFogFactor(output.positionCS.z);
     output.dentScar = (half)dentScarOS;
     output.materialIndex = min(resolvedInstanceID, (uint)(H8_UBER_NOIR_MATERIAL_CAPACITY - 1));
+    output.degradationIndex = H8UberNoirResolveDegradationIndex(instanceData, resolvedInstanceID);
     output.instanceSeed = (half)saturate(frac(safeInstanceSeed));
     output.instanceFade = (half)safeInstanceFade;
-#if defined(_MATH_LOD_LOW)
     output.extinctionColor = H8WaterExtinctionResolveRgbByWorld(positionWS, (half)_ExtinctionLUTRuntime.y);
-#else
-    output.extinctionColor = half3(1.0h, 1.0h, 1.0h);
-#endif
     return output;
 }
 

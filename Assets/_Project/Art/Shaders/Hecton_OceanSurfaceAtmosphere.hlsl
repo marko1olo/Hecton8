@@ -12,6 +12,12 @@ struct H8WaveParametersDTO
 };
 
 StructuredBuffer<H8WaveParametersDTO> _H8OceanWaveParameters;
+TEXTURE2D(_H8OceanDepthFoamMask);
+SAMPLER(sampler_H8OceanDepthFoamMask);
+TEXTURE2D(_H8OceanWakeDisplacement);
+SAMPLER(sampler_H8OceanWakeDisplacement);
+TEXTURE2D(_H8JacobianFoamTexture);
+SAMPLER(sampler_H8JacobianFoamTexture);
 
 CBUFFER_START(HectonOceanSurfaceAtmosphere)
 float _H8OceanSurfaceTime;
@@ -28,6 +34,11 @@ float4 _H8OceanRadialGridLod;
 float4 _H8OceanCameraAupLocalProjection;
 float4 _H8OceanWavePhaseBase0;
 float4 _H8OceanWavePhaseBase1;
+CBUFFER_END
+
+CBUFFER_START(HectonOceanVisualOverrides)
+float4 _H8OceanFoamAndShadowParams;
+float4 _H8OceanShorelineDepthParams;
 CBUFFER_END
 
 float H8OceanFiniteOr(float value, float fallbackValue)
@@ -143,9 +154,40 @@ uint H8OceanHash(uint value)
 
 float H8OceanHashNoise(float2 uv, float timeSeconds)
 {
-    uint2 cell = (uint2)floor(abs(uv) * 1024.0 + timeSeconds * float2(17.0, 31.0));
+    float2 safeUv = float2(H8OceanFiniteOr(uv.x, 0.0), H8OceanFiniteOr(uv.y, 0.0));
+    float safeTime = H8OceanFiniteOr(timeSeconds, 0.0);
+    uint2 cell = (uint2)floor(abs(safeUv) * 1024.0 + safeTime * float2(17.0, 31.0));
     uint h = H8OceanHash(cell.x ^ (cell.y * 0x9e3779b9u));
     return (float)(h & 0x00ffffffu) * (1.0 / 16777216.0);
+}
+
+float2 H8OceanWakeUv(float2 cameraLocalXZ)
+{
+    float worldSize = max(H8OceanFiniteOr(_H8OceanShorelineDepthParams.z, 512.0), 1.0);
+    return frac(cameraLocalXZ / worldSize + 0.5);
+}
+
+float4 H8OceanSampleWake(float2 cameraLocalXZ)
+{
+    float2 uv = H8OceanWakeUv(cameraLocalXZ);
+    float4 wake = SAMPLE_TEXTURE2D_LOD(_H8OceanWakeDisplacement, sampler_H8OceanWakeDisplacement, uv, 0);
+    return all(wake == wake) ? wake : 0.0;
+}
+
+float H8OceanSampleJacobianFoam(float2 cameraLocalXZ)
+{
+    float2 uv = H8OceanWakeUv(cameraLocalXZ);
+    float foam = SAMPLE_TEXTURE2D_LOD(_H8JacobianFoamTexture, sampler_H8JacobianFoamTexture, uv, 0).r;
+    return H8OceanFiniteOr(foam, 0.0);
+}
+
+float H8OceanSampleScreenFoam(float4 positionCS)
+{
+    float2 screenUV = GetNormalizedScreenSpaceUV(positionCS);
+    float4 mask = SAMPLE_TEXTURE2D(_H8OceanDepthFoamMask, sampler_H8OceanDepthFoamMask, screenUV);
+    float shoreline = H8OceanFiniteOr(mask.r, 0.0);
+    float quality = H8OceanSafeQuality(_H8OceanFoamAndShadowParams.w);
+    return saturate(shoreline * smoothstep(0.08, 0.72, quality));
 }
 
 void H8EvaluateOceanSurface(float2 cameraLocalXZ, out float3 displacement, out float3 normal, out float foamScalar)
@@ -189,9 +231,16 @@ void H8EvaluateOceanSurface(float2 cameraLocalXZ, out float3 displacement, out f
     }
 
     normal = H8OceanNormalize3(float3(-dHeightDx, 1.0, -dHeightDz), float3(0.0, 1.0, 0.0));
-    float foamThreshold = saturate(_H8OceanRainDisturbance.z);
-    float qualityFoam = saturate((qualityWeight - 0.28) / 0.72) * step(0.28, qualityWeight);
-    foamScalar = saturate((foamThreshold - minJacobian) * 4.0) * qualityFoam;
+    float4 wake = H8OceanSampleWake(cameraLocalXZ);
+    float wakeStrength = max(H8OceanFiniteOr(_H8OceanShorelineDepthParams.w, 0.0), 0.0);
+    displacement.xz += wake.xy * wakeStrength;
+    displacement.y += wake.z * 0.18 * wakeStrength;
+    float foamThreshold = saturate(max(_H8OceanRainDisturbance.z, _H8OceanFoamAndShadowParams.x));
+    float foamIntensity = max(H8OceanFiniteOr(_H8OceanFoamAndShadowParams.y, 1.0), 0.0);
+    float qualityFoam = smoothstep(0.18, 0.72, qualityWeight);
+    float jacobianFoam = saturate((foamThreshold - minJacobian) * 4.0) * qualityFoam * foamIntensity;
+    float persistentFoam = H8OceanSampleJacobianFoam(cameraLocalXZ) * smoothstep(0.05, 0.55, qualityWeight);
+    foamScalar = saturate(jacobianFoam + wake.w * wakeStrength * qualityFoam + persistentFoam);
     bool finiteSurface = all(displacement == displacement) && all(abs(displacement) < 1.0e20) &&
         all(normal == normal) && all(abs(normal) < 1.0e20) &&
         (foamScalar == foamScalar) && abs(foamScalar) < 1.0e20;

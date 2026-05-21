@@ -5,6 +5,7 @@ using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
+using Hecton8.Gameplay;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -18,7 +19,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6440)]
     [AddComponentMenu("Hecton8/World/Chemical Influence Grid")]
-    public sealed unsafe class ChemicalInfluenceGrid : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable
+    public sealed unsafe class ChemicalInfluenceGrid : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IChemicalInfluenceReadModel
     {
         internal enum ChemicalChannel : int
         {
@@ -250,28 +251,30 @@ namespace Hecton8.World
         [SerializeField] private Vector3 _debugLastBreadcrumbPosition;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<ChemicalCellDTO> _frontCellHandle;
-        private VaultBufferHandle<ChemicalCellDTO> _backCellHandle;
-        private VaultBufferHandle<float4> _publishedGridHandle;
-        private VaultBufferHandle<float4> _overlayGridHandle;
-        private VaultBufferHandle<ChemicalBreadcrumbWaypoint> _breadcrumbsHandle;
-        private VaultBufferHandle<ChemicalEmitterDTO> _pendingEmitterHandle;
-        private VaultBufferHandle<int> _pendingEmitterCountHandle;
-        private VaultBufferHandle<ChemicalEmitterDTO> _activeEmitterHandle;
-        private VaultBufferHandle<int> _activeEmitterCountHandle;
-        private VaultBufferHandle<ChemicalEmitterDTO> _mockEmitterHandle;
-        private VaultBufferHandle<int> _mockEmitterCountHandle;
-        private VaultBufferHandle<ChemicalTuningDTO> _tuningHandle;
-        private VaultBufferHandle<ChemicalTelemetryEntry> _telemetryRingHandle;
-        private VaultBufferHandle<int> _telemetryCursorHandle;
-        private VaultBufferHandle<ChemicalAtomicCounterDTO> _atomicCounterHandle;
-        private VaultBufferHandle<ChemicalDefoliantZoneDTO> _defoliantZoneHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<ChemicalEmitterProfileDTO> _profileTableHandle;
-        private VaultBufferHandle<int> _profileCountHandle;
+        private VaultGenerationHandle<ChemicalCellDTO> _frontCellHandle;
+        private VaultGenerationHandle<ChemicalCellDTO> _backCellHandle;
+        private VaultGenerationHandle<float4> _publishedGridHandle;
+        private VaultGenerationHandle<float4> _overlayGridHandle;
+        private VaultGenerationHandle<ChemicalBreadcrumbWaypoint> _breadcrumbsHandle;
+        private VaultGenerationHandle<ChemicalEmitterDTO> _pendingEmitterHandle;
+        private VaultGenerationHandle<int> _pendingEmitterCountHandle;
+        private VaultGenerationHandle<ChemicalEmitterDTO> _activeEmitterHandle;
+        private VaultGenerationHandle<int> _activeEmitterCountHandle;
+        private VaultGenerationHandle<ChemicalEmitterDTO> _mockEmitterHandle;
+        private VaultGenerationHandle<int> _mockEmitterCountHandle;
+        private VaultGenerationHandle<ChemicalTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<ChemicalTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<int> _telemetryCursorHandle;
+        private VaultGenerationHandle<ChemicalAtomicCounterDTO> _atomicCounterHandle;
+        private VaultGenerationHandle<ChemicalDefoliantZoneDTO> _defoliantZoneHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<ChemicalEmitterProfileDTO> _profileTableHandle;
+        private VaultGenerationHandle<int> _profileCountHandle;
         private bool _registeredUpdate;
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
+        private bool _registeredHotSwapListener;
+        private bool _registeredReadModel;
         private bool _runtimeInitialized;
         private bool _buffersReady;
         private bool _gridHasOrigin;
@@ -295,6 +298,8 @@ namespace Hecton8.World
         private double3 _scheduledOriginAup;
         private float3 _publishedRuntimeOrigin;
         private float3 _scheduledRuntimeOrigin;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private ISubmarineRuntimeContext _submarineRuntimeContext;
 
         public static ChemicalInfluenceGrid ActiveRuntimeInstance => _activeRuntimeInstance;
 
@@ -359,7 +364,7 @@ namespace Hecton8.World
         {
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
             instance.PublishFrame(instance.ResolveDeterministicFrameId(false));
-            breadcrumbs = instance.ResolveArray(instance._breadcrumbsHandle);
+            breadcrumbs = instance.OpenChemicalVaultArray(ref instance._breadcrumbsHandle, BreadcrumbBufferId, DefaultBreadcrumbCapacity);
             count = instance._breadcrumbCount;
             followStepMeters = math.max(1f, instance.breadcrumbRadiusMeters * 0.5f);
             return breadcrumbs.IsCreated && count > 0;
@@ -484,7 +489,14 @@ namespace Hecton8.World
                 return false;
             }
 
-            tuning = instance._tuningHandle.GetElementAsRef(instance._dataVault, 0);
+            NativeArray<ChemicalTuningDTO> tuningBuffer = instance.OpenChemicalVaultArray(ref instance._tuningHandle, TuningBufferId, 1);
+            if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
+            {
+                tuning = default;
+                return false;
+            }
+
+            tuning = tuningBuffer[0];
             return true;
         }
 
@@ -495,12 +507,17 @@ namespace Hecton8.World
             if (!instance._buffersReady)
                 return false;
 
-            ref ChemicalTuningDTO tuning = ref instance._tuningHandle.GetElementAsRef(instance._dataVault, 0);
+            NativeArray<ChemicalTuningDTO> tuningBuffer = instance.OpenChemicalVaultArray(ref instance._tuningHandle, TuningBufferId, 1);
+            if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
+                return false;
+
+            ChemicalTuningDTO tuning = tuningBuffer[0];
             tuning.BaseDiffusionRate = math.max(0.001f, baseDiffusion);
             tuning.AdvectionStrength = math.max(0f, advection);
             tuning.DissipationRate = math.max(0f, dissipation);
             tuning.GlobalQualityWeight = math.saturate(math.select(1f, qualityWeight, math.isfinite(qualityWeight)));
             tuning.Revision++;
+            tuningBuffer[0] = tuning;
             return true;
         }
 
@@ -513,8 +530,8 @@ namespace Hecton8.World
                 return false;
             }
 
-            NativeArray<ChemicalTelemetryEntry> ring = instance.ResolveArray(instance._telemetryRingHandle);
-            NativeArray<int> cursor = instance.ResolveArray(instance._telemetryCursorHandle);
+            NativeArray<ChemicalTelemetryEntry> ring = instance.OpenChemicalVaultArray(ref instance._telemetryRingHandle, TelemetryRingBufferId, TelemetryFrameCount);
+            NativeArray<int> cursor = instance.OpenChemicalVaultArray(ref instance._telemetryCursorHandle, TelemetryCursorBufferId, 1);
             if (!ring.IsCreated || ring.Length == 0 || !cursor.IsCreated || cursor.Length == 0)
             {
                 telemetry = default;
@@ -555,12 +572,16 @@ namespace Hecton8.World
         private void Awake()
         {
             EnsureSingletonOwnership();
+            CacheRegistryServicesCold();
             InitializeRuntime();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             InitializeRuntime();
+            TryRegisterChemicalReadModel();
             TryRegisterUpdate();
             TryRegisterSlowTick();
             TryRegisterLateFrame();
@@ -572,6 +593,8 @@ namespace Hecton8.World
             TryUnregisterUpdate();
             TryUnregisterSlowTick();
             TryUnregisterLateFrame();
+            TryUnregisterHotSwapListener();
+            TryUnregisterChemicalReadModel();
             ResetRuntimeStateForDisable();
         }
 
@@ -581,10 +604,128 @@ namespace Hecton8.World
             TryUnregisterUpdate();
             TryUnregisterSlowTick();
             TryUnregisterLateFrame();
+            TryUnregisterHotSwapListener();
+            TryUnregisterChemicalReadModel();
             ResetRuntimeStateForDisable();
 
             if (_activeRuntimeInstance == this)
                 _activeRuntimeInstance = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Submarine:
+                    _submarineRuntimeContext = currentService as ISubmarineRuntimeContext;
+                    break;
+            }
+        }
+
+        public bool TryReadNormalizedChannels(Vector3 runtimePosition, out float4 normalizedChannels)
+        {
+            normalizedChannels = float4.zero;
+            if (_activeRuntimeInstance != this || !_buffersReady)
+                return false;
+
+            return TrySampleNormalizedChannelsInternal(
+                new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                out normalizedChannels);
+        }
+
+        public bool TryFindNearestBloodWaypoint(
+            Vector3 runtimePosition,
+            out float distanceMeters,
+            out float intensity01)
+        {
+            distanceMeters = 0f;
+            intensity01 = 0f;
+            if (_activeRuntimeInstance != this || !_buffersReady)
+                return false;
+
+            return TryFindNearestScentWaypointInternal(
+                new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                ChemicalChannel.Blood,
+                out _,
+                out distanceMeters,
+                out intensity01);
+        }
+
+        public bool TryReadAttractantGradient(
+            Vector3 runtimePosition,
+            float now,
+            out float bloodSignal01,
+            out float exhaustSignal01,
+            out float3 bloodGradient,
+            out float3 exhaustGradient)
+        {
+            bloodSignal01 = 0f;
+            exhaustSignal01 = 0f;
+            bloodGradient = float3.zero;
+            exhaustGradient = float3.zero;
+            if (_activeRuntimeInstance != this || !_buffersReady)
+                return false;
+
+            NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs = OpenChemicalVaultArray(ref _breadcrumbsHandle, BreadcrumbBufferId, DefaultBreadcrumbCapacity);
+            if (!breadcrumbs.IsCreated || _breadcrumbCount <= 0)
+                return false;
+
+            float3 center = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(center)))
+                return false;
+
+            int safeCount = math.min(_breadcrumbCount, breadcrumbs.Length);
+            float3 bloodGradientWeighted = float3.zero;
+            float3 exhaustGradientWeighted = float3.zero;
+            float bloodWeight = 0f;
+            float exhaustWeight = 0f;
+            for (int i = 0; i < safeCount; i++)
+            {
+                ChemicalBreadcrumbWaypoint waypoint = breadcrumbs[i];
+                if (waypoint.ExpiresAt <= now || waypoint.RadiusMeters <= 0f)
+                    continue;
+
+                float radius = math.max(1f, waypoint.RadiusMeters);
+                float3 delta = waypoint.RuntimePosition - center;
+                float distanceSq = math.lengthsq(delta);
+                float radiusSq = math.max(1f, radius * radius);
+                if (!math.isfinite(distanceSq) || distanceSq > radiusSq)
+                    continue;
+
+                float falloff = SmoothStep01(1f - math.saturate(distanceSq * math.rcp(radiusSq)));
+                float blood = math.saturate(waypoint.Channels.x * falloff);
+                float exhaust = math.saturate(waypoint.Channels.y * falloff);
+                float3 direction = distanceSq > 0.000001f
+                    ? delta * math.rsqrt(math.max(distanceSq, 0.000001f))
+                    : float3.zero;
+
+                bloodSignal01 = math.max(bloodSignal01, blood);
+                exhaustSignal01 = math.max(exhaustSignal01, exhaust);
+                if (blood > 0.0001f)
+                {
+                    bloodGradientWeighted += direction * blood;
+                    bloodWeight += blood;
+                }
+
+                if (exhaust > 0.0001f)
+                {
+                    exhaustGradientWeighted += direction * exhaust;
+                    exhaustWeight += exhaust;
+                }
+            }
+
+            if (bloodWeight > 0f)
+                bloodGradient = NormalizeOrZero(bloodGradientWeighted * math.rcp(math.max(bloodWeight, 0.0001f)));
+            if (exhaustWeight > 0f)
+                exhaustGradient = NormalizeOrZero(exhaustGradientWeighted * math.rcp(math.max(exhaustWeight, 0.0001f)));
+
+            return bloodSignal01 > 0.0001f || exhaustSignal01 > 0.0001f;
         }
 
         public void Tick(float deltaTime)
@@ -672,12 +813,6 @@ namespace Hecton8.World
             if (_dataVault != null)
                 return true;
 
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-            {
-                _dataVault = latest;
-                return true;
-            }
-
             return false;
         }
 
@@ -686,67 +821,65 @@ namespace Hecton8.World
             if (!TryResolveDataVault())
                 return false;
 
-            _frontCellHandle = _dataVault.GetBufferHandle<ChemicalCellDTO>(GridFrontBufferId, ChemicalCellCount, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _backCellHandle = _dataVault.GetBufferHandle<ChemicalCellDTO>(GridBackBufferId, ChemicalCellCount, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _publishedGridHandle = _dataVault.GetBufferHandle<float4>(PublishedGridBufferId, ChemicalCellCount, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _overlayGridHandle = _dataVault.GetBufferHandle<float4>(OverlayGridBufferId, ChemicalCellCount, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _breadcrumbsHandle = _dataVault.GetBufferHandle<ChemicalBreadcrumbWaypoint>(BreadcrumbBufferId, DefaultBreadcrumbCapacity, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _pendingEmitterHandle = _dataVault.GetBufferHandle<ChemicalEmitterDTO>(PendingEmitterBufferId, MaxActiveEmitters, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _pendingEmitterCountHandle = _dataVault.GetBufferHandle<int>(PendingEmitterCountBufferId, 1, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _activeEmitterHandle = _dataVault.GetBufferHandle<ChemicalEmitterDTO>(ActiveEmitterBufferId, MaxActiveEmitters, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _activeEmitterCountHandle = _dataVault.GetBufferHandle<int>(ActiveEmitterCountBufferId, 1, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _mockEmitterHandle = _dataVault.GetBufferHandle<ChemicalEmitterDTO>(MockEmitterBufferId, MaxMockEmitters, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _mockEmitterCountHandle = _dataVault.GetBufferHandle<int>(MockEmitterCountBufferId, 1, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = _dataVault.GetBufferHandle<ChemicalTuningDTO>(TuningBufferId, 1, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = _dataVault.GetBufferHandle<ChemicalTelemetryEntry>(TelemetryRingBufferId, TelemetryFrameCount, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = _dataVault.GetBufferHandle<int>(TelemetryCursorBufferId, 1, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _atomicCounterHandle = _dataVault.GetBufferHandle<ChemicalAtomicCounterDTO>(AtomicCounterBufferId, 1, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _defoliantZoneHandle = _dataVault.GetBufferHandle<ChemicalDefoliantZoneDTO>(DefoliantZoneBufferId, MaxDefoliantDeadZones, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = _dataVault.GetBufferHandle<byte>(CsvScratchBufferId, CsvScratchBytes, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _profileTableHandle = _dataVault.GetBufferHandle<ChemicalEmitterProfileDTO>(EmitterProfileTableBufferId, ProfileTableCapacity, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-            _profileCountHandle = _dataVault.GetBufferHandle<int>(EmitterProfileCountBufferId, 1, SystemID.AISensory, NativeArrayOptions.UninitializedMemory);
-
-            bool created = _frontCellHandle.IsCreated &&
-                           _backCellHandle.IsCreated &&
-                           _publishedGridHandle.IsCreated &&
-                           _overlayGridHandle.IsCreated &&
-                           _breadcrumbsHandle.IsCreated &&
-                           _pendingEmitterHandle.IsCreated &&
-                           _pendingEmitterCountHandle.IsCreated &&
-                           _activeEmitterHandle.IsCreated &&
-                           _activeEmitterCountHandle.IsCreated &&
-                           _mockEmitterHandle.IsCreated &&
-                           _mockEmitterCountHandle.IsCreated &&
-                           _tuningHandle.IsCreated &&
-                           _telemetryRingHandle.IsCreated &&
-                           _telemetryCursorHandle.IsCreated &&
-                           _atomicCounterHandle.IsCreated &&
-                           _defoliantZoneHandle.IsCreated &&
-                           _csvScratchHandle.IsCreated &&
-                           _profileTableHandle.IsCreated &&
-                           _profileCountHandle.IsCreated;
+            NativeArray<ChemicalCellDTO> frontCells = default;
+            NativeArray<ChemicalCellDTO> backCells = default;
+            NativeArray<float4> publishedGrid = default;
+            NativeArray<float4> overlayGrid = default;
+            NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs = default;
+            NativeArray<ChemicalEmitterDTO> pendingEmitters = default;
+            NativeArray<int> pendingEmitterCount = default;
+            NativeArray<ChemicalEmitterDTO> activeEmitters = default;
+            NativeArray<int> activeEmitterCount = default;
+            NativeArray<ChemicalEmitterDTO> mockEmitters = default;
+            NativeArray<int> mockEmitterCount = default;
+            NativeArray<ChemicalTelemetryEntry> telemetryRing = default;
+            NativeArray<int> telemetryCursor = default;
+            NativeArray<ChemicalAtomicCounterDTO> counters = default;
+            NativeArray<ChemicalDefoliantZoneDTO> defoliantZones = default;
+            NativeArray<ChemicalEmitterProfileDTO> profileTable = default;
+            NativeArray<int> profileCount = default;
+            bool created =
+                OpenOrAcquireChemicalVaultBuffer(ref _frontCellHandle, GridFrontBufferId, ChemicalCellCount, NativeArrayOptions.UninitializedMemory, out frontCells) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _backCellHandle, GridBackBufferId, ChemicalCellCount, NativeArrayOptions.UninitializedMemory, out backCells) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _publishedGridHandle, PublishedGridBufferId, ChemicalCellCount, NativeArrayOptions.UninitializedMemory, out publishedGrid) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _overlayGridHandle, OverlayGridBufferId, ChemicalCellCount, NativeArrayOptions.UninitializedMemory, out overlayGrid) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _breadcrumbsHandle, BreadcrumbBufferId, DefaultBreadcrumbCapacity, NativeArrayOptions.UninitializedMemory, out breadcrumbs) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _pendingEmitterHandle, PendingEmitterBufferId, MaxActiveEmitters, NativeArrayOptions.UninitializedMemory, out pendingEmitters) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _pendingEmitterCountHandle, PendingEmitterCountBufferId, 1, NativeArrayOptions.UninitializedMemory, out pendingEmitterCount) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _activeEmitterHandle, ActiveEmitterBufferId, MaxActiveEmitters, NativeArrayOptions.UninitializedMemory, out activeEmitters) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _activeEmitterCountHandle, ActiveEmitterCountBufferId, 1, NativeArrayOptions.UninitializedMemory, out activeEmitterCount) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _mockEmitterHandle, MockEmitterBufferId, MaxMockEmitters, NativeArrayOptions.UninitializedMemory, out mockEmitters) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _mockEmitterCountHandle, MockEmitterCountBufferId, 1, NativeArrayOptions.UninitializedMemory, out mockEmitterCount) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _tuningHandle, TuningBufferId, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _telemetryRingHandle, TelemetryRingBufferId, TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out telemetryRing) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _telemetryCursorHandle, TelemetryCursorBufferId, 1, NativeArrayOptions.UninitializedMemory, out telemetryCursor) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _atomicCounterHandle, AtomicCounterBufferId, 1, NativeArrayOptions.UninitializedMemory, out counters) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _defoliantZoneHandle, DefoliantZoneBufferId, MaxDefoliantDeadZones, NativeArrayOptions.UninitializedMemory, out defoliantZones) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _csvScratchHandle, CsvScratchBufferId, CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _profileTableHandle, EmitterProfileTableBufferId, ProfileTableCapacity, NativeArrayOptions.UninitializedMemory, out profileTable) &&
+                OpenOrAcquireChemicalVaultBuffer(ref _profileCountHandle, EmitterProfileCountBufferId, 1, NativeArrayOptions.UninitializedMemory, out profileCount);
             if (!created)
                 return false;
 
             ColdZeroVaultBuffersJob zeroJob = new ColdZeroVaultBuffersJob
             {
-                FrontCells = (byte*)_frontCellHandle.ResolvePointer(_dataVault),
-                BackCells = (byte*)_backCellHandle.ResolvePointer(_dataVault),
-                PublishedGrid = (byte*)_publishedGridHandle.ResolvePointer(_dataVault),
-                OverlayGrid = (byte*)_overlayGridHandle.ResolvePointer(_dataVault),
-                Breadcrumbs = (byte*)_breadcrumbsHandle.ResolvePointer(_dataVault),
-                PendingEmitters = (byte*)_pendingEmitterHandle.ResolvePointer(_dataVault),
-                ActiveEmitters = (byte*)_activeEmitterHandle.ResolvePointer(_dataVault),
-                MockEmitters = (byte*)_mockEmitterHandle.ResolvePointer(_dataVault),
-                TelemetryRing = (byte*)_telemetryRingHandle.ResolvePointer(_dataVault),
-                DefoliantZones = (byte*)_defoliantZoneHandle.ResolvePointer(_dataVault),
-                ProfileTable = (byte*)_profileTableHandle.ResolvePointer(_dataVault),
-                Counters = (byte*)_atomicCounterHandle.ResolvePointer(_dataVault),
-                PendingCount = (byte*)_pendingEmitterCountHandle.ResolvePointer(_dataVault),
-                ActiveCount = (byte*)_activeEmitterCountHandle.ResolvePointer(_dataVault),
-                MockCount = (byte*)_mockEmitterCountHandle.ResolvePointer(_dataVault),
-                TelemetryCursor = (byte*)_telemetryCursorHandle.ResolvePointer(_dataVault),
-                ProfileCount = (byte*)_profileCountHandle.ResolvePointer(_dataVault),
+                FrontCells = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(frontCells),
+                BackCells = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(backCells),
+                PublishedGrid = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(publishedGrid),
+                OverlayGrid = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(overlayGrid),
+                Breadcrumbs = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(breadcrumbs),
+                PendingEmitters = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(pendingEmitters),
+                ActiveEmitters = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(activeEmitters),
+                MockEmitters = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mockEmitters),
+                TelemetryRing = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetryRing),
+                DefoliantZones = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(defoliantZones),
+                ProfileTable = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(profileTable),
+                Counters = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(counters),
+                PendingCount = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(pendingEmitterCount),
+                ActiveCount = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(activeEmitterCount),
+                MockCount = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mockEmitterCount),
+                TelemetryCursor = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetryCursor),
+                ProfileCount = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(profileCount),
                 FrontCellsBytes = ChemicalCellCount * UnsafeUtility.SizeOf<ChemicalCellDTO>(),
                 BackCellsBytes = ChemicalCellCount * UnsafeUtility.SizeOf<ChemicalCellDTO>(),
                 PublishedBytes = ChemicalCellCount * UnsafeUtility.SizeOf<float4>(),
@@ -766,9 +899,113 @@ namespace Hecton8.World
             return true;
         }
 
+        private bool OpenOrAcquireChemicalVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (OpenChemicalVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                return OpenChemicalVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.AISensory,
+                options);
+            return OpenChemicalVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private NativeArray<T> OpenChemicalVaultArray<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return OpenChemicalVaultBuffer(_dataVault, ref handle, bufferId, requiredLength, out NativeArray<T> buffer)
+                ? buffer
+                : default;
+        }
+
+        private static bool OpenChemicalVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsChemicalVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsChemicalVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.AISensory &&
+                   handle.Generation != 0u;
+        }
+
+        private bool TryOpenExistingVaultBuffer<T>(
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
+                handle.BufferID != (uint)bufferId ||
+                handle.Generation == 0u ||
+                !vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
         private void InitializeTuningBuffer()
         {
-            ref ChemicalTuningDTO tuning = ref _tuningHandle.GetElementAsRef(_dataVault, 0);
+            NativeArray<ChemicalTuningDTO> tuningBuffer = OpenChemicalVaultArray(ref _tuningHandle, TuningBufferId, 1);
+            if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
+                return;
+
+            ChemicalTuningDTO tuning = tuningBuffer[0];
             if (tuning.Revision != 0u &&
                 math.isfinite(tuning.BaseDiffusionRate) &&
                 math.isfinite(tuning.AdvectionStrength) &&
@@ -777,7 +1014,7 @@ namespace Hecton8.World
                 return;
             }
 
-            tuning = CreateDefaultTuning();
+            tuningBuffer[0] = CreateDefaultTuning();
         }
 
         private ChemicalTuningDTO CreateDefaultTuning()
@@ -799,8 +1036,8 @@ namespace Hecton8.World
 
         private void InitializeDefaultEmitterProfiles()
         {
-            NativeArray<ChemicalEmitterProfileDTO> profiles = ResolveArray(_profileTableHandle);
-            NativeArray<int> count = ResolveArray(_profileCountHandle);
+            NativeArray<ChemicalEmitterProfileDTO> profiles = OpenChemicalVaultArray(ref _profileTableHandle, EmitterProfileTableBufferId, ProfileTableCapacity);
+            NativeArray<int> count = OpenChemicalVaultArray(ref _profileCountHandle, EmitterProfileCountBufferId, 1);
             if (!profiles.IsCreated || profiles.Length < 5 || !count.IsCreated || count.Length == 0)
                 return;
 
@@ -858,9 +1095,9 @@ namespace Hecton8.World
             if (!_buffersReady)
                 return false;
 
-            NativeArray<byte> scratch = ResolveArray(_csvScratchHandle);
-            NativeArray<ChemicalEmitterProfileDTO> profiles = ResolveArray(_profileTableHandle);
-            NativeArray<int> count = ResolveArray(_profileCountHandle);
+            NativeArray<byte> scratch = OpenChemicalVaultArray(ref _csvScratchHandle, CsvScratchBufferId, CsvScratchBytes);
+            NativeArray<ChemicalEmitterProfileDTO> profiles = OpenChemicalVaultArray(ref _profileTableHandle, EmitterProfileTableBufferId, ProfileTableCapacity);
+            NativeArray<int> count = OpenChemicalVaultArray(ref _profileCountHandle, EmitterProfileCountBufferId, 1);
             if (!scratch.IsCreated || !profiles.IsCreated || !count.IsCreated || count.Length == 0)
                 return false;
 
@@ -874,7 +1111,7 @@ namespace Hecton8.World
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     int maxBytes = math.min(scratch.Length, (int)math.min(stream.Length, scratch.Length));
-                    void* scratchPtr = _csvScratchHandle.ResolvePointer(_dataVault);
+                    void* scratchPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
                     if (scratchPtr == null || maxBytes <= 0)
                         return false;
 
@@ -894,7 +1131,8 @@ namespace Hecton8.World
             if (bytesRead <= 0)
                 return false;
 
-            ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(_csvScratchHandle.ResolvePointer(_dataVault), bytesRead);
+            void* csvPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
+            ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(csvPtr, bytesRead);
             int parsed = ParseEmitterProfilesCsv(csv, profiles);
             if (parsed > 0)
             {
@@ -1003,8 +1241,8 @@ namespace Hecton8.World
             out float3 origin,
             out float3 cellSize)
         {
-            frontGrid = ResolveArray(_publishedGridHandle);
-            overlayGrid = ResolveArray(_overlayGridHandle);
+            frontGrid = OpenChemicalVaultArray(ref _publishedGridHandle, PublishedGridBufferId, ChemicalCellCount);
+            overlayGrid = OpenChemicalVaultArray(ref _overlayGridHandle, OverlayGridBufferId, ChemicalCellCount);
             dimensions = GridDimensions;
             origin = _publishedRuntimeOrigin;
             cellSize = new float3(ResolveCellSizeMeters());
@@ -1013,7 +1251,7 @@ namespace Hecton8.World
 
         private void CollectPersistentRuntimeEmissions()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
             var playerSurvival = playerContext != null ? playerContext.SurvivalSystem : null;
             if (playerTransform != null &&
@@ -1024,7 +1262,7 @@ namespace Hecton8.World
                 DropBreadcrumb(playerTransform.position, new float4(1f, 0f, 0f, 0f), ChemicalChannel.Blood);
             }
 
-            var submarine = GlobalRegistry.Submarine;
+            ISubmarineRuntimeContext submarine = _submarineRuntimeContext;
             if (submarine != null &&
                 submarine.PlatformTransform != null &&
                 submarine.HullRigidbody != null &&
@@ -1041,8 +1279,8 @@ namespace Hecton8.World
             if (!_buffersReady)
                 return;
 
-            NativeArray<ChemicalEmitterDTO> pending = ResolveArray(_pendingEmitterHandle);
-            NativeArray<int> pendingCount = ResolveArray(_pendingEmitterCountHandle);
+            NativeArray<ChemicalEmitterDTO> pending = OpenChemicalVaultArray(ref _pendingEmitterHandle, PendingEmitterBufferId, MaxActiveEmitters);
+            NativeArray<int> pendingCount = OpenChemicalVaultArray(ref _pendingEmitterCountHandle, PendingEmitterCountBufferId, 1);
             if (!pending.IsCreated || pending.Length == 0 || !pendingCount.IsCreated || pendingCount.Length == 0)
                 return;
 
@@ -1082,7 +1320,7 @@ namespace Hecton8.World
 
         private ChemicalEmitterProfileDTO ResolveEmitterProfile(uint profileHash)
         {
-            NativeArray<ChemicalEmitterProfileDTO> profiles = ResolveArray(_profileTableHandle);
+            NativeArray<ChemicalEmitterProfileDTO> profiles = OpenChemicalVaultArray(ref _profileTableHandle, EmitterProfileTableBufferId, ProfileTableCapacity);
             if (profileHash == 0u || !profiles.IsCreated || profiles.Length == 0)
                 return CreateProfile(profileHash, 1f, 1f, 1f, 1f, 1f, 0u);
 
@@ -1103,7 +1341,7 @@ namespace Hecton8.World
         private void DropBreadcrumb(Vector3 worldPosition, float4 channels, ChemicalChannel primaryChannel, float radiusOverrideMeters = 0f)
         {
             InitializeRuntime();
-            NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs = ResolveArray(_breadcrumbsHandle);
+            NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs = OpenChemicalVaultArray(ref _breadcrumbsHandle, BreadcrumbBufferId, DefaultBreadcrumbCapacity);
             if (!breadcrumbs.IsCreated)
                 return;
 
@@ -1156,12 +1394,16 @@ namespace Hecton8.World
 
             double3 focusAup = ResolveFocusAup();
             float quality = ResolveGlobalQualityWeight();
-            ref ChemicalTuningDTO tuningRef = ref _tuningHandle.GetElementAsRef(_dataVault, 0);
-            tuningRef.GlobalQualityWeight = quality;
-            tuningRef.Iterations = ResolveJacobiIterations(quality);
-            tuningRef.CellSizeMeters = ResolveCellSizeMeters();
-            tuningRef.MaxChannelIntensity = math.max(0.1f, maximumChannelIntensity);
-            ChemicalTuningDTO tuning = tuningRef;
+            NativeArray<ChemicalTuningDTO> tuningBuffer = OpenChemicalVaultArray(ref _tuningHandle, TuningBufferId, 1);
+            if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
+                return;
+
+            ChemicalTuningDTO tuning = tuningBuffer[0];
+            tuning.GlobalQualityWeight = quality;
+            tuning.Iterations = ResolveJacobiIterations(quality);
+            tuning.CellSizeMeters = ResolveCellSizeMeters();
+            tuning.MaxChannelIntensity = math.max(0.1f, maximumChannelIntensity);
+            tuningBuffer[0] = tuning;
             float cellSize = math.max(GridSampleEpsilon, tuning.CellSizeMeters);
             int3 targetCenterCell = AupToCell(focusAup, cellSize);
             int3 targetOriginCell = targetCenterCell - GridHalfExtents;
@@ -1180,35 +1422,49 @@ namespace Hecton8.World
             if (!TryLockSimulationBuffers())
                 return;
 
-            void* frontPtr = _frontCellHandle.ResolvePointer(_dataVault);
-            void* backPtr = _backCellHandle.ResolvePointer(_dataVault);
-            void* publishedPtr = _publishedGridHandle.ResolvePointer(_dataVault);
-            void* overlayPtr = _overlayGridHandle.ResolvePointer(_dataVault);
-            void* pendingPtr = _pendingEmitterHandle.ResolvePointer(_dataVault);
-            void* pendingCountPtr = _pendingEmitterCountHandle.ResolvePointer(_dataVault);
-            void* activePtr = _activeEmitterHandle.ResolvePointer(_dataVault);
-            void* activeCountPtr = _activeEmitterCountHandle.ResolvePointer(_dataVault);
-            void* mockPtr = _mockEmitterHandle.ResolvePointer(_dataVault);
-            void* mockCountPtr = _mockEmitterCountHandle.ResolvePointer(_dataVault);
-            void* telemetryPtr = _telemetryRingHandle.ResolvePointer(_dataVault);
-            void* telemetryCursorPtr = _telemetryCursorHandle.ResolvePointer(_dataVault);
-            void* counterPtr = _atomicCounterHandle.ResolvePointer(_dataVault);
-            void* zonesPtr = _defoliantZoneHandle.ResolvePointer(_dataVault);
-            byte* sdfPtr = null;
-            int sdfLength = 0;
-            if (_dataVault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> sdf) && sdf.IsCreated && sdf.Length > 0)
-            {
-                sdfPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sdf);
-                sdfLength = sdf.Length;
-            }
-
-            if (frontPtr == null || backPtr == null || publishedPtr == null || overlayPtr == null ||
-                pendingPtr == null || pendingCountPtr == null || activePtr == null || activeCountPtr == null ||
-                mockPtr == null || mockCountPtr == null || telemetryPtr == null || telemetryCursorPtr == null ||
-                counterPtr == null || zonesPtr == null)
+            NativeArray<ChemicalCellDTO> frontCells = OpenChemicalVaultArray(ref _frontCellHandle, GridFrontBufferId, ChemicalCellCount);
+            NativeArray<ChemicalCellDTO> backCells = OpenChemicalVaultArray(ref _backCellHandle, GridBackBufferId, ChemicalCellCount);
+            NativeArray<float4> publishedGrid = OpenChemicalVaultArray(ref _publishedGridHandle, PublishedGridBufferId, ChemicalCellCount);
+            NativeArray<float4> overlayGrid = OpenChemicalVaultArray(ref _overlayGridHandle, OverlayGridBufferId, ChemicalCellCount);
+            NativeArray<ChemicalEmitterDTO> pendingEmitters = OpenChemicalVaultArray(ref _pendingEmitterHandle, PendingEmitterBufferId, MaxActiveEmitters);
+            NativeArray<int> pendingEmitterCount = OpenChemicalVaultArray(ref _pendingEmitterCountHandle, PendingEmitterCountBufferId, 1);
+            NativeArray<ChemicalEmitterDTO> activeEmitters = OpenChemicalVaultArray(ref _activeEmitterHandle, ActiveEmitterBufferId, MaxActiveEmitters);
+            NativeArray<int> activeEmitterCount = OpenChemicalVaultArray(ref _activeEmitterCountHandle, ActiveEmitterCountBufferId, 1);
+            NativeArray<ChemicalEmitterDTO> mockEmitters = OpenChemicalVaultArray(ref _mockEmitterHandle, MockEmitterBufferId, MaxMockEmitters);
+            NativeArray<int> mockEmitterCount = OpenChemicalVaultArray(ref _mockEmitterCountHandle, MockEmitterCountBufferId, 1);
+            NativeArray<ChemicalTelemetryEntry> telemetryRing = OpenChemicalVaultArray(ref _telemetryRingHandle, TelemetryRingBufferId, TelemetryFrameCount);
+            NativeArray<int> telemetryCursor = OpenChemicalVaultArray(ref _telemetryCursorHandle, TelemetryCursorBufferId, 1);
+            NativeArray<ChemicalAtomicCounterDTO> counters = OpenChemicalVaultArray(ref _atomicCounterHandle, AtomicCounterBufferId, 1);
+            NativeArray<ChemicalDefoliantZoneDTO> zones = OpenChemicalVaultArray(ref _defoliantZoneHandle, DefoliantZoneBufferId, MaxDefoliantDeadZones);
+            if (!frontCells.IsCreated || !backCells.IsCreated || !publishedGrid.IsCreated || !overlayGrid.IsCreated ||
+                !pendingEmitters.IsCreated || !pendingEmitterCount.IsCreated || !activeEmitters.IsCreated || !activeEmitterCount.IsCreated ||
+                !mockEmitters.IsCreated || !mockEmitterCount.IsCreated || !telemetryRing.IsCreated || !telemetryCursor.IsCreated ||
+                !counters.IsCreated || !zones.IsCreated)
             {
                 UnlockSimulationBuffers();
                 return;
+            }
+
+            void* frontPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(frontCells);
+            void* backPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(backCells);
+            void* publishedPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(publishedGrid);
+            void* overlayPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(overlayGrid);
+            void* pendingPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(pendingEmitters);
+            void* pendingCountPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(pendingEmitterCount);
+            void* activePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(activeEmitters);
+            void* activeCountPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(activeEmitterCount);
+            void* mockPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mockEmitters);
+            void* mockCountPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mockEmitterCount);
+            void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetryRing);
+            void* telemetryCursorPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetryCursor);
+            void* counterPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(counters);
+            void* zonesPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(zones);
+            byte* sdfPtr = null;
+            int sdfLength = 0;
+            if (TryOpenExistingVaultBuffer(BufferID.VoxelSdfTexture3D, 1, out NativeArray<byte> sdf))
+            {
+                sdfPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sdf);
+                sdfLength = sdf.Length;
             }
 
             JobHandle dependency = default;
@@ -1329,7 +1585,6 @@ namespace Hecton8.World
             };
             dependency = publishJob.Schedule(ChemicalCellCount, 128, dependency);
 
-            NativeArray<int> telemetryCursor = ResolveArray(_telemetryCursorHandle);
             int telemetryIndex = 0;
             if (telemetryCursor.IsCreated && telemetryCursor.Length > 0)
             {
@@ -1387,7 +1642,7 @@ namespace Hecton8.World
         {
             if (_scheduledSwapAfterFinalize)
             {
-                VaultBufferHandle<ChemicalCellDTO> temp = _frontCellHandle;
+                VaultGenerationHandle<ChemicalCellDTO> temp = _frontCellHandle;
                 _frontCellHandle = _backCellHandle;
                 _backCellHandle = temp;
             }
@@ -1408,8 +1663,8 @@ namespace Hecton8.World
 
         private void PatchTelemetryAfterCompletion(float solverMicros)
         {
-            NativeArray<ChemicalTelemetryEntry> telemetry = ResolveArray(_telemetryRingHandle);
-            NativeArray<ChemicalAtomicCounterDTO> counters = ResolveArray(_atomicCounterHandle);
+            NativeArray<ChemicalTelemetryEntry> telemetry = OpenChemicalVaultArray(ref _telemetryRingHandle, TelemetryRingBufferId, TelemetryFrameCount);
+            NativeArray<ChemicalAtomicCounterDTO> counters = OpenChemicalVaultArray(ref _atomicCounterHandle, AtomicCounterBufferId, 1);
             if (!telemetry.IsCreated || telemetry.Length == 0 || (uint)_scheduledTelemetryIndex >= (uint)telemetry.Length)
                 return;
 
@@ -1423,7 +1678,7 @@ namespace Hecton8.World
 
         private void RefreshDebugCountersFromVault()
         {
-            NativeArray<ChemicalAtomicCounterDTO> counters = ResolveArray(_atomicCounterHandle);
+            NativeArray<ChemicalAtomicCounterDTO> counters = OpenChemicalVaultArray(ref _atomicCounterHandle, AtomicCounterBufferId, 1);
             if (!counters.IsCreated || counters.Length == 0)
                 return;
 
@@ -1434,9 +1689,16 @@ namespace Hecton8.World
             _debugMaxBlood = math.max(0f, math.asfloat(counter.MaxBloodBits));
             _debugScentGridActiveCellCount = math.max(0, counter.ActiveCellCount);
 
-            NativeArray<ChemicalTelemetryEntry> telemetry = ResolveArray(_telemetryRingHandle);
+            NativeArray<ChemicalTelemetryEntry> telemetry = OpenChemicalVaultArray(ref _telemetryRingHandle, TelemetryRingBufferId, TelemetryFrameCount);
             if (telemetry.IsCreated && telemetry.Length > 0 && (uint)_scheduledTelemetryIndex < (uint)telemetry.Length)
                 _debugLastSolverMicros = telemetry[_scheduledTelemetryIndex].SolverMicros;
+        }
+
+        private void UpdateDebugState()
+        {
+            RefreshDebugCountersFromVault();
+            _debugBreadcrumbCount = math.max(0, _breadcrumbCount);
+            _debugPendingWriteCount = math.max(0, _pendingEmitterWriteCursor);
         }
 
         private bool TrySampleScentGrid01Internal(Vector3 worldPosition, out float scent01)
@@ -1452,8 +1714,8 @@ namespace Hecton8.World
             if (!_buffersReady || !_gridHasOrigin)
                 return false;
 
-            NativeArray<float4> published = ResolveArray(_publishedGridHandle);
-            NativeArray<float4> overlay = ResolveArray(_overlayGridHandle);
+            NativeArray<float4> published = OpenChemicalVaultArray(ref _publishedGridHandle, PublishedGridBufferId, ChemicalCellCount);
+            NativeArray<float4> overlay = OpenChemicalVaultArray(ref _overlayGridHandle, OverlayGridBufferId, ChemicalCellCount);
             if (!published.IsCreated || published.Length < ChemicalCellCount)
                 return false;
 
@@ -1531,7 +1793,7 @@ namespace Hecton8.World
                 }
             }
 
-            NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs = ResolveArray(_breadcrumbsHandle);
+            NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs = OpenChemicalVaultArray(ref _breadcrumbsHandle, BreadcrumbBufferId, DefaultBreadcrumbCapacity);
             if (!breadcrumbs.IsCreated || _breadcrumbCount <= 0)
                 return false;
 
@@ -1620,7 +1882,7 @@ namespace Hecton8.World
 
         private void PruneExpiredBreadcrumbs(float now)
         {
-            NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs = ResolveArray(_breadcrumbsHandle);
+            NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs = OpenChemicalVaultArray(ref _breadcrumbsHandle, BreadcrumbBufferId, DefaultBreadcrumbCapacity);
             if (!breadcrumbs.IsCreated || _breadcrumbCount <= 0)
                 return;
 
@@ -1647,7 +1909,7 @@ namespace Hecton8.World
 
         private void RefreshRuntimePositions()
         {
-            NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs = ResolveArray(_breadcrumbsHandle);
+            NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs = OpenChemicalVaultArray(ref _breadcrumbsHandle, BreadcrumbBufferId, DefaultBreadcrumbCapacity);
             if (!breadcrumbs.IsCreated)
                 return;
 
@@ -1664,7 +1926,7 @@ namespace Hecton8.World
         private void RegisterDefoliantDeadZone(Vector3 worldPosition, float radiusMeters, float intensity)
         {
             InitializeRuntime();
-            NativeArray<ChemicalDefoliantZoneDTO> zones = ResolveArray(_defoliantZoneHandle);
+            NativeArray<ChemicalDefoliantZoneDTO> zones = OpenChemicalVaultArray(ref _defoliantZoneHandle, DefoliantZoneBufferId, MaxDefoliantDeadZones);
             if (!zones.IsCreated || zones.Length == 0)
                 return;
 
@@ -1708,7 +1970,7 @@ namespace Hecton8.World
 
         private bool IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(double3 absolutePosition)
         {
-            NativeArray<ChemicalDefoliantZoneDTO> zones = ResolveArray(_defoliantZoneHandle);
+            NativeArray<ChemicalDefoliantZoneDTO> zones = OpenChemicalVaultArray(ref _defoliantZoneHandle, DefoliantZoneBufferId, MaxDefoliantDeadZones);
             if (!zones.IsCreated)
                 return false;
 
@@ -1730,20 +1992,20 @@ namespace Hecton8.World
                 return true;
 
             bool locked =
-                _dataVault.TryLockBuffer(_frontCellHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_backCellHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_publishedGridHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_overlayGridHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_pendingEmitterHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_pendingEmitterCountHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_activeEmitterHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_activeEmitterCountHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_mockEmitterHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_mockEmitterCountHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_telemetryRingHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_telemetryCursorHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_atomicCounterHandle.BufferId, SystemID.AISensory) &&
-                _dataVault.TryLockBuffer(_defoliantZoneHandle.BufferId, SystemID.AISensory);
+                _dataVault.TryLockBuffer(GridFrontBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(GridBackBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(PublishedGridBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(OverlayGridBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(PendingEmitterBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(PendingEmitterCountBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(ActiveEmitterBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(ActiveEmitterCountBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(MockEmitterBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(MockEmitterCountBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(TelemetryRingBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(TelemetryCursorBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(AtomicCounterBufferId, SystemID.AISensory) &&
+                _dataVault.TryLockBuffer(DefoliantZoneBufferId, SystemID.AISensory);
             if (!locked)
             {
                 _scheduledBuffersLocked = true;
@@ -1760,27 +2022,27 @@ namespace Hecton8.World
             if (!_scheduledBuffersLocked || _dataVault == null)
                 return;
 
-            _dataVault.TryUnlockBuffer(_frontCellHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_backCellHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_publishedGridHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_overlayGridHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_pendingEmitterHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_pendingEmitterCountHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_activeEmitterHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_activeEmitterCountHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_mockEmitterHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_mockEmitterCountHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_telemetryRingHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_telemetryCursorHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_atomicCounterHandle.BufferId, SystemID.AISensory);
-            _dataVault.TryUnlockBuffer(_defoliantZoneHandle.BufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(GridFrontBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(GridBackBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(PublishedGridBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(OverlayGridBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(PendingEmitterBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(PendingEmitterCountBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(ActiveEmitterBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(ActiveEmitterCountBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(MockEmitterBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(MockEmitterCountBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(TelemetryRingBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(TelemetryCursorBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(AtomicCounterBufferId, SystemID.AISensory);
+            _dataVault.TryUnlockBuffer(DefoliantZoneBufferId, SystemID.AISensory);
             _scheduledBuffersLocked = false;
         }
 
         private void DumpTelemetryRing()
         {
-            NativeArray<ChemicalTelemetryEntry> ring = ResolveArray(_telemetryRingHandle);
-            NativeArray<int> cursor = ResolveArray(_telemetryCursorHandle);
+            NativeArray<ChemicalTelemetryEntry> ring = OpenChemicalVaultArray(ref _telemetryRingHandle, TelemetryRingBufferId, TelemetryFrameCount);
+            NativeArray<int> cursor = OpenChemicalVaultArray(ref _telemetryCursorHandle, TelemetryCursorBufferId, 1);
             if (!ring.IsCreated || ring.Length == 0)
                 return;
 
@@ -1838,7 +2100,7 @@ namespace Hecton8.World
             if (!Application.isPlaying || _activeRuntimeInstance != this || !_buffersReady)
                 return;
 
-            NativeArray<float4> published = ResolveArray(_publishedGridHandle);
+            NativeArray<float4> published = OpenChemicalVaultArray(ref _publishedGridHandle, PublishedGridBufferId, ChemicalCellCount);
             if (!published.IsCreated || published.Length < ChemicalCellCount)
                 return;
 
@@ -1918,6 +2180,50 @@ namespace Hecton8.World
             _registeredLateFrame = false;
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
+            if (_submarineRuntimeContext == null)
+                _submarineRuntimeContext = GlobalRegistry.Submarine;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void TryRegisterChemicalReadModel()
+        {
+            if (_registeredReadModel || _activeRuntimeInstance != this)
+                return;
+
+            GlobalRegistry.RegisterChemicalInfluenceReadModel(this);
+            _registeredReadModel = ReferenceEquals(GlobalRegistry.ChemicalInfluence, this);
+        }
+
+        private void TryUnregisterChemicalReadModel()
+        {
+            if (!_registeredReadModel)
+                return;
+
+            GlobalRegistry.UnregisterChemicalInfluenceReadModel(this);
+            _registeredReadModel = false;
+        }
+
         private void ResetRuntimeStateForDisable()
         {
             _breadcrumbCount = 0;
@@ -1930,23 +2236,17 @@ namespace Hecton8.World
             _buffersReady = false;
             _gridHasOrigin = false;
             _dataVault = null;
-        }
-
-        private NativeArray<T> ResolveArray<T>(VaultBufferHandle<T> handle) where T : struct
-        {
-            if (_dataVault == null || !handle.IsCreated)
-                return default;
-
-            return handle.Resolve(_dataVault);
+            _playerRuntimeContext = null;
+            _submarineRuntimeContext = null;
         }
 
         private double3 ResolveFocusAup()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
                 return playerContext.PlayerMovement.CurrentAup.ToAbsoluteDouble3();
 
-            var submarine = GlobalRegistry.Submarine;
+            ISubmarineRuntimeContext submarine = _submarineRuntimeContext;
             if (submarine != null && submarine.PlatformTransform != null)
             {
                 Vector3 runtimePosition = submarine.PlatformTransform.position;
@@ -1980,7 +2280,7 @@ namespace Hecton8.World
             AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            if (!MathGuard.IsFinite(in resolvedAup))
+            if (!resolvedAup.IsFinite())
                 return false;
 
             aup = resolvedAup.ToAbsoluteDouble3();
@@ -2008,11 +2308,17 @@ namespace Hecton8.World
         private float ResolveSimulationSeconds(int frameId)
         {
             double tick = DefaultSimulationTickDelta;
-            if (_buffersReady && _dataVault != null && _tuningHandle.IsCreated)
+            if (_buffersReady && _dataVault != null)
             {
-                ChemicalTuningDTO tuning = _tuningHandle.GetElementAsRef(_dataVault, 0);
-                if (math.isfinite(tuning.SimulationTickDelta) && tuning.SimulationTickDelta > 0d)
+                NativeArray<ChemicalTuningDTO> tuningBuffer = OpenChemicalVaultArray(ref _tuningHandle, TuningBufferId, 1);
+                if (tuningBuffer.IsCreated &&
+                    tuningBuffer.Length > 0 &&
+                    math.isfinite(tuningBuffer[0].SimulationTickDelta) &&
+                    tuningBuffer[0].SimulationTickDelta > 0d)
+                {
+                    ChemicalTuningDTO tuning = tuningBuffer[0];
                     tick = tuning.SimulationTickDelta;
+                }
             }
 
             double safeFrame = math.max(0, frameId);
@@ -2041,9 +2347,15 @@ namespace Hecton8.World
         {
             if (_buffersReady)
             {
-                ChemicalTuningDTO tuning = _tuningHandle.GetElementAsRef(_dataVault, 0);
-                if (math.isfinite(tuning.CellSizeMeters) && tuning.CellSizeMeters > GridSampleEpsilon)
+                NativeArray<ChemicalTuningDTO> tuningBuffer = OpenChemicalVaultArray(ref _tuningHandle, TuningBufferId, 1);
+                if (tuningBuffer.IsCreated &&
+                    tuningBuffer.Length > 0 &&
+                    math.isfinite(tuningBuffer[0].CellSizeMeters) &&
+                    tuningBuffer[0].CellSizeMeters > GridSampleEpsilon)
+                {
+                    ChemicalTuningDTO tuning = tuningBuffer[0];
                     return tuning.CellSizeMeters;
+                }
             }
 
             return DefaultCellSizeMeters;
@@ -2165,6 +2477,14 @@ namespace Hecton8.World
         private static float SmoothStep01(float value)
         {
             return Smooth01(value);
+        }
+
+        private static float3 NormalizeOrZero(float3 value)
+        {
+            float lengthSq = math.lengthsq(value);
+            return math.isfinite(lengthSq) && lengthSq > 0.000001f
+                ? value * math.rsqrt(math.max(lengthSq, 0.000001f))
+                : float3.zero;
         }
 
         private static uint HashAupCell(int3 cell)

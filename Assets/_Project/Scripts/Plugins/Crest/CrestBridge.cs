@@ -6,48 +6,63 @@ namespace Hecton8.Physics
     /// <summary>
     /// Crest anti-corruption bridge base. Concrete Crest version adapters own all Crest API calls.
     /// </summary>
-    public abstract class CrestBridge : HectonCrestOceanKinematics, IOceanVisualBridge
+    public abstract class CrestBridge : HectonOceanKinematicsBridgeBase, IOceanVisualBridge
     {
+        private static readonly int CrestCameraColorTextureId = Shader.PropertyToID("_Crest_CameraColorTexture");
+
+        private Crest.UnderwaterRenderer _cachedUnderwaterRenderer;
+
+        protected virtual Crest.OceanRenderer ReadBoundOceanRenderer()
+        {
+            return null;
+        }
+
         public Material OceanMaterial
         {
             get
             {
-                Crest.OceanRenderer oceanRenderer = Crest.OceanRenderer.Instance;
+                Crest.OceanRenderer oceanRenderer = ReadBoundOceanRenderer();
                 return oceanRenderer != null ? oceanRenderer.OceanMaterial : null;
             }
         }
 
-        public bool HasUnderwaterInstance => Crest.UnderwaterRenderer.Instance != null;
+        public bool HasUnderwaterInstance => _cachedUnderwaterRenderer != null;
 
-        public bool HasUnderwaterRenderer(Camera camera)
+        public int CameraColorTextureId => CrestCameraColorTextureId;
+
+        public bool HasUnderwaterPass(Camera camera)
         {
-            return camera != null && camera.GetComponent<Crest.UnderwaterRenderer>() != null;
+            return IsCachedUnderwaterRendererForCamera(camera);
         }
 
-        public Component TryGetUnderwaterRenderer(Camera camera)
+        public Component TryGetUnderwaterPass(Camera camera)
         {
-            return camera != null ? camera.GetComponent<Crest.UnderwaterRenderer>() : null;
+            return IsCachedUnderwaterRendererForCamera(camera) ? _cachedUnderwaterRenderer : null;
         }
 
-        public Component EnsureUnderwaterRenderer(Camera camera)
+        public Component EnsureUnderwaterPass(Camera camera)
         {
             if (camera == null)
                 return null;
 
             Crest.UnderwaterRenderer underwaterRenderer = camera.GetComponent<Crest.UnderwaterRenderer>();
             if (underwaterRenderer != null)
+            {
+                _cachedUnderwaterRenderer = underwaterRenderer;
                 return underwaterRenderer;
+            }
 
-            return camera.gameObject.AddComponent<Crest.UnderwaterRenderer>();
+            _cachedUnderwaterRenderer = camera.gameObject.AddComponent<Crest.UnderwaterRenderer>();
+            return _cachedUnderwaterRenderer;
         }
 
-        public bool IsUnderwaterRendererEnabled(Component renderer)
+        public bool IsUnderwaterPassEnabled(Component renderer)
         {
             Crest.UnderwaterRenderer underwaterRenderer = renderer as Crest.UnderwaterRenderer;
             return underwaterRenderer != null && underwaterRenderer.enabled;
         }
 
-        public void SetUnderwaterRendererEnabled(Component renderer, bool enabled)
+        public void SetUnderwaterPassEnabled(Component renderer, bool enabled)
         {
             Crest.UnderwaterRenderer underwaterRenderer = renderer as Crest.UnderwaterRenderer;
             if (underwaterRenderer == null || underwaterRenderer.enabled == enabled)
@@ -56,7 +71,7 @@ namespace Hecton8.Physics
             underwaterRenderer.enabled = enabled;
         }
 
-        public bool IsUnderwaterRendererActive(Component renderer)
+        public bool IsUnderwaterPassActive(Component renderer)
         {
             Crest.UnderwaterRenderer underwaterRenderer = renderer as Crest.UnderwaterRenderer;
             return underwaterRenderer != null && underwaterRenderer.IsActive;
@@ -71,7 +86,7 @@ namespace Hecton8.Physics
             underwaterRenderer._copyOceanMaterialParamsEachFrame = enabled;
         }
 
-        public void CopyUnderwaterRendererSettings(Component source, Component target)
+        public void CopyUnderwaterPassSettings(Component source, Component target)
         {
             Crest.UnderwaterRenderer sourceRenderer = source as Crest.UnderwaterRenderer;
             Crest.UnderwaterRenderer targetRenderer = target as Crest.UnderwaterRenderer;
@@ -85,11 +100,12 @@ namespace Hecton8.Physics
             targetRenderer._enableShaderAPI = sourceRenderer._enableShaderAPI;
             targetRenderer._copyOceanMaterialParamsEachFrame = sourceRenderer._copyOceanMaterialParamsEachFrame;
             targetRenderer._farPlaneMultiplier = sourceRenderer._farPlaneMultiplier;
+            _cachedUnderwaterRenderer = targetRenderer;
         }
 
         public bool IsOceanCameraOwnedBy(Camera camera)
         {
-            Crest.OceanRenderer oceanRenderer = Crest.OceanRenderer.Instance;
+            Crest.OceanRenderer oceanRenderer = ReadBoundOceanRenderer();
             return oceanRenderer != null &&
                    camera != null &&
                    ReferenceEquals(oceanRenderer.ViewCamera, camera) &&
@@ -98,7 +114,7 @@ namespace Hecton8.Physics
 
         public void AssignOceanCamera(Camera camera)
         {
-            Crest.OceanRenderer oceanRenderer = Crest.OceanRenderer.Instance;
+            Crest.OceanRenderer oceanRenderer = ReadBoundOceanRenderer();
             if (oceanRenderer == null || camera == null)
                 return;
 
@@ -135,6 +151,14 @@ namespace Hecton8.Physics
             Crest.Helpers.SetGlobalKeyword(
                 "CREST_SHADOWS_ON",
                 targetMaterial.IsKeywordEnabled("_SHADOWS_ON"));
+        }
+
+        private bool IsCachedUnderwaterRendererForCamera(Camera camera)
+        {
+            if (camera == null || _cachedUnderwaterRenderer == null)
+                return false;
+
+            return ReferenceEquals(_cachedUnderwaterRenderer.gameObject, camera.gameObject);
         }
     }
 }

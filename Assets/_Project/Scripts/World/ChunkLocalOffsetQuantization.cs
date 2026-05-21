@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
@@ -8,43 +9,56 @@ using Unity.Profiling;
 namespace Hecton8.World
 {
     /// <summary>
-    /// Burst quantization helpers for compressing chunk-local float3 offsets into 6-byte millimeter payloads.
+    /// Burst quantization helpers for compressing chunk-local float3 offsets into aligned millimeter payloads.
     /// </summary>
     internal static class ChunkLocalOffsetQuantization
     {
-        [StructLayout(LayoutKind.Sequential, Size = 6)]
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         internal struct Short3
         {
+            [FieldOffset(0)]
             public short X;
+            [FieldOffset(2)]
             public short Y;
+            [FieldOffset(4)]
             public short Z;
+            [FieldOffset(6)]
+            private ushort _pad0;
 
             public Short3(short x, short y, short z)
             {
                 X = x;
                 Y = y;
                 Z = z;
+                _pad0 = 0;
             }
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         internal struct QuantizationParams
         {
+            [FieldOffset(0)]
             public float3 ChunkCenterLocal;
+            [FieldOffset(16)]
             public float3 EncodeScale;
+            [FieldOffset(32)]
             public float3 DecodeStep;
+            [FieldOffset(44)]
+            private uint _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 6)]
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         internal struct QuantizedLocalOffset
         {
+            [FieldOffset(0)]
             public Short3 Packed;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct QuantizeChunkLocalOffsetsJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float3> SourceOffsets;
-            [WriteOnly] public NativeArray<QuantizedLocalOffset> QuantizedOffsets;
+            [ReadOnly, NoAlias] public NativeArray<float3> SourceOffsets;
+            [WriteOnly, NoAlias] public NativeArray<QuantizedLocalOffset> QuantizedOffsets;
             public QuantizationParams Parameters;
 
             public void Execute(int index)
@@ -58,11 +72,11 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct DequantizeChunkLocalOffsetsJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<QuantizedLocalOffset> QuantizedOffsets;
-            [WriteOnly] public NativeArray<float3> DecodedOffsets;
+            [ReadOnly, NoAlias] public NativeArray<QuantizedLocalOffset> QuantizedOffsets;
+            [WriteOnly, NoAlias] public NativeArray<float3> DecodedOffsets;
             public QuantizationParams Parameters;
 
             public void Execute(int index)

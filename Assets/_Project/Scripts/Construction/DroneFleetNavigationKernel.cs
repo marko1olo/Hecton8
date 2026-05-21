@@ -10,24 +10,40 @@ using Unity.Mathematics;
 
 namespace Hecton8.Construction
 {
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct DroneFleetTuningConstants
     {
+        [FieldOffset(0)]
         public float MaxDroneSpeed;
+        [FieldOffset(4)]
         public float BatteryDrainRate;
+        [FieldOffset(8)]
         public float SdfRepulsionStrength;
+        [FieldOffset(12)]
         public float RepairSpeed;
+        [FieldOffset(16)]
         public float CargoCapacity;
+        [FieldOffset(20)]
         public float MiningHoldSeconds;
+        [FieldOffset(24)]
         public float LowTierSteeringHz;
+        [FieldOffset(28)]
         public float MidTierSteeringHz;
+        [FieldOffset(32)]
         public float HighTierSteeringHz;
+        [FieldOffset(36)]
         public float UltraTierSteeringHz;
+        [FieldOffset(40)]
         public float AStarCellSize;
+        [FieldOffset(44)]
         public float LowTierSolveBudget;
+        [FieldOffset(48)]
         public float MidTierSolveBudget;
+        [FieldOffset(52)]
         public float HighTierSolveBudget;
+        [FieldOffset(56)]
         public float UltraTierSolveBudget;
+        [FieldOffset(60)]
         public float Reserved0;
 
         public static DroneFleetTuningConstants CreateDefault()
@@ -650,51 +666,86 @@ namespace Hecton8.Construction
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct PathWaypointDTO
     {
+        [FieldOffset(0)]
         public float3 LocalPosition;
+        [FieldOffset(12)]
         public uint ActionCode;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 144)]
+    [StructLayout(LayoutKind.Explicit, Size = 144)]
     public struct DroneFleetDebugRoute
     {
+        [FieldOffset(0)]
         public float3 Position;
+        [FieldOffset(12)]
         public float3 Target;
+        [FieldOffset(24)]
         public float3 Waypoint;
+        [FieldOffset(36)]
         public float3 SdfNormal;
+        [FieldOffset(48)]
         public float3 Velocity;
+        [FieldOffset(60)]
         public float3 RoutePoint0;
+        [FieldOffset(72)]
         public float3 RoutePoint1;
+        [FieldOffset(84)]
         public float3 RoutePoint2;
+        [FieldOffset(96)]
         public float3 RoutePoint3;
+        [FieldOffset(108)]
         public int RoutePointCount;
+        [FieldOffset(112)]
         public int DroneId;
+        [FieldOffset(116)]
         public int PathStatus;
+        [FieldOffset(120)]
         public float BatteryPercent;
+        [FieldOffset(124)]
         public byte State;
+        [FieldOffset(125)]
         public byte Flags;
+        [FieldOffset(126)]
         public ushort Reserved0;
+        [FieldOffset(128)]
         public uint Reserved1;
+        [FieldOffset(132)]
         public uint Reserved2;
+        [FieldOffset(136)]
         public uint Reserved3;
+        [FieldOffset(140)]
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct DroneFleetAutomationStats
     {
+        [FieldOffset(0)]
         public int ActiveDrones;
+        [FieldOffset(4)]
         public int PathSolves;
+        [FieldOffset(8)]
         public int PathFailures;
+        [FieldOffset(12)]
         public int PathIterations;
+        [FieldOffset(16)]
         public int TasksCompleted;
+        [FieldOffset(20)]
         public int LastAStarStatus;
+        [FieldOffset(24)]
         public int SteeringTickModulo;
+        [FieldOffset(28)]
         public int ChassisSpecCount;
+        [FieldOffset(32)]
         public float AveragePathfindingTimeMs;
+        [FieldOffset(36)]
         public float SdfRepulsionStrength;
+        [FieldOffset(40)]
         public float AStarCellSize;
+        [FieldOffset(44)]
         public float AverageBatteryPercent;
     }
 
@@ -736,32 +787,51 @@ namespace Hecton8.Construction
         [FieldOffset(56)] public ulong Reserved3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct DroneTaskDTO
     {
+        [FieldOffset(0)]
         public double3 TargetAup;
+        [FieldOffset(24)]
         public float3 LocalPosition;
+        [FieldOffset(36)]
         public float Priority;
+        [FieldOffset(40)]
         public float Score;
+        [FieldOffset(44)]
         public float CriticalityWeight;
+        [FieldOffset(48)]
         public float Radius;
+        [FieldOffset(52)]
         public int ModuleIndex;
+        [FieldOffset(56)]
         public int TaskKind;
+        [FieldOffset(60)]
         public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct MockSDFGrid
     {
+        [FieldOffset(0)]
         public float3 BoundsMin;
+        [FieldOffset(12)]
         public float RepulsionDistance;
+        [FieldOffset(16)]
         public float3 BoundsMax;
+        [FieldOffset(28)]
         public float SeamSpacing;
+        [FieldOffset(32)]
         public float3 SeamNormal;
+        [FieldOffset(44)]
         public float SeamHalfWidth;
+        [FieldOffset(48)]
         public int Enabled;
+        [FieldOffset(52)]
         public int Reserved0;
+        [FieldOffset(56)]
         public float Reserved1;
+        [FieldOffset(60)]
         public float Reserved2;
 
         public static MockSDFGrid CreateDefault()
@@ -862,10 +932,12 @@ namespace Hecton8.Construction
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     internal struct DroneNativeMinHeapNode
     {
+        [FieldOffset(0)]
         public float Cost;
+        [FieldOffset(4)]
         public int NodeIndex;
     }
 
@@ -1046,16 +1118,24 @@ namespace Hecton8.Construction
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct DroneAStarTelemetry
     {
+        [FieldOffset(0)]
         public int SolvedCount;
+        [FieldOffset(4)]
         public int FailedCount;
+        [FieldOffset(8)]
         public int IterationCount;
+        [FieldOffset(12)]
         public int LastStatus;
+        [FieldOffset(16)]
         public int ActiveCandidateCount;
+        [FieldOffset(20)]
         public int Reserved0;
+        [FieldOffset(24)]
         public int Reserved1;
+        [FieldOffset(28)]
         public int Reserved2;
     }
 

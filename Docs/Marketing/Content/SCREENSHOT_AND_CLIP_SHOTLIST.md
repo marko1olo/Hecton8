@@ -156,7 +156,7 @@ Caption options:
 - The dark has infrastructure.
 - The deeper signal is not a beacon. It is a wound.
 
-### Shot 08 - Low-Tier Proof Frame
+### Shot 08 - Minimum-Budget Proof Frame
 
 Purpose: future performance/trust asset.
 
@@ -276,7 +276,7 @@ Performance claim planned? no unless measured:
 
 Use this for the first real capture session. The goal is not a full campaign pack. The goal is to learn whether the current build can produce proof assets without lying.
 
-V5 priority note: the 2026-05-20 Steam API/page refresh kept SN2 `Very Positive` while the API summary rose to 73,533 all-language reviews and 44,011 English reviews; the public page also displays 73,893 total reviews and a Korean `Mixed` regional split. This confirms competitor strength, not collapse. After identity and player verb, do not spend the first session on mood-only anomaly footage if base/machinery and agency/decision proof are still missing. If the session time collapses, prioritize `PLAN-SHOT-002` or `PLAN-SHOT-005`, then `PLAN-SHOT-006` or a decision clip (`PLAN-CLIP-001` / `PLAN-CLIP-003`) before `PLAN-SHOT-007`.
+V6 priority note: the 2026-05-21 Steam API/appdetails refresh kept SN2 `Very Positive` while the API summary rose to 76,686 all-language reviews, 45,755 English reviews, and 71,190 appdetails recommendations. This confirms competitor strength, not collapse. After identity and player verb, do not spend the first session on mood-only anomaly footage if base/machinery and agency/decision proof are still missing. If the session time collapses, prioritize `PLAN-SHOT-002` or `PLAN-SHOT-005`, then `PLAN-SHOT-006` or a decision clip (`PLAN-CLIP-001` / `PLAN-CLIP-003`) before `PLAN-SHOT-007`.
 
 | Timebox | Attempt | Asset IDs | Required result | Stop if |
 |---:|---|---|---|---|
@@ -377,7 +377,7 @@ Freshness rule: recheck `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.
 | `PLAN-SHOT-002` | Base-building praise/friction means base visuals must be readable, not only decorative. | Show gauge/seal/pipe affordances and a maintenance surface. Reject clean corridor beauty. |
 | `PLAN-SHOT-003` | Negative reviews mention thin loops and missing player agency. | Tool, salvage target, hazard, and reward reason must be visible in one frame. |
 | `PLAN-SHOT-005` | Save/death-loop frustration makes unfair failure risky. | Failure state must show a response path: repair, seal, reroute, or escape. |
-| `PLAN-SHOT-006` | V5 agency/defensive-choice signal makes passive monster shots weak. | Threat must create a player choice through sonar/floodlight/route relation. Do not use a helpless monster-pose thumbnail. |
+| `PLAN-SHOT-006` | V6 agency/defensive-choice signal makes passive monster shots weak. | Threat must create a player choice through sonar/floodlight/route relation. Do not use a helpless monster-pose thumbnail. |
 | `PLAN-SHOT-008` | Performance trust is fragile. | Keep internal unless measured. It can prove readability at low settings, not frame rate. |
 | `PLAN-CLIP-001` | Pressure must be a system, not mood. | First 3 seconds: warning, leak, and player choice. |
 | `PLAN-CLIP-002` | Atmosphere praise means HECTON must not lose wonder, only change its contract. | Let instrument/audio dread carry the reveal before creature/shape visibility. |

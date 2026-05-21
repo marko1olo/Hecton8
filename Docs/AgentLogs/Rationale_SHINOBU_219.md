@@ -439,3 +439,403 @@ Solution: Ran targeted source gates: `git diff --check` on patched files, traili
 Rejected Alternatives: Running Unity import/build under CPU 50.241 percent was rejected by project rule. Broad all-workspace scans on generic `Renderer`/format tokens were rejected as noisy and outside SHINOBU ownership.
 Scalability potential: Static proof only; continuous shader/runtime quality path unchanged.
 Hardware Impact: No compiler load added; runtime patch adds two scalar branch guards.
+
+## Loop 21 - Vault Descriptor and Shader ABI Fence
+
+Problem: The latest forensic read exposed that SHINOBU-owned Vault descriptor validation compared owner and generation but not exact `BufferID` before resolving current cached descriptors. If two owned lanes shared a generation value, the code could validate the wrong lane and feed stale or structurally wrong data into the visual aging route.
+Solution: Add `IsHandleForBuffer()` and route all owned current/acquire checks through exact `BufferID + owner + generation` validation before `TryResolveHandle`. `ReleaseVaultGenerationHandle()` intentionally keeps the owner-only check because teardown must be able to release any SHINOBU-owned descriptor it actually holds.
+Rejected Alternatives: Trusting `VaultGenerationHandle<T>` type identity alone was rejected because a wrong buffer with matching owner/generation is still an authority-route violation. Reacquiring every lane every phase was rejected because it reopens the hot `TryEnsureVaultBuffer` metadata/grow/sanitize route.
+Scalability potential: The fix preserves the same continuous low/middle/high/ultra quality behavior. It changes descriptor correctness, not payload count, DTO layout, shader feature set, or gameplay ownership.
+Hardware Impact: One integer equality in current-descriptor validation. Expected runtime cost is below profiler resolution; safety gain is preventing wrong-lane reads that could poison the GPU payload and black-box telemetry.
+
+Problem: `_GlobalBaseAgingRuntime.x` was finite-checked but not clamped before casting to `uint` in `H8UberNoirLoadVisualAging`. A corrupted or oversized runtime active-count scalar could become a large unsigned value and stress the StructuredBuffer bounds branch.
+Solution: Clamp active count to `[0, H8_UBER_NOIR_AGING_CAPACITY]` before the `uint` cast in both payload loading and payload-weight calculation.
+Rejected Alternatives: Trusting CPU `_activeCount` was rejected because shader-side ABI guards must survive stale global vectors, release/rebind windows, and bad external state. Aliasing high material indices to the last DTO was already rejected because it changes payload identity.
+Scalability potential: Low quality still uses the same active rows and cheap masks; high/ultra still spend shader ALU only for valid rows. The clamp prevents invalid counts from changing identity or creating a binary fallback.
+Hardware Impact: One scalar clamp in shader setup. It prevents invalid buffer reads and does not add texture samples, variants, material mutation, or CPU work.
+
+Problem: Compile verification is still required by process, but the machine could not even return CPU/compiler gate samples within 30-60 seconds.
+Solution: Treat the gate as closed and do not launch build/import. Record the timeout as load evidence, not as compile proof.
+Rejected Alternatives: Launching `dotnet build`, Unity import, or shader compiler while the gate probe is timing out was rejected by the explicit rule forbidding rebuild under load or active compiler pressure.
+Scalability potential: No runtime-tier claim depends on compile status. Static proof only.
+Hardware Impact: No compiler load added. Remaining proof debt: guarded Unity import/build, shader compile, Frame Debugger, profiler, and GCMonitor when the gate clears.
+
+## Loop 22 - Subagent Forensic Integration and Lock-Order Fence
+
+Problem: Runtime audit found unlocked dispatcher quality reads, stale external handle fallback, cross-domain lock-order inversion, and fault dump file I/O under Vault locks.
+Solution: Refresh external generation handles at controlled dispatcher points, snapshot `SystemDispatcherMasterPresentationSuppression` through `RefreshGlobalQualitySnapshot()` under lock, keep `ResolveGlobalQualityWeight()` pure, acquire external thermal/structural locks before SHINOBU owned lanes, release in reverse, and copy telemetry to bounded fault staging before doing fault-path file I/O after unlock.
+Rejected Alternatives: Keeping the unlocked read because SystemDispatcher writes without a lock was rejected; consumers still need a Vault read fence. Copying to a managed array was rejected because fault handling does not need a heap allocation. Holding Vault locks during `FileStream` writes was rejected because a black-box dump must not stall unrelated owners.
+Scalability potential: Low/middle/high/ultra visual behavior is unchanged in gameplay truth; the patch changes route safety. Quality remains a continuous cached scalar and cannot alter DTO layout or authority identity.
+Hardware Impact: Adds non-allocating lock probes and one integer generation-stale flag path. Fault dump stack copy is fault-only. Normal-frame dump cost remains 0 us.
+
+Problem: Shader audit found NaN propagation through material state lanes, payload quality lowering the global quality floor, origin-shift-sensitive aging masks, and a hard 16-step rust POM cost cliff.
+Solution: Finite-saturate material-state inputs, clamp payload quality with a global floor, feed SHINOBU aging growth/glass fracture from UV/local-AUP stable coordinates, and replace the unrolled rust POM loop with a one-sample parallax fake using the already-sampled RustDetail height.
+Rejected Alternatives: Adding new shader keywords or `_MATH_LOD_LOW` branches was rejected because SHINOBU quality must be continuous. Running the 16-step loop with zeroed output weight was rejected because ALU/texture cost was still binary.
+Scalability potential: Low quality keeps cheap analytical masks; middle quality ramps texture detail; high/ultra keeps parallax impression with a bounded one-sample fake instead of a loop. Visual overkill budget is spent on shader appearance, not CPU decal/material mutation.
+Hardware Impact: Worst high-path rust relief removes up to 16 `SAMPLE_TEXTURE2D_LOD` calls per affected pixel. Quest/MX350-class devices shed texture pressure; high-end still gets directional rust relief.
+
+Problem: Editor/gizmo preview accepted saturated but non-finite DTO rows before creating `Vector3`, `Color`, and radius values.
+Solution: Skip rows with non-finite rust, stress, or depth/pressure lanes before drawing.
+Rejected Alternatives: Trusting `math.saturate` was rejected because NaN can survive or poison editor visualization before clamping.
+Scalability potential: Editor-only proof path. Runtime tier behavior unchanged.
+Hardware Impact: Editor-only branches; player cost 0 us.
+
+Problem: Build verification remains blocked by system load.
+Solution: Ran CPU/compiler gate only. Compiler process scan found no `dotnet`, `csc`, or `VBCSCompiler`, but CPU sampled 100 percent, so no build/import/shader compiler was launched.
+Rejected Alternatives: Launching a build at 100 percent CPU was rejected by the explicit project rule.
+Scalability potential: Static proof only; no runtime readiness claim.
+Hardware Impact: No compiler load added.
+
+## Loop 23 - Compile Wall and Fault Scratch Correction
+
+Problem: `VisualPressureAgingRuntime` imported `Hecton8.Thermodynamics` and used `ThermalCellDTO`, but `Hecton8.Graphics.Materials.asmdef` only references contracts/core assemblies and does not reference the sibling thermodynamics runtime assembly.
+Solution: Remove the direct thermodynamics DTO route and consume only the existing `ThermodynamicsTemperatureFrontMirror` float Vault lane. This keeps temperature corrosion boost as a mirror scalar input without adding a runtime assembly reference.
+Rejected Alternatives: Adding `Hecton8.Thermodynamics` to the graphics asmdef was rejected because it violates the compile wall and creates sibling runtime coupling. Duplicating `ThermalCellDTO` locally was rejected because it creates a shadow fact with no owner proof.
+Scalability potential: Low, middle, high, and ultra tiers still get the same continuous temperature multiplier from the float mirror; no quality switch or gameplay authority route changes.
+Hardware Impact: Removes a likely asmdef compile failure and avoids importing the full thermodynamics runtime assembly into graphics materials. Runtime loses no extra samples; it reads the same float lane it already supported.
+
+Problem: Fault dump staging used a large `stackalloc` in `VisualSyncTick`. That is fault-only, but it still violates the project stack discipline and risks stack pressure in the exact frame where telemetry is needed.
+Solution: Resize the Vault-owned `VisualPressureAgingCsvScratch` byte lane for the visual-only predecessor dump and reuse it as the locked dump formatting lane. VisualSync copies the formatted bytes into a transient 16-byte-aligned unmanaged buffer while the scratch lane is still locked, releases all Vault locks, then writes the dump file from that unmanaged copy and frees it in `finally`. Loop 27 records the current v2 dump as 38,432 bytes.
+Rejected Alternatives: Keeping the large stack allocation was rejected by the stack discipline. Writing from the unlocked Vault scratch view was rejected because editor CSV reload or same-owner scratch reuse can race the file write. Holding the scratch lock during `FileStream` writes was rejected because disk I/O must not extend Vault ownership. Using a managed byte array was rejected because the black-box path does not need heap ownership. Adding a new core BufferID was rejected because the existing SHINOBU-owned byte scratch can satisfy the fault-only formatting requirement without editing core memory enums.
+Scalability potential: No visual-tier behavior changes. Optional telemetry/fault staging stays outside gameplay truth and does not alter DTO layout, save identity, or shader quality.
+Hardware Impact: Normal VisualSync adds one owned scratch lock/unlock. Fault frame removes large stack pressure, copies a bounded native dump image once, and keeps file I/O outside Vault locks. Current v2 copy size is 38,432 bytes.
+
+Problem: The runtime/report literals still carried SHINOBU_239/S239 residue, so dump proof and mock seed identity did not match the assigned SHINOBU_219 task.
+Solution: Correct the runtime system hash comment/literal, dump path, cold allocation comments, mock hash seed, and editor static report fields to SHINOBU_219/S219.
+Rejected Alternatives: Leaving the mismatch was rejected because black-box dump location and static proof artifacts must match the actual agent ID.
+Scalability potential: No quality-tier impact; only deterministic identity and proof routing changed.
+Hardware Impact: No measurable runtime cost.
+
+Problem: Subagent ABI audit confirmed `_H8UberNoirMaterialStates` has fixed shader capacity 8192 while SHINOBU_43 uploads only bounded visible rows and does not expose a valid material-state count to HLSL.
+Solution: Mark this as `[BLOCKED BY SIBLING ABI: SHINOBU_43]`. SHINOBU_219 does not guess with unrelated quality/aging counters and does not change sibling-owned ABI in this slice.
+Rejected Alternatives: Shader-side guessing from `_GlobalBaseAgingRuntime.x` was rejected because visual aging count is a different fact. Disabling material response was rejected because it breaks a sibling rendering feature. Editing the material globals ABI here was rejected because ownership belongs to SHINOBU_43.
+Scalability potential: SHINOBU_219 aging remains continuously scalable; sibling material-state tail validity needs SHINOBU_43 owner correction before a full UberNoir material-state safety claim.
+Hardware Impact: No code cost in this slice. Required owner fix: clear/upload deterministic default rows for `[visibleCount, capacity)` or publish a material visible-count field under formal ABI change.
+
+Problem: Loop 23 needed local proof without launching a forbidden build.
+Solution: Reran scoped static scans for thermodynamics runtime types/namespaces, old thermal-cell lane names, SHINOBU_239/S239 residue, dump stackalloc residue, and hot-path forbidden tokens in SHINOBU_219 runtime/editor/gizmo files. `git diff --check` on patched runtime/editor/gizmo/shader/docs returned exit 0 with CRLF warnings only. CPU/compiler gate returned no compiler processes and `CPU_LOAD=100`.
+Rejected Alternatives: Launching `dotnet build`, Unity import, or shader compiler at 100 percent CPU was rejected by the explicit rebuild gate.
+Scalability potential: Static proof only. Runtime quality curve and shader fake remain unchanged.
+Hardware Impact: No compiler load added.
+
+## Loop 24 - Fault Dump Scratch Race Fence
+
+Problem: Loop 23 removed the large stack snapshot but still documented the dump as writing directly from the Vault-owned scratch view after unlock. That route would avoid I/O under lock, but the scratch lane is also the cold CSV parser lane, so an editor reload or owner-local scratch reuse could overwrite the bytes before `FileStream.Write` consumed them.
+Solution: Keep `VisualPressureAgingCsvScratch` as the locked formatter, then copy the final dump image into a transient unmanaged `UnsafeUtility.Malloc` buffer while the Vault scratch lane is still locked. Unlock all Vault lanes before file I/O, write from the transient unmanaged copy, and free it in `finally`. Loop 27 records the current v2 dump image as 38,432 bytes.
+Rejected Alternatives: Reading from unlocked Vault scratch was rejected because it is a real lifetime race. Holding the Vault scratch lock through directory creation and file write was rejected because a fault dump cannot stall unrelated Vault users. A managed `byte[]` was rejected because the black-box path does not require heap ownership. A private persistent native buffer was rejected because SHINOBU_219 must not own persistent private arrays outside the Vault.
+Scalability potential: No low, middle, high, or ultra visual route changes. The normal quality-scaled shader path remains unchanged; the allocation/copy exists only after a fault flag and cannot affect gameplay truth, DTO layout, save identity, or authority route.
+Hardware Impact: Normal frames allocate 0 bytes and do not copy the dump snapshot. Fault frames perform one bounded native copy plus one native allocation/free pair, then release the Vault before disk I/O. Current v2 copy size is 38,432 bytes. This trades fault-only native allocator overhead for deterministic scratch lifetime and no Vault lock held across filesystem calls.
+
+Problem: Loop 24 changed fault-staging lifetime semantics and documentation, so the source proof had to be refreshed without launching a forbidden build.
+Solution: Re-extract the SHINOBU_219 XML prompt, rerun scoped scans for removed thermodynamics DTO/runtime residue, old SHINOBU_239 dump identity, old stack snapshot route, hot-path forbidden tokens, transient unmanaged dump handoff, `git diff --check`, and CPU/compiler gate.
+Rejected Alternatives: Running Unity import or `dotnet build` at 100 percent CPU was rejected by the rebuild gate. Broad whole-repo scans over unrelated material systems were rejected because this loop only changed SHINOBU_219 fault staging and proof text.
+Scalability potential: Static proof only. The quality curve and shader fake remain unchanged across weak, middle, high, and ultra tiers.
+Hardware Impact: No compiler load added. Static scans ran under system load; runtime/profiler proof remains pending.
+
+## Loop 25 - Fault Dump I/O Exception Fence
+
+Problem: After the transient unmanaged staging fix, `Directory.CreateDirectory` and `FileStream` could still throw known filesystem/path exceptions from the black-box dump path. Throwing out of `VisualSyncTick` during fault handling defeats the reason the telemetry ring exists.
+Solution: Convert `WriteTelemetryDumpSnapshot` to `TryWriteTelemetryDumpSnapshot`, catch only known filesystem/path exceptions, return false, and log once in editor/development builds. `_dumpedFault` is set only after the write returns true.
+Rejected Alternatives: Catching all `Exception` was rejected because it can hide non-I/O faults such as memory pressure. Marking `_dumpedFault` before file success was rejected because it creates a false proof artifact. Holding Vault locks while retrying or doing extra diagnostics was rejected because the fault writer must stay outside Vault ownership.
+Scalability potential: No visual-tier or shader quality behavior changes. Low through ultra routes keep the same continuous quality payload; the exception fence exists only in fault I/O.
+Hardware Impact: Normal frames add no work. Fault frames add a bounded try/filter around filesystem I/O and a one-time editor/development log if the dump write fails.
+
+Problem: Loop 25 changed runtime source and therefore needed refreshed static proof.
+Solution: Rerun old-residue scans, hot-path forbidden-token scans, dump-writer proof scan, `git diff --check`, trailing-whitespace scan, and CPU/compiler gate.
+Rejected Alternatives: Launching a build at 91 percent CPU was rejected by the build discipline. Treating `Debug.LogError` as a hot-path violation was rejected because it is inside an editor/development-only failed dump write branch, not normal frame execution.
+Scalability potential: Static proof only. The continuous visual quality curve remains unchanged.
+Hardware Impact: No compiler load added. Runtime proof remains pending until Unity import/build and profiler gates can run.
+
+## Loop 26 - Agent Identity Proof Route Correction
+
+Problem: A focused identity scan found active SHINOBU_239/S239 residue after earlier loop text claimed the residue was gone. The live runtime hash, runtime dump path, editor report constants, cold allocation owner comments, and binary payload ledger addendum still pointed at the wrong agent identity.
+Solution: Change active runtime/editor proof routes to SHINOBU_219/S219: `SystemHash=0x53323139`, dump path `Docs/AgentLogs/Dump_SHINOBU_219.bin`, editor `AgentId=SHINOBU_219`, owner comments `SHINOBU_219`, and the ledger degradation addendum header/body/dump path. Record the prior proof as stale instead of pretending the earlier scan was sufficient.
+Rejected Alternatives: Leaving the old ID in comments was rejected because cold allocation labels and ledger text are part of memory/proof forensics. Leaving the old ID in `SystemHash` was rejected because deterministic mock cadence and dump identity must match the assigned owner. Editing sibling SHINOBU_43 material-state ABI was rejected because that blocker remains outside SHINOBU_219 ownership.
+Scalability potential: Low, middle, high, and ultra visual routes are unchanged. `GlobalQualityWeight` still controls cadence, payload count, telemetry sample budget, shader blend, rust/scorch/detail fakes, and no gameplay truth/DTO layout changes with quality.
+Hardware Impact: Normal frame delta is 0 us. The patch changes constants and documentation only; no new allocations, Vault buffers, shader variants, or job schedules were introduced.
+
+Problem: Job safety needed proof after the no-local-Complete policy was rechecked. SHINOBU_219 reads job-written Vault rows in VisualSync, so it must rely on dispatcher-owned completion, not local blocking.
+Solution: Verified `SystemDispatcher` stores every `ScheduleSimulation` return handle, combines domain handles, and calls `DispatcherJobFence.TryComplete(ref _masterSimulationCombinedHandle, forceComplete: true)` during PostSimulation before system `PostSimulationTick` callbacks and before VisualSync. SHINOBU_219 correctly returns its job handle and only unlocks/readies buffers after the dispatcher completion window.
+Rejected Alternatives: Adding `JobHandle.Complete()` inside `VisualPressureAgingRuntime.PostSimulationTick` was rejected because it would duplicate dispatcher ownership and violate the domain-local completion ban. Removing `_scheduledSimulationHandle.IsCompleted` was rejected because it remains a fail-closed stale-schedule guard if dispatcher order regresses.
+Scalability potential: Dispatcher completion proof does not alter quality math. Low quality still skips/sheds frames through deterministic hash probability; high/ultra restores full cadence.
+Hardware Impact: Static proof only. No extra fence or main-thread wait was added by SHINOBU_219.
+
+Problem: Loop 26 needed a compile/build discipline proof after the source and documentation patches.
+Solution: Sampled the CPU/compiler gate after final scans. CPU returned 100 percent and compiler process count returned 0, so no `dotnet build`, Unity import, shader compiler, Frame Debugger, profiler, GCMonitor, or player build was launched.
+Rejected Alternatives: Running a build at 100 percent CPU was rejected by the explicit rebuild gate and the user's direct instruction.
+Scalability potential: Static proof only. Runtime quality behavior remains unchanged, and no readiness claim depends on an unrun import/build.
+Hardware Impact: No compiler load added. Remaining proof debt is gated Unity/import/shader/profiler validation after CPU drops below 50 percent.
+
+## Loop 27 - Concurrent Identity Drift Recheck
+
+Problem: Immediately after Loop 26 proof text, a fresh active-source scan found `SHINOBU_239`/`S239` back in `VisualPressureAgingRuntime` and `VisualPressureAgingTunerWindow`.
+Solution: Reapply the SHINOBU_219 identity route to active source only: `SystemHash=0x53323139`, dump path `Docs/AgentLogs/Dump_SHINOBU_219.bin`, editor `AgentId=SHINOBU_219`, and SHINOBU_219 cold owner comments. Re-scan active source/ledger after the patch.
+Rejected Alternatives: Ignoring the drift was rejected because dump ownership and deterministic mock seed identity are proof artifacts. Editing sibling SHINOBU_239 logs or prompts was rejected because they are outside SHINOBU_219 ownership.
+Scalability potential: No low/middle/high/ultra visual behavior changes. This patch does not touch `GlobalQualityWeight`, payload capacities, shader math, or job cadence.
+Hardware Impact: 0 us normal-frame delta. This is identity/proof routing only.
+
+Problem: Older loop text still contained visual-only dump byte math, while current runtime writes a version-2 dump with both visual and degradation 300-frame rings.
+Solution: Restate the current dump image in the latest status/log and ledger: `TelemetryDumpHeaderBytes=32`, `VisualAgingTelemetryEntry=64`, `DegradationTelemetryEntry=64`, `TelemetryFrameCount=300`, total `32 + 300 * 64 * 2 = 38,432` bytes.
+Rejected Alternatives: Leaving stale 19,224-byte math as current proof was rejected because black-box dump readers need an exact ABI.
+Scalability potential: Fault dump byte count is outside gameplay truth and does not alter quality, save identity, or rollback authority.
+Hardware Impact: Fault-only copy size is 38,432 bytes. Normal frames still do not allocate or copy the dump snapshot.
+
+## Loop 28 - Dual Dump Identity Guard Correction
+
+Problem: Loop 27 used an overbroad identity guard that treated every `Dump_SHINOBU_239` active source literal as wrong-agent drift. The ledger explicitly assigns `Dump_SHINOBU_239.bin` to SHINOBU_239's layered UberNoir degradation proof mirror while preserving SHINOBU_219's primary visual-aging owner route.
+Solution: Correct the proof language. SHINOBU_219 primary identity is `SystemHash=0x53323139`, `S219`, editor `AgentId=SHINOBU_219`, and primary `Dump_SHINOBU_219.bin`. The `DegradationDumpRelativePath=Dump_SHINOBU_239.bin` literal is allowed only as the documented dual-proof mirror for `UberNoirInstanceDegradation`.
+Rejected Alternatives: Removing the SHINOBU_239 mirror was rejected because it would delete a sibling-owned proof artifact. Keeping the broad no-SHINOBU_239-anywhere claim was rejected because source and ledger disprove it.
+Scalability potential: No quality-tier behavior changes. The correction changes proof interpretation only and does not affect payload capacity, shader detail, cadence, or telemetry.
+Hardware Impact: 0 us runtime delta. Documentation-only correction.
+
+## Loop 29 - CSV Full-Read Fail-Closed Fence
+
+Problem: `ReadFileIntoScratch` used `math.min(stream.Length, scratch.Length)` and a single `FileStream.Read(span)`. An oversized or short-read CSV could feed a valid prefix into `ParseAgingRulesCsv`, partially mutating Vault-backed tuning while silently ignoring the remainder of the designer file.
+Solution: Fail closed when the file length is zero or larger than `VisualPressureAgingCsvScratch`, then loop until the exact full file length has been read. Any zero/short read returns 0, so `ReloadCsvFromDisk` preserves the previous tuning DTO.
+Rejected Alternatives: Continuing to parse the clipped prefix was rejected because it violates human-readable tuning bridge predictability. Allocating a managed byte array for exact reads was rejected because the existing Vault scratch lane already provides bounded cold staging.
+Scalability potential: No runtime quality route changes. This prevents designer CSV corruption from altering low/middle/high/ultra tuning coefficients unpredictably.
+Hardware Impact: Normal frame delta is 0 us. Cold/editor CSV reload adds a length check and a bounded read loop over the existing native scratch span.
+
+Problem: Runtime auditor reported the SHINOBU_239 degradation dump mirror as a P1 wrong-agent dump route.
+Solution: Triaged against the active binary payload ledger: SHINOBU_219 owns the primary visual-aging route and `Dump_SHINOBU_219.bin`; SHINOBU_239 owns the layered degradation mirror `Dump_SHINOBU_239.bin`. The auditor finding is valid as a warning against broad identity greps but not a source patch request for SHINOBU_219.
+Rejected Alternatives: Removing the mirror was rejected because it deletes a sibling proof artifact. Ignoring the warning was rejected because the proof language did need correction in Loop 28.
+Scalability potential: No quality route changes.
+Hardware Impact: Documentation classification only.
+
+## Loop 30 - Localized Shader Aging and Dedicated Report Proof
+
+Problem: Shader/editor audit found remaining SHINOBU aging/failure mask math using material-stable world coordinates. `H8UberNoirMaterialStablePosition` subtracts `_TotalUniverseOffset` in shader float space, which is acceptable for non-authoritative broad material ambience but not for the SHINOBU aging facts that already arrive as localized AUP deltas in `VisualAgingParamsDTO.DepthAndPressure.xyz`.
+Solution: Route rust crystal noise and scorch burn noise through `agingStablePosition`, the UV-plus-localized-AUP coordinate produced by `H8UberNoirVisualAgingStablePosition`. The rust and scorch functions now finite-clamp that localized coordinate locally and no longer call `H8UberNoirMaterialStablePosition`.
+Rejected Alternatives: Passing absolute world position into rust/scorch was rejected because it reintroduces 100km float jitter and origin-shift phase drift. Reusing `stablePosition` was rejected because that value is material ambience state, not the SHINOBU owner route.
+Scalability potential: Low still uses the cheap triangle/line aging mask; middle/high add continuous detail weight; ultra spends the same localized coordinate on richer hash/noise breakup without a binary tier split.
+Hardware Impact: Normal ALU class is unchanged. The correction protects visual stability under large AUP offsets; no CPU frame cost is added.
+
+Problem: The dedicated static report artifact declared by the editor inquisition was missing from `Docs/Reports`, leaving the proof route dependent on an aggregate report path shared by other agents.
+Solution: Add `Docs/Reports/VISUAL_AGING_INQUISITION_REPORT.json` as a dedicated source-scan artifact with SHINOBU_219 identity, static pass status, runtime pending status, exact counts, DTO byte sizes, dump paths, and non-overwrite policy for the shared aggregate report.
+Rejected Alternatives: Overwriting `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` from the CLI was rejected because multiple agents own that shared aggregate. Claiming runtime proof was rejected because Unity import/shader compile/profiler were not run.
+Scalability potential: Report does not alter runtime quality. It preserves the low/middle/high/ultra shader route as static evidence only.
+Hardware Impact: Documentation-only. Runtime cost 0 us.
+
+Problem: The active runtime CSV path is `Data/Visuals/environmental_degradation_rules.csv`, but its header named SHINOBU_239 as the cold-path owner. That conflicts with SHINOBU_219 as the primary visual-aging tuning owner and invites future wrong-agent edits.
+Solution: Change the header to SHINOBU_219 visual pressure aging tuning and explicitly state that SHINOBU_239 owns only the layered degradation dump mirror. Keep the existing runtime path and parsed tuning rows intact.
+Rejected Alternatives: Renaming the runtime CSV route was rejected because the editor inquisition and runtime already validate the degradation-rule path. Removing SHINOBU_239 text entirely was rejected because the mirror lane is real and ledger-documented.
+Scalability potential: No runtime tier behavior changes; the CSV still feeds the continuous tuning scalars used across weak, middle, high, and ultra devices.
+Hardware Impact: Header-only data change. Runtime cost 0 us.
+
+Problem: Source patches required a fresh static gate, but build/import remains under the CPU discipline.
+Solution: Reran scoped `git diff --check`, JSON parse, HLSL localized-coordinate proof, forbidden-token scan, runtime renderer mutation scan, Burst/NoAlias/Layout scan, CSV residue scan, and CPU/compiler gate.
+Rejected Alternatives: Launching `dotnet build`, Unity import, or shader compiler at 100 percent CPU was rejected by the explicit build gate.
+Scalability potential: Static proof only; runtime quality curve remains unchanged.
+Hardware Impact: No compiler load added. Runtime proof remains pending.
+
+## Loop 31 - CSV Schema Label Truth Correction
+
+Problem: The Loop 30 CSV ownership correction placed SHINOBU_219's owner/system hash under the label `schema_hash_fnv1a32`. That label implies a baked schema hash proof that this pass did not compute.
+Solution: Replace the label with `owner_system_hash,0x53323139` and add `schema_hash_status,static_source_pending_bake`. The parser skips comment rows, so runtime tuning values are unchanged.
+Rejected Alternatives: Leaving the mislabeled hash was rejected because proof files must not imply a bake that did not run. Removing the owner hash was rejected because the CSV route still needs explicit SHINOBU_219 ownership in a concurrent workspace.
+Scalability potential: No runtime quality route changes; the same continuous tuning values feed low, middle, high, and ultra tiers.
+Hardware Impact: Data-comment only. Runtime cost 0 us.
+
+Problem: Comment-only data correction still required proof that no stale wrong label remains.
+Solution: Reran `git diff --check`, CSV header readback, stale header/hash scan, and CPU/compiler gate.
+Rejected Alternatives: Build/import for a CSV comment change was rejected, especially with CPU at 100 percent.
+Scalability potential: Static proof only.
+Hardware Impact: No compiler load added.
+
+Problem: The dedicated report initially used a precise `generatedUtc` value even though this pass did not sample a trusted UTC clock.
+Solution: Replace it with `generatedDate=2026-05-21` and `timestampPrecision=DATE_ONLY_FROM_SESSION_CONTEXT`.
+Rejected Alternatives: Keeping an invented second-level timestamp was rejected because proof artifacts must not imply precision they do not have.
+Scalability potential: No runtime quality route changes.
+Hardware Impact: Documentation-only.
+
+## Loop 32 - Task 17 CSV Route Restoration
+
+Problem: Task 17 and the tracked repo file specify `Data/Visuals/environmental_aging_rules.csv`, but the active runtime/editor report route had drifted to untracked `Data/Visuals/environmental_degradation_rules.csv`.
+Solution: Restore `VisualPressureAgingRuntime.CsvRelativePath`, the editor inquisition file path, and the route-reference counter to `environmental_aging_rules.csv`. Add ownership/status comments and `scorch_intensity,1.0` to the tracked aging CSV so the parser and static report surface stay aligned.
+Rejected Alternatives: Keeping the runtime on an untracked degradation CSV was rejected because it violates the extracted XML assignment and makes CI dependent on a workspace artifact. Deleting the untracked file was rejected because it may be another agent's local staging artifact.
+Scalability potential: No runtime quality-route change; the same scalar tuning fields continue to feed low, middle, high, and ultra shader math through `GlobalQualityWeight`.
+Hardware Impact: Runtime frame cost remains 0 us. Cold CSV reload reads the tracked file through the existing full-read fail-closed Vault scratch path.
+
+Problem: The untracked degradation CSV still existed and could mislead future scans.
+Solution: Mark it as inactive in its header and point to the tracked active route; remove it from SHINOBU_219 runtime/tuner/dedicated-report routing. The separate SHINOBU_239 editor inquisition remains sibling-owned and was not edited.
+Rejected Alternatives: Treating the inactive file as active SHINOBU_219 proof was rejected; deleting it was avoided under concurrent-agent workspace discipline; editing the SHINOBU_239 inquisition was rejected as outside this owner route.
+Scalability potential: Documentation/data ownership only.
+Hardware Impact: 0 us.
+
+## Loop 33 - Dispatcher Fence and Single CSV Route Restoration
+
+Problem: `PostSimulationTick` still contained `_scheduledSimulationHandle.Complete()`, contradicting the dispatcher-owned fence rule and creating a hidden graphics-domain main-thread stall risk.
+Solution: Remove the raw completion call. The owner now waits for `_scheduledSimulationHandle.IsCompleted`, sets `FlagJobFencePending` if the dispatcher has not retired the handle, and only unlocks Vault buffers after the dispatcher-owned post-simulation fence has made the handle safe.
+Rejected Alternatives: Keeping a local `.Complete()` was rejected because read/owner phases must not hide job synchronization. Switching to `DispatcherJobFence.TryComplete` inside this domain was also rejected because the system dispatcher already owns the combined simulation completion route.
+Scalability potential: Low, middle, high, and ultra tiers keep the same shader quality curve. The change protects every tier from a surprise CPU fence when GPU visual payload generation is scheduled.
+Hardware Impact: Worst-case stall avoided is frame-sized and workload-dependent; normal completed handoff remains O(1) flag clear plus buffer unlock.
+
+Problem: A second active SHINOBU_219 reload path still targeted untracked `Data/Visuals/environmental_degradation_rules.csv`, even after the primary `CsvRelativePath` was restored to the tracked assignment file.
+Solution: Assign `_degradationCsvPath = _csvPath` and skip the second forced reload when both absolute paths match. The tracked `environmental_aging_rules.csv` already carries aging and degradation scalar keys.
+Rejected Alternatives: Parsing the untracked degradation CSV was rejected because CI cannot rely on a workspace artifact. Performing two forced parses of the same tracked file was rejected because it would increment `CsvGeneration` twice and dirty both buffers needlessly. Editing SHINOBU_239's separate inquisition was rejected as outside the SHINOBU_219 owner route.
+Scalability potential: No binary tier switch introduced. The same scalar tuning file continues to feed continuous `GlobalQualityWeight` math from weak devices through ultra visual overkill.
+Hardware Impact: Normal frame delta is 0 us. Editor forced reload saves one file open/read and one span parser pass when both routes alias the tracked file.
+
+Problem: The first anti-amnesia re-extraction used a strict bare `<AGENT_PROMPT id="SHINOBU_219">` regex and falsely reported the prompt missing because `CURRENT_BATCH.md` includes extra attributes on the tag.
+Solution: Rerun extraction with `<AGENT_PROMPT\s+id="SHINOBU_219"[^>]*>.*?</AGENT_PROMPT>`, confirming 15,491 bytes, 20 tasks, and Task 17 naming `environmental_aging_rules.csv`.
+Rejected Alternatives: Treating the strict-regex miss as batch rotation was rejected because `rg` showed SHINOBU_219 still present. Reading neighboring prompt text was rejected.
+Scalability potential: Documentation/proof only; no quality route changed.
+Hardware Impact: Static CLI proof only. Runtime frame delta 0 us.
+
+Problem: The raw completion and degradation CSV literal reappeared after earlier clean readbacks, indicating concurrent source drift or a delayed patch stream.
+Solution: Reapply the runtime patch and run six 2-second watch checks against `VisualPressureAgingRuntime.cs` for `.Complete(`, `DegradationCsvRelativePath`, and `environmental_degradation_rules.csv`.
+Rejected Alternatives: Marking the guard clean after one scan was rejected because the file had already drifted twice.
+Scalability potential: No quality route change.
+Hardware Impact: 12 seconds static watch; runtime frame delta 0 us.
+
+## Loop 34 - Non-Finite Quality and CSV Vaccination
+
+Problem: CSV parsing could overflow a large numeric token to `Infinity`, and Burst jobs used `math.saturate(GlobalQualityWeight)` directly. Depending on backend semantics, non-finite quality/upload values could propagate into DTOs and 300-frame telemetry.
+Solution: Make `ParseFloat` return `ok=false` for non-finite results, make `ApplyCsvValue` refuse non-finite values, sanitize `GlobalQualityWeight` with explicit finite checks before using it in structural/mock jobs, and sanitize `GpuUploadMicroseconds` before telemetry/runtime writes.
+Rejected Alternatives: Trusting CSV authoring discipline was rejected because the cold bridge must be fail-closed. Trusting `saturate(NaN)` was rejected because cross-platform math behavior must not be implicit.
+Scalability potential: Quality remains continuous; invalid quality collapses to the minimum-survival scalar `0.0f` without changing DTO layout, save identity, or authority route.
+Hardware Impact: Cold parser adds one finite branch per parsed value. Runtime adds scalar finite guards in scheduled jobs only; no memory bandwidth or buffer capacity change.
+
+## Loop 35 - Quality Snapshot Lock Removal
+
+Problem: SHINOBU_219 refreshed `GlobalQualityWeight` by locking `SystemDispatcherMasterPresentationSuppression` through the Vault inside runtime phases, even though Core already publishes a quantized first-party signal scalar.
+Solution: Read `SignalBusRegistry.GlobalQualityWeight01`, sanitize it into `_cachedGlobalQualityWeight`, and remove the dispatcher presentation-suppression Vault handle and stale-generation checks from SHINOBU_219.
+Rejected Alternatives: Keeping a cross-domain Vault lock for one scalar was rejected because it violates the owner-published snapshot doctrine and adds unnecessary contention. Adding a direct HomeostasisBrain poll was rejected because the signal registry is already the first-party hot broadcast route.
+Scalability potential: Continuous quality behavior is preserved exactly; only the acquisition route changed.
+Hardware Impact: Removes one Vault lock/unlock path and a buffer resolve branch from quality refresh. Runtime frame impact is small but removes contention risk.
+
+## Loop 36 - Recurrent CSV Drift Guard
+
+Problem: After Loop 35, `VisualPressureAgingRuntime` again restored `DegradationCsvRelativePath = "Data/Visuals/environmental_degradation_rules.csv"` and assigned `_degradationCsvPath` from that untracked file. That reintroduced a second active cold tuning route outside the extracted Task 17 assignment.
+Solution: Remove the degradation CSV route constant again and assign `_degradationCsvPath = _csvPath`, keeping the forced reload duplicate-skip branch intact. Rerun a ten-pass watch to prove the file stayed on the tracked `environmental_aging_rules.csv` route after the patch.
+Rejected Alternatives: Leaving the second route was rejected because it makes CI depend on an untracked workspace artifact and allows split tuning authority. Deleting `environmental_degradation_rules.csv` was rejected because it is untracked and may belong to a sibling staging path. Editing SHINOBU_239 inquisition code was rejected as outside this domain.
+Scalability potential: Low, middle, high, and ultra tiers continue to consume one CSV-owned scalar tuning route through continuous `GlobalQualityWeight`; no binary quality switch or shader ABI change was introduced.
+Hardware Impact: Runtime frame delta is 0 us. Cold/editor forced reload avoids a duplicate file open/read/span-parse route when both visual aging and degradation scalars are sourced from the tracked Task 17 file.
+
+Problem: The original prompt re-extraction scan briefly returned `TaskCount=0` because it searched for XML task tags, while the SHINOBU_219 block uses plain `Task 01:` lines.
+Solution: Use the attribute-aware `<AGENT_PROMPT\s+id="SHINOBU_219"[^>]*>` extraction and count `^Task\s+\d{2}:` lines, confirming 20 tasks and Task 17's `environmental_aging_rules.csv` requirement.
+Rejected Alternatives: Treating the zero count as a prompt rotation was rejected because the extracted block length was nonzero and the task text was present.
+Scalability potential: Proof route only; no runtime quality behavior changed.
+Hardware Impact: Static CLI proof only.
+
+## Loop 37 - VisualSync Scratch And Timing Fence
+
+Problem: `VisualSyncTick` locked and resolved `VisualPressureAgingCsvScratch` on every normal visual-sync pass even though that buffer is only needed to copy the 300-frame dump image on a fault. This made cold CSV/editor scratch contention capable of blocking render upload and telemetry publication.
+Solution: Remove scratch from the normal visual-sync lock chain. Lock and resolve `VisualPressureAgingCsvScratch` only inside the fault branch that calls `CopyTelemetryDumpSnapshot`, and release it immediately in a local `finally`.
+Rejected Alternatives: Keeping scratch in the normal chain was rejected because CSV scratch is not an upload prerequisite. Allocating a separate managed dump buffer was rejected because black-box snapshots must stay Vault-backed and zero-GC.
+Scalability potential: Low, middle, high, and ultra tiers keep the same visual payload route; weak devices avoid an unnecessary lock dependency in the normal render sync path, while high-tier visual overkill still gets the same dump artifact if a fault occurs.
+Hardware Impact: Normal visual sync removes one Vault lock/resolve dependency and one contention point. Fault-only path still performs the same bounded dump copy: `32 + 300 * 64 * 2 = 38,432` bytes.
+
+Problem: `ElapsedMicroseconds(start)` was written to `LastUploadMicroseconds` and `_publishedUploadMicroseconds` without a finite guard. A NaN timing value would fail the `uploadUs > UploadFaultMicroseconds` comparison and leak into runtime/editor counters.
+Solution: Store raw timing separately, gate it with `math.isfinite`, publish only a non-negative sanitized value, and set `FlagNonFinite` when the raw timing is invalid so the dump route activates.
+Rejected Alternatives: Trusting `Stopwatch` output unconditionally was rejected because telemetry must not depend on implicit platform behavior under counter faults or arithmetic overflow.
+Scalability potential: Quality scaling is unchanged; invalid timing affects only diagnostics and fault telemetry.
+Hardware Impact: One scalar finite check per visual sync. No DTO, buffer, or shader ABI change.
+
+## Loop 38 - Core Readiness Split
+
+Problem: After Loop 37, `VisualSyncTick` no longer directly locked CSV scratch during normal upload, but the shared readiness gate still made `VisualPressureAgingCsvScratch` and `VisualPressureAgingMockTemperature` mandatory for normal `PreSimulationTick`, `ScheduleSimulation`, `VisualSyncTick`, and editor/gizmo reads. A stale cold scratch lane could still veto render upload before the fault-only branch was reached.
+Solution: Split readiness into `HasCurrentOwnedCoreState` for normal upload/simulation/gizmos and `HasCurrentCsvReloadState` for forced editor CSV reload. Remove the unused full-state predicate so future code cannot accidentally reintroduce cold-lane admission. Fault dumps and CSV reloads now validate scratch with `IsCurrentOwnedBuffer` exactly where they need it.
+Rejected Alternatives: Keeping one full `HasCurrentOwnedVaultState` was rejected because it hides phase requirements and lets cold tooling state block hot presentation. Regenerating or reacquiring scratch in normal phases was rejected because it would turn a read/accessor check into a cold ownership mutation route.
+Scalability potential: Low, middle, high, and ultra tiers keep the same continuous `GlobalQualityWeight` shader route. Weak devices avoid a useless cold-lane contention point; high/ultra still get full fault dumps and CSV tuning when those cold lanes are valid.
+Hardware Impact: Normal phase admission no longer resolves CSV scratch and does not require mock temperature as a hard dependency. Static gain is removal of one cold scratch currentness check from each normal readiness path and one hard mock-temperature lock from scheduling; profiler proof remains pending.
+
+Problem: `VisualPressureAgingMockTemperature` was locked as part of every job buffer set even though both Burst jobs already fall back to `Tuning.MockTemperatureC` when `Temperatures` is not created.
+Solution: Make mock-temperature locking optional only when the thermodynamics mirror is absent. If the optional mock lock/currentness check fails, the job receives a default `NativeArray<float>` and uses the tuning DTO fallback.
+Rejected Alternatives: Requiring the mock Vault lane for every simulation batch was rejected because it is not gameplay truth and not required for deterministic render output. Allocating a managed fallback temperature array was rejected because the tuning DTO already carries the scalar.
+Scalability potential: Same visual scaling. The change protects all tiers from a false dependency; quality weight still scales count/detail, not ownership or DTO layout.
+Hardware Impact: Removes a possible Vault lock/resolve contention point from normal scheduling. Adds no new memory, no new job, no shader variant, and no managed allocation.
+
+Problem: Editor gizmo snapshot methods locked the correct buffer but then exposed a read-only view from raw `TryResolveHandle`, leaving a small stale-generation gap between the pre-lock readiness check and the view handoff.
+Solution: After acquiring the lock, revalidate `VisualPressureAgingParams` and `UberNoirInstanceDegradation` with `IsCurrentOwnedBuffer` before returning `NativeArray<T>.ReadOnly` views.
+Rejected Alternatives: Leaving the raw resolve was rejected because editor diagnostics are still proof surfaces and must not hide generation drift. Reacquiring/growing buffers from the snapshot accessor was rejected because read accessors must stay pure.
+Scalability potential: Editor-only proof path; no low/middle/high/ultra shader behavior changes.
+Hardware Impact: Editor-only generation check. Player hot path impact is 0 us.
+
+## Loop 39 - Telemetry Upload Byte Accounting
+
+Problem: The black-box telemetry job received `UploadedBytes` as `_degradationUploadedCount * sizeof(InstanceDegradationDTO)`, counting only the 32-byte degradation buffer while the visual route also uploads the 64-byte `VisualAgingParamsDTO` buffer.
+Solution: Compute a shared uploaded count from the two double-buffered GPU lanes and report `count * (sizeof(VisualAgingParamsDTO) + sizeof(InstanceDegradationDTO))`.
+Rejected Alternatives: Keeping degradation-only byte accounting was rejected because dump/profiler correlation would underreport PCIe/GPU upload pressure. Counting requested active count was rejected because telemetry should report the last actual uploaded payload, not the next simulation's target count.
+Scalability potential: No quality behavior changes; low/middle/high/ultra byte telemetry now scales with the actual dual-buffer payload.
+Hardware Impact: Adds two scalar operations before scheduling telemetry. Corrects black-box payload proof from 32 bytes/instance to 96 bytes/instance when both lanes are uploaded.
+
+## Loop 40 - Tiny Upload Job Purge
+
+Problem: `UploadNativeArray` and `UploadDegradationNativeArray` wrapped a straight memory copy in `CopyVisualAgingUploadJob.Run()` and `CopyDegradationUploadJob.Run()`. These are tiny synchronous jobs inside `VisualSync`, not dispatcher-owned amortized jobs.
+Solution: Delete the copy job structs and copy directly from the source native array pointer into the locked graphics buffer pointer with `UnsafeUtility.MemCpy`.
+Rejected Alternatives: Keeping `IJob.Run()` was rejected because it adds job wrapper ceremony without dependency graph value. Scheduling the copy was rejected because `GraphicsBuffer.LockBufferForWrite` already maps the write window and must be unlocked in the same scope.
+Scalability potential: No quality behavior changes; all tiers keep the same dirty-buffer upload route and continuous shader detail.
+Hardware Impact: Removes two synchronous job wrapper invocations on dirty dual-buffer uploads. The byte count and actual memory copy are unchanged.
+
+## Loop 41 - Shader Quality Stale-Lane Clamp
+
+Problem: `H8UberNoirVisualAgingQualityWeight` used `max(baseQuality, max(runtimeQuality, laneQuality))`. The lane quality comes from `VisualAgingParamsDTO.StressAndMicroFractures.w`, which is generated by a previous simulation batch and can stay high after the current global/runtime quality drops.
+Solution: Drive shader detail quality from the current global quality and current runtime aging quality only. The stale lane value remains in the DTO for telemetry/compatibility but no longer raises shader ALU detail.
+Rejected Alternatives: Keeping lane quality as a max source was rejected because it violates continuous thermal shedding. Removing the DTO lane was rejected because that would change payload layout and rollback/save-proof boundaries.
+Scalability potential: Low quality now collapses expensive shader detail immediately when the current quality scalar drops; high/ultra still raise rust/scorch/glass detail when current runtime/global quality allows it.
+Hardware Impact: Scalar cost is unchanged. Correctness impact is load-shed responsiveness: stale high-quality DTOs can no longer force high-cost shader detail.
+
+## Loop 42 - Continuous Capacity Scaling
+
+Problem: Status/rationale claimed active visual payload count scaled by `GlobalQualityWeight`, but the code only used quality for simulation cadence and shader detail. Requested active count stayed full-size except for structural owner count and designer override.
+Solution: Feed current quality into `ResolveActiveCount` and apply a smoothstep curve to the requested visual row count, lerping presentation capacity from 12.5 percent at minimum quality to 100 percent at ultra.
+Rejected Alternatives: Leaving count unscaled was rejected because it overworks low-tier devices and contradicts the reported architecture. A binary low/high cap was rejected because HECTON-8 requires continuous quality behavior.
+Scalability potential: Low processes a smaller visual subset and lower cadence; middle expands smoothly; high/ultra restore full requested rows and shader detail.
+Hardware Impact: Adds a few scalar ops before scheduling. Low-tier structural requests now cap visual-aging generation to roughly one eighth of requested rows before cadence decimation; no gameplay state is removed.
+
+## Loop 43 - Fallback Temperature and Timer Denominator Vaccination
+
+Problem: Both degradation Burst jobs treated `Tuning.MockTemperatureC` as the terminal fallback when the thermodynamics mirror or mock-temperature Vault row was absent or non-finite. If the tuning DTO itself was corrupt, temperature boost/scorch math could still receive a non-finite scalar.
+Solution: Compute a local `fallback = FiniteOr(Tuning.MockTemperatureC, 42.0f)` in both `ResolveTemperature` helpers and return only finite temperature data or that finite fallback.
+Rejected Alternatives: Trusting default tuning hydration was rejected because the Vault row can be externally edited by the cold editor/CSV path and fault handling must survive corrupted rows.
+Scalability potential: Quality curves are unchanged. Weak, middle, high, and ultra tiers all keep deterministic visual corrosion math when temperature inputs fail.
+Hardware Impact: One finite branch per scheduled batch job instance. No memory bandwidth change, no new Vault lane, no new job, no shader variant.
+
+Problem: `ElapsedMicroseconds` divided by `Stopwatch.Frequency` directly. The platform invariant is normally positive, but black-box telemetry should fail closed under counter faults instead of publishing non-finite upload timings.
+Solution: Guard `Stopwatch.Frequency <= 0`, reversed timestamps, NaN/negative computed microseconds, and values outside `float.MaxValue` before casting to float.
+Rejected Alternatives: Relying on the later `math.isfinite(rawUploadUs)` guard alone was rejected because the conversion to `float` had already happened after an unchecked denominator route.
+Scalability potential: No quality behavior changes; this protects the diagnostic proof route across all hardware tiers.
+Hardware Impact: Two integer branches and one double range branch per visual sync. Runtime proof still pending.
+
+## Loop 44 - Fault Dump and Shader Collapse Closure
+
+Problem: The fault-dump route still constructed path/directory/file-stream state in the same fatal branch that writes the black-box snapshot. That is acceptable for cold boot but wrong for a crash path that may be running after a NaN or upload fault.
+Solution: Pre-open the SHINOBU_219 primary and degradation dump streams once during cold initialization, release them during shutdown, and make the fault branch write only a bounded `ReadOnlySpan<byte>` to existing streams. Repeat initialization no longer overwrites a live stream handle. The write route catches `ObjectDisposedException` as a fail-closed diagnostic condition.
+Rejected Alternatives: Keeping `Path.GetDirectoryName`, `Directory.CreateDirectory`, or `new FileStream` in the fault branch was rejected because black-box dumping must be bounded and allocation-minimized. Allocating a managed dump buffer was rejected because the snapshot already lives in Vault-owned scratch.
+Scalability potential: No quality-tier behavior changes; weak and high-tier devices get the same proof artifact. The change protects the diagnostic path rather than buying visual fidelity.
+Hardware Impact: Fault-only path removes directory/path/file construction from the crash branch. Runtime frame delta is 0 us during normal visual sync.
+
+Problem: The SHINOBU_219 degradation mirror path reused a SHINOBU_239 dump name in documentation/source context, creating a cross-agent proof artifact ambiguity.
+Solution: Route the mirror to `Docs/AgentLogs/Dump_SHINOBU_219_Degradation.bin` and update the binary payload ledger to state that SHINOBU_219 does not write through `Dump_SHINOBU_239.bin`.
+Rejected Alternatives: Keeping the cross-agent path was rejected because one fact needs one owner and one proof artifact. Deleting or editing SHINOBU_239 artifacts was rejected as outside this domain.
+Scalability potential: Proof route only; no low/middle/high/ultra shader behavior changed.
+Hardware Impact: 0 us normal runtime impact.
+
+Problem: Static shader audit showed the visual-aging quality proof still allowed non-current quality lanes and lower-than-0.30 detail gates to preserve expensive aging ALU during low thermal quality.
+Solution: `H8UberNoirVisualAgingQualityWeight()` now uses current `_H8GlobalQualityWeight` and `_GlobalBaseAgingRuntime.z` only, not stale lane quality or caustic-side max lanes. SHINOBU aging rich-detail gates start at quality `0.30` or higher, and high-cost/visual-overkill helpers fail closed on non-finite runtime scalars.
+Rejected Alternatives: Keeping early rich-noise thresholds was rejected because quality below `0.3` must collapse to cheap fakes. Binary shader keywords were rejected because HECTON-8 requires continuous quality shedding.
+Scalability potential: Low uses triangle/hash masks and skips rust/scorch/surface rich noise. Middle ramps detail by smoothstep. High/Ultra restore richer procedural noise, POM, and catchlight work from the current quality scalar only.
+Hardware Impact: Low-quality GPU ALU is protected by zeroed detail weights; exact shader microseconds remain pending Frame Debugger/profiler proof.
+
+Problem: The binary payload ledger still contained stale text for `H8UberNoirVisualAgingQualityWeight(visualAging)` and `StressAndMicroFractures.w` as a detail max-source.
+Solution: Patch the ledger rows and append a SHINOBU_219 fault-dump/quality-collapse addendum with static-only caveats.
+Rejected Alternatives: Leaving stale ledger text was rejected because it contradicts source and misleads future agents after context compaction.
+Scalability potential: Documentation now matches low/middle/high/ultra implementation boundaries.
+Hardware Impact: Documentation-only; runtime proof remains pending.
+
+## Loop 45 - Shader Subagent Collapse Gate Closure
+
+Problem: A sidecar shader audit found two remaining low-quality cost leaks: scorch normal perturbation still scaled directly from `burnMask`, and texture-array aging blend began at quality 0.12.
+Solution: Gate scorch normal perturbation behind `H8UberNoirSmoothRange01(0.30, 0.74, quality)` and gate texture-array aging blend behind the same 0.30 threshold.
+Rejected Alternatives: Keeping the 0.12 texture-array ramp was rejected because quality below 0.3 must collapse to cheap fakes. Adding a shader keyword was rejected because HECTON-8 requires continuous scalar quality and avoids variant churn.
+Scalability potential: Low uses base burn/rust masks without extra normal/array detail; middle ramps detail continuously; high/ultra restore richer texture-array blending and scorch surface response.
+Hardware Impact: HLSL-only ALU/sampler gate. Low-quality GPU work is reduced by zeroing these paths before the branch; exact microseconds require shader profiler proof.
+
+## Loop 46 - Editor Proof Route And Snapshot Lease Correction
+
+Problem: Editor snapshot methods used read-like acquire/release names while mutating Vault locks and local lease flags, and the SHINOBU_219 tuner still had routes into SHINOBU_239 bridge/report surfaces.
+Solution: Rename snapshot methods to `TryOpen*SnapshotLease` and `Close*SnapshotLease`, route the tuner button through `VisualPressureAgingInquisition`, remove the SHINOBU_239 CSV bridge call from SHINOBU_219 reload, and keep SHINOBU_219 reports dedicated to `VISUAL_AGING_INQUISITION_REPORT.json`.
+Rejected Alternatives: Leaving read-like names was rejected because doctrine forbids read accessors that mutate state. Keeping the shared rendering report overwrite was rejected because another agent may own that aggregate surface. Deleting the untracked sibling degradation CSV was rejected because it may be another domain's workspace artifact.
+Scalability potential: Runtime quality scaling is unchanged; this protects the proof/control plane so low, middle, high, and ultra tuning all flow through the tracked aging CSV and SHINOBU_219-owned report artifact.
+Hardware Impact: Player hot path impact is 0 us. Editor command avoids one sibling reload route and prevents cross-agent report overwrite churn.

@@ -74,22 +74,22 @@ namespace Hecton8.Thermodynamics
         [SerializeField, Range(0f, 1f)] private float gizmoSliceY01 = 0.5f;
 
         private IDataVault _vault;
-        private VaultBufferHandle<ThermalCellDTO> _front;
-        private VaultBufferHandle<ThermalCellDTO> _back;
-        private VaultBufferHandle<ThermalCellDTO> _injection;
-        private VaultBufferHandle<ThermalCellDTO> _shiftScratch;
-        private VaultBufferHandle<HeatSourceDTO> _sources;
-        private VaultBufferHandle<int> _sourceCount;
-        private VaultBufferHandle<ThermalGridTuningDTO> _tuning;
-        private VaultBufferHandle<double3> _sampleAups;
-        private VaultBufferHandle<ThermalSampleResultDTO> _sampleResults;
-        private VaultBufferHandle<ThermalTelemetryEntry> _telemetryRing;
-        private VaultBufferHandle<byte> _profileBytes;
-        private VaultBufferHandle<HeatSourceProfileDTO> _profiles;
-        private VaultBufferHandle<int> _profileCount;
-        private VaultBufferHandle<ThermalSolverConvergenceStateDTO> _solverConvergence;
-        private VaultBufferHandle<ThermalResidualSlot64> _solverResidualSamples;
-        private VaultBufferHandle<int> _solverDumpLatch;
+        private VaultGenerationHandle<ThermalCellDTO> _front;
+        private VaultGenerationHandle<ThermalCellDTO> _back;
+        private VaultGenerationHandle<ThermalCellDTO> _injection;
+        private VaultGenerationHandle<ThermalCellDTO> _shiftScratch;
+        private VaultGenerationHandle<HeatSourceDTO> _sources;
+        private VaultGenerationHandle<int> _sourceCount;
+        private VaultGenerationHandle<ThermalGridTuningDTO> _tuning;
+        private VaultGenerationHandle<double3> _sampleAups;
+        private VaultGenerationHandle<ThermalSampleResultDTO> _sampleResults;
+        private VaultGenerationHandle<ThermalTelemetryEntry> _telemetryRing;
+        private VaultGenerationHandle<byte> _profileBytes;
+        private VaultGenerationHandle<HeatSourceProfileDTO> _profiles;
+        private VaultGenerationHandle<int> _profileCount;
+        private VaultGenerationHandle<ThermalSolverConvergenceStateDTO> _solverConvergence;
+        private VaultGenerationHandle<ThermalResidualSlot64> _solverResidualSamples;
+        private VaultGenerationHandle<int> _solverDumpLatch;
 
         private JobHandle _pendingHandle;
         private JobHandle _sampleReadHandle;
@@ -142,11 +142,13 @@ namespace Hecton8.Thermodynamics
         {
             if (_hasPendingJob)
             {
+                // [BLOCKING_SYNC_POINT] Teardown cannot release thermal Vault buffers while the solver writer is active.
                 DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true);
                 _hasPendingJob = false;
             }
 
             DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);
+            H8Memory.RegisterActiveJob(SystemID.Thermodynamics, default);
 
             if (_registeredUpdate)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -177,28 +179,28 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return;
 
-            ThermalCellDTO* front = (ThermalCellDTO*)_front.ResolvePointer(vault);
-            ThermalCellDTO* back = (ThermalCellDTO*)_back.ResolvePointer(vault);
-            ThermalCellDTO* injection = (ThermalCellDTO*)_injection.ResolvePointer(vault);
-            ThermalCellDTO* scratch = (ThermalCellDTO*)_shiftScratch.ResolvePointer(vault);
-            HeatSourceDTO* sources = (HeatSourceDTO*)_sources.ResolvePointer(vault);
-            int* sourceCount = (int*)_sourceCount.ResolvePointer(vault);
-            ThermalTelemetryEntry* telemetry = (ThermalTelemetryEntry*)_telemetryRing.ResolvePointer(vault);
-            ThermalGridTuningDTO* tuningPtr = (ThermalGridTuningDTO*)_tuning.ResolvePointer(vault);
-            ThermalSolverConvergenceStateDTO* solverState = (ThermalSolverConvergenceStateDTO*)_solverConvergence.ResolvePointer(vault);
-            ThermalResidualSlot64* solverResiduals = (ThermalResidualSlot64*)_solverResidualSamples.ResolvePointer(vault);
-
-            if (front == null ||
-                back == null ||
-                injection == null ||
-                scratch == null ||
-                sources == null ||
-                sourceCount == null ||
-                telemetry == null ||
-                tuningPtr == null ||
-                solverState == null ||
-                solverResiduals == null)
+            if (!TryResolveArray(vault, in _front, MaxCellCount, out NativeArray<ThermalCellDTO> frontArray) ||
+                !TryResolveArray(vault, in _back, MaxCellCount, out NativeArray<ThermalCellDTO> backArray) ||
+                !TryResolveArray(vault, in _injection, MaxCellCount, out NativeArray<ThermalCellDTO> injectionArray) ||
+                !TryResolveArray(vault, in _shiftScratch, MaxCellCount, out NativeArray<ThermalCellDTO> scratchArray) ||
+                !TryResolveArray(vault, in _sources, MaxSourceCount, out NativeArray<HeatSourceDTO> sourceArray) ||
+                !TryResolveArray(vault, in _sourceCount, 1, out NativeArray<int> sourceCountArray) ||
+                !TryResolveArray(vault, in _telemetryRing, AbyssalThermalMath.TelemetryCapacity, out NativeArray<ThermalTelemetryEntry> telemetryArray) ||
+                !TryResolveArray(vault, in _tuning, 1, out NativeArray<ThermalGridTuningDTO> tuningArray) ||
+                !TryResolveArray(vault, in _solverConvergence, 1, out NativeArray<ThermalSolverConvergenceStateDTO> solverStateArray) ||
+                !TryResolveArray(vault, in _solverResidualSamples, AbyssalThermalMath.ResidualThreadSlotCount, out NativeArray<ThermalResidualSlot64> solverResidualArray))
                 return;
+
+            ThermalCellDTO* front = (ThermalCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(frontArray);
+            ThermalCellDTO* back = (ThermalCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(backArray);
+            ThermalCellDTO* injection = (ThermalCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(injectionArray);
+            ThermalCellDTO* scratch = (ThermalCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(scratchArray);
+            HeatSourceDTO* sources = (HeatSourceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(sourceArray);
+            int* sourceCount = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(sourceCountArray);
+            ThermalTelemetryEntry* telemetry = (ThermalTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetryArray);
+            ThermalGridTuningDTO* tuningPtr = (ThermalGridTuningDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(tuningArray);
+            ThermalSolverConvergenceStateDTO* solverState = (ThermalSolverConvergenceStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(solverStateArray);
+            ThermalResidualSlot64* solverResiduals = (ThermalResidualSlot64*)NativeArrayUnsafeUtility.GetUnsafePtr(solverResidualArray);
 
             float quality = ResolveQualityWeight();
             uint nextFrame = _frame + 1u;
@@ -399,11 +401,11 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return;
 
-            ThermalGridTuningDTO* tuning = (ThermalGridTuningDTO*)_tuning.ResolvePointer(vault);
-            if (tuning != null)
-            {
-                tuning->LastShiftSequence = shiftData.Sequence;
-            }
+            if (!TryResolveArray(vault, in _tuning, 1, out NativeArray<ThermalGridTuningDTO> tuningArray))
+                return;
+
+            ThermalGridTuningDTO* tuning = (ThermalGridTuningDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(tuningArray);
+            tuning->LastShiftSequence = shiftData.Sequence;
         }
 
         public bool TryUpsertSource(uint sourceId, double3 aup, float intensityCelsiusPerSecond, float radiusMeters, uint profileHash)
@@ -415,11 +417,12 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return false;
 
-            HeatSourceDTO* sources = (HeatSourceDTO*)_sources.ResolvePointer(vault);
-            int* countPtr = (int*)_sourceCount.ResolvePointer(vault);
-            if (sources == null || countPtr == null)
+            if (!TryResolveArray(vault, in _sources, MaxSourceCount, out NativeArray<HeatSourceDTO> sourceArray) ||
+                !TryResolveArray(vault, in _sourceCount, 1, out NativeArray<int> sourceCountArray))
                 return false;
 
+            HeatSourceDTO* sources = (HeatSourceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(sourceArray);
+            int* countPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(sourceCountArray);
             int count = math.clamp(*countPtr, 0, MaxSourceCount);
             int target = -1;
             for (int i = 0; i < count; i++)
@@ -466,11 +469,12 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return false;
 
-            HeatSourceDTO* sources = (HeatSourceDTO*)_sources.ResolvePointer(vault);
-            int* countPtr = (int*)_sourceCount.ResolvePointer(vault);
-            if (sources == null || countPtr == null)
+            if (!TryResolveArray(vault, in _sources, MaxSourceCount, out NativeArray<HeatSourceDTO> sourceArray) ||
+                !TryResolveArray(vault, in _sourceCount, 1, out NativeArray<int> sourceCountArray))
                 return false;
 
+            HeatSourceDTO* sources = (HeatSourceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(sourceArray);
+            int* countPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(sourceCountArray);
             int count = math.clamp(*countPtr, 0, MaxSourceCount);
             for (int i = 0; i < count; i++)
             {
@@ -637,11 +641,12 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return false;
 
-            ThermalCellDTO* front = (ThermalCellDTO*)_front.ResolvePointer(vault);
-            ThermalGridTuningDTO* tuning = (ThermalGridTuningDTO*)_tuning.ResolvePointer(vault);
-            if (front == null || tuning == null)
+            if (!TryResolveArray(vault, in _front, MaxCellCount, out NativeArray<ThermalCellDTO> frontArray) ||
+                !TryResolveArray(vault, in _tuning, 1, out NativeArray<ThermalGridTuningDTO> tuningArray))
                 return false;
 
+            ThermalCellDTO* front = (ThermalCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(frontArray);
+            ThermalGridTuningDTO* tuning = (ThermalGridTuningDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(tuningArray);
             SampleTemperatureJob job;
             job.Cells = front;
             job.SampleAups = (double3*)NativeArrayUnsafeUtility.GetUnsafePtr(sampleAups);
@@ -663,20 +668,20 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return false;
 
-            ThermalCellDTO* front = (ThermalCellDTO*)_front.ResolvePointer(vault);
-            ThermalGridTuningDTO* tuning = (ThermalGridTuningDTO*)_tuning.ResolvePointer(vault);
-            if (front == null || tuning == null)
+            if (!TryReadArray(vault, in _front, MaxCellCount, out NativeArray<ThermalCellDTO> frontArray) ||
+                !TryReadArray(vault, in _tuning, 1, out NativeArray<ThermalGridTuningDTO> tuningArray))
                 return false;
 
+            ThermalGridTuningDTO tuning = tuningArray[0];
             int3 safeResolution = math.clamp(
-                AbyssalThermalMath.SafeResolution(tuning->GridResolution),
+                AbyssalThermalMath.SafeResolution(tuning.GridResolution),
                 new int3(1, 1, 1),
                 new int3(MaxResolution, MaxResolution, MaxResolution));
-            float safeCellSize = math.max(0.001f, math.isfinite(tuning->CellSizeMeters) ? tuning->CellSizeMeters : DefaultCellSizeMeters);
-            int3 cell = AbyssalThermalMath.MapAupToWrappedCell(aup, tuning->GridOriginAup, safeCellSize, safeResolution);
+            float safeCellSize = math.max(0.001f, math.isfinite(tuning.CellSizeMeters) ? tuning.CellSizeMeters : DefaultCellSizeMeters);
+            int3 cell = AbyssalThermalMath.MapAupToWrappedCell(aup, tuning.GridOriginAup, safeCellSize, safeResolution);
             int index = AbyssalThermalMath.Index(cell.x, cell.y, cell.z, safeResolution);
-            ThermalCellDTO value = front[index];
-            double3 localDouble = aup - tuning->GridOriginAup;
+            ThermalCellDTO value = frontArray[index];
+            double3 localDouble = aup - tuning.GridOriginAup;
             result.TemperatureCelsius = math.isfinite(value.TemperatureCelsius) ? value.TemperatureCelsius : DefaultAmbientTemperatureCelsius;
             result.ConvectionVelocityY = math.isfinite(value.ConvectionVelocityY) ? value.ConvectionVelocityY : 0f;
             result.CellIndex = (uint)index;
@@ -696,10 +701,10 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return false;
 
-            ThermalGridTuningDTO* ptr = (ThermalGridTuningDTO*)_tuning.ResolvePointer(vault);
-            if (ptr == null)
+            if (!TryReadArray(vault, in _tuning, 1, out NativeArray<ThermalGridTuningDTO> tuningArray))
                 return false;
-            tuning = *ptr;
+
+            tuning = tuningArray[0];
             return true;
         }
 
@@ -712,36 +717,48 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return false;
 
-            ThermalGridTuningDTO* ptr = (ThermalGridTuningDTO*)_tuning.ResolvePointer(vault);
-            if (ptr == null)
+            if (!vault.TryAcquireWriteLock(in _tuning, SystemID.CoreDiagnostics, out NativeArray<ThermalGridTuningDTO> tuningArray))
                 return false;
 
-            tuning.CellSizeMeters = math.max(0.001f, math.isfinite(tuning.CellSizeMeters) ? tuning.CellSizeMeters : DefaultCellSizeMeters);
-            tuning.AmbientTemperatureCelsius = math.isfinite(tuning.AmbientTemperatureCelsius) ? tuning.AmbientTemperatureCelsius : DefaultAmbientTemperatureCelsius;
-            tuning.WaterThermalConductivity = math.max(0.0001f, math.isfinite(tuning.WaterThermalConductivity) ? tuning.WaterThermalConductivity : DefaultWaterConductivity);
-            tuning.ConvectionSpeed = math.max(0f, math.isfinite(tuning.ConvectionSpeed) ? tuning.ConvectionSpeed : DefaultConvectionSpeed);
-            tuning.GlobalQualityWeight = math.saturate(math.isfinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : 1f);
-            tuning.JacobiIterations = AbyssalThermalMath.ResolveJacobiIterations(tuning.GlobalQualityWeight);
-            tuning.GridResolution = math.clamp(
-                AbyssalThermalMath.SafeResolution(tuning.GridResolution),
-                new int3(MinResolution, MinResolution, MinResolution),
-                new int3(MaxResolution, MaxResolution, MaxResolution));
-            tuning.ActiveCellCount = math.clamp(tuning.GridResolution.x * tuning.GridResolution.y * tuning.GridResolution.z, 1, MaxCellCount);
-            tuning.DissipationPerStep = math.saturate(math.isfinite(tuning.DissipationPerStep) ? tuning.DissipationPerStep : DefaultDissipationPerStep);
-            tuning.MaxStableTemperatureCelsius = math.max(tuning.AmbientTemperatureCelsius + 1f, math.isfinite(tuning.MaxStableTemperatureCelsius) ? tuning.MaxStableTemperatureCelsius : DefaultMaxStableTemperatureCelsius);
-            tuning.HullInsulationConductivity = math.max(0.0001f, math.isfinite(tuning.HullInsulationConductivity) ? tuning.HullInsulationConductivity : DefaultHullInsulationConductivity);
-            tuning.MockVolcanoIntensity = math.max(1f, math.isfinite(tuning.MockVolcanoIntensity) ? tuning.MockVolcanoIntensity : DefaultMockVolcanoIntensity);
-            tuning.MockVolcanoRadiusMeters = math.max(1f, math.isfinite(tuning.MockVolcanoRadiusMeters) ? tuning.MockVolcanoRadiusMeters : DefaultMockVolcanoRadiusMeters);
-            tuning.MockVolcanoCount = math.clamp(tuning.MockVolcanoCount, 1, 16);
-            tuning.ShiftThresholdMeters = math.max(tuning.CellSizeMeters, math.isfinite(tuning.ShiftThresholdMeters) ? tuning.ShiftThresholdMeters : tuning.CellSizeMeters * 2f);
-            tuning.ThermalDamageThresholdCelsius = math.max(tuning.AmbientTemperatureCelsius, math.isfinite(tuning.ThermalDamageThresholdCelsius) ? tuning.ThermalDamageThresholdCelsius : 58f);
-            tuning.SubmarineHalfExtentX = math.max(0f, math.isfinite(tuning.SubmarineHalfExtentX) ? tuning.SubmarineHalfExtentX : 0f);
-            tuning.SubmarineHalfExtentY = math.max(0f, math.isfinite(tuning.SubmarineHalfExtentY) ? tuning.SubmarineHalfExtentY : 0f);
-            tuning.SubmarineHalfExtentZ = math.max(0f, math.isfinite(tuning.SubmarineHalfExtentZ) ? tuning.SubmarineHalfExtentZ : 0f);
-            tuning.SimulationTickDeltaSeconds = SanitizeSimulationTickDelta(tuning.SimulationTickDeltaSeconds);
-            *ptr = tuning;
-            ApplyTuningToSerializedFields(tuning);
-            return true;
+            if (!tuningArray.IsCreated || tuningArray.Length < 1)
+            {
+                vault.ReleaseWriteLock(in _tuning, SystemID.CoreDiagnostics);
+                return false;
+            }
+
+            try
+            {
+                tuning.CellSizeMeters = math.max(0.001f, math.isfinite(tuning.CellSizeMeters) ? tuning.CellSizeMeters : DefaultCellSizeMeters);
+                tuning.AmbientTemperatureCelsius = math.isfinite(tuning.AmbientTemperatureCelsius) ? tuning.AmbientTemperatureCelsius : DefaultAmbientTemperatureCelsius;
+                tuning.WaterThermalConductivity = math.max(0.0001f, math.isfinite(tuning.WaterThermalConductivity) ? tuning.WaterThermalConductivity : DefaultWaterConductivity);
+                tuning.ConvectionSpeed = math.max(0f, math.isfinite(tuning.ConvectionSpeed) ? tuning.ConvectionSpeed : DefaultConvectionSpeed);
+                tuning.GlobalQualityWeight = math.saturate(math.isfinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : 1f);
+                tuning.JacobiIterations = AbyssalThermalMath.ResolveJacobiIterations(tuning.GlobalQualityWeight);
+                tuning.GridResolution = math.clamp(
+                    AbyssalThermalMath.SafeResolution(tuning.GridResolution),
+                    new int3(MinResolution, MinResolution, MinResolution),
+                    new int3(MaxResolution, MaxResolution, MaxResolution));
+                tuning.ActiveCellCount = math.clamp(tuning.GridResolution.x * tuning.GridResolution.y * tuning.GridResolution.z, 1, MaxCellCount);
+                tuning.DissipationPerStep = math.saturate(math.isfinite(tuning.DissipationPerStep) ? tuning.DissipationPerStep : DefaultDissipationPerStep);
+                tuning.MaxStableTemperatureCelsius = math.max(tuning.AmbientTemperatureCelsius + 1f, math.isfinite(tuning.MaxStableTemperatureCelsius) ? tuning.MaxStableTemperatureCelsius : DefaultMaxStableTemperatureCelsius);
+                tuning.HullInsulationConductivity = math.max(0.0001f, math.isfinite(tuning.HullInsulationConductivity) ? tuning.HullInsulationConductivity : DefaultHullInsulationConductivity);
+                tuning.MockVolcanoIntensity = math.max(1f, math.isfinite(tuning.MockVolcanoIntensity) ? tuning.MockVolcanoIntensity : DefaultMockVolcanoIntensity);
+                tuning.MockVolcanoRadiusMeters = math.max(1f, math.isfinite(tuning.MockVolcanoRadiusMeters) ? tuning.MockVolcanoRadiusMeters : DefaultMockVolcanoRadiusMeters);
+                tuning.MockVolcanoCount = math.clamp(tuning.MockVolcanoCount, 1, 16);
+                tuning.ShiftThresholdMeters = math.max(tuning.CellSizeMeters, math.isfinite(tuning.ShiftThresholdMeters) ? tuning.ShiftThresholdMeters : tuning.CellSizeMeters * 2f);
+                tuning.ThermalDamageThresholdCelsius = math.max(tuning.AmbientTemperatureCelsius, math.isfinite(tuning.ThermalDamageThresholdCelsius) ? tuning.ThermalDamageThresholdCelsius : 58f);
+                tuning.SubmarineHalfExtentX = math.max(0f, math.isfinite(tuning.SubmarineHalfExtentX) ? tuning.SubmarineHalfExtentX : 0f);
+                tuning.SubmarineHalfExtentY = math.max(0f, math.isfinite(tuning.SubmarineHalfExtentY) ? tuning.SubmarineHalfExtentY : 0f);
+                tuning.SubmarineHalfExtentZ = math.max(0f, math.isfinite(tuning.SubmarineHalfExtentZ) ? tuning.SubmarineHalfExtentZ : 0f);
+                tuning.SimulationTickDeltaSeconds = SanitizeSimulationTickDelta(tuning.SimulationTickDeltaSeconds);
+                tuningArray[0] = tuning;
+                ApplyTuningToSerializedFields(tuning);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _tuning, SystemID.CoreDiagnostics);
+            }
         }
 
         public bool TryReadTelemetry(int offsetFromLatest, out ThermalTelemetryEntry entry)
@@ -754,8 +771,7 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return false;
 
-            ThermalTelemetryEntry* ring = (ThermalTelemetryEntry*)_telemetryRing.ResolvePointer(vault);
-            if (ring == null)
+            if (!TryReadArray(vault, in _telemetryRing, AbyssalThermalMath.TelemetryCapacity, out NativeArray<ThermalTelemetryEntry> ring))
                 return false;
 
             if (_frame == 0u)
@@ -793,16 +809,26 @@ namespace Hecton8.Thermodynamics
             _solverDumpLatch = Acquire<int>(SolverDumpLatchId, 1);
 
             ThermalGridTuningDTO tuning = BuildTuning(ResolveQualityWeight(), DeterministicSimulationTickSeconds);
-            ThermalGridTuningDTO* tuningPtr = (ThermalGridTuningDTO*)_tuning.ResolvePointer(_vault);
-            int* sourceCount = (int*)_sourceCount.ResolvePointer(_vault);
-            int* profileCount = (int*)_profileCount.ResolvePointer(_vault);
-            ThermalSolverConvergenceStateDTO* solverState = (ThermalSolverConvergenceStateDTO*)_solverConvergence.ResolvePointer(_vault);
-            ThermalResidualSlot64* solverResiduals = (ThermalResidualSlot64*)_solverResidualSamples.ResolvePointer(_vault);
-            int* dumpLatch = (int*)_solverDumpLatch.ResolvePointer(_vault);
-            ThermalTelemetryEntry* telemetry = (ThermalTelemetryEntry*)_telemetryRing.ResolvePointer(_vault);
-            HeatSourceProfileDTO* profiles = (HeatSourceProfileDTO*)_profiles.ResolvePointer(_vault);
-            if (tuningPtr == null || sourceCount == null || profileCount == null || solverState == null || solverResiduals == null || dumpLatch == null || telemetry == null || profiles == null)
+            if (!TryResolveArray(_vault, in _tuning, 1, out NativeArray<ThermalGridTuningDTO> tuningArray) ||
+                !TryResolveArray(_vault, in _sourceCount, 1, out NativeArray<int> sourceCountArray) ||
+                !TryResolveArray(_vault, in _profileCount, 1, out NativeArray<int> profileCountArray) ||
+                !TryResolveArray(_vault, in _solverConvergence, 1, out NativeArray<ThermalSolverConvergenceStateDTO> solverStateArray) ||
+                !TryResolveArray(_vault, in _solverResidualSamples, AbyssalThermalMath.ResidualThreadSlotCount, out NativeArray<ThermalResidualSlot64> solverResidualArray) ||
+                !TryResolveArray(_vault, in _solverDumpLatch, 1, out NativeArray<int> dumpLatchArray) ||
+                !TryResolveArray(_vault, in _telemetryRing, AbyssalThermalMath.TelemetryCapacity, out NativeArray<ThermalTelemetryEntry> telemetryArray) ||
+                !TryResolveArray(_vault, in _profiles, MaxProfileCount, out NativeArray<HeatSourceProfileDTO> profileArray) ||
+                !TryResolveArray(_vault, in _front, MaxCellCount, out NativeArray<ThermalCellDTO> frontArray) ||
+                !TryResolveArray(_vault, in _back, MaxCellCount, out NativeArray<ThermalCellDTO> backArray) ||
+                !TryResolveArray(_vault, in _injection, MaxCellCount, out NativeArray<ThermalCellDTO> injectionArray))
                 throw new InvalidOperationException("Abyssal thermodynamics Vault pointer resolution failed.");
+
+            ThermalGridTuningDTO* tuningPtr = (ThermalGridTuningDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(tuningArray);
+            int* sourceCount = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(sourceCountArray);
+            int* profileCount = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(profileCountArray);
+            ThermalSolverConvergenceStateDTO* solverState = (ThermalSolverConvergenceStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(solverStateArray);
+            int* dumpLatch = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpLatchArray);
+            ThermalTelemetryEntry* telemetry = (ThermalTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetryArray);
+            HeatSourceProfileDTO* profiles = (HeatSourceProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileArray);
 
             *tuningPtr = tuning;
             *sourceCount = 0;
@@ -812,9 +838,9 @@ namespace Hecton8.Thermodynamics
             _hasRealSources = false;
 
             ThermalGridInitializeJob initJob;
-            initJob.Front = (ThermalCellDTO*)_front.ResolvePointer(_vault);
-            initJob.Back = (ThermalCellDTO*)_back.ResolvePointer(_vault);
-            initJob.Injection = (ThermalCellDTO*)_injection.ResolvePointer(_vault);
+            initJob.Front = (ThermalCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(frontArray);
+            initJob.Back = (ThermalCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(backArray);
+            initJob.Injection = (ThermalCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(injectionArray);
             initJob.AmbientTemperatureCelsius = tuning.AmbientTemperatureCelsius;
             initJob.WaterThermalConductivity = tuning.WaterThermalConductivity;
 
@@ -843,13 +869,43 @@ namespace Hecton8.Thermodynamics
             _registeredOrigin = true;
         }
 
-        private VaultBufferHandle<T> Acquire<T>(BufferID id, int count) where T : struct
+        private VaultGenerationHandle<T> Acquire<T>(BufferID id, int count) where T : struct
         {
             IDataVault vault = _vault ?? EnsureVault();
-            VaultBufferHandle<T> handle = vault.GetBufferHandle<T>(id, count, SystemID.Thermodynamics, NativeArrayOptions.UninitializedMemory);
-            if (!handle.IsCreated)
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(id, count, SystemID.Thermodynamics, NativeArrayOptions.UninitializedMemory);
+            if (!TryResolveArray(vault, in handle, count, out _))
                 throw new InvalidOperationException("Abyssal thermodynamics Vault allocation failed.");
             return handle;
+        }
+
+        private static bool TryResolveArray<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   requiredLength >= 0 &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadArray<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   requiredLength >= 0 &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
 
         private IDataVault EnsureVault()
@@ -860,12 +916,6 @@ namespace Hecton8.Thermodynamics
             _vault = GlobalRegistry.DataVault;
             if (_vault != null)
                 return _vault;
-
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-            {
-                _vault = latest;
-                return _vault;
-            }
 
             throw new InvalidOperationException("Abyssal thermodynamics requires GlobalDataVault before boot.");
         }
@@ -945,7 +995,7 @@ namespace Hecton8.Thermodynamics
             AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            if (!MathGuard.IsFinite(in resolvedAup))
+            if (!resolvedAup.IsFinite())
                 return false;
 
             anchorAup = resolvedAup.ToAbsoluteDouble3();
@@ -1032,11 +1082,12 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return;
 
-            HeatSourceProfileDTO* profiles = (HeatSourceProfileDTO*)_profiles.ResolvePointer(vault);
-            int* count = (int*)_profileCount.ResolvePointer(vault);
-            if (profiles == null || count == null)
+            if (!TryResolveArray(vault, in _profiles, MaxProfileCount, out NativeArray<HeatSourceProfileDTO> profileArray) ||
+                !TryResolveArray(vault, in _profileCount, 1, out NativeArray<int> profileCountArray))
                 return;
 
+            HeatSourceProfileDTO* profiles = (HeatSourceProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileArray);
+            int* count = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(profileCountArray);
             profiles[0].NameHash = BlackSmokerHash;
             profiles[0].IntensityCelsiusPerSecond = DefaultMockVolcanoIntensity;
             profiles[0].RadiusMeters = DefaultMockVolcanoRadiusMeters;
@@ -1050,7 +1101,10 @@ namespace Hecton8.Thermodynamics
 
         private void TryLoadProfilesCold()
         {
-            string path = Path.Combine(Application.streamingAssetsPath, "heat_source_profiles.csv");
+#if !UNITY_EDITOR
+            return;
+#else
+            string path = Path.Combine(Application.dataPath, "_SourceData", "Thermodynamics", "heat_source_profiles.csv");
             if (!File.Exists(path))
                 return;
 
@@ -1062,12 +1116,14 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return;
 
-            byte* scratch = (byte*)_profileBytes.ResolvePointer(vault);
-            HeatSourceProfileDTO* profiles = (HeatSourceProfileDTO*)_profiles.ResolvePointer(vault);
-            int* count = (int*)_profileCount.ResolvePointer(vault);
-            if (scratch == null || profiles == null || count == null)
+            if (!TryResolveArray(vault, in _profileBytes, CsvScratchBytes, out NativeArray<byte> scratchArray) ||
+                !TryResolveArray(vault, in _profiles, MaxProfileCount, out NativeArray<HeatSourceProfileDTO> profileArray) ||
+                !TryResolveArray(vault, in _profileCount, 1, out NativeArray<int> profileCountArray))
                 return;
 
+            byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratchArray);
+            HeatSourceProfileDTO* profiles = (HeatSourceProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileArray);
+            int* count = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(profileCountArray);
             int length;
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
@@ -1080,6 +1136,7 @@ namespace Hecton8.Thermodynamics
                 *count = parsed;
                 _lastProfileWriteTicks = writeTicks;
             }
+#endif
         }
 
         private void InspectLatestTelemetryAndDumpIfFaulted()
@@ -1087,12 +1144,10 @@ namespace Hecton8.Thermodynamics
             if (!TryReadTelemetry(0, out ThermalTelemetryEntry entry))
                 return;
             IDataVault vault = _vault;
-            int* dumpLatch = vault != null && _solverDumpLatch.IsCreated
-                ? (int*)_solverDumpLatch.ResolvePointer(vault)
-                : null;
-            if (dumpLatch == null)
+            if (!TryResolveArray(vault, in _solverDumpLatch, 1, out NativeArray<int> dumpLatchArray))
                 return;
 
+            int* dumpLatch = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpLatchArray);
             const uint immediateDumpFaultMask = AbyssalThermalMath.TelemetryFlagNaN | AbyssalThermalMath.TelemetryFlagDivergent;
             bool immediateFault = (entry.Flags & immediateDumpFaultMask) != 0u;
             bool maxIterationFault = (entry.Flags & AbyssalThermalMath.TelemetryFlagMaxIterations) != 0u;
@@ -1137,13 +1192,13 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return;
 
-            ThermalTelemetryEntry* ring = (ThermalTelemetryEntry*)_telemetryRing.ResolvePointer(vault);
-            if (ring == null)
+            if (!TryReadArray(vault, in _telemetryRing, AbyssalThermalMath.TelemetryCapacity, out NativeArray<ThermalTelemetryEntry> ringArray))
                 return;
 
             string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
             Directory.CreateDirectory(directory);
             long bytes = UnsafeUtility.SizeOf<ThermalTelemetryEntry>() * AbyssalThermalMath.TelemetryCapacity;
+            ThermalTelemetryEntry* ring = (ThermalTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ringArray);
 
             WriteDumpFile(Path.Combine(directory, "Dump_THERMO_SURGEON.bin"), ring, bytes);
             WriteDumpFile(Path.Combine(directory, "Dump_SHINOBU_203.bin"), ring, bytes);
@@ -1191,8 +1246,7 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return;
 
-            NativeArray<ThermalCellDTO> front = _front.Resolve(vault);
-            if (!front.IsCreated)
+            if (!TryReadArray(vault, in _front, MaxCellCount, out NativeArray<ThermalCellDTO> front))
                 return;
 
             GraphicsBuffer uploadBuffer = (_thermalCellsUploadParity & 1) == 0 ? _thermalCellsBufferA : _thermalCellsBufferB;
@@ -1205,19 +1259,19 @@ namespace Hecton8.Thermodynamics
             uploadBuffer.UnlockBufferAfterWrite(_activeCellCount);
 
             Shader.SetGlobalBuffer(ThermalCellsBufferId, uploadBuffer);
-            ThermalGridTuningDTO* tuning = (ThermalGridTuningDTO*)_tuning.ResolvePointer(vault);
-            if (tuning != null)
+            if (TryReadArray(vault, in _tuning, 1, out NativeArray<ThermalGridTuningDTO> tuningArray))
             {
+                ThermalGridTuningDTO tuning = tuningArray[0];
                 int3 safeResolution = math.clamp(
-                    AbyssalThermalMath.SafeResolution(tuning->GridResolution),
+                    AbyssalThermalMath.SafeResolution(tuning.GridResolution),
                     new int3(1, 1, 1),
                     new int3(MaxResolution, MaxResolution, MaxResolution));
-                float safeCellSize = math.max(0.001f, math.isfinite(tuning->CellSizeMeters) ? tuning->CellSizeMeters : DefaultCellSizeMeters);
-                float safeAmbient = math.isfinite(tuning->AmbientTemperatureCelsius) ? tuning->AmbientTemperatureCelsius : DefaultAmbientTemperatureCelsius;
-                float safeQuality = math.saturate(math.isfinite(tuning->GlobalQualityWeight) ? tuning->GlobalQualityWeight : ResolveQualityWeight());
+                float safeCellSize = math.max(0.001f, math.isfinite(tuning.CellSizeMeters) ? tuning.CellSizeMeters : DefaultCellSizeMeters);
+                float safeAmbient = math.isfinite(tuning.AmbientTemperatureCelsius) ? tuning.AmbientTemperatureCelsius : DefaultAmbientTemperatureCelsius;
+                float safeQuality = math.saturate(math.isfinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : ResolveQualityWeight());
                 Shader.SetGlobalVector(ThermalGridMetaId, new Vector4(safeResolution.x, safeCellSize, safeAmbient, safeQuality));
-                double3 origin = tuning->GridOriginAup;
-                float safeConvection = math.max(0f, math.isfinite(tuning->ConvectionSpeed) ? tuning->ConvectionSpeed : DefaultConvectionSpeed);
+                double3 origin = tuning.GridOriginAup;
+                float safeConvection = math.max(0f, math.isfinite(tuning.ConvectionSpeed) ? tuning.ConvectionSpeed : DefaultConvectionSpeed);
                 Shader.SetGlobalVector(ThermalGridOriginId, new Vector4((float)origin.x, (float)origin.y, (float)origin.z, safeConvection));
             }
             else
@@ -1229,9 +1283,9 @@ namespace Hecton8.Thermodynamics
             _visualDirty = false;
         }
 
-        private static void Swap<T>(ref VaultBufferHandle<T> a, ref VaultBufferHandle<T> b) where T : struct
+        private static void Swap<T>(ref VaultGenerationHandle<T> a, ref VaultGenerationHandle<T> b) where T : struct
         {
-            VaultBufferHandle<T> tmp = a;
+            VaultGenerationHandle<T> tmp = a;
             a = b;
             b = tmp;
         }
@@ -1246,21 +1300,21 @@ namespace Hecton8.Thermodynamics
             if (vault == null)
                 return;
 
-            ThermalCellDTO* front = (ThermalCellDTO*)_front.ResolvePointer(vault);
-            ThermalGridTuningDTO* tuning = (ThermalGridTuningDTO*)_tuning.ResolvePointer(vault);
-            if (front == null || tuning == null)
+            if (!TryReadArray(vault, in _front, MaxCellCount, out NativeArray<ThermalCellDTO> frontArray) ||
+                !TryReadArray(vault, in _tuning, 1, out NativeArray<ThermalGridTuningDTO> tuningArray))
                 return;
 
+            ThermalGridTuningDTO tuning = tuningArray[0];
             int3 safeResolution = math.clamp(
-                AbyssalThermalMath.SafeResolution(tuning->GridResolution),
+                AbyssalThermalMath.SafeResolution(tuning.GridResolution),
                 new int3(1, 1, 1),
                 new int3(MaxResolution, MaxResolution, MaxResolution));
             int res = safeResolution.x;
             int y = math.clamp((int)math.round((res - 1) * math.saturate(gizmoSliceY01)), 0, res - 1);
-            float cell = math.max(0.001f, math.isfinite(tuning->CellSizeMeters) ? tuning->CellSizeMeters : DefaultCellSizeMeters);
-            float ambient = math.isfinite(tuning->AmbientTemperatureCelsius) ? tuning->AmbientTemperatureCelsius : DefaultAmbientTemperatureCelsius;
-            float maxStable = math.max(ambient + 1f, math.isfinite(tuning->MaxStableTemperatureCelsius) ? tuning->MaxStableTemperatureCelsius : DefaultMaxStableTemperatureCelsius);
-            Vector3 origin = HectonFloatingOrigin.ToRuntimePosition(tuning->GridOriginAup, HectonFloatingOrigin.CurrentTotalOffsetDouble);
+            float cell = math.max(0.001f, math.isfinite(tuning.CellSizeMeters) ? tuning.CellSizeMeters : DefaultCellSizeMeters);
+            float ambient = math.isfinite(tuning.AmbientTemperatureCelsius) ? tuning.AmbientTemperatureCelsius : DefaultAmbientTemperatureCelsius;
+            float maxStable = math.max(ambient + 1f, math.isfinite(tuning.MaxStableTemperatureCelsius) ? tuning.MaxStableTemperatureCelsius : DefaultMaxStableTemperatureCelsius);
+            Vector3 origin = HectonFloatingOrigin.ToRuntimePosition(tuning.GridOriginAup, HectonFloatingOrigin.CurrentTotalOffsetDouble);
             Vector3 size = new Vector3(cell * 0.92f, 0.03f, cell * 0.92f);
 
             for (int z = 0; z < res; z++)
@@ -1268,7 +1322,7 @@ namespace Hecton8.Thermodynamics
                 for (int x = 0; x < res; x++)
                 {
                     int index = AbyssalThermalMath.Index(x, y, z, safeResolution);
-                    float temp = math.isfinite(front[index].TemperatureCelsius) ? front[index].TemperatureCelsius : ambient;
+                    float temp = math.isfinite(frontArray[index].TemperatureCelsius) ? frontArray[index].TemperatureCelsius : ambient;
                     float t = math.saturate((temp - ambient) / math.max(1f, maxStable - ambient));
                     Color coldToHot = t < 0.5f
                         ? Color.Lerp(Color.blue, Color.yellow, t * 2f)

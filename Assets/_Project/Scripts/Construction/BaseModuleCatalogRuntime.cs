@@ -203,43 +203,42 @@ namespace Hecton8.Construction
             if (vault == null || vault.IsAllocationLocked)
                 return false;
 
-            views.State = vault.GetBuffer<ModuleCatalogStateDTO>(
-                BufferID.BaseModuleCatalogState,
-                1,
-                SystemID.Construction,
-                NativeArrayOptions.ClearMemory);
-            views.Modules = vault.GetBuffer<ModuleDefinitionDTO>(
-                BufferID.BaseModuleCatalogDefinitions,
-                math.max(1, moduleCapacity),
-                SystemID.Construction,
-                NativeArrayOptions.UninitializedMemory);
-            views.Sockets = vault.GetBuffer<SocketDefinitionDTO>(
-                BufferID.BaseModuleCatalogSockets,
-                math.max(1, socketCapacity),
-                SystemID.Construction,
-                NativeArrayOptions.UninitializedMemory);
-            views.Costs = vault.GetBuffer<ModuleCostDTO>(
-                BufferID.BaseModuleCatalogCosts,
-                math.max(1, costCapacity),
-                SystemID.Construction,
-                NativeArrayOptions.UninitializedMemory);
-            views.HashToIndex = vault.GetBuffer<uint>(
-                BufferID.BaseModuleCatalogHashToIndex,
-                math.max(1, hashCapacity),
-                SystemID.Construction,
-                NativeArrayOptions.UninitializedMemory);
-            views.Telemetry = vault.GetBuffer<ModuleCatalogTelemetryEntry>(
-                BufferID.BaseModuleCatalogTelemetryRing,
-                TelemetryCapacity,
-                SystemID.Construction,
-                NativeArrayOptions.ClearMemory);
-
-            return views.State.IsCreated &&
-                   views.Modules.IsCreated &&
-                   views.Sockets.IsCreated &&
-                   views.Costs.IsCreated &&
-                   views.HashToIndex.IsCreated &&
-                   views.Telemetry.IsCreated;
+            return TryResolveOwnedLane(
+                       vault,
+                       BufferID.BaseModuleCatalogState,
+                       1,
+                       NativeArrayOptions.ClearMemory,
+                       out views.State) &&
+                   TryResolveOwnedLane(
+                       vault,
+                       BufferID.BaseModuleCatalogDefinitions,
+                       math.max(1, moduleCapacity),
+                       NativeArrayOptions.UninitializedMemory,
+                       out views.Modules) &&
+                   TryResolveOwnedLane(
+                       vault,
+                       BufferID.BaseModuleCatalogSockets,
+                       math.max(1, socketCapacity),
+                       NativeArrayOptions.UninitializedMemory,
+                       out views.Sockets) &&
+                   TryResolveOwnedLane(
+                       vault,
+                       BufferID.BaseModuleCatalogCosts,
+                       math.max(1, costCapacity),
+                       NativeArrayOptions.UninitializedMemory,
+                       out views.Costs) &&
+                   TryResolveOwnedLane(
+                       vault,
+                       BufferID.BaseModuleCatalogHashToIndex,
+                       math.max(1, hashCapacity),
+                       NativeArrayOptions.UninitializedMemory,
+                       out views.HashToIndex) &&
+                   TryResolveOwnedLane(
+                       vault,
+                       BufferID.BaseModuleCatalogTelemetryRing,
+                       TelemetryCapacity,
+                       NativeArrayOptions.ClearMemory,
+                       out views.Telemetry);
         }
 
         public static bool TryResolveViews(IDataVault vault, out ModuleCatalogViews views)
@@ -249,12 +248,12 @@ namespace Hecton8.Construction
                 return false;
 
             bool resolved =
-                vault.TryGetBuffer(BufferID.BaseModuleCatalogState, out views.State) &&
-                vault.TryGetBuffer(BufferID.BaseModuleCatalogDefinitions, out views.Modules) &&
-                vault.TryGetBuffer(BufferID.BaseModuleCatalogSockets, out views.Sockets) &&
-                vault.TryGetBuffer(BufferID.BaseModuleCatalogCosts, out views.Costs) &&
-                vault.TryGetBuffer(BufferID.BaseModuleCatalogHashToIndex, out views.HashToIndex) &&
-                vault.TryGetBuffer(BufferID.BaseModuleCatalogTelemetryRing, out views.Telemetry);
+                TryReadExistingLane(vault, BufferID.BaseModuleCatalogState, out views.State) &&
+                TryReadExistingLane(vault, BufferID.BaseModuleCatalogDefinitions, out views.Modules) &&
+                TryReadExistingLane(vault, BufferID.BaseModuleCatalogSockets, out views.Sockets) &&
+                TryReadExistingLane(vault, BufferID.BaseModuleCatalogCosts, out views.Costs) &&
+                TryReadExistingLane(vault, BufferID.BaseModuleCatalogHashToIndex, out views.HashToIndex) &&
+                TryReadExistingLane(vault, BufferID.BaseModuleCatalogTelemetryRing, out views.Telemetry);
 
             if (!resolved || !views.State.IsCreated || views.State.Length == 0)
                 return false;
@@ -263,6 +262,63 @@ namespace Hecton8.Construction
             return state.ModuleCount <= views.Modules.Length &&
                    state.SocketCount <= views.Sockets.Length &&
                    state.CostCount <= views.Costs.Length;
+        }
+
+        private static bool TryResolveOwnedLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsAllocationLocked)
+                return false;
+
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                math.max(1, requiredLength),
+                SystemID.Construction,
+                options);
+            return IsExactBufferId(in handle, bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadExistingLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
+                   IsExactBufferId(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool TryGetLaneGeneration<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out uint generation) where T : struct
+        {
+            generation = 0u;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                !IsExactBufferId(in handle, bufferId))
+            {
+                return false;
+            }
+
+            generation = handle.Generation;
+            return generation != 0u;
+        }
+
+        private static bool IsExactBufferId<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId);
         }
 
         public static JobHandle ScheduleMockCatalog(IDataVault vault, out ModuleCatalogViews views, JobHandle dependency = default)
@@ -316,12 +372,13 @@ namespace Hecton8.Construction
             if (length <= 0L || length > DefaultHydrationByteCapacity)
                 return false;
 
-            bytes = vault.GetBuffer<byte>(
-                BufferID.BaseModuleCatalogHydrationBytes,
-                (int)length,
-                SystemID.Construction,
-                NativeArrayOptions.UninitializedMemory);
-            if (!bytes.IsCreated || bytes.Length < length)
+            if (!TryResolveOwnedLane(
+                    vault,
+                    BufferID.BaseModuleCatalogHydrationBytes,
+                    (int)length,
+                    NativeArrayOptions.UninitializedMemory,
+                    out bytes) ||
+                bytes.Length < length)
                 return false;
 
             int readLength = ReadCatalogBytesIntoNativeArray(path, bytes, (int)length);
@@ -345,12 +402,13 @@ namespace Hecton8.Construction
             if (length <= 0L || length > DefaultHydrationByteCapacity)
                 return false;
 
-            bytes = vault.GetBuffer<byte>(
-                BufferID.BaseModuleCatalogHydrationBytes,
-                (int)length,
-                SystemID.Construction,
-                NativeArrayOptions.UninitializedMemory);
-            if (!bytes.IsCreated || bytes.Length < length)
+            if (!TryResolveOwnedLane(
+                    vault,
+                    BufferID.BaseModuleCatalogHydrationBytes,
+                    (int)length,
+                    NativeArrayOptions.UninitializedMemory,
+                    out bytes) ||
+                bytes.Length < length)
                 return false;
 
             int expectedLength = (int)length;
@@ -414,6 +472,14 @@ namespace Hecton8.Construction
                    telemetrySize == TelemetryEntrySize;
         }
 
+        private static uint ReverseBytes(uint value)
+        {
+            return ((value & 0x000000FFu) << 24) |
+                   ((value & 0x0000FF00u) << 8) |
+                   ((value & 0x00FF0000u) >> 8) |
+                   ((value & 0xFF000000u) >> 24);
+        }
+
         public static bool RunSelfAudit(out ModuleCatalogSelfAuditDTO audit)
         {
             audit = default;
@@ -431,7 +497,7 @@ namespace Hecton8.Construction
                 !ShouldPublishRollbackHash(BufferID.BaseModuleCatalogCosts);
             bool hydrationPolicy = true;
             bool endianPolicy = BinaryMagic == 0x48424D43u &&
-                                math.reversebytes(BinaryMagic) == 0x434D4248u &&
+                                ReverseBytes(BinaryMagic) == 0x434D4248u &&
                                 BinaryLittleEndianFlag != 0u;
 
             audit.Flags = 0u;
@@ -789,7 +855,12 @@ namespace Hecton8.Construction
                 flags |= TelemetryOverBudgetFlag;
             entry.Flags = flags;
             entry.CatalogHash = state.CatalogHash;
-            entry.VaultGenerationId = vault.VaultGenerationID;
+            entry.VaultGenerationId = TryGetLaneGeneration<ModuleCatalogTelemetryEntry>(
+                vault,
+                BufferID.BaseModuleCatalogTelemetryRing,
+                out uint telemetryGeneration)
+                ? telemetryGeneration
+                : 0u;
             entry.StateHash = HashTelemetry(entry);
             views.Telemetry[(int)cursor] = entry;
 
@@ -1159,7 +1230,7 @@ namespace Hecton8.Construction
                 ModuleCatalogBinaryHeader header = UnsafeUtility.ReadArrayElement<ModuleCatalogBinaryHeader>(source, 0);
                 if (header.Magic != BinaryMagic)
                 {
-                    state.HydrationStatus = math.reversebytes(header.Magic) == BinaryMagic
+                    state.HydrationStatus = ReverseBytes(header.Magic) == BinaryMagic
                         ? (uint)ModuleCatalogHydrationStatus.InvalidEndian
                         : (uint)ModuleCatalogHydrationStatus.InvalidHeader;
                     state.LastErrorCode = header.Magic;

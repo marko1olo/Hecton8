@@ -129,8 +129,9 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                playerPosition = _cachedTransform.position;
-                playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+                playerPosition = ResolveCachedRuntimePosition();
+                if (!TryResolveRuntimeAup(playerPosition, out playerAup))
+                    return;
             }
 
             float movementSpeedSqr = _playerRigidbody != null ? _playerRigidbody.linearVelocity.sqrMagnitude : 0f;
@@ -146,6 +147,11 @@ namespace Hecton8.Gameplay
                 transportBoost01,
                 transportSignature,
                 toolUseNoise01);
+        }
+
+        private Vector3 ResolveCachedRuntimePosition()
+        {
+            return _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
         }
 
         private void TryRegister()
@@ -243,6 +249,23 @@ namespace Hecton8.Gameplay
 
             playerAup = default;
             return false;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private void RefreshObservedToolReference()

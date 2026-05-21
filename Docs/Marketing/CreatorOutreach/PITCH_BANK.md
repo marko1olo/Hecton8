@@ -159,7 +159,7 @@ Your channel fits because [specific reason]. The angle is industrial underwater 
 
 Assets: [asset IDs/links only after asset metadata claim checks, QA, creator utility, and `creator_send_gate` pass; public Steam/trailer/demo links only after `steam_page_publish_permission_gate`, `press_release_permission_gate` or trailer asset publication gate where applicable, `demo_public_access_permission_gate` where a demo is linked, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`; private demo/key/playtest/preview routes only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, disclosure, and exact access-log fields]
 
-If this fits your audience, I can send a short build/press kit when the demo is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 
 ## Longer Creator Email
 
@@ -190,7 +190,7 @@ Specific reason this might fit your channel:
 
 [one sentence tailored to them]
 
-If this is useful for future coverage, I can send the demo when the public slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 
 Thanks,
 [Name]

@@ -87,8 +87,8 @@ What the player should feel:
 
 What is shown:
 
-- [asset 1]
-- [asset 2]
+- HOLD_ASSET_1 - exact approved asset ID/link only after metadata claim checks, QA, `viewer_named_decision`, valid `capture_verdict`, and route-specific publication gate pass.
+- HOLD_ASSET_2 - exact approved asset ID/link only after metadata claim checks, QA, `viewer_named_decision`, valid `capture_verdict`, and route-specific publication gate pass.
 
 What is not final:
 
@@ -100,8 +100,8 @@ Useful feedback:
 
 Agency proof fields, if this post claims pressure gameplay or route risk:
 
-- [asset metadata `viewer_named_decision`, `capture_verdict`, and `capture_handoff_packet_id` source]
-- [AB-009/KPI `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` source]
+- HOLD_AGENCY_METADATA_SOURCE - exact asset metadata `viewer_named_decision`, `capture_verdict`, and `capture_handoff_packet_id` source.
+- HOLD_AGENCY_READ_SOURCE - exact AB-009/KPI `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` source.
 ```
 
 ## First Ten Devlog Topics

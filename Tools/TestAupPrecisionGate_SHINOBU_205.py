@@ -37,6 +37,7 @@ public sealed class BadAup
         float distance = Vector3.Distance(transform.position, player.position);
         float distanceSq = (candidate.transform.position - player.position).sqrMagnitude;
         AbsoluteUniversePosition hiddenBridge = AbsoluteUniversePosition.FromRuntimePosition(cachedRuntimePosition);
+        float3 legacyAbsolute = new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z);
         float3 approved = AupPrecisionMath.LocalDeltaFloat3(targetAup, observerAup, float3.zero);
     }
 }
@@ -74,6 +75,7 @@ public sealed class AUP_Premature_Cast_Scanner
         assert_equal(counts["strictTransformAuthorityReadCount"], 2, "strictTransformAuthorityReadCount")
         assert_equal(counts["transformDistanceReviewCount"], 2, "transformDistanceReviewCount")
         assert_equal(counts["runtimeAupBridgeReviewCount"], 1, "runtimeAupBridgeReviewCount")
+        assert_equal(counts["legacyAbsoluteFloatPayloadReviewCount"], 1, "legacyAbsoluteFloatPayloadReviewCount")
         assert_equal(counts["approvedHelperCalls"], 1, "approvedHelperCalls")
 
 

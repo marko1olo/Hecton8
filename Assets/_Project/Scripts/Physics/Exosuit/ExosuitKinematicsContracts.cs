@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace Hecton8.Physics.Exosuit
@@ -14,19 +16,14 @@ namespace Hecton8.Physics.Exosuit
         public const uint Clamped = 1u << 2;
         public const uint PurgeLatched = 1u << 3;
         public const uint NaNDetected = 1u << 4;
-        public const uint LowProbeBudget = 1u << 5;
+        public const uint ReducedProbeBudget = 1u << 5;
         public const uint SecondaryProbeBlend = 1u << 6;
         public const uint EmergencyMockData = 1u << 7;
-    }
-
-    /// <summary>
-    /// Mock input action bits consumed by the blind exosuit solver.
-    /// </summary>
-    public static class ExosuitInputActions
-    {
-        public const uint Grab = 1u << 0;
-        public const uint Purge = 1u << 1;
-        public const uint Jump = 1u << 2;
+        public const uint ThrusterActive = 1u << 8;
+        public const uint Overheated = 1u << 9;
+        public const uint SdfContact = 1u << 10;
+        public const uint VoxelSdfSampled = 1u << 11;
+        public const uint BudgetExceeded = 1u << 12;
     }
 
     /// <summary>
@@ -35,12 +32,13 @@ namespace Hecton8.Physics.Exosuit
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ExosuitStateDTO
     {
-        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(0)] public double3 AUP_Position;
         [FieldOffset(24)] public float3 Velocity;
-        [FieldOffset(36)] public float HydraulicPressure;
-        [FieldOffset(40)] public float3 AnchorNormal;
-        [FieldOffset(52)] public uint StateMask;
-        [FieldOffset(56)] public ulong _pad0;
+        [FieldOffset(36)] public float3 AngularVelocity;
+        [FieldOffset(48)] public float ThrusterHeat;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public uint ReservedLock;
+        [FieldOffset(60)] private uint _pad0;
     }
 
     /// <summary>
@@ -97,7 +95,7 @@ namespace Hecton8.Physics.Exosuit
     {
         [FieldOffset(0)] public float HydraulicPressure;
         [FieldOffset(4)] public float DepthMeters;
-        [FieldOffset(8)] public uint StateMask;
+        [FieldOffset(8)] public uint Flags;
         [FieldOffset(12)] public uint Frame;
     }
 
@@ -109,19 +107,19 @@ namespace Hecton8.Physics.Exosuit
     {
         [FieldOffset(0)] public double3 AUP;
         [FieldOffset(24)] public float3 Velocity;
-        [FieldOffset(36)] public float HydraulicPressure;
-        [FieldOffset(40)] public float SdfPushOutMagnitude;
-        [FieldOffset(44)] public float SolverComputeTimeMs;
-        [FieldOffset(48)] public uint Frame;
-        [FieldOffset(52)] public uint StateMask;
-        [FieldOffset(56)] public uint ErrorFlags;
+        [FieldOffset(36)] public float ThrusterHeat;
+        [FieldOffset(40)] public float HydraulicPressure;
+        [FieldOffset(44)] public float SdfPushOutMagnitude;
+        [FieldOffset(48)] public float SolverComputeTimeMs;
+        [FieldOffset(52)] public uint Frame;
+        [FieldOffset(56)] public uint Flags;
         [FieldOffset(60)] public uint StateHash;
     }
 
     /// <summary>
-    /// Runtime tuning scalars for the exosuit solver. Size: 64 bytes.
+    /// Runtime tuning scalars for the exosuit solver. Size: 80 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct ExosuitTuningDTO
     {
         [FieldOffset(0)] public float BaseMass;
@@ -136,25 +134,13 @@ namespace Hecton8.Physics.Exosuit
         [FieldOffset(36)] public float FootstepStrideMeters;
         [FieldOffset(40)] public float MaxSpeedMetersPerSecond;
         [FieldOffset(44)] public float CrushDepthMeters;
-        [FieldOffset(48)] public uint CsvVersion;
-        [FieldOffset(52)] public uint StateHash;
-        [FieldOffset(56)] public uint Flags;
-        [FieldOffset(60)] private uint _pad0;
-    }
-
-    /// <summary>
-    /// Mock input buffer used by the blind solver. Size: 32 bytes.
-    /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct MockInputBuffer
-    {
-        [FieldOffset(0)] public float2 MoveAxis;
-        [FieldOffset(8)] public float VerticalAxis;
-        [FieldOffset(12)] public float DesiredYawRadians;
-        [FieldOffset(16)] public uint ActionMask;
-        [FieldOffset(20)] public uint Frame;
-        [FieldOffset(24)] public float GlobalQualityWeight;
-        [FieldOffset(28)] private uint _pad0;
+        [FieldOffset(48)] public float SdfEpsilonMeters;
+        [FieldOffset(52)] public float GravityMultiplier;
+        [FieldOffset(56)] public uint MaxSubsteps;
+        [FieldOffset(60)] public uint CsvVersion;
+        [FieldOffset(64)] public uint StateHash;
+        [FieldOffset(68)] public uint Flags;
+        [FieldOffset(72)] private ulong _pad0;
     }
 
     /// <summary>
@@ -207,5 +193,55 @@ namespace Hecton8.Physics.Exosuit
         [FieldOffset(52)] public uint Frame;
         [FieldOffset(56)] public uint StateHash;
         [FieldOffset(60)] private uint _pad0;
+    }
+
+    public static class ExosuitLayoutVerifier
+    {
+        public static bool ValidateRuntimeLayouts()
+        {
+            bool sizeOk =
+                UnsafeUtility.SizeOf<ExosuitStateDTO>() == 64 &&
+                UnsafeUtility.SizeOf<ExosuitFrameInputDTO>() == 32 &&
+                UnsafeUtility.SizeOf<MechHapticSignalDTO>() == 16 &&
+                UnsafeUtility.SizeOf<MockCrushDepthSignal>() == 16 &&
+                UnsafeUtility.SizeOf<SiltExplosionSignal>() == 32 &&
+                UnsafeUtility.SizeOf<ExosuitAcousticEchoTap>() == 32 &&
+                UnsafeUtility.SizeOf<ExoScreenDTO>() == 16 &&
+                UnsafeUtility.SizeOf<ExosuitTuningDTO>() == 80 &&
+                UnsafeUtility.SizeOf<MockTerrainSDF>() == 64 &&
+                UnsafeUtility.SizeOf<MockFlowField>() == 32 &&
+                UnsafeUtility.SizeOf<ExosuitSolverOutput>() == 64 &&
+                UnsafeUtility.SizeOf<ExosuitTelemetryEntry>() == 64;
+
+#if UNITY_EDITOR
+            return sizeOk &&
+                   GetOffset<ExosuitStateDTO>(nameof(ExosuitStateDTO.AUP_Position)) == 0 &&
+                   GetOffset<ExosuitStateDTO>(nameof(ExosuitStateDTO.Velocity)) == 24 &&
+                   GetOffset<ExosuitStateDTO>(nameof(ExosuitStateDTO.AngularVelocity)) == 36 &&
+                   GetOffset<ExosuitStateDTO>(nameof(ExosuitStateDTO.ThrusterHeat)) == 48 &&
+                   GetOffset<ExosuitStateDTO>(nameof(ExosuitStateDTO.Flags)) == 52 &&
+                   GetOffset<ExosuitStateDTO>(nameof(ExosuitStateDTO.ReservedLock)) == 56 &&
+                   GetOffset<ExosuitStateDTO>("_pad0") == 60 &&
+                   GetOffset<ExosuitFrameInputDTO>(nameof(ExosuitFrameInputDTO.MoveAxis)) == 0 &&
+                   GetOffset<ExosuitFrameInputDTO>(nameof(ExosuitFrameInputDTO.VerticalAxis)) == 8 &&
+                   GetOffset<ExosuitFrameInputDTO>(nameof(ExosuitFrameInputDTO.DesiredYawRadians)) == 12 &&
+                   GetOffset<ExosuitFrameInputDTO>(nameof(ExosuitFrameInputDTO.ActionMask)) == 16 &&
+                   GetOffset<ExosuitFrameInputDTO>(nameof(ExosuitFrameInputDTO.Frame)) == 20 &&
+                   GetOffset<ExosuitFrameInputDTO>(nameof(ExosuitFrameInputDTO.GlobalQualityWeight)) == 24 &&
+                   GetOffset<ExosuitTuningDTO>(nameof(ExosuitTuningDTO.SdfEpsilonMeters)) == 48 &&
+                   GetOffset<ExosuitTuningDTO>(nameof(ExosuitTuningDTO.GravityMultiplier)) == 52 &&
+                   GetOffset<ExosuitTuningDTO>(nameof(ExosuitTuningDTO.MaxSubsteps)) == 56 &&
+                   GetOffset<ExosuitTuningDTO>(nameof(ExosuitTuningDTO.StateHash)) == 64;
+#else
+            return sizeOk;
+#endif
+        }
+
+#if UNITY_EDITOR
+        private static int GetOffset<T>(string fieldName) where T : struct
+        {
+            return Marshal.OffsetOf<T>(fieldName).ToInt32();
+        }
+#endif
     }
 }

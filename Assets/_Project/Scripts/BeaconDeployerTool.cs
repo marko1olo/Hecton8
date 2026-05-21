@@ -116,26 +116,51 @@ namespace Hecton8.Gameplay
         [SerializeField] private Vector3 beaconScale = new Vector3(0.22f, 0.45f, 0.22f);
         [SerializeField] private float fallbackLightRange = 4f;
 
-        private Transform _cachedTransform;
         private float _cooldown;
-        private float _nextFeedbackAt;
+        private float _feedbackCooldownRemaining;
         [SerializeField] private int _debugActiveBeaconCount;
         private readonly BeaconNetworkSystem.BeaconSnapshot[] _beaconBuffer = new BeaconNetworkSystem.BeaconSnapshot[32];
-        private int _cachedNearestAssessmentFrame = -1;
+        private uint _nearestAssessmentEvaluationStamp;
+        private uint _cachedNearestAssessmentStamp = uint.MaxValue;
         private bool _cachedNearestAssessmentValid;
         private string _cachedNearestLabel;
         private float _cachedNearestDistance;
         private BeaconAssessment _cachedNearestAssessment;
-        private int _cachedOperationalTextFrame = -1;
+        private uint _operationalTextEvaluationStamp;
+        private uint _cachedOperationalTextStamp = uint.MaxValue;
         private string _cachedOperationalDirective;
+        private BeaconNetworkSystem _beaconNetwork;
+        private LocalizationManager _localization;
         private BiomeMatrixDirector _biomeMatrixDirector;
         private WorldZoneDirector _worldZoneDirector;
         private FixedCharBuffer _beaconHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - beacon HUD staging buffer - owner: BeaconDeployerTool
         private FixedCharBuffer _beaconLogBuffer = new FixedCharBuffer(768); // COLD ALLOC: char[768] - beacon operation log staging buffer - owner: BeaconDeployerTool
 
-        private void Awake()
+        public override void OnSpawn()
         {
-            _cachedTransform = transform;
+            base.OnSpawn();
+            CacheColdDependencies();
+            AdvanceEvaluationStamps();
+            InvalidateNearestAssessmentCache();
+        }
+
+        public override void OnEquip()
+        {
+            base.OnEquip();
+            CacheColdDependencies();
+            AdvanceEvaluationStamps();
+            InvalidateNearestAssessmentCache();
+        }
+
+        public override void OnDespawn()
+        {
+            _beaconNetwork = null;
+            _localization = null;
+            _biomeMatrixDirector = null;
+            _worldZoneDirector = null;
+            _feedbackCooldownRemaining = 0f;
+            InvalidateNearestAssessmentCache();
+            base.OnDespawn();
         }
 
         public override void UsePrimary(float deltaTime)
@@ -145,21 +170,27 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
+            if (!TryGetBeaconNetwork(out BeaconNetworkSystem beaconNetwork) ||
+                !TryResolvePlayerPose(out Vector3 poseOrigin, out Vector3 poseForward, out _))
+            {
+                return;
+            }
+
             Vector3 spawnPosition;
             Quaternion spawnRotation;
 
-            if (TryGetDeploymentHit(out RaycastHit hit))
+            if (TryGetDeploymentHit(poseOrigin, poseForward, out RaycastHit hit))
             {
                 spawnPosition = hit.point + hit.normal * 0.08f;
-                spawnRotation = Quaternion.LookRotation(hit.normal);
+                spawnRotation = ResolveSafeLookRotation(hit.normal, poseForward);
             }
             else
             {
-                spawnPosition = _cachedTransform.position + _cachedTransform.forward * 4f;
-                spawnRotation = Quaternion.identity;
+                spawnPosition = poseOrigin + (poseForward * 4f);
+                spawnRotation = ResolveSafeLookRotation(poseForward, Vector3.forward);
             }
 
-            if (BeaconNetworkSystem.TryDeployBeacon(
+            if (beaconNetwork.TryDeployBeaconFromTool(
                 worldBeaconPrefab,
                 spawnPosition,
                 spawnRotation,
@@ -188,38 +219,39 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            if (Hecton8.Core.GlobalRegistry.BeaconNetwork == null || Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount == 0)
+            if (!TryGetBeaconNetwork(out BeaconNetworkSystem beaconNetwork) || beaconNetwork.ActiveCount == 0)
             {
-                if (Time.time >= _nextFeedbackAt)
+                if (TryConsumeFeedbackGate())
                 {
                     if (TryWriteNoActiveBeaconHud())
                         ToolHitUtility.ShowWarning(in _beaconHudBuffer);
-                    _nextFeedbackAt = Time.time + feedbackInterval;
                 }
                 return;
             }
 
-            if (!BeaconNetworkSystem.TryGetNearest(_cachedTransform.position, out BeaconNetworkSystem.BeaconSnapshot nearestSnapshot, out float nearestDistance))
+            if (!TryResolvePlayerPose(out _, out _, out AbsoluteUniversePosition playerAup) ||
+                !beaconNetwork.TryGetNearestFromTool(in playerAup, out BeaconNetworkSystem.BeaconSnapshot nearestSnapshot, out float nearestDistance))
+            {
                 return;
+            }
 
             if (nearestDistance > retractRange)
             {
-                if (Time.time >= _nextFeedbackAt)
+                if (TryConsumeFeedbackGate())
                 {
                     BeaconAssessment assessment = BuildExistingBeaconAssessment(nearestSnapshot, nearestDistance);
                     if (TryWriteNearestBeaconHud(nearestSnapshot.Label, assessment, nearestDistance, ResolveActiveBeaconCount()))
                         ToolHitUtility.ShowInfo(in _beaconHudBuffer);
 
                     RecordBeaconCheckLog(nearestSnapshot.Label, nearestDistance, assessment);
-                    _nextFeedbackAt = Time.time + feedbackInterval;
                 }
                 return;
             }
 
-            if (BeaconNetworkSystem.TryRetractNearest(_cachedTransform.position, out BeaconRuntime nearest, out float distance))
+            if (beaconNetwork.TryRetractNearestFromTool(in playerAup, out BeaconRuntime nearest, out float distance))
             {
-                Vector3 position = nearest.transform.position;
-                string label = nearest.Label;
+                Vector3 position = nearestSnapshot.Position;
+                string label = nearest != null ? nearest.Label : nearestSnapshot.Label;
                 int activeCount = ResolveActiveBeaconCount();
                 if (TryWriteBeaconRetractedHud(label, activeCount))
                     ToolHitUtility.ShowInfo(in _beaconHudBuffer);
@@ -232,15 +264,22 @@ namespace Hecton8.Gameplay
 
         public override void ToolTick(float deltaTime)
         {
-            if (_cooldown > 0f)
-                _cooldown = math.max(0f, _cooldown - deltaTime);
+            float safeDeltaTime = math.max(0f, math.isfinite(deltaTime) ? deltaTime : 0f);
 
-            _debugActiveBeaconCount = Hecton8.Core.GlobalRegistry.BeaconNetwork != null
-                ? Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount
+            if (_cooldown > 0f)
+                _cooldown = math.max(0f, _cooldown - safeDeltaTime);
+
+            if (_feedbackCooldownRemaining > 0f)
+                _feedbackCooldownRemaining = math.max(0f, _feedbackCooldownRemaining - safeDeltaTime);
+
+            _debugActiveBeaconCount = _beaconNetwork != null
+                ? _beaconNetwork.ActiveCount
                 : 0;
+
+            AdvanceEvaluationStamps();
         }
 
-        public override string GetOperationalSummary()
+        public override string BuildLegacyOperationalSummaryString()
         {
             _beaconHudBuffer.Clear();
             WriteOperationalSummary(ref _beaconHudBuffer);
@@ -272,7 +311,6 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            ResolveRuntimeContext();
             if (TryBuildContextualReadyAssessment(out BeaconAssessment contextualAssessment))
             {
                 AppendText(ref buffer, "BEACON TOOL // ");
@@ -286,7 +324,7 @@ namespace Hecton8.Gameplay
             AppendText(ref buffer, " // READY");
         }
 
-        public override string GetOperationalDirective()
+        public override string BuildLegacyOperationalDirectiveString()
         {
             RefreshOperationalDirectiveCache();
             return _cachedOperationalDirective;
@@ -313,7 +351,7 @@ namespace Hecton8.Gameplay
                     routeAssessment.Recommendation);
             }
 
-            if (Hecton8.Core.GlobalRegistry.BeaconNetwork == null || Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount <= 1)
+            if (!TryGetBeaconNetwork(out BeaconNetworkSystem beaconNetwork) || beaconNetwork.ActiveCount <= 1)
             {
                 return new BeaconAssessment(
                     ResolveLocalized(LocalizationKeys.BEACON_ROLE_ANCHOR, "ANCHOR"),
@@ -356,9 +394,9 @@ namespace Hecton8.Gameplay
             return new BeaconAssessment(role, summary, recommendation);
         }
 
-        private bool TryGetDeploymentHit(out RaycastHit hit)
+        private bool TryGetDeploymentHit(Vector3 origin, Vector3 direction, out RaycastHit hit)
         {
-            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, deployRange, deploymentMask.value, QueryTriggerInteraction.Ignore, out hit);
+            return TryQueuePrimaryRaycast(origin, direction, deployRange, deploymentMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
         private bool TryWriteBeaconDeployedHud(string label, BeaconAssessment assessment, int activeCount)
@@ -396,10 +434,10 @@ namespace Hecton8.Gameplay
             return AppendText(ref _beaconHudBuffer, ResolveLocalized(LocalizationKeys.BEACON_HUD_NO_ACTIVE, DefaultNoActiveMarkers));
         }
 
-        private static int ResolveActiveBeaconCount()
+        private int ResolveActiveBeaconCount()
         {
-            return Hecton8.Core.GlobalRegistry.BeaconNetwork != null
-                ? Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount
+            return _beaconNetwork != null
+                ? _beaconNetwork.ActiveCount
                 : 0;
         }
 
@@ -481,10 +519,10 @@ namespace Hecton8.Gameplay
             snapshot = default;
             distance = 0f;
 
-            if (Hecton8.Core.GlobalRegistry.BeaconNetwork == null)
+            if (!TryGetBeaconNetwork(out BeaconNetworkSystem beaconNetwork))
                 return false;
 
-            int count = Hecton8.Core.GlobalRegistry.BeaconNetwork.CopySnapshots(_beaconBuffer);
+            int count = beaconNetwork.CopySnapshots(_beaconBuffer);
             if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
                 return false;
 
@@ -540,11 +578,14 @@ namespace Hecton8.Gameplay
             distance = 0f;
             assessment = default;
 
-            if (Hecton8.Core.GlobalRegistry.BeaconNetwork == null || Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount == 0)
+            if (!TryGetBeaconNetwork(out BeaconNetworkSystem beaconNetwork) || beaconNetwork.ActiveCount == 0)
                 return false;
 
-            if (!BeaconNetworkSystem.TryGetNearest(_cachedTransform.position, out BeaconNetworkSystem.BeaconSnapshot nearest, out distance))
+            if (!TryResolvePlayerPose(out _, out _, out AbsoluteUniversePosition playerAup) ||
+                !beaconNetwork.TryGetNearestFromTool(in playerAup, out BeaconNetworkSystem.BeaconSnapshot nearest, out distance))
+            {
                 return false;
+            }
 
             label = nearest.Label;
             assessment = BuildExistingBeaconAssessment(nearest, distance);
@@ -553,8 +594,8 @@ namespace Hecton8.Gameplay
 
         private bool TryGetNearestAssessmentCached(out string label, out float distance, out BeaconAssessment assessment)
         {
-            int currentFrame = Time.frameCount;
-            if (_cachedNearestAssessmentFrame == currentFrame)
+            uint currentStamp = _nearestAssessmentEvaluationStamp;
+            if (_cachedNearestAssessmentStamp == currentStamp)
             {
                 label = _cachedNearestLabel;
                 distance = _cachedNearestDistance;
@@ -563,7 +604,7 @@ namespace Hecton8.Gameplay
             }
 
             bool valid = TryReadNearestAssessment(out label, out distance, out assessment);
-            _cachedNearestAssessmentFrame = currentFrame;
+            _cachedNearestAssessmentStamp = currentStamp;
             _cachedNearestAssessmentValid = valid;
             _cachedNearestLabel = label;
             _cachedNearestDistance = distance;
@@ -573,19 +614,19 @@ namespace Hecton8.Gameplay
 
         private void InvalidateNearestAssessmentCache()
         {
-            _cachedNearestAssessmentFrame = -1;
+            _cachedNearestAssessmentStamp = uint.MaxValue;
             _cachedNearestAssessmentValid = false;
             _cachedNearestLabel = null;
             _cachedNearestDistance = 0f;
             _cachedNearestAssessment = default;
-            _cachedOperationalTextFrame = -1;
+            _cachedOperationalTextStamp = uint.MaxValue;
             _cachedOperationalDirective = null;
         }
 
         private void RefreshOperationalDirectiveCache()
         {
-            int currentFrame = Time.frameCount;
-            if (_cachedOperationalTextFrame == currentFrame)
+            uint currentStamp = _operationalTextEvaluationStamp;
+            if (_cachedOperationalTextStamp == currentStamp)
                 return;
 
             if (_cooldown > 0f)
@@ -593,35 +634,136 @@ namespace Hecton8.Gameplay
                 _cachedOperationalDirective = ResolveLocalized(
                     LocalizationKeys.BEACON_OPERATIONAL_COOLDOWN_DIRECTIVE,
                     "Wait for deployment hardware to reset.");
-                _cachedOperationalTextFrame = currentFrame;
+                _cachedOperationalTextStamp = currentStamp;
                 return;
             }
 
             if (TryGetNearestAssessmentCached(out _, out _, out BeaconAssessment assessment))
             {
                 _cachedOperationalDirective = assessment.Recommendation;
-                _cachedOperationalTextFrame = currentFrame;
+                _cachedOperationalTextStamp = currentStamp;
                 return;
             }
 
-            ResolveRuntimeContext();
             if (TryBuildContextualReadyAssessment(out BeaconAssessment contextualAssessment))
             {
                 _cachedOperationalDirective = contextualAssessment.Recommendation;
-                _cachedOperationalTextFrame = currentFrame;
+                _cachedOperationalTextStamp = currentStamp;
                 return;
             }
 
             _cachedOperationalDirective = ResolveLocalized(
                 LocalizationKeys.BEACON_OPERATIONAL_READY_DIRECTIVE,
                 "Primary deploys a route marker. Secondary checks or retracts the nearest beacon.");
-            _cachedOperationalTextFrame = currentFrame;
+            _cachedOperationalTextStamp = currentStamp;
         }
 
-        private void ResolveRuntimeContext()
+        private void CacheColdDependencies()
         {
+            _beaconNetwork = Hecton8.Core.GlobalRegistry.BeaconNetwork;
+            _localization = Hecton8.Core.GlobalRegistry.Localization;
             WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _biomeMatrixDirector);
             WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref _worldZoneDirector);
+        }
+
+        private bool TryGetBeaconNetwork(out BeaconNetworkSystem beaconNetwork)
+        {
+            beaconNetwork = _beaconNetwork;
+            return beaconNetwork != null;
+        }
+
+        private bool TryResolvePlayerPose(out Vector3 origin, out Vector3 direction, out AbsoluteUniversePosition aup)
+        {
+            origin = default;
+            direction = default;
+            aup = default;
+
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                return false;
+            }
+
+            float3 runtimePosition = snapshot.RuntimePosition;
+            float3 forward = snapshot.Forward;
+            float forwardLengthSq = math.lengthsq(forward);
+            if (!math.all(math.isfinite(runtimePosition)) ||
+                !math.all(math.isfinite(forward)) ||
+                !math.isfinite(forwardLengthSq) ||
+                forwardLengthSq <= 0.0001f ||
+                !math.all(math.isfinite(snapshot.Aup.ToAbsoluteDouble3())))
+            {
+                return false;
+            }
+
+            float invForwardLength = math.rsqrt(math.max(forwardLengthSq, 0.0001f));
+            origin = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            direction = new Vector3(
+                forward.x * invForwardLength,
+                forward.y * invForwardLength,
+                forward.z * invForwardLength);
+            aup = snapshot.Aup;
+            return true;
+        }
+
+        private bool TryConsumeFeedbackGate()
+        {
+            if (_feedbackCooldownRemaining > 0f)
+                return false;
+
+            _feedbackCooldownRemaining = ResolveFeedbackInterval();
+            return true;
+        }
+
+        private float ResolveFeedbackInterval()
+        {
+            float safeInterval = math.max(0.01f, math.isfinite(feedbackInterval) ? feedbackInterval : 0.45f);
+            float quality = ResolveGlobalQualityWeight();
+            float cadenceScale = math.lerp(1.65f, 0.85f, math.smoothstep(0f, 1f, quality));
+            return safeInterval * cadenceScale;
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 0.5f);
+        }
+
+        private static Quaternion ResolveSafeLookRotation(Vector3 forward, Vector3 fallback)
+        {
+            float3 candidate = new float3(forward.x, forward.y, forward.z);
+            float candidateLengthSq = math.lengthsq(candidate);
+            if (!math.all(math.isfinite(candidate)) ||
+                !math.isfinite(candidateLengthSq) ||
+                candidateLengthSq <= 0.0001f)
+            {
+                candidate = new float3(fallback.x, fallback.y, fallback.z);
+                candidateLengthSq = math.lengthsq(candidate);
+            }
+
+            if (!math.all(math.isfinite(candidate)) ||
+                !math.isfinite(candidateLengthSq) ||
+                candidateLengthSq <= 0.0001f)
+            {
+                candidate = new float3(0f, 0f, 1f);
+                candidateLengthSq = 1f;
+            }
+
+            float invLength = math.rsqrt(math.max(candidateLengthSq, 0.0001f));
+            Vector3 safeForward = new Vector3(
+                candidate.x * invLength,
+                candidate.y * invLength,
+                candidate.z * invLength);
+            return Quaternion.LookRotation(safeForward);
+        }
+
+        private void AdvanceEvaluationStamps()
+        {
+            unchecked
+            {
+                _nearestAssessmentEvaluationStamp++;
+                _operationalTextEvaluationStamp++;
+            }
         }
 
         private bool TryBuildContextualReadyAssessment(out BeaconAssessment assessment)
@@ -682,9 +824,9 @@ namespace Hecton8.Gameplay
             return false;
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
@@ -785,7 +927,7 @@ namespace Hecton8.Gameplay
                 : string.Empty;
         }
 
-        private static bool TryWriteDeploymentLogSummary(
+        private bool TryWriteDeploymentLogSummary(
             ref FixedCharBuffer buffer,
             string label,
             Vector3 spawnPosition,

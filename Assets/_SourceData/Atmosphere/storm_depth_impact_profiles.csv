@@ -1,0 +1,4 @@
+profile,min_depth_m,max_depth_m,decay_constant,turbidity_gain,surge_scale,acoustic_gain,biolum_gain
+gale,0,1800,0.0024,1.25,0.055,0.38,0.72
+hurricane,0,5200,0.00185,1.85,0.095,0.72,1.35
+abyssal_hurricane,1200,7600,0.00135,2.35,0.125,0.86,1.72

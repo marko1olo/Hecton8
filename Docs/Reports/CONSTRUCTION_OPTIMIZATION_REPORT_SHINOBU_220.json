@@ -1,0 +1,38 @@
+{
+  "agent": "SHINOBU_220",
+  "domain": "ECHELON 6 HABITAT & VEHICLES / BASE CONTAINMENT",
+  "generated_utc": "2026-05-20T22:24:34.4422764Z",
+  "scanner": "DoorPhysicsInquisition_PowerShell_Mirror_Loop42",
+  "physicalDoorMentions": 3,
+  "colliderDoorMentions": 1,
+  "transformDoorMotionMentions": 1,
+  "ownedRuntimePhysicsHits": 0,
+  "mathematicalBulkheadRuntime": "BulkheadContainmentRuntime",
+  "notes": "Emergency BaseAirlock bulkhead state is DataVault/CSR/KCC plane driven; visual closure is shader-side.",
+  "files": [
+    {
+      "path": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+      "collider": false,
+      "transformMotion": false,
+      "ownedRuntime": true,
+      "line": 516,
+      "snippet": "throw new FatalArchitectureException(\"SHINOBU_220 bulkhead DTO layout mismatch.\");"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
+      "collider": false,
+      "transformMotion": false,
+      "ownedRuntime": true,
+      "line": 115,
+      "snippet": "[Tooltip(\"Amber color shown while emergency bulkhead lockdown overrides player control.\")]"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
+      "collider": true,
+      "transformMotion": true,
+      "ownedRuntime": false,
+      "line": 77,
+      "snippet": "[Tooltip(\"Can the door be cut? Set to false for permanently sealed doors.\")]"
+    }
+  ]
+}

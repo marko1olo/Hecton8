@@ -149,6 +149,9 @@ Verification:
 
 ## Occupancy Truth Patch - 2026-05-20
 
+Superseded:
+- Later Vault-owned occupancy commit removed the SHINOBU authoring-component bridge. Current occupancy truth is `SocketStateDTO.ConnectionStatus` plus `SocketConnectionPairDTO`.
+
 What was wrong:
 - Target socket Vault rows were rebuilt from template definitions only. Existing `ModuleSocket.IsOccupied` state could be lost, allowing the Burst evaluator to consider sockets already consumed by prior placements.
 
@@ -596,7 +599,7 @@ What was wrong:
 
 What was done:
 - Replaced the fallback with `TryResolveShinobuSocketVault(out IDataVault vault)`.
-- `GlobalRegistry.DataVault` remains only in cold `ResolveRuntimeReferences()` binding for this SHINOBU route.
+- `GlobalRegistry.DataVault` remains only in cold `BindRuntimeReferences()` binding for the PlayerBuilder snap/validation route.
 
 Cinematic Cheats used:
 - No visual change. The builder hologram remains data-only and shader-driven.
@@ -691,6 +694,9 @@ Verification:
 
 ## Cold ModuleSocket Buffer Capacity - 2026-05-20
 
+Superseded:
+- Later Vault-owned occupancy commit removed the SHINOBU `ModuleSocket` authoring bridge. Current occupancy truth is `SocketStateDTO.ConnectionStatus` plus `SocketConnectionPairDTO`.
+
 What was wrong:
 - Reused `ModuleSocket` authoring buffers started at capacity 8.
 - Dense modules could force `List<T>` backing-array growth during cold target-cache rebuild or post-place occupancy marking.
@@ -731,3 +737,726 @@ Verification:
 - `git diff --check` passes with LF/CRLF normalization warnings only.
 - SHINOBU job forbidden-pattern scan has no hits.
 - No build/rebuild was launched; Core.Memory asmdef remains the documented compile wall.
+
+## Builder SDF Truth Revalidation - 2026-05-20
+
+What was wrong:
+- The previous SDF Math LOD report treated builder validation as presentation-only.
+- In source, the validation result feeds placement validity flags, so quality-scaled corner skipping would make build legality hardware-dependent.
+
+What was done:
+- Removed `ResolveBuilderGhostSdfSampleCount()` and the `SdfSampleCount` input from `ValidateBuilderGhostPlacementJob`.
+- Builder CPU hydration and Burst validation now always process all eight deterministic bounds corners through `ResolveBuilderGhostCornerIndex()`.
+- Holography telemetry records the constant eight-corner placement proof.
+
+Cinematic Cheats used:
+- None for placement truth. `GlobalQualityWeight` remains valid for Dear Lie shader/material envelope and socket candidate/search budgets.
+
+Exact Microseconds saved:
+- No savings claimed. This restores up to six low-quality SDF corner samples to keep placement truth identical across hardware.
+
+Verification:
+- XML self-audit parses as `SELF_AUDIT`.
+- JSON report parses and `aggregateResiduals.builderGhostSdfCornerChecks` is `8`.
+- Source scan has no `ResolveBuilderGhostSdfSampleCount`, `_builderGhostValidationSdfCornerChecks`, `SdfSampleCount =`, or sampled-corner out parameter in SHINOBU source.
+- Positive source scan shows `ResolveBuilderGhostCornerIndex()` and `BuilderGhostSdfCornerCount` used by both CPU hydration and `ValidateBuilderGhostPlacementJob`.
+- `git diff --check` reports only repository LF/CRLF normalization warnings.
+- No build/rebuild launched; Core.Memory asmdef remains the documented compile wall.
+
+## Read Accessor Purity Patch - 2026-05-20
+
+What was wrong:
+- The active socket alignment bridge used a `TryResolve*` name while it could hydrate Vault rows, schedule jobs, finalize prior results, and mutate cached pose state.
+- `TryResolveVaultViews()` called `InitializeVault()`, so an active read-looking gate could request descriptors.
+- Cached construction manager access could lazily poll the registry if cold binding failed.
+
+What was done:
+- Renamed the mutating bridge to `TryUpdateShinobuSocketAlignment()` / `TryUpdateShinobuSocketAlignmentFromVault()`.
+- Renamed `ResolveRuntimeReferences()` to `BindRuntimeReferences()` and moved SHINOBU `InitializeVault()` into that cold binder.
+- Made `TryResolveVaultViews()` resolve existing handles only.
+- Renamed the descriptor acquisition helper from `ResolveHandle<T>()` to `EnsureVaultHandle<T>()`.
+- Changed `GetCachedConstructionManager()` to return the cached field without registry fallback.
+
+Cinematic Cheats used:
+- None. This is authority-surface cleanup for the socket bridge.
+
+Exact Microseconds saved:
+- No profiler number claimed. Potential active-route work removed is one registry fallback and one descriptor-request path when cold binding fails.
+
+Verification:
+- Source scan has no `TryResolveShinobuSocketAlignment`, `ResolveRuntimeReferences`, or `ResolveCachedConstructionManager`.
+- Source scan has no SHINOBU `ResolveHandle<T>` descriptor acquisition helper.
+- `GlobalRegistry.DataVault` appears only in cold binders for the touched PlayerBuilder and preview-batch routes.
+- `TryResolveVaultViews()` contains no `InitializeVault()` call.
+- XML and JSON reports parse.
+- `git diff --check` reports only repository LF/CRLF normalization warnings.
+- No build/rebuild launched; Core.Memory asmdef remains the documented compile wall.
+
+## Cold Service Ensure Naming Patch - 2026-05-20
+
+What was wrong:
+- Cold dependency helpers in `PlayerBuilder` used `ResolvePlayerContext()`, `ResolveEnvironmentContext()`, `ResolveConstructionManager()`, and `ResolveModuleCatalog()` names.
+- The player/environment context helpers can create and initialize runtime services, so the old names violated the read-accessor purity doctrine.
+
+What was done:
+- Renamed them to `EnsurePlayerRuntimeContext()`, `EnsureEnvironmentRuntimeContext()`, `EnsureConstructionManager()`, and `EnsureModuleCatalog()`.
+- Kept the calls in `BindRuntimeReferences()`, the cold dependency binding phase already used by SHINOBU socket Vault initialization.
+
+Cinematic Cheats used:
+- None. This is authority-surface cleanup, not a visual fake pass.
+
+Exact Microseconds saved:
+- No profiler number claimed. The gain is preventing service creation from being mistaken for a pure read and moved into preview/snap hot paths.
+
+Verification:
+- Targeted scan has no stale cold-service `Resolve*` binder names in `PlayerBuilder`.
+- No build/rebuild launched; Core.Memory asmdef remains the documented compile wall.
+
+## Vault-First Construction Root AUP - 2026-05-20
+
+What was wrong:
+- `ResolveConstructionRootAup()` used a read-looking name while scanning `ConstructionManager.SpawnedModules` and module transforms for validation payload root authority.
+- The same root already exists in the SHINOBU `ConstructionSocketModuleDTO.RootAup` Vault lane after target socket hydration.
+
+What was done:
+- Removed `ResolveConstructionRootAup()`.
+- Added `_shinobuSocketVaultRootAup` / `_shinobuSocketVaultHasRootAup` as a Vault-derived fallback captured during target socket hydration.
+- Added `TryUpdateConstructionRootAupFromSocketVault()` that reads the Vault module lane first and updates the local fallback only from Vault data.
+- Added `BuildFallbackConstructionRootAup()` for the no-module case; it derives AUP from the current preview position and does not scan module objects.
+
+Cinematic Cheats used:
+- None. This is authority-route cleanup for AUP precision.
+
+Exact Microseconds saved:
+- No profiler number claimed. It removes one spawned-module transform scan per validation payload when Vault module rows exist and replaces it with contiguous NativeArray row reads.
+
+Verification:
+- Source scan has no `ResolveConstructionRootAup` or `TryReadConstructionRootAup`.
+- Positive source scan shows the Vault-first helper and fallback path.
+- No build/rebuild launched; Core.Memory asmdef remains the documented compile wall.
+
+## Parallel Audit Residue Closure - 2026-05-20
+
+What was wrong:
+- `HectonBlueprintPreviewBatch` still called the removed `ResolveBuilderGhostSdfSampleCount()` helper during telemetry upload.
+- Active preview batch paths could call `TryEnsureAndResolveBuffers()`, which reached `GlobalRegistry.DataVault` and `GetBufferHandle()`.
+- Source dump constants still referenced `Dump_SHINOBU_228*.bin`.
+- Terrain placement SDF probes still scaled from 1 to 9 by `GlobalQualityWeight`.
+- Socket scene hash sampled runtime transforms even though AUP socket rows are the authority.
+
+What was done:
+- Telemetry now records constant `BuilderGhostSdfCornerCount`.
+- Preview batch Vault binding moved to `EnsureBuffersCold()` from `Awake()` / `OnEnable()`; active paths use `TryReadCachedBuffers()` only.
+- Dump constants now point to `Dump_SHINOBU_217.bin` and `Dump_SHINOBU_217_Holography.bin`.
+- `TerrainProbeTruthCount = 9` now drives terrain placement probes in both `PlayerBuilder` and `ModularBaseConstructionValidator`.
+- Superseded by the 2026-05-21 pass: active snap topology hash now derives from Vault counters and `ConstructionSocketModuleDTO` rows, not object identity or runtime transforms.
+
+Cinematic Cheats used:
+- The Dear Lie remains shader/material scalar presentation. Placement SDF and terrain SDF truth are deliberately not quality-faked.
+
+Exact Microseconds saved:
+- No profiler number claimed. Removed active registry/descriptor fallback risk and transform hash reads; restored low-quality terrain probes for deterministic placement truth.
+
+Verification:
+- Source scan has no `ResolveBuilderGhostSdfSampleCount`, `ResolveProbeBudget`, `Dump_SHINOBU_228`, `TryEnsureAndResolveBuffers`, or active preview `TryResolveVault()`.
+- Positive scan shows `TerrainProbeTruthCount = 9`, `TryReadCachedBuffers()`, `EnsureBuffersCold()`, and `TryBindVaultCold()`.
+- No build/rebuild launched; user explicitly held rebuild, and the Core.Memory asmdef wall remains documented.
+
+## Vault-Owned Socket Occupancy Commit - 2026-05-20
+
+What was wrong:
+- SHINOBU snapped placement still marked occupied sockets through `ModuleSocket` authoring components.
+- That path required scene component scans and could lose durable occupancy after a Vault target rebuild.
+
+What was done:
+- Removed the SHINOBU `GetComponentsInChildren<ModuleSocket>` occupancy bridge from `PlayerBuilder`.
+- Added `TryCommitShinobuSnapOccupancy()` to append placed-module socket rows directly into Vault.
+- Active placement now marks target and consumed ghost socket `Connected`, writes one `SocketConnectionPairDTO`, updates `Counters[4]`, replays pairs, and rebuilds CSR.
+- Commit preconditions now check connection capacity, socket capacity, and nonzero placed socket count before row mutation; the 2026-05-21 pass removed the scene-list index requirement and writes `SceneModuleListIndex = -1`.
+- If commit fails after spawn, cached SHINOBU topology is invalidated so stale rows are not reused.
+
+Cinematic Cheats used:
+- No new physics. Occupancy remains flags and connection-pair DTOs; no door prefab, collider probe, or component traversal is used for SHINOBU snap truth.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static route removes two managed component scans/list clears per SHINOBU snapped placement and replaces them with one 32-byte connection-pair write plus bounded CSR rebuild.
+
+Verification:
+- Source scan has no `GetComponentsInChildren<ModuleSocket>`, `_shinobuTargetSocketBuffer`, `TryMarkShinobu*`, `IsShinobuAuthoredSocketOccupied`, or `TryMarkShinobuAuthoredSocketOccupied` in `PlayerBuilder`.
+- Positive scan shows `TryCommitShinobuSnapOccupancy()`, `TryWriteShinobuConnectionPair()`, `ApplyShinobuConnectionPairsToVault()`, `WriteShinobuModuleSocketsToVault()`, and `Counters[4]`.
+- No build/rebuild launched; user explicitly held rebuild, and the Core.Memory asmdef wall remains documented.
+
+## Native Telemetry Dump Write - 2026-05-20
+
+What was wrong:
+- Socket, holography, and construction-validation telemetry dumps allocated a full managed `byte[]` mirror before writing the NativeArray telemetry ring to disk.
+- Construction validation still wrote to the foreign `Dump_SHINOBU_67.bin` path.
+
+What was done:
+- Added `DumpNativeRingToFile<T>()`.
+- Socket and holography dump APIs now write a `ReadOnlySpan<byte>` over the NativeArray pointer into a `FileStream`.
+- `ModularBaseConstructionValidator.DumpTelemetry()` now uses the same NativeArray span write shape.
+- Construction validation now writes `Dump_SHINOBU_217_ConstructionValidation.bin`; socket and holography dump paths remain schema-separated.
+
+Cinematic Cheats used:
+- None. This is forensic memory hygiene on the black-box fault path.
+
+Exact Microseconds saved:
+- No profiler number claimed. Allocation avoided is one 19.2 KB managed array per 300-row 64-byte dump; disk IO remains fault-path work.
+
+Verification:
+- Source scan shows no `byte[]`, `new byte[`, or `File.WriteAllBytes` in `ShinobuSocketConstructionData.cs` or `ModularBaseConstructionValidator.cs`.
+- Positive scan shows `DumpNativeRingToFile<T>()`, `ReadOnlySpan<byte>`, `FileStream`, and `Dump_SHINOBU_217_ConstructionValidation.bin`.
+- No build/rebuild launched; user explicitly held rebuild, and the Core.Memory asmdef wall remains documented.
+
+## Construction Validator Deterministic Burst - 2026-05-20
+
+What was wrong:
+- `BurstGridValidationJob`, `LogisticsGraphSpliceJob`, and `DeconstructionConnectivityJob` used `FloatMode.Fast`.
+- These jobs feed build validity and graph/connectivity truth, not cosmetic presentation.
+
+What was done:
+- Switched all three `BurstCompile` attributes to `FloatMode.Deterministic` while preserving synchronous compile and standard precision.
+
+Cinematic Cheats used:
+- None. Validator truth is not faked. The Dear Lie remains shader/material presentation only.
+
+Exact Microseconds saved:
+- None claimed. This intentionally rejects fast-math drift on rollback-visible construction truth.
+
+Verification:
+- Source scan shows no `FloatMode.Fast` in `ModularBaseConstructionValidator.cs`.
+- SHINOBU socket jobs already used `FloatMode.Deterministic`.
+- No build/rebuild launched; user explicitly held rebuild, and the Core.Memory asmdef wall remains documented.
+
+## Vault Read Facades And Active Snap Source Purge - 2026-05-21
+
+What was wrong:
+- Validator read-looking methods could request/grow Vault buffers.
+- Active SHINOBU snapping still hydrated target sockets from `ConstructionManager.SpawnedModules`, `ModuleMarker`, `GetInstanceID()`, and transforms.
+- Snapped placement retained a legacy `ModuleSocket.SetOccupied` fallback.
+
+What was done:
+- Split validator APIs into cold `Ensure*` descriptor acquisition and active `TryRead*` buffer reads.
+- Cached object pool, deconstruction, and audio services in `BindRuntimeReferences()`.
+- Removed the unused public `AllocateRequestScratch()` NativeArray allocator.
+- Changed active SHINOBU snapping to consume pre-published Vault socket/module rows and compute topology hash from Vault counters/module rows.
+- Removed the `ModuleSocket.SetOccupied` branch; SHINOBU placement writes `SocketStateDTO.ConnectionStatus` and `SocketConnectionPairDTO` only.
+- Updated XML/JSON/architecture/ledger proof artifacts to label current evidence as static and pending compile/runtime.
+
+Cinematic Cheats used:
+- No new physics. The Dear Lie remains the shader/material scalar presentation; snap truth is direct Vault row math.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static route removes active scene-list traversal, component lookup, transform reads, three service-locator reads, and one component occupancy branch from the SHINOBU path.
+
+Verification:
+- Static scans target absence of legacy component-occupancy, scene-hydration, object-identity, and active scene-list reads in the snap path.
+- XML/JSON parse checks are required after this append.
+- No build/rebuild launched per user rebuild gate and known Core.Memory/generated-project compile wall.
+
+## Vault-Only Occupied Cell And Command-Pose Commit - 2026-05-21
+
+What was wrong:
+- `PlayerBuilder.TryFindOccupiedConstructionGridCell()` still walked `ConstructionManager.SpawnedModules`, read `GameObject`/`Transform` state, and hydrated `ConstructionBuilderOccupancy` scratch rows from that scene data.
+- `TryCommitShinobuSnapOccupancy()` wrote Vault module rows from `placedModule.transform` after the module had already spawned.
+- `PublishConstructionCommitSignals()` sampled the placed transform again for acoustic/flora proof signals.
+
+What was done:
+- Replaced the occupied-cell path with `TryFindOccupiedConstructionGridCellInSocketVault()`, which reads finite `ConstructionSocketModuleDTO.RootAup` rows from the cached SHINOBU Vault view and compares AUP-local integer `GridPos`.
+- Stopped using `ConstructionBuilderOccupancy` as active truth in `PlayerBuilder`; it remains validator scratch until a separate owner publishes it.
+- Routed snapped occupancy commit through placement command pose (`placePos`, `placeRot`) with finite quaternion normalization before writing Vault rows.
+- Routed construction commit signals through command pose plus template center instead of `TransformPoint`.
+
+Cinematic Cheats used:
+- No physics overlap or prefab/trigger occupancy simulation. The visual/interaction route consumes one Vault module-row fact and one shader-driven Dear Lie preview; proof signals are scalar/AUP payloads.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static removal: one scene-list traversal and multiple transform/AUP conversions per occupied-cell validation, one spawned-transform pose read per snapped commit, and one transform-center sample per commit signal.
+
+Verification:
+- Static scans show no `SpawnedModules`, no `TryLockBuffer(BufferID.ConstructionBuilderOccupancy)`, no `TryInsertOccupancyCell()`, no old `TryFindOccupiedConstructionGridCell(` call, no `GetInstanceID()`, and no `ModuleMarker` path in `PlayerBuilder`.
+- Positive scan shows `TryFindOccupiedConstructionGridCellInSocketVault()`, Vault `views.Modules` reads, command-pose `TryCommitShinobuSnapOccupancy(placePos, placeRot)`, and command-pose `PublishConstructionCommitSignals(...)`.
+- XML/JSON parse passed for the SHINOBU self-audit/report. `PlayerBuilder` brace count is balanced.
+- No build/rebuild launched per user rebuild gate and known Core.Memory/generated-project compile wall.
+
+## Dispatcher Frame Authority - 2026-05-21
+
+What was wrong:
+- `PlayerBuilder` still used Unity `Time.frameCount` for construction validation telemetry/settings, builder ghost state rows, preview signals, deconstruction requests, and flora exclusion signals.
+- `HectonBlueprintPreviewBatch` still used Unity `Time.frameCount` for preview signal liveness, builder-state frame stamps, and holography telemetry.
+- Builder holography animation phase was derived from `Time.unscaledTime`, and the phase participates in `BuilderGhostStateDTO.ValidationStateHash`.
+
+What was done:
+- Added dispatcher-frame capture helpers in `PlayerBuilder` and `HectonBlueprintPreviewBatch`.
+- Routed SHINOBU-owned frame stamps through `TimeSliceScheduler.CurrentFrameId`, with owner-local monotonic fallback only when the dispatcher frame is zero.
+- Replaced wall-clock Dear Lie phase with `frame / 120`.
+- Updated SHINOBU self-audit, scoped JSON report, architecture route card, ledger, status, and rationale.
+
+Cinematic Cheats used:
+- The Dear Lie remains a shader/material animation fake. It now advances from dispatcher frame identity rather than wall-clock time, so the fake stays cheap without leaking Unity time into validation hashes.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static change removes multiple direct Unity time reads and replaces them with a dispatcher-frame scalar read plus rare fallback increment. This is an authority/determinism correction, not a measured speed pass.
+
+Verification:
+- `rg` over `PlayerBuilder.cs` and `HectonBlueprintPreviewBatch.cs` returns zero hits for `Time.frameCount`, `Time.unscaledTime`, and `Time.time`.
+- Brace counts: `PlayerBuilder` 345/345, `HectonBlueprintPreviewBatch` 79/79.
+- `git diff --check` passes touched SHINOBU source files with LF/CRLF warnings only.
+- No build/rebuild launched per user rebuild gate and known Core.Memory/generated-project compile wall.
+
+## Placement Rule Buffer Eviction - 2026-05-21
+
+What was wrong:
+- `PlayerBuilder` held `_placementRuleBuffer`, a persistent `List<MonoBehaviour>` initialized with capacity two.
+- `CacheActivePlacementRule()` refilled it through `GetComponents(_placementRuleBuffer)`, so authored prefabs with more behaviours could grow the managed list during active buildable selection.
+
+What was done:
+- Removed the `System.Collections.Generic` import and `_placementRuleBuffer` field.
+- Replaced the list scan with a direct cold `GetComponent<IBuildPlacementRule>()` lookup.
+- Preserved the cached `_activePlacementRule` behavior used by active preview validation.
+
+Cinematic Cheats used:
+- None. This is a managed allocation-residue cleanup in the builder rule cache.
+
+Exact Microseconds saved:
+- No profiler number claimed. It removes one possible managed list-capacity allocation and the cold loop over every `MonoBehaviour` on the buildable prefab.
+
+Verification:
+- Targeted scans over `PlayerBuilder.cs` and `HectonBlueprintPreviewBatch.cs` return zero hits for `System.Collections.Generic`, `List<`, `_placementRuleBuffer`, `GetComponents(`, private persistent native containers, hot native container creation, LINQ, and `foreach`.
+- `PlayerBuilder` brace count remains balanced after the patch.
+- No build/rebuild launched per user rebuild gate and known Core.Memory/generated-project compile wall.
+
+## Semantic Placement Rule Dispatch Closure - 2026-05-21
+
+What was wrong:
+- `PlayerBuilder` still evaluated semantic placement through cached `IBuildPlacementRule`.
+- Deep-drill validation polled `GlobalRegistry.InteractionSignals`, built an `InteractionPacket` with `Time.frameCount`, and cast absolute coordinates to `float3`.
+- Extractor validation could allocate an `AutonomousExtractorSystem` owner through `EnsureRuntimeInstance()` and used transform-position fallback for candidates without persistent AUP.
+
+What was done:
+- Deleted `IBuildPlacementRule.cs` and `.meta`.
+- Replaced active semantic dispatch with byte-tagged sealed module dispatch in `PlayerBuilder`.
+- Cached `IInteractionSignalService` and `AutonomousExtractorSystem` in `BindRuntimeReferences()`.
+- Changed deep-drill semantic validation to consume the cached interaction service runtime-position raycast overload with finite guards.
+- Changed extractor semantic validation to consume the cached runtime or fail closed.
+- Removed candidate transform-distance fallback.
+
+Cinematic Cheats used:
+- No new physical simulation. The socket/ghost route remains the Dear Lie shader preview path; this pass removed semantic-rule control-plane overhead around it.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static savings are one virtual/interface call per semantic validation tick, one active registry poll plus packet construction in drill semantic validation, one possible runtime `GameObject` allocation branch in extractor validation, and one candidate transform fallback read when persistent AUP is missing.
+
+Verification:
+- Targeted scans show no `IBuildPlacementRule`, `GetComponent<IBuildPlacementRule>`, semantic `ValidatePlacement(` calls, `Time.frameCount`, `Time.unscaledTime`, `Time.time`, `InteractionPacket`, `ToolActionMode`, `ToolStateBits`, or `candidate.transform.position` in the touched semantic route files.
+- Brace counts pass for `PlayerBuilder.cs`, `DeepDrillModule.cs`, and `AutonomousExtractorSystem.cs`.
+- No build/rebuild launched.
+
+## Active Selection Nonblocking Fence - 2026-05-21
+
+What was wrong:
+- `CycleBuildable()` called `BindRuntimeReferences()` from an active input route.
+- `SetActiveBuildable()` force-completed pending socket snap and builder-ghost validation jobs before switching modules.
+- Active post-placement preview refresh could force-complete the structural validation job through `HabitatConstructionManager.ResetValidation()`.
+- `CacheActivePlacementRule()` still had a direct `GlobalRegistry.InteractionSignals` fallback.
+
+What was done:
+- Removed active `BindRuntimeReferences()` calls from module cycling and debug deploy.
+- Added `_activeBuildableGeneration` plus per-job generation stamps for socket snap and builder ghost validation.
+- Made active selection and post-placement ghost refresh use `DespawnGhost(forceValidationReset: false)`.
+- Made stale completed job results fail after natural `TryFinalizeCompleted()` instead of blocking the frame.
+- Removed the semantic-rule registry fallback.
+
+Cinematic Cheats used:
+- No new physical simulation. This keeps the existing Dear Lie preview path responsive by refusing to block input on pending analysis jobs.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static saving is removal of one active registry binding sweep per catalog cycle and removal of worst-case force-complete stalls on active selection/placement refresh. Runtime overhead added is one uint generation compare on finalize/cache reads.
+
+Verification:
+- Targeted scans show no `BindRuntimeReferences()` call inside `CycleBuildable()` or `DebugDeployActiveBuildable()`, no `Complete*ForTeardown()` calls inside `SetActiveBuildable()`, and no `GlobalRegistry.InteractionSignals` access outside cold `BindRuntimeReferences()`.
+- Brace counts pass for `PlayerBuilder.cs`, `DeepDrillModule.cs`, and `AutonomousExtractorSystem.cs`.
+- `git diff --check -- Assets/_Project/Scripts/PlayerBuilder.cs` passes with CRLF normalization warning only.
+- No build/rebuild launched.
+
+## Strict Vault Tuner Read - 2026-05-21
+
+What was wrong:
+- `TryReadTunerSettingsFromVault()` seeded `out settings` from `s_TunerSettings` before attempting the Vault read.
+- `PlayerBuilder` ignored the bool return, so a read-looking API concealed whether settings came from Vault or static fallback.
+
+What was done:
+- Changed `TryReadTunerSettingsFromVault()` to write `default` on failure and only publish a candidate after finite checks pass.
+- Changed `PlayerBuilder.TryBuildConstructionValidationPayload()` to explicitly call `GetTunerSettings()` when the Vault read fails.
+
+Cinematic Cheats used:
+- None. This is authority/read-facade hygiene.
+
+Exact Microseconds saved:
+- No profiler number claimed. Added one explicit branch in validation-payload construction; removed hidden static-state fallback from the Vault read API.
+
+Verification:
+- Scan shows no `settings = s_TunerSettings` inside `TryReadTunerSettingsFromVault()`.
+- PlayerBuilder handles the false return from `TryReadTunerSettingsFromVault()`.
+- Brace counts pass for `PlayerBuilder.cs` and `ModularBaseConstructionValidator.cs`.
+- No build/rebuild launched.
+
+## Builder Surface Hit Ownership - 2026-05-21
+
+What was wrong:
+- `PlayerBuilder.TryGetBuildHit()` directly owned a `UnityEngine.Physics.RaycastNonAlloc` query and a one-element `_buildHits` buffer.
+- Preview targeting and deconstruction targeting therefore had a private builder scene-query route instead of consuming the interaction owner.
+
+What was done:
+- Removed `_buildHits`.
+- Routed `TryGetBuildHit()` through the cold-cached `IInteractionSignalService.TryRaycastPrimary()` runtime-position overload.
+- Added finite origin/direction/range guards and a stable builder requester id.
+- Removed private PhysX fallback; missing interaction service fails closed.
+
+Cinematic Cheats used:
+- This preserves the existing queued/cached interaction-ray route rather than adding another immediate physics simulation.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static change removes one direct builder PhysX call site per preview/deconstruction target query and one cold `RaycastHit[1]` buffer field; raycast cost is now owned by the interaction service.
+
+Verification:
+- Targeted scan over `PlayerBuilder.cs` has zero `Physics.Raycast`, `RaycastNonAlloc`, or `_buildHits` hits.
+- Positive scan shows `_buildRayRequesterId` and `TryRaycastPrimary`.
+- `PlayerBuilder` brace count passes.
+- No build/rebuild launched.
+
+## Extractor Runtime Registry And Job ABI Fence - 2026-05-21
+
+What was wrong:
+- `AutonomousExtractorSystem` still owned a growable `List<AutonomousExtractorModule>` registry.
+- `DeepDrillModule` still owned a static growable `List<DeepDrillModule>` active-provider registry.
+- `AdvanceExtractionJob` used implicit job row layout, `FloatMode.Fast`, and NativeArray lanes without `[NoAlias]`.
+- `AutonomousExtractorJobs.cs` duplicated the same advance-job math with no source caller.
+- The remaining extractor semantic placement query cannot safely migrate to `ResourceNodeDTO` because the current contracts route exposes ore positions/types only, not extractor-capable host semantics.
+
+What was done:
+- Replaced `_modules` with a fixed `AutonomousExtractorModule[256]` and `_moduleCount`.
+- Converted registration and compaction away from `List<T>.Add`, `RemoveAt`, and `.Count`.
+- Replaced deep-drill active providers with fixed `DeepDrillModule[128]`, `s_ActiveModuleCount`, and swap-with-tail removal.
+- Added explicit 32-byte layouts for `ExtractorJobInput` and `ExtractorJobResult`.
+- Changed `AdvanceExtractionJob` to deterministic synchronous Burst and marked input/result arrays `[NoAlias]`.
+- Deleted the unreferenced `AutonomousExtractorJobs.cs` and `.meta` duplicate.
+- Recorded the world-resource host contract gap instead of adding a direct dependency on `Hecton8.World.Economy`.
+- Recorded that extractor private NativeArray SOA migration remains owner work requiring a route card; no unauthorized BufferIDs were minted.
+
+Cinematic Cheats used:
+- No new physics simulation. The extractor semantic PhysX overlap remains fenced as a resource-host contract gap; the accepted path is an eventual unmanaged world-host snapshot, not a construction-owned scene search.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static savings are removal of possible managed list capacity growth and managed reference tail shifts in extractor registration/compaction and deep-drill active-provider registration. Deterministic job flags trade fast-math latitude for multiplayer-visible inventory/power truth.
+
+Verification:
+- Targeted scan over `AutonomousExtractorSystem.cs` and `DeepDrillModule.cs` has zero `InitialModuleCapacity`, `System.Collections.Generic`, `List<`, `new List`, `_modules.Count`, `_modules.Add`, `_modules.RemoveAt`, `s_ActiveModules.Count`, `s_ActiveModules.Add`, `s_ActiveModules.RemoveAt`, old `BurstCompile(FloatMode...)`, and `FloatMode.Fast` hits.
+- Positive scan shows explicit 32-byte layouts, deterministic Burst, `[NoAlias]`, `MaxModuleCapacity`, `_moduleCount`, `MaxActiveModuleCapacity`, and `s_ActiveModuleCount`.
+- Brace counts are `AutonomousExtractorSystem` 102/102 and `DeepDrillModule` 43/43.
+- `git diff --check` for the extractor/provider source/docs passes with CRLF normalization warnings only.
+- No build/rebuild launched.
+
+## Provider Registry Proof Surface Synchronization - 2026-05-21
+
+What was wrong:
+- The source patch removed the DeepDrill static managed list, but several proof surfaces still named only the extractor registry.
+- The first JSON/XML literal proof probe used PowerShell `-like`, where `DeepDrillModule[128]` is parsed as a wildcard pattern, not a literal string.
+
+What was done:
+- Updated the construction architecture note, binary payload ledger, JSON report, XML self-audit, Rationale, and this log to explicitly name fixed `DeepDrillModule[128]` active-provider storage with `s_ActiveModuleCount`.
+- Kept `WORLD_RESOURCE_HOST_CONTRACT_GAP` and `EXTRACTOR_NATIVE_SOA_NOT_VAULT` as residual risks. No BufferID, Vault descriptor, signal payload, save identity, shader payload, or asmdef reference was added.
+- Re-ran static verification with source residue scans, positive source scans, brace counts, JSON/XML parsing, literal `.Contains()` checks, deletion checks for dead files, and `git diff --check`.
+
+Cinematic Cheats used:
+- No new simulation path. This pass preserves the existing Dear Lie boundary: provider validation is routed through cached services and bounded registries while heavy resource-host spatial semantics remain blocked on an unmanaged world snapshot.
+
+Exact Microseconds saved:
+- No profiler number claimed. The static gain remains removal of possible managed list capacity growth and managed reference tail shifts in extractor and DeepDrill provider registries; the proof sync prevents that work from being lost or reversed.
+
+Verification:
+- Forbidden scan over `AutonomousExtractorSystem.cs` and `DeepDrillModule.cs` returned no hits for `System.Collections.Generic`, `List<`, `new List`, stale list `.Count`/`.Add`/`.RemoveAt`, `InitialModuleCapacity`, `FloatMode.Fast`, or old `BurstCompile(FloatMode...)`.
+- Positive scan shows fixed capacities, explicit extractor 32-byte rows, deterministic Burst, `[NoAlias]`, `_moduleCount`, and `s_ActiveModuleCount`.
+- Brace counts remain `AutonomousExtractorSystem` 102/102 and `DeepDrillModule` 43/43.
+- `AutonomousExtractorJobs.cs` and `IBuildPlacementRule.cs` are absent.
+- JSON/XML parse succeeded; literal `.Contains("DeepDrillModule[128]")` proof checks are the valid predicate.
+- `git diff --check` reports CRLF normalization warnings only.
+- No build/rebuild launched.
+
+## Integrity Validation Determinism Fence - 2026-05-21
+
+What was wrong:
+- `HabitatConstructionManager.IntegrityValidationJob` used `FloatMode.Fast` while writing structural placement validity and failure reason.
+
+What was done:
+- Switched `IntegrityValidationJob` to `BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)`.
+- Updated JSON/XML/architecture proof text to include the integrity job in the deterministic rollback-visible validation set.
+- Left the remaining construction-folder `FloatMode.Fast` hits in catalog/stress/logistics systems untouched because they are outside SHINOBU_217 ownership.
+
+Cinematic Cheats used:
+- No new physics or structural simulation was added. The fix only hardens the existing validation kernel; scene-list graph migration remains a separate ownership problem.
+
+Exact Microseconds saved:
+- No profiler number claimed. Deterministic mode can cost fast-math latitude, but it removes a cross-platform placement-validity divergence risk.
+
+Verification:
+- `HabitatConstructionManager.cs` now reports `IntegrityValidationJob` with `FloatMode.Deterministic`.
+- Targeted SHINOBU route scans will treat remaining `FloatMode.Fast` hits outside this file as sibling-domain/out-of-scope unless a route card assigns them here.
+- No build/rebuild launched.
+
+## Build-Cost Buffer Growth Fence - 2026-05-21
+
+What was wrong:
+- `HabitatConstructionManager` could grow `_inventoryPlacementBuffer` and the build-cost scratch arrays during active resource validation/commit.
+- `PlayerInventory.GetPlacements()` truncates to the supplied buffer length, so silently using a too-small fixed buffer would be a false proof.
+
+What was done:
+- Replaced growth-capacity constants with fixed cold capacities: `MaxInventoryPlacementCapacity = 1024` and `MaxCostCapacity = 32`.
+- Removed `EnsureInventoryPlacementCapacity()` and `EnsureCostCapacity()` managed-array resize paths.
+- `HasBuildResources()` now fails closed when the inventory grid exceeds the placement snapshot capacity or build costs exceed fixed cost capacity.
+- `ConsumeBuildResources()` now fails closed when build costs exceed fixed cost capacity.
+
+Cinematic Cheats used:
+- No visual fake changed. This is active-route allocation hygiene; resource truth remains deterministic and fails closed.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static savings are removal of possible managed array allocations and copies from active build resource checks on oversized inventories or cost lists.
+
+Verification:
+- Source scan no longer finds `InitialInventoryPlacementCapacity`, `InitialCostCapacity`, `EnsureInventoryPlacementCapacity`, `EnsureCostCapacity`, or `new PlayerInventory.ItemPlacement[newCapacity]` in `HabitatConstructionManager.cs`.
+- Fixed cold buffer declarations are visible as `PlayerInventory.ItemPlacement[1024]` and cost arrays sized from `MaxCostCapacity`.
+- No build/rebuild launched.
+
+## Socket-Vault Integrity Cache Signature - 2026-05-21
+
+What was wrong:
+- `HabitatConstructionManager` still used `GameObject.GetInstanceID()` as the cache key for the existing integrity graph even when SHINOBU socket topology was already published in Vault.
+- A full Vault-only integrity graph swap is not valid yet because socket module rows do not own support-root/family or resource-mass facts.
+
+What was done:
+- Added `TryComputeSocketVaultGraphSignature()` and routed `ComputeExistingGraphSignature()` through it when the Vault module count matches the construction registry count.
+- The signature hashes module/socket/connection counters, `ConstructionSocketModuleDTO` AUP/rotation/socket range/topology fields, and `SocketConnectionPairDTO` target/ghost indices and flags.
+- Kept the legacy scene-list fallback for absent or count-mismatched Vault topology to avoid using mock/stale Vault data as a cache key for a scene-built graph, but removed `GetInstanceID()` from that fallback. The fallback now hashes `ModuleHashId`, family, AUP-quantized root, and rotation bits.
+
+Cinematic Cheats used:
+- No new simulation path. This is cache identity hygiene; snap and ghost visuals still use the Dear Lie shader path, while integrity support truth remains deterministic and route-limited.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static gain is removal of nondeterministic Unity instance-id cache keys from both SHINOBU-published topology cases and the count-mismatched/absent-Vault fallback, plus more precise graph invalidation when Vault connection topology changes.
+
+Verification:
+- Source scan shows `ComputeExistingGraphSignature(modules, _catalogVault)`, `TryComputeSocketVaultGraphSignature`, `ComputeSceneModuleSignature`, and `SocketConnectionPairDTO` hashing in `HabitatConstructionManager.cs`.
+- Targeted scan over SHINOBU files reports zero `GetInstanceID(` hits.
+- Brace count for `HabitatConstructionManager.cs` is 143/143.
+- `git diff --check` reports CRLF normalization warnings only.
+- No build/rebuild launched.
+
+## Integrity Adjacency Corruption Fence - 2026-05-21
+
+What was wrong:
+- `HabitatConstructionManager.BuildAdjacency()` trusted every `int2` connection row before indexing adjacency scratch buffers.
+- `AddConnection()` did not reject negative endpoints or self-loops before writing into the Vault connection lane.
+
+What was done:
+- Added `IsValidConnectionIndex()` and validate connection endpoints before both adjacency degree counting and final adjacency writes.
+- `BuildAdjacency()` now checks `AdjacencyRanges` creation/length, fences `_connectionCount` against `_connectionCapacity`, and rejects adjacency-count integer overflow with cache invalidation.
+- `AddConnection()` rejects negative endpoints and self-loops before mutating the connection buffer.
+
+Cinematic Cheats used:
+- No new physics or simulation path. This is fail-closed graph hygiene around the deterministic integrity validation path.
+
+Exact Microseconds saved:
+- No profiler number claimed. Added work is bounded scalar validation per connection row; the gain is prevention of unchecked NativeArray indexing and corrupted support topology.
+
+Verification:
+- Source scan shows `IsValidConnectionIndex`, `_connectionCount > _connectionCapacity`, `AdjacencyRanges.Length`, and `adjacencyCount > int.MaxValue - count` guards in `HabitatConstructionManager.cs`.
+- Brace count for `HabitatConstructionManager.cs` is 147/147.
+- `git diff --check` reports CRLF normalization warning only for `HabitatConstructionManager.cs`.
+- No build/rebuild launched.
+
+## Builder Deconstruction Target Registry - 2026-05-21
+
+What was wrong:
+- `PlayerBuilder` still called `GetComponentInParent<BaseModule>()` on the active deconstruction target path after receiving an interaction-owned hit.
+
+What was done:
+- Added `TryResolveTargetModule(Collider, out BaseModule)` in `PlayerBuilder`.
+- `TryDeconstructTargetModule()` and `GetTargetedModule()` now resolve through `LaserCutterTargetRegistry.TryResolveModule()`, populated by `BaseModule.OnEnable`.
+- Missing registry rows fail closed; no scene hierarchy fallback remains in `PlayerBuilder`.
+
+Cinematic Cheats used:
+- No visual fake changed. This is active-route identity lookup cleanup after the interaction-owned raycast route.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static gain is replacing two component-parent traversals with a fixed-array collider-id lookup.
+
+Verification:
+- Targeted source scan shows zero `GetComponentInParent<BaseModule>()` hits in `PlayerBuilder.cs`.
+- Positive scan shows `LaserCutterTargetRegistry.TryResolveModule` in `TryResolveTargetModule`.
+- Brace count for `PlayerBuilder.cs` is 350/350.
+- `git diff --check` reports CRLF normalization warning only for `PlayerBuilder.cs`.
+- No build/rebuild launched.
+
+## Continuous Snap Quality Math Enforcement - 2026-05-21
+
+What was wrong:
+- `ResolveCandidateBudget()` and `ResolveSearchRadius()` accepted `quality` but ignored it, returning the max candidate budget and ultra search radius.
+- `EvaluateSocketSnappingJob` used `safeCount` plus the high radius directly, so low-quality devices did not shed snap search work as reported.
+
+What was done:
+- `ResolveCandidateBudget()` now applies `SmoothQuality()` and `math.lerp()` from min to max budget.
+- `ResolveSearchRadius()` now applies `SmoothQuality()` and `math.lerp()` from low radius to ultra radius.
+- `EvaluateSocketSnappingJob` now clamps inspected CSR rows to the resolved budget and uses the resolved radius for radius-squared rejection.
+
+Cinematic Cheats used:
+- No physical truth was degraded. This is search-work scalability only; SDF/bounds/terrain truth remains fixed while the Dear Lie shader keeps presentation responsive.
+
+Exact Microseconds saved:
+- No profiler number claimed. Default curve now ranges from 16 inspected CSR rows at quality 0 to 256 rows at quality 1 instead of always scanning the ultra row budget.
+
+Verification:
+- Source scan shows `ResolveCandidateBudget()` and `ResolveSearchRadius()` using `SmoothQuality()` and `math.lerp()`.
+- Source scan shows `EvaluateSocketSnappingJob` calling both helpers instead of using `safeCount` and ultra radius directly.
+- Brace counts are `ShinobuSocketConstructionData.cs` 76/76 and `ShinobuSocketConstructionJobs.cs` 88/88.
+- `git diff --check` reports CRLF normalization warnings only for those files.
+- No build/rebuild launched.
+
+## Mock Grid Counter Lane Scrub - 2026-05-21
+
+What was wrong:
+- `GenerateMockBaseConstructionGrid()` wrote `Counters[0..3]` but left `Counters[4]`, the connection-pair count, stale in an `UninitializedMemory` Vault buffer.
+
+What was done:
+- The mock generator now zeroes the full counters NativeArray before writing module count, socket count, topology version, and flags.
+- This is confined to explicit mock generation; active read facades remain pure.
+
+Cinematic Cheats used:
+- No simulation or visual fake changed. This fixes deterministic fallback/mock data for CI and profiling.
+
+Exact Microseconds saved:
+- No profiler number claimed. Added cost is at most eight integer stores on cold mock generation; it prevents stale connection-pair hashing and false topology evidence.
+
+Verification:
+- Source scan shows the counter-clear loop at the start of `GenerateMockBaseConstructionGrid()`.
+- Brace count for `ShinobuSocketConstructionData.cs` is 76/76.
+- `git diff --check` reports CRLF normalization warning only for `ShinobuSocketConstructionData.cs`.
+- No build/rebuild launched.
+
+## Cold Counter Lane Seed Guard - 2026-05-21
+
+What was wrong:
+- `InitializeVault()` requested `ConstructionSocketCounters` with `UninitializedMemory` but did not seed the lane before active views could read module/socket/connection counts.
+
+What was done:
+- Added `ShouldResetCounterLane()` to detect absent, too-short, or out-of-capacity counter lanes before handle creation.
+- Added `ClearCounterLane()` and call it from `InitializeVault()` only when the cold lane is invalid, preserving valid live topology.
+- `GenerateMockBaseConstructionGrid()` reuses `ClearCounterLane()`.
+
+Cinematic Cheats used:
+- No simulation or visual fake changed. This is cold authority initialization so active snap reads deterministic counters.
+
+Exact Microseconds saved:
+- No profiler number claimed. Cold path adds one generation-handle resolve and bounded integer checks; invalid lanes get at most eight integer stores.
+
+Verification:
+- Source scan shows `ShouldResetCounterLane`, `TryGetGenerationHandle<int>`, and `ClearCounterLane` in `ShinobuSocketConstructionData.cs`.
+- Brace count for `ShinobuSocketConstructionData.cs` is 80/80.
+- `git diff --check` reports CRLF normalization warning only for `ShinobuSocketConstructionData.cs`.
+- No build/rebuild launched.
+
+## Builder Holography Generation Handles - 2026-05-21
+
+What was wrong:
+- `HectonBlueprintPreviewBatch` stored obsolete pointer-bearing `VaultBufferHandle<T>` descriptors for builder ghost state, visual, telemetry, and indirect-args lanes.
+- Active reads called `.Resolve(vault)`, while SHINOBU proof surfaces described generation-checked cached-vault reads.
+
+What was done:
+- Replaced those four handles with `VaultGenerationHandle<T>`.
+- `EnsureBuffersCold()` now reuses existing descriptors only after `IDataVault.TryResolveHandle(...)` proves capacity, and acquires lanes through `GetGenerationHandle(...)`.
+- `TryReadCachedBuffers()` now resolves phase-local `NativeArray` views exclusively through `TryResolveHandle(...)`.
+
+Cinematic Cheats used:
+- No visual fake changed. This removes stale-pointer handle semantics from the Dear Lie preview upload route.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static gain is eliminating legacy cached-pointer handle use in active holography reads.
+
+Verification:
+- Source scan shows `VaultGenerationHandle` and `TryResolveHandle(in _stateHandle...)` in `HectonBlueprintPreviewBatch.cs`.
+- Source scan shows no `VaultBufferHandle`, `GetBufferHandle`, `ResolveBuffer`, or `.Resolve(vault)` in `HectonBlueprintPreviewBatch.cs`.
+- Brace count for `HectonBlueprintPreviewBatch.cs` is 79/79.
+- `git diff --check` reports CRLF normalization warning only for `HectonBlueprintPreviewBatch.cs`.
+- No build/rebuild launched.
+
+## Runtime Origin Signal Bridge Removal - 2026-05-21
+
+What was wrong:
+- `PlayerBuilder` and `HectonBlueprintPreviewBatch` still called `GlobalSignals.CurrentRuntimeOriginAup()` in SHINOBU snap/holography origin conversion.
+- That bridge is a legacy facade over `HectonFloatingOrigin.CurrentTotalOffsetDouble` and should not sit in the active snap/preview route.
+
+What was done:
+- Added local finite-guarded `TryResolveRuntimeOriginAup(out double3)` helpers.
+- Active socket snap scheduling now passes the finite double3 runtime origin into `EvaluateSocketSnappingJob`.
+- Snap result application subtracts the finite double3 origin before casting to runtime `Vector3`.
+- Holography runtime-position conversion now adds the finite double3 origin before hydrating `AbsoluteUniversePosition`.
+
+Cinematic Cheats used:
+- No visual fake changed. This is AUP route hygiene for the existing Dear Lie preview and snap solver.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static gain is removing four direct origin bridge reads from SHINOBU builder/preview conversion sites.
+
+Verification:
+- Focused source scan reports zero `CurrentRuntimeOriginAup` hits in `PlayerBuilder.cs` and `HectonBlueprintPreviewBatch.cs`.
+- Positive scan shows local `TryResolveRuntimeOriginAup` helpers and `HectonFloatingOrigin.CurrentTotalOffsetDouble`.
+- Brace counts are `PlayerBuilder.cs` 353/353 and `HectonBlueprintPreviewBatch.cs` 79/79.
+- `git diff --check` reports CRLF normalization warnings only for the two source files.
+- No build/rebuild launched.
+
+## Validator Generation Descriptors - 2026-05-21
+
+What was wrong:
+- `ModularBaseConstructionValidator` still used obsolete pointer-bearing `VaultBufferHandle<T>` fields for tuning, telemetry, bounds, and occupancy lanes.
+- The file still called `GetBufferHandle`, `ResolveBuffer`, `.Resolve(vault)`, and `TryGetBuffer` in validation Vault routes.
+
+What was done:
+- Replaced the four validator handles with `VaultGenerationHandle<T>`.
+- Added `EnsureValidationBuffer()` for explicit ensure/write routes.
+- Added `TryResolveCachedValidationBuffer()` for read-only cached descriptor resolution.
+- `TryReadTunerSettingsFromVault()` now uses `TryGetGenerationHandle<ConstructionValidationSettingsDTO>()` plus `TryResolveHandle(...)`.
+
+Cinematic Cheats used:
+- No visual fake changed. This is Vault descriptor hygiene for construction validation and telemetry.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static gain is removing pointer-bearing Vault handle use from validator lanes.
+
+Verification:
+- Source scan reports zero `VaultBufferHandle`, `GetBufferHandle`, `ResolveBuffer`, `.Resolve(vault)`, and `TryGetBuffer` hits in `ModularBaseConstructionValidator.cs`.
+- Positive scan shows `VaultGenerationHandle`, `GetGenerationHandle`, `TryResolveHandle`, `EnsureValidationBuffer`, and `TryResolveCachedValidationBuffer`.
+- Brace count for `ModularBaseConstructionValidator.cs` is 112/112.
+- `git diff --check` reports CRLF normalization warning only for `ModularBaseConstructionValidator.cs`.
+- No build/rebuild launched.
+
+## Habitat Runtime Origin Bridge Removal - 2026-05-21
+
+What was wrong:
+- `HabitatConstructionManager.TryResolveAupFromRuntimeOrigin()` still called `GlobalSignals.CurrentRuntimeOriginAup()` when hydrating authored socket roots into AUP space.
+
+What was done:
+- Replaced the bridge with a finite-guarded read of `HectonFloatingOrigin.CurrentTotalOffsetDouble`.
+- Runtime root positions are added to that origin in double precision before socket AUP resolution.
+
+Cinematic Cheats used:
+- No visual fake changed. This keeps the existing socket matrix solver on a direct AUP route.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static gain is removing the last direct `CurrentRuntimeOriginAup` bridge from the SHINOBU habitat/builder/preview file set.
+
+Verification:
+- Focused source scan finds no `CurrentRuntimeOriginAup` in `HabitatConstructionManager.cs`, `PlayerBuilder.cs`, or `HectonBlueprintPreviewBatch.cs`.
+- Positive scan shows `HectonFloatingOrigin.CurrentTotalOffsetDouble` in `HabitatConstructionManager.TryResolveAupFromRuntimeOrigin`.
+- Brace count for `HabitatConstructionManager.cs` is 147/147.
+- `git diff --check` reports CRLF normalization warning only for `HabitatConstructionManager.cs`.
+- No build/rebuild launched.

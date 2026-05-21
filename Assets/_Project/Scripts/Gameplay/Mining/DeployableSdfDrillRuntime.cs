@@ -43,6 +43,7 @@ namespace Hecton8.Gameplay.Mining
         private const uint DrillDebrisSpeciesHash = 0xD211B10Bu;
         private const byte AcousticChannelThumper = 7;
         private const byte AcousticFlagThreat = 1 << 3;
+        private const DeployableSdfDrillMathLod AuthoritativeMathLod = DeployableSdfDrillMathLod.Ultra;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_VAULT_SOVEREIGNTY_ENFORCER_DEPLOYABLE_SDF_DRILL.bin";
 
         private static int s_activeDrills;
@@ -143,23 +144,24 @@ namespace Hecton8.Gameplay.Mining
         private IPowerGridService _powerGrid;
         private VoxelDeltaProcessor _cachedVoxelDeltaProcessor;
         private MapMagicBridge _mapMagic;
-        private DeployableSdfDrillMathLod _cachedMathLod = DeployableSdfDrillMathLod.Low;
-        private DeployableSdfDrillMathLod _targetMathLod = DeployableSdfDrillMathLod.Low;
+        private IDataVault _dataVault;
+        private DeployableSdfDrillMathLod _cachedMathLod = AuthoritativeMathLod;
+        private DeployableSdfDrillMathLod _targetMathLod = AuthoritativeMathLod;
         private double _mathLodChangeEligibleUnscaledTime;
         private HectonVoxelVolume _resolvedVoxelVolume;
         private JobHandle _snapHandle;
         private JobHandle _extractionHandle;
 
         private int _vaultSlotIndex = -1;
-        private VaultBufferHandle<uint> _slotOwnersHandle;
-        private VaultBufferHandle<ushort> _inventoryQuantitiesHandle;
-        private VaultBufferHandle<ushort> _inventoryCapacitiesHandle;
-        private VaultBufferHandle<uint> _inventoryItemHashesHandle;
-        private VaultBufferHandle<uint> _inventoryOreHashesHandle;
-        private VaultBufferHandle<DeployableSdfDrillExtractionResult> _extractionResultHandle;
-        private VaultBufferHandle<DeployableSdfDrillTelemetryEntry> _blackBoxHandle;
-        private VaultBufferHandle<RaycastCommand> _snapCommandsHandle;
-        private VaultBufferHandle<RaycastHit> _snapHitsHandle;
+        private VaultGenerationHandle<uint> _slotOwnersHandle;
+        private VaultGenerationHandle<ushort> _inventoryQuantitiesHandle;
+        private VaultGenerationHandle<ushort> _inventoryCapacitiesHandle;
+        private VaultGenerationHandle<uint> _inventoryItemHashesHandle;
+        private VaultGenerationHandle<uint> _inventoryOreHashesHandle;
+        private VaultGenerationHandle<DeployableSdfDrillExtractionResult> _extractionResultHandle;
+        private VaultGenerationHandle<DeployableSdfDrillTelemetryEntry> _blackBoxHandle;
+        private VaultGenerationHandle<RaycastCommand> _snapCommandsHandle;
+        private VaultGenerationHandle<RaycastHit> _snapHitsHandle;
         private int _blackBoxCursor;
 
         /// <summary>True once the drill has been destroyed by damage or a fatal state fault.</summary>
@@ -183,6 +185,7 @@ namespace Hecton8.Gameplay.Mining
             _sourceId = unchecked((uint)UnityEngine.EntityId.ToULong(gameObject.GetEntityId()));
             _lcgState = DeployableSdfDrillMath.Mix(_sourceId, DrillToolHash);
             _health = math.max(1f, maxHealth);
+            RebindDataVault(GlobalRegistry.DataVault, false);
             AllocateNativeState();
             ConfigureInventorySlots();
             CaptureAnchorFromTransform();
@@ -216,9 +219,9 @@ namespace Hecton8.Gameplay.Mining
             if (_cachedTransform == null)
                 _cachedTransform = transform;
 
+            CacheRuntimeDependencies();
             AllocateNativeState();
             ConfigureInventorySlots();
-            CacheRuntimeDependencies();
             if (_lastMacroUpdateUnscaledTime <= 0.0001d)
                 _lastMacroUpdateUnscaledTime = SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (_lastCarveUnscaledTime <= 0.0001d)
@@ -252,9 +255,9 @@ namespace Hecton8.Gameplay.Mining
         /// </summary>
         public void OnSpawn()
         {
+            CacheRuntimeDependencies();
             AllocateNativeState();
             ConfigureInventorySlots();
-            CacheRuntimeDependencies();
             _broken = false;
             _faultDumped = false;
             _stateFlags = DeployableSdfDrillFlags.None;
@@ -374,6 +377,9 @@ namespace Hecton8.Gameplay.Mining
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
                     RebindVoxelDependencies(currentService as HectonVoxelEngine);
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault, true);
+                    break;
             }
         }
 
@@ -392,13 +398,9 @@ namespace Hecton8.Gameplay.Mining
         /// </summary>
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            DeployableSdfDrillMathLod nextLod = ToMathLod(payload.CurrentQualityTier);
-            if (nextLod == _targetMathLod)
-                return;
-
-            _targetMathLod = nextLod;
-            _mathLodChangeEligibleUnscaledTime = SystemDispatcher.CurrentUnscaledTimeSeconds +
-                math.max(DefaultMathLodHysteresisSeconds, mathLodHysteresisSeconds);
+            _targetMathLod = AuthoritativeMathLod;
+            _cachedMathLod = AuthoritativeMathLod;
+            _mathLodChangeEligibleUnscaledTime = 0d;
         }
 
         /// <summary>
@@ -477,8 +479,8 @@ namespace Hecton8.Gameplay.Mining
         {
             CancelTerrainSnap();
             CompleteExtractionJobForBarrier();
-            AllocateNativeState();
             CacheRuntimeDependencies();
+            AllocateNativeState();
             double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
             _faultDumped = false;
             _stateFlags = DeployableSdfDrillFlags.None;
@@ -728,12 +730,37 @@ namespace Hecton8.Gameplay.Mining
 
         private void CacheRuntimeDependencies()
         {
+            RebindDataVault(GlobalRegistry.DataVault, false);
             _powerGrid = GlobalRegistry.PowerGrid;
             _mapMagic = MapMagicBridge.Instance;
-            _cachedMathLod = ToMathLod(GlobalRegistry.ScalabilityTier);
+            _cachedMathLod = AuthoritativeMathLod;
             _targetMathLod = _cachedMathLod;
             _mathLodChangeEligibleUnscaledTime = 0d;
             RebindVoxelDependencies(GlobalRegistry.VoxelEngine);
+        }
+
+        private void RebindDataVault(IDataVault replacementVault, bool hydrateAfterRebind)
+        {
+            if (ReferenceEquals(_dataVault, replacementVault))
+                return;
+
+            if (hydrateAfterRebind)
+            {
+                CancelTerrainSnap();
+                CompleteExtractionJobForBarrier();
+            }
+
+            ReleaseVaultSlot(_dataVault);
+            ClearVaultHandles();
+            _dataVault = replacementVault;
+
+            if (!hydrateAfterRebind || _dataVault == null || !isActiveAndEnabled)
+                return;
+
+            AllocateNativeState();
+            ConfigureInventorySlots();
+            if (!_broken)
+                ScheduleTerrainSnap();
         }
 
         private void RebindVoxelDependencies(HectonVoxelEngine voxelEngine)
@@ -867,7 +894,12 @@ namespace Hecton8.Gameplay.Mining
             }
 
             _anchorRuntimePosition = new float3(position.x, position.y, position.z);
-            _anchorAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            if (!TryResolveAupFromRuntimeOrigin(position, out _anchorAup))
+            {
+                FaultInvalidRuntimePosition();
+                return;
+            }
+
             _sectorHash = DeployableSdfDrillMath.ResolveSectorHash(
                 _anchorAup.GridX,
                 _anchorAup.GridY,
@@ -1072,7 +1104,13 @@ namespace Hecton8.Gameplay.Mining
                 return false;
             }
 
-            double3 absolutePoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePoint);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePoint, out AbsoluteUniversePosition pointAup))
+            {
+                FaultInvalidRuntimePosition();
+                return false;
+            }
+
+            double3 absolutePoint = pointAup.ToAbsoluteDouble3();
             double carveDepth = math.max(0.25f, carveRadiusMeters);
             VoxelCarveEvent carveEvent = new VoxelCarveEvent
             {
@@ -1192,9 +1230,12 @@ namespace Hecton8.Gameplay.Mining
 
         private void PublishDebris(Vector3 hitPoint)
         {
+            if (!TryResolveAupFromRuntimeOrigin(hitPoint, out AbsoluteUniversePosition debrisAup))
+                return;
+
             DebrisSpawnSignal signal = new DebrisSpawnSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint),
+                PositionAup = debrisAup,
                 SpeciesHash = DrillDebrisSpeciesHash,
                 SourceEntityId = _sourceId,
                 Intensity01 = 1f,
@@ -1220,7 +1261,7 @@ namespace Hecton8.Gameplay.Mining
 
         private DeployableSdfDrillMathLod ResolveMathLod()
         {
-            return _cachedMathLod;
+            return AuthoritativeMathLod;
         }
 
         private void UpdateMathLodHysteresis(double now)
@@ -1251,32 +1292,12 @@ namespace Hecton8.Gameplay.Mining
 
         private static ushort ResolveMaxRuntimeCycles(DeployableSdfDrillMathLod lod)
         {
-            switch (lod)
-            {
-                case DeployableSdfDrillMathLod.Ultra:
-                    return 8;
-                case DeployableSdfDrillMathLod.High:
-                    return 4;
-                case DeployableSdfDrillMathLod.Middle:
-                    return 2;
-                default:
-                    return 1;
-            }
+            return 8;
         }
 
         private static ushort ResolveMaxOfflineCycles(DeployableSdfDrillMathLod lod)
         {
-            switch (lod)
-            {
-                case DeployableSdfDrillMathLod.Ultra:
-                    return 512;
-                case DeployableSdfDrillMathLod.High:
-                    return 256;
-                case DeployableSdfDrillMathLod.Middle:
-                    return 128;
-                default:
-                    return 64;
-            }
+            return 512;
         }
 
         private bool ValidateFiniteState()
@@ -1483,6 +1504,22 @@ namespace Hecton8.Gameplay.Mining
             return IsFiniteVector3(anchor) ? anchor : Vector3.zero;
         }
 
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!IsFiniteVector3(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in aup);
+        }
+
         private void FaultInvalidRuntimePosition()
         {
             _broken = true;
@@ -1523,6 +1560,12 @@ namespace Hecton8.Gameplay.Mining
         private void DisposeNativeState()
         {
             ReleaseVaultSlot();
+            ClearVaultHandles();
+            _blackBoxCursor = 0;
+        }
+
+        private void ClearVaultHandles()
+        {
             _slotOwnersHandle = default;
             _inventoryQuantitiesHandle = default;
             _inventoryCapacitiesHandle = default;
@@ -1532,7 +1575,7 @@ namespace Hecton8.Gameplay.Mining
             _blackBoxHandle = default;
             _snapCommandsHandle = default;
             _snapHitsHandle = default;
-            _blackBoxCursor = 0;
+            _vaultSlotIndex = -1;
         }
 
         private bool TryPrepareNativeState(
@@ -1746,16 +1789,23 @@ namespace Hecton8.Gameplay.Mining
 
         private void ReleaseVaultSlot()
         {
+            ReleaseVaultSlot(_dataVault);
+        }
+
+        private void ReleaseVaultSlot(IDataVault vault)
+        {
             int slotIndex = _vaultSlotIndex;
             if (slotIndex < 0)
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault != null && _slotOwnersHandle.IsCreated)
+            if (TryOpenVaultBuffer(
+                    vault,
+                    ref _slotOwnersHandle,
+                    BufferID.DeployableSdfDrillSlotOwners,
+                    MaxVaultDrillInstances,
+                    out NativeArray<uint> slotOwners))
             {
-                NativeArray<uint> slotOwners = _slotOwnersHandle.Resolve(vault);
-                if (slotOwners.IsCreated &&
-                    slotIndex < slotOwners.Length &&
+                if (slotIndex < slotOwners.Length &&
                     slotOwners[slotIndex] == ResolveVaultOwnerHash())
                 {
                     slotOwners[slotIndex] = 0u;
@@ -1765,26 +1815,66 @@ namespace Hecton8.Gameplay.Mining
             _vaultSlotIndex = -1;
         }
 
-        private static bool TryResolveVaultBuffer<T>(
-            ref VaultBufferHandle<T> handle,
+        private bool TryResolveVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (!handle.IsCreated || handle.Length < requiredLength)
-                handle = vault.GetBufferHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, options);
+            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
 
-            if (!handle.IsCreated)
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                    return false;
+
+                return TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GameplayTools,
+                options);
+            return TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsDrillVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
                 return false;
+            }
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated && buffer.Length >= requiredLength;
+            return true;
+        }
+
+        private static bool IsDrillVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.GameplayTools &&
+                   handle.Generation != 0u;
         }
 
         private static bool TryBuildSlice<T>(

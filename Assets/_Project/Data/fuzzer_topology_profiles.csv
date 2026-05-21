@@ -1,0 +1,2 @@
+name,nodeCount,edgeCapacity,loopRatio01,starRatio01,islandRatio01
+hostile_default,5000,20000,0.78,0.20,0.15

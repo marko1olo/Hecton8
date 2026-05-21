@@ -12,12 +12,11 @@ namespace Hecton8.Gameplay
     using Hecton.Localization;
     using Unity.Mathematics;
     using UnityEngine;
-    using Hecton8.Bootstrap;
     using Hecton8.Core;
+    using Hecton8.Core.Contracts;
     using Hecton8.Inventory;
     using Hecton8.Interaction;
     using Hecton8.Items;
-    using Hecton8.Physics;
     using Hecton8.Tools;
 
     /// <summary>
@@ -30,6 +29,7 @@ namespace Hecton8.Gameplay
         private const uint ToolLifecycleSpawnHash = 0x544C5350u; // TLSP
         private const uint ToolLifecycleDespawnHash = 0x544C4453u; // TLDS
         private const float RuntimeActiveIntentHoldSeconds = 0.075f;
+        private const float NeverUsedSeconds = 1000000f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -64,25 +64,11 @@ namespace Hecton8.Gameplay
 
         public ItemData ToolData => _toolData;
         public ToolMetadata Metadata => _toolMetadata;
-        public bool IsEquipped { get; private set; }
+        public bool IsEquipped => _isEquipped;
 
-        public PlayerToolSwimContract SwimContract
-        {
-            get
-            {
-                if (!_swimContractResolved) ResolveSwimContract();
-                return _swimContract;
-            }
-        }
+        public PlayerToolSwimContract SwimContract => _swimContract;
 
-        internal PlayerTransportFeelContract TransportFeelContract
-        {
-            get
-            {
-                if (!_transportFeelContractResolved) ResolveTransportFeelContract();
-                return _transportFeelContract;
-            }
-        }
+        internal PlayerTransportFeelContract TransportFeelContract => _transportFeelContract;
 
         public float CurrentDurability
         {
@@ -123,20 +109,21 @@ namespace Hecton8.Gameplay
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
 
+        private bool _isEquipped;
         private bool _lowDurabilityWarningFired;
-        private bool _swimContractResolved;
-        private bool _transportFeelContractResolved;
         private string _cachedOperationalToolName;
-        private float _lastUseTime = float.NegativeInfinity;
+        private float _secondsSinceLastUse = NeverUsedSeconds;
         private float _runtimeActiveIntentSeconds;
+        private float _toolRuntimeClockSeconds;
+        private float _lastUseTime = float.NegativeInfinity;
         private ulong _queuedRaycastRequesterId;
         private uint _runtimeToolId;
         private uint _runtimeToolSpecHashId;
+        private uint _interactionFrameIndex;
         private uint _cachedToolItemHashId;
         private bool _runtimeToolRegistered;
         private bool _modularHotSwapRegistered;
         private bool _lastUseWasPrimary;
-        private Transform _cachedBaseTransform;
         private IModularEquipmentService _modularEquipmentService;
         private IPowerGridService _powerGridService;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
@@ -144,6 +131,7 @@ namespace Hecton8.Gameplay
         private IPlayerInventoryService _playerInventoryService;
         private IInputService _inputService;
         private IInteractionSignalService _interactionSignalService;
+        private IPlayerMovementForceSink _playerMovementForceSink;
         private ToolDurabilitySystem _toolDurabilityService;
         private FixedCharBuffer _legacyOperationalBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - legacy string bridge for non-HUD callers - owner: PlayerTool
 
@@ -155,16 +143,20 @@ namespace Hecton8.Gameplay
         {
             if (lifecycleDebugLogging)
                 PublishLifecycleDebug(ToolLifecycleSpawnHash);
-            IsEquipped = false;
+            _isEquipped = false;
             _lowDurabilityWarningFired = false;
-            _lastUseTime = float.NegativeInfinity;
+            _secondsSinceLastUse = NeverUsedSeconds;
             _runtimeActiveIntentSeconds = 0f;
+            _toolRuntimeClockSeconds = 0f;
+            _lastUseTime = float.NegativeInfinity;
             _lastUseWasPrimary = false;
+            _interactionFrameIndex = 0u;
             RefreshQueuedRaycastRequesterId();
             RefreshOperationalToolNameCache();
+            CacheRuntimeToolIdsCold();
             CacheToolItemHash();
-            ResolveSwimContract();
-            ResolveTransportFeelContract();
+            CacheSwimContractCold();
+            CacheTransportFeelContractCold();
             CacheToolRegistryDependenciesCold();
             TryRegisterModularHotSwap();
 
@@ -180,15 +172,18 @@ namespace Hecton8.Gameplay
                 PublishLifecycleDebug(ToolLifecycleDespawnHash);
             if (IsEquipped) OnUnequip();
             UnregisterModularRuntime();
-            IsEquipped = false;
+            _isEquipped = false;
             _lowDurabilityWarningFired = false;
-            _lastUseTime = float.NegativeInfinity;
+            _secondsSinceLastUse = NeverUsedSeconds;
             _runtimeActiveIntentSeconds = 0f;
+            _toolRuntimeClockSeconds = 0f;
+            _lastUseTime = float.NegativeInfinity;
             _lastUseWasPrimary = false;
             _cachedOperationalToolName = null;
             _queuedRaycastRequesterId = 0UL;
             _runtimeToolId = 0u;
             _runtimeToolSpecHashId = 0u;
+            _interactionFrameIndex = 0u;
             _cachedToolItemHashId = 0u;
             _runtimeToolRegistered = false;
             TryUnregisterModularHotSwap();
@@ -199,6 +194,7 @@ namespace Hecton8.Gameplay
             _playerInventoryService = null;
             _inputService = null;
             _interactionSignalService = null;
+            _playerMovementForceSink = null;
             _toolDurabilityService = null;
         }
 
@@ -207,7 +203,7 @@ namespace Hecton8.Gameplay
             _queuedRaycastRequesterId = EntityId.ToULong(gameObject.GetEntityId());
         }
 
-        protected bool TryResolveQueuedRaycast(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction qti, out RaycastHit hit)
+        protected bool TryQueuePrimaryRaycast(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction qti, out RaycastHit hit)
         {
             IInteractionSignalService interactionService = _interactionSignalService;
             if (interactionService != null && interactionService.IsInitialized)
@@ -221,8 +217,20 @@ namespace Hecton8.Gameplay
                 }
 
                 Vector3 normalizedDirection = NormalizeOrCachedForward(direction);
-                double3 absoluteOrigin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin);
+                if (!TryResolveRuntimeAup(origin, out double3 absoluteOrigin))
+                {
+                    hit = default;
+                    return false;
+                }
+
                 if (!IsFiniteVector(normalizedDirection) || !math.all(math.isfinite(absoluteOrigin)))
+                {
+                    hit = default;
+                    return false;
+                }
+
+                uint runtimeToolId = _runtimeToolId;
+                if (runtimeToolId == 0u)
                 {
                     hit = default;
                     return false;
@@ -230,22 +238,29 @@ namespace Hecton8.Gameplay
 
                 float safePower = math.saturate(FiniteNonNegativeOrZero(GetRuntimePowerScalar(1f)));
                 InteractionPacket packet = new InteractionPacket(
-                    ResolveRuntimeToolId(),
+                    runtimeToolId,
                     new Unity.Mathematics.float3((float)absoluteOrigin.x, (float)absoluteOrigin.y, (float)absoluteOrigin.z),
                     new Unity.Mathematics.float3(normalizedDirection.x, normalizedDirection.y, normalizedDirection.z),
                     safePower,
                     safeRange,
                     (byte)ToolActionMode.Primary,
                     (byte)(IsEquipped ? ToolStateBits.Active : ToolStateBits.Idle),
-                    unchecked((uint)Time.frameCount));
+                    NextInteractionFrameIndex());
                 return interactionService.TryRaycastPrimary(_queuedRaycastRequesterId, in packet, layerMask, qti, out hit);
             }
             hit = default;
             return false;
         }
 
-        private void ResolveSwimContract() { _swimContractResolved = true; if (_swimContract == null) TryGetComponent(out _swimContract); }
-        private void ResolveTransportFeelContract() { _transportFeelContractResolved = true; if (_transportFeelContract == null) TryGetComponent(out _transportFeelContract); }
+        private uint NextInteractionFrameIndex()
+        {
+            uint next = _interactionFrameIndex + 1u;
+            _interactionFrameIndex = next != 0u ? next : 1u;
+            return _interactionFrameIndex;
+        }
+
+        private void CacheSwimContractCold() { if (_swimContract == null) TryGetComponent(out _swimContract); }
+        private void CacheTransportFeelContractCold() { if (_transportFeelContract == null) TryGetComponent(out _transportFeelContract); }
 
         // ══════════════════════════════════════════════════════════
         //  TOOL LIFECYCLE
@@ -253,7 +268,7 @@ namespace Hecton8.Gameplay
 
         public virtual void OnEquip()
         {
-            IsEquipped = true;
+            _isEquipped = true;
             _lowDurabilityWarningFired = false;
             EnsureModularRuntimeRegistration();
             SyncModularHeat(ResolveModularHeatNormalized());
@@ -262,7 +277,7 @@ namespace Hecton8.Gameplay
 
         public virtual void OnUnequip()
         {
-            IsEquipped = false;
+            _isEquipped = false;
             _runtimeActiveIntentSeconds = 0f;
             if (TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered)
                 service.SetToolActive(_runtimeToolId, false);
@@ -282,17 +297,24 @@ namespace Hecton8.Gameplay
 
         internal void AdvanceRuntimeActiveIntent(float deltaTime)
         {
+            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
+            _toolRuntimeClockSeconds = math.min(_toolRuntimeClockSeconds + safeDeltaTime, 1000000000f);
             if (_runtimeActiveIntentSeconds <= 0f)
+            {
+                _secondsSinceLastUse = math.min(NeverUsedSeconds, _secondsSinceLastUse + safeDeltaTime);
                 return;
+            }
 
-            _runtimeActiveIntentSeconds = math.max(0f, _runtimeActiveIntentSeconds - FiniteNonNegativeOrZero(deltaTime));
+            _runtimeActiveIntentSeconds = math.max(0f, _runtimeActiveIntentSeconds - safeDeltaTime);
+            _secondsSinceLastUse = math.min(NeverUsedSeconds, _secondsSinceLastUse + safeDeltaTime);
         }
 
         // ══════════════════════════════════════════════════════════
-        //  OPERATIONAL SUMMARIES (ZERO-GC)
+        //  OPERATIONAL SUMMARIES (ZERO-GC WRITE ROUTE + LEGACY STRING BRIDGE)
         // ══════════════════════════════════════════════════════════
 
-        public virtual string GetOperationalSummary()
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public virtual string BuildLegacyOperationalSummaryString()
         {
             _legacyOperationalBuffer.Clear();
             WriteOperationalSummary(ref _legacyOperationalBuffer);
@@ -301,7 +323,7 @@ namespace Hecton8.Gameplay
 
         public virtual void WriteOperationalSummary(ref FixedCharBuffer buffer)
         {
-            buffer.Append(GetOperationalToolName());
+            buffer.Append(ReadOperationalToolNameSnapshot());
             if (!IsEquipped) { buffer.Append(" // STANDBY"); return; }
             if (IsBroken) { buffer.Append(" // BROKEN"); return; }
             if (_toolMetadata != null)
@@ -315,7 +337,8 @@ namespace Hecton8.Gameplay
             buffer.Append(" // READY");
         }
 
-        public virtual string GetOperationalDirective()
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public virtual string BuildLegacyOperationalDirectiveString()
         {
             _legacyOperationalBuffer.Clear();
             WriteOperationalDirective(ref _legacyOperationalBuffer);
@@ -339,10 +362,9 @@ namespace Hecton8.Gameplay
             buffer.Append("Tool is ready for the current field role.");
         }
 
-        private string GetOperationalToolName()
+        private string ReadOperationalToolNameSnapshot()
         {
-            if (string.IsNullOrEmpty(_cachedOperationalToolName)) RefreshOperationalToolNameCache();
-            return _cachedOperationalToolName;
+            return _cachedOperationalToolName ?? string.Empty;
         }
 
         private void RefreshOperationalToolNameCache()
@@ -358,7 +380,7 @@ namespace Hecton8.Gameplay
 
         protected float GetEfficiency()
         {
-            float fallback = _toolMetadata == null ? 1f : _toolMetadata.GetTotalEfficiency();
+            float fallback = _toolMetadata == null ? 1f : FiniteAtLeast(_toolMetadata.efficiency, 0.1f);
             float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetEfficiencyScalar(_runtimeToolId, fallback)
                 : fallback;
@@ -367,7 +389,7 @@ namespace Hecton8.Gameplay
 
         protected float GetSpeed()
         {
-            float fallback = _toolMetadata == null ? 1f : _toolMetadata.GetTotalSpeed();
+            float fallback = _toolMetadata == null ? 1f : FiniteAtLeast(_toolMetadata.speed, 0.1f);
             float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetSpeedScalar(_runtimeToolId, fallback)
                 : fallback;
@@ -376,7 +398,7 @@ namespace Hecton8.Gameplay
 
         protected float GetEnergyConsumption()
         {
-            float fallback = _toolMetadata == null ? 0f : _toolMetadata.GetTotalEnergyConsumption();
+            float fallback = _toolMetadata == null ? 0f : FiniteNonNegativeOrZero(_toolMetadata.energyConsumptionRate);
             float value = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetBatteryDrainPerSecond(_runtimeToolId, fallback)
                 : fallback;
@@ -509,7 +531,7 @@ namespace Hecton8.Gameplay
             float safeMultiplier = FiniteNonNegativeOrZero(multiplier);
             system.DrainDurabilityByTime(
                 _toolMetadata.toolID,
-                ResolveToolItemHash(),
+                GetCachedToolItemHash(),
                 drainRate * math.rcp(safeMaxDurability) * safeMultiplier * safeDeltaTime,
                 safeMaxDurability);
             SyncModularDurability();
@@ -533,9 +555,10 @@ namespace Hecton8.Gameplay
 
         internal ToolRuntimeProfile BuildModularRuntimeProfile()
         {
+            CacheRuntimeToolIdsCold();
             ToolRuntimeProfile profile = new ToolRuntimeProfile
             {
-                ToolId = ResolveRuntimeToolId(),
+                ToolId = _runtimeToolId,
                 MaxRange = 1f,
                 PowerScalar = 1f,
                 EfficiencyScalar = _toolMetadata != null ? FiniteAtLeast(_toolMetadata.efficiency, 0.1f) : 1f,
@@ -553,15 +576,18 @@ namespace Hecton8.Gameplay
             return profile;
         }
 
-        internal int CopyAuthoredModules(ToolModuleData[] destination)
+        internal int CopyAuthoredModuleRules(ToolUpgradeModuleRuleDTO[] destination, uint toolId)
         {
-            if (destination == null || destination.Length == 0 || _toolMetadata == null)
+            if (destination == null || destination.Length == 0)
                 return 0;
 
             for (int i = 0; i < destination.Length; i++)
-                destination[i] = null;
+                destination[i] = default;
 
-            return _toolMetadata.CopyDefaultModules(destination);
+            if (_toolMetadata == null)
+                return 0;
+
+            return _toolMetadata.CopyDefaultModuleRules(destination, toolId);
         }
 
         internal virtual float ResolveModularBatteryNormalized()
@@ -630,18 +656,28 @@ namespace Hecton8.Gameplay
             if (ToolHitUtility.TryApplyRelativeCarrierImpulse(safeDirection, impulseMagnitude))
                 return true;
 
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
-            if (playerBody == null)
+            IPlayerMovementForceSink forceSink = _playerMovementForceSink;
+            if (forceSink == null)
                 return false;
 
-            return PhysicsForceRouter.QueueForce(playerBody, -safeDirection * impulseMagnitude, ForceMode.Impulse);
+            float playerMass = 1f;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            if (playerBody != null && math.isfinite(playerBody.mass) && playerBody.mass > 0.0001f)
+                playerMass = playerBody.mass;
+
+            Vector3 velocityDelta = (-safeDirection * impulseMagnitude) / math.max(playerMass, 0.0001f);
+            if (!IsFiniteVector(velocityDelta))
+                return false;
+
+            forceSink.QueueExternalVelocityChange(velocityDelta);
+            return true;
         }
 
         private Vector3 NormalizeOrCachedForward(Vector3 direction)
         {
             if (!IsFiniteVector(direction))
-                return ResolveCachedForward();
+                return SelectCachedForward();
 
             float sqrMagnitude = direction.sqrMagnitude;
             if (math.isfinite(sqrMagnitude) && sqrMagnitude > 0.0001f)
@@ -652,19 +688,28 @@ namespace Hecton8.Gameplay
                 return direction * math.rsqrt(sqrMagnitude);
             }
 
-            return ResolveCachedForward();
+            return SelectCachedForward();
         }
 
-        private Vector3 ResolveCachedForward()
+        private Vector3 SelectCachedForward()
         {
-            if (_cachedBaseTransform == null)
-                _cachedBaseTransform = transform;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                float3 forward = snapshot.Forward;
+                float sqrMagnitude = math.lengthsq(forward);
+                if (math.all(math.isfinite(forward)) && math.isfinite(sqrMagnitude) && sqrMagnitude > 0.0001f)
+                {
+                    float invMagnitude = math.rsqrt(math.max(sqrMagnitude, 0.0001f));
+                    return new Vector3(
+                        forward.x * invMagnitude,
+                        forward.y * invMagnitude,
+                        forward.z * invMagnitude);
+                }
+            }
 
-            if (_cachedBaseTransform == null)
-                return Vector3.forward;
-
-            Vector3 forward = _cachedBaseTransform.forward;
-            return IsFiniteVector(forward) ? forward : Vector3.forward;
+            return Vector3.forward;
         }
 
         protected void QueueToolHapticFeedback(float powerDelivered, float ratedPower, byte priority = 1)
@@ -716,7 +761,8 @@ namespace Hecton8.Gameplay
                 ApplyDurabilityDrain(safeDeltaTime, isPrimary);
 
             _runtimeActiveIntentSeconds = math.max(_runtimeActiveIntentSeconds, RuntimeActiveIntentHoldSeconds);
-            _lastUseTime = Time.time;
+            _secondsSinceLastUse = 0f;
+            _lastUseTime = _toolRuntimeClockSeconds;
             CheckLowDurability();
             return true;
         }
@@ -753,37 +799,25 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            HectonPlayerHealth playerHealth = null;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (playerContext != null && playerContext.PlayerTransform != null)
-                playerContext.PlayerTransform.TryGetComponent(out playerHealth);
-
+            HectonPlayerHealth playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
             if (playerHealth != null)
                 playerHealth.TakeDamage(FiniteNonNegativeOrZero(playerDamage), true);
         }
 
-        private uint ResolveRuntimeToolId()
+        private void CacheRuntimeToolIdsCold()
         {
-            if (_runtimeToolId != 0u)
-                return _runtimeToolId;
+            if (_runtimeToolId != 0u && _runtimeToolSpecHashId != 0u)
+                return;
 
-            string toolIdSource = ResolveRuntimeToolIdSource();
-            _runtimeToolId = unchecked((uint)Animator.StringToHash(toolIdSource));
-            _runtimeToolSpecHashId = HashRuntimeToolSpecId(toolIdSource);
-            return _runtimeToolId;
+            string toolIdSource = SelectRuntimeToolIdSourceCold();
+            if (_runtimeToolId == 0u)
+                _runtimeToolId = unchecked((uint)Animator.StringToHash(toolIdSource));
+            if (_runtimeToolSpecHashId == 0u)
+                _runtimeToolSpecHashId = HashRuntimeToolSpecId(toolIdSource);
         }
 
-        private uint ResolveRuntimeToolSpecHashId()
-        {
-            if (_runtimeToolSpecHashId != 0u)
-                return _runtimeToolSpecHashId;
-
-            string toolIdSource = ResolveRuntimeToolIdSource();
-            _runtimeToolSpecHashId = HashRuntimeToolSpecId(toolIdSource);
-            return _runtimeToolSpecHashId;
-        }
-
-        private string ResolveRuntimeToolIdSource()
+        private string SelectRuntimeToolIdSourceCold()
         {
             return _toolMetadata != null && !string.IsNullOrWhiteSpace(_toolMetadata.toolID)
                 ? _toolMetadata.toolID
@@ -857,6 +891,12 @@ namespace Hecton8.Gameplay
             return playerContext != null && playerContext.IsInitialized;
         }
 
+        protected bool TryGetInputService(out IInputService inputService)
+        {
+            inputService = _inputService;
+            return inputService != null;
+        }
+
         private void CacheToolRegistryDependenciesCold()
         {
             _modularEquipmentService = GlobalRegistry.ModularEquipment;
@@ -866,6 +906,7 @@ namespace Hecton8.Gameplay
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _inputService = GlobalRegistry.Input;
             _interactionSignalService = GlobalRegistry.InteractionSignals;
+            _playerMovementForceSink = GlobalRegistry.PlayerMovementContracts;
             _toolDurabilityService = GlobalRegistry.ToolDurability;
         }
 
@@ -911,6 +952,9 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.InteractionSignals:
                     _interactionSignalService = currentService as IInteractionSignalService;
                     break;
+                case GlobalRegistryServiceSlot.PlayerMovementContracts:
+                    _playerMovementForceSink = currentService as IPlayerMovementForceSink;
+                    break;
                 case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
                     _toolDurabilityService = currentService as ToolDurabilitySystem;
                     break;
@@ -929,39 +973,36 @@ namespace Hecton8.Gameplay
 
         internal ToolMetadata RuntimeMetadata => _toolMetadata;
         internal uint RuntimeToolId => _runtimeToolId;
-        internal uint RuntimeToolSpecHashId => ResolveRuntimeToolSpecHashId();
+        internal uint RuntimeToolSpecHashId => _runtimeToolSpecHashId;
+        internal float SecondsSinceLastUse => _secondsSinceLastUse;
         internal float LastUseTime => _lastUseTime;
         internal bool LastUseWasPrimary => _lastUseWasPrimary;
         internal bool HasRuntimeActiveIntent => IsEquipped && _runtimeActiveIntentSeconds > 0f;
-        internal bool WasRecentlyUsed(float maxIdleSeconds) => IsEquipped && (Time.time - _lastUseTime <= FiniteAtLeast(maxIdleSeconds, 0.05f));
+        internal bool WasRecentlyUsed(float maxIdleSeconds) => IsEquipped && _secondsSinceLastUse <= FiniteAtLeast(maxIdleSeconds, 0.05f);
 
-        internal bool TryResolveCachedRuntimePosition(out float3 runtimePosition)
-        {
-            runtimePosition = default;
-            if (_cachedBaseTransform == null)
-                _cachedBaseTransform = transform;
-
-            if (_cachedBaseTransform == null)
-                return false;
-
-            Vector3 position = _cachedBaseTransform.position;
-            if (!IsFiniteVector(position))
-                return false;
-
-            runtimePosition = new float3(position.x, position.y, position.z);
-            return true;
-        }
-
-        internal bool TryResolveCachedAup(out double3 absoluteAup)
+        private bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 absoluteAup)
         {
             absoluteAup = default;
-            if (!TryResolveCachedRuntimePosition(out float3 runtimePosition))
+            if (!IsFiniteVector(runtimePosition))
                 return false;
 
-            absoluteAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(new Vector3(
-                runtimePosition.x,
-                runtimePosition.y,
-                runtimePosition.z));
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) ||
+                !snapshot.Aup.IsFinite())
+            {
+                return false;
+            }
+
+            double3 deltaMeters = new double3(
+                (double)runtimePosition.x - snapshot.RuntimePosition.x,
+                (double)runtimePosition.y - snapshot.RuntimePosition.y,
+                (double)runtimePosition.z - snapshot.RuntimePosition.z);
+            var resolvedAup = snapshot.Aup.OffsetMeters(deltaMeters);
+            if (!resolvedAup.IsFinite())
+                return false;
+
+            absoluteAup = resolvedAup.ToAbsoluteDouble3();
             return math.all(math.isfinite(absoluteAup));
         }
 
@@ -974,7 +1015,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             toolId = _toolMetadata.toolID;
-            itemHashId = ResolveToolItemHash();
+            itemHashId = GetCachedToolItemHash();
             maxDurability = FiniteAtLeast(_toolMetadata.maxDurability, 1f);
             return true;
         }
@@ -1002,20 +1043,21 @@ namespace Hecton8.Gameplay
 
         private void CacheToolItemHash()
         {
-            _cachedToolItemHashId = _toolData != null
-                ? unchecked((uint)LocHash.Compute(_toolData.PersistentId))
-                : 0u;
+            if (_toolData != null)
+                _cachedToolItemHashId = unchecked((uint)LocHash.Compute(_toolData.PersistentId));
+
+            if (_cachedToolItemHashId != 0u)
+                return;
+
+            string hashSource = _toolMetadata != null && !string.IsNullOrEmpty(_toolMetadata.toolID)
+                ? _toolMetadata.toolID
+                : SelectRuntimeToolIdSourceCold();
+            _cachedToolItemHashId = unchecked((uint)Animator.StringToHash(hashSource));
         }
 
-        private uint ResolveToolItemHash()
+        private uint GetCachedToolItemHash()
         {
-            if (_cachedToolItemHashId != 0u)
-                return _cachedToolItemHashId;
-
-            CacheToolItemHash();
-            return _cachedToolItemHashId != 0u
-                ? _cachedToolItemHashId
-                : unchecked((uint)Animator.StringToHash(_toolMetadata != null ? _toolMetadata.toolID : GetType().Name));
+            return _cachedToolItemHashId;
         }
     }
 }

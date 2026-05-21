@@ -13,7 +13,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Hecton Submarine OS Display")]
-    public sealed class HectonSubmarineOsDisplay : MonoBehaviour, ILateFrameTickable, ISubmarineOsEventListener
+    public sealed class HectonSubmarineOsDisplay : MonoBehaviour, ILateFrameTickable, ISubmarineOsEventListener, IGlobalRegistryHotSwapListener
     {
         private const int HistoryLineCount = 16;
         private const int HistoryLineCapacity = 64;
@@ -116,6 +116,7 @@ namespace Hecton8.UI
 
         private bool _typingActive;
         private bool _registeredUpdatable;
+        private bool _hotSwapListenerRegistered;
         private SubsystemStatus _renderedSubsystemStatus = (SubsystemStatus)InvalidCachedStatus;
         private SubmarineEmergencyLevel _renderedEmergencyLevel = (SubmarineEmergencyLevel)InvalidCachedStatus;
         private HectonSubmarineOsSnapshot _snapshot;
@@ -144,6 +145,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             EnsureUiBuilt(allowCreate: true);
             HectonSubmarineOsEvents.Unregister(this);
             HectonSubmarineOsEvents.Register(this);
@@ -151,24 +153,27 @@ namespace Hecton8.UI
             RefreshMetricsLabel();
             RefreshDroneFleetLabel();
             RefreshLogLabel();
-            if (_typingActive || _pendingEntryCount > 0)
-                TryRegister();
+            TryRegister();
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             EnsureUiBuilt(allowCreate: true);
+            TryRegister();
         }
 
         private void OnDisable()
         {
             HectonSubmarineOsEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
             HectonSubmarineOsEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
@@ -189,16 +194,12 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (!EnsureUiBuilt(allowCreate: false))
-            {
-                TryUnregister();
                 return;
-            }
 
             if (!_typingActive)
             {
                 if (!TryStartNextTypedEntry())
-                    TryUnregister();
-                return;
+                    return;
             }
 
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
@@ -218,9 +219,17 @@ namespace Hecton8.UI
                 _typingSourceLength = 0;
                 _typingRenderBaseLength = 0;
                 RefreshLogLabel();
-                if (!TryStartNextTypedEntry())
-                    TryUnregister();
+                TryStartNextTypedEntry();
             }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegister();
         }
 
         private void TryRegister()
@@ -228,10 +237,24 @@ namespace Hecton8.UI
             if (_registeredUpdatable || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            _registeredUpdatable = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            _registeredUpdatable = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void TryUnregister()

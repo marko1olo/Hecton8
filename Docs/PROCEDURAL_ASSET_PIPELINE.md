@@ -1,10 +1,11 @@
-# PROCEDURAL_ASSET_PIPELINE.md
-Date: 2026-05-11
-## ???????? ?? ????????? ??????????? ???????
-Status: PENDING VERIFICATION
+# Procedural Asset Pipeline
+
+Date: 2026-05-21
+Status: ACTIVE STATIC CONTRACT / RUNTIME PENDING
+Evidence class: STATIC_DOC / STATIC_SOURCE orientation only.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,382 +15,108 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; runtime proof remains absent.
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-Verification: not runtime-measured in this pass
-Target: NVIDIA MX350 2GB VRAM Ã‚Â· i5-1135G7 Ã‚Â· 12GB RAM
-Engine: Unity 6000.x Ã‚Â· URP Forward+
-Tools: MapMagic 2.1.18 Ã‚Â· GPU Instancer Pro Ã‚Â· Mantis LOD Ã‚Â· Mesh Baker
-
-2026-05-20 R42-subordinate current-state boundary:
-
-- This is the procedural asset production contract, not proof that a specific generated asset exists or is wired.
-- Historical conceptual background includes `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`, `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`; current authority starts at `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, current source, then DOC_GLOBAL R42 -> R41 -> R40 -> R39 -> R38 -> R37 -> R36 -> R35 -> R34 -> R33 -> R32 -> R31 -> subordinate correction layers.
-- For procedural world placement ownership, read `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`.
-- For readable geology/seismic ownership, read `Docs/ARCHITECTURE/SEISMIC_GEOLOGY_SYSTEM.md`.
-- The deprecated `Docs/HECTON8_GEOLOGY_PRODUCTION_PLAN.md` path must not be used as active authority.
-- Procedural assets must follow the visual-fake-first doctrine: imply richness through silhouette, material, LOD, shader motion, masks, decals, impostors, and pooled VFX before adding runtime simulation.
-
----
-
-## ????????? ??????????
-
-[REQ] ???? Ã¢â‚¬â€ ???????????? prefab ? ??????? ? ??????? runtime hookup.
-[REQ] ?????? ????????? ???? ? ?????? ????:
-  - prefab ?????????? ? ????? ???????
-  - material/shader ????????? ? ????????????? ??? ??????
-  - GPU Instancer prototype ???????????????
-  - MapMagic scatter profile ??????? ? ?????
-
-[REQ] ?????? ?? ????????? ????:
-  - ?????? ?????? validator/report ??? prefab
-  - ??????? editor script ??????? ?????? ?????????, ?? ???????
-  - ???????????? markdown ? ????????? ???? ??? ????? ???????
-
-[REQ] Prefer modifying existing runtime/authoring owners
-      over creating new editor utilities.
-[REQ] If a reusable editor generator is created, it must directly
-      create production assets, not only inspect them.
-[FORBID] New validator/report/status markdown unless user
-         explicitly asks for audit output.
-[FORBID] ????????? validator, editor tool, audit script, markdown report,
-         request packet ??? checklist generator ???? ????????????
-         ?? ???????? ??? ???? ? ???? ??? ???????? production prefab.
-[FORBID] ?????????????? ?????????? ??????? ???????????? validator ????.
-         ?????? ?????: ????????????, ?????? blocked-by ??????
-         ? ??????? ?????????? ?????? ??????? ?? ???????.
-
----
-
-## ?????????
-
-[REQ] ????????? ?????? ???? ????????? ????:
-  ORGANIC / GEOLOGICAL / STRUCTURAL / INTERIOR_DECOR
-
-### ??????? ????????? (LOD0)
-| ?????????      | MX350   | High-End  |
-|----------------|---------|-----------|
-| ORGANIC        | <= 3000 | <= 8000   |
-| GEOLOGICAL     | <= 8000 | <= 20000  |
-| STRUCTURAL     | <= 15000| <= 40000  |
-| INTERIOR_DECOR | <= 2000 | <= 6000   |
-
-### ?????????? ?????? ?????? (MX350)
-<= 2.5M visible tris Ã‚Â· <= 800 SetPass Ã‚Â· <= 1.6GB VRAM Ã‚Â· <= 100 unique materials
-
----
-
-## CORE PRINCIPLES
-
-[REQ] Detail != Polygons. Realism = normal maps + vertex displacement +
-      triplanar + correct LOD transitions.
-[REQ] Realism != runtime physics. Prefer authored deformation, VAT, shader wetness,
-      fake caustics, flow masks, and proxy colliders before simulation.
-[REQ] One material = one draw call. ??? ???????? ????? GPU Instancer
-      Color/Scale/Rotation randomization.
-[REQ] Zero UV dependency ??? ??????????? ?????????. Triplanar MANDATORY.
-[REQ] Zero CPU animation. ??? ???????? ????? vertex shader
-      (WorldPos + Time + Sine/Noise).
-[REQ] Follow steps in order internally. Do not stop to narrate every step
-      unless blocked by missing resource.
-[REQ] ???? ?????? API ?????????, SO ??? ??? ??? ???? MapMagic ??????????
-      -> STOP. Record missing dependency evidence. Do not invent placeholders.
-
----
-
-## ?????????
-
-[REQ] Quad-dominant topology, uniform density, no tris < 0.05mÃ‚Â².
-[REQ] ??????????? ?????????? ????? 3D noise (Simplex/Perlin):
-      Amplitude 0.05-0.3m, Frequency 2-5.
-[REQ] Auto-recalculate normals: Smooth + Preserve Hard Edges
-      ??? rock/coral plates.
-[REQ] Edge bleeding: boundary vertices snap to Average Normal
-      ???????? ?????? ??? seamless stitching.
-
-[FORBID] Chaotic triangulation, T-vertices, non-manifold geometry.
-[FORBID] UV unwrap ??? ??????????? ?????????.
-
----
-
-## PHOTOREALISTIC SURFACE
-
-[REQ] Shader MUST include:
-
-1. SSS Approximation
-   Wrap Lighting (Half-Lambert) + `1 - dot(N,L)` mask ?? Albedo.
-   ?????? ???? (coral/algae) ?????? ?????????? ????. ???????? ????? Mask.A.
-
-2. Curvature-Driven Wetness
-   Convex/concave ?? Normal map -> ????????? Roughness.
-   Concave = wet/glossy (0.2). Convex = dry/matte (0.7).
-   ??? ?????? ????????.
-
-3. Micro-Parallax Offset
-   Mask.B -> UV offset ?? Albedo/Normal. Max offset = 0.03.
-
-4. Fresnel Water Film
-   Fresnel Effect node ????????? ????, blend ? Depth Fog Color.
-
-5. Normal Scale Control
-   Float `_NormalScale`. Default 0.75 ??? phototextures.
-
-[FORBID] Direct texture sampling ??? curvature roughness,
-         SSS mask, Fresnel blend.
-
----
-
-## ????????? ???????
-
-| ?????????      | Cull Distance | ???????????                       |
-|----------------|---------------|-----------------------------------|
-| ORGANIC        | 60-120m       | Algae/coral fade into fog         |
-| GEOLOGICAL     | 150-300m      | Rocks form terrain silhouette     |
-| STRUCTURAL     | 250-500m      | Bases are navigation landmarks    |
-| INTERIOR_DECOR | 40-80m        | Line-of-sight dependent           |
-
-[REQ] Layer Cull Distances + GPU Instancer Distance Culling.
-      ?? ?????????? ? ????????.
-[REQ] URP: ????????? culling ? Fog Density.
-      Fog opacity > 0.95 -> disable rendering.
-[FORBID] Culling distance < 40m ??? ?????? world-space ???????.
-
----
-
-## ????????
-
-| ?????????         | Collider              | Note                   |
-|-------------------|-----------------------|------------------------|
-| ORGANIC (small)   | None                  | Pass-through           |
-| ORGANIC (large)   | Capsule / Box         | ?????? ???? ?????????  |
-| GEOLOGICAL (<=3m) | 2-3 Primitives        | Box/Sphere per cluster |
-| GEOLOGICAL (>3m)  | MeshCollider (Convex) | ?? ?????? LOD2         |
-| STRUCTURAL        | MeshCollider (Static) | isKinematic = true     |
-
-[FORBID] MeshCollider ?? LOD0.
-[FORBID] Dynamic Rigidbody ??? ????????? ??????.
-[FORBID] > 500 ???????? ??????????? ?? ??????.
-
----
-
-## ????????
-
-### ????????????
-| Map           | Format | Max Size | sRGB | Note                        |
-|---------------|--------|----------|------|-----------------------------|
-| Albedo        | BC7    | 2048     | Yes  | Tiling 2-4x                 |
-| Normal        | BC5    | 2048     | No   | Tangent Space, green flip   |
-| Mask (ARM)    | BC7    | 2048     | No   | R=AO G=Rough B=Height/Metal |
-| Detail Normal | BC5    | 1024     | No   | Micro-relief, shader blend  |
-
-### CURRENT FLORA RUNTIME CONTRACT
-[REQ] `WorldProceduralFlora` currently ships a category-owned texture contract, not generic ARM/detail-normal.
-[REQ] Do not reinterpret imported flora channels unless the runtime shaders are changed in the same task.
-[REQ] Current runtime ownership:
-      - `_DetailMap` = linear grayscale micro-detail / breakup / caustic modulation
-      - `_MaskMap` = flora-specific packed control map owned by the shader
-      - kelp/coral channel semantics differ; shader code is source of truth
-[REQ] Importer settings still stay strict:
-      - `albedo`  = sRGB On, Default
-      - `normal`  = sRGB Off, Normal Map
-      - `mask`    = sRGB Off, Default
-      - `detail`  = sRGB Off, Default
-[WARN] If runtime is migrated to true ARM + detail-normal packing, update:
-       shader sampling, material authoring, validator rules, and all imported family sets together.
-
-[REQ] ??? ???????? seamless (Wrap Mode = Repeat).
-[REQ] ???? ????? ?? biome/family. ???? Material ?? GPU Instancer batch.
-[REQ] Generate Mip Maps = On. Streaming = Off.
-[FORBID] Non-tiling, unique per instance, uncompressed, > 2048px ??? scatter.
-
-### ???? ??????? ???
-[REQ] ?? ???????????? placeholder. ?? ?????? validator
-      ??? ?????????????? ???????.
-[REQ] ?????? Master Prompt ??? ????????? ? ???????????? ?? ???????:
-
-      "Seamless tiling PBR [texture_type] texture, [subject],
-      [biome_context], top-down orthographic, uniform lighting,
-      no shadows, no perspective distortion, photorealistic,
-      4K, edge-perfect seamless tile, --tile --v 6 --ar 1:1"
-
-[REQ] Biome context tokens:
-  ORGANIC_shallow:  "sunlit underwater, turquoise, silicon-based coral"
-  GEOLOGICAL_slope: "weathered rock, basalt layers, wet sheen"
-  STRUCTURAL_ruin:  "NASA-punk metal, corrosion, salt staining, welded seams"
-  ORGANIC_abyss:    "bioluminescent deep sea, dark basalt, pale translucent"
-
-[REQ] ????? ???????: Wrap=Repeat, MipMaps=On, BC7/BC5,
-      sRGB ?????? Albedo, Read/Write=Off,
-      Max 2048 (hero) / 1024 (scatter).
-[FORBID] AI ?????????? ????????? .png ????????.
-         ?????? ??????? Ã¢â‚¬â€ ?????? ??????? ????? Unity Texture Importer.
-
----
-
-## SHADER ARCHITECTURE
-
-[REQ] URP Shader Graph:
-  - Master Node: PBR / AlphaTest / GPU Instancing ON
-  - Triplanar UV: World Space, Normal Type
-  - Texture Sampling: Albedo + Normal + Mask
-  - Detail Map Blending: Normal + Height
-  - Vertex Displacement: sin(Time.y * Freq + WorldPos.xz * Phase) * Amp
-  - Depth Fog: Lerp(MatColor, FogColor, exp(-Depth * Coeff))
-  - Quality Keywords: _QUALITY_MX350 / _QUALITY_HIGH
-
-[REQ] _QUALITY_MX350 ????????? Parallax, ??????? Displacement Amp.
-[REQ] Max 8 texture samples per pixel. GPU Instancing = ON.
-[REQ] Cull Off (organic). Cull Back (hard surface). ZWrite On. Blend Off.
-
-[FORBID] Transparent shaders ??? opaque geometry.
-[FORBID] GrabPass. ComputeBuffer ? renderer.
-[FORBID] Dynamic branch if() ? runtime.
-[FORBID] ScreenPosition dependencies.
-[FORBID] multi_compile > 4 keywords.
-
----
-
-## LOD ? ??????????
-
-### Mantis LOD Workflow
-1. Export LOD0 -> Import ? Mantis
-2. LOD1: Poly Reduction 40-50%, Preserve Silhouette = ON
-3. LOD2: Poly Reduction 85-90%
-4. LOD Group thresholds: 0.6 / 0.15 / 0.04 / 0
-5. Cross Fade = ON (Dithered) ??? ??????? ?????????
-
-### GPU Instancer Pro
-- Color Variation: Hue +-0.05, Sat 0.9-1.1, Val 0.85-1.05
-- Scale/Rotation: Y 0-360 deg, X/Z tilt +-8 deg, Scale 0.7-1.3
-- Frustum Culling: ON. Occlusion Culling: ON
-- Buffer Size: Auto-grow, max 100k instances per prefab type
-
-### Cluster Baking
-[REQ] Rock/coral ?????? -> Mesh Baker -> Mantis Decimation ->
-      LOD Group -> GPU Instancer.
-      Source meshes ??????? ????? bake.
-
-### MapMagic Scatter
-[REQ] ?????????? ????? HectonRockOutput -> GPU Instancer API.
-      Floor Offset Y: -0.2 to -0.8m. Yaw random 0-360 deg.
-[REQ] Max 1200 instances per 1000m tile (density clamp).
-[REQ] ??????? 2.5m clearance ?? player spawn coordinates.
-[FORBID] Instantiate() ? runtime. ?????? GPU Instancer / Pools.
-[FORBID] Spawn ?????? geometry. Unclamped scatter density.
-
----
-
-## SEAMLESS STITCHING
-
-[REQ] Chunk boundaries: Vertex Normal Blending + Height Offset <= 0.02m.
-[REQ] Structural/bases: Base Ring vertices ??????????? ? Terrain/Snap Grid.
-      Modular snap grid = 0.5m.
-[REQ] MapMagic terrain hole edges ??????? rock/debris scatter.
-
----
-
-## PIPELINE ????
-
-[REQ] ????????? ? ??????? ?????????. ?????? ??? ?????????? ????????
-      ???? ??? ?????? ? ???????. ?? ??????????????? ??? ?????????
-      ??????? ???? Ã¢â‚¬â€ ?????? ???? ???????????? ??????????? ???????.
-
-### STEP 1 Ã¢â‚¬â€ BASE MESH
--> ????????? ????????? ?? ?????????
--> ????????: Manifold? Normals consistent? Edge loops clean?
--> Output: .fbx/.obj (LOD0) ? ????? ???????
-
-### STEP 2 Ã¢â‚¬â€ TEXTURE SET
--> ???? ???????? ????: ????????? seamless, normal green flip, Mask RGB
--> ???? ??????? ???: ?????? Master Prompts -> STOP ?? ???????
--> Output: ??????????????? .png ? Unity ? ??????????? ???????????
-
-### STEP 3 Ã¢â‚¬â€ SHADER + MATERIAL
--> ??????? URP Shader Graph
--> ???????? GPU Instancing, Triplanar, Depth Fog, Quality Keywords
--> ????????: ?????????????? < 8 samples? Zero CPU animation?
--> Output: .shadergraph + MAT_[Category]_[Name]
-
-### STEP 4 Ã¢â‚¬â€ LOD + COLLIDER
--> Mantis: LOD1/LOD2. LOD Group thresholds.
--> ????????? ?? ??????? ?????????
--> ????????: Crossfade? Silhouette preserved? Poly budget met?
--> Output: Prefab ? LOD Group + Collider
-
-### STEP 5 Ã¢â‚¬â€ INSTANCER + SCATTER
--> GPU Instancer Pro: Color, Scale, Rot, Culling, Buffer
--> MapMagic Scatter profile: Biome mask, Density, Floor Offset, Yaw
--> ????????: Draw Calls <= 1 per type? VRAM <= 20MB per set?
--> Output: Prefab ??????????????? ? GPU Instancer.
-           Scatter profile ??????? ? MapMagic ?????.
-
-Validation checklist ??????????? ?????? ????? ???? ??? prefab ??????????.
-
----
-
-## VALIDATION CHECKLIST
-
-[REQ] ????????? ????? ?????????? STEP 5.
-[FORBID] ????????? ???? prefab ?? ??????.
-[FORBID] ???????? ??????????? checklist ??? proof ??????
-         ??? ????????????? prefab.
-
-[ ] Prefab ?????????? ? ????? ???????
-[ ] Poly count <= ??????? ?????????
-[ ] Zero UV seams (triplanar path selected; visual capture pending)
-[ ] Shader ?????????????, GPU Instancing ON, < 8 samples
-[ ] LOD0->1->2 smooth, dithered, no pop-in
-[ ] Draw calls <= 1 ??? 5k instances
-[ ] VRAM <= 1.6GB total ??? ???? procedural sets
-[ ] ????????? ????????????? ??????? ?????????
-[ ] Animation 100% vertex-shader driven
-[ ] GPU Instancer prototype ???????????????
-[ ] MapMagic scatter profile ???????
-
-[REQ] ????????????? ????? = ??????.
-      ??????? ??? ?????? ?? ?????? ? ??????.
-
----
-
-## BLOCKED-BY FORMAT
-
-???? ??? ???????????? Ã¢â‚¬â€ ???????? ?????? ? ???? ???????.
-?? ?????? validator/placeholder ?????? ?????.
-
-  BLOCKED: [???????? ????]
-  ???????: [??? ?????? ???????????]
-  ?????? ?????:
-    - Assets/Textures/[ExactName].png
-    - Assets/Meshes/[ExactName].fbx
-  ????????? ????????: [?????????? ???????? ????????????]
-  ?????? ? ???? ?????????????:
-    - [?????? ??????? ??????/????????]
-
----
-
-## ?????????? ???????
-
-[FORBID] Flat meshes ??? normals/displacement
-[FORBID] Unique materials per instance
-[FORBID] Animation ????? Update(), Animator, Bones, Coroutines
-[FORBID] UV-dependent details ??? ??????????? ?????????
-[FORBID] MeshCollider ?? LOD0 / Dynamic Rigidbody ??? statics
-[FORBID] Transparent shaders ??? opaque geometry
-[FORBID] ????????? ?????????. ??? ???????? ?? ??????? ??? ???????
-[FORBID] Runtime texture generation / Graphics.CopyTexture ??? mass assets
-[FORBID] Instantiate() ? runtime ??? scatter ????????
-[FORBID] New validator/report/status markdown ??? ?????? ???????
-[FORBID] Editor script ??????? ?????? ?????????, ?? ??????? ??????
-
----
-
-## USAGE PROMPT
-
-  Generate [Asset Category] [Asset Name] per PROCEDURAL_ASSET_PIPELINE.md.
-  Target: MX350 2GB VRAM, URP Forward+, GPU Instancer compatible.
-  Follow steps in order. Each step produces a real file or config.
-  If resource missing -> STOP + blocked-by list.
-  Do not write validators, reports or placeholders instead.
+
+## Purpose
+
+This file is the production contract for generated or semi-procedural assets: rocks, coral, kelp, wreck fragments, interior clutter, structural dressing, cave props, and biome scatter prefabs.
+
+It is not proof that any specific prefab exists, is referenced by a production scene, is included in Addressables or StreamingAssets, or is wired to runtime scatter. Proof requires a fresh artifact with command, timestamp, environment, and output.
+
+Current tool assumptions are static orientation only: Unity 6000.x, URP Forward+, MapMagic, GPU Instancer Pro or equivalent indirect rendering path, Mantis LOD or equivalent LOD reduction, Mesh Baker or equivalent offline batching. Tool presence and package versions must be checked from the current project before use.
+
+## Required Deliverable
+
+Each completed procedural asset family must produce all of the following:
+
+- production prefab or prefab variant under the active project asset tree
+- material set using project shader policy and texture-channel packing policy
+- LOD chain with measured triangle counts
+- collider or SDF proxy where interaction is required
+- scatter or placement profile only when the asset is meant to spawn procedurally
+- ownership note linking the authoring source, runtime owner, and proof artifact
+
+Inspection-only validators, markdown packets, or editor windows do not count as asset delivery unless they also generate or wire production assets.
+
+## Asset Classes
+
+Use one of these classes for budgets and review:
+
+| Class | Examples | MX350 LOD0 | High-end LOD0 |
+| --- | --- | ---: | ---: |
+| ORGANIC | kelp, coral, tubeworms, large flora | <= 3,000 tris | <= 8,000 tris |
+| GEOLOGICAL | rocks, vents, cave lips, resource outcrops | <= 8,000 tris | <= 20,000 tris |
+| STRUCTURAL | wreck plates, habitat shells, machinery | <= 15,000 tris | <= 40,000 tris |
+| INTERIOR_DECOR | small props, panels, clutter, signage | <= 2,000 tris | <= 6,000 tris |
+
+Scene-level MX350 orientation: <= 2.5M visible triangles, <= 800 SetPass calls, <= 1.6GB VRAM, <= 100 unique materials. These are planning thresholds, not profiler proof.
+
+## Visual-Fake-First Rules
+
+- Detail comes from normal maps, channel masks, triplanar projection, vertex displacement, decals, and LOD transitions before extra topology.
+- Runtime physics is rejected for visual-only motion. Use vertex shader sine, triangle wave, curl-noise offset, VAT, flow masks, wetness masks, and cheap impostors first.
+- One material per repeated asset family is preferred. Variation should come from GPU instance data: color, scale, rotation, phase, damage, wetness, toxicity, and age scalars.
+- CPU animation is forbidden for mass scatter. Wind, current sway, bioluminescence pulse, rust creep, silt, and caustic shimmer belong in shaders or indirect instance data.
+- Do not add a new simulation owner for a visual asset unless an active architecture route card names its owner, route, buffer, proof requirement, and disposal path.
+
+## Geometry Rules
+
+- Prefer quad-dominant topology, uniform density, and no triangles smaller than 0.05 square meters for large environmental pieces.
+- Geological and organic noise should be authored or baked where possible. Runtime deformation is for gameplay truth only.
+- Seam vertices on tiling assets must be normalized to the shared edge rule used by the owning terrain or scatter system.
+- Reject non-manifold geometry, T-vertices, chaotic triangulation, hidden duplicate surfaces, and UV-only world-scale material assumptions.
+- Large-world placement must use local-space deltas after subtracting the sector or camera AUP; never bake an asset workflow that requires absolute float world coordinates at 100km scale.
+
+## Surface Rules
+
+Materials must follow project channel-packing and shader doctrine. The minimum review set is:
+
+- albedo or base color
+- normal map
+- roughness or smoothness channel
+- ambient occlusion or cavity channel
+- mask channels for wetness, silt, biofilm, corrosion, emissive, or damage where relevant
+
+Use triplanar or world/object projection for rocks, caves, cliff faces, and modular structural pieces that would show UV stretching. Use authored UVs only where the visual language needs exact decals, labels, panels, or hand-placed detail.
+
+## LOD And Scatter
+
+- LOD0 is the inspection mesh, not the default runtime mesh for all distances.
+- LOD1 and LOD2 must preserve silhouette before preserving small surface detail.
+- Far organic scatter should collapse to cards, impostors, or indirect instance shells.
+- `GlobalQualityWeight` may scale density, update cadence, material tap count, shader noise taps, and optional telemetry. It must not change gameplay truth ownership, save identity, DTO layout, or authority route.
+- Runtime scatter must not instantiate thousands of GameObjects. Use pooled instances, BRG, GPU Instancer, or project-approved indirect rendering lanes.
+
+## Collider And Interaction Rules
+
+- Visual-only assets use no collider or a coarse trigger proxy.
+- Harvest, construction, scanner, damage, or traversal assets require an explicit owner route and a simple collider/SDF proxy that matches gameplay needs, not mesh detail.
+- MeshCollider is rejected for mass scatter and large procedural fields unless a route card and profiler artifact prove it is acceptable.
+- Physics materials, buoyancy, damage, and scan metadata are separate facts owned by their systems; do not duplicate them inside visual-only authoring files.
+
+## Binary And Streaming Rules
+
+- Generated binary payloads must follow `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`.
+- Any `.h8bin` or binary payload must declare byte order, struct size, padding, and validator proof.
+- `Pack=1` layouts are forbidden for runtime DTOs.
+- Asset streaming readiness requires actual payload presence plus boot/import evidence. A design contract or editor script is not streaming proof.
+
+## Evidence Required Before GREEN
+
+Minimum static evidence:
+
+- generated asset paths
+- source authoring inputs
+- material and texture-channel paths
+- LOD triangle counts
+- collider/SDF proxy path where applicable
+- route-card link where runtime ownership exists
+
+Runtime evidence remains separate and must include the actual command/tool, timestamp, environment, and output. Accepted runtime classes are Unity import, Console, Play Mode route, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, shader import, network send, platform run, or visual capture when relevant.
+
+## Current Known Boundary
+
+This document replaces the previous damaged `PROCEDURAL_ASSET_PIPELINE.md` text whose Russian headings and bullets were unrecoverable mojibake/question-mark placeholders. The usable intent has been preserved as an English static contract: deliver production assets, prefer visual fakes, keep ownership routed through current architecture, and do not claim runtime readiness from static docs.

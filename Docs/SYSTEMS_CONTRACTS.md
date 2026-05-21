@@ -4,7 +4,7 @@ Date: 2026-05-15
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,20 +14,18 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL/POWERSHELL_STATIC evidence. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; runtime proof remains absent.
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Verification: not runtime-measured in this pass
 Scope: Save, Steam, Audio, Telemetry, CI, Accessibility, Endgame
 
-Current-state boundary, 2026-05-20 R47-current:
+Current-state boundary, 2026-05-21 R50-current:
 
 - 2026-05-14 DOC_AUDIT override: `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` found the cited May 11 build artifacts absent from the current filesystem. Treat those compile-success references as dated report claims. Historical R43 external root `Hecton8*.csproj` no-restore CLI output is CLI evidence only and not current dirty-workspace proof unless rerun with artifact path, command, timestamp, environment, and output; it is not Unity runtime proof.
 - This stable file is the non-asset systems contract authority. Dated reports are evidence/counter snapshots only.
 - This file is a contracts and target-behavior document, not a proof that every listed file/class exists or is production-ready.
-- Current source-backed system ownership starts from `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, then DOC_GLOBAL R47 -> R46 -> R45 -> R44 -> R43 -> R42 -> R41 -> R40 -> R39 -> R38 -> R37 -> R36 -> R35 -> R34 -> R33 -> R32 -> R31 -> R30 -> R29 -> R28 -> R27 -> R26 -> R25 -> R24 -> R23 -> R22 -> subordinate correction reports before May 13 or older evidence.
+- Current source-backed system ownership starts from `AGENTS.md`, `.agents-skills/README.md`, task-relevant mandates, `Docs/README.md`, `Docs/ARCHITECTURE/README.md`, current source, then DOC_GLOBAL R50 -> R49 -> R48 -> R47 -> R46 -> R45 -> R44 -> R43 -> R42 -> R41 -> R40 -> R39 -> R38 -> R37 -> R36 -> R35 -> R34 -> R33 -> R32 -> R31 -> R30 -> R29 -> R28 -> R27 -> R26 -> R25 -> R24 -> R23 -> R22 -> subordinate correction reports before May 13 or older evidence.
 - Current save implementation authority is `SaveManager.cs` / `SaveBinaryStorage.cs`; versioning and migration requirements below remain contractual.
 - Current audio service authority is `SpatialAudioManager` plus procedural audio owners; older `UnderwaterAudioProcessor.cs` naming below is a target contract unless source confirms a concrete owner.
 - No line in this document is a zero-GC, Steam, CI, accessibility, or Play Mode verification claim without a fresh runtime/log artifact. May 11 report text claimed a completed Core dependency build at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player build, import, scene wiring, frame-time, memory, and visual quality proof remain absent.
@@ -65,7 +63,7 @@ These absent file names remain target-contract labels only. They must not be cit
 | payload shape | unmanaged structs, usually 32 or 64 bytes |
 | I/O | FileStream/native-window source truth; MMF claims require current source proof |
 | replay/black box | fixed-size circular buffers; no unbounded logs in frame lane |
-| math scalability | low/high math LOD path must be explicit when feature cost can scale |
+| math scalability | continuous `GlobalQualityWeight` curve must be explicit when feature cost can scale |
 
 Burst compliance rules:
 
@@ -194,14 +192,16 @@ File: BenchmarkRunner.cs, PerformanceThresholds.asset
 [FORBID] Skip tests on shader changes.
 
 ### Runtime Degradation Protocol
-If frame time > 25ms for 3 consecutive frames, auto-degrade in order:
-1. Disable vertex animation on flora
-2. GPU Boids count -50%
-3. Activate _QUALITY_MX350 (disable parallax/height blend)
-4. Disable post-processing (Bloom, DoF, Vignette)
-5. Volumetric Fog -> Half-Res
+If frame time > 25ms for 3 consecutive frames, lower the Homeostasis `GlobalQualityWeight` target and let owned systems consume the scalar:
+
+1. Flora vertex animation amplitude and update cadence scale down continuously.
+2. GPU boid active count scales by budget, not by a fixed 50% branch.
+3. Parallax/height blend weight approaches zero through shader scalar input.
+4. Post-processing sample count, bloom radius, DoF taps, and vignette intensity scale through continuous budget values.
+5. Volumetric fog resolution and march step count scale through continuous budget values.
 
 [FORBID] Static quality settings.
+[FORBID] Binary hardware branches for runtime quality.
 [FORBID] Hard crashes on performance spikes.
 
 ---

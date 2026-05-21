@@ -216,14 +216,22 @@ namespace Hecton8.Physics.Vehicles
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref VehicleGridCellDTO GetCellRef(
             IDataVault vault,
-            ref VaultBufferHandle<VehicleGridCellDTO> handle,
+            in VaultGenerationHandle<VehicleGridCellDTO> handle,
             int index)
         {
-            void* pointer = handle.ResolvePointer(vault);
-            if (pointer == null || (uint)index >= (uint)handle.Length)
+            NativeArray<VehicleGridCellDTO> cells = default;
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !vault.TryResolveHandle(in handle, out cells) ||
+                !cells.IsCreated ||
+                (uint)index >= (uint)cells.Length)
+            {
                 FatalMemoryException.ThrowStaleVaultHandle();
+            }
 
-            return ref UnsafeUtility.ArrayElementAsRef<VehicleGridCellDTO>(pointer, index);
+            return ref UnsafeUtility.ArrayElementAsRef<VehicleGridCellDTO>(
+                NativeArrayUnsafeUtility.GetUnsafePtr(cells),
+                index);
         }
     }
 

@@ -535,6 +535,18 @@ namespace Hecton8.Habitat.Deformation
             return vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated;
         }
 
+        private bool TryReadBorrowedVaultBuffer<T>(BufferID bufferId, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
+                   handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
         private void ReleaseVaultHandles()
         {
             IDataVault vault = _dataVault;
@@ -729,6 +741,7 @@ namespace Hecton8.Habitat.Deformation
                     PlasteelHash = _plasteelHash
                 }.Schedule();
                 H8Memory.RegisterActiveJob(SystemID.HullIntegrity, mockHandle);
+                // COLD SYNC JOB: deterministic mock topology generation for isolated profiling and CI fallback data.
                 DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
 
                 _activeEdgeCount = offsets.IsCreated && _activeNodeCount < offsets.Length ? offsets[_activeNodeCount] : 0;
@@ -749,7 +762,7 @@ namespace Hecton8.Habitat.Deformation
         private void ScheduleSolver(float quality, int framesBetweenUpdates)
         {
             NativeArray<byte> sdf = default;
-            bool includeSdfLock = _dataVault.TryGetBuffer(BufferID.VoxelSdfTexture3D, out sdf) && sdf.IsCreated;
+            bool includeSdfLock = TryReadBorrowedVaultBuffer(BufferID.VoxelSdfTexture3D, out sdf);
             if (!TryLockSolverBuffers(includeSdfLock))
                 return;
 
@@ -773,9 +786,7 @@ namespace Hecton8.Habitat.Deformation
             current.ActiveNodeCount = _activeNodeCount;
             tuning[0] = current;
 
-            if (includeSdfLock)
-                _dataVault.TryGetBuffer(BufferID.VoxelSdfTexture3D, out sdf);
-            else
+            if (!includeSdfLock || !TryReadBorrowedVaultBuffer(BufferID.VoxelSdfTexture3D, out sdf))
                 sdf = default;
             int sdfDimension = ResolveSdfDimension(sdf);
             int sdfFallback = sdfDimension <= 1 ? 1 : 0;

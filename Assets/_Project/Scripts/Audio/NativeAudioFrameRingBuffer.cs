@@ -18,18 +18,22 @@ namespace Hecton8.Audio
             1 / ((AudioBufferCapacity > 1 &&
                   (AudioBufferCapacity & (AudioBufferCapacity - 1)) == 0) ? 1 : 0);
 
-        private NativeArray<float> _frames; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<int> _sharedState; // Vault alias; GlobalDataVault owns backing memory.
+        private struct RingVaultViews
+        {
+            public NativeArray<float> Frames;
+            public NativeArray<int> SharedState;
+        }
+
         private IDataVault _dataVault;
-        private VaultBufferHandle<float> _framesHandle;
-        private VaultBufferHandle<int> _sharedStateHandle;
+        private VaultGenerationHandle<float> _framesHandle;
+        private VaultGenerationHandle<int> _sharedStateHandle;
         private int _capacityFrames;
         private int _capacityMask;
         private int _sourceChannels = 1;
         private int _overflowDropCount;
         private int _lastTelemetryOverflowDropCount;
 
-        public bool IsCreated => _frames.IsCreated && _sharedState.IsCreated;
+        public bool IsCreated => TryResolveRingViews(out _);
         public int CapacityFrames => _capacityFrames;
         public int SourceChannels => _sourceChannels;
         public int OverflowDropCount => Volatile.Read(ref _overflowDropCount);
@@ -38,27 +42,35 @@ namespace Hecton8.Audio
         {
             get
             {
-                if (!IsCreated)
+                if (!TryResolveRingViews(out RingVaultViews views))
                     return 0;
 
                 if (!HasValidPowerOfTwoState())
                     return 0;
 
-                int writeIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
-                int readIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
+                int writeIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
+                int readIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
                 return (writeIndex - readIndex) & _capacityMask;
             }
         }
 
-        public int WritableFrames => !IsCreated
-            ? 0
-            : HasValidPowerOfTwoState()
-                ? math.max(0, _capacityFrames - BufferedFrames - 1)
-                : 0;
+        public int WritableFrames
+        {
+            get
+            {
+                if (!TryResolveRingViews(out RingVaultViews views) || !HasValidPowerOfTwoState())
+                    return 0;
+
+                int writeIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
+                int readIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
+                int bufferedFrames = (writeIndex - readIndex) & _capacityMask;
+                return math.max(0, _capacityFrames - bufferedFrames - 1);
+            }
+        }
 
         public void GetState(out int bufferedFrames, out int writableFrames)
         {
-            if (!IsCreated)
+            if (!TryResolveRingViews(out RingVaultViews views))
             {
                 bufferedFrames = 0;
                 writableFrames = 0;
@@ -72,8 +84,8 @@ namespace Hecton8.Audio
                 return;
             }
 
-            int writeIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
-            int readIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
+            int writeIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
+            int readIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
             bufferedFrames = (writeIndex - readIndex) & _capacityMask;
             writableFrames = _capacityFrames - bufferedFrames - 1;
         }
@@ -94,19 +106,17 @@ namespace Hecton8.Audio
                 return;
 
             _dataVault = vault;
-            _framesHandle = vault.GetBufferHandle<float>(
+            _framesHandle = vault.GetGenerationHandle<float>(
                 BufferID.AudioFrameRingFrames,
                 resolvedCapacity * resolvedChannels,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _sharedStateHandle = vault.GetBufferHandle<int>(
+            _sharedStateHandle = vault.GetGenerationHandle<int>(
                 BufferID.AudioFrameRingSharedState,
                 NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _frames = _framesHandle.Resolve(vault);
-            _sharedState = _sharedStateHandle.Resolve(vault);
-            if (!_frames.IsCreated || !_sharedState.IsCreated)
+            if (!TryResolveRingViews(out _))
             {
                 Dispose();
                 return;
@@ -123,13 +133,13 @@ namespace Hecton8.Audio
 
         public void Clear()
         {
-            if (!IsCreated)
+            if (!TryResolveRingViews(out RingVaultViews views))
                 return;
 
             AssertPowerOfTwoCapacity(_capacityFrames, _capacityMask);
-            WriteSharedMetadata();
-            WriteSharedIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot, 0);
-            WriteSharedIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot, 0);
+            WriteSharedMetadata(ref views);
+            WriteSharedIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot, 0);
+            WriteSharedIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot, 0);
         }
 
         public bool TryWrite(NativeArray<float> source, int frameCount)
@@ -139,7 +149,7 @@ namespace Hecton8.Audio
 
         public bool TryWriteInterleaved(NativeArray<float> source, int frameCount, int sourceChannels)
         {
-            if (!IsCreated || !source.IsCreated || frameCount <= 0)
+            if (!TryResolveRingViews(out RingVaultViews views) || !source.IsCreated || frameCount <= 0)
                 return false;
 
             if (!HasValidPowerOfTwoState())
@@ -156,8 +166,13 @@ namespace Hecton8.Audio
             if (safeFrameCount != frameCount || safeFrameCount <= 0)
                 return false;
 
-            int readIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
-            int writeIndex = ReadSharedFrameIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
+            NativeArray<float> frames = views.Frames;
+            int requiredSamples = _capacityFrames * safeChannels;
+            if (!frames.IsCreated || frames.Length < requiredSamples)
+                return false;
+
+            int readIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
+            int writeIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
             int availableFrames = (writeIndex - readIndex) & _capacityMask;
             int freeFrames = _capacityFrames - availableFrames - 1;
             if (safeFrameCount > freeFrames)
@@ -184,17 +199,18 @@ namespace Hecton8.Audio
                 {
                     int frameWriteIndex = ((writeIndex + i) & _capacityMask) << 1;
                     int frameSourceIndex = i << 1;
-                    _frames[frameWriteIndex] = source[frameSourceIndex];
-                    _frames[frameWriteIndex + 1] = source[frameSourceIndex + 1];
+                    frames[frameWriteIndex] = source[frameSourceIndex];
+                    frames[frameWriteIndex + 1] = source[frameSourceIndex + 1];
                 }
             }
             else
             {
                 for (int i = 0; i < safeFrameCount; i++)
-                    _frames[(writeIndex + i) & _capacityMask] = source[i];
+                    frames[(writeIndex + i) & _capacityMask] = source[i];
             }
 
             WriteSharedIndex(
+                ref views,
                 NativeAudioKernelRingBufferDescriptor.WriteIndexSlot,
                 (writeIndex + safeFrameCount) & _capacityMask);
             return true;
@@ -212,7 +228,7 @@ namespace Hecton8.Audio
             out NativeAudioKernelBridgeStatus status)
         {
             descriptor = default;
-            if (!IsCreated)
+            if (!TryResolveRingViews(out RingVaultViews views))
             {
                 status = NativeAudioKernelBridgeStatus.SharedStateInvalid;
                 return false;
@@ -224,17 +240,28 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            int* sharedStatePtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_sharedState);
+            NativeArray<float> frames = views.Frames;
+            NativeArray<int> sharedState = views.SharedState;
+            if (!frames.IsCreated ||
+                !sharedState.IsCreated ||
+                frames.Length < _capacityFrames * _sourceChannels ||
+                sharedState.Length < NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount)
+            {
+                status = NativeAudioKernelBridgeStatus.SharedStateInvalid;
+                return false;
+            }
+
+            int* sharedStatePtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(sharedState);
             descriptor = new NativeAudioKernelRingBufferDescriptor
             {
                 DescriptorMagic = NativeAudioKernelRingBufferDescriptor.DescriptorMagicValue,
-                Frames = (IntPtr)NativeArrayUnsafeUtility.GetUnsafePtr(_frames),
+                Frames = (IntPtr)NativeArrayUnsafeUtility.GetUnsafePtr(frames),
                 SharedState = (IntPtr)sharedStatePtr,
                 ReadIndex = (IntPtr)(sharedStatePtr + NativeAudioKernelRingBufferDescriptor.ReadIndexSlot),
                 WriteIndex = (IntPtr)(sharedStatePtr + NativeAudioKernelRingBufferDescriptor.WriteIndexSlot),
                 CapacityFrames = _capacityFrames,
                 CapacityMask = _capacityMask,
-                SharedStateLengthInts = _sharedState.Length
+                SharedStateLengthInts = sharedState.Length
             };
 
             return HectonSensoryKernelNativeBridge.IsDescriptorValid(in descriptor, out status);
@@ -250,13 +277,9 @@ namespace Hecton8.Audio
         public void Dispose()
         {
             IDataVault vault = _dataVault;
-            if (vault != null)
-                vault.ReleaseOwnerBuffers(VaultOwner, out _);
+            ReleaseVaultBuffer(vault, ref _framesHandle);
+            ReleaseVaultBuffer(vault, ref _sharedStateHandle);
 
-            _frames = default;
-            _sharedState = default;
-            _framesHandle = default;
-            _sharedStateHandle = default;
             _dataVault = null;
             _capacityFrames = 0;
             _capacityMask = 0;
@@ -264,32 +287,70 @@ namespace Hecton8.Audio
             Volatile.Write(ref _overflowDropCount, 0);
         }
 
-        private int ReadSharedIndex(int slot)
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
         {
-            int* sharedStatePtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_sharedState);
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private bool TryResolveRingViews(out RingVaultViews views)
+        {
+            views = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (!vault.TryResolveHandle(in _framesHandle, out views.Frames) ||
+                !vault.TryResolveHandle(in _sharedStateHandle, out views.SharedState) ||
+                !views.Frames.IsCreated ||
+                !views.SharedState.IsCreated)
+            {
+                views = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static int ReadSharedIndex(ref RingVaultViews views, int slot)
+        {
+            NativeArray<int> sharedState = views.SharedState;
+            if (!sharedState.IsCreated || (uint)slot >= (uint)sharedState.Length)
+                return 0;
+
+            int* sharedStatePtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(sharedState);
             return Volatile.Read(ref sharedStatePtr[slot]);
         }
 
-        private int ReadSharedFrameIndex(int slot)
+        private int ReadSharedFrameIndex(ref RingVaultViews views, int slot)
         {
-            return ReadSharedIndex(slot) & _capacityMask;
+            return ReadSharedIndex(ref views, slot) & _capacityMask;
         }
 
-        private void WriteSharedIndex(int slot, int value)
+        private static void WriteSharedIndex(ref RingVaultViews views, int slot, int value)
         {
-            int* sharedStatePtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_sharedState);
+            NativeArray<int> sharedState = views.SharedState;
+            if (!sharedState.IsCreated || (uint)slot >= (uint)sharedState.Length)
+                return;
+
+            int* sharedStatePtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(sharedState);
             Volatile.Write(ref sharedStatePtr[slot], value);
         }
 
-        private void WriteSharedMetadata()
+        private void WriteSharedMetadata(ref RingVaultViews views)
         {
             AssertPowerOfTwoCapacity(_capacityFrames, _capacityMask);
-            WriteSharedIndex(NativeAudioKernelRingBufferDescriptor.CapacityFramesSlot, _capacityFrames);
-            WriteSharedIndex(NativeAudioKernelRingBufferDescriptor.CapacityMaskSlot, _capacityMask);
+            WriteSharedIndex(ref views, NativeAudioKernelRingBufferDescriptor.CapacityFramesSlot, _capacityFrames);
+            WriteSharedIndex(ref views, NativeAudioKernelRingBufferDescriptor.CapacityMaskSlot, _capacityMask);
             WriteSharedIndex(
+                ref views,
                 NativeAudioKernelRingBufferDescriptor.GuardValueSlotA,
                 NativeAudioKernelRingBufferDescriptor.SharedStateGuardValueA);
             WriteSharedIndex(
+                ref views,
                 NativeAudioKernelRingBufferDescriptor.GuardValueSlotB,
                 NativeAudioKernelRingBufferDescriptor.SharedStateGuardValueB);
         }

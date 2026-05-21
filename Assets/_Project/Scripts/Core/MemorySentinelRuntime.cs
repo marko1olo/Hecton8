@@ -209,7 +209,7 @@ namespace Hecton8.Core
 
             if (!TryResolveRequired(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
                 return;
-            MemorySentinelRuntimeStateDTO runtime = ResolveRuntimeState(runtimeArray);
+            MemorySentinelRuntimeStateDTO runtime = OpenRuntimeStateForOwner(runtimeArray);
             ApplyModdedGameMaskSignals(runtimeArray, ref runtime);
             float quality = ResolveGlobalQualityWeight(ref runtime);
             int cadenceFrames = ResolveValidationCadenceFrames(in runtime, quality);
@@ -228,7 +228,7 @@ namespace Hecton8.Core
             {
                 return;
             }
-            ResolveTargets(vault, states, targets, rollback, frame, cadenceFrames, runtime.ModdedGameMask);
+            RefreshTargetsForOwner(vault, states, targets, rollback, frame, cadenceFrames, runtime.ModdedGameMask);
 
             if (_targetCount <= 0 || !LockTargetBuffers(vault, targets, _targetCount))
                 return;
@@ -238,7 +238,7 @@ namespace Hecton8.Core
                 States = states,
                 Targets = targets,
                 Results = results,
-                DesyncWriter = SignalBus<MemoryDesyncSignal>.ParallelWriter,
+                DesyncWriter = SignalBus<MemoryDesyncSignal>.OpenParallelWriter(),
                 Frame = frame,
                 GlobalQualityWeight = quality
             }.Schedule(_targetCount, DefaultTargetBatch);
@@ -258,7 +258,7 @@ namespace Hecton8.Core
             if (!TryResolveRequired(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
                 return;
 
-            MemorySentinelRuntimeStateDTO runtime = ResolveRuntimeState(runtimeArray);
+            MemorySentinelRuntimeStateDTO runtime = OpenRuntimeStateForOwner(runtimeArray);
             runtime.Flags ^= (uint)(payload.CurrentTier + 1u);
             runtimeArray[0] = runtime;
         }
@@ -271,23 +271,23 @@ namespace Hecton8.Core
                 return false;
 
             IDataVault vault = runtime.ResolveVault();
-            if (vault == null || !runtime.EnsureVaultBuffers(vault))
+            if (vault == null)
                 return false;
 
             if (!TryResolveRequired(vault, in runtime._runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
                 return false;
             TryResolveRequired(vault, in runtime._telemetryHandle, MemorySentinelConstants.TelemetryCapacity, out NativeArray<MemorySentinelTelemetryEntry> telemetry);
 
-            MemorySentinelRuntimeStateDTO state = runtime.ResolveRuntimeState(runtimeArray);
+            MemorySentinelRuntimeStateDTO state = runtimeArray[0];
             MemorySentinelTelemetryEntry last = default;
             if (telemetry.IsCreated && telemetry.Length > 0)
                 last = telemetry[math.clamp(runtime._lastTelemetryIndex, 0, telemetry.Length - 1)];
 
-            snapshot.ValidationFrequencyHz = state.ValidationFrequencyHz;
-            snapshot.AupTeleportToleranceMeters = state.AupTeleportToleranceMeters;
-            snapshot.Strictness01 = state.Strictness01;
-            snapshot.GlobalQualityWeight = state.GlobalQualityWeight;
-            snapshot.LastValidationMs = state.LastValidationMs;
+            snapshot.ValidationFrequencyHz = math.isfinite(state.ValidationFrequencyHz) ? state.ValidationFrequencyHz : 0f;
+            snapshot.AupTeleportToleranceMeters = math.isfinite(state.AupTeleportToleranceMeters) ? state.AupTeleportToleranceMeters : 0f;
+            snapshot.Strictness01 = math.saturate(math.isfinite(state.Strictness01) ? state.Strictness01 : 0f);
+            snapshot.GlobalQualityWeight = math.saturate(math.isfinite(state.GlobalQualityWeight) ? state.GlobalQualityWeight : 0f);
+            snapshot.LastValidationMs = math.isfinite(state.LastValidationMs) ? state.LastValidationMs : 0f;
             snapshot.LastValidationFrame = state.LastValidationFrame;
             snapshot.TargetCount = (uint)math.max(0, state.TargetCount);
             snapshot.LastCorrectedCount = (uint)math.max(0, state.LastCorrectedCount);
@@ -314,7 +314,7 @@ namespace Hecton8.Core
             if (!TryResolveRequired(vault, in runtime._runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
                 return false;
 
-            MemorySentinelRuntimeStateDTO state = runtime.ResolveRuntimeState(runtimeArray);
+            MemorySentinelRuntimeStateDTO state = runtime.OpenRuntimeStateForOwner(runtimeArray);
             state.ValidationFrequencyHz = math.clamp(validationFrequencyHz, MinimumValidationFrequencyHz, DefaultValidationFrequencyHz);
             state.AupTeleportToleranceMeters = math.max(10f, aupTeleportToleranceMeters);
             state.Strictness01 = math.saturate(strictness01);
@@ -339,7 +339,7 @@ namespace Hecton8.Core
             if (!TryResolveRequired(vault, in runtime._runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
                 return false;
 
-            MemorySentinelRuntimeStateDTO state = runtime.ResolveRuntimeState(runtimeArray);
+            MemorySentinelRuntimeStateDTO state = runtime.OpenRuntimeStateForOwner(runtimeArray);
             state.ModdedGameMask = moddedGameMask;
             runtimeArray[0] = state;
             runtime._forceValidationNextFrame = true;
@@ -454,7 +454,7 @@ namespace Hecton8.Core
                    buffer.Length >= requiredLength;
         }
 
-        private static bool TryResolveOrAcquire<T>(
+        private static bool OpenOrAcquireVaultBuffer<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -532,28 +532,31 @@ namespace Hecton8.Core
             uint previousQuarantineGeneration = _modQuarantineHandle.Generation;
             uint previousRuntimeGeneration = _runtimeStateHandle.Generation;
 
+            NativeArray<ValidationStateDTO> states = default;
+            NativeArray<MemorySentinelTargetDTO> targets = default;
+            NativeArray<MemorySentinelResultDTO> results = default;
             bool stateViewsReady =
-                TryResolveOrAcquire(
+                OpenOrAcquireVaultBuffer(
                     vault,
                     ref _statesHandle,
                     ValidationStatesBuffer,
                     MaxTargets,
                     NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<ValidationStateDTO> states) &&
-                TryResolveOrAcquire(
+                    out states) &&
+                OpenOrAcquireVaultBuffer(
                     vault,
                     ref _targetsHandle,
                     TargetsBuffer,
                     MaxTargets,
                     NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<MemorySentinelTargetDTO> targets) &&
-                TryResolveOrAcquire(
+                    out targets) &&
+                OpenOrAcquireVaultBuffer(
                     vault,
                     ref _resultsHandle,
                     ResultsBuffer,
                     MaxTargets,
                     NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<MemorySentinelResultDTO> results);
+                    out results);
             if (!stateViewsReady)
             {
                 return false;
@@ -565,13 +568,21 @@ namespace Hecton8.Core
                 _stateMemoryCleared = false;
             }
 
-            if (!TryResolveOrAcquire(vault, ref _rollbackHandle, RollbackBytesBuffer, RollbackByteCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<byte> rollback) ||
-                !TryResolveOrAcquire(vault, ref _mockInventoryHandle, MockInventoryBuffer, MockInventoryCount, NativeArrayOptions.UninitializedMemory, out NativeArray<MockInventorySpan> mockInventory) ||
-                !TryResolveOrAcquire(vault, ref _modQuarantineHandle, ModQuarantineBuffer, ModQuarantineSpanCount, NativeArrayOptions.UninitializedMemory, out NativeArray<MemorySentinelModQuarantineSpan> modQuarantine) ||
-                !TryResolveOrAcquire(vault, ref _telemetryHandle, TelemetryBuffer, MemorySentinelConstants.TelemetryCapacity, NativeArrayOptions.ClearMemory, out NativeArray<MemorySentinelTelemetryEntry> telemetry) ||
-                !TryResolveOrAcquire(vault, ref _runtimeStateHandle, RuntimeStateBuffer, RuntimeStateCount, NativeArrayOptions.ClearMemory, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeState) ||
-                !TryResolveOrAcquire(vault, ref _aupSnapshotHandle, AupSnapshotBuffer, AupSnapshotCount, NativeArrayOptions.ClearMemory, out NativeArray<MemorySentinelAupSnapshotDTO> aupSnapshot) ||
-                !TryResolveOrAcquire(vault, ref _csvScratchHandle, CsvScratchBuffer, CsvScratchCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<byte> csvScratch))
+            NativeArray<byte> rollback = default;
+            NativeArray<MockInventorySpan> mockInventory = default;
+            NativeArray<MemorySentinelModQuarantineSpan> modQuarantine = default;
+            NativeArray<MemorySentinelTelemetryEntry> telemetry = default;
+            NativeArray<MemorySentinelRuntimeStateDTO> runtimeState = default;
+            NativeArray<MemorySentinelAupSnapshotDTO> aupSnapshot = default;
+            NativeArray<byte> csvScratch = default;
+
+            if (!OpenOrAcquireVaultBuffer(vault, ref _rollbackHandle, RollbackBytesBuffer, RollbackByteCapacity, NativeArrayOptions.UninitializedMemory, out rollback) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _mockInventoryHandle, MockInventoryBuffer, MockInventoryCount, NativeArrayOptions.UninitializedMemory, out mockInventory) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _modQuarantineHandle, ModQuarantineBuffer, ModQuarantineSpanCount, NativeArrayOptions.UninitializedMemory, out modQuarantine) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _telemetryHandle, TelemetryBuffer, MemorySentinelConstants.TelemetryCapacity, NativeArrayOptions.ClearMemory, out telemetry) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _runtimeStateHandle, RuntimeStateBuffer, RuntimeStateCount, NativeArrayOptions.ClearMemory, out runtimeState) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _aupSnapshotHandle, AupSnapshotBuffer, AupSnapshotCount, NativeArrayOptions.ClearMemory, out aupSnapshot) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _csvScratchHandle, CsvScratchBuffer, CsvScratchCapacity, NativeArrayOptions.UninitializedMemory, out csvScratch))
             {
                 return false;
             }
@@ -599,13 +610,13 @@ namespace Hecton8.Core
                 _stateMemoryCleared = true;
             }
 
-            ResolveRuntimeState(runtimeState);
+            OpenRuntimeStateForOwner(runtimeState);
             SeedMockInventory(vault);
             SeedModQuarantine(vault);
             return true;
         }
 
-        private MemorySentinelRuntimeStateDTO ResolveRuntimeState(NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray)
+        private MemorySentinelRuntimeStateDTO OpenRuntimeStateForOwner(NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray)
         {
             if (!runtimeArray.IsCreated || runtimeArray.Length <= 0)
                 return default;
@@ -741,7 +752,7 @@ namespace Hecton8.Core
             _modQuarantineSeeded = true;
         }
 
-        private void ResolveTargets(
+        private void RefreshTargetsForOwner(
             IDataVault vault,
             NativeArray<ValidationStateDTO> states,
             NativeArray<MemorySentinelTargetDTO> targets,
@@ -882,7 +893,7 @@ namespace Hecton8.Core
 
             if (TryResolveRequired(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
             {
-                MemorySentinelRuntimeStateDTO runtime = ResolveRuntimeState(runtimeArray);
+                MemorySentinelRuntimeStateDTO runtime = OpenRuntimeStateForOwner(runtimeArray);
                 runtime.TargetCount = _targetCount;
                 runtimeArray[0] = runtime;
             }
@@ -1190,7 +1201,7 @@ namespace Hecton8.Core
 
             if (TryResolveRequired(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
             {
-                MemorySentinelRuntimeStateDTO runtime = ResolveRuntimeState(runtimeArray);
+                MemorySentinelRuntimeStateDTO runtime = OpenRuntimeStateForOwner(runtimeArray);
                 runtime.LastValidationMs = elapsedMs;
                 runtime.LastValidationFrame = frame;
                 runtime.LastCorrectedCount = (int)desyncsCorrected;
@@ -1326,7 +1337,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            MemorySentinelRuntimeStateDTO runtime = ResolveRuntimeState(runtimeArray);
+            MemorySentinelRuntimeStateDTO runtime = OpenRuntimeStateForOwner(runtimeArray);
             ref LockstepPlayerKinematicState player = ref UnsafeUtility.AsRef<LockstepPlayerKinematicState>(ptr);
             double3 current = ResolvePlayerAbsolute(in player);
             MemorySentinelAupSnapshotDTO snapshot = snapshotArray[0];
@@ -1598,7 +1609,7 @@ namespace Hecton8.Core
             if (vault == null || !EnsureVaultBuffers(vault))
                 return false;
 
-            string path = ResolveCsvPath();
+            string path = FindValidationRulesCsvPathCold();
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
@@ -1619,7 +1630,7 @@ namespace Hecton8.Core
             return parsed;
         }
 
-        private static string ResolveCsvPath()
+        private static string FindValidationRulesCsvPathCold()
         {
             string projectRoot = Directory.GetCurrentDirectory();
             string rootPath = Path.Combine(projectRoot, CsvRootPath);
@@ -1638,7 +1649,7 @@ namespace Hecton8.Core
             if (!TryResolveRequired(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
                 return false;
 
-            MemorySentinelRuntimeStateDTO runtime = ResolveRuntimeState(runtimeArray);
+            MemorySentinelRuntimeStateDTO runtime = OpenRuntimeStateForOwner(runtimeArray);
             byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
             int lineStart = 0;
             bool changed = false;

@@ -206,7 +206,6 @@ namespace Hecton8.Editor.GeologyForge
 
         public static void Build(GeologyBakeProfile profile)
         {
-            EnsureSubscribed();
             int points = PreviewResolution;
             int count = points * points * points;
             float extent = math.max(0.5f, profile.RadiusMeters * 2.25f);
@@ -279,6 +278,7 @@ namespace Hecton8.Editor.GeologyForge
                 }
 
                 _pointCount = previewCount;
+                EnsureSubscribed();
             }
             finally
             {

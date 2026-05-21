@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.Rendering.WaterOptics",
+    "rootNamespace": "Hecton8.Rendering.WaterOptics",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

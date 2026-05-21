@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory.Layout;
 using Hecton8.Quest;
 using Hecton8.World;
@@ -1255,16 +1257,16 @@ namespace Hecton8.SaveSystem
 
         private readonly struct IndexedSectorCommitTarget
         {
-            public readonly bool ReusedExistingSlot;
-            public readonly bool InsertedNewSlot;
+            public readonly byte ReusedExistingSlot;
+            public readonly byte InsertedNewSlot;
             public readonly int SlotIndex;
             public readonly long WriteOffset;
             public readonly long NewFileLength;
 
             public IndexedSectorCommitTarget(bool reusedExistingSlot, bool insertedNewSlot, int slotIndex, long writeOffset, long newFileLength)
             {
-                ReusedExistingSlot = reusedExistingSlot;
-                InsertedNewSlot = insertedNewSlot;
+                ReusedExistingSlot = reusedExistingSlot ? (byte)1 : (byte)0;
+                InsertedNewSlot = insertedNewSlot ? (byte)1 : (byte)0;
                 SlotIndex = slotIndex;
                 WriteOffset = writeOffset;
                 NewFileLength = newFileLength;
@@ -1412,7 +1414,7 @@ namespace Hecton8.SaveSystem
             [FieldOffset(6)] public ushort Reserved0;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildSectorEntityStateSortEntriesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<EntityDataRecord> SourceStates;
@@ -1441,7 +1443,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct RadixSortSectorEntityStateEntriesJob : IJob
         {
             public NativeArray<SectorEntityStateSortEntry> Entries;
@@ -1495,7 +1497,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ExtractSortedSectorEntityStatesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<SectorEntityStateSortEntry> Entries;
@@ -1507,7 +1509,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildCompactSectorEntityStatesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<EntityDataRecord> SortedStates;
@@ -1521,6 +1523,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct CompressSectorEntityStateJob : IJob
         {
             [ReadOnly] public NativeArray<SectorCompactEntityStateRecord16> CompactStates;
@@ -5693,7 +5696,7 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                if (commitTarget.ReusedExistingSlot)
+                if (commitTarget.ReusedExistingSlot != 0)
                 {
                     int previousCompressedSize = sectorEntries[commitTarget.SlotIndex].CompressedSize;
                     int trailingSlack = previousCompressedSize - overrideCompressedSize;
@@ -5714,7 +5717,7 @@ namespace Hecton8.SaveSystem
                 };
                 WriteIndexedSectorEntry(mappedFilePtr + directoryEntryOffset, sectorEntrySize, in updatedEntry);
 
-                if (commitTarget.InsertedNewSlot && sectorCountDelta != 0)
+                if (commitTarget.InsertedNewSlot != 0 && sectorCountDelta != 0)
                 {
                     directoryHeader.SectorCount = checked((uint)(directoryHeader.SectorCount + sectorCountDelta));
                     UnsafeUtility.CopyStructureToPtr(ref directoryHeader, mappedFilePtr + headerSizeBytes);
@@ -6421,7 +6424,7 @@ namespace Hecton8.SaveSystem
                 for (int i = 0; i < sourceLength; i++)
                 {
                     PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
-                    if (!record.IsValid)
+                    if (!PersistentWorldDeltaRecord.IsValid(in record))
                     {
                         recordGroupIndex[i] = -1;
                         continue;
@@ -7179,7 +7182,7 @@ namespace Hecton8.SaveSystem
             for (int i = 0; i < recordCount; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
-                if (!deltaRecord.IsValid)
+                if (!PersistentWorldDeltaRecord.IsValid(in deltaRecord))
                     continue;
 
                 if (!chunkLookup.ContainsKey(deltaRecord.ChunkId))
@@ -7195,7 +7198,7 @@ namespace Hecton8.SaveSystem
                     chunkTable.Add(deltaRecord.ChunkId);
                 }
 
-                if (deltaRecord.IsDeleted)
+                if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord))
                     continue;
 
                 if (!itemHashLookup.ContainsKey(deltaRecord.ItemPersistentIdHash))
@@ -7250,7 +7253,7 @@ namespace Hecton8.SaveSystem
             for (int i = startIndex; i < endIndex; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
-                if (!deltaRecord.IsValid)
+                if (!PersistentWorldDeltaRecord.IsValid(in deltaRecord))
                     continue;
 
                 if (!chunkLookup.ContainsKey(deltaRecord.ChunkId))
@@ -7266,7 +7269,7 @@ namespace Hecton8.SaveSystem
                     chunkTable.Add(deltaRecord.ChunkId);
                 }
 
-                if (deltaRecord.IsDeleted)
+                if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord))
                     continue;
 
                 if (!itemHashLookup.ContainsKey(deltaRecord.ItemPersistentIdHash))
@@ -7402,7 +7405,7 @@ namespace Hecton8.SaveSystem
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
                 PersistentWorldSaveRecord16 saveRecord = default;
-                if (deltaRecord.IsDeleted &&
+                if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord) &&
                     chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort deletedChunkIndex))
                 {
                     saveRecord = new PersistentWorldSaveRecord16
@@ -7416,7 +7419,7 @@ namespace Hecton8.SaveSystem
                         ItemHashIndex = PersistentWorldDeletedItemHashIndex
                     };
                 }
-                else if (deltaRecord.IsValid &&
+                else if (PersistentWorldDeltaRecord.IsValid(in deltaRecord) &&
                          chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
                          itemHashLookup.TryGetValue(deltaRecord.ItemPersistentIdHash, out ushort itemHashIndex))
                 {
@@ -7496,7 +7499,7 @@ namespace Hecton8.SaveSystem
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
                 PersistentWorldSaveRecord16 saveRecord = default;
-                if (deltaRecord.IsDeleted &&
+                if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord) &&
                     chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort deletedChunkIndex))
                 {
                     saveRecord = new PersistentWorldSaveRecord16
@@ -7510,7 +7513,7 @@ namespace Hecton8.SaveSystem
                         ItemHashIndex = PersistentWorldDeletedItemHashIndex
                     };
                 }
-                else if (deltaRecord.IsValid &&
+                else if (PersistentWorldDeltaRecord.IsValid(in deltaRecord) &&
                          chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
                          itemHashLookup.TryGetValue(deltaRecord.ItemPersistentIdHash, out ushort itemHashIndex))
                 {
@@ -8260,7 +8263,25 @@ namespace Hecton8.SaveSystem
 
         private static AbsoluteUniversePosition ToAup(Vector3 runtimePosition)
         {
-            return AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            return TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition absoluteAup)
+                ? absoluteAup
+                : default;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z))))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return absoluteAup.IsFinite();
         }
 
         private static Vector3 ToRuntimePosition(AbsoluteUniversePosition position)

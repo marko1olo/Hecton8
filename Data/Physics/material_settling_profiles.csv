@@ -1,0 +1,8 @@
+material,linearSleepSpeedSq,angularSleepSpeedSq,forceSleepThresholdSq,requiredRestFrames,deepSleepTicks
+iron,0.0004,0.0002,0.1600,4,240
+ore,0.0006,0.0003,0.2025,5,300
+tool_steel,0.0009,0.0004,0.2500,6,360
+plastic,0.0025,0.0012,0.0900,10,540
+wood,0.0016,0.0008,0.1225,8,420
+cloth,0.0036,0.0018,0.0625,14,720
+default,0.0009,0.0004,0.2025,6,360

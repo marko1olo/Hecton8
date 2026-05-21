@@ -1,0 +1,43 @@
+﻿{
+    "agent":  "SHINOBU_250",
+    "domain":  "KCC_ENVIRONMENTAL_INTEGRATOR",
+    "summary":  "OOP Environment Forces Purged from KCC authority path; static candidates remain outside the new Burst route",
+    "scannerMode":  "TOKEN_REPORT_STALE__SOURCE_ROSLYN_AST_WITH_TOKEN_FALLBACK",
+    "astParser":  false,
+    "astParserReason":  "This report artifact predates the Roslyn source upgrade; Environment_Trigger_Scanner.cs now imports Microsoft.CodeAnalysis and parses CSharpSyntaxTree with token fallback, but Unity menu execution is pending compile/import.",
+    "previousReport":  "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_250.json",
+    "rawRegexCandidateCount":  120,
+    "sampleCandidates":  [
+                             "Assets/_Project/Scripts\\AtlasSignal\\AtlasSignalSystem.cs:176:                    return Vector3.down;",
+                             "Assets/_Project/Scripts\\AtlasSignal\\AtlasSignalSystem.cs:810:                return Vector3.down;",
+                             "Assets/_Project/Scripts\\Atmosphere\\HectonSurfaceWeatherDirector.cs:1743:            CameraJuiceSignals.PublishImpact(cameraShake01, shockPosition, Vector3.down);",
+                             "Assets/_Project/Scripts\\Atmosphere\\StormPropagation\\Editor\\Weather_Event_Inquisition.cs:38:            \".AddForce(\",",
+                             "Assets/_Project/Scripts\\BaseModule.cs:28://   - Dictionary\u003culong, BuoyancyObject\u003e is preallocated by EntityId; OnTriggerStay",
+                             "Assets/_Project/Scripts\\BaseModule.cs:52://   - OnTriggerStay is not used.",
+                             "Assets/_Project/Scripts\\BaseModule.cs:403:        [SerializeField] private Vector3 localGravityDirection = Vector3.down;",
+                             "Assets/_Project/Scripts\\BaseModule.cs:2708:                : Vector3.down;",
+                             "Assets/_Project/Scripts\\BaseModule.cs:3865:                return localDirection.y \u003e= 0f ? Vector3.up : Vector3.down;",
+                             "Assets/_Project/Scripts\\BaseModule.cs:4023:                    Vector3.down * forceNewtons,",
+                             "Assets/_Project/Scripts\\HectonBoidController.cs:1642:                case 3: return Vector3.down;",
+                             "Assets/_Project/Scripts\\CaveBioRootsGenerator.cs:140:                    positions[segmentIndex] = anchorLocal + segmentOffset + (Vector3.down * (length * t));",
+                             "Assets/_Project/Scripts\\CaveBioRootsGenerator.cs:246:            Vector3 startForward = ResolveSafeDirection(_volumeTransform.TransformDirection(localStartForward), Vector3.down);",
+                             "Assets/_Project/Scripts\\CaveBioRootsGenerator.cs:419:                : Vector3.down;",
+                             "Assets/_Project/Scripts\\Bootstrap\\GameBootstrapper.cs:4338:                Ray ray = new Ray(rayOrigin, Vector3.down);",
+                             "Assets/_Project/Scripts\\Bootstrap\\GameBootstrapper.cs:4343:                if (UnityEngine.Physics.RaycastNonAlloc(",
+                             "Assets/_Project/Scripts\\HectonPlayerSpawner.cs:174:    /// Pereispolzuetsya vo vseh vyzovah Physics.Raycast",
+                             "Assets/_Project/Scripts\\HectonPlayerSpawner.cs:187:    /// Unity perezapisyvaet polya pri kazhdom vyzove Physics.Raycast.",
+                             "Assets/_Project/Scripts\\HectonPlayerSpawner.cs:721:        int hitCount = Physics.RaycastNonAlloc(",
+                             "Assets/_Project/Scripts\\HectonPlayerSpawner.cs:723:            Vector3.down,",
+                             "Assets/_Project/Scripts\\HectonPlayerMovement.cs:3609:            Vector3 safeDirection = NormalizeVectorRsqrt(direction, Vector3.down);",
+                             "Assets/_Project/Scripts\\HectonPlayerMovement.cs:8509:                return safeFallback.sqrMagnitude \u003e MinLocalGravitySqr ? safeFallback : Vector3.down * gravityMagnitude;",
+                             "Assets/_Project/Scripts\\HectonPlayerMovement.cs:8514:                return safeFallback.sqrMagnitude \u003e MinLocalGravitySqr ? safeFallback : Vector3.down * gravityMagnitude;",
+                             "Assets/_Project/Scripts\\HectonPlayerMovement.cs:8522:                : (safeFallback.sqrMagnitude \u003e MinLocalGravitySqr ? safeFallback : Vector3.down * gravityMagnitude);"
+                         ],
+    "ownedRouteProof":  {
+                            "sargassumOnTriggerStayRemoved":  true,
+                            "kccUsesRigidbodyAddForce":  false,
+                            "kccUsesCharacterControllerSlopeLimit":  false,
+                            "environmentalForcesAppliedByBurst":  true
+                        },
+    "verification":  "STATIC_SOURCE_ONLY"
+}

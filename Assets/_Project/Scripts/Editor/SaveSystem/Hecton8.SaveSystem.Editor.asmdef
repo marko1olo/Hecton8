@@ -1,0 +1,19 @@
+{
+    "name": "Hecton8.SaveSystem.Editor",
+    "rootNamespace": "Hecton8.SaveSystem.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

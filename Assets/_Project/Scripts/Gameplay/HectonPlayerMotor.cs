@@ -1683,7 +1683,9 @@ namespace Hecton8.Gameplay
         {
             var dataVault = _dataVault;
             if (dataVault != null &&
-                dataVault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> vaultSdf) &&
+                dataVault.TryGetGenerationHandle<byte>(BufferID.VoxelSdfTexture3D, out VaultGenerationHandle<byte> sdfHandle) &&
+                sdfHandle.BufferID == unchecked((uint)(int)BufferID.VoxelSdfTexture3D) &&
+                dataVault.TryReadHandle(in sdfHandle, out NativeArray<byte> vaultSdf) &&
                 vaultSdf.IsCreated &&
                 vaultSdf.Length >= expectedLength)
             {
@@ -2009,7 +2011,7 @@ namespace Hecton8.Gameplay
             _scheduledSweepWasBlocked = true;
             _scheduledSweepBlockingHit = _nativeState.ScheduledSweepResults[nearestIndex];
             Vector3 safeNormal = SafeNormal(_scheduledSweepBlockingHit.normal, Vector3.up);
-            bool lowTierStop = KinematicCcdMath.IsLowTier(_scalabilityTierProfileByte);
+            bool lowTierStop = false;
             bool cornerCandidate = HasScheduledSweepCornerHit(
                 nearestIndex,
                 safeNormal,
@@ -2061,7 +2063,7 @@ namespace Hecton8.Gameplay
             }
 
             bool sdfSqueezeApplied = false;
-            bool squeezeLowTier = lowTierStop;
+            bool squeezeLowTier = false;
             if ((nearestHitIsVoxelProxy || cornerCandidate) &&
                 TryResolveSdfSqueeze(
                     _scheduledSweepResolvedPosition,

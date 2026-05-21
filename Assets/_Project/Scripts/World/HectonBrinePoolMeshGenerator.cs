@@ -118,7 +118,12 @@ namespace Hecton8.World
                     continue;
                 }
 
-                AbsoluteUniversePosition poolCenterAup = ResolvePoolCenterAup(poolBounds, safeCellSize, runtimeOrigin);
+                if (!TryResolvePoolCenterAup(poolBounds, safeCellSize, runtimeOrigin, out AbsoluteUniversePosition poolCenterAup))
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(InvalidInputWarningHash, BrineGeneratorContextHash, poolBounds.BasinId);
+                    continue;
+                }
+
                 Vector3 runtimeCenter = poolCenterAup.ToRuntimeFloat3();
                 GameObject poolObject = CreatePoolObject(poolBounds, safeCellSize, runtimeCenter);
                 if (!TryRegisterBrineHazard(in poolCenterAup, poolBounds, safeCellSize, hazardId))
@@ -303,22 +308,34 @@ namespace Hecton8.World
             return poolObject;
         }
 
-        private static AbsoluteUniversePosition ResolvePoolCenterAup(
+        private static bool TryResolvePoolCenterAup(
             AnomalyBrinePoolBounds poolBounds,
             float cellSizeMeters,
-            Vector3 runtimeOrigin)
+            Vector3 runtimeOrigin,
+            out AbsoluteUniversePosition poolCenterAup)
         {
+            poolCenterAup = default;
             double safeCellSize = math.max(0.001d, (double)cellSizeMeters);
             double minWorldX = poolBounds.MinX * safeCellSize;
             double maxWorldX = (poolBounds.MaxX + 1) * safeCellSize;
             double minWorldZ = poolBounds.MinZ * safeCellSize;
             double maxWorldZ = (poolBounds.MaxZ + 1) * safeCellSize;
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeOrigin);
+            AbsoluteUniversePosition runtimeOriginAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!runtimeOriginAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.OffsetMeters(
+                in runtimeOriginAup,
+                new double3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z));
+            if (!originAup.IsFinite())
+                return false;
+
             double3 originAbsolute = originAup.ToAbsoluteDouble3();
-            return AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+            poolCenterAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
                 originAbsolute.x + (minWorldX + maxWorldX) * 0.5d,
                 originAbsolute.y + poolBounds.LipHeight,
                 originAbsolute.z + (minWorldZ + maxWorldZ) * 0.5d));
+            return poolCenterAup.IsFinite();
         }
 
         private static bool TryResolvePoolBoundsFromRecord(

@@ -165,7 +165,7 @@ namespace Hecton8.EditorTools
                         if (material == null || !ShouldAudit(material))
                             continue;
 
-                        string materialPath = ResolvePrefabMaterialPath(prefabPath, renderer, material, materialIndex);
+                        string materialPath = BuildPrefabMaterialPath(prefabPath, renderer, material, materialIndex);
                         result.ScannedMaterialCount++;
                         result.TargetMaterialCount++;
                         issueBuffer.Clear();
@@ -183,7 +183,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static string ResolvePrefabMaterialPath(string prefabPath, Renderer renderer, Material material, int materialIndex)
+        private static string BuildPrefabMaterialPath(string prefabPath, Renderer renderer, Material material, int materialIndex)
         {
             string materialAssetPath = AssetDatabase.GetAssetPath(material);
             if (!string.IsNullOrEmpty(materialAssetPath))
@@ -293,7 +293,7 @@ namespace Hecton8.EditorTools
 
             TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
             if (!IsExpectedStandaloneFormat(standalone, TextureImporterFormat.BC7))
-                AddPackedMaskViolation(result, materialPath, $"packed mask '{texture.name}' Standalone format is {ResolveFormatLabel(importer, standalone)}. Expected Standalone:BC7.", issueBuffer);
+                AddPackedMaskViolation(result, materialPath, $"packed mask '{texture.name}' Standalone format is {BuildFormatLabel(importer, standalone)}. Expected Standalone:BC7.", issueBuffer);
 
             result.AnalysedMaskCount++;
             if (!TryAnalysePackedMaskTexture(texture, importer, out PackedMaskAnalysis analysis, out string failureReason))
@@ -515,7 +515,7 @@ namespace Hecton8.EditorTools
                    platformSettings.format == expectedFormat;
         }
 
-        private static string ResolveFormatLabel(TextureImporter importer, TextureImporterPlatformSettings platformSettings)
+        private static string BuildFormatLabel(TextureImporter importer, TextureImporterPlatformSettings platformSettings)
         {
             if (platformSettings != null && platformSettings.overridden)
                 return $"Standalone:{platformSettings.format}";

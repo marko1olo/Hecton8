@@ -371,7 +371,7 @@ namespace Hecton8.Editor
                     HeightScaleMeters = ErosionHeightScaleMeters,
                     TalusAngleDegrees = config.TalusAngle,
                     Strength = config.SlumpStrength,
-                    WriteWearMask = false
+                    WriteWearMaskFlag = 0
                 };
 
                 handle = slumpJob.Schedule(cellCount, 64, handle);

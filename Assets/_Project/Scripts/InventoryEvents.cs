@@ -102,6 +102,8 @@ namespace Hecton8.Inventory
         private const int ReferenceSlotCapacity = 64;
         private const int EventDedupCapacity = 128;
         private const uint PlayerInventorySourceId = 1u;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptOwnerIndexAllocator = Allocator.Persistent;
 
         private struct InventoryReferenceSlot
         {
@@ -115,8 +117,78 @@ namespace Hecton8.Inventory
             }
         }
 
-        // COLD ALLOC: RegistryBucket<IInventoryEventListener>[16] — inventory listeners drained by SystemDispatcher LateUpdate — owner: InventoryEvents
-        private static readonly RegistryBucket<IInventoryEventListener> _listeners = new RegistryBucket<IInventoryEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IInventoryEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct InventoryListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public InventoryListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity]; // COLD ALLOC: ListenerSlot[16] - fixed inventory listener slots drained by SystemDispatcher LateUpdate - owner: InventoryEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IInventoryEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IInventoryEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void Unregister(IInventoryEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public IInventoryEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static InventoryListenerRegistry _listeners = new InventoryListenerRegistry(ListenerCapacity);
         // COLD ALLOC: InventoryReferenceSlot[64] — managed reference sidecar for unmanaged inventory payloads — owner: InventoryEvents
         private static readonly InventoryReferenceSlot[] _referenceSlots = new InventoryReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[64] — reference slot occupancy map prevents wrap overwrite before deferred flush — owner: InventoryEvents
@@ -181,7 +253,7 @@ namespace Hecton8.Inventory
 
             EnsureInitialized();
             if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+                _listeners.TryRegister(listener);
         }
 
         /// <summary>
@@ -222,14 +294,13 @@ namespace Hecton8.Inventory
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IInventoryEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IInventoryEventListener listener = rawArray[i];
+                        IInventoryEventListener listener = _listeners.GetAt(i);
                         if (listener != null)
                             listener.OnInventoryEvent(in payload);
                     }
@@ -411,7 +482,7 @@ namespace Hecton8.Inventory
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<InventoryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — deferred inventory event lane flushed by SystemDispatcher LateUpdate — owner: InventoryEvents
+                _pendingEvents = new NativeQueue<InventoryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — deferred inventory event lane flushed by SystemDispatcher LateUpdate — owner: InventoryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -423,7 +494,7 @@ namespace Hecton8.Inventory
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<InventoryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — next-frame inventory event lane prevents same-frame reentrant dispatch — owner: InventoryEvents
+                _nextFrameEvents = new NativeQueue<InventoryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — next-frame inventory event lane prevents same-frame reentrant dispatch — owner: InventoryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -435,7 +506,7 @@ namespace Hecton8.Inventory
 
             if (!_queuedEventKeys.IsCreated)
             {
-                _queuedEventKeys = new NativeParallelHashSet<ulong>(EventDedupCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashSet<ulong>[128] - per-frame inventory duplicate suppression keys - owner: InventoryEvents
+                _queuedEventKeys = new NativeParallelHashSet<ulong>(EventDedupCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashSet<ulong>[128] - per-frame inventory duplicate suppression keys - owner: InventoryEvents
                 NativeMemorySentinel.RegisterNativeParallelHashSet(
                     _queuedEventKeys,
                     nameof(InventoryEvents),

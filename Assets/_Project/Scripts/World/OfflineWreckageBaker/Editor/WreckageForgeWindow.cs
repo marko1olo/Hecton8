@@ -710,7 +710,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
         {
             int safeVertexCount = math.clamp(vertexCount, 0, vertices.Length);
             Mesh mesh = new Mesh { name = name, indexFormat = IndexFormat.UInt32 };
-            const MeshUpdateFlags flags = MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontRecalculateNormals | MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers;
+            const MeshUpdateFlags flags = MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers;
             Bounds bounds = ComputeBounds(vertices, safeVertexCount);
             mesh.SetVertexBufferParams(safeVertexCount, s_vertexLayout);
             mesh.SetIndexBufferParams(indices.Length, IndexFormat.UInt32);

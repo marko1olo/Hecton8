@@ -246,7 +246,7 @@ namespace Hecton8.Gameplay
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SuitUpgradeResolverJob : IJob
     {
         public ulong Upgrades;

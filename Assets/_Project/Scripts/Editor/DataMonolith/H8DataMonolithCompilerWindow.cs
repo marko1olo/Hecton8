@@ -20,6 +20,7 @@ namespace Hecton8.EditorValidation
 
         private Label _status;
         private ScrollView _sourceList;
+        private ScrollView _coverageList;
         private ScrollView _layoutList;
         private ScrollView _binaryList;
 
@@ -49,6 +50,7 @@ namespace Hecton8.EditorValidation
             bakeButton.style.unityFontStyleAndWeight = FontStyle.Bold;
             toolbar.Add(bakeButton);
             toolbar.Add(MakeButton("Schemas", GenerateSchemas));
+            toolbar.Add(MakeButton("Coverage", RefreshCoverage));
             toolbar.Add(MakeButton("Inspect", InspectBinary));
             toolbar.Add(MakeButton("Refresh", RefreshAll));
             rootVisualElement.Add(toolbar);
@@ -59,9 +61,11 @@ namespace Hecton8.EditorValidation
 
             TwoColumnPane panes = new TwoColumnPane();
             _sourceList = CreateScroll("Sources");
+            _coverageList = CreateScroll("Production Coverage");
             _layoutList = CreateScroll("Struct Layout");
             _binaryList = CreateScroll("Binary Inspector");
             panes.Left.Add(_sourceList);
+            panes.Left.Add(_coverageList);
             panes.Right.Add(_layoutList);
             panes.Right.Add(_binaryList);
             rootVisualElement.Add(panes);
@@ -106,6 +110,24 @@ namespace Hecton8.EditorValidation
             WriteTemplate("Fauna_template.csv", "Id,version_id,Name,Description,SwimSpeed,TurnRate,Aggression01,FleeDistanceM,BiolumIntensity,AccessFrequency");
             WriteTemplate("Economy_template.csv", "Id,version_id,Name,Description,BasePrice,Scarcity01,Demand01,SupplyRefreshSeconds,AccessFrequency");
             WriteTemplate("Physics_template.csv", "Id,version_id,Name,Description,MassKg,AddedMass,LinearDrag,Buoyancy,CrushDepthM,AccessFrequency");
+            WriteTemplate("Biomes_template.csv", "id,name,surface_id,min_depth,max_depth,temperature_c,pressure_scalar,fog_density,scatter_r,scatter_g,scatter_b,heatmap_id,radiation_id,flags");
+            WriteTemplate("Recipes_template.csv", "output,station,ingredients,craft_seconds,output_count,flags");
+            WriteTemplate("LootCdf_template.csv", "table_id,item_id,weight");
+            WriteTemplate("VoxelMaterials_template.csv", "id,hardness,density,melting_point,yield_id,surface_id,flags");
+            WriteTemplate("AudioRegistry_template.csv", "event_id,addressable_key,bank");
+            WriteTemplate("VfxScalars_template.csv", "id,emission_rate,r,g,b,a,intensity,flags");
+            WriteTemplate("ToolHeat_template.csv", "id,heat_capacity,max_safe_temperature");
+            WriteTemplate("SubmarineHull_template.csv", "id,mass_kg,drag,buoyancy,crush_depth,integrity_cap,flags");
+            WriteTemplate("PhysicsMaterials_template.csv", "id,friction,restitution,flags");
+            WriteTemplate("GhostModules_template.csv", "id,name,snap_x,snap_y,snap_z,power,build_cost,recipe_id,flags");
+            WriteTemplate("SpawnCredits_template.csv", "id,credit_cost,director_mask");
+            WriteTemplate("SopErrors_template.csv", "id,message,severity");
+            WriteTemplate("HudLayout_template.csv", "id,flags,m00,m01,m02,m03,m10,m11,m12,m13,m20,m21,m22,m23,m30,m31");
+            WriteTemplate("SectorPages_template.csv", "sector_id,biome_id,file_offset,byte_count,aup_x,aup_z");
+            WriteTemplate("QuestNodes_optional_template.csv", "id,type,flags,aup_x,aup_y,aup_z,radius");
+            WriteTemplate("QuestEdges_optional_template.csv", "from,to,condition,flags");
+            WriteTemplate("NarrativeTriggers_optional_template.csv", "id,aup_x,aup_y,aup_z,radius");
+            WriteTemplate("RadiationMap_optional_template.csv", "id,intensity_sv,falloff");
             WriteStructTemplate<H8ItemRecord>("H8ItemRecord_struct_template.csv");
             WriteStructTemplate<H8CreatureTraitRecord>("H8CreatureTraitRecord_struct_template.csv");
             WriteStructTemplate<H8EconomyRecord>("H8EconomyRecord_struct_template.csv");
@@ -180,6 +202,7 @@ namespace Hecton8.EditorValidation
         private void RefreshAll()
         {
             RefreshSources();
+            RefreshCoverage();
             RefreshLayout();
             InspectBinary();
         }
@@ -211,6 +234,27 @@ namespace Hecton8.EditorValidation
                     continue;
 
                 _sourceList.Add(new Label(csv[i].Replace('\\', '/') + "  utc=" + File.GetLastWriteTimeUtc(csv[i]).ToString("u")));
+            }
+        }
+
+        private void RefreshCoverage()
+        {
+            if (_coverageList == null)
+                return;
+
+            _coverageList.Clear();
+            _coverageList.Add(MakeHeader("Production Coverage"));
+            bool ok = H8DataMonolithCompiler.TryAnalyzeProductionCoverage(out string report, out int missingCount);
+            _coverageList.Add(new Label("coverage=" + (ok ? "PASS" : "FAIL") + " missing=" + missingCount));
+            using StringReader reader = new StringReader(report);
+            while (true)
+            {
+                string line = reader.ReadLine();
+                if (line == null)
+                    break;
+
+                if (line.Length > 0)
+                    _coverageList.Add(new Label(line));
             }
         }
 

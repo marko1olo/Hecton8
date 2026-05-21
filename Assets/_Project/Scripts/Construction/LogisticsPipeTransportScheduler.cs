@@ -48,7 +48,7 @@ namespace Hecton8.Construction
         private static int _visitStamp = 1;
         private static int _nextCycleWarningFrame;
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildPipeTopologicalOrderJob : IJob
         {
             public int NodeCount;

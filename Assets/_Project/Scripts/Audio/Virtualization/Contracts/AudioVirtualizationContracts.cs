@@ -1260,6 +1260,10 @@ namespace Hecton8.Audio.Virtualization
                 return 0;
 
             rows.Clear();
+            int capacity = rows.Capacity;
+            if (capacity <= 0)
+                return 0;
+
             AcousticMaterialCoefficientDTO rock = new AcousticMaterialCoefficientDTO
             {
                 MaterialHash = 0x3A1B4AB4u,
@@ -1288,10 +1292,15 @@ namespace Hecton8.Audio.Virtualization
                 Flags = 1u
             };
 
-            rows[rock.MaterialHash] = rock;
-            rows[metal.MaterialHash] = metal;
-            rows[flesh.MaterialHash] = flesh;
-            return 3;
+            int written = 0;
+            if (written < capacity && rows.TryAdd(rock.MaterialHash, rock))
+                written++;
+            if (written < capacity && rows.TryAdd(metal.MaterialHash, metal))
+                written++;
+            if (written < capacity && rows.TryAdd(flesh.MaterialHash, flesh))
+                written++;
+
+            return written;
         }
 
         private static bool TryReadProfileRow(ReadOnlySpan<char> line, out AudioProfileCsvRow row)

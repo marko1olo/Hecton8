@@ -157,7 +157,8 @@ namespace Hecton8.VFX
         private Quaternion _lastShakeLocalRotation = Quaternion.identity;
         private Quaternion _lastShakeCompositeLocalRotation = Quaternion.identity;
         private IDataVault _dataVault;
-        private VaultBufferHandle<CameraJuiceTelemetryEntry> _cameraJuiceTelemetryHandle;
+        private VaultGenerationHandle<CameraJuiceTelemetryEntry> _cameraJuiceTelemetryHandle;
+        private bool _ownsCameraJuiceTelemetryBuffer;
         private int _cameraJuiceTelemetryCursor;
         private bool _cameraJuiceTelemetryDumped;
         private bool _cameraJuiceTelemetryReady;
@@ -735,9 +736,8 @@ namespace Hecton8.VFX
             if (ReferenceEquals(_dataVault, vault))
                 return;
 
+            ReleaseCameraJuiceTelemetryBuffer(_dataVault);
             _dataVault = vault;
-            _cameraJuiceTelemetryHandle = default;
-            _cameraJuiceTelemetryReady = false;
             _cameraJuiceTelemetryCursor = 0;
         }
 
@@ -1602,31 +1602,67 @@ namespace Hecton8.VFX
             IDataVault vault = _dataVault;
             if (vault == null)
             {
-                ReleaseCameraJuiceTelemetry();
+                ClearCameraJuiceTelemetryDescriptor();
                 return false;
             }
 
             if (vault.IsCompactionFenceActive)
             {
-                _cameraJuiceTelemetryHandle = default;
-                _cameraJuiceTelemetryReady = false;
+                ClearCameraJuiceTelemetryDescriptor();
                 return false;
             }
 
-            if (!vault.TryGetBufferHandle(BufferID.CameraJuiceTelemetryRing, out _cameraJuiceTelemetryHandle) ||
-                !_cameraJuiceTelemetryHandle.IsCreated)
+            if (IsVaultHandleCreated(in _cameraJuiceTelemetryHandle) &&
+                vault.TryResolveHandle(in _cameraJuiceTelemetryHandle, out NativeArray<CameraJuiceTelemetryEntry> existingTelemetry) &&
+                existingTelemetry.IsCreated &&
+                existingTelemetry.Length >= CAMERA_JUICE_TELEMETRY_CAPACITY)
             {
-                _cameraJuiceTelemetryHandle = vault.GetBufferHandle<CameraJuiceTelemetryEntry>(
-                    BufferID.CameraJuiceTelemetryRing,
-                    CAMERA_JUICE_TELEMETRY_CAPACITY,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
+                _cameraJuiceTelemetryReady = true;
+                return true;
             }
 
-            _cameraJuiceTelemetryReady =
-                _cameraJuiceTelemetryHandle.IsCreated &&
-                _cameraJuiceTelemetryHandle.Length >= CAMERA_JUICE_TELEMETRY_CAPACITY;
-            return _cameraJuiceTelemetryReady;
+            if (vault.TryGetGenerationHandle<CameraJuiceTelemetryEntry>(
+                    BufferID.CameraJuiceTelemetryRing,
+                    out VaultGenerationHandle<CameraJuiceTelemetryEntry> borrowedHandle) &&
+                vault.TryResolveHandle(in borrowedHandle, out existingTelemetry) &&
+                existingTelemetry.IsCreated &&
+                existingTelemetry.Length >= CAMERA_JUICE_TELEMETRY_CAPACITY)
+            {
+                _cameraJuiceTelemetryHandle = borrowedHandle;
+                _ownsCameraJuiceTelemetryBuffer = false;
+                _cameraJuiceTelemetryReady = true;
+                return true;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                ClearCameraJuiceTelemetryDescriptor();
+                return false;
+            }
+
+            VaultGenerationHandle<CameraJuiceTelemetryEntry> acquiredHandle = vault.GetGenerationHandle<CameraJuiceTelemetryEntry>(
+                BufferID.CameraJuiceTelemetryRing,
+                CAMERA_JUICE_TELEMETRY_CAPACITY,
+                SystemID.Vfx,
+                NativeArrayOptions.ClearMemory);
+            bool ownsAcquiredHandle = true;
+
+            if (!IsVaultHandleCreated(in acquiredHandle) ||
+                !vault.TryResolveHandle(in acquiredHandle, out existingTelemetry) ||
+                !existingTelemetry.IsCreated ||
+                existingTelemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
+            {
+                if (IsVaultHandleCreated(in acquiredHandle) && ownsAcquiredHandle)
+                    vault.ReleaseBuffer(in acquiredHandle);
+
+                ClearCameraJuiceTelemetryDescriptor();
+                return false;
+            }
+
+            _cameraJuiceTelemetryHandle = acquiredHandle;
+            _ownsCameraJuiceTelemetryBuffer = ownsAcquiredHandle;
+            _cameraJuiceTelemetryReady = true;
+            return true;
         }
 
         private bool TryResolveCameraJuiceTelemetry(out NativeArray<CameraJuiceTelemetryEntry> telemetry)
@@ -1635,23 +1671,48 @@ namespace Hecton8.VFX
             if (!EnsureCameraJuiceTelemetry())
                 return false;
 
-            if (!_dataVault.TryGetBufferHandle(BufferID.CameraJuiceTelemetryRing, out _cameraJuiceTelemetryHandle) ||
-                !_cameraJuiceTelemetryHandle.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryResolveHandle(in _cameraJuiceTelemetryHandle, out telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
             {
-                ReleaseCameraJuiceTelemetry();
+                ClearCameraJuiceTelemetryDescriptor();
                 return false;
             }
 
-            telemetry = _cameraJuiceTelemetryHandle.Resolve(_dataVault);
-            return telemetry.IsCreated && telemetry.Length >= CAMERA_JUICE_TELEMETRY_CAPACITY;
+            return true;
         }
 
         private void ReleaseCameraJuiceTelemetry()
         {
+            ReleaseCameraJuiceTelemetryBuffer(_dataVault);
             _dataVault = null;
-            _cameraJuiceTelemetryHandle = default;
-            _cameraJuiceTelemetryReady = false;
             _cameraJuiceTelemetryCursor = 0;
+        }
+
+        private void ReleaseCameraJuiceTelemetryBuffer(IDataVault vault)
+        {
+            if (_ownsCameraJuiceTelemetryBuffer &&
+                vault != null &&
+                IsVaultHandleCreated(in _cameraJuiceTelemetryHandle))
+            {
+                vault.ReleaseBuffer(in _cameraJuiceTelemetryHandle);
+            }
+
+            ClearCameraJuiceTelemetryDescriptor();
+        }
+
+        private void ClearCameraJuiceTelemetryDescriptor()
+        {
+            _cameraJuiceTelemetryHandle = default;
+            _ownsCameraJuiceTelemetryBuffer = false;
+            _cameraJuiceTelemetryReady = false;
+        }
+
+        private static bool IsVaultHandleCreated(in VaultGenerationHandle<CameraJuiceTelemetryEntry> handle)
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private static bool ValidateCameraJuiceTelemetryLayout()
@@ -2194,9 +2255,45 @@ namespace Hecton8.VFX
 
         private static double ResolveAupRuntimeDistanceSq(Vector3 fromRuntimePosition, Vector3 toRuntimePosition)
         {
-            AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromRuntimePosition);
-            AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toRuntimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(fromRuntimePosition, out AbsoluteUniversePosition fromAup) ||
+                !TryResolveAupFromRuntimeOrigin(toRuntimePosition, out AbsoluteUniversePosition toAup))
+            {
+                return ResolveLocalDistanceSq(fromRuntimePosition, toRuntimePosition);
+            }
+
             return AbsoluteUniversePosition.DistanceSq(in fromAup, in toAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return absoluteAup.IsFinite();
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static double ResolveLocalDistanceSq(Vector3 a, Vector3 b)
+        {
+            if (!IsFiniteVector(a) || !IsFiniteVector(b))
+                return double.MaxValue;
+
+            Vector3 delta = a - b;
+            return (double)delta.x * delta.x +
+                   (double)delta.y * delta.y +
+                   (double)delta.z * delta.z;
         }
 
         private float ResolveHudPlaneFocusDistance()

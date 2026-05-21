@@ -35,22 +35,22 @@ namespace Hecton8.AI.Cognition
     /// </summary>
     public struct AlphaLeviathanVaultHandles
     {
-        public VaultBufferHandle<AlphaLeviathanCognitionState> States;
-        public VaultBufferHandle<AlphaLeviathanSensoryStimulus> SensoryStimuli;
-        public VaultBufferHandle<AlphaLeviathanSteeringOutput> SteeringOutputs;
-        public VaultBufferHandle<AlphaLeviathanTelemetryEntry> TelemetryRing;
-        public VaultBufferHandle<int> TelemetryCursor;
+        public VaultGenerationHandle<AlphaLeviathanCognitionState> States;
+        public VaultGenerationHandle<AlphaLeviathanSensoryStimulus> SensoryStimuli;
+        public VaultGenerationHandle<AlphaLeviathanSteeringOutput> SteeringOutputs;
+        public VaultGenerationHandle<AlphaLeviathanTelemetryEntry> TelemetryRing;
+        public VaultGenerationHandle<int> TelemetryCursor;
 
         /// <summary>
         /// True when every required DataVault handle was resolved from the vault.
         /// </summary>
         public readonly bool IsCreated()
         {
-            return States.IsCreated &&
-                   SensoryStimuli.IsCreated &&
-                   SteeringOutputs.IsCreated &&
-                   TelemetryRing.IsCreated &&
-                   TelemetryCursor.IsCreated;
+            return IsHandleCreated(in States) &&
+                   IsHandleCreated(in SensoryStimuli) &&
+                   IsHandleCreated(in SteeringOutputs) &&
+                   IsHandleCreated(in TelemetryRing) &&
+                   IsHandleCreated(in TelemetryCursor);
         }
     }
 
@@ -64,58 +64,29 @@ namespace Hecton8.AI.Cognition
         private const string AgentDumpFileName = "Dump_PREDATOR_STALK_DIRECTOR.bin";
 
         /// <summary>
-        /// Resolves all persistent buffers required by the stalking solver.
+        /// Acquires all persistent buffers required by the stalking solver.
         /// </summary>
         /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
         /// <param name="requiredSlots">Requested predator slot capacity.</param>
-        /// <param name="buffers">Resolved DataVault buffer views.</param>
+        /// <param name="buffers">Acquired DataVault buffer views.</param>
         /// <returns>True when every buffer is available.</returns>
-        public static bool TryResolve(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultBuffers buffers)
+        public static bool TryAcquireBuffers(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultBuffers buffers)
         {
             buffers = default;
-            if (vault == null)
+            if (!TryAcquireHandles(vault, requiredSlots, out AlphaLeviathanVaultHandles handles))
                 return false;
 
-            int capacity = math.clamp(requiredSlots, 1, AlphaLeviathanStalkConstants.MaxLeviathanSlots);
-            if (vault.IsAllocationLocked)
-                return TryResolveExisting(vault, capacity, out buffers);
-
-            buffers.States = vault.GetBuffer<AlphaLeviathanCognitionState>(
-                BufferID.AlphaLeviathanCognitionState,
-                capacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            buffers.SensoryStimuli = vault.GetBuffer<AlphaLeviathanSensoryStimulus>(
-                BufferID.AlphaLeviathanSensoryStimulus,
-                capacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            buffers.SteeringOutputs = vault.GetBuffer<AlphaLeviathanSteeringOutput>(
-                BufferID.AlphaLeviathanSteeringOutput,
-                capacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            buffers.TelemetryRing = vault.GetBuffer<AlphaLeviathanTelemetryEntry>(
-                BufferID.AlphaLeviathanTelemetryRing,
-                AlphaLeviathanStalkConstants.TelemetryCapacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            buffers.TelemetryCursor = vault.GetBuffer<int>(
-                BufferID.AlphaLeviathanTelemetryCursor,
-                1,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            return buffers.IsCreated();
+            return TryResolveViews(vault, ref handles, out buffers);
         }
 
         /// <summary>
-        /// Resolves generation-checked handles for every persistent stalking buffer.
+        /// Acquires generation-checked handles for every persistent stalking buffer.
         /// </summary>
         /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
         /// <param name="requiredSlots">Requested predator slot capacity.</param>
-        /// <param name="handles">Resolved DataVault handles.</param>
+        /// <param name="handles">Acquired DataVault handles.</param>
         /// <returns>True when every handle is available.</returns>
-        public static bool TryResolveHandles(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultHandles handles)
+        public static bool TryAcquireHandles(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultHandles handles)
         {
             handles = default;
             if (vault == null)
@@ -123,29 +94,29 @@ namespace Hecton8.AI.Cognition
 
             int capacity = math.clamp(requiredSlots, 1, AlphaLeviathanStalkConstants.MaxLeviathanSlots);
             if (vault.IsAllocationLocked)
-                return TryResolveExistingHandles(vault, capacity, out handles);
+                return TryReadExistingHandles(vault, capacity, out handles);
 
-            handles.States = vault.GetBufferHandle<AlphaLeviathanCognitionState>(
+            handles.States = vault.GetGenerationHandle<AlphaLeviathanCognitionState>(
                 BufferID.AlphaLeviathanCognitionState,
                 capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.SensoryStimuli = vault.GetBufferHandle<AlphaLeviathanSensoryStimulus>(
+            handles.SensoryStimuli = vault.GetGenerationHandle<AlphaLeviathanSensoryStimulus>(
                 BufferID.AlphaLeviathanSensoryStimulus,
                 capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.SteeringOutputs = vault.GetBufferHandle<AlphaLeviathanSteeringOutput>(
+            handles.SteeringOutputs = vault.GetGenerationHandle<AlphaLeviathanSteeringOutput>(
                 BufferID.AlphaLeviathanSteeringOutput,
                 capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryRing = vault.GetBufferHandle<AlphaLeviathanTelemetryEntry>(
+            handles.TelemetryRing = vault.GetGenerationHandle<AlphaLeviathanTelemetryEntry>(
                 BufferID.AlphaLeviathanTelemetryRing,
                 AlphaLeviathanStalkConstants.TelemetryCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetBufferHandle<int>(
+            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
                 BufferID.AlphaLeviathanTelemetryCursor,
                 1,
                 SystemID.AICognition,
@@ -153,36 +124,14 @@ namespace Hecton8.AI.Cognition
             return handles.IsCreated();
         }
 
-        private static bool TryResolveExisting(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultBuffers buffers)
-        {
-            buffers = default;
-            if (!vault.TryGetBuffer(BufferID.AlphaLeviathanCognitionState, out buffers.States) ||
-                !vault.TryGetBuffer(BufferID.AlphaLeviathanSensoryStimulus, out buffers.SensoryStimuli) ||
-                !vault.TryGetBuffer(BufferID.AlphaLeviathanSteeringOutput, out buffers.SteeringOutputs) ||
-                !vault.TryGetBuffer(BufferID.AlphaLeviathanTelemetryRing, out buffers.TelemetryRing) ||
-                !vault.TryGetBuffer(BufferID.AlphaLeviathanTelemetryCursor, out buffers.TelemetryCursor))
-            {
-                buffers = default;
-                return false;
-            }
-
-            if (!HasRequiredCapacity(in buffers, requiredSlots))
-            {
-                buffers = default;
-                return false;
-            }
-
-            return true;
-        }
-
-        private static bool TryResolveExistingHandles(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultHandles handles)
+        private static bool TryReadExistingHandles(IDataVault vault, int requiredSlots, out AlphaLeviathanVaultHandles handles)
         {
             handles = default;
-            if (!vault.TryGetBufferHandle(BufferID.AlphaLeviathanCognitionState, out handles.States) ||
-                !vault.TryGetBufferHandle(BufferID.AlphaLeviathanSensoryStimulus, out handles.SensoryStimuli) ||
-                !vault.TryGetBufferHandle(BufferID.AlphaLeviathanSteeringOutput, out handles.SteeringOutputs) ||
-                !vault.TryGetBufferHandle(BufferID.AlphaLeviathanTelemetryRing, out handles.TelemetryRing) ||
-                !vault.TryGetBufferHandle(BufferID.AlphaLeviathanTelemetryCursor, out handles.TelemetryCursor))
+            if (!vault.TryGetGenerationHandle(BufferID.AlphaLeviathanCognitionState, out handles.States) ||
+                !vault.TryGetGenerationHandle(BufferID.AlphaLeviathanSensoryStimulus, out handles.SensoryStimuli) ||
+                !vault.TryGetGenerationHandle(BufferID.AlphaLeviathanSteeringOutput, out handles.SteeringOutputs) ||
+                !vault.TryGetGenerationHandle(BufferID.AlphaLeviathanTelemetryRing, out handles.TelemetryRing) ||
+                !vault.TryGetGenerationHandle(BufferID.AlphaLeviathanTelemetryCursor, out handles.TelemetryCursor))
             {
                 handles = default;
                 return false;
@@ -223,11 +172,16 @@ namespace Hecton8.AI.Cognition
             if (vault == null || !handles.IsCreated())
                 return false;
 
-            buffers.States = handles.States.Resolve(vault);
-            buffers.SensoryStimuli = handles.SensoryStimuli.Resolve(vault);
-            buffers.SteeringOutputs = handles.SteeringOutputs.Resolve(vault);
-            buffers.TelemetryRing = handles.TelemetryRing.Resolve(vault);
-            buffers.TelemetryCursor = handles.TelemetryCursor.Resolve(vault);
+            if (!TryOpenVaultView(vault, in handles.States, 1, out buffers.States) ||
+                !TryOpenVaultView(vault, in handles.SensoryStimuli, 1, out buffers.SensoryStimuli) ||
+                !TryOpenVaultView(vault, in handles.SteeringOutputs, 1, out buffers.SteeringOutputs) ||
+                !TryOpenVaultView(vault, in handles.TelemetryRing, AlphaLeviathanStalkConstants.TelemetryCapacity, out buffers.TelemetryRing) ||
+                !TryOpenVaultView(vault, in handles.TelemetryCursor, 1, out buffers.TelemetryCursor))
+            {
+                buffers = default;
+                return false;
+            }
+
             return buffers.IsCreated();
         }
 
@@ -272,7 +226,7 @@ namespace Hecton8.AI.Cognition
         /// <summary>
         /// Creates the canonical stalk job from DataVault-owned buffer views.
         /// </summary>
-        /// <param name="buffers">Resolved DataVault buffer views.</param>
+        /// <param name="buffers">Acquired DataVault buffer views.</param>
         /// <param name="frame">Global simulation frame written into telemetry.</param>
         /// <returns>Configured job. The returned job is invalid when <paramref name="buffers"/> is not created.</returns>
         public static LeviathanStalkJob CreateStalkJob(in AlphaLeviathanVaultBuffers buffers, uint frame)
@@ -570,6 +524,58 @@ namespace Hecton8.AI.Cognition
                 return false;
 
             return TryDumpBlackBoxOnFault(in buffers, projectRoot);
+        }
+
+        /// <summary>
+        /// Releases Alpha Leviathan cognition buffers only when this owner holds the exact descriptors.
+        /// </summary>
+        /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
+        /// <param name="handles">Owned descriptors to release and clear.</param>
+        public static void ReleaseOwnedHandles(IDataVault vault, ref AlphaLeviathanVaultHandles handles)
+        {
+            if (vault == null)
+            {
+                handles = default;
+                return;
+            }
+
+            ReleaseVaultHandle(vault, ref handles.States);
+            ReleaseVaultHandle(vault, ref handles.SensoryStimuli);
+            ReleaseVaultHandle(vault, ref handles.SteeringOutputs);
+            ReleaseVaultHandle(vault, ref handles.TelemetryRing);
+            ReleaseVaultHandle(vault, ref handles.TelemetryCursor);
+        }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool TryOpenVaultView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   requiredLength >= 0 &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
 
         private static int ResolveTelemetryCursor(in AlphaLeviathanVaultBuffers buffers)

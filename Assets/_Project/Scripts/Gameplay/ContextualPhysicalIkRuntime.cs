@@ -206,7 +206,6 @@ namespace Hecton8.Gameplay
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     internal struct ContextualPhysicalIkGroundDetectionJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkEntityState> Entities;
@@ -399,7 +398,6 @@ namespace Hecton8.Gameplay
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     internal struct ContextualPhysicalIkGroundResponseJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkEntityState> Entities;

@@ -13,8 +13,7 @@ namespace Hecton8.World.SeedShipAnomaly
         private static readonly int _SeedShipAnomalyParamsId = Shader.PropertyToID("_SeedShipAnomalyParams");
         private static readonly int _SeedShipUniverseOffsetNoiseId = Shader.PropertyToID("_SeedShipUniverseOffsetNoise");
 
-        private static VaultBufferHandle<float4> _shaderSlotsHandle;
-        private static uint _cachedVaultGeneration;
+        private static VaultGenerationHandle<float4> _shaderSlotsHandle;
         private static IDataVault _cachedVault;
 
         public static void Publish(IDataVault vault, in AnomalyFieldDTO field, in AnomalyGlobalScalarsDTO globals)
@@ -50,42 +49,47 @@ namespace Hecton8.World.SeedShipAnomaly
             if (vault == null)
                 return false;
 
-            uint generation = vault.VaultGenerationID;
             if (ReferenceEquals(vault, _cachedVault) &&
-                _cachedVaultGeneration == generation &&
-                _shaderSlotsHandle.IsCreated)
+                IsVaultGenerationHandleCreated(in _shaderSlotsHandle) &&
+                vault.TryResolveHandle(in _shaderSlotsHandle, out slots))
             {
-                slots = _shaderSlotsHandle.Resolve(vault);
                 return slots.IsCreated && slots.Length >= RequiredShaderSlots;
             }
 
-            if (vault.TryGetBufferHandle(BufferID.ShaderGlobalState, out VaultBufferHandle<float4> existing) &&
-                existing.IsCreated &&
-                existing.Length >= RequiredShaderSlots)
+            if (vault.TryGetGenerationHandle(BufferID.ShaderGlobalState, out _shaderSlotsHandle) &&
+                vault.TryResolveHandle(in _shaderSlotsHandle, out slots) &&
+                slots.IsCreated &&
+                slots.Length >= RequiredShaderSlots)
             {
                 _cachedVault = vault;
-                _cachedVaultGeneration = generation;
-                _shaderSlotsHandle = existing;
-                slots = existing.Resolve(vault);
-                return slots.IsCreated && slots.Length >= RequiredShaderSlots;
+                return true;
             }
 
             if (vault.IsAllocationLocked)
                 return false;
 
-            VaultBufferHandle<float4> allocated = vault.GetBufferHandle<float4>(
+            _shaderSlotsHandle = vault.GetGenerationHandle<float4>(
                 BufferID.ShaderGlobalState,
                 RequiredShaderSlots,
                 SystemID.EndgameAnomaly,
                 NativeArrayOptions.ClearMemory);
-            if (!allocated.IsCreated || allocated.Length < RequiredShaderSlots)
+            if (!IsVaultGenerationHandleCreated(in _shaderSlotsHandle) ||
+                !vault.TryResolveHandle(in _shaderSlotsHandle, out slots) ||
+                !slots.IsCreated ||
+                slots.Length < RequiredShaderSlots)
+            {
+                _shaderSlotsHandle = default;
                 return false;
+            }
 
             _cachedVault = vault;
-            _cachedVaultGeneration = generation;
-            _shaderSlotsHandle = allocated;
-            slots = allocated.Resolve(vault);
-            return slots.IsCreated && slots.Length >= RequiredShaderSlots;
+            return true;
+        }
+
+        private static bool IsVaultGenerationHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
     }
 }

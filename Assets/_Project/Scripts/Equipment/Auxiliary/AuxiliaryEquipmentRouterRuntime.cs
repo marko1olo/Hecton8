@@ -3,13 +3,12 @@ using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.Tools;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hecton8.Equipment.Auxiliary
 {
@@ -19,6 +18,7 @@ namespace Hecton8.Equipment.Auxiliary
     {
         private const int JobBatchSize = 64;
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_229.bin";
+        private const string ProfilesCsvFileName = "auxiliary_equipment_profiles.csv";
         private static readonly double s_timestampToMicroseconds = 1000000.0 / System.Diagnostics.Stopwatch.Frequency;
 
         [SerializeField, Range(64, AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries)]
@@ -32,6 +32,7 @@ namespace Hecton8.Equipment.Auxiliary
         private IDataVault _dataVault;
         private VaultGenerationHandle<DeployedAuxiliaryDTO> _deploymentsHandle;
         private VaultGenerationHandle<AuxiliaryStateDTO> _statesHandle;
+        private VaultGenerationHandle<AuxiliaryTetherAnchorDTO> _tetherAnchorsHandle;
         private VaultGenerationHandle<int> _activeCountHandle;
         private VaultGenerationHandle<AuxiliaryTuningDTO> _tuningHandle;
         private VaultGenerationHandle<AuxiliaryRouteCounterDTO> _routeCountersHandle;
@@ -40,15 +41,22 @@ namespace Hecton8.Equipment.Auxiliary
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private VaultGenerationHandle<AuxiliaryProfileDTO> _profilesHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
-        private VaultGenerationHandle<ActiveEquipmentDTO> _activeEquipmentHandle;
+        private VaultGenerationHandle<AuxiliaryActiveEquipmentDTO> _activeEquipmentHandle;
 
+        private GraphicsBuffer _vfxGpuBufferA;
+        private GraphicsBuffer _vfxGpuBufferB;
+        private GraphicsBuffer _vfxGpuReadBuffer;
         private JobHandle _pendingHandle;
         private long _pendingStartTicks;
         private double3 _lastCameraAup;
-        private double3 _lastTetherAnchorAup;
+        private double3 _lastUploadedVfxCameraAup;
         private float _lastCadenceHz = AuxiliaryEquipmentConstants.MaximumCadenceHz;
         private float _lastQualityWeight = 1f;
+        private float _lastUploadedVfxQualityWeight;
+        private int _lastVfxUploadCount;
+        private uint _lastVfxUploadHash;
         private uint _frameIndex;
+        private int _vfxGpuWriteIndex;
         private bool _jobActive;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
@@ -56,6 +64,9 @@ namespace Hecton8.Equipment.Auxiliary
         private bool _signalLanesReady;
         private bool _mockSeeded;
         private bool _dumpWritten;
+        private bool _profilesLoaded;
+        private bool _vfxUploadValid;
+        private AuxiliaryCsvParseResult _lastCsvParseResult;
 
         public static bool TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime)
         {
@@ -73,11 +84,8 @@ namespace Hecton8.Equipment.Auxiliary
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
-                in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            aup = resolvedAup.ToAbsoluteDouble3();
+            double3 originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            aup = originAup + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             return math.all(math.isfinite(aup));
         }
 
@@ -92,7 +100,7 @@ namespace Hecton8.Equipment.Auxiliary
         public static bool TryDeployFlareAup(double3 aup, float lifetimeSeconds = -1f)
         {
             return TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime) &&
-                   runtime.TryDeployAup(AuxiliaryEquipmentConstants.FlarePrefabHash, aup, lifetimeSeconds, 0f);
+                   runtime.TryDeployAup(AuxiliaryEquipmentConstants.FlarePrefabHash, aup, lifetimeSeconds, 0f, default, false);
         }
 
         public static bool TryCancelFlare(Vector3 runtimePosition, float radiusMeters = 2f)
@@ -114,7 +122,7 @@ namespace Hecton8.Equipment.Auxiliary
         public static bool TryDeploySensorPingAup(double3 aup, float lifetimeSeconds = -1f, float maxRadiusMeters = -1f)
         {
             return TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime) &&
-                   runtime.TryDeployAup(AuxiliaryEquipmentConstants.SensorPingPrefabHash, aup, lifetimeSeconds, maxRadiusMeters);
+                   runtime.TryDeployAup(AuxiliaryEquipmentConstants.SensorPingPrefabHash, aup, lifetimeSeconds, maxRadiusMeters, default, false);
         }
 
         public static bool TryDeployGravityTether(Vector3 projectilePosition, Vector3 anchorPosition, float lifetimeSeconds = -1f)
@@ -130,11 +138,14 @@ namespace Hecton8.Equipment.Auxiliary
 
         public static bool TryDeployGravityTetherAup(double3 projectileAup, double3 anchorAup, float lifetimeSeconds = -1f)
         {
-            if (!TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime))
+            if (!math.all(math.isfinite(projectileAup)) ||
+                !math.all(math.isfinite(anchorAup)) ||
+                !TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime))
+            {
                 return false;
+            }
 
-            runtime._lastTetherAnchorAup = anchorAup;
-            return runtime.TryDeployAup(AuxiliaryEquipmentConstants.GravityTetherPrefabHash, projectileAup, lifetimeSeconds, 0f);
+            return runtime.TryDeployAup(AuxiliaryEquipmentConstants.GravityTetherPrefabHash, projectileAup, lifetimeSeconds, 0f, anchorAup, true);
         }
 
         public static bool TryCancelGravityTether(Vector3 runtimePosition, float radiusMeters = 2f)
@@ -151,6 +162,38 @@ namespace Hecton8.Equipment.Auxiliary
                    runtime.TryCancelNearest(prefabHash, aup, radiusMeters);
         }
 
+        public static bool TryReadNearestRemainingLifetime(uint prefabHash, Vector3 runtimePosition, float radiusMeters, out float remainingLifetime)
+        {
+            remainingLifetime = 0f;
+            if (!TryResolveAupDoubleFromRuntimeOrigin(runtimePosition, out double3 aup))
+                return false;
+
+            return TryReadNearestRemainingLifetimeAup(prefabHash, aup, radiusMeters, out remainingLifetime);
+        }
+
+        public static bool TryReadNearestRemainingLifetimeAup(uint prefabHash, double3 aup, float radiusMeters, out float remainingLifetime)
+        {
+            remainingLifetime = 0f;
+            return TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime) &&
+                   runtime.TryFindNearestRemaining(prefabHash, aup, radiusMeters, out remainingLifetime);
+        }
+
+        public static bool TryReadVfxGraphicsBuffer(out GraphicsBuffer buffer, out int activeCount)
+        {
+            buffer = null;
+            activeCount = 0;
+            if (!TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime) ||
+                runtime._vfxGpuReadBuffer == null ||
+                !runtime._vfxGpuReadBuffer.IsValid())
+            {
+                return false;
+            }
+
+            buffer = runtime._vfxGpuReadBuffer;
+            activeCount = runtime._lastVfxUploadCount;
+            return activeCount > 0;
+        }
+
         public static bool TrySetPresentationCameraAup(double3 cameraAup)
         {
             if (!TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime) || !math.all(math.isfinite(cameraAup)))
@@ -164,7 +207,7 @@ namespace Hecton8.Equipment.Auxiliary
         {
             latest = default;
             if (!TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime) ||
-                !runtime.TryResolveViews(out AuxiliaryVaultViews views) ||
+                !runtime.TryResolveExistingViews(out AuxiliaryVaultViews views) ||
                 !views.TelemetryRing.IsCreated ||
                 !views.TelemetryCursor.IsCreated ||
                 views.TelemetryRing.Length == 0 ||
@@ -180,18 +223,19 @@ namespace Hecton8.Equipment.Auxiliary
             return true;
         }
 
-        public static bool TryReadDeployments(out NativeArray<DeployedAuxiliaryDTO> deployments, out int activeCount)
+        public static bool TryReadDeployments(out NativeArray<DeployedAuxiliaryDTO>.ReadOnly deployments, out int activeCount)
         {
             deployments = default;
             activeCount = 0;
             if (!TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime) ||
-                !runtime.TryResolveViews(out AuxiliaryVaultViews views) ||
+                runtime._jobActive ||
+                !runtime.TryResolveExistingViews(out AuxiliaryVaultViews views) ||
                 !views.Deployments.IsCreated)
             {
                 return false;
             }
 
-            deployments = views.Deployments;
+            deployments = views.Deployments.AsReadOnly();
             activeCount = runtime.ResolveActiveBound(views);
             return true;
         }
@@ -200,7 +244,7 @@ namespace Hecton8.Equipment.Auxiliary
         {
             tuning = default;
             if (!TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime) ||
-                !runtime.TryResolveViews(out AuxiliaryVaultViews views) ||
+                !runtime.TryResolveExistingViews(out AuxiliaryVaultViews views) ||
                 !views.Tuning.IsCreated ||
                 views.Tuning.Length == 0)
             {
@@ -215,15 +259,30 @@ namespace Hecton8.Equipment.Auxiliary
         {
             if (!TryGetActiveRuntime(out AuxiliaryEquipmentRouterRuntime runtime) ||
                 runtime._jobActive ||
-                !runtime.TryResolveViews(out AuxiliaryVaultViews views) ||
-                !views.Tuning.IsCreated ||
-                views.Tuning.Length == 0)
+                !runtime.TryLockTuningBuffer())
             {
                 return false;
             }
 
-            views.Tuning[0] = tuning;
-            return true;
+            try
+            {
+                IDataVault vault = runtime._dataVault;
+                if (vault == null ||
+                    !IsHandleCreated(in runtime._tuningHandle) ||
+                    !vault.TryResolveHandle(in runtime._tuningHandle, out NativeArray<AuxiliaryTuningDTO> tuningBuffer) ||
+                    !tuningBuffer.IsCreated ||
+                    tuningBuffer.Length == 0)
+                {
+                    return false;
+                }
+
+                tuningBuffer[0] = tuning;
+                return true;
+            }
+            finally
+            {
+                runtime.UnlockTuningBuffer();
+            }
         }
 
         public bool GenerateMockDeployments()
@@ -231,18 +290,28 @@ namespace Hecton8.Equipment.Auxiliary
             if (_jobActive || !EnsureRuntimeReady())
                 return false;
 
-            if (!TryResolveViews(out AuxiliaryVaultViews views) || !TryLockRuntimeBuffers())
+            if (!TryLockRuntimeBuffers())
                 return false;
 
+            bool scheduled = false;
             try
             {
+                if (!TryResolveExistingViews(out AuxiliaryVaultViews views))
+                    return false;
+
                 AuxiliaryTuningDTO tuning = ResolveTuning(views);
-                double3 origin = GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+                _lastQualityWeight = ResolveQualityWeight(tuning);
+                _lastCadenceHz = AuxiliaryEquipmentMath.ResolveCadenceHz(_lastQualityWeight, in tuning);
+                _lastCameraAup = ResolveCameraAup();
+                double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
                 GenerateMockAuxiliaryDeploymentsJob job = new GenerateMockAuxiliaryDeploymentsJob
                 {
                     Deployments = views.Deployments,
                     States = views.States,
+                    TetherAnchors = views.TetherAnchors,
                     ActiveEquipment = views.ActiveEquipment,
+                    RouteCounters = views.RouteCounters,
+                    VfxMatrices = views.VfxMatrices,
                     ActiveCount = views.ActiveCount,
                     Tuning = tuning,
                     OriginAup = origin,
@@ -250,24 +319,36 @@ namespace Hecton8.Equipment.Auxiliary
                     FrameIndex = _frameIndex
                 };
 
+                StageAuxiliaryVFXJob vfxJob = new StageAuxiliaryVFXJob
+                {
+                    Deployments = views.Deployments,
+                    States = views.States,
+                    ActiveCount = views.ActiveCount,
+                    VfxMatrices = views.VfxMatrices,
+                    CameraAup = _lastCameraAup,
+                    GlobalQualityWeight = _lastQualityWeight,
+                    VfxScale = tuning.VfxScale
+                };
+
+                _pendingStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
                 JobHandle mockHandle = job.Schedule(deploymentCapacity, JobBatchSize);
-                H8Memory.RegisterActiveJob(SystemID.GameplayTools, mockHandle);
-                // COLD SYNC JOB: cold mock deployments must exist before the first auxiliary runtime tick consumes them.
-                DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
+                _pendingHandle = vfxJob.Schedule(deploymentCapacity, JobBatchSize, mockHandle);
+                H8Memory.RegisterActiveJob(SystemID.GameplayTools, _pendingHandle);
+                _jobActive = true;
+                scheduled = true;
                 return true;
             }
             finally
             {
-                UnlockRuntimeBuffers();
+                if (!scheduled)
+                    UnlockRuntimeBuffers();
             }
         }
 
         private void OnEnable()
         {
             s_activeRuntime = this;
-            _dataVault = GlobalRegistry.DataVault;
-            EnsureSignalLanes();
-            EnsureRuntimeReady();
+            InitializeService(GlobalRegistry.DataVault);
             if (!registerWithDispatcher)
                 return;
 
@@ -294,12 +375,28 @@ namespace Hecton8.Equipment.Auxiliary
                 s_activeRuntime = null;
 
             ReleaseOwnedVaultHandles();
+            ReleaseGraphicsBuffer(ref _vfxGpuBufferA);
+            ReleaseGraphicsBuffer(ref _vfxGpuBufferB);
+            _vfxGpuReadBuffer = null;
+            _lastVfxUploadCount = 0;
+            _lastVfxUploadHash = 0u;
+            _vfxUploadValid = false;
             _buffersReady = false;
+            _profilesLoaded = false;
+        }
+
+        public void InitializeService(IDataVault dataVault)
+        {
+            if (dataVault != null)
+                _dataVault = dataVault;
+
+            EnsureSignalLanes();
+            EnsureRuntimeReady();
         }
 
         public void Tick(float deltaTime)
         {
-            if (_jobActive || !EnsureRuntimeReady())
+            if (_jobActive || !_buffersReady)
                 return;
 
             if (seedMockDataOnColdBoot && !_mockSeeded)
@@ -308,8 +405,14 @@ namespace Hecton8.Equipment.Auxiliary
                 return;
             }
 
-            if (!TryResolveViews(out AuxiliaryVaultViews views) || !TryLockRuntimeBuffers())
+            if (!TryLockRuntimeBuffers())
                 return;
+
+            if (!TryResolveExistingViews(out AuxiliaryVaultViews views))
+            {
+                UnlockRuntimeBuffers();
+                return;
+            }
 
             AuxiliaryTuningDTO tuning = ResolveTuning(views);
             _lastQualityWeight = ResolveQualityWeight(tuning);
@@ -320,14 +423,14 @@ namespace Hecton8.Equipment.Auxiliary
             {
                 Deployments = views.Deployments,
                 States = views.States,
+                TetherAnchors = views.TetherAnchors,
                 ActiveEquipment = views.ActiveEquipment,
                 RouteCounters = views.RouteCounters,
                 ActiveCount = views.ActiveCount,
-                FlareWriter = SignalBus<AuxiliaryFlareLightSignal>.ParallelWriter,
-                SonarWriter = SignalBus<AuxiliarySonarRequestSignal>.ParallelWriter,
-                TetherWriter = SignalBus<AuxiliaryTetherConnectionSignal>.ParallelWriter,
+                FlareWriter = SignalBus<AuxiliaryFlareLightSignal>.OpenParallelWriter(),
+                SonarWriter = SignalBus<AuxiliarySonarRequestSignal>.OpenParallelWriter(),
+                TetherWriter = SignalBus<AuxiliaryTetherConnectionSignal>.OpenParallelWriter(),
                 Tuning = tuning,
-                TetherAnchorAup = _lastTetherAnchorAup,
                 FrameIndex = _frameIndex,
                 SimulationDeltaTime = deltaTime,
                 GlobalQualityWeight = _lastQualityWeight
@@ -356,18 +459,29 @@ namespace Hecton8.Equipment.Auxiliary
             TryFinalizePendingJobNoWait();
         }
 
-        private bool TryDeployAup(uint prefabHash, double3 aup, float lifetimeSeconds, float scalar0)
+        private bool TryDeployAup(uint prefabHash, double3 aup, float lifetimeSeconds, float scalar0, double3 tetherAnchorAup, bool hasTetherAnchor)
         {
-            if (_jobActive || !math.all(math.isfinite(aup)) || !EnsureRuntimeReady() || !TryResolveViews(out AuxiliaryVaultViews views))
+            if (_jobActive ||
+                !_buffersReady ||
+                !math.all(math.isfinite(aup)) ||
+                (hasTetherAnchor && !math.all(math.isfinite(tetherAnchorAup))))
+            {
                 return false;
+            }
 
             if (!TryLockRuntimeBuffers())
                 return false;
 
             try
             {
+                if (!TryResolveExistingViews(out AuxiliaryVaultViews views))
+                    return false;
+
                 AuxiliaryTuningDTO tuning = ResolveTuning(views);
-                float baseLifetime = lifetimeSeconds > 0f ? lifetimeSeconds : AuxiliaryEquipmentMath.ResolveBaseLifetime(prefabHash, in tuning);
+                float authoredLifetime = lifetimeSeconds > 0f && math.isfinite(lifetimeSeconds)
+                    ? lifetimeSeconds
+                    : AuxiliaryEquipmentMath.ResolveBaseLifetime(prefabHash, in tuning);
+                float baseLifetime = AuxiliaryEquipmentMath.SanitizePositive(authoredLifetime, AuxiliaryEquipmentMath.ResolveBaseLifetime(prefabHash, in tuning));
                 float scalar = scalar0 > 0f && math.isfinite(scalar0) ? scalar0 : ResolveDefaultScalar(prefabHash, in tuning);
                 int slot = FindDeploymentSlot(views.Deployments, ResolveActiveBound(views));
                 if (slot < 0)
@@ -385,6 +499,16 @@ namespace Hecton8.Equipment.Auxiliary
                     AccumulatedDelta = 0f,
                     Flags = AuxiliaryEquipmentMath.ResolveKindFlags(prefabHash)
                 };
+                if ((uint)slot < (uint)views.TetherAnchors.Length)
+                {
+                    views.TetherAnchors[slot] = hasTetherAnchor
+                        ? new AuxiliaryTetherAnchorDTO
+                        {
+                            AnchorAup = tetherAnchorAup,
+                            Flags = AuxiliaryEquipmentFlags.Active | AuxiliaryEquipmentFlags.GravityTether
+                        }
+                        : default;
+                }
 
                 if (views.ActiveCount.IsCreated && views.ActiveCount.Length > 0 && views.ActiveCount[0] <= slot)
                     views.ActiveCount[0] = slot + 1;
@@ -399,7 +523,7 @@ namespace Hecton8.Equipment.Auxiliary
 
         private bool TryCancelNearest(uint prefabHash, double3 aup, float radiusMeters)
         {
-            if (_jobActive || prefabHash == 0u || !math.all(math.isfinite(aup)) || !EnsureRuntimeReady() || !TryResolveViews(out AuxiliaryVaultViews views))
+            if (_jobActive || !_buffersReady || prefabHash == 0u || !math.all(math.isfinite(aup)))
                 return false;
 
             if (!TryLockRuntimeBuffers())
@@ -407,7 +531,10 @@ namespace Hecton8.Equipment.Auxiliary
 
             try
             {
-                double radius = math.max(0.01f, radiusMeters);
+                if (!TryResolveExistingViews(out AuxiliaryVaultViews views))
+                    return false;
+
+                double radius = AuxiliaryEquipmentMath.SanitizePositive(radiusMeters, 0.01f);
                 double bestSq = radius * radius;
                 int best = -1;
                 int length = ResolveActiveBound(views);
@@ -432,6 +559,8 @@ namespace Hecton8.Equipment.Auxiliary
                 views.Deployments[best] = default;
                 if ((uint)best < (uint)views.States.Length)
                     views.States[best] = default;
+                if ((uint)best < (uint)views.TetherAnchors.Length)
+                    views.TetherAnchors[best] = default;
                 if ((uint)best < (uint)views.ActiveEquipment.Length)
                     views.ActiveEquipment[best] = default;
 
@@ -442,6 +571,35 @@ namespace Hecton8.Equipment.Auxiliary
             {
                 UnlockRuntimeBuffers();
             }
+        }
+
+        private bool TryFindNearestRemaining(uint prefabHash, double3 aup, float radiusMeters, out float remainingLifetime)
+        {
+            remainingLifetime = 0f;
+            if (_jobActive || !_buffersReady || prefabHash == 0u || !math.all(math.isfinite(aup)) || !TryResolveExistingViews(out AuxiliaryVaultViews views))
+                return false;
+
+            double radius = AuxiliaryEquipmentMath.SanitizePositive(radiusMeters, 0.01f);
+            double bestSq = radius * radius;
+            float bestLifetime = 0f;
+            int length = ResolveActiveBound(views);
+            for (int i = 0; i < length; i++)
+            {
+                DeployedAuxiliaryDTO deployment = views.Deployments[i];
+                if (deployment.PrefabHashID != prefabHash || deployment.RemainingLifetime <= 0f)
+                    continue;
+
+                double3 delta = deployment.AUP_Position - aup;
+                double sq = math.dot(delta, delta);
+                if (math.isfinite(sq) && sq <= bestSq)
+                {
+                    bestSq = sq;
+                    bestLifetime = deployment.RemainingLifetime;
+                }
+            }
+
+            remainingLifetime = bestLifetime;
+            return bestLifetime > 0f;
         }
 
         private void CompactActiveCount(AuxiliaryVaultViews views)
@@ -514,10 +672,11 @@ namespace Hecton8.Equipment.Auxiliary
             _jobActive = false;
             _frameIndex = _frameIndex == uint.MaxValue ? 1u : _frameIndex + 1u;
 
-            if (TryResolveViews(out AuxiliaryVaultViews views))
+            if (TryResolveExistingViews(out AuxiliaryVaultViews views))
             {
                 CompactActiveCount(views);
-                RecordAuxiliaryTelemetryJob telemetryJob = new RecordAuxiliaryTelemetryJob
+                UploadVfxMatricesToGpu(views);
+                RecordAuxiliaryTelemetryPass telemetryPass = new RecordAuxiliaryTelemetryPass
                 {
                     Deployments = views.Deployments,
                     RouteCounters = views.RouteCounters,
@@ -527,9 +686,12 @@ namespace Hecton8.Equipment.Auxiliary
                     FrameIndex = _frameIndex,
                     EffectiveCadenceHz = _lastCadenceHz,
                     CpuMicroseconds = cpuMicroseconds,
-                    GlobalQualityWeight = _lastQualityWeight
+                    GlobalQualityWeight = _lastQualityWeight,
+                    LaneDroppedSignals = ResolveLaneDroppedSignals(),
+                    LaneCorruptedSignals = ResolveLaneCorruptedSignals(),
+                    LanePeakQueuedSignals = ResolveLanePeakQueuedSignals()
                 };
-                telemetryJob.Execute();
+                telemetryPass.Execute();
                 if (cpuMicroseconds > AuxiliaryEquipmentConstants.FaultDumpThresholdMicroseconds ||
                     TryLatestTelemetryHasFault(views.TelemetryRing, views.TelemetryCursor))
                 {
@@ -543,42 +705,363 @@ namespace Hecton8.Equipment.Auxiliary
         private bool EnsureRuntimeReady()
         {
             if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
-            if (_dataVault == null)
                 return false;
 
             EnsureSignalLanes();
-            if (_buffersReady && TryResolveViews(out _))
-                return true;
+            if (_buffersReady)
+                return TryResolveExistingViews(out _);
 
-            bool ok = TryResolveViews(out AuxiliaryVaultViews views);
+            bool ok = TryAcquireViews(out AuxiliaryVaultViews views);
             if (!ok)
                 return false;
 
             if (views.Tuning.IsCreated && views.Tuning.Length > 0 && views.Tuning[0].FlareBaseLifetime <= 0f)
                 views.Tuning[0] = AuxiliaryTuningDTO.CreateDefault(ResolveQualityWeight(default));
 
+            TryLoadProfilesCold(views);
+            EnsureVfxGraphicsBuffer(math.clamp(deploymentCapacity, 64, AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries));
             _buffersReady = true;
             return true;
+        }
+
+        private bool EnsureVfxGraphicsBuffer(int capacity)
+        {
+            if (IsValidVfxBuffer(_vfxGpuBufferA, capacity) &&
+                IsValidVfxBuffer(_vfxGpuBufferB, capacity))
+            {
+                return true;
+            }
+
+            ReleaseGraphicsBuffer(ref _vfxGpuBufferA);
+            ReleaseGraphicsBuffer(ref _vfxGpuBufferB);
+            _vfxGpuReadBuffer = null;
+            _lastVfxUploadCount = 0;
+            _lastVfxUploadHash = 0u;
+            _vfxUploadValid = false;
+            _vfxGpuWriteIndex = 0;
+
+            _vfxGpuBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<AuxiliaryVfxMatrixDTO>(capacity);
+            _vfxGpuBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<AuxiliaryVfxMatrixDTO>(capacity);
+            return IsValidVfxBuffer(_vfxGpuBufferA, capacity) &&
+                   IsValidVfxBuffer(_vfxGpuBufferB, capacity);
+        }
+
+        private void UploadVfxMatricesToGpu(in AuxiliaryVaultViews views)
+        {
+            int capacity = math.clamp(deploymentCapacity, 64, AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries);
+            if (!views.VfxMatrices.IsCreated ||
+                !IsValidVfxBuffer(_vfxGpuBufferA, capacity) ||
+                !IsValidVfxBuffer(_vfxGpuBufferB, capacity))
+            {
+                _lastVfxUploadCount = 0;
+                return;
+            }
+
+            int count = ResolveActiveBound(views);
+            if (count <= 0)
+            {
+                _vfxGpuReadBuffer = null;
+                _lastVfxUploadCount = 0;
+                _vfxUploadValid = false;
+                return;
+            }
+
+            int previousUploadCount = _lastVfxUploadCount;
+            uint snapshotHash = ResolveVfxSnapshotHash(views.Deployments, count);
+            if (_vfxUploadValid &&
+                previousUploadCount == count &&
+                _lastVfxUploadHash == snapshotHash &&
+                _lastUploadedVfxQualityWeight == _lastQualityWeight &&
+                math.all(_lastUploadedVfxCameraAup == _lastCameraAup))
+            {
+                _lastVfxUploadCount = count;
+                return;
+            }
+
+            GraphicsBuffer target = _vfxGpuWriteIndex == 0 ? _vfxGpuBufferA : _vfxGpuBufferB;
+            GraphicsBufferUploadUtility.UploadNativeArray(target, views.VfxMatrices, count);
+            _vfxGpuReadBuffer = target;
+            _vfxGpuWriteIndex ^= 1;
+            _lastVfxUploadCount = math.min(count, target.count);
+            _lastVfxUploadHash = snapshotHash;
+            _lastUploadedVfxCameraAup = _lastCameraAup;
+            _lastUploadedVfxQualityWeight = _lastQualityWeight;
+            _vfxUploadValid = true;
+        }
+
+        private static bool IsValidVfxBuffer(GraphicsBuffer buffer, int capacity)
+        {
+            return buffer != null &&
+                   buffer.IsValid() &&
+                   buffer.count >= capacity &&
+                   buffer.stride == UnsafeUtility.SizeOf<AuxiliaryVfxMatrixDTO>();
+        }
+
+        private static uint ResolveVfxSnapshotHash(NativeArray<DeployedAuxiliaryDTO> deployments, int count)
+        {
+            if (!deployments.IsCreated || count <= 0)
+                return 0u;
+
+            uint hash = 2166136261u;
+            int length = math.min(count, deployments.Length);
+            for (int i = 0; i < length; i++)
+            {
+                DeployedAuxiliaryDTO deployment = deployments[i];
+                hash = (hash ^ (uint)i) * 16777619u;
+                if (deployment.PrefabHashID == 0u ||
+                    deployment.RemainingLifetime <= 0f ||
+                    !math.all(math.isfinite(deployment.AUP_Position)))
+                {
+                    hash = (hash ^ 0x9E3779B9u) * 16777619u;
+                    continue;
+                }
+
+                hash = (hash ^ deployment.PrefabHashID) * 16777619u;
+                hash = (hash ^ math.hash(deployment.AUP_Position)) * 16777619u;
+            }
+
+            return hash;
+        }
+
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
+        }
+
+        private bool TryLoadProfilesCold(in AuxiliaryVaultViews views)
+        {
+            if (_profilesLoaded)
+                return true;
+            if (!views.Profiles.IsCreated || views.Profiles.Length == 0 || !views.Tuning.IsCreated || views.Tuning.Length == 0)
+                return false;
+
+            AuxiliaryCsvParseResult result = default;
+            bool parsed = false;
+#if UNITY_EDITOR
+            if (views.CsvScratch.IsCreated && views.CsvScratch.Length > 0)
+            {
+                string path = Path.Combine(Application.dataPath, "_SourceData", "Equipment", "Auxiliary", ProfilesCsvFileName);
+                int byteCount = TryReadProfilesFileIntoScratch(path, views.CsvScratch);
+                if (byteCount > 0)
+                {
+                    unsafe
+                    {
+                        byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.CsvScratch);
+                        parsed = AuxiliaryEquipmentProfilesCsvParser.TryApplyProfilesCsv(
+                            new ReadOnlySpan<byte>(ptr, byteCount),
+                            views.Profiles,
+                            out result);
+                    }
+
+                    ClearProfileTail(views.Profiles, result.ParsedRows);
+                }
+            }
+#endif
+
+            if (!parsed)
+            {
+                SeedFallbackProfiles(views.Profiles, ResolveTuning(views), out result);
+                parsed = true;
+            }
+
+            if (parsed)
+                ApplyProfilesToTuning(views.Profiles, result.ParsedRows, views.Tuning);
+
+            _lastCsvParseResult = result;
+            _profilesLoaded = parsed;
+            return parsed;
+        }
+
+        private static unsafe int TryReadProfilesFileIntoScratch(string path, NativeArray<byte> scratch)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path) || !scratch.IsCreated || scratch.Length == 0)
+                return 0;
+
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    int limit = stream.Length > scratch.Length ? scratch.Length : (int)stream.Length;
+                    if (limit <= 0)
+                        return 0;
+
+                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                    int total = 0;
+                    while (total < limit)
+                    {
+                        int value = stream.ReadByte();
+                        if (value < 0)
+                            break;
+
+                        ptr[total] = (byte)value;
+                        total++;
+                    }
+
+                    return total;
+                }
+            }
+            catch (IOException)
+            {
+                return 0;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return 0;
+            }
+        }
+
+        private static void ClearProfileTail(NativeArray<AuxiliaryProfileDTO> profiles, int parsedRows)
+        {
+            if (!profiles.IsCreated)
+                return;
+
+            int start = math.clamp(parsedRows, 0, profiles.Length);
+            for (int i = start; i < profiles.Length; i++)
+                profiles[i] = default;
+        }
+
+        private static void SeedFallbackProfiles(
+            NativeArray<AuxiliaryProfileDTO> profiles,
+            in AuxiliaryTuningDTO tuning,
+            out AuxiliaryCsvParseResult result)
+        {
+            result = default;
+            if (!profiles.IsCreated || profiles.Length == 0)
+            {
+                result.FaultFlags = AuxiliaryEquipmentFlags.Faulted;
+                return;
+            }
+
+            for (int i = 0; i < profiles.Length; i++)
+                profiles[i] = default;
+
+            int count = 0;
+            WriteFallbackProfile(
+                profiles,
+                ref count,
+                0xA11CF1A9u,
+                AuxiliaryEquipmentConstants.FlarePrefabHash,
+                AuxiliaryEquipmentMath.SanitizePositive(tuning.FlareBaseLifetime, 60f),
+                AuxiliaryEquipmentMath.SanitizeNonNegative(tuning.FlareIntensity, 3f),
+                AuxiliaryEquipmentMath.SanitizeNonNegative(tuning.FlareRange, 15f));
+            WriteFallbackProfile(
+                profiles,
+                ref count,
+                0xA11C51A7u,
+                AuxiliaryEquipmentConstants.SensorPingPrefabHash,
+                AuxiliaryEquipmentMath.SanitizePositive(tuning.PingBaseLifetime, 8f),
+                AuxiliaryEquipmentMath.SanitizeNonNegative(tuning.PingMaxRadius, 96f),
+                AuxiliaryEquipmentMath.SanitizeNonNegative(tuning.PingExpansionRate, 24f));
+            WriteFallbackProfile(
+                profiles,
+                ref count,
+                0xA11C7E77u,
+                AuxiliaryEquipmentConstants.GravityTetherPrefabHash,
+                AuxiliaryEquipmentMath.SanitizePositive(tuning.TetherBaseLifetime, 12f),
+                AuxiliaryEquipmentMath.SanitizeNonNegative(tuning.TetherMaxDistance, 60f),
+                0f);
+
+            result.ParsedRows = count;
+            result.LastProfileHash = count > 0 ? profiles[count - 1].ProfileHash : 0u;
+            result.FaultFlags = count > 0 ? 0u : AuxiliaryEquipmentFlags.Faulted;
+        }
+
+        private static void WriteFallbackProfile(
+            NativeArray<AuxiliaryProfileDTO> profiles,
+            ref int count,
+            uint profileHash,
+            uint prefabHash,
+            float lifetime,
+            float scalar0,
+            float scalar1)
+        {
+            if ((uint)count >= (uint)profiles.Length)
+                return;
+
+            profiles[count] = new AuxiliaryProfileDTO
+            {
+                ProfileHash = profileHash,
+                PrefabHashID = prefabHash,
+                Lifetime = lifetime,
+                Scalar0 = scalar0,
+                Scalar1 = scalar1,
+                Flags = AuxiliaryEquipmentMath.ResolveKindFlags(prefabHash)
+            };
+            count++;
+        }
+
+        private static void ApplyProfilesToTuning(
+            NativeArray<AuxiliaryProfileDTO> profiles,
+            int profileCount,
+            NativeArray<AuxiliaryTuningDTO> tuningBuffer)
+        {
+            if (!profiles.IsCreated || !tuningBuffer.IsCreated || tuningBuffer.Length == 0)
+                return;
+
+            AuxiliaryTuningDTO tuning = tuningBuffer[0];
+            int count = math.clamp(profileCount, 0, profiles.Length);
+            for (int i = 0; i < count; i++)
+            {
+                AuxiliaryProfileDTO profile = profiles[i];
+                if (profile.PrefabHashID == AuxiliaryEquipmentConstants.FlarePrefabHash)
+                {
+                    tuning.FlareBaseLifetime = AuxiliaryEquipmentMath.SanitizePositive(profile.Lifetime, tuning.FlareBaseLifetime);
+                    tuning.FlareIntensity = AuxiliaryEquipmentMath.SanitizeNonNegative(profile.Scalar0, tuning.FlareIntensity);
+                    tuning.FlareRange = AuxiliaryEquipmentMath.SanitizeNonNegative(profile.Scalar1, tuning.FlareRange);
+                }
+                else if (profile.PrefabHashID == AuxiliaryEquipmentConstants.SensorPingPrefabHash)
+                {
+                    tuning.PingBaseLifetime = AuxiliaryEquipmentMath.SanitizePositive(profile.Lifetime, tuning.PingBaseLifetime);
+                    tuning.PingMaxRadius = AuxiliaryEquipmentMath.SanitizeNonNegative(profile.Scalar0, tuning.PingMaxRadius);
+                    tuning.PingExpansionRate = AuxiliaryEquipmentMath.SanitizeNonNegative(profile.Scalar1, tuning.PingExpansionRate);
+                }
+                else if (profile.PrefabHashID == AuxiliaryEquipmentConstants.GravityTetherPrefabHash)
+                {
+                    tuning.TetherBaseLifetime = AuxiliaryEquipmentMath.SanitizePositive(profile.Lifetime, tuning.TetherBaseLifetime);
+                    tuning.TetherMaxDistance = AuxiliaryEquipmentMath.SanitizeNonNegative(profile.Scalar0, tuning.TetherMaxDistance);
+                }
+            }
+
+            tuningBuffer[0] = tuning;
         }
 
         private void EnsureSignalLanes()
         {
             if (_signalLanesReady)
                 return;
-            if (GlobalRegistry.DataVault == null && !GlobalDataVault.TryGetLatestCreated(out _))
+            if (_dataVault == null)
                 return;
 
-            SignalBus<AuxiliaryFlareLightSignal>.Configure(256, 2048, 64, AuxiliaryEquipmentConstants.FlareLightLaneHash);
-            SignalBus<AuxiliarySonarRequestSignal>.Configure(256, 2048, 32, AuxiliaryEquipmentConstants.SensorPingLaneHash);
-            SignalBus<AuxiliaryTetherConnectionSignal>.Configure(128, 1024, 16, AuxiliaryEquipmentConstants.TetherLaneHash);
+            const int maxAuxiliarySignalsPerFrame = AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries;
+            const int lowTierFlareSignalsPerFrame = 64;
+            const int lowTierSonarSignalsPerFrame = 32;
+            const int lowTierTetherSignalsPerFrame = 16;
+            SignalBus<AuxiliaryFlareLightSignal>.Configure(
+                expectedCapacity: maxAuxiliarySignalsPerFrame,
+                maxFrameSignals: maxAuxiliarySignalsPerFrame,
+                lowTierFrameSignals: lowTierFlareSignalsPerFrame,
+                laneHash: AuxiliaryEquipmentConstants.FlareLightLaneHash);
+            SignalBus<AuxiliarySonarRequestSignal>.Configure(
+                expectedCapacity: maxAuxiliarySignalsPerFrame,
+                maxFrameSignals: maxAuxiliarySignalsPerFrame,
+                lowTierFrameSignals: lowTierSonarSignalsPerFrame,
+                laneHash: AuxiliaryEquipmentConstants.SensorPingLaneHash);
+            SignalBus<AuxiliaryTetherConnectionSignal>.Configure(
+                expectedCapacity: maxAuxiliarySignalsPerFrame,
+                maxFrameSignals: maxAuxiliarySignalsPerFrame,
+                lowTierFrameSignals: lowTierTetherSignalsPerFrame,
+                laneHash: AuxiliaryEquipmentConstants.TetherLaneHash);
             SignalBus<AuxiliaryFlareLightSignal>.EnsureInitialized();
             SignalBus<AuxiliarySonarRequestSignal>.EnsureInitialized();
             SignalBus<AuxiliaryTetherConnectionSignal>.EnsureInitialized();
             _signalLanesReady = true;
         }
 
-        private bool TryResolveViews(out AuxiliaryVaultViews views)
+        private bool TryAcquireViews(out AuxiliaryVaultViews views)
         {
             views = default;
             IDataVault vault = _dataVault;
@@ -586,20 +1069,43 @@ namespace Hecton8.Equipment.Auxiliary
                 return false;
 
             int capacity = math.clamp(deploymentCapacity, 64, AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries);
-            return TryResolveOrAcquire(vault, ref _deploymentsHandle, AuxiliaryEquipmentVaultIds.Deployments, capacity, NativeArrayOptions.UninitializedMemory, out views.Deployments) &&
-                   TryResolveOrAcquire(vault, ref _statesHandle, AuxiliaryEquipmentVaultIds.States, capacity, NativeArrayOptions.UninitializedMemory, out views.States) &&
-                   TryResolveOrAcquire(vault, ref _activeCountHandle, AuxiliaryEquipmentVaultIds.ActiveCount, 1, NativeArrayOptions.ClearMemory, out views.ActiveCount) &&
-                   TryResolveOrAcquire(vault, ref _tuningHandle, AuxiliaryEquipmentVaultIds.Tuning, 1, NativeArrayOptions.ClearMemory, out views.Tuning) &&
-                   TryResolveOrAcquire(vault, ref _routeCountersHandle, AuxiliaryEquipmentVaultIds.RouteCounters, capacity, NativeArrayOptions.UninitializedMemory, out views.RouteCounters) &&
-                   TryResolveOrAcquire(vault, ref _vfxMatricesHandle, AuxiliaryEquipmentVaultIds.VfxMatrices, capacity, NativeArrayOptions.UninitializedMemory, out views.VfxMatrices) &&
-                   TryResolveOrAcquire(vault, ref _telemetryRingHandle, AuxiliaryEquipmentVaultIds.TelemetryRing, AuxiliaryEquipmentConstants.TelemetryFrameCount, NativeArrayOptions.ClearMemory, out views.TelemetryRing) &&
-                   TryResolveOrAcquire(vault, ref _telemetryCursorHandle, AuxiliaryEquipmentVaultIds.TelemetryCursor, 1, NativeArrayOptions.ClearMemory, out views.TelemetryCursor) &&
-                   TryResolveOrAcquire(vault, ref _profilesHandle, AuxiliaryEquipmentVaultIds.Profiles, AuxiliaryEquipmentConstants.ProfileCapacity, NativeArrayOptions.UninitializedMemory, out views.Profiles) &&
-                   TryResolveOrAcquire(vault, ref _csvScratchHandle, AuxiliaryEquipmentVaultIds.CsvScratch, AuxiliaryEquipmentConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out views.CsvScratch) &&
-                   TryResolveOrAcquire(vault, ref _activeEquipmentHandle, AuxiliaryEquipmentVaultIds.ActiveEquipmentState, capacity, NativeArrayOptions.UninitializedMemory, out views.ActiveEquipment);
+            return AcquireOrRefresh(vault, ref _deploymentsHandle, AuxiliaryEquipmentVaultIds.Deployments, capacity, NativeArrayOptions.UninitializedMemory, out views.Deployments) &&
+                   AcquireOrRefresh(vault, ref _statesHandle, AuxiliaryEquipmentVaultIds.States, capacity, NativeArrayOptions.UninitializedMemory, out views.States) &&
+                   AcquireOrRefresh(vault, ref _tetherAnchorsHandle, AuxiliaryEquipmentVaultIds.TetherAnchors, capacity, NativeArrayOptions.UninitializedMemory, out views.TetherAnchors) &&
+                   AcquireOrRefresh(vault, ref _activeCountHandle, AuxiliaryEquipmentVaultIds.ActiveCount, 1, NativeArrayOptions.ClearMemory, out views.ActiveCount) &&
+                   AcquireOrRefresh(vault, ref _tuningHandle, AuxiliaryEquipmentVaultIds.Tuning, 1, NativeArrayOptions.ClearMemory, out views.Tuning) &&
+                   AcquireOrRefresh(vault, ref _routeCountersHandle, AuxiliaryEquipmentVaultIds.RouteCounters, capacity, NativeArrayOptions.UninitializedMemory, out views.RouteCounters) &&
+                   AcquireOrRefresh(vault, ref _vfxMatricesHandle, AuxiliaryEquipmentVaultIds.VfxMatrices, capacity, NativeArrayOptions.UninitializedMemory, out views.VfxMatrices) &&
+                   AcquireOrRefresh(vault, ref _telemetryRingHandle, AuxiliaryEquipmentVaultIds.TelemetryRing, AuxiliaryEquipmentConstants.TelemetryFrameCount, NativeArrayOptions.ClearMemory, out views.TelemetryRing) &&
+                   AcquireOrRefresh(vault, ref _telemetryCursorHandle, AuxiliaryEquipmentVaultIds.TelemetryCursor, 1, NativeArrayOptions.ClearMemory, out views.TelemetryCursor) &&
+                   AcquireOrRefresh(vault, ref _profilesHandle, AuxiliaryEquipmentVaultIds.Profiles, AuxiliaryEquipmentConstants.ProfileCapacity, NativeArrayOptions.UninitializedMemory, out views.Profiles) &&
+                   AcquireOrRefresh(vault, ref _csvScratchHandle, AuxiliaryEquipmentVaultIds.CsvScratch, AuxiliaryEquipmentConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out views.CsvScratch) &&
+                   AcquireOrRefresh(vault, ref _activeEquipmentHandle, AuxiliaryEquipmentVaultIds.ActiveEquipmentState, capacity, NativeArrayOptions.UninitializedMemory, out views.ActiveEquipment);
         }
 
-        private static bool TryResolveOrAcquire<T>(
+        private bool TryResolveExistingViews(out AuxiliaryVaultViews views)
+        {
+            views = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            int capacity = math.clamp(deploymentCapacity, 64, AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries);
+            return TryResolveExisting(vault, in _deploymentsHandle, capacity, out views.Deployments) &&
+                   TryResolveExisting(vault, in _statesHandle, capacity, out views.States) &&
+                   TryResolveExisting(vault, in _tetherAnchorsHandle, capacity, out views.TetherAnchors) &&
+                   TryResolveExisting(vault, in _activeCountHandle, 1, out views.ActiveCount) &&
+                   TryResolveExisting(vault, in _tuningHandle, 1, out views.Tuning) &&
+                   TryResolveExisting(vault, in _routeCountersHandle, capacity, out views.RouteCounters) &&
+                   TryResolveExisting(vault, in _vfxMatricesHandle, capacity, out views.VfxMatrices) &&
+                   TryResolveExisting(vault, in _telemetryRingHandle, AuxiliaryEquipmentConstants.TelemetryFrameCount, out views.TelemetryRing) &&
+                   TryResolveExisting(vault, in _telemetryCursorHandle, 1, out views.TelemetryCursor) &&
+                   TryResolveExisting(vault, in _profilesHandle, AuxiliaryEquipmentConstants.ProfileCapacity, out views.Profiles) &&
+                   TryResolveExisting(vault, in _csvScratchHandle, AuxiliaryEquipmentConstants.CsvScratchBytes, out views.CsvScratch) &&
+                   TryResolveExisting(vault, in _activeEquipmentHandle, capacity, out views.ActiveEquipment);
+        }
+
+        private static bool AcquireOrRefresh<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -608,6 +1114,7 @@ namespace Hecton8.Equipment.Auxiliary
             out NativeArray<T> buffer)
             where T : struct
         {
+            buffer = default;
             if (IsHandleCreated(in handle) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
@@ -623,6 +1130,20 @@ namespace Hecton8.Equipment.Auxiliary
                    buffer.Length >= requiredLength;
         }
 
+        private static bool TryResolveExisting<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return IsHandleCreated(in handle) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
         private bool TryLockRuntimeBuffers()
         {
             IDataVault vault = _dataVault;
@@ -631,8 +1152,12 @@ namespace Hecton8.Equipment.Auxiliary
 
             if (!vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.Deployments, SystemID.GameplayTools) ||
                 !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.States, SystemID.GameplayTools) ||
+                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.TetherAnchors, SystemID.GameplayTools) ||
+                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.ActiveCount, SystemID.GameplayTools) ||
                 !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.RouteCounters, SystemID.GameplayTools) ||
                 !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.VfxMatrices, SystemID.GameplayTools) ||
+                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.TelemetryRing, SystemID.GameplayTools) ||
+                !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.TelemetryCursor, SystemID.GameplayTools) ||
                 !vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.ActiveEquipmentState, SystemID.GameplayTools))
             {
                 UnlockRuntimeBuffers();
@@ -640,6 +1165,21 @@ namespace Hecton8.Equipment.Auxiliary
             }
 
             return true;
+        }
+
+        private bool TryLockTuningBuffer()
+        {
+            IDataVault vault = _dataVault;
+            return vault != null && vault.TryLockBuffer(AuxiliaryEquipmentVaultIds.Tuning, SystemID.GameplayTools);
+        }
+
+        private void UnlockTuningBuffer()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.Tuning, SystemID.GameplayTools);
         }
 
         private void UnlockRuntimeBuffers()
@@ -650,8 +1190,12 @@ namespace Hecton8.Equipment.Auxiliary
 
             vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.Deployments, SystemID.GameplayTools);
             vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.States, SystemID.GameplayTools);
+            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.TetherAnchors, SystemID.GameplayTools);
+            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.ActiveCount, SystemID.GameplayTools);
             vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.RouteCounters, SystemID.GameplayTools);
             vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.VfxMatrices, SystemID.GameplayTools);
+            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.TelemetryRing, SystemID.GameplayTools);
+            vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.TelemetryCursor, SystemID.GameplayTools);
             vault.TryUnlockBuffer(AuxiliaryEquipmentVaultIds.ActiveEquipmentState, SystemID.GameplayTools);
         }
 
@@ -663,6 +1207,7 @@ namespace Hecton8.Equipment.Auxiliary
 
             ReleaseHandle(vault, ref _deploymentsHandle);
             ReleaseHandle(vault, ref _statesHandle);
+            ReleaseHandle(vault, ref _tetherAnchorsHandle);
             ReleaseHandle(vault, ref _activeCountHandle);
             ReleaseHandle(vault, ref _tuningHandle);
             ReleaseHandle(vault, ref _routeCountersHandle);
@@ -671,7 +1216,7 @@ namespace Hecton8.Equipment.Auxiliary
             ReleaseHandle(vault, ref _telemetryCursorHandle);
             ReleaseHandle(vault, ref _profilesHandle);
             ReleaseHandle(vault, ref _csvScratchHandle);
-            _activeEquipmentHandle = default;
+            ReleaseHandle(vault, ref _activeEquipmentHandle);
         }
 
         private static void ReleaseHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
@@ -699,19 +1244,18 @@ namespace Hecton8.Equipment.Auxiliary
         private static float ResolveDefaultScalar(uint prefabHash, in AuxiliaryTuningDTO tuning)
         {
             if (prefabHash == AuxiliaryEquipmentConstants.FlarePrefabHash)
-                return tuning.FlareIntensity;
+                return AuxiliaryEquipmentMath.SanitizeNonNegative(tuning.FlareIntensity, 3f);
             if (prefabHash == AuxiliaryEquipmentConstants.SensorPingPrefabHash)
-                return tuning.PingMaxRadius;
+                return AuxiliaryEquipmentMath.SanitizeNonNegative(tuning.PingMaxRadius, 96f);
             if (prefabHash == AuxiliaryEquipmentConstants.GravityTetherPrefabHash)
-                return tuning.TetherMaxDistance;
+                return AuxiliaryEquipmentMath.SanitizeNonNegative(tuning.TetherMaxDistance, 60f);
             return 0f;
         }
 
         private static float ResolveQualityWeight(AuxiliaryTuningDTO tuning)
         {
-            float overrideWeight = tuning.GlobalQualityWeight;
-            if (math.isfinite(overrideWeight) && overrideWeight > 0f)
-                return math.saturate(overrideWeight);
+            if ((tuning.Flags & AuxiliaryTuningFlags.OverrideGlobalQualityWeight) != 0u)
+                return AuxiliaryEquipmentMath.Sanitize01(tuning.GlobalQualityWeight, 1f);
 
             float global = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, global, math.isfinite(global)));
@@ -738,6 +1282,41 @@ namespace Hecton8.Equipment.Auxiliary
                 return false;
 
             return (telemetry[latest % telemetry.Length].FaultFlags & AuxiliaryEquipmentFlags.Faulted) != 0u;
+        }
+
+        private static uint ResolveLaneDroppedSignals()
+        {
+            return SaturatingAdd(
+                ToNonNegativeUInt(SignalBus<AuxiliaryFlareLightSignal>.DroppedLastFlush),
+                ToNonNegativeUInt(SignalBus<AuxiliarySonarRequestSignal>.DroppedLastFlush),
+                ToNonNegativeUInt(SignalBus<AuxiliaryTetherConnectionSignal>.DroppedLastFlush));
+        }
+
+        private static uint ResolveLaneCorruptedSignals()
+        {
+            return SaturatingAdd(
+                ToNonNegativeUInt(SignalBus<AuxiliaryFlareLightSignal>.CorruptedSignalTotal),
+                ToNonNegativeUInt(SignalBus<AuxiliarySonarRequestSignal>.CorruptedSignalTotal),
+                ToNonNegativeUInt(SignalBus<AuxiliaryTetherConnectionSignal>.CorruptedSignalTotal));
+        }
+
+        private static uint ResolveLanePeakQueuedSignals()
+        {
+            return SaturatingAdd(
+                ToNonNegativeUInt(SignalBus<AuxiliaryFlareLightSignal>.PeakQueuedLastFlush),
+                ToNonNegativeUInt(SignalBus<AuxiliarySonarRequestSignal>.PeakQueuedLastFlush),
+                ToNonNegativeUInt(SignalBus<AuxiliaryTetherConnectionSignal>.PeakQueuedLastFlush));
+        }
+
+        private static uint ToNonNegativeUInt(int value)
+        {
+            return value <= 0 ? 0u : (uint)value;
+        }
+
+        private static uint SaturatingAdd(uint a, uint b, uint c)
+        {
+            ulong sum = (ulong)a + b + c;
+            return sum > uint.MaxValue ? uint.MaxValue : (uint)sum;
         }
 
         private unsafe void TryDumpTelemetry(NativeArray<AuxiliaryTelemetryEntry> telemetry)
@@ -774,6 +1353,7 @@ namespace Hecton8.Equipment.Auxiliary
         {
             public NativeArray<DeployedAuxiliaryDTO> Deployments;
             public NativeArray<AuxiliaryStateDTO> States;
+            public NativeArray<AuxiliaryTetherAnchorDTO> TetherAnchors;
             public NativeArray<int> ActiveCount;
             public NativeArray<AuxiliaryTuningDTO> Tuning;
             public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;
@@ -782,7 +1362,7 @@ namespace Hecton8.Equipment.Auxiliary
             public NativeArray<int> TelemetryCursor;
             public NativeArray<AuxiliaryProfileDTO> Profiles;
             public NativeArray<byte> CsvScratch;
-            public NativeArray<ActiveEquipmentDTO> ActiveEquipment;
+            public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;
         }
     }
 }

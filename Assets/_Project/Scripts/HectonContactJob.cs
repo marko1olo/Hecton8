@@ -10,7 +10,7 @@ namespace Hecton8.Physics
     {
         internal struct InelasticImpactResult
         {
-            public bool ExceedsYield;
+            public byte ExceedsYield;
             public float RelativeSpeedMetersPerSecond;
             public float NormalClosingSpeedMetersPerSecond;
             public float KineticEnergyJoules;
@@ -53,7 +53,7 @@ namespace Hecton8.Physics
             float severity01 = math.saturate((kineticEnergy - hullYieldThresholdJoules) / math.max(hullYieldThresholdJoules, 1f));
             byte integrityDelta = (byte)math.clamp((int)math.round(math.lerp(24f, 255f, severity01)), 1, 255);
 
-            result.ExceedsYield = true;
+            result.ExceedsYield = 1;
             result.RelativeSpeedMetersPerSecond = relativeSpeed;
             result.NormalClosingSpeedMetersPerSecond = closingSpeed;
             result.KineticEnergyJoules = kineticEnergy;

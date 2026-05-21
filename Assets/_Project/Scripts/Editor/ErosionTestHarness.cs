@@ -187,7 +187,7 @@ namespace Hecton8.Editor
                         HeightScaleMeters = ErosionHeightScaleMeters,
                         TalusAngleDegrees = 45f,
                         Strength = 0.32f,
-                        WriteWearMask = false
+                        WriteWearMaskFlag = 0
                     };
 
                     handle = slumpJob.Schedule(PixelCount, 64, handle);
@@ -640,7 +640,7 @@ namespace Hecton8.Editor
             next = swap;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ErosionGrayscalePngBakeJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> Values;
@@ -653,7 +653,7 @@ namespace Hecton8.Editor
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ErosionNormalMapBakeJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> Heights;
@@ -690,7 +690,7 @@ namespace Hecton8.Editor
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ErosionMaskMaxJob : IJob
         {
             [ReadOnly] public NativeArray<float> Values;
@@ -707,7 +707,7 @@ namespace Hecton8.Editor
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ErosionMaskPngBakeJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> Values;

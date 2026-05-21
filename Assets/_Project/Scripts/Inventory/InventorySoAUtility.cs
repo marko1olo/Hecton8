@@ -178,7 +178,7 @@ namespace Hecton8.Inventory
             return true;
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public struct InventoryTransferValidationJob : IJob
         {
             [ReadOnly] public NativeArray<uint> SourceHashes;
@@ -283,7 +283,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public struct InventoryCompactionJob : IJob
         {
             public NativeArray<uint> ItemHashes;
@@ -425,7 +425,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public struct DefragmentJob : IJob
         {
             public NativeArray<uint> ItemHashes;
@@ -469,7 +469,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public struct FrostTickConditionDecayJob : IJob
         {
             [ReadOnly] public NativeArray<uint> PerishableHashes;

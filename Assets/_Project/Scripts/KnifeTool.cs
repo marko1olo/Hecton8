@@ -1,4 +1,3 @@
-using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Scavenging;
 using Hecton.Localization;
@@ -13,7 +12,6 @@ namespace Hecton8.Gameplay
     {
         private const string KnifeCategory = "KNIFE";
         private const string GenericBladeTargetLabel = "FIELD TARGET";
-        private const string GenericBioformLabel = "BIOFORM";
         private const string GenericResourceNodeLabel = "RESOURCE NODE";
         private const string GenericBaseModuleLabel = "BASE MODULE";
         private const byte TemplateStringArg0 = 0x01;
@@ -21,14 +19,64 @@ namespace Hecton8.Gameplay
         private const byte TemplateFloatArg0 = 0x04;
         private const byte TemplateFloatArg1 = 0x08;
 
+        private readonly struct KnifeText
+        {
+            public readonly string Template;
+            public readonly string StringArg0;
+            public readonly string StringArg1;
+            public readonly float FloatArg0;
+            public readonly float FloatArg1;
+            public readonly int FloatDecimals;
+            public readonly byte ArgumentMask;
+
+            public KnifeText(
+                string template,
+                string stringArg0,
+                string stringArg1,
+                float floatArg0,
+                float floatArg1,
+                int floatDecimals,
+                byte argumentMask)
+            {
+                Template = template;
+                StringArg0 = stringArg0;
+                StringArg1 = stringArg1;
+                FloatArg0 = floatArg0;
+                FloatArg1 = floatArg1;
+                FloatDecimals = floatDecimals;
+                ArgumentMask = argumentMask;
+            }
+
+            public static KnifeText Plain(string text)
+            {
+                return new KnifeText(text, null, null, 0f, 0f, 0, 0);
+            }
+
+            public bool TryWrite(ref FixedCharBuffer buffer)
+            {
+                if (ArgumentMask == 0)
+                    return AppendText(ref buffer, Template);
+
+                return TryAppendKnifeTemplate(
+                    ref buffer,
+                    Template,
+                    StringArg0,
+                    StringArg1,
+                    FloatArg0,
+                    FloatArg1,
+                    FloatDecimals,
+                    ArgumentMask);
+            }
+        }
+
         private readonly struct KnifeAssessment
         {
-            public readonly string Headline;
-            public readonly string Summary;
-            public readonly string Recommendation;
+            public readonly KnifeText Headline;
+            public readonly KnifeText Summary;
+            public readonly KnifeText Recommendation;
             public readonly string Severity;
 
-            public KnifeAssessment(string headline, string summary, string recommendation, string severity)
+            public KnifeAssessment(KnifeText headline, KnifeText summary, KnifeText recommendation, string severity)
             {
                 Headline = headline;
                 Summary = summary;
@@ -36,13 +84,45 @@ namespace Hecton8.Gameplay
                 Severity = severity;
             }
 
+            public KnifeAssessment(string headline, string summary, string recommendation, string severity)
+                : this(KnifeText.Plain(headline), KnifeText.Plain(summary), KnifeText.Plain(recommendation), severity)
+            {
+            }
+
+            public KnifeAssessment(string headline, KnifeText summary, string recommendation, string severity)
+                : this(KnifeText.Plain(headline), summary, KnifeText.Plain(recommendation), severity)
+            {
+            }
+
+            public KnifeAssessment(KnifeText headline, KnifeText summary, string recommendation, string severity)
+                : this(headline, summary, KnifeText.Plain(recommendation), severity)
+            {
+            }
+
             public bool TryWriteHudMessage(ref FixedCharBuffer buffer)
             {
-                return AppendText(ref buffer, Headline) &&
+                return Headline.TryWrite(ref buffer) &&
                        AppendText(ref buffer, " | ") &&
-                       AppendText(ref buffer, Summary) &&
+                       Summary.TryWrite(ref buffer) &&
                        AppendText(ref buffer, " | ") &&
-                       AppendText(ref buffer, Recommendation);
+                       Recommendation.TryWrite(ref buffer);
+            }
+
+            public bool TryWriteHeadline(ref FixedCharBuffer buffer)
+            {
+                return Headline.TryWrite(ref buffer);
+            }
+
+            public bool TryWriteRecommendation(ref FixedCharBuffer buffer)
+            {
+                return Recommendation.TryWrite(ref buffer);
+            }
+
+            public bool TryWriteLogSummary(ref FixedCharBuffer buffer)
+            {
+                return Summary.TryWrite(ref buffer) &&
+                       AppendText(ref buffer, " | ") &&
+                       Recommendation.TryWrite(ref buffer);
             }
         }
 
@@ -57,23 +137,42 @@ namespace Hecton8.Gameplay
         [SerializeField] private LayerMask hitMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField] private float feedbackInterval = 0.35f;
 
-        private Transform _cachedTransform;
         private float _cooldown;
-        private float _nextFeedbackAt;
-        private int _cachedHitFrame = -1;
+        private float _feedbackCooldownRemaining;
+        private uint _hitEvaluationStamp;
+        private uint _cachedHitStamp = uint.MaxValue;
         private bool _cachedHitValid;
         private Collider _cachedHitCollider;
         private Vector3 _cachedHitPoint;
         private float _cachedHitDistance;
+        private LocalizationManager _localization;
         private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — survival blade HUD staging buffer — owner: KnifeTool
 
         private static FixedCharBuffer s_logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — survival blade field log staging buffer — owner: KnifeTool
         private static FixedCharBuffer s_legacySummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - survival blade legacy summary/directive bridge - owner: KnifeTool
-        private static FixedCharBuffer s_assessmentTextBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — survival blade assessment staging buffer — owner: KnifeTool
+        private static FixedCharBuffer s_assessmentTitleBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - survival blade assessment title staging buffer - owner: KnifeTool
 
-        private void Awake()
+        public override void OnSpawn()
         {
-            _cachedTransform = transform;
+            base.OnSpawn();
+            _localization = GlobalRegistry.Localization;
+            _feedbackCooldownRemaining = 0f;
+            InvalidateHitCache();
+        }
+
+        public override void OnDespawn()
+        {
+            _localization = null;
+            _feedbackCooldownRemaining = 0f;
+            InvalidateHitCache();
+            base.OnDespawn();
+        }
+
+        public override void OnEquip()
+        {
+            base.OnEquip();
+            _localization = GlobalRegistry.Localization;
+            InvalidateHitCache();
         }
 
         public override void UsePrimary(float deltaTime)
@@ -83,19 +182,17 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            Vector3 direction = _cachedTransform.forward;
-            if (TryFindBestHit(out Collider bestCollider, out Vector3 bestPoint, out float bestDistance))
+            if (TryFindBestHit(out Collider bestCollider, out Vector3 bestPoint, out float bestDistance, out Vector3 direction))
             {
-                float effectiveDamage = damage * GetEfficiency();
-                bool applied = ToolHitUtility.ApplyDamage(bestCollider, effectiveDamage, bestPoint, direction, impulse);
-                if (applied && Time.time >= _nextFeedbackAt)
+                float effectiveDamage = ResolveEffectiveDamage(1f);
+                bool applied = ToolHitUtility.ApplyDamage(bestCollider, effectiveDamage, bestPoint, direction, ResolveImpulse(1f));
+                if (applied && TryConsumeFeedbackGate())
                 {
                     PublishInfoMessage(ResolveLocalized(LocalizationKeys.KNIFE_HUD_CONTACT, "SURVIVAL BLADE - CONTACT"));
                     RecordContactLog(bestDistance);
-                    _nextFeedbackAt = Time.time + feedbackInterval;
                 }
             }
-            else if (Time.time >= _nextFeedbackAt)
+            else if (TryConsumeFeedbackGate())
             {
                 PublishWarningMessage(ResolveLocalized(LocalizationKeys.KNIFE_HUD_NO_CONTACT, "SURVIVAL BLADE - NO CONTACT"));
                 FieldOperationLogSystem.RecordOperation(
@@ -103,19 +200,29 @@ namespace Hecton8.Gameplay
                     ResolveLocalized(LocalizationKeys.KNIFE_LOG_CLEAR_TITLE, "MELEE SWING RETURNED CLEAR"),
                     ResolveLocalized(LocalizationKeys.KNIFE_LOG_CLEAR_MESSAGE, "No valid target entered the blade envelope during the last swing."),
                     "WARN");
-                _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
-            _cooldown = swingCooldown / math.max(0.25f, GetSpeed());
+            InvalidateHitCache();
+            _cooldown = ResolveCooldownSeconds(1f, true);
         }
 
         public override void ToolTick(float deltaTime)
         {
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             if (_cooldown > 0f)
-                _cooldown = math.max(0f, _cooldown - deltaTime);
+                _cooldown = math.max(0f, _cooldown - safeDeltaTime);
+
+            if (_feedbackCooldownRemaining > 0f)
+                _feedbackCooldownRemaining = math.max(0f, _feedbackCooldownRemaining - safeDeltaTime);
+
+            unchecked
+            {
+                _hitEvaluationStamp++;
+            }
         }
 
-        public override string GetOperationalSummary()
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override string BuildLegacyOperationalSummaryString()
         {
             s_legacySummaryBuffer.Clear();
             WriteOperationalSummary(ref s_legacySummaryBuffer);
@@ -143,7 +250,8 @@ namespace Hecton8.Gameplay
             AppendText(ref buffer, ResolveLocalized(LocalizationKeys.KNIFE_OPERATIONAL_READY, "SURVIVAL BLADE // READY"));
         }
 
-        public override string GetOperationalDirective()
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override string BuildLegacyOperationalDirectiveString()
         {
             s_legacySummaryBuffer.Clear();
             WriteOperationalDirective(ref s_legacySummaryBuffer);
@@ -162,7 +270,7 @@ namespace Hecton8.Gameplay
             {
                 if (TryBuildAssessment(target, distance, out KnifeAssessment assessment))
                 {
-                    AppendText(ref buffer, assessment.Recommendation);
+                    assessment.TryWriteRecommendation(ref buffer);
                     return;
                 }
 
@@ -180,39 +288,53 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            if (!TryFindBestHit(out Collider target, out Vector3 point, out float distance))
+            if (!TryFindBestHit(out Collider target, out Vector3 point, out float distance, out Vector3 direction))
             {
                 WarnNoContact(ResolveLocalized(LocalizationKeys.KNIFE_HUD_NO_TARGET_READ, "SURVIVAL BLADE - NO TARGET READ"));
-                _cooldown = swingCooldown * 0.5f;
+                _cooldown = ResolveCooldownSeconds(0.5f, false);
                 return;
             }
 
-            if (TryPrecisionStrike(target, point, distance))
+            if (TryPrecisionStrike(target, point, distance, direction))
             {
-                _cooldown = swingCooldown / math.max(0.25f, GetSpeed());
+                InvalidateHitCache();
+                _cooldown = ResolveCooldownSeconds(1f, true);
                 return;
             }
 
             ShowTacticalReadout(target, distance);
-            _cooldown = swingCooldown * 0.5f;
+            InvalidateHitCache();
+            _cooldown = ResolveCooldownSeconds(0.5f, false);
         }
 
-        private bool TryFindBestHit(out Collider bestCollider, out Vector3 bestPoint, out float bestDistance)
+        private bool TryFindBestHit(out Collider bestCollider, out Vector3 bestPoint, out float bestDistance, out Vector3 direction)
         {
-            Vector3 origin = _cachedTransform.position;
-            Vector3 direction = _cachedTransform.forward;
+            direction = default;
+            if (!TryResolveKnifeRay(out Vector3 origin, out direction))
+            {
+                bestCollider = null;
+                bestPoint = default;
+                bestDistance = 0f;
+                return false;
+            }
+
+            return TryFindBestHit(origin, direction, out bestCollider, out bestPoint, out bestDistance);
+        }
+
+        private bool TryFindBestHit(Vector3 origin, Vector3 direction, out Collider bestCollider, out Vector3 bestPoint, out float bestDistance)
+        {
             bestCollider = null;
-            float queryRange = range + math.max(0f, radius);
+            float queryRange = ResolveQueryRange();
             bestPoint = origin + direction * queryRange;
             bestDistance = queryRange;
+            if (queryRange <= 0f)
+                return false;
 
-            if (!TryResolveQueuedRaycast(origin, direction, queryRange, hitMask, QueryTriggerInteraction.Ignore, out RaycastHit hit))
+            if (!TryQueuePrimaryRaycast(origin, direction, queryRange, hitMask, QueryTriggerInteraction.Ignore, out RaycastHit hit))
                 return false;
 
             Collider candidate = hit.collider;
-            if (candidate == null ||
-                candidate.transform == _cachedTransform ||
-                candidate.transform.IsChildOf(_cachedTransform))
+            if (candidate == null || IsOwnToolCollider(candidate))
             {
                 return false;
             }
@@ -226,8 +348,8 @@ namespace Hecton8.Gameplay
 
         private bool TryGetBestHitCached(out Collider bestCollider, out Vector3 bestPoint, out float bestDistance)
         {
-            int currentFrame = Time.frameCount;
-            if (_cachedHitFrame == currentFrame)
+            uint currentStamp = _hitEvaluationStamp;
+            if (_cachedHitStamp == currentStamp)
             {
                 bestCollider = _cachedHitCollider;
                 bestPoint = _cachedHitPoint;
@@ -235,8 +357,8 @@ namespace Hecton8.Gameplay
                 return _cachedHitValid;
             }
 
-            bool valid = TryFindBestHit(out bestCollider, out bestPoint, out bestDistance);
-            _cachedHitFrame = currentFrame;
+            bool valid = TryFindBestHit(out bestCollider, out bestPoint, out bestDistance, out _);
+            _cachedHitStamp = currentStamp;
             _cachedHitValid = valid;
             _cachedHitCollider = bestCollider;
             _cachedHitPoint = bestPoint;
@@ -244,22 +366,21 @@ namespace Hecton8.Gameplay
             return valid;
         }
 
-        private bool TryPrecisionStrike(Collider target, Vector3 point, float distance)
+        private bool TryPrecisionStrike(Collider target, Vector3 point, float distance, Vector3 direction)
         {
             float normalized = GetTargetNormalizedVital(target);
             if (normalized < 0f || normalized > criticalHealthThreshold)
                 return false;
 
-            float effectiveDamage = damage * precisionStrikeMultiplier * GetEfficiency();
-            bool applied = ToolHitUtility.ApplyDamage(target, effectiveDamage, point, _cachedTransform.forward, impulse * 1.5f);
+            float effectiveDamage = ResolveEffectiveDamage(precisionStrikeMultiplier);
+            bool applied = ToolHitUtility.ApplyDamage(target, effectiveDamage, point, direction, ResolveImpulse(1.5f));
             if (!applied)
                 return false;
 
-            if (Time.time >= _nextFeedbackAt)
+            if (TryConsumeFeedbackGate())
             {
                 PublishInfoMessage(ResolveLocalized(LocalizationKeys.KNIFE_HUD_PRECISION_STRIKE, "SURVIVAL BLADE - PRECISION STRIKE"));
                 RecordPrecisionLog(distance);
-                _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
             return true;
@@ -270,41 +391,38 @@ namespace Hecton8.Gameplay
             if (target == null)
                 return;
 
-            FaunaBrain ai = ResolveFaunaBrain(target);
-            if (ai != null)
+            if (TryBuildDescriptorAssessment(target, distance, out KnifeAssessment descriptorAssessment))
             {
-                KnifeAssessment assessment = BuildBioformAssessment(ai, distance);
-                PublishAssessment(assessment);
-                RecordAssessmentLog(assessment);
-                _nextFeedbackAt = Time.time + feedbackInterval;
+                PublishAssessment(descriptorAssessment);
+                RecordAssessmentLog(descriptorAssessment);
+                ArmFeedbackCooldown();
                 return;
             }
 
-            ResourceNode node = ResolveResourceNode(target);
+            ResourceNode node = FindResourceNodeAdapter(target);
             if (node != null)
             {
                 KnifeAssessment assessment = BuildResourceAssessment(node, distance);
                 PublishAssessment(assessment);
                 RecordAssessmentLog(assessment);
-                _nextFeedbackAt = Time.time + feedbackInterval;
+                ArmFeedbackCooldown();
                 return;
             }
 
-            BaseModule module = ResolveBaseModule(target);
+            BaseModule module = FindBaseModuleAdapter(target);
             if (module != null)
             {
                 KnifeAssessment assessment = BuildModuleAssessment(module, distance);
                 PublishAssessment(assessment);
                 RecordAssessmentLog(assessment);
-                _nextFeedbackAt = Time.time + feedbackInterval;
+                ArmFeedbackCooldown();
                 return;
             }
 
-            if (Time.time >= _nextFeedbackAt)
+            if (TryConsumeFeedbackGate())
             {
                 PublishInfoMessage(ResolveLocalized(LocalizationKeys.KNIFE_HUD_TARGET_PROFILE_UNKNOWN, "SURVIVAL BLADE - TARGET PROFILE UNKNOWN"));
                 RecordUnknownProfileLog();
-                _nextFeedbackAt = Time.time + feedbackInterval;
             }
         }
 
@@ -313,24 +431,128 @@ namespace Hecton8.Gameplay
             if (target == null)
                 return -1f;
 
-            FaunaBrain ai = ResolveFaunaBrain(target);
-            if (ai != null)
-                return ai.HealthNormalized;
-
-            ResourceNode node = ResolveResourceNode(target);
+            ResourceNode node = FindResourceNodeAdapter(target);
             if (node != null)
                 return node.HealthNormalized;
 
-            BaseModule module = ResolveBaseModule(target);
+            BaseModule module = FindBaseModuleAdapter(target);
             if (module != null && module.MaxIntegrity > 0f)
                 return module.CurrentIntegrity / module.MaxIntegrity;
 
             return -1f;
         }
 
+        private bool TryResolveKnifeRay(out Vector3 origin, out Vector3 direction)
+        {
+            origin = default;
+            direction = default;
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                return false;
+            }
+
+            float3 runtimePosition = snapshot.RuntimePosition;
+            float3 forward = snapshot.Forward;
+            float forwardLengthSq = math.lengthsq(forward);
+            if (!math.all(math.isfinite(runtimePosition)) ||
+                !math.all(math.isfinite(forward)) ||
+                !math.isfinite(forwardLengthSq) ||
+                forwardLengthSq <= 0.0001f)
+            {
+                return false;
+            }
+
+            float invForwardLength = math.rsqrt(math.max(forwardLengthSq, 0.0001f));
+            origin = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            direction = new Vector3(
+                forward.x * invForwardLength,
+                forward.y * invForwardLength,
+                forward.z * invForwardLength);
+            return true;
+        }
+
+        private bool IsOwnToolCollider(Collider candidate)
+        {
+            if (candidate == null)
+                return true;
+
+            if (candidate.TryGetComponent(out KnifeTool directTool) && ReferenceEquals(directTool, this))
+                return true;
+
+            KnifeTool ownerTool = candidate.GetComponentInParent<KnifeTool>();
+            return ReferenceEquals(ownerTool, this);
+        }
+
+        private bool TryConsumeFeedbackGate()
+        {
+            if (_feedbackCooldownRemaining > 0f)
+                return false;
+
+            ArmFeedbackCooldown();
+            return true;
+        }
+
+        private void ArmFeedbackCooldown()
+        {
+            _feedbackCooldownRemaining = ResolveFeedbackInterval();
+        }
+
+        private float ResolveFeedbackInterval()
+        {
+            return math.isfinite(feedbackInterval)
+                ? math.max(0.05f, feedbackInterval)
+                : 0.35f;
+        }
+
+        private float ResolveQueryRange()
+        {
+            float safeRange = math.isfinite(range) ? math.max(0f, range) : 0f;
+            float safeRadius = math.isfinite(radius) ? math.max(0f, radius) : 0f;
+            return safeRange + safeRadius;
+        }
+
+        private float ResolveCooldownSeconds(float multiplier, bool scaleBySpeed)
+        {
+            float safeSwingCooldown = math.isfinite(swingCooldown) ? math.max(0f, swingCooldown) : 0f;
+            float safeMultiplier = math.isfinite(multiplier) ? math.max(0f, multiplier) : 0f;
+            float cooldown = safeSwingCooldown * safeMultiplier;
+            if (!scaleBySpeed)
+                return cooldown;
+
+            float speed = GetSpeed();
+            float safeSpeed = math.isfinite(speed) ? math.max(0.25f, speed) : 0.25f;
+            return cooldown / safeSpeed;
+        }
+
+        private float ResolveEffectiveDamage(float multiplier)
+        {
+            float safeDamage = math.isfinite(damage) ? math.max(0f, damage) : 0f;
+            float safeMultiplier = math.isfinite(multiplier) ? math.max(0f, multiplier) : 0f;
+            float efficiency = GetEfficiency();
+            float safeEfficiency = math.isfinite(efficiency) ? math.max(0f, efficiency) : 0f;
+            return safeDamage * safeMultiplier * safeEfficiency;
+        }
+
+        private float ResolveImpulse(float multiplier)
+        {
+            float safeImpulse = math.isfinite(impulse) ? math.max(0f, impulse) : 0f;
+            float safeMultiplier = math.isfinite(multiplier) ? math.max(0f, multiplier) : 0f;
+            return safeImpulse * safeMultiplier;
+        }
+
+        private void InvalidateHitCache()
+        {
+            _cachedHitStamp = uint.MaxValue;
+            _cachedHitValid = false;
+            _cachedHitCollider = null;
+            _cachedHitPoint = default;
+            _cachedHitDistance = 0f;
+        }
+
         private void WarnNoContact(string message)
         {
-            if (Time.time < _nextFeedbackAt)
+            if (!TryConsumeFeedbackGate())
                 return;
 
             PublishWarningMessage(message);
@@ -339,52 +561,35 @@ namespace Hecton8.Gameplay
                 message,
                 ResolveLocalized(LocalizationKeys.KNIFE_LOG_NO_TARGET_READ_MESSAGE, "No valid target entered the blade envelope during the tactical read."),
                 "WARN");
-            _nextFeedbackAt = Time.time + feedbackInterval;
         }
 
         private bool TryBuildAssessment(Collider target, float distance, out KnifeAssessment assessment)
         {
             assessment = default;
 
-            FaunaBrain ai = ResolveFaunaBrain(target);
-            if (ai != null)
+            if (TryBuildDescriptorAssessment(target, distance, out assessment))
             {
-                assessment = BuildBioformAssessment(ai, distance);
                 return true;
             }
 
-            ResourceNode node = ResolveResourceNode(target);
+            ResourceNode node = FindResourceNodeAdapter(target);
             if (node != null)
             {
                 assessment = BuildResourceAssessment(node, distance);
                 return true;
             }
 
-            BaseModule module = ResolveBaseModule(target);
+            BaseModule module = FindBaseModuleAdapter(target);
             if (module != null)
             {
                 assessment = BuildModuleAssessment(module, distance);
                 return true;
             }
 
-            if (TryBuildDescriptorAssessment(target, distance, out assessment))
-                return true;
-
             return false;
         }
 
-        private static FaunaBrain ResolveFaunaBrain(Collider target)
-        {
-            if (target == null)
-                return null;
-
-            if (target.TryGetComponent(out FaunaBrain ai))
-                return ai;
-
-            return target.GetComponentInParent<FaunaBrain>();
-        }
-
-        private static ResourceNode ResolveResourceNode(Collider target)
+        private static ResourceNode FindResourceNodeAdapter(Collider target)
         {
             if (target == null)
                 return null;
@@ -395,7 +600,7 @@ namespace Hecton8.Gameplay
             return target.GetComponentInParent<ResourceNode>();
         }
 
-        private static BaseModule ResolveBaseModule(Collider target)
+        private static BaseModule FindBaseModuleAdapter(Collider target)
         {
             if (target == null)
                 return null;
@@ -404,127 +609,6 @@ namespace Hecton8.Gameplay
                 return module;
 
             return target.GetComponentInParent<BaseModule>();
-        }
-
-        private KnifeAssessment BuildBioformAssessment(FaunaBrain ai, float distance)
-        {
-            float healthPercent = ai.HealthNormalized * 100f;
-            if (ai.IsSleeping)
-            {
-                return new KnifeAssessment(
-                    CreateSingleFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_DORMANT_BIOFORM, "BLADE READ - DORMANT BIOFORM {0:0}%"),
-                        healthPercent,
-                        0),
-                    CreateStringFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_DORMANT_BIOFORM, "{0} is dormant at {1:0.0} m and has not committed to attack."),
-                        GenericBioformLabel,
-                        distance,
-                        1),
-                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_DORMANT_BIOFORM, "Strike only if you need a silent opener or a clean sample window."),
-                    "INFO");
-            }
-
-            if (ai.CurrentState == FaunaBrain.AIState.Aggressive)
-            {
-                return new KnifeAssessment(
-                    CreateSingleFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_HOSTILE, "BLADE READ - HOSTILE {0:0}%"),
-                        healthPercent,
-                        0),
-                    CreateSingleStringText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_HOSTILE, "{0} is already aggressive and inside close-quarters danger range."),
-                        GenericBioformLabel),
-                    ai.HealthNormalized <= criticalHealthThreshold
-                        ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_HOSTILE_CRITICAL, "Precision strike is viable, but commit fast.")
-                        : ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_HOSTILE, "Use stun or create space before relying on the blade."),
-                    "WARN");
-            }
-
-            if (ai.CurrentState == FaunaBrain.AIState.Threaten || ai.CurrentState == FaunaBrain.AIState.Stalk || ai.CurrentState == FaunaBrain.AIState.Loom || ai.CurrentState == FaunaBrain.AIState.Feint)
-            {
-                bool packHunt = ai.UsesPackHuntBehavior && ai.CurrentState == FaunaBrain.AIState.Stalk;
-                bool feintCapable = ai.UsesFeintRushBehavior && (ai.CurrentState == FaunaBrain.AIState.Stalk || ai.CurrentState == FaunaBrain.AIState.Loom || ai.CurrentState == FaunaBrain.AIState.Feint);
-                bool ambushLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.AmbushBurst;
-                bool sentinelLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.SentinelPressure;
-                return new KnifeAssessment(
-                    CreateSingleFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_PRESSURE_CONTACT, "BLADE READ - PRESSURE CONTACT {0:0}%"),
-                        healthPercent,
-                        0),
-                    ai.CurrentState == FaunaBrain.AIState.Feint
-                        ? CreateSingleStringText(
-                            ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_FEINT, "{0} is in a false-charge pass and can swing back into a real hit if you misread the opening."),
-                            GenericBioformLabel)
-                        :
-                    ai.CurrentState == FaunaBrain.AIState.Loom
-                        ? (ambushLeviathan
-                            ? CreateSingleStringText(
-                                ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_AMBUSH, "{0} is setting up a burst ambush and can snap into close range with little warning."),
-                                GenericBioformLabel)
-                            : (sentinelLeviathan
-                                ? CreateSingleStringText(
-                                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_SENTINEL, "{0} is holding a guarded route and pushing you out of its corridor."),
-                                    GenericBioformLabel)
-                                : CreateSingleStringText(
-                                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_LOOM, "{0} is holding a heavy pressure circle and can crash into close range fast."),
-                                    GenericBioformLabel)))
-                        : ai.CurrentState == FaunaBrain.AIState.Threaten
-                        ? CreateSingleStringText(
-                            ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_THREATEN, "{0} is warning and pressuring you around its protected space."),
-                            GenericBioformLabel)
-                        : (packHunt
-                            ? CreateSingleStringText(
-                                ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_PACK, "{0} is shadowing you as part of a group hunt and may rush from the flank."),
-                                GenericBioformLabel)
-                            : (feintCapable
-                                ? CreateSingleStringText(
-                                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_TRACKING_FEINT, "{0} is shadowing you and may throw a fake entry before the real bite."),
-                                    GenericBioformLabel)
-                                : CreateSingleStringText(
-                                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_PRESSURE_TRACKING, "{0} is shadowing you and may commit to attack soon."),
-                                    GenericBioformLabel))),
-                    ai.CurrentState == FaunaBrain.AIState.Feint
-                        ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_FEINT, "Do not knife into the pass. Sidestep the fake run and wait for the turn.")
-                        :
-                    ai.CurrentState == FaunaBrain.AIState.Loom
-                        ? (ambushLeviathan
-                            ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_AMBUSH, "Do not trust a knife opener here. Break the angle before it bursts.")
-                            : (sentinelLeviathan
-                                ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_SENTINEL, "This is a bad knife lane. Leave the corridor or force a hard opening first.")
-                                : ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_LOOM, "Do not trust a knife opener here. Break distance first.")))
-                        : packHunt
-                        ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_PACK, "Do not trust a knife opener here unless you have already broken the group shape.")
-                        : (feintCapable
-                            ? ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_TRACKING_FEINT, "Do not bite on the fake entry. Hold the blade for the real commit window.")
-                            : ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_PRESSURE_TRACKING, "Do not rely on a knife opener here unless you are forcing a close-range break.")),
-                    "WARN");
-            }
-
-            if (ai.HealthNormalized <= criticalHealthThreshold)
-            {
-                return new KnifeAssessment(
-                    CreateSingleFloatText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_FRACTURED_TARGET, "BLADE READ - FRACTURED TARGET {0:0}%"),
-                        healthPercent,
-                        0),
-                    CreateSingleStringText(
-                        ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_FRACTURED_TARGET, "{0} is close to collapse and vulnerable to a finishing strike."),
-                        GenericBioformLabel),
-                    ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_FRACTURED_TARGET, "Go for a precision hit if you need the target down now."),
-                    "INFO");
-            }
-
-            return new KnifeAssessment(
-                CreateSingleFloatText(
-                    ResolveLocalized(LocalizationKeys.KNIFE_HEADLINE_BIOFORM_STABLE, "BLADE READ - BIOFORM STABLE {0:0}%"),
-                    healthPercent,
-                    0),
-                CreateSingleStringText(
-                    ResolveLocalized(LocalizationKeys.KNIFE_SUMMARY_BIOFORM_STABLE, "{0} is alive, mobile, and not yet in an easy finish window."),
-                    GenericBioformLabel),
-                ResolveLocalized(LocalizationKeys.KNIFE_RECOMMEND_BIOFORM_STABLE, "Observe, soften it first, or disengage."),
-                "INFO");
         }
 
         private KnifeAssessment BuildResourceAssessment(ResourceNode node, float distance)
@@ -649,7 +733,7 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static void RecordContactLog(float distance)
+        private void RecordContactLog(float distance)
         {
             s_logSummaryBuffer.Clear();
             if (!TryAppendStringFloatTemplate(
@@ -673,7 +757,7 @@ namespace Hecton8.Gameplay
                 "INFO");
         }
 
-        private static void RecordPrecisionLog(float distance)
+        private void RecordPrecisionLog(float distance)
         {
             s_logSummaryBuffer.Clear();
             if (!TryAppendStringFloatTemplate(
@@ -697,29 +781,21 @@ namespace Hecton8.Gameplay
                 "INFO");
         }
 
-        private static void RecordAssessmentLog(KnifeAssessment assessment)
+        private void RecordAssessmentLog(KnifeAssessment assessment)
         {
             s_logSummaryBuffer.Clear();
-            if (!TryAppendTwoStringTemplate(
-                    ref s_logSummaryBuffer,
-                    ResolveLocalized(LocalizationKeys.KNIFE_LOG_ASSESSMENT, "{0} | {1}"),
-                    assessment.Summary,
-                    assessment.Recommendation))
-            {
-                s_logSummaryBuffer.Clear();
-                AppendText(ref s_logSummaryBuffer, assessment.Summary);
-                AppendText(ref s_logSummaryBuffer, " | ");
-                AppendText(ref s_logSummaryBuffer, assessment.Recommendation);
-            }
+            assessment.TryWriteLogSummary(ref s_logSummaryBuffer);
+            s_assessmentTitleBuffer.Clear();
+            assessment.TryWriteHeadline(ref s_assessmentTitleBuffer);
 
             FieldOperationLogSystem.RecordOperation(
                 ResolveLocalized(LocalizationKeys.KNIFE_CATEGORY, KnifeCategory),
-                assessment.Headline,
+                in s_assessmentTitleBuffer,
                 in s_logSummaryBuffer,
                 assessment.Severity);
         }
 
-        private static void RecordUnknownProfileLog()
+        private void RecordUnknownProfileLog()
         {
             s_logSummaryBuffer.Clear();
             if (!TryAppendSingleStringTemplate(
@@ -765,9 +841,9 @@ namespace Hecton8.Gameplay
                 ToolHitUtility.ShowWarning(in s_hudBuffer);
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
@@ -780,31 +856,19 @@ namespace Hecton8.Gameplay
                 : string.Empty;
         }
 
-        private static string CreateSingleFloatText(string template, float value, int decimals)
+        private static KnifeText CreateSingleFloatText(string template, float value, int decimals)
         {
-            s_assessmentTextBuffer.Clear();
-            if (!TryAppendSingleFloatTemplate(ref s_assessmentTextBuffer, template, value, decimals))
-                return template;
-
-            return CreateLegacyString(in s_assessmentTextBuffer);
+            return new KnifeText(template, null, null, value, 0f, decimals, TemplateFloatArg0);
         }
 
-        private static string CreateSingleStringText(string template, string value)
+        private static KnifeText CreateSingleStringText(string template, string value)
         {
-            s_assessmentTextBuffer.Clear();
-            if (!TryAppendSingleStringTemplate(ref s_assessmentTextBuffer, template, value))
-                return template;
-
-            return CreateLegacyString(in s_assessmentTextBuffer);
+            return new KnifeText(template, value, null, 0f, 0f, 0, TemplateStringArg0);
         }
 
-        private static string CreateStringFloatText(string template, string stringValue, float floatValue, int decimals)
+        private static KnifeText CreateStringFloatText(string template, string stringValue, float floatValue, int decimals)
         {
-            s_assessmentTextBuffer.Clear();
-            if (!TryAppendStringFloatTemplate(ref s_assessmentTextBuffer, template, stringValue, floatValue, decimals))
-                return template;
-
-            return CreateLegacyString(in s_assessmentTextBuffer);
+            return new KnifeText(template, stringValue, null, 0f, floatValue, decimals, TemplateStringArg0 | TemplateFloatArg1);
         }
 
         private static bool AppendText(ref FixedCharBuffer buffer, string value)

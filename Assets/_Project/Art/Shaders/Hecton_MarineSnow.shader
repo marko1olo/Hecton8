@@ -29,7 +29,6 @@ Shader "Hecton8/VFX/MarineSnow"
             #pragma target 4.5
             #pragma vertex vert
             #pragma fragment frag
-            #pragma multi_compile _ _MATH_LOD_LOW
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
@@ -93,6 +92,7 @@ Shader "Hecton8/VFX/MarineSnow"
 
             float4 _MarineSnowTint;
             float4 _MarineSnowRenderParams;
+            float4 _PropwashBiomeTint;
 
             SiltParticle LoadSiltParticle(uint index)
             {
@@ -170,6 +170,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 float invMaxDistanceSq = rcp(max(maxDistance * maxDistance, 0.0001));
                 float distanceFade = saturate(1.0 - dot(cameraDelta, cameraDelta) * invMaxDistanceSq);
                 float isBubble = ((particle.Flags & 1u) != 0u) ? 1.0 : 0.0;
+                float isPropwashSilt = ((particle.Flags & 8u) != 0u) ? 1.0 : 0.0;
                 float headlightBoost = saturate(particle.Pad.y);
                 float size = particle.Size * lerp(0.65, 1.0, distanceFade) * lerp(1.0, 1.65, isBubble);
                 float stretchScale = max(1.0, _MarineSnowCameraVelocity_Stretch.w);
@@ -187,7 +188,9 @@ Shader "Hecton8/VFX/MarineSnow"
                 output.positionCS = TransformWorldToHClip(worldPosition);
                 output.positionWS = particle.Pos;
                 output.uv = corner * 0.5 + 0.5;
-                output.color = lerp(_MarineSnowTint, float4(0.72, 0.88, 0.94, _MarineSnowTint.a * 0.72), isBubble);
+                float4 propwashSiltTint = float4(saturate(_PropwashBiomeTint.rgb), _MarineSnowTint.a);
+                float4 baseSiltColor = lerp(_MarineSnowTint, propwashSiltTint, isPropwashSilt);
+                output.color = lerp(baseSiltColor, float4(0.72, 0.88, 0.94, _MarineSnowTint.a * 0.72), isBubble);
                 output.color.rgb *= 1.0 + headlightBoost * 1.45;
                 output.color.a *= active * densityScale * particle.Life * distanceFade * (1.0 + headlightBoost * 0.65);
                 return output;

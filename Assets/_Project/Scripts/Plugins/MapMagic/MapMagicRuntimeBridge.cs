@@ -37,6 +37,7 @@
 
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.World;
 using Unity.Burst;
@@ -249,13 +250,18 @@ namespace Hecton8.Core
         {
             // ── Singleton ──
             TryResolveCoLocatedMapMagicObject();
+            FenceRuntimeMapMagicGenerationIfNeeded();
             ReportMissingMapMagicBindingIfNeeded();
 
-            _runtimeTerrainResolutionRepairPending = mapMagicObject != null;
-            EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
+            _runtimeTerrainResolutionRepairPending = !Application.isPlaying && mapMagicObject != null;
+            if (!Application.isPlaying)
+                EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
             RefreshTerrainTileCache(force: true);
-            ApplyTerrainDataMemoryBudgetToCachedTerrains();
-            RepairRuntimeTerrainResolutionMismatchIfNeeded();
+            if (!Application.isPlaying)
+            {
+                ApplyTerrainDataMemoryBudgetToCachedTerrains();
+                RepairRuntimeTerrainResolutionMismatchIfNeeded();
+            }
 
             // ── Poisk igroka ──
             if (playerTransform == null)
@@ -396,7 +402,9 @@ namespace Hecton8.Core
             }
 
             Vector3 runtimeOrigin = playerTransform.position;
-            double3 aupOrigin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeOrigin);
+            double3 aupOrigin = TryResolveAupDoubleFromRuntimeOrigin(runtimeOrigin, out double3 resolvedAupOrigin)
+                ? resolvedAupOrigin
+                : double3.zero;
             float safeFadeDistance = Mathf.Max(128f, terrainFadeDistanceMeters);
             float safeFadeWidth = Mathf.Max(1f, terrainFadeWidthMeters);
 
@@ -412,6 +420,27 @@ namespace Hecton8.Core
                 new Vector4((float)aupOrigin.x, (float)aupOrigin.y, (float)aupOrigin.z, 1f));
 
             UpdateDistantTerrainShadowMask(runtimeOrigin);
+        }
+
+        private static bool TryResolveAupDoubleFromRuntimeOrigin(Vector3 runtimePosition, out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            float3 runtimeMeters = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtimeMeters)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!positionAup.IsFinite())
+                return false;
+
+            absoluteAup = positionAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
         }
 
         private void UpdateDistantTerrainShadowMask(Vector3 runtimeCenter)
@@ -836,7 +865,7 @@ namespace Hecton8.Core
                 sourcePayload.TerrainSize,
                 sourcePayload.HeightmapResolution,
                 sourcePayload.CacheRevision);
-            return payload.IsValid;
+            return QuantizedHeightmapPayload.IsValid(in payload);
         }
 
         public override bool TryGetQuantizedHeightmapPayload(float x, float z, out QuantizedHeightmapPayload payload)
@@ -855,7 +884,7 @@ namespace Hecton8.Core
                 sourcePayload.TerrainSize,
                 sourcePayload.HeightmapResolution,
                 sourcePayload.CacheRevision);
-            return payload.IsValid;
+            return QuantizedHeightmapPayload.IsValid(in payload);
         }
 
         public override bool TryGetQuantizedHeightmapPayloadAUP(Vector3 absoluteUniversePosition, out QuantizedHeightmapPayload payload)
@@ -1689,12 +1718,15 @@ namespace Hecton8.Core
         public override void SetMapMagicObject(UnityEngine.Object target)
         {
             mapMagicObject = target as MapMagicObject;
+            FenceRuntimeMapMagicGenerationIfNeeded();
             _cachedTerrainTileRootCount = -1;
             _lastResolvedTerrainTile = null;
             InvalidateBiomeTextureCache();
-            EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
+            if (!Application.isPlaying)
+                EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
             RefreshTerrainTileCache(force: true);
-            ApplyTerrainDataMemoryBudgetToCachedTerrains();
+            if (!Application.isPlaying)
+                ApplyTerrainDataMemoryBudgetToCachedTerrains();
             _nextSceneBindingRefreshTime = float.NegativeInfinity;
             UpdateDiagnostics();
         }
@@ -1745,6 +1777,9 @@ namespace Hecton8.Core
             float heightScaleMeters,
             JobHandle dependency = default)
         {
+            if (Application.isPlaying)
+                return dependency;
+
             if (!enableSandboxThermalWeathering ||
                 !inputHeights01.IsCreated ||
                 !outputHeights01.IsCreated ||
@@ -1845,6 +1880,9 @@ namespace Hecton8.Core
             float cellSizeMeters,
             JobHandle dependency = default)
         {
+            if (Application.isPlaying)
+                return dependency;
+
             if (!enableSandboxTectonicSpineDisplacement ||
                 !isTectonicSpineBiome ||
                 !inputHeights01.IsCreated ||
@@ -1890,6 +1928,9 @@ namespace Hecton8.Core
             float heightScaleMeters,
             JobHandle dependency = default)
         {
+            if (Application.isPlaying)
+                return dependency;
+
             if (!enableSandboxFakeCliffOverhangOffsets ||
                 !heights01.IsCreated ||
                 !horizontalOffsetsMeters.IsCreated ||
@@ -1959,7 +2000,7 @@ namespace Hecton8.Core
             return job.Schedule(cellCount, batchCount, dependency);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BrineBasinLipRidgeOverlayJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<byte> BasinMask;
@@ -2373,12 +2414,13 @@ namespace Hecton8.Core
             if (mapMagicObject == null)
             {
                 TryResolveCoLocatedMapMagicObject();
+                FenceRuntimeMapMagicGenerationIfNeeded();
                 _cachedTerrainTileRootCount = -1;
                 _lastResolvedTerrainTile = null;
                 InvalidateBiomeTextureCache();
-                _runtimeTerrainResolutionRepairPending = mapMagicObject != null;
+                _runtimeTerrainResolutionRepairPending = !Application.isPlaying && mapMagicObject != null;
 
-                if (mapMagicObject != null)
+                if (!Application.isPlaying && mapMagicObject != null)
                     EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
             }
 
@@ -2386,8 +2428,18 @@ namespace Hecton8.Core
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
             ReportMissingMapMagicBindingIfNeeded();
-            RepairRuntimeTerrainResolutionMismatchIfNeeded();
+            if (!Application.isPlaying)
+                RepairRuntimeTerrainResolutionMismatchIfNeeded();
             UpdateDiagnostics();
+        }
+
+        private void FenceRuntimeMapMagicGenerationIfNeeded()
+        {
+            if (!Application.isPlaying || mapMagicObject == null)
+                return;
+
+            mapMagicObject.enabled = false;
+            _runtimeTerrainResolutionRepairPending = false;
         }
 
         private void TryResolveCoLocatedMapMagicObject()
@@ -2617,7 +2669,8 @@ namespace Hecton8.Core
                 if (tile.distance < 0f)
                     continue;
 
-                if (rebuildInRange &&
+                if (!Application.isPlaying &&
+                    rebuildInRange &&
                     mapMagicObject.graph != null &&
                     (int)tile.distance <= activeRange)
                 {

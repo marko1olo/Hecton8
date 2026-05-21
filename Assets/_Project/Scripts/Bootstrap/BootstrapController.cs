@@ -10,16 +10,22 @@ namespace Hecton8.Bootstrap
     [DefaultExecutionOrder(-30000)]
     public sealed class BootstrapController : MonoBehaviour
     {
-        [Tooltip("Scene-owned analytical caustics compute shader transferred to the runtime GameBootstrapper.")]
-        [SerializeField] private ComputeShader analyticalCausticsCompute;
+        private const string BootstrapSceneName = "00_BOOTSTRAP";
+
+        [Tooltip("Shader variant collections handed to GameBootstrapper for MemoryPreWarm before scene activation.")]
+        [SerializeField] private ShaderVariantCollection[] shaderVariantCollections;
 
         private bool _delegatedBoot;
-
-        internal ComputeShader AnalyticalCausticsCompute => analyticalCausticsCompute;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+        }
+
+        private static bool IsBootstrapScene(Scene scene)
+        {
+            return scene.IsValid() &&
+                string.Equals(scene.name, BootstrapSceneName, System.StringComparison.Ordinal);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -29,7 +35,7 @@ namespace Hecton8.Bootstrap
                 return;
 
             Scene activeScene = SceneManager.GetActiveScene();
-            if (!activeScene.IsValid() || !activeScene.name.Contains("00_BOOTSTRAP"))
+            if (!IsBootstrapScene(activeScene))
                 return;
 
             GameBootstrapper.EnsureRuntimeInstance()?.BeginBootstrap();
@@ -63,11 +69,24 @@ namespace Hecton8.Bootstrap
                 return;
 
             Scene currentScene = gameObject.scene;
-            if (!currentScene.IsValid() || !currentScene.name.Contains("00_BOOTSTRAP"))
+            if (!IsBootstrapScene(currentScene))
                 return;
 
             _delegatedBoot = true;
-            GameBootstrapper.EnsureRuntimeInstance(gameObject)?.BeginBootstrap();
+            GameBootstrapper bootstrapper = GameBootstrapper.EnsureRuntimeInstance(gameObject);
+            if (bootstrapper == null)
+                return;
+
+            ApplySerializedShaderVariantCollections(bootstrapper);
+            bootstrapper.BeginBootstrap();
+        }
+
+        internal void ApplySerializedShaderVariantCollections(GameBootstrapper bootstrapper)
+        {
+            if (bootstrapper == null)
+                return;
+
+            bootstrapper.SetBootstrapShaderVariantCollections(shaderVariantCollections);
         }
     }
 }

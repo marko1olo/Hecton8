@@ -118,7 +118,7 @@ liters_per_second = base_liters_per_second
 
 Base O2 is `0.10 L/s` against a `600 L` tank. Stress, pressure, and activity are table-driven. Fast swim calorie burn is exactly `9.0 kcal/min`, which is 3x the slow swim value of `3.0 kcal/min`.
 
-Low tier uses direct table lookup on SlowTick. Middle can interpolate. High and Ultra only improve presentation smoothing and warning feedback; gameplay drain stays table-authoritative.
+Minimum quality uses direct table lookup on SlowTick. Intermediate weights can interpolate. High and maximum quality only improve presentation smoothing and warning feedback; gameplay drain stays table-authoritative.
 
 ## Time To First Submarine
 

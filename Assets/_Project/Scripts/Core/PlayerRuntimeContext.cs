@@ -48,6 +48,15 @@ namespace Hecton8.Core
         [FieldOffset(124)] private uint _padding0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct PlayerMovementStressRuntimeState
+    {
+        [FieldOffset(0)] public float HullStress01;
+        [FieldOffset(4)] public float UnderwaterStressIntensity01;
+        [FieldOffset(8)] public float AbyssalCounterDriveEnergyMultiplier;
+        [FieldOffset(12)] public uint Flags;
+    }
+
     /// <summary>
     /// Headless-safe player gaze snapshot. Presentation cameras may seed it, but gameplay reads only this data.
     /// </summary>
@@ -112,6 +121,7 @@ namespace Hecton8.Core
     public sealed class PlayerRuntimeContext
     {
         private const float SurvivalDamageEpsilon = 0.0001f;
+        private const float MinTransportSpeedMultiplier = 0.01f;
         private const uint PlayerTargetHash = 0x504C5952u;
         private const uint SurvivalSourceHash = 0x53525656u;
 
@@ -137,6 +147,7 @@ namespace Hecton8.Core
         public HUDNotification HudNotification { get; private set; }
 
         public PlayerMovementRuntimeState MovementState;
+        public PlayerMovementStressRuntimeState MovementStressState;
         public PlayerLookState LookState;
         public PlayerSurvivalRuntimeState SurvivalState;
         public PlayerInteractionRuntimeState InteractionState;
@@ -169,6 +180,7 @@ namespace Hecton8.Core
             PlayerCollider = null;
             HudNotification = null;
             MovementState = default;
+            MovementStressState = default;
             LookState = default;
             SurvivalState = default;
             InteractionState = default;
@@ -223,7 +235,25 @@ namespace Hecton8.Core
 
         public void PublishMovementState(in PlayerMovementRuntimeState state)
         {
-            MovementState = MathGuard.SanitizePlayerMovementRuntimeState(in state, in MovementState);
+            MovementState = SanitizeMovementState(in state, in MovementState);
+        }
+
+        public void PublishMovementStressState(in PlayerMovementStressRuntimeState state)
+        {
+            PlayerMovementStressRuntimeState sanitized = state;
+            sanitized.HullStress01 = MathGuard.Sanitize01(state.HullStress01, MovementStressState.HullStress01);
+            sanitized.UnderwaterStressIntensity01 = MathGuard.Sanitize01(
+                state.UnderwaterStressIntensity01,
+                MovementStressState.UnderwaterStressIntensity01);
+            sanitized.AbyssalCounterDriveEnergyMultiplier = math.max(
+                1f,
+                MathGuard.SanitizeFinite(
+                    state.AbyssalCounterDriveEnergyMultiplier,
+                    MovementStressState.AbyssalCounterDriveEnergyMultiplier > 0f
+                        ? MovementStressState.AbyssalCounterDriveEnergyMultiplier
+                        : 1f));
+            sanitized.Flags = state.Flags;
+            MovementStressState = sanitized;
         }
 
         /// <summary>
@@ -270,6 +300,27 @@ namespace Hecton8.Core
                 Flags = Hecton8.Core.Contracts.Signals.CombatDamageSignal.DirectRuntimeFlag
             };
             SignalBus<Hecton8.Core.Contracts.Signals.CombatDamageSignal>.Push(in signal);
+        }
+
+        private static PlayerMovementRuntimeState SanitizeMovementState(
+            in PlayerMovementRuntimeState value,
+            in PlayerMovementRuntimeState fallback)
+        {
+            PlayerMovementRuntimeState sanitized = value;
+            sanitized.WorldPosition = MathGuard.SanitizeFinite(value.WorldPosition, fallback.WorldPosition);
+            sanitized.PredictedWorldPosition = MathGuard.SanitizeFinite(value.PredictedWorldPosition, sanitized.WorldPosition);
+            sanitized.PredictedAup = AbsoluteUniversePosition.Sanitize(in value.PredictedAup, in fallback.PredictedAup);
+            sanitized.Velocity = MathGuard.SanitizeFinite(value.Velocity, fallback.Velocity);
+            sanitized.Forward = MathGuard.SanitizeDirection(value.Forward, fallback.Forward);
+            sanitized.CameraForward = MathGuard.SanitizeDirection(value.CameraForward, sanitized.Forward);
+            sanitized.DepthMeters = MathGuard.SanitizeNonNegative(value.DepthMeters, fallback.DepthMeters);
+            sanitized.TransportSpeedMultiplier = math.max(
+                MinTransportSpeedMultiplier,
+                MathGuard.SanitizeFinite(value.TransportSpeedMultiplier, fallback.TransportSpeedMultiplier));
+            sanitized.UnderwaterStressIntensity01 = MathGuard.Sanitize01(
+                value.UnderwaterStressIntensity01,
+                fallback.UnderwaterStressIntensity01);
+            return sanitized;
         }
     }
 }

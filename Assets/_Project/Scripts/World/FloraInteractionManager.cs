@@ -39,11 +39,11 @@ namespace Hecton8.World
 
         private static FloraInteractionManager s_ActiveRuntimeInstance;
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct FloraInteractionPointGpuData
         {
-            public Vector4 PositionRadius;
-            public Vector4 VelocitySpeed;
+            [FieldOffset(0)] public Vector4 PositionRadius;
+            [FieldOffset(16)] public Vector4 VelocitySpeed;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -143,6 +143,12 @@ namespace Hecton8.World
 
         internal readonly struct ModuleParasiteTarget
         {
+            public readonly BaseModule HostModule;
+            public readonly Vector3 Position;
+            public readonly float Radius;
+            public readonly float InfectionLevel;
+            public readonly float CriticalityWeight;
+
             public ModuleParasiteTarget(BaseModule hostModule, Vector3 position, float radius, float infectionLevel, float criticalityWeight)
             {
                 HostModule = hostModule;
@@ -151,34 +157,28 @@ namespace Hecton8.World
                 InfectionLevel = infectionLevel;
                 CriticalityWeight = criticalityWeight;
             }
-
-            public BaseModule HostModule { get; }
-            public Vector3 Position { get; }
-            public float Radius { get; }
-            public float InfectionLevel { get; }
-            public float CriticalityWeight { get; }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct FloraCascadeEventPayload
         {
-            public float3 Center;
-            public float StartTimeSeconds;
-            public float RadiusMeters;
-            public float Padding0;
-            public float Padding1;
-            public float Padding2;
+            [FieldOffset(0)] public float3 Center;
+            [FieldOffset(12)] public float StartTimeSeconds;
+            [FieldOffset(16)] public float RadiusMeters;
+            [FieldOffset(20)] public float Padding0;
+            [FieldOffset(24)] public float Padding1;
+            [FieldOffset(28)] public float Padding2;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct DefensiveSporeBurstState
         {
-            public Vector3 PositionWS;
-            public float Radius;
-            public float Intensity;
-            public float ExpireTimeSeconds;
-            public float Padding0;
-            public float Padding1;
+            [FieldOffset(0)] public Vector3 PositionWS;
+            [FieldOffset(12)] public float Radius;
+            [FieldOffset(16)] public float Intensity;
+            [FieldOffset(20)] public float ExpireTimeSeconds;
+            [FieldOffset(24)] public float Padding0;
+            [FieldOffset(28)] public float Padding1;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -825,6 +825,12 @@ namespace Hecton8.World
         private const float DamageReactionDurationReciprocal = 1.8181819f;
         private const string NativeMemoryOwner = nameof(FloraInteractionManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const Allocator DataVaultExemptOceanFlowSampleAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptReactiveFloraSpatialAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptCascadeEventAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptParasiteStateAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptTemplateMaskAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptCascadePhaseSeedAllocator = Allocator.Persistent;
 #if UNITY_EDITOR
         private const string WakeTrailSimulationComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_VegetationWakeTrailSim.compute";
 #endif
@@ -1345,6 +1351,9 @@ namespace Hecton8.World
         private PlayerToolManager _playerToolManager;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private Rigidbody _submarineHullRigidbody;
+        private HectonFluidEngine _fluidEngine;
+        private HectonCelestialEngine _celestialEngine;
+        private ISaveService _saveService;
         private Transform _activeScooterTransform;
         private Vector3 _lastPlayerPosition;
         private Vector3 _lastPublishedPlayerVelocity;
@@ -1639,6 +1648,7 @@ namespace Hecton8.World
             _ghostWeedAllelopathyStableHashId = string.IsNullOrWhiteSpace(_ghostWeedAllelopathyStableId) ? 0 : LocHash.Compute(_ghostWeedAllelopathyStableId);
             CacheStableHashIds(_cascadeReactiveStableIds, ref _cascadeReactiveStableHashIds);
             CacheStableHashIds(_defensiveSporeBurstStableIds, ref _defensiveSporeBurstStableHashIds);
+            CacheEnvironmentRuntimeServicesCold();
             TryAutoAssignWakeTrailSimulationCompute();
             if (_wakeTrailSimulationCompute != null)
                 _wakeTrailSimulationKernel = _wakeTrailSimulationCompute.FindKernel("SimulateWakeTrail");
@@ -1659,19 +1669,19 @@ namespace Hecton8.World
             _predatorThreatQueryHits = new SpatialQueryHit[MaxPredatorThreatQueryHits];
             _interactionBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraInteractionPointGpuData>(_maxInteractionPoints); // COLD ALLOC: GraphicsBuffer[_maxInteractionPoints] - global vegetation interaction StructuredBuffer - owner: FloraInteractionManager
             // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample positions for vegetation flow publishing - owner: FloraInteractionManager
-            _oceanFlowSamplePositions = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _oceanFlowSamplePositions = new NativeArray<Vector3>(1, DataVaultExemptOceanFlowSampleAllocator, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample results for vegetation flow publishing - owner: FloraInteractionManager
-            _oceanFlowSampleResults = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _oceanFlowSampleResults = new NativeArray<Vector3>(1, DataVaultExemptOceanFlowSampleAllocator, NativeArrayOptions.ClearMemory);
             ResolveProceduralWakeVaultBuffer(clearExisting: true);
             ResolveFloraSwayFieldVaultBuffer(clearExisting: false);
             GenerateEmergencyMockStiffness();
             EnsureFloraSwayFieldGraphicsBuffers();
-            _reactiveFloraQueryHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - shared reactive flora spatial-query handle staging - owner: FloraInteractionManager
-            _surfaceReactiveFloraHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - registered surface reactive-flora spatial handles - owner: FloraInteractionManager
-            _underwaterReactiveFloraHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - registered underwater reactive-flora spatial handles - owner: FloraInteractionManager
-            _surfaceCascadeEvents = new NativeArray<FloraCascadeEventPayload>(MaxCascadeEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraCascadeEventPayload>[4] - bounded active surface cascade wavefront descriptors - owner: FloraInteractionManager
-            _underwaterCascadeEvents = new NativeArray<FloraCascadeEventPayload>(MaxCascadeEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraCascadeEventPayload>[4] - bounded active underwater cascade wavefront descriptors - owner: FloraInteractionManager
-            _parasiteNodes = new NativeArray<ParasiteNode>(_headlessParasiteCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ParasiteNode>[_headlessParasiteCapacity] - headless module parasite simulation state - owner: FloraInteractionManager
+            _reactiveFloraQueryHandles = new NativeList<int>(64, DataVaultExemptReactiveFloraSpatialAllocator); // COLD ALLOC: NativeList<int>[64] - shared reactive flora spatial-query handle staging - owner: FloraInteractionManager
+            _surfaceReactiveFloraHandles = new NativeList<int>(64, DataVaultExemptReactiveFloraSpatialAllocator); // COLD ALLOC: NativeList<int>[64] - registered surface reactive-flora spatial handles - owner: FloraInteractionManager
+            _underwaterReactiveFloraHandles = new NativeList<int>(64, DataVaultExemptReactiveFloraSpatialAllocator); // COLD ALLOC: NativeList<int>[64] - registered underwater reactive-flora spatial handles - owner: FloraInteractionManager
+            _surfaceCascadeEvents = new NativeArray<FloraCascadeEventPayload>(MaxCascadeEvents, DataVaultExemptCascadeEventAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraCascadeEventPayload>[4] - bounded active surface cascade wavefront descriptors - owner: FloraInteractionManager
+            _underwaterCascadeEvents = new NativeArray<FloraCascadeEventPayload>(MaxCascadeEvents, DataVaultExemptCascadeEventAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraCascadeEventPayload>[4] - bounded active underwater cascade wavefront descriptors - owner: FloraInteractionManager
+            _parasiteNodes = new NativeArray<ParasiteNode>(_headlessParasiteCapacity, DataVaultExemptParasiteStateAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ParasiteNode>[_headlessParasiteCapacity] - headless module parasite simulation state - owner: FloraInteractionManager
             _defensiveSporeBursts = new DefensiveSporeBurstState[MaxDefensiveSporeBursts]; // COLD ALLOC: DefensiveSporeBurstState[6] - bounded active toxicity cloud descriptors - owner: FloraInteractionManager
             RegisterNativeMemorySentinel();
 
@@ -1702,6 +1712,7 @@ namespace Hecton8.World
             ResolveFloraSwayFieldVaultBuffer(clearExisting: false);
             EnsureFloraSwayFieldGraphicsBuffers();
             RefreshInstanceCullingService();
+            CacheEnvironmentRuntimeServicesCold();
             TryRegisterCullingHotSwapListener();
             RefreshCachedSubmarineContext();
             PublishFlowFieldGlobals();
@@ -1725,6 +1736,9 @@ namespace Hecton8.World
             _instanceCullingService = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
+            _fluidEngine = null;
+            _celestialEngine = null;
+            _saveService = null;
             TryUnregister();
             ClearToxicSporeHazard();
             ClearDefensiveSporeHazard();
@@ -1747,6 +1761,9 @@ namespace Hecton8.World
             _instanceCullingService = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
+            _fluidEngine = null;
+            _celestialEngine = null;
+            _saveService = null;
             TryUnregister();
             ClearToxicSporeHazard();
             ClearDefensiveSporeHazard();
@@ -1820,7 +1837,7 @@ namespace Hecton8.World
             UpdateSedimentCooldowns(deltaTime);
 
             Transform runtimePlayerTransform = ResolveRuntimePlayerTransform();
-            Vector3 targetPosition = runtimePlayerTransform != null ? runtimePlayerTransform.position : Vector3.zero;
+            Vector3 targetPosition = ResolveRuntimePosition(runtimePlayerTransform);
             PublishEnvironmentGlobals(targetPosition);
             PublishSubmarineWashGlobals();
             PublishDamageReactionGlobal(deltaTime);
@@ -1892,6 +1909,11 @@ namespace Hecton8.World
             Shader.SetGlobalInt(_InteractionCountId, 0);
             _lastPublishedInteractionCount = 0;
             ResetExternalInteractions();
+        }
+
+        private static Vector3 ResolveRuntimePosition(Transform source)
+        {
+            return source != null ? source.position : Vector3.zero;
         }
 
         /// <summary>
@@ -2335,7 +2357,7 @@ namespace Hecton8.World
             if (surfaceBounds.size.sqrMagnitude <= 0.0001f || !surfaceBounds.Contains(positionWS))
                 return false;
 
-            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            HectonFluidEngine fluidEngine = _fluidEngine;
             float waterLevel = fluidEngine != null ? fluidEngine.WaterLevel : DefaultVegetationWaterLevel;
             return positionWS.y <= waterLevel - 0.25f;
         }
@@ -2426,7 +2448,7 @@ namespace Hecton8.World
             float lightFactor = underwaterVisuals != null ? underwaterVisuals.CurrentLightFactor : 1f;
             float turbidity = underwaterVisuals != null ? underwaterVisuals.CurrentTurbidity : 0f;
 
-            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            HectonFluidEngine fluidEngine = _fluidEngine;
             float waterLevel = fluidEngine != null ? fluidEngine.WaterLevel : DefaultVegetationWaterLevel;
             Vector3 currentVector = ResolveGlobalOceanFlow(samplePositionWS, fluidEngine);
             _lastVegetationCurrentVector = IsFiniteVector3(currentVector) ? currentVector : Vector3.zero;
@@ -2501,14 +2523,15 @@ namespace Hecton8.World
                     _cascadeReleaseDurationSeconds));
         }
 
-        private static float GetCurrentSimulationTimeSeconds()
+        private float GetCurrentSimulationTimeSeconds()
         {
-            HectonCelestialEngine celestialEngine = GlobalRegistry.CelestialEngine;
+            HectonCelestialEngine celestialEngine = _celestialEngine;
             if (celestialEngine != null)
                 return Mathf.Max(0f, celestialEngine.GameTime);
 
-            return GlobalRegistry.Save != null
-                ? Mathf.Max(0f, GlobalRegistry.Save.CurrentPlayTimeSeconds)
+            ISaveService saveService = _saveService;
+            return saveService != null
+                ? Mathf.Max(0f, saveService.CurrentPlayTimeSeconds)
                 : Time.realtimeSinceStartup;
         }
 
@@ -3257,7 +3280,7 @@ namespace Hecton8.World
             if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 playerAup = snapshot.Aup;
-                return MathGuard.IsFinite(in playerAup);
+                return playerAup.IsFinite();
             }
 
             var playerMovement = playerContext.PlayerMovement;
@@ -3265,7 +3288,7 @@ namespace Hecton8.World
                 return false;
 
             playerAup = playerMovement.CurrentAup;
-            return MathGuard.IsFinite(in playerAup);
+            return playerAup.IsFinite();
         }
 
         private static AbsoluteUniversePosition QuantizeFloraSwayAup(in AbsoluteUniversePosition rawAup, float cellSize)
@@ -6667,7 +6690,7 @@ namespace Hecton8.World
                 return;
 
             DisposeNativeArray(ref array);
-            array = new NativeArray<byte>(requiredCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[templateCount] - reactive flora template membership mask - owner: FloraInteractionManager
+            array = new NativeArray<byte>(requiredCount, DataVaultExemptTemplateMaskAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[templateCount] - reactive flora template membership mask - owner: FloraInteractionManager
             NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
@@ -6683,7 +6706,7 @@ namespace Hecton8.World
                 return;
 
             DisposeNativeArray(ref array);
-            array = new NativeArray<float>(requiredCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[instanceCount] - per-instance cascade phase seed staging - owner: FloraInteractionManager
+            array = new NativeArray<float>(requiredCount, DataVaultExemptCascadePhaseSeedAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[instanceCount] - per-instance cascade phase seed staging - owner: FloraInteractionManager
             NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
@@ -7577,10 +7600,26 @@ namespace Hecton8.World
 
         private void RefreshCachedSubmarineContext()
         {
-            _submarineRuntimeContext = GlobalRegistry.Submarine;
             _submarineHullRigidbody = _submarineRuntimeContext != null
                 ? _submarineRuntimeContext.HullRigidbody
                 : null;
+        }
+
+        private void CacheEnvironmentRuntimeServicesCold()
+        {
+            if (_submarineRuntimeContext == null)
+                _submarineRuntimeContext = GlobalRegistry.Submarine;
+
+            if (_fluidEngine == null)
+                _fluidEngine = GlobalRegistry.Fluid;
+
+            if (_celestialEngine == null)
+                _celestialEngine = GlobalRegistry.CelestialEngine;
+
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
+
+            RefreshCachedSubmarineContext();
         }
 
         private void RefreshInstanceCullingService()
@@ -7890,19 +7929,31 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            switch (serviceSlot)
             {
-                ResolveProceduralWakeVaultBuffer(currentService as IDataVault, clearExisting: false);
-                ResolveFloraSwayFieldVaultBuffer(currentService as IDataVault, clearExisting: false);
-                PublishFloraSwayFieldGlobals(forceUpload: true);
-                return;
+                case GlobalRegistryServiceSlot.DataVault:
+                    ResolveProceduralWakeVaultBuffer(currentService as IDataVault, clearExisting: false);
+                    ResolveFloraSwayFieldVaultBuffer(currentService as IDataVault, clearExisting: false);
+                    PublishFloraSwayFieldGlobals(forceUpload: true);
+                    break;
+                case GlobalRegistryServiceSlot.InstanceCullingRuntime:
+                    _instanceCullingService = currentService as IInstanceCullingService;
+                    PublishCulledFloraGlobals();
+                    break;
+                case GlobalRegistryServiceSlot.Submarine:
+                    _submarineRuntimeContext = currentService as ISubmarineRuntimeContext;
+                    RefreshCachedSubmarineContext();
+                    break;
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _fluidEngine = currentService as HectonFluidEngine;
+                    break;
+                case GlobalRegistryServiceSlot.CelestialEngineRuntime:
+                    _celestialEngine = currentService as HectonCelestialEngine;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    _saveService = currentService as ISaveService;
+                    break;
             }
-
-            if (serviceSlot != GlobalRegistryServiceSlot.InstanceCullingRuntime)
-                return;
-
-            _instanceCullingService = currentService as IInstanceCullingService;
-            PublishCulledFloraGlobals();
         }
 
         private void ReleaseFlowFieldBuffer()

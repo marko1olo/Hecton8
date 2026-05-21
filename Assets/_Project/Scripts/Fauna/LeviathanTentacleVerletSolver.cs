@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Animation.IK;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -13,6 +14,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 
 namespace Hecton8.AI
 {
@@ -22,7 +24,7 @@ namespace Hecton8.AI
     [DisallowMultipleComponent]
     // Runs early enough to register with the dispatcher before fauna presentation consumers sample matrices.
     [DefaultExecutionOrder(-9910)]
-    internal sealed class LeviathanTentacleVerletSolver : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable
+    internal sealed class LeviathanTentacleVerletSolver : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxTentacles = 8;
         private const int SegmentsPerTentacle = 20;
@@ -494,7 +496,9 @@ namespace Hecton8.AI
         private int _grabTargetDamageId;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
+        private bool _registeredHotSwapListener;
         private bool _registeredOriginShiftListener;
+        private bool _registeredScalabilityListener;
         private bool _solverScheduled;
         private bool _pendingOriginShiftRebase;
         private bool _telemetryDumped;
@@ -525,23 +529,24 @@ namespace Hecton8.AI
         private Mesh _argsUploadMesh;
         private JobHandle _pendingSolverHandle;
         private IDataVault _dataVault;
+        private HectonFluidEngine _fluidRuntime;
 
         // COLD ALLOC: Vector3[8] - deterministic missing-socket local anchors - owner: LeviathanTentacleVerletSolver
         private readonly Vector3[] _fallbackRootOffsets = new Vector3[MaxTentacles];
 
-        private VaultBufferHandle<float3> _positionsHandle;
-        private VaultBufferHandle<float3> _previousPositionsHandle;
-        private VaultBufferHandle<float> _radiusHandle;
-        private VaultBufferHandle<LeviathanBoneDTO> _segmentMatricesHandle;
-        private VaultBufferHandle<float> _stretchFractionsHandle;
-        private VaultBufferHandle<float3> _constraintCorrectionsHandle;
-        private VaultBufferHandle<int> _constraintCorrectionCountsHandle;
-        private VaultBufferHandle<float3> _rootPositionsHandle;
-        private VaultBufferHandle<float3> _targetPositionsHandle;
-        private VaultBufferHandle<AbsoluteUniversePosition> _rootAupsHandle;
-        private VaultBufferHandle<AbsoluteUniversePosition> _targetAupsHandle;
-        private VaultBufferHandle<uint> _tentacleStatesHandle;
-        private VaultBufferHandle<LeviathanTentacleTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<float3> _positionsHandle;
+        private VaultGenerationHandle<float3> _previousPositionsHandle;
+        private VaultGenerationHandle<float> _radiusHandle;
+        private VaultGenerationHandle<LeviathanBoneDTO> _segmentMatricesHandle;
+        private VaultGenerationHandle<float> _stretchFractionsHandle;
+        private VaultGenerationHandle<float3> _constraintCorrectionsHandle;
+        private VaultGenerationHandle<int> _constraintCorrectionCountsHandle;
+        private VaultGenerationHandle<float3> _rootPositionsHandle;
+        private VaultGenerationHandle<float3> _targetPositionsHandle;
+        private VaultGenerationHandle<AbsoluteUniversePosition> _rootAupsHandle;
+        private VaultGenerationHandle<AbsoluteUniversePosition> _targetAupsHandle;
+        private VaultGenerationHandle<uint> _tentacleStatesHandle;
+        private VaultGenerationHandle<LeviathanTentacleTelemetryEntry> _telemetryRingHandle;
 
         private struct TentacleVaultBuffers
         {
@@ -579,6 +584,8 @@ namespace Hecton8.AI
             EnsurePersistentBuffers();
             SeedAllTentaclesFromSockets();
             ResetConstraintIterationHysteresis();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             TryRegister();
             TryRegisterOriginShiftListener();
         }
@@ -589,6 +596,8 @@ namespace Hecton8.AI
                 return;
 
             TryUnregisterOriginShiftListener();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             TryUnregister();
             if (_solverScheduled && DispatcherJobSwap.TryFinalizeCompleted(ref _pendingSolverHandle))
             {
@@ -615,6 +624,8 @@ namespace Hecton8.AI
 
             _disposed = true;
             TryUnregisterOriginShiftListener();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             TryUnregister();
             DisposePersistentBuffers();
             ReleaseGraphicsBuffers();
@@ -707,7 +718,9 @@ namespace Hecton8.AI
                 math.max(DefaultMaxStretchLength, safeRestLength * SegmentLastIndex),
                 safeRestLength * SegmentLastIndex);
             float3 safeGravity = SanitizeFiniteInputFloat3(new float3(gravity.x, gravity.y, gravity.z), float3.zero);
-            _qualityTier = GlobalRegistry.ScalabilityTier;
+            _qualityTier = _qualityTier == HectonQualityTier.Unknown
+                ? HectonQualityTier.Low
+                : _qualityTier;
             _globalQualityWeight = ResolveGlobalQualityWeight();
             int constraintIterations = ResolveConstraintIterationsWithHysteresis(safeDeltaTime, _globalQualityWeight);
             _solverTimeSeconds += safeDeltaTime;
@@ -791,9 +804,6 @@ namespace Hecton8.AI
                 _registeredLateFrame = false;
             }
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             if (_registeredUpdate && _registeredLateFrame)
@@ -817,6 +827,41 @@ namespace Hecton8.AI
 
             _registeredUpdate = false;
             _registeredLateFrame = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
         }
 
         private void TryRegisterOriginShiftListener()
@@ -853,6 +898,24 @@ namespace Hecton8.AI
         private void RefreshColdDependencies()
         {
             _dataVault = GlobalRegistry.DataVault;
+            _fluidRuntime = GlobalRegistry.Fluid;
+            _qualityTier = GlobalRegistry.ScalabilityTier;
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _qualityTier = payload.CurrentQualityTier;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.FluidRuntime)
+                return;
+
+            _fluidRuntime = currentService as HectonFluidEngine;
         }
 
         private void EnsurePersistentBuffers()
@@ -864,24 +927,23 @@ namespace Hecton8.AI
                 return;
 
             ClearVaultHandles();
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
-            _dataVault = vault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 
-            _positionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentaclePositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _previousPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentaclePreviousPositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _radiusHandle = vault.GetBufferHandle<float>(BufferID.LeviathanTentacleRadius, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _segmentMatricesHandle = vault.GetBufferHandle<LeviathanBoneDTO>(BufferID.LeviathanTentacleSegmentMatrices, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _stretchFractionsHandle = vault.GetBufferHandle<float>(BufferID.LeviathanTentacleStretchFractions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _constraintCorrectionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleConstraintCorrections, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _constraintCorrectionCountsHandle = vault.GetBufferHandle<int>(BufferID.LeviathanTentacleConstraintCorrectionCounts, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _rootPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleRootPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _targetPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanTentacleTargetPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _rootAupsHandle = vault.GetBufferHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleRootAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _targetAupsHandle = vault.GetBufferHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleTargetAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _tentacleStatesHandle = vault.GetBufferHandle<uint>(BufferID.LeviathanTentacleStates, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = vault.GetBufferHandle<LeviathanTentacleTelemetryEntry>(BufferID.LeviathanTentacleTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _positionsHandle = vault.GetGenerationHandle<float3>(BufferID.LeviathanTentaclePositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _previousPositionsHandle = vault.GetGenerationHandle<float3>(BufferID.LeviathanTentaclePreviousPositions, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _radiusHandle = vault.GetGenerationHandle<float>(BufferID.LeviathanTentacleRadius, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _segmentMatricesHandle = vault.GetGenerationHandle<LeviathanBoneDTO>(BufferID.LeviathanTentacleSegmentMatrices, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _stretchFractionsHandle = vault.GetGenerationHandle<float>(BufferID.LeviathanTentacleStretchFractions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _constraintCorrectionsHandle = vault.GetGenerationHandle<float3>(BufferID.LeviathanTentacleConstraintCorrections, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _constraintCorrectionCountsHandle = vault.GetGenerationHandle<int>(BufferID.LeviathanTentacleConstraintCorrectionCounts, TotalSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _rootPositionsHandle = vault.GetGenerationHandle<float3>(BufferID.LeviathanTentacleRootPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _targetPositionsHandle = vault.GetGenerationHandle<float3>(BufferID.LeviathanTentacleTargetPositions, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _rootAupsHandle = vault.GetGenerationHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleRootAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _targetAupsHandle = vault.GetGenerationHandle<AbsoluteUniversePosition>(BufferID.LeviathanTentacleTargetAups, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _tentacleStatesHandle = vault.GetGenerationHandle<uint>(BufferID.LeviathanTentacleStates, MaxTentacles, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
+            _telemetryRingHandle = vault.GetGenerationHandle<LeviathanTentacleTelemetryEntry>(BufferID.LeviathanTentacleTelemetryRing, TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
 
             if (!TryResolvePersistentBuffers(out _))
                 ClearVaultHandles();
@@ -919,24 +981,28 @@ namespace Hecton8.AI
         private bool TryResolvePersistentBuffers(out TentacleVaultBuffers buffers)
         {
             buffers = default;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
-            _dataVault = vault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            buffers.Positions = _positionsHandle.Resolve(vault);
-            buffers.PreviousPositions = _previousPositionsHandle.Resolve(vault);
-            buffers.Radius = _radiusHandle.Resolve(vault);
-            buffers.SegmentMatrices = _segmentMatricesHandle.Resolve(vault);
-            buffers.StretchFractions = _stretchFractionsHandle.Resolve(vault);
-            buffers.ConstraintCorrections = _constraintCorrectionsHandle.Resolve(vault);
-            buffers.ConstraintCorrectionCounts = _constraintCorrectionCountsHandle.Resolve(vault);
-            buffers.RootPositions = _rootPositionsHandle.Resolve(vault);
-            buffers.TargetPositions = _targetPositionsHandle.Resolve(vault);
-            buffers.RootAups = _rootAupsHandle.Resolve(vault);
-            buffers.TargetAups = _targetAupsHandle.Resolve(vault);
-            buffers.TentacleStates = _tentacleStatesHandle.Resolve(vault);
-            buffers.TelemetryRing = _telemetryRingHandle.Resolve(vault);
+            if (!TryResolveVaultBuffer(vault, in _positionsHandle, BufferID.LeviathanTentaclePositions, out buffers.Positions) ||
+                !TryResolveVaultBuffer(vault, in _previousPositionsHandle, BufferID.LeviathanTentaclePreviousPositions, out buffers.PreviousPositions) ||
+                !TryResolveVaultBuffer(vault, in _radiusHandle, BufferID.LeviathanTentacleRadius, out buffers.Radius) ||
+                !TryResolveVaultBuffer(vault, in _segmentMatricesHandle, BufferID.LeviathanTentacleSegmentMatrices, out buffers.SegmentMatrices) ||
+                !TryResolveVaultBuffer(vault, in _stretchFractionsHandle, BufferID.LeviathanTentacleStretchFractions, out buffers.StretchFractions) ||
+                !TryResolveVaultBuffer(vault, in _constraintCorrectionsHandle, BufferID.LeviathanTentacleConstraintCorrections, out buffers.ConstraintCorrections) ||
+                !TryResolveVaultBuffer(vault, in _constraintCorrectionCountsHandle, BufferID.LeviathanTentacleConstraintCorrectionCounts, out buffers.ConstraintCorrectionCounts) ||
+                !TryResolveVaultBuffer(vault, in _rootPositionsHandle, BufferID.LeviathanTentacleRootPositions, out buffers.RootPositions) ||
+                !TryResolveVaultBuffer(vault, in _targetPositionsHandle, BufferID.LeviathanTentacleTargetPositions, out buffers.TargetPositions) ||
+                !TryResolveVaultBuffer(vault, in _rootAupsHandle, BufferID.LeviathanTentacleRootAups, out buffers.RootAups) ||
+                !TryResolveVaultBuffer(vault, in _targetAupsHandle, BufferID.LeviathanTentacleTargetAups, out buffers.TargetAups) ||
+                !TryResolveVaultBuffer(vault, in _tentacleStatesHandle, BufferID.LeviathanTentacleStates, out buffers.TentacleStates) ||
+                !TryResolveVaultBuffer(vault, in _telemetryRingHandle, BufferID.LeviathanTentacleTelemetryRing, out buffers.TelemetryRing))
+            {
+                buffers = default;
+                return false;
+            }
+
             return buffers.Positions.IsCreated &&
                 buffers.PreviousPositions.IsCreated &&
                 buffers.Radius.IsCreated &&
@@ -963,6 +1029,19 @@ namespace Hecton8.AI
                 buffers.TargetAups.Length >= MaxTentacles &&
                 buffers.TentacleStates.Length >= MaxTentacles &&
                 buffers.TelemetryRing.Length >= TelemetryCapacity;
+        }
+
+        private static bool TryResolveVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
 
         private void BuildFallbackRootOffsets()
@@ -1047,7 +1126,7 @@ namespace Hecton8.AI
             _lastFlowCenter = Vector4.zero;
             _lastFlowSpacing = Vector4.zero;
 
-            var fluid = GlobalRegistry.Fluid;
+            HectonFluidEngine fluid = _fluidRuntime;
             if (fluid == null)
                 return;
 
@@ -1170,7 +1249,13 @@ namespace Hecton8.AI
             double inverseDistance = math.rsqrt(math.max(distanceSq, 0.0001d));
             double3 exactDirection = delta * inverseDistance;
             float3 resolvedDirection = new float3((float)exactDirection.x, (float)exactDirection.y, (float)exactDirection.z);
-            Vector3 resolvedTip = HectonFloatingOrigin.ToRuntimePosition(tipAbsolute, HectonFloatingOrigin.CurrentTotalOffsetDouble);
+            if (!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup))
+                return false;
+
+            float3 resolvedTipLocal = AupPrecisionMath.DowncastLocalDelta(
+                tipAbsolute - originAup.ToAbsoluteDouble3(),
+                float3.zero);
+            Vector3 resolvedTip = new Vector3(resolvedTipLocal.x, resolvedTipLocal.y, resolvedTipLocal.z);
             if (!math.all(math.isfinite(resolvedDirection)) || !IsFinite(resolvedTip))
                 return false;
 
@@ -1547,7 +1632,9 @@ namespace Hecton8.AI
 
         private void ResetConstraintIterationHysteresis()
         {
-            _qualityTier = GlobalRegistry.ScalabilityTier;
+            _qualityTier = _qualityTier == HectonQualityTier.Unknown
+                ? HectonQualityTier.Low
+                : _qualityTier;
             _globalQualityWeight = ResolveGlobalQualityWeight();
             int iterations = ResolveConstraintIterations(_globalQualityWeight, highTierConstraintIterations);
             _resolvedConstraintIterations = iterations;
@@ -1661,10 +1748,18 @@ namespace Hecton8.AI
         private static AbsoluteUniversePosition ToAbsoluteUniversePosition(float3 runtimePosition)
         {
             float3 safeRuntimePosition = SanitizeFiniteFloat3(runtimePosition, float3.zero);
-            return AbsoluteUniversePosition.FromRuntimePosition(new Vector3(
-                safeRuntimePosition.x,
-                safeRuntimePosition.y,
-                safeRuntimePosition.z));
+            if (!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup))
+                return default;
+
+            return AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(safeRuntimePosition.x, safeRuntimePosition.y, safeRuntimePosition.z));
+        }
+
+        private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
+        {
+            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return originAup.IsFinite();
         }
 
         private static bool TryPrepareAbyssalFlowPayload(

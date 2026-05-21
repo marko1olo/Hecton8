@@ -63,8 +63,11 @@ namespace Hecton8.Narrative
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-139)]
-    public sealed class LoreDatabaseManager : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener, IAudioLogEventListener
+    public sealed class LoreDatabaseManager : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener, IAudioLogEventListener, ILoreUnlockReadModel
     {
+        private const string NativeMemoryOwner = nameof(LoreDatabaseManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+
         private readonly struct LoreSeed
         {
             public readonly string LogId;
@@ -118,6 +121,10 @@ namespace Hecton8.Narrative
         /// </summary>
         public readonly struct LoreRecordView
         {
+            public readonly uint LogHash;
+            public readonly AudioLogCategory Category;
+            public readonly LoreDeliveryMode DeliveryMode;
+
             internal LoreRecordView(
                 uint logHash,
                 AudioLogCategory category,
@@ -127,21 +134,6 @@ namespace Hecton8.Narrative
                 Category = category;
                 DeliveryMode = deliveryMode;
             }
-
-            /// <summary>
-            /// Stable record hash.
-            /// </summary>
-            public uint LogHash { get; }
-
-            /// <summary>
-            /// Broad archive category used by the PDA list.
-            /// </summary>
-            public AudioLogCategory Category { get; }
-
-            /// <summary>
-            /// Delivery mode metadata from the authored survival spec.
-            /// </summary>
-            public LoreDeliveryMode DeliveryMode { get; }
         }
 
         // COLD ALLOC: LoreSeed[50] - fixed industrial lore archive bank from survival spec - owner: LoreDatabaseManager
@@ -277,6 +269,7 @@ namespace Hecton8.Narrative
 
             if (_unlockedWords.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_unlockedWords);
                 _disposeHandle = _unlockedWords.Dispose(_disposeHandle);
                 _unlockedWords = default;
                 JobHandle.ScheduleBatchedJobs();
@@ -350,7 +343,7 @@ namespace Hecton8.Narrative
                 return;
 
             GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+            _hotSwapListenerRegistered = GlobalRegistry.IsHotSwapListenerRegistered(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -358,7 +351,7 @@ namespace Hecton8.Narrative
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.HotSwapListeners.Contains(this))
+            if (GlobalRegistry.IsHotSwapListenerRegistered(this))
                 GlobalRegistry.UnregisterHotSwapListener(this);
 
             _hotSwapListenerRegistered = false;
@@ -443,6 +436,20 @@ namespace Hecton8.Narrative
         public bool IsUnlocked(uint logHash)
         {
             return TryGetRecordIndex(logHash, out int index) && IsUnlocked(index);
+        }
+
+        public bool IsLoreUnlocked(uint logHash)
+        {
+            if (logHash == 0u)
+                return false;
+
+            for (int i = 0; i < IndustrialLoreBitMask.RecordCount; i++)
+            {
+                if (s_records[i].LogHash == logHash)
+                    return IsUnlocked(i);
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -838,6 +845,7 @@ namespace Hecton8.Narrative
                 IndustrialLoreBitMask.RuntimeWordCount,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[2] - industrial lore unlock words - owner: LoreDatabaseManager
+            NativeMemorySentinel.RegisterNativeArray(_unlockedWords, NativeMemoryOwner, nameof(_unlockedWords), NativeMemoryLifetime);
         }
 
 #if UNITY_EDITOR

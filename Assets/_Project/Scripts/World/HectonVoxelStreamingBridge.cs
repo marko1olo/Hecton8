@@ -217,8 +217,9 @@ namespace Hecton8.World
             if (!vegetationBridge.TryGetTerrainHoleStreamingPayload(out var holes, out int holeCount) || !holes.IsCreated || holeCount <= 0)
                 return;
 
-            Vector3 playerPosition = playerTransform != null ? playerTransform.position : transform.position;
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                return;
+
             double requestDistanceSq = (double)requestDistance * requestDistance;
             for (int i = 0; i < holeCount; i++)
             {
@@ -226,7 +227,9 @@ namespace Hecton8.World
                 if (hole.SourceType != TerrainHoleSourceType.CaveEntrance)
                     continue;
 
-                AbsoluteUniversePosition absoluteHolePosition = AbsoluteUniversePosition.FromRuntimePosition(hole.Position);
+                if (!TryResolveAupFromRuntimeOrigin(hole.Position, out AbsoluteUniversePosition absoluteHolePosition))
+                    continue;
+
                 long requestKey = hole.HoleId != 0
                     ? hole.HoleId
                     : BuildHoleKey(absoluteHolePosition, hole.Radius);
@@ -279,8 +282,9 @@ namespace Hecton8.World
             if (_activeVolumes.Count <= 0)
                 return;
 
-            Vector3 playerPosition = playerTransform != null ? playerTransform.position : transform.position;
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                return;
+
             double retentionDistanceSq = (double)retentionDistance * retentionDistance;
             _keyScratch.Clear();
             Dictionary<long, GameObject>.Enumerator enumerator = _activeVolumes.GetEnumerator();
@@ -475,6 +479,36 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
             WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerMovement != null)
+            {
+                playerAup = playerContext.PlayerMovement.CurrentAup;
+                if (AbsoluteUniversePosition.IsFinite(in playerAup))
+                    return true;
+            }
+
+            Vector3 playerPosition = playerTransform != null ? playerTransform.position : transform.position;
+            return TryResolveAupFromRuntimeOrigin(playerPosition, out playerAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in aup);
         }
 
         private void TryRegister()

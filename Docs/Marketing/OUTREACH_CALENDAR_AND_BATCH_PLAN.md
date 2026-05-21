@@ -127,7 +127,7 @@ Targets:
 
 Ask:
 
-> Steam page is live. I am collecting blunt feedback on whether the page communicates pressure/machinery/survival clearly.
+> HOLD_STEAM_PAGE_FEEDBACK_ASK - say the Steam page is live and request page feedback only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, UTM custody, and AB-009/KPI proof for any agency/pressure/route-risk page claim pass.
 
 Optional CTA:
 

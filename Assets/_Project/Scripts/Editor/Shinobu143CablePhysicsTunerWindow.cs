@@ -104,56 +104,86 @@ namespace Hecton8.Editor
 
         private void PullFromVault()
         {
-            if (!TryResolveTuning(out NativeArray<VerletCableTuningDTO> tuning))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!TryAcquireEditorWriteView(
+                    vault,
+                    BufferID.VerletCableTuning,
+                    1,
+                    SystemID.Physics,
+                    NativeArrayOptions.ClearMemory,
+                    out VaultGenerationHandle<VerletCableTuningDTO> tuningHandle,
+                    out NativeArray<VerletCableTuningDTO> tuning))
             {
                 _status.text = "GlobalDataVault unavailable.";
                 return;
             }
 
-            VerletCableTuningDTO dto = tuning[0];
-            if (math.lengthsq(dto.Gravity) <= 0.000001f)
-                dto.Gravity = new float3(0f, -9.80665f, 0f);
-            if (dto.FluidFriction <= 0f)
-                dto.FluidFriction = 0.975f;
-            if (dto.StretchThreshold01 <= 0f)
-                dto.StretchThreshold01 = 0.18f;
-            if (dto.RockFriction01 <= 0f)
-                dto.RockFriction01 = 0.58f;
-            if (dto.ReelSpeedMetersPerSecond <= 0f)
-                dto.ReelSpeedMetersPerSecond = 18f;
+            try
+            {
+                VerletCableTuningDTO dto = tuning[0];
+                if (math.lengthsq(dto.Gravity) <= 0.000001f)
+                    dto.Gravity = new float3(0f, -9.80665f, 0f);
+                if (dto.FluidFriction <= 0f)
+                    dto.FluidFriction = 0.975f;
+                if (dto.StretchThreshold01 <= 0f)
+                    dto.StretchThreshold01 = 0.18f;
+                if (dto.RockFriction01 <= 0f)
+                    dto.RockFriction01 = 0.58f;
+                if (dto.ReelSpeedMetersPerSecond <= 0f)
+                    dto.ReelSpeedMetersPerSecond = 18f;
 
-            tuning[0] = dto;
-            _gravity.SetValueWithoutNotify(dto.Gravity.y);
-            _friction.SetValueWithoutNotify(dto.FluidFriction);
-            _iterations.SetValueWithoutNotify(math.clamp(dto.ConstraintIterations, 0, 15));
-            _stretch.SetValueWithoutNotify(dto.StretchThreshold01);
-            _breakForce.SetValueWithoutNotify(math.max(0f, dto.BreakForce));
-            _rockFriction.SetValueWithoutNotify(dto.RockFriction01);
-            _reelSpeed.SetValueWithoutNotify(dto.ReelSpeedMetersPerSecond);
-            _status.text = "Vault sampled.";
+                tuning[0] = dto;
+                _gravity.SetValueWithoutNotify(dto.Gravity.y);
+                _friction.SetValueWithoutNotify(dto.FluidFriction);
+                _iterations.SetValueWithoutNotify(math.clamp(dto.ConstraintIterations, 0, 15));
+                _stretch.SetValueWithoutNotify(dto.StretchThreshold01);
+                _breakForce.SetValueWithoutNotify(math.max(0f, dto.BreakForce));
+                _rockFriction.SetValueWithoutNotify(dto.RockFriction01);
+                _reelSpeed.SetValueWithoutNotify(dto.ReelSpeedMetersPerSecond);
+                _status.text = "Vault sampled.";
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in tuningHandle, SystemID.CoreDiagnostics);
+            }
         }
 
         private void ApplyTuning()
         {
-            if (!TryResolveTuning(out NativeArray<VerletCableTuningDTO> tuning))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!TryAcquireEditorWriteView(
+                    vault,
+                    BufferID.VerletCableTuning,
+                    1,
+                    SystemID.Physics,
+                    NativeArrayOptions.ClearMemory,
+                    out VaultGenerationHandle<VerletCableTuningDTO> tuningHandle,
+                    out NativeArray<VerletCableTuningDTO> tuning))
             {
                 _status.text = "GlobalDataVault unavailable.";
                 return;
             }
 
-            tuning[0] = new VerletCableTuningDTO
+            try
             {
-                Gravity = new float3(0f, _gravity.value, 0f),
-                FluidFriction = math.saturate(_friction.value),
-                ConstraintIterations = math.clamp(_iterations.value, 0, 15),
-                StretchThreshold01 = math.max(0.001f, _stretch.value),
-                BreakForce = math.max(0f, _breakForce.value),
-                RockFriction01 = math.saturate(_rockFriction.value),
-                ReelSpeedMetersPerSecond = math.max(0.001f, _reelSpeed.value),
-                Reserved0 = 0f,
-                Reserved1 = 0f
-            };
-            _status.text = "Tuning written to Vault.";
+                tuning[0] = new VerletCableTuningDTO
+                {
+                    Gravity = new float3(0f, _gravity.value, 0f),
+                    FluidFriction = math.saturate(_friction.value),
+                    ConstraintIterations = math.clamp(_iterations.value, 0, 15),
+                    StretchThreshold01 = math.max(0.001f, _stretch.value),
+                    BreakForce = math.max(0f, _breakForce.value),
+                    RockFriction01 = math.saturate(_rockFriction.value),
+                    ReelSpeedMetersPerSecond = math.max(0.001f, _reelSpeed.value),
+                    Reserved0 = 0f,
+                    Reserved1 = 0f
+                };
+                _status.text = "Tuning written to Vault.";
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in tuningHandle, SystemID.CoreDiagnostics);
+            }
         }
 
         private void ReloadCsv()
@@ -165,32 +195,62 @@ namespace Hecton8.Editor
                 return;
             }
 
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
             {
                 _status.text = "GlobalDataVault unavailable.";
                 return;
             }
 
             byte[] bytes = File.ReadAllBytes(path);
-            NativeArray<CableMaterialDTO> legacyMaterials = vault.GetBufferHandle<CableMaterialDTO>(
-                BufferID.VerletCableMaterials,
-                MaterialCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.ClearMemory).Resolve(vault);
-            NativeArray<CableMaterialDTO> shinobuMaterials = vault.GetBufferHandle<CableMaterialDTO>(
-                BufferID.Shinobu143CableMaterials,
-                MaterialCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.ClearMemory).Resolve(vault);
-            int parsed = CableMaterialCsvParser.Parse(bytes.AsSpan(), legacyMaterials);
-            if (shinobuMaterials.IsCreated)
-                CableMaterialCsvParser.ParseHashTable(bytes.AsSpan(), shinobuMaterials);
-            _status.text = parsed > 0 ? "CSV materials applied." : "CSV parsed no rows.";
+            if (!TryAcquireEditorWriteView(
+                    vault,
+                    BufferID.VerletCableMaterials,
+                    MaterialCapacity,
+                    SystemID.Physics,
+                    NativeArrayOptions.ClearMemory,
+                    out VaultGenerationHandle<CableMaterialDTO> legacyHandle,
+                    out NativeArray<CableMaterialDTO> legacyMaterials))
+            {
+                _status.text = "Legacy material Vault lane unavailable.";
+                return;
+            }
+
+            try
+            {
+                if (!TryAcquireEditorWriteView(
+                        vault,
+                        BufferID.Shinobu143CableMaterials,
+                        MaterialCapacity,
+                        SystemID.Physics,
+                        NativeArrayOptions.ClearMemory,
+                        out VaultGenerationHandle<CableMaterialDTO> shinobuHandle,
+                        out NativeArray<CableMaterialDTO> shinobuMaterials))
+                {
+                    _status.text = "SHINOBU_143 material Vault lane unavailable.";
+                    return;
+                }
+
+                try
+                {
+                    int parsed = CableMaterialCsvParser.Parse(bytes.AsSpan(), legacyMaterials);
+                    CableMaterialCsvParser.ParseHashTable(bytes.AsSpan(), shinobuMaterials);
+                    _status.text = parsed > 0 ? "CSV materials applied." : "CSV parsed no rows.";
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in shinobuHandle, SystemID.CoreDiagnostics);
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in legacyHandle, SystemID.CoreDiagnostics);
+            }
         }
 
         private void DumpCableSurgeon()
         {
-            bool dumped = TetherAupRuntimeIntrospection.TryDumpCableSurgeon(0x5348554Eu);
+            bool dumped = TetherAupRuntimeIntrospection.TryDumpCableSurgeon(GlobalRegistry.DataVault, 0x5348554Eu);
             _status.text = dumped ? "Cable surgeon dump written." : "Cable surgeon dump unavailable.";
         }
 
@@ -209,7 +269,7 @@ namespace Hecton8.Editor
                 return;
 
             _nextTelemetryRefreshTime = now + 0.25d;
-            if (!TetherAupRuntimeIntrospection.TrySampleLatestTelemetry(out TetherAupTelemetryEntry telemetry))
+            if (!TetherAupRuntimeIntrospection.TrySampleLatestTelemetry(GlobalRegistry.DataVault, out TetherAupTelemetryEntry telemetry))
             {
                 _maxTensionReadout.text = "Max tension: --";
                 _computeTimeReadout.text = "Compute us: --";
@@ -224,18 +284,50 @@ namespace Hecton8.Editor
             _stateHashReadout.text = "State hash: 0x" + telemetry.StateHash.ToString("X8");
         }
 
-        private static bool TryResolveTuning(out NativeArray<VerletCableTuningDTO> tuning)
+        private static bool TryAcquireEditorWriteView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            SystemID owner,
+            NativeArrayOptions options,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
+            where T : struct
         {
-            tuning = default;
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+            handle = default;
+            buffer = default;
+            int required = math.max(1, requiredLength);
+            if (vault == null)
                 return false;
 
-            tuning = vault.GetBufferHandle<VerletCableTuningDTO>(
-                BufferID.VerletCableTuning,
-                1,
-                SystemID.Physics,
-                NativeArrayOptions.ClearMemory).Resolve(vault);
-            return tuning.IsCreated && tuning.Length > 0;
+            if (vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing) &&
+                vault.TryReadHandle(in existing, out NativeArray<T> existingBuffer) &&
+                existingBuffer.IsCreated &&
+                existingBuffer.Length >= required)
+            {
+                handle = existing;
+            }
+            else
+            {
+                if (vault.IsAllocationLocked)
+                    return false;
+
+                handle = vault.GetGenerationHandle<T>(
+                    bufferId,
+                    required,
+                    owner,
+                    options);
+            }
+
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
+                return false;
+
+            if (buffer.IsCreated && buffer.Length >= required)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            buffer = default;
+            return false;
         }
 
         private static string ResolveCsvPath()

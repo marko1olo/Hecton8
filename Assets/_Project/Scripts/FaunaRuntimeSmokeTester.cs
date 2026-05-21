@@ -3,6 +3,7 @@ using Hecton8.Core;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -33,12 +34,12 @@ namespace Hecton8.Dev
 
         public struct OmegaSmokeResult
         {
-            public bool Passed;
-            public bool AupDriftPassed;
-            public bool AupStressPassed;
-            public bool ParasiteAttachPassed;
-            public bool EggPersistencePassed;
-            public bool NativeSentinelBalanced;
+            public byte Passed;
+            public byte AupDriftPassed;
+            public byte AupStressPassed;
+            public byte ParasiteAttachPassed;
+            public byte EggPersistencePassed;
+            public byte NativeSentinelBalanced;
             public double AupDriftDistanceErrorMeters;
             public double AupStressMaxDistanceErrorMeters;
             public float ParasiteHostHealth;
@@ -151,11 +152,11 @@ namespace Hecton8.Dev
             bool eggPassed = RunEggPersistenceSmoke(out float eggHatchTimeSeconds);
             int sentinelDelta = NativeMemorySentinel.ActiveAllocationCount - sentinelBefore;
 
-            result.AupDriftPassed = aupPassed;
-            result.AupStressPassed = stressPassed;
-            result.ParasiteAttachPassed = parasitePassed;
-            result.EggPersistencePassed = eggPassed;
-            result.NativeSentinelBalanced = sentinelDelta == 0;
+            result.AupDriftPassed = aupPassed ? (byte)1 : (byte)0;
+            result.AupStressPassed = stressPassed ? (byte)1 : (byte)0;
+            result.ParasiteAttachPassed = parasitePassed ? (byte)1 : (byte)0;
+            result.EggPersistencePassed = eggPassed ? (byte)1 : (byte)0;
+            result.NativeSentinelBalanced = sentinelDelta == 0 ? (byte)1 : (byte)0;
             result.AupDriftDistanceErrorMeters = distanceErrorMeters;
             result.AupStressMaxDistanceErrorMeters = stressMaxDistanceErrorMeters;
             result.ParasiteHostHealth = parasiteHostHealth;
@@ -167,8 +168,10 @@ namespace Hecton8.Dev
                             stressPassed &&
                             parasitePassed &&
                             eggPassed &&
-                            sentinelDelta == 0;
-            return result.Passed;
+                            sentinelDelta == 0
+                ? (byte)1
+                : (byte)0;
+            return result.Passed != 0;
         }
 
         private static bool RunAupDriftStressJob(out double maxDistanceErrorMeters)
@@ -387,12 +390,12 @@ namespace Hecton8.Dev
                 (float)(absolute.z - origin.z));
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct AupDriftStressJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<AbsoluteUniversePositionBlit128> PredatorAups;
-            [ReadOnly] public NativeArray<AbsoluteUniversePositionBlit128> PreyAups;
-            public NativeArray<double> DistanceErrors;
+            [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePositionBlit128> PredatorAups;
+            [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePositionBlit128> PreyAups;
+            [NoAlias] public NativeArray<double> DistanceErrors;
             public float3 OriginBefore;
             public float3 OriginAfter;
 

@@ -44,7 +44,7 @@ namespace Hecton8.Core
                 ReportRuntimeRequirementViolation("Active URP asset has Camera Opaque Texture disabled.");
 
             if (urpAsset.msaaSampleCount != 1)
-                ReportRuntimeRequirementViolation($"Active URP asset uses MSAA {urpAsset.msaaSampleCount}. Crest parity path expects MSAA disabled.");
+                ReportRuntimeRequirementViolation($"Active URP asset uses MSAA {urpAsset.msaaSampleCount}. Ocean parity path expects MSAA disabled.");
 
             ReadOnlySpan<ScriptableRendererData> rendererDataList = urpAsset.rendererDataList;
             for (int rendererIndex = 0; rendererIndex < rendererDataList.Length; rendererIndex++)
@@ -54,7 +54,7 @@ namespace Hecton8.Core
 
                 if (rendererData.depthPrimingMode != DepthPrimingMode.Disabled)
                     ReportRuntimeRequirementViolation(
-                        $"Renderer '{rendererData.name}' has Depth Priming enabled. Crest parity path expects it disabled.");
+                        $"Renderer '{rendererData.name}' has Depth Priming enabled. Ocean parity path expects it disabled.");
             }
         }
 

@@ -7,12 +7,14 @@ using Hecton8.Core.Generated;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Memory.Layout;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Scripting;
+using static Hecton8.Core.Contracts.Signals.SignalPayloadSanitizer;
+using AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition;
+using AbsoluteUniversePositionBlit = Hecton8.World.AbsoluteUniversePositionBlit;
 using BiomeChangedSignal = Hecton8.Core.Contracts.Signals.BiomeChangedSignal;
 using CameraFrustumSignal = Hecton8.Core.Contracts.Signals.CameraFrustumSignal;
 using CameraPositionSignal = Hecton8.Core.Contracts.Signals.CameraPositionSignal;
@@ -32,6 +34,29 @@ using HullRepairedSignal = Hecton8.Core.Contracts.Signals.HullRepairedSignal;
 
 namespace Hecton8.Core.Contracts.Signals
 {
+    internal static class SignalPayloadSanitizer
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeFinite(float value)
+        {
+            return math.isfinite(value) ? value : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeFinite(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Vector3 SanitizeFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z)
+                ? value
+                : Vector3.zero;
+        }
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 16)]
     public readonly struct ScalabilityChangedEvent : ISignal
     {
@@ -1566,6 +1591,7 @@ namespace Hecton8.Core.Contracts.Signals
             FlushDirectSignalLane<ItemDurabilityChangedSignal>(systemStressMilli, simulationPaused);
             FlushDirectSignalLane<KccVelocitySignal>(systemStressMilli, simulationPaused);
             FlushDirectSignalLane<KillSwitchSignal>(systemStressMilli, simulationPaused);
+            FlushDirectSignalLane<SystemKillSwitchBitsSignal>(systemStressMilli, simulationPaused);
             FlushDirectSignalLane<LaserCutterEventPayload>(systemStressMilli, simulationPaused);
             FlushDirectSignalLane<LockstepSnapshotSignal>(systemStressMilli, simulationPaused);
             FlushDirectSignalLane<LoreFragmentScannedSignal>(systemStressMilli, simulationPaused);
@@ -1715,6 +1741,7 @@ namespace Hecton8.Core.Contracts.Signals
             SignalBus<ItemDurabilityChangedSignal>.ClearPostSimulation();
             SignalBus<KccVelocitySignal>.ClearPostSimulation();
             SignalBus<KillSwitchSignal>.ClearPostSimulation();
+            SignalBus<SystemKillSwitchBitsSignal>.ClearPostSimulation();
             SignalBus<LaserCutterEventPayload>.ClearPostSimulation();
             SignalBus<LockstepSnapshotSignal>.ClearPostSimulation();
             SignalBus<LoreFragmentScannedSignal>.ClearPostSimulation();
@@ -1818,6 +1845,11 @@ namespace Hecton8.Core.Contracts.Signals
         private const uint FnvPrime = 16777619u;
         private const uint SnapshotBufferIdPrefix = 0x40000000u;
         private const uint SnapshotBufferIdMask = 0x3FFFFFFFu;
+        private const ushort LayoutPolicyCacheLineCritical = 1;
+        private const byte TelemetryFlagCacheLineStrideDebt = 32;
+        private const byte TelemetryFlagLegacyMpscWriterOpened = 64;
+        private const int TelemetryLayoutPolicyMask = 0x00FF;
+        private const int TelemetryLegacyWriterOpenCountShift = 8;
 
         private static NativeQueue<T> _queue;
         private static VaultGenerationHandle<T> _frameSnapshotHandle;
@@ -1840,10 +1872,14 @@ namespace Hecton8.Core.Contracts.Signals
         private static int _corruptedSignalTotal;
         private static int _acceptedSignalTotal;
         private static int _peakQueuedLastFlush;
+        private static int _legacyWriterOpenPending;
+        private static int _legacyWriterOpenLastFlush;
         private static bool _initialized;
         private static bool _registered;
         private static bool _layoutFaultLogged;
         private static uint _laneHash;
+        private static ushort _layoutPolicyFlags;
+        private static readonly uint _defaultLaneHash = ComputeTypeHash();
 
         // COLD ALLOC: SignalLaneFlushDelegate[1] - closed generic lane operation for non-generated dispatch - owner: SignalBus<T>
         private static readonly SignalBusRegistry.SignalLaneFlushDelegate _flushDispatch = FlushPreSimulation;
@@ -1859,8 +1895,7 @@ namespace Hecton8.Core.Contracts.Signals
         {
             get
             {
-                EnsureRegistered();
-                return _laneHash;
+                return _laneHash != 0u ? _laneHash : _defaultLaneHash;
             }
         }
 
@@ -1869,7 +1904,7 @@ namespace Hecton8.Core.Contracts.Signals
         {
             get
             {
-                return TryResolveFrameSnapshot(out _) ? _frameSnapshotCount : 0;
+                return TryReadFrameSnapshot(out _, out int count) ? count : 0;
             }
         }
 
@@ -1878,7 +1913,7 @@ namespace Hecton8.Core.Contracts.Signals
         {
             get
             {
-                return TryResolveFrameSnapshot(out _) ? _frameSnapshotGeneration : 0;
+                return TryReadFrameSnapshot(out _, out _) ? _frameSnapshotGeneration : 0;
             }
         }
 
@@ -1894,13 +1929,32 @@ namespace Hecton8.Core.Contracts.Signals
         /// <summary>Peak queue depth observed at the last pre-simulation flush.</summary>
         public static int PeakQueuedLastFlush => Volatile.Read(ref _peakQueuedLastFlush);
 
-        /// <summary>Parallel writer for Burst producers.</summary>
+        /// <summary>
+        /// Opens the legacy MPSC queue writer for compatibility producers that have not migrated to thread-local scratch.
+        /// This is a low-frequency bridge, not the preferred route for cache-line-critical producer storms.
+        /// </summary>
+        public static NativeQueue<T>.ParallelWriter OpenLegacyMpscWriter()
+        {
+            EnsureInitialized();
+            if (!_queue.IsCreated)
+                return default;
+
+            Interlocked.Increment(ref _legacyWriterOpenPending);
+            return _queue.AsParallelWriter();
+        }
+
+        /// <summary>Compatibility alias for the legacy MPSC bridge. High-frequency producers use thread-local scratch.</summary>
+        public static NativeQueue<T>.ParallelWriter OpenParallelWriter()
+        {
+            return OpenLegacyMpscWriter();
+        }
+
+        /// <summary>Legacy producer writer facade. New cache-line-critical Core producers use thread-local scratch or explicit owner facades.</summary>
         public static NativeQueue<T>.ParallelWriter ParallelWriter
         {
             get
             {
-                EnsureInitialized();
-                return _queue.IsCreated ? _queue.AsParallelWriter() : default;
+                return OpenLegacyMpscWriter();
             }
         }
 
@@ -1909,10 +1963,24 @@ namespace Hecton8.Core.Contracts.Signals
         /// </summary>
         public static void Configure(int expectedCapacity, int maxFrameSignals = DefaultMaxFrameSignals, int lowTierFrameSignals = DefaultSurvivalFrameSignals, uint laneHash = 0u)
         {
+            ConfigureInternal(expectedCapacity, maxFrameSignals, lowTierFrameSignals, laneHash, 0);
+        }
+
+        /// <summary>
+        /// Configures a high-contention lane whose payload should migrate toward 64/128-byte cache-line strides.
+        /// </summary>
+        public static void ConfigureCacheLineCritical(int expectedCapacity, int maxFrameSignals = DefaultMaxFrameSignals, int lowTierFrameSignals = DefaultSurvivalFrameSignals, uint laneHash = 0u)
+        {
+            ConfigureInternal(expectedCapacity, maxFrameSignals, lowTierFrameSignals, laneHash, LayoutPolicyCacheLineCritical);
+        }
+
+        private static void ConfigureInternal(int expectedCapacity, int maxFrameSignals, int lowTierFrameSignals, uint laneHash, ushort layoutPolicyFlags)
+        {
             _expectedCapacity = Math.Max(1, expectedCapacity);
             _maxFrameSignals = Math.Max(1, maxFrameSignals);
             _survivalFrameSignals = Math.Max(1, Math.Min(lowTierFrameSignals, _maxFrameSignals));
-            _laneHash = laneHash != 0u ? laneHash : ComputeTypeHash();
+            _laneHash = laneHash != 0u ? laneHash : _defaultLaneHash;
+            _layoutPolicyFlags = layoutPolicyFlags;
             EnsureRegistered();
         }
 
@@ -1967,6 +2035,8 @@ namespace Hecton8.Core.Contracts.Signals
             _corruptedSignalTotal = 0;
             _acceptedSignalTotal = 0;
             _peakQueuedLastFlush = 0;
+            _legacyWriterOpenPending = 0;
+            _legacyWriterOpenLastFlush = 0;
             _initialized = true;
         }
 
@@ -2016,14 +2086,14 @@ namespace Hecton8.Core.Contracts.Signals
         /// <summary>Returns a contiguous read-only view over the current frame snapshot.</summary>
         public static unsafe ReadOnlySpan<T> GetFrameSnapshot()
         {
-            if (!TryResolveFrameSnapshot(out NativeArray<T> frameSnapshot) ||
-                _frameSnapshotCount == 0)
+            if (!TryReadFrameSnapshot(out NativeArray<T> frameSnapshot, out int snapshotCount) ||
+                snapshotCount == 0)
             {
                 return ReadOnlySpan<T>.Empty;
             }
 
             T* pointer = (T*)frameSnapshot.GetUnsafeReadOnlyPtr();
-            return new ReadOnlySpan<T>(pointer, _frameSnapshotCount);
+            return new ReadOnlySpan<T>(pointer, snapshotCount);
         }
 
         /// <summary>Alias for consumers that read the current deterministic signal snapshot.</summary>
@@ -2035,22 +2105,22 @@ namespace Hecton8.Core.Contracts.Signals
         /// <summary>Returns a NativeArray read-only snapshot for Burst jobs.</summary>
         public static unsafe NativeArray<T>.ReadOnly GetFrameSnapshotArray()
         {
-            if (!TryResolveFrameSnapshot(out NativeArray<T> frameSnapshot) ||
-                _frameSnapshotCount == 0)
+            if (!TryReadFrameSnapshot(out NativeArray<T> frameSnapshot, out int snapshotCount) ||
+                snapshotCount == 0)
             {
                 return default;
             }
 
             void* pointer = frameSnapshot.GetUnsafeReadOnlyPtr();
-            NativeArray<T> view = H8Memory.CreateNativeArrayView<T>(pointer, _frameSnapshotCount);
+            NativeArray<T> view = H8Memory.CreateNativeArrayView<T>(pointer, snapshotCount);
             return view.AsReadOnly();
         }
 
-        /// <summary>Legacy destructive reader over the current frame snapshot.</summary>
-        public static bool TryReadFrame(out T signal)
+        /// <summary>Legacy destructive consumer over the current frame snapshot.</summary>
+        public static bool TryConsumeFrame(out T signal)
         {
-            if (!TryResolveFrameSnapshot(out NativeArray<T> frameSnapshot) ||
-                _legacyReadCursor >= _frameSnapshotCount)
+            if (!TryReadFrameSnapshot(out NativeArray<T> frameSnapshot, out int snapshotCount) ||
+                _legacyReadCursor >= snapshotCount)
             {
                 signal = default;
                 return false;
@@ -2064,10 +2134,14 @@ namespace Hecton8.Core.Contracts.Signals
         public static void TransformSnapshot<TTransformer>(TTransformer transformer)
             where TTransformer : struct, ISignalSnapshotTransformer<T>
         {
-            if (!TryResolveFrameSnapshot(out NativeArray<T> frameSnapshot))
+            if (!TryOpenFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot))
                 return;
 
-            for (int i = 0; i < _frameSnapshotCount; i++)
+            int snapshotCount = _frameSnapshotCount;
+            if (snapshotCount <= 0)
+                return;
+
+            for (int i = 0; i < snapshotCount; i++)
             {
                 T signal = frameSnapshot[i];
                 transformer.Transform(ref signal);
@@ -2079,14 +2153,17 @@ namespace Hecton8.Core.Contracts.Signals
         public static int FilterSnapshot<TFilter>(TFilter filter)
             where TFilter : struct, ISignalSnapshotFilter<T>
         {
-            if (!TryResolveFrameSnapshot(out NativeArray<T> frameSnapshot) ||
-                _frameSnapshotCount == 0)
+            if (!TryOpenFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot))
+                return 0;
+
+            int snapshotCount = _frameSnapshotCount;
+            if (snapshotCount == 0)
             {
                 return 0;
             }
 
             int writeIndex = 0;
-            int originalLength = _frameSnapshotCount;
+            int originalLength = snapshotCount;
             for (int readIndex = 0; readIndex < originalLength; readIndex++)
             {
                 T signal = frameSnapshot[readIndex];
@@ -2109,7 +2186,7 @@ namespace Hecton8.Core.Contracts.Signals
             return dropped;
         }
 
-        internal static NativeQueue<T> GetQueueForLegacyGlobalSignals()
+        internal static NativeQueue<T> OpenQueueForLegacyGlobalSignals()
         {
             EnsureInitialized();
             return _queue;
@@ -2120,15 +2197,19 @@ namespace Hecton8.Core.Contracts.Signals
             if (!_initialized)
                 return;
 
-            if (!TryResolveFrameSnapshot(out NativeArray<T> frameSnapshot))
+            if (!TryOpenFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot))
                 return;
 
             _frameSnapshotCount = 0;
             _legacyReadCursor = 0;
             _frameSnapshotGeneration = _frameSnapshotGeneration == int.MaxValue ? 1 : _frameSnapshotGeneration + 1;
             _droppedLastFlush = Interlocked.Exchange(ref _droppedPendingFlush, 0);
+            _legacyWriterOpenLastFlush = Interlocked.Exchange(ref _legacyWriterOpenPending, 0);
             _coalescedLastFlush = 0;
             _stormDetectedLastFlush = 0;
+            int coalescedThisFlush = 0;
+            int loadShedThisFlush = 0;
+            int corruptedThisFlush = 0;
 
             int queued = _queue.Count;
             _queuedBeforeFlush = queued;
@@ -2174,9 +2255,30 @@ namespace Hecton8.Core.Contracts.Signals
                 if (!_queue.TryDequeue(out T signal))
                     break;
 
-                if (TryCoalesceOrAppend(ref signal, frameLimit, frameSnapshot))
+                int guardCode = SignalPayloadFiniteGuards.Sanitize(ref signal);
+                if (guardCode != 0)
+                {
+                    corruptedThisFlush++;
+                    _droppedLastFlush++;
+                    global::Hecton8.Core.GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+                    continue;
+                }
+
+                if (TryCoalesceOrAppend(ref signal, frameLimit, frameSnapshot, ref coalescedThisFlush, ref loadShedThisFlush))
                     continue;
             }
+
+            if (coalescedThisFlush > 0)
+            {
+                _coalescedLastFlush = coalescedThisFlush;
+                Interlocked.Add(ref _coalescedTotal, coalescedThisFlush);
+            }
+
+            if (loadShedThisFlush > 0)
+                Interlocked.Add(ref _loadShedTotal, loadShedThisFlush);
+
+            if (corruptedThisFlush > 0)
+                Interlocked.Add(ref _corruptedSignalTotal, corruptedThisFlush);
 
             if (_frameSnapshotCount > 1 && SignalLanePolicyCache<T>.DeterministicMutationOrder)
                 SortSnapshotDeterministically(frameSnapshot);
@@ -2210,18 +2312,25 @@ namespace Hecton8.Core.Contracts.Signals
             return math.clamp(continuousLimit, 1, _maxFrameSignals);
         }
 
-        private static bool TryCoalesceOrAppend(ref T signal, int frameLimit, NativeArray<T> frameSnapshot)
+        private static bool TryCoalesceOrAppend(
+            ref T signal,
+            int frameLimit,
+            NativeArray<T> frameSnapshot,
+            ref int coalescedThisFlush,
+            ref int loadShedThisFlush)
         {
-            if (SignalLanePolicyCache<T>.CoalescesByAupGrid && TryCoalesceAcousticPing(ref signal, frameSnapshot))
+            if (SignalLanePolicyCache<T>.CoalescesByAupGrid &&
+                TryCoalesceAcousticPing(ref signal, frameSnapshot, ref coalescedThisFlush))
                 return true;
 
-            if (SignalLanePolicyCache<T>.CoalescesByTargetHash && TryCoalesceCombatDamage(ref signal, frameSnapshot))
+            if (SignalLanePolicyCache<T>.CoalescesByTargetHash &&
+                TryCoalesceCombatDamage(ref signal, frameSnapshot, ref coalescedThisFlush))
                 return true;
 
             if (_frameSnapshotCount >= frameLimit)
             {
                 _droppedLastFlush++;
-                Interlocked.Increment(ref _loadShedTotal);
+                loadShedThisFlush++;
                 return true;
             }
 
@@ -2229,7 +2338,7 @@ namespace Hecton8.Core.Contracts.Signals
             return true;
         }
 
-        private static bool TryCoalesceAcousticPing(ref T signal, NativeArray<T> frameSnapshot)
+        private static bool TryCoalesceAcousticPing(ref T signal, NativeArray<T> frameSnapshot, ref int coalescedThisFlush)
         {
             ref AcousticPingSignal incoming = ref UnsafeUtility.As<T, AcousticPingSignal>(ref signal);
             for (int i = 0; i < _frameSnapshotCount; i++)
@@ -2249,15 +2358,14 @@ namespace Hecton8.Core.Contracts.Signals
                     existing.SourceId = incoming.SourceId;
 
                 frameSnapshot[i] = existingGeneric;
-                _coalescedLastFlush++;
-                Interlocked.Increment(ref _coalescedTotal);
+                coalescedThisFlush++;
                 return true;
             }
 
             return false;
         }
 
-        private static bool TryCoalesceCombatDamage(ref T signal, NativeArray<T> frameSnapshot)
+        private static bool TryCoalesceCombatDamage(ref T signal, NativeArray<T> frameSnapshot, ref int coalescedThisFlush)
         {
             ref CombatDamageSignal incoming = ref UnsafeUtility.As<T, CombatDamageSignal>(ref signal);
             if (incoming.TargetHash == 0u)
@@ -2283,8 +2391,7 @@ namespace Hecton8.Core.Contracts.Signals
                     existing.SourceId = incoming.SourceId;
 
                 frameSnapshot[i] = existingGeneric;
-                _coalescedLastFlush++;
-                Interlocked.Increment(ref _coalescedTotal);
+                coalescedThisFlush++;
                 return true;
             }
 
@@ -2440,6 +2547,8 @@ namespace Hecton8.Core.Contracts.Signals
             _corruptedSignalTotal = 0;
             _acceptedSignalTotal = 0;
             _peakQueuedLastFlush = 0;
+            _legacyWriterOpenPending = 0;
+            _legacyWriterOpenLastFlush = 0;
             _initialized = false;
             _registered = false;
             _layoutFaultLogged = false;
@@ -2451,7 +2560,7 @@ namespace Hecton8.Core.Contracts.Signals
                 return;
 
             if (_laneHash == 0u)
-                _laneHash = ComputeTypeHash();
+                _laneHash = _defaultLaneHash;
 
             SignalBusRegistry.Register(
                 _disposeDispatch,
@@ -2469,19 +2578,36 @@ namespace Hecton8.Core.Contracts.Signals
             int corruptedTotal = Volatile.Read(ref _corruptedSignalTotal);
             if (corruptedTotal < 0)
                 corruptedTotal = int.MaxValue;
+            int legacyWriterOpenCount = Volatile.Read(ref _legacyWriterOpenLastFlush);
+            if (legacyWriterOpenCount < 0)
+                legacyWriterOpenCount = int.MaxValue;
 
             telemetry.LaneHash = LaneHash;
             telemetry.QueuedBeforeFlush = _queuedBeforeFlush;
             telemetry.SnapshotCount = SnapshotCount;
             telemetry.DroppedCount = _droppedLastFlush;
             telemetry.CoalescedCount = _coalescedLastFlush;
-            telemetry.Flags = (byte)(
+            byte flags = (byte)(
                 (_stormDetectedLastFlush != 0 ? 1 : 0) |
                 (SignalLanePolicyCache<T>.NonCriticalVfx ? 2 : 0) |
                 (SignalLanePolicyCache<T>.FatalInterrupt ? 4 : 0) |
                 (_coalescedLastFlush > 0 ? 8 : 0) |
                 (corruptedTotal > 0 ? 16 : 0));
+            if (HasCacheLineCriticalStrideDebt())
+                flags |= TelemetryFlagCacheLineStrideDebt;
+            if (legacyWriterOpenCount > 0)
+                flags |= TelemetryFlagLegacyMpscWriterOpened;
+
+            telemetry.Flags = flags;
+            telemetry.Reserved0 = (byte)math.min(UnsafeUtility.SizeOf<T>(), byte.MaxValue);
+            telemetry.Reserved1 = PackTelemetryReserved1(legacyWriterOpenCount);
             telemetry.Reserved2 = ((ulong)(uint)corruptedTotal << 32) | (uint)pushedLastFlush;
+        }
+
+        private static ushort PackTelemetryReserved1(int legacyWriterOpenCount)
+        {
+            int writerCount = legacyWriterOpenCount > byte.MaxValue ? byte.MaxValue : legacyWriterOpenCount;
+            return (ushort)((_layoutPolicyFlags & TelemetryLayoutPolicyMask) | (writerCount << TelemetryLegacyWriterOpenCountShift));
         }
 
         private static void PrewarmQueue(int capacity)
@@ -2501,9 +2627,19 @@ namespace Hecton8.Core.Contracts.Signals
             return size == 16 || size == 32 || size == 64 || size == 128 || size == 192;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasCacheLineCriticalStrideDebt()
+        {
+            if ((_layoutPolicyFlags & LayoutPolicyCacheLineCritical) == 0)
+                return false;
+
+            int size = UnsafeUtility.SizeOf<T>();
+            return size != 64 && size != 128;
+        }
+
         private static bool TryAcquireFrameSnapshotBuffer(int capacity)
         {
-            if (!TryResolveFrameSnapshotVault(out IDataVault vault))
+            if (!TryFindFrameSnapshotVaultForBootstrap(out IDataVault vault))
                 return false;
 
             _frameSnapshotBufferId = ResolveSnapshotBufferId();
@@ -2532,7 +2668,28 @@ namespace Hecton8.Core.Contracts.Signals
             return true;
         }
 
-        private static bool TryResolveFrameSnapshot(out NativeArray<T> frameSnapshot)
+        private static bool TryReadFrameSnapshot(out NativeArray<T> frameSnapshot, out int snapshotCount)
+        {
+            frameSnapshot = default;
+            snapshotCount = 0;
+            if (_frameSnapshotVault == null || _frameSnapshotHandle.BufferID == 0u)
+                return false;
+
+            if (!_frameSnapshotVault.TryResolveHandle(in _frameSnapshotHandle, out frameSnapshot) ||
+                !frameSnapshot.IsCreated)
+            {
+                return false;
+            }
+
+            int count = _frameSnapshotCount;
+            if (count <= 0)
+                return true;
+
+            snapshotCount = math.min(count, frameSnapshot.Length);
+            return true;
+        }
+
+        private static bool TryOpenFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot)
         {
             frameSnapshot = default;
             if (_frameSnapshotVault == null || _frameSnapshotHandle.BufferID == 0u)
@@ -2563,19 +2720,10 @@ namespace Hecton8.Core.Contracts.Signals
             return false;
         }
 
-        private static bool TryResolveFrameSnapshotVault(out IDataVault vault)
+        private static bool TryFindFrameSnapshotVaultForBootstrap(out IDataVault vault)
         {
             vault = global::Hecton8.Core.GlobalRegistry.DataVault;
-            if (vault != null)
-                return true;
-
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-            {
-                vault = latest;
-                return true;
-            }
-
-            return false;
+            return vault != null;
         }
 
         private static BufferID ResolveSnapshotBufferId()
@@ -2660,6 +2808,7 @@ namespace Hecton8.Core.Contracts.Signals
                    type == typeof(NarrativeHudWaypointSignal) ||
                    type == typeof(SubtitleSignal) ||
                    type == typeof(VocalWarningSignal) ||
+                   type == typeof(VocalCueSignal) ||
                    type == typeof(DataReloadSignal) ||
                    type == typeof(MemoryPressureSignal) ||
                    type == typeof(CrashTelemetrySignal) ||
@@ -2768,6 +2917,7 @@ namespace Hecton8.Core.Contracts.Signals
                    type == typeof(ItemDurabilityChangedSignal) ||
                    type == typeof(KccVelocitySignal) ||
                    type == typeof(KillSwitchSignal) ||
+                   type == typeof(SystemKillSwitchBitsSignal) ||
                    type == typeof(LaserCutterEventPayload) ||
                    type == typeof(LockstepSnapshotSignal) ||
                    type == typeof(LoreFragmentScannedSignal) ||
@@ -2948,6 +3098,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const int WakeRequestSignalGuardCode = unchecked((int)0x51A1005Eu);
         private const int DynamicMusicScalarSignalGuardCode = unchecked((int)0x51A10060u);
         private const int PlayerRespawnSignalGuardCode = unchecked((int)0x51A10061u);
+        private const int VocalCueSignalGuardCode = unchecked((int)0x51A10062u);
         private const double MaxSignalAupExtentMeters = 100000.0d;
         private const byte GuardNone = 0;
         private const byte GuardImpact = 2;
@@ -3046,6 +3197,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const byte GuardThermalSource = 95;
         private const byte GuardDynamicMusicScalar = 96;
         private const byte GuardPlayerRespawn = 97;
+        private const byte GuardVocalCue = 98;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Sanitize<T>(ref T signal)
@@ -3197,6 +3349,11 @@ namespace Hecton8.Core.Contracts.Signals
                 {
                     ref PlayerRespawnSignal typed = ref UnsafeUtility.As<T, PlayerRespawnSignal>(ref signal);
                     return SanitizePlayerRespawnSignal(ref typed);
+                }
+                case GuardVocalCue:
+                {
+                    ref VocalCueSignal typed = ref UnsafeUtility.As<T, VocalCueSignal>(ref signal);
+                    return SanitizeVocalCueSignal(ref typed);
                 }
                 case GuardCullingOverload:
                 {
@@ -3733,6 +3890,8 @@ namespace Hecton8.Core.Contracts.Signals
                 return GuardWakeRequest;
             if (typeof(T) == typeof(PlayerRespawnSignal))
                 return GuardPlayerRespawn;
+            if (typeof(T) == typeof(VocalCueSignal))
+                return GuardVocalCue;
 
             return GuardNone;
         }
@@ -4188,6 +4347,53 @@ namespace Hecton8.Core.Contracts.Signals
             {
                 signal.SuspendCollisionFrames = PlayerRespawnSignal.MaxSuspendCollisionFrames;
                 guardCode = PlayerRespawnSignalGuardCode;
+            }
+
+            return guardCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SanitizeVocalCueSignal(ref VocalCueSignal signal)
+        {
+            int guardCode = 0;
+            if (!math.isfinite(signal.VolumeScalar) || signal.VolumeScalar < 0f)
+            {
+                signal.VolumeScalar = 1f;
+                guardCode = VocalCueSignalGuardCode;
+            }
+            else
+            {
+                signal.VolumeScalar = math.saturate(signal.VolumeScalar);
+            }
+
+            if (!math.isfinite(signal.PlaybackSpeed) || signal.PlaybackSpeed <= 0f)
+            {
+                signal.PlaybackSpeed = 1f;
+                guardCode = VocalCueSignalGuardCode;
+            }
+            else
+            {
+                signal.PlaybackSpeed = math.clamp(signal.PlaybackSpeed, 0.25f, 2f);
+            }
+
+            if (SanitizeUnit01(ref signal.RadioDistortion01))
+                guardCode = VocalCueSignalGuardCode;
+            if (SanitizeUnit01(ref signal.SpatialBlend01))
+                guardCode = VocalCueSignalGuardCode;
+            if (!math.isfinite(signal.SourceAupLocalX))
+            {
+                signal.SourceAupLocalX = 0f;
+                guardCode = VocalCueSignalGuardCode;
+            }
+            if (!math.isfinite(signal.SourceAupLocalY))
+            {
+                signal.SourceAupLocalY = 0f;
+                guardCode = VocalCueSignalGuardCode;
+            }
+            if (!math.isfinite(signal.SourceAupLocalZ))
+            {
+                signal.SourceAupLocalZ = 0f;
+                guardCode = VocalCueSignalGuardCode;
             }
 
             return guardCode;
@@ -5345,7 +5551,8 @@ namespace Hecton8.Core
 
         public static AbsoluteUniversePosition CurrentRuntimeOriginAup()
         {
-            return AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            return math.all(math.isfinite(origin)) ? AbsoluteUniversePosition.FromAbsolutePosition(origin) : default;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -5360,9 +5567,14 @@ namespace Hecton8.Core
             if (!math.all(math.isfinite(runtimePosition)))
                 return false;
 
-            Vector3 point = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
-            aup = AbsoluteUniversePosition.FromRuntimePosition(point);
-            return true;
+            AbsoluteUniversePosition originAup = CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return aup.IsFinite();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -5606,333 +5818,310 @@ namespace Hecton8.Core
 
         public static uint LatestCraftingCompletedUnitCount => unchecked((uint)Volatile.Read(ref _latestCraftingCompletedUnitCount));
 
-        /// <summary>Damage routing writer for Burst jobs or background producers.</summary>
+        /// <summary>Opens one typed legacy MPSC writer for an explicit compatibility producer phase without booting every direct queue.</summary>
+        public static NativeQueue<TSignal>.ParallelWriter OpenSignalWriterForProducerPhase<TSignal>()
+            where TSignal : unmanaged, ISignal
+        {
+            return SignalBus<TSignal>.OpenLegacyMpscWriter();
+        }
+
+        // Compatibility writer properties below preserve existing sibling-domain ABI.
+        // Maintained Core producer code uses thread-local scratch or OpenSignalWriterForProducerPhase<TSignal>() only as a legacy bridge.
+
+        /// <summary>Damage routing legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<CombatDamageSignal>.ParallelWriter DamageSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<CombatDamageSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<CombatDamageSignal>();
             }
         }
 
-        /// <summary>Physics impact writer for Burst jobs or background producers.</summary>
+        /// <summary>Physics impact legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<ImpactSignal>.ParallelWriter ImpactSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<ImpactSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<ImpactSignal>();
             }
         }
 
-        /// <summary>AUP shift broadcast writer for Burst jobs or background producers.</summary>
+        /// <summary>AUP pre-shift legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<AupPreShiftSignal>.ParallelWriter AupPreShiftSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<AupPreShiftSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<AupPreShiftSignal>();
             }
         }
 
-        /// <summary>AUP shift broadcast writer for Burst jobs or background producers.</summary>
+        /// <summary>AUP shift legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<AupShiftSignal>.ParallelWriter AupShiftSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<AupShiftSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<AupShiftSignal>();
             }
         }
 
-        /// <summary>Logistics brownout writer for Burst jobs or background producers.</summary>
+        /// <summary>Logistics brownout legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<BrownoutSignal>.ParallelWriter BrownoutSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<BrownoutSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<BrownoutSignal>();
             }
         }
 
-        /// <summary>Armor deflection writer for Burst combat jobs.</summary>
+        /// <summary>Armor deflection legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<DeflectSignal>.ParallelWriter DeflectSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<DeflectSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<DeflectSignal>();
             }
         }
 
-        /// <summary>Entity death writer for Burst producers.</summary>
+        /// <summary>Entity death legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<EntityDeathSignal>.ParallelWriter EntityDeathSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<EntityDeathSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<EntityDeathSignal>();
             }
         }
 
-        /// <summary>Runtime anomaly writer for Burst jobs or background producers.</summary>
+        /// <summary>Runtime anomaly legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<AnomalySignal>.ParallelWriter AnomalySignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<AnomalySignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<AnomalySignal>();
             }
         }
 
-        /// <summary>Acoustic ping writer for Burst jobs or background producers.</summary>
+        /// <summary>Acoustic ping legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<AcousticPingSignal>.ParallelWriter AcousticPingSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<AcousticPingSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<AcousticPingSignal>();
             }
         }
 
-        /// <summary>Movement acoustic writer for Burst jobs or background producers.</summary>
+        /// <summary>Movement acoustic legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<MovementAcousticSignal>.ParallelWriter MovementAcousticSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<MovementAcousticSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<MovementAcousticSignal>();
             }
         }
 
-        /// <summary>Hypoxia writer for Burst jobs or background producers.</summary>
+        /// <summary>Hypoxia legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<HypoxiaSignal>.ParallelWriter HypoxiaSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<HypoxiaSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<HypoxiaSignal>();
             }
         }
 
-        /// <summary>Scan completion writer for Burst jobs or background producers.</summary>
+        /// <summary>Scan completion legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<ScanCompleteSignal>.ParallelWriter ScanCompleteSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<ScanCompleteSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<ScanCompleteSignal>();
             }
         }
 
-        /// <summary>Blueprint unlock writer for Burst jobs or background producers.</summary>
+        /// <summary>Blueprint unlock legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<BlueprintUnlockedSignal>.ParallelWriter BlueprintUnlockedSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<BlueprintUnlockedSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<BlueprintUnlockedSignal>();
             }
         }
 
-        /// <summary>Crafting-start writer for Burst jobs or background producers.</summary>
+        /// <summary>Crafting-start legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<CraftingStartedSignal>.ParallelWriter CraftingStartedSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<CraftingStartedSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<CraftingStartedSignal>();
             }
         }
 
-        /// <summary>Crafting-completed writer for Burst jobs or background producers.</summary>
+        /// <summary>Crafting-completed legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<CraftingCompletedSignal>.ParallelWriter CraftingCompletedSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<CraftingCompletedSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<CraftingCompletedSignal>();
             }
         }
 
-        /// <summary>Tool acoustic writer for Burst jobs or background producers.</summary>
+        /// <summary>Tool acoustic legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<ToolAcousticSignal>.ParallelWriter ToolAcousticSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<ToolAcousticSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<ToolAcousticSignal>();
             }
         }
 
-        /// <summary>Tool state writer for Burst jobs or background producers.</summary>
+        /// <summary>Tool state legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<ToolStateChangedSignal>.ParallelWriter ToolStateChangedSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<ToolStateChangedSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<ToolStateChangedSignal>();
             }
         }
 
-        /// <summary>Power-drain writer for crafting and power-network producers.</summary>
+        /// <summary>Power-drain legacy bridge writer for low-frequency crafting and power-network producers.</summary>
         public static NativeQueue<PowerDrainSignal>.ParallelWriter PowerDrainSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<PowerDrainSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<PowerDrainSignal>();
             }
         }
 
-        /// <summary>Habitat deconstruction request writer for Burst-capable tool producers.</summary>
+        /// <summary>Habitat deconstruction request legacy bridge writer for low-frequency tool producers.</summary>
         public static NativeQueue<DeconstructRequestSignal>.ParallelWriter DeconstructRequestSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<DeconstructRequestSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<DeconstructRequestSignal>();
             }
         }
 
-        /// <summary>Habitat deconstruction result writer for validation/execution consumers.</summary>
+        /// <summary>Habitat deconstruction result legacy bridge writer for low-frequency validation/execution producers.</summary>
         public static NativeQueue<DeconstructResultSignal>.ParallelWriter DeconstructResultSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<DeconstructResultSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<DeconstructResultSignal>();
             }
         }
 
-        /// <summary>Tool trigger writer for device bridge producers.</summary>
+        /// <summary>Tool trigger legacy bridge writer for low-frequency device bridge producers.</summary>
         public static NativeQueue<ToolTriggerSignal>.ParallelWriter ToolTriggerSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<ToolTriggerSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<ToolTriggerSignal>();
             }
         }
 
-        /// <summary>HUD notification writer for Burst jobs or background producers.</summary>
+        /// <summary>HUD notification legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<HUDNotificationSignal>.ParallelWriter HUDNotificationSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<HUDNotificationSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<HUDNotificationSignal>();
             }
         }
 
-        /// <summary>Rigidbody sleep-state writer for Burst jobs or background producers.</summary>
+        /// <summary>Rigidbody sleep-state legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<RigidbodySleepSignal>.ParallelWriter RigidbodySleepSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<RigidbodySleepSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<RigidbodySleepSignal>();
             }
         }
 
-        /// <summary>Fluid pipe rupture writer for Burst-backed graph bridges.</summary>
+        /// <summary>Fluid pipe rupture legacy bridge writer for low-frequency graph bridge producers.</summary>
         public static NativeQueue<PipeRuptureSignal>.ParallelWriter PipeRuptureSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<PipeRuptureSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<PipeRuptureSignal>();
             }
         }
 
-        /// <summary>Scanner-active writer for Burst jobs or background producers.</summary>
+        /// <summary>Scanner-active legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<ScannerToolActiveSignal>.ParallelWriter ScannerToolActiveSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<ScannerToolActiveSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<ScannerToolActiveSignal>();
             }
         }
 
-        /// <summary>Global time synchronization writer for Burst jobs or background producers.</summary>
+        /// <summary>Global time synchronization legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<GlobalTimeSyncSignal>.ParallelWriter GlobalTimeSyncSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<GlobalTimeSyncSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<GlobalTimeSyncSignal>();
             }
         }
 
-        /// <summary>Deterministic seismic shake writer for Burst jobs or background producers.</summary>
+        /// <summary>Deterministic seismic shake legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<SeismicSignal>.ParallelWriter SeismicSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<SeismicSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<SeismicSignal>();
             }
         }
 
-        /// <summary>Ore/resource yield writer for Burst jobs or background producers.</summary>
+        /// <summary>Ore/resource yield legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<ItemAcquiredSignal>.ParallelWriter ItemAcquiredSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<ItemAcquiredSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<ItemAcquiredSignal>();
             }
         }
 
-        /// <summary>Radiation dose writer for physiology and hazard-grid producers.</summary>
+        /// <summary>Radiation dose legacy bridge writer for low-frequency physiology and hazard-grid producers.</summary>
         public static NativeQueue<RadiationDoseSignal>.ParallelWriter RadiationDoseSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<RadiationDoseSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<RadiationDoseSignal>();
             }
         }
 
-        /// <summary>Ore depletion delta writer for Burst jobs or background producers.</summary>
+        /// <summary>Ore depletion delta legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<ResourceDepletionDeltaSignal>.ParallelWriter ResourceDepletionDeltaSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<ResourceDepletionDeltaSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<ResourceDepletionDeltaSignal>();
             }
         }
 
-        /// <summary>Narrative progression writer for Burst jobs or background producers.</summary>
+        /// <summary>Narrative progression legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<ProgressionEventSignal>.ParallelWriter ProgressionEventSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<ProgressionEventSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<ProgressionEventSignal>();
             }
         }
 
-        /// <summary>Global narrative state writer for Burst jobs or background producers.</summary>
+        /// <summary>Global narrative state legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<GlobalWorldStateSignal>.ParallelWriter GlobalWorldStateSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<GlobalWorldStateSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<GlobalWorldStateSignal>();
             }
         }
 
-        /// <summary>Biome transition writer for Burst jobs or background producers.</summary>
+        /// <summary>Biome transition legacy bridge writer for low-frequency compatibility producers.</summary>
         public static NativeQueue<BiomeChangedSignal>.ParallelWriter BiomeChangedSignalWriter
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<BiomeChangedSignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<BiomeChangedSignal>();
             }
         }
 
@@ -5941,8 +6130,7 @@ namespace Hecton8.Core
         {
             get
             {
-                EnsureInitialized();
-                return SignalBus<CrashTelemetrySignal>.ParallelWriter;
+                return OpenSignalWriterForProducerPhase<CrashTelemetrySignal>();
             }
         }
 
@@ -5953,16 +6141,17 @@ namespace Hecton8.Core
                 return;
 
             float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            IDataVault dataVault = GlobalRegistry.DataVault;
             SignalBusRegistry.SetGlobalQualityWeight01(qualityWeight);
             SignalBusRegistry.ClearSimulationHalt();
             SignalPriorityTable.InitializeFromDisk();
-            SignalTuningTable.Initialize(GlobalRegistry.DataVault);
+            SignalTuningTable.Initialize(dataVault);
             SignalTuningCsvHotSwap.TryLoadDefault();
             SignalTelemetryRingBuffer.Initialize();
             SignalThreadLocalScratchpad.Initialize(
-                GlobalRegistry.DataVault,
+                dataVault,
                 qualityWeight,
-                GlobalRegistry.DataVault != null ? GlobalRegistry.DataVault.CapacityPressure01 : 0f);
+                dataVault != null ? dataVault.CapacityPressure01 : 0f);
             SignalThreadContentionCsvHotSwap.TryLoadDefault();
             CreateQueue(ref _impactSignals, ImpactSignalCapacity, nameof(_impactSignals));
             CreateQueue(ref _aupPreShiftSignals, AupPreShiftSignalCapacity, nameof(_aupPreShiftSignals));
@@ -6068,6 +6257,7 @@ namespace Hecton8.Core
             ValidateSignalSize<VitalWarningSignal>(32);
             ValidateSignalSize<CrushWarningSignal>(32);
             ValidateSignalSize<VocalWarningSignal>(32);
+            ValidateSignalSize<VocalCueSignal>(64);
             ValidateSignalSize<SubtitleSignal>(32);
             ValidateSignalSize<DataReloadSignal>(32);
             ValidateSignalSize<DataVaultUpdateSignal>(32);
@@ -6192,6 +6382,7 @@ namespace Hecton8.Core
             ValidateSignalSize<SystemHealthSignal>(64);
             ValidateSignalSize<FrameTimeSignal>(32);
             ValidateSignalSize<KillSwitchSignal>(32);
+            ValidateSignalSize<SystemKillSwitchBitsSignal>(32);
             ValidateSignalSize<ReentryVfxStateSignal>(64);
             ValidateSignalSize<VisorDropletSignal>(64);
             ValidateSignalSize<CameraJuiceImpactSignal>(128);
@@ -6439,7 +6630,6 @@ namespace Hecton8.Core
         public static void Publish(in AupPreShiftSignal signal)
         {
             EnsureInitialized();
-            GlobalRegistry.JobAdmission?.SetAupBarrierActive(true);
             uint shiftFrameId = signal.ShiftFrameId != 0u ? signal.ShiftFrameId : unchecked((uint)Time.frameCount);
             SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
             if (dispatcher != null)
@@ -6452,7 +6642,9 @@ namespace Hecton8.Core
         public static void Publish(in AupShiftSignal signal)
         {
             EnsureInitialized();
-            GlobalRegistry.JobAdmission?.SetAupBarrierActive(false);
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            if (dispatcher != null)
+                dispatcher.ReleaseAupPreShiftPause(signal.ShiftFrameId);
             SignalBus<AupShiftSignal>.Push(in signal);
         }
 
@@ -6594,6 +6786,17 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             SignalBus<VocalWarningSignal>.Push(in signal);
+        }
+
+        /// <summary>Queues one hash-addressed protagonist voice packet from the main thread.</summary>
+        public static void Publish(in VocalCueSignal signal)
+        {
+            EnsureInitialized();
+            VocalCueSignal sanitizedSignal = signal;
+            int guardCode = SignalPayloadFiniteGuards.Sanitize(ref sanitizedSignal);
+            if (guardCode != 0)
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+            SignalBus<VocalCueSignal>.Push(in sanitizedSignal);
         }
 
         /// <summary>Queues one subtitle packet from the main thread.</summary>
@@ -7272,7 +7475,7 @@ namespace Hecton8.Core
         public static bool TryDequeueImpact(out ImpactSignal signal) => TryDequeue(ref _impactSignals, out signal);
         public static bool TryDequeueAupPreShift(out AupPreShiftSignal signal) => TryDequeue(ref _aupPreShiftSignals, out signal);
         public static bool TryDequeueAupShift(out AupShiftSignal signal) => TryDequeue(ref _aupShiftSignals, out signal);
-        public static bool TryDequeueDropPodLanded(out DropPodLandedSignal signal) => SignalBus<DropPodLandedSignal>.TryReadFrame(out signal);
+        public static bool TryDequeueDropPodLanded(out DropPodLandedSignal signal) => SignalBus<DropPodLandedSignal>.TryConsumeFrame(out signal);
         public static bool TryDequeueBrownout(out BrownoutSignal signal) => TryDequeue(ref _brownoutSignals, out signal);
         public static bool TryDequeueDebrisSpawn(out DebrisSpawnSignal signal) => TryDequeue(ref _debrisSpawnSignals, out signal);
         public static bool TryDequeueDeflect(out DeflectSignal signal) => TryDequeue(ref _deflectSignals, out signal);
@@ -7307,7 +7510,7 @@ namespace Hecton8.Core
         public static bool TryDequeueRigidbodySleep(out RigidbodySleepSignal signal) => TryDequeue(ref _rigidbodySleepSignals, out signal);
         public static bool TryDequeueScannerToolActive(out ScannerToolActiveSignal signal) => TryDequeue(ref _scannerToolActiveSignals, out signal);
         public static bool TryDequeueScanComplete(out ScanCompleteSignal signal) => TryDequeue(ref _scanCompleteSignals, out signal);
-        public static bool TryDequeueLoreFragmentScanned(out LoreFragmentScannedSignal signal) => SignalBus<LoreFragmentScannedSignal>.TryReadFrame(out signal);
+        public static bool TryDequeueLoreFragmentScanned(out LoreFragmentScannedSignal signal) => SignalBus<LoreFragmentScannedSignal>.TryConsumeFrame(out signal);
         public static bool TryDequeueBlueprintUnlocked(out BlueprintUnlockedSignal signal) => TryDequeue(ref _blueprintUnlockedSignals, out signal);
         public static bool TryDequeueCraftingStarted(out CraftingStartedSignal signal) => TryDequeue(ref _craftingStartedSignals, out signal);
         public static bool TryDequeueCraftingCompleted(out CraftingCompletedSignal signal) => TryDequeue(ref _craftingCompletedSignals, out signal);
@@ -7316,12 +7519,12 @@ namespace Hecton8.Core
         public static bool TryDequeuePowerDrain(out PowerDrainSignal signal) => TryDequeue(ref _powerDrainSignals, out signal);
         public static bool TryDequeueToolTrigger(out ToolTriggerSignal signal) => TryDequeue(ref _toolTriggerSignals, out signal);
         public static bool TryDequeueHUDNotification(out HUDNotificationSignal signal) => TryDequeue(ref _hudNotificationSignals, out signal);
-        public static bool TryDequeueStorageDebt(out StorageDebtSignal signal) => SignalBus<StorageDebtSignal>.TryReadFrame(out signal);
-        public static bool TryDequeueStreamingTurbulence(out StreamingTurbulenceSignal signal) => SignalBus<StreamingTurbulenceSignal>.TryReadFrame(out signal);
-        public static bool TryDequeueAtmosphericReentry(out AtmosphericReentrySignal signal) => SignalBus<AtmosphericReentrySignal>.TryReadFrame(out signal);
-        public static bool TryDequeuePrologueComplete(out PrologueCompleteSignal signal) => SignalBus<PrologueCompleteSignal>.TryReadFrame(out signal);
-        public static bool TryDequeueManualOverridePulled(out ManualOverridePulledSignal signal) => SignalBus<ManualOverridePulledSignal>.TryReadFrame(out signal);
-        public static bool TryDequeueDiegeticHud(out DiegeticHudSignal signal) => SignalBus<DiegeticHudSignal>.TryReadFrame(out signal);
+        public static bool TryDequeueStorageDebt(out StorageDebtSignal signal) => SignalBus<StorageDebtSignal>.TryConsumeFrame(out signal);
+        public static bool TryDequeueStreamingTurbulence(out StreamingTurbulenceSignal signal) => SignalBus<StreamingTurbulenceSignal>.TryConsumeFrame(out signal);
+        public static bool TryDequeueAtmosphericReentry(out AtmosphericReentrySignal signal) => SignalBus<AtmosphericReentrySignal>.TryConsumeFrame(out signal);
+        public static bool TryDequeuePrologueComplete(out PrologueCompleteSignal signal) => SignalBus<PrologueCompleteSignal>.TryConsumeFrame(out signal);
+        public static bool TryDequeueManualOverridePulled(out ManualOverridePulledSignal signal) => SignalBus<ManualOverridePulledSignal>.TryConsumeFrame(out signal);
+        public static bool TryDequeueDiegeticHud(out DiegeticHudSignal signal) => SignalBus<DiegeticHudSignal>.TryConsumeFrame(out signal);
         public static bool TryDequeueReconData(out ReconDataSignal signal) => TryDequeue(ref _reconDataSignals, out signal);
         public static bool TryDequeueSaveLifecycle(out SaveLifecycleSignal signal) => TryDequeue(ref _saveLifecycleSignals, out signal);
         public static bool TryDequeueComplianceViolation(out ComplianceViolationSignal signal) => TryDequeue(ref _complianceViolationSignals, out signal);
@@ -7329,8 +7532,8 @@ namespace Hecton8.Core
         public static bool TryDequeueSeismic(out SeismicSignal signal) => TryDequeue(ref _seismicSignals, out signal);
         public static bool TryDequeueTimeDilation(out TimeDilationSignal signal) => TryDequeue(ref _timeDilationSignals, out signal);
         public static bool TryDequeueSimulationPause(out SimulationPauseSignal signal) => TryDequeue(ref _simulationPauseSignals, out signal);
-        public static bool TryDequeueHapticRequest(out HapticRequest signal) => SignalBus<HapticRequest>.TryReadFrame(out signal);
-        public static bool TryDequeueSubmarineFloodState(out SubmarineFloodStateSignal signal) => SignalBus<SubmarineFloodStateSignal>.TryReadFrame(out signal);
+        public static bool TryDequeueHapticRequest(out HapticRequest signal) => SignalBus<HapticRequest>.TryConsumeFrame(out signal);
+        public static bool TryDequeueSubmarineFloodState(out SubmarineFloodStateSignal signal) => SignalBus<SubmarineFloodStateSignal>.TryConsumeFrame(out signal);
         public static bool TryDequeueBulletTimeVisual(out BulletTimeVisualSignal signal) => TryDequeue(ref _bulletTimeVisualSignals, out signal);
         public static bool TryDequeueWeatherStrength(out WeatherStrengthSignal signal) => TryDequeue(ref _weatherStrengthSignals, out signal);
         public static bool TryDequeueItemDecay(out ItemDecaySignal signal) => TryDequeue(ref _itemDecaySignals, out signal);
@@ -7339,11 +7542,11 @@ namespace Hecton8.Core
         public static bool TryDequeueResourceDepletionDelta(out ResourceDepletionDeltaSignal signal) => TryDequeue(ref _resourceDepletionDeltaSignals, out signal);
         public static bool TryDequeueLightLevel(out LightLevelSignal signal) => TryDequeue(ref _lightLevelSignals, out signal);
         public static bool TryDequeueSubmarineLightsChanged(out SubmarineLightsChangedSignal signal) =>
-            SignalBus<SubmarineLightsChangedSignal>.TryReadFrame(out signal);
+            SignalBus<SubmarineLightsChangedSignal>.TryConsumeFrame(out signal);
         public static bool TryDequeueFaunaStateChanged(out FaunaStateChangedSignal signal) => TryDequeue(ref _faunaStateChangedSignals, out signal);
         public static bool TryDequeuePhysiologyState(out PhysiologyStateSignal signal) => TryDequeue(ref _physiologyStateSignals, out signal);
         public static bool TryDequeuePlayerStress(out PlayerStressSignal signal) => TryDequeue(ref _playerStressSignals, out signal);
-        public static bool TryDequeuePlayerState(out PlayerStateSignal signal) => SignalBus<PlayerStateSignal>.TryReadFrame(out signal);
+        public static bool TryDequeuePlayerState(out PlayerStateSignal signal) => SignalBus<PlayerStateSignal>.TryConsumeFrame(out signal);
         public static bool TryDequeueTrauma(out TraumaSignal signal) => TryDequeue(ref _traumaSignals, out signal);
         public static bool TryDequeueProgressionEvent(out ProgressionEventSignal signal) => TryDequeue(ref _progressionEventSignals, out signal);
         public static bool TryDequeueGlobalWorldState(out GlobalWorldStateSignal signal) => TryDequeue(ref _globalWorldStateSignals, out signal);
@@ -7866,7 +8069,7 @@ namespace Hecton8.Core
             SignalBus<CraftingCompletedSignal>.EnsureInitialized();
             SignalBus<ToolLoadoutChangedSignal>.Configure(ToolLoadoutChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ToolLoadoutChangedSignal)));
             SignalBus<ToolLoadoutChangedSignal>.EnsureInitialized();
-            SignalBus<ToolAcousticSignal>.Configure(ToolAcousticSignalCapacity, maxFrameSignals: ToolAcousticSignalCapacity, lowTierFrameSignals: 32, laneHash: ComputeStableSignalLaneHash(nameof(ToolAcousticSignal)));
+            SignalBus<ToolAcousticSignal>.ConfigureCacheLineCritical(ToolAcousticSignalCapacity, maxFrameSignals: ToolAcousticSignalCapacity, lowTierFrameSignals: 32, laneHash: ComputeStableSignalLaneHash(nameof(ToolAcousticSignal)));
             SignalBus<ToolAcousticSignal>.EnsureInitialized();
             SignalBus<PlayerActionProgressSignal>.Configure(PlayerActionProgressSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerActionProgressSignal)));
             SignalBus<PlayerActionProgressSignal>.EnsureInitialized();
@@ -7886,6 +8089,8 @@ namespace Hecton8.Core
             SignalBus<FrameTimeSignal>.EnsureInitialized();
             SignalBus<KillSwitchSignal>.Configure(8, maxFrameSignals: 32, lowTierFrameSignals: 8, laneHash: 0x4B534857u);
             SignalBus<KillSwitchSignal>.EnsureInitialized();
+            SignalBus<SystemKillSwitchBitsSignal>.Configure(8, maxFrameSignals: 32, lowTierFrameSignals: 8, laneHash: HectonSignalLaneContract.SystemKillSwitchBitsSignalStableHash);
+            SignalBus<SystemKillSwitchBitsSignal>.EnsureInitialized();
             SignalBus<ReentryVfxStateSignal>.Configure(4, 16, 4, ComputeStableSignalLaneHash(nameof(ReentryVfxStateSignal)));
             SignalBus<ReentryVfxStateSignal>.EnsureInitialized();
             SignalBus<VisorDropletSignal>.Configure(8, 32, 8, ComputeStableSignalLaneHash(nameof(VisorDropletSignal)));
@@ -7925,7 +8130,7 @@ namespace Hecton8.Core
             SignalBus<MacroCollisionSignal>.EnsureInitialized();
             SignalBus<WakeRequestSignal>.Configure(16, maxFrameSignals: 16, lowTierFrameSignals: 8, laneHash: ComputeStableSignalLaneHash(nameof(WakeRequestSignal)));
             SignalBus<WakeRequestSignal>.EnsureInitialized();
-            SignalBus<TetherTensionSignal>.Configure(128, laneHash: ComputeStableSignalLaneHash(nameof(TetherTensionSignal)));
+            SignalBus<TetherTensionSignal>.ConfigureCacheLineCritical(128, laneHash: ComputeStableSignalLaneHash(nameof(TetherTensionSignal)));
             SignalBus<TetherTensionSignal>.EnsureInitialized();
             SignalBus<TetherSnappedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(TetherSnappedSignal)));
             SignalBus<TetherSnappedSignal>.EnsureInitialized();
@@ -7958,13 +8163,13 @@ namespace Hecton8.Core
                 return;
 
             SignalBus<T>.Configure(expectedCapacity, laneHash: ComputeStableSignalLaneHash(label));
-            queue = SignalBus<T>.GetQueueForLegacyGlobalSignals();
+            queue = SignalBus<T>.OpenQueueForLegacyGlobalSignals();
         }
 
         private static bool TryDequeue<T>(ref NativeQueue<T> queue, out T signal)
             where T : unmanaged, ISignal
         {
-            return SignalBus<T>.TryReadFrame(out signal);
+            return SignalBus<T>.TryConsumeFrame(out signal);
         }
 
         private static void ClearLatestSignals()
@@ -8055,15 +8260,14 @@ namespace Hecton8.Core
     }
 
     /// <summary>Power-of-two single-producer/single-consumer signal fallback using mask wrapping.</summary>
-    [StructLayout(LayoutKind.Sequential)]
     public struct SpscSignalRingBuffer<T> : IDisposable
         where T : unmanaged
     {
         private NativeArray<T> _buffer;
         private Hecton8.Core.Memory.SystemID _owner;
         private int _mask;
-        private int _head;
-        private int _tail;
+        private PaddedSignalIndex _head;
+        private PaddedSignalIndex _tail;
 
         public SpscSignalRingBuffer(int requestedCapacity, Allocator allocator)
             : this(requestedCapacity, allocator, Hecton8.Core.Memory.SystemID.Audio)
@@ -8079,8 +8283,8 @@ namespace Hecton8.Core
             _buffer = Hecton8.Core.Memory.H8Memory.Allocate<T>(capacity, owner, allocator, NativeArrayOptions.UninitializedMemory);
             _owner = owner;
             _mask = capacity - 1;
-            _head = 0;
-            _tail = 0;
+            _head = default;
+            _tail = default;
         }
 
         public bool IsCreated => _buffer.IsCreated;
@@ -8094,14 +8298,14 @@ namespace Hecton8.Core
             _buffer = default;
             _owner = Hecton8.Core.Memory.SystemID.Unknown;
             _mask = 0;
-            _head = 0;
-            _tail = 0;
+            _head = default;
+            _tail = default;
         }
 
         public void Clear()
         {
-            Volatile.Write(ref _head, 0);
-            Volatile.Write(ref _tail, 0);
+            Interlocked.Exchange(ref _head.Value, 0);
+            Interlocked.Exchange(ref _tail.Value, 0);
         }
 
         public bool TryEnqueue(in T signal)
@@ -8109,13 +8313,13 @@ namespace Hecton8.Core
             if (!_buffer.IsCreated)
                 return false;
 
-            int tail = Volatile.Read(ref _tail);
+            int tail = Volatile.Read(ref _tail.Value);
             int nextTail = (tail + 1) & _mask;
-            if (nextTail == Volatile.Read(ref _head))
+            if (nextTail == Volatile.Read(ref _head.Value))
                 return false;
 
             _buffer[tail] = signal;
-            Volatile.Write(ref _tail, nextTail);
+            Interlocked.Exchange(ref _tail.Value, nextTail);
             return true;
         }
 
@@ -8127,16 +8331,29 @@ namespace Hecton8.Core
                 return false;
             }
 
-            int head = Volatile.Read(ref _head);
-            if (head == Volatile.Read(ref _tail))
+            int head = Volatile.Read(ref _head.Value);
+            if (head == Volatile.Read(ref _tail.Value))
             {
                 signal = default;
                 return false;
             }
 
             signal = _buffer[head];
-            Volatile.Write(ref _head, (head + 1) & _mask);
+            Interlocked.Exchange(ref _head.Value, (head + 1) & _mask);
             return true;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        private struct PaddedSignalIndex
+        {
+            [FieldOffset(0)] public int Value;
+            [FieldOffset(8)] private ulong _pad0;
+            [FieldOffset(16)] private ulong _pad1;
+            [FieldOffset(24)] private ulong _pad2;
+            [FieldOffset(32)] private ulong _pad3;
+            [FieldOffset(40)] private ulong _pad4;
+            [FieldOffset(48)] private ulong _pad5;
+            [FieldOffset(56)] private ulong _pad6;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -9108,6 +9325,25 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(18)] private ushort _padTail0;
         [FieldOffset(20)] private uint _padTail1;
         [FieldOffset(24)] private ulong _padTail2;
+    }
+
+    /// <summary>Hash-addressed protagonist voice cue consumed by the vocal synthesis MMF decoder. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct VocalCueSignal : ISignal
+    {
+        [FieldOffset(0)] public uint PhraseHashID;
+        [FieldOffset(4)] public int Priority;
+        [FieldOffset(8)] public float VolumeScalar;
+        [FieldOffset(12)] public float PlaybackSpeed;
+        [FieldOffset(16)] public float RadioDistortion01;
+        [FieldOffset(20)] public float SpatialBlend01;
+        [FieldOffset(24)] public long SourceAupGridX;
+        [FieldOffset(32)] public long SourceAupGridY;
+        [FieldOffset(40)] public long SourceAupGridZ;
+        [FieldOffset(48)] public float SourceAupLocalX;
+        [FieldOffset(52)] public float SourceAupLocalY;
+        [FieldOffset(56)] public float SourceAupLocalZ;
+        [FieldOffset(60)] public uint Flags;
     }
 
     /// <summary>Editor data reload signal. Size: 32 bytes.</summary>
@@ -10154,7 +10390,19 @@ namespace Hecton8.Core.Contracts.Signals
     public struct PhysiologyStateSignal : ISignal
     {
         public const uint LaneHash = 0x50485953u; // PHYS
+        public const uint SourceShinobuPhysiology = 0x53483231u; // SH21
         public const byte CauseDecompression = 3;
+        public const byte CauseGasToxicity = 4;
+        public const uint StatusGasHypoxia = 1u << 12;
+        public const uint StatusGasHyperoxia = 1u << 13;
+        public const uint StatusGasCarbonDioxideToxicity = 1u << 14;
+        public const uint StatusGasCnsOxygenToxicity = 1u << 15;
+        public const uint StatusGasFatalToxicity = 1u << 16;
+        public const uint GasStatusMask = StatusGasHypoxia |
+                                          StatusGasHyperoxia |
+                                          StatusGasCarbonDioxideToxicity |
+                                          StatusGasCnsOxygenToxicity |
+                                          StatusGasFatalToxicity;
 
         [FieldOffset(0)] public float PlayerStress01;
         [FieldOffset(4)] public float O2DrainMultiplier;
@@ -10162,6 +10410,8 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(12)] public uint Frame;
         [FieldOffset(16)] public byte Cause;
         [FieldOffset(17)] public byte Flags;
+        [FieldOffset(18)] public byte GasCnsSeverity;
+        [FieldOffset(19)] public byte GasCarbonDioxideSeverity;
         [FieldOffset(20)] public float Supersaturation01;
         [FieldOffset(24)] public float Narcosis01;
         [FieldOffset(28)] public float AmbientPressureAtm;
@@ -10172,6 +10422,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(48)] public int EntityIndex;
         [FieldOffset(52)] public byte ActiveCompartments;
         [FieldOffset(53)] public byte FatalSeverity;
+        [FieldOffset(54)] private ushort _pad0;
         [FieldOffset(56)] public uint StatusFlags;
         [FieldOffset(60)] private uint _padTail0;
     }
@@ -10264,20 +10515,13 @@ namespace Hecton8.Core.Contracts.Signals
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double3 FromRuntimePoint(float3 runtimePoint)
         {
-            if (!math.all(math.isfinite(runtimePoint)))
-                return double3.zero;
-
-            Vector3 point = new Vector3(runtimePoint.x, runtimePoint.y, runtimePoint.z);
-            return global::Hecton8.Core.HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(point);
+            return TryResolveRuntimePointAup(runtimePoint, out double3 impactAup) ? impactAup : double3.zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double3 FromRuntimePoint(Vector3 runtimePoint)
         {
-            if (!math.all(math.isfinite(new float3(runtimePoint.x, runtimePoint.y, runtimePoint.z))))
-                return double3.zero;
-
-            return global::Hecton8.Core.HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePoint);
+            return FromRuntimePoint(new float3(runtimePoint.x, runtimePoint.y, runtimePoint.z));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -10305,6 +10549,25 @@ namespace Hecton8.Core.Contracts.Signals
                    math.abs(aup.x) <= MaxAupExtentMeters &&
                    math.abs(aup.y) <= MaxAupExtentMeters &&
                    math.abs(aup.z) <= MaxAupExtentMeters;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryResolveRuntimePointAup(float3 runtimePoint, out double3 impactAup)
+        {
+            impactAup = double3.zero;
+            if (!math.all(math.isfinite(runtimePoint)))
+                return false;
+
+            double3 originAup = global::Hecton8.Core.HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(originAup)))
+                return false;
+
+            double3 resolvedAup = originAup + new double3(runtimePoint.x, runtimePoint.y, runtimePoint.z);
+            if (!math.all(math.isfinite(resolvedAup)))
+                return false;
+
+            impactAup = resolvedAup;
+            return true;
         }
     }
 

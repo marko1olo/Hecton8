@@ -224,6 +224,8 @@ namespace Hecton8.Modding
         private const long ModHeapQuotaBytes = 16L * 1024L * 1024L;
         private const long ModHeapFrameQuotaBytes = 1L * 1024L * 1024L;
         private const float MaxModVoxelModifyRadiusMeters = 8f;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptOwnerIndexAllocator = Allocator.Persistent;
 
         private const byte ModStateActive = 1;
         private const byte ModStateQuarantined = 2;
@@ -308,61 +310,61 @@ namespace Hecton8.Modding
 
             if (!_pendingCommands.IsCreated)
             {
-                _pendingCommands = new NativeQueue<ModCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModCommand>[4096] - sandboxed mod command ring buffer - owner: ModCommandDispatcher
+                _pendingCommands = new NativeQueue<ModCommand>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModCommand>[4096] - sandboxed mod command ring buffer - owner: ModCommandDispatcher
                 RegisterQueue(ref _pendingCommands, CommandCapacity, nameof(_pendingCommands));
             }
 
             if (!_pendingAupCommands.IsCreated)
             {
-                _pendingAupCommands = new NativeQueue<ModAupCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModAupCommand>[4096] - AUP-stable mod command ring buffer - owner: ModCommandDispatcher
+                _pendingAupCommands = new NativeQueue<ModAupCommand>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModAupCommand>[4096] - AUP-stable mod command ring buffer - owner: ModCommandDispatcher
                 RegisterQueue(ref _pendingAupCommands, CommandCapacity, nameof(_pendingAupCommands));
             }
 
             if (!_pendingRenderCommands.IsCreated)
             {
-                _pendingRenderCommands = new NativeQueue<ModRenderInstanceCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRenderInstanceCommand>[1024] - mod instancing request lane - owner: ModCommandDispatcher
+                _pendingRenderCommands = new NativeQueue<ModRenderInstanceCommand>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModRenderInstanceCommand>[1024] - mod instancing request lane - owner: ModCommandDispatcher
                 RegisterQueue(ref _pendingRenderCommands, MaxModRenderInstancesPerFrame, nameof(_pendingRenderCommands));
             }
 
             if (!_pendingRaycastResults.IsCreated)
             {
-                _pendingRaycastResults = new NativeQueue<ModRaycastResultPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRaycastResultPayload>[128] - next-frame mod raycast callback lane - owner: ModCommandDispatcher
+                _pendingRaycastResults = new NativeQueue<ModRaycastResultPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModRaycastResultPayload>[128] - next-frame mod raycast callback lane - owner: ModCommandDispatcher
                 RegisterQueue(ref _pendingRaycastResults, MaxModRaycasts, nameof(_pendingRaycastResults));
             }
 
             if (!_pendingRejectEvents.IsCreated)
             {
-                _pendingRejectEvents = new NativeQueue<ModInteractionRejectedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModInteractionRejectedPayload>[256] - unmanaged mod rejection event lane - owner: ModCommandDispatcher
+                _pendingRejectEvents = new NativeQueue<ModInteractionRejectedPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModInteractionRejectedPayload>[256] - unmanaged mod rejection event lane - owner: ModCommandDispatcher
                 RegisterQueue(ref _pendingRejectEvents, MaxDrainPerLateFrame, nameof(_pendingRejectEvents));
             }
 
             if (!_pendingMemoryEvictionEvents.IsCreated)
             {
-                _pendingMemoryEvictionEvents = new NativeQueue<ModCriticalMemoryEvictionPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModCriticalMemoryEvictionPayload>[32] - unmanaged mod memory eviction event lane - owner: ModCommandDispatcher
+                _pendingMemoryEvictionEvents = new NativeQueue<ModCriticalMemoryEvictionPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModCriticalMemoryEvictionPayload>[32] - unmanaged mod memory eviction event lane - owner: ModCommandDispatcher
                 RegisterQueue(ref _pendingMemoryEvictionEvents, ModCapacity, nameof(_pendingMemoryEvictionEvents));
             }
 
             if (!_pendingAupResponses.IsCreated)
             {
-                _pendingAupResponses = new NativeQueue<ModAupResponse>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModAupResponse>[256] - unmanaged mod AUP response event lane - owner: ModCommandDispatcher
+                _pendingAupResponses = new NativeQueue<ModAupResponse>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModAupResponse>[256] - unmanaged mod AUP response event lane - owner: ModCommandDispatcher
                 RegisterQueue(ref _pendingAupResponses, MaxDrainPerLateFrame, nameof(_pendingAupResponses));
             }
 
             if (!_modStatesByHash.IsCreated)
             {
-                _modStatesByHash = new NativeHashMap<uint, ModCommandModState>(ModCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,ModCommandModState>[32] - O(1) mod command security lookup - owner: ModCommandDispatcher
+                _modStatesByHash = new NativeHashMap<uint, ModCommandModState>(ModCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeHashMap<uint,ModCommandModState>[32] - O(1) mod command security lookup - owner: ModCommandDispatcher
                 NativeMemorySentinel.RegisterNativeHashMap(_modStatesByHash, nameof(ModCommandDispatcher), nameof(_modStatesByHash), NativeAllocationLifetime.Session);
             }
 
             if (!_modIndexByHash.IsCreated)
             {
-                _modIndexByHash = new NativeHashMap<uint, int>(ModCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[32] - O(1) mod hash reverse-index lookup - owner: ModCommandDispatcher
+                _modIndexByHash = new NativeHashMap<uint, int>(ModCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[32] - O(1) mod hash reverse-index lookup - owner: ModCommandDispatcher
                 NativeMemorySentinel.RegisterNativeHashMap(_modIndexByHash, nameof(ModCommandDispatcher), nameof(_modIndexByHash), NativeAllocationLifetime.Session);
             }
 
             if (!_kernelIndexByCommandKey.IsCreated)
             {
-                _kernelIndexByCommandKey = new NativeHashMap<uint, int>(KernelCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[32] - O(1) command kernel lookup - owner: ModCommandDispatcher
+                _kernelIndexByCommandKey = new NativeHashMap<uint, int>(KernelCapacity, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[32] - O(1) command kernel lookup - owner: ModCommandDispatcher
                 NativeMemorySentinel.RegisterNativeHashMap(_kernelIndexByCommandKey, nameof(ModCommandDispatcher), nameof(_kernelIndexByCommandKey), NativeAllocationLifetime.Session);
             }
 

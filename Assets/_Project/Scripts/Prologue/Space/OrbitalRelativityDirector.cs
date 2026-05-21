@@ -88,8 +88,7 @@ namespace Hecton8.Prologue.Space
         [SerializeField] private float audioIntervalSeconds = 0.12f;
         [SerializeField] private float hapticIntervalSeconds = 0.10f;
 
-        private NativeArray<OrbitalTelemetryEntry> _telemetryRing;
-        private VaultBufferHandle<OrbitalTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<OrbitalTelemetryEntry> _telemetryRingHandle;
         private int _telemetryCursor;
         private int _tickCount;
         private uint _sequence;
@@ -158,7 +157,7 @@ namespace Hecton8.Prologue.Space
         private void OnEnable()
         {
             CacheColdReferences();
-            _originAup = AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
+            _originAup = ResolveCurrentRuntimeOriginAup();
             ResetRuntimeState(applyPresentation: false);
             _spaceDomainActive = false;
 
@@ -240,6 +239,16 @@ namespace Hecton8.Prologue.Space
             }
 
             _spaceDomainActive = false;
+            ReleaseTelemetryBuffer();
+            _telemetryCursor = 0;
+        }
+
+        private static AbsoluteUniversePosition ResolveCurrentRuntimeOriginAup()
+        {
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return originAup.IsFinite()
+                ? originAup
+                : AbsoluteUniversePosition.FromAbsolutePosition(double3.zero);
         }
 
         private void OnDestroy()
@@ -249,8 +258,7 @@ namespace Hecton8.Prologue.Space
 
         public void Dispose()
         {
-            _telemetryRing = default;
-            _telemetryRingHandle = default;
+            ReleaseTelemetryBuffer();
             _telemetryCursor = 0;
         }
 
@@ -373,27 +381,57 @@ namespace Hecton8.Prologue.Space
             _registeredHotSwapListener = false;
         }
 
-        private void EnsureTelemetry()
+        private bool EnsureTelemetry()
         {
-            if (_telemetryRing.IsCreated)
-                return;
-
             IDataVault vault = _dataVault;
             if (vault == null)
-                return;
+                return false;
 
-            _telemetryRingHandle = vault.GetBufferHandle<OrbitalTelemetryEntry>(
+            if (vault.IsCompactionFenceActive)
+            {
+                ClearTelemetryDescriptor();
+                return false;
+            }
+
+            if (IsVaultHandleCreated(in _telemetryRingHandle) &&
+                vault.TryResolveHandle(in _telemetryRingHandle, out NativeArray<OrbitalTelemetryEntry> currentRing) &&
+                currentRing.IsCreated &&
+                currentRing.Length >= TelemetryCapacity)
+            {
+                return true;
+            }
+
+            ClearTelemetryDescriptor();
+            if (vault.TryGetGenerationHandle(
+                    TelemetryRingBufferId,
+                    out VaultGenerationHandle<OrbitalTelemetryEntry> existing) &&
+                vault.TryResolveHandle(in existing, out NativeArray<OrbitalTelemetryEntry> existingRing) &&
+                existingRing.IsCreated &&
+                existingRing.Length >= TelemetryCapacity)
+            {
+                _telemetryRingHandle = existing;
+                return true;
+            }
+
+            if (vault.IsAllocationLocked)
+                return false;
+
+            VaultGenerationHandle<OrbitalTelemetryEntry> acquired = vault.GetGenerationHandle<OrbitalTelemetryEntry>(
                 TelemetryRingBufferId,
                 TelemetryCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _telemetryRing = _telemetryRingHandle.Resolve(vault);
-            if (!_telemetryRing.IsCreated || _telemetryRing.Length < TelemetryCapacity)
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out NativeArray<OrbitalTelemetryEntry> acquiredRing) ||
+                !acquiredRing.IsCreated ||
+                acquiredRing.Length < TelemetryCapacity)
             {
-                _telemetryRing = default;
-                _telemetryRingHandle = default;
                 _telemetryCursor = 0;
+                return false;
             }
+
+            _telemetryRingHandle = acquired;
+            return true;
         }
 
         private void ResetRuntimeState(bool applyPresentation)
@@ -773,10 +811,10 @@ namespace Hecton8.Prologue.Space
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                ReleaseVaultBuffer(previousService as IDataVault ?? _dataVault, ref _telemetryRingHandle);
                 _dataVault = currentService as IDataVault;
-                _telemetryRing = default;
-                _telemetryRingHandle = default;
                 _telemetryCursor = 0;
+                EnsureTelemetry();
                 return;
             }
 
@@ -817,7 +855,7 @@ namespace Hecton8.Prologue.Space
 
         private void RecordTelemetry()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveTelemetryRing(out NativeArray<OrbitalTelemetryEntry> telemetryRing, allowEnsure: false))
                 return;
 
             OrbitalTelemetryEntry entry = default;
@@ -830,14 +868,17 @@ namespace Hecton8.Prologue.Space
             entry.Sequence = unchecked((ushort)_sequence);
             entry.MathLod = _mathLod == byte.MaxValue ? MathLodImpostor : _mathLod;
             entry.Flags = (byte)((_handoffEmitted ? 1 : 0) | (_aborted ? 2 : 0));
-            _telemetryRing[_telemetryCursor] = entry;
-            _telemetryCursor = (_telemetryCursor + 1) % _telemetryRing.Length;
+            telemetryRing[_telemetryCursor] = entry;
+            _telemetryCursor = (_telemetryCursor + 1) % telemetryRing.Length;
         }
 
         private void DumpTelemetry(byte reason)
         {
-            if (_telemetryDumped || !_telemetryRing.IsCreated)
+            if (_telemetryDumped ||
+                !TryResolveTelemetryRing(out NativeArray<OrbitalTelemetryEntry> telemetryRing, allowEnsure: false))
+            {
                 return;
+            }
 
             _telemetryDumped = true;
             string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
@@ -851,10 +892,10 @@ namespace Hecton8.Prologue.Space
                 writer.Write(reason);
                 writer.Write(TelemetryCapacity);
                 writer.Write(_telemetryCursor);
-                for (int i = 0; i < _telemetryRing.Length; i++)
+                for (int i = 0; i < telemetryRing.Length; i++)
                 {
-                    int index = (_telemetryCursor + i) % _telemetryRing.Length;
-                    OrbitalTelemetryEntry entry = _telemetryRing[index];
+                    int index = (_telemetryCursor + i) % telemetryRing.Length;
+                    OrbitalTelemetryEntry entry = telemetryRing[index];
                     writer.Write(entry.Frame);
                     writer.Write(entry.StateHash);
                     writer.Write(entry.UniverseVelocity.x);
@@ -868,6 +909,52 @@ namespace Hecton8.Prologue.Space
                     writer.Write(entry.Flags);
                 }
             }
+        }
+
+        private bool TryResolveTelemetryRing(out NativeArray<OrbitalTelemetryEntry> telemetryRing, bool allowEnsure)
+        {
+            telemetryRing = default;
+            if (allowEnsure && !EnsureTelemetry())
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsVaultHandleCreated(in _telemetryRingHandle))
+                return false;
+
+            if (!vault.TryResolveHandle(in _telemetryRingHandle, out telemetryRing) ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length < TelemetryCapacity)
+            {
+                if (allowEnsure)
+                    ClearTelemetryDescriptor();
+
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ClearTelemetryDescriptor()
+        {
+            _telemetryRingHandle = default;
+        }
+
+        private void ReleaseTelemetryBuffer()
+        {
+            ReleaseVaultBuffer(_dataVault, ref _telemetryRingHandle);
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void LockCapsuleAuthority()

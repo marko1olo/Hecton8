@@ -8,13 +8,13 @@ namespace Hecton8.Environment.Fluids
     /// <summary>
     /// Builds a bounded splash impulse vector field for GPU-side abyssal flow blending.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct FluidImpulseJob : IJob
     {
         private const float Epsilon = 0.0001f;
 
-        public NativeArray<float4> ImpulseField;
-        public NativeArray<int> ImpulseStats;
+        [WriteOnly, NoAlias] public NativeArray<float4> ImpulseField;
+        [WriteOnly, NoAlias] public NativeArray<int> ImpulseStats;
         public float3 FieldCenterWS;
         public float3 ImpactPositionWS;
         public float WorldSizeMeters;

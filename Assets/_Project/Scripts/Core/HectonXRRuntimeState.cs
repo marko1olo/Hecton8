@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
-using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.XR;
@@ -28,7 +27,17 @@ namespace Hecton8.Core
                 return false;
             }
 
-            return TryFromAbsoluteDouble3(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition), out aup);
+            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+            {
+                aup = default;
+                return false;
+            }
+
+            double3 absolutePosition = Hecton8.World.AbsoluteUniversePosition.OffsetAbsoluteMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return TryFromAbsoluteDouble3(absolutePosition, out aup);
         }
 
         internal static bool TryFromFields(
@@ -99,7 +108,14 @@ namespace Hecton8.Core
         internal bool TryToRuntimeFloat3(out float3 runtimePosition)
         {
             double3 absolute = ToAbsoluteDouble3(in this);
-            double3 runtime = absolute - HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+            {
+                runtimePosition = float3.zero;
+                return false;
+            }
+
+            double3 runtime = absolute - originAup.ToAbsoluteDouble3();
             if (!math.all(math.isfinite(runtime)) ||
                 math.any(math.abs(runtime) > HectonPhysicsContract.AupMaxFloatSafeMeters))
             {
@@ -107,7 +123,7 @@ namespace Hecton8.Core
                 return false;
             }
 
-            runtimePosition = new float3((float)runtime.x, (float)runtime.y, (float)runtime.z);
+            runtimePosition = AupPrecisionMath.DowncastLocalDelta(runtime, float3.zero);
             return math.all(math.isfinite(runtimePosition));
         }
 
@@ -217,7 +233,7 @@ namespace Hecton8.Core
         private static Quaternion _lockedLeftEyeRotation = Quaternion.identity;
         private static Quaternion _lockedRightEyeRotation = Quaternion.identity;
         private static Vector3 _cachedHeadRuntimePosition;
-        private static AbsoluteUniversePosition _cachedHeadAup;
+        private static XRRuntimeAup48 _cachedHeadAup;
         private static int _cachedHeadAupFrame = -1;
         private static bool _hasCachedHeadAup;
 
@@ -315,49 +331,44 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (TryResolveHeadRuntimePosition(out Vector3 runtimePosition, out AbsoluteUniversePosition headAup))
+            if (TryResolveHeadRuntimePosition(out Vector3 runtimePosition, out XRRuntimeAup48 headAup))
                 CacheHeadAup(runtimePosition, in headAup);
-        }
-
-        internal static bool TryResolveCachedHeadAup(Vector3 runtimePosition, out AbsoluteUniversePosition headAup)
-        {
-            if (_isXRActive && _hasCachedHeadAup && _cachedHeadAupFrame >= 0 && IsFinite(runtimePosition))
-            {
-                headAup = OffsetAupLocal(in _cachedHeadAup, runtimePosition - _cachedHeadRuntimePosition);
-                return true;
-            }
-
-            headAup = default;
-            return false;
         }
 
         internal static bool TryResolveCachedHeadAup48(Vector3 runtimePosition, out XRRuntimeAup48 headAup)
         {
-            if (TryResolveCachedHeadAup(runtimePosition, out AbsoluteUniversePosition worldAup))
-            {
-                return XRRuntimeAup48.TryFromFields(
-                    worldAup.GridX,
-                    worldAup.GridY,
-                    worldAup.GridZ,
-                    worldAup.LocalX,
-                    worldAup.LocalY,
-                    worldAup.LocalZ,
-                    out headAup);
-            }
+            if (_isXRActive &&
+                _hasCachedHeadAup &&
+                _cachedHeadAupFrame >= 0 &&
+                IsFinite(runtimePosition) &&
+                XRRuntimeAup48.TryOffsetLocal(in _cachedHeadAup, runtimePosition - _cachedHeadRuntimePosition, out headAup))
+                return true;
 
             headAup = default;
             return false;
         }
 
-        internal static bool TryGetCachedHeadAup(out AbsoluteUniversePosition headAup)
+        internal static bool TryResolveCachedHeadAupFields(
+            Vector3 runtimePosition,
+            out long gridX,
+            out long gridY,
+            out long gridZ,
+            out float localX,
+            out float localY,
+            out float localZ)
         {
-            if (_isXRActive && _hasCachedHeadAup && _cachedHeadAupFrame >= 0)
+            if (TryResolveCachedHeadAup48(runtimePosition, out XRRuntimeAup48 headAup))
             {
-                headAup = _cachedHeadAup;
+                CopyAupFields(in headAup, out gridX, out gridY, out gridZ, out localX, out localY, out localZ);
                 return true;
             }
 
-            headAup = default;
+            gridX = 0L;
+            gridY = 0L;
+            gridZ = 0L;
+            localX = 0f;
+            localY = 0f;
+            localZ = 0f;
             return false;
         }
 
@@ -643,7 +654,7 @@ namespace Hecton8.Core
                    math.abs(a.w - b.w) <= 0.0001f;
         }
 
-        private static bool TryResolveHeadRuntimePosition(out Vector3 runtimePosition, out AbsoluteUniversePosition headAup)
+        private static bool TryResolveHeadRuntimePosition(out Vector3 runtimePosition, out XRRuntimeAup48 headAup)
         {
             if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
                 TryResolveHeadRuntimePosition(in runtimeContext, out runtimePosition, out headAup))
@@ -657,46 +668,21 @@ namespace Hecton8.Core
                 if (playerContext.PlayerCamera != null)
                 {
                     runtimePosition = playerContext.PlayerCamera.transform.position;
-                    if (!IsFinite(runtimePosition))
-                    {
-                        headAup = default;
-                        return false;
-                    }
-
-                    var movement = playerContext.PlayerMovement;
-                    if (movement != null)
-                    {
-                        AbsoluteUniversePosition bodyAup = movement.CurrentAup;
-                        Vector3 bodyRuntimePosition = (Vector3)bodyAup.ToRuntimeFloat3();
-                        if (IsFinite(bodyRuntimePosition))
-                        {
-                            headAup = OffsetAupLocal(in bodyAup, runtimePosition - bodyRuntimePosition);
-                            return true;
-                        }
-                    }
-
-                    headAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-                    return true;
+                    return XRRuntimeAup48.TryFromRuntimePosition(runtimePosition, out headAup);
                 }
 
-                if (playerContext.PlayerMovement != null)
+                if (playerContext.TryGetPlayerPoseSnapshot(out var poseSnapshot) &&
+                    math.all(math.isfinite(poseSnapshot.RuntimePosition)))
                 {
-                    headAup = playerContext.PlayerMovement.CurrentAup;
-                    runtimePosition = (Vector3)headAup.ToRuntimeFloat3();
-                    return IsFinite(runtimePosition);
+                    float3 poseRuntime = poseSnapshot.RuntimePosition;
+                    runtimePosition = new Vector3(poseRuntime.x, poseRuntime.y, poseRuntime.z);
+                    return XRRuntimeAup48.TryFromRuntimePosition(runtimePosition, out headAup);
                 }
 
                 if (playerContext.PlayerTransform != null)
                 {
                     runtimePosition = playerContext.PlayerTransform.position;
-                    if (!IsFinite(runtimePosition))
-                    {
-                        headAup = default;
-                        return false;
-                    }
-
-                    headAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-                    return true;
+                    return XRRuntimeAup48.TryFromRuntimePosition(runtimePosition, out headAup);
                 }
             }
 
@@ -708,7 +694,7 @@ namespace Hecton8.Core
         private static bool TryResolveHeadRuntimePosition(
             in PlayerRuntimeContext runtimeContext,
             out Vector3 runtimePosition,
-            out AbsoluteUniversePosition headAup)
+            out XRRuntimeAup48 headAup)
         {
             runtimePosition = Vector3.zero;
             headAup = default;
@@ -723,24 +709,10 @@ namespace Hecton8.Core
             }
 
             runtimePosition = new Vector3(lookState.EyePosition.x, lookState.EyePosition.y, lookState.EyePosition.z);
-            var movement = runtimeContext.PlayerMovement;
-            if (movement != null)
-            {
-                float3 bodyRuntimePosition = runtimeContext.MovementState.WorldPosition;
-                if (math.all(math.isfinite(bodyRuntimePosition)))
-                {
-                    Vector3 bodyPosition = new Vector3(bodyRuntimePosition.x, bodyRuntimePosition.y, bodyRuntimePosition.z);
-                    AbsoluteUniversePosition bodyAup = movement.CurrentAup;
-                    headAup = OffsetAupLocal(in bodyAup, runtimePosition - bodyPosition);
-                    return true;
-                }
-            }
-
-            headAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-            return true;
+            return XRRuntimeAup48.TryFromRuntimePosition(runtimePosition, out headAup);
         }
 
-        private static void CacheHeadAup(Vector3 runtimePosition, in AbsoluteUniversePosition headAup)
+        private static void CacheHeadAup(Vector3 runtimePosition, in XRRuntimeAup48 headAup)
         {
             if (!IsFinite(runtimePosition))
                 return;
@@ -751,39 +723,21 @@ namespace Hecton8.Core
             _hasCachedHeadAup = true;
         }
 
-        private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)
+        private static void CopyAupFields(
+            in XRRuntimeAup48 aup,
+            out long gridX,
+            out long gridY,
+            out long gridZ,
+            out float localX,
+            out float localY,
+            out float localZ)
         {
-            AbsoluteUniversePosition result = anchorAup;
-            result.LocalX += runtimeOffset.x;
-            result.LocalY += runtimeOffset.y;
-            result.LocalZ += runtimeOffset.z;
-            NormalizeAupLocalAxis(ref result.GridX, ref result.LocalX);
-            NormalizeAupLocalAxis(ref result.GridY, ref result.LocalY);
-            NormalizeAupLocalAxis(ref result.GridZ, ref result.LocalZ);
-            return result;
-        }
-
-        private static void NormalizeAupLocalAxis(ref long grid, ref float local)
-        {
-            const float cellSize = AbsoluteUniversePosition.CellSizeMeters;
-            if (local >= 0f && local < cellSize)
-                return;
-
-            long gridDelta = (long)math.floor(local / cellSize);
-            grid += gridDelta;
-            local -= gridDelta * cellSize;
-            if (local < 0f)
-            {
-                local += cellSize;
-                grid--;
-                return;
-            }
-
-            if (local >= cellSize)
-            {
-                local -= cellSize;
-                grid++;
-            }
+            gridX = aup.GridX;
+            gridY = aup.GridY;
+            gridZ = aup.GridZ;
+            localX = aup.LocalX;
+            localY = aup.LocalY;
+            localZ = aup.LocalZ;
         }
 
         private static bool IsFinite(Vector3 value)

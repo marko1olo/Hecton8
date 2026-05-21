@@ -1,0 +1,4 @@
+name,resolution,narrow_band_meters,global_quality_weight,submesh_index
+Hero_Cave,256,20,1,-1
+Large_Arch,192,18,0.85,-1
+Small_Wreck,96,12,0.65,-1

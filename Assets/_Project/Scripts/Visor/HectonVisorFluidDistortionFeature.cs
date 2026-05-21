@@ -21,7 +21,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Fullscreen visor droplet and leak distortion driven by the active player wet-lens and hull-stress signals.
     /// </summary>
-    public sealed class HectonVisorFluidDistortionFeature : ScriptableRendererFeature
+    public sealed class HectonVisorFluidDistortionFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
         private const float ThermalDistortionCullStartSpeedMetersPerSecond = 12f;
         private const float ThermalDistortionCullEndSpeedMetersPerSecond = 15f;
@@ -667,16 +667,31 @@ namespace Hecton8.Visor
                        math.abs(left.w - right.w) <= GlobalsFloatEpsilon;
             }
 
-            [StructLayout(LayoutKind.Sequential, Size = VisorFluidGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Explicit, Size = VisorFluidGlobalsStrideBytes)]
             private struct VisorFluidGlobalsDTO
             {
+                [FieldOffset(0)]
                 public Vector4 Params0;
+
+                [FieldOffset(16)]
                 public Vector4 Params1;
+
+                [FieldOffset(32)]
                 public Vector4 Params2;
+
+                [FieldOffset(48)]
                 public Vector4 IorLut;
+
+                [FieldOffset(64)]
                 public Vector4 Params3;
+
+                [FieldOffset(80)]
                 public Vector4 Params4;
+
+                [FieldOffset(96)]
                 public Vector4 LocalVelocity;
+
+                [FieldOffset(112)]
                 public Vector4 Params5;
 
                 public VisorFluidGlobalsDTO(
@@ -700,13 +715,22 @@ namespace Hecton8.Visor
                 }
             }
 
-            [StructLayout(LayoutKind.Sequential, Size = LensComputeGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Explicit, Size = LensComputeGlobalsStrideBytes)]
             private struct LensComputeGlobalsDTO
             {
+                [FieldOffset(0)]
                 public Vector4 LensState;
+
+                [FieldOffset(16)]
                 public Vector4 LensParams0;
+
+                [FieldOffset(32)]
                 public Vector4 LensParams1;
+
+                [FieldOffset(48)]
                 public Vector4 LensParams2;
+
+                [FieldOffset(64)]
                 public Vector4 ComputeParams;
 
                 public LensComputeGlobalsDTO(
@@ -749,9 +773,23 @@ namespace Hecton8.Visor
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerContext;
         private IFluidSim _fluidSimulation;
-        private VaultBufferHandle<VisorRefractionTelemetryEntry> _blackBoxHandle;
+        private VaultGenerationHandle<VisorRefractionTelemetryEntry> _blackBoxHandle;
         private uint _blackBoxVaultGeneration;
+        private bool _blackBoxHandleOwned;
         private bool _blackBoxDumped;
+        private bool _blackBoxHotSwapRegistered;
+
+        private void OnEnable()
+        {
+            TryRegisterBlackBoxHotSwapListener();
+            CacheBlackBoxVaultCold(GlobalRegistry.DataVault);
+        }
+
+        private void OnDisable()
+        {
+            ReleaseBlackBoxLease();
+            TryUnregisterBlackBoxHotSwapListener();
+        }
 
         /// <inheritdoc />
         public override void Create()
@@ -765,6 +803,8 @@ namespace Hecton8.Visor
 
             _pass ??= new VisorFluidPass();
             _pass.PrewarmVisorFluidGlobalsBuffer();
+            TryRegisterBlackBoxHotSwapListener();
+            CacheBlackBoxVaultCold(GlobalRegistry.DataVault);
             Shader shader = settings != null ? settings.shader : null;
             if (shader == null)
             {
@@ -802,7 +842,30 @@ namespace Hecton8.Visor
             _material = null;
             _playerContext = null;
             _fluidSimulation = null;
-            InvalidateBlackBoxLease();
+            ReleaseBlackBoxLease();
+            TryUnregisterBlackBoxHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                ReleaseBlackBoxLease();
+                CacheBlackBoxVaultCold(currentService as IDataVault);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.FluidSimulation)
+                _fluidSimulation = currentService as IFluidSim;
         }
 
         private bool TryBuildRuntimeState(
@@ -1119,10 +1182,10 @@ namespace Hecton8.Visor
                 flags |= BlackBoxFlagNonFiniteInput;
         }
 
-        private unsafe void WriteBlackBoxFrame(Camera renderCamera, in RuntimeState runtimeState)
+        private void WriteBlackBoxFrame(Camera renderCamera, in RuntimeState runtimeState)
         {
             int frame = Time.frameCount;
-            if (!TryResolveBlackBoxPointer(out VisorRefractionTelemetryEntry* blackBox, out int blackBoxLength))
+            if (!TryResolveBlackBoxRing(out NativeArray<VisorRefractionTelemetryEntry> blackBox, out int blackBoxLength))
                 return;
 
             Vector3 localVelocity = SanitizeVector(runtimeState.LocalVelocity);
@@ -1166,74 +1229,138 @@ namespace Hecton8.Visor
 
         private bool TryEnsureBlackBoxLease()
         {
-            if (IsBlackBoxLeaseValid())
+            if (TryResolveCurrentBlackBoxRing(out _, out _))
                 return true;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive)
             {
-                InvalidateBlackBoxLease();
+                ClearBlackBoxDescriptor();
                 return false;
             }
 
-            VaultBufferHandle<VisorRefractionTelemetryEntry> blackBoxHandle = vault.GetBufferHandle<VisorRefractionTelemetryEntry>(
+            if (vault.TryGetGenerationHandle(
+                    BufferID.VisorRefractionBlackBox,
+                    out VaultGenerationHandle<VisorRefractionTelemetryEntry> existingHandle) &&
+                vault.TryResolveHandle(in existingHandle, out NativeArray<VisorRefractionTelemetryEntry> existingBlackBox) &&
+                existingBlackBox.IsCreated &&
+                existingBlackBox.Length >= BlackBoxFrameCount)
+            {
+                _blackBoxHandle = existingHandle;
+                _blackBoxVaultGeneration = existingHandle.Generation;
+                _blackBoxHandleOwned = false;
+                return true;
+            }
+
+            VaultGenerationHandle<VisorRefractionTelemetryEntry> blackBoxHandle = vault.GetGenerationHandle<VisorRefractionTelemetryEntry>(
                 BufferID.VisorRefractionBlackBox,
                 BlackBoxFrameCount,
                 SystemID.Vfx);
-            if (!blackBoxHandle.IsCreated ||
-                blackBoxHandle.Length < BlackBoxFrameCount ||
-                !vault.TryGetBufferGeneration(BufferID.VisorRefractionBlackBox, out uint generation) ||
-                generation != blackBoxHandle.GenerationID)
+            if (!IsVaultHandleCreated(in blackBoxHandle) ||
+                !vault.TryResolveHandle(in blackBoxHandle, out NativeArray<VisorRefractionTelemetryEntry> blackBox) ||
+                !blackBox.IsCreated ||
+                blackBox.Length < BlackBoxFrameCount)
             {
-                InvalidateBlackBoxLease();
+                ClearBlackBoxDescriptor();
                 return false;
             }
 
-            _dataVault = vault;
             _blackBoxHandle = blackBoxHandle;
-            _blackBoxVaultGeneration = generation;
+            _blackBoxVaultGeneration = blackBoxHandle.Generation;
+            _blackBoxHandleOwned = true;
             return true;
         }
 
-        private unsafe bool TryResolveBlackBoxPointer(out VisorRefractionTelemetryEntry* blackBox, out int blackBoxLength)
+        private bool TryResolveBlackBoxRing(out NativeArray<VisorRefractionTelemetryEntry> blackBox, out int blackBoxLength)
         {
-            blackBox = null;
-            blackBoxLength = 0;
+            if (TryResolveCurrentBlackBoxRing(out blackBox, out blackBoxLength))
+                return true;
+
             if (!TryEnsureBlackBoxLease())
                 return false;
 
-            void* ptr = _blackBoxHandle.ResolvePointer(_dataVault);
-            if (ptr == null || !_blackBoxHandle.IsCreated || _blackBoxHandle.Length < BlackBoxFrameCount)
-            {
-                InvalidateBlackBoxLease();
-                return false;
-            }
-
-            blackBox = (VisorRefractionTelemetryEntry*)ptr;
-            blackBoxLength = _blackBoxHandle.Length;
-            return true;
+            return TryResolveCurrentBlackBoxRing(out blackBox, out blackBoxLength);
         }
 
-        private bool IsBlackBoxLeaseValid()
+        private bool TryResolveCurrentBlackBoxRing(out NativeArray<VisorRefractionTelemetryEntry> blackBox, out int blackBoxLength)
         {
+            blackBox = default;
+            blackBoxLength = 0;
             if (_dataVault == null ||
-                !_blackBoxHandle.IsCreated ||
-                _blackBoxHandle.Length < BlackBoxFrameCount ||
+                !IsVaultHandleCreated(in _blackBoxHandle) ||
                 _dataVault.IsCompactionFenceActive)
             {
                 return false;
             }
 
-            return _dataVault.TryGetBufferGeneration(BufferID.VisorRefractionBlackBox, out uint generation) &&
-                   generation == _blackBoxVaultGeneration &&
-                   ReferenceEquals(_dataVault, GlobalRegistry.DataVault);
+            if (!_dataVault.TryResolveHandle(in _blackBoxHandle, out blackBox) ||
+                !blackBox.IsCreated ||
+                blackBox.Length < BlackBoxFrameCount)
+            {
+                ClearBlackBoxDescriptor();
+                return false;
+            }
+
+            _blackBoxVaultGeneration = _blackBoxHandle.Generation;
+            blackBoxLength = blackBox.Length;
+            return true;
         }
 
-        private void InvalidateBlackBoxLease()
+        private void CacheBlackBoxVaultCold(IDataVault vault)
         {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            ReleaseBlackBoxLease();
+            _dataVault = vault;
+        }
+
+        private void ReleaseBlackBoxLease()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null &&
+                _blackBoxHandleOwned &&
+                IsVaultHandleCreated(in _blackBoxHandle) &&
+                !vault.IsCompactionFenceActive &&
+                vault.TryGetGenerationHandle(
+                    BufferID.VisorRefractionBlackBox,
+                    out VaultGenerationHandle<VisorRefractionTelemetryEntry> currentHandle) &&
+                currentHandle.Generation == _blackBoxHandle.Generation)
+            {
+                vault.ReleaseBuffer(in _blackBoxHandle);
+            }
+
+            ClearBlackBoxDescriptor();
             _dataVault = null;
+        }
+
+        private void ClearBlackBoxDescriptor()
+        {
             _blackBoxHandle = default;
             _blackBoxVaultGeneration = 0u;
+            _blackBoxHandleOwned = false;
+        }
+
+        private void TryRegisterBlackBoxHotSwapListener()
+        {
+            if (_blackBoxHotSwapRegistered)
+                return;
+
+            _blackBoxHotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterBlackBoxHotSwapListener()
+        {
+            if (!_blackBoxHotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _blackBoxHotSwapRegistered = false;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private static uint BuildBlackBoxHash(in RuntimeState runtimeState, uint flags)
@@ -1277,11 +1404,12 @@ namespace Hecton8.Visor
             return index >= 0 ? index : index + blackBoxLength;
         }
 
-        private unsafe void DumpBlackBoxOnce(uint reasonFlags, VisorRefractionTelemetryEntry* blackBox, int blackBoxLength, int startIndex)
+        private void DumpBlackBoxOnce(uint reasonFlags, NativeArray<VisorRefractionTelemetryEntry> blackBox, int blackBoxLength, int startIndex)
         {
-            if (_blackBoxDumped || blackBox == null || blackBoxLength <= 0)
+            if (_blackBoxDumped || !blackBox.IsCreated || blackBoxLength <= 0)
                 return;
 
+            blackBoxLength = math.min(blackBoxLength, blackBox.Length);
             _blackBoxDumped = true;
             string path = Path.Combine(Application.dataPath, "..", BlackBoxDumpRelativePath);
             string directory = Path.GetDirectoryName(path);

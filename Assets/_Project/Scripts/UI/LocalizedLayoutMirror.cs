@@ -113,32 +113,35 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+            if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime &&
+                serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            s_cachedLocalization = currentService as LocalizationManager;
-            s_localizationColdResolved = true;
-            QueueApplyMirroring();
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
+                s_cachedLocalization = currentService as LocalizationManager;
+                s_localizationColdResolved = true;
+                QueueApplyMirroring();
+                return;
+            }
+
+            if (isActiveAndEnabled)
+                TryRegisterForTick();
         }
 
         /// <inheritdoc />
         public void LateFrameTick()
         {
             if (!_applyMirroringPending)
-            {
-                TryUnregisterFromTick();
                 return;
-            }
 
             _applyMirroringPending = false;
             ApplyMirroring();
-            if (!_applyMirroringPending)
-                TryUnregisterFromTick();
         }
 
         private void TryRegisterForTick()
         {
-            if (_registeredForTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredForTick || !Application.isPlaying)
                 return;
 
             _registeredForTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);

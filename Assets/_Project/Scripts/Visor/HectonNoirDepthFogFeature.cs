@@ -199,12 +199,19 @@ namespace Hecton8.Visor
                        left.ParamsB == right.ParamsB;
             }
 
-            [StructLayout(LayoutKind.Sequential, Size = DepthFogGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Explicit, Size = DepthFogGlobalsStrideBytes)]
             private struct DepthFogGlobalsDTO
             {
+                [FieldOffset(0)]
                 internal Vector4 ShallowColor;
+
+                [FieldOffset(16)]
                 internal Vector4 AbyssColor;
+
+                [FieldOffset(32)]
                 internal Vector4 ParamsA;
+
+                [FieldOffset(48)]
                 internal Vector4 ParamsB;
 
                 internal static DepthFogGlobalsDTO FromSettings(FeatureSettings settings)

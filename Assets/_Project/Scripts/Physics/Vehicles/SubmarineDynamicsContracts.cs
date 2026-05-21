@@ -22,9 +22,13 @@ namespace Hecton8.Physics.Vehicles
         public const uint SourceHashMock = 0x4B425553u; // SUBK
         public const uint SourceHashLegacy = 0x4F485355u; // USHO
         public const uint SourceHashCsv = 0x43535653u; // SVSC
+        public const uint SourceHashAddedMass = 0x414D3235u; // AM25
         public const uint StateFlagInitialized = 1u << 0;
         public const uint StateFlagFatalNan = 1u << 1;
         public const uint StateFlagGyroSuppressed = 1u << 2;
+        public const uint HydroFlagTensorFallback = 1u << 0;
+        public const uint HydroFlagFullTensorBlend = 1u << 1;
+        public const uint HydroFlagFloodMassInjected = 1u << 2;
         public const uint ForceFlagImpact = 1u << 0;
         public const uint ForceFlagImpactNormalLocal = 1u << 1;
         public const byte ConfigFlagThermalDilation = 1 << 0;
@@ -49,18 +53,17 @@ namespace Hecton8.Physics.Vehicles
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float SampleDensityKgPerM3(float depthMeters, float baseDensityKgPerM3, uint frame, byte hardwareTier)
+        public static float SampleDensityKgPerM3(float depthMeters, float baseDensityKgPerM3, uint frame, float globalQualityWeight)
         {
             float depth = math.isfinite(depthMeters) ? math.clamp(depthMeters, 0f, 1200f) : 0f;
             float baseDensity = math.isfinite(baseDensityKgPerM3)
                 ? math.clamp(baseDensityKgPerM3, MinDensityKgPerM3, MaxDensityKgPerM3)
                 : DefaultSeawaterDensityKgPerM3;
             float compressionBias = depth * 0.0042f;
-            if (hardwareTier == 0)
-                return math.clamp(baseDensity + compressionBias, MinDensityKgPerM3, MaxDensityKgPerM3);
-
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
             uint phase = (frame * 1103515245u) + 12345u;
-            float microLayerBias = (((phase >> 8) & 1023u) * (1f / 1023f) - 0.5f) * 0.55f;
+            float microLayerWeight = quality * quality * (3f - (2f * quality));
+            float microLayerBias = (((phase >> 8) & 1023u) * (1f / 1023f) - 0.5f) * 0.55f * microLayerWeight;
             return math.clamp(baseDensity + compressionBias + microLayerBias, MinDensityKgPerM3, MaxDensityKgPerM3);
         }
     }
@@ -87,7 +90,7 @@ namespace Hecton8.Physics.Vehicles
         [FieldOffset(132)] public uint EntityId;
         [FieldOffset(136)] public uint ShiftFrameId;
         [FieldOffset(140)] public byte MathLod;
-        [FieldOffset(141)] public byte HardwareTier;
+        [FieldOffset(141)] public byte QualityWeightByte;
         [FieldOffset(142)] private ushort _pad0;
         [FieldOffset(144)] private ulong _pad1;
         [FieldOffset(152)] private ulong _pad2;
@@ -204,7 +207,7 @@ namespace Hecton8.Physics.Vehicles
         [FieldOffset(100)] public float TickDilationPressure01;
         [FieldOffset(104)] public float3 MockFloodLocal;
         [FieldOffset(116)] public uint SourceHash;
-        [FieldOffset(120)] public byte HardwareTier;
+        [FieldOffset(120)] public byte QualityWeightByte;
         [FieldOffset(121)] public byte Flags;
         [FieldOffset(122)] private ushort _pad0;
         [FieldOffset(124)] private uint _pad1;
@@ -230,6 +233,75 @@ namespace Hecton8.Physics.Vehicles
         [FieldOffset(112)] private uint _pad0;
         [FieldOffset(116)] private uint _pad1;
         [FieldOffset(120)] private ulong _pad2;
+    }
+
+    /// <summary>Added mass tensor payload. Size: 128 bytes, two matrix cache lines.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    public struct AddedMassProfileDTO
+    {
+        [FieldOffset(0)] public float4x4 LinearAddedMass;
+        [FieldOffset(64)] public float4x4 AngularAddedMass;
+    }
+
+    /// <summary>Hydrodynamic tensor blackbox entry. Size: 128 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    public struct SubmarineHydrodynamicsTelemetry
+    {
+        [FieldOffset(0)] public double3 Aup;
+        [FieldOffset(24)] public float DepthMeters;
+        [FieldOffset(28)] public float FluidDensityKgPerM3;
+        [FieldOffset(32)] public float DisplacedWaterMassKg;
+        [FieldOffset(36)] public float FloodWaterMassKg;
+        [FieldOffset(40)] public float3 LinearDiagKg;
+        [FieldOffset(52)] public float3 AngularDiagKgm2;
+        [FieldOffset(64)] public float MatrixBlend01;
+        [FieldOffset(68)] public float RotationalDamping;
+        [FieldOffset(72)] public uint Frame;
+        [FieldOffset(76)] public uint Flags;
+        [FieldOffset(80)] public uint StateHash;
+        [FieldOffset(84)] public uint TensorHash;
+        [FieldOffset(88)] public float BurstElapsedUs;
+        [FieldOffset(92)] public float DepthDensityScalar;
+        [FieldOffset(96)] private ulong _pad0;
+        [FieldOffset(104)] private ulong _pad1;
+        [FieldOffset(112)] private ulong _pad2;
+        [FieldOffset(120)] private ulong _pad3;
+    }
+
+    /// <summary>Cold imported hull profile row. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SubmarineHullProfileDTO
+    {
+        [FieldOffset(0)] public uint ProfileHash;
+        [FieldOffset(4)] public float BaseMassKg;
+        [FieldOffset(8)] public float HullVolumeM3;
+        [FieldOffset(12)] public float LengthMeters;
+        [FieldOffset(16)] public float RadiusMeters;
+        [FieldOffset(20)] public float AddedMassMultiplier;
+        [FieldOffset(24)] public float3 CenterOfBuoyancyLocal;
+        [FieldOffset(36)] public float3 CenterOfMassLocal;
+        [FieldOffset(48)] public uint Flags;
+        [FieldOffset(52)] public float FloodVolumeScalar;
+        [FieldOffset(56)] private ulong _pad0;
+    }
+
+    /// <summary>Editor/cold tuning lane for the added-mass solver. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SubmarineAddedMassTuningDTO
+    {
+        [FieldOffset(0)] public float BaseAddedMassMultiplier;
+        [FieldOffset(4)] public float DepthDensityLinear;
+        [FieldOffset(8)] public float DepthDensityQuadratic;
+        [FieldOffset(12)] public float RotationalDampingScalar;
+        [FieldOffset(16)] public float MatrixBlendBias;
+        [FieldOffset(20)] public float MaxDepthMeters;
+        [FieldOffset(24)] public float FloodVolumeScalar;
+        [FieldOffset(28)] public float TensorAnisotropyScalar;
+        [FieldOffset(32)] public uint SourceHash;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] private ulong _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
     /// <summary>Fallback flood signal used when the real flood domain is unavailable. Size: 64 bytes.</summary>
@@ -289,44 +361,604 @@ namespace Hecton8.Physics.Vehicles
     {
         public static ref SubmarineKinematicState GetStateRef(
             IDataVault vault,
-            ref VaultBufferHandle<SubmarineKinematicState> handle,
+            in VaultGenerationHandle<SubmarineKinematicState> handle,
             int index)
         {
-            void* pointer = handle.ResolvePointer(vault);
-            if (pointer == null || (uint)index >= (uint)handle.Length)
+            NativeArray<SubmarineKinematicState> states = default;
+            if (vault == null ||
+                !vault.TryResolveHandle(in handle, out states) ||
+                !states.IsCreated ||
+                (uint)index >= (uint)states.Length)
+            {
                 FatalMemoryException.ThrowStaleVaultHandle();
+            }
 
+            void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(states);
             Hint.Assume(pointer != null);
             Hint.Assume(index >= 0);
-            Hint.Assume(index < handle.Length);
+            Hint.Assume(index < states.Length);
             return ref UnsafeUtility.ArrayElementAsRef<SubmarineKinematicState>(pointer, index);
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct MockFloodSignalSeederJob : IJob
+    internal static class SubmarineDynamicsSimdMath
     {
-        public NativeQueue<MockFloodSignal>.ParallelWriter FloodWriter;
-        public uint Frame;
-        public uint Seed;
-        public float3 LocalCompartment;
-        public float MassKg;
-
-        public void Execute()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float LengthFromSq(float lengthSq)
         {
-            uint hash = Seed ^ (Frame * 747796405u);
-            hash = (hash ^ (hash >> 16)) * 2246822519u;
-            hash ^= hash >> 13;
-            if ((hash & 31u) != 0u)
+            float finiteSq = math.select(0f, lengthSq, math.isfinite(lengthSq));
+            float safeSq = math.max(finiteSq, 0.0001f);
+            return math.select(0f, safeSq * math.rsqrt(math.max(safeSq, 0.0001f)), finiteSq > 0.0001f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 NormalizeOrFallback(float3 value, float3 fallback)
+        {
+            float lenSq = math.lengthsq(value);
+            bool valid = math.all(math.isfinite(value)) & math.isfinite(lenSq) & lenSq > 0.0001f;
+            float3 source = math.select(fallback, value, valid);
+            lenSq = math.lengthsq(source);
+            bool fallbackValid = math.all(math.isfinite(source)) & math.isfinite(lenSq) & lenSq > 0.0001f;
+            return math.select(float3.zero, source * math.rsqrt(math.max(lenSq, 0.0001f)), fallbackValid);
+        }
+    }
+
+    internal static class SubmarineAddedMassMath
+    {
+        private const float Pi = 3.14159265358979323846f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double3 SafeAup(double3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : double3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ToLocal(in double3 aup, in SubmarineKinematicConfig config)
+        {
+            double3 delta = SafeAup(aup) - SafeAup(config.LocalOriginAup);
+            float3 local = new float3((float)delta.x, (float)delta.y, (float)delta.z);
+            return math.all(math.isfinite(local)) ? local : float3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SafePositive(float value, float fallback)
+        {
+            return math.isfinite(value) && value > 0f ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SafeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion NormalizeSafe(quaternion value)
+        {
+            if (!math.all(math.isfinite(value.value)))
+                return quaternion.identity;
+
+            float lenSq = math.lengthsq(value.value);
+            return lenSq > 0.0001f ? new quaternion(value.value * math.rsqrt(math.max(lenSq, 0.0001f))) : quaternion.identity;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveDepthDensityScalar(float depthMeters)
+        {
+            return ResolveDepthDensityScalar(depthMeters, 0.08f, 0.05f, 6000f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveDepthDensityScalar(float depthMeters, float linear, float quadratic, float maxDepthMeters)
+        {
+            float maxDepth = SafePositive(maxDepthMeters, 6000f);
+            float depth = math.clamp(math.isfinite(depthMeters) ? depthMeters : 0f, 0f, maxDepth);
+            float t = depth / maxDepth;
+            float l = math.clamp(math.isfinite(linear) ? linear : 0.08f, 0f, 0.5f);
+            float q = math.clamp(math.isfinite(quadratic) ? quadratic : 0.05f, 0f, 0.5f);
+            return 1f + (l * t) + (q * t * t);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveTensorBlend(float globalQualityWeight, float lowLodHoldSeconds, float matrixBlendBias)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float bias = math.clamp(math.isfinite(matrixBlendBias) ? matrixBlendBias : 0f, -0.5f, 0.5f);
+            float baseBlend = math.saturate((quality * 1.08f) + bias - 0.18f);
+            float lodSuppression = math.saturate(1f - (SafeNonNegative(lowLodHoldSeconds) * 0.5f));
+            float blended = math.saturate(baseBlend * lodSuppression);
+            return blended * blended * (3f - (2f * blended));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static SubmarineAddedMassTuningDTO SanitizeTuning(in SubmarineAddedMassTuningDTO tuning)
+        {
+            SubmarineAddedMassTuningDTO safe = default;
+            safe.BaseAddedMassMultiplier = math.clamp(SafePositive(tuning.BaseAddedMassMultiplier, 1f), 0.25f, 4f);
+            safe.DepthDensityLinear = math.clamp(math.isfinite(tuning.DepthDensityLinear) ? tuning.DepthDensityLinear : 0.08f, 0f, 0.5f);
+            safe.DepthDensityQuadratic = math.clamp(math.isfinite(tuning.DepthDensityQuadratic) ? tuning.DepthDensityQuadratic : 0.05f, 0f, 0.5f);
+            safe.RotationalDampingScalar = math.clamp(SafePositive(tuning.RotationalDampingScalar, 1f), 0.1f, 6f);
+            safe.MatrixBlendBias = math.clamp(math.isfinite(tuning.MatrixBlendBias) ? tuning.MatrixBlendBias : 0f, -0.5f, 0.5f);
+            safe.MaxDepthMeters = math.clamp(SafePositive(tuning.MaxDepthMeters, 6000f), 100f, 12000f);
+            safe.FloodVolumeScalar = math.clamp(math.isfinite(tuning.FloodVolumeScalar) ? tuning.FloodVolumeScalar : 1f, 0f, 3f);
+            safe.TensorAnisotropyScalar = math.clamp(SafePositive(tuning.TensorAnisotropyScalar, 1f), 0.25f, 4f);
+            safe.SourceHash = tuning.SourceHash != 0u ? tuning.SourceHash : SubmarineDynamicsConstants.SourceHashAddedMass;
+            safe.Flags = tuning.Flags;
+            return safe;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static SubmarineAddedMassTuningDTO DefaultTuning()
+        {
+            SubmarineAddedMassTuningDTO tuning = default;
+            tuning.BaseAddedMassMultiplier = 1f;
+            tuning.DepthDensityLinear = 0.08f;
+            tuning.DepthDensityQuadratic = 0.05f;
+            tuning.RotationalDampingScalar = 1f;
+            tuning.MatrixBlendBias = 0f;
+            tuning.MaxDepthMeters = 6000f;
+            tuning.FloodVolumeScalar = 1f;
+            tuning.TensorAnisotropyScalar = 1f;
+            tuning.SourceHash = SubmarineDynamicsConstants.SourceHashAddedMass;
+            return tuning;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ResolveHullAxes(float hullVolumeM3, out float lengthMeters, out float radiusMeters)
+        {
+            float volume = SafePositive(hullVolumeM3, 1f);
+            lengthMeters = math.clamp(CubeRootPositive(volume * 10f) * 1.8f, 4f, 80f);
+            float radiusSq = volume / math.max(Pi * lengthMeters, 0.001f);
+            radiusMeters = math.clamp(SubmarineDynamicsSimdMath.LengthFromSq(math.max(radiusSq, 0.04f)), 0.2f, 12f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float CubeRootPositive(float value)
+        {
+            float target = math.max(0.000001f, math.select(1f, value, math.isfinite(value)));
+            float high = 1f;
+            for (int i = 0; i < 8; i++)
+            {
+                float highSq = high * high;
+                if (highSq * high >= target || high >= 128f)
+                    break;
+
+                high *= 2f;
+            }
+
+            float low = 0f;
+            for (int i = 0; i < 12; i++)
+            {
+                float mid = (low + high) * 0.5f;
+                float cube = mid * mid * mid;
+                if (cube <= target)
+                    low = mid;
+                else
+                    high = mid;
+            }
+
+            return math.max(0.0001f, (low + high) * 0.5f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float4x4 BuildWorldTensor(float3 diagonalLocal, quaternion rotation)
+        {
+            float3 safe = math.max(new float3(1f), math.abs(diagonalLocal));
+            float3x3 r = new float3x3(NormalizeSafe(rotation));
+            float3x3 d = new float3x3(
+                new float3(safe.x, 0f, 0f),
+                new float3(0f, safe.y, 0f),
+                new float3(0f, 0f, safe.z));
+            float3x3 m = math.mul(math.mul(r, d), math.transpose(r));
+            return new float4x4(
+                new float4(m.c0, 0f),
+                new float4(m.c1, 0f),
+                new float4(m.c2, 0f),
+                new float4(0f, 0f, 0f, 1f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ExtractDiagonal(in float4x4 matrix)
+        {
+            return math.max(new float3(1f), new float3(matrix.c0.x, matrix.c1.y, matrix.c2.z));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ResolveLinearAcceleration(float3 forceWorld, float baseMassKg, in AddedMassProfileDTO profile, float matrixBlend01)
+        {
+            float3 diagonal = ExtractDiagonal(in profile.LinearAddedMass) + new float3(SafePositive(baseMassKg, 1f));
+            float3 diagonalAcceleration = forceWorld / math.max(diagonal, new float3(1f));
+            if (matrixBlend01 <= 0.001f)
+                return diagonalAcceleration;
+
+            float4x4 matrix = profile.LinearAddedMass;
+            matrix.c0.x += SafePositive(baseMassKg, 1f);
+            matrix.c1.y += SafePositive(baseMassKg, 1f);
+            matrix.c2.z += SafePositive(baseMassKg, 1f);
+            matrix.c3 = new float4(0f, 0f, 0f, 1f);
+            float determinant = math.determinant(matrix);
+            if (!math.isfinite(determinant) || math.abs(determinant) <= 0.0001f)
+                return diagonalAcceleration;
+
+            float3 tensorAcceleration = math.mul(math.inverse(matrix), new float4(forceWorld, 0f)).xyz;
+            bool valid = math.all(math.isfinite(tensorAcceleration));
+            tensorAcceleration = math.select(diagonalAcceleration, tensorAcceleration, valid);
+            return math.lerp(diagonalAcceleration, tensorAcceleration, math.saturate(matrixBlend01));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ResolveLinearVelocityDelta(float3 impulseWorld, float baseMassKg, in AddedMassProfileDTO profile, float matrixBlend01)
+        {
+            return ResolveLinearAcceleration(impulseWorld, baseMassKg, in profile, matrixBlend01);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ResolveAngularAcceleration(float3 torqueWorld, float3 baseInertia, in AddedMassProfileDTO profile, float matrixBlend01)
+        {
+            float3 diagonal = ExtractDiagonal(in profile.AngularAddedMass) + math.max(baseInertia, new float3(1f));
+            float3 diagonalAcceleration = torqueWorld / math.max(diagonal, new float3(1f));
+            if (matrixBlend01 <= 0.001f)
+                return diagonalAcceleration;
+
+            float4x4 matrix = profile.AngularAddedMass;
+            matrix.c0.x += math.max(1f, baseInertia.x);
+            matrix.c1.y += math.max(1f, baseInertia.y);
+            matrix.c2.z += math.max(1f, baseInertia.z);
+            matrix.c3 = new float4(0f, 0f, 0f, 1f);
+            float determinant = math.determinant(matrix);
+            if (!math.isfinite(determinant) || math.abs(determinant) <= 0.0001f)
+                return diagonalAcceleration;
+
+            float3 tensorAcceleration = math.mul(math.inverse(matrix), new float4(torqueWorld, 0f)).xyz;
+            bool valid = math.all(math.isfinite(tensorAcceleration));
+            tensorAcceleration = math.select(diagonalAcceleration, tensorAcceleration, valid);
+            return math.lerp(diagonalAcceleration, tensorAcceleration, math.saturate(matrixBlend01));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ResolveAngularVelocityDelta(float3 angularImpulseWorld, float3 baseInertia, in AddedMassProfileDTO profile, float matrixBlend01)
+        {
+            return ResolveAngularAcceleration(angularImpulseWorld, baseInertia, in profile, matrixBlend01);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveRotationalDamping(in AddedMassProfileDTO profile, float totalMassKg, float globalQualityWeight)
+        {
+            return ResolveRotationalDamping(in profile, totalMassKg, globalQualityWeight, 1f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveRotationalDamping(in AddedMassProfileDTO profile, float totalMassKg, float globalQualityWeight, float dampingScalar)
+        {
+            float3 angularDiag = ExtractDiagonal(in profile.AngularAddedMass);
+            float trace = angularDiag.x + angularDiag.y + angularDiag.z;
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float scalar = math.clamp(SafePositive(dampingScalar, 1f), 0.1f, 6f);
+            float scale = math.saturate(trace / math.max(1f, SafePositive(totalMassKg, 1f) * 42f));
+            return math.lerp(0.04f, 0.18f, scale) * math.lerp(0.65f, 1f, quality) * scalar;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 ApplyAngularDamping(float3 angularVelocity, float damping, float dt)
+        {
+            float decayInput = math.max(0f, damping) * math.clamp(dt, 0.001f, 0.05f);
+            float decay = math.rcp(1f + decayInput + (0.48f * decayInput * decayInput));
+            return angularVelocity * decay;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsFinite(in AddedMassProfileDTO profile)
+        {
+            return math.all(math.isfinite(profile.LinearAddedMass.c0)) &&
+                   math.all(math.isfinite(profile.LinearAddedMass.c1)) &&
+                   math.all(math.isfinite(profile.LinearAddedMass.c2)) &&
+                   math.all(math.isfinite(profile.LinearAddedMass.c3)) &&
+                   math.all(math.isfinite(profile.AngularAddedMass.c0)) &&
+                   math.all(math.isfinite(profile.AngularAddedMass.c1)) &&
+                   math.all(math.isfinite(profile.AngularAddedMass.c2)) &&
+                   math.all(math.isfinite(profile.AngularAddedMass.c3));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint HashTensor(in AddedMassProfileDTO profile)
+        {
+            uint hash = 2166136261u;
+            hash = Mix(hash, math.asuint(profile.LinearAddedMass.c0.x));
+            hash = Mix(hash, math.asuint(profile.LinearAddedMass.c1.y));
+            hash = Mix(hash, math.asuint(profile.LinearAddedMass.c2.z));
+            hash = Mix(hash, math.asuint(profile.AngularAddedMass.c0.x));
+            hash = Mix(hash, math.asuint(profile.AngularAddedMass.c1.y));
+            hash = Mix(hash, math.asuint(profile.AngularAddedMass.c2.z));
+            return hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Mix(uint hash, uint value)
+        {
+            hash ^= value;
+            return hash * 16777619u;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct CalculateAddedMassTensorJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<SubmarineKinematicState> States;
+        [ReadOnly, NoAlias] public NativeArray<SubmarineMassProperties> MassProperties;
+        [ReadOnly, NoAlias] public NativeArray<SubmarineKinematicConfig> Configs;
+        [ReadOnly, NoAlias] public NativeArray<SubmarineHullProfileDTO> HullProfiles;
+        [ReadOnly, NoAlias] public NativeArray<SubmarineAddedMassTuningDTO> Tuning;
+        [NoAlias] public NativeArray<AddedMassProfileDTO> AddedMassProfiles;
+        [NoAlias] public NativeArray<SubmarineHydrodynamicsTelemetry> HydrodynamicsTelemetry;
+        public float GlobalQualityWeight;
+        public uint Frame;
+        public int VehicleCount;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)VehicleCount ||
+                (uint)index >= (uint)States.Length ||
+                (uint)index >= (uint)MassProperties.Length ||
+                (uint)index >= (uint)AddedMassProfiles.Length ||
+                Configs.Length == 0)
+            {
+                return;
+            }
+
+            SubmarineKinematicState state = States[index];
+            SubmarineMassProperties mass = MassProperties[index];
+            SubmarineKinematicConfig config = Configs[0];
+            SubmarineAddedMassTuningDTO tuning = ResolveTuning(in Tuning);
+            float3 localPosition = SubmarineAddedMassMath.ToLocal(in state.Aup, in config);
+            float depthMeters = math.max(0f, -localPosition.y);
+            float baseDensity = SubmarineAddedMassMath.SafePositive(
+                config.FluidDensityKgPerM3,
+                MockFluidDensityGenerator.DefaultSeawaterDensityKgPerM3);
+            float fluidDensity = MockFluidDensityGenerator.SampleDensityKgPerM3(
+                depthMeters,
+                baseDensity,
+                Frame,
+                GlobalQualityWeight);
+            float depthDensityScalar = SubmarineAddedMassMath.ResolveDepthDensityScalar(
+                depthMeters,
+                tuning.DepthDensityLinear,
+                tuning.DepthDensityQuadratic,
+                tuning.MaxDepthMeters);
+            bool hasHullProfile = HullProfiles.IsCreated &&
+                                  (uint)index < (uint)HullProfiles.Length &&
+                                  HullProfiles[index].ProfileHash != 0u;
+            SubmarineHullProfileDTO hullProfile = hasHullProfile ? HullProfiles[index] : default;
+            float hullVolume = hasHullProfile
+                ? SubmarineAddedMassMath.SafePositive(hullProfile.HullVolumeM3, SubmarineAddedMassMath.SafePositive(config.HullVolumeM3, 1f))
+                : SubmarineAddedMassMath.SafePositive(config.HullVolumeM3, 1f);
+            float addedMassMultiplier = hasHullProfile
+                ? math.clamp(SubmarineAddedMassMath.SafePositive(hullProfile.AddedMassMultiplier, 1f), 0.25f, 3f)
+                : 1f;
+            addedMassMultiplier *= tuning.BaseAddedMassMultiplier;
+            float floodVolumeScalar = hasHullProfile
+                ? math.clamp(math.isfinite(hullProfile.FloodVolumeScalar) ? hullProfile.FloodVolumeScalar : 1f, 0f, 2f)
+                : 1f;
+            floodVolumeScalar *= tuning.FloodVolumeScalar;
+            float floodMass = SubmarineAddedMassMath.SafeNonNegative(mass.FloodMassKg);
+            float floodVolume = (floodMass / math.max(850f, fluidDensity)) * floodVolumeScalar;
+            float effectiveVolume = hullVolume + floodVolume;
+            float displacedWaterMass = math.max(1f, effectiveVolume * fluidDensity * depthDensityScalar);
+
+            SubmarineAddedMassMath.ResolveHullAxes(effectiveVolume, out float lengthMeters, out float radiusMeters);
+            if (hasHullProfile)
+            {
+                lengthMeters = SubmarineAddedMassMath.SafePositive(hullProfile.LengthMeters, lengthMeters);
+                radiusMeters = SubmarineAddedMassMath.SafePositive(hullProfile.RadiusMeters, radiusMeters);
+            }
+            float anisotropy01 = math.saturate((tuning.TensorAnisotropyScalar - 0.25f) * (1f / 3.75f));
+            float forwardAddedMass = displacedWaterMass * math.lerp(0.30f, 0.18f, anisotropy01);
+            float lateralAddedMass = displacedWaterMass * math.lerp(0.62f, 0.82f, anisotropy01);
+            float verticalAddedMass = displacedWaterMass * math.lerp(0.68f, 0.94f, anisotropy01);
+            float3 linearDiagonalLocal = new float3(lateralAddedMass, verticalAddedMass, forwardAddedMass) * addedMassMultiplier;
+
+            float radiusSq = radiusMeters * radiusMeters;
+            float lengthSq = lengthMeters * lengthMeters;
+            float rollAddedInertia = 0.42f * displacedWaterMass * radiusSq;
+            float pitchAddedInertia = (0.74f * displacedWaterMass * ((3f * radiusSq) + lengthSq)) / 12f;
+            float yawAddedInertia = (0.82f * displacedWaterMass * ((3f * radiusSq) + lengthSq)) / 12f;
+            float3 angularDiagonalLocal = new float3(rollAddedInertia, pitchAddedInertia, yawAddedInertia) * addedMassMultiplier;
+
+            quaternion rotation = SubmarineAddedMassMath.NormalizeSafe(state.Rotation);
+            AddedMassProfileDTO profile = default;
+            profile.LinearAddedMass = SubmarineAddedMassMath.BuildWorldTensor(linearDiagonalLocal, rotation);
+            profile.AngularAddedMass = SubmarineAddedMassMath.BuildWorldTensor(angularDiagonalLocal, rotation);
+            bool finite = SubmarineAddedMassMath.IsFinite(in profile);
+            if (!finite)
+            {
+                profile.LinearAddedMass = SubmarineAddedMassMath.BuildWorldTensor(new float3(1f), quaternion.identity);
+                profile.AngularAddedMass = SubmarineAddedMassMath.BuildWorldTensor(new float3(1f), quaternion.identity);
+            }
+
+            AddedMassProfiles[index] = profile;
+            WriteHydrodynamicsTelemetry(
+                index,
+                in state,
+                in profile,
+                depthMeters,
+                fluidDensity,
+                depthDensityScalar,
+                displacedWaterMass,
+                floodMass,
+                tuning,
+                finite,
+                HydrodynamicsTelemetry);
+        }
+
+        private void WriteHydrodynamicsTelemetry(
+            int vehicleIndex,
+            in SubmarineKinematicState state,
+            in AddedMassProfileDTO profile,
+            float depthMeters,
+            float fluidDensity,
+            float depthDensityScalar,
+            float displacedWaterMass,
+            float floodMass,
+            in SubmarineAddedMassTuningDTO tuning,
+            bool finite,
+            NativeArray<SubmarineHydrodynamicsTelemetry> telemetry)
+        {
+            if (!telemetry.IsCreated)
                 return;
 
-            MockFloodSignal signal = default;
-            signal.LocalCompartment = LocalCompartment;
-            signal.WaterMassKg = math.max(0f, MassKg);
-            signal.FillRatio01 = math.saturate(signal.WaterMassKg / 4000f);
-            signal.Frame = Frame;
-            signal.Flags = 1;
-            FloodWriter.Enqueue(signal);
+            int baseIndex = vehicleIndex * SubmarineDynamicsConstants.BlackBoxFrames;
+            if ((uint)baseIndex >= (uint)telemetry.Length)
+                return;
+
+            int local = (int)(Frame % SubmarineDynamicsConstants.BlackBoxFrames);
+            int index = baseIndex + local;
+            if ((uint)index >= (uint)telemetry.Length)
+                return;
+
+            float matrixBlend = SubmarineAddedMassMath.ResolveTensorBlend(GlobalQualityWeight, 0f, tuning.MatrixBlendBias);
+            SubmarineHydrodynamicsTelemetry entry = default;
+            entry.Aup = state.Aup;
+            entry.DepthMeters = depthMeters;
+            entry.FluidDensityKgPerM3 = fluidDensity;
+            entry.DepthDensityScalar = depthDensityScalar;
+            entry.DisplacedWaterMassKg = displacedWaterMass;
+            entry.FloodWaterMassKg = floodMass;
+            entry.LinearDiagKg = SubmarineAddedMassMath.ExtractDiagonal(in profile.LinearAddedMass);
+            entry.AngularDiagKgm2 = SubmarineAddedMassMath.ExtractDiagonal(in profile.AngularAddedMass);
+            entry.MatrixBlend01 = matrixBlend;
+            entry.RotationalDamping = SubmarineAddedMassMath.ResolveRotationalDamping(in profile, state.TotalMassKg, GlobalQualityWeight, tuning.RotationalDampingScalar);
+            entry.Frame = Frame;
+            entry.Flags = finite ? 0u : SubmarineDynamicsConstants.HydroFlagTensorFallback;
+            entry.Flags |= matrixBlend > 0.001f ? SubmarineDynamicsConstants.HydroFlagFullTensorBlend : 0u;
+            entry.Flags |= floodMass > 0.001f ? SubmarineDynamicsConstants.HydroFlagFloodMassInjected : 0u;
+            entry.StateHash = HashHydroState(in state);
+            entry.TensorHash = SubmarineAddedMassMath.HashTensor(in profile);
+            entry.BurstElapsedUs = 0f;
+            telemetry[index] = entry;
+        }
+
+        private static uint HashHydroState(in SubmarineKinematicState state)
+        {
+            uint hash = 2166136261u;
+            hash = Mix(hash, math.asuint(state.LocalPosition.x));
+            hash = Mix(hash, math.asuint(state.LocalPosition.y));
+            hash = Mix(hash, math.asuint(state.LocalPosition.z));
+            hash = Mix(hash, state.Flags);
+            return hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Mix(uint hash, uint value)
+        {
+            hash ^= value;
+            return hash * 16777619u;
+        }
+
+        private static SubmarineAddedMassTuningDTO ResolveTuning(in NativeArray<SubmarineAddedMassTuningDTO> tuning)
+        {
+            if (!tuning.IsCreated || tuning.Length == 0)
+                return SubmarineAddedMassMath.DefaultTuning();
+
+            return SubmarineAddedMassMath.SanitizeTuning(tuning[0]);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct ApplyTensorAccelerationJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<SubmarineKinematicState> States;
+        [ReadOnly, NoAlias] public NativeArray<SubmarineForceAccumulator> Forces;
+        [ReadOnly, NoAlias] public NativeArray<AddedMassProfileDTO> AddedMassProfiles;
+        [ReadOnly, NoAlias] public NativeArray<SubmarineAddedMassTuningDTO> Tuning;
+        public float FixedDeltaTime;
+        public float GlobalQualityWeight;
+        public int VehicleCount;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)VehicleCount ||
+                (uint)index >= (uint)States.Length ||
+                (uint)index >= (uint)Forces.Length ||
+                (uint)index >= (uint)AddedMassProfiles.Length)
+            {
+                return;
+            }
+
+            SubmarineKinematicState state = States[index];
+            SubmarineForceAccumulator force = Forces[index];
+            AddedMassProfileDTO profile = AddedMassProfiles[index];
+            SubmarineAddedMassTuningDTO tuning = !Tuning.IsCreated || Tuning.Length == 0
+                ? SubmarineAddedMassMath.DefaultTuning()
+                : SubmarineAddedMassMath.SanitizeTuning(Tuning[0]);
+            float blend = SubmarineAddedMassMath.ResolveTensorBlend(GlobalQualityWeight, state.GyroDisabledSeconds, tuning.MatrixBlendBias);
+            float dt = math.clamp(FixedDeltaTime, 0.001f, 0.05f);
+            state.LinearVelocity += SubmarineAddedMassMath.ResolveLinearAcceleration(force.LinearForceWorld, state.TotalMassKg, in profile, blend) * dt;
+            state.AngularVelocity += SubmarineAddedMassMath.ResolveAngularAcceleration(force.TorqueWorld, state.InertiaTensor, in profile, blend) * dt;
+            States[index] = state;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct ApplyHydrodynamicDampingJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<SubmarineKinematicState> States;
+        [ReadOnly, NoAlias] public NativeArray<AddedMassProfileDTO> AddedMassProfiles;
+        [ReadOnly, NoAlias] public NativeArray<SubmarineAddedMassTuningDTO> Tuning;
+        public float FixedDeltaTime;
+        public float GlobalQualityWeight;
+        public int VehicleCount;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)VehicleCount ||
+                (uint)index >= (uint)States.Length ||
+                (uint)index >= (uint)AddedMassProfiles.Length)
+            {
+                return;
+            }
+
+            SubmarineKinematicState state = States[index];
+            AddedMassProfileDTO profile = AddedMassProfiles[index];
+            SubmarineAddedMassTuningDTO tuning = !Tuning.IsCreated || Tuning.Length == 0
+                ? SubmarineAddedMassMath.DefaultTuning()
+                : SubmarineAddedMassMath.SanitizeTuning(Tuning[0]);
+            float damping = SubmarineAddedMassMath.ResolveRotationalDamping(in profile, state.TotalMassKg, GlobalQualityWeight, tuning.RotationalDampingScalar);
+            state.AngularVelocity = SubmarineAddedMassMath.ApplyAngularDamping(state.AngularVelocity, damping, FixedDeltaTime);
+            States[index] = state;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct GenerateMockAddedMassJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<AddedMassProfileDTO> AddedMassProfiles;
+        [NoAlias] public NativeArray<SubmarineForceAccumulator> Forces;
+        public uint Seed;
+        public int VehicleCount;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)VehicleCount ||
+                (uint)index >= (uint)AddedMassProfiles.Length ||
+                (uint)index >= (uint)Forces.Length)
+            {
+                return;
+            }
+
+            uint hash = Seed ^ ((uint)index * 747796405u);
+            float skew = 0.8f + (((hash >> 8) & 255u) * (0.4f / 255f));
+            float3 linear = new float3(6400f * skew, 8200f, 2100f / skew);
+            float3 angular = new float3(18000f, 92000f * skew, 104000f / skew);
+            AddedMassProfileDTO profile = default;
+            profile.LinearAddedMass = SubmarineAddedMassMath.BuildWorldTensor(linear, quaternion.identity);
+            profile.AngularAddedMass = SubmarineAddedMassMath.BuildWorldTensor(angular, quaternion.identity);
+            AddedMassProfiles[index] = profile;
+
+            SubmarineForceAccumulator force = Forces[index];
+            force.LinearForceWorld = new float3(5000f * skew, 1200f, 24000f);
+            force.TorqueWorld = new float3(900f, 1800f * skew, 400f);
+            force.Frame = Seed + (uint)index;
+            Forces[index] = force;
         }
     }
 
@@ -339,8 +971,27 @@ namespace Hecton8.Physics.Vehicles
         [NoAlias] public NativeArray<SubmarineMassProperties> MassProperties;
         [NoAlias] public NativeArray<SubmarineForceAccumulator> Forces;
         [NoAlias] public NativeArray<SubmarineKinematicTelemetry> Telemetry;
+        [ReadOnly, NoAlias] public NativeArray<AddedMassProfileDTO> AddedMassProfiles;
+        [ReadOnly, NoAlias] public NativeArray<SubmarineAddedMassTuningDTO> Tuning;
         [ReadOnly, NoAlias] public NativeArray<SubmarineKinematicConfig> Configs;
         [ReadOnly, NoAlias] public NativeArray<float> DragLut;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // SignalBus owns the cavitation acoustic lane and this integrator receives a producer-only writer.
+        // Unity cannot infer that external queue ownership from the field type, so its warning is a false
+        // positive for this finite event emission path. [NoAlias] tells Burst the queue writer cannot alias
+        // the submarine SoA state, control, PID, mass, force, telemetry, tuning, config, or drag LUT buffers.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected direct audio/runtime calls from the integrator because that would introduce managed side
+        // effects and compile-wall coupling. Rejected atomics into a shared counter buffer because it would
+        // serialize the vectorized integration lane. Rejected a second reduction job because acoustic events
+        // are sparse and already have a typed SignalBus route.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Each scheduled submarine integration pass owns one CavitationWriter. The dispatcher fences the
+        // returned JobHandle before draining, and the SignalBus lane is not resized or disposed while the job
+        // can still execute. The job only enqueues finite payloads and never reads queue state.
+        [NoAlias, NativeDisableContainerSafetyRestriction]
         public NativeQueue<CavitationAcousticSignal>.ParallelWriter CavitationWriter;
         public float FixedDeltaTime;
         public float GlobalQualityWeight;
@@ -355,6 +1006,7 @@ namespace Hecton8.Physics.Vehicles
                 (uint)index >= (uint)PidStates.Length ||
                 (uint)index >= (uint)MassProperties.Length ||
                 (uint)index >= (uint)Forces.Length ||
+                (uint)index >= (uint)AddedMassProfiles.Length ||
                 Configs.Length == 0 ||
                 DragLut.Length == 0)
             {
@@ -367,21 +1019,23 @@ namespace Hecton8.Physics.Vehicles
             SubmarineMassProperties mass = MassProperties[index];
             SubmarineForceAccumulator force = Forces[index];
             SubmarineKinematicConfig config = Configs[0];
+            SubmarineAddedMassTuningDTO tuning = ResolveTuning(in Tuning);
 
             float dt = math.clamp(FixedDeltaTime, 0.001f, 0.05f);
-            int stride = ResolveQualityStride(GlobalQualityWeight);
-            bool skippedByStride = stride > 1 && ((Frame + (uint)index) % (uint)stride) != 0u;
-            bool lowMathRequested = (config.Flags & SubmarineDynamicsConstants.ConfigFlagThermalDilation) != 0 || stride > 1;
-            pid.LowLodHoldSeconds = lowMathRequested
-                ? math.max(pid.LowLodHoldSeconds, 2f)
-                : math.max(0f, pid.LowLodHoldSeconds - dt);
-            bool lowMathLod = pid.LowLodHoldSeconds > 0f;
-            bool runSlowSolvers = !lowMathLod || (Frame % (uint)stride) == 0u;
+            bool thermalDilation = (config.Flags & SubmarineDynamicsConstants.ConfigFlagThermalDilation) != 0;
+            float updateFraction = ResolveQualityUpdateFraction(GlobalQualityWeight);
+            if (thermalDilation)
+                updateFraction = math.min(updateFraction, 0.5f);
+            bool skippedByCadence = !ShouldRunQualityCadence(Frame, index, updateFraction);
+            float lowLodTargetSeconds = math.lerp(2f, 0f, updateFraction);
+            pid.LowLodHoldSeconds = math.max(lowLodTargetSeconds, math.max(0f, pid.LowLodHoldSeconds - dt));
+            bool lowMathLod = pid.LowLodHoldSeconds > 0.001f;
+            bool runSlowSolvers = !skippedByCadence;
 
             if ((state.Flags & SubmarineDynamicsConstants.StateFlagInitialized) == 0u)
                 InitializeState(ref state, in config, index);
 
-            if (skippedByStride)
+            if (skippedByCadence)
             {
                 ApplyDeadReckoning(ref state, in config, dt);
                 pid.Frame = Frame;
@@ -395,7 +1049,6 @@ namespace Hecton8.Physics.Vehicles
 
             float3 localPosition = ToLocal(in state.Aup, in config);
             state.LocalPosition = localPosition;
-            state.HardwareTier = config.HardwareTier;
             state.MathLod = lowMathLod ? (byte)0 : (byte)1;
 
             state.LinearVelocity = SafeFinite(state.LinearVelocity, float3.zero);
@@ -433,6 +1086,17 @@ namespace Hecton8.Physics.Vehicles
             state.TotalMassKg = totalMass;
             state.BallastRatio01 = math.saturate(control.BallastCommand01);
 
+            AddedMassProfileDTO addedMassProfile = AddedMassProfiles[index];
+            if (!SubmarineAddedMassMath.IsFinite(in addedMassProfile))
+            {
+                float fallbackWaterMass = math.max(1f, SafePositive(config.HullVolumeM3, 1f) * SafePositive(config.FluidDensityKgPerM3, MockFluidDensityGenerator.DefaultSeawaterDensityKgPerM3));
+                addedMassProfile.LinearAddedMass = SubmarineAddedMassMath.BuildWorldTensor(new float3(0.72f, 0.86f, 0.18f) * fallbackWaterMass, rotation);
+                addedMassProfile.AngularAddedMass = SubmarineAddedMassMath.BuildWorldTensor(ResolveInertiaTensor(fallbackWaterMass, centerOfMassLocal, floodMass, in config), rotation);
+            }
+
+            float matrixBlend = SubmarineAddedMassMath.ResolveTensorBlend(GlobalQualityWeight, pid.LowLodHoldSeconds, tuning.MatrixBlendBias);
+            state.MathLod = matrixBlend < 0.001f ? (byte)0 : matrixBlend < 0.45f ? (byte)1 : matrixBlend < 0.85f ? (byte)2 : (byte)3;
+
             float pidOutput = pid.LastOutput;
             if (runSlowSolvers)
                 pidOutput = SolveDepthPid(ref pid, depthMeters, control.TargetDepthMeters, in config, dt);
@@ -440,7 +1104,7 @@ namespace Hecton8.Physics.Vehicles
 
             float3 forward = math.mul(rotation, new float3(0f, 0f, 1f));
             float3 throttleVector = math.lengthsq(control.ThrustLocal) > 0.0001f
-                ? math.mul(rotation, math.normalizesafe(control.ThrustLocal, new float3(0f, 0f, 1f)))
+                ? math.mul(rotation, SubmarineDynamicsSimdMath.NormalizeOrFallback(control.ThrustLocal, new float3(0f, 0f, 1f)))
                 : forward;
 
             float throttle01 = math.saturate(control.Throttle01);
@@ -462,7 +1126,7 @@ namespace Hecton8.Physics.Vehicles
             }
 
             float dragCoefficient = SampleDragLut(speedSq, in DragLut) * SafePositive(config.DragScale, 0.01f);
-            float3 dragWorld = -math.normalizesafe(state.LinearVelocity) * speedSq * dragCoefficient;
+            float3 dragWorld = -SubmarineDynamicsSimdMath.NormalizeOrFallback(state.LinearVelocity, float3.zero) * speedSq * dragCoefficient;
 
             float targetDepth = math.max(1f, control.TargetDepthMeters);
             float depthRatio = math.saturate((depthMeters + 1f) / (targetDepth + 1f));
@@ -472,7 +1136,7 @@ namespace Hecton8.Physics.Vehicles
                 depthMeters,
                 config.FluidDensityKgPerM3,
                 Frame,
-                state.HardwareTier);
+                GlobalQualityWeight);
             float ballastLift = SafeNonNegative(config.BallastLiftN);
             float buoyancyN = hullVolume * fluidDensity * SubmarineDynamicsConstants.Gravity * buoyancyEase;
             buoyancyN += math.lerp(-ballastLift, ballastLift, state.BallastRatio01) + pidOutput;
@@ -499,33 +1163,35 @@ namespace Hecton8.Physics.Vehicles
 
             if ((force.Flags & SubmarineDynamicsConstants.ForceFlagImpact) != 0u && force.ImpactMagnitude > 0f)
             {
-                float3 impactNormal = math.normalizesafe(force.ImpactNormalWorld, -forward);
+                float3 impactNormal = SubmarineDynamicsSimdMath.NormalizeOrFallback(force.ImpactNormalWorld, -forward);
                 if ((force.Flags & SubmarineDynamicsConstants.ForceFlagImpactNormalLocal) != 0u)
-                    impactNormal = math.normalizesafe(math.mul(rotation, impactNormal), -forward);
+                    impactNormal = SubmarineDynamicsSimdMath.NormalizeOrFallback(math.mul(rotation, impactNormal), -forward);
 
                 float impulse = force.ImpactMagnitude;
-                state.LinearVelocity += impactNormal * (impulse / totalMass);
+                state.LinearVelocity += SubmarineAddedMassMath.ResolveLinearVelocityDelta(impactNormal * impulse, totalMass, in addedMassProfile, matrixBlend);
                 float3 angularImpulse = math.cross(force.ImpactPointLocal - centerOfMassLocal, impactNormal * impulse);
-                state.AngularVelocity += angularImpulse / math.max(new float3(1f), state.InertiaTensor);
+                state.AngularVelocity += SubmarineAddedMassMath.ResolveAngularVelocityDelta(angularImpulse, state.InertiaTensor, in addedMassProfile, matrixBlend);
                 if (impulse > 45000f)
                     state.GyroDisabledSeconds = 2f;
             }
 
             float3 totalForce = thrustWorld + dragWorld + buoyancyWorld + gravityWorld;
-            state.LinearVelocity += (totalForce / totalMass) * dt;
+            state.LinearVelocity += SubmarineAddedMassMath.ResolveLinearAcceleration(totalForce, totalMass, in addedMassProfile, matrixBlend) * dt;
             state.LinearVelocity = math.clamp(state.LinearVelocity, new float3(-90f), new float3(90f));
             localPosition += state.LinearVelocity * dt;
             state.Aup = SafeAup(config.LocalOriginAup) + new double3(localPosition);
             state.LocalPosition = localPosition;
 
             float3 inertia = math.max(new float3(1f), state.InertiaTensor);
-            state.AngularVelocity += (torqueWorld / inertia) * dt;
+            state.AngularVelocity += SubmarineAddedMassMath.ResolveAngularAcceleration(torqueWorld, inertia, in addedMassProfile, matrixBlend) * dt;
+            float rotationalDamping = SubmarineAddedMassMath.ResolveRotationalDamping(in addedMassProfile, totalMass, GlobalQualityWeight, tuning.RotationalDampingScalar);
+            state.AngularVelocity = SubmarineAddedMassMath.ApplyAngularDamping(state.AngularVelocity, rotationalDamping, dt);
             state.AngularVelocity = math.clamp(state.AngularVelocity, new float3(-2.8f), new float3(2.8f));
-            float angularSpeed = math.length(state.AngularVelocity);
+            float angularSpeed = SubmarineDynamicsSimdMath.LengthFromSq(math.lengthsq(state.AngularVelocity));
             if (angularSpeed > 0.0001f)
             {
                 quaternion deltaRotation = quaternion.AxisAngle(state.AngularVelocity / angularSpeed, angularSpeed * dt);
-                rotation = math.normalize(math.mul(deltaRotation, rotation));
+                rotation = NormalizeSafe(math.mul(deltaRotation, rotation));
             }
 
             state.Rotation = rotation;
@@ -539,7 +1205,8 @@ namespace Hecton8.Physics.Vehicles
                           IsFinite(torqueWorld) &&
                           IsFinite(thrustWorld) &&
                           IsFinite(dragWorld) &&
-                          IsFinite(buoyancyWorld);
+                          IsFinite(buoyancyWorld) &&
+                          SubmarineAddedMassMath.IsFinite(in addedMassProfile);
             if (!finite)
             {
                 state.Flags |= SubmarineDynamicsConstants.StateFlagFatalNan;
@@ -592,6 +1259,14 @@ namespace Hecton8.Physics.Vehicles
             state.EntityId = (uint)index;
         }
 
+        private static SubmarineAddedMassTuningDTO ResolveTuning(in NativeArray<SubmarineAddedMassTuningDTO> tuning)
+        {
+            if (!tuning.IsCreated || tuning.Length == 0)
+                return SubmarineAddedMassMath.DefaultTuning();
+
+            return SubmarineAddedMassMath.SanitizeTuning(tuning[0]);
+        }
+
         private static void ApplyDeadReckoning(ref SubmarineKinematicState state, in SubmarineKinematicConfig config, float dt)
         {
             state.LinearVelocity = SafeFinite(state.LinearVelocity, float3.zero);
@@ -599,22 +1274,33 @@ namespace Hecton8.Physics.Vehicles
             state.LocalPosition = SafeFinite(state.LocalPosition + (state.LinearVelocity * dt), float3.zero);
             state.Aup = SafeAup(config.LocalOriginAup) + new double3(state.LocalPosition);
             quaternion rotation = NormalizeSafe(state.Rotation);
-            float angularSpeed = math.length(state.AngularVelocity);
+            float angularSpeed = SubmarineDynamicsSimdMath.LengthFromSq(math.lengthsq(state.AngularVelocity));
             if (angularSpeed > 0.0001f)
             {
                 quaternion deltaRotation = quaternion.AxisAngle(state.AngularVelocity / angularSpeed, angularSpeed * dt);
-                rotation = math.normalize(math.mul(deltaRotation, rotation));
+                rotation = NormalizeSafe(math.mul(deltaRotation, rotation));
             }
 
             state.Rotation = rotation;
             state.Flags |= SubmarineDynamicsConstants.StateFlagInitialized;
         }
 
-        private static int ResolveQualityStride(float globalQualityWeight)
+        private static float ResolveQualityUpdateFraction(float globalQualityWeight)
         {
             float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            float inverse = 1f - quality;
-            return math.clamp(1 + (int)math.floor(inverse * 3.333334f), 1, 4);
+            float curved = quality * quality * (3f - (2f * quality));
+            return math.lerp(0.25f, 1f, curved);
+        }
+
+        private static bool ShouldRunQualityCadence(uint frame, int index, float updateFraction)
+        {
+            float fraction = math.saturate(math.isfinite(updateFraction) ? updateFraction : 1f);
+            if (fraction >= 0.999f)
+                return true;
+
+            uint hash = Mix(2166136261u, frame);
+            hash = Mix(hash, (uint)index + 0x9E3779B9u);
+            return Hash01(hash) <= fraction;
         }
 
         private static float3 ToLocal(in double3 aup, in SubmarineKinematicConfig config)
@@ -824,7 +1510,7 @@ namespace Hecton8.Physics.Vehicles
                 return quaternion.identity;
 
             float lenSq = math.lengthsq(value.value);
-            return lenSq > 0.000001f ? new quaternion(value.value * math.rsqrt(lenSq)) : quaternion.identity;
+            return lenSq > 0.0001f ? new quaternion(value.value * math.rsqrt(math.max(lenSq, 0.0001f))) : quaternion.identity;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

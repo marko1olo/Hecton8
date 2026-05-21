@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!200 &20000000
+ShaderVariantCollection:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Hecton_VisorAR_Stencil
+  m_Shaders:
+  - first: {fileID: 4800000, guid: af3b2017e12747bfa050b98c80d0876c, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0
+  - first: {fileID: 4800000, guid: d8d506639f0b53a4b91a8eb8dbfe316e, type: 3}
+    second:
+      variants:
+      - keywords:
+        passType: 0

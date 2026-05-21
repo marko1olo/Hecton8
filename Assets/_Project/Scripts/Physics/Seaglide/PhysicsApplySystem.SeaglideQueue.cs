@@ -1,4 +1,3 @@
-using Hecton8.Core;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -33,6 +32,8 @@ namespace Hecton8.Physics
         }
 
         internal static void DrainSeaglideForcePackets(
+            PhysicsApplySystem system,
+            GlobalPhysicsStateManager bodyResolver,
             NativeArray<SeaglideForcePacketDTO> packets,
             NativeArray<SeaglideCounterDTO> counters,
             NativeArray<SeaglideBodyBindingDTO> bodyBindings,
@@ -50,17 +51,26 @@ namespace Hecton8.Physics
                 return;
             }
 
-            PhysicsApplySystem system = EnsureRuntimeInstance();
-            GlobalPhysicsStateManager.TryGetBuoyancyBodyResolver(out GlobalPhysicsStateManager bodyResolver);
-            int packetCount = math.clamp(counters[0].ForcePackets, 0, packets.Length);
+            SeaglideCounterDTO counter = counters[0];
+            int packetCount = math.clamp(counter.ForcePackets, 0, packets.Length);
+            int scanWindow = math.clamp(counter.EvaluatedRequests, 0, packets.Length);
+            if (scanWindow <= 0)
+                scanWindow = packetCount;
+
             int budget = math.min(math.max(0, maxPackets), packetCount);
-            for (int i = 0; i < budget; i++)
+            int attempted = 0;
+            for (int i = 0; i < scanWindow && attempted < budget; i++)
             {
                 SeaglideForcePacketDTO packet = packets[i];
-                if (system == null ||
-                    packet.TargetEntityHash == 0u ||
-                    !math.all(math.isfinite(packet.NetForce)) ||
-                    !TryResolveSeaglideBody(packet, bodyBindings, bodyResolver, out Rigidbody body))
+                if (packet.TargetEntityHash == 0u ||
+                    (packet.Flags & SeaglideHydrodynamicsConstants.FlagForceQueued) == 0u ||
+                    !math.all(math.isfinite(packet.NetForce)))
+                {
+                    continue;
+                }
+
+                attempted++;
+                if (system == null || !TryResolveBoundSeaglideBodyForPacket(packet, bodyBindings, bodyResolver, out Rigidbody body))
                 {
                     unresolved++;
                     continue;
@@ -80,7 +90,7 @@ namespace Hecton8.Physics
             }
         }
 
-        private static bool TryResolveSeaglideBody(
+        private static bool TryResolveBoundSeaglideBodyForPacket(
             SeaglideForcePacketDTO packet,
             NativeArray<SeaglideBodyBindingDTO> bodyBindings,
             GlobalPhysicsStateManager bodyResolver,
@@ -88,55 +98,24 @@ namespace Hecton8.Physics
         {
             body = null;
             int stateIndex = packet.StateIndex;
-            if (bodyResolver != null &&
-                bodyBindings.IsCreated &&
-                (uint)stateIndex < (uint)bodyBindings.Length)
+            if (bodyResolver == null ||
+                !bodyBindings.IsCreated ||
+                (uint)stateIndex >= (uint)bodyBindings.Length)
             {
-                SeaglideBodyBindingDTO binding = bodyBindings[stateIndex];
-                bool bindingMatches = binding.TargetEntityHash == packet.TargetEntityHash &&
-                                      binding.StateIndex == stateIndex &&
-                                      binding.RigidbodyIndex >= 0 &&
-                                      (binding.Flags & SeaglideHydrodynamicsConstants.FlagActive) != 0u;
-                if (bindingMatches &&
-                    GlobalPhysicsStateManager.TryResolveTrackedBodyByIndex(
-                        bodyResolver,
-                        binding.RigidbodyIndex,
-                        packet.TargetEntityHash,
-                        out body))
-                {
-                    return true;
-                }
+                return false;
             }
 
-            if (bodyResolver != null &&
-                GlobalPhysicsStateManager.TryResolveTrackedBodyByFoldedEntityHash(
-                    bodyResolver,
-                    packet.TargetEntityHash,
-                    out body,
-                    out int bodyIndex))
-            {
-                if (bodyBindings.IsCreated && (uint)stateIndex < (uint)bodyBindings.Length)
-                {
-                    SeaglideBodyBindingDTO binding = default;
-                    binding.TargetEntityHash = packet.TargetEntityHash;
-                    binding.StateIndex = stateIndex;
-                    binding.RigidbodyIndex = bodyIndex;
-                    binding.Flags = SeaglideHydrodynamicsConstants.FlagActive;
-                    bodyBindings[stateIndex] = binding;
-                }
-
-                return true;
-            }
-
-            if (packet.TargetEntityHash == SeaglideHydrodynamicsConstants.PlayerBodyTargetHash &&
-                PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext.PlayerRigidbody != null)
-            {
-                body = runtimeContext.PlayerRigidbody;
-                return true;
-            }
-
-            return false;
+            SeaglideBodyBindingDTO binding = bodyBindings[stateIndex];
+            bool bindingMatches = binding.TargetEntityHash == packet.TargetEntityHash &&
+                                  binding.StateIndex == stateIndex &&
+                                  binding.RigidbodyIndex >= 0 &&
+                                  (binding.Flags & SeaglideHydrodynamicsConstants.FlagActive) != 0u;
+            return bindingMatches &&
+                   GlobalPhysicsStateManager.TryResolveTrackedBodyByIndex(
+                       bodyResolver,
+                       binding.RigidbodyIndex,
+                       packet.TargetEntityHash,
+                       out body);
         }
 
         internal static void ShutdownSeaglideForceQueue()

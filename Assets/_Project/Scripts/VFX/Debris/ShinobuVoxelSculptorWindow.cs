@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.Globalization;
 using System.IO;
 using Hecton8.Core;
@@ -393,19 +394,25 @@ namespace Hecton8.VFX.Debris
                 return false;
             }
 
-            NativeArray<int> jobState = vault.GetBuffer<int>(
+            VaultGenerationHandle<int> jobStateHandle = vault.GetGenerationHandle<int>(
                 BufferID.CarveDebrisJobState,
                 ShinobuDeltaCrusher.CarveDebrisJobStateLength,
                 SystemID.Vfx,
                 NativeArrayOptions.ClearMemory);
-            if (!jobState.IsCreated || jobState.Length < ShinobuDeltaCrusher.CarveDebrisJobStateLength)
+            if (jobStateHandle.BufferID != unchecked((uint)(int)BufferID.CarveDebrisJobState))
             {
                 return false;
             }
 
-            bool locked = vault.TryLockBuffer(BufferID.CarveDebrisJobState, SystemID.Vfx);
+            bool locked = vault.TryAcquireWriteLock(in jobStateHandle, SystemID.CoreDiagnostics, out NativeArray<int> jobState);
             if (!locked)
                 return false;
+
+            if (!jobState.IsCreated || jobState.Length < ShinobuDeltaCrusher.CarveDebrisJobStateLength)
+            {
+                vault.ReleaseWriteLock(in jobStateHandle, SystemID.CoreDiagnostics);
+                return false;
+            }
 
             try
             {
@@ -414,7 +421,7 @@ namespace Hecton8.VFX.Debris
             finally
             {
                 if (locked)
-                    vault.TryUnlockBuffer(BufferID.CarveDebrisJobState, SystemID.Vfx);
+                    vault.ReleaseWriteLock(in jobStateHandle, SystemID.CoreDiagnostics);
             }
         }
 
@@ -432,15 +439,17 @@ namespace Hecton8.VFX.Debris
                 if (string.IsNullOrWhiteSpace(line) || line[0] == '#')
                     continue;
 
-                string[] cells = line.Split(',');
-                if (cells.Length < 4 || cells[0].Trim().Equals("gravity_y", System.StringComparison.OrdinalIgnoreCase))
+                ReadOnlySpan<char> row = line.AsSpan();
+                int cursor = 0;
+                ReadOnlySpan<char> gravityToken = ReadCsvToken(row, ref cursor);
+                if (IsAsciiTokenIgnoreCase(gravityToken, "gravity_y".AsSpan()))
                     continue;
 
                 dataRowCount++;
-                if (!TryParseFloat(cells[0], out float gravityY) ||
-                    !TryParseFloat(cells[1], out float bounce) ||
-                    !TryParseInt(cells[2], out int maxDebris) ||
-                    !TryParseInt(cells[3], out int massUnits))
+                if (!TryParseFloat(gravityToken, out float gravityY) ||
+                    !TryParseFloat(ReadCsvToken(row, ref cursor), out float bounce) ||
+                    !TryParseInt(ReadCsvToken(row, ref cursor), out int maxDebris) ||
+                    !TryParseInt(ReadCsvToken(row, ref cursor), out int massUnits))
                 {
                     return false;
                 }
@@ -460,15 +469,64 @@ namespace Hecton8.VFX.Debris
             return false;
         }
 
-        private static bool TryParseFloat(string cell, out float value)
+        private static ReadOnlySpan<char> ReadCsvToken(ReadOnlySpan<char> row, ref int cursor)
         {
-            return float.TryParse(cell.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out value) &&
+            if ((uint)cursor >= (uint)row.Length)
+                return ReadOnlySpan<char>.Empty;
+
+            int start = cursor;
+            while (cursor < row.Length && row[cursor] != ',')
+                cursor++;
+
+            ReadOnlySpan<char> token = row.Slice(start, cursor - start);
+            if (cursor < row.Length && row[cursor] == ',')
+                cursor++;
+
+            return TrimCsvToken(token);
+        }
+
+        private static ReadOnlySpan<char> TrimCsvToken(ReadOnlySpan<char> token)
+        {
+            int start = 0;
+            int end = token.Length - 1;
+            while (start <= end && char.IsWhiteSpace(token[start]))
+                start++;
+
+            while (end >= start && char.IsWhiteSpace(token[end]))
+                end--;
+
+            return start <= end ? token.Slice(start, end - start + 1) : ReadOnlySpan<char>.Empty;
+        }
+
+        private static bool IsAsciiTokenIgnoreCase(ReadOnlySpan<char> token, ReadOnlySpan<char> expected)
+        {
+            if (token.Length != expected.Length)
+                return false;
+
+            for (int i = 0; i < token.Length; i++)
+            {
+                char left = token[i];
+                char right = expected[i];
+                if ((uint)(left - 'A') <= 25u)
+                    left = (char)(left + 32);
+                if ((uint)(right - 'A') <= 25u)
+                    right = (char)(right + 32);
+                if (left != right)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryParseFloat(ReadOnlySpan<char> cell, out float value)
+        {
+            return float.TryParse(cell, NumberStyles.Float, CultureInfo.InvariantCulture, out value) &&
                    math.isfinite(value);
         }
 
-        private static bool TryParseInt(string cell, out int value)
+        private static bool TryParseInt(ReadOnlySpan<char> cell, out int value)
         {
-            return int.TryParse(cell.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+            return int.TryParse(cell, NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
         }
 
         private static bool TryWriteTuningBinary(string path, in CarveDebrisTuningDTO tuning)

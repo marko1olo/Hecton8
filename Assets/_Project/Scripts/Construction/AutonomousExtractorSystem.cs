@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Items;
@@ -7,6 +7,7 @@ using Hecton8.Scavenging;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -22,7 +23,7 @@ namespace Hecton8.Construction
     [DefaultExecutionOrder(-4041)]
     public sealed class AutonomousExtractorSystem : MonoBehaviour, ISlowTickable, ILateFrameTickable
     {
-        private const int InitialModuleCapacity = 16;
+        private const int MaxModuleCapacity = 256;
         private const float SlowTickDeltaSeconds = 0.5f;
         private const string NativeMemoryOwner = nameof(AutonomousExtractorSystem);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
@@ -31,30 +32,34 @@ namespace Hecton8.Construction
         private const uint DuplicateRuntimeWarningHash = 0xB44D12E9u;
         private const uint DuplicateRuntimeContextHash = 0xAD50966Cu;
 
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct ExtractorJobInput
         {
-            public float CycleTimerSeconds;
-            public float CycleSeconds;
-            public int BufferedUnitCount;
-            public int BufferedUnitCapacity;
-            public int ItemHashId;
-            public byte IsActive;
+            [FieldOffset(0)] public float CycleTimerSeconds;
+            [FieldOffset(4)] public float CycleSeconds;
+            [FieldOffset(8)] public int BufferedUnitCount;
+            [FieldOffset(12)] public int BufferedUnitCapacity;
+            [FieldOffset(16)] public int ItemHashId;
+            [FieldOffset(20)] public byte IsActive;
+            [FieldOffset(24)] private ulong _pad0;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct ExtractorJobResult
         {
-            public float NextCycleTimerSeconds;
-            public int NextBufferedUnitCount;
-            public int BufferedItemHashId;
-            public int CompletedCycleDelta;
-            public byte IsOperating;
+            [FieldOffset(0)] public float NextCycleTimerSeconds;
+            [FieldOffset(4)] public int NextBufferedUnitCount;
+            [FieldOffset(8)] public int BufferedItemHashId;
+            [FieldOffset(12)] public int CompletedCycleDelta;
+            [FieldOffset(16)] public byte IsOperating;
+            [FieldOffset(24)] private ulong _pad0;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct AdvanceExtractionJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<ExtractorJobInput> Inputs;
-            public NativeArray<ExtractorJobResult> Results;
+            [ReadOnly, NoAlias] public NativeArray<ExtractorJobInput> Inputs;
+            [NoAlias] public NativeArray<ExtractorJobResult> Results;
             public float SlowTickDeltaSeconds;
 
             public void Execute(int index)
@@ -101,8 +106,8 @@ namespace Hecton8.Construction
             }
         }
 
-        // COLD ALLOC: List<AutonomousExtractorModule>[InitialModuleCapacity] — managed runtime extractor registry — owner: AutonomousExtractorSystem
-        private readonly List<AutonomousExtractorModule> _modules = new List<AutonomousExtractorModule>(InitialModuleCapacity);
+        // COLD ALLOC: AutonomousExtractorModule[MaxModuleCapacity] - fixed runtime extractor registry; no managed growth - owner: AutonomousExtractorSystem
+        private readonly AutonomousExtractorModule[] _modules = new AutonomousExtractorModule[MaxModuleCapacity];
         private NativeArray<ExtractorJobInput> _jobInputs;
         private NativeArray<ExtractorJobResult> _jobResults;
         private NativeArray<float> _cycleTimers;
@@ -115,6 +120,7 @@ namespace Hecton8.Construction
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private int _scheduledModuleCount;
+        private int _moduleCount;
 
         /// <summary>Returns the current runtime owner when one exists.</summary>
         public static AutonomousExtractorSystem Instance => GlobalRegistry.AutonomousExtractors;
@@ -143,6 +149,8 @@ namespace Hecton8.Construction
             TryRegisterToGlobalRegistry();
             if (!_serviceRegistered)
                 return;
+
+            EnsureNativeCapacity(MaxModuleCapacity);
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
@@ -231,7 +239,7 @@ namespace Hecton8.Construction
                 return;
 
             CompactModuleList();
-            int moduleCount = _modules.Count;
+            int moduleCount = _moduleCount;
             if (moduleCount <= 0)
                 return;
 
@@ -298,7 +306,7 @@ namespace Hecton8.Construction
                 _bufferedItemHashIds[i] = result.BufferedItemHashId;
                 _completedCycleCounts[i] += result.CompletedCycleDelta;
 
-                AutonomousExtractorModule module = i < _modules.Count ? _modules[i] : null;
+                AutonomousExtractorModule module = i < _moduleCount ? _modules[i] : null;
                 if (module == null)
                 {
                     _cycleTimers[i] = 0f;
@@ -340,7 +348,7 @@ namespace Hecton8.Construction
             if (module == null)
                 return -1;
 
-            for (int i = 0; i < _modules.Count; i++)
+            for (int i = 0; i < _moduleCount; i++)
             {
                 if (ReferenceEquals(_modules[i], module))
                     return i;
@@ -353,8 +361,18 @@ namespace Hecton8.Construction
                 return i;
             }
 
-            int newIndex = _modules.Count;
-            _modules.Add(module);
+            if (_moduleCount >= _modules.Length)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    ExtractorCapacityGrowthWarningHash,
+                    ExtractorCapacityGrowthContextHash,
+                    _modules.Length);
+                return -1;
+            }
+
+            int newIndex = _moduleCount;
+            _modules[newIndex] = module;
+            _moduleCount++;
             module.SetRuntimeIndex(newIndex);
             return newIndex;
         }
@@ -365,10 +383,10 @@ namespace Hecton8.Construction
                 return;
 
             int index = module.RuntimeIndex;
-            if (index < 0 || index >= _modules.Count || !ReferenceEquals(_modules[index], module))
+            if (index < 0 || index >= _moduleCount || !ReferenceEquals(_modules[index], module))
             {
                 index = -1;
-                for (int i = 0; i < _modules.Count; i++)
+                for (int i = 0; i < _moduleCount; i++)
                 {
                     if (ReferenceEquals(_modules[i], module))
                     {
@@ -402,7 +420,7 @@ namespace Hecton8.Construction
             if (node == null)
                 return false;
 
-            int moduleCount = _modules.Count;
+            int moduleCount = _moduleCount;
             for (int i = 0; i < moduleCount; i++)
             {
                 AutonomousExtractorModule module = _modules[i];
@@ -418,37 +436,39 @@ namespace Hecton8.Construction
 
         private void CompactModuleList()
         {
-            for (int i = _modules.Count - 1; i >= 0; i--)
+            for (int i = _moduleCount - 1; i >= 0; i--)
             {
                 if (_modules[i] != null)
                     continue;
 
-                int lastIndex = _modules.Count - 1;
+                int lastIndex = _moduleCount - 1;
                 while (lastIndex > i && _modules[lastIndex] == null)
                 {
-                    _modules.RemoveAt(lastIndex);
+                    _moduleCount--;
                     lastIndex--;
                 }
 
-                if (i >= _modules.Count)
+                if (i >= _moduleCount)
                     continue;
 
-                if (_modules[i] == null && _modules.Count - 1 > i)
+                if (_modules[i] == null && _moduleCount - 1 > i)
                 {
-                    AutonomousExtractorModule movedModule = _modules[_modules.Count - 1];
+                    int sourceIndex = _moduleCount - 1;
+                    AutonomousExtractorModule movedModule = _modules[sourceIndex];
                     _modules[i] = movedModule;
-                    _modules.RemoveAt(_modules.Count - 1);
+                    _modules[sourceIndex] = null;
+                    _moduleCount--;
                     if (movedModule != null)
                         movedModule.SetRuntimeIndex(i);
                 }
             }
 
-            for (int i = _modules.Count - 1; i >= 0; i--)
+            for (int i = _moduleCount - 1; i >= 0; i--)
             {
                 if (_modules[i] != null)
                     break;
 
-                _modules.RemoveAt(i);
+                _moduleCount--;
             }
         }
 
@@ -461,7 +481,10 @@ namespace Hecton8.Construction
             if (currentCapacity >= requiredCount)
                 return;
 
-            int nextCapacity = math.max(requiredCount, math.max(InitialModuleCapacity, currentCapacity * 2));
+            if (requiredCount > MaxModuleCapacity)
+                return;
+
+            int nextCapacity = MaxModuleCapacity;
             NativeArray<ExtractorJobInput> nextInputs = new NativeArray<ExtractorJobInput>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ExtractorJobInput>[capacity] — extractor Burst input lane — owner: AutonomousExtractorSystem
             NativeArray<ExtractorJobResult> nextResults = new NativeArray<ExtractorJobResult>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ExtractorJobResult>[capacity] — extractor Burst result lane — owner: AutonomousExtractorSystem
             NativeArray<float> nextCycleTimers = new NativeArray<float>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[capacity] — extractor cycle SOA timers — owner: AutonomousExtractorSystem
@@ -580,7 +603,7 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Autonomous Extractor Module")]
-    public sealed class AutonomousExtractorModule : MonoBehaviour, IPoolable, IPowerComponent, IBuildPlacementRule
+    public sealed class AutonomousExtractorModule : MonoBehaviour, IPoolable, IPowerComponent
     {
         private const string DefaultPlacementBlockedReason = "INFINITE VEIN REQUIRED";
         private const string DefaultClaimBlockedReason = "VEIN ALREADY CLAIMED";
@@ -716,10 +739,18 @@ namespace Hecton8.Construction
                 ApplyRuntimeTelemetry(_debugBufferedItemHashId, _debugBufferedUnitCount, _debugCompletedCycleCount, false);
         }
 
-        /// <inheritdoc />
-        public bool ValidatePlacement(Vector3 position, Quaternion rotation, out string blockReason)
+        internal bool ValidatePlacementWithRuntime(
+            Vector3 position,
+            Quaternion rotation,
+            AutonomousExtractorSystem runtime,
+            out string blockReason)
         {
-            AutonomousExtractorSystem runtime = AutonomousExtractorSystem.EnsureRuntimeInstance();
+            if (runtime == null)
+            {
+                blockReason = DefaultPlacementBlockedReason;
+                return false;
+            }
+
             if (!TryResolveNearestValidNode(position, placementProbeRadius, runtime, out ResourceNode node))
             {
                 blockReason = DefaultPlacementBlockedReason;
@@ -852,8 +883,7 @@ namespace Hecton8.Construction
             if (runtime == null)
                 return;
 
-            runtime.RegisterModule(this);
-            _registered = true;
+            _registered = runtime.RegisterModule(this) >= 0;
         }
 
         private void TryUnregister()
@@ -954,12 +984,7 @@ namespace Hecton8.Construction
                 return SaturateDistanceSq(AbsoluteUniversePosition.DistanceSq(in candidateAup, in queryAup));
             }
 
-            Vector3 candidateRuntimePosition = candidate != null ? candidate.transform.position : queryRuntimePosition;
-            Vector3 visualDelta = candidateRuntimePosition - queryRuntimePosition;
-            if (!math.all(math.isfinite(new float3(visualDelta.x, visualDelta.y, visualDelta.z))))
-                return float.MaxValue;
-
-            return visualDelta.sqrMagnitude;
+            return float.MaxValue;
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)

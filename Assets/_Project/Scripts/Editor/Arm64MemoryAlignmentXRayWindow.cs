@@ -110,8 +110,10 @@ namespace Hecton8.Editor
             toolbar.style.flexDirection = FlexDirection.Row;
             Button refresh = new Button(Refresh) { text = "Refresh" };
             Button cli = new Button(RunArm64MemoryAlignmentCli) { text = "Run Strict CLI" };
+            Button selfAudit = new Button(Arm64AlignmentSelfAuditReport.WriteSelfAuditReportMenu) { text = "Write SHINOBU_204 Self Audit" };
             toolbar.Add(refresh);
             toolbar.Add(cli);
+            toolbar.Add(selfAudit);
             rootVisualElement.Add(toolbar);
 
             _summary = new Label();

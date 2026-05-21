@@ -10,6 +10,7 @@ using Hecton8.Gameplay;
 using Hecton8.VFX;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -130,17 +131,16 @@ namespace Hecton8.Physics
         private const string NativeMemoryOwner = nameof(SubmarineStructuralGrid);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
-        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullDamageDiffusionJob : IJob
         {
-            [ReadOnly] public NativeArray<byte> InputIntegrity;
-            [ReadOnly] public NativeArray<byte> CellCompartmentIndices;
-            [ReadOnly] public NativeArray<ImpactCommand> Impacts;
+            [ReadOnly, NoAlias] public NativeArray<byte> InputIntegrity;
+            [ReadOnly, NoAlias] public NativeArray<byte> CellCompartmentIndices;
+            [ReadOnly, NoAlias] public NativeArray<ImpactCommand> Impacts;
 
-            public NativeArray<byte> OutputIntegrity;
-            public NativeArray<ulong> OutputBreachMaskWords;
-            public NativeArray<float> OutputCompartmentBreachAreas;
+            [NoAlias] public NativeArray<byte> OutputIntegrity;
+            [NoAlias] public NativeArray<ulong> OutputBreachMaskWords;
+            [NoAlias] public NativeArray<float> OutputCompartmentBreachAreas;
 
             public int GridWidth;
             public int GridHeight;
@@ -243,12 +243,11 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullCompartmentMappingJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float3> CompartmentCentroids;
-            public NativeArray<byte> CellCompartmentIndices;
+            [ReadOnly, NoAlias] public NativeArray<float3> CompartmentCentroids;
+            [NoAlias] public NativeArray<byte> CellCompartmentIndices;
 
             public int CompartmentCount;
             public int GridWidth;
@@ -292,17 +291,16 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullFatigueCompartmentJob : IJob
         {
-            [ReadOnly] public NativeArray<byte> CellCompartmentIndices;
-            public NativeArray<byte> CellIntegrityFront;
-            public NativeArray<byte> CellIntegrityBack;
-            public NativeArray<byte> CellFatigue;
-            public NativeArray<byte> FatigueCompartmentFlags;
-            public NativeArray<float> FatigueIntegrityLossPerCycle;
-            public NativeArray<float> PeakNormalized;
+            [ReadOnly, NoAlias] public NativeArray<byte> CellCompartmentIndices;
+            [NoAlias] public NativeArray<byte> CellIntegrityFront;
+            [NoAlias] public NativeArray<byte> CellIntegrityBack;
+            [NoAlias] public NativeArray<byte> CellFatigue;
+            [NoAlias] public NativeArray<byte> FatigueCompartmentFlags;
+            [NoAlias] public NativeArray<float> FatigueIntegrityLossPerCycle;
+            [NoAlias] public NativeArray<float> PeakNormalized;
 
             public int CellCount;
 
@@ -342,21 +340,26 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct ImpactCommand
         {
+            [FieldOffset(0)]
             public float3 LocalPoint;
+            [FieldOffset(12)]
             public float RadiusMeters;
+            [FieldOffset(16)]
             public float SigmaMeters;
+            [FieldOffset(20)]
             public int DamageBytes;
+            [FieldOffset(24)]
+            private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BreachRepairJob : IJob
         {
-            public NativeArray<float4> Breaches;
-            public NativeArray<float> SeveritySum;
+            [NoAlias] public NativeArray<float4> Breaches;
+            [NoAlias] public NativeArray<float> SeveritySum;
             public int ActiveCount;
             public float3 LocalHitPoint;
             public float RepairDelta;
@@ -388,15 +391,22 @@ namespace Hecton8.Physics
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct DamageControlTelemetryEntry
         {
+            [FieldOffset(0)]
             public float3 FirstBreachLocal;
+            [FieldOffset(12)]
             public float SeveritySum;
+            [FieldOffset(16)]
             public ushort ActiveBreachCount;
+            [FieldOffset(18)]
             public ushort VisibleBreachCount;
+            [FieldOffset(20)]
             public uint Frame;
+            [FieldOffset(24)]
             public uint Flags;
+            [FieldOffset(28)]
             public uint StateHash;
         }
 
@@ -533,8 +543,8 @@ namespace Hecton8.Physics
         private ParticleSystem.EmitParams _hullImpactSparkEmitParams;
         private MaterialPropertyBlock _leakPlumeDrawProperties;
         private IDataVault _dataVault;
-        private VaultBufferHandle<float4> _breachesHandle;
-        private VaultBufferHandle<DamageControlTelemetryEntry> _damageControlTelemetryHandle;
+        private VaultGenerationHandle<float4> _breachesHandle;
+        private VaultGenerationHandle<DamageControlTelemetryEntry> _damageControlTelemetryHandle;
         private bool _breachRepairJobRunning;
         private bool _pendingRepairQueued;
         private bool _breachGpuDirty;
@@ -1679,7 +1689,7 @@ namespace Hecton8.Physics
             AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            if (!MathGuard.IsFinite(in resolvedAup))
+            if (!resolvedAup.IsFinite())
                 return false;
 
             aup = resolvedAup.ToAbsoluteDouble3();
@@ -1869,29 +1879,42 @@ namespace Hecton8.Physics
             if (vault == null)
                 return false;
 
-            if (!_breachesHandle.IsCreated ||
-                _breachesHandle.BufferId != BufferID.SubmarineStructuralBreaches ||
-                _breachesHandle.Length < MaxActiveBreaches)
+            if (!TryResolveVaultBuffer(vault, in _breachesHandle, BufferID.SubmarineStructuralBreaches, MaxActiveBreaches, out NativeArray<float4> _))
             {
-                _breachesHandle = vault.GetBufferHandle<float4>(
-                    BufferID.SubmarineStructuralBreaches,
-                    MaxActiveBreaches,
-                    SystemID.VehiclesPhysics,
-                    NativeArrayOptions.ClearMemory);
+                if (vault.IsAllocationLocked)
+                {
+                    if (!vault.TryGetGenerationHandle(BufferID.SubmarineStructuralBreaches, out _breachesHandle))
+                        return false;
+                }
+                else
+                {
+                    _breachesHandle = vault.GetGenerationHandle<float4>(
+                        BufferID.SubmarineStructuralBreaches,
+                        MaxActiveBreaches,
+                        SystemID.VehiclesPhysics,
+                        NativeArrayOptions.ClearMemory);
+                }
             }
 
-            if (!_damageControlTelemetryHandle.IsCreated ||
-                _damageControlTelemetryHandle.BufferId != BufferID.SubmarineDamageControlBlackBox ||
-                _damageControlTelemetryHandle.Length < DamageControlTelemetryCapacity)
+            if (!TryResolveVaultBuffer(vault, in _damageControlTelemetryHandle, BufferID.SubmarineDamageControlBlackBox, DamageControlTelemetryCapacity, out NativeArray<DamageControlTelemetryEntry> _))
             {
-                _damageControlTelemetryHandle = vault.GetBufferHandle<DamageControlTelemetryEntry>(
-                    BufferID.SubmarineDamageControlBlackBox,
-                    DamageControlTelemetryCapacity,
-                    SystemID.VehiclesPhysics,
-                    NativeArrayOptions.ClearMemory);
+                if (vault.IsAllocationLocked)
+                {
+                    if (!vault.TryGetGenerationHandle(BufferID.SubmarineDamageControlBlackBox, out _damageControlTelemetryHandle))
+                        return false;
+                }
+                else
+                {
+                    _damageControlTelemetryHandle = vault.GetGenerationHandle<DamageControlTelemetryEntry>(
+                        BufferID.SubmarineDamageControlBlackBox,
+                        DamageControlTelemetryCapacity,
+                        SystemID.VehiclesPhysics,
+                        NativeArrayOptions.ClearMemory);
+                }
             }
 
-            return _breachesHandle.IsCreated && _damageControlTelemetryHandle.IsCreated;
+            return TryResolveVaultBuffer(vault, in _breachesHandle, BufferID.SubmarineStructuralBreaches, MaxActiveBreaches, out NativeArray<float4> _) &&
+                   TryResolveVaultBuffer(vault, in _damageControlTelemetryHandle, BufferID.SubmarineDamageControlBlackBox, DamageControlTelemetryCapacity, out NativeArray<DamageControlTelemetryEntry> _);
         }
 
         private bool TryResolveBreachBuffer(out NativeArray<float4> breaches)
@@ -1901,8 +1924,7 @@ namespace Hecton8.Physics
                 return false;
 
             IDataVault vault = ResolveDataVault();
-            breaches = _breachesHandle.Resolve(vault);
-            return breaches.IsCreated && breaches.Length >= MaxActiveBreaches;
+            return TryResolveVaultBuffer(vault, in _breachesHandle, BufferID.SubmarineStructuralBreaches, MaxActiveBreaches, out breaches);
         }
 
         private bool TryResolveDamageControlTelemetry(out NativeArray<DamageControlTelemetryEntry> telemetry)
@@ -1912,8 +1934,25 @@ namespace Hecton8.Physics
                 return false;
 
             IDataVault vault = ResolveDataVault();
-            telemetry = _damageControlTelemetryHandle.Resolve(vault);
-            return telemetry.IsCreated && telemetry.Length >= DamageControlTelemetryCapacity;
+            return TryResolveVaultBuffer(vault, in _damageControlTelemetryHandle, BufferID.SubmarineDamageControlBlackBox, DamageControlTelemetryCapacity, out telemetry);
+        }
+
+        private static bool TryResolveVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   handle.BufferID == (uint)bufferId &&
+                   handle.Generation != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
 
         private void EnsureNativeState()

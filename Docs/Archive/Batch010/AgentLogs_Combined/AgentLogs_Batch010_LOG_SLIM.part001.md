@@ -3,6 +3,7 @@ Scope: Batch010
 Source: C:\hades\Hecton8\Docs\Archive\Batch010\AgentLogs
 FileCount: 104
 Separator: ===== FILE: name =====
+SnapshotNote: Combined SLIM sections are archival snapshots. For SHINOBU_155 after 2026-05-21 Loop 79, use direct mirror Docs/Archive/Batch010/AgentLogs/LOG_SHINOBU_155.md.
 
 ===== FILE: LOG_ARCHIVE_BATCH_010.md =====
 LOG ARCHIVE_BATCH_010

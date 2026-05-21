@@ -22,6 +22,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -430,7 +431,10 @@ namespace Hecton8.Gameplay
 
         private static uint ResolveSectorHash(Vector3 worldPosition)
         {
-            double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition);
+            if (!TryResolveRuntimeAup(worldPosition, out AbsoluteUniversePosition positionAup))
+                return 1u;
+
+            double3 aup = positionAup.ToAbsoluteDouble3();
             if (!math.all(math.isfinite(aup)))
                 return 1u;
 
@@ -442,6 +446,23 @@ namespace Hecton8.Gameplay
             hash = MixHash(hash ^ unchecked((uint)sectorY) ^ 0xD8163841u);
             hash = MixHash(hash ^ unchecked((uint)sectorZ) ^ 0xCB1AB31Fu);
             return hash == 0u ? 1u : hash;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static uint MixHash(uint value)

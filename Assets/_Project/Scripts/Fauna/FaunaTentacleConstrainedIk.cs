@@ -32,7 +32,7 @@ namespace Hecton8.AI
         [FieldOffset(28)] public uint StateMask;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
     internal struct FaunaTentacleConstrainedIkJob : IJobParallelFor
     {
         private const float MinLengthSq = 0.000001f;

@@ -1,0 +1,51 @@
+{
+  "agent": "SHINOBU_264",
+  "scanner": "SynchronousGpuReadbackScanner.RoslynAST",
+  "verdict": "PASS_STATIC_UNITY_EXECUTION_PENDING",
+  "summary": "Synchronous GPU Stalls Eradicated in Physics/Vehicles static source scan",
+  "dynamicWakeShaderRoute": "_H8OceanWakeDisplacement sampled inside Hecton_WaveHeightSampler.compute at request.LocalXZ + camera AUP projection; runtime binds global wake texture and shoreline params without a sibling-domain C# reference.",
+  "gpuRingRoute": "Request buffers and wave-parameter buffers are slot-matched three-ring GraphicsBuffers with per-slot wave dirty hashes/counts.",
+  "originRoute": "Runtime caches OriginShiftEventData through IOriginShiftListener; hot PreSimulation does not read HectonFloatingOrigin.CurrentTotalOffsetDouble.",
+  "cameraAupRoute": "Owner-published camera AUP is accepted through TryPublishCameraAupSnapshot or the shift-sequenced TryQueueSample overload; Transform anchor is UNITY_EDITOR fallback only.",
+  "vaultAccessRoute": "Pure reads use IDataVault.TryReadHandle; direct owner writes use TryAcquireWriteLock/ReleaseWriteLock; scheduled job write locks are released in PostSimulation.",
+  "runtimeAssemblyRoute": "SHINOBU async readback code is isolated under Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback with Hecton8.Physics.Buoyancy.Runtime.asmdef. The assembly references Core/Core.Contracts/Core.Memory plus Unity packages only; no sibling runtime assembly reference is introduced.",
+  "backlogRoute": "Dispatch returns NoWork/Dispatched/Unavailable/RingBacklog; mock readback is used only for Unavailable, not for saturated async ring backlog.",
+  "readyReadbackRetryRoute": "A ready AsyncGPUReadbackRequest slot remains active when the completed-results Vault write lock is unavailable; active metadata is cleared only after zero-count classification, GPU error, or successful payload copy.",
+  "teardownRoute": "ReleaseGpuBuffers calls ResetReadbackRingState so stale AsyncGPUReadbackRequest metadata cannot survive disable/re-enable.",
+  "uploadRoute": "Runtime uses private GraphicsBuffer.LockBufferForWrite upload helpers and no internal GraphicsBufferUploadUtility dependency.",
+  "simulationDeltaRoute": "Simulation consumes DispatcherTimingDTO.FixedDelta through a cached last-valid fallback; readback/mock time accumulation advances by fixed delta; owned async runtime/job/contract files contain no Unity Time reads.",
+  "jobAdmissionRoute": "ApplyDelayedBuoyancyReadbackJob is skipped on empty frames and otherwise schedules only actual active lanes; RecordReadbackTelemetryJob was removed as dead tiny-job surface.",
+  "generatedWithoutUnity": true,
+  "unityMenuRoute": "HECTON-8/Physics/Run Sync GPU Readback Scanner",
+  "syncFindingCount": 0,
+  "allowedAsyncGetDataCount": 1,
+  "allowedAsyncGetData": [
+    "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:577 request.GetData<ReadbackRequestDTO>() after SystemDispatcher.IsAsyncReadbackReadyNoWait(request, out byte statusFlags)"
+  ],
+  "dtoSizeBytes": 16,
+  "dtoOffsets": {
+    "LocalXZ": 0,
+    "ResultHeight": 8,
+    "EntityHash": 12
+  },
+  "waveParamsSizeBytes": 64,
+  "telemetryEntrySizeBytes": 64,
+  "layoutPointerProof": "Editor validator checks 16-byte stride plus temp NativeArray base pointer modulo 16.",
+  "applyMicrosTelemetry": "schedule-side timing only; rows are flagged with FlagApplyMicrosScheduleOnly until Unity Profiler/SystemDispatcher worker timing is integrated.",
+  "forbiddenPatterns": [
+    "ReadPixels",
+    "GetPixel",
+    "ComputeBuffer.GetData",
+    "GraphicsBuffer.GetData",
+    "AsyncGPUReadbackRequest.WaitForCompletion",
+    "GraphicsBuffer.SetData",
+    "ComputeBuffer.SetData",
+    "new Texture2D",
+    "new RenderTexture",
+    "hot new[]",
+    "hot new NativeArray",
+    "Pack=1"
+  ],
+  "findings": [],
+  "verificationLimit": "Unity editor scanner execution and compile were not run because CPU load sampled at 98-100 percent with existing dotnet/csc activity, and current generated .csproj files do not yet include the SHINOBU_264 assets until Unity regenerates project files."
+}

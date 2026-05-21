@@ -104,4 +104,4 @@ Status: SOURCE-SCANNED, RUNTIME PENDING VERIFICATION.
 
 [FAIL] VRAM budget spikes: merge color into BC7 atlases, move normals/detail to BC5, reject 4K unique maps, and audit duplicate materials.
 
-[FAIL] Propwash deforms too hard: clamp wake scalar in shader, reduce high-tier harmonics first, and avoid adding collision-driven plant motion.
+[FAIL] Propwash deforms too hard: clamp wake scalar in shader, reduce high-fidelity harmonics first, and avoid adding collision-driven plant motion.

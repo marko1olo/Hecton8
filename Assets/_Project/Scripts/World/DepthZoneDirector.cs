@@ -16,6 +16,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -45,20 +46,36 @@ namespace Hecton8.World
 
     public static class DepthZoneEvents
     {
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         private struct DepthZoneEventPayload
         {
-            public uint ZoneHash;
-            public byte EventType;
+            [FieldOffset(0)] public uint ZoneHash;
+            [FieldOffset(4)] public byte EventType;
+            [FieldOffset(5)] private byte _pad0;
+            [FieldOffset(6)] private ushort _pad1;
         }
 
         private const byte EnteredEventType = 1;
         private const byte ExitedEventType = 2;
         private const int PendingEventCapacity = 16;
+        private const int ListenerCapacity = 16;
+        private const Allocator DataVaultExemptDepthZoneEventLaneAllocator = Allocator.Persistent;
 
-        private static readonly RegistryBucket<IDepthZoneEventListener> _listeners = new RegistryBucket<IDepthZoneEventListener>(16);
+        private struct ListenerSlot
+        {
+            public IDepthZoneEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private static readonly System.Collections.Generic.Dictionary<uint, DepthZoneProfile> _profilesByHash = new System.Collections.Generic.Dictionary<uint, DepthZoneProfile>(32);
         private static NativeQueue<DepthZoneEventPayload> _pendingEvents;
         private static NativeQueue<DepthZoneEventPayload> _nextFrameEvents;
+        private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -85,7 +102,10 @@ namespace Hecton8.World
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
-            _listeners.Clear();
+            for (int i = 0; i < ListenerCapacity; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
             _profilesByHash.Clear();
         }
 
@@ -95,14 +115,38 @@ namespace Hecton8.World
 
         public static void Register(IDepthZoneEventListener listener)
         {
-            if (listener != null && !_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (listener == null)
+                return;
+
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
         }
 
         public static void Unregister(IDepthZoneEventListener listener)
         {
-            if (listener != null && _listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (listener == null)
+                return;
+
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = --_listenerCount;
+                if (i != lastIndex)
+                    _listeners[i].Listener = _listeners[lastIndex].Listener;
+
+                _listeners[lastIndex].Clear();
+                return;
+            }
         }
 
         public static void RaiseZoneEntered(DepthZoneProfile zone) => Enqueue(zone, EnteredEventType);
@@ -129,14 +173,13 @@ namespace Hecton8.World
                 if (!_profilesByHash.TryGetValue(payload.ZoneHash, out DepthZoneProfile profile) || profile == null)
                     continue;
 
-                IDepthZoneEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
+                int count = _listenerCount;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IDepthZoneEventListener listener = rawArray[i];
+                        IDepthZoneEventListener listener = _listeners[i].Listener;
                         if (listener == null)
                             continue;
 
@@ -161,7 +204,7 @@ namespace Hecton8.World
 
         private static void Enqueue(DepthZoneProfile zone, byte eventType)
         {
-            if (zone == null || _listeners.Count <= 0 || _pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            if (zone == null || _listenerCount <= 0 || _pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
 
             EnsureInitialized();
@@ -188,7 +231,7 @@ namespace Hecton8.World
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<DepthZoneEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DepthZoneEventPayload>[16] - depth-zone event lane flushed by SystemDispatcher - owner: DepthZoneEvents
+                _pendingEvents = new NativeQueue<DepthZoneEventPayload>(DataVaultExemptDepthZoneEventLaneAllocator); // COLD ALLOC: NativeQueue<DepthZoneEventPayload>[16] - depth-zone event lane flushed by SystemDispatcher - owner: DepthZoneEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -200,7 +243,7 @@ namespace Hecton8.World
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<DepthZoneEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DepthZoneEventPayload>[16] - next-frame depth-zone event lane prevents same-frame reentrant dispatch - owner: DepthZoneEvents
+                _nextFrameEvents = new NativeQueue<DepthZoneEventPayload>(DataVaultExemptDepthZoneEventLaneAllocator); // COLD ALLOC: NativeQueue<DepthZoneEventPayload>[16] - next-frame depth-zone event lane prevents same-frame reentrant dispatch - owner: DepthZoneEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

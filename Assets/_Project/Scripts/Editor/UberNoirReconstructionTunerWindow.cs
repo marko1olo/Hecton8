@@ -172,7 +172,7 @@ namespace Hecton8.Editor
                 _qualityLabel.text = "Global Quality Weight: runtime unavailable";
             }
 
-            if (HectonVisorUberPostFeature.TryReadEditorReconstructionConstants(out UberNoirReconstructionConstantsDTO constants))
+            if (HectonVisorUberPostFeature.TryFetchEditorReconstructionConstants(out UberNoirReconstructionConstantsDTO constants))
             {
                 _constantsLabel.text =
                     $"CBuffer: scale {constants.RenderScaleParams.x:0.000}, sharp {constants.RenderScaleParams.w:0.000}, radius {constants.TemporalParams.w:0.000}, grain {constants.OverkillParams.x:0.000}";

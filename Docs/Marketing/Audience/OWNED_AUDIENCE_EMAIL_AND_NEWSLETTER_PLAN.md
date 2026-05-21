@@ -180,18 +180,18 @@ Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_c
 Subject:
 
 ```text
-HECTON-8 demo/playtest is open
+HOLD_DEMO_OPEN_SUBJECT - use demo/playtest-open subject only after `demo_public_access_permission_gate`, owned-audience permission, public CTA custody, and current build/known-issues source pass.
 ```
 
 Body:
 
 ```text
-The HECTON-8 [demo/playtest] is now available.
+HOLD_DEMO_AVAILABILITY_COPY - announce demo/playtest availability only after `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED`, owned-audience permission, public CTA custody, and current build/known-issues source pass.
 
 Current build focus:
-- [Feature 1]
-- [Feature 2]
-- [Feature 3]
+- HOLD_FEATURE_1 - exact approved demo/playtest feature from current build scope.
+- HOLD_FEATURE_2 - exact approved demo/playtest feature from current build scope.
+- HOLD_FEATURE_3 - exact approved demo/playtest feature from current build scope.
 
 Current build does not include:
 - unsupported multiplayer modes;

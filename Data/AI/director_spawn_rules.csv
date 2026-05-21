@@ -1,0 +1,5 @@
+# species,min_tension,max_tension,cpu_cost,biome_mask,loot_hash,threat_weight,swarm_count_bias
+hadal_stalker,0.46,1.00,2.85,all,loot_hadal_stalker,1.40,0.15
+reef_eel_swarm,0.25,0.72,0.42,all,loot_reef_eel,0.72,4.50
+thermal_maw,0.62,1.00,3.60,all,loot_thermal_maw,1.75,0.05
+silt_needle_pack,0.35,0.88,0.86,all,loot_silt_needle,1.00,2.00

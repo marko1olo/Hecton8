@@ -43,17 +43,44 @@ namespace Hecton8.Gameplay
         [SerializeField] private LayerMask samplingMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField] private float feedbackInterval = 0.45f;
 
-        private Transform _cachedTransform;
         private float _cooldown;
-        private float _nextFeedbackAt;
+        private float _feedbackCooldownRemaining;
         private bool _secondaryLatched;
-        private int _cachedDiagnosisFrame = -1;
+        private uint _diagnosisEvaluationStamp;
+        private uint _cachedDiagnosisStamp = uint.MaxValue;
         private bool _cachedDiagnosisValid;
         private SamplerDiagnosis _cachedDiagnosis;
+        private ScanLogSystem _scanLog;
+        private LocalizationManager _localization;
 
-        private void Awake()
+        public override void OnSpawn()
         {
-            _cachedTransform = transform;
+            base.OnSpawn();
+            CacheColdDependencies();
+            InvalidateDiagnosisCache();
+        }
+
+        public override void OnDespawn()
+        {
+            _scanLog = null;
+            _localization = null;
+            _feedbackCooldownRemaining = 0f;
+            _secondaryLatched = false;
+            InvalidateDiagnosisCache();
+            base.OnDespawn();
+        }
+
+        public override void OnEquip()
+        {
+            base.OnEquip();
+            CacheColdDependencies();
+            InvalidateDiagnosisCache();
+        }
+
+        private void CacheColdDependencies()
+        {
+            _scanLog = GlobalRegistry.ScanLog;
+            _localization = GlobalRegistry.Localization;
         }
 
         public override void UsePrimary(float deltaTime)
@@ -63,31 +90,28 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            if (TryGetSamplingHit(out RaycastHit hit))
+            if (TryGetSamplingHit(out RaycastHit hit, out Vector3 sampleDirection))
             {
                 float effectiveDamage = sampleDamage * GetEfficiency();
                 bool applied = ToolHitUtility.ApplyDamage(
                     hit.collider,
                     effectiveDamage,
                     hit.point,
-                    _cachedTransform.forward,
+                    sampleDirection,
                     sampleImpulse);
 
-                if (!applied && Time.time >= _nextFeedbackAt)
+                if (!applied && TryConsumeFeedbackGate())
                 {
                     PublishWarningMessage(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_VIABLE_TARGET, "SAMPLER - NO VIABLE TARGET"));
-                    _nextFeedbackAt = Time.time + feedbackInterval;
                 }
-                else if (applied && Time.time >= _nextFeedbackAt)
+                else if (applied && TryConsumeFeedbackGate())
                 {
                     PublishInfoMessage(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_EXTRACTION_IN_PROGRESS, "SAMPLER - EXTRACTION IN PROGRESS"));
-                    _nextFeedbackAt = Time.time + feedbackInterval;
                 }
             }
-            else if (Time.time >= _nextFeedbackAt)
+            else if (TryConsumeFeedbackGate())
             {
                 PublishWarningMessage(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_TARGET_LOCK, "SAMPLER - NO TARGET LOCK"));
-                _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
             InvalidateDiagnosisCache();
@@ -106,9 +130,10 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            if (TryGetSamplingHit(out RaycastHit hit))
+            if (TryGetSamplingHit(out RaycastHit hit, out _) &&
+                TryResolveInteractorRoot(out Transform interactorRoot))
             {
-                bool collected = ToolHitUtility.TryCollectItem(hit.collider, _cachedTransform.root, out ItemData recoveredItem);
+                bool collected = ToolHitUtility.TryCollectItem(hit.collider, interactorRoot, out ItemData recoveredItem);
                 if (collected)
                 {
                     ArchiveRecoveredItem(recoveredItem);
@@ -141,7 +166,7 @@ namespace Hecton8.Gameplay
                         PublishRecoveredItemMessage(recoveredItem.itemName);
                     else
                         PublishInfoMessage(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_SALVAGE_RECOVERED, "SAMPLER - SALVAGE RECOVERED"));
-                    _nextFeedbackAt = Time.time + feedbackInterval;
+                    ArmFeedbackCooldown();
                 }
                 else
                 {
@@ -154,10 +179,9 @@ namespace Hecton8.Gameplay
                         diagnosis.severity);
                 }
             }
-            else if (Time.time >= _nextFeedbackAt)
+            else if (TryConsumeFeedbackGate())
             {
                 PublishWarningMessage(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_SALVAGE_LOCK, "SAMPLER - NO SALVAGE LOCK"));
-                _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
             InvalidateDiagnosisCache();
@@ -166,18 +190,26 @@ namespace Hecton8.Gameplay
 
         public override void ToolTick(float deltaTime)
         {
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             if (_cooldown > 0f)
-                _cooldown = math.max(0f, _cooldown - deltaTime);
+                _cooldown = math.max(0f, _cooldown - safeDeltaTime);
 
-            IInputService inputService = GlobalRegistry.Input;
-            PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+            if (_feedbackCooldownRemaining > 0f)
+                _feedbackCooldownRemaining = math.max(0f, _feedbackCooldownRemaining - safeDeltaTime);
+
+            PlayerInputState inputState = TryGetInputService(out IInputService inputService) && inputService.IsPlayerInputEnabled
                 ? inputService.GetState()
                 : default;
             if (!inputState.HasAction(PlayerInputAction.SecondaryFire))
                 _secondaryLatched = false;
+
+            unchecked
+            {
+                _diagnosisEvaluationStamp++;
+            }
         }
 
-        public override string GetOperationalSummary()
+        public override string BuildLegacyOperationalSummaryString()
         {
             s_legacySummaryBuffer.Clear();
             WriteOperationalSummary(ref s_legacySummaryBuffer);
@@ -204,7 +236,7 @@ namespace Hecton8.Gameplay
             AppendText(ref buffer, ResolveLocalized(LocalizationKeys.SAMPLER_OPERATIONAL_READY, "SAMPLER // READY"));
         }
 
-        public override string GetOperationalDirective()
+        public override string BuildLegacyOperationalDirectiveString()
         {
             s_legacySummaryBuffer.Clear();
             WriteOperationalDirective(ref s_legacySummaryBuffer);
@@ -236,9 +268,10 @@ namespace Hecton8.Gameplay
                     "Primary extracts. Secondary checks or recovers salvage packages."));
         }
 
-        private static void ArchiveRecoveredItem(ItemData item)
+        private void ArchiveRecoveredItem(ItemData item)
         {
-            if (item == null || Hecton8.Core.GlobalRegistry.ScanLog == null)
+            ScanLogSystem scanLog = _scanLog;
+            if (item == null || scanLog == null)
                 return;
 
             string itemId = item.PersistentId;
@@ -265,7 +298,7 @@ namespace Hecton8.Gameplay
                 item.itemName,
                 false);
 
-            Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
+            scanLog.ArchiveEntry(
                 CreateLegacyString(in s_archiveIdBuffer),
                 CreateLegacyString(in s_archiveTitleBuffer),
                 GetCategoryLabel(item.category),
@@ -276,7 +309,7 @@ namespace Hecton8.Gameplay
         {
             diagnosis = default;
 
-            if (!TryGetSamplingHit(out RaycastHit hit))
+            if (!TryGetSamplingHit(out RaycastHit hit, out _))
             {
                 return false;
             }
@@ -287,15 +320,15 @@ namespace Hecton8.Gameplay
 
         private bool TryGetDiagnosisCached(out SamplerDiagnosis diagnosis)
         {
-            int currentFrame = Time.frameCount;
-            if (_cachedDiagnosisFrame == currentFrame)
+            uint currentStamp = _diagnosisEvaluationStamp;
+            if (_cachedDiagnosisStamp == currentStamp)
             {
                 diagnosis = _cachedDiagnosis;
                 return _cachedDiagnosisValid;
             }
 
             bool valid = TryReadDiagnosis(out diagnosis);
-            _cachedDiagnosisFrame = currentFrame;
+            _cachedDiagnosisStamp = currentStamp;
             _cachedDiagnosisValid = valid;
             _cachedDiagnosis = diagnosis;
             return valid;
@@ -303,12 +336,12 @@ namespace Hecton8.Gameplay
 
         private void InvalidateDiagnosisCache()
         {
-            _cachedDiagnosisFrame = -1;
+            _cachedDiagnosisStamp = uint.MaxValue;
             _cachedDiagnosisValid = false;
             _cachedDiagnosis = default;
         }
 
-        private static SamplerDiagnosis BuildDiagnosis(Collider hitCollider)
+        private SamplerDiagnosis BuildDiagnosis(Collider hitCollider)
         {
             if (hitCollider == null)
             {
@@ -387,7 +420,7 @@ namespace Hecton8.Gameplay
             };
         }
 
-        private static void PublishDiagnosis(SamplerDiagnosis diagnosis)
+        private void PublishDiagnosis(SamplerDiagnosis diagnosis)
         {
             s_hudBuffer.Clear();
             if (!TryWriteDiagnosisHudMessage(ref s_hudBuffer, diagnosis.headline))
@@ -399,7 +432,7 @@ namespace Hecton8.Gameplay
                 ToolHitUtility.ShowInfo(in s_hudBuffer);
         }
 
-        private static void PublishRecoveredItemMessage(string itemName)
+        private void PublishRecoveredItemMessage(string itemName)
         {
             if (string.IsNullOrWhiteSpace(itemName))
             {
@@ -440,16 +473,90 @@ namespace Hecton8.Gameplay
         //  ZERO-GC STRING CACHING
         // ══════════════════════════════════════════════════════════
 
-        private bool TryGetSamplingHit(out RaycastHit hit)
+        private bool TryGetSamplingHit(out RaycastHit hit, out Vector3 direction)
         {
-            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, samplingRange, samplingMask.value, QueryTriggerInteraction.Collide, out hit);
+            direction = default;
+            if (!TryResolveSamplingRay(out Vector3 origin, out direction))
+            {
+                hit = default;
+                return false;
+            }
+
+            return TryQueuePrimaryRaycast(origin, direction, samplingRange, samplingMask.value, QueryTriggerInteraction.Collide, out hit);
+        }
+
+        private bool TryResolveSamplingRay(out Vector3 origin, out Vector3 direction)
+        {
+            origin = default;
+            direction = default;
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                return false;
+            }
+
+            float3 runtimePosition = snapshot.RuntimePosition;
+            float3 forward = snapshot.Forward;
+            float forwardLengthSq = math.lengthsq(forward);
+            if (!math.all(math.isfinite(runtimePosition)) ||
+                !math.all(math.isfinite(forward)) ||
+                !math.isfinite(forwardLengthSq) ||
+                forwardLengthSq <= 0.0001f)
+            {
+                return false;
+            }
+
+            float invForwardLength = math.rsqrt(math.max(forwardLengthSq, 0.0001f));
+            origin = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            direction = new Vector3(
+                forward.x * invForwardLength,
+                forward.y * invForwardLength,
+                forward.z * invForwardLength);
+            return true;
+        }
+
+        private bool TryResolveInteractorRoot(out Transform interactorRoot)
+        {
+            interactorRoot = null;
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext))
+                return false;
+
+            Transform playerTransform = playerContext.PlayerTransform;
+            if (playerTransform == null)
+                return false;
+
+            interactorRoot = playerTransform.root;
+            return interactorRoot != null;
+        }
+
+        private bool TryConsumeFeedbackGate()
+        {
+            if (_feedbackCooldownRemaining > 0f)
+                return false;
+
+            ArmFeedbackCooldown();
+            return true;
+        }
+
+        private void ArmFeedbackCooldown()
+        {
+            _feedbackCooldownRemaining = ResolveFeedbackInterval();
+        }
+
+        private float ResolveFeedbackInterval()
+        {
+            float safeInterval = math.isfinite(feedbackInterval) ? math.max(0.05f, feedbackInterval) : 0.35f;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.isfinite(quality) ? math.saturate(quality) : 0.5f;
+            float qualityCurve = math.smoothstep(0f, 1f, quality);
+            return safeInterval * math.lerp(1.65f, 0.85f, qualityCurve);
         }
 
         /// <summary>
         /// Writes sampler diagnosis text into a fixed HUD buffer.
         /// Uses localized fixed-buffer append paths for dynamic fallback labels.
         /// </summary>
-        private static bool TryWriteDiagnosisHudMessage(ref FixedCharBuffer buffer, string headline)
+        private bool TryWriteDiagnosisHudMessage(ref FixedCharBuffer buffer, string headline)
         {
             switch (headline)
             {
@@ -469,7 +576,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static string GetDiagnosisLogTitle(string headline)
+        private string GetDiagnosisLogTitle(string headline)
         {
             switch (headline)
             {
@@ -498,7 +605,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static string CreateRecoveryReadySummary(string itemLabel, int quantity)
+        private string CreateRecoveryReadySummary(string itemLabel, int quantity)
         {
             s_diagnosisTextBuffer.Clear();
             if (!TryAppendStringIntTemplate(
@@ -517,7 +624,7 @@ namespace Hecton8.Gameplay
             return CreateLegacyString(in s_diagnosisTextBuffer);
         }
 
-        private static string CreateResourceNodeHeadline(float integrityPercent)
+        private string CreateResourceNodeHeadline(float integrityPercent)
         {
             s_diagnosisTextBuffer.Clear();
             if (!TryAppendSingleFloatTemplate(
@@ -533,10 +640,11 @@ namespace Hecton8.Gameplay
             return CreateLegacyString(in s_diagnosisTextBuffer);
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            return Hecton8.Core.GlobalRegistry.Localization != null
-                ? Hecton8.Core.GlobalRegistry.Localization.GetOrFallback(Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage, key, fallback)
+            LocalizationManager manager = _localization;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
         }
 
@@ -710,7 +818,7 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static string GetCategoryLabel(ItemCategory category)
+        private string GetCategoryLabel(ItemCategory category)
         {
             return category switch
             {

@@ -5,16 +5,21 @@ using UnityEngine;
 
 namespace Hecton8.Optimization
 {
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal readonly struct AssetGuidIdRecord
     {
+        [FieldOffset(0)]
         public readonly uint GuidHash;
+        [FieldOffset(4)]
         public readonly uint AssetId;
+        [FieldOffset(8)]
+        private readonly ulong _pad0;
 
         public AssetGuidIdRecord(uint guidHash, uint assetId)
         {
             GuidHash = guidHash;
             AssetId = assetId;
+            _pad0 = 0UL;
         }
     }
 

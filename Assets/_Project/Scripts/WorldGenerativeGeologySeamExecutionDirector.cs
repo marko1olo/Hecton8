@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -355,6 +357,19 @@ namespace Hecton8.World
             if (!plan.RequiresVoxelBlend)
                 return;
 
+            AbsoluteUniversePosition voxelCenterAup = plan.absoluteVoxelVolumeCenterAup;
+            bool hasVoxelCenterAup = plan.hasAbsoluteVoxelVolumeCenterAup && voxelCenterAup.IsFinite();
+            if (!hasVoxelCenterAup)
+                hasVoxelCenterAup = TryResolveAupFromRuntimeOrigin(plan.RuntimeVoxelVolumeCenter, out voxelCenterAup);
+
+            AbsoluteUniversePosition terrainContactAup = plan.absoluteTerrainContactAup;
+            bool hasTerrainContactAup = plan.hasAbsoluteTerrainContactAup && terrainContactAup.IsFinite();
+            if (!hasTerrainContactAup)
+                hasTerrainContactAup = TryResolveAupFromRuntimeOrigin(plan.TerrainContactPosition, out terrainContactAup);
+
+            if (!hasVoxelCenterAup || !hasTerrainContactAup)
+                return;
+
             _voxelRequests.Add(new WorldGenerativeGeologyVoxelBlendRequest
             {
                 runtimeKey = plan.runtimeKey,
@@ -369,12 +384,8 @@ namespace Hecton8.World
                 planWeight = plan.planWeight,
                 hasTerrainSample = plan.hasTerrainSample,
                 absoluteTerrainContactPosition = new Vector3(plan.absoluteUniversePosition.x, plan.absoluteTerrainHeight, plan.absoluteUniversePosition.z),
-                absoluteUniverseCenterAup = plan.hasAbsoluteVoxelVolumeCenterAup
-                    ? plan.absoluteVoxelVolumeCenterAup
-                    : AbsoluteUniversePosition.FromRuntimePosition(plan.RuntimeVoxelVolumeCenter),
-                absoluteTerrainContactAup = plan.hasAbsoluteTerrainContactAup
-                    ? plan.absoluteTerrainContactAup
-                    : AbsoluteUniversePosition.FromRuntimePosition(plan.TerrainContactPosition),
+                absoluteUniverseCenterAup = voxelCenterAup,
+                absoluteTerrainContactAup = terrainContactAup,
                 hasAbsoluteUniverseCenterAup = true,
                 hasAbsoluteTerrainContactAup = true,
                 slopeDegrees = plan.slopeDegrees,
@@ -385,6 +396,26 @@ namespace Hecton8.World
                 hasMacroZone = plan.hasMacroZone,
                 macroZoneCoord = plan.MacroZoneCoord
             });
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return absoluteAup.IsFinite();
         }
 
         private void ConfigureGapDitherVfx(Transform root, in WorldGenerativeGeologySeamPlan plan)

@@ -1,0 +1,17 @@
+{
+  "agent": "SHINOBU_276",
+  "scope": "exosuit_6d_kinematic_integrator",
+  "summary": "Static CLI audit: writable scheduled job lanes now acquire writer locks; read-only terrain/flow/crush and external voxel SDF lanes use read locks; Unity editor scanner has not been executed in this pass.",
+  "verdict": "PASS_STATIC_CLI_EDITOR_SCANNER_PENDING",
+  "legacy_movement_hits_policy": "legacy ApplyExosuit* and indirect motor-force routes are warnings only when the same method scope has already passed ExosuitKinematicAuthority.HasActiveAuthority",
+  "source": "CLI_STATIC_LOOP28",
+  "editor_menu": "Hecton8/Physics/Run Exosuit Physics Inquisition",
+  "aggregate_node": "PENDING_UNITY_EDITOR_MENU_RUN",
+  "layout_ok_static_source": true,
+  "job_writer_lock_fence": true,
+  "core_facade_owner_fence": true,
+  "forbidden_hot_path_scan": "PASS_STATIC_SCOPE",
+  "compile": "BLOCKED_EXTERNAL_CS2001_ASSETS__PROJECT_SCRIPTS_IBUILDPLACEMENTRULE_CS",
+  "unity_playmode": "NOT_RUN",
+  "profiler": "NOT_RUN"
+}

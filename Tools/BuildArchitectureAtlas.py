@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Build the HECTON-8 architecture atlas from current disk state.
 
 Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM.
@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+import sys
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -142,6 +143,113 @@ def normalize_signal_name(raw: str) -> str:
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8-sig", errors="ignore")
+
+
+def summarize_missing_references(missing_refs: list[str]) -> str:
+    if not missing_refs:
+        return "none"
+
+    parts: list[str] = []
+    realtime_count = sum(1 for ref in missing_refs if ref.startswith("Assets/RealtimeCSG/"))
+    for ref in missing_refs:
+        if ref.startswith("Assets/RealtimeCSG/"):
+            continue
+        parts.append(f"`{ref}`")
+
+    if realtime_count:
+        insert_at = 1 if parts and "Dynamic Decals" in parts[0] else 0
+        parts.insert(insert_at, f"RealtimeCSG vendor icon/readme image references ({realtime_count})")
+
+    return ", ".join(parts)
+
+
+def summarize_atlas_check(output: str, returncode: int) -> dict[str, object]:
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    status_line = lines[0] if lines else f"ATLAS_CHECK_UNKNOWN exit={returncode}"
+    missing_refs: list[str] = []
+    for line in lines[1:]:
+        if not line.startswith("MISSING "):
+            continue
+        raw = line[len("MISSING "):]
+        ref = raw.split(" lines=", 1)[0].strip()
+        if ref:
+            missing_refs.append(ref)
+
+    return {
+        "returncode": returncode,
+        "status_line": status_line,
+        "missing_refs": missing_refs,
+        "missing_summary": summarize_missing_references(missing_refs),
+    }
+
+
+def run_atlas_check_capture() -> dict[str, object]:
+    try:
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "Tools" / "AtlasCheck.py")],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="ignore",
+        )
+    except OSError as exc:
+        return {
+            "returncode": 127,
+            "status_line": f"ATLAS_CHECK_NOT_RUN error={exc}",
+            "missing_refs": [],
+            "missing_summary": "not captured",
+        }
+
+    return summarize_atlas_check(
+        "\n".join(part for part in (result.stdout, result.stderr) if part),
+        result.returncode,
+    )
+
+
+def atlas_check_markdown_status(atlas_check: dict[str, object] | None) -> str:
+    if atlas_check is None:
+        return (
+            "- Current DOC_GLOBAL R51 AtlasCheck gate: not captured by this in-process render. "
+            "Run `python Tools/AtlasCheck.py` after generation; runtime proof remains absent."
+        )
+
+    status_line = str(atlas_check.get("status_line", "ATLAS_CHECK_UNKNOWN"))
+    returncode = atlas_check.get("returncode", "unknown")
+    missing_summary = str(atlas_check.get("missing_summary", "not captured"))
+    if status_line.startswith("ATLAS_CHECK_PASS"):
+        return (
+            f"- Current DOC_GLOBAL R51 AtlasCheck gate: `python Tools/AtlasCheck.py` exits `{returncode}` "
+            f"with `{status_line}`. This is static reference integrity only, not Unity/runtime proof."
+        )
+
+    return (
+        f"- Current DOC_GLOBAL R51 blocker: `python Tools/AtlasCheck.py` still exits `{returncode}` "
+        f"with `{status_line}`; missing refs currently include {missing_summary} until the references "
+        "are restored or the atlas check excludes that evidence class deliberately."
+    )
+
+
+def atlas_check_json_status(atlas_check: dict[str, object] | None) -> str:
+    if atlas_check is None:
+        return (
+            "PENDING: run Tools/AtlasCheck.py after generation. Generated atlas is STATIC_SOURCE only "
+            "until AtlasCheck exits 0."
+        )
+
+    status_line = str(atlas_check.get("status_line", "ATLAS_CHECK_UNKNOWN"))
+    returncode = atlas_check.get("returncode", "unknown")
+    missing_summary = str(atlas_check.get("missing_summary", "not captured"))
+    if status_line.startswith("ATLAS_CHECK_PASS"):
+        return (
+            f"PASS: Tools/AtlasCheck.py exits {returncode} with {status_line}. "
+            "This is static reference integrity only, not Unity/runtime proof."
+        )
+
+    return (
+        f"RED: Tools/AtlasCheck.py exits {returncode} with {status_line}; missing refs currently include "
+        f"{missing_summary}. Generated atlas is STATIC_SOURCE only until AtlasCheck exits 0."
+    )
 
 
 def load_source_cache() -> dict[str, object]:
@@ -727,7 +835,11 @@ def append_phi(out: list[str], source: dict[str, object], exact_exists: bool, ne
     out.append("")
 
 
-def build_markdown(data: dict[str, object] | None = None, generated_at: datetime | None = None) -> str:
+def build_markdown(
+    data: dict[str, object] | None = None,
+    generated_at: datetime | None = None,
+    atlas_check: dict[str, object] | None = None,
+) -> str:
     if data is None:
         data = collect_atlas_data()
     if generated_at is None:
@@ -753,7 +865,7 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
     )
     out.append("")
     out.append("<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->")
-    out.append("## 2026-05-20 R47 Root/Architecture Actuality Boundary")
+    out.append("## 2026-05-21 R51 Root/Architecture Actuality Boundary")
     out.append("")
     out.append("This document is active only where it agrees with:")
     out.append("")
@@ -771,13 +883,19 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
     )
     out.append("")
     out.append(
-        "Current DOC_GLOBAL boundary (2026-05-20 R47): "
-        "`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` "
-        "is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. "
+        "Current DOC_GLOBAL boundary (2026-05-21 R51): "
+        "`Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` "
+        "is the latest local static root/architecture encoding repair, boundary-gap, read-order, "
+        "route-card/static-contract, and source/AtlasCheck orientation correction. "
+        "R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, "
+        "and source-counter drift correction. "
+        "R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction; "
+        "R48 remains the prior date-rollover/AtlasCheck/source-counter correction; "
+        "R47 remains the prior authority-spine/runtime-wording/counter-drift correction; "
         "R46 remains the prior interior-authority/route-field/proof-language correction; "
         "R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; "
-        "R44 remains the prior internal-residue/exact-route-field/proof-wording correction; "
-        "R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; AtlasCheck remains red and runtime proof is absent."
+        "R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. "
+        "AtlasCheck remains red and runtime proof is absent."
     )
     out.append("<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->")
     out.append("")
@@ -850,7 +968,7 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
     out.append("- `python Tools/AtlasCheck.py`")
     out.append("- `python -m py_compile Tools/BuildArchitectureAtlas.py Tools/AtlasCheck.py`")
     out.append("- C# compile verification is outside this atlas; run Unity import/Console and serial CLI builds as separate evidence.")
-    out.append("- Current DOC_GLOBAL R47 blocker: `python Tools/AtlasCheck.py` still exits `1` with `ATLAS_CHECK_FAIL references=6781 missing=61`; missing refs include one Dynamic Decals vendor asset reference, RealtimeCSG vendor icon/readme image references, `Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs`, `Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs`, and `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs` until the references are restored or the atlas check excludes that evidence class deliberately.")
+    out.append(atlas_check_markdown_status(atlas_check))
     out.append("- This generated atlas is not `VERIFIED` unless `Tools/AtlasCheck.py` exits `0` after generation.")
     out.append("")
 
@@ -870,7 +988,11 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
     return "\n".join(out)
 
 
-def build_json_payload(data: dict[str, object], generated_at: datetime | None = None) -> dict[str, object]:
+def build_json_payload(
+    data: dict[str, object],
+    generated_at: datetime | None = None,
+    atlas_check: dict[str, object] | None = None,
+) -> dict[str, object]:
     if generated_at is None:
         generated_at = datetime.now()
     asmdefs = data["asmdefs"]
@@ -956,7 +1078,7 @@ def build_json_payload(data: dict[str, object], generated_at: datetime | None = 
             "generator": "Tools/BuildArchitectureAtlas.py",
             "validator": "Tools/AtlasCheck.py",
             "tests": "Tools/test_architecture_atlas.py",
-            "atlas_check_status": "RED: Tools/AtlasCheck.py exits 1 with ATLAS_CHECK_FAIL references=6781 missing=61; missing refs include one Dynamic Decals vendor asset reference, RealtimeCSG vendor icon/readme image references, Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs, Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs, and Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs. Generated atlas is STATIC_SOURCE only until AtlasCheck exits 0.",
+            "atlas_check_status": atlas_check_json_status(atlas_check),
         },
         "residual_risk": [
             "Unity import, runtime wiring, actual VRAM residency, profiler frame time, GC, build, and Play Mode remain PENDING VERIFICATION.",
@@ -968,8 +1090,28 @@ def build_json_payload(data: dict[str, object], generated_at: datetime | None = 
 def main() -> int:
     data = collect_atlas_data()
     generated_at = datetime.now()
-    OUTPUT.write_text(build_markdown(data, generated_at), encoding="utf-8")
-    JSON_OUTPUT.write_text(json.dumps(build_json_payload(data, generated_at), indent=2), encoding="utf-8")
+    atlas_check: dict[str, object] | None = None
+
+    for _ in range(3):
+        OUTPUT.write_text(build_markdown(data, generated_at, atlas_check), encoding="utf-8")
+        JSON_OUTPUT.write_text(
+            json.dumps(build_json_payload(data, generated_at, atlas_check), indent=2),
+            encoding="utf-8",
+        )
+        next_check = run_atlas_check_capture()
+        if (
+            atlas_check is not None
+            and atlas_check.get("status_line") == next_check.get("status_line")
+            and atlas_check.get("missing_refs") == next_check.get("missing_refs")
+        ):
+            break
+        atlas_check = next_check
+
+    OUTPUT.write_text(build_markdown(data, generated_at, atlas_check), encoding="utf-8")
+    JSON_OUTPUT.write_text(
+        json.dumps(build_json_payload(data, generated_at, atlas_check), indent=2),
+        encoding="utf-8",
+    )
     print(f"WROTE {rel(OUTPUT)}")
     print(f"WROTE {rel(JSON_OUTPUT)}")
     return 0

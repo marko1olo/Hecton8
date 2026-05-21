@@ -1,9 +1,9 @@
 ﻿# SHINOBU_02 Status
 
-Date: 2026-05-20
+Date: 2026-05-21
 Agent: SHINOBU_02
 Domain: Core & Memory Infrastructure / Global EventBus MPSC SignalBus
-Status: CURRENT49 PRIORITY CSV RELEASE GUARD, STACK SCRATCH, AND SIGNAL FILTER AUDIT FALSE-POSITIVE FIX APPLIED; SIGNALCRITICAL STATIC AUDIT 0 ERRORS / 0 WARNINGS / 17 INFOS / SIGNALS WITHOUT LAYOUT 0; BUILD BLOCKED BY HARDWARE GUARD CPU=100. CORE COMPILE GREEN STILL UNPROVEN. PREVIOUS POST-PATCH BUILD REMAINS CURRENT40: 311 ERRORS / 19 WARNINGS UNTIL A GUARDED BUILD CAN RUN.
+Status: CURRENT57 CACHE-LINE-CRITICAL AUDIT PARSER HARDENED FOR FORWARD STATEMENTS AND DEBT ACTION LEDGER ADDED; SIGNALCRITICAL POWERSHELL AUDIT 0 ERRORS / 0 WARNINGS / 19 INFOS / CACHE-LINE STRIDE DEBT 2; C# CLI COMPILE NOT PROVEN BECAUSE BUILD GUARD REPORTED CPU=100. CORE COMPILE GREEN STILL UNPROVEN. PREVIOUS POST-PATCH BUILD REMAINS CURRENT40: 311 ERRORS / 19 WARNINGS UNTIL A GUARDED BUILD CAN RUN.
 
 ## Current49 Checklist
 
@@ -161,3 +161,174 @@ Status: CURRENT49 PRIORITY CSV RELEASE GUARD, STACK SCRATCH, AND SIGNAL FILTER A
 - `Directory.Build.targets` still intentionally has Core contract source-backed overlays where binary contracts are stale; Current42 adds the missing `MemorySentinelContracts.cs` removal to reduce Core Memory source/binary identity split.
 - `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md` exists as an untracked current static report; docs now point to it.
 - Current41 build was not launched: CPU guard reported 100%. No dotnet/csc/MSBuild processes were running.
+
+## 2026-05-20 - Current50 Global Authority Hot Registry Pass
+
+- [x] Re-read active SHINOBU_02 status/rationale before edits.
+- [x] Used subagents for read-only doctrine audit. Halley produced no usable evidence due shell hangs; Bernoulli identified Core hot registry risks and the stale SHINOBU_140 scanner method set.
+- [x] Confirmed `SignalThreadLocalScratchpad` read facades already use `IsInitializedForRead()` plus cached handles; no new hidden read bootstrap was introduced.
+- [x] Removed Foveated hot DataVault polling. `BeginDispatcherFrame`, `ScheduleImportanceScoringJob`, and `ScheduleInterpolationJob` now reach `EnsureNativeBuffersAllocated()` through cached `_dataVault`; `_dataVault` is bound only from `InitializeRuntime` or `IGlobalRegistryHotSwapListener`.
+- [x] Removed Foveated hot player-context polling. `SetVoxelTeardownBackpressure` and `TryResolveViewCamera` now use cached `_playerContext`; `_playerContext` is rebound on the `Player` registry slot replacement.
+- [x] Updated `RunShinobu140StaticScanners.py` hot/mid-frame method roots so dispatcher phase names such as `BeginDispatcherFrame`, `ReportFrame`, `ScheduleFrameJobs`, and master phase methods are scanned, not just `Tick`/`Update`.
+- [x] Updated `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md` with the Current50 Foveated cold-DI addendum.
+- [x] Targeted Foveated hot-registry audit: `hotRegistryCritical=0`, `hotHelperRegistryCritical=0`, `hotHelperCompleteCritical=0`.
+- [x] SignalCritical audit: `errors=0`, `warnings=0`, `infos=17`, `confirmedErrors=0`, `signalsWithoutLayout=0`, `runtimeSignalPack1Layouts=0`.
+- [x] `python -m py_compile Tools/RunShinobu140StaticScanners.py` passed.
+- [x] `git diff --check` passed on Current50 touched files with line-ending warnings only.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT50 CPU=100 PROCS=0`; build skipped by project rule.
+- [ ] Full SHINOBU_140 repository scan: attempted once, exceeded the 180s local command budget, stale partial output was removed, and no full-scan pass is claimed.
+- [ ] Core compile green: not proven in Current50 because CPU guard blocked build. Last actual guarded build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-20 - Current51 System/Input Cold-DI Registry Pass
+
+- [x] Re-read active `Status_SHINOBU_02.md` and `Rationale_SHINOBU_02.md` before edits.
+- [x] Used subagents. Descartes confirmed `InputDispatcher` hot `GlobalRegistry.DataVault` fallbacks and recommended the smallest safe patch. Anscombe hung on the read-only `SystemDispatcher` sidecar and was closed without using its output.
+- [x] Removed `SystemDispatcher.RequestAupPreShiftPause()` DataVault registry refresh. AUP pre-shift now uses cached `_dataVault` only and still forces the master fence.
+- [x] Removed `SystemDispatcher.EnsureMasterDispatcherNativeBuffers()` and `EnsureH8TimeArray()` self-refresh fallback. These helpers now use cached `_dataVault` and fail closed when cold DI/hot-swap has not provided the owner route.
+- [x] Kept `SystemDispatcher.RefreshDataVaultDependency()` as the cold `InitializeService()` bind path and hot-swap listener rebind path; no runtime `GlobalDataVault.TryGetLatestCreated()` fallback was added.
+- [x] Added `InputDispatcher.RefreshCachedDataVaultCold()` to `InitializeService`, `Awake`, and `OnEnable` before deterministic/XR buffer setup.
+- [x] Added `InputDispatcher.OnGlobalRegistryServiceRebound(DataVault)` handling and centralized DataVault rebinding in `RebindCachedDataVault(...)`.
+- [x] Removed `InputDispatcher` lazy DataVault registry reads from deterministic buffer ensure/acquire and XR buffer ensure/read helpers.
+- [x] Updated `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md` with the Current51 System/Input cold-DI addendum.
+- [x] Targeted scanner import over `SystemDispatcher.cs` and `InputDispatcher.cs`: `Hot_Registry_Polling=0`, `Hot_Helper_Registry_Polling=0`, `Mid_Frame_Complete=0`, `Hot_Helper_Complete=0`.
+- [x] SignalCritical audit Current51: `errors=0`, `warnings=0`, `infos=17`, `confirmedErrors=0`, `signalsWithoutLayout=0`, `runtimeSignalPack1Layouts=0`.
+- [x] `git diff --check` passed on Current51 touched code files with line-ending warnings only.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT51 CPU=100 PROCS=0`; build skipped by project rule.
+- [ ] Full repository SHINOBU_140 scan: not rerun in Current51 because the prior Current50 full run exceeded 180s and this pass had targeted evidence only.
+- [ ] Core compile green: not proven in Current51 because CPU guard blocked build. Last actual guarded build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-21 - Current52 XR Read-Accessor Purity Pass
+
+- [x] Re-read active `Status_SHINOBU_02.md`, `Rationale_SHINOBU_02.md`, batch prompt, domain map, binary payload ledger, global authority doc, and Current52 mandate files before edits.
+- [x] Used read-only subagents Helmholtz and Zeno for accessor-purity and signal-contention sidecar audits. Both timed out during the first wait; their later reports were folded into Current53.
+- [x] Identified the remaining `InputDispatcher` XR read accessor breach: `GetXRInputStatesReadOnly`, `GetXRLookAtRayCommandsReadOnly`, and `TryGetXRInputState` reached `TryResolveXR*`, which could call `TryResolveOrAcquireInputBuffer` and grow/acquire Vault buffers.
+- [x] Changed `TryResolveXRInputStates` and `TryResolveXRLookAtRayCommands` to call `TryResolveInputBuffer` only. XR buffer acquisition remains in owner setup through `EnsureXRNativeBuffers`.
+- [x] Updated `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md` with the Current52 XR read-facade addendum.
+- [x] Targeted resolver proof: `TryResolveXRInputStates acquire=False registry=False pureResolve=True`; `TryResolveXRLookAtRayCommands acquire=False registry=False pureResolve=True`.
+- [x] Targeted scanner import over `SystemDispatcher.cs` and `InputDispatcher.cs`: `Hot_Registry_Polling=0`, `Hot_Helper_Registry_Polling=0`, `Mid_Frame_Complete=0`, `Hot_Helper_Complete=0`.
+- [x] SignalCritical audit Current52: `errors=0`, `warnings=0`, `infos=17`, `confirmedErrors=0`, `signalsWithoutLayout=0`, runtime signal Pack=1 remains 0.
+- [x] `git diff --check -- Assets/_Project/Scripts/Core/InputDispatcher.cs` passed with line-ending warning only.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT52 CPU=100 SAMPLES=100,50,92 PROCS=0`; build skipped by project rule.
+- [ ] Full repository SHINOBU_140 scan: not rerun in Current52 because Current50 full run exceeded 180s and this pass had targeted evidence only.
+- [ ] Core compile green: not proven in Current52 because CPU guard blocked build. Last actual guarded build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-21 - Current53 Late Sidecar Read-Purity And Signal Flush Pass
+
+- [x] Re-read active `Status_SHINOBU_02.md` and `Rationale_SHINOBU_02.md` after Helmholtz and Zeno returned late sidecar reports.
+- [x] Applied Helmholtz read-accessor naming findings: mutating `Resolve*` paths in `SystemDispatcher`, `InputDispatcher`, and `FoveatedSimulationManager` were renamed to `Claim*`, `Build*`, `Consume*`, `Refresh*`, `Advance*`, or `Capture*`.
+- [x] Removed `FoveatedSimulationManager` dispatcher-frame `GameBootstrapper`/`TryGetComponent` camera and listener lookup. Camera/listener binding now uses cached `_playerContext` only and fails closed when unavailable.
+- [x] Applied Zeno finite-guard finding for legacy `NativeQueue<T>.ParallelWriter`: `SignalBus<T>.FlushPreSimulation` now sanitizes dequeued payloads before coalescing or appending snapshots, increments corruption telemetry, and drops corrupt payloads.
+- [x] Applied Zeno coalescence contention finding: owner flush now accumulates coalesced/load-shed counts locally and commits totals once instead of doing `Interlocked.Increment(ref _coalescedTotal)` inside every coalesced signal.
+- [x] Deferred Zeno high-frequency layout split and full `ParallelWriter` API deprecation because those require ABI/lane contract migration across producers and consumers; this pass only sealed the corruption bypass and local contention.
+- [x] Updated `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md` with the Current53 read-purity/signal-flush addendum.
+- [x] Old-name scan over touched Core files returned no hits for the reported mutating `Resolve*` method names.
+- [x] Targeted scanner import over `SystemDispatcher.cs`, `InputDispatcher.cs`, `FoveatedSimulationManager.cs`, and `GlobalSignals.cs`: `Hot_Registry_Polling=0`, `Hot_Helper_Registry_Polling=0`, `Mid_Frame_Complete=0`, `Hot_Helper_Complete=0`, `Runtime_Struct_Layout=0`, `Burst_Job_Directives=0`.
+- [x] SignalCritical audit Current53: `errors=0`, `warnings=0`, `infos=17`, `confirmedErrors=0`, `signalsWithoutLayout=0`, runtime signal Pack=1 remains 0.
+- [x] `git diff --check` passed on Current53 touched code/docs/log files with line-ending warnings only.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT53 CPU=100 SAMPLES=100,100,100 PROCS=0`; build skipped by project rule.
+- [ ] Full repository SHINOBU_140 scan: not rerun in Current53 because Current50 full run exceeded 180s and this pass had targeted evidence only.
+- [ ] Core compile green: not proven in Current53 because CPU guard blocked build. Last actual guarded build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-21 - Current54 Cache-Line-Critical Signal Telemetry Pass
+
+- [x] Re-read active `Status_SHINOBU_02.md` and `Rationale_SHINOBU_02.md` before edits.
+- [x] Scoped the remaining Current53/Zeno layout debt to SignalBus lane configuration and telemetry, not a broad producer API rewrite.
+- [x] Added `SignalBus<T>.ConfigureCacheLineCritical(...)` as an ABI-preserving boot path. Existing `Configure(...)` calls keep the old signature and behavior.
+- [x] Added cache-line-critical layout telemetry: `SignalLaneTelemetry.Flags` bit `32` is set when a marked lane payload is not 64 or 128 bytes; `Reserved0` records payload stride bytes and `Reserved1` records layout policy flags.
+- [x] Marked `ToolAcousticSignal` and `TetherTensionSignal` as cache-line-critical lanes without changing public payload fields, offsets, total sizes, or producer/consumer contracts.
+- [x] Verified the two target lanes no longer use the plain `Configure(...)` bootstrap call.
+- [x] SignalCritical audit Current54: files 9 C# / 67 compute, errors 0, warnings 0, infos 17, confirmedErrors 0, runtime signal Pack=1 remains 0, managed event surface remains 0.
+- [x] `git diff --check` over Current54 touched code and audit artifacts passed with line-ending warning only.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT54 CPU=100 SAMPLES=100,100,100 PROCS=0`; build skipped by project rule.
+- [ ] Core compile green: not proven in Current54 because CPU guard blocked build. Last actual guarded Core build evidence remains Current40: 311 errors / 19 warnings.
+- [ ] Unity import / Play Mode / Profiler / GCMonitor / IL2CPP / ARM64 proof: not run.
+
+## 2026-05-21 - Current55 Legacy MPSC Writer Surface Telemetry Pass
+
+- [x] Re-read active `Status_SHINOBU_02.md` and `Rationale_SHINOBU_02.md` before edits.
+- [x] Re-read AGENTS, SHINOBU_200 prompt, domain map, binary ledger, global authority doc, and mandates: `ARCH_Signal_Lane_Segregation`, `OPT_Zero_GC`, `DATA_Runtime_Struct_Layout_ARM64`, `OPT_Native_Memory_Collections_JobSystem`, `DBG_Telemetry`, `ARCH_Global_Registry`, and `QA_Evidence`.
+- [x] Executed read-only WriterSidecar audit over `GlobalSignals.cs`. Recommendation: no producer rewrites, no payload ABI mutation; name retained `NativeQueue<T>.ParallelWriter` as legacy MPSC and expose telemetry debt.
+- [x] Added `SignalBus<T>.OpenLegacyMpscWriter()` and routed `OpenParallelWriter()`, `ParallelWriter`, and `GlobalSignals.OpenSignalWriterForProducerPhase<TSignal>()` through it while preserving public compatibility signatures.
+- [x] Added per-lane legacy writer-open telemetry: `SignalLaneTelemetry.Flags` bit `64`, `Reserved1` high byte saturated writer-open count, low byte layout policy flags.
+- [x] Updated `SignalLaneTelemetry` contract comments and Core architecture docs.
+- [x] Static writer proof: `OpenLegacyMpscWriter=4`, `DirectGenericOldOpen=0`, `LegacyFlag=2`, `Reserved1Pack=2`, contract comments present.
+- [x] SignalCritical audit Current55: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, runtime signal Pack=1 0, managed event surface 0, cache-line-critical stride debt remains 2 INFO.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT55 CPU=100,100,100 PROCS=0`; build skipped.
+- [x] `git diff --check` over Current55 writer-surface code/docs/log files passed with line-ending warnings only.
+- [ ] Core compile green: not proven in Current55. Last actual guarded Core build evidence remains Current40: 311 errors / 19 warnings.
+- [ ] Unity import / Play Mode / Profiler / GCMonitor / IL2CPP / ARM64 proof: not run.
+
+## 2026-05-21 - Current56 Cache-Line-Critical Audit Sidecar Pass
+
+- [x] Re-read active `Status_SHINOBU_02.md` and `Rationale_SHINOBU_02.md` before edits.
+- [x] Re-read relevant mandates: `ARCH_Signal_Lane_Segregation`, `DATA_Runtime_Struct_Layout_ARM64`, `QA_Evidence_Text_Filter_Audit`, `DBG_Telemetry_Crash_Reporting_PostMortem`, and `OPT_Zero_GC_Policy_AllocFree_Mandate`.
+- [x] Extracted the current SHINOBU_200 batch prompt by CLI regex: 20 tasks, 24695 chars.
+- [x] Used read-only sidecar Avicenna to confirm the smallest safe path is INFO-level static debt from `SignalBus<T>.ConfigureCacheLineCritical(...)` to declared `[StructLayout(Size = N)]`; Mencius sidecar was not needed for this patch.
+- [x] Mirrored `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT` in PowerShell and C# audit tools. The rule reports INFO only when a cache-line-critical lane payload size is not 64 or 128 bytes.
+- [x] PowerShell SignalCritical audit Current56: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, `cacheLineCriticalStrideDebtHits=2`.
+- [x] Confirmed reported symbols: `ToolAcousticSignal` payload 32 bytes and `TetherTensionSignal` payload 192 bytes.
+- [x] Removed stale intermediate Current55 audit artifacts because Current55 is now reserved for the legacy MPSC writer visibility pass.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT56 CPU=100,100,100 PROCS=0`; dotnet/C# CLI compile skipped by project rule.
+- [x] `git diff --check` over Current56 audit tool/artifact/docs files passed with line-ending warnings only.
+- [ ] C# audit CLI compile green: not proven in Current56 because CPU guard blocked dotnet build.
+- [ ] Core compile green: not proven in Current56 because CPU guard blocked build. Last actual guarded Core build evidence remains Current40: 311 errors / 19 warnings.
+- [ ] Unity import / Play Mode / Profiler / GCMonitor / IL2CPP / ARM64 proof: not run.
+
+## 2026-05-21 - Current57 Cache-Line-Critical Audit Parser And Debt Ledger Pass
+
+- [x] Re-read active `Status_SHINOBU_02.md` and `Rationale_SHINOBU_02.md` before edits.
+- [x] Re-read AGENTS/docs truth surfaces, SHINOBU_200 prompt extraction, binary payload ledger, global authority doc, and relevant mandates for signal lane segregation, ARM64 layout, evidence reporting, blackbox telemetry, and zero-GC.
+- [x] Used read-only sidecar Pauli to audit parser shape and Lagrange to rank residual SignalBus debt. Pauli confirmed the forward-statement parser has low false-positive risk; Lagrange ranked an explicit debt action ledger as the safest next move.
+- [x] Hardened `Tools/SignalBusContractAudit.ps1` and `Tools/SignalBusContractAuditCli/Program.cs` so `ConfigureCacheLineCritical(...)` detection scans a bounded forward statement instead of one line and supports qualified `SignalBus<...>` receivers/payload type names.
+- [x] Added `statementLineSpan` tags and full raw statement evidence to `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT` findings.
+- [x] Added the cache-line-critical debt action ledger to `SHINOBU_200_SIGNAL_THREAD_CONTENTION_ROUTE_CARD.md` for `ToolAcousticSignal` 32 bytes and `TetherTensionSignal` 192 bytes.
+- [x] PowerShell SignalCritical audit Current57: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, `cacheLineCriticalStrideDebtHits=2`.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT57 CPU=100,100,100 PROCS=0`; dotnet/C# CLI compile skipped by project rule.
+- [x] `git diff --check` over Current57 audit tool/artifact/docs files passed with line-ending warnings only.
+- [ ] C# audit CLI compile green: not proven in Current57 because CPU guard blocked dotnet build.
+- [ ] Core compile green: not proven in Current57 because CPU guard blocked build. Last actual guarded Core build evidence remains Current40: 311 errors / 19 warnings.
+- [ ] Unity import / Play Mode / Profiler / GCMonitor / IL2CPP / ARM64 proof: not run.
+
+## 2026-05-21 - Current58 SignalWarden Read Contract And Audit Summary Drift Pass
+
+- [x] Re-read active `Status_SHINOBU_02.md` and `Rationale_SHINOBU_02.md` before edits.
+- [x] Continued from the SHINOBU_200 extracted prompt and limited changes to Core SignalWarden/audit/docs surfaces already owned by this pass.
+- [x] Spawned read-only sidecars Halley and Archimedes. Integrated Halley's ledger-anchor recommendation and Archimedes' PowerShell/C# audit-summary drift finding.
+- [x] Renamed the private mutable committed-signal opener from stale `TryReadCommittedSignals(...)` to `TryOpenCommittedSignalsBuffer(...)`; owner access is `TryOpenCommittedSignalsForOwner(...)`, consumer access remains `TryGetCommittedSignalsReadOnly(...)`.
+- [x] Verified no `TryReadCommittedSignals` symbol remains in `SignalWardenRuntime.cs`; `TryOpenCommittedSignalsBuffer` has exactly the two callsites plus private declaration.
+- [x] Fixed `Tools/SignalBusContractAudit.ps1` summary drift by adding `localNativeSignalQueues` to JSON and markdown. Current58 SignalCritical value: `0`.
+- [x] Added struct/boot/size-guard/telemetry anchors to the `ToolAcousticSignal` and `TetherTensionSignal` cache-line-critical debt ledger without padding or splitting payload ABI.
+- [x] PowerShell parser check: `PS_PARSE_ERRORS=0`.
+- [x] PowerShell SignalCritical audit Current58: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, `cacheLineCriticalStrideDebtHits=2`, `localNativeSignalQueues=0`.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT58 CPU=100,100,100 PROCS=0`; dotnet/Core/C# CLI compile skipped by project rule.
+- [ ] C# audit CLI compile green: not proven in Current58 because CPU guard blocked dotnet; Archimedes also flagged `net10.0` as an SDK floor/toolchain policy risk.
+- [ ] Core compile green: not proven in Current58 because CPU guard blocked build. Last actual guarded Core build evidence remains Current40: 311 errors / 19 warnings.
+- [ ] Unity import / Play Mode / Profiler / GCMonitor / IL2CPP / ARM64 proof: not run.
+
+## 2026-05-21 - Current59 Audit CLI SDK Floor Reduction Pass
+
+- [x] Re-read active `Status_SHINOBU_02.md` and `Rationale_SHINOBU_02.md` before edits.
+- [x] Investigated Archimedes' toolchain finding: repo has no root `global.json`; `SignalBusContractAuditCli.csproj` targeted `net10.0`; `Program.cs` uses C# 12 language features but no observed net10-only library API.
+- [x] Retargeted `Tools/SignalBusContractAuditCli/SignalBusContractAuditCli.csproj` from `net10.0` to `net8.0` and pinned `<LangVersion>12.0</LangVersion>`.
+- [x] Rejected a root `global.json` SDK pin because that would preserve the .NET 10 floor instead of reducing CI/agent portability.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT59 CPU=100,100,100 PROCS=0`; dotnet/C# CLI compile skipped by project rule.
+- [x] `git diff --check` over Current59/current touched files passed with line-ending warnings only.
+- [ ] C# audit CLI compile green: not proven in Current59 because CPU guard blocked dotnet.
+- [ ] Core compile green: not proven in Current59 because CPU guard blocked build. Last actual guarded Core build evidence remains Current40: 311 errors / 19 warnings.
+- [ ] Unity import / Play Mode / Profiler / GCMonitor / IL2CPP / ARM64 proof: not run.
+
+## 2026-05-21 - Current60 Tuning Read Split And Bootstrap Vault Cache Pass
+
+- [x] Re-read active `Status_SHINOBU_02.md` and `Rationale_SHINOBU_02.md` before edits.
+- [x] Re-extracted SHINOBU_200 prompt by CLI regex: `SHINOBU_200_PROMPT_CHARS=24695`; task count remains governed by the 20-task SHINOBU_02 matrix in prior logs.
+- [x] Scanned touched Core signal files for read-named methods returning mutable `NativeArray<T>`.
+- [x] Split `SignalTuningTable` access: `TryGetProfile(...)` now uses `TryReadProfiles(...)` returning `NativeArray<SignalTuningProfile>.ReadOnly` plus copied count; owner mutation remains in `TryOpenBuffersForOwner(...)`.
+- [x] Renamed thread scratch readiness validation from `ResolveBuffers(...)` to `AreVaultBuffersReady(...)`.
+- [x] Cached `GlobalRegistry.DataVault` once in `GlobalSignals.InitializeAllQueues()` and passed the cached dependency to tuning and thread contention initialization.
+- [x] Post-patch read-name scan over targeted Core files only reports read-only `NativeArray<T>.ReadOnly` routes and external `dataVault.TryGetBuffer(...)` at SystemDispatcher pre-shift lines.
+- [x] PowerShell parse check: `PS_PARSE_ERRORS=0`.
+- [x] PowerShell SignalCritical audit Current60: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, `cacheLineCriticalStrideDebtHits=2`, `localNativeSignalQueues=0`.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT60 CPU=100,100,100 PROCS=0`; post-audit guard `PRE_BUILD_GUARD_CURRENT60_POST_AUDIT CPU=100,100,100 PROCS=0`; dotnet/Core/C# CLI compile skipped by project rule.
+- [ ] C# audit CLI compile green: not proven in Current60 because CPU guard blocked dotnet.
+- [ ] Core compile green: not proven in Current60 because CPU guard blocked build. Last actual guarded Core build evidence remains Current40: 311 errors / 19 warnings.
+- [ ] Unity import / Play Mode / Profiler / GCMonitor / IL2CPP / ARM64 proof: not run.

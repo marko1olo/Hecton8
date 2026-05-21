@@ -614,19 +614,23 @@ namespace Hecton8.Power
 
         private void PublishBrownoutSignal(in PowerGridTelemetrySnapshot snapshot)
         {
+            bool hasPowerDeficit = PowerGridTelemetrySnapshot.HasPowerDeficit(in snapshot);
+            bool emergencyReserveActive = PowerGridTelemetrySnapshot.IsEmergencyReserveActive(in snapshot);
+            LogisticsBrownoutTier highestBrownoutTier = PowerGridTelemetrySnapshot.GetHighestBrownoutTier(in snapshot);
+
             byte flags = 0;
-            if (snapshot.HasPowerDeficit)
+            if (hasPowerDeficit)
                 flags |= 1;
-            if (snapshot.EmergencyReserveActive)
+            if (emergencyReserveActive)
                 flags |= 1 << 1;
 
             float supplyRatio = math.saturate(math.isfinite(snapshot.SupplyRatio) ? snapshot.SupplyRatio : 1f);
-            float severity01 = snapshot.HighestBrownoutTier != LogisticsBrownoutTier.None ||
-                               snapshot.HasPowerDeficit ||
-                               snapshot.EmergencyReserveActive
+            float severity01 = highestBrownoutTier != LogisticsBrownoutTier.None ||
+                               hasPowerDeficit ||
+                               emergencyReserveActive
                 ? math.saturate(1f - supplyRatio)
                 : 0f;
-            if (snapshot.EmergencyReserveActive)
+            if (emergencyReserveActive)
                 severity01 = math.max(severity01, 0.75f);
             severity01 = math.saturate(math.isfinite(severity01) ? severity01 : 0f);
             uint frame = unchecked(_powerBrownoutSignalFrame + 1u);
@@ -641,7 +645,7 @@ namespace Hecton8.Power
                 SupplyRatio = supplyRatio,
                 Severity01 = severity01,
                 Frame = frame,
-                Priority = (byte)snapshot.HighestBrownoutTier,
+                Priority = (byte)highestBrownoutTier,
                 Flags = flags
             };
             GlobalSignals.Publish(in signal);
@@ -784,7 +788,7 @@ namespace Hecton8.Power
             if (runtime == null)
                 return;
 
-            float quality = HomeostasisBrain.GlobalQualityWeight;
+            float quality = PowerSolverConvergenceMath.AuthoritativeQualityWeight;
             float cadenceSeconds = ResolveSubmarineThermalGridCadenceSeconds(quality);
             if (now + 0.0001f < _nextSubmarineThermalGridTickTime)
                 return;
@@ -805,9 +809,7 @@ namespace Hecton8.Power
 
         internal static float ResolveSubmarineThermalGridCadenceSeconds(float globalQualityWeight)
         {
-            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
-            float smooth = weight * weight * (3f - 2f * weight);
-            return math.lerp(SubmarineThermalGridLowCadenceSeconds, SubmarineThermalGridHighCadenceSeconds, smooth);
+            return SubmarineThermalGridHighCadenceSeconds;
         }
 
         private void TryRegisterHotSwapListener()

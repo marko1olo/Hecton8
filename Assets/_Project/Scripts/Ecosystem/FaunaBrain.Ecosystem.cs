@@ -206,7 +206,11 @@ namespace Hecton8.AI
 
         private void RefreshCachedEcosystemDirectorReference()
         {
-            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            BindCachedEcosystemDirectorReference(GlobalRegistry.EcosystemDirector);
+        }
+
+        private void BindCachedEcosystemDirectorReference(IEcosystemDirectorService ecosystemDirector)
+        {
             _cachedEcosystemDirectorService = ecosystemDirector;
             _cachedEcosystemDirectorConcrete = ecosystemDirector as EcosystemDirector;
         }
@@ -223,8 +227,7 @@ namespace Hecton8.AI
             if (ecosystemDirector != null && ecosystemDirector.IsInitialized)
                 return ecosystemDirector;
 
-            RefreshCachedEcosystemDirectorReference();
-            return _cachedEcosystemDirectorService;
+            return null;
         }
 
         private EcosystemDirector ResolveCachedEcosystemDirectorConcrete()
@@ -233,10 +236,7 @@ namespace Hecton8.AI
             if (ecosystemDirector != null && ecosystemDirector.IsInitialized)
                 return ecosystemDirector;
 
-            RefreshCachedEcosystemDirectorReference();
-            return _cachedEcosystemDirectorConcrete != null && _cachedEcosystemDirectorConcrete.IsInitialized
-                ? _cachedEcosystemDirectorConcrete
-                : null;
+            return null;
         }
 
         private void ApplyRuntimeEcosystemOverlays()

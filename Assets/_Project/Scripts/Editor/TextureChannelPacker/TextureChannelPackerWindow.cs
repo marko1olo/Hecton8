@@ -298,7 +298,7 @@ namespace Hecton8.EditorTools
                 if (texture == null)
                     continue;
 
-                string key = ResolveSetKey(Path.GetFileNameWithoutExtension(path));
+                string key = BuildSetKey(Path.GetFileNameWithoutExtension(path));
                 if (!sets.TryGetValue(key, out SourceTextureSet set))
                 {
                     set.Key = key;
@@ -341,7 +341,7 @@ namespace Hecton8.EditorTools
                 set.Albedo = texture;
         }
 
-        private static string ResolveSetKey(string name)
+        private static string BuildSetKey(string name)
         {
             string value = name;
             value = RemoveToken(value, "_AmbientOcclusion");
@@ -406,6 +406,7 @@ namespace Hecton8.EditorTools
                     Ao = ao,
                     Roughness = roughness,
                     Metallic = metallic
+                // Editor preview boundary: UI Toolkit Image consumes the extracted channel textures immediately.
                 }.Schedule(sourcePixels.Length, 128).Complete();
 
                 _aoPreviewTexture = BuildPreviewTexture("TX_PREVIEW_ARM_AO", ao);
@@ -631,7 +632,7 @@ namespace Hecton8.EditorTools
                     SkipLine(ptr, read, ref cursor);
                     while (cursor < read)
                     {
-                        if (TryReadProfile(ptr, read, ref cursor, out TexturePackingProfile profile))
+                        if (TryParseProfile(ptr, read, ref cursor, out TexturePackingProfile profile))
                             profiles.Add(profile);
                     }
                 }
@@ -674,29 +675,29 @@ namespace Hecton8.EditorTools
             return profile;
         }
 
-        private static bool TryReadProfile(byte* bytes, int length, ref int cursor, out TexturePackingProfile profile)
+        private static bool TryParseProfile(byte* bytes, int length, ref int cursor, out TexturePackingProfile profile)
         {
             profile = default;
             SkipBlank(bytes, length, ref cursor);
             if (cursor >= length)
                 return false;
 
-            profile.Name = ReadFixedString(bytes, length, ref cursor);
-            profile.NormalIntensity = SafePositive(ReadFloat(bytes, length, ref cursor, 1f), 1f);
-            profile.RoughnessScale = math.max(0f, ReadFloat(bytes, length, ref cursor, 1f));
-            profile.MetallicScale = math.max(0f, ReadFloat(bytes, length, ref cursor, 1f));
-            profile.MacroNoiseStrength = math.saturate(ReadFloat(bytes, length, ref cursor, 0.08f));
-            profile.TileSizeMeters = SafePositive(ReadFloat(bytes, length, ref cursor, 4f), 4f);
-            profile.MacroWorldSpanMeters = SafePositive(ReadFloat(bytes, length, ref cursor, 120f), 120f);
-            profile.GlobalQualityWeight = math.saturate(ReadFloat(bytes, length, ref cursor, 0.55f));
-            profile.Flags = ReadFlags(bytes, length, ref cursor);
+            profile.Name = ParseFixedStringColumn(bytes, length, ref cursor);
+            profile.NormalIntensity = SafePositive(ParseFloatColumn(bytes, length, ref cursor, 1f), 1f);
+            profile.RoughnessScale = math.max(0f, ParseFloatColumn(bytes, length, ref cursor, 1f));
+            profile.MetallicScale = math.max(0f, ParseFloatColumn(bytes, length, ref cursor, 1f));
+            profile.MacroNoiseStrength = math.saturate(ParseFloatColumn(bytes, length, ref cursor, 0.08f));
+            profile.TileSizeMeters = SafePositive(ParseFloatColumn(bytes, length, ref cursor, 4f), 4f);
+            profile.MacroWorldSpanMeters = SafePositive(ParseFloatColumn(bytes, length, ref cursor, 120f), 120f);
+            profile.GlobalQualityWeight = math.saturate(ParseFloatColumn(bytes, length, ref cursor, 0.55f));
+            profile.Flags = ParseFlagsColumn(bytes, length, ref cursor);
             SkipLine(bytes, length, ref cursor);
             if (profile.Name.Length == 0)
                 profile.Name = new FixedString64Bytes("Unnamed_Texture_Profile");
             return true;
         }
 
-        private static FixedString64Bytes ReadFixedString(byte* bytes, int length, ref int cursor)
+        private static FixedString64Bytes ParseFixedStringColumn(byte* bytes, int length, ref int cursor)
         {
             FixedString64Bytes value = default;
             while (cursor < length)
@@ -712,7 +713,7 @@ namespace Hecton8.EditorTools
             return value;
         }
 
-        private static float ReadFloat(byte* bytes, int length, ref int cursor, float fallback)
+        private static float ParseFloatColumn(byte* bytes, int length, ref int cursor, float fallback)
         {
             SkipColumnWhitespace(bytes, length, ref cursor);
             bool negative = false;
@@ -758,7 +759,7 @@ namespace Hecton8.EditorTools
             return math.isfinite(result) ? result : fallback;
         }
 
-        private static uint ReadFlags(byte* bytes, int length, ref int cursor)
+        private static uint ParseFlagsColumn(byte* bytes, int length, ref int cursor)
         {
             uint flags = 0u;
             uint tokenHash = 2166136261u;

@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -9,54 +8,49 @@ namespace Hecton8.Core
     /// <summary>
     /// Persistent non-allocating JobHandle fan-in buffer.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
     public struct JobFenceManager : IDisposable
     {
         private const string BudgetOwner = nameof(JobFenceManager);
 
-        private NativeArray<JobHandle> _handles;
-        private int _capacity;
-        private int _count;
-        private int _writeIndex;
-        private int _sentinelId;
-
-        public bool IsCreated => _handles.IsCreated;
-        public int Count => _count;
-        public int Capacity => _capacity;
+        public NativeArray<JobHandle> Handles;
+        public int Capacity;
+        public int Count;
+        public int WriteIndex;
+        public int SentinelId;
 
         public JobFenceManager(int capacity)
         {
-            _capacity = capacity <= 0 ? 1 : capacity;
-            _count = 0;
-            _writeIndex = 0;
-            _handles = new NativeArray<JobHandle>(_capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _sentinelId = NativeMemorySentinel.RegisterNativeArray(
-                _handles,
+            Capacity = capacity <= 0 ? 1 : capacity;
+            Count = 0;
+            WriteIndex = 0;
+            Handles = new NativeArray<JobHandle>(Capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            SentinelId = NativeMemorySentinel.RegisterNativeArray(
+                Handles,
                 nameof(JobFenceManager),
-                nameof(_handles),
+                nameof(Handles),
                 NativeAllocationLifetime.Session);
 
-            long bytes = (long)UnsafeUtility.SizeOf<JobHandle>() * _capacity;
+            long bytes = (long)UnsafeUtility.SizeOf<JobHandle>() * Capacity;
             MemoryBudgetTracker.Register(BudgetOwner, bytes, bytes);
         }
 
         public bool TryRegister(JobHandle handle)
         {
-            if (!_handles.IsCreated || _count >= _capacity)
+            if (!Handles.IsCreated || Count >= Capacity)
                 return false;
 
-            _handles[_writeIndex] = handle;
-            _writeIndex++;
-            if (_writeIndex >= _capacity)
-                _writeIndex = 0;
+            Handles[WriteIndex] = handle;
+            WriteIndex++;
+            if (WriteIndex >= Capacity)
+                WriteIndex = 0;
 
-            _count++;
+            Count++;
             return true;
         }
 
         public JobHandle CombineAndClear()
         {
-            if (!_handles.IsCreated || _count <= 0)
+            if (!Handles.IsCreated || Count <= 0)
                 return default;
 
             JobHandle combined = CombineRegisteredHandles();
@@ -66,10 +60,10 @@ namespace Hecton8.Core
 
         public void Clear()
         {
-            if (!_handles.IsCreated)
+            if (!Handles.IsCreated)
             {
-                _count = 0;
-                _writeIndex = 0;
+                Count = 0;
+                WriteIndex = 0;
                 return;
             }
 
@@ -78,78 +72,78 @@ namespace Hecton8.Core
 
         public void Dispose()
         {
-            if (!_handles.IsCreated)
+            if (!Handles.IsCreated)
                 return;
 
             ClearRegisteredSlots();
-            if (_sentinelId != 0)
+            if (SentinelId != 0)
             {
-                NativeMemorySentinel.Unregister(_sentinelId);
-                _sentinelId = 0;
+                NativeMemorySentinel.Unregister(SentinelId);
+                SentinelId = 0;
             }
 
             MemoryBudgetTracker.Unregister(BudgetOwner);
-            _handles.Dispose();
-            _capacity = 0;
-            _count = 0;
-            _writeIndex = 0;
+            Handles.Dispose();
+            Capacity = 0;
+            Count = 0;
+            WriteIndex = 0;
         }
 
         public JobHandle Dispose(JobHandle inputDeps)
         {
-            if (!_handles.IsCreated)
+            if (!Handles.IsCreated)
                 return inputDeps;
 
-            if (_sentinelId != 0)
+            if (SentinelId != 0)
             {
-                NativeMemorySentinel.Unregister(_sentinelId);
-                _sentinelId = 0;
+                NativeMemorySentinel.Unregister(SentinelId);
+                SentinelId = 0;
             }
 
             MemoryBudgetTracker.Unregister(BudgetOwner);
-            JobHandle disposeHandle = _handles.Dispose(inputDeps);
-            _handles = default;
-            _capacity = 0;
-            _count = 0;
-            _writeIndex = 0;
+            JobHandle disposeHandle = Handles.Dispose(inputDeps);
+            Handles = default;
+            Capacity = 0;
+            Count = 0;
+            WriteIndex = 0;
             return disposeHandle;
         }
 
         private void ClearRegisteredSlots()
         {
-            if (_count <= 0)
+            if (Count <= 0)
                 return;
 
-            int readIndex = _writeIndex - _count;
+            int readIndex = WriteIndex - Count;
             while (readIndex < 0)
-                readIndex += _capacity;
+                readIndex += Capacity;
 
-            for (int i = 0; i < _count; i++)
+            for (int i = 0; i < Count; i++)
             {
-                _handles[readIndex] = default;
+                Handles[readIndex] = default;
                 readIndex++;
-                if (readIndex >= _capacity)
+                if (readIndex >= Capacity)
                     readIndex = 0;
             }
 
-            _count = 0;
-            _writeIndex = 0;
+            Count = 0;
+            WriteIndex = 0;
         }
 
         private JobHandle CombineRegisteredHandles()
         {
-            int readIndex = _writeIndex - _count;
+            int readIndex = WriteIndex - Count;
             if (readIndex < 0)
-                readIndex += _capacity;
+                readIndex += Capacity;
 
-            JobHandle combined = _handles[readIndex];
-            for (int i = 1; i < _count; i++)
+            JobHandle combined = Handles[readIndex];
+            for (int i = 1; i < Count; i++)
             {
                 readIndex++;
-                if (readIndex >= _capacity)
+                if (readIndex >= Capacity)
                     readIndex = 0;
 
-                combined = JobHandle.CombineDependencies(combined, _handles[readIndex]);
+                combined = JobHandle.CombineDependencies(combined, Handles[readIndex]);
             }
 
             return combined;

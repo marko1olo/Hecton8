@@ -33,7 +33,6 @@ Shader "Hidden/Hecton8/BiosDiagnostic"
                 float4 _HectonBiosLootSphere;
             CBUFFER_END
 
-            float4 _TotalUniverseOffset;
             TEXTURE2D_X(_BlitTexture);
 
             struct Attributes
@@ -98,9 +97,8 @@ Shader "Hidden/Hecton8/BiosDiagnostic"
 #endif
                     {
                         float3 worldPos = ComputeWorldSpacePosition(uv, depth, UNITY_MATRIX_I_VP);
-                        float3 absoluteWorld = worldPos + _TotalUniverseOffset.xyz;
                         float radius = max(0.1, _HectonBiosLootSphere.w);
-                        float3 lootDelta = absoluteWorld - _HectonBiosLootSphere.xyz;
+                        float3 lootDelta = worldPos - _HectonBiosLootSphere.xyz;
                         float distSq = dot(lootDelta, lootDelta);
                         float innerRadius = radius * 0.72;
                         loot = 1.0 - smoothstep(innerRadius * innerRadius, radius * radius, distSq);

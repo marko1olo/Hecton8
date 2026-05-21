@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -12,31 +13,55 @@ namespace Hecton8.World
     /// Blittable parameter block for the sandbox tectonic shelf height function.
     /// </summary>
     [System.Serializable]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 104)]
     public struct HectonSandboxAbyssalShelfParams
     {
+        [FieldOffset(0)]
         public double AupCellSizeMeters;
+        [FieldOffset(8)]
         public double DescentRadiusMeters;
+        [FieldOffset(16)]
         public double PlateCellSizeMeters;
+        [FieldOffset(24)]
         public float HighWorldY;
+        [FieldOffset(28)]
         public float LowWorldY;
+        [FieldOffset(32)]
         public float RidgeHeightMeters;
+        [FieldOffset(36)]
         public float RidgeMultiplier;
+        [FieldOffset(40)]
         public float RidgeWidthMeters;
+        [FieldOffset(44)]
         public float JunctionWidthMeters;
+        [FieldOffset(48)]
         public float PlateUniformity;
+        [FieldOffset(52)]
         public float DomainWarpMeters;
+        [FieldOffset(56)]
         public float DomainWarpFrequency;
+        [FieldOffset(60)]
         public float SlopeNoiseFrequency;
+        [FieldOffset(64)]
         public float MacroExponentialFalloff;
+        [FieldOffset(68)]
         public float ShelfRunMeters;
+        [FieldOffset(72)]
         public float ShelfTargetSlopeDegrees;
+        [FieldOffset(76)]
         public float TrenchDepthMeters;
+        [FieldOffset(80)]
         public float TrenchWidthMeters;
+        [FieldOffset(84)]
         public float TrenchSharpness;
+        [FieldOffset(88)]
         public float IslandCenterRadiusMeters;
+        [FieldOffset(92)]
         public float IslandJunctionThreshold;
+        [FieldOffset(96)]
         public uint Seed;
+        [FieldOffset(100)]
+        private uint _pad0;
     }
 
     public struct HectonSandboxAbyssalShelfRidgeData
@@ -103,7 +128,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst-safe terrain math for the HECTON sandbox planetary shelf.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public static class HectonSandboxAbyssalShelfMath
     {
         /// <summary>
@@ -113,7 +138,7 @@ namespace Hecton8.World
         /// <param name="absoluteZ">Absolute Universe Position Z in meters.</param>
         /// <param name="parameters">Terrain function parameters.</param>
         /// <returns>Absolute world Y in meters.</returns>
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float EvaluateHeightMeters(
             double absoluteX,
@@ -183,7 +208,7 @@ namespace Hecton8.World
         /// <param name="position">Absolute Universe Position payload.</param>
         /// <param name="parameters">Terrain function parameters.</param>
         /// <returns>Absolute world Y in meters.</returns>
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float EvaluateHeightMeters(
             in AbsoluteUniversePosition position,
@@ -204,7 +229,7 @@ namespace Hecton8.World
         /// <param name="position">Absolute Universe Position payload.</param>
         /// <param name="parameters">Terrain function parameters.</param>
         /// <returns>Voronoi edge, junction, island, and trench masks in [0,1].</returns>
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void EvaluateVoronoiRidgeData(
             in AbsoluteUniversePosition position,
@@ -641,10 +666,10 @@ namespace Hecton8.World
     /// <summary>
     /// Generates raw normalized heights for the sandbox abyssal shelf.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HectonSandboxAbyssalShelfBaseJob : IJobParallelFor
     {
-        [WriteOnly] public NativeArray<float> OutputHeights01;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputHeights01;
         public HectonSandboxAbyssalShelfParams Parameters;
         public int Width;
         public AbsoluteUniversePosition WorldOriginAup;
@@ -670,11 +695,11 @@ namespace Hecton8.World
     /// <summary>
     /// Quantizes shallow slopes into shelves and steep slopes into cliffs.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HectonSandboxSlopeQuantizationJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> InputHeights01;
-        [WriteOnly] public NativeArray<float> OutputHeights01;
+        [ReadOnly, NoAlias] public NativeArray<float> InputHeights01;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputHeights01;
         public int Width;
         public int Height;
         public float CellSizeMeters;
@@ -743,11 +768,11 @@ namespace Hecton8.World
     /// <summary>
     /// Samples the shelf function over AUP stress positions for smoke validation.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HectonSandboxAbyssalShelfSmokeSampleJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<AbsoluteUniversePosition> PositionsAup;
-        [WriteOnly] public NativeArray<HectonSandboxAbyssalShelfAuditSample> OutputSamples;
+        [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePosition> PositionsAup;
+        [WriteOnly, NoAlias] public NativeArray<HectonSandboxAbyssalShelfAuditSample> OutputSamples;
         public HectonSandboxAbyssalShelfParams Parameters;
         public double SlopeProbeMeters;
 
@@ -807,11 +832,11 @@ namespace Hecton8.World
     /// <summary>
     /// Converts smoke samples into per-sample reduction records without managed loops.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HectonSandboxAbyssalShelfSmokeReductionJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<HectonSandboxAbyssalShelfAuditSample> Samples;
-        [WriteOnly] public NativeArray<HectonSandboxAbyssalShelfSampleReduction> Reductions;
+        [ReadOnly, NoAlias] public NativeArray<HectonSandboxAbyssalShelfAuditSample> Samples;
+        [WriteOnly, NoAlias] public NativeArray<HectonSandboxAbyssalShelfSampleReduction> Reductions;
 
         public void Execute(int index)
         {
@@ -838,11 +863,11 @@ namespace Hecton8.World
     /// <summary>
     /// Final cold-path smoke summary reduction. Runs under Burst after the parallel sample pass.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HectonSandboxAbyssalShelfSmokeSummaryJob : IJob
     {
-        [ReadOnly] public NativeArray<HectonSandboxAbyssalShelfSampleReduction> Reductions;
-        [WriteOnly] public NativeArray<HectonSandboxAbyssalShelfSmokeSummary> Summary;
+        [ReadOnly, NoAlias] public NativeArray<HectonSandboxAbyssalShelfSampleReduction> Reductions;
+        [WriteOnly, NoAlias] public NativeArray<HectonSandboxAbyssalShelfSmokeSummary> Summary;
 
         public HectonSandboxAbyssalShelfParams Parameters;
         public int RequiredSampleCount;

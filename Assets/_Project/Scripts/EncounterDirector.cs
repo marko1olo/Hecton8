@@ -273,6 +273,7 @@ namespace Hecton8.Systems.AI
         private const float FrustumRejectPadding = 3f;
         private const float SafeIdleStressDecayPerTick = 0.06f;
         private const float InvHash24Max = 1f / 16777215f;
+        private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
 
         private NativeArray<EncounterDirectorState> _frontState;
         private NativeArray<EncounterDirectorState> _backState;
@@ -326,17 +327,17 @@ namespace Hecton8.Systems.AI
 
         internal EncounterDirector()
         {
-            _frontState = new NativeArray<EncounterDirectorState>(1, Allocator.Persistent);
-            _backState = new NativeArray<EncounterDirectorState>(1, Allocator.Persistent);
-            _enemyTokens = new NativeArray<EncounterEnemyToken>(MaxActiveEnemies, Allocator.Persistent);
-            _frustumPlanes = new NativeArray<float4>(FrustumPlaneCount, Allocator.Persistent);
-            _candidateDirections = new NativeArray<float3>(HighCandidateCount, Allocator.Persistent);
-            _jobOutput = new NativeArray<EncounterJobOutput>(1, Allocator.Persistent);
+            _frontState = new NativeArray<EncounterDirectorState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _backState = new NativeArray<EncounterDirectorState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _enemyTokens = new NativeArray<EncounterEnemyToken>(MaxActiveEnemies, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _frustumPlanes = new NativeArray<float4>(FrustumPlaneCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _candidateDirections = new NativeArray<float3>(HighCandidateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _jobOutput = new NativeArray<EncounterJobOutput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _spawnRequests = new NativeArray<EncounterSpawnRequest>(HeadlessSpawnRequestCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _despawnRequests = new NativeArray<int>(HeadlessDespawnRequestCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _debugEventRing = new NativeArray<EncounterDebugEvent>(DebugEventRingCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _debugEventHead = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _headlessEntities = new NativeList<HeadlessEntity>(HeadlessEntityCapacity, Allocator.Persistent);
+            _headlessEntities = new NativeList<HeadlessEntity>(HeadlessEntityCapacity, DataVaultExemptSceneScratchAllocator);
             // COLD ALLOC: HeadlessEntity[1024] - data-only encounter threat slots, no GameObject hydration - owner: EncounterDirector
             for (int i = 0; i < HeadlessEntityCapacity; i++)
                 _headlessEntities.Add(default);
@@ -1170,7 +1171,9 @@ namespace Hecton8.Systems.AI
             if (_nextHeadlessEntitySequence == 0)
                 _nextHeadlessEntitySequence = 1;
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
+            if (!TryResolveRuntimeAup(spawnPosition, out AbsoluteUniversePosition aup))
+                return false;
+
             HeadlessEntity entity = default;
             entity.EntityId = HeadlessEntityIdBase | _nextHeadlessEntitySequence;
             entity.ThreatClass = (int)threatClass;
@@ -1183,6 +1186,23 @@ namespace Hecton8.Systems.AI
             entity.AgeColdTicks = 0;
             _headlessEntities[slot] = entity;
             return true;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 local = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(local)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(local.x, local.y, local.z));
+            return positionAup.IsFinite();
         }
 
         private bool TryReleaseHeadlessEntity(int entityId, bool refundHalfCost, bool decrementActiveCount, out bool releasedPredator)

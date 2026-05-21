@@ -1,4 +1,6 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using System.IO;
 using System.Collections.Generic;
@@ -99,9 +101,8 @@ namespace Hecton8.Physics
         private bool _registeredLateFrameTick;
         private bool _registeredSlowTick;
         private bool _registeredOriginShiftListener;
-        private VaultBufferHandle<TetherManagerTelemetryEntry> _telemetryRingHandle;
-        private VaultBufferHandle<int> _telemetryHeadHandle;
-        private uint _telemetryResolvedGeneration;
+        private VaultGenerationHandle<TetherManagerTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<int> _telemetryHeadHandle;
         private JobHandle _shinobu143AupMockHandle;
         private bool _shinobu143AupMockScheduled;
         private long _shinobu143AupMockScheduleTicks;
@@ -128,13 +129,29 @@ namespace Hecton8.Physics
         internal HectonFluidEngine CachedFluidEngine => _cachedFluidEngine;
         internal IWeatherService CachedWeatherService => _cachedWeatherService;
 
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Size = 16)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct TetherManagerTelemetryEntry
         {
+            [System.Runtime.InteropServices.FieldOffset(0)]
             public uint FrameIndex;
+            [System.Runtime.InteropServices.FieldOffset(4)]
             public int ActiveTethers;
+            [System.Runtime.InteropServices.FieldOffset(8)]
             public float PeakTension;
+            [System.Runtime.InteropServices.FieldOffset(12)]
             public uint Flags;
+            [System.Runtime.InteropServices.FieldOffset(16)]
+            private ulong _pad0;
+            [System.Runtime.InteropServices.FieldOffset(24)]
+            private ulong _pad1;
+            [System.Runtime.InteropServices.FieldOffset(32)]
+            private ulong _pad2;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            private ulong _pad3;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private ulong _pad4;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private ulong _pad5;
         }
 
         private void Awake()
@@ -291,7 +308,6 @@ namespace Hecton8.Physics
 
             _telemetryRingHandle = default;
             _telemetryHeadHandle = default;
-            _telemetryResolvedGeneration = 0u;
             _dataVault = null;
             _cachedVegetationBridge = null;
             _cachedFluidEngine = null;
@@ -920,9 +936,9 @@ namespace Hecton8.Physics
             cameraPosition = sourceTransform != null ? sourceTransform.position : Vector3.zero;
             if (!math.all(math.isfinite(new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z))))
             {
-                cameraAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+                cameraAup = GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
                 cameraPosition = Vector3.zero;
-                return false;
+                return math.all(math.isfinite(cameraAup));
             }
 
             HectonPlayerMovement movement = _cachedPlayerMovement;
@@ -936,8 +952,28 @@ namespace Hecton8.Physics
                 return math.all(math.isfinite(cameraAup));
             }
 
-            cameraAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cameraPosition);
-            return math.all(math.isfinite(cameraAup));
+            return TryResolveRuntimeAup(cameraPosition, out cameraAup);
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!positionAup.IsFinite())
+                return false;
+
+            absoluteAup = positionAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
         }
 
         private void ScheduleShinobu143AupMock(float fixedDeltaTime, uint frameIndex)
@@ -1065,30 +1101,59 @@ namespace Hecton8.Physics
             if (_dataVault == null)
                 return false;
 
-            if (!_dataVault.TryGetBufferHandle(BufferID.Shinobu143TetherAupNodes, out VaultBufferHandle<TetherNodeDTO> nodeHandle) ||
-                !_dataVault.TryGetBufferHandle(BufferID.Shinobu143TetherConstraints, out VaultBufferHandle<TetherConstraintDTO> constraintHandle) ||
-                !_dataVault.TryGetBufferHandle(BufferID.Shinobu143TetherEndpoints, out VaultBufferHandle<TetherEndpointAupDTO> endpointHandle) ||
-                !_dataVault.TryGetBufferHandle(BufferID.Shinobu143TetherSegmentTensions, out VaultBufferHandle<float> tensionHandle) ||
-                !_dataVault.TryGetBufferHandle(BufferID.Shinobu143TetherSolverStats, out VaultBufferHandle<float> statsHandle) ||
-                !_dataVault.TryGetBufferHandle(BufferID.Shinobu143TetherForcePackets, out VaultBufferHandle<TetherForcePacketDTO> forceHandle) ||
-                !_dataVault.TryGetBufferHandle(BufferID.Shinobu143TetherTelemetryRing, out VaultBufferHandle<TetherAupTelemetryEntry> telemetryHandle) ||
-                !_dataVault.TryGetBufferHandle(BufferID.Shinobu143TetherTelemetryHead, out VaultBufferHandle<int> headHandle) ||
-                !_dataVault.TryGetBufferHandle(BufferID.Shinobu143TetherPinnedAups, out VaultBufferHandle<double3> pinnedAupHandle) ||
-                !_dataVault.TryGetBufferHandle(BufferID.Shinobu143TetherPinnedMask, out VaultBufferHandle<byte> pinnedMaskHandle))
+            if (!TryOpenExistingPhysicsVaultBuffer(
+                    _dataVault,
+                    BufferID.Shinobu143TetherAupNodes,
+                    TetherAupRuntimeConstants.MockNodeCapacity,
+                    out nodes) ||
+                !TryOpenExistingPhysicsVaultBuffer(
+                    _dataVault,
+                    BufferID.Shinobu143TetherConstraints,
+                    TetherAupRuntimeConstants.MockConstraintCapacity,
+                    out constraints) ||
+                !TryOpenExistingPhysicsVaultBuffer(
+                    _dataVault,
+                    BufferID.Shinobu143TetherEndpoints,
+                    TetherAupRuntimeConstants.MockTetherCount,
+                    out endpoints) ||
+                !TryOpenExistingPhysicsVaultBuffer(
+                    _dataVault,
+                    BufferID.Shinobu143TetherSegmentTensions,
+                    TetherAupRuntimeConstants.MockConstraintCapacity,
+                    out segmentTensions) ||
+                !TryOpenExistingPhysicsVaultBuffer(
+                    _dataVault,
+                    BufferID.Shinobu143TetherSolverStats,
+                    TetherAupRuntimeConstants.SolverStatsCapacity,
+                    out solverStats) ||
+                !TryOpenExistingPhysicsVaultBuffer(
+                    _dataVault,
+                    BufferID.Shinobu143TetherForcePackets,
+                    TetherAupRuntimeConstants.MockForcePacketCapacity,
+                    out forcePackets) ||
+                !TryOpenExistingPhysicsVaultBuffer(
+                    _dataVault,
+                    BufferID.Shinobu143TetherTelemetryRing,
+                    TetherAupRuntimeConstants.TelemetryCapacity,
+                    out telemetryRing) ||
+                !TryOpenExistingPhysicsVaultBuffer(
+                    _dataVault,
+                    BufferID.Shinobu143TetherTelemetryHead,
+                    1,
+                    out telemetryHead) ||
+                !TryOpenExistingPhysicsVaultBuffer(
+                    _dataVault,
+                    BufferID.Shinobu143TetherPinnedAups,
+                    TetherAupRuntimeConstants.MockNodeCapacity,
+                    out pinnedAups) ||
+                !TryOpenExistingPhysicsVaultBuffer(
+                    _dataVault,
+                    BufferID.Shinobu143TetherPinnedMask,
+                    TetherAupRuntimeConstants.MockNodeCapacity,
+                    out pinnedMask))
             {
                 return false;
             }
-
-            nodes = nodeHandle.Resolve(_dataVault);
-            constraints = constraintHandle.Resolve(_dataVault);
-            endpoints = endpointHandle.Resolve(_dataVault);
-            segmentTensions = tensionHandle.Resolve(_dataVault);
-            solverStats = statsHandle.Resolve(_dataVault);
-            forcePackets = forceHandle.Resolve(_dataVault);
-            telemetryRing = telemetryHandle.Resolve(_dataVault);
-            telemetryHead = headHandle.Resolve(_dataVault);
-            pinnedAups = pinnedAupHandle.Resolve(_dataVault);
-            pinnedMask = pinnedMaskHandle.Resolve(_dataVault);
 
             return nodes.IsCreated &&
                 constraints.IsCreated &&
@@ -1192,6 +1257,94 @@ namespace Hecton8.Physics
             return peak;
         }
 
+        private bool OpenOrAcquirePhysicsVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (TryOpenPhysicsVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                return TryOpenPhysicsVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.Physics,
+                options);
+            return TryOpenPhysicsVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenExistingPhysicsVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
+            {
+                return false;
+            }
+
+            return TryOpenPhysicsVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenPhysicsVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsPhysicsVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsPhysicsVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.Physics &&
+                   handle.Generation != 0u;
+        }
+
         private void EnsureTelemetry()
         {
             TryResolveTelemetry(out _, out _);
@@ -1206,39 +1359,32 @@ namespace Hecton8.Physics
             if (_dataVault == null)
                 return false;
 
-            bool resetHead = !_telemetryHeadHandle.IsCreated;
-            bool generationChanged = _telemetryResolvedGeneration != _dataVault.VaultGenerationID;
-            if (!_telemetryRingHandle.IsCreated || _telemetryRingHandle.Length < TetherBlackBoxCapacity)
-            {
-                _telemetryRingHandle = _dataVault.GetBufferHandle<TetherManagerTelemetryEntry>(
+            uint previousRingGeneration = _telemetryRingHandle.Generation;
+            uint previousHeadGeneration = _telemetryHeadHandle.Generation;
+            bool resetHead = !IsPhysicsVaultHandle(in _telemetryHeadHandle, BufferID.TetherManagerBlackBoxHead);
+            if (!OpenOrAcquirePhysicsVaultBuffer(
+                    ref _telemetryRingHandle,
                     BufferID.TetherManagerBlackBox,
                     TetherBlackBoxCapacity,
-                    SystemID.Physics,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_telemetryHeadHandle.IsCreated || _telemetryHeadHandle.Length < 1)
-            {
-                _telemetryHeadHandle = _dataVault.GetBufferHandle<int>(
+                    NativeArrayOptions.ClearMemory,
+                    out telemetryRing) ||
+                !OpenOrAcquirePhysicsVaultBuffer(
+                    ref _telemetryHeadHandle,
                     BufferID.TetherManagerBlackBoxHead,
                     1,
-                    SystemID.Physics,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            telemetryRing = _telemetryRingHandle.Resolve(_dataVault);
-            telemetryHead = _telemetryHeadHandle.Resolve(_dataVault);
-            if (!telemetryRing.IsCreated || !telemetryHead.IsCreated)
+                    NativeArrayOptions.ClearMemory,
+                    out telemetryHead))
             {
                 _telemetryRingHandle = default;
                 _telemetryHeadHandle = default;
-                _telemetryResolvedGeneration = 0u;
                 return false;
             }
 
             if (resetHead)
                 telemetryHead[0] = 0;
-            _telemetryResolvedGeneration = _dataVault.VaultGenerationID;
+            bool generationChanged =
+                (previousRingGeneration != 0u && previousRingGeneration != _telemetryRingHandle.Generation) ||
+                (previousHeadGeneration != 0u && previousHeadGeneration != _telemetryHeadHandle.Generation);
             if (generationChanged)
                 _telemetryDumped = false;
             return true;

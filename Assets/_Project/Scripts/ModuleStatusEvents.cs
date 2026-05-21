@@ -67,6 +67,7 @@ public static class ModuleStatusEvents
     private const uint PlayerInsideStatusFlag = 1u << 3;
     private const uint AirQualityLowStatusFlag = 1u << 4;
     private const uint CascadeFailureStatusFlag = 1u << 5;
+    private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
     public static bool IsEnterEvent(in ModuleStatusEventPayload payload)
     {
@@ -113,8 +114,79 @@ public static class ModuleStatusEvents
         }
     }
 
-    // COLD ALLOC: RegistryBucket<IModuleStatusEventListener>[16] — module status listeners drained by SystemDispatcher LateUpdate — owner: ModuleStatusEvents
-    private static readonly RegistryBucket<IModuleStatusEventListener> _listeners = new RegistryBucket<IModuleStatusEventListener>(ListenerCapacity);
+    private struct ListenerSlot
+    {
+        public IModuleStatusEventListener Listener;
+
+        public void Clear()
+        {
+            Listener = null;
+        }
+    }
+
+    private struct ModuleStatusListenerRegistry
+    {
+        private readonly ListenerSlot[] _slots;
+        private int _count;
+
+        public ModuleStatusListenerRegistry(int capacity)
+        {
+            _slots = new ListenerSlot[capacity];
+            _count = 0;
+        }
+
+        public int Count => _count;
+
+        public void Clear()
+        {
+            for (int i = 0; i < _count; i++)
+                _slots[i].Clear();
+
+            _count = 0;
+        }
+
+        public bool Contains(IModuleStatusEventListener listener)
+        {
+            for (int i = 0; i < _count; i++)
+            {
+                if (ReferenceEquals(_slots[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool TryRegister(IModuleStatusEventListener listener)
+        {
+            if (listener == null || _count >= _slots.Length)
+                return false;
+
+            _slots[_count++].Listener = listener;
+            return true;
+        }
+
+        public void Unregister(IModuleStatusEventListener listener)
+        {
+            for (int i = 0; i < _count; i++)
+            {
+                if (!ReferenceEquals(_slots[i].Listener, listener))
+                    continue;
+
+                _count--;
+                _slots[i] = _slots[_count];
+                _slots[_count].Clear();
+                return;
+            }
+        }
+
+        public IModuleStatusEventListener GetAt(int index)
+        {
+            return (uint)index < (uint)_count ? _slots[index].Listener : null;
+        }
+    }
+
+    // COLD ALLOC: ListenerSlot[16] — module status listeners drained by SystemDispatcher LateUpdate — owner: ModuleStatusEvents
+    private static ModuleStatusListenerRegistry _listeners = new ModuleStatusListenerRegistry(ListenerCapacity);
     // COLD ALLOC: ModuleReferenceSlot[128] — managed BaseModule sidecar for unmanaged module status payloads — owner: ModuleStatusEvents
     private static readonly ModuleReferenceSlot[] _referenceSlots = new ModuleReferenceSlot[ReferenceSlotCapacity];
     // COLD ALLOC: bool[128] — sidecar occupancy map prevents overwrite before deferred dispatch — owner: ModuleStatusEvents
@@ -169,7 +241,7 @@ public static class ModuleStatusEvents
 
         EnsureInitialized();
         if (!_listeners.Contains(listener))
-            _listeners.Register(listener);
+            _listeners.TryRegister(listener);
     }
 
     /// <summary>
@@ -210,14 +282,13 @@ public static class ModuleStatusEvents
             if (_pendingEventCount > 0)
                 _pendingEventCount--;
 
-            IModuleStatusEventListener[] rawArray = _listeners.RawArray;
             int count = _listeners.Count;
             _isDispatching = true;
             try
             {
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    IModuleStatusEventListener listener = rawArray[i];
+                    IModuleStatusEventListener listener = _listeners.GetAt(i);
                     if (listener != null)
                         listener.OnModuleStatusEvent(in payload);
                 }
@@ -296,7 +367,7 @@ public static class ModuleStatusEvents
     {
         if (!_pendingEvents.IsCreated)
         {
-            _pendingEvents = new NativeQueue<ModuleStatusEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] — deferred module status event lane flushed by SystemDispatcher LateUpdate — owner: ModuleStatusEvents
+            _pendingEvents = new NativeQueue<ModuleStatusEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] — deferred module status event lane flushed by SystemDispatcher LateUpdate — owner: ModuleStatusEvents
             NativeMemorySentinel.RegisterNativeQueue(
                 _pendingEvents,
                 PendingEventCapacity,
@@ -308,7 +379,7 @@ public static class ModuleStatusEvents
 
         if (!_nextFrameEvents.IsCreated)
         {
-            _nextFrameEvents = new NativeQueue<ModuleStatusEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] — next-frame module status lane prevents same-frame reentrant dispatch — owner: ModuleStatusEvents
+            _nextFrameEvents = new NativeQueue<ModuleStatusEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] — next-frame module status lane prevents same-frame reentrant dispatch — owner: ModuleStatusEvents
             NativeMemorySentinel.RegisterNativeQueue(
                 _nextFrameEvents,
                 PendingEventCapacity,

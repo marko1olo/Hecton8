@@ -15,11 +15,14 @@ namespace Hecton8.Editor.Physics
         private Slider _scalarFallbackSlider;
         private VisualElement _vectorBar;
         private VisualElement _scalarBar;
+        private VisualElement _throughputBar;
         private int _lastCursor = int.MinValue;
         private int _lastEntityCount = int.MinValue;
         private int _lastVectorCentis = int.MinValue;
         private int _lastThroughputCentis = int.MinValue;
         private int _lastScalarFallbackCentis = int.MinValue;
+        private bool _runtimeUnavailableStatusShown;
+        private bool _telemetryStatusShown;
 
         [MenuItem("HECTON-8/Physics/Burst Vectorization X-Ray")]
         public static void Open()
@@ -51,6 +54,9 @@ namespace Hecton8.Editor.Physics
             rootVisualElement.Add(new Label("Scalar us"));
             _scalarBar = CreateBar(0.95f, 0.35f, 0.18f);
             rootVisualElement.Add(_scalarBar);
+            rootVisualElement.Add(new Label("Entities/ms"));
+            _throughputBar = CreateBar(0.2f, 0.8f, 0.35f);
+            rootVisualElement.Add(_throughputBar);
 
             _statusLabel = new Label("Play Mode runtime and GlobalDataVault required.");
             _statusLabel.style.marginTop = 8;
@@ -101,9 +107,7 @@ namespace Hecton8.Editor.Physics
         {
             bool ok = BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime) &&
                       runtime.TryLoadSimdMathTolerancesCsv();
-            int write = 0;
-            AppendLiteral(_readoutBuffer, ref write, ok ? "SIMD tolerance CSV loaded." : "SIMD tolerance CSV not loaded.");
-            _statusLabel.text = new string(_readoutBuffer, 0, write);
+            _statusLabel.text = ok ? "SIMD tolerance CSV loaded." : "SIMD tolerance CSV not loaded.";
         }
 
         private void RefreshTelemetry()
@@ -112,17 +116,27 @@ namespace Hecton8.Editor.Physics
                 return;
 
             if (!BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime) ||
-                !runtime.TryResolveSimdEditorViews(
+                !runtime.TryOpenSimdEditorViews(
                     out NativeArray<SimdTelemetryEntry> telemetry,
                     out NativeArray<int> cursor,
                     out _))
             {
-                _statusLabel.text = "Play Mode runtime and GlobalDataVault required.";
+                if (!_runtimeUnavailableStatusShown)
+                    _statusLabel.text = "Play Mode runtime and GlobalDataVault required.";
+                _runtimeUnavailableStatusShown = true;
+                _telemetryStatusShown = false;
                 return;
             }
 
             if (!telemetry.IsCreated || telemetry.Length <= 0 || !cursor.IsCreated || cursor.Length <= 0)
                 return;
+
+            _runtimeUnavailableStatusShown = false;
+            if (!_telemetryStatusShown)
+            {
+                _statusLabel.text = "SIMD telemetry bars read the Vault ring without rebuilding text every editor tick.";
+                _telemetryStatusShown = true;
+            }
 
             PullSimdTuning();
 
@@ -145,25 +159,7 @@ namespace Hecton8.Editor.Physics
             _lastThroughputCentis = throughputCentis;
             SetBarWidth(_vectorBar, entry.VectorMicros);
             SetBarWidth(_scalarBar, entry.ScalarMicros);
-
-            int write = 0;
-            AppendLiteral(_readoutBuffer, ref write, "SIMD telemetry\nKernel: 0x");
-            AppendHex8(_readoutBuffer, ref write, entry.KernelHash);
-            AppendLiteral(_readoutBuffer, ref write, "\nEntities: ");
-            AppendInt(_readoutBuffer, ref write, entry.EntityCount);
-            AppendLiteral(_readoutBuffer, ref write, "\nVector us: ");
-            AppendFixed2(_readoutBuffer, ref write, vectorCentis);
-            AppendLiteral(_readoutBuffer, ref write, "\nScalar us: ");
-            AppendFixed2(_readoutBuffer, ref write, ToCentis(entry.ScalarMicros));
-            AppendLiteral(_readoutBuffer, ref write, "\nEntities/ms: ");
-            AppendFixed2(_readoutBuffer, ref write, throughputCentis);
-            AppendLiteral(_readoutBuffer, ref write, "\nThroughput drop 0..1: ");
-            AppendFixed2(_readoutBuffer, ref write, ToCentis(entry.ThroughputDrop01));
-            AppendLiteral(_readoutBuffer, ref write, "\nQ: ");
-            AppendFixed2(_readoutBuffer, ref write, ToCentis(entry.GlobalQualityWeight));
-            AppendLiteral(_readoutBuffer, ref write, "\nFlags: 0x");
-            AppendHex8(_readoutBuffer, ref write, entry.Flags);
-            _statusLabel.text = new string(_readoutBuffer, 0, write);
+            SetScaledBarWidth(_throughputBar, entry.EntitiesPerMillisecond, 0.0002f);
         }
 
         private void PullSimdTuning()
@@ -172,7 +168,7 @@ namespace Hecton8.Editor.Physics
                 return;
 
             if (!BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime) ||
-                !runtime.TryResolveSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO> tuning) ||
+                !runtime.TryOpenSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO> tuning) ||
                 !tuning.IsCreated ||
                 tuning.Length <= 0)
             {
@@ -193,7 +189,7 @@ namespace Hecton8.Editor.Physics
                 return;
 
             if (!BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime) ||
-                !runtime.TryResolveSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO> tuning) ||
+                !runtime.TryOpenSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO> tuning) ||
                 !tuning.IsCreated ||
                 tuning.Length <= 0)
             {
@@ -228,6 +224,15 @@ namespace Hecton8.Editor.Physics
                 return;
 
             float width = math.clamp(math.select(1f, micros * 0.05f, math.isfinite(micros)), 1f, 320f);
+            bar.style.width = width;
+        }
+
+        private static void SetScaledBarWidth(VisualElement bar, float value, float scale)
+        {
+            if (bar == null)
+                return;
+
+            float width = math.clamp(math.select(1f, value * scale, math.isfinite(value)), 1f, 320f);
             bar.style.width = width;
         }
 

@@ -721,18 +721,30 @@ namespace Hecton8.Core
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
 
+            NativeArray<byte> bytes = default;
+            NativeArray<byte> mmfScratch = default;
+            NativeArray<byte> dumpHeader = default;
+            NativeArray<TelemetryEventDTO> events = default;
+            NativeArray<BlackboxSourceSlot> sources = default;
+            NativeArray<TelemetryLoggingMaskDTO> loggingMasks = default;
+            NativeArray<int> atomicState = default;
+            NativeArray<int> watchdogCounters = default;
+            NativeArray<int> watchdogSamples = default;
+            NativeArray<int> watchdogStaleProbes = default;
+            NativeArray<int> watchdogActive = default;
+
             bool resolved =
-                vault.TryResolveHandle(in bytesHandle, out NativeArray<byte> bytes) &&
-                vault.TryResolveHandle(in mmfScratchHandle, out NativeArray<byte> mmfScratch) &&
-                vault.TryResolveHandle(in dumpHeaderHandle, out NativeArray<byte> dumpHeader) &&
-                vault.TryResolveHandle(in eventsHandle, out NativeArray<TelemetryEventDTO> events) &&
-                vault.TryResolveHandle(in sourcesHandle, out NativeArray<BlackboxSourceSlot> sources) &&
-                vault.TryResolveHandle(in loggingMasksHandle, out NativeArray<TelemetryLoggingMaskDTO> loggingMasks) &&
-                vault.TryResolveHandle(in atomicStateHandle, out NativeArray<int> atomicState) &&
-                vault.TryResolveHandle(in watchdogCountersHandle, out NativeArray<int> watchdogCounters) &&
-                vault.TryResolveHandle(in watchdogSamplesHandle, out NativeArray<int> watchdogSamples) &&
-                vault.TryResolveHandle(in watchdogStaleProbesHandle, out NativeArray<int> watchdogStaleProbes) &&
-                vault.TryResolveHandle(in watchdogActiveHandle, out NativeArray<int> watchdogActive);
+                vault.TryResolveHandle(in bytesHandle, out bytes) &&
+                vault.TryResolveHandle(in mmfScratchHandle, out mmfScratch) &&
+                vault.TryResolveHandle(in dumpHeaderHandle, out dumpHeader) &&
+                vault.TryResolveHandle(in eventsHandle, out events) &&
+                vault.TryResolveHandle(in sourcesHandle, out sources) &&
+                vault.TryResolveHandle(in loggingMasksHandle, out loggingMasks) &&
+                vault.TryResolveHandle(in atomicStateHandle, out atomicState) &&
+                vault.TryResolveHandle(in watchdogCountersHandle, out watchdogCounters) &&
+                vault.TryResolveHandle(in watchdogSamplesHandle, out watchdogSamples) &&
+                vault.TryResolveHandle(in watchdogStaleProbesHandle, out watchdogStaleProbes) &&
+                vault.TryResolveHandle(in watchdogActiveHandle, out watchdogActive);
 
             if (!resolved ||
                 !bytes.IsCreated || bytes.Length < byteCount ||

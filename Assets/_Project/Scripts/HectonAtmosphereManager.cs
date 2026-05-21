@@ -99,17 +99,31 @@ namespace Hecton8.Atmosphere
     {
         private const int ExpectedPendingStateEventCapacity = 8;
         private const int ListenerCapacity = 8;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private static readonly uint _listenerRejectedWarningHash = unchecked((uint)LocHash.Compute("AtmosphereEvents.ListenerRejected"));
         private static readonly uint _listenerExceptionWarningHash = unchecked((uint)LocHash.Compute("AtmosphereEvents.ListenerException"));
         private static readonly uint _listenerContextHash = unchecked((uint)LocHash.Compute("AtmosphereEvents.Listeners"));
 
-        private static readonly RegistryBucket<IAtmosphereStateEventListener> _listeners = new RegistryBucket<IAtmosphereStateEventListener>(ListenerCapacity);
-        // COLD ALLOC: IAtmosphereStateEventListener[8] - listener additions deferred while dispatching atmosphere state events - owner: AtmosphereEvents
-        private static readonly IAtmosphereStateEventListener[] _deferredRegisterListeners = new IAtmosphereStateEventListener[ListenerCapacity];
-        // COLD ALLOC: IAtmosphereStateEventListener[8] - listener removals deferred while dispatching atmosphere state events - owner: AtmosphereEvents
-        private static readonly IAtmosphereStateEventListener[] _deferredUnregisterListeners = new IAtmosphereStateEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public IAtmosphereStateEventListener Listener;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - bounded managed atmosphere state listeners, no interface array hot dispatch - owner: AtmosphereEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener additions deferred while dispatching atmosphere state events - owner: AtmosphereEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener removals deferred while dispatching atmosphere state events - owner: AtmosphereEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<EnvironmentState> _pendingStates;
         private static NativeQueue<EnvironmentState> _nextFrameStates;
+        private static int _listenerCount;
         private static int _pendingStateCount;
         private static int _nextFrameStateCount;
         private static int _deferredRegisterCount;
@@ -144,8 +158,16 @@ namespace Hecton8.Atmosphere
                 _nextFrameStates = default;
             }
 
-            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
-            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+                _deferredRegisterListeners[i].Clear();
+
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+                _deferredUnregisterListeners[i].Clear();
+
+            _listenerCount = 0;
             _pendingStateCount = 0;
             _nextFrameStateCount = 0;
             _deferredRegisterCount = 0;
@@ -155,7 +177,6 @@ namespace Hecton8.Atmosphere
             _lastListenerRejectedTelemetryFrame = -1;
             _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
-            _listeners.Clear();
         }
 
         /// <summary>
@@ -189,7 +210,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            _listeners.TryUnregister(listener);
+            TryUnregisterImmediate(listener);
         }
 
         /// <summary>
@@ -197,7 +218,7 @@ namespace Hecton8.Atmosphere
         /// </summary>
         public static void RaiseStateChanged(EnvironmentState state)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureInitialized();
@@ -236,14 +257,13 @@ namespace Hecton8.Atmosphere
                 if (_pendingStateCount > 0)
                     _pendingStateCount--;
                 scanBudget--;
-                IAtmosphereStateEventListener[] rawListeners = _listeners.RawArray;
-                int listenerCount = _listeners.Count;
+                int listenerCount = _listenerCount;
                 _isDispatching = true;
                 try
                 {
                     for (int i = listenerCount - 1; i >= 0; i--)
                     {
-                        IAtmosphereStateEventListener listener = rawListeners[i];
+                        IAtmosphereStateEventListener listener = _listeners[i].Listener;
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -268,7 +288,7 @@ namespace Hecton8.Atmosphere
         {
             if (!_pendingStates.IsCreated)
             {
-                _pendingStates = new NativeQueue<EnvironmentState>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - deferred atmosphere state lane flushed by SystemDispatcher - owner: AtmosphereEvents
+                _pendingStates = new NativeQueue<EnvironmentState>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - deferred atmosphere state lane flushed by SystemDispatcher - owner: AtmosphereEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingStates,
                     ExpectedPendingStateEventCapacity,
@@ -280,7 +300,7 @@ namespace Hecton8.Atmosphere
 
             if (!_nextFrameStates.IsCreated)
             {
-                _nextFrameStates = new NativeQueue<EnvironmentState>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - next-frame atmosphere state lane prevents same-frame reentrant dispatch - owner: AtmosphereEvents
+                _nextFrameStates = new NativeQueue<EnvironmentState>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - next-frame atmosphere state lane prevents same-frame reentrant dispatch - owner: AtmosphereEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameStates,
                     ExpectedPendingStateEventCapacity,
@@ -346,7 +366,7 @@ namespace Hecton8.Atmosphere
 
         private static void QueueDeferredRegister(IAtmosphereStateEventListener listener)
         {
-            if (_listeners.Contains(listener))
+            if (ContainsImmediate(listener))
             {
                 CancelDeferredUnregister(listener);
                 return;
@@ -361,7 +381,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IAtmosphereStateEventListener listener)
@@ -369,7 +389,7 @@ namespace Hecton8.Atmosphere
             if (CancelDeferredRegister(listener))
                 return;
 
-            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+            if (!ContainsImmediate(listener) || IsDeferredUnregisterPending(listener))
                 return;
 
             if (_deferredUnregisterCount >= ListenerCapacity)
@@ -378,19 +398,19 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IAtmosphereStateEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -401,12 +421,12 @@ namespace Hecton8.Atmosphere
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -415,7 +435,7 @@ namespace Hecton8.Atmosphere
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -426,7 +446,7 @@ namespace Hecton8.Atmosphere
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -437,18 +457,18 @@ namespace Hecton8.Atmosphere
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IAtmosphereStateEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IAtmosphereStateEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
-                    _listeners.TryUnregister(listener);
+                    TryUnregisterImmediate(listener);
             }
 
             _deferredUnregisterCount = 0;
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IAtmosphereStateEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IAtmosphereStateEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }
@@ -458,11 +478,43 @@ namespace Hecton8.Atmosphere
 
         private static void RegisterImmediate(IAtmosphereStateEventListener listener)
         {
-            if (_listeners.Contains(listener))
+            if (ContainsImmediate(listener))
                 return;
 
-            if (!_listeners.TryRegister(listener))
+            if (_listenerCount >= ListenerCapacity)
+            {
                 ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _listeners[_listenerCount++].Listener = listener;
+        }
+
+        private static bool TryUnregisterImmediate(IAtmosphereStateEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                _listenerCount--;
+                _listeners[i] = _listeners[_listenerCount];
+                _listeners[_listenerCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsImmediate(IAtmosphereStateEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void ReportListenerRegistrationRejected()
@@ -1776,7 +1828,9 @@ namespace Hecton8.Atmosphere
                 return true;
             }
 
-            AbsoluteUniversePosition currentAup = AbsoluteUniversePosition.FromRuntimePosition(samplePosition);
+            if (!TryBuildAupFromRuntimePosition(samplePosition, out AbsoluteUniversePosition currentAup))
+                return false;
+
             if (!_hasPendingBiomeInfluencePrimary ||
                 _pendingBiomeInfluencePrimaryId != nextPrimaryId)
             {
@@ -1794,6 +1848,23 @@ namespace Hecton8.Atmosphere
             _stableBiomeInfluencePrimaryId = nextPrimaryId;
             _hasPendingBiomeInfluencePrimary = false;
             return true;
+        }
+
+        private static bool TryBuildAupFromRuntimePosition(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private void ClearProceduralBiomeInfluenceHysteresis()

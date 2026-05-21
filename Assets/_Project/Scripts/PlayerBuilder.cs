@@ -3,12 +3,12 @@
 // Kontroller stroitelstva modulnoy bazy.
 //
 // v3.0 — SOCKET SNAP SYSTEM:
-//   [ADD] Sistema magnitnogo prilipaniya k tochkam stykovki (ModuleSocket).
+//   [ADD] Sistema magnitnogo prilipaniya k Vault socket rows.
 //   [ADD] Poisk soketov cherez SHINOBU_217 template/AUP resolver (zero GC target).
 //   [ADD] Gisterezis: snapRadius=2m, unsnapRadius=2.5m (bez mertsaniya).
 //   [ADD] Plavnyy snap/unsnap cherez eksponentsialnoe sglazhivanie.
-//   [ADD] Zanyatye sokety (IsOccupied) propuskayutsya pri poiske.
-//   [ADD] Pri razmeschenii: blizhayshiy soket pomechaetsya kak occupied.
+//   [ADD] Zanyatye sokety propuskayutsya po SocketStateDTO.ConnectionStatus.
+//   [ADD] Pri razmeschenii: zanyatost pishetsya v SocketConnectionPairDTO.
 //   [ADD] socketLayerMask dlya filtratsii (Layer "Sockets").
 //
 //   POVEDENIE:
@@ -23,7 +23,7 @@
 //
 //   ZERO GC:
 //     • Socket adapter math → no PhysX socket broadphase.
-//     • TryGetComponent<ModuleSocket> → zero GC.
+//     • Vault-owned SocketStateDTO/SocketConnectionPairDTO → no ModuleSocket authority branch.
 //     • Vse struct math, nikakih List/LINQ/lyambd.
 //
 // PREDYDUSchIE VERSII (sohraneny):
@@ -32,7 +32,6 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
 using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Caves;
@@ -42,7 +41,6 @@ using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using Hecton8.Modding;
 using Hecton8.Construction;
 using Hecton8.Physics;
 using Hecton8.UI;
@@ -162,20 +160,20 @@ namespace Hecton8.Building
         private Vector3 _builderGhostPreviewScale = Vector3.one;
         private JobHandle _builderGhostValidationHandle;
         private bool _builderGhostValidationPending;
+        private uint _builderGhostValidationSelectionGeneration;
         private uint _builderGhostValidationQueryHash;
         private uint _builderGhostValidationFrame;
         private long _builderGhostValidationStartTicks;
         private float _builderGhostValidationQuality;
         private float _builderGhostValidationMinSdf;
-        private uint _builderGhostValidationSdfCornerChecks;
         private uint _builderGhostValidationSolidCornerCount;
         private RaycastHit _hit;
-        private readonly RaycastHit[] _buildHits = new RaycastHit[1]; // COLD ALLOC: single surface probe for build targeting.
         private const float StructuralPlacementGridMeters = 4f;
         private const float StructuralPlacementGridInv = 0.25f;
         private const float StructuralRotationStepDegrees = 90f;
         private const float StructuralSnapRadiusMeters = 1f;
         private const float StructuralUnsnapRadiusMeters = 1.25f;
+        private const int BuildCostDigestCapacity = 32;
         private int _ghostYawStep;
         private static readonly Vector3 ViewportCenter = new Vector3(0.5f, 0.5f, 0f);
 
@@ -195,32 +193,23 @@ namespace Hecton8.Building
         private bool _isSnapped;
 
         /// <summary>
-        /// Transform soketa, k kotoromu prilip prizrak.
-        /// null kogda ne v snap-rezhime.
-        /// Keshiruetsya dlya: pozitsii, rotatsii, i otmetki occupied pri razmeschenii.
-        /// </summary>
-        private Transform _snappedSocketTransform;
-
-        /// <summary>
-        /// Keshirovannyy ModuleSocket komponent snapnutogo soketa.
-        /// Ispolzuetsya dlya proverki IsOccupied i SetOccupied pri razmeschenii.
-        /// </summary>
-        private ModuleSocket _snappedSocket;
-
-        /// <summary>
         /// Predyduschiy snap-status. Dlya edge detection (zvuk pri snap/unsnap).
         /// </summary>
         private bool _wasSnapped;
         private ModuleCatalog _buildCatalog;
         private int _activeBuildableIndex = -1;
-        // COLD ALLOC: List<MonoBehaviour>[2] — authored placement-rule scan buffer for the active buildable prefab — owner: PlayerBuilder
-        private readonly List<MonoBehaviour> _placementRuleBuffer = new List<MonoBehaviour>(2);
         private FixedCharBuffer _builderHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - builder HUD notification staging buffer - owner: PlayerBuilder
         private FixedCharBuffer _builderLogTitleBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - builder field-log title staging buffer - owner: PlayerBuilder
         private FixedCharBuffer _builderLogSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - builder field-log summary staging buffer - owner: PlayerBuilder
-        private IBuildPlacementRule _activePlacementRule;
+        private const byte PlacementRuleKindNone = 0;
+        private const byte PlacementRuleKindDeepDrill = 1;
+        private const byte PlacementRuleKindAutonomousExtractor = 2;
+        private byte _activePlacementRuleKind;
+        private DeepDrillModule _activeDeepDrillRule;
+        private AutonomousExtractorModule _activeAutonomousExtractorRule;
         private bool _semanticPlacementValid = true;
         private string _semanticPlacementBlockReason = string.Empty;
+        private uint _activeBuildableGeneration;
         private bool _terrainSdfPlacementValid = true;
         private string _terrainSdfPlacementBlockReason = string.Empty;
         private const float TerrainSdfBlockHapticCooldownSeconds = 0.35f;
@@ -237,6 +226,12 @@ namespace Hecton8.Building
         private static bool s_ConstructionSignalLanesInitialized;
         private HabitatConstructionManager _habitatConstructionManager;
         private ConstructionManager _cachedConstructionManager;
+        private ObjectPoolManager _cachedObjectPool;
+        private IHabitatDeconstructionSystem _cachedHabitatDeconstructionSystem;
+        private IInteractionSignalService _cachedInteractionSignalService;
+        private AutonomousExtractorSystem _cachedAutonomousExtractorSystem;
+        private IAudioService _cachedAudioService;
+        private ulong _buildRayRequesterId;
         private bool _shinobuHasSnappedPose;
         private Vector3 _shinobuSnappedPosePosition;
         private Quaternion _shinobuSnappedPoseRotation;
@@ -244,6 +239,7 @@ namespace Hecton8.Building
         private Vector3 _shinobuSnappedTargetLocalPosition;
         private ModuleSocketDirection _shinobuSnappedTargetDirection;
         private uint _shinobuSnappedTargetCompatibilityHash;
+        private int _shinobuSnappedTargetSocketIndex = -1;
         private int _shinobuSnappedGhostSocketIndex = -1;
         private float _shinobuDearLieDampen;
         private int _shinobuSocketAdapterCandidateCount;
@@ -251,10 +247,15 @@ namespace Hecton8.Building
         private uint _shinobuSocketVaultSceneHash;
         private int _shinobuSocketVaultModuleCount = -1;
         private int _shinobuSocketVaultTargetCount;
+        private int _shinobuSocketVaultConnectionCount;
+        private bool _shinobuSocketVaultHasRootAup;
+        private double3 _shinobuSocketVaultRootAup;
         private uint _shinobuSocketVaultTopologyVersion;
+        private uint _shinobuBuilderFrameCounter;
         private uint _shinobuSocketFrameCounter;
         private JobHandle _shinobuSocketSnapHandle;
         private bool _shinobuSocketSnapPending;
+        private uint _shinobuSocketSnapSelectionGeneration;
         private int _shinobuSocketSnapBestResultIndex;
         private uint _shinobuSocketSnapFrame;
         private uint _shinobuSocketSnapSceneHash;
@@ -262,10 +263,11 @@ namespace Hecton8.Building
         private double3 _shinobuSocketSnapGhostRootAup;
         private long _shinobuSocketSnapStartTicks;
         private float _shinobuSocketCachedBestDistanceSq = float.MaxValue;
-        private readonly List<ModuleSocket> _shinobuTargetSocketBuffer = new List<ModuleSocket>(ShinobuSocketConstructionRuntime.GhostSocketCapacity);
         private bool _integrityPlacementValid = true;
         private bool _integrityValidationDirty;
         private string _integrityPlacementBlockReason = string.Empty;
+        private bool _cachedHasResourcesForActiveBuildable;
+        private BuildReadiness _cachedBuildReadiness = BuildReadiness.Offline;
         private ValidationSnapshot _scheduledValidationSnapshot;
         private ValidationSnapshot _completedValidationSnapshot;
         private bool _hasScheduledValidationSnapshot;
@@ -280,10 +282,10 @@ namespace Hecton8.Building
         public BuildableData ActiveBuildable => activeBuildable;
         public int ActiveBuildableIndex => _activeBuildableIndex;
         public int BuildableCount => _buildCatalog != null ? _buildCatalog.ViewableCount : 0;
-        public bool HasResourcesForActiveBuildable => activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable) && HasResources(activeBuildable);
+        public bool HasResourcesForActiveBuildable => _cachedHasResourcesForActiveBuildable;
         public bool CanPlaceActiveBuildable => activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable) && _builderGhostPreviewActive && _builderGhostPreviewCanBuild && _semanticPlacementValid && _terrainSdfPlacementValid && _integrityPlacementValid;
         public bool HasPlacementPreview => _builderGhostPreviewActive;
-        public BuildReadiness ActiveBuildReadiness => GetActiveBuildReadiness();
+        public BuildReadiness ActiveBuildReadiness => _cachedBuildReadiness;
 
         /// <summary>Seychas prizrak prilip k soketu.</summary>
         public bool IsSnapped => _isSnapped;
@@ -291,7 +293,7 @@ namespace Hecton8.Building
         private struct ValidationSnapshot
         {
             public BuildableData Buildable;
-            public ModuleSocket TargetSocket;
+            public int TargetSocketIndex;
             public int ModuleCount;
             public Vector3 Position;
             public Quaternion Rotation;
@@ -325,8 +327,6 @@ namespace Hecton8.Building
             if (builderDebugLogging)
                 LogBuilderDebug($"DebugDeploy enter consumeCost={consumeCost} pos={position}");
 #endif
-            LogBuilderDebug("DebugDeploy -> ResolveRuntimeReferences");
-            ResolveRuntimeReferences();
             LogBuilderDebug("DebugDeploy -> EnsureCatalogSelection");
             EnsureCatalogSelection();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -384,7 +384,7 @@ namespace Hecton8.Building
 #endif
                 if (!ConsumeResources(activeBuildable))
                 {
-                    ConstructionManager constructionManager = ResolveCachedConstructionManager();
+                    ConstructionManager constructionManager = GetCachedConstructionManager();
                     if (constructionManager != null)
                         constructionManager.DestroyModule(spawned);
                     else
@@ -397,7 +397,7 @@ namespace Hecton8.Building
                 }
             }
 
-            PublishConstructionCommitSignals(spawned, activeBuildable);
+            PublishConstructionCommitSignals(spawned, activeBuildable, position, rotation);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
@@ -465,7 +465,7 @@ namespace Hecton8.Building
 
         public string GetActiveBuildStatusLabel()
         {
-            switch (GetActiveBuildReadiness())
+            switch (ActiveBuildReadiness)
             {
                 case BuildReadiness.Offline: return "OFFLINE";
                 case BuildReadiness.NoSelection: return "NO MODULE";
@@ -486,7 +486,7 @@ namespace Hecton8.Building
 
         public void WriteActiveBuildStatusLabel(ref FixedCharBuffer buffer)
         {
-            switch (GetActiveBuildReadiness())
+            switch (ActiveBuildReadiness)
             {
                 case BuildReadiness.Offline:
                     AppendText(ref buffer, "OFFLINE");
@@ -516,7 +516,7 @@ namespace Hecton8.Building
         {
             string purpose = DescribeBuildPurpose(activeBuildable);
 
-            switch (GetActiveBuildReadiness())
+            switch (ActiveBuildReadiness)
             {
                 case BuildReadiness.Offline:
                     AppendText(ref buffer, "Restore builder links before field deployment.");
@@ -616,15 +616,13 @@ namespace Hecton8.Building
             if (!IsBuildableBlueprintViewable(data)) return;
 
             bool wasEquipped = IsEquipped;
-            CompleteShinobuSocketSnapForTeardown();
-            CompleteBuilderGhostValidationForTeardown();
 
             if (wasEquipped)
-                DespawnGhost();
+                DespawnGhost(forceValidationReset: false);
 
-            activeBuildable = data;
-            CacheActivePlacementRule();
+            AssignActiveBuildable(data);
             SyncActiveBuildableIndex();
+            RefreshActiveBuildReadiness();
 
             if (wasEquipped)
                 SpawnGhost();
@@ -634,13 +632,16 @@ namespace Hecton8.Building
         //  IPoolable
         // ══════════════════════════════════════════════════════════
 
+        private void Awake()
+        {
+            EnsureHabitatConstructionManagerCold();
+        }
+
         public override void OnSpawn()
         {
-            if (_habitatConstructionManager == null)
-                _habitatConstructionManager = new HabitatConstructionManager();
-
+            EnsureHabitatConstructionManagerCold();
             base.OnSpawn();
-            ResolveRuntimeReferences();
+            BindRuntimeReferences();
             ResetBuilderState();
         }
 
@@ -663,6 +664,11 @@ namespace Hecton8.Building
             }
 
             _cachedConstructionManager = null;
+            _cachedObjectPool = null;
+            _cachedHabitatDeconstructionSystem = null;
+            _cachedInteractionSignalService = null;
+            _cachedAutonomousExtractorSystem = null;
+            _cachedAudioService = null;
             _shinobuSocketVault = null;
         }
 
@@ -673,7 +679,7 @@ namespace Hecton8.Building
         public override void OnEquip()
         {
             base.OnEquip();
-            ResolveRuntimeReferences();
+            BindRuntimeReferences();
             EnsureCatalogSelection();
             ResetBuilderState();
             BaselineBuilderInputSignalSequence();
@@ -698,6 +704,10 @@ namespace Hecton8.Building
                 UpdateGhostPosition(deltaTime);
                 UpdatePlacementValidationState();
                 DrawBuildGhostProjection();
+            }
+            else
+            {
+                RefreshActiveBuildReadiness();
             }
         }
 
@@ -794,7 +804,6 @@ namespace Hecton8.Building
 
         private void CycleBuildable(int direction)
         {
-            ResolveRuntimeReferences();
             if (_buildCatalog == null || _buildCatalog.ViewableCount <= 0)
             {
                 NotifyBuildBlocked("MODULE CATALOG OFFLINE");
@@ -845,29 +854,33 @@ namespace Hecton8.Building
             _ghostYawStep        = 0;
             _isSnapped           = false;
             _wasSnapped          = false;
-            _snappedSocketTransform = null;
-            _snappedSocket       = null;
             InvalidateShinobuCachedSnapPose();
             _shinobuSocketAdapterCandidateCount = 0;
             _shinobuSocketVaultSceneHash = 0u;
             _shinobuSocketVaultModuleCount = -1;
             _shinobuSocketVaultTargetCount = 0;
+            _shinobuSocketVaultConnectionCount = 0;
+            _shinobuSocketVaultHasRootAup = false;
+            _shinobuSocketVaultRootAup = default;
             _shinobuSocketVaultTopologyVersion = 0u;
+            _shinobuBuilderFrameCounter = 0u;
             _shinobuSocketFrameCounter = 0u;
             _shinobuSocketSnapHandle = default;
             _shinobuSocketSnapPending = false;
+            _shinobuSocketSnapSelectionGeneration = 0u;
             _shinobuSocketSnapBestResultIndex = 0;
             _shinobuSocketSnapFrame = 0u;
             _shinobuSocketSnapSceneHash = 0u;
             _shinobuSocketSnapQueryHash = 0u;
             _shinobuSocketSnapGhostRootAup = default;
             _shinobuSocketSnapStartTicks = 0L;
+            _shinobuSnappedTargetSocketIndex = -1;
+            _shinobuSnappedGhostSocketIndex = -1;
             _integrityPlacementValid = true;
             _integrityValidationDirty = false;
             _integrityPlacementBlockReason = string.Empty;
             _hasScheduledValidationSnapshot = false;
             _hasCompletedValidationSnapshot = false;
-            _shinobuTargetSocketBuffer.Clear();
             _builderGhostPreviewActive = false;
             _builderGhostPreviewCanBuild = true;
             _builderGhostPreviewPosition = default;
@@ -875,14 +888,15 @@ namespace Hecton8.Building
             _builderGhostPreviewScale = Vector3.one;
             _builderGhostValidationHandle = default;
             _builderGhostValidationPending = false;
+            _builderGhostValidationSelectionGeneration = 0u;
             _builderGhostValidationQueryHash = 0u;
             _builderGhostValidationFrame = 0u;
             _builderGhostValidationStartTicks = 0L;
             _builderGhostValidationQuality = 0f;
             _builderGhostValidationMinSdf = 0f;
-            _builderGhostValidationSdfCornerChecks = 0u;
             _builderGhostValidationSolidCornerCount = 0u;
             _habitatConstructionManager?.ResetValidation();
+            RefreshActiveBuildReadiness();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -919,13 +933,21 @@ namespace Hecton8.Building
             _builderGhostPreviewPosition = spawnPos;
             _builderGhostPreviewRotation = Quaternion.identity;
             _builderGhostPreviewScale = ResolveActivePreviewScale();
-            _integrityPlacementValid = true;
-            _integrityPlacementBlockReason = string.Empty;
+            if (_habitatConstructionManager != null && _habitatConstructionManager.IsValidationPending)
+            {
+                _integrityPlacementValid = false;
+                _integrityPlacementBlockReason = HabitatConstructionManager.PendingReason;
+            }
+            else
+            {
+                _integrityPlacementValid = true;
+                _integrityPlacementBlockReason = string.Empty;
+            }
             _integrityValidationDirty = true;
             UpdatePlacementValidationState();
         }
 
-        private void DespawnGhost()
+        private void DespawnGhost(bool forceValidationReset = true)
         {
             _builderGhostPreviewActive = false;
             _builderGhostPreviewCanBuild = true;
@@ -939,7 +961,9 @@ namespace Hecton8.Building
             _integrityValidationDirty = false;
             _hasScheduledValidationSnapshot = false;
             _hasCompletedValidationSnapshot = false;
-            _habitatConstructionManager?.ResetValidation();
+            if (forceValidationReset || _habitatConstructionManager == null || !_habitatConstructionManager.IsValidationPending)
+                _habitatConstructionManager?.ResetValidation();
+            RefreshActiveBuildReadiness();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -952,7 +976,7 @@ namespace Hecton8.Building
         /// v3.0 ALGORITM:
         ///   1. Raycast iz tsentra kamery → hitPoint.
         ///   2. SHINOBU_217 template/AUP socket resolver vokrug hitPoint.
-        ///   3. Nayti blizhayshiy svobodnyy ModuleSocket.
+        ///   3. Nayti blizhayshiy svobodnyy SocketStateDTO row.
         ///   4. GISTEREZIS:
         ///      - Esli NE snapnut i dist ≤ snapRadius → SNAP.
         ///      - Esli snapnut i dist > unsnapRadius → UNSNAP.
@@ -1022,16 +1046,13 @@ namespace Hecton8.Building
             //  Fakticheskaya proverka snap/unsnap — po distantsii nizhe.
             // ═══════════════════════════════════════════════════
 
-            bool foundSocket = TryResolveShinobuSocketAlignment(
+            bool foundSocket = TryUpdateShinobuSocketAlignment(
                 rawTargetPoint,
                 activeUnsnapRadius,
                 out float bestDist,
                 out Transform bestTransform,
                 out Vector3 bestAlignedPosition,
                 out Quaternion bestAlignedRotation);
-
-            // ── Nayti blizhayshiy svobodnyy soket ──
-            ModuleSocket bestSocket = null;
 
             if (!foundSocket)
                 InvalidateShinobuCachedSnapPose();
@@ -1049,35 +1070,30 @@ namespace Hecton8.Building
             // ═══════════════════════════════════════════════════
 
             bool previousSnapState = _isSnapped;
-            ModuleSocket previousSocket = _snappedSocket;
+            int previousTargetSocketIndex = _shinobuSnappedTargetSocketIndex;
 
+            bool hasSocketCandidate = foundSocket && math.isfinite(bestDist);
             if (_isSnapped)
             {
                 // ── Seychas snapnut: proveryaem uslovie OTRYVA ──
-                if (bestTransform == null || bestDist > activeUnsnapRadiusSq)
+                if (!hasSocketCandidate || bestDist > activeUnsnapRadiusSq)
                 {
                     // Otryvaemsya: net soketov poblizosti ILI slishkom daleko
                     _isSnapped = false;
-                    _snappedSocketTransform = null;
-                    _snappedSocket = null;
                     InvalidateShinobuCachedSnapPose();
                 }
                 else
                 {
                     // Obnovlyaem: vozmozhno, blizhayshiy soket smenilsya
                     // (igrok navel na drugoy soket togo zhe modulya)
-                    _snappedSocketTransform = bestTransform;
-                    _snappedSocket = bestSocket;
                 }
             }
             else
             {
                 // ── Seychas NE snapnut: proveryaem uslovie PRILIPANIYa ──
-                if (bestTransform != null && bestDist <= activeSnapRadiusSq)
+                if (hasSocketCandidate && bestDist <= activeSnapRadiusSq)
                 {
                     _isSnapped = true;
-                    _snappedSocketTransform = bestTransform;
-                    _snappedSocket = bestSocket;
                 }
             }
 
@@ -1092,7 +1108,7 @@ namespace Hecton8.Building
             //  TARGET POSITION / ROTATION
             // ═══════════════════════════════════════════════════
 
-            if (_isSnapped && (_shinobuHasSnappedPose || _snappedSocket != null))
+            if (_isSnapped && _shinobuHasSnappedPose)
             {
                 // ── SNAP MODE: pozitsiya i rotatsiya ot soketa ──
                 targetPos = _shinobuHasSnappedPose ? _shinobuSnappedPosePosition : bestAlignedPosition;
@@ -1165,7 +1181,7 @@ namespace Hecton8.Building
             }
 
             if (previousSnapState != _isSnapped ||
-                !ReferenceEquals(previousSocket, _snappedSocket) ||
+                previousTargetSocketIndex != _shinobuSnappedTargetSocketIndex ||
                 (_builderGhostPreviewPosition - previousPosition).sqrMagnitude > 0.0001f ||
                 Quaternion.Dot(previousRotation, _builderGhostPreviewRotation) < 0.9999f)
             {
@@ -1174,7 +1190,7 @@ namespace Hecton8.Building
         }
 
         // ══════════════════════════════════════════════════════════
-        //  MODULE PLACEMENT (v3.0: socket occupied marking)
+        //  MODULE PLACEMENT (v3.0: Vault socket occupancy commit)
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
@@ -1183,7 +1199,7 @@ namespace Hecton8.Building
         ///   2. Proverka resursov v inventare
         ///   3. Spisanie resursov
         ///   4. Despavn prizraka → spavn finalnogo modulya
-        ///   5. v3.0: esli snapnuty k soketu → pometit ego kak occupied
+        ///   5. v3.0: esli snapnuty k soketu → zapisat SocketConnectionPairDTO
         ///   6. Peresozdanie prizraka dlya prodolzheniya stroitelstva
         /// </summary>
         private void TryPlaceModule()
@@ -1259,7 +1275,7 @@ namespace Hecton8.Building
 
             if (!ConsumeResources(activeBuildable))
             {
-                ConstructionManager constructionManager = ResolveCachedConstructionManager();
+                ConstructionManager constructionManager = GetCachedConstructionManager();
                 if (constructionManager != null)
                     constructionManager.DestroyModule(placedModule);
                 else
@@ -1270,40 +1286,29 @@ namespace Hecton8.Building
                 return;
             }
 
-            if (_isSnapped && _snappedSocket != null)
+            if (_isSnapped && _shinobuHasSnappedPose)
             {
-                _snappedSocket.SetOccupied(true);
-            }
-            else if (_isSnapped && _shinobuHasSnappedPose)
-            {
-                TryMarkShinobuTargetSocketOccupied();
-                TryMarkShinobuPlacedGhostSocketOccupied(placedModule);
+                if (!TryCommitShinobuSnapOccupancy(placePos, placeRot))
+                {
+                    _shinobuSocketVaultSceneHash = 0u;
+                    _shinobuSocketVaultModuleCount = -1;
+                    _shinobuSocketVaultTargetCount = 0;
+                    _shinobuSocketVaultHasRootAup = false;
+                    _shinobuSocketVaultRootAup = default;
+                }
             }
 
-            bool hasModulePose = placedModule != null;
-            ulong moduleEntityId = hasModulePose ? EntityId.ToULong(placedModule.GetEntityId()) : 0ul;
-            Transform moduleTransform = hasModulePose ? placedModule.transform : null;
-            Vector3 modulePosition = moduleTransform != null ? moduleTransform.position : Vector3.zero;
-            Quaternion moduleRotation = moduleTransform != null ? moduleTransform.rotation : Quaternion.identity;
-            HectonEventBus.Publish(new BaseModulePlacedEvent(
-                activeBuildable,
-                moduleEntityId,
-                modulePosition,
-                moduleRotation,
-                hasModulePose));
-            PublishConstructionCommitSignals(placedModule, activeBuildable);
+            PublishConstructionCommitSignals(placedModule, activeBuildable, placePos, placeRot);
             PlaySound(buildSound);
             NotifyBuildPlaced(activeBuildable);
 
             // ── Sbros snap-sostoyaniya ──
             _isSnapped = false;
-            _snappedSocketTransform = null;
-            _snappedSocket = null;
             InvalidateShinobuCachedSnapPose();
             _shinobuSocketAdapterCandidateCount = 0;
 
             // ── Peresozdaem prizrak ──
-            DespawnGhost();
+            DespawnGhost(forceValidationReset: false);
             SpawnGhost();
         }
 
@@ -1324,53 +1329,70 @@ namespace Hecton8.Building
             return data != null && data.IsBlueprintViewable();
         }
 
-        private void ResolveRuntimeReferences()
+        private void BindRuntimeReferences()
         {
-            LogBuilderDebug("ResolveRuntimeReferences begin");
-            if (_habitatConstructionManager == null)
-                _habitatConstructionManager = new HabitatConstructionManager();
+            LogBuilderDebug("BindRuntimeReferences begin");
+            HabitatConstructionManager habitatConstructionManager = _habitatConstructionManager;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (habitatConstructionManager == null && builderDebugLogging)
+                LogBuilderDebug("BindRuntimeReferences missing cold HabitatConstructionManager");
+#endif
 
-            ModularBaseConstructionValidator.InitializeVault(GlobalRegistry.DataVault);
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            ModularBaseConstructionValidator.InitializeVault(dataVault);
+            habitatConstructionManager?.BindCatalogVault(dataVault);
             if (_shinobuSocketVault == null)
-                _shinobuSocketVault = GlobalRegistry.DataVault;
+                _shinobuSocketVault = dataVault;
+            if (_shinobuSocketVault != null)
+                ShinobuSocketConstructionRuntime.InitializeVault(_shinobuSocketVault);
             EnsureConstructionSignalLanes();
 
-            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             if (inventory == null && playerContext != null)
                 inventory = playerContext.Inventory;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
-                LogBuilderDebug($"ResolveRuntimeReferences inventory={(inventory != null ? "Y" : "N")}");
+                LogBuilderDebug($"BindRuntimeReferences inventory={(inventory != null ? "Y" : "N")}");
 #endif
 
             if (playerCamera == null && playerContext != null)
                 playerCamera = playerContext.PlayerCamera;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
-                LogBuilderDebug($"ResolveRuntimeReferences camera={(playerCamera != null ? playerCamera.name : "null")}");
+                LogBuilderDebug($"BindRuntimeReferences camera={(playerCamera != null ? playerCamera.name : "null")}");
 #endif
 
             if (buildAnchor == null && playerContext != null)
                 buildAnchor = playerContext.HandAnchor;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
-                LogBuilderDebug($"ResolveRuntimeReferences buildAnchor={(buildAnchor != null ? buildAnchor.name : "null")}");
+                LogBuilderDebug($"BindRuntimeReferences buildAnchor={(buildAnchor != null ? buildAnchor.name : "null")}");
 #endif
 
             if (hudNotification == null && playerContext != null)
                 hudNotification = playerContext.HudNotification;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
-                LogBuilderDebug($"ResolveRuntimeReferences hud={(hudNotification != null ? "Y" : "N")}");
+                LogBuilderDebug($"BindRuntimeReferences hud={(hudNotification != null ? "Y" : "N")}");
 #endif
 
             if (_buildCatalog == null)
                 _buildCatalog = ResolveModuleCatalog();
             if (_cachedConstructionManager == null)
                 _cachedConstructionManager = ResolveConstructionManager();
+            if (_cachedObjectPool == null)
+                _cachedObjectPool = GlobalRegistry.ObjectPool;
+            if (_cachedHabitatDeconstructionSystem == null)
+                _cachedHabitatDeconstructionSystem = GlobalRegistry.HabitatDeconstruction;
+            if (_cachedInteractionSignalService == null)
+                _cachedInteractionSignalService = GlobalRegistry.InteractionSignals;
+            if (_cachedAutonomousExtractorSystem == null)
+                _cachedAutonomousExtractorSystem = GlobalRegistry.AutonomousExtractors;
+            if (_cachedAudioService == null)
+                _cachedAudioService = GlobalRegistry.Audio;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
-                LogBuilderDebug($"ResolveRuntimeReferences catalogCount={(_buildCatalog != null ? _buildCatalog.Count : -1)}");
+                LogBuilderDebug($"BindRuntimeReferences catalogCount={(_buildCatalog != null ? _buildCatalog.Count : -1)}");
 #endif
 
             if (activeBuildable == null)
@@ -1379,8 +1401,16 @@ namespace Hecton8.Building
             SyncActiveBuildableIndex();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
-                LogBuilderDebug($"ResolveRuntimeReferences end activeIndex={_activeBuildableIndex}");
+                LogBuilderDebug($"BindRuntimeReferences end activeIndex={_activeBuildableIndex}");
 #endif
+        }
+
+        private void EnsureHabitatConstructionManagerCold()
+        {
+            if (_habitatConstructionManager != null)
+                return;
+
+            _habitatConstructionManager = new HabitatConstructionManager();
         }
 
         private static void EnsureConstructionSignalLanes()
@@ -1403,6 +1433,15 @@ namespace Hecton8.Building
             s_ConstructionSignalLanesInitialized = true;
         }
 
+        private void AssignActiveBuildable(BuildableData data)
+        {
+            if (!ReferenceEquals(activeBuildable, data))
+                _activeBuildableGeneration = unchecked(_activeBuildableGeneration + 1u);
+
+            activeBuildable = data;
+            CacheActivePlacementRule();
+        }
+
         private void EnsureCatalogSelection()
         {
             LogBuilderDebug("EnsureCatalogSelection begin");
@@ -1410,7 +1449,7 @@ namespace Hecton8.Building
             if (activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable)) return;
             if (_buildCatalog == null || _buildCatalog.ViewableCount <= 0) return;
 
-            activeBuildable = null;
+            AssignActiveBuildable(null);
             _activeBuildableIndex = -1;
 
             int viewableCount = _buildCatalog.ViewableCount;
@@ -1419,8 +1458,7 @@ namespace Hecton8.Building
                 BuildableData candidate = _buildCatalog.GetViewableAt(i);
                 if (candidate == null) continue;
 
-                activeBuildable = candidate;
-                CacheActivePlacementRule();
+                AssignActiveBuildable(candidate);
                 _activeBuildableIndex = _buildCatalog.IndexOf(candidate);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (builderDebugLogging)
@@ -1572,7 +1610,7 @@ namespace Hecton8.Building
 
         private bool TryGetObjectPool(out ObjectPoolManager pool)
         {
-            pool = GlobalRegistry.ObjectPool;
+            pool = _cachedObjectPool;
             return pool != null;
         }
 
@@ -1607,7 +1645,7 @@ namespace Hecton8.Building
 
             if (placedModule != null)
             {
-                ConstructionManager manager = ResolveCachedConstructionManager();
+                ConstructionManager manager = GetCachedConstructionManager();
                 if (manager != null)
                 {
                     manager.RegisterModule(placedModule, data);
@@ -1844,7 +1882,21 @@ namespace Hecton8.Building
                 "INFO");
         }
 
-        private BuildReadiness GetActiveBuildReadiness()
+        private void RefreshActiveBuildReadiness()
+        {
+            _cachedHasResourcesForActiveBuildable = ComputeActiveBuildableResourceSnapshot();
+            _cachedBuildReadiness = ComputeActiveBuildReadinessSnapshot(_cachedHasResourcesForActiveBuildable);
+        }
+
+        private bool ComputeActiveBuildableResourceSnapshot()
+        {
+            return activeBuildable != null &&
+                   IsBuildableBlueprintViewable(activeBuildable) &&
+                   inventory != null &&
+                   HasResources(activeBuildable);
+        }
+
+        private BuildReadiness ComputeActiveBuildReadinessSnapshot(bool hasResources)
         {
             if (activeBuildable == null)
                 return BuildReadiness.NoSelection;
@@ -1855,56 +1907,82 @@ namespace Hecton8.Building
             if (inventory == null || playerCamera == null)
                 return BuildReadiness.Offline;
 
-            if (!HasResources(activeBuildable))
+            if (!hasResources)
                 return BuildReadiness.MissingCost;
 
             if (!_builderGhostPreviewActive)
                 return BuildReadiness.Ready;
 
-            if (!UpdatePlacementValidityState() || !_builderGhostPreviewCanBuild)
+            if (!_builderGhostPreviewCanBuild ||
+                !_semanticPlacementValid ||
+                !_terrainSdfPlacementValid ||
+                !_integrityPlacementValid)
+            {
                 return BuildReadiness.PlacementBlocked;
+            }
 
             return _isSnapped ? BuildReadiness.SnappedReady : BuildReadiness.Ready;
         }
 
         private void CacheActivePlacementRule()
         {
-            _activePlacementRule = null;
+            _activePlacementRuleKind = PlacementRuleKindNone;
+            _activeDeepDrillRule = null;
+            _activeAutonomousExtractorRule = null;
             _semanticPlacementValid = true;
             _semanticPlacementBlockReason = string.Empty;
 
             if (activeBuildable == null || activeBuildable.finalPrefab == null)
                 return;
 
-            _placementRuleBuffer.Clear();
-            activeBuildable.finalPrefab.GetComponents(_placementRuleBuffer);
-
-            for (int i = 0; i < _placementRuleBuffer.Count; i++)
+            if (activeBuildable.finalPrefab.TryGetComponent(out DeepDrillModule deepDrillRule))
             {
-                MonoBehaviour behaviour = _placementRuleBuffer[i];
-                if (behaviour is IBuildPlacementRule rule)
-                {
-                    _activePlacementRule = rule;
-                    break;
-                }
+                _activePlacementRuleKind = PlacementRuleKindDeepDrill;
+                _activeDeepDrillRule = deepDrillRule;
+                return;
             }
 
-            _placementRuleBuffer.Clear();
+            if (activeBuildable.finalPrefab.TryGetComponent(out AutonomousExtractorModule extractorRule))
+            {
+                _activePlacementRuleKind = PlacementRuleKindAutonomousExtractor;
+                _activeAutonomousExtractorRule = extractorRule;
+            }
         }
 
         private bool UpdateSemanticPlacementState()
         {
-            if (_activePlacementRule == null || !_builderGhostPreviewActive)
+            if (_activePlacementRuleKind == PlacementRuleKindNone || !_builderGhostPreviewActive)
             {
                 _semanticPlacementValid = true;
                 _semanticPlacementBlockReason = string.Empty;
                 return true;
             }
 
-            _semanticPlacementValid = _activePlacementRule.ValidatePlacement(
-                _builderGhostPreviewPosition,
-                _builderGhostPreviewRotation,
-                out _semanticPlacementBlockReason);
+            switch (_activePlacementRuleKind)
+            {
+                case PlacementRuleKindDeepDrill:
+                    _semanticPlacementValid = _activeDeepDrillRule != null &&
+                        _activeDeepDrillRule.ValidatePlacementWithService(
+                            _cachedInteractionSignalService,
+                            _builderGhostPreviewPosition,
+                            _builderGhostPreviewRotation,
+                            out _semanticPlacementBlockReason);
+                    break;
+
+                case PlacementRuleKindAutonomousExtractor:
+                    _semanticPlacementValid = _activeAutonomousExtractorRule != null &&
+                        _activeAutonomousExtractorRule.ValidatePlacementWithRuntime(
+                            _builderGhostPreviewPosition,
+                            _builderGhostPreviewRotation,
+                            _cachedAutonomousExtractorSystem,
+                            out _semanticPlacementBlockReason);
+                    break;
+
+                default:
+                    _semanticPlacementValid = true;
+                    _semanticPlacementBlockReason = string.Empty;
+                    break;
+            }
 
             if (_semanticPlacementValid)
                 _semanticPlacementBlockReason = string.Empty;
@@ -1912,7 +1990,7 @@ namespace Hecton8.Building
             return _semanticPlacementValid;
         }
 
-        private bool TryResolveShinobuSocketAlignment(
+        private bool TryUpdateShinobuSocketAlignment(
             Vector3 rawTargetPoint,
             float activeUnsnapRadius,
             out float bestDistanceSq,
@@ -1933,17 +2011,11 @@ namespace Hecton8.Building
             if (ghostSockets == null || ghostSockets.Length == 0)
                 return false;
 
-            ConstructionManager constructionManager = ResolveCachedConstructionManager();
-            IReadOnlyList<GameObject> modules = constructionManager != null ? constructionManager.SpawnedModules : null;
-            if (modules == null || modules.Count == 0)
-                return false;
-
             float quality = ShinobuSocketConstructionRuntime.ResolveGlobalQualityWeight();
             ConstructionSocketTuningDTO tuning = ShinobuSocketConstructionRuntime.GetTuning();
-            return TryResolveShinobuSocketAlignmentFromVault(
+            return TryUpdateShinobuSocketAlignmentFromVault(
                 rawTargetPoint,
                 activeUnsnapRadius,
-                modules,
                 ghostSockets,
                 quality,
                 tuning,
@@ -1953,10 +2025,9 @@ namespace Hecton8.Building
                 out bestAlignedRotation);
         }
 
-        private bool TryResolveShinobuSocketAlignmentFromVault(
+        private bool TryUpdateShinobuSocketAlignmentFromVault(
             Vector3 rawTargetPoint,
             float activeUnsnapRadius,
-            IReadOnlyList<GameObject> modules,
             BaseModuleTemplate.SocketDefinition[] ghostSockets,
             float quality,
             ConstructionSocketTuningDTO tuning,
@@ -1970,8 +2041,7 @@ namespace Hecton8.Building
             bestAlignedPosition = default;
             bestAlignedRotation = default;
 
-            if (modules == null ||
-                ghostSockets == null ||
+            if (ghostSockets == null ||
                 ghostSockets.Length == 0 ||
                 !TryResolveShinobuSocketVault(out IDataVault vault) ||
                 !ShinobuSocketConstructionRuntime.TryResolveVaultViews(vault, out ConstructionSocketVaultViews views))
@@ -1979,7 +2049,7 @@ namespace Hecton8.Building
                 return false;
             }
 
-            uint sceneHash = ComputeShinobuSocketSceneHash(modules);
+            uint sceneHash = ComputeShinobuSocketVaultHash(views);
             uint queryHash = ComputeShinobuSocketQueryHash(sceneHash, rawTargetPoint, ghostSockets);
             if ((_shinobuHasSnappedPose || _shinobuSocketCachedBestDistanceSq < float.MaxValue) &&
                 (_shinobuSocketSnapSceneHash != sceneHash || _shinobuSocketSnapQueryHash != queryHash))
@@ -1990,7 +2060,6 @@ namespace Hecton8.Building
             if (_shinobuSocketSnapPending)
             {
                 if (TryFinalizeShinobuSocketSnap(
-                        modules,
                         views,
                         ghostSockets,
                         quality,
@@ -2009,10 +2078,11 @@ namespace Hecton8.Building
             }
 
             uint solverFrame = unchecked(++_shinobuSocketFrameCounter);
-            if (!TryHydrateShinobuTargetSocketVault(modules, views, quality, tuning, sceneHash, out int targetCount) ||
+            if (!TryPrepareShinobuTargetSocketVault(views, sceneHash, out int targetCount) ||
                 targetCount <= 0 ||
                 !TryHydrateShinobuGhostSocketVault(rawTargetPoint, ghostSockets, views, quality, tuning, solverFrame, out int ghostCount, out double3 ghostRootAup, out quaternion ghostRootRotation) ||
                 ghostCount <= 0 ||
+                !TryResolveRuntimeOriginAup(out double3 runtimeOriginAup) ||
                 !views.SnapResults.IsCreated ||
                 views.SnapResults.Length <= ghostCount)
             {
@@ -2036,7 +2106,7 @@ namespace Hecton8.Building
                 Results = views.SnapResults,
                 Tuning = jobTuning,
                 GhostRootAup = ghostRootAup,
-                RuntimeOriginAup = GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3(),
+                RuntimeOriginAup = runtimeOriginAup,
                 GhostRootRotation = ghostRootRotation,
                 GhostModuleHash = ResolveShinobuModuleHash(activeBuildable),
                 TargetCount = targetCount,
@@ -2055,6 +2125,7 @@ namespace Hecton8.Building
             };
             _shinobuSocketSnapHandle = selectJob.Schedule(evaluateHandle);
             _shinobuSocketSnapPending = true;
+            _shinobuSocketSnapSelectionGeneration = _activeBuildableGeneration;
             _shinobuSocketSnapBestResultIndex = bestResultIndex;
             _shinobuSocketSnapFrame = solverFrame;
             _shinobuSocketSnapSceneHash = sceneHash;
@@ -2063,26 +2134,10 @@ namespace Hecton8.Building
             _shinobuSocketSnapStartTicks = solverStartTicks;
             H8Memory.RegisterActiveJob(SystemID.Construction, _shinobuSocketSnapHandle);
 
-            if (TryFinalizeShinobuSocketSnap(
-                    modules,
-                    views,
-                    ghostSockets,
-                    quality,
-                    sceneHash,
-                    queryHash,
-                    out bestDistanceSq,
-                    out bestTargetTransform,
-                    out bestAlignedPosition,
-                    out bestAlignedRotation))
-            {
-                return true;
-            }
-
             return TryUseCachedShinobuSocketSnap(sceneHash, queryHash, out bestDistanceSq, out bestTargetTransform, out bestAlignedPosition, out bestAlignedRotation);
         }
 
         private bool TryFinalizeShinobuSocketSnap(
-            IReadOnlyList<GameObject> modules,
             ConstructionSocketVaultViews views,
             BaseModuleTemplate.SocketDefinition[] ghostSockets,
             float quality,
@@ -2107,7 +2162,8 @@ namespace Hecton8.Building
             _shinobuSocketSnapPending = false;
             _shinobuSocketSnapHandle = default;
 
-            if (sceneHash != _shinobuSocketSnapSceneHash ||
+            if (_shinobuSocketSnapSelectionGeneration != _activeBuildableGeneration ||
+                sceneHash != _shinobuSocketSnapSceneHash ||
                 queryHash != _shinobuSocketSnapQueryHash ||
                 !views.SnapResults.IsCreated ||
                 (uint)_shinobuSocketSnapBestResultIndex >= (uint)views.SnapResults.Length)
@@ -2147,7 +2203,6 @@ namespace Hecton8.Building
             }
 
             if (!TryApplyShinobuVaultSnapResult(
-                modules,
                 views,
                 ghostSockets,
                 in best,
@@ -2179,7 +2234,7 @@ namespace Hecton8.Building
             bestAlignedRotation = default;
 
             if (!_shinobuHasSnappedPose ||
-                _shinobuSnappedTargetTransform == null ||
+                _shinobuSocketSnapSelectionGeneration != _activeBuildableGeneration ||
                 _shinobuSocketSnapSceneHash != sceneHash ||
                 _shinobuSocketSnapQueryHash != queryHash ||
                 !math.isfinite(_shinobuSocketCachedBestDistanceSq) ||
@@ -2202,6 +2257,7 @@ namespace Hecton8.Building
             _shinobuSnappedTargetLocalPosition = default;
             _shinobuSnappedTargetDirection = ModuleSocketDirection.North;
             _shinobuSnappedTargetCompatibilityHash = 0u;
+            _shinobuSnappedTargetSocketIndex = -1;
             _shinobuSnappedGhostSocketIndex = -1;
             _shinobuDearLieDampen = 0f;
             _shinobuSocketCachedBestDistanceSq = float.MaxValue;
@@ -2215,6 +2271,7 @@ namespace Hecton8.Building
             DispatcherJobFence.TryComplete(ref _shinobuSocketSnapHandle, forceComplete: true);
             _shinobuSocketSnapHandle = default;
             _shinobuSocketSnapPending = false;
+            _shinobuSocketSnapSelectionGeneration = 0u;
         }
 
         private void CompleteBuilderGhostValidationForTeardown()
@@ -2225,6 +2282,7 @@ namespace Hecton8.Building
             DispatcherJobFence.TryComplete(ref _builderGhostValidationHandle, forceComplete: true);
             _builderGhostValidationHandle = default;
             _builderGhostValidationPending = false;
+            _builderGhostValidationSelectionGeneration = 0u;
         }
 
         private bool TryResolveShinobuSocketVault(out IDataVault vault)
@@ -2233,141 +2291,61 @@ namespace Hecton8.Building
             return vault != null;
         }
 
-        private bool TryHydrateShinobuTargetSocketVault(
-            IReadOnlyList<GameObject> modules,
+        private bool TryPrepareShinobuTargetSocketVault(
             ConstructionSocketVaultViews views,
-            float quality,
-            ConstructionSocketTuningDTO tuning,
             uint sceneHash,
             out int targetSocketCount)
         {
             targetSocketCount = 0;
-            if (modules == null ||
-                !views.SocketStates.IsCreated ||
+            if (!views.SocketStates.IsCreated ||
                 !views.SocketAups.IsCreated ||
                 !views.Modules.IsCreated ||
                 !views.Counters.IsCreated ||
-                views.Counters.Length < 4)
+                views.Counters.Length <= 4)
             {
                 return false;
             }
 
-            int moduleCount = modules.Count;
+            int socketCapacity = math.min(views.SocketStates.Length, views.SocketAups.Length);
+            int moduleCount = math.clamp(views.Counters[0], 0, views.Modules.Length);
+            int socketCount = math.clamp(views.Counters[1], 0, socketCapacity);
+            if (moduleCount <= 0 || socketCount <= 0)
+                return false;
+
             if (moduleCount == _shinobuSocketVaultModuleCount &&
                 _shinobuSocketVaultTargetCount > 0 &&
+                _shinobuSocketVaultTargetCount == socketCount &&
                 sceneHash == _shinobuSocketVaultSceneHash)
             {
-                targetSocketCount = _shinobuSocketVaultTargetCount;
-                return BuildShinobuSocketCsrIndex(views, targetSocketCount);
+                targetSocketCount = socketCount;
+                return true;
             }
 
-            int moduleWrite = 0;
-            int socketWrite = 0;
-            int socketCapacity = math.min(views.SocketStates.Length, views.SocketAups.Length);
-            for (int sceneIndex = 0; sceneIndex < modules.Count && moduleWrite < views.Modules.Length && socketWrite < socketCapacity; sceneIndex++)
-            {
-                GameObject moduleObject = modules[sceneIndex];
-                if (moduleObject == null ||
-                    !moduleObject.TryGetComponent(out ModuleMarker marker) ||
-                    marker == null ||
-                    marker.Data == null ||
-                    marker.Data.ModuleTemplate == null)
-                {
-                    continue;
-                }
-
-                BaseModuleTemplate template = marker.Data.ModuleTemplate;
-                BaseModuleTemplate.SocketDefinition[] sockets = template.SocketDefinitions;
-                if (sockets == null || sockets.Length == 0)
-                    continue;
-
-                Transform moduleTransform = moduleObject.transform;
-                Vector3 position = moduleTransform.position;
-                Quaternion rotation = moduleTransform.rotation;
-                quaternion moduleRotation = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
-                if (!TryResolveConstructionPivotAup(position, out double3 rootAup))
-                    continue;
-                int socketStart = socketWrite;
-                uint moduleHash = ResolveShinobuModuleHash(marker.Data);
-                _shinobuTargetSocketBuffer.Clear();
-                moduleObject.GetComponentsInChildren<ModuleSocket>(true, _shinobuTargetSocketBuffer);
-
-                for (int socketIndex = 0; socketIndex < sockets.Length && socketWrite < socketCapacity; socketIndex++)
-                {
-                    BaseModuleTemplate.SocketDefinition definition = sockets[socketIndex];
-                    byte direction = (byte)definition.Direction;
-                    bool directionValid = ShinobuSocketConstructionRuntime.IsDirectionValid(direction);
-                    float3 local = new float3(definition.LocalPosition.x, definition.LocalPosition.y, definition.LocalPosition.z);
-                    float3 normal = directionValid
-                        ? ShinobuSocketConstructionRuntime.DirectionToNormal(direction)
-                        : float3.zero;
-                    float3 rotatedNormal = math.rotate(moduleRotation, normal);
-                    float3 rotatedOffset = math.rotate(moduleRotation, local);
-                    bool finiteSocket = directionValid &&
-                                        math.all(math.isfinite(local)) &&
-                                        math.all(math.isfinite(rotatedNormal)) &&
-                                        math.all(math.isfinite(rotatedOffset));
-
-                    SocketStateDTO socket;
-                    socket.LocalOffset = new double3(local.x, local.y, local.z);
-                    socket.NormalDirection = finiteSocket ? rotatedNormal : float3.zero;
-                    socket.AllowedConnectionBitmask = ShinobuSocketConstructionRuntime.PackAllowedConnectionBitmask(
-                        direction,
-                        ShinobuSocketConstructionRuntime.HashCompatibility(definition.CompatibleType));
-                    socket.ParentModuleHash = moduleHash;
-                    socket.ConnectionStatus = finiteSocket
-                        ? IsShinobuAuthoredSocketOccupied(moduleTransform, definition, _shinobuTargetSocketBuffer)
-                            ? ConstructionSocketFlags.Connected
-                            : 0u
-                        : ConstructionSocketFlags.NonFinite | ConstructionSocketFlags.CollisionBlocked;
-                    socket._pad0 = 0u;
-                    socket._pad1 = 0u;
-                    socket._pad2 = 0u;
-                    socket._pad3 = 0u;
-                    views.SocketStates[socketWrite] = socket;
-                    views.SocketAups[socketWrite] = rootAup + new double3(rotatedOffset.x, rotatedOffset.y, rotatedOffset.z);
-                    socketWrite++;
-                }
-                _shinobuTargetSocketBuffer.Clear();
-
-                ConstructionSocketModuleDTO module;
-                module.RootAup = rootAup;
-                module.Rotation = moduleRotation;
-                module.BoundsCenter = new float3(template.ProxyBoundsCenter.x, template.ProxyBoundsCenter.y, template.ProxyBoundsCenter.z);
-                module.BoundsExtents = new float3(
-                    math.max(0.001f, template.ProxyBoundsSize.x * 0.5f),
-                    math.max(0.001f, template.ProxyBoundsSize.y * 0.5f),
-                    math.max(0.001f, template.ProxyBoundsSize.z * 0.5f));
-                module.ModuleHash = moduleHash;
-                module.SocketStart = socketStart;
-                module.SocketCount = socketWrite - socketStart;
-                module.Flags = 0u;
-                module.TopologyVersion = _shinobuSocketVaultTopologyVersion;
-                module.DearLieDampen = 0f;
-                module.ConnectedMask = 0u;
-                module.SceneModuleListIndex = sceneIndex;
-                views.Modules[moduleWrite++] = module;
-            }
-
-            _shinobuSocketVaultTopologyVersion = unchecked(_shinobuSocketVaultTopologyVersion + 1u);
+            _shinobuSocketVaultTopologyVersion = unchecked((uint)views.Counters[2]);
             _shinobuSocketVaultSceneHash = sceneHash;
             _shinobuSocketVaultModuleCount = moduleCount;
-            _shinobuSocketVaultTargetCount = socketWrite;
-            views.Counters[0] = moduleWrite;
-            views.Counters[1] = socketWrite;
-            views.Counters[2] = unchecked((int)_shinobuSocketVaultTopologyVersion);
-            views.Counters[3] = (int)ConstructionSocketFlags.TopologyDirty;
-            if (!BuildShinobuSocketCsrIndex(views, socketWrite))
-                return false;
-
-            if (views.Tuning.IsCreated && views.Tuning.Length > 0)
+            _shinobuSocketVaultTargetCount = socketCount;
+            _shinobuSocketVaultConnectionCount = views.Connections.IsCreated
+                ? math.clamp(views.Counters[4], 0, views.Connections.Length)
+                : 0;
+            if (moduleCount > 0)
             {
-                tuning.GlobalQualityWeight = ShinobuSocketConstructionRuntime.SanitizeQuality(quality);
-                views.Tuning[0] = tuning;
+                ConstructionSocketModuleDTO firstModule = views.Modules[0];
+                _shinobuSocketVaultRootAup = firstModule.RootAup;
+                _shinobuSocketVaultHasRootAup = math.all(math.isfinite(firstModule.RootAup));
+            }
+            else
+            {
+                _shinobuSocketVaultRootAup = default;
+                _shinobuSocketVaultHasRootAup = false;
             }
 
-            targetSocketCount = socketWrite;
-            return socketWrite > 0;
+            ApplyShinobuConnectionPairsToVault(views, socketCount);
+            if (!BuildShinobuSocketCsrIndex(views, socketCount))
+                return false;
+
+            targetSocketCount = socketCount;
+            return true;
         }
 
         private bool TryHydrateShinobuGhostSocketVault(
@@ -2485,33 +2463,102 @@ namespace Hecton8.Building
             return ghostSocketCount > 0;
         }
 
-        private static bool IsShinobuAuthoredSocketOccupied(
-            Transform moduleTransform,
-            BaseModuleTemplate.SocketDefinition definition,
-            List<ModuleSocket> authoredSockets)
+        private static int WriteShinobuModuleSocketsToVault(
+            BaseModuleTemplate template,
+            uint moduleHash,
+            double3 rootAup,
+            quaternion moduleRotation,
+            int socketStart,
+            int socketCapacity,
+            int consumedSocketIndex,
+            ConstructionSocketVaultViews views)
         {
-            if (moduleTransform == null || authoredSockets == null || authoredSockets.Count == 0)
-                return false;
-
-            uint definitionCompatibility = ShinobuSocketConstructionRuntime.HashCompatibility(definition.CompatibleType);
-            Vector3 definitionLocal = definition.LocalPosition;
-            for (int i = 0; i < authoredSockets.Count; i++)
+            BaseModuleTemplate.SocketDefinition[] sockets = template != null ? template.SocketDefinitions : null;
+            if (sockets == null ||
+                !views.SocketStates.IsCreated ||
+                !views.SocketAups.IsCreated ||
+                socketStart < 0 ||
+                socketStart >= socketCapacity)
             {
-                ModuleSocket socket = authoredSockets[i];
-                if (socket == null || !socket.IsOccupied || socket.Direction != definition.Direction)
-                    continue;
-
-                uint socketCompatibility = ShinobuSocketConstructionRuntime.HashCompatibility(socket.CompatibleType);
-                if (!ShinobuSocketConstructionRuntime.AreCompatibilityHashesCompatible(definitionCompatibility, socketCompatibility))
-                    continue;
-
-                Vector3 socketLocal = moduleTransform.InverseTransformPoint(socket.transform.position);
-                Vector3 delta = socketLocal - definitionLocal;
-                if (delta.sqrMagnitude <= 0.0004f)
-                    return true;
+                return 0;
             }
 
-            return false;
+            int socketWrite = socketStart;
+            int count = math.min(sockets.Length, socketCapacity - socketStart);
+            for (int socketIndex = 0; socketIndex < count; socketIndex++)
+            {
+                BaseModuleTemplate.SocketDefinition definition = sockets[socketIndex];
+                byte direction = (byte)definition.Direction;
+                bool directionValid = ShinobuSocketConstructionRuntime.IsDirectionValid(direction);
+                float3 local = new float3(definition.LocalPosition.x, definition.LocalPosition.y, definition.LocalPosition.z);
+                float3 normal = directionValid
+                    ? ShinobuSocketConstructionRuntime.DirectionToNormal(direction)
+                    : float3.zero;
+                float3 rotatedNormal = math.rotate(moduleRotation, normal);
+                float3 rotatedOffset = math.rotate(moduleRotation, local);
+                bool finiteSocket = directionValid &&
+                                    math.all(math.isfinite(local)) &&
+                                    math.all(math.isfinite(rotatedNormal)) &&
+                                    math.all(math.isfinite(rotatedOffset));
+
+                SocketStateDTO socket;
+                socket.LocalOffset = new double3(local.x, local.y, local.z);
+                socket.NormalDirection = finiteSocket ? rotatedNormal : float3.zero;
+                socket.AllowedConnectionBitmask = ShinobuSocketConstructionRuntime.PackAllowedConnectionBitmask(
+                    direction,
+                    ShinobuSocketConstructionRuntime.HashCompatibility(definition.CompatibleType));
+                socket.ParentModuleHash = moduleHash;
+                socket.ConnectionStatus = finiteSocket
+                    ? (socketIndex == consumedSocketIndex ? ConstructionSocketFlags.Connected : 0u)
+                    : ConstructionSocketFlags.NonFinite | ConstructionSocketFlags.CollisionBlocked;
+                socket._pad0 = 0u;
+                socket._pad1 = 0u;
+                socket._pad2 = 0u;
+                socket._pad3 = 0u;
+                views.SocketStates[socketWrite] = socket;
+                views.SocketAups[socketWrite] = rootAup + new double3(rotatedOffset.x, rotatedOffset.y, rotatedOffset.z);
+                socketWrite++;
+            }
+
+            return socketWrite - socketStart;
+        }
+
+        private static void ApplyShinobuConnectionPairsToVault(ConstructionSocketVaultViews views, int socketCount)
+        {
+            if (!views.Connections.IsCreated ||
+                !views.SocketStates.IsCreated ||
+                !views.Counters.IsCreated ||
+                views.Counters.Length <= 4 ||
+                socketCount <= 0)
+            {
+                return;
+            }
+
+            int count = math.clamp(views.Counters[4], 0, views.Connections.Length);
+            for (int i = 0; i < count; i++)
+            {
+                SocketConnectionPairDTO connection = views.Connections[i];
+                if ((connection.Flags & ConstructionSocketFlags.ValidSnap) == 0u ||
+                    (uint)connection.TargetSocketIndex >= (uint)socketCount ||
+                    (uint)connection.GhostSocketIndex >= (uint)socketCount)
+                {
+                    continue;
+                }
+
+                SocketStateDTO target = views.SocketStates[connection.TargetSocketIndex];
+                SocketStateDTO ghost = views.SocketStates[connection.GhostSocketIndex];
+                if (target.ParentModuleHash != connection.TargetModuleHash ||
+                    ghost.ParentModuleHash != connection.GhostModuleHash)
+                {
+                    continue;
+                }
+
+                uint flags = ConstructionSocketFlags.Connected | (connection.ConnectionKind & (ConstructionSocketFlags.CorridorRoom | ConstructionSocketFlags.Hatch));
+                target.ConnectionStatus |= flags;
+                ghost.ConnectionStatus |= flags;
+                views.SocketStates[connection.TargetSocketIndex] = target;
+                views.SocketStates[connection.GhostSocketIndex] = ghost;
+            }
         }
 
         private static bool BuildShinobuSocketCsrIndex(ConstructionSocketVaultViews views, int targetSocketCount)
@@ -2524,7 +2571,6 @@ namespace Hecton8.Building
         }
 
         private bool TryApplyShinobuVaultSnapResult(
-            IReadOnlyList<GameObject> modules,
             ConstructionSocketVaultViews views,
             BaseModuleTemplate.SocketDefinition[] ghostSockets,
             in SocketSnappingResultDTO best,
@@ -2548,30 +2594,30 @@ namespace Hecton8.Building
                 return false;
             }
 
-            int moduleCount = views.Counters.IsCreated && views.Counters.Length > 0
-                ? math.clamp(views.Counters[0], 0, views.Modules.Length)
-                : 0;
-            int sceneIndex = ResolveShinobuSceneModuleIndexForSocket(views.Modules, best.TargetSocketIndex, moduleCount);
-            if (modules == null || (uint)sceneIndex >= (uint)modules.Count || modules[sceneIndex] == null)
-                return false;
-
-            Transform targetTransform = modules[sceneIndex].transform;
             SocketStateDTO targetSocket = views.SocketStates[best.TargetSocketIndex];
-            BaseModuleTemplate.SocketDefinition ghostSocket = ghostSockets[best.GhostSocketIndex];
             byte targetDirectionByte = ShinobuSocketConstructionRuntime.ExtractDirection(targetSocket);
-            if (!TryToShinobuSocketDirection(targetDirectionByte, out ModuleSocketDirection targetDirection) ||
-                !ShinobuSocketConstructionRuntime.IsDirectionValid((byte)ghostSocket.Direction))
+            if (!TryToShinobuSocketDirection(targetDirectionByte, out ModuleSocketDirection targetDirection))
             {
                 return false;
             }
 
-            Quaternion targetSocketRotation = targetTransform.rotation * ModuleSocketTopology.RotationFromDirection(targetDirection);
-            Quaternion desiredSocketRotation = targetSocketRotation * ResolveShinobuSocketYawRotation(_ghostYawStep);
-            Quaternion ghostLocalRotation = ModuleSocketTopology.RotationFromDirection(ghostSocket.Direction);
-            Quaternion candidateRotation = desiredSocketRotation * Quaternion.Inverse(ghostLocalRotation);
-            Vector3 rotatedLocalOffset = candidateRotation * ghostSocket.LocalPosition;
-            double3 candidateRootAup = views.SocketAups[best.TargetSocketIndex] - new double3(rotatedLocalOffset.x, rotatedLocalOffset.y, rotatedLocalOffset.z);
-            double3 runtimeOriginAup = GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+            float3 matrixForward = best.SnappingMatrix.c2.xyz;
+            float3 matrixUp = best.SnappingMatrix.c1.xyz;
+            if (!math.all(math.isfinite(matrixForward)) ||
+                !math.all(math.isfinite(matrixUp)) ||
+                math.lengthsq(matrixForward) <= 0.000001f ||
+                math.lengthsq(matrixUp) <= 0.000001f)
+            {
+                return false;
+            }
+
+            Quaternion candidateRotation = Quaternion.LookRotation(
+                new Vector3(matrixForward.x, matrixForward.y, matrixForward.z),
+                new Vector3(matrixUp.x, matrixUp.y, matrixUp.z));
+            double3 candidateRootAup = best.SnappedRootAup;
+            if (!TryResolveRuntimeOriginAup(out double3 runtimeOriginAup))
+                return false;
+
             double3 candidateRuntimeDouble = candidateRootAup - runtimeOriginAup;
             if (!math.all(math.isfinite(candidateRootAup)) ||
                 !math.all(math.isfinite(candidateRuntimeDouble)) ||
@@ -2580,7 +2626,7 @@ namespace Hecton8.Building
                 return false;
             }
 
-            bestTargetTransform = targetTransform;
+            bestTargetTransform = null;
             bestAlignedPosition = new Vector3(
                 (float)candidateRuntimeDouble.x,
                 (float)candidateRuntimeDouble.y,
@@ -2590,6 +2636,7 @@ namespace Hecton8.Building
             _shinobuSnappedPosePosition = bestAlignedPosition;
             _shinobuSnappedPoseRotation = bestAlignedRotation;
             _shinobuSnappedTargetTransform = bestTargetTransform;
+            _shinobuSnappedTargetSocketIndex = best.TargetSocketIndex;
             _shinobuSnappedGhostSocketIndex = best.GhostSocketIndex;
             _shinobuSnappedTargetLocalPosition = new Vector3(
                 (float)targetSocket.LocalOffset.x,
@@ -2612,48 +2659,53 @@ namespace Hecton8.Building
             return true;
         }
 
-        private static int ResolveShinobuSceneModuleIndexForSocket(NativeArray<ConstructionSocketModuleDTO> modules, int socketIndex, int moduleCount)
-        {
-            if (!modules.IsCreated || socketIndex < 0 || moduleCount <= 0)
-                return -1;
-
-            int count = math.min(moduleCount, modules.Length);
-            for (int i = 0; i < count; i++)
-            {
-                ConstructionSocketModuleDTO module = modules[i];
-                if (module.SocketCount <= 0 || socketIndex < module.SocketStart || socketIndex >= module.SocketStart + module.SocketCount)
-                    continue;
-
-                return module.SceneModuleListIndex;
-            }
-
-            return -1;
-        }
-
-        private static uint ComputeShinobuSocketSceneHash(IReadOnlyList<GameObject> modules)
+        private static uint ComputeShinobuSocketVaultHash(ConstructionSocketVaultViews views)
         {
             uint hash = 2166136261u;
-            if (modules == null)
+            if (!views.Counters.IsCreated || views.Counters.Length <= 4)
                 return hash;
 
-            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, (uint)modules.Count);
-            for (int i = 0; i < modules.Count; i++)
-            {
-                GameObject moduleObject = modules[i];
-                if (moduleObject == null)
-                    continue;
+            int moduleCount = views.Modules.IsCreated
+                ? math.clamp(views.Counters[0], 0, views.Modules.Length)
+                : math.max(0, views.Counters[0]);
+            int socketCount = views.SocketStates.IsCreated
+                ? math.clamp(views.Counters[1], 0, views.SocketStates.Length)
+                : math.max(0, views.Counters[1]);
+            int connectionCount = views.Connections.IsCreated
+                ? math.clamp(views.Counters[4], 0, views.Connections.Length)
+                : math.max(0, views.Counters[4]);
 
-                Transform tr = moduleObject.transform;
-                Vector3 p = tr.position;
-                Quaternion r = tr.rotation;
-                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, unchecked((uint)moduleObject.GetInstanceID()));
-                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(p.x));
-                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(p.y));
-                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(p.z));
-                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(r.x));
-                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(r.y));
-                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(r.z));
-                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(r.w));
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, (uint)moduleCount);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, (uint)socketCount);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, unchecked((uint)views.Counters[2]));
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, unchecked((uint)views.Counters[3]));
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, (uint)connectionCount);
+
+            if (!views.Modules.IsCreated)
+                return hash;
+
+            for (int i = 0; i < moduleCount; i++)
+            {
+                ConstructionSocketModuleDTO module = views.Modules[i];
+                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, module.ModuleHash);
+                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, unchecked((uint)module.SocketStart));
+                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, unchecked((uint)module.SocketCount));
+                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, module.TopologyVersion);
+                hash = ShinobuSocketConstructionRuntime.FoldHash(hash, module.Flags);
+            }
+
+            if (views.Connections.IsCreated)
+            {
+                for (int i = 0; i < connectionCount; i++)
+                {
+                    SocketConnectionPairDTO connection = views.Connections[i];
+                    hash = ShinobuSocketConstructionRuntime.FoldHash(hash, unchecked((uint)connection.TargetSocketIndex));
+                    hash = ShinobuSocketConstructionRuntime.FoldHash(hash, unchecked((uint)connection.GhostSocketIndex));
+                    hash = ShinobuSocketConstructionRuntime.FoldHash(hash, connection.TargetModuleHash);
+                    hash = ShinobuSocketConstructionRuntime.FoldHash(hash, connection.GhostModuleHash);
+                    hash = ShinobuSocketConstructionRuntime.FoldHash(hash, connection.ResultHash);
+                    hash = ShinobuSocketConstructionRuntime.FoldHash(hash, connection.Flags);
+                }
             }
 
             return hash;
@@ -2751,81 +2803,162 @@ namespace Hecton8.Building
             }
         }
 
-        private bool TryMarkShinobuTargetSocketOccupied()
+        private bool TryCommitShinobuSnapOccupancy(Vector3 placedRootPosition, Quaternion placedRootRotation)
         {
-            ModuleSocket socket = _snappedSocket;
-            if (socket == null || _shinobuSnappedTargetTransform == null)
-                return false;
-
-            if (socket.IsOccupied || socket.Direction != _shinobuSnappedTargetDirection)
-                return false;
-
-            Transform socketTransform = socket.transform;
-            if (socketTransform == null || !socketTransform.IsChildOf(_shinobuSnappedTargetTransform))
-                return false;
-
-            uint compatibilityHash = ShinobuSocketConstructionRuntime.HashCompatibility(socket.CompatibleType);
-            if (!ShinobuSocketConstructionRuntime.AreCompatibilityHashesCompatible(compatibilityHash, _shinobuSnappedTargetCompatibilityHash))
-                return false;
-
-            Vector3 localPosition = _shinobuSnappedTargetTransform.InverseTransformPoint(socketTransform.position);
-            if ((localPosition - _shinobuSnappedTargetLocalPosition).sqrMagnitude > 0.0004f)
-                return false;
-
-            socket.SetOccupied(true);
-            return true;
-        }
-
-        private bool TryMarkShinobuPlacedGhostSocketOccupied(GameObject placedModule)
-        {
-            if (placedModule == null ||
-                activeBuildable == null ||
+            if (activeBuildable == null ||
                 activeBuildable.ModuleTemplate == null ||
                 activeBuildable.ModuleTemplate.SocketDefinitions == null ||
-                (uint)_shinobuSnappedGhostSocketIndex >= (uint)activeBuildable.ModuleTemplate.SocketDefinitions.Length)
+                _shinobuSnappedTargetSocketIndex < 0 ||
+                (uint)_shinobuSnappedGhostSocketIndex >= (uint)activeBuildable.ModuleTemplate.SocketDefinitions.Length ||
+                !TryResolveShinobuSocketVault(out IDataVault vault) ||
+                !ShinobuSocketConstructionRuntime.TryResolveVaultViews(vault, out ConstructionSocketVaultViews views) ||
+                !views.SocketStates.IsCreated ||
+                !views.SocketAups.IsCreated ||
+                !views.Modules.IsCreated ||
+                !views.Connections.IsCreated ||
+                !views.Counters.IsCreated ||
+                views.Counters.Length <= 4)
             {
                 return false;
             }
 
-            Transform placedTransform = placedModule.transform;
-            BaseModuleTemplate.SocketDefinition definition = activeBuildable.ModuleTemplate.SocketDefinitions[_shinobuSnappedGhostSocketIndex];
-            _shinobuTargetSocketBuffer.Clear();
-            placedModule.GetComponentsInChildren<ModuleSocket>(true, _shinobuTargetSocketBuffer);
-            bool marked = TryMarkShinobuAuthoredSocketOccupied(placedTransform, definition, _shinobuTargetSocketBuffer);
-            _shinobuTargetSocketBuffer.Clear();
-            return marked;
+            int socketCapacity = math.min(views.SocketStates.Length, views.SocketAups.Length);
+            int targetSocketCount = math.clamp(views.Counters[1], 0, socketCapacity);
+            if ((uint)_shinobuSnappedTargetSocketIndex >= (uint)targetSocketCount)
+                return false;
+
+            int moduleCount = math.clamp(views.Counters[0], 0, views.Modules.Length);
+            if (moduleCount >= views.Modules.Length || targetSocketCount >= socketCapacity)
+                return false;
+
+            int connectionCount = math.clamp(views.Counters[4], 0, views.Connections.Length);
+            if (connectionCount >= views.Connections.Length)
+            {
+                views.Counters[3] = (int)ConstructionSocketFlags.CapacityExceeded;
+                return false;
+            }
+
+            if (!math.isfinite(placedRootRotation.x) ||
+                !math.isfinite(placedRootRotation.y) ||
+                !math.isfinite(placedRootRotation.z) ||
+                !math.isfinite(placedRootRotation.w) ||
+                !TryResolveConstructionPivotAup(placedRootPosition, out double3 rootAup))
+            {
+                return false;
+            }
+
+            BaseModuleTemplate template = activeBuildable.ModuleTemplate;
+            quaternion rawModuleRotation = new quaternion(
+                placedRootRotation.x,
+                placedRootRotation.y,
+                placedRootRotation.z,
+                placedRootRotation.w);
+            float rotationLengthSq = math.lengthsq(rawModuleRotation.value);
+            if (!math.isfinite(rotationLengthSq) || rotationLengthSq <= 0.00000001f)
+                return false;
+
+            quaternion moduleRotation = new quaternion(rawModuleRotation.value * math.rsqrt(math.max(rotationLengthSq, 0.00000001f)));
+            uint moduleHash = ResolveShinobuModuleHash(activeBuildable);
+            int socketStart = targetSocketCount;
+            int placedSocketCount = template.SocketDefinitions.Length;
+            if (placedSocketCount <= 0 || targetSocketCount > socketCapacity - placedSocketCount)
+                return false;
+
+            int writtenSockets = WriteShinobuModuleSocketsToVault(
+                template,
+                moduleHash,
+                rootAup,
+                moduleRotation,
+                socketStart,
+                socketCapacity,
+                _shinobuSnappedGhostSocketIndex,
+                views);
+            if (writtenSockets <= 0 || _shinobuSnappedGhostSocketIndex >= writtenSockets)
+                return false;
+
+            SocketStateDTO targetSocket = views.SocketStates[_shinobuSnappedTargetSocketIndex];
+            targetSocket.ConnectionStatus |= ConstructionSocketFlags.Connected;
+            views.SocketStates[_shinobuSnappedTargetSocketIndex] = targetSocket;
+
+            uint topologyFlags = ConstructionSocketFlags.TopologyDirty | ConstructionSocketFlags.RollbackFence;
+            ConstructionSocketModuleDTO module;
+            module.RootAup = rootAup;
+            module.Rotation = moduleRotation;
+            module.BoundsCenter = new float3(template.ProxyBoundsCenter.x, template.ProxyBoundsCenter.y, template.ProxyBoundsCenter.z);
+            module.BoundsExtents = new float3(
+                math.max(0.001f, template.ProxyBoundsSize.x * 0.5f),
+                math.max(0.001f, template.ProxyBoundsSize.y * 0.5f),
+                math.max(0.001f, template.ProxyBoundsSize.z * 0.5f));
+            module.ModuleHash = moduleHash;
+            module.SocketStart = socketStart;
+            module.SocketCount = writtenSockets;
+            module.Flags = topologyFlags;
+            module.TopologyVersion = unchecked(_shinobuSocketVaultTopologyVersion + 1u);
+            module.DearLieDampen = _shinobuDearLieDampen;
+            module.ConnectedMask = 0u;
+            module.SceneModuleListIndex = -1;
+            views.Modules[moduleCount] = module;
+
+            int ghostSocketGlobalIndex = socketStart + _shinobuSnappedGhostSocketIndex;
+            if (!TryWriteShinobuConnectionPair(views, _shinobuSnappedTargetSocketIndex, ghostSocketGlobalIndex, targetSocket.ParentModuleHash, moduleHash))
+            {
+                topologyFlags |= ConstructionSocketFlags.CapacityExceeded;
+                module.Flags = topologyFlags;
+                views.Modules[moduleCount] = module;
+            }
+
+            _shinobuSocketVaultConnectionCount = views.Counters[4];
+
+            int newSocketCount = targetSocketCount + writtenSockets;
+            _shinobuSocketVaultTopologyVersion = unchecked(_shinobuSocketVaultTopologyVersion + 1u);
+            views.Counters[0] = moduleCount + 1;
+            views.Counters[1] = newSocketCount;
+            views.Counters[2] = unchecked((int)_shinobuSocketVaultTopologyVersion);
+            views.Counters[3] = (int)topologyFlags;
+
+            _shinobuSocketVaultSceneHash = ComputeShinobuSocketVaultHash(views);
+            _shinobuSocketVaultModuleCount = moduleCount + 1;
+            _shinobuSocketVaultTargetCount = newSocketCount;
+            _shinobuSocketVaultHasRootAup = true;
+            _shinobuSocketVaultRootAup = rootAup;
+            ApplyShinobuConnectionPairsToVault(views, newSocketCount);
+            return BuildShinobuSocketCsrIndex(views, newSocketCount);
         }
 
-        private static bool TryMarkShinobuAuthoredSocketOccupied(
-            Transform moduleTransform,
-            BaseModuleTemplate.SocketDefinition definition,
-            List<ModuleSocket> authoredSockets)
+        private static bool TryWriteShinobuConnectionPair(
+            ConstructionSocketVaultViews views,
+            int targetSocketIndex,
+            int ghostSocketIndex,
+            uint targetModuleHash,
+            uint ghostModuleHash)
         {
-            if (moduleTransform == null || authoredSockets == null || authoredSockets.Count == 0)
+            if (!views.Connections.IsCreated || !views.Counters.IsCreated || views.Counters.Length <= 4)
                 return false;
 
-            uint definitionCompatibility = ShinobuSocketConstructionRuntime.HashCompatibility(definition.CompatibleType);
-            Vector3 definitionLocal = definition.LocalPosition;
-            for (int i = 0; i < authoredSockets.Count; i++)
+            int connectionIndex = math.clamp(views.Counters[4], 0, views.Connections.Length);
+            if (connectionIndex >= views.Connections.Length)
             {
-                ModuleSocket socket = authoredSockets[i];
-                if (socket == null || socket.Direction != definition.Direction)
-                    continue;
-
-                uint socketCompatibility = ShinobuSocketConstructionRuntime.HashCompatibility(socket.CompatibleType);
-                if (!ShinobuSocketConstructionRuntime.AreCompatibilityHashesCompatible(definitionCompatibility, socketCompatibility))
-                    continue;
-
-                Vector3 socketLocal = moduleTransform.InverseTransformPoint(socket.transform.position);
-                Vector3 delta = socketLocal - definitionLocal;
-                if (delta.sqrMagnitude > 0.0004f)
-                    continue;
-
-                socket.SetOccupied(true);
-                return true;
+                views.Counters[3] = (int)ConstructionSocketFlags.CapacityExceeded;
+                return false;
             }
 
-            return false;
+            uint hash = ShinobuSocketConstructionRuntime.FoldHash(2166136261u, (uint)targetSocketIndex);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, (uint)ghostSocketIndex);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, targetModuleHash);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, ghostModuleHash);
+
+            SocketConnectionPairDTO pair;
+            pair.TargetSocketIndex = targetSocketIndex;
+            pair.GhostSocketIndex = ghostSocketIndex;
+            pair.TargetModuleHash = targetModuleHash;
+            pair.GhostModuleHash = ghostModuleHash;
+            pair.ConnectionKind = 0u;
+            pair.Flags = ConstructionSocketFlags.ValidSnap;
+            pair.ResultHash = hash;
+            pair._pad0 = 0u;
+            views.Connections[connectionIndex] = pair;
+            views.Counters[4] = connectionIndex + 1;
+            return true;
         }
 
         private bool UpdatePlacementValidityState()
@@ -2834,6 +2967,7 @@ namespace Hecton8.Building
             bool terrainValid = UpdateTerrainSdfPlacementState();
             bool finalValid = semanticValid && terrainValid && _integrityPlacementValid;
             _builderGhostPreviewCanBuild = finalValid;
+            RefreshActiveBuildReadiness();
 
             return finalValid;
         }
@@ -2874,7 +3008,7 @@ namespace Hecton8.Building
                 in worldSampler,
                 in sipBudget);
 
-            if (TryFindOccupiedConstructionGridCell(
+            if (TryFindOccupiedConstructionGridCellInSocketVault(
                     in request,
                     in settings,
                     out int occupiedCellHash))
@@ -2946,11 +3080,11 @@ namespace Hecton8.Building
             _lastConstructionWorldSampler = worldSampler;
 
             IDataVault telemetryVault = _shinobuSocketVault;
-            if (ModularBaseConstructionValidator.TryResolveTelemetryRing(telemetryVault, out var telemetryRing))
+            if (ModularBaseConstructionValidator.TryReadTelemetryRing(telemetryVault, out var telemetryRing))
             {
                 ModularBaseConstructionValidator.WriteTelemetry(
                     telemetryRing,
-                    (uint)Time.frameCount,
+                    settings.Frame != 0u ? settings.Frame : CaptureShinobuFrameId(),
                     in request,
                     in result,
                     0f,
@@ -3013,12 +3147,15 @@ namespace Hecton8.Building
             if (template == null || activeBuildable == null)
                 return false;
 
-            ModularBaseConstructionValidator.TryReadTunerSettingsFromVault(_shinobuSocketVault, out settings);
+            if (!ModularBaseConstructionValidator.TryReadTunerSettingsFromVault(_shinobuSocketVault, out settings))
+                settings = ModularBaseConstructionValidator.GetTunerSettings();
             float gridSize = ResolveConstructionGridSize();
             if (!TryResolveConstructionPivotAup(previewPosition, out double3 pivotAup))
                 return false;
 
-            double3 rootAup = ResolveConstructionRootAup(previewPosition);
+            double3 rootAup = TryUpdateConstructionRootAupFromSocketVault(out double3 vaultRootAup)
+                ? vaultRootAup
+                : BuildFallbackConstructionRootAup(previewPosition);
             uint moduleHash = ResolveShinobuModuleHash(activeBuildable);
             uint rotation = ResolveConstructionRotationIndex(previewRotation);
             if (!ModularBaseConstructionValidator.TryBuildRequestFromAup(
@@ -3032,7 +3169,7 @@ namespace Hecton8.Building
 
             settings.GridSizeMeters = gridSize;
             settings.GlobalQualityWeight = ModularBaseConstructionValidator.ResolveGlobalQualityWeight();
-            settings.Frame = (uint)Time.frameCount;
+            settings.Frame = CaptureShinobuFrameId();
             settings.CandidatePortMask = ToConstructionPortMask(template.SocketMask);
 
             bounds = ModularBaseConstructionValidator.BuildBounds(
@@ -3059,108 +3196,33 @@ namespace Hecton8.Building
             return true;
         }
 
-        private bool TryFindOccupiedConstructionGridCell(
+        private bool TryFindOccupiedConstructionGridCellInSocketVault(
             in ConstructionRequestDTO request,
             in ConstructionValidationSettingsDTO settings,
             out int occupiedCellHash)
         {
             occupiedCellHash = 0;
-            ConstructionManager constructionManager = ResolveCachedConstructionManager();
-            IReadOnlyList<GameObject> modules = constructionManager != null ? constructionManager.SpawnedModules : null;
-            if (modules == null)
-                return false;
-
             float gridSize = settings.GridSizeMeters > 0.001f ? settings.GridSizeMeters : ResolveConstructionGridSize();
-            int moduleCount = modules.Count;
-            uint frame = settings.Frame != 0u ? settings.Frame : unchecked((uint)Time.frameCount);
-            IDataVault vault = _shinobuSocketVault;
-            if (vault != null &&
-                ModularBaseConstructionValidator.TryResolveOccupancyHashTable(vault, out _) &&
-                vault.TryLockBuffer(BufferID.ConstructionBuilderOccupancy, SystemID.Construction))
+            if (!TryResolveShinobuSocketVault(out IDataVault vault) ||
+                !ShinobuSocketConstructionRuntime.TryResolveVaultViews(vault, out ConstructionSocketVaultViews views) ||
+                !views.Modules.IsCreated ||
+                !views.Counters.IsCreated ||
+                views.Counters.Length <= 0)
             {
-                bool resolvedLockedTable = ModularBaseConstructionValidator.TryResolveOccupancyHashTable(
-                    vault,
-                    out NativeArray<BaseModuleOccupancyDTO> occupancyTable);
-                bool hydrated = resolvedLockedTable;
-                bool foundInVaultTable = false;
-                int vaultOccupiedCellHash = 0;
-                if (resolvedLockedTable)
-                {
-                    for (int i = 0; i < moduleCount; i++)
-                    {
-                        GameObject module = modules[i];
-                        if (module == null)
-                            continue;
-
-                        Transform moduleTransform = module.transform;
-                        if (moduleTransform == null)
-                            continue;
-
-                        if (!TryResolveConstructionPivotAup(moduleTransform.position, out double3 moduleAup))
-                            continue;
-
-                        if (!ModularBaseConstructionValidator.TryBuildRequestFromAup(
-                                request.RootAUP,
-                                moduleAup,
-                                0u,
-                                0u,
-                                gridSize,
-                                out ConstructionRequestDTO existing))
-                        {
-                            continue;
-                        }
-
-                        BaseModuleOccupancyDTO entry;
-                        entry.GridPos = existing.GridPos;
-                        entry.ModuleHash = existing.ModuleHash;
-                        entry.PortMask = ConstructionPortMask.AllCardinal;
-                        entry.NodeIndex = 0;
-                        entry.Flags = 0u;
-                        entry._pad0 = 0u;
-                        hydrated &= ModularBaseConstructionValidator.TryInsertOccupancyCell(
-                            occupancyTable,
-                            in entry,
-                            frame);
-                    }
-
-                    if (hydrated)
-                    {
-                        foundInVaultTable = ModularBaseConstructionValidator.TryFindOccupiedCell(
-                            occupancyTable,
-                            request.GridPos,
-                            frame,
-                            out vaultOccupiedCellHash);
-                    }
-                }
-
-                vault.TryUnlockBuffer(BufferID.ConstructionBuilderOccupancy, SystemID.Construction);
-                if (foundInVaultTable)
-                {
-                    occupiedCellHash = vaultOccupiedCellHash;
-                    return true;
-                }
-
-                if (hydrated)
-                    return false;
+                return false;
             }
 
+            int moduleCount = math.clamp(views.Counters[0], 0, views.Modules.Length);
             for (int i = 0; i < moduleCount; i++)
             {
-                GameObject module = modules[i];
-                if (module == null)
-                    continue;
-
-                Transform moduleTransform = module.transform;
-                if (moduleTransform == null)
-                    continue;
-
-                if (!TryResolveConstructionPivotAup(moduleTransform.position, out double3 moduleAup))
+                ConstructionSocketModuleDTO module = views.Modules[i];
+                if (!math.all(math.isfinite(module.RootAup)))
                     continue;
 
                 if (!ModularBaseConstructionValidator.TryBuildRequestFromAup(
                         request.RootAUP,
-                        moduleAup,
-                        0u,
+                        module.RootAup,
+                        module.ModuleHash,
                         0u,
                         gridSize,
                         out ConstructionRequestDTO existing))
@@ -3185,7 +3247,7 @@ namespace Hecton8.Building
             out float maxDensity)
         {
             maxDensity = 0f;
-            int probeCount = ModularBaseConstructionValidator.ResolveTerrainProbeCount(settings.GlobalQualityWeight);
+            int probeCount = ModularBaseConstructionValidator.ResolveTerrainProbeCount();
             for (int i = 0; i < probeCount; i++)
             {
                 float3 localProbe = ModularBaseConstructionValidator.ResolveTerrainProbeLocal(
@@ -3199,7 +3261,7 @@ namespace Hecton8.Building
                 if (!math.all(math.isfinite(probeRuntimeFloat)))
                     return true;
 
-                if (!HectonVoxelVolume.TrySampleRuntimeSdfDensity(probeRuntime, out float density))
+                if (!HectonVoxelVolume.TryReadRuntimeSdfDensity(probeRuntime, out float density))
                     continue;
 
                 if (density > 0f)
@@ -3258,18 +3320,22 @@ namespace Hecton8.Building
                     previewRotation,
                     views.BuilderGhostSdfSamples,
                     out float minSdf,
-                    out uint sdfCornerChecks,
                     out uint solidCornerCount))
             {
                 return false;
             }
 
             Vector3 centerRuntime = previewPosition + (previewRotation * template.ProxyBoundsCenter);
-            double3 centerAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(centerRuntime);
-            double3 originAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);
+            if (!TryResolveConstructionPivotAup(centerRuntime, out double3 centerAup) ||
+                !TryResolveConstructionPivotAup(Vector3.zero, out double3 originAup))
+            {
+                return false;
+            }
+
             quaternion rotation = new quaternion(previewRotation.x, previewRotation.y, previewRotation.z, previewRotation.w);
 
             long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+            uint frame = CaptureShinobuFrameId();
             BuildBuilderGhostStateJob buildJob = new BuildBuilderGhostStateJob
             {
                 States = views.BuilderGhostStates,
@@ -3281,13 +3347,13 @@ namespace Hecton8.Building
                 GridSizeMeters = ResolveConstructionGridSize(),
                 PrefabHashID = moduleHash,
                 ValidationFlags = flags,
-                AnimationPhase = math.frac(Time.unscaledTime * 0.5f),
+                AnimationPhase = ResolveShinobuAnimationPhase(frame),
                 GlobalQualityWeight = quality,
                 DearLieDampen = _shinobuDearLieDampen,
                 DearLieWiggleSpeed = ShinobuSocketConstructionRuntime.GetTuning().DearLieWiggleSpeed,
                 ValidColor = new float4(0.08f, 1f, 0.72f, 0.72f),
                 InvalidColor = new float4(1f, 0.18f, 0.12f, 0.78f),
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = frame,
                 StateIndex = 0
             };
             JobHandle buildHandle = buildJob.Schedule();
@@ -3300,9 +3366,6 @@ namespace Hecton8.Building
                 VoxelSdfSamples = views.BuilderGhostSdfSamples,
                 BoundsExtents = (float3)(Vector3.Max(template.ProxyBoundsSize, Vector3.one * 0.001f) * 0.5f),
                 ExistingCount = views.Counters.IsCreated && views.Counters.Length > 0 ? math.max(0, views.Counters[0]) : math.max(0, _shinobuSocketVaultModuleCount),
-                SdfSampleCount = (int)(sdfCornerChecks > (uint)ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount
-                    ? (uint)ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount
-                    : sdfCornerChecks),
                 SolidSdfThreshold = 0f,
                 GlobalQualityWeight = quality,
                 StateIndex = 0
@@ -3310,12 +3373,12 @@ namespace Hecton8.Building
             _builderGhostValidationHandle = validateJob.Schedule(buildHandle);
             H8Memory.RegisterActiveJob(SystemID.Construction, _builderGhostValidationHandle);
             _builderGhostValidationPending = true;
+            _builderGhostValidationSelectionGeneration = _activeBuildableGeneration;
             _builderGhostValidationQueryHash = queryHash;
-            _builderGhostValidationFrame = unchecked((uint)Time.frameCount);
+            _builderGhostValidationFrame = frame;
             _builderGhostValidationStartTicks = startTicks;
             _builderGhostValidationQuality = quality;
             _builderGhostValidationMinSdf = minSdf;
-            _builderGhostValidationSdfCornerChecks = sdfCornerChecks;
             _builderGhostValidationSolidCornerCount = solidCornerCount;
             return false;
         }
@@ -3334,7 +3397,8 @@ namespace Hecton8.Building
 
             _builderGhostValidationHandle = default;
             _builderGhostValidationPending = false;
-            if (queryHash != _builderGhostValidationQueryHash ||
+            if (_builderGhostValidationSelectionGeneration != _activeBuildableGeneration ||
+                queryHash != _builderGhostValidationQueryHash ||
                 !views.BuilderGhostStates.IsCreated ||
                 views.BuilderGhostStates.Length <= 0)
             {
@@ -3351,7 +3415,7 @@ namespace Hecton8.Building
                     _builderGhostValidationFrame,
                     state.AUP_TargetPosition,
                     state.PrefabHashID,
-                    _builderGhostValidationSdfCornerChecks,
+                    (uint)ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount,
                     state.ValidationFlags,
                     solverMicroseconds,
                     _builderGhostValidationSolidCornerCount > 0u ? math.min(_builderGhostValidationMinSdf, -0.01f) : _builderGhostValidationMinSdf,
@@ -3368,11 +3432,9 @@ namespace Hecton8.Building
             Quaternion previewRotation,
             NativeArray<byte> sdfSamples,
             out float minSdf,
-            out uint sampledCornerCount,
             out uint solidCornerCount)
         {
             minSdf = float.MaxValue;
-            sampledCornerCount = 0u;
             solidCornerCount = 0u;
             if (template == null ||
                 !sdfSamples.IsCreated ||
@@ -3386,9 +3448,7 @@ namespace Hecton8.Building
             for (int i = 0; i < ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount; i++)
                 sdfSamples[i] = 127;
 
-            int sampleCount = ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount;
-            sampledCornerCount = (uint)sampleCount;
-            for (int sampleOrdinal = 0; sampleOrdinal < sampleCount; sampleOrdinal++)
+            for (int sampleOrdinal = 0; sampleOrdinal < ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount; sampleOrdinal++)
             {
                 int i = ShinobuSocketConstructionRuntime.ResolveBuilderGhostCornerIndex(sampleOrdinal);
                 float sx = (i & 1) == 0 ? -1f : 1f;
@@ -3405,7 +3465,7 @@ namespace Hecton8.Building
                     continue;
                 }
 
-                if (!HectonVoxelVolume.TrySampleRuntimeSdfDensity(runtime, out float density))
+                if (!HectonVoxelVolume.TryReadRuntimeSdfDensity(runtime, out float density))
                 {
                     sdfSamples[i] = 127;
                     continue;
@@ -3428,26 +3488,44 @@ namespace Hecton8.Building
             return true;
         }
 
-        private double3 ResolveConstructionRootAup(Vector3 fallbackRuntimePosition)
+        private bool TryUpdateConstructionRootAupFromSocketVault(out double3 rootAup)
         {
-            ConstructionManager constructionManager = ResolveCachedConstructionManager();
-            if (constructionManager != null && constructionManager.SpawnedModules != null)
+            rootAup = default;
+            if (TryResolveShinobuSocketVault(out IDataVault vault) &&
+                ShinobuSocketConstructionRuntime.TryResolveVaultViews(vault, out ConstructionSocketVaultViews views) &&
+                views.Modules.IsCreated &&
+                views.Counters.IsCreated &&
+                views.Counters.Length > 0)
             {
-                IReadOnlyList<GameObject> modules = constructionManager.SpawnedModules;
-                for (int i = 0, count = modules.Count; i < count; i++)
+                int moduleCount = math.clamp(views.Counters[0], 0, views.Modules.Length);
+                for (int i = 0; i < moduleCount; i++)
                 {
-                    GameObject module = modules[i];
-                    if (module != null &&
-                        TryResolveConstructionPivotAup(module.transform.position, out double3 moduleAup))
-                    {
-                        return moduleAup;
-                    }
+                    double3 candidate = views.Modules[i].RootAup;
+                    if (!math.all(math.isfinite(candidate)))
+                        continue;
+
+                    _shinobuSocketVaultRootAup = candidate;
+                    _shinobuSocketVaultHasRootAup = true;
+                    rootAup = candidate;
+                    return true;
                 }
             }
 
-            return TryResolveConstructionPivotAup(fallbackRuntimePosition, out double3 fallbackAup)
-                ? fallbackAup
-                : GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+            if (_shinobuSocketVaultHasRootAup && math.all(math.isfinite(_shinobuSocketVaultRootAup)))
+            {
+                rootAup = _shinobuSocketVaultRootAup;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static double3 BuildFallbackConstructionRootAup(Vector3 fallbackRuntimePosition)
+        {
+            if (TryResolveConstructionPivotAup(fallbackRuntimePosition, out double3 fallbackAup))
+                return fallbackAup;
+
+            return TryResolveRuntimeOriginAup(out double3 originAup) ? originAup : double3.zero;
         }
 
         private static bool TryResolveConstructionPivotAup(Vector3 runtimePosition, out double3 pivotAup)
@@ -3460,15 +3538,17 @@ namespace Hecton8.Building
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
-                in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            if (!MathGuard.IsFinite(in resolvedAup))
+            if (!TryResolveRuntimeOriginAup(out double3 originAup))
                 return false;
 
-            pivotAup = resolvedAup.ToAbsoluteDouble3();
+            pivotAup = originAup + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             return math.all(math.isfinite(pivotAup));
+        }
+
+        private static bool TryResolveRuntimeOriginAup(out double3 originAup)
+        {
+            originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            return math.all(math.isfinite(originAup));
         }
 
         private float ResolveConstructionGridSize()
@@ -3573,7 +3653,7 @@ namespace Hecton8.Building
             signal.ModuleHash = ResolveShinobuModuleHash(activeBuildable);
             signal.FailureFlags = _lastConstructionValidationResult.FailureFlags;
             signal.ResultHash = _lastConstructionValidationResult.ResultHash;
-            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.Frame = CaptureShinobuFrameId();
             signal.IsValid = placementAllowed ? (byte)1 : (byte)0;
             float signalQuality = ShinobuSocketConstructionRuntime.ResolveGlobalQualityWeight();
             ConstructionSocketTuningDTO socketTuning = ShinobuSocketConstructionRuntime.GetTuning();
@@ -3631,7 +3711,7 @@ namespace Hecton8.Building
 
             if (!_habitatConstructionManager.IsValidationPending && needsValidation)
             {
-                ConstructionManager constructionManager = ResolveCachedConstructionManager();
+                ConstructionManager constructionManager = GetCachedConstructionManager();
                 if (_habitatConstructionManager.ScheduleIntegrityValidation(
                         constructionManager,
                         activeBuildable,
@@ -3664,9 +3744,9 @@ namespace Hecton8.Building
             if (!_builderGhostPreviewActive || activeBuildable == null)
                 return false;
 
-            ConstructionManager constructionManager = ResolveCachedConstructionManager();
+            ConstructionManager constructionManager = GetCachedConstructionManager();
             snapshot.Buildable = activeBuildable;
-            snapshot.TargetSocket = _snappedSocket;
+            snapshot.TargetSocketIndex = _shinobuSnappedTargetSocketIndex;
             snapshot.ModuleCount = constructionManager != null ? constructionManager.ModuleCount : 0;
             snapshot.Position = _builderGhostPreviewPosition;
             snapshot.Rotation = _builderGhostPreviewRotation;
@@ -3676,7 +3756,7 @@ namespace Hecton8.Building
         private static bool AreEquivalentSnapshots(ValidationSnapshot lhs, ValidationSnapshot rhs)
         {
             return ReferenceEquals(lhs.Buildable, rhs.Buildable) &&
-                   ReferenceEquals(lhs.TargetSocket, rhs.TargetSocket) &&
+                   lhs.TargetSocketIndex == rhs.TargetSocketIndex &&
                    lhs.ModuleCount == rhs.ModuleCount &&
                    (lhs.Position - rhs.Position).sqrMagnitude <= 0.0001f &&
                    Quaternion.Dot(lhs.Rotation, rhs.Rotation) >= 0.9999f;
@@ -3704,11 +3784,21 @@ namespace Hecton8.Building
                 return;
             }
 
-            bool wroteAny = false;
-            for (int i = 0; i < data.buildCost.Count; i++)
+            Span<int> costHashes = stackalloc int[BuildCostDigestCapacity];
+            Span<int> costAmounts = stackalloc int[BuildCostDigestCapacity];
+            Span<int> costIndices = stackalloc int[BuildCostDigestCapacity];
+            int groupedCostCount = PrepareBuildCostDigestGroups(data, costHashes, costAmounts, costIndices);
+            if (groupedCostCount < 0)
             {
-                InventoryCost cost = data.buildCost[i];
-                if (cost == null || cost.item == null || cost.amount <= 0)
+                AppendText(ref buffer, "COST OVERFLOW");
+                return;
+            }
+
+            bool wroteAny = false;
+            for (int i = 0; i < groupedCostCount; i++)
+            {
+                InventoryCost cost = data.buildCost[costIndices[i]];
+                if (cost == null || cost.item == null)
                     continue;
 
                 if (wroteAny)
@@ -3719,16 +3809,75 @@ namespace Hecton8.Building
                 AppendText(ref buffer, " ");
 
                 int available = inventory != null
-                    ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
+                    ? inventory.CountAvailableTotal(costHashes[i])
                     : 0;
                 buffer.AppendInt(available);
                 AppendText(ref buffer, "/");
-                buffer.AppendInt(cost.amount);
+                buffer.AppendInt(costAmounts[i]);
                 wroteAny = true;
             }
 
             if (!wroteAny)
                 AppendText(ref buffer, "NO COST");
+        }
+
+        private static int PrepareBuildCostDigestGroups(
+            BuildableData data,
+            Span<int> costHashes,
+            Span<int> costAmounts,
+            Span<int> costIndices)
+        {
+            if (data == null || data.buildCost == null || data.buildCost.Count == 0)
+                return 0;
+
+            int groupedCount = 0;
+            int sourceCount = data.buildCost.Count;
+            for (int i = 0; i < sourceCount; i++)
+            {
+                InventoryCost cost = data.buildCost[i];
+                if (cost == null || cost.item == null || cost.amount <= 0)
+                    continue;
+
+                int itemHashId = Hecton.Localization.LocHash.Compute(cost.item.PersistentId);
+                if (itemHashId == 0)
+                    continue;
+
+                int groupIndex = FindBuildCostDigestGroup(costHashes, groupedCount, itemHashId);
+                if (groupIndex < 0)
+                {
+                    if (groupedCount >= costHashes.Length ||
+                        groupedCount >= costAmounts.Length ||
+                        groupedCount >= costIndices.Length)
+                    {
+                        return -1;
+                    }
+
+                    groupIndex = groupedCount;
+                    costHashes[groupIndex] = itemHashId;
+                    costAmounts[groupIndex] = 0;
+                    costIndices[groupIndex] = i;
+                    groupedCount++;
+                }
+
+                int current = costAmounts[groupIndex];
+                if (current > int.MaxValue - cost.amount)
+                    return -1;
+
+                costAmounts[groupIndex] = current + cost.amount;
+            }
+
+            return groupedCount;
+        }
+
+        private static int FindBuildCostDigestGroup(Span<int> costHashes, int groupedCount, int itemHashId)
+        {
+            for (int i = 0; i < groupedCount; i++)
+            {
+                if (costHashes[i] == itemHashId)
+                    return i;
+            }
+
+            return -1;
         }
 
         private static string DescribePowerRole(BuildableData data)
@@ -3845,8 +3994,7 @@ namespace Hecton8.Building
                 return;
             }
 
-            BaseModule module = hit.collider != null ? hit.collider.GetComponentInParent<BaseModule>() : null;
-            if (module == null)
+            if (!TryResolveTargetModule(hit.collider, out BaseModule module))
             {
                 NotifyBuildBlocked("NO MODULE TARGET");
                 return;
@@ -3876,7 +4024,13 @@ namespace Hecton8.Building
             if (!TryGetBuildHit(ray, HectonLayerMasks.ConstructionSurfaceLayerMask, out RaycastHit hit))
                 return null;
 
-            return hit.collider != null ? hit.collider.GetComponentInParent<BaseModule>() : null;
+            return TryResolveTargetModule(hit.collider, out BaseModule module) ? module : null;
+        }
+
+        private static bool TryResolveTargetModule(Collider collider, out BaseModule module)
+        {
+            module = null;
+            return collider != null && LaserCutterTargetRegistry.TryResolveModule(collider, out module);
         }
 
         private bool TryRequestModuleDeconstruction(
@@ -3889,7 +4043,7 @@ namespace Hecton8.Building
             if (module == null)
                 return false;
 
-            IHabitatDeconstructionSystem deconstructionSystem = GlobalRegistry.HabitatDeconstruction;
+            IHabitatDeconstructionSystem deconstructionSystem = _cachedHabitatDeconstructionSystem;
             if (deconstructionSystem == null || !deconstructionSystem.IsInitialized)
                 return false;
 
@@ -3914,7 +4068,7 @@ namespace Hecton8.Building
                 RequesterEntityId = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId())),
                 MaxDistance = Mathf.Max(0f, maxDistance),
                 RayDirection = new float3(rayDirection.x, rayDirection.y, rayDirection.z),
-                Frame = (uint)Mathf.Max(0, Time.frameCount),
+                Frame = CaptureShinobuFrameId(),
                 ToolKind = toolKind,
                 Flags = 0
             };
@@ -3924,21 +4078,35 @@ namespace Hecton8.Building
 
         private bool TryGetBuildHit(Ray ray, LayerMask mask, out RaycastHit hit)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                ray,
-                _buildHits,
-                buildDistance,
-                mask,
-                QueryTriggerInteraction.Ignore);
+            hit = default;
+            IInteractionSignalService interactionService = _cachedInteractionSignalService;
+            if (interactionService == null || !interactionService.IsInitialized)
+                return false;
 
-            if (hitCount > 0)
+            float3 origin = new float3(ray.origin.x, ray.origin.y, ray.origin.z);
+            float3 direction = new float3(ray.direction.x, ray.direction.y, ray.direction.z);
+            float directionLengthSq = math.lengthsq(direction);
+            if (!math.all(math.isfinite(origin)) ||
+                !math.all(math.isfinite(direction)) ||
+                directionLengthSq <= 0.000001f ||
+                !math.isfinite(buildDistance) ||
+                buildDistance <= 0f)
             {
-                hit = _buildHits[0];
-                return true;
+                return false;
             }
 
-            hit = default;
-            return false;
+            direction *= math.rsqrt(math.max(directionLengthSq, 0.000001f));
+            if (_buildRayRequesterId == 0UL)
+                _buildRayRequesterId = EntityId.ToULong(gameObject.GetEntityId()) ^ 0x4255494C44524159UL;
+
+            return interactionService.TryRaycastPrimary(
+                _buildRayRequesterId,
+                ray.origin,
+                new Vector3(direction.x, direction.y, direction.z),
+                buildDistance,
+                mask.value,
+                QueryTriggerInteraction.Ignore,
+                out hit);
         }
 
         private bool ConsumeResources(BuildableData data)
@@ -3949,17 +4117,20 @@ namespace Hecton8.Building
             return _habitatConstructionManager.ConsumeBuildResources(inventory, data);
         }
 
-        private void PublishConstructionCommitSignals(GameObject placedModule, BuildableData data)
+        private void PublishConstructionCommitSignals(
+            GameObject placedModule,
+            BuildableData data,
+            Vector3 modulePosition,
+            Quaternion moduleRotation)
         {
             if (placedModule == null || data == null)
                 return;
 
             EnsureConstructionSignalLanes();
-            Transform moduleTransform = placedModule.transform;
             BaseModuleTemplate template = data.ModuleTemplate;
             Vector3 localCenter = template != null ? template.ProxyBoundsCenter : Vector3.zero;
             Vector3 proxySize = template != null ? template.ProxyBoundsSize : Vector3.one;
-            Vector3 centerRuntime = moduleTransform.TransformPoint(localCenter);
+            Vector3 centerRuntime = modulePosition + moduleRotation * localCenter;
             if (!TryResolveConstructionPivotAup(centerRuntime, out double3 centerAupDouble))
                 return;
 
@@ -3983,12 +4154,31 @@ namespace Hecton8.Building
             flora.Extents = extents;
             flora.ModuleHash = moduleHash;
             flora.SourceEntityLow = sourceLow;
-            flora.Frame = unchecked((uint)Time.frameCount);
+            flora.Frame = CaptureShinobuFrameId();
             flora.Operation = FloraExclusionSignal.OperationApply;
             flora.Flags = 0;
             flora._pad0 = 0;
             flora._pad1 = 0u;
             SignalBus<FloraExclusionSignal>.TryPush(in flora);
+        }
+
+        private uint CaptureShinobuFrameId()
+        {
+            uint dispatcherFrame = TimeSliceScheduler.CurrentFrameId;
+            if (dispatcherFrame != 0u)
+            {
+                if (dispatcherFrame > _shinobuBuilderFrameCounter)
+                    _shinobuBuilderFrameCounter = dispatcherFrame;
+                return dispatcherFrame;
+            }
+
+            _shinobuBuilderFrameCounter = unchecked(_shinobuBuilderFrameCounter + 1u);
+            return _shinobuBuilderFrameCounter != 0u ? _shinobuBuilderFrameCounter : 1u;
+        }
+
+        private static float ResolveShinobuAnimationPhase(uint frame)
+        {
+            return math.frac(frame * (1f / 120f));
         }
 
         private static uint FoldEntityId(ulong entityId)
@@ -4000,45 +4190,30 @@ namespace Hecton8.Building
         //  AUDIO
         // ══════════════════════════════════════════════════════════
 
-        private static IPlayerRuntimeContext ResolvePlayerContext()
+        private static IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null)
-                return playerContext;
-
-            PlayerRuntimeContextService playerService = PlayerRuntimeContextService.EnsureRuntimeInstance();
-            playerService.InitializeService();
             return GlobalRegistry.Player;
         }
 
-        private static IEnvironmentRuntimeContext ResolveEnvironmentContext()
+        private static IEnvironmentRuntimeContext ResolveEnvironmentRuntimeContext()
         {
-            IEnvironmentRuntimeContext environmentContext = GlobalRegistry.Environment;
-            if (environmentContext != null)
-                return environmentContext;
-
-            EnvironmentRuntimeContextService environmentService = EnvironmentRuntimeContextService.EnsureRuntimeInstance();
-            environmentService.InitializeService();
             return GlobalRegistry.Environment;
         }
 
         private static ConstructionManager ResolveConstructionManager()
         {
-            IEnvironmentRuntimeContext environmentContext = ResolveEnvironmentContext();
+            IEnvironmentRuntimeContext environmentContext = ResolveEnvironmentRuntimeContext();
             return environmentContext != null ? environmentContext.ConstructionManager : null;
         }
 
-        private ConstructionManager ResolveCachedConstructionManager()
+        private ConstructionManager GetCachedConstructionManager()
         {
-            if (_cachedConstructionManager == null)
-                _cachedConstructionManager = ResolveConstructionManager();
-
             return _cachedConstructionManager;
         }
 
         private static ModuleCatalog ResolveModuleCatalog()
         {
-            IEnvironmentRuntimeContext environmentContext = ResolveEnvironmentContext();
+            IEnvironmentRuntimeContext environmentContext = ResolveEnvironmentRuntimeContext();
             return environmentContext != null ? environmentContext.ModuleCatalog : null;
         }
 
@@ -4047,8 +4222,9 @@ namespace Hecton8.Building
             if (clip == null)
                 return;
 
-            if (Hecton8.Core.GlobalRegistry.Audio != null)
-                Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(clip);
+            IAudioService audioService = _cachedAudioService;
+            if (audioService != null)
+                audioService.PlayStatic2D(clip);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -4086,13 +4262,13 @@ namespace Hecton8.Building
             // Vizualizatsiya snap-zony (tolko v Play Mode pri nalichii prizraka)
             if (Application.isPlaying && _builderGhostPreviewActive)
             {
-                if (_isSnapped && _snappedSocketTransform != null)
+                if (_isSnapped && _shinobuHasSnappedPose)
                 {
-                    // Snap active — zelenaya liniya k soketu
+                    // Snap active — green marker at Vault-derived snapped pose.
                     Gizmos.color = Color.green;
                     Gizmos.DrawLine(_builderGhostPreviewPosition,
-                                    _snappedSocketTransform.position);
-                    Gizmos.DrawWireSphere(_snappedSocketTransform.position, 0.2f);
+                                    _shinobuSnappedPosePosition);
+                    Gizmos.DrawWireSphere(_shinobuSnappedPosePosition, 0.2f);
                 }
             }
         }

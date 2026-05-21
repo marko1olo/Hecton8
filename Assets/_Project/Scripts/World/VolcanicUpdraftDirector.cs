@@ -24,122 +24,122 @@ namespace Hecton8.World
     /// One L1 cache-line vent truth row. Layout: double3 AUP 24B, float3 up 12B,
     /// radius/thrust/timer/pad 16B, implicit 4B alignment gap, ulong pad 8B.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VentStateDTO
     {
-        public double3 AUP;
-        public float3 UpVector;
-        public float Radius;
-        public float ThrustPower;
-        public float EruptionTimer;
-        public uint _pad0;
-        public ulong _pad1;
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public float3 UpVector;
+        [FieldOffset(36)] public float Radius;
+        [FieldOffset(40)] public float ThrustPower;
+        [FieldOffset(44)] public float EruptionTimer;
+        [FieldOffset(48)] public uint _pad0;
+        [FieldOffset(56)] public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VolcanicUpdraftSettingsDTO
     {
-        public float MaxThrust;
-        public float EruptionFrequency;
-        public float CylinderRadius;
-        public float MaxHeight;
-        public float HeatOutput;
-        public float GlobalQualityWeight;
-        public float MaxVerticalVelocity;
-        public float EruptionThreshold;
-        public float EruptionGain;
-        public float AcousticRadius;
-        public float DebrisCommandIntensity;
-        public float ThermalBlindnessScale;
-        public uint Frame;
-        public uint VentCount;
-        public uint SourceHash;
-        public uint Flags;
+        [FieldOffset(0)] public float MaxThrust;
+        [FieldOffset(4)] public float EruptionFrequency;
+        [FieldOffset(8)] public float CylinderRadius;
+        [FieldOffset(12)] public float MaxHeight;
+        [FieldOffset(16)] public float HeatOutput;
+        [FieldOffset(20)] public float GlobalQualityWeight;
+        [FieldOffset(24)] public float MaxVerticalVelocity;
+        [FieldOffset(28)] public float EruptionThreshold;
+        [FieldOffset(32)] public float EruptionGain;
+        [FieldOffset(36)] public float AcousticRadius;
+        [FieldOffset(40)] public float DebrisCommandIntensity;
+        [FieldOffset(44)] public float ThermalBlindnessScale;
+        [FieldOffset(48)] public uint Frame;
+        [FieldOffset(52)] public uint VentCount;
+        [FieldOffset(56)] public uint SourceHash;
+        [FieldOffset(60)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VolcanicUpdraftTelemetryEntry
     {
-        public double3 PrimaryVentAup;
-        public float3 LastVector;
-        public float CylinderComputeTimeMs;
-        public uint Frame;
-        public uint StateHash;
-        public ushort ActiveEruptions;
-        public ushort EntitiesLifted;
-        public ushort DebrisLifted;
-        public ushort LeviathansLifted;
-        public uint Flags;
-        public uint _pad0;
+        [FieldOffset(0)] public double3 PrimaryVentAup;
+        [FieldOffset(24)] public float3 LastVector;
+        [FieldOffset(36)] public float CylinderComputeTimeMs;
+        [FieldOffset(40)] public uint Frame;
+        [FieldOffset(44)] public uint StateHash;
+        [FieldOffset(48)] public ushort ActiveEruptions;
+        [FieldOffset(50)] public ushort EntitiesLifted;
+        [FieldOffset(52)] public ushort DebrisLifted;
+        [FieldOffset(54)] public ushort LeviathansLifted;
+        [FieldOffset(56)] public uint Flags;
+        [FieldOffset(60)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockSubmarineArray
     {
-        public double3 AUP;
-        public float3 Velocity;
-        public float Radius;
-        public uint Flags;
-        public uint EntityId;
-        public float MassKg;
-        public float LiftScalar;
-        public ulong _pad0;
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public float3 Velocity;
+        [FieldOffset(36)] public float Radius;
+        [FieldOffset(40)] public uint Flags;
+        [FieldOffset(44)] public uint EntityId;
+        [FieldOffset(48)] public float MassKg;
+        [FieldOffset(52)] public float LiftScalar;
+        [FieldOffset(56)] public ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MockLeviathanVelocityDTO
     {
-        public double3 AUP;
-        public float3 Velocity;
-        public float3 DesiredDirection;
-        public float RideStaminaSaved01;
-        public uint Flags;
-        public ushort Slot;
-        public ushort _pad0;
-        public uint _pad1;
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public float3 Velocity;
+        [FieldOffset(36)] public float3 DesiredDirection;
+        [FieldOffset(48)] public float RideStaminaSaved01;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public ushort Slot;
+        [FieldOffset(58)] public ushort _pad0;
+        [FieldOffset(60)] public uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MockDebrisParticleDTO
     {
-        public double3 AUP;
-        public float3 Velocity;
-        public float Radius;
-        public uint Flags;
-        public uint EntityId;
-        public float MassKg;
-        public float LiftWeight;
-        public ulong _pad0;
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public float3 Velocity;
+        [FieldOffset(36)] public float Radius;
+        [FieldOffset(40)] public uint Flags;
+        [FieldOffset(44)] public uint EntityId;
+        [FieldOffset(48)] public float MassKg;
+        [FieldOffset(52)] public float LiftWeight;
+        [FieldOffset(56)] public ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VolcanicFloatStateSignal
     {
-        public double3 AUP;
-        public float3 UpVector;
-        public float Intensity01;
-        public uint Frame;
-        public uint EntityHash;
-        public ushort Slot;
-        public byte StateKind;
-        public byte Flags;
-        public uint _pad0;
-        public ulong _pad1;
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public float3 UpVector;
+        [FieldOffset(36)] public float Intensity01;
+        [FieldOffset(40)] public uint Frame;
+        [FieldOffset(44)] public uint EntityHash;
+        [FieldOffset(48)] public ushort Slot;
+        [FieldOffset(50)] public byte StateKind;
+        [FieldOffset(51)] public byte Flags;
+        [FieldOffset(52)] public uint _pad0;
+        [FieldOffset(56)] public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VolcanicPlayerHeatSignalDTO
     {
-        public double3 AUP;
-        public float Heat01;
-        public float Blindness01;
-        public float Radius;
-        public float Intensity01;
-        public uint Frame;
-        public uint SourceHash;
-        public uint Flags;
-        public uint _pad0;
-        public ulong _pad1;
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public float Heat01;
+        [FieldOffset(28)] public float Blindness01;
+        [FieldOffset(32)] public float Radius;
+        [FieldOffset(36)] public float Intensity01;
+        [FieldOffset(40)] public uint Frame;
+        [FieldOffset(44)] public uint SourceHash;
+        [FieldOffset(48)] public uint Flags;
+        [FieldOffset(52)] public uint _pad0;
+        [FieldOffset(56)] public ulong _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -168,6 +168,7 @@ namespace Hecton8.World
         public const int MockDebrisCapacity = 64;
         public const int DynamicWakeCapacity = 16;
         public const int CsvScratchBytes = 4096;
+        public const float AuthoritativeQualityWeight = 1f;
         public const uint SourceHash = 0x564F4C43u; // VOLC
         public const uint TelemetryFlagNaN = 1u << 0;
         public const uint TelemetryFlagEmergencyVents = 1u << 1;
@@ -205,15 +206,21 @@ namespace Hecton8.World
             if (vault == null ||
                 !states.IsCreated ||
                 !forces.IsCreated ||
-                !vault.TryGetBufferHandle<VentStateDTO>(VentsBuffer, out VaultBufferHandle<VentStateDTO> ventHandle) ||
-                !vault.TryGetBufferHandle<VolcanicUpdraftSettingsDTO>(SettingsBuffer, out VaultBufferHandle<VolcanicUpdraftSettingsDTO> settingsHandle))
+                !vault.TryGetGenerationHandle<VentStateDTO>(VentsBuffer, out VaultGenerationHandle<VentStateDTO> ventHandle) ||
+                !vault.TryGetGenerationHandle<VolcanicUpdraftSettingsDTO>(SettingsBuffer, out VaultGenerationHandle<VolcanicUpdraftSettingsDTO> settingsHandle))
             {
                 return dependency;
             }
 
             dependency = JobHandle.CombineDependencies(dependency, _pendingVentWriteHandle);
-            NativeArray<VentStateDTO> vents = ventHandle.Resolve(vault);
-            NativeArray<VolcanicUpdraftSettingsDTO> settingsArray = settingsHandle.Resolve(vault);
+            if (ventHandle.BufferID != unchecked((uint)(int)VentsBuffer) ||
+                settingsHandle.BufferID != unchecked((uint)(int)SettingsBuffer) ||
+                !vault.TryResolveHandle(in ventHandle, out NativeArray<VentStateDTO> vents) ||
+                !vault.TryResolveHandle(in settingsHandle, out NativeArray<VolcanicUpdraftSettingsDTO> settingsArray))
+            {
+                return dependency;
+            }
+
             if (!vents.IsCreated || !settingsArray.IsCreated || settingsArray.Length <= 0)
                 return dependency;
 
@@ -303,7 +310,7 @@ namespace Hecton8.World
             if (active01 <= 0.0001f)
                 return false;
 
-            float turbulenceGate = ResolveTurbulenceGate(settings.GlobalQualityWeight);
+            float turbulenceGate = ResolveTurbulenceGate(AuthoritativeQualityWeight);
             float3 strictUp = new float3(0f, 1f, 0f);
             float3 up = strictUp;
             if (turbulenceGate > 0.0001f)
@@ -605,7 +612,7 @@ namespace Hecton8.World
 
             if ((uint)index < (uint)MockDebrisCount && (uint)index < (uint)MockDebris.Length)
             {
-                float debrisLiftWeight = VolcanicUpdraftVault.ResolveDebrisLiftWeight(Settings.GlobalQualityWeight);
+                float debrisLiftWeight = VolcanicUpdraftVault.ResolveDebrisLiftWeight(VolcanicUpdraftVault.AuthoritativeQualityWeight);
                 MockDebrisParticleDTO debris = MockDebris[index];
                 float3 deltaVelocity = float3.zero;
                 float peak = 0f;
@@ -894,7 +901,7 @@ namespace Hecton8.World
 
             uint flags = Settings.Flags;
             flags |= nan != 0 ? VolcanicUpdraftVault.TelemetryFlagNaN : 0u;
-            flags |= VolcanicUpdraftVault.ResolveDebrisLiftWeight(Settings.GlobalQualityWeight) <= 0.0001f
+            flags |= VolcanicUpdraftVault.ResolveDebrisLiftWeight(VolcanicUpdraftVault.AuthoritativeQualityWeight) <= 0.0001f
                 ? VolcanicUpdraftVault.TelemetryFlagDebrisCulled
                 : 0u;
 
@@ -949,21 +956,21 @@ namespace Hecton8.World
         [SerializeField] private bool drawGizmos = true;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<VentStateDTO> _ventHandle;
-        private VaultBufferHandle<VolcanicUpdraftSettingsDTO> _settingsHandle;
-        private VaultBufferHandle<VolcanicUpdraftTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<MockSubmarineArray> _mockSubmarineHandle;
-        private VaultBufferHandle<MockLeviathanVelocityDTO> _mockLeviathanHandle;
-        private VaultBufferHandle<MockDebrisParticleDTO> _mockDebrisHandle;
-        private VaultBufferHandle<VolcanicFloatStateSignal> _floatSignalHandle;
-        private VaultBufferHandle<VfxDynamicWakeDTO> _dynamicWakeHandle;
-        private VaultBufferHandle<VfxMockFlowField> _mockFlowFieldHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<VolcanicUpdraftFrameCounter> _counterHandle;
-        private VaultBufferHandle<VolcanicPlayerHeatSignalDTO> _playerHeatHandle;
-        private VaultBufferHandle<PlayerKinematicState> _playerStateHandle;
-        private VaultBufferHandle<AlphaLeviathanCognitionState> _leviathanStateHandle;
-        private VaultBufferHandle<AlphaLeviathanSteeringOutput> _leviathanOutputHandle;
+        private VaultGenerationHandle<VentStateDTO> _ventHandle;
+        private VaultGenerationHandle<VolcanicUpdraftSettingsDTO> _settingsHandle;
+        private VaultGenerationHandle<VolcanicUpdraftTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<MockSubmarineArray> _mockSubmarineHandle;
+        private VaultGenerationHandle<MockLeviathanVelocityDTO> _mockLeviathanHandle;
+        private VaultGenerationHandle<MockDebrisParticleDTO> _mockDebrisHandle;
+        private VaultGenerationHandle<VolcanicFloatStateSignal> _floatSignalHandle;
+        private VaultGenerationHandle<VfxDynamicWakeDTO> _dynamicWakeHandle;
+        private VaultGenerationHandle<VfxMockFlowField> _mockFlowFieldHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<VolcanicUpdraftFrameCounter> _counterHandle;
+        private VaultGenerationHandle<VolcanicPlayerHeatSignalDTO> _playerHeatHandle;
+        private VaultGenerationHandle<PlayerKinematicState> _playerStateHandle;
+        private VaultGenerationHandle<AlphaLeviathanCognitionState> _leviathanStateHandle;
+        private VaultGenerationHandle<AlphaLeviathanSteeringOutput> _leviathanOutputHandle;
         private IThermodynamicsService _thermodynamicsService;
 
         private JobHandle _jobHandle;
@@ -986,8 +993,8 @@ namespace Hecton8.World
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
-            ResolveDataVault();
             ResolveColdRegistryDependencies();
+            ResolveDataVault();
             EnsureVaultBuffers();
             if (Application.isPlaying)
             {
@@ -1192,8 +1199,7 @@ namespace Hecton8.World
 
         public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsService)
-                _thermodynamicsService = currentService as IThermodynamicsService;
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1201,8 +1207,7 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsService)
-                _thermodynamicsService = currentService as IThermodynamicsService;
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
         }
 
         public bool TryGetVentReadback(int index, out VentStateDTO vent, out VolcanicUpdraftSettingsDTO settings)
@@ -1212,10 +1217,12 @@ namespace Hecton8.World
             if (!ResolveDataVault())
                 return false;
 
-            NativeArray<VentStateDTO> vents = _ventHandle.Resolve(_dataVault);
-            NativeArray<VolcanicUpdraftSettingsDTO> settingsArray = _settingsHandle.Resolve(_dataVault);
-            if (!vents.IsCreated || !settingsArray.IsCreated || settingsArray.Length <= 0 || (uint)index >= (uint)vents.Length)
+            if (!TryResolveVaultBuffer(in _ventHandle, VolcanicUpdraftVault.VentsBuffer, 1, out NativeArray<VentStateDTO> vents) ||
+                !TryResolveVaultBuffer(in _settingsHandle, VolcanicUpdraftVault.SettingsBuffer, 1, out NativeArray<VolcanicUpdraftSettingsDTO> settingsArray) ||
+                (uint)index >= (uint)vents.Length)
+            {
                 return false;
+            }
 
             vent = vents[index];
             settings = settingsArray[0];
@@ -1227,9 +1234,10 @@ namespace Hecton8.World
             if (!ResolveDataVault())
                 return false;
 
-            NativeArray<VolcanicUpdraftSettingsDTO> settingsArray = _settingsHandle.Resolve(_dataVault);
-            if (!settingsArray.IsCreated || settingsArray.Length <= 0)
+            if (!TryResolveVaultBuffer(in _settingsHandle, VolcanicUpdraftVault.SettingsBuffer, 1, out NativeArray<VolcanicUpdraftSettingsDTO> settingsArray))
+            {
                 return false;
+            }
 
             VolcanicUpdraftSettingsDTO settings = settingsArray[0];
             settings.MaxThrust = math.max(0.01f, editorMaxThrust);
@@ -1246,10 +1254,11 @@ namespace Hecton8.World
             if (_fixedPipelineScheduled || !ResolveDataVault())
                 return false;
 
-            NativeArray<VentStateDTO> vents = _ventHandle.Resolve(_dataVault);
-            NativeArray<VolcanicUpdraftSettingsDTO> settingsArray = _settingsHandle.Resolve(_dataVault);
-            if (!vents.IsCreated || vents.Length <= 0 || !settingsArray.IsCreated || settingsArray.Length <= 0)
+            if (!TryResolveVaultBuffer(in _ventHandle, VolcanicUpdraftVault.VentsBuffer, 1, out NativeArray<VentStateDTO> vents) ||
+                !TryResolveVaultBuffer(in _settingsHandle, VolcanicUpdraftVault.SettingsBuffer, 1, out NativeArray<VolcanicUpdraftSettingsDTO> settingsArray))
+            {
                 return false;
+            }
 
             VolcanicUpdraftSettingsDTO settings = SanitizeSettings(settingsArray[0]);
             int ventCount = math.clamp((int)settings.VentCount, 1, math.min(vents.Length, VolcanicUpdraftVault.MaxVents));
@@ -1275,24 +1284,70 @@ namespace Hecton8.World
 
         private bool ResolveDataVault()
         {
-            if (_dataVault != null)
-                return true;
-
-            _dataVault = GlobalRegistry.DataVault;
-            if (_dataVault != null)
-                return true;
-
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                _dataVault = latest;
-
             return _dataVault != null;
         }
 
         private void ResolveColdRegistryDependencies()
         {
+            _dataVault = GlobalRegistry.DataVault;
             _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
             if (Application.isPlaying && !_registeredHotSwap)
                 _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault);
+                    break;
+                case GlobalRegistryServiceSlot.ThermodynamicsService:
+                    _thermodynamicsService = currentService as IThermodynamicsService;
+                    break;
+            }
+        }
+
+        private void RebindDataVault(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            if (_fixedPipelineScheduled)
+            {
+                DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
+                _fixedPipelineScheduled = false;
+            }
+
+            UnlockExternalBuffers();
+            UnlockOwnBuffers();
+            ClearVaultHandles();
+            _dataVault = currentVault;
+            if (_dataVault != null && isActiveAndEnabled)
+                EnsureVaultBuffers();
+        }
+
+        private void ClearVaultHandles()
+        {
+            _ventHandle = default;
+            _settingsHandle = default;
+            _telemetryHandle = default;
+            _mockSubmarineHandle = default;
+            _mockLeviathanHandle = default;
+            _mockDebrisHandle = default;
+            _floatSignalHandle = default;
+            _dynamicWakeHandle = default;
+            _mockFlowFieldHandle = default;
+            _csvScratchHandle = default;
+            _counterHandle = default;
+            _playerHeatHandle = default;
+            _playerStateHandle = default;
+            _leviathanStateHandle = default;
+            _leviathanOutputHandle = default;
+            _buffersReady = false;
+            _ownBuffersLocked = false;
+            _playerLocked = false;
+            _leviathanLocked = false;
         }
 
         private bool EnsureVaultBuffers()
@@ -1300,35 +1355,28 @@ namespace Hecton8.World
             if (!ResolveDataVault())
                 return false;
 
-            _ventHandle = _dataVault.GetBufferHandle<VentStateDTO>(VolcanicUpdraftVault.VentsBuffer, math.clamp(maxVentCount, 1, VolcanicUpdraftVault.MaxVents), OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _settingsHandle = _dataVault.GetBufferHandle<VolcanicUpdraftSettingsDTO>(VolcanicUpdraftVault.SettingsBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = _dataVault.GetBufferHandle<VolcanicUpdraftTelemetryEntry>(VolcanicUpdraftVault.TelemetryBuffer, VolcanicUpdraftVault.TelemetryFrames, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _mockSubmarineHandle = _dataVault.GetBufferHandle<MockSubmarineArray>(VolcanicUpdraftVault.MockSubmarinesBuffer, VolcanicUpdraftVault.MockSubmarineCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _mockLeviathanHandle = _dataVault.GetBufferHandle<MockLeviathanVelocityDTO>(VolcanicUpdraftVault.MockLeviathansBuffer, VolcanicUpdraftVault.MockLeviathanCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _mockDebrisHandle = _dataVault.GetBufferHandle<MockDebrisParticleDTO>(VolcanicUpdraftVault.MockDebrisBuffer, VolcanicUpdraftVault.MockDebrisCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _floatSignalHandle = _dataVault.GetBufferHandle<VolcanicFloatStateSignal>(VolcanicUpdraftVault.FloatSignalsBuffer, AlphaLeviathanStalkConstants.MaxLeviathanSlots, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _dynamicWakeHandle = _dataVault.GetBufferHandle<VfxDynamicWakeDTO>(VolcanicUpdraftVault.DynamicWakesBuffer, VolcanicUpdraftVault.DynamicWakeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _mockFlowFieldHandle = _dataVault.GetBufferHandle<VfxMockFlowField>(VolcanicUpdraftVault.MockFlowFieldBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = _dataVault.GetBufferHandle<byte>(VolcanicUpdraftVault.CsvScratchBuffer, VolcanicUpdraftVault.CsvScratchBytes, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _counterHandle = _dataVault.GetBufferHandle<VolcanicUpdraftFrameCounter>(VolcanicUpdraftVault.FrameCountersBuffer, VolcanicUpdraftVault.CounterCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _playerHeatHandle = _dataVault.GetBufferHandle<VolcanicPlayerHeatSignalDTO>(VolcanicUpdraftVault.PlayerHeatBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _ventHandle = _dataVault.GetGenerationHandle<VentStateDTO>(VolcanicUpdraftVault.VentsBuffer, math.clamp(maxVentCount, 1, VolcanicUpdraftVault.MaxVents), OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _settingsHandle = _dataVault.GetGenerationHandle<VolcanicUpdraftSettingsDTO>(VolcanicUpdraftVault.SettingsBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _telemetryHandle = _dataVault.GetGenerationHandle<VolcanicUpdraftTelemetryEntry>(VolcanicUpdraftVault.TelemetryBuffer, VolcanicUpdraftVault.TelemetryFrames, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _mockSubmarineHandle = _dataVault.GetGenerationHandle<MockSubmarineArray>(VolcanicUpdraftVault.MockSubmarinesBuffer, VolcanicUpdraftVault.MockSubmarineCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _mockLeviathanHandle = _dataVault.GetGenerationHandle<MockLeviathanVelocityDTO>(VolcanicUpdraftVault.MockLeviathansBuffer, VolcanicUpdraftVault.MockLeviathanCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _mockDebrisHandle = _dataVault.GetGenerationHandle<MockDebrisParticleDTO>(VolcanicUpdraftVault.MockDebrisBuffer, VolcanicUpdraftVault.MockDebrisCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _floatSignalHandle = _dataVault.GetGenerationHandle<VolcanicFloatStateSignal>(VolcanicUpdraftVault.FloatSignalsBuffer, AlphaLeviathanStalkConstants.MaxLeviathanSlots, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _dynamicWakeHandle = _dataVault.GetGenerationHandle<VfxDynamicWakeDTO>(VolcanicUpdraftVault.DynamicWakesBuffer, VolcanicUpdraftVault.DynamicWakeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _mockFlowFieldHandle = _dataVault.GetGenerationHandle<VfxMockFlowField>(VolcanicUpdraftVault.MockFlowFieldBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _csvScratchHandle = _dataVault.GetGenerationHandle<byte>(VolcanicUpdraftVault.CsvScratchBuffer, VolcanicUpdraftVault.CsvScratchBytes, OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _counterHandle = _dataVault.GetGenerationHandle<VolcanicUpdraftFrameCounter>(VolcanicUpdraftVault.FrameCountersBuffer, VolcanicUpdraftVault.CounterCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
+            _playerHeatHandle = _dataVault.GetGenerationHandle<VolcanicPlayerHeatSignalDTO>(VolcanicUpdraftVault.PlayerHeatBuffer, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
 
-            if (!_ventHandle.IsCreated || !_settingsHandle.IsCreated || !_telemetryHandle.IsCreated ||
-                !_mockSubmarineHandle.IsCreated || !_mockLeviathanHandle.IsCreated || !_mockDebrisHandle.IsCreated ||
-                !_floatSignalHandle.IsCreated || !_dynamicWakeHandle.IsCreated || !_mockFlowFieldHandle.IsCreated ||
-                !_csvScratchHandle.IsCreated || !_counterHandle.IsCreated || !_playerHeatHandle.IsCreated)
+            if (!TryResolveVaultBuffer(in _ventHandle, VolcanicUpdraftVault.VentsBuffer, 1, out NativeArray<VentStateDTO> vents) ||
+                !TryResolveVaultBuffer(in _settingsHandle, VolcanicUpdraftVault.SettingsBuffer, 1, out NativeArray<VolcanicUpdraftSettingsDTO> settings) ||
+                !TryResolveVaultBuffer(in _mockSubmarineHandle, VolcanicUpdraftVault.MockSubmarinesBuffer, VolcanicUpdraftVault.MockSubmarineCapacity, out NativeArray<MockSubmarineArray> mockSubmarines) ||
+                !TryResolveVaultBuffer(in _mockLeviathanHandle, VolcanicUpdraftVault.MockLeviathansBuffer, VolcanicUpdraftVault.MockLeviathanCapacity, out NativeArray<MockLeviathanVelocityDTO> mockLeviathans) ||
+                !TryResolveVaultBuffer(in _mockDebrisHandle, VolcanicUpdraftVault.MockDebrisBuffer, VolcanicUpdraftVault.MockDebrisCapacity, out NativeArray<MockDebrisParticleDTO> mockDebris))
             {
                 _buffersReady = false;
                 return false;
             }
-
-            NativeArray<VentStateDTO> vents = _ventHandle.Resolve(_dataVault);
-            NativeArray<VolcanicUpdraftSettingsDTO> settings = _settingsHandle.Resolve(_dataVault);
-            NativeArray<MockSubmarineArray> mockSubmarines = _mockSubmarineHandle.Resolve(_dataVault);
-            NativeArray<MockLeviathanVelocityDTO> mockLeviathans = _mockLeviathanHandle.Resolve(_dataVault);
-            NativeArray<MockDebrisParticleDTO> mockDebris = _mockDebrisHandle.Resolve(_dataVault);
-            if (!vents.IsCreated || !settings.IsCreated || settings.Length <= 0)
-                return false;
 
             if (settings[0].SourceHash == 0u)
             {
@@ -1362,31 +1410,48 @@ namespace Hecton8.World
             out NativeArray<VolcanicUpdraftFrameCounter> counters,
             out NativeArray<VolcanicPlayerHeatSignalDTO> playerHeat)
         {
-            vents = _ventHandle.Resolve(_dataVault);
-            settings = _settingsHandle.Resolve(_dataVault);
-            telemetry = _telemetryHandle.Resolve(_dataVault);
-            mockSubmarines = _mockSubmarineHandle.Resolve(_dataVault);
-            mockLeviathans = _mockLeviathanHandle.Resolve(_dataVault);
-            mockDebris = _mockDebrisHandle.Resolve(_dataVault);
-            floatSignals = _floatSignalHandle.Resolve(_dataVault);
-            dynamicWakes = _dynamicWakeHandle.Resolve(_dataVault);
-            mockFlowField = _mockFlowFieldHandle.Resolve(_dataVault);
-            counters = _counterHandle.Resolve(_dataVault);
-            playerHeat = _playerHeatHandle.Resolve(_dataVault);
-            return vents.IsCreated &&
-                   settings.IsCreated &&
-                   settings.Length > 0 &&
-                   telemetry.IsCreated &&
-                   telemetry.Length >= VolcanicUpdraftVault.TelemetryFrames &&
-                   mockSubmarines.IsCreated &&
-                   mockLeviathans.IsCreated &&
-                   mockDebris.IsCreated &&
-                   floatSignals.IsCreated &&
-                   dynamicWakes.IsCreated &&
-                   mockFlowField.IsCreated &&
-                   counters.IsCreated &&
-                   counters.Length >= VolcanicUpdraftVault.CounterCapacity &&
-                   playerHeat.IsCreated;
+            vents = default;
+            settings = default;
+            telemetry = default;
+            mockSubmarines = default;
+            mockLeviathans = default;
+            mockDebris = default;
+            floatSignals = default;
+            dynamicWakes = default;
+            mockFlowField = default;
+            counters = default;
+            playerHeat = default;
+
+            return TryResolveVaultBuffer(in _ventHandle, VolcanicUpdraftVault.VentsBuffer, 1, out vents) &&
+                   TryResolveVaultBuffer(in _settingsHandle, VolcanicUpdraftVault.SettingsBuffer, 1, out settings) &&
+                   TryResolveVaultBuffer(in _telemetryHandle, VolcanicUpdraftVault.TelemetryBuffer, VolcanicUpdraftVault.TelemetryFrames, out telemetry) &&
+                   TryResolveVaultBuffer(in _mockSubmarineHandle, VolcanicUpdraftVault.MockSubmarinesBuffer, 1, out mockSubmarines) &&
+                   TryResolveVaultBuffer(in _mockLeviathanHandle, VolcanicUpdraftVault.MockLeviathansBuffer, 1, out mockLeviathans) &&
+                   TryResolveVaultBuffer(in _mockDebrisHandle, VolcanicUpdraftVault.MockDebrisBuffer, 1, out mockDebris) &&
+                   TryResolveVaultBuffer(in _floatSignalHandle, VolcanicUpdraftVault.FloatSignalsBuffer, 1, out floatSignals) &&
+                   TryResolveVaultBuffer(in _dynamicWakeHandle, VolcanicUpdraftVault.DynamicWakesBuffer, 1, out dynamicWakes) &&
+                   TryResolveVaultBuffer(in _mockFlowFieldHandle, VolcanicUpdraftVault.MockFlowFieldBuffer, 1, out mockFlowField) &&
+                   TryResolveVaultBuffer(in _counterHandle, VolcanicUpdraftVault.FrameCountersBuffer, VolcanicUpdraftVault.CounterCapacity, out counters) &&
+                   TryResolveVaultBuffer(in _playerHeatHandle, VolcanicUpdraftVault.PlayerHeatBuffer, 1, out playerHeat);
+        }
+
+        private bool TryResolveVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return _dataVault != null &&
+                   IsExactVaultHandle(in handle, expectedBufferId) &&
+                   _dataVault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
         }
 
         private bool LockOwnBuffers()
@@ -1441,22 +1506,21 @@ namespace Hecton8.World
             if (_dataVault == null)
                 return;
 
-            _dataVault.TryGetBufferHandle<PlayerKinematicState>(BufferID.ShinobuSomaticKinematicState, out _playerStateHandle);
-            _dataVault.TryGetBufferHandle<AlphaLeviathanCognitionState>(BufferID.AlphaLeviathanCognitionState, out _leviathanStateHandle);
-            _dataVault.TryGetBufferHandle<AlphaLeviathanSteeringOutput>(BufferID.AlphaLeviathanSteeringOutput, out _leviathanOutputHandle);
+            _dataVault.TryGetGenerationHandle<PlayerKinematicState>(BufferID.ShinobuSomaticKinematicState, out _playerStateHandle);
+            _dataVault.TryGetGenerationHandle<AlphaLeviathanCognitionState>(BufferID.AlphaLeviathanCognitionState, out _leviathanStateHandle);
+            _dataVault.TryGetGenerationHandle<AlphaLeviathanSteeringOutput>(BufferID.AlphaLeviathanSteeringOutput, out _leviathanOutputHandle);
         }
 
         private bool TryLockPlayerBuffer(out NativeArray<PlayerKinematicState> playerState)
         {
             playerState = default;
-            if (!_playerStateHandle.IsCreated ||
+            if (!IsExactVaultHandle(in _playerStateHandle, BufferID.ShinobuSomaticKinematicState) ||
                 !_dataVault.TryLockBuffer(BufferID.ShinobuSomaticKinematicState, OwnerSystem))
             {
                 return false;
             }
 
-            playerState = _playerStateHandle.Resolve(_dataVault);
-            if (!playerState.IsCreated || playerState.Length <= 0)
+            if (!TryResolveVaultBuffer(in _playerStateHandle, BufferID.ShinobuSomaticKinematicState, 1, out playerState))
             {
                 _dataVault.TryUnlockBuffer(BufferID.ShinobuSomaticKinematicState, OwnerSystem);
                 return false;
@@ -1472,16 +1536,15 @@ namespace Hecton8.World
         {
             states = default;
             outputs = default;
-            if (!_leviathanStateHandle.IsCreated ||
-                !_leviathanOutputHandle.IsCreated ||
+            if (!IsExactVaultHandle(in _leviathanStateHandle, BufferID.AlphaLeviathanCognitionState) ||
+                !IsExactVaultHandle(in _leviathanOutputHandle, BufferID.AlphaLeviathanSteeringOutput) ||
                 !_dataVault.TryLockBuffer(BufferID.AlphaLeviathanSteeringOutput, OwnerSystem))
             {
                 return false;
             }
 
-            states = _leviathanStateHandle.Resolve(_dataVault);
-            outputs = _leviathanOutputHandle.Resolve(_dataVault);
-            if (!states.IsCreated || !outputs.IsCreated)
+            if (!TryResolveVaultBuffer(in _leviathanStateHandle, BufferID.AlphaLeviathanCognitionState, 1, out states) ||
+                !TryResolveVaultBuffer(in _leviathanOutputHandle, BufferID.AlphaLeviathanSteeringOutput, 1, out outputs))
             {
                 _dataVault.TryUnlockBuffer(BufferID.AlphaLeviathanSteeringOutput, OwnerSystem);
                 return false;
@@ -1831,7 +1894,10 @@ namespace Hecton8.World
                 return;
 
             if (string.IsNullOrEmpty(_csvPath))
-                _csvPath = Path.Combine(Application.streamingAssetsPath, CsvFileName);
+                _csvPath = ResolveCsvPathCold();
+
+            if (string.IsNullOrEmpty(_csvPath))
+                return;
 
             if (!File.Exists(_csvPath))
                 return;
@@ -1840,11 +1906,12 @@ namespace Hecton8.World
             if (ticks == _csvLastWriteTicks)
                 return;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(_dataVault);
-            NativeArray<VolcanicUpdraftSettingsDTO> settings = _settingsHandle.Resolve(_dataVault);
-            NativeArray<VentStateDTO> vents = _ventHandle.Resolve(_dataVault);
-            if (!scratch.IsCreated || !settings.IsCreated || settings.Length <= 0 || !vents.IsCreated)
+            if (!TryResolveVaultBuffer(in _csvScratchHandle, VolcanicUpdraftVault.CsvScratchBuffer, VolcanicUpdraftVault.CsvScratchBytes, out NativeArray<byte> scratch) ||
+                !TryResolveVaultBuffer(in _settingsHandle, VolcanicUpdraftVault.SettingsBuffer, 1, out NativeArray<VolcanicUpdraftSettingsDTO> settings) ||
+                !TryResolveVaultBuffer(in _ventHandle, VolcanicUpdraftVault.VentsBuffer, 1, out NativeArray<VentStateDTO> vents))
+            {
                 return;
+            }
 
             int length = ReadCsvBytesCold(_csvPath, scratch);
             if (length <= 0)
@@ -1881,6 +1948,26 @@ namespace Hecton8.World
             {
                 return 0;
             }
+        }
+
+        private static string ResolveCsvPathCold()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
+            string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
+            string path = Path.Combine(projectRoot, "Assets", "_SourceData", "World", CsvFileName);
+            if (File.Exists(path))
+                return path;
+
+            path = Path.Combine(projectRoot, "Data", "World", CsvFileName);
+            if (File.Exists(path))
+                return path;
+
+            path = Path.Combine(projectRoot, CsvFileName);
+            return File.Exists(path) ? path : null;
+#else
+            return null;
+#endif
         }
 
         private static void ParseCsvBytes(NativeArray<byte> bytes, int length, ref VolcanicUpdraftSettingsDTO settings, NativeArray<VentStateDTO> vents)
@@ -2012,9 +2099,10 @@ namespace Hecton8.World
             if (_faultDumped || !_buffersReady || !ResolveDataVault())
                 return;
 
-            NativeArray<VolcanicUpdraftTelemetryEntry> telemetry = _telemetryHandle.Resolve(_dataVault);
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
+            if (!TryResolveVaultBuffer(in _telemetryHandle, VolcanicUpdraftVault.TelemetryBuffer, VolcanicUpdraftVault.TelemetryFrames, out NativeArray<VolcanicUpdraftTelemetryEntry> telemetry))
+            {
                 return;
+            }
 
             VolcanicUpdraftTelemetryEntry entry = telemetry[(int)(_frame % VolcanicUpdraftVault.TelemetryFrames)];
             if ((entry.Flags & VolcanicUpdraftVault.TelemetryFlagNaN) == 0u)

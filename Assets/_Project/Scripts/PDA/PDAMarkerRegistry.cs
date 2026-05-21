@@ -152,7 +152,12 @@ namespace Hecton8.PDA
 
             string trimmedTitle = string.IsNullOrWhiteSpace(title) ? BuildDefaultTitle(iconType) : title.Trim();
             string markerId = BuildNextMarkerId();
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
+            {
+                marker = default;
+                return false;
+            }
+
             MarkerRecord record = new MarkerRecord
             {
                 markerHashId = ComputeMarkerHash(markerId),
@@ -233,7 +238,12 @@ namespace Hecton8.PDA
 
         private bool TryCreateOrUpdateMarker(uint markerHashId, string markerId, Vector3 position, MarkerIconType iconType, uint titleHashId, string title, bool visibleOnHud, out PDAMarkerSnapshot marker)
         {
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
+            {
+                marker = default;
+                return false;
+            }
+
             return TryCreateOrUpdateMarker(markerHashId, markerId, position, in positionAup, iconType, titleHashId, title, visibleOnHud, out marker);
         }
 
@@ -333,8 +343,11 @@ namespace Hecton8.PDA
             if (markerHashId == 0u || !TryFindMarkerIndex(markerHashId, out int markerIndex))
                 return false;
 
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
+                return false;
+
             MarkerRecord record = _markers[markerIndex];
-            record.positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            record.positionAup = positionAup;
             record.runtimePosition = position;
             _markers[markerIndex] = record;
             Hecton8.UI.PDAEvents.RaiseMarkerChanged(record.markerHashId, _markerCount);
@@ -410,7 +423,13 @@ namespace Hecton8.PDA
         /// </summary>
         public bool TryGetNearestVisibleHudMarker(Vector3 origin, out PDAMarkerSnapshot marker, out float distance)
         {
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+            {
+                marker = default;
+                distance = 0f;
+                return false;
+            }
+
             return TryGetNearestVisibleHudMarker(in originAup, out marker, out distance);
         }
 
@@ -503,9 +522,16 @@ namespace Hecton8.PDA
                         continue;
 
                     string stableTitle = string.IsNullOrWhiteSpace(entry.title) ? BuildDefaultTitle((MarkerIconType)entry.iconType) : entry.title;
-                    AbsoluteUniversePosition positionAup = entry.HasAupPosition()
-                        ? entry.GetAup()
-                        : AbsoluteUniversePosition.FromRuntimePosition(entry.GetPosition());
+                    AbsoluteUniversePosition positionAup;
+                    if (entry.HasAupPosition())
+                    {
+                        positionAup = entry.GetAup();
+                    }
+                    else if (!TryResolveAupFromRuntimeOrigin(entry.GetPosition(), out positionAup))
+                    {
+                        continue;
+                    }
+
                     MarkerRecord record = new MarkerRecord
                     {
                         markerHashId = markerHashId,
@@ -711,6 +737,41 @@ namespace Hecton8.PDA
         {
             float3 runtime = position.ToRuntimeFloat3();
             return new Vector3(runtime.x, runtime.y, runtime.z);
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
+        {
+            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return IsFiniteAup(in originAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteVector(runtimePosition) ||
+                !TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup))
+            {
+                return false;
+            }
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
         }
 
         private static float ApproximateDistanceMetersFromSq(double distanceSq)

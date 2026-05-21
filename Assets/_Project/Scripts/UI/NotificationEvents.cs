@@ -32,6 +32,7 @@ namespace Hecton8.UI
     {
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 8;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint NotificationListenerOverflowWarningHash = 0x4E45564Cu; // NEVL
         private const uint NotificationListenerContextHash = 0x4E455652u; // NEVR
         private const uint NotificationListenerExceptionWarningHash = 0x4E455645u; // NEVE
@@ -41,12 +42,82 @@ namespace Hecton8.UI
         private const uint NotificationRegisteredMessageMissWarningHash = 0x4E45564Du; // NEVM
         private const uint NotificationRegisteredMessageContextHash = 0x4E455643u; // NEVC
 
-        // COLD ALLOC: RegistryBucket<INotificationEventListener>[8] — HUD notification listeners drained on dispatcher LateUpdate — owner: NotificationEvents
-        private static readonly RegistryBucket<INotificationEventListener> _listeners = new RegistryBucket<INotificationEventListener>(ListenerCapacity);
-        // COLD ALLOC: INotificationEventListener[8] — listener additions deferred while dispatching notification events — owner: NotificationEvents
-        private static readonly INotificationEventListener[] _deferredRegisterListeners = new INotificationEventListener[ListenerCapacity];
-        // COLD ALLOC: INotificationEventListener[8] — listener removals deferred while dispatching notification events — owner: NotificationEvents
-        private static readonly INotificationEventListener[] _deferredUnregisterListeners = new INotificationEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public INotificationEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct NotificationListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public NotificationListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity]; // COLD ALLOC: ListenerSlot[8] - fixed HUD notification listener slots drained on dispatcher LateUpdate - owner: NotificationEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(INotificationEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(INotificationEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void Unregister(INotificationEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public INotificationEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static NotificationListenerRegistry _listeners = new NotificationListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[8] - listener additions deferred while dispatching notification events - owner: NotificationEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener removals deferred while dispatching notification events - owner: NotificationEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: Dictionary<uint,string>[64] — notification message registry keyed by stable FNV-1a hash for cold-path UI resolution — owner: NotificationEvents
         private static readonly Dictionary<uint, string> _messagesByHash = new Dictionary<uint, string>(64);
         private static NativeQueue<NotificationEventPayload> _pendingEvents;
@@ -100,8 +171,8 @@ namespace Hecton8.UI
 
             _listeners.Clear();
             _messagesByHash.Clear();
-            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
-            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
+            ClearDeferredRegisterListeners();
+            ClearDeferredUnregisterListeners();
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _deferredRegisterCount = 0;
@@ -142,7 +213,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            _listeners.TryUnregister(listener);
+            _listeners.Unregister(listener);
         }
 
         public static void FlushPending()
@@ -166,14 +237,13 @@ namespace Hecton8.UI
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                INotificationEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        INotificationEventListener listener = rawArray[i];
+                        INotificationEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -322,7 +392,7 @@ namespace Hecton8.UI
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<NotificationEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<NotificationEventPayload>[8] — deferred notification lane flushed by SystemDispatcher LateUpdate — owner: NotificationEvents
+                _pendingEvents = new NativeQueue<NotificationEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<NotificationEventPayload>[8] — deferred notification lane flushed by SystemDispatcher LateUpdate — owner: NotificationEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -334,7 +404,7 @@ namespace Hecton8.UI
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<NotificationEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<NotificationEventPayload>[8] — next-frame notification lane prevents same-frame reentrant dispatch — owner: NotificationEvents
+                _nextFrameEvents = new NativeQueue<NotificationEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<NotificationEventPayload>[8] — next-frame notification lane prevents same-frame reentrant dispatch — owner: NotificationEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -461,7 +531,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(INotificationEventListener listener)
@@ -481,19 +551,19 @@ namespace Hecton8.UI
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(INotificationEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -504,12 +574,12 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -518,7 +588,7 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -529,7 +599,7 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -540,18 +610,18 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                INotificationEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                INotificationEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
-                    _listeners.TryUnregister(listener);
+                    _listeners.Unregister(listener);
             }
 
             _deferredUnregisterCount = 0;
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                INotificationEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                INotificationEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }
@@ -566,6 +636,18 @@ namespace Hecton8.UI
 
             if (!_listeners.TryRegister(listener))
                 ReportListenerRegistrationOverflow();
+        }
+
+        private static void ClearDeferredRegisterListeners()
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+                _deferredRegisterListeners[i].Clear();
+        }
+
+        private static void ClearDeferredUnregisterListeners()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+                _deferredUnregisterListeners[i].Clear();
         }
 
         private static void ReportQueueOverflow(NotificationEventSeverity severity)

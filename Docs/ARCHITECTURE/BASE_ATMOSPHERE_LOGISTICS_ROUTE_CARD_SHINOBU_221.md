@@ -3,21 +3,30 @@
 Status: `YELLOW / STATIC SOURCE UPDATED / UNITY PROOF PENDING`
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
-- Docs/README.md
-- Docs/DOC_GOVERNANCE.md
-- Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; runtime proof remains absent.
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+## R48 Exact Route Field Normalization
+
+Route ID: BASE_ATMOSPHERE_LOGISTICS_ROUTE_CARD_SHINOBU_221
+Owner: `Hecton8.Atmosphere.BaseAtmosphereLogisticsRuntime`
+Instrument: documented route instrument in this file; no new route is accepted from this normalization block alone.
+Producer/consumer phase: producer and consumer phases documented below; hot GlobalRegistry polling is forbidden.
+Cadence/capacity: bounded cadence/capacity documented below; no hot dynamic allocation or unbounded queue growth is implied.
+Overflow/failure: fail closed, clamp/drop/coalesce as documented below, and treat dump paths as planned/generated-on-fault until a timestamped artifact exists.
+Shutdown/disposal: owner/Vault/SignalBus lifecycle documented below; visual/debug consumers do not own native memory.
+Proof required before GREEN: fresh compile/import, Play Mode route, profiler/GC, platform/player proof where runtime-facing, and linked artifact path with command, timestamp, environment, and output.
+Review disposition: YELLOW / STATIC_SOURCE_ONLY.
 
 Owner: `Hecton8.Atmosphere.BaseAtmosphereLogisticsRuntime`
 
@@ -34,7 +43,7 @@ Compile-wall boundary: owned BaseAtmosphereLogistics runtime/gizmo/jobs/types im
 - Jacobi contract: diffusion uses `(neighborGasSum + currentGas) / max(sumConductance + 1, 0.0001)` and then applies continuous alpha from tuning/quality cadence; it is not in-place Gauss-Seidel.
 - Conservation correction: quantization residuals are distributed across already-quantized back-buffer cells per gas channel after the expected/actual integer totals are known; no single cell is used as a permanent rounding sink.
 - Source/sink truth: consumers, toxic sources, and vents in Vault buffers `71508..71510`.
-- Reactor input: `SignalBus<ReactorDamageSignal>`, unmanaged 64-byte payload, configured capacity 64, low-tier frame cap 8. Contract source is `Assets/_Project/Scripts/Core/Contracts/Signals/ReactorDamageSignal.cs`; Atmosphere owns consumption, not payload authority.
+- Reactor input: `SignalBus<ReactorDamageSignal>`, unmanaged 64-byte payload, configured capacity 64, minimum-quality frame cap 8. Contract source is `Assets/_Project/Scripts/Core/Contracts/Signals/ReactorDamageSignal.cs`; Atmosphere owns consumption, not payload authority.
 - Existing inputs: `SignalBus<FluidIncursionSignal>`, `SignalBus<PlayerBaseEnterSignal>`, `SignalBus<PlayerBaseExitSignal>`.
 - Legacy oxygen bridge: `HabitatIntegrityManager` public global O2 reads route to `BaseAtmosphereLogisticsRuntime.TryGetGlobalOxygenSnapshot`; its old aggregate fields are fallback-only and stop receiving module contributions once the runtime snapshot is valid.
 - Cold tuning input: `Docs/Atmosphere/gas_diffusion_profiles.csv`, parsed from `ReadOnlySpan<byte>` into profile rows with numeric IDs or lowercase FNV-1a module-name hashes.
@@ -93,6 +102,8 @@ Compile-wall boundary: owned BaseAtmosphereLogistics runtime/gizmo/jobs/types im
 | Consumer phase | `PostSimulation` telemetry/fault readback and `VisualSync` shader scalar publication |
 | Cadence | Fixed simulation cadence for gas truth; visual scalar publication only after completed solver output |
 | Capacity | 1000 cells, 2500 graph connections, 5000 CSR destinations/conductance rows, 128 consumers, 128 toxic sources, 64 vents, 300 telemetry entries |
+| Producer/consumer phase | `PreSimulation` signal ingest and `Simulation` atmosphere solver jobs -> `PostSimulation` telemetry/fault readback and `VisualSync` shader scalar publication |
+| Cadence/capacity | Fixed simulation cadence for gas truth; visual scalar publication only after completed solver output; 1000 cells, 2500 graph connections, 5000 CSR destinations/conductance rows, 128 consumers, 128 toxic sources, 64 vents, 300 telemetry entries |
 | Overflow/failure | CSR/source overflow clamps to bounded Vault rows and sets flags; empty graph, non-finite gas, or Vault lock failure fail closed and preserve bounded fallback behavior |
 | Overflow policy | CSR/source overflow clamps to bounded Vault rows and sets flags; no dynamic expansion is implied |
 | Failure mode | Empty graph, CSR overflow, source overflow, non-finite gas, or Vault lock failure fail closed and preserve bounded fallback behavior |

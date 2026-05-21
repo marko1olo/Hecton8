@@ -1,0 +1,3 @@
+id,message,severity
+missing_static_data,Static data payload missing. Boot remains in diagnostic fallback.,3
+pressure_route_invalid,Pressure route invalid for active hull state.,2

@@ -1,0 +1,38 @@
+{
+  "scanner": "Water_Interface_Scanner",
+  "status": "OOP Water Queries Not Eradicated - legacy callers remain",
+  "generatedWithoutUnity": true,
+  "unityMenuRoute": "Hecton/Physics/Water Interface Scanner",
+  "scanScope": "Assets/_Project/Scripts excluding Plugins/Crest",
+  "scannedScripts": null,
+  "directOceanRendererLookups": 0,
+  "managedWaterQueries": 4,
+  "oopWaterQueriesEradicated": false,
+  "legacyManagedCallers": [
+    "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+    "Assets/_Project/Scripts/World/FloraInteractionManager.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+      "line": 6865,
+      "pattern": ".GetWaterHeight("
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+      "line": 6873,
+      "pattern": ".GetWaveNormal("
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+      "line": 6925,
+      "pattern": ".GetSurfaceFlow("
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "line": 7003,
+      "pattern": ".GetSurfaceFlow("
+    }
+  ],
+  "verificationLimit": "Unity AssetDatabase scanner was not executed because CPU load is above the project build/editor gate; shell rg fallback confirms zero direct OceanRenderer lookups and four legacy managed water-query call sites."
+}

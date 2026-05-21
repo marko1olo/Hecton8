@@ -240,7 +240,7 @@ namespace Hecton8.Editor
             string enqueueBody = ExtractMethodBody(atlas6DirectiveSystem, "private static bool Enqueue(in Atlas6EventPayload payload)");
             string ensureBody = ExtractMethodBody(atlas6DirectiveSystem, "private static void EnsureInitialized()");
 
-            AssertContains(atlas6DirectiveSystem, "[StructLayout(LayoutKind.Sequential)]", "Atlas-6 event payload has sequential layout", report, ref failureCount);
+            AssertContains(atlas6DirectiveSystem, "[StructLayout(LayoutKind.Explicit, Size = 32)]", "Atlas-6 event payload has explicit 32-byte layout", report, ref failureCount);
             AssertContains(atlas6DirectiveSystem, "NativeQueue<Atlas6EventPayload>", "Atlas-6 directive events use NativeQueue payload lanes", report, ref failureCount);
             AssertContains(ensureBody, "PrewarmQueue(ref _pendingEvents, PendingEventCapacity)", "Atlas-6 front queue is cold-prewarmed before gameplay enqueue", report, ref failureCount);
             AssertContains(ensureBody, "PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity)", "Atlas-6 reentrant queue is cold-prewarmed before gameplay enqueue", report, ref failureCount);
@@ -273,7 +273,7 @@ namespace Hecton8.Editor
                 string unregisterMissBody = ExtractMethodBody(questEvents, "private static void ReportUnregisterMiss()");
                 string listenerExceptionBody = ExtractMethodBody(questEvents, "private static void ReportListenerDispatchException()");
 
-                AssertContains(questEvents, "[StructLayout(LayoutKind.Sequential)]", "Quest event payload has sequential layout", report, ref failureCount);
+                AssertContains(questEvents, "[StructLayout(LayoutKind.Explicit, Size = 16)]", "Quest event payload has explicit 16-byte layout", report, ref failureCount);
                 AssertContains(questEvents, "NativeQueue<QuestEventPayload>", "Quest events use NativeQueue payload lanes", report, ref failureCount);
                 AssertContains(ensureBody, "PrewarmQueue(ref _pendingEvents, PendingEventCapacity)", "Quest front queue is cold-prewarmed before gameplay enqueue", report, ref failureCount);
                 AssertContains(ensureBody, "PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity)", "Quest reentrant queue is cold-prewarmed before gameplay enqueue", report, ref failureCount);
@@ -671,7 +671,7 @@ namespace Hecton8.Editor
                 string tryAddUnlockedHashBody = ExtractMethodBody(playerAchievementRegistry, "private bool TryAddUnlockedHash(");
                 string tryPushAchievementNotificationBody = ExtractMethodBody(playerAchievementRegistry, "private void TryPushAchievementNotification(");
 
-                AssertContains(playerAchievementRegistry, "[StructLayout(LayoutKind.Sequential)]", "Achievement progression structs declare sequential layout", report, ref failureCount);
+                AssertContains(playerAchievementRegistry, "[StructLayout(LayoutKind.Explicit, Size = 16)]", "Achievement runtime threshold row declares explicit 16-byte layout", report, ref failureCount);
                 AssertContains(playerAchievementRegistry, "private readonly struct AchievementRuntimeDefinition", "Achievement runtime thresholds are tightly packed for hot evaluation", report, ref failureCount);
                 AssertContains(playerAchievementRegistry, "private static readonly AchievementRuntimeDefinition[] _runtimeDefinitions", "Achievement hot evaluation uses string-free runtime definition table", report, ref failureCount);
                 AssertContains(tickBody, "AbsoluteUniversePosition.DistanceSq", "Achievement swim distance gates with AUP squared distance", report, ref failureCount);

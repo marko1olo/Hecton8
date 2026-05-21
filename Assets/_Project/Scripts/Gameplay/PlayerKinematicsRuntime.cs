@@ -135,7 +135,7 @@ namespace Hecton8.Gameplay
                 runtimeFlags |= PlayerKinematicsRuntime.BodyFlagSdfGradientValid;
                 telemetrySolidDensity = sdfDensity;
                 if ((SdfSampleMode & SdfSampleModeTetra4) != 0)
-                    runtimeFlags |= PlayerKinematicsRuntime.BodyFlagSdfLowTierGradient;
+                    runtimeFlags |= PlayerKinematicsRuntime.BodyFlagSdfReducedGradientSamples;
             }
             else if (TrySampleSdfTrilinear(
                          VoxelSdfTexture3D,
@@ -422,7 +422,7 @@ namespace Hecton8.Gameplay
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct PlayerKinematicsHandPlacementJob : IJob
     {
-        public const byte RuntimeFlagLowTier = 1 << 0;
+        public const byte RuntimeFlagReducedProbeSet = 1 << 0;
         public const byte RuntimeFlagImpact = 1 << 1;
 
         [ReadOnly] public NativeArray<RaycastHit> Hits;
@@ -442,6 +442,7 @@ namespace Hecton8.Gameplay
         public float SqueezeBlend;
         public float Stress01;
         public float Phase;
+        public byte ProbeCount;
         public byte RuntimeFlags;
 
         public void Execute()
@@ -461,7 +462,8 @@ namespace Hecton8.Gameplay
 
             PlayerKinematicsHandTarget leftTarget = default;
             PlayerKinematicsHandTarget rightTarget = default;
-            if ((RuntimeFlags & RuntimeFlagLowTier) != 0)
+            int probeCount = math.clamp((int)ProbeCount, 1, 4);
+            if ((RuntimeFlags & RuntimeFlagReducedProbeSet) != 0 || probeCount <= 1)
             {
                 TryBuildProbeTarget(0, -1.0f, 0.18f, braceBaseBlend, forward, right, up, ref leftTarget);
                 TryBuildProbeTarget(0, 1.0f, 0.18f, braceBaseBlend, forward, right, up, ref rightTarget);
@@ -469,10 +471,10 @@ namespace Hecton8.Gameplay
             else
             {
                 TryBuildProbeTarget(0, -1.0f, 0.04f, braceBaseBlend, forward, right, up, ref leftTarget);
-                TryBuildProbeTarget(1, 1.0f, 0.04f, braceBaseBlend, forward, right, up, ref rightTarget);
-                if (leftTarget.Hit == 0)
+                TryBuildProbeTarget(math.min(1, probeCount - 1), 1.0f, 0.04f, braceBaseBlend, forward, right, up, ref rightTarget);
+                if (leftTarget.Hit == 0 && probeCount > 2)
                     TryBuildBestCentralTarget(-1.0f, braceBaseBlend, forward, right, up, ref leftTarget);
-                if (rightTarget.Hit == 0)
+                if (rightTarget.Hit == 0 && probeCount > 2)
                     TryBuildBestCentralTarget(1.0f, braceBaseBlend, forward, right, up, ref rightTarget);
             }
 
@@ -694,7 +696,7 @@ namespace Hecton8.Gameplay
         private struct VaultBufferBinding<T>
             where T : struct
         {
-            public VaultBufferHandle<T> Handle;
+            public VaultGenerationHandle<T> Handle;
             public BufferID BufferId;
             public int RequiredLength;
             public SystemID OwnerSystemId;
@@ -737,8 +739,16 @@ namespace Hecton8.Gameplay
                 }
 
                 _vault = dataVault;
-                if (!Handle.IsCreated || Handle.Length < RequiredLength)
-                    Handle = dataVault.GetBufferHandle<T>(BufferId, RequiredLength, OwnerSystemId, options);
+                if (!TryResolveRequired(dataVault, in Handle, RequiredLength))
+                {
+                    if (!dataVault.TryGetGenerationHandle(BufferId, out VaultGenerationHandle<T> existing) ||
+                        !TryResolveRequired(dataVault, in existing, RequiredLength))
+                    {
+                        existing = dataVault.GetGenerationHandle<T>(BufferId, RequiredLength, OwnerSystemId, options);
+                    }
+
+                    Handle = existing;
+                }
 
                 NativeArray<T> buffer = ResolveExisting(dataVault);
                 return buffer.IsCreated && buffer.Length >= RequiredLength;
@@ -782,10 +792,27 @@ namespace Hecton8.Gameplay
 
             NativeArray<T> ResolveExisting(IDataVault dataVault)
             {
-                if (dataVault == null || !Handle.IsCreated)
+                if (dataVault == null || !IsHandleCreated(in Handle))
                     return default;
 
-                return Handle.Resolve(dataVault);
+                return dataVault.TryResolveHandle(in Handle, out NativeArray<T> buffer)
+                    ? buffer
+                    : default;
+            }
+
+            private static bool TryResolveRequired(IDataVault dataVault, in VaultGenerationHandle<T> handle, int requiredLength)
+            {
+                if (dataVault == null || !IsHandleCreated(in handle))
+                    return false;
+
+                return dataVault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
+                       buffer.IsCreated &&
+                       buffer.Length >= requiredLength;
+            }
+
+            private static bool IsHandleCreated(in VaultGenerationHandle<T> handle)
+            {
+                return handle.BufferID != 0u && handle.Generation != 0u;
             }
         }
 
@@ -799,7 +826,7 @@ namespace Hecton8.Gameplay
         internal const uint BodyFlagInSolid = 1u << 1;
         internal const uint BodyFlagMaelstromActive = 1u << 2;
         internal const uint BodyFlagSdfGradientValid = 1u << 3;
-        internal const uint BodyFlagSdfLowTierGradient = 1u << 4;
+        internal const uint BodyFlagSdfReducedGradientSamples = 1u << 4;
         internal const uint BodyFlagSdfSqueezeIntervention = 1u << 5;
         private const int TelemetrySqueezeInterventionShift = 8;
         private const uint TelemetrySqueezeInterventionMask = 0xFFFFu << TelemetrySqueezeInterventionShift;
@@ -858,11 +885,11 @@ namespace Hecton8.Gameplay
         private const float BracePhaseWrap = 1024.0f;
         private const float LadderSnapRadius = 0.52f;
         private const float SolidDensityThreshold = 0.0f;
-        private const int LowTierHandProbeFrameMask = 3;
+        private const int MinimumQualityHandProbeFrameMask = 3;
         private const uint IkBraceTelemetryFlag = 1u << 16;
         private const uint IkSqueezeTelemetryFlag = 1u << 17;
         private const uint IkImpactTelemetryFlag = 1u << 18;
-        private const uint IkLowTierTelemetryFlag = 1u << 19;
+        private const uint IkReducedProbeTelemetryFlag = 1u << 19;
         private const uint IkScrapeTelemetryFlag = 1u << 20;
         private const uint AupPreShiftHaltTelemetryFlag = 1u << 21;
         private const uint AupDriftTelemetryFlag = 1u << 22;
@@ -873,6 +900,8 @@ namespace Hecton8.Gameplay
         private const float RollSignalEpsilonDegrees = 0.01f;
         private const uint AupWatchdogDumpMagic = 0x41555044u;
         private const uint SdfSqueezeDumpMagic = 0x5344464Bu;
+        private const byte KccVelocityReducedQualityCompatibilityFlag = 1 << 0;
+        private const byte PlayerStateReducedGradientCompatibilityFlag = 1 << 2;
         private const string AupWatchdogDumpFileName = "Dump_AUP_DETERMINISM_WATCHDOG.bin";
         private const string SdfSqueezeDumpFileName = "Dump_KCC_SDF_SQUEEZE_RESOLVER.bin";
         private static readonly int _PlayerSwimVatSpeedId = Shader.PropertyToID("_HectonSwimVatSpeedScalar");
@@ -898,6 +927,7 @@ namespace Hecton8.Gameplay
         private VaultBufferBinding<RaycastCommand> _handProbeCommands = new VaultBufferBinding<RaycastCommand>(BufferID.PlayerKinematicHandProbeCommands, EnvironmentProbeCount, OwnerSystemId);
         private VaultBufferBinding<RaycastHit> _handProbeHits = new VaultBufferBinding<RaycastHit>(BufferID.PlayerKinematicHandProbeHits, EnvironmentProbeCount, OwnerSystemId);
         private VaultBufferBinding<SdfSqueezeResult> _sdfSqueezeResults = new VaultBufferBinding<SdfSqueezeResult>(BufferID.PlayerKinematicSdfSqueezeResults, EntityCount, OwnerSystemId);
+        private VaultGenerationHandle<BulkheadCollisionResultDTO> _bulkheadCollisionResultsHandle;
         private JobHandle _handProbeHandle;
         private JobHandle _handPlacementHandle;
         private bool _handProbePending;
@@ -929,12 +959,25 @@ namespace Hecton8.Gameplay
         private float _lastVatSpeedScalar = -1.0f;
         private float _lastPushedRollDegrees = 99999.0f;
         private int _nextColdRebindFrame;
+        private uint _nextBulkheadCollisionHandleBindFrame;
         private int _cadenceSalt;
+        private float _cachedGlobalQualityWeight01 = 1.0f;
         private uint _lastConsumedSqueezeSignalFrame;
         private uint _lastConsumedSqueezeSignalSourceHash;
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
         private uint _sourceId;
         private PlayerKinematicsAccumulatorState _accumulatorState;
+
+        private Vector3 ResolveBodyRuntimePosition()
+        {
+            if (_body != null)
+                return _body.position;
+
+            if (_cachedTransform != null)
+                return _cachedTransform.position;
+
+            return transform.position;
+        }
         private InputStateSignal _lastInputStateSignal;
         private Vector4 _lastGpuFlowResolution;
         private Vector4 _lastGpuFlowCenter;
@@ -965,7 +1008,8 @@ namespace Hecton8.Gameplay
         private uint _lastConsumedSystemStressFrame;
         private float _cachedSystemStress01;
         private bool _hasImpactBracePoint;
-        private bool _lastProbeLowTier;
+        private bool _lastProbeReduced;
+        private int _lastProbeCount;
         private bool _wasBraceActive;
 
         private void Awake()
@@ -1022,14 +1066,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            HectonQualityTier scalabilityTier = ResolveScalabilityTier();
+            float qualityWeight01 = RefreshGlobalQualityWeight01();
             if (MovementOwnsKinematicAuthority())
             {
                 byte externalFlags = KccVelocitySignal.FlagMovementAuthorityExternal;
-                if (IsLowTier(scalabilityTier))
-                    externalFlags |= KccVelocitySignal.FlagLowTier;
+                externalFlags |= (byte)(KccVelocityReducedQualityCompatibilityFlag * (byte)math.step(SmoothQuality01(qualityWeight01), 0.25f));
 
-                float3 rawAuthorityPosition = ToFloat3(_body.position);
+                float3 rawAuthorityPosition = ToFloat3(ResolveBodyRuntimePosition());
                 float3 rawAuthorityVelocity = ToFloat3(_body.linearVelocity);
                 bool authorityInputInvalid =
                     !math.all(math.isfinite(rawAuthorityPosition)) ||
@@ -1050,23 +1093,25 @@ namespace Hecton8.Gameplay
             SnapshotInputs();
             SnapshotGpuFlow();
             SnapshotVoxelSolid(out byte inSolid, out float solidDensity);
-            byte lowTier = IsLowTier(scalabilityTier) ? (byte)1 : (byte)0;
             byte sdfGradientProbeRequested = ResolveSdfGradientProbeRequest();
             NativeArray<byte> sdfTexture3D = default;
             int3 sdfDimensions = default;
             float3 sdfOrigin = float3.zero;
             float3 sdfCellSize = float3.zero;
             float sdfRange = 0.0f;
-            byte sdfSampleMode = lowTier != 0
-                ? PlayerKinematicsBodyJob.SdfSampleModeTetra4
-                : PlayerKinematicsBodyJob.SdfSampleModeAxis6;
-            float3 rawBodyPosition = ToFloat3(_body.position);
+            byte sdfSampleMode = ResolveSdfSampleMode(qualityWeight01, unchecked((uint)Time.frameCount));
+            float3 rawBodyPosition = ToFloat3(ResolveBodyRuntimePosition());
             float3 rawBodyVelocity = ToFloat3(_body.linearVelocity);
             float3 bodyPosition = SanitizeFloat3(rawBodyPosition, ReadLastValidPosition());
             float3 bodyVelocity = SanitizeFloat3(rawBodyVelocity, float3.zero);
             bool rawBodyStateInvalid = !math.all(math.isfinite(rawBodyPosition)) || !math.all(math.isfinite(rawBodyVelocity));
             Vector3 safeBodyPosition = ToVector3(bodyPosition);
-            bool needsSdfPayload = inSolid != 0 || sdfGradientProbeRequested != 0 || lowTier == 0 || _sdfSqueezeSlowHoldFrames > 0;
+            uint frameId = unchecked((uint)Time.frameCount);
+            bool needsSdfPayload =
+                inSolid != 0 ||
+                sdfGradientProbeRequested != 0 ||
+                _sdfSqueezeSlowHoldFrames > 0 ||
+                ShouldRefreshPassiveSdfPayload(qualityWeight01, frameId);
 
             if (needsSdfPayload)
             {
@@ -1087,7 +1132,7 @@ namespace Hecton8.Gameplay
             SdfSqueezeResult sdfSqueezeResult;
             if (TryApplySdfSqueeze(
                     fixedDeltaTime,
-                    lowTier,
+                    qualityWeight01,
                     sdfTexture3D,
                     sdfDimensions,
                     sdfOrigin,
@@ -1144,7 +1189,7 @@ namespace Hecton8.Gameplay
                 SolidDensity = solidDensity,
                 VoxelSdfRange = sdfRange,
                 SdfSampleStepMeters = ResolveSdfSampleStepMeters(sdfCellSize),
-                LowMaelstromTier = lowTier,
+                LowMaelstromTier = IsReducedSdfSampleMode(sdfSampleMode) ? (byte)1 : (byte)0,
                 SdfSampleMode = sdfSampleMode,
                 SdfGradientProbeRequested = sdfGradientProbeRequested,
                 Frame = (uint)Time.frameCount,
@@ -1177,9 +1222,9 @@ namespace Hecton8.Gameplay
             PublishKccVelocitySignal(
                 resolvedPosition3,
                 resolvedVelocity3,
-                lowTier != 0 ? KccVelocitySignal.FlagLowTier : (byte)0);
+                (byte)(KccVelocityReducedQualityCompatibilityFlag * (byte)math.step(SmoothQuality01(qualityWeight01), 0.25f)));
             if (SdfSqueezeResult.IsResultActive(in sdfSqueezeResult))
-                PublishSdfSqueezeSignals(in sdfSqueezeResult, resolvedPosition3, resolvedVelocity3, lowTier);
+                PublishSdfSqueezeSignals(in sdfSqueezeResult, resolvedPosition3, resolvedVelocity3);
             if (faultFlags == 0)
                 _dumpWrittenForFault = false;
 
@@ -1191,11 +1236,7 @@ namespace Hecton8.Gameplay
 
         private bool TryApplyBulkheadCollisionResult(ref float3 position, ref float3 velocity)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !vault.TryGetBuffer(BufferID.Shinobu220BulkheadCollisionResults, out NativeArray<BulkheadCollisionResultDTO> collisions) ||
-                !collisions.IsCreated ||
-                collisions.Length == 0)
+            if (!TryResolveBulkheadCollisionResults(out NativeArray<BulkheadCollisionResultDTO> collisions))
             {
                 return false;
             }
@@ -1226,6 +1267,68 @@ namespace Hecton8.Gameplay
                 velocity = SnapMillimeter(velocity - normal * inwardVelocity);
 
             return true;
+        }
+
+        private bool TryResolveBulkheadCollisionResults(out NativeArray<BulkheadCollisionResultDTO> collisions)
+        {
+            collisions = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (IsVaultHandleCreated(in _bulkheadCollisionResultsHandle) &&
+                vault.TryResolveHandle(in _bulkheadCollisionResultsHandle, out collisions) &&
+                collisions.IsCreated &&
+                collisions.Length > 0)
+            {
+                return true;
+            }
+
+            uint frame = SystemDispatcher.CurrentFrameId;
+            if (frame == 0u)
+            {
+                if (_nextBulkheadCollisionHandleBindFrame != 0u)
+                    return false;
+                _nextBulkheadCollisionHandleBindFrame = 16u;
+            }
+            else
+            {
+                if (frame < _nextBulkheadCollisionHandleBindFrame)
+                    return false;
+                _nextBulkheadCollisionHandleBindFrame = unchecked(frame + 16u);
+            }
+
+            return TryBindBulkheadCollisionResultHandle(vault) &&
+                   vault.TryResolveHandle(in _bulkheadCollisionResultsHandle, out collisions) &&
+                   collisions.IsCreated &&
+                   collisions.Length > 0;
+        }
+
+        private bool TryBindBulkheadCollisionResultHandle(IDataVault dataVault)
+        {
+            if (dataVault == null)
+            {
+                _bulkheadCollisionResultsHandle = default;
+                return false;
+            }
+
+            if (!dataVault.TryGetGenerationHandle(
+                    BufferID.Shinobu220BulkheadCollisionResults,
+                    out VaultGenerationHandle<BulkheadCollisionResultDTO> handle))
+            {
+                _bulkheadCollisionResultsHandle = default;
+                return false;
+            }
+
+            _bulkheadCollisionResultsHandle = handle;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -1379,6 +1482,7 @@ namespace Hecton8.Gameplay
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
             _cachedScalabilityTier = payload.CurrentQualityTier;
+            _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01(_cachedGlobalQualityWeight01);
         }
 
         void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
@@ -1416,6 +1520,7 @@ namespace Hecton8.Gameplay
             _ = _handProbeCommands.Ensure(dataVault);
             _ = _handProbeHits.Ensure(dataVault);
             _ = _sdfSqueezeResults.Ensure(dataVault);
+            TryBindBulkheadCollisionResultHandle(dataVault);
             if (!HasKinematicsStorage() || !HasSyncStateWriteStorage())
                 return;
 
@@ -1447,6 +1552,8 @@ namespace Hecton8.Gameplay
             _handProbeCommands.ReleaseView();
             _handProbeHits.ReleaseView();
             _sdfSqueezeResults.ReleaseView();
+            _bulkheadCollisionResultsHandle = default;
+            _nextBulkheadCollisionHandleBindFrame = 0u;
             ResetDeterminismSessionState();
         }
 
@@ -1614,7 +1721,8 @@ namespace Hecton8.Gameplay
             _lastConsumedSystemStressFrame = 0u;
             _cachedSystemStress01 = 0.0f;
             _hasImpactBracePoint = false;
-            _lastProbeLowTier = false;
+            _lastProbeReduced = false;
+            _lastProbeCount = 0;
             _wasBraceActive = false;
             if (_intendedMovement.IsCreated && _intendedMovement.Length >= EntityCount)
                 _intendedMovement[0] = float3.zero;
@@ -1644,6 +1752,7 @@ namespace Hecton8.Gameplay
                 ? playerContext.PlayerCamera.transform
                 : null;
             _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
+            _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01(_cachedGlobalQualityWeight01);
         }
 
         private void RebindColdIfMissing()
@@ -1773,9 +1882,7 @@ namespace Hecton8.Gameplay
             volumeOrigin = float3.zero;
             voxelCellSize = float3.zero;
             sdfRange = 0.0f;
-            sampleMode = IsLowTier(ResolveScalabilityTier())
-                ? PlayerKinematicsBodyJob.SdfSampleModeTetra4
-                : PlayerKinematicsBodyJob.SdfSampleModeAxis6;
+            sampleMode = ResolveSdfSampleMode(ReadCachedGlobalQualityWeight01(), unchecked((uint)Time.frameCount));
 
             if (_voxelEngine == null)
                 return;
@@ -1832,7 +1939,7 @@ namespace Hecton8.Gameplay
 
         private bool TryApplySdfSqueeze(
             float fixedDeltaTime,
-            byte lowTier,
+            float qualityWeight01,
             NativeArray<byte> sdfTexture3D,
             int3 sdfDimensions,
             float3 sdfOrigin,
@@ -1863,19 +1970,19 @@ namespace Hecton8.Gameplay
             {
                 return slowCadence &&
                        inSolid != 0 &&
-                       TryApplyCachedSdfSqueeze(safeDeltaTime, lowTier, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition, out result);
+                       TryApplyCachedSdfSqueeze(safeDeltaTime, sdfSampleMode, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition, out result);
             }
 
             bool runSampleNow = !slowCadence ||
                                 _sdfSqueezeSlowHoldFrames <= 0 ||
                                 ((Time.frameCount + _cadenceSalt) % SdfSqueezeSlowCadenceFrameInterval) == 0;
             if (!runSampleNow &&
-                TryApplyCachedSdfSqueeze(safeDeltaTime, lowTier, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition, out result))
+                TryApplyCachedSdfSqueeze(safeDeltaTime, sdfSampleMode, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition, out result))
             {
                 return true;
             }
 
-            if (!TryResolveAupFromRuntimeOrigin(safeBodyPosition, out AbsoluteUniversePosition bodyAup))
+            if (!TryConvertRuntimePositionToAup(safeBodyPosition, out AbsoluteUniversePosition bodyAup))
                 return false;
 
             AbsoluteUniversePosition sampleAup = TryReadPlayerKinematicStateFromVault(out AbsoluteUniversePosition vaultAup)
@@ -1894,7 +2001,7 @@ namespace Hecton8.Gameplay
                 VoxelSdfDimensions = sdfDimensions,
                 VoxelSdfOrigin = sdfOrigin,
                 VoxelSdfCellSize = sdfCellSize,
-                TargetAupAbsolute = sampleAup.ToAbsoluteDouble3(),
+                TargetAupAbsolute = ToAbsoluteDouble3(in sampleAup),
                 FloatingOriginOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble,
                 VoxelSdfRange = sdfRange,
                 SdfSampleStepMeters = ResolveSdfSampleStepMeters(sdfCellSize),
@@ -1902,8 +2009,8 @@ namespace Hecton8.Gameplay
                 MaxPushOutSpeedMetersPerSecond = SdfSqueezeMaxPushOutSpeedMetersPerSecond,
                 SpeedPenalty01 = SdfSqueezeForwardSpeedPenalty01,
                 SystemStress01 = systemStress01,
-                SampleMode = lowTier != 0 ? (byte)SdfSqueezeSampleMode.Tetra4 : sdfSampleMode,
-                LowTier = lowTier,
+                QualityWeight = qualityWeight01,
+                SampleMode = IsReducedSdfSampleMode(sdfSampleMode) ? (byte)SdfSqueezeSampleMode.Tetra4 : (byte)SdfSqueezeSampleMode.Axis6,
                 SlowCadence = slowCadence ? (byte)1 : (byte)0,
                 Frame = unchecked((uint)Time.frameCount)
             };
@@ -1920,13 +2027,13 @@ namespace Hecton8.Gameplay
 
             _lastSdfSqueezeResult = result;
             _sdfSqueezeSlowHoldFrames = slowCadence ? SdfSqueezeSlowCadenceFrameInterval - 1 : 0;
-            ApplySdfSqueezeResultToRuntime(in result, lowTier, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition);
+            ApplySdfSqueezeResultToRuntime(in result, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition);
             return true;
         }
 
         private bool TryApplyCachedSdfSqueeze(
             float fixedDeltaTime,
-            byte lowTier,
+            byte sdfSampleMode,
             ref byte inSolid,
             ref byte sdfGradientProbeRequested,
             ref float3 bodyPosition,
@@ -1965,16 +2072,15 @@ namespace Hecton8.Gameplay
             result.PushSpeed = pushSpeed;
             result.Frame = unchecked((uint)Time.frameCount);
             result.Flags |= SdfSqueezeResult.FlagSlowCadence;
-            if (lowTier != 0)
-                result.Flags |= SdfSqueezeResult.FlagLowTier;
+            if (IsReducedSdfSampleMode(sdfSampleMode))
+                result.Flags |= SdfSqueezeResult.FlagReducedGradientSamples;
 
-            ApplySdfSqueezeResultToRuntime(in result, lowTier, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition);
+            ApplySdfSqueezeResultToRuntime(in result, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition);
             return true;
         }
 
         private void ApplySdfSqueezeResultToRuntime(
             in SdfSqueezeResult result,
-            byte lowTier,
             ref byte inSolid,
             ref byte sdfGradientProbeRequested,
             ref float3 bodyPosition,
@@ -1988,8 +2094,8 @@ namespace Hecton8.Gameplay
             sdfGradientProbeRequested = 1;
             _lastSdfSqueezeNormal = SafeNormalize(result.Normal, _lastSdfSqueezeNormal);
             _lastSdfSqueezeStress01 = math.max(_lastSdfSqueezeStress01, SanitizeUnit(result.Stress01));
-            if (lowTier != 0)
-                _lastSdfSqueezeResult.Flags |= SdfSqueezeResult.FlagLowTier;
+            if ((result.Flags & SdfSqueezeResult.FlagReducedGradientSamples) != 0u)
+                _lastSdfSqueezeResult.Flags |= SdfSqueezeResult.FlagReducedGradientSamples;
         }
 
         private static bool IsValidSdfPayload(
@@ -2169,8 +2275,8 @@ namespace Hecton8.Gameplay
                 return float3.zero;
 
             float gpuBoost = _accumulatorState.LastGpuFlowFrame != 0u ? 1.0f : 0.65f;
-            float tierScale = IsLowTier(ResolveScalabilityTier()) ? 0.75f : 1.0f;
-            float3 advection = flow * (AdvectionVelocityScale * gpuBoost * tierScale * immersion01);
+            float qualityScale = math.lerp(0.75f, 1.0f, SmoothQuality01(ReadCachedGlobalQualityWeight01()));
+            float3 advection = flow * (AdvectionVelocityScale * gpuBoost * qualityScale * immersion01);
             return SanitizeFloat3(advection, float3.zero);
         }
 
@@ -2214,7 +2320,8 @@ namespace Hecton8.Gameplay
                 float side = math.sign(math.select(sideDot, 0.0f, !math.isfinite(sideDot)));
                 _rollPhaseRadians = DeterministicPhysicsMath.WrapSignedPi(_rollPhaseRadians + SanitizeNonNegative(dt) * 28.0f);
                 rollPhaseAdvanced = true;
-                float impactWave = IsHighScalabilityTier() ? DeterministicPhysicsMath.SinApprox(_rollPhaseRadians) : SignedTriangleWave(_rollPhaseRadians);
+                float qualityCurve01 = SmoothQuality01(ReadCachedGlobalQualityWeight01());
+                float impactWave = math.lerp(SignedTriangleWave(_rollPhaseRadians), DeterministicPhysicsMath.SinApprox(_rollPhaseRadians), qualityCurve01);
                 targetRoll = -side *
                     SanitizeNonNegative(WallImpactRollDegrees) *
                     speed01 *
@@ -2224,15 +2331,19 @@ namespace Hecton8.Gameplay
 
             float safeDt = SanitizeNonNegative(dt);
             float squeezeStress = SanitizeUnit(_lastSdfSqueezeStress01);
-            if (squeezeStress > 0.0001f && IsHighScalabilityTier() && IsFiniteNonZero(_lastSdfSqueezeNormal))
+            float squeezeRollWeight01 = SmoothQuality01(math.saturate((ReadCachedGlobalQualityWeight01() - 0.45f) * 1.8181819f));
+            if (squeezeStress > 0.0001f && squeezeRollWeight01 > 0.0001f && IsFiniteNonZero(_lastSdfSqueezeNormal))
             {
                 if (!rollPhaseAdvanced)
                     _rollPhaseRadians = DeterministicPhysicsMath.WrapSignedPi(_rollPhaseRadians + safeDt * 16.0f);
 
                 float sideDot = math.dot(_lastSdfSqueezeNormal, SafeRight());
                 float side = math.sign(math.select(sideDot, 0.0f, !math.isfinite(sideDot)));
-                float twistWave = 0.65f + 0.35f * DeterministicPhysicsMath.SinApprox(_rollPhaseRadians);
-                float squeezeRoll = -side * SdfSqueezeRollDegrees * squeezeStress * twistWave;
+                float twistWave = math.lerp(
+                    SignedTriangleWave(_rollPhaseRadians),
+                    0.65f + 0.35f * DeterministicPhysicsMath.SinApprox(_rollPhaseRadians),
+                    squeezeRollWeight01);
+                float squeezeRoll = -side * SdfSqueezeRollDegrees * squeezeStress * squeezeRollWeight01 * twistWave;
                 if (math.abs(squeezeRoll) > math.abs(targetRoll))
                     targetRoll = squeezeRoll;
             }
@@ -2257,7 +2368,7 @@ namespace Hecton8.Gameplay
             float3 safePosition = SanitizeFloat3(
                 ToFloat3(position),
                 ReadPositionSnapshot(float3.zero));
-            if (!TryResolveAupFromRuntimeOrigin(SnapMillimeter(safePosition), out AbsoluteUniversePosition positionAup))
+            if (!TryConvertRuntimePositionToAup(SnapMillimeter(safePosition), out AbsoluteUniversePosition positionAup))
                 return;
 
             MovementAcousticSignal signal = default;
@@ -2278,7 +2389,7 @@ namespace Hecton8.Gameplay
 
             float3 snappedPosition = SnapMillimeter(position);
             float3 snappedVelocity = SnapMillimeter(velocity);
-            if (!TryResolveAupFromRuntimeOrigin(snappedPosition, out AbsoluteUniversePosition bodyAup))
+            if (!TryConvertRuntimePositionToAup(snappedPosition, out AbsoluteUniversePosition bodyAup))
                 return;
 
             PhysicsDeterminismSignals.PublishKccVelocity(
@@ -2289,22 +2400,22 @@ namespace Hecton8.Gameplay
                 flags);
         }
 
-        private void PublishSdfSqueezeSignals(in SdfSqueezeResult result, float3 position, float3 velocity, byte lowTier)
+        private void PublishSdfSqueezeSignals(in SdfSqueezeResult result, float3 position, float3 velocity)
         {
             float stress01 = SanitizeUnit(result.Stress01);
             float pushSpeed = SanitizeNonNegative(result.PushSpeed);
             if (stress01 <= 0.0001f && pushSpeed <= 0.0001f)
                 return;
 
-            if (!TryResolveAupFromRuntimeOrigin(SnapMillimeter(position), out AbsoluteUniversePosition positionAup))
+            if (!TryConvertRuntimePositionToAup(SnapMillimeter(position), out AbsoluteUniversePosition positionAup))
                 return;
 
             byte stateFlags = (byte)(PlayerStateSignal.FlagActive |
                                      PlayerStateSignal.FlagSqueezing |
                                      PlayerStateSignal.FlagSdfGradientValid |
                                      PlayerStateSignal.FlagAupShiftSafe);
-            if (lowTier != 0 || (result.Flags & SdfSqueezeResult.FlagLowTier) != 0u)
-                stateFlags |= PlayerStateSignal.FlagLowTierGradient;
+            if ((result.Flags & SdfSqueezeResult.FlagReducedGradientSamples) != 0u)
+                stateFlags |= PlayerStateReducedGradientCompatibilityFlag;
 
             PlayerStateSignal playerState = default;
             playerState.PositionAup = positionAup;
@@ -2392,13 +2503,14 @@ namespace Hecton8.Gameplay
             uint frame)
         {
             float intensity = SanitizeUnit(stress01);
-            if (!IsHighScalabilityTier() || intensity < SdfSqueezeVisualImpulseMinStress01)
+            float visualWeight01 = SmoothQuality01(math.saturate((ReadCachedGlobalQualityWeight01() - 0.45f) * 1.8181819f));
+            if (visualWeight01 <= 0.0001f || intensity < SdfSqueezeVisualImpulseMinStress01)
                 return;
 
             float3 safeNormal = SafeNormalize(normal, float3.zero);
             float3 safeVelocity = SanitizeFloat3(velocity, float3.zero);
-            float3 vector = safeNormal * (0.65f + intensity * 1.15f) +
-                            safeVelocity * SdfSqueezeVisualImpulseVelocityScale;
+            float3 vector = (safeNormal * (0.65f + intensity * 1.15f) +
+                             safeVelocity * SdfSqueezeVisualImpulseVelocityScale) * visualWeight01;
             float vectorSq = math.lengthsq(vector);
             if (!math.isfinite(vectorSq) || vectorSq <= 0.000001f)
                 return;
@@ -2407,9 +2519,9 @@ namespace Hecton8.Gameplay
             impulse.PositionAup = positionAup;
             impulse.Vector = vector;
             impulse.Radius = SdfSqueezeVisualImpulseBaseRadiusMeters +
-                             intensity * SdfSqueezeVisualImpulseExtraRadiusMeters;
+                             intensity * visualWeight01 * SdfSqueezeVisualImpulseExtraRadiusMeters;
             impulse.Lifetime = SdfSqueezeVisualImpulseBaseLifetimeSeconds +
-                               intensity * SdfSqueezeVisualImpulseExtraLifetimeSeconds;
+                               intensity * visualWeight01 * SdfSqueezeVisualImpulseExtraLifetimeSeconds;
             impulse.Frame = frame;
             impulse.SourceHash = _sourceId;
             impulse.Flags = (uint)(PlayerStateSignal.FlagSqueezing | PlayerStateSignal.FlagSdfGradientValid);
@@ -2428,8 +2540,8 @@ namespace Hecton8.Gameplay
                             ((clampedInterventions << TelemetrySqueezeInterventionShift) & TelemetrySqueezeInterventionMask);
             if ((result.Flags & SdfSqueezeResult.FlagGradientValid) != 0u)
                 auxFlags |= BodyFlagSdfGradientValid;
-            if ((result.Flags & SdfSqueezeResult.FlagLowTier) != 0u)
-                auxFlags |= BodyFlagSdfLowTierGradient;
+            if ((result.Flags & SdfSqueezeResult.FlagReducedGradientSamples) != 0u)
+                auxFlags |= BodyFlagSdfReducedGradientSamples;
             if ((result.Flags & SdfSqueezeResult.FlagSlowCadence) != 0u)
                 auxFlags |= SdfSqueezeSlowTelemetryFlag;
             if ((result.Flags & SdfSqueezeResult.FlagNaNFallback) != 0u)
@@ -2526,7 +2638,9 @@ namespace Hecton8.Gameplay
                     signal.ImpactSpeed < HandBraceSpeedThreshold)
                     continue;
 
-                float3 point = signal.PointAup.ToRuntimeFloat3();
+                if (!TryConvertAupToRuntimePosition(in signal.PointAup, out float3 point))
+                    continue;
+
                 float3 normal = SafeNormalize(signal.Normal, new float3(0.0f, 1.0f, 0.0f));
                 if (!math.all(math.isfinite(point)) || !math.all(math.isfinite(normal)))
                     continue;
@@ -2700,8 +2814,8 @@ namespace Hecton8.Gameplay
             uint auxFlags = BodyFlagSdfSqueezeIntervention |
                 BodyFlagSdfGradientValid |
                 ((clampedInterventions << TelemetrySqueezeInterventionShift) & TelemetrySqueezeInterventionMask);
-            if ((signal.Flags & PlayerStateSignal.FlagLowTierGradient) != 0)
-                auxFlags |= BodyFlagSdfLowTierGradient;
+            if ((signal.Flags & PlayerStateReducedGradientCompatibilityFlag) != 0)
+                auxFlags |= BodyFlagSdfReducedGradientSamples;
 
             _telemetry[wrappedIndex] = new PlayerKinematicsRuntimeTelemetryEntry
             {
@@ -2746,15 +2860,16 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            bool lowTier = IsLowTier(ResolveScalabilityTier());
-            int scheduledProbeCount = lowTier ? 1 : EnvironmentProbeCount;
+            float qualityWeight01 = ReadCachedGlobalQualityWeight01();
+            int scheduledProbeCount = ResolveHandProbeCount(qualityWeight01);
             if (!HasHandProbeStorage(scheduledProbeCount))
             {
                 ClearHandTargets();
                 return;
             }
 
-            if (lowTier && ((Time.frameCount + _cadenceSalt) & LowTierHandProbeFrameMask) != 0)
+            int probeFrameMask = ResolveHandProbeFrameMask(qualityWeight01);
+            if (probeFrameMask != 0 && ((Time.frameCount + _cadenceSalt) & probeFrameMask) != 0)
                 return;
 
             Transform source = _cameraTransform != null ? _cameraTransform : _cachedTransform;
@@ -2792,7 +2907,8 @@ namespace Hecton8.Gameplay
             _lastProbeSourceRight = sourceRight;
             _lastProbeSourceUp = sourceUp;
             _lastProbeVelocity = velocity;
-            _lastProbeLowTier = lowTier;
+            _lastProbeReduced = scheduledProbeCount < EnvironmentProbeCount;
+            _lastProbeCount = scheduledProbeCount;
 
             Vector3 origin = ToVector3(chestOrigin);
             Vector3 right = ToVector3(sourceRight);
@@ -2808,13 +2924,13 @@ namespace Hecton8.Gameplay
 
             _handProbeCommands[0] = new RaycastCommand
             {
-                from = lowTier ? origin : origin - right * HandProbeSideOffset,
+                from = scheduledProbeCount <= 1 ? origin : origin - right * HandProbeSideOffset,
                 direction = direction,
                 distance = HandProbeDistance,
                 queryParameters = parameters
             };
 
-            if (!lowTier)
+            if (scheduledProbeCount > 1)
             {
                 _handProbeCommands[1] = new RaycastCommand
                 {
@@ -2823,6 +2939,10 @@ namespace Hecton8.Gameplay
                     distance = HandProbeDistance,
                     queryParameters = parameters
                 };
+            }
+
+            if (scheduledProbeCount > 2)
+            {
                 _handProbeCommands[2] = new RaycastCommand
                 {
                     from = origin + up * 0.22f,
@@ -2830,6 +2950,10 @@ namespace Hecton8.Gameplay
                     distance = HandBraceDistance,
                     queryParameters = parameters
                 };
+            }
+
+            if (scheduledProbeCount > 3)
+            {
                 _handProbeCommands[3] = new RaycastCommand
                 {
                     from = origin - up * 0.52f,
@@ -2837,7 +2961,6 @@ namespace Hecton8.Gameplay
                     distance = HandBraceDistance,
                     queryParameters = parameters
                 };
-                scheduledProbeCount = EnvironmentProbeCount;
             }
 
             NativeArray<RaycastCommand> commandBatch = _handProbeCommands.GetSubArray(0, scheduledProbeCount);
@@ -2893,7 +3016,7 @@ namespace Hecton8.Gameplay
 
         private void ScheduleHandPlacement()
         {
-            int requiredProbeCount = _lastProbeLowTier ? 1 : EnvironmentProbeCount;
+            int requiredProbeCount = math.clamp(_lastProbeCount, 1, EnvironmentProbeCount);
             if (_handPlacementPending ||
                 !HasHandTargetWriteStorage() ||
                 !HasHandProbeHitStorage(requiredProbeCount))
@@ -2920,8 +3043,9 @@ namespace Hecton8.Gameplay
                 SqueezeBlend = _squeezeBlend,
                 Stress01 = _cachedStress01,
                 Phase = _bracePhase,
+                ProbeCount = (byte)requiredProbeCount,
                 RuntimeFlags = (byte)(
-                    (_lastProbeLowTier ? PlayerKinematicsHandPlacementJob.RuntimeFlagLowTier : 0) |
+                    (_lastProbeReduced ? PlayerKinematicsHandPlacementJob.RuntimeFlagReducedProbeSet : 0) |
                     (_hasImpactBracePoint ? PlayerKinematicsHandPlacementJob.RuntimeFlagImpact : 0))
             };
             _handPlacementHandle = placementJob.Schedule();
@@ -3095,7 +3219,7 @@ namespace Hecton8.Gameplay
             if (safeBlockedSpeed <= 0.2f || safeVelocityReduction01 <= 0.05f)
                 return false;
 
-            if (!TryResolveAupFromRuntimeOrigin(point, out AbsoluteUniversePosition pointAup))
+            if (!TryConvertRuntimePositionToAup(point, out AbsoluteUniversePosition pointAup))
                 return false;
 
             AcousticPingSignal signal = default;
@@ -3127,8 +3251,8 @@ namespace Hecton8.Gameplay
             }
             if (_hasImpactBracePoint)
                 auxFlags |= IkImpactTelemetryFlag;
-            if (_lastProbeLowTier)
-                auxFlags |= IkLowTierTelemetryFlag;
+            if (_lastProbeReduced)
+                auxFlags |= IkReducedProbeTelemetryFlag;
             if (scraped)
                 auxFlags |= IkScrapeTelemetryFlag;
             if (auxFlags == 0u)
@@ -3353,7 +3477,7 @@ namespace Hecton8.Gameplay
             rotation = CanonicalizeRotation(rotation);
             uint safeFlags = inputInvalid ? flags | (uint)FaultNaN : flags;
 
-            if (!TryResolveAupFromRuntimeOrigin(snappedPosition, out AbsoluteUniversePosition aup))
+            if (!TryConvertRuntimePositionToAup(snappedPosition, out AbsoluteUniversePosition aup))
             {
                 AddFaultFlag(FaultNaN);
                 return;
@@ -3463,7 +3587,7 @@ namespace Hecton8.Gameplay
             velocity = SanitizeFloat3(velocity, float3.zero);
             quaternion rotation = HasSyncStateReadStorage() ? _stateRead[0].Rotation : CanonicalizeRotation(ToQuaternion(_body.rotation));
             Vector3 runtimePosition = ToVector3(position);
-            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition aup))
+            if (!TryConvertRuntimePositionToAup(position, out AbsoluteUniversePosition aup))
                 return;
 
             uint hash = BuildSyncFenceHash(in aup, velocity, rotation);
@@ -3487,7 +3611,7 @@ namespace Hecton8.Gameplay
 
         private static float ResolveAupMaxDriftErrorMeters(in AbsoluteUniversePosition aup, float3 runtimePosition)
         {
-            double3 expectedRuntime = aup.ToAbsoluteDouble3() - HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            double3 expectedRuntime = ToAbsoluteDouble3(in aup) - HectonFloatingOrigin.CurrentTotalOffsetDouble;
             double3 measuredRuntime = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             double3 drift = math.abs(expectedRuntime - measuredRuntime);
             double maxAxis = math.max(drift.x, math.max(drift.y, drift.z));
@@ -3539,7 +3663,7 @@ namespace Hecton8.Gameplay
                 PlayerKinematicsSyncState state = _stateRead[0];
                 float3 position = SanitizeFloat3(state.Position, ReadLastValidPosition());
                 float3 velocity = SanitizeFloat3(state.Velocity, float3.zero);
-                if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition aup))
+                if (!TryConvertRuntimePositionToAup(position, out AbsoluteUniversePosition aup))
                     return 0u;
 
                 return BuildSyncFenceHash(in aup, velocity, CanonicalizeRotation(state.Rotation));
@@ -3550,7 +3674,7 @@ namespace Hecton8.Gameplay
 
             float3 bodyPosition = SanitizeFloat3(ToFloat3(_body.position), ReadLastValidPosition());
             float3 bodyVelocity = SanitizeFloat3(ToFloat3(_body.linearVelocity), float3.zero);
-            if (!TryResolveAupFromRuntimeOrigin(bodyPosition, out AbsoluteUniversePosition bodyAup))
+            if (!TryConvertRuntimePositionToAup(bodyPosition, out AbsoluteUniversePosition bodyAup))
                 return 0u;
 
             return BuildSyncFenceHash(in bodyAup, bodyVelocity, CanonicalizeRotation(ToQuaternion(_body.rotation)));
@@ -3561,7 +3685,7 @@ namespace Hecton8.Gameplay
             state.Position = SanitizeFloat3(state.Position, float3.zero);
             state.Velocity = SanitizeFloat3(state.Velocity, float3.zero);
             state.Rotation = CanonicalizeRotation(state.Rotation);
-            state.StateHash = TryResolveAupFromRuntimeOrigin(state.Position, out AbsoluteUniversePosition aup)
+            state.StateHash = TryConvertRuntimePositionToAup(state.Position, out AbsoluteUniversePosition aup)
                 ? BuildSyncFenceHash(in aup, state.Velocity, state.Rotation)
                 : 0u;
             return state;
@@ -3771,7 +3895,10 @@ namespace Hecton8.Gameplay
             if (!hasAupPayload)
                 return ReadStatePositionSnapshot(ReadPositionSnapshot(float3.zero));
 
-            return SnapMillimeter(SanitizeFloat3(correction.PositionAup.ToRuntimeFloat3(), ReadStatePositionSnapshot(float3.zero)));
+            float3 fallback = ReadStatePositionSnapshot(float3.zero);
+            return TryConvertAupToRuntimePosition(in correction.PositionAup, out float3 runtimePosition)
+                ? SnapMillimeter(SanitizeFloat3(runtimePosition, fallback))
+                : fallback;
         }
 
         private float3 ResolveCorrectionVelocity(in StateCorrectionSignal correction)
@@ -3813,25 +3940,47 @@ namespace Hecton8.Gameplay
             return math.all(math.isfinite(new double3(value.LocalX, value.LocalY, value.LocalZ)));
         }
 
-        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        private static bool TryConvertRuntimePositionToAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
-            return TryResolveAupFromRuntimeOrigin(ToFloat3(runtimePosition), out positionAup);
+            return TryConvertRuntimePositionToAup(ToFloat3(runtimePosition), out positionAup);
         }
 
-        private static bool TryResolveAupFromRuntimeOrigin(float3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        private static bool TryConvertRuntimePositionToAup(float3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
             positionAup = default;
             if (!math.all(math.isfinite(runtimePosition)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!IsFiniteAup(in originAup))
+            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            if (!math.all(math.isfinite(absolutePosition)))
                 return false;
 
-            positionAup = AbsoluteUniversePosition.OffsetMeters(
-                in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            positionAup = AbsoluteUniversePosition.FromAbsolutePosition(absolutePosition);
             return IsFiniteAup(in positionAup);
+        }
+
+        private static bool TryConvertAupToRuntimePosition(in AbsoluteUniversePosition positionAup, out float3 runtimePosition)
+        {
+            runtimePosition = default;
+            if (!IsFiniteAup(in positionAup))
+                return false;
+
+            double3 absolutePosition = ToAbsoluteDouble3(in positionAup);
+            if (!math.all(math.isfinite(absolutePosition)))
+                return false;
+
+            Vector3 candidate = HectonFloatingOrigin.ToRuntimePosition(absolutePosition);
+            runtimePosition = ToFloat3(candidate);
+            return math.all(math.isfinite(runtimePosition));
+        }
+
+        private static double3 ToAbsoluteDouble3(in AbsoluteUniversePosition position)
+        {
+            const double cell = HectonPhysicsContract.AupSectorSizeMetersDouble;
+            return new double3(
+                position.GridX * cell + position.LocalX,
+                position.GridY * cell + position.LocalY,
+                position.GridZ * cell + position.LocalZ);
         }
 
         private static quaternion ToQuaternion(Quaternion value)
@@ -3881,17 +4030,73 @@ namespace Hecton8.Gameplay
             return flags;
         }
 
-        private bool IsHighScalabilityTier()
+        private float RefreshGlobalQualityWeight01()
         {
-            HectonQualityTier tier = ResolveScalabilityTier();
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
+            _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01(_cachedGlobalQualityWeight01);
+            return _cachedGlobalQualityWeight01;
         }
 
-        private static bool IsLowTier(HectonQualityTier tier)
+        private float ReadCachedGlobalQualityWeight01()
         {
-            return tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350 ||
-                   tier == HectonQualityTier.Unknown;
+            float cached = _cachedGlobalQualityWeight01;
+            return math.saturate(math.select(1.0f, cached, math.isfinite(cached)));
+        }
+
+        private static float ResolveGlobalQualityWeight01(float fallback)
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(fallback, qualityWeight, math.isfinite(qualityWeight)));
+        }
+
+        private static float SmoothQuality01(float value)
+        {
+            float t = math.saturate(math.select(1.0f, value, math.isfinite(value)));
+            return t * t * (3.0f - 2.0f * t);
+        }
+
+        private byte ResolveSdfSampleMode(float qualityWeight01, uint frame)
+        {
+            float fullGradientWeight01 = SmoothQuality01(qualityWeight01);
+            float phase01 = ResolveDeterministicQualityPhase01(frame, unchecked((uint)_cadenceSalt) ^ 0xA511E9B3u);
+            return (byte)math.select(
+                (int)PlayerKinematicsBodyJob.SdfSampleModeTetra4,
+                (int)PlayerKinematicsBodyJob.SdfSampleModeAxis6,
+                phase01 < fullGradientWeight01);
+        }
+
+        private bool ShouldRefreshPassiveSdfPayload(float qualityWeight01, uint frame)
+        {
+            float refreshWeight01 = SmoothQuality01(qualityWeight01);
+            float phase01 = ResolveDeterministicQualityPhase01(frame, unchecked((uint)_cadenceSalt) ^ 0x6C8E9CF5u);
+            return phase01 < refreshWeight01;
+        }
+
+        private static bool IsReducedSdfSampleMode(byte sampleMode)
+        {
+            return (sampleMode & PlayerKinematicsBodyJob.SdfSampleModeTetra4) != 0;
+        }
+
+        private static int ResolveHandProbeCount(float qualityWeight01)
+        {
+            float probeCount = math.lerp(1.0f, (float)EnvironmentProbeCount, SmoothQuality01(qualityWeight01));
+            return math.clamp((int)math.round(probeCount), 1, EnvironmentProbeCount);
+        }
+
+        private static int ResolveHandProbeFrameMask(float qualityWeight01)
+        {
+            float cadenceMask = math.lerp((float)MinimumQualityHandProbeFrameMask, 0.0f, SmoothQuality01(qualityWeight01));
+            return math.clamp((int)math.round(cadenceMask), 0, MinimumQualityHandProbeFrameMask);
+        }
+
+        private static float ResolveDeterministicQualityPhase01(uint frame, uint salt)
+        {
+            uint hash = frame ^ salt;
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return (hash & 0x00FFFFFFu) * 0.0000000596046483f;
         }
 
         private static bool IsFreshSignalFrame(uint currentFrame, uint signalFrame, uint maxAgeFrames)
@@ -3939,11 +4144,8 @@ namespace Hecton8.Gameplay
 
         private int ResolveGpuFlowProbeFrameMask()
         {
-            HectonQualityTier tier = ResolveScalabilityTier();
-            if (IsLowTier(tier))
-                return 3;
-
-            return tier == HectonQualityTier.Mid ? 1 : 0;
+            float cadenceMask = math.lerp(3.0f, 0.0f, SmoothQuality01(ReadCachedGlobalQualityWeight01()));
+            return math.clamp((int)math.round(cadenceMask), 0, 3);
         }
 
         private HectonQualityTier ResolveScalabilityTier()

@@ -67,7 +67,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Alloc-free FABRIK arm solver. The owner allocates all NativeArray buffers once and schedules this job.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct ProceduralFabrikArmSolveJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<ProceduralFabrikArmChain> Chains;

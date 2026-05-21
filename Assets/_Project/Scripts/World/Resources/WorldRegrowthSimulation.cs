@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -36,35 +37,67 @@ namespace Hecton8.World
     /// <summary>
     /// Fixed-point constants for the daily macro regrowth solve.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct WorldRegrowthConfig
     {
+        [FieldOffset(0)]
         public int GridWidth;
+        [FieldOffset(4)]
         public int GridHeight;
+        [FieldOffset(8)]
         public int MacroSectorMeters;
+        [FieldOffset(12)]
         public ushort BaseGrowthProgressPerDayQ;
+        [FieldOffset(14)]
         public ushort NutrientDiffusionPermille;
+        [FieldOffset(16)]
         public ushort PreyGrowthPermille;
+        [FieldOffset(18)]
         public ushort PredationPermille;
+        [FieldOffset(20)]
         public ushort PredatorConversionPermille;
+        [FieldOffset(22)]
         public ushort PredatorMortalityPermille;
+        [FieldOffset(24)]
         public byte PassiveNutrientRecoveryPerDayQ;
+        [FieldOffset(25)]
         public byte NutrientPenaltyOnMiningQ;
+        [FieldOffset(26)]
         public byte MinimumNutrientsQ;
+        [FieldOffset(27)]
         public byte SeedToMatureProgressQ;
+        [FieldOffset(28)]
         public byte TombstoneBaseDecayDays;
+        [FieldOffset(29)]
         public byte MinApexRespawnDays;
+        [FieldOffset(30)]
         public byte MaxApexRespawnDays;
+        [FieldOffset(31)]
         public byte SafeShallowsTemperatureQ;
+        [FieldOffset(32)]
         public byte TemperateReefTemperatureQ;
+        [FieldOffset(33)]
         public byte ThermalVentTemperatureQ;
+        [FieldOffset(34)]
         public byte DeepAbyssTemperatureQ;
+        [FieldOffset(35)]
         public byte SafeShallowsNutrientStartQ;
+        [FieldOffset(36)]
         public byte TemperateReefNutrientStartQ;
+        [FieldOffset(37)]
         public byte ThermalVentNutrientStartQ;
+        [FieldOffset(38)]
         public byte DeepAbyssNutrientStartQ;
+        [FieldOffset(39)]
         public byte Reserved0;
+        [FieldOffset(40)]
         public byte Reserved1;
+        [FieldOffset(41)]
+        private byte _pad0;
+        [FieldOffset(42)]
+        private ushort _pad1;
+        [FieldOffset(44)]
+        private uint _pad2;
 
         /// <summary>
         /// Current entropy-balanced constants mirrored by Data/Economy/Regrowth_Constants.json.
@@ -101,21 +134,21 @@ namespace Hecton8.World
     /// <summary>
     /// Last-frame state sample for post-mortem regrowth diagnostics.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct WorldRegrowthTelemetryEntry
     {
-        public uint DayIndex;
-        public uint StateHash;
-        public int MatureCells;
-        public int SeedCells;
-        public int TombstoneCells;
-        public int AverageNutrientQ;
-        public int AverageApexRespawnDays;
-        public int Flags;
-        public uint Reserved0;
-        public uint Reserved1;
-        public uint Reserved2;
-        public uint Reserved3;
+        [FieldOffset(0)] public uint DayIndex;
+        [FieldOffset(4)] public uint StateHash;
+        [FieldOffset(8)] public int MatureCells;
+        [FieldOffset(12)] public int SeedCells;
+        [FieldOffset(16)] public int TombstoneCells;
+        [FieldOffset(20)] public int AverageNutrientQ;
+        [FieldOffset(24)] public int AverageApexRespawnDays;
+        [FieldOffset(28)] public int Flags;
+        [FieldOffset(32)] public uint Reserved0;
+        [FieldOffset(36)] public uint Reserved1;
+        [FieldOffset(40)] public uint Reserved2;
+        [FieldOffset(44)] public uint Reserved3;
     }
 
     /// <summary>
@@ -561,21 +594,21 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct InitializeRegrowthGridJob : IJobParallelFor
     {
-        public NativeArray<byte> SoilNutrients;
-        public NativeArray<byte> SoilNutrientsScratch;
-        public NativeArray<byte> TemperatureQ;
-        public NativeArray<byte> BiomeIds;
-        public NativeArray<byte> ResourceStages;
-        public NativeArray<byte> TombstoneAgeDays;
-        public NativeArray<byte> RegrowthProgressQ;
-        public NativeArray<byte> OreStockQ;
-        public NativeArray<byte> FloraStockQ;
-        public NativeArray<byte> PreyBiomassQ;
-        public NativeArray<byte> PredatorBiomassQ;
-        public NativeArray<byte> ApexRespawnDays;
+        [NoAlias] public NativeArray<byte> SoilNutrients;
+        [NoAlias] public NativeArray<byte> SoilNutrientsScratch;
+        [NoAlias] public NativeArray<byte> TemperatureQ;
+        [NoAlias] public NativeArray<byte> BiomeIds;
+        [NoAlias] public NativeArray<byte> ResourceStages;
+        [NoAlias] public NativeArray<byte> TombstoneAgeDays;
+        [NoAlias] public NativeArray<byte> RegrowthProgressQ;
+        [NoAlias] public NativeArray<byte> OreStockQ;
+        [NoAlias] public NativeArray<byte> FloraStockQ;
+        [NoAlias] public NativeArray<byte> PreyBiomassQ;
+        [NoAlias] public NativeArray<byte> PredatorBiomassQ;
+        [NoAlias] public NativeArray<byte> ApexRespawnDays;
         public WorldRegrowthConfig Config;
         public int2 MacroSectorOrigin;
         public uint WorldSeed;
@@ -661,12 +694,12 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct NutrientDiffusionJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<byte> SoilNutrients;
-        [WriteOnly] public NativeArray<byte> SoilNutrientsScratch;
-        [ReadOnly] public NativeArray<byte> ResourceStages;
+        [ReadOnly, NoAlias] public NativeArray<byte> SoilNutrients;
+        [WriteOnly, NoAlias] public NativeArray<byte> SoilNutrientsScratch;
+        [ReadOnly, NoAlias] public NativeArray<byte> ResourceStages;
         public WorldRegrowthConfig Config;
         public int Width;
         public int Height;
@@ -718,20 +751,20 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct DailyRegrowthJob : IJobParallelFor
     {
-        [WriteOnly] public NativeArray<byte> SoilNutrients;
-        [ReadOnly] public NativeArray<byte> SoilNutrientsScratch;
-        [ReadOnly] public NativeArray<byte> TemperatureQ;
-        public NativeArray<byte> ResourceStages;
-        public NativeArray<byte> TombstoneAgeDays;
-        public NativeArray<byte> RegrowthProgressQ;
-        public NativeArray<byte> OreStockQ;
-        public NativeArray<byte> FloraStockQ;
-        public NativeArray<byte> PreyBiomassQ;
-        public NativeArray<byte> PredatorBiomassQ;
-        public NativeArray<byte> ApexRespawnDays;
+        [WriteOnly, NoAlias] public NativeArray<byte> SoilNutrients;
+        [ReadOnly, NoAlias] public NativeArray<byte> SoilNutrientsScratch;
+        [ReadOnly, NoAlias] public NativeArray<byte> TemperatureQ;
+        [NoAlias] public NativeArray<byte> ResourceStages;
+        [NoAlias] public NativeArray<byte> TombstoneAgeDays;
+        [NoAlias] public NativeArray<byte> RegrowthProgressQ;
+        [NoAlias] public NativeArray<byte> OreStockQ;
+        [NoAlias] public NativeArray<byte> FloraStockQ;
+        [NoAlias] public NativeArray<byte> PreyBiomassQ;
+        [NoAlias] public NativeArray<byte> PredatorBiomassQ;
+        [NoAlias] public NativeArray<byte> ApexRespawnDays;
         public WorldRegrowthConfig Config;
 
         public void Execute(int index)
@@ -807,17 +840,17 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct MiningTombstoneJob : IJob
     {
-        [ReadOnly] public NativeArray<int> MinedCellIndices;
-        public NativeArray<byte> SoilNutrients;
-        public NativeArray<byte> ResourceStages;
-        public NativeArray<byte> TombstoneAgeDays;
-        public NativeArray<byte> RegrowthProgressQ;
-        public NativeArray<byte> OreStockQ;
-        public NativeArray<byte> FloraStockQ;
-        public NativeArray<byte> PreyBiomassQ;
+        [ReadOnly, NoAlias] public NativeArray<int> MinedCellIndices;
+        [NoAlias] public NativeArray<byte> SoilNutrients;
+        [NoAlias] public NativeArray<byte> ResourceStages;
+        [NoAlias] public NativeArray<byte> TombstoneAgeDays;
+        [NoAlias] public NativeArray<byte> RegrowthProgressQ;
+        [NoAlias] public NativeArray<byte> OreStockQ;
+        [NoAlias] public NativeArray<byte> FloraStockQ;
+        [NoAlias] public NativeArray<byte> PreyBiomassQ;
         public byte DepletionSeverityQ;
         public byte NutrientPenaltyQ;
 
@@ -842,13 +875,13 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct RegrowthTelemetryJob : IJob
     {
-        [ReadOnly] public NativeArray<byte> SoilNutrients;
-        [ReadOnly] public NativeArray<byte> ResourceStages;
-        [ReadOnly] public NativeArray<byte> ApexRespawnDays;
-        public NativeArray<WorldRegrowthTelemetryEntry> BlackBox;
+        [ReadOnly, NoAlias] public NativeArray<byte> SoilNutrients;
+        [ReadOnly, NoAlias] public NativeArray<byte> ResourceStages;
+        [ReadOnly, NoAlias] public NativeArray<byte> ApexRespawnDays;
+        [NoAlias] public NativeArray<WorldRegrowthTelemetryEntry> BlackBox;
         public uint DayIndex;
 
         public void Execute()
@@ -901,28 +934,48 @@ namespace Hecton8.World
     /// <summary>
     /// H8_MacroDB binary payload header for regrowth pages.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct WorldRegrowthPayloadHeader
     {
+        [FieldOffset(0)]
         public uint Magic;
+        [FieldOffset(4)]
         public uint Version;
+        [FieldOffset(8)]
         public int Width;
+        [FieldOffset(12)]
         public int Height;
+        [FieldOffset(16)]
         public int CellCount;
+        [FieldOffset(20)]
         public int SimDay;
+        [FieldOffset(24)]
         public int SoilOffset;
+        [FieldOffset(28)]
         public int TemperatureOffset;
+        [FieldOffset(32)]
         public int BiomeOffset;
+        [FieldOffset(36)]
         public int StageOffset;
+        [FieldOffset(40)]
         public int TombstoneOffset;
+        [FieldOffset(44)]
         public int ProgressOffset;
+        [FieldOffset(48)]
         public int OreOffset;
+        [FieldOffset(52)]
         public int FloraOffset;
+        [FieldOffset(56)]
         public int PreyOffset;
+        [FieldOffset(60)]
         public int PredatorOffset;
+        [FieldOffset(64)]
         public int ApexOffset;
+        [FieldOffset(68)]
         public uint Checksum;
+        [FieldOffset(72)]
         public uint Reserved0;
+        [FieldOffset(76)]
         public uint Reserved1;
     }
 
@@ -996,6 +1049,7 @@ namespace Hecton8.World
 
             byte* src = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
             header = UnsafeUtility.ReadArrayElement<WorldRegrowthPayloadHeader>(src, 0);
+            header = NormalizeHeaderEndian(header);
             if (header.Magic != PayloadMagic || header.Version != PayloadVersion || header.CellCount != memory.CellCount)
                 return false;
 
@@ -1026,6 +1080,47 @@ namespace Hecton8.World
 
             memory.CurrentDay = math.max(0, header.SimDay);
             return true;
+        }
+
+        private static WorldRegrowthPayloadHeader NormalizeHeaderEndian(WorldRegrowthPayloadHeader header)
+        {
+            if (header.Magic != ReverseBytes(PayloadMagic))
+                return header;
+
+            header.Magic = ReverseBytes(header.Magic);
+            header.Version = ReverseBytes(header.Version);
+            header.Width = ReverseInt(header.Width);
+            header.Height = ReverseInt(header.Height);
+            header.CellCount = ReverseInt(header.CellCount);
+            header.SimDay = ReverseInt(header.SimDay);
+            header.SoilOffset = ReverseInt(header.SoilOffset);
+            header.TemperatureOffset = ReverseInt(header.TemperatureOffset);
+            header.BiomeOffset = ReverseInt(header.BiomeOffset);
+            header.StageOffset = ReverseInt(header.StageOffset);
+            header.TombstoneOffset = ReverseInt(header.TombstoneOffset);
+            header.ProgressOffset = ReverseInt(header.ProgressOffset);
+            header.OreOffset = ReverseInt(header.OreOffset);
+            header.FloraOffset = ReverseInt(header.FloraOffset);
+            header.PreyOffset = ReverseInt(header.PreyOffset);
+            header.PredatorOffset = ReverseInt(header.PredatorOffset);
+            header.ApexOffset = ReverseInt(header.ApexOffset);
+            header.Checksum = ReverseBytes(header.Checksum);
+            header.Reserved0 = ReverseBytes(header.Reserved0);
+            header.Reserved1 = ReverseBytes(header.Reserved1);
+            return header;
+        }
+
+        private static int ReverseInt(int value)
+        {
+            return unchecked((int)ReverseBytes((uint)value));
+        }
+
+        private static uint ReverseBytes(uint value)
+        {
+            return ((value & 0x000000FFu) << 24) |
+                   ((value & 0x0000FF00u) << 8) |
+                   ((value & 0x00FF0000u) >> 8) |
+                   ((value & 0xFF000000u) >> 24);
         }
 
         private static WorldRegrowthPayloadHeader BuildHeader(in WorldRegrowthSimulationMemory memory, int headerBytes)

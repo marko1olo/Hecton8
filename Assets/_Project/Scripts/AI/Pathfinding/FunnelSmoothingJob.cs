@@ -36,7 +36,7 @@ namespace Hecton8.AI.Pathfinding
             result.CorridorHash = CorridorHash;
             result.Frame = Frame;
             uint flags = 0u;
-            result.MathLod = ResolveEffectiveMathLod(ref flags);
+            result.MathLod = (byte)PathFunnelMathLod.Ultra;
 
             if (!Waypoints.IsCreated || Waypoints.Length <= 0)
             {
@@ -67,7 +67,7 @@ namespace Hecton8.AI.Pathfinding
             }
 
             int portalCount = ResolvePortalCount(requestedPortalCount, ref flags);
-            int lookAhead = ResolveLookAhead(result.MathLod);
+            int lookAhead = ResolveLookAhead();
             int portalLimit = math.min(portalCount, lookAhead);
             ushort blockedCell = 0;
 
@@ -224,40 +224,9 @@ namespace Hecton8.AI.Pathfinding
             return portalCount;
         }
 
-        private byte ResolveEffectiveMathLod(ref uint flags)
+        private static int ResolveLookAhead()
         {
-            if (Stressed != 0 || MathLod == (byte)PathFunnelMathLod.Stressed)
-                return (byte)PathFunnelMathLod.Stressed;
-
-            switch ((PathFunnelMathLod)MathLod)
-            {
-                case PathFunnelMathLod.Low:
-                case PathFunnelMathLod.Middle:
-                case PathFunnelMathLod.High:
-                case PathFunnelMathLod.Ultra:
-                    return MathLod;
-                default:
-                    flags |= PathFunnelResultFlags.InvalidMathLod;
-                    return (byte)PathFunnelMathLod.Low;
-            }
-        }
-
-        private static int ResolveLookAhead(byte effectiveMathLod)
-        {
-            switch ((PathFunnelMathLod)effectiveMathLod)
-            {
-                case PathFunnelMathLod.Stressed:
-                    return 1;
-                case PathFunnelMathLod.Low:
-                    return 2;
-                case PathFunnelMathLod.Middle:
-                    return 8;
-                case PathFunnelMathLod.High:
-                case PathFunnelMathLod.Ultra:
-                    return 16;
-                default:
-                    return 2;
-            }
+            return 16;
         }
 
         private NavPortal LoadPortal(int index, float3 fallback, ref uint flags)

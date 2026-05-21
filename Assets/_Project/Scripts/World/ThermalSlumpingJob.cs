@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -9,17 +10,17 @@ namespace Hecton8.World
     /// <summary>
     /// Burst thermal slumping pass that relaxes slopes above a talus angle.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ThermalSlumpingJob : IJobParallelFor
     {
         /// <summary>Read-only source heights in normalized 0..1 terrain space.</summary>
-        [ReadOnly] public NativeArray<float> InputHeights01;
+        [ReadOnly, NoAlias] public NativeArray<float> InputHeights01;
 
         /// <summary>Write-only relaxed heights in normalized 0..1 terrain space.</summary>
-        [WriteOnly] public NativeArray<float> OutputHeights01;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputHeights01;
 
         /// <summary>Optional wear lane receiving talus displacement intensity.</summary>
-        public NativeArray<float> WearMask;
+        [NoAlias] public NativeArray<float> WearMask;
 
         /// <summary>Heightmap width.</summary>
         public int Width;
@@ -39,8 +40,8 @@ namespace Hecton8.World
         /// <summary>Per-iteration transfer strength.</summary>
         public float Strength;
 
-        /// <summary>Whether to write talus intensity into <see cref="WearMask"/>.</summary>
-        public bool WriteWearMask;
+        /// <summary>Non-zero writes talus intensity into <see cref="WearMask"/>.</summary>
+        public byte WriteWearMaskFlag;
 
         /// <summary>
         /// Executes one mass-conserving slumping iteration.
@@ -58,7 +59,7 @@ namespace Hecton8.World
             if (x <= 0 || z <= 0 || x >= Width - 1 || z >= Height - 1)
             {
                 OutputHeights01[index] = center;
-                if (WriteWearMask && WearMask.IsCreated)
+                if (WriteWearMaskFlag != 0 && WearMask.IsCreated)
                     WearMask[index] = math.max(WearMask[index], 0f);
                 return;
             }
@@ -79,7 +80,7 @@ namespace Hecton8.World
             float resolved = math.saturate(center + delta);
             OutputHeights01[index] = resolved;
 
-            if (WriteWearMask && WearMask.IsCreated)
+            if (WriteWearMaskFlag != 0 && WearMask.IsCreated)
                 WearMask[index] += math.abs(delta);
         }
 

@@ -36,9 +36,9 @@ namespace Hecton8.Editor
                 EditorApplication.Exit(passed ? 0 : 1);
         }
 
-        private static int Bool01(bool value)
+        private static int Bool01(byte value)
         {
-            return value ? 1 : 0;
+            return value != 0 ? 1 : 0;
         }
     }
 }

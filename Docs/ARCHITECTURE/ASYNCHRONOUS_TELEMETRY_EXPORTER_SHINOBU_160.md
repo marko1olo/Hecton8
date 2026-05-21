@@ -6,10 +6,18 @@ Runtime file: `Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExp
 First 20 Minutes moment: Proof/route-testability for Copper Wire route deaths, resource pickups, route samples, hazard/perf spikes, and return-path heatmap review.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
-This route card is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) (R46 prior interior-authority/route-field/proof-language correction; R45 prior R43/R44 residue/proof-artifact/source-counter correction). R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R37/R36/R35/R34/R33 remain prior correction layers. Current static gates: `Tools/AtlasCheck.py` fails `ATLAS_CHECK_FAIL references=6781 missing=61` (one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, missing HectonMaskChannelPacker/HectonMaterialChannelPackValidator editor source refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes as static-tool orientation only.
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
-Unity batchmode import/compile was attempted on 2026-05-20 and the log is archived at `Docs/Archive/Batch010/AgentLogs/Unity_SHINOBU_160_compile.log`. A second attempt after hotpath/dump repair is archived at `Docs/Archive/Batch010/AgentLogs/Unity_SHINOBU_160_compile_after_hotpath.log`. Active SHINOBU_160 status/rationale/log files have been restored under `Docs/Tasks` and `Docs/AgentLogs`, but the active `Docs/Tasks/CURRENT_BATCH.md` has shifted to `SHINOBU_200+` and no longer contains the SHINOBU_160 prompt. Targeted searches found no `AsynchronousTelemetryExporter*.cs(` compiler errors, but project compilation is blocked by unrelated domains. No clean Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, analytics endpoint, network send, disk fallback, or visual proof is implied until the dependency wall is cleared.
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Source Anchors
@@ -53,12 +61,12 @@ Shutdown cleanup runs only after `StopWorker()` succeeds; if a first `OnDisable`
 
 ## Scaling
 
-`GlobalQualityWeight` continuously maps routine event retention and per-frame drain work from roughly 10 records per drain on survival-tier hardware to 1000 on ultra-tier hardware. Routine pressure culling uses a deterministic hash of event type, timestamp, backlog, and full AUP double lanes so load shedding remains spatially distributed instead of dropping same-second cohorts. Critical hashes use the high bit, route through the critical ingress lane, and survive routine pressure culling.
+`GlobalQualityWeight` continuously maps routine event retention and per-frame drain work from roughly 10 records per drain at `q=0` to 1000 at `q=1`. Routine pressure culling uses a deterministic hash of event type, timestamp, backlog, and full AUP double lanes so load shedding remains spatially distributed instead of dropping same-second cohorts. Critical hashes use the high bit, route through the critical ingress lane, and survive routine pressure culling.
 
-Low: cull routine route/resource/mock samples early, retain death/perf events, disk fallback only if needed.
-Middle: retain route samples every 5 seconds from KCC AUP.
-High: keep dense staging and editor heatmap.
-Ultra: tolerate larger backlog and richer deterministic mock stress without changing gameplay determinism.
+`q=0.00..0.25`: cull routine route/resource/mock samples early, retain death/perf events, disk fallback only if needed.
+`q=0.25..0.55`: retain route samples every 5 seconds from KCC AUP.
+`q=0.55..0.85`: keep dense staging and editor heatmap.
+`q=0.85..1.00`: tolerate larger backlog and deterministic mock stress without changing gameplay determinism.
 
 ## Serialization
 

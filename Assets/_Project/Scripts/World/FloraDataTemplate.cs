@@ -65,19 +65,30 @@ namespace Hecton8.World
             Fan = 4
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 56)]
+        [StructLayout(LayoutKind.Explicit, Size = 56)]
         public struct RuntimeDescriptor
         {
+            [FieldOffset(0)]
             public int StableHashId;
+            [FieldOffset(4)]
             public int LootHashId;
+            [FieldOffset(8)]
             public uint VulnerabilityMask;
+            [FieldOffset(12)]
             public uint AudioMaterialId;
+            [FieldOffset(16)]
             public float4 BioluminescenceColor;
+            [FieldOffset(32)]
             public float PulseFrequency;
+            [FieldOffset(36)]
             public int HarvestTemplateStableHashId;
+            [FieldOffset(40)]
             public uint AttachmentSurface;
+            [FieldOffset(44)]
             public float SwaySpeed;
+            [FieldOffset(48)]
             public float BendAmplitude;
+            [FieldOffset(52)]
             public uint Reserved0;
         }
 

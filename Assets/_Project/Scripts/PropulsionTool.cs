@@ -148,24 +148,35 @@ namespace Hecton8.Gameplay
         [SerializeField] private float towAngleBreakBacklashImpulse = 4f;
         [SerializeField] private float launchImpulse = 22f;
 
-        private Transform _cachedTransform;
-        private float _nextFeedbackAt;
+        private float _feedbackCooldownRemaining;
         private Rigidbody _lockedBody;
         private string _lockedName;
         private string _lockedNameUpper;
-        private int _cachedAssessmentFrame = -1;
+        private uint _assessmentEvaluationStamp;
+        private uint _cachedAssessmentStamp;
         private bool _cachedAssessmentValid;
         private PropulsionAssessment _cachedAssessment;
         private bool _primaryInvokedThisTick;
         private bool _secondaryInvokedThisTick;
         private bool _primaryHeldLastTick;
         private bool _secondaryHeldLastTick;
+        private LocalizationManager _localization;
         private FixedCharBuffer _assessmentHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — propulsion assessment HUD staging buffer — owner: PropulsionTool
         private FixedCharBuffer _operationLogBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - propulsion operation log staging buffer - owner: PropulsionTool
 
-        private void Awake()
+        public override void OnSpawn()
         {
-            _cachedTransform = transform;
+            base.OnSpawn();
+            _localization = GlobalRegistry.Localization;
+            _feedbackCooldownRemaining = 0f;
+            ForceReleaseWithoutFeedback();
+        }
+
+        public override void OnEquip()
+        {
+            base.OnEquip();
+            _localization = GlobalRegistry.Localization;
+            InvalidateAssessmentCache();
         }
 
         public override void UsePrimary(float deltaTime)
@@ -214,17 +225,24 @@ namespace Hecton8.Gameplay
         {
             base.OnUnequip();
             ForceReleaseWithoutFeedback();
+            _feedbackCooldownRemaining = 0f;
         }
 
         public override void OnDespawn()
         {
             base.OnDespawn();
             ForceReleaseWithoutFeedback();
+            _localization = null;
+            _feedbackCooldownRemaining = 0f;
         }
 
         public override void ToolTick(float deltaTime)
         {
-            MaintainLock(deltaTime);
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+            if (_feedbackCooldownRemaining > 0f)
+                _feedbackCooldownRemaining = math.max(0f, _feedbackCooldownRemaining - safeDeltaTime);
+
+            MaintainLock(safeDeltaTime);
 
             _primaryHeldLastTick = _primaryInvokedThisTick;
             _secondaryHeldLastTick = _secondaryInvokedThisTick;
@@ -232,7 +250,8 @@ namespace Hecton8.Gameplay
             _secondaryInvokedThisTick = false;
         }
 
-        public override string GetOperationalSummary()
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override string BuildLegacyOperationalSummaryString()
         {
             _assessmentHudBuffer.Clear();
             WriteOperationalSummary(ref _assessmentHudBuffer);
@@ -257,7 +276,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (TryGetAssessmentCached(out PropulsionAssessment assessment))
+            if (TryReadCachedAssessmentSnapshot(out PropulsionAssessment assessment))
             {
                 if (!TryAppendSingleArgumentTemplate(
                         ref buffer,
@@ -275,7 +294,8 @@ namespace Hecton8.Gameplay
             AppendText(ref buffer, ResolveLocalized(LocalizationKeys.PROPULSION_OPERATIONAL_READY, "PROPULSION // READY"));
         }
 
-        public override string GetOperationalDirective()
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override string BuildLegacyOperationalDirectiveString()
         {
             _assessmentHudBuffer.Clear();
             WriteOperationalDirective(ref _assessmentHudBuffer);
@@ -290,7 +310,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (TryGetAssessmentCached(out PropulsionAssessment assessment))
+            if (TryReadCachedAssessmentSnapshot(out PropulsionAssessment assessment))
             {
                 AppendText(ref buffer, assessment.Recommendation);
                 return;
@@ -304,8 +324,9 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || force <= 0f)
                 return;
 
-            if (!TryGetTargetHit(out RaycastHit hit))
+            if (!TryQueueTargetHit(out RaycastHit hit, out Vector3 toolOrigin, out Vector3 toolForward))
             {
+                InvalidateAssessmentCache();
                 Warn(pushAway
                     ? ResolveLocalized(LocalizationKeys.PROPULSION_HUD_NO_MASS_LOCK, "PROPULSION - NO MASS LOCK")
                     : ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TRACTOR_NO_MASS_LOCK, "TRACTOR - NO MASS LOCK"));
@@ -314,6 +335,7 @@ namespace Hecton8.Gameplay
 
             if (!ToolHitUtility.TryGetRigidbody(hit.collider, out Rigidbody body))
             {
+                InvalidateAssessmentCache();
                 Warn(ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TARGET_NOT_MOBILE, "PROPULSION - TARGET NOT MOBILE"));
                 return;
             }
@@ -323,19 +345,23 @@ namespace Hecton8.Gameplay
                 if (body != null)
                     PublishAssessment(BuildAssessment(body, hit.distance, false));
                 else
+                {
+                    InvalidateAssessmentCache();
                     Warn(ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TARGET_LOCK_INVALID, "PROPULSION - TARGET LOCK INVALID"));
+                }
                 return;
             }
 
             Vector3 direction = pushAway
-                ? _cachedTransform.forward
-                : (_cachedTransform.position - body.worldCenterOfMass);
+                ? toolForward
+                : (toolOrigin - body.worldCenterOfMass);
 
-            if (direction.sqrMagnitude < 0.0001f)
+            float directionLengthSq = direction.sqrMagnitude;
+            if (!IsFiniteVector(direction) || !math.isfinite(directionLengthSq) || directionLengthSq < 0.0001f)
                 return;
 
             PhysicsForceRouter.QueueForce(body, NormalizeOrForward(direction) * force, ForceMode.Force);
-            if (Time.time >= _nextFeedbackAt)
+            if (IsFeedbackReady())
             {
                 string title = pushAway
                     ? ResolveLocalized(LocalizationKeys.PROPULSION_LOG_IMPULSE_APPLIED_TITLE, "PROPULSION IMPULSE APPLIED")
@@ -354,11 +380,10 @@ namespace Hecton8.Gameplay
                         "INFO"));
                 RecordMassRangeLog(
                     title,
-                    body.gameObject.name,
+                    ResolveCargoLabel(),
                     body.mass,
                     hit.distance,
                     "INFO");
-                _nextFeedbackAt = Time.time + feedbackInterval;
             }
         }
 
@@ -367,14 +392,16 @@ namespace Hecton8.Gameplay
             if (!IsEquipped)
                 return;
 
-            if (!TryGetTargetHit(out RaycastHit hit))
+            if (!TryQueueTargetHit(out RaycastHit hit, out _, out _))
             {
+                InvalidateAssessmentCache();
                 Warn(ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TRACTOR_NO_MASS_LOCK, "TRACTOR - NO MASS LOCK"));
                 return;
             }
 
             if (!ToolHitUtility.TryGetRigidbody(hit.collider, out Rigidbody body))
             {
+                InvalidateAssessmentCache();
                 Warn(ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TRACTOR_TARGET_NOT_MOBILE, "TRACTOR - TARGET NOT MOBILE"));
                 return;
             }
@@ -384,7 +411,10 @@ namespace Hecton8.Gameplay
                 if (body != null)
                     PublishAssessment(BuildAssessment(body, hit.distance, true));
                 else
+                {
+                    InvalidateAssessmentCache();
                     Warn(ResolveLocalized(LocalizationKeys.PROPULSION_HUD_TRACTOR_TARGET_LOCK_INVALID, "TRACTOR - TARGET LOCK INVALID"));
+                }
                 return;
             }
 
@@ -395,7 +425,7 @@ namespace Hecton8.Gameplay
             }
 
             _lockedBody = body;
-            _lockedName = body.gameObject.name;
+            _lockedName = ResolveCargoLabel();
             _lockedNameUpper = string.IsNullOrWhiteSpace(_lockedName)
                 ? ResolveLocalized(LocalizationKeys.PROPULSION_CARGO, "CARGO")
                 : _lockedName;
@@ -416,12 +446,17 @@ namespace Hecton8.Gameplay
                 body.mass,
                 hit.distance,
                 "INFO");
-            _nextFeedbackAt = Time.time + feedbackInterval;
+            ArmFeedbackCooldown();
         }
 
         internal static bool ShouldBreakTractorTetherByTowAngle(Vector3 playerForward, Vector3 towVector)
         {
-            if (playerForward.sqrMagnitude <= 0.0001f || towVector.sqrMagnitude <= 0.0001f)
+            if (!IsFiniteVector(playerForward) || !IsFiniteVector(towVector))
+                return false;
+
+            float forwardLengthSq = playerForward.sqrMagnitude;
+            float towLengthSq = towVector.sqrMagnitude;
+            if (!math.isfinite(forwardLengthSq) || !math.isfinite(towLengthSq) || forwardLengthSq <= 0.0001f || towLengthSq <= 0.0001f)
                 return false;
 
             return Vector3.Dot(playerForward, towVector) < 0f;
@@ -441,13 +476,23 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Vector3 holdPoint = _cachedTransform.position + _cachedTransform.forward * holdDistance;
-            Vector3 towVector = _lockedBody.worldCenterOfMass - _cachedTransform.position;
-            if (ShouldBreakTractorTetherByTowAngle(_cachedTransform.forward, towVector))
+            if (!TryResolveToolPose(out Vector3 toolOrigin, out Vector3 toolForward))
             {
-                Vector3 towDirection = towVector.sqrMagnitude > 0.0001f
+                ReleaseLockedTarget(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_HUD_LOCK_LOST, "TRACTOR LOCK LOST"),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_LOCK_INVALID, "Player pose authority was unavailable during tractor handling."),
+                    "WARN");
+                return;
+            }
+
+            Vector3 holdPoint = toolOrigin + toolForward * holdDistance;
+            Vector3 towVector = _lockedBody.worldCenterOfMass - toolOrigin;
+            if (ShouldBreakTractorTetherByTowAngle(toolForward, towVector))
+            {
+                float towLengthSq = towVector.sqrMagnitude;
+                Vector3 towDirection = math.isfinite(towLengthSq) && towLengthSq > 0.0001f
                     ? NormalizeOrForward(towVector)
-                    : -_cachedTransform.forward;
+                    : -toolForward;
                 ToolHitUtility.TryApplyRelativeCarrierImpulse(
                     towDirection,
                     towAngleBreakBacklashImpulse * math.max(0.5f, GetEfficiency()));
@@ -459,8 +504,10 @@ namespace Hecton8.Gameplay
             }
 
             Vector3 toHold = holdPoint - _lockedBody.worldCenterOfMass;
+            float toHoldLengthSq = toHold.sqrMagnitude;
+            float maxBreakDistance = math.max(0.1f, maxHoldBreakDistance);
 
-            if (toHold.sqrMagnitude > maxHoldBreakDistance * maxHoldBreakDistance)
+            if (!IsFiniteVector(toHold) || !math.isfinite(toHoldLengthSq) || toHoldLengthSq > maxBreakDistance * maxBreakDistance)
             {
                 ReleaseLockedTarget(
                     ResolveLocalized(LocalizationKeys.PROPULSION_HUD_LOCK_LOST, "TRACTOR LOCK LOST"),
@@ -469,8 +516,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            HectonPlayerMotor playerMotor = GlobalRegistry.PlayerMotor;
-            Rigidbody anchorBody = playerMotor != null ? playerMotor.Body : null;
+            Rigidbody anchorBody = TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext)
+                ? playerContext.PlayerRigidbody
+                : null;
             PhysicsForceRouter.QueueTractorBeamPd(
                 anchorBody,
                 _lockedBody,
@@ -482,7 +530,7 @@ namespace Hecton8.Gameplay
                 true,
                 true);
 
-            if (Time.time >= _nextFeedbackAt)
+            if (IsFeedbackReady())
             {
                 PublishAssessment(new PropulsionAssessment(
                     PropulsionTextSegment.FormatString(
@@ -491,7 +539,6 @@ namespace Hecton8.Gameplay
                     new PropulsionTextSegment(ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_TRACTOR_HOLD, "Cargo remains stabilized inside the handling envelope.")),
                     new PropulsionTextSegment(ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_TRACTOR_HOLD, "Release to drop or primary-fire to launch.")),
                     "INFO"));
-                _nextFeedbackAt = Time.time + feedbackInterval;
             }
         }
 
@@ -501,16 +548,25 @@ namespace Hecton8.Gameplay
                 return;
 
             Rigidbody body = _lockedBody;
-            string lockedName = string.IsNullOrWhiteSpace(_lockedName) ? body.gameObject.name : _lockedName;
+            if (!TryResolveToolPose(out _, out Vector3 toolForward))
+            {
+                ReleaseLockedTarget(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_HUD_LOCK_LOST, "TRACTOR LOCK LOST"),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_LOCK_INVALID, "Player pose authority was unavailable for launch."),
+                    "WARN");
+                return;
+            }
+
+            string lockedName = string.IsNullOrWhiteSpace(_lockedName) ? ResolveCargoLabel() : _lockedName;
             string lockedNameUpper = _lockedNameUpper;
             if (string.IsNullOrWhiteSpace(lockedNameUpper))
                 lockedNameUpper = ResolveLocalized(LocalizationKeys.PROPULSION_CARGO, "CARGO");
             float appliedImpulse = launchImpulse * math.max(0.5f, GetEfficiency());
             PhysicsForceRouter.QueueForce(
                 body,
-                _cachedTransform.forward * appliedImpulse,
+                toolForward * appliedImpulse,
                 ForceMode.Impulse);
-            ToolHitUtility.TryApplyRelativeCarrierImpulse(_cachedTransform.forward, appliedImpulse);
+            ToolHitUtility.TryApplyRelativeCarrierImpulse(toolForward, appliedImpulse);
             ForceReleaseWithoutFeedback();
 
             PublishAssessment(new PropulsionAssessment(
@@ -526,13 +582,13 @@ namespace Hecton8.Gameplay
                     ResolveLocalized(LocalizationKeys.PROPULSION_LOG_LAUNCH_MESSAGE, "{0} was launched from tractor hold."),
                     lockedName),
                 "INFO");
-            _nextFeedbackAt = Time.time + feedbackInterval;
+            ArmFeedbackCooldown();
         }
 
         private void ReleaseLockedTarget(string hudMessage, string summary, string severity)
         {
             string lockedName = _lockedBody != null
-                ? (string.IsNullOrWhiteSpace(_lockedName) ? _lockedBody.gameObject.name : _lockedName)
+                ? (string.IsNullOrWhiteSpace(_lockedName) ? ResolveCargoLabel() : _lockedName)
                 : ResolveLocalized(LocalizationKeys.PROPULSION_UNKNOWN_MASS, "UNKNOWN MASS");
 
             ForceReleaseWithoutFeedback();
@@ -547,7 +603,7 @@ namespace Hecton8.Gameplay
                     lockedName,
                     summary),
                 severity);
-            _nextFeedbackAt = Time.time + feedbackInterval;
+            ArmFeedbackCooldown();
         }
 
         private void ForceReleaseWithoutFeedback()
@@ -560,7 +616,7 @@ namespace Hecton8.Gameplay
 
         private void Warn(string message)
         {
-            if (Time.time < _nextFeedbackAt)
+            if (!IsFeedbackReady())
                 return;
 
             PublishWarningMessage(message);
@@ -569,7 +625,7 @@ namespace Hecton8.Gameplay
                 message,
                 ResolveLocalized(LocalizationKeys.PROPULSION_LOG_WARN_MESSAGE, "Directed force command could not be completed on the current target."),
                 "WARN");
-            _nextFeedbackAt = Time.time + feedbackInterval;
+            ArmFeedbackCooldown();
         }
 
         private void PublishInfoMessage(string message)
@@ -586,55 +642,83 @@ namespace Hecton8.Gameplay
                 ToolHitUtility.ShowWarning(in _assessmentHudBuffer);
         }
 
-        private bool TryReadAssessment(out PropulsionAssessment assessment)
+        private bool TryReadCachedAssessmentSnapshot(out PropulsionAssessment assessment)
         {
-            assessment = default;
-
-            if (!TryGetTargetHit(out RaycastHit hit))
-            {
-                return false;
-            }
-
-            if (!ToolHitUtility.TryGetRigidbody(hit.collider, out Rigidbody body))
-            {
-                assessment = new PropulsionAssessment(
-                    ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_TARGET_NOT_MOBILE, "TARGET NOT MOBILE"),
-                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_TARGET_NOT_MOBILE, "The current contact does not expose a movable rigidbody."),
-                    ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_TARGET_NOT_MOBILE, "Switch tools or sweep for free cargo."),
-                    "WARN");
-                return true;
-            }
-
-            assessment = BuildAssessment(body, hit.distance, _secondaryHeldLastTick || _secondaryInvokedThisTick);
-            return true;
+            assessment = _cachedAssessment;
+            return _cachedAssessmentValid && _cachedAssessmentStamp == _assessmentEvaluationStamp;
         }
 
-        private bool TryGetAssessmentCached(out PropulsionAssessment assessment)
+        private void StoreAssessment(PropulsionAssessment assessment)
         {
-            int currentFrame = Time.frameCount;
-            if (_cachedAssessmentFrame == currentFrame)
-            {
-                assessment = _cachedAssessment;
-                return _cachedAssessmentValid;
-            }
-
-            bool valid = TryReadAssessment(out assessment);
-            _cachedAssessmentFrame = currentFrame;
-            _cachedAssessmentValid = valid;
+            AdvanceAssessmentStamp();
             _cachedAssessment = assessment;
-            return valid;
+            _cachedAssessmentStamp = _assessmentEvaluationStamp;
+            _cachedAssessmentValid = true;
         }
 
         private void InvalidateAssessmentCache()
         {
-            _cachedAssessmentFrame = -1;
+            AdvanceAssessmentStamp();
+            _cachedAssessmentStamp = 0u;
             _cachedAssessmentValid = false;
             _cachedAssessment = default;
         }
 
-        private bool TryGetTargetHit(out RaycastHit hit)
+        private void AdvanceAssessmentStamp()
         {
-            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);
+            unchecked
+            {
+                _assessmentEvaluationStamp++;
+                if (_assessmentEvaluationStamp == 0u)
+                    _assessmentEvaluationStamp = 1u;
+            }
+        }
+
+        private bool TryQueueTargetHit(out RaycastHit hit, out Vector3 origin, out Vector3 forward)
+        {
+            if (!TryResolveToolPose(out origin, out forward))
+            {
+                hit = default;
+                return false;
+            }
+
+            return TryQueuePrimaryRaycast(origin, forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);
+        }
+
+        private bool TryResolveToolPose(out Vector3 origin, out Vector3 forward)
+        {
+            origin = default;
+            forward = Vector3.forward;
+
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                return false;
+            }
+
+            float3 runtimePosition = snapshot.RuntimePosition;
+            float3 rawForward = snapshot.Forward;
+            float forwardLengthSq = math.lengthsq(rawForward);
+            if (!math.all(math.isfinite(runtimePosition)) ||
+                !math.all(math.isfinite(rawForward)) ||
+                !math.isfinite(forwardLengthSq) ||
+                forwardLengthSq <= 0.0001f)
+            {
+                return false;
+            }
+
+            float inverseForwardLength = math.rsqrt(math.max(forwardLengthSq, 0.0001f));
+            origin = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            forward = new Vector3(
+                rawForward.x * inverseForwardLength,
+                rawForward.y * inverseForwardLength,
+                rawForward.z * inverseForwardLength);
+            return true;
+        }
+
+        private string ResolveCargoLabel()
+        {
+            return ResolveLocalized(LocalizationKeys.PROPULSION_CARGO, "CARGO");
         }
 
         private PropulsionAssessment BuildAssessment(Rigidbody body, float distance, bool tractorIntent)
@@ -658,7 +742,7 @@ namespace Hecton8.Gameplay
                         : ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_STRUCTURE_ANCHORED, "PROPULSION - STRUCTURE ANCHORED")),
                     PropulsionTextSegment.FormatString(
                         ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_STRUCTURE_ANCHORED, "{0} is fixed in place and cannot be manipulated."),
-                        body.gameObject.name),
+                        ResolveCargoLabel()),
                     new PropulsionTextSegment(ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_STRUCTURE_ANCHORED, "Use cutter, builder, or move on.")),
                     "WARN");
             }
@@ -674,7 +758,7 @@ namespace Hecton8.Gameplay
                         : ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_MASS_EXCEEDS, "PROPULSION - MASS EXCEEDS SAFE THRUST")),
                     PropulsionTextSegment.FormatStringFloatFloat(
                         ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_MASS_EXCEEDS, "{0} weighs {1:0.0} kg at {2:0.0} m."),
-                        body.gameObject.name,
+                        ResolveCargoLabel(),
                         body.mass,
                         distance),
                     new PropulsionTextSegment(ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_MASS_EXCEEDS, "Do not force it. Use planning, deconstruction, or another route.")),
@@ -692,7 +776,7 @@ namespace Hecton8.Gameplay
                         : ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_LIGHT_CARGO, "PROPULSION - LIGHT CARGO")),
                     PropulsionTextSegment.FormatStringFloat(
                         ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_LIGHT_CARGO, "{0} is a light utility object ({1:0.0} kg)."),
-                        body.gameObject.name,
+                        ResolveCargoLabel(),
                         body.mass),
                     new PropulsionTextSegment(tractorIntent
                         ? ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_LIGHT_CARGO_TRACTOR, "Stable lock is easy. Reposition or carry it through hazards.")
@@ -708,7 +792,7 @@ namespace Hecton8.Gameplay
                         : ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_WORKLOAD, "PROPULSION - WORKLOAD MASS")),
                     PropulsionTextSegment.FormatStringFloat(
                         ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_WORKLOAD, "{0} sits in the normal handling band ({1:0.0} kg)."),
-                        body.gameObject.name,
+                        ResolveCargoLabel(),
                         body.mass),
                     new PropulsionTextSegment(tractorIntent
                         ? ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_WORKLOAD_TRACTOR, "Lock, steady, then launch or place it deliberately.")
@@ -722,7 +806,7 @@ namespace Hecton8.Gameplay
                     : ResolveLocalized(LocalizationKeys.PROPULSION_HEADLINE_HEAVY_CARGO, "PROPULSION - HEAVY CARGO")),
                 PropulsionTextSegment.FormatStringFloat(
                     ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_HEAVY_CARGO, "{0} is heavy but still inside the safe operating envelope ({1:0.0} kg)."),
-                    body.gameObject.name,
+                    ResolveCargoLabel(),
                     body.mass),
                 new PropulsionTextSegment(tractorIntent
                     ? ResolveLocalized(LocalizationKeys.PROPULSION_RECOMMEND_HEAVY_CARGO_TRACTOR, "Expect sluggish response and keep the hold distance stable.")
@@ -774,32 +858,69 @@ namespace Hecton8.Gameplay
                 severity);
         }
 
+        private bool IsFeedbackReady()
+        {
+            return _feedbackCooldownRemaining <= 0f;
+        }
+
+        private void ArmFeedbackCooldown()
+        {
+            float baseInterval = math.isfinite(feedbackInterval) ? math.max(0.01f, feedbackInterval) : 0.35f;
+            float quality = ResolveGlobalQualityWeight();
+            float qualityCurve = Smooth01(quality);
+            float intervalScale = math.lerp(1.65f, 0.85f, qualityCurve);
+            _feedbackCooldownRemaining = baseInterval * intervalScale;
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
+        }
+
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - 2f * x);
+        }
+
         private static Vector3 NormalizeOrForward(Vector3 direction)
         {
+            if (!IsFiniteVector(direction))
+                return Vector3.forward;
+
             float sqrMagnitude = direction.sqrMagnitude;
-            if (sqrMagnitude <= 0.0001f)
+            if (!math.isfinite(sqrMagnitude) || sqrMagnitude <= 0.0001f)
                 return Vector3.forward;
 
             if (math.abs(sqrMagnitude - 1f) <= 0.02f)
                 return direction;
 
-            return direction * math.rsqrt(sqrMagnitude);
+            return direction * math.rsqrt(math.max(sqrMagnitude, 0.0001f));
         }
 
-        private void PublishAssessment(PropulsionAssessment assessment)
+        private static bool IsFiniteVector(Vector3 value)
         {
-            if (Time.time < _nextFeedbackAt)
-                return;
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private bool PublishAssessment(PropulsionAssessment assessment)
+        {
+            StoreAssessment(assessment);
+
+            if (!IsFeedbackReady())
+                return false;
 
             if (!TryBuildAssessmentHudMessage(in assessment))
-                return;
+                return false;
 
             if (assessment.Severity == "WARN" || assessment.Severity == "CRITICAL")
                 ToolHitUtility.ShowWarning(in _assessmentHudBuffer);
             else
                 ToolHitUtility.ShowInfo(in _assessmentHudBuffer);
 
-            _nextFeedbackAt = Time.time + feedbackInterval;
+            ArmFeedbackCooldown();
+            return true;
         }
 
         private bool TryBuildAssessmentHudMessage(in PropulsionAssessment assessment)
@@ -1020,10 +1141,11 @@ namespace Hecton8.Gameplay
             return segmentStart >= templateSpan.Length || buffer.Append(templateSpan.Slice(segmentStart));
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            return Hecton8.Core.GlobalRegistry.Localization != null
-                ? Hecton8.Core.GlobalRegistry.Localization.GetOrFallback(Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage, key, fallback)
+            LocalizationManager manager = _localization;
+            return manager != null
+                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
         }
     }

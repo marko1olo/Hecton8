@@ -56,6 +56,7 @@ namespace Hecton8.Interaction
         private bool _snapBodyDetectedCollisions;
         private bool _snapInProgress;
         private bool _registeredTick;
+        private bool _tickDormant;
         private bool _batteryVisualStateCached;
         private bool _batteryVisualActive;
 
@@ -157,16 +158,19 @@ namespace Hecton8.Interaction
 
         public void Tick(float deltaTime)
         {
+            if (_tickDormant)
+                return;
+
             if (!_snapInProgress)
             {
-                TryUnregisterTick();
+                _tickDormant = true;
                 return;
             }
 
             if (_snappingCell == null || _pendingBattery == null)
             {
-                AbortBatterySnap();
-                TryUnregisterTick();
+                AbortBatterySnap(false);
+                _tickDormant = true;
                 return;
             }
 
@@ -176,7 +180,7 @@ namespace Hecton8.Interaction
             ApplyBatterySnapPose(t);
 
             if (t >= 1f)
-                CompleteBatterySnap();
+                CompleteBatterySnap(false);
         }
 
         private bool TryResolveTool(out IBatteryTool tool)
@@ -241,6 +245,7 @@ namespace Hecton8.Interaction
             }
 
             _snapInProgress = true;
+            _tickDormant = false;
             ApplyBatteryVisual();
             TryRegisterTick();
         }
@@ -273,7 +278,7 @@ namespace Hecton8.Interaction
             return new quaternion(blended * ApproximateInverseMagnitudeNoSqrt(blended));
         }
 
-        private void CompleteBatterySnap()
+        private void CompleteBatterySnap(bool unregisterTick = true)
         {
             ApplyBatterySnapPose(1f);
             bool inserted = TryResolveTool(out IBatteryTool tool) && !tool.HasBattery &&
@@ -302,10 +307,13 @@ namespace Hecton8.Interaction
             _snapBodyAngularVelocity = Vector3.zero;
             _snapInProgress = false;
             ApplyBatteryVisual();
-            TryUnregisterTick();
+            if (unregisterTick)
+                TryUnregisterTick();
+            else
+                _tickDormant = true;
         }
 
-        private void AbortBatterySnap()
+        private void AbortBatterySnap(bool unregisterTick = true)
         {
             if (!_snapInProgress)
                 return;
@@ -328,7 +336,10 @@ namespace Hecton8.Interaction
             _snapBodyAngularVelocity = Vector3.zero;
             _snapInProgress = false;
             ApplyBatteryVisual();
-            TryUnregisterTick();
+            if (unregisterTick)
+                TryUnregisterTick();
+            else
+                _tickDormant = true;
         }
 
         private void RestoreSnappingCellPose()
@@ -411,10 +422,12 @@ namespace Hecton8.Interaction
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredTick || !Application.isPlaying)
                 return;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (_registeredTick)
+                _tickDormant = false;
         }
 
         private void TryUnregisterTick()
@@ -424,6 +437,7 @@ namespace Hecton8.Interaction
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredTick = false;
+            _tickDormant = false;
         }
 
         private void CacheDoorAxis()

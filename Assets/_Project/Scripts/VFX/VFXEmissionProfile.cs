@@ -133,15 +133,31 @@ namespace Hecton8.VFX
         /// <summary>Returns the god-ray raymarch step budget for the requested hardware tier.</summary>
         public int GetVolumetricGodRaySteps(HardwareTier hardwareTier)
         {
-            switch (hardwareTier)
-            {
-                case HardwareTier.Low:
-                    return Mathf.Max(1, volumetricLightBudget.lowTierSteps);
-                case HardwareTier.High:
-                    return Mathf.Max(1, volumetricLightBudget.highTierSteps);
-                default:
-                    return Mathf.Max(1, volumetricLightBudget.mediumTierSteps);
-            }
+            float fallbackWeight = Mathf.Clamp01((int)hardwareTier * 0.5f);
+            return GetVolumetricGodRaySteps(fallbackWeight);
+        }
+
+        /// <summary>Returns the god-ray raymarch step budget for a continuous quality weight.</summary>
+        public int GetVolumetricGodRaySteps(float globalQualityWeight)
+        {
+            float q = float.IsNaN(globalQualityWeight) || float.IsInfinity(globalQualityWeight)
+                ? 0.5f
+                : Mathf.Clamp01(globalQualityWeight);
+            float low = Mathf.Max(1, volumetricLightBudget.lowTierSteps);
+            float middle = Mathf.Max(1, volumetricLightBudget.mediumTierSteps);
+            float high = Mathf.Max(1, volumetricLightBudget.highTierSteps);
+            float lowToMiddle = SmoothStep01(q * 1.82f);
+            float middleToHigh = SmoothStep01((q - 0.45f) * 1.82f);
+            float steps = low +
+                (middle - low) * lowToMiddle +
+                (high - middle) * middleToHigh;
+            return Mathf.Clamp(Mathf.RoundToInt(steps), 1, Mathf.RoundToInt(high));
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = Mathf.Clamp01(value);
+            return t * t * (3f - 2f * t);
         }
 
 #if UNITY_EDITOR

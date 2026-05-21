@@ -1054,7 +1054,7 @@ namespace Hecton8.Power
             if (directedEdgeCount <= 0)
                 return false;
 
-            int qualityIterationBudget = SubmarineOsThermalGridRuntime.ResolvePropagationIterations(HomeostasisBrain.GlobalQualityWeight);
+            int qualityIterationBudget = SubmarineOsThermalGridRuntime.ResolvePropagationIterations(PowerSolverConvergenceMath.AuthoritativeQualityWeight);
             int iterationBudget = math.clamp(_cableThermalIterationBudget, 1, qualityIterationBudget);
             NativeArray<float> inputTemperatures = _thermalTemperatureFront;
             NativeArray<float> outputTemperatures = _thermalTemperatureBack;
@@ -1586,7 +1586,7 @@ namespace Hecton8.Power
             _totalConsumption = distribution.TotalConsumption;
             _balance = distribution.Balance;
             _supplyRatio = distribution.SupplyRatio;
-            _hasPowerDeficit = distribution.HasDeficit;
+            _hasPowerDeficit = distribution.HasDeficit != 0;
             _brownoutTier = _batteryEmergencyReserveActive
                 ? LogisticsBrownoutTier.EmergencyOnly
                 : distribution.BrownoutTier;

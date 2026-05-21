@@ -63,8 +63,8 @@ namespace Hecton8.Visor
                 DistortionOffset = distortionOffset;
             }
 
-            internal float ChromaticOffset { get; }
-            internal float DistortionOffset { get; }
+            internal readonly float ChromaticOffset;
+            internal readonly float DistortionOffset;
         }
 
         private readonly struct RuntimeState
@@ -77,10 +77,10 @@ namespace Hecton8.Visor
                 Narcosis01 = narcosis01;
             }
 
-            public float Health01 { get; }
-            public float Critical01 { get; }
-            public float HeartbeatBpm { get; }
-            public float Narcosis01 { get; }
+            public readonly float Health01;
+            public readonly float Critical01;
+            public readonly float HeartbeatBpm;
+            public readonly float Narcosis01;
         }
 
         private sealed class RetinaDistortionPass : ScriptableRenderPass
@@ -256,10 +256,13 @@ namespace Hecton8.Visor
                        math.abs(left.w - right.w) <= GlobalsFloatEpsilon;
             }
 
-            [StructLayout(LayoutKind.Sequential, Size = RetinaGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Explicit, Size = RetinaGlobalsStrideBytes)]
             private struct RetinaGlobalsDTO
             {
+                [FieldOffset(0)]
                 public Vector4 Params0;
+
+                [FieldOffset(16)]
                 public Vector4 Params1;
 
                 public RetinaGlobalsDTO(Vector4 params0, Vector4 params1)

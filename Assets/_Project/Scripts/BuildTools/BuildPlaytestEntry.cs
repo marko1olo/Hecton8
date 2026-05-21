@@ -80,7 +80,7 @@ namespace Hecton8.BuildTools
         public string Notes;
 
         /// <summary>Timestamp kogda entry byla sozdana.</summary>
-        public long CreatedTimestamp { get; private set; }
+        public long CreatedTimestamp;
 
         /// <summary>Pokazyvaet, byl li entry sozdan cherez fabriku i poluchil timestamp.</summary>
         public readonly bool HasRecordedTimestamp => CreatedTimestamp > 0;

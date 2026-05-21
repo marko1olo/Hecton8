@@ -51,17 +51,17 @@ namespace Hecton8.Graphics.Culling
         [SerializeField, Min(1)] private int _gizmoBoxLimit = 96;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<ShadowCullInstanceDTO> _instanceHandle;
-        private VaultBufferHandle<ShadowCullStateDTO> _stateHandle;
-        private VaultBufferHandle<float> _illuminationHandle;
-        private VaultBufferHandle<float4> _frustumHandle;
-        private VaultBufferHandle<ShadowCullCountersDTO> _counterHandle;
-        private VaultBufferHandle<CullingTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<AbyssalShadowRuntimeStateDTO> _runtimeHandle;
-        private VaultBufferHandle<ShadowCullProfileRuleDTO> _profileRuleHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<ShadowCullHzbTileDTO> _hzbTileHandle;
-        private VaultBufferHandle<ShadowCullIndirectArgsDTO> _indirectArgsHandle;
+        private VaultGenerationHandle<ShadowCullInstanceDTO> _instanceHandle;
+        private VaultGenerationHandle<ShadowCullStateDTO> _stateHandle;
+        private VaultGenerationHandle<float> _illuminationHandle;
+        private VaultGenerationHandle<float4> _frustumHandle;
+        private VaultGenerationHandle<ShadowCullCountersDTO> _counterHandle;
+        private VaultGenerationHandle<CullingTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<AbyssalShadowRuntimeStateDTO> _runtimeHandle;
+        private VaultGenerationHandle<ShadowCullProfileRuleDTO> _profileRuleHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<ShadowCullHzbTileDTO> _hzbTileHandle;
+        private VaultGenerationHandle<ShadowCullIndirectArgsDTO> _indirectArgsHandle;
 
         private GraphicsBuffer _stateUploadBufferA;
         private GraphicsBuffer _stateUploadBufferB;
@@ -171,6 +171,7 @@ namespace Hecton8.Graphics.Culling
             }
 
             ReleaseGpuBuffers();
+            ResetVaultHandles();
             _initialized = false;
         }
 
@@ -222,8 +223,7 @@ namespace Hecton8.Graphics.Culling
             if (vault == null || _jobPending || !EnsureVaultBuffers(vault))
                 return;
 
-            NativeArray<float4> planes = _frustumHandle.Resolve(vault);
-            if (!planes.IsCreated || planes.Length < AbyssalShadowCullingConstants.FrustumPlaneCount)
+            if (!TryOpenVaultBuffer(vault, ref _frustumHandle, AbyssalShadowBufferIds.FrustumPlanes, AbyssalShadowCullingConstants.FrustumPlaneCount, out NativeArray<float4> planes))
                 return;
 
             planes[0] = plane0;
@@ -246,14 +246,13 @@ namespace Hecton8.Graphics.Culling
             hzbTiles = default;
             frustumPlanes = default;
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultBuffers(vault) || _jobPending)
+            if (vault == null || _jobPending)
                 return false;
 
-            instances = _instanceHandle.Resolve(vault);
-            illuminationScalars = _illuminationHandle.Resolve(vault);
-            hzbTiles = _hzbTileHandle.Resolve(vault);
-            frustumPlanes = _frustumHandle.Resolve(vault);
-            return instances.IsCreated && illuminationScalars.IsCreated && hzbTiles.IsCreated && frustumPlanes.IsCreated;
+            return TryOpenVaultBuffer(vault, ref _instanceHandle, AbyssalShadowBufferIds.Instances, math.max(1, _instanceCapacity), out instances) &&
+                   TryOpenVaultBuffer(vault, ref _illuminationHandle, AbyssalShadowBufferIds.IlluminationScalars, math.max(1, _instanceCapacity), out illuminationScalars) &&
+                   TryOpenVaultBuffer(vault, ref _hzbTileHandle, AbyssalShadowBufferIds.HzbDepthTiles, AbyssalShadowCullingConstants.HzbTileCapacity, out hzbTiles) &&
+                   TryOpenVaultBuffer(vault, ref _frustumHandle, AbyssalShadowBufferIds.FrustumPlanes, AbyssalShadowCullingConstants.FrustumPlaneCount, out frustumPlanes);
         }
 
         public void RegisterExternalProducerDependency(
@@ -303,8 +302,7 @@ namespace Hecton8.Graphics.Culling
             if (vault == null || _jobPending || !EnsureVaultBuffers(vault))
                 return;
 
-            NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray = _runtimeHandle.Resolve(vault);
-            if (!runtimeArray.IsCreated || runtimeArray.Length <= 0)
+            if (!TryOpenVaultBuffer(vault, ref _runtimeHandle, AbyssalShadowBufferIds.RuntimeState, 1, out NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray))
                 return;
 
             AbyssalShadowRuntimeStateDTO runtime = runtimeArray[0];
@@ -337,9 +335,8 @@ namespace Hecton8.Graphics.Culling
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(vault);
-            NativeArray<ShadowCullProfileRuleDTO> rules = _profileRuleHandle.Resolve(vault);
-            if (!scratch.IsCreated || !rules.IsCreated)
+            if (!TryOpenVaultBuffer(vault, ref _csvScratchHandle, AbyssalShadowBufferIds.CsvScratch, AbyssalShadowCullingConstants.CsvScratchCapacity, out NativeArray<byte> scratch) ||
+                !TryOpenVaultBuffer(vault, ref _profileRuleHandle, AbyssalShadowBufferIds.ProfileRules, AbyssalShadowCullingConstants.ProfileRuleCapacity, out NativeArray<ShadowCullProfileRuleDTO> rules))
                 return false;
 
             int bytesRead;
@@ -375,11 +372,10 @@ namespace Hecton8.Graphics.Culling
         {
             snapshot = default;
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultBuffers(vault))
+            if (vault == null)
                 return false;
 
-            NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray = _runtimeHandle.Resolve(vault);
-            if (!runtimeArray.IsCreated || runtimeArray.Length <= 0)
+            if (!TryOpenVaultBuffer(vault, ref _runtimeHandle, AbyssalShadowBufferIds.RuntimeState, 1, out NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray))
                 return false;
 
             AbyssalShadowRuntimeStateDTO runtime = runtimeArray[0];
@@ -522,35 +518,18 @@ namespace Hecton8.Graphics.Culling
         private bool EnsureVaultBuffers(IDataVault vault)
         {
             int instanceCount = math.max(1, _instanceCapacity);
-            if (!_instanceHandle.IsCreated || _instanceHandle.Length < instanceCount)
-                _instanceHandle = vault.GetBufferHandle<ShadowCullInstanceDTO>(AbyssalShadowBufferIds.Instances, instanceCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!_stateHandle.IsCreated || _stateHandle.Length < instanceCount)
-                _stateHandle = vault.GetBufferHandle<ShadowCullStateDTO>(AbyssalShadowBufferIds.States, instanceCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!_illuminationHandle.IsCreated || _illuminationHandle.Length < instanceCount)
-                _illuminationHandle = vault.GetBufferHandle<float>(AbyssalShadowBufferIds.IlluminationScalars, instanceCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!_frustumHandle.IsCreated || _frustumHandle.Length < AbyssalShadowCullingConstants.FrustumPlaneCount)
-                _frustumHandle = vault.GetBufferHandle<float4>(AbyssalShadowBufferIds.FrustumPlanes, AbyssalShadowCullingConstants.FrustumPlaneCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!_counterHandle.IsCreated || _counterHandle.Length < 1)
-                _counterHandle = vault.GetBufferHandle<ShadowCullCountersDTO>(AbyssalShadowBufferIds.Counters, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!_telemetryHandle.IsCreated || _telemetryHandle.Length < AbyssalShadowCullingConstants.TelemetryCapacity)
-                _telemetryHandle = vault.GetBufferHandle<CullingTelemetryEntry>(AbyssalShadowBufferIds.TelemetryRing, AbyssalShadowCullingConstants.TelemetryCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!_runtimeHandle.IsCreated || _runtimeHandle.Length < 1)
-                _runtimeHandle = vault.GetBufferHandle<AbyssalShadowRuntimeStateDTO>(AbyssalShadowBufferIds.RuntimeState, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!_profileRuleHandle.IsCreated || _profileRuleHandle.Length < AbyssalShadowCullingConstants.ProfileRuleCapacity)
-                _profileRuleHandle = vault.GetBufferHandle<ShadowCullProfileRuleDTO>(AbyssalShadowBufferIds.ProfileRules, AbyssalShadowCullingConstants.ProfileRuleCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!_csvScratchHandle.IsCreated || _csvScratchHandle.Length < AbyssalShadowCullingConstants.CsvScratchCapacity)
-                _csvScratchHandle = vault.GetBufferHandle<byte>(AbyssalShadowBufferIds.CsvScratch, AbyssalShadowCullingConstants.CsvScratchCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!_hzbTileHandle.IsCreated || _hzbTileHandle.Length < AbyssalShadowCullingConstants.HzbTileCapacity)
-                _hzbTileHandle = vault.GetBufferHandle<ShadowCullHzbTileDTO>(AbyssalShadowBufferIds.HzbDepthTiles, AbyssalShadowCullingConstants.HzbTileCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!_indirectArgsHandle.IsCreated || _indirectArgsHandle.Length < 1)
-                _indirectArgsHandle = vault.GetBufferHandle<ShadowCullIndirectArgsDTO>(AbyssalShadowBufferIds.IndirectArgs, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-
-            NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray = _runtimeHandle.Resolve(vault);
-            NativeArray<float4> planes = _frustumHandle.Resolve(vault);
-            NativeArray<ShadowCullProfileRuleDTO> profileRules = _profileRuleHandle.Resolve(vault);
-            NativeArray<ShadowCullHzbTileDTO> hzbTiles = _hzbTileHandle.Resolve(vault);
-            NativeArray<ShadowCullIndirectArgsDTO> indirectArgs = _indirectArgsHandle.Resolve(vault);
-            if (!runtimeArray.IsCreated || !planes.IsCreated || !profileRules.IsCreated || !hzbTiles.IsCreated || !indirectArgs.IsCreated)
+            bool buffersReady = OpenOrAcquireVaultBuffer(vault, ref _instanceHandle, AbyssalShadowBufferIds.Instances, instanceCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _stateHandle, AbyssalShadowBufferIds.States, instanceCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _illuminationHandle, AbyssalShadowBufferIds.IlluminationScalars, instanceCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _frustumHandle, AbyssalShadowBufferIds.FrustumPlanes, AbyssalShadowCullingConstants.FrustumPlaneCount, NativeArrayOptions.UninitializedMemory, out NativeArray<float4> planes) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _counterHandle, AbyssalShadowBufferIds.Counters, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _telemetryHandle, AbyssalShadowBufferIds.TelemetryRing, AbyssalShadowCullingConstants.TelemetryCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _runtimeHandle, AbyssalShadowBufferIds.RuntimeState, 1, NativeArrayOptions.UninitializedMemory, out NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _profileRuleHandle, AbyssalShadowBufferIds.ProfileRules, AbyssalShadowCullingConstants.ProfileRuleCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<ShadowCullProfileRuleDTO> profileRules) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _csvScratchHandle, AbyssalShadowBufferIds.CsvScratch, AbyssalShadowCullingConstants.CsvScratchCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _hzbTileHandle, AbyssalShadowBufferIds.HzbDepthTiles, AbyssalShadowCullingConstants.HzbTileCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<ShadowCullHzbTileDTO> hzbTiles) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _indirectArgsHandle, AbyssalShadowBufferIds.IndirectArgs, 1, NativeArrayOptions.UninitializedMemory, out NativeArray<ShadowCullIndirectArgsDTO> indirectArgs);
+            if (!buffersReady)
                 return false;
 
             if (!_runtimeDefaultsWritten)
@@ -585,6 +564,75 @@ namespace Hecton8.Graphics.Culling
             }
 
             return true;
+        }
+
+        private bool OpenOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                OwnerSystemId,
+                options);
+            return TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsMatchingVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
+        }
+
+        private void ResetVaultHandles()
+        {
+            _instanceHandle = default;
+            _stateHandle = default;
+            _illuminationHandle = default;
+            _frustumHandle = default;
+            _counterHandle = default;
+            _telemetryHandle = default;
+            _runtimeHandle = default;
+            _profileRuleHandle = default;
+            _csvScratchHandle = default;
+            _hzbTileHandle = default;
+            _indirectArgsHandle = default;
         }
 
         private void EnsureGpuBuffers(int capacity)
@@ -638,18 +686,17 @@ namespace Hecton8.Graphics.Culling
 
         private JobHandle ScheduleCullingPass(IDataVault vault, uint frame, JobHandle dependsOn)
         {
-            NativeArray<ShadowCullInstanceDTO> instances = _instanceHandle.Resolve(vault);
-            NativeArray<ShadowCullStateDTO> states = _stateHandle.Resolve(vault);
-            NativeArray<float> illumination = _illuminationHandle.Resolve(vault);
-            NativeArray<float4> planes = _frustumHandle.Resolve(vault);
-            NativeArray<ShadowCullCountersDTO> counters = _counterHandle.Resolve(vault);
-            NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray = _runtimeHandle.Resolve(vault);
-            NativeArray<ShadowCullProfileRuleDTO> profileRules = _profileRuleHandle.Resolve(vault);
-            NativeArray<ShadowCullHzbTileDTO> hzbTiles = _hzbTileHandle.Resolve(vault);
-            NativeArray<ShadowCullIndirectArgsDTO> indirectArgs = _indirectArgsHandle.Resolve(vault);
-            if (!instances.IsCreated || !states.IsCreated || !illumination.IsCreated || !planes.IsCreated ||
-                !counters.IsCreated || !runtimeArray.IsCreated || !profileRules.IsCreated || !hzbTiles.IsCreated ||
-                !indirectArgs.IsCreated || _jobPending)
+            int instanceCapacity = math.max(1, _instanceCapacity);
+            if (!TryOpenVaultBuffer(vault, ref _instanceHandle, AbyssalShadowBufferIds.Instances, instanceCapacity, out NativeArray<ShadowCullInstanceDTO> instances) ||
+                !TryOpenVaultBuffer(vault, ref _stateHandle, AbyssalShadowBufferIds.States, instanceCapacity, out NativeArray<ShadowCullStateDTO> states) ||
+                !TryOpenVaultBuffer(vault, ref _illuminationHandle, AbyssalShadowBufferIds.IlluminationScalars, instanceCapacity, out NativeArray<float> illumination) ||
+                !TryOpenVaultBuffer(vault, ref _frustumHandle, AbyssalShadowBufferIds.FrustumPlanes, AbyssalShadowCullingConstants.FrustumPlaneCount, out NativeArray<float4> planes) ||
+                !TryOpenVaultBuffer(vault, ref _counterHandle, AbyssalShadowBufferIds.Counters, 1, out NativeArray<ShadowCullCountersDTO> counters) ||
+                !TryOpenVaultBuffer(vault, ref _runtimeHandle, AbyssalShadowBufferIds.RuntimeState, 1, out NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray) ||
+                !TryOpenVaultBuffer(vault, ref _profileRuleHandle, AbyssalShadowBufferIds.ProfileRules, AbyssalShadowCullingConstants.ProfileRuleCapacity, out NativeArray<ShadowCullProfileRuleDTO> profileRules) ||
+                !TryOpenVaultBuffer(vault, ref _hzbTileHandle, AbyssalShadowBufferIds.HzbDepthTiles, AbyssalShadowCullingConstants.HzbTileCapacity, out NativeArray<ShadowCullHzbTileDTO> hzbTiles) ||
+                !TryOpenVaultBuffer(vault, ref _indirectArgsHandle, AbyssalShadowBufferIds.IndirectArgs, 1, out NativeArray<ShadowCullIndirectArgsDTO> indirectArgs) ||
+                _jobPending)
             {
                 return dependsOn;
             }
@@ -830,10 +877,10 @@ namespace Hecton8.Graphics.Culling
 
         private uint UploadCompletedState(IDataVault vault, int count)
         {
-            NativeArray<ShadowCullStateDTO> states = _stateHandle.Resolve(vault);
-            NativeArray<ShadowCullIndirectArgsDTO> indirectArgs = _indirectArgsHandle.Resolve(vault);
-            NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray = _runtimeHandle.Resolve(vault);
-            if (!states.IsCreated || !indirectArgs.IsCreated || !runtimeArray.IsCreated || count <= 0)
+            if (!TryOpenVaultBuffer(vault, ref _stateHandle, AbyssalShadowBufferIds.States, math.max(1, _instanceCapacity), out NativeArray<ShadowCullStateDTO> states) ||
+                !TryOpenVaultBuffer(vault, ref _indirectArgsHandle, AbyssalShadowBufferIds.IndirectArgs, 1, out NativeArray<ShadowCullIndirectArgsDTO> indirectArgs) ||
+                !TryOpenVaultBuffer(vault, ref _runtimeHandle, AbyssalShadowBufferIds.RuntimeState, 1, out NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray) ||
+                count <= 0)
                 return 0u;
 
             EnsureGpuBuffers(count);
@@ -887,14 +934,13 @@ namespace Hecton8.Graphics.Culling
 
         private void RecordTelemetry(IDataVault vault, uint frame, uint extraFlags, uint uploadedCount, float burstWallTimeMs)
         {
-            NativeArray<CullingTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            NativeArray<ShadowCullCountersDTO> countersArray = _counterHandle.Resolve(vault);
-            NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray = _runtimeHandle.Resolve(vault);
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
+            if (!TryOpenVaultBuffer(vault, ref _telemetryHandle, AbyssalShadowBufferIds.TelemetryRing, AbyssalShadowCullingConstants.TelemetryCapacity, out NativeArray<CullingTelemetryEntry> telemetry))
                 return;
 
-            ShadowCullCountersDTO counters = countersArray.IsCreated && countersArray.Length > 0 ? countersArray[0] : default;
-            AbyssalShadowRuntimeStateDTO runtime = runtimeArray.IsCreated && runtimeArray.Length > 0 ? runtimeArray[0] : default;
+            bool hasCounters = TryOpenVaultBuffer(vault, ref _counterHandle, AbyssalShadowBufferIds.Counters, 1, out NativeArray<ShadowCullCountersDTO> countersArray);
+            bool hasRuntime = TryOpenVaultBuffer(vault, ref _runtimeHandle, AbyssalShadowBufferIds.RuntimeState, 1, out NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray);
+            ShadowCullCountersDTO counters = hasCounters ? countersArray[0] : default;
+            AbyssalShadowRuntimeStateDTO runtime = hasRuntime ? runtimeArray[0] : default;
             _lastCounters = counters;
             uint stateHash = counters.StateHash;
             uint faultFlags = counters.Flags & TelemetryFlagNonFinite;
@@ -1003,11 +1049,10 @@ namespace Hecton8.Graphics.Culling
                 return dispatcherFrame;
 
             uint current = _scheduledFrame;
-            if (vault != null && _runtimeHandle.IsCreated)
+            if (vault != null &&
+                TryOpenVaultBuffer(vault, ref _runtimeHandle, AbyssalShadowBufferIds.RuntimeState, 1, out NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray))
             {
-                NativeArray<AbyssalShadowRuntimeStateDTO> runtimeArray = _runtimeHandle.Resolve(vault);
-                if (runtimeArray.IsCreated && runtimeArray.Length > 0)
-                    current = runtimeArray[0].Frame;
+                current = runtimeArray[0].Frame;
             }
 
             if (!advanceFallback && current != 0u)
@@ -1152,9 +1197,8 @@ namespace Hecton8.Graphics.Culling
             if (vault == null)
                 return;
 
-            NativeArray<ShadowCullInstanceDTO> instances = _instanceHandle.Resolve(vault);
-            NativeArray<ShadowCullStateDTO> states = _stateHandle.Resolve(vault);
-            if (!instances.IsCreated || !states.IsCreated)
+            if (!TryOpenVaultBuffer(vault, ref _instanceHandle, AbyssalShadowBufferIds.Instances, math.max(1, _instanceCapacity), out NativeArray<ShadowCullInstanceDTO> instances) ||
+                !TryOpenVaultBuffer(vault, ref _stateHandle, AbyssalShadowBufferIds.States, math.max(1, _instanceCapacity), out NativeArray<ShadowCullStateDTO> states))
                 return;
 
             int count = math.min(math.min(_gizmoBoxLimit, _scheduledInstanceCount), math.min(instances.Length, states.Length));

@@ -5,7 +5,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.Logistics
 {
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct FluidPipePressureSolveJob : IJob
     {
         public int NodeCount;
@@ -14,24 +14,24 @@ namespace Hecton8.Logistics
         public float DeltaTime;
         public float DefaultFlowRate;
 
-        [ReadOnly] public NativeParallelMultiHashMap<int, int> Connections;
-        [ReadOnly] public NativeArray<byte> PipeContentKinds;
-        [ReadOnly] public NativeArray<int> PipeNetworkIds;
-        [ReadOnly] public NativeArray<int> PipeRoomIndices;
-        [ReadOnly] public NativeArray<float> PipeCapacities;
-        [ReadOnly] public NativeArray<float> PipeMaxPressure;
-        [ReadOnly] public NativeArray<float> PipeFlowRates;
-        [ReadOnly] public NativeArray<float> PipeSourceRates;
-        [ReadOnly] public NativeArray<float> PipeDemandRates;
+        [ReadOnly, NoAlias] public NativeParallelMultiHashMap<int, int> Connections;
+        [ReadOnly, NoAlias] public NativeArray<byte> PipeContentKinds;
+        [ReadOnly, NoAlias] public NativeArray<int> PipeNetworkIds;
+        [ReadOnly, NoAlias] public NativeArray<int> PipeRoomIndices;
+        [ReadOnly, NoAlias] public NativeArray<float> PipeCapacities;
+        [ReadOnly, NoAlias] public NativeArray<float> PipeMaxPressure;
+        [ReadOnly, NoAlias] public NativeArray<float> PipeFlowRates;
+        [ReadOnly, NoAlias] public NativeArray<float> PipeSourceRates;
+        [ReadOnly, NoAlias] public NativeArray<float> PipeDemandRates;
 
-        public NativeArray<float> PipePressure;
-        public NativeArray<float> PipeContents;
-        public NativeArray<byte> PipeFlags;
-        public NativeArray<float3> PipeFlowVectors;
-        public NativeArray<float> PipeRoomExchangeContents;
-        public NativeArray<FluidPipeTelemetryEntry> TelemetryRing;
-        public NativeArray<FluidPipeRuptureRecord> RuptureTelemetryRing;
-        public NativeQueue<FluidPipeRuptureRecord>.ParallelWriter Ruptures;
+        [NoAlias] public NativeArray<float> PipePressure;
+        [NoAlias] public NativeArray<float> PipeContents;
+        [NoAlias] public NativeArray<byte> PipeFlags;
+        [NoAlias] public NativeArray<float3> PipeFlowVectors;
+        [NoAlias] public NativeArray<float> PipeRoomExchangeContents;
+        [WriteOnly, NoAlias] public NativeArray<FluidPipeTelemetryEntry> TelemetryRing;
+        [WriteOnly, NoAlias] public NativeArray<FluidPipeRuptureRecord> RuptureTelemetryRing;
+        [WriteOnly, NoAlias] public NativeQueue<FluidPipeRuptureRecord>.ParallelWriter Ruptures;
 
         public void Execute()
         {

@@ -3,7 +3,6 @@
 // Copyright 2020 Wave Harmonic Ltd
 
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Crest
 {
@@ -34,63 +33,12 @@ namespace Crest
     /// </summary>
     public class BuildCommandBuffer : BuildCommandBufferBase
     {
-        CommandBuffer _buf;
-
-        void BuildLodData(OceanRenderer ocean, CommandBuffer buf)
-        {
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            // --- Ocean depths
-            if (ocean._lodDataSeaDepths != null && ocean._lodDataSeaDepths.enabled)
-            {
-                ocean._lodDataSeaDepths.BuildCommandBuffer(ocean, buf);
-            }
-
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            // --- Flow data
-            if (ocean._lodDataFlow != null && ocean._lodDataFlow.enabled)
-            {
-                ocean._lodDataFlow.BuildCommandBuffer(ocean, buf);
-            }
-
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            // --- Dynamic wave simulations
-            if (ocean._lodDataDynWaves != null && ocean._lodDataDynWaves.enabled)
-            {
-                ocean._lodDataDynWaves.BuildCommandBuffer(ocean, buf);
-            }
-
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            // --- Animated waves next
-            if (ocean._lodDataAnimWaves != null && ocean._lodDataAnimWaves.enabled)
-            {
-                ocean._lodDataAnimWaves.BuildCommandBuffer(ocean, buf);
-            }
-
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            // --- Foam simulation
-            if (ocean._lodDataFoam != null && ocean._lodDataFoam.enabled)
-            {
-                ocean._lodDataFoam.BuildCommandBuffer(ocean, buf);
-            }
-
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            // --- Clip surface
-            if (ocean._lodDataClipSurface != null && ocean._lodDataClipSurface.enabled)
-            {
-                ocean._lodDataClipSurface.BuildCommandBuffer(ocean, buf);
-            }
-
-            if (ocean._lodDataAlbedo != null && ocean._lodDataAlbedo.enabled)
-            {
-                ocean._lodDataAlbedo.BuildCommandBuffer(ocean, buf);
-            }
-        }
-
         public static void FlipDataBuffers(OceanRenderer ocean)
         {
-            foreach (var rd in ocean._lodTransform._renderData)
+            var renderData = ocean._lodTransform._renderData;
+            for (int i = 0; i < renderData.Length; i++)
             {
-                rd.Flip();
+                renderData[i].Flip();
             }
         }
 
@@ -101,25 +49,7 @@ namespace Crest
         {
             if (OceanRenderer.Instance == null) return;
 
-            if (_buf == null)
-            {
-                _buf = new CommandBuffer();
-                _buf.name = "CrestLodData";
-            }
-
-            _buf.Clear();
-
-            BuildLodData(OceanRenderer.Instance, _buf);
-
-            if (OceanRenderer.Instance.ViewCamera != null)
-            {
-                // Fixes flickering non mesh renderer renderers (like particles). Method is undocumented.
-                Camera.SetupCurrent(OceanRenderer.Instance.ViewCamera);
-            }
-
-            // This will execute at the beginning of the frame before the graphics queue
-            Graphics.ExecuteCommandBuffer(_buf);
-
+            FlipDataBuffers(OceanRenderer.Instance);
             _lastUpdateFrame = OceanRenderer.FrameCount;
         }
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -48,93 +49,226 @@ namespace Hecton8.World
         Retained = 2
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct ScatterSimulationLayerQuota
     {
+        [FieldOffset(0)]
         public int PlacementsPerCell;
+
+        [FieldOffset(4)]
         public int CellStride;
+
+        [FieldOffset(8)]
         public int FamilyIndex;
+
+        [FieldOffset(12)]
+        private uint _pad0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ScatterSimulationQuotaState
     {
+        [FieldOffset(0)]
         public ScatterSimulationLayerQuota Ground;
+
+        [FieldOffset(16)]
         public ScatterSimulationLayerQuota Cluster;
+
+        [FieldOffset(32)]
         public ScatterSimulationLayerQuota Structure;
+
+        [FieldOffset(48)]
         public ScatterSimulationLayerQuota Spawn;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ScatterSimulationCellState
     {
+        [FieldOffset(0)]
         public long CellKey;
+
+        [FieldOffset(8)]
         public int CellX;
+
+        [FieldOffset(12)]
         public int CellZ;
+
+        [FieldOffset(16)]
         public float Height;
+
+        [FieldOffset(20)]
         public int HeightSource;
+
+        [FieldOffset(24)]
         public uint BiomeInfluencePacked;
+
+        [FieldOffset(28)]
         public ScatterSimulationEligibilityFlags Eligibility;
+
+        [FieldOffset(29)]
         public ScatterSimulationSuppressionState Suppression;
+
+        [FieldOffset(30)]
         public ScatterSimulationDirtyFlags DirtyFlags;
+
+        [FieldOffset(31)]
+        private byte _pad0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ScatterSimulationParitySnapshot
     {
-        public int CandidateCount;
-        public int GroundCount;
-        public int ClusterCount;
-        public int StructureCount;
-        public int SpawnCount;
-        public int EligibleGroundCells;
-        public int EligibleClusterCells;
-        public int EligibleStructureCells;
-        public int EligibleSpawnCells;
-        public int DirtyCellCount;
-        public int SuppressedCellCount;
+        [FieldOffset(0)]
         public ulong CandidateChecksum;
+
+        [FieldOffset(8)]
         public ulong CellChecksum;
+
+        [FieldOffset(16)]
+        public int CandidateCount;
+
+        [FieldOffset(20)]
+        public int GroundCount;
+
+        [FieldOffset(24)]
+        public int ClusterCount;
+
+        [FieldOffset(28)]
+        public int StructureCount;
+
+        [FieldOffset(32)]
+        public int SpawnCount;
+
+        [FieldOffset(36)]
+        public int EligibleGroundCells;
+
+        [FieldOffset(40)]
+        public int EligibleClusterCells;
+
+        [FieldOffset(44)]
+        public int EligibleStructureCells;
+
+        [FieldOffset(48)]
+        public int EligibleSpawnCells;
+
+        [FieldOffset(52)]
+        public int DirtyCellCount;
+
+        [FieldOffset(56)]
+        public int SuppressedCellCount;
+
+        [FieldOffset(60)]
+        private uint _pad0;
     }
 
     /// <summary>
     /// Immutable config for one scatter simulation pass.
     /// Shared by classic Jobs and future DOTS backends.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct ScatterSimulationConfig
     {
-        public float CellSize;
-        public int RadiusCells;
-        public float3 PlayerPosition;
+        [FieldOffset(0)]
         public ScatterSimulationQuotaState QuotaState;
-        public ScatterSimulationEligibilityFlags DefaultEligibility;
-        public ScatterSimulationSuppressionState DefaultSuppressionState;
-        public ScatterSimulationDirtyFlags DirtyFlags;
+
+        [FieldOffset(64)]
+        public float3 PlayerPosition;
+
+        [FieldOffset(76)]
+        public float CellSize;
+
+        [FieldOffset(80)]
+        public float SurfaceYOffset;
+
+        [FieldOffset(84)]
+        public uint Seed;
+
+        [FieldOffset(88)]
+        public int RadiusCells;
 
         // Legacy mirrors kept for classic evaluator compatibility during hybrid transition.
+        [FieldOffset(92)]
         public int GroundPlacementsPerCell;
+
+        [FieldOffset(96)]
         public int ClusterPlacementsPerCell;
+
+        [FieldOffset(100)]
         public int StructureCellStride;
+
+        [FieldOffset(104)]
         public int SpawnCellStride;
+
+        [FieldOffset(108)]
         public int GroundFamilyIndex;
+
+        [FieldOffset(112)]
         public int ClusterFamilyIndex;
+
+        [FieldOffset(116)]
         public int StructureFamilyIndex;
+
+        [FieldOffset(120)]
         public int SpawnFamilyIndex;
-        public float SurfaceYOffset;
-        public uint Seed;
+
+        [FieldOffset(124)]
+        public ScatterSimulationEligibilityFlags DefaultEligibility;
+
+        [FieldOffset(125)]
+        public ScatterSimulationSuppressionState DefaultSuppressionState;
+
+        [FieldOffset(126)]
+        public ScatterSimulationDirtyFlags DirtyFlags;
+
+        [FieldOffset(127)]
+        private byte _pad0;
     }
 
     /// <summary>
     /// Blittable scatter candidate contract shared by classic Jobs and future DOTS backends.
     /// Managed refs are resolved later by the owner-driven main-thread apply path.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ScatterSimulationCandidate
     {
-        public float3 Position;
-        public float Rotation;
-        public float Scale;
+        [FieldOffset(0)]
         public long CellKey;
-        public int FamilyIndex;
-        public int LayerIndex;
+
+        [FieldOffset(8)]
+        public float3 Position;
+
+        [FieldOffset(20)]
+        public float Rotation;
+
+        [FieldOffset(24)]
+        public float Scale;
+
+        [FieldOffset(28)]
         public float Score;
+
+        [FieldOffset(32)]
+        public int FamilyIndex;
+
+        [FieldOffset(36)]
+        public int LayerIndex;
+
+        [FieldOffset(40)]
         public int HeightSource;
-        public bool IsValid;
+
+        [FieldOffset(44)]
+        public byte IsValid;
+
+        [FieldOffset(45)]
+        private byte _pad0;
+
+        [FieldOffset(46)]
+        private ushort _pad1;
+
+        [FieldOffset(48)]
+        private ulong _pad2;
+
+        [FieldOffset(56)]
+        private ulong _pad3;
     }
 
     /// <summary>
@@ -153,9 +287,9 @@ namespace Hecton8.World
             ParitySnapshot = paritySnapshot;
         }
 
-        public NativeArray<ScatterSimulationCandidate> Candidates { get; }
-        public int CandidateCount { get; }
-        public ScatterSimulationParitySnapshot ParitySnapshot { get; }
+        public readonly NativeArray<ScatterSimulationCandidate> Candidates;
+        public readonly int CandidateCount;
+        public readonly ScatterSimulationParitySnapshot ParitySnapshot;
     }
 
     /// <summary>

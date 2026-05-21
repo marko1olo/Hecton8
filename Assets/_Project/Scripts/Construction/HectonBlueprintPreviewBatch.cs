@@ -1,10 +1,8 @@
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.Core.Memory.Layout;
 using Hecton8.World;
 using System;
-using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -24,22 +22,6 @@ namespace Hecton8.Construction
         private const string HologramShaderPath = "Assets/_Project/Shaders/Hecton_ConstructionDearLieHologram.shader";
         private const float DefaultDearLieWiggleSpeed = 18f;
 
-        [BinaryBlittableSafe]
-        [StructLayout(LayoutKind.Explicit, Size = 64)]
-        public struct BlueprintPreviewInstance
-        {
-            [FieldOffset(0)] public quaternion Rotation;
-            [FieldOffset(16)] public float3 Position;
-            [FieldOffset(28)] public float3 Scale;
-            [FieldOffset(40)] public uint RequirementMask;
-            [FieldOffset(44)] public uint OwnedMask;
-            [FieldOffset(48)] public float BobAmplitude;
-            [FieldOffset(52)] public float BobFrequency;
-            [FieldOffset(56)] public float SpinRadiansPerSecond;
-            [FieldOffset(60)] public float FlickerAmplitude;
-        }
-
-        [SerializeField] private Mesh previewMesh;
         [SerializeField] private Material previewMaterial;
         [SerializeField] private Shader previewShader;
         [SerializeField] private Camera targetCamera;
@@ -47,10 +29,10 @@ namespace Hecton8.Construction
         [SerializeField] private Color validColor = new Color(0.08f, 1f, 0.72f, 0.72f);
         [SerializeField] private Color invalidColor = new Color(1f, 0.18f, 0.12f, 0.78f);
 
-        private VaultBufferHandle<BuilderGhostStateDTO> _stateHandle;
-        private VaultBufferHandle<BuilderGhostVisualDTO> _visualHandle;
-        private VaultBufferHandle<HolographyTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<BuilderGhostIndirectArgsDTO> _argsHandle;
+        private VaultGenerationHandle<BuilderGhostStateDTO> _stateHandle;
+        private VaultGenerationHandle<BuilderGhostVisualDTO> _visualHandle;
+        private VaultGenerationHandle<HolographyTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<BuilderGhostIndirectArgsDTO> _argsHandle;
         private IDataVault _vault;
         private GraphicsBuffer _stateBufferA;
         private GraphicsBuffer _stateBufferB;
@@ -69,7 +51,9 @@ namespace Hecton8.Construction
         private int _pendingBuildCount;
         private int _capacityResolved;
         private int _writeBufferIndex;
-        private int _lastPreviewSignalFrame = -1;
+        private uint _previewFrameCounter;
+        private uint _lastPreviewSignalFrame;
+        private bool _hasLastPreviewSignalFrame;
         private bool _drawBoundsValid;
         private GraphicsBuffer _boundStateBuffer;
         private GraphicsBuffer _boundVisualBuffer;
@@ -83,7 +67,7 @@ namespace Hecton8.Construction
         private void Awake()
         {
             ConfigureSignalLane();
-            EnsureBuffers();
+            EnsureBuffersCold();
             EnsureMaterial();
             EnsureGraphicsBuffers();
         }
@@ -94,6 +78,7 @@ namespace Hecton8.Construction
             if (!Application.isPlaying)
                 return;
 
+            EnsureBuffersCold();
             _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
@@ -141,7 +126,7 @@ namespace Hecton8.Construction
         private void OnDrawGizmos()
         {
             if (!Application.isPlaying ||
-                !TryResolveBuffers(
+                !TryReadCachedBuffers(
                     out NativeArray<BuilderGhostStateDTO> states,
                     out _,
                     out _,
@@ -183,11 +168,12 @@ namespace Hecton8.Construction
         {
             TryFinalizePendingBuildAndUpload();
             ConsumeConstructionPreviewSignals();
+            RecordActiveTelemetryHeartbeat();
         }
 
         public bool SetPreview(int index, Vector3 position, Quaternion rotation, Vector3 scale, uint requirementMask, uint ownedMask)
         {
-            if (!TryEnsureAndResolveBuffers(
+            if (!TryReadCachedBuffers(
                     out NativeArray<BuilderGhostStateDTO> states,
                     out NativeArray<BuilderGhostVisualDTO> visuals,
                     out _,
@@ -212,14 +198,20 @@ namespace Hecton8.Construction
             else
                 flags |= BuilderGhostValidationFlags.BoundsBlocked;
 
-            double3 centerAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition centerAup) ||
+                !TryResolveRuntimeOriginAup(out double3 runtimeOriginAup))
+            {
+                return false;
+            }
+
             float quality = ShinobuSocketConstructionRuntime.ResolveGlobalQualityWeight();
+            uint frame = CapturePreviewFrameId();
             JobHandle dependency = ScheduleBuilderGhostStateBuild(
                 states,
                 visuals,
                 index,
-                centerAup,
-                HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero),
+                centerAup.ToAbsoluteDouble3(),
+                runtimeOriginAup,
                 new quaternion(rotation.x, rotation.y, rotation.z, rotation.w),
                 (float3)scale,
                 0u,
@@ -227,7 +219,7 @@ namespace Hecton8.Construction
                 0f,
                 quality,
                 DefaultDearLieWiggleSpeed,
-                unchecked((uint)Time.frameCount),
+                frame,
                 default);
             _pendingBuildHandle = ScheduleIndirectArgsBuild(args, index + 1, dependency);
             _pendingBuildScheduled = true;
@@ -255,6 +247,7 @@ namespace Hecton8.Construction
             _lastSignalBatchHash = 0u;
             _lastSignalBatchCount = 0;
             _hasLastSignalBatchHash = false;
+            _hasLastPreviewSignalFrame = false;
             if (_pendingBuildScheduled)
                 _pendingBuildDiscard = true;
         }
@@ -307,7 +300,7 @@ namespace Hecton8.Construction
             _pendingBuildScheduled = false;
             _pendingBuildDiscard = false;
             _pendingBuildCount = 0;
-            if (!TryEnsureAndResolveBuffers(
+            if (!TryReadCachedBuffers(
                     out NativeArray<BuilderGhostStateDTO> states,
                     out NativeArray<BuilderGhostVisualDTO> visuals,
                     out NativeArray<HolographyTelemetryEntry> telemetry,
@@ -318,7 +311,13 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            EnsureGraphicsBuffers();
+            if (!HasGraphicsBuffers())
+            {
+                _uploadedCount = 0;
+                _drawBoundsValid = false;
+                return false;
+            }
+
             int writeCount = math.min(uploadCount, math.min(states.Length, visuals.Length));
             UpdateDrawBoundsFromStates(states, writeCount);
             if (!_drawBoundsValid)
@@ -339,7 +338,7 @@ namespace Hecton8.Construction
                 WriteTelemetry(
                     telemetry,
                     writtenState,
-                    (uint)ShinobuSocketConstructionRuntime.ResolveBuilderGhostSdfSampleCount(visuals[i].GlobalQualityWeight),
+                    (uint)ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount,
                     0f,
                     ResolveTelemetrySdfDistance(writtenState.ValidationFlags),
                     visuals[i].GlobalQualityWeight);
@@ -377,14 +376,15 @@ namespace Hecton8.Construction
                 return;
 
             ReadOnlySpan<ConstructionPreviewSignal> signals = SignalBus<ConstructionPreviewSignal>.GetFrameSnapshot();
+            uint frame = CapturePreviewFrameId();
             if (signals.Length <= 0)
             {
-                if (_lastPreviewSignalFrame >= 0 && Time.frameCount - _lastPreviewSignalFrame > 1)
+                if (_hasLastPreviewSignalFrame && frame - _lastPreviewSignalFrame > 1u)
                     ClearPreviews();
                 return;
             }
 
-            if (!TryEnsureAndResolveBuffers(
+            if (!TryReadCachedBuffers(
                     out NativeArray<BuilderGhostStateDTO> states,
                     out NativeArray<BuilderGhostVisualDTO> visuals,
                     out _,
@@ -408,18 +408,22 @@ namespace Hecton8.Construction
                 _drawBoundsValid)
             {
                 _activeCount = activeSignalCount;
-                _lastPreviewSignalFrame = Time.frameCount;
+                _lastPreviewSignalFrame = frame;
+                _hasLastPreviewSignalFrame = true;
                 return;
             }
 
             int writeCount = 0;
             JobHandle buildDependency = default;
-            double3 runtimeOriginAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);
-            uint frame = unchecked((uint)Time.frameCount);
+            if (!TryResolveRuntimeOriginAup(out double3 runtimeOriginAup))
+                return;
+
             for (int i = 0; i < signals.Length && writeCount < capacityLimit; i++)
             {
                 ConstructionPreviewSignal signal = signals[i];
                 if ((signal.Flags & ConstructionPreviewSignal.FlagActive) == 0)
+                    continue;
+                if (!AbsoluteUniversePosition.IsFinite(in signal.CenterAup))
                     continue;
 
                 quaternion rotation = new quaternion(signal.Rotation.x, signal.Rotation.y, signal.Rotation.z, signal.Rotation.w);
@@ -454,7 +458,8 @@ namespace Hecton8.Construction
                     signal.DearLieWiggleSpeed,
                     signal.Frame != 0u ? signal.Frame : frame,
                     buildDependency);
-                _lastPreviewSignalFrame = Time.frameCount;
+                _lastPreviewSignalFrame = frame;
+                _hasLastPreviewSignalFrame = true;
                 writeCount++;
             }
 
@@ -565,7 +570,7 @@ namespace Hecton8.Construction
                 GridSizeMeters = 0d,
                 PrefabHashID = moduleHash,
                 ValidationFlags = validationFlags,
-                AnimationPhase = math.frac(Time.unscaledTime * 0.5f),
+                AnimationPhase = ResolvePreviewAnimationPhase(frame),
                 GlobalQualityWeight = globalQualityWeight,
                 DearLieDampen = dearLieDampen,
                 DearLieWiggleSpeed = dearLieWiggleSpeed,
@@ -587,7 +592,7 @@ namespace Hecton8.Construction
         {
             ShinobuSocketConstructionRuntime.WriteHolographyTelemetry(
                 telemetry,
-                unchecked((uint)Time.frameCount),
+                CapturePreviewFrameId(),
                 state.AUP_TargetPosition,
                 state.PrefabHashID,
                 sdfCornerChecks,
@@ -598,62 +603,105 @@ namespace Hecton8.Construction
                 globalQualityWeight);
         }
 
-        private void EnsureBuffers()
+        private uint CapturePreviewFrameId()
         {
-            int resolvedCapacity = ResolveCapacity();
-            if (!TryResolveVault(out IDataVault vault))
+            uint dispatcherFrame = TimeSliceScheduler.CurrentFrameId;
+            if (dispatcherFrame != 0u)
+            {
+                if (dispatcherFrame > _previewFrameCounter)
+                    _previewFrameCounter = dispatcherFrame;
+                return dispatcherFrame;
+            }
+
+            _previewFrameCounter = unchecked(_previewFrameCounter + 1u);
+            return _previewFrameCounter != 0u ? _previewFrameCounter : 1u;
+        }
+
+        private static float ResolvePreviewAnimationPhase(uint frame)
+        {
+            return math.frac(frame * (1f / 120f));
+        }
+
+        private void RecordActiveTelemetryHeartbeat()
+        {
+            if (_pendingBuildScheduled)
                 return;
 
-            _vault = vault;
-            if (_stateHandle.IsCreated &&
-                _visualHandle.IsCreated &&
-                _telemetryHandle.IsCreated &&
-                _argsHandle.IsCreated &&
-                _stateHandle.Length >= resolvedCapacity &&
-                _visualHandle.Length >= resolvedCapacity &&
-                _telemetryHandle.Length >= ShinobuSocketConstructionRuntime.TelemetryCapacity &&
-                _argsHandle.Length >= 1 &&
-                vault.ResolveBuffer(ref _stateHandle) &&
-                vault.ResolveBuffer(ref _visualHandle) &&
-                vault.ResolveBuffer(ref _telemetryHandle) &&
-                vault.ResolveBuffer(ref _argsHandle))
+            if (!TryReadCachedBuffers(
+                    out NativeArray<BuilderGhostStateDTO> states,
+                    out NativeArray<BuilderGhostVisualDTO> visuals,
+                    out NativeArray<HolographyTelemetryEntry> telemetry,
+                    out _) ||
+                !telemetry.IsCreated ||
+                telemetry.Length <= 0)
             {
                 return;
             }
 
-            _stateHandle = vault.GetBufferHandle<BuilderGhostStateDTO>(
+            int count = math.min(_activeCount, math.min(states.Length, visuals.Length));
+            for (int i = 0; i < count; i++)
+            {
+                BuilderGhostStateDTO state = states[i];
+                if ((state.ValidationFlags & BuilderGhostValidationFlags.Active) == 0u)
+                    continue;
+
+                WriteTelemetry(
+                    telemetry,
+                    state,
+                    (uint)ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount,
+                    0f,
+                    ResolveTelemetrySdfDistance(state.ValidationFlags),
+                    visuals[i].GlobalQualityWeight);
+                return;
+            }
+        }
+
+        private void EnsureBuffersCold()
+        {
+            int resolvedCapacity = ResolveCapacity();
+            if (!TryBindVaultCold(out IDataVault vault))
+                return;
+
+            _vault = vault;
+            if (vault.TryResolveHandle(in _stateHandle, out NativeArray<BuilderGhostStateDTO> states) &&
+                vault.TryResolveHandle(in _visualHandle, out NativeArray<BuilderGhostVisualDTO> visuals) &&
+                vault.TryResolveHandle(in _telemetryHandle, out NativeArray<HolographyTelemetryEntry> telemetry) &&
+                vault.TryResolveHandle(in _argsHandle, out NativeArray<BuilderGhostIndirectArgsDTO> args) &&
+                states.IsCreated &&
+                states.Length >= resolvedCapacity &&
+                visuals.IsCreated &&
+                visuals.Length >= resolvedCapacity &&
+                telemetry.IsCreated &&
+                telemetry.Length >= ShinobuSocketConstructionRuntime.TelemetryCapacity &&
+                args.IsCreated &&
+                args.Length >= 1)
+            {
+                return;
+            }
+
+            _stateHandle = vault.GetGenerationHandle<BuilderGhostStateDTO>(
                 ShinobuSocketConstructionRuntime.BuilderGhostStateBufferId,
                 resolvedCapacity,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
-            _visualHandle = vault.GetBufferHandle<BuilderGhostVisualDTO>(
+            _visualHandle = vault.GetGenerationHandle<BuilderGhostVisualDTO>(
                 ShinobuSocketConstructionRuntime.BuilderGhostVisualBufferId,
                 resolvedCapacity,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetBufferHandle<HolographyTelemetryEntry>(
+            _telemetryHandle = vault.GetGenerationHandle<HolographyTelemetryEntry>(
                 ShinobuSocketConstructionRuntime.BuilderGhostTelemetryBufferId,
                 ShinobuSocketConstructionRuntime.TelemetryCapacity,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
-            _argsHandle = vault.GetBufferHandle<BuilderGhostIndirectArgsDTO>(
+            _argsHandle = vault.GetGenerationHandle<BuilderGhostIndirectArgsDTO>(
                 ShinobuSocketConstructionRuntime.BuilderGhostIndirectArgsBufferId,
                 1,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
         }
 
-        private bool TryEnsureAndResolveBuffers(
-            out NativeArray<BuilderGhostStateDTO> states,
-            out NativeArray<BuilderGhostVisualDTO> visuals,
-            out NativeArray<HolographyTelemetryEntry> telemetry,
-            out NativeArray<BuilderGhostIndirectArgsDTO> args)
-        {
-            EnsureBuffers();
-            return TryResolveBuffers(out states, out visuals, out telemetry, out args);
-        }
-
-        private bool TryResolveBuffers(
+        private bool TryReadCachedBuffers(
             out NativeArray<BuilderGhostStateDTO> states,
             out NativeArray<BuilderGhostVisualDTO> visuals,
             out NativeArray<HolographyTelemetryEntry> telemetry,
@@ -665,21 +713,50 @@ namespace Hecton8.Construction
             args = default;
 
             IDataVault vault = _vault;
-            if (vault == null && !TryResolveVault(out vault))
+            if (vault == null)
                 return false;
 
-            _vault = vault;
-            states = _stateHandle.Resolve(vault);
-            visuals = _visualHandle.Resolve(vault);
-            telemetry = _telemetryHandle.Resolve(vault);
-            args = _argsHandle.Resolve(vault);
-            return states.IsCreated && visuals.IsCreated && telemetry.IsCreated && args.IsCreated;
+            return vault.TryResolveHandle(in _stateHandle, out states) &&
+                   vault.TryResolveHandle(in _visualHandle, out visuals) &&
+                   vault.TryResolveHandle(in _telemetryHandle, out telemetry) &&
+                   vault.TryResolveHandle(in _argsHandle, out args) &&
+                   states.IsCreated &&
+                   visuals.IsCreated &&
+                   telemetry.IsCreated &&
+                   args.IsCreated;
         }
 
-        private static bool TryResolveVault(out IDataVault vault)
+        private static bool TryBindVaultCold(out IDataVault vault)
         {
             vault = GlobalRegistry.DataVault;
             return vault != null;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            if (!TryResolveRuntimeOriginAup(out double3 originAup))
+                return false;
+
+            double3 resolved = originAup + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(resolved)))
+                return false;
+
+            aup = AbsoluteUniversePosition.FromAbsolutePosition(resolved);
+            return AbsoluteUniversePosition.IsFinite(in aup);
+        }
+
+        private static bool TryResolveRuntimeOriginAup(out double3 runtimeOriginAup)
+        {
+            runtimeOriginAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            return math.all(math.isfinite(runtimeOriginAup));
         }
 
         private void EnsureGraphicsBuffers()
@@ -711,6 +788,17 @@ namespace Hecton8.Construction
             _argsBufferB = CreateIndirectArgsBuffer();
             _boundStateBuffer = null;
             _boundVisualBuffer = null;
+        }
+
+        private bool HasGraphicsBuffers()
+        {
+            return _stateBufferA != null &&
+                   _stateBufferB != null &&
+                   _visualBufferA != null &&
+                   _visualBufferB != null &&
+                   _argsBufferA != null &&
+                   _argsBufferB != null &&
+                   _capacityResolved >= ResolveCapacity();
         }
 
         private void CompletePendingBuildForTeardown()

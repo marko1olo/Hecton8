@@ -1,0 +1,525 @@
+{
+  "agent_id": "SHINOBU_258",
+  "bytes_processed": 36096,
+  "elapsed_seconds": 0.686297,
+  "files": [
+    {
+      "bytes": 36096,
+      "path": "C:\\hades\\Hecton8\\Assets\\StreamingAssets\\Hecton8\\Audio\\vocal_banks.h8bin",
+      "sampled_records": 1,
+      "sections": 1,
+      "status": "OK"
+    }
+  ],
+  "files_checked": 1,
+  "findings": [
+    {
+      "code": "RUNTIME_TEXT_STREAMINGASSETS_LOAD",
+      "message": "Runtime C# source loads text from StreamingAssets via text artifact symbol CsvFileName=apex_predator_stats.csv: Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs:907: return Path.Combine(root, \"Assets\", \"StreamingAssets\", CsvFileName);",
+      "path": "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\AI\\Cognition\\ShinobuApexBrainVault.cs",
+      "references": [
+        "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs:907:return Path.Combine(root, \"Assets\", \"StreamingAssets\", CsvFileName);"
+      ],
+      "remediation": "Move the human-readable source file to editor/source-data ownership, bake it into static_data.h8bin or a domain .h8bin payload, and make runtime cold boot read binary/Vault bytes.",
+      "severity": "ERROR"
+    },
+    {
+      "code": "RUNTIME_TEXT_STREAMINGASSETS_LOAD",
+      "message": "Runtime C# source loads text from StreamingAssets via text artifact symbol ApexCortexBehaviorCsvName=ai_behavior_overrides.csv: Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3129: path = Path.Combine(projectRoot, \"Assets\", \"StreamingAssets\", ApexCortexBehaviorCsvName);",
+      "path": "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Fauna\\PredatorCognitionDomain.cs",
+      "references": [
+        "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3129:path = Path.Combine(projectRoot, \"Assets\", \"StreamingAssets\", ApexCortexBehaviorCsvName);"
+      ],
+      "remediation": "Move the human-readable source file to editor/source-data ownership, bake it into static_data.h8bin or a domain .h8bin payload, and make runtime cold boot read binary/Vault bytes.",
+      "severity": "ERROR"
+    },
+    {
+      "code": "RUNTIME_TEXT_STREAMINGASSETS_LOAD",
+      "message": "Runtime C# source loads text from StreamingAssets via text artifact symbol MesofaunaSpeciesProfilesCsvName=mesofauna_species_profiles.csv: Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3341: path = Path.Combine(Application.streamingAssetsPath, MesofaunaSpeciesProfilesCsvName);",
+      "path": "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Fauna\\PredatorCognitionDomain.cs",
+      "references": [
+        "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3341:path = Path.Combine(Application.streamingAssetsPath, MesofaunaSpeciesProfilesCsvName);"
+      ],
+      "remediation": "Move the human-readable source file to editor/source-data ownership, bake it into static_data.h8bin or a domain .h8bin payload, and make runtime cold boot read binary/Vault bytes.",
+      "severity": "ERROR"
+    },
+    {
+      "code": "RUNTIME_TEXT_STREAMINGASSETS_LOAD",
+      "message": "Runtime C# source loads text from StreamingAssets via text artifact symbol RulesCsvName=director_spawn_rules.csv: Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs:2234: path = Path.Combine(Application.streamingAssetsPath, RulesCsvName);",
+      "path": "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Fauna\\StressDrivenSpawnDirector.cs",
+      "references": [
+        "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs:2234:path = Path.Combine(Application.streamingAssetsPath, RulesCsvName);"
+      ],
+      "remediation": "Move the human-readable source file to editor/source-data ownership, bake it into static_data.h8bin or a domain .h8bin payload, and make runtime cold boot read binary/Vault bytes.",
+      "severity": "ERROR"
+    },
+    {
+      "code": "RUNTIME_TEXT_STREAMINGASSETS_LOAD",
+      "message": "Runtime C# source loads text from StreamingAssets via text artifact symbol CsvFileName=volcanic_vents.csv: Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs:1896: _csvPath = Path.Combine(Application.streamingAssetsPath, CsvFileName);",
+      "path": "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\World\\VolcanicUpdraftDirector.cs",
+      "references": [
+        "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs:1896:_csvPath = Path.Combine(Application.streamingAssetsPath, CsvFileName);"
+      ],
+      "remediation": "Move the human-readable source file to editor/source-data ownership, bake it into static_data.h8bin or a domain .h8bin payload, and make runtime cold boot read binary/Vault bytes.",
+      "severity": "ERROR"
+    },
+    {
+      "code": "STATIC_DATA_MISSING",
+      "message": "required Data Monolith payload is absent: C:\\hades\\Hecton8\\Assets\\StreamingAssets\\Hecton8\\DataMonolith\\static_data.h8bin",
+      "path": "C:\\hades\\Hecton8\\Assets\\StreamingAssets\\Hecton8\\DataMonolith\\static_data.h8bin",
+      "severity": "ERROR"
+    },
+    {
+      "code": "H8VB_SCHEMA_VALIDATED",
+      "message": "H8VB Audio/VocalBank validated records=1 bytes=36096",
+      "path": "C:\\hades\\Hecton8\\Assets\\StreamingAssets\\Hecton8\\Audio\\vocal_banks.h8bin",
+      "severity": "INFO"
+    }
+  ],
+  "mb_processed": 0.034424,
+  "migration_summary": {
+    "active_runtime_payload": "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
+    "blocking_counts": {
+      "RUNTIME_TEXT_STREAMINGASSETS_LOAD": 5,
+      "STATIC_DATA_MISSING": 1
+    },
+    "owner_count": 1,
+    "owners": [
+      {
+        "artifact_count": 0,
+        "artifacts": [],
+        "loader_site_count": 5,
+        "loader_sites": [
+          "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs:907:return Path.Combine(root, \"Assets\", \"StreamingAssets\", CsvFileName);",
+          "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3129:path = Path.Combine(projectRoot, \"Assets\", \"StreamingAssets\", ApexCortexBehaviorCsvName);",
+          "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3341:path = Path.Combine(Application.streamingAssetsPath, MesofaunaSpeciesProfilesCsvName);",
+          "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs:2234:path = Path.Combine(Application.streamingAssetsPath, RulesCsvName);",
+          "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs:1896:_csvPath = Path.Combine(Application.streamingAssetsPath, CsvFileName);"
+        ],
+        "next_action": "Move human-readable sources to the listed source_root, bake an aligned binary payload, then remove runtime StreamingAssets text loaders or isolate editor-only facades.",
+        "owner": "Unclassified",
+        "runtime_route": "owner-domain .h8bin or static_data.h8bin section loaded before runtime use",
+        "source_root": "Assets/_SourceData/<owner>"
+      }
+    ],
+    "schema": "h8bin_validator.migration_summary.v1"
+  },
+  "primary_struct_layouts": {
+    "H8DataBlobDirectory": {
+      "fields": [
+        {
+          "alignment": 4,
+          "name": "Magic",
+          "offset": 0,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 2,
+          "name": "FormatVersion",
+          "offset": 4,
+          "size": 2,
+          "type": "ushort"
+        },
+        {
+          "alignment": 2,
+          "name": "SectionCount",
+          "offset": 6,
+          "size": 2,
+          "type": "ushort"
+        },
+        {
+          "alignment": 4,
+          "name": "SectionTableOffset",
+          "offset": 8,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "SectionTableBytes",
+          "offset": 12,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "BlobBytes",
+          "offset": 16,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "DataStartOffset",
+          "offset": 20,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "LocalizationOffset",
+          "offset": 24,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "LocalizationBytes",
+          "offset": 28,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "Flags",
+          "offset": 32,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "WorldSeed",
+          "offset": 36,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "AppVersionHash",
+          "offset": 40,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "Reserved0",
+          "offset": 44,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "Reserved1",
+          "offset": 48,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "Reserved2",
+          "offset": 52,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "Reserved3",
+          "offset": 56,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "Reserved4",
+          "offset": 60,
+          "size": 4,
+          "type": "uint"
+        }
+      ],
+      "final_padding": 0,
+      "largest_alignment": 4,
+      "payload_padding": 0,
+      "size": 64
+    },
+    "H8DataBlobHeader": {
+      "fields": [
+        {
+          "alignment": 4,
+          "name": "Magic",
+          "offset": 0,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 2,
+          "name": "FormatVersion",
+          "offset": 4,
+          "size": 2,
+          "type": "ushort"
+        },
+        {
+          "alignment": 2,
+          "name": "HeaderBytes",
+          "offset": 6,
+          "size": 2,
+          "type": "ushort"
+        },
+        {
+          "alignment": 8,
+          "name": "Checksum64",
+          "offset": 8,
+          "size": 8,
+          "type": "ulong"
+        }
+      ],
+      "final_padding": 0,
+      "largest_alignment": 8,
+      "payload_padding": 0,
+      "size": 16
+    },
+    "H8DataSectionEntry": {
+      "fields": [
+        {
+          "alignment": 4,
+          "name": "SectionId",
+          "offset": 0,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "RecordSize",
+          "offset": 4,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "Count",
+          "offset": 8,
+          "size": 4,
+          "type": "uint"
+        },
+        {
+          "alignment": 4,
+          "name": "OffsetBytes",
+          "offset": 12,
+          "size": 4,
+          "type": "uint"
+        }
+      ],
+      "final_padding": 0,
+      "largest_alignment": 4,
+      "payload_padding": 0,
+      "size": 16
+    }
+  },
+  "schema": "h8bin_validator.report.v1",
+  "sections_expected": [
+    {
+      "id": 1,
+      "index": 0,
+      "name": "Items",
+      "record_size": 80,
+      "struct": "H8ItemRecord"
+    },
+    {
+      "id": 2,
+      "index": 1,
+      "name": "Creatures",
+      "record_size": 64,
+      "struct": "H8CreatureTraitRecord"
+    },
+    {
+      "id": 3,
+      "index": 2,
+      "name": "Biomes",
+      "record_size": 64,
+      "struct": "H8BiomeRecord"
+    },
+    {
+      "id": 4,
+      "index": 3,
+      "name": "Recipes",
+      "record_size": 64,
+      "struct": "H8RecipeRecord"
+    },
+    {
+      "id": 5,
+      "index": 4,
+      "name": "BiomeHeatmap",
+      "record_size": 16,
+      "struct": "H8BiomeHeatmapCellRecord"
+    },
+    {
+      "id": 6,
+      "index": 5,
+      "name": "QuestNodes",
+      "record_size": 32,
+      "struct": "H8QuestNodeRecord"
+    },
+    {
+      "id": 7,
+      "index": 6,
+      "name": "QuestEdges",
+      "record_size": 16,
+      "struct": "H8QuestEdgeRecord"
+    },
+    {
+      "id": 8,
+      "index": 7,
+      "name": "LootCdf",
+      "record_size": 16,
+      "struct": "H8LootCdfRecord"
+    },
+    {
+      "id": 9,
+      "index": 8,
+      "name": "VoxelMaterials",
+      "record_size": 32,
+      "struct": "H8VoxelMaterialRecord"
+    },
+    {
+      "id": 10,
+      "index": 9,
+      "name": "AudioClipRegistry",
+      "record_size": 16,
+      "struct": "H8AudioClipRegistryRecord"
+    },
+    {
+      "id": 11,
+      "index": 10,
+      "name": "VfxScalars",
+      "record_size": 32,
+      "struct": "H8VfxScalarRecord"
+    },
+    {
+      "id": 12,
+      "index": 11,
+      "name": "DepthPressureCurve",
+      "record_size": 16,
+      "struct": "H8DepthPressureSampleRecord"
+    },
+    {
+      "id": 13,
+      "index": 12,
+      "name": "ToolHeatCapacity",
+      "record_size": 16,
+      "struct": "H8ToolHeatCapacityRecord"
+    },
+    {
+      "id": 14,
+      "index": 13,
+      "name": "SubmarineHullConstants",
+      "record_size": 32,
+      "struct": "H8SubmarineHullConstantRecord"
+    },
+    {
+      "id": 15,
+      "index": 14,
+      "name": "NarrativeTriggers",
+      "record_size": 32,
+      "struct": "H8NarrativeTriggerRecord"
+    },
+    {
+      "id": 16,
+      "index": 15,
+      "name": "PhysicsMaterials",
+      "record_size": 16,
+      "struct": "H8PhysicsMaterialRecord"
+    },
+    {
+      "id": 17,
+      "index": 16,
+      "name": "GhostModules",
+      "record_size": 64,
+      "struct": "H8GhostModuleRecord"
+    },
+    {
+      "id": 18,
+      "index": 17,
+      "name": "RadiationIntensityMap",
+      "record_size": 16,
+      "struct": "H8RadiationIntensityCellRecord"
+    },
+    {
+      "id": 19,
+      "index": 18,
+      "name": "SpawnCreditCosts",
+      "record_size": 16,
+      "struct": "H8SpawnCreditCostRecord"
+    },
+    {
+      "id": 20,
+      "index": 19,
+      "name": "LightAttenuationCurve",
+      "record_size": 32,
+      "struct": "H8LightAttenuationSampleRecord"
+    },
+    {
+      "id": 21,
+      "index": 20,
+      "name": "SopErrors",
+      "record_size": 16,
+      "struct": "H8SopErrorRecord"
+    },
+    {
+      "id": 22,
+      "index": 21,
+      "name": "HudLayouts",
+      "record_size": 64,
+      "struct": "H8HudLayoutRecord"
+    },
+    {
+      "id": 23,
+      "index": 22,
+      "name": "LocalizationUtf8",
+      "record_size": 1,
+      "struct": ""
+    },
+    {
+      "id": 24,
+      "index": 23,
+      "name": "SectorPageDirectory",
+      "record_size": 32,
+      "struct": "H8SectorPageRecord"
+    },
+    {
+      "id": 25,
+      "index": 24,
+      "name": "Economy",
+      "record_size": 64,
+      "struct": "H8EconomyRecord"
+    },
+    {
+      "id": 26,
+      "index": 25,
+      "name": "PhysicsConstants",
+      "record_size": 64,
+      "struct": "H8PhysicsConstantsRecord"
+    }
+  ],
+  "self_audit": {
+    "agent_id": "SHINOBU_258",
+    "checksum": "Unity.Collections.xxHash3.Hash64 pure-Python oracle over bytes[16..end)",
+    "compile_guard": "No dotnet or Unity build invoked by this tool.",
+    "csharp_parser": {
+      "combined_attributes": "supports [Serializable, StructLayout(...)] and [NonSerialized, FieldOffset(...)] lists",
+      "field": "field attribute blocks -> FieldOffset(Attribute)(X) -> modifiers type Name;",
+      "mode": "lightweight syntax tree scanner: comments stripped, attribute blocks balanced, declaration bodies matched by braces",
+      "record_size": "case H8DataSectionId.*: return ...;",
+      "section_order": "SectionOrder = { H8DataSectionId.* }",
+      "struct": "leading attribute blocks -> StructLayout(Attribute)(...LayoutKind.Explicit..., Size=...) -> modifiers struct Name { ... }"
+    },
+    "csv_diff_field_gate": "--csv-diff compares known numeric H8ItemRecord fields such as Cost/MassKg/VolumeM3 when present in the source CSV, not only Items.HashId.",
+    "dear_lie": "Payload validation samples deterministic 5% by default after full header/table proof; --thorough validates all records.",
+    "global_quality_weight": "Not consumed. This CI validator never changes gameplay truth ownership, DTO layout, save identity, or authority route.",
+    "integer_aup_gate": "Integer AUP fields named Aup*/AUP* are checked against +/-100000 just like floating AUP coordinates.",
+    "job_graph": "No Burst jobs, no JobHandle, no Complete. External CI process only.",
+    "migration_summary": "Report groups runtime text artifacts and loader sites by required route owner.",
+    "mmap_file_access": true,
+    "mmap_release_on_fail_fast": "Checksum memoryview is scoped to compute_payload_checksum and released in finally before fail-fast findings can unwind.",
+    "record_stride_gate": "Non-empty sections must declare a non-zero stride large enough to contain the parsed C# explicit-layout struct before hash extraction or sampling.",
+    "reference_master_gate": "Recipe/Loot references fail as REFERENCE_MASTER_EMPTY when Items.HashId cannot be proven, avoiding false BROKEN_FOREIGN_KEY proof.",
+    "rle_flag_contract": "RLE probe runs only when C# defines RleDirectoryFlag and the directory sets that bit; unknown directory flags fail as DIRECTORY_FLAGS_UNSUPPORTED.",
+    "section_alignment_floor": "C# SectionAlignmentBytes must be >=16; effective section/file/data-start alignment never drops below 16 bytes.",
+    "sidecar_schema_guard": "H8VB Audio/VocalBank payloads are routed by magic before H8DM parsing and validated through the source-backed 64-byte header, 32-byte index, FNV bank hash, 16-byte aligned payload ranges with zeroed inter-record padding, supported codec set, and ADPCM block headers.",
+    "standalone_python": true,
+    "task_count": 20,
+    "unity_runtime_dependency": false,
+    "vault_status": "No Unity NativeArray/GlobalDataVault allocations. OS mmap only."
+  },
+  "status": "FAIL",
+  "structs_parsed": 32
+}

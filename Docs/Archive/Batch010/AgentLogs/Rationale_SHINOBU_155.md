@@ -683,3 +683,248 @@ Rejected Alternatives: Scheduling and completing a cold job handle; registering 
 Scalability potential: Low/Middle/High/Ultra behavior unchanged. The mock row set remains the same bounded fallback seed; shader presentation still scales continuously by `GlobalQualityWeight`.
 Hardware Impact: Hot path cost 0 us. Cold setup avoids a pointless scheduled-handle lifecycle and removes a compile defect. Low-end i3/MX350 gameplay cost is unchanged.
 First 20 Minutes Route Impact: The first fallback respawn cannot observe partially seeded mock rows or fail compilation from an orphan mock handle.
+
+## Decision 77 - Read Accessor Purity And Mock Fence Recurrence
+
+Problem: A renewed disk audit found the cold mock hydration block again contained `mockJob.Schedule(...)`, `H8Memory.RegisterActiveJob(...)`, and forced `DispatcherJobFence.TryComplete(ref mockHandle, forceComplete:true)`. The public editor read facade `TryReadEditorState` also called `EnsureVaultState()` and `TryPrepareEditorVaultAccess()`, so a `TryRead*` method could allocate/acquire Vault descriptors and finalize a job. The shader bridge had an allocation-capable helper named `ResolveSlotsVault`, weakening scan-based enforcement of read-accessor doctrine.
+Solution: Restore cold default med-bay seeding to the wrapper-only path: assign `GenerateMockRespawnPointsJob` fields and call `mockJob.Run(bays.Length)`. Make `TryReadEditorState` a pure fail-closed read: it now checks `s_active`, cached `_dataVault`, `HasHotVaultState(vault)`, `_jobScheduled`, resolved local array views, and lengths only. Rename mutation/allocation-capable private binders to `BindVaultCold` and `AcquireSlotsVault`; SHINOBU VisualSync still calls `PublishRespawnDearLie(IDataVault, Vector4)` with allocation disabled.
+Rejected Alternatives: Keeping the scheduled boot job; forcing editor reads to finalize jobs for convenience; leaving `Resolve*` names on helpers that can bind `GlobalRegistry` or allocate shader slots; duplicating private editor buffers. Cold setup has only eight rows, and a read-named method must not acquire, allocate, or complete.
+Scalability potential: Low/Middle/High/Ultra visual behavior unchanged. This is authority/readability hardening; the Dear Lie still scales continuously through `GlobalQualityWeight`, and med-bay search remains bounded O(8).
+Hardware Impact: Hot path cost is unchanged. Cold setup avoids an unnecessary scheduled handle and forced fence. Editor reads now cost only metadata checks plus two local Vault resolves when cached state is valid; they do not trigger allocation or job finalization. Low-end i3/MX350 benefit is less editor/runtime contention and no hidden cold fence in the death-route setup.
+First 20 Minutes Route Impact: The first fallback respawn seeds deterministic mock med-bay rows without a boot fence, and the UI Toolkit tuner can observe state without creating Vault rows or consuming an in-flight reconciliation job.
+
+## Decision 78 - LOG Buffer ID Evidence Correction
+
+Problem: Read-only proof audit found stale LOG evidence that mislabeled `71606` as med bays and `71608` as tuning. Source and ledger both define `71605` as `MedicalBayRespawnPointsBuffer` and `71609` as `RespawnTuningBuffer`; leaving the stale report would make H-Phi proof text contradict the binary payload ledger. The same audit found historical date-order inversion in the LOG: an early 2026-05-20 block preceded later 2026-05-19 entries.
+Solution: Correct the active LOG lines to `71605` med bays, `71609` tuning, and cold mock rows writing med-bay buffer `71605`. Archive mirrors are synced after active proof updates, so parity preserves corrected evidence. This decision recorded the historical ordering inversion as evidence debt; Decision 79 later repaired the old LOG block order.
+Rejected Alternatives: Ignoring the report as documentation-only; changing source IDs to match stale text; leaving archive parity as proof; bulk-reordering the full historical LOG under high IO/load without a dedicated diff review. The source/ledger owns the IDs, and LOG must describe that route exactly.
+Scalability potential: No runtime behavior changed. The correction protects human tuning and integration proof across all quality tiers.
+Hardware Impact: 0 us runtime. It prevents wrong buffer inspection during debugging on low-end and high-end targets alike.
+First 20 Minutes Route Impact: Early death/rebirth debugging now points designers and integrators at the actual med-bay and tuning Vault lanes.
+
+## Decision 79 - LOG Chronology Repair
+
+Problem: The active LOG violated the reporting protocol's top-old/bottom-new ordering because six `2026-05-20` SHINOBU_155 sections appeared before later `2026-05-19` sections. That made the evidence trail harder to audit and left the Loop 72 report carrying known proof debt.
+Solution: Perform a targeted mechanical move of the misplaced contiguous `2026-05-20` block to the first valid `2026-05-20` insertion point after the final `2026-05-19` heading. A heading-order verifier now reports no `2026-05-19` heading after the first `2026-05-20` heading.
+Rejected Alternatives: Leaving the stale ordering because it was documentation-only; rewriting unrelated LOG content; touching runtime code to create new proof instead of repairing the proof trail. The defect was ordering, not runtime behavior.
+Scalability potential: No runtime behavior changed. Low/Middle/High/Ultra death-route scalability remains governed by existing continuous `GlobalQualityWeight` math and shader Dear Lie parameters.
+Hardware Impact: 0 us runtime. Audit cost is reduced because CTO/integrator reads no longer have to reconcile out-of-order proof blocks.
+First 20 Minutes Route Impact: Early death/rebirth evidence now reads in chronological order before the current proof appendices.
+
+## Decision 80 - Cold Recovery Hydration Repair
+
+Problem: `Start()` and DataVault replacement could recover valid Vault descriptors after an earlier cold acquisition miss, but only `OnEnable()` ran the default respawn row hydration plus CSV penalty ingest. That made a real cold recovery path where dispatcher phases were registered against valid handles while mock med-bay rows or penalty-rule rows were still empty.
+Solution: Add `HydrateColdDefaultsAndPenaltyRules()` and call it after successful `EnsureVaultState(...)` in `OnEnable`, `Start`, and DataVault replacement. The helper initializes defaults once, then loads the penalty CSV once through `_penaltyCsvInitialized`; `ClearCachedHandles()` resets both cold latches when descriptors are invalidated.
+Rejected Alternatives: Retrying `EnsureVaultState()` or CSV ingest from dispatcher phases; loading CSV every `Start()` after a successful `OnEnable()`; creating shared Physiology/Metabolism/Kinematic buffers from SHINOBU; storing local fallback arrays. The correct seam is cold lifecycle recovery after descriptor proof and before phase registration/consumption.
+Scalability potential: Low/Middle/High/Ultra gameplay behavior is unchanged. This repair protects the existing continuous `GlobalQualityWeight` death cover and bounded O(8) med-bay route by ensuring recovered cold rows exist before hot phases can observe them.
+Hardware Impact: Hot path 0 us. Cold path avoids repeated file IO after first hydration and prevents a recovered Vault from falling into fallback-only death handling due to unhydrated med-bay/penalty rows. Expected low-end i3/MX350 gain is avoiding one bad recovery frame and repeated cold CSV reads, not a steady-state frame-time reduction.
+First 20 Minutes Route Impact: First death/rebirth after domain-reload-disabled entry or DataVault replacement can recover descriptors and still have deterministic mock medical bays plus authored penalty rules before the dispatcher consumes the route.
+
+## Decision 81 - Subagent Proof Gap Repair
+
+Problem: Read-only subagent audit found that `TryAcquireOwnedVaultDescriptor()` accepted existing generation handles without proving `handle.SystemID == OwnerSystem`, while `ReleaseVaultDescriptor()` later called `GlobalDataVault.ReleaseBuffer()` on those handles. The Vault release API checks generation and writer state but not owner identity. The same audit found failed/missing penalty CSV loads were latched as initialized, and the public no-vault `PublishRespawnDearLie(Vector4)` still reached an allocation-capable `GlobalRegistry.DataVault` route.
+Solution: Add `IsOwnedVaultDescriptor()` and require it before accepting existing SHINOBU-owned descriptors, before accepting newly requested descriptors, and before release. Change cold hydration so `_penaltyCsvInitialized` is set only from the `TryLoadPenaltyCsv()` result. Route the public no-vault respawn Dear Lie overload through `AcquireCachedSlotsVaultNoAllocate()`, which can validate already-cached shader slots with `allowAllocation:false` and otherwise falls back to direct shader globals.
+Rejected Alternatives: Trusting `ReleaseBuffer()` to enforce owner identity; releasing any descriptor with a matching BufferID; marking a missing CSV as initialized to suppress repeated cold `File.Exists`; removing the public no-vault Dear Lie overload; changing the generic shader bridge allocation route used by non-SHINOBU callers. The narrow repair protects the SHINOBU owner route and the respawn visual bridge without widening compile dependencies.
+Scalability potential: Low/Middle/High/Ultra gameplay behavior unchanged. Weak devices still get bounded O(8) med-bay lookup and shader scalar cover; high/ultra still spend GPU via the existing Dear Lie shader route. The change affects cold authority and allocation containment only.
+Hardware Impact: Hot path cost remains 0 us for descriptor ownership because acquisition/release are cold lifecycle seams. The no-vault Dear Lie fallback avoids an allocation-capable GlobalRegistry path and preserves one scalar/vector shader write. Low-end i3/MX350 benefit is fewer cold ownership hazards and no surprise shader-slot allocation from the respawn bridge.
+First 20 Minutes Route Impact: Early death/rebirth tests cannot adopt or release another owner system's Vault rows, failed CSV authoring remains retryable by cold/editor routes, and the public visual cover helper cannot allocate shader Vault storage behind SHINOBU's back.
+
+## Decision 82 - Owned Hot Gate And Dispatcher Activation Repair
+
+Problem: Loop 75 proved SHINOBU ownership at acquisition and release, but hot-state gates still treated nonzero generation descriptors as sufficient for SHINOBU-owned lanes once cached. `OnEnable()` also registered dispatcher adapters even when `EnsureVaultState(...)` failed, leaving no-truth phase callbacks alive after a cold Vault miss.
+Solution: Register dispatcher phases only after descriptor proof and cold hydration. On DataVault replacement, unregister adapters before clearing descriptors, then re-register only after the new Vault proves descriptors and hydration. Split owned-lane validation into explicit created/resolvable/current owner gates so `71604..71613` require `VaultGenerationHandle.SystemID == SystemID.GameplayPlayer` before PreSimulation, Simulation, VisualSync, editor read, CSV, dump, or release paths can observe them.
+Rejected Alternatives: Letting empty phase adapters tick and fail through `HasHotVaultState()` every frame; trusting acquisition-only owner proof; adding per-frame reacquisition retries; synthesizing shared Physiology/Metabolism/Kinematic rows from SHINOBU. The correct behavior is cold activation after proof and hot fail-closed owner validation.
+Scalability potential: Low/Middle/High/Ultra gameplay output unchanged. The fix removes useless phase callbacks on invalid cold setup and preserves the same continuous Dear Lie shader/fade scaling once the route is legitimately active.
+Hardware Impact: Hot valid path adds compile-time-inlined `SystemID` comparisons for ten SHINOBU-owned descriptors before generation checks. Invalid setup avoids four dispatcher callbacks per frame. Expected low-end i3/MX350 gain is avoiding dead phase polling after cold Vault misses and blocking wrong-owner memory release; no profiler microseconds claimed.
+First 20 Minutes Route Impact: First death/rebirth can run only after owner-local respawn lanes and shared read lanes prove valid; a failed cold setup remains silent and unregistered until Start or DataVault replacement can prove the route.
+
+## Decision 83 - Hydration Proof And Editor Fence Naming Repair
+
+Problem: Read-only Darwin audit found Loop 76 still relied on a `void` hydration helper, so phase registration could follow a silent default-row hydration failure. DataVault replacement also released owner descriptors before unregistering phase adapters. `TryPrepareEditorVaultAccess()` finalized completed jobs and mutated `_jobScheduled`, making its `Try*` name hostile to read-accessor doctrine.
+Solution: Change `HydrateColdDefaultsAndPenaltyRules()` to return `bool`; `OnEnable`, `Start`, and DataVault replacement now register phases only after descriptor proof and default-row hydration proof. Move DataVault replacement unregister before owner descriptor release. Rename the editor mutation helper to `FinalizeCompletedEditorFenceForMutation()` and keep it only in explicit editor mutation/dump routes.
+Rejected Alternatives: Treating optional/missing CSV as a registration blocker; leaving adapters registered while descriptors are released; keeping the `TryPrepare*` name because it is editor-only. Missing CSV is already encoded through `PenaltyRuleCount=0` and fallback inventory payload semantics; default respawn rows are the required activation proof.
+Scalability potential: Low/Middle/High/Ultra gameplay output unchanged. Invalid cold setup no longer registers dead adapters; valid setup preserves continuous `GlobalQualityWeight` fade/dear-lie scaling.
+Hardware Impact: Hot valid path unchanged from Loop 76. Invalid setup avoids phase callback churn. Low-end i3/MX350 benefit is fewer dead dispatcher invocations and cleaner editor mutation semantics; no profiler microseconds claimed.
+First 20 Minutes Route Impact: First death/rebirth cannot run with unhydrated default med-bay/tuning/request rows, replacement Vault cannot expose released descriptors to registered adapters, and editor write/reload/dump helpers no longer masquerade as pure reads.
+Verification: focused source scans show the `OnEnable`, `Start`, and DataVault replacement registration gates, no `TryPrepareEditorVaultAccess` residue, no stale mock schedule/handle, no legacy Vault handle/pointer path, no DTO auto-property/`Pack=` hit, no LINQ/managed collection allocation hit in the respawn source slice, and deterministic Burst/`[NoAlias]` directives intact. `git diff --check` reports only LF-to-CRLF warnings. CPU guard sampled `100%`, so build was not launched.
+
+## Decision 84 - Latest-Created Vault Fallback Ejection
+
+Problem: `BindVaultCold()` still accepted `GlobalDataVault.TryGetLatestCreated()` when `GlobalRegistry.DataVault` was null. The current global doctrine and binary payload ledger state that latest-created Vault lookup is bootstrap/editor/diagnostic/crash-only unless an explicit core fallback route card exists. SHINOBU_155 owns a player death route, not DataVault identity bootstrap.
+Solution: Remove the latest-created fallback from `BindVaultCold()`. Cold lifecycle binding now returns only the cached `_dataVault` or `GlobalRegistry.DataVault`. If the registry has not published Vault identity, descriptor acquisition fails closed and dispatcher phases are not registered by the existing Loop 77 activation gate.
+Rejected Alternatives: Adding a SHINOBU-specific fallback route card; keeping latest-created as "cold only"; polling until a latest Vault appears; allocating private fallback arrays. A non-owner route must not infer global Vault identity, and private fallback memory would violate one fact -> one owner -> one route.
+Scalability potential: Low/Middle/High/Ultra gameplay output unchanged after valid boot. On every tier, missing Vault identity now collapses to no-op before med-bay search, reset/fade jobs, inventory command, telemetry writes, or Dear Lie shader publish. No binary quality switch was added.
+Hardware Impact: Hot path cost 0 us. Cold bind loses one static singleton probe and avoids binding to a stale or editor-created Vault under domain-reload-disabled transitions. Low-end i3/MX350 benefit is fewer false activations and less cold recovery ambiguity; no profiler microseconds claimed.
+First 20 Minutes Route Impact: Early death/rebirth tests can run only after the actual runtime registry publishes DataVault identity. A stale latest-created Vault from editor/bootstrap history cannot become the owner route for SHINOBU respawn truth.
+
+## Decision 85 - Job Pointer Lease Locks And Shared Owner Proof
+
+Problem: `ScheduleSimulation()` resolved `NativeArray` views, converted them to raw pointers, and scheduled `ResetPlayerPhysiologyJob`/`UpdateRespawnFadeJob` without locking the underlying Vault buffers. `HasHotVaultState()` proved current generations before pointer capture, but it did not keep the arena from relocating while the scheduled job owned those pointers. The same audit found shared live-state descriptors and shader slot descriptors accepted BufferID/length without owner proof.
+Solution: Add a `TryLockJobBuffers()` chain for the 15 pointer-backed job lanes and release those locks in `TryFinalizeActiveJobNoWait()`, `CompleteActiveJobForTeardown()`, pointer-resolution failure, and no-work early return. Keep job scheduling fail-closed if any lock cannot be acquired. Add owner validation for shared Physiology/Decompression/Tissue/Scalars/Metabolism/Kinematic descriptors with expected owner `SystemID.GameplayPlayer`. Add `IsSlotsHandleOwned()` so cached, existing, and allocated `ShaderGlobalState` descriptors require `SystemID.GraphicsScalability`.
+Rejected Alternatives: Trusting generation checks alone; treating `H8Memory.RegisterActiveJob()` as a Vault lock; copying job inputs to private native arrays; releasing shared live-state buffers from SHINOBU; accepting wrong-owner shader slots because the slot buffer is shared. The job needs stable Vault-backed pointers, not copies, and ownership proof must not change release authority.
+Scalability potential: Low/Middle/High/Ultra gameplay output unchanged. If a buffer cannot be locked, the route collapses before reset/fade scheduling and therefore before med-bay rebirth, inventory penalty, telemetry mutation, or Dear Lie shader publish. No binary quality branch was added.
+Hardware Impact: Hot active-death path adds 15 lock increments before scheduling and 15 unlock decrements after completion; no allocation, no main-thread `Complete()`, and no new job edge. Low-end i3/MX350 benefit is preventing arena relocation/use-after-move failures during the rare death frame; steady-state no-death frames do not lock because no job is scheduled.
+First 20 Minutes Route Impact: Early death/rebirth tests now either acquire stable Vault pointer leases for the full scheduled job chain or fail closed before pointer extraction. Wrong-owner shared rows and wrong-owner shader slots cannot be adopted as SHINOBU truth.
+
+## Decision 86 - Post-Lock Schedule Exception Lease Guard
+
+Problem: After Loop 79, `ScheduleSimulation()` could acquire all 15 Vault buffer locks and then fail while constructing or scheduling the reset/fade jobs before `_jobScheduled` became true. That creates a bad transient: `_jobBuffersLocked` can remain true, but finalization/teardown helpers return early because no active job is recorded.
+Solution: Wrap the post-lock scheduling block in a `try/finally` and unlock only when `_jobScheduled` is still false. Once `ResetPlayerPhysiologyJob.Schedule(dependsOn)` returns, assign `_activeHandle = resetHandle` and `_jobScheduled = true` before constructing/scheduling `UpdateRespawnFadeJob`. If the fade schedule later fails, the reset job remains the active dispatcher-owned fence and normal finalization/teardown releases the Vault locks.
+Rejected Alternatives: Blind catch/unlock around the whole schedule block; registering a fake completed handle; force-completing the reset job inside the catch; copying job inputs into a private native staging buffer. After reset scheduling succeeds, the job may already own raw pointer leases, so immediate unlock would reintroduce relocation risk. Force-complete would violate the no hidden main-thread completion rule, and private staging buffers violate Vault ownership.
+Scalability potential: Low/Middle/High/Ultra gameplay output unchanged. Under weak-device or editor exception conditions, the route either unlocks an unscheduled lock acquisition immediately or keeps a real scheduled handle as the lease owner. Continuous `GlobalQualityWeight` fade/dear-lie math is unchanged.
+Hardware Impact: Normal death-frame cost is one `try/finally` region around rare scheduling work; no no-death steady-state cost, no allocation, no extra `Complete()`, no new job, and no asmdef edge. Low-end i3/MX350 benefit is preventing a stuck Vault lock after a rare scheduling fault without blocking the main thread.
+First 20 Minutes Route Impact: Early death/rebirth tests cannot wedge the respawn Vault lanes if a schedule-time exception occurs between lock acquisition and active-handle publication; the route fails closed or remains attached to a real dispatcher fence.
+
+## Decision 87 - Shader Bridge Slot Collision Guard
+
+Problem: The shared shader-global Vault row map had `PowerBrownoutSlot=8`, while `GlobalShaderDispatcher` treats `ShaderGlobalsDTO` as a 48-byte struct starting at slot `8`. That DTO occupies slots `8`, `9`, and `10`; mock/global shader writes then overwrite the same storage the dispatcher later reads as power brownout state. SHINOBU's respawn Dear Lie slot at `19` was not colliding, but it shares the same bridge and would inherit future slot-map drift risk without a guard.
+
+Solution: Move `PowerBrownoutSlot` to slot `20`, keep `RespawnDearLieSlot` at `19`, and make `HectonShaderGlobalDataVaultBridge` expose the shared slot ranges: DTO `8..10`, dispatcher runtime `12..18`, thermal packed `32..39`, and telemetry blackbox `64..363`. Add `ValidateSharedSlotMap()` and a cached static guard before shader slot adoption/allocation; update `GlobalShaderDispatcher.ValidateLayouts()` to validate the same constants and the `ShaderGlobalsDTO` three-`float4` footprint. Add an all-zero finite fallback in `SanitizePowerBrownoutVector()` so freshly cleared slot `20` means safe supply `(1,0,0,quality)` until the power owner publishes.
+
+Rejected Alternatives: Leaving brownout at slot `8` and relying on write order; moving respawn Dear Lie; storing brownout in a managed side cache; adding a new BufferID for one shader vector; widening `ShaderGlobalsDTO` to carry brownout; writing a default brownout row every dispatcher tick and potentially overwriting the real power publisher. The correct DOD repair is a non-overlapping slot in the existing `ShaderGlobalState` buffer plus a static slot-map proof and read-side zero-init interpretation.
+
+Scalability potential: Low/Middle/High/Ultra shader presentation remains continuous. Weak devices still collapse respawn Dear Lie detail through existing `GlobalQualityWeight`; high/ultra still spend GPU shader detail. The slot repair changes storage authority only and does not add a binary quality switch or extra shader variant.
+
+Hardware Impact: Hot write path adds one cached boolean guard branch in `TryPrepareSlotsVault()` and removes a correctness hazard where brownout could sample unrelated fog/flow data. Low-end i3/MX350 benefit is avoiding invalid brownout flicker or stale shader state without adding allocations, jobs, or buffer copies.
+
+First 20 Minutes Route Impact: Early death/rebirth VisualSync keeps publishing `_HectonRespawnDearLieParams` to slot `19`; power brownout now uses slot `20` and cannot alias the dispatcher fog/flow/time DTO at `8..10`.
+
+## Decision 88 - Cached Shader Vault Acquisition Guard
+
+Problem: After the slot collision repair, the shared shader bridge still had a generic hot-publish weakness: `AcquireSlotsVault()` read `GlobalRegistry.DataVault` every time a no-vault shader scalar publisher called the bridge, even if `_cachedVault` and `_slotsHandle` were already valid. That violates the cold-DI-only registry doctrine for recurring shader scalar publication. Decision 91 supersedes the interim part of this repair by removing the bridge-local registry fallback entirely.
+
+Solution: Change `AcquireSlotsVault()` to validate `_cachedVault` first with `TryPrepareSlotsVault(cached, allowAllocation:false)` and return it when valid. This was an interim repair. Decision 91 later removed `AcquireSlotsVault()` and the bridge-local registry/allocation fallback entirely. SHINOBU's explicit respawn Dear Lie overload remains stricter: it uses the caller's cached Vault and `allowAllocation:false`.
+
+Rejected Alternatives: Leaving the registry poll because it was hidden in a helper; requiring every legacy shader publisher to pass an `IDataVault` parameter in this loop; disabling allocation for all generic bridge publishers; adding another registry service or BufferID. The narrow DOD repair removes hot registry polling after cache warmup without changing non-SHINOBU publisher APIs.
+
+Scalability potential: Low/Middle/High/Ultra presentation behavior is unchanged. Weak devices avoid repeated registry traffic on shader scalar updates; high/ultra keep the same shader overkill route after the cached Vault is prepared. No binary quality switch or shader variant was added.
+
+Hardware Impact: Hot bridge calls after the first successful bind avoid one `GlobalRegistry.DataVault` property read and stay inside cached generation validation. Low-end i3/MX350 expected benefit is small but real on recurring shader scalar publishers; no profiler microseconds claimed.
+
+First 20 Minutes Route Impact: Early death/rebirth VisualSync still uses explicit cached-vault publication for `_HectonRespawnDearLieParams`; neighboring shader scalar publishers stop polling the registry after the shared slot buffer is cached, reducing global authority pressure during first-session shader updates.
+
+## Decision 89 - Reset Handle H8Memory Publication Guard
+
+Problem: `ScheduleSimulation()` publishes `_activeHandle` and `_jobScheduled` immediately after `ResetPlayerPhysiologyJob.Schedule(dependsOn)`, but the H8Memory owner-job fence was registered only after `UpdateRespawnFadeJob.Schedule(resetHandle)` succeeded. A fade-schedule exception after reset scheduling leaves a live reset job touching Vault pointer leases while owner teardown tracking has not seen the handle.
+
+Solution: Register `_activeHandle` with `H8Memory.RegisterActiveJob(OwnerSystem, _activeHandle)` immediately after `_activeHandle = resetHandle` and `_jobScheduled = true`. Keep the existing registration after successful fade scheduling, because the final handle is the normal reset->fade chain returned to the dispatcher.
+
+Rejected Alternatives: Force-completing the reset job on fade-schedule failure; unlocking Vault buffers in the exception path after reset scheduling; delaying `_jobScheduled = true` until after fade; removing the fade job to simplify the chain. Once reset scheduling returns, the job may already execute against raw Vault pointers, so early unlock or hidden completion violates the lease and dispatcher rules. Delaying `_jobScheduled` would recreate the lost-handle bug from Loop 80.
+
+Scalability potential: Low/Middle/High/Ultra gameplay output unchanged. Weak devices and high-end devices both keep the same continuous `GlobalQualityWeight` fade/Dear Lie math; this repair only hardens owner job tracking for rare schedule-time failures.
+
+Hardware Impact: Normal death frame adds one extra H8Memory owner-job registration for the reset handle before the final fade handle registration. That is cold relative to no-death steady state and avoids a teardown/memory-safety hole on low-end i3/MX350 class hardware without adding allocation, blocking, or a new job.
+
+First 20 Minutes Route Impact: Early death/rebirth tests cannot leave a scheduled reset job untracked if fade scheduling fails; Vault pointer locks remain attached to a known owner job until the existing finalization/teardown route releases them.
+
+## Decision 90 - Pre-Lock No-Work Gate
+
+Problem: Herschel found `ScheduleSimulation()` locked and resolved all 15 pointer-backed Vault lanes before proving a respawn request, active respawn, or fade was present. That made no-death frames pay lock/resolve/unlock churn despite the route proof claiming lock cost is paid only on active death work.
+
+Solution: Add `HasPendingRespawnWork(IDataVault)` before `TryLockJobBuffers(vault)`. The gate resolves only request/state/fade rows through method-local `NativeArray<T>` views and returns false unless `PendingRequest`, `RespawnActive`, or `DeathFadeIntensity > 0.0001f` is present. The existing post-lock no-work check stays as a second proof after pointer locks are acquired.
+
+Rejected Alternatives: Keeping the 15-lock path because it is functionally correct; reading all job inputs before locking; using a private dirty flag; removing the post-lock check. A private dirty flag would create shadow state, and the post-lock check is still needed because the pre-lock gate is only a cheap filter.
+
+Scalability potential: Low/Middle/High/Ultra output unchanged. Weak devices stop paying the full job-lock scan on idle frames; high/ultra keep the same death-frame reset/fade and Dear Lie shader math.
+
+Hardware Impact: No-death Simulation frames now pay three Vault view resolves and three scalar checks instead of 15 buffer locks, 15 view resolves, raw pointer extraction, and 15 unlocks. No profiler microseconds claimed until Unity proof.
+
+First 20 Minutes Route Impact: Early gameplay without death no longer exercises the heavy respawn job lease path every Simulation tick. First death still enters the full lock chain once the cheap gate sees pending work.
+
+## Decision 91 - Bridge Cached-Only Hot Publish
+
+Problem: The generic shader bridge no-vault path still had an allocation-capable helper: `WriteReadSlot(int,...)` called `AcquireSlotsVault()`, which could read `GlobalRegistry.DataVault` and allocate/adopt `ShaderGlobalState` from a recurring publish call.
+
+Solution: Route `WriteReadSlot(int,...)` through `AcquireCachedSlotsVaultNoAllocate()` and pass `allowAllocation:false`. Remove `AcquireSlotsVault()` entirely. If the bridge has no cached slot Vault, the caller still gets deterministic fallback shader globals but the bridge does not touch the registry or allocate shared Vault storage.
+
+Rejected Alternatives: Keeping a cold registry fallback in the bridge; forcing every legacy publisher to pass `IDataVault` in this loop; adding a second shader-global BufferID. The dispatcher owner should prepare shader slots; the bridge should not become a hidden allocator on render cadence.
+
+Scalability potential: Low/Middle/High/Ultra presentation unchanged after slot cache is present. When absent, weak and high-end devices both fall back to direct shader globals rather than mutating Vault ownership from a generic publish call.
+
+Hardware Impact: Hot bridge calls avoid registry access and allocation-capable code unconditionally. No allocation, job, buffer copy, shader variant, or main-thread fence added.
+
+First 20 Minutes Route Impact: Early death/rebirth Dear Lie still uses explicit cached-vault publication. Neighboring shader publishers either write an already cached slot or fall back to shader globals without allocating `ShaderGlobalState`.
+
+## Decision 92 - Shader Dispatcher Generation Descriptor Migration
+
+Problem: Herschel found the dispatcher still owned the exact bridge storage through `VaultBufferHandle<float4>` and `.Resolve(vault)`, while thermal bridge source rows used `TryGetBufferHandle` plus `.Resolve(vault)`. That left the shared shader slot path partly on legacy descriptor APIs after the bridge itself had moved to generation handles.
+
+Solution: Migrate `s_shaderSlotsHandle` to `VaultGenerationHandle<float4>`, prove `BufferID.ShaderGlobalState` and `SystemID.GraphicsScalability`, and resolve through `IDataVault.TryResolveHandle`. Migrate thermal source reads for centers/temperatures/lifetimes to `TryGetGenerationHandle`, prove `SystemID.VehiclesPhysics`, then resolve through `TryResolveHandle` under the existing lock order.
+
+Rejected Alternatives: Deferring dispatcher migration because it is a rendering file; leaving thermal rows on `VaultBufferHandle` because they are visual-only; changing BufferIDs or adding duplicate shader buffers. The touched paths are the bridge slots SHINOBU uses, so cross-domain repair is justified and no payload identity should move.
+
+Scalability potential: Low/Middle/High/Ultra shader behavior unchanged. Weak devices still get bounded thermal packing/mock fallback; high/ultra still consume the same packed thermal slots. The change hardens descriptor sovereignty only.
+
+Hardware Impact: Hot path replaces legacy handle resolve with generation-handle proof and `TryResolveHandle`. No new allocation after cold slot preparation, no shader variant, no job, and no extra lock; owner proof prevents wrong-owner adoption.
+
+First 20 Minutes Route Impact: The first-session shader slot owner and thermal visual bridge now use generation descriptors consistently with the bridge, reducing descriptor drift around respawn Dear Lie and neighboring shader slots.
+
+## Decision 93 - Editor Read Facade Cached-Only Repair
+
+Problem: Renewed read-accessor audit found two editor-side leaks of mutation semantics. `ShinobuRespawnReconciliationRuntime.OnDrawGizmos()` could call `BindVaultCold()` and therefore bind `GlobalRegistry.DataVault` from a draw callback. `GlobalShaderDispatcher.TryReadEditorTuning()` and `TryGetEditorGlobalFlow()` could call `EnsureShaderGlobalSlots(out IDataVault vault)`, which can allocate `ShaderGlobalState` and then lock the buffer from read-looking facades.
+
+Solution: Make SHINOBU med-bay gizmos read only the cached `_dataVault`. Add `TryResolveCachedShaderGlobalSlots(out NativeArray<float4> slots)` and route editor tuning/flow reads through cached generation validation only. Keep `TryWriteEditorTuning(...)` as the explicit mutating editor path with slot ensure and buffer lock.
+
+Rejected Alternatives: Treating editor read paths as harmless because they are not player runtime; keeping read-time allocation because it helps the tuner window initialize; adding a new editor-only registry fallback. Editor tooling must not train the runtime codebase into read-accessor mutation, and missing cached shader state can safely draw no gizmo/flow arrow.
+
+Scalability potential: Low/Middle/High/Ultra shader behavior is unchanged. Weak devices and high-end devices both avoid editor read-time Vault mutation; explicit authoring writes remain possible without changing `GlobalQualityWeight`, DTO layout, or shader slot identity.
+
+Hardware Impact: Editor repaint paths remove hidden registry binding, slot allocation checks, and shader-buffer locks from read facades. No runtime job, allocation, shader variant, or gameplay route changed. Low-end i3/MX350 benefit is reduced editor/frame interference during tuning sessions; no profiler microseconds claimed.
+
+First 20 Minutes Route Impact: Respawn med-bay gizmos and shader-flow visual inspection no longer mutate global authority while the first-session death route is being inspected.
+
+## Decision 94 - Dynamic Wake Owner Conflict Fail-Closed
+
+Problem: Subagent Maxwell verified `WakeGlobalBuffer` and `WakeVectorBuffer` have two current allocation owners: `HectonFluidEngine` creates/adopts them as `SystemID.Fluid`, while `FloraInteractionManager` creates/adopts the same BufferIDs as `SystemID.Vfx` and writes packed wake rows. `GlobalShaderDispatcher` accepting both owners through generation handles would mask whichever system allocated first and violate one fact -> one owner -> one route -> one proof.
+
+Solution: Remove dispatcher participation in the disputed wake BufferIDs until the route is fixed by the owning systems. `TryGetGizmoWake()` now fails closed. `UploadDynamicWakeBuffers()` returns zero wake params and relies on already allocated empty GPU buffers, so the dispatcher still binds a valid empty StructuredBuffer surface without reading ambiguous Vault wake rows.
+
+Rejected Alternatives: Accepting both `SystemID.Fluid` and `SystemID.Vfx`; choosing `SystemID.Vfx` because Flora currently writes rows; touching `HectonFluidEngine` or `FloraInteractionManager` from the SHINOBU_155 lane; adding another BufferID. The correct local repair is to stop the dispatcher from amplifying an unresolved authority conflict, then leave the owner-route correction to the wake/VFX owners.
+
+Scalability potential: Low/Middle/High/Ultra wake presentation collapses continuously to zero wake contribution through `_DynamicWakeParams=(0, lowTierWeight01, 0, 0)`. This is a fail-closed visual downgrade, not a gameplay truth change, and it does not alter `GlobalQualityWeight` authority, shader slot layout, save identity, or DTO shape.
+
+Hardware Impact: Dispatcher render cadence now avoids wake Vault lookups, wake buffer locks, NativeArray uploads, and active-count scans. The visual wake effect is disabled in this dispatcher path until ownership is repaired. Low-end i3/MX350 gains avoided ambiguous buffer work; high-end visual overkill is deferred rather than built on nondeterministic ownership.
+
+First 20 Minutes Route Impact: Early death/rebirth shader cover still uses respawn Dear Lie and thermal shader lanes. Dynamic wake visualization is not allowed to contaminate the shader dispatcher while its owner route is unresolved.
+
+## Decision 95 - Disabled Wake GPU Allocation And Compaction Fence Guard
+
+Problem: After wake ownership was failed closed, `GlobalShaderDispatcher.EnsureGpuBuffers()` still allocated `_wakeBuffer` and `_wakeVectorBuffer` as 16-row GPU StructuredBuffers. That retained dead render-surface cost for a route that intentionally no longer consumes wake Vault rows. The shader slot bridge also lacked a direct compaction-fence guard in the shared slot preparation path.
+
+Solution: Remove the disabled wake GPU buffers, their capacity constant, creation, and release. Bind `_DynamicWakes` and `_DynamicWakeVectors` to the existing one-row `_emptyFloat4Buffer` while `_DynamicWakeParams` carries zero active wake contribution. Add `vault.IsCompactionFenceActive` checks to `GlobalShaderDispatcher.TryResolveShaderGlobalSlotsLocked(...)` and `HectonShaderGlobalDataVaultBridge.TryPrepareSlotsVault(...)`.
+
+Rejected Alternatives: Keeping the disabled wake buffers for future VFX; binding null buffers; re-enabling wake reads under a preferred owner; adding a new wake BufferID from the SHINOBU lane. Future wake work needs a single owner and route card. Null shader buffers risk material-side undefined behavior, while the existing empty sentinel is a stable one-row StructuredBuffer.
+
+Scalability potential: Low/Middle/High/Ultra wake presentation stays continuously collapsed to zero until the owner route is repaired. Weak devices avoid two cold GPU allocations and any hidden wake surface residency. High/Ultra visual overkill is deferred until the wake fact has one owner; respawn Dear Lie and thermal shader lanes remain available.
+
+Hardware Impact: Removes two `GraphicsBuffer[16]` allocations from dispatcher setup and eliminates their teardown tracking. No runtime job, shader variant, DTO change, Vault ID, or BufferID mutation was introduced. Compaction-fence checks prevent shader slot preparation/resolution during Vault relocation.
+
+First 20 Minutes Route Impact: Early death/rebirth VisualSync still publishes `_HectonRespawnDearLieParams`. Dynamic wake shader bindings remain valid through the empty sentinel and cannot allocate or upload ambiguous wake data during first-session shader dispatch.
+
+## Decision 96 - Cold Helper Naming Read-Accessor Guard
+
+Problem: `ResolveProjectRoot()` built managed path strings, and `GetCsvScratch()` allocated a managed `byte[4096]` on first use. Both were cold paths, but their names sat inside the pure read-accessor namespace that architecture scans inspect for hidden allocation or global mutation.
+
+Solution: Rename `ResolveProjectRoot()` to `BuildProjectRootPathCold()` in SHINOBU respawn and the shader dispatcher. Rename `GetCsvScratch()` to `AcquireCsvScratchCold()` in the shader dispatcher. No behavior, ownership, DTO, BufferID, shader slot, or job graph changed.
+
+Rejected Alternatives: Leaving comments only; moving CSV scratch into a new Vault route; adding an analyzer suppression; broad-renaming all mathematical `Resolve*` helpers. The narrow fix removes the actual misleading names while leaving pure math resolvers and interface `Get*` methods intact.
+
+Scalability potential: Low/Middle/High/Ultra output unchanged. The value is auditability: cold path construction and first-use scratch allocation are explicit, while hot read facades remain cached/pure.
+
+Hardware Impact: No runtime microsecond claim. This is a source-level guard against future hidden allocation drift, not a performance patch.
+
+First 20 Minutes Route Impact: Early death/rebirth startup still builds CSV/dump paths once. Shader CSV override scratch still allocates only in the cold override-load path; the static read-accessor scan can now separate it from pure reads.
+
+## Decision 97 - Tiny Shader Job Demotion
+
+Problem: `GlobalShaderDispatcher.MockGlobalShaderDataJob` carried `[BurstCompile]` and `IJob`, but it was invoked through direct `.Execute()`. The work writes a handful of shader slots and is consumed immediately in the same locked dispatcher path, so scheduling it would create a same-frame schedule/readback problem, while direct execution makes the Burst job wrapper misleading.
+
+Solution: Demote the type to `MockGlobalShaderDataKernel`, remove `Unity.Burst` and `Unity.Jobs` from the dispatcher, and call `kernel.Run()`. The kernel remains a stack/value-type write over the already locked `NativeArray<float4>` slot view.
+
+Rejected Alternatives: Scheduling the job and completing it before command-buffer publication; leaving direct `.Execute()` under a Burst/IJob wrapper; converting the whole shader dispatch to a larger scheduled batch. The first option violates same-frame readback doctrine, the second is false architecture, and the third is too broad for a seven-slot scalar write.
+
+Scalability potential: Low/Middle/High/Ultra visual output unchanged. The kernel still uses continuous `lowTierWeight01` and shader-time curves. Weak devices avoid job-system overhead; high/ultra keep the same shader overkill scalars.
+
+Hardware Impact: No profiler microsecond claim. Static source removes one fake job surface and two unused using directives. Runtime behavior remains inline deterministic scalar math over a locked contiguous `float4` slot span.
+
+First 20 Minutes Route Impact: Early shader-global setup still writes fog/flow/weather slots in the same dispatcher phase, but no longer advertises a Burst job that is not scheduled.

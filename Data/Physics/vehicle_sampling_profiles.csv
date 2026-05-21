@@ -1,0 +1,4 @@
+vehicle,length_m,beam_m,draft_m,min_samples,max_samples,inset_m
+seed_ship_large,42.0,12.0,4.0,4,128,1.2
+submarine_heavy,28.0,8.0,3.2,4,96,0.8
+workboat_medium,16.0,5.5,1.8,4,48,0.5

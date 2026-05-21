@@ -1,0 +1,21 @@
+{
+    "name": "Hecton8.World.GeographySanity.Editor",
+    "rootNamespace": "Hecton8.Editor.GeographySanity",
+    "references": [
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

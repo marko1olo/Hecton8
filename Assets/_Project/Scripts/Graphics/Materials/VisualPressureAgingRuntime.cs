@@ -24,6 +24,19 @@ namespace Hecton8.Graphics.Materials
         [FieldOffset(48)] public float4 DepthAndPressure;         // xyz=localized AUP offset, w=pressure01
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct InstanceDegradationDTO
+    {
+        [FieldOffset(0)] public uint InstanceID;
+        [FieldOffset(4)] public float RustAmount;
+        [FieldOffset(8)] public float ScorchAmount;
+        [FieldOffset(12)] public float BioFouling;
+        [FieldOffset(16)] public float StructuralStress;
+        [FieldOffset(20)] public uint _pad0;
+        [FieldOffset(24)] public uint _pad1;
+        [FieldOffset(28)] public uint _pad2;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VisualAgingTuningDTO
     {
@@ -42,7 +55,7 @@ namespace Hecton8.Graphics.Materials
         [FieldOffset(48)] public uint GlassHashStride;
         [FieldOffset(52)] public uint ActiveCountOverride;
         [FieldOffset(56)] public float MockTemperatureC;
-        [FieldOffset(60)] public uint Reserved0;
+        [FieldOffset(60)] public float ScorchIntensityMultiplier;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -87,31 +100,59 @@ namespace Hecton8.Graphics.Materials
         [FieldOffset(60)] public uint Sequence;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct DegradationTelemetryEntry
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public int InstancesEvaluated;
+        [FieldOffset(12)] public int UploadedCount;
+        [FieldOffset(16)] public float AverageBaseStress01;
+        [FieldOffset(20)] public float MaxScorch01;
+        [FieldOffset(24)] public float GpuUploadMicroseconds;
+        [FieldOffset(28)] public float GlobalQualityWeight;
+        [FieldOffset(32)] public uint StateHash;
+        [FieldOffset(36)] public uint LayoutHash;
+        [FieldOffset(40)] public uint UploadedBytes;
+        [FieldOffset(44)] public uint CsvGeneration;
+        [FieldOffset(48)] public uint Sequence;
+        [FieldOffset(52)] public uint _pad0;
+        [FieldOffset(56)] public uint _pad1;
+        [FieldOffset(60)] public uint _pad2;
+    }
+
     public sealed unsafe class VisualPressureAgingRuntime
     {
         private const SystemID OwnerSystemId = SystemID.GraphicsMaterials;
         private const uint SystemHash = 0x53323139u; // S219
         private const int Capacity = StructuralIntegrityConstants.MaxNodeCapacity;
         private const int TelemetryFrameCount = 300;
-        private const int CsvScratchBytes = 4096;
+        private const int TelemetryDumpHeaderBytes = 32;
+        private const int TelemetryDumpSnapshotBytes = TelemetryDumpHeaderBytes + TelemetryFrameCount * 64 * 2;
+        private const int CsvScratchBytes = TelemetryDumpSnapshotBytes;
         private const int JobBatchSize = 64;
         private const float UploadFaultMicroseconds = 100.0f;
         private const uint DumpMagic = 0x56414745u; // VAGE
-        private const uint DumpVersion = 1u;
+        private const uint DumpVersion = 2u;
         private const string CsvRelativePath = "Data/Visuals/environmental_aging_rules.csv";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_219.bin";
+        private const string DegradationDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_219_Degradation.bin";
 
         private const uint FlagStructuralSource = 1u << 0;
         private const uint FlagMockSource = 1u << 1;
         private const uint FlagThermalSource = 1u << 2;
         private const uint FlagCsvLoaded = 1u << 3;
         private const uint FlagNoRollbackState = 1u << 4;
+        private const uint FlagExternalGenerationRefresh = 1u << 5;
+        private const uint FlagJobFencePending = 1u << 6;
         private const uint FlagLayoutFault = 1u << 29;
         private const uint FlagNonFinite = 1u << 30;
         private const uint FlagUploadFault = 1u << 31;
 
         private static readonly int AgingParamsId = Shader.PropertyToID("_GlobalBaseAgingParams");
         private static readonly int AgingRuntimeId = Shader.PropertyToID("_GlobalBaseAgingRuntime");
+        private static readonly int DegradationBufferId = Shader.PropertyToID("_GlobalUberNoirDegradation");
+        private static readonly int DegradationRuntimeId = Shader.PropertyToID("_GlobalUberNoirDegradationRuntime");
 
         private static VisualPressureAgingRuntime s_active;
         private static bool s_hasPendingEditorTuning;
@@ -122,9 +163,16 @@ namespace Hecton8.Graphics.Materials
         private VaultGenerationHandle<VisualAgingRuntimeDTO> _runtimeHandle;
         private VaultGenerationHandle<VisualAgingTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
+        private VaultGenerationHandle<InstanceDegradationDTO> _degradationHandle;
+        private VaultGenerationHandle<DegradationTelemetryEntry> _degradationTelemetryHandle;
+        private VaultGenerationHandle<int> _degradationTelemetryCursorHandle;
         private VaultGenerationHandle<VisualAgingTuningDTO> _tuningHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<float> _mockTemperatureHandle;
+        private VaultGenerationHandle<IntegrityStateDTO> _structuralStatesHandle;
+        private VaultGenerationHandle<double3> _structuralNodeAupsHandle;
+        private VaultGenerationHandle<StructuralTuningDTO> _structuralTuningHandle;
+        private VaultGenerationHandle<float> _thermalFrontMirrorHandle;
 
         private PreSimulationPhaseSystem _preSimulationPhase;
         private SimulationPhaseSystem _simulationPhase;
@@ -133,30 +181,49 @@ namespace Hecton8.Graphics.Materials
 
         private GraphicsBuffer _agingBufferA;
         private GraphicsBuffer _agingBufferB;
+        private GraphicsBuffer _degradationBufferA;
+        private GraphicsBuffer _degradationBufferB;
         private string _csvPath;
+        private string _degradationCsvPath;
         private string _dumpPath;
+        private string _degradationDumpPath;
+        private FileStream _dumpStream;
+        private FileStream _degradationDumpStream;
         private long _csvLastWriteTicks;
+        private long _degradationCsvLastWriteTicks;
         private int _lockedBufferMask;
         private int _activeCount;
         private int _uploadedCount;
         private int _readBufferIndex;
+        private int _degradationUploadedCount;
+        private int _degradationReadBufferIndex;
         private int _telemetryCursor;
+        private int _degradationTelemetryCursor;
         private uint _frame;
         private uint _csvGeneration = 1u;
         private uint _runtimeFlags = FlagMockSource | FlagNoRollbackState;
+        private uint _publishedFlags = FlagMockSource | FlagNoRollbackState;
         private float _payloadBlend01;
+        private float _publishedUploadMicroseconds;
+        private float _cachedGlobalQualityWeight;
         private bool _registeredPreSimulation;
         private bool _registeredSimulation;
         private bool _registeredPostSimulation;
         private bool _registeredVisualSync;
+        private JobHandle _scheduledSimulationHandle;
         private bool _vaultInitialized;
         private bool _defaultsInitialized;
         private bool _simulationScheduled;
         private bool _hasGeneratedPayload;
         private bool _agingDirty = true;
+        private bool _degradationDirty = true;
         private bool _dumpedFault;
+        private bool _dumpedDegradationFault;
+        private bool _dumpWriteFailureLogged;
+        private bool _degradationDumpWriteFailureLogged;
         private bool _shutdown;
         private bool _gizmoReadLocked;
+        private bool _degradationGizmoReadLocked;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -189,15 +256,25 @@ namespace Hecton8.Graphics.Materials
         public static bool ValidateLayout()
         {
             bool sizeValid = UnsafeUtility.SizeOf<VisualAgingParamsDTO>() == 64 &&
+                UnsafeUtility.SizeOf<InstanceDegradationDTO>() == 32 &&
                 UnsafeUtility.SizeOf<VisualAgingTuningDTO>() == 64 &&
                 UnsafeUtility.SizeOf<VisualAgingRuntimeDTO>() == 64 &&
-                UnsafeUtility.SizeOf<VisualAgingTelemetryEntry>() == 64;
+                UnsafeUtility.SizeOf<VisualAgingTelemetryEntry>() == 64 &&
+                UnsafeUtility.SizeOf<DegradationTelemetryEntry>() == 64;
 #if UNITY_EDITOR
             return sizeValid &&
                 Offset<VisualAgingParamsDTO>(nameof(VisualAgingParamsDTO.RustAndCorrosion)) == 0 &&
                 Offset<VisualAgingParamsDTO>(nameof(VisualAgingParamsDTO.SaltAndBiomass)) == 16 &&
                 Offset<VisualAgingParamsDTO>(nameof(VisualAgingParamsDTO.StressAndMicroFractures)) == 32 &&
-                Offset<VisualAgingParamsDTO>(nameof(VisualAgingParamsDTO.DepthAndPressure)) == 48;
+                Offset<VisualAgingParamsDTO>(nameof(VisualAgingParamsDTO.DepthAndPressure)) == 48 &&
+                Offset<InstanceDegradationDTO>(nameof(InstanceDegradationDTO.InstanceID)) == 0 &&
+                Offset<InstanceDegradationDTO>(nameof(InstanceDegradationDTO.RustAmount)) == 4 &&
+                Offset<InstanceDegradationDTO>(nameof(InstanceDegradationDTO.ScorchAmount)) == 8 &&
+                Offset<InstanceDegradationDTO>(nameof(InstanceDegradationDTO.BioFouling)) == 12 &&
+                Offset<InstanceDegradationDTO>(nameof(InstanceDegradationDTO.StructuralStress)) == 16 &&
+                Offset<InstanceDegradationDTO>(nameof(InstanceDegradationDTO._pad0)) == 20 &&
+                Offset<InstanceDegradationDTO>(nameof(InstanceDegradationDTO._pad1)) == 24 &&
+                Offset<InstanceDegradationDTO>(nameof(InstanceDegradationDTO._pad2)) == 28;
 #else
             return sizeValid;
 #endif
@@ -210,7 +287,8 @@ namespace Hecton8.Graphics.Materials
             float biomassTemperature,
             float glassThreshold,
             float temperatureBoost,
-            float qualityNoiseScale)
+            float qualityNoiseScale,
+            float scorchIntensity = 1.0f)
         {
             VisualAgingTuningDTO tuning = s_pendingEditorTuning;
             tuning.RustStressMultiplier = math.max(0.0f, SanitizeFloat(rustStress, tuning.RustStressMultiplier));
@@ -220,12 +298,13 @@ namespace Hecton8.Graphics.Materials
             tuning.GlassFractureThreshold = math.saturate(SanitizeFloat(glassThreshold, tuning.GlassFractureThreshold));
             tuning.TemperatureBoostMultiplier = math.max(0.0f, SanitizeFloat(temperatureBoost, tuning.TemperatureBoostMultiplier));
             tuning.QualityNoiseOctaveScale = math.saturate(SanitizeFloat(qualityNoiseScale, tuning.QualityNoiseOctaveScale));
+            tuning.ScorchIntensityMultiplier = math.max(0.0f, SanitizeFloat(scorchIntensity, tuning.ScorchIntensityMultiplier));
             tuning.CsvGeneration = unchecked(tuning.CsvGeneration + 1u);
             s_pendingEditorTuning = tuning;
             s_hasPendingEditorTuning = true;
 
             VisualPressureAgingRuntime active = s_active;
-            return active != null && active.ApplyPendingEditorTuningImmediate(true);
+            return active != null && active.ApplyPendingEditorTuningImmediate();
         }
 
         public static bool TryReadEditorTuning(
@@ -243,46 +322,13 @@ namespace Hecton8.Graphics.Materials
             if (active == null)
                 return false;
 
-            if (active._simulationScheduled)
+            if (active._simulationScheduled || !active._vaultInitialized)
                 return false;
 
-            IDataVault vault = active.ResolveVault(true);
-            if (vault == null || !active.EnsureVaultState(vault))
-                return false;
-
-            bool runtimeLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
-            if (!runtimeLocked)
-                return false;
-
-            bool tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-            if (!tuningLocked)
-            {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
-                return false;
-            }
-
-            try
-            {
-                vault.TryResolveHandle(in active._tuningHandle, out NativeArray<VisualAgingTuningDTO> tuningBuffer);
-                if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
-                    tuning = tuningBuffer[0];
-
-                vault.TryResolveHandle(in active._runtimeHandle, out NativeArray<VisualAgingRuntimeDTO> runtimeBuffer);
-                if (runtimeBuffer.IsCreated && runtimeBuffer.Length > 0)
-                {
-                    VisualAgingRuntimeDTO runtime = runtimeBuffer[0];
-                    activeCount = runtime.ActiveCount;
-                    uploadMicroseconds = runtime.LastUploadMicroseconds;
-                    flags = runtime.Flags | runtime.FaultFlags;
-                }
-
-                return true;
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
-            }
+            activeCount = active._hasGeneratedPayload ? active._activeCount : 0;
+            uploadMicroseconds = active._publishedUploadMicroseconds;
+            flags = active._publishedFlags;
+            return true;
         }
 
 #if UNITY_EDITOR
@@ -292,62 +338,145 @@ namespace Hecton8.Graphics.Materials
             if (active == null)
                 return false;
 
-            IDataVault vault = active.ResolveVault(true);
-            return vault != null &&
-                active.EnsureVaultState(vault) &&
-                active.ReloadCsvFromDisk(vault, true);
+            IDataVault vault = active.ResolveVault();
+            if (vault == null)
+                return false;
+
+            bool ready = active.HasCurrentCsvReloadState(vault) || active.TryInitializeVaultState(vault);
+            if (!ready)
+                return false;
+
+            active.RefreshExternalInputHandles(vault);
+            bool loadedAging = active.ReloadCsvFromDisk(vault, active._csvPath, ref active._csvLastWriteTicks, true);
+            bool loadedDegradation = false;
+            if (!string.Equals(active._csvPath, active._degradationCsvPath, StringComparison.OrdinalIgnoreCase))
+                loadedDegradation = active.ReloadCsvFromDisk(vault, active._degradationCsvPath, ref active._degradationCsvLastWriteTicks, true);
+            else
+                active._degradationCsvLastWriteTicks = active._csvLastWriteTicks;
+
+            return loadedAging | loadedDegradation;
         }
 #endif
 
-        public static bool TryAcquireAgingBufferRead(out NativeArray<VisualAgingParamsDTO> aging, out int activeCount)
+        public static bool TryOpenAgingBufferSnapshotLease(out NativeArray<VisualAgingParamsDTO>.ReadOnly aging, out int activeCount)
         {
             aging = default;
             activeCount = 0;
+#if !UNITY_EDITOR
+            return false;
+#else
             VisualPressureAgingRuntime active = s_active;
             if (active == null)
                 return false;
 
-            if (active._simulationScheduled)
+            if (active._simulationScheduled || active._gizmoReadLocked)
                 return false;
 
-            IDataVault vault = active.ResolveVault(true);
-            if (vault == null || !active.EnsureVaultState(vault))
+            IDataVault vault = active.ResolveVault();
+            if (vault == null || !active.HasCurrentOwnedCoreState(vault))
                 return false;
 
             if (!vault.TryLockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId))
                 return false;
 
             active._gizmoReadLocked = true;
-            vault.TryResolveHandle(in active._paramsHandle, out aging);
-            if (active._hasGeneratedPayload && aging.IsCreated && aging.Length > 0)
+            bool agingReady = IsCurrentOwnedBuffer(
+                vault,
+                in active._paramsHandle,
+                BufferID.VisualPressureAgingParams,
+                Capacity,
+                out NativeArray<VisualAgingParamsDTO> mutableAging);
+            if (active._hasGeneratedPayload && agingReady && mutableAging.IsCreated && mutableAging.Length > 0)
             {
-                activeCount = math.min(active._activeCount, aging.Length);
+                aging = mutableAging.AsReadOnly();
+                activeCount = math.min(active._activeCount, mutableAging.Length);
                 return true;
             }
 
-            ReleaseAgingBufferRead();
+            CloseAgingBufferSnapshotLease();
             aging = default;
             activeCount = 0;
             return false;
+#endif
         }
 
-        public static void ReleaseAgingBufferRead()
+        public static void CloseAgingBufferSnapshotLease()
         {
+#if UNITY_EDITOR
             VisualPressureAgingRuntime active = s_active;
             if (active == null || !active._gizmoReadLocked)
                 return;
 
-            IDataVault vault = active.ResolveVault(true);
+            IDataVault vault = active.ResolveVault();
             if (vault != null)
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
             active._gizmoReadLocked = false;
+#endif
+        }
+
+        public static bool TryOpenDegradationBufferSnapshotLease(out NativeArray<InstanceDegradationDTO>.ReadOnly degradation, out int activeCount)
+        {
+            degradation = default;
+            activeCount = 0;
+#if !UNITY_EDITOR
+            return false;
+#else
+            VisualPressureAgingRuntime active = s_active;
+            if (active == null)
+                return false;
+
+            if (active._simulationScheduled || active._degradationGizmoReadLocked)
+                return false;
+
+            IDataVault vault = active.ResolveVault();
+            if (vault == null || !active.HasCurrentOwnedCoreState(vault))
+                return false;
+
+            if (!vault.TryLockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId))
+                return false;
+
+            active._degradationGizmoReadLocked = true;
+            bool degradationReady = IsCurrentOwnedBuffer(
+                vault,
+                in active._degradationHandle,
+                BufferID.UberNoirInstanceDegradation,
+                Capacity,
+                out NativeArray<InstanceDegradationDTO> mutableDegradation);
+            if (active._hasGeneratedPayload && degradationReady && mutableDegradation.IsCreated && mutableDegradation.Length > 0)
+            {
+                degradation = mutableDegradation.AsReadOnly();
+                activeCount = math.min(active._activeCount, mutableDegradation.Length);
+                return true;
+            }
+
+            CloseDegradationBufferSnapshotLease();
+            degradation = default;
+            activeCount = 0;
+            return false;
+#endif
+        }
+
+        public static void CloseDegradationBufferSnapshotLease()
+        {
+#if UNITY_EDITOR
+            VisualPressureAgingRuntime active = s_active;
+            if (active == null || !active._degradationGizmoReadLocked)
+                return;
+
+            IDataVault vault = active.ResolveVault();
+            if (vault != null)
+                vault.TryUnlockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
+            active._degradationGizmoReadLocked = false;
+#endif
         }
 
         private VisualPressureAgingRuntime()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             _csvPath = Path.GetFullPath(Path.Combine(projectRoot, CsvRelativePath));
+            _degradationCsvPath = _csvPath;
             _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, DumpRelativePath));
+            _degradationDumpPath = Path.GetFullPath(Path.Combine(projectRoot, DegradationDumpRelativePath));
             _preSimulationPhase = new PreSimulationPhaseSystem(this); // COLD ALLOC: phase adapter - owner: SHINOBU_219
             _simulationPhase = new SimulationPhaseSystem(this);       // COLD ALLOC: phase adapter - owner: SHINOBU_219
             _postSimulationPhase = new PostSimulationPhaseSystem(this);// COLD ALLOC: phase adapter - owner: SHINOBU_219
@@ -359,6 +488,12 @@ namespace Hecton8.Graphics.Materials
             _shutdown = false;
             _vault = GlobalRegistry.DataVault;
             EnsureGraphicsBuffers();
+            EnsureDumpStreams();
+            if (_vault != null)
+            {
+                TryInitializeVaultState(_vault);
+                RefreshExternalInputHandles(_vault);
+            }
             RegisterDispatcherPhases();
             Application.quitting -= ShutdownActive;
             Application.quitting += ShutdownActive;
@@ -371,14 +506,17 @@ namespace Hecton8.Graphics.Materials
 
             _shutdown = true;
             Application.quitting -= ShutdownActive;
-            ReleaseAgingBufferRead();
+            CloseAgingBufferSnapshotLease();
+            CloseDegradationBufferSnapshotLease();
             UnlockJobBuffers();
             UnregisterDispatcherPhases();
             ReleaseGraphicsBuffers();
+            ReleaseDumpStreams();
             ReleaseVaultHandles(_vault);
             _vault = null;
             _vaultInitialized = false;
             _simulationScheduled = false;
+            _scheduledSimulationHandle = default;
             if (ReferenceEquals(s_active, this))
                 s_active = null;
         }
@@ -419,26 +557,22 @@ namespace Hecton8.Graphics.Materials
             }
         }
 
-        private IDataVault ResolveVault(bool allowRegistryLookup = false)
+        private IDataVault ResolveVault()
         {
-            IDataVault vault = _vault;
-            if (vault != null)
-                return vault;
-
-            if (!allowRegistryLookup)
-                return null;
-
-            vault = GlobalRegistry.DataVault;
-            _vault = vault;
-            return vault;
+            return _vault;
         }
 
         private void PreSimulationTick(in DispatcherTimingDTO timing)
         {
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultState(vault))
+            if (vault == null)
                 return;
 
+            if (!HasCurrentOwnedCoreState(vault))
+                return;
+
+            MarkExternalGenerationRefresh(vault);
+            RefreshGlobalQualitySnapshot(vault);
             ApplyPendingEditorTuningImmediate();
         }
 
@@ -451,20 +585,41 @@ namespace Hecton8.Graphics.Materials
                 return dependsOn;
 
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultState(vault))
+            if (vault == null || !HasCurrentOwnedCoreState(vault))
                 return dependsOn;
 
-            if (!TryLockJobBuffers(vault))
+            MarkExternalGenerationRefresh(vault);
+            float quality = RefreshGlobalQualitySnapshot(vault);
+            if (_hasGeneratedPayload && ShouldSkipSimulationFrame(context.Frame, quality))
+                return dependsOn;
+
+            UnlockJobBuffers();
+            NativeArray<float> temperatures = default;
+            _runtimeFlags &= ~FlagThermalSource;
+            bool hasThermalInput = AcquireThermalInputForSchedule(vault, out temperatures);
+
+            NativeArray<IntegrityStateDTO> states = default;
+            NativeArray<double3> nodeAups = default;
+            bool hasStructural = AcquireStructuralInputsForSchedule(vault, out states, out nodeAups);
+
+            NativeArray<StructuralTuningDTO> structuralTuning = default;
+            if (hasStructural)
+                AcquireStructuralTuningForSchedule(vault, out structuralTuning);
+
+            if (!TryLockJobBuffers(vault, !hasThermalInput, out bool mockTemperatureLocked))
                 return dependsOn;
 
             _frame = context.Frame;
-            if (!TryResolveJobBuffers(
+            if (!BindLockedJobBuffersForSchedule(
                     vault,
                     out NativeArray<VisualAgingParamsDTO> output,
+                    out NativeArray<InstanceDegradationDTO> degradation,
                     out NativeArray<VisualAgingRuntimeDTO> runtime,
                     out NativeArray<VisualAgingTuningDTO> tuning,
                     out NativeArray<VisualAgingTelemetryEntry> telemetry,
-                    out NativeArray<int> telemetryCursor))
+                    out NativeArray<int> telemetryCursor,
+                    out NativeArray<DegradationTelemetryEntry> degradationTelemetry,
+                    out NativeArray<int> degradationTelemetryCursor))
             {
                 UnlockJobBuffers();
                 return dependsOn;
@@ -473,21 +628,11 @@ namespace Hecton8.Graphics.Materials
             bool keepLocksForScheduledJob = false;
             try
             {
-                NativeArray<IntegrityStateDTO> states = default;
-                NativeArray<double3> nodeAups = default;
-                bool hasStructural = TryResolveStructuralInputs(vault, out states, out nodeAups);
-
-                NativeArray<StructuralTuningDTO> structuralTuning = default;
-                if (hasStructural)
-                    TryResolveStructuralTuning(vault, out structuralTuning);
-
-                NativeArray<float> temperatures = default;
-                _runtimeFlags &= ~FlagThermalSource;
-                if (!TryResolveThermalInput(vault, out temperatures))
-                    vault.TryResolveHandle(in _mockTemperatureHandle, out temperatures);
+                if (!hasThermalInput && mockTemperatureLocked &&
+                    !IsCurrentOwnedBuffer(vault, in _mockTemperatureHandle, BufferID.VisualPressureAgingMockTemperature, 1, out temperatures))
+                    temperatures = default;
 
                 VisualAgingTuningDTO localTuning = tuning[0];
-                float quality = ResolveGlobalQualityWeight();
                 int count = ResolveActiveCount(hasStructural, states, structuralTuning, localTuning, output.Length, quality);
                 _activeCount = count;
 
@@ -496,13 +641,14 @@ namespace Hecton8.Graphics.Materials
                 if (hasStructural)
                 {
                     _runtimeFlags = (_runtimeFlags & ~FlagMockSource) | FlagStructuralSource | FlagNoRollbackState;
-                    handle = new ProcessAgingParametersJob
+                    handle = new CompileDegradationParametersJob
                     {
                         States = states,
                         NodeAups = nodeAups,
                         StructuralTuning = structuralTuning,
                         Temperatures = temperatures,
                         Output = output,
+                        Degradation = degradation,
                         Tuning = localTuning,
                         OriginAup = originAup,
                         Frame = context.Frame,
@@ -513,9 +659,10 @@ namespace Hecton8.Graphics.Materials
                 else
                 {
                     _runtimeFlags = (_runtimeFlags & ~FlagStructuralSource) | FlagMockSource | FlagNoRollbackState;
-                    handle = new GenerateMockAgingDataJob
+                    handle = new GenerateMockDegradationDataJob
                     {
                         Output = output,
+                        Degradation = degradation,
                         Temperatures = temperatures,
                         Tuning = localTuning,
                         OriginAup = originAup,
@@ -525,16 +672,21 @@ namespace Hecton8.Graphics.Materials
                     }.Schedule(count, JobBatchSize, dependsOn);
                 }
 
+                int lastUploadedCount = math.min(_uploadedCount, _degradationUploadedCount);
+                uint lastUploadedBytes = (uint)(lastUploadedCount * (UnsafeUtility.SizeOf<VisualAgingParamsDTO>() + UnsafeUtility.SizeOf<InstanceDegradationDTO>()));
                 handle = new RecordVisualAgingTelemetryJob
                 {
                     Output = output,
+                    Degradation = degradation,
                     Runtime = runtime,
                     Telemetry = telemetry,
                     TelemetryCursor = telemetryCursor,
+                    DegradationTelemetry = degradationTelemetry,
+                    DegradationTelemetryCursor = degradationTelemetryCursor,
                     Frame = context.Frame,
                     ActiveCount = count,
-                    UploadedCount = _uploadedCount,
-                    UploadedBytes = (uint)(_uploadedCount * UnsafeUtility.SizeOf<VisualAgingParamsDTO>()),
+                    UploadedCount = lastUploadedCount,
+                    UploadedBytes = lastUploadedBytes,
                     GpuUploadMicroseconds = runtime[0].LastUploadMicroseconds,
                     GlobalQualityWeight = quality,
                     RuntimeFlags = _runtimeFlags,
@@ -543,7 +695,9 @@ namespace Hecton8.Graphics.Materials
                 }.Schedule(handle);
 
                 _simulationScheduled = true;
+                _scheduledSimulationHandle = handle;
                 _agingDirty = true;
+                _degradationDirty = true;
                 keepLocksForScheduledJob = true;
                 H8Memory.RegisterActiveJob(OwnerSystemId, handle);
                 return handle;
@@ -559,8 +713,17 @@ namespace Hecton8.Graphics.Materials
         {
             if (_simulationScheduled)
             {
+                if (!_scheduledSimulationHandle.IsCompleted)
+                {
+                    _runtimeFlags |= FlagJobFencePending;
+                    return;
+                }
+
+                _runtimeFlags &= ~FlagJobFencePending;
+                // SHINOBU_219: SystemDispatcher owns the completion fence; this phase only releases Vault locks.
                 UnlockJobBuffers();
                 _simulationScheduled = false;
+                _scheduledSimulationHandle = default;
                 _hasGeneratedPayload = _activeCount > 0;
             }
         }
@@ -571,7 +734,7 @@ namespace Hecton8.Graphics.Materials
                 return;
 
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultState(vault) || !EnsureGraphicsBuffers())
+            if (vault == null || !HasCurrentOwnedCoreState(vault) || !AreGraphicsBuffersReady())
                 return;
 
             bool paramsLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
@@ -602,63 +765,154 @@ namespace Hecton8.Graphics.Materials
                 return;
             }
 
+            bool degradationLocked = vault.TryLockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
+            if (!degradationLocked)
+            {
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryCursor, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryRing, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
+                return;
+            }
+
+            bool degradationTelemetryLocked = vault.TryLockBuffer(BufferID.UberNoirDegradationTelemetryRing, OwnerSystemId);
+            if (!degradationTelemetryLocked)
+            {
+                vault.TryUnlockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryCursor, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryRing, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
+                return;
+            }
+
+            bool degradationCursorLocked = vault.TryLockBuffer(BufferID.UberNoirDegradationTelemetryCursor, OwnerSystemId);
+            if (!degradationCursorLocked)
+            {
+                vault.TryUnlockBuffer(BufferID.UberNoirDegradationTelemetryRing, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryCursor, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryRing, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
+                return;
+            }
+
+            int telemetryDumpBytes = 0;
             try
             {
                 vault.TryResolveHandle(in _paramsHandle, out NativeArray<VisualAgingParamsDTO> aging);
+                vault.TryResolveHandle(in _degradationHandle, out NativeArray<InstanceDegradationDTO> degradation);
                 vault.TryResolveHandle(in _runtimeHandle, out NativeArray<VisualAgingRuntimeDTO> runtime);
                 vault.TryResolveHandle(in _telemetryHandle, out NativeArray<VisualAgingTelemetryEntry> telemetry);
                 vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<int> telemetryCursor);
-                if (!aging.IsCreated || !runtime.IsCreated || !telemetry.IsCreated || !telemetryCursor.IsCreated ||
-                    runtime.Length == 0 || telemetryCursor.Length == 0)
+                vault.TryResolveHandle(in _degradationTelemetryHandle, out NativeArray<DegradationTelemetryEntry> degradationTelemetry);
+                vault.TryResolveHandle(in _degradationTelemetryCursorHandle, out NativeArray<int> degradationTelemetryCursor);
+                if (!aging.IsCreated || !degradation.IsCreated || !runtime.IsCreated || !telemetry.IsCreated || !telemetryCursor.IsCreated ||
+                    !degradationTelemetry.IsCreated || !degradationTelemetryCursor.IsCreated ||
+                    runtime.Length == 0 || telemetryCursor.Length == 0 || degradationTelemetryCursor.Length == 0)
                     return;
 
                 int bufferCapacity = math.min(aging.Length, _agingBufferA != null ? _agingBufferA.count : 0);
-                int uploadCount = _hasGeneratedPayload ? math.clamp(_activeCount, 1, bufferCapacity) : 0;
+                int degradationCapacity = math.min(degradation.Length, _degradationBufferA != null ? _degradationBufferA.count : 0);
+                int uploadCount = _hasGeneratedPayload && bufferCapacity > 0 && degradationCapacity > 0
+                    ? math.clamp(_activeCount, 1, math.min(bufferCapacity, degradationCapacity))
+                    : 0;
                 float quality = ResolveGlobalQualityWeight();
                 long start = Stopwatch.GetTimestamp();
                 GraphicsBuffer readBuffer = SelectAgingBuffer(_readBufferIndex);
-                if (_hasGeneratedPayload && uploadCount > 0 && (_agingDirty || uploadCount != _uploadedCount))
+                GraphicsBuffer degradationReadBuffer = SelectDegradationBuffer(_degradationReadBufferIndex);
+                if (_hasGeneratedPayload && uploadCount > 0 && (_agingDirty || _degradationDirty || uploadCount != _uploadedCount || uploadCount != _degradationUploadedCount))
                 {
                     int writeIndex = _readBufferIndex ^ 1;
+                    int degradationWriteIndex = _degradationReadBufferIndex ^ 1;
                     GraphicsBuffer writeBuffer = SelectAgingBuffer(writeIndex);
+                    GraphicsBuffer degradationWriteBuffer = SelectDegradationBuffer(degradationWriteIndex);
                     UploadNativeArray(writeBuffer, aging, uploadCount);
+                    UploadDegradationNativeArray(degradationWriteBuffer, degradation, uploadCount);
                     _readBufferIndex = writeIndex;
+                    _degradationReadBufferIndex = degradationWriteIndex;
                     _uploadedCount = uploadCount;
+                    _degradationUploadedCount = uploadCount;
                     _agingDirty = false;
+                    _degradationDirty = false;
                     readBuffer = writeBuffer;
+                    degradationReadBuffer = degradationWriteBuffer;
                 }
                 else if (!_hasGeneratedPayload)
                 {
                     _uploadedCount = 0;
+                    _degradationUploadedCount = 0;
                 }
 
-                float targetPayloadBlend = uploadCount > 0 && readBuffer != null ? 1.0f : 0.0f;
+                float targetPayloadBlend = uploadCount > 0 && readBuffer != null && degradationReadBuffer != null ? 1.0f : 0.0f;
                 _payloadBlend01 = math.saturate(math.lerp(_payloadBlend01, targetPayloadBlend, math.lerp(0.25f, 0.85f, quality)));
                 Shader.SetGlobalBuffer(AgingParamsId, readBuffer);
+                Shader.SetGlobalBuffer(DegradationBufferId, degradationReadBuffer);
                 Shader.SetGlobalVector(AgingRuntimeId, new Vector4(uploadCount, _payloadBlend01, quality, (float)_runtimeFlags));
-                float uploadUs = ElapsedMicroseconds(start);
+                Shader.SetGlobalVector(DegradationRuntimeId, new Vector4(uploadCount, _payloadBlend01, quality, (float)_runtimeFlags));
+                float rawUploadUs = ElapsedMicroseconds(start);
+                bool uploadTimingFinite = math.isfinite(rawUploadUs);
+                float uploadUs = uploadTimingFinite ? math.max(0.0f, rawUploadUs) : 0.0f;
 
                 VisualAgingRuntimeDTO current = runtime[0];
                 _telemetryCursor = telemetryCursor[0];
+                _degradationTelemetryCursor = degradationTelemetryCursor[0];
                 current.Frame = _frame;
                 current.UploadedCount = uploadCount;
                 current.LastUploadMicroseconds = uploadUs;
                 current.GlobalQualityWeight = quality;
                 current.Flags = _runtimeFlags;
+                if (!uploadTimingFinite)
+                    current.FaultFlags |= FlagNonFinite;
                 if (uploadUs > UploadFaultMicroseconds)
                     current.FaultFlags |= FlagUploadFault;
                 if (!ValidateLayout())
                     current.FaultFlags |= FlagLayoutFault;
                 runtime[0] = current;
+                _publishedUploadMicroseconds = current.LastUploadMicroseconds;
+                _publishedFlags = current.Flags | current.FaultFlags;
 
-                if ((current.FaultFlags & (FlagUploadFault | FlagLayoutFault | FlagNonFinite)) != 0u && !_dumpedFault)
+                if ((current.FaultFlags & (FlagUploadFault | FlagLayoutFault | FlagNonFinite)) != 0u &&
+                    (!_dumpedFault || !_dumpedDegradationFault))
                 {
-                    DumpTelemetry(telemetry);
-                    _dumpedFault = true;
+                    bool dumpScratchLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingCsvScratch, OwnerSystemId);
+                    if (dumpScratchLocked)
+                    {
+                        try
+                        {
+                            bool scratchReady = IsCurrentOwnedBuffer(
+                                vault,
+                                in _csvScratchHandle,
+                                BufferID.VisualPressureAgingCsvScratch,
+                                CsvScratchBytes,
+                                out NativeArray<byte> dumpScratch);
+                            telemetryDumpBytes = scratchReady && dumpScratch.IsCreated
+                                ? CopyTelemetryDumpSnapshot(telemetry, degradationTelemetry, dumpScratch)
+                                : 0;
+                            if (telemetryDumpBytes > 0)
+                            {
+                                if (!_dumpedFault &&
+                                    TryWriteTelemetryDumpSnapshot(dumpScratch, telemetryDumpBytes, _dumpStream, ref _dumpWriteFailureLogged))
+                                    _dumpedFault = true;
+
+                                if (!_dumpedDegradationFault &&
+                                    TryWriteTelemetryDumpSnapshot(dumpScratch, telemetryDumpBytes, _degradationDumpStream, ref _degradationDumpWriteFailureLogged))
+                                    _dumpedDegradationFault = true;
+                            }
+                        }
+                        finally
+                        {
+                            vault.TryUnlockBuffer(BufferID.VisualPressureAgingCsvScratch, OwnerSystemId);
+                        }
+                    }
                 }
             }
             finally
             {
+                vault.TryUnlockBuffer(BufferID.UberNoirDegradationTelemetryCursor, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.UberNoirDegradationTelemetryRing, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryCursor, OwnerSystemId);
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryRing, OwnerSystemId);
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
@@ -666,23 +920,29 @@ namespace Hecton8.Graphics.Materials
             }
         }
 
-        private bool EnsureVaultState(IDataVault vault)
+        private bool TryInitializeVaultState(IDataVault vault)
         {
             if (vault == null)
                 return false;
 
             _vaultInitialized =
-                TryResolveOrAcquire(vault, ref _paramsHandle, BufferID.VisualPressureAgingParams, Capacity, NativeArrayOptions.UninitializedMemory, out NativeArray<VisualAgingParamsDTO> output) &&
-                TryResolveOrAcquire(vault, ref _runtimeHandle, BufferID.VisualPressureAgingRuntime, 1, NativeArrayOptions.ClearMemory, out NativeArray<VisualAgingRuntimeDTO> runtime) &&
-                TryResolveOrAcquire(vault, ref _telemetryHandle, BufferID.VisualPressureAgingTelemetryRing, TelemetryFrameCount, NativeArrayOptions.ClearMemory, out NativeArray<VisualAgingTelemetryEntry> telemetry) &&
-                TryResolveOrAcquire(vault, ref _telemetryCursorHandle, BufferID.VisualPressureAgingTelemetryCursor, 1, NativeArrayOptions.ClearMemory, out NativeArray<int> telemetryCursor) &&
-                TryResolveOrAcquire(vault, ref _tuningHandle, BufferID.VisualPressureAgingTuning, 1, NativeArrayOptions.ClearMemory, out NativeArray<VisualAgingTuningDTO> tuning) &&
-                TryResolveOrAcquire(vault, ref _csvScratchHandle, BufferID.VisualPressureAgingCsvScratch, CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out NativeArray<byte> csvScratch) &&
-                TryResolveOrAcquire(vault, ref _mockTemperatureHandle, BufferID.VisualPressureAgingMockTemperature, 1, NativeArrayOptions.ClearMemory, out NativeArray<float> mockTemperature) &&
+                EnsureVaultBufferForInit(vault, ref _paramsHandle, BufferID.VisualPressureAgingParams, Capacity, NativeArrayOptions.UninitializedMemory, out NativeArray<VisualAgingParamsDTO> output) &&
+                EnsureVaultBufferForInit(vault, ref _degradationHandle, BufferID.UberNoirInstanceDegradation, Capacity, NativeArrayOptions.UninitializedMemory, out NativeArray<InstanceDegradationDTO> degradation) &&
+                EnsureVaultBufferForInit(vault, ref _runtimeHandle, BufferID.VisualPressureAgingRuntime, 1, NativeArrayOptions.ClearMemory, out NativeArray<VisualAgingRuntimeDTO> runtime) &&
+                EnsureVaultBufferForInit(vault, ref _telemetryHandle, BufferID.VisualPressureAgingTelemetryRing, TelemetryFrameCount, NativeArrayOptions.ClearMemory, out NativeArray<VisualAgingTelemetryEntry> telemetry) &&
+                EnsureVaultBufferForInit(vault, ref _telemetryCursorHandle, BufferID.VisualPressureAgingTelemetryCursor, 1, NativeArrayOptions.ClearMemory, out NativeArray<int> telemetryCursor) &&
+                EnsureVaultBufferForInit(vault, ref _degradationTelemetryHandle, BufferID.UberNoirDegradationTelemetryRing, TelemetryFrameCount, NativeArrayOptions.ClearMemory, out NativeArray<DegradationTelemetryEntry> degradationTelemetry) &&
+                EnsureVaultBufferForInit(vault, ref _degradationTelemetryCursorHandle, BufferID.UberNoirDegradationTelemetryCursor, 1, NativeArrayOptions.ClearMemory, out NativeArray<int> degradationTelemetryCursor) &&
+                EnsureVaultBufferForInit(vault, ref _tuningHandle, BufferID.VisualPressureAgingTuning, 1, NativeArrayOptions.ClearMemory, out NativeArray<VisualAgingTuningDTO> tuning) &&
+                EnsureVaultBufferForInit(vault, ref _csvScratchHandle, BufferID.VisualPressureAgingCsvScratch, CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out NativeArray<byte> csvScratch) &&
+                EnsureVaultBufferForInit(vault, ref _mockTemperatureHandle, BufferID.VisualPressureAgingMockTemperature, 1, NativeArrayOptions.ClearMemory, out NativeArray<float> mockTemperature) &&
                 output.IsCreated &&
+                degradation.IsCreated &&
                 runtime.IsCreated &&
                 telemetry.IsCreated &&
                 telemetryCursor.IsCreated &&
+                degradationTelemetry.IsCreated &&
+                degradationTelemetryCursor.IsCreated &&
                 tuning.IsCreated &&
                 csvScratch.IsCreated &&
                 mockTemperature.IsCreated;
@@ -690,6 +950,8 @@ namespace Hecton8.Graphics.Materials
             if (!_vaultInitialized)
                 return false;
 
+            RefreshExternalInputHandles(vault);
+            RefreshGlobalQualitySnapshot(vault);
             if (!_defaultsInitialized || !ValidateLayout())
             {
                 if (!WriteDefaults(vault))
@@ -699,7 +961,42 @@ namespace Hecton8.Graphics.Materials
             return true;
         }
 
-        private static bool TryResolveOrAcquire<T>(
+        private bool HasCurrentCsvReloadState(IDataVault vault)
+        {
+            return HasCurrentOwnedCoreState(vault) &&
+                IsCurrentOwnedBuffer(vault, in _csvScratchHandle, BufferID.VisualPressureAgingCsvScratch, CsvScratchBytes, out NativeArray<byte> _);
+        }
+
+        private bool HasCurrentOwnedCoreState(IDataVault vault)
+        {
+            return vault != null &&
+                IsCurrentOwnedBuffer(vault, in _paramsHandle, BufferID.VisualPressureAgingParams, Capacity, out NativeArray<VisualAgingParamsDTO> _) &&
+                IsCurrentOwnedBuffer(vault, in _degradationHandle, BufferID.UberNoirInstanceDegradation, Capacity, out NativeArray<InstanceDegradationDTO> _) &&
+                IsCurrentOwnedBuffer(vault, in _runtimeHandle, BufferID.VisualPressureAgingRuntime, 1, out NativeArray<VisualAgingRuntimeDTO> _) &&
+                IsCurrentOwnedBuffer(vault, in _telemetryHandle, BufferID.VisualPressureAgingTelemetryRing, TelemetryFrameCount, out NativeArray<VisualAgingTelemetryEntry> _) &&
+                IsCurrentOwnedBuffer(vault, in _telemetryCursorHandle, BufferID.VisualPressureAgingTelemetryCursor, 1, out NativeArray<int> _) &&
+                IsCurrentOwnedBuffer(vault, in _degradationTelemetryHandle, BufferID.UberNoirDegradationTelemetryRing, TelemetryFrameCount, out NativeArray<DegradationTelemetryEntry> _) &&
+                IsCurrentOwnedBuffer(vault, in _degradationTelemetryCursorHandle, BufferID.UberNoirDegradationTelemetryCursor, 1, out NativeArray<int> _) &&
+                IsCurrentOwnedBuffer(vault, in _tuningHandle, BufferID.VisualPressureAgingTuning, 1, out NativeArray<VisualAgingTuningDTO> _);
+        }
+
+        private static bool IsCurrentOwnedBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return requiredLength > 0 &&
+                IsHandleForBuffer(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength;
+        }
+
+        private static bool EnsureVaultBufferForInit<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -712,9 +1009,7 @@ namespace Hecton8.Graphics.Materials
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (IsHandleValid(in handle) &&
-                vault.TryGetBufferGeneration(bufferId, out uint generation) &&
-                handle.Generation == generation &&
+            if (IsHandleForBuffer(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -723,7 +1018,7 @@ namespace Hecton8.Graphics.Materials
             }
 
             if (vault.TryGetGenerationHandle<T>(bufferId, out handle) &&
-                IsHandleValid(in handle) &&
+                IsHandleForBuffer(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -732,7 +1027,7 @@ namespace Hecton8.Graphics.Materials
             }
 
             handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
-            return IsHandleValid(in handle) &&
+            return IsHandleForBuffer(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength;
@@ -771,13 +1066,25 @@ namespace Hecton8.Graphics.Materials
                 return false;
             }
 
+            bool degradationLocked = vault.TryLockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
+            if (!degradationLocked)
+            {
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingMockTemperature, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
+                vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
+                return false;
+            }
+
             try
             {
                 vault.TryResolveHandle(in _paramsHandle, out NativeArray<VisualAgingParamsDTO> output);
+                vault.TryResolveHandle(in _degradationHandle, out NativeArray<InstanceDegradationDTO> degradation);
                 vault.TryResolveHandle(in _tuningHandle, out NativeArray<VisualAgingTuningDTO> tuning);
                 vault.TryResolveHandle(in _mockTemperatureHandle, out NativeArray<float> mockTemperature);
                 vault.TryResolveHandle(in _runtimeHandle, out NativeArray<VisualAgingRuntimeDTO> runtime);
                 if (!output.IsCreated || output.Length == 0 ||
+                    !degradation.IsCreated || degradation.Length == 0 ||
                     !tuning.IsCreated || tuning.Length == 0 ||
                     !mockTemperature.IsCreated || mockTemperature.Length == 0 ||
                     !runtime.IsCreated || runtime.Length == 0)
@@ -786,6 +1093,7 @@ namespace Hecton8.Graphics.Materials
                 }
 
                 output[0] = default;
+                degradation[0] = default;
                 tuning[0] = s_pendingEditorTuning = DefaultTuning(_csvGeneration);
                 mockTemperature[0] = 42.0f;
                 runtime[0] = new VisualAgingRuntimeDTO
@@ -797,16 +1105,21 @@ namespace Hecton8.Graphics.Materials
                 };
 
                 _runtimeFlags = FlagMockSource | FlagNoRollbackState;
+                _publishedFlags = _runtimeFlags;
+                _publishedUploadMicroseconds = 0.0f;
                 _activeCount = 0;
                 _uploadedCount = 0;
+                _degradationUploadedCount = 0;
                 _payloadBlend01 = 0.0f;
                 _hasGeneratedPayload = false;
                 _agingDirty = true;
+                _degradationDirty = true;
                 _defaultsInitialized = true;
                 return true;
             }
             finally
             {
+                vault.TryUnlockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingMockTemperature, OwnerSystemId);
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
                 vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
@@ -814,57 +1127,67 @@ namespace Hecton8.Graphics.Materials
             }
         }
 
-        private bool TryResolveJobBuffers(
+        private bool BindLockedJobBuffersForSchedule(
             IDataVault vault,
             out NativeArray<VisualAgingParamsDTO> output,
+            out NativeArray<InstanceDegradationDTO> degradation,
             out NativeArray<VisualAgingRuntimeDTO> runtime,
             out NativeArray<VisualAgingTuningDTO> tuning,
             out NativeArray<VisualAgingTelemetryEntry> telemetry,
-            out NativeArray<int> telemetryCursor)
+            out NativeArray<int> telemetryCursor,
+            out NativeArray<DegradationTelemetryEntry> degradationTelemetry,
+            out NativeArray<int> degradationTelemetryCursor)
         {
             output = default;
+            degradation = default;
             runtime = default;
             tuning = default;
             telemetry = default;
             telemetryCursor = default;
+            degradationTelemetry = default;
+            degradationTelemetryCursor = default;
             return vault != null &&
                 vault.TryResolveHandle(in _paramsHandle, out output) &&
+                vault.TryResolveHandle(in _degradationHandle, out degradation) &&
                 vault.TryResolveHandle(in _runtimeHandle, out runtime) &&
                 vault.TryResolveHandle(in _tuningHandle, out tuning) &&
                 vault.TryResolveHandle(in _telemetryHandle, out telemetry) &&
                 vault.TryResolveHandle(in _telemetryCursorHandle, out telemetryCursor) &&
+                vault.TryResolveHandle(in _degradationTelemetryHandle, out degradationTelemetry) &&
+                vault.TryResolveHandle(in _degradationTelemetryCursorHandle, out degradationTelemetryCursor) &&
                 output.IsCreated &&
+                degradation.IsCreated &&
                 runtime.IsCreated &&
                 tuning.IsCreated &&
                 telemetry.IsCreated &&
                 telemetryCursor.IsCreated &&
+                degradationTelemetry.IsCreated &&
+                degradationTelemetryCursor.IsCreated &&
                 output.Length > 0 &&
+                degradation.Length > 0 &&
                 runtime.Length > 0 &&
                 tuning.Length > 0 &&
                 telemetry.Length > 0 &&
-                telemetryCursor.Length > 0;
+                telemetryCursor.Length > 0 &&
+                degradationTelemetry.Length > 0 &&
+                degradationTelemetryCursor.Length > 0;
         }
 
-        private bool TryResolveStructuralInputs(
+        private bool AcquireStructuralInputsForSchedule(
             IDataVault vault,
             out NativeArray<IntegrityStateDTO> states,
             out NativeArray<double3> nodeAups)
         {
             states = default;
             nodeAups = default;
-            if (!vault.TryGetGenerationHandle(BufferID.StructuralIntegrityStates, out VaultGenerationHandle<IntegrityStateDTO> statesHandle) ||
-                !vault.TryGetGenerationHandle(BufferID.StructuralIntegrityNodeAups, out VaultGenerationHandle<double3> nodeAupsHandle) ||
-                !TryLockStructuralInputs(vault))
+            if (!TryLockStructuralInputs(vault))
             {
                 return false;
             }
 
-            bool resolved = vault.TryResolveHandle(in statesHandle, out states) &&
-                vault.TryResolveHandle(in nodeAupsHandle, out nodeAups) &&
-                states.IsCreated &&
-                nodeAups.IsCreated &&
-                states.Length > 0 &&
-                nodeAups.Length > 0;
+            bool resolved =
+                IsCurrentExternalBuffer(vault, in _structuralStatesHandle, BufferID.StructuralIntegrityStates, 1, out states) &&
+                IsCurrentExternalBuffer(vault, in _structuralNodeAupsHandle, BufferID.StructuralIntegrityNodeAups, 1, out nodeAups);
             if (!resolved)
             {
                 UnlockOptional(vault, BufferID.StructuralIntegrityNodeAups, 1 << 9);
@@ -874,31 +1197,28 @@ namespace Hecton8.Graphics.Materials
             return resolved;
         }
 
-        private bool TryResolveStructuralTuning(IDataVault vault, out NativeArray<StructuralTuningDTO> structuralTuning)
+        private bool AcquireStructuralTuningForSchedule(IDataVault vault, out NativeArray<StructuralTuningDTO> structuralTuning)
         {
             structuralTuning = default;
-            if (!vault.TryGetGenerationHandle(BufferID.StructuralIntegrityTuning, out VaultGenerationHandle<StructuralTuningDTO> structuralTuningHandle) ||
-                !TryLockOptional(vault, BufferID.StructuralIntegrityTuning, 1 << 10))
+            if (!TryLockOptional(vault, BufferID.StructuralIntegrityTuning, 1 << 10))
             {
                 return false;
             }
 
-            bool resolved = vault.TryResolveHandle(in structuralTuningHandle, out structuralTuning) &&
-                structuralTuning.IsCreated &&
-                structuralTuning.Length > 0;
+            bool resolved = IsCurrentExternalBuffer(vault, in _structuralTuningHandle, BufferID.StructuralIntegrityTuning, 1, out structuralTuning);
             if (!resolved)
                 UnlockOptional(vault, BufferID.StructuralIntegrityTuning, 1 << 10);
 
             return resolved;
         }
 
-        private bool ApplyPendingEditorTuningImmediate(bool allowRegistryLookup = false)
+        private bool ApplyPendingEditorTuningImmediate()
         {
             if (!s_hasPendingEditorTuning)
                 return true;
 
-            IDataVault vault = ResolveVault(allowRegistryLookup);
-            if (vault == null || !IsHandleValid(in _tuningHandle))
+            IDataVault vault = ResolveVault();
+            if (vault == null || !HasCurrentOwnedCoreState(vault))
                 return false;
 
             if (!vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId))
@@ -913,6 +1233,8 @@ namespace Hecton8.Graphics.Materials
                 tuning[0] = s_pendingEditorTuning;
                 _csvGeneration = math.max(_csvGeneration, s_pendingEditorTuning.CsvGeneration);
                 _agingDirty = true;
+                _degradationDirty = true;
+                _publishedFlags = _runtimeFlags;
                 s_hasPendingEditorTuning = false;
                 return true;
             }
@@ -922,20 +1244,13 @@ namespace Hecton8.Graphics.Materials
             }
         }
 
-        private bool TryResolveThermalInput(IDataVault vault, out NativeArray<float> temperatures)
+        private bool AcquireThermalInputForSchedule(IDataVault vault, out NativeArray<float> temperatures)
         {
             temperatures = default;
-            if (!vault.TryGetGenerationHandle(BufferID.ThermodynamicsTemperatureFrontMirror, out VaultGenerationHandle<float> frontMirrorHandle))
-            {
-                return false;
-            }
-
             if (!TryLockOptional(vault, BufferID.ThermodynamicsTemperatureFrontMirror, 1 << 7))
                 return false;
 
-            bool resolved = vault.TryResolveHandle(in frontMirrorHandle, out temperatures) &&
-                temperatures.IsCreated &&
-                temperatures.Length > 0;
+            bool resolved = IsCurrentExternalBuffer(vault, in _thermalFrontMirrorHandle, BufferID.ThermodynamicsTemperatureFrontMirror, 1, out temperatures);
             if (!resolved)
             {
                 UnlockOptional(vault, BufferID.ThermodynamicsTemperatureFrontMirror, 1 << 7);
@@ -946,15 +1261,19 @@ namespace Hecton8.Graphics.Materials
             return true;
         }
 
-        private bool TryLockJobBuffers(IDataVault vault)
+        private bool TryLockJobBuffers(IDataVault vault, bool tryLockMockTemperature, out bool mockTemperatureLocked)
         {
-            UnlockJobBuffers();
+            mockTemperatureLocked = false;
             if (!TryLock(vault, BufferID.VisualPressureAgingParams, 1 << 0)) return false;
             if (!TryLock(vault, BufferID.VisualPressureAgingRuntime, 1 << 1)) return false;
             if (!TryLock(vault, BufferID.VisualPressureAgingTelemetryRing, 1 << 2)) return false;
             if (!TryLock(vault, BufferID.VisualPressureAgingTelemetryCursor, 1 << 3)) return false;
             if (!TryLock(vault, BufferID.VisualPressureAgingTuning, 1 << 4)) return false;
-            if (!TryLock(vault, BufferID.VisualPressureAgingMockTemperature, 1 << 5)) return false;
+            if (tryLockMockTemperature)
+                mockTemperatureLocked = TryLockOptional(vault, BufferID.VisualPressureAgingMockTemperature, 1 << 5);
+            if (!TryLock(vault, BufferID.UberNoirInstanceDegradation, 1 << 6)) return false;
+            if (!TryLock(vault, BufferID.UberNoirDegradationTelemetryRing, 1 << 11)) return false;
+            if (!TryLock(vault, BufferID.UberNoirDegradationTelemetryCursor, 1 << 12)) return false;
             return true;
         }
 
@@ -1017,37 +1336,50 @@ namespace Hecton8.Graphics.Materials
                 return;
             }
 
-            if ((_lockedBufferMask & (1 << 10)) != 0) vault.TryUnlockBuffer(BufferID.StructuralIntegrityTuning, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 9)) != 0) vault.TryUnlockBuffer(BufferID.StructuralIntegrityNodeAups, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 8)) != 0) vault.TryUnlockBuffer(BufferID.StructuralIntegrityStates, OwnerSystemId);
-            if ((_lockedBufferMask & (1 << 7)) != 0) vault.TryUnlockBuffer(BufferID.ThermodynamicsTemperatureFrontMirror, OwnerSystemId);
+            if ((_lockedBufferMask & (1 << 12)) != 0) vault.TryUnlockBuffer(BufferID.UberNoirDegradationTelemetryCursor, OwnerSystemId);
+            if ((_lockedBufferMask & (1 << 11)) != 0) vault.TryUnlockBuffer(BufferID.UberNoirDegradationTelemetryRing, OwnerSystemId);
+            if ((_lockedBufferMask & (1 << 6)) != 0) vault.TryUnlockBuffer(BufferID.UberNoirInstanceDegradation, OwnerSystemId);
             if ((_lockedBufferMask & (1 << 5)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingMockTemperature, OwnerSystemId);
             if ((_lockedBufferMask & (1 << 4)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
             if ((_lockedBufferMask & (1 << 3)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryCursor, OwnerSystemId);
             if ((_lockedBufferMask & (1 << 2)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingTelemetryRing, OwnerSystemId);
             if ((_lockedBufferMask & (1 << 1)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingRuntime, OwnerSystemId);
             if ((_lockedBufferMask & (1 << 0)) != 0) vault.TryUnlockBuffer(BufferID.VisualPressureAgingParams, OwnerSystemId);
+            if ((_lockedBufferMask & (1 << 10)) != 0) vault.TryUnlockBuffer(BufferID.StructuralIntegrityTuning, OwnerSystemId);
+            if ((_lockedBufferMask & (1 << 9)) != 0) vault.TryUnlockBuffer(BufferID.StructuralIntegrityNodeAups, OwnerSystemId);
+            if ((_lockedBufferMask & (1 << 8)) != 0) vault.TryUnlockBuffer(BufferID.StructuralIntegrityStates, OwnerSystemId);
+            if ((_lockedBufferMask & (1 << 7)) != 0) vault.TryUnlockBuffer(BufferID.ThermodynamicsTemperatureFrontMirror, OwnerSystemId);
             _lockedBufferMask = 0;
         }
 
         private void ReleaseVaultHandles(IDataVault vault)
         {
-            if (vault == null)
-                return;
+            if (vault != null)
+            {
+                ReleaseVaultGenerationHandle(vault, ref _mockTemperatureHandle);
+                ReleaseVaultGenerationHandle(vault, ref _csvScratchHandle);
+                ReleaseVaultGenerationHandle(vault, ref _tuningHandle);
+                ReleaseVaultGenerationHandle(vault, ref _telemetryCursorHandle);
+                ReleaseVaultGenerationHandle(vault, ref _telemetryHandle);
+                ReleaseVaultGenerationHandle(vault, ref _degradationTelemetryCursorHandle);
+                ReleaseVaultGenerationHandle(vault, ref _degradationTelemetryHandle);
+                ReleaseVaultGenerationHandle(vault, ref _runtimeHandle);
+                ReleaseVaultGenerationHandle(vault, ref _degradationHandle);
+                ReleaseVaultGenerationHandle(vault, ref _paramsHandle);
+            }
 
-            ReleaseVaultGenerationHandle(vault, ref _mockTemperatureHandle);
-            ReleaseVaultGenerationHandle(vault, ref _csvScratchHandle);
-            ReleaseVaultGenerationHandle(vault, ref _tuningHandle);
-            ReleaseVaultGenerationHandle(vault, ref _telemetryCursorHandle);
-            ReleaseVaultGenerationHandle(vault, ref _telemetryHandle);
-            ReleaseVaultGenerationHandle(vault, ref _runtimeHandle);
-            ReleaseVaultGenerationHandle(vault, ref _paramsHandle);
+            _thermalFrontMirrorHandle = default;
+            _structuralTuningHandle = default;
+            _structuralNodeAupsHandle = default;
+            _structuralStatesHandle = default;
             _defaultsInitialized = false;
             _hasGeneratedPayload = false;
             _activeCount = 0;
             _uploadedCount = 0;
+            _degradationUploadedCount = 0;
             _payloadBlend01 = 0.0f;
             _agingDirty = true;
+            _degradationDirty = true;
         }
 
         private static void ReleaseVaultGenerationHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
@@ -1066,19 +1398,102 @@ namespace Hecton8.Graphics.Materials
                 handle.Generation != 0u;
         }
 
+        private static bool IsHandleForBuffer<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId && IsHandleValid(in handle);
+        }
+
+        private static bool IsExternalHandleValid<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                handle.SystemID != 0u &&
+                handle.Generation != 0u;
+        }
+
+        private static bool IsCurrentExternalBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                requiredLength > 0 &&
+                IsExternalHandleValid(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength;
+        }
+
+        private void RefreshExternalInputHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            bool stale =
+                IsExternalGenerationStale(vault, in _structuralStatesHandle, BufferID.StructuralIntegrityStates) ||
+                IsExternalGenerationStale(vault, in _structuralNodeAupsHandle, BufferID.StructuralIntegrityNodeAups) ||
+                IsExternalGenerationStale(vault, in _structuralTuningHandle, BufferID.StructuralIntegrityTuning) ||
+                IsExternalGenerationStale(vault, in _thermalFrontMirrorHandle, BufferID.ThermodynamicsTemperatureFrontMirror);
+            vault.TryGetGenerationHandle(BufferID.StructuralIntegrityStates, out _structuralStatesHandle);
+            vault.TryGetGenerationHandle(BufferID.StructuralIntegrityNodeAups, out _structuralNodeAupsHandle);
+            vault.TryGetGenerationHandle(BufferID.StructuralIntegrityTuning, out _structuralTuningHandle);
+            vault.TryGetGenerationHandle(BufferID.ThermodynamicsTemperatureFrontMirror, out _thermalFrontMirrorHandle);
+            if (stale)
+                _runtimeFlags |= FlagExternalGenerationRefresh;
+        }
+
+        private static bool IsExternalGenerationStale<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            return vault != null &&
+                IsExternalHandleValid(in handle, bufferId) &&
+                (!vault.TryResolveHandle(in handle, out NativeArray<T> buffer) ||
+                 !buffer.IsCreated);
+        }
+
         private bool EnsureGraphicsBuffers()
         {
             int stride = UnsafeUtility.SizeOf<VisualAgingParamsDTO>();
+            int degradationStride = UnsafeUtility.SizeOf<InstanceDegradationDTO>();
             bool changedA = EnsureBuffer(ref _agingBufferA, Capacity, stride);
             bool changedB = EnsureBuffer(ref _agingBufferB, Capacity, stride);
-            if (changedA || changedB)
+            bool degradationChangedA = EnsureBuffer(ref _degradationBufferA, Capacity, degradationStride);
+            bool degradationChangedB = EnsureBuffer(ref _degradationBufferB, Capacity, degradationStride);
+            if (changedA || changedB || degradationChangedA || degradationChangedB)
             {
                 _readBufferIndex = 0;
+                _degradationReadBufferIndex = 0;
                 _uploadedCount = 0;
+                _degradationUploadedCount = 0;
                 _agingDirty = true;
+                _degradationDirty = true;
             }
 
-            return _agingBufferA != null && _agingBufferB != null;
+            return _agingBufferA != null && _agingBufferB != null && _degradationBufferA != null && _degradationBufferB != null;
+        }
+
+        private bool AreGraphicsBuffersReady()
+        {
+            int stride = UnsafeUtility.SizeOf<VisualAgingParamsDTO>();
+            int degradationStride = UnsafeUtility.SizeOf<InstanceDegradationDTO>();
+            return _agingBufferA != null &&
+                _agingBufferB != null &&
+                _degradationBufferA != null &&
+                _degradationBufferB != null &&
+                _agingBufferA.count == Capacity &&
+                _agingBufferB.count == Capacity &&
+                _degradationBufferA.count == Capacity &&
+                _degradationBufferB.count == Capacity &&
+                _agingBufferA.stride == stride &&
+                _agingBufferB.stride == stride &&
+                _degradationBufferA.stride == degradationStride &&
+                _degradationBufferB.stride == degradationStride;
         }
 
         private static bool EnsureBuffer(ref GraphicsBuffer buffer, int count, int stride)
@@ -1087,7 +1502,7 @@ namespace Hecton8.Graphics.Materials
                 return false;
 
             ReleaseBuffer(ref buffer);
-            // COLD ALLOC: GraphicsBuffer[VisualAgingParamsDTO] - double-buffered LockBufferForWrite upload lane - owner: SHINOBU_219
+            // COLD ALLOC: GraphicsBuffer - double-buffered LockBufferForWrite upload lane - owner: SHINOBU_219
             buffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.Structured,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
@@ -1098,12 +1513,20 @@ namespace Hecton8.Graphics.Materials
 
         private void ReleaseGraphicsBuffers()
         {
+            Shader.SetGlobalVector(AgingRuntimeId, Vector4.zero);
+            Shader.SetGlobalVector(DegradationRuntimeId, Vector4.zero);
             ReleaseBuffer(ref _agingBufferA);
             ReleaseBuffer(ref _agingBufferB);
+            ReleaseBuffer(ref _degradationBufferA);
+            ReleaseBuffer(ref _degradationBufferB);
             _readBufferIndex = 0;
+            _degradationReadBufferIndex = 0;
             _uploadedCount = 0;
+            _degradationUploadedCount = 0;
             _payloadBlend01 = 0.0f;
+            _publishedUploadMicroseconds = 0.0f;
             _agingDirty = true;
+            _degradationDirty = true;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
@@ -1115,9 +1538,79 @@ namespace Hecton8.Graphics.Materials
             buffer = null;
         }
 
+        private void EnsureDumpStreams()
+        {
+            if (_dumpStream == null)
+                _dumpStream = OpenDumpStreamCold(_dumpPath, ref _dumpWriteFailureLogged);
+
+            if (_degradationDumpStream == null)
+                _degradationDumpStream = OpenDumpStreamCold(_degradationDumpPath, ref _degradationDumpWriteFailureLogged);
+        }
+
+        private static FileStream OpenDumpStreamCold(string path, ref bool failureLogged)
+        {
+            if (string.IsNullOrEmpty(path))
+                return null;
+
+            try
+            {
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                // COLD ALLOC: pre-opened black-box dump stream. Fault path writes spans only.
+                return new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, TelemetryDumpSnapshotBytes, FileOptions.WriteThrough);
+            }
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is NotSupportedException ||
+                exception is ArgumentException)
+            {
+                if (!failureLogged)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogError("Hecton8 VisualPressureAgingRuntime failed to open black-box dump stream.");
+#endif
+                    failureLogged = true;
+                }
+
+                return null;
+            }
+        }
+
+        private void ReleaseDumpStreams()
+        {
+            ReleaseDumpStream(ref _degradationDumpStream);
+            ReleaseDumpStream(ref _dumpStream);
+        }
+
+        private static void ReleaseDumpStream(ref FileStream stream)
+        {
+            if (stream == null)
+                return;
+
+            try
+            {
+                stream.Dispose();
+            }
+            catch (Exception exception) when (exception is IOException || exception is ObjectDisposedException)
+            {
+            }
+            finally
+            {
+                stream = null;
+            }
+        }
+
         private GraphicsBuffer SelectAgingBuffer(int index)
         {
             return (index & 1) == 0 ? _agingBufferA : _agingBufferB;
+        }
+
+        private GraphicsBuffer SelectDegradationBuffer(int index)
+        {
+            return (index & 1) == 0 ? _degradationBufferA : _degradationBufferB;
         }
 
         private static void UploadNativeArray(GraphicsBuffer destination, NativeArray<VisualAgingParamsDTO> source, int count)
@@ -1130,19 +1623,47 @@ namespace Hecton8.Graphics.Materials
                 return;
 
             NativeArray<VisualAgingParamsDTO> mapped = destination.LockBufferForWrite<VisualAgingParamsDTO>(0, safeCount);
-            void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-            void* src = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(source);
-            UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<VisualAgingParamsDTO>());
-            destination.UnlockBufferAfterWrite<VisualAgingParamsDTO>(safeCount);
+            try
+            {
+                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<VisualAgingParamsDTO>());
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<VisualAgingParamsDTO>(safeCount);
+            }
         }
 
-        private bool ReloadCsvFromDisk(IDataVault vault, bool force)
+        private static void UploadDegradationNativeArray(GraphicsBuffer destination, NativeArray<InstanceDegradationDTO> source, int count)
         {
-            if (string.IsNullOrEmpty(_csvPath) || !File.Exists(_csvPath))
+            if (destination == null || !source.IsCreated || count <= 0)
+                return;
+
+            int safeCount = math.min(math.min(count, source.Length), destination.count);
+            if (safeCount <= 0 || destination.stride != UnsafeUtility.SizeOf<InstanceDegradationDTO>())
+                return;
+
+            NativeArray<InstanceDegradationDTO> mapped = destination.LockBufferForWrite<InstanceDegradationDTO>(0, safeCount);
+            try
+            {
+                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<InstanceDegradationDTO>());
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<InstanceDegradationDTO>(safeCount);
+            }
+        }
+
+        private bool ReloadCsvFromDisk(IDataVault vault, string csvPath, ref long lastWriteTicks, bool force)
+        {
+            if (string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
                 return false;
 
-            long ticks = File.GetLastWriteTimeUtc(_csvPath).Ticks;
-            if (!force && ticks == _csvLastWriteTicks)
+            long ticks = File.GetLastWriteTimeUtc(csvPath).Ticks;
+            if (!force && ticks == lastWriteTicks)
                 return false;
 
             bool tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
@@ -1158,12 +1679,17 @@ namespace Hecton8.Graphics.Materials
 
             try
             {
-                vault.TryResolveHandle(in _csvScratchHandle, out NativeArray<byte> scratch);
+                bool scratchReady = IsCurrentOwnedBuffer(
+                    vault,
+                    in _csvScratchHandle,
+                    BufferID.VisualPressureAgingCsvScratch,
+                    CsvScratchBytes,
+                    out NativeArray<byte> scratch);
                 vault.TryResolveHandle(in _tuningHandle, out NativeArray<VisualAgingTuningDTO> tuning);
-                if (!scratch.IsCreated || !tuning.IsCreated || tuning.Length == 0)
+                if (!scratchReady || !scratch.IsCreated || !tuning.IsCreated || tuning.Length == 0)
                     return false;
 
-                int bytesRead = ReadFileIntoScratch(_csvPath, scratch);
+                int bytesRead = ReadFileIntoScratch(csvPath, scratch);
                 if (bytesRead <= 0)
                     return false;
 
@@ -1176,9 +1702,10 @@ namespace Hecton8.Graphics.Materials
                 tuning[0] = dto;
                 s_pendingEditorTuning = dto;
                 _csvGeneration = dto.CsvGeneration;
-                _csvLastWriteTicks = ticks;
+                lastWriteTicks = ticks;
                 _runtimeFlags |= FlagCsvLoaded;
                 _agingDirty = true;
+                _degradationDirty = true;
                 return true;
             }
             finally
@@ -1193,13 +1720,23 @@ namespace Hecton8.Graphics.Materials
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 long length = stream.Length;
-                if (length <= 0)
+                if (length <= 0 || length > scratch.Length)
                     return 0;
 
-                int readLength = (int)math.min(length, scratch.Length);
+                int readLength = (int)length;
                 byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
                 Span<byte> span = new Span<byte>(ptr, readLength);
-                return stream.Read(span);
+                int totalRead = 0;
+                while (totalRead < readLength)
+                {
+                    int read = stream.Read(span.Slice(totalRead));
+                    if (read <= 0)
+                        return 0;
+
+                    totalRead += read;
+                }
+
+                return totalRead;
             }
         }
 
@@ -1248,6 +1785,9 @@ namespace Hecton8.Graphics.Materials
 
         private static bool ApplyCsvValue(uint key, float value, ref VisualAgingTuningDTO tuning)
         {
+            if (!math.isfinite(value))
+                return false;
+
             switch (key)
             {
                 case 0x436ED2B4u: tuning.RustStressMultiplier = math.max(0.0f, value); return true;       // rust_stress
@@ -1257,38 +1797,103 @@ namespace Hecton8.Graphics.Materials
                 case 0xEDD0017Fu: tuning.GlassFractureThreshold = math.saturate(value); return true;      // glass_threshold
                 case 0x1BC3EDBDu: tuning.TemperatureBoostMultiplier = math.max(0.0f, value); return true; // temperature_boost
                 case 0x1ACB3DD7u: tuning.QualityNoiseOctaveScale = math.saturate(value); return true;     // quality_noise
+                case 0xBEE9A39Bu: tuning.ScorchIntensityMultiplier = math.max(0.0f, value); return true;  // scorch_intensity
+                case 0xFA06E7F3u: tuning.ScorchIntensityMultiplier = math.max(0.0f, value); return true;  // scorch_intensity_multiplier
                 default: return false;
             }
         }
 
-        private void DumpTelemetry(NativeArray<VisualAgingTelemetryEntry> telemetry)
+        private int CopyTelemetryDumpSnapshot(
+            NativeArray<VisualAgingTelemetryEntry> telemetry,
+            NativeArray<DegradationTelemetryEntry> degradationTelemetry,
+            NativeArray<byte> destination)
         {
-            if (!telemetry.IsCreated || telemetry.Length == 0 || string.IsNullOrEmpty(_dumpPath))
-                return;
-
-            string directory = Path.GetDirectoryName(_dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            if (!telemetry.IsCreated ||
+                !degradationTelemetry.IsCreated ||
+                !destination.IsCreated ||
+                telemetry.Length == 0 ||
+                degradationTelemetry.Length == 0 ||
+                string.IsNullOrEmpty(_dumpPath))
             {
-                Span<byte> header = stackalloc byte[24];
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), DumpMagic);
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), DumpVersion);
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8, 4), (uint)telemetry.Length);
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), (uint)UnsafeUtility.SizeOf<VisualAgingTelemetryEntry>());
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(16, 4), _frame);
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(20, 4), ResolveLayoutHash());
-                stream.Write(header);
+                return 0;
+            }
 
-                int cursorStart = WrapTelemetryIndex(_telemetryCursor, telemetry.Length);
-                for (int offset = 0; offset < telemetry.Length; offset++)
+            int visualEntrySize = UnsafeUtility.SizeOf<VisualAgingTelemetryEntry>();
+            int degradationEntrySize = UnsafeUtility.SizeOf<DegradationTelemetryEntry>();
+            int byteCount = TelemetryDumpHeaderBytes + telemetry.Length * visualEntrySize + degradationTelemetry.Length * degradationEntrySize;
+            if (destination.Length < byteCount)
+                return 0;
+
+            byte* destinationPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(destination);
+            Span<byte> destinationBytes = new Span<byte>(destinationPtr, destination.Length);
+            BinaryPrimitives.WriteUInt32LittleEndian(destinationBytes.Slice(0, 4), DumpMagic);
+            BinaryPrimitives.WriteUInt32LittleEndian(destinationBytes.Slice(4, 4), DumpVersion);
+            BinaryPrimitives.WriteUInt32LittleEndian(destinationBytes.Slice(8, 4), (uint)telemetry.Length);
+            BinaryPrimitives.WriteUInt32LittleEndian(destinationBytes.Slice(12, 4), (uint)visualEntrySize);
+            BinaryPrimitives.WriteUInt32LittleEndian(destinationBytes.Slice(16, 4), (uint)degradationTelemetry.Length);
+            BinaryPrimitives.WriteUInt32LittleEndian(destinationBytes.Slice(20, 4), (uint)degradationEntrySize);
+            BinaryPrimitives.WriteUInt32LittleEndian(destinationBytes.Slice(24, 4), _frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(destinationBytes.Slice(28, 4), ResolveLayoutHash());
+
+            int writeOffset = TelemetryDumpHeaderBytes;
+            int cursorStart = WrapTelemetryIndex(_telemetryCursor, telemetry.Length);
+            for (int offset = 0; offset < telemetry.Length; offset++)
+            {
+                int index = WrapTelemetryIndex(cursorStart + offset, telemetry.Length);
+                VisualAgingTelemetryEntry entry = telemetry[index];
+                ReadOnlySpan<byte> entryBytes = new ReadOnlySpan<byte>(&entry, visualEntrySize);
+                entryBytes.CopyTo(destinationBytes.Slice(writeOffset, visualEntrySize));
+                writeOffset += visualEntrySize;
+            }
+
+            int degradationCursorStart = WrapTelemetryIndex(_degradationTelemetryCursor, degradationTelemetry.Length);
+            for (int offset = 0; offset < degradationTelemetry.Length; offset++)
+            {
+                int index = WrapTelemetryIndex(degradationCursorStart + offset, degradationTelemetry.Length);
+                DegradationTelemetryEntry entry = degradationTelemetry[index];
+                ReadOnlySpan<byte> entryBytes = new ReadOnlySpan<byte>(&entry, degradationEntrySize);
+                entryBytes.CopyTo(destinationBytes.Slice(writeOffset, degradationEntrySize));
+                writeOffset += degradationEntrySize;
+            }
+
+            return byteCount;
+        }
+
+        private bool TryWriteTelemetryDumpSnapshot(NativeArray<byte> snapshot, int byteCount, FileStream stream, ref bool failureLogged)
+        {
+            if (!snapshot.IsCreated || byteCount <= 0 || byteCount > snapshot.Length || stream == null)
+                return false;
+
+            try
+            {
+                if (!stream.CanWrite)
+                    return false;
+
+                void* snapshotPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(snapshot);
+                ReadOnlySpan<byte> snapshotBytes = new ReadOnlySpan<byte>(snapshotPtr, byteCount);
+                stream.SetLength(0L);
+                stream.Position = 0L;
+                stream.Write(snapshotBytes);
+                stream.Flush();
+
+                return true;
+            }
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is NotSupportedException ||
+                exception is ObjectDisposedException ||
+                exception is ArgumentException)
+            {
+                if (!failureLogged)
                 {
-                    int index = WrapTelemetryIndex(cursorStart + offset, telemetry.Length);
-                    VisualAgingTelemetryEntry entry = telemetry[index];
-                    ReadOnlySpan<byte> entryBytes = new ReadOnlySpan<byte>(&entry, UnsafeUtility.SizeOf<VisualAgingTelemetryEntry>());
-                    stream.Write(entryBytes);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogError("Hecton8 VisualPressureAgingRuntime failed to write black-box dump.");
+#endif
+                    failureLogged = true;
                 }
+
+                return false;
             }
         }
 
@@ -1315,9 +1920,51 @@ namespace Hecton8.Graphics.Materials
             if (tuning.ActiveCountOverride > 0u)
                 requested = math.min(requested, (int)tuning.ActiveCountOverride);
 
-            float q = math.saturate(quality);
-            float budget = math.lerp(0.25f, 1.0f, q * q);
-            return math.clamp((int)math.ceil(requested * budget), 1, capacity);
+            float q = math.saturate(math.isfinite(quality) ? quality : 0.0f);
+            float smooth = q * q * (3.0f - 2.0f * q);
+            float capacityScale = math.lerp(0.125f, 1.0f, smooth);
+            int qualityCount = math.max(1, (int)math.ceil(requested * capacityScale));
+            return math.clamp(qualityCount, 1, math.min(requested, capacity));
+        }
+
+        private static bool ShouldSkipSimulationFrame(uint frame, float quality)
+        {
+            float keepProbability = ResolveSimulationKeepProbability(quality);
+            uint hash = MixFrameHash(frame ^ SystemHash);
+            float sample = (hash & 16777215u) * (1.0f / 16777215.0f);
+            return sample > keepProbability;
+        }
+
+        private static float ResolveSimulationKeepProbability(float quality)
+        {
+            float q = math.saturate(math.isfinite(quality) ? quality : 0.0f);
+            float smooth = q * q * (3.0f - 2.0f * q);
+            float targetHz = math.lerp(5.0f, 60.0f, smooth);
+            return math.saturate(targetHz * (1.0f / 60.0f));
+        }
+
+        private static uint MixFrameHash(uint x)
+        {
+            x ^= x >> 16;
+            x *= 0x7FEB352Du;
+            x ^= x >> 15;
+            x *= 0x846CA68Bu;
+            x ^= x >> 16;
+            return x;
+        }
+
+        private void MarkExternalGenerationRefresh(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            bool stale =
+                IsExternalGenerationStale(vault, in _structuralStatesHandle, BufferID.StructuralIntegrityStates) ||
+                IsExternalGenerationStale(vault, in _structuralNodeAupsHandle, BufferID.StructuralIntegrityNodeAups) ||
+                IsExternalGenerationStale(vault, in _structuralTuningHandle, BufferID.StructuralIntegrityTuning) ||
+                IsExternalGenerationStale(vault, in _thermalFrontMirrorHandle, BufferID.ThermodynamicsTemperatureFrontMirror);
+            if (stale)
+                _runtimeFlags |= FlagExternalGenerationRefresh;
         }
 
         private static VisualAgingTuningDTO DefaultTuning(uint generation)
@@ -1338,7 +1985,8 @@ namespace Hecton8.Graphics.Materials
                 RuntimeFlags = FlagNoRollbackState,
                 GlassHashStride = 5u,
                 ActiveCountOverride = 0u,
-                MockTemperatureC = 42.0f
+                MockTemperatureC = 42.0f,
+                ScorchIntensityMultiplier = 1.0f
             };
         }
 
@@ -1346,16 +1994,23 @@ namespace Hecton8.Graphics.Materials
         {
             uint hash = 2166136261u;
             hash = (hash ^ (uint)UnsafeUtility.SizeOf<VisualAgingParamsDTO>()) * 16777619u;
+            hash = (hash ^ (uint)UnsafeUtility.SizeOf<InstanceDegradationDTO>()) * 16777619u;
             hash = (hash ^ (uint)UnsafeUtility.SizeOf<VisualAgingTuningDTO>()) * 16777619u;
             hash = (hash ^ (uint)UnsafeUtility.SizeOf<VisualAgingRuntimeDTO>()) * 16777619u;
             hash = (hash ^ (uint)UnsafeUtility.SizeOf<VisualAgingTelemetryEntry>()) * 16777619u;
+            hash = (hash ^ (uint)UnsafeUtility.SizeOf<DegradationTelemetryEntry>()) * 16777619u;
             return hash;
         }
 
-        private static float ResolveGlobalQualityWeight()
+        private float RefreshGlobalQualitySnapshot(IDataVault vault)
         {
-            float quality = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(quality) ? quality : 0.0f);
+            _cachedGlobalQualityWeight = SanitizeFloat(SignalBusRegistry.GlobalQualityWeight01, 0.0f);
+            return ResolveGlobalQualityWeight();
+        }
+
+        private float ResolveGlobalQualityWeight()
+        {
+            return math.saturate(_cachedGlobalQualityWeight);
         }
 
         private static float SanitizeFloat(float value, float fallback)
@@ -1366,7 +2021,15 @@ namespace Hecton8.Graphics.Materials
         private static float ElapsedMicroseconds(long start)
         {
             long now = Stopwatch.GetTimestamp();
-            return (now - start) * 1000000.0f / Stopwatch.Frequency;
+            long frequency = Stopwatch.Frequency;
+            if (frequency <= 0L || now < start)
+                return 0.0f;
+
+            double elapsed = (double)(now - start) * 1000000.0 / frequency;
+            if (!(elapsed >= 0.0) || elapsed > 3.4028234663852886E+38)
+                return 0.0f;
+
+            return (float)elapsed;
         }
 
 #if UNITY_EDITOR
@@ -1429,8 +2092,9 @@ namespace Hecton8.Graphics.Materials
                 }
             }
 
-            ok = digits > 0;
-            return sign * value;
+            float result = sign * value;
+            ok = digits > 0 && math.isfinite(result);
+            return result;
         }
 
         private static int TrimTokenEnd(NativeArray<byte> bytes, int start, int end)
@@ -1531,13 +2195,14 @@ namespace Hecton8.Graphics.Materials
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct ProcessAgingParametersJob : IJobParallelFor
+    internal unsafe struct CompileDegradationParametersJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<IntegrityStateDTO> States;
         [ReadOnly, NoAlias] public NativeArray<double3> NodeAups;
         [ReadOnly, NoAlias] public NativeArray<StructuralTuningDTO> StructuralTuning;
         [ReadOnly, NoAlias] public NativeArray<float> Temperatures;
-        [NoAlias] public NativeArray<VisualAgingParamsDTO> Output;
+        [WriteOnly, NoAlias] public NativeArray<VisualAgingParamsDTO> Output;
+        [WriteOnly, NoAlias] public NativeArray<InstanceDegradationDTO> Degradation;
         public VisualAgingTuningDTO Tuning;
         public double3 OriginAup;
         public uint Frame;
@@ -1546,33 +2211,39 @@ namespace Hecton8.Graphics.Materials
 
         public void Execute(int index)
         {
-            if ((uint)index >= (uint)Output.Length || (uint)index >= (uint)States.Length || (uint)index >= (uint)NodeAups.Length)
+            if ((uint)index >= (uint)Output.Length || (uint)index >= (uint)Degradation.Length || (uint)index >= (uint)States.Length || (uint)index >= (uint)NodeAups.Length)
                 return;
 
-            IntegrityStateDTO state = States[index];
+            ref readonly IntegrityStateDTO state = ref UnsafeUtility.AsRef<IntegrityStateDTO>(
+                (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(States) + index * UnsafeUtility.SizeOf<IntegrityStateDTO>());
             double3 nodeAup = NodeAups[index];
             double3 seaLevel = StructuralTuning.IsCreated && StructuralTuning.Length > 0 ? StructuralTuning[0].SeaLevelAup : new double3(0.0);
-            float pressureScale = math.max(1.0f, Tuning.PressureScaleKPa);
-            float depthScale = math.max(1.0f, Tuning.DepthScaleMeters);
+            float pressureScale = math.max(1.0f, FiniteOr(Tuning.PressureScaleKPa, 5500.0f));
+            float depthScale = math.max(1.0f, FiniteOr(Tuning.DepthScaleMeters, 1400.0f));
             float3 local = Localize(nodeAup, OriginAup);
-            float depthMeters = math.max(0.0f, (float)(seaLevel.y - nodeAup.y));
+            double seaY = math.isfinite(seaLevel.y) ? seaLevel.y : 0.0;
+            double nodeY = math.isfinite(nodeAup.y) ? nodeAup.y : seaY;
+            float depthMeters = math.max(0.0f, (float)(seaY - nodeY));
             float pressure01 = math.saturate(FiniteOr(state.AppliedPressure, 0.0f) / pressureScale);
             float depth01 = math.saturate(depthMeters / depthScale);
             float stress01 = math.saturate(FiniteOr(state.CurrentStress, 0.0f));
             float buckling01 = math.saturate(FiniteOr(state.BucklingScalar, 0.0f));
             float baseWeakness01 = 1.0f - math.saturate(FiniteOr(state.BaseStrength, 1.0f));
             float temperatureC = ResolveTemperature(index);
-            float temperatureBoost = math.saturate(math.max(0.0f, temperatureC - 4.0f) * Tuning.TemperatureBoostMultiplier);
-            float q = math.saturate(GlobalQualityWeight);
+            float temperatureBoost = math.saturate(math.max(0.0f, temperatureC - 4.0f) * FiniteOr(Tuning.TemperatureBoostMultiplier, 0.018f));
+            float q = math.saturate(FiniteOr(GlobalQualityWeight, 0.0f));
             uint hash = Mix(state.NodeHash ^ ((uint)index * 747796405u) ^ Frame);
             float seed01 = (hash & 65535u) * (1.0f / 65535.0f);
-            float glassMask = ((hash % math.max(1u, Tuning.GlassHashStride)) == 0u) ? 1.0f : 0.0f;
-            float rust = math.saturate((stress01 * Tuning.RustStressMultiplier + depth01 * 0.35f + baseWeakness01 * 0.22f) * (1.0f + temperatureBoost));
-            float corrosion = math.saturate((pressure01 * Tuning.CorrosionPressureMultiplier + buckling01 * 0.45f) * (0.35f + q));
-            float pitting = math.saturate((stress01 + buckling01 + corrosion) * Tuning.PittingStressMultiplier * (0.55f + seed01 * 0.45f));
-            float salt = math.saturate(depth01 * Tuning.SaltDepthMultiplier + pressure01 * 0.18f);
-            float biomass = math.saturate(temperatureBoost * Tuning.BiomassTemperatureMultiplier + (1.0f - stress01) * depth01 * 0.18f);
-            float fracture = glassMask * math.saturate((stress01 + buckling01 * 0.55f - Tuning.GlassFractureThreshold) * math.rcp(math.max(0.01f, 1.0f - Tuning.GlassFractureThreshold)));
+            uint glassStride = math.max(1u, Tuning.GlassHashStride);
+            float glassThreshold = math.saturate(FiniteOr(Tuning.GlassFractureThreshold, 0.68f));
+            float glassMask = ((hash % glassStride) == 0u) ? 1.0f : 0.0f;
+            float rust = math.saturate((stress01 * FiniteOr(Tuning.RustStressMultiplier, 0.78f) + depth01 * 0.35f + baseWeakness01 * 0.22f) * (1.0f + temperatureBoost));
+            float corrosion = math.saturate((pressure01 * FiniteOr(Tuning.CorrosionPressureMultiplier, 0.62f) + buckling01 * 0.45f) * (0.35f + q));
+            float pitting = math.saturate((stress01 + buckling01 + corrosion) * FiniteOr(Tuning.PittingStressMultiplier, 0.74f) * (0.55f + seed01 * 0.45f));
+            float salt = math.saturate(depth01 * FiniteOr(Tuning.SaltDepthMultiplier, 0.58f) + pressure01 * 0.18f);
+            float biomass = math.saturate(temperatureBoost * FiniteOr(Tuning.BiomassTemperatureMultiplier, 0.42f) + (1.0f - stress01) * depth01 * 0.18f);
+            float scorch = math.saturate((temperatureBoost * FiniteOr(Tuning.ScorchIntensityMultiplier, 1.0f) + buckling01 * 0.18f + pressure01 * 0.08f) * (0.45f + q * 0.55f));
+            float fracture = glassMask * math.saturate((stress01 + buckling01 * 0.55f - glassThreshold) * math.rcp(math.max(0.01f, 1.0f - glassThreshold)));
 
             Output[index] = new VisualAgingParamsDTO
             {
@@ -1581,19 +2252,37 @@ namespace Hecton8.Graphics.Materials
                 StressAndMicroFractures = new float4(stress01, fracture, buckling01, q),
                 DepthAndPressure = new float4(local.x, local.y, local.z, pressure01)
             };
+
+            Degradation[index] = new InstanceDegradationDTO
+            {
+                InstanceID = (uint)index,
+                RustAmount = rust,
+                ScorchAmount = scorch,
+                BioFouling = biomass,
+                StructuralStress = stress01
+            };
         }
 
         private float ResolveTemperature(int index)
         {
+            float fallback = FiniteOr(Tuning.MockTemperatureC, 42.0f);
             if (!Temperatures.IsCreated || Temperatures.Length == 0)
-                return Tuning.MockTemperatureC;
+                return fallback;
 
             float temperature = Temperatures[index % Temperatures.Length];
-            return math.isfinite(temperature) ? temperature : Tuning.MockTemperatureC;
+            return math.isfinite(temperature) ? temperature : fallback;
         }
 
         private static float3 Localize(double3 aup, double3 origin)
         {
+            aup = new double3(
+                math.isfinite(aup.x) ? aup.x : origin.x,
+                math.isfinite(aup.y) ? aup.y : origin.y,
+                math.isfinite(aup.z) ? aup.z : origin.z);
+            origin = new double3(
+                math.isfinite(origin.x) ? origin.x : 0.0,
+                math.isfinite(origin.y) ? origin.y : 0.0,
+                math.isfinite(origin.z) ? origin.z : 0.0);
             double3 delta = aup - origin;
             delta = math.clamp(delta, new double3(-8192.0), new double3(8192.0));
             return new float3((float)delta.x, (float)delta.y, (float)delta.z);
@@ -1616,9 +2305,10 @@ namespace Hecton8.Graphics.Materials
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct GenerateMockAgingDataJob : IJobParallelFor
+    internal struct GenerateMockDegradationDataJob : IJobParallelFor
     {
-        [NoAlias] public NativeArray<VisualAgingParamsDTO> Output;
+        [WriteOnly, NoAlias] public NativeArray<VisualAgingParamsDTO> Output;
+        [WriteOnly, NoAlias] public NativeArray<InstanceDegradationDTO> Degradation;
         [ReadOnly, NoAlias] public NativeArray<float> Temperatures;
         public VisualAgingTuningDTO Tuning;
         public double3 OriginAup;
@@ -1628,7 +2318,7 @@ namespace Hecton8.Graphics.Materials
 
         public void Execute(int index)
         {
-            if ((uint)index >= (uint)Output.Length)
+            if ((uint)index >= (uint)Output.Length || (uint)index >= (uint)Degradation.Length)
                 return;
 
             uint hash = Mix(((uint)index + 1u) * 2891336453u ^ Frame ^ 0x53323139u);
@@ -1638,37 +2328,68 @@ namespace Hecton8.Graphics.Materials
             float stress01 = math.saturate(0.25f + t * 0.75f);
             float buckling = math.saturate(stress01 * 0.65f + Triangle(Frame * 0.0031f + t) * 0.18f);
             float temperatureC = ResolveTemperature();
-            float temperatureBoost = math.saturate(math.max(0.0f, temperatureC - 4.0f) * Tuning.TemperatureBoostMultiplier);
+            float temperatureBoost = math.saturate(math.max(0.0f, temperatureC - 4.0f) * FiniteOr(Tuning.TemperatureBoostMultiplier, 0.018f));
             float pressure01 = math.saturate(depth01 * 0.75f + stress01 * 0.25f);
-            float q = math.saturate(GlobalQualityWeight);
+            float q = math.saturate(FiniteOr(GlobalQualityWeight, 0.0f));
+            float scorch = math.saturate((temperatureBoost * FiniteOr(Tuning.ScorchIntensityMultiplier, 1.0f) + buckling * 0.16f + pressure01 * 0.08f) * (0.45f + q * 0.55f));
             float seed01 = ((hash >> 20) & 1023u) * (1.0f / 1023.0f);
-            float glassMask = ((hash % math.max(1u, Tuning.GlassHashStride)) == 0u) ? 1.0f : 0.0f;
-            double3 mockAup = OriginAup + new double3((index & 31) * 5.0, -depth01 * Tuning.DepthScaleMeters, (index >> 5) * 5.0);
+            uint glassStride = math.max(1u, Tuning.GlassHashStride);
+            float glassThreshold = math.saturate(FiniteOr(Tuning.GlassFractureThreshold, 0.68f));
+            float depthScale = math.max(1.0f, FiniteOr(Tuning.DepthScaleMeters, 1400.0f));
+            float glassMask = ((hash % glassStride) == 0u) ? 1.0f : 0.0f;
+            double3 mockAup = OriginAup + new double3((index & 31) * 5.0, -depth01 * depthScale, (index >> 5) * 5.0);
             float3 local = Localize(mockAup, OriginAup);
-            float fracture = glassMask * math.saturate((stress01 + buckling * 0.55f - Tuning.GlassFractureThreshold) * math.rcp(math.max(0.01f, 1.0f - Tuning.GlassFractureThreshold)));
+            float fracture = glassMask * math.saturate((stress01 + buckling * 0.55f - glassThreshold) * math.rcp(math.max(0.01f, 1.0f - glassThreshold)));
+            float rust = math.saturate((stress01 * FiniteOr(Tuning.RustStressMultiplier, 0.78f) + depth01 * 0.32f) * (1.0f + temperatureBoost));
+            float corrosion = math.saturate(pressure01 * FiniteOr(Tuning.CorrosionPressureMultiplier, 0.62f));
+            float pitting = math.saturate((stress01 + buckling) * FiniteOr(Tuning.PittingStressMultiplier, 0.74f));
+            float salt = math.saturate(depth01 * FiniteOr(Tuning.SaltDepthMultiplier, 0.58f));
+            float biomass = math.saturate(temperatureBoost * FiniteOr(Tuning.BiomassTemperatureMultiplier, 0.42f) + depth01 * 0.12f);
 
             Output[index] = new VisualAgingParamsDTO
             {
                 RustAndCorrosion = new float4(
-                    math.saturate((stress01 * Tuning.RustStressMultiplier + depth01 * 0.32f) * (1.0f + temperatureBoost)),
-                    math.saturate(pressure01 * Tuning.CorrosionPressureMultiplier),
-                    math.saturate((stress01 + buckling) * Tuning.PittingStressMultiplier),
+                    rust,
+                    corrosion,
+                    pitting,
                     seed01),
                 SaltAndBiomass = new float4(
-                    math.saturate(depth01 * Tuning.SaltDepthMultiplier),
-                    math.saturate(temperatureBoost * Tuning.BiomassTemperatureMultiplier + depth01 * 0.12f),
+                    salt,
+                    biomass,
                     temperatureBoost,
                     glassMask),
                 StressAndMicroFractures = new float4(stress01, fracture, buckling, q),
                 DepthAndPressure = new float4(local.x, local.y, local.z, pressure01)
             };
+
+            Degradation[index] = new InstanceDegradationDTO
+            {
+                InstanceID = (uint)index,
+                RustAmount = rust,
+                ScorchAmount = scorch,
+                BioFouling = biomass,
+                StructuralStress = stress01
+            };
         }
 
         private static float3 Localize(double3 aup, double3 origin)
         {
+            aup = new double3(
+                math.isfinite(aup.x) ? aup.x : origin.x,
+                math.isfinite(aup.y) ? aup.y : origin.y,
+                math.isfinite(aup.z) ? aup.z : origin.z);
+            origin = new double3(
+                math.isfinite(origin.x) ? origin.x : 0.0,
+                math.isfinite(origin.y) ? origin.y : 0.0,
+                math.isfinite(origin.z) ? origin.z : 0.0);
             double3 delta = aup - origin;
             delta = math.clamp(delta, new double3(-8192.0), new double3(8192.0));
             return new float3((float)delta.x, (float)delta.y, (float)delta.z);
+        }
+
+        private static float FiniteOr(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
         }
 
         private static float Triangle(float phase)
@@ -1678,11 +2399,12 @@ namespace Hecton8.Graphics.Materials
 
         private float ResolveTemperature()
         {
+            float fallback = FiniteOr(Tuning.MockTemperatureC, 42.0f);
             if (!Temperatures.IsCreated || Temperatures.Length == 0)
-                return Tuning.MockTemperatureC;
+                return fallback;
 
             float temperature = Temperatures[0];
-            return math.isfinite(temperature) ? temperature : Tuning.MockTemperatureC;
+            return math.isfinite(temperature) ? temperature : fallback;
         }
 
         private static uint Mix(uint x)
@@ -1700,9 +2422,12 @@ namespace Hecton8.Graphics.Materials
     internal struct RecordVisualAgingTelemetryJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<VisualAgingParamsDTO> Output;
+        [ReadOnly, NoAlias] public NativeArray<InstanceDegradationDTO> Degradation;
         [NoAlias] public NativeArray<VisualAgingRuntimeDTO> Runtime;
         [NoAlias] public NativeArray<VisualAgingTelemetryEntry> Telemetry;
         [NoAlias] public NativeArray<int> TelemetryCursor;
+        [NoAlias] public NativeArray<DegradationTelemetryEntry> DegradationTelemetry;
+        [NoAlias] public NativeArray<int> DegradationTelemetryCursor;
         public uint Frame;
         public int ActiveCount;
         public int UploadedCount;
@@ -1715,18 +2440,23 @@ namespace Hecton8.Graphics.Materials
 
         public void Execute()
         {
-            if (!Output.IsCreated || !Runtime.IsCreated || Runtime.Length == 0 || !Telemetry.IsCreated || Telemetry.Length == 0 ||
-                !TelemetryCursor.IsCreated || TelemetryCursor.Length == 0)
+            if (!Output.IsCreated || !Degradation.IsCreated || !Runtime.IsCreated || Runtime.Length == 0 || !Telemetry.IsCreated || Telemetry.Length == 0 ||
+                !TelemetryCursor.IsCreated || TelemetryCursor.Length == 0 ||
+                !DegradationTelemetry.IsCreated || DegradationTelemetry.Length == 0 ||
+                !DegradationTelemetryCursor.IsCreated || DegradationTelemetryCursor.Length == 0)
             {
                 return;
             }
 
-            int sampleCount = math.clamp(ActiveCount, 0, Output.Length);
-            int sampleBudget = math.max(16, (int)math.round(math.lerp(32.0f, 256.0f, math.saturate(GlobalQualityWeight))));
+            float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0.0f);
+            float uploadUs = math.isfinite(GpuUploadMicroseconds) ? GpuUploadMicroseconds : 0.0f;
+            int sampleCount = math.clamp(ActiveCount, 0, math.min(Output.Length, Degradation.Length));
+            int sampleBudget = math.max(16, (int)math.round(math.lerp(32.0f, 256.0f, q)));
             int stride = sampleCount > sampleBudget ? math.max(1, sampleCount / sampleBudget) : 1;
             float stressMean = 0.0f;
             float fractureMean = 0.0f;
             float tempMean = 0.0f;
+            float maxScorch = 0.0f;
             float maxDepth = 0.0f;
             uint activeGlassFractures = 0u;
             uint hash = 2166136261u;
@@ -1735,18 +2465,24 @@ namespace Hecton8.Graphics.Materials
             for (int i = 0; i < sampleCount && sampled < sampleBudget; i += stride)
             {
                 VisualAgingParamsDTO dto = Output[i];
+                InstanceDegradationDTO degradation = Degradation[i];
                 if (!math.all(math.isfinite(dto.RustAndCorrosion)) ||
                     !math.all(math.isfinite(dto.SaltAndBiomass)) ||
                     !math.all(math.isfinite(dto.StressAndMicroFractures)) ||
-                    !math.all(math.isfinite(dto.DepthAndPressure)))
+                    !math.all(math.isfinite(dto.DepthAndPressure)) ||
+                    !math.isfinite(degradation.RustAmount) ||
+                    !math.isfinite(degradation.ScorchAmount) ||
+                    !math.isfinite(degradation.BioFouling) ||
+                    !math.isfinite(degradation.StructuralStress))
                 {
                     faults |= 1u << 30;
                     continue;
                 }
 
-                stressMean += dto.StressAndMicroFractures.x;
+                stressMean += degradation.StructuralStress;
                 fractureMean += dto.StressAndMicroFractures.y;
                 tempMean += dto.SaltAndBiomass.z;
+                maxScorch = math.max(maxScorch, math.saturate(degradation.ScorchAmount));
                 maxDepth = math.max(maxDepth, math.saturate(math.abs(dto.DepthAndPressure.y) * 0.0007142857f));
                 if (dto.SaltAndBiomass.w > 0.5f && dto.StressAndMicroFractures.y > 0.01f)
                     activeGlassFractures++;
@@ -1757,8 +2493,9 @@ namespace Hecton8.Graphics.Materials
 
             float inv = sampled > 0 ? math.rcp(sampled) : 0.0f;
             int cursor = WrapTelemetryIndex(TelemetryCursor[0], Telemetry.Length);
+            int degradationCursor = WrapTelemetryIndex(DegradationTelemetryCursor[0], DegradationTelemetry.Length);
             uint sequence = Runtime[0].Sequence + 1u;
-            float cpuEstimateUs = ActiveCount * math.lerp(0.010f, 0.026f, math.saturate(GlobalQualityWeight));
+            float cpuEstimateUs = ActiveCount * math.lerp(0.010f, 0.026f, q);
             VisualAgingTelemetryEntry entry = new VisualAgingTelemetryEntry
             {
                 Frame = Frame,
@@ -1768,27 +2505,44 @@ namespace Hecton8.Graphics.Materials
                 ActiveCount = ActiveCount,
                 UploadedCount = UploadedCount,
                 UploadedBytes = UploadedBytes,
-                GlobalQualityWeight = math.saturate(GlobalQualityWeight),
+                GlobalQualityWeight = q,
                 MaxDepth01 = maxDepth,
                 AverageStress01 = stressMean * inv,
                 ActiveGlassFractures = activeGlassFractures,
                 MeanTemperatureBoost01 = tempMean * inv,
                 CpuEstimateMicroseconds = cpuEstimateUs,
-                GpuUploadMicroseconds = GpuUploadMicroseconds,
+                GpuUploadMicroseconds = uploadUs,
                 CsvGeneration = CsvGeneration,
                 Sequence = sequence
             };
 
             Telemetry[cursor] = entry;
             TelemetryCursor[0] = (cursor + 1) % Telemetry.Length;
+            DegradationTelemetry[degradationCursor] = new DegradationTelemetryEntry
+            {
+                Frame = Frame,
+                Flags = RuntimeFlags | faults,
+                InstancesEvaluated = ActiveCount,
+                UploadedCount = UploadedCount,
+                AverageBaseStress01 = stressMean * inv,
+                MaxScorch01 = maxScorch,
+                GpuUploadMicroseconds = uploadUs,
+                GlobalQualityWeight = q,
+                StateHash = hash,
+                LayoutHash = LayoutHash,
+                UploadedBytes = UploadedBytes,
+                CsvGeneration = CsvGeneration,
+                Sequence = sequence
+            };
+            DegradationTelemetryCursor[0] = (degradationCursor + 1) % DegradationTelemetry.Length;
             Runtime[0] = new VisualAgingRuntimeDTO
             {
                 Frame = Frame,
                 Flags = RuntimeFlags,
                 ActiveCount = ActiveCount,
                 UploadedCount = UploadedCount,
-                GlobalQualityWeight = math.saturate(GlobalQualityWeight),
-                LastUploadMicroseconds = GpuUploadMicroseconds,
+                GlobalQualityWeight = q,
+                LastUploadMicroseconds = uploadUs,
                 LastCpuEstimateMicroseconds = cpuEstimateUs,
                 MaxDepth01 = maxDepth,
                 StateHash = hash,

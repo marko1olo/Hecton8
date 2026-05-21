@@ -426,8 +426,8 @@ namespace Hecton8.EditorTools
                 if (tool == null)
                     continue;
 
-                ValidateOverride(tool, path, nameof(PlayerTool.GetOperationalSummary), ref errorCount, ref warningCount);
-                ValidateOverride(tool, path, nameof(PlayerTool.GetOperationalDirective), ref errorCount, ref warningCount);
+                ValidateOverride(tool, path, nameof(PlayerTool.BuildLegacyOperationalSummaryString), ref errorCount, ref warningCount);
+                ValidateOverride(tool, path, nameof(PlayerTool.BuildLegacyOperationalDirectiveString), ref errorCount, ref warningCount);
             }
 
             HUDQuickBar quickBar = FindSceneObjectIncludingInactive<HUDQuickBar>();

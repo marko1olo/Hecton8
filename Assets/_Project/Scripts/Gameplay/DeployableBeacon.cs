@@ -298,7 +298,7 @@ namespace Hecton8.Gameplay
             RefreshCachedAup();
 
             // Calculate current depth
-            float currentDepth = -_cachedTransform.position.y;
+            float currentDepth = -ResolveRuntimePosition().y;
 
             // Calculate depth error
             float depthError = targetDepth - currentDepth;
@@ -393,8 +393,13 @@ namespace Hecton8.Gameplay
 
         private void RefreshCachedAup()
         {
-            if (TryResolveAupFromRuntimeOrigin(_cachedTransform.position, out AbsoluteUniversePosition beaconAup))
+            if (TryResolveAupFromRuntimeOrigin(ResolveRuntimePosition(), out AbsoluteUniversePosition beaconAup))
                 _cachedAup = beaconAup;
+        }
+
+        private Vector3 ResolveRuntimePosition()
+        {
+            return _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(
@@ -410,13 +415,13 @@ namespace Hecton8.Gameplay
             }
 
             AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!MathGuard.IsFinite(in originAup))
+            if (!originAup.IsFinite())
                 return false;
 
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return MathGuard.IsFinite(in positionAup);
+            return positionAup.IsFinite();
         }
 
         private void TryRegisterBeacon()

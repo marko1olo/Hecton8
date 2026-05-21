@@ -68,6 +68,9 @@ RUNTIME_AUP_BRIDGE_REVIEW = re.compile(
     r"AbsoluteUniversePosition\.FromRuntimePosition|"
     r"HectonFloatingOrigin\.ToAbsoluteUniversePositionDouble3"
 )
+LEGACY_ABSOLUTE_FLOAT_PAYLOAD_REVIEW = re.compile(
+    r"new\s+(?:float3|Vector3)\s*\([^;\n]*\(float\)\s*[^,;\n]*(?:absolute|Absolute)[A-Za-z0-9_\.]*"
+)
 
 SKIP_DIR_NAMES = {
     ".git",
@@ -136,16 +139,19 @@ def scan_sources(source_root: Path, sample_limit: int) -> dict[str, Any]:
     distance_reviews: list[dict[str, Any]] = []
     transform_distance_reviews: list[dict[str, Any]] = []
     runtime_aup_bridge_reviews: list[dict[str, Any]] = []
+    legacy_absolute_payload_reviews: list[dict[str, Any]] = []
 
     strict_by_file: Counter[str] = Counter()
     direct_by_file: Counter[str] = Counter()
     component_by_file: Counter[str] = Counter()
     runtime_aup_bridge_by_file: Counter[str] = Counter()
+    legacy_absolute_payload_by_file: Counter[str] = Counter()
     approved_helper_calls = 0
     broad_transform_count = 0
     distance_review_count = 0
     transform_distance_review_count = 0
     runtime_aup_bridge_review_count = 0
+    legacy_absolute_payload_review_count = 0
     direct_cast_count = 0
     runtime_component_count = 0
     editor_component_count = 0
@@ -251,6 +257,20 @@ def scan_sources(source_root: Path, sample_limit: int) -> dict[str, Any]:
                     sample_limit,
                 )
 
+            if (
+                LEGACY_ABSOLUTE_FLOAT_PAYLOAD_REVIEW.search(line)
+                and "AupPrecisionMath." not in line
+                and not scanner_self_diagnostic
+            ):
+                legacy_absolute_payload_review_count += 1
+                rel = normalize_path(file_path)
+                legacy_absolute_payload_by_file[rel] += 1
+                append_limited(
+                    legacy_absolute_payload_reviews,
+                    finding(file_path, index, "LEGACY_ABSOLUTE_FLOAT_PAYLOAD_REVIEW", line),
+                    sample_limit,
+                )
+
     return {
         "filesScanned": len(files),
         "approvedHelperCalls": approved_helper_calls,
@@ -262,6 +282,7 @@ def scan_sources(source_root: Path, sample_limit: int) -> dict[str, Any]:
         "floatDistanceReviewCount": distance_review_count,
         "transformDistanceReviewCount": transform_distance_review_count,
         "runtimeAupBridgeReviewCount": runtime_aup_bridge_review_count,
+        "legacyAbsoluteFloatPayloadReviewCount": legacy_absolute_payload_review_count,
         "blockedCastFindings": blocked_casts,
         "editorComponentFloatAupCastReviews": editor_reviews,
         "strictTransformAuthorityFindings": strict_transform,
@@ -269,6 +290,7 @@ def scan_sources(source_root: Path, sample_limit: int) -> dict[str, Any]:
         "floatDistanceFindings": distance_reviews,
         "transformDistanceFindings": transform_distance_reviews,
         "runtimeAupBridgeFindings": runtime_aup_bridge_reviews,
+        "legacyAbsoluteFloatPayloadFindings": legacy_absolute_payload_reviews,
         "directAupFloat3CastByFile": sorted(
             ({"file": file, "count": count} for file, count in direct_by_file.items()),
             key=lambda row: (-row["count"], row["file"]),
@@ -283,6 +305,10 @@ def scan_sources(source_root: Path, sample_limit: int) -> dict[str, Any]:
         ),
         "runtimeAupBridgeByFile": sorted(
             ({"file": file, "count": count} for file, count in runtime_aup_bridge_by_file.items()),
+            key=lambda row: (-row["count"], row["file"]),
+        ),
+        "legacyAbsoluteFloatPayloadByFile": sorted(
+            ({"file": file, "count": count} for file, count in legacy_absolute_payload_by_file.items()),
             key=lambda row: (-row["count"], row["file"]),
         ),
     }
@@ -350,6 +376,7 @@ def upsert_math_report(math_report_path: Path, full_report_path: Path, payload: 
         "blocked_transform_authority_reads": counts["strictTransformAuthorityReadCount"],
         "strict_transform_authority_files": len(counts["strictTransformAuthorityByFile"]),
         "runtime_aup_bridge_reviews": counts["runtimeAupBridgeReviewCount"],
+        "legacy_absolute_float_payload_reviews": counts["legacyAbsoluteFloatPayloadReviewCount"],
         "layout_validation_failures": payload["layoutValidationFailures"],
         "precision_rule": payload["precisionRule"],
         "transform_rule": payload["transformRule"],
@@ -358,6 +385,7 @@ def upsert_math_report(math_report_path: Path, full_report_path: Path, payload: 
         "verification": (
             "CLI gate: direct AUP float3 cast and runtime component cast counts are zero; "
             "strict Transform.position authority reads are zero; runtime AUP bridge reviews track hidden bridges; "
+            "legacy absolute float payload reviews track float DTO lanes that still need double proof migration; "
             "Unity import/Burst/profiler pending; no dotnet build launched by this gate."
         ),
     }
@@ -392,6 +420,7 @@ def print_summary(payload: dict[str, Any], rows: list[str]) -> None:
     print(f"strictTransformAuthorityReadCount={counts['strictTransformAuthorityReadCount']}")
     print(f"strictTransformAuthorityFileCount={len(counts['strictTransformAuthorityByFile'])}")
     print(f"runtimeAupBridgeReviewCount={counts['runtimeAupBridgeReviewCount']}")
+    print(f"legacyAbsoluteFloatPayloadReviewCount={counts['legacyAbsoluteFloatPayloadReviewCount']}")
     for row in counts["strictTransformAuthorityByFile"][:12]:
         print(f"strictByFile={row['count']} {row['file']}")
     if rows:

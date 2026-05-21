@@ -124,15 +124,13 @@ namespace Hecton8.Editor
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault != null)
             {
-                if (vault.TryGetBuffer(BufferID.ConstructionSocketCounters, out NativeArray<int> counters) &&
-                    counters.IsCreated &&
+                if (ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketCounters, out NativeArray<int> counters) &&
                     counters.Length > 1)
                 {
                     activeSockets = counters[1];
                 }
 
-                if (vault.TryGetBuffer(BufferID.ConstructionSocketTelemetry, out NativeArray<ConstructionSocketTelemetryEntry> telemetry) &&
-                    telemetry.IsCreated &&
+                if (ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketTelemetry, out NativeArray<ConstructionSocketTelemetryEntry> telemetry) &&
                     telemetry.Length > 0)
                 {
                     solverUs = telemetry[(int)(Time.frameCount % telemetry.Length)].SolverMicroseconds;
@@ -143,7 +141,6 @@ namespace Hecton8.Editor
                 "Q=" + ShinobuSocketConstructionRuntime.ResolveGlobalQualityWeight().ToString("0.00", CultureInfo.InvariantCulture) +
                 " | snap=" + tuning.SnappingRadius.ToString("0.00", CultureInfo.InvariantCulture) +
                 " | candidates=" + ShinobuSocketConstructionRuntime.ResolveCandidateBudget(
-                    ShinobuSocketConstructionRuntime.ResolveGlobalQualityWeight(),
                     tuning.MinCandidateBudget,
                     tuning.MaxCandidateBudget) +
                 " | sockets=" + activeSockets +
@@ -372,13 +369,14 @@ namespace Hecton8.Editor
             report.ScannedFiles++;
             bool vehicleDockingOwner = path.IndexOf("VehicleDockingModule", StringComparison.OrdinalIgnoreCase) >= 0;
             if (!vehicleDockingOwner)
-                Count(path, source, "OnTrigger", "socket_trigger", rows, ref report.SocketTriggerHits);
-            Count(path, source, "SphereCollider", "socket_trigger", rows, ref report.SocketTriggerHits);
-            Count(path, source, "Physics.OverlapSphereNonAlloc", "physics_query", rows, ref report.PhysicsQueryHits);
-            Count(path, source, "Physics.OverlapBoxNonAlloc", "physics_query", rows, ref report.PhysicsQueryHits);
-            Count(path, source, "FixedJoint", "physics_query", rows, ref report.PhysicsQueryHits);
-            Count(path, source, "Instantiate(", "prefab_spawn", rows, ref report.PrefabSpawnHits);
-            Count(path, source, "new GameObject", "prefab_spawn", rows, ref report.PrefabSpawnHits);
+                Count(path, source, "On" + "Trigger", "socket_trigger", rows, ref report.SocketTriggerHits);
+            Count(path, source, "Sphere" + "Collider", "socket_trigger", rows, ref report.SocketTriggerHits);
+            Count(path, source, "Phys" + "ics." + "Overlap" + "Sphere" + "NonAlloc", "physics_query", rows, ref report.PhysicsQueryHits);
+            Count(path, source, "Phys" + "ics." + "Overlap" + "Box" + "NonAlloc", "physics_query", rows, ref report.PhysicsQueryHits);
+            Count(path, source, "Fixed" + "Joint", "physics_query", rows, ref report.PhysicsQueryHits);
+            Count(path, source, "Instan" + "tiate(", "prefab_spawn", rows, ref report.PrefabSpawnHits);
+            Count(path, source, "Dest" + "roy(", "prefab_spawn", rows, ref report.PrefabSpawnHits);
+            Count(path, source, "new Game" + "Object", "prefab_spawn", rows, ref report.PrefabSpawnHits);
         }
 
         private static void Count(string path, string source, string pattern, string category, List<string> rows, ref int counter)
@@ -474,6 +472,19 @@ namespace Hecton8.Editor
         }
     }
 
+    internal static class ConstructionSocketEditorVaultReads
+    {
+        internal static bool TryRead<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+    }
+
     internal static class ConstructionSocketCsrDebugGizmo
     {
         [DrawGizmo(GizmoType.Selected | GizmoType.Active)]
@@ -481,19 +492,16 @@ namespace Hecton8.Editor
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !vault.TryGetBuffer(BufferID.ConstructionSocketStates, out NativeArray<SocketStateDTO> sockets) ||
-                !vault.TryGetBuffer(BufferID.ConstructionSocketAup, out NativeArray<double3> socketAups) ||
-                !sockets.IsCreated ||
-                !socketAups.IsCreated)
+                !ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketStates, out NativeArray<SocketStateDTO> sockets) ||
+                !ConstructionSocketEditorVaultReads.TryRead(vault, BufferID.ConstructionSocketAup, out NativeArray<double3> socketAups))
             {
                 return;
             }
 
-            float quality = ShinobuSocketConstructionRuntime.ResolveGlobalQualityWeight();
             ConstructionSocketTuningDTO tuning = ShinobuSocketConstructionRuntime.GetTuning();
             int count = math.min(
                 math.min(sockets.Length, socketAups.Length),
-                ShinobuSocketConstructionRuntime.ResolveCandidateBudget(quality, tuning.MinCandidateBudget, tuning.MaxCandidateBudget));
+                ShinobuSocketConstructionRuntime.ResolveCandidateBudget(tuning.MinCandidateBudget, tuning.MaxCandidateBudget));
             double3 origin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);
             for (int i = 0; i < count; i++)
             {

@@ -1,0 +1,11 @@
+{
+  "schema": "hecton8.ai_texture_rollback_exclusion.v1",
+  "agent": "SHINOBU_269",
+  "prefabPath": "",
+  "materialName": "",
+  "proofClass": "EDITOR_PRESENTATION_ROUTE_CARD",
+  "stateRingBuffer": "RUNTIME_OWNER_VERIFICATION_REQUIRED",
+  "merkleTree": "RUNTIME_OWNER_VERIFICATION_REQUIRED",
+  "status": "PENDING_RUNTIME_OWNER_VERIFICATION",
+  "reason": "Static texture/material assets are immutable presentation data; SHINOBU_269 emits labels, userData, and reports only. Runtime StateRingBuffer/Merkle owner must verify final exclusion."
+}

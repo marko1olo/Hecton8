@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -210,10 +211,10 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct ChunkResidencyDtoInitJob : IJobParallelFor
     {
-        public NativeArray<ChunkResidencyDTO> Chunks;
+        [NoAlias] public NativeArray<ChunkResidencyDTO> Chunks;
 
         public void Execute(int index)
         {
@@ -230,10 +231,10 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockAupShiftSignalJob : IJob
     {
-        public NativeArray<MockAupShiftSignal> Signal;
+        [NoAlias] public NativeArray<MockAupShiftSignal> Signal;
         public uint Frame;
         public uint Seed;
 
@@ -256,11 +257,11 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct ChunkResidencyAupShiftReconcileJob : IJobParallelFor
     {
-        public NativeArray<ChunkResidencyDTO> Chunks;
-        [ReadOnly] public NativeArray<MockAupShiftSignal> Signal;
+        [NoAlias] public NativeArray<ChunkResidencyDTO> Chunks;
+        [ReadOnly, NoAlias] public NativeArray<MockAupShiftSignal> Signal;
 
         public void Execute(int index)
         {
@@ -274,12 +275,12 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct PredictiveChunkResidencyJob : IJobParallelFor
     {
-        public NativeArray<ChunkResidencyDTO> Chunks;
-        public NativeList<int>.ParallelWriter HydrationRequests;
-        public NativeList<int>.ParallelWriter DehydrationRequests;
+        [NoAlias] public NativeArray<ChunkResidencyDTO> Chunks;
+        [NoAlias] public NativeList<int>.ParallelWriter HydrationRequests;
+        [NoAlias] public NativeList<int>.ParallelWriter DehydrationRequests;
         public double3 CameraAup;
         public float3 CameraVelocity;
         public float LoadRadiusMeters;
@@ -496,9 +497,6 @@ namespace Hecton8.World
 
     public static class WorldStreamingLegacyProfileArchaeology
     {
-        private const int MaxRationaleFiles = 96;
-        private const int MaxReadChars = 8192;
-
         public static WorldStreamingRuntimeTuning GenerateEmergencyMockProfile()
         {
             return WorldStreamingRuntimeTuning.CreateDefault();
@@ -506,115 +504,11 @@ namespace Hecton8.World
 
         public static WorldStreamingRuntimeTuning ScanOrEmergency(string projectRoot)
         {
+            _ = projectRoot;
             WorldStreamingRuntimeTuning tuning = GenerateEmergencyMockProfile();
-            try
-            {
-                if (string.IsNullOrEmpty(projectRoot))
-                    return tuning;
-
-                string archive = Path.Combine(projectRoot, "Docs", "Archive");
-                if (!Directory.Exists(archive))
-                    return tuning;
-
-                ScanLegacyBinaryNames(archive, ref tuning);
-                ScanRationaleLogs(archive, ref tuning);
-            }
-            catch (Exception)
-            {
-                tuning = GenerateEmergencyMockProfile();
-            }
-
+            tuning.Flags |= 2;
+            tuning.ProfileHash ^= 0x53454D47u; // "SEMG": deterministic emergency mock profile, no runtime disk archaeology.
             return tuning;
-        }
-
-        private static void ScanLegacyBinaryNames(string archive, ref WorldStreamingRuntimeTuning tuning)
-        {
-            foreach (string file in Directory.EnumerateFiles(archive, "world_chunk_streaming_profile.h8bin", SearchOption.AllDirectories))
-            {
-                if (!string.IsNullOrEmpty(file))
-                {
-                    tuning.Flags |= 1;
-                    tuning.ProfileHash ^= 0x48384249u;
-                    return;
-                }
-            }
-        }
-
-        private static void ScanRationaleLogs(string archive, ref WorldStreamingRuntimeTuning tuning)
-        {
-            int scanned = 0;
-            foreach (string file in Directory.EnumerateFiles(archive, "Rationale_*.md", SearchOption.AllDirectories))
-            {
-                if (scanned++ >= MaxRationaleFiles)
-                    break;
-
-                string text = File.ReadAllText(file);
-                if (text.Length > MaxReadChars)
-                    text = text.Substring(0, MaxReadChars);
-
-                ReadOnlySpan<char> span = text.AsSpan();
-                TryExtractRadius(span, "Visual", ref tuning.VisualResidencyRadiusMeters);
-                TryExtractRadius(span, "Data", ref tuning.DataResidencyRadiusMeters);
-                TryExtractRadius(span, "Full", ref tuning.PhysicalHydrationRadiusMeters);
-                TryExtractRadius(span, "LOD1", ref tuning.Lod1RadiusMeters);
-            }
-        }
-
-        private static void TryExtractRadius(ReadOnlySpan<char> text, string label, ref float target)
-        {
-            int index = IndexOfOrdinalIgnoreCase(text, label);
-            if (index < 0)
-                return;
-
-            int end = math.min(text.Length, index + 96);
-            ReadOnlySpan<char> slice = text.Slice(index, end - index);
-            for (int i = 0; i < slice.Length; i++)
-            {
-                if ((slice[i] < '0' || slice[i] > '9') && slice[i] != '.')
-                    continue;
-
-                int start = i;
-                while (i < slice.Length && ((slice[i] >= '0' && slice[i] <= '9') || slice[i] == '.'))
-                    i++;
-
-                if (float.TryParse(slice.Slice(start, i - start), NumberStyles.Float, CultureInfo.InvariantCulture, out float value) &&
-                    math.isfinite(value) &&
-                    value >= 1f)
-                {
-                    target = value;
-                    return;
-                }
-            }
-        }
-
-        private static int IndexOfOrdinalIgnoreCase(ReadOnlySpan<char> text, string needle)
-        {
-            if (needle.Length == 0 || text.Length < needle.Length)
-                return -1;
-
-            for (int i = 0; i <= text.Length - needle.Length; i++)
-            {
-                bool match = true;
-                for (int n = 0; n < needle.Length; n++)
-                {
-                    char a = text[i + n];
-                    char b = needle[n];
-                    if (a >= 'A' && a <= 'Z')
-                        a = (char)(a + 32);
-                    if (b >= 'A' && b <= 'Z')
-                        b = (char)(b + 32);
-                    if (a != b)
-                    {
-                        match = false;
-                        break;
-                    }
-                }
-
-                if (match)
-                    return i;
-            }
-
-            return -1;
         }
     }
 }

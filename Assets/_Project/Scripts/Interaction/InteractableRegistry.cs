@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Scavenging;
@@ -32,7 +31,6 @@ namespace Hecton8.Interaction
         private static bool s_cacheSaturationLogged;
 #endif
 
-        [StructLayout(LayoutKind.Sequential)]
         internal readonly struct TargetInfo
         {
             public TargetInfo(

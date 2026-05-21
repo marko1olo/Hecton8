@@ -6,6 +6,7 @@ using Hecton8.SaveSystem;
 using Hecton8.Construction;
 using Hecton8.Building;
 using Hecton8.Audio;
+using Hecton8.Audio.Propagation;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory.Layout;
@@ -1236,6 +1237,34 @@ namespace Hecton8.Core
         void StopAll();
     }
 
+    public static class AudioResidencyDomainIds
+    {
+        public const byte Music = 0;
+        public const byte Player = 1;
+        public const byte Creatures = 2;
+        public const byte Environment = 3;
+        public const byte Interface = 4;
+    }
+
+    /// <summary>
+    /// Cold audio clip residency surface for tools that need explicit prewarm/release without depending on the audio runtime type.
+    /// </summary>
+    public interface IAudioResidencyService
+    {
+        void TouchClip(AudioClip clip, byte residencyDomain, bool decodeNow);
+        void PrewarmAudioSource(AudioSource source, byte residencyDomain);
+        void ReleaseAudioSource(AudioSource source);
+        void ReleaseClip(AudioClip clip);
+    }
+
+    /// <summary>
+    /// Tool-facing acoustic cue surface for one-shot feedback without depending on the audio runtime owner type.
+    /// </summary>
+    public interface IToolAcousticCueService
+    {
+        void PlayMantaMisfire(float intensity01);
+    }
+
     /// <summary>
     /// Canonical byte identifiers for the vocal warning priority queue.
     /// Lower numeric value is higher priority.
@@ -1892,6 +1921,57 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Command/read facade for cutter salvage tension owned by the player movement runtime.
+    /// </summary>
+    public interface IPlayerCuttingTensionService
+    {
+        bool TryApplyCuttingTensionAnchor(float3 anchorPointWS, float3 anchorNormalWS);
+
+        void ClearCuttingTensionAnchor();
+
+        bool TryReadCuttingTensionNormalized(out float tension01);
+    }
+
+    /// <summary>
+    /// Command facade for the sargassum cut-mask owner.
+    /// </summary>
+    public interface ISargassumCutWriteService
+    {
+        bool TryRegisterExternalCut(Vector3 positionWS, float radiusWS, float strength01, Vector3 directionWS, float bubbleWeight);
+    }
+
+    /// <summary>
+    /// Command facade for indirect organic harvest/destruction hits owned by the world flora runtime.
+    /// </summary>
+    public interface IOrganicToolHitService
+    {
+        bool TryApplyOrganicToolHit(
+            Vector3 hitPoint,
+            Vector3 hitNormal,
+            Vector3 direction,
+            float deliveredDamage,
+            float normalizedPower,
+            uint toolCapabilityMask);
+
+        bool TryApplyAttachedFloraToolHit(
+            Vector3 hitPoint,
+            float searchRadius,
+            Vector3 hitNormal,
+            Vector3 direction,
+            float deliveredDamage,
+            float normalizedPower,
+            uint toolCapabilityMask);
+    }
+
+    /// <summary>
+    /// Command facade for localized water-heat presentation/thermal anomaly owners.
+    /// </summary>
+    public interface IWaterHeatInjectionService
+    {
+        bool TryInjectLocalizedWaterHeat(Vector3 runtimePoint, Vector3 direction, float cutStrength, float normalizedPower);
+    }
+
+    /// <summary>
     /// Authoritative player runtime-context contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IPlayerRuntimeContext
@@ -1915,6 +1995,11 @@ namespace Hecton8.Core
         /// Player locomotion owner resolved from the current player root.
         /// </summary>
         HectonPlayerMovement PlayerMovement { get; }
+
+        /// <summary>
+        /// Command/read facade for laser-cutter heavy salvage tension owned by player movement.
+        /// </summary>
+        IPlayerCuttingTensionService CuttingTensionService { get; }
 
         /// <summary>
         /// Player rigidbody resolved from the current player root.
@@ -2005,6 +2090,96 @@ namespace Hecton8.Core
         /// Resolves the current player AUP, runtime position, and camera-facing direction without exposing concrete runtime state.
         /// </summary>
         bool TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot);
+
+        /// <summary>
+        /// Reads the latest owner-published movement snapshot without synchronizing scene state.
+        /// </summary>
+        bool TryGetMovementRuntimeState(out PlayerMovementRuntimeState state);
+
+        /// <summary>
+        /// Reads the latest owner-published movement stress snapshot without exposing the concrete movement owner.
+        /// </summary>
+        bool TryGetMovementStressRuntimeState(out PlayerMovementStressRuntimeState state);
+
+        /// <summary>
+        /// Reads the latest owner-published survival snapshot without synchronizing scene state.
+        /// </summary>
+        bool TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState state);
+    }
+
+    /// <summary>
+    /// Compact survival-owned environment scalars for scanner and presentation consumers.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct PlayerSurvivalEnvironmentSnapshot
+    {
+        [FieldOffset(0)] public float EnvironmentTemperatureCelsius;
+        [FieldOffset(4)] public float DepthMeters;
+        [FieldOffset(8)] public uint Flags;
+        [FieldOffset(12)] private uint _pad0;
+    }
+
+    /// <summary>
+    /// Read-only survival environment scalar route that does not expose the survival concrete owner.
+    /// </summary>
+    public interface IPlayerSurvivalEnvironmentReadModel
+    {
+        bool TryGetSurvivalEnvironmentSnapshot(out PlayerSurvivalEnvironmentSnapshot snapshot);
+    }
+
+    /// <summary>
+    /// Read-only chemical influence grid route for scanner and sensory consumers.
+    /// </summary>
+    public interface IChemicalInfluenceReadModel
+    {
+        bool TryReadNormalizedChannels(Vector3 runtimePosition, out float4 normalizedChannels);
+
+        bool TryReadAttractantGradient(
+            Vector3 runtimePosition,
+            float now,
+            out float bloodSignal01,
+            out float exhaustSignal01,
+            out float3 bloodGradient,
+            out float3 exhaustGradient);
+
+        bool TryFindNearestBloodWaypoint(
+            Vector3 runtimePosition,
+            out float distanceMeters,
+            out float intensity01);
+    }
+
+    /// <summary>
+    /// Read-only brine density sampler for corrosion and environmental consumers.
+    /// </summary>
+    public interface IBrineFluidDensityReadModel
+    {
+        bool TrySampleBrineFluidDensity(Vector3 runtimePosition, out float fluidDensityKgPerCubicMeter);
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct AtlasSignalReadSnapshot
+    {
+        public const uint IsDetectedFlag = 1u << 0;
+        public const uint HasNavigationFlag = 1u << 1;
+
+        [FieldOffset(0)] public float3 DirectionToCore;
+        [FieldOffset(12)] public float Strength01;
+        [FieldOffset(16)] public int RevealStage;
+        [FieldOffset(20)] public int StrengthBand;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] private uint _pad0;
+    }
+
+    public interface IAtlasSignalReadModel
+    {
+        bool TryReadAtlasSignalSnapshot(
+            in AbsoluteUniversePosition observerAup,
+            out AtlasSignalReadSnapshot snapshot);
+    }
+
+    public interface ILoreUnlockReadModel
+    {
+        bool IsLoreUnlocked(uint logHash);
     }
 
     /// <summary>
@@ -2147,6 +2322,19 @@ namespace Hecton8.Core
         /// Active HUD notification sink when available.
         /// </summary>
         HUDNotification HudNotification { get; }
+    }
+
+    /// <summary>
+    /// Read-only hazard sampling contract for consumers that only need immutable exposure scalars.
+    /// </summary>
+    public interface IHazardZoneReadModel
+    {
+        /// <summary>
+        /// Returns the summed hazard intensity at the supplied absolute-universe point.
+        /// </summary>
+        float GetHazardIntensity(in AbsoluteUniversePosition pointAup, HazardType type);
+
+        float GetToxicityIntensity(in AbsoluteUniversePosition pointAup);
     }
 
     /// <summary>
@@ -3068,13 +3256,13 @@ namespace Hecton8.Core
         }
 
         /// <summary>Registry slot that was replaced.</summary>
-        public GlobalRegistryServiceSlot ServiceSlot { get; }
+        public readonly GlobalRegistryServiceSlot ServiceSlot;
 
         /// <summary>Previous service instance, or null when the slot was empty.</summary>
-        public object PreviousService { get; }
+        public readonly object PreviousService;
 
         /// <summary>Current service instance, or null when the slot was cleared.</summary>
-        public object CurrentService { get; }
+        public readonly object CurrentService;
     }
 
     public enum RegistryEventType : byte
@@ -3314,6 +3502,8 @@ namespace Hecton8.Core
         AmbientBiotaRuntime = 170,
         DockingAutopilotRuntime = 171,
         ProceduralLadderClimbRuntime = 172,
+        ChemicalInfluenceRuntime = 173,
+        DestructibleOrganicRuntime = 174,
         Unknown = 255
     }
 
@@ -3390,7 +3580,7 @@ namespace Hecton8.Core
 
     /// <summary>
     /// Registry-backed ocean provider selector published through <see cref="GlobalRegistry"/>.
-    /// Gameplay systems must query this service instead of talking to Crest-adapter singletons directly.
+    /// Gameplay systems must query this service instead of talking to third-party ocean adapter singletons directly.
     /// </summary>
     public interface IHectonOceanKinematicsService : ISystem
     {
@@ -3406,13 +3596,10 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// Registry-facing owner of the analytical underwater caustics projection pass.
+    /// Registry-facing owner of underwater caustics presentation output.
     /// </summary>
     public interface ICausticsService : ISystem
     {
-        bool IsComputeActive { get; }
-        RenderTexture CausticsMap { get; }
-        Vector4 CausticsAup { get; }
     }
 
     /// <summary>

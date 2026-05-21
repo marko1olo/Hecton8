@@ -7,11 +7,11 @@ using UnityEditor;
 namespace Hecton8.World
 {
     /// <summary>
-    /// Builds first-party damping facade textures for future Crest 5 inputs without touching Crest ocean shaders or materials.
+    /// Builds first-party damping facade textures for future ocean-donor inputs without touching ocean shaders or materials.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-102)]
-    public sealed class SargassumCrestDampingController : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener
+    public sealed class SargassumCrestDampingController : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private struct LegacyInputState
         {
@@ -115,18 +115,19 @@ namespace Hecton8.World
         private bool _usesCrest4LegacyInputs;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredHotSwap;
         private bool _hasPublishedFacadeData;
         private LegacyInputState _wavesInputState;
         private LegacyInputState _foamInputState;
         private LegacyInputState _oilFilmInputState;
 
         /// <summary>
-        /// Public damping facade texture intended for future Crest 5 wave or water-depth inputs.
+        /// Public damping facade texture intended for future ocean wave or water-depth inputs.
         /// </summary>
         public RenderTexture WaveDampingMaskTexture => _waveDampingMask;
 
         /// <summary>
-        /// Public oil-film facade texture intended for future Crest 5 albedo inputs.
+        /// Public oil-film facade texture intended for future ocean albedo inputs.
         /// </summary>
         public RenderTexture OilFilmMaskTexture => _oilFilmMask;
 
@@ -138,7 +139,7 @@ namespace Hecton8.World
         private void Awake()
         {
             SanitizeSettings();
-            ResolveDependencies();
+            CacheRegistryServicesCold();
             DisableLegacyInputs();
             EnsureFacadeResources();
             RefreshFacadeTextures(force: true);
@@ -147,7 +148,8 @@ namespace Hecton8.World
         private void OnEnable()
         {
             SanitizeSettings();
-            ResolveDependencies();
+            TryRegisterHotSwapListener();
+            CacheRegistryServicesCold();
             DisableLegacyInputs();
             EnsureFacadeResources();
             RefreshFacadeTextures(force: true);
@@ -159,6 +161,7 @@ namespace Hecton8.World
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
             RestoreLegacyInputs();
             ReleaseFacadeResources();
             PublishGlobals(active: false, forceClear: true);
@@ -168,6 +171,7 @@ namespace Hecton8.World
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
             RestoreLegacyInputs();
             ReleaseFacadeResources();
             PublishGlobals(active: false, forceClear: true);
@@ -234,13 +238,37 @@ namespace Hecton8.World
 
         private void ResolveDependencies()
         {
+            ResolveLegacyInputs();
+        }
+
+        private void CacheRegistryServicesCold()
+        {
             if (dragManager == null)
-                dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
+                dragManager = GlobalRegistry.SargassumDrag;
 
             if (cutManager == null)
-                cutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
+                cutManager = GlobalRegistry.SargassumCut;
 
             ResolveLegacyInputs();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.SargassumDragRuntime)
+            {
+                if (dragManager == null || ReferenceEquals(dragManager, previousService))
+                    dragManager = currentService as SargassumGlobalDragManager;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.SargassumCutRuntime &&
+                (cutManager == null || ReferenceEquals(cutManager, previousService)))
+            {
+                cutManager = currentService as SargassumCutManager;
+            }
         }
 
         private void RefreshFacadeTextures(bool force)
@@ -356,7 +384,7 @@ namespace Hecton8.World
                 autoGenerateMips = false,
                 enableRandomWrite = true,
                 hideFlags = HideFlags.HideAndDontSave
-            }; // COLD ALLOC: RenderTexture[1] - public sargassum damping facade texture for Crest 5 wave/albedo inputs - owner: SargassumCrestDampingController
+            }; // COLD ALLOC: RenderTexture[1] - public sargassum damping facade texture for ocean wave/albedo inputs - owner: SargassumCrestDampingController
             texture.Create();
             return texture;
         }
@@ -530,6 +558,23 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (!Application.isPlaying || _registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void SanitizeSettings()

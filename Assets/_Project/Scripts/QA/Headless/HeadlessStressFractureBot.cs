@@ -1848,61 +1848,62 @@ namespace Hecton8.QA.Headless
                 writer.Write('0');
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 40)]
         private struct MemorySnapshot
         {
-            public long NativeBytes;
-            public long H8Bytes;
-            public long DataVaultBytes;
-            public int NativeAllocations;
-            public int H8Allocations;
-            public float DataVaultFragmentation;
+            [FieldOffset(0)] public long NativeBytes;
+            [FieldOffset(8)] public long H8Bytes;
+            [FieldOffset(16)] public long DataVaultBytes;
+            [FieldOffset(24)] public int NativeAllocations;
+            [FieldOffset(28)] public int H8Allocations;
+            [FieldOffset(32)] public float DataVaultFragmentation;
+            [FieldOffset(36)] private uint _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 96)]
         private struct HPhiStaticCounters
         {
-            public int SignalBusPush;
-            public int GlobalRegistryGet;
-            public int GlobalRegistrySurface;
-            public int EventPublish;
-            public int UnityUpdateMethods;
-            public int IUpdatable;
-            public int IFastTickable;
-            public int IFixedTickable;
-            public int ISlowTickable;
-            public int IColdTickable;
-            public int IFrostTickable;
-            public int ILateFrameTickable;
-            public int IPostFixedTickable;
-            public int IJob;
-            public int ITickable;
-            public int DataVaultRefs;
-            public int NativeArrayRefs;
-            public int StructDeclarations;
-            public int StructLayoutAttributes;
-            public int StaticInstance;
-            public int SceneLookupCalls;
-            public int ComponentLookupCalls;
-            public int AupPrecisionSafe;
-            public int AupPrecisionRisk;
+            [FieldOffset(0)] public int SignalBusPush;
+            [FieldOffset(4)] public int GlobalRegistryGet;
+            [FieldOffset(8)] public int GlobalRegistrySurface;
+            [FieldOffset(12)] public int EventPublish;
+            [FieldOffset(16)] public int UnityUpdateMethods;
+            [FieldOffset(20)] public int IUpdatable;
+            [FieldOffset(24)] public int IFastTickable;
+            [FieldOffset(28)] public int IFixedTickable;
+            [FieldOffset(32)] public int ISlowTickable;
+            [FieldOffset(36)] public int IColdTickable;
+            [FieldOffset(40)] public int IFrostTickable;
+            [FieldOffset(44)] public int ILateFrameTickable;
+            [FieldOffset(48)] public int IPostFixedTickable;
+            [FieldOffset(52)] public int IJob;
+            [FieldOffset(56)] public int ITickable;
+            [FieldOffset(60)] public int DataVaultRefs;
+            [FieldOffset(64)] public int NativeArrayRefs;
+            [FieldOffset(68)] public int StructDeclarations;
+            [FieldOffset(72)] public int StructLayoutAttributes;
+            [FieldOffset(76)] public int StaticInstance;
+            [FieldOffset(80)] public int SceneLookupCalls;
+            [FieldOffset(84)] public int ComponentLookupCalls;
+            [FieldOffset(88)] public int AupPrecisionSafe;
+            [FieldOffset(92)] public int AupPrecisionRisk;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = BlackboxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = BlackboxEntrySizeBytes)]
         private struct FractureTelemetryEntry
         {
-            public uint Frame;
-            public uint ExtremeFrame;
-            public uint ShiftSequence;
-            public uint EventHash;
-            public long NativeBytes;
-            public long H8Bytes;
-            public int NativeAllocations;
-            public int H8Allocations;
-            public float DispatcherPhaseMs;
-            public float DataVaultFragmentation;
-            public float3 LastShiftMeters;
-            public uint Flags;
+            [FieldOffset(0)] public uint Frame;
+            [FieldOffset(4)] public uint ExtremeFrame;
+            [FieldOffset(8)] public uint ShiftSequence;
+            [FieldOffset(12)] public uint EventHash;
+            [FieldOffset(16)] public long NativeBytes;
+            [FieldOffset(24)] public long H8Bytes;
+            [FieldOffset(32)] public int NativeAllocations;
+            [FieldOffset(36)] public int H8Allocations;
+            [FieldOffset(40)] public float DispatcherPhaseMs;
+            [FieldOffset(44)] public float DataVaultFragmentation;
+            [FieldOffset(48)] public float3 LastShiftMeters;
+            [FieldOffset(60)] public uint Flags;
         }
     }
 }

@@ -14,7 +14,7 @@ using UnityEngine;
 namespace Hecton8.Visor
 {
     [DisallowMultipleComponent]
-    public unsafe sealed class DiegeticVisorLensRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IScalabilityChangedEventListener
+    public unsafe sealed class DiegeticVisorLensRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
         private const int CsvBufferBytes = 4096;
@@ -28,6 +28,7 @@ namespace Hecton8.Visor
         private const uint DumpVersion = 1u;
         private const uint VisorBreachLaneHash = 0x56534252u;
         private const uint RuntimeSourceHash = 0x53483635u;
+        private const SystemID OwnerSystem = SystemID.Vfx;
 
         private static readonly BufferID StateBufferId = (BufferID)71020;
         private static readonly BufferID TuningBufferId = (BufferID)71021;
@@ -48,16 +49,16 @@ namespace Hecton8.Visor
 
         private IDataVault _vault;
         private IPlayerRuntimeContext _playerContext;
-        private VaultBufferHandle<VisorStateDTO> _stateHandle;
-        private VaultBufferHandle<VisorLensTuningDTO> _tuningHandle;
-        private VaultBufferHandle<MockPhysiologySignal> _physiologyHandle;
-        private VaultBufferHandle<MockVisorEnvironmentSignal> _environmentHandle;
-        private VaultBufferHandle<DiegeticVisorLensGpuGlobalsDTO> _gpuGlobalsHandle;
-        private VaultBufferHandle<VisorLensTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<int> _telemetryCursorHandle;
-        private VaultBufferHandle<byte> _csvBytesHandle;
-        private VaultBufferHandle<byte> _binaryProbeBytesHandle;
-        private VaultBufferHandle<int> _nanFlagsHandle;
+        private VaultGenerationHandle<VisorStateDTO> _stateHandle;
+        private VaultGenerationHandle<VisorLensTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<MockPhysiologySignal> _physiologyHandle;
+        private VaultGenerationHandle<MockVisorEnvironmentSignal> _environmentHandle;
+        private VaultGenerationHandle<DiegeticVisorLensGpuGlobalsDTO> _gpuGlobalsHandle;
+        private VaultGenerationHandle<VisorLensTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<int> _telemetryCursorHandle;
+        private VaultGenerationHandle<byte> _csvBytesHandle;
+        private VaultGenerationHandle<byte> _binaryProbeBytesHandle;
+        private VaultGenerationHandle<int> _nanFlagsHandle;
         private GraphicsBuffer _gpuGlobalsBufferA;
         private GraphicsBuffer _gpuGlobalsBufferB;
         private GraphicsBuffer _activeGpuGlobalsBuffer;
@@ -96,17 +97,18 @@ namespace Hecton8.Visor
         private bool _hasPendingEnvironment;
         private bool _pendingMockReset;
         private bool _pendingTuningVersionIncrement;
+        private bool _registeredHotSwapListener;
 
         private ref VisorStateDTO GetStateRefUnsafe()
         {
             EnsureNativeState();
-            return ref _stateHandle.GetElementAsRef(EnsureVault(), 0);
+            return ref GetVaultElementRef(ref _stateHandle, StateBufferId, 1, 0);
         }
 
         private ref VisorLensTuningDTO GetTuningRefUnsafe()
         {
             EnsureNativeState();
-            return ref _tuningHandle.GetElementAsRef(EnsureVault(), 0);
+            return ref GetVaultElementRef(ref _tuningHandle, TuningBufferId, 1, 0);
         }
 
         public bool TryGetPreview(out VisorStateDTO state, out DiegeticVisorLensGpuGlobalsDTO globals, out VisorLensTuningDTO tuning)
@@ -114,18 +116,20 @@ namespace Hecton8.Visor
             state = default;
             globals = default;
             tuning = default;
-            if (!_nativeReady)
+            IDataVault vault = _vault;
+            if (!_nativeReady ||
+                _hasScheduledWork ||
+                vault == null ||
+                !TryReadVaultArray(vault, in _stateHandle, StateBufferId, 1, out NativeArray<VisorStateDTO> states) ||
+                !TryReadVaultArray(vault, in _gpuGlobalsHandle, GpuGlobalsBufferId, 1, out NativeArray<DiegeticVisorLensGpuGlobalsDTO> gpuGlobals) ||
+                !TryReadVaultArray(vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<VisorLensTuningDTO> tunings))
             {
-                EnsureNativeState();
+                return false;
             }
 
-            IDataVault vault = EnsureVault();
-            if (_hasScheduledWork || !_stateHandle.IsCreated || !_gpuGlobalsHandle.IsCreated || !_tuningHandle.IsCreated)
-                return false;
-
-            state = _stateHandle.Resolve(vault)[0];
-            globals = _gpuGlobalsHandle.Resolve(vault)[0];
-            tuning = _tuningHandle.Resolve(vault)[0];
+            state = states[0];
+            globals = gpuGlobals[0];
+            tuning = tunings[0];
             return true;
         }
 
@@ -163,13 +167,15 @@ namespace Hecton8.Visor
 
         private void Awake()
         {
+            CacheRegistryServicesCold();
             EnsureNativeState();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
             EnsureNativeState();
-            _playerContext = GlobalRegistry.Player;
+            TryRegisterHotSwapListener();
             GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
             ScalabilityEvents.Register(this);
@@ -182,9 +188,11 @@ namespace Hecton8.Visor
             ScalabilityEvents.Unregister(this);
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            TryUnregisterHotSwapListener();
             ClearGpuGlobals();
             ReleaseGpuBuffer();
             _playerContext = null;
+            ReleaseNativeState(_vault, clearVault: true);
         }
 
         public void Tick(float deltaTime)
@@ -232,7 +240,6 @@ namespace Hecton8.Visor
                 EnsureNativeState();
             }
 
-            _playerContext ??= GlobalRegistry.Player;
             if (_hasScheduledWork)
             {
                 _pendingTuningVersionIncrement = true;
@@ -259,11 +266,10 @@ namespace Hecton8.Visor
 
         private void ApplyEmergencyMockVisorData()
         {
-            IDataVault vault = EnsureVault();
-            ref VisorStateDTO state = ref _stateHandle.GetElementAsRef(vault, 0);
-            ref VisorLensTuningDTO tuning = ref _tuningHandle.GetElementAsRef(vault, 0);
-            ref MockPhysiologySignal physiology = ref _physiologyHandle.GetElementAsRef(vault, 0);
-            ref MockVisorEnvironmentSignal environment = ref _environmentHandle.GetElementAsRef(vault, 0);
+            ref VisorStateDTO state = ref GetVaultElementRef(ref _stateHandle, StateBufferId, 1, 0);
+            ref VisorLensTuningDTO tuning = ref GetVaultElementRef(ref _tuningHandle, TuningBufferId, 1, 0);
+            ref MockPhysiologySignal physiology = ref GetVaultElementRef(ref _physiologyHandle, PhysiologyBufferId, 1, 0);
+            ref MockVisorEnvironmentSignal environment = ref GetVaultElementRef(ref _environmentHandle, EnvironmentBufferId, 1, 0);
 
             state.CondensationLevel = 0f;
             state.WaterDropletIntensity = 0f;
@@ -336,7 +342,7 @@ namespace Hecton8.Visor
                 return;
             }
 
-            ref MockPhysiologySignal physiology = ref _physiologyHandle.GetElementAsRef(EnsureVault(), 0);
+            ref MockPhysiologySignal physiology = ref GetVaultElementRef(ref _physiologyHandle, PhysiologyBufferId, 1, 0);
             physiology.RespirationRate = safeRespiration;
             physiology.HeartRate = safeHeartRate;
             physiology.CoreTemperatureC = safeCoreTemperature;
@@ -356,7 +362,7 @@ namespace Hecton8.Visor
                 return;
             }
 
-            ref MockVisorEnvironmentSignal environment = ref _environmentHandle.GetElementAsRef(EnsureVault(), 0);
+            ref MockVisorEnvironmentSignal environment = ref GetVaultElementRef(ref _environmentHandle, EnvironmentBufferId, 1, 0);
             environment.ExternalPressure01 = safePressure;
             environment.Frame = _frameCounter;
             _forceImmediateSimulation = true;
@@ -380,7 +386,7 @@ namespace Hecton8.Visor
                 return;
             }
 
-            ref MockVisorEnvironmentSignal environment = ref _environmentHandle.GetElementAsRef(EnsureVault(), 0);
+            ref MockVisorEnvironmentSignal environment = ref GetVaultElementRef(ref _environmentHandle, EnvironmentBufferId, 1, 0);
             environment.ExternalWaterTemperatureC = safeWaterTemperature;
             environment.SiltDensity01 = math.max(environment.SiltDensity01, safeSilt);
             environment.Darkness01 = safeDarkness;
@@ -400,7 +406,7 @@ namespace Hecton8.Visor
                 return;
             }
 
-            ref MockVisorEnvironmentSignal environment = ref _environmentHandle.GetElementAsRef(EnsureVault(), 0);
+            ref MockVisorEnvironmentSignal environment = ref GetVaultElementRef(ref _environmentHandle, EnvironmentBufferId, 1, 0);
             environment.SurfaceEmergence01 = math.max(environment.SurfaceEmergence01, safeIntensity);
             environment.WaterlineBreach01 = math.max(environment.WaterlineBreach01, safeIntensity);
             environment.Frame = _frameCounter;
@@ -418,7 +424,7 @@ namespace Hecton8.Visor
                 return;
             }
 
-            ref MockVisorEnvironmentSignal environment = ref _environmentHandle.GetElementAsRef(EnsureVault(), 0);
+            ref MockVisorEnvironmentSignal environment = ref GetVaultElementRef(ref _environmentHandle, EnvironmentBufferId, 1, 0);
             environment.WipeCommand01 = math.max(environment.WipeCommand01, safeStrength);
             environment.Frame = _frameCounter;
             _forceImmediateSimulation = true;
@@ -437,9 +443,9 @@ namespace Hecton8.Visor
 
             try
             {
-                NativeArray<byte> bytes = _csvBytesHandle.Resolve(EnsureVault());
+                NativeArray<byte> bytes = OpenVaultArray(ref _csvBytesHandle, CsvByteBufferId, CsvBufferBytes);
                 int length = FillByteBufferFromFile(path, bytes);
-                ref VisorLensTuningDTO tuning = ref _tuningHandle.GetElementAsRef(EnsureVault(), 0);
+                ref VisorLensTuningDTO tuning = ref GetVaultElementRef(ref _tuningHandle, TuningBufferId, 1, 0);
                 ParseVisorCsv(bytes, length, ref tuning);
                 return true;
             }
@@ -454,26 +460,60 @@ namespace Hecton8.Visor
             if (_nativeReady)
                 return;
 
-            _vault = EnsureVault();
-            _stateHandle = AcquireBuffer<VisorStateDTO>(StateBufferId, 1);
-            _tuningHandle = AcquireBuffer<VisorLensTuningDTO>(TuningBufferId, 1);
-            _physiologyHandle = AcquireBuffer<MockPhysiologySignal>(PhysiologyBufferId, 1);
-            _environmentHandle = AcquireBuffer<MockVisorEnvironmentSignal>(EnvironmentBufferId, 1);
-            _gpuGlobalsHandle = AcquireBuffer<DiegeticVisorLensGpuGlobalsDTO>(GpuGlobalsBufferId, 1);
-            _telemetryHandle = AcquireBuffer<VisorLensTelemetryEntry>(TelemetryRingBufferId, TelemetryCapacity);
-            _telemetryCursorHandle = AcquireBuffer<int>(TelemetryCursorBufferId, 1);
-            _csvBytesHandle = AcquireBuffer<byte>(CsvByteBufferId, CsvBufferBytes);
-            _binaryProbeBytesHandle = AcquireBuffer<byte>(BinaryProbeByteBufferId, BinaryProbeBytes);
-            _nanFlagsHandle = AcquireBuffer<int>(NanFlagBufferId, 1);
-            ClearNativeBuffersWithMemClear();
-            _nativeReady = true;
-            PrewarmSignalLanes();
-            GenerateEmergencyMockVisorData();
-            TryReloadCsvOverrides();
-            ProbeColdBinaryPayloads();
-            EnsureGpuBuffer();
-            ClearGpuGlobals();
-            _simulationAccumulator = ResolveSimulationInterval(ResolveQualityWeight());
+            IDataVault vault = EnsureVault();
+            _vault = vault;
+            try
+            {
+                _stateHandle = AcquireBuffer<VisorStateDTO>(StateBufferId, 1);
+                _tuningHandle = AcquireBuffer<VisorLensTuningDTO>(TuningBufferId, 1);
+                _physiologyHandle = AcquireBuffer<MockPhysiologySignal>(PhysiologyBufferId, 1);
+                _environmentHandle = AcquireBuffer<MockVisorEnvironmentSignal>(EnvironmentBufferId, 1);
+                _gpuGlobalsHandle = AcquireBuffer<DiegeticVisorLensGpuGlobalsDTO>(GpuGlobalsBufferId, 1);
+                _telemetryHandle = AcquireBuffer<VisorLensTelemetryEntry>(TelemetryRingBufferId, TelemetryCapacity);
+                _telemetryCursorHandle = AcquireBuffer<int>(TelemetryCursorBufferId, 1);
+                _csvBytesHandle = AcquireBuffer<byte>(CsvByteBufferId, CsvBufferBytes);
+                _binaryProbeBytesHandle = AcquireBuffer<byte>(BinaryProbeByteBufferId, BinaryProbeBytes);
+                _nanFlagsHandle = AcquireBuffer<int>(NanFlagBufferId, 1);
+                ClearNativeBuffersWithMemClear();
+                _nativeReady = true;
+                PrewarmSignalLanes();
+                GenerateEmergencyMockVisorData();
+                TryReloadCsvOverrides();
+                ProbeColdBinaryPayloads();
+                EnsureGpuBuffer();
+                ClearGpuGlobals();
+                _simulationAccumulator = ResolveSimulationInterval(ResolveQualityWeight());
+            }
+            catch
+            {
+                ReleaseNativeState(vault, clearVault: false);
+                throw;
+            }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                CompleteScheduledWorkForTeardown();
+                IDataVault previousVault = previousService as IDataVault;
+                if (previousVault == null)
+                    previousVault = _vault;
+
+                ReleaseNativeState(previousVault, clearVault: false);
+                _vault = currentService as IDataVault;
+                if (_vault != null)
+                    EnsureNativeState();
+            }
         }
 
         private IDataVault EnsureVault()
@@ -481,37 +521,167 @@ namespace Hecton8.Visor
             if (_vault != null)
                 return _vault;
 
-            _vault = GlobalRegistry.DataVault;
-            if (_vault != null)
-                return _vault;
-
-            if (GlobalRegistry.TryGet(out IDataVault vault) && vault != null)
-            {
-                _vault = vault;
-                return _vault;
-            }
-
             throw new InvalidOperationException("DiegeticVisorLensRuntime requires GlobalDataVault before boot.");
         }
 
-        private VaultBufferHandle<T> AcquireBuffer<T>(BufferID id, int length) where T : struct
+        private void CacheRegistryServicesCold()
         {
-            return EnsureVault().GetBufferHandle<T>(id, length, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+            if (_vault == null)
+            {
+                _vault = GlobalRegistry.DataVault;
+                if (_vault == null && GlobalRegistry.TryGet(out IDataVault vault))
+                    _vault = vault;
+            }
+
+            if (_playerContext == null)
+                _playerContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID id, int length) where T : struct
+        {
+            IDataVault vault = EnsureVault();
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(id, length, OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            if (!TryResolveVaultArray(vault, in handle, id, length, out _))
+                throw new InvalidOperationException("DiegeticVisorLensRuntime failed to acquire Vault descriptor.");
+
+            return handle;
+        }
+
+        private void ReleaseNativeState(IDataVault vault, bool clearVault)
+        {
+            ReleaseVisorVaultHandles(vault);
+            _nativeReady = false;
+            _hasGpuGlobals = false;
+            _hasUploadedGpuGlobals = false;
+            _lastGpuGlobals = default;
+            _uploadedGpuGlobals = default;
+            if (clearVault)
+                _vault = null;
+        }
+
+        private void ReleaseVisorVaultHandles(IDataVault vault)
+        {
+            ReleaseVisorVaultHandle(vault, ref _stateHandle, StateBufferId);
+            ReleaseVisorVaultHandle(vault, ref _tuningHandle, TuningBufferId);
+            ReleaseVisorVaultHandle(vault, ref _physiologyHandle, PhysiologyBufferId);
+            ReleaseVisorVaultHandle(vault, ref _environmentHandle, EnvironmentBufferId);
+            ReleaseVisorVaultHandle(vault, ref _gpuGlobalsHandle, GpuGlobalsBufferId);
+            ReleaseVisorVaultHandle(vault, ref _telemetryHandle, TelemetryRingBufferId);
+            ReleaseVisorVaultHandle(vault, ref _telemetryCursorHandle, TelemetryCursorBufferId);
+            ReleaseVisorVaultHandle(vault, ref _csvBytesHandle, CsvByteBufferId);
+            ReleaseVisorVaultHandle(vault, ref _binaryProbeBytesHandle, BinaryProbeByteBufferId);
+            ReleaseVisorVaultHandle(vault, ref _nanFlagsHandle, NanFlagBufferId);
+        }
+
+        private NativeArray<T> OpenVaultArray<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID id,
+            int length) where T : struct
+        {
+            IDataVault vault = EnsureVault();
+            if (!TryResolveVaultArray(vault, in handle, id, length, out NativeArray<T> buffer))
+                throw new InvalidOperationException("DiegeticVisorLensRuntime Vault descriptor is unavailable.");
+
+            return buffer;
+        }
+
+        private ref T GetVaultElementRef<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID id,
+            int length,
+            int index) where T : struct
+        {
+            NativeArray<T> buffer = OpenVaultArray(ref handle, id, length);
+            if ((uint)index >= (uint)buffer.Length)
+                throw new InvalidOperationException("DiegeticVisorLensRuntime Vault index is out of range.");
+
+            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
+            return ref UnsafeUtility.ArrayElementAsRef<T>(ptr, index);
+        }
+
+        private static bool TryResolveVaultArray<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID id,
+            int length,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   length > 0 &&
+                   IsVisorVaultHandle(in handle, id) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= length;
+        }
+
+        private static bool TryReadVaultArray<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID id,
+            int length,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   length > 0 &&
+                   IsVisorVaultHandle(in handle, id) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= length;
+        }
+
+        private static bool IsVisorVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID id) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)id) &&
+                   handle.SystemID == (uint)OwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
+        private static void ReleaseVisorVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID id) where T : struct
+        {
+            if (vault != null && IsVisorVaultHandle(in handle, id))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void ClearNativeBuffersWithMemClear()
         {
-            IDataVault vault = EnsureVault();
-            MemClearArray(_stateHandle.Resolve(vault));
-            MemClearArray(_tuningHandle.Resolve(vault));
-            MemClearArray(_physiologyHandle.Resolve(vault));
-            MemClearArray(_environmentHandle.Resolve(vault));
-            MemClearArray(_gpuGlobalsHandle.Resolve(vault));
-            MemClearArray(_telemetryHandle.Resolve(vault));
-            MemClearArray(_telemetryCursorHandle.Resolve(vault));
-            MemClearArray(_csvBytesHandle.Resolve(vault));
-            MemClearArray(_binaryProbeBytesHandle.Resolve(vault));
-            MemClearArray(_nanFlagsHandle.Resolve(vault));
+            MemClearArray(OpenVaultArray(ref _stateHandle, StateBufferId, 1));
+            MemClearArray(OpenVaultArray(ref _tuningHandle, TuningBufferId, 1));
+            MemClearArray(OpenVaultArray(ref _physiologyHandle, PhysiologyBufferId, 1));
+            MemClearArray(OpenVaultArray(ref _environmentHandle, EnvironmentBufferId, 1));
+            MemClearArray(OpenVaultArray(ref _gpuGlobalsHandle, GpuGlobalsBufferId, 1));
+            MemClearArray(OpenVaultArray(ref _telemetryHandle, TelemetryRingBufferId, TelemetryCapacity));
+            MemClearArray(OpenVaultArray(ref _telemetryCursorHandle, TelemetryCursorBufferId, 1));
+            MemClearArray(OpenVaultArray(ref _csvBytesHandle, CsvByteBufferId, CsvBufferBytes));
+            MemClearArray(OpenVaultArray(ref _binaryProbeBytesHandle, BinaryProbeByteBufferId, BinaryProbeBytes));
+            MemClearArray(OpenVaultArray(ref _nanFlagsHandle, NanFlagBufferId, 1));
         }
 
         private static void MemClearArray<T>(NativeArray<T> array) where T : struct
@@ -525,15 +695,14 @@ namespace Hecton8.Visor
 
         private void ScheduleSimulation(float deltaTime, float qualityWeight)
         {
-            IDataVault vault = EnsureVault();
             VisorCondensationJob job = new VisorCondensationJob
             {
-                State = _stateHandle.Resolve(vault),
-                Tuning = _tuningHandle.Resolve(vault),
-                Physiology = _physiologyHandle.Resolve(vault),
-                Environment = _environmentHandle.Resolve(vault),
-                GpuGlobals = _gpuGlobalsHandle.Resolve(vault),
-                NanFlags = _nanFlagsHandle.Resolve(vault),
+                State = OpenVaultArray(ref _stateHandle, StateBufferId, 1),
+                Tuning = OpenVaultArray(ref _tuningHandle, TuningBufferId, 1),
+                Physiology = OpenVaultArray(ref _physiologyHandle, PhysiologyBufferId, 1),
+                Environment = OpenVaultArray(ref _environmentHandle, EnvironmentBufferId, 1),
+                GpuGlobals = OpenVaultArray(ref _gpuGlobalsHandle, GpuGlobalsBufferId, 1),
+                NanFlags = OpenVaultArray(ref _nanFlagsHandle, NanFlagBufferId, 1),
                 DeltaTime = deltaTime,
                 GlobalQualityWeight = qualityWeight,
                 HeadAngularVelocity = _headAngularVelocity,
@@ -573,16 +742,18 @@ namespace Hecton8.Visor
         {
             _hasScheduledWork = false;
 
-            IDataVault vault = EnsureVault();
-            VisorStateDTO state = _stateHandle.Resolve(vault)[0];
-            _lastGpuGlobals = _gpuGlobalsHandle.Resolve(vault)[0];
+            NativeArray<VisorStateDTO> states = OpenVaultArray(ref _stateHandle, StateBufferId, 1);
+            NativeArray<DiegeticVisorLensGpuGlobalsDTO> globals = OpenVaultArray(ref _gpuGlobalsHandle, GpuGlobalsBufferId, 1);
+            NativeArray<int> nanFlagsBuffer = OpenVaultArray(ref _nanFlagsHandle, NanFlagBufferId, 1);
+            VisorStateDTO state = states[0];
+            _lastGpuGlobals = globals[0];
             _hasGpuGlobals = true;
-            int nanFlags = _nanFlagsHandle.Resolve(vault)[0];
+            int nanFlags = nanFlagsBuffer[0];
             WriteTelemetryFrame(in state, in _lastGpuGlobals, nanFlags);
             if (nanFlags != 0)
             {
                 DumpBlackBoxOnce((uint)nanFlags);
-                _nanFlagsHandle.Resolve(vault)[0] = 0;
+                nanFlagsBuffer[0] = 0;
             }
 
             TryPublishBreach(in state);
@@ -691,9 +862,8 @@ namespace Hecton8.Visor
 
         private void IngestCoreSignals(float deltaTime)
         {
-            IDataVault vault = EnsureVault();
-            ref MockPhysiologySignal physiology = ref _physiologyHandle.GetElementAsRef(vault, 0);
-            ref MockVisorEnvironmentSignal environment = ref _environmentHandle.GetElementAsRef(vault, 0);
+            ref MockPhysiologySignal physiology = ref GetVaultElementRef(ref _physiologyHandle, PhysiologyBufferId, 1, 0);
+            ref MockVisorEnvironmentSignal environment = ref GetVaultElementRef(ref _environmentHandle, EnvironmentBufferId, 1, 0);
 
             physiology.Frame = _frameCounter;
             environment.Frame = _frameCounter;
@@ -758,7 +928,7 @@ namespace Hecton8.Visor
 
         private void IncrementTuningVersionUnsafe()
         {
-            ref VisorLensTuningDTO tuning = ref _tuningHandle.GetElementAsRef(EnsureVault(), 0);
+            ref VisorLensTuningDTO tuning = ref GetVaultElementRef(ref _tuningHandle, TuningBufferId, 1, 0);
             tuning.Version++;
         }
 
@@ -869,7 +1039,7 @@ namespace Hecton8.Visor
             if (state.CrackSeverity <= 0.8f || _breachCooldown > 0f)
                 return;
 
-            MockVisorEnvironmentSignal environment = _environmentHandle.Resolve(EnsureVault())[0];
+            MockVisorEnvironmentSignal environment = OpenVaultArray(ref _environmentHandle, EnvironmentBufferId, 1)[0];
             VisorBreachSignal signal = default;
             signal.SourceId = RuntimeSourceHash;
             signal.Frame = _frameCounter;
@@ -884,9 +1054,8 @@ namespace Hecton8.Visor
 
         private void WriteTelemetryFrame(in VisorStateDTO state, in DiegeticVisorLensGpuGlobalsDTO globals, int nanFlags)
         {
-            IDataVault vault = EnsureVault();
-            NativeArray<VisorLensTelemetryEntry> ring = _telemetryHandle.Resolve(vault);
-            NativeArray<int> cursorBuffer = _telemetryCursorHandle.Resolve(vault);
+            NativeArray<VisorLensTelemetryEntry> ring = OpenVaultArray(ref _telemetryHandle, TelemetryRingBufferId, TelemetryCapacity);
+            NativeArray<int> cursorBuffer = OpenVaultArray(ref _telemetryCursorHandle, TelemetryCursorBufferId, 1);
             if (!ring.IsCreated || ring.Length < TelemetryCapacity || !cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
                 return;
 
@@ -894,8 +1063,8 @@ namespace Hecton8.Visor
             if (cursor < 0 || cursor >= TelemetryCapacity)
                 cursor = 0;
 
-            MockPhysiologySignal physiology = _physiologyHandle.Resolve(vault)[0];
-            MockVisorEnvironmentSignal environment = _environmentHandle.Resolve(vault)[0];
+            MockPhysiologySignal physiology = OpenVaultArray(ref _physiologyHandle, PhysiologyBufferId, 1)[0];
+            MockVisorEnvironmentSignal environment = OpenVaultArray(ref _environmentHandle, EnvironmentBufferId, 1)[0];
             ring[cursor] = new VisorLensTelemetryEntry
             {
                 Frame = _frameCounter,
@@ -921,9 +1090,8 @@ namespace Hecton8.Visor
 
         private void PatchLatestTelemetryShaderUpdateNs(uint shaderUpdateComputeTimeNs)
         {
-            IDataVault vault = EnsureVault();
-            NativeArray<VisorLensTelemetryEntry> ring = _telemetryHandle.Resolve(vault);
-            NativeArray<int> cursorBuffer = _telemetryCursorHandle.Resolve(vault);
+            NativeArray<VisorLensTelemetryEntry> ring = OpenVaultArray(ref _telemetryHandle, TelemetryRingBufferId, TelemetryCapacity);
+            NativeArray<int> cursorBuffer = OpenVaultArray(ref _telemetryCursorHandle, TelemetryCursorBufferId, 1);
             if (!ring.IsCreated || ring.Length < TelemetryCapacity || !cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
                 return;
 
@@ -944,9 +1112,8 @@ namespace Hecton8.Visor
             _blackBoxDumped = true;
             try
             {
-                IDataVault vault = EnsureVault();
-                NativeArray<VisorLensTelemetryEntry> ring = _telemetryHandle.Resolve(vault);
-                NativeArray<int> cursorBuffer = _telemetryCursorHandle.Resolve(vault);
+                NativeArray<VisorLensTelemetryEntry> ring = OpenVaultArray(ref _telemetryHandle, TelemetryRingBufferId, TelemetryCapacity);
+                NativeArray<int> cursorBuffer = OpenVaultArray(ref _telemetryCursorHandle, TelemetryCursorBufferId, 1);
                 if (!ring.IsCreated || ring.Length < TelemetryCapacity || !cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
                     return;
 
@@ -1003,7 +1170,7 @@ namespace Hecton8.Visor
 
             try
             {
-                NativeArray<byte> bytes = _binaryProbeBytesHandle.Resolve(EnsureVault());
+                NativeArray<byte> bytes = OpenVaultArray(ref _binaryProbeBytesHandle, BinaryProbeByteBufferId, BinaryProbeBytes);
                 int length = FillByteBufferFromFile(path, bytes);
                 if (length < 4)
                     return false;

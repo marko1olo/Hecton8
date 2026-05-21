@@ -45,6 +45,7 @@ public static class MCTables
     static int _ready;
     static readonly object _initLock = new object();
     static bool _editorHooksInstalled;
+    const Allocator DataVaultExemptMarchingCubesTableAllocator = Allocator.Persistent;
 
 #if UNITY_EDITOR
     static void EnsureEditorHooks()
@@ -126,7 +127,7 @@ public static class MCTables
                 0xF00,0xE09,0xD03,0xC0A,0xB06,0xA0F,0x905,0x80C,
                 0x70C,0x605,0x50F,0x406,0x30A,0x203,0x109,0x000
             };
-            _edgeTable = new NativeArray<int>(256, Allocator.Persistent);
+            _edgeTable = new NativeArray<int>(256, DataVaultExemptMarchingCubesTableAllocator);
             _edgeTable.CopyFrom(et);
             NativeMemorySentinel.RegisterNativeArray(_edgeTable, nameof(MCTables), nameof(_edgeTable), NativeAllocationLifetime.Permanent);
 
@@ -389,7 +390,7 @@ public static class MCTables
                 0,3,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                 -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
             };
-            _triTable = new NativeArray<int>(4096, Allocator.Persistent);
+            _triTable = new NativeArray<int>(4096, DataVaultExemptMarchingCubesTableAllocator);
             _triTable.CopyFrom(tt);
             NativeMemorySentinel.RegisterNativeArray(_triTable, nameof(MCTables), nameof(_triTable), NativeAllocationLifetime.Permanent);
 
@@ -428,9 +429,13 @@ public static class MCTables
 // ════════════════════════════════════════════════════════════════════════════════
 #region MC Types
 
+[StructLayout(LayoutKind.Explicit, Size = 24)]
 public struct MCRawVertex
 {
-    public float3 position;
+    [FieldOffset(0)]
+    public float3 localPosition;
+
+    [FieldOffset(16)]
     public long edgeId;
 }
 
@@ -444,7 +449,7 @@ public struct MCRawVertex
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 1: DENSITY FIELD — Multi-primitive SDF cave system (v4.0 REWRITE)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDensityJob : IJobParallelFor
 {
     private const byte DeltaModeAdditive = 1 << 0;
@@ -459,20 +464,20 @@ public struct VoxelDensityJob : IJobParallelFor
     public float voxelStep;
 
     // ── Terrain ──
-    [ReadOnly] public NativeArray<float> terrainHeights;
+    [ReadOnly, NoAlias] public NativeArray<float> terrainHeights;
 
     // ── Cave SDF primitives ──
-    [ReadOnly] public NativeArray<float> gridBiome;
-    [ReadOnly] public NativeArray<CaveNode> caveNodes;
-    [ReadOnly] public NativeArray<CaveTunnel> caveTunnels;
-    [ReadOnly] public NativeArray<CaveEntrance> caveEntrances;
-    [ReadOnly] public NativeArray<CaveStructure> caveStructures;
-    [ReadOnly] public NativeArray<VoxelCraterStamp> craterStamps;
+    [ReadOnly, NoAlias] public NativeArray<float> gridBiome;
+    [ReadOnly, NoAlias] public NativeArray<CaveNode> caveNodes;
+    [ReadOnly, NoAlias] public NativeArray<CaveTunnel> caveTunnels;
+    [ReadOnly, NoAlias] public NativeArray<CaveEntrance> caveEntrances;
+    [ReadOnly, NoAlias] public NativeArray<CaveStructure> caveStructures;
+    [ReadOnly, NoAlias] public NativeArray<VoxelCraterStamp> craterStamps;
     [ReadOnly] public NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells;
-    [ReadOnly] public NativeArray<int> nodeBucketOffsets;
-    [ReadOnly] public NativeArray<int> nodeBucketIndices;
-    [ReadOnly] public NativeArray<int> tunnelBucketOffsets;
-    [ReadOnly] public NativeArray<int> tunnelBucketIndices;
+    [ReadOnly, NoAlias] public NativeArray<int> nodeBucketOffsets;
+    [ReadOnly, NoAlias] public NativeArray<int> nodeBucketIndices;
+    [ReadOnly, NoAlias] public NativeArray<int> tunnelBucketOffsets;
+    [ReadOnly, NoAlias] public NativeArray<int> tunnelBucketIndices;
 
     // ── Cave parameters ──
     public CaveGenerationParams caveParams;
@@ -490,8 +495,8 @@ public struct VoxelDensityJob : IJobParallelFor
     public int enableBiomeSdfModifiers;
 
     // ── Output ──
-    [WriteOnly] public NativeArray<float> density;
-    [WriteOnly] public NativeArray<float> smoothDensity;
+    [WriteOnly, NoAlias] public NativeArray<float> density;
+    [WriteOnly, NoAlias] public NativeArray<float> smoothDensity;
 
     // ════════════════════════════════════════════════════════════════════════
     //  EXECUTE — Per voxel point
@@ -1658,15 +1663,15 @@ public struct VoxelDensityJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 struct VoxelColliderChunkClassifyJob : IJobParallelFor
 {
-    [ReadOnly] public NativeArray<float3> positions;
-    [ReadOnly] public NativeArray<int> triangleIndices;
+    [ReadOnly, NoAlias] public NativeArray<float3> positions;
+    [ReadOnly, NoAlias] public NativeArray<int> triangleIndices;
     public float3 boundsMin;
     public float3 boundsSize;
     public int chunkCount;
-    [WriteOnly] public NativeArray<byte> triangleBuckets;
+    [WriteOnly, NoAlias] public NativeArray<byte> triangleBuckets;
 
     public void Execute(int triangleIndex)
     {
@@ -1695,11 +1700,11 @@ struct VoxelColliderChunkClassifyJob : IJobParallelFor
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelFillIntArrayJob : IJobParallelFor
 {
     public int Value;
-    public NativeArray<int> Values;
+    [NoAlias] public NativeArray<int> Values;
 
     public void Execute(int index)
     {
@@ -1707,7 +1712,7 @@ public struct VoxelFillIntArrayJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelChunkSkirtExtrusionJob : IJobParallelFor
 {
     public int ptsX;
@@ -1718,8 +1723,8 @@ public struct VoxelChunkSkirtExtrusionJob : IJobParallelFor
     public float skirtWidthMeters;
     public int lodLevel;
 
-    public NativeArray<float3> positions;
-    public NativeArray<float> skirtAlphaValues;
+    [NoAlias] public NativeArray<float3> positions;
+    [NoAlias] public NativeArray<float> skirtAlphaValues;
 
     public void Execute(int idx)
     {
@@ -1746,12 +1751,12 @@ public struct VoxelChunkSkirtExtrusionJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelChunkBoundsContentJob : IJob
 {
     public int ptsX, ptsY, ptsZ;
-    [ReadOnly] public NativeArray<float> density;
-    public NativeArray<int> hasContent;
+    [ReadOnly, NoAlias] public NativeArray<float> density;
+    [NoAlias] public NativeArray<int> hasContent;
 
     public void Execute()
     {
@@ -1782,17 +1787,17 @@ public struct VoxelChunkBoundsContentJob : IJob
 
 //  JOB 2: Marching Cubes exact count pass
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelMCCountJob : IJobParallelFor
 {
     public int cellsX, cellsY, cellsZ;
     public int ptsX, ptsY, ptsZ;
     public float densityDecodeScale;
 
-    [ReadOnly] public NativeArray<sbyte> density;
-    [ReadOnly] public NativeArray<int> edgeTable;
-    [ReadOnly] public NativeArray<int> triTable;
-    [WriteOnly] public NativeArray<int> cellVertexCounts;
+    [ReadOnly, NoAlias] public NativeArray<sbyte> density;
+    [ReadOnly, NoAlias] public NativeArray<int> edgeTable;
+    [ReadOnly, NoAlias] public NativeArray<int> triTable;
+    [WriteOnly, NoAlias] public NativeArray<int> cellVertexCounts;
 
     public void Execute(int cellIdx)
     {
@@ -1842,13 +1847,13 @@ public struct VoxelMCCountJob : IJobParallelFor
     float D(int ix, int iy, int iz) => density[GI(ix, iy, iz)] * densityDecodeScale;
 }
 
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDensityQuantizeJob : IJobParallelFor
 {
     public float densityDecodeInvScale;
 
-    [ReadOnly] public NativeArray<float> density;
-    [WriteOnly] public NativeArray<sbyte> quantizedDensity;
+    [ReadOnly, NoAlias] public NativeArray<float> density;
+    [WriteOnly, NoAlias] public NativeArray<sbyte> quantizedDensity;
 
     public void Execute(int index)
     {
@@ -1865,7 +1870,7 @@ public struct VoxelDensityQuantizeJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2.1: Marching Cubes extraction (exact-offset write)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public unsafe struct VoxelMCExtractJob : IJobParallelFor
 {
     public int cellsX, cellsY, cellsZ;
@@ -1874,11 +1879,11 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
     public float voxelStep;
     public float densityDecodeScale;
 
-    [ReadOnly] public NativeArray<sbyte> density;
-    [ReadOnly] public NativeArray<int> edgeTable;
-    [ReadOnly] public NativeArray<int> triTable;
-    [ReadOnly] public NativeArray<int> cellVertexOffsets;
-    [ReadOnly] public NativeArray<int> cellVertexCounts;
+    [ReadOnly, NoAlias] public NativeArray<sbyte> density;
+    [ReadOnly, NoAlias] public NativeArray<int> edgeTable;
+    [ReadOnly, NoAlias] public NativeArray<int> triTable;
+    [ReadOnly, NoAlias] public NativeArray<int> cellVertexOffsets;
+    [ReadOnly, NoAlias] public NativeArray<int> cellVertexCounts;
 
     // SAFETY_JUSTIFICATION_PARAGRAPH_1:
     // Unity's safety system cannot prove that each parallel cell writes a disjoint slice of outVertices.
@@ -1892,7 +1897,7 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
     // The invariant is exclusive range ownership: Execute(cellIdx) writes only
     // [cellVertexOffsets[cellIdx], cellVertexOffsets[cellIdx] + cellVertexCounts[cellIdx]).
     // No other job writes outVertices until this job handle completes.
-    [NativeDisableContainerSafetyRestriction]
+    [NativeDisableContainerSafetyRestriction, NoAlias]
     public NativeArray<MCRawVertex> outVertices;
 
     public void Execute(int cellIdx)
@@ -1975,13 +1980,13 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
             int e2 = triTable[triBase + t + 2];
 
             outVertices[wi] = new MCRawVertex {
-                position = GetEV(e0,ev0,ev1,ev2,ev3,ev4,ev5,ev6,ev7,ev8,ev9,ev10,ev11),
+                localPosition = GetEV(e0,ev0,ev1,ev2,ev3,ev4,ev5,ev6,ev7,ev8,ev9,ev10,ev11),
                 edgeId = GetEID(e0,eid0,eid1,eid2,eid3,eid4,eid5,eid6,eid7,eid8,eid9,eid10,eid11) };
             outVertices[wi+1] = new MCRawVertex {
-                position = GetEV(e1,ev0,ev1,ev2,ev3,ev4,ev5,ev6,ev7,ev8,ev9,ev10,ev11),
+                localPosition = GetEV(e1,ev0,ev1,ev2,ev3,ev4,ev5,ev6,ev7,ev8,ev9,ev10,ev11),
                 edgeId = GetEID(e1,eid0,eid1,eid2,eid3,eid4,eid5,eid6,eid7,eid8,eid9,eid10,eid11) };
             outVertices[wi+2] = new MCRawVertex {
-                position = GetEV(e2,ev0,ev1,ev2,ev3,ev4,ev5,ev6,ev7,ev8,ev9,ev10,ev11),
+                localPosition = GetEV(e2,ev0,ev1,ev2,ev3,ev4,ev5,ev6,ev7,ev8,ev9,ev10,ev11),
                 edgeId = GetEID(e2,eid0,eid1,eid2,eid3,eid4,eid5,eid6,eid7,eid8,eid9,eid10,eid11) };
             wi += 3;
         }
@@ -2031,7 +2036,7 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2.5: Vertex Welding (UNCHANGED from v3.2)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public unsafe struct VoxelWeldJob : IJob
 {
     private const int InvalidVertexIndex = -1;
@@ -2040,15 +2045,15 @@ public unsafe struct VoxelWeldJob : IJob
     public int ptsX;
     public int ptsY;
     public int ptsZ;
-    [ReadOnly] public NativeArray<MCRawVertex> rawVertices;
-    public NativeArray<int> edgeVertexX;
-    public NativeArray<int> edgeVertexY;
-    public NativeArray<int> edgeVertexZ;
-    [WriteOnly]
+    [ReadOnly, NoAlias] public NativeArray<MCRawVertex> rawVertices;
+    [NoAlias] public NativeArray<int> edgeVertexX;
+    [NoAlias] public NativeArray<int> edgeVertexY;
+    [NoAlias] public NativeArray<int> edgeVertexZ;
+    [WriteOnly, NoAlias]
     public NativeArray<float3> weldedPositions;
-    [WriteOnly]
+    [WriteOnly, NoAlias]
     public NativeArray<int> triangleIndices;
-    public NativeArray<int> weldedCounter;
+    [NoAlias] public NativeArray<int> weldedCounter;
 
     public void Execute()
     {
@@ -2066,7 +2071,7 @@ public unsafe struct VoxelWeldJob : IJob
                 }
 
                 int newIdx = weldedCount;
-                weldedPositions[newIdx] = rv.position;
+                weldedPositions[newIdx] = rv.localPosition;
                 WriteEdgeVertex(axis, edgeSlot, newIdx);
                 triangleIndices[i] = newIdx;
                 weldedCount++;
@@ -2074,7 +2079,7 @@ public unsafe struct VoxelWeldJob : IJob
             }
 
             int fallbackIdx = weldedCount;
-            weldedPositions[fallbackIdx] = rv.position;
+            weldedPositions[fallbackIdx] = rv.localPosition;
             triangleIndices[i] = fallbackIdx;
             weldedCount++;
         }
@@ -2156,7 +2161,7 @@ public unsafe struct VoxelWeldJob : IJob
 // -------------------------------------------------------------------------------
 //  JOB 3: Cheap SDF normals and cinematic curvature masks
 // -------------------------------------------------------------------------------
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelNormalJob : IJobParallelFor
 {
     const float SolidNeighborAoScale = 0.111111112f;
@@ -2166,11 +2171,11 @@ public struct VoxelNormalJob : IJobParallelFor
     public int densityStrideZ;
     public float3 volumeOrigin;
     public float invVoxelStep;
-    [ReadOnly] public NativeArray<sbyte> densityField;
-    [ReadOnly] public NativeArray<float3> positions;
-    [WriteOnly] public NativeArray<float3> normals;
-    [WriteOnly] public NativeArray<float> curvatureValues;
-    [WriteOnly] public NativeArray<float> ambientOcclusionValues;
+    [ReadOnly, NoAlias] public NativeArray<sbyte> densityField;
+    [ReadOnly, NoAlias] public NativeArray<float3> positions;
+    [WriteOnly, NoAlias] public NativeArray<float3> normals;
+    [WriteOnly, NoAlias] public NativeArray<float> curvatureValues;
+    [WriteOnly, NoAlias] public NativeArray<float> ambientOcclusionValues;
 
     public void Execute(int idx)
     {
@@ -2238,7 +2243,7 @@ public struct VoxelNormalJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelTerrainSeamSnapJob : IJobParallelFor
 {
     public int ptsX;
@@ -2249,8 +2254,8 @@ public struct VoxelTerrainSeamSnapJob : IJobParallelFor
     public float seamTransitionBand;
     public float seamOverlap;
 
-    [ReadOnly] public NativeArray<float> terrainHeights;
-    public NativeArray<float3> positions;
+    [ReadOnly, NoAlias] public NativeArray<float> terrainHeights;
+    [NoAlias] public NativeArray<float3> positions;
 
     public void Execute(int idx)
     {
@@ -2295,7 +2300,7 @@ public struct VoxelTerrainSeamSnapJob : IJobParallelFor
         return math.lerp(math.lerp(h00, h10, fx), math.lerp(h01, h11, fx), fz);
     }
 }
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelSeamNormalBlendJob : IJobParallelFor
 {
     public int ptsX;
@@ -2305,9 +2310,9 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
     public float voxelStep;
     public float seamTransitionBand;
 
-    [ReadOnly] public NativeArray<float3> positions;
-    [ReadOnly] public NativeArray<float> terrainHeights;
-    public NativeArray<float3> normals;
+    [ReadOnly, NoAlias] public NativeArray<float3> positions;
+    [ReadOnly, NoAlias] public NativeArray<float> terrainHeights;
+    [NoAlias] public NativeArray<float3> normals;
 
     public void Execute(int idx)
     {
@@ -2416,14 +2421,14 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelShiftAwareProjectionJob : IJobParallelFor
 {
     public float3 rebaseDelta;
     public float3 rootRuntimePosition;
 
-    [ReadOnly] public NativeArray<float3> sourcePositions;
-    [WriteOnly] public NativeArray<float3> projectedPositions;
+    [ReadOnly, NoAlias] public NativeArray<float3> sourcePositions;
+    [WriteOnly, NoAlias] public NativeArray<float3> projectedPositions;
 
     public void Execute(int index)
     {
@@ -2435,15 +2440,15 @@ public struct VoxelShiftAwareProjectionJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 3.5: Biome Sampling (UNCHANGED from v3.2)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelBiomeSampleJob : IJobParallelFor
 {
     public int ptsX, ptsZ;
     public float3 volumeOrigin;
     public float voxelStep;
-    [ReadOnly] public NativeArray<float> gridBiome;
-    [ReadOnly] public NativeArray<float3> positions;
-    [WriteOnly] public NativeArray<float> biomeValues;
+    [ReadOnly, NoAlias] public NativeArray<float> gridBiome;
+    [ReadOnly, NoAlias] public NativeArray<float3> positions;
+    [WriteOnly, NoAlias] public NativeArray<float> biomeValues;
 
     public void Execute(int idx)
     {
@@ -2467,7 +2472,7 @@ public struct VoxelBiomeSampleJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 4: Vertex Colors (v4.0 — updated for cave SDF)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelColorJob : IJobParallelFor
 {
     public float maxDepth;
@@ -2482,20 +2487,20 @@ public struct VoxelColorJob : IJobParallelFor
     public int lodLevel;
     public float lodTransitionBand;
 
-    [ReadOnly] public NativeArray<float3> positions;
-    [ReadOnly] public NativeArray<float3> normals;
-    [ReadOnly] public NativeArray<float> terrainHeights;
-    [ReadOnly] public NativeArray<float> gridBiome;
-    [ReadOnly] public NativeArray<float> curvatureValues;
-    [ReadOnly] public NativeArray<float> ambientOcclusionValues;
-    [ReadOnly] public NativeArray<float> biomeValues;
-    [ReadOnly] public NativeArray<CaveEntrance> caveEntrances;
+    [ReadOnly, NoAlias] public NativeArray<float3> positions;
+    [ReadOnly, NoAlias] public NativeArray<float3> normals;
+    [ReadOnly, NoAlias] public NativeArray<float> terrainHeights;
+    [ReadOnly, NoAlias] public NativeArray<float> gridBiome;
+    [ReadOnly, NoAlias] public NativeArray<float> curvatureValues;
+    [ReadOnly, NoAlias] public NativeArray<float> ambientOcclusionValues;
+    [ReadOnly, NoAlias] public NativeArray<float> biomeValues;
+    [ReadOnly, NoAlias] public NativeArray<CaveEntrance> caveEntrances;
     [ReadOnly] public NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells;
 
     public float3 absoluteUniverseOffset;
 
-    [WriteOnly] public NativeArray<Color> colors;
-    public NativeArray<float> skirtAlphaValues;
+    [WriteOnly, NoAlias] public NativeArray<Color> colors;
+    [NoAlias] public NativeArray<float> skirtAlphaValues;
 
     public void Execute(int idx)
     {
@@ -2617,14 +2622,14 @@ public struct VoxelColorJob : IJobParallelFor
 //  Each point carries a deterministic hashId derived from world position,
 //  ensuring save system consistency regardless of parallel execution order.
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDirtyBlendJob : IJobParallelFor
 {
-    [ReadOnly] public NativeArray<float3> positions;
+    [ReadOnly, NoAlias] public NativeArray<float3> positions;
     [ReadOnly] public NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells;
     public float voxelStep;
     public float3 absoluteUniverseOffset;
-    [WriteOnly] public NativeArray<float> dirtyBlendValues;
+    [WriteOnly, NoAlias] public NativeArray<float> dirtyBlendValues;
 
     public void Execute(int index)
     {
@@ -2656,11 +2661,11 @@ public struct VoxelDirtyBlendJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelSpawnPointJob : IJobParallelFor
 {
-    [ReadOnly] public NativeArray<float3> positions;
-    [ReadOnly] public NativeArray<float3> normals;
+    [ReadOnly, NoAlias] public NativeArray<float3> positions;
+    [ReadOnly, NoAlias] public NativeArray<float3> normals;
 
     /// <summary>Volume center for interior depth calculation.</summary>
     public float3 volumeCenter;
@@ -2753,7 +2758,7 @@ public struct VoxelSpawnPointJob : IJobParallelFor
 // ════════════════════════════════════════════════════════════════════════════════
 #region HectonVoxelEngine
 
-public class HectonVoxelEngine : MonoBehaviour
+public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSonarSdfReadModel
 {
     private const string DefaultVoxelBakeGhostShaderName = "Hecton8/Environment/Hecton_VoxelBakeGhost";
     private const string RuntimeCaveVolumeName = "CaveVolume";
@@ -2808,6 +2813,8 @@ public class HectonVoxelEngine : MonoBehaviour
     private const string ModifiedCellsNativeMemoryLabel = "VoxelPipelineData.ModifiedCells";
     private const string SpawnPointListNativeMemoryLabel = "VoxelPipelineData.SpawnPointList";
     private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+    private const Allocator DataVaultExemptVoxelPipelineScratchAllocator = Allocator.Persistent;
+    private const Allocator DataVaultExemptVoxelSpawnPointAllocator = Allocator.Persistent;
     private static readonly uint _VoxelTeardownBackpressureWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Voxel.PhysicsBake.TeardownBackpressure"));
     private static readonly uint _VoxelPhysicsBakeForceReleaseWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Voxel.PhysicsBake.ForceRelease"));
     private static readonly uint _VoxelColliderUploadDropWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Voxel.ColliderUpload.Drop"));
@@ -2998,7 +3005,6 @@ public class HectonVoxelEngine : MonoBehaviour
     private static bool _voxelSurfaceMeshPoolExhaustedWarningArmed;
     private static bool _voxelPhysicsBakeMeshPoolExhaustedWarningArmed;
 
-    [StructLayout(LayoutKind.Sequential)]
     private struct DeferredVoxelPhysicsBakeTeardown
     {
         public Mesh Mesh;
@@ -3014,7 +3020,6 @@ public class HectonVoxelEngine : MonoBehaviour
         public byte HasProxyBounds;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     private struct DeferredVoxelColliderUpload
     {
         public Hecton8.Caves.HectonVoxelVolume Volume;
@@ -3030,19 +3035,40 @@ public class HectonVoxelEngine : MonoBehaviour
         public byte RetryCount;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     private struct VoxelMeshPipelineTelemetryEntry
     {
+        [FieldOffset(0)]
         public uint Frame;
+
+        [FieldOffset(4)]
         public uint Flags;
+
+        [FieldOffset(8)]
         public ushort ChunksMeshedThisFrame;
+
+        [FieldOffset(10)]
         public ushort BakeQueueLength;
+
+        [FieldOffset(12)]
         public ushort ColliderUploadQueueLength;
+
+        [FieldOffset(14)]
         public ushort ActiveGenerationOperations;
+
+        [FieldOffset(16)]
         public ushort SurfacePoolInUse;
+
+        [FieldOffset(18)]
         public ushort PhysicsPoolInUse;
+
+        [FieldOffset(20)]
         public uint StateHash;
+
+        [FieldOffset(24)]
         public uint Padding0;
+
+        [FieldOffset(28)]
         public uint Padding1;
     }
 
@@ -3433,8 +3459,7 @@ public class HectonVoxelEngine : MonoBehaviour
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     struct VoxelMeshBakeJob : IJob
     {
         public EntityId MeshId;
@@ -3582,7 +3607,9 @@ public class HectonVoxelEngine : MonoBehaviour
             float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
             float lodTransitionBand = clampedLodLevel > 0 ? math.max(baseVoxelStep * 2f, voxelStep * 1.25f) : 0f;
             float effectiveSealMargin = math.max(sealMargin, TerrainVoxelSeamTransitionBand) + lodTransitionBand;
-            double3 absoluteUniverseOffsetAtStartDouble = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!TryResolveCurrentRuntimeOriginAbsolute(out double3 absoluteUniverseOffsetAtStartDouble))
+                return null;
+
             Vector3 absoluteUniverseOffsetAtStart = ToVector3(absoluteUniverseOffsetAtStartDouble);
             uint shiftEpochAtStart = HectonFloatingOrigin.CurrentShiftSequence;
 
@@ -3810,7 +3837,9 @@ public class HectonVoxelEngine : MonoBehaviour
             float effectiveSealMargin = math.max(sealMargin, TerrainVoxelSeamTransitionBand) + lodTransitionBand;
             float3 actualSize = new float3(gridDim, gridDim, gridDim) * voxelStep;
             float3 volumeOrigin = (float3)worldCenter - actualSize * 0.5f;
-            double3 absoluteUniverseOffsetAtStartDouble = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!TryResolveCurrentRuntimeOriginAbsolute(out double3 absoluteUniverseOffsetAtStartDouble))
+                return null;
+
             Vector3 absoluteUniverseOffsetAtStart = ToVector3(absoluteUniverseOffsetAtStartDouble);
             uint shiftEpochAtStart = HectonFloatingOrigin.CurrentShiftSequence;
 
@@ -4271,7 +4300,9 @@ public class HectonVoxelEngine : MonoBehaviour
     internal bool TryGetNearestActiveVolume(Vector3 worldPosition, out Hecton8.Caves.HectonVoxelVolume nearestVolume)
     {
         nearestVolume = null;
-        AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+        if (!TryResolveRuntimeAup(worldPosition, out AbsoluteUniversePosition queryAup))
+            return false;
+
         double bestSqrDistance = double.PositiveInfinity;
 
         for (int i = 0; i < _activeVolumes.Count; i++)
@@ -4296,6 +4327,253 @@ public class HectonVoxelEngine : MonoBehaviour
         }
 
         return nearestVolume != null;
+    }
+
+    public bool TryReadNearestSonarSdf(
+        float3 runtimeOrigin,
+        out NativeArray<byte> encodedSdf,
+        out int3 gridDimensions,
+        out float3 volumeOrigin,
+        out float3 cellSize,
+        out float sdfRange)
+    {
+        encodedSdf = default;
+        gridDimensions = default;
+        volumeOrigin = default;
+        cellSize = default;
+        sdfRange = 0f;
+        if (!math.all(math.isfinite(runtimeOrigin)))
+            return false;
+
+        Vector3 origin = new Vector3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z);
+        if (!TryReadNearestActiveSonarSdfPayload(
+                origin,
+                out NativeArray<byte> payload,
+                out Vector3Int dimensions,
+                out Vector3 payloadOrigin,
+                out Vector3 payloadCellSize,
+                out float payloadRange,
+                out int _))
+        {
+            return false;
+        }
+
+        encodedSdf = payload;
+        gridDimensions = new int3(dimensions.x, dimensions.y, dimensions.z);
+        volumeOrigin = new float3(payloadOrigin.x, payloadOrigin.y, payloadOrigin.z);
+        cellSize = new float3(payloadCellSize.x, payloadCellSize.y, payloadCellSize.z);
+        sdfRange = payloadRange;
+        return encodedSdf.IsCreated &&
+               math.all(gridDimensions > 0) &&
+               math.all(math.isfinite(volumeOrigin)) &&
+               math.all(math.isfinite(cellSize)) &&
+               math.isfinite(sdfRange) &&
+               sdfRange > 0f;
+    }
+
+    public bool TryRaymarchNearestSonarSdf(
+        float3 runtimeOrigin,
+        float3 runtimeDirection,
+        float maxDistance,
+        float stepMeters,
+        out VoxelSonarSdfRaycastHit hit,
+        out NativeArray<byte> encodedSdf,
+        out int3 gridDimensions,
+        out float3 volumeOrigin,
+        out float3 cellSize,
+        out float sdfRange)
+    {
+        hit = default;
+        encodedSdf = default;
+        gridDimensions = default;
+        volumeOrigin = default;
+        cellSize = default;
+        sdfRange = 0f;
+        if (!math.all(math.isfinite(runtimeOrigin)) ||
+            !math.all(math.isfinite(runtimeDirection)) ||
+            !math.isfinite(maxDistance) ||
+            maxDistance <= 0f)
+        {
+            return false;
+        }
+
+        Vector3 origin = new Vector3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z);
+        Vector3 direction = new Vector3(runtimeDirection.x, runtimeDirection.y, runtimeDirection.z);
+        float safeStepMeters = math.max(0.05f, math.isfinite(stepMeters) ? stepMeters : 0.05f);
+        float bestDistance = float.MaxValue;
+        bool resolved = false;
+
+        for (int i = 0; i < _activeVolumes.Count; i++)
+        {
+            GameObject activeVolume = _activeVolumes[i];
+            HectonVoxelVolume volume = i < _activeVolumeComponents.Count ? _activeVolumeComponents[i] : null;
+            if (activeVolume == null ||
+                volume == null ||
+                !volume.HasRuntimeData)
+            {
+                continue;
+            }
+
+            if (!volume.TryRaymarchPublishedSdf(
+                    origin,
+                    direction,
+                    maxDistance,
+                    safeStepMeters,
+                    out VoxelSdfRaycastHit candidateHit) ||
+                candidateHit.Hit == 0 ||
+                candidateHit.Distance >= bestDistance)
+            {
+                continue;
+            }
+
+            if (!volume.TryGetPublishedSonarSdfPayload(
+                    out NativeArray<byte> candidateSdf,
+                    out Vector3Int candidateDimensions,
+                    out Vector3 candidateOrigin,
+                    out Vector3 candidateCellSize,
+                    out float candidateRange,
+                    out int candidateVersion))
+            {
+                continue;
+            }
+
+            bestDistance = candidateHit.Distance;
+            hit.Point = new float3(candidateHit.Point.x, candidateHit.Point.y, candidateHit.Point.z);
+            hit.Normal = new float3(candidateHit.Normal.x, candidateHit.Normal.y, candidateHit.Normal.z);
+            hit.Distance = math.max(0f, candidateHit.Distance);
+            hit.Density = math.isfinite(candidateHit.Density) ? candidateHit.Density : 0f;
+            hit.Density01 = math.saturate(math.max(0f, hit.Density) * math.rcp(math.max(0.0001f, candidateRange)));
+            hit.SdfRange = candidateRange;
+            hit.Version = candidateVersion;
+            hit.Flags = VoxelSonarSdfRaycastHit.FlagHit;
+            encodedSdf = candidateSdf;
+            gridDimensions = new int3(candidateDimensions.x, candidateDimensions.y, candidateDimensions.z);
+            volumeOrigin = new float3(candidateOrigin.x, candidateOrigin.y, candidateOrigin.z);
+            cellSize = new float3(candidateCellSize.x, candidateCellSize.y, candidateCellSize.z);
+            sdfRange = candidateRange;
+            resolved = true;
+        }
+
+        return resolved;
+    }
+
+    public bool TrySampleNearestSonarSdf(
+        float3 runtimePosition,
+        out float density,
+        out float density01)
+    {
+        density = 0f;
+        density01 = 0f;
+        if (!math.all(math.isfinite(runtimePosition)))
+            return false;
+
+        Vector3 position = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+        float bestBoundsDistanceSq = float.MaxValue;
+        bool resolved = false;
+
+        for (int i = 0; i < _activeVolumes.Count; i++)
+        {
+            GameObject activeVolume = _activeVolumes[i];
+            HectonVoxelVolume volume = i < _activeVolumeComponents.Count ? _activeVolumeComponents[i] : null;
+            if (activeVolume == null ||
+                volume == null ||
+                !volume.HasRuntimeData ||
+                !volume.TryGetPublishedSonarSdfPayload(
+                    out NativeArray<byte> _,
+                    out Vector3Int dimensions,
+                    out Vector3 payloadOrigin,
+                    out Vector3 payloadCellSize,
+                    out float _,
+                    out int _) ||
+                !volume.TrySampleSonarSdf(runtimePosition, out float candidateDensity, out float candidateDensity01))
+            {
+                continue;
+            }
+
+            float boundsDistanceSq = ResolveSdfPayloadBoundsDistanceSq(position, payloadOrigin, dimensions, payloadCellSize);
+            if (boundsDistanceSq >= bestBoundsDistanceSq)
+                continue;
+
+            bestBoundsDistanceSq = boundsDistanceSq;
+            density = candidateDensity;
+            density01 = candidateDensity01;
+            resolved = true;
+        }
+
+        return resolved;
+    }
+
+    private bool TryReadNearestActiveSonarSdfPayload(
+        Vector3 runtimeOrigin,
+        out NativeArray<byte> encodedSdf,
+        out Vector3Int gridDimensions,
+        out Vector3 volumeOrigin,
+        out Vector3 voxelCellSize,
+        out float sdfRange,
+        out int version)
+    {
+        encodedSdf = default;
+        gridDimensions = default;
+        volumeOrigin = default;
+        voxelCellSize = default;
+        sdfRange = 0f;
+        version = 0;
+
+        float bestDistanceSq = float.MaxValue;
+        bool resolved = false;
+        for (int i = 0; i < _activeVolumes.Count; i++)
+        {
+            GameObject activeVolume = _activeVolumes[i];
+            HectonVoxelVolume volume = i < _activeVolumeComponents.Count ? _activeVolumeComponents[i] : null;
+            if (activeVolume == null ||
+                volume == null ||
+                !volume.HasRuntimeData ||
+                !volume.TryGetPublishedSonarSdfPayload(
+                    out NativeArray<byte> candidateSdf,
+                    out Vector3Int candidateDimensions,
+                    out Vector3 candidateOrigin,
+                    out Vector3 candidateCellSize,
+                    out float candidateSdfRange,
+                    out int candidateVersion))
+            {
+                continue;
+            }
+
+            Vector3 center = candidateOrigin + new Vector3(
+                candidateCellSize.x * math.max(0, candidateDimensions.x - 1) * 0.5f,
+                candidateCellSize.y * math.max(0, candidateDimensions.y - 1) * 0.5f,
+                candidateCellSize.z * math.max(0, candidateDimensions.z - 1) * 0.5f);
+            float distanceSq = (center - runtimeOrigin).sqrMagnitude;
+            if (distanceSq >= bestDistanceSq)
+                continue;
+
+            bestDistanceSq = distanceSq;
+            encodedSdf = candidateSdf;
+            gridDimensions = candidateDimensions;
+            volumeOrigin = candidateOrigin;
+            voxelCellSize = candidateCellSize;
+            sdfRange = candidateSdfRange;
+            version = candidateVersion;
+            resolved = true;
+        }
+
+        return resolved;
+    }
+
+    private static float ResolveSdfPayloadBoundsDistanceSq(
+        Vector3 position,
+        Vector3 origin,
+        Vector3Int dimensions,
+        Vector3 cellSize)
+    {
+        Vector3 max = origin + new Vector3(
+            cellSize.x * math.max(0, dimensions.x - 1),
+            cellSize.y * math.max(0, dimensions.y - 1),
+            cellSize.z * math.max(0, dimensions.z - 1));
+        float dx = position.x < origin.x ? origin.x - position.x : (position.x > max.x ? position.x - max.x : 0f);
+        float dy = position.y < origin.y ? origin.y - position.y : (position.y > max.y ? position.y - max.y : 0f);
+        float dz = position.z < origin.z ? origin.z - position.z : (position.z > max.z ? position.z - max.z : 0f);
+        return dx * dx + dy * dy + dz * dz;
     }
 
     void TeardownRuntimeState()
@@ -4505,8 +4783,13 @@ public class HectonVoxelEngine : MonoBehaviour
 
     private static bool PathIntersectsDeferredVoxelProxyAup(Vector3 runtimeStart, Vector3 runtimeEnd)
     {
-        double3 startAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeStart).ToAbsoluteDouble3();
-        double3 endAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeEnd).ToAbsoluteDouble3();
+        if (!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup) ||
+            !TryResolveRuntimeAbsoluteDouble(runtimeStart, in originAup, out double3 startAup) ||
+            !TryResolveRuntimeAbsoluteDouble(runtimeEnd, in originAup, out double3 endAup))
+        {
+            return false;
+        }
+
         double padding = PredictiveVoxelProxyCinematicPaddingMeters;
         double3 pathMin = math.min(startAup, endAup) - new double3(padding);
         double3 pathMax = math.max(startAup, endAup) + new double3(padding);
@@ -4607,11 +4890,16 @@ public class HectonVoxelEngine : MonoBehaviour
         if (bounds.size.sqrMagnitude <= 0.0001f)
             return false;
 
+        if (!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup) ||
+            !TryResolveRuntimeAbsoluteDouble(bounds.min, in originAup, out double3 minAup) ||
+            !TryResolveRuntimeAbsoluteDouble(bounds.max, in originAup, out double3 maxAup))
+        {
+            return false;
+        }
+
         double padding = PredictiveVoxelProxyCinematicPaddingMeters;
-        AbsoluteUniversePosition minAup = AbsoluteUniversePosition.FromRuntimePosition(bounds.min);
-        AbsoluteUniversePosition maxAup = AbsoluteUniversePosition.FromRuntimePosition(bounds.max);
-        proxyMinAup = AbsoluteUniversePosition.OffsetAbsoluteMeters(in minAup, new double3(-padding));
-        proxyMaxAup = AbsoluteUniversePosition.OffsetAbsoluteMeters(in maxAup, new double3(padding));
+        proxyMinAup = minAup - new double3(padding);
+        proxyMaxAup = maxAup + new double3(padding);
         return true;
     }
 
@@ -5492,8 +5780,13 @@ public class HectonVoxelEngine : MonoBehaviour
 
     internal static int DebugResolveDistanceBasedVoxelLodLevel(Vector3 worldCenter, Vector3 observerPosition)
     {
-        AbsoluteUniversePosition worldCenterAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);
-        AbsoluteUniversePosition observerAup = AbsoluteUniversePosition.FromRuntimePosition(observerPosition);
+        if (!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup) ||
+            !TryResolveRuntimeAup(worldCenter, in originAup, out AbsoluteUniversePosition worldCenterAup) ||
+            !TryResolveRuntimeAup(observerPosition, in originAup, out AbsoluteUniversePosition observerAup))
+        {
+            return 0;
+        }
+
         return ResolveDistanceBasedVoxelLodLevel(in worldCenterAup, in observerAup, VoxelLodColliderDisableDistanceMeters);
     }
 
@@ -5511,7 +5804,9 @@ public class HectonVoxelEngine : MonoBehaviour
         if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
             return 0;
 
-        AbsoluteUniversePosition worldCenterAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);
+        if (!TryResolveRuntimeAup(worldCenter, out AbsoluteUniversePosition worldCenterAup))
+            return 0;
+
         return ResolveDistanceBasedVoxelLodLevel(in worldCenterAup, in playerAup, VoxelLodColliderDisableDistanceMeters);
     }
 
@@ -5576,6 +5871,76 @@ public class HectonVoxelEngine : MonoBehaviour
 
         playerAup = default;
         return false;
+    }
+
+    private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+    {
+        return math.isfinite(position.LocalX) &&
+               math.isfinite(position.LocalY) &&
+               math.isfinite(position.LocalZ);
+    }
+
+    private static bool TryResolveCurrentRuntimeOriginAbsolute(out double3 originAbsolute)
+    {
+        originAbsolute = default;
+        if (!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup))
+            return false;
+
+        originAbsolute = originAup.ToAbsoluteDouble3();
+        return math.all(math.isfinite(originAbsolute));
+    }
+
+    private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
+    {
+        originAup = GlobalSignals.CurrentRuntimeOriginAup();
+        return IsFiniteAup(in originAup);
+    }
+
+    private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+    {
+        positionAup = default;
+        if (!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup))
+            return false;
+
+        return TryResolveRuntimeAup(runtimePosition, in originAup, out positionAup);
+    }
+
+    private static bool TryResolveRuntimeAup(
+        Vector3 runtimePosition,
+        in AbsoluteUniversePosition originAup,
+        out AbsoluteUniversePosition positionAup)
+    {
+        positionAup = default;
+        if (!IsFiniteVector(runtimePosition) || !IsFiniteAup(in originAup))
+            return false;
+
+        positionAup = AbsoluteUniversePosition.OffsetMeters(
+            in originAup,
+            new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+        return IsFiniteAup(in positionAup);
+    }
+
+    private static bool TryResolveRuntimeAbsoluteDouble(Vector3 runtimePosition, out double3 absolutePosition)
+    {
+        absolutePosition = default;
+        if (!TryResolveRuntimeAup(runtimePosition, out AbsoluteUniversePosition positionAup))
+            return false;
+
+        absolutePosition = positionAup.ToAbsoluteDouble3();
+        return math.all(math.isfinite(absolutePosition));
+    }
+
+    private static bool TryResolveRuntimeAbsoluteDouble(
+        Vector3 runtimePosition,
+        in AbsoluteUniversePosition originAup,
+        out double3 absolutePosition)
+    {
+        absolutePosition = default;
+        if (!TryResolveRuntimeAup(runtimePosition, in originAup, out AbsoluteUniversePosition positionAup))
+            return false;
+
+        absolutePosition = positionAup.ToAbsoluteDouble3();
+        return math.all(math.isfinite(absolutePosition));
     }
 
     private static AbsoluteUniversePosition BuildCapturedAup(Vector3 runtimePosition, Vector3 capturedOffset)
@@ -6505,13 +6870,13 @@ public class HectonVoxelEngine : MonoBehaviour
 
         ct.ThrowIfCancellationRequested();
 
-        data.Normals = new NativeArray<float3>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        data.CurvatureValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        data.AmbientOcclusionValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        data.BiomeValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        data.SkirtAlphaValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-        data.DirtyBlendValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-        data.Colors = new NativeArray<Color>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        data.Normals = new NativeArray<float3>(data.WeldedCount, DataVaultExemptVoxelPipelineScratchAllocator, NativeArrayOptions.UninitializedMemory);
+        data.CurvatureValues = new NativeArray<float>(data.WeldedCount, DataVaultExemptVoxelPipelineScratchAllocator, NativeArrayOptions.UninitializedMemory);
+        data.AmbientOcclusionValues = new NativeArray<float>(data.WeldedCount, DataVaultExemptVoxelPipelineScratchAllocator, NativeArrayOptions.UninitializedMemory);
+        data.BiomeValues = new NativeArray<float>(data.WeldedCount, DataVaultExemptVoxelPipelineScratchAllocator, NativeArrayOptions.UninitializedMemory);
+        data.SkirtAlphaValues = new NativeArray<float>(data.WeldedCount, DataVaultExemptVoxelPipelineScratchAllocator, NativeArrayOptions.ClearMemory);
+        data.DirtyBlendValues = new NativeArray<float>(data.WeldedCount, DataVaultExemptVoxelPipelineScratchAllocator, NativeArrayOptions.ClearMemory);
+        data.Colors = new NativeArray<Color>(data.WeldedCount, DataVaultExemptVoxelPipelineScratchAllocator, NativeArrayOptions.UninitializedMemory);
         RegisterTrackedNativeArray(data.Normals, nameof(data.Normals));
         RegisterTrackedNativeArray(data.CurvatureValues, nameof(data.CurvatureValues));
         RegisterTrackedNativeArray(data.AmbientOcclusionValues, nameof(data.AmbientOcclusionValues));
@@ -6522,7 +6887,7 @@ public class HectonVoxelEngine : MonoBehaviour
         if (data.ExtractSpawnPoints)
         {
             int maxSpawnPoints = math.max(data.WeldedCount / 20, 64);
-            data.SpawnPointList = new NativeList<CaveSpawnData>(maxSpawnPoints, Allocator.Persistent);
+            data.SpawnPointList = new NativeList<CaveSpawnData>(maxSpawnPoints, DataVaultExemptVoxelSpawnPointAllocator);
             data.SpawnPointListNativeMemoryId = NativeMemorySentinel.RegisterNativeListInstance(
                 data.SpawnPointList,
                 NativeMemoryOwner,
@@ -6995,7 +7360,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
         NativeArrayOptions options = clear ? NativeArrayOptions.ClearMemory : NativeArrayOptions.UninitializedMemory;
         // COLD ALLOC: NativeArray<T>[requiredLength] - reusable voxel streaming scratch slot growth - owner: HectonVoxelEngine
-        array = new NativeArray<T>(requiredLength, Allocator.Persistent, options);
+        array = new NativeArray<T>(requiredLength, DataVaultExemptVoxelPipelineScratchAllocator, options);
         RegisterTrackedNativeArray(array, label);
     }
 
@@ -7385,13 +7750,13 @@ public class HectonVoxelEngine : MonoBehaviour
     {
         public readonly OriginShiftEventData StableShift;
         public readonly Vector3 RootRuntimePosition;
-        public readonly bool ShiftEpochChanged;
+        public readonly byte ShiftEpochChanged;
 
         public VoxelFinalizeProjectionState(in OriginShiftEventData stableShift, Vector3 rootRuntimePosition, bool shiftEpochChanged)
         {
             StableShift = stableShift;
             RootRuntimePosition = rootRuntimePosition;
-            ShiftEpochChanged = shiftEpochChanged;
+            ShiftEpochChanged = shiftEpochChanged ? (byte)1 : (byte)0;
         }
 
         public double3 AbsolutePositionOffsetDouble => StableShift.NewTotalOffsetDouble + ToDouble3(RootRuntimePosition);
@@ -7469,7 +7834,7 @@ public class HectonVoxelEngine : MonoBehaviour
         async Awaitable<NativeArray<float3>> BuildShiftAwareLocalPositionBufferInternalAsync()
         {
             bool needsProjection =
-                projectionState.ShiftEpochChanged ||
+                projectionState.ShiftEpochChanged != 0 ||
                 !OffsetsApproximatelyMatch(data.AbsoluteUniverseOffsetAtStartDouble, projectionState.StableShift.NewTotalOffsetDouble) ||
                 projectionState.RootRuntimePosition.sqrMagnitude > 0.000001f;
 

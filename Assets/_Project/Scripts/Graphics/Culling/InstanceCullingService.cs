@@ -5,6 +5,7 @@ using Hecton8.Core;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -203,8 +204,9 @@ namespace Hecton8.Graphics.Culling
 
             int instanceCount = math.min(descriptor.InstanceCount, _capacity);
             float cullDistance = ResolveCullDistance(in descriptor);
+            float qualityWeight = ResolveDispatchQualityWeight(in descriptor);
             uint flags = (uint)descriptor.Flags;
-            if (descriptor.QualityTier == InstanceCullingQualityTier.Low)
+            if (ResolveLowTierDistanceWeight01(qualityWeight) > 0.0001f)
                 flags |= (uint)InstanceCullingDispatchFlags.LowTierDistance;
             if (descriptor.VramUsedMb > VramDownsampleThresholdMb)
                 flags |= (uint)InstanceCullingDispatchFlags.VramDownsample;
@@ -375,10 +377,28 @@ namespace Hecton8.Graphics.Culling
 
         private float ResolveCullDistance(in InstanceCullingDispatchDescriptor descriptor)
         {
+            float qualityWeight = ResolveDispatchQualityWeight(in descriptor);
+            float qualityCurve = math.smoothstep(0.18f, 0.72f, qualityWeight);
+            float defaultDistance = math.lerp(LowTierCullDistanceMeters, DefaultCullDistanceMeters, qualityCurve);
             float requested = descriptor.MaxCullDistanceMeters > 0f
                 ? descriptor.MaxCullDistanceMeters
-                : (descriptor.QualityTier == InstanceCullingQualityTier.Low ? LowTierCullDistanceMeters : DefaultCullDistanceMeters);
+                : defaultDistance;
             return math.max(0.01f, requested);
+        }
+
+        private static float ResolveDispatchQualityWeight(in InstanceCullingDispatchDescriptor descriptor)
+        {
+            float weight = descriptor.GlobalQualityWeight;
+            if (math.isfinite(weight))
+                return math.saturate(weight);
+
+            int tierIndex = (int)descriptor.QualityTier;
+            return math.saturate(tierIndex * (1f / 3f));
+        }
+
+        private static float ResolveLowTierDistanceWeight01(float qualityWeight)
+        {
+            return 1f - math.smoothstep(0.18f, 0.42f, math.saturate(qualityWeight));
         }
 
         private void EnsureResources()
@@ -513,7 +533,11 @@ namespace Hecton8.Graphics.Culling
                 CullDistanceMeters = math.isfinite(cullDistanceMeters) ? cullDistanceMeters : 0f,
                 VramUsedMb = math.isfinite(vramUsedMb) ? vramUsedMb : 0f,
                 StateHash = stateHash,
-                ShiftFrameId = _lastShiftFrameId
+                ShiftFrameId = _lastShiftFrameId,
+                Padding0 = 0u,
+                Padding1 = 0ul,
+                Padding2 = 0ul,
+                Padding3 = 0ul
             };
             _lastTelemetryFrame = frame;
             _telemetryWriteIndex++;
@@ -584,11 +608,10 @@ namespace Hecton8.Graphics.Culling
             buffer = null;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ApplyAupShiftJob : IJobParallelFor
         {
-            public NativeArray<Matrix4x4> Matrices;
+            [NoAlias] public NativeArray<Matrix4x4> Matrices;
             public float3 ShiftMeters;
 
             public void Execute(int index)
@@ -605,19 +628,35 @@ namespace Hecton8.Graphics.Culling
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 40)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct InstanceCullingTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public int SourceInstances;
+            [FieldOffset(8)]
             public int VisibleInstances;
+            [FieldOffset(12)]
             public int CulledInstances;
+            [FieldOffset(16)]
             public uint Flags;
+            [FieldOffset(20)]
             public float CullDistanceMeters;
+            [FieldOffset(24)]
             public float VramUsedMb;
+            [FieldOffset(28)]
             public uint StateHash;
+            [FieldOffset(32)]
             public uint ShiftFrameId;
+            [FieldOffset(36)]
             public uint Padding0;
+            [FieldOffset(40)]
+            public ulong Padding1;
+            [FieldOffset(48)]
+            public ulong Padding2;
+            [FieldOffset(56)]
+            public ulong Padding3;
         }
     }
 }

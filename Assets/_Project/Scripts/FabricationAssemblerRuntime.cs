@@ -186,7 +186,7 @@ namespace Hecton8.Crafting
         public const uint Dirty = 1u << 7;
     }
 
-    public sealed class FabricationAssemblerRuntime
+    public sealed class FabricationAssemblerRuntime : IGlobalRegistryHotSwapListener
     {
         public const int MaxFabricationJobs = 128;
         public const int TelemetryFrameCount = 300;
@@ -215,14 +215,14 @@ namespace Hecton8.Crafting
         private readonly string _dumpPath;
 
         private IDataVault _vault;
-        private VaultBufferHandle<FabricationJobDTO> _jobsHandle;
-        private VaultBufferHandle<FabricationRuntimeDTO> _runtimeHandle;
-        private VaultBufferHandle<FabricationGpuPayloadDTO> _gpuPayloadHandle;
-        private VaultBufferHandle<FabricationTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<FabricationTuningDTO> _tuningHandle;
-        private VaultBufferHandle<FabricationTimingDTO> _timingHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<ScalabilityStateDTO> _scalabilityHandle;
+        private VaultGenerationHandle<FabricationJobDTO> _jobsHandle;
+        private VaultGenerationHandle<FabricationRuntimeDTO> _runtimeHandle;
+        private VaultGenerationHandle<FabricationGpuPayloadDTO> _gpuPayloadHandle;
+        private VaultGenerationHandle<FabricationTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<FabricationTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<FabricationTimingDTO> _timingHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityHandle;
 
         private GraphicsBuffer _gpuPayloadBufferA;
         private GraphicsBuffer _gpuPayloadBufferB;
@@ -230,6 +230,7 @@ namespace Hecton8.Crafting
         private bool _registeredSimulation;
         private bool _registeredPostSimulation;
         private bool _registeredVisualSync;
+        private bool _registeredHotSwap;
         private bool _vaultInitialized;
         private bool _shutdown;
         private bool _payloadDirty;
@@ -286,12 +287,12 @@ namespace Hecton8.Crafting
             if (runtime == null || !runtime.EnsureVaultState())
                 return false;
 
-            IDataVault vault = runtime.ResolveVault();
-            NativeArray<FabricationJobDTO> jobs = runtime._jobsHandle.Resolve(vault);
-            NativeArray<FabricationRuntimeDTO> states = runtime._runtimeHandle.Resolve(vault);
-            NativeArray<FabricationGpuPayloadDTO> payloads = runtime._gpuPayloadHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated)
+            if (!runtime.TryOpenArray(in runtime._jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
+                !runtime.TryOpenArray(in runtime._runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
+                !runtime.TryOpenArray(in runtime._gpuPayloadHandle, MaxFabricationJobs, out NativeArray<FabricationGpuPayloadDTO> payloads))
+            {
                 return false;
+            }
 
             int targetSlot = -1;
             unsafe
@@ -384,24 +385,24 @@ namespace Hecton8.Crafting
             if (runtime == null || !runtime.EnsureVaultState())
                 return false;
 
-            IDataVault vault = runtime.ResolveVault();
-            NativeArray<FabricationJobDTO> jobs = runtime._jobsHandle.Resolve(vault);
-            NativeArray<FabricationRuntimeDTO> states = runtime._runtimeHandle.Resolve(vault);
-            NativeArray<FabricationGpuPayloadDTO> payloads = runtime._gpuPayloadHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated ||
+            if (!runtime.TryOpenArray(in runtime._jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
+                !runtime.TryOpenArray(in runtime._runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
+                !runtime.TryOpenArray(in runtime._gpuPayloadHandle, MaxFabricationJobs, out NativeArray<FabricationGpuPayloadDTO> payloads) ||
                 (uint)slot >= (uint)jobs.Length || (uint)slot >= (uint)states.Length || (uint)slot >= (uint)payloads.Length)
+            {
                 return false;
+            }
 
             unsafe
             {
                 ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(
-                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states),
+                    NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states),
                     slot);
                 if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
                     return false;
 
                 ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
-                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(jobs),
+                    NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(jobs),
                     slot);
                 ref FabricationGpuPayloadDTO payload = ref UnsafeUtility.ArrayElementAsRef<FabricationGpuPayloadDTO>(
                     NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payloads),
@@ -432,14 +433,15 @@ namespace Hecton8.Crafting
         {
             snapshot = default;
             FabricationAssemblerRuntime runtime = s_active;
-            if (runtime == null || !runtime.EnsureVaultState())
+            if (runtime == null || !runtime._vaultInitialized)
                 return false;
 
-            IDataVault vault = runtime.ResolveVault();
-            NativeArray<FabricationJobDTO> jobs = runtime._jobsHandle.Resolve(vault);
-            NativeArray<FabricationRuntimeDTO> states = runtime._runtimeHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || (uint)slot >= (uint)jobs.Length || (uint)slot >= (uint)states.Length)
+            if (!runtime.TryOpenReadArray(in runtime._jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
+                !runtime.TryOpenReadArray(in runtime._runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
+                (uint)slot >= (uint)jobs.Length || (uint)slot >= (uint)states.Length)
+            {
                 return false;
+            }
 
             unsafe
             {
@@ -467,13 +469,13 @@ namespace Hecton8.Crafting
             if (runtime == null || !runtime.EnsureVaultState())
                 return;
 
-            IDataVault vault = runtime.ResolveVault();
-            NativeArray<FabricationJobDTO> jobs = runtime._jobsHandle.Resolve(vault);
-            NativeArray<FabricationRuntimeDTO> states = runtime._runtimeHandle.Resolve(vault);
-            NativeArray<FabricationGpuPayloadDTO> payloads = runtime._gpuPayloadHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated ||
+            if (!runtime.TryOpenArray(in runtime._jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
+                !runtime.TryOpenArray(in runtime._runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
+                !runtime.TryOpenArray(in runtime._gpuPayloadHandle, MaxFabricationJobs, out NativeArray<FabricationGpuPayloadDTO> payloads) ||
                 (uint)slot >= (uint)jobs.Length || (uint)slot >= (uint)states.Length || (uint)slot >= (uint)payloads.Length)
+            {
                 return;
+            }
 
             unsafe
             {
@@ -503,12 +505,12 @@ namespace Hecton8.Crafting
             if (runtime == null || !runtime.EnsureVaultState())
                 return false;
 
-            IDataVault vault = runtime.ResolveVault();
-            NativeArray<FabricationJobDTO> jobs = runtime._jobsHandle.Resolve(vault);
-            NativeArray<FabricationRuntimeDTO> states = runtime._runtimeHandle.Resolve(vault);
-            NativeArray<FabricationGpuPayloadDTO> payloads = runtime._gpuPayloadHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated)
+            if (!runtime.TryOpenArray(in runtime._jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
+                !runtime.TryOpenArray(in runtime._runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
+                !runtime.TryOpenArray(in runtime._gpuPayloadHandle, MaxFabricationJobs, out NativeArray<FabricationGpuPayloadDTO> payloads))
+            {
                 return false;
+            }
 
             // COLD SYNC JOB: editor/CI mock injection must be visible immediately to the tuner/profiler.
             GenerateMockFabricationJobsJob job = new GenerateMockFabricationJobsJob
@@ -540,14 +542,14 @@ namespace Hecton8.Crafting
         {
             stats = default;
             FabricationAssemblerRuntime runtime = s_active;
-            if (runtime == null || !runtime.EnsureVaultState())
+            if (runtime == null || !runtime._vaultInitialized)
                 return false;
 
-            IDataVault vault = runtime.ResolveVault();
-            NativeArray<FabricationJobDTO> jobs = runtime._jobsHandle.Resolve(vault);
-            NativeArray<FabricationRuntimeDTO> states = runtime._runtimeHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated)
+            if (!runtime.TryOpenReadArray(in runtime._jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
+                !runtime.TryOpenReadArray(in runtime._runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states))
+            {
                 return false;
+            }
 
             float sum = 0f;
             unsafe
@@ -581,14 +583,15 @@ namespace Hecton8.Crafting
         {
             debug = default;
             FabricationAssemblerRuntime runtime = s_active;
-            if (runtime == null || !runtime.EnsureVaultState())
+            if (runtime == null || !runtime._vaultInitialized)
                 return false;
 
-            IDataVault vault = runtime.ResolveVault();
-            NativeArray<FabricationJobDTO> jobs = runtime._jobsHandle.Resolve(vault);
-            NativeArray<FabricationRuntimeDTO> states = runtime._runtimeHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || (uint)slot >= (uint)jobs.Length || (uint)slot >= (uint)states.Length)
+            if (!runtime.TryOpenReadArray(in runtime._jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
+                !runtime.TryOpenReadArray(in runtime._runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
+                (uint)slot >= (uint)jobs.Length || (uint)slot >= (uint)states.Length)
+            {
                 return false;
+            }
 
             unsafe
             {
@@ -618,7 +621,7 @@ namespace Hecton8.Crafting
             powerDrawMultiplier = 1f;
             shaderEdgeGlowIntensity = 1f;
             FabricationAssemblerRuntime runtime = s_active;
-            if (runtime == null || !runtime.EnsureVaultState())
+            if (runtime == null || !runtime._vaultInitialized)
                 return false;
 
             FabricationTuningDTO tuning = runtime.ResolveTuning();
@@ -635,17 +638,23 @@ namespace Hecton8.Crafting
                 return false;
 
             IDataVault vault = runtime.ResolveVault();
-            NativeArray<FabricationTuningDTO> tuning = runtime._tuningHandle.Resolve(vault);
-            if (!tuning.IsCreated || tuning.Length == 0)
+            if (!runtime.TryOpenWriteArray(in runtime._tuningHandle, SystemID.CoreDiagnostics, 1, out NativeArray<FabricationTuningDTO> tuning))
                 return false;
 
-            FabricationTuningDTO next = tuning[0];
-            next.BaseBuildSpeedMultiplier = math.clamp(math.isfinite(baseBuildSpeedMultiplier) ? baseBuildSpeedMultiplier : 1f, 0.05f, 16f);
-            next.PowerDrawMultiplier = math.clamp(math.isfinite(powerDrawMultiplier) ? powerDrawMultiplier : 1f, 0f, 8f);
-            next.ShaderEdgeGlowIntensity = math.clamp(math.isfinite(shaderEdgeGlowIntensity) ? shaderEdgeGlowIntensity : 1f, 0f, 8f);
-            tuning[0] = next;
-            runtime._payloadDirty = true;
-            return true;
+            try
+            {
+                FabricationTuningDTO next = tuning[0];
+                next.BaseBuildSpeedMultiplier = math.clamp(math.isfinite(baseBuildSpeedMultiplier) ? baseBuildSpeedMultiplier : 1f, 0.05f, 16f);
+                next.PowerDrawMultiplier = math.clamp(math.isfinite(powerDrawMultiplier) ? powerDrawMultiplier : 1f, 0f, 8f);
+                next.ShaderEdgeGlowIntensity = math.clamp(math.isfinite(shaderEdgeGlowIntensity) ? shaderEdgeGlowIntensity : 1f, 0f, 8f);
+                tuning[0] = next;
+                runtime._payloadDirty = true;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in runtime._tuningHandle, SystemID.CoreDiagnostics);
+            }
         }
 
         public static unsafe bool TryIngestFabricationTimingsCsv(string absolutePath, out int parsedRows)
@@ -662,30 +671,49 @@ namespace Hecton8.Crafting
                 return false;
 
             IDataVault vault = runtime.ResolveVault();
-            NativeArray<byte> scratch = runtime._csvScratchHandle.Resolve(vault);
-            NativeArray<FabricationTimingDTO> timings = runtime._timingHandle.Resolve(vault);
-            NativeArray<FabricationTuningDTO> tuning = runtime._tuningHandle.Resolve(vault);
-            if (!scratch.IsCreated || !timings.IsCreated || scratch.Length == 0 || timings.Length == 0)
+            if (!runtime.TryOpenWriteArray(in runtime._csvScratchHandle, OwnerSystemId, CsvScratchByteCapacity, out NativeArray<byte> scratch))
                 return false;
 
-            int readLength;
-            using (FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            bool timingsLocked = false;
+            if (!runtime.TryOpenWriteArray(in runtime._timingHandle, OwnerSystemId, TimingLookupCapacity, out NativeArray<FabricationTimingDTO> timings))
             {
-                long streamLength = stream.Length;
-                int cappedLength = streamLength > scratch.Length ? scratch.Length : (int)streamLength;
-                Span<byte> span = new Span<byte>(scratch.GetUnsafePtr(), cappedLength);
-                readLength = stream.Read(span);
+                vault.ReleaseWriteLock(in runtime._csvScratchHandle, OwnerSystemId);
+                return false;
             }
 
-            bool parsed = ParseTimingCsv(scratch, readLength, timings, out parsedRows);
-            if (parsed && tuning.IsCreated && tuning.Length > 0)
+            timingsLocked = true;
+            bool tuningLocked = false;
+            try
             {
-                FabricationTuningDTO next = tuning[0];
-                next.CsvTimingsVersion++;
-                tuning[0] = next;
-            }
+                int readLength;
+                using (FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    long streamLength = stream.Length;
+                    int cappedLength = streamLength > scratch.Length ? scratch.Length : (int)streamLength;
+                    Span<byte> span = new Span<byte>(scratch.GetUnsafePtr(), cappedLength);
+                    readLength = stream.Read(span);
+                }
 
-            return parsed;
+                bool parsed = ParseTimingCsv(scratch, readLength, timings, out parsedRows);
+                if (parsed &&
+                    runtime.TryOpenWriteArray(in runtime._tuningHandle, OwnerSystemId, 1, out NativeArray<FabricationTuningDTO> tuning))
+                {
+                    tuningLocked = true;
+                    FabricationTuningDTO next = tuning[0];
+                    next.CsvTimingsVersion++;
+                    tuning[0] = next;
+                }
+
+                return parsed;
+            }
+            finally
+            {
+                if (tuningLocked)
+                    vault.ReleaseWriteLock(in runtime._tuningHandle, OwnerSystemId);
+                if (timingsLocked)
+                    vault.ReleaseWriteLock(in runtime._timingHandle, OwnerSystemId);
+                vault.ReleaseWriteLock(in runtime._csvScratchHandle, OwnerSystemId);
+            }
         }
 
         private FabricationAssemblerRuntime()
@@ -703,7 +731,8 @@ namespace Hecton8.Crafting
         private void Initialize()
         {
             _shutdown = false;
-            _vault = ResolveVault();
+            _vault = GlobalRegistry.DataVault;
+            TryRegisterHotSwapListener();
             ConfigureSignalLanes();
             if (!Application.isBatchMode)
             {
@@ -731,9 +760,11 @@ namespace Hecton8.Crafting
 
             _shutdown = true;
             Application.quitting -= ShutdownActive;
+            TryUnregisterHotSwapListener();
             UnregisterDispatcherPhases();
             ReleaseBuffer(ref _gpuPayloadBufferA);
             ReleaseBuffer(ref _gpuPayloadBufferB);
+            ReleaseVaultHandles(_vault);
             _vault = null;
             _vaultInitialized = false;
             if (ReferenceEquals(s_active, this))
@@ -779,18 +810,115 @@ namespace Hecton8.Crafting
             }
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            ReleaseVaultHandles(previousService as IDataVault ?? _vault);
+            _vault = currentService as IDataVault;
+            _vaultInitialized = false;
+        }
+
         private IDataVault ResolveVault()
         {
-            IDataVault vault = _vault;
+            return _vault;
+        }
+
+        private static bool HasHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private bool TryOpenArray<T>(in VaultGenerationHandle<T> handle, int requiredLength, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (!HasHandle(in handle) || requiredLength < 0)
+                return false;
+
+            IDataVault vault = ResolveVault();
+            return vault != null &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryOpenReadArray<T>(in VaultGenerationHandle<T> handle, int requiredLength, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (!HasHandle(in handle) || requiredLength < 0)
+                return false;
+
+            IDataVault vault = ResolveVault();
+            return vault != null &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryOpenWriteArray<T>(
+            in VaultGenerationHandle<T> handle,
+            SystemID writerSystem,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (!HasHandle(in handle) || writerSystem == SystemID.Unknown || requiredLength < 0)
+                return false;
+
+            IDataVault vault = ResolveVault();
+            if (vault == null || !vault.TryAcquireWriteLock(in handle, writerSystem, out buffer))
+                return false;
+
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, writerSystem);
+            buffer = default;
+            return false;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnedHandle(vault, ref _jobsHandle);
+            ReleaseOwnedHandle(vault, ref _runtimeHandle);
+            ReleaseOwnedHandle(vault, ref _gpuPayloadHandle);
+            ReleaseOwnedHandle(vault, ref _telemetryHandle);
+            ReleaseOwnedHandle(vault, ref _tuningHandle);
+            ReleaseOwnedHandle(vault, ref _timingHandle);
+            ReleaseOwnedHandle(vault, ref _csvScratchHandle);
+            _scalabilityHandle = default;
+            _vaultInitialized = false;
+        }
+
+        private static void ReleaseOwnedHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (!HasHandle(in handle))
+                return;
+
             if (vault != null)
-                return vault;
+                vault.ReleaseBuffer(in handle);
+            handle = default;
+        }
 
-            vault = GlobalRegistry.DataVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                vault = latest;
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
 
-            _vault = vault;
-            return vault;
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private bool EnsureVaultState()
@@ -805,26 +933,26 @@ namespace Hecton8.Crafting
             if (vault == null)
                 return false;
 
-            _jobsHandle = vault.GetBufferHandle<FabricationJobDTO>(BufferID.ShinobuFabricationJobs, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _runtimeHandle = vault.GetBufferHandle<FabricationRuntimeDTO>(BufferID.ShinobuFabricationRuntime, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _gpuPayloadHandle = vault.GetBufferHandle<FabricationGpuPayloadDTO>(BufferID.ShinobuFabricationGpuPayload, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetBufferHandle<FabricationTelemetryEntry>(BufferID.ShinobuFabricationTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetBufferHandle<FabricationTuningDTO>(BufferID.ShinobuFabricationTuning, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _timingHandle = vault.GetBufferHandle<FabricationTimingDTO>(BufferID.ShinobuFabricationTimingLookup, TimingLookupCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuFabricationCsvScratch, CsvScratchByteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (vault.TryGetBufferHandle(BufferID.ShinobuScalabilityState, out VaultBufferHandle<ScalabilityStateDTO> scalability))
+            _jobsHandle = vault.GetGenerationHandle<FabricationJobDTO>(BufferID.ShinobuFabricationJobs, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _runtimeHandle = vault.GetGenerationHandle<FabricationRuntimeDTO>(BufferID.ShinobuFabricationRuntime, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _gpuPayloadHandle = vault.GetGenerationHandle<FabricationGpuPayloadDTO>(BufferID.ShinobuFabricationGpuPayload, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _telemetryHandle = vault.GetGenerationHandle<FabricationTelemetryEntry>(BufferID.ShinobuFabricationTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _tuningHandle = vault.GetGenerationHandle<FabricationTuningDTO>(BufferID.ShinobuFabricationTuning, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _timingHandle = vault.GetGenerationHandle<FabricationTimingDTO>(BufferID.ShinobuFabricationTimingLookup, TimingLookupCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _csvScratchHandle = vault.GetGenerationHandle<byte>(BufferID.ShinobuFabricationCsvScratch, CsvScratchByteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            if (vault.TryGetGenerationHandle(BufferID.ShinobuScalabilityState, out VaultGenerationHandle<ScalabilityStateDTO> scalability))
                 _scalabilityHandle = scalability;
 
-            NativeArray<FabricationJobDTO> jobs = _jobsHandle.Resolve(vault);
-            NativeArray<FabricationRuntimeDTO> states = _runtimeHandle.Resolve(vault);
-            NativeArray<FabricationGpuPayloadDTO> payloads = _gpuPayloadHandle.Resolve(vault);
-            NativeArray<FabricationTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            NativeArray<FabricationTuningDTO> tuning = _tuningHandle.Resolve(vault);
-            NativeArray<FabricationTimingDTO> timings = _timingHandle.Resolve(vault);
-            NativeArray<byte> csvScratch = _csvScratchHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated || !telemetry.IsCreated ||
-                !tuning.IsCreated || !timings.IsCreated || !csvScratch.IsCreated)
+            if (!TryOpenArray(in _jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
+                !TryOpenArray(in _runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
+                !TryOpenArray(in _gpuPayloadHandle, MaxFabricationJobs, out NativeArray<FabricationGpuPayloadDTO> payloads) ||
+                !TryOpenArray(in _telemetryHandle, TelemetryFrameCount, out NativeArray<FabricationTelemetryEntry> telemetry) ||
+                !TryOpenArray(in _tuningHandle, 1, out NativeArray<FabricationTuningDTO> tuning) ||
+                !TryOpenArray(in _timingHandle, TimingLookupCapacity, out NativeArray<FabricationTimingDTO> timings) ||
+                !TryOpenArray(in _csvScratchHandle, CsvScratchByteCapacity, out _))
+            {
                 return false;
+            }
 
             // COLD SYNC JOB: first-use Vault sanitation before dispatcher systems can read fabrication slots.
             ClearFabricationJobsJob clearJob = new ClearFabricationJobsJob
@@ -868,12 +996,12 @@ namespace Hecton8.Crafting
             if (!EnsureVaultState())
                 return dependsOn;
 
-            IDataVault vault = ResolveVault();
-            NativeArray<FabricationJobDTO> jobs = _jobsHandle.Resolve(vault);
-            NativeArray<FabricationRuntimeDTO> states = _runtimeHandle.Resolve(vault);
-            NativeArray<FabricationGpuPayloadDTO> payloads = _gpuPayloadHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated)
+            if (!TryOpenArray(in _jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
+                !TryOpenArray(in _runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
+                !TryOpenArray(in _gpuPayloadHandle, MaxFabricationJobs, out NativeArray<FabricationGpuPayloadDTO> payloads))
+            {
                 return dependsOn;
+            }
 
             _lastFrame = context.Frame;
             float safeDelta = math.max(0f, timing.FrameDelta);
@@ -910,11 +1038,13 @@ namespace Hecton8.Crafting
                 return;
 
             IDataVault vault = ResolveVault();
-            NativeArray<FabricationJobDTO> jobs = _jobsHandle.Resolve(vault);
-            NativeArray<FabricationRuntimeDTO> states = _runtimeHandle.Resolve(vault);
-            NativeArray<FabricationTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || !telemetry.IsCreated || telemetry.Length == 0)
+            if (!TryOpenReadArray(in _jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
+                !TryOpenReadArray(in _runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
+                !TryOpenArray(in _telemetryHandle, TelemetryFrameCount, out NativeArray<FabricationTelemetryEntry> telemetry) ||
+                telemetry.Length == 0)
+            {
                 return;
+            }
 
             uint active = 0u;
             uint completed = 0u;
@@ -1003,9 +1133,7 @@ namespace Hecton8.Crafting
             if (uploadStride > 1 && (_lastFrame % (uint)uploadStride) != 0u)
                 return;
 
-            IDataVault vault = ResolveVault();
-            NativeArray<FabricationGpuPayloadDTO> payloads = _gpuPayloadHandle.Resolve(vault);
-            if (!payloads.IsCreated)
+            if (!TryOpenReadArray(in _gpuPayloadHandle, MaxFabricationJobs, out NativeArray<FabricationGpuPayloadDTO> payloads))
                 return;
 
             FabricationTuningDTO tuning = ResolveTuning();
@@ -1096,15 +1224,20 @@ namespace Hecton8.Crafting
             IDataVault vault = ResolveVault();
             if (vault != null)
             {
-                if (!_scalabilityHandle.IsCreated &&
-                    vault.TryGetBufferHandle(BufferID.ShinobuScalabilityState, out VaultBufferHandle<ScalabilityStateDTO> scalability))
+                if (!HasHandle(in _scalabilityHandle) &&
+                    vault.TryGetGenerationHandle(BufferID.ShinobuScalabilityState, out VaultGenerationHandle<ScalabilityStateDTO> scalability))
                 {
                     _scalabilityHandle = scalability;
                 }
 
-                NativeArray<ScalabilityStateDTO> state = _scalabilityHandle.IsCreated ? _scalabilityHandle.Resolve(vault) : default;
-                if (state.IsCreated && state.Length > 0 && math.isfinite(state[0].GlobalQualityWeight))
+                if (HasHandle(in _scalabilityHandle) &&
+                    vault.TryReadHandle(in _scalabilityHandle, out NativeArray<ScalabilityStateDTO> state) &&
+                    state.IsCreated &&
+                    state.Length > 0 &&
+                    math.isfinite(state[0].GlobalQualityWeight))
+                {
                     return math.saturate(state[0].GlobalQualityWeight);
+                }
             }
 
             float fallback = HomeostasisBrain.GlobalQualityWeight;
@@ -1115,9 +1248,14 @@ namespace Hecton8.Crafting
         {
             FabricationTuningDTO tuning = CreateDefaultTuning();
             IDataVault vault = ResolveVault();
-            NativeArray<FabricationTuningDTO> buffer = _tuningHandle.IsCreated && vault != null ? _tuningHandle.Resolve(vault) : default;
-            if (buffer.IsCreated && buffer.Length > 0)
+            if (HasHandle(in _tuningHandle) &&
+                vault != null &&
+                vault.TryReadHandle(in _tuningHandle, out NativeArray<FabricationTuningDTO> buffer) &&
+                buffer.IsCreated &&
+                buffer.Length > 0)
+            {
                 tuning = buffer[0];
+            }
 
             tuning.BaseBuildSpeedMultiplier = math.clamp(math.isfinite(tuning.BaseBuildSpeedMultiplier) ? tuning.BaseBuildSpeedMultiplier : 1f, 0.05f, 16f);
             tuning.PowerDrawMultiplier = math.clamp(math.isfinite(tuning.PowerDrawMultiplier) ? tuning.PowerDrawMultiplier : 1f, 0f, 8f);
@@ -1129,9 +1267,15 @@ namespace Hecton8.Crafting
         {
             durationSeconds = 0f;
             IDataVault vault = ResolveVault();
-            NativeArray<FabricationTimingDTO> timings = _timingHandle.IsCreated && vault != null ? _timingHandle.Resolve(vault) : default;
-            if (!timings.IsCreated || timings.Length == 0 || targetPrefabHash == 0u)
+            if (!HasHandle(in _timingHandle) ||
+                vault == null ||
+                !vault.TryReadHandle(in _timingHandle, out NativeArray<FabricationTimingDTO> timings) ||
+                !timings.IsCreated ||
+                timings.Length == 0 ||
+                targetPrefabHash == 0u)
+            {
                 return false;
+            }
 
             int start = (int)(targetPrefabHash % (uint)timings.Length);
             for (int probe = 0; probe < timings.Length; probe++)
@@ -1315,7 +1459,7 @@ namespace Hecton8.Crafting
             };
         }
 
-        private static float3 ResolveLocalAupOffset(double3 targetAup, double3 fabricatorAup)
+        internal static float3 ResolveLocalAupOffset(double3 targetAup, double3 fabricatorAup)
         {
             double3 delta = targetAup - fabricatorAup;
             if (!math.all(math.isfinite(delta)))
@@ -1325,7 +1469,7 @@ namespace Hecton8.Crafting
             return new float3((float)delta.x, (float)delta.y, (float)delta.z);
         }
 
-        private static AbsoluteUniversePosition ToAbsoluteUniversePosition(double3 absolutePosition)
+        internal static AbsoluteUniversePosition ToAbsoluteUniversePosition(double3 absolutePosition)
         {
             if (!math.all(math.isfinite(absolutePosition)))
                 absolutePosition = double3.zero;
@@ -1383,7 +1527,7 @@ namespace Hecton8.Crafting
             return math.clamp((int)math.round(stride), 1, 60);
         }
 
-        private static uint HashSlot(int slot, uint targetHash, float progress01)
+        internal static uint HashSlot(int slot, uint targetHash, float progress01)
         {
             uint hash = 2166136261u;
             hash = HashCombine(hash, (uint)slot);
@@ -1671,7 +1815,7 @@ namespace Hecton8.Crafting
             job.Progress01 = progress;
 
             float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : state.GlobalQualityWeight);
-            uint rollbackHash = HashSlot(index, job.TargetPrefabHash, progress);
+            uint rollbackHash = FabricationAssemblerRuntime.HashSlot(index, job.TargetPrefabHash, progress);
             state.RollbackHash = rollbackHash;
 
             state.Flags = flags | FabricationAssemblerFlags.Dirty;
@@ -1685,7 +1829,7 @@ namespace Hecton8.Crafting
             payload.BoundsProgress.y = math.max(state.BoundsMinY + 0.001f, state.BoundsMaxY);
             payload.BoundsProgress.z = progress;
             payload.BoundsProgress.w = quality;
-            float3 localOffset = ResolveLocalAupOffset(job.TargetAUP, state.FabricatorAUP);
+            float3 localOffset = FabricationAssemblerRuntime.ResolveLocalAupOffset(job.TargetAUP, state.FabricatorAUP);
             payload.LocalOffsetPause = new float4(localOffset, paused ? 1f : 0f);
         }
     }
@@ -1693,7 +1837,7 @@ namespace Hecton8.Crafting
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct EmitFabricationSignalsJob : IJob
     {
-        [NoAlias] public NativeArray<FabricationJobDTO> Jobs;
+        [ReadOnly, NoAlias] public NativeArray<FabricationJobDTO> Jobs;
         [NoAlias] public NativeArray<FabricationRuntimeDTO> Runtime;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // ParallelWriter safety is suppressed because SignalBus owns the queue lifetime and the job only appends completed fabrication events.
@@ -1701,21 +1845,21 @@ namespace Hecton8.Crafting
         // Rejected main-thread event emission because it would force a second scan of all fabrication jobs. Rejected managed callbacks because they allocate and break Burst isolation.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // The job is scheduled once from the dispatcher SIMULATION phase and its returned handle is registered through H8Memory before any lane drain can consume the writer output.
-        [NativeDisableContainerSafetyRestriction] public NativeQueue<FabricationCompletedSignal>.ParallelWriter FabricationCompletedSignalWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<FabricationCompletedSignal>.ParallelWriter FabricationCompletedSignalWriter;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // Tick signal writes are producer-only and do not read queue state; Unity's container safety cannot see the dispatcher-owned consumer phase.
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
         // Rejected splitting tick events into a NativeArray because sparse event compaction would add another job. Rejected immediate UI writes because UI belongs to VISUAL_SYNC.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // Signal consumption is phase-separated after the combined simulation handle; this field has no second producer in EmitFabricationSignalsJob.
-        [NativeDisableContainerSafetyRestriction] public NativeQueue<FabricationTickSignal>.ParallelWriter FabricationTickSignalWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<FabricationTickSignal>.ParallelWriter FabricationTickSignalWriter;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // Deconstruct results are emitted through the legacy GlobalSignals bridge; the safety restriction is limited to write-only enqueue.
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
         // Rejected direct owner callbacks because deconstruction crosses construction/inventory/UI domains. Rejected a managed event because it violates zero-GC hot path rules.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // The returned signalHandle chains after progressHandle and is registered with H8Memory; the late-frame bridge drains only after dispatcher fence resolution.
-        [NativeDisableContainerSafetyRestriction] public NativeQueue<DeconstructResultSignal>.ParallelWriter DeconstructResultWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<DeconstructResultSignal>.ParallelWriter DeconstructResultWriter;
         public uint Frame;
         public float GlobalQualityWeight;
 
@@ -1725,16 +1869,18 @@ namespace Hecton8.Crafting
                 return;
 
             int count = math.min(Jobs.Length, Runtime.Length);
+            void* jobsPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Jobs);
+            void* runtimePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Runtime);
             for (int index = 0; index < count; index++)
             {
                 ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(
-                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Runtime),
+                    runtimePtr,
                     index);
                 if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
                     continue;
 
-                ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
-                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Jobs),
+                ref readonly FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
+                    jobsPtr,
                     index);
                 uint flags = state.Flags;
                 float progress = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
@@ -1764,11 +1910,14 @@ namespace Hecton8.Crafting
             uint rollbackHash,
             bool deconstruct)
         {
+            if (!math.all(math.isfinite(job.TargetAUP)))
+                return;
+
             if (deconstruct)
             {
                 DeconstructResultWriter.Enqueue(new DeconstructResultSignal
                 {
-                    TargetAup = ToAbsoluteUniversePosition(job.TargetAUP),
+                    TargetAup = FabricationAssemblerRuntime.ToAbsoluteUniversePosition(job.TargetAUP),
                     TargetEntityId = job.TargetPrefabHash,
                     RequesterEntityId = state.FabricatorHash,
                     RefundItemCount = 0,
@@ -1801,6 +1950,9 @@ namespace Hecton8.Crafting
             float quality01,
             float emissionMultiplier)
         {
+            if (!math.all(math.isfinite(job.TargetAUP)))
+                return;
+
             FabricationTickSignalWriter.Enqueue(new FabricationTickSignal
             {
                 TargetAUP = job.TargetAUP,

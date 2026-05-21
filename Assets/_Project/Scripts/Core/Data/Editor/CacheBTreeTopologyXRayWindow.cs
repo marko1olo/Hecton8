@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -180,18 +181,25 @@ namespace Hecton8.Core.Data.Editor
                 return;
             }
 
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault) ||
-                !H8CacheBTree.TryGetTuningProfileVaultBuffer(vault, out NativeArray<BTreeTuningProfileDTO> profiles))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!TryAcquireTuningProfiles(vault, out VaultGenerationHandle<BTreeTuningProfileDTO> profileHandle, out NativeArray<BTreeTuningProfileDTO> profiles))
             {
                 _tuningStatus = "no active Vault for tuning profiles";
                 ApplyUi();
                 return;
             }
 
-            byte[] bytes = File.ReadAllBytes(path);
-            _tuningStatus = BTreeTuningCsvParser.TryParse(bytes, profiles, out int count, out uint errorHash)
-                ? "tuning profiles " + count
-                : "tuning error 0x" + errorHash.ToString("X8");
+            try
+            {
+                byte[] bytes = File.ReadAllBytes(path);
+                _tuningStatus = BTreeTuningCsvParser.TryParse(bytes, profiles, out int count, out uint errorHash)
+                    ? "tuning profiles " + count
+                    : "tuning error 0x" + errorHash.ToString("X8");
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in profileHandle, SystemID.CoreDiagnostics);
+            }
             ApplyUi();
         }
 
@@ -489,8 +497,13 @@ namespace Hecton8.Core.Data.Editor
         private void RefreshTelemetrySnapshot()
         {
             _telemetryCount = 0;
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault) ||
-                !vault.TryGetBuffer(H8CacheBTree.BTreeTelemetryRingBufferId, out NativeArray<BTreeTelemetryEntry> ring) ||
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle<BTreeTelemetryEntry>(
+                    H8CacheBTree.BTreeTelemetryRingBufferId,
+                    out VaultGenerationHandle<BTreeTelemetryEntry> ringHandle) ||
+                ringHandle.BufferID != unchecked((uint)(int)H8CacheBTree.BTreeTelemetryRingBufferId) ||
+                !vault.TryReadHandle(in ringHandle, out NativeArray<BTreeTelemetryEntry> ring) ||
                 !ring.IsCreated)
             {
                 return;
@@ -533,6 +546,49 @@ namespace Hecton8.Core.Data.Editor
 
             _waterfall.SetSamples(_telemetry, _telemetryCount);
             _topology.SetNodes(_nodes, _nodeSnapshotCount, _traceOffsets, _traceCount);
+        }
+
+        private static bool TryAcquireTuningProfiles(
+            IDataVault vault,
+            out VaultGenerationHandle<BTreeTuningProfileDTO> handle,
+            out NativeArray<BTreeTuningProfileDTO> profiles)
+        {
+            handle = default;
+            profiles = default;
+            if (vault == null)
+                return false;
+
+            if (vault.TryGetGenerationHandle<BTreeTuningProfileDTO>(
+                    H8CacheBTree.BTreeTuningProfilesBufferId,
+                    out VaultGenerationHandle<BTreeTuningProfileDTO> existing) &&
+                existing.BufferID == unchecked((uint)(int)H8CacheBTree.BTreeTuningProfilesBufferId) &&
+                vault.TryReadHandle(in existing, out NativeArray<BTreeTuningProfileDTO> existingProfiles) &&
+                existingProfiles.IsCreated &&
+                existingProfiles.Length >= H8CacheBTree.BTreeTuningProfileCapacity)
+            {
+                handle = existing;
+            }
+            else
+            {
+                if (vault.IsAllocationLocked)
+                    return false;
+
+                handle = vault.GetGenerationHandle<BTreeTuningProfileDTO>(
+                    H8CacheBTree.BTreeTuningProfilesBufferId,
+                    H8CacheBTree.BTreeTuningProfileCapacity,
+                    SystemID.CoreDataVault,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out profiles))
+                return false;
+
+            if (profiles.IsCreated && profiles.Length >= H8CacheBTree.BTreeTuningProfileCapacity)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            profiles = default;
+            return false;
         }
 
         private static string ResolveDefaultPath()

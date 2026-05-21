@@ -28,7 +28,7 @@ namespace Hecton8.Core
     public enum SystemBit : ulong
     {
         None = 0UL,
-        SecondaryCaustics = 1UL << 4,
+        CausticsDetail = 1UL << 4,
         MicroDebrisAdvection = 1UL << 5,
         ParticleAdvection = MicroDebrisAdvection,
         VolumetricFogHighRes = 1UL << 6,
@@ -138,7 +138,7 @@ namespace Hecton8.Core
         private const uint ReasonHash = 0x484F4D45u; // HOME
 
         private const ulong Level1Mask =
-            (ulong)(SystemBit.SecondaryCaustics |
+            (ulong)(SystemBit.CausticsDetail |
                     SystemBit.MicroDebrisAdvection);
 
         private const ulong Level2Mask =
@@ -798,7 +798,7 @@ namespace Hecton8.Core
                 case 8: return (ulong)SystemBit.FoveatedSimulationTier3;
                 case 9: return (ulong)SystemBit.VolumetricFogHighRes;
                 case 10: return (ulong)SystemBit.MicroDebrisAdvection;
-                case 11: return (ulong)SystemBit.SecondaryCaustics;
+                case 11: return (ulong)SystemBit.CausticsDetail;
                 default: return 0UL;
             }
         }

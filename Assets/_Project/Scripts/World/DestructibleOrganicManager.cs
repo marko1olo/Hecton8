@@ -1,15 +1,19 @@
 using System.Runtime.InteropServices;
 using System;
+using System.Threading;
 using Hecton8.Audio;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Scavenging;
 using Hecton8.SaveSystem;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -21,16 +25,31 @@ namespace Hecton8.World
     /// <summary>
     /// Zero-allocation hand IK snap target resolved from the active indirect-flora lanes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     public readonly struct FloraHarvestInteractionPoint
     {
+        [FieldOffset(0)]
         public readonly uint InstanceUid;
+        [FieldOffset(4)]
+        private readonly uint _pad0;
+        [FieldOffset(8)]
         public readonly AbsoluteUniversePosition AnchorAup;
+        [FieldOffset(56)]
         public readonly Vector3 RuntimePosition;
+        [FieldOffset(68)]
         public readonly Vector3 SurfaceNormal;
+        [FieldOffset(80)]
         public readonly HarvestableTemplate.MaterialClass MaterialClass;
+        [FieldOffset(81)]
+        private readonly byte _pad1;
+        [FieldOffset(82)]
+        private readonly ushort _pad2;
+        [FieldOffset(84)]
         public readonly int TemplateIndex;
+        [FieldOffset(88)]
         public readonly float BlendWeight;
+        [FieldOffset(92)]
+        private readonly uint _pad3;
 
         public FloraHarvestInteractionPoint(
             uint instanceUid,
@@ -42,12 +61,16 @@ namespace Hecton8.World
             float blendWeight)
         {
             InstanceUid = instanceUid;
+            _pad0 = 0u;
             AnchorAup = anchorAup;
             RuntimePosition = runtimePosition;
             SurfaceNormal = surfaceNormal;
             MaterialClass = materialClass;
+            _pad1 = 0;
+            _pad2 = 0;
             TemplateIndex = templateIndex;
             BlendWeight = blendWeight;
+            _pad3 = 0u;
         }
     }
 
@@ -56,7 +79,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-120)] // Manager order must stay ahead of gameplay consumers that read/wire destruction state.
-    public sealed class DestructibleOrganicManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
+    public sealed class DestructibleOrganicManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IOrganicToolHitService
     {
         private static DestructibleOrganicManager _activeRuntimeInstance;
 
@@ -100,8 +123,41 @@ namespace Hecton8.World
         private const float CorpseDiseaseRadiusMeters = 22f;
         private const float CorpseDiseaseSeverity = 1f;
         private const int MaterialClassCount = 5;
+        private const int DearLieMaxDamageSignalsPerFrame = 128;
+        private const int DearLieMockDamageSignalCount = 100;
+        private const int DearLieMaxResultsPerFrame = DearLieMaxDamageSignalsPerFrame * 2;
+        private const int DearLieMaxRegenRecords = 2048;
+        private const int DearLieTelemetryFrameCount = 300;
+        private const int DearLieSpatialHashCapacity = 8192;
+        private const int DearLieJobBatchSize = 64;
+        private const float DearLieQueryRadiusMeters = 2.25f;
+        private const float DearLieSpatialCellSizeMeters = 3f;
+        private const float DearLieRegenerationDelaySeconds = 300f;
+        private const float DearLieMinimumMagnitude = 0.001f;
+        private const uint DearLieSignalHashFlora = 0x464C4F52u; // FLOR
+        private const uint DearLieSignalHashOrganic = 0x4F524741u; // ORGA
+        private const byte DearLieFloraDamageFlag = 1 << 6;
+        private const BufferID DearLieSurfaceClaimsBufferId = (BufferID)72980;
+        private const BufferID DearLieUnderwaterClaimsBufferId = (BufferID)72981;
+        private const BufferID DearLieDamageEventsBufferId = (BufferID)72982;
+        private const BufferID DearLieResultsBufferId = (BufferID)72983;
+        private const BufferID DearLieCountersBufferId = (BufferID)72984;
+        private const BufferID DearLieRegenRecordsBufferId = (BufferID)72985;
+        private const BufferID DearLieTelemetryRingBufferId = (BufferID)72986;
+        private const BufferID DearLieSurfaceBucketHeadsBufferId = (BufferID)72987;
+        private const BufferID DearLieSurfaceBucketNextBufferId = (BufferID)72988;
+        private const BufferID DearLieUnderwaterBucketHeadsBufferId = (BufferID)72989;
+        private const BufferID DearLieUnderwaterBucketNextBufferId = (BufferID)72990;
+        private const int DearLieVaultJobBufferCount = 11;
         private const string NativeMemoryOwner = nameof(DestructibleOrganicManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const Allocator DataVaultExemptOrganicHealthStateAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptOrganicDestroyedStateAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptOrganicScratchAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptOrganicYieldQueueAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptOrganicDropAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptHarvestTemplateAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptYieldMaterialAllocator = Allocator.Persistent;
 
         private enum HarvestState : byte
         {
@@ -124,6 +180,96 @@ namespace Hecton8.World
             public float SpawnTime;
             public float ExpireTime;
             public byte Active;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        public struct FloraDestructionEventDTO
+        {
+            [FieldOffset(0)] public double3 ImpactAUP;
+            [FieldOffset(24)] public uint FloraTypeHash;
+            [FieldOffset(28)] public uint _pad0;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 128)]
+        private struct FloraDearLieDestructionResult
+        {
+            [FieldOffset(0)] public Matrix4x4 OriginalMatrix;
+            [FieldOffset(64)] public double3 ImpactAUP;
+            [FieldOffset(88)] public uint InstanceUid;
+            [FieldOffset(92)] public int ActiveIndex;
+            [FieldOffset(96)] public uint FloraTypeHash;
+            [FieldOffset(100)] public uint MagnitudeBits;
+            [FieldOffset(104)] public ushort VfxQuantity;
+            [FieldOffset(106)] public byte EmitVfx;
+            [FieldOffset(107)] public byte MaterialClass;
+            [FieldOffset(108)] private uint _pad0;
+            [FieldOffset(112)] private ulong _pad1;
+            [FieldOffset(120)] private ulong _pad2;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        private struct FloraDearLieCounter64
+        {
+            [FieldOffset(0)] public int Value;
+            [FieldOffset(4)] private uint _pad0;
+            [FieldOffset(8)] private ulong _pad1;
+            [FieldOffset(16)] private ulong _pad2;
+            [FieldOffset(24)] private ulong _pad3;
+            [FieldOffset(32)] private ulong _pad4;
+            [FieldOffset(40)] private ulong _pad5;
+            [FieldOffset(48)] private ulong _pad6;
+            [FieldOffset(56)] private ulong _pad7;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        private struct FloraDearLieClaim64
+        {
+            [FieldOffset(0)] public int Claimed;
+            [FieldOffset(4)] private uint _pad0;
+            [FieldOffset(8)] private ulong _pad1;
+            [FieldOffset(16)] private ulong _pad2;
+            [FieldOffset(24)] private ulong _pad3;
+            [FieldOffset(32)] private ulong _pad4;
+            [FieldOffset(40)] private ulong _pad5;
+            [FieldOffset(48)] private ulong _pad6;
+            [FieldOffset(56)] private ulong _pad7;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 96)]
+        private struct FloraDearLieRegenRecord
+        {
+            [FieldOffset(0)] public Matrix4x4 OriginalMatrix;
+            [FieldOffset(64)] public uint InstanceUid;
+            [FieldOffset(68)] public int ActiveIndex;
+            [FieldOffset(72)] public float RestoreTimeSeconds;
+            [FieldOffset(76)] public float3 RuntimePosition;
+            [FieldOffset(88)] public byte Underwater;
+            [FieldOffset(89)] private byte _pad0;
+            [FieldOffset(90)] private ushort _pad1;
+            [FieldOffset(92)] private uint _pad2;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        private struct FloraDearLieTelemetryEntry
+        {
+            [FieldOffset(0)] public int FrameIndex;
+            [FieldOffset(4)] public int SurfaceCount;
+            [FieldOffset(8)] public int UnderwaterCount;
+            [FieldOffset(12)] public int DamageSignalCount;
+            [FieldOffset(16)] public int DestroyedCount;
+            [FieldOffset(20)] public int VfxSignalCount;
+            [FieldOffset(24)] public int RegenQueuedCount;
+            [FieldOffset(28)] public int RecoveredCount;
+            [FieldOffset(32)] public int RejectedSignalCount;
+            [FieldOffset(36)] public int NanRejectCount;
+            [FieldOffset(40)] public float GlobalQualityWeight;
+            [FieldOffset(44)] public uint Hash;
+            [FieldOffset(48)] public uint LastInstanceUid;
+            [FieldOffset(52)] public byte Flags;
+            [FieldOffset(53)] private byte _pad0;
+            [FieldOffset(54)] private ushort _pad1;
+            [FieldOffset(56)] public float QueryMicroseconds;
+            [FieldOffset(60)] private uint _pad2;
         }
 
         private readonly struct SporeAcousticEvent
@@ -339,12 +485,56 @@ namespace Hecton8.World
         [Tooltip("Maximum active flora instances checked per lane each Tick for mature spore acoustic cadence. This keeps large fields bounded.")]
         private int matureSporeAcousticScanBudgetPerTick = 64;
 
+        [Header("Dear Lie Destruction")]
+        [SerializeField]
+        [Tooltip("Editor/runtime smoke hook: one frame generates 100 deterministic SignalBus-equivalent flora damage events around this component.")]
+        private bool dearLieGenerateMockDamageBurst;
+
+        [SerializeField]
+        [Tooltip("Runtime-local center used by the mock Dear Lie damage generator.")]
+        private Vector3 dearLieMockDamageCenter;
+
+        [SerializeField, Range(0.25f, 8f)]
+        [Tooltip("Dear Lie spatial damage epsilon in meters. Editor tuning surface; copied into Burst jobs as a scalar.")]
+        private float dearLieDamageRadiusEpsilon = DearLieQueryRadiusMeters;
+
+        [SerializeField, Range(5f, 900f)]
+        [Tooltip("Visual-only Dear Lie regeneration delay in seconds. Editor tuning surface; copied into the native regen queue as a scalar timestamp.")]
+        private float dearLieRegenerationDelaySeconds = DearLieRegenerationDelaySeconds;
+
+        [SerializeField, Range(-1f, 1f)]
+        [Tooltip("-1 uses HomeostasisBrain.GlobalQualityWeight. 0..1 overrides Dear Lie VFX gating for editor stress tests.")]
+        private float dearLieQualityOverride = -1f;
+
         private NativeArray<uint> _surfaceInstanceUids;
         private NativeArray<uint> _underwaterInstanceUids;
         private NativeArray<byte> _surfaceMaterialClasses;
         private NativeArray<byte> _underwaterMaterialClasses;
         private NativeArray<Unity.Mathematics.half> _surfaceHealth;
         private NativeArray<Unity.Mathematics.half> _underwaterHealth;
+        private NativeArray<int> _surfaceDearLieBucketHeads;
+        private NativeArray<int> _surfaceDearLieBucketNext;
+        private NativeArray<int> _underwaterDearLieBucketHeads;
+        private NativeArray<int> _underwaterDearLieBucketNext;
+        private NativeArray<FloraDearLieClaim64> _surfaceDearLieClaims;
+        private NativeArray<FloraDearLieClaim64> _underwaterDearLieClaims;
+        private NativeArray<FloraDestructionEventDTO> _dearLieDamageEvents;
+        private NativeArray<FloraDearLieDestructionResult> _dearLieResults;
+        private NativeArray<FloraDearLieCounter64> _dearLieCounters;
+        private NativeArray<FloraDearLieRegenRecord> _dearLieRegenRecords;
+        private NativeArray<FloraDearLieTelemetryEntry> _dearLieTelemetryRing;
+        private IDataVault _dearLieVault;
+        private VaultGenerationHandle<FloraDearLieClaim64> _surfaceDearLieClaimsHandle;
+        private VaultGenerationHandle<FloraDearLieClaim64> _underwaterDearLieClaimsHandle;
+        private VaultGenerationHandle<FloraDestructionEventDTO> _dearLieDamageEventsHandle;
+        private VaultGenerationHandle<FloraDearLieDestructionResult> _dearLieResultsHandle;
+        private VaultGenerationHandle<FloraDearLieCounter64> _dearLieCountersHandle;
+        private VaultGenerationHandle<FloraDearLieRegenRecord> _dearLieRegenRecordsHandle;
+        private VaultGenerationHandle<FloraDearLieTelemetryEntry> _dearLieTelemetryRingHandle;
+        private VaultGenerationHandle<int> _surfaceDearLieBucketHeadsHandle;
+        private VaultGenerationHandle<int> _surfaceDearLieBucketNextHandle;
+        private VaultGenerationHandle<int> _underwaterDearLieBucketHeadsHandle;
+        private VaultGenerationHandle<int> _underwaterDearLieBucketNextHandle;
         private NativeHashMap<uint, Unity.Mathematics.half> _healthByInstanceUid;
         private NativeHashMap<uint, byte> _destroyedByInstanceUid;
         private NativeHashMap<uint, float> _pendingWiltEndTimeByInstanceUid;
@@ -372,17 +562,35 @@ namespace Hecton8.World
         private NativeArray<EntropyYieldMaterialLutEntry> _yieldMaterialLut;
         private NativeArray<Vector3> _dropDebugScratch;
         private JobHandle _yieldJobHandle;
+        private JobHandle _dearLieJobHandle;
         private int _scheduledYieldCount;
+        private int _dearLieScheduledDamageCount;
+        private int _dearLieJobScheduleFrame = -1;
+        private double _dearLieJobStartTimeSeconds;
         private int _deferredYieldScheduleFrame = -1;
         private int _surfaceRevision = -1;
         private int _underwaterRevision = -1;
         private int _surfaceCount;
         private int _underwaterCount;
+        private int _dearLieRegenCount;
+        private int _dearLieTelemetryCursor;
+        private int _dearLieLastDamageFrame = -1;
+        private int _dearLieLastDestroyedCount;
+        private int _dearLieLastVfxCount;
+        private float _dearLieLastQualityWeight;
+        private float _dearLieFallbackQualityWeight = 0.25f;
+        private Vector3 _dearLieLastImpactRuntimePosition;
+        private Vector3 _dearLieLastTargetRuntimePosition;
+        private byte _dearLieHasLastDebugHit;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
         private bool _lateFrameTickRegistered;
         private bool _originShiftListenerRegistered;
         private bool _yieldScheduled;
+        private bool _dearLieJobScheduled;
+        private bool _dearLieVaultReady;
+        private bool _dearLieVaultJobLocksHeld;
+        private int _dearLieVaultJobLockCount;
 
         private NativeArray<Matrix4x4> _surfaceMatrices;
         private NativeArray<HectonVegetationInstanceData> _surfaceMetadata;
@@ -407,12 +615,80 @@ namespace Hecton8.World
         private int _underwaterMatureSporeScanCursor;
         private int _surfaceOvergrowthScanCursor;
         private int _underwaterOvergrowthScanCursor;
+        private PlayerInventory _playerInventoryRuntime;
+        private PersistentWorldRegistry _persistentWorldRegistry;
+        private IAudioService _audioService;
+        private SpatialAudioManager _spatialAudioManager;
+        private bool _hotSwapRegistered;
+        private bool _organicToolHitServiceRegistered;
         // COLD ALLOC: CorpseResourceNodeRecord[96] - bounded ecological corpse-resource nodes used by scavenger AI and blood-scent routing - owner: DestructibleOrganicManager
         private CorpseResourceNodeRecord[] _corpseResourceNodes = Array.Empty<CorpseResourceNodeRecord>();
         private int _corpseResourceNodeCount;
 
         /// <summary>Currently enabled runtime organic entropy owner.</summary>
         public static DestructibleOrganicManager ActiveRuntimeInstance => _activeRuntimeInstance;
+
+        public int DearLieRegenQueueCount => _dearLieRegenCount;
+        public int DearLieLastDamageFrame => _dearLieLastDamageFrame;
+        public int DearLieLastDestroyedCount => _dearLieLastDestroyedCount;
+        public int DearLieLastVfxCount => _dearLieLastVfxCount;
+        public int DearLieSurfaceInstanceCount => _surfaceCount;
+        public int DearLieUnderwaterInstanceCount => _underwaterCount;
+        public float DearLieQualityWeight => _dearLieLastQualityWeight;
+        public float DearLieDamageRadiusEpsilon => ResolveDearLieQueryRadius();
+        public float DearLieRegenerationDelayTuningSeconds => ResolveDearLieRegenerationDelaySeconds();
+        public float DearLieQualityOverride => dearLieQualityOverride;
+
+#if UNITY_EDITOR
+        public void EditorSetDearLieTuning(float damageRadiusEpsilon, float regenerationDelaySeconds, float qualityOverride)
+        {
+            dearLieDamageRadiusEpsilon = math.clamp(
+                math.select(DearLieQueryRadiusMeters, damageRadiusEpsilon, math.isfinite(damageRadiusEpsilon)),
+                0.25f,
+                8f);
+            dearLieRegenerationDelaySeconds = math.clamp(
+                math.select(DearLieRegenerationDelaySeconds, regenerationDelaySeconds, math.isfinite(regenerationDelaySeconds)),
+                5f,
+                900f);
+            dearLieQualityOverride = math.clamp(
+                math.select(-1f, qualityOverride, math.isfinite(qualityOverride)),
+                -1f,
+                1f);
+        }
+
+        public void EditorRequestDearLieMockBurst()
+        {
+            dearLieGenerateMockDamageBurst = true;
+        }
+
+        public int EditorCopyDearLieTelemetry(
+            Span<int> frameIndices,
+            Span<int> destroyedCounts,
+            Span<int> vfxCounts,
+            Span<int> regenCounts)
+        {
+            if (!_dearLieTelemetryRing.IsCreated || _dearLieTelemetryRing.Length == 0)
+                return 0;
+
+            int copyCount = math.min(_dearLieTelemetryCursor, _dearLieTelemetryRing.Length);
+            copyCount = math.min(copyCount, math.min(frameIndices.Length, math.min(destroyedCounts.Length, math.min(vfxCounts.Length, regenCounts.Length))));
+            int start = _dearLieTelemetryCursor - copyCount;
+            for (int i = 0; i < copyCount; i++)
+            {
+                int ringIndex = (start + i) % _dearLieTelemetryRing.Length;
+                if (ringIndex < 0)
+                    ringIndex += _dearLieTelemetryRing.Length;
+
+                FloraDearLieTelemetryEntry entry = _dearLieTelemetryRing[ringIndex];
+                frameIndices[i] = entry.FrameIndex;
+                destroyedCounts[i] = entry.DestroyedCount;
+                vfxCounts[i] = entry.VfxSignalCount;
+                regenCounts[i] = entry.RegenQueuedCount;
+            }
+
+            return copyCount;
+        }
+#endif
 
         internal bool RegisterCorpseResourceNode(Vector3 worldPosition, int speciesId, float capacityUnits)
         {
@@ -421,7 +697,9 @@ namespace Hecton8.World
 
         internal bool RegisterCorpseResourceNode(Vector3 worldPosition, int speciesId, float capacityUnits, uint contaminatedItemHash)
         {
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition positionAup))
+                return false;
+
             return RegisterCorpseResourceNode(in positionAup, worldPosition, speciesId, capacityUnits, contaminatedItemHash);
         }
 
@@ -482,7 +760,13 @@ namespace Hecton8.World
 
         internal bool TryResolveNearestCorpseResourceNode(Vector3 worldPosition, float searchRadius, out Vector3 corpsePosition, out uint corpseNodeId)
         {
-            AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition queryAup))
+            {
+                corpsePosition = default;
+                corpseNodeId = 0u;
+                return false;
+            }
+
             return TryResolveNearestCorpseResourceNode(in queryAup, searchRadius, out corpsePosition, out corpseNodeId);
         }
 
@@ -563,7 +847,9 @@ namespace Hecton8.World
 
         internal float ResolveCorpseSpawnInfluence01(Vector3 worldPosition, float searchRadius)
         {
-            AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition queryAup))
+                return 0f;
+
             return ResolveCorpseSpawnInfluence01(in queryAup, searchRadius);
         }
 
@@ -651,48 +937,49 @@ namespace Hecton8.World
             matureSporeAcousticScanBudgetPerTick = Mathf.Max(1, matureSporeAcousticScanBudgetPerTick);
 
             // COLD ALLOC: NativeHashMap<uint,half>[4096] - persistent per-instance harvest health state keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _healthByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _healthByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,byte>[2048] - persistent destroyed flora tombstone set keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _destroyedByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
+            _destroyedByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,float>[2048] - active wilt-to-hide timers keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _pendingWiltEndTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
+            _pendingWiltEndTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,float>[2048] - persistent partial-damage wilt progress keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _damageVisualProgressByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
+            _damageVisualProgressByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,float>[2048] - persistent decomposition start time keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _decompositionStartTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
+            _decompositionStartTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,float>[2048] - active flora regrowth progress keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _regrowthProgressByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
+            _regrowthProgressByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,float3>[2048] - flora regrowth position overrides keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _regrowthPositionByInstanceUid = new NativeHashMap<uint, float3>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
+            _regrowthPositionByInstanceUid = new NativeHashMap<uint, float3>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicDestroyedStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,half>[4096] - live flora maturation scale multipliers keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _maturationScaleByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _maturationScaleByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,half>[4096] - live flora maturation resource-yield multipliers keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _maturationYieldByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _maturationYieldByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,float>[4096] - mature spore acoustic cadence keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _nextSporeAcousticTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _nextSporeAcousticTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,float2>[4096] - baseline height/width scales keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _baseScaleByInstanceUid = new NativeHashMap<uint, float2>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _baseScaleByInstanceUid = new NativeHashMap<uint, float2>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,byte>[4096] - runtime flora bit-mask flags keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _runtimeFlagsByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _runtimeFlagsByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,float>[4096] - untouched flora clock keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _lastOrganicTouchTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _lastOrganicTouchTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,byte>[4096] - macro-flora overgrowth obstacle state keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _overgrownByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _overgrownByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,byte>[4096] - one-shot Titan root SDF mound state keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _rootMoundAppliedByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _rootMoundAppliedByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
             // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[2048] - destroyed flora tombstone restore scratch - owner: DestructibleOrganicManager
-            _destroyedFloraScratch = new NativeList<PersistentWorldDeltaRecord>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
+            _destroyedFloraScratch = new NativeList<PersistentWorldDeltaRecord>(DefaultTrackedDestroyedCapacity, DataVaultExemptOrganicScratchAllocator);
             // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[4096] - partial flora-state restore scratch - owner: DestructibleOrganicManager
-            _floraStateOverrideScratch = new NativeList<PersistentWorldDeltaRecord>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _floraStateOverrideScratch = new NativeList<PersistentWorldDeltaRecord>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicScratchAllocator);
             // COLD ALLOC: NativeHashMap<uint,half>[4096] - persisted normalized flora health overrides keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _persistedHealth01ByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _persistedHealth01ByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
             // COLD ALLOC: NativeHashMap<uint,half>[4096] - persisted normalized flora height overrides keyed by deterministic flora uid - owner: DestructibleOrganicManager
-            _persistedHeightScale01ByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            _persistedHeightScale01ByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, DataVaultExemptOrganicHealthStateAllocator);
             // COLD ALLOC: NativeList<DestroyedOrganicEvent>[128] - pending entropy yield event queue - owner: DestructibleOrganicManager
-            _pendingYieldEvents = new NativeList<DestroyedOrganicEvent>(DefaultPendingYieldCapacity, Allocator.Persistent);
-            _dropBuffer = new DropBuffer(DefaultDropBufferCapacity, Allocator.Persistent);
+            _pendingYieldEvents = new NativeList<DestroyedOrganicEvent>(DefaultPendingYieldCapacity, DataVaultExemptOrganicYieldQueueAllocator);
+            _dropBuffer = new DropBuffer(DefaultDropBufferCapacity, DataVaultExemptOrganicDropAllocator);
             // COLD ALLOC: Vector3[1] - bounded debug scratch for future runtime diagnostics - owner: DestructibleOrganicManager
-            _dropDebugScratch = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _dropDebugScratch = new NativeArray<Vector3>(1, DataVaultExemptOrganicDropAllocator, NativeArrayOptions.ClearMemory);
+            // VAULT ROUTE: Dear Lie transient visual lanes are acquired from GlobalDataVault during OnEnable; Awake keeps no private Dear Lie native-container ownership.
             RegisterNativeMemorySentinel();
             // COLD ALLOC: CorpseResourceNodeRecord[96] - bounded ecological corpse-resource nodes used by scavenger AI and blood-scent routing - owner: DestructibleOrganicManager
             _corpseResourceNodes = new CorpseResourceNodeRecord[DefaultCorpseNodeCapacity];
@@ -707,7 +994,11 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return;
 
+            CacheRegistryServicesCold();
+            TryBootstrapDearLieVault(clearExisting: true);
+            TryRegisterHotSwapListener();
             RegisterOriginShiftListener();
+            TryRegisterOrganicToolHitService();
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
@@ -756,8 +1047,13 @@ namespace Hecton8.World
                 _lateFrameTickRegistered = false;
             }
 
+            CompleteDearLieJobIfNeeded(Time.time);
             CompleteYieldJobIfNeeded();
             UnregisterOriginShiftListener();
+            TryUnregisterHotSwapListener();
+            TryUnregisterOrganicToolHitService();
+            ReleaseDearLieVaultBuffers(_dearLieVault);
+            ClearCachedRegistryServices();
         }
 
         private void OnDestroy()
@@ -765,8 +1061,13 @@ namespace Hecton8.World
             if (_activeRuntimeInstance == this)
                 _activeRuntimeInstance = null;
 
+            CompleteDearLieJobIfNeeded(Time.time);
             CompleteYieldJobIfNeeded();
             UnregisterOriginShiftListener();
+            TryUnregisterHotSwapListener();
+            TryUnregisterOrganicToolHitService();
+            ReleaseDearLieVaultBuffers(_dearLieVault);
+            ClearCachedRegistryServices();
             DisposeNativeArray(ref _surfaceInstanceUids);
             DisposeNativeArray(ref _underwaterInstanceUids);
             DisposeNativeArray(ref _surfaceMaterialClasses);
@@ -845,6 +1146,370 @@ namespace Hecton8.World
             _originShiftListenerRegistered = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    _playerInventoryRuntime = (currentService as IPlayerInventoryService)?.Inventory;
+                    break;
+                case GlobalRegistryServiceSlot.PersistentWorldRegistry:
+                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    CacheAudioService(currentService as IAudioService);
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    IDataVault currentVault = currentService as IDataVault;
+                    if (currentVault != null && ReferenceEquals(_dearLieVault, currentVault))
+                    {
+                        TryBootstrapDearLieVault(clearExisting: false);
+                        break;
+                    }
+
+                    if (_dearLieVault != null)
+                        ReleaseDearLieVaultBuffers(_dearLieVault);
+
+                    _dearLieVault = currentVault;
+                    _dearLieVaultReady = false;
+                    if (_dearLieVault != null)
+                        TryBootstrapDearLieVault(clearExisting: true);
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterOrganicToolHitService()
+        {
+            if (_organicToolHitServiceRegistered || !Application.isPlaying)
+                return;
+
+            IOrganicToolHitService registered = GlobalRegistry.OrganicToolHits;
+            if (registered != null && !ReferenceEquals(registered, this))
+                return;
+
+            GlobalRegistry.RegisterOrganicToolHitService(this);
+            _organicToolHitServiceRegistered = ReferenceEquals(GlobalRegistry.OrganicToolHits, this);
+        }
+
+        private void TryUnregisterOrganicToolHitService()
+        {
+            if (!_organicToolHitServiceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterOrganicToolHitService(this);
+            _organicToolHitServiceRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _playerInventoryRuntime = GlobalRegistry.PlayerInventoryRuntime;
+            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            CacheAudioService(GlobalRegistry.Audio);
+            CacheDearLieFallbackQualityWeightCold();
+        }
+
+        private bool TryBootstrapDearLieVault(bool clearExisting)
+        {
+            IDataVault vault = _dearLieVault ?? GlobalRegistry.DataVault;
+            _dearLieVault = vault;
+            if (vault == null)
+            {
+                _dearLieVaultReady = false;
+                return false;
+            }
+
+            _dearLieVaultReady = EnsureDearLieVaultBuffers(vault, clearExisting) && TryResolveDearLieVaultBuffers(vault);
+            if (clearExisting && _dearLieVaultReady)
+                ClearDearLieVaultRuntimeState();
+
+            return _dearLieVaultReady;
+        }
+
+        private bool EnsureDearLieVaultBuffers(IDataVault vault, bool clearExisting)
+        {
+            if (vault == null)
+                return false;
+
+            NativeArrayOptions fixedOptions = clearExisting ? NativeArrayOptions.ClearMemory : NativeArrayOptions.UninitializedMemory;
+            return EnsureDearLieVaultBuffer(vault, DearLieSurfaceClaimsBufferId, DearLieSpatialHashCapacity, ref _surfaceDearLieClaimsHandle, out _surfaceDearLieClaims, fixedOptions) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieUnderwaterClaimsBufferId, DearLieSpatialHashCapacity, ref _underwaterDearLieClaimsHandle, out _underwaterDearLieClaims, fixedOptions) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieDamageEventsBufferId, DearLieMaxDamageSignalsPerFrame, ref _dearLieDamageEventsHandle, out _dearLieDamageEvents, fixedOptions) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieResultsBufferId, DearLieMaxResultsPerFrame, ref _dearLieResultsHandle, out _dearLieResults, fixedOptions) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieCountersBufferId, 8, ref _dearLieCountersHandle, out _dearLieCounters, NativeArrayOptions.ClearMemory) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieRegenRecordsBufferId, DearLieMaxRegenRecords, ref _dearLieRegenRecordsHandle, out _dearLieRegenRecords, fixedOptions) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieTelemetryRingBufferId, DearLieTelemetryFrameCount, ref _dearLieTelemetryRingHandle, out _dearLieTelemetryRing, NativeArrayOptions.ClearMemory) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieSurfaceBucketHeadsBufferId, DearLieSpatialHashCapacity, ref _surfaceDearLieBucketHeadsHandle, out _surfaceDearLieBucketHeads, fixedOptions) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieSurfaceBucketNextBufferId, DearLieSpatialHashCapacity, ref _surfaceDearLieBucketNextHandle, out _surfaceDearLieBucketNext, fixedOptions) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieUnderwaterBucketHeadsBufferId, DearLieSpatialHashCapacity, ref _underwaterDearLieBucketHeadsHandle, out _underwaterDearLieBucketHeads, fixedOptions) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieUnderwaterBucketNextBufferId, DearLieSpatialHashCapacity, ref _underwaterDearLieBucketNextHandle, out _underwaterDearLieBucketNext, fixedOptions);
+        }
+
+        private bool TryResolveDearLieVaultBuffers(IDataVault vault)
+        {
+            return TryResolveDearLieVaultBuffer(vault, in _surfaceDearLieClaimsHandle, DearLieSpatialHashCapacity, out _surfaceDearLieClaims) &&
+                   TryResolveDearLieVaultBuffer(vault, in _underwaterDearLieClaimsHandle, DearLieSpatialHashCapacity, out _underwaterDearLieClaims) &&
+                   TryResolveDearLieVaultBuffer(vault, in _dearLieDamageEventsHandle, DearLieMaxDamageSignalsPerFrame, out _dearLieDamageEvents) &&
+                   TryResolveDearLieVaultBuffer(vault, in _dearLieResultsHandle, DearLieMaxResultsPerFrame, out _dearLieResults) &&
+                   TryResolveDearLieVaultBuffer(vault, in _dearLieCountersHandle, 8, out _dearLieCounters) &&
+                   TryResolveDearLieVaultBuffer(vault, in _dearLieRegenRecordsHandle, DearLieMaxRegenRecords, out _dearLieRegenRecords) &&
+                   TryResolveDearLieVaultBuffer(vault, in _dearLieTelemetryRingHandle, DearLieTelemetryFrameCount, out _dearLieTelemetryRing) &&
+                   TryResolveDearLieVaultBuffer(vault, in _surfaceDearLieBucketHeadsHandle, DearLieSpatialHashCapacity, out _surfaceDearLieBucketHeads) &&
+                   TryResolveDearLieVaultBuffer(vault, in _surfaceDearLieBucketNextHandle, DearLieSpatialHashCapacity, out _surfaceDearLieBucketNext) &&
+                   TryResolveDearLieVaultBuffer(vault, in _underwaterDearLieBucketHeadsHandle, DearLieSpatialHashCapacity, out _underwaterDearLieBucketHeads) &&
+                   TryResolveDearLieVaultBuffer(vault, in _underwaterDearLieBucketNextHandle, DearLieSpatialHashCapacity, out _underwaterDearLieBucketNext);
+        }
+
+        private bool EnsureDearLieVaultLaneCapacity(bool underwater, int requiredCount)
+        {
+            if (requiredCount <= 0)
+                return true;
+
+            IDataVault vault = _dearLieVault;
+            if (vault == null || !_dearLieVaultReady || _dearLieJobScheduled)
+                return false;
+
+            int requiredCapacity = math.max(DearLieSpatialHashCapacity, math.ceilpow2(requiredCount));
+            if (underwater)
+            {
+                return EnsureDearLieVaultBuffer(vault, DearLieUnderwaterClaimsBufferId, requiredCapacity, ref _underwaterDearLieClaimsHandle, out _underwaterDearLieClaims, NativeArrayOptions.UninitializedMemory) &&
+                       EnsureDearLieVaultBuffer(vault, DearLieUnderwaterBucketHeadsBufferId, requiredCapacity, ref _underwaterDearLieBucketHeadsHandle, out _underwaterDearLieBucketHeads, NativeArrayOptions.UninitializedMemory) &&
+                       EnsureDearLieVaultBuffer(vault, DearLieUnderwaterBucketNextBufferId, requiredCapacity, ref _underwaterDearLieBucketNextHandle, out _underwaterDearLieBucketNext, NativeArrayOptions.UninitializedMemory);
+            }
+
+            return EnsureDearLieVaultBuffer(vault, DearLieSurfaceClaimsBufferId, requiredCapacity, ref _surfaceDearLieClaimsHandle, out _surfaceDearLieClaims, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieSurfaceBucketHeadsBufferId, requiredCapacity, ref _surfaceDearLieBucketHeadsHandle, out _surfaceDearLieBucketHeads, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureDearLieVaultBuffer(vault, DearLieSurfaceBucketNextBufferId, requiredCapacity, ref _surfaceDearLieBucketNextHandle, out _surfaceDearLieBucketNext, NativeArrayOptions.UninitializedMemory);
+        }
+
+        private static bool EnsureDearLieVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            ref VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer,
+            NativeArrayOptions options) where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (handle.BufferID != 0u &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.FloraGenomics, options);
+            return handle.BufferID != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryResolveDearLieVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private void ClearDearLieVaultRuntimeState()
+        {
+            ClearDearLieCounters();
+            if (_dearLieTelemetryRing.IsCreated)
+            {
+                for (int i = 0; i < _dearLieTelemetryRing.Length; i++)
+                    _dearLieTelemetryRing[i] = default;
+            }
+
+            if (_surfaceDearLieBucketHeads.IsCreated)
+            {
+                for (int i = 0; i < _surfaceDearLieBucketHeads.Length; i++)
+                    _surfaceDearLieBucketHeads[i] = -1;
+            }
+
+            if (_underwaterDearLieBucketHeads.IsCreated)
+            {
+                for (int i = 0; i < _underwaterDearLieBucketHeads.Length; i++)
+                    _underwaterDearLieBucketHeads[i] = -1;
+            }
+
+            _dearLieRegenCount = 0;
+            _dearLieTelemetryCursor = 0;
+        }
+
+        private bool TryLockDearLieVaultJobBuffers()
+        {
+            IDataVault vault = _dearLieVault;
+            if (vault == null || _dearLieVaultJobLocksHeld || _dearLieVaultJobLockCount != 0)
+                return false;
+
+            int lockedCount = 0;
+            for (int i = 0; i < DearLieVaultJobBufferCount; i++)
+            {
+                BufferID bufferId = GetDearLieVaultJobBufferId(i);
+                if (!vault.TryLockBuffer(bufferId, SystemID.FloraGenomics))
+                {
+                    UnlockDearLieVaultJobBuffers(vault, lockedCount);
+                    return false;
+                }
+
+                lockedCount++;
+            }
+
+            _dearLieVaultJobLockCount = lockedCount;
+            _dearLieVaultJobLocksHeld = true;
+            return true;
+        }
+
+        private void UnlockDearLieVaultJobBuffers()
+        {
+            IDataVault vault = _dearLieVault;
+            if (vault != null && _dearLieVaultJobLockCount > 0)
+                UnlockDearLieVaultJobBuffers(vault, _dearLieVaultJobLockCount);
+
+            _dearLieVaultJobLockCount = 0;
+            _dearLieVaultJobLocksHeld = false;
+        }
+
+        private static void UnlockDearLieVaultJobBuffers(IDataVault vault, int lockedCount)
+        {
+            for (int i = lockedCount - 1; i >= 0; i--)
+            {
+                BufferID bufferId = GetDearLieVaultJobBufferId(i);
+                if (bufferId != default)
+                    vault.TryUnlockBuffer(bufferId, SystemID.FloraGenomics);
+            }
+        }
+
+        private static BufferID GetDearLieVaultJobBufferId(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return DearLieSurfaceClaimsBufferId;
+                case 1:
+                    return DearLieUnderwaterClaimsBufferId;
+                case 2:
+                    return DearLieDamageEventsBufferId;
+                case 3:
+                    return DearLieResultsBufferId;
+                case 4:
+                    return DearLieCountersBufferId;
+                case 5:
+                    return DearLieRegenRecordsBufferId;
+                case 6:
+                    return DearLieTelemetryRingBufferId;
+                case 7:
+                    return DearLieSurfaceBucketHeadsBufferId;
+                case 8:
+                    return DearLieSurfaceBucketNextBufferId;
+                case 9:
+                    return DearLieUnderwaterBucketHeadsBufferId;
+                case 10:
+                    return DearLieUnderwaterBucketNextBufferId;
+                default:
+                    return default;
+            }
+        }
+
+        private void ReleaseDearLieVaultBuffers(IDataVault vault)
+        {
+            if (_dearLieJobScheduled)
+                CompleteDearLieJobIfNeeded(Time.time, force: true);
+
+            if (_dearLieVaultJobLocksHeld)
+                UnlockDearLieVaultJobBuffers();
+
+            if (vault != null)
+            {
+                ReleaseDearLieVaultBuffer(vault, ref _surfaceDearLieClaimsHandle);
+                ReleaseDearLieVaultBuffer(vault, ref _underwaterDearLieClaimsHandle);
+                ReleaseDearLieVaultBuffer(vault, ref _dearLieDamageEventsHandle);
+                ReleaseDearLieVaultBuffer(vault, ref _dearLieResultsHandle);
+                ReleaseDearLieVaultBuffer(vault, ref _dearLieCountersHandle);
+                ReleaseDearLieVaultBuffer(vault, ref _dearLieRegenRecordsHandle);
+                ReleaseDearLieVaultBuffer(vault, ref _dearLieTelemetryRingHandle);
+                ReleaseDearLieVaultBuffer(vault, ref _surfaceDearLieBucketHeadsHandle);
+                ReleaseDearLieVaultBuffer(vault, ref _surfaceDearLieBucketNextHandle);
+                ReleaseDearLieVaultBuffer(vault, ref _underwaterDearLieBucketHeadsHandle);
+                ReleaseDearLieVaultBuffer(vault, ref _underwaterDearLieBucketNextHandle);
+            }
+
+            _surfaceDearLieClaims = default;
+            _underwaterDearLieClaims = default;
+            _dearLieDamageEvents = default;
+            _dearLieResults = default;
+            _dearLieCounters = default;
+            _dearLieRegenRecords = default;
+            _dearLieTelemetryRing = default;
+            _surfaceDearLieBucketHeads = default;
+            _surfaceDearLieBucketNext = default;
+            _underwaterDearLieBucketHeads = default;
+            _underwaterDearLieBucketNext = default;
+            _dearLieVault = null;
+            _dearLieVaultReady = false;
+            _dearLieVaultJobLocksHeld = false;
+            _dearLieVaultJobLockCount = 0;
+        }
+
+        private static void ReleaseDearLieVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private void CacheDearLieFallbackQualityWeightCold()
+        {
+            float tierWeight = math.saturate(GlobalRegistry.ScalabilityTierProfileByte);
+            _dearLieFallbackQualityWeight = math.saturate(math.lerp(0.25f, 1f, SmoothStep01(tierWeight)));
+        }
+
+        private void CacheAudioService(IAudioService audioService)
+        {
+            _audioService = audioService != null && audioService.IsInitialized ? audioService : null;
+            _spatialAudioManager = _audioService as SpatialAudioManager;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _playerInventoryRuntime = null;
+            _persistentWorldRegistry = null;
+            _audioService = null;
+            _spatialAudioManager = null;
+        }
+
         /// <summary>
         /// Processes pending entropy jobs and drop routing.
         /// </summary>
@@ -852,6 +1517,8 @@ namespace Hecton8.World
         {
             float currentTime = Time.time;
             RefreshActiveCachesIfNeeded(force: false);
+            ProcessDearLieDestructionSignals(currentTime);
+            ProcessDearLieRegeneration(currentTime);
             UpdateDecompositionVisuals(currentTime);
             UpdateRegrowthVisuals();
             UpdateMatureSporeAcoustics(currentTime);
@@ -866,7 +1533,17 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
-            CompleteYieldJobIfNeeded(force: false);
+            DispatcherJobSwap.BeginLateFrameSwapWindow();
+            try
+            {
+                CompleteDearLieJobIfNeeded(Time.time, force: false);
+                CompleteYieldJobIfNeeded(force: false);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndLateFrameSwapWindow();
+            }
+
             if (_yieldScheduled)
                 return;
 
@@ -892,6 +1569,925 @@ namespace Hecton8.World
             RefreshCorpseResourceNodes(Time.time);
             EvaluateAllelopathicRelease();
             EvaluateAggressiveOvergrowth(Time.time);
+        }
+
+        private void ProcessDearLieDestructionSignals(float currentTime)
+        {
+            if (_dearLieJobScheduled)
+                return;
+
+            if (!_dearLieVaultReady ||
+                !_dearLieDamageEvents.IsCreated ||
+                !_dearLieResults.IsCreated ||
+                !_dearLieCounters.IsCreated ||
+                !_surfaceDearLieBucketHeads.IsCreated ||
+                !_surfaceDearLieBucketNext.IsCreated ||
+                !_underwaterDearLieBucketHeads.IsCreated ||
+                !_underwaterDearLieBucketNext.IsCreated)
+            {
+                return;
+            }
+
+            if (SignalBus<CombatDamageSignal>.GetFrameSnapshot().Length == 0 && !dearLieGenerateMockDamageBurst)
+            {
+                RecordDearLieTelemetry(Time.frameCount, 0, 0, 0, 0, 0, 0, 0f, 0u, 0);
+                return;
+            }
+
+            if (!TryLockDearLieVaultJobBuffers())
+            {
+                RecordDearLieTelemetry(Time.frameCount, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
+                return;
+            }
+
+            ClearDearLieCounters();
+
+            int damageCount = StageDearLieDamageEvents(out JobHandle stageHandle);
+            if (damageCount <= 0)
+            {
+                int rejectedOnlyCount = math.max(0, ReadDearLieCounter(4));
+                int nanOnlyCount = math.max(0, ReadDearLieCounter(5));
+                RecordDearLieTelemetry(Time.frameCount, 0, 0, 0, 0, rejectedOnlyCount, nanOnlyCount, 0f, 0u, nanOnlyCount > 0 ? (byte)1 : (byte)0);
+                if (nanOnlyCount > 0)
+                    DumpDearLieTelemetry();
+                UnlockDearLieVaultJobBuffers();
+                return;
+            }
+
+            JobHandle surfaceHandle = ScheduleDearLieLane(false, damageCount, stageHandle);
+            JobHandle underwaterHandle = ScheduleDearLieLane(true, damageCount, stageHandle);
+            _dearLieJobHandle = JobHandle.CombineDependencies(stageHandle, JobHandle.CombineDependencies(surfaceHandle, underwaterHandle));
+            _dearLieScheduledDamageCount = damageCount;
+            _dearLieJobScheduleFrame = Time.frameCount;
+            _dearLieJobStartTimeSeconds = Time.realtimeSinceStartupAsDouble;
+            _dearLieJobScheduled = true;
+        }
+
+        private void ClearDearLieCounters()
+        {
+            if (!_dearLieCounters.IsCreated)
+                return;
+
+            for (int i = 0; i < _dearLieCounters.Length; i++)
+                _dearLieCounters[i] = default;
+        }
+
+        private int ReadDearLieCounter(int index)
+        {
+            if (!_dearLieCounters.IsCreated || (uint)index >= (uint)_dearLieCounters.Length)
+                return 0;
+
+            return _dearLieCounters[index].Value;
+        }
+
+        private void WriteDearLieCounter(int index, int value)
+        {
+            if (!_dearLieCounters.IsCreated || (uint)index >= (uint)_dearLieCounters.Length)
+                return;
+
+            FloraDearLieCounter64 counter = _dearLieCounters[index];
+            counter.Value = value;
+            _dearLieCounters[index] = counter;
+        }
+
+        private bool CompleteDearLieJobIfNeeded(float currentTime, bool force = true)
+        {
+            if (!_dearLieJobScheduled)
+                return true;
+
+            if (!DispatcherJobSwap.TryComplete(ref _dearLieJobHandle, force))
+                return false;
+
+            _dearLieJobScheduled = false;
+            bool sameFrameCompletion = _dearLieJobScheduleFrame == Time.frameCount;
+            float queryMicroseconds = 0f;
+            if (_dearLieJobStartTimeSeconds > 0d)
+            {
+                double elapsedSeconds = Time.realtimeSinceStartupAsDouble - _dearLieJobStartTimeSeconds;
+                if (elapsedSeconds > 0d && math.isfinite(elapsedSeconds))
+                    queryMicroseconds = (float)math.min(1000000d, elapsedSeconds * 1000000d);
+            }
+
+            _dearLieJobScheduleFrame = -1;
+            _dearLieJobStartTimeSeconds = 0d;
+            int damageCount = math.max(0, _dearLieScheduledDamageCount);
+            _dearLieScheduledDamageCount = 0;
+            try
+            {
+                int destroyedCount = ApplyDearLieDestructionResults(currentTime, out uint lastInstanceUid, out int vfxCount);
+                _dearLieLastDamageFrame = Time.frameCount;
+                _dearLieLastDestroyedCount = destroyedCount;
+                _dearLieLastVfxCount = vfxCount;
+
+                int overflowCount = math.max(0, ReadDearLieCounter(6));
+                int rejectedCount = math.max(0, ReadDearLieCounter(4)) + overflowCount;
+                int nanRejectCount = math.max(0, ReadDearLieCounter(5));
+                byte flags = 0;
+                if (nanRejectCount > 0)
+                    flags |= 1;
+                if (destroyedCount > 0)
+                    flags |= 2;
+                if (sameFrameCompletion && queryMicroseconds > 500f)
+                    flags |= 8;
+                if (overflowCount > 0)
+                    flags |= 16;
+                RecordDearLieTelemetry(Time.frameCount, damageCount, destroyedCount, vfxCount, 0, rejectedCount, nanRejectCount, queryMicroseconds, lastInstanceUid, flags);
+                if (nanRejectCount > 0 || overflowCount > 0 || (sameFrameCompletion && queryMicroseconds > 500f))
+                    DumpDearLieTelemetry();
+            }
+            finally
+            {
+                UnlockDearLieVaultJobBuffers();
+            }
+
+            return true;
+        }
+
+        private int StageDearLieDamageEvents(out JobHandle stageHandle)
+        {
+            stageHandle = default;
+            int writeCount = 0;
+            int rejectedCount = 0;
+            int nanRejectCount = 0;
+            ReadOnlySpan<CombatDamageSignal> signals = SignalBus<CombatDamageSignal>.GetFrameSnapshot();
+            int signalCount = math.min(signals.Length, DearLieMaxDamageSignalsPerFrame);
+            for (int i = 0; i < signalCount && writeCount < DearLieMaxDamageSignalsPerFrame; i++)
+            {
+                CombatDamageSignal signal = signals[i];
+                if (!TryBuildDearLieEvent(in signal, out FloraDestructionEventDTO dearLieEvent, ref nanRejectCount))
+                {
+                    rejectedCount++;
+                    continue;
+                }
+
+                _dearLieDamageEvents[writeCount++] = dearLieEvent;
+            }
+
+            if (dearLieGenerateMockDamageBurst && writeCount < DearLieMaxDamageSignalsPerFrame)
+            {
+                dearLieGenerateMockDamageBurst = false;
+                int mockCount = math.min(DearLieMockDamageSignalCount, DearLieMaxDamageSignalsPerFrame - writeCount);
+                double3 originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+                double3 centerAup = originAup + new double3(dearLieMockDamageCenter.x, dearLieMockDamageCenter.y, dearLieMockDamageCenter.z);
+                var mockJob = new GenerateMockFloraDamageJob
+                {
+                    Events = _dearLieDamageEvents,
+                    Offset = writeCount,
+                    Count = mockCount,
+                    CenterAUP = centerAup,
+                    Seed = unchecked((uint)(Time.frameCount * 268 + 0x51A268u))
+                };
+                stageHandle = mockJob.Schedule(mockCount, DearLieJobBatchSize);
+                writeCount += mockCount;
+            }
+
+            WriteDearLieCounter(4, rejectedCount);
+            WriteDearLieCounter(5, nanRejectCount);
+
+            return writeCount;
+        }
+
+        private static bool TryBuildDearLieEvent(
+            in CombatDamageSignal signal,
+            out FloraDestructionEventDTO dearLieEvent,
+            ref int nanRejectCount)
+        {
+            dearLieEvent = default;
+            if (!CombatDamageSignalCodec.IsFiniteAup(signal.ImpactAup) ||
+                !math.isfinite(signal.Magnitude) ||
+                !math.all(math.isfinite(signal.Direction)))
+            {
+                nanRejectCount++;
+                return false;
+            }
+
+            if (signal.Magnitude <= DearLieMinimumMagnitude)
+                return false;
+
+            if ((signal.Flags & CombatDamageSignal.LegacyMirrorFlag) != 0)
+                return false;
+
+            bool explicitFloraRoute = (signal.Flags & DearLieFloraDamageFlag) != 0;
+            bool areaRoute = signal.TargetId == 0 && (signal.TargetHash == 0u || signal.TargetHash == DearLieSignalHashFlora || signal.TargetHash == DearLieSignalHashOrganic);
+            if (!explicitFloraRoute && !areaRoute)
+                return false;
+
+            dearLieEvent = new FloraDestructionEventDTO
+            {
+                ImpactAUP = signal.ImpactAup,
+                FloraTypeHash = signal.TargetHash == 0u ? DearLieSignalHashFlora : signal.TargetHash,
+                _pad0 = math.asuint(math.saturate(signal.Magnitude))
+            };
+            return true;
+        }
+
+        private JobHandle ScheduleDearLieLane(bool underwater, int damageCount, JobHandle inputDependency)
+        {
+            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+            NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
+            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
+            NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;
+            NativeArray<FloraDearLieClaim64> claims = underwater ? _underwaterDearLieClaims : _surfaceDearLieClaims;
+            NativeArray<int> bucketHeads = underwater ? _underwaterDearLieBucketHeads : _surfaceDearLieBucketHeads;
+            NativeArray<int> bucketNext = underwater ? _underwaterDearLieBucketNext : _surfaceDearLieBucketNext;
+            int count = underwater ? _underwaterCount : _surfaceCount;
+            if (!matrices.IsCreated ||
+                !metadata.IsCreated ||
+                !instanceUids.IsCreated ||
+                !materialClasses.IsCreated ||
+                !health.IsCreated ||
+                !claims.IsCreated ||
+                !bucketHeads.IsCreated ||
+                !bucketNext.IsCreated ||
+                count <= 0)
+            {
+                return default;
+            }
+
+            int safeCount = math.min(count, math.min(matrices.Length, math.min(metadata.Length, math.min(instanceUids.Length, math.min(materialClasses.Length, math.min(health.Length, math.min(claims.Length, bucketNext.Length)))))));
+            if (safeCount <= 0)
+                return default;
+
+            float qualityWeight = ResolveDearLieGlobalQualityWeight();
+            double3 originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            var clearJob = new ClearDearLieClaimsJob
+            {
+                Claims = claims,
+                Count = safeCount
+            };
+            JobHandle clearHandle = clearJob.Schedule(safeCount, DearLieJobBatchSize, inputDependency);
+            var clearBucketsJob = new ClearDearLieBucketsJob
+            {
+                BucketHeads = bucketHeads,
+                Count = bucketHeads.Length
+            };
+            JobHandle clearBucketsHandle = clearBucketsJob.Schedule(bucketHeads.Length, DearLieJobBatchSize, inputDependency);
+            JobHandle clearAllHandle = JobHandle.CombineDependencies(clearHandle, clearBucketsHandle);
+
+            var buildJob = new BuildDearLieSpatialHashJob
+            {
+                Matrices = matrices,
+                InstanceUids = instanceUids,
+                Health = health,
+                BucketHeads = bucketHeads,
+                BucketNext = bucketNext,
+                Count = safeCount,
+                BucketCount = bucketHeads.Length,
+                RuntimeOriginAUP = originAup,
+                CellSizeMeters = DearLieSpatialCellSizeMeters
+            };
+            JobHandle buildHandle = buildJob.Schedule(safeCount, DearLieJobBatchSize, clearAllHandle);
+
+            var resolveJob = new ResolveDearLieDamageJob
+            {
+                Matrices = matrices,
+                Metadata = metadata,
+                InstanceUids = instanceUids,
+                MaterialClasses = materialClasses,
+                Health = health,
+                Claims = claims,
+                Events = _dearLieDamageEvents,
+                Results = _dearLieResults,
+                Counters = _dearLieCounters,
+                BucketHeads = bucketHeads,
+                BucketNext = bucketNext,
+                Count = safeCount,
+                BucketCount = bucketHeads.Length,
+                EventCount = math.min(damageCount, DearLieMaxDamageSignalsPerFrame),
+                RuntimeOriginAUP = originAup,
+                CellSizeMeters = DearLieSpatialCellSizeMeters,
+                QueryRadiusMeters = ResolveDearLieQueryRadius(),
+                GlobalQualityWeight = qualityWeight,
+                Frame = unchecked((uint)Time.frameCount),
+                LaneSalt = underwater ? 0xA2680002u : 0xA2680001u
+            };
+            return resolveJob.Schedule(damageCount, 1, buildHandle);
+        }
+
+        private int ApplyDearLieDestructionResults(float currentTime, out uint lastInstanceUid, out int vfxCount)
+        {
+            lastInstanceUid = 0u;
+            vfxCount = 0;
+            if (!_dearLieResults.IsCreated ||
+                !_dearLieCounters.IsCreated ||
+                !_destroyedByInstanceUid.IsCreated)
+            {
+                return 0;
+            }
+
+            int resultCount = math.min(math.max(0, ReadDearLieCounter(0)), _dearLieResults.Length);
+            int appliedCount = 0;
+            for (int i = 0; i < resultCount; i++)
+            {
+                FloraDearLieDestructionResult result = _dearLieResults[i];
+                uint instanceUid = result.InstanceUid;
+                if (instanceUid == 0u || _destroyedByInstanceUid.ContainsKey(instanceUid))
+                    continue;
+
+                if (!TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
+                    continue;
+
+                NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+                if (!matrices.IsCreated || activeIndex < 0 || activeIndex >= matrices.Length)
+                    continue;
+
+                Vector3 runtimePosition = ExtractTranslation(result.OriginalMatrix);
+                if (!IsFiniteVector(runtimePosition))
+                    runtimePosition = ExtractTranslation(matrices[activeIndex]);
+
+                Vector3 impactRuntimePosition = (Vector3)AbsoluteUniversePosition.FromAbsolutePosition(result.ImpactAUP).ToRuntimeFloat3();
+                if (IsFiniteVector(impactRuntimePosition) && IsFiniteVector(runtimePosition))
+                {
+                    _dearLieLastImpactRuntimePosition = impactRuntimePosition;
+                    _dearLieLastTargetRuntimePosition = runtimePosition;
+                    _dearLieHasLastDebugHit = 1;
+                }
+
+                _destroyedByInstanceUid.TryAdd(instanceUid, 1);
+                if (_healthByInstanceUid.IsCreated)
+                {
+                    _healthByInstanceUid.Remove(instanceUid);
+                    _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)0f);
+                }
+
+                ClearOrganicLifecycleState(instanceUid);
+                PrimeDecompositionState(instanceUid, currentTime);
+                SetLaneHealth(underwater, activeIndex, 0f);
+                if (_pendingWiltEndTimeByInstanceUid.IsCreated)
+                    _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
+                if (_damageVisualProgressByInstanceUid.IsCreated)
+                    _damageVisualProgressByInstanceUid.Remove(instanceUid);
+
+                byte runtimeFlags = MarkDeadRuntimeFlag(instanceUid);
+                ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
+                ApplyDearLieMatrixScaleZeroToLaneInstance(underwater, activeIndex);
+                QueueDearLieRegeneration(instanceUid, underwater, activeIndex, runtimePosition, currentTime + ResolveDearLieRegenerationDelaySeconds(), in result.OriginalMatrix);
+                if (TryPublishDearLieDebris(in result))
+                    vfxCount++;
+                appliedCount++;
+                lastInstanceUid = instanceUid;
+            }
+
+            return appliedCount;
+        }
+
+        private static bool TryPublishDearLieDebris(in FloraDearLieDestructionResult result)
+        {
+            if (result.EmitVfx == 0 || result.InstanceUid == 0u || result.VfxQuantity == 0)
+                return false;
+
+            float intensity = math.saturate(math.asfloat(result.MagnitudeBits));
+            if (!math.isfinite(intensity) || intensity <= 0f || !CombatDamageSignalCodec.IsFiniteAup(result.ImpactAUP))
+                return false;
+
+            DebrisSpawnSignal signal = new DebrisSpawnSignal
+            {
+                PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(result.ImpactAUP),
+                SpeciesHash = result.FloraTypeHash ^ ((uint)result.MaterialClass * 2246822519u),
+                SourceEntityId = result.InstanceUid ^ 0x7F4A7C15u,
+                Intensity01 = intensity,
+                DebrisKind = DebrisSpawnSignal.DebrisKindOrganicScrap,
+                Flags = DebrisSpawnSignal.FlagComputeShard,
+                Quantity = result.VfxQuantity
+            };
+            return SignalBus<DebrisSpawnSignal>.TryPush(in signal);
+        }
+
+        private void QueueDearLieRegeneration(uint instanceUid, bool underwater, int activeIndex, Vector3 runtimePosition, float restoreTimeSeconds, in Matrix4x4 originalMatrix)
+        {
+            if (!_dearLieRegenRecords.IsCreated || instanceUid == 0u || _dearLieRegenCount >= _dearLieRegenRecords.Length)
+                return;
+
+            _dearLieRegenRecords[_dearLieRegenCount++] = new FloraDearLieRegenRecord
+            {
+                OriginalMatrix = originalMatrix,
+                InstanceUid = instanceUid,
+                ActiveIndex = activeIndex,
+                RestoreTimeSeconds = restoreTimeSeconds,
+                RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                Underwater = underwater ? (byte)1 : (byte)0
+            };
+        }
+
+        private void ProcessDearLieRegeneration(float currentTime)
+        {
+            if (!_dearLieRegenRecords.IsCreated || _dearLieRegenCount <= 0)
+                return;
+
+            int recoveredCount = 0;
+            for (int i = _dearLieRegenCount - 1; i >= 0; i--)
+            {
+                FloraDearLieRegenRecord record = _dearLieRegenRecords[i];
+                if (record.InstanceUid == 0u || currentTime < record.RestoreTimeSeconds)
+                    continue;
+
+                Vector3 runtimePosition = new Vector3(record.RuntimePosition.x, record.RuntimePosition.y, record.RuntimePosition.z);
+                if (!IsFiniteVector(runtimePosition) && IsFiniteMatrix(in record.OriginalMatrix))
+                    runtimePosition = ExtractTranslation(record.OriginalMatrix);
+
+                if (!IsFiniteVector(runtimePosition) &&
+                    TryResolveActiveInstanceByUid(record.InstanceUid, out bool underwater, out int activeIndex, out _) &&
+                    TryResolveMatrixForLane(underwater, activeIndex, out Matrix4x4 matrix))
+                {
+                    runtimePosition = ExtractTranslation(matrix);
+                }
+
+                TryRestoreDearLieOriginalMatrix(in record);
+
+                if (IsFiniteVector(runtimePosition) && TrySetRegrowthProgress(record.InstanceUid, runtimePosition, 1f))
+                    recoveredCount++;
+
+                int lastIndex = _dearLieRegenCount - 1;
+                _dearLieRegenRecords[i] = _dearLieRegenRecords[lastIndex];
+                _dearLieRegenRecords[lastIndex] = default;
+                _dearLieRegenCount = lastIndex;
+            }
+
+            if (recoveredCount > 0)
+                RecordDearLieTelemetry(Time.frameCount, 0, 0, 0, recoveredCount, 0, 0, 0f, 0u, 4);
+        }
+
+        private bool TryRestoreDearLieOriginalMatrix(in FloraDearLieRegenRecord record)
+        {
+            if (record.InstanceUid == 0u || !IsFiniteMatrix(in record.OriginalMatrix))
+                return false;
+
+            bool recordUnderwater = record.Underwater != 0;
+            bool underwater = recordUnderwater;
+            int activeIndex = record.ActiveIndex;
+            if (!TryResolveActiveInstanceByUid(record.InstanceUid, out underwater, out activeIndex, out _))
+            {
+                underwater = recordUnderwater;
+                activeIndex = record.ActiveIndex;
+                NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
+                int count = underwater ? _underwaterCount : _surfaceCount;
+                if (!instanceUids.IsCreated ||
+                    activeIndex < 0 ||
+                    activeIndex >= count ||
+                    activeIndex >= instanceUids.Length ||
+                    instanceUids[activeIndex] != record.InstanceUid)
+                {
+                    return false;
+                }
+            }
+
+            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+            if (!matrices.IsCreated || activeIndex < 0 || activeIndex >= matrices.Length)
+                return false;
+
+            matrices[activeIndex] = record.OriginalMatrix;
+            return true;
+        }
+
+        private bool TryResolveMatrixForLane(bool underwater, int activeIndex, out Matrix4x4 matrix)
+        {
+            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+            if (!matrices.IsCreated || activeIndex < 0 || activeIndex >= matrices.Length)
+            {
+                matrix = default;
+                return false;
+            }
+
+            matrix = matrices[activeIndex];
+            return true;
+        }
+
+        private void RecordDearLieTelemetry(
+            int frameIndex,
+            int damageSignalCount,
+            int destroyedCount,
+            int vfxSignalCount,
+            int recoveredCount,
+            int rejectedSignalCount,
+            int nanRejectCount,
+            float queryMicroseconds,
+            uint lastInstanceUid,
+            byte flags)
+        {
+            if (!_dearLieTelemetryRing.IsCreated || _dearLieTelemetryRing.Length == 0)
+                return;
+
+            int index = _dearLieTelemetryCursor++ % _dearLieTelemetryRing.Length;
+            float qualityWeight = ResolveDearLieGlobalQualityWeight();
+            _dearLieLastQualityWeight = qualityWeight;
+            uint hash = 2166136261u;
+            hash = MixDearLieHash(hash, (uint)frameIndex);
+            hash = MixDearLieHash(hash, (uint)damageSignalCount);
+            hash = MixDearLieHash(hash, (uint)destroyedCount);
+            hash = MixDearLieHash(hash, lastInstanceUid);
+            hash = MixDearLieHash(hash, math.asuint(math.select(0f, queryMicroseconds, math.isfinite(queryMicroseconds))));
+            _dearLieTelemetryRing[index] = new FloraDearLieTelemetryEntry
+            {
+                FrameIndex = frameIndex,
+                SurfaceCount = _surfaceCount,
+                UnderwaterCount = _underwaterCount,
+                DamageSignalCount = damageSignalCount,
+                DestroyedCount = destroyedCount,
+                VfxSignalCount = vfxSignalCount,
+                RegenQueuedCount = _dearLieRegenCount,
+                RecoveredCount = recoveredCount,
+                RejectedSignalCount = rejectedSignalCount,
+                NanRejectCount = nanRejectCount,
+                GlobalQualityWeight = qualityWeight,
+                Hash = hash,
+                LastInstanceUid = lastInstanceUid,
+                Flags = flags,
+                QueryMicroseconds = math.select(0f, queryMicroseconds, math.isfinite(queryMicroseconds))
+            };
+        }
+
+        private unsafe void DumpDearLieTelemetry()
+        {
+            if (!_dearLieTelemetryRing.IsCreated)
+                return;
+
+            string path = global::System.IO.Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_SHINOBU_268.bin");
+            try
+            {
+                using (global::System.IO.FileStream stream = new global::System.IO.FileStream(path, global::System.IO.FileMode.Create, global::System.IO.FileAccess.Write, global::System.IO.FileShare.Read))
+                {
+                    int stride = UnsafeUtility.SizeOf<FloraDearLieTelemetryEntry>();
+                    byte* scratchPtr = stackalloc byte[stride];
+                    for (int i = 0; i < _dearLieTelemetryRing.Length; i++)
+                    {
+                        FloraDearLieTelemetryEntry entry = _dearLieTelemetryRing[i];
+                        UnsafeUtility.MemCpy(scratchPtr, UnsafeUtility.AddressOf(ref entry), stride);
+                        for (int byteIndex = 0; byteIndex < stride; byteIndex++)
+                            stream.WriteByte(scratchPtr[byteIndex]);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private float ResolveDearLieGlobalQualityWeight()
+        {
+            if (math.isfinite(dearLieQualityOverride) && dearLieQualityOverride >= 0f)
+                return math.saturate(dearLieQualityOverride);
+
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            if (!math.isfinite(weight))
+                weight = _dearLieFallbackQualityWeight;
+
+            return math.saturate(weight);
+        }
+
+        private float ResolveDearLieQueryRadius()
+        {
+            return math.clamp(
+                math.select(DearLieQueryRadiusMeters, dearLieDamageRadiusEpsilon, math.isfinite(dearLieDamageRadiusEpsilon)),
+                0.25f,
+                8f);
+        }
+
+        private float ResolveDearLieRegenerationDelaySeconds()
+        {
+            return math.clamp(
+                math.select(DearLieRegenerationDelaySeconds, dearLieRegenerationDelaySeconds, math.isfinite(dearLieRegenerationDelaySeconds)),
+                5f,
+                900f);
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - (2f * t));
+        }
+
+        private static uint MixDearLieHash(uint hash, uint value)
+        {
+            hash ^= value;
+            hash *= 16777619u;
+            return hash;
+        }
+
+        private static int ComputeDearLieCellHash(double3 positionAup, double cellSizeMeters)
+        {
+            double safeCellSize = math.max(0.25d, cellSizeMeters);
+            long x = (long)math.floor(positionAup.x / safeCellSize);
+            long y = (long)math.floor(positionAup.y / safeCellSize);
+            long z = (long)math.floor(positionAup.z / safeCellSize);
+            ulong hash = 1469598103934665603UL;
+            hash = (hash ^ (ulong)x) * 1099511628211UL;
+            hash = (hash ^ (ulong)y) * 1099511628211UL;
+            hash = (hash ^ (ulong)z) * 1099511628211UL;
+            return unchecked((int)(hash ^ (hash >> 32)));
+        }
+
+        private static int ComputeDearLieCellHash(long x, long y, long z)
+        {
+            ulong hash = 1469598103934665603UL;
+            hash = (hash ^ (ulong)x) * 1099511628211UL;
+            hash = (hash ^ (ulong)y) * 1099511628211UL;
+            hash = (hash ^ (ulong)z) * 1099511628211UL;
+            return unchecked((int)(hash ^ (hash >> 32)));
+        }
+
+        private static double3 ExtractMatrixTranslationDouble(Matrix4x4 matrix)
+        {
+            return new double3(matrix.m03, matrix.m13, matrix.m23);
+        }
+
+        private static float Hash01(uint value)
+        {
+            value ^= value >> 16;
+            value *= 2246822519u;
+            value ^= value >> 13;
+            value *= 3266489917u;
+            value ^= value >> 16;
+            return (value & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ClearDearLieClaimsJob : IJobParallelFor
+        {
+            // SAFETY_JUSTIFICATION_PARAGRAPH_1: Claims is a Vault-backed 64-byte claim array sized to the visible flora lane before scheduling; each worker writes only its own index during the clear pass.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_2: The clear pass is chained before spatial hash build and resolve jobs, so no concurrent writer reads stale claim state while this pass runs.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_3: NativeDisableParallelForRestriction is required because the same claim array is later used for atomic CompareExchange claims; the owner holds Vault job locks until dispatcher completion.
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDearLieClaim64> Claims;
+            public int Count;
+
+            public void Execute(int index)
+            {
+                if ((uint)index >= (uint)Count || index >= Claims.Length)
+                    return;
+
+                Claims[index] = default;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ClearDearLieBucketsJob : IJobParallelFor
+        {
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> BucketHeads;
+            public int Count;
+
+            public void Execute(int index)
+            {
+                if ((uint)index >= (uint)Count || index >= BucketHeads.Length)
+                    return;
+
+                BucketHeads[index] = -1;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct BuildDearLieSpatialHashJob : IJobParallelFor
+        {
+            [ReadOnly, NoAlias] public NativeArray<Matrix4x4> Matrices;
+            [ReadOnly, NoAlias] public NativeArray<uint> InstanceUids;
+            [ReadOnly, NoAlias] public NativeArray<Unity.Mathematics.half> Health;
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> BucketHeads;
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> BucketNext;
+            public int Count;
+            public int BucketCount;
+            public double3 RuntimeOriginAUP;
+            public double CellSizeMeters;
+
+            public void Execute(int index)
+            {
+                if ((uint)index >= (uint)Count ||
+                    index >= Matrices.Length ||
+                    index >= InstanceUids.Length ||
+                    index >= Health.Length ||
+                    index >= BucketNext.Length)
+                {
+                    return;
+                }
+
+                int bucketCount = math.min(BucketCount, BucketHeads.Length);
+                if (bucketCount <= 0 || (bucketCount & (bucketCount - 1)) != 0)
+                    return;
+
+                BucketNext[index] = -1;
+
+                if (InstanceUids[index] == 0u || (float)Health[index] <= 0.0001f)
+                    return;
+
+                Matrix4x4 matrix = Matrices[index];
+                double3 positionAup = RuntimeOriginAUP + ExtractMatrixTranslationDouble(matrix);
+                if (!math.all(math.isfinite(positionAup)))
+                    return;
+
+                int hash = ComputeDearLieCellHash(positionAup, CellSizeMeters);
+                int bucketIndex = (int)((uint)hash & (uint)(bucketCount - 1));
+                int* heads = (int*)BucketHeads.GetUnsafePtr();
+                int* next = (int*)BucketNext.GetUnsafePtr();
+                int oldHead = Interlocked.Exchange(ref heads[bucketIndex], index);
+                next[index] = oldHead;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct ResolveDearLieDamageJob : IJobParallelFor
+        {
+            // SAFETY_JUSTIFICATION_PARAGRAPH_1: Matrices, Metadata, Health, Claims, Results, Counters, Events, and bucket arrays are distinct native lanes; Dear Lie transient lanes are Vault-backed and locked while jobs hold pointers.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_2: Cross-worker mutation is limited to atomic claim slots and 64-byte padded counters; result rows are allocated by atomic counter and have 128-byte stride to avoid cache-line overlap.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_3: The job emits only staged result rows. SignalBus publication happens after DispatcherJobSwap completion in the owner phase, avoiding legacy writer lifetime races.
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<Matrix4x4> Matrices;
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<HectonVegetationInstanceData> Metadata;
+            [ReadOnly, NoAlias] public NativeArray<uint> InstanceUids;
+            [ReadOnly, NoAlias] public NativeArray<byte> MaterialClasses;
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<Unity.Mathematics.half> Health;
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDearLieClaim64> Claims;
+            [ReadOnly, NoAlias] public NativeArray<FloraDestructionEventDTO> Events;
+            // SAFETY_JUSTIFICATION_PARAGRAPH_4: Results and Counters are intentionally shared by surface/underwater resolve jobs; rows are claimed only by atomic 64-byte padded counters.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_5: Each result row is 128 bytes and written once by the worker that owns the returned atomic index; readers are fenced by DispatcherJobSwap.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_6: Native container safety is disabled only on these two cross-lane aggregation buffers, not on lane source arrays or flat spatial buckets.
+            [NoAlias, NativeDisableParallelForRestriction, NativeDisableContainerSafetyRestriction] public NativeArray<FloraDearLieDestructionResult> Results;
+            [NoAlias, NativeDisableParallelForRestriction, NativeDisableContainerSafetyRestriction] public NativeArray<FloraDearLieCounter64> Counters;
+            [ReadOnly, NoAlias] public NativeArray<int> BucketHeads;
+            [ReadOnly, NoAlias] public NativeArray<int> BucketNext;
+            public int Count;
+            public int BucketCount;
+            public int EventCount;
+            public double3 RuntimeOriginAUP;
+            public double CellSizeMeters;
+            public float QueryRadiusMeters;
+            public float GlobalQualityWeight;
+            public uint Frame;
+            public uint LaneSalt;
+
+            public void Execute(int eventIndex)
+            {
+                if ((uint)eventIndex >= (uint)EventCount || eventIndex >= Events.Length)
+                    return;
+
+                FloraDestructionEventDTO damageEvent = Events[eventIndex];
+                float magnitude01 = math.asfloat(damageEvent._pad0);
+                if (!math.all(math.isfinite(damageEvent.ImpactAUP)) || !math.isfinite(magnitude01))
+                {
+                    IncrementCounter(5);
+                    return;
+                }
+
+                double safeCellSize = math.max(0.25d, CellSizeMeters);
+                double3 cellPosition = damageEvent.ImpactAUP / safeCellSize;
+                long baseX = (long)math.floor(cellPosition.x);
+                long baseY = (long)math.floor(cellPosition.y);
+                long baseZ = (long)math.floor(cellPosition.z);
+                float queryRadius = math.max(0.05f, QueryRadiusMeters);
+                float queryRadiusSq = queryRadius * queryRadius;
+                int bestIndex = -1;
+                float bestDistanceSq = queryRadiusSq;
+                int bucketCount = math.min(BucketCount, BucketHeads.Length);
+                if (bucketCount <= 0 || (bucketCount & (bucketCount - 1)) != 0 || !BucketNext.IsCreated)
+                    return;
+
+                for (int dz = -1; dz <= 1; dz++)
+                {
+                    for (int dy = -1; dy <= 1; dy++)
+                    {
+                        for (int dx = -1; dx <= 1; dx++)
+                        {
+                            int cellHash = ComputeDearLieCellHash(baseX + dx, baseY + dy, baseZ + dz);
+                            int bucketIndex = (int)((uint)cellHash & (uint)(bucketCount - 1));
+                            int candidateIndex = BucketHeads[bucketIndex];
+                            int guard = 0;
+                            while (candidateIndex >= 0 && guard++ < Count)
+                            {
+                                int currentIndex = candidateIndex;
+                                candidateIndex = currentIndex < BucketNext.Length ? BucketNext[currentIndex] : -1;
+                                if ((uint)currentIndex >= (uint)Count ||
+                                    currentIndex >= Matrices.Length ||
+                                    currentIndex >= InstanceUids.Length ||
+                                    currentIndex >= Health.Length)
+                                {
+                                    continue;
+                                }
+
+                                if (InstanceUids[currentIndex] == 0u || (float)Health[currentIndex] <= 0.0001f)
+                                    continue;
+
+                                double3 candidateAup = RuntimeOriginAUP + ExtractMatrixTranslationDouble(Matrices[currentIndex]);
+                                if (!math.all(math.isfinite(candidateAup)))
+                                    continue;
+
+                                double3 localDeltaAup = candidateAup - damageEvent.ImpactAUP;
+                                float3 localDelta = new float3((float)localDeltaAup.x, (float)localDeltaAup.y, (float)localDeltaAup.z);
+                                if (!math.all(math.isfinite(localDelta)))
+                                    continue;
+
+                                float distanceSq = math.lengthsq(localDelta);
+                                if (distanceSq < bestDistanceSq)
+                                {
+                                    bestDistanceSq = distanceSq;
+                                    bestIndex = currentIndex;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (bestIndex < 0 || !TryClaim(bestIndex))
+                    return;
+
+                uint instanceUid = InstanceUids[bestIndex];
+                int resultIndex = IncrementCounter(0) - 1;
+                if ((uint)resultIndex >= (uint)Results.Length)
+                {
+                    IncrementCounter(6);
+                    return;
+                }
+
+                Matrix4x4* matrixPtr = (Matrix4x4*)Matrices.GetUnsafePtr();
+                Unity.Mathematics.half* healthPtr = (Unity.Mathematics.half*)Health.GetUnsafePtr();
+                ref Matrix4x4 matrixRef = ref UnsafeUtility.AsRef<Matrix4x4>(matrixPtr + bestIndex);
+                ref Unity.Mathematics.half healthRef = ref UnsafeUtility.AsRef<Unity.Mathematics.half>(healthPtr + bestIndex);
+                Matrix4x4 originalMatrix = matrixRef;
+                ScaleMatrixColumnsToZero(ref matrixRef);
+                healthRef = (Unity.Mathematics.half)0f;
+
+                if (bestIndex < Metadata.Length)
+                {
+                    HectonVegetationInstanceData* metadataPtr = (HectonVegetationInstanceData*)Metadata.GetUnsafePtr();
+                    ref HectonVegetationInstanceData data = ref UnsafeUtility.AsRef<HectonVegetationInstanceData>(metadataPtr + bestIndex);
+                    data.HeightScale = 0f;
+                    data.WidthScale = 0f;
+                    data.RuntimeState = HectonVegetationInstanceData.RuntimeStateDying;
+                    data.RuntimeFlags = FloraRuntimeFlagDead;
+                    data.HealthNormalized = 0f;
+                    data.Reserved0 = -1f;
+                }
+
+                ResolveDebrisEmission(in damageEvent, instanceUid, bestIndex, out byte emitVfx, out ushort vfxQuantity, out byte materialClass);
+                Results[resultIndex] = new FloraDearLieDestructionResult
+                {
+                    OriginalMatrix = originalMatrix,
+                    ImpactAUP = damageEvent.ImpactAUP,
+                    InstanceUid = instanceUid,
+                    ActiveIndex = bestIndex,
+                    FloraTypeHash = damageEvent.FloraTypeHash,
+                    MagnitudeBits = damageEvent._pad0,
+                    VfxQuantity = vfxQuantity,
+                    EmitVfx = emitVfx,
+                    MaterialClass = materialClass
+                };
+            }
+
+            private bool TryClaim(int index)
+            {
+                if ((uint)index >= (uint)Claims.Length)
+                    return false;
+
+                FloraDearLieClaim64* claimPtr = (FloraDearLieClaim64*)Claims.GetUnsafePtr();
+                return Interlocked.CompareExchange(ref claimPtr[index].Claimed, 1, 0) == 0;
+            }
+
+            private int IncrementCounter(int index)
+            {
+                if ((uint)index >= (uint)Counters.Length)
+                    return 0;
+
+                FloraDearLieCounter64* ptr = (FloraDearLieCounter64*)Counters.GetUnsafePtr();
+                return Interlocked.Increment(ref ptr[index].Value);
+            }
+
+            private void ResolveDebrisEmission(in FloraDestructionEventDTO damageEvent, uint instanceUid, int activeIndex, out byte emitVfx, out ushort quantity, out byte materialClass)
+            {
+                emitVfx = 0;
+                quantity = 0;
+                float q = math.saturate(GlobalQualityWeight);
+                float intensity = math.saturate(math.asfloat(damageEvent._pad0));
+                materialClass = activeIndex >= 0 && activeIndex < MaterialClasses.Length ? MaterialClasses[activeIndex] : (byte)0;
+                float emissionProbability = math.saturate((0.12f + (q * 0.88f)) * math.max(0.2f, intensity));
+                uint hash = instanceUid ^ Frame ^ LaneSalt ^ ((uint)materialClass * 2654435761u);
+                if (Hash01(hash) > emissionProbability)
+                    return;
+
+                quantity = (ushort)math.clamp((int)math.round(math.lerp(1f, 24f, SmoothStep01(q)) * math.max(0.25f, intensity)), 1, 64);
+                emitVfx = 1;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct GenerateMockFloraDamageJob : IJobParallelFor
+        {
+            [NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDestructionEventDTO> Events;
+            public int Offset;
+            public int Count;
+            public double3 CenterAUP;
+            public uint Seed;
+
+            public void Execute(int index)
+            {
+                if ((uint)index >= (uint)Count || Offset + index >= Events.Length)
+                    return;
+
+                uint h = Seed ^ ((uint)index * 747796405u);
+                float angle = Hash01(h) * 6.28318530718f;
+                float radius = math.sqrt(Hash01(h ^ 0x9E3779B9u)) * 7f;
+                double3 offset = new double3(math.cos(angle) * radius, math.lerp(-0.8f, 0.8f, Hash01(h ^ 0x85EBCA6Bu)), math.sin(angle) * radius);
+                Events[Offset + index] = new FloraDestructionEventDTO
+                {
+                    ImpactAUP = CenterAUP + offset,
+                    FloraTypeHash = DearLieSignalHashFlora,
+                    _pad0 = math.asuint(math.lerp(0.35f, 1f, Hash01(h ^ 0xC2B2AE35u)))
+                };
+            }
         }
 
         /// <summary>
@@ -1188,11 +2784,11 @@ namespace Hecton8.World
             DisposeNativeArray(ref _lootEntries);
             _templateDescriptors = new NativeArray<HarvestableTemplate.RuntimeDescriptor>(
                 math.max(1, validTemplateCount),
-                Allocator.Persistent,
+                DataVaultExemptHarvestTemplateAllocator,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: RuntimeDescriptor[templateCount] - flora-resolved harvest runtime table - owner: DestructibleOrganicManager
             _lootEntries = new NativeArray<HarvestableTemplate.LootRuntimeEntry>(
                 math.max(1, totalLootEntries),
-                Allocator.Persistent,
+                DataVaultExemptHarvestTemplateAllocator,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: LootRuntimeEntry[totalLootEntries] - flattened harvest loot runtime table - owner: DestructibleOrganicManager
             NativeMemorySentinel.RegisterNativeArray(_templateDescriptors, NativeMemoryOwner, nameof(_templateDescriptors), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_lootEntries, NativeMemoryOwner, nameof(_lootEntries), NativeMemoryLifetime);
@@ -1477,7 +3073,7 @@ namespace Hecton8.World
             DisposeNativeArray(ref _yieldMaterialLut);
             _yieldMaterialLut = new NativeArray<EntropyYieldMaterialLutEntry>(
                 math.max(1, MaterialClassCount),
-                Allocator.Persistent,
+                DataVaultExemptYieldMaterialAllocator,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: EntropyYieldMaterialLutEntry[MaterialClassCount] - deterministic density/unit-mass lookup for burst flora yield - owner: DestructibleOrganicManager
             NativeMemorySentinel.RegisterNativeArray(_yieldMaterialLut, NativeMemoryOwner, nameof(_yieldMaterialLut), NativeMemoryLifetime);
 
@@ -1595,6 +3191,14 @@ namespace Hecton8.World
             NativeArray<Unity.Mathematics.half> health = underwater
                 ? EnsureLaneCapacity(ref _underwaterHealth, count, nameof(_underwaterHealth))
                 : EnsureLaneCapacity(ref _surfaceHealth, count, nameof(_surfaceHealth));
+            if (underwater)
+            {
+                EnsureDearLieVaultLaneCapacity(true, count);
+            }
+            else
+            {
+                EnsureDearLieVaultLaneCapacity(false, count);
+            }
             float currentTime = Time.time;
 
             for (int i = 0; i < count; i++)
@@ -1652,6 +3256,7 @@ namespace Hecton8.World
                     if (_damageVisualProgressByInstanceUid.IsCreated)
                         _damageVisualProgressByInstanceUid.Remove(instanceUid);
                     float entropy01 = ResolveOrPrimeDecompositionProgress(instanceUid, currentTime);
+                    ApplyDearLieMatrixScaleZero(ref matrices, i);
                     ApplyDecompositionMetadata(ref metadata, i, instanceUid, entropy01);
                 }
                 else if (templateIndex >= 0 && resolvedHealth < defaultHealth)
@@ -1698,7 +3303,7 @@ namespace Hecton8.World
 
         private void SyncDestroyedFloraFromPersistence()
         {
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null || !_destroyedFloraScratch.IsCreated || !_destroyedByInstanceUid.IsCreated)
                 return;
 
@@ -1730,7 +3335,7 @@ namespace Hecton8.World
 
         private void SyncFloraStateOverridesFromPersistence()
         {
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null ||
                 !_floraStateOverrideScratch.IsCreated ||
                 !_persistedHealth01ByInstanceUid.IsCreated ||
@@ -1838,11 +3443,9 @@ namespace Hecton8.World
             if (!_dropBuffer.IsCreated)
                 return true;
 
-            PlayerInventory playerInventory = GlobalRegistry.PlayerInventory != null
-                ? GlobalRegistry.PlayerInventory.Inventory
-                : null;
+            PlayerInventory playerInventory = _playerInventoryRuntime;
             Hecton8.SaveSystem.ItemCatalog itemCatalog = playerInventory != null ? playerInventory.ItemCatalog : null;
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             int remainingBudget = math.min(_dropBuffer.Capacity, MaxOrganicDropRecordsPerFrame);
             while (remainingBudget-- > 0 && _dropBuffer.TryDequeue(out ItemDropData drop))
             {
@@ -1990,9 +3593,12 @@ namespace Hecton8.World
             Vector3 normal = handRuntimePosition - snapPosition;
             normal = NormalizeVector3Fast(normal, Vector3.up);
 
+            if (!TryResolveAupFromRuntimeOrigin(snapPosition, out AbsoluteUniversePosition snapAup))
+                return false;
+
             interactionPoint = new FloraHarvestInteractionPoint(
                 instanceUid,
-                AbsoluteUniversePosition.FromRuntimePosition(snapPosition),
+                snapAup,
                 snapPosition,
                 normal,
                 materialClass,
@@ -2419,6 +4025,7 @@ namespace Hecton8.World
 
             float parentMassKg = ResolveParentMassKg(underwater, activeIndex, materialClass, templateIndex);
             ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
+            ApplyDearLieMatrixScaleZeroToLaneInstance(underwater, activeIndex);
             ApplyDecompositionToLaneInstance(underwater, activeIndex, instanceUid, 0f);
 
             PublishExternalInteraction(instancePosition, NormalizeVector3Fast(hitNormal, Vector3.up) * (normalizedPower * OrganicBurstVelocityScale), interactionBurstRadius * 1.25f);
@@ -2434,7 +4041,7 @@ namespace Hecton8.World
                 hasNavObstacleBounds ? navObstacleCenter : float3.zero,
                 hasNavObstacleBounds ? navObstacleExtents : float3.zero);
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null)
                 registry.TryClearFloraStateOverride(instanceUid);
 
@@ -2474,9 +4081,10 @@ namespace Hecton8.World
             SetLaneHealth(underwater, activeIndex, 0f);
             float parentMassKg = ResolveParentMassKg(underwater, activeIndex, materialClass, templateIndex);
             ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
+            ApplyDearLieMatrixScaleZeroToLaneInstance(underwater, activeIndex);
             ApplyDecompositionToLaneInstance(underwater, activeIndex, instanceUid, 0f);
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null)
                 registry.TryClearFloraStateOverride(instanceUid);
 
@@ -2516,10 +4124,14 @@ namespace Hecton8.World
             if (!math.all(math.isfinite(spawnPosition)))
                 return;
 
+            Vector3 debrisRuntimePosition = new Vector3(spawnPosition.x, spawnPosition.y, spawnPosition.z);
+            if (!TryResolveAupFromRuntimeOrigin(debrisRuntimePosition, out AbsoluteUniversePosition debrisAup))
+                return;
+
             float safePower = math.isfinite(normalizedPower) ? math.max(0.1f, normalizedPower) : 0.1f;
             DebrisSpawnSignal signal = new DebrisSpawnSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(spawnPosition.x, spawnPosition.y, spawnPosition.z)),
+                PositionAup = debrisAup,
                 SpeciesHash = unchecked((uint)materialClass) ^ 0x4F524741u,
                 SourceEntityId = instanceUid ^ 0x7F4A7C15u,
                 Intensity01 = math.saturate(safePower),
@@ -2669,7 +4281,7 @@ namespace Hecton8.World
             PrimeDecompositionState(instanceUid, Time.time - OrganicDecompositionDurationSeconds);
             ClearOrganicLifecycleState(instanceUid);
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null)
                 registry.TryClearFloraStateOverride(instanceUid);
 
@@ -3014,14 +4626,15 @@ namespace Hecton8.World
 
             float volume = ResolveHarvestAudioVolume(nextState);
             float pitch = ResolveHarvestAudioPitch(nextState);
-            AbsoluteUniversePosition soundAup = AbsoluteUniversePosition.FromRuntimePosition(instancePosition);
-            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+            SpatialAudioManager spatialAudioManager = _spatialAudioManager;
+            if (TryResolveAupFromRuntimeOrigin(instancePosition, out AbsoluteUniversePosition soundAup) &&
+                spatialAudioManager != null)
             {
                 spatialAudioManager.PlayHarvestAtAup(soundAup, clip, volume, pitch);
                 return;
             }
 
-            GlobalRegistry.Audio?.PlayAtPoint(clip, instancePosition, volume, pitch);
+            _audioService?.PlayAtPoint(clip, instancePosition, volume, pitch);
         }
 
         private AudioClip ResolveHarvestAudioClip(byte audioMaterialId, HarvestState harvestState)
@@ -3112,25 +4725,32 @@ namespace Hecton8.World
 
             float volume = ResolveMatureSporeAcousticVolume(templateIndex);
             float pitch = ResolveMatureSporeAcousticPitch(pulseFrequency);
-            AbsoluteUniversePosition soundAup = AbsoluteUniversePosition.FromRuntimePosition(instancePosition);
-            SporeAcousticEvent acousticEvent = new SporeAcousticEvent(
-                soundAup,
-                instancePosition,
-                clip,
-                pulseFrequency,
-                volume,
-                pitch,
-                nextAllowedTime,
-                phaseOffset01);
-            DispatchSporeAcousticEvent(in acousticEvent);
+            if (TryResolveAupFromRuntimeOrigin(instancePosition, out AbsoluteUniversePosition soundAup))
+            {
+                SporeAcousticEvent acousticEvent = new SporeAcousticEvent(
+                    soundAup,
+                    instancePosition,
+                    clip,
+                    pulseFrequency,
+                    volume,
+                    pitch,
+                    nextAllowedTime,
+                    phaseOffset01);
+                DispatchSporeAcousticEvent(in acousticEvent);
+            }
+            else
+            {
+                _audioService?.PlayAtPoint(clip, instancePosition, volume, pitch);
+            }
 
             _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
             _nextSporeAcousticTimeByInstanceUid.TryAdd(instanceUid, ResolveNextSporePulseTime(currentTime + 0.0001f, pulseFrequency, phaseOffset01));
         }
 
-        private static void DispatchSporeAcousticEvent(in SporeAcousticEvent acousticEvent)
+        private void DispatchSporeAcousticEvent(in SporeAcousticEvent acousticEvent)
         {
-            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+            SpatialAudioManager spatialAudioManager = _spatialAudioManager;
+            if (spatialAudioManager != null)
             {
                 spatialAudioManager.PlaySporeEmissionAtAup(
                     acousticEvent.PositionAup,
@@ -3142,7 +4762,7 @@ namespace Hecton8.World
                 return;
             }
 
-            GlobalRegistry.Audio?.PlayAtPoint(
+            _audioService?.PlayAtPoint(
                 acousticEvent.Clip,
                 acousticEvent.RuntimePosition,
                 acousticEvent.Volume,
@@ -3287,7 +4907,7 @@ namespace Hecton8.World
             HarvestState harvestState = ResolveHarvestState(templateIndex, baseHealth, currentHealth, normalizedHeightScale);
             if (PersistentWorldRegistry.IsPristineFloraState(normalizedHealth, normalizedHeightScale))
             {
-                GlobalRegistry.PersistentWorldRegistry?.TryClearFloraStateOverride(instanceUid);
+                _persistentWorldRegistry?.TryClearFloraStateOverride(instanceUid);
                 ClearPersistedFloraStateOverride(instanceUid);
                 return;
             }
@@ -3304,7 +4924,7 @@ namespace Hecton8.World
                 _persistedHeightScale01ByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)normalizedHeightScale);
             }
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -3607,6 +5227,37 @@ namespace Hecton8.World
             metadata[activeIndex] = hiddenMetadata;
         }
 
+        private void ApplyDearLieMatrixScaleZeroToLaneInstance(bool underwater, int activeIndex)
+        {
+            if (underwater)
+                ApplyDearLieMatrixScaleZero(ref _underwaterMatrices, activeIndex);
+            else
+                ApplyDearLieMatrixScaleZero(ref _surfaceMatrices, activeIndex);
+        }
+
+        private static void ApplyDearLieMatrixScaleZero(ref NativeArray<Matrix4x4> matrices, int activeIndex)
+        {
+            if (!matrices.IsCreated || activeIndex < 0 || activeIndex >= matrices.Length)
+                return;
+
+            Matrix4x4 matrix = matrices[activeIndex];
+            ScaleMatrixColumnsToZero(ref matrix);
+            matrices[activeIndex] = matrix;
+        }
+
+        private static void ScaleMatrixColumnsToZero(ref Matrix4x4 matrix)
+        {
+            matrix.m00 = 0f;
+            matrix.m01 = 0f;
+            matrix.m02 = 0f;
+            matrix.m10 = 0f;
+            matrix.m11 = 0f;
+            matrix.m12 = 0f;
+            matrix.m20 = 0f;
+            matrix.m21 = 0f;
+            matrix.m22 = 0f;
+        }
+
         private static void ApplyWiltMetadata(
             ref NativeArray<HectonVegetationInstanceData> metadata,
             int activeIndex,
@@ -3877,6 +5528,50 @@ namespace Hecton8.World
             else if (clampedProgress < MatureSporeGrowthThreshold01 && _nextSporeAcousticTimeByInstanceUid.IsCreated)
             {
                 _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
+            }
+
+            return true;
+        }
+
+        bool IOrganicToolHitService.TryApplyOrganicToolHit(
+            Vector3 hitPoint,
+            Vector3 hitNormal,
+            Vector3 direction,
+            float deliveredDamage,
+            float normalizedPower,
+            uint toolCapabilityMask)
+        {
+            return TryApplyToolHit(hitPoint, hitNormal, direction, deliveredDamage, normalizedPower, toolCapabilityMask);
+        }
+
+        bool IOrganicToolHitService.TryApplyAttachedFloraToolHit(
+            Vector3 hitPoint,
+            float searchRadius,
+            Vector3 hitNormal,
+            Vector3 direction,
+            float deliveredDamage,
+            float normalizedPower,
+            uint toolCapabilityMask)
+        {
+            if (!TryResolveNearestConsumableFlora(
+                    hitPoint,
+                    Mathf.Max(0.0001f, searchRadius),
+                    out Vector3 floraPosition,
+                    out _))
+            {
+                return false;
+            }
+
+            FloraInteractionManager interactionManager = floraInteractionManager;
+            if (interactionManager != null)
+            {
+                interactionManager.TryApplyModuleParasiteCut(
+                    floraPosition,
+                    hitNormal,
+                    direction,
+                    deliveredDamage,
+                    normalizedPower,
+                    toolCapabilityMask);
             }
 
             return true;
@@ -4159,7 +5854,7 @@ namespace Hecton8.World
                 _decompositionStartTimeByInstanceUid.Remove(instanceUid);
             MarkOrganicTouched(instanceUid, Time.time);
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null)
                 registry.TryClearFloraStateOverride(instanceUid);
 
@@ -4473,6 +6168,56 @@ namespace Hecton8.World
             return new Vector3(matrix.m03, matrix.m13, matrix.m23);
         }
 
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static bool IsFiniteMatrix(in Matrix4x4 matrix)
+        {
+            return math.isfinite(matrix.m00) &&
+                   math.isfinite(matrix.m01) &&
+                   math.isfinite(matrix.m02) &&
+                   math.isfinite(matrix.m03) &&
+                   math.isfinite(matrix.m10) &&
+                   math.isfinite(matrix.m11) &&
+                   math.isfinite(matrix.m12) &&
+                   math.isfinite(matrix.m13) &&
+                   math.isfinite(matrix.m20) &&
+                   math.isfinite(matrix.m21) &&
+                   math.isfinite(matrix.m22) &&
+                   math.isfinite(matrix.m23) &&
+                   math.isfinite(matrix.m30) &&
+                   math.isfinite(matrix.m31) &&
+                   math.isfinite(matrix.m32) &&
+                   math.isfinite(matrix.m33);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
+        }
+
         private static double3 ToDouble3(Vector3 value)
         {
             return new double3(value.x, value.y, value.z);
@@ -4522,7 +6267,7 @@ namespace Hecton8.World
                 array.Dispose();
             }
 
-            array = new NativeArray<T>(requiredCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<T>[requiredCount] - resized persistent entropy runtime lane - owner: DestructibleOrganicManager
+            array = new NativeArray<T>(requiredCount, DataVaultExemptOrganicScratchAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<T>[requiredCount] - resized persistent entropy runtime lane - owner: DestructibleOrganicManager
             NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
@@ -4550,6 +6295,42 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeList(_pendingYieldEvents, NativeMemoryOwner, nameof(_pendingYieldEvents), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_dropDebugScratch, NativeMemoryOwner, nameof(_dropDebugScratch), NativeMemoryLifetime);
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = new Color(0.1f, 0.95f, 0.55f, 0.42f);
+            Gizmos.DrawWireSphere(dearLieMockDamageCenter, ResolveDearLieQueryRadius());
+            Gizmos.color = new Color(0.2f, 0.6f, 1f, 0.25f);
+            Gizmos.DrawWireCube(dearLieMockDamageCenter, Vector3.one * DearLieSpatialCellSizeMeters);
+
+            ReadOnlySpan<CombatDamageSignal> signals = SignalBus<CombatDamageSignal>.GetFrameSnapshot();
+            int sampleCount = math.min(signals.Length, DearLieMaxDamageSignalsPerFrame);
+            for (int i = 0; i < sampleCount; i++)
+            {
+                int nanRejectCount = 0;
+                if (!TryBuildDearLieEvent(in signals[i], out FloraDestructionEventDTO eventDto, ref nanRejectCount))
+                    continue;
+
+                Vector3 impactRuntime = (Vector3)AbsoluteUniversePosition.FromAbsolutePosition(eventDto.ImpactAUP).ToRuntimeFloat3();
+                if (!IsFiniteVector(impactRuntime))
+                    continue;
+
+                Gizmos.color = new Color(1f, 0.08f, 0.02f, 0.72f);
+                Gizmos.DrawWireSphere(impactRuntime, ResolveDearLieQueryRadius());
+                break;
+            }
+
+            if (_dearLieHasLastDebugHit != 0 &&
+                IsFiniteVector(_dearLieLastImpactRuntimePosition) &&
+                IsFiniteVector(_dearLieLastTargetRuntimePosition))
+            {
+                Gizmos.color = new Color(1f, 0.95f, 0.1f, 0.8f);
+                Gizmos.DrawLine(_dearLieLastImpactRuntimePosition, _dearLieLastTargetRuntimePosition);
+                Gizmos.DrawWireSphere(_dearLieLastTargetRuntimePosition, 0.25f);
+            }
+        }
+#endif
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
         {

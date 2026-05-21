@@ -1,128 +1,474 @@
 {
-  "agent": "SHINOBU_207",
-  "reportOwner": "shared",
-  "sections": ["SHINOBU_207", "SHINOBU_228"],
-  "binarySearch": {
-    "avgTableProbes": 13.00099,
-    "nsPerLookup": 26167.873,
-    "theoreticalCacheLineFetchesPerLookup": 13.00099
-  },
-  "cacheBTree": {
-    "avgDepth": 5.0,
-    "avgKeysProcessed": 31.57094,
-    "nsPerLookup": 26089.424,
-    "theoreticalCacheLineFetchesPerLookup": 5.0
-  },
-  "delta": {
-    "nsPerLookupSaved": 78.44900000000052,
-    "theoreticalBytesSavedPerLookup": 512.06336,
-    "theoreticalCacheLinesSavedPerLookup": 8.00099
-  },
-  "flatRecordBytes": 16,
-  "flatTableBytes": 262144,
-  "lookupCount": 100000,
-  "nodeBytes": 64,
-  "notes": [
-    "Python timing is static scanner evidence, not Unity Burst profiler proof.",
-    "Both legacy binary search and B-Tree traversal read packed byte blobs through struct.unpack_from.",
-    "The cache-line delta is topology-derived and independent of Python interpreter overhead."
-  ],
-  "recordCount": 16384,
-  "sourceContracts": {
-    "btreeNodeExplicit64": true,
-    "deterministicSearchJobs": {
-      "BabelBTreeSearchKernel": true,
-      "DispatchBulkBTreeSearchJob": true,
-      "ScanBTreeNodeJob": true,
-      "SpatialMortonRangeQueryJob": true,
-      "TraceBTreeTraversalJob": true,
-      "TraverseBTreeJob": true
+  "SHINOBU_207": {
+    "agent": "SHINOBU_207",
+    "binarySearch": {
+      "avgTableProbes": 13.00099,
+      "nsPerLookup": 40547.62,
+      "theoreticalCacheLineFetchesPerLookup": 13.00099
     },
-    "pdaMockFlatIndexScanRemoved": true,
-    "sourceResidueClean": {
-      "binarySearchApi": true,
-      "flatBinarySearchLoop": true,
-      "managedLookupContainers": true,
-      "mockFullOutputClear": true,
-      "packOneLayout": true,
-      "wrappedOffsetPlus64": true
-    }
+    "cacheBTree": {
+      "avgDepth": 5.0,
+      "avgKeysProcessed": 31.57094,
+      "nsPerLookup": 24841.869,
+      "theoreticalCacheLineFetchesPerLookup": 5.0
+    },
+    "delta": {
+      "nsPerLookupSaved": 15705.751000000004,
+      "theoreticalBytesSavedPerLookup": 512.06336,
+      "theoreticalCacheLinesSavedPerLookup": 8.00099
+    },
+    "flatRecordBytes": 16,
+    "flatTableBytes": 262144,
+    "lookupCount": 100000,
+    "nodeBytes": 64,
+    "notes": [
+      "Python timing is static scanner evidence, not Unity Burst profiler proof.",
+      "Both legacy binary search and B-Tree traversal read packed byte blobs through struct.unpack_from.",
+      "The cache-line delta is topology-derived and independent of Python interpreter overhead."
+    ],
+    "recordCount": 16384,
+    "sourceContracts": {
+      "babelMirrorGenerationGuard": true,
+      "babelReadableViewResolveGuard": true,
+      "btreeNodeExplicit64": true,
+      "deterministicSearchJobs": {
+        "BabelBTreeSearchKernel": true,
+        "DispatchBulkBTreeSearchJob": true,
+        "ScanBTreeNodeJob": true,
+        "SpatialMortonRangeQueryJob": true,
+        "TraceBTreeTraversalJob": true,
+        "TraverseBTreeJob": true
+      },
+      "editorOnlyDesignerBridges": {
+        "H8DataBaker": true,
+        "H8DataHashTool.GenerateHashManifest": true
+      },
+      "h8lrMirrorGenerationGuard": true,
+      "h8lrMutableReadCountersRemoved": true,
+      "pdaCsvIngestBridgesFenced": {
+        "TryIngestLoreMetadataCsv": true,
+        "TryIngestLoreMetadataCsvFromProject": true
+      },
+      "pdaEditorFacadesFenced": {
+        "EditorIngestCsv": true,
+        "EditorLockAll": true,
+        "EditorSelectEntry": true,
+        "EditorTrySnapshot": true,
+        "EditorTryWriteRawUtf8Hex": true,
+        "EditorUnlockAll": true
+      },
+      "pdaMockFlatIndexScanRemoved": true,
+      "readAccessorPurity": {
+        "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs:FetchUtf8:227": true,
+        "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs:FetchUtf8:239": true,
+        "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs:TryFindIndex:712": true,
+        "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs:TryFindIndex:717": true,
+        "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs:TryFindIndex:727": true,
+        "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs:TryFindIndex:738": true,
+        "Assets/_Project/Scripts/Core/Data/StaticDataStore.cs:FetchRecord:183": true,
+        "Assets/_Project/Scripts/Core/Data/StaticDataStore.cs:TryGetLookupEntry:271": true,
+        "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs:TryFindBitIndex:942": true,
+        "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs:TryGetH8lrUtf8:996": true,
+        "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs:TryGetMockUtf8:1811": true,
+        "Assets/_Project/Scripts/UI/PdaH8lrLoreStore.cs:TryGetRecord:142": true,
+        "Assets/_Project/Scripts/UI/PdaH8lrLoreStore.cs:TryGetUtf8:111": true
+      },
+      "sourceResidueClean": {
+        "binarySearchApi": true,
+        "flatBinarySearchLoop": true,
+        "hotScheduleVaultAllocationFacade": true,
+        "managedLookupContainers": true,
+        "mockFullOutputClear": true,
+        "mutatingReadAccessorNames": true,
+        "packOneLayout": true,
+        "wrappedOffsetPlus64": true
+      }
+    },
+    "treeBytes": 171328
   },
-  "treeBytes": 171328,
   "SHINOBU_228": {
     "agent": "SHINOBU_228",
     "domain": "BUILDER_TOOL_HOLOGRAPHY_SYNC",
-    "layout": {
-      "BuilderGhostStateDTOBytes": 128,
-      "LocalToWorldOffset": 0,
-      "AUP_TargetPositionOffset": 64,
-      "PrefabHashIDOffset": 88,
-      "ValidationFlagsOffset": 92,
-      "AnimationPhaseOffset": 96,
-      "ValidationStateHashOffset": 100
-    },
-    "hotPathResidue": {
-      "PlayerBuilderPreviewTryAcquireGhostProxy": false,
-      "PlacementGhostOverlapBoxNonAlloc": false,
-      "PlacementGhostScriptRemoved": true,
-      "ProjectFilePlacementGhostCompileInclude": false,
-      "GhostPrefabAssetsRemoved": true,
-      "NoBuildableGhostPrefabReferences": true,
-      "RuntimeGlobalDataVaultLatestFallback": false,
-      "BuilderGhostSdfTruthScaledByQuality": false,
-      "UnchangedSignalGpuUploadSkipped": true,
-      "HectonBlueprintPreviewBatchDrawMeshInstanced": false,
-      "HectonBlueprintPreviewBatchSetData": false,
-      "VRPipeBlueprintPreviewDrawMeshInstanced": false,
-      "VRPipeBlueprintPreviewMatrixArray": false,
-      "HabitatConstructionManagerObjectAlignmentRoute": false,
-      "DrawProceduralIndirect": true,
-      "LockBufferForWrite": true
-    },
-    "vaultBuffers": {
-      "BuilderGhostStateBufferId": 70940,
-      "BuilderGhostVisualBufferId": 70941,
-      "BuilderGhostTelemetryBufferId": 70942,
-      "BuilderGhostMockStateBufferId": 70943,
-      "BuilderGhostSdfSamplesBufferId": 70944,
-      "BuilderGhostIndirectArgsBufferId": 70945,
-      "VRPipeStateBufferId": 70946,
-      "VRPipeVisualBufferId": 70947,
-      "VRPipeIndirectArgsBufferId": 70948
-    },
-    "staticEstimates": {
-      "evidenceClass": "STATIC_SOURCE_ESTIMATE",
-      "previewPrefabSpikeRemovedEstimate": "120-180",
-      "physxOverlapRemovedEstimate": "60-180",
-      "gpuUploadStallAvoidedEstimate": "10-60"
-    },
     "evidence": [
       {
-        "claim": "Ghost preview object route removed from first-party source/assets.",
-        "evidenceClass": "STATIC_SOURCE",
-        "artifact": "rg PFB_Ghost_|PlacementGhost|ghostPrefab non-zero over Assets/_Project returned no runtime/source asset residue.",
+        "artifact": "rg PFB_Ghost_|PlacementGhost|ghostPrefab: {fileID: [^0] over Assets/_Project found no non-zero ghost asset refs; runtime scripts contain no ghostPrefab consumer route.",
+        "claim": "Ghost preview object route removed from first-party consumers and serialized first-party assets.",
         "date": "2026-05-20",
+        "evidenceClass": "STATIC_SOURCE",
         "residualRisk": "Unity import and scene reference validation pending."
       },
       {
+        "artifact": "BuilderGhostSdfCornerCount is fixed at 8; hydration and ValidateBuilderGhostPlacementJob loop over that constant.",
         "claim": "Placement validation no longer quality-throttles SDF corner truth.",
-        "evidenceClass": "STATIC_SOURCE",
-        "artifact": "ResolveBuilderGhostSdfSampleCount returns BuilderGhostSdfCornerCount and hydration writes all eight corners.",
         "date": "2026-05-20",
+        "evidenceClass": "STATIC_SOURCE",
         "residualRisk": "Play Mode placement repro pending."
       },
       {
-        "claim": "Runtime presenters do not use GlobalDataVault.TryGetLatestCreated fallback authority.",
-        "evidenceClass": "STATIC_SOURCE",
         "artifact": "HectonBlueprintPreviewBatch and VRPipeBlueprintPreview TryResolveVault return GlobalRegistry.DataVault only.",
+        "claim": "Runtime presenters do not use GlobalDataVault.TryGetLatestCreated fallback authority.",
         "date": "2026-05-20",
+        "evidenceClass": "STATIC_SOURCE",
         "residualRisk": "Unity boot wiring proof pending."
+      },
+      {
+        "artifact": "PlayerBuilder.TryMarkShinobuTargetSocketOccupied uses TryMarkShinobuTargetSocketOccupiedDirect before the final-placement fallback scan.",
+        "claim": "Target socket commit marking has a cached direct component path and keeps scene scan fallback out of preview validation.",
+        "date": "2026-05-20",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Play Mode snap-and-place socket occupancy proof pending."
+      },
+      {
+        "artifact": "PlayerBuilder returns cached snap pose after selectJob.Schedule and finalizes only through a later TryFinalizeShinobuSocketSnap pass.",
+        "claim": "Socket snap job no longer attempts same-frame result readback immediately after scheduling.",
+        "date": "2026-05-20",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Profiler proof pending."
+      },
+      {
+        "artifact": "PlayerBuilder.ActiveBuildReadiness returns _cachedBuildReadiness; ComputeActiveBuildReadinessSnapshot contains no UpdatePlacementValidityState call.",
+        "claim": "Readiness read accessor no longer mutates placement state or schedules validation work.",
+        "date": "2026-05-20",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity UI readback proof pending."
+      },
+      {
+        "artifact": "PlayerBuilder.HasResourcesForActiveBuildable returns _cachedHasResourcesForActiveBuildable; owner-phase RefreshActiveBuildReadiness owns the inventory-resource snapshot.",
+        "claim": "UI read path no longer traverses inventory placement buffers through HasResources.",
+        "date": "2026-05-20",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity UI readback proof pending."
+      },
+      {
+        "artifact": "HectonBlueprintPreviewBatch and VRPipeBlueprintPreview hot paths call TryReadCachedBuffers only; buffer handle creation is confined to cold EnsureBuffersCold routes.",
+        "claim": "Preview presenters do not resolve GlobalRegistry/DataVault or create Vault handles from LateFrame/Schedule/Finalize hot paths.",
+        "date": "2026-05-20",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity boot-order proof pending."
+      },
+      {
+        "artifact": "EvaluateSocketSnappingJob evaluates the full CSR range and uses SearchRadiusUltraMeters directly; ResolveCandidateBudget returns safeMax and ResolveSearchRadius returns high.",
+        "claim": "GlobalQualityWeight is presentation/telemetry data only for socket snap and bounds collision truth.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Play Mode snap/bounds truth proof pending."
+      },
+      {
+        "artifact": "PlayerBuilder.TryFindVoxelSdfIntersection calls parameterless ResolveTerrainProbeCount(); ModularBaseConstructionValidator.ResolveTerrainProbeCount() returns TerrainProbeTruthCount=9 and accepts no GlobalQualityWeight parameter.",
+        "claim": "Legacy construction terrain SDF probe legality is fixed truth and cannot be quality-throttled by caller contract.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Play Mode terrain-probe legality proof pending."
+      },
+      {
+        "artifact": "PlayerBuilder no longer publishes `new BaseModulePlacedEvent(...)`; ConstructionManager.RegisterModule already emits unmanaged HabitatConstructionSignal for placed modules.",
+        "claim": "Builder final placement no longer allocates a managed mod event on the first-party gameplay commit path.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Mod projection bridge coverage for habitat construction remains a separate Modding owner concern."
+      },
+      {
+        "artifact": "PlayerBuilder.BindRuntimeReferences no longer constructs HabitatConstructionManager; manager allocation is confined to Awake/OnSpawn via EnsureHabitatConstructionManagerCold.",
+        "claim": "Builder equip/bind no longer has a managed fallback allocation for construction validation ownership.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity lifecycle proof pending; Awake/OnSpawn remain the cold allocation phases."
+      },
+      {
+        "artifact": "VRPipeBlueprintPreview ResolvePointRuntime/ResolvePointAup no longer call CacheRuntimeReferences; PlayerBuilder.TryApplyShinobuVaultSnapResult consumes the Burst matrix/AUP result instead of scene transform rotation.",
+        "claim": "Read-like presentation helpers avoid hidden cache refreshes and snap finalize avoids scene-transform authority.",
+        "date": "2026-05-20",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity XR preview proof pending."
+      },
+      {
+        "artifact": "HabitatConstructionManager.TryConsumeCompletedValidation uses DispatcherJobFence.TryFinalizeCompleted instead of DispatcherJobSwap.TryComplete(..., false).",
+        "claim": "Preview validation result consumption finalizes only already-completed work and does not enter the non-forced completion helper path.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Dispatcher phase proof pending."
+      },
+      {
+        "artifact": "VRPipeBlueprintPreview caches HectonXRRuntimeState.XRActiveChangedHandler in Awake/OnEnable and subscribes/unsubscribes with the cached field.",
+        "claim": "XR active-state subscription no longer creates method-group delegate instances on each enable/disable cycle.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Core-owned typed XR signal route remains future boundary cleanup."
+      },
+      {
+        "artifact": "HabitatConstructionManager.BuildValidationGraph calls EnsureExistingGraphCache and IndexCandidateSockets; full ResolveBuildableData/module socket indexing moved behind cached existing-graph signature invalidation.",
+        "claim": "Integrity validation scheduling reuses cached existing module/socket graph and only adds the candidate node per schedule when the module list/grid signature is unchanged.",
+        "date": "2026-05-20",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "ConstructionManager-owned immutable graph publication remains the stronger future route."
+      },
+      {
+        "artifact": "HabitatConstructionManager integrity graph storage is generation-handle based: buffers 70949-70956 cover nodes, ranges, flattened adjacency, BFS queue/depth/result, and adjacency degree/write scratch.",
+        "claim": "Structural integrity validation no longer owns private persistent NativeArray graph buffers or managed adjacency scratch arrays.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity import and runtime Vault relocation/stale-generation proof pending."
+      },
+      {
+        "artifact": "HabitatConstructionManager no longer declares List<int2>, Dictionary<SocketKey,...>, or SocketMatchEntry for the structural graph; buffers 70957 and 70958 cover connection pairs and a 48-byte open-addressed SocketLookupSlot table.",
+        "claim": "Structural validation connection and socket lookup caches are Vault-backed instead of managed collection backed.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity import and runtime Vault relocation/stale-generation proof pending."
+      },
+      {
+        "artifact": "ConstructionManager exposes internal GetSpawnedModuleAt(int), and HabitatConstructionManager structural graph/signature rebuilds now consume ModuleCount plus GetSpawnedModuleAt instead of IReadOnlyList<GameObject> SpawnedModules.",
+        "claim": "The SHINOBU structural validation cache-miss path no longer pays interface-list dispatch while preserving ConstructionManager as the placed-module owner.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "A ConstructionManager-owned immutable topology snapshot remains the stronger future route; runtime profiler proof pending."
+      },
+      {
+        "artifact": "TryFinalizePendingBuildAndUpload in both holography presenters gates on HasGraphicsBuffers instead of calling EnsureGraphicsBuffers; HectonBlueprintPreviewBatch writes a phase-local RecordActiveTelemetryHeartbeat sample each LateFrameTick.",
+        "claim": "Presenter finalize paths no longer allocate/release GraphicsBuffers, and the 300-frame holography black box receives active-frame heartbeat samples without a tiny scheduled telemetry job.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Profiler/GCMonitor proof pending."
+      },
+      {
+        "artifact": "VRPipeBlueprintPreview stores VaultGenerationHandle descriptors for lanes 70946-70948, resolves them with IDataVault.TryResolveHandle, converts runtime points through HectonFloatingOrigin.CurrentTotalOffsetDouble, and stamps Frame through TimeSliceScheduler.CurrentFrameId with an owner-local fallback counter.",
+        "claim": "XR pipe preview no longer uses legacy pointer-bearing VaultBufferHandle descriptors, GlobalSignals runtime-origin fallback, or Unity Time.frameCount for its presentation payload.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity compile/import and XR preview runtime proof pending."
+      },
+      {
+        "artifact": "VRPipeBlueprintPreview runtime point cache uses four scalar AbsoluteUniversePosition slots plus four bool flags, with TryGetRuntimePointAup/SetRuntimePointAup switch helpers; the old AbsoluteUniversePosition[] and bool[] caches are absent.",
+        "claim": "XR pipe preview no longer allocates managed control-point arrays for its owner-local runtime point cache.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity import and allocation-profiler proof pending."
+      },
+      {
+        "artifact": "ShinobuSocketConstructionRuntime.DefaultDumpPath is Dump_SHINOBU_228.bin and HolographyDumpPath is Dump_SHINOBU_228_Holography.bin; BuilderHolographyStaticAudit checks that neither constant contains SHINOBU_217.",
+        "claim": "Black Box telemetry dumps now route to the SHINOBU_228 proof artifacts claimed by the status, rationale, and architecture docs.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Fault-injection dump generation proof pending."
+      },
+      {
+        "artifact": "HectonBlueprintPreviewBatch no longer declares the unused BlueprintPreviewInstance struct or serialized previewMesh field, and VRPipeBlueprintPreview no longer declares serialized segmentMesh; both presenters render from BuilderGhost DTOs plus indirect args.",
+        "claim": "Builder holography has no inert mesh-preview serialized surface that can imply a fallback DrawMesh or DrawMeshInstanced route.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity import and serialized asset migration proof pending."
+      },
+      {
+        "artifact": "HabitatConstructionManager.BuildValidationGraph now calls HasValidationGraphCapacity instead of EnsureNodeCapacity, BuildAdjacency fails closed when adjacencyCount exceeds the prepared Vault lane, and EnsureAdjacencyCapacity is absent.",
+        "claim": "Active structural validation no longer grows or releases graph Vault buffers from the schedule path; resizing is confined to cold catalog-vault binding.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Runtime stress proof for over-capacity validation pending."
+      },
+      {
+        "artifact": "PlayerBuilder terrain probes and builder ghost SDF hydration call HectonVoxelVolume.TryReadRuntimeSdfDensity, whose method body skips stale entries without RemoveAt mutation.",
+        "claim": "Active builder SDF validation no longer mutates the published voxel-volume registry through the read path.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Full Voxel owner native/DataVault sampling route remains pending outside SHINOBU ownership."
+      },
+      {
+        "artifact": "HabitatConstructionManager.HasBuildResources reads PlayerInventory.GetItemIDsReadOnly, GetStackCountsReadOnly, and GetCraftLockedCountsReadOnly; _inventoryPlacementBuffer and GetPlacements calls are absent from the construction validator.",
+        "claim": "Build-resource readiness no longer copies inventory placements into a managed ItemPlacement[] snapshot and now subtracts craft-locked reservations before reporting coverage.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "A future Inventory-owned immutable count snapshot plus reserve/commit API is still the stronger route; SHINOBU did not create a second inventory authority."
+      },
+      {
+        "artifact": "HabitatConstructionManager.PrepareCostBuffers groups duplicate serialized build-cost rows by LocHash through FindCostGroupIndex and accumulates amounts through TryAccumulateCostAmount with overflow fail-closed guards.",
+        "claim": "Build-resource readiness and commit consumption now evaluate the same grouped item-hash requirements instead of letting duplicate cost rows pass readiness with one shared inventory stack.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Runtime builder smoke proof for duplicate serialized cost rows remains pending; Inventory-owned reserve/commit API remains future route work."
+      },
+      {
+        "artifact": "HabitatConstructionManager no longer declares _costHashBuffer/_costRemainingBuffer/_costRemovedBuffer/_costItemBuffer; HasBuildResources and ConsumeBuildResources use stackalloc int[MaxCostCapacity] spans for grouped costs and rollback counters.",
+        "claim": "The construction validation manager no longer owns managed cost transaction arrays, closing a remaining H-Phi private-array exception without creating a UI or Inventory shadow cache.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Inventory-owned immutable count snapshot plus reserve/commit/release API remains future route work."
+      },
+      {
+        "artifact": "PlayerBuilder.WriteCostDigest, BuilderStatusOverlay.BuildCostSummary, and PDAConstructionTab HasCost/TryAppendCostDigest/TryAppendShortCost group duplicate build-cost rows into stack spans and read PlayerInventory.CountAvailableTotal instead of CountTotal.",
+        "claim": "Builder-facing cost presentation now matches the grouped, craft-reservation-aware placement readiness semantics without adding managed dictionaries or persistent arrays.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Runtime UI visual proof for duplicate/craft-locked costs remains pending."
+      },
+      {
+        "artifact": "ModularBaseConstructionValidator and BinaryLayoutManifest no longer reference HectonBlueprintPreviewBatch.BlueprintPreviewInstance; both assert BuilderGhostIndirectArgsDTO as the active 16-byte indirect args payload.",
+        "claim": "Cold binary layout gates cannot fail on the deleted preview instance DTO and now validate the active indirect draw argument route.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity import/boot layout sentinel proof pending."
+      },
+      {
+        "artifact": "HabitatConstructionManager.ResetValidation sets _discardValidationResult for pending jobs; only CompletePendingValidationForTeardown calls DispatcherJobSwap.TryComplete(..., true).",
+        "claim": "Normal builder reset/despawn state changes no longer force-complete structural validation jobs on the main thread.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Dispatcher phase/runtime cancellation proof pending."
+      },
+      {
+        "artifact": "PlayerBuilder ResolvePlayerRuntimeContext/ResolveEnvironmentRuntimeContext return published GlobalRegistry services only; PlayerRuntimeContextService.EnsureRuntimeInstance and EnvironmentRuntimeContextService.EnsureRuntimeInstance are absent from PlayerBuilder.",
+        "claim": "Builder bind/equip no longer creates or initializes runtime-context owners from a consumer path.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Bootstrap route proof pending."
+      },
+      {
+        "artifact": "PDAConstructionTab implements IGlobalRegistryHotSwapListener, caches Player/Environment context services, and Tick no longer calls AutoResolve or scene/bootstrap fallback searches.",
+        "claim": "PDA construction UI cadence consumes cached registry services and signal snapshots instead of polling GlobalRegistry or scraping scene/player transforms.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "PDA open/tab-change runtime proof pending."
+      },
+      {
+        "artifact": "ShinobuSocketConstructionRuntime.ResolveCandidateBudget and ResolveSearchRadius no longer accept a quality parameter; editor diagnostics call the max-truth overloads.",
+        "claim": "Socket legality helper signatures no longer imply that GlobalQualityWeight can throttle candidate count or search radius truth.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity compile/import proof pending."
+      },
+      {
+        "artifact": "BuilderHolographyTools and ConstructionSocketEditorTools split forbidden scanner probe literals, including socket-trigger, collider, PhysX overlap, fixed-joint, Instantiate, Destroy, new-GameObject, DataVault-latest, interface-list, and deleted-preview probes; broad SHINOBU residue rg returned no target/editor self-matches after the split.",
+        "claim": "Static audit tools no longer contain contiguous forbidden tokens that can poison broad residue gates.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity editor audit menu execution proof pending."
+      },
+      {
+        "artifact": "BuilderHolographyStaticAudit.UpsertReportSection now writes Docs/Reports/MEMORY_OPTIMIZATION_REPORT.SHINOBU_228.json as a sidecar if it cannot splice the shared report, and returns without replacing the shared report.",
+        "claim": "A malformed shared optimization report can no longer be destructively overwritten by the SHINOBU_228 editor audit fallback.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity editor audit menu execution proof pending."
+      },
+      {
+        "artifact": "HectonBlueprintPreviewBatch.RecordActiveTelemetryHeartbeat returns immediately when _pendingBuildScheduled is true, before reading BuilderGhostStateDTO and BuilderGhostVisualDTO buffers.",
+        "claim": "Preview heartbeat telemetry no longer reads state/visual NativeArrays in the same frame a producer job may still be writing them.",
+        "date": "2026-05-21",
+        "evidenceClass": "STATIC_SOURCE",
+        "residualRisk": "Unity Jobs Debugger / Play Mode proof pending."
       }
     ],
+    "hotPathResidue": {
+      "ActiveBuildReadinessMutatingReadAccessor": false,
+      "ActiveBuildResourceMutatingReadAccessor": false,
+      "BindRuntimeReferencesManagerAllocation": false,
+      "BoundsCollisionTruthScaledByQuality": false,
+      "BuilderGhostSdfTruthScaledByQuality": false,
+      "DumpPathsOwnedByShinobu228": true,
+      "DrawProceduralIndirect": true,
+      "GhostPrefabAssetsRemoved": true,
+      "HabitatConstructionManagerGameObjectSocketIndexOverload": false,
+      "HabitatConstructionManagerHotRegistryDataVault": false,
+      "HabitatConstructionManagerIntegrityGraphVaultOwned": true,
+      "HabitatConstructionManagerGroupedBuildCostRows": true,
+      "HabitatConstructionManagerManagedCostTransactionArrays": false,
+      "BuilderCostPresentationGroupedAvailableRows": true,
+      "HabitatConstructionManagerInventorySoAReadiness": true,
+      "HabitatConstructionManagerManagedGraphCollections": false,
+      "HabitatConstructionManagerManagedInventoryPlacementSnapshot": false,
+      "HabitatConstructionManagerObjectAlignmentRoute": false,
+      "HabitatConstructionManagerPerScheduleGraphRebuild": false,
+      "HabitatConstructionManagerPrivateNativeGraphArrays": false,
+      "HabitatConstructionManagerResourceReadinessIgnoresCraftLocks": false,
+      "HabitatConstructionManagerResetForcedCompletion": false,
+      "HabitatConstructionManagerSpawnedModulesInterfaceDispatch": false,
+      "HabitatConstructionManagerTryCompleteFalse": false,
+      "HectonBlueprintPreviewBatchDrawMeshInstanced": false,
+      "HectonBlueprintPreviewBatchSetData": false,
+      "HolographyTelemetryHeartbeat": true,
+      "HolographyTelemetryHeartbeatReadsLiveProducer": false,
+      "HotVaultEnsureInPipePreview": false,
+      "HotVaultEnsureInPreviewBatch": false,
+      "LegacyPreviewMeshSerializedFields": false,
+      "LockBufferForWrite": true,
+      "ManagedBaseModulePlacedEventAllocation": false,
+      "NoNonZeroBuildableGhostPrefabReferences": true,
+      "NoSameFrameSocketSnapReadback": true,
+      "PDAConstructionTabHotRegistryPolling": false,
+      "PlacementGhostOverlapBoxNonAlloc": false,
+      "PlacementGhostScriptRemoved": true,
+      "PlayerBuilderRuntimeContextOwnerCreation": false,
+      "PlayerBuilderPreviewTryAcquireGhostProxy": false,
+      "PreviewFinalizeGraphicsBufferAllocation": false,
+      "ProjectFilePlacementGhostCompileInclude": false,
+      "RuntimeGhostConsumerRoute": false,
+      "RuntimeGlobalDataVaultLatestFallback": false,
+      "SchedulePathValidationGraphVaultResize": false,
+      "SnapFinalizeSceneTransformAuthority": false,
+      "SocketLayoutGateDeletedPreviewInstance": false,
+      "SocketLookupVaultOwned": true,
+      "SocketSnapTruthScaledByQuality": false,
+      "SocketTruthHelperQualityParameter": false,
+      "SocketTruthHelpersReturnMaxTruth": true,
+      "StaticAuditProbeStringSelfResidue": false,
+      "TerrainProbeTruthScaledByQuality": false,
+      "TargetSocketCommitDirectPath": true,
+      "UnchangedSignalGpuUploadSkipped": true,
+      "UnusedRecordHolographyTelemetryJob": false,
+      "VoxelSdfReadPathRegistryMutation": false,
+      "VRPipeBlueprintPreviewDrawMeshInstanced": false,
+      "VRPipeBlueprintPreviewMatrixArray": false,
+      "VRPipeGlobalSignalsOriginBridge": false,
+      "VRPipeLegacyVaultBufferHandle": false,
+      "VRPipeManagedPointArrays": false,
+      "VRPipeReadAccessorCacheMutation": false,
+      "VRPipeUnityFrameCount": false,
+      "VRPipeXRMethodGroupEventSubscription": false
+    },
+    "layout": {
+      "AUP_TargetPositionOffset": 64,
+      "AnimationPhaseOffset": 96,
+      "BuilderGhostStateDTOBytes": 128,
+      "LocalToWorldOffset": 0,
+      "PrefabHashIDOffset": 88,
+      "ValidationFlagsOffset": 92,
+      "ValidationStateHashOffset": 100
+    },
     "netcode": {
       "claim": "BuilderGhostStateDTO is PresentationOnly|RollbackExcluded and not registered as a Merkle leaf descriptor.",
       "evidenceClass": "STATIC_SOURCE",
       "residualRisk": "Runtime rollback proof pending."
+    },
+    "staticEstimates": {
+      "evidenceClass": "STATIC_SOURCE_ESTIMATE",
+      "gpuUploadStallAvoidedEstimate": "10-60",
+      "physxOverlapRemovedEstimate": "60-180",
+      "previewPrefabSpikeRemovedEstimate": "120-180"
+    },
+    "vaultBuffers": {
+      "BuilderGhostIndirectArgsBufferId": 70945,
+      "BuilderGhostMockStateBufferId": 70943,
+      "BuilderGhostSdfSamplesBufferId": 70944,
+      "BuilderGhostStateBufferId": 70940,
+      "BuilderGhostTelemetryBufferId": 70942,
+      "BuilderGhostVisualBufferId": 70941,
+      "IntegrityAdjacencyBufferId": 70951,
+      "IntegrityConnectionBufferId": 70957,
+      "IntegrityDegreeScratchBufferId": 70955,
+      "IntegrityDepthBufferId": 70953,
+      "IntegrityNodeBufferId": 70949,
+      "IntegrityQueueBufferId": 70952,
+      "IntegrityRangeBufferId": 70950,
+      "IntegrityResultBufferId": 70954,
+      "IntegritySocketLookupBufferId": 70958,
+      "IntegrityWriteScratchBufferId": 70956,
+      "VRPipeIndirectArgsBufferId": 70948,
+      "VRPipeStateBufferId": 70946,
+      "VRPipeVisualBufferId": 70947
     }
-  }
+  },
+  "reportOwner": "shared",
+  "sections": [
+    "SHINOBU_207",
+    "SHINOBU_228"
+  ]
 }

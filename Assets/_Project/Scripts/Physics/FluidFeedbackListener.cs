@@ -3,6 +3,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Hecton.Localization;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Physics
@@ -30,9 +31,20 @@ namespace Hecton8.Physics
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("FluidFeedbackEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute(nameof(SplashEvent)));
 
-        // COLD ALLOC: RegistryBucket<IFluidSplashEventListener>[16] - splash feedback listeners drained by SystemDispatcher LateUpdate - owner: FluidFeedbackEvents
-        private static readonly RegistryBucket<IFluidSplashEventListener> _listeners = new RegistryBucket<IFluidSplashEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IFluidSplashEventListener Listener;
 
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[16] - splash feedback listeners drained by SystemDispatcher LateUpdate - owner: FluidFeedbackEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
+
+        private static int _listenerCount;
         private static int _snapshotReadGeneration = -1;
         private static int _snapshotReadCursor;
         private static int _lastOverflowWarningGeneration = -1;
@@ -56,7 +68,10 @@ namespace Hecton8.Physics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _listeners.Clear();
+            for (int i = 0; i < ListenerCapacity; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
             _snapshotReadGeneration = -1;
             _snapshotReadCursor = 0;
             _lastOverflowWarningGeneration = -1;
@@ -72,8 +87,16 @@ namespace Hecton8.Physics
             if (listener == null)
                 return;
 
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
         }
 
         /// <summary>
@@ -85,8 +108,18 @@ namespace Hecton8.Physics
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = --_listenerCount;
+                if (i != lastIndex)
+                    _listeners[i].Listener = _listeners[lastIndex].Listener;
+
+                _listeners[lastIndex].Clear();
+                return;
+            }
         }
 
         /// <summary>
@@ -94,7 +127,7 @@ namespace Hecton8.Physics
         /// </summary>
         public static void PublishSplashQueued(in SplashEvent splashEvent)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             Enqueue(in splashEvent);
@@ -105,7 +138,7 @@ namespace Hecton8.Physics
         /// </summary>
         public static void FlushPending()
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureInitialized();
@@ -141,14 +174,13 @@ namespace Hecton8.Physics
             if (_initialized)
                 return;
 
-            GlobalSignals.InitializeAllQueues();
             SignalBus<SplashEvent>.EnsureInitialized();
             _initialized = true;
         }
 
         private static bool Enqueue(in SplashEvent splashEvent)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return false;
 
             EnsureInitialized();
@@ -158,11 +190,10 @@ namespace Hecton8.Physics
 
         private static void DispatchToListeners(in SplashEvent splashEvent)
         {
-            IFluidSplashEventListener[] rawArray = _listeners.RawArray;
-            int count = _listeners.Count;
+            int count = _listenerCount;
             for (int i = count - 1; i >= 0; i--)
             {
-                IFluidSplashEventListener listener = rawArray[i];
+                IFluidSplashEventListener listener = _listeners[i].Listener;
                 if (listener != null)
                     listener.OnFluidSplashQueued(in splashEvent);
             }
@@ -200,14 +231,21 @@ namespace Hecton8.Physics
         [Tooltip("Optional audio source reserved for low-frequency hull splash feedback.")]
         [SerializeField] private AudioSource splashAudioSource;
 
+        private AbyssalFluidDecalManager _fluidDecals;
+        private IAudioService _audio;
+
         private void OnEnable()
         {
+            _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            _audio = GlobalRegistry.Audio;
             FluidFeedbackEvents.Register(this);
         }
 
         private void OnDisable()
         {
             FluidFeedbackEvents.Unregister(this);
+            _fluidDecals = null;
+            _audio = null;
         }
 
         /// <inheritdoc />
@@ -218,15 +256,14 @@ namespace Hecton8.Physics
                 splashEvent.RuntimePosition.y,
                 splashEvent.RuntimePosition.z);
 
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
-            if (fluidDecals != null)
+            if (_fluidDecals != null)
             {
-                Vector3 decalVelocity = Vector3.up * Mathf.Max(0.1f, splashEvent.ImpactSpeedMetersPerSecond);
-                float intensity = Mathf.Clamp01(
+                Vector3 decalVelocity = Vector3.up * math.max(0.1f, splashEvent.ImpactSpeedMetersPerSecond);
+                float intensity = math.saturate(
                     splashEvent.SubmersionFactor * 0.45f +
                     splashEvent.ImpactSpeedMetersPerSecond * 0.055f +
                     splashEvent.KineticEnergyJoules * 0.00008f);
-                fluidDecals.RegisterWaterSplash(runtimePosition, decalVelocity, intensity);
+                _fluidDecals.RegisterWaterSplash(runtimePosition, decalVelocity, intensity);
             }
 
             if (splashAudioSource == null)
@@ -237,10 +274,9 @@ namespace Hecton8.Physics
                 audioTransform.position = runtimePosition;
 
             AudioClip clip = splashAudioSource.clip;
-            IAudioService audio = GlobalRegistry.Audio;
-            if (clip != null && audio != null)
+            if (clip != null && _audio != null)
             {
-                audio.PlayAtPoint(
+                _audio.PlayAtPoint(
                     clip,
                     runtimePosition,
                     splashAudioSource.volume,

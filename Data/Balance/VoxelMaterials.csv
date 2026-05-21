@@ -1,0 +1,3 @@
+id,hardness,density,melting_point_c,yield_id,surface_id,flags
+silt_basalt,3.5,2850,1120,scrap_metal,basalt_rough,1
+fractured_basalt,4.2,3100,1180,scrap_metal,basalt_fractured,1

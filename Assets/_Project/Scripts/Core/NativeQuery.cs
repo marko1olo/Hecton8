@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -11,7 +10,6 @@ namespace Hecton8.Core
         where TSource : unmanaged
         where TResult : unmanaged;
 
-    [StructLayout(LayoutKind.Sequential)]
     public readonly struct NativeQuery<T> where T : unmanaged
     {
         internal readonly NativeArray<T> Source;
@@ -37,7 +35,6 @@ namespace Hecton8.Core
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     public readonly struct NativeSelectQuery<TSource, TResult>
         where TSource : unmanaged
         where TResult : unmanaged
@@ -137,7 +134,6 @@ namespace Hecton8.Core
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     public struct NativeFilterJob<T> : IJob where T : unmanaged
     {
         [ReadOnly, NoAlias] public NativeArray<T> Source;
@@ -159,7 +155,6 @@ namespace Hecton8.Core
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     public struct NativeSelectJob<TSource, TResult> : IJob
         where TSource : unmanaged
         where TResult : unmanaged

@@ -171,7 +171,9 @@ namespace Hecton8.Gameplay
 
         private void HandleNodeFound(float3 worldPos)
         {
-            AbsoluteUniversePosition markerAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(worldPos.x, worldPos.y, worldPos.z));
+            if (!TryResolveAupFromRuntimeOrigin(new Vector3(worldPos.x, worldPos.y, worldPos.z), out AbsoluteUniversePosition markerAup))
+                return;
+
             ulong activeMask = _activeMarkerMask;
             while (activeMask != 0UL)
             {
@@ -247,7 +249,9 @@ namespace Hecton8.Gameplay
 
             Transform cameraTransform = hudCamera.transform;
             Vector3 playerPositionVector = _playerTransform.position;
-            AbsoluteUniversePosition playerAup = ResolvePlayerAup(playerPositionVector);
+            if (!TryResolvePlayerAup(playerPositionVector, out AbsoluteUniversePosition playerAup))
+                return 0;
+
             UpdateProjectionCache();
             float projectionDistance = _cachedProjectionDistance;
             float worldPerPixel = _cachedWorldPerPixel;
@@ -462,8 +466,9 @@ namespace Hecton8.Gameplay
             _markerMaterialDirty = false;
         }
 
-        private AbsoluteUniversePosition ResolvePlayerAup(Vector3 fallbackRuntimePosition)
+        private bool TryResolvePlayerAup(Vector3 fallbackRuntimePosition, out AbsoluteUniversePosition playerAup)
         {
+            playerAup = default;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (!ReferenceEquals(playerContext, _cachedPlayerContext))
             {
@@ -476,9 +481,34 @@ namespace Hecton8.Gameplay
             }
 
             HectonPlayerMovement movement = _cachedPlayerMovement;
-            return movement != null
-                ? movement.PredictedAup
-                : AbsoluteUniversePosition.FromRuntimePosition(fallbackRuntimePosition);
+            if (movement != null)
+            {
+                playerAup = movement.PredictedAup;
+                if (playerAup.IsFinite())
+                    return true;
+            }
+
+            return TryResolveAupFromRuntimeOrigin(fallbackRuntimePosition, out playerAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return aup.IsFinite();
         }
 
         private static bool SameColor(Color a, Color b)

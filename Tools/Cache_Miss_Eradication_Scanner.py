@@ -20,6 +20,21 @@ CHILD_CAPACITY = 8
 LEAF_FLAG = 0x100
 NODE_STRUCT = struct.Struct("<16I")
 FLAT_RECORD_STRUCT = struct.Struct("<4I")
+SHINOBU_207_SECTION = "SHINOBU_207"
+SHINOBU_207_REPORT_KEYS = {
+    "agent",
+    "binarySearch",
+    "cacheBTree",
+    "delta",
+    "flatRecordBytes",
+    "flatTableBytes",
+    "lookupCount",
+    "nodeBytes",
+    "notes",
+    "recordCount",
+    "sourceContracts",
+    "treeBytes",
+}
 DETERMINISTIC_SEARCH_JOBS = (
     ("Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs", "ScanBTreeNodeJob"),
     ("Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs", "TraverseBTreeJob"),
@@ -43,6 +58,23 @@ RESIDUE_PATTERNS = (
     ("packOneLayout", (r"Pack\s*=\s*1",)),
     ("wrappedOffsetPlus64", (r"offset\s*\+\s*64",)),
     ("mockFullOutputClear", (r"for\s*\(\s*int\s+clear\s*=\s*0\s*;\s*clear\s*<\s*OutputBytes\.Length",)),
+    ("mutatingReadAccessorNames", (
+        r"public\s+ref\s+readonly\s+T\s+GetRecord\s*<",
+        r"public\s+ReadOnlySpan<byte>\s+GetUtf8\s*\(",
+        r"ResolveOrCreateBitIndex\s*\(",
+        r"ResolveActiveUtf8\s*\(",
+        r"TryResolveVault\s*\(",
+        r"TryResolvePlayerContextCold\s*\(",
+        r"ReadFileIntoPaddedBuffer\s*\(",
+        r"TryGetTelemetryVaultBuffers\s*\(",
+        r"TryGetTuningProfileVaultBuffer\s*\(",
+        r"FetchRecordWithTelemetry\s*\(",
+        r"FetchUtf8WithTelemetry\s*\(",
+        r"GlobalDataVault\.TryGetLatestCreated\s*\(",
+    )),
+    ("hotScheduleVaultAllocationFacade", (
+        r"ScheduleTelemetryPostSimulationFlush\s*\([^)]*IDataVault",
+    )),
 )
 
 
@@ -69,6 +101,107 @@ def validate_no_source_residue() -> dict[str, object]:
         if matches:
             detail = "\n".join(matches[:16])
             raise RuntimeError(f"Source residue {residue_name} returned:\n{detail}")
+    return checks
+
+
+def validate_negative_patterns(source: str, label: str, patterns: tuple[str, ...]) -> None:
+    matches: list[str] = []
+    for pattern in patterns:
+        for match in re.finditer(pattern, source):
+            line_start = source.rfind("\n", 0, match.start()) + 1
+            line_end = source.find("\n", match.start())
+            if line_end == -1:
+                line_end = len(source)
+            snippet = source[line_start:line_end].strip()
+            matches.append(f"{label}:{line_number(source, match.start())}: {snippet}")
+
+    if matches:
+        detail = "\n".join(matches[:16])
+        raise RuntimeError(f"Forbidden source residue {label} returned:\n{detail}")
+
+
+def is_inside_unity_editor_fence(source: str, offset: int) -> bool:
+    last_if = source.rfind("#if UNITY_EDITOR", 0, offset)
+    last_endif = source.rfind("#endif", 0, offset)
+    return last_if >= 0 and last_if > last_endif
+
+
+def extract_method_bodies(source: str, method_name: str) -> list[tuple[int, str]]:
+    pattern = re.compile(
+        rf"\b(?:public|private|internal|protected)\s+"
+        rf"(?:static\s+)?(?:unsafe\s+)?(?:ref\s+readonly\s+)?"
+        rf"[\w<>,\[\]\s]+\s+{re.escape(method_name)}(?:\s*<[^>]+>)?\s*\("
+    )
+    bodies: list[tuple[int, str]] = []
+    for match in pattern.finditer(source):
+        brace = source.find("{", match.end())
+        if brace < 0:
+            continue
+
+        depth = 0
+        for index in range(brace, len(source)):
+            char = source[index]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    bodies.append((match.start(), source[brace + 1:index]))
+                    break
+
+    return bodies
+
+
+def validate_read_accessor_purity() -> dict[str, bool]:
+    forbidden_tokens = (
+        "EnsureVaultBuffersCold(",
+        "TryColdBootstrap(",
+        "GetGenerationHandle<",
+        "GetBuffer<",
+        "GlobalRegistry.",
+        "GlobalDataVault.TryGetLatestCreated",
+        "File.",
+        "Directory.",
+        "RecordTelemetry(",
+        "DumpBlackBox(",
+        "DumpBTreeTelemetry(",
+        "SignalBus<",
+        ".TryPush(",
+        ".Complete(",
+        "DispatcherJobFence.TryComplete",
+        "RefreshFrameLookupCounters(",
+        "TryPublishLinkedAudio(",
+        "CaptureLookupStats(",
+        "new PdaH8lrLoreStore",
+    )
+    method_targets = (
+        ("Assets/_Project/Scripts/Core/Data/StaticDataStore.cs", "FetchRecord"),
+        ("Assets/_Project/Scripts/Core/Data/StaticDataStore.cs", "TryGetLookupEntry"),
+        ("Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs", "FetchUtf8"),
+        ("Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs", "TryFindIndex"),
+        ("Assets/_Project/Scripts/UI/PdaH8lrLoreStore.cs", "TryGetUtf8"),
+        ("Assets/_Project/Scripts/UI/PdaH8lrLoreStore.cs", "TryGetRecord"),
+        ("Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs", "TryGetH8lrUtf8"),
+        ("Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs", "TryGetMockUtf8"),
+        ("Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs", "TryFindBitIndex"),
+    )
+    checks: dict[str, bool] = {}
+    for relative_path, method_name in method_targets:
+        source_path = REPO_ROOT / relative_path
+        source = source_path.read_text(encoding="utf-8")
+        bodies = extract_method_bodies(source, method_name)
+        if not bodies:
+            raise RuntimeError(f"Missing read-accessor purity target {relative_path}:{method_name}")
+
+        for offset, body in bodies:
+            key = f"{relative_path}:{method_name}:{line_number(source, offset)}"
+            bad_tokens = [token for token in forbidden_tokens if token in body]
+            checks[key] = not bad_tokens
+            if bad_tokens:
+                raise RuntimeError(
+                    f"Read-accessor purity violation in {key}: {', '.join(bad_tokens)}"
+                )
+
     return checks
 
 
@@ -99,11 +232,149 @@ def validate_source_contracts() -> dict[str, object]:
     if not pda_mock_flat_scan_removed:
         raise RuntimeError("PDA mock lookup still scans Index.Length linearly")
 
+    h8lr_source = (REPO_ROOT / "Assets/_Project/Scripts/UI/PdaH8lrLoreStore.cs").read_text(encoding="utf-8")
+    h8lr_mutable_read_counters_removed = all(
+        token not in h8lr_source
+        for token in ("_lastTreeDepth", "_lastTreeKeysProcessed", "_lastPrefetchTouchCount")
+    )
+    if not h8lr_mutable_read_counters_removed:
+        raise RuntimeError("PdaH8lrLoreStore.TryGetUtf8 still mutates per-read tree counters")
+
+    babel_source = (REPO_ROOT / "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs").read_text(encoding="utf-8")
+    validate_negative_patterns(
+        babel_source,
+        "BabelDictionaryStore.cs",
+        (
+            r"\.\s*GetBuffer\s*<\s*byte\s*>\s*\(\s*BufferID\.BabelDictionaryMappedBytes",
+            r"\.\s*TryGetBuffer\s*<\s*byte\s*>\s*\(\s*BufferID\.BabelDictionaryMappedBytes",
+            r"SourceBytes\s*=\s*_basePointer",
+            r"_basePointer\s*\+\s*entry\.ByteOffset",
+        ),
+    )
+    babel_mirror_generation_guard = all(
+        token in babel_source
+        for token in (
+            "private VaultGenerationHandle<byte> _mappedBytesHandle;",
+            "_mappedBytesHandle = vault.GetGenerationHandle<byte>(",
+            "BufferID.BabelDictionaryMappedBytes",
+            "vault.TryResolveHandle(in _mappedBytesHandle",
+            "LoadFileIntoPaddedBufferCold",
+        )
+    ) and "ReadFileIntoPaddedBuffer" not in babel_source
+    if not babel_mirror_generation_guard:
+        raise RuntimeError("Babel padded dictionary mirror is not generation-handle guarded")
+
+    babel_readable_view_resolve_guard = all(
+        token in babel_source
+        for token in (
+            "private bool TryResolveReadableView(out byte* basePointer, out BabelIndexDTO* indexPointer, out long mappedBytes)",
+            "TryResolveMappedBytes(out basePointer, out mappedBytes)",
+            "_mappedBytesHandle.BufferID == 0u",
+            "vault.TryResolveHandle(in _mappedBytesHandle",
+            "private bool TryResolveMappedBytesView(out NativeArray<byte> mappedBytesView)",
+            "return new ReadOnlySpan<byte>(basePointer + entry.ByteOffset",
+            "if (_ownedFallbackPointer != null)",
+            "TryResolveMappedBytesView(out NativeArray<byte> sourceBytes)",
+            "BabelLoreXorDecryptJob job = new BabelLoreXorDecryptJob",
+            "SourceBytes = sourceBytes",
+            "else",
+            "BabelLoreXorDecryptPointerJob job = new BabelLoreXorDecryptPointerJob",
+            "SourceBytes = basePointer",
+            "SourceByteLength = mappedBytes",
+        )
+    ) and "_basePointer + entry.ByteOffset" not in babel_source and "SourceBytes = _basePointer" not in babel_source
+    if not babel_readable_view_resolve_guard:
+        raise RuntimeError("Babel lookup/decrypt paths do not resolve the Vault mirror view before payload dereference")
+
+    validate_negative_patterns(
+        h8lr_source,
+        "PdaH8lrLoreStore.cs",
+        (
+            r"\bOpen(?:Default)?\s*\([^)]*NativeArray\s*<\s*byte\s*>",
+            r"\bTryOpenVaultMirror\s*\([^)]*NativeArray\s*<\s*byte\s*>",
+            r"\.\s*GetBuffer\s*<\s*byte\s*>\s*\(",
+            r"\.\s*TryGetBuffer\s*<\s*byte\s*>\s*\(",
+        ),
+    )
+    h8lr_mirror_generation_guard = all(
+        token in h8lr_source
+        for token in (
+            "private VaultGenerationHandle<byte> _vaultMirrorHandle;",
+            "OpenDefault(IDataVault vault, in VaultGenerationHandle<byte> vaultMirrorHandle)",
+            "Open(string path, IDataVault vault, in VaultGenerationHandle<byte> vaultMirrorHandle)",
+            "vault.TryResolveHandle(in vaultMirrorHandle",
+            "TryResolveReadableBasePointer",
+            "_vault.TryResolveHandle(in _vaultMirrorHandle",
+        )
+    ) and "OpenDefault(NativeArray<byte>" not in h8lr_source and "Open(string path, NativeArray<byte>" not in h8lr_source
+    if not h8lr_mirror_generation_guard:
+        raise RuntimeError("H8LR Vault mirror is not generation-handle guarded")
+
+    editor_method_names = (
+        "EditorTrySnapshot",
+        "EditorUnlockAll",
+        "EditorLockAll",
+        "EditorSelectEntry",
+        "EditorIngestCsv",
+        "EditorTryWriteRawUtf8Hex",
+    )
+    editor_fence_checks: dict[str, bool] = {}
+    for method_name in editor_method_names:
+        match = re.search(rf"public\s+(?:bool|void)\s+{method_name}\s*\(", pda_source)
+        if match is None:
+            raise RuntimeError(f"Missing PDA editor facade {method_name}")
+
+        fenced = is_inside_unity_editor_fence(pda_source, match.start())
+        editor_fence_checks[method_name] = fenced
+        if not fenced:
+            raise RuntimeError(f"PDA editor facade {method_name} is not UNITY_EDITOR fenced")
+
+    csv_ingest_method_names = (
+        "TryIngestLoreMetadataCsvFromProject",
+        "TryIngestLoreMetadataCsv",
+    )
+    csv_ingest_fence_checks: dict[str, bool] = {}
+    for method_name in csv_ingest_method_names:
+        match = re.search(rf"public\s+bool\s+{method_name}\s*\(", pda_source)
+        if match is None:
+            raise RuntimeError(f"Missing PDA CSV ingest bridge {method_name}")
+
+        fenced = is_inside_unity_editor_fence(pda_source, match.start())
+        csv_ingest_fence_checks[method_name] = fenced
+        if not fenced:
+            raise RuntimeError(f"PDA CSV ingest bridge {method_name} is not UNITY_EDITOR fenced")
+
+    baker_source = (REPO_ROOT / "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs").read_text(encoding="utf-8")
+    baker_match = re.search(r"public\s+static\s+unsafe\s+class\s+H8DataBaker\b", baker_source)
+    if baker_match is None:
+        raise RuntimeError("Missing H8DataBaker editor bake bridge")
+    h8_data_baker_fenced = is_inside_unity_editor_fence(baker_source, baker_match.start())
+    if not h8_data_baker_fenced:
+        raise RuntimeError("H8DataBaker is not UNITY_EDITOR fenced")
+
+    manifest_match = re.search(r"public\s+static\s+H8DataBakeResult\s+GenerateHashManifest\s*\(", contracts_source)
+    if manifest_match is None:
+        raise RuntimeError("Missing H8DataHashTool.GenerateHashManifest editor bridge")
+    hash_manifest_fenced = is_inside_unity_editor_fence(contracts_source, manifest_match.start())
+    if not hash_manifest_fenced:
+        raise RuntimeError("H8DataHashTool.GenerateHashManifest is not UNITY_EDITOR fenced")
+
     return {
         "deterministicSearchJobs": checks,
         "btreeNodeExplicit64": btree_node_64,
         "pdaMockFlatIndexScanRemoved": pda_mock_flat_scan_removed,
+        "h8lrMutableReadCountersRemoved": h8lr_mutable_read_counters_removed,
+        "babelMirrorGenerationGuard": babel_mirror_generation_guard,
+        "babelReadableViewResolveGuard": babel_readable_view_resolve_guard,
+        "h8lrMirrorGenerationGuard": h8lr_mirror_generation_guard,
+        "pdaEditorFacadesFenced": editor_fence_checks,
+        "pdaCsvIngestBridgesFenced": csv_ingest_fence_checks,
+        "editorOnlyDesignerBridges": {
+            "H8DataBaker": h8_data_baker_fenced,
+            "H8DataHashTool.GenerateHashManifest": hash_manifest_fenced,
+        },
         "sourceResidueClean": validate_no_source_residue(),
+        "readAccessorPurity": validate_read_accessor_purity(),
     }
 
 
@@ -201,6 +472,52 @@ def generate_records(count: int) -> list[tuple[int, int]]:
     return [((0x811C9DC5 + (index * 0x01000193)) & 0xFFFFFFFF, index) for index in range(count)]
 
 
+def merge_shared_report(report: dict[str, object]) -> dict[str, object]:
+    def new_shared_payload() -> dict[str, object]:
+        return {
+            "reportOwner": "shared",
+            "sections": [SHINOBU_207_SECTION],
+            SHINOBU_207_SECTION: report,
+        }
+
+    if not REPORT_PATH.exists():
+        return new_shared_payload()
+
+    try:
+        existing = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return new_shared_payload()
+
+    if not isinstance(existing, dict):
+        return new_shared_payload()
+
+    merged = dict(existing)
+    if existing.get("agent") == SHINOBU_207_SECTION:
+        for key in SHINOBU_207_REPORT_KEYS:
+            merged.pop(key, None)
+
+    merged[SHINOBU_207_SECTION] = report
+
+    sections = merged.get("sections")
+    if isinstance(sections, list):
+        section_names = [item for item in sections if isinstance(item, str)]
+    else:
+        section_names = []
+
+    if SHINOBU_207_SECTION not in section_names:
+        section_names.insert(0, SHINOBU_207_SECTION)
+
+    for key in existing:
+        if key.startswith("SHINOBU_") and key not in section_names:
+            section_names.append(key)
+
+    if len(section_names) > 1:
+        merged["reportOwner"] = "shared"
+        merged["sections"] = section_names
+
+    return merged
+
+
 def main() -> int:
     source_contracts = validate_source_contracts()
     record_count = 16384
@@ -278,7 +595,7 @@ def main() -> int:
     }
 
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    REPORT_PATH.write_text(json.dumps(merge_shared_report(report), indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"MEMORY OPTIMIZATION REPORT: {REPORT_PATH.relative_to(REPO_ROOT)}")
     print(f"binary={binary_ns_per_lookup:.2f} ns btree={btree_ns_per_lookup:.2f} ns cacheLinesSaved={binary_cache_lines - btree_cache_lines:.2f}")
     return 0

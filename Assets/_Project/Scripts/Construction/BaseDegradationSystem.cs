@@ -29,7 +29,7 @@ namespace Hecton8.Construction
 
         private struct RuptureNodeState
         {
-            public bool IsRuptured;
+            public byte IsRuptured;
             public int ModuleRuntimeId;
             public uint SyncStamp;
             public Vector3 AbsoluteUniversePosition;
@@ -55,7 +55,7 @@ namespace Hecton8.Construction
             public float MatureAttachedSeconds;
             public float InfectionLevel;
             public float AddedMassKilograms;
-            public bool CollapseDispatched;
+            public byte CollapseDispatched;
         }
 
         // COLD ALLOC: Dictionary<UInt32,RuptureNodeState>[64] - last-known rupture state per habitat graph node - owner: BaseDegradationSystem
@@ -176,7 +176,7 @@ namespace Hecton8.Construction
             bool hadState = _parasiteStructuralStates.TryGetValue(moduleRuntimeId, out ParasiteStructuralState state);
             if (sanitizedMatureSeconds <= 0.001f)
             {
-                if (hadState && !state.CollapseDispatched)
+                if (hadState && state.CollapseDispatched == 0)
                     _parasiteStructuralStates.Remove(moduleRuntimeId);
                 return;
             }
@@ -184,10 +184,10 @@ namespace Hecton8.Construction
             state.MatureAttachedSeconds = sanitizedMatureSeconds;
             state.InfectionLevel = sanitizedInfection;
             state.AddedMassKilograms = sanitizedMass;
-            if (!state.CollapseDispatched &&
+            if (state.CollapseDispatched == 0 &&
                 sanitizedMatureSeconds >= ParasiteStructuralCollapseDelaySeconds)
             {
-                state.CollapseDispatched = true;
+                state.CollapseDispatched = 1;
                 DispatchParasiteStructuralCollapse(baseModule, sanitizedInfection, sanitizedMass);
             }
 
@@ -202,7 +202,7 @@ namespace Hecton8.Construction
             int moduleRuntimeId = unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
             if (moduleRuntimeId != 0 &&
                 _parasiteStructuralStates.TryGetValue(moduleRuntimeId, out ParasiteStructuralState state) &&
-                !state.CollapseDispatched)
+                state.CollapseDispatched == 0)
             {
                 _parasiteStructuralStates.Remove(moduleRuntimeId);
             }
@@ -235,7 +235,7 @@ namespace Hecton8.Construction
 
             if (!isRuptured)
             {
-                if (hadPreviousState && previousState.IsRuptured)
+                if (hadPreviousState && previousState.IsRuptured != 0)
                     ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, false);
 
                 if (moduleRuntimeId != 0)
@@ -245,10 +245,12 @@ namespace Hecton8.Construction
                 return;
             }
 
-            double3 absoluteUniversePositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(ruptureWorldPosition);
+            if (!TryResolveAbsoluteFromRuntimeOrigin(ruptureWorldPosition, out double3 absoluteUniversePositionDouble))
+                return;
+
             Vector3 absoluteUniversePosition = ToVector3(absoluteUniversePositionDouble);
             bool ruptureStateChanged = !hadPreviousState ||
-                                       !previousState.IsRuptured ||
+                                       previousState.IsRuptured == 0 ||
                                        previousState.ModuleRuntimeId != moduleRuntimeId ||
                                        !ApproximatelySameDouble3(
                                            ResolveRuptureAbsolutePositionDouble(in previousState),
@@ -256,7 +258,7 @@ namespace Hecton8.Construction
 
             _ruptureStates[nodeId] = new RuptureNodeState
             {
-                IsRuptured = true,
+                IsRuptured = 1,
                 ModuleRuntimeId = moduleRuntimeId,
                 SyncStamp = _ruptureSyncStamp,
                 AbsoluteUniversePosition = absoluteUniversePosition,
@@ -499,6 +501,23 @@ namespace Hecton8.Construction
         {
             double3 delta = left - right;
             return math.lengthsq(delta) <= RupturePositionChangeEpsilonSq;
+        }
+
+        private static bool TryResolveAbsoluteFromRuntimeOrigin(Vector3 runtimePosition, out double3 absolutePosition)
+        {
+            absolutePosition = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absolutePosition = AbsoluteUniversePosition.OffsetAbsoluteMeters(
+                in originAup,
+                new double3(localRuntime.x, localRuntime.y, localRuntime.z));
+            return math.all(math.isfinite(absolutePosition));
         }
 
         private static double3 ResolveRuptureAbsolutePositionDouble(in RuptureNodeState state)

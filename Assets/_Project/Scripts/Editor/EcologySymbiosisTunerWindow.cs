@@ -128,14 +128,12 @@ namespace Hecton8.Editor
                 return;
             }
 
-            if (!vault.TryGetBufferHandle(BufferID.ShinobuSymbiosisTuning, out VaultBufferHandle<SymbiosisTuningDTO> tuningHandle) ||
-                !tuningHandle.IsCreated)
+            if (!TryReadFirst(vault, BufferID.ShinobuSymbiosisTuning, out SymbiosisTuningDTO tuning))
             {
                 SetUnavailable("Symbiosis tuning buffer is not registered.");
                 return;
             }
 
-            ref readonly SymbiosisTuningDTO tuning = ref tuningHandle.GetElementAsReadOnlyRef(vault, 0);
             SyncControls(SymbiosisTuningDTO.Sanitize(tuning));
             DrawCounters(vault);
             _stateLabel.text = "Play Mode DataVault: linked";
@@ -228,41 +226,31 @@ namespace Hecton8.Editor
         private static bool TryGetMutableTuning(IDataVault vault, out SymbiosisTuningDTO tuning)
         {
             tuning = default;
-            if (!Application.isPlaying || vault == null ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuSymbiosisTuning, out VaultBufferHandle<SymbiosisTuningDTO> tuningHandle) ||
-                !tuningHandle.IsCreated)
+            if (!Application.isPlaying || vault == null)
             {
                 return false;
             }
 
-            ref readonly SymbiosisTuningDTO current = ref tuningHandle.GetElementAsReadOnlyRef(vault, 0);
-            tuning = SymbiosisTuningDTO.Sanitize(current);
+            if (!TryReadFirst(vault, BufferID.ShinobuSymbiosisTuning, out tuning))
+                return false;
+
+            tuning = SymbiosisTuningDTO.Sanitize(tuning);
             return true;
         }
 
         private static void WriteTuning(IDataVault vault, SymbiosisTuningDTO tuning)
         {
-            if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuSymbiosisTuning, out VaultBufferHandle<SymbiosisTuningDTO> tuningHandle) ||
-                !tuningHandle.IsCreated)
-            {
-                return;
-            }
-
-            ref SymbiosisTuningDTO target = ref tuningHandle.GetElementAsRef(vault, 0);
-            target = SymbiosisTuningDTO.Sanitize(tuning);
-            SceneView.RepaintAll();
+            if (TryWriteFirst(vault, BufferID.ShinobuSymbiosisTuning, SymbiosisTuningDTO.Sanitize(tuning)))
+                SceneView.RepaintAll();
         }
 
         private void DrawCounters(IDataVault vault)
         {
-            if (!vault.TryGetBufferHandle(BufferID.ShinobuSymbiosisCounters, out VaultBufferHandle<SymbiosisCounterDTO> counterHandle) ||
-                !counterHandle.IsCreated)
+            if (!TryReadFirst(vault, BufferID.ShinobuSymbiosisCounters, out SymbiosisCounterDTO counter))
             {
                 return;
             }
 
-            ref readonly SymbiosisCounterDTO counter = ref counterHandle.GetElementAsReadOnlyRef(vault, 0);
             _activeExchangesLabel.text = "Active Exchanges: " + counter.ActiveExchanges;
             _biomassTransferredLabel.text = "Biomass Transferred: " + (counter.BiomassTransferredMilli * 0.001f);
             _oxygenEmittersLabel.text = "Oxygen Emitters: " + counter.OxygenEmitterCount;
@@ -279,13 +267,11 @@ namespace Hecton8.Editor
             if (!Application.isPlaying || vault == null)
                 return;
 
-            if (!vault.TryGetBufferHandle(BufferID.ShinobuSymbiosisTuning, out VaultBufferHandle<SymbiosisTuningDTO> tuningHandle) ||
-                !tuningHandle.IsCreated)
+            if (!TryReadFirst(vault, BufferID.ShinobuSymbiosisTuning, out SymbiosisTuningDTO tuning))
             {
                 return;
             }
 
-            ref readonly SymbiosisTuningDTO tuning = ref tuningHandle.GetElementAsReadOnlyRef(vault, 0);
             if ((tuning.Flags & ShinobuFloraFaunaSymbiosisSolver.TuningFlagEditorGizmos) == 0u)
                 return;
 
@@ -332,22 +318,16 @@ namespace Hecton8.Editor
             mockFish = default;
             ambientAups = default;
 
-            if (!vault.TryGetBufferHandle(BufferID.ShinobuSymbiosisExchanges, out VaultBufferHandle<SymbiosisExchangeDTO> exchangeHandle) ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuSymbiosisCounters, out VaultBufferHandle<SymbiosisCounterDTO> counterHandle) ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuSymbiosisFlora, out VaultBufferHandle<SymbiosisFloraDTO> floraHandle) ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuSymbiosisFloraAups, out VaultBufferHandle<SymbiosisFloraAupDTO> floraAupHandle) ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuSymbiosisMockFish, out VaultBufferHandle<MockFishSymbiosisDTO> mockFishHandle) ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuAmbientAups, out VaultBufferHandle<AmbientEntityAupDTO> ambientAupHandle))
+            if (!TryReadExistingVaultView(vault, BufferID.ShinobuSymbiosisExchanges, out exchanges) ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuSymbiosisCounters, out counters) ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuSymbiosisFlora, out flora) ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuSymbiosisFloraAups, out floraAups) ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuSymbiosisMockFish, out mockFish) ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuAmbientAups, out ambientAups))
             {
                 return false;
             }
 
-            exchanges = exchangeHandle.Resolve(vault);
-            counters = counterHandle.Resolve(vault);
-            flora = floraHandle.Resolve(vault);
-            floraAups = floraAupHandle.Resolve(vault);
-            mockFish = mockFishHandle.Resolve(vault);
-            ambientAups = ambientAupHandle.Resolve(vault);
             return exchanges.IsCreated &&
                    counters.IsCreated &&
                    counters.Length > 0 &&
@@ -355,6 +335,51 @@ namespace Hecton8.Editor
                    floraAups.IsCreated &&
                    mockFish.IsCreated &&
                    ambientAups.IsCreated;
+        }
+
+        private static bool TryReadFirst<T>(IDataVault vault, BufferID bufferId, out T value)
+            where T : struct
+        {
+            value = default;
+            if (!TryReadExistingVaultView(vault, bufferId, out NativeArray<T> buffer) || buffer.Length <= 0)
+                return false;
+
+            value = buffer[0];
+            return true;
+        }
+
+        private static bool TryWriteFirst<T>(IDataVault vault, BufferID bufferId, in T value)
+            where T : struct
+        {
+            if (vault == null ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out NativeArray<T> buffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!buffer.IsCreated || buffer.Length <= 0)
+                    return false;
+
+                buffer[0] = value;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
+        }
+
+        private static bool TryReadExistingVaultView<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
 
         private static bool TryFindClosestFloraAup(

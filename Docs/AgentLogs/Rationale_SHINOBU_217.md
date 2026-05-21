@@ -185,7 +185,9 @@ Hardware Impact: For six-way sockets, the direction CSR removes roughly five inc
 
 ## Decision 15 - Occupancy Truth Transfer
 
-Problem: Target socket hydration rebuilt DTO rows from `BaseModuleTemplate.SocketDefinition` data, but occupied state lives on cold `ModuleSocket` components after placement. That could erase `IsOccupied` truth and let the Burst evaluator consider an already consumed socket.
+Superseded by Decision 50. Current SHINOBU occupancy truth is committed through `SocketStateDTO.ConnectionStatus` and `SocketConnectionPairDTO` rows in Vault; the authoring-component transfer described below is historical only.
+
+Problem: Historical target socket rebuilds wrote DTO rows from `BaseModuleTemplate.SocketDefinition` data, but occupied state lived on cold `ModuleSocket` components after placement. That could erase `IsOccupied` truth and let the Burst evaluator consider an already consumed socket.
 
 Solution: During target-vault rebuild only, scan each module's authored `ModuleSocket` components into the existing `_shinobuTargetSocketBuffer` list and mark matching occupied sockets as `ConstructionSocketFlags.Connected` in `SocketStateDTO.ConnectionStatus`. The active SHINOBU placement path also records the consumed ghost socket index from the Burst result and marks that socket occupied on the newly placed module. The Burst evaluator rejects `Connected` rows before distance/alignment work.
 
@@ -439,7 +441,7 @@ Hardware Impact: On i3/MX350-class hardware, the worst visible cost removed is a
 
 Problem: The builder ghost validation bridge still contained a live `GlobalRegistry.DataVault` fallback inside `TryRunBuilderGhostBurstValidation()`. That is not inside a Burst loop, but it is still an active preview route and weakens the Global Authority boundary already enforced by the socket snap bridge.
 
-Solution: Route builder validation through `TryResolveShinobuSocketVault(out IDataVault vault)`. The only SHINOBU DataVault binding for `PlayerBuilder` remains in the cold `ResolveRuntimeReferences()` path, where the Vault is also initialized for construction validation.
+Solution: Route builder validation through `TryResolveShinobuSocketVault(out IDataVault vault)`. The only SHINOBU DataVault binding for `PlayerBuilder` remains in the cold `BindRuntimeReferences()` path, where the Vault is also initialized for construction validation.
 
 Rejected Alternatives: Keeping the active fallback was rejected because a missing cached vault should fail closed instead of silently polling the registry in the frame path. Re-resolving the registry every preview tick was rejected because it hides boot-order defects and adds service-locator traffic to a path that already has an owner-local cache.
 
@@ -497,6 +499,8 @@ Hardware Impact: No hot-path cost. The only runtime effect is the target path us
 
 ## Decision 41 - Reused ModuleSocket Lists Do Not Grow From 8
 
+Superseded by Decision 50. SHINOBU snap occupancy no longer uses the `ModuleSocket` authoring bridge; the current route writes `SocketStateDTO.ConnectionStatus` and `SocketConnectionPairDTO` rows directly in Vault.
+
 Problem: During the migration period, SHINOBU still reads cold `ModuleSocket` authoring components to transfer occupied-socket truth into `SocketStateDTO`. The reusable list buffers were created with capacity 8, so dense modules could trigger `List<T>` growth during target-cache rebuild or post-place occupancy marking.
 
 Solution: Pre-size `_ghostSocketBuffer` and `_shinobuTargetSocketBuffer` to `ShinobuSocketConstructionRuntime.GhostSocketCapacity` so their managed backing arrays match the fixed SHINOBU ghost socket lane.
@@ -507,7 +511,9 @@ Scalability potential: Low/Middle/High/Ultra all keep the same cold authoring br
 
 Hardware Impact: Avoids one possible managed list resize allocation on dense modules in the cold cache-refresh path. No Burst candidate cost changes.
 
-## Decision 42 - Builder SDF Validation Uses Continuous Math LOD
+## Decision 42 - Builder SDF Validation Uses Continuous Math LOD (Superseded)
+
+Superseded by Decision 43. The later Global Systems Doctrine and binary ledger clarify that `GlobalQualityWeight` must not change builder placement truth, so quality-scaled SDF corner reduction is rejected for validation authority.
 
 Problem: Builder holography SDF hydration always sampled all eight bounds corners even when `GlobalQualityWeight` was low. That contradicted the continuous scalability rule and made low-end preview validation pay full corner-sampling cost before the scheduled Burst validation job.
 
@@ -518,3 +524,389 @@ Rejected Alternatives: A binary low/high switch was rejected because HECTON-8 re
 Scalability potential: Low quality samples two opposing corners as a cheap presentation proof. Middle quality adds paired corners smoothly. High and Ultra sample all eight corners while the Dear Lie visual fake remains shader-driven and instant.
 
 Hardware Impact: On i3/MX350-class hardware, low-quality builder holography SDF hydration drops from eight SDF calls to two. No layout, Vault ID, or shader payload changed.
+
+## Decision 43 - Builder SDF Validation Uses All-Eight Truth
+
+Problem: The previous SDF Math LOD rationale treated builder holography SDF validation as presentation-only, but the result feeds `BuilderGhostValidationFlags.SdfBlocked`, `BoundsBlocked`, `NonFinite`, and placement UI validity. Reducing corner checks by `GlobalQualityWeight` would therefore let quality change placement truth, violating the Global Systems Doctrine.
+
+Solution: Remove the quality-scaled SDF sample-count route from the validate job API. CPU hydration and `ValidateBuilderGhostPlacementJob` now always use `BuilderGhostSdfCornerCount` with the shared `ResolveBuilderGhostCornerIndex()` deterministic order. Holography telemetry records the constant all-eight corner proof; quality stays limited to shader/material presentation and socket search/candidate budgets.
+
+Rejected Alternatives: Keeping a 2-corner low-quality path was rejected because it could miss blocked corners and approve placement on weak hardware. Adding a separate "presentation-only" SDF lane was rejected because the existing result is already consumed as placement evidence. Removing the corner-order helper was rejected because CPU hydration and Burst validation still need identical deterministic ordering.
+
+Scalability potential: Low/Middle/High/Ultra all share identical placement validation truth. Low devices still shed work through CSR candidate budget, search radius, and shader envelope cost. High and Ultra spend saved socket-search headroom on stronger Dear Lie presentation without changing SDF acceptance.
+
+Hardware Impact: Restores up to six SDF sample calls on low quality compared with the superseded idea, but prevents hardware-dependent build legality. No BufferID, DTO layout, shader payload, or Vault descriptor changed.
+
+## Decision 44 - Read Accessor Purity For Socket Bridge
+
+Problem: The active SHINOBU socket bridge used read-looking names while doing mutating work. `TryResolveShinobuSocketAlignment()` could hydrate Vault rows, schedule jobs, finalize prior results, and update cached pose state. `TryResolveVaultViews()` also called `InitializeVault()`, which can request or grow Vault descriptors. That violated the Global Systems Doctrine for `Get*`, `TryGet*`, `Resolve*`, and `Read*` APIs.
+
+Solution: Rename the mutating active bridge to `TryUpdateShinobuSocketAlignment()` and `TryUpdateShinobuSocketAlignmentFromVault()`. Rename the lifecycle binder to `BindRuntimeReferences()` and move SHINOBU `InitializeVault()` there beside the cached DataVault binding. Make `TryResolveVaultViews()` a pure phase-local handle resolution method with no descriptor requests. Rename descriptor acquisition helper `ResolveHandle<T>()` to `EnsureVaultHandle<T>()`. `GetCachedConstructionManager()` now only returns the cached field and does not lazily poll the registry.
+
+Rejected Alternatives: Leaving the names unchanged was rejected because future callers would treat scheduling and Vault hydration as a read. Keeping `InitializeVault()` inside `TryResolveVaultViews()` was rejected because active validation and snapping call that method. Keeping lazy construction-manager registry fallback was rejected because active routes must fail closed if cold binding failed.
+
+Scalability potential: Low/Middle/High/Ultra all use the same cold dependency binding and pure active read gates. Quality still scales candidate/search budgets and Dear Lie visuals, not dependency resolution or Vault allocation behavior.
+
+Hardware Impact: Removes possible active-route registry fallback and descriptor request work. Main gain is architectural: no read-looking accessor hides scheduling, Vault allocation/growth, descriptor acquisition, or service lookup.
+
+## Decision 45 - Cold Service Binders Are Explicit Ensure Calls
+
+Problem: `ResolvePlayerContext()`, `ResolveEnvironmentContext()`, `ResolveConstructionManager()`, and `ResolveModuleCatalog()` were cold bind helpers, but the first two can call `EnsureRuntimeInstance()` and `InitializeService()`. That made `Resolve*` names semantically false under the new read-accessor purity doctrine.
+
+Solution: Rename them to `EnsurePlayerRuntimeContext()`, `EnsureEnvironmentRuntimeContext()`, `EnsureConstructionManager()`, and `EnsureModuleCatalog()`. `BindRuntimeReferences()` remains the only SHINOBU cold binder that calls them; active socket alignment continues to use cached fields and pure Vault view resolution.
+
+Rejected Alternatives: Leaving the names as `Resolve*` was rejected because a future caller could move them into an active frame path and think they were pure reads. Splitting service creation into a new global bootstrap was rejected because that crosses core ownership and is not required for the socket adaptor patch.
+
+Scalability potential: Low/Middle/High/Ultra all keep dependency boot cost in the same cold phase. Quality curves remain limited to candidate budget, search radius, and Dear Lie presentation.
+
+Hardware Impact: No direct runtime microsecond claim. The value is preventing hidden service initialization from entering preview/snap hot paths.
+
+## Decision 46 - Construction Root AUP Comes From Socket Vault First
+
+Problem: `ResolveConstructionRootAup()` used a read-looking name while scanning `ConstructionManager.SpawnedModules` and module transforms to select a base root for construction validation payloads. That repeated object-world reads despite SHINOBU already hydrating `ConstructionSocketModuleDTO.RootAup` into Vault.
+
+Solution: Delete `ResolveConstructionRootAup()`. Vault target preparation now captures the first finite module root AUP into a local fallback, and construction validation asks `TryUpdateConstructionRootAupFromSocketVault()` for the root. That helper reads the Vault module lane first, updates the local fallback only from Vault data, and uses `BuildFallbackConstructionRootAup(previewPosition)` only when no Vault module root exists.
+
+Rejected Alternatives: Keeping the spawned-module scan was rejected because it contradicts the Vault-owned AUP route and read-accessor search prohibition. Cache-first root lookup was rejected because a stale cache could hide topology churn before the Vault lane is reread.
+
+Scalability potential: Low/Middle/High/Ultra all use the same root authority route. Quality continues to scale socket candidate count, search radius, and Dear Lie presentation, not base-root selection or placement truth.
+
+Hardware Impact: Avoids a spawned-module transform scan per validation payload when Vault module rows exist. The remaining scan is over contiguous `ConstructionSocketModuleDTO` NativeArray rows and allocates no managed memory.
+
+## Decision 47 - Preview Batch Vault Handles Are Cold-Bound
+
+Problem: `HectonBlueprintPreviewBatch` still had `TryEnsureAndResolveBuffers()` in active preview paths. That method could reach `GlobalRegistry.DataVault` and request Vault handles through `GetBufferHandle`, contradicting the claim that active preview upload consumes cached Vault state only.
+
+Solution: Rename the allocation path to `EnsureBuffersCold()` and call it from `Awake()` and play-mode `OnEnable()`. Active `SetPreview()`, pending-upload finalization, gizmo read, and `ConsumeConstructionPreviewSignals()` now use `TryReadCachedBuffers()` only. If the cold owner phase did not bind the Vault handles, the active path fails closed instead of polling the registry or requesting descriptors.
+
+Rejected Alternatives: Keeping active lazy allocation was rejected because it hides registry and Vault descriptor work in the frame path. Moving the buffer acquisition into a global bootstrap was rejected because this component already owns the builder-holography lanes and can bind them during lifecycle cold setup.
+
+Scalability potential: Low/Middle/High/Ultra all use the same cached Vault lanes. `GlobalQualityWeight` continues to scale presentation/search cost, not buffer ownership or authority routing.
+
+Hardware Impact: Removes possible active-frame registry and descriptor acquisition work. No profiler number claimed; the patch is a route-purity fix.
+
+## Decision 48 - Placement SDF Truth Uses Fixed Probe Count
+
+Problem: `TryFindVoxelSdfIntersection()` and `ModularBaseConstructionValidator.ValidatePlacement()` still used `ResolveTerrainProbeCount(settings.GlobalQualityWeight)` / `ResolveProbeBudget()`. That allowed terrain intersection legality to change from 1 to 9 probes by hardware quality.
+
+Solution: Add `TerrainProbeTruthCount = 9` and use it for both the PlayerBuilder terrain probe route and the validator job route. Remove the private quality-scaled probe budget helper so there is no stale quality-dependent terrain legality path.
+
+Rejected Alternatives: Keeping a low-quality one-probe path was rejected because it can approve a module that intersects terrain on another machine. Adding a second presentation-only probe route was rejected until a concrete visual consumer exists; current probes feed placement truth.
+
+Scalability potential: Low/Middle/High/Ultra share the same terrain placement truth. Quality still scales socket CSR budget, search radius, and Dear Lie shader/material envelope; it does not change DTO layout, save identity, or placement authority.
+
+Hardware Impact: Low quality may pay up to eight more SDF sample calls than the rejected path. The cost is bounded to nine AABB probes and prevents hardware-dependent build legality.
+
+## Decision 49 - Scene Hash Stops Sampling Runtime Transforms
+
+Superseded by Decision 53. Active SHINOBU topology hashing now derives from Vault counters and `ConstructionSocketModuleDTO` rows only; the object-identity hash described below was an intermediate step.
+
+Problem: The socket target scene hash previously included module transform position and rotation. Origin shifts and presentation-only transform adjustments can change those values even though the authoritative socket topology and AUP rows in Vault did not change.
+
+Solution: The intermediate solution computed scene hash from module count and stable scene object identity only. Decision 53 removes that remaining scene identity input; current source computes topology hash from Vault counters and module rows.
+
+Rejected Alternatives: Keeping transform hashing was rejected because it made runtime object transforms compete with Vault AUP authority. Hashing only module count was rejected because object replacement with the same count should still invalidate target hydration.
+
+Scalability potential: Low/Middle/High/Ultra all avoid false topology rebuilds during origin-shift or visual-only transform updates. Quality curves remain limited to candidate/search/presentation cost.
+
+Hardware Impact: Removes transform vector/quaternion hash reads during cache validation and avoids cold target-Vault rebuilds caused only by runtime transform drift.
+
+## Decision 50 - SHINOBU Occupancy Commits Through Vault Pairs
+
+Problem: The prior SHINOBU snapped-placement path still marked occupied sockets through `ModuleSocket` authoring components after placement. That meant the active snap route depended on scene component scans and local component flags instead of one unmanaged authority route. It also left target rebuilds dependent on authoring occupancy state rather than durable Vault connection records.
+
+Solution: Remove the SHINOBU `GetComponentsInChildren<ModuleSocket>` occupancy bridge and replace it with `TryCommitShinobuSnapOccupancy()`. The current commit validates connection-pair capacity, socket capacity, and placed socket count before mutating rows; Decision 53 removed the scene-index lookup and writes `SceneModuleListIndex = -1`. It appends `ConstructionSocketModuleDTO` and `SocketStateDTO` rows for the placed module, marks the target socket and consumed ghost socket `Connected`, writes a `SocketConnectionPairDTO`, updates `Counters[4]`, replays connection pairs into socket state, and rebuilds CSR. If commit fails after the module has already been spawned, cached topology hash/count/root AUP are invalidated so the next snap pass cannot reuse stale rows.
+
+Rejected Alternatives: Keeping component marking was rejected because `ModuleSocket` state is not the SHINOBU authority route and requires managed scene traversal. Marking only the current target/ghost rows without a connection-pair DTO was rejected because a later target rebuild would lose durable occupancy. Returning success after partial capacity failure was rejected because it leaves `SocketStateDTO.ConnectionStatus`, `ConstructionSocketConnections`, and CSR disagreeing.
+
+Scalability potential: Low, Middle, High, and Ultra all share identical occupancy truth and DTO layout. `GlobalQualityWeight` still scales snap candidate/search budgets and Dear Lie presentation only; it does not change connection identity, socket count, or authority route.
+
+Hardware Impact: Removes two managed component scans/list clears from each SHINOBU snapped placement. Adds one 32-byte `SocketConnectionPairDTO` write and bounded CSR rebuild on placement commit; no active per-frame scan is added.
+
+## Decision 51 - Black-Box Dumps Avoid Managed Mirror Buffers
+
+Problem: SHINOBU socket, builder-holography, and construction-validation telemetry dump paths copied full NativeArray telemetry rings into managed `byte[]` buffers before writing to disk. The paths are fault-only, but they still allocated dump-sized managed mirror buffers at exactly the moment the system is trying to preserve forensic state. Construction validation also still pointed at the foreign `Dump_SHINOBU_67.bin` dump name.
+
+Solution: Route socket and holography dump APIs through `DumpNativeRingToFile<T>()`, and make `ModularBaseConstructionValidator.DumpTelemetry()` use the same `ReadOnlySpan<byte>` pointer-to-`FileStream` write shape. Construction validation now writes `Dump_SHINOBU_217_ConstructionValidation.bin`; socket and holography dump paths remain `Dump_SHINOBU_217.bin` and `Dump_SHINOBU_217_Holography.bin`.
+
+Rejected Alternatives: Keeping `File.WriteAllBytes()` was rejected because it requires a managed byte buffer. Allocating a persistent private staging array was rejected because SHINOBU does not own persistent private arrays outside Vault. Merging socket, holography, and construction-validation dumps was rejected because their 64-byte rows have different schemas.
+
+Scalability potential: Low, Middle, High, and Ultra share the same fixed 300-row telemetry rings and dump schemas. `GlobalQualityWeight` may scale optional telemetry cadence elsewhere, but it does not change dump row size, file identity, or black-box ownership.
+
+Hardware Impact: Avoids one 19.2 KB managed allocation for each 300-row 64-byte dump. The remaining file handle allocation and disk write are fault-path only, not frame-lane work.
+
+## Decision 52 - Construction Validator Jobs Are Deterministic
+
+Problem: `BurstGridValidationJob`, `LogisticsGraphSpliceJob`, and `DeconstructionConnectivityJob` used `FloatMode.Fast`. Those jobs feed placement validity, construction graph splice decisions, and deconstruction connectivity truth. That is rollback-visible state, not a presentation-only approximation.
+
+Solution: Switch all three `BurstCompile` attributes to `FloatMode.Deterministic` while retaining `CompileSynchronously = true` and `FloatPrecision.Standard`.
+
+Rejected Alternatives: Keeping `FloatMode.Fast` was rejected because ARM64/x86 drift in placement or connectivity decisions can desync co-op rollback. Adding a separate low-quality validator was rejected because `GlobalQualityWeight` must not change gameplay truth or authority route.
+
+Scalability potential: Low, Middle, High, and Ultra share the same validator truth. Quality curves remain on snap candidate budgets and Dear Lie visuals only.
+
+Hardware Impact: Fast-math ALU wins are intentionally given up on validator truth. The cost is bounded to placement/connectivity jobs, not every frame of presentation.
+
+## Decision 53 - Read Facades And Vault-Only Active Snap Source
+
+Problem: The construction validator exposed read-looking methods that could request Vault descriptors, and the active `PlayerBuilder` SHINOBU snap bridge still used `ConstructionManager.SpawnedModules` to hydrate target socket rows from scene objects. The placement path also retained a legacy `_snappedSocket.SetOccupied(true)` component-authority branch.
+
+Solution: Split construction-validation access into cold `Ensure*` methods and active `TryRead*` methods, cache object pool/deconstruction/audio services during `BindRuntimeReferences()`, and remove the unused public `AllocateRequestScratch()` NativeArray allocator. The SHINOBU snap bridge now derives topology hash from Vault counters, module rows, and connection-pair rows, then prepares CSR from pre-published `SocketStateDTO`/AUP rows; if those rows are absent, snapping fails closed. Snapped placement now always writes Vault occupancy through `TryCommitShinobuSnapOccupancy()` and uses `SceneModuleListIndex = -1` for new rows because scene-list identity is not snap truth.
+
+Rejected Alternatives: Keeping lazy `GetBufferHandle` behind `TryResolve*` was rejected because read accessors must be pure. Keeping active `SpawnedModules` hydration was rejected because it reads managed scene authority inside the snap route. Keeping `ModuleSocket.SetOccupied` as a fallback was rejected because it creates a second occupancy owner.
+
+Scalability potential: Low, Middle, High, and Ultra all consume the same Vault-owned socket truth and DTO layout. `GlobalQualityWeight` continues to scale candidate budget, search radius, and Dear Lie presentation only; it does not alter socket ownership, save identity, or placement validity.
+
+Hardware Impact: Removes active scene-list traversal, `ModuleMarker` lookup, runtime transform reads, and component occupancy mutation from the SHINOBU snap/placement route. No profiler microseconds are claimed; static evidence only until the Core.Memory compile wall is cleared.
+
+## Decision 54 - Occupied Cell Truth Reads Vault Modules Only
+
+Problem: `TryFindOccupiedConstructionGridCell()` still pulled `ConstructionManager.SpawnedModules`, walked `GameObject`/`Transform` state, and used PlayerBuilder to hydrate `ConstructionBuilderOccupancy` scratch rows before checking a candidate cell. That contradicted the SHINOBU claim that active placement truth was Vault-owned and scene-list free. `ConstructionBuilderOccupancy` was not independent authority because the only active publisher was the same PlayerBuilder method.
+
+Solution: Replace the method with `TryFindOccupiedConstructionGridCellInSocketVault()`. It reads cached SHINOBU Vault views, clamps `Counters[0]`, iterates `ConstructionSocketModuleDTO` rows, converts each finite `RootAup` into a `ConstructionRequestDTO` using the same root AUP and grid size as the candidate, and compares `GridPos`. Snapped placement commit now receives the placement command pose (`placePos`, `placeRot`) instead of reading `placedModule.transform`, normalizes the quaternion with finite guards, and writes module/socket/connection rows from that data. Construction acoustic/flora commit signals also derive center AUP from command pose plus template center instead of sampling the spawned transform.
+
+Rejected Alternatives: Treating `ConstructionBuilderOccupancy` as pre-published truth was rejected because `EnsureOccupancyHashTable()` only allocates the buffer and PlayerBuilder was the writer. Keeping a fallback scene scan was rejected because it creates a second authority route and hides legacy publisher gaps. Reading the spawned transform after placement was rejected because the command pose already contains the placement fact and the Vault row is the proof artifact.
+
+Scalability potential: Low, Middle, High, and Ultra all use the same module-row occupancy truth and placement command pose. `GlobalQualityWeight` continues to scale snap search budget, search radius, and Dear Lie visuals only; it does not change occupancy authority, DTO layout, or save identity.
+
+Hardware Impact: Removes managed scene-list traversal and scratch hash-table writes from occupied-cell validation, one spawned-transform position/rotation read from snapped Vault commit, and one `TransformPoint`-based signal sample from post-place proof. No profiler microseconds are claimed; static evidence only until compile/runtime proof is available.
+
+## Decision 55 - SHINOBU Frame Identity Uses Dispatcher Frame
+
+Problem: `PlayerBuilder` and `HectonBlueprintPreviewBatch` still stamped SHINOBU-owned preview, validation, holography telemetry, deconstruction, and flora payloads with Unity `Time.frameCount`; builder holography also derived `AnimationPhase` from `Time.unscaledTime`. These are not placement layout fields, but they feed black-box evidence and `BuilderGhostStateDTO.ValidationStateHash`, so direct Unity time created a determinism and authority residue.
+
+Solution: Add `CaptureShinobuFrameId()` in `PlayerBuilder` and `CapturePreviewFrameId()` in `HectonBlueprintPreviewBatch`. Both consume `TimeSliceScheduler.CurrentFrameId` and use an owner-local monotonic fallback only when the dispatcher has not published a nonzero frame. Replace direct frame stamps in construction validation telemetry, validator settings, builder ghost jobs, preview signals, deconstruction requests, flora exclusion signals, and holography telemetry. Replace `Time.unscaledTime * 0.5f` with frame-derived `frame / 120` animation phase.
+
+Rejected Alternatives: Keeping Unity frame/time reads was rejected because the source now has a dispatcher frame lane. Registering `PlayerBuilder` as an `IDispatcherSystem` was rejected because this MonoBehaviour is an active player tool path and widening its lifecycle would cross more ownership boundaries than the residue requires. Making frame identity a Vault lane was rejected because no SHINOBU-owned frame truth buffer exists and creating one would add a second clock owner.
+
+Scalability potential: Low, Middle, High, and Ultra all get the same frame identity and DTO layout. `GlobalQualityWeight` still scales snap search and Dear Lie presentation; it does not change frame ownership, save identity, or validation authority.
+
+Hardware Impact: No profiler microseconds claimed. Static cost is one public static frame read and rare fallback increment per payload. The gain is deterministic provenance: validation hashes and black-box rows no longer depend on direct Unity wall-clock/frame calls in the SHINOBU-owned route.
+
+## Decision 56 - Placement Rule Cache Drops Managed List Buffer
+
+Problem: `PlayerBuilder` owned `_placementRuleBuffer`, a persistent `List<MonoBehaviour>` with initial capacity two. The route cleared and refilled it with `finalPrefab.GetComponents(_placementRuleBuffer)` when active buildables changed. That path is cold, but a prefab with more behaviours than capacity can grow the list and allocate managed memory.
+
+Solution: Remove the list field and `System.Collections.Generic` import. `CacheActivePlacementRule()` now performs one cold `activeBuildable.finalPrefab.GetComponent<IBuildPlacementRule>()` lookup and caches the returned rule reference. Active semantic validation still calls the cached rule only when a builder preview exists.
+
+Rejected Alternatives: Increasing the list capacity was rejected because it only moves the growth threshold. Keeping `GetComponents()` and scanning all `MonoBehaviour` entries was rejected because the target contract is a single optional placement rule. Rewriting all authored placement rules into Vault rows was rejected because that is a wider design migration outside this SHINOBU socket polish pass.
+
+Scalability potential: Low, Middle, High, and Ultra all use the same cold rule cache behavior. Quality curves remain limited to snap search, shader Dear Lie presentation, and optional telemetry; they do not alter semantic placement truth.
+
+Hardware Impact: Removes one possible managed list capacity allocation on active buildable changes and removes the component-array scan loop. No active-frame profiler number is claimed.
+
+## Decision 57 - Semantic Placement Rule Dispatch Closure
+
+Problem: The active builder preview route still cached `IBuildPlacementRule` and called `ValidatePlacement()` through an interface every validation tick. The two current implementers also carried route-specific residue: `DeepDrillModule.ValidatePlacement()` polled `GlobalRegistry.InteractionSignals`, constructed an `InteractionPacket` with `Time.frameCount`, and cast absolute AUP coordinates down to `float3`; `AutonomousExtractorModule.ValidatePlacement()` could call `EnsureRuntimeInstance()` and allocate a runtime owner if none was registered, and its candidate distance fallback used `candidate.transform.position`.
+
+Solution: Remove `IBuildPlacementRule.cs` and replace the active semantic rule lane in `PlayerBuilder` with a byte-tagged sealed dispatch cached from the active prefab. `PlayerBuilder.BindRuntimeReferences()` caches `IInteractionSignalService` and `AutonomousExtractorSystem`; active semantic validation passes those cached dependencies into `DeepDrillModule.ValidatePlacementWithService()` or `AutonomousExtractorModule.ValidatePlacementWithRuntime()`. Deep-drill validation now uses the interaction service runtime-position raycast overload with finite guards and no `InteractionPacket` or Unity time stamp. Extractor validation fails closed when the cached runtime is missing, and candidate distance returns valid scores only from persistent AUP pairs.
+
+Rejected Alternatives: Keeping the cached interface was rejected because the implementer set is known in source and the route runs during active preview validation. Creating a new cross-domain semantic rule registry was rejected because it would widen ownership and add another route for the same placement fact. Keeping extractor runtime creation in validation was rejected because `EnsureRuntimeInstance()` can allocate a `GameObject`. Keeping transform fallback was rejected because it makes semantic placement truth depend on presentation transforms.
+
+Scalability potential: Low, Middle, High, and Ultra use the same semantic truth and fail-closed missing-owner behavior. `GlobalQualityWeight` remains confined to snap candidate/search budgets and Dear Lie visuals; it does not alter semantic placement ownership or rule identity.
+
+Hardware Impact: Removes one virtual/interface dispatch per semantic validation tick, one active registry poll from drill validation, one packet construction plus absolute-to-runtime conversion path per drill validation attempt, and one possible runtime-owner allocation branch from extractor validation. The remaining extractor `Physics.OverlapSphereNonAlloc` is documented as extractor-domain residue until a resource-node owner publishes an unmanaged spatial snapshot; no profiler microseconds are claimed.
+
+## Decision 58 - Active Buildable Selection Does Not Force-Complete Jobs
+
+Problem: `CycleBuildable()` was an active input path that called `BindRuntimeReferences()`, then `SetActiveBuildable()`. `SetActiveBuildable()` force-completed pending SHINOBU socket and builder-ghost validation jobs before switching the selection. Post-placement ghost refresh also called `DespawnGhost()` with the default structural-validation reset, and `HabitatConstructionManager.ResetValidation()` force-completes its pending job internally. `CacheActivePlacementRule()` still contained a direct `GlobalRegistry.InteractionSignals` fallback for deep-drill semantic rules.
+
+Solution: Make active selection consume only cold-cached references. `CycleBuildable()` and `DebugDeployActiveBuildable()` no longer call `BindRuntimeReferences()`. `SetActiveBuildable()` no longer calls the force-complete teardown helpers; it despawns the preview with `forceValidationReset: false`, assigns the new buildable through `AssignActiveBuildable()`, and lets existing jobs finish naturally. `_activeBuildableGeneration` increments on buildable assignment; snap and builder-ghost validation jobs store that generation at schedule time and reject stale results after `TryFinalizeCompleted()` returns. Cached snap pose reuse also checks the generation. Active post-placement ghost refresh uses the same nonblocking despawn path, and `SpawnGhost()` marks integrity as pending if the old structural validation job is still running. `CacheActivePlacementRule()` now relies exclusively on the cold cached interaction service.
+
+Rejected Alternatives: Calling `.Complete()` or force-complete helpers from input was rejected because module cycling is active-frame work. Clearing pending handles without completion was rejected because jobs could still write shared Vault rows. Rebinding `GlobalRegistry` when cycling was rejected because dependency identity belongs to cold owner phases. Creating a second job buffer per active selection was rejected because SHINOBU already owns fixed Vault lanes and can discard stale results with generation stamps.
+
+Scalability potential: Low, Middle, High, and Ultra all use the same nonblocking active selection path. `GlobalQualityWeight` still scales snap candidate/search budget and Dear Lie presentation; it does not change selection identity, DTO layout, or job authority.
+
+Hardware Impact: Removes one active registry binding sweep per catalog cycle and avoids worst-case input/placement stalls caused by forced completion of socket snap, builder ghost, or integrity validation jobs. Added cost is one uint generation compare on finalize/cache reads. No profiler microseconds are claimed.
+
+## Decision 59 - Tuner Vault Read Is Strict
+
+Problem: `ModularBaseConstructionValidator.TryReadTunerSettingsFromVault()` returned `false` on missing/invalid Vault data but still wrote `s_TunerSettings` into the out parameter before failing. `PlayerBuilder.TryBuildConstructionValidationPayload()` ignored the bool, so the route worked only because a read-looking API concealed a static fallback.
+
+Solution: Make `TryReadTunerSettingsFromVault()` strict: it writes `default` before attempting the Vault read and only writes a real candidate after all finite checks pass. `PlayerBuilder` now checks the bool return and explicitly calls `GetTunerSettings()` as the local fallback when the Vault lane is unavailable.
+
+Rejected Alternatives: Keeping the implicit out-parameter fallback was rejected because it makes the origin of tuning data invisible. Renaming the method to an explicit fallback API was rejected because the existing cold editor and initializer paths already expect strict `Try*` semantics and can choose their own fallback.
+
+Scalability potential: Low, Middle, High, and Ultra use the same tuner layout and authority route. `GlobalQualityWeight` in the settings remains a scalar field; this patch changes only read provenance, not quality behavior.
+
+Hardware Impact: Adds one explicit branch in PlayerBuilder validation-payload construction. No profiler microseconds are claimed; the gain is route clarity and removal of hidden static state from a read facade.
+
+## Decision 60 - PlayerBuilder Consumes Interaction-Owned Surface Hits
+
+Problem: `PlayerBuilder.TryGetBuildHit()` directly called `UnityEngine.Physics.RaycastNonAlloc` with its own one-element buffer. That made the builder tool the owner of the scene query for preview targeting and deconstruction targeting, contradicting the Global Systems Doctrine route split after the interaction service already exists.
+
+Solution: Remove `_buildHits` and route `TryGetBuildHit()` through the cold-cached `IInteractionSignalService.TryRaycastPrimary()` runtime-position overload. The builder validates finite origin/direction/range, normalizes direction with `math.rsqrt`, and uses a stable requester id derived from the builder entity id. If the interaction service is missing or uninitialized, the builder fails closed instead of doing a private PhysX fallback.
+
+Rejected Alternatives: Keeping `RaycastNonAlloc` as fallback was rejected because it preserves two owners for the same surface-hit fact. Reintroducing `InteractionPacket` was rejected because the runtime-position overload avoids absolute-to-runtime conversion in this route. Creating a new construction surface-hit signal was rejected for this pass because the interaction service already owns asynchronous raycast queuing and cached completion.
+
+Scalability potential: Low, Middle, High, and Ultra use the same surface-hit authority route. `GlobalQualityWeight` still scales snap candidate/search budget and visual presentation, not hit ownership.
+
+Hardware Impact: Removes one direct builder PhysX call site for active preview/deconstruction target queries and one cold `RaycastHit[1]` buffer field. The actual raycast cost remains owned by the interaction service and may return completed queued results; no profiler microseconds are claimed.
+
+## Decision 61 - Extractor Runtime Registry And Job ABI Fence
+
+Problem: `AutonomousExtractorSystem` still owned a growable `List<AutonomousExtractorModule>` and its `AdvanceExtractionJob` used implicit struct layout, `FloatMode.Fast`, and unqualified NativeArray lanes. `DeepDrillModule` also kept a static growable `List<DeepDrillModule>` active-provider registry. These runtimes are adjacent to SHINOBU semantic placement because active validation dispatches directly to drill/extractor providers, and the current world resource route still lacks an unmanaged extractor-host semantic contract.
+
+Solution: Replace the extractor module registry with a fixed `AutonomousExtractorModule[256]` plus `_moduleCount`, bounded registration, and explicit compaction without `List<T>.Add/RemoveAt`. Replace the deep-drill static active registry with a fixed `DeepDrillModule[128]` plus `s_ActiveModuleCount` and swap-with-tail removal. Define `ExtractorJobInput`/`ExtractorJobResult` as explicit 32-byte rows. Change `AdvanceExtractionJob` to `BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)` and add `[NoAlias]` to the input/result lanes. Delete the unreferenced `AutonomousExtractorJobs.cs` duplicate instead of keeping a second internal advance-job ABI.
+
+Rejected Alternatives: Keeping either `List<T>` was rejected because registration pressure could trigger managed growth and `RemoveAt` shifts managed references. Moving extractor host resolution to `ResourceNodeDTO` was rejected for this pass because the only public contracts route exposes ore positions/types; extraction-support flag, host diameter, yield item hash, depletion semantics, and stable host claim identity are not available through `Hecton8.World.Contracts`. Referencing `Hecton8.World.Economy` directly was rejected because it would create a sibling runtime dependency/cycle risk. Mirroring resource host facts inside construction was rejected because one fact needs one owner. Moving extractor private NativeArray SOA lanes to ad hoc BufferIDs was rejected because those lanes need an extractor-owned route card; SHINOBU socket truth is already Vault-owned separately.
+
+Scalability potential: Low, Middle, High, and Ultra share the same fixed registry capacity, deterministic job ABI, and fail-closed host-contract boundary. `GlobalQualityWeight` must not change extractor host truth; once the world owner exposes extractor-capable host snapshots, SHINOBU should use quality only to scale optional preview/search cadence, not yield identity or claim state.
+
+Hardware Impact: Removes possible managed list capacity allocations and list tail-shift paths from extractor runtime registration/compaction and deep-drill active-provider registration. Deterministic Burst may cost ALU latitude versus fast math, but cycle completion affects gameplay-visible inventory/power state. No profiler microseconds are claimed.
+
+## Decision 62 - Provider Registry Proof Surfaces Must Match Source
+
+Problem: The DeepDrill source had already moved from a static growable list to fixed active-provider storage, but several proof surfaces still described only the extractor registry. That mismatch creates a false forensic trail: a future reviewer could believe DeepDrill still owns a managed list or that the extractor evidence also covers DeepDrill without naming it.
+
+Solution: Update the Rationale, LOG, construction architecture note, binary payload ledger, JSON report, and XML self-audit to explicitly name fixed `DeepDrillModule[128]` storage plus `s_ActiveModuleCount` and swap-with-tail removal. Keep the unresolved resource-host contract and extractor private NativeArray SOA risks intact rather than laundering them through the proof update.
+
+Rejected Alternatives: Leaving the proof surfaces stale was rejected because the project treats disk logs as long-term memory. Adding a new BufferID or world-resource mirror during documentation cleanup was rejected because no extractor-owned route card exists and resource-host truth belongs to the world owner.
+
+Scalability potential: Low, Middle, High, and Ultra share the same provider registry mechanics. Quality curves remain presentation/cadence controls only; they do not change semantic rule identity, resource host truth, or DTO layout.
+
+Hardware Impact: No runtime microseconds claimed. The correction prevents future managed-container regression work and keeps the static verification predicate literal; the first PowerShell `-like` check used wildcard semantics for `[]`, so `.Contains()` is the valid proof check for `DeepDrillModule[128]`.
+
+## Decision 63 - Integrity Validation Is Rollback Truth
+
+Problem: `HabitatConstructionManager.IntegrityValidationJob` still used `FloatMode.Fast`. The job writes placement support validity, integrity score, candidate depth, and failure reason, which affects whether the player can place a module. That is gameplay-visible state and can enter rollback-relevant construction truth.
+
+Solution: Change the job attribute to `BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)`. Keep the existing `[NoAlias]` lanes and scheduling path unchanged.
+
+Rejected Alternatives: Keeping fast math was rejected because ARM64/x86 drift can change threshold-side structural decisions. Rewriting the whole `HabitatConstructionManager` scene-list graph path in this loop was rejected because replacing `ConstructionManager.SpawnedModules` with a pure socket-Vault graph requires a separate ownership route and must not be hidden inside a Burst flag fix.
+
+Scalability potential: Low, Middle, High, and Ultra use the same structural truth. `GlobalQualityWeight` may scale preview/search cadence and visuals, but it must not change integrity pass/fail semantics.
+
+Hardware Impact: No microseconds claimed. Deterministic mode may reduce compiler fast-math latitude, but it prevents co-op divergence for placement validity.
+
+## Decision 64 - Build-Cost Scratch Buffers Are Fixed Capacity
+
+Problem: `HabitatConstructionManager.HasBuildResources()` could grow `_inventoryPlacementBuffer` to `inventory.Grid.TotalCells`, and `PrepareCostBuffers()` could grow four managed cost arrays to the blueprint cost count. These paths run during builder resource validation and construction commit, so an oversized inventory or blueprint could allocate on the active placement route.
+
+Solution: Allocate fixed cold buffers in the manager constructor: `PlayerInventory.ItemPlacement[1024]`, `int[32]` hash/remaining/removed buffers, and `ItemData[32]` rollback references. `PrepareCostBuffers()` returns `-1` if authored build-cost rows exceed the fixed capacity. `HasBuildResources()` fails closed if the inventory grid exceeds the fixed placement snapshot capacity, preventing `PlayerInventory.GetPlacements()` truncation from becoming a false resource proof.
+
+Rejected Alternatives: Retaining `NextPowerOfTwo()` growth was rejected because it moves managed allocation into active build validation. Truncating the inventory placement scan was rejected because construction could be approved with incomplete inventory evidence. Moving build-cost validation into a new Vault lane was rejected for this loop because inventory ownership belongs to the inventory domain and would require a route card.
+
+Scalability potential: Low, Middle, High, and Ultra share the same build-cost truth and fixed capacity. Quality weight must not change resource affordability or construction authority.
+
+Hardware Impact: Removes possible managed array allocation and copy churn from active resource validation/commit. Added cost is one capacity predicate per resource check; no profiler microseconds are claimed.
+
+## Decision 65 - Integrity Graph Cache Uses Socket Vault Signature When Available
+
+Problem: `HabitatConstructionManager` still keyed its existing integrity graph cache with `GameObject.GetInstanceID()`. That cache key is nondeterministic Unity object identity, while SHINOBU already publishes module AUP/socket/connection topology into Vault. A full rewrite of the integrity graph source is not safe yet because `ConstructionSocketModuleDTO` does not carry the support-root/family or resource-mass facts consumed by `IntegrityValidationJob`.
+
+Solution: Add `TryComputeSocketVaultGraphSignature()` and route `ComputeExistingGraphSignature()` through it when the socket Vault module count exactly matches the construction scene registry count. The signature hashes module count, socket count, connection count, topology counters, `ConstructionSocketModuleDTO` module hash/socket range/flags/topology/root AUP/rotation, and `SocketConnectionPairDTO` target/ghost indices and flags. If the Vault route is absent or count-mismatched, the fallback scene signature now folds `ModuleHashId`, family, AUP-quantized root, and rotation bits instead of Unity instance IDs.
+
+Rejected Alternatives: Replacing the full existing graph with Vault rows was rejected because it would guess support roots and mass from incomplete socket DTOs. Using Vault signature unconditionally was rejected because mock or stale Vault rows could mask scene graph changes. Removing the fallback scene-built graph path was rejected until the construction owner publishes support-root and resource-mass facts in an unmanaged route card; only Unity instance identity was removed from that fallback.
+
+Scalability potential: Low, Middle, High, and Ultra share the same topology truth. `GlobalQualityWeight` still controls snap search/presentation only; it does not alter integrity graph identity, support semantics, or DTO layout.
+
+Hardware Impact: Removes nondeterministic Unity instance-id cache keys from SHINOBU-published topology cases and invalidates the cached graph when Vault module/connection topology changes. No profiler microseconds are claimed.
+
+## Decision 66 - Integrity Adjacency Fails Closed On Corrupted Connection Rows
+
+Problem: `HabitatConstructionManager.BuildAdjacency()` counted and wrote adjacency entries by indexing `AdjacencyCounts[connection.x]` and `AdjacencyCounts[connection.y]` without validating each `int2` connection row against the current node count. Normal generation should only write valid module indices, but a stale/corrupted Vault connection lane or partial failed cache state could turn a bad row into an unchecked NativeArray index before the deterministic `IntegrityValidationJob` runs.
+
+Solution: Add `IsValidConnectionIndex()` and validate every connection row before degree counting and before adjacency writes. `BuildAdjacency()` now also checks `AdjacencyRanges` creation/length, fences `_connectionCount` against `_connectionCapacity`, and rejects adjacency-count integer overflow by invalidating the existing graph cache and returning false. `AddConnection()` rejects negative endpoints and self-loops before writing a pair into the connection buffer.
+
+Rejected Alternatives: Trusting the generated rows was rejected because black-box crash forensics require fault isolation before a bad unmanaged row reaches a Burst job. Clamping invalid endpoints was rejected because it would fabricate graph topology and possibly approve unsupported placement. Filtering invalid rows was rejected because losing an edge silently changes structural support truth; fail-closed validation is the only deterministic route.
+
+Scalability potential: Low, Middle, High, and Ultra share the same integrity topology truth. `GlobalQualityWeight` does not alter adjacency validity, support graph identity, DTO layout, or placement authority.
+
+Hardware Impact: Adds two unsigned endpoint bounds checks per connection row in the CPU adjacency build and three scalar checks in the writer. The cost is bounded by connection count and only occurs before scheduling structural validation; it prevents out-of-bounds NativeArray writes and downstream cache-corruption cascades. No profiler microseconds are claimed.
+
+## Decision 67 - Builder Deconstruction Target Uses Collider Registry
+
+Problem: After routing builder raycasts through the interaction service, `PlayerBuilder.TryDeconstructTargetModule()` and `GetTargetedModule()` still converted the returned collider to a module through `GetComponentInParent<BaseModule>()`. That is a scene hierarchy search on an active target path. `BaseModule.OnEnable()` already registers its collider tree into the fixed-array `LaserCutterTargetRegistry`, and `LaserCutterTargetRegistry.TryResolveModule()` performs an open-addressed collider-id lookup without component traversal.
+
+Solution: Add `PlayerBuilder.TryResolveTargetModule(Collider, out BaseModule)` and route both deconstruction target call sites through `LaserCutterTargetRegistry.TryResolveModule()`. If the collider is missing from the registry, the builder fails closed with no target.
+
+Rejected Alternatives: Keeping `GetComponentInParent<BaseModule>()` as fallback was rejected because it preserves a second authority route and component traversal in the active builder target path. Creating a new builder-owned collider registry was rejected because the same collider-to-module fact is already owned by a lifecycle-populated fixed registry. Moving this into `ConstructionManager` was rejected for this loop because it would widen the route and touch a larger owner surface without need.
+
+Scalability potential: Low, Middle, High, and Ultra use the same collider-to-module identity route. `GlobalQualityWeight` does not change target ownership, deconstruction authority, or DTO layout.
+
+Hardware Impact: Replaces two active component-parent searches with a fixed-capacity open-address collider-id lookup. No profiler microseconds are claimed.
+
+## Decision 68 - Snap Candidate Budget And Radius Use Continuous Quality
+
+Problem: `ShinobuSocketConstructionRuntime.ResolveCandidateBudget()` accepted `quality` but discarded it and returned `safeMax`. `ResolveSearchRadius()` also discarded `quality` and returned the ultra radius. `EvaluateSocketSnappingJob` compounded this by using `safeCount` as the budget and the max radius directly. The reports claimed continuous scalability, but the source still ran the ultra snap search width on low-quality devices.
+
+Solution: `ResolveCandidateBudget()` now uses `SmoothQuality(quality)` and `math.lerp(safeMin, safeMax, q)` with a ceil to keep at least one row. `ResolveSearchRadius()` uses the same smoothed quality scalar to lerp from low radius to ultra radius. `EvaluateSocketSnappingJob` calls both helpers and clamps inspected CSR rows to the resolved candidate budget.
+
+Rejected Alternatives: A binary low/high branch was rejected because `GlobalQualityWeight` must be continuous. Returning the old max budget for correctness was rejected because target eligibility is still checked deterministically inside the bounded candidate window and missing far rows are a fidelity/search-cadence tradeoff, not a DTO or authority layout change. Scaling placement truth checks was rejected; SDF corners and terrain probes remain fixed truth.
+
+Scalability potential: Low uses the minimum inspected CSR rows and low search radius; Middle smoothly expands both values; High and Ultra approach the full 256-row and ultra-radius path. The same socket DTOs, compatibility predicate, and connection authority remain unchanged across the curve.
+
+Hardware Impact: Restores the intended memory-bandwidth and distance-check reduction on low-quality devices. At default 16..256 budgets, quality 0 resolves to 16 inspected target rows and quality 1 resolves to 256 rows. No profiler microseconds are claimed.
+
+## Decision 69 - Mock Grid Clears All Counter Lanes
+
+Problem: `GenerateMockBaseConstructionGrid()` writes module count, socket count, topology version, and flags into `Counters[0..3]`, but the counters buffer is allocated with `NativeArrayOptions.UninitializedMemory` and `Counters[4]` is the live connection-pair count consumed by topology hashing and placement commit logic. Leaving that lane stale can make a mock-only grid appear to have arbitrary connection pairs.
+
+Solution: Clear the entire `counters` NativeArray at the start of explicit mock generation, then write the known module/socket/topology values. This sets connection count and spare lanes to zero without touching active read facades.
+
+Rejected Alternatives: Clearing counters in `TryResolveVaultViews()` was rejected because read accessors must be pure. Clearing counters on every `InitializeVault()` was rejected because cold rebinding could erase live construction state. Leaving stale lanes was rejected because the fallback mock generator is a CI/profiling route and must be deterministic.
+
+Scalability potential: Low, Middle, High, and Ultra receive the same deterministic mock topology. `GlobalQualityWeight` still scales snap search and presentation only; it does not alter counter layout or connection ownership.
+
+Hardware Impact: Adds at most eight integer stores during explicit mock generation. No active-frame cost and no profiler microseconds are claimed.
+
+## Decision 70 - Counter Lane Is Seeded Only On Cold Invalid State
+
+Problem: The socket counters buffer is requested with `NativeArrayOptions.UninitializedMemory`. Before mock generation or any construction owner writes topology, `TryResolveVaultViews()` consumers can read `Counters[0]`, `Counters[1]`, and `Counters[4]`. Clearing in the read facade would violate purity, while clearing on every `InitializeVault()` could erase live topology after a cold rebind.
+
+Solution: Add `ShouldResetCounterLane()` and `ClearCounterLane()`. `InitializeVault()` checks the existing `ConstructionSocketCounters` generation handle before requesting the handle. If the lane is absent, shorter than the used counters, or already outside known module/socket/connection capacities, the lane is cleared once after handle resolution. Valid existing counters are preserved. `GenerateMockBaseConstructionGrid()` reuses the same clear helper because mock generation is an explicit writer route.
+
+Rejected Alternatives: Clearing counters in `TryResolveVaultViews()` was rejected because read accessors must not publish or mutate. Clearing on every `InitializeVault()` was rejected because service rebinding could destroy legitimate topology. Adding a new counter DTO was rejected because it would change the payload surface for a guard that can be handled inside the existing fixed lane.
+
+Scalability potential: Low, Middle, High, and Ultra share the same counter identity and capacity semantics. `GlobalQualityWeight` has no effect on counter ownership or topology identity.
+
+Hardware Impact: Cold path only: one existing-handle resolve plus a few integer range checks, with at most eight integer stores when the lane is absent/invalid. No active-frame profiler number is claimed.
+
+## Decision 71 - Builder Holography Uses Generation Descriptors
+
+Problem: `HectonBlueprintPreviewBatch` still stored obsolete `VaultBufferHandle<T>` descriptors and active reads called `.Resolve(vault)`. That contradicted the SHINOBU proof surfaces that describe generation-checked descriptor reads and kept legacy pointer-bearing handle semantics in the preview upload/telemetry heartbeat path.
+
+Solution: Replace `_stateHandle`, `_visualHandle`, `_telemetryHandle`, and `_argsHandle` with `VaultGenerationHandle<T>`. `EnsureBuffersCold()` now checks existing handles with `IDataVault.TryResolveHandle(...)` and acquires/grows lanes with `GetGenerationHandle(...)`. `TryReadCachedBuffers()` resolves phase-local `NativeArray` views only through `TryResolveHandle(...)`.
+
+Rejected Alternatives: Keeping `VaultBufferHandle<T>.Resolve(vault)` was rejected because the handle type is marked as a legacy pointer-bearing migration bridge. Converting active reads to `GlobalRegistry.DataVault` was rejected because the batch already cold-caches `_vault` and active paths must not poll the registry. Moving the holography lanes into a new owner was rejected because the existing BufferIDs already define the construction-owner route.
+
+Scalability potential: Low, Middle, High, and Ultra share the same descriptor identity. `GlobalQualityWeight` still scales hologram presentation and snap search work only; it does not change Vault descriptor ownership or DTO layout.
+
+Hardware Impact: Removes cached pointer handle resolution from active holography reads and keeps active upload/telemetry reads generation-checked. No profiler microseconds are claimed.
+
+## Decision 72 - Runtime Origin Conversion Avoids GlobalSignals Bridge
+
+Problem: `PlayerBuilder` and `HectonBlueprintPreviewBatch` still called `GlobalSignals.CurrentRuntimeOriginAup()` while scheduling SHINOBU snap/holography jobs and converting runtime positions to AUP. The method is a legacy wrapper around `HectonFloatingOrigin.CurrentTotalOffsetDouble`, so the active route was depending on a signal facade for data that can be resolved as a finite double3 origin.
+
+Solution: Add local `TryResolveRuntimeOriginAup(out double3)` helpers in the two SHINOBU files. Active snap job scheduling passes that finite origin into `EvaluateSocketSnappingJob`. Snap result application subtracts the finite origin before casting to `Vector3`. Holography runtime-position conversion adds the finite origin in double precision and then hydrates `AbsoluteUniversePosition` from the resolved absolute double3.
+
+Rejected Alternatives: Keeping `GlobalSignals.CurrentRuntimeOriginAup()` was rejected because direct GlobalSignals bridge reads are legacy lanes and obscure the owner-local origin dependency. Converting runtime positions through absolute floats was rejected because it violates the 100km AUP precision rule. Creating a new signal payload was rejected because no new fact is needed; the existing floating-origin owner already exposes the current double3 offset.
+
+Scalability potential: Low, Middle, High, and Ultra share the same origin conversion. `GlobalQualityWeight` does not change origin authority, DTO layout, snap truth, or runtime/AUP conversion precision.
+
+Hardware Impact: Removes four active legacy signal-origin reads from the SHINOBU builder/preview path. Added cost is finite double3 validation at each conversion boundary; no profiler microseconds are claimed.
+
+## Decision 73 - Construction Validator Uses Generation Descriptors
+
+Problem: `ModularBaseConstructionValidator` still stored `VaultBufferHandle<T>` descriptors for tuning, telemetry, bounds, and occupancy lanes and resolved them with `ResolveBuffer` / `.Resolve(vault)`. The validator is part of SHINOBU's construction placement proof, so keeping pointer-bearing migration handles contradicted the Vault descriptor discipline already applied to socket and holography lanes.
+
+Solution: Replace the four static handles with `VaultGenerationHandle<T>`. Add `EnsureValidationBuffer()` for explicit writer/ensure routes and `TryResolveCachedValidationBuffer()` for read-only cached descriptor resolution. `TryReadTunerSettingsFromVault()` now reads an existing generation descriptor through `TryGetGenerationHandle<ConstructionValidationSettingsDTO>()` and `TryResolveHandle(...)`.
+
+Rejected Alternatives: Keeping `VaultBufferHandle<T>` was rejected because the type carries obsolete cached-pointer semantics. Using `GetGenerationHandle` inside read facades was rejected because read accessors must not create or grow buffers. Adding new BufferIDs was rejected because the existing tuning/telemetry/bounds/occupancy identities remain valid.
+
+Scalability potential: Low, Middle, High, and Ultra share the same validation DTO lanes and descriptor identity. `GlobalQualityWeight` scales preview/search presentation only; it does not change validator buffer identity or placement truth.
+
+Hardware Impact: Removes legacy pointer refresh/resolve calls from validator lanes. Active read routes now resolve generation descriptors and check lengths. No profiler microseconds are claimed.
+
+## Decision 74 - Habitat Socket AUP Conversion Avoids GlobalSignals Bridge
+
+Problem: After removing the active builder and holography origin bridges, `HabitatConstructionManager.TryResolveAupFromRuntimeOrigin()` still called `GlobalSignals.CurrentRuntimeOriginAup()` before computing authored socket AUP rows. This kept the same legacy origin bridge inside SHINOBU's habitat socket adaptation route.
+
+Solution: Resolve the current floating-origin offset directly as `HectonFloatingOrigin.CurrentTotalOffsetDouble`, guard it with `math.isfinite`, add the runtime position in double precision, and return the resulting finite `double3` AUP to the socket resolver.
+
+Rejected Alternatives: Keeping the GlobalSignals wrapper was rejected because it adds no ownership proof beyond the floating-origin owner. Converting through runtime floats was rejected because AUP precision must stay double until local runtime projection. Creating a new signal or DTO was rejected because the existing floating-origin owner already provides the required origin fact.
+
+Scalability potential: Low, Middle, High, and Ultra share the same AUP conversion. `GlobalQualityWeight` does not change origin authority, socket root identity, DTO layout, or placement truth.
+
+Hardware Impact: Removes the last `CurrentRuntimeOriginAup()` read from the SHINOBU habitat/builder/preview files. Added cost is one finite double3 check per conversion call; no profiler microseconds are claimed.

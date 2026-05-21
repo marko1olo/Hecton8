@@ -116,9 +116,9 @@ HECTON-8 is a single-player-first underwater survival game about [segment-specif
 
 The reason I think it might work for your audience: [one real asset-backed sentence].
 
-Assets: [Steam/screens/clip/demo]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, `creator_send_gate` open, route gate passes, and CRM send-log fields are ready.
 
-If useful, I can send the demo/press kit when the slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 
 ## Segment Openers
 
@@ -169,13 +169,13 @@ After demo:
 - Use Steam keys only through the private access/key policy after the same recipient/batch gate passes.
 - Stop after two non-responses.
 
-## 2026-05-20 SN2 Pain-Point Fit Rules V5
+## 2026-05-21 SN2 Pain-Point Fit Rules V6
 
 Status: internal routing only. Do not mention Subnautica 2 pain, EULA, bugs, co-op desync, performance variance, or missing features in creator messages.
 
 The purpose of the SN2 pain refresh is to select the proof asset that makes a creator care without turning HECTON-8 into a competitor-attack pitch.
 
-V5 currentness boundary: the 2026-05-20 official Steam API/page refresh still reads `Very Positive` globally and in English. Treat SN2-active creator rows as audience-fit evidence, not competitor weakness. If a pain-backed angle uses V4 negative-sample buckets, the send packet must name the V5 monitoring/currentness row plus the specific private pain bucket in `pain_freshness_source`, fill `pain_freshness_checked_at`, and keep `public_comparison_gate = PRIVATE_ONLY_NO_COMPETITOR_COPY` or stricter.
+V6 currentness boundary: the 2026-05-21 official Steam API/appdetails refresh still reads `Very Positive` globally and in English and shows higher review/recommendation volume than V5. Treat SN2-active creator rows as audience-fit evidence, not competitor weakness. If a pain-backed angle uses any SN2-derived bucket, the send packet must name the V6 monitoring/currentness row or a newer same-day row plus the specific private pain bucket in `pain_freshness_source`, fill `pain_freshness_checked_at`, and keep `public_comparison_gate = PRIVATE_ONLY_NO_COMPETITOR_COPY` or stricter.
 
 | Creator segment | Private pain signal to answer | Required HECTON proof | Safe pitch angle |
 |---|---|---|---|
@@ -206,7 +206,7 @@ Use this only after:
 - no asset in the packet is marked `HOLD_ASSET` or `KILL_ANGLE`;
 - every creator-facing asset in the packet has creator utility 3/4+ in `QA/MARKETING_ASSET_QA_CHECKLIST.md` and maps to the recipient's CRM row;
 - each asset metadata row has `creator_send_gate` open for that recipient segment, not just a nonzero utility score;
-- the packet has `pain_freshness_source` and `pain_freshness_checked_at` for any pain-backed angle; the source must name the current monitoring refresh, for example `Monitoring SN2 Steam API/Page Refresh V5`, plus the exact private bucket used, and the packet must include at least one factual asset with `agency_decision_proof_gate = AGENCY_PROOF_CANDIDATE`, non-empty `agency_decision_notes`, non-pending `viewer_named_decision`, `capture_verdict = KEEP_TESTING` or stronger campaign `KEEP`, and AB-009/KPI `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` when the message references gameplay proof, pressure decisions, route risk, threat, salvage failure, demo readiness, or first-public feedback;
+- the packet has `pain_freshness_source` and `pain_freshness_checked_at` for any pain-backed angle; the source must name the current monitoring refresh, for example `Monitoring SN2 Steam API / Public-Source Refresh V6`, plus the exact private bucket used, and the packet must include at least one factual asset with `agency_decision_proof_gate = AGENCY_PROOF_CANDIDATE`, non-empty `agency_decision_notes`, non-pending `viewer_named_decision`, `capture_verdict = KEEP_TESTING` or stronger campaign `KEEP`, and AB-009/KPI `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` when the message references gameplay proof, pressure decisions, route risk, threat, salvage failure, demo readiness, or first-public feedback;
 - official Steam page or presskit URL is mentioned only after the exact `steam_page_publish_permission_gate` or `press_release_permission_gate` passes plus destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`;
 - YouTube About/site contact route is verified by the human owner where required;
 - the final email contains no multiplayer-scope promise, clone-war framing, or unsupported performance claim;

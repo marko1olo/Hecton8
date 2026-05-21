@@ -5,7 +5,7 @@ using Unity.Mathematics;
 namespace Hecton8.AI.Pathfinding
 {
     /// <summary>
-    /// Math LOD used by the funnel smoother. Higher tiers inspect more portals per smoothing pass.
+    /// Legacy telemetry byte for funnel smoothing. Authoritative path output must not change with hardware quality.
     /// </summary>
     public enum PathFunnelMathLod : byte
     {

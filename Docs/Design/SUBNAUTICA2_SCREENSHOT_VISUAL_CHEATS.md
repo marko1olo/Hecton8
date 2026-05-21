@@ -65,7 +65,7 @@ Replace:
 - colorful thermal fantasy -> oxidized orange hazard, chemical bloom, vent ash
 - creature spectacle -> acoustic warning, partial silhouette, silt displacement
 
-## Cheap Effects That Must Carry Low Tier
+## Cheap Effects For Minimum Quality
 
 These are mandatory before any expensive render path is justified:
 
@@ -79,11 +79,11 @@ These are mandatory before any expensive render path is justified:
 - screen-space visor grime masks
 - audio/haptic pulses for pressure and threat
 
-Low tier must still look intentional. It can be sparse, but it cannot look unstyled.
+Minimum quality must still look intentional. It can be sparse, but it cannot look unstyled.
 
-## High-Tier Visual Overkill Targets
+## High-Fidelity Visual Overkill Targets
 
-High and Ultra should spend saved logic cycles on visible signatures:
+High and maximum quality should spend saved logic cycles on visible signatures:
 
 - salt crystals and condensation growing on visor masks
 - volumetric silt in vehicle wake and creature movement
@@ -110,7 +110,7 @@ Every biome needs a compact visual authority record:
 - flora object-batch budget
 - wreck/debris object-batch budget
 - particle sheet budget
-- high-tier overkill flags
+- high-fidelity overkill flags
 
 Every visual overkill feature must read from existing state:
 
@@ -141,7 +141,7 @@ P1:
 
 P2:
 
-- Ultra-only overkill pack is isolated from low-tier builds.
+- Ultra-budget overkill pack is isolated from minimum-budget builds.
 - Frame Debugger/RenderDoc evidence records SetPass, batches, overdraw, and raymarch pass cost.
 
 ## Rejected Paths
@@ -150,7 +150,7 @@ P2:
 - Per-bubble or per-flora-blade simulation.
 - Dynamic light spam as a substitute for composition.
 - Copying Subnautica 2 color palettes directly.
-- Using high-tier effects to hide missing first-hour route proof.
+- Using high-fidelity effects to hide missing first-hour route proof.
 - Shipping one "balanced" visual profile instead of tiered contracts.
 
 ## Proof Limits

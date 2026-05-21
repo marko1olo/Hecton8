@@ -138,7 +138,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (hasScheduledWork)
                 {
                     // COLD SYNC JOB: MapMagic Generate must publish concrete matrix products before returning to the graph.
-                    handle.Complete();
+                    DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 }
 
                 if (stopRequested)

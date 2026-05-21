@@ -17,10 +17,24 @@ namespace Hecton8.Core
     public static class MapMagicBiomeEvents
     {
         private const int ExpectedPendingBiomeEventCapacity = 8;
+        private const int ListenerCapacity = 8;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        private static readonly RegistryBucket<IMapMagicBiomeEventListener> _listeners = new RegistryBucket<IMapMagicBiomeEventListener>(8);
+        private struct ListenerSlot
+        {
+            public IMapMagicBiomeEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - MapMagic biome listeners drained by SystemDispatcher without interface array dispatch - owner: MapMagicBiomeEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<int> _pendingBiomeIds;
         private static NativeQueue<int> _nextFrameBiomeIds;
+        private static int _listenerCount;
         private static int _pendingBiomeIdCount;
         private static int _nextFrameBiomeIdCount;
         private static bool _isDispatching;
@@ -47,19 +61,22 @@ namespace Hecton8.Core
             _pendingBiomeIdCount = 0;
             _nextFrameBiomeIdCount = 0;
             _isDispatching = false;
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
         }
 
         public static void Register(IMapMagicBiomeEventListener listener)
         {
-            if (listener != null && !_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (listener != null)
+                RegisterImmediate(listener);
         }
 
         public static void Unregister(IMapMagicBiomeEventListener listener)
         {
-            if (listener != null && _listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (listener != null)
+                TryUnregisterImmediate(listener);
         }
 
         public static void RaiseBiomeChanged(int biomeId)
@@ -98,14 +115,13 @@ namespace Hecton8.Core
                     _pendingBiomeIdCount--;
 
                 scanBudget--;
-                IMapMagicBiomeEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
+                int count = _listenerCount;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IMapMagicBiomeEventListener listener = rawArray[i];
+                        IMapMagicBiomeEventListener listener = _listeners[i].Listener;
                         if (listener != null)
                             listener.OnMapMagicBiomeChanged(biomeId);
                     }
@@ -127,7 +143,7 @@ namespace Hecton8.Core
         {
             if (!_pendingBiomeIds.IsCreated)
             {
-                _pendingBiomeIds = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[8] - deferred MapMagic biome events flushed by SystemDispatcher - owner: MapMagicBiomeEvents
+                _pendingBiomeIds = new NativeQueue<int>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<int>[8] - deferred MapMagic biome events flushed by SystemDispatcher - owner: MapMagicBiomeEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingBiomeIds,
                     ExpectedPendingBiomeEventCapacity,
@@ -139,7 +155,7 @@ namespace Hecton8.Core
 
             if (!_nextFrameBiomeIds.IsCreated)
             {
-                _nextFrameBiomeIds = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[8] - next-frame MapMagic biome event lane prevents same-frame reentrant dispatch - owner: MapMagicBiomeEvents
+                _nextFrameBiomeIds = new NativeQueue<int>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<int>[8] - next-frame MapMagic biome event lane prevents same-frame reentrant dispatch - owner: MapMagicBiomeEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameBiomeIds,
                     ExpectedPendingBiomeEventCapacity,
@@ -180,6 +196,36 @@ namespace Hecton8.Core
             _pendingBiomeIdCount = _nextFrameBiomeIdCount;
             _nextFrameBiomeIdCount = 0;
         }
+
+        private static void RegisterImmediate(IMapMagicBiomeEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
+        }
+
+        private static bool TryUnregisterImmediate(IMapMagicBiomeEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                _listenerCount--;
+                _listeners[i] = _listeners[_listenerCount];
+                _listeners[_listenerCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
     }
 
     public readonly struct MapMagicTerrainTileSnapshot
@@ -192,10 +238,10 @@ namespace Hecton8.Core
             Terrain = terrain;
         }
 
-        public MapMagicBridge Provider { get; }
-        public int TileX { get; }
-        public int TileZ { get; }
-        public Terrain Terrain { get; }
+        public readonly MapMagicBridge Provider;
+        public readonly int TileX;
+        public readonly int TileZ;
+        public readonly Terrain Terrain;
 
         public bool IsValid => Terrain != null && Terrain.terrainData != null;
     }
@@ -209,25 +255,41 @@ namespace Hecton8.Core
 
     public static class MapMagicTerrainTileEvents
     {
-        private static readonly RegistryBucket<IMapMagicTerrainTileEventListener> _listeners =
-            new RegistryBucket<IMapMagicTerrainTileEventListener>(8);
+        private const int ListenerCapacity = 8;
+
+        private struct ListenerSlot
+        {
+            public IMapMagicTerrainTileEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - MapMagic terrain tile listeners without interface array dispatch - owner: MapMagicTerrainTileEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
+        private static int _listenerCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
         }
 
         public static void Register(IMapMagicTerrainTileEventListener listener)
         {
-            if (listener != null && !_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (listener != null)
+                RegisterImmediate(listener);
         }
 
         public static void Unregister(IMapMagicTerrainTileEventListener listener)
         {
-            if (listener != null && _listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (listener != null)
+                TryUnregisterImmediate(listener);
         }
 
         public static void RaiseTileApplied(in MapMagicTerrainTileSnapshot snapshot)
@@ -251,11 +313,10 @@ namespace Hecton8.Core
             };
             TerrainChunkGeneratedEvents.TryPublish(in signal);
 
-            IMapMagicTerrainTileEventListener[] rawArray = _listeners.RawArray;
-            int count = _listeners.Count;
+            int count = _listenerCount;
             for (int i = count - 1; i >= 0; i--)
             {
-                IMapMagicTerrainTileEventListener listener = rawArray[i];
+                IMapMagicTerrainTileEventListener listener = _listeners[i].Listener;
                 if (listener != null)
                     listener.OnMapMagicTerrainTileApplied(in snapshot);
             }
@@ -266,14 +327,43 @@ namespace Hecton8.Core
             if (!snapshot.IsValid)
                 return;
 
-            IMapMagicTerrainTileEventListener[] rawArray = _listeners.RawArray;
-            int count = _listeners.Count;
+            int count = _listenerCount;
             for (int i = count - 1; i >= 0; i--)
             {
-                IMapMagicTerrainTileEventListener listener = rawArray[i];
+                IMapMagicTerrainTileEventListener listener = _listeners[i].Listener;
                 if (listener != null)
                     listener.OnMapMagicTerrainTileMoved(in snapshot);
             }
+        }
+
+        private static void RegisterImmediate(IMapMagicTerrainTileEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
+        }
+
+        private static bool TryUnregisterImmediate(IMapMagicTerrainTileEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                _listenerCount--;
+                _listeners[i] = _listeners[_listenerCount];
+                _listeners[_listenerCount].Clear();
+                return true;
+            }
+
+            return false;
         }
     }
 
@@ -300,16 +390,18 @@ namespace Hecton8.Core
                 CacheRevision = cacheRevision;
             }
 
-            public NativeArray<ushort> HeightSamples { get; }
-            public Vector3 TerrainPosition { get; }
-            public Vector3 TerrainSize { get; }
-            public int HeightmapResolution { get; }
-            public int CacheRevision { get; }
+            public readonly NativeArray<ushort> HeightSamples;
+            public readonly Vector3 TerrainPosition;
+            public readonly Vector3 TerrainSize;
+            public readonly int HeightmapResolution;
+            public readonly int CacheRevision;
 
-            public bool IsValid =>
-                HeightSamples.IsCreated &&
-                HeightmapResolution > 1 &&
-                HeightSamples.Length >= HeightmapResolution * HeightmapResolution;
+            public static bool IsValid(in QuantizedHeightmapPayload payload)
+            {
+                return payload.HeightSamples.IsCreated &&
+                       payload.HeightmapResolution > 1 &&
+                       payload.HeightSamples.Length >= payload.HeightmapResolution * payload.HeightmapResolution;
+            }
         }
 
         public static MapMagicBridge Instance
@@ -506,7 +598,7 @@ namespace Hecton8.Core
             return string.Equals(familyId, TectonicSpineFamilyId, StringComparison.OrdinalIgnoreCase);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BrineBasinLipRidgeOverlayJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<byte> BasinMask;

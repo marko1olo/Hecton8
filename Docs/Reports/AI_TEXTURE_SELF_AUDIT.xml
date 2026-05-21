@@ -1,0 +1,123 @@
+<SELF_AUDIT agent="SHINOBU_269" status="PENDING_UNITY_VERIFICATION">
+  <Check name="RuntimeControlMapExecution" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="All SHINOBU_269 systems are wrapped in UNITY_EDITOR folders and no runtime MonoBehaviour capture route is emitted." />
+  <Check name="DearLieUvFlattening" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Bake shaders force clip-space XY from UV coordinates for template PNG generation." />
+  <Check name="NoSynchronousPixelReadback" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="No Texture2D ReadPixels/GetPixels/EncodeToPNG or Camera.Render capture call exists in SHINOBU_269 source." />
+  <Check name="RequestIntoNativeArray" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="AsyncGPUReadback writes into caller-owned NativeArray before EncodeNativeArrayToPNG." />
+  <Check name="NativePngWrite" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="EncodeNativeArrayToPNG result is owned as NativeArray&lt;byte&gt; with explicit rowBytes=0; background FileStream write uses an unsafe ReadOnlySpan over NativeArray memory and disposes after main-thread completion." />
+  <Check name="ReadbackFormatGuard" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Bake pass fails closed before AsyncGPUReadback when R8G8B8A8_UNorm lacks ReadPixels support on the current graphics backend." />
+  <Check name="UninitializedTempJobBuffers" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Temporary bake/readback buffers use NativeArrayOptions.UninitializedMemory; no MemClear route is present." />
+  <Check name="GpuResourceRelease" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="RenderTexture, CommandBuffer, Material, and NativeArray resources have finally/callback cleanup paths." />
+  <Check name="SupersampleAntiAliasing" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="UV passes draw into a quality-weighted rounded 1x..4x non-MSAA supersample texture when supported, then GPU-blit down to the pristine output resolution before AsyncGPUReadback." />
+  <Check name="AutomatedIngestion" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="AssetPostprocessor applies BC7/BC5/ASTC without Inspector steps and queues post-import binding." />
+  <Check name="TextureImportPaddingZero" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="TextureImportConfigDTO offset 12 remains true manual padding and is hydrated as zero, not repurposed as hidden semantic data." />
+  <Check name="PostImportDeferredBinding" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="OnPostprocessTexture only enqueues asset path/kind/config; rollback labels, material binding, prefab manifest mutation, and reports drain from EditorApplication.update after import." />
+  <Check name="PostImportDuplicateCollapse" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Deferred post-import queue collapses duplicate asset paths before material binding/report work to avoid repeated AssetDatabase churn during import event storms." />
+  <Check name="ScenePreview" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="SceneView preview renders unlit control-map math on selected mesh or prefab." />
+  <Check name="MaterialMetricValidator" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Material_Setup_Scanner writes owned AI_TEXTURE_MATERIAL_SETUP_REPORT.json; shared RENDERING_OPTIMIZATION_REPORT.json merge is pending Unity menu scan execution." />
+  <Check name="CurvatureVectorizationEvidence" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Curvature shader uses GPU derivative instructions ddx/ddy rather than CPU adjacency traversal." />
+  <Check name="BlackBoxTelemetryRing" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Source route exists for a 300-entry AITextureBakeTelemetryEntry ring to record pass outcomes and write Dump_SHINOBU_269.bin on critical warning paths; execution proof requires Unity bake." />
+  <Check name="MainThreadCompletionDrain" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="AsyncGPUReadback and FileStream callbacks enqueue plain completion payloads only; Unity API calls, PNG encoding, telemetry, and disposal execute from EditorApplication.update." />
+  <Check name="AsyncReloadGuard" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Baker locks Unity assembly reload while async GPU readbacks or native PNG writes are in flight, then unlocks from the main-thread drain when all queues are idle." />
+  <Check name="LazyInboxWatcher" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="FileSystemWatcher is started only by explicit menu/tool action; editor domain load registers cleanup hooks but does not create inbox folders or watcher side effects." />
+  <Check name="ManifestOnlyPrefabBinding" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Material assignment mutates exactly the renderer path and material slot declared in ai_texture_prefab_bindings.csv, and creates no Lit/Standard fallback material named UberNoir." />
+  <Check name="RollbackRouteCard" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Texture/material assets receive presentation-only labels and userData route cards; StateRingBuffer/Merkle exclusion remains pending runtime owner verification rather than asserted as proven by the editor tool." />
+  <Check name="ContinuousQualityCurve" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="GlobalQualityWeight drives bake curvature shader constants, validation sample count, SceneView preview curvature, and supersample selection; exported AI control-map resolution remains pristine per original SHINOBU_269 prompt." />
+  <Check name="InboxReadinessRetry" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="FileSystemWatcher only queues paths; EditorApplication.update drains imports after exclusive-read readiness succeeds, with bounded retry for files still being written." />
+  <Check name="InboxDuplicateCollapse" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Pending inbox records collapse duplicate Created/Changed events, the empty drain branch unregisters the update callback after manual watcher stop, and Stopwatch delay overflow is guarded." />
+  <Check name="CsvProfileFormatBridge" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="CSV ingestion profiles parse standalone/android format columns and route matching asset paths into importer max-size and Standalone texture format selection; composite names such as Hero_Prop also match their leading token without changing DTO layout." />
+  <Check name="PristineBakeResolution" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="NormalizeBakeResolution only aligns/clamps authored profile resolution up to 4096; no GlobalQualityWeight downscale is applied to exported template PNGs." />
+  <Check name="Task08CameraContract" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidenceClass="STATIC_SOURCE" evidence="Baker instantiates one hidden disabled Camera per batch, binds it to the active RenderTexture, applies its matrices to the CommandBuffer, then clears targetTexture after async readback is queued; no Camera.Render path exists." />
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Manual bake archaeology source scans first-party Editor capture tokens and avoids deleting unrelated vendor tools." />
+    <TASK id="02" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Baker excludes ReadPixels/GetPixels/Texture2D.EncodeToPNG/Camera.Render capture routes; GPU readback is async." />
+    <TASK id="03" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Hot DTOs use raw fields; mock mesh jobs write unmanaged vertex/index buffers directly." />
+    <TASK id="04" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="TextureImportConfigDTO is explicit 16 bytes with offset proof below and offset 12 is zeroed padding." />
+    <TASK id="05" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="GenerateMockComplexMeshJob creates deterministic irregular UV stress geometry without upstream dependency." />
+    <TASK id="06" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Normal, Depth, and ColorID unlit UV-flatten shaders exist and route through optional GPU supersampling before final readback." />
+    <TASK id="07" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Curvature is GPU derivative math, not CPU adjacency traversal." />
+    <TASK id="08" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Baker instantiates one hidden disabled Camera per batch, binds it to each RenderTexture, applies camera matrices to the CommandBuffer, and draws UV-space with no Camera.Render traversal." />
+    <TASK id="09" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="PNG route uses AsyncGPUReadback.RequestIntoNativeArray, NativeArray EncodeNativeArrayToPNG output with explicit rowBytes, and background FileStream write with main-thread completion drain." />
+    <TASK id="10" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Inbox watcher is explicit-start only, queues paths from FileSystemWatcher, collapses duplicate events, and drains imports on EditorApplication.update only after exclusive-read readiness/retry passes." />
+    <TASK id="11" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="AssetPostprocessor applies mipmaps, unreadable CPU state, BC7/BC5 Standalone and ASTC_6x6 Android, then defers and collapses post-import side effects in the update drain." />
+    <TASK id="12" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Material binding creates deterministic UberNoir-only MAT asset and prefab mutation is manifest-only down to renderer path plus material slot, with dry-run report fallback." />
+    <TASK id="13" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Texture/material assets receive presentation-only rollback route cards; final StateRingBuffer/Merkle exclusion proof is explicitly pending the runtime owner." />
+    <TASK id="14" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Readback and mock mesh native buffers use NativeArrayOptions.UninitializedMemory." />
+    <TASK id="15" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Bake, ingestion, rollback, prefab binding, material scan, archaeology, and blackbox report source routes have distinct output paths; execution proof requires Unity bake/import." />
+    <TASK id="16" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="UI Toolkit forge window exposes folder, passes, resolution, GlobalQualityWeight, preview, inbox, material scan, and audit commands." />
+    <TASK id="17" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="CSV profile parser uses pointer/Span over uninitialized TempJob bytes and parses profile resolution plus Standalone/Android format columns for importer policy." />
+    <TASK id="18" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="SceneView preview renders control-map math without PNG write and uses continuous quality for preview curvature." />
+    <TASK id="19" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="Material_Setup_Scanner writes AI_TEXTURE_MATERIAL_SETUP_REPORT.json and merges a SHINOBU_269 key into RENDERING_OPTIMIZATION_REPORT.json when the Unity menu scan runs." />
+    <TASK id="20" status="PASS_STATIC_SOURCE_PENDING_UNITY" evidence="This forensic XML includes reconciliation, layout proof, scalability curve, Vault status, dependency graph, compile guard, and Dear Lie complexity; Unity verification remains pending." />
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <Struct name="TextureImportConfigDTO" size="16" alignment="multiple-of-8-and-16" proof="4+4+4+4=16">
+      <Field name="FormatHash" offset="0" size="4" />
+      <Field name="MaxSize" offset="4" size="4" />
+      <Field name="Flags" offset="8" size="4" />
+      <Field name="_pad0" offset="12" size="4" />
+    </Struct>
+    <Struct name="AITextureBakeVertex" size="32" alignment="multiple-of-8-and-16-and-32" proof="float3(12)+float3(12)+float2(8)=32">
+      <Field name="Position" offset="0" size="12" />
+      <Field name="Normal" offset="12" size="12" />
+      <Field name="Uv0" offset="24" size="8" />
+    </Struct>
+    <Struct name="MockComplexMeshConfigDTO" size="32" alignment="multiple-of-8-and-16-and-32" proof="8 scalar 4-byte lanes=32">
+      <Field name="RingSegments" offset="0" size="4" />
+      <Field name="TubeSegments" offset="4" size="4" />
+      <Field name="MajorRadius" offset="8" size="4" />
+      <Field name="TubeRadius" offset="12" size="4" />
+      <Field name="Irregularity" offset="16" size="4" />
+      <Field name="Seed" offset="20" size="4" />
+      <Field name="Twist" offset="24" size="4" />
+      <Field name="_pad0" offset="28" size="4" />
+    </Struct>
+    <Struct name="AITextureBakeTelemetryEntry" size="64" alignment="single-L1-cache-line" falseSharing="padded-to-64" proof="15 explicit 4-byte lanes plus pad=64">
+      <Field name="SourceHash" offset="0" size="4" />
+      <Field name="MeshHash" offset="4" size="4" />
+      <Field name="Resolution" offset="8" size="4" />
+      <Field name="PassMask" offset="12" size="4" />
+      <Field name="RenderMicroseconds" offset="16" size="4" />
+      <Field name="EncodeMicroseconds" offset="20" size="4" />
+      <Field name="WriteMicroseconds" offset="24" size="4" />
+      <Field name="VertexCount" offset="28" size="4" />
+      <Field name="SubMeshCount" offset="32" size="4" />
+      <Field name="WarningFlags" offset="36" size="4" />
+      <Field name="BoundsExtentX" offset="40" size="4" />
+      <Field name="BoundsExtentY" offset="44" size="4" />
+      <Field name="BoundsExtentZ" offset="48" size="4" />
+      <Field name="GlobalQualityWeight" offset="52" size="4" />
+      <Field name="StateHash" offset="56" size="4" />
+      <Field name="_pad0" offset="60" size="4" />
+    </Struct>
+    <Struct name="AITextureBakeSettings" size="80" alignment="multiple-of-8-and-16" proof="FixedString64Bytes(64)+passMask(4)+resolution(4)+quality(4)+2 bytes+ushort pad=80">
+      <Field name="ProfileName" offset="0" size="64" />
+      <Field name="PassMask" offset="64" size="4" />
+      <Field name="Resolution" offset="68" size="4" />
+      <Field name="GlobalQualityWeight" offset="72" size="4" />
+      <Field name="AntiAliasing" offset="76" size="1" />
+      <Field name="ForceOverwrite" offset="77" size="1" />
+      <Field name="_pad0" offset="78" size="2" />
+    </Struct>
+    <Struct name="AITextureIngestionProfile" size="96" alignment="multiple-of-8-and-16-and-32" proof="FixedString64Bytes(64)+5 scalar lanes(20)+uint pad(4)+ulong pad(8)=96">
+      <Field name="ProfileName" offset="0" size="64" />
+      <Field name="PassMask" offset="64" size="4" />
+      <Field name="Resolution" offset="68" size="4" />
+      <Field name="GlobalQualityWeight" offset="72" size="4" />
+      <Field name="StandaloneFormatHash" offset="76" size="4" />
+      <Field name="AndroidFormatHash" offset="80" size="4" />
+      <Field name="_pad0" offset="84" size="4" />
+      <Field name="_pad1" offset="88" size="8" />
+    </Struct>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION value="GlobalQualityWeight uses smoothstep q*q*(3-2q) for bake curvature shader constants, validation sample count, SceneView preview curvature, and supersample selection. Exported AI template PNG resolution is not downscaled by quality; NormalizeBakeResolution only aligns/clamps the authored profile resolution to preserve pristine 2048/4096 ControlNet inputs. Below 0.3 the tool sheds optional validation density, curvature gain, preview ALU, and supersample multiplier first, preserving DTO layout, asset identity, and source-map dimensions." />
+  <H_PHI_VAULT_STATUS runtimePrivateArrays="0" vaultHandles="0" editorException="AITextureBakeBlackBox owns one UNITY_EDITOR Persistent NativeArray ring, 300*64=19200 bytes, released on assembly reload/quitting. It is not runtime, not rollback authority, and not cross-domain state, so GlobalDataVault is deliberately not used." />
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>
+    <Job name="GenerateMockComplexMeshJob" consumes="none" outputs="vertexHandle" noAlias="VertexPtr" completion="combined only inside offline menu benchmark" />
+    <Job name="FillUInt32IndexJob" consumes="none" outputs="indexHandle" noAlias="IndexPtr" completion="JobHandle.CombineDependencies(vertexHandle,indexHandle).Complete in offline menu benchmark" />
+    <Async name="BakePassReadback" consumes="Graphics.ExecuteCommandBuffer completion by GPU queue" outputs="ReadbackCompletion" completion="no main-thread Complete; callback enqueues payload only; EditorApplication.update encodes PNG and disposes resources" />
+  </POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD value="No SHINOBU_269 runtime asmdef or sibling runtime reference exists under the domain path; all source is under Editor/UNITY_EDITOR and communicates by assets/reports only." />
+  <DEAR_LIE_CONFIRMATION value="Instead of CPU mesh-neighborhood curvature and perspective scene traversal, the batch-level Camera is a disabled UV capture rig scaffold bound to the RenderTexture and used for CommandBuffer view/projection state; shaders flatten UVs directly to clip space and use ddx/ddy derivative curvature. CPU adjacency path would be O(V+E) preprocessing plus blocking readback risk; implemented CPU orchestration is O(meshes*passes*submeshes), while per-pixel work stays on GPU raster hardware." />
+  <RenderPasses normal="Hecton_BakeWorldNormal" depth="Hecton_BakeDepth" colorId="Hecton_BakeColorID" curvature="Hecton_BakeCurvature" preview="Hecton_ControlMapScenePreview" />
+  <Scalability low="continuous q near 0.0: pristine authored bake resolution preserved, 512 validation samples, cheaper preview curvature" middle="q around 0.5: pristine authored bake resolution preserved, middle validation density" high="q 0.85: pristine authored bake resolution preserved, stricter validation" ultra="q 1.0: 4096 cap when profile requests it, 4096 validation samples, full forensic reporting" />
+</SELF_AUDIT>

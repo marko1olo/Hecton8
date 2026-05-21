@@ -4,7 +4,7 @@ Date: 2026-05-15
 Status: PENDING UNITY VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,14 +14,13 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-
-R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## 2026-05-20 DOC_GLOBAL R46 Root/Architecture Boundary Note
 
-R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) (R46 prior interior-authority/route-field/proof-language correction; R45 prior R43/R44 residue/proof-artifact/source-counter correction) keeps this file as a static navigation/math contract, not fauna runtime, pathfinding quality, or profiler proof. Current DOC_GLOBAL boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`; R46 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`; R45 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`; R44 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current static gates: `Tools/AtlasCheck.py` remains red on `ATLAS_CHECK_FAIL references=6781 missing=61` (one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, missing HectonMaskChannelPacker/HectonMaterialChannelPackValidator editor source refs, and missing HabitatDamageBakePipeline source ref in the current atlas); `Docs/Modding/Validate_Mod_API_Static.ps1` passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only. Runtime proof remains absent.
+R51 root/architecture encoding/boundary/read-order/route-card/source-counter correction (`Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md`) keeps this file as a static architecture/source contract, not runtime proof. Current DOC_GLOBAL boundary is `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md`; R50 remains prior at `Docs/Reports/2026-05-21_DOCUMENTATION_R50_ROOT_ARCHITECTURE_ATLAS_REGEN_R48_INTERIOR_DUMPTARGET_AND_COUNTER_DRIFT_LOCAL.md`; R49 remains prior at `Docs/Reports/2026-05-21_DOCUMENTATION_R49_ROOT_ARCHITECTURE_ATLASCHECK_BOUNDARY_ROUTE_FIELDS_AND_COUNTER_DRIFT_LOCAL.md`; R48 remains prior at `Docs/Reports/2026-05-21_DOCUMENTATION_R48_ROOT_ARCHITECTURE_DATE_ROLLOVER_ATLASCHECK_AND_COUNTER_REFRESH_LOCAL.md`; R47 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`; R46/R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current static gates: `Tools/AtlasCheck.py` remains red on `ATLAS_CHECK_FAIL references=6881 missing=60` (one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HectonMaskChannelPacker and HectonMaterialChannelPackValidator source refs in the current atlas); `Docs/Modding/Validate_Mod_API_Static.ps1` passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only. Runtime proof remains absent.
 
 Owner: AI_POTENTIAL_FIELD_NAVIGATOR
 Domain: ECHELON 3 - FLORA, FAUNA & BIOTA
@@ -108,7 +107,7 @@ Header: <4sHHIIIIIIII24s
 Record: <IHHfI
 ```
 
-Every record key is an ASCII-lower FNV-1a 32-bit hash of the semantic field path. `Tools/VerifyAiNavigationTuning.py` regenerates the blob and manifest, checks byte-for-byte parity, checks file alignment, rejects endian drift, verifies zero FNV collisions, validates zeroed reserved header bytes, records header/payload CRC32 values, and validates the standalone manifest source JSON hash, section offsets, toaster payload, RTX extra data, and stateless lookup contract.
+Every record key is an ASCII-lower FNV-1a 32-bit hash of the semantic field path. `Tools/VerifyAiNavigationTuning.py` regenerates the blob and manifest, checks byte-for-byte parity, checks file alignment, rejects endian drift, verifies zero FNV collisions, validates zeroed reserved header bytes, records header/payload CRC32 values, and validates the standalone manifest source JSON hash, section offsets, minimum-budget payload, overkill-quality extra data, and stateless lookup contract.
 
 Artifact guard:
 
@@ -129,7 +128,7 @@ Low/MX350:
 - One analytical flow sample.
 - One nearest SDF/clearance sample or local proxy.
 - Stronger EWMA smoothing and lower flow boost.
-- SHINOBU runtime can consume the stripped `toasterData` binary records with no strings and no GPU readback.
+- SHINOBU runtime can consume the stripped minimum-budget binary records with no strings and no GPU readback.
 
 Middle:
 - 10Hz steering.
@@ -147,13 +146,13 @@ Ultra:
 - Still O(1); no global A* spam and no GPU readback.
 - `rtxOverkillData` exposes harmonic flow bands, richer SDF gradient samples, visual banking curvature samples, and wake-ribbon samples for presentation-only overkill after frame/VRAM guards pass.
 
-Tier switching uses hysteresis from `Data/AI/Navigation_Tuning.json`: 5m distance band and 3s dwell time. Runtime must satisfy both before changing steering tier so predators do not flip between Low/Middle/High/Ultra within the same engagement.
+Quality-band switching uses hysteresis from `Data/AI/Navigation_Tuning.json`: 5m distance band and 3s dwell time. Runtime must satisfy both before changing steering quality so predators do not flip between minimum, intermediate, high-quality, and maximum-quality weights within the same engagement.
 
 ## Failure Modes
 
 - Non-finite flow: discard flow and use target/SDF steering.
 - Negative SDF clearance: use strongest positive SDF gradient, suppress attack thrust, and mark black box flags.
-- Steering jitter over 3-frame window: increase smoothing alpha toward Low tier and cap flow boost.
+- Steering jitter over 3-frame window: increase smoothing alpha toward the minimum-quality endpoint and cap flow boost.
 - Sustained frame pressure: reduce steering cadence to 5Hz and cluster targets in 16m cells.
 
 ## Verification Boundary

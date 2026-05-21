@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -2325,7 +2324,6 @@ namespace Hecton8.EditorTools
                 : string.Join("__", normalizedTokens);
         }
 
-        [StructLayout(LayoutKind.Sequential)]
         private readonly struct VertexData
         {
             public VertexData(Vector3 position, Vector3 normal, Vector4 tangent, Color32 color, Vector2 uv)

@@ -130,6 +130,7 @@ namespace Hecton8.World.ProceduralCoral
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MockSectorTriggerJob : IJob
     {
+        [WriteOnly]
         [NoAlias]
         public NativeArray<CoralSectorTriggerDTO> SectorTriggers;
 
@@ -256,6 +257,7 @@ namespace Hecton8.World.ProceduralCoral
         [NoAlias]
         public NativeArray<CoralPaddedCounterDTO> Counters;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<CoralGenerationTelemetryEntry> TelemetryRing;
 
@@ -754,6 +756,7 @@ namespace Hecton8.World.ProceduralCoral
         [NoAlias]
         public NativeArray<CoralBranchDTO> Branches;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<CoralSpatialCellDTO> SpatialCells;
 
@@ -891,12 +894,15 @@ namespace Hecton8.World.ProceduralCoral
         [NoAlias]
         public NativeArray<CoralHzbTileDTO> HzbTiles;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<float4x4> RenderMatrices;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<CoralIndirectArgsDTO> IndirectArgs;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<CoralGpuSwayDTO> GpuSway;
 
@@ -1065,6 +1071,7 @@ namespace Hecton8.World.ProceduralCoral
         [NoAlias]
         public NativeArray<CoralTuningDTO> Tuning;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<SyncPulseDTO> SyncPulses;
 
@@ -1120,6 +1127,7 @@ namespace Hecton8.World.ProceduralCoral
         [NoAlias]
         public NativeArray<CoralTuningDTO> Tuning;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<CapsuleColliderDTO> CollisionProxies;
 
@@ -1176,6 +1184,7 @@ namespace Hecton8.World.ProceduralCoral
         [NoAlias]
         public NativeArray<CoralPaddedCounterDTO> Counters;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<CoralSelfAuditResultDTO> Results;
 

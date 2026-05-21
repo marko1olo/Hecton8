@@ -62,14 +62,14 @@ namespace Hecton8.AI.Ecosystem
         [SerializeField, Range(0f, 1f)] private float stressCullFraction01 = DefaultStressCullFraction01;
         [SerializeField] private bool enableTier1FleeDown = true;
 
-        private VaultBufferHandle<EcosystemPopulationCoefficient> _coefficientHandle;
-        private VaultBufferHandle<EcosystemPopulationSectorState> _sectorStateHandle;
-        private VaultBufferHandle<EcosystemPopulationCullEvent> _cullEventHandle;
-        private VaultBufferHandle<EcosystemPopulationTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<EcosystemPopulationFreeSlot> _freeRingHandle;
-        private VaultBufferHandle<int> _counterHandle;
-        private VaultBufferHandle<AbsoluteUniversePosition> _entityAupHandle;
-        private VaultBufferHandle<uint> _entityFlagHandle;
+        private VaultGenerationHandle<EcosystemPopulationCoefficient> _coefficientHandle;
+        private VaultGenerationHandle<EcosystemPopulationSectorState> _sectorStateHandle;
+        private VaultGenerationHandle<EcosystemPopulationCullEvent> _cullEventHandle;
+        private VaultGenerationHandle<EcosystemPopulationTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<EcosystemPopulationFreeSlot> _freeRingHandle;
+        private VaultGenerationHandle<int> _counterHandle;
+        private VaultGenerationHandle<AbsoluteUniversePosition> _entityAupHandle;
+        private VaultGenerationHandle<uint> _entityFlagHandle;
         private IDataVault _dataVault;
         private IEcosystemDirectorService _ecosystemDirector;
         private JobHandle _balancerHandle;
@@ -114,7 +114,9 @@ namespace Hecton8.AI.Ecosystem
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                IDataVault oldVault = previousService as IDataVault ?? _dataVault;
                 CompleteScheduledJobForTeardown();
+                ReleaseOwnedVaultHandles(oldVault);
                 _dataVault = currentService as IDataVault;
                 ResetVaultHandles();
                 _coefficientsLoaded = false;
@@ -196,7 +198,7 @@ namespace Hecton8.AI.Ecosystem
         {
             EcosystemPopulationLayoutManifest.VerifyColdBoot();
 
-            IDataVault vault = ResolveDataVaultDependency();
+            IDataVault vault = EnsureDataVaultDependency();
             if (vault == null)
             {
                 _runtimeFlags |= TelemetryVaultMissingFlag;
@@ -212,45 +214,53 @@ namespace Hecton8.AI.Ecosystem
             maxActivePreyPerSector = math.max(1, maxActivePreyPerSector);
             stressCullFraction01 = math.saturate(stressCullFraction01);
 
-            bool hasEntityHandles = TryResolveEntityHandles(vault);
+            bool hasEntityHandles = EnsureEntityHandles(vault);
 
-            _coefficientHandle = vault.GetBufferHandle<EcosystemPopulationCoefficient>(
-                BufferID.EcosystemPopulationCoefficients,
-                CoefficientCapacity,
-                SystemID.AIEcology,
-                NativeArrayOptions.ClearMemory);
-            _sectorStateHandle = vault.GetBufferHandle<EcosystemPopulationSectorState>(
-                BufferID.EcosystemPopulationSectorState,
-                maxSectors,
-                SystemID.AIEcology,
-                NativeArrayOptions.ClearMemory);
-            _cullEventHandle = vault.GetBufferHandle<EcosystemPopulationCullEvent>(
-                BufferID.EcosystemPopulationCullEvents,
-                cullEventCapacity,
-                SystemID.AIEcology,
-                NativeArrayOptions.ClearMemory);
-            _telemetryHandle = vault.GetBufferHandle<EcosystemPopulationTelemetryEntry>(
-                BufferID.EcosystemPopulationTelemetryRing,
-                TelemetryCapacity,
-                SystemID.AIEcology,
-                NativeArrayOptions.ClearMemory);
-            _freeRingHandle = vault.GetBufferHandle<EcosystemPopulationFreeSlot>(
-                BufferID.EcosystemPopulationFreeRing,
-                freeRingCapacity,
-                SystemID.AIEcology,
-                NativeArrayOptions.ClearMemory);
-            _counterHandle = vault.GetBufferHandle<int>(
-                BufferID.EcosystemPopulationCounters,
-                CounterCapacity,
-                SystemID.AIEcology,
-                NativeArrayOptions.ClearMemory);
+            bool hasOwnedBuffers =
+                TryResolveOrAcquire(
+                    vault,
+                    ref _coefficientHandle,
+                    BufferID.EcosystemPopulationCoefficients,
+                    CoefficientCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<EcosystemPopulationCoefficient> _) &&
+                TryResolveOrAcquire(
+                    vault,
+                    ref _sectorStateHandle,
+                    BufferID.EcosystemPopulationSectorState,
+                    maxSectors,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<EcosystemPopulationSectorState> _) &&
+                TryResolveOrAcquire(
+                    vault,
+                    ref _cullEventHandle,
+                    BufferID.EcosystemPopulationCullEvents,
+                    cullEventCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<EcosystemPopulationCullEvent> _) &&
+                TryResolveOrAcquire(
+                    vault,
+                    ref _telemetryHandle,
+                    BufferID.EcosystemPopulationTelemetryRing,
+                    TelemetryCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<EcosystemPopulationTelemetryEntry> _) &&
+                TryResolveOrAcquire(
+                    vault,
+                    ref _freeRingHandle,
+                    BufferID.EcosystemPopulationFreeRing,
+                    freeRingCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<EcosystemPopulationFreeSlot> _) &&
+                TryResolveOrAcquire(
+                    vault,
+                    ref _counterHandle,
+                    BufferID.EcosystemPopulationCounters,
+                    CounterCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<int> _);
 
-            if (!_coefficientHandle.IsCreated ||
-                !_sectorStateHandle.IsCreated ||
-                !_cullEventHandle.IsCreated ||
-                !_telemetryHandle.IsCreated ||
-                !_freeRingHandle.IsCreated ||
-                !_counterHandle.IsCreated)
+            if (!hasOwnedBuffers)
             {
                 _runtimeFlags |= TelemetryVaultMissingFlag;
                 return false;
@@ -268,25 +278,22 @@ namespace Hecton8.AI.Ecosystem
             if (!_coefficientsLoaded)
                 LoadCoefficientsIntoVault(vault);
 
-            ResolveDirectorDependency();
+            EnsureDirectorDependency();
             return _coefficientsLoaded;
         }
 
-        private IDataVault ResolveDataVaultDependency()
+        private IDataVault EnsureDataVaultDependency()
         {
             IDataVault vault = _dataVault;
             if (vault != null)
                 return vault;
 
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-            {
-                vault = latest;
-                _dataVault = vault;
-            }
+            vault = GlobalRegistry.DataVault;
+            _dataVault = vault;
             return vault;
         }
 
-        private IEcosystemDirectorService ResolveDirectorDependency()
+        private IEcosystemDirectorService EnsureDirectorDependency()
         {
             IEcosystemDirectorService director = _ecosystemDirector;
             if (director != null && director.IsInitialized)
@@ -297,12 +304,20 @@ namespace Hecton8.AI.Ecosystem
             return director;
         }
 
-        private bool TryResolveEntityHandles(IDataVault vault)
+        private bool EnsureEntityHandles(IDataVault vault)
         {
-            bool hasAupHandle = vault.TryGetBufferHandle(BufferID.EntityAUPs, out _entityAupHandle) &&
-                                _entityAupHandle.IsCreated;
-            bool hasFlagHandle = vault.TryGetBufferHandle(BufferID.EntityFlags, out _entityFlagHandle) &&
-                                 _entityFlagHandle.IsCreated;
+            bool hasAupHandle = TryBorrowVaultView(
+                vault,
+                BufferID.EntityAUPs,
+                ref _entityAupHandle,
+                1,
+                out NativeArray<AbsoluteUniversePosition> _);
+            bool hasFlagHandle = TryBorrowVaultView(
+                vault,
+                BufferID.EntityFlags,
+                ref _entityFlagHandle,
+                1,
+                out NativeArray<uint> _);
 
             if (!hasAupHandle)
                 _entityAupHandle = default;
@@ -314,11 +329,10 @@ namespace Hecton8.AI.Ecosystem
 
         private void LoadCoefficientsIntoVault(IDataVault vault)
         {
-            var coefficients = _coefficientHandle.Resolve(vault);
-            if (!coefficients.IsCreated || coefficients.Length <= 0)
+            if (!TryOpenVaultView(vault, in _coefficientHandle, 1, out NativeArray<EcosystemPopulationCoefficient> coefficients))
                 return;
 
-            EcosystemPopulationCoefficient coefficient = EcosystemPopulationCoefficient.Default;
+            EcosystemPopulationCoefficient coefficient = EcosystemPopulationCoefficient.CreateDefault();
             if (TryReadCoefficientJson(out EcosystemCoefficientJson json))
             {
                 coefficient = EcosystemPopulationCoefficient.FromJson(in json);
@@ -380,18 +394,12 @@ namespace Hecton8.AI.Ecosystem
         {
             entityCount = 0;
             totalActiveEntities = 0;
-            var entityAups = _entityAupHandle.Resolve(vault);
-            var entityFlags = _entityFlagHandle.Resolve(vault);
-            var sectorStates = _sectorStateHandle.Resolve(vault);
-            var coefficients = _coefficientHandle.Resolve(vault);
-            var freeRing = _freeRingHandle.Resolve(vault);
-            var counters = _counterHandle.Resolve(vault);
-            if (!entityAups.IsCreated ||
-                !entityFlags.IsCreated ||
-                !sectorStates.IsCreated ||
-                !coefficients.IsCreated ||
-                !freeRing.IsCreated ||
-                !counters.IsCreated)
+            if (!TryOpenVaultView(vault, in _entityAupHandle, 1, out NativeArray<AbsoluteUniversePosition> entityAups) ||
+                !TryOpenVaultView(vault, in _entityFlagHandle, 1, out NativeArray<uint> entityFlags) ||
+                !TryOpenVaultView(vault, in _sectorStateHandle, 1, out NativeArray<EcosystemPopulationSectorState> sectorStates) ||
+                !TryOpenVaultView(vault, in _coefficientHandle, 1, out NativeArray<EcosystemPopulationCoefficient> coefficients) ||
+                !TryOpenVaultView(vault, in _freeRingHandle, 1, out NativeArray<EcosystemPopulationFreeSlot> freeRing) ||
+                !TryOpenVaultView(vault, in _counterHandle, 1, out NativeArray<int> counters))
             {
                 return false;
             }
@@ -426,7 +434,7 @@ namespace Hecton8.AI.Ecosystem
                     continue;
 
                 long sectorHash = EcosystemPopulationMath.ResolveSectorHash(in aup);
-                int sectorIndex = ResolveOrCreateSectorSlot(sectorStates, sectorCapacity, ref sectorCount, sectorHash, in aup);
+                int sectorIndex = EnsureSectorSlot(sectorStates, sectorCapacity, ref sectorCount, sectorHash, in aup);
                 if (sectorIndex < 0)
                     continue;
 
@@ -516,22 +524,14 @@ namespace Hecton8.AI.Ecosystem
             if (!TryLockJobBuffers(vault))
                 return;
 
-            var coefficients = _coefficientHandle.Resolve(vault);
-            var sectorStates = _sectorStateHandle.Resolve(vault);
-            var cullEvents = _cullEventHandle.Resolve(vault);
-            var telemetry = _telemetryHandle.Resolve(vault);
-            var freeRing = _freeRingHandle.Resolve(vault);
-            var counters = _counterHandle.Resolve(vault);
-            var entityAups = _entityAupHandle.Resolve(vault);
-            var entityFlags = _entityFlagHandle.Resolve(vault);
-            if (!coefficients.IsCreated ||
-                !sectorStates.IsCreated ||
-                !cullEvents.IsCreated ||
-                !telemetry.IsCreated ||
-                !freeRing.IsCreated ||
-                !counters.IsCreated ||
-                !entityAups.IsCreated ||
-                !entityFlags.IsCreated)
+            if (!TryOpenVaultView(vault, in _coefficientHandle, 1, out NativeArray<EcosystemPopulationCoefficient> coefficients) ||
+                !TryOpenVaultView(vault, in _sectorStateHandle, 1, out NativeArray<EcosystemPopulationSectorState> sectorStates) ||
+                !TryOpenVaultView(vault, in _cullEventHandle, 1, out NativeArray<EcosystemPopulationCullEvent> cullEvents) ||
+                !TryOpenVaultView(vault, in _telemetryHandle, 1, out NativeArray<EcosystemPopulationTelemetryEntry> telemetry) ||
+                !TryOpenVaultView(vault, in _freeRingHandle, 1, out NativeArray<EcosystemPopulationFreeSlot> freeRing) ||
+                !TryOpenVaultView(vault, in _counterHandle, 1, out NativeArray<int> counters) ||
+                !TryOpenVaultView(vault, in _entityAupHandle, 1, out NativeArray<AbsoluteUniversePosition> entityAups) ||
+                !TryOpenVaultView(vault, in _entityFlagHandle, 1, out NativeArray<uint> entityFlags))
             {
                 UnlockJobBuffers();
                 return;
@@ -580,9 +580,8 @@ namespace Hecton8.AI.Ecosystem
 
         private void RecordEmptyTelemetry(IDataVault vault, uint frame, int totalActiveEntities)
         {
-            var telemetry = _telemetryHandle.Resolve(vault);
-            var counters = _counterHandle.Resolve(vault);
-            if (!telemetry.IsCreated || telemetry.Length <= 0 || !counters.IsCreated)
+            if (!TryOpenVaultView(vault, in _telemetryHandle, 1, out NativeArray<EcosystemPopulationTelemetryEntry> telemetry) ||
+                !TryOpenVaultView(vault, in _counterHandle, 1, out NativeArray<int> counters))
                 return;
 
             int telemetryIndex = ReserveTelemetryIndex(telemetry.Length);
@@ -642,11 +641,11 @@ namespace Hecton8.AI.Ecosystem
             if (vault == null)
                 return;
 
-            var cullEvents = _cullEventHandle.Resolve(vault);
-            var counters = _counterHandle.Resolve(vault);
-            var telemetry = _telemetryHandle.Resolve(vault);
-            if (!cullEvents.IsCreated || !counters.IsCreated)
+            if (!TryOpenVaultView(vault, in _cullEventHandle, 1, out NativeArray<EcosystemPopulationCullEvent> cullEvents) ||
+                !TryOpenVaultView(vault, in _counterHandle, 1, out NativeArray<int> counters))
                 return;
+
+            TryOpenVaultView(vault, in _telemetryHandle, 1, out NativeArray<EcosystemPopulationTelemetryEntry> telemetry);
 
             int eventCount = counters.Length > EcosystemPopulationCounters.CullEventCount
                 ? math.clamp(counters[EcosystemPopulationCounters.CullEventCount], 0, cullEvents.Length)
@@ -827,6 +826,7 @@ namespace Hecton8.AI.Ecosystem
 
         private void ClearCachedDependencies()
         {
+            ReleaseOwnedVaultHandles(_dataVault);
             _dataVault = null;
             _ecosystemDirector = null;
             _coefficientsLoaded = false;
@@ -849,7 +849,113 @@ namespace Hecton8.AI.Ecosystem
             _entityFlagHandle = default;
         }
 
-        private static int ResolveOrCreateSectorSlot(
+        private static bool TryResolveOrAcquire<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (TryOpenVaultView(vault, in handle, requiredLength, out buffer))
+                return true;
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out handle) &&
+                TryOpenVaultView(vault, in handle, requiredLength, out buffer))
+            {
+                return true;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.AIEcology,
+                options);
+
+            return TryOpenVaultView(vault, in handle, requiredLength, out buffer);
+        }
+
+        private static bool TryBorrowVaultView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            ref VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (TryOpenVaultView(vault, in handle, requiredLength, out buffer))
+                return true;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle))
+            {
+                handle = default;
+                return false;
+            }
+
+            if (TryOpenVaultView(vault, in handle, requiredLength, out buffer))
+                return true;
+
+            handle = default;
+            buffer = default;
+            return false;
+        }
+
+        private static bool TryOpenVaultView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   requiredLength >= 0 &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private void ReleaseOwnedVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _coefficientHandle);
+            ReleaseVaultHandle(vault, ref _sectorStateHandle);
+            ReleaseVaultHandle(vault, ref _cullEventHandle);
+            ReleaseVaultHandle(vault, ref _telemetryHandle);
+            ReleaseVaultHandle(vault, ref _freeRingHandle);
+            ReleaseVaultHandle(vault, ref _counterHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static int EnsureSectorSlot(
             NativeArray<EcosystemPopulationSectorState> states,
             int capacity,
             ref int count,
@@ -1005,7 +1111,7 @@ namespace Hecton8.AI.Ecosystem
 
                 EcosystemPopulationCoefficient coefficient = Coefficients.Length > 0
                     ? EcosystemPopulationMath.SanitizeCoefficient(Coefficients[0])
-                    : EcosystemPopulationCoefficient.Default;
+                    : EcosystemPopulationCoefficient.CreateDefault();
 
                 for (int sectorIndex = 0; sectorIndex < sectorCount; sectorIndex++)
                 {
@@ -1418,20 +1524,23 @@ namespace Hecton8.AI.Ecosystem
         [FieldOffset(60)]
         public uint Reserved3;
 
-        public static EcosystemPopulationCoefficient Default => new EcosystemPopulationCoefficient
+        public static EcosystemPopulationCoefficient CreateDefault()
         {
-            BirthRate = HectonEcologyContract.LotkaBirthRate,
-            DeathRate = HectonEcologyContract.LotkaDeathRate,
-            DeltaTimeSeconds = HectonEcologyContract.LotkaDeltaTimeSeconds,
-            FeedRate = HectonEcologyContract.LotkaFeedRate,
-            PredatorConversion = HectonEcologyContract.LotkaPredatorConversion,
-            PreyCarryingCapacity = HectonEcologyContract.LotkaPreyCarryingCapacity,
-            StablePredatorBiomass = HectonEcologyContract.LotkaStablePredatorBiomass,
-            StablePreyBiomass = HectonEcologyContract.LotkaStablePreyBiomass,
-            ObservedPredatorMax = HectonEcologyContract.LotkaObservedPredatorMax,
-            ObservedPreyMax = HectonEcologyContract.LotkaObservedPreyMax,
-            IntegrationSteps = HectonEcologyContract.LotkaIntegrationSteps
-        };
+            return new EcosystemPopulationCoefficient
+            {
+                BirthRate = HectonEcologyContract.LotkaBirthRate,
+                DeathRate = HectonEcologyContract.LotkaDeathRate,
+                DeltaTimeSeconds = HectonEcologyContract.LotkaDeltaTimeSeconds,
+                FeedRate = HectonEcologyContract.LotkaFeedRate,
+                PredatorConversion = HectonEcologyContract.LotkaPredatorConversion,
+                PreyCarryingCapacity = HectonEcologyContract.LotkaPreyCarryingCapacity,
+                StablePredatorBiomass = HectonEcologyContract.LotkaStablePredatorBiomass,
+                StablePreyBiomass = HectonEcologyContract.LotkaStablePreyBiomass,
+                ObservedPredatorMax = HectonEcologyContract.LotkaObservedPredatorMax,
+                ObservedPreyMax = HectonEcologyContract.LotkaObservedPreyMax,
+                IntegrationSteps = HectonEcologyContract.LotkaIntegrationSteps
+            };
+        }
 
         public static EcosystemPopulationCoefficient FromJson(in EcosystemCoefficientJson json)
         {
@@ -1620,17 +1729,17 @@ namespace Hecton8.AI.Ecosystem
         {
             EcosystemPopulationCoefficient output = input;
             if (!math.isfinite(output.BirthRate) || output.BirthRate < 0f)
-                output.BirthRate = EcosystemPopulationCoefficient.Default.BirthRate;
+                output.BirthRate = HectonEcologyContract.LotkaBirthRate;
             if (!math.isfinite(output.DeathRate) || output.DeathRate < 0f)
-                output.DeathRate = EcosystemPopulationCoefficient.Default.DeathRate;
+                output.DeathRate = HectonEcologyContract.LotkaDeathRate;
             if (!math.isfinite(output.DeltaTimeSeconds) || output.DeltaTimeSeconds <= 0f)
-                output.DeltaTimeSeconds = EcosystemPopulationCoefficient.Default.DeltaTimeSeconds;
+                output.DeltaTimeSeconds = HectonEcologyContract.LotkaDeltaTimeSeconds;
             if (!math.isfinite(output.FeedRate) || output.FeedRate < 0f)
-                output.FeedRate = EcosystemPopulationCoefficient.Default.FeedRate;
+                output.FeedRate = HectonEcologyContract.LotkaFeedRate;
             if (!math.isfinite(output.PredatorConversion) || output.PredatorConversion < 0f)
-                output.PredatorConversion = EcosystemPopulationCoefficient.Default.PredatorConversion;
+                output.PredatorConversion = HectonEcologyContract.LotkaPredatorConversion;
             if (!math.isfinite(output.PreyCarryingCapacity) || output.PreyCarryingCapacity <= 0f)
-                output.PreyCarryingCapacity = EcosystemPopulationCoefficient.Default.PreyCarryingCapacity;
+                output.PreyCarryingCapacity = HectonEcologyContract.LotkaPreyCarryingCapacity;
 
             output.BirthRate = math.clamp(output.BirthRate, 0f, 1f);
             output.DeathRate = math.clamp(output.DeathRate, 0f, 1f);

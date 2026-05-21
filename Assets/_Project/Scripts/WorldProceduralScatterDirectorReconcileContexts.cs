@@ -10,11 +10,11 @@ namespace Hecton8.World
             public readonly ScatterPlacement Placement;
             public readonly WorldProceduralProxyInstance Instance;
             public readonly WorldPrefabFamilyProfile.VariantEntry RuntimeVariant;
-            public readonly bool FinalVariantActive;
-            public readonly bool RequiresSpawn;
-            public readonly bool ShouldApplyGeneratedGeology;
+            public readonly byte FinalVariantActive;
+            public readonly byte RequiresSpawn;
+            public readonly byte ShouldApplyGeneratedGeology;
             public readonly int SyncSignature;
-            public readonly bool AllowInitialWarmupCreate;
+            public readonly byte AllowInitialWarmupCreate;
 
             public ScatterPlacementReconcilePlan(
                 ScatterPlacement placement,
@@ -29,11 +29,11 @@ namespace Hecton8.World
                 Placement = placement;
                 Instance = instance;
                 RuntimeVariant = runtimeVariant;
-                FinalVariantActive = finalVariantActive;
-                RequiresSpawn = requiresSpawn;
-                ShouldApplyGeneratedGeology = shouldApplyGeneratedGeology;
+                FinalVariantActive = finalVariantActive ? (byte)1 : (byte)0;
+                RequiresSpawn = requiresSpawn ? (byte)1 : (byte)0;
+                ShouldApplyGeneratedGeology = shouldApplyGeneratedGeology ? (byte)1 : (byte)0;
                 SyncSignature = syncSignature;
-                AllowInitialWarmupCreate = allowInitialWarmupCreate;
+                AllowInitialWarmupCreate = allowInitialWarmupCreate ? (byte)1 : (byte)0;
             }
         }
 

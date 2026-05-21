@@ -140,7 +140,7 @@ Fallback:
 
 Tier payloads:
 
-- Toaster/Celeron: `Data/Visuals/Refraction_LUT_RGBA16F_MINIMAL_128.bin`, `128 x 128`, `131072` bytes.
+- Minimum-budget/Celeron: `Data/Visuals/Refraction_LUT_RGBA16F_MINIMAL_128.bin`, `128 x 128`, `131072` bytes.
 - Low/Middle: `Data/Visuals/Refraction_LUT_RGBA16F.bin`, `256 x 256`, `524288` bytes.
 - High/Ultra: `Data/Visuals/Refraction_LUT_RGBA16F_ULTRA_512.bin`, `512 x 512`, `2097152` bytes.
 

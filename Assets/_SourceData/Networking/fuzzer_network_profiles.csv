@@ -1,0 +1,4 @@
+profile,ping_ms,jitter_frames,packet_loss_permille,lag_spike_frames,flush_frames,redundancy,quality_weight
+ci_user_10_loss,200,3,100,30,96,8,1.0
+batch_brutal_15_loss,200,3,150,60,96,8,1.0
+quest_thermal_regression,220,5,100,36,112,10,0.35

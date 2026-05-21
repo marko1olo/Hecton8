@@ -11,9 +11,9 @@ The marketing folder is now broad enough. More documents are not progress unless
 
 Current hard truth: HECTON-8 has marketing preparation, but no public screenshot pack, no Steam page, no demo, no measured performance proof, and no public conversion data. Therefore the correct work now is preparation, verification, asset criteria, and proof gates. Not hype.
 
-## 2026-05-20 External Reality Update V5
+## 2026-05-21 External Reality Update V6
 
-Subnautica 2 is no longer a future trailer target. Steam now lists it as released on 2026-05-14, with single-player, online co-op, cross-platform multiplayer, a large Very Positive review base, 11 supported languages, and a public Early Access plan that expects years of updates. V5 official-platform snapshot from 2026-05-20 records Steam review API 67,378 positive / 6,155 negative / 73,533 all-language reviews and 41,240 positive / 2,771 negative / 44,011 English reviews, both `Very Positive`; the public store page displayed 73,893 total reviews. Snapshot source: `https://store.steampowered.com/app/1962700/Subnautica_2/`.
+Subnautica 2 is no longer a future trailer target. Steam now lists it as released on 2026-05-14, with single-player, online co-op, cross-platform multiplayer, a large Very Positive review base, 11 supported languages, and a public Early Access plan that expects years of updates. V6 official-platform snapshot from 2026-05-21 records Steam review API 70,108 positive / 6,578 negative / 76,686 all-language reviews and 42,855 positive / 2,900 negative / 45,755 English reviews, both `Very Positive`, plus 71,190 appdetails recommendations. Snapshot source: `https://store.steampowered.com/app/1962700/Subnautica_2/`.
 
 PC Gamer and other launch coverage report millions of copies sold in the first launch window and hundreds of thousands of concurrent players. Implication: do not build the marketing plan around SN2 collapse. Their launch momentum is real. HECTON-8 must win through a sharper promise: single-player pressure, machinery, salvage, Seed Ship anomaly, grim industrial identity, and proof-backed performance once we can measure it.
 
@@ -23,7 +23,7 @@ Launch-week weak signals to monitor, not publicly attack:
 - Anecdotal co-op desync reports around shared world state, growbeds, storage, and building.
 - Anecdotal movement/stutter reports, including input-repeat and traversal-area stutter.
 - Base-building friction where flexible construction makes some players miss readable prefabs.
-- Regional review split, especially the V5 Korean/Mixed watch item or other non-English outliers on Steam.
+- Regional review split, especially non-English outliers on Steam.
 
 These are research leads only. They are not public ammunition and not proof that HECTON-8 is better.
 
@@ -55,7 +55,7 @@ If an agent has no context, read only these first:
 
 Everything else is opened only when doing that lane's work.
 
-## Current Operating State - 2026-05-20
+## Current Operating State - 2026-05-21
 
 | Area | Current state | Next valid action |
 |---|---|---|
@@ -71,7 +71,7 @@ Everything else is opened only when doing that lane's work.
 | Owned audience | Signup/list/email work is draft-only. `owned_audience_permission_gate = HOLD_NO_OWNED_AUDIENCE`; no list import, signup push, or newsletter send is active. | Prepare copy only; do not publish signup forms or send list email until the exact mode has `ALLOW_OWNED_AUDIENCE_VERIFIED`, provider/inbox custody, unsubscribe/delete, consent provenance, route class, and public/private route gates. |
 | Regional/localization | Regional copy is draft-only. `localization_public_permission_gate = HOLD_LOCALIZED_PUBLIC_USE`; RU/DE/PT-BR/ES/FR/PL/JP/KR drafts and regional lead rows are not send-ready. | Use localized copy only after language/surface-specific `ALLOW_LOCALIZED_PUBLIC_USE_VERIFIED`, native/fluent review, encoding clean pass, English proof gates, route-specific send/CTA/access/post gates, and provenance fields pass. |
 | Measurement/reporting | KPI and analytics tables require first-capture handoff fields for asset packets, `route_class` / `consent_provenance` for feedback/forms/support/public links, `send_route_class` / `reply_consent_provenance` for creator/press/curator replies, permission gate/source for reportable rows, and exact private access-log fields for private access replies: `verified_contact_route`, `access_route_class`, `reply_status_after_send`, `reply_consent_provenance`, plus `agency_decision_field_source` where proof claims are used. Agency proof rows also require `what_decision_next`, `agency_decision_read`, `agency_decision_read_comments`, or `cold_read_agency_decision` as applicable. Public CTA activation uses `public_cta_permission_gate`; private access uses access logs. | Do not report signal from a row that lacks first-capture handoff fields, route/source permission fields, or claims agency proof without the decision-read field; `unknown` route/provenance values are quarantine only. |
-| Monitoring | SN2 is strong; public Steam API sample now maps pain buckets to planned HECTON proof assets. Pain signals remain internal research only. | Recheck before first HECTON screenshot drop; use pain buckets to prioritize capture, not public attack copy. |
+| Monitoring | SN2 is strong; V6 public Steam API/appdetails sample maps pain buckets to planned HECTON proof assets. Pain signals remain internal research only. | Recheck on the same day before first HECTON screenshot drop; use pain buckets to prioritize capture only through `pain_freshness_source`, `pain_freshness_checked_at`, `viewer_named_decision`, and `capture_verdict`, not public attack copy. |
 | Promise/copy | Promise Lint Gate exists. | Any public sentence must be tagged and proof-checked before use. |
 | Site/presskit | No-link holding state and presskit minimums exist. Public presskit announcement/release copy is held by `press_release_permission_gate = HOLD_NO_PRESS_RELEASE_PUBLICATION`. | Do not publish more than a minimal holding page before official contact and real assets. Do not announce or link a public presskit, media one-pager, or press release unless `press_release_permission_gate = ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED` and every public link has destination-specific CTA custody. |
 | Launch/demo ops | War-room dry run, demo access scoring, key/access compliance, and playtest route custody gates exist. Public demo/Playtest access is held by `demo_public_access_permission_gate = HOLD_NO_PUBLIC_DEMO_ACCESS`; private access is held by `private_access_permission_gate = HOLD_NO_PRIVATE_ACCESS`. | No public demo/Playtest access without `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED`; no private demo/key/playtest/preview/Curator Connect recipient or batch access without `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`; no launch/demo/key/playtest batch without named owners, clean links, AB-009/KPI field source for gameplay/pressure/route-risk claims, exact access-log fields for private routes, route/consent fields for public routes, and stop rules. |
@@ -186,6 +186,8 @@ Every marketing task must end with one of these outputs:
 Generic "research completed" is not enough.
 
 Daily work must now follow `Operations/DAILY_AGENT_TASK_LOOP.md` and end as `ADVANCE`, `HOLD`, or `KILL`.
+
+After any Marketing docs/data edit, run `Operations/DAILY_AGENT_TASK_LOOP.md` End-Of-Change Validation Cut V1. Include the Backtick Path Audit and rationale-order audit when entry, backlog, source-ledger, campaign, presskit, operation, status, or rationale files changed.
 
 ## Current Top Priorities
 

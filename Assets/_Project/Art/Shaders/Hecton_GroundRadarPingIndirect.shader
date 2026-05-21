@@ -42,8 +42,7 @@ Shader "Hecton8/World/GroundRadarPingIndirect"
 
             struct Attributes
             {
-                float4 positionOS : POSITION;
-                float2 uv : TEXCOORD0;
+                uint vertexId : SV_VertexID;
                 uint instanceId : SV_InstanceID;
             };
 
@@ -54,15 +53,28 @@ Shader "Hecton8/World/GroundRadarPingIndirect"
                 float strength : TEXCOORD1;
             };
 
+            float2 ResolveQuadCorner(uint vertexId)
+            {
+                uint localVertex = vertexId % 6u;
+                if (localVertex == 0u || localVertex == 3u)
+                    return float2(-1.0, -1.0);
+                if (localVertex == 1u)
+                    return float2(1.0, -1.0);
+                if (localVertex == 2u || localVertex == 4u)
+                    return float2(1.0, 1.0);
+                return float2(-1.0, 1.0);
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
                 float4 ping = _GroundRadarPings[input.instanceId];
                 float strength = saturate(ping.w);
                 float scale = max(0.05, _GroundRadarScale) * lerp(0.85, 2.35, strength);
-                float3 worldPosition = ping.xyz + float3(input.positionOS.x * scale, 0.02, input.positionOS.z * scale);
+                float2 corner = ResolveQuadCorner(input.vertexId);
+                float3 worldPosition = ping.xyz + float3(corner.x * scale, 0.02, corner.y * scale);
                 output.positionCS = TransformWorldToHClip(worldPosition);
-                output.uv = input.uv;
+                output.uv = corner * 0.5 + 0.5;
                 output.strength = strength;
                 return output;
             }

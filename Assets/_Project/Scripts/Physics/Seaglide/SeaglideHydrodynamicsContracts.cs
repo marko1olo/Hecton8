@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -19,7 +20,9 @@ namespace Hecton8.Physics
         public const int CsvScratchBytes = 65536;
         public const int StateBytes = 64;
         public const int RequestBytes = 128;
+        public const int RequestSignalBytes = 192;
         public const int ForcePacketBytes = 128;
+        public const int ForceDtoBytes = ForcePacketBytes;
         public const int FlowSampleBytes = 64;
         public const int TuningBytes = 128;
         public const int CounterBytes = 64;
@@ -40,7 +43,8 @@ namespace Hecton8.Physics
         public const float DefaultBatteryBaseDrainPerSecond = 0.018f;
         public const float DefaultBatteryLoadDrainPerNewton = 0.000015f;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_227.bin";
-        public const string CsvRelativePath = "Data/Physics/seaglide_vehicle_profiles.csv";
+        public const string CsvRelativePath = "Data/Physics/seaglide_performance_profiles.csv";
+        public const string LegacyCsvRelativePath = "Data/Physics/seaglide_vehicle_profiles.csv";
         public const uint PlayerBodyTargetHash = 0x504C5952u;
         public const uint SourceHash = 0x53323237u;
 
@@ -54,6 +58,9 @@ namespace Hecton8.Physics
         public const uint FlagCavitationSignal = 1u << 7;
         public const uint FlagPacketOverflow = 1u << 8;
         public const uint FlagBudgetExceeded = 1u << 9;
+        public const uint FlagTelemetryHeartbeat = 1u << 10;
+        public const uint FlagCadenceSkipped = 1u << 11;
+        public const uint FlagBodyBindingUnresolved = 1u << 12;
         public const uint FlagNonFinite = 1u << 31;
     }
 
@@ -109,7 +116,24 @@ namespace Hecton8.Physics
         [FieldOffset(124)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = SeaglideHydrodynamicsConstants.ForcePacketBytes)]
+    [StructLayout(LayoutKind.Explicit, Size = SeaglideHydrodynamicsConstants.RequestSignalBytes)]
+    public struct SeaglidePropulsionRequestSignal : ISignal
+    {
+        [FieldOffset(0)] public SeaglidePropulsionRequestDTO Request;
+        [FieldOffset(128)] public float3 Velocity;
+        [FieldOffset(140)] public float BatteryLevel;
+        [FieldOffset(144)] public float MassKg;
+        [FieldOffset(148)] public float AddedMassKg;
+        [FieldOffset(152)] public uint TargetEntityHash;
+        [FieldOffset(156)] public uint FrameIndex;
+        [FieldOffset(160)] public uint Flags;
+        [FieldOffset(164)] public uint _pad0;
+        [FieldOffset(168)] public ulong _pad1;
+        [FieldOffset(176)] public ulong _pad2;
+        [FieldOffset(184)] public ulong _pad3;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = SeaglideHydrodynamicsConstants.ForceDtoBytes)]
     public struct SeaglideForcePacketDTO
     {
         [FieldOffset(0)] public double3 CurrentAUP;
@@ -228,6 +252,7 @@ namespace Hecton8.Physics
     [StructLayout(LayoutKind.Explicit, Size = SeaglideHydrodynamicsConstants.TelemetryBytes)]
     public struct SeaglideTelemetryEntry
     {
+        [FieldOffset(0)] public ulong FrameAndRequestCountPacked;
         [FieldOffset(0)] public uint FrameIndex;
         [FieldOffset(4)] public int EvaluatedRequests;
         [FieldOffset(8)] public int ForcePackets;
@@ -280,7 +305,7 @@ namespace Hecton8.Physics
         [FieldOffset(44)] public uint Flags;
         [FieldOffset(48)] public uint TargetEntityHash;
         [FieldOffset(52)] public uint FrameIndex;
-        [FieldOffset(56)] public ulong _pad1;
+        [FieldOffset(56)] public ulong _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = SeaglideHydrodynamicsConstants.CavitationSignalBytes)]
@@ -309,6 +334,7 @@ namespace Hecton8.Physics
         {
             return UnsafeUtility.SizeOf<SeaglideStateDTO>() == SeaglideHydrodynamicsConstants.StateBytes &&
                    UnsafeUtility.SizeOf<SeaglidePropulsionRequestDTO>() == SeaglideHydrodynamicsConstants.RequestBytes &&
+                   UnsafeUtility.SizeOf<SeaglidePropulsionRequestSignal>() == SeaglideHydrodynamicsConstants.RequestSignalBytes &&
                    UnsafeUtility.SizeOf<SeaglideForcePacketDTO>() == SeaglideHydrodynamicsConstants.ForcePacketBytes &&
                    UnsafeUtility.SizeOf<SeaglideFlowSampleDTO>() == SeaglideHydrodynamicsConstants.FlowSampleBytes &&
                    UnsafeUtility.SizeOf<SeaglideTuningDTO>() == SeaglideHydrodynamicsConstants.TuningBytes &&
@@ -318,10 +344,33 @@ namespace Hecton8.Physics
                    UnsafeUtility.SizeOf<SeaglideVisualStateDTO>() == SeaglideHydrodynamicsConstants.VisualStateBytes &&
                    UnsafeUtility.SizeOf<SeaglideAudioSignalDTO>() == SeaglideHydrodynamicsConstants.AudioSignalBytes &&
                    UnsafeUtility.SizeOf<SeaglideCavitationVfxSignalDTO>() == SeaglideHydrodynamicsConstants.CavitationSignalBytes &&
+                   UnsafeUtility.AlignOf<SeaglideStateDTO>() == 8 &&
+                   UnsafeUtility.AlignOf<SeaglidePropulsionRequestDTO>() == 8 &&
+                   UnsafeUtility.AlignOf<SeaglidePropulsionRequestSignal>() == 8 &&
+                   UnsafeUtility.AlignOf<SeaglideForcePacketDTO>() == 8 &&
+                   UnsafeUtility.AlignOf<SeaglideFlowSampleDTO>() == 8 &&
+                   UnsafeUtility.AlignOf<SeaglideTuningDTO>() == 8 &&
+                   UnsafeUtility.AlignOf<SeaglideCounterDTO>() == 8 &&
+                   UnsafeUtility.AlignOf<SeaglideTelemetryEntry>() == 8 &&
+                   UnsafeUtility.AlignOf<SeaglideBodyBindingDTO>() == 8 &&
+                   UnsafeUtility.AlignOf<SeaglideVisualStateDTO>() == 8 &&
+                   UnsafeUtility.AlignOf<SeaglideAudioSignalDTO>() == 8 &&
+                   UnsafeUtility.AlignOf<SeaglideCavitationVfxSignalDTO>() == 8 &&
                    OffsetOf<SeaglideStateDTO>(nameof(SeaglideStateDTO.CurrentAUP)) == 0 &&
                    OffsetOf<SeaglideStateDTO>(nameof(SeaglideStateDTO.Velocity)) == 24 &&
                    OffsetOf<SeaglideStateDTO>(nameof(SeaglideStateDTO.BatteryLevel)) == 36 &&
                    OffsetOf<SeaglideStateDTO>(nameof(SeaglideStateDTO.ActiveFlags)) == 40 &&
+                   OffsetOf<SeaglidePropulsionRequestDTO>(nameof(SeaglidePropulsionRequestDTO.CurrentAUP)) == 0 &&
+                   OffsetOf<SeaglidePropulsionRequestDTO>(nameof(SeaglidePropulsionRequestDTO.PreviousAUP)) == 24 &&
+                   OffsetOf<SeaglidePropulsionRequestDTO>(nameof(SeaglidePropulsionRequestDTO.InputVector)) == 48 &&
+                   OffsetOf<SeaglidePropulsionRequestDTO>(nameof(SeaglidePropulsionRequestDTO.ForwardVector)) == 60 &&
+                   OffsetOf<SeaglidePropulsionRequestDTO>(nameof(SeaglidePropulsionRequestDTO.Throttle01)) == 72 &&
+                   OffsetOf<SeaglidePropulsionRequestDTO>(nameof(SeaglidePropulsionRequestDTO.TargetEntityHash)) == 80 &&
+                   OffsetOf<SeaglidePropulsionRequestDTO>(nameof(SeaglidePropulsionRequestDTO.SurfaceNormal)) == 104 &&
+                   OffsetOf<SeaglidePropulsionRequestDTO>(nameof(SeaglidePropulsionRequestDTO._pad0)) == 124 &&
+                   OffsetOf<SeaglidePropulsionRequestSignal>(nameof(SeaglidePropulsionRequestSignal.Request)) == 0 &&
+                   OffsetOf<SeaglidePropulsionRequestSignal>(nameof(SeaglidePropulsionRequestSignal.Velocity)) == 128 &&
+                   OffsetOf<SeaglidePropulsionRequestSignal>(nameof(SeaglidePropulsionRequestSignal.TargetEntityHash)) == 152 &&
                    OffsetOf<SeaglideForcePacketDTO>(nameof(SeaglideForcePacketDTO.TargetEntityHash)) == 84 &&
                    OffsetOf<SeaglideForcePacketDTO>(nameof(SeaglideForcePacketDTO.NetForce)) == 24 &&
                    OffsetOfTelemetry(nameof(SeaglideTelemetryEntry.LastFlowForce)) == 48 &&
@@ -337,6 +386,10 @@ namespace Hecton8.Physics
             Type type = typeof(T);
             if (type == typeof(SeaglideStateDTO))
                 return OffsetOfState(fieldName);
+            if (type == typeof(SeaglidePropulsionRequestDTO))
+                return OffsetOfRequest(fieldName);
+            if (type == typeof(SeaglidePropulsionRequestSignal))
+                return OffsetOfRequestSignal(fieldName);
             if (type == typeof(SeaglideForcePacketDTO))
                 return OffsetOfForcePacket(fieldName);
             if (type == typeof(SeaglideVisualStateDTO))
@@ -344,6 +397,44 @@ namespace Hecton8.Physics
             if (type == typeof(SeaglideAudioSignalDTO))
                 return OffsetOfAudioSignal(fieldName);
 
+            return -1;
+        }
+
+        private static int OffsetOfRequest(string fieldName)
+        {
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.CurrentAUP)) return 0;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.PreviousAUP)) return 24;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.InputVector)) return 48;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.ForwardVector)) return 60;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.Throttle01)) return 72;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.DeltaTime)) return 76;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.TargetEntityHash)) return 80;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.RequestHash)) return 84;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.Flags)) return 88;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.FrameIndex)) return 92;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.BatteryLevel)) return 96;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.MaxThrustOverrideN)) return 100;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.SurfaceNormal)) return 104;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.CrossSectionAreaOverrideM2)) return 116;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO.DragCoefficientOverride)) return 120;
+            if (fieldName == nameof(SeaglidePropulsionRequestDTO._pad0)) return 124;
+            return -1;
+        }
+
+        private static int OffsetOfRequestSignal(string fieldName)
+        {
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal.Request)) return 0;
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal.Velocity)) return 128;
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal.BatteryLevel)) return 140;
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal.MassKg)) return 144;
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal.AddedMassKg)) return 148;
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal.TargetEntityHash)) return 152;
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal.FrameIndex)) return 156;
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal.Flags)) return 160;
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal._pad0)) return 164;
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal._pad1)) return 168;
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal._pad2)) return 176;
+            if (fieldName == nameof(SeaglidePropulsionRequestSignal._pad3)) return 184;
             return -1;
         }
 
@@ -407,7 +498,7 @@ namespace Hecton8.Physics
             if (fieldName == nameof(SeaglideAudioSignalDTO.Flags)) return 44;
             if (fieldName == nameof(SeaglideAudioSignalDTO.TargetEntityHash)) return 48;
             if (fieldName == nameof(SeaglideAudioSignalDTO.FrameIndex)) return 52;
-            if (fieldName == nameof(SeaglideAudioSignalDTO._pad1)) return 56;
+            if (fieldName == nameof(SeaglideAudioSignalDTO._pad0)) return 56;
             return -1;
         }
 

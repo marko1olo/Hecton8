@@ -88,16 +88,8 @@ namespace Hecton8.Construction
 
             int safeStart = math.clamp(range.x, 0, math.max(0, TargetCount));
             int safeCount = math.clamp(range.y, 0, math.max(0, TargetCount - safeStart));
-            int budget = math.min(
-                safeCount,
-                ShinobuSocketConstructionRuntime.ResolveCandidateBudget(
-                    Tuning.GlobalQualityWeight,
-                    Tuning.MinCandidateBudget,
-                    Tuning.MaxCandidateBudget));
-            double radius = ShinobuSocketConstructionRuntime.ResolveSearchRadius(
-                Tuning.GlobalQualityWeight,
-                Tuning.SearchRadiusLowMeters,
-                Tuning.SearchRadiusUltraMeters);
+            int budget = safeCount;
+            double radius = ShinobuSocketConstructionRuntime.SanitizePositive(Tuning.SearchRadiusUltraMeters, 18f);
             double radiusSq = radius * radius;
             float alignmentThreshold = math.clamp(Tuning.AlignmentDotThreshold, -1f, 1f);
             uint evaluated = 0u;
@@ -386,12 +378,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            int budget = math.min(
-                math.max(0, ExistingCount),
-                ShinobuSocketConstructionRuntime.ResolveCandidateBudget(
-                    Tuning.GlobalQualityWeight,
-                    Tuning.MinCandidateBudget,
-                    Tuning.MaxCandidateBudget));
+            int budget = math.min(math.max(0, ExistingCount), ExistingBounds.Length);
 
             for (int i = 0; i < budget && i < ExistingBounds.Length; i++)
             {
@@ -554,7 +541,6 @@ namespace Hecton8.Construction
         [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfSamples;
         public float3 BoundsExtents;
         public int ExistingCount;
-        public int SdfSampleCount;
         public float SolidSdfThreshold;
         public float GlobalQualityWeight;
         public int StateIndex;
@@ -587,14 +573,7 @@ namespace Hecton8.Construction
             float3 axisY = state.LocalToWorld.c1.xyz * 0.5f;
             float3 axisZ = state.LocalToWorld.c2.xyz * 0.5f;
             int sampleBase = index * ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount;
-            int availableSampleLimit = SdfSampleCount <= 0
-                ? ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount
-                : SdfSampleCount;
-            int sampleLimit = math.clamp(
-                availableSampleLimit,
-                1,
-                ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount);
-            for (int sampleOrdinal = 0; sampleOrdinal < sampleLimit; sampleOrdinal++)
+            for (int sampleOrdinal = 0; sampleOrdinal < ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount; sampleOrdinal++)
             {
                 int corner = ShinobuSocketConstructionRuntime.ResolveBuilderGhostCornerIndex(sampleOrdinal);
                 float sx = (corner & 1) == 0 ? -1f : 1f;
@@ -946,52 +925,6 @@ namespace Hecton8.Construction
             args.StartVertex = 0u;
             args.StartInstance = 0u;
             Args[0] = args;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct RecordHolographyTelemetryJob : IJob
-    {
-        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<HolographyTelemetryEntry> TelemetryRing;
-        [ReadOnly, NoAlias] public NativeArray<BuilderGhostStateDTO> States;
-        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> DumpRequest;
-        public uint Frame;
-        public uint SdfCornerChecks;
-        public float SolverMicroseconds;
-        public float MinSdfDistance;
-        public float GlobalQualityWeight;
-        public int StateIndex;
-
-        public void Execute()
-        {
-            if (!TelemetryRing.IsCreated || TelemetryRing.Length <= 0 || !States.IsCreated || States.Length <= 0)
-                return;
-
-            int stateIndex = math.clamp(StateIndex, 0, States.Length - 1);
-            BuilderGhostStateDTO state = States[stateIndex];
-            int ringIndex = (int)(Frame % (uint)math.min(TelemetryRing.Length, ShinobuSocketConstructionRuntime.TelemetryCapacity));
-            HolographyTelemetryEntry entry;
-            entry.AUP_TargetPosition = state.AUP_TargetPosition;
-            entry.Frame = Frame;
-            entry.PrefabHashID = state.PrefabHashID;
-            entry.SdfCornerChecks = SdfCornerChecks;
-            entry.ValidationFlags = state.ValidationFlags;
-            entry.SolverMicroseconds = math.isfinite(SolverMicroseconds) ? SolverMicroseconds : -1f;
-            entry.MinSdfDistance = math.isfinite(MinSdfDistance) ? MinSdfDistance : -9999f;
-            entry.ValidationStateHash = state.ValidationStateHash;
-            entry.GlobalQualityWeight = ShinobuSocketConstructionRuntime.SanitizeQuality(GlobalQualityWeight);
-            entry._pad0 = 0u;
-            entry._pad1 = 0u;
-            TelemetryRing[ringIndex] = entry;
-
-            if (DumpRequest.IsCreated &&
-                DumpRequest.Length > 0 &&
-                (entry.SolverMicroseconds > 500f ||
-                 entry.SolverMicroseconds < 0f ||
-                 (state.ValidationFlags & BuilderGhostValidationFlags.NonFinite) != 0u))
-            {
-                DumpRequest[0] = 1;
-            }
         }
     }
 

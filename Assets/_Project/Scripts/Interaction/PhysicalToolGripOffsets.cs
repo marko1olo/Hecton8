@@ -77,7 +77,7 @@ namespace Hecton8.Interaction
             if (_allocated && _gripOffsets.IsCreated)
                 return;
 
-            _gripOffsets = new NativeArray<float4x4>(GripOffsetCount, Allocator.Persistent); // COLD ALLOC: NativeArray<float4x4>[2] - VR hand grip offsets - owner: PhysicalToolGripOffsets
+            _gripOffsets = new NativeArray<float4x4>(GripOffsetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[2] - VR hand grip offsets - owner: PhysicalToolGripOffsets
             NativeMemorySentinel.RegisterNativeArray(_gripOffsets, nameof(PhysicalToolGripOffsets), nameof(_gripOffsets), NativeAllocationLifetime.Session);
             _allocated = true;
             WriteAuthoredOffsets();

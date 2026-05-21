@@ -276,6 +276,8 @@ namespace Hecton8.Gameplay
         private const int MetaWeakspotTierShift = 17;
         private const int MetaDetailIndexShift = 19;
         private const int MetaDamageClassShift = 29;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptOwnerIndexAllocator = Allocator.Persistent;
         private const uint MetaDamageTypeMask = 0xFFu;
         private const uint MetaStatusBitsMask = 0x1FFu;
         private const uint MetaWeakspotTierMask = 0x3u;
@@ -296,8 +298,9 @@ namespace Hecton8.Gameplay
         private static readonly ProfilerMarker _scheduleMarker = new ProfilerMarker("CombatDamageRuntime.Schedule");
         private static readonly ProfilerMarker _lateFrameMarker = new ProfilerMarker("CombatDamageRuntime.LateFrame");
         private static readonly ProfilerMarker _slowTickMarker = new ProfilerMarker("CombatDamageRuntime.SlowTick");
-        private static readonly RegistryBucket<ICombatDamageEventListener> _listeners =
-            new RegistryBucket<ICombatDamageEventListener>(ListenerCapacity);
+        private static readonly ListenerSlot[] _listeners =
+            new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - combat damage event listeners - owner: CombatDamageRuntime
+        private static int _listenerCount;
         private static readonly SpatialQueryHit[] _poisonDiffusionHits =
             new SpatialQueryHit[PoisonDiffusionBufferLength]; // COLD ALLOC: SpatialQueryHit[16] - poison spread fanout scratch - owner: CombatDamageRuntime
         private static readonly int[] _poisonDiffusionTargetIds =
@@ -339,8 +342,7 @@ namespace Hecton8.Gameplay
         private static bool _telemetryDumpedThisSession;
         private static byte _mathLod = (byte)CombatMathLod.Low;
         private static byte _requestedMathLod = (byte)CombatMathLod.High;
-        private static MathPrecisionLevel _cachedMathPrecision = MathPrecisionLevel.Low;
-        private static HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
+        private static float _visualQualityWeight01 = 1f;
 
         public static bool IsInitialized => _damageSignals.IsCreated;
         public static int PendingSignalCount => _queuedSignalCount;
@@ -417,8 +419,7 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            RegisterListenerImmediate(listener);
         }
 
         public static void Unregister(ICombatDamageEventListener listener)
@@ -426,7 +427,7 @@ namespace Hecton8.Gameplay
             if (listener == null)
                 return;
 
-            _listeners.TryUnregister(listener);
+            TryUnregisterListenerImmediate(listener);
         }
 
         public static bool RegisterTarget(
@@ -654,7 +655,7 @@ namespace Hecton8.Gameplay
 
             using (_scheduleMarker.Auto())
             {
-                _mathLod = ResolveRuntimeMathLod();
+                RefreshRuntimePolicy();
                 ClearCounters();
                 ProcessDamageQueueJob job = new ProcessDamageQueueJob
                 {
@@ -680,7 +681,7 @@ namespace Hecton8.Gameplay
                     Counters = _counters,
                     DeflectSignalWriter = GlobalSignals.DeflectSignalWriter,
                     SignalBudget = MaxQueuedSignals,
-                    MathLod = _mathLod
+                    VisualQualityWeight01 = _visualQualityWeight01
                 };
                 _damageJobHandle = job.Schedule();
                 _damageJobScheduled = true;
@@ -931,10 +932,11 @@ namespace Hecton8.Gameplay
             _queuedSignalCount = 0;
             _mathLod = (byte)CombatMathLod.Low;
             _requestedMathLod = (byte)CombatMathLod.High;
-            _cachedMathPrecision = MathPrecisionLevel.Low;
-            _cachedScalabilityTier = HectonQualityTier.Unknown;
+            _visualQualityWeight01 = 1f;
             _telemetryDumpedThisSession = false;
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+            _listenerCount = 0;
         }
 
         private static void EnsureInitialized()
@@ -942,7 +944,7 @@ namespace Hecton8.Gameplay
             if (_damageSignals.IsCreated)
                 return;
 
-            _damageSignals = new NativeQueue<CombatDamageRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CombatDamageRequest>[1024] - combat damage ingress lane - owner: CombatDamageRuntime
+            _damageSignals = new NativeQueue<CombatDamageRequest>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<CombatDamageRequest>[1024] - combat damage ingress lane - owner: CombatDamageRuntime
             NativeMemorySentinel.RegisterNativeQueue(
                 _damageSignals,
                 MaxQueuedSignals,
@@ -952,7 +954,7 @@ namespace Hecton8.Gameplay
             PrewarmQueue(ref _damageSignals, MaxQueuedSignals);
             _signalDetails = AllocateArray<CombatDamageSignalDetail>(MaxQueuedSignals, nameof(_signalDetails));
 
-            _slotByTargetId = new NativeParallelHashMap<int, int>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<int,int>[2048] - target id to health slot map - owner: CombatDamageRuntime
+            _slotByTargetId = new NativeParallelHashMap<int, int>(MaxTargets, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashMap<int,int>[2048] - target id to health slot map - owner: CombatDamageRuntime
             NativeMemorySentinel.RegisterNativeParallelHashMap(
                 _slotByTargetId,
                 nameof(CombatDamageRuntime),
@@ -1076,13 +1078,18 @@ namespace Hecton8.Gameplay
                 DispatchManagedSideEffects(in result, receiver, slot);
             }
 
-            ICombatDamageEventListener[] listeners = _listeners.RawArray;
-            int listenerCount = _listeners.Count;
+            int listenerCount = _listenerCount;
             for (int resultIndex = 0; resultIndex < resultCount; resultIndex++)
             {
                 CombatDamageResult result = _results[resultIndex];
                 for (int listenerIndex = 0; listenerIndex < listenerCount; listenerIndex++)
-                    listeners[listenerIndex].OnCombatDamageResolved(in result);
+                {
+                    ICombatDamageEventListener listener = _listeners[listenerIndex].Listener;
+                    if (listener == null)
+                        continue;
+
+                    listener.OnCombatDamageResolved(in result);
+                }
             }
 
             _counters[CounterResultCount] = 0;
@@ -1090,8 +1097,7 @@ namespace Hecton8.Gameplay
 
         private static void DispatchStatusResults()
         {
-            ICombatDamageEventListener[] listeners = _listeners.RawArray;
-            int listenerCount = _listeners.Count;
+            int listenerCount = _listenerCount;
             int targetCount = _targetCount;
             for (int slot = 0; slot < targetCount; slot++)
             {
@@ -1124,7 +1130,60 @@ namespace Hecton8.Gameplay
                 }
 
                 for (int listenerIndex = 0; listenerIndex < listenerCount; listenerIndex++)
-                    listeners[listenerIndex].OnCombatDamageResolved(in result);
+                {
+                    ICombatDamageEventListener listener = _listeners[listenerIndex].Listener;
+                    if (listener == null)
+                        continue;
+
+                    listener.OnCombatDamageResolved(in result);
+                }
+            }
+        }
+
+        private static void RegisterListenerImmediate(ICombatDamageEventListener listener)
+        {
+            if (ContainsListenerImmediate(listener) || _listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount].Listener = listener;
+            _listenerCount++;
+        }
+
+        private static bool TryUnregisterListenerImmediate(ICombatDamageEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = _listenerCount - 1;
+                _listeners[i] = _listeners[lastIndex];
+                _listeners[lastIndex].Clear();
+                _listenerCount = lastIndex;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsListenerImmediate(ICombatDamageEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private struct ListenerSlot
+        {
+            public ICombatDamageEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
             }
         }
 
@@ -1298,9 +1357,12 @@ namespace Hecton8.Gameplay
 
             float intensity = math.saturate(result.AppliedDamage * math.rcp(math.max(0.0001f, result.MaxHealth)));
             ChemicalInfluenceGrid.QueueBloodScent(worldPoint, intensity);
+            if (!TryResolveAupFromRuntimeOrigin(worldPoint, out AbsoluteUniversePosition positionAup))
+                return;
+
             GlobalSignals.Publish(new DebrisSpawnSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPoint),
+                PositionAup = positionAup,
                 SpeciesHash = unchecked((uint)result.TargetId),
                 SourceEntityId = unchecked((uint)result.SourceId),
                 Intensity01 = intensity,
@@ -1332,9 +1394,12 @@ namespace Hecton8.Gameplay
             if (!TryResolveWorldPoint(in result, slot, out Vector3 worldPoint))
                 return;
 
+            if (!TryResolveAupFromRuntimeOrigin(worldPoint, out AbsoluteUniversePosition positionAup))
+                return;
+
             GlobalSignals.Publish(new EntityDeathSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPoint),
+                PositionAup = positionAup,
                 EntityHash = unchecked((uint)result.TargetId),
                 SourceHash = unchecked((uint)result.SourceId),
                 Intensity01 = 1f,
@@ -1469,6 +1534,26 @@ namespace Hecton8.Gameplay
             Vector3 localPoint = new Vector3(result.LocalPoint.x, result.LocalPoint.y, result.LocalPoint.z);
             worldPoint = receiverTransform.TransformPoint(localPoint);
             return math.all(math.isfinite(new float3(worldPoint.x, worldPoint.y, worldPoint.z)));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static byte QuantizeDelta(float previousHealth, float nextHealth, float maximumHealth)
@@ -1687,52 +1772,70 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte ResolveRuntimeMathLod()
+        private static byte ResolveFeedbackMathLod(float visualQualityWeight01)
         {
-            if (_requestedMathLod == (byte)CombatMathLod.Low ||
-                _cachedMathPrecision != MathPrecisionLevel.High)
-            {
-                return (byte)CombatMathLod.Low;
-            }
-
-            HectonQualityTier tier = _cachedScalabilityTier;
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra
+            return visualQualityWeight01 >= 0.5f
                 ? (byte)CombatMathLod.High
                 : (byte)CombatMathLod.Low;
         }
 
         private static void RefreshRuntimePolicy()
         {
-            _cachedMathPrecision = GlobalRegistry.MathPrecision;
-            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
+            float qualityWeight01 = SignalBusRegistry.GlobalQualityWeight01;
+            float requestedWeight01 = _requestedMathLod == (byte)CombatMathLod.Low ? 0f : 1f;
+            _visualQualityWeight01 = SanitizeQualityWeight01(qualityWeight01) * requestedWeight01;
+            _mathLod = ResolveFeedbackMathLod(SmoothStep01(_visualQualityWeight01));
         }
 
-        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeQualityWeight01(float qualityWeight01)
+        {
+            return math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - (2f * t));
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ProcessDamageQueueJob : IJob
         {
+            [NoAlias]
             public NativeQueue<CombatDamageRequest> Signals;
-            [ReadOnly] public NativeArray<CombatDamageSignalDetail> SignalDetails;
-            [ReadOnly] public NativeParallelHashMap<int, int> SlotByTargetId;
-            [ReadOnly] public NativeArray<int> InstanceIds;
+            [ReadOnly, NoAlias] public NativeArray<CombatDamageSignalDetail> SignalDetails;
+            [ReadOnly, NoAlias] public NativeParallelHashMap<int, int> SlotByTargetId;
+            [ReadOnly, NoAlias] public NativeArray<int> InstanceIds;
+            [NoAlias]
             public NativeArray<float> Health;
-            [ReadOnly] public NativeArray<float> MaxHealth;
-            [ReadOnly] public NativeArray<float> InvMaxHealth;
+            [ReadOnly, NoAlias] public NativeArray<float> MaxHealth;
+            [ReadOnly, NoAlias] public NativeArray<float> InvMaxHealth;
+            [NoAlias]
             public NativeArray<int> ArmorValues;
+            [NoAlias]
             public NativeArray<float> ShieldValues;
+            [NoAlias]
             public NativeArray<float> MinorDamageAccumulators;
-            [ReadOnly] public NativeArray<float3> TargetForwardVectors;
-            [ReadOnly] public NativeArray<float> TargetHeights;
-            [ReadOnly] public NativeArray<uint> TargetFlags;
+            [ReadOnly, NoAlias] public NativeArray<float3> TargetForwardVectors;
+            [ReadOnly, NoAlias] public NativeArray<float> TargetHeights;
+            [ReadOnly, NoAlias] public NativeArray<uint> TargetFlags;
+            [NoAlias]
             public NativeArray<uint> StatusMasks;
+            [NoAlias]
             public NativeArray<float4> StatusDurations0123;
+            [NoAlias]
             public NativeArray<float4> LegacyStatusDurations4567;
+            [NoAlias]
             public NativeArray<float> BrittleDurations;
-            [ReadOnly] public NativeArray<float> DamageArmorLut;
-            public NativeArray<CombatDamageResult> Results;
+            [ReadOnly, NoAlias] public NativeArray<float> DamageArmorLut;
+            [WriteOnly, NoAlias] public NativeArray<CombatDamageResult> Results;
+            [NoAlias]
             public NativeArray<int> Counters;
             public NativeQueue<DeflectSignal>.ParallelWriter DeflectSignalWriter;
             public int SignalBudget;
-            public byte MathLod;
+            public float VisualQualityWeight01;
 
             public void Execute()
             {
@@ -1759,12 +1862,12 @@ namespace Hecton8.Gameplay
                     int armorClass = (int)(targetFlags & TargetFlagArmorMask);
                     int damageClass = (int)ReadDamageClass(signal.PackedMeta);
                     float armorMultiplier = DamageArmorLut[(damageClass * ArmorClassCount) + armorClass];
-                    if (MathLod == (byte)CombatMathLod.High)
-                    {
-                        float3 projectileDirection = ResolveExactDirection(signal.Direction);
-                        float3 armorNormal = ResolveExactDirection(detail.ArmorNormal);
-                        armorMultiplier *= math.saturate(math.dot(projectileDirection, armorNormal) + 0.2f);
-                    }
+                    float3 projectileDirection = ResolveExactDirection(signal.Direction);
+                    float3 armorNormal = ResolveExactDirection(detail.ArmorNormal);
+                    float directionalArmorMultiplier = math.saturate(math.dot(projectileDirection, armorNormal) + 0.2f);
+                    bool hasDirectionalArmorProof = math.lengthsq(projectileDirection) > 0.0001f &&
+                                                     math.lengthsq(armorNormal) > 0.0001f;
+                    armorMultiplier *= math.select(1f, directionalArmorMultiplier, hasDirectionalArmorProof);
 
                     int weakspotTier = ReadWeakspotTier(signal.PackedMeta);
                     float weakspotMultiplier = math.select(1f, 3f, weakspotTier == (int)CombatWeakspotTier.Weakspot);
@@ -1880,10 +1983,13 @@ namespace Hecton8.Gameplay
                         flags |= CombatDamageResultFlags.CriticalFailure;
                     }
 
-                    if ((flags & CombatDamageResultFlags.WoundTrigger) != 0 && MathLod == (byte)CombatMathLod.High)
+                    if ((flags & CombatDamageResultFlags.WoundTrigger) != 0 &&
+                        ShouldEmitHighFidelityWound(slot, signal.SourceId, VisualQualityWeight01))
+                    {
                         flags |= CombatDamageResultFlags.HighFidelityWound;
+                    }
 
-                    WriteResult(slot, signal, detail, damageType, kind, previousHealth, nextHealth, damage, maxHealth, InvMaxHealth[slot], MathLod, flags);
+                    WriteResult(slot, signal, detail, damageType, kind, previousHealth, nextHealth, damage, maxHealth, InvMaxHealth[slot], VisualQualityWeight01, flags);
                 }
 
                 Counters[CounterProcessedSignals] = Counters[CounterProcessedSignals] + processed;
@@ -2009,7 +2115,7 @@ namespace Hecton8.Gameplay
                 float damage,
                 float maxHealth,
                 float invMaxHealth,
-                byte mathLod,
+                float visualQualityWeight01,
                 ushort flags)
             {
                 int resultIndex = Counters[CounterResultCount];
@@ -2030,36 +2136,39 @@ namespace Hecton8.Gameplay
                     NextHealth = nextHealth,
                     AppliedDamage = damage,
                     MaxHealth = maxHealth,
-                    Direction = ResolveCombatDirection(signal.Direction, kind, mathLod),
+                    Direction = ResolveCombatDirection(signal.Direction, kind),
                     TraumaLevel = ResolveTraumaLevelFromInvMax(damage, invMaxHealth),
                     Flags = flags,
                     Channel = (byte)DamageChannel.Integrity,
                     DirectionOctant = ResolveDirectionOctant(signal.Direction),
                     LocalPoint = detail.LocalPoint,
-                    SurfaceNormal = mathLod == (byte)CombatMathLod.High
-                        ? ResolveExactDirection(detail.ArmorNormal)
-                        : float3.zero,
+                    SurfaceNormal = ResolveVisualSurfaceNormal(detail.ArmorNormal, visualQualityWeight01),
                     Depth = 0f
                 };
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ProcessCombatStatusJob : IJobParallelFor
         {
             public float DeltaTime;
             public int TargetCount;
-            [ReadOnly] public NativeArray<int> InstanceIds;
+            [ReadOnly, NoAlias] public NativeArray<int> InstanceIds;
+            [NoAlias]
             public NativeArray<float> Health;
-            [ReadOnly] public NativeArray<float> MaxHealth;
-            [ReadOnly] public NativeArray<float> InvMaxHealth;
-            [ReadOnly] public NativeArray<uint> TargetFlags;
+            [ReadOnly, NoAlias] public NativeArray<float> MaxHealth;
+            [ReadOnly, NoAlias] public NativeArray<float> InvMaxHealth;
+            [ReadOnly, NoAlias] public NativeArray<uint> TargetFlags;
+            [NoAlias]
             public NativeArray<uint> StatusMasks;
+            [NoAlias]
             public NativeArray<float4> StatusDurations0123;
+            [NoAlias]
             public NativeArray<float4> LegacyStatusDurations4567;
+            [NoAlias]
             public NativeArray<float> BrittleDurations;
-            public NativeArray<CombatDamageResult> ResultsBySlot;
-            public NativeArray<byte> ResultActiveBySlot;
+            [WriteOnly, NoAlias] public NativeArray<CombatDamageResult> ResultsBySlot;
+            [WriteOnly, NoAlias] public NativeArray<byte> ResultActiveBySlot;
 
             public void Execute(int index)
             {
@@ -2145,7 +2254,7 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float3 ResolveCombatDirection(float3 direction, byte kind, byte mathLod)
+        private static float3 ResolveCombatDirection(float3 direction, byte kind)
         {
             if (kind == (byte)CombatEntityKind.Player)
                 return ResolveExactDirection(direction);
@@ -2169,6 +2278,24 @@ namespace Hecton8.Gameplay
             return lengthSq > 0.0001f && math.all(math.isfinite(direction))
                 ? direction * math.rsqrt(lengthSq)
                 : float3.zero;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ResolveVisualSurfaceNormal(float3 normal, float visualQualityWeight01)
+        {
+            return ResolveExactDirection(normal) * SmoothStep01(visualQualityWeight01);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ShouldEmitHighFidelityWound(int slot, int sourceId, float visualQualityWeight01)
+        {
+            float weight = SmoothStep01(visualQualityWeight01);
+            if (weight <= 0f)
+                return false;
+
+            uint hash = math.hash(new uint3(unchecked((uint)slot), unchecked((uint)sourceId), 0xC0BADA7Au));
+            float threshold = (hash & 0xFFFFu) * (1f / 65535f);
+            return threshold <= weight;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

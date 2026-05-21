@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -12,13 +11,12 @@ namespace Hecton8.Audio
     /// </summary>
     internal static class PlayerCriticalBufferJobs
     {
-        [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
         public struct DopplerShiftBatchJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float> SourceFrequencies;
-            [ReadOnly] public NativeArray<float> RelativeVelocitiesMetersPerSecond;
-            [WriteOnly] public NativeArray<float> ShiftedFrequencies;
+            [ReadOnly, NoAlias] public NativeArray<float> SourceFrequencies;
+            [ReadOnly, NoAlias] public NativeArray<float> RelativeVelocitiesMetersPerSecond;
+            [WriteOnly, NoAlias] public NativeArray<float> ShiftedFrequencies;
             public float SpeedOfSoundMetersPerSecond;
             public float SpeedOfSoundMetersPerSecondInv;
 
@@ -54,15 +52,14 @@ namespace Hecton8.Audio
             }
         }
 
-        [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
         public struct BinauralVoxelAcousticsOutputJob : IJob
         {
-            [ReadOnly] public NativeArray<float> MonoInput;
-            public NativeArray<float> StereoOutput;
-            public NativeArray<float> DelayRing;
-            public NativeArray<int> DelayWriteIndexState;
-            public NativeArray<float> ShadowHistory;
+            [ReadOnly, NoAlias] public NativeArray<float> MonoInput;
+            [NoAlias] public NativeArray<float> StereoOutput;
+            [NoAlias] public NativeArray<float> DelayRing;
+            [NoAlias] public NativeArray<int> DelayWriteIndexState;
+            [NoAlias] public NativeArray<float> ShadowHistory;
             public int FrameCount;
             public int DelayMask;
             public int DelayWriteIndex;
@@ -175,19 +172,18 @@ namespace Hecton8.Audio
             }
         }
 
-        [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
         public struct GranularSynthesisBlockJob : IJob
         {
-            [ReadOnly] public NativeArray<float> GrainBank;
-            [WriteOnly] public NativeArray<float> Output;
-            public NativeArray<int> VoiceActive;
-            public NativeArray<int> VoiceElapsed;
-            public NativeArray<int> VoiceLength;
-            public NativeArray<int> VoiceStart;
-            public NativeArray<float> VoiceCursor;
-            public NativeArray<float> VoicePlaybackRate;
-            public NativeArray<float> VoiceGain;
+            [ReadOnly, NoAlias] public NativeArray<float> GrainBank;
+            [WriteOnly, NoAlias] public NativeArray<float> Output;
+            [NoAlias] public NativeArray<int> VoiceActive;
+            [NoAlias] public NativeArray<int> VoiceElapsed;
+            [NoAlias] public NativeArray<int> VoiceLength;
+            [NoAlias] public NativeArray<int> VoiceStart;
+            [NoAlias] public NativeArray<float> VoiceCursor;
+            [NoAlias] public NativeArray<float> VoicePlaybackRate;
+            [NoAlias] public NativeArray<float> VoiceGain;
             public int FrameCount;
             public int VoiceCount;
             public int LinearEnvelope;
@@ -409,11 +405,10 @@ namespace Hecton8.Audio
             }
         }
 
-        [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
         public struct VwsCooldownDecayJob : IJob
         {
-            public NativeArray<float> Cooldowns;
+            [NoAlias] public NativeArray<float> Cooldowns;
             public float DeltaSeconds;
 
             public void Execute()
@@ -431,11 +426,10 @@ namespace Hecton8.Audio
             }
         }
 
-        [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]
         public struct VwsPrioritySortJob : IJob
         {
-            public NativeArray<byte> Queue;
+            [NoAlias] public NativeArray<byte> Queue;
             public int QueueCount;
 
             public void Execute()

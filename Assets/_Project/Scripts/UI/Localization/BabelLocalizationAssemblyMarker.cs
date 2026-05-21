@@ -7,11 +7,11 @@ namespace Hecton8.UI.Localization
     /// </summary>
     public readonly struct BabelLocalizationAssemblyMarker
     {
+        public readonly FixedString64Bytes Marker;
+
         public BabelLocalizationAssemblyMarker(FixedString64Bytes marker)
         {
             Marker = marker;
         }
-
-        public FixedString64Bytes Marker { get; }
     }
 }

@@ -394,7 +394,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                                 HeightScaleMeters = heightScaleMeters,
                                 TalusAngleDegrees = talusAngleDegrees,
                                 Strength = thermalStrength,
-                                WriteWearMask = false
+                                WriteWearMaskFlag = 0
                             };
 
                             handle = slumpJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);

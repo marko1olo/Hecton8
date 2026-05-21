@@ -616,7 +616,6 @@ namespace Hecton8.World.VoxelSurfaceNets
         [NoAlias]
         public NativeArray<VoxelSurfacePriorityDTO> Priorities;
 
-        [NativeDisableContainerSafetyRestriction]
         [ReadOnly]
         public NativeArray<float4> FrustumPlanes;
 

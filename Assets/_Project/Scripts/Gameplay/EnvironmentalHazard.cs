@@ -20,6 +20,7 @@
 
 using Hecton8.Core;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -31,7 +32,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Environmental Hazard")]
-    public sealed class EnvironmentalHazard : MonoBehaviour, ITickable, IUpdatable
+    public sealed class EnvironmentalHazard : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private static int PlayerLayerIndex = -1;
 
@@ -100,8 +101,11 @@ namespace Hecton8.Gameplay
         private float _damageTimer;
         private float _currentIntensity;
         private bool _registered;
+        private bool _hotSwapRegistered;
+        private bool _radiationSourceRegistered;
         private int _radiationSourceId;
         private int _emissionPropertyId;
+        private IThermodynamicsService _thermodynamicsService;
 
         // Cached references
         private Transform _cachedTransform;
@@ -154,6 +158,7 @@ namespace Hecton8.Gameplay
         {
             EnsureLayerCache();
             _cachedTransform = transform;
+            RefreshColdRegistryReferences();
             _radiationSourceId = unchecked((int)EntityId.ToULong(GetEntityId()));
             _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: EnvironmentalHazard
@@ -170,21 +175,25 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            RefreshColdRegistryReferences();
             TryRegister();
+            TryRegisterHotSwapListener();
             TryRegisterRadiationSource();
             UpdateIndicator();
         }
 
         private void OnDisable()
         {
-            RadiationHazardGrid.UnregisterSource(_radiationSourceId);
+            TryUnregisterRadiationSource();
+            TryUnregisterHotSwapListener();
             TryUnregister();
             ClearExposureState();
         }
 
         private void OnDestroy()
         {
-            RadiationHazardGrid.UnregisterSource(_radiationSourceId);
+            TryUnregisterRadiationSource();
+            TryUnregisterHotSwapListener();
             TryUnregister();
             ClearExposureState();
         }
@@ -194,7 +203,7 @@ namespace Hecton8.Gameplay
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            if (hazardType == HazardType.Radiation)
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
@@ -207,6 +216,37 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsService)
+                _thermodynamicsService = currentService as IThermodynamicsService;
         }
 
         private void ClearExposureState()
@@ -283,10 +323,7 @@ namespace Hecton8.Gameplay
         public void Tick(float deltaTime)
         {
             if (hazardType == HazardType.Radiation)
-            {
-                TryRegisterRadiationSource();
                 return;
-            }
 
             if (hazardType == HazardType.Heat)
             {
@@ -403,9 +440,34 @@ namespace Hecton8.Gameplay
                 return offset.sqrMagnitude;
             }
 
-            AbsoluteUniversePosition hazardAup = AbsoluteUniversePosition.FromRuntimePosition(hazardPosition);
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolveAupFromRuntimeOrigin(hazardPosition, out AbsoluteUniversePosition hazardAup) ||
+                !TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup))
+            {
+                double radius = math.max((double)hazardRadius, 0d);
+                return radius * radius;
+            }
+
             return AbsoluteUniversePosition.DistanceSq(in hazardAup, in playerAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -469,6 +531,16 @@ namespace Hecton8.Gameplay
 
             float intensity = Mathf.Max(0f, baseDamagePerSecond) * 10f;
             RadiationHazardGrid.RegisterSource(_radiationSourceId, _cachedTransform.position, intensity, hazardRadius);
+            _radiationSourceRegistered = Application.isPlaying;
+        }
+
+        private void TryUnregisterRadiationSource()
+        {
+            if (!_radiationSourceRegistered)
+                return;
+
+            RadiationHazardGrid.UnregisterSource(_radiationSourceId);
+            _radiationSourceRegistered = false;
         }
 
         private void TryPublishThermalFieldSource()
@@ -476,7 +548,7 @@ namespace Hecton8.Gameplay
             if (hazardType != HazardType.Heat || _cachedTransform == null)
                 return;
 
-            IThermodynamicsService thermodynamics = GlobalRegistry.ThermodynamicsService;
+            IThermodynamicsService thermodynamics = _thermodynamicsService;
             if (thermodynamics != null && thermodynamics.IsInitialized)
                 thermodynamics.TryInjectTransientHeatSource(_cachedTransform.position, hazardRadius, baseDamagePerSecond, unchecked((uint)_radiationSourceId));
         }

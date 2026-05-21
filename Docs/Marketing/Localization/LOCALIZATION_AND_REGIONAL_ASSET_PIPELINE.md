@@ -119,13 +119,13 @@ What it is not:
 [unsupported multiplayer-scope promise, competitor-attack pitch]
 
 Assets:
-[Steam/screens/trailer/demo]
+HOLD_LOCALIZED_ASSET_LINKS - exact localized/public asset IDs or links only after asset metadata claim checks, QA, language review, destination-specific public CTA gates, and any private access gates pass.
 
 Coverage angle:
 [regional/segment fit]
 
 Contact:
-[official route]
+HOLD_OFFICIAL_ROUTE - use only after official inbox/contact custody and route-specific permission gate pass.
 
 CTA / access route:
 [gated public CTA after `public_cta_permission_gate`, no-link feedback ask, or private access route logged separately]

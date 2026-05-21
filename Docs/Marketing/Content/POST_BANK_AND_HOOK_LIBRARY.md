@@ -179,11 +179,11 @@ Use these only in communities that permit developer posts or critique requests.
 
 ## 2026-05-19 Pre-Asset Quiet Account Content Pack V0
 
-Use only after official handles are owner-controlled. These posts are optional and low-frequency. They are meant to make a reserved account look intentional without pretending screenshots exist.
+Use only after official handles are owner-controlled through `account_registration_permission_gate = ALLOW_ACCOUNT_REGISTRATION_VERIFIED`, the post-registration custody row is filled, and the exact quiet row has `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`. These posts are optional and low-frequency. They are meant to make a custody-proven account look intentional without pretending screenshots exist.
 
 Do not post more than 1-2 of these per week before real screenshots.
 
-Reporting rule: each row below is `route_class = no_link_feedback` unless it contains a public CTA after the exact destination gate and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`. Replies can be counted only as `consent_provenance = public_comment`; they are not newsletter, playtest, press, or creator consent.
+Reporting rule: each row below is `route_class = no_link_feedback` unless it contains a public CTA after the exact destination gate and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`. Every row still needs exact `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` before posting. Replies can be counted only as `consent_provenance = public_comment`; they are not newsletter, playtest, press, or creator consent.
 
 | ID | Platform | Copy | Use when | Kill if |
 |---|---|---|---|---|
@@ -193,8 +193,8 @@ Reporting rule: each row below is `route_class = no_link_feedback` unless it con
 | PRE-004 | X/Bluesky | `The base should read like a pressure machine with rooms, seals, gauges, and failure paths inside.` | Base direction needs a public thesis. | No base visual exists within the next asset beat. |
 | PRE-005 | X/Bluesky | `Performance claims will come with build, hardware, settings, and measurement context. Until then, no empty FPS promises.` | Performance questions appear. | It invites performance debate before footage. |
 | PRE-006 | X/Bluesky | `HECTON-8 visual target: salt, oil, scratched glass, warning lights, hard metal, and water that always feels heavier than the player.` | Visual identity needs a text-only cue. | It reads as concept-only art direction for too long. |
-| PRE-007 | YouTube Community | `This channel is reserved for HECTON-8 clips, trailers, and dev updates. First gameplay posts will wait until the footage can show pressure, machinery, salvage, and black-water route risk honestly.` | YouTube handle exists but no trailer yet. | YouTube account has no visual identity/avatar. |
-| PRE-008 | Reddit profile only | `Developer account for HECTON-8. Posts will disclose dev status. No fake discovery posts; scope and performance details require proof/receipts.` | Reddit account reserved. | Do not post to subreddits from this yet. |
+| PRE-007 | YouTube Community | `This channel is reserved for HECTON-8 clips, trailers, and dev updates. First gameplay posts will wait until the footage can show pressure, machinery, salvage, and black-water route risk honestly.` | YouTube account is registered under project custody and exact quiet-row post gate is allowed; no trailer yet. | YouTube account has no visual identity/avatar, custody row, or exact post gate. |
+| PRE-008 | Reddit profile only | `Developer account for HECTON-8. Posts will disclose dev status. No fake discovery posts; scope and performance details require proof/receipts.` | Reddit account is registered under project custody and exact quiet-row post gate is allowed. | Do not post to subreddits from this yet; do not use if account is candidate-only, personal, or missing custody. |
 | PRE-009 | Bluesky | `Deep-sea survival works when the player trusts the machine more than the ocean, and then the machine starts losing.` | Need one atmospheric thesis. | People ask "where game?" repeatedly. |
 | PRE-010 | X/Bluesky | `The first public asset pack has a simple pass/fail: can a stranger identify pressure, machinery, a player verb, and the next risk in five seconds?` | Before first screenshot drop. | First asset pack is not imminent. |
 
@@ -324,7 +324,7 @@ Single-player-first scope. No performance claim yet. Just checking whether the v
 Creator warmup note:
 
 ```text
-I am not sending builds yet. I am checking whether the first HECTON-8 screenshots read as industrial deep-sea survival rather than generic underwater sci-fi. If this matches your survival/horror audience, I can send the Steam page or demo later when it is ready.
+I am not sending builds yet. I am checking whether the first HECTON-8 screenshots read as industrial deep-sea survival rather than generic underwater sci-fi. HOLD_FUTURE_ROUTE_OFFER - mention Steam page, demo, build, or preview only after exact public CTA, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Kill if:
@@ -341,13 +341,13 @@ Required asset/gate: public Steam Coming Soon page through `steam_page_publish_p
 Steam/news title:
 
 ```text
-HECTON-8 Steam Page Is Live
+HOLD_STEAM_PAGE_NEWS_TITLE - use "HECTON-8 Steam Page Is Live" only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, `steam_announcement_permission_gate = ALLOW_STEAM_ANNOUNCEMENT_VERIFIED`, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`.
 ```
 
 Steam/news body:
 
 ```text
-The HECTON-8 Steam page is live.
+HOLD_STEAM_PAGE_LIVE_COPY - say the Steam page is live only after app/page publication, Steam announcement/news permission, and public CTA custody pass.
 
 HECTON-8 is single-player-first deep-sea survival about pressure, salvage, machinery, and the cost of keeping a base alive below the light.
 
@@ -369,14 +369,14 @@ Hi [Name],
 
 I am reaching out because your audience has shown clear interest in [creator-specific survival/horror/base-building fit].
 
-HECTON-8 is a single-player deep-sea survival game about pressure, salvage, machinery, and keeping a base alive below the light. The Steam page is now live, but I am not pretending this is a finished build or selling scope the current build cannot prove.
+HECTON-8 is a single-player deep-sea survival game about pressure, salvage, machinery, and keeping a base alive below the light. HOLD_STEAM_PAGE_LIVE_COPY - say the Steam page is live only after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass; keep the finished-build/scope caveat.
 
 Best fit for your channel: [one specific angle].
 
 Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
 Screenshots/presskit: [gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
 
-If the angle fits, I can send a short demo/preview build later when the route is stable.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, preview build, presskit, or material only after exact public CTA, demo/public access, presskit, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Reddit/organic boundary:
@@ -432,7 +432,7 @@ Status: draft-ready / asset-gated / do not post without matching real capture.
 
 Use this table as the first operating queue once screenshots or clips exist. Every row must be linked to an actual file in the asset library before publication.
 
-Asset gate rule: any public post must have `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`, pass normal screenshot/clip QA plus asset metadata claim checks (`multiplayer_scope_check`, `performance_claim_check`, `feature_truth_check`), and pass the relevant `public_cta_permission_gate` for its CTA. Any row using private pain-proof priority must have `pain_freshness_source` and `pain_freshness_checked_at` filled; any row used for creator warmup or micro-feedback must also pass `QA/MARKETING_ASSET_QA_CHECKLIST.md` creator utility 3/4+, name the matching CRM rows from `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, and have an open `creator_send_gate`.
+Asset gate rule: any public post must have `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`, pass normal screenshot/clip QA plus asset metadata claim checks (`multiplayer_scope_check`, `performance_claim_check`, `feature_truth_check`), carry non-pending `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI decision-read fields where gameplay/pressure/route-risk proof is claimed, and pass the relevant `public_cta_permission_gate` for its CTA. Any row using private pain-proof priority must have `pain_freshness_source` and `pain_freshness_checked_at` filled; any row used for creator warmup or micro-feedback must also pass `QA/MARKETING_ASSET_QA_CHECKLIST.md` creator utility 3/4+, name the matching CRM rows from `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, and have an open `creator_send_gate`.
 
 Reporting rule: every published row needs a dashboard/event-log record with `route_class`, `consent_provenance`, `asset_id`, `campaign_id`, and `beat_id` before any response is summarized. Do not count public comments as creator reply, press reply, playtest consent, or newsletter opt-in.
 

@@ -1,0 +1,4 @@
+event_id,addressable_key,bank
+ui_sop_error,audio/ui/sop_error,ui
+vehicle_hull_stress,audio/vehicle/hull_stress,vehicle
+biome_twilight_bed,audio/ambience/hadal_twilight,ambience

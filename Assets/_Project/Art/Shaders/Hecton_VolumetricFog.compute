@@ -1,21 +1,20 @@
-#pragma kernel RaymarchVolumetricFog
-#pragma kernel CompositeVolumetricFog
+#pragma kernel BuildVolumetricFogGrid DISABLE_TEXTURE2D_X_ARRAY
+#pragma kernel RaymarchVolumetricFog DISABLE_TEXTURE2D_X_ARRAY
+#pragma kernel RaymarchVolumetricFogXR
 #pragma target 5.0
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 #ifndef HECTON_VOLUMETRIC_FOG_MAX_STEPS
 #define HECTON_VOLUMETRIC_FOG_MAX_STEPS 64
 #endif
 
-static const float3 HECTON_VOLUMETRIC_FOG_NOIR_FLOOR = float3(0.0015, 0.0023, 0.0031);
-
-TEXTURE2D_X(_HectonVolumetricFogSourceColor);
 TEXTURE2D_X(_HectonVolumetricFogSourceDepth);
-TEXTURE2D_X(_HectonVolumetricFogHalfInput);
-RW_TEXTURE2D(float4, _HectonVolumetricFogHalfResult);
-RW_TEXTURE2D(float4, _HectonVolumetricFogCompositeResult);
+RW_TEXTURE2D_X(float4, _HectonVolumetricFogHalfResult);
+RWTexture3D<float4> _HectonVolumetricFogVolumeRW;
+Texture3D<float4> _HectonVolumetricFogVolume;
 
 Texture2D<int> _HectonMarineSnowFogDensityTex;
 Texture3D<float4> _AbyssalFlowFieldTexture;
@@ -35,6 +34,13 @@ CBUFFER_START(HectonVolumetricFogParams)
     float4 _HectonVolumetricFogScatteringParams;
     float4 _HectonVolumetricFogFlowAdvection;
     float4 _HectonVolumetricFogQualityAndLimits;
+CBUFFER_END
+
+CBUFFER_START(_GlobalWaterOptics)
+    float4 _H8WaterOpticsAbsorptionCoefficientsRGB;
+    float4 _H8WaterOpticsScatteringCoefficientsRGB;
+    float4 _H8WaterOpticsDirectionalLightColorAndIntensity;
+    float4 _H8WaterOpticsQualityAndDepthLimits;
 CBUFFER_END
 
 CBUFFER_START(HectonVolumetricFogFrameParams)
@@ -87,8 +93,79 @@ float3 SafeFiniteColor(float3 color, float3 fallbackColor)
 
 float3 ResolveNoirFloorColor(float3 color)
 {
-    color = SafeFiniteColor(color, HECTON_VOLUMETRIC_FOG_NOIR_FLOOR);
-    return max(color, HECTON_VOLUMETRIC_FOG_NOIR_FLOOR);
+    float3 authoredFloor = max(SafeFiniteColor(_HectonVolumetricFogColorAndDensity.rgb, float3(0.0015, 0.0023, 0.0031)), float3(0.0015, 0.0023, 0.0031));
+    color = SafeFiniteColor(color, authoredFloor);
+    return max(color, authoredFloor);
+}
+
+float WaterOpticsActive()
+{
+    return step(0.001, SafeFiniteScalar(_H8WaterOpticsQualityAndDepthLimits.w, 0.0));
+}
+
+float WaterOpticsQualityWeight()
+{
+    return SafeFiniteSaturate(_H8WaterOpticsQualityAndDepthLimits.x);
+}
+
+float WaterOpticsSmooth01(float value)
+{
+    value = SafeFiniteSaturate(value);
+    return value * value * (3.0 - 2.0 * value);
+}
+
+float WaterOpticsSpectralAdmissionWeight(float quality)
+{
+    return WaterOpticsSmooth01(SafeFiniteSaturate((quality - 0.28) * 1.3888889));
+}
+
+float3 WaterOpticsAbsorption()
+{
+    float multiplier = max(0.0, SafeFiniteScalar(_H8WaterOpticsAbsorptionCoefficientsRGB.w, 1.0));
+    return max(SafeFiniteColor(_H8WaterOpticsAbsorptionCoefficientsRGB.xyz, float3(0.42, 0.105, 0.028)), float3(0.0, 0.0, 0.0)) * multiplier;
+}
+
+float3 WaterOpticsScattering()
+{
+    return max(SafeFiniteColor(_H8WaterOpticsScatteringCoefficientsRGB.xyz, float3(0.035, 0.09, 0.16)), float3(0.0, 0.0, 0.0));
+}
+
+float3 WaterOpticsExtinction()
+{
+    return WaterOpticsAbsorption() + WaterOpticsScattering();
+}
+
+float WaterOpticsDepthGate(float3 positionWS)
+{
+    float3 cameraPositionWS = all(isfinite(_WorldSpaceCameraPos.xyz)) ? _WorldSpaceCameraPos.xyz : float3(0.0, 0.0, 0.0);
+    float localSurfaceY = SafeFiniteScalar(_H8WaterOpticsQualityAndDepthLimits.y, 0.0);
+    float depth = max(0.0, localSurfaceY - (positionWS.y - cameraPositionWS.y));
+    return SafeFiniteSaturate(depth * 4.0);
+}
+
+float WaterOpticsCameraUnderwaterGate()
+{
+    return WaterOpticsActive() * step(0.001, SafeFiniteScalar(_H8WaterOpticsQualityAndDepthLimits.y, 0.0));
+}
+
+float3 WaterOpticsTransmittanceCompressed(float3 extinctionCoefficients, float travelMeters)
+{
+    float quality = WaterOpticsQualityWeight();
+    float spectralWeight = WaterOpticsSpectralAdmissionWeight(quality);
+    float maxTravel = max(1.0, SafeFiniteScalar(_H8WaterOpticsQualityAndDepthLimits.z, 5000.0));
+    float distance = min(max(0.0, SafeFiniteScalar(travelMeters, 0.0)), maxTravel);
+    float3 extinction = max(SafeFiniteColor(extinctionCoefficients, float3(0.0, 0.0, 0.0)), float3(0.0, 0.0, 0.0));
+    float monoExtinction = max(dot(extinction, float3(0.299, 0.587, 0.114)), 0.000001);
+    float monoTransmittance = FastNegativeExp(distance * monoExtinction);
+    float3 monoExtinction3 = float3(monoExtinction, monoExtinction, monoExtinction);
+    float3 monoTransmittance3 = float3(monoTransmittance, monoTransmittance, monoTransmittance);
+    [branch]
+    if (spectralWeight <= 0.0001)
+        return monoTransmittance3;
+
+    float3 spectralDelta = (extinction - monoExtinction3) * distance;
+    float3 spectralApprox = monoTransmittance3 * rcp(max(float3(0.0625, 0.0625, 0.0625), float3(1.0, 1.0, 1.0) + spectralDelta * (0.58 + 0.42 * spectralWeight)));
+    return SafeFiniteColor(saturate(lerp(monoTransmittance3, spectralApprox, spectralWeight)), monoTransmittance3);
 }
 
 float4 ResolveSafeFogWrite(float3 color, float opacity)
@@ -127,6 +204,18 @@ void ResolveDepthData(float2 screenUv, out float rawDepth, out float validMask, 
         validMask = 0.0;
         linearEyeDepth = 0.0;
     }
+}
+
+float ResolveSafeLinearEyeDepth(float rawDepth)
+{
+    float safeRawDepth = isfinite(rawDepth) ? rawDepth : ResolveFarRawDepth();
+#if UNITY_REVERSED_Z
+    safeRawDepth = safeRawDepth > 0.0001 ? safeRawDepth : ResolveFarRawDepth();
+#else
+    safeRawDepth = safeRawDepth < 0.9999 ? safeRawDepth : ResolveFarRawDepth();
+#endif
+    float linearDepth = LinearEyeDepth(safeRawDepth, _ZBufferParams);
+    return isfinite(linearDepth) && linearDepth >= 0.0 ? linearDepth : 0.0;
 }
 
 float Hash31(float3 value)
@@ -220,6 +309,27 @@ float PhaseHG(float cosTheta, float anisotropy)
     return (1.0 - gSq) * SafeRcp(4.0 * PI) * SafeRcp(denominator) * rsqrt(denominator);
 }
 
+float3 ApplyWaterOpticsToScattering(float3 scatterColor, float3 samplePositionWS, float3 viewDir, float travelMeters)
+{
+    float active = WaterOpticsActive();
+    float depthGate = WaterOpticsDepthGate(samplePositionWS);
+    float blend = active * depthGate;
+    if (blend <= 0.0)
+        return scatterColor;
+
+    float3 extinction = WaterOpticsExtinction();
+    float3 transmittance = WaterOpticsTransmittanceCompressed(extinction, travelMeters);
+    float3 scattering = WaterOpticsScattering();
+    float3 scatterRatio = saturate(scattering * rcp(max(extinction, float3(0.00001, 0.00001, 0.00001))));
+    float3 sunDirection = SafeNormalize3(-_SunDirection.xyz, float3(0.0, -1.0, 0.0));
+    float phase = PhaseHG(dot(sunDirection, -viewDir), _H8WaterOpticsScatteringCoefficientsRGB.w);
+    float quality = WaterOpticsQualityWeight();
+    float3 opticsLight = max(_H8WaterOpticsDirectionalLightColorAndIntensity.rgb, _FinalGiantAbyssLight.rgb) *
+        max(0.0, SafeFiniteScalar(_H8WaterOpticsDirectionalLightColorAndIntensity.w, 0.85));
+    float3 inScatter = opticsLight * scatterRatio * (1.0 - transmittance) * phase * lerp(0.35, 1.85, quality);
+    return SafeFiniteColor(lerp(scatterColor, scatterColor * transmittance + inScatter, blend), scatterColor);
+}
+
 float3 SampleAbyssalFlow(float3 positionWS)
 {
     float textureResolution = SafeFiniteScalar(_AbyssalFlowTextureParams.x, 0.0);
@@ -247,7 +357,7 @@ float SampleMarineSnowDensity(float2 screenUv)
         return 0.0;
 
     int2 pixel = clamp((int2)floor(saturate(screenUv) * float2(width, height)), int2(0, 0), int2((int)width - 1, (int)height - 1));
-    int encoded = _HectonMarineSnowFogDensityTex.Load(int3(pixel, 0));
+    int encoded = _HectonMarineSnowFogDensityTex.Load(int3(pixel, 0)).r;
     float scale = max(SafeFiniteScalar(_HectonMarineSnowFogDensityParams.y, 1.0), 1.0);
     float densityScale = max(0.0, SafeFiniteScalar(_HectonMarineSnowFogDensityParams.x, 0.0));
     float siltStrength = max(0.0, SafeFiniteScalar(_HectonVolumetricFogCompositeParams.y, 0.0));
@@ -320,26 +430,78 @@ float3 HeatmapColor(float normalizedSteps)
     return lerp(float3(0.02, 0.18, 0.28), float3(0.85, 0.18, 0.05), normalizedSteps);
 }
 
-float4 ResolveCompositeWrite(float4 sourceColor, float4 fogAccum)
-{
-    fogAccum = all(isfinite(fogAccum)) ? fogAccum : float4(0.0, 0.0, 0.0, 0.0);
-    float alpha = SafeFiniteSaturate(fogAccum.a);
-    float3 safeSourceColor = SafeFiniteColor(sourceColor.rgb, HECTON_VOLUMETRIC_FOG_NOIR_FLOOR);
-    float3 color = safeSourceColor * (1.0 - alpha) + SafeFiniteColor(fogAccum.rgb, float3(0.0, 0.0, 0.0));
-    float sourceAlpha = SafeFiniteSaturate(SafeFiniteScalar(sourceColor.a, 1.0));
-    return float4(SafeFiniteColor(color, safeSourceColor), sourceAlpha);
-}
-
 [numthreads(8, 8, 1)]
-void RaymarchVolumetricFog(uint3 dispatchThreadId : SV_DispatchThreadID)
+void BuildVolumetricFogGrid(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-    uint targetWidth;
-    uint targetHeight;
-    _HectonVolumetricFogHalfResult.GetDimensions(targetWidth, targetHeight);
-    if (dispatchThreadId.x >= targetWidth || dispatchThreadId.y >= targetHeight)
+    uint volumeWidth;
+    uint volumeHeight;
+    uint volumeDepth;
+    _HectonVolumetricFogVolumeRW.GetDimensions(volumeWidth, volumeHeight, volumeDepth);
+
+    float safeQuality = SafeFiniteSaturate(_HectonVolumetricFogQualityAndLimits.x);
+    int raySteps = clamp((int)round(SafeFiniteScalar(_HectonVolumetricFogQualityAndLimits.y, 4.0)), 4, HECTON_VOLUMETRIC_FOG_MAX_STEPS);
+    int activeDepth = min(raySteps, (int)volumeDepth);
+    if (dispatchThreadId.x >= volumeWidth || dispatchThreadId.y >= volumeHeight || dispatchThreadId.z >= (uint)activeDepth)
         return;
 
-    float2 screenUv = (dispatchThreadId.xy + 0.5) * _HectonVolumetricFogHalfSize.zw;
+    float2 screenUv = (dispatchThreadId.xy + 0.5) * rcp(float2(max(volumeWidth, 1u), max(volumeHeight, 1u)));
+    float3 cameraPositionWS = all(isfinite(_WorldSpaceCameraPos.xyz)) ? _WorldSpaceCameraPos.xyz : float3(0.0, 0.0, 0.0);
+    float3 farPositionWS = ComputeWorldSpacePosition(screenUv, ResolveFarRawDepth(), _HectonVolumetricFogInverseViewProjection);
+    float3 rayDir = SafeNormalize3(farPositionWS - cameraPositionWS, float3(0.0, 0.0, 1.0));
+    float maxRayDistance = max(0.25, SafeFiniteScalar(_HectonVolumetricFogQualityAndLimits.z, 70.0));
+    float normalizedTravel = ((float)dispatchThreadId.z + 0.5) * rcp((float)max(activeDepth, 1));
+    float travel = normalizedTravel * maxRayDistance;
+    float3 samplePositionLocal = rayDir * travel;
+    float3 samplePositionWS = cameraPositionWS + samplePositionLocal;
+    int octaveCount = clamp(1 + (int)floor(safeQuality * 3.999), 1, 4);
+    float siltDensity = SampleMarineSnowDensity(screenUv);
+    float density = ResolveFogDensity(samplePositionLocal, samplePositionWS, normalizedTravel, octaveCount, siltDensity);
+    float3 fogColor = ResolveNoirFloorColor(_HectonVolumetricFogColorAndDensity.rgb);
+    float scatterCoefficient = max(0.0, SafeFiniteScalar(_HectonVolumetricFogScatteringParams.x, 0.85));
+    float3 localScatter = fogColor * scatterCoefficient + ResolveDirectionalScattering(rayDir) + ResolvePointLightScattering(samplePositionWS, rayDir);
+    localScatter = ApplyWaterOpticsToScattering(localScatter, samplePositionWS, rayDir, travel);
+    density *= lerp(1.0, 1.0 + dot(WaterOpticsExtinction(), float3(0.299, 0.587, 0.114)) * 0.18, WaterOpticsActive() * WaterOpticsDepthGate(samplePositionWS));
+    _HectonVolumetricFogVolumeRW[dispatchThreadId] = float4(SafeFiniteColor(localScatter, fogColor), density);
+}
+
+void RaymarchVolumetricFogCore(uint3 dispatchThreadId)
+{
+    UNITY_XR_ASSIGN_VIEW_INDEX(dispatchThreadId.z);
+
+    uint2 pixel = dispatchThreadId.xy;
+    uint targetWidth = (uint)max(1.0, SafeFiniteScalar(_HectonVolumetricFogHalfSize.x, 1.0));
+    uint targetHeight = (uint)max(1.0, SafeFiniteScalar(_HectonVolumetricFogHalfSize.y, 1.0));
+    if (pixel.x >= targetWidth || pixel.y >= targetHeight)
+        return;
+
+    float2 screenUv = (pixel + 0.5) * _HectonVolumetricFogHalfSize.zw;
+    float maxRayDistance = max(0.25, SafeFiniteScalar(_HectonVolumetricFogQualityAndLimits.z, 70.0));
+    int raySteps = clamp((int)round(SafeFiniteScalar(_HectonVolumetricFogQualityAndLimits.y, 4.0)), 4, HECTON_VOLUMETRIC_FOG_MAX_STEPS);
+    float proxyBlend = SafeFiniteSaturate(_HectonVolumetricFogQualityAndLimits.w);
+    if (proxyBlend >= 0.999)
+    {
+        float rawDepth = SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogSourceDepth, sampler_PointClamp, saturate(screenUv), 0).r;
+#if UNITY_REVERSED_Z
+        float validMask = step(0.0001, rawDepth);
+#else
+        float validMask = step(rawDepth, 0.9999);
+#endif
+        float proxyDepth = ResolveSafeLinearEyeDepth(rawDepth);
+        float rayDistance = validMask > 0.5 ? min(proxyDepth, maxRayDistance) : maxRayDistance;
+        float proxyWaterExtinction = dot(WaterOpticsExtinction(), float3(0.299, 0.587, 0.114)) * WaterOpticsCameraUnderwaterGate();
+        float proxyOpacity = SafeFiniteSaturate(1.0 - FastNegativeExp(max(0.0, SafeFiniteScalar(_HectonVolumetricFogColorAndDensity.w, 0.0)) * max(0.0001, SafeFiniteScalar(_HectonVolumetricFogScatteringParams.y, 0.12) + proxyWaterExtinction * 0.18) * rayDistance));
+        float proxyDither = ResolveProxyDither(screenUv);
+        proxyOpacity = SafeFiniteSaturate(proxyOpacity + (proxyDither - 0.5) * SafeFiniteSaturate(_HectonVolumetricFogDebugParams.y) * 0.08);
+        float2 centeredUv = screenUv * 2.0 - 1.0;
+        float shaftFake = SafeFiniteSaturate(1.0 - dot(centeredUv, centeredUv) * 0.65);
+        float3 proxyColor = ResolveNoirFloorColor(_HectonVolumetricFogColorAndDensity.rgb) * proxyOpacity * (0.86 + 0.22 * shaftFake);
+        float heatmapWeightProxy = SafeFiniteSaturate(_HectonVolumetricFogDebugParams.x);
+        proxyColor = lerp(proxyColor, HeatmapColor((float)raySteps * rcp((float)HECTON_VOLUMETRIC_FOG_MAX_STEPS)), heatmapWeightProxy);
+        proxyOpacity = SafeFiniteSaturate(lerp(proxyOpacity, max(proxyOpacity, 0.8), heatmapWeightProxy));
+        _HectonVolumetricFogHalfResult[COORD_TEXTURE2D_X(pixel)] = ResolveSafeFogWrite(proxyColor, proxyOpacity);
+        return;
+    }
+
     float rawDepth;
     float validMask;
     float linearEyeDepth;
@@ -350,32 +512,22 @@ void RaymarchVolumetricFog(uint3 dispatchThreadId : SV_DispatchThreadID)
     scenePositionWS = all(isfinite(scenePositionWS)) ? scenePositionWS : cameraPositionWS + float3(0.0, 0.0, 1.0);
     float3 toScene = scenePositionWS - cameraPositionWS;
     float sceneDistance = SafeFiniteScalar(length(toScene), 0.0);
-    float maxRayDistance = max(0.25, SafeFiniteScalar(_HectonVolumetricFogQualityAndLimits.z, 70.0));
     float rayDistance = validMask > 0.5 ? min(sceneDistance, maxRayDistance) : maxRayDistance;
     float3 rayDir = SafeNormalize3(toScene, float3(0.0, 0.0, 1.0));
-    float safeQuality = SafeFiniteSaturate(_HectonVolumetricFogQualityAndLimits.x);
-    int raySteps = clamp((int)round(SafeFiniteScalar(_HectonVolumetricFogQualityAndLimits.y, 4.0)), 4, HECTON_VOLUMETRIC_FOG_MAX_STEPS);
-    float proxyBlend = SafeFiniteSaturate(_HectonVolumetricFogQualityAndLimits.w);
-    float proxyOpacity = SafeFiniteSaturate(1.0 - FastNegativeExp(max(0.0, SafeFiniteScalar(_HectonVolumetricFogColorAndDensity.w, 0.0)) * max(0.0001, SafeFiniteScalar(_HectonVolumetricFogScatteringParams.y, 0.12)) * rayDistance));
+    float proxyWaterExtinction = dot(WaterOpticsExtinction(), float3(0.299, 0.587, 0.114)) * WaterOpticsActive() * WaterOpticsDepthGate(scenePositionWS);
+    float proxyOpacity = SafeFiniteSaturate(1.0 - FastNegativeExp(max(0.0, SafeFiniteScalar(_HectonVolumetricFogColorAndDensity.w, 0.0)) * max(0.0001, SafeFiniteScalar(_HectonVolumetricFogScatteringParams.y, 0.12) + proxyWaterExtinction * 0.18) * rayDistance));
     float proxyDither = ResolveProxyDither(screenUv);
     proxyOpacity = SafeFiniteSaturate(proxyOpacity + (proxyDither - 0.5) * SafeFiniteSaturate(_HectonVolumetricFogDebugParams.y) * 0.08);
-    if (proxyBlend >= 0.999)
-    {
-        float3 proxyColor = (ResolveNoirFloorColor(_HectonVolumetricFogColorAndDensity.rgb) + ResolveDirectionalScattering(rayDir) * 0.35) * proxyOpacity;
-        float heatmapWeightProxy = SafeFiniteSaturate(_HectonVolumetricFogDebugParams.x);
-        proxyColor = lerp(proxyColor, HeatmapColor((float)raySteps * rcp((float)HECTON_VOLUMETRIC_FOG_MAX_STEPS)), heatmapWeightProxy);
-        proxyOpacity = SafeFiniteSaturate(lerp(proxyOpacity, max(proxyOpacity, 0.8), heatmapWeightProxy));
-        _HectonVolumetricFogHalfResult[dispatchThreadId.xy] = ResolveSafeFogWrite(proxyColor, proxyOpacity);
-        return;
-    }
 
     float stepLength = rayDistance * rcp((float)raySteps);
-    int octaveCount = clamp(1 + (int)floor(safeQuality * 3.999), 1, 4);
     float jitter = (ResolveInterleavedGradientNoise(screenUv) - 0.5) * SafeFiniteSaturate(_HectonVolumetricFogDebugParams.y);
-    float siltDensity = SampleMarineSnowDensity(screenUv);
     float3 fogColor = ResolveNoirFloorColor(_HectonVolumetricFogColorAndDensity.rgb);
-    float extinction = max(0.0001, SafeFiniteScalar(_HectonVolumetricFogScatteringParams.y, 0.12));
-    float scatterCoefficient = max(0.0, SafeFiniteScalar(_HectonVolumetricFogScatteringParams.x, 0.85));
+    float extinction = max(0.0001, SafeFiniteScalar(_HectonVolumetricFogScatteringParams.y, 0.12) + proxyWaterExtinction * 0.12);
+    uint volumeWidth;
+    uint volumeHeight;
+    uint volumeDepth;
+    _HectonVolumetricFogVolume.GetDimensions(volumeWidth, volumeHeight, volumeDepth);
+    int activeDepth = min(raySteps, (int)volumeDepth);
     float accumulatedOpacity = 0.0;
     float3 accumulatedLight = float3(0.0, 0.0, 0.0);
     int executedSteps = 0;
@@ -388,13 +540,13 @@ void RaymarchVolumetricFog(uint3 dispatchThreadId : SV_DispatchThreadID)
 
         float travel = (stepIndex + 0.5 + jitter) * stepLength;
         float normalizedTravel = SafeFiniteSaturate(travel * SafeRcp(max(rayDistance, 0.001)));
-        float3 samplePositionLocal = rayDir * travel;
-        float3 samplePositionWS = cameraPositionWS + samplePositionLocal;
-        float density = ResolveFogDensity(samplePositionLocal, samplePositionWS, normalizedTravel, octaveCount, siltDensity);
+        int volumeZ = clamp((int)floor(normalizedTravel * (float)activeDepth), 0, max(activeDepth - 1, 0));
+        int2 volumeXY = clamp((int2)floor(saturate(screenUv) * float2(volumeWidth, volumeHeight)), int2(0, 0), int2(max((int)volumeWidth - 1, 0), max((int)volumeHeight - 1, 0)));
+        float4 volumeCell = activeDepth > 0 ? _HectonVolumetricFogVolume.Load(int4(volumeXY, volumeZ, 0)) : float4(fogColor, 0.0);
+        float density = max(0.0, SafeFiniteScalar(volumeCell.a, 0.0));
         float stepOpacity = SafeFiniteSaturate(1.0 - FastNegativeExp(density * extinction * stepLength));
         float transmittance = 1.0 - accumulatedOpacity;
-        float3 localScatter = fogColor * scatterCoefficient + ResolveDirectionalScattering(rayDir) + ResolvePointLightScattering(samplePositionWS, rayDir);
-        accumulatedLight += transmittance * stepOpacity * localScatter;
+        accumulatedLight += transmittance * stepOpacity * SafeFiniteColor(volumeCell.rgb, fogColor);
         accumulatedOpacity += transmittance * stepOpacity;
         executedSteps++;
 
@@ -410,50 +562,17 @@ void RaymarchVolumetricFog(uint3 dispatchThreadId : SV_DispatchThreadID)
     resolvedColor = lerp(resolvedColor, HeatmapColor(normalizedSteps), heatmapWeight);
     resolvedOpacity = SafeFiniteSaturate(lerp(resolvedOpacity, max(resolvedOpacity, 0.8), heatmapWeight));
 
-    _HectonVolumetricFogHalfResult[dispatchThreadId.xy] = ResolveSafeFogWrite(resolvedColor, resolvedOpacity);
+    _HectonVolumetricFogHalfResult[COORD_TEXTURE2D_X(pixel)] = ResolveSafeFogWrite(resolvedColor, resolvedOpacity);
 }
 
 [numthreads(8, 8, 1)]
-void CompositeVolumetricFog(uint3 dispatchThreadId : SV_DispatchThreadID)
+void RaymarchVolumetricFog(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-    uint targetWidth;
-    uint targetHeight;
-    _HectonVolumetricFogCompositeResult.GetDimensions(targetWidth, targetHeight);
-    if (dispatchThreadId.x >= targetWidth || dispatchThreadId.y >= targetHeight)
-        return;
+    RaymarchVolumetricFogCore(dispatchThreadId);
+}
 
-    float2 screenUv = (dispatchThreadId.xy + 0.5) * _HectonVolumetricFogFullSize.zw;
-    float centerDepth = SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogSourceDepth, sampler_PointClamp, screenUv, 0).r;
-    float4 sourceColor = SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogSourceColor, sampler_LinearClamp, screenUv, 0);
-    float proxyBlend = SafeFiniteSaturate(_HectonVolumetricFogQualityAndLimits.w);
-    if (proxyBlend >= 0.999)
-    {
-        float4 proxyFogAccum = SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogHalfInput, sampler_LinearClamp, screenUv, 0);
-        _HectonVolumetricFogCompositeResult[dispatchThreadId.xy] = ResolveCompositeWrite(sourceColor, proxyFogAccum);
-        return;
-    }
-
-    float4 fogAccum = float4(0.0, 0.0, 0.0, 0.0);
-    float weightSum = 0.0;
-    float depthScale = max(0.01, SafeFiniteScalar(_HectonVolumetricFogCompositeParams.x, 8.0));
-
-    [unroll]
-    for (int y = -1; y <= 1; y++)
-    {
-        [unroll]
-        for (int x = -1; x <= 1; x++)
-        {
-            float2 halfOffset = float2((float)x, (float)y) * _HectonVolumetricFogHalfSize.zw;
-            float2 sampleUv = saturate(screenUv + halfOffset);
-            float sampleDepth = SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogSourceDepth, sampler_PointClamp, sampleUv, 0).r;
-            float depthWeight = FastNegativeExp(abs(LinearEyeDepth(sampleDepth, _ZBufferParams) - LinearEyeDepth(centerDepth, _ZBufferParams)) * depthScale);
-            float kernelWeight = (x == 0 && y == 0) ? 1.0 : 0.5;
-            float weight = depthWeight * kernelWeight;
-            fogAccum += SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricFogHalfInput, sampler_LinearClamp, sampleUv, 0) * weight;
-            weightSum += weight;
-        }
-    }
-
-    fogAccum *= SafeRcp(max(weightSum, 1e-4));
-    _HectonVolumetricFogCompositeResult[dispatchThreadId.xy] = ResolveCompositeWrite(sourceColor, fogAccum);
+[numthreads(8, 8, 1)]
+void RaymarchVolumetricFogXR(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    RaymarchVolumetricFogCore(dispatchThreadId);
 }

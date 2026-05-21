@@ -67,7 +67,7 @@ namespace Hecton8.World
             if (destructibleOrganicManager == null || !TryResolvePlayerRuntime())
                 return;
 
-            if (!destructibleOrganicManager.TryEvaluateParasiteExposure(_playerTransform.position, out float exposure01) ||
+            if (!destructibleOrganicManager.TryEvaluateParasiteExposure(ResolvePlayerRuntimePosition(), out float exposure01) ||
                 exposure01 <= 0.0001f)
             {
                 return;
@@ -76,6 +76,11 @@ namespace Hecton8.World
             float oxygenDrain = parasiteBaseOxygenDrainPerSecond * 2f * exposure01 * Mathf.Max(0f, deltaTime);
             if (oxygenDrain > 0f)
                 _survivalSystem.DrainOxygen(oxygenDrain);
+        }
+
+        private Vector3 ResolvePlayerRuntimePosition()
+        {
+            return _playerTransform != null ? _playerTransform.position : Vector3.zero;
         }
 
         private void ResolveOrganicManager()

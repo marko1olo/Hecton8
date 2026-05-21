@@ -87,9 +87,11 @@ namespace Hecton8.Gameplay
 
     public static class ScanEvents
     {
+        private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 16;
         private const int DeferredListenerMutationCapacity = 16;
         private const int EntryMetadataCapacity = 128;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const double WreckSignalDebounceSeconds = 5.0d;
         private const byte ListenerMutationRegister = 1;
         private const byte ListenerMutationUnregister = 2;
@@ -101,14 +103,84 @@ namespace Hecton8.Gameplay
         private const uint ScanListenerExceptionContextHash = 0x534E5658u; // SNVX
         public const byte WreckSignalReservedMarker = 1;
 
-        // COLD ALLOC: RegistryBucket<IScanEventListener>[16] - scan event listener registry drained on dispatcher LateUpdate - owner: ScanEvents
-        private static readonly RegistryBucket<IScanEventListener> _listeners = new RegistryBucket<IScanEventListener>(16);
+        private struct ListenerSlot
+        {
+            public IScanEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct ScanListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public ScanListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity]; // COLD ALLOC: ListenerSlot[16] - fixed scan listener slots drained on dispatcher LateUpdate - owner: ScanEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IScanEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IScanEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void Unregister(IScanEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public IScanEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static ScanListenerRegistry _listeners = new ScanListenerRegistry(ListenerCapacity);
         // COLD ALLOC: Dictionary<uint,ScanEntryMetadata>[128] - bounded hashed scan entry metadata cache for queue listeners that still own authored strings - owner: ScanEvents
         private static readonly Dictionary<uint, ScanEntryMetadata> _entryMetadataByHash = new Dictionary<uint, ScanEntryMetadata>(EntryMetadataCapacity);
         // COLD ALLOC: uint[128] - FIFO eviction ring for ScanEvents entry metadata cache - owner: ScanEvents
         private static readonly uint[] _entryMetadataEvictionRing = new uint[EntryMetadataCapacity];
-        // COLD ALLOC: IScanEventListener[16] - deferred listener mutations during scan dispatch - owner: ScanEvents
-        private static readonly IScanEventListener[] _deferredListenerMutations = new IScanEventListener[DeferredListenerMutationCapacity];
+        // COLD ALLOC: ListenerSlot[16] - deferred listener mutations during scan dispatch - owner: ScanEvents
+        private static readonly ListenerSlot[] _deferredListenerMutations = new ListenerSlot[DeferredListenerMutationCapacity];
         // COLD ALLOC: byte[16] - deferred listener mutation op codes during scan dispatch - owner: ScanEvents
         private static readonly byte[] _deferredListenerMutationOps = new byte[DeferredListenerMutationCapacity];
         private static NativeQueue<ScanEventPayload> _pendingEvents;
@@ -221,14 +293,13 @@ namespace Hecton8.Gameplay
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IScanEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IScanEventListener listener = rawArray[i];
+                        IScanEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -272,14 +343,14 @@ namespace Hecton8.Gameplay
 
         private static void UnregisterListenerImmediate(IScanEventListener listener)
         {
-            _listeners.TryUnregister(listener);
+            _listeners.Unregister(listener);
         }
 
         private static void QueueDeferredListenerMutation(IScanEventListener listener, byte op)
         {
             for (int i = 0; i < _deferredListenerMutationCount; i++)
             {
-                if (!ReferenceEquals(_deferredListenerMutations[i], listener))
+                if (!ReferenceEquals(_deferredListenerMutations[i].Listener, listener))
                     continue;
 
                 _deferredListenerMutationOps[i] = op;
@@ -293,7 +364,7 @@ namespace Hecton8.Gameplay
             }
 
             int writeIndex = _deferredListenerMutationCount++;
-            _deferredListenerMutations[writeIndex] = listener;
+            _deferredListenerMutations[writeIndex].Listener = listener;
             _deferredListenerMutationOps[writeIndex] = op;
         }
 
@@ -306,9 +377,9 @@ namespace Hecton8.Gameplay
             _deferredListenerMutationCount = 0;
             for (int i = 0; i < mutationCount; i++)
             {
-                IScanEventListener listener = _deferredListenerMutations[i];
+                IScanEventListener listener = _deferredListenerMutations[i].Listener;
                 byte op = _deferredListenerMutationOps[i];
-                _deferredListenerMutations[i] = null;
+                _deferredListenerMutations[i].Clear();
                 _deferredListenerMutationOps[i] = 0;
 
                 if (listener == null)
@@ -325,7 +396,7 @@ namespace Hecton8.Gameplay
         {
             for (int i = 0; i < _deferredListenerMutationCount; i++)
             {
-                _deferredListenerMutations[i] = null;
+                _deferredListenerMutations[i].Clear();
                 _deferredListenerMutationOps[i] = 0;
             }
 
@@ -339,7 +410,7 @@ namespace Hecton8.Gameplay
                 if (_deferredListenerMutationOps[i] != ListenerMutationUnregister)
                     continue;
 
-                if (ReferenceEquals(_deferredListenerMutations[i], listener))
+                if (ReferenceEquals(_deferredListenerMutations[i].Listener, listener))
                     return true;
             }
 
@@ -583,7 +654,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<ScanEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ScanEventPayload>[16] - deferred scan event lane flushed by SystemDispatcher LateUpdate - owner: ScanEvents
+                _pendingEvents = new NativeQueue<ScanEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ScanEventPayload>[16] - deferred scan event lane flushed by SystemDispatcher LateUpdate - owner: ScanEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -595,7 +666,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<ScanEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ScanEventPayload>[16] - next-frame scan event lane prevents same-frame reentrant dispatch - owner: ScanEvents
+                _nextFrameEvents = new NativeQueue<ScanEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ScanEventPayload>[16] - next-frame scan event lane prevents same-frame reentrant dispatch - owner: ScanEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

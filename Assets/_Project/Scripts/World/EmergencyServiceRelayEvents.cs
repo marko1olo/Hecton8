@@ -22,6 +22,7 @@ namespace Hecton8.World
     {
         private const int PendingEventCapacity = 16;
         private const int ListenerCapacity = 16;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint ListenerRejectedWarningHash = 0x4552524Au;
         private const uint ListenerExceptionWarningHash = 0x45524558u;
         private const uint ListenerContextHash = 0x45524C53u;
@@ -32,9 +33,82 @@ namespace Hecton8.World
             public byte FirstActivation;
         }
 
-        private static readonly RegistryBucket<IEmergencyServiceRelayEventListener> _listeners = new RegistryBucket<IEmergencyServiceRelayEventListener>(ListenerCapacity);
-        private static readonly IEmergencyServiceRelayEventListener[] _deferredRegisterListeners = new IEmergencyServiceRelayEventListener[ListenerCapacity];
-        private static readonly IEmergencyServiceRelayEventListener[] _deferredUnregisterListeners = new IEmergencyServiceRelayEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public IEmergencyServiceRelayEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct EmergencyRelayListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public EmergencyRelayListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IEmergencyServiceRelayEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IEmergencyServiceRelayEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public bool TryUnregister(IEmergencyServiceRelayEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return true;
+                }
+
+                return false;
+            }
+
+            public IEmergencyServiceRelayEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static EmergencyRelayListenerRegistry _listeners = new EmergencyRelayListenerRegistry(ListenerCapacity);
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static readonly System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay> _relaysByInstanceId = new System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay>(32);
         private static NativeQueue<RelayEventPayload> _pendingEvents;
         private static NativeQueue<RelayEventPayload> _nextFrameEvents;
@@ -173,7 +247,6 @@ namespace Hecton8.World
                 if (!_relaysByInstanceId.TryGetValue(payload.RelayEntityId, out EmergencyServiceRelay relay) || relay == null)
                     continue;
 
-                IEmergencyServiceRelayEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 bool firstActivation = payload.FirstActivation != 0;
                 _isDispatching = true;
@@ -181,7 +254,7 @@ namespace Hecton8.World
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IEmergencyServiceRelayEventListener listener = rawArray[i];
+                        IEmergencyServiceRelayEventListener listener = _listeners.GetAt(i);
                         if (listener != null && !IsDeferredUnregisterPending(listener))
                             DispatchToListener(listener, relay, firstActivation);
                     }
@@ -205,7 +278,7 @@ namespace Hecton8.World
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<RelayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RelayEventPayload>[16] - emergency relay event lane flushed by SystemDispatcher - owner: EmergencyServiceRelayEvents
+                _pendingEvents = new NativeQueue<RelayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RelayEventPayload>[16] - emergency relay event lane flushed by SystemDispatcher - owner: EmergencyServiceRelayEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -217,7 +290,7 @@ namespace Hecton8.World
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<RelayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RelayEventPayload>[16] - next-frame emergency relay event lane prevents same-frame reentrant dispatch - owner: EmergencyServiceRelayEvents
+                _nextFrameEvents = new NativeQueue<RelayEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RelayEventPayload>[16] - next-frame emergency relay event lane prevents same-frame reentrant dispatch - owner: EmergencyServiceRelayEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -281,7 +354,7 @@ namespace Hecton8.World
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IEmergencyServiceRelayEventListener listener)
@@ -296,14 +369,14 @@ namespace Hecton8.World
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool IsDeferredRegisterPending(IEmergencyServiceRelayEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -314,7 +387,7 @@ namespace Hecton8.World
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -325,14 +398,14 @@ namespace Hecton8.World
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 int tail = _deferredRegisterCount - i - 1;
                 if (tail > 0)
                     Array.Copy(_deferredRegisterListeners, i + 1, _deferredRegisterListeners, i, tail);
 
-                _deferredRegisterListeners[--_deferredRegisterCount] = null;
+                _deferredRegisterListeners[--_deferredRegisterCount].Clear();
                 return;
             }
         }
@@ -341,14 +414,14 @@ namespace Hecton8.World
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 int tail = _deferredUnregisterCount - i - 1;
                 if (tail > 0)
                     Array.Copy(_deferredUnregisterListeners, i + 1, _deferredUnregisterListeners, i, tail);
 
-                _deferredUnregisterListeners[--_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[--_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -357,19 +430,19 @@ namespace Hecton8.World
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IEmergencyServiceRelayEventListener listener = _deferredUnregisterListeners[i];
+                IEmergencyServiceRelayEventListener listener = _deferredUnregisterListeners[i].Listener;
                 if (listener != null)
                     _listeners.TryUnregister(listener);
 
-                _deferredUnregisterListeners[i] = null;
+                _deferredUnregisterListeners[i].Clear();
             }
 
             _deferredUnregisterCount = 0;
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                RegisterImmediate(_deferredRegisterListeners[i]);
-                _deferredRegisterListeners[i] = null;
+                RegisterImmediate(_deferredRegisterListeners[i].Listener);
+                _deferredRegisterListeners[i].Clear();
             }
 
             _deferredRegisterCount = 0;

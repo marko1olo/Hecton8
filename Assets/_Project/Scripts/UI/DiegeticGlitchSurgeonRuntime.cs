@@ -393,6 +393,12 @@ namespace Hecton8.UI
             }
 
             FinishDisableTeardown();
+            UnregisterLateFrameCold();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterLateFrameCold();
         }
 
         /// <inheritdoc />
@@ -1015,6 +1021,13 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -1046,8 +1059,6 @@ namespace Hecton8.UI
         private void CacheDataVaultCold()
         {
             _vault = GlobalRegistry.DataVault;
-            if (_vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                _vault = latestVault;
         }
 
         private void EnsureNativeResources()
@@ -1490,17 +1501,20 @@ namespace Hecton8.UI
         private void FinishDisableTeardown()
         {
             UnlockScheduledBuffers();
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                _registeredLateFrame = false;
-            }
-
             _pendingDisableTeardown = false;
             _pendingVaultSwap = false;
             _pendingVaultAfterSwap = null;
             _nativeReady = false;
             _vault = null;
+        }
+
+        private void UnregisterLateFrameCold()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = false;
         }
 
         private void FinishPendingVaultSwap()

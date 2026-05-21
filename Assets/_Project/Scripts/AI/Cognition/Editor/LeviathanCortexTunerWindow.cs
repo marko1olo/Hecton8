@@ -95,7 +95,7 @@ namespace Hecton8.AI.Cognition.Editor
                 return false;
             }
 
-            if (!_handles.IsCreated() && !ApexBrainVault.TryResolve(vault, out _handles))
+            if (!_handles.IsCreated() && !ApexBrainVault.TryAcquireHandles(vault, out _handles))
             {
                 _status = "ApexBrain vault handles unavailable.";
                 return false;
@@ -172,7 +172,10 @@ namespace Hecton8.AI.Cognition.Editor
             }
 
             double pulse = EditorApplication.timeSinceStartup;
-            float ringRadius = 2f + (Mathf.Sin((float)pulse * 4f) * 0.5f);
+            float pulsePhase = (float)pulse * 4f;
+            float pulseFraction = pulsePhase - math.floor(pulsePhase);
+            float pulseTriangle = (1f - math.abs(pulseFraction * 2f - 1f)) * 2f - 1f;
+            float ringRadius = 2f + (pulseTriangle * 0.5f);
             int count = math.min(buffers.Outputs.Length, ApexBrainConstants.MaxLeviathans);
             for (int i = 0; i < count; i++)
             {

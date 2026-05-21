@@ -41,13 +41,7 @@ namespace Hecton8.Physiology.Editor
                 return;
             }
 
-            NativeArray<PhysiologyTuningDTO> tuningArray = vault.GetBuffer<PhysiologyTuningDTO>(
-                BufferID.ShinobuPhysiologyTuning,
-                1,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.ClearMemory);
-
-            if (!tuningArray.IsCreated || tuningArray.Length == 0)
+            if (!TryReadBuffer(vault, BufferID.ShinobuPhysiologyTuning, 1, out NativeArray<PhysiologyTuningDTO> tuningArray))
             {
                 EditorGUILayout.HelpBox("Physiology tuning buffer is not available.", MessageType.Warning);
                 return;
@@ -60,7 +54,7 @@ namespace Hecton8.Physiology.Editor
             tuning.AdrenalineDecaySeconds = EditorGUILayout.Slider("Adrenaline Decay", tuning.AdrenalineDecaySeconds, 1f, 180f);
             tuning.HypothermiaCoolingRate = EditorGUILayout.Slider("Hypothermia Cooling Rate", tuning.HypothermiaCoolingRate, 0.0001f, 0.05f);
             if (EditorGUI.EndChangeCheck())
-                tuningArray[0] = ShinobuPhysiologyJobMath.SanitizeTuning(tuning);
+                TryWriteTuning(vault, ShinobuPhysiologyJobMath.SanitizeTuning(tuning));
 
             _entityIndex = EditorGUILayout.IntSlider("Entity Row", _entityIndex, 0, 63);
             ReadHistogram(vault, _entityIndex);
@@ -69,20 +63,16 @@ namespace Hecton8.Physiology.Editor
 
         private void ReadHistogram(IDataVault vault, int entityIndex)
         {
-            NativeArray<DecompressionStateDTO> states = vault.GetBuffer<DecompressionStateDTO>(
-                BufferID.ShinobuDecompressionStates,
-                math.max(1, entityIndex + 1),
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.ClearMemory);
-
-            NativeArray<HaldaneTissueCoefficientDTO> coefficients = vault.GetBuffer<HaldaneTissueCoefficientDTO>(
-                BufferID.ShinobuHaldaneCoefficients,
-                ShinobuPhysiologyConstants.TissueCompartmentCount,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.ClearMemory);
-
-            if (!states.IsCreated ||
-                !coefficients.IsCreated ||
+            if (!TryReadBuffer(
+                    vault,
+                    BufferID.ShinobuDecompressionStates,
+                    math.max(1, entityIndex + 1),
+                    out NativeArray<DecompressionStateDTO> states) ||
+                !TryReadBuffer(
+                    vault,
+                    BufferID.ShinobuHaldaneCoefficients,
+                    ShinobuPhysiologyConstants.TissueCompartmentCount,
+                    out NativeArray<HaldaneTissueCoefficientDTO> coefficients) ||
                 (uint)entityIndex >= (uint)states.Length ||
                 coefficients.Length < ShinobuPhysiologyConstants.TissueCompartmentCount)
             {
@@ -106,6 +96,45 @@ namespace Hecton8.Physiology.Editor
                         _mValueScratch[i] = math.max(0.1f, state.AmbientPressure * math.max(1.01f, coefficients[i].MValueRatio));
                     }
                 }
+            }
+        }
+
+        private static bool TryReadBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return
+                vault != null &&
+                requiredLength >= 0 &&
+                vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                vault.TryReadHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength;
+        }
+
+        private static bool TryWriteTuning(IDataVault vault, PhysiologyTuningDTO tuning)
+        {
+            if (vault == null ||
+                !vault.TryGetGenerationHandle(BufferID.ShinobuPhysiologyTuning, out VaultGenerationHandle<PhysiologyTuningDTO> handle) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out NativeArray<PhysiologyTuningDTO> tuningArray))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!tuningArray.IsCreated || tuningArray.Length == 0)
+                    return false;
+
+                tuningArray[0] = tuning;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
             }
         }
 

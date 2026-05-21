@@ -252,35 +252,34 @@ namespace Hecton8.Physics
         private NativeArray<float3> _dataVaultCableVelocities;
         private NativeArray<float> _dataVaultCableMasses;
         private NativeArray<float> _dataVaultCableSegmentTensions;
-        private VaultBufferHandle<float3> _visualSegmentPositionsHandle;
-        private VaultBufferHandle<GpuCableSplinePointDTO> _visualSegmentGpuPointsHandle;
-        private VaultBufferHandle<float3> _visualAnchorPositionsHandle;
-        private VaultBufferHandle<float> _visualSegmentLengthsHandle;
-        private VaultBufferHandle<float3> _verletPositionsHandle;
-        private VaultBufferHandle<float3> _verletPreviousPositionsHandle;
-        private VaultBufferHandle<float3> _verletVelocitiesHandle;
-        private VaultBufferHandle<float3> _verletPinnedPositionsHandle;
-        private VaultBufferHandle<byte> _verletPinnedMaskHandle;
-        private VaultBufferHandle<float> _verletSegmentRestLengthsHandle;
-        private VaultBufferHandle<float> _verletSegmentTensionsHandle;
-        private VaultBufferHandle<float3> _verletCorrectionsHandle;
-        private VaultBufferHandle<float> _verletCorrectionWeightsHandle;
-        private VaultBufferHandle<float> _verletSolverStatsHandle;
-        private VaultBufferHandle<int> _verletSolverFlagsHandle;
-        private VaultBufferHandle<byte> _verletNodeFaultFlagsHandle;
-        private VaultBufferHandle<TetherVerletTelemetryEntry> _verletTelemetryRingHandle;
-        private VaultBufferHandle<int> _verletTelemetryHeadHandle;
-        private VaultBufferHandle<CableTensionForceDTO> _verletTensionForcesHandle;
-        private VaultBufferHandle<VerletCableTuningDTO> _verletTuningHandle;
-        private VaultBufferHandle<float3> _dataVaultCablePositionsHandle;
-        private VaultBufferHandle<float3> _dataVaultCablePreviousPositionsHandle;
-        private VaultBufferHandle<float3> _dataVaultCableVelocitiesHandle;
-        private VaultBufferHandle<float> _dataVaultCableMassesHandle;
-        private VaultBufferHandle<float> _dataVaultCableSegmentTensionsHandle;
+        private VaultGenerationHandle<float3> _visualSegmentPositionsHandle;
+        private VaultGenerationHandle<GpuCableSplinePointDTO> _visualSegmentGpuPointsHandle;
+        private VaultGenerationHandle<float3> _visualAnchorPositionsHandle;
+        private VaultGenerationHandle<float> _visualSegmentLengthsHandle;
+        private VaultGenerationHandle<float3> _verletPositionsHandle;
+        private VaultGenerationHandle<float3> _verletPreviousPositionsHandle;
+        private VaultGenerationHandle<float3> _verletVelocitiesHandle;
+        private VaultGenerationHandle<float3> _verletPinnedPositionsHandle;
+        private VaultGenerationHandle<byte> _verletPinnedMaskHandle;
+        private VaultGenerationHandle<float> _verletSegmentRestLengthsHandle;
+        private VaultGenerationHandle<float> _verletSegmentTensionsHandle;
+        private VaultGenerationHandle<float3> _verletCorrectionsHandle;
+        private VaultGenerationHandle<float> _verletCorrectionWeightsHandle;
+        private VaultGenerationHandle<float> _verletSolverStatsHandle;
+        private VaultGenerationHandle<int> _verletSolverFlagsHandle;
+        private VaultGenerationHandle<byte> _verletNodeFaultFlagsHandle;
+        private VaultGenerationHandle<TetherVerletTelemetryEntry> _verletTelemetryRingHandle;
+        private VaultGenerationHandle<int> _verletTelemetryHeadHandle;
+        private VaultGenerationHandle<CableTensionForceDTO> _verletTensionForcesHandle;
+        private VaultGenerationHandle<VerletCableTuningDTO> _verletTuningHandle;
+        private VaultGenerationHandle<float3> _dataVaultCablePositionsHandle;
+        private VaultGenerationHandle<float3> _dataVaultCablePreviousPositionsHandle;
+        private VaultGenerationHandle<float3> _dataVaultCableVelocitiesHandle;
+        private VaultGenerationHandle<float> _dataVaultCableMassesHandle;
+        private VaultGenerationHandle<float> _dataVaultCableSegmentTensionsHandle;
         private IDataVault _dataVault;
         private int _dataVaultSlot = -1;
         private int _dataVaultNativeStateMask;
-        private uint _dataVaultResolvedGeneration;
         private bool _dataVaultCableStateReady;
         private bool _verletRuntimeInitialized;
         private int _verletNodeCount;
@@ -1122,14 +1121,6 @@ namespace Hecton8.Physics
             int nodeCount = ResolveDataVaultNodeCount(requestedNodeCount);
             _dataVault = _manager != null ? _manager.CachedDataVault : _dataVault;
             IDataVault vault = _dataVault;
-            if (_dataVaultCableStateReady &&
-                _dataVaultSlot >= 0 &&
-                vault != null &&
-                _dataVaultResolvedGeneration == vault.VaultGenerationID &&
-                AreDataVaultScratchSlicesReady(nodeCount))
-            {
-                return;
-            }
 
             if (_dataVaultSlot < 0 && !TryAcquireDataVaultSlot())
                 return;
@@ -1362,7 +1353,6 @@ namespace Hecton8.Physics
                                         solverStatsReady &&
                                         solverFlagsReady &&
                                         nodeFaultFlagsReady;
-            _dataVaultResolvedGeneration = _dataVaultCableStateReady ? vault.VaultGenerationID : 0u;
         }
 
         private int ResolveDataVaultNodeCount(int requestedNodeCount)
@@ -1373,32 +1363,9 @@ namespace Hecton8.Physics
             return math.clamp(nodeCount, 2, DataVaultCablePointCount);
         }
 
-        private bool AreDataVaultScratchSlicesReady(int nodeCount)
-        {
-            int segmentCount = math.max(1, nodeCount - 1);
-            return _visualSegmentPositions.IsCreated && _visualSegmentPositions.Length == nodeCount &&
-                   _visualSegmentGpuPoints.IsCreated && _visualSegmentGpuPoints.Length == nodeCount &&
-                   _visualAnchorPositions.IsCreated && _visualAnchorPositions.Length == MaxAnchors &&
-                   _visualSegmentLengths.IsCreated && _visualSegmentLengths.Length == MaxSegments &&
-                   _verletPositions.IsCreated && _verletPositions.Length == nodeCount &&
-                   _verletPreviousPositions.IsCreated && _verletPreviousPositions.Length == nodeCount &&
-                   _verletVelocities.IsCreated && _verletVelocities.Length == nodeCount &&
-                   _verletPinnedPositions.IsCreated && _verletPinnedPositions.Length == nodeCount &&
-                   _verletPinnedMask.IsCreated && _verletPinnedMask.Length == nodeCount &&
-                   _verletSegmentRestLengths.IsCreated && _verletSegmentRestLengths.Length == segmentCount &&
-                   _verletSegmentTensions.IsCreated && _verletSegmentTensions.Length == segmentCount &&
-                   _verletCorrections.IsCreated && _verletCorrections.Length == nodeCount &&
-                   _verletCorrectionWeights.IsCreated && _verletCorrectionWeights.Length == nodeCount &&
-                   _verletSolverStats.IsCreated && _verletSolverStats.Length == 1 &&
-                   _verletSolverFlags.IsCreated && _verletSolverFlags.Length == 1 &&
-                   _verletTensionForces.IsCreated && _verletTensionForces.Length >= DataVaultMaxTetherSlots &&
-                   _verletTuning.IsCreated && _verletTuning.Length >= 1 &&
-                   _verletNodeFaultFlags.IsCreated && _verletNodeFaultFlags.Length == nodeCount;
-        }
-
         private bool EnsureDataVaultCableArray<T>(
             ref NativeArray<T> array,
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int length,
             string label,
@@ -1415,17 +1382,13 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            if (!handle.IsCreated || handle.Length < length)
-            {
-                handle = vault.GetBufferHandle<T>(
+            if (OpenOrAcquireDataVaultCableBuffer(
+                    vault,
+                    ref handle,
                     bufferId,
                     length,
-                    SystemID.Physics,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            NativeArray<T> vaultArray = handle.Resolve(vault);
-            if (vaultArray.IsCreated && vaultArray.Length >= length)
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<T> vaultArray))
             {
                 _dataVaultNativeStateMask |= vaultFlag;
                 array = vaultArray;
@@ -1438,7 +1401,7 @@ namespace Hecton8.Physics
 
         private bool EnsureDataVaultSliceArray<T>(
             ref NativeArray<T> array,
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int totalLength,
             int offset,
@@ -1456,17 +1419,14 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            if (!handle.IsCreated || handle.Length < totalLength)
-            {
-                handle = vault.GetBufferHandle<T>(
+            if (OpenOrAcquireDataVaultCableBuffer(
+                    vault,
+                    ref handle,
                     bufferId,
                     totalLength,
-                    SystemID.Physics,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            NativeArray<T> vaultArray = handle.Resolve(vault);
-            if (vaultArray.IsCreated && offset + length <= vaultArray.Length)
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<T> vaultArray) &&
+                offset + length <= vaultArray.Length)
             {
                 _dataVaultNativeStateMask |= vaultFlag;
                 array = vaultArray.GetSubArray(offset, length);
@@ -1475,6 +1435,76 @@ namespace Hecton8.Physics
 
             ResetDataVaultCableView(ref array, ref handle, vaultFlag);
             return false;
+        }
+
+        private static bool OpenOrAcquireDataVaultCableBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            if (TryOpenDataVaultCableBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                return TryOpenDataVaultCableBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.Physics,
+                options);
+            return TryOpenDataVaultCableBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenDataVaultCableBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsDataVaultCableHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsDataVaultCableHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.Physics &&
+                   handle.Generation != 0u;
         }
 
         private void DisposeDataVaultCableState()
@@ -1509,12 +1539,11 @@ namespace Hecton8.Physics
             ReleaseDataVaultSlot();
             _dataVault = null;
             _dataVaultCableStateReady = false;
-            _dataVaultResolvedGeneration = 0u;
         }
 
         private void DisposeDataVaultCableArray<T>(
             ref NativeArray<T> array,
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             int vaultFlag)
             where T : struct
         {
@@ -1525,14 +1554,13 @@ namespace Hecton8.Physics
 
         private void ResetDataVaultCableView<T>(
             ref NativeArray<T> array,
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             int vaultFlag)
             where T : struct
         {
             handle = default;
             array = default;
             _dataVaultNativeStateMask &= ~vaultFlag;
-            _dataVaultResolvedGeneration = 0u;
         }
 
         private void EnsureVerletTuningDefaults()
@@ -2166,10 +2194,13 @@ namespace Hecton8.Physics
             if (!IsFinite(midpoint))
                 return;
 
+            if (!TryResolveAupFromRuntimeOrigin(midpoint, out AbsoluteUniversePosition pointAup))
+                return;
+
             float intensity = math.saturate((peakTension - safeMargin) * math.rcp(math.max(1f, snapThreshold - safeMargin)));
             ImpactSignal signal = new ImpactSignal
             {
-                PointAup = AbsoluteUniversePosition.FromRuntimePosition(midpoint),
+                PointAup = pointAup,
                 Force = peakTension,
                 Intensity = intensity,
                 MaterialHash = TetherCreakMaterialHash,
@@ -2191,13 +2222,19 @@ namespace Hecton8.Physics
             Vector3 safeAnchorPosition = IsFinite(anchorPosition) ? anchorPosition : Vector3.zero;
             Vector3 safePayloadPosition = IsFinite(payloadPosition) ? payloadPosition : safeAnchorPosition;
             Vector3 direction = ResolveSafeDirection(safePayloadPosition - safeAnchorPosition, Vector3.zero);
+            if (!TryResolveAupFromRuntimeOrigin(safeAnchorPosition, out AbsoluteUniversePosition anchorAup) ||
+                !TryResolveAupFromRuntimeOrigin(safePayloadPosition, out AbsoluteUniversePosition payloadAup))
+            {
+                return;
+            }
+
             float reactiveVfx01 = math.saturate(
                 (peakTension - snapThreshold * ReactiveVfxThreshold01) *
                 math.rcp(math.max(1f, snapThreshold * (1f - ReactiveVfxThreshold01))));
             TetherTensionSignal signal = new TetherTensionSignal
             {
-                AnchorAup = AbsoluteUniversePosition.FromRuntimePosition(safeAnchorPosition),
-                PayloadAup = AbsoluteUniversePosition.FromRuntimePosition(safePayloadPosition),
+                AnchorAup = anchorAup,
+                PayloadAup = payloadAup,
                 DirectionToPayload = ToFloat3(direction),
                 TetherId = unchecked((uint)EntityId.ToULong(GetEntityId())),
                 FrameIndex = unchecked((uint)_currentSimulationFrameIndex),
@@ -2220,9 +2257,12 @@ namespace Hecton8.Physics
             float safePeakTension = math.isfinite(peakTension) ? math.max(0f, peakTension) : 0f;
             float safeSnapSeverity = math.isfinite(snapSeverity) ? math.saturate(snapSeverity) : 0f;
 
+            if (!TryResolveAupFromRuntimeOrigin(snapPosition, out AbsoluteUniversePosition snapAup))
+                return;
+
             ImpactSignal signal = new ImpactSignal
             {
-                PointAup = AbsoluteUniversePosition.FromRuntimePosition(snapPosition),
+                PointAup = snapAup,
                 Force = safePeakTension,
                 Intensity = safeSnapSeverity,
                 MaterialHash = TetherSnapImpactMaterialHash,
@@ -2257,9 +2297,17 @@ namespace Hecton8.Physics
                 return;
 
             Vector3 payloadForce = -direction * scaledForce;
-            double3 localOriginAup = AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero).ToAbsoluteDouble3();
-            double3 anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition).ToAbsoluteDouble3();
-            double3 payloadAup = AbsoluteUniversePosition.FromRuntimePosition(payloadPosition).ToAbsoluteDouble3();
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return;
+
+            double3 localOriginAup = originAup.ToAbsoluteDouble3();
+            if (!TryResolveAupAbsoluteDoubleFromRuntimeOrigin(anchorPosition, in originAup, out double3 anchorAup) ||
+                !TryResolveAupAbsoluteDoubleFromRuntimeOrigin(payloadPosition, in originAup, out double3 payloadAup))
+            {
+                return;
+            }
+
             float3 payloadForce3 = new float3(payloadForce.x, payloadForce.y, payloadForce.z);
             uint frameIndex = unchecked((uint)_currentSimulationFrameIndex);
             TetherForcePacketDTO anchorPacket = default;
@@ -2351,9 +2399,7 @@ namespace Hecton8.Physics
             if (tuningOverride > 0)
                 return math.clamp(tuningOverride, VerletLowIterationCount, VerletUltraIterationCount);
 
-            float qualityWeight = ResolveTetherQualityWeight(qualityTier);
-            int iterations = (int)math.lerp(2f, 15f, qualityWeight);
-            return math.clamp(iterations, 2, VerletUltraIterationCount);
+            return VerletUltraIterationCount;
         }
 
         private static int ResolveVerletPointCount(HectonQualityTier qualityTier)
@@ -2363,15 +2409,12 @@ namespace Hecton8.Physics
 
         private static int ResolveVerletSegmentCount(HectonQualityTier qualityTier)
         {
-            float qualityWeight = ResolveTetherQualityWeight(qualityTier);
-            int segmentCount = (int)math.round(math.lerp(VerletLowSegmentCount, VerletDefaultSegmentCount, Smooth01(qualityWeight)));
-            return math.clamp(segmentCount, VerletLowSegmentCount, VerletDefaultSegmentCount);
+            return VerletDefaultSegmentCount;
         }
 
         private static float ResolveVerletVelocityDamping(HectonQualityTier qualityTier)
         {
-            float qualityWeight = ResolveTetherQualityWeight(qualityTier);
-            return math.lerp(VerletLowVelocityDamping, VerletHighVelocityDamping, Smooth01(qualityWeight));
+            return VerletHighVelocityDamping;
         }
 
         private static float ResolveTetherQualityWeight(HectonQualityTier qualityTier)
@@ -3041,9 +3084,12 @@ namespace Hecton8.Physics
             if (!IsFinite(snapPosition))
                 snapPosition = transform.position;
 
+            if (!TryResolveAupFromRuntimeOrigin(snapPosition, out AbsoluteUniversePosition snapAup))
+                return;
+
             TetherSignals.PublishSnap(new TetherSnappedSignal
             {
-                SnapAup = AbsoluteUniversePosition.FromRuntimePosition(snapPosition),
+                SnapAup = snapAup,
                 TetherId = unchecked((uint)EntityId.ToULong(GetEntityId())),
                 FrameIndex = unchecked((uint)_currentSimulationFrameIndex),
                 PeakTension = peakTension,
@@ -3701,6 +3747,47 @@ namespace Hecton8.Physics
         {
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3));
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            double3 deltaMeters = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            aup = AbsoluteUniversePosition.OffsetMeters(in originAup, deltaMeters);
+            return IsFiniteAup(in aup);
+        }
+
+        private static bool TryResolveAupAbsoluteDoubleFromRuntimeOrigin(
+            Vector3 runtimePosition,
+            in AbsoluteUniversePosition originAup,
+            out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            if (!IsFinite(runtimePosition) || !IsFiniteAup(in originAup))
+                return false;
+
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!IsFiniteAup(in aup))
+                return false;
+
+            absoluteAup = aup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
         }
 
         private static bool IsFrameCooldownActive(int currentFrame, int lastFrame, int cooldownFrames)

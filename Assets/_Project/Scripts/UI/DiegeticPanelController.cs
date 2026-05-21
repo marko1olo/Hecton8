@@ -1677,7 +1677,12 @@ namespace Hecton8.UI
                 return;
             }
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition((Vector3)runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin((Vector3)runtimePosition, out AbsoluteUniversePosition aup))
+            {
+                UnregisterProxyLight();
+                return;
+            }
+
             ProxyLightData lightData = ProxyLightData.CreateUiPanel(
                 in aup,
                 runtimePosition,
@@ -1858,9 +1863,29 @@ namespace Hecton8.UI
 
         private static double ResolveAupDistanceSq(Vector3 runtimePositionA, Vector3 runtimePositionB)
         {
-            AbsoluteUniversePosition a = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionA);
-            AbsoluteUniversePosition b = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionB);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePositionA, out AbsoluteUniversePosition a) ||
+                !TryResolveAupFromRuntimeOrigin(runtimePositionB, out AbsoluteUniversePosition b))
+            {
+                return double.MaxValue;
+            }
+
             return AbsoluteUniversePosition.DistanceSq(in a, in b);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in positionAup);
         }
 
         private bool TryProjectRayToPanel(

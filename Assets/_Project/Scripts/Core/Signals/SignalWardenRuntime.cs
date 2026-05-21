@@ -11,6 +11,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.UIElements;
 using UnityEngine.Scripting;
 
 namespace Hecton8.Core.Contracts.Signals
@@ -265,7 +266,7 @@ namespace Hecton8.Core.Contracts.Signals
 
             if (_initialized != 0 && ReferenceEquals(_vault, vault))
             {
-                if (ResolveBuffers(vault, out _, out _, out _))
+                if (TryOpenBuffersForOwner(vault, out _, out _, out _))
                     return;
 
                 _initialized = 0;
@@ -288,7 +289,7 @@ namespace Hecton8.Core.Contracts.Signals
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
 
-            if (!ResolveBuffers(vault, out _, out NativeArray<int> count, out _))
+            if (!TryOpenBuffersForOwner(vault, out _, out NativeArray<int> count, out _))
             {
                 _initialized = 0;
                 return;
@@ -300,8 +301,8 @@ namespace Hecton8.Core.Contracts.Signals
             UpsertProfile(ComputeLabelHash(nameof(CombatDamageSignal)), 16, 128, DefaultCoalescingRadiusMeters, 100);
         }
 
-        /// <summary>Returns the resolved scratch buffer used by the zero-string CSV parser.</summary>
-        public static bool TryGetCsvScratch(out NativeArray<byte> scratch)
+        /// <summary>Opens the mutable scratch buffer used by the zero-string CSV parser.</summary>
+        public static bool TryOpenCsvScratchForLoad(out NativeArray<byte> scratch)
         {
             scratch = default;
             if (_initialized == 0 || _vault == null ||
@@ -321,12 +322,11 @@ namespace Hecton8.Core.Contracts.Signals
             profile = default;
             if (laneHash == 0u ||
                 _initialized == 0 ||
-                !ResolveBuffers(_vault, out NativeArray<SignalTuningProfile> profiles, out NativeArray<int> countArray, out _))
+                !TryReadProfiles(_vault, out NativeArray<SignalTuningProfile>.ReadOnly profiles, out int count))
             {
                 return false;
             }
 
-            int count = math.clamp(countArray[0], 0, math.min(MaxProfiles, profiles.Length));
             for (int i = 0; i < count; i++)
             {
                 SignalTuningProfile candidate = profiles[i];
@@ -345,7 +345,7 @@ namespace Hecton8.Core.Contracts.Signals
         {
             if (laneHash == 0u ||
                 _initialized == 0 ||
-                !ResolveBuffers(_vault, out NativeArray<SignalTuningProfile> profiles, out NativeArray<int> countArray, out _))
+                !TryOpenBuffersForOwner(_vault, out NativeArray<SignalTuningProfile> profiles, out NativeArray<int> countArray, out _))
             {
                 return false;
             }
@@ -385,7 +385,28 @@ namespace Hecton8.Core.Contracts.Signals
             return true;
         }
 
-        private static bool ResolveBuffers(
+        private static bool TryReadProfiles(
+            IDataVault vault,
+            out NativeArray<SignalTuningProfile>.ReadOnly profiles,
+            out int count)
+        {
+            profiles = default;
+            count = 0;
+            if (vault == null ||
+                !vault.TryResolveHandle(in _profilesHandle, out NativeArray<SignalTuningProfile> profileArray) ||
+                !vault.TryResolveHandle(in _countHandle, out NativeArray<int> countArray) ||
+                profileArray.Length < MaxProfiles ||
+                countArray.Length < 1)
+            {
+                return false;
+            }
+
+            profiles = profileArray.AsReadOnly();
+            count = math.clamp(countArray[0], 0, math.min(MaxProfiles, profileArray.Length));
+            return true;
+        }
+
+        private static bool TryOpenBuffersForOwner(
             IDataVault vault,
             out NativeArray<SignalTuningProfile> profiles,
             out NativeArray<int> count,
@@ -440,37 +461,44 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>
-    /// Cold allocation-free parser for StreamingAssets/signal_tuning_profiles.csv.
+    /// Editor/source-data parser for signal_tuning_profiles.csv.
     /// Expected columns: signal,min_frame,max_frame,coalescing_radius,priority.
+    /// Player runtime must consume baked binary/Vault data, not StreamingAssets text.
     /// </summary>
     [Preserve]
     public static class SignalTuningCsvHotSwap
     {
+        private const string SourceDataRelativePath = "_SourceData/Signals/signal_tuning_profiles.csv";
         private const byte Comma = (byte)',';
         private const byte LineFeed = (byte)'\n';
         private const byte CarriageReturn = (byte)'\r';
         private const byte Period = (byte)'.';
 
-        /// <summary>Loads the default signal tuning CSV if the vault and file are available.</summary>
+        /// <summary>Loads the editor signal tuning CSV if the vault and source file are available.</summary>
         public static bool TryLoadDefault()
         {
+#if UNITY_EDITOR
             string dataPath = Application.dataPath;
             if (string.IsNullOrEmpty(dataPath))
                 return false;
 
-            string path = Path.Combine(dataPath, "StreamingAssets", "signal_tuning_profiles.csv");
+            string path = Path.Combine(dataPath, SourceDataRelativePath);
             return TryLoad(path);
+#else
+            return false;
+#endif
         }
 
-        /// <summary>Loads a signal tuning CSV into vault-backed DTO rows.</summary>
+        /// <summary>Loads an editor signal tuning CSV into vault-backed DTO rows.</summary>
         public static unsafe bool TryLoad(string path)
         {
+#if UNITY_EDITOR
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
             IDataVault vault = GlobalRegistry.DataVault;
             SignalTuningTable.Initialize(vault);
-            if (!SignalTuningTable.TryGetCsvScratch(out NativeArray<byte> scratch) || !scratch.IsCreated)
+            if (!SignalTuningTable.TryOpenCsvScratchForLoad(out NativeArray<byte> scratch) || !scratch.IsCreated)
                 return false;
 
             int bytesRead;
@@ -505,6 +533,10 @@ namespace Hecton8.Core.Contracts.Signals
             }
 
             return Parse(new ReadOnlySpan<byte>(scratch.GetUnsafeReadOnlyPtr(), bytesRead));
+#else
+            _ = path;
+            return false;
+#endif
         }
 
         private static bool Parse(ReadOnlySpan<byte> bytes)
@@ -728,7 +760,7 @@ namespace Hecton8.Core.Contracts.Signals
 
             if (_initialized != 0 && ReferenceEquals(_vault, vault))
             {
-                if (TryResolveRing(vault, out _, out _))
+                if (TryReadRingFromVault(vault, out _, out _))
                     return;
 
                 _initialized = 0;
@@ -746,7 +778,7 @@ namespace Hecton8.Core.Contracts.Signals
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
 
-            if (!TryResolveRing(vault, out _, out NativeArray<int> cursor))
+            if (!TryReadRingFromVault(vault, out _, out NativeArray<int> cursor))
             {
                 _initialized = 0;
                 return;
@@ -777,7 +809,7 @@ namespace Hecton8.Core.Contracts.Signals
             int globalQualityMilli,
             int systemStressMilli)
         {
-            if (!TryResolveRing(out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor))
+            if (!TryOpenRingForOwnerWrite(out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor))
                 return;
 
             int index = math.clamp(cursor[0], 0, Capacity - 1);
@@ -802,7 +834,7 @@ namespace Hecton8.Core.Contracts.Signals
         /// <summary>Dumps the full signal black-box ring to Docs/AgentLogs/Dump_SIGNAL_CORRIDOR.bin.</summary>
         public static bool DumpToDisk()
         {
-            if (!TryResolveRing(out NativeArray<SignalTelemetryFrame> ring, out _))
+            if (!TryOpenRingForCrashDump(out NativeArray<SignalTelemetryFrame> ring, out _))
                 return false;
 
             try
@@ -847,7 +879,7 @@ namespace Hecton8.Core.Contracts.Signals
         /// <summary>Copies the current vault-backed telemetry ring into an editor/runtime diagnostic buffer.</summary>
         public static int CopyFrames(NativeArray<SignalTelemetryFrame> destination)
         {
-            if (!destination.IsCreated || !TryResolveRing(out NativeArray<SignalTelemetryFrame> ring, out _))
+            if (!destination.IsCreated || !TryReadRing(out NativeArray<SignalTelemetryFrame> ring, out _))
                 return 0;
 
             int count = math.min(destination.Length, Capacity);
@@ -865,25 +897,33 @@ namespace Hecton8.Core.Contracts.Signals
             bytes[offset + 3] = (byte)(value >> 24);
         }
 
-        private static bool TryResolveRing(out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor)
+        private static bool TryReadRing(out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor)
         {
             ring = default;
             cursor = default;
-            IDataVault vault = _vault ?? GlobalRegistry.DataVault;
-            if (vault == null)
+            if (_initialized == 0 || _vault == null)
                 return false;
 
-            if (_initialized == 0 || !ReferenceEquals(_vault, vault))
-                Initialize();
+            return TryReadRingFromVault(_vault, out ring, out cursor);
+        }
 
-            vault = _vault;
+        private static bool TryOpenRingForOwnerWrite(out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor)
+        {
+            ring = default;
+            cursor = default;
+            IDataVault vault = _vault;
             if (vault == null || _initialized == 0)
                 return false;
 
-            return TryResolveRing(vault, out ring, out cursor);
+            return TryReadRingFromVault(vault, out ring, out cursor);
         }
 
-        private static bool TryResolveRing(IDataVault vault, out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor)
+        private static bool TryOpenRingForCrashDump(out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor)
+        {
+            return TryOpenRingForOwnerWrite(out ring, out cursor);
+        }
+
+        private static bool TryReadRingFromVault(IDataVault vault, out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor)
         {
             ring = default;
             cursor = default;
@@ -2260,7 +2300,7 @@ namespace Hecton8.Core.Contracts.Signals
             if (_initialized != 0 && ReferenceEquals(_vault, vault))
             {
                 _activeStrideBytes = activeStride;
-                if (ResolveBuffers(vault))
+                if (AreVaultBuffersReady(vault))
                     return true;
 
                 _initialized = 0;
@@ -2288,7 +2328,7 @@ namespace Hecton8.Core.Contracts.Signals
             _csvScratchHandle = vault.GetGenerationHandle<byte>(CsvScratchBufferId, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _activeStrideBytes = activeStride;
             _writeBufferIndex = 0;
-            _initialized = ResolveBuffers(vault) ? 1 : 0;
+            _initialized = AreVaultBuffersReady(vault) ? 1 : 0;
             if (_initialized == 0)
                 return false;
 
@@ -2332,7 +2372,7 @@ namespace Hecton8.Core.Contracts.Signals
         public static bool TryAcquireWriteContext(uint frame, double3 sectorOriginAup, out SignalThreadLocalWriteContext context)
         {
             context = default;
-            if (!EnsureInitializedFromRegistry())
+            if (!EnsureInitializedForOwnerRoute())
                 return false;
 
             NativeArray<byte> bytes = default;
@@ -2436,7 +2476,7 @@ namespace Hecton8.Core.Contracts.Signals
         public static bool ScheduleCommit(uint frame, double3 sectorOriginAup, JobHandle dependency, out JobHandle handle)
         {
             handle = dependency;
-            if (!EnsureInitializedFromRegistry())
+            if (!EnsureInitializedForOwnerRoute())
                 return false;
 
             int readBufferIndex = _writeBufferIndex;
@@ -2498,7 +2538,7 @@ namespace Hecton8.Core.Contracts.Signals
 
         public static unsafe bool TryPushAsynchronousOverflow(in SignalWardenMockDamageSignal signal, double3 sectorOriginAup)
         {
-            if (!EnsureInitializedFromRegistry() ||
+            if (!EnsureInitializedForOwnerRoute() ||
                 !TryResolve(_vault, in _overflowSignalsHandle, out NativeArray<SignalWardenMockDamageSignal> overflowSignals) ||
                 !TryResolve(_vault, in _overflowHeaderHandle, out NativeArray<SignalThreadOverflowHeader64> overflowHeader) ||
                 overflowHeader.Length <= 0)
@@ -2574,7 +2614,7 @@ namespace Hecton8.Core.Contracts.Signals
         public static bool ScheduleOrphanedLockAutopsy(uint frame, int maxFrameAge, JobHandle dependency, out JobHandle handle)
         {
             handle = dependency;
-            if (!EnsureInitializedFromRegistry())
+            if (!EnsureInitializedForOwnerRoute())
                 return false;
 
             NativeArray<SignalThreadLocalHeader64> headers = default;
@@ -2594,21 +2634,9 @@ namespace Hecton8.Core.Contracts.Signals
             return true;
         }
 
-        public static bool TryGetCommittedSignals(out NativeArray<SignalWardenMockDamageSignal> signals, out int count)
+        public static bool TryOpenCommittedSignalsForOwner(out NativeArray<SignalWardenMockDamageSignal> signals, out int count)
         {
-            signals = default;
-            count = 0;
-            if (!EnsureInitializedFromRegistry() ||
-                !TryResolve(_vault, in _committedSignalsHandle, out NativeArray<SignalWardenMockDamageSignal> committedSignals) ||
-                !TryResolve(_vault, in _committedCountHandle, out NativeArray<int> committedCount) ||
-                committedCount.Length <= 0)
-            {
-                return false;
-            }
-
-            signals = committedSignals;
-            count = math.clamp(committedCount[0], 0, committedSignals.Length);
-            return true;
+            return TryOpenCommittedSignalsBuffer(out signals, out count);
         }
 
         /// <summary>Returns a read-only view of the finalized mock signal snapshot for consumers and editor diagnostics.</summary>
@@ -2616,7 +2644,7 @@ namespace Hecton8.Core.Contracts.Signals
         {
             signals = default;
             count = 0;
-            if (!TryGetCommittedSignals(out NativeArray<SignalWardenMockDamageSignal> committedSignals, out count))
+            if (!TryOpenCommittedSignalsBuffer(out NativeArray<SignalWardenMockDamageSignal> committedSignals, out count))
                 return false;
 
             signals = committedSignals.AsReadOnly();
@@ -2626,7 +2654,7 @@ namespace Hecton8.Core.Contracts.Signals
         public static bool TryGetLatestTelemetry(out SignalThreadContentionTelemetryEntry entry)
         {
             entry = default;
-            if (!EnsureInitializedFromRegistry() ||
+            if (!IsInitializedForRead() ||
                 !TryResolve(_vault, in _telemetryHandle, out NativeArray<SignalThreadContentionTelemetryEntry> telemetry) ||
                 !TryResolve(_vault, in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) ||
                 telemetryCursor.Length <= 0)
@@ -2646,7 +2674,7 @@ namespace Hecton8.Core.Contracts.Signals
         {
             telemetry = default;
             cursor = 0;
-            if (!EnsureInitializedFromRegistry() ||
+            if (!IsInitializedForRead() ||
                 !TryResolve(_vault, in _telemetryHandle, out NativeArray<SignalThreadContentionTelemetryEntry> telemetryArray) ||
                 !TryResolve(_vault, in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) ||
                 telemetryCursor.Length <= 0 ||
@@ -2662,7 +2690,7 @@ namespace Hecton8.Core.Contracts.Signals
 
         public static void RecordLastCommitMicroseconds(uint microseconds)
         {
-            if (!EnsureInitializedFromRegistry() ||
+            if (!EnsureInitializedForOwnerRoute() ||
                 !TryResolve(_vault, in _telemetryHandle, out NativeArray<SignalThreadContentionTelemetryEntry> telemetry) ||
                 !TryResolve(_vault, in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) ||
                 telemetryCursor.Length <= 0)
@@ -2681,7 +2709,7 @@ namespace Hecton8.Core.Contracts.Signals
         public static bool TryGetThreadHeader(int threadIndex, out SignalThreadLocalHeader64 header)
         {
             header = default;
-            if (!EnsureInitializedFromRegistry())
+            if (!IsInitializedForRead())
                 return false;
 
             NativeArray<SignalThreadLocalHeader64> headers = default;
@@ -2725,7 +2753,7 @@ namespace Hecton8.Core.Contracts.Signals
             int maxOutputCount,
             uint targetPlatformHash)
         {
-            if (!EnsureInitializedFromRegistry() ||
+            if (!EnsureInitializedForOwnerRoute() ||
                 !TryResolve(_vault, in _tuningHandle, out NativeArray<SignalThreadContentionTuning64> tuningArray) ||
                 tuningArray.Length <= 0)
             {
@@ -2752,7 +2780,7 @@ namespace Hecton8.Core.Contracts.Signals
         public static bool TryGetTuning(out SignalThreadContentionTuning64 tuning)
         {
             tuning = default;
-            if (!EnsureInitializedFromRegistry() ||
+            if (!IsInitializedForRead() ||
                 !TryResolve(_vault, in _tuningHandle, out NativeArray<SignalThreadContentionTuning64> tuningArray) ||
                 tuningArray.Length <= 0)
             {
@@ -2763,10 +2791,10 @@ namespace Hecton8.Core.Contracts.Signals
             return tuning.Magic == TuningMagic;
         }
 
-        public static bool TryGetCsvScratch(out NativeArray<byte> scratch)
+        public static bool TryOpenCsvScratchForLoad(out NativeArray<byte> scratch)
         {
             scratch = default;
-            if (!EnsureInitializedFromRegistry() ||
+            if (!IsInitializedForRead() ||
                 !TryResolve(_vault, in _csvScratchHandle, out NativeArray<byte> csvScratch) ||
                 csvScratch.Length < CsvScratchBytes)
             {
@@ -2779,7 +2807,7 @@ namespace Hecton8.Core.Contracts.Signals
 
         public static bool DumpToDisk()
         {
-            if (!EnsureInitializedFromRegistry() ||
+            if (!EnsureInitializedForCrashDumpRoute() ||
                 !TryResolve(_vault, in _telemetryHandle, out NativeArray<SignalThreadContentionTelemetryEntry> telemetry))
             {
                 return false;
@@ -2841,7 +2869,38 @@ namespace Hecton8.Core.Contracts.Signals
                    math.isfinite(signal.Damage);
         }
 
-        private static bool EnsureInitializedFromRegistry()
+        private static bool IsInitializedForRead()
+        {
+            return _initialized != 0 && _vault != null;
+        }
+
+        private static bool TryOpenCommittedSignalsBuffer(out NativeArray<SignalWardenMockDamageSignal> signals, out int count)
+        {
+            signals = default;
+            count = 0;
+            if (!IsInitializedForRead() ||
+                !TryResolve(_vault, in _committedSignalsHandle, out NativeArray<SignalWardenMockDamageSignal> committedSignals) ||
+                !TryResolve(_vault, in _committedCountHandle, out NativeArray<int> committedCount) ||
+                committedCount.Length <= 0)
+            {
+                return false;
+            }
+
+            signals = committedSignals;
+            count = math.clamp(committedCount[0], 0, committedSignals.Length);
+            return true;
+        }
+
+        private static bool EnsureInitializedForOwnerRoute()
+        {
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            return Initialize(vault, SignalBusRegistry.GlobalQualityWeight01, vault.CapacityPressure01);
+        }
+
+        private static bool EnsureInitializedForCrashDumpRoute()
         {
             IDataVault vault = _vault ?? GlobalRegistry.DataVault;
             if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
@@ -2852,7 +2911,7 @@ namespace Hecton8.Core.Contracts.Signals
             return Initialize(vault, SignalBusRegistry.GlobalQualityWeight01, vault.CapacityPressure01);
         }
 
-        private static bool ResolveBuffers(IDataVault vault)
+        private static bool AreVaultBuffersReady(IDataVault vault)
         {
             int byteCapacity = (MaxThreadCount * MaxThreadStrideBytes) + 64;
             if (!TryResolve(vault, in _frontBytesHandle, out NativeArray<byte> frontBytes) || frontBytes.Length < byteCapacity)
@@ -3015,10 +3074,11 @@ namespace Hecton8.Core.Contracts.Signals
         }
     }
 
-    /// <summary>Zero-row-allocation parser for StreamingAssets/signal_corridor_capacities.csv.</summary>
+    /// <summary>Editor/source-data parser for signal_corridor_capacities.csv.</summary>
     [Preserve]
     public static class SignalThreadContentionCsvHotSwap
     {
+        private const string SourceDataRelativePath = "_SourceData/Signals/signal_corridor_capacities.csv";
         private const byte Comma = (byte)',';
         private const byte LineFeed = (byte)'\n';
         private const byte CarriageReturn = (byte)'\r';
@@ -3034,19 +3094,24 @@ namespace Hecton8.Core.Contracts.Signals
 
         public static bool TryLoadDefault()
         {
+#if UNITY_EDITOR
             string dataPath = Application.dataPath;
             if (string.IsNullOrEmpty(dataPath))
                 return false;
 
-            return TryLoad(Path.Combine(dataPath, "StreamingAssets", "signal_corridor_capacities.csv"));
+            return TryLoad(Path.Combine(dataPath, SourceDataRelativePath));
+#else
+            return false;
+#endif
         }
 
         public static unsafe bool TryLoad(string path)
         {
+#if UNITY_EDITOR
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            if (!SignalThreadLocalScratchpad.TryGetCsvScratch(out NativeArray<byte> scratch) || !scratch.IsCreated)
+            if (!SignalThreadLocalScratchpad.TryOpenCsvScratchForLoad(out NativeArray<byte> scratch) || !scratch.IsCreated)
                 return false;
 
             int bytesRead;
@@ -3081,6 +3146,10 @@ namespace Hecton8.Core.Contracts.Signals
             }
 
             return Parse(new ReadOnlySpan<byte>(scratch.GetUnsafeReadOnlyPtr(), bytesRead));
+#else
+            _ = path;
+            return false;
+#endif
         }
 
         private static bool Parse(ReadOnlySpan<byte> bytes)
@@ -3403,7 +3472,7 @@ namespace Hecton8.Core.Contracts.Signals
             root.Add(qualitySlider);
 
             root.Add(new UnityEngine.UIElements.Button(() => { SignalThreadContentionCsvHotSwap.TryLoadDefault(); }) { text = "Load CSV" });
-            root.Add(new UnityEngine.UIElements.Button(RunMockContention) { text = "Run Mock Contention" });
+            root.Add(new UnityEngine.UIElements.Button(RunMockContentionEditorBlocking) { text = "Run Mock Contention" });
             _waterfallGraph = new SignalThreadContentionWaterfallGraph();
             root.Add(_waterfallGraph);
             RefreshMetrics();
@@ -3431,7 +3500,7 @@ namespace Hecton8.Core.Contracts.Signals
                 tuning.TargetPlatformHash);
         }
 
-        private void RunMockContention()
+        private void RunMockContentionEditorBlocking()
         {
             JobHandle handle;
             uint frame = unchecked((uint)Time.frameCount);

@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using Hecton8.BuildTools;
 using UnityEngine;
 using Unity.Profiling;
@@ -345,7 +344,6 @@ namespace Hecton8.Tools
     /// Snapshot of performance data at a point in time.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct PerformanceSnapshot
     {
         public DateTime Timestamp;

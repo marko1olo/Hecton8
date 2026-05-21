@@ -88,48 +88,50 @@ namespace Hecton8.Scavenging
             public ushort amount;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         public struct YieldRuntimeEntry
         {
-            public int ItemHashId;
-            public ushort MinimumAmount;
-            public ushort MaximumAmount;
-            public byte Weight;
-            public byte Reserved0;
-            public ushort Reserved1;
-            public uint Reserved2;
+            [FieldOffset(0)] public int ItemHashId;
+            [FieldOffset(4)] public ushort MinimumAmount;
+            [FieldOffset(6)] public ushort MaximumAmount;
+            [FieldOffset(8)] public byte Weight;
+            [FieldOffset(9)] public byte Reserved0;
+            [FieldOffset(10)] public ushort Reserved1;
+            [FieldOffset(12)] public uint Reserved2;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         public struct RarityDropRuntimeEntry
         {
-            public int ItemHashId;
-            public ushort Amount;
-            public byte RarityTier;
-            public byte ProbabilityByte;
-            public uint Reserved0;
-            public uint Reserved1;
+            [FieldOffset(0)] public int ItemHashId;
+            [FieldOffset(4)] public ushort Amount;
+            [FieldOffset(6)] public byte RarityTier;
+            [FieldOffset(7)] public byte ProbabilityByte;
+            [FieldOffset(8)] public uint Reserved0;
+            [FieldOffset(12)] public uint Reserved1;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         public struct RuntimeDescriptor
         {
-            public int StableHashId;
-            public float ToolResistance;
-            public float HarvestDurationSeconds;
-            public int ValidLayerMask;
-            public byte RequiredToolClass;
-            public byte YieldCount;
-            public byte RarityDropCount;
-            public byte DefaultLootCount;
-            public float MinimumDensity;
-            public float MaximumDensity;
-            public float MinimumDepthMeters;
-            public float MaximumDepthMeters;
-            public float MinimumTemperatureCelsius;
-            public float MaximumTemperatureCelsius;
-            public float MinimumSlopeDegrees;
-            public float MaximumSlopeDegrees;
+            [FieldOffset(0)] public int StableHashId;
+            [FieldOffset(4)] public float ToolResistance;
+            [FieldOffset(8)] public float HarvestDurationSeconds;
+            [FieldOffset(12)] public int ValidLayerMask;
+            [FieldOffset(16)] public byte RequiredToolClass;
+            [FieldOffset(17)] public byte YieldCount;
+            [FieldOffset(18)] public byte RarityDropCount;
+            [FieldOffset(19)] public byte DefaultLootCount;
+            [FieldOffset(20)] public float MinimumDensity;
+            [FieldOffset(24)] public float MaximumDensity;
+            [FieldOffset(28)] public float MinimumDepthMeters;
+            [FieldOffset(32)] public float MaximumDepthMeters;
+            [FieldOffset(36)] public float MinimumTemperatureCelsius;
+            [FieldOffset(40)] public float MaximumTemperatureCelsius;
+            [FieldOffset(44)] public float MinimumSlopeDegrees;
+            [FieldOffset(48)] public float MaximumSlopeDegrees;
+            [FieldOffset(52)] private uint _pad0;
+            [FieldOffset(56)] private ulong _pad1;
         }
 
         [Header("Identity")]

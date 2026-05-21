@@ -556,7 +556,15 @@ namespace Hecton8.Physiology
 
             AbsoluteUniversePosition aup = snapshot.Aup;
             if (!IsFiniteAup(in aup))
-                aup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            {
+                AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+                if (!IsFiniteAup(in originAup))
+                    return false;
+
+                aup = OffsetAupByRuntimeDelta(in originAup, runtimePosition);
+                if (!IsFiniteAup(in aup))
+                    return false;
+            }
 
             pose = new PlayerPose(
                 new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z),

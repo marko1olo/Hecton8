@@ -28,8 +28,31 @@ namespace Hecton8.World
 
         private static Vector3 ToAbsoluteScatterPosition(Vector3 runtimePosition)
         {
-            double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            double3 absolute = TryResolveRuntimeAupDouble(runtimePosition, out double3 resolvedAup)
+                ? resolvedAup
+                : new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             return new Vector3((float)absolute.x, (float)absolute.y, (float)absolute.z);
+        }
+
+        private static bool TryResolveRuntimeAupDouble(Vector3 runtimePosition, out double3 absolutePosition)
+        {
+            absolutePosition = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(localRuntime.x, localRuntime.y, localRuntime.z));
+            if (!resolvedAup.IsFinite())
+                return false;
+
+            absolutePosition = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absolutePosition));
         }
 
         private static Vector3 ToRuntimeScatterPosition(Vector3 absolutePosition)

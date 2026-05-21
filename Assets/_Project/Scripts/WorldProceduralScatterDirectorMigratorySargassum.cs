@@ -17,6 +17,7 @@ namespace Hecton8.World
         private const float MigratorySargassumMaximumDeltaTimeSeconds = 2f;
         private const string MigratorySargassumNativeMemoryOwner = "WorldProceduralScatterDirector.MigratorySargassum";
         private const NativeAllocationLifetime MigratorySargassumNativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const Allocator DataVaultExemptMigratorySargassumStateAllocator = Allocator.Persistent;
 
         private static readonly int _MigratorySargassumSpeciesHash = ComputeStableStringHash("flora.halo_sargassum");
         private static readonly ProfilerMarker _migratorySargassumProfilerMarker = new("WorldScatter.MigratorySargassum");
@@ -229,17 +230,17 @@ namespace Hecton8.World
                 return;
 
             // COLD ALLOC: NativeArray<MigratorySargassumIslandState>[MaxMigratorySargassumIslandCount] — persistent data-only migratory canopy state — owner: WorldProceduralScatterDirector
-            _migratorySargassumIslands = new NativeArray<MigratorySargassumIslandState>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
+            _migratorySargassumIslands = new NativeArray<MigratorySargassumIslandState>(MaxMigratorySargassumIslandCount, DataVaultExemptMigratorySargassumStateAllocator);
             // COLD ALLOC: NativeArray<MigratorySargassumIslandState>[MaxMigratorySargassumIslandCount] — stable source reconciliation scratch — owner: WorldProceduralScatterDirector
-            _migratorySargassumScratchIslands = new NativeArray<MigratorySargassumIslandState>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
+            _migratorySargassumScratchIslands = new NativeArray<MigratorySargassumIslandState>(MaxMigratorySargassumIslandCount, DataVaultExemptMigratorySargassumStateAllocator);
             // COLD ALLOC: NativeArray<MigratorySargassumSourceState>[MaxMigratorySargassumIslandCount] — deterministic source selection scratch — owner: WorldProceduralScatterDirector
-            _migratorySargassumSelectedSources = new NativeArray<MigratorySargassumSourceState>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
+            _migratorySargassumSelectedSources = new NativeArray<MigratorySargassumSourceState>(MaxMigratorySargassumIslandCount, DataVaultExemptMigratorySargassumStateAllocator);
             // COLD ALLOC: NativeArray<float3>[MaxMigratorySargassumIslandCount] — AbyssalFlow samples for Burst drift solve — owner: WorldProceduralScatterDirector
-            _migratorySargassumFlowSamples = new NativeArray<float3>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
+            _migratorySargassumFlowSamples = new NativeArray<float3>(MaxMigratorySargassumIslandCount, DataVaultExemptMigratorySargassumStateAllocator);
             // COLD ALLOC: NativeArray<int>[MaxMigratorySargassumIslandCount] — AUP spatial hash handles — owner: WorldProceduralScatterDirector
-            _migratorySargassumSpatialHandles = new NativeArray<int>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
+            _migratorySargassumSpatialHandles = new NativeArray<int>(MaxMigratorySargassumIslandCount, DataVaultExemptMigratorySargassumStateAllocator);
             // COLD ALLOC: NativeArray<int>[MaxMigratorySargassumIslandCount] — AUP spatial hash handle reconciliation scratch — owner: WorldProceduralScatterDirector
-            _migratorySargassumScratchSpatialHandles = new NativeArray<int>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
+            _migratorySargassumScratchSpatialHandles = new NativeArray<int>(MaxMigratorySargassumIslandCount, DataVaultExemptMigratorySargassumStateAllocator);
             RegisterMigratoryNativeArray(_migratorySargassumIslands, nameof(_migratorySargassumIslands));
             RegisterMigratoryNativeArray(_migratorySargassumScratchIslands, nameof(_migratorySargassumScratchIslands));
             RegisterMigratoryNativeArray(_migratorySargassumSelectedSources, nameof(_migratorySargassumSelectedSources));

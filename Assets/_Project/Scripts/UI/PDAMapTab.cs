@@ -88,14 +88,20 @@ namespace Hecton8.UI
             0, 2, 3
         }; // COLD ALLOC: int[6] — immutable PDA sonar indirect quad indices — owner: PDAMapTab
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 96)]
         private struct SonarMapConstants
         {
+            [FieldOffset(0)]
             public Vector4 GridDimensions;
+            [FieldOffset(16)]
             public Vector4 VolumeOrigin;
+            [FieldOffset(32)]
             public Vector4 PlayerWorldPosition;
+            [FieldOffset(48)]
             public Vector4 ScalarParams;
+            [FieldOffset(64)]
             public Vector4 DispatchParams;
+            [FieldOffset(80)]
             public Vector4 OverlayParams;
         }
         private static readonly int SonarMapConstantsStrideBytes = UnsafeUtility.SizeOf<SonarMapConstants>();

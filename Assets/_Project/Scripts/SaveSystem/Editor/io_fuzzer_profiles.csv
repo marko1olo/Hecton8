@@ -1,0 +1,2 @@
+name,payload_bytes,loop_payload_bytes,loop_iterations,kill_percent,sector_count,chunk_bytes,stall_threshold_micros,quality_per_mille
+default,10485760,1024,1000,50,5000,65536,2000,1000

@@ -44,7 +44,7 @@ Shader "Hecton8/Ambient/BiotaIndirect"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            #define HECTON_BIOTA_LOW_TIER 2u
+            #define HECTON_BIOTA_MINIMUM_QUALITY_BILLBOARD 2u
             #define HECTON_BIOTA_REACTIVE 16u
 
             struct AmbientBiotaGpuInstance
@@ -173,13 +173,13 @@ Shader "Hecton8/Ambient/BiotaIndirect"
             #endif
                 AmbientBiotaGpuInstance biota = _HectonBiotaInstances[instanceID];
                 float active = step(0.0001, biota.PositionScale.w);
-                float lowTier = (biota.StateFlags & HECTON_BIOTA_LOW_TIER) != 0u ? 1.0 : 0.0;
+                float minimumQualityBillboard = (biota.StateFlags & HECTON_BIOTA_MINIMUM_QUALITY_BILLBOARD) != 0u ? 1.0 : 0.0;
                 float hash = biota.VisualParams.z;
                 float age01 = biota.VisualParams.x;
                 float pulse = TriangleSigned(hash + _HectonBiotaVisualTime * lerp(0.17, 0.41, _HectonBiotaOverkill01));
                 float squash = lerp(1.0, 1.0 + pulse * 0.16, _HectonBiotaOverkill01);
                 float2 quad = input.positionOS.xy;
-                quad.x *= lerp(1.0, 1.0 + age01 * 0.22, lowTier);
+                quad.x *= lerp(1.0, 1.0 + age01 * 0.22, minimumQualityBillboard);
                 quad.y *= squash;
 
                 float3 velocity = biota.VelocityEmission.xyz;

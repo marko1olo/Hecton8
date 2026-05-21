@@ -1,0 +1,3 @@
+id,name,snap_x,snap_y,snap_z,power,build_cost,recipe_id,flags
+oxygen_reserve_module,Oxygen Reserve Module,0,0,0.5,120,1.15,oxygen_cell,1
+sonar_array_module,Sonar Array Module,0,0,0.75,180,1.40,sonar_crystal,1

@@ -1,11 +1,9 @@
 using System.Runtime.InteropServices;
-using Hecton8.Atmosphere;
+using AOT;
 using Hecton8.Core;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
-using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.Rendering
@@ -28,9 +26,12 @@ namespace Hecton8.Rendering
         public const uint StateHash = 0x53433233u; // SC23
         public const uint FaultNonFinite = 1u << 0;
         public const uint FaultLayout = 1u << 1;
+        public const uint FaultDumpIo = 1u << 2;
+        public const uint FaultConstantBufferUnavailable = 1u << 3;
+        public const uint FaultBurstKernelUnavailable = 1u << 4;
         public const uint FlagMockLighting = 1u << 8;
-        public const uint FlagWaveVaultBound = 1u << 9;
-        public const uint FlagWeatherVaultBound = 1u << 10;
+        public const uint FlagWaveInputBound = 1u << 9;
+        public const uint FlagWeatherSnapshotBound = 1u << 10;
         public const uint FlagProfileBound = 1u << 11;
         public const uint FlagInputSnapshot = 1u << 12;
     }
@@ -115,14 +116,13 @@ namespace Hecton8.Rendering
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct GenerateMockCausticLightingJob : IJob
+    public unsafe struct GenerateMockCausticLightingJob
     {
         // SAFETY: Parameters is the SHINOBU-owned Vault lane for caustic CBuffer DTOs.
         // The runtime resolves a minimum capacity before invocation and this kernel writes
         // exactly one clamped element, so the unsafe pointer never crosses the lane bounds.
-        // Tuning is a separate one-element Vault lane and is read-only for the whole call.
-        [NativeDisableContainerSafetyRestriction] [NoAlias] public NativeArray<CausticsParametersDTO> Parameters;
-        [ReadOnly] [NoAlias] public NativeArray<CausticsTuningDTO> Tuning;
+        [NoAlias] [NativeDisableUnsafePtrRestriction] public CausticsParametersDTO* Parameters;
+        public int ParameterLength;
         public CausticsInputSnapshotDTO InputSnapshot;
         public double3 CameraAupLocalOffset;
         public float TimeSeconds;
@@ -132,12 +132,12 @@ namespace Hecton8.Rendering
 
         public void Execute()
         {
-            if (!Parameters.IsCreated || Parameters.Length < 1)
+            if (Parameters == null || ParameterLength < 1)
                 return;
 
             CausticsTuningDTO tuning = (InputSnapshot.Flags & AbyssalCausticsConstants.FlagInputSnapshot) != 0u
                 ? InputSnapshot.Tuning
-                : (Tuning.IsCreated && Tuning.Length > 0 ? Tuning[0] : DefaultTuning());
+                : DefaultTuning();
             float quality = math.saturate(math.select(GlobalQualityWeight, 1f, !math.isfinite(GlobalQualityWeight)));
             float phase = TimeSeconds * (0.115f + quality * 0.085f);
             float3 lightDir = SafeNormalize(
@@ -150,8 +150,8 @@ namespace Hecton8.Rendering
             float scale = math.max(0.01f, tuning.ScaleFlowDepthIntensity.x);
             float flow = math.max(0f, tuning.ScaleFlowDepthIntensity.y);
 
-            int outputIndex = ClampOutputIndex(OutputIndex, Parameters.Length);
-            CausticsParametersDTO* ptr = (CausticsParametersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(Parameters) + outputIndex;
+            int outputIndex = ClampOutputIndex(OutputIndex, ParameterLength);
+            CausticsParametersDTO* ptr = Parameters + outputIndex;
             ref CausticsParametersDTO dto = ref UnsafeUtility.AsRef<CausticsParametersDTO>(ptr);
             dto.ProjectionVectorAndScale = new float4(lightDir, scale);
             dto.NoiseAnimationSpeed = new float4(wrappedAup.x, wrappedAup.z, TimeSeconds * flow, tuning.DispersionSdfTileProfile.x);
@@ -210,28 +210,24 @@ namespace Hecton8.Rendering
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct CalculateCausticParametersJob : IJob
+    public unsafe struct CalculateCausticParametersJob
     {
-        // SAFETY: Parameters, Telemetry, TelemetryCursor, Tuning, Weather, WaveParameters,
-        // SurfaceSwell, and Profiles are distinct Vault lanes with separate BufferIDs.
-        // Runtime resolves each lane to the required length before this kernel is invoked;
-        // missing optional producer lanes are passed as default NativeArray values.
+        // SAFETY: Parameters, Telemetry, and TelemetryCursor are distinct Vault lanes
+        // resolved to raw pointers and lengths immediately before this kernel is invoked.
+        // Optional producer facts are pre-sanitized into InputSnapshot.
         //
         // SAFETY: The only raw pointer write targets Parameters[clamped OutputIndex].
         // Telemetry writes use one cursor modulo the fixed 300-entry ring; cursor lane is
-        // one int. The kernel does not resize, release, or retain any NativeArray view.
+        // one int. The kernel does not resize, release, or retain any memory view.
         //
-        // SAFETY: [NoAlias] is valid because SHINOBU owner lanes and Atmosphere producer
-        // lanes are allocated under different BufferIDs. No field aliases another field,
-        // and optional external inputs are read-only snapshots for this owner-phase call.
-        [NativeDisableContainerSafetyRestriction] [NoAlias] public NativeArray<CausticsParametersDTO> Parameters;
-        [NativeDisableContainerSafetyRestriction] [NoAlias] public NativeArray<CausticsTelemetryEntry> Telemetry;
-        [NativeDisableContainerSafetyRestriction] [NoAlias] public NativeArray<int> TelemetryCursor;
-        [ReadOnly] [NoAlias] public NativeArray<CausticsTuningDTO> Tuning;
-        [ReadOnly] [NoAlias] public NativeArray<WeatherStateDTO> Weather;
-        [ReadOnly] [NoAlias] public NativeArray<WaveParametersDTO> WaveParameters;
-        [ReadOnly] [NoAlias] public NativeArray<float4> SurfaceSwell;
-        [ReadOnly] [NoAlias] public NativeArray<CausticsLightingProfileDTO> Profiles;
+        // SAFETY: [NoAlias] is valid because each pointer comes from a different
+        // SHINOBU-owned BufferID and optional external inputs are value snapshots.
+        [NoAlias] [NativeDisableUnsafePtrRestriction] public CausticsParametersDTO* Parameters;
+        public int ParameterLength;
+        [NoAlias] [NativeDisableUnsafePtrRestriction] public CausticsTelemetryEntry* Telemetry;
+        public int TelemetryLength;
+        [NoAlias] [NativeDisableUnsafePtrRestriction] public int* TelemetryCursor;
+        public int TelemetryCursorLength;
         public CausticsInputSnapshotDTO InputSnapshot;
         public double3 CameraAupLocalOffset;
         public float TimeSeconds;
@@ -241,13 +237,13 @@ namespace Hecton8.Rendering
 
         public void Execute()
         {
-            if (!Parameters.IsCreated || Parameters.Length < 1)
+            if (Parameters == null || ParameterLength < 1)
                 return;
 
             CausticsInputSnapshotDTO snapshot = InputSnapshot;
             CausticsTuningDTO tuning = (snapshot.Flags & AbyssalCausticsConstants.FlagInputSnapshot) != 0u
                 ? snapshot.Tuning
-                : (Tuning.IsCreated && Tuning.Length > 0 ? Tuning[0] : GenerateMockCausticLightingJob.DefaultTuning());
+                : GenerateMockCausticLightingJob.DefaultTuning();
             float weatherStorm = math.saturate(snapshot.WeatherStormWindPhaseQuality.x);
             float windSpeed = math.max(0f, snapshot.WeatherStormWindPhaseQuality.y);
             float wavePhase = snapshot.WeatherStormWindPhaseQuality.z;
@@ -280,8 +276,8 @@ namespace Hecton8.Rendering
             float intensity = math.max(0f, tuning.ScaleFlowDepthIntensity.w) * profileIntensity * weatherFade * math.lerp(0.32f, 1.0f, quality);
             float activeOctaves = GenerateMockCausticLightingJob.ResolveActiveOctaves(quality);
 
-            int outputIndex = ClampOutputIndex(OutputIndex, Parameters.Length);
-            CausticsParametersDTO* ptr = (CausticsParametersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(Parameters) + outputIndex;
+            int outputIndex = ClampOutputIndex(OutputIndex, ParameterLength);
+            CausticsParametersDTO* ptr = Parameters + outputIndex;
             ref CausticsParametersDTO dto = ref UnsafeUtility.AsRef<CausticsParametersDTO>(ptr);
             dto.ProjectionVectorAndScale = new float4(sunDir, baseScale);
             dto.NoiseAnimationSpeed = new float4(wrappedAup.x, wrappedAup.z, TimeSeconds * flow, profileChromaticDispersion);
@@ -298,12 +294,16 @@ namespace Hecton8.Rendering
 
         private void WriteTelemetry(in CausticsParametersDTO dto, uint flags, float activeOctaves, float maxDepth)
         {
-            if (!Telemetry.IsCreated || Telemetry.Length <= 0)
+            if (Telemetry == null || TelemetryLength <= 0)
                 return;
 
             int cursor = 0;
-            if (TelemetryCursor.IsCreated && TelemetryCursor.Length > 0)
-                cursor = math.abs(TelemetryCursor[0]) % Telemetry.Length;
+            if (TelemetryCursor != null && TelemetryCursorLength > 0)
+            {
+                cursor = TelemetryCursor[0] % TelemetryLength;
+                if (cursor < 0)
+                    cursor += TelemetryLength;
+            }
 
             CausticsTelemetryEntry entry;
             entry.FrameIndex = FrameIndex;
@@ -318,8 +318,8 @@ namespace Hecton8.Rendering
             entry.NoiseAnimationSpeed = dto.NoiseAnimationSpeed;
             Telemetry[cursor] = entry;
 
-            if (TelemetryCursor.IsCreated && TelemetryCursor.Length > 0)
-                TelemetryCursor[0] = (cursor + 1) % Telemetry.Length;
+            if (TelemetryCursor != null && TelemetryCursorLength > 0)
+                TelemetryCursor[0] = (cursor + 1) % TelemetryLength;
         }
 
         private static int ClampOutputIndex(int outputIndex, int parameterLength)
@@ -380,6 +380,37 @@ namespace Hecton8.Rendering
                 (uint)WeatherState.BiolumeSurge;
             return (profileKey & ~knownWeatherMask) == 0u &&
                    (profileKey & rawWeatherStateMask) != 0u;
+        }
+    }
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal unsafe delegate void GenerateMockCausticLightingKernelDelegate(GenerateMockCausticLightingJob* job);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal unsafe delegate void CalculateCausticParametersKernelDelegate(CalculateCausticParametersJob* job);
+
+    internal static unsafe class AbyssalCausticsBurstKernelEntrypoints
+    {
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [MonoPInvokeCallback(typeof(GenerateMockCausticLightingKernelDelegate))]
+        internal static void GenerateMockCausticLighting(GenerateMockCausticLightingJob* job)
+        {
+            if (job == null)
+                return;
+
+            ref GenerateMockCausticLightingJob jobRef = ref UnsafeUtility.AsRef<GenerateMockCausticLightingJob>(job);
+            jobRef.Execute();
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [MonoPInvokeCallback(typeof(CalculateCausticParametersKernelDelegate))]
+        internal static void CalculateCausticParameters(CalculateCausticParametersJob* job)
+        {
+            if (job == null)
+                return;
+
+            ref CalculateCausticParametersJob jobRef = ref UnsafeUtility.AsRef<CalculateCausticParametersJob>(job);
+            jobRef.Execute();
         }
     }
 }

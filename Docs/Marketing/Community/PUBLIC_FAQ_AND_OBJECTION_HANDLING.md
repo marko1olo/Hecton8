@@ -129,6 +129,8 @@ Use one short answer, then stop. If the person asks a concrete follow-up, answer
 
 Use only when someone explicitly brings up Subnautica 2. Do not volunteer the comparison.
 
+2026-05-21 update: current public source checks still show SN2 as a strong, broadly liked Early Access launch. Do not imply HECTON-8 exists because SN2 failed. Do not repeat SN2 EULA/privacy, co-op, performance, content, weapon, or base-building complaints in public replies. Those are internal monitoring buckets only.
+
 | Trigger | Safe reply | Do not say | Internal action |
 |---|---|---|---|
 | "Are you making this because Subnautica 2 disappointed people?" | `No. HECTON-8 has to stand on its own. The focus is pressure, salvage, machinery, black water, and single-player survival decisions.` | Any mention of SN2 EULA, bugs, co-op problems, or review complaints. | Check whether the asset/caption is leaning too hard on competitor contrast. |

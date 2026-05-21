@@ -875,19 +875,25 @@ namespace Hecton8.Core
         /// <summary>
         /// Raw cache-line-aligned arena slice. Frame lifetime only.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public readonly struct NativeArenaSlice<T> where T : unmanaged
         {
+            [FieldOffset(0)]
             public readonly void* Ptr;
 
+            [FieldOffset(8)]
             public readonly int Length;
 
+            [FieldOffset(12)]
             public readonly int Stride;
 
+            [FieldOffset(16)]
             public readonly int ByteCount;
 
+            [FieldOffset(20)]
             public readonly int FrameSequence;
 
+            [FieldOffset(24)]
             private readonly long _pad0;
 
             public NativeArenaSlice(void* ptr, int length, int stride, int byteCount, int frameSequence)

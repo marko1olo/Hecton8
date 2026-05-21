@@ -90,37 +90,44 @@ namespace Hecton8.Visor
 
             internal int ResolveRaymarchSteps()
             {
-                int maxStepCount = ResolveTierStepLimit();
-                if (ShouldUseLowTierSteps())
-                    return LowTierRaymarchSteps;
-
-                if (ShouldUseHighTierSteps())
-                    return HighTierRaymarchSteps;
+                float qualityWeight = ResolveEffectiveQualityWeight01();
+                int maxStepCount = ResolveContinuousStepLimit(qualityWeight);
 
                 if (emissionProfile != null)
-                    return Mathf.Clamp(emissionProfile.GetVolumetricGodRaySteps(hardwareTier), LowTierRaymarchSteps, maxStepCount);
+                    return Mathf.Clamp(emissionProfile.GetVolumetricGodRaySteps(qualityWeight), LowTierRaymarchSteps, maxStepCount);
 
-                return Mathf.Clamp(fallbackSteps, LowTierRaymarchSteps, maxStepCount);
+                float fallback = Mathf.Lerp(LowTierRaymarchSteps, fallbackSteps, SmoothStep01(qualityWeight * 1.7f));
+                fallback = Mathf.Lerp(fallback, HighTierRaymarchSteps, SmoothStep01((qualityWeight - 0.58f) * 2.15f));
+                return Mathf.Clamp(Mathf.RoundToInt(fallback), LowTierRaymarchSteps, maxStepCount);
             }
 
             internal int ResolveVolumetricShadowSteps()
             {
-                return Mathf.Clamp(volumetricShadowSteps, 1, ResolveTierStepLimit());
+                return Mathf.Clamp(volumetricShadowSteps, 1, ResolveContinuousStepLimit(ResolveEffectiveQualityWeight01()));
             }
 
-            private int ResolveTierStepLimit()
+            private int ResolveContinuousStepLimit(float qualityWeight)
             {
-                return ShouldUseLowTierSteps() ? LowTierRaymarchSteps : HighTierRaymarchSteps;
+                float t = SmoothStep01(Mathf.Clamp01(qualityWeight));
+                return Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(LowTierRaymarchSteps, HighTierRaymarchSteps, t)), LowTierRaymarchSteps, HighTierRaymarchSteps);
             }
 
-            private bool ShouldUseLowTierSteps()
+            private float ResolveEffectiveQualityWeight01()
             {
-                return hardwareTier == VFXEmissionProfile.HardwareTier.Low || Shader.IsKeywordEnabled("_MATH_LOD_LOW");
+                float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+                if (float.IsNaN(qualityWeight) || float.IsInfinity(qualityWeight))
+                    qualityWeight = Mathf.Clamp01((int)hardwareTier * 0.5f);
+                if (Shader.IsKeywordEnabled("_MATH_LOD_LOW"))
+                    qualityWeight = Mathf.Min(qualityWeight, 0f);
+                if (Shader.IsKeywordEnabled("_MATH_LOD_HIGH"))
+                    qualityWeight = Mathf.Max(qualityWeight, 1f);
+                return Mathf.Clamp01(qualityWeight);
             }
 
-            private bool ShouldUseHighTierSteps()
+            private static float SmoothStep01(float value)
             {
-                return hardwareTier == VFXEmissionProfile.HardwareTier.High || Shader.IsKeywordEnabled("_MATH_LOD_HIGH");
+                float t = Mathf.Clamp01(value);
+                return t * t * (3f - 2f * t);
             }
         }
 

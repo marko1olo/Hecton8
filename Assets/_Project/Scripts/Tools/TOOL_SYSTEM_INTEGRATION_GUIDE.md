@@ -45,7 +45,13 @@ Assets → Create → Hecton8 → Tools → Tool Metadata
 - `repairCostFull` — stoimost polnogo remonta (1-100)
 - `repairResourceID` — ID resursa dlya remonta (naprimer, "titanium")
 
-### 2. Sozdanie ToolUpgradeData (optsionalno)
+### 2. Sozdanie ToolModuleData (runtime matrix route)
+
+SHINOBU_231 note: `ToolUpgradeData` is a legacy authoring facade only. Runtime stat upgrades must flow through `ToolModuleData` -> `ToolUpgradeModuleRuleDTO` -> `ToolUpgradeSystem` / `UpgradeMatrixCompiler` LUTs. Do not call `ToolMetadata.GetTotalEfficiency/Speed/Energy` as an upgrade stat path.
+
+Runtime module menu: `Assets -> Create -> Hecton8 -> Tools -> Tool Module`.
+Runtime module fields: `moduleId`, `upgradeBits`, `compatibleCategories`, `rangeMultiplier`, `powerMultiplier`, `efficiencyMultiplier`, `speedMultiplier`, `heatGenerationMultiplier`, `cooldownMultiplier`, `batteryCapacityMultiplier`, `batteryDrainMultiplier`, `durabilityDrainMultiplier`, `recoilMultiplier`.
+The older `Tool Upgrade` asset path below is legacy migration context only.
 
 ```
 Assets → Create → Hecton8 → Tools → Tool Upgrade
@@ -203,36 +209,26 @@ if (inventory.HasResource(resourceID, cost))
 
 ```csharp
 ToolMetadata metadata = tool.Metadata;
-ToolUpgradeData upgrade = myUpgradeAsset;
+ToolModuleData module = myModuleAsset;
+uint toolId = registeredToolId; // returned by IModularEquipmentService.RegisterTool(owner)
 
-// Proverka sovmestimosti
-if (!upgrade.IsCompatibleWith(metadata))
+// Runtime path: module is packed into ToolUpgradeModuleRuleDTO, then stats rebuild from LUT/mask math.
+if (!GlobalRegistry.ModularEquipment.TryInstallModule(toolId, module))
 {
-    Debug.Log("Upgrade is not compatible with this tool!");
+    Debug.Log("Module install rejected.");
     return;
 }
 
-// Proverka svobodnyh slotov
-if (!metadata.HasFreeUpgradeSlot())
+if (GlobalRegistry.ModularEquipment.TryGetToolStats(toolId, out ToolRuntimeStats stats))
 {
-    Debug.Log("No free upgrade slots!");
-    return;
+    float newEfficiency = stats.EfficiencyScalar;
+    float newSpeed = stats.SpeedScalar;
 }
 
-// Ustanovka uluchsheniya
-if (metadata.InstallUpgrade(upgrade))
+// Udalenie modulya
+if (GlobalRegistry.ModularEquipment.TryRemoveModule(toolId, module.ModuleId))
 {
-    Debug.Log("Upgrade installed successfully!");
-    
-    // Obnovlennye staty dostupny srazu
-    float newEfficiency = metadata.GetTotalEfficiency();
-    float newSpeed = metadata.GetTotalSpeed();
-}
-
-// Udalenie uluchsheniya
-if (metadata.RemoveUpgrade(slotIndex))
-{
-    Debug.Log("Upgrade removed!");
+    Debug.Log("Module removed.");
 }
 ```
 
@@ -323,9 +319,9 @@ SaveData.toolBrokenMap["tool_laser_cutter"] = false;
 - Proverte chto _toolMetadata naznachen na PlayerTool
 
 **Problema:** Upgrades ne primenyayutsya
-- Proverte chto upgrade ustanovlen cherez InstallUpgrade()
+- Proverte chto module ustanovlen cherez `IModularEquipmentService.TryInstallModule`
 - Proverte sovmestimost cherez IsCompatibleWith()
-- Proverte chto GetTotalEfficiency/Speed/Energy vyzyvayutsya v kode
+- Proverte chto `PlayerTool.GetEfficiency/GetSpeed/GetEnergyConsumption` or `IModularEquipmentService.TryGetToolStats` reads the compiled runtime stats; do not route upgrade math through `ToolMetadata.GetTotal*`.
 
 **Problema:** Save/Load ne rabotaet
 - Proverte chto SaveManager.Instance suschestvuet

@@ -236,7 +236,7 @@ namespace Hecton8.Editor.Validation
                     catalogHashOwners.Add(hashId, string.IsNullOrWhiteSpace(itemPath) ? item.name : itemPath);
                 }
 
-                if (!itemCatalog.TryGetRuntimeDescriptor(hashId, out ItemCatalog.ItemRuntimeDescriptor descriptor) || !descriptor.IsValid)
+                if (!itemCatalog.TryGetRuntimeDescriptor(hashId, out ItemCatalog.ItemRuntimeDescriptor descriptor) || !ItemCatalog.IsValidDescriptor(in descriptor))
                 {
                     result.ItemCatalogMissingRuntimeDescriptorCount++;
                     result.Errors.Add($"{ItemCatalogPath}: allItems[{i}] '{item.name}' has no valid runtime descriptor for hash 0x{hashId:X8}.");
@@ -480,7 +480,7 @@ namespace Hecton8.Editor.Validation
 
             if (itemCatalog == null ||
                 !itemCatalog.TryGetRuntimeDescriptor(hashId, out ItemCatalog.ItemRuntimeDescriptor descriptor) ||
-                !descriptor.IsValid)
+                !ItemCatalog.IsValidDescriptor(in descriptor))
             {
                 result.RecipeRouteErrorCount++;
                 result.Errors.Add($"{assetPath}: RecipeData.{label} '{persistentId}' has no valid ItemCatalog runtime descriptor.");
@@ -660,7 +660,7 @@ namespace Hecton8.Editor.Validation
             if (hashId == 0 ||
                 itemCatalog == null ||
                 !itemCatalog.TryGetRuntimeDescriptor(hashId, out ItemCatalog.ItemRuntimeDescriptor descriptor) ||
-                !descriptor.IsValid)
+                !ItemCatalog.IsValidDescriptor(in descriptor))
             {
                 result.QuestRouteErrorCount++;
                 result.Errors.Add($"{assetPath}: QuestData.{propertyName} '{itemId}' has no valid ItemCatalog runtime descriptor.");
@@ -800,7 +800,7 @@ namespace Hecton8.Editor.Validation
             }
             else if (itemCatalog == null ||
                      !itemCatalog.TryGetRuntimeDescriptor(hashId, out ItemCatalog.ItemRuntimeDescriptor descriptor) ||
-                     !descriptor.IsValid)
+                     !ItemCatalog.IsValidDescriptor(in descriptor))
             {
                 result.ToolRouteErrorCount++;
                 result.Errors.Add($"{context}: PlayerTool ItemData '{item.name}' is missing a valid ItemCatalog runtime descriptor.");

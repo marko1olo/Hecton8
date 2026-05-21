@@ -1,25 +1,25 @@
-<SELF_AUDIT agent="SHINOBU_229" status="COMPILE_WALL_BLOCKED_BY_GENERATED_PROJECT_AND_SIBLING_DEPENDENCIES">
+<SELF_AUDIT agent="SHINOBU_229" status="PENDING_GUARDED_COMPILE_AND_PROFILER_PROOF_CPU_GUARD_BLOCKED">
   <taskReconciliation>
     <task id="01" name="MONOBEHAVIOUR_AUXILIARY_INQUISITION" status="PASS">DeployableFlare, GravTrap, GravityTetherTool, and scanner pulse paths audited; hot auxiliary lifecycle moved out of per-object scripts.</task>
     <task id="02" name="UNITY_LIGHT_AND_JOINT_PURGE" status="PASS">Facades no longer own Light, ParticleSystem, Rigidbody, Collider broadphase, SpringJoint, or local pulse drawer effects.</task>
     <task id="03" name="CS1612_HOT_PATH_PROPERTY_ANNIHILATION" status="PASS">Auxiliary DTOs and job payloads use raw public fields and explicit layout; scanner pulse properties removed.</task>
     <task id="04" name="ARM64_AUX_LAYOUT_ASSERTION" status="PASS">Primary DTOs/signals are explicit 16/32/64 byte layouts; editor ABI validator added.</task>
-    <task id="05" name="EMERGENCY_MOCK_AUX_DEPLOYMENT" status="PASS">GenerateMockAuxiliaryDeploymentsJob writes 500 deterministic records.</task>
+    <task id="05" name="EMERGENCY_MOCK_AUX_DEPLOYMENT" status="PASS">GenerateMockAuxiliaryDeploymentsJob writes 500 deterministic records and now schedules behind the router pending fence without Tick-time force completion.</task>
     <task id="06" name="BURST_AUXILIARY_LIFECYCLE_KERNEL" status="PASS">UpdateDeployedAuxiliaryJob owns lifetime countdown and route emission in NativeArray.</task>
     <task id="07" name="FLARE_LIGHTING_ROUTING" status="PASS">AuxiliaryFlareLightSignal replaces Unity Light ownership.</task>
     <task id="08" name="SENSOR_PING_RAYMARCH_DISPATCH" status="PASS">AuxiliarySonarRequestSignal replaces scanner-local pulse drawer and collider pulse; ScannerTool routes effectiveScanRadius into the router.</task>
-    <task id="09" name="THE_DEAR_LIE_GRAVITY_TETHER" status="PASS">AuxiliaryTetherConnectionSignal replaces Unity joint and force-loop ownership.</task>
+    <task id="09" name="THE_DEAR_LIE_GRAVITY_TETHER" status="PASS">AuxiliaryTetherConnectionSignal replaces Unity joint and force-loop ownership; each tether slot now owns its own anchor AUP.</task>
     <task id="10" name="CONTINUOUS_SCALABILITY_TICK_MODULATION" status="PASS">GlobalQualityWeight drives continuous 15Hz to 60Hz cadence and ping expansion curve.</task>
     <task id="11" name="AUP_PRECISION_SIGNAL_LOCALIZATION" status="PASS">Signals carry double3 AUP; VFX staging downcasts only after camera-AUP subtraction.</task>
-    <task id="12" name="ASYNCHRONOUS_VFX_STAGING" status="PASS">StageAuxiliaryVFXJob writes NativeArray matrix payloads for downstream visual sync.</task>
+    <task id="12" name="ASYNCHRONOUS_VFX_STAGING" status="PASS">StageAuxiliaryVFXJob writes Vault matrix payloads and post-fence upload publishes double-buffered GraphicsBuffer pages for downstream visual sync; unchanged snapshots skip upload through count/hash/camera/quality dirty-gate.</task>
     <task id="13" name="ROLLBACK_NETCODE_STATE_FENCE" status="PASS">Jobs use deterministic Burst float mode and deterministic AUP/frame hash seeding.</task>
     <task id="14" name="ZERO_INIT_OVERHEAD_BYPASS" status="PASS">Large Vault arrays use UninitializedMemory with initialized-bound guards.</task>
-    <task id="15" name="TELEMETRY_AUXILIARY_RECORDER" status="PASS">300-frame telemetry ring and Dump_SHINOBU_229.bin path implemented.</task>
+    <task id="15" name="TELEMETRY_AUXILIARY_RECORDER" status="BLOCKED_PROFILER_PROOF">300-frame telemetry ring and Dump_SHINOBU_229.bin path implemented; CpuMicroseconds is schedule-to-finalize wall time until Unity profiler proof supplies exact Burst kernel timing.</task>
     <task id="16" name="AUXILIARY_ROUTER_XRAY_WINDOW" status="PASS">UI Toolkit X-Ray window reads telemetry and writes tuning through router API.</task>
-    <task id="17" name="CSV_AUXILIARY_PROFILES_INGESTOR" status="PASS">ReadOnlySpan byte parser added; no string.Split or float.Parse profile path.</task>
+    <task id="17" name="CSV_AUXILIARY_PROFILES_INGESTOR" status="PASS">ReadOnlySpan byte parser is called during cold boot, writes Vault profiles, applies tuning, and falls back to deterministic unmanaged profiles.</task>
     <task id="18" name="LIVE_DEPLOYMENT_DEBUG_GIZMO" status="PASS">Editor-only AUP-subtract gizmo added without scene marker GameObjects.</task>
     <task id="19" name="ARCHITECTURAL_METRIC_VALIDATOR" status="PASS">Auxiliary OOP scanner writes shared report and flags cross-domain TetherManager residue.</task>
-    <task id="20" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" status="BLOCKED">Static audit and docs are written; compile attempted once and is blocked by stale generated csproj plus unrelated sibling-agent missing symbols.</task>
+    <task id="20" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" status="PENDING_GUARDED_COMPILE">Static audit and docs are written; Directory.Build.targets shields the known stale generated-project entry, but compile/profiler proof has not rerun because CPU guard remains saturated and unrelated sibling-agent missing symbols may remain.</task>
   </taskReconciliation>
   <structLayoutVerification>
     <struct name="DeployedAuxiliaryDTO" sizeBytes="64" alignment="64">
@@ -35,8 +35,31 @@
       <field name="AccumulatedDelta" offset="8" size="4" type="float" />
       <field name="Flags" offset="12" size="4" type="uint" />
     </struct>
+    <struct name="AuxiliaryTetherAnchorDTO" sizeBytes="32" alignment="32">
+      <field name="AnchorAup" offset="0" size="24" type="double3" />
+      <field name="Flags" offset="24" size="4" type="uint" />
+      <field name="Reserved0" offset="28" size="4" type="uint" />
+      <math>24 + 4 + 4 = 32 bytes; per-slot tether anchor does not disturb the 64-byte deployment ABI.</math>
+    </struct>
     <struct name="AuxiliaryTuningDTO" sizeBytes="64" alignment="64" />
-    <struct name="AuxiliaryTelemetryEntry" sizeBytes="64" alignment="64" />
+    <struct name="AuxiliaryTelemetryEntry" sizeBytes="64" alignment="64">
+      <field name="Frame" offset="0" size="4" type="uint" />
+      <field name="ActiveCount" offset="4" size="4" type="uint" />
+      <field name="FlareSignals" offset="8" size="4" type="uint" />
+      <field name="PingSignals" offset="12" size="4" type="uint" />
+      <field name="TetherSignals" offset="16" size="4" type="uint" />
+      <field name="EffectiveCadenceHz" offset="20" size="4" type="float" />
+      <field name="CpuMicroseconds" offset="24" size="4" type="float" />
+      <field name="GlobalQualityWeight" offset="28" size="4" type="float" />
+      <field name="FaultFlags" offset="32" size="4" type="uint" />
+      <field name="SnapshotHash" offset="36" size="4" type="uint" />
+      <field name="DroppedSlots" offset="40" size="4" type="uint" />
+      <field name="DroppedSignals" offset="44" size="4" type="uint" />
+      <field name="CorruptedSignals" offset="48" size="4" type="uint" />
+      <field name="PeakQueuedSignals" offset="52" size="4" type="uint" />
+      <field name="Reserved2" offset="56" size="8" type="ulong" />
+      <math>14 scalar 4-byte fields plus one 8-byte reserved field = 56 + 8 = 64 bytes; telemetry occupies one cache line.</math>
+    </struct>
     <struct name="AuxiliaryFlareLightSignal" sizeBytes="64" alignment="64" />
     <struct name="AuxiliarySonarRequestSignal" sizeBytes="64" alignment="64" />
     <struct name="AuxiliaryTetherConnectionSignal" sizeBytes="64" alignment="64" />
@@ -49,6 +72,7 @@
   <hPhiVaultStatus privatePersistentNativeArrays="0">
     <buffer id="ShinobuAuxiliaryDeployments" type="DeployedAuxiliaryDTO" count="1024" options="UninitializedMemory" />
     <buffer id="ShinobuAuxiliaryStates" type="AuxiliaryStateDTO" count="1024" options="UninitializedMemory" />
+    <buffer id="ShinobuAuxiliaryTetherAnchors" type="AuxiliaryTetherAnchorDTO" count="1024" options="UninitializedMemory" />
     <buffer id="ShinobuAuxiliaryActiveCount" type="int" count="1" options="ClearMemory" />
     <buffer id="ShinobuAuxiliaryTuning" type="AuxiliaryTuningDTO" count="1" options="ClearMemory" />
     <buffer id="ShinobuAuxiliaryRouteCounters" type="AuxiliaryRouteCounterDTO" count="1024" options="UninitializedMemory" />
@@ -57,22 +81,110 @@
     <buffer id="ShinobuAuxiliaryTelemetryCursor" type="int" count="1" options="ClearMemory" />
     <buffer id="ShinobuAuxiliaryProfiles" type="AuxiliaryProfileDTO" count="64" options="UninitializedMemory" />
     <buffer id="ShinobuAuxiliaryCsvScratch" type="byte" count="16384" options="UninitializedMemory" />
-    <buffer id="ShinobuAuxiliaryActiveEquipmentState" type="ActiveEquipmentDTO" count="1024" options="UninitializedMemory" />
+    <buffer id="ShinobuAuxiliaryActiveEquipmentState" type="AuxiliaryActiveEquipmentDTO" count="1024" options="UninitializedMemory" />
+    <gpuBuffer id="AuxiliaryVfxGraphicsBufferA" type="GraphicsBuffer Structured AuxiliaryVfxMatrixDTO" count="deploymentCapacity" owner="router cold presentation handoff A" />
+    <gpuBuffer id="AuxiliaryVfxGraphicsBufferB" type="GraphicsBuffer Structured AuxiliaryVfxMatrixDTO" count="deploymentCapacity" owner="router cold presentation handoff B" />
+    <gpuBuffer id="AuxiliaryVfxReadBuffer" type="GraphicsBuffer reference" count="activeCount" owner="immutable downstream presentation snapshot" />
   </hPhiVaultStatus>
   <pointerAliasingAndDependencyGraph>
-    <job name="UpdateDeployedAuxiliaryJob" consumes="dispatcher input handle" outputs="_pendingHandle" noAlias="Deployments, States, ActiveEquipment, ActiveCount, RouteCounters" />
+    <job name="UpdateDeployedAuxiliaryJob" consumes="dispatcher input handle" outputs="_pendingHandle" noAlias="Deployments, States, TetherAnchors, ActiveEquipment, ActiveCount, RouteCounters" />
     <job name="StageAuxiliaryVFXJob" consumes="_pendingHandle" outputs="_pendingHandle" noAlias="Deployments, States, ActiveCount, VfxMatrices" />
-    <job name="RecordAuxiliaryTelemetryJob" consumes="completed pending handle in LateFrameTick" outputs="telemetry ring write" noAlias="Deployments, States, ActiveCount, RouteCounters, TelemetryRing, TelemetryCursor" />
-    <fence>Router schedules work and finalizes through DispatcherJobFence.TryFinalizeCompleted/TryComplete; it does not complete in the middle of simulation Tick.</fence>
+    <pass name="UploadAuxiliaryVFXToGpu" consumes="completed pending handle in LateFrameTick" outputs="AuxiliaryVfxReadBuffer" doubleBuffered="true" dirtyGate="active count + deployment snapshot hash + camera AUP + quality weight" />
+    <job name="GenerateMockAuxiliaryDeploymentsJob" consumes="explicit mock/editor/seed request" outputs="_pendingHandle via dependent StageAuxiliaryVFXJob" noAlias="Deployments, States, TetherAnchors, ActiveEquipment, RouteCounters, VfxMatrices, ActiveCount" completion="asynchronous except teardown" />
+    <pass name="RecordAuxiliaryTelemetryPass" consumes="completed pending handle in LateFrameTick" outputs="telemetry ring write" metric="schedule-to-finalize wall microseconds, not exact Burst kernel time" />
+    <vaultLockFence includes="Deployments, States, TetherAnchors, ActiveCount, RouteCounters, VfxMatrices, TelemetryRing, TelemetryCursor, ActiveEquipmentState">All NativeArrays used by scheduled lifecycle/VFX jobs and post-fence telemetry proof writes are locked before scheduling/finalization, re-resolved under the lock, and unlocked only after pending job finalization plus telemetry recording.</vaultLockFence>
+    <tuningLockFence includes="Tuning">TryWriteTuning locks ShinobuAuxiliaryTuning, resolves only the tuning handle, writes one DTO, and unlocks immediately; scheduled jobs receive tuning by value.</tuningLockFence>
+    <fence>Router schedules work and finalizes through DispatcherJobFence.TryFinalizeCompleted/TryComplete; it does not complete in the middle of simulation Tick. Force-complete is restricted to teardown.</fence>
   </pointerAliasingAndDependencyGraph>
   <compileGuard>
     <asmdef>No new sibling Runtime asmdef reference was introduced. Auxiliary files live under the root Hecton8.Core asmdef path and communicate outward through SignalBus payloads and Vault buffers.</asmdef>
-    <build status="BLOCKED">CPU guard cleared once; dotnet build failed because ignored generated Hecton8.Core.csproj did not include new auxiliary files and the repo has unrelated missing sibling-agent symbols. Stable Unity meta files were added; generated csproj was not edited as source.</build>
+    <build status="PENDING_CPU_GUARD">CPU guard cleared once earlier; dotnet build failed because generated Hecton8.Core.csproj did not include new auxiliary files and the repo had unrelated missing sibling-agent symbols. Directory.Build.targets now shields the known SHINOBU_229 stale generated-project entry, but rebuild/profiler proof has not rerun because CPU guard is saturated. Generated csproj files were not edited as source.</build>
+    <directoryBuildTargetsShield status="STATIC_PASS">Directory.Build.targets prunes the deleted HectonScannerProjectionState.cs compile item and conditionally includes SHINOBU_229 runtime/editor auxiliary source files without editing generated csproj files.</directoryBuildTargetsShield>
   </compileGuard>
+  <authorityRouteCard path="Docs/ARCHITECTURE/SHINOBU_229_AUXILIARY_EQUIPMENT_ROUTE_CARD.md" disposition="YELLOW">
+    <reason>Route card has owner, instruments, phases, cadence, capacity, failure mode, telemetry, shutdown, and proof plan. Runtime-facing route cannot be GREEN without Unity import, Console, Play Mode, profiler/GC, and signal stress artifacts.</reason>
+  </authorityRouteCard>
+  <first20MinutesRouteImpact>
+    <moment>Tool / Hazard / Proof</moment>
+    <routeImpact>Flare darkness response, scanner active pulse feedback, and gravity tether support now route as deterministic Vault/SignalBus data instead of Unity-object effect owners. This supports the scanner P1 extension and hazard/tool proof, but it is not end-to-end playable route proof.</routeImpact>
+    <proofRequired>Unity import and clean Console for SHINOBU_229 files; Play Mode deploy smoke for flare, sensor ping, and gravity tether; Profiler or GCMonitor 0 B/frame capture; SignalBus telemetry under mock stress; Frame Debugger proof for the double-buffered VFX upload.</proofRequired>
+    <parkedWorkRejected>Scanner lore/UI zero-GC rewrite, downstream audio/AI/cockpit radar consumer migration, tether-manager cold pool removal, Data Monolith h8bin migration, and downstream visual implementation remain owner-specific work outside this route.</parkedWorkRejected>
+  </first20MinutesRouteImpact>
+  <accessorPurity>
+    <readApis allocateOrGrowBuffers="false" completeJobs="false" publishSignals="false" mutateGlobalState="false">TryReadTelemetry, TryReadDeployments, TryReadTuning, and TryWriteTuning use existing Vault generation handles only. TryReadDeployments returns NativeArray&lt;DeployedAuxiliaryDTO&gt;.ReadOnly and fails closed while the lifecycle job is active.</readApis>
+    <hotPaths allocateOrGrowBuffers="false" globalRegistryPoll="false">Tick, deploy, cancel, and telemetry finalization use existing handles only, lock runtime buffers before re-resolving job-visible views, and fail closed when boot handles are absent.</hotPaths>
+  </accessorPurity>
+  <safetyMetadata>
+    <job name="GenerateMockAuxiliaryDeploymentsJob" field="ActiveCount" readOnly="false">Index 0 writes the initialized bound; writable metadata matches actual access.</job>
+    <job name="UpdateDeployedAuxiliaryJob" field="ActiveCount" readOnly="true">Consumer only; no writes.</job>
+    <job name="StageAuxiliaryVFXJob" field="ActiveCount" readOnly="true">Consumer only; no writes.</job>
+    <pass name="RecordAuxiliaryTelemetryPass" field="ActiveCount" readOnly="true">Consumer only; writes telemetry ring, not the bound. It is a direct post-fence pass without Burst/NoAlias claims, avoiding a tiny-job schedule/readback loop.</pass>
+    <vaultLockFence activeCountIncluded="true" tetherAnchorsIncluded="true" telemetryIncluded="true" lockBeforeResolve="true">ShinobuAuxiliaryActiveCount, ShinobuAuxiliaryTetherAnchors, ShinobuAuxiliaryTelemetryRing, and ShinobuAuxiliaryTelemetryCursor are locked/unlocked with the runtime buffers; job-visible views and post-fence proof buffers are re-resolved under the lock.</vaultLockFence>
+    <vaultShutdown activeEquipmentHandleReleased="true">ShinobuAuxiliaryActiveEquipmentState stores AuxiliaryActiveEquipmentDTO and releases through ReleaseHandle with the rest of the auxiliary generation handles.</vaultShutdown>
+  </safetyMetadata>
+  <domainIsolation>
+    <auxiliaryToolsDependency status="REMOVED">Auxiliary runtime/jobs no longer import Hecton8.Tools or reuse ActiveEquipmentDTO/ActiveEquipmentStateFlags from a sibling tool domain; the mirror is a local unmanaged AuxiliaryActiveEquipmentDTO.</auxiliaryToolsDependency>
+    <worldDependency status="REMOVED_FROM_AUX_ROUTER">Router runtime AUP conversion uses HectonFloatingOrigin.CurrentTotalOffsetDouble directly and no longer imports Hecton8.World.</worldDependency>
+    <mockCompletion status="NO_TICK_FORCE_COMPLETE">GenerateMockDeployments schedules mock and VFX jobs asynchronously and waits for LateFrame finalization; no DispatcherJobFence.TryComplete call remains outside teardown.</mockCompletion>
+    <readPurity status="HARDENED">GravTrap.IsActive reads router state directly and no longer has an _activationIssued mirror. DeployableFlare.State, IsBurning, and RemainingFuel read router lifetime directly and no longer have _fuelTimer or _state mirrors. Scanner quality tier methods that mutate cached state were renamed from Resolve* to Refresh*.</readPurity>
+    <facadeReadback status="PASS">DeployableFlare.ResolveState returns Burning only while a central router record exists; otherwise it returns Extinguished without keeping a local countdown or enum-state mirror.</facadeReadback>
+  </domainIsolation>
+  <staticVerification>
+    <promptExtraction status="PASS">Exact SHINOBU_229 XML prompt re-extracted from Docs/Tasks/CURRENT_BATCH.md after hardening; task count remains 20.</promptExtraction>
+    <runtimeForbiddenPatterns status="PASS">Touched runtime/facade/projection files contain no ScannerPulseDrawer, scanner pulse shadow state, Unity Light/Joint/ParticleSystem/OverlapSphere, UnityEngine.Random, Time.deltaTime, Time.fixedDeltaTime, projection Time.time residues, active-pulse interpolated Debug.Log, string.Format, LINQ, or foreach residues. Remaining forbidden-pattern matches are editor-only literal strings in Auxiliary_OOP_Scanner.</runtimeForbiddenPatterns>
+    <compileWall status="SHIELDED_NO_REBUILD">Hecton8.Core.csproj still contains stale generated metadata on disk, but Directory.Build.targets now prunes the deleted scanner projection state and conditionally includes SHINOBU_229 source files. No dotnet build was relaunched; sibling dependency and runtime profiler proof remain pending.</compileWall>
+    <reportParse status="PASS">This XML self-audit parses as XML and EQUIPMENT_OPTIMIZATION_REPORT.json parses as JSON.</reportParse>
+    <assetMeta status="PASS">No orphan .cs.meta or .shader.meta files were found under Assets/_Project after deleting HectonScannerProjectionState.cs/.meta.</assetMeta>
+    <polishMandateAudit status="PASS_WITH_WARNINGS" path="Docs/AgentLogs/PolishMandateStaticAudit_SHINOBU_229_Auxiliary.json" sourceRoot="Assets/_Project/Scripts/Equipment/Auxiliary" csFiles="6">
+      <packOne hits="0" />
+      <missingBurstCompileSynchronously hits="0" />
+      <missingFloatMode hits="0" />
+      <missingFloatPrecision hits="0" />
+      <jobHandleComplete hits="0" />
+      <linqSurface hits="0" />
+      <structAutoProperties hits="0" />
+      <privateNativeCollectionField hits="0" />
+      <noAlias hits="13" />
+    </polishMandateAudit>
+  </staticVerification>
+  <csvProfileIntegration>
+    <file path="Assets/StreamingAssets/auxiliary_equipment_profiles.csv" />
+    <coldBoot>TryLoadProfilesCold reads into ShinobuAuxiliaryCsvScratch, parses ReadOnlySpan bytes, writes ShinobuAuxiliaryProfiles, and applies profiles to AuxiliaryTuningDTO.</coldBoot>
+    <fallback>Missing CSV seeds deterministic unmanaged fallback profiles for flare, sensor ping, and gravity tether.</fallback>
+    <dataMonolith caveat="PENDING_OWNER_MIGRATION">The CSV is the XML-mandated cold tuning bridge and static fallback. It is not Data Monolith runtime readiness; Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin is absent in this workspace.</dataMonolith>
+  </csvProfileIntegration>
+  <nanVaccination>
+    <producerSignalFiniteGuard status="PASS">UpdateDeployedAuxiliaryJob sanitizes route scalars before NativeQueue ParallelWriter enqueue because managed SignalBus.TryPush guards are not executed by Burst producers; jobs open the first-party lanes through OpenParallelWriter.</producerSignalFiniteGuard>
+    <lifetimeRadiusGuard status="PASS">Deploy and cancel/readback paths reject non-finite AUP, sanitize authored lifetime and radius, and reset non-finite accumulated tick debt before integration.</lifetimeRadiusGuard>
+    <gravityTetherAnchorGuard status="PASS">TryDeployGravityTetherAup rejects non-finite projectile/anchor AUP; RouteGravityTether drops non-finite anchor/distance and clamps rest length to sanitized TetherMaxDistance with NonFiniteRecovered telemetry.</gravityTetherAnchorGuard>
+  </nanVaccination>
+  <signalRouteAccounting>
+    <producerWriters>UpdateDeployedAuxiliaryJob receives SignalBus&lt;AuxiliaryFlareLightSignal&gt;.OpenParallelWriter(), SignalBus&lt;AuxiliarySonarRequestSignal&gt;.OpenParallelWriter(), and SignalBus&lt;AuxiliaryTetherConnectionSignal&gt;.OpenParallelWriter().</producerWriters>
+    <prewarm expectedCapacityPerLane="1024" maxFrameSignals="1024">Auxiliary flare, sonar, and tether lanes prewarm the full one-signal-per-active-slot producer ceiling, avoiding NativeQueue growth when 1024 active deployments route in one frame.</prewarm>
+    <lowTierFlushCaps flare="64" sonar="32" tether="16">Low-tier SignalBus flush caps shed optional visual/effect bandwidth under low GlobalQualityWeight while deployment lifetime truth remains in Vault; dropped/coalesced/peak pressure is recorded in AuxiliaryTelemetryEntry.</lowTierFlushCaps>
+    <routeCounters semantics="attemptedEnqueueCounts">AuxiliaryRouteCounterDTO counts successful Burst-side route construction and NativeQueue enqueue attempts. It is not claimed as a guaranteed consumer-delivery counter.</routeCounters>
+    <deliveryTelemetry fields="DroppedSignals,CorruptedSignals,PeakQueuedSignals">AuxiliaryTelemetryEntry records SignalBus last-flush lane drops, corruptions, and peak queued signal pressure so overflow/backpressure is visible in the 300-frame ring.</deliveryTelemetry>
+  </signalRouteAccounting>
+  <gpuUploadDiscipline>
+    <doubleBuffer status="PASS">Auxiliary VFX presentation uses GraphicsBuffer A/B pages plus an immutable read-buffer pointer.</doubleBuffer>
+    <writePath status="PASS">AuxiliaryEquipmentRouterRuntime creates buffers through GraphicsBufferUploadUtility.CreateStructuredLockBuffer and uploads via GraphicsBufferUploadUtility.UploadNativeArray, whose implementation maps LockBufferForWrite and copies with UnsafeMemoryCopyGuard.TryMemCpy before UnlockBufferAfterWrite.</writePath>
+    <setDataInAuxiliaryRoute hits="0">No Auxiliary-owned VFX upload path calls GraphicsBuffer.SetData or GraphicsBufferUploadUtility.UploadArraySetData.</setDataInAuxiliaryRoute>
+    <dirtyGate status="PASS">Unchanged active count, deployment snapshot hash, camera AUP, and quality weight skip UploadNativeArray and keep the previous read buffer.</dirtyGate>
+  </gpuUploadDiscipline>
+  <radarBoundary>
+    <owned>ScannerTool active sensor ping lifetime routes through AuxiliaryEquipmentRouterRuntime.TryDeploySensorPing and AuxiliarySonarRequestSignal.</owned>
+    <projectionConsumer>HectonScannerProjectionFeature reads SignalBus&lt;AuxiliarySonarRequestSignal&gt;.GetSignals(), subtracts HectonFloatingOrigin.CurrentTotalOffsetDouble from the double3 AUP before float downcast, and derives presentation age from CurrentRadius / MaxRadius in the latest signal snapshot. It no longer uses Time.time, StartTime, or a managed projection-state mirror.</projectionConsumer>
+    <directPublish status="DELETED">ScannerTool no longer calls HectonScannerProjectionState.Publish, and the unused HectonScannerProjectionState static shadow-state file plus meta were deleted. Scanner projection is now derived from AuxiliarySonarRequestSignal snapshots.</directPublish>
+    <activeAudio status="SIGNALBUS">ScannerTool active pulse no longer calls IAudioService.PlayAtPoint and no longer gates the acoustic signal on AudioClip assets. It publishes AcousticPingSignal through SignalBus with active-sonar channel flags and AUP payload.</activeAudio>
+    <activeStatusSignal status="SIGNALBUS_PRODUCER">ScannerToolActiveSignal producer no longer calls GlobalSignals.Publish; ScannerTool pushes directly to SignalBus&lt;ScannerToolActiveSignal&gt; from registered LateFrameTick. Downstream GlobalSignals.TryGetLatestScannerToolActiveSignal fallback readers remain legacy consumer bridge debt outside this auxiliary producer route.</activeStatusSignal>
+    <activePulseDebug status="REMOVED">ScannerTool.LogScanPulse no longer builds an interpolated Debug.Log string in editor/development builds; the method is intentionally blank to preserve zero-GC active pulse proof.</activePulseDebug>
+    <notOwned>Visor/SpectrumSystem sonar visuals, audio sonar, cockpit radar UI, and AI sensory sonar consume or present signals and remain outside SHINOBU_229 write authority.</notOwned>
+    <scannerResiduals status="OUT_OF_DOMAIN_FOR_THIS_ROUTE">Scanner scientific/lore discovery still has managed string construction, ScanEvents remains scanner-log/progression legacy routing, broad scanner knowledge/UI coupling remains in ScannerTool, and downstream latest-signal fallback readers remain consumer bridge debt. Those are scanner knowledge/UI routes, not the auxiliary light/physics/VFX effect route owned by SHINOBU_229.</scannerResiduals>
+  </radarBoundary>
   <dearLieConfirmation>
     <flare before="O(n components) Light/ParticleSystem/Rigidbody ownership" after="O(n) scalar signal writes in Burst">Brightness is deterministic scalar/noise routed to a light owner.</flare>
     <sensorPing before="MonoBehaviour pulse drawer plus material/matrix draw or collider pulse" after="O(n) radius signal writes in Burst">ScannerTool now routes a data request; sonar/VFX decide presentation.</sensorPing>
-    <gravityTether before="O(n*m) broadphase/force loop or SpringJoint" after="O(n) AUP constraint packets">No local Unity physics ownership remains in the auxiliary tool path.</gravityTether>
+    <gravityTether before="O(n*m) broadphase/force loop or SpringJoint" after="O(n) per-slot AUP constraint packets">No local Unity physics ownership remains in the auxiliary tool path; anchors are per deployment.</gravityTether>
   </dearLieConfirmation>
   <blockedResidue file="Assets/_Project/Scripts/TetherManager.cs" line="710">Cold new GameObject("TetherInstance") belongs to tether/cable physics domain and is reported as cross-domain residue.</blockedResidue>
 </SELF_AUDIT>

@@ -149,7 +149,7 @@ Minimum first page batch:
 4. salvage/wreck interaction;
 5. hostile silhouette with a readable player choice;
 6. Seed Ship anomaly hint after agency proof exists;
-7. low tier readable frame;
+7. minimum-quality readable frame;
 8. heavy vehicle or exosuit if actually present.
 
 Every screenshot must answer at least one question:

@@ -40,9 +40,81 @@ namespace Hecton8.Gameplay
     {
         private const int ListenerCapacity = 12;
         private const int PendingCapacity = 16;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<ISuitMeshUpdateEventListener>[12] - suit mesh listeners - owner: SuitMeshUpdateEvents
-        private static readonly RegistryBucket<ISuitMeshUpdateEventListener> _listeners = new RegistryBucket<ISuitMeshUpdateEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public ISuitMeshUpdateEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct SuitMeshUpdateListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public SuitMeshUpdateListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(ISuitMeshUpdateEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(ISuitMeshUpdateEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void Unregister(ISuitMeshUpdateEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public ISuitMeshUpdateEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[12] - suit mesh listeners - owner: SuitMeshUpdateEvents
+        private static SuitMeshUpdateListenerRegistry _listeners = new SuitMeshUpdateListenerRegistry(ListenerCapacity);
         private static NativeQueue<SuitMeshUpdateSignal> _pendingSignals;
         private static NativeQueue<SuitMeshUpdateSignal> _nextFrameSignals;
         private static int _pendingSignalCount;
@@ -69,7 +141,7 @@ namespace Hecton8.Gameplay
 
             EnsureInitialized();
             if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+                _listeners.TryRegister(listener);
         }
 
         public static void Unregister(ISuitMeshUpdateEventListener listener)
@@ -125,7 +197,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingSignals.IsCreated)
             {
-                _pendingSignals = new NativeQueue<SuitMeshUpdateSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SuitMeshUpdateSignal>[16] - deferred suit mesh lane - owner: SuitMeshUpdateEvents
+                _pendingSignals = new NativeQueue<SuitMeshUpdateSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SuitMeshUpdateSignal>[16] - deferred suit mesh lane - owner: SuitMeshUpdateEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingSignals,
                     PendingCapacity,
@@ -137,7 +209,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameSignals.IsCreated)
             {
-                _nextFrameSignals = new NativeQueue<SuitMeshUpdateSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SuitMeshUpdateSignal>[16] - next-frame suit mesh lane - owner: SuitMeshUpdateEvents
+                _nextFrameSignals = new NativeQueue<SuitMeshUpdateSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SuitMeshUpdateSignal>[16] - next-frame suit mesh lane - owner: SuitMeshUpdateEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameSignals,
                     PendingCapacity,
@@ -188,11 +260,10 @@ namespace Hecton8.Gameplay
 
                 _pendingSignalCount--;
                 scanBudget--;
-                ISuitMeshUpdateEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    ISuitMeshUpdateEventListener listener = rawArray[i];
+                    ISuitMeshUpdateEventListener listener = _listeners.GetAt(i);
                     if (listener != null)
                         listener.OnSuitMeshUpdateSignal(in signal);
                 }

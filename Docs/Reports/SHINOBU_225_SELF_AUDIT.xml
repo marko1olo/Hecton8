@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<SELF_AUDIT agent="SHINOBU_225" task="LASER_CUTTER_DOD_REWRITE" utc="2026-05-20T11:41:47Z">
-  <Scope domain="ECHELON 4 Player, Kinematics &amp; Tools / Equipment Runtime Tools" taskCount="20" status="STATIC_PASS_COMPILE_BLOCKED_BY_EXTERNAL_DEPENDENCIES" />
+<SELF_AUDIT agent="SHINOBU_225" task="LASER_CUTTER_DOD_REWRITE" utc="2026-05-21T01:23:00Z">
+  <Scope domain="ECHELON 4 Player, Kinematics &amp; Tools / Equipment Runtime Tools" taskCount="20" status="LOOP25_HOT_MANAGED_ROUTE_SCAN_OK_REBUILD_NOT_LAUNCHED" />
   <TaskReconciliation>
     <Task id="01" status="PASS">Focused cutter scan found no direct live `Physics.Raycast`; live cutter keeps deferred interaction route and SHINOBU sidecar owns batch proof.</Task>
     <Task id="02" status="PASS">Removed cutter-adjacent ParticleSystem paths; sparks/debris are `DebrisSpawnSignal` / `VfxSparkRequestSignal` data only.</Task>
-    <Task id="03" status="PASS">Unmanaged cutter DTOs use raw fields only; no `{ get; set; }` DTO state.</Task>
+    <Task id="03" status="PASS">Unmanaged cutter DTOs use raw fields only; no `{ get; set; }` DTO state. Loop 24 also removed cutter-adjacent public property facades from LaserCutter/SealedDoor state readers and replaced consumers with explicit Read* methods or owner-private math.</Task>
     <Task id="04" status="PASS">`LaserCutRequestDTO` restored to exact XML ABI with padding at 52/56/60; metadata moved out.</Task>
-    <Task id="05" status="PASS">`GenerateMockCutterTriggersJob.Schedule(...)+DispatcherJobFence.TryComplete` writes deterministic request+meta rows for isolated editor/CI profiling.</Task>
+    <Task id="05" status="PASS">`GenerateMockCutterTriggersJob.Schedule(...)+DispatcherJobFence.TryComplete` writes deterministic request+meta rows for isolated editor/CI profiling; force-complete is fenced to `UNITY_EDITOR || DEVELOPMENT_BUILD`.</Task>
     <Task id="06" status="PASS">`BuildCutterRaycastsJob` feeds preallocated commands; `RaycastCommand.ScheduleBatch` is registered with `H8Memory`.</Task>
     <Task id="07" status="PASS">`EvaluateCutterRaycastHitsJob` converts hits into SDF/deformation/drain/decal/VFX DTOs with finite guards.</Task>
     <Task id="08" status="PASS">Hull denting is shader/deformation DTO data; no CPU mesh mutation.</Task>
@@ -14,14 +14,14 @@
     <Task id="10" status="PASS">Glow scar is `LaserCutGlowDecalRequestDTO`; no scar mesh generation.</Task>
     <Task id="11" status="PASS">Spark count uses `math.smoothstep(GlobalQualityWeight)` over tuning `LowSparkCount=0` to `UltraSparkCount=500`; post-evaluation signals forward job-computed `SparkCount` directly.</Task>
     <Task id="12" status="PASS">Cooldown is tick-frame metadata in Vault lanes; duplicate same-frame writes are suppressed.</Task>
-    <Task id="13" status="PASS">AUP math subtracts double origins before local float downcast.</Task>
+    <Task id="13" status="PASS">AUP math subtracts double origins before local float downcast; cutter-adjacent AUP conversion no longer calls `GlobalSignals.CurrentRuntimeOriginAup`; `LaserCutterDodRuntime` consumes cached presentation-origin snapshots and no longer reads `HectonFloatingOrigin.CurrentTotalOffsetDouble` directly.</Task>
     <Task id="14" status="PASS">DTO rows are blittable explicit structs and jobs use `FloatMode.Deterministic`.</Task>
-    <Task id="15" status="PASS">300-entry telemetry ring exists with `BatteryWatts@120` and `BurstWorkEstimateMicros@124`; non-finite flags dump `Docs/AgentLogs/Dump_SHINOBU_225.bin`.</Task>
-    <Task id="16" status="PASS">UI Toolkit tuner reads tuning/telemetry with frame, heat, battery watts, Burst us estimate, and HitAUP XYZ.</Task>
+    <Task id="15" status="PASS">300-entry telemetry ring exists with `BatteryWatts@120` and `BurstWorkEstimateMicros@124`; non-finite flags dump `Docs/AgentLogs/Dump_SHINOBU_225.bin` through raw native span export with a 32-byte little-endian header.</Task>
+    <Task id="16" status="PASS">UI Toolkit tuner reads tuning/telemetry with frame, heat, battery watts, Burst us estimate, and HitAUP XYZ; mock request frames now use dispatcher frame authority.</Task>
     <Task id="17" status="PASS">CSV parser slices `ReadOnlySpan&lt;byte&gt;` and writes unmanaged spec rows.</Task>
-    <Task id="18" status="PASS">Editor gizmo draws red beam, cyan origin, green hit sphere, yellow normal from Vault rows.</Task>
-    <Task id="19" status="PASS">Static report sidecar and shared construction appendix updated.</Task>
-    <Task id="20" status="PASS">Static scans and no-alias/dependency audit written; compile deferred only by CPU guard.</Task>
+    <Task id="18" status="PASS">Editor gizmo draws red beam, cyan origin, green hit sphere, yellow normal from Vault rows and consumes the cached DOD presentation origin through a pure accessor; missing origin fails closed.</Task>
+    <Task id="19" status="PASS">Static report sidecar and shared construction appendix updated with origin-bridge, DOD runtime direct-origin, DOD debug-gizmo direct-origin, WFC dead property accessor, cutter-adjacent property facade, hot managed iteration/text allocation, mock force-complete, DOD runtime DataVault fallback, and explicit secondary diagnosis lookup counters.</Task>
+    <Task id="20" status="PASS">Static scans and no-alias/dependency audit written; guarded compile attempt failed on external dependency errors with 0 SHINOBU-owned error paths among files included in Hecton8.Core.csproj. CLI coverage remains incomplete for DOD/WFC runtime files until Unity import regenerates projects.</Task>
   </TaskReconciliation>
   <StructLayoutVerification>
     <DTO name="LaserCutRequestDTO" size="64">
@@ -52,6 +52,24 @@
       <Field name="BurstWorkEstimateMicros" offset="124" size="4" />
       <Proof>Stores origin, hit AUP, direction, distance, power, quality, frame, sequence, hashes, flags, heat, state hash, battery watts, and deterministic Burst work estimate.</Proof>
     </DTO>
+    <DTO name="WfcLaserCutTelemetryEntry" size="96" ringEntries="300">
+      <Field name="CutOriginAup" offset="0" size="24" />
+      <Field name="HitAup" offset="24" size="24" />
+      <Field name="SectorHash" offset="48" size="8" />
+      <Field name="Frame" offset="56" size="4" />
+      <Field name="ToolHash" offset="60" size="4" />
+      <Field name="Progress01" offset="64" size="4" />
+      <Field name="ProgressDelta01" offset="68" size="4" />
+      <Field name="CutterPower01" offset="72" size="4" />
+      <Field name="Heat01" offset="76" size="4" />
+      <Field name="SystemStress01" offset="80" size="4" />
+      <Field name="DoorsCutCount" offset="84" size="4" />
+      <Field name="CellIndex" offset="88" size="2" />
+      <Field name="Flags" offset="90" size="1" />
+      <Field name="Reserved" offset="91" size="1" />
+      <Field name="ReservedPadding" offset="92" size="4" />
+      <Proof>24+24+8+4+4+20+4+2+1+1+4=96; multiple of 32 and exported raw in chronological ring order.</Proof>
+    </DTO>
   </StructLayoutVerification>
   <ScalabilityCurve>
     <Low weight="0.0-0.3">Spark quantity smoothsteps toward zero; dent/decal radius uses tuning minimum; jobs still execute deterministic truth but shader presentation collapses to cheap glow/deformation parameters.</Low>
@@ -77,6 +95,42 @@
     <Buffer id="71334" name="CsvScratch" />
     <Buffer id="71335" name="Counters" />
   </VaultStatus>
+  <GlobalSystemsDoctrine>
+    <ReadAccessor name="TryGetLatestTelemetry" pure="true" ensureInitialized="false" allowAcquire="false" hiddenWrite="false" />
+    <ReadAccessor name="TryGetTuning" pure="true" ensureInitialized="false" allowAcquire="false" hiddenWrite="false" />
+    <ReadAccessor name="TryGetPresentationOriginForGizmo" pure="true" ensureInitialized="false" allowAcquire="false" hiddenWrite="false" />
+    <ReadAccessor name="TryGetRequestForGizmo" pure="true" ensureInitialized="false" allowAcquire="false" hiddenWrite="false" />
+    <ReadAccessor name="TryGetHitForGizmo" pure="true" ensureInitialized="false" allowAcquire="false" hiddenWrite="false" />
+    <ReadHelper name="ReadBoundBuffer" pure="true">Resolves only already-created Vault generation handles; no acquire, release, growth, signal publish, job completion, or boot.</ReadHelper>
+    <ReadHelper name="ReadCoreBuffers" pure="true">Composes ReadBoundBuffer for request/meta/count/cursor/counter lanes only.</ReadHelper>
+    <ColdBootstrap>EnsureInitialized binds scheduler/result/telemetry/request/meta lanes and seeds default tuning before hot no-acquire scheduling.</ColdBootstrap>
+    <QualityHandle>Foreign scalability-state handle is cached during cold boot; hot refresh resolves the cached handle or falls back to HomeostasisBrain.GlobalQualityWeight.</QualityHandle>
+    <HotRegistryReads count="0">Hot cutter routes consume cached Audio/Input/InteractionSignals/HabitatDeconstruction/SargassumCut/Localization interfaces. Direct registry reads for those services are confined to cold CacheColdDependencies.</HotRegistryReads>
+    <WfcCompileWallBoundary directPowerDependencySites="0" directLogisticsGridDependencySites="0" wfcRuntimeDataVaultRegistrySites="0">WfcLaserCutRuntime imports no Hecton8.Power or Hecton8.Logistics.Grid.Contracts, calls no WfcOutpostGridRegistry/WfcOutpostGridLease, and reads no GlobalRegistry.DataVault. LaserCutter cold lifecycle passes IDataVault explicitly; WFC hot route reads bound handles only.</WfcCompileWallBoundary>
+    <WfcPropertyBoundary propertyAccessorSites="0">WfcLaserCutRuntime exposes no dead static `DoorsCutCount` property accessor; the telemetry ring owns cutter-adjacent proof rows.</WfcPropertyBoundary>
+    <CutterPropertyBoundary propertyAccessorSites="0">LaserCutter and SealedDoor expose no scoped cutter-adjacent public property facades for heat, overheat, pending-count, listener-count, door state, door progress, opened, or can-cut state. Consumers use explicit Read* methods or owner-private math.</CutterPropertyBoundary>
+    <ReadRouteBindingBoundary hiddenPlayerBindingRepairs="0">Sustained energy/tension/pull reads use ReadCached* helpers and no longer call EnsurePlayerBindings or TryGetComponent. Cold lifecycle/equip owns player binding.</ReadRouteBindingBoundary>
+    <AdjacentResponderColdCaches>SealedDoor caches IAudioService in Awake/OnEnable and clears on disable/destroy. SargassumCutResponder caches SargassumCutManager in Awake/OnEnable and clears on disable. Route methods consume fields only.</AdjacentResponderColdCaches>
+    <EventLaneColdBootBoundary legacyGlobalSignalsInitSites="0" hotEnsureInitializedSites="0">LaserCutterEvents no longer calls GlobalSignals.InitializeAllQueues and no longer bootstraps its lane from Enqueue or FlushPending. Listener/source registration owns cold lane configuration; runtime payload emission fails closed if the typed SignalBus lane was not configured.</EventLaneColdBootBoundary>
+    <SargassumResponderBoundary runtimeRegistrationSites="0">SargassumCutResponder no longer implements ITickable/IUpdatable and no longer calls GlobalRegistry.Dispatcher, TryRegisterUpdatable, or UnregisterUpdatable. The cut mask fact remains owned by SargassumCutManager; debris cooldown is a dispatcher-frame stamp.</SargassumResponderBoundary>
+    <DodSchedulerColdBootBoundary hotSchedulerEnsureSites="0">TryScheduleRaycastBatch now fails closed when IDataVault was not cold-bound and no longer calls EnsureInitialized from the scheduling route.</DodSchedulerColdBootBoundary>
+    <DodRuntimeBootBoundary dataVaultRegistrySites="0">LaserCutterDodRuntime no longer has an implicit GlobalRegistry.DataVault fallback; boot receives explicit IDataVault from LaserCutter lifecycle or the editor facade.</DodRuntimeBootBoundary>
+    <AupOriginBoundary originBridgeReadSites="0">LaserCutter, SealedDoor, and SargassumCutResponder no longer call GlobalSignals.CurrentRuntimeOriginAup in scanned cutter-adjacent conversion routes. Owner phases cache HectonFloatingOrigin.CurrentTotalOffsetDouble into local AUP snapshots.</AupOriginBoundary>
+    <DodRuntimeOriginBoundary directOriginSites="0" zeroFallbackSites="0" failClosedSites="7">LaserCutterDodRuntime scheduling, evaluation, and VFX publication consume `CachePresentationOriginAup` snapshots from the LaserCutter owner phase; invalid samples and runtime rebinds clear cached and scheduled origins. The DOD runtime file contains no direct `HectonFloatingOrigin.CurrentTotalOffsetDouble` reads and no zero-origin presentation fallback.</DodRuntimeOriginBoundary>
+    <DodDebugGizmoOriginBoundary directOriginSites="0">LaserCutterDodDebugGizmo consumes TryGetPresentationOriginForGizmo and returns without drawing when the cached owner-phase presentation origin is absent.</DodDebugGizmoOriginBoundary>
+    <MockGeneratorBoundary forceCompleteSites="1" compileFenceHits="1">GenerateMockCutterTriggers may force-complete only inside UNITY_EDITOR || DEVELOPMENT_BUILD as an editor/CI stress facade.</MockGeneratorBoundary>
+    <TargetRegistryBoundary hotComponentDiscoverySites="0">TryApplyWfcDoorCut and ProcessDeconstructMode resolve collider ownership through LaserCutterTargetRegistry. SealedDoor and BaseModule register/unregister their colliders from lifecycle; active beam routes no longer call TryGetComponent or GetComponentInParent on target change.</TargetRegistryBoundary>
+    <ExplicitSecondaryDiagnosisBoundary componentLookupSites="0">BuildDiagnosisFromHit resolves salvage module ownership through LaserCutterTargetRegistry and contains no TryGetComponent/GetComponentInParent fallback.</ExplicitSecondaryDiagnosisBoundary>
+    <WfcOwnerPhaseContextBoundary routeSnapshotScanSites="0">WFC grid/stress SignalBus snapshots are refreshed by LaserCutter owner phase through RefreshOwnerPhaseContext. TryApplyDoorCut reads cached active-grid and stress scalars only.</WfcOwnerPhaseContextBoundary>
+    <ComponentLookupCache target="SealedDoor/BaseModule">Component lookup for WFC doors and salvage modules is shifted to lifecycle-owned collider registration, not sustained hit routes.</ComponentLookupCache>
+    <SignalBridgeEradication globalSignalsPublish="0" globalSignalsInitializeAllQueues="0" directSignalBusPublish="17">Focused cutter/door route publishes ToolAcousticSignal, HapticRequest, WfcOutpostStateChangedSignal, LaserCutterEventPayload, DebrisSpawnSignal, VfxSparkRequestSignal, and PowerDrainSignal through typed SignalBus lanes only.</SignalBridgeEradication>
+    <LegacyStringBoundary hotRoute="false" laserCutterNewStringBridgeSites="1">Active HUD/PDA callers use WriteOperational/TryWrite Span and FixedCharBuffer paths. BuildLegacyOperational*String remains as PlayerTool cold compatibility and ToolStackValidator surface and now uses a dedicated cold `_legacyOperationalBuffer`.</LegacyStringBoundary>
+    <HotManagedCodeBoundary iterationSites="0" textAllocationSites="0">UsePrimary, ToolTick, cut application, WFC hit, and DOD schedule/evaluate/VFX route windows contain no foreach, LINQ, string.Format, string interpolation, or new string allocation sites. The only focused runtime `new string` hit is the cold legacy compatibility bridge.</HotManagedCodeBoundary>
+    <DiagnosisReadBoundary liveReadSites="0" managedSeverityFields="0">Operational summary/directive writers no longer call live diagnosis, raycast, or component query. Explicit secondary fire is the owner action; cached byte severity is displayed for a bounded dispatcher-frame window.</DiagnosisReadBoundary>
+    <TimeAuthority frameSource="TimeSliceScheduler.CurrentFrameId" visualClock="ToolTick(deltaTime)" unityTimeSites="0">Focused cutter, DOD runtime, WFC runtime, sealed-door route, and editor mock generator no longer use Time.time, Time.frameCount, Time.deltaTime, or Time.fixedDeltaTime. Visual jitter remains a triangle-wave fake driven by finite owner-phase delta.</TimeAuthority>
+    <BlackBoxDumpBoundary binaryWriterSites="0" rawPointerSpanWriters="2">Laser cutter and WFC cutter fault dumps write raw native telemetry spans with stackalloc little-endian headers and entry-size guards, not managed field loops.</BlackBoxDumpBoundary>
+    <ValidatorDriftGuard>Static inquisition now counts legacy GlobalSignals.Publish, GlobalSignals.InitializeAllQueues, Unity Time.*, dispatcher frame helpers, cold registry service read sites, legacy string bridge hits, focused LaserCutter new-string bridge sites, hot managed iteration/text allocation sites, completed-fence finalizers, live diagnosis reads, managed diagnosis severity state, BinaryWriter black-box regressions, event Enqueue cold-init sites, SargassumCutResponder runtime registration sites, DOD scheduler cold init, active-route component discovery, DOD debug-gizmo direct origin reads, WFC dead static property accessors, and WFC per-hit snapshot scans.</ValidatorDriftGuard>
+  </GlobalSystemsDoctrine>
   <PointerAliasingAndDependencyGraph noAliasHits="17">
     <Job name="ManageCutterCooldownJob" consumes="Requests,RequestMetas,Cooldowns" outputs="RequestMetas,Cooldowns" />
     <Job name="BuildCutterRaycastsJob" consumes="Requests,RequestMetas" outputs="RaycastCommands" />
@@ -85,13 +139,16 @@
     <Handles>cooldownHandle -> buildHandle -> scheduledRaycastHandle -> scheduledEvaluationHandle; raycast and evaluation handles are registered through `H8Memory.RegisterActiveJob(SystemID.GameplayTools, handle)` and finalized only when `DispatcherJobFence.TryFinalizeCompleted` succeeds.</Handles>
   </PointerAliasingAndDependencyGraph>
   <CompileGuard>
-    <Assembly>No asmdef edited; no sibling runtime assembly reference added. `SealedDoor` no longer imports `Hecton8.Tools` for door VFX.</Assembly>
-    <Build status="FAILED_EXTERNAL_DEPENDENCIES" attemptedUtc="2026-05-20T11:52:19Z" command="dotnet build Hecton8.Core.csproj --no-restore -v:minimal" errorCount="77" ownedErrorPaths="0" />
+    <Assembly>No asmdef edited; no sibling runtime assembly reference added. `SealedDoor` no longer imports `Hecton8.Tools` for door VFX and no longer uses `GlobalSignals.Publish` for WFC state. WFC Tools runtime no longer imports Power or Logistics.Grid runtime contracts.</Assembly>
+    <Build status="FAILED_EXTERNAL_DEPENDENCIES" attemptedUtc="2026-05-20T11:52:19Z" command="dotnet build Hecton8.Core.csproj --no-restore -v:minimal" errorCount="77" ownedErrorPaths="0" coverage="included_files_only" />
+    <CoverageCaveat>Generated Hecton8.Core.csproj includes LaserCutter.cs and SealedDoor.cs but omits LaserCutterDodRuntime.cs and WfcLaserCutRuntime.cs, so CLI compile coverage is incomplete until Unity/asmdef import regenerates projects.</CoverageCaveat>
+    <Rerun status="NOT_LAUNCHED_AFTER_LOOP23" cpuLoadPercent="100" activeCompilerProcesses="0" reason="CPU gate forbids rebuild above 50 percent; previous compile wall is external to SHINOBU_225 and generated Hecton8.Core.csproj omits DOD/WFC runtime files, so rerun would not prove the patched runtime surface without Unity import/project regeneration" />
   </CompileGuard>
   <DearLie>
     <Before complexity="O(hits * meshVertices) + prefab churn">Legacy risk: CPU mesh deformation, scar geometry, ParticleSystem state or prefab spark bursts.</Before>
     <After complexity="O(requests) CPU DTO writes + GPU shader/indirect presentation">CPU emits compact AUP/normal/heat/radius/scalar rows; shader/decal/GPU spark lanes fake melting, denting, scorch, and sparks.</After>
   </DearLie>
-  <StaticScan syncRaycast="0" instantiate="0" particleSystem="0" meshMutation="0" report="Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_225.json" />
-  <StaticScanDetail requestDto="46" requestMeta="30" raycastBatch="1" noAlias="17" burstWorkEstimate="3" />
+  <StaticScan scope="primary_laser_route_and_SHINOBU_method_windows" syncRaycast="0" instantiate="0" particleSystem="0" meshMutation="0" newNativeArray="0" nativeList="0" nativeHashMap="0" completeCalls="0" globalSignalsPublish="0" globalSignalsInitializeAllQueues="0" originBridgeReadSites="0" dodRuntimeDirectOriginSites="0" dodDebugGizmoDirectOriginSites="0" dodRuntimeOriginZeroFallbackSites="0" dodRuntimeOriginFailClosedSites="7" unityTimeSites="0" liveDiagnosisReadSites="0" managedDiagnosisSeveritySites="0" hotManagedIterationSites="0" hotManagedTextAllocationSites="0" laserCutterNewStringBridgeSites="1" blackBoxBinaryWriterSites="0" prematureAupFloatHashSites="0" directPowerRuntimeDependencySites="0" directLogisticsGridRuntimeDependencySites="0" wfcRuntimeDataVaultRegistrySites="0" wfcRuntimePropertyAccessorSites="0" cutterPropertyAccessorSites="0" dodRuntimeDataVaultRegistrySites="0" laserEventHotEnsureSites="0" sargassumRuntimeRegistrationSites="0" dodHotSchedulerEnsureSites="0" laserHotComponentDiscoverySites="0" explicitSecondaryDiagnosisComponentLookupSites="0" wfcRouteSnapshotScanSites="0" mockForceCompleteSites="1" mockForceCompleteCompileFenceHits="1" report="Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_225.json" />
+  <ScanScopeCaveat>Whole-file BaseModule.cs retains pre-existing unrelated ParticleSystem, Unity Time, and GlobalSignals.Publish sites outside SHINOBU ownership. SHINOBU-owned RegisterModuleTree/UnregisterModuleTree lifecycle windows scanned clean for component traversal, particle-system, legacy signal publish, Unity time, and Complete-call hazards.</ScanScopeCaveat>
+  <StaticScanDetail requestDto="47" requestMeta="30" raycastBatch="1" noAlias="17" coldRegistryCacheHits="8" coldDataVaultBootstrapSites="2" hotRegistryHits="0" signalBusSites="17" pureReadAccessors="5" burstWorkEstimate="3" dispatcherFrameHelpers="6" completedFenceFinalizers="2" legacyStringBridgeHits="3" laserCutterNewStringBridgeSites="1" hotManagedIterationSites="0" hotManagedTextAllocationSites="0" rawBlackBoxSpanWriterHits="3" originBridgeReadSites="0" dodRuntimeDirectOriginSites="0" dodDebugGizmoDirectOriginSites="0" dodRuntimeOriginZeroFallbackSites="0" dodRuntimeOriginFailClosedSites="7" mockForceCompleteSites="1" mockForceCompleteCompileFenceHits="1" dodRuntimeDataVaultRegistrySites="0" wfcRuntimePropertyAccessorSites="0" cutterPropertyAccessorSites="0" explicitSecondaryDiagnosisComponentLookupSites="0" />
 </SELF_AUDIT>

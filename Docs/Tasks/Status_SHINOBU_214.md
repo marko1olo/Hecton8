@@ -4,7 +4,7 @@ Date: 2026-05-20
 Agent: SHINOBU_214
 Role: PBR_TEXTURE_CHANNEL_PACKER
 Domain: Echelon 2 World Generation / Tech Art Editor texture packing
-Status: STATIC POLISH + ISOLATED_ASMDEF + BLACKBOX + STRUCT_REQUEST_FIX + AXIS_DIMENSION_FIX + QUALITY_CURVE + CSV_PROFILE_AUTHORITY + PROPERTY_PURGE + BATCH_FAULT_ADVANCE APPLIED / COMPILE BLOCKED BY CPU GATE
+Status: STATIC POLISH + ISOLATED_ASMDEF + BLACKBOX + STRUCT_REQUEST_FIX + AXIS_DIMENSION_FIX + QUALITY_CURVE + CSV_PROFILE_AUTHORITY + PROPERTY_PURGE + BATCH_FAULT_ADVANCE + ACCESSOR_PURITY_GUARD + ATLAS_PATH_DRIFT_PRUNED APPLIED / COMPILE BLOCKED BY CPU GATE
 
 ## Source Prompt
 
@@ -68,7 +68,7 @@ Status: STATIC POLISH + ISOLATED_ASMDEF + BLACKBOX + STRUCT_REQUEST_FIX + AXIS_D
 
 ## Verification
 
-- Compile check: BLOCKED BY CPU GATE. Latest check: `dotnet/csc` absent, CPU sample `99`; project rule forbids `dotnet build` above 50%.
+- Compile check: BLOCKED BY CPU GATE. Latest check: `dotnet/csc` absent, CPU sample `100`; project rule forbids `dotnet build` above 50%.
 - Static diff check: PASS for edited files (`git diff --check` returned line-ending warnings only).
 - Static forbidden scan: PASS for owned new/edited path on old M.A.S.K. menu, old ORM label, `ormSample`, `GetPixels`, `SetPixels`, `EncodeToPNG`.
 - Report artifacts: `Docs/Reports/TEXTURE_PACKING_REPORT.json` and `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` installed as pending Unity menu-run reports; previous SHINOBU_212 report payload preserved under `previousReport`.
@@ -82,8 +82,12 @@ Status: STATIC POLISH + ISOLATED_ASMDEF + BLACKBOX + STRUCT_REQUEST_FIX + AXIS_D
 - Cold allocation annotation pass: PASS static patch. Editor-only `List`/`Dictionary` caches now carry canonical `COLD ALLOC` owner/capacity comments.
 - Batch fault advance pass: PASS static patch. Forge queue catches per-set pack exceptions, records one failure, advances `_pendingIndex`, and avoids retry loops after the packer blackbox dumps the fault.
 - Compile wall pass: PASS static patch. Packer scripts moved under `Assets/_Project/Scripts/Editor/TextureChannelPacker/` with `Hecton8.Rendering.TexturePacker.Editor.asmdef` referencing only Unity Collections/Mathematics/Burst/Jobs.
+- Accessor purity guard pass: PASS static patch. Mutating/allocation-bearing asset path, set-key, CSV column, prefab path, and format-label helpers were renamed to command/parser/build helpers; remaining `Resolve*` helpers are pure dimension/mip math and the remaining `GetPackedMaskPropertyName` does not search scene state or mutate global state.
+- Job completion boundary pass: PASS static patch. Owned `.Complete()` calls are explicitly documented as Editor serialization, mip materialization, mock benchmark, or UI preview boundaries; no runtime path is introduced.
+- Atlas path drift pass: PASS static patch. `Docs/DEPENDENCY_GRAPH.md`, `Docs/DEPENDENCY_GRAPH.json`, `Tools/BuildArchitectureAtlas.py`, `Tools/test_architecture_atlas.py`, and `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` no longer report the removed broad-assembly texture packer paths as current AtlasCheck blockers. Current `AtlasCheck` output is `ATLAS_CHECK_FAIL references=6779 missing=60`; remaining misses are vendor/Habitat/PlacementGhost refs outside SHINOBU_214 authority.
 - Latest static forbidden scan: PASS for owned new/edited path on old ORM/M.A.S.K./pixel APIs/LINQ/foreach/Random/Time/MemClear/get-only properties/`HashLiteral`/retired square-only dimension helpers.
 - Current batch extraction: PASS with regex allowing additional XML attributes on `<AGENT_PROMPT id="SHINOBU_214" ...>`.
 - Report JSON parse: PASS for `TEXTURE_PACKING_REPORT.json` and `RENDERING_OPTIMIZATION_REPORT.json`.
+- Atlas tooling checks: PASS for `python -m unittest Tools.test_architecture_atlas` and `python -m py_compile Tools/BuildArchitectureAtlas.py Tools/AtlasCheck.py Tools/test_architecture_atlas.py`; `python Tools/AtlasCheck.py` remains red only on non-SHINOBU_214 missing refs.
 - Unity import proof: PENDING.
 - Profiler/GCMonitor proof: PENDING.

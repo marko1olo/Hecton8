@@ -8,7 +8,7 @@ namespace Hecton8.Atmosphere
     /// </summary>
     public struct AtmosphericLightingState
     {
-        public bool IsValid;
+        public byte IsValid;
         public float SunElevationDegrees;
         public float SkyExposure;
         public float FogDensity;
@@ -33,7 +33,7 @@ namespace Hecton8.Atmosphere
 
         public static AtmosphericLightingState Default => new AtmosphericLightingState
         {
-            IsValid = false,
+            IsValid = 0,
             SkyExposure = 1f,
             FogDensity = 0.001f,
             AmbientIntensity = 1f,

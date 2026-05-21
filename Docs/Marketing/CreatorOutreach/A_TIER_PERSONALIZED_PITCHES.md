@@ -45,7 +45,7 @@ Assets:
 - screenshots: [asset IDs/links only after asset metadata claim checks, QA, creator utility, and `creator_send_gate`]
 - demo/key: [only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, disclosure, and exact access-log fields]
 
-If it fits your audience, I can send the demo when the slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 
 ## A-Tier Drafts
 

@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using Hecton8.Core.Contracts.Physiology;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;

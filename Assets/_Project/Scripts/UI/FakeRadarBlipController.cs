@@ -56,6 +56,8 @@ namespace Hecton8.UI
         private const string RadarBlipShaderPath = "Assets/_Project/Art/Shaders/Hecton_RadarBlipInstanced.shader";
         private const string RadarBlipShaderName = "HECTON/HUD/RadarBlipInstanced";
         private const string NativeMemoryOwner = nameof(FakeRadarBlipController);
+        private const Allocator DataVaultExemptRadarCullAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptRadarRenderHandoffAllocator = Allocator.Persistent;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const uint RadarSolveBudgetWarningHash = 648937224u;
@@ -299,7 +301,6 @@ namespace Hecton8.UI
             {
                 if (!_radarCullScheduled)
                 {
-                    RefreshLateFrameRegistration();
                     return;
                 }
 
@@ -316,14 +317,11 @@ namespace Hecton8.UI
                 if (discardCompletedCull)
                 {
                     ClearVisibleBlipHandoff();
-                    RefreshLateFrameRegistration();
                     return;
                 }
 
                 _visibleBlipMatrixCount = visibleCount;
                 _blipMatricesDirty = visibleCount > 0;
-                RefreshRenderableRegistration();
-                RefreshLateFrameRegistration();
             }
             finally
             {
@@ -371,17 +369,12 @@ namespace Hecton8.UI
         {
             bool hasVisibleNativeBlips = _visibleBlipMatrices.IsCreated && _visibleBlipMatrices.Length > 0;
             if (_visibleBlipMatrixCount == 0 && !_blipMatricesDirty && !hasVisibleNativeBlips)
-            {
-                if (_registeredRenderable)
-                    RefreshRenderableRegistration();
                 return;
-            }
 
             _visibleBlipMatrixCount = 0;
             _blipMatricesDirty = false;
             if (hasVisibleNativeBlips)
                 _visibleBlipMatrices.Clear();
-            RefreshRenderableRegistration();
         }
 
         private void AppendVisibleBlipMatrix(Matrix4x4 matrix, ref int visibleCount)
@@ -419,7 +412,6 @@ namespace Hecton8.UI
                 _scheduledBlipCapacity = math.clamp(_qualityBlipCapacity, MinimumQualityBlipCapacity, MaxBlips);
                 _radarCullScheduled = false;
                 _radarCullHandle = default;
-                RefreshLateFrameRegistration();
                 return;
             }
 
@@ -517,8 +509,6 @@ namespace Hecton8.UI
             {
                 _radarCullHandle = default;
             }
-
-            RefreshLateFrameRegistration();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -526,6 +516,13 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegister();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Player)
                 return;
 
@@ -1017,19 +1014,19 @@ namespace Hecton8.UI
 
             if (!_radarCullCandidates.IsCreated)
             {
-                _radarCullCandidates = new NativeArray<RadarCullCandidate>(MaxBlips, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RadarCullCandidate>[64] — Burst 2D HUD bounds cull input — owner: FakeRadarBlipController
+                _radarCullCandidates = new NativeArray<RadarCullCandidate>(MaxBlips, DataVaultExemptRadarCullAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RadarCullCandidate>[64] — Burst 2D HUD bounds cull input — owner: FakeRadarBlipController
                 NativeMemorySentinel.RegisterNativeArray(_radarCullCandidates, NativeMemoryOwner, nameof(_radarCullCandidates), NativeAllocationLifetime.Scene);
             }
 
             if (!_radarCullResults.IsCreated)
             {
-                _radarCullResults = new NativeArray<RadarCullResult>(MaxBlips, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RadarCullResult>[64] — Burst 2D HUD bounds cull output — owner: FakeRadarBlipController
+                _radarCullResults = new NativeArray<RadarCullResult>(MaxBlips, DataVaultExemptRadarCullAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RadarCullResult>[64] — Burst 2D HUD bounds cull output — owner: FakeRadarBlipController
                 NativeMemorySentinel.RegisterNativeArray(_radarCullResults, NativeMemoryOwner, nameof(_radarCullResults), NativeAllocationLifetime.Scene);
             }
 
             if (!_visibleBlipMatrices.IsCreated)
             {
-                _visibleBlipMatrices = new NativeList<Matrix4x4>(MaxBlips, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[64] — LateFrame radar render handoff to GlobalRenderContext — owner: FakeRadarBlipController
+                _visibleBlipMatrices = new NativeList<Matrix4x4>(MaxBlips, DataVaultExemptRadarRenderHandoffAllocator); // COLD ALLOC: NativeList<Matrix4x4>[64] — LateFrame radar render handoff to GlobalRenderContext — owner: FakeRadarBlipController
                 NativeMemorySentinel.RegisterNativeList(_visibleBlipMatrices, NativeMemoryOwner, nameof(_visibleBlipMatrices), NativeAllocationLifetime.Scene);
             }
         }
@@ -1161,57 +1158,17 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
             if (!_registered)
                 _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
 
-            RefreshLateFrameRegistration();
-            RefreshRenderableRegistration();
-        }
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
 
-        private void RefreshLateFrameRegistration()
-        {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
-            {
-                if (_registeredLateFrame)
-                {
-                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                    _registeredLateFrame = false;
-                }
-
-                return;
-            }
-
-            if (_radarCullScheduled)
-            {
-                if (!_registeredLateFrame)
-                    _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
-            }
-            else if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                _registeredLateFrame = false;
-            }
-        }
-
-        private void RefreshRenderableRegistration()
-        {
-            bool shouldRender = Application.isPlaying &&
-                _visibleBlipMatrixCount > 0 &&
-                _visibleBlipMatrices.IsCreated;
-
-            if (shouldRender)
-            {
-                if (!_registeredRenderable)
-                    _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
-            }
-            else if (_registeredRenderable)
-            {
-                GlobalRegistry.Renderables.Unregister(this);
-                _registeredRenderable = false;
-            }
+            if (!_registeredRenderable)
+                _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
         }
 
         private void TryRegisterScanEvents()

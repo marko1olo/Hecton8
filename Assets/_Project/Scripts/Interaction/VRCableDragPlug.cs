@@ -283,10 +283,13 @@ namespace Hecton8.Interaction
         private bool IsCableOverstretched()
         {
             ResolveRawEndPose(out Vector3 end, out _);
-            if (!IsFiniteVector(end) || !TryResolveAup(sourceSocket, out AbsoluteUniversePosition sourceAup))
+            if (!IsFiniteVector(end) ||
+                !TryResolveAupRuntimePosition(sourceSocket, out AbsoluteUniversePosition sourceAup, out Vector3 sourceRuntimePosition) ||
+                !TryResolveAupFromRuntimeDelta(end, sourceRuntimePosition, in sourceAup, out AbsoluteUniversePosition endAup))
+            {
                 return true;
+            }
 
-            AbsoluteUniversePosition endAup = AbsoluteUniversePosition.FromRuntimePosition(end);
             return AbsoluteUniversePosition.DistanceSq(in sourceAup, in endAup) > ResolveSafeMaxCableLengthSq();
         }
 
@@ -386,12 +389,14 @@ namespace Hecton8.Interaction
             if (sourceSocket == null)
                 return;
 
-            if (!TryResolveAup(sourceSocket, out AbsoluteUniversePosition sourceAup) || !IsFiniteVector(end))
+            if (!TryResolveAupRuntimePosition(sourceSocket, out AbsoluteUniversePosition sourceAup, out Vector3 sourceRuntimePosition) ||
+                !IsFiniteVector(end) ||
+                !TryResolveAupFromRuntimeDelta(end, sourceRuntimePosition, in sourceAup, out AbsoluteUniversePosition endAup))
+            {
                 return;
+            }
 
-            AbsoluteUniversePosition endAup = AbsoluteUniversePosition.FromRuntimePosition(end);
             double lengthSq = AbsoluteUniversePosition.DistanceSq(in sourceAup, in endAup);
-            Vector3 sourceRuntimePosition = (Vector3)sourceAup.ToRuntimeFloat3();
             if (double.IsNaN(lengthSq) || double.IsInfinity(lengthSq))
             {
                 end = sourceRuntimePosition;
@@ -458,13 +463,9 @@ namespace Hecton8.Interaction
 
         private static AbsoluteUniversePosition ResolveAup(Transform source)
         {
-            if (source == null)
-                return AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
-
-            Vector3 position = source.position;
-            return IsFiniteVector(position)
-                ? AbsoluteUniversePosition.FromRuntimePosition(position)
-                : AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
+            return TryResolveAup(source, out AbsoluteUniversePosition aup)
+                ? aup
+                : GlobalSignals.CurrentRuntimeOriginAup();
         }
 
         private static bool TryResolveAup(Transform source, out AbsoluteUniversePosition aup)
@@ -482,8 +483,52 @@ namespace Hecton8.Interaction
                 return false;
             }
 
-            aup = AbsoluteUniversePosition.FromRuntimePosition(position);
-            return true;
+            return TryResolveAupFromRuntimeOrigin(position, out aup);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition aup)
+        {
+            return math.isfinite(aup.LocalX) &&
+                   math.isfinite(aup.LocalY) &&
+                   math.isfinite(aup.LocalZ);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in aup);
+        }
+
+        private static bool TryResolveAupFromRuntimeDelta(
+            Vector3 runtimePosition,
+            Vector3 originRuntimePosition,
+            in AbsoluteUniversePosition originAup,
+            out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!IsFiniteVector(runtimePosition) ||
+                !IsFiniteVector(originRuntimePosition) ||
+                !IsFiniteAup(in originAup))
+            {
+                return false;
+            }
+
+            double3 deltaMeters = new double3(
+                (double)runtimePosition.x - originRuntimePosition.x,
+                (double)runtimePosition.y - originRuntimePosition.y,
+                (double)runtimePosition.z - originRuntimePosition.z);
+            aup = AbsoluteUniversePosition.OffsetMeters(in originAup, deltaMeters);
+            return IsFiniteAup(in aup);
         }
 
         private static Vector3 ResolveAupRuntimePosition(Transform source)

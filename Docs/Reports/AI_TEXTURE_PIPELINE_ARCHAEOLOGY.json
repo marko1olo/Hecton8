@@ -1,0 +1,8 @@
+{
+  "schema": "hecton8.ai_texture_pipeline_archaeology.v1",
+  "agent": "SHINOBU_269",
+  "status": "PENDING_UNITY_MENU_EXECUTION",
+  "manualCaptureFindings": 0,
+  "scope": "Assets/Editor first-party scan route implemented in AITexturePipelineArchaeology",
+  "reason": "Static source route exists; menu execution was not run during this polish pass."
+}

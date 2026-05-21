@@ -125,10 +125,7 @@ namespace Hecton8.Gameplay
         public void Tick(float deltaTime)
         {
             if (_light == null)
-            {
-                UnregisterFromTickManager();
                 return;
-            }
 
             _flickerTime = math.frac(_flickerTime + (math.max(0f, deltaTime) * FlickerCyclesPerSecond));
             float triangle = 1f - math.abs((_flickerTime * 2f) - 1f);
@@ -157,7 +154,7 @@ namespace Hecton8.Gameplay
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTickManager || _light == null || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredToTickManager || _light == null || !Application.isPlaying)
                 return;
 
             _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);

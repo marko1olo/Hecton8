@@ -11,9 +11,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(0.1f)] private float pullRadius = 8f;
         [SerializeField, Min(0.01f)] private float lifetimeSeconds = 12f;
 
-        private bool _isActive;
-
-        public bool IsActive => _isActive;
+        public bool IsActive => ReadActiveState();
         public float PullRadius => pullRadius;
 
         private void OnEnable()
@@ -23,24 +21,33 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            _isActive = false;
+            Deactivate();
         }
 
         public void Activate()
         {
-            if (_isActive)
+            if (ReadActiveState())
                 return;
 
-            _isActive = true;
             float lifetime = math.max(0.01f, lifetimeSeconds);
+            float radius = math.max(0.1f, pullRadius);
             Vector3 position = transform.position;
-            AuxiliaryEquipmentRouterRuntime.TryDeployGravityTether(position, position, lifetime);
+            Vector3 shellPosition = position + (transform.forward * radius);
+            AuxiliaryEquipmentRouterRuntime.TryDeployGravityTether(shellPosition, position, lifetime);
         }
 
         public void Deactivate()
         {
-            AuxiliaryEquipmentRouterRuntime.TryCancelGravityTether(transform.position);
-            _isActive = false;
+            AuxiliaryEquipmentRouterRuntime.TryCancelGravityTether(transform.position, math.max(0.1f, pullRadius) + 0.5f);
+        }
+
+        private bool ReadActiveState()
+        {
+            return AuxiliaryEquipmentRouterRuntime.TryReadNearestRemainingLifetime(
+                AuxiliaryEquipmentConstants.GravityTetherPrefabHash,
+                transform.position,
+                math.max(0.1f, pullRadius) + 0.5f,
+                out _);
         }
     }
 }

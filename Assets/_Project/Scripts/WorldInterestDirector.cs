@@ -180,7 +180,7 @@ namespace Hecton8.World
                 if (playerContext != null && playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
                 {
                     playerAup = snapshot.Aup;
-                    return MathGuard.IsFinite(in playerAup);
+                    return playerAup.IsFinite();
                 }
 
                 if (playerContext != null)

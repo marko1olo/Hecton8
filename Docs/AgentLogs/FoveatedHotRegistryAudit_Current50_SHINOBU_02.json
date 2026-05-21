@@ -1,0 +1,17 @@
+{
+  "agent": "SHINOBU_02",
+  "evidenceClass": "STATIC_SOURCE_TARGETED",
+  "generatedUtc": "2026-05-20T17:16:36.7094768Z",
+  "scope": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+  "hotRegistryCritical": 0,
+  "hotRegistryFindings": [],
+  "hotHelperRegistryCritical": 0,
+  "hotHelperRegistryFindings": [],
+  "hotHelperCompleteCritical": 0,
+  "hotHelperCompleteFindings": [],
+  "notes": [
+    "Targeted RunShinobu140StaticScanners.py import after Current50 patch.",
+    "BeginDispatcherFrame, ScheduleImportanceScoringJob, ScheduleInterpolationJob, and SetVoxelTeardownBackpressure inspected for direct GlobalRegistry use.",
+    "Full repository SHINOBU_140 scan exceeded the local 180s command budget and was not used as final proof."
+  ]
+}

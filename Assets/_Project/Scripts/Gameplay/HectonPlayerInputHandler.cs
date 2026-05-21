@@ -90,13 +90,13 @@ namespace Hecton8.Gameplay
             MoveInput = moveInput;
             LookInput = lookInput;
             VerticalInput = verticalInput;
-            SprintHeld = sprintHeld;
+            SprintHeld = sprintHeld ? (byte)1 : (byte)0;
         }
 
         public readonly PlayerInputState State;
         public readonly Vector2 MoveInput;
         public readonly Vector2 LookInput;
         public readonly float VerticalInput;
-        public readonly bool SprintHeld;
+        public readonly byte SprintHeld;
     }
 }

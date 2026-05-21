@@ -10,10 +10,12 @@ namespace Hecton8.Physics
 {
     public static class BuoyancyDisplacementConstants
     {
-        public const int StateCapacity = 4096;
-        public const int MockObjectCount = 1000;
+        public const int StateCapacity = 50000;
+        public const int MockObjectCount = 50000;
         public const int FlowSampleCapacity = 4096;
         public const int MaterialVolumeCapacity = 2048;
+        public const int MaterialSettlingProfileCapacity = 512;
+        public const int SleepSdfCellCapacity = 65536;
         public const int CsvScratchBytes = 65536;
         public const int ForceQueueSoftCapacity = 8192;
         public const int TelemetryCapacity = 300;
@@ -22,17 +24,22 @@ namespace Hecton8.Physics
         public const int StateBytes = 64;
         public const int TuningBytes = 128;
         public const int ForcePacketBytes = 128;
+        public const int ForceDtoBytes = ForcePacketBytes;
         public const int FlowSampleBytes = 64;
         public const int TelemetryBytes = 64;
         public const int MaterialVolumeBytes = 32;
+        public const int MaterialSettlingProfileBytes = 32;
         public const int CounterBytes = 64;
         public const int DebugForceBytes = 128;
         public const int BodyBindingBytes = 32;
+        public const int SleepSdfConfigBytes = 64;
+        public const int SleepTelemetryBytes = 64;
         public const int SimdBenchmarkCapacity = SimdVectorizationConstants.BenchmarkEntityCount;
         public const int SimdTelemetryCapacity = SimdVectorizationConstants.TelemetryCapacity;
         public const int SimdToleranceCapacity = SimdVectorizationConstants.ToleranceCapacity;
         public const int SimdHydrodynamicTuningCapacity = 1;
         public const float Epsilon = 0.0001f;
+        public const float AuthoritativeQualityWeight = 1f;
         public const float DefaultWaterDensityKgPerM3 = 1025f;
         public const float DefaultGravityMetersPerSecondSq = 9.80665f;
         public const float DefaultLinearDragCoefficient = 3.25f;
@@ -41,7 +48,9 @@ namespace Hecton8.Physics
         public const float DefaultFlowForceCoefficient = 0.35f;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_FLUID_DYNAMICS.bin";
         public const string AgentDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_201_Buoyancy.bin";
+        public const string SleepStateDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_249.bin";
         public const string CsvRelativePath = "Data/Physics/item_volume_specs.csv";
+        public const string MaterialSettlingProfilesCsvRelativePath = "Data/Physics/material_settling_profiles.csv";
         public const string SimdToleranceCsvRelativePath = "Data/Physics/simd_math_tolerances.csv";
 
         public const uint FlagActive = 1u << 0;
@@ -54,7 +63,14 @@ namespace Hecton8.Physics
         public const uint FlagStrideSkipped = 1u << 7;
         public const uint FlagOwnsGravityInPacket = 1u << 8;
         public const uint FlagForcePacketOverflow = 1u << 9;
+        public const uint FlagSdfGrounded = 1u << 10;
+        public const uint FlagDeepSleeping = 1u << 11;
+        public const uint FlagStaticPromotionPending = 1u << 12;
+        public const uint FlagWakeSignal = 1u << 13;
+        public const uint FlagAmbientCurrentWake = 1u << 14;
         public const uint FlagNonFinite = 1u << 31;
+        public const int SleepSdfConfigRestFrameOverrideShift = 16;
+        public const uint SleepSdfConfigRestFrameOverrideMask = 0x00FF0000u;
     }
 
     public static class BuoyancyDisplacementBufferIds
@@ -81,6 +97,11 @@ namespace Hecton8.Physics
         public const BufferID SimdVisibleIndices = BufferID.ShinobuSimdVisibleIndices;
         public const BufferID SimdVisibleCount = BufferID.ShinobuSimdVisibleCount;
         public const BufferID SimdHydrodynamicTuning = BufferID.ShinobuSimdHydrodynamicTuning;
+        public const BufferID SleepSdfDensity = BufferID.ShinobuBuoyancySleepSdfDensity;
+        public const BufferID SleepSdfConfig = BufferID.ShinobuBuoyancySleepSdfConfig;
+        public const BufferID SleepTelemetryRing = BufferID.ShinobuBuoyancySleepTelemetryRing;
+        public const BufferID SleepTelemetryCursor = BufferID.ShinobuBuoyancySleepTelemetryCursor;
+        public const BufferID MaterialSettlingProfiles = BufferID.ShinobuBuoyancyMaterialSettlingProfiles;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = BuoyancyDisplacementConstants.StateBytes)]
@@ -92,8 +113,79 @@ namespace Hecton8.Physics
         [FieldOffset(40)] public float MassKg;
         [FieldOffset(44)] public uint EntityHashID;
         [FieldOffset(48)] public uint Flags;
-        [FieldOffset(52)] public uint _pad0;
-        [FieldOffset(56)] public ulong _pad1;
+        [FieldOffset(52)] public byte RestingFrameCount;
+        [FieldOffset(53)] public byte DeepSleepTickCount;
+        [FieldOffset(54)] public ushort MaterialSleepProfileIndex;
+        /// <summary>Squared angular speed supplied by owner systems for sleep thresholding.</summary>
+        [FieldOffset(56)] public float AngularSpeedSq;
+        [FieldOffset(60)] public uint _pad1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = BuoyancyDisplacementConstants.SleepSdfConfigBytes)]
+    public struct BuoyancySleepSdfConfigDTO
+    {
+        [FieldOffset(0)] public double3 SdfOriginAUP;
+        [FieldOffset(24)] public float CellSizeMeters;
+        [FieldOffset(28)] public float DensityDecodeScale;
+        [FieldOffset(32)] public float ContactEpsilonMeters;
+        [FieldOffset(36)] public float AmbientStirThresholdSq;
+        [FieldOffset(40)] public int Width;
+        [FieldOffset(44)] public int Height;
+        [FieldOffset(48)] public int Depth;
+        [FieldOffset(52)] public int StrideY;
+        [FieldOffset(56)] public int StrideZ;
+        [FieldOffset(60)] public uint Flags;
+
+        public static BuoyancySleepSdfConfigDTO Default()
+        {
+            BuoyancySleepSdfConfigDTO value = default;
+            value.SdfOriginAUP = double3.zero;
+            value.CellSizeMeters = 1f;
+            value.DensityDecodeScale = 0.05f;
+            value.ContactEpsilonMeters = 0.2f;
+            value.AmbientStirThresholdSq = 0.25f;
+            value.Width = 0;
+            value.Height = 0;
+            value.Depth = 0;
+            value.StrideY = 0;
+            value.StrideZ = 0;
+            value.Flags = 0u;
+            return value;
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = BuoyancyDisplacementConstants.SleepTelemetryBytes)]
+    public struct SleepStateTelemetryEntry
+    {
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public int ActiveObjects;
+        [FieldOffset(8)] public int SleepingObjects;
+        [FieldOffset(12)] public int ForcedAwakeObjects;
+        [FieldOffset(16)] public int StaticPromotionCandidates;
+        [FieldOffset(20)] public int NonFiniteCount;
+        [FieldOffset(24)] public float ComputeMicros;
+        [FieldOffset(28)] public float GlobalQualityWeight;
+        [FieldOffset(32)] public float SleepEnergyThreshold;
+        [FieldOffset(36)] public int SdfGroundedObjects;
+        [FieldOffset(40)] public int WakeRequestCount;
+        [FieldOffset(44)] public int AmbientCurrentWakes;
+        [FieldOffset(48)] public uint Flags;
+        [FieldOffset(52)] public uint LastEntityHashID;
+        [FieldOffset(56)] public float MaxEnergy;
+        [FieldOffset(60)] public uint _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = BuoyancyDisplacementConstants.MaterialSettlingProfileBytes)]
+    public struct BuoyancyMaterialSettlingProfileDTO
+    {
+        [FieldOffset(0)] public uint MaterialHash;
+        [FieldOffset(4)] public float LinearSleepSpeedSq;
+        [FieldOffset(8)] public float AngularSleepSpeedSq;
+        [FieldOffset(12)] public float ForceSleepThresholdSq;
+        [FieldOffset(16)] public ushort RequiredRestFrames;
+        [FieldOffset(18)] public ushort DeepSleepTicks;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public ulong _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = BuoyancyDisplacementConstants.TuningBytes)]
@@ -150,7 +242,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = BuoyancyDisplacementConstants.ForcePacketBytes)]
+    [StructLayout(LayoutKind.Explicit, Size = BuoyancyDisplacementConstants.ForceDtoBytes)]
     public struct BuoyancyForcePacketDTO
     {
         [FieldOffset(0)] public double3 CurrentAUP;
@@ -226,8 +318,10 @@ namespace Hecton8.Physics
         [FieldOffset(28)] public uint Flags;
         [FieldOffset(32)] public uint LastEntityHashID;
         [FieldOffset(36)] public float ComputeMicros;
-        [FieldOffset(40)] public ulong _pad0;
-        [FieldOffset(48)] public ulong _pad1;
+        [FieldOffset(40)] public int ForcedAwakeObjects;
+        [FieldOffset(44)] public int StaticPromotionCandidates;
+        [FieldOffset(48)] public int AmbientCurrentWakes;
+        [FieldOffset(52)] public int SdfGroundedObjects;
         [FieldOffset(56)] public ulong _pad2;
     }
 
@@ -278,7 +372,10 @@ namespace Hecton8.Physics
                    UnsafeUtility.SizeOf<BuoyancyForcePacketDTO>() == BuoyancyDisplacementConstants.ForcePacketBytes &&
                    UnsafeUtility.SizeOf<BuoyancyFlowSampleDTO>() == BuoyancyDisplacementConstants.FlowSampleBytes &&
                    UnsafeUtility.SizeOf<BuoyancyTelemetryEntry>() == BuoyancyDisplacementConstants.TelemetryBytes &&
+                   UnsafeUtility.SizeOf<BuoyancySleepSdfConfigDTO>() == BuoyancyDisplacementConstants.SleepSdfConfigBytes &&
+                   UnsafeUtility.SizeOf<SleepStateTelemetryEntry>() == BuoyancyDisplacementConstants.SleepTelemetryBytes &&
                    UnsafeUtility.SizeOf<BuoyancyMaterialVolumeDTO>() == BuoyancyDisplacementConstants.MaterialVolumeBytes &&
+                   UnsafeUtility.SizeOf<BuoyancyMaterialSettlingProfileDTO>() == BuoyancyDisplacementConstants.MaterialSettlingProfileBytes &&
                    UnsafeUtility.SizeOf<BuoyancyCounterDTO>() == BuoyancyDisplacementConstants.CounterBytes &&
                    UnsafeUtility.SizeOf<BuoyancyDebugForceDTO>() == BuoyancyDisplacementConstants.DebugForceBytes &&
                    UnsafeUtility.SizeOf<BuoyancyBodyBindingDTO>() == BuoyancyDisplacementConstants.BodyBindingBytes &&
@@ -287,7 +384,10 @@ namespace Hecton8.Physics
                    ValidateForcePacketOffsets() &&
                    ValidateFlowSampleOffsets() &&
                    ValidateTelemetryOffsets() &&
+                   ValidateSleepSdfConfigOffsets() &&
+                   ValidateSleepTelemetryOffsets() &&
                    ValidateMaterialVolumeOffsets() &&
+                   ValidateMaterialSettlingOffsets() &&
                    ValidateCounterOffsets() &&
                    ValidateDebugForceOffsets() &&
                    ValidateBodyBindingOffsets();
@@ -301,8 +401,11 @@ namespace Hecton8.Physics
                    OffsetOf<BuoyancyStateDTO>(nameof(BuoyancyStateDTO.MassKg)) == 40 &&
                    OffsetOf<BuoyancyStateDTO>(nameof(BuoyancyStateDTO.EntityHashID)) == 44 &&
                    OffsetOf<BuoyancyStateDTO>(nameof(BuoyancyStateDTO.Flags)) == 48 &&
-                   OffsetOf<BuoyancyStateDTO>(nameof(BuoyancyStateDTO._pad0)) == 52 &&
-                   OffsetOf<BuoyancyStateDTO>(nameof(BuoyancyStateDTO._pad1)) == 56;
+                   OffsetOf<BuoyancyStateDTO>(nameof(BuoyancyStateDTO.RestingFrameCount)) == 52 &&
+                   OffsetOf<BuoyancyStateDTO>(nameof(BuoyancyStateDTO.DeepSleepTickCount)) == 53 &&
+                   OffsetOf<BuoyancyStateDTO>(nameof(BuoyancyStateDTO.MaterialSleepProfileIndex)) == 54 &&
+                   OffsetOf<BuoyancyStateDTO>(nameof(BuoyancyStateDTO.AngularSpeedSq)) == 56 &&
+                   OffsetOf<BuoyancyStateDTO>(nameof(BuoyancyStateDTO._pad1)) == 60;
         }
 
         private static bool ValidateTuningOffsets()
@@ -379,6 +482,41 @@ namespace Hecton8.Physics
                    OffsetOf<BuoyancyTelemetryEntry>(nameof(BuoyancyTelemetryEntry._pad0)) == 60;
         }
 
+        private static bool ValidateSleepSdfConfigOffsets()
+        {
+            return OffsetOf<BuoyancySleepSdfConfigDTO>(nameof(BuoyancySleepSdfConfigDTO.SdfOriginAUP)) == 0 &&
+                   OffsetOf<BuoyancySleepSdfConfigDTO>(nameof(BuoyancySleepSdfConfigDTO.CellSizeMeters)) == 24 &&
+                   OffsetOf<BuoyancySleepSdfConfigDTO>(nameof(BuoyancySleepSdfConfigDTO.DensityDecodeScale)) == 28 &&
+                   OffsetOf<BuoyancySleepSdfConfigDTO>(nameof(BuoyancySleepSdfConfigDTO.ContactEpsilonMeters)) == 32 &&
+                   OffsetOf<BuoyancySleepSdfConfigDTO>(nameof(BuoyancySleepSdfConfigDTO.AmbientStirThresholdSq)) == 36 &&
+                   OffsetOf<BuoyancySleepSdfConfigDTO>(nameof(BuoyancySleepSdfConfigDTO.Width)) == 40 &&
+                   OffsetOf<BuoyancySleepSdfConfigDTO>(nameof(BuoyancySleepSdfConfigDTO.Height)) == 44 &&
+                   OffsetOf<BuoyancySleepSdfConfigDTO>(nameof(BuoyancySleepSdfConfigDTO.Depth)) == 48 &&
+                   OffsetOf<BuoyancySleepSdfConfigDTO>(nameof(BuoyancySleepSdfConfigDTO.StrideY)) == 52 &&
+                   OffsetOf<BuoyancySleepSdfConfigDTO>(nameof(BuoyancySleepSdfConfigDTO.StrideZ)) == 56 &&
+                   OffsetOf<BuoyancySleepSdfConfigDTO>(nameof(BuoyancySleepSdfConfigDTO.Flags)) == 60;
+        }
+
+        private static bool ValidateSleepTelemetryOffsets()
+        {
+            return OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.FrameIndex)) == 0 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.ActiveObjects)) == 4 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.SleepingObjects)) == 8 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.ForcedAwakeObjects)) == 12 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.StaticPromotionCandidates)) == 16 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.NonFiniteCount)) == 20 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.ComputeMicros)) == 24 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.GlobalQualityWeight)) == 28 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.SleepEnergyThreshold)) == 32 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.SdfGroundedObjects)) == 36 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.WakeRequestCount)) == 40 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.AmbientCurrentWakes)) == 44 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.Flags)) == 48 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.LastEntityHashID)) == 52 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry.MaxEnergy)) == 56 &&
+                   OffsetOf<SleepStateTelemetryEntry>(nameof(SleepStateTelemetryEntry._pad0)) == 60;
+        }
+
         private static bool ValidateMaterialVolumeOffsets()
         {
             return OffsetOf<BuoyancyMaterialVolumeDTO>(nameof(BuoyancyMaterialVolumeDTO.ItemHash)) == 0 &&
@@ -388,6 +526,18 @@ namespace Hecton8.Physics
                    OffsetOf<BuoyancyMaterialVolumeDTO>(nameof(BuoyancyMaterialVolumeDTO.Flags)) == 16 &&
                    OffsetOf<BuoyancyMaterialVolumeDTO>(nameof(BuoyancyMaterialVolumeDTO._pad0)) == 20 &&
                    OffsetOf<BuoyancyMaterialVolumeDTO>(nameof(BuoyancyMaterialVolumeDTO._pad1)) == 24;
+        }
+
+        private static bool ValidateMaterialSettlingOffsets()
+        {
+            return OffsetOf<BuoyancyMaterialSettlingProfileDTO>(nameof(BuoyancyMaterialSettlingProfileDTO.MaterialHash)) == 0 &&
+                   OffsetOf<BuoyancyMaterialSettlingProfileDTO>(nameof(BuoyancyMaterialSettlingProfileDTO.LinearSleepSpeedSq)) == 4 &&
+                   OffsetOf<BuoyancyMaterialSettlingProfileDTO>(nameof(BuoyancyMaterialSettlingProfileDTO.AngularSleepSpeedSq)) == 8 &&
+                   OffsetOf<BuoyancyMaterialSettlingProfileDTO>(nameof(BuoyancyMaterialSettlingProfileDTO.ForceSleepThresholdSq)) == 12 &&
+                   OffsetOf<BuoyancyMaterialSettlingProfileDTO>(nameof(BuoyancyMaterialSettlingProfileDTO.RequiredRestFrames)) == 16 &&
+                   OffsetOf<BuoyancyMaterialSettlingProfileDTO>(nameof(BuoyancyMaterialSettlingProfileDTO.DeepSleepTicks)) == 18 &&
+                   OffsetOf<BuoyancyMaterialSettlingProfileDTO>(nameof(BuoyancyMaterialSettlingProfileDTO.Flags)) == 20 &&
+                   OffsetOf<BuoyancyMaterialSettlingProfileDTO>(nameof(BuoyancyMaterialSettlingProfileDTO._pad0)) == 24;
         }
 
         private static bool ValidateCounterOffsets()
@@ -402,8 +552,10 @@ namespace Hecton8.Physics
                    OffsetOf<BuoyancyCounterDTO>(nameof(BuoyancyCounterDTO.Flags)) == 28 &&
                    OffsetOf<BuoyancyCounterDTO>(nameof(BuoyancyCounterDTO.LastEntityHashID)) == 32 &&
                    OffsetOf<BuoyancyCounterDTO>(nameof(BuoyancyCounterDTO.ComputeMicros)) == 36 &&
-                   OffsetOf<BuoyancyCounterDTO>(nameof(BuoyancyCounterDTO._pad0)) == 40 &&
-                   OffsetOf<BuoyancyCounterDTO>(nameof(BuoyancyCounterDTO._pad1)) == 48 &&
+                   OffsetOf<BuoyancyCounterDTO>(nameof(BuoyancyCounterDTO.ForcedAwakeObjects)) == 40 &&
+                   OffsetOf<BuoyancyCounterDTO>(nameof(BuoyancyCounterDTO.StaticPromotionCandidates)) == 44 &&
+                   OffsetOf<BuoyancyCounterDTO>(nameof(BuoyancyCounterDTO.AmbientCurrentWakes)) == 48 &&
+                   OffsetOf<BuoyancyCounterDTO>(nameof(BuoyancyCounterDTO.SdfGroundedObjects)) == 52 &&
                    OffsetOf<BuoyancyCounterDTO>(nameof(BuoyancyCounterDTO._pad2)) == 56;
         }
 
@@ -449,8 +601,14 @@ namespace Hecton8.Physics
                 return OffsetOfFlowSample(fieldName);
             if (type == typeof(BuoyancyTelemetryEntry))
                 return OffsetOfTelemetry(fieldName);
+            if (type == typeof(BuoyancySleepSdfConfigDTO))
+                return OffsetOfSleepSdfConfig(fieldName);
+            if (type == typeof(SleepStateTelemetryEntry))
+                return OffsetOfSleepTelemetry(fieldName);
             if (type == typeof(BuoyancyMaterialVolumeDTO))
                 return OffsetOfMaterialVolume(fieldName);
+            if (type == typeof(BuoyancyMaterialSettlingProfileDTO))
+                return OffsetOfMaterialSettling(fieldName);
             if (type == typeof(BuoyancyCounterDTO))
                 return OffsetOfCounter(fieldName);
             if (type == typeof(BuoyancyDebugForceDTO))
@@ -475,10 +633,16 @@ namespace Hecton8.Physics
                 return 44;
             if (fieldName == nameof(BuoyancyStateDTO.Flags))
                 return 48;
-            if (fieldName == nameof(BuoyancyStateDTO._pad0))
+            if (fieldName == nameof(BuoyancyStateDTO.RestingFrameCount))
                 return 52;
-            if (fieldName == nameof(BuoyancyStateDTO._pad1))
+            if (fieldName == nameof(BuoyancyStateDTO.DeepSleepTickCount))
+                return 53;
+            if (fieldName == nameof(BuoyancyStateDTO.MaterialSleepProfileIndex))
+                return 54;
+            if (fieldName == nameof(BuoyancyStateDTO.AngularSpeedSq))
                 return 56;
+            if (fieldName == nameof(BuoyancyStateDTO._pad1))
+                return 60;
 
             return -1;
         }
@@ -561,6 +725,43 @@ namespace Hecton8.Physics
             return -1;
         }
 
+        private static int OffsetOfSleepSdfConfig(string fieldName)
+        {
+            if (fieldName == nameof(BuoyancySleepSdfConfigDTO.SdfOriginAUP)) return 0;
+            if (fieldName == nameof(BuoyancySleepSdfConfigDTO.CellSizeMeters)) return 24;
+            if (fieldName == nameof(BuoyancySleepSdfConfigDTO.DensityDecodeScale)) return 28;
+            if (fieldName == nameof(BuoyancySleepSdfConfigDTO.ContactEpsilonMeters)) return 32;
+            if (fieldName == nameof(BuoyancySleepSdfConfigDTO.AmbientStirThresholdSq)) return 36;
+            if (fieldName == nameof(BuoyancySleepSdfConfigDTO.Width)) return 40;
+            if (fieldName == nameof(BuoyancySleepSdfConfigDTO.Height)) return 44;
+            if (fieldName == nameof(BuoyancySleepSdfConfigDTO.Depth)) return 48;
+            if (fieldName == nameof(BuoyancySleepSdfConfigDTO.StrideY)) return 52;
+            if (fieldName == nameof(BuoyancySleepSdfConfigDTO.StrideZ)) return 56;
+            if (fieldName == nameof(BuoyancySleepSdfConfigDTO.Flags)) return 60;
+            return -1;
+        }
+
+        private static int OffsetOfSleepTelemetry(string fieldName)
+        {
+            if (fieldName == nameof(SleepStateTelemetryEntry.FrameIndex)) return 0;
+            if (fieldName == nameof(SleepStateTelemetryEntry.ActiveObjects)) return 4;
+            if (fieldName == nameof(SleepStateTelemetryEntry.SleepingObjects)) return 8;
+            if (fieldName == nameof(SleepStateTelemetryEntry.ForcedAwakeObjects)) return 12;
+            if (fieldName == nameof(SleepStateTelemetryEntry.StaticPromotionCandidates)) return 16;
+            if (fieldName == nameof(SleepStateTelemetryEntry.NonFiniteCount)) return 20;
+            if (fieldName == nameof(SleepStateTelemetryEntry.ComputeMicros)) return 24;
+            if (fieldName == nameof(SleepStateTelemetryEntry.GlobalQualityWeight)) return 28;
+            if (fieldName == nameof(SleepStateTelemetryEntry.SleepEnergyThreshold)) return 32;
+            if (fieldName == nameof(SleepStateTelemetryEntry.SdfGroundedObjects)) return 36;
+            if (fieldName == nameof(SleepStateTelemetryEntry.WakeRequestCount)) return 40;
+            if (fieldName == nameof(SleepStateTelemetryEntry.AmbientCurrentWakes)) return 44;
+            if (fieldName == nameof(SleepStateTelemetryEntry.Flags)) return 48;
+            if (fieldName == nameof(SleepStateTelemetryEntry.LastEntityHashID)) return 52;
+            if (fieldName == nameof(SleepStateTelemetryEntry.MaxEnergy)) return 56;
+            if (fieldName == nameof(SleepStateTelemetryEntry._pad0)) return 60;
+            return -1;
+        }
+
         private static int OffsetOfMaterialVolume(string fieldName)
         {
             if (fieldName == nameof(BuoyancyMaterialVolumeDTO.ItemHash)) return 0;
@@ -570,6 +771,19 @@ namespace Hecton8.Physics
             if (fieldName == nameof(BuoyancyMaterialVolumeDTO.Flags)) return 16;
             if (fieldName == nameof(BuoyancyMaterialVolumeDTO._pad0)) return 20;
             if (fieldName == nameof(BuoyancyMaterialVolumeDTO._pad1)) return 24;
+            return -1;
+        }
+
+        private static int OffsetOfMaterialSettling(string fieldName)
+        {
+            if (fieldName == nameof(BuoyancyMaterialSettlingProfileDTO.MaterialHash)) return 0;
+            if (fieldName == nameof(BuoyancyMaterialSettlingProfileDTO.LinearSleepSpeedSq)) return 4;
+            if (fieldName == nameof(BuoyancyMaterialSettlingProfileDTO.AngularSleepSpeedSq)) return 8;
+            if (fieldName == nameof(BuoyancyMaterialSettlingProfileDTO.ForceSleepThresholdSq)) return 12;
+            if (fieldName == nameof(BuoyancyMaterialSettlingProfileDTO.RequiredRestFrames)) return 16;
+            if (fieldName == nameof(BuoyancyMaterialSettlingProfileDTO.DeepSleepTicks)) return 18;
+            if (fieldName == nameof(BuoyancyMaterialSettlingProfileDTO.Flags)) return 20;
+            if (fieldName == nameof(BuoyancyMaterialSettlingProfileDTO._pad0)) return 24;
             return -1;
         }
 
@@ -585,8 +799,10 @@ namespace Hecton8.Physics
             if (fieldName == nameof(BuoyancyCounterDTO.Flags)) return 28;
             if (fieldName == nameof(BuoyancyCounterDTO.LastEntityHashID)) return 32;
             if (fieldName == nameof(BuoyancyCounterDTO.ComputeMicros)) return 36;
-            if (fieldName == nameof(BuoyancyCounterDTO._pad0)) return 40;
-            if (fieldName == nameof(BuoyancyCounterDTO._pad1)) return 48;
+            if (fieldName == nameof(BuoyancyCounterDTO.ForcedAwakeObjects)) return 40;
+            if (fieldName == nameof(BuoyancyCounterDTO.StaticPromotionCandidates)) return 44;
+            if (fieldName == nameof(BuoyancyCounterDTO.AmbientCurrentWakes)) return 48;
+            if (fieldName == nameof(BuoyancyCounterDTO.SdfGroundedObjects)) return 52;
             if (fieldName == nameof(BuoyancyCounterDTO._pad2)) return 56;
             return -1;
         }
@@ -803,6 +1019,262 @@ namespace Hecton8.Physics
 
             value = sign * (integer + fraction * math.rcp(math.max(divisor, 1f)));
             return math.isfinite(value);
+        }
+
+        private static uint Fnv1A32(ReadOnlySpan<byte> span)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < span.Length; i++)
+            {
+                byte c = span[i];
+                if (c >= (byte)'A' && c <= (byte)'Z')
+                    c = (byte)(c + 32);
+                hash ^= c;
+                hash *= 16777619u;
+            }
+
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static bool EqualsAscii(ReadOnlySpan<byte> span, string text)
+        {
+            if (span.Length != text.Length)
+                return false;
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                byte a = span[i];
+                if (a >= (byte)'A' && a <= (byte)'Z')
+                    a = (byte)(a + 32);
+                if (a != (byte)text[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsWhitespace(byte value)
+        {
+            return value == Space || value == Tab || value == CarriageReturn || value == LineFeed;
+        }
+    }
+
+    public static class BuoyancyMaterialSettlingProfileCsvParser
+    {
+        private const byte Comma = (byte)',';
+        private const byte CarriageReturn = (byte)'\r';
+        private const byte LineFeed = (byte)'\n';
+        private const byte Hash = (byte)'#';
+        private const byte Space = (byte)' ';
+        private const byte Tab = (byte)'\t';
+
+        public static bool TryApply(ReadOnlySpan<byte> csv, NativeArray<BuoyancyMaterialSettlingProfileDTO> table, out int rowsWritten)
+        {
+            rowsWritten = 0;
+            if (csv.Length <= 0 || !table.IsCreated || table.Length <= 0)
+                return false;
+
+            ClearTable(table);
+            int cursor = 0;
+            while (cursor < csv.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < csv.Length && csv[cursor] != LineFeed)
+                    cursor++;
+
+                int lineEnd = cursor;
+                if (cursor < csv.Length && csv[cursor] == LineFeed)
+                    cursor++;
+                if (lineEnd > lineStart && csv[lineEnd - 1] == CarriageReturn)
+                    lineEnd--;
+
+                if (TryParseLine(csv.Slice(lineStart, lineEnd - lineStart), out BuoyancyMaterialSettlingProfileDTO row) &&
+                    Insert(table, row))
+                {
+                    rowsWritten++;
+                }
+            }
+
+            return rowsWritten > 0;
+        }
+
+        private static void ClearTable(NativeArray<BuoyancyMaterialSettlingProfileDTO> table)
+        {
+            for (int i = 0; i < table.Length; i++)
+                table[i] = default;
+        }
+
+        private static bool TryParseLine(ReadOnlySpan<byte> line, out BuoyancyMaterialSettlingProfileDTO row)
+        {
+            row = default;
+            line = Trim(line);
+            if (line.Length <= 0 || line[0] == Hash)
+                return false;
+
+            int c0 = IndexOf(line, Comma, 0);
+            if (c0 <= 0)
+                return false;
+
+            ReadOnlySpan<byte> key = Trim(line.Slice(0, c0));
+            if (key.Length <= 0 || EqualsAscii(key, "material") || EqualsAscii(key, "name"))
+                return false;
+
+            int c1 = IndexOf(line, Comma, c0 + 1);
+            int c2 = c1 > c0 ? IndexOf(line, Comma, c1 + 1) : -1;
+            int c3 = c2 > c1 ? IndexOf(line, Comma, c2 + 1) : -1;
+            int c4 = c3 > c2 ? IndexOf(line, Comma, c3 + 1) : -1;
+
+            if (c1 <= c0 || c2 <= c1)
+                return false;
+
+            ReadOnlySpan<byte> linearSpan = Trim(line.Slice(c0 + 1, c1 - c0 - 1));
+            ReadOnlySpan<byte> angularSpan = Trim(line.Slice(c1 + 1, c2 - c1 - 1));
+            ReadOnlySpan<byte> forceSpan = c3 > c2
+                ? Trim(line.Slice(c2 + 1, c3 - c2 - 1))
+                : Trim(line.Slice(c2 + 1));
+            ReadOnlySpan<byte> restSpan = c3 > c2
+                ? (c4 > c3 ? Trim(line.Slice(c3 + 1, c4 - c3 - 1)) : Trim(line.Slice(c3 + 1)))
+                : ReadOnlySpan<byte>.Empty;
+            ReadOnlySpan<byte> deepSpan = c4 > c3 ? Trim(line.Slice(c4 + 1)) : ReadOnlySpan<byte>.Empty;
+
+            if (!TryParseFloat(linearSpan, out float linearSleepSpeedSq) ||
+                !TryParseFloat(angularSpan, out float angularSleepSpeedSq) ||
+                !TryParseFloat(forceSpan, out float forceSleepThresholdSq) ||
+                !math.isfinite(linearSleepSpeedSq) ||
+                !math.isfinite(angularSleepSpeedSq) ||
+                !math.isfinite(forceSleepThresholdSq))
+            {
+                return false;
+            }
+
+            ushort restFrames = 6;
+            ushort deepTicks = 180;
+            if (restSpan.Length > 0 && TryParseUnsigned(restSpan, out ushort parsedRest))
+                restFrames = parsedRest;
+            if (deepSpan.Length > 0 && TryParseUnsigned(deepSpan, out ushort parsedDeep))
+                deepTicks = parsedDeep;
+
+            row.MaterialHash = Fnv1A32(key);
+            row.LinearSleepSpeedSq = math.max(0.000001f, linearSleepSpeedSq);
+            row.AngularSleepSpeedSq = math.max(0.000001f, angularSleepSpeedSq);
+            row.ForceSleepThresholdSq = math.max(0.000001f, forceSleepThresholdSq);
+            row.RequiredRestFrames = (ushort)math.clamp((int)restFrames, 1, 255);
+            row.DeepSleepTicks = (ushort)math.clamp((int)deepTicks, 1, ushort.MaxValue);
+            row.Flags = BuoyancyDisplacementConstants.FlagActive;
+            return row.MaterialHash != 0u;
+        }
+
+        private static bool Insert(NativeArray<BuoyancyMaterialSettlingProfileDTO> table, BuoyancyMaterialSettlingProfileDTO row)
+        {
+            int length = table.Length;
+            int slot = (int)(row.MaterialHash % (uint)length);
+            for (int probe = 0; probe < length; probe++)
+            {
+                int index = (slot + probe) % length;
+                BuoyancyMaterialSettlingProfileDTO current = table[index];
+                if (current.MaterialHash == 0u || current.MaterialHash == row.MaterialHash)
+                {
+                    table[index] = row;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ReadOnlySpan<byte> Trim(ReadOnlySpan<byte> value)
+        {
+            int start = 0;
+            int end = value.Length - 1;
+            while (start <= end && IsWhitespace(value[start]))
+                start++;
+            while (end >= start && IsWhitespace(value[end]))
+                end--;
+            return start > end ? ReadOnlySpan<byte>.Empty : value.Slice(start, end - start + 1);
+        }
+
+        private static int IndexOf(ReadOnlySpan<byte> value, byte target, int start)
+        {
+            for (int i = math.max(0, start); i < value.Length; i++)
+            {
+                if (value[i] == target)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static bool TryParseFloat(ReadOnlySpan<byte> span, out float value)
+        {
+            value = 0f;
+            span = Trim(span);
+            if (span.Length <= 0)
+                return false;
+
+            int index = 0;
+            float sign = 1f;
+            if (span[index] == (byte)'-')
+            {
+                sign = -1f;
+                index++;
+            }
+            else if (span[index] == (byte)'+')
+            {
+                index++;
+            }
+
+            float integer = 0f;
+            bool hasDigit = false;
+            while (index < span.Length && span[index] >= (byte)'0' && span[index] <= (byte)'9')
+            {
+                integer = (integer * 10f) + (span[index] - (byte)'0');
+                index++;
+                hasDigit = true;
+            }
+
+            float fraction = 0f;
+            float divisor = 1f;
+            if (index < span.Length && span[index] == (byte)'.')
+            {
+                index++;
+                while (index < span.Length && span[index] >= (byte)'0' && span[index] <= (byte)'9')
+                {
+                    fraction = (fraction * 10f) + (span[index] - (byte)'0');
+                    divisor *= 10f;
+                    index++;
+                    hasDigit = true;
+                }
+            }
+
+            if (!hasDigit)
+                return false;
+
+            value = sign * (integer + fraction * math.rcp(math.max(divisor, 1f)));
+            return math.isfinite(value);
+        }
+
+        private static bool TryParseUnsigned(ReadOnlySpan<byte> span, out ushort value)
+        {
+            value = 0;
+            span = Trim(span);
+            if (span.Length <= 0)
+                return false;
+
+            uint parsed = 0u;
+            for (int i = 0; i < span.Length; i++)
+            {
+                byte c = span[i];
+                if (c < (byte)'0' || c > (byte)'9')
+                    return false;
+                parsed = (parsed * 10u) + (uint)(c - (byte)'0');
+                if (parsed > ushort.MaxValue)
+                    parsed = ushort.MaxValue;
+            }
+
+            value = (ushort)parsed;
+            return true;
         }
 
         private static uint Fnv1A32(ReadOnlySpan<byte> span)

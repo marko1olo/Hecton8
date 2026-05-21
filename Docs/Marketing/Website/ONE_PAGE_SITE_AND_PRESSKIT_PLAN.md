@@ -33,13 +33,13 @@ HECTON-8 is a single-player-first underwater survival game where pressure, machi
 |---|---|
 | Title | HECTON-8 |
 | Genre | Single-player underwater survival / exploration / base systems |
-| Platforms | TBD |
-| Release | TBD |
-| Demo | TBD |
-| Developer | TBD |
-| Contact | TBD official project email only |
-| Steam | TBD |
-| Press kit | TBD |
+| Platforms | HOLD_PLATFORM_LIST_UNVERIFIED - publish only after owner/platform source exists. |
+| Release | HOLD_NO_RELEASE_WINDOW - do not publish a date/window from planning prose. |
+| Demo | HOLD_NO_PUBLIC_DEMO_ACCESS - public demo/Playtest only after `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED`. |
+| Developer | HOLD_LEGAL_NAME_UNVERIFIED - publish only after owner-approved legal/public credit. |
+| Contact | HOLD_NO_PROJECT_INBOX_CUSTODY - official project email only after `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED`. |
+| Steam | HOLD_NO_STEAM_PAGE_PUBLICATION - link only after `steam_page_publish_permission_gate` and destination-specific `public_cta_permission_gate`. |
+| Press kit | HOLD_NO_PRESS_RELEASE_PUBLICATION - public presskit link only after `press_release_permission_gate` and destination-specific `public_cta_permission_gate`. |
 | Public stance | Single-player-first scope, proof-first public copy |
 
 ## Presskit Folder Structure
@@ -153,9 +153,9 @@ This is a non-secret checklist. Store secrets only in the owner password manager
 | Field | State |
 |---|---|
 | `official_inbox_custody_gate` | HOLD_NO_PROJECT_INBOX_CUSTODY |
-| Official inbox address | TBD |
-| Provider/domain | TBD |
-| Vault item name | TBD |
+| Official inbox address | UNRECORDED_NOT_PUBLISHABLE |
+| Provider/domain | UNRECORDED_NOT_PUBLISHABLE |
+| Vault item name | UNRECORDED_NOT_PUBLISHABLE |
 | Recovery owner verified | NO |
 | 2FA enabled | NO |
 | Backup codes stored | NO |

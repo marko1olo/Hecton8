@@ -522,9 +522,10 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spectrumSystem, "Shader.SetGlobalVector(_ShaderHectonSonarVisualParams", "Active sonar ping publishes visual pulse parameters without object scanning", builder, ref failureCount);
                 AssertContains(spectrumSystem, "PublishActiveSonarDangerImpulse", "Active sonar ping routes visibility cost into acoustic aggro", builder, ref failureCount);
                 AssertContains(spectrumSystem, "Physics" + "Event" + "Bus.NotifyLargeAcousticImpulse(in impulseEvent)", "Active sonar aggro publishes LargeAcousticImpulseEvent", builder, ref failureCount);
-                AssertContains(spectrumSystem, "private NativeArray<uint> _aupDiscoveryGrid", "Sonar map owns a persistent AUP discovery bit grid", builder, ref failureCount);
-                AssertContains(spectrumSystem, "NativeMemorySentinel.RegisterNative" + "Array", "AUP discovery grid is registered with NativeMemorySentinel", builder, ref failureCount);
-                AssertContains(spectrumSystem, "nameof(_aupDiscoveryGrid)", "AUP discovery grid sentinel registration uses the concrete field name", builder, ref failureCount);
+                AssertContains(spectrumSystem, "private VaultGenerationHandle<uint> _aupDiscoveryGridHandle", "Sonar map persists a generation handle for the AUP discovery grid", builder, ref failureCount);
+                AssertContains(spectrumSystem, "AupDiscoveryGridBufferId", "AUP discovery grid has a stable Vault BufferID", builder, ref failureCount);
+                AssertContains(spectrumSystem, "TryResolveAupDiscoveryGrid(out NativeArray<uint>", "AUP discovery grid resolves through a method-local Vault view", builder, ref failureCount);
+                AssertNotContains(spectrumSystem, "private NativeArray<uint> _aupDiscoveryGrid", "AUP discovery grid no longer persists a NativeArray alias", builder, ref failureCount);
                 AssertContains(spectrumSystem, "MarkAupDiscoveryPulseShell(origin, radius, pulseIntensity)", "Sonar reveal stamps discovery bits from pulse shell", builder, ref failureCount);
                 AssertContains(spectrumSystem, "ResolvePlayerSpeedMagnitudeSqr() - speedStartSqr", "Radar distortion uses squared velocity thresholds", builder, ref failureCount);
                 AssertContains(spectrumSystem, "_HectonSonarRadarDistortion", "Radar distortion global drives HUD ghost/flicker shader path", builder, ref failureCount);

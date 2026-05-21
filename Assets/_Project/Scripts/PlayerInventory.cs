@@ -169,7 +169,7 @@ namespace Hecton8.Inventory
             [FieldOffset(28)] public int Flags;
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct InventoryMassVolumeJob : IJob
         {
             [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
@@ -484,7 +484,7 @@ namespace Hecton8.Inventory
             public float unitRadiationSv;
             public byte categoryId;
             public byte rarity;
-            public bool stackable;
+            public byte stackable;
 
             public InventoryGrid.InventoryItemDescriptor Descriptor => new InventoryGrid.InventoryItemDescriptor(
                 itemHashId,
@@ -494,7 +494,7 @@ namespace Hecton8.Inventory
                 weight,
                 categoryId,
                 rarity,
-                stackable);
+                stackable != 0);
         }
 
         [Header("── Grid Settings ──────────────────")]
@@ -1117,7 +1117,7 @@ namespace Hecton8.Inventory
                 return false;
 
             if (!TryGetRuntimeDescriptor(descriptor.HashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor) ||
-                !runtimeDescriptor.IsConsumable)
+                runtimeDescriptor.IsConsumable == 0)
             {
                 return false;
             }
@@ -2259,8 +2259,11 @@ namespace Hecton8.Inventory
             }
 
             IDataVault vault = _cachedDataVault;
+            BufferID rulesBufferId = (BufferID)command.Payload0;
             if (vault == null ||
-                !vault.TryGetBuffer<InventoryDeathPenaltyRuleDTO>((BufferID)command.Payload0, out rules) ||
+                !vault.TryGetGenerationHandle<InventoryDeathPenaltyRuleDTO>(rulesBufferId, out VaultGenerationHandle<InventoryDeathPenaltyRuleDTO> rulesHandle) ||
+                rulesHandle.BufferID != unchecked((uint)(int)rulesBufferId) ||
+                !vault.TryReadHandle(in rulesHandle, out rules) ||
                 !rules.IsCreated)
             {
                 rules = default;
@@ -2352,7 +2355,7 @@ namespace Hecton8.Inventory
                 _defragRarities[count] = descriptor.Rarity;
                 _defragWidths[count] = descriptor.Width;
                 _defragHeights[count] = descriptor.Height;
-                _defragFlags[count] = descriptor.Stackable ? (byte)0x01 : (byte)0x00;
+                _defragFlags[count] = descriptor.Stackable != 0 ? (byte)0x01 : (byte)0x00;
                 _defragStateFlags[count] = _itemStateFlags.IsCreated ? _itemStateFlags[anchorIndex] : (ushort)0;
                 _defragGenetics[count] = _itemGenetics.IsCreated ? _itemGenetics[anchorIndex] : (byte)0;
                 _defragQualityMilli[count] = _qualityMilli.IsCreated && _qualityMilli[anchorIndex] > 0
@@ -2461,7 +2464,7 @@ namespace Hecton8.Inventory
                 _defragCategories[index],
                 _defragRarities[index],
                 (_defragFlags[index] & 0x01) != 0);
-            return descriptor.IsValid;
+            return InventoryGrid.IsValidDescriptor(in descriptor);
         }
 
         private static int ResolveElapsedMicroseconds(long startTimestamp)
@@ -2623,7 +2626,9 @@ namespace Hecton8.Inventory
             }
 
             PrepareBulkTransferCaches();
-            AbsoluteUniversePosition dropAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition dropAup))
+                return false;
+
             int movedSlotCount = 0;
             int movedStackCount = 0;
             float transferWeightKg = 0f;
@@ -3288,7 +3293,7 @@ namespace Hecton8.Inventory
             for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
             {
                 InventoryGrid.InventoryItemDescriptor descriptor = placements[placementIndex].Descriptor;
-                if (!descriptor.IsValid || !TryReservePlacementInSimulation(in descriptor))
+                if (!InventoryGrid.IsValidDescriptor(in descriptor) || !TryReservePlacementInSimulation(in descriptor))
                     return false;
             }
 
@@ -3319,7 +3324,7 @@ namespace Hecton8.Inventory
             {
                 ItemPlacement placement = placements[placementIndex];
                 InventoryGrid.InventoryItemDescriptor descriptor = placement.Descriptor;
-                if (!descriptor.IsValid || !_grid.TryAddItem(in descriptor, out int placedX, out int placedY))
+                if (!InventoryGrid.IsValidDescriptor(in descriptor) || !_grid.TryAddItem(in descriptor, out int placedX, out int placedY))
                     return false;
 
                 int anchorIndex = AnchorIndex(placedX, placedY);
@@ -3358,6 +3363,22 @@ namespace Hecton8.Inventory
         private static bool IsFiniteRuntimePosition(Vector3 runtimePosition)
         {
             return math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return absoluteAup.IsFinite();
         }
 
         private void PublishBulkTransferAudio(float transferWeightKg)
@@ -3603,7 +3624,7 @@ namespace Hecton8.Inventory
 
             bool allAdded = quantity == requestedQuantity;
             int remainingQuantity = quantity;
-            if (descriptor.Stackable)
+            if (descriptor.Stackable != 0)
             {
                 int stackedQuantity = TryStackQuantityWithState(
                     descriptor.HashId,
@@ -3624,7 +3645,7 @@ namespace Hecton8.Inventory
 
             while (remainingQuantity > 0)
             {
-                int quantityForSlot = descriptor.Stackable
+                int quantityForSlot = descriptor.Stackable != 0
                     ? math.min(math.max(1, (int)descriptor.MaxStack), remainingQuantity)
                     : 1;
                 if (_grid.TryAddItem(in descriptor, out int placedX, out int placedY))
@@ -3734,7 +3755,7 @@ namespace Hecton8.Inventory
             _grid.CopyOccupiedMask(_simulationOccupiedCells);
 
             int remaining = quantity;
-            if (descriptor.Stackable)
+            if (descriptor.Stackable != 0)
             {
                 for (int anchorIndex = 0; anchorIndex < _stackCounts.Length && remaining > 0; anchorIndex++)
                 {
@@ -3763,7 +3784,7 @@ namespace Hecton8.Inventory
                 if (!TryReservePlacementInSimulation(in descriptor))
                     return false;
 
-                remaining -= descriptor.Stackable
+                remaining -= descriptor.Stackable != 0
                     ? math.min(math.max(1, (int)descriptor.MaxStack), remaining)
                     : 1;
             }
@@ -3814,7 +3835,7 @@ namespace Hecton8.Inventory
                     return false;
                 }
 
-                if (descriptor.Stackable)
+                if (descriptor.Stackable != 0)
                 {
                     for (int anchorIndex = 0; anchorIndex < _stackCounts.Length && remaining > 0; anchorIndex++)
                     {
@@ -3843,7 +3864,7 @@ namespace Hecton8.Inventory
                     if (!TryReservePlacementInSimulation(in descriptor))
                         return false;
 
-                    remaining -= descriptor.Stackable
+                    remaining -= descriptor.Stackable != 0
                         ? math.min(math.max(1, (int)descriptor.MaxStack), remaining)
                         : 1;
                 }
@@ -4117,8 +4138,8 @@ namespace Hecton8.Inventory
                 runtimeDescriptor.Weight,
                 runtimeDescriptor.CategoryId,
                 0,
-                runtimeDescriptor.Stackable);
-            return descriptor.IsValid;
+                runtimeDescriptor.Stackable != 0);
+            return InventoryGrid.IsValidDescriptor(in descriptor);
         }
 
         private bool TryApplyPlacements(ItemPlacement[] placements, int placementCount)
@@ -4145,7 +4166,7 @@ namespace Hecton8.Inventory
             {
                 ItemPlacement placement = placements[placementIndex];
                 InventoryGrid.InventoryItemDescriptor descriptor = placement.Descriptor;
-                if (!descriptor.IsValid || !_grid.PlaceAt(in descriptor, placement.x, placement.y))
+                if (!InventoryGrid.IsValidDescriptor(in descriptor) || !_grid.PlaceAt(in descriptor, placement.x, placement.y))
                     return false;
 
                 int anchorIndex = AnchorIndex(placement.x, placement.y);

@@ -1,0 +1,2306 @@
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using Microsoft.Win32.SafeHandles;
+using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Data;
+using Hecton8.Core.Memory;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
+using Unity.Profiling;
+using UnityEngine;
+
+namespace Hecton8.World
+{
+    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-4130)]
+    public unsafe sealed class TerrainChunkPagerRuntime : MonoBehaviour, IFrostTickable, IDisposable
+    {
+        private const string WorkerName = "H8_Terrain_Pager";
+        private const string DefaultChunkRootRelativePath = "Hecton8/TerrainChunks";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_245.bin";
+        private const string StreamingProfileCsvRelativePath = "Docs/Tasks/streaming_hardware_profiles.csv";
+        private const ulong HectonDumpMagic = 0x00384E4F54434548UL;
+        private const uint DumpVersion = 245u;
+
+        private const BufferID MetadataBufferId = (BufferID)71740;
+        private const BufferID SectorCoordsBufferId = (BufferID)71741;
+        private const BufferID StagingBytesBufferId = (BufferID)71742;
+        private const BufferID ActiveBytesBufferId = (BufferID)71743;
+        private const BufferID CompressedScratchBufferId = (BufferID)71744;
+        private const BufferID WorkerRequestBufferId = (BufferID)71745;
+        private const BufferID WorkerResultBufferId = (BufferID)71746;
+        private const BufferID JobLoadRequestsBufferId = (BufferID)71747;
+        private const BufferID JobLoadCountBufferId = (BufferID)71748;
+        private const BufferID JobStaleSlotsBufferId = (BufferID)71749;
+        private const BufferID JobStaleCountBufferId = (BufferID)71750;
+        private const BufferID TelemetryRingBufferId = (BufferID)71751;
+        private const BufferID TuningBufferId = (BufferID)71752;
+        private const BufferID CountersBufferId = (BufferID)71753;
+        private const BufferID FreedSlotsBufferId = (BufferID)71754;
+        private const BufferID FreedCountBufferId = (BufferID)71755;
+        private const BufferID HardwareProfilesBufferId = (BufferID)71756;
+        private const BufferID CsvScratchBufferId = (BufferID)71757;
+        private const BufferID TelemetryDumpSnapshotBufferId = (BufferID)71758;
+
+        private const ulong MetadataBit = 1UL << 0;
+        private const ulong SectorCoordsBit = 1UL << 1;
+        private const ulong StagingBytesBit = 1UL << 2;
+        private const ulong ActiveBytesBit = 1UL << 3;
+        private const ulong CompressedScratchBit = 1UL << 4;
+        private const ulong WorkerRequestBit = 1UL << 5;
+        private const ulong WorkerResultBit = 1UL << 6;
+        private const ulong JobLoadRequestsBit = 1UL << 7;
+        private const ulong JobLoadCountBit = 1UL << 8;
+        private const ulong JobStaleSlotsBit = 1UL << 9;
+        private const ulong JobStaleCountBit = 1UL << 10;
+        private const ulong TelemetryRingBit = 1UL << 11;
+        private const ulong TuningBit = 1UL << 12;
+        private const ulong CountersBit = 1UL << 13;
+        private const ulong FreedSlotsBit = 1UL << 14;
+        private const ulong FreedCountBit = 1UL << 15;
+        private const ulong HardwareProfilesBit = 1UL << 16;
+        private const ulong CsvScratchBit = 1UL << 17;
+        private const ulong TelemetryDumpSnapshotBit = 1UL << 18;
+        private const ulong RequiredVaultMask = (1UL << 19) - 1UL;
+
+        private static readonly ProfilerMarker _preSimulationMarker = new ProfilerMarker("H8.World.TerrainChunkPager.PreSimulation");
+        private static readonly ProfilerMarker _postSimulationMarker = new ProfilerMarker("H8.World.TerrainChunkPager.PostSimulation");
+        private static readonly ProfilerMarker _visualSyncMarker = new ProfilerMarker("H8.World.TerrainChunkPager.VisualSync");
+        private static TerrainChunkPagerRuntime s_active;
+
+        [Header("Terrain Pager")]
+        [SerializeField, Min(1)] private int maxChunkSlots = TerrainChunkPagerConstants.DefaultMaxChunkSlots;
+        [SerializeField, Min(2)] private int queueCapacity = TerrainChunkPagerConstants.DefaultQueueCapacity;
+        [SerializeField, Min(4096)] private int chunkByteCapacity = TerrainChunkPagerConstants.DefaultChunkBytes;
+        [SerializeField] private string chunkRootRelativePath = DefaultChunkRootRelativePath;
+        [SerializeField] private bool forceMockDiskIo = true;
+        [SerializeField] private bool loadCsvProfileOnEnable = true;
+        [SerializeField] private bool useMockCameraAupWhenNoPlayer = true;
+        [SerializeField] private Vector3 mockCameraAupMeters;
+
+#if UNITY_EDITOR
+        [Header("Editor Diagnostics")]
+        [SerializeField] private bool drawDebugGizmos = true;
+        [SerializeField, Min(1f)] private float debugGizmoHeightMeters = 8f;
+#endif
+
+        private readonly PreSimulationPhaseSystem _preSimulationPhase;
+        private readonly PostSimulationPhaseSystem _postSimulationPhase;
+        private readonly VisualSyncPhaseSystem _visualSyncPhase;
+
+        private IDataVault _vault;
+        private VaultGenerationHandle<ChunkMetadataDTO> _metadataHandle;
+        private VaultGenerationHandle<long2> _sectorCoordsHandle;
+        private VaultGenerationHandle<byte> _stagingBytesHandle;
+        private VaultGenerationHandle<byte> _activeBytesHandle;
+        private VaultGenerationHandle<byte> _compressedScratchBytesHandle;
+        private VaultGenerationHandle<TerrainChunkWorkerRequestDTO> _workerRequestsHandle;
+        private VaultGenerationHandle<TerrainChunkWorkerResultDTO> _workerResultsHandle;
+        private VaultGenerationHandle<TerrainChunkWorkerRequestDTO> _jobLoadRequestsHandle;
+        private VaultGenerationHandle<int> _jobLoadCountHandle;
+        private VaultGenerationHandle<int> _jobStaleSlotsHandle;
+        private VaultGenerationHandle<int> _jobStaleCountHandle;
+        private VaultGenerationHandle<PagerTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<TerrainChunkPagerTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<TerrainChunkPagerCountersDTO> _countersHandle;
+        private VaultGenerationHandle<int> _freedSlotsHandle;
+        private VaultGenerationHandle<int> _freedCountHandle;
+        private VaultGenerationHandle<StreamingHardwareProfileDTO> _hardwareProfilesHandle;
+        private VaultGenerationHandle<byte> _csvScratchBytesHandle;
+        private VaultGenerationHandle<byte> _telemetryDumpSnapshotBytesHandle;
+
+        private ChunkMetadataDTO* _metadataPtr;
+        private long2* _sectorCoordsPtr;
+        private byte* _stagingPtr;
+        private byte* _activePtr;
+        private byte* _compressedScratchPtr;
+        private TerrainChunkWorkerRequestDTO* _workerRequestPtr;
+        private TerrainChunkWorkerResultDTO* _workerResultPtr;
+        private TerrainChunkWorkerRequestDTO* _jobLoadRequestPtr;
+        private int* _jobLoadCountPtr;
+        private int* _jobStaleSlotPtr;
+        private int* _jobStaleCountPtr;
+        private PagerTelemetryEntry* _telemetryPtr;
+        private TerrainChunkPagerTuningDTO* _tuningPtr;
+        private TerrainChunkPagerCountersDTO* _countersPtr;
+        private int* _freedSlotPtr;
+        private int* _freedCountPtr;
+        private StreamingHardwareProfileDTO* _hardwareProfilePtr;
+        private byte* _csvScratchPtr;
+        private byte* _telemetryDumpSnapshotPtr;
+        private int _metadataLength;
+        private int _sectorCoordsLength;
+        private int _stagingByteLength;
+        private int _activeByteLength;
+        private int _compressedScratchByteLength;
+        private int _workerRequestLength;
+        private int _workerResultLength;
+        private int _jobLoadRequestLength;
+        private int _jobLoadCountLength;
+        private int _jobStaleSlotLength;
+        private int _jobStaleCountLength;
+        private int _telemetryLength;
+        private int _tuningLength;
+        private int _countersLength;
+        private int _freedSlotLength;
+        private int _freedCountLength;
+        private int _hardwareProfileLength;
+        private int _csvScratchByteLength;
+        private int _telemetryDumpSnapshotByteLength;
+
+        private AutoResetEvent _workerWake;
+        private Thread _workerThread;
+        private char[] _pathBuffer;
+        private byte[] _utf8PathBuffer;
+        private string _chunkRootFullPath;
+        private string _dumpFullPath;
+        private int _workerRunning;
+        private int _forceMockDiskIo;
+        private int _requestHead;
+        private int _requestTail;
+        private int _resultHead;
+        private int _resultTail;
+        private int _queueMask;
+        private int _allocatedChunkByteCapacity;
+        private int _allocatedCompressedChunkByteCapacity;
+        private int _chunkSlabByteLength;
+        private int _compressedSlabByteLength;
+        private int _dumpSnapshotByteLength;
+        private int _registeredPreSimulation;
+        private int _registeredPostSimulation;
+        private int _registeredVisualSync;
+        private int _registeredFrost;
+        private int _initialized;
+        private int _disposed;
+        private int _telemetryCursor;
+        private int _csvProfileCount;
+        private int _lockedVaultBuffers;
+        private ulong _lockedVaultMask;
+        private int _lastDumpFrame;
+        private long _dumpRequestPacked;
+        private uint _lastDumpFaultFlags;
+        private uint _faultFlags;
+        private uint _workerSequence;
+        private uint _lastEvalMicros;
+        private uint _frameId;
+        private uint _layoutValid;
+        private ulong _vaultBackedMask;
+        private PlayerRuntimeContext _cachedRuntimeContext;
+        private double3 _lastCameraAup;
+        private long _lastCameraSectorX;
+        private long _lastCameraSectorZ;
+        private JobHandle _pendingResidencyHandle;
+        private JobHandle _pendingEvictionHandle;
+        private long _pendingResidencyStartTimestamp;
+        private int _pendingResidency;
+        private int _pendingEviction;
+        private int _deferredShutdown;
+        private int _cameraAupSequence;
+        private long _cameraAupBitsX;
+        private long _cameraAupBitsY;
+        private long _cameraAupBitsZ;
+        private int _workerThreadActive;
+        private long _workerHeartbeatTimestamp;
+
+        public TerrainChunkPagerRuntime()
+        {
+            _preSimulationPhase = new PreSimulationPhaseSystem(this);
+            _postSimulationPhase = new PostSimulationPhaseSystem(this);
+            _visualSyncPhase = new VisualSyncPhaseSystem(this);
+        }
+
+        public static bool TryReadTuning(out TerrainChunkPagerTuningDTO tuning)
+        {
+            TerrainChunkPagerRuntime active = s_active;
+            if (active == null || active._initialized == 0 || active._tuningPtr == null || active._tuningLength <= 0)
+            {
+                tuning = default;
+                return false;
+            }
+
+            tuning = active._tuningPtr[0];
+            return true;
+        }
+
+        public static bool TryWriteTuning(in TerrainChunkPagerTuningDTO tuning)
+        {
+            TerrainChunkPagerRuntime active = s_active;
+            if (active == null || active._initialized == 0 || active._tuningPtr == null || active._tuningLength <= 0)
+                return false;
+
+            TerrainChunkPagerTuningDTO sanitized = TerrainChunkPagerMath.Sanitize(tuning);
+            sanitized.ChunkByteCapacity = active._allocatedChunkByteCapacity;
+            sanitized.MaxQueuedLoads = math.clamp(sanitized.MaxQueuedLoads, 1, math.max(1, active.queueCapacity - 1));
+            sanitized.CommitByteBudgetPerFrame = math.min(
+                sanitized.CommitByteBudgetPerFrame,
+                ResolveCommitByteBudget(active._allocatedChunkByteCapacity, sanitized.MaxCommitsPerVisualSync));
+            active._tuningPtr[0] = sanitized;
+            return true;
+        }
+
+        public static bool TryPublishCameraAup(double3 cameraAup)
+        {
+            TerrainChunkPagerRuntime active = s_active;
+            if (active == null || active._initialized == 0 || !math.all(math.isfinite(cameraAup)))
+                return false;
+
+            int sequence = Volatile.Read(ref active._cameraAupSequence);
+            Volatile.Write(ref active._cameraAupSequence, sequence | 1);
+            Volatile.Write(ref active._cameraAupBitsX, math.aslong(cameraAup.x));
+            Volatile.Write(ref active._cameraAupBitsY, math.aslong(cameraAup.y));
+            Volatile.Write(ref active._cameraAupBitsZ, math.aslong(cameraAup.z));
+            Volatile.Write(ref active._cameraAupSequence, (sequence + 2) & ~1);
+            return true;
+        }
+
+        public void BindRuntimeContext(PlayerRuntimeContext runtimeContext)
+        {
+            _cachedRuntimeContext = runtimeContext;
+        }
+
+        public static bool TryReadCounters(out TerrainChunkPagerCountersDTO counters)
+        {
+            TerrainChunkPagerRuntime active = s_active;
+            if (active == null || active._initialized == 0 || active._countersPtr == null || active._countersLength <= 0)
+            {
+                counters = default;
+                return false;
+            }
+
+            counters = active._countersPtr[0];
+            return true;
+        }
+
+        public static bool TryGetDebugCell(int index, out ChunkMetadataDTO metadata, out long2 sectorCoord, out int count)
+        {
+            TerrainChunkPagerRuntime active = s_active;
+            if (active == null || active._initialized == 0 || active._metadataPtr == null || active._sectorCoordsPtr == null)
+            {
+                metadata = default;
+                sectorCoord = default;
+                count = 0;
+                return false;
+            }
+
+            count = active._metadataLength;
+            if ((uint)index >= (uint)count)
+            {
+                metadata = default;
+                sectorCoord = default;
+                return false;
+            }
+
+            metadata = active._metadataPtr[index];
+            sectorCoord = active._sectorCoordsPtr[index];
+            return true;
+        }
+
+        private void OnEnable()
+        {
+            Initialize();
+        }
+
+        private void OnDisable()
+        {
+            Shutdown();
+        }
+
+        private void OnDestroy()
+        {
+            Shutdown();
+        }
+
+        public void Dispose()
+        {
+            Shutdown();
+        }
+
+        public void FrostTick()
+        {
+            if (_initialized == 0 || _metadataPtr == null || _freedSlotPtr == null || _freedCountPtr == null)
+                return;
+
+            if (!TryFinalizeEviction() || !TryFinalizeResidencyEvaluation())
+                return;
+
+            if (!TryResolveArray(in _freedSlotsHandle, _freedSlotLength, out NativeArray<int> freedSlots) ||
+                !TryResolveArray(in _freedCountHandle, _freedCountLength, out NativeArray<int> freedCount))
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                return;
+            }
+
+            TerrainChunkPagerTuningDTO tuning = _tuningPtr != null && _tuningLength > 0
+                ? TerrainChunkPagerMath.Sanitize(_tuningPtr[0])
+                : TerrainChunkPagerTuningDTO.CreateDefault();
+
+            EvictStaleChunksJob job = new EvictStaleChunksJob
+            {
+                MetadataPtr = _metadataPtr,
+                SectorCoordPtr = _sectorCoordsPtr,
+                MetadataCapacity = _metadataLength,
+                FreedSlots = freedSlots,
+                FreedSlotCount = freedCount,
+                CameraSectorX = _lastCameraSectorX,
+                CameraSectorZ = _lastCameraSectorZ,
+                SectorSizeMeters = tuning.SectorSizeMeters,
+                CullRadiusSectors = tuning.EffectiveRingRadius + tuning.EvictionHysteresisSectors + 1.0f
+            };
+            _pendingEvictionHandle = job.Schedule();
+            _pendingEviction = 1;
+            H8Memory.RegisterActiveJob(SystemID.WorldStreaming, _pendingEvictionHandle);
+        }
+
+        private void Initialize()
+        {
+            if (_initialized != 0)
+                return;
+
+            _disposed = 0;
+            Volatile.Write(ref _deferredShutdown, 0);
+            _faultFlags = 0u;
+            _lastDumpFaultFlags = 0u;
+            _layoutValid = ChunkMetadataLayoutGuard.ValidateLayout() ? 1u : 0u;
+            ResetRuntimeStateCounters();
+            _vault = GlobalRegistry.DataVault;
+            queueCapacity = NextPowerOfTwo(math.max(2, queueCapacity));
+            _queueMask = queueCapacity - 1;
+            maxChunkSlots = math.max(1, maxChunkSlots);
+            chunkByteCapacity = math.max(4096, chunkByteCapacity);
+            if (!TryResolveLz4BoundedCapacity(chunkByteCapacity, out int compressedChunkCapacity) ||
+                !TryResolveChunkSlabByteLength(maxChunkSlots, chunkByteCapacity, out int chunkSlabByteLength) ||
+                !TryResolveChunkSlabByteLength(maxChunkSlots, compressedChunkCapacity, out int compressedSlabByteLength) ||
+                !TryResolveTelemetrySnapshotByteLength(out int dumpSnapshotByteLength))
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultCapacityOverflow;
+                _initialized = 0;
+                return;
+            }
+
+            _allocatedChunkByteCapacity = chunkByteCapacity;
+            _allocatedCompressedChunkByteCapacity = compressedChunkCapacity;
+            _chunkSlabByteLength = chunkSlabByteLength;
+            _compressedSlabByteLength = compressedSlabByteLength;
+            _dumpSnapshotByteLength = dumpSnapshotByteLength;
+            _forceMockDiskIo = forceMockDiskIo ? 1 : 0;
+            _pathBuffer = new char[512];
+            _utf8PathBuffer = new byte[4096];
+            _chunkRootFullPath = ResolveChunkRootPath();
+            _dumpFullPath = PrepareDumpPathCold();
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+                _cachedRuntimeContext = runtimeContext;
+
+            AllocateNativeState();
+            if (_layoutValid == 0u)
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultLayout;
+            if (!AreRequiredVaultBuffersReady())
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                ReleaseNativeState();
+                return;
+            }
+
+            ResetRuntimeStateCounters();
+
+            LoadColdStreamingProfile();
+            StartWorker();
+            RegisterDispatcher();
+            _initialized = 1;
+            s_active = this;
+        }
+
+        private void Shutdown()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
+                return;
+
+            bool jobsFinalized = TryFinalizePendingPagerJobsForTeardown();
+            bool workerStopped = StopWorker();
+            if (!jobsFinalized || !workerStopped)
+            {
+                UnregisterDispatcher(keepVisualSyncForDeferredShutdown: true);
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
+                Volatile.Write(ref _deferredShutdown, 1);
+                if (ReferenceEquals(s_active, this))
+                    s_active = null;
+                _initialized = 0;
+                return;
+            }
+
+            UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);
+            ReleaseNativeState();
+            if (ReferenceEquals(s_active, this))
+                s_active = null;
+            _initialized = 0;
+            _vault = null;
+            _chunkRootFullPath = null;
+            _dumpFullPath = null;
+            _pathBuffer = null;
+            _utf8PathBuffer = null;
+            _cachedRuntimeContext = null;
+            _allocatedChunkByteCapacity = 0;
+            _allocatedCompressedChunkByteCapacity = 0;
+            _chunkSlabByteLength = 0;
+            _compressedSlabByteLength = 0;
+            _dumpSnapshotByteLength = 0;
+            Volatile.Write(ref _cameraAupSequence, 0);
+            Volatile.Write(ref _cameraAupBitsX, 0L);
+            Volatile.Write(ref _cameraAupBitsY, 0L);
+            Volatile.Write(ref _cameraAupBitsZ, 0L);
+        }
+
+        private void TryReleaseDeferredShutdownState()
+        {
+            if (!TryFinalizePendingPagerJobsForTeardown())
+                return;
+
+            if (Volatile.Read(ref _workerThreadActive) != 0)
+                return;
+
+            UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);
+            ReleaseNativeState();
+            _vault = null;
+            _chunkRootFullPath = null;
+            _dumpFullPath = null;
+            _pathBuffer = null;
+            _utf8PathBuffer = null;
+            _cachedRuntimeContext = null;
+            _allocatedChunkByteCapacity = 0;
+            _allocatedCompressedChunkByteCapacity = 0;
+            _chunkSlabByteLength = 0;
+            _compressedSlabByteLength = 0;
+            _dumpSnapshotByteLength = 0;
+            Volatile.Write(ref _deferredShutdown, 0);
+        }
+
+        private void RegisterDispatcher()
+        {
+            if (_registeredPreSimulation == 0 && GlobalRegistry.TryRegisterDispatcherSystem(_preSimulationPhase))
+                _registeredPreSimulation = 1;
+            if (_registeredPostSimulation == 0 && GlobalRegistry.TryRegisterDispatcherSystem(_postSimulationPhase))
+                _registeredPostSimulation = 1;
+            if (_registeredVisualSync == 0 && GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncPhase))
+                _registeredVisualSync = 1;
+            if (_registeredFrost == 0 && GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment))
+                _registeredFrost = 1;
+        }
+
+        private void UnregisterDispatcher(bool keepVisualSyncForDeferredShutdown)
+        {
+            if (_registeredPreSimulation != 0)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_preSimulationPhase);
+                _registeredPreSimulation = 0;
+            }
+
+            if (_registeredPostSimulation != 0)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
+                _registeredPostSimulation = 0;
+            }
+
+            if (_registeredVisualSync != 0 && !keepVisualSyncForDeferredShutdown)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_visualSyncPhase);
+                _registeredVisualSync = 0;
+            }
+
+            if (_registeredFrost != 0)
+            {
+                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
+                _registeredFrost = 0;
+            }
+        }
+
+        private void AllocateNativeState()
+        {
+            _vaultBackedMask = 0UL;
+            ResetVaultAliases();
+            AcquireArray(MetadataBufferId, maxChunkSlots, NativeArrayOptions.ClearMemory, MetadataBit, ref _metadataHandle);
+            AcquireArray(SectorCoordsBufferId, maxChunkSlots, NativeArrayOptions.ClearMemory, SectorCoordsBit, ref _sectorCoordsHandle);
+            AcquireArray(StagingBytesBufferId, _chunkSlabByteLength, NativeArrayOptions.UninitializedMemory, StagingBytesBit, ref _stagingBytesHandle);
+            AcquireArray(ActiveBytesBufferId, _chunkSlabByteLength, NativeArrayOptions.UninitializedMemory, ActiveBytesBit, ref _activeBytesHandle);
+            AcquireArray(CompressedScratchBufferId, _compressedSlabByteLength, NativeArrayOptions.UninitializedMemory, CompressedScratchBit, ref _compressedScratchBytesHandle);
+            AcquireArray(WorkerRequestBufferId, queueCapacity, NativeArrayOptions.UninitializedMemory, WorkerRequestBit, ref _workerRequestsHandle);
+            AcquireArray(WorkerResultBufferId, queueCapacity, NativeArrayOptions.UninitializedMemory, WorkerResultBit, ref _workerResultsHandle);
+            AcquireArray(JobLoadRequestsBufferId, math.min(maxChunkSlots, 121), NativeArrayOptions.UninitializedMemory, JobLoadRequestsBit, ref _jobLoadRequestsHandle);
+            AcquireArray(JobLoadCountBufferId, 1, NativeArrayOptions.ClearMemory, JobLoadCountBit, ref _jobLoadCountHandle);
+            AcquireArray(JobStaleSlotsBufferId, maxChunkSlots, NativeArrayOptions.UninitializedMemory, JobStaleSlotsBit, ref _jobStaleSlotsHandle);
+            AcquireArray(JobStaleCountBufferId, 1, NativeArrayOptions.ClearMemory, JobStaleCountBit, ref _jobStaleCountHandle);
+            AcquireArray(TelemetryRingBufferId, TerrainChunkPagerConstants.TelemetryCapacity, NativeArrayOptions.ClearMemory, TelemetryRingBit, ref _telemetryRingHandle);
+            AcquireArray(TuningBufferId, 1, NativeArrayOptions.ClearMemory, TuningBit, ref _tuningHandle);
+            AcquireArray(CountersBufferId, 1, NativeArrayOptions.ClearMemory, CountersBit, ref _countersHandle);
+            AcquireArray(FreedSlotsBufferId, maxChunkSlots, NativeArrayOptions.UninitializedMemory, FreedSlotsBit, ref _freedSlotsHandle);
+            AcquireArray(FreedCountBufferId, 1, NativeArrayOptions.ClearMemory, FreedCountBit, ref _freedCountHandle);
+            AcquireArray(HardwareProfilesBufferId, 8, NativeArrayOptions.ClearMemory, HardwareProfilesBit, ref _hardwareProfilesHandle);
+            AcquireArray(CsvScratchBufferId, 16 * 1024, NativeArrayOptions.UninitializedMemory, CsvScratchBit, ref _csvScratchBytesHandle);
+            AcquireArray(TelemetryDumpSnapshotBufferId, _dumpSnapshotByteLength, NativeArrayOptions.UninitializedMemory, TelemetryDumpSnapshotBit, ref _telemetryDumpSnapshotBytesHandle);
+
+            if (!LockVaultBuffers())
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                return;
+            }
+
+            if (!CacheUnsafePointers())
+                return;
+
+            if (_tuningPtr != null && _tuningLength > 0)
+            {
+                TerrainChunkPagerTuningDTO tuning = TerrainChunkPagerTuningDTO.CreateDefault();
+                tuning.ChunkByteCapacity = _allocatedChunkByteCapacity;
+                tuning.Flags = forceMockDiskIo ? TerrainChunkPagerConstants.RequestFlagForceMock : 0u;
+                _tuningPtr[0] = TerrainChunkPagerMath.Sanitize(tuning);
+            }
+
+        }
+
+        private void AcquireArray<T>(
+            BufferID bufferId,
+            int length,
+            NativeArrayOptions options,
+            ulong bit,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            IDataVault vault = _vault;
+            if (vault != null)
+            {
+                handle = vault.GetGenerationHandle<T>(bufferId, math.max(1, length), SystemID.WorldStreaming, options);
+                if (HasVaultHandle(in handle) &&
+                    vault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
+                    buffer.IsCreated &&
+                    buffer.Length >= math.max(1, length))
+                {
+                    _vaultBackedMask |= bit;
+                    return;
+                }
+            }
+
+            _vaultBackedMask &= ~bit;
+            handle = default;
+            _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+        }
+
+        private bool AreRequiredVaultBuffersReady()
+        {
+            return (_vaultBackedMask & RequiredVaultMask) == RequiredVaultMask &&
+                   _lockedVaultBuffers != 0 &&
+                   _metadataPtr != null &&
+                   _sectorCoordsPtr != null &&
+                   _stagingPtr != null &&
+                   _activePtr != null &&
+                   _compressedScratchPtr != null &&
+                   _workerRequestPtr != null &&
+                   _workerResultPtr != null &&
+                   _jobLoadRequestPtr != null &&
+                   _jobLoadCountPtr != null &&
+                   _jobStaleSlotPtr != null &&
+                   _jobStaleCountPtr != null &&
+                   _telemetryPtr != null &&
+                   _tuningPtr != null &&
+                   _countersPtr != null &&
+                   _freedSlotPtr != null &&
+                   _freedCountPtr != null &&
+                   _hardwareProfilePtr != null &&
+                   _csvScratchPtr != null &&
+                   _telemetryDumpSnapshotPtr != null;
+        }
+
+        private bool CacheUnsafePointers()
+        {
+            ResetVaultAliases();
+            if (!TryResolveArray(in _metadataHandle, maxChunkSlots, out NativeArray<ChunkMetadataDTO> metadata) ||
+                !TryResolveArray(in _sectorCoordsHandle, maxChunkSlots, out NativeArray<long2> sectorCoords) ||
+                !TryResolveArray(in _stagingBytesHandle, _chunkSlabByteLength, out NativeArray<byte> stagingBytes) ||
+                !TryResolveArray(in _activeBytesHandle, _chunkSlabByteLength, out NativeArray<byte> activeBytes) ||
+                !TryResolveArray(in _compressedScratchBytesHandle, _compressedSlabByteLength, out NativeArray<byte> compressedScratchBytes) ||
+                !TryResolveArray(in _workerRequestsHandle, queueCapacity, out NativeArray<TerrainChunkWorkerRequestDTO> workerRequests) ||
+                !TryResolveArray(in _workerResultsHandle, queueCapacity, out NativeArray<TerrainChunkWorkerResultDTO> workerResults) ||
+                !TryResolveArray(in _jobLoadRequestsHandle, math.min(maxChunkSlots, 121), out NativeArray<TerrainChunkWorkerRequestDTO> jobLoadRequests) ||
+                !TryResolveArray(in _jobLoadCountHandle, 1, out NativeArray<int> jobLoadCount) ||
+                !TryResolveArray(in _jobStaleSlotsHandle, maxChunkSlots, out NativeArray<int> jobStaleSlots) ||
+                !TryResolveArray(in _jobStaleCountHandle, 1, out NativeArray<int> jobStaleCount) ||
+                !TryResolveArray(in _telemetryRingHandle, TerrainChunkPagerConstants.TelemetryCapacity, out NativeArray<PagerTelemetryEntry> telemetryRing) ||
+                !TryResolveArray(in _tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO> tuning) ||
+                !TryResolveArray(in _countersHandle, 1, out NativeArray<TerrainChunkPagerCountersDTO> counters) ||
+                !TryResolveArray(in _freedSlotsHandle, maxChunkSlots, out NativeArray<int> freedSlots) ||
+                !TryResolveArray(in _freedCountHandle, 1, out NativeArray<int> freedCount) ||
+                !TryResolveArray(in _hardwareProfilesHandle, 8, out NativeArray<StreamingHardwareProfileDTO> hardwareProfiles) ||
+                !TryResolveArray(in _csvScratchBytesHandle, 16 * 1024, out NativeArray<byte> csvScratchBytes) ||
+                !TryResolveArray(in _telemetryDumpSnapshotBytesHandle, _dumpSnapshotByteLength, out NativeArray<byte> telemetryDumpSnapshotBytes))
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                ResetVaultAliases();
+                return false;
+            }
+
+            _metadataPtr = (ChunkMetadataDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(metadata);
+            _sectorCoordsPtr = (long2*)NativeArrayUnsafeUtility.GetUnsafePtr(sectorCoords);
+            _stagingPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(stagingBytes);
+            _activePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(activeBytes);
+            _compressedScratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(compressedScratchBytes);
+            _workerRequestPtr = (TerrainChunkWorkerRequestDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(workerRequests);
+            _workerResultPtr = (TerrainChunkWorkerResultDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(workerResults);
+            _jobLoadRequestPtr = (TerrainChunkWorkerRequestDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(jobLoadRequests);
+            _jobLoadCountPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(jobLoadCount);
+            _jobStaleSlotPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(jobStaleSlots);
+            _jobStaleCountPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(jobStaleCount);
+            _telemetryPtr = (PagerTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetryRing);
+            _tuningPtr = (TerrainChunkPagerTuningDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(tuning);
+            _countersPtr = (TerrainChunkPagerCountersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(counters);
+            _freedSlotPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(freedSlots);
+            _freedCountPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(freedCount);
+            _hardwareProfilePtr = (StreamingHardwareProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(hardwareProfiles);
+            _csvScratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(csvScratchBytes);
+            _telemetryDumpSnapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetryDumpSnapshotBytes);
+            _metadataLength = metadata.Length;
+            _sectorCoordsLength = sectorCoords.Length;
+            _stagingByteLength = stagingBytes.Length;
+            _activeByteLength = activeBytes.Length;
+            _compressedScratchByteLength = compressedScratchBytes.Length;
+            _workerRequestLength = workerRequests.Length;
+            _workerResultLength = workerResults.Length;
+            _jobLoadRequestLength = jobLoadRequests.Length;
+            _jobLoadCountLength = jobLoadCount.Length;
+            _jobStaleSlotLength = jobStaleSlots.Length;
+            _jobStaleCountLength = jobStaleCount.Length;
+            _telemetryLength = telemetryRing.Length;
+            _tuningLength = tuning.Length;
+            _countersLength = counters.Length;
+            _freedSlotLength = freedSlots.Length;
+            _freedCountLength = freedCount.Length;
+            _hardwareProfileLength = hardwareProfiles.Length;
+            _csvScratchByteLength = csvScratchBytes.Length;
+            _telemetryDumpSnapshotByteLength = telemetryDumpSnapshotBytes.Length;
+            return true;
+        }
+
+        private void ReleaseNativeState()
+        {
+            if (!TryFinalizePendingPagerJobsForTeardown())
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
+                return;
+            }
+
+            UnlockVaultBuffers();
+            ReleaseArray(ref _metadataHandle, MetadataBit);
+            ReleaseArray(ref _sectorCoordsHandle, SectorCoordsBit);
+            ReleaseArray(ref _stagingBytesHandle, StagingBytesBit);
+            ReleaseArray(ref _activeBytesHandle, ActiveBytesBit);
+            ReleaseArray(ref _compressedScratchBytesHandle, CompressedScratchBit);
+            ReleaseArray(ref _workerRequestsHandle, WorkerRequestBit);
+            ReleaseArray(ref _workerResultsHandle, WorkerResultBit);
+            ReleaseArray(ref _jobLoadRequestsHandle, JobLoadRequestsBit);
+            ReleaseArray(ref _jobLoadCountHandle, JobLoadCountBit);
+            ReleaseArray(ref _jobStaleSlotsHandle, JobStaleSlotsBit);
+            ReleaseArray(ref _jobStaleCountHandle, JobStaleCountBit);
+            ReleaseArray(ref _telemetryRingHandle, TelemetryRingBit);
+            ReleaseArray(ref _tuningHandle, TuningBit);
+            ReleaseArray(ref _countersHandle, CountersBit);
+            ReleaseArray(ref _freedSlotsHandle, FreedSlotsBit);
+            ReleaseArray(ref _freedCountHandle, FreedCountBit);
+            ReleaseArray(ref _hardwareProfilesHandle, HardwareProfilesBit);
+            ReleaseArray(ref _csvScratchBytesHandle, CsvScratchBit);
+            ReleaseArray(ref _telemetryDumpSnapshotBytesHandle, TelemetryDumpSnapshotBit);
+            ResetVaultAliases();
+            _vaultBackedMask = 0UL;
+        }
+
+        private void ReleaseArray<T>(ref VaultGenerationHandle<T> handle, ulong bit) where T : struct
+        {
+            IDataVault vault = _vault;
+            if ((_vaultBackedMask & bit) != 0UL)
+            {
+                if (vault != null && HasVaultHandle(in handle))
+                    vault.ReleaseBuffer(in handle);
+                handle = default;
+                _vaultBackedMask &= ~bit;
+                return;
+            }
+
+            handle = default;
+        }
+
+        private bool LockVaultBuffers()
+        {
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            _lockedVaultMask = 0UL;
+            if (!TryLock(vault, MetadataBufferId, MetadataBit)) return FailLock(vault);
+            if (!TryLock(vault, SectorCoordsBufferId, SectorCoordsBit)) return FailLock(vault);
+            if (!TryLock(vault, StagingBytesBufferId, StagingBytesBit)) return FailLock(vault);
+            if (!TryLock(vault, ActiveBytesBufferId, ActiveBytesBit)) return FailLock(vault);
+            if (!TryLock(vault, CompressedScratchBufferId, CompressedScratchBit)) return FailLock(vault);
+            if (!TryLock(vault, WorkerRequestBufferId, WorkerRequestBit)) return FailLock(vault);
+            if (!TryLock(vault, WorkerResultBufferId, WorkerResultBit)) return FailLock(vault);
+            if (!TryLock(vault, JobLoadRequestsBufferId, JobLoadRequestsBit)) return FailLock(vault);
+            if (!TryLock(vault, JobLoadCountBufferId, JobLoadCountBit)) return FailLock(vault);
+            if (!TryLock(vault, JobStaleSlotsBufferId, JobStaleSlotsBit)) return FailLock(vault);
+            if (!TryLock(vault, JobStaleCountBufferId, JobStaleCountBit)) return FailLock(vault);
+            if (!TryLock(vault, TelemetryRingBufferId, TelemetryRingBit)) return FailLock(vault);
+            if (!TryLock(vault, TuningBufferId, TuningBit)) return FailLock(vault);
+            if (!TryLock(vault, CountersBufferId, CountersBit)) return FailLock(vault);
+            if (!TryLock(vault, FreedSlotsBufferId, FreedSlotsBit)) return FailLock(vault);
+            if (!TryLock(vault, FreedCountBufferId, FreedCountBit)) return FailLock(vault);
+            if (!TryLock(vault, HardwareProfilesBufferId, HardwareProfilesBit)) return FailLock(vault);
+            if (!TryLock(vault, CsvScratchBufferId, CsvScratchBit)) return FailLock(vault);
+            if (!TryLock(vault, TelemetryDumpSnapshotBufferId, TelemetryDumpSnapshotBit)) return FailLock(vault);
+            _lockedVaultBuffers = 1;
+            return true;
+        }
+
+        private void UnlockVaultBuffers()
+        {
+            IDataVault vault = _vault;
+            if (vault == null || _lockedVaultBuffers == 0)
+                return;
+
+            UnlockLockedBuffers(vault);
+            _lockedVaultBuffers = 0;
+            _lockedVaultMask = 0UL;
+        }
+
+        private bool TryLock(IDataVault vault, BufferID bufferId, ulong bit)
+        {
+            if (!vault.TryLockBuffer(bufferId, SystemID.WorldStreaming))
+                return false;
+
+            _lockedVaultMask |= bit;
+            return true;
+        }
+
+        private bool FailLock(IDataVault vault)
+        {
+            UnlockLockedBuffers(vault);
+            _lockedVaultMask = 0UL;
+            _lockedVaultBuffers = 0;
+            return false;
+        }
+
+        private void UnlockLockedBuffers(IDataVault vault)
+        {
+            if ((_lockedVaultMask & MetadataBit) != 0UL) vault.TryUnlockBuffer(MetadataBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & SectorCoordsBit) != 0UL) vault.TryUnlockBuffer(SectorCoordsBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & StagingBytesBit) != 0UL) vault.TryUnlockBuffer(StagingBytesBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & ActiveBytesBit) != 0UL) vault.TryUnlockBuffer(ActiveBytesBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & CompressedScratchBit) != 0UL) vault.TryUnlockBuffer(CompressedScratchBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & WorkerRequestBit) != 0UL) vault.TryUnlockBuffer(WorkerRequestBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & WorkerResultBit) != 0UL) vault.TryUnlockBuffer(WorkerResultBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & JobLoadRequestsBit) != 0UL) vault.TryUnlockBuffer(JobLoadRequestsBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & JobLoadCountBit) != 0UL) vault.TryUnlockBuffer(JobLoadCountBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & JobStaleSlotsBit) != 0UL) vault.TryUnlockBuffer(JobStaleSlotsBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & JobStaleCountBit) != 0UL) vault.TryUnlockBuffer(JobStaleCountBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & TelemetryRingBit) != 0UL) vault.TryUnlockBuffer(TelemetryRingBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & TuningBit) != 0UL) vault.TryUnlockBuffer(TuningBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & CountersBit) != 0UL) vault.TryUnlockBuffer(CountersBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & FreedSlotsBit) != 0UL) vault.TryUnlockBuffer(FreedSlotsBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & FreedCountBit) != 0UL) vault.TryUnlockBuffer(FreedCountBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & HardwareProfilesBit) != 0UL) vault.TryUnlockBuffer(HardwareProfilesBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & CsvScratchBit) != 0UL) vault.TryUnlockBuffer(CsvScratchBufferId, SystemID.WorldStreaming);
+            if ((_lockedVaultMask & TelemetryDumpSnapshotBit) != 0UL) vault.TryUnlockBuffer(TelemetryDumpSnapshotBufferId, SystemID.WorldStreaming);
+        }
+
+        private static bool HasVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private bool TryResolveArray<T>(in VaultGenerationHandle<T> handle, int minLength, out NativeArray<T> buffer) where T : struct
+        {
+            IDataVault vault = _vault;
+            return vault != null &&
+                   HasVaultHandle(in handle) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= math.max(1, minLength);
+        }
+
+        private void ResetVaultAliases()
+        {
+            _metadataPtr = null;
+            _sectorCoordsPtr = null;
+            _stagingPtr = null;
+            _activePtr = null;
+            _compressedScratchPtr = null;
+            _workerRequestPtr = null;
+            _workerResultPtr = null;
+            _jobLoadRequestPtr = null;
+            _jobLoadCountPtr = null;
+            _jobStaleSlotPtr = null;
+            _jobStaleCountPtr = null;
+            _telemetryPtr = null;
+            _tuningPtr = null;
+            _countersPtr = null;
+            _freedSlotPtr = null;
+            _freedCountPtr = null;
+            _hardwareProfilePtr = null;
+            _csvScratchPtr = null;
+            _telemetryDumpSnapshotPtr = null;
+            _metadataLength = 0;
+            _sectorCoordsLength = 0;
+            _stagingByteLength = 0;
+            _activeByteLength = 0;
+            _compressedScratchByteLength = 0;
+            _workerRequestLength = 0;
+            _workerResultLength = 0;
+            _jobLoadRequestLength = 0;
+            _jobLoadCountLength = 0;
+            _jobStaleSlotLength = 0;
+            _jobStaleCountLength = 0;
+            _telemetryLength = 0;
+            _tuningLength = 0;
+            _countersLength = 0;
+            _freedSlotLength = 0;
+            _freedCountLength = 0;
+            _hardwareProfileLength = 0;
+            _csvScratchByteLength = 0;
+            _telemetryDumpSnapshotByteLength = 0;
+        }
+
+        private void ResetRuntimeStateCounters()
+        {
+            Volatile.Write(ref _requestHead, 0);
+            Volatile.Write(ref _requestTail, 0);
+            Volatile.Write(ref _resultHead, 0);
+            Volatile.Write(ref _resultTail, 0);
+            _telemetryCursor = 0;
+            _csvProfileCount = 0;
+            _lastDumpFrame = 0;
+            Interlocked.Exchange(ref _dumpRequestPacked, 0L);
+            _workerSequence = 0u;
+            _lastEvalMicros = 0u;
+            _frameId = 0u;
+            _pendingResidency = 0;
+            _pendingEviction = 0;
+            _pendingResidencyStartTimestamp = 0L;
+            _pendingResidencyHandle = default;
+            _pendingEvictionHandle = default;
+            Volatile.Write(ref _workerHeartbeatTimestamp, 0L);
+            if (_jobLoadCountPtr != null && _jobLoadCountLength > 0)
+                _jobLoadCountPtr[0] = 0;
+            if (_jobStaleCountPtr != null && _jobStaleCountLength > 0)
+                _jobStaleCountPtr[0] = 0;
+            if (_freedCountPtr != null && _freedCountLength > 0)
+                _freedCountPtr[0] = 0;
+            if (_countersPtr != null && _countersLength > 0)
+                _countersPtr[0] = default;
+        }
+
+        private void PreSimulationTick(in DispatcherTimingDTO timing)
+        {
+            using (_preSimulationMarker.Auto())
+            {
+                if (_initialized == 0 || _metadataPtr == null)
+                    return;
+
+                _frameId = timing.FrameId;
+                if (!TryFinalizeEviction() || !TryFinalizeResidencyEvaluation())
+                    return;
+
+                if (!TryReadCameraAupSnapshot(out double3 cameraAup))
+                {
+                    _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultNonFiniteAup;
+                    return;
+                }
+
+                _lastCameraAup = cameraAup;
+                TerrainChunkPagerTuningDTO tuning = ResolveFrameTuning();
+                _lastCameraSectorX = TerrainChunkPagerMath.ResolveSectorCoord(cameraAup.x, tuning.SectorSizeMeters);
+                _lastCameraSectorZ = TerrainChunkPagerMath.ResolveSectorCoord(cameraAup.z, tuning.SectorSizeMeters);
+                if (!TryResolveArray(in _jobLoadRequestsHandle, _jobLoadRequestLength, out NativeArray<TerrainChunkWorkerRequestDTO> jobLoadRequests) ||
+                    !TryResolveArray(in _jobLoadCountHandle, _jobLoadCountLength, out NativeArray<int> jobLoadCount) ||
+                    !TryResolveArray(in _jobStaleSlotsHandle, _jobStaleSlotLength, out NativeArray<int> jobStaleSlots) ||
+                    !TryResolveArray(in _jobStaleCountHandle, _jobStaleCountLength, out NativeArray<int> jobStaleCount))
+                {
+                    _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                    return;
+                }
+
+                jobLoadCount[0] = 0;
+                jobStaleCount[0] = 0;
+
+                long start = System.Diagnostics.Stopwatch.GetTimestamp();
+                EvaluateChunkResidencyJob job = new EvaluateChunkResidencyJob
+                {
+                    MetadataPtr = _metadataPtr,
+                    SectorCoordPtr = _sectorCoordsPtr,
+                    MetadataCapacity = _metadataLength,
+                    LoadRequests = jobLoadRequests,
+                    LoadRequestCount = jobLoadCount,
+                    StaleSlots = jobStaleSlots,
+                    StaleSlotCount = jobStaleCount,
+                    CameraAup = cameraAup,
+                    Tuning = tuning,
+                    Frame = timing.FrameId,
+                    SequenceBase = _workerSequence + 1u
+                };
+                _pendingResidencyStartTimestamp = start;
+                _pendingResidencyHandle = job.Schedule();
+                _pendingResidency = 1;
+                H8Memory.RegisterActiveJob(SystemID.WorldStreaming, _pendingResidencyHandle);
+            }
+        }
+
+        private void PostSimulationTick(in DispatcherTimingDTO timing)
+        {
+            using (_postSimulationMarker.Auto())
+            {
+                if (_initialized == 0)
+                    return;
+
+                _frameId = timing.FrameId;
+                if (!TryFinalizeEviction() || !TryFinalizeResidencyEvaluation())
+                    return;
+
+                DrainWorkerResults();
+                DispatchEvaluationLoadRequests();
+                WriteTelemetry();
+            }
+        }
+
+        private void VisualSyncTick(in DispatcherTimingDTO timing)
+        {
+            using (_visualSyncMarker.Auto())
+            {
+                if (Volatile.Read(ref _deferredShutdown) != 0)
+                {
+                    TryReleaseDeferredShutdownState();
+                    return;
+                }
+
+                if (_initialized == 0 || _metadataPtr == null || _stagingPtr == null || _activePtr == null)
+                    return;
+
+                _frameId = timing.FrameId;
+                if (!TryFinalizeEviction() || !TryFinalizeResidencyEvaluation())
+                    return;
+
+                TerrainChunkPagerTuningDTO tuning = _tuningPtr != null && _tuningLength > 0
+                    ? TerrainChunkPagerMath.Sanitize(_tuningPtr[0])
+                    : TerrainChunkPagerTuningDTO.CreateDefault();
+                int commitBudget = math.max(1, tuning.MaxCommitsPerVisualSync);
+                int byteBudget = math.max(4096, (int)tuning.CommitByteBudgetPerFrame);
+                int committed = 0;
+                for (int slot = 0; slot < _metadataLength && committed < commitBudget && byteBudget > 0; slot++)
+                {
+                    ref ChunkMetadataDTO meta = ref UnsafeUtility.AsRef<ChunkMetadataDTO>(_metadataPtr + slot);
+                    if ((meta.StateFlags & TerrainChunkStateFlags.ReadyToCommit) == 0u)
+                        continue;
+
+                    int bytes = math.clamp((int)meta.FileOffset, 0, _allocatedChunkByteCapacity);
+                    if (bytes <= 0 || bytes > byteBudget)
+                        continue;
+
+                    int offset = slot * _allocatedChunkByteCapacity;
+                    UnsafeUtility.MemCpy(_activePtr + offset, _stagingPtr + offset, bytes);
+                    meta.StateFlags = (meta.StateFlags | TerrainChunkStateFlags.Active | TerrainChunkStateFlags.NetcodeExcluded) &
+                                      ~(TerrainChunkStateFlags.Loading | TerrainChunkStateFlags.ReadyToCommit | TerrainChunkStateFlags.Stale);
+                    meta.BufferIdRef = unchecked((uint)slot);
+                    committed++;
+                    byteBudget -= bytes;
+                }
+            }
+        }
+
+        private bool TryFinalizeResidencyEvaluation()
+        {
+            if (_pendingResidency == 0)
+                return true;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _pendingResidencyHandle))
+                return false;
+
+            _pendingResidency = 0;
+            _lastEvalMicros = ElapsedMicroseconds(_pendingResidencyStartTimestamp);
+            _pendingResidencyStartTimestamp = 0L;
+            return true;
+        }
+
+        private bool TryFinalizeEviction()
+        {
+            if (_pendingEviction == 0)
+                return true;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _pendingEvictionHandle))
+                return false;
+
+            _pendingEviction = 0;
+            return true;
+        }
+
+        private bool TryFinalizePendingPagerJobsForTeardown()
+        {
+            bool finalized = true;
+            if (_pendingResidency != 0)
+            {
+                if (DispatcherJobFence.TryFinalizeCompleted(ref _pendingResidencyHandle))
+                {
+                    _pendingResidency = 0;
+                    _lastEvalMicros = ElapsedMicroseconds(_pendingResidencyStartTimestamp);
+                    _pendingResidencyStartTimestamp = 0L;
+                }
+                else
+                {
+                    finalized = false;
+                }
+            }
+
+            if (_pendingEviction != 0)
+            {
+                if (DispatcherJobFence.TryFinalizeCompleted(ref _pendingEvictionHandle))
+                    _pendingEviction = 0;
+                else
+                    finalized = false;
+            }
+
+            return finalized;
+        }
+
+        private TerrainChunkPagerTuningDTO ResolveFrameTuning()
+        {
+            TerrainChunkPagerTuningDTO tuning = _tuningPtr != null && _tuningLength > 0 ? _tuningPtr[0] : TerrainChunkPagerTuningDTO.CreateDefault();
+            tuning.GlobalQualityWeight = math.saturate(TerrainChunkPagerMath.FiniteOr(HomeostasisBrain.GlobalQualityWeight, tuning.GlobalQualityWeight));
+            if (_allocatedChunkByteCapacity > 0)
+                tuning.ChunkByteCapacity = _allocatedChunkByteCapacity;
+            tuning.Flags = Volatile.Read(ref _forceMockDiskIo) != 0
+                ? (tuning.Flags | TerrainChunkPagerConstants.RequestFlagForceMock)
+                : (tuning.Flags & ~TerrainChunkPagerConstants.RequestFlagForceMock);
+            tuning = TerrainChunkPagerMath.Sanitize(tuning);
+            tuning.MaxQueuedLoads = math.clamp(tuning.MaxQueuedLoads, 1, math.max(1, queueCapacity - 1));
+            tuning.CommitByteBudgetPerFrame = math.min(
+                tuning.CommitByteBudgetPerFrame,
+                ResolveCommitByteBudget(_allocatedChunkByteCapacity, tuning.MaxCommitsPerVisualSync));
+            if (_tuningPtr != null && _tuningLength > 0)
+                _tuningPtr[0] = tuning;
+            return tuning;
+        }
+
+        private void DispatchEvaluationLoadRequests()
+        {
+            if (_jobLoadCountPtr == null || _jobLoadRequestPtr == null || _metadataPtr == null || _sectorCoordsPtr == null || _tuningPtr == null)
+                return;
+
+            int count = math.min(_jobLoadCountPtr[0], _jobLoadRequestLength);
+            TerrainChunkPagerTuningDTO tuning = _tuningPtr[0];
+            int dispatched = 0;
+            for (int i = 0; i < count && dispatched < tuning.MaxQueuedLoads; i++)
+            {
+                TerrainChunkWorkerRequestDTO request = _jobLoadRequestPtr[i];
+                if (FindSlotByHash(request.SectorHash) >= 0)
+                    continue;
+
+                int slot = FindFreeSlot();
+                if (slot < 0)
+                    break;
+
+                request.SlotIndex = slot;
+                request.Sequence = ++_workerSequence;
+                ChunkMetadataDTO meta = default;
+                meta.SectorHash = request.SectorHash;
+                meta.BufferIdRef = unchecked((uint)slot);
+                meta.FileOffset = request.Sequence;
+                meta.StateFlags = TerrainChunkStateFlags.Loading | TerrainChunkStateFlags.NetcodeExcluded;
+                meta.DistanceSq = request.DistanceSq;
+                _metadataPtr[slot] = meta;
+                _sectorCoordsPtr[slot] = new long2(request.SectorX, request.SectorZ);
+                if (!TryEnqueueWorkerRequest(in request))
+                {
+                    _metadataPtr[slot] = default;
+                    _sectorCoordsPtr[slot] = default;
+                    _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultQueueOverflow;
+                    IncrementQueueOverflow();
+                    break;
+                }
+
+                dispatched++;
+            }
+        }
+
+        private void DrainWorkerResults()
+        {
+            TerrainChunkWorkerResultDTO result;
+            while (TryDequeueWorkerResult(out result))
+            {
+                if ((uint)result.SlotIndex >= (uint)_metadataLength)
+                    continue;
+
+                ChunkMetadataDTO meta = _metadataPtr[result.SlotIndex];
+                if (meta.SectorHash != result.SectorHash ||
+                    meta.FileOffset != result.Sequence ||
+                    (meta.StateFlags & TerrainChunkStateFlags.Loading) == 0u)
+                {
+                    _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
+                    continue;
+                }
+
+                TerrainChunkPagerTuningDTO tuning = _tuningPtr != null ? _tuningPtr[0] : TerrainChunkPagerTuningDTO.CreateDefault();
+                float safeLatency = math.max(0f, result.LatencyMs);
+                tuning.LatencyEwmaMs = tuning.LatencyEwmaMs <= 0f
+                    ? safeLatency
+                    : math.lerp(tuning.LatencyEwmaMs, safeLatency, 0.08f);
+                tuning.EffectiveRingRadius = TerrainChunkPagerMath.ResolveContinuousRingRadius(tuning.GlobalQualityWeight, tuning.LatencyEwmaMs, in tuning);
+                if (_tuningPtr != null)
+                    _tuningPtr[0] = TerrainChunkPagerMath.Sanitize(tuning);
+
+                if ((result.Flags & TerrainChunkPagerConstants.ResultFlagSuccess) != 0u && result.BytesWritten > 0)
+                {
+                    meta.SectorHash = result.SectorHash;
+                    meta.BufferIdRef = unchecked((uint)result.SlotIndex);
+                    meta.FileOffset = unchecked((uint)math.min(result.BytesWritten, _allocatedChunkByteCapacity));
+                    meta.StateFlags = (meta.StateFlags | TerrainChunkStateFlags.ReadyToCommit | TerrainChunkStateFlags.NetcodeExcluded) &
+                                      ~TerrainChunkStateFlags.Stale;
+                    if ((result.Flags & TerrainChunkPagerConstants.ResultFlagMock) != 0u)
+                        meta.StateFlags |= TerrainChunkStateFlags.MockPayload;
+                    _sectorCoordsPtr[result.SlotIndex] = new long2(result.SectorX, result.SectorZ);
+                }
+                else
+                {
+                    meta.SectorHash = result.SectorHash;
+                    meta.BufferIdRef = unchecked((uint)result.SlotIndex);
+                    meta.StateFlags = TerrainChunkStateFlags.MissingFile | TerrainChunkStateFlags.Stale | TerrainChunkStateFlags.NetcodeExcluded;
+                    meta.FileOffset = 0u;
+                    if ((result.Flags & TerrainChunkPagerConstants.ResultFlagMissingFile) != 0u)
+                        IncrementMissingFile();
+                    if ((result.Flags & TerrainChunkPagerConstants.ResultFlagIoError) != 0u)
+                        IncrementIoError();
+                    if ((result.Flags & TerrainChunkPagerConstants.ResultFlagLz4Error) != 0u)
+                        IncrementLz4Error();
+                    if ((result.Flags & TerrainChunkPagerConstants.ResultFlagInvalidHeader) != 0u)
+                        _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultInvalidHeader;
+                    if ((result.Flags & TerrainChunkPagerConstants.ResultFlagChecksumMismatch) != 0u)
+                        _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultChecksum;
+                }
+
+                _metadataPtr[result.SlotIndex] = meta;
+            }
+        }
+
+        private bool TryEnqueueWorkerRequest(in TerrainChunkWorkerRequestDTO request)
+        {
+            int head = Volatile.Read(ref _requestHead);
+            int next = (head + 1) & _queueMask;
+            if (next == Volatile.Read(ref _requestTail))
+                return false;
+
+            _workerRequestPtr[head] = request;
+            Interlocked.Exchange(ref _requestHead, next);
+            _workerWake.Set();
+            return true;
+        }
+
+        private bool TryDequeueWorkerRequest(out TerrainChunkWorkerRequestDTO request)
+        {
+            int tail = Volatile.Read(ref _requestTail);
+            if (tail == Volatile.Read(ref _requestHead))
+            {
+                request = default;
+                return false;
+            }
+
+            request = _workerRequestPtr[tail];
+            Interlocked.Exchange(ref _requestTail, (tail + 1) & _queueMask);
+            return true;
+        }
+
+        private bool TryEnqueueWorkerResult(in TerrainChunkWorkerResultDTO result)
+        {
+            int head = Volatile.Read(ref _resultHead);
+            int next = (head + 1) & _queueMask;
+            if (next == Volatile.Read(ref _resultTail))
+                return false;
+
+            _workerResultPtr[head] = result;
+            Interlocked.Exchange(ref _resultHead, next);
+            return true;
+        }
+
+        private bool TryDequeueWorkerResult(out TerrainChunkWorkerResultDTO result)
+        {
+            int tail = Volatile.Read(ref _resultTail);
+            if (tail == Volatile.Read(ref _resultHead))
+            {
+                result = default;
+                return false;
+            }
+
+            result = _workerResultPtr[tail];
+            Interlocked.Exchange(ref _resultTail, (tail + 1) & _queueMask);
+            return true;
+        }
+
+        private void StartWorker()
+        {
+            _workerWake = new AutoResetEvent(false);
+            Volatile.Write(ref _workerRunning, 1);
+            Volatile.Write(ref _workerThreadActive, 1);
+            Volatile.Write(ref _workerHeartbeatTimestamp, System.Diagnostics.Stopwatch.GetTimestamp());
+            _workerThread = new Thread(WorkerLoop);
+            _workerThread.IsBackground = true;
+            _workerThread.Name = WorkerName;
+            _workerThread.Priority = System.Threading.ThreadPriority.BelowNormal;
+            _workerThread.Start();
+        }
+
+        private bool StopWorker()
+        {
+            Volatile.Write(ref _workerRunning, 0);
+            AutoResetEvent wake = _workerWake;
+            if (wake != null)
+                wake.Set();
+
+            Thread thread = _workerThread;
+            if (thread != null && thread.IsAlive)
+            {
+                if (!thread.Join(2000))
+                    return false;
+            }
+
+            _workerThread = null;
+            if (_workerWake != null)
+            {
+                _workerWake.Dispose();
+                _workerWake = null;
+            }
+
+            Volatile.Write(ref _workerThreadActive, 0);
+            return true;
+        }
+
+        private void WorkerLoop()
+        {
+            try
+            {
+                while (Volatile.Read(ref _workerRunning) != 0)
+                {
+                    Volatile.Write(ref _workerHeartbeatTimestamp, System.Diagnostics.Stopwatch.GetTimestamp());
+                    _workerWake.WaitOne();
+                    Volatile.Write(ref _workerHeartbeatTimestamp, System.Diagnostics.Stopwatch.GetTimestamp());
+                    TerrainChunkWorkerRequestDTO request;
+                    while (Volatile.Read(ref _workerRunning) != 0 && TryDequeueWorkerRequest(out request))
+                    {
+                        try
+                        {
+                            Volatile.Write(ref _workerHeartbeatTimestamp, System.Diagnostics.Stopwatch.GetTimestamp());
+                            ProcessWorkerRequest(in request);
+                            Volatile.Write(ref _workerHeartbeatTimestamp, System.Diagnostics.Stopwatch.GetTimestamp());
+                        }
+                        catch (Exception)
+                        {
+                            TerrainChunkWorkerResultDTO result = default;
+                            result.SectorHash = request.SectorHash;
+                            result.SectorX = request.SectorX;
+                            result.SectorZ = request.SectorZ;
+                            result.SlotIndex = request.SlotIndex;
+                            result.Sequence = request.Sequence;
+                            result.RequestFrame = request.RequestFrame;
+                            result.Flags = TerrainChunkPagerConstants.ResultFlagIoError;
+                            PublishWorkerResult(in result);
+                        }
+                    }
+
+                    TryDrainTelemetryDumpRequestOnWorker();
+                }
+            }
+            finally
+            {
+                Volatile.Write(ref _workerThreadActive, 0);
+                Volatile.Write(ref _workerHeartbeatTimestamp, 0L);
+            }
+        }
+
+        private void ProcessWorkerRequest(in TerrainChunkWorkerRequestDTO request)
+        {
+            TerrainChunkWorkerResultDTO result = default;
+            result.SectorHash = request.SectorHash;
+            result.SectorX = request.SectorX;
+            result.SectorZ = request.SectorZ;
+            result.SlotIndex = request.SlotIndex;
+            result.Sequence = request.Sequence;
+            result.RequestFrame = request.RequestFrame;
+
+            long start = System.Diagnostics.Stopwatch.GetTimestamp();
+            int slot = request.SlotIndex;
+            int capacity = math.min(request.ChunkByteCapacity, _allocatedChunkByteCapacity);
+            int compressedCapacity = _allocatedCompressedChunkByteCapacity;
+            if ((uint)slot >= (uint)maxChunkSlots ||
+                capacity <= 0 ||
+                compressedCapacity <= 0 ||
+                _stagingPtr == null ||
+                _compressedScratchPtr == null)
+            {
+                result.Flags = TerrainChunkPagerConstants.ResultFlagIoError;
+                result.LatencyMs = ElapsedMilliseconds(start);
+                PublishWorkerResult(in result);
+                return;
+            }
+
+            byte* staging = _stagingPtr + (slot * _allocatedChunkByteCapacity);
+            byte* compressed = _compressedScratchPtr + (slot * _allocatedCompressedChunkByteCapacity);
+            bool forceMock = Volatile.Read(ref _forceMockDiskIo) != 0 ||
+                             (request.Flags & TerrainChunkPagerConstants.RequestFlagForceMock) != 0u;
+            if (forceMock)
+            {
+                SimulateMockDiskDelay(in request);
+                GenerateMockDiskLoadJob.Fill(staging, capacity, request.SectorHash, request.Sequence);
+                result.BytesWritten = capacity;
+                result.Flags = TerrainChunkPagerConstants.ResultFlagSuccess | TerrainChunkPagerConstants.ResultFlagMock;
+                result.LatencyMs = ElapsedMilliseconds(start);
+                PublishWorkerResult(in result);
+                return;
+            }
+
+            if (!TryLoadChunkFile(in request, staging, compressed, capacity, compressedCapacity, ref result))
+            {
+                result.LatencyMs = ElapsedMilliseconds(start);
+                PublishWorkerResult(in result);
+                return;
+            }
+
+            result.Flags |= TerrainChunkPagerConstants.ResultFlagSuccess;
+            result.LatencyMs = ElapsedMilliseconds(start);
+            PublishWorkerResult(in result);
+        }
+
+        private void PublishWorkerResult(in TerrainChunkWorkerResultDTO result)
+        {
+            int spins = 0;
+            while (Volatile.Read(ref _workerRunning) != 0)
+            {
+                if (TryEnqueueWorkerResult(in result))
+                    return;
+
+                spins++;
+                if (spins < 4)
+                    Thread.Yield();
+                else
+                    Thread.Sleep(1);
+            }
+        }
+
+        private bool TryLoadChunkFile(
+            in TerrainChunkWorkerRequestDTO request,
+            byte* staging,
+            byte* compressed,
+            int capacity,
+            int compressedCapacity,
+            ref TerrainChunkWorkerResultDTO result)
+        {
+            if (!TryOpenSectorReadStream(request.SectorHash, out FileStream stream, out bool missingFile))
+            {
+                result.Flags = missingFile
+                    ? TerrainChunkPagerConstants.ResultFlagMissingFile
+                    : TerrainChunkPagerConstants.ResultFlagIoError;
+                return false;
+            }
+
+            try
+            {
+                using (stream) // BACKGROUND_WORKER_IO_SHINOBU_245: native path open, never executed on Unity main thread.
+                {
+                    TerrainChunkFileHeaderDTO header = default;
+                    int headerBytes = CopyExactFromStream(stream, (byte*)&header, UnsafeUtility.SizeOf<TerrainChunkFileHeaderDTO>());
+                    if (headerBytes != UnsafeUtility.SizeOf<TerrainChunkFileHeaderDTO>() ||
+                        !TryNormalizeChunkHeader(ref header) ||
+                        !TryValidateChunkHeader(in header, stream.Length, capacity, compressedCapacity, out int storedBytes, out int uncompressedBytes, out long payloadOffset))
+                    {
+                        result.Flags = TerrainChunkPagerConstants.ResultFlagInvalidHeader;
+                        return false;
+                    }
+
+                    stream.Position = payloadOffset;
+
+                    if (header.Compression == TerrainChunkPagerConstants.FileCompressionRaw)
+                    {
+                        int rawBytes = CopyExactFromStream(stream, staging, uncompressedBytes);
+                        result.BytesWritten = rawBytes;
+                        if (rawBytes != uncompressedBytes)
+                            result.Flags |= TerrainChunkPagerConstants.ResultFlagPartialRead;
+                        if (rawBytes <= 0)
+                            return false;
+                        if (!ValidateChunkPayloadCrc(staging, rawBytes, header.Crc32))
+                        {
+                            result.Flags |= TerrainChunkPagerConstants.ResultFlagChecksumMismatch;
+                            return false;
+                        }
+
+                        return true;
+                    }
+
+                    if (header.Compression == TerrainChunkPagerConstants.FileCompressionLz4)
+                    {
+                        int readBytes = CopyExactFromStream(stream, compressed, storedBytes);
+                        if (readBytes != storedBytes)
+                        {
+                            result.Flags = TerrainChunkPagerConstants.ResultFlagPartialRead;
+                            return false;
+                        }
+
+                        if (!TerrainChunkLz4Codec.TryDecompress(compressed, storedBytes, staging, capacity, out int written) ||
+                            written <= 0 ||
+                            written != uncompressedBytes ||
+                            written > capacity)
+                        {
+                            result.Flags = TerrainChunkPagerConstants.ResultFlagLz4Error;
+                            return false;
+                        }
+
+                        if (!ValidateChunkPayloadCrc(staging, written, header.Crc32))
+                        {
+                            result.Flags = TerrainChunkPagerConstants.ResultFlagChecksumMismatch;
+                            return false;
+                        }
+
+                        result.BytesWritten = written;
+                        return true;
+                    }
+
+                    result.Flags = TerrainChunkPagerConstants.ResultFlagIoError;
+                    return false;
+                }
+            }
+            catch (IOException)
+            {
+                result.Flags = TerrainChunkPagerConstants.ResultFlagIoError;
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                result.Flags = TerrainChunkPagerConstants.ResultFlagIoError;
+                return false;
+            }
+        }
+
+        private static bool TryNormalizeChunkHeader(ref TerrainChunkFileHeaderDTO header)
+        {
+            if (header.Magic == TerrainChunkPagerConstants.FileMagic)
+                return true;
+
+            if (ReverseUInt32(header.Magic) != TerrainChunkPagerConstants.FileMagic)
+                return false;
+
+            header.Magic = TerrainChunkPagerConstants.FileMagic;
+            header.Version = ReverseUInt32(header.Version);
+            header.StoredBytes = ReverseUInt32(header.StoredBytes);
+            header.UncompressedBytes = ReverseUInt32(header.UncompressedBytes);
+            header.Compression = ReverseUInt32(header.Compression);
+            header.PayloadOffset = ReverseUInt32(header.PayloadOffset);
+            header.Crc32 = ReverseUInt32(header.Crc32);
+            header.Flags = ReverseUInt32(header.Flags);
+            return true;
+        }
+
+        private static bool TryValidateChunkHeader(
+            in TerrainChunkFileHeaderDTO header,
+            long fileLength,
+            int capacity,
+            int compressedCapacity,
+            out int storedBytes,
+            out int uncompressedBytes,
+            out long payloadOffset)
+        {
+            storedBytes = 0;
+            uncompressedBytes = 0;
+            payloadOffset = 0L;
+            uint headerBytes = (uint)UnsafeUtility.SizeOf<TerrainChunkFileHeaderDTO>();
+            if (capacity <= 0 ||
+                compressedCapacity <= 0 ||
+                fileLength <= headerBytes ||
+                header.Version == 0u ||
+                (header.Compression != TerrainChunkPagerConstants.FileCompressionRaw &&
+                 header.Compression != TerrainChunkPagerConstants.FileCompressionLz4) ||
+                header.StoredBytes == 0u ||
+                header.UncompressedBytes == 0u ||
+                header.StoredBytes > (uint)compressedCapacity ||
+                header.UncompressedBytes > (uint)capacity ||
+                header.PayloadOffset < headerBytes)
+            {
+                return false;
+            }
+
+            if (header.Compression == TerrainChunkPagerConstants.FileCompressionRaw &&
+                header.StoredBytes != header.UncompressedBytes)
+            {
+                return false;
+            }
+
+            payloadOffset = header.PayloadOffset;
+            long remaining = fileLength - payloadOffset;
+            if (payloadOffset > fileLength || remaining < header.StoredBytes)
+                return false;
+
+            storedBytes = (int)header.StoredBytes;
+            uncompressedBytes = (int)header.UncompressedBytes;
+            return true;
+        }
+
+        private static bool ValidateChunkPayloadCrc(byte* payload, int byteCount, uint expectedCrc)
+        {
+            return payload != null && byteCount > 0 && H8Crc32.Compute(payload, byteCount) == expectedCrc;
+        }
+
+        private static uint ReverseUInt32(uint value)
+        {
+            return (value >> 24) |
+                   ((value >> 8) & 0x0000FF00u) |
+                   ((value << 8) & 0x00FF0000u) |
+                   (value << 24);
+        }
+
+        private static int CopyExactFromStream(FileStream stream, byte* destination, int byteCount)
+        {
+            if (stream == null || destination == null || byteCount <= 0)
+                return 0;
+
+            int total = 0;
+            Span<byte> span = new Span<byte>(destination, byteCount);
+            while (total < byteCount)
+            {
+                int read = stream.Read(span.Slice(total)); // BACKGROUND_WORKER_IO_SHINOBU_245 / COLD_BOOT_CONFIG_READ_SHINOBU_245
+                if (read <= 0)
+                    break;
+                total += read;
+            }
+
+            return total;
+        }
+
+        private void SimulateMockDiskDelay(in TerrainChunkWorkerRequestDTO request)
+        {
+            int minMs = math.max(0, request.WorkerMockDelayMinMs);
+            int maxMs = math.max(minMs, request.WorkerMockDelayMaxMs);
+            if (maxMs <= 0)
+                return;
+
+            uint mixed = unchecked((uint)(request.SectorHash ^ (request.SectorHash >> 32)) ^ request.Sequence);
+            int range = math.max(1, maxMs - minMs + 1);
+            int delay = minMs + (int)(mixed % (uint)range);
+            Thread.Sleep(delay);
+        }
+
+        private bool TryOpenSectorReadStream(ulong sectorHash, out FileStream stream, out bool missingFile)
+        {
+            stream = null;
+            missingFile = false;
+            if (!TryBuildSectorPathChars(sectorHash, out int charCount))
+                return false;
+
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            fixed (char* path = _pathBuffer)
+            {
+                SafeFileHandle handle = NativeChunkFileOpen.CreateFileW(
+                    path,
+                    NativeChunkFileOpen.GenericRead,
+                    NativeChunkFileOpen.FileShareRead,
+                    IntPtr.Zero,
+                    NativeChunkFileOpen.OpenExisting,
+                    NativeChunkFileOpen.FileAttributeNormal | NativeChunkFileOpen.FileFlagSequentialScan | NativeChunkFileOpen.FileFlagOverlapped,
+                    IntPtr.Zero);
+                if (handle == null || handle.IsInvalid)
+                {
+                    if (handle != null)
+                        handle.Dispose();
+                    int error = Marshal.GetLastWin32Error();
+                    missingFile = error == NativeChunkFileOpen.ErrorFileNotFound || error == NativeChunkFileOpen.ErrorPathNotFound;
+                    return false;
+                }
+
+                stream = new FileStream(handle, FileAccess.Read, 64 * 1024, true); // BACKGROUND_WORKER_IO_SHINOBU_245: SafeFileHandle stream only.
+                return true;
+            }
+#else
+            if (!TryEncodePathUtf8(_pathBuffer, charCount, _utf8PathBuffer, out int byteCount))
+                return false;
+
+            fixed (byte* path = _utf8PathBuffer)
+            {
+                int fd = NativeChunkFileOpen.OpenUnix(path, NativeChunkFileOpen.O_RDONLY);
+                if (fd < 0)
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    missingFile = error == NativeChunkFileOpen.ENOENT || error == NativeChunkFileOpen.ENOTDIR;
+                    return false;
+                }
+
+                SafeFileHandle handle = new SafeFileHandle(new IntPtr(fd), true);
+                stream = new FileStream(handle, FileAccess.Read, 64 * 1024, true); // BACKGROUND_WORKER_IO_SHINOBU_245: SafeFileHandle stream only.
+                return true;
+            }
+#endif
+        }
+
+        private bool TryBuildSectorPathChars(ulong sectorHash, out int charCount)
+        {
+            charCount = 0;
+            char[] buffer = _pathBuffer;
+            if (buffer == null || string.IsNullOrEmpty(_chunkRootFullPath))
+                return false;
+
+            int cursor = 0;
+            if (!Append(buffer, ref cursor, _chunkRootFullPath))
+                return false;
+            if (cursor > 0)
+            {
+                char last = buffer[cursor - 1];
+                if (last != '\\' && last != '/')
+                {
+                    if (cursor >= buffer.Length)
+                        return false;
+                    buffer[cursor++] = Path.DirectorySeparatorChar;
+                }
+            }
+
+            if (!Append(buffer, ref cursor, "sector_") ||
+                !AppendHex64(buffer, ref cursor, sectorHash) ||
+                !Append(buffer, ref cursor, ".h8bin"))
+            {
+                return false;
+            }
+
+            if (cursor >= buffer.Length)
+                return false;
+
+            buffer[cursor] = '\0';
+            charCount = cursor;
+            return true;
+        }
+
+        private static bool TryEncodePathUtf8(char[] source, int charCount, byte[] destination, out int byteCount)
+        {
+            byteCount = 0;
+            if (source == null || destination == null || charCount < 0)
+                return false;
+
+            for (int i = 0; i < charCount; i++)
+            {
+                int code = source[i];
+                if (code <= 0x7F)
+                {
+                    if (byteCount + 1 >= destination.Length)
+                        return false;
+                    destination[byteCount++] = (byte)code;
+                }
+                else if (code <= 0x7FF)
+                {
+                    if (byteCount + 2 >= destination.Length)
+                        return false;
+                    destination[byteCount++] = (byte)(0xC0 | (code >> 6));
+                    destination[byteCount++] = (byte)(0x80 | (code & 0x3F));
+                }
+                else
+                {
+                    if (char.IsSurrogate(source[i]))
+                        return false;
+                    if (byteCount + 3 >= destination.Length)
+                        return false;
+                    destination[byteCount++] = (byte)(0xE0 | (code >> 12));
+                    destination[byteCount++] = (byte)(0x80 | ((code >> 6) & 0x3F));
+                    destination[byteCount++] = (byte)(0x80 | (code & 0x3F));
+                }
+            }
+
+            destination[byteCount] = 0;
+            return true;
+        }
+
+        private static bool Append(char[] buffer, ref int cursor, string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return true;
+
+            int max = buffer.Length;
+            if (text.Length > max - cursor)
+                return false;
+
+            for (int i = 0; i < text.Length; i++)
+                buffer[cursor++] = text[i];
+            return true;
+        }
+
+        private static bool AppendHex64(char[] buffer, ref int cursor, ulong value)
+        {
+            if (buffer.Length - cursor < 16)
+                return false;
+
+            for (int shift = 60; shift >= 0; shift -= 4)
+            {
+                int nibble = (int)((value >> shift) & 0xFUL);
+                buffer[cursor++] = (char)(nibble < 10 ? '0' + nibble : 'A' + (nibble - 10));
+            }
+
+            return true;
+        }
+
+        private int FindFreeSlot()
+        {
+            for (int i = 0; i < _metadataLength; i++)
+            {
+                ChunkMetadataDTO meta = _metadataPtr[i];
+                if (meta.SectorHash == 0UL)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private int FindSlotByHash(ulong sectorHash)
+        {
+            for (int i = 0; i < _metadataLength; i++)
+            {
+                ChunkMetadataDTO meta = _metadataPtr[i];
+                if (meta.SectorHash == sectorHash &&
+                    (meta.StateFlags & (TerrainChunkStateFlags.Active | TerrainChunkStateFlags.Loading | TerrainChunkStateFlags.ReadyToCommit | TerrainChunkStateFlags.MissingFile)) != 0u)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private void WriteTelemetry()
+        {
+            if (_telemetryPtr == null || _telemetryLength <= 0 || _countersPtr == null || _metadataPtr == null || _tuningPtr == null)
+                return;
+
+            int active = 0;
+            int loading = 0;
+            int stale = 0;
+            for (int i = 0; i < _metadataLength; i++)
+            {
+                uint flags = _metadataPtr[i].StateFlags;
+                if ((flags & TerrainChunkStateFlags.Active) != 0u) active++;
+                if ((flags & TerrainChunkStateFlags.Loading) != 0u) loading++;
+                if ((flags & TerrainChunkStateFlags.Stale) != 0u) stale++;
+            }
+
+            int pendingLoads = CountRing(ref _requestHead, ref _requestTail);
+            int pendingResults = CountRing(ref _resultHead, ref _resultTail);
+            TerrainChunkPagerTuningDTO tuning = _tuningPtr[0];
+            if (Volatile.Read(ref _workerRunning) != 0 &&
+                (Volatile.Read(ref _workerThreadActive) == 0 ||
+                 IsWorkerHeartbeatStale(Volatile.Read(ref _workerHeartbeatTimestamp), tuning.CriticalLatencyMs, pendingLoads, loading)))
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
+            }
+
+            TerrainChunkPagerCountersDTO counters = _countersPtr[0];
+            counters.Frame = _frameId;
+            counters.ActiveChunks = active;
+            counters.LoadingChunks = loading;
+            counters.StaleChunks = stale;
+            counters.PendingRequests = pendingLoads;
+            counters.PendingResults = pendingResults;
+            counters.LatencyEwmaMs = tuning.LatencyEwmaMs;
+            counters.EffectiveRingRadius = tuning.EffectiveRingRadius;
+            counters.LastFaultFlags = _faultFlags;
+            counters.WorkerSequence = _workerSequence;
+            counters.LayoutValid = _layoutValid;
+            _countersPtr[0] = counters;
+
+            int cursor = _telemetryCursor;
+            PagerTelemetryEntry entry = default;
+            entry.CameraAup = _lastCameraAup;
+            entry.Frame = _frameId;
+            entry.StateHash = TerrainChunkPagerMath.HashMetadata(_metadataPtr, _metadataLength);
+            entry.ActiveChunks = (ushort)math.min(ushort.MaxValue, active);
+            entry.LoadingChunks = (ushort)math.min(ushort.MaxValue, loading);
+            entry.StaleChunks = (ushort)math.min(ushort.MaxValue, stale);
+            entry.PendingLoads = (ushort)math.min(ushort.MaxValue, pendingLoads);
+            entry.LatencyEwmaMs = tuning.LatencyEwmaMs;
+            entry.ResidencyEvalMicros = _lastEvalMicros;
+            entry.EffectiveRingRadius = tuning.EffectiveRingRadius;
+            entry.Flags = _faultFlags;
+            entry.MissingFileCount = counters.MissingFileCount;
+            entry.WorkerSequence = _workerSequence;
+            _telemetryPtr[cursor] = entry;
+            _telemetryCursor = (cursor + 1) % _telemetryLength;
+
+            if (_faultFlags != 0u)
+                RequestTelemetryDumpOnce();
+        }
+
+        private int CountRing(ref int head, ref int tail)
+        {
+            int safeHead = Volatile.Read(ref head);
+            int safeTail = Volatile.Read(ref tail);
+            return (safeHead - safeTail) & _queueMask;
+        }
+
+        private static bool IsWorkerHeartbeatStale(long heartbeatTimestamp, float criticalLatencyMs, int pendingLoads, int loadingChunks)
+        {
+            if (heartbeatTimestamp <= 0L || (pendingLoads | loadingChunks) == 0)
+                return false;
+
+            long delta = System.Diagnostics.Stopwatch.GetTimestamp() - heartbeatTimestamp;
+            double elapsedMs = (double)delta * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            float limitMs = math.max(5000f, math.max(1f, criticalLatencyMs) * 8f);
+            return elapsedMs > limitMs;
+        }
+
+        private void IncrementMissingFile()
+        {
+            if (_countersPtr == null)
+                return;
+
+            TerrainChunkPagerCountersDTO counters = _countersPtr[0];
+            counters.MissingFileCount++;
+            counters.LastFaultFlags |= TerrainChunkPagerConstants.TelemetryFaultMissingFile;
+            _countersPtr[0] = counters;
+            _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultMissingFile;
+        }
+
+        private void IncrementIoError()
+        {
+            if (_countersPtr == null)
+                return;
+
+            TerrainChunkPagerCountersDTO counters = _countersPtr[0];
+            counters.IoErrorCount++;
+            counters.LastFaultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
+            _countersPtr[0] = counters;
+            _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
+        }
+
+        private void IncrementLz4Error()
+        {
+            if (_countersPtr == null)
+                return;
+
+            TerrainChunkPagerCountersDTO counters = _countersPtr[0];
+            counters.Lz4ErrorCount++;
+            counters.LastFaultFlags |= TerrainChunkPagerConstants.TelemetryFaultLz4;
+            _countersPtr[0] = counters;
+            _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultLz4;
+        }
+
+        private void IncrementQueueOverflow()
+        {
+            if (_countersPtr == null)
+                return;
+
+            TerrainChunkPagerCountersDTO counters = _countersPtr[0];
+            counters.QueueOverflowCount++;
+            counters.LastFaultFlags |= TerrainChunkPagerConstants.TelemetryFaultQueueOverflow;
+            _countersPtr[0] = counters;
+        }
+
+        private bool TryReadCameraAupSnapshot(out double3 cameraAup)
+        {
+            int sequence0 = Volatile.Read(ref _cameraAupSequence);
+            if (sequence0 != 0 && (sequence0 & 1) == 0)
+            {
+                long x = Volatile.Read(ref _cameraAupBitsX);
+                long y = Volatile.Read(ref _cameraAupBitsY);
+                long z = Volatile.Read(ref _cameraAupBitsZ);
+                int sequence1 = Volatile.Read(ref _cameraAupSequence);
+                if (sequence0 == sequence1 && (sequence1 & 1) == 0)
+                {
+                    cameraAup = new double3(LongBitsToDouble(x), LongBitsToDouble(y), LongBitsToDouble(z));
+                    return math.all(math.isfinite(cameraAup));
+                }
+            }
+
+            PlayerRuntimeContext runtimeContext = _cachedRuntimeContext;
+            if (runtimeContext != null && runtimeContext.IsBound)
+            {
+                AbsoluteUniversePosition aup = runtimeContext.MovementState.PredictedAup;
+                if (aup.IsFinite())
+                {
+                    cameraAup = aup.ToAbsoluteDouble3();
+                    return math.all(math.isfinite(cameraAup));
+                }
+            }
+
+            if (useMockCameraAupWhenNoPlayer)
+            {
+                cameraAup = new double3(mockCameraAupMeters.x, mockCameraAupMeters.y, mockCameraAupMeters.z);
+                return math.all(math.isfinite(cameraAup));
+            }
+
+            cameraAup = default;
+            return false;
+        }
+
+        private void LoadColdStreamingProfile()
+        {
+            if (!loadCsvProfileOnEnable ||
+                _tuningPtr == null ||
+                _tuningLength == 0 ||
+                _hardwareProfilePtr == null ||
+                _csvScratchPtr == null ||
+                _csvScratchByteLength <= 0)
+            {
+                return;
+            }
+
+            if (!TryResolveArray(in _hardwareProfilesHandle, _hardwareProfileLength, out NativeArray<StreamingHardwareProfileDTO> hardwareProfiles))
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                return;
+            }
+
+            string path = Path.Combine(ResolveProjectRoot(), StreamingProfileCsvRelativePath);
+            try
+            {
+                using (FileStream stream = new FileStream( // COLD_BOOT_CONFIG_READ_SHINOBU_245: one-shot CSV ingest into native scratch.
+                           path,
+                           FileMode.Open,
+                           FileAccess.Read,
+                           FileShare.ReadWrite,
+                           4096,
+                           FileOptions.SequentialScan))
+                {
+                    int byteCount = (int)math.min(stream.Length, _csvScratchByteLength);
+                    if (byteCount <= 0)
+                        return;
+
+                    int read = CopyExactFromStream(stream, _csvScratchPtr, byteCount);
+                    if (read <= 0)
+                        return;
+
+                    TerrainChunkPagerTuningDTO tuning = _tuningPtr[0];
+                    ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(_csvScratchPtr, read);
+                    if (TerrainChunkStreamingProfileCsvParser.TryParse(csv, ref tuning, hardwareProfiles, out _csvProfileCount))
+                    {
+                        tuning.ChunkByteCapacity = _allocatedChunkByteCapacity;
+                        tuning.MaxQueuedLoads = math.clamp(tuning.MaxQueuedLoads, 1, math.max(1, queueCapacity - 1));
+                        tuning.CommitByteBudgetPerFrame = math.min(
+                            tuning.CommitByteBudgetPerFrame,
+                            ResolveCommitByteBudget(_allocatedChunkByteCapacity, tuning.MaxCommitsPerVisualSync));
+                        _tuningPtr[0] = TerrainChunkPagerMath.Sanitize(tuning);
+                    }
+                }
+            }
+            catch (FileNotFoundException)
+            {
+            }
+            catch (DirectoryNotFoundException)
+            {
+            }
+            catch (IOException)
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
+            }
+        }
+
+        private void RequestTelemetryDumpOnce()
+        {
+            uint faults = _faultFlags;
+            uint newFaults = faults & ~_lastDumpFaultFlags;
+            if (newFaults == 0u)
+                return;
+
+            _lastDumpFaultFlags |= newFaults;
+            uint frame = _frameId;
+            _lastDumpFrame = unchecked((int)frame);
+            if (!CopyTelemetrySnapshotForDump())
+                return;
+
+            ulong packed = ((ulong)faults << 32) | frame;
+            Interlocked.Exchange(ref _dumpRequestPacked, unchecked((long)packed));
+            AutoResetEvent wake = _workerWake;
+            if (wake != null)
+                wake.Set();
+        }
+
+        private void TryDrainTelemetryDumpRequestOnWorker()
+        {
+            long packedLong = Interlocked.Exchange(ref _dumpRequestPacked, 0L);
+            if (packedLong == 0L)
+                return;
+
+            ulong packed = unchecked((ulong)packedLong);
+            DumpTelemetryOnWorker((uint)packed, (uint)(packed >> 32));
+        }
+
+        private bool CopyTelemetrySnapshotForDump()
+        {
+            if (_telemetryPtr == null ||
+                _telemetryLength <= 0 ||
+                _telemetryDumpSnapshotPtr == null)
+            {
+                return false;
+            }
+
+            int bytes = _telemetryLength * UnsafeUtility.SizeOf<PagerTelemetryEntry>();
+            if (bytes <= 0 || bytes > _telemetryDumpSnapshotByteLength)
+                return false;
+
+            UnsafeUtility.MemCpy(_telemetryDumpSnapshotPtr, _telemetryPtr, bytes);
+            return true;
+        }
+
+        private void DumpTelemetryOnWorker(uint frame, uint faults)
+        {
+            if (_telemetryDumpSnapshotPtr == null ||
+                _telemetryLength <= 0 ||
+                string.IsNullOrEmpty(_dumpFullPath))
+                return;
+
+            int bytes = _telemetryLength * UnsafeUtility.SizeOf<PagerTelemetryEntry>();
+            if (bytes <= 0 || bytes > _telemetryDumpSnapshotByteLength)
+                return;
+
+            try
+            {
+                using (FileStream stream = new FileStream(_dumpFullPath, FileMode.Create, FileAccess.Write, FileShare.Read)) // BLACKBOX_DUMP_SHINOBU_245: worker-only fault dump.
+                {
+                    Span<byte> header = stackalloc byte[24];
+                    WriteUInt64(header, 0, HectonDumpMagic);
+                    WriteUInt32(header, 8, DumpVersion);
+                    WriteUInt32(header, 12, (uint)_telemetryLength);
+                    WriteUInt32(header, 16, (uint)UnsafeUtility.SizeOf<PagerTelemetryEntry>());
+                    WriteUInt32(header, 20, faults);
+                    stream.Write(header); // BLACKBOX_DUMP_SHINOBU_245
+                    stream.Write(new ReadOnlySpan<byte>(_telemetryDumpSnapshotPtr, bytes)); // BLACKBOX_DUMP_SHINOBU_245
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        private string ResolveChunkRootPath()
+        {
+            if (!string.IsNullOrEmpty(chunkRootRelativePath) && Path.IsPathRooted(chunkRootRelativePath))
+                return chunkRootRelativePath;
+
+            string streamingRoot = Application.streamingAssetsPath;
+            return Path.Combine(streamingRoot, string.IsNullOrEmpty(chunkRootRelativePath) ? DefaultChunkRootRelativePath : chunkRootRelativePath);
+        }
+
+        private static string PrepareDumpPathCold()
+        {
+            try
+            {
+                string path = Path.Combine(ResolveProjectRoot(), DumpRelativePath);
+                string dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir))
+                    Directory.CreateDirectory(dir);
+                return path;
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
+        }
+
+        private static string ResolveProjectRoot()
+        {
+            DirectoryInfo parent = Directory.GetParent(Application.dataPath);
+            return parent != null ? parent.FullName : Application.dataPath;
+        }
+
+        private static int NextPowerOfTwo(int value)
+        {
+            int result = 1;
+            while (result < value && result < 4096)
+                result <<= 1;
+            return result;
+        }
+
+        private static uint ElapsedMicroseconds(long startTimestamp)
+        {
+            long delta = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            double micros = (double)delta * 1000000.0 / System.Diagnostics.Stopwatch.Frequency;
+            return (uint)math.clamp((int)micros, 0, int.MaxValue);
+        }
+
+        private static float ElapsedMilliseconds(long startTimestamp)
+        {
+            long delta = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            double ms = (double)delta * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            return math.isfinite(ms) ? (float)math.max(0.0, ms) : 0f;
+        }
+
+        private static bool TryResolveLz4BoundedCapacity(int uncompressedCapacity, out int compressedCapacity)
+        {
+            compressedCapacity = 0;
+            if (uncompressedCapacity < 4096)
+                return false;
+
+            long bound = (long)uncompressedCapacity + (uncompressedCapacity / 255L) + 16L;
+            if (bound <= 0L || bound > int.MaxValue)
+                return false;
+
+            compressedCapacity = (int)bound;
+            return true;
+        }
+
+        private static bool TryResolveChunkSlabByteLength(int slots, int chunkBytes, out int byteLength)
+        {
+            byteLength = 0;
+            long total = (long)slots * chunkBytes;
+            if (slots <= 0 || chunkBytes < 4096 || total <= 0L || total > int.MaxValue)
+                return false;
+
+            byteLength = (int)total;
+            return true;
+        }
+
+        private static bool TryResolveTelemetrySnapshotByteLength(out int byteLength)
+        {
+            byteLength = TerrainChunkPagerConstants.TelemetryCapacity * UnsafeUtility.SizeOf<PagerTelemetryEntry>();
+            return byteLength > 0;
+        }
+
+        private static float ResolveCommitByteBudget(int chunkBytes, int commitCount)
+        {
+            float safeChunkBytes = math.max(4096f, (float)math.max(0, chunkBytes));
+            float safeCommitCount = math.max(1f, (float)math.max(1, commitCount));
+            float budget = safeChunkBytes * safeCommitCount;
+            return math.min(math.max(4096f, budget), (float)int.MaxValue);
+        }
+
+        private static unsafe class NativeChunkFileOpen
+        {
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            public const uint GenericRead = 0x80000000u;
+            public const uint FileShareRead = 0x00000001u;
+            public const uint OpenExisting = 3u;
+            public const uint FileAttributeNormal = 0x00000080u;
+            public const uint FileFlagOverlapped = 0x40000000u;
+            public const uint FileFlagSequentialScan = 0x08000000u;
+            public const int ErrorFileNotFound = 2;
+            public const int ErrorPathNotFound = 3;
+
+            [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "CreateFileW")]
+            public static extern SafeFileHandle CreateFileW(
+                char* lpFileName,
+                uint dwDesiredAccess,
+                uint dwShareMode,
+                IntPtr lpSecurityAttributes,
+                uint dwCreationDisposition,
+                uint dwFlagsAndAttributes,
+                IntPtr hTemplateFile);
+#else
+            public const int O_RDONLY = 0;
+            public const int ENOENT = 2;
+            public const int ENOTDIR = 20;
+
+            [DllImport("libc", SetLastError = true, EntryPoint = "open")]
+            public static extern int OpenUnix(byte* pathname, int flags);
+#endif
+        }
+
+        private static void WriteUInt32(Span<byte> span, int offset, uint value)
+        {
+            span[offset] = (byte)value;
+            span[offset + 1] = (byte)(value >> 8);
+            span[offset + 2] = (byte)(value >> 16);
+            span[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64(Span<byte> span, int offset, ulong value)
+        {
+            for (int i = 0; i < 8; i++)
+                span[offset + i] = (byte)(value >> (i * 8));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double LongBitsToDouble(long bits)
+        {
+            return *(double*)&bits;
+        }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (!drawDebugGizmos || _initialized == 0 || _metadataPtr == null || _sectorCoordsPtr == null)
+                return;
+
+            TerrainChunkPagerTuningDTO tuning = _tuningPtr != null && _tuningLength > 0 ? _tuningPtr[0] : TerrainChunkPagerTuningDTO.CreateDefault();
+            float sectorSize = math.max(1f, tuning.SectorSizeMeters);
+            Vector3 root = transform.position;
+            Vector3 size = new Vector3(sectorSize, debugGizmoHeightMeters, sectorSize);
+            for (int i = 0; i < _metadataLength; i++)
+            {
+                ChunkMetadataDTO meta = _metadataPtr[i];
+                if (meta.SectorHash == 0UL)
+                    continue;
+
+                uint flags = meta.StateFlags;
+                if ((flags & TerrainChunkStateFlags.Loading) != 0u)
+                    Gizmos.color = Color.yellow;
+                else if ((flags & TerrainChunkStateFlags.Stale) != 0u)
+                    Gizmos.color = Color.red;
+                else if ((flags & TerrainChunkStateFlags.Active) != 0u)
+                    Gizmos.color = Color.green;
+                else
+                    Gizmos.color = Color.gray;
+
+                long2 coord = _sectorCoordsPtr[i];
+                float x = (float)(coord.x - _lastCameraSectorX) * sectorSize;
+                float z = (float)(coord.y - _lastCameraSectorZ) * sectorSize;
+                Vector3 center = root + new Vector3(x + sectorSize * 0.5f, 0f, z + sectorSize * 0.5f);
+                Gizmos.DrawWireCube(center, size);
+            }
+        }
+#endif
+
+        private sealed class PreSimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly TerrainChunkPagerRuntime _owner;
+            public PreSimulationPhaseSystem(TerrainChunkPagerRuntime owner) { _owner = owner; }
+            public uint GetSystemIdHash() { return 0x54325052u; }
+            public DispatcherPhase GetDispatcherPhase() { return DispatcherPhase.PreSimulation; }
+            public byte GetBucketId() { return byte.MaxValue; }
+            public int GetDependencyCount() { return 0; }
+            public uint GetDependencyHash(int dependencyIndex) { return 0u; }
+            public void PreSimulationTick(in DispatcherTimingDTO timing) { _owner.PreSimulationTick(in timing); }
+            public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) { return dependsOn; }
+            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
+            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
+        }
+
+        private sealed class PostSimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly TerrainChunkPagerRuntime _owner;
+            public PostSimulationPhaseSystem(TerrainChunkPagerRuntime owner) { _owner = owner; }
+            public uint GetSystemIdHash() { return 0x5432504Fu; }
+            public DispatcherPhase GetDispatcherPhase() { return DispatcherPhase.PostSimulation; }
+            public byte GetBucketId() { return byte.MaxValue; }
+            public int GetDependencyCount() { return 0; }
+            public uint GetDependencyHash(int dependencyIndex) { return 0u; }
+            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
+            public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) { return dependsOn; }
+            public void PostSimulationTick(in DispatcherTimingDTO timing) { _owner.PostSimulationTick(in timing); }
+            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
+        }
+
+        private sealed class VisualSyncPhaseSystem : IDispatcherSystem
+        {
+            private readonly TerrainChunkPagerRuntime _owner;
+            public VisualSyncPhaseSystem(TerrainChunkPagerRuntime owner) { _owner = owner; }
+            public uint GetSystemIdHash() { return 0x54325056u; }
+            public DispatcherPhase GetDispatcherPhase() { return DispatcherPhase.VisualSync; }
+            public byte GetBucketId() { return byte.MaxValue; }
+            public int GetDependencyCount() { return 0; }
+            public uint GetDependencyHash(int dependencyIndex) { return 0u; }
+            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
+            public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) { return dependsOn; }
+            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
+            public void VisualSyncTick(in DispatcherTimingDTO timing) { _owner.VisualSyncTick(in timing); }
+        }
+    }
+}

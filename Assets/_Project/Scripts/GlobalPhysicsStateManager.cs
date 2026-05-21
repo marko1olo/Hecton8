@@ -5,10 +5,11 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.AI;
+using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -139,8 +140,48 @@ namespace Hecton8.Physics
     /// <summary>
     /// Immutable gameplay impact payload flushed in LateUpdate after the fixed-step collision phase.
     /// </summary>
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public readonly struct PhysicsImpactSignal
     {
+        /// <summary>Primary tracked rigidbody instance ID.</summary>
+        [FieldOffset(0)] public readonly ulong PrimaryBodyId;
+
+        /// <summary>Secondary tracked rigidbody instance ID, or zero for static geometry.</summary>
+        [FieldOffset(8)] public readonly ulong SecondaryBodyId;
+
+        [FieldOffset(16)] private readonly AbsoluteUniversePosition _pointAup;
+
+        /// <summary>Resolved world-space impact point.</summary>
+        [FieldOffset(64)] public readonly Vector3 Point;
+
+        /// <summary>Resolved world-space impact normal.</summary>
+        [FieldOffset(76)] public readonly Vector3 Normal;
+
+        /// <summary>Average impact force derived from collision impulse.</summary>
+        [FieldOffset(88)] public readonly float Force;
+
+        /// <summary>Perceived impact intensity computed from the force-domain logarithmic mapping.</summary>
+        [FieldOffset(92)] public readonly float Intensity;
+
+        /// <summary>Strict item impact loudness scalar: impact velocity magnitude multiplied by primary body mass.</summary>
+        [FieldOffset(96)] public readonly float MassVelocity;
+
+        /// <summary>Discrete impact-weight bucket for downstream presentation systems.</summary>
+        [FieldOffset(100)] public readonly PhysicsImpactWeightClass WeightClass;
+
+        /// <summary>Primary collision body's compact authored impact material family.</summary>
+        [FieldOffset(101)] public readonly byte PrimaryAudioMaterialId;
+
+        /// <summary>Secondary collision body's compact authored impact material family.</summary>
+        [FieldOffset(102)] public readonly byte SecondaryAudioMaterialId;
+
+        [FieldOffset(103)] private readonly byte _hasPointAup;
+        [FieldOffset(104)] private readonly uint _pad0;
+        [FieldOffset(108)] private readonly uint _pad1;
+        [FieldOffset(112)] private readonly ulong _pad2;
+        [FieldOffset(120)] private readonly ulong _pad3;
+
         /// <summary>
         /// Creates a queued gameplay physics-impact payload.
         /// </summary>
@@ -176,6 +217,10 @@ namespace Hecton8.Physics
             WeightClass = weightClass;
             PrimaryAudioMaterialId = primaryAudioMaterialId;
             SecondaryAudioMaterialId = secondaryAudioMaterialId;
+            _pad0 = 0u;
+            _pad1 = 0u;
+            _pad2 = 0UL;
+            _pad3 = 0UL;
         }
 
         /// <summary>
@@ -206,22 +251,17 @@ namespace Hecton8.Physics
             WeightClass = weightClass;
             PrimaryAudioMaterialId = primaryAudioMaterialId;
             SecondaryAudioMaterialId = secondaryAudioMaterialId;
+            _pad0 = 0u;
+            _pad1 = 0u;
+            _pad2 = 0UL;
+            _pad3 = 0UL;
         }
 
-        /// <summary>Primary tracked rigidbody instance ID.</summary>
-        public ulong PrimaryBodyId { get; }
-
-        /// <summary>Secondary tracked rigidbody instance ID, or zero for static geometry.</summary>
-        public ulong SecondaryBodyId { get; }
-
-        /// <summary>Resolved world-space impact point.</summary>
-        public Vector3 Point { get; }
-
         /// <summary>True when the impact point already carries floating-origin-safe AUP.</summary>
-        public bool HasPointAup => _hasPointAup != 0;
-
-        /// <summary>Resolved floating-origin-safe impact point.</summary>
-        public AbsoluteUniversePosition PointAup => ResolvePointAup();
+        public static bool HasPointAup(in PhysicsImpactSignal signal)
+        {
+            return signal._hasPointAup != 0;
+        }
 
         /// <summary>Returns the impact point as AUP, falling back only for default/legacy payloads.</summary>
         public AbsoluteUniversePosition ResolvePointAup()
@@ -233,29 +273,11 @@ namespace Hecton8.Physics
                     : default;
         }
 
-        /// <summary>Resolved world-space impact normal.</summary>
-        public Vector3 Normal { get; }
-
-        /// <summary>Average impact force derived from collision impulse.</summary>
-        public float Force { get; }
-
-        /// <summary>Perceived impact intensity computed from the force-domain logarithmic mapping.</summary>
-        public float Intensity { get; }
-
-        /// <summary>Strict item impact loudness scalar: impact velocity magnitude multiplied by primary body mass.</summary>
-        public float MassVelocity { get; }
-
-        /// <summary>Discrete impact-weight bucket for downstream presentation systems.</summary>
-        public PhysicsImpactWeightClass WeightClass { get; }
-
-        /// <summary>Primary collision body's compact authored impact material family.</summary>
-        public byte PrimaryAudioMaterialId { get; }
-
-        /// <summary>Secondary collision body's compact authored impact material family.</summary>
-        public byte SecondaryAudioMaterialId { get; }
-
         /// <summary>True when the event falls into the heavy feedback bucket.</summary>
-        public bool IsHeavy => WeightClass == PhysicsImpactWeightClass.Heavy;
+        public static bool IsHeavy(in PhysicsImpactSignal signal)
+        {
+            return signal.WeightClass == PhysicsImpactWeightClass.Heavy;
+        }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
@@ -263,10 +285,11 @@ namespace Hecton8.Physics
             if (!IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!IsFinite(in originAup))
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(origin)))
                 return false;
 
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -285,9 +308,6 @@ namespace Hecton8.Physics
                 math.isfinite(value.LocalY) &&
                 math.isfinite(value.LocalZ);
         }
-
-        private readonly AbsoluteUniversePosition _pointAup;
-        private readonly byte _hasPointAup;
     }
 
     /// <summary>
@@ -307,15 +327,17 @@ namespace Hecton8.Physics
     {
         private const int ListenerCapacity = 16;
 
-        // COLD ALLOC: RegistryBucket<IPhysicsImpactEventListener>[16] — deferred physics impact listeners — owner: PhysicsEvents
-        private static readonly RegistryBucket<IPhysicsImpactEventListener> _impactListeners = new RegistryBucket<IPhysicsImpactEventListener>(ListenerCapacity);
+        private static readonly ListenerSlot[] _impactListeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - deferred physics impact listeners - owner: PhysicsEvents
+        private static int _impactListenerCount;
 
-        internal static bool HasImpactListeners => _impactListeners.Count > 0;
+        internal static bool HasImpactListeners => _impactListenerCount > 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _impactListeners.Clear();
+            for (int i = 0; i < _impactListenerCount; i++)
+                _impactListeners[i].Clear();
+            _impactListenerCount = 0;
         }
 
         /// <summary>
@@ -324,8 +346,8 @@ namespace Hecton8.Physics
         /// <param name="listener">Listener to register.</param>
         public static void Register(IPhysicsImpactEventListener listener)
         {
-            if (listener != null && !_impactListeners.Contains(listener))
-                _impactListeners.Register(listener);
+            if (listener != null)
+                RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -334,22 +356,68 @@ namespace Hecton8.Physics
         /// <param name="listener">Listener to unregister.</param>
         public static void Unregister(IPhysicsImpactEventListener listener)
         {
-            if (listener != null && _impactListeners.Contains(listener))
-                _impactListeners.Unregister(listener);
+            if (listener != null)
+                TryUnregisterImmediate(listener);
         }
 
         internal static void RaiseImpact(in PhysicsImpactSignal impactSignal)
         {
-            int count = _impactListeners.Count;
+            int count = _impactListenerCount;
             if (count <= 0)
                 return;
 
-            IPhysicsImpactEventListener[] rawArray = _impactListeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
             {
-                IPhysicsImpactEventListener listener = rawArray[i];
+                IPhysicsImpactEventListener listener = _impactListeners[i].Listener;
                 if (listener != null)
                     listener.OnPhysicsImpact(in impactSignal);
+            }
+        }
+
+        private static void RegisterImmediate(IPhysicsImpactEventListener listener)
+        {
+            if (ContainsImmediate(listener) || _impactListenerCount >= ListenerCapacity)
+                return;
+
+            _impactListeners[_impactListenerCount].Listener = listener;
+            _impactListenerCount++;
+        }
+
+        private static bool TryUnregisterImmediate(IPhysicsImpactEventListener listener)
+        {
+            for (int i = 0; i < _impactListenerCount; i++)
+            {
+                if (!ReferenceEquals(_impactListeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = _impactListenerCount - 1;
+                _impactListeners[i] = _impactListeners[lastIndex];
+                _impactListeners[lastIndex].Clear();
+                _impactListenerCount = lastIndex;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsImmediate(IPhysicsImpactEventListener listener)
+        {
+            for (int i = 0; i < _impactListenerCount; i++)
+            {
+                if (ReferenceEquals(_impactListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private struct ListenerSlot
+        {
+            public IPhysicsImpactEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
             }
         }
     }
@@ -359,12 +427,12 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8995)]
-    public sealed partial class GlobalPhysicsStateManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IPostFixedTickable, IOriginShiftListener, IAcousticPingEventListener, IPhysicsAcousticImpulseEventListener, IPhysicsImpactEventListener, IPhysicsCullingOverseer, IServiceHeartbeat, IServiceShutdown
+    public sealed partial class GlobalPhysicsStateManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IPostFixedTickable, IOriginShiftListener, IAcousticPingEventListener, IPhysicsAcousticImpulseEventListener, IPhysicsImpactEventListener, IPhysicsCullingOverseer, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private struct VaultBufferBinding<T>
             where T : struct
         {
-            public VaultBufferHandle<T> Handle;
+            public VaultGenerationHandle<T> Handle;
             public BufferID BufferId;
             public int RequiredLength;
             public SystemID OwnerSystemId;
@@ -406,17 +474,24 @@ namespace Hecton8.Physics
                     return false;
                 }
 
-                if (!Handle.IsCreated || Handle.Length < RequiredLength)
+                NativeArray<T> buffer = ResolveExisting(dataVault);
+                if (!buffer.IsCreated || buffer.Length < RequiredLength)
                 {
-                    Handle = dataVault.GetBufferHandle<T>(
+                    Handle = dataVault.GetGenerationHandle<T>(
                         BufferId,
                         RequiredLength,
                         OwnerSystemId,
                         options);
+                    buffer = ResolveExisting(dataVault);
                 }
 
-                NativeArray<T> buffer = ResolveExisting(dataVault);
                 return buffer.IsCreated && buffer.Length >= RequiredLength;
+            }
+
+            public void BindDataVault(IDataVault dataVault)
+            {
+                if (dataVault != null)
+                    CachedDataVault = dataVault;
             }
 
             public NativeArray<T> AsNativeArray()
@@ -455,24 +530,23 @@ namespace Hecton8.Physics
 
             NativeArray<T> ResolveExisting(IDataVault dataVault)
             {
-                if (dataVault == null || !Handle.IsCreated)
+                if (dataVault == null || !IsHandleValid())
                     return default;
 
-                return Handle.Resolve(dataVault);
+                return dataVault.TryResolveHandle(in Handle, out NativeArray<T> buffer)
+                    ? buffer
+                    : default;
             }
 
             IDataVault ResolveDataVault()
             {
-                if (CachedDataVault != null)
-                    return CachedDataVault;
+                return CachedDataVault;
+            }
 
-                if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                {
-                    CachedDataVault = latest;
-                    return CachedDataVault;
-                }
-
-                return null;
+            private bool IsHandleValid()
+            {
+                return Handle.BufferID == unchecked((uint)(int)BufferId) &&
+                       Handle.Generation != 0u;
             }
         }
 
@@ -483,20 +557,20 @@ namespace Hecton8.Physics
             public int CompensationRefCount;
             public int CullingLockRefCount;
             public float MaxAngularVelocityClamp;
-            public bool AllowDistanceKinematicSleep;
-            public bool DistanceSleepActive;
-            public bool DistanceKinematicSleepActive;
-            public bool MeshColliderStripActive;
-            public bool HasLastValidPosition;
-            public bool HasLastValidAup;
-            public bool HasOriginShiftSnapshot;
-            public bool WasSleepingBeforeOriginShift;
-            public bool WasSleepingBeforeDistanceSleep;
-            public bool InterpolationSuspendedForOriginShift;
-            public bool CollisionDetectionOverriddenForOriginShift;
-            public bool SafeTeleportSpeculativeCcdActive;
-            public bool KinematicModeBeforeDistanceSleep;
-            public bool DetectCollisionsBeforeDistanceSleep;
+            public byte AllowDistanceKinematicSleep;
+            public byte DistanceSleepActive;
+            public byte DistanceKinematicSleepActive;
+            public byte MeshColliderStripActive;
+            public byte HasLastValidPosition;
+            public byte HasLastValidAup;
+            public byte HasOriginShiftSnapshot;
+            public byte WasSleepingBeforeOriginShift;
+            public byte WasSleepingBeforeDistanceSleep;
+            public byte InterpolationSuspendedForOriginShift;
+            public byte CollisionDetectionOverriddenForOriginShift;
+            public byte SafeTeleportSpeculativeCcdActive;
+            public byte KinematicModeBeforeDistanceSleep;
+            public byte DetectCollisionsBeforeDistanceSleep;
             public RigidbodyInterpolation InterpolationModeBeforeOriginShift;
             public CollisionDetectionMode CollisionDetectionModeBeforeOriginShift;
             public CollisionDetectionMode CollisionDetectionModeBeforeSafeTeleport;
@@ -515,15 +589,15 @@ namespace Hecton8.Physics
             public float LastAppliedAddedMassSubmersionFactor;
             public float FixedInterpolationAlphaBeforeOriginShift;
             public float ColliderLodOutOfRangeSeconds;
-            public bool HasColliderLodSink;
-            public bool ColliderLodDistanceGateOpen;
-            public bool IsFullySubmerged;
-            public bool HasAddedMassBaseline;
-            public bool AddedMassTensorApplied;
+            public byte HasColliderLodSink;
+            public byte ColliderLodDistanceGateOpen;
+            public byte IsFullySubmerged;
+            public byte HasAddedMassBaseline;
+            public byte AddedMassTensorApplied;
             public PhysicsCullingFlags CullingFlags;
             public byte MeshColliderCount;
             public byte SleepColliderCount;
-            public bool CollidersDisabledByDistanceSleep;
+            public byte CollidersDisabledByDistanceSleep;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -577,44 +651,38 @@ namespace Hecton8.Physics
                 }
 
                 float effectiveSleepDistance = math.max(1f, SleepDistanceMeters);
-                if (AbyssalDepthCull != 0)
-                    effectiveSleepDistance *= AbyssalDepthSleepDistanceScale;
+                effectiveSleepDistance *= math.select(1f, AbyssalDepthSleepDistanceScale, AbyssalDepthCull != 0);
 
                 float3 safeCameraForward = NormalizeWithRsqrtGuard(CameraForward, new float3(0f, 0f, 1f));
                 double behindDot =
                     playerRelativeAup.x * safeCameraForward.x +
                     playerRelativeAup.y * safeCameraForward.y +
                     playerRelativeAup.z * safeCameraForward.z;
-                bool behindCamera = behindDot < 0d;
-                if (behindCamera)
-                    effectiveSleepDistance *= BehindCameraSleepDistanceScale;
+                effectiveSleepDistance *= math.select(1f, BehindCameraSleepDistanceScale, behindDot < 0d);
 
                 float effectiveWakeDistance = math.max(1f, math.min(WakeDistanceMeters, effectiveSleepDistance - SleepWakeHysteresisMeters));
                 float sleepDistanceSq = effectiveSleepDistance * effectiveSleepDistance;
                 float wakeDistanceSq = effectiveWakeDistance * effectiveWakeDistance;
 
                 bool sleepActive = (currentState & CullingStateSleepActive) != 0;
-                bool shouldSleep = sleepActive
-                    ? distanceSq > wakeDistanceSq
-                    : distanceSq > sleepDistanceSq;
+                bool shouldSleep = distanceSq > math.select(sleepDistanceSq, wakeDistanceSq, sleepActive);
                 bool kinematicActive = (currentState & CullingStateKinematicActive) != 0;
-                bool shouldKinematic = kinematicActive
-                    ? distanceSq > KinematicWakeDistanceMeters * KinematicWakeDistanceMeters
-                    : distanceSq > KinematicSleepDistanceMeters * KinematicSleepDistanceMeters;
+                float kinematicSleepDistanceSq = KinematicSleepDistanceMeters * KinematicSleepDistanceMeters;
+                float kinematicWakeDistanceSq = KinematicWakeDistanceMeters * KinematicWakeDistanceMeters;
+                bool shouldKinematic = distanceSq > math.select(kinematicSleepDistanceSq, kinematicWakeDistanceSq, kinematicActive);
                 bool meshStripActive = (currentState & CullingStateMeshColliderStripped) != 0;
                 bool hasHeavyCollider = (currentState & CullingStateHeavyCollider) != 0;
-                bool shouldStripMeshColliders = hasHeavyCollider && (meshStripActive
-                    ? distanceSq > MeshColliderRestoreDistanceMeters * MeshColliderRestoreDistanceMeters
-                    : distanceSq > MeshColliderStripDistanceMeters * MeshColliderStripDistanceMeters);
+                float meshStripDistanceSq = MeshColliderStripDistanceMeters * MeshColliderStripDistanceMeters;
+                float meshRestoreDistanceSq = MeshColliderRestoreDistanceMeters * MeshColliderRestoreDistanceMeters;
+                bool shouldStripMeshColliders = hasHeavyCollider &
+                    (distanceSq > math.select(meshStripDistanceSq, meshRestoreDistanceSq, meshStripActive));
 
-                AwakeResults[index] = shouldSleep ? (byte)0 : (byte)1;
+                AwakeResults[index] = (byte)math.select(1, 0, shouldSleep);
 
-                byte command = shouldSleep ? (byte)0 : CullingCommandAwake;
-                if (shouldKinematic)
-                    command |= CullingCommandKinematic;
-                if (shouldStripMeshColliders)
-                    command |= CullingCommandStripMeshColliders;
-                CommandResults[index] = command;
+                int command = math.select((int)CullingCommandAwake, 0, shouldSleep);
+                command |= math.select(0, (int)CullingCommandKinematic, shouldKinematic);
+                command |= math.select(0, (int)CullingCommandStripMeshColliders, shouldStripMeshColliders);
+                CommandResults[index] = (byte)command;
             }
         }
 
@@ -625,7 +693,7 @@ namespace Hecton8.Physics
             public Rigidbody BodyB;
             public Rigidbody CompensatedBody;
             public PhysicsConnectionKind Kind;
-            public bool CompensationActive;
+            public byte CompensationActive;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 112)]
@@ -736,6 +804,7 @@ namespace Hecton8.Physics
         private const SystemID OwnerSystemId = SystemID.GlobalPhysicsStateManager;
         private static readonly uint _nanRecoverySystemHash = unchecked((uint)LocHash.Compute(nameof(GlobalPhysicsStateManager)));
         private static readonly uint _kinematicHitStopHash = unchecked((uint)LocHash.Compute("GlobalPhysicsStateManager.KinematicHitStop"));
+        private static GlobalPhysicsStateManager s_runtimeManager;
 
         // COLD ALLOC: Rigidbody[512 initial] â€” authoritative tracked rigidbody registry â€” owner: GlobalPhysicsStateManager
         private Rigidbody[] _trackedBodies = new Rigidbody[MaxTrackedBodies];
@@ -772,6 +841,9 @@ namespace Hecton8.Physics
         private VaultBufferBinding<float> _rigidbodyDistanceSqResults = new VaultBufferBinding<float>(BufferID.RigidbodyDistanceSq, MaxTrackedBodies, OwnerSystemId);
         private VaultBufferBinding<PhysicsCullingTelemetryEntry> _physicsCullingTelemetry = new VaultBufferBinding<PhysicsCullingTelemetryEntry>(BufferID.PhysicsCullingTelemetry, PhysicsCullingTelemetryCapacity, OwnerSystemId);
         private VaultBufferBinding<PhysicsImpactEventData> _impactEvents = new VaultBufferBinding<PhysicsImpactEventData>(BufferID.PhysicsImpactEvents, MaxQueuedImpactEvents, OwnerSystemId);
+        private Rigidbody _submarineHullBody;
+        private ITickDispatcher _tickDispatcher;
+        private HectonCelestialEngine _celestialEngineRuntime;
         private JobHandle _physicsCullingJobHandle;
         private int _trackedBodyCount;
         private int _connectionCount;
@@ -785,6 +857,7 @@ namespace Hecton8.Physics
         private int _kinematicCcdInterventionsThisFrame;
         private bool _serviceRegistered;
         private bool _isInitialized;
+        private bool _registeredHotSwapListener;
         private bool _registeredFixedTick;
         private bool _registeredLateFrameTick;
         private bool _registeredPostFixedTick;
@@ -812,6 +885,8 @@ namespace Hecton8.Physics
         private static uint _cachedWaterLevelCelestialSequence;
         private static bool _cachedWaterLevelTidesEnabled;
         private static float _cachedCurrentWaterLevelY;
+        private static CelestialRuntimeSnapshot _cachedCelestialRuntimeSnapshot;
+        private static uint _cachedCelestialRuntimeSnapshotSequence;
 
         /// <summary>
         /// Frame-stable cinematic water level. Consumers read this instead of recomputing tide sine waves.
@@ -840,18 +915,21 @@ namespace Hecton8.Physics
             _cachedWaterLevelCelestialSequence = 0u;
             _cachedWaterLevelTidesEnabled = false;
             _cachedCurrentWaterLevelY = 0f;
+            _cachedCelestialRuntimeSnapshot = default;
+            _cachedCelestialRuntimeSnapshotSequence = 0u;
+            s_runtimeManager = null;
         }
 
-        public static float ResolveFrameCachedCurrentWaterLevelY(
+        public static float UpdateFrameCachedCurrentWaterLevelY(
             float baseWaterLevelY,
             bool tidesEnabled,
             float tideAmplitudeMeters,
             float timeSeconds)
         {
-            int frame = Time.frameCount;
+            int frame = ResolveCurrentDispatcherFrameIndex();
             float safeAmplitude = math.max(0f, tideAmplitudeMeters);
-            CelestialRuntimeSnapshot celestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshot;
-            uint celestialSequence = GlobalRegistry.CelestialRuntimeSnapshotSequence;
+            CelestialRuntimeSnapshot celestialSnapshot = _cachedCelestialRuntimeSnapshot;
+            uint celestialSequence = _cachedCelestialRuntimeSnapshotSequence;
             float celestialTideY = (celestialSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u
                 ? celestialSnapshot.TideHeightMeters
                 : 0f;
@@ -898,8 +976,8 @@ namespace Hecton8.Physics
         {
             double universeTime = (celestialSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u
                 ? celestialSnapshot.AbsoluteUniverseTime
-                : GlobalRegistry.AbsoluteUniverseTime;
-            if (double.IsNaN(universeTime) || double.IsInfinity(universeTime))
+                : fallbackTimeSeconds;
+            if (double.IsNaN(universeTime) || double.IsInfinity(universeTime) || universeTime < 0d)
                 return fallbackTimeSeconds;
 
             double wrappedTime = universeTime % 4096d;
@@ -912,7 +990,7 @@ namespace Hecton8.Physics
             if (safeBaseHeight <= 0f)
                 return 0f;
 
-            CelestialRuntimeSnapshot celestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshot;
+            CelestialRuntimeSnapshot celestialSnapshot = _cachedCelestialRuntimeSnapshot;
             bool hasCelestialTide = (celestialSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u;
             float tide01 = hasCelestialTide
                 ? math.saturate(celestialSnapshot.TideHigh01)
@@ -1070,7 +1148,7 @@ namespace Hecton8.Physics
             if (connectionIndex < 0)
                 return false;
 
-            return manager._connections[connectionIndex].CompensationActive;
+            return manager._connections[connectionIndex].CompensationActive != 0;
         }
 
         /// <summary>
@@ -1097,6 +1175,7 @@ namespace Hecton8.Physics
             if (_isInitialized)
             {
                 TryRegisterService();
+                TryRegisterHotSwapListener();
                 TryRegisterFixedTick();
                 TryRegisterLateFrameTick();
                 TryRegisterPostFixedTick();
@@ -1113,6 +1192,7 @@ namespace Hecton8.Physics
             }
 
             TryRegisterService();
+            TryRegisterHotSwapListener();
 
             SubscribeSceneEvents();
             ScanLoadedScenesForRigidbodies();
@@ -1131,6 +1211,7 @@ namespace Hecton8.Physics
             if (!_isInitialized)
                 return;
 
+            TryRegisterHotSwapListener();
             TryRegisterFixedTick();
             TryRegisterLateFrameTick();
             TryRegisterPostFixedTick();
@@ -1141,6 +1222,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            RefreshOwnerPhaseCelestialSnapshotCache();
             TryCompletePhysicsCullingJobNonBlocking();
             TickKinematicHitStopGate();
             FlushImpactEvents();
@@ -1161,6 +1243,9 @@ namespace Hecton8.Physics
 
         private void EnsureNativeState()
         {
+            BindNativeStateDataVault();
+            CacheColdRuntimeDependencies();
+            RefreshOwnerPhaseCelestialSnapshotCache();
             ReleaseUndersizedNativeState();
 
             if (!_lastValidPositions.IsCreated)
@@ -1212,6 +1297,47 @@ namespace Hecton8.Physics
             }
 
             EnsureShinobu37PhysicsCullingState();
+        }
+
+        private void BindNativeStateDataVault()
+        {
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            _lastValidPositions.BindDataVault(dataVault);
+            _impactEvents.BindDataVault(dataVault);
+            _rigidbodyAUPs.BindDataVault(dataVault);
+            _rigidbodyCullingStateSnapshot.BindDataVault(dataVault);
+            _rigidbodyAwakeResults.BindDataVault(dataVault);
+            _rigidbodyCullingCommandResults.BindDataVault(dataVault);
+            _rigidbodyDistanceSqResults.BindDataVault(dataVault);
+            _physicsCullingTelemetry.BindDataVault(dataVault);
+            BindShinobu37PhysicsCullingDataVault(dataVault);
+        }
+
+        private void CacheColdRuntimeDependencies()
+        {
+            if (_submarineHullBody == null)
+            {
+                var submarineContext = GlobalRegistry.Submarine;
+                _submarineHullBody = submarineContext != null ? submarineContext.HullRigidbody : null;
+            }
+
+            if (_tickDispatcher == null)
+                _tickDispatcher = GlobalRegistry.TickDispatcher;
+            if (_celestialEngineRuntime == null)
+                _celestialEngineRuntime = GlobalRegistry.CelestialEngine;
+        }
+
+        private void RefreshOwnerPhaseCelestialSnapshotCache()
+        {
+            // Owner-phase bridge: public waterline/speculative hover helpers consume this immutable cache
+            // instead of polling GlobalRegistry from read-shaped accessors.
+            HectonCelestialEngine celestialEngine = _celestialEngineRuntime;
+            if (celestialEngine == null)
+                return;
+
+            CelestialRuntimeSnapshot snapshot = celestialEngine.RuntimeSnapshot;
+            _cachedCelestialRuntimeSnapshot = snapshot;
+            _cachedCelestialRuntimeSnapshotSequence = snapshot.Sequence;
         }
 
         private void ReleaseUndersizedNativeState()
@@ -1309,6 +1435,8 @@ namespace Hecton8.Physics
             _rigidbodyDistanceSqResults.ReleaseView();
             _physicsCullingTelemetry.ReleaseView();
             ReleaseShinobu37PhysicsCullingState();
+            _submarineHullBody = null;
+            _tickDispatcher = null;
 
             TryUnregisterService();
             _isInitialized = false;
@@ -1347,11 +1475,54 @@ namespace Hecton8.Physics
                 PhysicsEvents.Unregister((IPhysicsImpactEventListener)this);
                 _physicsCullingEventBusRegistered = false;
             }
+
+            TryUnregisterHotSwapListener();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.CelestialEngineRuntime:
+                    _celestialEngineRuntime = currentService as HectonCelestialEngine;
+                    RefreshOwnerPhaseCelestialSnapshotCache();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _tickDispatcher = currentService as ITickDispatcher;
+                    if (_isInitialized)
+                    {
+                        TryRegisterFixedTick();
+                        TryRegisterLateFrameTick();
+                        TryRegisterPostFixedTick();
+                    }
+                    break;
+            }
         }
 
         /// <inheritdoc />
         public void FixedTick(float fixedDeltaTime)
         {
+            RefreshOwnerPhaseCelestialSnapshotCache();
             _lastFixedDeltaTime = SanitizeFixedStepDelta(fixedDeltaTime);
             RefreshTrackedBodies(_lastFixedDeltaTime);
             SweepNaNPhysicsState();
@@ -1370,6 +1541,13 @@ namespace Hecton8.Physics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ResolveCurrentDispatcherFrameIndex()
+        {
+            uint frame = TimeSliceScheduler.CurrentFrameId;
+            return unchecked((int)(frame != 0u ? frame : 1u));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float ResolveImpactFixedDeltaTime()
         {
             return math.max(_lastFixedDeltaTime, 0.0001f);
@@ -1377,7 +1555,7 @@ namespace Hecton8.Physics
 
         private static bool TryGetRuntimeManager(out GlobalPhysicsStateManager manager)
         {
-            manager = GlobalRegistry.PhysicsStateManager;
+            manager = s_runtimeManager;
             return manager != null;
         }
 
@@ -1413,9 +1591,9 @@ namespace Hecton8.Physics
                 return false;
 
             RigidbodyState bodyState = _bodyStates[bodyIndex];
-            return bodyState.DistanceSleepActive ||
-                bodyState.DistanceKinematicSleepActive ||
-                bodyState.MeshColliderStripActive;
+            return bodyState.DistanceSleepActive != 0 ||
+                bodyState.DistanceKinematicSleepActive != 0 ||
+                bodyState.MeshColliderStripActive != 0;
         }
 
         private void TryRegisterService()
@@ -1427,6 +1605,8 @@ namespace Hecton8.Physics
             GlobalRegistry.RegisterPhysicsCullingOverseer(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PhysicsStateManager, this) &&
                 ReferenceEquals(GlobalRegistry.PhysicsCullingOverseer, this);
+            if (_serviceRegistered)
+                s_runtimeManager = this;
         }
 
         private void TryUnregisterService()
@@ -1439,38 +1619,33 @@ namespace Hecton8.Physics
             if (ReferenceEquals(GlobalRegistry.PhysicsCullingOverseer, this))
                 GlobalRegistry.UnregisterPhysicsCullingOverseer(this);
 
+            if (ReferenceEquals(s_runtimeManager, this))
+                s_runtimeManager = null;
             _serviceRegistered = false;
         }
 
         private void TryRegisterFixedTick()
         {
-            if (_registeredFixedTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredFixedTick || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
-            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+            _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Core);
         }
 
         private void TryRegisterLateFrameTick()
         {
-            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredLateFrameTick || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
-            _registeredLateFrameTick = SystemDispatcher
-                .GetLateFrameLane(PriorityLayer.Core)
-                .Contains(this);
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
         private void TryRegisterPostFixedTick()
         {
-            if (_registeredPostFixedTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredPostFixedTick || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Core);
-            _registeredPostFixedTick = SystemDispatcher
-                .GetPostFixedLane(PriorityLayer.Core)
-                .Contains(this);
+            _registeredPostFixedTick = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core);
         }
 
         private void TryRegisterOriginShift()
@@ -1518,7 +1693,7 @@ namespace Hecton8.Physics
                 }
 
                 RigidbodyState bodyState = _bodyStates[i];
-                if (body.isKinematic && !bodyState.DistanceKinematicSleepActive)
+                if (body.isKinematic && bodyState.DistanceKinematicSleepActive == 0)
                     continue;
 
                 Vector3 position = body.position;
@@ -1528,40 +1703,40 @@ namespace Hecton8.Physics
                 CollisionDetectionMode collisionDetectionMode = body.collisionDetectionMode;
                 if (IsFinite(position))
                 {
-                    bodyState.HasLastValidPosition = true;
+                    bodyState.HasLastValidPosition = 1;
                     _lastValidPositions[i] = new float3(position.x, position.y, position.z);
                     if (TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
                     {
                         bodyState.LastValidAup = positionAup;
-                        bodyState.HasLastValidAup = true;
+                        bodyState.HasLastValidAup = 1;
                     }
                 }
                 else
                 {
-                    position = bodyState.HasLastValidPosition
+                    position = bodyState.HasLastValidPosition != 0
                         ? new Vector3(_lastValidPositions[i].x, _lastValidPositions[i].y, _lastValidPositions[i].z)
                         : Vector3.zero;
                 }
 
-                bodyState.HasOriginShiftSnapshot = true;
+                bodyState.HasOriginShiftSnapshot = 1;
                 bodyState.SnapshotPositionBeforeOriginShift = position;
                 bodyState.SnapshotRotationBeforeOriginShift = IsFinite(rotation) ? rotation : Quaternion.identity;
 
                 bodyState.LastValidLinearVelocity = IsFinite(linearVelocity) ? linearVelocity : Vector3.zero;
                 bodyState.LastValidAngularVelocity = IsFinite(angularVelocity) ? angularVelocity : Vector3.zero;
                 bodyState.FixedInterpolationAlphaBeforeOriginShift = HectonFloatingOrigin.CurrentFixedInterpolationAlpha;
-                bodyState.WasSleepingBeforeOriginShift = body.IsSleeping();
+                bodyState.WasSleepingBeforeOriginShift = body.IsSleeping() ? (byte)1 : (byte)0;
                 bodyState.InterpolationModeBeforeOriginShift = body.interpolation;
-                bodyState.InterpolationSuspendedForOriginShift = body.interpolation != RigidbodyInterpolation.None;
-                if (bodyState.InterpolationSuspendedForOriginShift)
+                bodyState.InterpolationSuspendedForOriginShift = body.interpolation != RigidbodyInterpolation.None ? (byte)1 : (byte)0;
+                if (bodyState.InterpolationSuspendedForOriginShift != 0)
                     body.interpolation = RigidbodyInterpolation.None;
                 bodyState.CollisionDetectionModeBeforeOriginShift = collisionDetectionMode;
                 float speedSq = bodyState.LastValidLinearVelocity.sqrMagnitude;
                 bodyState.CollisionDetectionOverriddenForOriginShift =
-                    speedSq > OriginShiftContinuousCcdSpeedMetersPerSecondSq &&
+                    (speedSq > OriginShiftContinuousCcdSpeedMetersPerSecondSq &&
                     collisionDetectionMode != CollisionDetectionMode.Continuous &&
-                    collisionDetectionMode != CollisionDetectionMode.ContinuousDynamic;
-                if (bodyState.CollisionDetectionOverriddenForOriginShift)
+                    collisionDetectionMode != CollisionDetectionMode.ContinuousDynamic) ? (byte)1 : (byte)0;
+                if (bodyState.CollisionDetectionOverriddenForOriginShift != 0)
                     body.collisionDetectionMode = CollisionDetectionMode.Continuous;
                 body.PublishTransform();
                 _bodyStates[i] = bodyState;
@@ -1584,10 +1759,10 @@ namespace Hecton8.Physics
                 }
 
                 RigidbodyState bodyState = _bodyStates[i];
-                if (body.isKinematic && !bodyState.DistanceKinematicSleepActive)
+                if (body.isKinematic && bodyState.DistanceKinematicSleepActive == 0)
                     continue;
 
-                Vector3 snapshotPosition = bodyState.HasOriginShiftSnapshot
+                Vector3 snapshotPosition = bodyState.HasOriginShiftSnapshot != 0
                     ? bodyState.SnapshotPositionBeforeOriginShift
                     : body.position;
                 Vector3 targetPosition = snapshotPosition - shiftOffset;
@@ -1595,7 +1770,7 @@ namespace Hecton8.Physics
                 if (!IsFinite(targetPosition))
                     targetPosition = Vector3.zero;
 
-                Quaternion targetRotation = bodyState.HasOriginShiftSnapshot && IsFinite(bodyState.SnapshotRotationBeforeOriginShift)
+                Quaternion targetRotation = bodyState.HasOriginShiftSnapshot != 0 && IsFinite(bodyState.SnapshotRotationBeforeOriginShift)
                     ? bodyState.SnapshotRotationBeforeOriginShift
                     : Quaternion.identity;
 
@@ -1612,26 +1787,26 @@ namespace Hecton8.Physics
                     targetRotation,
                     linearVelocity,
                     angularVelocity,
-                    bodyState.WasSleepingBeforeOriginShift);
+                    bodyState.WasSleepingBeforeOriginShift != 0);
 
                 _lastValidPositions[i] = new float3(targetPosition.x, targetPosition.y, targetPosition.z);
                 if (_rigidbodyAUPs.IsCreated)
                     _rigidbodyAUPs[i] = new double3(targetPosition.x, targetPosition.y, targetPosition.z);
-                bodyState.HasLastValidPosition = true;
+                bodyState.HasLastValidPosition = 1;
                 if (TryResolveAupFromRuntimeOrigin(targetPosition, out AbsoluteUniversePosition targetAup))
                 {
                     bodyState.LastValidAup = targetAup;
-                    bodyState.HasLastValidAup = true;
+                    bodyState.HasLastValidAup = 1;
                 }
                 else
                 {
-                    bodyState.HasLastValidAup = false;
+                    bodyState.HasLastValidAup = 0;
                 }
-                bodyState.HasOriginShiftSnapshot = false;
+                bodyState.HasOriginShiftSnapshot = 0;
                 bodyState.LastValidLinearVelocity = linearVelocity;
                 bodyState.LastValidAngularVelocity = angularVelocity;
                 bodyState.FixedInterpolationAlphaBeforeOriginShift = 0f;
-                bodyState.WasSleepingBeforeOriginShift = false;
+                bodyState.WasSleepingBeforeOriginShift = 0;
                 _bodyStates[i] = bodyState;
             }
         }
@@ -1649,14 +1824,14 @@ namespace Hecton8.Physics
                 }
 
                 RigidbodyState bodyState = _bodyStates[i];
-                if (!bodyState.InterpolationSuspendedForOriginShift)
+                if (bodyState.InterpolationSuspendedForOriginShift == 0)
                 {
-                    if (bodyState.CollisionDetectionOverriddenForOriginShift)
+                    if (bodyState.CollisionDetectionOverriddenForOriginShift != 0)
                     {
-                        if (!bodyState.SafeTeleportSpeculativeCcdActive)
+                        if (bodyState.SafeTeleportSpeculativeCcdActive == 0)
                             body.collisionDetectionMode = bodyState.CollisionDetectionModeBeforeOriginShift;
 
-                        bodyState.CollisionDetectionOverriddenForOriginShift = false;
+                        bodyState.CollisionDetectionOverriddenForOriginShift = 0;
                         _bodyStates[i] = bodyState;
                     }
 
@@ -1664,13 +1839,13 @@ namespace Hecton8.Physics
                 }
 
                 body.interpolation = bodyState.InterpolationModeBeforeOriginShift;
-                bodyState.InterpolationSuspendedForOriginShift = false;
-                if (bodyState.CollisionDetectionOverriddenForOriginShift)
+                bodyState.InterpolationSuspendedForOriginShift = 0;
+                if (bodyState.CollisionDetectionOverriddenForOriginShift != 0)
                 {
-                    if (!bodyState.SafeTeleportSpeculativeCcdActive)
+                    if (bodyState.SafeTeleportSpeculativeCcdActive == 0)
                         body.collisionDetectionMode = bodyState.CollisionDetectionModeBeforeOriginShift;
 
-                    bodyState.CollisionDetectionOverriddenForOriginShift = false;
+                    bodyState.CollisionDetectionOverriddenForOriginShift = 0;
                 }
 
                 _bodyStates[i] = bodyState;
@@ -1706,23 +1881,23 @@ namespace Hecton8.Physics
                     wasSleeping);
 
                 _lastValidPositions[i] = new float3(position.x, position.y, position.z);
-                bodyState.HasLastValidPosition = true;
+                bodyState.HasLastValidPosition = 1;
                 if (TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
                 {
                     bodyState.LastValidAup = positionAup;
-                    bodyState.HasLastValidAup = true;
+                    bodyState.HasLastValidAup = 1;
                 }
                 else
                 {
-                    bodyState.HasLastValidAup = false;
+                    bodyState.HasLastValidAup = 0;
                 }
 
                 bodyState.LastValidLinearVelocity = linearVelocity;
                 bodyState.LastValidAngularVelocity = angularVelocity;
-                bodyState.HasOriginShiftSnapshot = false;
+                bodyState.HasOriginShiftSnapshot = 0;
                 bodyState.FixedInterpolationAlphaBeforeOriginShift = 0f;
-                bodyState.InterpolationSuspendedForOriginShift = false;
-                bodyState.CollisionDetectionOverriddenForOriginShift = false;
+                bodyState.InterpolationSuspendedForOriginShift = 0;
+                bodyState.CollisionDetectionOverriddenForOriginShift = 0;
                 if (wasSleeping)
                     bodyState.StateMask |= PhysicsStateMask.WasAsleep;
                 else
@@ -1734,12 +1909,14 @@ namespace Hecton8.Physics
 
         private void ArmSafeTeleportSpeculativeCcdForSafeTeleportInternal()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            Rigidbody playerBody = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null &&
+                runtimeContext.IsBound
+                    ? runtimeContext.PlayerRigidbody
+                    : null;
             ArmSafeTeleportSpeculativeCcd(playerBody);
 
-            ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
-            Rigidbody hullBody = submarineContext != null ? submarineContext.HullRigidbody : null;
+            Rigidbody hullBody = _submarineHullBody;
             if (!ReferenceEquals(hullBody, playerBody))
                 ArmSafeTeleportSpeculativeCcd(hullBody);
 
@@ -1782,15 +1959,15 @@ namespace Hecton8.Physics
                 return;
 
             RigidbodyState bodyState = _bodyStates[bodyIndex];
-            if (!bodyState.SafeTeleportSpeculativeCcdActive)
+            if (bodyState.SafeTeleportSpeculativeCcdActive == 0)
             {
-                bodyState.CollisionDetectionModeBeforeSafeTeleport = bodyState.CollisionDetectionOverriddenForOriginShift
+                bodyState.CollisionDetectionModeBeforeSafeTeleport = bodyState.CollisionDetectionOverriddenForOriginShift != 0
                     ? bodyState.CollisionDetectionModeBeforeOriginShift
                     : body.collisionDetectionMode;
             }
 
-            bodyState.SafeTeleportSpeculativeCcdActive = true;
-            bodyState.CollisionDetectionOverriddenForOriginShift = false;
+            bodyState.SafeTeleportSpeculativeCcdActive = 1;
+            bodyState.CollisionDetectionOverriddenForOriginShift = 0;
             bodyState.SafeTeleportSpeculativeFixedTicksRemaining = SafeTeleportSpeculativeFixedTickHold;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             body.PublishTransform();
@@ -1802,7 +1979,7 @@ namespace Hecton8.Physics
             for (int i = _trackedBodyCount - 1; i >= 0; i--)
             {
                 RigidbodyState bodyState = _bodyStates[i];
-                if (!bodyState.SafeTeleportSpeculativeCcdActive)
+                if (bodyState.SafeTeleportSpeculativeCcdActive == 0)
                     continue;
 
                 Rigidbody body = _trackedBodies[i];
@@ -1835,7 +2012,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            ITickDispatcher dispatcher = _tickDispatcher;
             float currentScale = dispatcher != null ? dispatcher.TimeDilationScalar : 1f;
             if (!math.isfinite(currentScale) || currentScale <= 0.0001f)
                 return;
@@ -1861,9 +2038,9 @@ namespace Hecton8.Physics
             RestoreKinematicHitStopGate(forceRestore: false);
         }
 
-        private static float ResolveDispatcherUnscaledDeltaTime()
+        private float ResolveDispatcherUnscaledDeltaTime()
         {
-            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            ITickDispatcher dispatcher = _tickDispatcher;
             if (dispatcher != null)
             {
                 double dispatcherDelta = dispatcher.TimeSnapshot.UnscaledDeltaTime;
@@ -1882,7 +2059,7 @@ namespace Hecton8.Physics
             if (!_hitStopActive)
                 return;
 
-            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            ITickDispatcher dispatcher = _tickDispatcher;
             float currentScale = dispatcher != null ? dispatcher.TimeDilationScalar : 1f;
             bool ownsScale = math.isfinite(currentScale) &&
                 currentScale > 0.0001f &&
@@ -1911,7 +2088,7 @@ namespace Hecton8.Physics
             }
 
             ulong bodyEntityId = EntityId.ToULong(body.GetEntityId());
-            PhysicsCullingFlags cullingFlags = ResolveCullingFlags(body) | registrationFlags;
+            PhysicsCullingFlags cullingFlags = ScanCullingFlagsFromComponents(body) | registrationFlags;
             if (_trackedBodyIndexByEntityId.TryGetValue(bodyEntityId, out int existingBodyIndex))
             {
                 if ((uint)existingBodyIndex < (uint)_trackedBodyCount &&
@@ -1931,13 +2108,13 @@ namespace Hecton8.Physics
                     existingState.CullingFlags = cullingFlags;
                     existingState.MeshColliderCount = existingMeshColliderCount;
                     existingState.SleepColliderCount = existingSleepColliderCount;
-                    existingState.AllowDistanceKinematicSleep = ShouldAllowDistanceKinematicSleep(body, cullingFlags);
+                    existingState.AllowDistanceKinematicSleep = ShouldAllowDistanceKinematicSleep(body, cullingFlags) ? (byte)1 : (byte)0;
                     if ((cullingFlags & PhysicsCullingFlags.IgnoreCulling) != 0)
                         RestoreAllPhysicsCullingState(existingBodyIndex, body, ref existingState, forceWake: true);
 
                     _bodyStates[existingBodyIndex] = existingState;
                     _trackedBodyIndexByInstanceId[body.GetInstanceID()] = existingBodyIndex;
-                    AbsoluteUniversePosition existingAup = existingState.HasLastValidAup && IsFinite(in existingState.LastValidAup)
+                    AbsoluteUniversePosition existingAup = existingState.HasLastValidAup != 0 && IsFinite(in existingState.LastValidAup)
                         ? existingState.LastValidAup
                         : TryResolveAupFromRuntimeOrigin(body.position, out AbsoluteUniversePosition resolvedExistingAup)
                             ? resolvedExistingAup
@@ -1957,15 +2134,16 @@ namespace Hecton8.Physics
                 return;
 
             CompletePhysicsCullingJobForStateMutationBarrier(discardResults: true);
-            IPhysicsColliderLodHysteresisSink colliderLodSink = ResolveColliderLodSink(body);
+            IPhysicsColliderLodHysteresisSink colliderLodSink = FindColliderLodSinkFromComponent(body);
             Vector3 bodyPosition = body.position;
             Vector3 bodyLinearVelocity = body.linearVelocity;
             Vector3 bodyAngularVelocity = body.angularVelocity;
             Vector3 bodyInertiaTensor = body.inertiaTensor;
             Quaternion bodyInertiaTensorRotation = body.inertiaTensorRotation;
             bool hasFiniteBodyPosition = IsFinite(bodyPosition);
+            AbsoluteUniversePosition bodyAup = default;
             bool hasBodyAup = hasFiniteBodyPosition &&
-                TryResolveAupFromRuntimeOrigin(bodyPosition, out AbsoluteUniversePosition bodyAup);
+                TryResolveAupFromRuntimeOrigin(bodyPosition, out bodyAup);
 
             int bodyIndex = _trackedBodyCount++;
             byte meshColliderCount = CacheMeshCollidersForBody(body, bodyIndex);
@@ -1980,31 +2158,31 @@ namespace Hecton8.Physics
                 StateMask = PhysicsStateMask.None,
                 CompensationRefCount = 0,
                 CullingLockRefCount = 0,
-                MaxAngularVelocityClamp = ResolveMaxAngularVelocityClamp(body),
-                AllowDistanceKinematicSleep = ShouldAllowDistanceKinematicSleep(body, cullingFlags),
+                MaxAngularVelocityClamp = ScanMaxAngularVelocityClampFromComponents(body),
+                AllowDistanceKinematicSleep = ShouldAllowDistanceKinematicSleep(body, cullingFlags) ? (byte)1 : (byte)0,
                 CullingFlags = cullingFlags,
                 MeshColliderCount = meshColliderCount,
                 SleepColliderCount = sleepColliderCount,
-                DistanceSleepActive = false,
-                DistanceKinematicSleepActive = false,
-                MeshColliderStripActive = false,
-                HasLastValidPosition = hasFiniteBodyPosition,
-                HasLastValidAup = hasBodyAup,
+                DistanceSleepActive = 0,
+                DistanceKinematicSleepActive = 0,
+                MeshColliderStripActive = 0,
+                HasLastValidPosition = hasFiniteBodyPosition ? (byte)1 : (byte)0,
+                HasLastValidAup = hasBodyAup ? (byte)1 : (byte)0,
                 LastValidAup = hasBodyAup ? bodyAup : default,
-                KinematicModeBeforeDistanceSleep = body.isKinematic,
-                DetectCollisionsBeforeDistanceSleep = body.detectCollisions,
+                KinematicModeBeforeDistanceSleep = body.isKinematic ? (byte)1 : (byte)0,
+                DetectCollisionsBeforeDistanceSleep = body.detectCollisions ? (byte)1 : (byte)0,
                 LastValidLinearVelocity = IsFinite(bodyLinearVelocity) ? bodyLinearVelocity : Vector3.zero,
                 LastValidAngularVelocity = IsFinite(bodyAngularVelocity) ? bodyAngularVelocity : Vector3.zero,
                 ColliderLodSink = colliderLodSink,
-                ImpactAudioMaterialId = ResolveImpactAudioMaterialIdUncached(body),
-                HasColliderLodSink = IsColliderLodSinkAlive(colliderLodSink),
-                ColliderLodDistanceGateOpen = false,
+                ImpactAudioMaterialId = FindImpactAudioMaterialIdFromComponents(body),
+                HasColliderLodSink = IsColliderLodSinkAlive(colliderLodSink) ? (byte)1 : (byte)0,
+                ColliderLodDistanceGateOpen = 0,
                 ColliderLodOutOfRangeSeconds = 0f,
                 BaseInertiaTensor = IsFinite(bodyInertiaTensor) ? bodyInertiaTensor : Vector3.one,
                 BaseInertiaTensorRotation = IsFinite(bodyInertiaTensorRotation) ? bodyInertiaTensorRotation : Quaternion.identity,
                 BaseAngularDamping = math.max(0f, body.angularDamping),
                 HydrodynamicSubmersionFactor = 0f,
-                HasAddedMassBaseline = true
+                HasAddedMassBaseline = 1
             };
             ApplyTrackedBodyAngularVelocityClamp(body, _bodyStates[bodyIndex].MaxAngularVelocityClamp);
             _trackedBodyIndexByEntityId[bodyEntityId] = bodyIndex;
@@ -2038,7 +2216,7 @@ namespace Hecton8.Physics
             RigidbodyState bodyState = _bodyStates[bodyIndex];
             CaptureAddedMassBaseline(body, ref bodyState);
             bodyState.HydrodynamicSubmersionFactor = math.saturate(submersionFactor);
-            bodyState.IsFullySubmerged = bodyState.HydrodynamicSubmersionFactor >= AddedMassFullySubmergedThreshold;
+            bodyState.IsFullySubmerged = bodyState.HydrodynamicSubmersionFactor >= AddedMassFullySubmergedThreshold ? (byte)1 : (byte)0;
             _bodyStates[bodyIndex] = bodyState;
         }
 
@@ -2210,7 +2388,7 @@ namespace Hecton8.Physics
                     SecondaryMaterialId = impactEvent.SecondaryAudioMaterialId,
                     Flags = 0
                 };
-                GlobalSignals.Publish(in corridorSignal);
+                SignalBus<ImpactSignal>.Push(in corridorSignal);
                 PhysicsEvents.RaiseImpact(new PhysicsImpactSignal(
                     impactEvent.PrimaryBodyId,
                     impactEvent.SecondaryBodyId,
@@ -2241,7 +2419,7 @@ namespace Hecton8.Physics
             return 0;
         }
 
-        private static byte ResolveImpactAudioMaterialIdUncached(Rigidbody body)
+        private static byte FindImpactAudioMaterialIdFromComponents(Rigidbody body)
         {
             if (body == null)
                 return 0;
@@ -2292,7 +2470,7 @@ namespace Hecton8.Physics
                 BodyB = bodyB,
                 CompensatedBody = null,
                 Kind = kind,
-                CompensationActive = false
+                CompensationActive = 0
             };
 
             EvaluateConnectionAt(connectionIndex);
@@ -2331,7 +2509,7 @@ namespace Hecton8.Physics
                 EvaluateConnectionAt(i);
                 connection = _connections[i];
                 ApplyImmediateConnectionCullingLocks(in connection, forceWake: false);
-                if (!connection.CompensationActive || connection.CompensatedBody == null)
+                if (connection.CompensationActive == 0 || connection.CompensatedBody == null)
                     continue;
 
                 int compensatedIndex = FindTrackedBodyIndex(connection.CompensatedBody);
@@ -2367,9 +2545,9 @@ namespace Hecton8.Physics
             RigidbodyState bodyState = _bodyStates[bodyIndex];
             bodyState.CullingLockRefCount++;
             if (forceWake &&
-                (bodyState.DistanceSleepActive ||
-                 bodyState.DistanceKinematicSleepActive ||
-                 bodyState.MeshColliderStripActive))
+                (bodyState.DistanceSleepActive != 0 ||
+                 bodyState.DistanceKinematicSleepActive != 0 ||
+                 bodyState.MeshColliderStripActive != 0))
             {
                 RestoreAllPhysicsCullingState(bodyIndex, body, ref bodyState, forceWake: true);
             }
@@ -2383,14 +2561,14 @@ namespace Hecton8.Physics
             Rigidbody bodyA = connection.BodyA;
             Rigidbody bodyB = connection.BodyB;
 
-            connection.CompensationActive = false;
+            connection.CompensationActive = 0;
             connection.CompensatedBody = null;
 
             if (connection.Kind == PhysicsConnectionKind.Dock)
             {
                 if (bodyA != null)
                 {
-                    connection.CompensationActive = true;
+                    connection.CompensationActive = 1;
                     connection.CompensatedBody = bodyA;
                 }
 
@@ -2415,7 +2593,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            connection.CompensationActive = true;
+            connection.CompensationActive = 1;
             connection.CompensatedBody = massA >= massB ? bodyA : bodyB;
             _connections[connectionIndex] = connection;
         }
@@ -2452,11 +2630,11 @@ namespace Hecton8.Physics
                     }
                 }
 
-                bodyState.HasLastValidPosition = true;
+                bodyState.HasLastValidPosition = 1;
                 if (TryResolveAupFromRuntimeOrigin(bodyPosition, out AbsoluteUniversePosition bodyAup))
                 {
                     bodyState.LastValidAup = bodyAup;
-                    bodyState.HasLastValidAup = true;
+                    bodyState.HasLastValidAup = 1;
                 }
                 bodyState.LastValidLinearVelocity = currentLinearVelocity;
                 Vector3 bodyAngularVelocity = body.angularVelocity;
@@ -2474,19 +2652,21 @@ namespace Hecton8.Physics
                 HectonFloatingOrigin.IsShiftInProgress)
                 return;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            Rigidbody playerBody = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null &&
+                runtimeContext.IsBound
+                    ? runtimeContext.PlayerRigidbody
+                    : null;
             ApplyAupJitterSentinelForBody(playerBody);
 
-            ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
-            Rigidbody submarineBody = submarineContext != null ? submarineContext.HullRigidbody : null;
+            Rigidbody submarineBody = _submarineHullBody;
             if (submarineBody != null && !ReferenceEquals(submarineBody, playerBody))
                 ApplyAupJitterSentinelForBody(submarineBody);
         }
 
         private bool ShouldRunAupJitterSentinelFrame()
         {
-            int frame = Time.frameCount;
+            int frame = ResolveCurrentDispatcherFrameIndex();
             if (_aupJitterSentinelCachedFrame == frame)
                 return _aupJitterSentinelDueThisFrame;
 
@@ -2520,7 +2700,7 @@ namespace Hecton8.Physics
             }
 
             RigidbodyState bodyState = _bodyStates[bodyIndex];
-            if (!bodyState.HasLastValidAup)
+            if (bodyState.HasLastValidAup == 0)
                 return;
 
             Vector3 bodyPosition = trackedBody.position;
@@ -2547,8 +2727,8 @@ namespace Hecton8.Physics
             HectonFloatingOrigin.ResyncBody(trackedBody, in bodyState.LastValidAup);
 
             _lastValidPositions[bodyIndex] = aupRuntimePosition3;
-            bodyState.HasLastValidPosition = true;
-            bodyState.HasLastValidAup = true;
+            bodyState.HasLastValidPosition = 1;
+            bodyState.HasLastValidAup = 1;
             bodyState.LastValidLinearVelocity = linearVelocity;
             bodyState.LastValidAngularVelocity = angularVelocity;
             _bodyStates[bodyIndex] = bodyState;
@@ -2558,7 +2738,7 @@ namespace Hecton8.Physics
 
         private void ReportKineticAnomalyOncePerFrame(Vector3 bodyPosition, Vector3 deltaVelocity, float acceleration)
         {
-            int frame = Time.frameCount;
+            int frame = ResolveCurrentDispatcherFrameIndex();
             if (_lastKineticAnomalyFrame == frame)
                 return;
 
@@ -2592,9 +2772,9 @@ namespace Hecton8.Physics
 
                 DumpPhysicsCullingBlackBox("rigidbody_nan");
                 RigidbodyState bodyState = _bodyStates[i];
-                float3 lastValidPosition = bodyState.HasLastValidAup
+                float3 lastValidPosition = bodyState.HasLastValidAup != 0
                     ? bodyState.LastValidAup.ToRuntimeFloat3()
-                    : bodyState.HasLastValidPosition
+                    : bodyState.HasLastValidPosition != 0
                         ? _lastValidPositions[i]
                         : float3.zero;
                 Vector3 invalidRuntimePosition = new Vector3(position.x, position.y, position.z);
@@ -2617,15 +2797,15 @@ namespace Hecton8.Physics
                     true);
                 bodyState.LastValidLinearVelocity = Vector3.zero;
                 bodyState.LastValidAngularVelocity = Vector3.zero;
-                bodyState.HasLastValidPosition = true;
+                bodyState.HasLastValidPosition = 1;
                 if (TryResolveAupFromRuntimeOrigin(recoveredRuntimePosition, out AbsoluteUniversePosition recoveredAup))
                 {
                     bodyState.LastValidAup = recoveredAup;
-                    bodyState.HasLastValidAup = true;
+                    bodyState.HasLastValidAup = 1;
                 }
                 else
                 {
-                    bodyState.HasLastValidAup = false;
+                    bodyState.HasLastValidAup = 0;
                 }
                 _lastValidPositions[i] = lastValidPosition;
                 _bodyStates[i] = bodyState;
@@ -2735,7 +2915,7 @@ namespace Hecton8.Physics
                 }
 
                 RigidbodyState bodyState = _bodyStates[bodyIndex];
-                if (!TryResolveTrackedBodyAup(body, ref bodyState, out AbsoluteUniversePosition bodyAup))
+                if (!TryUpdateTrackedBodyAupCache(body, ref bodyState, out AbsoluteUniversePosition bodyAup))
                 {
                     _bodyStates[bodyIndex] = bodyState;
                     _rigidbodyAUPs[bodyIndex] = double3.zero;
@@ -2806,6 +2986,7 @@ namespace Hecton8.Physics
             JobHandle cullingHandle = job.Schedule(candidateCount, 32, changedIndexClearHandle);
             _physicsCullingJobHandle = SchedulePhysicsChangedIndexCompaction(jobCount, cullingHandle);
             _physicsCullingJobScheduled = true;
+            H8Memory.RegisterActiveJob(OwnerSystemId, _physicsCullingJobHandle);
             JobHandle.ScheduleBatchedJobs();
         }
 
@@ -2830,6 +3011,8 @@ namespace Hecton8.Physics
                 _physicsCullingJobDiscardRequested = true;
 
             bool shouldDiscard = _physicsCullingJobDiscardRequested;
+            // [BLOCKING_SYNC_POINT] Discard paths are structural mutation/origin-shift/teardown barriers;
+            // normal culling result publication uses non-blocking finalization only.
             bool completed = shouldDiscard
                 ? DispatcherJobSwap.TryComplete(ref _physicsCullingJobHandle, forceComplete: true)
                 : DispatcherJobSwap.TryFinalizeCompleted(ref _physicsCullingJobHandle);
@@ -2842,6 +3025,7 @@ namespace Hecton8.Physics
             _physicsCullingJobScheduled = false;
             _physicsCullingJobDiscardRequested = false;
             _physicsCullingJobCount = 0;
+            H8Memory.RegisterActiveJob(OwnerSystemId, default);
 
             if (shouldDiscard)
                 return;
@@ -2910,7 +3094,7 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            bool cullingAllowed = bodyState.AllowDistanceKinematicSleep &&
+            bool cullingAllowed = bodyState.AllowDistanceKinematicSleep != 0 &&
                 bodyState.CompensationRefCount <= 0 &&
                 bodyState.CullingLockRefCount <= 0 &&
                 (bodyState.CullingFlags & PhysicsCullingFlags.IgnoreCulling) == 0;
@@ -2939,9 +3123,9 @@ namespace Hecton8.Physics
             if (shouldKinematic)
                 ApplyDistanceKinematicCull(body, ref bodyState);
 
-            return bodyState.DistanceSleepActive ||
-                bodyState.DistanceKinematicSleepActive ||
-                bodyState.MeshColliderStripActive;
+            return bodyState.DistanceSleepActive != 0 ||
+                bodyState.DistanceKinematicSleepActive != 0 ||
+                bodyState.MeshColliderStripActive != 0;
         }
 
         private void ApplyDistanceSleep(int bodyIndex, Rigidbody body, ref RigidbodyState bodyState, float distanceSq)
@@ -2949,7 +3133,7 @@ namespace Hecton8.Physics
             if (body == null)
                 return;
 
-            if (bodyState.DistanceSleepActive)
+            if (bodyState.DistanceSleepActive != 0)
             {
                 if (!body.IsSleeping())
                 {
@@ -2961,8 +3145,8 @@ namespace Hecton8.Physics
                 return;
             }
 
-            bodyState.WasSleepingBeforeDistanceSleep = body.IsSleeping();
-            if (bodyState.WasSleepingBeforeDistanceSleep)
+            bodyState.WasSleepingBeforeDistanceSleep = body.IsSleeping() ? (byte)1 : (byte)0;
+            if (bodyState.WasSleepingBeforeDistanceSleep != 0)
                 bodyState.StateMask |= PhysicsStateMask.WasAsleep;
             else
                 bodyState.StateMask &= ~PhysicsStateMask.WasAsleep;
@@ -2970,21 +3154,21 @@ namespace Hecton8.Physics
             FreezeBodyVelocityForDistanceSleep(bodyIndex, body);
             DisableSleepColliders(bodyIndex, ref bodyState);
             body.Sleep();
-            bodyState.DistanceSleepActive = true;
+            bodyState.DistanceSleepActive = 1;
             WritePhysicsCullingDtoSleepState(bodyIndex, 1);
             PublishRigidbodySleepSignal(in bodyState, body != null ? body.position : Vector3.zero, distanceSq, 1);
         }
 
         private void RestoreDistanceSleep(int bodyIndex, Rigidbody body, ref RigidbodyState bodyState, bool forceWake)
         {
-            if (!bodyState.DistanceSleepActive)
+            if (bodyState.DistanceSleepActive == 0)
                 return;
 
-            bool wasAsleepBeforeEviction = bodyState.WasSleepingBeforeDistanceSleep ||
+            bool wasAsleepBeforeEviction = bodyState.WasSleepingBeforeDistanceSleep != 0 ||
                                            (bodyState.StateMask & PhysicsStateMask.WasAsleep) != 0;
-            bodyState.WasSleepingBeforeDistanceSleep = false;
+            bodyState.WasSleepingBeforeDistanceSleep = 0;
             bodyState.StateMask &= ~PhysicsStateMask.WasAsleep;
-            bodyState.DistanceSleepActive = false;
+            bodyState.DistanceSleepActive = 0;
 
             if (body != null && !body.isKinematic)
             {
@@ -3009,7 +3193,7 @@ namespace Hecton8.Physics
             if (body == null)
                 return;
 
-            if (bodyState.DistanceKinematicSleepActive)
+            if (bodyState.DistanceKinematicSleepActive != 0)
             {
                 body.isKinematic = true;
                 body.detectCollisions = false;
@@ -3019,30 +3203,30 @@ namespace Hecton8.Physics
                 return;
             }
 
-            bodyState.KinematicModeBeforeDistanceSleep = body.isKinematic;
-            bodyState.DetectCollisionsBeforeDistanceSleep = body.detectCollisions;
+            bodyState.KinematicModeBeforeDistanceSleep = body.isKinematic ? (byte)1 : (byte)0;
+            bodyState.DetectCollisionsBeforeDistanceSleep = body.detectCollisions ? (byte)1 : (byte)0;
             body.isKinematic = true;
             body.detectCollisions = false;
             body.Sleep();
-            bodyState.DistanceKinematicSleepActive = true;
+            bodyState.DistanceKinematicSleepActive = 1;
         }
 
         private void RestoreDistanceKinematicCull(int bodyIndex, Rigidbody body, ref RigidbodyState bodyState, bool forceWake)
         {
-            if (!bodyState.DistanceKinematicSleepActive)
+            if (bodyState.DistanceKinematicSleepActive == 0)
                 return;
 
             if (body != null)
             {
-                body.isKinematic = bodyState.KinematicModeBeforeDistanceSleep;
-                body.detectCollisions = bodyState.DetectCollisionsBeforeDistanceSleep;
+                body.isKinematic = bodyState.KinematicModeBeforeDistanceSleep != 0;
+                body.detectCollisions = bodyState.DetectCollisionsBeforeDistanceSleep != 0;
                 if (!body.isKinematic)
                     RestoreFrozenVelocityForDistanceSleep(bodyIndex, body);
                 if (forceWake && !body.isKinematic)
                     body.WakeUp();
             }
 
-            bodyState.DistanceKinematicSleepActive = false;
+            bodyState.DistanceKinematicSleepActive = 0;
         }
 
         private void RestoreAllPhysicsCullingState(int bodyIndex, Rigidbody body, ref RigidbodyState bodyState, bool forceWake)
@@ -3057,13 +3241,13 @@ namespace Hecton8.Physics
         private static byte BuildPhysicsCullingStateSnapshot(in RigidbodyState bodyState)
         {
             byte state = 0;
-            if (bodyState.DistanceSleepActive)
+            if (bodyState.DistanceSleepActive != 0)
                 state |= CullingStateSleepActive;
-            if (bodyState.DistanceKinematicSleepActive)
+            if (bodyState.DistanceKinematicSleepActive != 0)
                 state |= CullingStateKinematicActive;
-            if (bodyState.MeshColliderStripActive)
+            if (bodyState.MeshColliderStripActive != 0)
                 state |= CullingStateMeshColliderStripped;
-            if (!bodyState.AllowDistanceKinematicSleep ||
+            if (bodyState.AllowDistanceKinematicSleep == 0 ||
                 bodyState.CompensationRefCount > 0 ||
                 bodyState.CullingLockRefCount > 0 ||
                 (bodyState.CullingFlags & PhysicsCullingFlags.IgnoreCulling) != 0)
@@ -3100,31 +3284,24 @@ namespace Hecton8.Physics
             cameraForward = new float3(0f, 0f, 1f);
             depthMeters = 0f;
 
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.IsBound)
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
+                runtimeContext == null ||
+                !runtimeContext.IsBound)
             {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
-                {
-                    playerAup = movementState.PredictedAup;
-                    cameraForward = NormalizeWithRsqrtGuard(movementState.CameraForward, new float3(0f, 0f, 1f));
-                    float rawDepthMeters = movementState.DepthMeters;
-                    depthMeters = math.isfinite(rawDepthMeters) ? math.max(0f, rawDepthMeters) : 0f;
-                    return IsFinite(in playerAup) && math.all(math.isfinite(cameraForward));
-                }
+                return false;
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement == null)
-                return false;
+            PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+            if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                playerAup = movementState.PredictedAup;
+                cameraForward = NormalizeWithRsqrtGuard(movementState.CameraForward, new float3(0f, 0f, 1f));
+                float rawDepthMeters = movementState.DepthMeters;
+                depthMeters = math.isfinite(rawDepthMeters) ? math.max(0f, rawDepthMeters) : 0f;
+                return IsFinite(in playerAup) && math.all(math.isfinite(cameraForward));
+            }
 
-            playerAup = playerMovement.CurrentAup;
-            cameraForward = new float3(0f, 0f, 1f);
-            float fallbackDepthMeters = playerMovement.CurrentDepth;
-            depthMeters = math.isfinite(fallbackDepthMeters) ? math.max(0f, fallbackDepthMeters) : 0f;
-            return IsFinite(in playerAup);
+            return false;
         }
 
         private void ApplyMeshColliderStrip(int bodyIndex, ref RigidbodyState bodyState)
@@ -3132,7 +3309,7 @@ namespace Hecton8.Physics
             if (bodyState.MeshColliderCount <= 0)
                 return;
 
-            if (bodyState.MeshColliderStripActive)
+            if (bodyState.MeshColliderStripActive != 0)
             {
                 EnforceMeshColliderStrip(bodyIndex, bodyState.MeshColliderCount);
                 return;
@@ -3154,7 +3331,7 @@ namespace Hecton8.Physics
                 meshCollider.enabled = false;
             }
 
-            bodyState.MeshColliderStripActive = true;
+            bodyState.MeshColliderStripActive = 1;
         }
 
         private void EnforceMeshColliderStrip(int bodyIndex, byte meshColliderCount)
@@ -3171,7 +3348,7 @@ namespace Hecton8.Physics
 
         private void RestoreMeshColliderStrip(int bodyIndex, ref RigidbodyState bodyState)
         {
-            if (!bodyState.MeshColliderStripActive || bodyState.MeshColliderCount <= 0)
+            if (bodyState.MeshColliderStripActive == 0 || bodyState.MeshColliderCount <= 0)
                 return;
 
             int baseIndex = bodyIndex * MaxMeshCollidersPerBody;
@@ -3186,7 +3363,7 @@ namespace Hecton8.Physics
                 _trackedMeshColliderEnabledBeforeStrip[colliderIndex] = 0;
             }
 
-            bodyState.MeshColliderStripActive = false;
+            bodyState.MeshColliderStripActive = 0;
         }
 
         private byte CacheMeshCollidersForBody(Rigidbody body, int bodyIndex)
@@ -3249,9 +3426,10 @@ namespace Hecton8.Physics
                 ? 0
                 : nextWriteIndex;
 
+            int frame = ResolveCurrentDispatcherFrameIndex();
             _physicsCullingTelemetry[writeIndex] = new PhysicsCullingTelemetryEntry
             {
-                FrameIndex = Time.frameCount,
+                FrameIndex = frame,
                 TrackedBodyCount = _trackedBodyCount,
                 CulledBodyCount = culledCount,
                 BodyId = unchecked((uint)bodyState.EntityId),
@@ -3259,13 +3437,13 @@ namespace Hecton8.Physics
                 Command = command,
                 AwakeResult = awakeResult,
                 Flags = (byte)bodyState.CullingFlags,
-                CcdInterventions = ResolveKinematicCcdInterventionsForFrame(Time.frameCount)
+                CcdInterventions = ResolveKinematicCcdInterventionsForFrame(frame)
             };
         }
 
         private void ReportKinematicCcdInterventionInternal()
         {
-            int frame = Time.frameCount;
+            int frame = ResolveCurrentDispatcherFrameIndex();
             if (_kinematicCcdInterventionsFrame != frame)
             {
                 _kinematicCcdInterventionsFrame = frame;
@@ -3400,14 +3578,14 @@ namespace Hecton8.Physics
                 }
 
                 RigidbodyState bodyState = _bodyStates[i];
-                if (!bodyState.DistanceSleepActive &&
-                    !bodyState.DistanceKinematicSleepActive &&
-                    !bodyState.MeshColliderStripActive)
+                if (bodyState.DistanceSleepActive == 0 &&
+                    bodyState.DistanceKinematicSleepActive == 0 &&
+                    bodyState.MeshColliderStripActive == 0)
                 {
                     continue;
                 }
 
-                if (!TryResolveTrackedBodyAup(body, ref bodyState, out AbsoluteUniversePosition bodyAup))
+                if (!TryUpdateTrackedBodyAupCache(body, ref bodyState, out AbsoluteUniversePosition bodyAup))
                 {
                     _bodyStates[i] = bodyState;
                     continue;
@@ -3440,26 +3618,26 @@ namespace Hecton8.Physics
                 }
 
                 RigidbodyState bodyState = _bodyStates[i];
-                if (!bodyState.HasColliderLodSink || !IsColliderLodSinkAlive(bodyState.ColliderLodSink))
+                if (bodyState.HasColliderLodSink == 0 || !IsColliderLodSinkAlive(bodyState.ColliderLodSink))
                 {
                     bodyState.ColliderLodOutOfRangeSeconds = 0f;
-                    bodyState.ColliderLodDistanceGateOpen = false;
+                    bodyState.ColliderLodDistanceGateOpen = 0;
                     _bodyStates[i] = bodyState;
                     continue;
                 }
 
-                if (!TryResolveTrackedBodyAup(body, ref bodyState, out AbsoluteUniversePosition bodyAup))
+                if (!TryUpdateTrackedBodyAupCache(body, ref bodyState, out AbsoluteUniversePosition bodyAup))
                 {
                     _bodyStates[i] = bodyState;
                     continue;
                 }
 
                 double distanceSq = AbsoluteUniversePosition.DistanceSq(in bodyAup, in playerAup);
-                if (bodyState.ColliderLodDistanceGateOpen)
+                if (bodyState.ColliderLodDistanceGateOpen != 0)
                 {
                     if (distanceSq <= ColliderLodSimpleToCompoundDistanceSq)
                     {
-                        bodyState.ColliderLodDistanceGateOpen = false;
+                        bodyState.ColliderLodDistanceGateOpen = 0;
                         bodyState.ColliderLodOutOfRangeSeconds = 0f;
                         bodyState.ColliderLodSink.SetColliderLodDistanceGate(false);
                     }
@@ -3469,7 +3647,7 @@ namespace Hecton8.Physics
                     bodyState.ColliderLodOutOfRangeSeconds += safeDeltaTime;
                     if (bodyState.ColliderLodOutOfRangeSeconds >= ColliderLodSimplifyHysteresisSeconds)
                     {
-                        bodyState.ColliderLodDistanceGateOpen = true;
+                        bodyState.ColliderLodDistanceGateOpen = 1;
                         bodyState.ColliderLodSink.SetColliderLodDistanceGate(true);
                     }
                 }
@@ -3498,9 +3676,9 @@ namespace Hecton8.Physics
                 BodyId = unchecked((uint)bodyState.EntityId),
                 DistanceMeters = distanceMeters,
                 SleepState = sleepState,
-                Flags = bodyState.DistanceKinematicSleepActive ? (byte)1 : (byte)0
+                Flags = bodyState.DistanceKinematicSleepActive != 0 ? (byte)1 : (byte)0
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<RigidbodySleepSignal>.Push(in signal);
         }
 
         private static void PublishRigidbodySleepSignal(
@@ -3510,7 +3688,7 @@ namespace Hecton8.Physics
             byte sleepState)
         {
             AbsoluteUniversePosition bodyAup;
-            if (bodyState.HasLastValidAup)
+            if (bodyState.HasLastValidAup != 0)
             {
                 bodyAup = bodyState.LastValidAup;
             }
@@ -3538,21 +3716,21 @@ namespace Hecton8.Physics
                 float submersionFactor = math.saturate(bodyState.HydrodynamicSubmersionFactor);
                 if (submersionFactor <= AddedMassSubmersionEpsilon)
                 {
-                    if (bodyState.AddedMassTensorApplied)
+                    if (bodyState.AddedMassTensorApplied != 0)
                         RestoreAddedMassBaseline(body, ref bodyState);
 
                     _bodyStates[i] = bodyState;
                     continue;
                 }
 
-                if (bodyState.AddedMassTensorApplied &&
+                if (bodyState.AddedMassTensorApplied != 0 &&
                     math.abs(bodyState.LastAppliedAddedMassSubmersionFactor - submersionFactor) <= AddedMassSubmersionEpsilon)
                 {
                     _bodyStates[i] = bodyState;
                     continue;
                 }
 
-                bool isFullySubmerged = bodyState.IsFullySubmerged;
+                bool isFullySubmerged = bodyState.IsFullySubmerged != 0;
                 float multiplier = isFullySubmerged
                     ? AddedMassFullySubmergedAngularDampingMultiplier
                     : 1f + (AddedMassAngularDampingScale * submersionFactor);
@@ -3562,7 +3740,7 @@ namespace Hecton8.Physics
                 body.angularDamping = bodyState.BaseAngularDamping * multiplier;
                 body.inertiaTensor = bodyState.BaseInertiaTensor * inertiaMultiplier;
                 body.inertiaTensorRotation = bodyState.BaseInertiaTensorRotation;
-                bodyState.AddedMassTensorApplied = true;
+                bodyState.AddedMassTensorApplied = 1;
                 bodyState.LastAppliedAddedMassSubmersionFactor = submersionFactor;
                 _bodyStates[i] = bodyState;
             }
@@ -3570,18 +3748,18 @@ namespace Hecton8.Physics
 
         private static void CaptureAddedMassBaseline(Rigidbody body, ref RigidbodyState bodyState)
         {
-            if (body == null || bodyState.HasAddedMassBaseline)
+            if (body == null || bodyState.HasAddedMassBaseline != 0)
                 return;
 
             bodyState.BaseInertiaTensor = IsFinite(body.inertiaTensor) ? body.inertiaTensor : Vector3.one;
             bodyState.BaseInertiaTensorRotation = IsFinite(body.inertiaTensorRotation) ? body.inertiaTensorRotation : Quaternion.identity;
             bodyState.BaseAngularDamping = math.max(0f, body.angularDamping);
-            bodyState.HasAddedMassBaseline = true;
+            bodyState.HasAddedMassBaseline = 1;
         }
 
         private static void RestoreAddedMassBaseline(Rigidbody body, ref RigidbodyState bodyState)
         {
-            if (body == null || !bodyState.HasAddedMassBaseline)
+            if (body == null || bodyState.HasAddedMassBaseline == 0)
                 return;
 
             if (IsFinite(bodyState.BaseInertiaTensor))
@@ -3589,7 +3767,7 @@ namespace Hecton8.Physics
             if (IsFinite(bodyState.BaseInertiaTensorRotation))
                 body.inertiaTensorRotation = bodyState.BaseInertiaTensorRotation;
             body.angularDamping = math.max(0f, bodyState.BaseAngularDamping);
-            bodyState.AddedMassTensorApplied = false;
+            bodyState.AddedMassTensorApplied = 0;
             bodyState.LastAppliedAddedMassSubmersionFactor = 0f;
         }
 
@@ -3607,7 +3785,7 @@ namespace Hecton8.Physics
                 RestoreColliderLodGate(ref removedState);
                 RestoreSafeTeleportSpeculativeCcd(removedBody, ref removedState);
                 RestoreAllPhysicsCullingState(bodyIndex, removedBody, ref removedState, forceWake: false);
-                if (removedState.AddedMassTensorApplied)
+                if (removedState.AddedMassTensorApplied != 0)
                     RestoreAddedMassBaseline(removedBody, ref removedState);
                 _trackedBodyIndexByEntityId.Remove(EntityId.ToULong(removedBody.GetEntityId()));
                 _trackedBodyIndexByInstanceId.Remove(removedBody.GetInstanceID());
@@ -3650,24 +3828,19 @@ namespace Hecton8.Physics
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                runtimeContext.IsBound)
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
+                runtimeContext == null ||
+                !runtimeContext.IsBound)
             {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
-                    IsFinite(in movementState.PredictedAup))
-                {
-                    playerAup = movementState.PredictedAup;
-                    return true;
-                }
+                playerAup = default;
+                return false;
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement != null)
+            PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+            if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                IsFinite(in movementState.PredictedAup))
             {
-                playerAup = playerMovement.CurrentAup;
+                playerAup = movementState.PredictedAup;
                 return true;
             }
 
@@ -3675,9 +3848,9 @@ namespace Hecton8.Physics
             return false;
         }
 
-        private static bool TryResolveTrackedBodyAup(Rigidbody body, ref RigidbodyState bodyState, out AbsoluteUniversePosition bodyAup)
+        private static bool TryUpdateTrackedBodyAupCache(Rigidbody body, ref RigidbodyState bodyState, out AbsoluteUniversePosition bodyAup)
         {
-            if (bodyState.HasLastValidAup)
+            if (bodyState.HasLastValidAup != 0)
             {
                 bodyAup = bodyState.LastValidAup;
                 return true;
@@ -3700,11 +3873,11 @@ namespace Hecton8.Physics
                 return false;
 
             bodyState.LastValidAup = bodyAup;
-            bodyState.HasLastValidAup = true;
+            bodyState.HasLastValidAup = 1;
             return true;
         }
 
-        private static PhysicsCullingFlags ResolveCullingFlags(Rigidbody body)
+        private static PhysicsCullingFlags ScanCullingFlagsFromComponents(Rigidbody body)
         {
             if (body == null)
                 return PhysicsCullingFlags.IgnoreCulling;
@@ -3717,10 +3890,7 @@ namespace Hecton8.Physics
             if (parentProvider != null && !ReferenceEquals(parentProvider, directProvider))
                 flags |= parentProvider.CullingFlags;
 
-            if (body.CompareTag("Player") ||
-                body.TryGetComponent(out HectonPlayerMotor _) ||
-                body.TryGetComponent(out MountablePlayerTransport _) ||
-                body.TryGetComponent(out SubmarineCoreDirector _))
+            if (body.CompareTag("Player"))
             {
                 flags |= PhysicsCullingFlags.IgnoreCulling;
             }
@@ -3739,7 +3909,7 @@ namespace Hecton8.Physics
             return true;
         }
 
-        private static IPhysicsColliderLodHysteresisSink ResolveColliderLodSink(Rigidbody body)
+        private static IPhysicsColliderLodHysteresisSink FindColliderLodSinkFromComponent(Rigidbody body)
         {
             if (body != null && body.TryGetComponent(out IPhysicsColliderLodHysteresisSink sink))
                 return sink;
@@ -3757,19 +3927,19 @@ namespace Hecton8.Physics
 
         private static void RestoreColliderLodGate(ref RigidbodyState bodyState)
         {
-            if (!bodyState.ColliderLodDistanceGateOpen)
+            if (bodyState.ColliderLodDistanceGateOpen == 0)
                 return;
 
             if (IsColliderLodSinkAlive(bodyState.ColliderLodSink))
                 bodyState.ColliderLodSink.SetColliderLodDistanceGate(false);
 
-            bodyState.ColliderLodDistanceGateOpen = false;
+            bodyState.ColliderLodDistanceGateOpen = 0;
             bodyState.ColliderLodOutOfRangeSeconds = 0f;
         }
 
         private static void RestoreSafeTeleportSpeculativeCcd(Rigidbody body, ref RigidbodyState bodyState)
         {
-            if (!bodyState.SafeTeleportSpeculativeCcdActive)
+            if (bodyState.SafeTeleportSpeculativeCcdActive == 0)
                 return;
 
             if (body != null)
@@ -3778,19 +3948,19 @@ namespace Hecton8.Physics
                 body.PublishTransform();
             }
 
-            bodyState.SafeTeleportSpeculativeCcdActive = false;
+            bodyState.SafeTeleportSpeculativeCcdActive = 0;
             bodyState.SafeTeleportSpeculativeFixedTicksRemaining = 0;
             bodyState.CollisionDetectionModeBeforeSafeTeleport = default;
         }
 
-        private static float ResolveMaxAngularVelocityClamp(Rigidbody body)
+        private static float ScanMaxAngularVelocityClampFromComponents(Rigidbody body)
         {
             if (body == null)
                 return 0f;
 
-            if (body.TryGetComponent(out MountablePlayerTransport _) ||
-                body.TryGetComponent(out VehicleMotor _) ||
-                body.TryGetComponent(out SubmarineCoreDirector _))
+            if (body.mass >= 250f ||
+                (body.TryGetComponent(out IPhysicsCullingFlagProvider cullingProvider) &&
+                (cullingProvider.CullingFlags & PhysicsCullingFlags.HeavyCollider) != 0))
             {
                 return 3f;
             }
@@ -3941,7 +4111,7 @@ namespace Hecton8.Physics
                 RestoreColliderLodGate(ref bodyState);
                 RestoreSafeTeleportSpeculativeCcd(body, ref bodyState);
                 RestoreAllPhysicsCullingState(i, body, ref bodyState, forceWake: false);
-                if (bodyState.AddedMassTensorApplied)
+                if (bodyState.AddedMassTensorApplied != 0)
                     RestoreAddedMassBaseline(body, ref bodyState);
             }
 
@@ -4020,7 +4190,10 @@ namespace Hecton8.Physics
 
         private static float ResolveImpactIntensityFromForce(float impactForce)
         {
-            return math.log10(1f + (math.max(0f, impactForce) / 100f));
+            float normalizedForce = math.max(0f, impactForce) * 0.01f;
+            float primary = normalizedForce * math.rcp(2.35f + normalizedForce);
+            float highTail = normalizedForce * math.rcp(16f + normalizedForce);
+            return primary + (highTail * 0.65f);
         }
 
         private static float EstimateMagnitudeNoSqrt(float valueSq)
@@ -4094,10 +4267,11 @@ namespace Hecton8.Physics
             if (!IsFinite(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!IsFinite(in originAup))
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(origin)))
                 return false;
 
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));

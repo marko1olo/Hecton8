@@ -6,14 +6,22 @@ namespace Hecton8.Tools
     using Hecton8.Core.Contracts;
     using Hecton8.Core.Contracts.Signals;
     using Hecton8.Core.Memory;
+    using Hecton8.Tools.ToolKinematics.Contracts;
     using Hecton8.World;
     using Unity.Collections;
+    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
     using Unity.Mathematics;
     using UnityEngine;
 
     public static class LaserCutterDodRuntime
     {
+        private const uint BlackBoxDumpMagic = 0x53483235u; // SH25
+        private const uint BlackBoxDumpVersion = 1u;
+        private const int BlackBoxDumpHeaderBytes = 32;
+        private const int LaserCutTelemetryEntrySizeBytes = 128;
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_225.bin";
+
         private static IDataVault _dataVault;
         private static VaultGenerationHandle<LaserCutRequestDTO> _requestsHandle;
         private static VaultGenerationHandle<LaserCutRequestMetaDTO> _requestMetasHandle;
@@ -32,6 +40,7 @@ namespace Hecton8.Tools
         private static VaultGenerationHandle<LaserCutterSpecDTO> _specHandle;
         private static VaultGenerationHandle<byte> _csvScratchHandle;
         private static VaultGenerationHandle<LaserCutterCountersDTO> _countersHandle;
+        private static VaultGenerationHandle<ScalabilityStateDTO> _scalabilityStateHandle;
 
         private static JobHandle _scheduledRaycastHandle;
         private static bool _scheduledRaycastActive;
@@ -43,10 +52,15 @@ namespace Hecton8.Tools
         private static uint _requestSequence;
         private static uint _lastDumpFrame;
         private static float _cachedGlobalQualityWeight = 1f;
+        private static double3 _cachedPresentationOriginAup;
+        private static bool _hasCachedPresentationOriginAup;
+        private static double3 _scheduledRaycastPresentationOriginAup;
+        private static bool _hasScheduledRaycastPresentationOriginAup;
+        private static double3 _scheduledEvaluationPresentationOriginAup;
+        private static bool _hasScheduledEvaluationPresentationOriginAup;
 
-        public static bool EnsureInitialized(IDataVault explicitVault = null)
+        public static bool EnsureInitialized(IDataVault vault)
         {
-            IDataVault vault = explicitVault ?? GlobalRegistry.DataVault;
             if (vault == null)
             {
                 ReleaseVaultHandles(_dataVault);
@@ -62,11 +76,40 @@ namespace Hecton8.Tools
                 _dataVault = vault;
             }
 
-            bool ready = TryResolveCoreBuffers(out _, out _, out _, out _, out _);
+            bool ready = BindSchedulerBuffers(out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _);
             if (ready)
+            {
+                CacheScalabilityStateHandle();
                 RefreshCachedGlobalQualityWeight();
+                EnsureTuningSeeded();
+            }
 
             return ready;
+        }
+
+        public static void CachePresentationOriginAup(double3 originAup)
+        {
+            if (!math.all(math.isfinite(originAup)))
+            {
+                ClearPresentationOriginAup();
+                return;
+            }
+
+            _cachedPresentationOriginAup = originAup;
+            _hasCachedPresentationOriginAup = true;
+        }
+
+        public static void ClearPresentationOriginAup()
+        {
+            _cachedPresentationOriginAup = double3.zero;
+            _hasCachedPresentationOriginAup = false;
+            ClearScheduledRaycastPresentationOrigin();
+            ClearScheduledEvaluationPresentationOrigin();
+        }
+
+        public static bool TryGetPresentationOriginForGizmo(out double3 originAup)
+        {
+            return TryReadPresentationOriginAup(out originAup);
         }
 
         public static bool QueueLiveRequest(
@@ -81,7 +124,7 @@ namespace Hecton8.Tools
             if (_dataVault == null ||
                 _scheduledRaycastActive ||
                 _scheduledEvaluationActive ||
-                !TryResolveCoreBuffers(
+                !BindCoreBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
                     out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
@@ -147,15 +190,17 @@ namespace Hecton8.Tools
 
         public static bool GenerateMockCutterTriggers(int count, double3 originAup, uint frame, uint seed)
         {
-            if (!EnsureInitialized() ||
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_dataVault == null ||
                 _scheduledRaycastActive ||
                 _scheduledEvaluationActive ||
-                !TryResolveCoreBuffers(
+                !BindCoreBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
                     out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
                     out NativeArray<int> _,
-                    out NativeArray<LaserCutterCountersDTO> counters) ||
+                    out NativeArray<LaserCutterCountersDTO> counters,
+                    allowAcquire: false) ||
                 !requests.IsCreated ||
                 !requestMetas.IsCreated ||
                 !requestCount.IsCreated ||
@@ -177,7 +222,7 @@ namespace Hecton8.Tools
                 ToolHashID = LaserCutterDodConstants.LaserCutterHash,
                 ParentEntityID = 0u,
                 Seed = seed,
-                MaximumDistanceMeters = ResolveTuning().DefaultMaxDistanceMeters
+                MaximumDistanceMeters = ReadTuningOrDefaultNoAcquire().DefaultMaxDistanceMeters
             };
             JobHandle mockHandle = job.Schedule(safeCount, LaserCutterDodConstants.MinCommandsPerJob);
             H8Memory.RegisterActiveJob(SystemID.GameplayTools, mockHandle);
@@ -196,6 +241,9 @@ namespace Hecton8.Tools
             }
 
             return true;
+#else
+            return false;
+#endif
         }
 
         public static bool TryScheduleRaycastBatch(int layerMask, QueryTriggerInteraction queryTriggerInteraction, uint frame)
@@ -206,12 +254,18 @@ namespace Hecton8.Tools
                 return false;
             }
 
-            if (_dataVault == null && !EnsureInitialized())
+            if (_dataVault == null)
                 return false;
+
+            if (!TryReadPresentationOriginAup(out double3 presentationOriginAup))
+            {
+                SuppressQueuedRequests(frame);
+                return false;
+            }
 
             RefreshCachedGlobalQualityWeight();
 
-            if (!TryResolveSchedulerBuffers(
+            if (!BindSchedulerBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
                     out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
@@ -236,7 +290,7 @@ namespace Hecton8.Tools
             if (scheduledCount <= 0)
                 return false;
 
-            LaserCutterTuningDTO tuning = ResolveTuningNoAcquire();
+            LaserCutterTuningDTO tuning = ReadTuningOrDefaultNoAcquire();
             uint cooldownFrames = (uint)math.max(1f, math.isfinite(tuning.CooldownFrames) ? tuning.CooldownFrames : 1f);
             ManageCutterCooldownJob cooldownJob = new ManageCutterCooldownJob
             {
@@ -252,7 +306,7 @@ namespace Hecton8.Tools
                 Requests = requests,
                 RequestMetas = requestMetas,
                 Commands = commands,
-                PresentationOriginAUP = HectonFloatingOrigin.CurrentTotalOffsetDouble,
+                PresentationOriginAUP = presentationOriginAup,
                 LayerMask = layerMask,
                 HitTriggers = queryTriggerInteraction == QueryTriggerInteraction.Collide ? (byte)1 : (byte)0
             };
@@ -267,6 +321,8 @@ namespace Hecton8.Tools
             H8Memory.RegisterActiveJob(SystemID.GameplayTools, _scheduledRaycastHandle);
             _scheduledRaycastActive = true;
             _scheduledRaycastCount = scheduledCount;
+            _scheduledRaycastPresentationOriginAup = presentationOriginAup;
+            _hasScheduledRaycastPresentationOriginAup = true;
             return true;
         }
 
@@ -281,7 +337,16 @@ namespace Hecton8.Tools
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledRaycastHandle))
                 return false;
 
-            if (!TryResolveSchedulerBuffers(
+            if (!TryReadScheduledRaycastPresentationOrigin(out double3 presentationOriginAup))
+            {
+                SuppressQueuedRequests(ResolveCurrentFrameId());
+                _scheduledRaycastActive = false;
+                _scheduledRaycastCount = 0;
+                ClearScheduledRaycastPresentationOrigin();
+                return false;
+            }
+
+            if (!BindSchedulerBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
                     out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
@@ -299,6 +364,7 @@ namespace Hecton8.Tools
             {
                 _scheduledRaycastActive = false;
                 _scheduledRaycastCount = 0;
+                ClearScheduledRaycastPresentationOrigin();
                 return false;
             }
 
@@ -308,11 +374,12 @@ namespace Hecton8.Tools
                 requestCount[0] = 0;
                 _scheduledRaycastActive = false;
                 _scheduledRaycastCount = 0;
+                ClearScheduledRaycastPresentationOrigin();
                 return false;
             }
 
             uint cursorBase = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? (uint)math.max(0, telemetryCursor[0]) : 0u;
-            LaserCutterTuningDTO tuning = ResolveTuningNoAcquire();
+            LaserCutterTuningDTO tuning = ReadTuningOrDefaultNoAcquire();
             EvaluateCutterRaycastHitsJob evaluateJob = new EvaluateCutterRaycastHitsJob
             {
                 Requests = requests,
@@ -324,7 +391,7 @@ namespace Hecton8.Tools
                 GlowDecalRequests = decals,
                 ImpactVfxRequests = impactVfx,
                 TelemetryRing = telemetry,
-                PresentationOriginAUP = HectonFloatingOrigin.CurrentTotalOffsetDouble,
+                PresentationOriginAUP = presentationOriginAup,
                 TelemetryCursorBase = cursorBase,
                 GlobalQualityWeight = _cachedGlobalQualityWeight,
                 Heat01 = heat01,
@@ -341,8 +408,11 @@ namespace Hecton8.Tools
             _scheduledEvaluationActive = true;
             _scheduledEvaluationCount = count;
             _scheduledEvaluationCursorBase = cursorBase;
+            _scheduledEvaluationPresentationOriginAup = presentationOriginAup;
+            _hasScheduledEvaluationPresentationOriginAup = true;
             _scheduledRaycastActive = false;
             _scheduledRaycastCount = 0;
+            ClearScheduledRaycastPresentationOrigin();
             return false;
         }
 
@@ -354,7 +424,17 @@ namespace Hecton8.Tools
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledEvaluationHandle))
                 return false;
 
-            if (!TryResolveSchedulerBuffers(
+            if (!TryReadScheduledEvaluationPresentationOrigin(out double3 presentationOriginAup))
+            {
+                SuppressQueuedRequests(ResolveCurrentFrameId());
+                _scheduledEvaluationActive = false;
+                _scheduledEvaluationCount = 0;
+                _scheduledEvaluationCursorBase = 0u;
+                ClearScheduledEvaluationPresentationOrigin();
+                return false;
+            }
+
+            if (!BindSchedulerBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
                     out NativeArray<LaserCutRequestMetaDTO> _,
                     out NativeArray<int> requestCount,
@@ -373,6 +453,7 @@ namespace Hecton8.Tools
                 _scheduledEvaluationActive = false;
                 _scheduledEvaluationCount = 0;
                 _scheduledEvaluationCursorBase = 0u;
+                ClearScheduledEvaluationPresentationOrigin();
                 return false;
             }
 
@@ -383,6 +464,7 @@ namespace Hecton8.Tools
                 _scheduledEvaluationActive = false;
                 _scheduledEvaluationCount = 0;
                 _scheduledEvaluationCursorBase = 0u;
+                ClearScheduledEvaluationPresentationOrigin();
                 return false;
             }
 
@@ -390,18 +472,19 @@ namespace Hecton8.Tools
                 telemetryCursor[0] = (int)((_scheduledEvaluationCursorBase + (uint)count) % (uint)LaserCutterDodConstants.BlackBoxFrameCount);
 
             PublishDrainSignals(batteryDrains, count);
-            PublishImpactSignals(impactVfx, count);
-            DumpOnNonFinite(telemetry);
+            PublishImpactSignals(impactVfx, count, presentationOriginAup);
+            DumpOnNonFinite(telemetry, telemetryCursor);
             requestCount[0] = 0;
             _scheduledEvaluationActive = false;
             _scheduledEvaluationCount = 0;
             _scheduledEvaluationCursorBase = 0u;
+            ClearScheduledEvaluationPresentationOrigin();
             return true;
         }
 
         public static void StageGpuSparkSignal(double3 hitAup, float3 normal, float heat01, float cuttingPower01, uint toolHashID, uint parentEntityID, uint frame)
         {
-            LaserCutterTuningDTO tuning = ResolveTuningNoAcquire();
+            LaserCutterTuningDTO tuning = ReadTuningOrDefaultNoAcquire();
             float quality = Smooth01(_cachedGlobalQualityWeight);
             float intensity = math.saturate((0.35f + heat01 * 0.65f) * (0.55f + cuttingPower01 * 0.45f));
             float lowSparkCount = math.max(0f, math.isfinite(tuning.LowSparkCount) ? tuning.LowSparkCount : LaserCutterDodConstants.LowSparkCount);
@@ -412,10 +495,16 @@ namespace Hecton8.Tools
                 0,
                 ushort.MaxValue);
 
-            PublishGpuSparkSignals(hitAup, normal, intensity, quantity, heat01, toolHashID, parentEntityID, frame, true);
+            if (quantity == 0)
+                return;
+
+            if (!TryReadPresentationOriginAup(out double3 presentationOriginAup))
+                return;
+
+            PublishGpuSparkSignals(hitAup, normal, intensity, quantity, heat01, toolHashID, parentEntityID, frame, presentationOriginAup, true);
         }
 
-        private static void PublishGpuSparkSignals(double3 hitAup, float3 normal, float intensity01, ushort quantity, float heat01, uint toolHashID, uint parentEntityID, uint frame, bool stageImpactVfx)
+        private static void PublishGpuSparkSignals(double3 hitAup, float3 normal, float intensity01, ushort quantity, float heat01, uint toolHashID, uint parentEntityID, uint frame, double3 presentationOriginAup, bool stageImpactVfx)
         {
             float intensity = math.saturate(intensity01);
             DebrisSpawnSignal debris = new DebrisSpawnSignal
@@ -432,7 +521,7 @@ namespace Hecton8.Tools
 
             VfxSparkRequestSignal spark = new VfxSparkRequestSignal
             {
-                HitPoint = AupPrecisionMath.LocalDeltaFloat3(hitAup, HectonFloatingOrigin.CurrentTotalOffsetDouble, float3.zero),
+                HitPoint = AupPrecisionMath.LocalDeltaFloat3(hitAup, presentationOriginAup, float3.zero),
                 Normal = SafeNormalize(normal, new float3(0f, 1f, 0f)),
                 MaterialHash = LaserCutterDodConstants.LaserCutterHash,
                 ToolHash = toolHashID == 0u ? LaserCutterDodConstants.LaserCutterHash : toolHashID,
@@ -442,20 +531,18 @@ namespace Hecton8.Tools
             SignalBus<VfxSparkRequestSignal>.TryPush(in spark);
 
             if (stageImpactVfx)
-                TryStageImpactVfx(hitAup, normal, intensity, heat01, quantity, toolHashID, frame);
+                StageImpactVfxIfBound(hitAup, normal, intensity, heat01, quantity, toolHashID, frame);
         }
 
         public static bool TryGetLatestTelemetry(out LaserCutTelemetryEntry entry)
         {
             entry = default;
-            if (!EnsureInitialized() ||
-                !TryResolveOrAcquire(
-                    LaserCutterDodConstants.TelemetryRingBuffer,
+            if (_dataVault == null ||
+                !ReadBoundBuffer(
                     LaserCutterDodConstants.BlackBoxFrameCount,
                     ref _telemetryRingHandle,
                     out NativeArray<LaserCutTelemetryEntry> telemetry) ||
-                !TryResolveOrAcquire(
-                    LaserCutterDodConstants.TelemetryCursorBuffer,
+                !ReadBoundBuffer(
                     1,
                     ref _telemetryCursorHandle,
                     out NativeArray<int> cursor) ||
@@ -478,32 +565,26 @@ namespace Hecton8.Tools
         public static bool TryGetTuning(out LaserCutterTuningDTO tuning)
         {
             tuning = default;
-            if (!EnsureInitialized() ||
-                !TryResolveOrAcquire(
-                    LaserCutterDodConstants.TuningBuffer,
+            if (_dataVault == null ||
+                !ReadBoundBuffer(
                     1,
                     ref _tuningHandle,
                     out NativeArray<LaserCutterTuningDTO> tuningBuffer) ||
                 !tuningBuffer.IsCreated ||
-                tuningBuffer.Length <= 0)
+                tuningBuffer.Length <= 0 ||
+                tuningBuffer[0].VersionHash == 0UL)
             {
                 return false;
             }
 
             tuning = tuningBuffer[0];
-            if (tuning.VersionHash == 0UL)
-            {
-                tuning = CreateDefaultTuning();
-                tuningBuffer[0] = tuning;
-            }
-
             return true;
         }
 
         public static bool TrySetTuning(in LaserCutterTuningDTO tuning)
         {
-            if (!EnsureInitialized() ||
-                !TryResolveOrAcquire(
+            if (_dataVault == null ||
+                !BindOrAcquireBuffer(
                     LaserCutterDodConstants.TuningBuffer,
                     1,
                     ref _tuningHandle,
@@ -542,8 +623,8 @@ namespace Hecton8.Tools
         {
             request = default;
             meta = default;
-            if (!EnsureInitialized() ||
-                !TryResolveCoreBuffers(
+            if (_dataVault == null ||
+                !ReadCoreBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
                     out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
@@ -569,9 +650,8 @@ namespace Hecton8.Tools
         public static bool TryGetHitForGizmo(int index, out LaserCutHitDTO hit)
         {
             hit = default;
-            if (!EnsureInitialized() ||
-                !TryResolveOrAcquire(
-                    LaserCutterDodConstants.HitResultsBuffer,
+            if (_dataVault == null ||
+                !ReadBoundBuffer(
                     LaserCutterDodConstants.MaxHitResults,
                     ref _hitResultsHandle,
                     out NativeArray<LaserCutHitDTO> hitResults) ||
@@ -586,29 +666,29 @@ namespace Hecton8.Tools
             return (hit.Flags & LaserCutterDodConstants.ResultFlagHit) != 0u;
         }
 
-        internal static bool TryResolveSpecBuffer(out NativeArray<LaserCutterSpecDTO> specs)
+        internal static bool TryAcquireSpecBufferForCsvIngest(out NativeArray<LaserCutterSpecDTO> specs)
         {
             specs = default;
-            return EnsureInitialized() &&
-                   TryResolveOrAcquire(
+            return _dataVault != null &&
+                   BindOrAcquireBuffer(
                        LaserCutterDodConstants.SpecBuffer,
                        LaserCutterDodConstants.CsvSpecCapacity,
                        ref _specHandle,
                        out specs);
         }
 
-        internal static bool TryResolveCsvScratch(out NativeArray<byte> scratch)
+        internal static bool TryAcquireCsvScratchForCsvIngest(out NativeArray<byte> scratch)
         {
             scratch = default;
-            return EnsureInitialized() &&
-                   TryResolveOrAcquire(
+            return _dataVault != null &&
+                   BindOrAcquireBuffer(
                        LaserCutterDodConstants.CsvScratchBuffer,
                        LaserCutterDodConstants.CsvScratchByteCapacity,
                        ref _csvScratchHandle,
                        out scratch);
         }
 
-        private static bool TryResolveCoreBuffers(
+        private static bool BindCoreBuffers(
             out NativeArray<LaserCutRequestDTO> requests,
             out NativeArray<LaserCutRequestMetaDTO> requestMetas,
             out NativeArray<int> requestCount,
@@ -621,14 +701,14 @@ namespace Hecton8.Tools
             requestCount = default;
             telemetryCursor = default;
             counters = default;
-            return TryResolveOrAcquire(LaserCutterDodConstants.RequestsBuffer, LaserCutterDodConstants.MaxRequests, ref _requestsHandle, out requests, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.RequestMetaBuffer, LaserCutterDodConstants.MaxRequests, ref _requestMetasHandle, out requestMetas, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.RequestCountBuffer, 1, ref _requestCountHandle, out requestCount, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.TelemetryCursorBuffer, 1, ref _telemetryCursorHandle, out telemetryCursor, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.CountersBuffer, 1, ref _countersHandle, out counters, allowAcquire);
+            return BindOrAcquireBuffer(LaserCutterDodConstants.RequestsBuffer, LaserCutterDodConstants.MaxRequests, ref _requestsHandle, out requests, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.RequestMetaBuffer, LaserCutterDodConstants.MaxRequests, ref _requestMetasHandle, out requestMetas, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.RequestCountBuffer, 1, ref _requestCountHandle, out requestCount, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.TelemetryCursorBuffer, 1, ref _telemetryCursorHandle, out telemetryCursor, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.CountersBuffer, 1, ref _countersHandle, out counters, allowAcquire);
         }
 
-        private static bool TryResolveSchedulerBuffers(
+        private static bool BindSchedulerBuffers(
             out NativeArray<LaserCutRequestDTO> requests,
             out NativeArray<LaserCutRequestMetaDTO> requestMetas,
             out NativeArray<int> requestCount,
@@ -653,19 +733,50 @@ namespace Hecton8.Tools
             decals = default;
             impactVfx = default;
             telemetry = default;
-            return TryResolveCoreBuffers(out requests, out requestMetas, out requestCount, out telemetryCursor, out _, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.RaycastCommandsBuffer, LaserCutterDodConstants.MaxRequests, ref _raycastCommandsHandle, out commands, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.RaycastHitsBuffer, LaserCutterDodConstants.MaxRequests, ref _raycastHitsHandle, out hits, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.CooldownBuffer, LaserCutterDodConstants.MaxRequests, ref _cooldownHandle, out cooldowns, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.HitResultsBuffer, LaserCutterDodConstants.MaxHitResults, ref _hitResultsHandle, out hitResults, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.DeformationBuffer, LaserCutterDodConstants.MaxHitResults, ref _deformationHandle, out deformations, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.BatteryDrainBuffer, LaserCutterDodConstants.MaxHitResults, ref _batteryDrainHandle, out batteryDrains, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.GlowDecalBuffer, LaserCutterDodConstants.MaxHitResults, ref _glowDecalHandle, out decals, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.ImpactVfxBuffer, LaserCutterDodConstants.MaxHitResults, ref _impactVfxHandle, out impactVfx, allowAcquire) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.TelemetryRingBuffer, LaserCutterDodConstants.BlackBoxFrameCount, ref _telemetryRingHandle, out telemetry, allowAcquire);
+            return BindCoreBuffers(out requests, out requestMetas, out requestCount, out telemetryCursor, out _, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.RaycastCommandsBuffer, LaserCutterDodConstants.MaxRequests, ref _raycastCommandsHandle, out commands, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.RaycastHitsBuffer, LaserCutterDodConstants.MaxRequests, ref _raycastHitsHandle, out hits, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.CooldownBuffer, LaserCutterDodConstants.MaxRequests, ref _cooldownHandle, out cooldowns, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.HitResultsBuffer, LaserCutterDodConstants.MaxHitResults, ref _hitResultsHandle, out hitResults, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.DeformationBuffer, LaserCutterDodConstants.MaxHitResults, ref _deformationHandle, out deformations, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.BatteryDrainBuffer, LaserCutterDodConstants.MaxHitResults, ref _batteryDrainHandle, out batteryDrains, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.GlowDecalBuffer, LaserCutterDodConstants.MaxHitResults, ref _glowDecalHandle, out decals, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.ImpactVfxBuffer, LaserCutterDodConstants.MaxHitResults, ref _impactVfxHandle, out impactVfx, allowAcquire) &&
+                   BindOrAcquireBuffer(LaserCutterDodConstants.TelemetryRingBuffer, LaserCutterDodConstants.BlackBoxFrameCount, ref _telemetryRingHandle, out telemetry, allowAcquire);
         }
 
-        private static bool TryResolveOrAcquire<T>(BufferID bufferId, int requiredLength, ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer, bool allowAcquire = true)
+        private static bool ReadCoreBuffers(
+            out NativeArray<LaserCutRequestDTO> requests,
+            out NativeArray<LaserCutRequestMetaDTO> requestMetas,
+            out NativeArray<int> requestCount,
+            out NativeArray<int> telemetryCursor,
+            out NativeArray<LaserCutterCountersDTO> counters)
+        {
+            requests = default;
+            requestMetas = default;
+            requestCount = default;
+            telemetryCursor = default;
+            counters = default;
+            return ReadBoundBuffer(LaserCutterDodConstants.MaxRequests, ref _requestsHandle, out requests) &&
+                   ReadBoundBuffer(LaserCutterDodConstants.MaxRequests, ref _requestMetasHandle, out requestMetas) &&
+                   ReadBoundBuffer(1, ref _requestCountHandle, out requestCount) &&
+                   ReadBoundBuffer(1, ref _telemetryCursorHandle, out telemetryCursor) &&
+                   ReadBoundBuffer(1, ref _countersHandle, out counters);
+        }
+
+        private static bool ReadBoundBuffer<T>(int requiredLength, ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsHandleCreated(in handle) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool BindOrAcquireBuffer<T>(BufferID bufferId, int requiredLength, ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer, bool allowAcquire = true)
             where T : struct
         {
             buffer = default;
@@ -707,20 +818,13 @@ namespace Hecton8.Tools
             return true;
         }
 
-        private static LaserCutterTuningDTO ResolveTuning()
-        {
-            return TryGetTuning(out LaserCutterTuningDTO tuning) ? tuning : CreateDefaultTuning();
-        }
-
-        private static LaserCutterTuningDTO ResolveTuningNoAcquire()
+        private static LaserCutterTuningDTO ReadTuningOrDefaultNoAcquire()
         {
             if (_dataVault != null &&
-                TryResolveOrAcquire(
-                    LaserCutterDodConstants.TuningBuffer,
+                ReadBoundBuffer(
                     1,
                     ref _tuningHandle,
-                    out NativeArray<LaserCutterTuningDTO> tuningBuffer,
-                    allowAcquire: false) &&
+                    out NativeArray<LaserCutterTuningDTO> tuningBuffer) &&
                 tuningBuffer.IsCreated &&
                 tuningBuffer.Length > 0 &&
                 tuningBuffer[0].VersionHash != 0UL)
@@ -729,6 +833,29 @@ namespace Hecton8.Tools
             }
 
             return CreateDefaultTuning();
+        }
+
+        private static void EnsureTuningSeeded()
+        {
+            if (!BindOrAcquireBuffer(
+                    LaserCutterDodConstants.TuningBuffer,
+                    1,
+                    ref _tuningHandle,
+                    out NativeArray<LaserCutterTuningDTO> tuningBuffer) ||
+                !tuningBuffer.IsCreated ||
+                tuningBuffer.Length <= 0)
+            {
+                return;
+            }
+
+            LaserCutterTuningDTO tuning = tuningBuffer[0];
+            if (tuning.VersionHash == 0UL)
+            {
+                tuning = CreateDefaultTuning();
+                tuningBuffer[0] = tuning;
+            }
+
+            _cachedGlobalQualityWeight = math.saturate(math.isfinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : _cachedGlobalQualityWeight);
         }
 
         private static LaserCutterTuningDTO CreateDefaultTuning()
@@ -752,16 +879,16 @@ namespace Hecton8.Tools
             };
         }
 
-        private static void TryStageImpactVfx(double3 hitAup, float3 normal, float intensity01, float heat01, ushort quantity, uint toolHashID, uint frame)
+        private static void StageImpactVfxIfBound(double3 hitAup, float3 normal, float intensity01, float heat01, ushort quantity, uint toolHashID, uint frame)
         {
             if (_dataVault == null ||
-                !TryResolveOrAcquire(
+                !BindOrAcquireBuffer(
                     LaserCutterDodConstants.ImpactVfxBuffer,
                     LaserCutterDodConstants.MaxHitResults,
                     ref _impactVfxHandle,
                     out NativeArray<LaserCutImpactVfxDTO> impactVfx,
                     allowAcquire: false) ||
-                !TryResolveCoreBuffers(out _, out _, out NativeArray<int> requestCount, out _, out _, allowAcquire: false) ||
+                !BindCoreBuffers(out _, out _, out NativeArray<int> requestCount, out _, out _, allowAcquire: false) ||
                 !impactVfx.IsCreated ||
                 !requestCount.IsCreated ||
                 requestCount.Length <= 0)
@@ -810,7 +937,7 @@ namespace Hecton8.Tools
             }
         }
 
-        private static void PublishImpactSignals(NativeArray<LaserCutImpactVfxDTO> impactVfx, int count)
+        private static void PublishImpactSignals(NativeArray<LaserCutImpactVfxDTO> impactVfx, int count, double3 presentationOriginAup)
         {
             if (!impactVfx.IsCreated)
                 return;
@@ -832,16 +959,17 @@ namespace Hecton8.Tools
                     request.ToolHashID,
                     0u,
                     request.Frame,
+                    presentationOriginAup,
                     false);
             }
         }
 
-        private static void DumpOnNonFinite(NativeArray<LaserCutTelemetryEntry> telemetry)
+        private static void DumpOnNonFinite(NativeArray<LaserCutTelemetryEntry> telemetry, NativeArray<int> telemetryCursor)
         {
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = ResolveCurrentFrameId();
             if (_lastDumpFrame == frame)
                 return;
 
@@ -850,72 +978,81 @@ namespace Hecton8.Tools
                 if ((telemetry[i].Flags & LaserCutterDodConstants.ResultFlagNonFinite) == 0u)
                     continue;
 
-                DumpBlackBox(telemetry);
+                int cursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0
+                    ? math.clamp(telemetryCursor[0], 0, telemetry.Length)
+                    : 0;
+                DumpBlackBox(telemetry, cursor);
                 _lastDumpFrame = frame;
                 return;
             }
         }
 
-        private static void DumpBlackBox(NativeArray<LaserCutTelemetryEntry> telemetry)
+        private static unsafe void DumpBlackBox(NativeArray<LaserCutTelemetryEntry> telemetry, int telemetryCursor)
         {
             try
             {
-                string assetsPath = Application.dataPath;
-                DirectoryInfo projectRoot = Directory.GetParent(assetsPath);
-                if (projectRoot == null)
+                int entrySize = UnsafeUtility.SizeOf<LaserCutTelemetryEntry>();
+                if (entrySize != LaserCutTelemetryEntrySizeBytes)
                     return;
 
-                string directory = Path.Combine(projectRoot.FullName, "Docs", "AgentLogs");
+                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string path = Path.Combine(root, DumpRelativePath);
+                string directory = Path.GetDirectoryName(path);
+                if (string.IsNullOrEmpty(directory))
+                    return;
+
                 Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_SHINOBU_225.bin");
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+
+                int entryCount = math.min(telemetry.Length, LaserCutterDodConstants.BlackBoxFrameCount);
+                int cursor = math.clamp(telemetryCursor, 0, entryCount);
+                int payloadBytes = entryCount * entrySize;
+                Span<byte> header = stackalloc byte[BlackBoxDumpHeaderBytes];
+                WriteUIntLittleEndian(header.Slice(0, 4), BlackBoxDumpMagic);
+                WriteUIntLittleEndian(header.Slice(4, 4), BlackBoxDumpVersion);
+                WriteUIntLittleEndian(header.Slice(8, 4), ResolveCurrentFrameId());
+                WriteUIntLittleEndian(header.Slice(12, 4), (uint)entryCount);
+                WriteUIntLittleEndian(header.Slice(16, 4), (uint)entrySize);
+                WriteUIntLittleEndian(header.Slice(20, 4), (uint)cursor);
+                WriteUIntLittleEndian(header.Slice(24, 4), _requestSequence);
+                WriteUIntLittleEndian(header.Slice(28, 4), (uint)payloadBytes);
+
+                byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 {
-                    writer.Write(telemetry.Length);
-                    writer.Write(_requestSequence);
-                    for (int i = 0; i < telemetry.Length; i++)
-                    {
-                        LaserCutTelemetryEntry entry = telemetry[i];
-                        writer.Write(entry.RayOriginAUP.x);
-                        writer.Write(entry.RayOriginAUP.y);
-                        writer.Write(entry.RayOriginAUP.z);
-                        writer.Write(entry.HitAUP.x);
-                        writer.Write(entry.HitAUP.y);
-                        writer.Write(entry.HitAUP.z);
-                        writer.Write(entry.RayDirection.x);
-                        writer.Write(entry.RayDirection.y);
-                        writer.Write(entry.RayDirection.z);
-                        writer.Write(entry.DistanceMeters);
-                        writer.Write(entry.CuttingPower);
-                        writer.Write(entry.QualityWeight);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.RequestSequence);
-                        writer.Write(entry.ToolHashID);
-                        writer.Write(entry.ParentEntityID);
-                        writer.Write(entry.ColliderInstanceID);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.SparkCount);
-                        writer.Write(entry.CooldownUntilFrame);
-                        writer.Write(entry.LayoutMagic);
-                        writer.Write(entry.Heat01);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.BatteryWatts);
-                        writer.Write(entry.BurstWorkEstimateMicros);
-                    }
+                    stream.Write(header);
+                    WriteTelemetryBlock(stream, source, cursor, entryCount - cursor, entrySize);
+                    WriteTelemetryBlock(stream, source, 0, cursor, entrySize);
+                    stream.Flush(true);
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError("[SHINOBU_225] Failed to dump cutter black box: " + ex.Message);
+                Debug.LogException(ex);
             }
+        }
+
+        private static unsafe void WriteTelemetryBlock(FileStream stream, byte* source, int start, int count, int entrySize)
+        {
+            if (count <= 0)
+                return;
+
+            stream.Write(new ReadOnlySpan<byte>(source + start * entrySize, count * entrySize));
+        }
+
+        private static void WriteUIntLittleEndian(Span<byte> destination, uint value)
+        {
+            destination[0] = (byte)value;
+            destination[1] = (byte)(value >> 8);
+            destination[2] = (byte)(value >> 16);
+            destination[3] = (byte)(value >> 24);
         }
 
         private static void RefreshCachedGlobalQualityWeight()
         {
             IDataVault vault = _dataVault;
             if (vault != null &&
-                vault.TryGetGenerationHandle(BufferID.ShinobuScalabilityState, out VaultGenerationHandle<ScalabilityStateDTO> handle) &&
-                vault.TryResolveHandle(in handle, out NativeArray<ScalabilityStateDTO> states) &&
+                IsHandleCreated(in _scalabilityStateHandle) &&
+                vault.TryResolveHandle(in _scalabilityStateHandle, out NativeArray<ScalabilityStateDTO> states) &&
                 states.IsCreated &&
                 states.Length > 0 &&
                 math.isfinite(states[0].GlobalQualityWeight))
@@ -927,6 +1064,72 @@ namespace Hecton8.Tools
             _cachedGlobalQualityWeight = math.saturate(HomeostasisBrain.GlobalQualityWeight);
         }
 
+        private static bool TryReadPresentationOriginAup(out double3 originAup)
+        {
+            originAup = _cachedPresentationOriginAup;
+            if (_hasCachedPresentationOriginAup && math.all(math.isfinite(originAup)))
+                return true;
+
+            originAup = double3.zero;
+            return false;
+        }
+
+        private static bool TryReadScheduledRaycastPresentationOrigin(out double3 originAup)
+        {
+            originAup = _scheduledRaycastPresentationOriginAup;
+            if (_hasScheduledRaycastPresentationOriginAup && math.all(math.isfinite(originAup)))
+                return true;
+
+            originAup = double3.zero;
+            return false;
+        }
+
+        private static bool TryReadScheduledEvaluationPresentationOrigin(out double3 originAup)
+        {
+            originAup = _scheduledEvaluationPresentationOriginAup;
+            if (_hasScheduledEvaluationPresentationOriginAup && math.all(math.isfinite(originAup)))
+                return true;
+
+            originAup = double3.zero;
+            return false;
+        }
+
+        private static void ClearScheduledRaycastPresentationOrigin()
+        {
+            _scheduledRaycastPresentationOriginAup = double3.zero;
+            _hasScheduledRaycastPresentationOriginAup = false;
+        }
+
+        private static void ClearScheduledEvaluationPresentationOrigin()
+        {
+            _scheduledEvaluationPresentationOriginAup = double3.zero;
+            _hasScheduledEvaluationPresentationOriginAup = false;
+        }
+
+        private static void CacheScalabilityStateHandle()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                _scalabilityStateHandle = default;
+                return;
+            }
+
+            if (IsHandleCreated(in _scalabilityStateHandle) &&
+                vault.TryResolveHandle(in _scalabilityStateHandle, out NativeArray<ScalabilityStateDTO> states) &&
+                states.IsCreated &&
+                states.Length > 0)
+            {
+                return;
+            }
+
+            _scalabilityStateHandle = vault.TryGetGenerationHandle(
+                BufferID.ShinobuScalabilityState,
+                out VaultGenerationHandle<ScalabilityStateDTO> handle)
+                ? handle
+                : default;
+        }
+
         private static void IncrementSuppressed(NativeArray<LaserCutterCountersDTO> counters, uint frame)
         {
             if (!counters.IsCreated || counters.Length <= 0)
@@ -936,6 +1139,27 @@ namespace Hecton8.Tools
             counter.SuppressedCount++;
             counter.LastFrame = frame;
             counters[0] = counter;
+        }
+
+        private static void SuppressQueuedRequests(uint frame)
+        {
+            if (!BindCoreBuffers(
+                    out _,
+                    out _,
+                    out NativeArray<int> requestCount,
+                    out _,
+                    out NativeArray<LaserCutterCountersDTO> counters,
+                    allowAcquire: false) ||
+                !requestCount.IsCreated ||
+                requestCount.Length <= 0)
+            {
+                return;
+            }
+
+            if (requestCount[0] > 0)
+                IncrementSuppressed(counters, frame);
+
+            requestCount[0] = 0;
         }
 
         private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
@@ -962,6 +1186,7 @@ namespace Hecton8.Tools
             _specHandle = default;
             _csvScratchHandle = default;
             _countersHandle = default;
+            _scalabilityStateHandle = default;
             _scheduledRaycastHandle = default;
             _scheduledRaycastActive = false;
             _scheduledRaycastCount = 0;
@@ -970,6 +1195,10 @@ namespace Hecton8.Tools
             _scheduledEvaluationCount = 0;
             _scheduledEvaluationCursorBase = 0u;
             _cachedGlobalQualityWeight = 1f;
+            _cachedPresentationOriginAup = double3.zero;
+            _hasCachedPresentationOriginAup = false;
+            ClearScheduledRaycastPresentationOrigin();
+            ClearScheduledEvaluationPresentationOrigin();
         }
 
         private static void ReleaseVaultHandles(IDataVault vault)
@@ -1026,6 +1255,12 @@ namespace Hecton8.Tools
         {
             float t = math.saturate(math.isfinite(value) ? value : 0f);
             return math.smoothstep(0f, 1f, t);
+        }
+
+        private static uint ResolveCurrentFrameId()
+        {
+            uint frame = TimeSliceScheduler.CurrentFrameId;
+            return frame != 0u ? frame : 1u;
         }
 
         private static ulong Mix(ulong hash, uint value)

@@ -10,6 +10,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -22,6 +23,10 @@ namespace Hecton8.Editor.OfflineGeometry
         private const uint LodManifestMagic = 0x444C3848u;
         private const uint LittleEndianTag = 0x01020304u;
         private const uint AgentStableHash = 0x53483231u;
+        private const uint WarningBakeAttemptFailed = 16u;
+        private const uint WarningSourceAssetMissing = 32u;
+        private const uint WarningPrefabSaveFailed = 64u;
+        private const uint WarningLodAssetBindFailed = 128u;
 
         private const MeshUpdateFlags MeshFlags =
             MeshUpdateFlags.DontRecalculateBounds |
@@ -29,6 +34,14 @@ namespace Hecton8.Editor.OfflineGeometry
             MeshUpdateFlags.DontNotifyMeshUsers;
 
         private static readonly Stopwatch _Stopwatch = new Stopwatch();
+        private static readonly UTF8Encoding _Utf8NoBom = new UTF8Encoding(false);
+        private static readonly ProfilerMarker _MockHighPolyJobMarker = new ProfilerMarker("SHINOBU_213.MockHighPolyJobFence");
+        private static readonly ProfilerMarker _PreviewPrimitiveFitJobMarker = new ProfilerMarker("SHINOBU_213.PreviewPrimitiveFitJobFence");
+        private static readonly ProfilerMarker _PreviewHullJobMarker = new ProfilerMarker("SHINOBU_213.PreviewHullJobFence");
+        private static readonly ProfilerMarker _DecimateJobMarker = new ProfilerMarker("SHINOBU_213.DecimateJobFence");
+        private static readonly ProfilerMarker _PackMeshJobMarker = new ProfilerMarker("SHINOBU_213.PackMeshJobFence");
+        private static readonly ProfilerMarker _ColliderPrimitiveFitJobMarker = new ProfilerMarker("SHINOBU_213.ColliderPrimitiveFitJobFence");
+        private static readonly ProfilerMarker _ColliderHullJobMarker = new ProfilerMarker("SHINOBU_213.ColliderHullJobFence");
 
         [MenuItem("HECTON-8/LOD Collider Forge/Bake Selected Optimized Prefabs", false, 250)]
         private static void BakeSelectedMenu()
@@ -151,14 +164,15 @@ namespace Hecton8.Editor.OfflineGeometry
             if (string.IsNullOrWhiteSpace(sourcePath) || metrics == null)
                 return false;
 
+            OfflineBakeMetrics metric = CreateBaseMetric(sourcePath, settings);
+
             GameObject sourceRoot = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath);
             if (sourceRoot == null)
-                return false;
-
-            OfflineBakeMetrics metric = new OfflineBakeMetrics
             {
-                SourcePath = ToFixed128(sourcePath)
-            };
+                metric.WarningFlags |= WarningSourceAssetMissing | WarningBakeAttemptFailed;
+                OfflineGeometryBakeBlackBox.Record(metric);
+                return false;
+            }
 
             string sourceToken = SanitizeToken(Path.GetFileNameWithoutExtension(sourcePath));
             string prefabName = "GEN_" + sourceToken + "_Optimized";
@@ -178,6 +192,7 @@ namespace Hecton8.Editor.OfflineGeometry
             var lod2Renderers = new List<Renderer>(16);
 
             bool success = false;
+            bool recorded = false;
             try
             {
                 MeshFilter[] filters = sourceRoot.GetComponentsInChildren<MeshFilter>(true);
@@ -205,46 +220,80 @@ namespace Hecton8.Editor.OfflineGeometry
                     metric.PrimitiveTolerance = primitiveTolerance;
                     metric.DecimationWindow = decimationWindow;
                     string meshToken = sourceToken + "_" + filterIndex.ToString("000", CultureInfo.InvariantCulture) + "_" + SanitizeToken(sourceMesh.name);
+                    Mesh lod0Mesh = null;
+                    Mesh lod1Mesh = null;
+                    Mesh lod2Mesh = null;
+                    bool lod0OwnedByCaller = false;
+                    bool lod1OwnedByCaller = false;
+                    bool lod2OwnedByCaller = false;
+                    NativeArray<OfflineGeometryRawVertex> lod0Raw = default;
+                    NativeArray<OfflineGeometryRawVertex> lod1Raw = default;
+                    NativeArray<OfflineGeometryRawVertex> lod2Raw = default;
                     _Stopwatch.Restart();
-                    Mesh lod0Mesh = BuildLodMesh(sourceMesh, meshToken + "_LOD0", 1f, settings.Lod0HardBudget, 1, out int lod0Triangles, out NativeArray<OfflineGeometryRawVertex> lod0Raw);
+                    lod0Mesh = BuildLodMesh(sourceMesh, meshToken + "_LOD0", 1f, settings.Lod0HardBudget, 1, out int lod0Triangles, out lod0Raw);
+                    lod0OwnedByCaller = lod0Mesh != null;
                     _Stopwatch.Stop();
                     metric.ExtractionMilliseconds += _Stopwatch.Elapsed.TotalMilliseconds;
                     if (lod0Mesh == null || !lod0Raw.IsCreated)
+                    {
+                        if (lod0OwnedByCaller && lod0Mesh != null)
+                            UnityEngine.Object.DestroyImmediate(lod0Mesh);
+                        if (lod0Raw.IsCreated)
+                            lod0Raw.Dispose();
                         continue;
+                    }
 
                     try
                     {
                         _Stopwatch.Restart();
-                        Mesh lod1Mesh = BuildLodMesh(sourceMesh, meshToken + "_LOD1", lod1Ratio, lod1HardBudget, decimationWindow, out int lod1Triangles, out NativeArray<OfflineGeometryRawVertex> lod1Raw);
+                        lod1Mesh = BuildLodMesh(sourceMesh, meshToken + "_LOD1", lod1Ratio, lod1HardBudget, decimationWindow, out int lod1Triangles, out lod1Raw);
+                        lod1OwnedByCaller = lod1Mesh != null;
                         _Stopwatch.Stop();
                         metric.ExtractionMilliseconds += _Stopwatch.Elapsed.TotalMilliseconds;
-                        if (lod1Raw.IsCreated) lod1Raw.Dispose();
-
-                        _Stopwatch.Restart();
-                        Mesh lod2Mesh = BuildLodMesh(sourceMesh, meshToken + "_LOD2", lod2Ratio, lod2HardBudget, decimationWindow, out int lod2Triangles, out NativeArray<OfflineGeometryRawVertex> lod2Raw);
-                        _Stopwatch.Stop();
-                        metric.ExtractionMilliseconds += _Stopwatch.Elapsed.TotalMilliseconds;
-                        if (lod2Raw.IsCreated) lod2Raw.Dispose();
-                        if (lod1Mesh == null || lod2Mesh == null)
+                        if (lod1Raw.IsCreated)
                         {
-                            if (lod1Mesh != null)
-                                UnityEngine.Object.DestroyImmediate(lod1Mesh);
-                            if (lod2Mesh != null)
-                                UnityEngine.Object.DestroyImmediate(lod2Mesh);
-                            UnityEngine.Object.DestroyImmediate(lod0Mesh);
-                            continue;
+                            lod1Raw.Dispose();
+                            lod1Raw = default;
                         }
 
                         _Stopwatch.Restart();
+                        lod2Mesh = BuildLodMesh(sourceMesh, meshToken + "_LOD2", lod2Ratio, lod2HardBudget, decimationWindow, out int lod2Triangles, out lod2Raw);
+                        lod2OwnedByCaller = lod2Mesh != null;
+                        _Stopwatch.Stop();
+                        metric.ExtractionMilliseconds += _Stopwatch.Elapsed.TotalMilliseconds;
+                        if (lod2Raw.IsCreated)
+                        {
+                            lod2Raw.Dispose();
+                            lod2Raw = default;
+                        }
+                        if (lod1Mesh == null || lod2Mesh == null)
+                            continue;
+
+                        _Stopwatch.Restart();
                         string lod0Path = SaveOrReplaceMesh(lod0Mesh, OfflineGeometryBakerConstants.MeshOutputFolder + "/" + meshToken + "_LOD0.asset", true);
+                        lod0OwnedByCaller = false;
+                        lod0Mesh = null;
                         string lod1Path = SaveOrReplaceMesh(lod1Mesh, OfflineGeometryBakerConstants.MeshOutputFolder + "/" + meshToken + "_LOD1.asset", true);
+                        lod1OwnedByCaller = false;
+                        lod1Mesh = null;
                         string lod2Path = SaveOrReplaceMesh(lod2Mesh, OfflineGeometryBakerConstants.MeshOutputFolder + "/" + meshToken + "_LOD2.asset", true);
+                        lod2OwnedByCaller = false;
+                        lod2Mesh = null;
+                        if (string.IsNullOrEmpty(lod0Path) || string.IsNullOrEmpty(lod1Path) || string.IsNullOrEmpty(lod2Path))
+                        {
+                            metric.WarningFlags |= WarningLodAssetBindFailed;
+                            continue;
+                        }
+
                         Mesh lod0Asset = AssetDatabase.LoadAssetAtPath<Mesh>(lod0Path);
                         Mesh lod1Asset = AssetDatabase.LoadAssetAtPath<Mesh>(lod1Path);
                         Mesh lod2Asset = AssetDatabase.LoadAssetAtPath<Mesh>(lod2Path);
                         _Stopwatch.Stop();
                         if (lod0Asset == null || lod1Asset == null || lod2Asset == null)
+                        {
+                            metric.WarningFlags |= WarningLodAssetBindFailed;
                             continue;
+                        }
 
                         metric.SerializationMilliseconds += _Stopwatch.Elapsed.TotalMilliseconds;
                         metric.Lod0Triangles += lod0Triangles;
@@ -278,6 +327,16 @@ namespace Hecton8.Editor.OfflineGeometry
                     }
                     finally
                     {
+                        if (lod2OwnedByCaller && lod2Mesh != null)
+                            UnityEngine.Object.DestroyImmediate(lod2Mesh);
+                        if (lod1OwnedByCaller && lod1Mesh != null)
+                            UnityEngine.Object.DestroyImmediate(lod1Mesh);
+                        if (lod0OwnedByCaller && lod0Mesh != null)
+                            UnityEngine.Object.DestroyImmediate(lod0Mesh);
+                        if (lod2Raw.IsCreated)
+                            lod2Raw.Dispose();
+                        if (lod1Raw.IsCreated)
+                            lod1Raw.Dispose();
                         if (lod0Raw.IsCreated)
                             lod0Raw.Dispose();
                     }
@@ -289,26 +348,39 @@ namespace Hecton8.Editor.OfflineGeometry
                 LODGroup lodGroup = outputRoot.AddComponent<LODGroup>();
                 LOD[] levels =
                 {
-                    new LOD(ResolveLod0Threshold(settings), lod0Renderers.ToArray()),
-                    new LOD(ResolveLod1Threshold(settings), lod1Renderers.ToArray()),
-                    new LOD(ResolveLod2Threshold(settings), lod2Renderers.ToArray())
+                    new LOD(ResolveLod0Threshold(settings), CopyRenderers(lod0Renderers)),
+                    new LOD(ResolveLod1Threshold(settings), CopyRenderers(lod1Renderers)),
+                    new LOD(ResolveLod2Threshold(settings), CopyRenderers(lod2Renderers))
                 };
-                levels[0].fadeTransitionWidth = 0.08f;
-                levels[1].fadeTransitionWidth = 0.08f;
-                levels[2].fadeTransitionWidth = 0.04f;
+                levels[0].fadeTransitionWidth = ResolveFadeTransitionWidth(settings, 0.04f, 0.12f);
+                levels[1].fadeTransitionWidth = ResolveFadeTransitionWidth(settings, 0.035f, 0.1f);
+                levels[2].fadeTransitionWidth = ResolveFadeTransitionWidth(settings, 0.015f, 0.055f);
                 lodGroup.SetLODs(levels);
                 lodGroup.fadeMode = LODFadeMode.CrossFade;
                 lodGroup.animateCrossFading = true;
                 lodGroup.RecalculateBounds();
                 GameObjectUtility.SetStaticEditorFlags(outputRoot, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.ContributeGI);
-                PrefabUtility.SaveAsPrefabAsset(outputRoot, prefabPath);
+                PrefabUtility.SaveAsPrefabAsset(outputRoot, prefabPath, out bool prefabSaved);
+                if (!prefabSaved)
+                {
+                    metric.WarningFlags |= WarningPrefabSaveFailed;
+                    return false;
+                }
+
                 metric.OutputPath = ToFixed128(prefabPath);
                 OfflineGeometryBakeBlackBox.Record(metric);
+                recorded = true;
                 metrics.Add(metric);
                 return true;
             }
             finally
             {
+                if (!recorded)
+                {
+                    metric.WarningFlags |= WarningBakeAttemptFailed;
+                    OfflineGeometryBakeBlackBox.Record(metric);
+                }
+
                 UnityEngine.Object.DestroyImmediate(outputRoot);
             }
         }
@@ -326,19 +398,28 @@ namespace Hecton8.Editor.OfflineGeometry
                 // COLD ALLOC: NativeArray<OfflineGeometryRawVertex>[vertexCount] - editor mock high-poly mesh benchmark - owner: OfflineGeometryBaker
                 raw = new NativeArray<OfflineGeometryRawVertex>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 _Stopwatch.Restart();
-                new GenerateMockHighPolyMeshJob
+                using (_MockHighPolyJobMarker.Auto())
                 {
-                    Vertices = raw,
-                    LatitudeSegments = lat,
-                    LongitudeSegments = lon,
-                    Radius = 3f,
-                    FractalAmplitude = math.lerp(0.08f, 0.45f, math.saturate(settings.GlobalQualityWeight)),
-                    Seed = 0x53483231u
-                }.Schedule(quadCount, 64).Complete();
+                    new GenerateMockHighPolyMeshJob
+                    {
+                        Vertices = raw,
+                        LatitudeSegments = lat,
+                        LongitudeSegments = lon,
+                        Radius = 3f,
+                        FractalAmplitude = math.lerp(0.08f, 0.45f, math.saturate(settings.GlobalQualityWeight)),
+                        Seed = 0x53483231u
+                    }.Schedule(quadCount, 64).Complete();
+                }
                 _Stopwatch.Stop();
                 ranges = BuildSingleSubMeshRange(vertexCount / 3);
                 Mesh mesh = CreateUnityMesh("GEN_SHINOBU_213_MockHighPoly", raw, ranges);
                 string path = SaveOrReplaceMesh(mesh, OfflineGeometryBakerConstants.MeshOutputFolder + "/GEN_SHINOBU_213_MockHighPoly.asset", true);
+                if (string.IsNullOrEmpty(path))
+                {
+                    Debug.LogWarning("[SHINOBU_213] Mock high poly mesh generation failed before AssetDatabase bind.");
+                    return null;
+                }
+
                 Mesh assetMesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
                 Debug.Log("[SHINOBU_213] Mock high poly mesh generated vertices=" + vertexCount + " ms=" + _Stopwatch.Elapsed.TotalMilliseconds.ToString("0.000", CultureInfo.InvariantCulture) + ".");
                 return assetMesh;
@@ -376,12 +457,15 @@ namespace Hecton8.Editor.OfflineGeometry
             {
                 // COLD ALLOC: NativeArray<OfflinePrimitiveFitResult>[1] - editor preview primitive fit - owner: OfflineGeometryBaker
                 fit = new NativeArray<OfflinePrimitiveFitResult>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                new FitGeometricPrimitivesJob
+                using (_PreviewPrimitiveFitJobMarker.Auto())
                 {
-                    Vertices = raw,
-                    Result = fit,
-                    PrimitiveTolerance = ResolvePrimitiveTolerance(settings)
-                }.Schedule().Complete();
+                    new FitGeometricPrimitivesJob
+                    {
+                        Vertices = raw,
+                        Result = fit,
+                        PrimitiveTolerance = ResolvePrimitiveTolerance(settings)
+                    }.Schedule().Complete();
+                }
                 fitResult = fit[0];
 
                 int hullVertexCapacity = ResolveHullVertexCapacity(settings.ConvexHullVertexLimit);
@@ -393,15 +477,18 @@ namespace Hecton8.Editor.OfflineGeometry
                 hullCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 // COLD ALLOC: NativeArray<int>[1] - editor preview hull index count - owner: OfflineGeometryBaker
                 hullIndexCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                new GenerateConvexHullJob
+                using (_PreviewHullJobMarker.Auto())
                 {
-                    Vertices = raw,
-                    HullVertices = hull,
-                    HullIndices = hullIndexBuffer,
-                    HullVertexCount = hullCount,
-                    HullIndexCount = hullIndexCount,
-                    HullVertexLimit = settings.ConvexHullVertexLimit
-                }.Schedule().Complete();
+                    new GenerateConvexHullJob
+                    {
+                        Vertices = raw,
+                        HullVertices = hull,
+                        HullIndices = hullIndexBuffer,
+                        HullVertexCount = hullCount,
+                        HullIndexCount = hullIndexCount,
+                        HullVertexLimit = settings.ConvexHullVertexLimit
+                    }.Schedule().Complete();
+                }
 
                 int count = math.clamp(hullCount[0], 0, hull.Length);
                 for (int i = 0; i < count; i++)
@@ -411,7 +498,7 @@ namespace Hecton8.Editor.OfflineGeometry
                 int previewIndexCount = math.min(indexCount, 2000);
                 for (int i = 0; i < previewIndexCount; i++)
                     hullIndices.Add(hullIndexBuffer[i]);
-                return count > 0;
+                return count >= OfflineGeometryBakerConstants.MinHullVertexCount && previewIndexCount >= 12;
             }
             finally
             {
@@ -522,8 +609,22 @@ namespace Hecton8.Editor.OfflineGeometry
                         }.Schedule(triangleCount, 64);
                     }
 
-                    handle.Complete();
+                    using (_DecimateJobMarker.Auto())
+                    {
+                        handle.Complete();
+                    }
                     Mesh mesh = CreateUnityMesh(meshName, rawVertices, ranges);
+                    if (mesh == null)
+                    {
+                        if (rawVertices.IsCreated)
+                        {
+                            rawVertices.Dispose();
+                            rawVertices = default;
+                        }
+
+                        triangleCount = 0;
+                    }
+
                     return mesh;
                 }
                 catch
@@ -551,6 +652,13 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private static Mesh CreateUnityMesh(string meshName, NativeArray<OfflineGeometryRawVertex> rawVertices, NativeArray<OfflineSubMeshRange> ranges)
         {
+            if (!rawVertices.IsCreated || rawVertices.Length < 3 || !ranges.IsCreated || ranges.Length <= 0)
+                return null;
+
+            int subMeshCount = CountPositiveRanges(ranges, rawVertices.Length);
+            if (subMeshCount <= 0)
+                return null;
+
             NativeArray<OfflineGeometryVertex32> packed = default;
             NativeArray<uint> indices = default;
             try
@@ -560,49 +668,62 @@ namespace Hecton8.Editor.OfflineGeometry
                 packed = new NativeArray<OfflineGeometryVertex32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 // COLD ALLOC: NativeArray<uint>[vertexCount] - editor linear index stream - owner: OfflineGeometryBaker
                 indices = new NativeArray<uint>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                JobHandle packHandle = new OfflinePackVertexJob
+                using (_PackMeshJobMarker.Auto())
                 {
-                    SourceVertices = rawVertices,
-                    PackedVertices = packed
-                }.Schedule(vertexCount, 64);
-                JobHandle indexHandle = new OfflineIndexFillJob
-                {
-                    Indices = indices
-                }.Schedule(vertexCount, 64, packHandle);
-                indexHandle.Complete();
-
-                Bounds bounds = CalculateBounds(rawVertices);
-                Mesh mesh = new Mesh
-                {
-                    name = meshName,
-                    indexFormat = IndexFormat.UInt32
-                };
-                mesh.SetVertexBufferParams(vertexCount, OfflineGeometryVertexLayoutValidator.Layout);
-                mesh.SetVertexBufferData(packed, 0, 0, vertexCount, 0, MeshFlags);
-                mesh.SetIndexBufferParams(vertexCount, IndexFormat.UInt32);
-                mesh.SetIndexBufferData(indices, 0, 0, vertexCount, MeshFlags);
-                int subMeshCount = CountPositiveRanges(ranges);
-                mesh.subMeshCount = subMeshCount;
-                int outputSubMeshIndex = 0;
-                for (int i = 0; i < ranges.Length; i++)
-                {
-                    OfflineSubMeshRange range = ranges[i];
-                    if (range.TargetTriangleCount <= 0)
-                        continue;
-
-                    int indexStart = range.TargetTriangleStart * 3;
-                    int indexCount = range.TargetTriangleCount * 3;
-                    mesh.SetSubMesh(outputSubMeshIndex, new SubMeshDescriptor(indexStart, indexCount, MeshTopology.Triangles)
+                    JobHandle packHandle = new OfflinePackVertexJob
                     {
-                        bounds = bounds,
-                        vertexCount = vertexCount
-                    }, MeshFlags);
-                    outputSubMeshIndex++;
+                        SourceVertices = rawVertices,
+                        PackedVertices = packed
+                    }.Schedule(vertexCount, 64);
+                    JobHandle indexHandle = new OfflineIndexFillJob
+                    {
+                        Indices = indices
+                    }.Schedule(vertexCount, 64, packHandle);
+                    indexHandle.Complete();
                 }
 
-                mesh.bounds = bounds;
-                OfflineGeometryVertexLayoutValidator.ValidateMesh(mesh);
-                return mesh;
+                Bounds bounds = CalculateBounds(rawVertices);
+                Mesh mesh = null;
+                bool transferred = false;
+                try
+                {
+                    mesh = new Mesh
+                    {
+                        name = meshName,
+                        indexFormat = IndexFormat.UInt32
+                    };
+                    mesh.SetVertexBufferParams(vertexCount, OfflineGeometryVertexLayoutValidator.Layout);
+                    mesh.SetVertexBufferData(packed, 0, 0, vertexCount, 0, MeshFlags);
+                    mesh.SetIndexBufferParams(vertexCount, IndexFormat.UInt32);
+                    mesh.SetIndexBufferData(indices, 0, 0, vertexCount, MeshFlags);
+                    mesh.subMeshCount = subMeshCount;
+                    int outputSubMeshIndex = 0;
+                    for (int i = 0; i < ranges.Length; i++)
+                    {
+                        OfflineSubMeshRange range = ranges[i];
+                        if (!IsSubMeshRangeValid(range, vertexCount))
+                            continue;
+
+                        int indexStart = range.TargetTriangleStart * 3;
+                        int indexCount = range.TargetTriangleCount * 3;
+                        mesh.SetSubMesh(outputSubMeshIndex, new SubMeshDescriptor(indexStart, indexCount, MeshTopology.Triangles)
+                        {
+                            bounds = bounds,
+                            vertexCount = vertexCount
+                        }, MeshFlags);
+                        outputSubMeshIndex++;
+                    }
+
+                    mesh.bounds = bounds;
+                    OfflineGeometryVertexLayoutValidator.ValidateMesh(mesh);
+                    transferred = true;
+                    return mesh;
+                }
+                finally
+                {
+                    if (!transferred && mesh != null)
+                        UnityEngine.Object.DestroyImmediate(mesh);
+                }
             }
             finally
             {
@@ -625,16 +746,26 @@ namespace Hecton8.Editor.OfflineGeometry
             return ranges;
         }
 
-        private static int CountPositiveRanges(NativeArray<OfflineSubMeshRange> ranges)
+        private static int CountPositiveRanges(NativeArray<OfflineSubMeshRange> ranges, int vertexCount)
         {
             int count = 0;
             for (int i = 0; i < ranges.Length; i++)
             {
-                if (ranges[i].TargetTriangleCount > 0)
+                if (IsSubMeshRangeValid(ranges[i], vertexCount))
                     count++;
             }
 
-            return math.max(1, count);
+            return count;
+        }
+
+        private static bool IsSubMeshRangeValid(OfflineSubMeshRange range, int vertexCount)
+        {
+            if (range.TargetTriangleStart < 0 || range.TargetTriangleCount <= 0)
+                return false;
+
+            long indexStart = (long)range.TargetTriangleStart * 3L;
+            long indexCount = (long)range.TargetTriangleCount * 3L;
+            return indexStart >= 0L && indexCount > 0L && indexStart + indexCount <= vertexCount;
         }
 
         private static string SaveOrReplaceMesh(Mesh mesh, string path, bool uploadMeshData)
@@ -642,21 +773,42 @@ namespace Hecton8.Editor.OfflineGeometry
             if (mesh == null)
                 return null;
 
-            EnsureAssetFolder(Path.GetDirectoryName(path).Replace('\\', '/'));
-            mesh.name = Path.GetFileNameWithoutExtension(path);
-            if (uploadMeshData)
-                mesh.UploadMeshData(true);
-
-            Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
-            if (existing != null)
+            if (string.IsNullOrWhiteSpace(path))
             {
-                EditorUtility.CopySerialized(mesh, existing);
                 UnityEngine.Object.DestroyImmediate(mesh);
-                return path;
+                return null;
             }
 
-            AssetDatabase.CreateAsset(mesh, path);
-            return path;
+            string folder = Path.GetDirectoryName(path)?.Replace('\\', '/');
+            if (!TryEnsureAssetFolder(folder))
+            {
+                UnityEngine.Object.DestroyImmediate(mesh);
+                return null;
+            }
+
+            bool assetOwned = false;
+            try
+            {
+                mesh.name = Path.GetFileNameWithoutExtension(path);
+                if (uploadMeshData)
+                    mesh.UploadMeshData(true);
+
+                Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+                if (existing != null)
+                {
+                    EditorUtility.CopySerialized(mesh, existing);
+                    return path;
+                }
+
+                AssetDatabase.CreateAsset(mesh, path);
+                assetOwned = true;
+                return path;
+            }
+            finally
+            {
+                if (!assetOwned)
+                    UnityEngine.Object.DestroyImmediate(mesh);
+            }
         }
 
         private static void CopyRenderer(Transform sourceRoot, Transform sourceTransform, Transform parent, MeshRenderer sourceRenderer, Mesh mesh, List<Renderer> renderers, string name)
@@ -677,6 +829,16 @@ namespace Hecton8.Editor.OfflineGeometry
             GameObjectUtility.SetStaticEditorFlags(child, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.ContributeGI);
         }
 
+        private static Renderer[] CopyRenderers(List<Renderer> renderers)
+        {
+            int count = renderers != null ? renderers.Count : 0;
+            Renderer[] copied = new Renderer[count];
+            for (int i = 0; i < count; i++)
+                copied[i] = renderers[i];
+
+            return copied;
+        }
+
         private static void CreateCollider(Transform sourceRoot, Transform sourceTransform, Transform parent, NativeArray<OfflineGeometryRawVertex> rawVertices, string sourceToken, int filterIndex, float primitiveTolerance, int convexHullVertexLimit, ref OfflineBakeMetrics metric)
         {
             NativeArray<OfflinePrimitiveFitResult> fit = default;
@@ -684,12 +846,15 @@ namespace Hecton8.Editor.OfflineGeometry
             {
                 // COLD ALLOC: NativeArray<OfflinePrimitiveFitResult>[1] - editor primitive collider fit result - owner: OfflineGeometryBaker
                 fit = new NativeArray<OfflinePrimitiveFitResult>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                new FitGeometricPrimitivesJob
+                using (_ColliderPrimitiveFitJobMarker.Auto())
                 {
-                    Vertices = rawVertices,
-                    Result = fit,
-                    PrimitiveTolerance = primitiveTolerance
-                }.Schedule().Complete();
+                    new FitGeometricPrimitivesJob
+                    {
+                        Vertices = rawVertices,
+                        Result = fit,
+                        PrimitiveTolerance = primitiveTolerance
+                    }.Schedule().Complete();
+                }
 
                 OfflinePrimitiveFitResult result = fit[0];
                 string name = "COL_" + filterIndex.ToString("000", CultureInfo.InvariantCulture);
@@ -762,6 +927,8 @@ namespace Hecton8.Editor.OfflineGeometry
             NativeArray<int> hullCount = default;
             NativeArray<int> hullIndexCount = default;
             NativeArray<OfflineGeometryVertex32> packed = default;
+            Mesh mesh = null;
+            bool transferred = false;
             try
             {
                 int hullVertexCapacity = ResolveHullVertexCapacity(hullVertexLimit);
@@ -773,20 +940,23 @@ namespace Hecton8.Editor.OfflineGeometry
                 hullCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 // COLD ALLOC: NativeArray<int>[1] - editor fallback hull index count - owner: OfflineGeometryBaker
                 hullIndexCount = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                new GenerateConvexHullJob
+                using (_ColliderHullJobMarker.Auto())
                 {
-                    Vertices = rawVertices,
-                    HullVertices = hullVertices,
-                    HullIndices = hullIndices,
-                    HullVertexCount = hullCount,
-                    HullIndexCount = hullIndexCount,
-                    HullVertexLimit = hullVertexLimit
-                }.Schedule().Complete();
+                    new GenerateConvexHullJob
+                    {
+                        Vertices = rawVertices,
+                        HullVertices = hullVertices,
+                        HullIndices = hullIndices,
+                        HullVertexCount = hullCount,
+                        HullIndexCount = hullIndexCount,
+                        HullVertexLimit = hullVertexLimit
+                    }.Schedule().Complete();
+                }
 
                 int vertexCount = math.clamp(hullCount[0], 0, hullVertices.Length);
                 int indexCount = math.clamp(hullIndexCount[0], 0, hullIndices.Length);
                 indexCount -= indexCount % 3;
-                if (vertexCount < 4 || indexCount < 12)
+                if (vertexCount < OfflineGeometryBakerConstants.MinHullVertexCount || indexCount < 12)
                     return null;
 
                 // COLD ALLOC: NativeArray<OfflineGeometryVertex32>[vertexCount] - editor convex collider vertex stream - owner: OfflineGeometryBaker
@@ -810,7 +980,7 @@ namespace Hecton8.Editor.OfflineGeometry
                 }
 
                 Bounds bounds = new Bounds(ToVector3((min + max) * 0.5f), ToVector3(max - min));
-                Mesh mesh = new Mesh
+                mesh = new Mesh
                 {
                     name = name,
                     indexFormat = IndexFormat.UInt16
@@ -826,10 +996,13 @@ namespace Hecton8.Editor.OfflineGeometry
                     vertexCount = vertexCount
                 }, MeshFlags);
                 mesh.bounds = bounds;
+                transferred = true;
                 return mesh;
             }
             finally
             {
+                if (!transferred && mesh != null)
+                    UnityEngine.Object.DestroyImmediate(mesh);
                 if (packed.IsCreated) packed.Dispose();
                 if (hullIndexCount.IsCreated) hullIndexCount.Dispose();
                 if (hullCount.IsCreated) hullCount.Dispose();
@@ -840,7 +1013,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private static int ResolveHullVertexCapacity(int hullVertexLimit)
         {
-            return math.clamp(hullVertexLimit, 8, OfflineGeometryBakerConstants.MaxHullVertexCount);
+            return math.clamp(hullVertexLimit, OfflineGeometryBakerConstants.MinHullVertexCount, OfflineGeometryBakerConstants.MaxHullVertexCount);
         }
 
         private static NativeArray<OfflineSubMeshRange> BuildSubMeshRanges(Mesh.MeshData meshData, int sourceTriangles, int targetTriangles, out int resolvedTargetTriangles)
@@ -943,6 +1116,8 @@ namespace Hecton8.Editor.OfflineGeometry
             layout.PositionStream = meshData.GetVertexAttributeStream(VertexAttribute.Position);
             layout.PositionStride = meshData.GetVertexBufferStride(layout.PositionStream);
             layout.PositionOffset = meshData.GetVertexAttributeOffset(VertexAttribute.Position);
+            if (!IsStreamLaneValid(layout.PositionStride, layout.PositionOffset, 12))
+                return false;
 
             if (meshData.HasVertexAttribute(VertexAttribute.Normal))
             {
@@ -953,6 +1128,8 @@ namespace Hecton8.Editor.OfflineGeometry
                     layout.NormalStream = meshData.GetVertexAttributeStream(VertexAttribute.Normal);
                     layout.NormalStride = meshData.GetVertexBufferStride(layout.NormalStream);
                     layout.NormalOffset = meshData.GetVertexAttributeOffset(VertexAttribute.Normal);
+                    if (!IsStreamLaneValid(layout.NormalStride, layout.NormalOffset, 12))
+                        layout.HasNormals = 0;
                 }
             }
 
@@ -965,10 +1142,17 @@ namespace Hecton8.Editor.OfflineGeometry
                     layout.Uv0Stream = meshData.GetVertexAttributeStream(VertexAttribute.TexCoord0);
                     layout.Uv0Stride = meshData.GetVertexBufferStride(layout.Uv0Stream);
                     layout.Uv0Offset = meshData.GetVertexAttributeOffset(VertexAttribute.TexCoord0);
+                    if (!IsStreamLaneValid(layout.Uv0Stride, layout.Uv0Offset, 8))
+                        layout.HasUv0 = 0;
                 }
             }
 
-            return layout.PositionStride > 0;
+            return true;
+        }
+
+        private static bool IsStreamLaneValid(int stride, int offset, int laneBytes)
+        {
+            return stride > 0 && offset >= 0 && laneBytes > 0 && offset <= stride - laneBytes;
         }
 
         private static Bounds CalculateBounds(NativeArray<OfflineGeometryRawVertex> vertices)
@@ -1004,13 +1188,61 @@ namespace Hecton8.Editor.OfflineGeometry
             Vector3 right = matrix.GetColumn(0);
             Vector3 up = matrix.GetColumn(1);
             Vector3 forward = matrix.GetColumn(2);
-            Vector3 scale = new Vector3(right.magnitude, up.magnitude, forward.magnitude);
-            if (scale.x > 0.0001f) right /= scale.x;
-            if (scale.y > 0.0001f) up /= scale.y;
-            if (scale.z > 0.0001f) forward /= scale.z;
-            target.localPosition = matrix.GetColumn(3);
-            target.localRotation = Quaternion.LookRotation(forward.sqrMagnitude > 1e-8f ? forward : Vector3.forward, up.sqrMagnitude > 1e-8f ? up : Vector3.up);
-            target.localScale = new Vector3(math.max(0.0001f, scale.x), math.max(0.0001f, scale.y), math.max(0.0001f, scale.z));
+            Vector3 scale = new Vector3(SafeMagnitude(right), SafeMagnitude(up), SafeMagnitude(forward));
+            target.localPosition = SanitizeVector3(matrix.GetColumn(3), Vector3.zero);
+            target.localRotation = SafeLookRotation(forward, up);
+            target.localScale = scale;
+        }
+
+        private static Quaternion SafeLookRotation(Vector3 forward, Vector3 up)
+        {
+            Vector3 safeForward = NormalizeOrDefault(forward, Vector3.forward);
+            Vector3 safeUp = NormalizeOrDefault(up, Vector3.up);
+            safeUp -= safeForward * Vector3.Dot(safeUp, safeForward);
+            if (!IsFinite(safeUp) || safeUp.sqrMagnitude <= 1e-8f)
+            {
+                Vector3 seed = Mathf.Abs(safeForward.y) < 0.75f ? Vector3.up : Vector3.right;
+                safeUp = seed - safeForward * Vector3.Dot(seed, safeForward);
+            }
+
+            safeUp = NormalizeOrDefault(safeUp, Mathf.Abs(safeForward.y) < 0.75f ? Vector3.up : Vector3.right);
+            return Quaternion.LookRotation(safeForward, safeUp);
+        }
+
+        private static Vector3 NormalizeOrDefault(Vector3 value, Vector3 fallback)
+        {
+            if (!IsFinite(value))
+                return fallback;
+
+            float lenSq = value.sqrMagnitude;
+            if (!IsFinite(lenSq) || lenSq <= 1e-8f)
+                return fallback;
+
+            return value / Mathf.Sqrt(Mathf.Max(lenSq, 1e-8f));
+        }
+
+        private static float SafeMagnitude(Vector3 value)
+        {
+            if (!IsFinite(value))
+                return 0.0001f;
+
+            float magnitude = value.magnitude;
+            return IsFinite(magnitude) ? Mathf.Max(0.0001f, magnitude) : 0.0001f;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        }
+
+        private static Vector3 SanitizeVector3(Vector3 value, Vector3 fallback)
+        {
+            return IsFinite(value) ? value : fallback;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static float ResolveLod0Threshold(OfflineBakeSettings settings)
@@ -1077,6 +1309,14 @@ namespace Hecton8.Editor.OfflineGeometry
             return math.clamp(OfflineGeometryBakerConstants.DefaultLod2Threshold * math.lerp(1.6f, 0.75f, quality) + depth * 0.025f, 0.015f, 0.2f);
         }
 
+        private static float ResolveFadeTransitionWidth(OfflineBakeSettings settings, float lowQualityWidth, float highQualityWidth)
+        {
+            float quality = math.smoothstep(0f, 1f, math.saturate(settings.GlobalQualityWeight));
+            float depth = math.saturate((settings.DepthMeters - 400f) * math.rcp(1600f));
+            float width = math.lerp(lowQualityWidth, highQualityWidth, quality) * math.lerp(1f, 0.65f, depth);
+            return math.clamp(width, 0.005f, 0.18f);
+        }
+
         private static Vector3 ToVector3(float3 value)
         {
             return new Vector3(value.x, value.y, value.z);
@@ -1094,6 +1334,21 @@ namespace Hecton8.Editor.OfflineGeometry
                         hash ^= value[i];
                         hash *= 16777619u;
                     }
+                }
+
+                return hash;
+            }
+        }
+
+        private static uint StableHash(in FixedString128Bytes value)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                for (int i = 0; i < value.Length; i++)
+                {
+                    hash ^= value[i];
+                    hash *= 16777619u;
                 }
 
                 return hash;
@@ -1145,6 +1400,26 @@ namespace Hecton8.Editor.OfflineGeometry
             return fixedValue;
         }
 
+        private static OfflineBakeMetrics CreateBaseMetric(string sourcePath, OfflineBakeSettings settings)
+        {
+            string sourceToken = SanitizeToken(Path.GetFileNameWithoutExtension(sourcePath));
+            string prefabName = "GEN_" + sourceToken + "_Optimized";
+            string prefabPath = OfflineGeometryBakerConstants.PrefabOutputFolder + "/" + prefabName + ".prefab";
+            return new OfflineBakeMetrics
+            {
+                SourcePath = ToFixed128(sourcePath),
+                OutputPath = ToFixed128(prefabPath),
+                Lod1Ratio = ResolveLod1Ratio(settings),
+                Lod2Ratio = ResolveLod2Ratio(settings),
+                PrimitiveTolerance = ResolvePrimitiveTolerance(settings),
+                Lod1Threshold = ResolveLod1Threshold(settings),
+                Lod2Threshold = ResolveLod2Threshold(settings),
+                GlobalQualityWeight = math.saturate(settings.GlobalQualityWeight),
+                DepthMeters = math.max(0f, settings.DepthMeters),
+                DecimationWindow = ResolveDecimationWindow(settings)
+            };
+        }
+
         private static string SanitizeToken(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
@@ -1164,10 +1439,13 @@ namespace Hecton8.Editor.OfflineGeometry
 
         internal static void EnsureAssetFolder(string folder)
         {
-            if (string.IsNullOrWhiteSpace(folder) || AssetDatabase.IsValidFolder(folder))
+            if (string.IsNullOrWhiteSpace(folder))
                 return;
 
             string normalized = folder.Replace('\\', '/');
+            if (!IsProjectAssetFolder(normalized) || AssetDatabase.IsValidFolder(normalized))
+                return;
+
             string[] parts = normalized.Split('/');
             string current = parts[0];
             for (int i = 1; i < parts.Length; i++)
@@ -1177,6 +1455,25 @@ namespace Hecton8.Editor.OfflineGeometry
                     AssetDatabase.CreateFolder(current, parts[i]);
                 current = next;
             }
+        }
+
+        private static bool TryEnsureAssetFolder(string folder)
+        {
+            if (string.IsNullOrWhiteSpace(folder))
+                return false;
+
+            string normalized = folder.Replace('\\', '/');
+            if (!IsProjectAssetFolder(normalized))
+                return false;
+
+            EnsureAssetFolder(normalized);
+            return AssetDatabase.IsValidFolder(normalized);
+        }
+
+        private static bool IsProjectAssetFolder(string folder)
+        {
+            return string.Equals(folder, "Assets", StringComparison.Ordinal) ||
+                   folder.StartsWith("Assets/", StringComparison.Ordinal);
         }
 
         internal static void WriteOptimizationReport(List<OfflineBakeMetrics> metrics)
@@ -1204,9 +1501,9 @@ namespace Hecton8.Editor.OfflineGeometry
                     if (i > 0)
                         builder.Append(",\n");
                     builder.Append("    { \"source\": \"");
-                    builder.Append(Escape(m.SourcePath.ToString()));
+                    AppendEscapedFixedString(builder, in m.SourcePath);
                     builder.Append("\", \"output\": \"");
-                    builder.Append(Escape(m.OutputPath.ToString()));
+                    AppendEscapedFixedString(builder, in m.OutputPath);
                     builder.Append("\", \"originalTris\": ");
                     builder.Append(m.OriginalTriangles);
                     builder.Append(", \"lod0Tris\": ");
@@ -1260,20 +1557,23 @@ namespace Hecton8.Editor.OfflineGeometry
             builder.Append(",\n  \"binaryManifest\": \"");
             builder.Append(Escape(OfflineGeometryBakerConstants.LodManifestPath));
             builder.Append("\",\n  \"netcodeExclusion\": \"Generated mesh, LODGroup, and collider data are immutable presentation/environment data. Do not add LOD selected state or screen thresholds to StateRingBuffer/Merkle hashing. Synchronize existence and AUP pose only.\"\n}\n");
-            File.WriteAllText(OfflineGeometryBakerConstants.OptimizationReportPath, builder.ToString());
+            WriteTextFileAtomic(OfflineGeometryBakerConstants.OptimizationReportPath, builder.ToString());
             OfflineGeometrySelfAudit.WriteSelfAuditReport();
         }
 
         private static void WriteLodManifest(List<OfflineBakeMetrics> metrics)
         {
             OfflineGeometryVertexLayoutValidator.ValidateStructs();
-            string manifestFolder = Path.GetDirectoryName(OfflineGeometryBakerConstants.LodManifestPath)?.Replace('\\', '/');
-            EnsureAssetFolder(manifestFolder);
-            EnsureFileFolder(OfflineGeometryBakerConstants.LodManifestPath);
+            string manifestPath = OfflineGeometryBakerConstants.LodManifestPath;
+            string manifestFolder = Path.GetDirectoryName(manifestPath)?.Replace('\\', '/');
+            if (!TryEnsureAssetFolder(manifestFolder))
+                throw new IOException("[SHINOBU_213] Invalid .h8lod manifest folder: " + manifestFolder);
+            EnsureFileFolder(manifestPath);
             int count = metrics != null ? metrics.Count : 0;
             uint sourceAggregate = 2166136261u;
             uint outputAggregate = 2166136261u;
             NativeArray<OfflineLodManifestRecord> records = default;
+            string tempPath = manifestPath + ".tmp";
             try
             {
                 if (count > 0)
@@ -1283,8 +1583,8 @@ namespace Hecton8.Editor.OfflineGeometry
                     for (int i = 0; i < count; i++)
                     {
                         OfflineBakeMetrics metric = metrics[i];
-                        uint sourceHash = StableHash(metric.SourcePath.ToString());
-                        uint outputHash = StableHash(metric.OutputPath.ToString());
+                        uint sourceHash = StableHash(in metric.SourcePath);
+                        uint outputHash = StableHash(in metric.OutputPath);
                         sourceAggregate = FoldHash(sourceAggregate, sourceHash);
                         outputAggregate = FoldHash(outputAggregate, outputHash);
                         OfflineLodManifestRecord record = new OfflineLodManifestRecord
@@ -1327,7 +1627,8 @@ namespace Hecton8.Editor.OfflineGeometry
                     OutputAggregateHash = outputAggregate
                 };
 
-                using (FileStream stream = new FileStream(OfflineGeometryBakerConstants.LodManifestPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                long expectedBytes = 64L + ((long)count * 128L);
+                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     Span<byte> headerBytes = stackalloc byte[64];
                     WriteManifestHeaderLittleEndian(headerBytes, in header);
@@ -1342,12 +1643,21 @@ namespace Hecton8.Editor.OfflineGeometry
                             stream.Write(recordBytes);
                         }
                     }
+
+                    stream.Flush(true);
                 }
 
-                AssetDatabase.ImportAsset(OfflineGeometryBakerConstants.LodManifestPath, ImportAssetOptions.ForceSynchronousImport);
+                long actualBytes = new FileInfo(tempPath).Length;
+                if (actualBytes != expectedBytes)
+                    throw new IOException("[SHINOBU_213] Torn .h8lod manifest write. expected=" + expectedBytes.ToString(CultureInfo.InvariantCulture) + " actual=" + actualBytes.ToString(CultureInfo.InvariantCulture));
+
+                ReplaceTempFile(tempPath, manifestPath);
+                AssetDatabase.ImportAsset(manifestPath, ImportAssetOptions.ForceSynchronousImport);
             }
             finally
             {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
                 if (records.IsCreated)
                     records.Dispose();
             }
@@ -1453,6 +1763,47 @@ namespace Hecton8.Editor.OfflineGeometry
                 Directory.CreateDirectory(folder);
         }
 
+        internal static void WriteTextFileAtomic(string relativePath, string contents)
+        {
+            EnsureFileFolder(relativePath);
+            string tempPath = relativePath + ".tmp";
+            try
+            {
+                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    using (StreamWriter writer = new StreamWriter(stream, _Utf8NoBom, 1024, true))
+                    {
+                        writer.Write(contents ?? string.Empty);
+                        writer.Flush();
+                    }
+
+                    stream.Flush(true);
+                }
+
+                ReplaceTempFile(tempPath, relativePath);
+            }
+            finally
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
+
+        internal static void ReplaceTempFile(string tempPath, string finalPath)
+        {
+            EnsureFileFolder(finalPath);
+            if (File.Exists(finalPath))
+            {
+                string backupPath = finalPath + ".bak";
+                if (File.Exists(backupPath))
+                    File.Delete(backupPath);
+                File.Replace(tempPath, finalPath, backupPath, true);
+                return;
+            }
+
+            File.Move(tempPath, finalPath);
+        }
+
         internal static void AppendFixed(StringBuilder builder, double value)
         {
             if (double.IsNaN(value) || double.IsInfinity(value))
@@ -1471,7 +1822,123 @@ namespace Hecton8.Editor.OfflineGeometry
 
         internal static string Escape(string value)
         {
-            return string.IsNullOrEmpty(value) ? string.Empty : value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+            if (string.IsNullOrEmpty(value))
+                return string.Empty;
+
+            StringBuilder builder = null;
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                string replacement = null;
+                switch (c)
+                {
+                    case '\\':
+                        replacement = "\\\\";
+                        break;
+                    case '"':
+                        replacement = "\\\"";
+                        break;
+                    case '\n':
+                        replacement = "\\n";
+                        break;
+                    case '\r':
+                        replacement = "\\r";
+                        break;
+                    case '\t':
+                        replacement = "\\t";
+                        break;
+                    case '\b':
+                        replacement = "\\b";
+                        break;
+                    case '\f':
+                        replacement = "\\f";
+                        break;
+                }
+
+                if (replacement == null && c >= 0x20)
+                {
+                    if (builder != null)
+                        builder.Append(c);
+                    continue;
+                }
+
+                if (builder == null)
+                {
+                    builder = new StringBuilder(value.Length + 8);
+                    for (int prefix = 0; prefix < i; prefix++)
+                        builder.Append(value[prefix]);
+                }
+
+                if (replacement != null)
+                    builder.Append(replacement);
+                else
+                    AppendControlCharacterEscape(builder, c);
+            }
+
+            return builder != null ? builder.ToString() : value;
+        }
+
+        private static void AppendEscapedFixedString(StringBuilder builder, in FixedString128Bytes value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (value[i] >= 0x80)
+                {
+                    builder.Append(Escape(value.ToString()));
+                    return;
+                }
+            }
+
+            for (int i = 0; i < value.Length; i++)
+                AppendEscapedJsonChar(builder, (char)value[i]);
+        }
+
+        private static void AppendEscapedJsonChar(StringBuilder builder, char value)
+        {
+            switch (value)
+            {
+                case '\\':
+                    builder.Append("\\\\");
+                    return;
+                case '"':
+                    builder.Append("\\\"");
+                    return;
+                case '\n':
+                    builder.Append("\\n");
+                    return;
+                case '\r':
+                    builder.Append("\\r");
+                    return;
+                case '\t':
+                    builder.Append("\\t");
+                    return;
+                case '\b':
+                    builder.Append("\\b");
+                    return;
+                case '\f':
+                    builder.Append("\\f");
+                    return;
+            }
+
+            if (value < 0x20)
+            {
+                AppendControlCharacterEscape(builder, value);
+                return;
+            }
+
+            builder.Append(value);
+        }
+
+        private static void AppendControlCharacterEscape(StringBuilder builder, char value)
+        {
+            builder.Append("\\u00");
+            AppendHexNibble(builder, (value >> 4) & 0xF);
+            AppendHexNibble(builder, value & 0xF);
+        }
+
+        private static void AppendHexNibble(StringBuilder builder, int value)
+        {
+            builder.Append((char)(value < 10 ? '0' + value : 'A' + (value - 10)));
         }
 
         private struct SourceVertexLayout

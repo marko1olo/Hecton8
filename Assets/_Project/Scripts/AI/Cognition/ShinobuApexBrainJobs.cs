@@ -87,6 +87,20 @@ namespace Hecton8.AI.Cognition
         [NoAlias] public NativeArray<ApexProximitySignal> ProximitySignals;
         [NoAlias] public NativeArray<MockCombatDamageSignal> CombatDamageSignals;
         [NoAlias] public NativeArray<ApexPanicSignal> PanicSignals;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Each apex lane writes its own influence, ambush scratch, and telemetry row derived from the Execute
+        // index and the externally scheduled active count. Unity cannot prove that the hunting owner schedules
+        // one logical apex per row, so it treats these arrays as possibly contended.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A managed aggregation pass was rejected because it would allocate and read back AI state on the main
+        // thread. A per-signal NativeQueue path was also rejected for these dense facts because it would turn
+        // fixed row data into variable contention.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Invariant: InfluenceNodes, AmbushNodeScratch, and TelemetryRing are disjoint Vault lanes owned by the
+        // apex brain scheduler. Downstream consumers read only after the ApexBrainJob handle is returned through
+        // the dispatcher dependency chain.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<ApexInfluenceNode> InfluenceNodes;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<float3> AmbushNodeScratch;
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<ApexTelemetryEntry> TelemetryRing;
@@ -105,7 +119,7 @@ namespace Hecton8.AI.Cognition
         // Invariant: only ApexBrainVault.AttachSignalWriters/TryScheduleWithSignalWriters set
         // EnableSignalQueueWrites=1, and those methods receive externally owned queue writers from the Core
         // SignalBus boundary. When the flag is 0, this field is never read or enqueued.
-        [NativeDisableContainerSafetyRestriction] public NativeQueue<ApexProximitySignal>.ParallelWriter ProximitySignalWriter;
+        [NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<ApexProximitySignal>.ParallelWriter ProximitySignalWriter;
 
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // This optional writer is default-initialized on schedules that only write DataVault combat signal rows.
@@ -121,7 +135,7 @@ namespace Hecton8.AI.Cognition
         // Invariant: when EnableSignalQueueWrites=1, the owning Core/SignalBus bridge has already provided a valid
         // ParallelWriter and owns queue lifetime beyond the returned JobHandle. When the flag is 0, this writer is
         // inert and only the DataVault MockCombatDamageSignal row is written.
-        [NativeDisableContainerSafetyRestriction] public NativeQueue<MockCombatDamageSignal>.ParallelWriter CombatDamageSignalWriter;
+        [NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<MockCombatDamageSignal>.ParallelWriter CombatDamageSignalWriter;
 
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // This optional writer follows the same gated pattern as the proximity and combat lanes. Unity Jobs cannot
@@ -137,7 +151,7 @@ namespace Hecton8.AI.Cognition
         // Invariant: the queue writer is used only inside WriteSignals after the vault panic row is populated, and
         // only when EnableSignalQueueWrites!=0. The caller owns the NativeQueue and must chain the returned
         // JobHandle before draining or disposing it.
-        [NativeDisableContainerSafetyRestriction] public NativeQueue<ApexPanicSignal>.ParallelWriter PanicSignalWriter;
+        [NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<ApexPanicSignal>.ParallelWriter PanicSignalWriter;
         public int TargetCount;
         public int AcousticTapCount;
         public uint Frame;
@@ -149,20 +163,18 @@ namespace Hecton8.AI.Cognition
             if (!CanExecute(index))
                 return;
 
-            ApexBrainTuning tuning = ResolveTuning();
+            ApexBrainTuning tuning = ReadTuning();
             ApexEmergencyStats stats = ResolveEmergencyStats();
             MockWorldSampler sampler = ResolveSampler(tuning);
             float quality = ResolveQuality(tuning.GlobalQualityWeight);
-            float qualityCurve = Smooth01(math.saturate((quality - ApexBrainConstants.LowQualityNodeHold) * math.rcp(1f - ApexBrainConstants.LowQualityNodeHold)));
+            float qualityCurve = Smooth01(math.saturate((quality - ApexBrainConstants.MinimumQualityNodeHold) * math.rcp(1f - ApexBrainConstants.MinimumQualityNodeHold)));
             int acousticTapLimit = ResolveAcousticTapLimit(qualityCurve);
             int targetIndex = ResolveTargetIndex(index);
             MockPlayerAUP target = MockTargets[targetIndex];
             ApexStateDTO state = States[index];
             ushort slot = (ushort)math.min(index, ushort.MaxValue);
             byte flags = ApexBrainFlags.Active;
-            float lowQualityCollapse01 = 1f - math.step(0.3f, quality);
-            if (lowQualityCollapse01 > 0f)
-                flags = (byte)(flags | ApexBrainFlags.LowQualityCollapse);
+            flags = (byte)(flags | (byte)ResolveReducedQualityNodeBudgetFlag(quality));
             if ((tuning.Flags & ApexBrainFlags.EmergencyMockStats) != 0u)
                 flags = (byte)(flags | ApexBrainFlags.EmergencyMockStats);
 
@@ -187,7 +199,8 @@ namespace Hecton8.AI.Cognition
 
             float3 targetLocal = DowncastAupDelta(target.AUP - state.AUP);
             float distanceSq = math.max(math.lengthsq(targetLocal), ApexBrainConstants.Epsilon);
-            float distanceMeters = distanceSq * math.rsqrt(distanceSq);
+            float invDistance = math.rsqrt(math.max(distanceSq, ApexBrainConstants.Epsilon));
+            float distanceMeters = distanceSq * invDistance;
             float3 targetDirection = NormalizeSafe(targetLocal, new float3(0f, 0f, 1f));
             float stamina = math.saturate(math.select(1f, state.Stamina, math.isfinite(state.Stamina)));
             float speed = math.max(ApexBrainConstants.Epsilon, tuning.LeviathanSpeed * math.lerp(0.45f, 1f, stamina));
@@ -203,19 +216,11 @@ namespace Hecton8.AI.Cognition
 
             SdfSample centerSample = SampleMockSdf(sampler, float3.zero);
             SdfSample headSample = SampleMockSdf(sampler, pursuitDirection * math.max(tuning.HeadOffsetMeters, sampler.HeadOffsetMeters));
-            float midWeight = SmoothStep(ApexBrainConstants.SdfMidsectionStartQuality, 0.62f, quality) *
-                              math.step(ApexBrainConstants.SdfMidsectionStartQuality, quality);
-            float tailWeight = SmoothStep(ApexBrainConstants.SdfTailStartQuality, 0.94f, quality) *
-                               math.step(ApexBrainConstants.SdfTailStartQuality, quality);
-            SdfSample midSample = headSample;
-            SdfSample tailSample = headSample;
-            if (midWeight > ApexBrainConstants.Epsilon)
-                midSample = SampleMockSdf(sampler, -pursuitDirection * math.max(tuning.MidOffsetMeters, sampler.MidOffsetMeters));
-            if (tailWeight > ApexBrainConstants.Epsilon)
-            {
-                tailSample = SampleMockSdf(sampler, -pursuitDirection * math.max(tuning.TailOffsetMeters, sampler.TailOffsetMeters));
-                flags = (byte)(flags | ApexBrainFlags.TailSdfSampled);
-            }
+            float midWeight = SmoothStep(ApexBrainConstants.SdfMidsectionStartQuality, 0.62f, quality);
+            float tailWeight = SmoothStep(ApexBrainConstants.SdfTailStartQuality, 0.94f, quality);
+            SdfSample midSample = SampleMockSdf(sampler, -pursuitDirection * math.max(tuning.MidOffsetMeters, sampler.MidOffsetMeters));
+            SdfSample tailSample = SampleMockSdf(sampler, -pursuitDirection * math.max(tuning.TailOffsetMeters, sampler.TailOffsetMeters));
+            flags = (byte)(flags | (byte)math.select(0, (int)ApexBrainFlags.TailSdfSampled, tailWeight > ApexBrainConstants.Epsilon));
 
             float3 wallRepulsion =
                 ResolveRepulsion(centerSample, sampler) +
@@ -230,10 +235,8 @@ namespace Hecton8.AI.Cognition
             float distanceVisibility = 1f - math.saturate(distanceMeters * math.rcp(math.max(tuning.StalkingDistance * 3f, 1f)));
             float hashShadow = HashToUnit(HashSpatial(targetLocal, math.max(sampler.SpatialCellSizeMeters, 1f)));
             float wallShadow = math.saturate((sampler.SdfSoftMarginMeters - centerSample.Distance) * math.rcp(math.max(sampler.SdfSoftMarginMeters, ApexBrainConstants.Epsilon)));
-            float losProbeWeight = SmoothStep(0.28f, 0.85f, quality) * math.step(0.28f, quality);
-            SdfSample lineSample = centerSample;
-            if (losProbeWeight > ApexBrainConstants.Epsilon)
-                lineSample = SampleMockSdf(sampler, targetLocal * 0.5f);
+            float losProbeWeight = SmoothStep(0.28f, 0.85f, quality);
+            SdfSample lineSample = SampleMockSdf(sampler, targetLocal * 0.5f);
             float lineShadow = math.saturate((sampler.SdfSoftMarginMeters - lineSample.Distance) * math.rcp(math.max(sampler.SdfSoftMarginMeters, ApexBrainConstants.Epsilon)));
             float sdfShadow = math.lerp(wallShadow, math.max(wallShadow, lineShadow), losProbeWeight);
             float canyonHashShadow = hashShadow * sampler.CanyonBias01 * (1f - qualityCurve);
@@ -370,7 +373,7 @@ namespace Hecton8.AI.Cognition
             return math.clamp((int)Outputs[index].EvaluatedNodeCount, 0, ApexBrainConstants.MaxAmbushNodes);
         }
 
-        private ApexBrainTuning ResolveTuning()
+        private ApexBrainTuning ReadTuning()
         {
             ApexBrainTuning tuning = ApexBrainDefaults.BuildEmergencyMockTuning();
             if (Tuning.IsCreated && Tuning.Length > 0)
@@ -534,7 +537,7 @@ namespace Hecton8.AI.Cognition
                         SweetLieWeight01 = sweetLieShadow,
                         FractionalWeight01 = fractionalWeight,
                         NodeIndex = (uint)i,
-                        Flags = (1f - math.step(0.3f, quality)) > 0f ? ApexBrainFlags.LowQualityCollapse : 0u
+                        Flags = ResolveReducedQualityNodeBudgetFlag(quality)
                     };
                 }
 
@@ -764,6 +767,12 @@ namespace Hecton8.AI.Cognition
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ResolveReducedQualityNodeBudgetFlag(float quality)
+        {
+            return math.select((uint)ApexBrainFlags.ReducedQualityNodeBudget, 0u, quality >= ApexBrainConstants.MinimumQualityNodeHold);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float ResolveDeltaTime(in ApexBrainTuning tuning, in MockPlayerAUP target)
         {
             float dt = math.select(tuning.SimulationTickDelta, target.SimulationTickDelta, math.isfinite(target.SimulationTickDelta) & target.SimulationTickDelta > 0f);
@@ -803,12 +812,13 @@ namespace Hecton8.AI.Cognition
         {
             float3 p = localPosition - sampler.OriginLocal;
             float radialSq = math.max((p.x * p.x) + (p.z * p.z), ApexBrainConstants.Epsilon);
-            float radial = radialSq * math.rsqrt(radialSq);
+            float invRadial = math.rsqrt(math.max(radialSq, ApexBrainConstants.Epsilon));
+            float radial = radialSq * invRadial;
             float sideDistance = sampler.CaveRadiusMeters - radial;
             float floorDistance = p.y - sampler.FloorY;
             float ceilingDistance = sampler.CeilingY - p.y;
             float distance = math.min(sideDistance, math.min(floorDistance, ceilingDistance));
-            float3 radialGradient = new float3(-p.x, 0f, -p.z) * math.rsqrt(radialSq);
+            float3 radialGradient = new float3(-p.x, 0f, -p.z) * invRadial;
             float3 gradient = radialGradient;
             gradient = math.select(gradient, new float3(0f, 1f, 0f), floorDistance < sideDistance & floorDistance <= ceilingDistance);
             gradient = math.select(gradient, new float3(0f, -1f, 0f), ceilingDistance < sideDistance & ceilingDistance < floorDistance);
@@ -879,9 +889,9 @@ namespace Hecton8.AI.Cognition
             float nodeUs = math.min(evaluatedNodeCount, ApexBrainConstants.MaxAmbushNodes) * 0.72f;
             float acousticUs = math.min(math.max(0, acousticTapCount), ApexBrainConstants.MaxAcousticTaps) * 0.22f;
             float staleClearUs = math.min(math.max(0, staleNodeClearCount), ApexBrainConstants.MaxAmbushNodes) * 0.06f;
-            float losProbeUs = math.step(0.28f, quality) * 0.38f;
-            float midSampleUs = math.step(ApexBrainConstants.SdfMidsectionStartQuality, quality) * 0.75f;
-            float tailSampleUs = ((flags & ApexBrainFlags.TailSdfSampled) != 0 ? 0.9f : 0f);
+            float losProbeUs = SmoothStep(0.28f, 0.85f, quality) * 0.38f;
+            float midSampleUs = SmoothStep(ApexBrainConstants.SdfMidsectionStartQuality, 0.62f, quality) * 0.75f;
+            float tailSampleUs = math.select(0f, 0.9f, (flags & ApexBrainFlags.TailSdfSampled) != 0);
             float baseUs = 5.4f + (quality * 1.8f);
             return (baseUs + nodeUs + acousticUs + staleClearUs + losProbeUs + midSampleUs + tailSampleUs) * 0.001f;
         }

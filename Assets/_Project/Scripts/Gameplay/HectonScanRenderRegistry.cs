@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -276,13 +277,15 @@ namespace Hecton8.Gameplay
                 if (distanceSq > bestDistanceSq)
                     continue;
 
+                AbsoluteUniversePosition runtimeOriginAup = GlobalSignals.CurrentRuntimeOriginAup();
+                if (!runtimeOriginAup.IsFinite())
+                    continue;
+
+                double3 localCenterDelta = AupPrecisionMath.LocalDeltaDouble(
+                    centerAup.ToAbsoluteDouble3(),
+                    runtimeOriginAup.ToAbsoluteDouble3());
                 float radius = cachedRadius + math.max(0f, radiusPadding);
-                float3 runtimeCenter = centerAup.ToRuntimeFloat3();
-                double3 totalOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-                float3 shaderCenter = new float3(
-                    (float)(runtimeCenter.x + totalOffset.x),
-                    (float)(runtimeCenter.y + totalOffset.y),
-                    (float)(runtimeCenter.z + totalOffset.z));
+                float3 shaderCenter = AupPrecisionMath.DowncastLocalDelta(localCenterDelta, float3.zero);
                 if (!math.all(math.isfinite(shaderCenter)))
                     continue;
 
@@ -405,9 +408,34 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            s_lootCenterAups[index] = AbsoluteUniversePosition.FromRuntimePosition(boundsCenter);
+            if (!TryResolveRuntimeAup(boundsCenter, out s_lootCenterAups[index]))
+            {
+                s_lootCenterAups[index] = default;
+                s_lootRadii[index] = 0f;
+                s_lootSphereRefreshFrames[index] = frame;
+                return;
+            }
+
             s_lootRadii[index] = math.max(0.1f, math.cmax(extents));
             s_lootSphereRefreshFrames[index] = frame;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static bool IsActiveLoot(uint flags)

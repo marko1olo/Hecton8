@@ -3,7 +3,9 @@
 // Fixed-capacity registry for active DeployableBeacon instances.
 // ============================================================================
 
+using Hecton8.Core;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -82,7 +84,9 @@ namespace Hecton8.Gameplay
         /// <summary>Finds the nearest beacon to a runtime-space position. Returns null if no beacons are registered.</summary>
         public static DeployableBeacon GetNearest(Vector3 position)
         {
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            if (!TryResolveRuntimeAup(position, out AbsoluteUniversePosition originAup))
+                return null;
+
             return GetNearest(in originAup);
         }
 
@@ -122,6 +126,24 @@ namespace Hecton8.Gameplay
             }
 
             return nearest != null;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         /// <summary>Clears all registered beacons. Call when loading a new scene.</summary>

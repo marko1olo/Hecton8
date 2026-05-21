@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -90,46 +92,84 @@ namespace Hecton8.World
             Growth = 1UL << 24
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         public struct ZoneData
         {
+            [FieldOffset(0)]
             public float2 PositionXZ;
+            [FieldOffset(8)]
             public float ActivationRadius;
+            [FieldOffset(12)]
             public float HoldRadius;
+            [FieldOffset(16)]
             public float EdgeBlendDistance;
+            [FieldOffset(20)]
             public float EdgeNoiseScale;
+            [FieldOffset(24)]
             public float EdgeNoiseStrength;
+            [FieldOffset(28)]
             public float2 EdgeNoiseOffset;
+            [FieldOffset(36)]
             public int Priority;
+            [FieldOffset(40)]
             public int Kind;
+            [FieldOffset(44)]
             public int Tier;
+            [FieldOffset(48)]
             public int DominantMatrixDataIndex;
+            [FieldOffset(52)]
             public int DominantFamilyDataIndex;
+            [FieldOffset(56)]
             public int RouteCritical;
+            [FieldOffset(60)]
+            private int _pad0;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         public struct BiomeMatrixData
         {
+            [FieldOffset(0)]
             public int MatrixIndex;
+            [FieldOffset(4)]
             public int FamilyDataIndex;
+            [FieldOffset(8)]
             public float MinDepthMeters;
+            [FieldOffset(12)]
             public float MaxDepthMeters;
+            [FieldOffset(16)]
             public int LoosePickupBias;
+            [FieldOffset(20)]
             public int NodeExtractionBias;
+            [FieldOffset(24)]
             public int SalvageBias;
+            [FieldOffset(28)]
             public int CommonResourceBias;
+            [FieldOffset(32)]
             public int UncommonResourceBias;
+            [FieldOffset(36)]
             public int RareResourceBias;
+            [FieldOffset(40)]
             public int RoutePressure;
+            [FieldOffset(44)]
             public int LandmarkStrength;
+            [FieldOffset(48)]
             public int RewardPull;
+            [FieldOffset(52)]
             public int SurvivalPressure;
+            [FieldOffset(56)]
             public int IsPlaceholder;
+            [FieldOffset(60)]
             public int VolumetricRole;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         public struct BiomeFamilyData
         {
+            [FieldOffset(0)]
             public int FamilyInstanceId;
+            [FieldOffset(4)]
+            private int _pad0;
+            [FieldOffset(8)]
             public BiomeFamilyFlags Flags;
         }
 
@@ -172,9 +212,13 @@ namespace Hecton8.World
             return (byte)math.clamp((int)math.floor(blend01 * 255f + 0.5f), 0, 255);
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         public struct BiomeInfluenceCell
         {
+            [FieldOffset(0)]
             public uint Packed;
+            [FieldOffset(4)]
+            private uint _pad0;
 
             public byte PrimaryVisualFamilyId => HectonBiomeVisualFamilyUtility.ExtractPrimaryVisualFamilyId(Packed);
             public byte SecondaryVisualFamilyId => HectonBiomeVisualFamilyUtility.ExtractSecondaryVisualFamilyId(Packed);
@@ -183,6 +227,31 @@ namespace Hecton8.World
             public uint GpuPacked => HectonBiomeVisualFamilyUtility.ExtractGpuPacked(Packed);
             public byte PrimaryBiomeId => PrimaryVisualFamilyId;
             public byte SecondaryBiomeId => SecondaryVisualFamilyId;
+
+            public static byte ExtractPrimaryVisualFamilyId(in BiomeInfluenceCell cell)
+            {
+                return HectonBiomeVisualFamilyUtility.ExtractPrimaryVisualFamilyId(cell.Packed);
+            }
+
+            public static byte ExtractSecondaryVisualFamilyId(in BiomeInfluenceCell cell)
+            {
+                return HectonBiomeVisualFamilyUtility.ExtractSecondaryVisualFamilyId(cell.Packed);
+            }
+
+            public static byte ExtractBlend255(in BiomeInfluenceCell cell)
+            {
+                return HectonBiomeVisualFamilyUtility.ExtractBlend255(cell.Packed);
+            }
+
+            public static byte ExtractFlags(in BiomeInfluenceCell cell)
+            {
+                return HectonBiomeVisualFamilyUtility.ExtractFlags(cell.Packed);
+            }
+
+            public static uint ExtractGpuPacked(in BiomeInfluenceCell cell)
+            {
+                return HectonBiomeVisualFamilyUtility.ExtractGpuPacked(cell.Packed);
+            }
 
             public static BiomeInfluenceCell Create(byte primaryVisualFamilyId, byte secondaryVisualFamilyId, byte blend255, byte flags)
             {
@@ -209,105 +278,203 @@ namespace Hecton8.World
             }
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 72)]
         public struct CellInputData
         {
+            [FieldOffset(0)]
             public float3 Position;
+            [FieldOffset(12)]
             public float CenterHeight;
+            [FieldOffset(16)]
             public float NorthHeight;
+            [FieldOffset(20)]
             public float SouthHeight;
+            [FieldOffset(24)]
             public float EastHeight;
+            [FieldOffset(28)]
             public float WestHeight;
+            [FieldOffset(32)]
             public float WaterSurface;
+            [FieldOffset(36)]
             public int BiomeIndex;
+            [FieldOffset(40)]
             public int BiomeMatrixId;
+            [FieldOffset(44)]
             public int SecondaryBiomeMatrixId;
+            [FieldOffset(48)]
             public int BiomeBlend255;
+            [FieldOffset(52)]
             public int MapMagicBiomeDataValid;
+            [FieldOffset(56)]
             public int CellX;
+            [FieldOffset(60)]
             public int CellZ;
+            [FieldOffset(64)]
             public int SeafloorSource;
+            [FieldOffset(68)]
             public int IsValid;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 328)]
         public struct CellOutputData
         {
+            [FieldOffset(0)]
             public float3 Position;
+            [FieldOffset(12)]
             public int CellX;
+            [FieldOffset(16)]
             public int CellZ;
+            [FieldOffset(20)]
             public float SampleY;
+            [FieldOffset(24)]
             public float SeafloorHeight;
+            [FieldOffset(28)]
             public float DepthMeters;
+            [FieldOffset(32)]
             public float SlopeDegrees;
+            [FieldOffset(36)]
             public float Curvature;
+            [FieldOffset(40)]
             public float RidgeSignal;
+            [FieldOffset(44)]
             public float CanyonSignal;
+            [FieldOffset(48)]
             public float CaveProximity;
+            [FieldOffset(52)]
             public float CompositionPotential;
+            [FieldOffset(56)]
             public float ZoneWeight;
+            [FieldOffset(60)]
             public float TerrainNoise;
+            [FieldOffset(64)]
             public float DetailNoise;
+            [FieldOffset(68)]
             public float SedimentFieldNoise;
+            [FieldOffset(72)]
             public float FertileFieldNoise;
+            [FieldOffset(76)]
             public float ReefFieldNoise;
+            [FieldOffset(80)]
             public float IndustrialFieldNoise;
+            [FieldOffset(84)]
             public float HazardFieldNoise;
+            [FieldOffset(88)]
             public float LandmarkFieldNoise;
+            [FieldOffset(92)]
             public float BasinFieldNoise;
+            [FieldOffset(96)]
             public float RuggedBiomeNoise;
+            [FieldOffset(100)]
             public float FertileBiomeNoise;
+            [FieldOffset(104)]
             public float ThermalBiomeNoise;
+            [FieldOffset(108)]
             public float MetallicBiomeNoise;
+            [FieldOffset(112)]
             public float CrystalBiomeNoise;
+            [FieldOffset(116)]
             public float VoidBiomeNoise;
+            [FieldOffset(120)]
             public float ReefBiomeNoise;
+            [FieldOffset(124)]
             public float BasinMacroNoise;
+            [FieldOffset(128)]
             public float ReefMacroNoise;
+            [FieldOffset(132)]
             public float ServiceMacroNoise;
+            [FieldOffset(136)]
             public float RiftMacroNoise;
+            [FieldOffset(140)]
             public float CoralPatternNoise;
+            [FieldOffset(144)]
             public float CaveNoise;
+            [FieldOffset(148)]
             public float CompositionNoise;
+            [FieldOffset(152)]
             public float RuggedBias;
+            [FieldOffset(156)]
             public float FertileBias;
+            [FieldOffset(160)]
             public float HazardBias;
+            [FieldOffset(164)]
             public float ServiceBias;
+            [FieldOffset(168)]
             public float ResourceBias;
+            [FieldOffset(172)]
             public float ShelterBias;
+            [FieldOffset(176)]
             public float LandmarkBias;
+            [FieldOffset(180)]
             public float RockDensityHeat;
+            [FieldOffset(184)]
             public float KelpDensityHeat;
+            [FieldOffset(188)]
             public float FloraDensityHeat;
+            [FieldOffset(192)]
             public float CoralDensityHeat;
+            [FieldOffset(196)]
             public float BioDensityHeat;
+            [FieldOffset(200)]
             public float DebrisDensityHeat;
+            [FieldOffset(204)]
             public float RuinDensityHeat;
+            [FieldOffset(208)]
             public float CaveDensityHeat;
+            [FieldOffset(212)]
             public float LandmarkStrengthHeat;
+            [FieldOffset(216)]
             public float FaunaDensityHeat;
+            [FieldOffset(220)]
             public float HazardDensityHeat;
+            [FieldOffset(224)]
             public float ResourceDensityHeat;
+            [FieldOffset(228)]
             public float ShelterDensityHeat;
+            [FieldOffset(232)]
             public float ServiceDensityHeat;
+            [FieldOffset(236)]
             public float GenericHeat;
+            [FieldOffset(240)]
             public float SecondaryHeight;
+            [FieldOffset(244)]
             public float SecondaryDepthMeters;
+            [FieldOffset(248)]
             public float SecondaryCaveProximity;
+            [FieldOffset(252)]
             public float SecondaryDomainWeight;
+            [FieldOffset(256)]
             public int BiomeIndex;
+            [FieldOffset(260)]
             public int ZoneDataIndex;
+            [FieldOffset(264)]
             public int BiomeMatrixDataIndex;
+            [FieldOffset(268)]
             public int PreviousBiomeMatrixDataIndex;
+            [FieldOffset(272)]
             public int SecondaryBiomeMatrixDataIndex;
+            [FieldOffset(276)]
             public int MapMagicBiomeBlend255;
+            [FieldOffset(280)]
             public int BiomeFamilyDataIndex;
+            [FieldOffset(284)]
+            private uint _pad0;
+            [FieldOffset(288)]
             public ulong BiomeFamilyFlags;
+            [FieldOffset(296)]
             public int ResolvedZoneKind;
+            [FieldOffset(300)]
             public int ResolvedPattern;
+            [FieldOffset(304)]
             public int PreviewOverrideActive;
+            [FieldOffset(308)]
             public int VolumetricOverrideActive;
+            [FieldOffset(312)]
             public int SecondarySampleValid;
+            [FieldOffset(316)]
             public int SeafloorSource;
+            [FieldOffset(320)]
             public int IsValid;
+            [FieldOffset(324)]
             public uint BiomeInfluencePacked;
         }
 
@@ -336,12 +503,12 @@ namespace Hecton8.World
             public float zoneWeight;
             public WorldZoneAnchor.ZoneKind resolvedZoneKind;
             public WorldProceduralPattern resolvedPattern;
-            public bool isPreviewOverride;
+            public byte isPreviewOverride;
             public int verticalDomainIndex;
             public float verticalDomainWeight;
-            public bool isSecondaryDomain;
+            public byte isSecondaryDomain;
             public SeafloorSource seafloorSource;
-            public bool isValid;
+            public byte isValid;
         }
 
         public struct CellSamplingContext
@@ -479,11 +646,16 @@ namespace Hecton8.World
             public int SamplingFrameId;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct CaveEntranceHintData
         {
+            [FieldOffset(0)]
             public float3 SurfacePosition;
+            [FieldOffset(12)]
             public float3 InteriorPosition;
+            [FieldOffset(24)]
             public float EntranceRadius;
+            [FieldOffset(28)]
             public float InfluenceRadius;
         }
 
@@ -509,18 +681,18 @@ namespace Hecton8.World
             public SeafloorSource CenterSource;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct CellSamplingJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<CellInputData> CellInputs;
-            [ReadOnly] public NativeArray<ZoneData> Zones;
-            [ReadOnly] public NativeArray<BiomeMatrixData> BiomeMatrices;
-            [ReadOnly] public NativeArray<int> BiomeMatrixIdToDataIndex;
-            [ReadOnly] public NativeArray<BiomeFamilyData> BiomeFamilies;
-            [ReadOnly] public NativeArray<CaveEntranceHintData> CaveEntranceHints;
-            [ReadOnly] public NativeArray<ushort> NoiseLookupTable;
-            [WriteOnly] public NativeArray<CellOutputData> CellOutputs;
-            [WriteOnly] public NativeArray<BiomeInfluenceCell> BiomeInfluences;
+            [ReadOnly, NoAlias] public NativeArray<CellInputData> CellInputs;
+            [ReadOnly, NoAlias] public NativeArray<ZoneData> Zones;
+            [ReadOnly, NoAlias] public NativeArray<BiomeMatrixData> BiomeMatrices;
+            [ReadOnly, NoAlias] public NativeArray<int> BiomeMatrixIdToDataIndex;
+            [ReadOnly, NoAlias] public NativeArray<BiomeFamilyData> BiomeFamilies;
+            [ReadOnly, NoAlias] public NativeArray<CaveEntranceHintData> CaveEntranceHints;
+            [ReadOnly, NoAlias] public NativeArray<ushort> NoiseLookupTable;
+            [WriteOnly, NoAlias] public NativeArray<CellOutputData> CellOutputs;
+            [WriteOnly, NoAlias] public NativeArray<BiomeInfluenceCell> BiomeInfluences;
 
             public float SlopeProbeMeters;
             public float FieldNoiseScale;
@@ -2393,12 +2565,12 @@ namespace Hecton8.World
                 zoneWeight = output.ZoneWeight,
                 resolvedZoneKind = (WorldZoneAnchor.ZoneKind)output.ResolvedZoneKind,
                 resolvedPattern = (WorldProceduralPattern)output.ResolvedPattern,
-                isPreviewOverride = output.PreviewOverrideActive != 0,
+                isPreviewOverride = output.PreviewOverrideActive != 0 ? (byte)1 : (byte)0,
                 verticalDomainIndex = domainIndex,
                 verticalDomainWeight = secondaryDomain ? output.SecondaryDomainWeight : 1f,
-                isSecondaryDomain = secondaryDomain,
+                isSecondaryDomain = secondaryDomain ? (byte)1 : (byte)0,
                 seafloorSource = (SeafloorSource)output.SeafloorSource,
-                isValid = true
+                isValid = 1
             };
             return true;
         }
@@ -2929,9 +3101,9 @@ namespace Hecton8.World
                 zoneWeight = zoneWeight,
                 resolvedZoneKind = resolvedZoneKind,
                 resolvedPattern = resolvedPattern,
-                isPreviewOverride = previewOverrideApplied,
+                isPreviewOverride = previewOverrideApplied ? (byte)1 : (byte)0,
                 seafloorSource = seafloorSource,
-                isValid = true
+                isValid = 1
             };
 
             if (ShouldUpdateDiagnostics())
@@ -5029,7 +5201,7 @@ namespace Hecton8.World
                 : SyntheticZoneLabelPrefix + GetZoneKindLabel(sample.resolvedZoneKind);
             _debugLastBiomeProfile = sample.biomeProfile != null ? sample.biomeProfile.biomeName : "None";
             _debugLastBiomeFamily = sample.biomeFamily != null ? sample.biomeFamily.familyLabel : "None";
-            _debugLastPattern = sample.isValid ? GetPatternLabel(sample.resolvedPattern) : PatternLabelNone;
+            _debugLastPattern = sample.isValid != 0 ? GetPatternLabel(sample.resolvedPattern) : PatternLabelNone;
             _debugPatternOverride = forcePatternPreviewOverride
                 ? limitPatternOverrideToFallback
                     ? $"{previewPatternOverride} (FallbackOnly)"

@@ -15,7 +15,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4027)]
-    public sealed class SeamGapDitherRenderer : MonoBehaviour, IUpdatable, ILateFrameTickable
+    public sealed class SeamGapDitherRenderer : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static readonly int _MatrixBufferId = Shader.PropertyToID("_HectonSeamDitherMatrices");
         private static readonly int _ColorBufferId = Shader.PropertyToID("_HectonSeamDitherColors");
@@ -115,6 +115,7 @@ namespace Hecton8.World
         private GraphicsBuffer _colorBuffer;
         private GraphicsBuffer _argsBuffer;
         private Mesh _quadMesh;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private NativeArray<RaycastCommand> _seamRaycastCommands;
         private NativeArray<RaycastHit> _seamRaycastHits;
         private JobHandle _seamRaycastHandle;
@@ -124,6 +125,7 @@ namespace Hecton8.World
         private bool _registeredToDispatcher;
         private bool _registeredLateFrame;
         private bool _seamRaycastScheduled;
+        private bool _hotSwapRegistered;
         private float _nextLegacyVfxDisableTime = float.NegativeInfinity;
         private bool _loggedMissingSeamDitherMaterial;
 
@@ -137,16 +139,17 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            ResolveReferences();
+            ResolveReferencesCold();
             EnsureCpuCapacity();
             EnsureQuadMesh();
         }
 
         private void OnEnable()
         {
-            ResolveReferences();
+            ResolveReferencesCold();
             EnsureCpuCapacity();
             EnsureQuadMesh();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -158,11 +161,13 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             DisposeRaycastBuffers();
             ReleaseBuffers();
             ReleaseRuntimeMaterial();
@@ -171,7 +176,7 @@ namespace Hecton8.World
 
         public void Tick(float deltaTime)
         {
-            ResolveReferences();
+            ResolveReferencesFromCache();
             DisableLegacyGapDitherIfNeeded();
             if (!EnsureRenderingResources())
             {
@@ -201,7 +206,7 @@ namespace Hecton8.World
             Material drawMaterial = ResolveMaterial();
             drawMaterial.SetBuffer(_MatrixBufferId, _matrixBuffer);
             drawMaterial.SetBuffer(_ColorBufferId, _colorBuffer);
-            drawMaterial.SetVector(_CameraPositionId, targetCamera.transform.position);
+            drawMaterial.SetVector(_CameraPositionId, ResolveCameraRuntimePosition(targetCamera));
             drawMaterial.SetFloat(_MaxCameraDistanceId, Mathf.Max(0.5f, maxCameraDistance));
 
             UnityEngine.Graphics.DrawMeshInstancedIndirect(
@@ -218,34 +223,55 @@ namespace Hecton8.World
                 targetCamera);
         }
 
+        private static Vector3 ResolveCameraRuntimePosition(Camera targetCamera)
+        {
+            return targetCamera != null && targetCamera.transform != null
+                ? targetCamera.transform.position
+                : Vector3.zero;
+        }
+
         public void LateFrameTick()
         {
             CompleteSeamRaycastBatchIfReady();
         }
 
-        private void ResolveReferences()
+        private void ResolveReferencesCold()
         {
             if (seamRegistry == null)
                 seamRegistry = SeamRegistry.ActiveRuntimeInstance;
 
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+        }
 
-            if (targetCamera == null && GlobalRegistry.Player != null)
-                targetCamera = GlobalRegistry.Player.PlayerCamera;
+        private void ResolveReferencesFromCache()
+        {
+            if (seamRegistry == null)
+                seamRegistry = SeamRegistry.ActiveRuntimeInstance;
+
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null)
+                return;
+
+            if (playerTransform == null)
+                playerTransform = playerContext.PlayerTransform;
+
+            if (targetCamera == null)
+                targetCamera = playerContext.PlayerCamera;
         }
 
         private void TryRegister()
         {
-            if (_registeredToDispatcher)
-                return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this);
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+            if (!_registeredToDispatcher)
+                _registeredToDispatcher = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -261,6 +287,65 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredToDispatcher = false;
             }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    ClearPlayerRuntimeContext(previousService as IPlayerRuntimeContext);
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegister();
+                    break;
+            }
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext;
+            if (playerContext == null)
+                return;
+
+            if (playerTransform == null)
+                playerTransform = playerContext.PlayerTransform;
+
+            if (targetCamera == null)
+                targetCamera = playerContext.PlayerCamera;
+        }
+
+        private void ClearPlayerRuntimeContext(IPlayerRuntimeContext previousContext)
+        {
+            if (previousContext == null)
+                return;
+
+            if (ReferenceEquals(playerTransform, previousContext.PlayerTransform))
+                playerTransform = null;
+
+            if (ReferenceEquals(targetCamera, previousContext.PlayerCamera))
+                targetCamera = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private bool EnsureRenderingResources()

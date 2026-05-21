@@ -12,12 +12,15 @@ namespace Hecton8.AI.Perception
         public NativeArray<LightSourceData> LightSources;
         public NativeArray<RetinalTelemetryEntry> TelemetryRing;
 
-        public readonly bool IsCreated =>
+        public readonly bool IsCreated()
+        {
+            return
             Exposure.IsCreated &&
             BlindnessState.IsCreated &&
             LastPublishedBlindnessState.IsCreated &&
             LightSources.IsCreated &&
             TelemetryRing.IsCreated;
+        }
     }
 
     internal static class RetinalAdaptationVault
@@ -37,33 +40,68 @@ namespace Hecton8.AI.Perception
             int safeLightCapacity = math.max(1, lightCapacity);
             int safeTelemetryCapacity = math.max(1, telemetryCapacity);
 
-            buffers.Exposure = vault.GetBuffer<float>(
-                BufferID.PredatorRetinalExposure,
-                predatorCapacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            buffers.BlindnessState = vault.GetBuffer<byte>(
-                BufferID.PredatorRetinalBlindnessState,
-                predatorCapacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            buffers.LastPublishedBlindnessState = vault.GetBuffer<byte>(
-                BufferID.PredatorRetinalLastPublishedBlindnessState,
-                predatorCapacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            buffers.LightSources = vault.GetBuffer<LightSourceData>(
-                BufferID.PredatorRetinalLightSources,
-                safeLightCapacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            buffers.TelemetryRing = vault.GetBuffer<RetinalTelemetryEntry>(
-                BufferID.PredatorRetinalTelemetryRing,
-                safeTelemetryCapacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
+            if (!TryOpenBuffer(
+                    vault,
+                    BufferID.PredatorRetinalExposure,
+                    predatorCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<float> exposure) ||
+                !TryOpenBuffer(
+                    vault,
+                    BufferID.PredatorRetinalBlindnessState,
+                    predatorCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<byte> blindnessState) ||
+                !TryOpenBuffer(
+                    vault,
+                    BufferID.PredatorRetinalLastPublishedBlindnessState,
+                    predatorCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<byte> lastPublishedBlindnessState) ||
+                !TryOpenBuffer(
+                    vault,
+                    BufferID.PredatorRetinalLightSources,
+                    safeLightCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<LightSourceData> lightSources) ||
+                !TryOpenBuffer(
+                    vault,
+                    BufferID.PredatorRetinalTelemetryRing,
+                    safeTelemetryCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<RetinalTelemetryEntry> telemetryRing))
+            {
+                return false;
+            }
 
-            return buffers.IsCreated;
+            buffers.Exposure = exposure;
+            buffers.BlindnessState = blindnessState;
+            buffers.LastPublishedBlindnessState = lastPublishedBlindnessState;
+            buffers.LightSources = lightSources;
+            buffers.TelemetryRing = telemetryRing;
+            return buffers.IsCreated();
+        }
+
+        private static bool TryOpenBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.AICognition,
+                options);
+
+            uint expectedBufferId = unchecked((uint)(int)bufferId);
+            return
+                handle.BufferID == expectedBufferId &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength;
         }
     }
 }

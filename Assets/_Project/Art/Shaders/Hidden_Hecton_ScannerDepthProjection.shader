@@ -37,8 +37,6 @@ Shader "Hidden/Hecton8/ScannerDepthProjection"
             CBUFFER_END
 
             TEXTURE2D_X(_BlitTexture);
-            float4 _TotalUniverseOffset;
-
             struct Attributes
             {
                 uint vertexID : SV_VertexID;
@@ -106,8 +104,7 @@ Shader "Hidden/Hecton8/ScannerDepthProjection"
                 float age01 = saturate(_HectonScannerProjectionUpAge.w);
                 float intensity = saturate(_HectonScannerProjectionForwardIntensity.w);
 
-                float3 absoluteWorld = worldPos + _TotalUniverseOffset.xyz;
-                float3 delta = absoluteWorld - origin;
+                float3 delta = worldPos - origin;
                 float forwardMeters = dot(delta, forwardAxis);
                 float2 projector = float2(dot(delta, rightAxis), dot(delta, upAxis)) / radius;
                 float radialSq = dot(projector, projector);

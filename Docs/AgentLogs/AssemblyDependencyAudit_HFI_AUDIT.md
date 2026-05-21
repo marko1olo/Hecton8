@@ -4,17 +4,17 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, player build, or runtim
 
 - Schema: `hecton8.assembly_dependency_audit.v1`
 - Source root: `Assets/_Project/Scripts`
-- Asmdefs: `137`
-- First-party asmdefs: `137`
-- Runtime first-party asmdefs: `102`
-- Editor first-party asmdefs: `35`
+- Asmdefs: `167`
+- First-party asmdefs: `167`
+- Runtime first-party asmdefs: `114`
+- Editor first-party asmdefs: `53`
 - First-party `noEngineReferences=true`: `6`
-- First-party `autoReferenced=false`: `134`
+- First-party `autoReferenced=false`: `164`
 
 ## Core Compile-Wall Pressure
 
 - Core present: `True`
-- Core references: `20`
+- Core references: `21`
 - Core first-party references: `8`
 - Core concrete sibling references: `1`
 
@@ -24,7 +24,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, player build, or runtim
 
 ## Runtime Concrete Cross-Domain References
 
-- Count: `77`
+- Count: `96`
 
 | Assembly | Reference | Path |
 |---|---|---|
@@ -36,12 +36,15 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, player build, or runtim
 | `Hecton8.Animation.FaunaProcedural` | `Hecton8.Core` | `Assets/_Project/Scripts/Animation/FaunaProcedural/Hecton8.Animation.FaunaProcedural.asmdef` |
 | `Hecton8.Animation.FaunaProcedural` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Animation/FaunaProcedural/Hecton8.Animation.FaunaProcedural.asmdef` |
 | `Hecton8.Animation.IK` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Animation/IK/Hecton8.Animation.IK.asmdef` |
+| `Hecton8.Atmosphere.StormPropagation.Runtime` | `Hecton8.Core` | `Assets/_Project/Scripts/Atmosphere/StormPropagation/Hecton8.Atmosphere.StormPropagation.Runtime.asmdef` |
+| `Hecton8.Atmosphere.StormPropagation.Runtime` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Atmosphere/StormPropagation/Hecton8.Atmosphere.StormPropagation.Runtime.asmdef` |
 | `Hecton8.Audio.Prologue` | `Hecton8.Core` | `Assets/_Project/Scripts/Audio/Prologue/Hecton8.Audio.Prologue.asmdef` |
 | `Hecton8.Audio.Synthesis` | `Hecton8.Core` | `Assets/_Project/Scripts/Audio/Synthesis/Hecton8.Audio.Synthesis.asmdef` |
 | `Hecton8.Audio.Synthesis` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Audio/Synthesis/Hecton8.Audio.Synthesis.asmdef` |
 | `Hecton8.Cartography` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Cartography/Hecton8.Cartography.asmdef` |
 | `Hecton8.Dev.SpaceEngine098` | `Hecton8.Core` | `Assets/_Project/Scripts/Dev/SpaceEngine098/Hecton8.Dev.SpaceEngine098.asmdef` |
 | `Hecton8.Dev.SpaceEngine098` | `Hecton8.SpaceEngine098Terrain` | `Assets/_Project/Scripts/Dev/SpaceEngine098/Hecton8.Dev.SpaceEngine098.asmdef` |
+| `Hecton8.Environment.Fluids` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Environment/Fluids/Hecton8.Environment.Fluids.asmdef` |
 | `Hecton8.Gameplay.Loot.Contracts` | `Hecton8.Core` | `Assets/_Project/Scripts/Gameplay/Loot/Contracts/Hecton8.Gameplay.Loot.Contracts.asmdef` |
 | `Hecton8.Gameplay.Loot` | `Hecton8.Core` | `Assets/_Project/Scripts/Gameplay/Loot/Hecton8.Gameplay.Loot.asmdef` |
 | `Hecton8.Gameplay.Loot` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Gameplay/Loot/Hecton8.Gameplay.Loot.asmdef` |
@@ -63,21 +66,18 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, player build, or runtim
 | `Hecton8.Lighting` | `Hecton8.Core` | `Assets/_Project/Scripts/Lighting/Hecton8.Lighting.asmdef` |
 | `Hecton8.Lighting` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Lighting/Hecton8.Lighting.asmdef` |
 | `Hecton8.Narrative.Campaign` | `Hecton8.Core` | `Assets/_Project/Scripts/Narrative/Campaign/Hecton8.Narrative.Campaign.asmdef` |
+| `Hecton8.Physics.Buoyancy.Runtime` | `Hecton8.Core` | `Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/Hecton8.Physics.Buoyancy.Runtime.asmdef` |
+| `Hecton8.Physics.Buoyancy.Runtime` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/Hecton8.Physics.Buoyancy.Runtime.asmdef` |
 | `Hecton8.Physiology` | `Hecton8.Core` | `Assets/_Project/Scripts/Physiology/Hecton8.Physiology.asmdef` |
 | `Hecton8.Physiology` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Physiology/Hecton8.Physiology.asmdef` |
+| `Hecton8.Crest.Bridge` | `Hecton8.Core` | `Assets/_Project/Scripts/Plugins/Crest/Hecton8.Crest.Bridge.asmdef` |
+| `Hecton8.Crest.Bridge` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Plugins/Crest/Hecton8.Crest.Bridge.asmdef` |
 | `Hecton8.Plugins` | `Hecton8.Core` | `Assets/_Project/Scripts/Plugins/Hecton8.Plugins.asmdef` |
 | `Hecton8.Plugins` | `Hecton8.SpaceEngine098Terrain` | `Assets/_Project/Scripts/Plugins/Hecton8.Plugins.asmdef` |
+| `Hecton8.Power.BatteryChargerLogistics.Runtime` | `Hecton8.Core` | `Assets/_Project/Scripts/Power/BatteryChargerLogistics/Hecton8.Power.BatteryChargerLogistics.Runtime.asmdef` |
+| `Hecton8.Power.BatteryChargerLogistics.Runtime` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Power/BatteryChargerLogistics/Hecton8.Power.BatteryChargerLogistics.Runtime.asmdef` |
 | `Hecton8.Power.Generators` | `Hecton8.Core` | `Assets/_Project/Scripts/Power/Generators/Hecton8.Power.Generators.asmdef` |
 | `Hecton8.Power.Generators` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Power/Generators/Hecton8.Power.Generators.asmdef` |
-| `Hecton8.Prologue.Space` | `Hecton8.Core` | `Assets/_Project/Scripts/Prologue/Space/Hecton8.Prologue.Space.asmdef` |
-| `Hecton8.Prologue.VFX` | `Hecton8.Core` | `Assets/_Project/Scripts/Prologue/VFX/Hecton8.Prologue.VFX.asmdef` |
-| `Hecton8.QA.Headless` | `Hecton8.Core` | `Assets/_Project/Scripts/QA/Headless/Hecton8.QA.Headless.asmdef` |
-| `Hecton8.QA.Headless` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/QA/Headless/Hecton8.QA.Headless.asmdef` |
-| `Hecton8.QA` | `Hecton8.Core` | `Assets/_Project/Scripts/QA/Hecton8.QA.asmdef` |
-| `Hecton8.Thermodynamics` | `Hecton8.Core` | `Assets/_Project/Scripts/Thermodynamics/Hecton8.Thermodynamics.asmdef` |
-| `Hecton8.Thermodynamics` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Thermodynamics/Hecton8.Thermodynamics.asmdef` |
-| `Hecton8.Tools.ToolKinematics` | `Hecton8.Core` | `Assets/_Project/Scripts/Tools/ToolKinematics/Hecton8.Tools.ToolKinematics.asmdef` |
-| `Hecton8.Tools.ToolKinematics` | `Hecton8.Core.Memory` | `Assets/_Project/Scripts/Tools/ToolKinematics/Hecton8.Tools.ToolKinematics.asmdef` |
 
 ## Cycles
 

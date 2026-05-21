@@ -25,6 +25,7 @@ using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
+using Hecton8.World;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
@@ -52,7 +53,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
     [AddComponentMenu("Hecton/Gameplay/Bio Reactor")]
-    public sealed class BioReactor : MonoBehaviour, IPowerComponent, ITickable, IUpdatable, IInteractable, ILocalizationLanguageChangedListener
+    public sealed class BioReactor : MonoBehaviour, IPowerComponent, ITickable, IUpdatable, IInteractable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -174,7 +175,7 @@ namespace Hecton8.Gameplay
             PlayerInventory playerInventory = interactor.GetComponentInParent<PlayerInventory>();
             if (playerInventory == null)
             {
-                playerInventory = Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null;
+                playerInventory = _playerRuntime != null ? _playerRuntime.Inventory : null;
             }
 
             if (playerInventory != null)
@@ -317,11 +318,15 @@ namespace Hecton8.Gameplay
         private bool _isProducing;
         private bool _wasProducing;
         private bool _registered;
+        private bool _registeredHotSwap;
         private bool _hasPower = true; // IPowerComponent requirement
         private int _emissionPropertyId;
         private float _overheatTimer;
         private float _debugGridUtilization;
         private bool _meltdownTriggered;
+        private IAudioService _audioService;
+        private IPlayerRuntimeContext _playerRuntime;
+        private LocalizationManager _localizationRuntime;
 
         // Cached references
         private Transform _cachedTransform;
@@ -382,6 +387,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            RefreshColdRegistryReferences();
             _cachedTransform = transform;
             _powerNode = GetComponent<PowerNode>();
             _hostModule = GetComponent<BaseModule>();
@@ -397,8 +403,10 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            RefreshColdRegistryReferences();
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
+            TryRegisterHotSwap();
             RebuildLocalizedTextCache();
             UpdateFuelIndicator();
         }
@@ -407,21 +415,20 @@ namespace Hecton8.Gameplay
         {
             InteractableRegistry.InvalidateTree(this);
             LocalizationEvents.UnregisterLanguageListener(this);
+            TryUnregisterHotSwap();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
             InteractableRegistry.InvalidateTree(this);
+            TryUnregisterHotSwap();
             TryUnregister();
         }
 
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
@@ -434,6 +441,47 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.UnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _audioService = GlobalRegistry.Audio;
+            _playerRuntime = GlobalRegistry.Player;
+            _localizationRuntime = GlobalRegistry.Localization;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntime = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationRuntime = currentService as LocalizationManager;
+                    RebuildLocalizedTextCache();
+                    break;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -508,7 +556,7 @@ namespace Hecton8.Gameplay
             _currentFuelLevel += fuelValue;
 
             // Play insert sound
-            if (insertSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            if (insertSound != null && _audioService is IAudioService audio)
             {
                 audio.PlayAtPoint(insertSound, _cachedTransform.position);
             }
@@ -575,7 +623,7 @@ namespace Hecton8.Gameplay
                     _fuelItems.RemoveAt(0);
 
                     // Play depleted sound
-                    if (depletedSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+                    if (depletedSound != null && _audioService is IAudioService audio)
                     {
                         audio.PlayAtPoint(depletedSound, _cachedTransform.position);
                     }
@@ -726,15 +774,40 @@ namespace Hecton8.Gameplay
         private void PublishReactorGasLeak(float severity01)
         {
             Vector3 origin = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            if (!TryResolveRuntimeAup(origin, out double3 damageAup))
+                return;
+
             ReactorDamageSignal signal = new ReactorDamageSignal
             {
-                DamageAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin),
+                DamageAup = damageAup,
                 ReactorHash = unchecked((uint)GetRuntimeId(this)),
                 Damage01 = math.saturate(severity01),
                 ToxinLeak01 = math.saturate(severity01),
                 Flags = 1
             };
             SignalBus<ReactorDamageSignal>.TryPush(in signal);
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!resolvedAup.IsFinite())
+                return false;
+
+            positionAup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(positionAup));
         }
 
         private static bool TryRegisterUniqueId(int[] ids, ref int count, int value)
@@ -841,9 +914,9 @@ namespace Hecton8.Gameplay
             RebuildLocalizedTextCache();
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localizationRuntime;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

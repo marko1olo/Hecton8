@@ -9,7 +9,7 @@ namespace Hecton8.Debugging
 {
     public struct AutomationOmegaSmokeResult
     {
-        public bool Passed;
+        public byte Passed;
         public int NodeCount;
         public int EdgeCount;
         public int RoutedNode;
@@ -39,7 +39,7 @@ namespace Hecton8.Debugging
 
             AutomationOmegaSmokeResult smokeResult = new AutomationOmegaSmokeResult
             {
-                Passed = false,
+                Passed = 0,
                 NodeCount = nodeCount,
                 EdgeCount = edgeCount,
                 RoutedNode = -1,
@@ -113,7 +113,9 @@ namespace Hecton8.Debugging
                 smokeResult.Passed =
                     smokeResult.RoutedNode == storageNodeIndex &&
                     smokeResult.NoStorageRouteNode == -1 &&
-                    smokeResult.InvalidStartRouteNode == -1;
+                    smokeResult.InvalidStartRouteNode == -1
+                        ? (byte)1
+                        : (byte)0;
 
                 return smokeResult;
             }

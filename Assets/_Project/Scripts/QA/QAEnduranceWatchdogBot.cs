@@ -858,43 +858,48 @@ namespace Hecton8.QA
             return value > 0L ? value : 0L;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 128)]
         private struct QAEnduranceBlackBoxEntry
         {
-            public int Frame;
-            public float DistanceMeters;
-            public float3 RuntimePosition;
-            public float3 Velocity;
-            public AbsoluteUniversePosition Aup;
-            public long TotalMemoryBytes;
-            public long ManagedMemoryBytes;
-            public long GraphicsDriverBytes;
-            public float AverageFps;
-            public uint EventHash;
-            public uint Flags;
+            [FieldOffset(0)] public int Frame;
+            [FieldOffset(4)] public float DistanceMeters;
+            [FieldOffset(8)] public float3 RuntimePosition;
+            [FieldOffset(20)] public float3 Velocity;
+            [FieldOffset(32)] public AbsoluteUniversePosition Aup;
+            [FieldOffset(80)] public long TotalMemoryBytes;
+            [FieldOffset(88)] public long ManagedMemoryBytes;
+            [FieldOffset(96)] public long GraphicsDriverBytes;
+            [FieldOffset(104)] public float AverageFps;
+            [FieldOffset(108)] public uint EventHash;
+            [FieldOffset(112)] public uint Flags;
+            [FieldOffset(116)] private uint _pad0;
+            [FieldOffset(120)] private ulong _pad1;
         }
 
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     internal struct QAEnduranceCsvRecord
     {
-        public int Frame;
-        public float DistanceMeters;
-        public float AverageFps;
-        public long TotalMemoryBytes;
-        public long ManagedMemoryBytes;
-        public long GraphicsDriverBytes;
-        public float RuntimeX;
-        public float RuntimeY;
-        public float RuntimeZ;
-        public float VelocityMagnitude;
-        public int OriginShiftCount;
-        public int TrapCount;
-        public int SaveRequestCount;
-        public int CsvDropCount;
-        public byte Tier;
-        public uint EventHash;
+        [FieldOffset(0)] public int Frame;
+        [FieldOffset(4)] public float DistanceMeters;
+        [FieldOffset(8)] public float AverageFps;
+        [FieldOffset(12)] private uint _pad0;
+        [FieldOffset(16)] public long TotalMemoryBytes;
+        [FieldOffset(24)] public long ManagedMemoryBytes;
+        [FieldOffset(32)] public long GraphicsDriverBytes;
+        [FieldOffset(40)] public float RuntimeX;
+        [FieldOffset(44)] public float RuntimeY;
+        [FieldOffset(48)] public float RuntimeZ;
+        [FieldOffset(52)] public float VelocityMagnitude;
+        [FieldOffset(56)] public int OriginShiftCount;
+        [FieldOffset(60)] public int TrapCount;
+        [FieldOffset(64)] public int SaveRequestCount;
+        [FieldOffset(68)] public int CsvDropCount;
+        [FieldOffset(72)] public byte Tier;
+        [FieldOffset(73)] private byte _pad1;
+        [FieldOffset(74)] private ushort _pad2;
+        [FieldOffset(76)] public uint EventHash;
     }
 
     internal sealed class QAEnduranceCsvWriter : IDisposable

@@ -1,9 +1,11 @@
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace Hecton8.World
 {
     public sealed partial class WorldProceduralScatterDirector
     {
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private readonly struct ScatterBackendShadowScheduleContext
         {
             public ScatterBackendShadowScheduleContext(
@@ -15,22 +17,43 @@ namespace Hecton8.World
                 int spawnStride,
                 ScatterBackendParityReference classicParityReference)
             {
+                ClassicParityReference = classicParityReference;
                 ObserverPosition = observerPosition;
                 TotalCells = totalCells;
                 GroundBudget = groundBudget;
                 ClusterBudget = clusterBudget;
                 StructureStride = structureStride;
                 SpawnStride = spawnStride;
-                ClassicParityReference = classicParityReference;
+                _pad0 = 0UL;
+                _pad1 = 0UL;
             }
 
-            public Vector3 ObserverPosition { get; }
-            public int TotalCells { get; }
-            public int GroundBudget { get; }
-            public int ClusterBudget { get; }
-            public int StructureStride { get; }
-            public int SpawnStride { get; }
-            public ScatterBackendParityReference ClassicParityReference { get; }
+            [FieldOffset(0)]
+            public readonly ScatterBackendParityReference ClassicParityReference;
+
+            [FieldOffset(32)]
+            public readonly Vector3 ObserverPosition;
+
+            [FieldOffset(44)]
+            public readonly int TotalCells;
+
+            [FieldOffset(48)]
+            public readonly int GroundBudget;
+
+            [FieldOffset(52)]
+            public readonly int ClusterBudget;
+
+            [FieldOffset(56)]
+            public readonly int StructureStride;
+
+            [FieldOffset(60)]
+            public readonly int SpawnStride;
+
+            [FieldOffset(64)]
+            private readonly ulong _pad0;
+
+            [FieldOffset(72)]
+            private readonly ulong _pad1;
         }
     }
 }

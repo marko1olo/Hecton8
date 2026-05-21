@@ -83,7 +83,12 @@ namespace Hecton8.World
                 return;
             }
 
-            AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeCenter);
+            if (!TryResolveAupFromRuntimeOrigin(runtimeCenter, out AbsoluteUniversePosition centerAup))
+            {
+                UnregisterCell(cellId);
+                return;
+            }
+
             RegisterCell(cellId, in centerAup, sizeX, sizeZ, verticalDepthMeters);
         }
 
@@ -228,7 +233,9 @@ namespace Hecton8.World
             if (!IsFiniteRuntimePosition(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition aup))
+                return false;
+
             return ContainsAupXZ(aup.ToAbsoluteDouble3());
         }
 
@@ -240,7 +247,9 @@ namespace Hecton8.World
             if (!IsFiniteRuntimePosition(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition aup))
+                return false;
+
             return ContainsAupSubmergedPosition(aup.ToAbsoluteDouble3());
         }
 
@@ -496,6 +505,22 @@ namespace Hecton8.World
                    math.isfinite(position.z);
         }
 
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in aup);
+        }
+
         private static bool IsFiniteAup(in AbsoluteUniversePosition position)
         {
             return math.isfinite(position.LocalX) &&
@@ -607,18 +632,38 @@ namespace Hecton8.World
             s_maxZ = 0d;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 56)]
         private struct ToxicMudCell
         {
+            [FieldOffset(0)]
             public double CenterX;
+
+            [FieldOffset(8)]
             public double CenterZ;
+
+            [FieldOffset(16)]
             public double SurfaceY;
+
+            [FieldOffset(24)]
             public double MinY;
+
+            [FieldOffset(32)]
             public float HalfX;
+
+            [FieldOffset(36)]
             public float HalfZ;
+
+            [FieldOffset(40)]
             public float InvHalfXSq;
+
+            [FieldOffset(44)]
             public float InvHalfZSq;
+
+            [FieldOffset(48)]
             public int CellId;
+
+            [FieldOffset(52)]
+            private uint _pad0;
         }
     }
 }

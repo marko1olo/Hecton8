@@ -616,7 +616,9 @@ namespace Hecton8.Interaction
             signal.RuntimeAnchor.x = anchor.x;
             signal.RuntimeAnchor.y = anchor.y;
             signal.RuntimeAnchor.z = anchor.z;
-            signal.TargetAup = AbsoluteUniversePosition.FromRuntimePosition(anchor);
+            if (!TryResolveAupFromRuntimeOrigin(anchor, out signal.TargetAup))
+                return;
+
             signal.DistanceMeters = math.isfinite(hit.distance) && hit.distance >= 0f ? hit.distance : 0f;
             signal.SurfaceNormal = ResolveLookTargetNormal(in hit);
             signal.TargetHash = ResolveTargetHash(target);
@@ -643,6 +645,23 @@ namespace Hecton8.Interaction
 
             Component component = target as Component;
             return component != null ? component.transform.position : Vector3.zero;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            float3 runtime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return aup.IsFinite();
         }
 
         private static float3 ResolveLookTargetNormal(in RaycastHit hit)

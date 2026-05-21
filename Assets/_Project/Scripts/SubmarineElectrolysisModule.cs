@@ -16,8 +16,16 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Acoustic payload emitted when electrolysis boils surrounding water.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct ElectrolysisAcousticEvent
     {
+        [FieldOffset(0)] public readonly Vector3 Position;
+        [FieldOffset(12)] public readonly float DumpedPowerWatts;
+        [FieldOffset(16)] public readonly float OxygenUnits;
+        [FieldOffset(20)] public readonly float ThreatStrength;
+        [FieldOffset(24)] public readonly float RadiusMeters;
+        [FieldOffset(28)] private readonly uint _pad0;
+
         public ElectrolysisAcousticEvent(Vector3 position, float dumpedPowerWatts, float oxygenUnits, float threatStrength, float radiusMeters)
         {
             Position = IsFiniteVector(position) ? position : Vector3.zero;
@@ -25,13 +33,8 @@ namespace Hecton8.Gameplay
             OxygenUnits = FiniteNonNegativeOrZero(oxygenUnits);
             ThreatStrength = FiniteNonNegativeOrZero(threatStrength);
             RadiusMeters = FiniteAtLeast(radiusMeters, 1f);
+            _pad0 = 0u;
         }
-
-        public Vector3 Position { get; }
-        public float DumpedPowerWatts { get; }
-        public float OxygenUnits { get; }
-        public float ThreatStrength { get; }
-        public float RadiusMeters { get; }
 
         private static bool IsFiniteVector(Vector3 value)
         {
@@ -58,15 +61,27 @@ namespace Hecton8.Gameplay
     {
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 32;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("ElectrolysisAcousticEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("ElectrolysisAcousticEvents"));
 
-        // COLD ALLOC: RegistryBucket<IElectrolysisAcousticEventListener>[8] - electrolysis acoustic listeners drained by SystemDispatcher LateUpdate - owner: ElectrolysisAcousticEvents
-        private static readonly RegistryBucket<IElectrolysisAcousticEventListener> _listeners = new RegistryBucket<IElectrolysisAcousticEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IElectrolysisAcousticEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - electrolysis acoustic listeners drained by SystemDispatcher LateUpdate - owner: ElectrolysisAcousticEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
 
         private static NativeQueue<ElectrolysisAcousticPayload> _pendingEvents;
         private static NativeQueue<ElectrolysisAcousticPayload> _nextFrameEvents;
+        private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -94,7 +109,10 @@ namespace Hecton8.Gameplay
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
+            for (int i = 0; i < ListenerCapacity; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
@@ -109,8 +127,16 @@ namespace Hecton8.Gameplay
             if (listener == null)
                 return;
 
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
         }
 
         /// <summary>
@@ -121,12 +147,20 @@ namespace Hecton8.Gameplay
             if (listener == null)
                 return;
 
-            if (!_listeners.Contains(listener))
-                return;
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
 
-            _listeners.Unregister(listener);
-            if (_listeners.Count <= 0)
-                DropQueuedPayloads();
+                int lastIndex = --_listenerCount;
+                if (i != lastIndex)
+                    _listeners[i].Listener = _listeners[lastIndex].Listener;
+
+                _listeners[lastIndex].Clear();
+                if (_listenerCount <= 0)
+                    DropQueuedPayloads();
+                return;
+            }
         }
 
         /// <summary>
@@ -134,7 +168,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static void Notify(in ElectrolysisAcousticEvent acousticEvent)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             Enqueue(new ElectrolysisAcousticPayload
@@ -155,7 +189,7 @@ namespace Hecton8.Gameplay
             if (!_pendingEvents.IsCreated)
                 return;
 
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
             {
                 DropQueuedPayloads();
                 return;
@@ -181,14 +215,13 @@ namespace Hecton8.Gameplay
                     payload.ThreatStrength,
                     payload.RadiusMeters);
 
-                IElectrolysisAcousticEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
+                int count = _listenerCount;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IElectrolysisAcousticEventListener listener = rawArray[i];
+                        IElectrolysisAcousticEventListener listener = _listeners[i].Listener;
                         if (listener != null)
                             listener.OnElectrolysisAcoustic(in acousticEvent);
                     }
@@ -210,7 +243,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<ElectrolysisAcousticPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - deferred electrolysis acoustic lane flushed by SystemDispatcher LateUpdate - owner: ElectrolysisAcousticEvents
+                _pendingEvents = new NativeQueue<ElectrolysisAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - deferred electrolysis acoustic lane flushed by SystemDispatcher LateUpdate - owner: ElectrolysisAcousticEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -222,7 +255,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<ElectrolysisAcousticPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - next-frame electrolysis acoustic lane prevents same-frame reentrant dispatch - owner: ElectrolysisAcousticEvents
+                _nextFrameEvents = new NativeQueue<ElectrolysisAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - next-frame electrolysis acoustic lane prevents same-frame reentrant dispatch - owner: ElectrolysisAcousticEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -330,14 +363,15 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Blittable queued payload for electrolysis acoustic events.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ElectrolysisAcousticPayload
     {
-        public Vector3 Position;
-        public float DumpedPowerWatts;
-        public float OxygenUnits;
-        public float ThreatStrength;
-        public float RadiusMeters;
+        [FieldOffset(0)] public Vector3 Position;
+        [FieldOffset(12)] public float DumpedPowerWatts;
+        [FieldOffset(16)] public float OxygenUnits;
+        [FieldOffset(20)] public float ThreatStrength;
+        [FieldOffset(24)] public float RadiusMeters;
+        [FieldOffset(28)] private uint _pad0;
     }
 
     /// <summary>
@@ -669,7 +703,9 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            AbsoluteUniversePosition nodeAup = AbsoluteUniversePosition.FromRuntimePosition(ResolveCinematicPulsePosition());
+            if (!TryResolveRuntimeAup(ResolveCinematicPulsePosition(), out AbsoluteUniversePosition nodeAup))
+                return false;
+
             if (!graph.TryRegisterPipeNode(
                     ResolvePipeNetworkId(),
                     targetRoomIndex,
@@ -688,6 +724,23 @@ namespace Hecton8.Gameplay
                 (byte)(FluidPipeFlags.Active | FluidPipeFlags.OxygenSource | FluidPipeFlags.RoomCoupled),
                 (byte)FluidPipeFlags.Disabled);
             return true;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private bool ResolveWaterSourceAvailability()

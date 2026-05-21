@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Unity.Collections.LowLevel.Unsafe;
@@ -16,16 +17,18 @@ namespace Hecton8.Editor.GeologyForge
             GeologyVertexLayoutValidator.ValidateStruct();
             int meshCount = 0;
             int meshFailures = 0;
+            int unmanifestedMeshCount = 0;
             StringBuilder failures = new StringBuilder(1024);
-            ValidateGeneratedMeshes(ref meshCount, ref meshFailures, failures);
-            bool manifestValid = TryValidateManifest(out uint manifestRecords, out long manifestBytes, out string manifestReason);
-            bool manifestRequired = meshCount > 0;
-            bool manifestFailure = manifestRequired && !manifestValid;
-            WriteReport(meshCount, meshFailures, manifestValid, manifestRecords, manifestBytes, manifestReason, manifestFailure, failures);
-            Debug.Log($"[SHINOBU_208] Geology layout audit wrote {GeologyForgeConstants.LayoutAuditReportPath} meshes={meshCount} meshFailures={meshFailures} manifestValid={manifestValid}.");
+            HashSet<string> manifestMeshPaths = new HashSet<string>(StringComparer.Ordinal);
+            bool manifestValid = TryValidateManifest(manifestMeshPaths, out uint manifestRecords, out long manifestBytes, out string manifestReason);
+            ValidateGeneratedMeshes(manifestMeshPaths, ref meshCount, ref meshFailures, ref unmanifestedMeshCount, failures);
+            bool noOutput = meshCount == 0 || manifestRecords == 0u;
+            bool manifestFailure = !manifestValid || manifestRecords == 0u;
+            WriteReport(meshCount, meshFailures, unmanifestedMeshCount, manifestMeshPaths.Count, manifestValid, manifestRecords, manifestBytes, manifestReason, manifestFailure, noOutput, failures);
+            Debug.Log($"[SHINOBU_208] Geology layout audit wrote {GeologyForgeConstants.LayoutAuditReportPath} meshes={meshCount} meshFailures={meshFailures} manifestValid={manifestValid} noOutput={noOutput}.");
         }
 
-        private static void ValidateGeneratedMeshes(ref int meshCount, ref int meshFailures, StringBuilder failures)
+        private static void ValidateGeneratedMeshes(HashSet<string> manifestMeshPaths, ref int meshCount, ref int meshFailures, ref int unmanifestedMeshCount, StringBuilder failures)
         {
             if (!Directory.Exists(GeologyForgeConstants.MeshOutputFolder))
                 return;
@@ -36,9 +39,20 @@ namespace Hecton8.Editor.GeologyForge
                 string path = files[i].Replace('\\', '/');
                 Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
                 if (mesh == null)
+                {
+                    meshFailures++;
+                    AppendFailure(failures, path, "NON_MESH_ASSET_IN_GEOLOGY_OUTPUT_FOLDER");
                     continue;
+                }
 
                 meshCount++;
+                if (!manifestMeshPaths.Contains(path))
+                {
+                    meshFailures++;
+                    unmanifestedMeshCount++;
+                    AppendFailure(failures, path, "UNMANIFESTED_MESH_ASSET");
+                }
+
                 try
                 {
                     GeologyVertexLayoutValidator.ValidateMesh(mesh);
@@ -51,7 +65,7 @@ namespace Hecton8.Editor.GeologyForge
             }
         }
 
-        private static bool TryValidateManifest(out uint recordCount, out long byteLength, out string reason)
+        private static bool TryValidateManifest(HashSet<string> manifestMeshPaths, out uint recordCount, out long byteLength, out string reason)
         {
             recordCount = 0u;
             byteLength = 0L;
@@ -65,7 +79,7 @@ namespace Hecton8.Editor.GeologyForge
                 return false;
             }
 
-            using (FileStream stream = new FileStream(GeologyForgeConstants.ManifestPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (FileStream stream = new FileStream(GeologyForgeConstants.ManifestPath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 byteLength = stream.Length;
                 int headerSize = UnsafeUtility.SizeOf<GeologyMeshManifestHeader>();
@@ -122,11 +136,23 @@ namespace Hecton8.Editor.GeologyForge
                     }
 
                     GeologyMeshManifestRecord record = UnsafeUtility.ReadArrayElement<GeologyMeshManifestRecord>(recordPtr, 0);
-                    if (!ValidateManifestRecord(record))
+                    if (!ValidateManifestRecord(record, manifestMeshPaths))
                     {
                         reason = "BAD_RECORD";
                         return false;
                     }
+                }
+
+                if (manifestMeshPaths.Count != header.RecordCount * GeologyForgeConstants.LodCount)
+                {
+                    reason = "BAD_GUID_REFERENCE_COUNT";
+                    return false;
+                }
+
+                if (stream.Length != byteLength)
+                {
+                    reason = "UNSTABLE_FILE_LENGTH";
+                    return false;
                 }
             }
 
@@ -134,15 +160,19 @@ namespace Hecton8.Editor.GeologyForge
             return true;
         }
 
-        private static bool ValidateManifestRecord(GeologyMeshManifestRecord record)
+        private static bool ValidateManifestRecord(GeologyMeshManifestRecord record, HashSet<string> manifestMeshPaths)
         {
             if (record.VertexStrideBytes != GeologyForgeConstants.VertexStrideBytes)
                 return false;
             if ((record.Flags & GeologyForgeConstants.ManifestFlagBrgReady) == 0u)
                 return false;
-            if (record.Lod0Triangles < 0 || record.Lod1Triangles < 0 || record.Lod2Triangles < 0)
+            if (record.Lod0Triangles <= 0 || record.Lod1Triangles <= 0 || record.Lod2Triangles <= 0)
+                return false;
+            if (!math.all(math.isfinite(record.SectorAup)))
                 return false;
             if (!math.all(math.isfinite(record.BoundsCenter)) || !math.all(math.isfinite(record.BoundsExtents)))
+                return false;
+            if (!math.all(record.BoundsExtents > 0f))
                 return false;
             if (record.Lod0GuidHigh == 0UL && record.Lod0GuidLow == 0UL)
                 return false;
@@ -150,7 +180,48 @@ namespace Hecton8.Editor.GeologyForge
                 return false;
             if (record.Lod2GuidHigh == 0UL && record.Lod2GuidLow == 0UL)
                 return false;
+            if (!ValidateMeshGuid(record.Lod0GuidHigh, record.Lod0GuidLow, manifestMeshPaths))
+                return false;
+            if (!ValidateMeshGuid(record.Lod1GuidHigh, record.Lod1GuidLow, manifestMeshPaths))
+                return false;
+            if (!ValidateMeshGuid(record.Lod2GuidHigh, record.Lod2GuidLow, manifestMeshPaths))
+                return false;
             return true;
+        }
+
+        private static bool ValidateMeshGuid(ulong high, ulong low, HashSet<string> manifestMeshPaths)
+        {
+            if (high == 0UL && low == 0UL)
+                return false;
+
+            string path = AssetDatabase.GUIDToAssetPath(high.ToString("x16") + low.ToString("x16"));
+            if (string.IsNullOrEmpty(path))
+                return false;
+            path = path.Replace('\\', '/');
+            if (!IsMeshOutputPath(path))
+                return false;
+            if (!manifestMeshPaths.Add(path))
+                return false;
+
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            if (mesh == null)
+                return false;
+
+            try
+            {
+                GeologyVertexLayoutValidator.ValidateMesh(mesh);
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsMeshOutputPath(string path)
+        {
+            return path.StartsWith(GeologyForgeConstants.MeshOutputFolder + "/", StringComparison.Ordinal);
         }
 
         private static bool ReadExact(FileStream stream, Span<byte> target)
@@ -170,18 +241,23 @@ namespace Hecton8.Editor.GeologyForge
         private static void WriteReport(
             int meshCount,
             int meshFailures,
+            int unmanifestedMeshCount,
+            int manifestMeshReferenceCount,
             bool manifestValid,
             uint manifestRecords,
             long manifestBytes,
             string manifestReason,
             bool manifestFailure,
+            bool noOutput,
             StringBuilder failures)
         {
             string folder = Path.GetDirectoryName(GeologyForgeConstants.LayoutAuditReportPath);
             if (!string.IsNullOrEmpty(folder) && !Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
 
-            bool pass = meshFailures == 0 && !manifestFailure;
+            long expectedManifestMeshCount = (long)manifestRecords * GeologyForgeConstants.LodCount;
+            bool exactMeshSet = meshCount == manifestMeshReferenceCount && manifestMeshReferenceCount == expectedManifestMeshCount;
+            bool pass = meshCount > 0 && meshFailures == 0 && manifestValid && manifestRecords > 0u && !manifestFailure && exactMeshSet;
             StringBuilder builder = new StringBuilder(2048);
             builder.Append("{\n  \"agent\": \"SHINOBU_208\",\n  \"status\": \"");
             builder.Append(pass ? "STATIC_LAYOUT_AUDIT_PASS" : "STATIC_LAYOUT_AUDIT_FAIL");
@@ -189,6 +265,14 @@ namespace Hecton8.Editor.GeologyForge
             builder.Append(meshCount);
             builder.Append(",\n  \"meshFailures\": ");
             builder.Append(meshFailures);
+            builder.Append(",\n  \"unmanifestedMeshCount\": ");
+            builder.Append(unmanifestedMeshCount);
+            builder.Append(",\n  \"manifestMeshReferenceCount\": ");
+            builder.Append(manifestMeshReferenceCount);
+            builder.Append(",\n  \"expectedManifestMeshCount\": ");
+            builder.Append(expectedManifestMeshCount);
+            builder.Append(",\n  \"exactMeshSet\": ");
+            builder.Append(exactMeshSet ? "true" : "false");
             builder.Append(",\n  \"manifestValid\": ");
             builder.Append(manifestValid ? "true" : "false");
             builder.Append(",\n  \"manifestRecords\": ");
@@ -197,7 +281,9 @@ namespace Hecton8.Editor.GeologyForge
             builder.Append(manifestBytes);
             builder.Append(",\n  \"manifestReason\": \"");
             builder.Append(Escape(manifestReason));
-            builder.Append("\",\n  \"vertexStrideBytes\": ");
+            builder.Append("\",\n  \"noOutput\": ");
+            builder.Append(noOutput ? "true" : "false");
+            builder.Append(",\n  \"vertexStrideBytes\": ");
             builder.Append(GeologyForgeConstants.VertexStrideBytes);
             builder.Append(",\n  \"failures\": [");
             if (failures.Length > 0)

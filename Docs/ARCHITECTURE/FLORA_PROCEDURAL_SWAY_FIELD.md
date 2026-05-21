@@ -3,8 +3,15 @@
 Owner: `SHINOBU_124` / `FloraInteractionManager`.
 Source anchor: `Assets/_Project/Scripts/World/FloraInteractionManager.cs`.
 
+Ambient current overlay owner: `SHINOBU_267` / `FloraAmbientSwayRuntime`.
+Ambient source anchor: `Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs`.
+Ambient runtime assembly: `Assets/_Project/Scripts/World/FloraAmbientSway/Hecton8.World.FloraAmbientSway.asmdef`.
+Ambient editor assembly: `Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef`.
+Shader anchor: `Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader`.
+Binary payload ledger anchor: `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` / `2026-05-21 SHINOBU_267 Flora Ambient Sway Payload Boundary`.
+
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,9 +21,8 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-
-R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 The submarine-to-flora bend path is a visual displacement field, not a physics interaction. Vehicles and other movers publish `WakeGeneratedSignal`; `FloraInteractionManager` resolves those wake sources into a Vault-owned 3D `FloraDisplacementDTO` field:
@@ -27,11 +33,37 @@ The submarine-to-flora bend path is a visual displacement field, not a physics i
 - `71653`: unmanaged stiffness rules fallback/CSV target.
 - `71654`: unmanaged CSV byte scratchpad.
 
+The ambient current overlay is also visual-only and is excluded from save, rollback, and netcode truth. It owns these Vault buffers:
+
+- `72900`: `FloraSwayParamsDTO`, 32 bytes, uploaded to shader CBuffer `_GlobalFloraSway`.
+- `72901`: `FloraAmbientFlowStateDTO`, 32 bytes, decoupled mock/future Abyssal Flow bridge.
+- `72902`: `SwayTelemetryEntry[300]`, 32 bytes each.
+- `72903`: telemetry cursor.
+- `72904`: `FloraSwayTuningDTO`, 32 bytes, cold/editor tuning.
+- `72905`: `FloraBiomeSwayProfileDTO[64]`, unmanaged CSV profiles.
+- `72906`: unmanaged CSV byte scratchpad.
+
+Biome profile CSV is a cold authoring bridge only. Player runtime does not read `StreamingAssets` or perform text file IO for this lane; the current `flora_biome_sway_profiles.csv` ingest is wrapped behind `UNITY_EDITOR`, reads `Docs/flora_biome_sway_profiles.csv`, parses bytes through `ReadOnlySpan<byte>`, and commits finite 32-byte profile DTOs into Vault. The eventual production source remains the project DataMonolith/static-data route without changing BufferIDs or shader ABI.
+
+`FloraAmbientSwayRuntime` registers one PRE_SIMULATION dispatcher system for `GenerateMockAmbientFlowJob` and `CalculateFloraSwayParametersJob`, and one VISUAL_SYNC adapter for double-buffered `GraphicsBuffer.Target.Constant` upload. The two PRE_SIMULATION kernels are one-row presentation jobs executed directly with `Execute()` to avoid ordinary runtime `IJob.Run()`/same-frame fence debt; they retain deterministic job-struct metadata and `[NoAlias]` source proof. The upload path uses `LockBufferForWrite` and `UnsafeUtility.MemCpy`; it does not use `Shader.SetGlobalVector`, per-renderer material mutation, CPU bones, or per-flora `Update` loops. `IDataVault` replacement is event-driven through `IGlobalRegistryHotSwapListener`; old generation handles are released and cleared before cold reacquisition from the new vault. `PreSimulationTick` does not poll `GlobalRegistry`, and `VisualSyncTick` does not allocate replacement `GraphicsBuffer` objects if cold bootstrap has not produced ready buffers.
+Runtime installation is scene-local. Authored placement is preferred; if absent, `RuntimeInitializeOnLoadMethod(AfterSceneLoad)` subscribes `SceneManager.sceneLoaded` and creates one `H8_FloraAmbientSwayRuntime` host guarded by a static claim, `HideFlags.DontSave`, and no `DontDestroyOnLoad`. `SubsystemRegistration` unsubscribes the scene callback and clears the claim, so domain reload and scene reload do not leave stale static lifecycle state. This fallback is a cold lifecycle fence only and does not add per-frame scene searches or persistent root ownership.
+Compile-wall boundary: the runtime is isolated in `Hecton8.World.FloraAmbientSway.asmdef` with `autoReferenced=false`, `allowUnsafeCode=true`, references limited to `Hecton8.Core`, `Hecton8.Bootstrap.Contracts`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory`, and Unity Burst/Collections/Jobs/Mathematics, with no sibling domain assembly references. The editor facade is isolated in `Hecton8.World.FloraAmbientSway.Editor.asmdef` and references the SHINOBU_267 runtime assembly plus direct public-surface dependencies `Hecton8.Core`, `Hecton8.Bootstrap.Contracts`, `Unity.Collections`, `Unity.Jobs`, and `Unity.Mathematics`; it has no sibling domain reference. All SHINOBU_267 script folders, `.cs`, and `.asmdef` assets carry explicit `.meta` GUIDs so Unity import identity is source-controlled instead of generated per workstation.
+Simulation time and frame IDs come from `DispatcherTimingDTO` only. The runtime does not read `UnityEngine.Time.deltaTime` or `Time.frameCount`; if dispatcher timing is absent, it uses a bounded owner-local fallback frame counter and `1/60f` visual fallback delta. Constant buffers are created during cold bootstrap; VISUAL_SYNC only validates and uploads, and does not allocate replacement GPU buffers in the steady frame path.
+
+`FloraSwayParamsDTO` maps to `_GlobalFloraSway` as two float4 lanes:
+
+- `GlobalFlowVector`: x/y/z normalized flow direction, w flow speed.
+- `SwayMathParams`: x wrapped time via `fmod(t,1000)`, y amplitude, z effective spatial frequency, w continuous `GlobalQualityWeight`.
+
+The runtime folds editor `PhaseSpatialOffset` into `SwayMathParams.z`, preserving the mandated 32-byte CBuffer ABI instead of adding a third lane. The shader computes `sin(time + dot(worldPosition, flowDirection) * effectiveSpatialFrequency)` and scales the result by Vertex Color red stiffness and height. Final displacement is gated by `smoothstep(0.1, 0.4, GlobalQualityWeight)`: at a zero gate the function returns before `FastSinApprox`, weak devices fade to static silhouettes, middle tier keeps cheap global sway, high tier keeps stronger spatial phase, and ultra tier keeps the same route while spending saved CPU elsewhere. Non-finite quality input fail-closes to `0.0` in C# before CBuffer packing and again in shader-side quality resolvers, so corrupt thermal/scalability data cannot accidentally open the expensive shader path. The existing 3D interaction field remains additive in the vertex path, so submarine wake impulses and ambient current sway blend without changing gameplay authority.
+
+Alpha-clipped morphology now samples `_FloraAlphaMask.a`, multiplies coverage, and performs an early `clip` before normal/light/caustic work in the indirect vegetation fragment path. A final post-necrosis clip remains as a safety clamp. This is still alpha-test, not alpha-blend; it exists to support torn kelp/grass texture edges without sort, extra geometry, or bone cost. The texture defaults to white, so authored materials without a mask preserve existing coverage.
+
 The field is generated by Burst gather jobs: `DecayFloraForcesJob`, `AccumulateFloraForcesJob`, optional `MockDisplacementInjectorJob`, and `UploadDisplacementTextureJob` for stats/upload readiness. Source positions are resolved from AUP by subtracting the quantized grid-origin AUP before casting to `float3`. The localized grid uses a toroidal ring offset: center motion is converted from quantized AUP delta to integer cell shift, physical storage is addressed through modulo mapping, and `DecayFloraForcesJob` clears only newly exposed wrapped rows/layers unless resolution/cell-size/large-jump reset requires a full active-range reset. The shader receives `_HectonFloraSwayFieldRingOffset`, resolves it once per field-offset evaluation, and samples the same modulo mapping, so persistent wake energy stays spatially stable without physically shuffling the 64^3 buffer. The mock injector sanitizes prior cell values and re-clamps to the same quality-scaled max displacement after adding synthetic force, so the CI/editor stress path cannot bypass the production magnitude guard. The field is uploaded through double-buffered `GraphicsBuffer` staging and sampled by `Hecton_IndirectVegetation.shader` via `_HectonFloraSwayDisplacementField`. When this field is active, the shader fades out the old direct submarine sphere and direct player/interaction offsets to avoid double-bending.
 
 Sway-frame metadata no longer reads Unity's frame counter. `FloraInteractionManager` owns monotonic local counters for sway simulation frames, wake-source signal stamps, and wake-trail dispatch guards. Hot field-buffer resolves use the cached Vault service obtained during boot; `GlobalRegistry.DataVault` is only used in cold handle acquisition for the initial Vault request.
 
-Wake source budgeting is continuous. The procedural wake lane derives a budget weight from `HomeostasisBrain.GlobalQualityWeight` plus thermal stress, then maps the active wake-slot count between 4 and 16 with a smooth curve. `_GlobalWakeParams.y` is budget pressure, not a low-tier boolean; shader/compute consumers may lerp toward cheaper sampling under pressure without a hard hardware profile branch.
+Wake source budgeting is continuous. The procedural wake lane derives a budget weight from `HomeostasisBrain.GlobalQualityWeight` plus thermal stress, then maps the active wake-slot count between 4 and 16 with a smooth curve. `_GlobalWakeParams.y` is budget pressure, not a minimum-quality boolean; shader/compute consumers may lerp toward cheaper sampling under pressure without a hard hardware profile branch.
 
 Disabling the field does not clear or upload the 64^3 node buffer on the main thread. The runtime clears only metadata and publishes inactive shader globals; if a flora field job is still in flight, the pending upload is marked for discard and skipped after natural completion instead of forcing a main-thread wait. The discard path writes a black-box event with `FloraSwayFieldDiscardedUploadFlag`; pending ring offset and center-shift cells are preserved until that event is recorded, so postmortems can separate a deliberately discarded stale upload from a normal quiet frame. Stale node values are ignored while inactive and are reset inside the Burst decay pass when the next valid resolution/origin schedule starts.
 

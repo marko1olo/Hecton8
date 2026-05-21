@@ -12,6 +12,7 @@ namespace Hecton8.World
     internal static unsafe class HectonCrestOceanDepthCacheRuntimeBridge
     {
         private const float HectonMinimumCameraHeightAboveSeaLevel = 8f;
+        private static readonly bool HectonRuntimeDepthCacheCameraDisabled = true;
 
         internal static void HectonConfigureRealtimeCapture(
             this OceanDepthCache depthCache,
@@ -21,6 +22,9 @@ namespace Hecton8.World
             bool relativeToSeaLevel)
         {
             if (depthCache == null)
+                return;
+
+            if (HectonRuntimeDepthCacheCameraDisabled)
                 return;
 
             depthCache.HectonApplyRuntimeSettings(
@@ -33,6 +37,9 @@ namespace Hecton8.World
         internal static Camera HectonEnsureCaptureCamera(this OceanDepthCache depthCache, bool updateComponents)
         {
             if (depthCache == null)
+                return null;
+
+            if (HectonRuntimeDepthCacheCameraDisabled)
                 return null;
 
             return depthCache.HectonGetOrCreateCaptureCamera(updateComponents);
@@ -50,6 +57,9 @@ namespace Hecton8.World
             if (depthCache == null || captureCamera == null)
                 return;
 
+            if (HectonRuntimeDepthCacheCameraDisabled)
+                return;
+
             float resolvedCameraHeight = Mathf.Max(HectonMinimumCameraHeightAboveSeaLevel, cameraMaxTerrainHeight);
             Transform cameraTransform = captureCamera.transform;
             cameraTransform.position = runtimeCacheCenter + Vector3.up * resolvedCameraHeight;
@@ -64,6 +74,9 @@ namespace Hecton8.World
         internal static bool HectonSaveDepthCacheTexturePng(this OceanDepthCache depthCache, string absolutePath)
         {
             if (depthCache == null || string.IsNullOrWhiteSpace(absolutePath))
+                return false;
+
+            if (HectonRuntimeDepthCacheCameraDisabled)
                 return false;
 
             RenderTexture cacheTexture = depthCache.CacheTexture;

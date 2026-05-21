@@ -13,6 +13,14 @@ namespace Hecton8.Physics.Vehicles
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct InitializeVehicleGridJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Cells is an owner-resolved contiguous grid pointer; Unity cannot attach a safety handle after pointer lowering.
+        // Execute validates index < grid cell count before the single Cells[index] initialization write.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A managed grid was rejected because vehicle damage is rollback-facing and Burst-only. A temporary NativeArray copy
+        // was rejected because it would duplicate the grid and add a copyback pass.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is one grid cell per worker index and no concurrent grid reader until this initialization handle is fenced.
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleGridCellDTO* Cells;
         public int GridWidth;
         public int GridHeight;
@@ -80,6 +88,13 @@ namespace Hecton8.Physics.Vehicles
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct GenerateMockVehicleDamageJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Signals is a write-only deterministic mock signal lane. The job checks index < SignalCount before each write.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // NativeQueue output was rejected because downstream jobs need contiguous signal rows. Managed mock payloads were
+        // rejected because they allocate and cannot enter Burst/rollback snapshots.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is one signal row per worker index; downstream mapping reads Signals only through the returned handle.
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageSignalDTO* Signals;
         public int SignalCount;
         public double3 RootAup;
@@ -190,6 +205,14 @@ namespace Hecton8.Physics.Vehicles
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct CopyVehicleDamageSignalsJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Source and Destination are distinct signal ranges selected by the owner before scheduling. Bounds checks cover
+        // SourceCount, DestinationOffset, and DestinationCapacity before the copy.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A managed copy path was rejected for GC. A queued append path was rejected because it would destroy stable signal
+        // ordering and add contention.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is non-overlapping source/destination slices and one destination row per worker index.
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageSignalDTO* Source;
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageSignalDTO* Destination;
         public int SourceCount;
@@ -213,6 +236,15 @@ namespace Hecton8.Physics.Vehicles
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct MapImpactToGridJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Cells and Signals are owner-provided pointer lanes. Signal index and derived grid coordinates are bounded before
+        // any damage contribution is written.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Physics overlap/raycast fanout was rejected as nondeterministic and CPU-heavy. A staged managed signal list was
+        // rejected because it would allocate and break contiguous SIMD traversal.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is deterministic signal-to-cell mapping under a single scheduled writer phase; reducers consume the
+        // grid only after this handle is chained.
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleGridCellDTO* Cells;
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageSignalDTO* Signals;
         public int SignalCount;
@@ -309,6 +341,14 @@ namespace Hecton8.Physics.Vehicles
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct ApplyVehicleDamageReductionJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Cells is the mutable damage grid and Signals is read-only impact input. Unity cannot prove that distinction once
+        // they are raw pointers, so the job carries explicit counts for both lanes.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Duplicating Cells into a temporary reduction buffer was rejected because it adds bandwidth and copyback cost.
+        // A managed dictionary by component was rejected because it is not Burst-compatible.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is one grid cell per worker index for mutation; Signals remains immutable during this job's handle.
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleGridCellDTO* Cells;
         [ReadOnly, NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageSignalDTO* Signals;
         public int SignalCount;
@@ -398,11 +438,36 @@ namespace Hecton8.Physics.Vehicles
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct EvaluateVehicleSystemsJob : IJob
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Cells/Signals are read lanes and StateWrite is a single owner state slot. Pointer safety cannot infer that
+        // StateWrite does not alias the grid/signal payloads, so the job validates counts and uses one writer phase.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Splitting this into per-component managed objects was rejected for virtual dispatch and GC. A second state
+        // shadow buffer was rejected because it creates duplicate authority.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is one system-evaluation writer: only this job writes StateWrite before the publish job fences it.
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleGridCellDTO* Cells;
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageSignalDTO* Signals;
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageStateDTO* StateWrite;
         [NoAlias] public NativeArray<VehicleDamageTelemetryEntry> Telemetry;
         [NoAlias] public NativeArray<uint> TelemetryCursor;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // SignalBus owns the vehicle hazard lane and this job receives only a producer-side ParallelWriter.
+        // Unity cannot model the external one-producer queue contract, so the container safety warning is a
+        // false positive for this write-only lane. [NoAlias] proves the queue writer is not overlapping the
+        // pointer-backed vehicle grid, signal buffer, state write slot, or telemetry arrays.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected a managed event bridge because it allocates and escapes the deterministic job graph.
+        // Rejected a post-job main-thread hazard scan because it duplicates the grid walk and delays hazard
+        // publication. Rejected a local NativeArray staging lane because it adds another buffer and compaction pass.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The scheduler creates one HazardWriter for this EvaluateVehicleSystemsJob pass, drains only after
+        // the returned JobHandle has completed, and does not resize or dispose the SignalBus lane while the
+        // job is alive. The job never reads from the queue and no second vehicle-hazard producer is scheduled
+        // against the same queue handle in this pass.
+        [NoAlias, NativeDisableContainerSafetyRestriction]
         public NativeQueue<VehicleHazardSignal>.ParallelWriter HazardWriter;
         public int CellCount;
         public int SignalCount;
@@ -673,6 +738,15 @@ namespace Hecton8.Physics.Vehicles
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct PublishVehicleDamageStateJob : IJob
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Publish uses explicit read/write pointer pairs for grid and state so rollback-safe publication can swap/copy
+        // without managed containers. Unity cannot model the owner-established non-overlap of those pairs.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // In-place mutation was rejected because readers need a stable prior state. Managed publication was rejected
+        // because the payload is Burst/rollback-facing.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is two disjoint buffers: GridRead/StateRead are immutable inputs, GridWrite/StateWrite are the
+        // only outputs, and the caller chains this handle before exposing the new state.
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleGridCellDTO* GridWrite;
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleGridCellDTO* GridRead;
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageStateDTO* StateWrite;

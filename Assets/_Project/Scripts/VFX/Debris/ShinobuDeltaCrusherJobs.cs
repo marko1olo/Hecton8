@@ -84,6 +84,7 @@ namespace Hecton8.VFX.Debris
         public const int DefaultChunkResolution = 32;
         public const int DefaultChunkCellCount = DefaultChunkResolution * DefaultChunkResolution * DefaultChunkResolution;
         public const int LowTierDebrisCap = 500;
+        public const int MidTierDebrisCap = 4096;
         public const int UltraTierDebrisCap = 10000;
         public const sbyte MockSolidDensity = 127;
         public const sbyte MockEmptyDensity = sbyte.MinValue;
@@ -107,13 +108,18 @@ namespace Hecton8.VFX.Debris
             return state == (byte)MockVoxelChunkState.Ready;
         }
 
-        public static int ResolveDebrisCap(bool lowTier, bool highEndTier, int configuredCap)
+        public static int ResolveDebrisCap(float globalQualityWeight01, int configuredCap)
         {
             int upper = math.clamp(configuredCap > 0 ? configuredCap : UltraTierDebrisCap, LowTierDebrisCap, UltraTierDebrisCap);
-            if (lowTier)
-                return math.min(LowTierDebrisCap, upper);
+            float quality = SmoothQuality01(globalQualityWeight01);
+            int continuousCap = (int)math.round(math.lerp(LowTierDebrisCap, upper, quality));
+            return math.clamp(continuousCap, LowTierDebrisCap, upper);
+        }
 
-            return highEndTier ? upper : math.min(4096, upper);
+        public static float SmoothQuality01(float globalQualityWeight01)
+        {
+            float quality = math.isfinite(globalQualityWeight01) ? math.saturate(globalQualityWeight01) : 0f;
+            return quality * quality * (3f - (2f * quality));
         }
 
         public static bool TryReadCarveDebrisTuning(NativeArray<int> jobState, out CarveDebrisTuningDTO tuning)
@@ -160,8 +166,9 @@ namespace Hecton8.VFX.Debris
     public struct MockLaserCarveGateJob : IJob
     {
         public DeltaCrusherMockLaserFireSignal Signal;
-        public NativeArray<int> Accepted;
-        public NativeArray<uint> TelemetryRing;
+        [WriteOnly, NoAlias] public NativeArray<int> Accepted;
+        [WriteOnly, NoAlias] public NativeArray<uint> TelemetryRing;
+        [NoAlias]
         public NativeArray<int> TelemetryCursor;
 
         public void Execute()
@@ -196,7 +203,7 @@ namespace Hecton8.VFX.Debris
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct ChunkBoundarySplitJob : IJobParallelFor
     {
         public int3 MinChunk;
@@ -204,7 +211,7 @@ namespace Hecton8.VFX.Debris
         public int3 CarveMinCell;
         public int3 CarveMaxCell;
         public int ChunkResolution;
-        [NativeDisableParallelForRestriction] public NativeArray<ChunkCarveDispatchDTO> Dispatches;
+        [NativeDisableParallelForRestriction, WriteOnly, NoAlias] public NativeArray<ChunkCarveDispatchDTO> Dispatches;
 
         public void Execute(int index)
         {
@@ -233,10 +240,10 @@ namespace Hecton8.VFX.Debris
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockVoxelGridGeneratorJob : IJobParallelFor
     {
-        [NativeDisableParallelForRestriction] public NativeArray<sbyte> Densities;
+        [NativeDisableParallelForRestriction, WriteOnly, NoAlias] public NativeArray<sbyte> Densities;
         public sbyte Density;
 
         public void Execute(int index)
@@ -248,11 +255,11 @@ namespace Hecton8.VFX.Debris
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct InitializeDensityAccumulatorJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<sbyte> SourceDensities;
-        [NativeDisableParallelForRestriction] public NativeArray<int> DensityAccumulator;
+        [ReadOnly, NoAlias] public NativeArray<sbyte> SourceDensities;
+        [NativeDisableParallelForRestriction, WriteOnly, NoAlias] public NativeArray<int> DensityAccumulator;
 
         public void Execute(int index)
         {
@@ -268,7 +275,7 @@ namespace Hecton8.VFX.Debris
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct VoxelSphericalCarveJob : IJobParallelFor
     {
         public int3 MinCell;
@@ -323,11 +330,11 @@ namespace Hecton8.VFX.Debris
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct ApplyCarveDensityDeltasJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<int> DensityAccumulator;
-        [NativeDisableParallelForRestriction] public NativeArray<sbyte> OutputDensities;
+        [ReadOnly, NoAlias] public NativeArray<int> DensityAccumulator;
+        [NativeDisableParallelForRestriction, WriteOnly, NoAlias] public NativeArray<sbyte> OutputDensities;
 
         public void Execute(int index)
         {
@@ -343,12 +350,12 @@ namespace Hecton8.VFX.Debris
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct RleCompressSByteJob : IJob
     {
-        [ReadOnly] public NativeArray<sbyte> Input;
+        [ReadOnly, NoAlias] public NativeArray<sbyte> Input;
         public NativeList<short> OutputPairs;
-        public NativeArray<int> Stats;
+        [WriteOnly, NoAlias] public NativeArray<int> Stats;
 
         public void Execute()
         {
@@ -433,12 +440,12 @@ namespace Hecton8.VFX.Debris
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct RleDecompressSByteJob : IJob
     {
-        [ReadOnly] public NativeList<short> InputPairs;
-        [NativeDisableParallelForRestriction] public NativeArray<sbyte> Output;
-        public NativeArray<int> WrittenCount;
+        [ReadOnly, NoAlias] public NativeList<short> InputPairs;
+        [NativeDisableParallelForRestriction, WriteOnly, NoAlias] public NativeArray<sbyte> Output;
+        [WriteOnly, NoAlias] public NativeArray<int> WrittenCount;
 
         public void Execute()
         {
@@ -460,11 +467,11 @@ namespace Hecton8.VFX.Debris
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct DebrisMassToCountJob : IJob
     {
-        [ReadOnly] public NativeArray<int> RemovedMass;
-        [WriteOnly] public NativeArray<int> DebrisCount;
+        [ReadOnly, NoAlias] public NativeArray<int> RemovedMass;
+        [WriteOnly, NoAlias] public NativeArray<int> DebrisCount;
         public int MassUnitsPerParticle;
         public int MaxDebris;
 
@@ -481,11 +488,11 @@ namespace Hecton8.VFX.Debris
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct DebrisEmitFromMassJob : IJobParallelFor
     {
-        [NativeDisableParallelForRestriction] public NativeArray<DebrisParticleDTO> Particles;
-        [ReadOnly] public NativeArray<int> DebrisCount;
+        [NativeDisableParallelForRestriction, WriteOnly, NoAlias] public NativeArray<DebrisParticleDTO> Particles;
+        [ReadOnly, NoAlias] public NativeArray<int> DebrisCount;
         public float3 Origin;
         public float Radius;
         public float3 Impulse;
@@ -543,10 +550,10 @@ namespace Hecton8.VFX.Debris
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct DebrisPhysicsFakeJob : IJobParallelFor
     {
-        [NativeDisableParallelForRestriction] public NativeArray<DebrisParticleDTO> Particles;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<DebrisParticleDTO> Particles;
         public int Count;
         public float DeltaTime;
         public float3 Gravity;

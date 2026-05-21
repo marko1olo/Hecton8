@@ -15,7 +15,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Death Memory Dump")]
-    public sealed class PDADeathMemoryDump : MonoBehaviour, ILateFrameTickable
+    public sealed class PDADeathMemoryDump : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private enum DumpState : byte
         {
@@ -90,18 +90,22 @@ namespace Hecton8.UI
         private float _holdTimer;
         private int _visibleLineTarget;
         private HectonEventSubscription _playerDiedSubscription;
+        private bool _hotSwapListenerRegistered;
 
         private void OnEnable()
         {
             dumpFont = LocalizedFontResolver.ResolveReadableFont(dumpFont);
             EnsureLineLibrary();
             EnsureUiBuilt();
+            TryRegisterHotSwapListener();
+            RegisterToTickManager();
             Subscribe();
         }
 
         private void OnDisable()
         {
             Unsubscribe();
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
             HideOverlay();
         }
@@ -109,7 +113,17 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             Unsubscribe();
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+                RegisterToTickManager();
         }
 
         /// <inheritdoc />
@@ -151,7 +165,6 @@ namespace Hecton8.UI
                     if (_overlayGroup.alpha <= HiddenAlphaCutoff)
                     {
                         HideOverlay();
-                        UnregisterFromTickManager();
                     }
                     break;
             }
@@ -234,7 +247,6 @@ namespace Hecton8.UI
             _lineProgress = 0f;
             _holdTimer = 0f;
             _state = DumpState.Revealing;
-            RegisterToTickManager();
         }
 
         private void EnsureLineLibrary()
@@ -413,9 +425,6 @@ namespace Hecton8.UI
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
@@ -426,6 +435,23 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _tickRegistered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private static Canvas ResolveTargetCanvas()

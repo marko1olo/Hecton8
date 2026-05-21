@@ -82,6 +82,7 @@ namespace Hecton8.World
         private const BufferID TerrainSeamNormalsBufferId = (BufferID)0x530425;
         private const int TerrainSeamBaselineBufferIdBase = 0x531000;
         private const int TerrainSeamBaselineBufferIdMask = 0x000FFFFF;
+        private const SystemID OwnerSystem = SystemID.TerrainSeams;
         private static readonly int HectonVoxelBlendMaskId = Shader.PropertyToID("_HectonVoxelBlendMask");
         private static readonly int HectonVoxelBlendMaskRectId = Shader.PropertyToID("_HectonVoxelBlendMaskRect");
         private static readonly int HectonVoxelBlendMaskParamsId = Shader.PropertyToID("_HectonVoxelBlendMaskParams");
@@ -104,8 +105,7 @@ namespace Hecton8.World
         {
             public UnityEngine.Terrain terrain;
             public UnityEngine.TerrainData terrainData;
-            public VaultBufferHandle<float> baselineHeightsHandle;
-            public NativeArray<float> baselineHeights;
+            public VaultGenerationHandle<float> baselineHeightsHandle;
             public BufferID baselineHeightsBufferId;
             public int heightmapResolution;
             public RectInt previousRect;
@@ -115,7 +115,6 @@ namespace Hecton8.World
             public void ReleaseBaseline()
             {
                 baselineHeightsHandle = default;
-                baselineHeights = default;
                 baselineHeightsBufferId = BufferID.Unknown;
             }
         }
@@ -151,7 +150,7 @@ namespace Hecton8.World
         private readonly List<int> _terrainBucketScratch = new List<int>(8);
         private MapMagicTerrainTileSnapshot[] _tileSnapshotScratch;
         private Texture2D _voxelBlendMaskTexture;
-        private VaultBufferHandle<TerrainSeamTelemetryEntry> _terrainSeamBlackBoxHandle;
+        private VaultGenerationHandle<TerrainSeamTelemetryEntry> _terrainSeamBlackBoxHandle;
         private bool _registeredToTickManager;
         private int _nextPatchTelemetryFrame;
         private int _blackBoxWriteIndex;
@@ -263,32 +262,15 @@ namespace Hecton8.World
             float trenchSlope,
             float influenceRadius)
         {
-            if (trenchId == 0L)
-                return;
-
-            SeismicTrenchState trench = new SeismicTrenchState
-            {
-                TrenchId = trenchId,
-                AbsoluteStart = absoluteStart,
-                AbsoluteEnd = absoluteEnd,
-                DepthMeters = Mathf.Max(1f, trenchDepth),
-                Slope = Mathf.Max(0.05f, trenchSlope),
-                InfluenceRadius = Mathf.Max(2f, influenceRadius)
-            };
-
-            for (int i = 0; i < _activeTrenches.Count; i++)
-            {
-                if (_activeTrenches[i].TrenchId != trenchId)
-                    continue;
-
-                _activeTrenches[i] = trench;
-                return;
-            }
-
-            if (_activeTrenches.Count >= Mathf.Max(1, maxActiveTrenches))
-                _activeTrenches.RemoveAt(0);
-
-            _activeTrenches.Add(trench);
+            _ = trenchId;
+            _ = absoluteStart;
+            _ = absoluteEnd;
+            _ = trenchDepth;
+            _ = trenchSlope;
+            _ = influenceRadius;
+            // SHINOBU_241: static trench truth is baked to .h8bin. Keep this compatibility entry inert so runtime
+            // seismic payloads cannot write heightmap canyon cuts from SlowTick.
+            return;
         }
 
         public void ReconcileTerrainSeams()
@@ -446,6 +428,13 @@ namespace Hecton8.World
             if (applyRect.width <= 0 || applyRect.height <= 0)
                 return;
 
+            if (Application.isPlaying)
+            {
+                state.previousRect = hasActiveRect ? activeRect : default;
+                state.hasPreviousRect = hasActiveRect;
+                return;
+            }
+
             float[,] patch = PreparePatchBuffer(state, applyRect);
             bool previousHeightmapChanged = state.hasPreviousRect;
             bool currentHeightmapChanged = false;
@@ -548,7 +537,7 @@ namespace Hecton8.World
             float sampleX = signal.TerrainPosition.x + signal.TerrainSize.x * 0.5f;
             float sampleZ = signal.TerrainPosition.z + signal.TerrainSize.z * 0.5f;
             if (!mapMagicBridge.TryGetQuantizedHeightmapPayload(sampleX, sampleZ, out MapMagicBridge.QuantizedHeightmapPayload payload) ||
-                !payload.IsValid ||
+                !MapMagicBridge.QuantizedHeightmapPayload.IsValid(in payload) ||
                 payload.HeightmapResolution != signal.HeightmapResolution)
             {
                 return false;
@@ -559,13 +548,15 @@ namespace Hecton8.World
                 return false;
 
             int requiredLength = payload.HeightmapResolution * payload.HeightmapResolution;
-            NativeArray<ushort> vaultHeights = vault.GetBuffer<ushort>(
-                BufferID.TerrainSeamHeightmap,
-                requiredLength,
-                SystemID.TerrainSeams,
-                NativeArrayOptions.UninitializedMemory);
-            if (!vaultHeights.IsCreated || vaultHeights.Length < requiredLength)
+            if (!TryAcquireTerrainSeamBuffer(
+                    vault,
+                    BufferID.TerrainSeamHeightmap,
+                    requiredLength,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<ushort> vaultHeights))
+            {
                 return false;
+            }
 
             for (int i = 0; i < requiredLength; i++)
                 vaultHeights[i] = payload.HeightSamples[i];
@@ -609,7 +600,9 @@ namespace Hecton8.World
             UnityEngine.TerrainData terrainData = state.terrainData;
             Vector3 terrainPosition = terrain.transform.position;
             Vector3 terrainSize = terrainData.size;
-            double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);
+            if (!TryResolveRuntimeAbsoluteDouble(terrainPosition, out double3 terrainAbsolutePosition))
+                return false;
+
             float globalQualityWeight = ResolveGlobalQualityWeight();
             float seamExpensiveWeight = ResolveSeamExpensiveWeight(globalQualityWeight);
             bool lowTierVisualOnly = seamExpensiveWeight <= 0.0001f;
@@ -839,11 +832,12 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (!vault.TryGetBuffer(BufferID.TerrainSeamHeightmap, out quantizedHeightmap))
-                return false;
-
             int requiredLength = state.heightmapResolution * state.heightmapResolution;
-            return quantizedHeightmap.IsCreated && quantizedHeightmap.Length >= requiredLength;
+            return TryOpenExistingTerrainSeamBuffer(
+                vault,
+                BufferID.TerrainSeamHeightmap,
+                requiredLength,
+                out quantizedHeightmap);
         }
 
         private static bool TryResolveHybridTerrainScratchBuffers(
@@ -866,28 +860,39 @@ namespace Hecton8.World
             if (vault == null)
                 return false;
 
-            nativePlans = vault.GetBuffer<HybridTerrainSeamPlanNative>(
-                TerrainSeamNativePlansBufferId,
-                hybridPlanCount,
-                SystemID.TerrainSeams,
-                NativeArrayOptions.UninitializedMemory);
-            patchHeights = vault.GetBuffer<float>(
-                TerrainSeamPatchHeightsBufferId,
-                sampleCount,
-                SystemID.TerrainSeams,
-                NativeArrayOptions.UninitializedMemory);
-            blendMask = vault.GetBuffer<byte>(
-                TerrainSeamBlendMaskBufferId,
-                sampleCount,
-                SystemID.TerrainSeams,
-                NativeArrayOptions.UninitializedMemory);
+            if (!TryAcquireTerrainSeamBuffer(
+                    vault,
+                    TerrainSeamNativePlansBufferId,
+                    hybridPlanCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out nativePlans) ||
+                !TryAcquireTerrainSeamBuffer(
+                    vault,
+                    TerrainSeamPatchHeightsBufferId,
+                    sampleCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out patchHeights) ||
+                !TryAcquireTerrainSeamBuffer(
+                    vault,
+                    TerrainSeamBlendMaskBufferId,
+                    sampleCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out blendMask))
+            {
+                return false;
+            }
+
             if (needsNormals)
             {
-                normals = vault.GetBuffer<float3>(
-                    TerrainSeamNormalsBufferId,
-                    sampleCount,
-                    SystemID.TerrainSeams,
-                    NativeArrayOptions.UninitializedMemory);
+                if (!TryAcquireTerrainSeamBuffer(
+                        vault,
+                        TerrainSeamNormalsBufferId,
+                        sampleCount,
+                        NativeArrayOptions.UninitializedMemory,
+                        out normals))
+                {
+                    return false;
+                }
             }
 
             return nativePlans.IsCreated &&
@@ -904,7 +909,7 @@ namespace Hecton8.World
             baselineHeights = default;
             if (state == null ||
                 state.heightmapResolution <= 1 ||
-                !state.baselineHeightsHandle.IsCreated)
+                state.baselineHeightsHandle.BufferID == 0u)
             {
                 return false;
             }
@@ -913,12 +918,76 @@ namespace Hecton8.World
             if (vault == null)
                 return false;
 
-            baselineHeights = state.baselineHeightsHandle.Resolve(vault);
             int requiredLength = state.heightmapResolution * state.heightmapResolution;
-            if (!baselineHeights.IsCreated || baselineHeights.Length < requiredLength)
+            return TryOpenTerrainSeamBuffer(
+                vault,
+                in state.baselineHeightsHandle,
+                state.baselineHeightsBufferId,
+                requiredLength,
+                out baselineHeights);
+        }
+
+        private static bool TryAcquireTerrainSeamBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            int length = math.max(1, requiredLength);
+            if (TryOpenExistingTerrainSeamBuffer(vault, bufferId, length, out buffer))
+                return true;
+
+            buffer = default;
+            if (vault == null || vault.IsAllocationLocked)
                 return false;
 
-            state.baselineHeights = baselineHeights;
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                length,
+                OwnerSystem,
+                options);
+            return TryOpenTerrainSeamBuffer(vault, in handle, bufferId, length, out buffer);
+        }
+
+        private static bool TryOpenExistingTerrainSeamBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
+            {
+                return false;
+            }
+
+            return TryOpenTerrainSeamBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenTerrainSeamBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                handle.BufferID != (uint)bufferId ||
+                handle.SystemID != (uint)OwnerSystem ||
+                handle.Generation == 0u ||
+                !vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
             return true;
         }
 
@@ -965,7 +1034,10 @@ namespace Hecton8.World
         {
             double3 absolutePosition = plan.hasAbsoluteUniverseAup
                 ? plan.absoluteUniverseAup.ToAbsoluteDouble3()
-                : HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeFallback);
+                : ResolveTerrainRelativeFallbackAbsolute(
+                    in terrainAbsolutePosition,
+                    runtimeFallback,
+                    terrainRuntimePosition);
             return ToTerrainLocalFloat3(
                 absolutePosition,
                 terrainAbsolutePosition,
@@ -981,7 +1053,10 @@ namespace Hecton8.World
         {
             double3 absolutePosition = plan.hasAbsoluteTerrainContactAup
                 ? plan.absoluteTerrainContactAup.ToAbsoluteDouble3()
-                : HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeFallback);
+                : ResolveTerrainRelativeFallbackAbsolute(
+                    in terrainAbsolutePosition,
+                    runtimeFallback,
+                    terrainRuntimePosition);
             return ToTerrainLocalFloat3(
                 absolutePosition,
                 terrainAbsolutePosition,
@@ -997,7 +1072,10 @@ namespace Hecton8.World
         {
             double3 absolutePosition = plan.hasAbsoluteVoxelVolumeCenterAup
                 ? plan.absoluteVoxelVolumeCenterAup.ToAbsoluteDouble3()
-                : HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeFallback);
+                : ResolveTerrainRelativeFallbackAbsolute(
+                    in terrainAbsolutePosition,
+                    runtimeFallback,
+                    terrainRuntimePosition);
             return ToTerrainLocalFloat3(
                 absolutePosition,
                 terrainAbsolutePosition,
@@ -1021,6 +1099,74 @@ namespace Hecton8.World
 
             Vector3 fallbackLocal = runtimeFallback - terrainRuntimePosition;
             return new float3(fallbackLocal.x, fallbackLocal.y, fallbackLocal.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private static bool TryResolveRuntimeAbsoluteDouble(Vector3 runtimePosition, out double3 absolutePosition)
+        {
+            absolutePosition = default;
+            if (!IsFiniteRuntimeVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!IsFiniteAup(in positionAup))
+                return false;
+
+            absolutePosition = positionAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absolutePosition));
+        }
+
+        private static double3 ResolveTerrainRelativeFallbackAbsolute(
+            in double3 terrainAbsolutePosition,
+            Vector3 runtimeFallback,
+            Vector3 terrainRuntimePosition)
+        {
+            if (!math.all(math.isfinite(terrainAbsolutePosition)) ||
+                !IsFiniteRuntimeVector(runtimeFallback) ||
+                !IsFiniteRuntimeVector(terrainRuntimePosition))
+            {
+                return terrainAbsolutePosition;
+            }
+
+            return terrainAbsolutePosition + new double3(
+                (double)runtimeFallback.x - terrainRuntimePosition.x,
+                (double)runtimeFallback.y - terrainRuntimePosition.y,
+                (double)runtimeFallback.z - terrainRuntimePosition.z);
+        }
+
+        private static bool IsFiniteRuntimeVector(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+
+        private static int FloorToIntSafe(double value)
+        {
+            if (!math.isfinite(value))
+                return 0;
+
+            double clamped = math.clamp(math.floor(value), int.MinValue, int.MaxValue);
+            return (int)clamped;
+        }
+
+        private static int CeilToIntSafe(double value)
+        {
+            if (!math.isfinite(value))
+                return 0;
+
+            double clamped = math.clamp(math.ceil(value), int.MinValue, int.MaxValue);
+            return (int)clamped;
         }
 
         private static bool IsFiniteTerrainLocal(double value)
@@ -1138,22 +1284,24 @@ namespace Hecton8.World
             Vector3 terrainSize = terrainData.size;
             float denominator = Mathf.Max(1f, terrainData.heightmapResolution - 1f);
             float cellSize = Mathf.Max(0.05f, Mathf.Min(terrainSize.x, terrainSize.z) / denominator);
-            double3 originOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            float minWorldX = (float)((double)terrainPosition.x + (applyRect.x / denominator) * terrainSize.x + originOffset.x);
-            float maxWorldX = (float)((double)terrainPosition.x + ((applyRect.x + applyRect.width) / denominator) * terrainSize.x + originOffset.x);
-            float minWorldY = (float)((double)terrainPosition.y + minHeight01 * terrainSize.y + originOffset.y);
-            float maxWorldY = (float)((double)terrainPosition.y + maxHeight01 * terrainSize.y + originOffset.y);
-            float minWorldZ = (float)((double)terrainPosition.z + (applyRect.y / denominator) * terrainSize.z + originOffset.z);
-            float maxWorldZ = (float)((double)terrainPosition.z + ((applyRect.y + applyRect.height) / denominator) * terrainSize.z + originOffset.z);
+            if (!TryResolveRuntimeAbsoluteDouble(terrainPosition, out double3 terrainAbsolutePosition))
+                return;
+
+            double minWorldX = terrainAbsolutePosition.x + (applyRect.x / denominator) * terrainSize.x;
+            double maxWorldX = terrainAbsolutePosition.x + ((applyRect.x + applyRect.width) / denominator) * terrainSize.x;
+            double minWorldY = terrainAbsolutePosition.y + minHeight01 * terrainSize.y;
+            double maxWorldY = terrainAbsolutePosition.y + maxHeight01 * terrainSize.y;
+            double minWorldZ = terrainAbsolutePosition.z + (applyRect.y / denominator) * terrainSize.z;
+            double maxWorldZ = terrainAbsolutePosition.z + ((applyRect.y + applyRect.height) / denominator) * terrainSize.z;
 
             int3 minCell = new int3(
-                Mathf.FloorToInt(minWorldX / cellSize),
-                Mathf.FloorToInt(minWorldY / cellSize),
-                Mathf.FloorToInt(minWorldZ / cellSize));
+                FloorToIntSafe(minWorldX / cellSize),
+                FloorToIntSafe(minWorldY / cellSize),
+                FloorToIntSafe(minWorldZ / cellSize));
             int3 maxCell = new int3(
-                Mathf.CeilToInt(maxWorldX / cellSize),
-                Mathf.CeilToInt(maxWorldY / cellSize),
-                Mathf.CeilToInt(maxWorldZ / cellSize));
+                CeilToIntSafe(maxWorldX / cellSize),
+                CeilToIntSafe(maxWorldY / cellSize),
+                CeilToIntSafe(maxWorldZ / cellSize));
             ulong volumeInstanceId = EntityId.ToULong(terrain.GetEntityId());
             if (volumeInstanceId == 0ul)
                 volumeInstanceId = ((ulong)stateHash << 1) | 1ul;
@@ -1278,7 +1426,9 @@ namespace Hecton8.World
 
             Vector3 terrainPosition = terrain.transform.position;
             Vector3 terrainSize = terrainData.size;
-            double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);
+            if (!TryResolveRuntimeAbsoluteDouble(terrainPosition, out double3 terrainAbsolutePosition))
+                return false;
+
             float invHeight = terrainSize.y > 0.001f ? 1f / terrainSize.y : 0f;
             float invMaxHeightIndex = 1f / Mathf.Max(1, terrainData.heightmapResolution - 1);
             float effectiveRadius = Mathf.Max(2f, plan.seamBlendRadius + radiusPaddingMeters);
@@ -1403,7 +1553,9 @@ namespace Hecton8.World
 
             Vector3 terrainPosition = terrain.transform.position;
             Vector3 terrainSize = terrainData.size;
-            double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);
+            if (!TryResolveRuntimeAbsoluteDouble(terrainPosition, out double3 terrainAbsolutePosition))
+                return false;
+
             Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteStart);
             Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteEnd);
             float3 localStart3 = ToTerrainLocalFloat3(
@@ -1521,6 +1673,13 @@ namespace Hecton8.World
                 return;
             }
 
+            if (Application.isPlaying)
+            {
+                state.previousRect = default;
+                state.hasPreviousRect = false;
+                return;
+            }
+
             float[,] patch = PreparePatchBuffer(state, rect);
             using (TerrainHeightmapWritebackMarker.Auto())
             {
@@ -1606,11 +1765,24 @@ namespace Hecton8.World
                 if (vault != null)
                 {
                     state.baselineHeightsBufferId = ResolveTerrainBaselineBufferId(terrain);
-                    state.baselineHeightsHandle = vault.GetBufferHandle<float>(
-                        state.baselineHeightsBufferId,
-                        totalHeights,
-                        SystemID.TerrainSeams,
-                        NativeArrayOptions.UninitializedMemory);
+                    if (vault.IsAllocationLocked)
+                    {
+                        if (!vault.TryGetGenerationHandle(
+                                state.baselineHeightsBufferId,
+                                out state.baselineHeightsHandle))
+                        {
+                            state.baselineHeightsHandle = default;
+                        }
+                    }
+                    else
+                    {
+                        state.baselineHeightsHandle = vault.GetGenerationHandle<float>(
+                            state.baselineHeightsBufferId,
+                            totalHeights,
+                            OwnerSystem,
+                            NativeArrayOptions.UninitializedMemory);
+                    }
+
                     if (TryResolveBaselineHeights(state, out NativeArray<float> baselineHeights))
                         PopulateTerrainBaselineNative(baselineHeights, terrain, terrainData, resolution);
                 }
@@ -1684,19 +1856,54 @@ namespace Hecton8.World
             if (vault == null)
                 return false;
 
-            if (_terrainSeamBlackBoxHandle.IsCreated)
+            if (_terrainSeamBlackBoxHandle.BufferID != 0u)
             {
-                blackBox = _terrainSeamBlackBoxHandle.Resolve(vault);
-                if (blackBox.IsCreated && blackBox.Length >= TerrainSeamBlackBoxCapacity)
+                if (TryOpenTerrainSeamBuffer(
+                        vault,
+                        in _terrainSeamBlackBoxHandle,
+                        TerrainSeamBlackBoxBufferId,
+                        TerrainSeamBlackBoxCapacity,
+                        out blackBox))
+                {
                     return true;
+                }
             }
 
-            _terrainSeamBlackBoxHandle = vault.GetBufferHandle<TerrainSeamTelemetryEntry>(
-                TerrainSeamBlackBoxBufferId,
-                TerrainSeamBlackBoxCapacity,
-                SystemID.TerrainSeams,
-                NativeArrayOptions.ClearMemory);
-            blackBox = _terrainSeamBlackBoxHandle.Resolve(vault);
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle(
+                        TerrainSeamBlackBoxBufferId,
+                        out _terrainSeamBlackBoxHandle) ||
+                    !TryOpenTerrainSeamBuffer(
+                        vault,
+                        in _terrainSeamBlackBoxHandle,
+                        TerrainSeamBlackBoxBufferId,
+                        TerrainSeamBlackBoxCapacity,
+                        out blackBox))
+                {
+                    blackBox = default;
+                    return false;
+                }
+            }
+            else
+            {
+                _terrainSeamBlackBoxHandle = vault.GetGenerationHandle<TerrainSeamTelemetryEntry>(
+                    TerrainSeamBlackBoxBufferId,
+                    TerrainSeamBlackBoxCapacity,
+                    OwnerSystem,
+                    NativeArrayOptions.ClearMemory);
+                if (!TryOpenTerrainSeamBuffer(
+                        vault,
+                        in _terrainSeamBlackBoxHandle,
+                        TerrainSeamBlackBoxBufferId,
+                        TerrainSeamBlackBoxCapacity,
+                        out blackBox))
+                {
+                    blackBox = default;
+                    return false;
+                }
+            }
+
             _blackBoxWriteIndex = 0;
             return blackBox.IsCreated && blackBox.Length >= TerrainSeamBlackBoxCapacity;
         }
@@ -1866,7 +2073,9 @@ namespace Hecton8.World
             int maxIndex = terrainData.heightmapResolution - 1;
             float radius = Mathf.Max(1f, plan.seamBlendRadius);
             Vector3 runtimeWorldPosition = plan.RuntimeWorldPosition;
-            double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);
+            if (!TryResolveRuntimeAbsoluteDouble(position, out double3 terrainAbsolutePosition))
+                return default;
+
             float3 localPosition = ResolveTerrainLocalWorldPosition(
                 in plan,
                 in terrainAbsolutePosition,
@@ -1897,7 +2106,9 @@ namespace Hecton8.World
 
             Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteStart);
             Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteEnd);
-            double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);
+            if (!TryResolveRuntimeAbsoluteDouble(terrainPosition, out double3 terrainAbsolutePosition))
+                return default;
+
             float3 localStart = ToTerrainLocalFloat3(
                 new double3(trench.AbsoluteStart.x, trench.AbsoluteStart.y, trench.AbsoluteStart.z),
                 terrainAbsolutePosition,

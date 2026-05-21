@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Hecton8.Core.Memory.Layout;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -82,7 +83,7 @@ namespace Hecton8.AI
         public bool forceRetreat;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct SpeciesCognitionTuning
     {
         public SpeciesCognitionTuning(
@@ -108,21 +109,43 @@ namespace Hecton8.AI
             _pad2 = 0;
         }
 
+        [FieldOffset(0)]
         public readonly float HungerWeight;
+        [FieldOffset(4)]
         public readonly float FearWeight;
+        [FieldOffset(8)]
         public readonly float CuriosityWeight;
+        [FieldOffset(12)]
         public readonly float LightReactionRangeMeters;
+        [FieldOffset(16)]
         public readonly float LightReactionDotThreshold;
+        [FieldOffset(20)]
         public readonly float LightFrenzySpeedMultiplier;
+        [FieldOffset(24)]
         public readonly float LightReactionFearBoost01;
+        [FieldOffset(28)]
         public readonly FaunaLightReactionMode LightReactionMode;
+        [FieldOffset(29)]
         private readonly byte _pad0;
+        [FieldOffset(30)]
         private readonly byte _pad1;
+        [FieldOffset(31)]
         private readonly byte _pad2;
     }
 
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct FaunaInteractionResponse
     {
+        [FieldOffset(0)] public readonly float DamageMultiplier;
+        [FieldOffset(4)] public readonly float RetreatDurationSeconds;
+        [FieldOffset(8)] public readonly float FearImpulse01;
+        [FieldOffset(12)] public readonly FaunaInteractionKind InteractionKind;
+        [FieldOffset(13)] public readonly byte ForceRetreatFlag;
+        [FieldOffset(14)] private readonly ushort _pad0;
+        [FieldOffset(16)] private readonly ulong _pad1;
+        [FieldOffset(24)] private readonly ulong _pad2;
+
         public FaunaInteractionResponse(
             FaunaInteractionKind interactionKind,
             float damageMultiplier,
@@ -134,14 +157,16 @@ namespace Hecton8.AI
             DamageMultiplier = math.max(0f, damageMultiplier);
             RetreatDurationSeconds = math.max(0f, retreatDurationSeconds);
             FearImpulse01 = math.saturate(fearImpulse01);
-            ForceRetreat = forceRetreat;
+            ForceRetreatFlag = forceRetreat ? (byte)1 : (byte)0;
+            _pad0 = 0;
+            _pad1 = 0UL;
+            _pad2 = 0UL;
         }
 
-        public FaunaInteractionKind InteractionKind { get; }
-        public float DamageMultiplier { get; }
-        public float RetreatDurationSeconds { get; }
-        public float FearImpulse01 { get; }
-        public bool ForceRetreat { get; }
+        public static bool ShouldForceRetreat(in FaunaInteractionResponse response)
+        {
+            return response.ForceRetreatFlag != 0;
+        }
     }
 
     /// <summary>
@@ -151,21 +176,34 @@ namespace Hecton8.AI
     [CreateAssetMenu(fileName = "FaunaDataTemplate_", menuName = "Hecton8/Fauna/Data Template")]
     public sealed class FaunaDataTemplate : ScriptableObject
     {
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 88)]
         public struct RuntimeDescriptor
         {
+            [FieldOffset(0)]
             public int SpeciesId;
+            [FieldOffset(4)]
             public float MassKg;
+            [FieldOffset(8)]
             public float BodyRadiusMeters;
+            [FieldOffset(12)]
             public float CruiseSpeedMetersPerSecond;
+            [FieldOffset(16)]
             public float MaxSpeedMetersPerSecond;
+            [FieldOffset(20)]
             public float SteeringResponse;
+            [FieldOffset(24)]
             public float4 VatPositionScaleBias;
+            [FieldOffset(40)]
             public float4 VatNormalScaleBias;
+            [FieldOffset(56)]
             public float4 VatPhaseOffsetScale;
+            [FieldOffset(72)]
             public uint DefaultBoidStateMask;
+            [FieldOffset(76)]
             public uint SpawnFlags;
+            [FieldOffset(80)]
             public int MaxSchoolCount;
+            [FieldOffset(84)]
             public int Reserved0;
         }
 

@@ -152,9 +152,9 @@ Hardware Impact: Corrects cold tuning selection for i3/MX350/Quest-class devices
 
 ## Decision 12 - SHINOBU-Owned CSV Scratch And Checked-In Capacity Source
 
-Problem: `SignalThreadContentionCsvHotSwap` had a parser but no `Assets/StreamingAssets/signal_corridor_capacities.csv` asset in the checkout. It also borrowed the older generic `SignalTuningTable` CSV scratch buffer `73042`, which made the Task 19 H-Phi proof ambiguous.
+Problem: `SignalThreadContentionCsvHotSwap` had a parser but no checked-in human-readable capacity source in the checkout. It also borrowed the older generic `SignalTuningTable` CSV scratch buffer `73042`, which made the Task 19 H-Phi proof ambiguous. SHINOBU_258 later moved the authoring source out of runtime `StreamingAssets` into `Assets/_SourceData/Signals` to satisfy the Data Monolith text-runtime gate.
 
-Solution: Added Vault buffer `73055` as `SignalThreadContentionCsvScratch byte[8192]`, resolved through `SignalThreadLocalScratchpad.TryGetCsvScratch`. Added `Assets/StreamingAssets/signal_corridor_capacities.csv` with platform/min/max/output rows and a stable Unity `.meta`. Platform label hashing now lowercases ASCII bytes before FNV-1a folding without allocating strings.
+Solution: Added Vault buffer `73055` as `SignalThreadContentionCsvScratch byte[8192]`, resolved through `SignalThreadLocalScratchpad.TryOpenCsvScratchForLoad`. The current checked-in authoring source is `Assets/_SourceData/Signals/signal_corridor_capacities.csv` with platform/min/max/output rows and a stable Unity `.meta`; player/runtime builds return false from the CSV loader instead of reading text. Platform label hashing lowercases ASCII bytes before FNV-1a folding without allocating strings.
 
 Rejected Alternatives: Parser-only completion was rejected because a missing data file leaves designers with no tuning bridge. Continuing to share buffer `73042` was rejected because SHINOBU_200 must list every Vault handle it requests at boot and should not hide behind a pre-existing generic scratch lane.
 
@@ -377,3 +377,303 @@ Rejected Alternatives: Fixing Gameplay, Power, Construction, Audio, World, or Sa
 Scalability potential: No Low/Middle/High/Ultra behavior change. This decision protects production velocity while keeping the SignalBus patch bounded to Core signal routing.
 
 Hardware Impact: No runtime microsecond claim. The build probe cost `16.44 s` and produced dependency-wall evidence; profiler/runtime proof remains blocked until the broader Core compile wall is cleared.
+
+## Decision 31 - Read-Looking Signal Accessors Must Be Pure
+
+Problem: `SignalBus<T>.SnapshotCount`, `SnapshotGeneration`, `GetFrameSnapshot()`, and `GetFrameSnapshotArray()` called a private `TryResolveFrameSnapshot(...)` helper that could refresh a Vault generation handle and clamp `_frameSnapshotCount`. The public `TryReadFrame(out T)` name was worse: it advanced `_legacyReadCursor`, so callers were consuming data through a read-looking API. This violated the new global systems doctrine that `Get*`, `TryGet*`, `Resolve*`, and `Read*` accessors must not mutate global state.
+
+Solution: Split the route. Pure snapshot readers now call `TryReadFrameSnapshot(...)`, which only resolves the already cached Vault generation handle, clamps count into a local variable, and returns a read-only span/view without writing global lane state. Destructive legacy iteration is now named `TryConsumeFrame(...)`; the `GlobalSignals.TryDequeue*` bridge and the few direct consumers in Core determinism, camera juice, terminal command, save chunk dehydration, and atmosphere base-transition handling were repointed to that explicit consume API. Mutating cold helpers were renamed to `OpenQueueForLegacyGlobalSignals()`, `TryOpenFrameSnapshotForOwnerWrite(...)`, and `TryFindFrameSnapshotVaultForBootstrap(...)`.
+
+Rejected Alternatives: Keeping a compatibility shim named `TryReadFrame` was rejected because the doctrine violation would remain in source and future consumers would copy the wrong API. Changing consumer behavior to non-destructive reads was rejected because existing `while(TryDequeue...)` loops intentionally drain the per-frame cursor. Removing the legacy dequeue bridge entirely was rejected because cross-domain consumers still depend on it during this batch.
+
+Scalability potential: Low-tier devices benefit from clearer cold/hot boundaries because read paths no longer attempt handle refresh or counter repair. Middle tiers keep the same deterministic snapshot semantics. High/Ultra tiers keep the same frame snapshot data, but tooling and consumers can distinguish pure inspection from destructive consumption when feeding richer downstream VFX/audio interpretation.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is removal of hidden mutation from read-looking snapshot APIs and elimination of `SignalBus<...>.TryReadFrame` call sites in the changed source. No DTO layout, BufferID, save identity, or authority route changed.
+
+## Decision 32 - Scratchpad TryGet APIs Cannot Bootstrap The Vault
+
+Problem: SHINOBU's own `SignalThreadLocalScratchpad` read facades still called `EnsureInitializedFromRegistry()`. That helper can initialize Vault generation handles and use `GlobalDataVault.TryGetLatestCreated()` if the registry slot is absent. This is acceptable only on explicit owner/writer/bootstrap/crash paths; it is not acceptable behind `TryGetLatestTelemetry`, `TryGetTelemetryReadOnly`, `TryGetTuning`, `TryGetCsvScratch`, `TryGetThreadHeader`, or read-only committed snapshot access.
+
+Solution: Added `IsInitializedForRead()` and `TryReadCommittedSignals(...)` as non-mutating cached-handle gates. The public `TryGet*` facades now fail closed when the scratchpad has not been initialized instead of bootstrapping the Vault. The writable committed-snapshot accessor was renamed from `TryGetCommittedSignals(...)` to `TryOpenCommittedSignalsForOwner(...)` so a mutable owner surface does not masquerade as a pure read.
+
+Rejected Alternatives: Keeping `EnsureInitializedFromRegistry()` in editor/diagnostic `TryGet*` methods was rejected because it hides global authority mutation in read-looking APIs. Removing initialization from writer and scheduler paths was rejected because those paths explicitly own setup and would fail producer routes unnecessarily. Returning default fake telemetry was rejected because the black-box surface must show absence of initialized truth, not fabricate data.
+
+Scalability potential: Low-tier devices avoid surprise cold Vault acquisition when editor/diagnostic reads touch the lane. Middle tiers get deterministic failure when the owner phase has not initialized. High/Ultra tiers keep the same telemetry and tuning data once the owner route has initialized, with clearer separation between inspection and mutation.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is removal of hidden GlobalRegistry/Vault bootstrap from SHINOBU `TryGet*` read facades while leaving writer/scheduler/mutation paths intact.
+
+## Decision 33 - Telemetry Ring Reads Cannot Initialize The Vault
+
+Problem: `SignalTelemetryRingBuffer.CopyFrames(...)` is a diagnostic copy/read surface, but it used a private `TryResolveRing(...)` helper that could fall through to `GlobalRegistry.DataVault` and call `Initialize()`. The same source also exposed mutable CSV file scratch buffers as `TryGetCsvScratch(...)`, despite those buffers being written by cold file loaders.
+
+Solution: Split telemetry ring access by authority. `CopyFrames(...)` now calls `TryReadRing(...)`, which fails closed unless cached Vault handles are already initialized. `ReportFrame(...)` uses `TryOpenRingForOwnerWrite(...)`, and crash dump uses `TryOpenRingForCrashDump(...)`. Mutable CSV scratch buffers in `SignalTuningTable` and `SignalThreadLocalScratchpad` were renamed to `TryOpenCsvScratchForLoad(...)`, and the two span-based CSV loaders were repointed.
+
+Rejected Alternatives: Keeping `CopyFrames(...)` on a helper that initializes through `GlobalRegistry.DataVault` was rejected because diagnostic reads must not mutate global state. Keeping `TryGetCsvScratch(...)` was rejected because returning writable `NativeArray<byte>` under a `TryGet*` name violates the read-accessor doctrine. Moving scratch storage to local arrays was rejected because the CSV loaders are already cold, Vault-owned, and zero-GC through `ReadOnlySpan<byte>`.
+
+Scalability potential: Low-tier devices avoid surprise Vault bootstrap when editor diagnostics poll signal telemetry. Middle tiers keep deterministic failure when the owner phase has not initialized. High/Ultra tiers preserve the same 300-frame black-box data and the same hot-reload CSV bridge after explicit owner initialization.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is removal of hidden initialization from a diagnostic copy surface and removal of mutable `TryGetCsvScratch` names from SHINOBU-owned signal source. No BufferID, DTO layout, save identity, or authority route changed.
+
+## Decision 34 - Producer Writer Acquisition Must Use An Open Verb In Owned Routes
+
+Problem: `SignalBus<T>.ParallelWriter` is a property surface that can cold-initialize a lane and returns a mutable `NativeQueue<T>.ParallelWriter`. It is a producer/open operation, not a pure read. SHINOBU-owned `GlobalSignals.*SignalWriter` facades and already-touched Core/Terminal bridge producers still routed through that property, which preserved behavior but hid the authority transition behind property syntax.
+
+Solution: Added `SignalBus<T>.OpenParallelWriter()` and repointed all `GlobalSignals.*SignalWriter` facades plus `MemorySentinelRuntime` and `TerminalOsRuntime` direct bridge producers to it. The legacy `ParallelWriter` property remains as a compatibility facade that delegates to `OpenParallelWriter()` so sibling domains outside SHINOBU_200 are not broken by a broad API removal.
+
+Rejected Alternatives: Removing `ParallelWriter` globally was rejected because static scan shows many sibling-domain producers still reference it, and changing all of them would expand beyond the SHINOBU signal-core lane. Leaving owned code on the property was rejected because producer acquisition should advertise that it can open or initialize lane infrastructure. Making `ParallelWriter` fail closed without initialization was rejected because that would silently break existing producers without a full compile/profiler pass.
+
+Scalability potential: Low-tier devices get clearer cold/open boundaries for writer acquisition without extra work in the producer hot path. Middle tiers keep the same explicit typed lanes. High/Ultra tiers retain the same writer capacity and snapshot flow while letting future high-frequency producers move to thread-local scratchpad APIs without mistaking the compatibility property for the preferred route.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is removal of direct `SignalBus<...>.ParallelWriter` call sites from SHINOBU-owned `GlobalSignals` facades and already-touched Core/Terminal bridge files. External-domain property call sites remain as compatibility debt; no DTO layout, BufferID, save identity, or authority route changed.
+
+## Decision 35 - Producer Routes Cannot Bootstrap From Latest Created Vault
+
+Problem: `SignalThreadLocalScratchpad.EnsureInitializedFromRegistry()` was no longer used by read facades, but producer/scheduler/mutation paths still used it. That helper could fall back to `GlobalDataVault.TryGetLatestCreated()` if cached `_vault` and `GlobalRegistry.DataVault` were missing. This is acceptable for crash diagnostics, not for normal producer routes that should prove owner initialization.
+
+Solution: Split initialization by authority. `TryAcquireWriteContext`, `ScheduleCommit`, `TryPushAsynchronousOverflow`, `ScheduleOrphanedLockAutopsy`, `RecordLastCommitMicroseconds`, and `MutateTuning` now use `EnsureInitializedForOwnerRoute()`, which only uses cached `_vault` from explicit initialization and fails closed if absent. `DumpToDisk()` uses `EnsureInitializedForCrashDumpRoute()`, the only SHINOBU contention route still allowed to consult `GlobalRegistry.DataVault` and `GlobalDataVault.TryGetLatestCreated()`.
+
+Rejected Alternatives: Keeping the latest-created fallback in producer routes was rejected because it can hide missing dependency injection and bind to the wrong Vault under tests or editor tooling. Removing crash fallback was rejected because black-box dump recovery is specifically allowed for crash/diagnostic routes. Adding `[Obsolete]` to every legacy writer property was rejected for this pass because repo-wide sibling-domain callers could turn warnings into a new compile wall.
+
+Scalability potential: Low-tier devices avoid surprise Vault bootstrap work on producer paths. Middle tiers keep deterministic fail-closed behavior when owner initialization is missing. High/Ultra tiers keep the same Vault-backed buffers and coalescence path after explicit initialization; no quality-dependent truth route changes.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is containment of `GlobalDataVault.TryGetLatestCreated()` to `EnsureInitializedForCrashDumpRoute()` and addition of the generic `GlobalSignals.OpenSignalWriterForProducerPhase<TSignal>()` maintained producer API. No DTO layout, BufferID, save identity, or authority route changed.
+
+## Decision 36 - Generic SignalBus Bootstrap Must Fail Closed Without Owner Vault
+
+Problem: `SignalBus<T>.EnsureInitialized()` could reach `TryFindFrameSnapshotVaultForBootstrap(...)`, and that helper used `GlobalDataVault.TryGetLatestCreated()` if `GlobalRegistry.DataVault` was absent. Even though the helper was named bootstrap, `EnsureInitialized()` is reachable from producer APIs such as `TryPush` and writer opening, so the fallback could bind normal runtime traffic to a diagnostic/latest-created Vault. `SignalTelemetryRingBuffer.ReportFrame(...)` also had a registry fallback in the owner write path.
+
+Solution: `TryFindFrameSnapshotVaultForBootstrap(...)` now accepts only `GlobalRegistry.DataVault` and fails closed when owner injection is absent. `SignalTelemetryRingBuffer.TryOpenRingForOwnerWrite(...)` now uses only cached `_vault` and `_initialized`; cold initialization must happen through `SignalTelemetryRingBuffer.Initialize()`, not the per-frame report path.
+
+Rejected Alternatives: Documenting the latest-created fallback as bootstrap was rejected because the call chain is producer-reachable. Reinitializing the telemetry ring during `ReportFrame(...)` was rejected because it hides registry polling behind a frame-owned write path. Removing the SHINOBU contention crash fallback was rejected because crash dump recovery remains a legitimate diagnostic route.
+
+Scalability potential: Low-tier devices avoid surprise dependency lookup and possible Vault acquisition from signal pushes or telemetry frame writes. Middle tiers keep deterministic fail-closed behavior when owner boot did not wire the Vault. High/Ultra tiers preserve all same snapshot, coalescence, and telemetry capacity after explicit initialization.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is removal of `GlobalDataVault.TryGetLatestCreated()` from generic SignalBus snapshot bootstrap and removal of `GlobalRegistry.DataVault` fallback from per-frame signal telemetry owner writes. No DTO layout, BufferID, save identity, or authority route changed.
+
+## Decision 37 - Already-Touched Terminal Bridge Cannot Use Latest-Created Vault
+
+Problem: The local post-patch scan included `TerminalOsRuntime.cs` because SHINOBU_200 had already repointed its SignalBus producers to `OpenParallelWriter()`. That file still initialized UI native buffers through `GlobalDataVault.TryGetLatestCreated()`. It is not SHINOBU signal ownership, but leaving a normal runtime latest-created fallback inside an already-touched bridge file would contradict the same global authority rule being enforced on the Core signal route.
+
+Solution: Replace the TerminalOS native-resource fallback with cached `_vault` or owner-published `GlobalRegistry.DataVault`. Missing registry injection now fails closed with the existing `FaultVaultUnavailable` path; the UI bridge no longer binds itself to an arbitrary latest-created Vault.
+
+Rejected Alternatives: Broadly scanning and fixing every repo-wide `TryGetLatestCreated()` caller was rejected because it would cross many active sibling domains. Ignoring the TerminalOS hit was rejected because the file is already in the SHINOBU writer-route patch and the fix is a narrow authority containment. Adding a new UI DataVault service route was rejected because that belongs to the TerminalOS owner, not the Core SignalBus MPSC lane.
+
+Scalability potential: Low-tier devices avoid accidental native-buffer allocation against the wrong Vault during UI initialization. Middle tiers retain the same TerminalOS buffer capacities and signal lanes after proper owner injection. High/Ultra tiers keep the same presentation fidelity; no quality-dependent truth, layout, save identity, or authority owner changes.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is that the four touched source files now contain `GlobalDataVault.TryGetLatestCreated()` only in `SignalWardenRuntime.EnsureInitializedForCrashDumpRoute()`, the documented crash/diagnostic exception. The latest build guard remains `CPU=100`, `dotnet=0`, `csc=0`, so no compile was launched.
+
+## Decision 38 - Subagent Read-Accessor Findings Require Narrow Source-Contract Fixes
+
+Problem: The read-only sidecar audit found three remaining source-contract issues in files already touched by the SHINOBU producer-route patch. `MemorySentinelRuntime.TryGetTunerSnapshot(...)` was read-looking but could call `EnsureVaultBuffers(...)` and `ResolveRuntimeState(...)`, which can acquire Vault buffers and write default runtime state. `MemorySentinelRuntime.TryResolveOrAcquire(...)` and `TerminalOsRuntime.ResolveNativeBuffer(...)` were private helpers with read-looking names that acquire/open Vault buffers. `TerminalOsRuntime.GetTerminalStateRef(...)` returned a mutable ref and set fault state on failure.
+
+Solution: Keep the public tuner snapshot API name but make the implementation read-only: it now requires existing handles and reads the runtime DTO locally without calling buffer acquisition or default-state mutation. Rename the private acquisition helpers to `OpenOrAcquireVaultBuffer(...)` and `OpenNativeBufferForOwner(...)`. Rename the mutable terminal ref surface to `OpenTerminalStateRefForOwner(...)` and `OpenTerminalStateRefForOwnerUnchecked(...)`.
+
+Rejected Alternatives: Broadly editing every repo-wide `TryResolveOrAcquire*` pattern was rejected because those helpers belong to other active domains. Renaming `TryGetTunerSnapshot(...)` was rejected because the editor tuner already depends on that public API and the source violation was solved by making it pure. Keeping `GetTerminalStateRef(...)` was rejected because mutable ref access plus fault mutation violates the read-accessor doctrine even if no external caller was found.
+
+Scalability potential: Low-tier devices avoid surprise Vault allocation or runtime-state repair when an editor tuner reads MemorySentinel state. Middle tiers get clearer setup versus read boundaries. High/Ultra tiers preserve the same diagnostics and UI state access after owner initialization; no quality-dependent truth or authority route changes.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is removal of the specific subagent-reported read-accessor violations in the touched Core/Terminal files. No BufferID, DTO layout, SignalBus payload stride, save identity, rollback exclusion, or gameplay truth owner changed.
+
+## Decision 39 - Mutating Resolve Names In Adjacent Proof Files Must Be Evicted
+
+Problem: A follow-up source scan found more private `Resolve*` methods in already-touched bridge files that were not pure. `TerminalOsRuntime.ResolveAttentionCamera(...)` mutates `_attentionCameraCache` and `_nextCameraResolveFrame`; `ResolveComputeKernel(...)` discovers a compute kernel and writes `_blitKernel`, `_threadsX`, and `_threadsY`; `ResolveGazeInput(...)` mutates `_inputPressedLastFrame`; `ResolveTerminalStatePointer(...)` returns a mutable state pointer. `MemorySentinelRuntime.ResolveRuntimeState(...)` writes default runtime state and pending mod mask into Vault storage, and `ResolveTargets(...)` mutates target rows and `_targetCount`.
+
+Solution: Rename only private call sites in files already touched by the SHINOBU signal-route proof. TerminalOS now uses `RefreshAttentionCameraForOwner(...)`, `TryCaptureCameraFrameForOwner(...)`, `EnsureComputeKernelForOwner(...)`, `CaptureGazeInputForOwner(...)`, `CaptureGazePoseForOwner(...)`, `SelectStateBuffer(...)`, and `OpenTerminalStatePointerForOwner(...)`. MemorySentinel now uses `OpenRuntimeStateForOwner(...)`, `RefreshTargetsForOwner(...)`, and `FindValidationRulesCsvPathCold(...)`.
+
+Rejected Alternatives: Broadly renaming every repo-wide `Resolve*` method was rejected as cross-domain churn. Leaving the mutating methods unchanged because they are private was rejected because the global read-accessor doctrine applies to source contracts, not just public APIs. Changing behavior was rejected; this pass preserves the owner route and only makes mutating/open/cold intent explicit.
+
+Scalability potential: Low-tier devices gain clearer owner/cold boundaries without runtime behavior changes. Middle tiers keep the same cadence and bridge data flow. High/Ultra tiers preserve visual/UI diagnostics and MemorySentinel telemetry while future audits can distinguish pure calculations from owner mutation and cold discovery.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is removal of stale private mutating `Resolve*` names from the touched TerminalOS/MemorySentinel proof set. No BufferID, DTO layout, SignalBus payload stride, save identity, rollback exclusion, authority owner, or quality curve changed.
+
+## Decision 40 - Snapshot Mutation Must Use Owner-Open Semantics
+
+Problem: `SignalBus<T>.TransformSnapshot(...)` and `SignalBus<T>.FilterSnapshot(...)` mutate frame snapshot rows in-place, but they still obtained the backing `NativeArray<T>` through `TryReadFrameSnapshot(...)`. The helper itself was pure, yet using it in a write path kept a source-contract ambiguity directly against the global read-accessor doctrine.
+
+Solution: Repoint the two mutating methods to `TryOpenFrameSnapshotForOwnerWrite(...)`. The owner-open helper resolves the cached generation handle, clamps `_frameSnapshotCount` to the array length, and explicitly represents writable owner-phase access. Pure consumers keep `TryReadFrameSnapshot(...)`; destructive cursor consumption remains explicitly named `TryConsumeFrame(...)`.
+
+Rejected Alternatives: Renaming public `TransformSnapshot(...)` and `FilterSnapshot(...)` was rejected because their names already describe mutation and external callers may exist. Deleting the methods was rejected because generated Core lane filters depend on them. Leaving the helper call unchanged was rejected because future audits would keep flagging a write operation routed through a read helper.
+
+Scalability potential: Low-tier devices keep the same bounded snapshot and coalescence path. Middle tiers keep deterministic frame snapshot mutation semantics. High/Ultra tiers preserve richer signal snapshots and visual-sync consumers without changing gameplay truth ownership, DTO layout, or authority route.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is source-contract hardening only; no BufferID, payload stride, save identity, rollback exclusion, quality curve, or hot-path algorithm changed.
+
+## Decision 41 - Editor Blocking Benchmark Must Be Named As Blocking
+
+Problem: The UI Toolkit contention tuner intentionally force-completes mock generation and commit jobs to produce an editor-side microsecond sample. The method name `RunMockContention(...)` hid that blocking behavior even though it is fenced inside `#if UNITY_EDITOR`.
+
+Solution: Rename the method to `RunMockContentionEditorBlocking(...)` and point the editor button at that explicit method. The runtime dispatcher route still returns `JobHandle`s and does not use this editor button path.
+
+Rejected Alternatives: Removing the blocking benchmark was rejected because Task 05 and Task 18 require an isolated mock contention generator and editor stress harness. Moving the benchmark to a runtime path was rejected because same-frame schedule/readback loops are forbidden without profiler proof and would violate dispatcher-owned completion windows.
+
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The editor tool remains a manual x-ray harness for observing continuous capacity and quality tuning without turning its blocking measurement pattern into a hidden runtime route.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is naming disclosure only; runtime hot path unchanged.
+
+## Decision 42 - SPSC Ring Indices Need Interlocked Mutation
+
+Problem: `SpscSignalRingBuffer<T>` retained `Volatile.Write(...)` for `_head` and `_tail` mutations. The type is a Core signal escape hatch and the native-memory mandate treats weak ARM memory ordering as the baseline; cross-thread index mutations require `Interlocked.Exchange(...)` or `CompareExchange(...)`, while `Volatile.Read(...)` is used for observation.
+
+Solution: Change `Clear()`, producer enqueue tail publication, and consumer dequeue head publication to `Interlocked.Exchange(...)`. Keep `_head`/`_tail` reads as `Volatile.Read(...)`. Update `Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md` so the documented SPSC contract matches source.
+
+Rejected Alternatives: Leaving the old writes was rejected because the code violated the explicit barrier rule even if current static source scans find no live C# callsite for the generic type. Replacing the whole SPSC wrapper with `NativeQueue<T>` was rejected because it would convert a single-producer/single-consumer escape hatch into an MPSC lane and reintroduce unnecessary atomic queue machinery.
+
+Scalability potential: Low-tier and mobile/ARM targets gain stronger memory-ordering safety without changing payload shape or SignalBus authority. Middle/High/Ultra behavior is unchanged; this patch protects correctness rather than adding visual fidelity.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is barrier correctness only. There is no live callsite proof for `SpscSignalRingBuffer<T>` in current first-party C# source, so no microsecond saving is claimed.
+
+## Decision 43 - Global Corridor Docs Cannot Endorse Legacy MPSC For Producer Storms
+
+Problem: `Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md` still said `NativeQueue<T>.ParallelWriter` was the correct MPSC path when multiple jobs produce the same event type. That text contradicted SHINOBU_200's implemented route and original task law: high-frequency same-lane producers must avoid shared CAS queue contention and use per-thread scratch plus deterministic commit.
+
+Solution: Reword the global corridor contract so `ParallelWriter` is explicitly a retained low-frequency legacy bridge. The documented high-frequency route is now the SHINOBU thread-local corridor: per-worker scratch, 64-byte payload layout, deterministic post-simulation commit, coalescence, and telemetry-visible overflow. Source comments on `OpenLegacyMpscWriter()`, `OpenParallelWriter()`, and `ParallelWriter` now match that contract.
+
+Rejected Alternatives: Adding `[Obsolete]` attributes was rejected because sibling-domain legacy call sites still exist and warning-as-error configurations could create a compile wall. Rewriting every legacy writer call in the repo was rejected because that crosses active domain ownership. Leaving the stale wording was rejected because future agents would read the doc as approval to route producer storms back through a shared MPSC queue.
+
+Scalability potential: Low-tier devices avoid high-frequency CAS producer storms by treating `ParallelWriter` as a rare bridge. Middle tiers keep the same explicit SignalBus lanes. High/Ultra tiers preserve richer event detail through larger thread-local buffers and visual-sync consumers, not by increasing shared queue contention.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is source/document contract hardening only; no BufferID, payload stride, save identity, rollback exclusion, queue type, or authority owner changed.
+
+## Decision 44 - Compatibility Writer Properties Must Not Advertise Broad Burst Producer Use
+
+Problem: After the main route documentation was corrected, the individual `GlobalSignals.*SignalWriter` XML summaries still used broad wording such as `Burst jobs or background producers`. That text was enough to mislead future producers back into the retained MPSC bridge for high-frequency work.
+
+Solution: Rewrite the property summaries so every retained writer property is explicitly a legacy bridge for low-frequency compatibility producers. Also correct `GLOBAL_SIGNAL_CORRIDOR.md` consume/publish wording: producer-side surfaces are `Publish(in T)` and typed `SignalBus<T>.Push/TryPush`; destructive cursor consumption is `TryConsumeFrame(...)` or retained bridge `TryDequeue*`; snapshot reads are read-only.
+
+Rejected Alternatives: Removing the writer properties was rejected because they are public compatibility ABI for sibling domains. Adding compiler warnings was rejected because warnings-as-errors could break unrelated lanes. Leaving broad per-property XML summaries was rejected because source comments are part of the architecture contract in this batch.
+
+Scalability potential: Low-tier devices keep the legacy writer route as rare bridge traffic only. Middle tiers keep typed signal lanes and explicit snapshot consumption. High/Ultra tiers get richer event presentation through thread-local capacity and visual-sync consumers, not by routing producer storms into a shared MPSC queue.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is comment/document contract hardening only; no BufferID, payload stride, save identity, rollback exclusion, queue type, runtime branch, or authority owner changed.
+
+## Decision 45 - Typed Writer Acquisition Must Not Wake Every Direct Queue
+
+Problem: `GlobalSignals.OpenSignalWriterForProducerPhase<TSignal>()` still called broad `GlobalSignals.EnsureInitialized()`. That method routes to `InitializeAllQueues()`, which reads quality/homeostasis, initializes tuning/telemetry/scratch lanes, and prewarms the legacy direct `NativeQueue` fields. Opening one typed compatibility writer must not perform global queue boot work.
+
+Solution: Remove the broad `EnsureInitialized()` call and delegate directly to `SignalBus<TSignal>.OpenLegacyMpscWriter()`. The closed generic SignalBus lane still performs its own `EnsureInitialized()` and registers/flattens the requested typed route only.
+
+Rejected Alternatives: Keeping the broad init was rejected because it hides cold allocation/prewarm behind a producer-open facade. Deleting the compatibility writer APIs was rejected because sibling-domain callers still depend on the ABI and warning churn can become a compile wall. Moving all direct queues to lazy typed SignalBus lanes was rejected as an integrator-scale migration outside SHINOBU_200.
+
+Scalability potential: Low-tier devices avoid accidental all-lane queue prewarm when a rare legacy writer is opened. Middle tiers keep explicit typed bridge lanes. High/Ultra tiers retain the same event capacity after proper bootstrap; visual overkill still comes from thread-local capacity and downstream presentation, not broad queue wake-up.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is narrower writer acquisition: one typed lane open instead of broad `InitializeAllQueues()` side effects. No BufferID, queue type, DTO layout, signal payload stride, save identity, rollback exclusion, producer phase, or authority owner changed.
+
+## Decision 46 - Adjacent Core MPSC Helpers Need Explicit Open Surfaces
+
+Problem: The read-only sidecar found direct `.AsParallelWriter()` residue outside the SHINOBU SignalBus route. Most hits are sibling-domain ownership, but two Core helpers were within the safe proof surface. `ThreadSafeCommandQueue.TryGetParallelWriter(...)` initialized a native queue behind a `TryGet*` name, and `BurstCallbackQueue.ParallelWriter` hid writer acquisition behind a property.
+
+Solution: Add explicit open surfaces. `ThreadSafeCommandQueue.OpenLegacyMpscWriter()` and `TryOpenParallelWriter(...)` perform initialization and writer acquisition; the old `AsParallelWriter()` compatibility alias delegates to the open method, while `TryGetParallelWriter(...)` no longer initializes storage and only reads already-created state. `BurstCallbackQueue.OpenParallelWriter()` performs the writer conversion; the `ParallelWriter` property remains as a compatibility alias with explicit documentation.
+
+Rejected Alternatives: Rewriting every repo-wide `.AsParallelWriter()` hit was rejected because atmosphere, world, power, quest, UI, visor, and modding lanes belong to other active domain owners. Removing compatibility aliases was rejected because public call sites may exist outside the static scan. Replacing the callback/structural queues with thread-local scratch was rejected without volume profiling; these are low-frequency bridge helpers, not the SHINOBU high-frequency signal storm corridor.
+
+Scalability potential: Low-tier devices gain clearer boundaries that prevent accidental queue initialization from read-named calls. Middle tiers keep existing structural-command and callback semantics. High/Ultra tiers do not route visual overkill through these low-frequency queues; richer output remains bought through thread-local SignalBus capacity and downstream presentation.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is source-contract hardening and reduced hidden initialization risk in Core helper APIs. No BufferID, DTO layout, signal payload stride, save identity, rollback exclusion, queue owner, or GlobalQualityWeight truth route changed.
+
+## Decision 47 - SHINOBU Capacity CSV Is Source Data, Not Runtime StreamingAssets
+
+Problem: SHINOBU_200 proof files still contained old wording that named the former runtime `StreamingAssets` signal-capacity CSV as the Task 19 capacity source. SHINOBU_258's active Data Monolith gate intentionally deletes runtime text payloads from `StreamingAssets` and moves signal CSVs to `Assets/_SourceData/Signals`. Leaving the old wording would make future audits misclassify the deletion as missing SHINOBU data or tempt a bad restore of runtime CSV truth.
+
+Solution: Treat `Assets/_SourceData/Signals/signal_corridor_capacities.csv` as the current editor/source-data authoring truth. Keep `SignalThreadContentionCsvHotSwap.TryLoadDefault()` and `TryLoad(string)` fenced to `UNITY_EDITOR`; in player/runtime builds they return false before file I/O. Runtime capacity truth still needs a baked binary/Vault route before Data Monolith readiness can be claimed.
+
+Rejected Alternatives: Restoring the deleted `StreamingAssets` CSV was rejected because it violates the active text-runtime migration. Removing the parser was rejected because designers still need a source-data tuning bridge in editor. Claiming binary readiness was rejected because `static_data.h8bin` is still absent in the current filesystem gate.
+
+Scalability potential: Low/MX350/Quest authoring rows remain available to editor/bake tooling, Middle keeps intermediate stride rows, and High/Ultra rows keep maximum event-detail headroom. Runtime quality remains driven by the existing continuous `GlobalQualityWeight` and Vault tuning values, not by runtime text reads.
+
+Hardware Impact: No runtime microsecond claim. Static effect is authority cleanup: player builds no longer rely on a text file under `StreamingAssets`, and SHINOBU-owned docs now match the source-data migration.
+
+## Decision 48 - Burst Callback Counter Must Use H8Memory Ownership
+
+Problem: `BurstCallbackQueue` still allocated its persistent pending-count lane with `new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory)` and disposed it directly. The queue is a low-frequency Core callback bridge rather than the SHINOBU high-frequency signal corridor, but it is inside the already-touched Core writer surface and the direct allocation bypassed H8Memory owner tracking.
+
+Solution: Allocate the counter through `Hecton8.Core.Memory.H8Memory.Allocate<int>(..., SystemID.CoreDiagnostics, Allocator.Persistent, ClearMemory)` and release it through the matching H8Memory owner route in both synchronous and job-dependent dispose paths. If counter allocation fails, the constructor unregisters and disposes the already-created native queue, clears capacity, and returns fail-closed. Existing `NativeMemorySentinel` registration remains because the callback queue already exposes diagnostics through that tracker.
+
+Rejected Alternatives: Moving the single callback counter into a new DataVault BufferID was rejected because it would widen the global memory contract for a currently unreferenced helper without dispatcher/runtime proof. Removing `BurstCallbackQueue` was rejected because it is a public Core utility surface. Rewriting `NativeQueue<int>` storage was rejected because Unity's queue owns its internal nodes and this pass targets the explicit direct NativeArray allocation we can prove.
+
+Scalability potential: Low-tier devices avoid an unowned persistent counter lane in the callback bridge. Middle/High/Ultra behavior is unchanged; event-volume scalability remains on the SHINOBU thread-local signal corridor rather than this retained low-frequency MPSC bridge.
+
+Hardware Impact: Measured runtime proof is absent. Static effect is H8Memory owner proof and safer failure cleanup for a one-int counter; no BufferID, SignalBus payload stride, queue route, save identity, rollback exclusion, quality curve, or dispatcher dependency changed.
+
+## Decision 49 - Remove Dead Core Imports That Imply Sibling Runtime Coupling
+
+Problem: `GlobalSignals.cs` imported `Hecton8.World` and `ThreadSafeCommandQueue.cs` imported `Hecton8.Caves`. Static symbol search showed no unqualified World/Caves symbols in those files, and `Hecton8.Core.asmdef` does not reference `Hecton8.World.*` or `Hecton8.Caves.*` runtime assemblies. Leaving dead imports in Core signal/command infrastructure weakens compile-wall evidence and misleads future agents into thinking sibling-runtime access is approved.
+
+Solution: Remove the two dead namespace imports only. No asmdef reference, BufferID, DTO layout, queue route, signal payload, save identity, rollback exclusion, or runtime branch changed.
+
+Rejected Alternatives: Editing `Hecton8.Core.asmdef` was rejected because the assembly definition already lacks World/Caves runtime references and broad asmdef churn risks a compile wall. Rewriting biome/cave signal payloads was rejected because the current symbols are Core contract DTOs or local constants, not sibling-domain types.
+
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged. The value is iteration-speed protection: Core signal and structural-command files no longer advertise dead sibling-domain imports.
+
+Hardware Impact: No runtime microsecond claim. Static compile-wall proof improved by removing misleading direct namespace imports; no generated code, Burst job, memory allocation, or job dependency changed.
+
+## Decision 50 - Structural Command Rollback Must Not Dispatch Through UI Domain
+
+Problem: The sidecar audit found `ThreadSafeCommandQueue.ExecuteCommand(...)` still dispatching `UndoPDAState` through `Hecton8.UI.PDAEvents.RaiseUndoRequest(...)`. That placed a Core structural-command queue on a concrete sibling UI namespace instead of the Core-owned state route. The current UI event listener path does only one relevant side effect: `UIStateStore.TryRollbackPDAState(payload.PayloadA <= 0 ? 1 : payload.PayloadA)`.
+
+Solution: Route `UndoPDAState` directly to `UIStateStore.TryRollbackPDAState(command.IntValue <= 0 ? 1 : command.IntValue)`. This preserves the existing non-positive-frame clamp while removing the Core-to-UI concrete dispatch. No public DTO, queue, SignalBus payload, BufferID, rollback snapshot, shader payload, or save identity changed.
+
+Rejected Alternatives: Keeping the UI event dispatch was rejected because Core infrastructure must not depend on sibling concrete domains. Publishing a new SignalBus lane was rejected because current evidence shows no independent UI listeners for `UndoRequest`; adding a new lane would create an unused route and a new contract surface. Calling `UIStateStore.TryRollbackPDAState(command.IntValue)` without the clamp was rejected because it diverged from the current `PDAEvents.ApplySimulationSideEffects(...)` behavior.
+
+Scalability potential: Low-tier devices avoid one managed UI-domain event queue hop for structural undo. Middle tiers retain deterministic Core state rollback. High/Ultra tiers keep presentation behavior unchanged; visual overkill remains downstream of `UIStateStore` state observation, not a Core command dispatch into UI code.
+
+Hardware Impact: No measured runtime microsecond claim. Static effect is compile-wall and authority hardening: `ThreadSafeCommandQueue.cs` contains no `Hecton8.UI` reference or `PDAEvents.RaiseUndoRequest(...)` call, and the rollback path stays inside Core state storage.
+
+## Decision 51 - Residual Core Sibling References Are Integrator/Core-Owner Debt
+
+Problem: A broader Core scan after the queue patch found direct sibling references in `SystemDispatcher`, `GlobalRegistry`, `GlobalRegistryContracts`, runtime context services, diagnostics viewers, and player context managers. These are not the SHINOBU-owned signal corridor files. Some are core authority surfaces that intentionally expose or flush cross-domain services today; replacing them requires a dispatcher/registry route-card migration, not a narrow MPSC queue patch.
+
+Solution: Record the residual inventory and leave those massive Core files unedited in this pass. Keep the SHINOBU-owned/touched signal and command surface clean: `ThreadSafeCommandQueue.cs`, `GlobalSignals.cs`, and `BurstCallback.cs` now have no concrete `Hecton8.UI` hit, no dead World/Caves import, and no forbidden direct counter allocation/dispose pattern.
+
+Rejected Alternatives: Mass-rewriting `SystemDispatcher` UI/mod flushes was rejected because it is a broad phase-owner migration and risks breaking presentation dispatch. Editing `GlobalRegistry`/contracts was rejected because those are shared core identity surfaces, not SHINOBU lane-owned implementation files. Ignoring the scan was rejected because the compile-wall proof must state what is fixed and what remains outside this lane.
+
+Scalability potential: Low-tier devices benefit from the narrow queue cleanup without destabilizing dispatcher boot/flush order. Middle tiers keep current registry/context behavior. High/Ultra tiers are unaffected; visual overkill routing still belongs to downstream presentation consumers, not a SHINOBU-owned rewrite of global registry services.
+
+Hardware Impact: No runtime microsecond claim. Static effect is risk containment: touched SHINOBU signal/command files are clean, while remaining cross-domain Core surfaces are explicitly classified as integrator/core-owner debt pending a separate route-carded migration.
+
+## Decision 52 - Structural Command Writer Alias Cannot Keep TryGet Naming
+
+Problem: `ThreadSafeCommandQueue.TryGetParallelWriter(...)` no longer initialized storage after the previous pass, but it still returned a mutable `NativeQueue<EntityCommand>.ParallelWriter` through a `TryGet*` name. The global accessor doctrine requires read-looking APIs to be pure inspection paths. A mutable producer writer is not a read accessor even when storage is already initialized.
+
+Solution: Delete `TryGetParallelWriter(...)`. The maintained structural-command writer routes are `TryOpenParallelWriter(...)` and `OpenLegacyMpscWriter()`, both named as open/producer paths. `AsParallelWriter()` remains only as a legacy compatibility alias because first-party source still has a known pattern of legacy writer APIs, while `TryGetParallelWriter` had no repo caller.
+
+Rejected Alternatives: Keeping the alias was rejected because the name itself violates the source contract and invites future misuse. Marking it obsolete was rejected because there is no first-party caller to migrate and warnings can become compile-wall noise. Removing `AsParallelWriter()` in the same pass was rejected because the wider ecosystem still has many `AsParallelWriter` compatibility surfaces and that removal should be route-carded separately.
+
+Scalability potential: Low-tier devices gain clearer command ingress boundaries; no accidental read-looking path can be copied into a hot producer route. Middle/High/Ultra behavior is unchanged; structural command storms still require owner-local batching before the retained MPSC bridge.
+
+Hardware Impact: No runtime microsecond claim. Static effect is source-contract hardening only: repo-wide source scan finds no `TryGetParallelWriter` after deletion, and the focused touched-file forbidden-pattern scan remains clean.
+
+## Decision 53 - Sidecar Purity Closure Without Annotation Theater
+
+Problem: After repeated polish passes, the SHINOBU signal corridor needed an independent check for read-accessor purity, writer exposure, Burst flags, `[NoAlias]`, documented cache-line debt, and crash-only `GlobalDataVault.TryGetLatestCreated()` usage. The risk was either missing a real mutation path or creating churn by annotating non-job context fields that do not influence Burst vectorization.
+
+Solution: Consumed the Gauss sidecar audit and recorded it as clean for the requested SHINOBU scope. Read-looking audited paths do not allocate/grow native buffers, publish, complete jobs, mutate global state, or search scene. Direct `.AsParallelWriter()` remains inside explicit compatibility/open methods only. SHINOBU Burst jobs retain deterministic synchronous Burst attributes and `[NoAlias]` on relevant `NativeArray` fields. The only cache-line-critical non-64/128 payloads remain `ToolAcousticSignal` and `TetherTensionSignal`, both documented as open route-card debt. `TryGetLatestCreated()` is present only in the crash/fault route.
+
+Rejected Alternatives: Changing non-job context fields only to satisfy a text pattern was rejected because `[NoAlias]` matters to Burst kernel fields, not cold managed facades. Padding `ToolAcousticSignal` or splitting `TetherTensionSignal` was rejected because both cross broad producer/consumer ownership and already have explicit migration gates. Reopening the removed `TryGetParallelWriter` compatibility API was rejected because the sidecar confirmed explicit writer vocabulary is sufficient in the audited first-party scope.
+
+Scalability potential: Low-tier devices keep the thread-local signal corridor and avoid hidden writer/read-accessor regressions. Middle tiers keep the same deterministic snapshot route. High/Ultra keep richer event-detail headroom through Vault tuning and presentation consumers, not through expanded legacy MPSC surfaces.
+
+Hardware Impact: No profiler microsecond claim. Static proof improved by closing the sidecar loop and preserving only documented compatibility bridges; runtime build/import proof remains blocked by the CPU guard.
+
+## Decision 54 - Combat Damage Codec Must Not Pull World AUP Type Into Core Signal Surface
+
+Problem: Russell's read-only sidecar found that `CombatDamageSignalCodec` still referenced `global::Hecton8.World.AbsoluteUniversePosition` and `OffsetAbsoluteMeters(...)` from `Assets/_Project/Scripts/Core/GlobalSignals.cs`. The dead `using Hecton8.World` cleanup was not enough because the concrete sibling type was fully qualified inside the codec. That weakens the Core signal compile-wall proof and makes a low-level codec depend on a World implementation type.
+
+Solution: Replace the concrete World AUP object reconstruction with Core-owned double precision origin math: `HectonFloatingOrigin.CurrentTotalOffsetDouble + new double3(runtimePoint.x, runtimePoint.y, runtimePoint.z)`. The helper is private, finite-guarded, allocation-free, and preserves the public `double3 FromRuntimePoint(...)` API and the existing `CombatDamageSignal` ABI. Runtime-to-AUP conversion stays in double precision before any local float projection, satisfying the 100 km jitter rule without importing a World DTO.
+
+Rejected Alternatives: Moving `CombatDamageSignalCodec` into World was rejected because call sites span combat, fauna, vehicles, construction, habitat, and Core context code. Changing the public codec return type to a World AUP contract was rejected because it would mutate every producer/consumer and likely force asmdef churn. Reusing `GlobalSignals.CurrentRuntimeOriginAup()` was rejected in this codec because it still exposes the concrete World AUP type at the call boundary.
+
+Scalability potential: Low-tier devices keep the cheapest conversion path: one cached-origin read, one double3 add, and finite guards. Middle tiers keep the same deterministic signal ABI. High/Ultra tiers do not gain extra gameplay truth here; visual overkill remains downstream of the signal consumers and shader/VFX presentation lanes.
+
+Hardware Impact: No measured microsecond claim. Static effect is compile-wall and branch-surface hardening. The patch removes a concrete sibling-domain type from a touched Core codec while avoiding a cross-domain migration that would increase build churn and merge risk.
+
+## Decision 55 - Legacy AUP DTO Aliases Are Safer Than Broad World Import Or Broken Source
+
+Problem: `GlobalSignals.cs` has many pre-existing `AbsoluteUniversePosition` and `AbsoluteUniversePositionBlit` fields across signal DTOs. Removing `using Hecton8.World;` without replacing those symbol imports risks a compile failure before any Burst or Unity import validation can run. The goal is to remove the codec's concrete World AUP construction path, not silently invalidate every legacy AUP-bearing signal contract.
+
+Solution: Add two explicit aliases at the top of `GlobalSignals.cs`: `AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition` and `AbsoluteUniversePositionBlit = Hecton8.World.AbsoluteUniversePositionBlit`. This keeps the existing source compiling against the current AUP DTO while preventing a broad namespace import from hiding future World usage. The combat codec remains on the Core floating-origin `double3` projection path and no longer calls World AUP methods.
+
+Rejected Alternatives: Restoring broad `using Hecton8.World;` was rejected because it reopens the full namespace and hides future direct use. Converting every AUP-bearing signal to a new Core contract DTO was rejected because it is a major ABI migration across signal producers, consumers, save paths, and tests. Leaving the import removed was rejected because static source already shows unresolved AUP type names under normal C# rules.
+
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. This is compile-risk containment and boundary clarity, not a new fidelity path. The existing continuous `GlobalQualityWeight` route and SHINOBU thread-local buffers are untouched.
+
+Hardware Impact: No runtime microsecond claim. Static effect is lower compile-wall risk: the file keeps the old AUP DTO dependency explicit and narrow while the hot codec path avoids World method calls.

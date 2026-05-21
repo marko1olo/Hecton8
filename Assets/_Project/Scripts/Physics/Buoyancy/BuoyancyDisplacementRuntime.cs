@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -22,6 +23,11 @@ namespace Hecton8.Physics
         private const int LockDebugForces = 1 << 5;
         private const int LockCounters = 1 << 6;
         private const int LockForcePackets = 1 << 7;
+        private const int LockSleepTelemetry = 1 << 8;
+        private const int LockSleepTelemetryCursor = 1 << 9;
+        private const int LockSleepSdfDensity = 1 << 10;
+        private const int LockSleepSdfConfig = 1 << 11;
+        private const int LockMaterialSettlingProfiles = 1 << 12;
 
         [Header("Vault Capacity")]
         [SerializeField, Range(1, BuoyancyDisplacementConstants.StateCapacity)]
@@ -42,8 +48,20 @@ namespace Hecton8.Physics
         private bool _loadCsvOnEnable = true;
 
         [SerializeField]
+        [Tooltip("Loads material_settling_profiles.csv into the Vault-backed sleep profile table during cold startup.")]
+        private bool _loadMaterialSettlingProfilesOnEnable = true;
+
+        [SerializeField]
+        [Tooltip("Loads simd_math_tolerances.csv into the Vault-backed SIMD polynomial tolerance table during cold startup.")]
+        private bool _loadSimdTolerancesOnEnable = true;
+
+        [SerializeField]
         [Tooltip("Project-relative material volume CSV path.")]
         private string _csvRelativePath = BuoyancyDisplacementConstants.CsvRelativePath;
+
+        [SerializeField]
+        [Tooltip("Project-relative material settling CSV path.")]
+        private string _materialSettlingProfilesCsvRelativePath = BuoyancyDisplacementConstants.MaterialSettlingProfilesCsvRelativePath;
 
         private IDataVault _dataVault;
         private VaultGenerationHandle<BuoyancyStateDTO> _statesHandle;
@@ -53,10 +71,15 @@ namespace Hecton8.Physics
         private VaultGenerationHandle<BuoyancyTelemetryEntry> _telemetryRingHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private VaultGenerationHandle<BuoyancyMaterialVolumeDTO> _materialVolumesHandle;
+        private VaultGenerationHandle<BuoyancyMaterialSettlingProfileDTO> _materialSettlingProfilesHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<BuoyancyDebugForceDTO> _debugForcesHandle;
         private VaultGenerationHandle<BuoyancyCounterDTO> _countersHandle;
         private VaultGenerationHandle<BuoyancyBodyBindingDTO> _bodyBindingsHandle;
+        private VaultGenerationHandle<sbyte> _sleepSdfDensityHandle;
+        private VaultGenerationHandle<BuoyancySleepSdfConfigDTO> _sleepSdfConfigHandle;
+        private VaultGenerationHandle<SleepStateTelemetryEntry> _sleepTelemetryRingHandle;
+        private VaultGenerationHandle<int> _sleepTelemetryCursorHandle;
         private VaultGenerationHandle<SimdFloat3Padded> _simdLocalPositionsHandle;
         private VaultGenerationHandle<SimdFloat3Padded> _simdVelocitiesHandle;
         private VaultGenerationHandle<float> _simdDragCoefficientsHandle;
@@ -95,36 +118,64 @@ namespace Hecton8.Physics
         }
 #endif
 
-        public bool TryResolveEditorViews(
+#if UNITY_EDITOR
+        /// <summary>Opens mutable editor views for buoyancy tuning, counters, telemetry, and cursor rows.</summary>
+        /// <param name="tuning">Opened tuning row.</param>
+        /// <param name="counters">Opened counter row.</param>
+        /// <param name="telemetry">Opened buoyancy telemetry ring.</param>
+        /// <param name="cursor">Opened buoyancy telemetry cursor.</param>
+        /// <remarks>Editor-only cold surface; gameplay phases do not call this accessor.</remarks>
+        public bool TryOpenEditorViews(
             out NativeArray<BuoyancyTuningDTO> tuning,
             out NativeArray<BuoyancyCounterDTO> counters,
             out NativeArray<BuoyancyTelemetryEntry> telemetry,
             out NativeArray<int> cursor)
         {
+            NativeArray<SleepStateTelemetryEntry> unused;
+            return TryOpenEditorViews(out tuning, out counters, out telemetry, out unused, out cursor);
+        }
+
+        /// <summary>Opens mutable editor views for buoyancy and sleep telemetry rows.</summary>
+        /// <param name="tuning">Opened tuning row.</param>
+        /// <param name="counters">Opened counter row.</param>
+        /// <param name="telemetry">Opened buoyancy telemetry ring.</param>
+        /// <param name="sleepTelemetry">Opened sleep telemetry ring.</param>
+        /// <param name="cursor">Opened telemetry cursor.</param>
+        /// <remarks>Editor-only cold surface; returned buffers are not a read-only gameplay API.</remarks>
+        public bool TryOpenEditorViews(
+            out NativeArray<BuoyancyTuningDTO> tuning,
+            out NativeArray<BuoyancyCounterDTO> counters,
+            out NativeArray<BuoyancyTelemetryEntry> telemetry,
+            out NativeArray<SleepStateTelemetryEntry> sleepTelemetry,
+            out NativeArray<int> cursor)
+        {
             tuning = default;
             counters = default;
             telemetry = default;
+            sleepTelemetry = default;
             cursor = default;
             IDataVault vault = _dataVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                vault = latestVault;
-            if (vault == null)
-                return false;
-
-            if (!HasHandle(in _tuningHandle) && !EnsureVaultBuffers())
+            if (vault == null || !HandlesReady(vault))
                 return false;
 
             tuning = ResolveVaultBuffer(vault, in _tuningHandle);
             counters = ResolveVaultBuffer(vault, in _countersHandle);
             telemetry = ResolveVaultBuffer(vault, in _telemetryRingHandle);
+            sleepTelemetry = ResolveVaultBuffer(vault, in _sleepTelemetryRingHandle);
             cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
             return tuning.IsCreated && tuning.Length > 0 &&
                    counters.IsCreated && counters.Length > 0 &&
                    telemetry.IsCreated && telemetry.Length > 0 &&
+                   sleepTelemetry.IsCreated && sleepTelemetry.Length > 0 &&
                    cursor.IsCreated && cursor.Length > 0;
         }
 
-        public bool TryResolveSimdEditorViews(
+        /// <summary>Opens mutable editor views for SIMD benchmark telemetry and tolerance rows.</summary>
+        /// <param name="telemetry">Opened SIMD telemetry ring.</param>
+        /// <param name="cursor">Opened SIMD telemetry cursor.</param>
+        /// <param name="tolerances">Opened SIMD tolerance rows.</param>
+        /// <remarks>Editor-only cold surface used by Burst Vectorization X-Ray tooling.</remarks>
+        public bool TryOpenSimdEditorViews(
             out NativeArray<SimdTelemetryEntry> telemetry,
             out NativeArray<int> cursor,
             out NativeArray<SimdMathToleranceDTO> tolerances)
@@ -133,9 +184,7 @@ namespace Hecton8.Physics
             cursor = default;
             tolerances = default;
             IDataVault vault = _dataVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                vault = latestVault;
-            if (vault == null || !EnsureVaultBuffers())
+            if (vault == null || !HandlesReady(vault))
                 return false;
 
             telemetry = ResolveVaultBuffer(vault, in _simdTelemetryRingHandle);
@@ -146,18 +195,50 @@ namespace Hecton8.Physics
                    tolerances.IsCreated && tolerances.Length > 0;
         }
 
-        public bool TryResolveSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO> tuning)
+        /// <summary>Opens the editor-only SIMD hydrodynamic tuning row.</summary>
+        /// <param name="tuning">Opened SIMD hydrodynamic tuning row.</param>
+        /// <remarks>Editor-only cold surface; not used by runtime gameplay phases.</remarks>
+        public bool TryOpenSimdTuningEditorView(out NativeArray<SimdHydrodynamicTuningDTO> tuning)
         {
             tuning = default;
             IDataVault vault = _dataVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                vault = latestVault;
-            if (vault == null || !EnsureVaultBuffers())
+            if (vault == null || !HandlesReady(vault))
                 return false;
 
             tuning = ResolveVaultBuffer(vault, in _simdHydrodynamicTuningHandle);
             return tuning.IsCreated && tuning.Length > 0;
         }
+
+        /// <summary>Opens mutable editor views for SHINOBU_249 sleep telemetry and SDF tuning.</summary>
+        /// <param name="tuning">Opened buoyancy tuning row.</param>
+        /// <param name="telemetry">Opened sleep telemetry ring.</param>
+        /// <param name="cursor">Opened sleep telemetry cursor.</param>
+        /// <param name="sdfConfig">Opened sleep SDF config row.</param>
+        /// <remarks>Editor-only cold surface used by the Physics Sleep State X-Ray window.</remarks>
+        public bool TryOpenSleepTelemetryEditorViews(
+            out NativeArray<BuoyancyTuningDTO> tuning,
+            out NativeArray<SleepStateTelemetryEntry> telemetry,
+            out NativeArray<int> cursor,
+            out NativeArray<BuoyancySleepSdfConfigDTO> sdfConfig)
+        {
+            tuning = default;
+            telemetry = default;
+            cursor = default;
+            sdfConfig = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || !HandlesReady(vault))
+                return false;
+
+            tuning = ResolveVaultBuffer(vault, in _tuningHandle);
+            telemetry = ResolveVaultBuffer(vault, in _sleepTelemetryRingHandle);
+            cursor = ResolveVaultBuffer(vault, in _sleepTelemetryCursorHandle);
+            sdfConfig = ResolveVaultBuffer(vault, in _sleepSdfConfigHandle);
+            return tuning.IsCreated && tuning.Length > 0 &&
+                   telemetry.IsCreated && telemetry.Length > 0 &&
+                   cursor.IsCreated && cursor.Length > 0 &&
+                   sdfConfig.IsCreated && sdfConfig.Length > 0;
+        }
+#endif
 
         private void Awake()
         {
@@ -230,24 +311,19 @@ namespace Hecton8.Physics
                     out NativeArray<BuoyancyTuningDTO> tuning,
                     out NativeArray<BuoyancyTelemetryEntry> telemetry,
                     out NativeArray<int> telemetryCursor,
+                    out NativeArray<SleepStateTelemetryEntry> sleepTelemetry,
+                    out NativeArray<int> sleepTelemetryCursor,
+                    out NativeArray<sbyte> sleepSdfDensity,
+                    out NativeArray<BuoyancySleepSdfConfigDTO> sleepSdfConfig,
+                    out NativeArray<BuoyancyMaterialSettlingProfileDTO> materialSettlingProfiles,
                     out NativeArray<BuoyancyDebugForceDTO> debugForces,
                     out NativeArray<BuoyancyCounterDTO> counters))
             {
-                if (!TryRecoverRuntimeVaultDescriptors(ref vault) ||
-                    !TryResolveRuntimeBuffers(
-                        vault,
-                        out states,
-                        out forcePackets,
-                        out flowSamples,
-                        out tuning,
-                        out telemetry,
-                        out telemetryCursor,
-                        out debugForces,
-                        out counters))
-                {
-                    return;
-                }
+                return;
             }
+
+            if (!TryLockJobBuffers(vault))
+                return;
 
             BuoyancyTuningDTO tuningDto = tuning[0];
             float quality = ResolveGlobalQualityWeight(ref tuningDto);
@@ -260,15 +336,49 @@ namespace Hecton8.Physics
             int authoredActiveCount = math.select(_stateCapacity, tuningDto.ActiveStateCount, tuningDto.ActiveStateCount > 0);
             _activeStateCount = math.clamp(authoredActiveCount, 0, states.Length);
             if (_activeStateCount <= 0)
+            {
+                WriteCompletedSimdUtilizationTelemetry(0f);
+                UnlockJobBuffers();
                 return;
-
-            if (!TryLockJobBuffers(vault))
-                return;
+            }
 
             if (!PhysicsApplySystem.TryPrepareBuoyancyForcePackets(forcePackets, counters))
             {
                 UnlockJobBuffers();
                 return;
+            }
+
+            NativeArray<WakeRequestSignal>.ReadOnly wakeRequests = SignalBus<WakeRequestSignal>.GetFrameSnapshotArray();
+            int wakeRequestCount = wakeRequests.IsCreated ? wakeRequests.Length : 0;
+            JobHandle sleepPrepassHandle = default;
+            if (wakeRequestCount > 0)
+            {
+                ProcessBuoyancyWakeTriggersJob wakeJob = new ProcessBuoyancyWakeTriggersJob
+                {
+                    States = states,
+                    WakeRequests = wakeRequests,
+                    StateCount = _activeStateCount,
+                    WakeRequestCount = wakeRequestCount
+                };
+                sleepPrepassHandle = wakeJob.Schedule(_activeStateCount, 64);
+            }
+
+            int currentPollCadence = ResolveAmbientCurrentPollCadence(quality);
+            if ((_simulationFrame % (uint)currentPollCadence) == 0u)
+            {
+                BuoyancySleepSdfConfigDTO sdfConfig = sleepSdfConfig.Length > 0
+                    ? sleepSdfConfig[0]
+                    : BuoyancySleepSdfConfigDTO.Default();
+                PollAmbientCurrentsJob currentWakeJob = new PollAmbientCurrentsJob
+                {
+                    States = states,
+                    FlowSamples = flowSamples,
+                    StateCount = _activeStateCount,
+                    FlowSampleCount = flowSamples.Length,
+                    StirThresholdSq = sdfConfig.AmbientStirThresholdSq,
+                    SimulationFrame = _simulationFrame
+                };
+                sleepPrepassHandle = currentWakeJob.Schedule(_activeStateCount, 64, sleepPrepassHandle);
             }
 
             int stride = ResolveEvaluationStride(quality);
@@ -283,22 +393,33 @@ namespace Hecton8.Physics
                     Counters = counters,
                     TelemetryRing = telemetry,
                     TelemetryCursor = telemetryCursor,
+                    SleepTelemetryRing = sleepTelemetry,
+                    SleepTelemetryCursor = sleepTelemetryCursor,
                     ActiveStateCount = _activeStateCount,
+                    WakeRequestCount = wakeRequestCount,
                     SimulationFrame = _simulationFrame,
                     GlobalQualityWeight = quality,
+                    SleepEnergyThreshold = tuningDto.SleepSpeedSq,
                     ComputeMicros = 0f
                 };
-                _pendingHandle = emptyReduceJob.Schedule();
+                _pendingHandle = emptyReduceJob.Schedule(sleepPrepassHandle);
                 _jobScheduled = true;
                 return;
             }
 
+            BuoyancySleepSdfConfigDTO sleepConfig = sleepSdfConfig.Length > 0
+                ? sleepSdfConfig[0]
+                : BuoyancySleepSdfConfigDTO.Default();
             EvaluateBuoyancyJob evaluateJob = new EvaluateBuoyancyJob
             {
                 States = states,
                 StateCount = states.Length,
                 FlowSamples = flowSamples,
                 FlowSampleCount = flowSamples.Length,
+                SleepSdfDensity = sleepSdfDensity,
+                MaterialSettlingProfiles = materialSettlingProfiles,
+                MaterialSettlingProfileCount = materialSettlingProfiles.Length,
+                SleepSdfConfig = sleepConfig,
                 Tuning = tuningDto,
                 DebugForces = debugForces,
                 DebugForceCount = debugForces.Length,
@@ -310,10 +431,10 @@ namespace Hecton8.Physics
                 EvaluationOffset = evaluationOffset,
                 SimulationFrame = _simulationFrame,
                 SimulationTickDelta = safeFixedDeltaTime,
-                GlobalQualityWeight = quality
+                GlobalQualityWeight = BuoyancyDisplacementConstants.AuthoritativeQualityWeight
             };
 
-            JobHandle evaluateHandle = evaluateJob.Schedule(scheduledEvaluationCount, 64);
+            JobHandle evaluateHandle = evaluateJob.Schedule(scheduledEvaluationCount, 64, sleepPrepassHandle);
             CompactBuoyancyForcePacketsJob compactForcePacketsJob = new CompactBuoyancyForcePacketsJob
             {
                 ForcePackets = forcePackets,
@@ -327,9 +448,13 @@ namespace Hecton8.Physics
                 Counters = counters,
                 TelemetryRing = telemetry,
                 TelemetryCursor = telemetryCursor,
+                SleepTelemetryRing = sleepTelemetry,
+                SleepTelemetryCursor = sleepTelemetryCursor,
                 ActiveStateCount = _activeStateCount,
+                WakeRequestCount = wakeRequestCount,
                 SimulationFrame = _simulationFrame,
                 GlobalQualityWeight = quality,
+                SleepEnergyThreshold = tuningDto.SleepSpeedSq,
                 ComputeMicros = 0f
             };
             _pendingHandle = reduceJob.Schedule(compactHandle);
@@ -482,7 +607,7 @@ namespace Hecton8.Physics
             int laneCount = (count + SimdVectorizationConstants.HydrodynamicsLaneWidth - 1) /
                             SimdVectorizationConstants.HydrodynamicsLaneWidth;
 
-            SimdHydrodynamicTuningDTO tuningValue = ResolveBenchmarkSimdTuning(benchmarkTuning, _simulationFrame);
+            SimdHydrodynamicTuningDTO tuningValue = PrepareBenchmarkSimdTuning(benchmarkTuning, _simulationFrame);
             float scalarMicros = 0f;
             float scalarProbeWeight = math.saturate(math.select(
                 0f,
@@ -598,6 +723,32 @@ namespace Hecton8.Physics
             return BuoyancyMaterialVolumeCsvParser.TryApply(span, table, out _);
         }
 
+        public bool TryLoadMaterialSettlingProfilesCsv()
+        {
+            // COLD TUNING PATH: explicit designer-triggered sleep profile hydration; hot jobs read unmanaged rows only.
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsAllocationLocked || !EnsureVaultBuffers())
+                return false;
+
+            NativeArray<byte> scratch = ResolveVaultBuffer(vault, in _csvScratchHandle);
+            NativeArray<BuoyancyMaterialSettlingProfileDTO> table = ResolveVaultBuffer(vault, in _materialSettlingProfilesHandle);
+            if (!scratch.IsCreated || scratch.Length <= 0 || !table.IsCreated || table.Length <= 0)
+                return false;
+
+            string path = ResolveProjectPath(_materialSettlingProfilesCsvRelativePath);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            int bytesRead = ReadFileIntoNativeScratch(path, scratch);
+            if (bytesRead <= 0)
+                return false;
+
+            ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(
+                NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch),
+                math.min(bytesRead, scratch.Length));
+            return BuoyancyMaterialSettlingProfileCsvParser.TryApply(span, table, out _);
+        }
+
         public bool TryLoadSimdMathTolerancesCsv()
         {
             // COLD TUNING PATH: editor/manual SIMD tolerance hydration; gameplay jobs consume the parsed Vault rows.
@@ -633,8 +784,8 @@ namespace Hecton8.Physics
 
         private void RefreshColdDependencies()
         {
-            if (_dataVault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                _dataVault = latest;
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
         }
 
         private bool EnsureColdBooted()
@@ -654,6 +805,10 @@ namespace Hecton8.Physics
             InitializeColdBuffersIfNeeded();
             if (_loadCsvOnEnable)
                 TryLoadMaterialVolumesCsv();
+            if (_loadMaterialSettlingProfilesOnEnable)
+                TryLoadMaterialSettlingProfilesCsv();
+            if (_loadSimdTolerancesOnEnable)
+                TryLoadSimdMathTolerancesCsv();
             if (_seedEmergencyMockObjects && ShouldSeedEmergencyMock())
                 GenerateMockBuoyantObjects();
 
@@ -691,7 +846,12 @@ namespace Hecton8.Physics
                    EnsureVaultDescriptor(vault, ref _tuningHandle, BuoyancyDisplacementBufferIds.Tuning, BuoyancyDisplacementConstants.TuningCapacity, NativeArrayOptions.UninitializedMemory) &&
                    EnsureVaultDescriptor(vault, ref _telemetryRingHandle, BuoyancyDisplacementBufferIds.TelemetryRing, BuoyancyDisplacementConstants.TelemetryCapacity, NativeArrayOptions.UninitializedMemory) &&
                    EnsureVaultDescriptor(vault, ref _telemetryCursorHandle, BuoyancyDisplacementBufferIds.TelemetryCursor, 1, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultDescriptor(vault, ref _sleepTelemetryRingHandle, BuoyancyDisplacementBufferIds.SleepTelemetryRing, BuoyancyDisplacementConstants.TelemetryCapacity, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultDescriptor(vault, ref _sleepTelemetryCursorHandle, BuoyancyDisplacementBufferIds.SleepTelemetryCursor, 1, NativeArrayOptions.ClearMemory) &&
+                   EnsureVaultDescriptor(vault, ref _sleepSdfDensityHandle, BuoyancyDisplacementBufferIds.SleepSdfDensity, BuoyancyDisplacementConstants.SleepSdfCellCapacity, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultDescriptor(vault, ref _sleepSdfConfigHandle, BuoyancyDisplacementBufferIds.SleepSdfConfig, 1, NativeArrayOptions.UninitializedMemory) &&
                    EnsureVaultDescriptor(vault, ref _materialVolumesHandle, BuoyancyDisplacementBufferIds.MaterialVolumes, BuoyancyDisplacementConstants.MaterialVolumeCapacity, NativeArrayOptions.UninitializedMemory) &&
+                   EnsureVaultDescriptor(vault, ref _materialSettlingProfilesHandle, BuoyancyDisplacementBufferIds.MaterialSettlingProfiles, BuoyancyDisplacementConstants.MaterialSettlingProfileCapacity, NativeArrayOptions.UninitializedMemory) &&
                    EnsureVaultDescriptor(vault, ref _csvScratchHandle, BuoyancyDisplacementBufferIds.CsvScratch, BuoyancyDisplacementConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory) &&
                    EnsureVaultDescriptor(vault, ref _debugForcesHandle, BuoyancyDisplacementBufferIds.DebugForces, stateCapacity, NativeArrayOptions.UninitializedMemory) &&
                    EnsureVaultDescriptor(vault, ref _countersHandle, BuoyancyDisplacementBufferIds.Counters, BuoyancyDisplacementConstants.CounterCapacity, NativeArrayOptions.ClearMemory) &&
@@ -725,7 +885,12 @@ namespace Hecton8.Physics
                    HasHandle(in _tuningHandle) &&
                    HasHandle(in _telemetryRingHandle) &&
                    HasHandle(in _telemetryCursorHandle) &&
+                   HasHandle(in _sleepTelemetryRingHandle) &&
+                   HasHandle(in _sleepTelemetryCursorHandle) &&
+                   HasHandle(in _sleepSdfDensityHandle) &&
+                   HasHandle(in _sleepSdfConfigHandle) &&
                    HasHandle(in _materialVolumesHandle) &&
+                   HasHandle(in _materialSettlingProfilesHandle) &&
                    HasHandle(in _csvScratchHandle) &&
                    HasHandle(in _debugForcesHandle) &&
                    HasHandle(in _countersHandle) &&
@@ -747,41 +912,11 @@ namespace Hecton8.Physics
 
         private bool TryPrepareRuntimeVault(out IDataVault vault)
         {
-            if (_dataVault == null)
-                RefreshColdDependencies();
-
             vault = _dataVault;
-            if (vault == null)
+            if (!_coldBootCompleted || vault == null)
                 return false;
 
-            if (!_coldBootCompleted)
-            {
-                if (vault.IsAllocationLocked || !EnsureColdBooted())
-                    return false;
-
-                vault = _dataVault;
-                return vault != null && HandlesReady(vault);
-            }
-
-            if (HandlesReady(vault))
-                return true;
-
-            return TryRecoverRuntimeVaultDescriptors(ref vault);
-        }
-
-        private bool TryRecoverRuntimeVaultDescriptors(ref IDataVault vault)
-        {
-            if (vault == null)
-                return false;
-
-            if (vault.IsAllocationLocked)
-                return false;
-
-            if (!EnsureVaultBuffers())
-                return false;
-
-            vault = _dataVault;
-            return vault != null && HandlesReady(vault);
+            return HandlesReady(vault);
         }
 
         private static bool EnsureVaultDescriptor<T>(
@@ -908,14 +1043,24 @@ namespace Hecton8.Physics
             NativeArray<BuoyancyFlowSampleDTO> flowSamples = ResolveVaultBuffer(vault, in _flowSamplesHandle);
             NativeArray<BuoyancyTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryRingHandle);
             NativeArray<int> telemetryCursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+            NativeArray<SleepStateTelemetryEntry> sleepTelemetry = ResolveVaultBuffer(vault, in _sleepTelemetryRingHandle);
+            NativeArray<int> sleepTelemetryCursor = ResolveVaultBuffer(vault, in _sleepTelemetryCursorHandle);
+            NativeArray<sbyte> sleepSdfDensity = ResolveVaultBuffer(vault, in _sleepSdfDensityHandle);
+            NativeArray<BuoyancySleepSdfConfigDTO> sleepSdfConfig = ResolveVaultBuffer(vault, in _sleepSdfConfigHandle);
             NativeArray<BuoyancyMaterialVolumeDTO> materials = ResolveVaultBuffer(vault, in _materialVolumesHandle);
+            NativeArray<BuoyancyMaterialSettlingProfileDTO> settlingProfiles = ResolveVaultBuffer(vault, in _materialSettlingProfilesHandle);
             NativeArray<BuoyancyDebugForceDTO> debug = ResolveVaultBuffer(vault, in _debugForcesHandle);
             NativeArray<BuoyancyCounterDTO> counters = ResolveVaultBuffer(vault, in _countersHandle);
             NativeArray<BuoyancyBodyBindingDTO> bindings = ResolveVaultBuffer(vault, in _bodyBindingsHandle);
             if (!flowSamples.IsCreated ||
                 !telemetry.IsCreated ||
                 !telemetryCursor.IsCreated ||
+                !sleepTelemetry.IsCreated ||
+                !sleepTelemetryCursor.IsCreated ||
+                !sleepSdfDensity.IsCreated ||
+                !sleepSdfConfig.IsCreated ||
                 !materials.IsCreated ||
+                !settlingProfiles.IsCreated ||
                 !debug.IsCreated ||
                 !counters.IsCreated ||
                 !bindings.IsCreated)
@@ -928,7 +1073,12 @@ namespace Hecton8.Physics
                 FlowSamples = flowSamples,
                 TelemetryRing = telemetry,
                 TelemetryCursor = telemetryCursor,
+                SleepTelemetryRing = sleepTelemetry,
+                SleepTelemetryCursor = sleepTelemetryCursor,
+                SleepSdfDensity = sleepSdfDensity,
+                SleepSdfConfig = sleepSdfConfig,
                 MaterialVolumes = materials,
+                MaterialSettlingProfiles = settlingProfiles,
                 DebugForces = debug,
                 Counters = counters,
                 BodyBindings = bindings
@@ -949,6 +1099,11 @@ namespace Hecton8.Physics
             out NativeArray<BuoyancyTuningDTO> tuning,
             out NativeArray<BuoyancyTelemetryEntry> telemetry,
             out NativeArray<int> telemetryCursor,
+            out NativeArray<SleepStateTelemetryEntry> sleepTelemetry,
+            out NativeArray<int> sleepTelemetryCursor,
+            out NativeArray<sbyte> sleepSdfDensity,
+            out NativeArray<BuoyancySleepSdfConfigDTO> sleepSdfConfig,
+            out NativeArray<BuoyancyMaterialSettlingProfileDTO> materialSettlingProfiles,
             out NativeArray<BuoyancyDebugForceDTO> debugForces,
             out NativeArray<BuoyancyCounterDTO> counters)
         {
@@ -958,6 +1113,11 @@ namespace Hecton8.Physics
             tuning = default;
             telemetry = default;
             telemetryCursor = default;
+            sleepTelemetry = default;
+            sleepTelemetryCursor = default;
+            sleepSdfDensity = default;
+            sleepSdfConfig = default;
+            materialSettlingProfiles = default;
             debugForces = default;
             counters = default;
             if (vault == null)
@@ -969,6 +1129,11 @@ namespace Hecton8.Physics
             tuning = ResolveVaultBuffer(vault, in _tuningHandle);
             telemetry = ResolveVaultBuffer(vault, in _telemetryRingHandle);
             telemetryCursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+            sleepTelemetry = ResolveVaultBuffer(vault, in _sleepTelemetryRingHandle);
+            sleepTelemetryCursor = ResolveVaultBuffer(vault, in _sleepTelemetryCursorHandle);
+            sleepSdfDensity = ResolveVaultBuffer(vault, in _sleepSdfDensityHandle);
+            sleepSdfConfig = ResolveVaultBuffer(vault, in _sleepSdfConfigHandle);
+            materialSettlingProfiles = ResolveVaultBuffer(vault, in _materialSettlingProfilesHandle);
             debugForces = ResolveVaultBuffer(vault, in _debugForcesHandle);
             counters = ResolveVaultBuffer(vault, in _countersHandle);
             return states.IsCreated &&
@@ -977,11 +1142,19 @@ namespace Hecton8.Physics
                    tuning.IsCreated &&
                    telemetry.IsCreated &&
                    telemetryCursor.IsCreated &&
+                   sleepTelemetry.IsCreated &&
+                   sleepTelemetryCursor.IsCreated &&
+                   sleepSdfDensity.IsCreated &&
+                   sleepSdfConfig.IsCreated &&
+                   materialSettlingProfiles.IsCreated &&
                    debugForces.IsCreated &&
                    counters.IsCreated &&
                    tuning.Length >= 1 &&
                    telemetry.Length >= BuoyancyDisplacementConstants.TelemetryCapacity &&
                    telemetryCursor.Length >= 1 &&
+                   sleepTelemetry.Length >= BuoyancyDisplacementConstants.TelemetryCapacity &&
+                   sleepTelemetryCursor.Length >= 1 &&
+                   sleepSdfConfig.Length >= 1 &&
                    counters.Length >= 1;
         }
 
@@ -1013,11 +1186,12 @@ namespace Hecton8.Physics
         private bool FinishPendingSolverCompletion()
         {
             _jobScheduled = false;
-            UnlockJobBuffers();
-
             float micros = ResolveElapsedMicros(_scheduleTimestamp);
             WriteCompletedComputeMicros(micros);
-            if (!_dumpedFault && TryLatestCounterHasFault())
+            WriteCompletedSimdUtilizationTelemetry(micros);
+            bool shouldDumpFault = !_dumpedFault && TryLatestCounterHasFault();
+            UnlockJobBuffers();
+            if (shouldDumpFault)
             {
                 DumpBlackBoxOnce();
                 _dumpedFault = true;
@@ -1053,6 +1227,100 @@ namespace Hecton8.Physics
             BuoyancyTelemetryEntry entry = telemetry[slot];
             entry.ComputeMicros = safeMicros;
             telemetry[slot] = entry;
+
+            NativeArray<SleepStateTelemetryEntry> sleepTelemetry = ResolveVaultBuffer(vault, in _sleepTelemetryRingHandle);
+            NativeArray<int> sleepCursor = ResolveVaultBuffer(vault, in _sleepTelemetryCursorHandle);
+            if (!sleepTelemetry.IsCreated || sleepTelemetry.Length <= 0 || !sleepCursor.IsCreated || sleepCursor.Length <= 0)
+                return;
+
+            int sleepCurrentCursor = math.clamp(sleepCursor[0], 0, sleepTelemetry.Length - 1);
+            int sleepSlot = (sleepCurrentCursor + sleepTelemetry.Length - 1) % sleepTelemetry.Length;
+            SleepStateTelemetryEntry sleepEntry = sleepTelemetry[sleepSlot];
+            sleepEntry.ComputeMicros = safeMicros;
+            sleepTelemetry[sleepSlot] = sleepEntry;
+        }
+
+        private void WriteCompletedSimdUtilizationTelemetry(float micros)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !HasHandle(in _simdTelemetryRingHandle) ||
+                !HasHandle(in _simdTelemetryCursorHandle))
+            {
+                return;
+            }
+
+            if (!vault.TryLockBuffer(BuoyancyDisplacementBufferIds.SimdTelemetryRing, SystemID.Physics))
+                return;
+
+            bool cursorLocked = vault.TryLockBuffer(BuoyancyDisplacementBufferIds.SimdTelemetryCursor, SystemID.Physics);
+            if (!cursorLocked)
+            {
+                vault.TryUnlockBuffer(BuoyancyDisplacementBufferIds.SimdTelemetryRing, SystemID.Physics);
+                return;
+            }
+
+            try
+            {
+                NativeArray<SimdTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _simdTelemetryRingHandle);
+                NativeArray<int> cursor = ResolveVaultBuffer(vault, in _simdTelemetryCursorHandle);
+                if (!telemetry.IsCreated || telemetry.Length <= 0 || !cursor.IsCreated || cursor.Length <= 0)
+                    return;
+
+                NativeArray<SimdHydrodynamicTuningDTO> tuning = ResolveVaultBuffer(vault, in _simdHydrodynamicTuningHandle);
+                SimdHydrodynamicTuningDTO tuningValue = default;
+                if (tuning.IsCreated && tuning.Length > 0)
+                    tuningValue = tuning[0];
+
+                float safeMicros = math.max(0f, math.select(0f, micros, math.isfinite(micros)));
+                float vectorMs = math.max(0.0001f, safeMicros * 0.001f);
+                float throughput = math.max(0, _activeStateCount) * math.rcp(vectorMs);
+                float quality = ResolveGlobalQualityWeightFromHomeostasis();
+                float maxError = math.max(0f, math.select(0.01f, tuningValue.MaxApproximationError, math.isfinite(tuningValue.MaxApproximationError)));
+                float maxSpeed = math.max(0f, math.select(0f, tuningValue.MaxSpeed, math.isfinite(tuningValue.MaxSpeed)));
+                float maxSpeedSq = maxSpeed * maxSpeed;
+                int currentCursor = math.max(0, cursor[0]);
+                int previousSlot = (currentCursor + telemetry.Length - 1) % telemetry.Length;
+                SimdTelemetryEntry previousEntry = telemetry[previousSlot];
+                bool previousSameKernel = previousEntry.KernelHash == SimdVectorizationConstants.HydrodynamicsKernelHash;
+                float previousScalarMicros = math.max(
+                    0f,
+                    math.select(0f, previousEntry.ScalarMicros, previousSameKernel & math.isfinite(previousEntry.ScalarMicros)));
+                float throughputDrop = ResolveSimdThroughputDrop(safeMicros, previousScalarMicros);
+                bool nonFinite = !math.isfinite(micros) |
+                                 !math.isfinite(throughput) |
+                                 !math.isfinite(maxError) |
+                                 !math.isfinite(maxSpeedSq) |
+                                 !math.isfinite(throughputDrop);
+
+                int slot = currentCursor % telemetry.Length;
+                SimdTelemetryEntry entry = default;
+                entry.FrameIndex = _simulationFrame;
+                entry.KernelHash = SimdVectorizationConstants.HydrodynamicsKernelHash;
+                entry.EntityCount = math.max(0, _activeStateCount);
+                entry.VectorMicros = safeMicros;
+                entry.ScalarMicros = previousScalarMicros;
+                entry.EntitiesPerMillisecond = math.select(0f, throughput, math.isfinite(throughput));
+                entry.ThroughputDrop01 = throughputDrop;
+                entry.GlobalQualityWeight = quality;
+                entry.Flags = math.select(0u, SimdVectorizationConstants.FlagNonFinite, nonFinite);
+                entry.LastStateHash = (_simulationFrame * 747796405u) ^
+                                      (uint)math.max(0, _activeStateCount) ^
+                                      SimdVectorizationConstants.HydrodynamicsKernelHash;
+                entry.MaxError = maxError;
+                entry.MaxSpeedSq = math.select(0f, maxSpeedSq, math.isfinite(maxSpeedSq));
+                telemetry[slot] = entry;
+                int nextCursor = slot + 1;
+                cursor[0] = math.select(nextCursor, 0, nextCursor >= telemetry.Length);
+
+                if ((entry.Flags & SimdVectorizationConstants.FlagNonFinite) != 0u || throughputDrop > 0.5f)
+                    TryDumpSimdTelemetry(telemetry);
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BuoyancyDisplacementBufferIds.SimdTelemetryCursor, SystemID.Physics);
+                vault.TryUnlockBuffer(BuoyancyDisplacementBufferIds.SimdTelemetryRing, SystemID.Physics);
+            }
         }
 
         private bool TryLatestCounterHasFault()
@@ -1078,6 +1346,11 @@ namespace Hecton8.Physics
                    TryLock(vault, BuoyancyDisplacementBufferIds.Tuning, LockTuning) &&
                    TryLock(vault, BuoyancyDisplacementBufferIds.TelemetryRing, LockTelemetry) &&
                    TryLock(vault, BuoyancyDisplacementBufferIds.TelemetryCursor, LockTelemetryCursor) &&
+                   TryLock(vault, BuoyancyDisplacementBufferIds.SleepTelemetryRing, LockSleepTelemetry) &&
+                   TryLock(vault, BuoyancyDisplacementBufferIds.SleepTelemetryCursor, LockSleepTelemetryCursor) &&
+                   TryLock(vault, BuoyancyDisplacementBufferIds.SleepSdfDensity, LockSleepSdfDensity) &&
+                   TryLock(vault, BuoyancyDisplacementBufferIds.SleepSdfConfig, LockSleepSdfConfig) &&
+                   TryLock(vault, BuoyancyDisplacementBufferIds.MaterialSettlingProfiles, LockMaterialSettlingProfiles) &&
                    TryLock(vault, BuoyancyDisplacementBufferIds.DebugForces, LockDebugForces) &&
                    TryLock(vault, BuoyancyDisplacementBufferIds.Counters, LockCounters);
         }
@@ -1109,6 +1382,11 @@ namespace Hecton8.Physics
             Unlock(vault, BuoyancyDisplacementBufferIds.Tuning, LockTuning);
             Unlock(vault, BuoyancyDisplacementBufferIds.TelemetryRing, LockTelemetry);
             Unlock(vault, BuoyancyDisplacementBufferIds.TelemetryCursor, LockTelemetryCursor);
+            Unlock(vault, BuoyancyDisplacementBufferIds.SleepTelemetryRing, LockSleepTelemetry);
+            Unlock(vault, BuoyancyDisplacementBufferIds.SleepTelemetryCursor, LockSleepTelemetryCursor);
+            Unlock(vault, BuoyancyDisplacementBufferIds.SleepSdfDensity, LockSleepSdfDensity);
+            Unlock(vault, BuoyancyDisplacementBufferIds.SleepSdfConfig, LockSleepSdfConfig);
+            Unlock(vault, BuoyancyDisplacementBufferIds.MaterialSettlingProfiles, LockMaterialSettlingProfiles);
             Unlock(vault, BuoyancyDisplacementBufferIds.DebugForces, LockDebugForces);
             Unlock(vault, BuoyancyDisplacementBufferIds.Counters, LockCounters);
             _lockedBuffers = 0;
@@ -1213,7 +1491,12 @@ namespace Hecton8.Physics
                 ReleaseVaultHandle(vault, ref _tuningHandle);
                 ReleaseVaultHandle(vault, ref _telemetryRingHandle);
                 ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+                ReleaseVaultHandle(vault, ref _sleepTelemetryRingHandle);
+                ReleaseVaultHandle(vault, ref _sleepTelemetryCursorHandle);
+                ReleaseVaultHandle(vault, ref _sleepSdfDensityHandle);
+                ReleaseVaultHandle(vault, ref _sleepSdfConfigHandle);
                 ReleaseVaultHandle(vault, ref _materialVolumesHandle);
+                ReleaseVaultHandle(vault, ref _materialSettlingProfilesHandle);
                 ReleaseVaultHandle(vault, ref _csvScratchHandle);
                 ReleaseVaultHandle(vault, ref _debugForcesHandle);
                 ReleaseVaultHandle(vault, ref _countersHandle);
@@ -1253,7 +1536,12 @@ namespace Hecton8.Physics
             _tuningHandle = default;
             _telemetryRingHandle = default;
             _telemetryCursorHandle = default;
+            _sleepTelemetryRingHandle = default;
+            _sleepTelemetryCursorHandle = default;
+            _sleepSdfDensityHandle = default;
+            _sleepSdfConfigHandle = default;
             _materialVolumesHandle = default;
+            _materialSettlingProfilesHandle = default;
             _csvScratchHandle = default;
             _debugForcesHandle = default;
             _countersHandle = default;
@@ -1277,9 +1565,12 @@ namespace Hecton8.Physics
 
         private static int ResolveEvaluationStride(float quality)
         {
-            float q = math.saturate(math.select(1f, quality, math.isfinite(quality)));
-            float curve = q * q * (3f - 2f * q);
-            return math.clamp((int)math.round(math.lerp(12f, 1f, curve)), 1, 12);
+            return 1;
+        }
+
+        private static int ResolveAmbientCurrentPollCadence(float quality)
+        {
+            return 8;
         }
 
         private static int ResolveScheduledEvaluationCount(int activeCount, int stride, int offset)
@@ -1304,7 +1595,7 @@ namespace Hecton8.Physics
             return math.saturate(math.select(1f, homeostasis, math.isfinite(homeostasis)));
         }
 
-        private static SimdHydrodynamicTuningDTO ResolveBenchmarkSimdTuning(
+        private static SimdHydrodynamicTuningDTO PrepareBenchmarkSimdTuning(
             NativeArray<SimdHydrodynamicTuningDTO> tuning,
             uint frameIndex)
         {
@@ -1451,6 +1742,9 @@ namespace Hecton8.Physics
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             TryWriteTelemetryDump(projectRoot, BuoyancyDisplacementConstants.DumpRelativePath, telemetry);
             TryWriteTelemetryDump(projectRoot, BuoyancyDisplacementConstants.AgentDumpRelativePath, telemetry);
+
+            NativeArray<SleepStateTelemetryEntry> sleepTelemetry = ResolveVaultBuffer(vault, in _sleepTelemetryRingHandle);
+            TryWriteSleepTelemetryDump(projectRoot, BuoyancyDisplacementConstants.SleepStateDumpRelativePath, sleepTelemetry);
         }
 
         private static void TryWriteTelemetryDump(string projectRoot, string relativePath, NativeArray<BuoyancyTelemetryEntry> telemetry)
@@ -1468,6 +1762,34 @@ namespace Hecton8.Physics
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     int bytes = telemetry.Length * UnsafeUtility.SizeOf<BuoyancyTelemetryEntry>();
+                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                    ReadOnlySpan<byte> source = new ReadOnlySpan<byte>(ptr, bytes);
+                    stream.Write(source);
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        private static void TryWriteSleepTelemetryDump(string projectRoot, string relativePath, NativeArray<SleepStateTelemetryEntry> telemetry)
+        {
+            if (string.IsNullOrEmpty(projectRoot) || string.IsNullOrEmpty(relativePath) || !telemetry.IsCreated || telemetry.Length <= 0)
+                return;
+
+            string dumpPath = Path.Combine(projectRoot, relativePath);
+            string directory = Path.GetDirectoryName(dumpPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            try
+            {
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                {
+                    int bytes = telemetry.Length * UnsafeUtility.SizeOf<SleepStateTelemetryEntry>();
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
                     ReadOnlySpan<byte> source = new ReadOnlySpan<byte>(ptr, bytes);
                     stream.Write(source);
@@ -1520,17 +1842,24 @@ namespace Hecton8.Physics
         }
 
 #if UNITY_EDITOR
-        private static readonly UnityEngine.GUIContent SimdLocalPositionsLabel =
-            new UnityEngine.GUIContent("SHINOBU SIMD local-pos | stride 16 | cap 250000 | align 16");
+        private const string SimdLocalPositionsName = "SHINOBU SIMD local-pos";
+        private const string SimdVelocitiesName = "SHINOBU SIMD velocity";
+        private const string SimdOutputForcesName = "SHINOBU SIMD force-out";
+        private const string SimdDragCoefficientsName = "SHINOBU SIMD drag";
 
-        private static readonly UnityEngine.GUIContent SimdVelocitiesLabel =
-            new UnityEngine.GUIContent("SHINOBU SIMD velocity | stride 16 | cap 250000 | align 16");
-
-        private static readonly UnityEngine.GUIContent SimdOutputForcesLabel =
-            new UnityEngine.GUIContent("SHINOBU SIMD force-out | stride 16 | cap 250000 | align 16");
-
-        private static readonly UnityEngine.GUIContent SimdDragCoefficientsLabel =
-            new UnityEngine.GUIContent("SHINOBU SIMD drag | stride 4 | cap 250000 | align 16");
+        private readonly char[] _simdGizmoLabelBuffer = new char[160];
+        private readonly UnityEngine.GUIContent _simdLocalPositionsLabel =
+            new UnityEngine.GUIContent(SimdLocalPositionsName);
+        private readonly UnityEngine.GUIContent _simdVelocitiesLabel =
+            new UnityEngine.GUIContent(SimdVelocitiesName);
+        private readonly UnityEngine.GUIContent _simdOutputForcesLabel =
+            new UnityEngine.GUIContent(SimdOutputForcesName);
+        private readonly UnityEngine.GUIContent _simdDragCoefficientsLabel =
+            new UnityEngine.GUIContent(SimdDragCoefficientsName);
+        private int _simdLocalPositionsLabelHash = int.MinValue;
+        private int _simdVelocitiesLabelHash = int.MinValue;
+        private int _simdOutputForcesLabelHash = int.MinValue;
+        private int _simdDragCoefficientsLabelHash = int.MinValue;
 
         private static readonly UnityEngine.GUIContent SimdAlignmentFaultLabel =
             new UnityEngine.GUIContent("SHINOBU SIMD ALIGNMENT FAULT - ARM64 NEON unsafe");
@@ -1541,6 +1870,7 @@ namespace Hecton8.Physics
                 return;
 
             DrawSimdAlignmentGizmos();
+            DrawSleepStateGizmos();
             if (!HasHandle(in _debugForcesHandle))
                 return;
 
@@ -1561,6 +1891,38 @@ namespace Hecton8.Physics
                 DrawVector(origin, debug.GravityForce, Color.red, 0.0025f);
                 DrawVector(origin, debug.DragForce, Color.green, 0.01f);
             }
+        }
+
+        private void DrawSleepStateGizmos()
+        {
+            if (!HasHandle(in _statesHandle))
+                return;
+
+            NativeArray<BuoyancyStateDTO> states = ResolveVaultBuffer(_dataVault, in _statesHandle);
+            if (!states.IsCreated)
+                return;
+
+            int count = math.min(math.max(0, _activeStateCount), states.Length);
+            double3 committedOffset = ResolveCachedSectorAUP();
+            for (int i = 0; i < count; i++)
+            {
+                BuoyancyStateDTO state = states[i];
+                if ((state.Flags & BuoyancyDisplacementConstants.FlagActive) == 0u || state.EntityHashID == 0u)
+                    continue;
+
+                bool sleeping = (state.Flags & BuoyancyDisplacementConstants.FlagSleeping) != 0u;
+                Gizmos.color = sleeping ? new Color(0.02f, 0.08f, 0.32f, 0.92f) : new Color(0.05f, 0.9f, 0.25f, 0.85f);
+                Vector3 origin = HectonFloatingOrigin.ToRuntimePosition(state.CurrentAUP, committedOffset);
+                float size = math.clamp(EstimateGizmoSize(state.VolumeCubicMeters), 0.12f, 1.25f);
+                Gizmos.DrawWireCube(origin, new Vector3(size, size, size));
+            }
+        }
+
+        private static float EstimateGizmoSize(float volume)
+        {
+            float safeVolume = math.max(BuoyancyDisplacementConstants.Epsilon, math.select(BuoyancyDisplacementConstants.Epsilon, volume, math.isfinite(volume)));
+            float size = safeVolume * math.rsqrt(math.max(safeVolume, BuoyancyDisplacementConstants.Epsilon));
+            return math.max(0.12f, size);
         }
 
         private static void DrawVector(Vector3 origin, float3 vector, Color color, float scale)
@@ -1588,32 +1950,42 @@ namespace Hecton8.Physics
                 ResolveVaultBuffer(_dataVault, in _simdLocalPositionsHandle),
                 origin + Vector3.right * -0.75f,
                 0.16f,
-                SimdLocalPositionsLabel);
+                _simdLocalPositionsLabel,
+                SimdLocalPositionsName,
+                ref _simdLocalPositionsLabelHash);
             bool velocityOk = DrawSimdLaneBar(
                 ResolveVaultBuffer(_dataVault, in _simdVelocitiesHandle),
                 origin + Vector3.right * -0.25f,
                 0.16f,
-                SimdVelocitiesLabel);
+                _simdVelocitiesLabel,
+                SimdVelocitiesName,
+                ref _simdVelocitiesLabelHash);
             bool forceOk = DrawSimdLaneBar(
                 ResolveVaultBuffer(_dataVault, in _simdOutputForcesHandle),
                 origin + Vector3.right * 0.25f,
                 0.16f,
-                SimdOutputForcesLabel);
+                _simdOutputForcesLabel,
+                SimdOutputForcesName,
+                ref _simdOutputForcesLabelHash);
             bool dragOk = DrawSimdLaneBar(
                 ResolveVaultBuffer(_dataVault, in _simdDragCoefficientsHandle),
                 origin + Vector3.right * 0.75f,
                 0.16f,
-                SimdDragCoefficientsLabel);
+                _simdDragCoefficientsLabel,
+                SimdDragCoefficientsName,
+                ref _simdDragCoefficientsLabelHash);
 
             if (!(localOk & velocityOk & forceOk & dragOk))
                 DrawSimdAlignmentFault(origin);
         }
 
-        private static unsafe bool DrawSimdLaneBar<T>(
+        private unsafe bool DrawSimdLaneBar<T>(
             NativeArray<T> array,
             Vector3 origin,
             float scale,
-            UnityEngine.GUIContent label) where T : struct
+            UnityEngine.GUIContent label,
+            string labelName,
+            ref int labelHash) where T : struct
         {
             if (!array.IsCreated || array.Length <= 0)
                 return true;
@@ -1623,12 +1995,84 @@ namespace Hecton8.Physics
             int stride = UnsafeUtility.SizeOf<T>();
             bool strideVectorSafe = stride == 4 || (stride & 15) == 0;
             bool ok = pointerAligned && strideVectorSafe;
+            UpdateSimdLaneLabel(label, labelName, array.Length, stride, pointerAligned, strideVectorSafe, ok, ref labelHash);
             Gizmos.color = ok ? new Color(0.05f, 0.85f, 0.9f, 0.85f) : new Color(1f, 0.05f, 0.02f, 1f);
             float height = math.saturate(array.Length * (1f / SimdVectorizationConstants.BenchmarkEntityCount)) * 1.5f + 0.1f;
             Gizmos.DrawWireCube(origin + Vector3.up * (height * 0.5f), new Vector3(scale, height, scale));
             UnityEditor.Handles.color = ok ? Color.cyan : Color.red;
             UnityEditor.Handles.Label(origin + Vector3.up * (height + 0.08f), label);
             return ok;
+        }
+
+        private void UpdateSimdLaneLabel(
+            UnityEngine.GUIContent label,
+            string labelName,
+            int capacity,
+            int stride,
+            bool pointerAligned,
+            bool strideVectorSafe,
+            bool ok,
+            ref int labelHash)
+        {
+            int hash = capacity ^
+                       (stride << 9) ^
+                       (pointerAligned ? 0x10000 : 0x20000) ^
+                       (strideVectorSafe ? 0x40000 : 0x80000) ^
+                       (ok ? 0x100000 : 0x200000);
+            if (hash == labelHash)
+                return;
+
+            int write = 0;
+            AppendEditorLiteral(_simdGizmoLabelBuffer, ref write, labelName);
+            AppendEditorLiteral(_simdGizmoLabelBuffer, ref write, " | stride ");
+            AppendEditorInt(_simdGizmoLabelBuffer, ref write, stride);
+            AppendEditorLiteral(_simdGizmoLabelBuffer, ref write, " | cap ");
+            AppendEditorInt(_simdGizmoLabelBuffer, ref write, capacity);
+            AppendEditorLiteral(_simdGizmoLabelBuffer, ref write, " | ptr16 ");
+            AppendEditorLiteral(_simdGizmoLabelBuffer, ref write, pointerAligned ? "OK" : "FAIL");
+            AppendEditorLiteral(_simdGizmoLabelBuffer, ref write, " | lane ");
+            AppendEditorLiteral(_simdGizmoLabelBuffer, ref write, strideVectorSafe ? "OK" : "FAIL");
+            label.text = new string(_simdGizmoLabelBuffer, 0, write);
+            labelHash = hash;
+        }
+
+        private static void AppendEditorLiteral(char[] buffer, ref int offset, string value)
+        {
+            for (int i = 0; i < value.Length && offset < buffer.Length; i++)
+                buffer[offset++] = value[i];
+        }
+
+        private static void AppendEditorInt(char[] buffer, ref int offset, int value)
+        {
+            if (offset >= buffer.Length)
+                return;
+
+            if (value == 0)
+            {
+                buffer[offset++] = '0';
+                return;
+            }
+
+            int remaining = math.abs(value);
+            if (value < 0 && offset < buffer.Length)
+                buffer[offset++] = '-';
+
+            int start = offset;
+            while (remaining > 0 && offset < buffer.Length)
+            {
+                buffer[offset++] = (char)('0' + remaining % 10);
+                remaining /= 10;
+            }
+
+            int end = offset - 1;
+            while (start < end)
+            {
+                char swap = buffer[start];
+                buffer[start] = buffer[end];
+                buffer[end] = swap;
+                start++;
+                end--;
+            }
         }
 
         private static void DrawSimdAlignmentFault(Vector3 origin)

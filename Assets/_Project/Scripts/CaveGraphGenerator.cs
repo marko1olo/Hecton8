@@ -171,19 +171,19 @@ public static class CaveGraphGenerator
         }
 
         // Phase 5: Copy to output
-        nodes = new NativeArray<CaveNode>(roomList.Length, allocator);
+        nodes = new NativeArray<CaveNode>(roomList.Length, allocator, NativeArrayOptions.ClearMemory);
         for (int i = 0; i < roomList.Length; i++)
             nodes[i] = roomList[i];
 
-        tunnels = new NativeArray<CaveTunnel>(tunnelList.Length, allocator);
+        tunnels = new NativeArray<CaveTunnel>(tunnelList.Length, allocator, NativeArrayOptions.ClearMemory);
         for (int i = 0; i < tunnelList.Length; i++)
             tunnels[i] = tunnelList[i];
 
-        entrances = new NativeArray<CaveEntrance>(entranceList.Length, allocator);
+        entrances = new NativeArray<CaveEntrance>(entranceList.Length, allocator, NativeArrayOptions.ClearMemory);
         for (int i = 0; i < entranceList.Length; i++)
             entrances[i] = entranceList[i];
 
-        structures = new NativeArray<CaveStructure>(structureList.Length, allocator);
+        structures = new NativeArray<CaveStructure>(structureList.Length, allocator, NativeArrayOptions.ClearMemory);
         for (int i = 0; i < structureList.Length; i++)
             structures[i] = structureList[i];
 
@@ -236,7 +236,7 @@ public static class CaveGraphGenerator
         roomList.Add(firstRoom);
 
         int branchPointCount = 0;
-        var branchIndices = new NativeArray<int>(MAX_ROOMS, Allocator.Temp);
+        var branchIndices = new NativeArray<int>(MAX_ROOMS, Allocator.Temp, NativeArrayOptions.ClearMemory);
 
         float3 currentPos = firstPos;
         int currentRoomIdx = 0;
@@ -549,7 +549,7 @@ public static class CaveGraphGenerator
         // v4.1: Check that terrain surface is reachable from volume
         float volumeTopY = worldCenter.y + volumeHalfExtent;
 
-        var usedRooms = new NativeArray<bool>(rooms.Length, Allocator.Temp);
+        var usedRooms = new NativeArray<byte>(rooms.Length, Allocator.Temp, NativeArrayOptions.ClearMemory);
 
         for (int e = 0; e < entranceCount; e++)
         {
@@ -558,7 +558,7 @@ public static class CaveGraphGenerator
 
             for (int r = 0; r < rooms.Length; r++)
             {
-                if (usedRooms[r]) continue;
+                if (usedRooms[r] != 0) continue;
 
                 float3 roomPos = rooms[r].position;
                 float distToSurface = terrainHeight - roomPos.y;
@@ -578,7 +578,7 @@ public static class CaveGraphGenerator
 
             if (bestRoom < 0) break;
 
-            usedRooms[bestRoom] = true;
+            usedRooms[bestRoom] = 1;
 
             float3 targetRoomPos = rooms[bestRoom].position;
             float targetRoomMaxRadius = math.cmax(rooms[bestRoom].radii);

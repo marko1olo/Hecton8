@@ -228,7 +228,7 @@ namespace Hecton8.Editor
                 _powerTelemetryCursorHandle = default;
             }
 
-            if (!TryResolvePowerTelemetry(vault, out NativeArray<PowerTelemetryEntry> ring, out NativeArray<PowerGridCounter64> cursor))
+            if (!TryReadPowerTelemetry(vault, out NativeArray<PowerTelemetryEntry> ring, out NativeArray<PowerGridCounter64> cursor))
                 return false;
 
             PowerGridCounter64 cursorState = cursor[0];
@@ -244,29 +244,29 @@ namespace Hecton8.Editor
             return entry.FrameIndex != 0u || entry.NodeCount != 0 || entry.EdgeCount != 0 || entry.RuntimeEdgeCount != 0;
         }
 
-        private bool TryResolvePowerTelemetry(
+        private bool TryReadPowerTelemetry(
             IDataVault vault,
             out NativeArray<PowerTelemetryEntry> ring,
             out NativeArray<PowerGridCounter64> cursor)
         {
             ring = default;
             cursor = default;
-            if (!TryResolveTelemetryRing(vault, out ring))
+            if (!TryReadTelemetryRing(vault, out ring))
                 return false;
 
-            return TryResolveTelemetryCursor(vault, out cursor);
+            return TryReadTelemetryCursor(vault, out cursor);
         }
 
-        private bool TryResolveTelemetryRing(IDataVault vault, out NativeArray<PowerTelemetryEntry> ring)
+        private bool TryReadTelemetryRing(IDataVault vault, out NativeArray<PowerTelemetryEntry> ring)
         {
             if (_powerTelemetryRingHandle.BufferID == 0u ||
-                !vault.TryResolveHandle(in _powerTelemetryRingHandle, out ring) ||
+                !vault.TryReadHandle(in _powerTelemetryRingHandle, out ring) ||
                 !ring.IsCreated ||
                 ring.Length < PowerGridJacobiConstants.TelemetryFrameCount)
             {
                 if (!vault.TryGetGenerationHandle(PowerGridBufferIds.TelemetryRing, out _powerTelemetryRingHandle) ||
                     _powerTelemetryRingHandle.BufferID == 0u ||
-                    !vault.TryResolveHandle(in _powerTelemetryRingHandle, out ring) ||
+                    !vault.TryReadHandle(in _powerTelemetryRingHandle, out ring) ||
                     !ring.IsCreated ||
                     ring.Length < PowerGridJacobiConstants.TelemetryFrameCount)
                 {
@@ -278,16 +278,16 @@ namespace Hecton8.Editor
             return true;
         }
 
-        private bool TryResolveTelemetryCursor(IDataVault vault, out NativeArray<PowerGridCounter64> cursor)
+        private bool TryReadTelemetryCursor(IDataVault vault, out NativeArray<PowerGridCounter64> cursor)
         {
             if (_powerTelemetryCursorHandle.BufferID == 0u ||
-                !vault.TryResolveHandle(in _powerTelemetryCursorHandle, out cursor) ||
+                !vault.TryReadHandle(in _powerTelemetryCursorHandle, out cursor) ||
                 !cursor.IsCreated ||
                 cursor.Length <= 0)
             {
                 if (!vault.TryGetGenerationHandle(PowerGridBufferIds.TelemetryCursor, out _powerTelemetryCursorHandle) ||
                     _powerTelemetryCursorHandle.BufferID == 0u ||
-                    !vault.TryResolveHandle(in _powerTelemetryCursorHandle, out cursor) ||
+                    !vault.TryReadHandle(in _powerTelemetryCursorHandle, out cursor) ||
                     !cursor.IsCreated ||
                     cursor.Length <= 0)
                 {

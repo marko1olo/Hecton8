@@ -50,6 +50,7 @@ namespace Hecton8.Gameplay
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 8;
         private const int ReferenceSlotCapacity = 8;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
         private struct PlayerExpressionReferenceSlot
         {
@@ -61,8 +62,79 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // COLD ALLOC: RegistryBucket<IPlayerExpressionEventListener>[8] - player-expression listeners drained by SystemDispatcher LateUpdate - owner: PlayerExpressionEvents
-        private static readonly RegistryBucket<IPlayerExpressionEventListener> _listeners = new RegistryBucket<IPlayerExpressionEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IPlayerExpressionEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct PlayerExpressionListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public PlayerExpressionListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IPlayerExpressionEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IPlayerExpressionEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void Unregister(IPlayerExpressionEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public IPlayerExpressionEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - player-expression listeners drained by SystemDispatcher LateUpdate - owner: PlayerExpressionEvents
+        private static PlayerExpressionListenerRegistry _listeners = new PlayerExpressionListenerRegistry(ListenerCapacity);
         // COLD ALLOC: PlayerExpressionReferenceSlot[8] - managed profile sidecar for unmanaged payloads - owner: PlayerExpressionEvents
         private static readonly PlayerExpressionReferenceSlot[] _referenceSlots = new PlayerExpressionReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[8] - reference slot occupancy map prevents overwrite before deferred flush - owner: PlayerExpressionEvents
@@ -91,7 +163,7 @@ namespace Hecton8.Gameplay
 
             EnsureInitialized();
             if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+                _listeners.TryRegister(listener);
         }
 
         /// <summary>
@@ -132,14 +204,13 @@ namespace Hecton8.Gameplay
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IPlayerExpressionEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IPlayerExpressionEventListener listener = rawArray[i];
+                        IPlayerExpressionEventListener listener = _listeners.GetAt(i);
                         if (listener != null)
                             listener.OnPlayerExpressionEvent(in payload);
                     }
@@ -223,7 +294,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<PlayerExpressionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - deferred player-expression lane flushed by SystemDispatcher LateUpdate - owner: PlayerExpressionEvents
+                _pendingEvents = new NativeQueue<PlayerExpressionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - deferred player-expression lane flushed by SystemDispatcher LateUpdate - owner: PlayerExpressionEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -235,7 +306,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<PlayerExpressionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - next-frame player-expression lane prevents same-frame reentrant dispatch - owner: PlayerExpressionEvents
+                _nextFrameEvents = new NativeQueue<PlayerExpressionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - next-frame player-expression lane prevents same-frame reentrant dispatch - owner: PlayerExpressionEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

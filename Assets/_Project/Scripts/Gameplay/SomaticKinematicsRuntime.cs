@@ -308,7 +308,7 @@ namespace Hecton8.Gameplay
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SomaticKinematicsJob : IJob
     {
         public NativeArray<PlayerKinematicState> State;
@@ -1047,7 +1047,7 @@ namespace Hecton8.Gameplay
             fence.Frame = shiftData.Frame >= 0 ? unchecked((uint)shiftData.Frame) : state.Frame;
             fence.SourceId = _sourceId;
             fence.Sequence = shiftData.Sequence;
-            fence.Flags = shiftData.IsSafeTeleport ? (byte)1 : (byte)0;
+            fence.Flags = shiftData.IsSafeTeleport != 0 ? (byte)1 : (byte)0;
             SignalBus<SyncFenceSignal>.Push(in fence);
         }
 

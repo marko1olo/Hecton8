@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Text;
 using UnityEngine;
 using Hecton8.Core;
@@ -147,7 +146,7 @@ namespace Hecton8.Tools
                 SystemName = systemName,
                 System = system,
                 BudgetMs = budgetMs,
-                IsThrottled = false
+                IsThrottled = 0
             };
             int index = _systemBudgetCount;
             _systemBudgets[index] = budget;
@@ -285,7 +284,7 @@ namespace Hecton8.Tools
                 AppendFixed2(statusBuilder, budget.BudgetMs);
                 statusBuilder.Append("ms(");
                 AppendPercent0(statusBuilder, budgetUsage);
-                statusBuilder.Append(budget.IsThrottled ? ",throttled" : ",ok");
+                statusBuilder.Append(budget.IsThrottled != 0 ? ",throttled" : ",ok");
                 statusBuilder.Append(')');
             }
 
@@ -326,10 +325,10 @@ namespace Hecton8.Tools
                 for (int i = 0; i < budgetCount; i++)
                 {
                     SystemBudget budget = _systemBudgets[i];
-                    if (!budget.IsThrottled)
+                    if (budget.IsThrottled == 0)
                     {
                         budget.System?.SetPerformanceLevel(_throttleMultiplier);
-                        budget.IsThrottled = true;
+                        budget.IsThrottled = 1;
                         LogSystemThrottled(budget.SystemName, _currentFrameTimeAverage, _maxFrameTimeMs);
                         _systemBudgets[i] = budget;
                     }
@@ -342,10 +341,10 @@ namespace Hecton8.Tools
                 for (int i = 0; i < budgetCount; i++)
                 {
                     SystemBudget budget = _systemBudgets[i];
-                    if (budget.IsThrottled)
+                    if (budget.IsThrottled != 0)
                     {
                         budget.System?.SetPerformanceLevel(1f);
-                        budget.IsThrottled = false;
+                        budget.IsThrottled = 0;
                         LogSystemRestored(budget.SystemName);
                         _systemBudgets[i] = budget;
                     }
@@ -385,7 +384,7 @@ namespace Hecton8.Tools
             int budgetCount = _systemBudgetCount;
             for (int i = 0; i < budgetCount; i++)
             {
-                if (_systemBudgets[i].IsThrottled)
+                if (_systemBudgets[i].IsThrottled != 0)
                     count++;
             }
 
@@ -575,7 +574,6 @@ namespace Hecton8.Tools
     /// <summary>
     /// Internal budget tracking for a system.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
     public struct SystemBudget
     {
         public string SystemName;
@@ -585,7 +583,7 @@ namespace Hecton8.Tools
         public float TotalTimeMs;
         public int FrameCount;
         public int OverBudgetCount;
-        public bool IsThrottled;
+        public byte IsThrottled;
         public float NextOverBudgetLogTime;
     }
 
@@ -593,13 +591,12 @@ namespace Hecton8.Tools
     /// Public budget status information.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct SystemBudgetInfo
     {
         public float BudgetMs;
         public float AverageTimeMs;
         public float BudgetUsage; // 0-1 (1 = at budget limit)
-        public bool IsThrottled;
+        public byte IsThrottled;
         public int OverBudgetCount;
     }
 }

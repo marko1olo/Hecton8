@@ -358,13 +358,13 @@ namespace Hecton8.Interaction
             }
 
             AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!MathGuard.IsFinite(in originAup))
+            if (!originAup.IsFinite())
                 return false;
 
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new Unity.Mathematics.double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return MathGuard.IsFinite(in positionAup);
+            return positionAup.IsFinite();
         }
 
         private static uint ComputeQuestHash(string value)

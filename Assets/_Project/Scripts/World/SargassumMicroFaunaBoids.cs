@@ -28,7 +28,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-101)]
-    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener, ISargassumGlobalDragEventListener, ISonarPingEventListener
+    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxLeviathanNodePathIterations = 4096;
         private const int WhileLoopWatchdogLimit = 10000;
@@ -60,6 +60,8 @@ namespace Hecton8.World
         private const float FaunaSimulationBucketInvCount = 1f / SimulationBucketConstants.StandardSlowBucketCount;
         private const uint FaunaAmbientDriftKillSwitchMask = GlobalRegistry.SystemKillSwitchLane4VfxMask;
         private const uint FaunaBucketedSimulationCostHash = 0x46534255u; // FSBU
+        private static uint _systemKillSwitchMaskSnapshot;
+        private static int _systemKillSwitchSnapshotFrame = -1;
 #if UNITY_EDITOR
         private const int MaxEditorValidateDepth = 4;
         private static int _editorValidateDepth;
@@ -67,8 +69,8 @@ namespace Hecton8.World
 
         internal static SargassumMicroFaunaBoids ActiveRuntimeInstance => GlobalRegistry.SargassumMicroFauna;
 
-        // GPU StructuredBuffer interop: Pack=4 matches HLSL scalar packing; ValidateGpuStructLayouts gates stride and offsets.
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        // GPU StructuredBuffer interop: explicit offsets preserve HLSL scalar packing; ValidateGpuStructLayouts gates stride.
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         internal struct BoidData
         {
             // Byte layout proof vs HLSL StructuredBuffer<BoidData>:
@@ -76,9 +78,13 @@ namespace Hecton8.World
             // Velocity   -> offset 12, size 12
             // Panic      -> offset 24, size  4
             // StateFlags -> offset 28, size  4
+            [FieldOffset(0)]
             public Vector3 Position;
+            [FieldOffset(12)]
             public Vector3 Velocity;
+            [FieldOffset(24)]
             public float Panic;
+            [FieldOffset(28)]
             public uint StateFlags;
         }
 
@@ -217,12 +223,12 @@ namespace Hecton8.World
             LightStimulus = 1u << 6
         }
 
-        [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct PredatorBoidConsumptionJob : IJob
         {
-            [ReadOnly] public NativeArray<BoidData> Boids;
-            public NativeArray<BoidKillSignal> KillSignals;
-            public NativeArray<int> KillSignalCount;
+            [ReadOnly, NoAlias] public NativeArray<BoidData> Boids;
+            [NoAlias] public NativeArray<BoidKillSignal> KillSignals;
+            [NoAlias] public NativeArray<int> KillSignalCount;
             public float3 PredatorPositionWS;
             public float3 BiteCenterWS;
             public float BiteRangeSq;
@@ -364,48 +370,71 @@ namespace Hecton8.World
             }
         }
 
-        // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        // GPU StructuredBuffer interop: explicit offsets preserve HLSL float/uint field packing.
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct GrazingAnchorData
         {
+            [FieldOffset(0)]
             public Vector3 Position;
+            [FieldOffset(12)]
             public float Radius;
+            [FieldOffset(16)]
             public float Strength;
+            [FieldOffset(20)]
             public float Phase;
+            [FieldOffset(24)]
             public Vector2 Padding;
         }
 
-        // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
-        [StructLayout(LayoutKind.Sequential, Size = 48)]
+        // GPU StructuredBuffer interop: explicit offsets preserve HLSL float/uint field packing.
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct MassiveThreatData
         {
+            [FieldOffset(0)]
             public Vector3 Position;
+            [FieldOffset(12)]
             public float InnerRadius;
+            [FieldOffset(16)]
             public float PanicRadius;
+            [FieldOffset(20)]
             public float Strength;
+            [FieldOffset(24)]
             public float EndTime;
+            [FieldOffset(28)]
             public Vector3 DirectionWS;
+            [FieldOffset(40)]
             public uint ThreatFlags;
+            [FieldOffset(44)]
+            private uint _pad0;
         }
 
-        // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        // GPU StructuredBuffer interop: explicit offsets preserve HLSL float/uint field packing.
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct FormationBeaconData
         {
+            [FieldOffset(0)]
             public Vector3 Position;
+            [FieldOffset(12)]
             public float Radius;
+            [FieldOffset(16)]
             public float Strength;
+            [FieldOffset(20)]
             public float Phase;
+            [FieldOffset(24)]
             public Vector2 Padding;
         }
 
-        // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        // GPU StructuredBuffer interop: explicit offsets preserve HLSL float/uint field packing.
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct FormationObstacleData
         {
+            [FieldOffset(0)]
             public Vector3 Position;
+            [FieldOffset(12)]
             public float Radius;
+            [FieldOffset(16)]
             public float Weight;
+            [FieldOffset(20)]
             public Vector3 Padding;
         }
 
@@ -426,23 +455,27 @@ namespace Hecton8.World
             }
         }
 
-        // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        // GPU StructuredBuffer interop: explicit offsets preserve HLSL float/uint field packing.
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct LeviathanNodeData
         {
+            [FieldOffset(0)]
             public float3 Position;
+            [FieldOffset(12)]
             public float Distance01;
+            [FieldOffset(16)]
             public float3 Tangent;
+            [FieldOffset(28)]
             public float Radius;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildLeviathanNodeJob : IJob
         {
-            [ReadOnly] public NativeArray<float3> SourcePath;
+            [ReadOnly, NoAlias] public NativeArray<float3> SourcePath;
             public int SourceCount;
-            public NativeArray<LeviathanNodeData> OutputNodes;
-            public NativeArray<int> OutputCount;
+            [NoAlias] public NativeArray<LeviathanNodeData> OutputNodes;
+            [NoAlias] public NativeArray<int> OutputCount;
             public float BodyRadius;
 
             private static float ApproxVisualSegmentLength(float3 a, float3 b)
@@ -548,57 +581,105 @@ namespace Hecton8.World
             }
         }
 
-        // GPU frame packet interop: Pack=4 preserves int4/float4 HLSL stride.
-        [StructLayout(LayoutKind.Sequential, Size = 768)]
+        // GPU frame packet interop: explicit 16-byte lanes preserve int4/float4 HLSL stride.
+        [StructLayout(LayoutKind.Explicit, Size = 768)]
         private struct SimulationFrameConstants
         {
+            [FieldOffset(0)]
             public float4 Simulation0;
+            [FieldOffset(16)]
             public float4 Motion0;
+            [FieldOffset(32)]
             public float4 Neighbor0;
+            [FieldOffset(48)]
             public float4 Flocking0;
+            [FieldOffset(64)]
             public float4 Flocking1;
+            [FieldOffset(80)]
             public float4 Flocking2;
+            [FieldOffset(96)]
             public float4 Grazing0;
+            [FieldOffset(112)]
             public float4 Time0;
+            [FieldOffset(128)]
             public float4 FieldCenter;
+            [FieldOffset(144)]
             public float4 FieldExtents;
+            [FieldOffset(160)]
             public float4 SpatialGridOrigin;
+            [FieldOffset(176)]
             public int4 SpatialGridMeta;
+            [FieldOffset(192)]
             public int4 Counts0;
+            [FieldOffset(208)]
             public int4 Counts1;
+            [FieldOffset(224)]
             public float4 DensityWorldRect;
+            [FieldOffset(240)]
             public float4 CutMaskWorldRect;
+            [FieldOffset(256)]
             public float4 DriftOffset;
+            [FieldOffset(272)]
             public float4 DriftDelta;
+            [FieldOffset(288)]
             public float4 PlayerPosition;
+            [FieldOffset(304)]
             public float4 PlayerVelocity;
+            [FieldOffset(320)]
             public float4 PlayerRight;
+            [FieldOffset(336)]
             public float4 PlayerUp;
+            [FieldOffset(352)]
             public float4 PlayerForward;
+            [FieldOffset(368)]
             public float4 CameraAvoidPosition;
+            [FieldOffset(384)]
             public float4 CameraAvoidData;
+            [FieldOffset(400)]
             public float4 ParasiteAndFormation0;
+            [FieldOffset(416)]
             public float4 Formation1;
+            [FieldOffset(432)]
             public float4 Leviathan0;
+            [FieldOffset(448)]
             public float4 Leviathan1;
+            [FieldOffset(464)]
             public float4 Leviathan2;
+            [FieldOffset(480)]
             public float4 CameraPosition;
+            [FieldOffset(496)]
             public int4 ThreatGridMeta;
+            [FieldOffset(512)]
             public float4 ThreatGridCenter;
+            [FieldOffset(528)]
             public int4 ThreatVoxelMeta;
+            [FieldOffset(544)]
             public float4 ThreatVoxelOrigin;
+            [FieldOffset(560)]
             public float4 ThreatVoxelCellSize;
+            [FieldOffset(576)]
             public float4 TransportCapsule0;
+            [FieldOffset(592)]
             public float4 TransportCapsule1;
+            [FieldOffset(608)]
             public float4 SubmarineWake0;
+            [FieldOffset(624)]
             public float4 SubmarineWake1;
+            [FieldOffset(640)]
             public float4 Ecosystem0;
+            [FieldOffset(656)]
             public float4 Fragmentation0;
+            [FieldOffset(672)]
             public float4 Fragmentation1;
+            [FieldOffset(688)]
             public float4 SonarScatter0;
+            [FieldOffset(704)]
             public float4 AcousticPanic0;
+            [FieldOffset(720)]
             public float4 AcousticPanic1;
+            [FieldOffset(736)]
             public float4 AbyssalFlowWeatherCurrent;
+            [FieldOffset(752)]
             public float4 PlayerDirection;
         }
 
@@ -1617,6 +1698,7 @@ namespace Hecton8.World
         private bool _registeredFixedTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
+        private bool _registeredHotSwap;
         private bool _serviceRegistered;
         private bool _hasSpawnData;
         private bool _computeKernelBindingsValid;
@@ -1685,6 +1767,7 @@ namespace Hecton8.World
         private HectonPlayerMovement _playerMovement;
         private HectonPlayerHealth _playerHealth;
         private PlayerFlashlight _playerFlashlight;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private WorldZoneDirector _worldZoneDirector;
         private BiomeMatrixDirector _biomeMatrixDirector;
         private HectonMapMagicVegetationBridge _mapMagicVegetationBridge;
@@ -1813,6 +1896,7 @@ namespace Hecton8.World
             RefreshRenderScaleCache();
             ResetDependencyProbeCache();
             _simulationBucketerProbeAttempted = false;
+            RefreshColdRegistryDependencies();
             ResolveDependencies();
             EnsureBuffers();
             RefreshThreatVoxelPayload();
@@ -1830,6 +1914,8 @@ namespace Hecton8.World
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
             _simulationBucketerProbeAttempted = false;
+            TryRegisterHotSwapListener();
+            RefreshColdRegistryDependencies();
             ResolveDependencies();
             EnsureBuffers();
             RefreshThreatVoxelPayload();
@@ -2181,10 +2267,114 @@ namespace Hecton8.World
             ApplyLeviathanShockwave();
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault);
+                    break;
+                case GlobalRegistryServiceSlot.BiolumManagerRuntime:
+                    biolumManager = currentService as HectonBiolumManager;
+                    break;
+                case GlobalRegistryServiceSlot.SargassumDragRuntime:
+                    dragManager = currentService as SargassumGlobalDragManager;
+                    break;
+                case GlobalRegistryServiceSlot.SargassumCutRuntime:
+                    cutManager = currentService as SargassumCutManager;
+                    break;
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _fluidEngine = currentService as HectonFluidEngine;
+                    break;
+                case GlobalRegistryServiceSlot.Submarine:
+                    _submarineRuntime = currentService as ISubmarineRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.EncounterDirector:
+                    _encounterDirector = currentService as IEncounterDirectorService;
+                    break;
+                case GlobalRegistryServiceSlot.EcosystemDirector:
+                    _ecosystemDirector = currentService as IEcosystemDirectorService;
+                    break;
+                case GlobalRegistryServiceSlot.BeaconNetworkRuntime:
+                    _beaconNetworkRuntime = currentService as BeaconNetworkSystem;
+                    break;
+                case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
+                    _abyssalFluidDecals = currentService as AbyssalFluidDecalManager;
+                    break;
+                case GlobalRegistryServiceSlot.SimulationBucketerRuntime:
+                    _simulationBucketer = currentService as ISimulationBucketer;
+                    _simulationBucketerProbeAttempted = true;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    _playerRuntimeContextProbeAttempted = false;
+                    InvalidateViewPoseCache();
+                    break;
+            }
+        }
+
+        private void RefreshColdRegistryDependencies()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            if (biolumManager == null)
+                biolumManager = GlobalRegistry.BiolumManager;
+
+            if (dragManager == null)
+                dragManager = GlobalRegistry.SargassumDrag;
+
+            if (cutManager == null)
+                cutManager = GlobalRegistry.SargassumCut;
+
+            if (_fluidEngine == null)
+                _fluidEngine = GlobalRegistry.Fluid;
+
+            if (_submarineRuntime == null)
+                _submarineRuntime = GlobalRegistry.Submarine;
+
+            if (_encounterDirector == null)
+                _encounterDirector = GlobalRegistry.EncounterDirector;
+
+            if (_ecosystemDirector == null)
+                _ecosystemDirector = GlobalRegistry.EcosystemDirector;
+
+            if (_beaconNetworkRuntime == null)
+                _beaconNetworkRuntime = GlobalRegistry.BeaconNetwork;
+
+            if (_abyssalFluidDecals == null)
+                _abyssalFluidDecals = GlobalRegistry.AbyssalFluidDecals;
+
+            _playerRuntimeContext = GlobalRegistry.Player;
+
+            if (_simulationBucketer == null)
+                _simulationBucketer = GlobalRegistry.SimulationBucketer;
+
+            _simulationBucketerProbeAttempted = true;
+        }
+
+        private void RebindDataVault(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            // [BLOCKING_SYNC_POINT] DataVault owner replacement invalidates native handles; fence writers before rebinding.
+            CompletePendingPredatorConsumption(forceComplete: true);
+            CompletePendingFoveatedSimulationDecision(forceComplete: true);
+            JobHandle disposeDependency = CancelPendingLeviathanNodeBuildForDispose();
+            ClearVaultHandles(disposeDependency);
+            _dataVault = currentVault;
+            if (_dataVault != null && isActiveAndEnabled)
+            {
+                EnsureBuffers();
+                RefreshThreatVoxelPayload();
+                PrimeFoveatedSimulationDecision(0f, ResolveCameraDistanceSq());
+            }
+        }
+
         private void ResolveDependencies()
         {
-            _dataVault ??= GlobalRegistry.DataVault;
-
             bool missingRuntimeServices = biolumManager == null ||
                                           dragManager == null ||
                                           cutManager == null ||
@@ -2199,15 +2389,6 @@ namespace Hecton8.World
                                           _abyssalFluidDecals == null;
             if (!_runtimeServiceProbeAttempted && missingRuntimeServices)
             {
-                if (biolumManager == null)
-                    biolumManager = Hecton8.Core.GlobalRegistry.BiolumManager;
-
-                if (dragManager == null)
-                    dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
-
-                if (cutManager == null)
-                    cutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
-
                 if (_worldZoneDirector == null)
                     _worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
 
@@ -2216,24 +2397,6 @@ namespace Hecton8.World
 
                 if (_mapMagicVegetationBridge == null)
                     _mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-
-                if (_fluidEngine == null)
-                    _fluidEngine = GlobalRegistry.Fluid;
-
-                if (_submarineRuntime == null)
-                    _submarineRuntime = GlobalRegistry.Submarine;
-
-                if (_encounterDirector == null)
-                    _encounterDirector = GlobalRegistry.EncounterDirector;
-
-                if (_ecosystemDirector == null)
-                    _ecosystemDirector = GlobalRegistry.EcosystemDirector;
-
-                if (_beaconNetworkRuntime == null)
-                    _beaconNetworkRuntime = GlobalRegistry.BeaconNetwork;
-
-                if (_abyssalFluidDecals == null)
-                    _abyssalFluidDecals = GlobalRegistry.AbyssalFluidDecals;
 
                 _runtimeServiceProbeAttempted = true;
             }
@@ -2255,7 +2418,7 @@ namespace Hecton8.World
             }
             else if (!_playerRuntimeContextProbeAttempted)
             {
-                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null && playerContext.IsInitialized)
                 {
                     playerTransform ??= playerContext.PlayerTransform;
@@ -2294,7 +2457,6 @@ namespace Hecton8.World
 
             if (!_simulationBucketerProbeAttempted)
             {
-                _simulationBucketer = GlobalRegistry.SimulationBucketer;
                 _simulationBucketerProbeAttempted = true;
             }
         }
@@ -2462,8 +2624,7 @@ namespace Hecton8.World
             EnsureFallbackAbyssalFlowTexture();
             if (buffersChanged)
                 _computeStaticBuffersBound = false;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
-            _dataVault = vault;
+            IDataVault vault = _dataVault;
             EnsureVaultBufferHandle(vault, ref _grazingAnchorsHandle, BufferID.SargassumGrazingAnchors, grazingAnchorCount);
             EnsureVaultBufferHandle(vault, ref _massiveThreatsHandle, BufferID.SargassumMassiveThreats, maxMassiveThreatCount);
             EnsureVaultBufferHandle(vault, ref _formationBeaconsHandle, BufferID.SargassumFormationBeacons, formationBeaconCapacity);
@@ -2739,7 +2900,7 @@ namespace Hecton8.World
             int cellCount = (int)cellCountLong;
             if (EnsureBufferCapacity(ref _threatGridBuffer, cellCount, ThreatGridStride))
                 _computeStaticBuffersBound = false;
-            EnsureVaultBufferHandle(_dataVault ?? GlobalRegistry.DataVault, ref _threatGridUploadHandle, BufferID.SargassumThreatGridUpload, cellCount);
+            EnsureVaultBufferHandle(_dataVault, ref _threatGridUploadHandle, BufferID.SargassumThreatGridUpload, cellCount);
             var threatGridUpload = ResolveVaultBuffer(ref _threatGridUploadHandle);
             if (!threatGridUpload.IsCreated || threatGridUpload.Length < cellCount)
             {
@@ -3566,7 +3727,7 @@ namespace Hecton8.World
             if (_leviathanNodeBuildScheduled)
                 return;
 
-            EnsureVaultBufferHandle(_dataVault ?? GlobalRegistry.DataVault, ref _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, safePathCount);
+            EnsureVaultBufferHandle(_dataVault, ref _leviathanPathScratchHandle, BufferID.SargassumLeviathanPathScratch, safePathCount);
             var leviathanPathScratch = ResolveVaultBuffer(ref _leviathanPathScratchHandle);
             if (!leviathanPathScratch.IsCreated || leviathanPathScratch.Length < safePathCount)
                 return;
@@ -4882,7 +5043,20 @@ namespace Hecton8.World
 
         private static bool IsFaunaAmbientDriftKillSwitchActive()
         {
-            return (GlobalRegistry.SystemKillSwitchMask & FaunaAmbientDriftKillSwitchMask) != 0u;
+            RefreshSystemKillSwitchBitsSnapshot();
+            return (_systemKillSwitchMaskSnapshot & FaunaAmbientDriftKillSwitchMask) != 0u;
+        }
+
+        private static void RefreshSystemKillSwitchBitsSnapshot()
+        {
+            int frame = Time.frameCount;
+            if (_systemKillSwitchSnapshotFrame == frame)
+                return;
+
+            _systemKillSwitchSnapshotFrame = frame;
+            ReadOnlySpan<SystemKillSwitchBitsSignal> signals = SignalBus<SystemKillSwitchBitsSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+                _systemKillSwitchMaskSnapshot = signals[i].CurrentMask;
         }
 
         private static void ReportWatchdogCost(uint subsystemHash, long startTimestamp)
@@ -5949,7 +6123,7 @@ namespace Hecton8.World
             {
                 case Hecton8.Gameplay.FlashlightEventType.Toggled:
                 case Hecton8.Gameplay.FlashlightEventType.FlickerStart:
-                    HandleFlashlightToggled(payload.IsOn);
+                    HandleFlashlightToggled(FlashlightEventPayload.IsOn(in payload));
                     break;
                 case Hecton8.Gameplay.FlashlightEventType.BatteryDepleted:
                 case Hecton8.Gameplay.FlashlightEventType.Overheat:
@@ -6884,7 +7058,12 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
+                return;
+
+            TryRegisterHotSwapListener();
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredTick)
@@ -6952,6 +7131,20 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrameTick = false;
             }
+
+            if (_registeredHotSwap)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _registeredHotSwap = false;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (!Application.isPlaying || _registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void ReleaseBuffers()
@@ -7008,24 +7201,9 @@ namespace Hecton8.World
             ReleaseBuffers();
             ResetComputeKernelBindings();
             _boundBoidCompute = null;
-            _staticObstacleCacheHandle = default;
-            _boidStateHandle = default;
-            _leviathanPathScratchHandle = default;
-            _leviathanNodeFrontHandle = default;
-            _leviathanNodeBackHandle = default;
-            _leviathanNodeCountHandle = default;
-            DisposeFoveatedSimulationBuffers(disposeDependency);
-            _threatGridUploadHandle = default;
             ResetThreatGridSnapshot();
             ResetThreatVoxelSnapshot();
-            _simulationFrameHandle = default;
-            _boidSensoryThreatsHandle = default;
-            _boidSensoryBlackBoxHandle = default;
-            _foodChainTelemetryRingHandle = default;
-            _killSignalHandle = default;
-            _killSignalCountHandle = default;
-            _inactiveStatisticalSwarmRing.Dispose(disposeDependency);
-            _inactiveStatisticalSwarmCenterRing.Dispose(disposeDependency);
+            ClearVaultHandles(disposeDependency);
 
             _feedingFrenzyWindowStartTime = -1f;
             _feedingFrenzyKillCount = 0;
@@ -7050,10 +7228,33 @@ namespace Hecton8.World
             return disposeDependency;
         }
 
+        private void ClearVaultHandles(JobHandle disposeDependency)
+        {
+            _grazingAnchorsHandle = default;
+            _massiveThreatsHandle = default;
+            _formationBeaconsHandle = default;
+            _formationObstaclesHandle = default;
+            _staticObstacleCacheHandle = default;
+            _boidStateHandle = default;
+            _killSignalHandle = default;
+            _killSignalCountHandle = default;
+            _foodChainTelemetryRingHandle = default;
+            _leviathanPathScratchHandle = default;
+            _leviathanNodeFrontHandle = default;
+            _leviathanNodeBackHandle = default;
+            _leviathanNodeCountHandle = default;
+            _simulationFrameHandle = default;
+            _boidSensoryThreatsHandle = default;
+            _boidSensoryBlackBoxHandle = default;
+            _threatGridUploadHandle = default;
+            DisposeFoveatedSimulationBuffers(disposeDependency);
+            _inactiveStatisticalSwarmRing.Dispose(disposeDependency);
+            _inactiveStatisticalSwarmCenterRing.Dispose(disposeDependency);
+        }
+
         private void PrimeFoveatedSimulationDecision(float frameDeltaTime, float cameraDistanceSq)
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
-            _dataVault = vault;
+            IDataVault vault = _dataVault;
             EnsureVaultBufferHandle(vault, ref _foveatedSimulationInputHandle, BufferID.SargassumFoveatedSimulationInput, 1);
             EnsureVaultBufferHandle(vault, ref _foveatedSimulationFrontHandle, BufferID.SargassumFoveatedSimulationFront, 1);
             EnsureVaultBufferHandle(vault, ref _foveatedSimulationBackHandle, BufferID.SargassumFoveatedSimulationBack, 1);
@@ -7420,8 +7621,7 @@ namespace Hecton8.World
 
         NativeArray<T> ResolveVaultBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
-            _dataVault = vault;
+            IDataVault vault = _dataVault;
             return vault != null && handle.IsCreated
                 ? handle.Resolve(vault)
                 : default;

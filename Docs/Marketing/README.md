@@ -52,6 +52,7 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 - Do not use key/access/playtest/demo outreach copy to claim gameplay, pressure, route-risk, threat, salvage, or base-failure proof unless AB-009/KPI has `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
 - Do not buy fake wishlists, Discord members, views, comments, reviews, curator posts, or key-reseller access.
 - Run Promise Lint before any public sentence leaves the docs: public copy must be current-build proof, active-work proof, planned focus, investigating, not planned, or removed.
+- After any Marketing docs/data edit, run `Operations/DAILY_AGENT_TASK_LOOP.md` End-Of-Change Validation Cut V1. Include the Backtick Path Audit and rationale-order audit when entry, backlog, source-ledger, campaign, presskit, operation, status, or rationale files changed.
 
 ## Directory Map
 
@@ -133,7 +134,7 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 | `AgentOps/AGENT_MARKETING_WORKFLOWS.md` | How to use agents as labor: lead mining, verification, copy tests, monitoring. |
 | `AgentOps/scrape_letsplayindex_public_leads.ps1` | Reproducible public-index lead extraction script. |
 | `AgentOps/generate_priority50_messages.ps1` | Generates first 50 draft messages from the priority creator shortlist. |
-| `AgentOps/VerificationBatches_2026-05-19/VERIFY_BATCH_01.md` | First verification batch; other batch files in the same folder follow the same parked raw-sprint rule. |
+| `AgentOps/VerificationBatches_2026-05-19/VERIFY_BATCH_01.md` | First verification batch; other batch files in the same folder follow the same parked raw-sprint rule. `TODO`, checked boxes, contact notes, and public-index metrics inside these files are scratch values only, not CRM promotion or send readiness. |
 | `Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` | Marketing asset folder structure, filename rules, status values, metadata schema, and rejection codes. |
 | `Data/SOURCE_LEDGER.md` | Sources, evidence classes, raw lead-mining notes, and verification rules. |
 | `Data/MARKETING_BACKLOG_INDEX.md` | Agent-executable marketing backlog with P0/P1/P2 tasks and spend gates. |
@@ -146,7 +147,7 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 
 ## Core Position
 
-Competitor positioning note, source-check before public use: the Subnautica 2 Steam page currently presents co-op/multiplayer positioning, but do not extrapolate beyond storefront/source text. Subnautica 2 owns bright alien-ocean wonder and co-op momentum only as a working marketing contrast, not as a legal or product-analysis proof.
+Competitor positioning note, source-check before public use: the active SN2 route is V6 or newer same-day monitoring only. Subnautica 2 currently presents co-op/multiplayer storefront positioning and owns bright alien-ocean wonder as a market contrast, but this is audience/identity context only. Do not use SN2 co-op momentum, EULA/privacy discourse, performance anecdotes, review negativity, or pain buckets as public copy, creator hooks, product superiority proof, or raw-lead expansion reason.
 
 HECTON-8 must own:
 

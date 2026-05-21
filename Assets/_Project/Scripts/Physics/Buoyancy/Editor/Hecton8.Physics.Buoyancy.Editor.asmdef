@@ -1,0 +1,27 @@
+{
+    "name": "Hecton8.Physics.Buoyancy.Editor",
+    "rootNamespace": "Hecton8.Physics.Buoyancy.Editor",
+    "references": [
+        "Hecton8.Physics.Buoyancy.Runtime",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Mathematics",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -67,21 +67,26 @@ namespace Hecton8.Core.Memory
                 return false;
 
             VaultMemoryLayoutConfig config = VaultMemoryMath.BuildMockConfig(0);
-            if (vault.TryGetGenerationHandle<VaultMemoryLayoutConfig>(BufferID.VaultMemoryLayoutConfig, out VaultGenerationHandle<VaultMemoryLayoutConfig> existing) &&
-                vault.TryResolveHandle(in existing, out NativeArray<VaultMemoryLayoutConfig> existingBuffer) &&
-                existingBuffer.IsCreated &&
-                existingBuffer.Length > 0)
+            if (TryOpenExistingLane(
+                    vault,
+                    BufferID.VaultMemoryLayoutConfig,
+                    1,
+                    out NativeArray<VaultMemoryLayoutConfig> existingBuffer))
             {
                 config = existingBuffer[0];
             }
 
-            NativeArray<byte> scratch = vault.GetBuffer<byte>(
-                BufferID.VaultMemoryProfileCsvScratch,
-                CsvScratchBytes,
-                SystemID.CoreDataVault,
-                NativeArrayOptions.UninitializedMemory);
-            if (!scratch.IsCreated || scratch.Length < CsvMaxLineBytes + 64)
+            if (!OpenOrAcquireLane(
+                    vault,
+                    BufferID.VaultMemoryProfileCsvScratch,
+                    CsvScratchBytes,
+                    SystemID.CoreDataVault,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<byte> scratch) ||
+                scratch.Length < CsvMaxLineBytes + 64)
+            {
                 return false;
+            }
 
             ParseCsvOverrideStream(csvPath, scratch, ref config);
 
@@ -333,19 +338,84 @@ namespace Hecton8.Core.Memory
 
         private static void WriteConfigToVault(IDataVault vault, in VaultMemoryLayoutConfig config)
         {
-            VaultGenerationHandle<VaultMemoryLayoutConfig> handle = vault.GetGenerationHandle<VaultMemoryLayoutConfig>(
-                BufferID.VaultMemoryLayoutConfig,
-                1,
-                SystemID.CoreDataVault,
-                NativeArrayOptions.UninitializedMemory);
-            if (!vault.TryResolveHandle(in handle, out NativeArray<VaultMemoryLayoutConfig> buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length == 0)
+            if (!OpenOrAcquireLane(
+                    vault,
+                    BufferID.VaultMemoryLayoutConfig,
+                    1,
+                    SystemID.CoreDataVault,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<VaultMemoryLayoutConfig> buffer))
             {
                 return;
             }
 
             buffer[0] = config;
+        }
+
+        private static bool TryOpenExistingLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
+                return false;
+
+            return TryOpenLane(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool OpenOrAcquireLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            SystemID owner,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                !IsHandleCreated(in handle, bufferId))
+            {
+                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, owner, options);
+            }
+
+            return TryOpenLane(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenLane<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0 || !IsHandleCreated(in handle, bufferId))
+                return false;
+
+            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) && handle.Generation != 0u;
         }
 
         private static ReadOnlySpan<byte> Trim(ReadOnlySpan<byte> span)

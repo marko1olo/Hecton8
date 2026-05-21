@@ -3,8 +3,8 @@
 // Zero-GC gameplay event bus for tool-driven effect signals.
 // ============================================================================
 
-using Hecton8.Core;
 using UnityEngine;
+using Hecton8.Interaction;
 
 namespace Hecton8.Gameplay
 {
@@ -27,32 +27,32 @@ namespace Hecton8.Gameplay
         /// </summary>
         public ToolEffectSignal(
             EffectType effectType,
-            BaseModule module,
+            IRepairableModuleTarget moduleTarget,
             Transform sourceTransform,
             float magnitude,
             Vector3 hitPointWorld)
         {
             EffectType = effectType;
-            Module = module;
+            ModuleTarget = moduleTarget;
             SourceTransform = sourceTransform;
             Magnitude = magnitude;
             HitPointWorld = hitPointWorld;
         }
 
         /// <summary>Resolved gameplay effect type.</summary>
-        public EffectType EffectType { get; }
+        public readonly EffectType EffectType;
 
-        /// <summary>Target module under the active tool beam.</summary>
-        public BaseModule Module { get; }
+        /// <summary>Repairable module target under the active tool beam.</summary>
+        public readonly IRepairableModuleTarget ModuleTarget;
 
         /// <summary>Transform that emitted the tool effect, when available.</summary>
-        public Transform SourceTransform { get; }
+        public readonly Transform SourceTransform;
 
         /// <summary>Effect magnitude in gameplay units for this frame.</summary>
-        public float Magnitude { get; }
+        public readonly float Magnitude;
 
         /// <summary>World hit point resolved by the active tool query.</summary>
-        public Vector3 HitPointWorld { get; }
+        public readonly Vector3 HitPointWorld;
     }
 
     /// <summary>
@@ -74,8 +74,79 @@ namespace Hecton8.Gameplay
     {
         private const int ListenerCapacity = 16;
 
-        // COLD ALLOC: RegistryBucket<IToolEffectListener>[16] - immediate pre-repair tool effect listeners - owner: ToolEffectEvents
-        private static readonly RegistryBucket<IToolEffectListener> _listeners = new RegistryBucket<IToolEffectListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IToolEffectListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct ToolEffectListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public ToolEffectListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IToolEffectListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IToolEffectListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void Unregister(IToolEffectListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public IToolEffectListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[16] - immediate pre-repair tool effect listeners - owner: ToolEffectEvents
+        private static ToolEffectListenerRegistry _listeners = new ToolEffectListenerRegistry(ListenerCapacity);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -93,7 +164,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+                _listeners.TryRegister(listener);
         }
 
         /// <summary>
@@ -114,23 +185,22 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static void RaiseEffectApplied(
             EffectType effectType,
-            BaseModule module,
+            IRepairableModuleTarget moduleTarget,
             Transform sourceTransform,
             float magnitude,
             Vector3 hitPointWorld)
         {
-            if (module == null || effectType == EffectType.None || magnitude <= 0f)
+            if (moduleTarget == null || effectType == EffectType.None || magnitude <= 0f)
                 return;
 
             int count = _listeners.Count;
             if (count <= 0)
                 return;
 
-            ToolEffectSignal signal = new ToolEffectSignal(effectType, module, sourceTransform, magnitude, hitPointWorld);
-            IToolEffectListener[] rawArray = _listeners.RawArray;
+            ToolEffectSignal signal = new ToolEffectSignal(effectType, moduleTarget, sourceTransform, magnitude, hitPointWorld);
             for (int i = count - 1; i >= 0; i--)
             {
-                IToolEffectListener listener = rawArray[i];
+                IToolEffectListener listener = _listeners.GetAt(i);
                 if (listener != null)
                     listener.OnToolEffectApplied(in signal);
             }

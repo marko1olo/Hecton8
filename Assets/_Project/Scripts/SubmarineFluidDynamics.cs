@@ -17,6 +17,7 @@ using Hecton8.Gameplay;
 using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -38,7 +39,8 @@ namespace Hecton8.Physics
         IPostFixedTickable,
         IOriginShiftListener,
         IScalabilityChangedEventListener,
-        IGlobalRegistryHotSwapListener
+        IGlobalRegistryHotSwapListener,
+        IWaterHeatInjectionService
     {
         private const int CompartmentCapacity = 8;
         private const int BulkheadCapacity = 7;
@@ -504,28 +506,31 @@ namespace Hecton8.Physics
         private HectonPlayerMovement _cachedPlayerMovement;
         private IDataVault _dataVault;
 
-        private unsafe struct VaultNativeBuffer<T> where T : struct
+        private struct VaultNativeBuffer<T> where T : struct
         {
             private IDataVault _vault;
-            private VaultBufferHandle<T> _handle;
+            private VaultGenerationHandle<T> _handle;
+            private int _length;
 
-            public bool IsCreated => _handle.IsCreated && _vault != null;
+            public bool IsCreated => IsVehiclesPhysicsHandle(in _handle) && _length > 0 && _vault != null;
 
-            public int Length => _handle.Length;
+            public int Length => _length;
 
             public T this[int index]
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
-                    return IsIndexValid(index) ? UnsafeUtility.ReadArrayElement<T>(_handle.ptr, index) : default;
+                    NativeArray<T> view = OpenView();
+                    return IsIndexValid(view, index) ? view[index] : default;
                 }
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 set
                 {
-                    if (IsIndexValid(index))
-                        UnsafeUtility.WriteArrayElement(_handle.ptr, index, value);
+                    NativeArray<T> view = OpenView();
+                    if (IsIndexValid(view, index))
+                        view[index] = value;
                 }
             }
 
@@ -539,24 +544,39 @@ namespace Hecton8.Physics
 
                 bool mustRebind =
                     !ReferenceEquals(_vault, vault) ||
-                    !_handle.IsCreated ||
-                    _handle.BufferId != bufferId ||
-                    _handle.Length < requiredLength ||
-                    !IsGenerationCurrent(vault, bufferId);
+                    _handle.BufferID == 0u ||
+                    _handle.BufferID != unchecked((uint)bufferId) ||
+                    _handle.SystemID != unchecked((uint)SystemID.VehiclesPhysics) ||
+                    _length < requiredLength ||
+                    !TryResolveCurrent(vault, requiredLength, out _);
 
                 _vault = vault;
                 if (mustRebind)
                 {
-                    _handle = vault.GetBufferHandle<T>(
-                        bufferId,
-                        requiredLength,
-                        SystemID.VehiclesPhysics,
-                        NativeArrayOptions.ClearMemory);
+                    if (vault.IsAllocationLocked)
+                    {
+                        if (!vault.TryGetGenerationHandle(bufferId, out _handle))
+                        {
+                            Clear();
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        _handle = vault.GetGenerationHandle<T>(
+                            bufferId,
+                            requiredLength,
+                            SystemID.VehiclesPhysics,
+                            NativeArrayOptions.ClearMemory);
+                    }
                 }
 
-                NativeArray<T> view = Resolve();
+                NativeArray<T> view = OpenView();
                 if (view.IsCreated && view.Length >= requiredLength)
+                {
+                    _length = view.Length;
                     return true;
+                }
 
                 Clear();
                 return false;
@@ -566,20 +586,24 @@ namespace Hecton8.Physics
             {
                 _vault = null;
                 _handle = default;
+                _length = 0;
             }
 
             public bool Refresh(IDataVault vault)
             {
-                if (vault == null || !_handle.IsCreated)
+                if (vault == null || _handle.BufferID == 0u || _length <= 0)
                 {
                     Clear();
                     return false;
                 }
 
-                BufferID bufferId = _handle.BufferId;
-                int requiredLength = _handle.Length;
-                if (!vault.TryGetBufferHandle(bufferId, out VaultBufferHandle<T> refreshed) ||
-                    refreshed.Length < requiredLength)
+                BufferID bufferId = unchecked((BufferID)_handle.BufferID);
+                int requiredLength = _length;
+                if (!vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> refreshed) ||
+                    !IsVehiclesPhysicsHandle(in refreshed) ||
+                    !vault.TryResolveHandle(in refreshed, out NativeArray<T> view) ||
+                    !view.IsCreated ||
+                    view.Length < requiredLength)
                 {
                     Clear();
                     return false;
@@ -587,34 +611,53 @@ namespace Hecton8.Physics
 
                 _vault = vault;
                 _handle = refreshed;
+                _length = view.Length;
                 return true;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public NativeArray<T> Resolve()
+            public NativeArray<T> OpenView()
             {
-                return _vault != null && _handle.IsCreated ? _handle.Resolve(_vault) : default;
+                if (_vault == null ||
+                    !IsVehiclesPhysicsHandle(in _handle) ||
+                    !_vault.TryResolveHandle(in _handle, out NativeArray<T> view) ||
+                    !view.IsCreated)
+                {
+                    return default;
+                }
+
+                return view;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static implicit operator NativeArray<T>(VaultNativeBuffer<T> buffer)
             {
-                return buffer.Resolve();
+                return buffer.OpenView();
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private bool IsIndexValid(int index)
+            private static bool IsIndexValid(NativeArray<T> view, int index)
             {
-                return _handle.ptr != null && (uint)index < (uint)_handle.Length;
+                return view.IsCreated && (uint)index < (uint)view.Length;
             }
 
-            private bool IsGenerationCurrent(IDataVault vault, BufferID bufferId)
+            private bool TryResolveCurrent(IDataVault vault, int requiredLength, out NativeArray<T> view)
             {
-                if (!_handle.IsCreated)
+                view = default;
+                if (vault == null || !IsVehiclesPhysicsHandle(in _handle))
                     return false;
 
-                return vault.TryGetBufferGeneration(bufferId, out uint generation) &&
-                    generation == _handle.generation;
+                return vault.TryResolveHandle(in _handle, out view) &&
+                       view.IsCreated &&
+                       view.Length >= requiredLength;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static bool IsVehiclesPhysicsHandle(in VaultGenerationHandle<T> handle)
+            {
+                return handle.BufferID != 0u &&
+                       handle.SystemID == unchecked((uint)SystemID.VehiclesPhysics) &&
+                       handle.Generation != 0u;
             }
         }
 
@@ -624,6 +667,7 @@ namespace Hecton8.Physics
         private HectonFluidEngine _fluidRuntime;
         private IPowerGridService _powerGridService;
         private IThermodynamicsService _thermodynamicsService;
+        private HectonAtmosphereManager _atmosphereRuntime;
         private byte _cachedFloodStateMathLod;
         private bool _registered;
         private bool _registeredOriginShiftListener;
@@ -740,6 +784,9 @@ namespace Hecton8.Physics
         private VaultNativeBuffer<float> _exteriorThermalAnomalyTemperatures;
         private VaultNativeBuffer<float> _exteriorThermalAnomalyLifetimes;
         private VaultNativeBuffer<int> _exteriorThermalHazardIds;
+        private VaultNativeBuffer<float> _roomWaterLevels;
+        private VaultNativeBuffer<float> _roomVolumes;
+        private VaultNativeBuffer<float3> _roomLocalAups;
         private FluidMathCore _fluidMathCore;
         private bool _fluidSimulationRegistered;
         private bool _isBrineSubmerged;
@@ -805,12 +852,11 @@ namespace Hecton8.Physics
             [FieldOffset(116)] public uint StateHash;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HydroKinematicDragJob : IJob
         {
-            [ReadOnly] public NativeArray<HydroKinematicJobInput> Input;
-            public NativeArray<HydroKinematicJobOutput> Output;
+            [ReadOnly, NoAlias] public NativeArray<HydroKinematicJobInput> Input;
+            [NoAlias] public NativeArray<HydroKinematicJobOutput> Output;
 
             public void Execute()
             {
@@ -894,17 +940,16 @@ namespace Hecton8.Physics
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct FluidTransferJob : IJob
         {
-            [ReadOnly] public NativeArray<float> InputFloodVolumes;
-            [ReadOnly] public NativeArray<float> MaxVolumes;
-            [ReadOnly] public NativeArray<float> BreachAreas;
-            [ReadOnly] public NativeArray<uint> InputFlags;
+            [ReadOnly, NoAlias] public NativeArray<float> InputFloodVolumes;
+            [ReadOnly, NoAlias] public NativeArray<float> MaxVolumes;
+            [ReadOnly, NoAlias] public NativeArray<float> BreachAreas;
+            [ReadOnly, NoAlias] public NativeArray<uint> InputFlags;
 
-            public NativeArray<float> OutputFloodVolumes;
-            public NativeArray<uint> OutputFlags;
+            [NoAlias] public NativeArray<float> OutputFloodVolumes;
+            [NoAlias] public NativeArray<uint> OutputFlags;
 
             public int CompartmentCount;
             public float DepthMeters;
@@ -964,17 +1009,16 @@ namespace Hecton8.Physics
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BulkheadTransferDeltaJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float> FloodVolumes;
-            [ReadOnly] public NativeArray<float> MaxVolumes;
-            [ReadOnly] public NativeArray<int2> BulkheadPairs;
-            [ReadOnly] public NativeArray<byte> BulkheadSealed;
-            [ReadOnly] public NativeArray<float> BulkheadDoorAreas;
+            [ReadOnly, NoAlias] public NativeArray<float> FloodVolumes;
+            [ReadOnly, NoAlias] public NativeArray<float> MaxVolumes;
+            [ReadOnly, NoAlias] public NativeArray<int2> BulkheadPairs;
+            [ReadOnly, NoAlias] public NativeArray<byte> BulkheadSealed;
+            [ReadOnly, NoAlias] public NativeArray<float> BulkheadDoorAreas;
 
-            public NativeArray<float> TransferDeltas;
+            [NoAlias] public NativeArray<float> TransferDeltas;
 
             public int CompartmentCount;
             public float FixedDeltaTime;
@@ -1017,17 +1061,16 @@ namespace Hecton8.Physics
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ApplyBulkheadTransferJob : IJob
         {
-            [ReadOnly] public NativeArray<int2> BulkheadPairs;
-            [ReadOnly] public NativeArray<byte> BulkheadSealed;
-            [ReadOnly] public NativeArray<float> MaxVolumes;
-            [ReadOnly] public NativeArray<float> TransferDeltas;
+            [ReadOnly, NoAlias] public NativeArray<int2> BulkheadPairs;
+            [ReadOnly, NoAlias] public NativeArray<byte> BulkheadSealed;
+            [ReadOnly, NoAlias] public NativeArray<float> MaxVolumes;
+            [ReadOnly, NoAlias] public NativeArray<float> TransferDeltas;
 
-            public NativeArray<float> FloodVolumes;
-            public NativeArray<uint> Flags;
+            [NoAlias] public NativeArray<float> FloodVolumes;
+            [NoAlias] public NativeArray<uint> Flags;
 
             public int BulkheadCount;
             public int CompartmentCount;
@@ -1069,7 +1112,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct FloodMassPropertiesResult
         {
@@ -1081,17 +1124,16 @@ namespace Hecton8.Physics
             [FieldOffset(44)] public uint Reserved0;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct FloodMassPropertiesJob : IJob
         {
-            [ReadOnly] public NativeArray<float> FloodVolumes;
-            [ReadOnly] public NativeArray<float> MaxVolumes;
-            [ReadOnly] public NativeArray<float3> LocalCentroids;
-            [ReadOnly] public NativeArray<uint> Flags;
+            [ReadOnly, NoAlias] public NativeArray<float> FloodVolumes;
+            [ReadOnly, NoAlias] public NativeArray<float> MaxVolumes;
+            [ReadOnly, NoAlias] public NativeArray<float3> LocalCentroids;
+            [ReadOnly, NoAlias] public NativeArray<uint> Flags;
 
-            public NativeArray<float3> WeightedCentroids;
-            public NativeArray<FloodMassPropertiesResult> Output;
+            [NoAlias] public NativeArray<float3> WeightedCentroids;
+            [NoAlias] public NativeArray<FloodMassPropertiesResult> Output;
 
             public int CompartmentCount;
             public float3 DryCenterLocal;
@@ -1184,7 +1226,7 @@ namespace Hecton8.Physics
         {
             // COLD ALLOC: FluidMathCore[1] - data-only submarine fluid math service registered through GlobalRegistry - owner: SubmarineFluidDynamics
             _fluidMathCore ??= new FluidMathCore();
-            CacheReferences();
+            CacheReferencesCold();
             RefreshResolvedInertiaTensors();
             RefreshDerivedConstants(DefaultFixedStepSeconds);
             RefreshDebugState();
@@ -1193,7 +1235,7 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             TryRegisterFluidSimulationService();
-            CacheReferences();
+            CacheReferencesCold();
             TryRegisterHotSwapListener();
             TryRegisterScalabilityListener();
             EnsureNativeState();
@@ -1394,6 +1436,25 @@ namespace Hecton8.Physics
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
+            {
+                _atmosphereRuntime = currentService as HectonAtmosphereManager;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null &&
+                    isActiveAndEnabled &&
+                    !_registered &&
+                    HasActiveHydrodynamicsConfiguration())
+                {
+                    TryRegister();
+                }
+
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -1414,7 +1475,7 @@ namespace Hecton8.Physics
 
         public void OnScalabilityChanged(in Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent payload)
         {
-            _cachedFloodStateMathLod = payload.CurrentTier == ScalabilityTierProfiles.LowMx350 ? (byte)0 : (byte)1;
+            RefreshFloodStateMathLodFromQuality();
         }
 
         /// <summary>
@@ -1845,6 +1906,24 @@ namespace Hecton8.Physics
             InjectLocalizedWaterHeatJoulesInternal(runtimePoint, heatEnergyJoules);
         }
 
+        bool IWaterHeatInjectionService.TryInjectLocalizedWaterHeat(Vector3 runtimePoint, Vector3 direction, float cutStrength, float normalizedPower)
+        {
+            if (!isActiveAndEnabled ||
+                _cachedTransform == null ||
+                cutStrength <= 0f ||
+                normalizedPower <= MinEffectiveBeamPowerForThermalAnomaly())
+            {
+                return false;
+            }
+
+            float heatEnergyJoules = cutStrength * math.saturate(normalizedPower);
+            if (heatEnergyJoules <= 0f)
+                return false;
+
+            InjectLocalizedWaterHeatJoulesInternal(runtimePoint, heatEnergyJoules);
+            return true;
+        }
+
         /// <summary>
         /// Injects localized heat directly into the exterior water anomaly field using submarine-local coordinates and explicit joules.
         /// </summary>
@@ -1938,7 +2017,7 @@ namespace Hecton8.Physics
             return _compartmentFlags[compartmentIndex];
         }
 
-        private void CacheReferences()
+        private void CacheReferencesCold()
         {
             if (_cachedTransform == null)
                 _cachedTransform = transform;
@@ -1980,6 +2059,9 @@ namespace Hecton8.Physics
 
             if (_thermodynamicsService == null || IsUnityObjectInvalid(_thermodynamicsService))
                 _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
+
+            if (_atmosphereRuntime == null || IsUnityObjectInvalid(_atmosphereRuntime))
+                _atmosphereRuntime = GlobalRegistry.Atmosphere;
 
             if (_structuralBreachReadModel == null)
             {
@@ -2373,9 +2455,16 @@ namespace Hecton8.Physics
             if (_registered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
-            _registered = SystemDispatcher.GetPostFixedLane(PriorityLayer.Environment).Contains(this);
+            if (!GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment))
+                return;
+
+            if (!GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment))
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                return;
+            }
+
+            _registered = true;
         }
 
         private void TryRegisterFluidSimulationService()
@@ -2409,7 +2498,7 @@ namespace Hecton8.Physics
             if (_registeredScalabilityListener || !Application.isPlaying)
                 return;
 
-            _cachedFloodStateMathLod = DistanceMath.IsHighQualityTier(GlobalRegistry.ScalabilityTier) ? (byte)1 : (byte)0;
+            RefreshFloodStateMathLodFromQuality();
             ScalabilityEvents.Register(this);
             _registeredScalabilityListener = true;
         }
@@ -2569,12 +2658,9 @@ namespace Hecton8.Physics
                 math.min(_compartmentFloodVolumes.Length, math.min(_compartmentMaxVolumes.Length, _compartmentLocalCentroids.Length)));
 
             const int sharedRoomCount = CompartmentCapacity;
-            NativeArray<float> roomWaterLevels;
-            NativeArray<float> roomVolumes;
-            NativeArray<float3> roomLocalAups;
-            bool hasRoomWaterLevels = vault.TryGetBuffer(BufferID.RoomWaterLevels, out roomWaterLevels);
-            bool hasRoomVolumes = vault.TryGetBuffer(BufferID.RoomVolumes, out roomVolumes);
-            bool hasRoomLocalAups = vault.TryGetBuffer(BufferID.RoomLocalAUPs, out roomLocalAups);
+            bool hasRoomWaterLevels = _roomWaterLevels.Refresh(vault);
+            bool hasRoomVolumes = _roomVolumes.Refresh(vault);
+            bool hasRoomLocalAups = _roomLocalAups.Refresh(vault);
             bool hasPartialRoomSoa = hasRoomWaterLevels || hasRoomVolumes || hasRoomLocalAups;
             if (activeCount <= 0 && !hasPartialRoomSoa)
                 return;
@@ -2586,23 +2672,16 @@ namespace Hecton8.Physics
             }
             else
             {
-                roomWaterLevels = vault.GetBuffer<float>(
-                    BufferID.RoomWaterLevels,
-                    sharedRoomCount,
-                    SystemID.VehiclesPhysics,
-                    NativeArrayOptions.UninitializedMemory);
-                roomVolumes = vault.GetBuffer<float>(
-                    BufferID.RoomVolumes,
-                    sharedRoomCount,
-                    SystemID.VehiclesPhysics,
-                    NativeArrayOptions.UninitializedMemory);
-                roomLocalAups = vault.GetBuffer<float3>(
-                    BufferID.RoomLocalAUPs,
-                    sharedRoomCount,
-                    SystemID.VehiclesPhysics,
-                    NativeArrayOptions.UninitializedMemory);
+                hasRoomWaterLevels = _roomWaterLevels.Ensure(vault, BufferID.RoomWaterLevels, sharedRoomCount);
+                hasRoomVolumes = _roomVolumes.Ensure(vault, BufferID.RoomVolumes, sharedRoomCount);
+                hasRoomLocalAups = _roomLocalAups.Ensure(vault, BufferID.RoomLocalAUPs, sharedRoomCount);
+                if (!hasRoomWaterLevels || !hasRoomVolumes || !hasRoomLocalAups)
+                    return;
             }
 
+            NativeArray<float> roomWaterLevels = _roomWaterLevels.OpenView();
+            NativeArray<float> roomVolumes = _roomVolumes.OpenView();
+            NativeArray<float3> roomLocalAups = _roomLocalAups.OpenView();
             if (!roomWaterLevels.IsCreated ||
                 !roomVolumes.IsCreated ||
                 !roomLocalAups.IsCreated ||
@@ -4342,11 +4421,18 @@ namespace Hecton8.Physics
             if (director == null || !director.TrySampleBrineLayer(runtimePosition, out sample))
                 return false;
 
-            double3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            double3 originAbsolute = originAup.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(originAbsolute)))
+                return false;
+
             return BrineLayerMath.IsRuntimeBelowAbsolutePlane(
                 runtimePosition.y,
                 sample.AbsoluteHeightY,
-                (float)shiftOffset.y);
+                (float)originAbsolute.y);
         }
 
         private void UpdateBrineHullBreachState(bool insideBrine, Vector3 runtimePosition)
@@ -4365,8 +4451,11 @@ namespace Hecton8.Physics
             if (_isBrineSubmerged == _wasBrineSubmerged || !IsFiniteVector(runtimePosition))
                 return;
 
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
+                return;
+
             AcousticPingSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            signal.PositionAup = positionAup;
             signal.RadiusMeters = 28f;
             signal.Intensity01 = 0.85f;
             signal.SourceId = SubmarineFluidDynamicsContextHash;
@@ -4491,7 +4580,7 @@ namespace Hecton8.Physics
             ref int densityCount)
         {
             HectonMapMagicVegetationBridge.VegetationDensitySample sample = vegetationBridge.GetVegetationDensity(samplePosition);
-            if (!sample.HasVegetation)
+            if (sample.HasVegetation == 0)
                 return;
 
             bool contributesDrag = sample.Type == HectonVegetationInstanceType.GiantKelp ||
@@ -4979,7 +5068,10 @@ namespace Hecton8.Physics
             if (!(kineticEnergyJoules > Epsilon) || !float.IsFinite(kineticEnergyJoules))
                 return;
 
-            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
+            if (!TryResolveAupFromRuntimeOrigin(worldPoint, out AbsoluteUniversePosition impactAup))
+                return;
+
+            double3 absoluteUniversePosition = impactAup.ToAbsoluteDouble3();
             if (!math.all(math.isfinite(absoluteUniversePosition)))
                 return;
 
@@ -5001,11 +5093,11 @@ namespace Hecton8.Physics
                 SampleIndex = sampleIndex
             };
 
-            PublishSplashFluidImpulse(in splashEvent, absoluteUniversePosition, pointVelocity);
+            PublishSplashFluidImpulse(in splashEvent, in impactAup, pointVelocity);
 
             ImpactSignal impactSignal = new ImpactSignal
             {
-                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePosition),
+                PointAup = impactAup,
                 Force = impactSpeedMetersPerSecond * effectiveSampleMass,
                 Intensity = math.saturate(kineticEnergyJoules * 0.0005f),
                 PrimaryBodyId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u,
@@ -5019,11 +5111,13 @@ namespace Hecton8.Physics
 
         private static void PublishSplashFluidImpulse(
             in SplashEvent splashEvent,
-            double3 absoluteUniversePosition,
+            in AbsoluteUniversePosition splashAup,
             Vector3 pointVelocity)
         {
+            double3 absoluteUniversePosition = splashAup.ToAbsoluteDouble3();
             float3 velocity = new float3(pointVelocity.x, pointVelocity.y, pointVelocity.z);
             if (!math.all(math.isfinite(velocity)) ||
+                !AbsoluteUniversePosition.IsFinite(in splashAup) ||
                 !math.all(math.isfinite(absoluteUniversePosition)) ||
                 !math.isfinite(splashEvent.KineticEnergyJoules) ||
                 !math.isfinite(splashEvent.ImpactSpeedMetersPerSecond))
@@ -5041,7 +5135,7 @@ namespace Hecton8.Physics
                 impulseVector = new float3(0f, math.max(0.1f, splashEvent.ImpactSpeedMetersPerSecond), 0f);
 
             FluidImpulseSignal impulse = default;
-            impulse.PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePosition);
+            impulse.PositionAup = splashAup;
             impulse.Vector = impulseVector * math.lerp(0.15f, 0.65f, impact01);
             impulse.Radius = math.lerp(0.75f, 4.5f, impact01);
             impulse.Lifetime = math.lerp(0.2f, 0.9f, impact01);
@@ -5064,8 +5158,7 @@ namespace Hecton8.Physics
             if (upwardSpeedMetersPerSecond < math.max(0f, surfacingBreachSpeedMetersPerSecond))
                 return;
 
-            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
-            if (!math.all(math.isfinite(absoluteUniversePosition)))
+            if (!TryResolveAupFromRuntimeOrigin(worldPoint, out AbsoluteUniversePosition impactAup))
                 return;
 
             float effectiveSampleMass = math.max(sampleHullMass, Epsilon);
@@ -5075,7 +5168,7 @@ namespace Hecton8.Physics
 
             ImpactSignal impactSignal = new ImpactSignal
             {
-                PointAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePosition),
+                PointAup = impactAup,
                 Force = upwardSpeedMetersPerSecond * effectiveSampleMass,
                 Intensity = math.saturate(kineticEnergyJoules * 0.00035f),
                 PrimaryBodyId = unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())),
@@ -5332,6 +5425,20 @@ namespace Hecton8.Physics
             return _cachedFloodStateMathLod;
         }
 
+        private void RefreshFloodStateMathLodFromQuality()
+        {
+            _cachedFloodStateMathLod = ResolveFloodStateMathLodByte(HomeostasisBrain.GlobalQualityWeight);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte ResolveFloodStateMathLodByte(float qualityWeight01)
+        {
+            float quality = math.isfinite(qualityWeight01) ? math.saturate(qualityWeight01) : 0f;
+            float curvedQuality = math.smoothstep(0.08f, 0.92f, quality);
+            int lod = (int)math.floor(math.lerp(0f, 3.999f, curvedQuality));
+            return (byte)math.clamp(lod, 0, 3);
+        }
+
         private void RefreshRuntimeActorContextsIfMissing()
         {
             if (_playerRuntime == null || IsUnityObjectInvalid(_playerRuntime))
@@ -5351,6 +5458,7 @@ namespace Hecton8.Physics
             _fluidRuntime = null;
             _powerGridService = null;
             _thermodynamicsService = null;
+            _atmosphereRuntime = null;
             _resourceDistributionRuntime = null;
             _vocalWarningSystem = null;
         }
@@ -5436,7 +5544,13 @@ namespace Hecton8.Physics
         {
             if (sampleDepthFromAtmosphere)
             {
-                HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
+                HectonAtmosphereManager atmosphereManager = _atmosphereRuntime;
+                if (IsUnityObjectInvalid(atmosphereManager))
+                {
+                    _atmosphereRuntime = null;
+                    atmosphereManager = null;
+                }
+
                 if (atmosphereManager != null && _cachedTransform != null)
                 {
                     float depthMeters = atmosphereManager.SeaLevelY - _cachedTransform.position.y;
@@ -5814,7 +5928,7 @@ namespace Hecton8.Physics
                 !UnityEditor.EditorApplication.isCompiling &&
                 !UnityEditor.EditorApplication.isUpdating)
             {
-                CacheReferences();
+                CacheReferencesCold();
                 RebuildExteriorBuoyancySampleLocalPoints();
             }
         }
@@ -5987,6 +6101,22 @@ namespace Hecton8.Physics
             return IsFiniteVector(value) ? new float3(value.x, value.y, value.z) : float3.zero;
         }
 
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in positionAup);
+        }
+
         private static Vector3 ToVector3(float3 value)
         {
             return math.all(math.isfinite(value)) ? new Vector3(value.x, value.y, value.z) : Vector3.zero;
@@ -6091,6 +6221,9 @@ namespace Hecton8.Physics
             _exteriorThermalAnomalyTemperatures = default;
             _exteriorThermalAnomalyLifetimes = default;
             _exteriorThermalHazardIds = default;
+            _roomWaterLevels = default;
+            _roomVolumes = default;
+            _roomLocalAups = default;
         }
 
         private void DisposeNativeStateBuffer<T>(ref VaultNativeBuffer<T> buffer, int vaultFlag) where T : struct

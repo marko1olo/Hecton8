@@ -45,6 +45,10 @@ namespace Hecton8.World
         private const byte StateActive = 1;
         private const string NativeMemoryOwner = nameof(FloraRegrowthDirector);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const Allocator DataVaultExemptRegrowthScratchAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptRegrowthStateAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptRegrowthIndexAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptMaturationResultAllocator = Allocator.Persistent;
 
         [StructLayout(LayoutKind.Explicit, Size = 40)]
         private struct FloraRegrowthState
@@ -335,37 +339,37 @@ namespace Hecton8.World
 
             _destroyedFloraScratch = new NativeList<PersistentWorldDeltaRecord>(
                 DefaultTrackedRegrowthCapacity,
-                Allocator.Persistent); // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[2048] - destroyed flora scan scratch for regrowth eligibility - owner: FloraRegrowthDirector
+                DataVaultExemptRegrowthScratchAllocator); // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[2048] - destroyed flora scan scratch for regrowth eligibility - owner: FloraRegrowthDirector
             _pendingSeedScratch = new NativeList<PersistentWorldDeltaRecord>(
                 DefaultTrackedRegrowthCapacity,
-                Allocator.Persistent); // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[2048] - pending flora seed scan scratch for delayed sprout updates - owner: FloraRegrowthDirector
+                DataVaultExemptRegrowthScratchAllocator); // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[2048] - pending flora seed scan scratch for delayed sprout updates - owner: FloraRegrowthDirector
             _regrowthStates = new NativeList<FloraRegrowthState>(
                 DefaultTrackedRegrowthCapacity,
-                Allocator.Persistent); // COLD ALLOC: NativeList<FloraRegrowthState>[2048] - active and pending flora regrowth states - owner: FloraRegrowthDirector
+                DataVaultExemptRegrowthStateAllocator); // COLD ALLOC: NativeList<FloraRegrowthState>[2048] - active and pending flora regrowth states - owner: FloraRegrowthDirector
             _stateIndexByInstanceUid = new NativeHashMap<uint, int>(
                 DefaultTrackedRegrowthCapacity,
-                Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[2048] - regrowth state lookup keyed by flora uid - owner: FloraRegrowthDirector
+                DataVaultExemptRegrowthIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[2048] - regrowth state lookup keyed by flora uid - owner: FloraRegrowthDirector
             _seedFlightStates = new NativeList<SeedFlightState>(
                 DefaultTrackedRegrowthCapacity,
-                Allocator.Persistent); // COLD ALLOC: NativeList<SeedFlightState>[2048] - active organic seed trajectories - owner: FloraRegrowthDirector
+                DataVaultExemptRegrowthStateAllocator); // COLD ALLOC: NativeList<SeedFlightState>[2048] - active organic seed trajectories - owner: FloraRegrowthDirector
             _seedFlightIndexByUid = new NativeHashMap<uint, int>(
                 DefaultTrackedRegrowthCapacity,
-                Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[2048] - seed trajectory lookup keyed by landed seed uid - owner: FloraRegrowthDirector
+                DataVaultExemptRegrowthIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[2048] - seed trajectory lookup keyed by landed seed uid - owner: FloraRegrowthDirector
             _seedEmissionByDestroyedUid = new NativeHashMap<uint, byte>(
                 DefaultTrackedRegrowthCapacity,
-                Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,byte>[2048] - destroyed flora seed-emission gate keyed by source flora uid - owner: FloraRegrowthDirector
+                DataVaultExemptRegrowthIndexAllocator); // COLD ALLOC: NativeHashMap<uint,byte>[2048] - destroyed flora seed-emission gate keyed by source flora uid - owner: FloraRegrowthDirector
             _maturationStates = new NativeList<FloraMaturationState>(
                 DefaultTrackedRegrowthCapacity,
-                Allocator.Persistent); // COLD ALLOC: NativeList<FloraMaturationState>[2048] - live flora maturation state lane keyed by deterministic flora uid - owner: FloraRegrowthDirector
+                DataVaultExemptRegrowthStateAllocator); // COLD ALLOC: NativeList<FloraMaturationState>[2048] - live flora maturation state lane keyed by deterministic flora uid - owner: FloraRegrowthDirector
             _maturationIndexByInstanceUid = new NativeHashMap<uint, int>(
                 DefaultTrackedRegrowthCapacity,
-                Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[2048] - maturation state lookup keyed by deterministic flora uid - owner: FloraRegrowthDirector
+                DataVaultExemptRegrowthIndexAllocator); // COLD ALLOC: NativeHashMap<uint,int>[2048] - maturation state lookup keyed by deterministic flora uid - owner: FloraRegrowthDirector
             _symbioticFungalNodes = new NativeList<SymbioticFungalNodeState>(
                 MaxSymbioticFungalNodes,
-                Allocator.Persistent); // COLD ALLOC: NativeList<SymbioticFungalNodeState>[128] - bounded fungal root-radius nodes - owner: FloraRegrowthDirector
+                DataVaultExemptRegrowthStateAllocator); // COLD ALLOC: NativeList<SymbioticFungalNodeState>[128] - bounded fungal root-radius nodes - owner: FloraRegrowthDirector
             _symbioticFungalBuffs = new NativeList<SymbioticFungalBuffState>(
                 MaxSymbioticFungalNodes,
-                Allocator.Persistent); // COLD ALLOC: NativeList<SymbioticFungalBuffState>[128] - active fungal growth buffs consumed by maturation Burst job - owner: FloraRegrowthDirector
+                DataVaultExemptRegrowthStateAllocator); // COLD ALLOC: NativeList<SymbioticFungalBuffState>[128] - active fungal growth buffs consumed by maturation Burst job - owner: FloraRegrowthDirector
             _lastSeedPlayTime = GetCurrentPlayTimeSeconds();
             RegisterNativeMemorySentinel();
         }
@@ -937,7 +941,7 @@ namespace Hecton8.World
 
             _maturationResults = new NativeArray<FloraMaturationResult>(
                 requiredCount,
-                Allocator.Persistent,
+                DataVaultExemptMaturationResultAllocator,
                 NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<FloraMaturationResult>[requiredCount] - burst maturation result lane for slow-tick flora growth application - owner: FloraRegrowthDirector
             NativeMemorySentinel.RegisterNativeArray(_maturationResults, NativeMemoryOwner, nameof(_maturationResults), NativeMemoryLifetime);
         }
@@ -1309,7 +1313,7 @@ namespace Hecton8.World
             for (int i = 0; i < _pendingSeedScratch.Length; i++)
             {
                 PersistentWorldDeltaRecord seedRecord = _pendingSeedScratch[i];
-                if (!seedRecord.IsFloraSeedPending)
+                if (!PersistentWorldDeltaRecord.IsFloraSeedPending(in seedRecord))
                     continue;
 
                 int remainingSeconds = Mathf.Max(0, seedRecord.Quantity - elapsedSeconds);

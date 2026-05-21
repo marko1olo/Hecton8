@@ -333,7 +333,7 @@ namespace Hecton8.Vehicles.Automation.Editor
 
             double invLen = math.rsqrt(math.max(0.0001d, lenSq));
             double2 normal = new double2(-flat.y, flat.x) * invLen;
-            double magnitude = math.clamp(math.sqrt(lenSq) * 0.18d, 12.0d, 48.0d);
+            double magnitude = math.clamp((lenSq * invLen) * 0.18d, 12.0d, 48.0d);
             return new double3(normal.x * magnitude, 0.0d, normal.y * magnitude);
         }
 

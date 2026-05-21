@@ -21,7 +21,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Transport/Vehicle Motor")]
-    public sealed class VehicleMotor : MonoBehaviour, IOriginShiftListener, ILateFrameTickable, IPostFixedTickable
+    public sealed class VehicleMotor : MonoBehaviour, IOriginShiftListener, ILateFrameTickable, IPostFixedTickable, IGlobalRegistryHotSwapListener
     {
         [StructLayout(LayoutKind.Explicit, Size = SubmarineStateSizeBytes)]
         internal struct SubmarineState
@@ -83,6 +83,7 @@ namespace Hecton8.Gameplay
         private const float KelpPushbackMinSpeedMetersPerSecond = 0.5f;
         private const float KelpDragScale = 1.35f;
         private const float KelpMaxDragCoefficient = 2.8f;
+        private const SystemID VaultOwnerSystem = SystemID.VehiclesPhysics;
 
         private static readonly VehicleMotor[] _registeredMotors = new VehicleMotor[MaxRegisteredMotors];
         private static readonly ProfilerMarker _scheduleProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Schedule");
@@ -121,9 +122,9 @@ namespace Hecton8.Gameplay
         private float _brineViscosityQueryRadiusMeters = 0.5f;
         private float _brineViscosityVerticalHalfExtentMeters = 0.5f;
         private IDataVault _dataVault;
-        private VaultBufferHandle<SubmarineState> _submarineStateHandle;
-        private VaultBufferHandle<CapsulecastCommand> _scheduledSweepCommandsHandle;
-        private VaultBufferHandle<RaycastHit> _scheduledSweepResultsHandle;
+        private VaultGenerationHandle<SubmarineState> _submarineStateHandle;
+        private VaultGenerationHandle<CapsulecastCommand> _scheduledSweepCommandsHandle;
+        private VaultGenerationHandle<RaycastHit> _scheduledSweepResultsHandle;
         private JobHandle _scheduledSweepHandle;
         private ScheduledSweepState _scheduledSweepState;
         private bool _scheduledSweepPending;
@@ -143,6 +144,9 @@ namespace Hecton8.Gameplay
         private bool _registeredOriginShiftListener;
         private bool _registeredLateFrameTick;
         private bool _registeredPostFixedTick;
+        private bool _registeredHotSwapListener;
+        private bool _lateFrameTickDormant;
+        private bool _postFixedTickDormant;
         private int _motorRegistryIndex = -1;
         private bool _safeTeleportCollisionGuardActive;
         private bool _visualTeleportPending;
@@ -228,6 +232,7 @@ namespace Hecton8.Gameplay
             RegisterMotor();
             ResolveDataVault();
             EnsureSubmarineState();
+            TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
             ResetRuntimeState();
             if (headlessVisualRoot != null)
@@ -239,6 +244,7 @@ namespace Hecton8.Gameplay
             CacheBrineViscosityQueryShape();
             RegisterMotor();
             ResolveDataVault();
+            TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
             if (headlessVisualRoot != null)
                 TryRegisterLateFrameTickable();
@@ -248,6 +254,8 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterLateFrameTickable();
             CompleteSafeTeleportCollisionGuard();
+            TryUnregisterPostFixedTickable();
+            TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             UnregisterMotor();
             DisposeScheduledSweepState();
@@ -258,6 +266,8 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterLateFrameTickable();
             CompleteSafeTeleportCollisionGuard();
+            TryUnregisterPostFixedTickable();
+            TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
             UnregisterMotor();
             DisposeScheduledSweepState();
@@ -390,10 +400,9 @@ namespace Hecton8.Gameplay
 
             _localAngularVelocityDegrees = Vector3.zero;
             _entanglementAnchorPosition = anchorPosition;
-            _floraAnchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
+            _hasFloraAnchorAup = TryResolveAupFromRuntimeOrigin(anchorPosition, out _floraAnchorAup);
             _entanglementTetherLength = resolvedTetherLength;
             _lastEntanglementTensionNewtons = 0f;
-            _hasFloraAnchorAup = true;
             _isEntangled = true;
         }
 
@@ -430,22 +439,28 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            ApplyOriginShift(shiftData.ShiftOffset, shiftData.IsSafeTeleport);
-            if (shiftData.IsSafeTeleport)
+            ApplyOriginShift(shiftData.ShiftOffset, shiftData.IsSafeTeleport != 0);
+            if (shiftData.IsSafeTeleport != 0)
                 _visualTeleportPending = true;
         }
 
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            if (_lateFrameTickDormant)
+                return;
+
             ApplyHeadlessVisualInterpolation();
             if (headlessVisualRoot == null)
-                TryUnregisterLateFrameTickable();
+                _lateFrameTickDormant = _registeredLateFrameTick;
         }
 
         /// <inheritdoc />
         public void PostFixedTick(float fixedDeltaTime)
         {
+            if (_postFixedTickDormant)
+                return;
+
             if (_scheduledSweepPending)
                 TryFinalizeScheduledSweep();
 
@@ -454,7 +469,7 @@ namespace Hecton8.Gameplay
 
             if (!_safeTeleportCollisionGuardActive && !_scheduledSweepPending)
             {
-                TryUnregisterPostFixedTickable();
+                _postFixedTickDormant = _registeredPostFixedTick;
                 return;
             }
         }
@@ -770,7 +785,7 @@ namespace Hecton8.Gameplay
                 wasBlocked = true;
                 blockingHit = sweepResults[nearestIndex];
                 Vector3 safeNormal = ResolveSafeNormal(blockingHit.normal, Vector3.up);
-                bool lowTierStop = KinematicCcdMath.IsLowTier(GlobalRegistry.ScalabilityTierProfileByte);
+                bool lowTierStop = false;
                 bool cornerHalt = !lowTierStop &&
                                   HasScheduledSweepCornerHit(sweepResults, nearestIndex, safeNormal, blockingHit.distance);
                 float safeDistance = KinematicCcdMath.ResolveRollbackDistance(
@@ -1072,6 +1087,23 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 runtime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in positionAup);
+        }
+
         private static Vector3 ResolveVelocityDelta(Vector3 force, ForceMode mode, float mass, float fixedDeltaTime)
         {
             Vector3 safeForce = HectonPlayerMotor.SafeVelocity(force);
@@ -1277,7 +1309,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            AbsoluteUniversePosition wakeAup = AbsoluteUniversePosition.FromRuntimePosition(emitterPosition);
+            if (!TryResolveAupFromRuntimeOrigin(emitterPosition, out AbsoluteUniversePosition wakeAup))
+                return;
+
             WakeGeneratedSignal signal = new WakeGeneratedSignal
             {
                 Velocity = velocity,
@@ -1361,10 +1395,18 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterLateFrameTickable()
         {
-            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
+            if (_registeredLateFrameTick)
+            {
+                _lateFrameTickDormant = false;
+                return;
+            }
+
             _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            if (_registeredLateFrameTick)
+                _lateFrameTickDormant = false;
         }
 
         private void TryUnregisterLateFrameTickable()
@@ -1374,14 +1416,23 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
             _registeredLateFrameTick = false;
+            _lateFrameTickDormant = false;
         }
 
         private void TryRegisterPostFixedTickable()
         {
-            if (_registeredPostFixedTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
+            if (_registeredPostFixedTick)
+            {
+                _postFixedTickDormant = false;
+                return;
+            }
+
             _registeredPostFixedTick = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Player);
+            if (_registeredPostFixedTick)
+                _postFixedTickDormant = false;
         }
 
         private void TryUnregisterPostFixedTickable()
@@ -1391,6 +1442,51 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Player);
             _registeredPostFixedTick = false;
+            _postFixedTickDormant = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault currentVault = currentService as IDataVault;
+                if (!ReferenceEquals(_dataVault, currentVault))
+                {
+                    DisposeScheduledSweepState();
+                    DisposeSubmarineState();
+                    _dataVault = currentVault;
+                }
+
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null)
+                return;
+
+            if (headlessVisualRoot != null)
+                TryRegisterLateFrameTickable();
+            if (_safeTeleportCollisionGuardActive || _scheduledSweepPending)
+                TryRegisterPostFixedTickable();
         }
 
         private void BeginSafeTeleportCollisionGuard()
@@ -1415,10 +1511,7 @@ namespace Hecton8.Gameplay
         private void CompleteSafeTeleportCollisionGuard()
         {
             if (!_safeTeleportCollisionGuardActive)
-            {
-                TryUnregisterPostFixedTickable();
                 return;
-            }
 
             if (_body != null)
             {
@@ -1430,7 +1523,6 @@ namespace Hecton8.Gameplay
 
             _safeTeleportCollisionGuardActive = false;
             _safeTeleportCollisionModeCaptured = false;
-            TryUnregisterPostFixedTickable();
         }
 
         private void ApplyHeadlessVisualInterpolation()
@@ -1493,19 +1585,29 @@ namespace Hecton8.Gameplay
 
         private void EnsureSubmarineState()
         {
-            if (_submarineStateHandle.IsCreated)
-                return;
-
             if (!ResolveDataVault())
                 return;
 
+            if (TryResolveVehicleVaultBuffer(
+                    ref _submarineStateHandle,
+                    BufferID.VehicleMotorSubmarineStates,
+                    MaxRegisteredMotors,
+                    out _))
+            {
+                return;
+            }
+
             VerifySubmarineStateLayout();
-            _submarineStateHandle = _dataVault.GetBufferHandle<SubmarineState>(
+            _submarineStateHandle = _dataVault.GetGenerationHandle<SubmarineState>(
                 BufferID.VehicleMotorSubmarineStates,
                 MaxRegisteredMotors,
-                SystemID.VehiclesPhysics,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            NativeArray<SubmarineState> states = _submarineStateHandle.Resolve(_dataVault);
+            TryResolveVehicleVaultBuffer(
+                ref _submarineStateHandle,
+                BufferID.VehicleMotorSubmarineStates,
+                MaxRegisteredMotors,
+                out NativeArray<SubmarineState> states);
             if (states.IsCreated && states.Length >= MaxRegisteredMotors)
                 GenerateEmergencyMockVaultState(states, ResolveMotorVaultIndex());
         }
@@ -1524,7 +1626,9 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(position3)) || !math.all(math.isfinite(rotation4)))
                 return;
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition aup))
+                return;
+
             submarineState[stateIndex] = new SubmarineState
             {
                 Aup = aup.ToAlignedBlit(),
@@ -1552,13 +1656,18 @@ namespace Hecton8.Gameplay
 
         internal ref SubmarineState GetStateAsRef(int index)
         {
-            if (!ResolveDataVault())
+            if (!TryResolveSubmarineState(out NativeArray<SubmarineState> submarineState) ||
+                (uint)index >= (uint)submarineState.Length)
+            {
                 FatalMemoryException.ThrowStaleVaultHandle();
+            }
 
-            if (!_submarineStateHandle.IsCreated)
-                EnsureSubmarineState();
-
-            return ref _submarineStateHandle.GetElementAsRef(_dataVault, index);
+            unsafe
+            {
+                return ref UnsafeUtility.ArrayElementAsRef<SubmarineState>(
+                    submarineState.GetUnsafePtr(),
+                    index);
+            }
         }
 
         private bool TryResolveSubmarineState(out NativeArray<SubmarineState> submarineState, bool ensure = true)
@@ -1566,11 +1675,74 @@ namespace Hecton8.Gameplay
             submarineState = default;
             if (ensure)
                 EnsureSubmarineState();
-            if (_dataVault == null || !_submarineStateHandle.IsCreated)
+            if (_dataVault == null)
                 return false;
 
-            submarineState = _submarineStateHandle.Resolve(_dataVault);
-            return submarineState.IsCreated && submarineState.Length >= MaxRegisteredMotors;
+            return TryResolveVehicleVaultBuffer(
+                ref _submarineStateHandle,
+                BufferID.VehicleMotorSubmarineStates,
+                MaxRegisteredMotors,
+                out submarineState);
+        }
+
+        private bool EnsureVehicleVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (!ResolveDataVault() || requiredLength <= 0)
+                return false;
+
+            if (TryResolveVehicleVaultBuffer(ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            handle = _dataVault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            return TryResolveVehicleVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool TryResolveVehicleVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (IsVehicleVaultHandle(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !IsVehicleVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsVehicleVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystem &&
+                   handle.Generation != 0u;
         }
 
         private int ResolveMotorVaultIndex()
@@ -1584,12 +1756,17 @@ namespace Hecton8.Gameplay
 
         private bool ResolveDataVault()
         {
-            if (_dataVault != null)
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (_dataVault != null && ReferenceEquals(_dataVault, currentVault))
                 return true;
 
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                _dataVault = latest;
+            if (_dataVault != null && !ReferenceEquals(_dataVault, currentVault))
+            {
+                DisposeScheduledSweepState();
+                DisposeSubmarineState();
+            }
 
+            _dataVault = currentVault;
             return _dataVault != null;
         }
 
@@ -1729,7 +1906,9 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 point = HectonPlayerMotor.SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);
-            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
+            if (!TryResolveAupFromRuntimeOrigin(point, out AbsoluteUniversePosition pointAup))
+                return;
+
             ulong bodyId = _body != null ? EntityId.ToULong(_body.GetEntityId()) : 0UL;
             uint targetHash = unchecked((uint)GetHitColliderInstanceId(in hit));
             byte targetMaterialId = ResolveHighSpeedImpactTargetMaterialId(in hit, HighSpeedImpactSignal.MaterialMetal);
@@ -1787,7 +1966,7 @@ namespace Hecton8.Gameplay
             if (lostKineticEnergy >= KinematicCcdMath.MassiveLostKineticEnergyJoules)
             {
                 Hecton8.Core.Contracts.Signals.CombatDamageSignal damage = default;
-                damage.ImpactAup = Hecton8.Core.Contracts.Signals.CombatDamageSignalCodec.FromRuntimePoint(point);
+                damage.ImpactAup = pointAup.ToAbsoluteDouble3();
                 damage.Direction = new float3(safeNormal.x, safeNormal.y, safeNormal.z);
                 damage.Magnitude = math.min(500f, lostKineticEnergy * 0.005f);
                 damage.DamageType = (uint)DamageTypeMask.Impact;
@@ -1807,23 +1986,18 @@ namespace Hecton8.Gameplay
 
         private bool EnsureScheduledSweepState()
         {
-            if (_scheduledSweepCommandsHandle.IsCreated && _scheduledSweepResultsHandle.IsCreated)
-                return true;
-
-            if (!ResolveDataVault())
-                return false;
-
-            _scheduledSweepCommandsHandle = _dataVault.GetBufferHandle<CapsulecastCommand>(
-                BufferID.VehicleMotorSweepCommands,
-                MaxRegisteredMotors,
-                SystemID.VehiclesPhysics,
-                NativeArrayOptions.ClearMemory);
-            _scheduledSweepResultsHandle = _dataVault.GetBufferHandle<RaycastHit>(
-                BufferID.VehicleMotorSweepResults,
-                MaxRegisteredMotors * ScheduledSweepMaxHits,
-                SystemID.VehiclesPhysics,
-                NativeArrayOptions.ClearMemory);
-            return _scheduledSweepCommandsHandle.IsCreated && _scheduledSweepResultsHandle.IsCreated;
+            return EnsureVehicleVaultBuffer(
+                       ref _scheduledSweepCommandsHandle,
+                       BufferID.VehicleMotorSweepCommands,
+                       MaxRegisteredMotors,
+                       NativeArrayOptions.ClearMemory,
+                       out _) &&
+                   EnsureVehicleVaultBuffer(
+                       ref _scheduledSweepResultsHandle,
+                       BufferID.VehicleMotorSweepResults,
+                       MaxRegisteredMotors * ScheduledSweepMaxHits,
+                       NativeArrayOptions.ClearMemory,
+                       out _);
         }
 
         private bool TryResolveScheduledSweepBuffers(
@@ -1839,8 +2013,16 @@ namespace Hecton8.Gameplay
 
             int commandIndex = ResolveMotorVaultIndex();
             int resultStart = commandIndex * ScheduledSweepMaxHits;
-            NativeArray<CapsulecastCommand> commandBuffer = _scheduledSweepCommandsHandle.Resolve(_dataVault);
-            NativeArray<RaycastHit> resultBuffer = _scheduledSweepResultsHandle.Resolve(_dataVault);
+            TryResolveVehicleVaultBuffer(
+                ref _scheduledSweepCommandsHandle,
+                BufferID.VehicleMotorSweepCommands,
+                MaxRegisteredMotors,
+                out NativeArray<CapsulecastCommand> commandBuffer);
+            TryResolveVehicleVaultBuffer(
+                ref _scheduledSweepResultsHandle,
+                BufferID.VehicleMotorSweepResults,
+                MaxRegisteredMotors * ScheduledSweepMaxHits,
+                out NativeArray<RaycastHit> resultBuffer);
             if (!commandBuffer.IsCreated ||
                 !resultBuffer.IsCreated ||
                 (uint)commandIndex >= (uint)commandBuffer.Length ||
@@ -1868,7 +2050,11 @@ namespace Hecton8.Gameplay
 
             int commandIndex = ResolveMotorVaultIndex();
             int resultStart = commandIndex * ScheduledSweepMaxHits;
-            NativeArray<RaycastHit> resultBuffer = _scheduledSweepResultsHandle.Resolve(_dataVault);
+            TryResolveVehicleVaultBuffer(
+                ref _scheduledSweepResultsHandle,
+                BufferID.VehicleMotorSweepResults,
+                MaxRegisteredMotors * ScheduledSweepMaxHits,
+                out NativeArray<RaycastHit> resultBuffer);
             if (!resultBuffer.IsCreated || resultStart < 0 || resultStart + ScheduledSweepMaxHits > resultBuffer.Length)
                 return false;
 
@@ -1883,11 +2069,11 @@ namespace Hecton8.Gameplay
             if (_dataVault == null)
                 return false;
 
-            if (!_dataVault.TryLockBuffer(BufferID.VehicleMotorSweepCommands, SystemID.VehiclesPhysics))
+            if (!_dataVault.TryLockBuffer(BufferID.VehicleMotorSweepCommands, VaultOwnerSystem))
                 return false;
-            if (!_dataVault.TryLockBuffer(BufferID.VehicleMotorSweepResults, SystemID.VehiclesPhysics))
+            if (!_dataVault.TryLockBuffer(BufferID.VehicleMotorSweepResults, VaultOwnerSystem))
             {
-                _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepCommands, SystemID.VehiclesPhysics);
+                _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepCommands, VaultOwnerSystem);
                 return false;
             }
 
@@ -1900,8 +2086,8 @@ namespace Hecton8.Gameplay
             if (!_scheduledSweepBuffersLocked || _dataVault == null)
                 return;
 
-            _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepResults, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepCommands, SystemID.VehiclesPhysics);
+            _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepResults, VaultOwnerSystem);
+            _dataVault.TryUnlockBuffer(BufferID.VehicleMotorSweepCommands, VaultOwnerSystem);
             _scheduledSweepBuffersLocked = false;
         }
 

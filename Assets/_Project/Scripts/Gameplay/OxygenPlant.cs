@@ -30,7 +30,7 @@ namespace Hecton8.Gameplay
     /// Subnautica Brain Coral equivalent.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class OxygenPlant : MonoBehaviour, ITickable, IUpdatable
+    public sealed class OxygenPlant : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SPAWN SETTINGS
@@ -73,7 +73,10 @@ namespace Hecton8.Gameplay
         private uint _releaseSeed;
         private uint _releaseOrdinal;
         private bool _isRegistered;
+        private bool _registeredHotSwapListener;
         private bool _poolMissingLogged;
+        private ObjectPoolManager _objectPool;
+        private IAudioService _audioService;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -83,6 +86,7 @@ namespace Hecton8.Gameplay
         {
             _transform = transform;
             _releaseSeed = MixHash(unchecked((uint)EntityId.ToULong(GetEntityId())) ^ 0x4F58504Cu);
+            RefreshColdRegistryReferences();
 
             // Use self as spawn point if not assigned
             if (spawnPoint == null)
@@ -96,6 +100,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
             if (spawnOnEnable)
             {
                 _releaseTimer = 0f;
@@ -106,6 +112,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             UnregisterFromTick();
         }
 
@@ -140,7 +147,7 @@ namespace Hecton8.Gameplay
 
             Vector3 spawnPos = spawnPoint.position;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
             {
                 if (!_poolMissingLogged)
@@ -158,7 +165,8 @@ namespace Hecton8.Gameplay
             if (bubble == null) return;
 
             // Play release sound
-            if (releaseSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            IAudioService audio = _audioService;
+            if (releaseSound != null && audio != null)
             {
                 audio.PlayAtPoint(releaseSound, spawnPos, releaseVolume);
             }
@@ -220,7 +228,7 @@ namespace Hecton8.Gameplay
         private void RegisterToTick()
         {
             if (_isRegistered) return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
+            if (!Application.isPlaying) return;
 
             _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
@@ -236,6 +244,50 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  EDITOR
         // ══════════════════════════════════════════════════════════
+
+        private void RefreshColdRegistryReferences()
+        {
+            _objectPool = GlobalRegistry.ObjectPool;
+            _audioService = GlobalRegistry.Audio;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPool = currentService as ObjectPoolManager;
+                    _poolMissingLogged = false;
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                        RegisterToTick();
+                    break;
+            }
+        }
 
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()

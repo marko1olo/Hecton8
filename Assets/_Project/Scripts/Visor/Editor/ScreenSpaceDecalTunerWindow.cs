@@ -11,37 +11,44 @@ namespace Hecton8.Visor.Editor
     public sealed class ScreenSpaceDecalTunerWindow : EditorWindow
     {
         private const double RefreshSeconds = 0.2d;
-        private const string DefaultCsvPath = "Assets/_Project/Data/Decals/decal_material_profiles.csv";
+        private const string DefaultCsvPath = "Assets/_Project/Data/Decals/visor_decal_profiles.csv";
 
         private readonly VisualElement[] _histogramBars = new VisualElement[16];
         private Slider _qualitySlider;
         private Slider _fadeSlider;
         private Slider _capacitySlider;
-        private Slider _mipBiasSlider;
+        private Slider _refractionSlider;
         private Slider _radiusSlider;
         private Slider _depthSlider;
+        private Toggle _drawGizmoToggle;
+        private SliderInt _gizmoLimitSlider;
         private Label _statsLabel;
         private Label _csvLabel;
         private double _nextRefreshTime;
 
-        [MenuItem("HECTON-8/Rendering/Screen-Space Decal Tuner")]
+        [MenuItem("HECTON-8/Rendering/Screen-Space Visor Wound Tuner")]
         public static void Open()
         {
-            GetWindow<ScreenSpaceDecalTunerWindow>("Dynamic Decals");
+            GetWindow<ScreenSpaceDecalTunerWindow>("Visor Wounds");
         }
 
         private void OnEnable()
         {
             EditorApplication.update += OnEditorUpdate;
+            SceneView.duringSceneGui -= OnDrawGizmos;
+            SceneView.duringSceneGui += OnDrawGizmos;
         }
 
         private void OnDisable()
         {
             EditorApplication.update -= OnEditorUpdate;
+            SceneView.duringSceneGui -= OnDrawGizmos;
         }
 
         public void CreateGUI()
         {
+            DynamicDecalVaultRuntime.WarmupColdGlobalRoutes();
+
             rootVisualElement.style.paddingLeft = 8f;
             rootVisualElement.style.paddingRight = 8f;
             rootVisualElement.style.paddingTop = 8f;
@@ -50,20 +57,28 @@ namespace Hecton8.Visor.Editor
             _qualitySlider = BuildSlider("Global Quality", 0f, 1f, HomeostasisBrain.GlobalQualityWeight);
             _fadeSlider = BuildSlider("Base Fade Seconds", 0.25f, 60f, 7.5f);
             _capacitySlider = BuildSlider("Maximum Overkill Capacity", DynamicDecalVaultRuntime.LowCapacity, DynamicDecalVaultRuntime.MaxCapacity, DynamicDecalVaultRuntime.MaxCapacity);
-            _mipBiasSlider = BuildSlider("Atlas Mipmap Bias", -2f, 4f, 0f);
+            _refractionSlider = BuildSlider("Normal Refraction Intensity", 0f, 2.5f, 1f);
             _radiusSlider = BuildSlider("Base Radius", 0.025f, 8f, 0.55f);
             _depthSlider = BuildSlider("Projection Depth", 0.025f, 2f, 0.18f);
+            _drawGizmoToggle = new Toggle("Draw Live Matrix Gizmo") { value = false };
+            _gizmoLimitSlider = new SliderInt("Gizmo Volume Limit", 1, DynamicDecalVaultRuntime.MaxCapacity)
+            {
+                value = 64,
+                showInputField = true
+            };
             _statsLabel = new Label();
             _csvLabel = new Label();
 
             rootVisualElement.Add(_qualitySlider);
             rootVisualElement.Add(_fadeSlider);
             rootVisualElement.Add(_capacitySlider);
-            rootVisualElement.Add(_mipBiasSlider);
+            rootVisualElement.Add(_refractionSlider);
             rootVisualElement.Add(_radiusSlider);
             rootVisualElement.Add(_depthSlider);
-            rootVisualElement.Add(new Button(GenerateMockLoad) { text = "Generate 1024 Mock Decals" });
-            rootVisualElement.Add(new Button(LoadCsvProfiles) { text = "Load Material CSV" });
+            rootVisualElement.Add(_drawGizmoToggle);
+            rootVisualElement.Add(_gizmoLimitSlider);
+            rootVisualElement.Add(new Button(GenerateMockLoad) { text = "Generate Mock Visor Wounds" });
+            rootVisualElement.Add(new Button(LoadCsvProfiles) { text = "Load Visor Wound CSV" });
             rootVisualElement.Add(BuildHistogram());
             rootVisualElement.Add(_statsLabel);
             rootVisualElement.Add(_csvLabel);
@@ -71,9 +86,11 @@ namespace Hecton8.Visor.Editor
             _qualitySlider.RegisterValueChangedCallback(evt => HomeostasisBrain.SetForcedGlobalQualityWeightForTuner(evt.newValue, true));
             _fadeSlider.RegisterValueChangedCallback(_ => PublishTuning());
             _capacitySlider.RegisterValueChangedCallback(_ => PublishTuning());
-            _mipBiasSlider.RegisterValueChangedCallback(_ => PublishTuning());
+            _refractionSlider.RegisterValueChangedCallback(_ => PublishTuning());
             _radiusSlider.RegisterValueChangedCallback(_ => PublishTuning());
             _depthSlider.RegisterValueChangedCallback(_ => PublishTuning());
+            _drawGizmoToggle.RegisterValueChangedCallback(_ => SceneView.RepaintAll());
+            _gizmoLimitSlider.RegisterValueChangedCallback(_ => SceneView.RepaintAll());
 
             PullTuning();
             RefreshStats();
@@ -129,7 +146,7 @@ namespace Hecton8.Visor.Editor
 
             _fadeSlider?.SetValueWithoutNotify(tuning.BaseFadeTimeSeconds);
             _capacitySlider?.SetValueWithoutNotify(tuning.MaximumOverkillCapacity);
-            _mipBiasSlider?.SetValueWithoutNotify(tuning.AtlasMipmapBias);
+            _refractionSlider?.SetValueWithoutNotify(tuning.NormalRefractionIntensity);
             _radiusSlider?.SetValueWithoutNotify(tuning.BaseRadiusMeters);
             _depthSlider?.SetValueWithoutNotify(tuning.ProjectionDepthMeters);
             _qualitySlider?.SetValueWithoutNotify(HomeostasisBrain.GlobalQualityWeight);
@@ -143,7 +160,7 @@ namespace Hecton8.Visor.Editor
 
             tuning.BaseFadeTimeSeconds = _fadeSlider != null ? _fadeSlider.value : 7.5f;
             tuning.MaximumOverkillCapacity = _capacitySlider != null ? _capacitySlider.value : DynamicDecalVaultRuntime.MaxCapacity;
-            tuning.AtlasMipmapBias = _mipBiasSlider != null ? _mipBiasSlider.value : 0f;
+            tuning.NormalRefractionIntensity = _refractionSlider != null ? _refractionSlider.value : 1f;
             tuning.ProjectionDepthMeters = _depthSlider != null ? _depthSlider.value : 0.18f;
             tuning.LowTierCapacity = DynamicDecalVaultRuntime.LowCapacity;
             tuning.BaseRadiusMeters = _radiusSlider != null ? _radiusSlider.value : 0.55f;
@@ -152,7 +169,7 @@ namespace Hecton8.Visor.Editor
 
         private void GenerateMockLoad()
         {
-            DynamicDecalVaultRuntime.GenerateMockDecals(DynamicDecalVaultRuntime.MaxCapacity);
+            DynamicDecalVaultRuntime.GenerateMockVisorWounds(DynamicDecalVaultRuntime.MaxCapacity);
             RefreshStats();
         }
 
@@ -160,7 +177,7 @@ namespace Hecton8.Visor.Editor
         {
             string projectPath = Application.dataPath;
             string defaultPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(projectPath, "..", DefaultCsvPath));
-            string selected = EditorUtility.OpenFilePanel("Load decal_material_profiles.csv", System.IO.Path.GetDirectoryName(defaultPath), "csv");
+            string selected = EditorUtility.OpenFilePanel("Load visor_decal_profiles.csv", System.IO.Path.GetDirectoryName(defaultPath), "csv");
             if (string.IsNullOrEmpty(selected))
                 return;
 
@@ -176,7 +193,7 @@ namespace Hecton8.Visor.Editor
                 return;
 
             DynamicDecalVaultRuntime.TryGetRuntimeState(out DecalRuntimeStateDTO state);
-            DynamicDecalVaultRuntime.TryGetLatestTelemetry(out DecalTelemetryEntry telemetry);
+            DynamicDecalVaultRuntime.TryGetLatestTelemetry(out VisorWoundTelemetryEntry telemetry);
             float capacity = math.max(1f, state.MaxActiveThisFrame);
             float fill = math.saturate(state.ActiveCount / capacity);
             for (int i = 0; i < _histogramBars.Length; i++)
@@ -211,6 +228,56 @@ namespace Hecton8.Visor.Editor
                 DynamicDecalVaultRuntime.GetLoadedMaterialProfileCount().ToString(culture),
                 " | Last Hash 0x",
                 telemetry.StateHash.ToString("X8", culture));
+        }
+
+        private void OnDrawGizmos(SceneView sceneView)
+        {
+            if (_drawGizmoToggle == null || !_drawGizmoToggle.value || sceneView == null)
+                return;
+
+            if (!DynamicDecalVaultRuntime.TryAcquireDecalBufferRead(out Unity.Collections.NativeArray<VisorDecalDTO> decals, out _, out Vector3 cameraWorldPosition))
+                return;
+
+            Matrix4x4 previousMatrix = Handles.matrix;
+            Color previousColor = Handles.color;
+            try
+            {
+                int limit = _gizmoLimitSlider != null
+                    ? Mathf.Clamp(_gizmoLimitSlider.value, 1, DynamicDecalVaultRuntime.MaxCapacity)
+                    : 64;
+                int drawn = 0;
+                for (int i = 0; i < decals.Length && drawn < limit; i++)
+                {
+                    VisorDecalDTO decal = decals[i];
+                    if ((decal.Flags & DynamicDecalFlags.Active) == 0u || decal.Opacity01 <= 0.0001f)
+                        continue;
+
+                    Unity.Mathematics.float4x4 source = decal.LocalToWorld;
+                    Matrix4x4 matrix = default;
+                    matrix.SetColumn(0, new Vector4(source.c0.x, source.c0.y, source.c0.z, source.c0.w));
+                    matrix.SetColumn(1, new Vector4(source.c1.x, source.c1.y, source.c1.z, source.c1.w));
+                    matrix.SetColumn(2, new Vector4(source.c2.x, source.c2.y, source.c2.z, source.c2.w));
+                    matrix.SetColumn(
+                        3,
+                        new Vector4(
+                            source.c3.x + cameraWorldPosition.x,
+                            source.c3.y + cameraWorldPosition.y,
+                            source.c3.z + cameraWorldPosition.z,
+                            1f));
+
+                    float opacity = Mathf.Clamp01(decal.Opacity01);
+                    Handles.matrix = matrix;
+                    Handles.color = new Color(1f, 0.35f, 0.08f, 0.2f + opacity * 0.55f);
+                    Handles.DrawWireCube(Vector3.zero, Vector3.one);
+                    drawn++;
+                }
+            }
+            finally
+            {
+                DynamicDecalVaultRuntime.ReleaseDecalBufferRead();
+                Handles.matrix = previousMatrix;
+                Handles.color = previousColor;
+            }
         }
     }
 }

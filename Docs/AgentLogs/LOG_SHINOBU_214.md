@@ -216,7 +216,7 @@ What was wrong:
 - `texture_packing_profiles.csv` parsing always began with macro noise, Toksvig mips, and Sobel normals enabled. A profile intended for props could not actually disable those stages from data.
 
 What was done:
-- Rewrote `ReadFlags` to parse lowercase FNV-1a tokens from the existing byte cursor.
+- Rewrote the CSV flag-column parser to parse lowercase FNV-1a tokens from the existing byte cursor.
 - Supported `macro/noise`, `toksvig/mip`, `normal/sobel`, `invert/smoothness`, and `none/off/false/0`.
 - Empty flag cells keep the default hard-surface behavior; explicit off returns zero flags.
 
@@ -254,6 +254,55 @@ Verification:
 - Static forbidden-pattern scan passed after this patch.
 - JSON reports parse.
 - Build remains gated: dotnet/csc absent, CPU sampled at 100 percent.
+
+## 2026-05-20 - Accessor Purity Guard Pass
+
+What was wrong:
+- Global Systems Doctrine requires `Get*`, `TryGet*`, `Resolve*`, and `Read*` accessors to remain pure. Some owned Editor helpers had those names while creating asset folders, building strings, or advancing CSV cursor state.
+
+What was done:
+- Renamed impure helpers to command/parser/build names: `CreateUniqueAssetPath`, `BuildSetKey`, `TryParseProfile`, `ParseFixedStringColumn`, `ParseFloatColumn`, `ParseFlagsColumn`, `BuildPrefabMaterialPath`, and `BuildFormatLabel`.
+- Left only pure dimension/mip math under `Resolve*`.
+- Added explicit comments on owned `.Complete()` calls proving they are Editor serialization, mip materialization, benchmark, or preview boundaries.
+
+Cinematic Cheats used:
+- None added in this pass. Existing baked macro-noise Dear Lie remains the runtime sampler-saving fake.
+
+Exact Microseconds saved:
+- Runtime added: 0 us.
+- Runtime sampler savings unchanged: converted materials still use one ARM sampler instead of separate AO/Roughness/Metallic samplers.
+- Editor performance unchanged; this pass removes semantic ambiguity and reduces future hot-path misuse risk.
+
+Verification:
+- Retired impure accessor names no longer match in owned texture-packer path.
+- Remaining accessor-name scan reports only pure `ResolvePackWidth`, `ResolvePackHeight`, `ResolveAxisDimension`, `ResolveMipCount`, and pure `GetPackedMaskPropertyName`.
+- Build remains gated until CPU drops below 50 percent and no `dotnet`/`csc` process is active.
+
+## 2026-05-20 - Atlas Path Drift Prune Pass
+
+What was wrong:
+- Static atlas artifacts still referenced the removed broad-assembly paths `Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs` and `Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs`.
+- Recreating files at those paths would pull texture-packer code back toward the broad `Hecton8.Editor.asmdef` surface and undo the compile-wall isolation.
+
+What was done:
+- Updated `Docs/DEPENDENCY_GRAPH.md` and `Docs/DEPENDENCY_GRAPH.json` to point texture-packer hotspots at the isolated `Editor/TextureChannelPacker` paths.
+- Updated `Tools/BuildArchitectureAtlas.py` so future atlas regeneration does not reintroduce the stale SHINOBU_214 paths.
+- Updated `Tools/test_architecture_atlas.py` to assert the current atlas red-state count.
+- Updated `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` so the current static gate no longer names removed SHINOBU_214 source paths as active AtlasCheck blockers.
+
+Cinematic Cheats used:
+- None. This is static atlas hygiene; the active cinematic cheat remains baked macro-noise in ARM AO/Roughness.
+
+Exact Microseconds saved:
+- Runtime added: 0 us.
+- Developer compile wall protected: no old-path source shim was added.
+- Atlas missing refs reduced by two SHINOBU_214 stale references; remaining `AtlasCheck` misses are outside this domain.
+
+Verification:
+- `python Tools/AtlasCheck.py`: expected red state now reports `ATLAS_CHECK_FAIL references=6779 missing=60`; no missing `HectonMaskChannelPacker` or `HectonMaterialChannelPackValidator` old path remains.
+- `python -m unittest Tools.test_architecture_atlas`: PASS, 10 tests.
+- `python -m py_compile Tools/BuildArchitectureAtlas.py Tools/AtlasCheck.py Tools/test_architecture_atlas.py`: PASS.
+- No `dotnet build` launched.
 
 ## 2026-05-20 - Batch Fault Advance Pass
 

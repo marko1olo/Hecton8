@@ -253,6 +253,7 @@ namespace Hecton8.World
             }
 
             int safeSubMesh = Mathf.Clamp(_subMeshIndex, 0, Mathf.Max(0, mesh.subMeshCount - 1));
+            float globalQualityWeight = ResolveGlobalQualityWeight01();
             InstanceCullingDispatchDescriptor descriptor = new InstanceCullingDispatchDescriptor
             {
                 AllInstancesBuffer = _matrixSourceBuffer,
@@ -260,7 +261,8 @@ namespace Hecton8.World
                 BoundsRadius = _lastBoundsRadius,
                 MaxCullDistanceMeters = Mathf.Max(1000f, _lastBoundsRadius * 64f),
                 VramUsedMb = VRAMBudgetTracker.EstimatedVRAMBytes * GlobalTelemetryBus.BytesToMegabytes,
-                QualityTier = ResolveCullingQualityTier(ResolveGlobalQualityWeight01()),
+                GlobalQualityWeight = globalQualityWeight,
+                QualityTier = ResolveCullingQualityTier(globalQualityWeight),
                 Flags = InstanceCullingDispatchFlags.None,
                 IndirectArgs = new InstanceCullingIndirectArgs
                 {

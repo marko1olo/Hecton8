@@ -322,7 +322,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+            _hotSwapListenerRegistered = GlobalRegistry.IsHotSwapListenerRegistered(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -330,7 +330,7 @@ namespace Hecton8.UI
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.HotSwapListeners.Contains(this))
+            if (GlobalRegistry.IsHotSwapListenerRegistered(this))
                 GlobalRegistry.UnregisterHotSwapListener(this);
 
             _hotSwapListenerRegistered = false;

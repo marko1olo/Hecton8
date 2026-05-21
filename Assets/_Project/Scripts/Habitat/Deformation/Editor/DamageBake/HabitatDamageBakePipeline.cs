@@ -14,6 +14,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
@@ -1041,8 +1042,8 @@ namespace Hecton8.Habitat.Deformation.Editor
             Mesh.MeshData sourceData = readOnly[0];
             if (!sourceData.HasVertexAttribute(VertexAttribute.Position))
                 return null;
-            VertexAttributeDescriptor positionDescriptor = sourceData.GetVertexAttribute(VertexAttribute.Position);
-            if (positionDescriptor.format != VertexAttributeFormat.Float32 || positionDescriptor.dimension < 3)
+            if (sourceData.GetVertexAttributeFormat(VertexAttribute.Position) != VertexAttributeFormat.Float32 ||
+                sourceData.GetVertexAttributeDimension(VertexAttribute.Position) < 3)
                 return null;
             int sourceVertexCount = sourceData.vertexCount;
             NativeArray<HabitatDamageIndexRangeDTO> indexRanges = BuildTriangleIndexRanges(
@@ -1327,8 +1328,7 @@ namespace Hecton8.Habitat.Deformation.Editor
 
         private static JobHandle ScheduleExtract(Mesh.MeshData sourceData, NativeArray<HabitatDamageSourceVertex> output)
         {
-            VertexAttributeDescriptor position = sourceData.GetVertexAttribute(VertexAttribute.Position);
-            int positionStream = position.stream;
+            int positionStream = sourceData.GetVertexAttributeStream(VertexAttribute.Position);
             int normalStream = -1;
             int tangentStream = -1;
             int uvStream = -1;
@@ -1337,21 +1337,21 @@ namespace Hecton8.Habitat.Deformation.Editor
             bool hasUv = false;
             if (sourceData.HasVertexAttribute(VertexAttribute.Normal))
             {
-                VertexAttributeDescriptor normal = sourceData.GetVertexAttribute(VertexAttribute.Normal);
-                hasNormal = normal.format == VertexAttributeFormat.Float32 && normal.dimension >= 3;
-                normalStream = normal.stream;
+                hasNormal = sourceData.GetVertexAttributeFormat(VertexAttribute.Normal) == VertexAttributeFormat.Float32 &&
+                            sourceData.GetVertexAttributeDimension(VertexAttribute.Normal) >= 3;
+                normalStream = hasNormal ? sourceData.GetVertexAttributeStream(VertexAttribute.Normal) : -1;
             }
             if (sourceData.HasVertexAttribute(VertexAttribute.Tangent))
             {
-                VertexAttributeDescriptor tangent = sourceData.GetVertexAttribute(VertexAttribute.Tangent);
-                hasTangent = tangent.format == VertexAttributeFormat.Float32 && tangent.dimension >= 4;
-                tangentStream = tangent.stream;
+                hasTangent = sourceData.GetVertexAttributeFormat(VertexAttribute.Tangent) == VertexAttributeFormat.Float32 &&
+                             sourceData.GetVertexAttributeDimension(VertexAttribute.Tangent) >= 4;
+                tangentStream = hasTangent ? sourceData.GetVertexAttributeStream(VertexAttribute.Tangent) : -1;
             }
             if (sourceData.HasVertexAttribute(VertexAttribute.TexCoord0))
             {
-                VertexAttributeDescriptor uv = sourceData.GetVertexAttribute(VertexAttribute.TexCoord0);
-                hasUv = uv.format == VertexAttributeFormat.Float32 && uv.dimension >= 2;
-                uvStream = uv.stream;
+                hasUv = sourceData.GetVertexAttributeFormat(VertexAttribute.TexCoord0) == VertexAttributeFormat.Float32 &&
+                        sourceData.GetVertexAttributeDimension(VertexAttribute.TexCoord0) >= 2;
+                uvStream = hasUv ? sourceData.GetVertexAttributeStream(VertexAttribute.TexCoord0) : -1;
             }
             NativeArray<byte> positionBytes = sourceData.GetVertexData<byte>(positionStream);
             ExtractSourceVertexJob job = new ExtractSourceVertexJob

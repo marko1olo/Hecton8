@@ -158,12 +158,8 @@ Shader "Hecton8/Flora/KelpMaster"
             half _HectonOceanBiolumStrength;
             half4 _HectonFloorBiolumColor;
             half _HectonFloorBiolumStrength;
-            float4 _BiolumMasterPhase;
-            float4 _BiolumIntensity;
             float4x4 _GlobalBiolumDearLieGroups;
             float4 _GlobalBiolumParams;
-            float4 _GlobalBiolumClock;
-            float4 _GlobalBiolumAupOffset;
 
             float4 _HectonPropWashPosition; // xyz: position, w: radius
             half _HectonPropWashForce;
@@ -300,6 +296,7 @@ Shader "Hecton8/Flora/KelpMaster"
                 half fogFactor : TEXCOORD5;
                 half4 tangentWS : TEXCOORD6;
                 half3 bitangentWS : TEXCOORD7;
+                float3 biolumLocalAupCoord : TEXCOORD8;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -373,22 +370,36 @@ Shader "Hecton8/Flora/KelpMaster"
                 return lerp(low, high, step(2.0h, exponent));
             }
 
-            half4 ResolveKelpGlobalBiolum(float3 positionWS)
+            half3 ResolveKelpBiolumGroupTint(int stateIndex)
             {
-                if (!all(isfinite(positionWS)))
+                half3 tint0 = half3(0.18h, 0.88h, 1.00h);
+                half3 tint1 = half3(0.32h, 1.00h, 0.62h);
+                half3 tint2 = half3(0.74h, 0.38h, 1.00h);
+                half3 tint3 = half3(1.00h, 0.72h, 0.32h);
+                half idx = (half)stateIndex;
+                half3 lowPair = lerp(tint0, tint1, step(0.5h, idx));
+                half3 highPair = lerp(tint2, tint3, step(2.5h, idx));
+                return lerp(lowPair, highPair, step(1.5h, idx));
+            }
+
+            half4 ResolveKelpGlobalBiolum(float3 localAupCoord)
+            {
+                if (!all(isfinite(localAupCoord)))
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
                 float4 safeParams = all(isfinite(_GlobalBiolumParams)) ? _GlobalBiolumParams : float4(0.0, 0.0, 0.0, 0.0);
-                float4 safeAupOffset = all(isfinite(_GlobalBiolumAupOffset)) ? _GlobalBiolumAupOffset : float4(0.0, 0.0, 0.0, 0.0);
-                float safeClock = isfinite(_GlobalBiolumClock.x) ? _GlobalBiolumClock.x : 0.0;
                 int activeCount = min(max((int)floor(max(safeParams.x, 0.0)), 0), 4);
                 if (activeCount <= 0)
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
-                float selector = frac(abs(positionWS.x * 0.029 + positionWS.z * 0.047 + safeAupOffset.x * 0.0011 + safeAupOffset.z * 0.0019));
+                float selector = frac(abs(localAupCoord.x * 0.029 + localAupCoord.z * 0.047));
                 int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
                 float4 stateRaw = _GlobalBiolumDearLieGroups[stateIndex];
                 float4 state = all(isfinite(stateRaw)) ? stateRaw : float4(0.0, 0.0, 0.0, 0.0);
+                const float invTwoPi = 0.159154943091895;
+                float frequency = max(abs(state.y), 0.0025);
+                float spatialPhase = dot(localAupCoord, float3(0.029, 0.017, 0.047)) + state.w;
+                half primaryPulse = (half)(1.0 - abs(frac(state.x * invTwoPi + spatialPhase * frequency) * 2.0 - 1.0));
                 half strobe = saturate((half)max(safeParams.z, 0.0));
                 half qualityCurve = saturate((half)max(safeParams.y, 0.0));
                 qualityCurve = qualityCurve * qualityCurve * (3.0h - 2.0h * qualityCurve);
@@ -397,19 +408,24 @@ Shader "Hecton8/Flora/KelpMaster"
                     secondaryIndex = 0;
                 float4 secondaryStateRaw = _GlobalBiolumDearLieGroups[secondaryIndex];
                 float4 secondaryState = all(isfinite(secondaryStateRaw)) ? secondaryStateRaw : float4(0.0, 0.0, 0.0, 0.0);
+                float secondaryFrequency = max(abs(secondaryState.y), 0.0025);
+                float secondarySpatialPhase = dot(localAupCoord, float3(0.023, -0.013, 0.039)) + secondaryState.w;
+                half secondaryPulse = (half)(1.0 - abs(frac(secondaryState.x * invTwoPi + secondarySpatialPhase * secondaryFrequency) * 2.0 - 1.0));
                 half overdrive = 0.0h;
                 half godSpark = 0.0h;
                 half godHaze = 0.0h;
-                half overPulse = (half)(1.0 - abs(frac(safeClock * 0.07 + selector * 3.0) * 2.0 - 1.0));
-                half filament = (half)(1.0 - abs(frac(positionWS.x * 0.149 + positionWS.y * 0.071 + positionWS.z * 0.181 + safeClock * 0.19) * 2.0 - 1.0));
+                half overPulse = secondaryPulse;
+                half filament = (half)(1.0 - abs(frac(state.x * invTwoPi + dot(localAupCoord, float3(0.149, 0.071, 0.181)) * frequency + state.w) * 2.0 - 1.0));
                 godHaze = smoothstep(0.42h, 0.92h, overPulse) * (0.52h + filament * 0.48h) * qualityCurve;
                 godSpark = smoothstep(0.80h, 0.97h, filament) * overPulse * qualityCurve;
                 overdrive = saturate(overPulse * 0.35h + godSpark * 0.22h) * qualityCurve;
-                half3 color = lerp(saturate((half3)state.rgb), half3(1.0h, 1.0h, 1.0h), strobe);
-                half intensity = clamp(max((half)max(state.w, 0.0), strobe * 10.0h), 0.0h, 10.0h);
-                color = lerp(color, saturate((half3)secondaryState.rgb), overdrive);
+                half3 color = lerp(ResolveKelpBiolumGroupTint(stateIndex), half3(1.0h, 1.0h, 1.0h), strobe);
+                half amplitude = (half)max(state.z, 0.0) * (0.62h + primaryPulse * 0.38h);
+                half secondaryAmplitude = (half)max(secondaryState.z, 0.0) * (0.62h + secondaryPulse * 0.38h);
+                half intensity = clamp(max(amplitude, strobe * 10.0h), 0.0h, 10.0h);
+                color = lerp(color, ResolveKelpBiolumGroupTint(secondaryIndex), overdrive);
                 color = saturate(color + godHaze * half3(0.05h, 0.18h, 0.20h));
-                intensity = clamp(intensity + (half)max(secondaryState.w, 0.0) * overdrive + godSpark * 0.55h + godHaze * 0.28h, 0.0h, 10.0h);
+                intensity = clamp(intensity + secondaryAmplitude * overdrive + godSpark * 0.55h + godHaze * 0.28h, 0.0h, 10.0h);
                 return half4(color, intensity);
             }
 
@@ -434,6 +450,7 @@ Shader "Hecton8/Flora/KelpMaster"
                 output.uv = input.uv;
                 output.viewDirWS = SafeNormalize(GetWorldSpaceViewDir(positionInputs.positionWS));
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
+                output.biolumLocalAupCoord = positionInputs.positionWS - TransformObjectToWorld(float3(0.0, 0.0, 0.0));
                 return output;
             }
 
@@ -543,18 +560,14 @@ Shader "Hecton8/Flora/KelpMaster"
                 [branch]
                 if (_BiolumStrength > 0.0001h)
                 {
-                    half4 globalBiolumState = ResolveKelpGlobalBiolum(samplePositionWS);
+                    float3 biolumLocalAupCoord = input.biolumLocalAupCoord;
+                    half4 globalBiolumState = ResolveKelpGlobalBiolum(biolumLocalAupCoord);
                     half globalBiolumMask = step(0.001h, globalBiolumState.w);
-                    half masterPhase = (half)saturate(_BiolumMasterPhase.x);
-                    half fieldPhase = masterPhase + samplePositionWS.x * 0.08h + samplePositionWS.z * 0.05h + input.uv.y * 3.1h;
-                    half pulse = 1.0h + ((half)HectonCoreLitTrianglePulse01(fieldPhase) * 2.0h - 1.0h) * 0.22h;
-                    half currentWave = (half)HectonCoreLitTrianglePulse01(masterPhase * 0.72h + samplePositionWS.x * 0.04h - samplePositionWS.z * 0.06h);
-                    half proceduralBiolumMask = (half)HectonCoreLitTrianglePulse01(samplePositionWS.x * 0.043h + samplePositionWS.z * 0.061h + input.uv.y * 1.7h);
+                    half proceduralBiolumMask = (half)HectonCoreLitTrianglePulse01(biolumLocalAupCoord.x * 0.043h + biolumLocalAupCoord.z * 0.061h + input.uv.y * 1.7h);
                     half biolumMask = saturate((edgeMask * 0.42h + thicknessMask * 0.38h + proceduralBiolumMask * 0.20h) * _BiolumMaskStrength);
-                    half biolumField = lerp(1.0h, currentWave, saturate(_BiolumCurrentResponse));
                     half celestialBiolum = max((half)_HectonCelestialBiolumMultiplier, 1.0h);
-                    half masterBiolum = max(max((half)_BiolumIntensity.x, 0.0h), globalBiolumState.w);
-                    half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * masterBiolum * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField;
+                    half masterBiolum = globalBiolumState.w;
+                    half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * masterBiolum * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask;
                     authoredBiolumEnergy = clamp(authoredBiolumEnergy, 0.0h, 10.0h);
                     [branch]
                     if (authoredBiolumEnergy > 0.0001h)

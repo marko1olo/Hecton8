@@ -626,6 +626,11 @@ namespace Hecton8.World
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_ASSET_STREAMING_PREDICTIVE.bin";
         private const string BackpressureDumpRelativePath = "Docs/AgentLogs/Dump_STREAMING_IO_BACKPRESSURE.bin";
         private const string HlodDumpRelativePath = "Docs/AgentLogs/Dump_WORLD_STREAMING_LOD_MANAGER.bin";
+        private const Allocator DataVaultExemptWorldStreamingVaultFallbackAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptChunkStateAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptChunkScratchAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptSpatialLookupAllocator = Allocator.Persistent;
         private const double LatencyDebtBaselineMs = 80.0;
         private const double CriticalHoleThresholdMs = 250.0;
         private const float StorageDebtEwmaWeight = 0.08f;
@@ -1607,7 +1612,7 @@ namespace Hecton8.World
             return H8Memory.Allocate<T>(
                 length,
                 SystemID.WorldStreaming,
-                Allocator.Persistent,
+                DataVaultExemptWorldStreamingVaultFallbackAllocator,
                 options);
         }
 
@@ -1620,21 +1625,21 @@ namespace Hecton8.World
             // COLD ALLOC: NativeArray<AbsoluteUniversePositionBlit>[maxChunkCount] - AUP center SoA for Burst residency scans - owner: WorldChunkResidencyManager
             _chunkCenters = AcquireWorldStreamingArray<AbsoluteUniversePositionBlit>(ChunkCentersVaultBufferId, capacity, NativeArrayOptions.UninitializedMemory, ChunkCentersVaultBit);
             // COLD ALLOC: NativeParallelHashMap<long,ChunkState>[maxChunkCount] - residency state table - owner: WorldChunkResidencyManager
-            _chunkStates = new NativeParallelHashMap<long, ChunkState>(capacity, Allocator.Persistent);
+            _chunkStates = new NativeParallelHashMap<long, ChunkState>(capacity, DataVaultExemptChunkStateAllocator);
             // COLD ALLOC: NativeParallelHashMap<long,int>[maxChunkCount] - chunk id to definition index map - owner: WorldChunkResidencyManager
-            _chunkIndexById = new NativeParallelHashMap<long, int>(capacity, Allocator.Persistent);
+            _chunkIndexById = new NativeParallelHashMap<long, int>(capacity, DataVaultExemptChunkStateAllocator);
             // COLD ALLOC: NativeQueue<ChunkLoadRequest>[loadQueueCapacity] - throttled Addressables request lane - owner: WorldChunkResidencyManager
-            _loadRequests = new NativeQueue<ChunkLoadRequest>(Allocator.Persistent);
+            _loadRequests = new NativeQueue<ChunkLoadRequest>(DataVaultExemptSignalLaneAllocator);
             // COLD ALLOC: NativeList<long>[maxChunkCount] - Burst load output list - owner: WorldChunkResidencyManager
-            _chunksToLoad = new NativeList<long>(capacity, Allocator.Persistent);
+            _chunksToLoad = new NativeList<long>(capacity, DataVaultExemptChunkScratchAllocator);
             // COLD ALLOC: NativeList<long>[maxChunkCount] - Burst unload output list - owner: WorldChunkResidencyManager
-            _chunksToUnload = new NativeList<long>(capacity, Allocator.Persistent);
+            _chunksToUnload = new NativeList<long>(capacity, DataVaultExemptChunkScratchAllocator);
             // COLD ALLOC: NativeList<ChunkLoadSortRecord>[maxChunkCount] - native sort scratch for load prioritization - owner: WorldChunkResidencyManager
-            _chunkLoadSortRecords = new NativeList<ChunkLoadSortRecord>(capacity, Allocator.Persistent);
+            _chunkLoadSortRecords = new NativeList<ChunkLoadSortRecord>(capacity, DataVaultExemptChunkScratchAllocator);
             // COLD ALLOC: NativeArray<ChunkResidencyTelemetryEntry>[300] - black-box circular telemetry - owner: WorldChunkResidencyManager
             _telemetryRing = AcquireWorldStreamingArray<ChunkResidencyTelemetryEntry>(ResidencyTelemetryVaultBufferId, TelemetryCapacity, NativeArrayOptions.ClearMemory, ResidencyTelemetryVaultBit);
             ResolveStreamingLedgerBuffers(capacity);
-            _chunkSpatialLookup = new NativeParallelMultiHashMap<int, int>(capacity, Allocator.Persistent);
+            _chunkSpatialLookup = new NativeParallelMultiHashMap<int, int>(capacity, DataVaultExemptSpatialLookupAllocator);
             // COLD ALLOC: NativeArray<double>[maxChunkCount] - absolute Addressables load start times keyed by chunk index - owner: WorldChunkResidencyManager
             _loadStartTimes = AcquireWorldStreamingArray<double>(LoadStartTimesVaultBufferId, capacity, NativeArrayOptions.ClearMemory, LoadStartTimesVaultBit);
             // COLD ALLOC: NativeArray<byte>[maxChunkCount] - immediate-radius load flags for oldest-pending IO debt - owner: WorldChunkResidencyManager
@@ -1769,7 +1774,7 @@ namespace Hecton8.World
                     definition.absoluteCenterMeters.x,
                     definition.absoluteCenterMeters.y,
                     definition.absoluteCenterMeters.z));
-                if (!MathGuard.IsFinite(in centerAup))
+                if (!centerAup.IsFinite())
                 {
                     DumpTelemetry(TelemetryInvalidAupFlag);
                     continue;
@@ -2078,7 +2083,7 @@ namespace Hecton8.World
             if (!TryResolvePlayerMotion(out AbsoluteUniversePosition playerAup, out _))
                 return;
 
-            if (!MathGuard.IsFinite(in playerAup))
+            if (!playerAup.IsFinite())
                 return;
 
             if (!_hasLastPlayerAup)
@@ -2219,7 +2224,7 @@ namespace Hecton8.World
             if (!TryResolvePlayerMotion(out AbsoluteUniversePosition playerAup, out float3 playerVelocity))
                 return;
 
-            if (!MathGuard.IsFinite(in playerAup) || !IsFinite(playerVelocity))
+            if (!playerAup.IsFinite() || !IsFinite(playerVelocity))
             {
                 DumpTelemetry(TelemetryInvalidAupFlag);
                 return;
@@ -4055,13 +4060,13 @@ namespace Hecton8.World
                     velocity = default;
 
                 playerAup = runtimeContext.MovementState.PredictedAup;
-                if (MathGuard.IsFinite(in playerAup))
+                if (playerAup.IsFinite())
                     return true;
 
                 if (runtimeContext.PlayerMovement != null)
                 {
                     playerAup = runtimeContext.PlayerMovement.CurrentAup;
-                    if (MathGuard.IsFinite(in playerAup))
+                    if (playerAup.IsFinite())
                         return true;
                 }
 
@@ -4602,13 +4607,13 @@ namespace Hecton8.World
                 runtimeContext.IsBound)
             {
                 playerAup = runtimeContext.MovementState.PredictedAup;
-                if (MathGuard.IsFinite(in playerAup))
+                if (playerAup.IsFinite())
                     return true;
 
                 if (runtimeContext.PlayerMovement != null)
                 {
                     playerAup = runtimeContext.PlayerMovement.CurrentAup;
-                    return MathGuard.IsFinite(in playerAup);
+                    return playerAup.IsFinite();
                 }
 
             }

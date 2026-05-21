@@ -71,7 +71,7 @@ namespace Hecton8.World
                 int sentinelAfter,
                 int sentinelDelta)
             {
-                Passed = passed;
+                Passed = passed ? (byte)1 : (byte)0;
                 ShallowBiomeId = shallowBiomeId;
                 TwilightBiomeId = twilightBiomeId;
                 HadalBiomeId = hadalBiomeId;
@@ -84,17 +84,17 @@ namespace Hecton8.World
                 SentinelDelta = sentinelDelta;
             }
 
-            public bool Passed { get; }
-            public int ShallowBiomeId { get; }
-            public int TwilightBiomeId { get; }
-            public int HadalBiomeId { get; }
-            public int TwilightFlags { get; }
-            public int StressSampleCount { get; }
-            public int StressFailureCount { get; }
-            public uint PackedChecksum { get; }
-            public int SentinelBefore { get; }
-            public int SentinelAfter { get; }
-            public int SentinelDelta { get; }
+            public readonly byte Passed;
+            public readonly int ShallowBiomeId;
+            public readonly int TwilightBiomeId;
+            public readonly int HadalBiomeId;
+            public readonly int TwilightFlags;
+            public readonly int StressSampleCount;
+            public readonly int StressFailureCount;
+            public readonly uint PackedChecksum;
+            public readonly int SentinelBefore;
+            public readonly int SentinelAfter;
+            public readonly int SentinelDelta;
         }
 
         private void Start()

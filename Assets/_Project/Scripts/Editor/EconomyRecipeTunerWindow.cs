@@ -316,8 +316,8 @@ namespace Hecton8.EditorTools
             }
 
             _vaultRecipeIndex = EditorGUILayout.IntSlider("Vault Index", _vaultRecipeIndex, 0, 255);
-            if (!vault.TryGetBuffer<CraftingRecipeDTO>(BufferID.ShinobuRecipeDtos, out NativeArray<CraftingRecipeDTO> recipes) ||
-                !vault.TryGetBuffer<CraftingRecipeMaskDTO>(BufferID.ShinobuRecipeMasks, out NativeArray<CraftingRecipeMaskDTO> masks) ||
+            if (!TryReadExistingVaultView(vault, BufferID.ShinobuRecipeDtos, out NativeArray<CraftingRecipeDTO> recipes) ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuRecipeMasks, out NativeArray<CraftingRecipeMaskDTO> masks) ||
                 recipes.Length == 0 ||
                 masks.Length == 0)
             {
@@ -333,21 +333,14 @@ namespace Hecton8.EditorTools
             bool hasIngredientRows = false;
             int ingredientCursor = 0;
             int ingredientCount = 0;
-            if (vault.TryGetBuffer<CraftingIngredientDTO>(
-                    BufferID.ShinobuRecipeIngredients,
-                    out NativeArray<CraftingIngredientDTO> ingredients))
+            if (TryReadExistingVaultView(vault, BufferID.ShinobuRecipeIngredients, out NativeArray<CraftingIngredientDTO> ingredients))
             {
                 hasIngredientRows = TryResolveIngredientWindow(in dto, ingredients, out ingredientCursor, out ingredientCount);
             }
 
             if (hasIngredientRows)
             {
-                bool dirty = DrawIngredientRows(ingredients, ingredientCursor, ingredientCount, ref dto);
-                if (dirty)
-                {
-                    recipes[index] = dto;
-                    masks[index] = Shinobu19EconomyLedger.BuildRecipeMask(in dto, (uint)index, ingredients);
-                }
+                DrawIngredientRows(vault, ingredients, ingredientCursor, ingredientCount, index, ref dto);
             }
             else
             {
@@ -357,22 +350,22 @@ namespace Hecton8.EditorTools
                 {
                     dto.QuantityA = dto.ComponentA != 0u ? Mathf.Max(1, quantityA) : 0;
                     dto.QuantityB = dto.ComponentB != 0u ? Mathf.Max(1, quantityB) : 0;
-                    recipes[index] = dto;
-                    masks[index] = Shinobu19EconomyLedger.BuildRecipeMask(in dto, (uint)index);
+                    TryWriteRecipeAndMask(vault, index, in dto, Shinobu19EconomyLedger.BuildRecipeMask(in dto, (uint)index));
                 }
             }
 
             if (GUILayout.Button("Write Selected Recipe To Vault", GUILayout.Width(220f)))
             {
-                recipes[index] = selectedDto;
-                masks[index] = Shinobu19EconomyLedger.BuildRecipeMask(in selectedDto, (uint)index);
+                TryWriteRecipeAndMask(vault, index, in selectedDto, Shinobu19EconomyLedger.BuildRecipeMask(in selectedDto, (uint)index));
             }
         }
 
         private static bool DrawIngredientRows(
+            IDataVault vault,
             NativeArray<CraftingIngredientDTO> ingredients,
             int ingredientCursor,
             int ingredientCount,
+            int recipeIndex,
             ref CraftingRecipeDTO dto)
         {
             EditorGUILayout.LabelField("H8CR Ingredient Rows", EditorStyles.miniBoldLabel);
@@ -394,16 +387,129 @@ namespace Hecton8.EditorTools
                     ingredient.Quantity = unchecked((ushort)clamped);
                     ulong totalMass = (ulong)ingredient.UnitMassGrams * (uint)ingredient.Quantity;
                     ingredient.TotalMassGrams = totalMass > uint.MaxValue ? uint.MaxValue : (uint)totalMass;
-                    ingredients[rowIndex] = ingredient;
+                    CraftingRecipeDTO updatedDto = dto;
                     if (offset == 0)
-                        dto.QuantityA = ingredient.Quantity;
+                        updatedDto.QuantityA = ingredient.Quantity;
                     else if (offset == 1)
-                        dto.QuantityB = ingredient.Quantity;
-                    dirty = true;
+                        updatedDto.QuantityB = ingredient.Quantity;
+
+                    if (TryWriteIngredientRecipeAndMask(vault, rowIndex, in ingredient, recipeIndex, in updatedDto))
+                    {
+                        dto = updatedDto;
+                        dirty = true;
+                    }
                 }
             }
 
             return dirty;
+        }
+
+        private static bool TryReadExistingVaultView<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool TryAcquireEditorWriteView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            handle = default;
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out handle) &&
+                   vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool TryWriteRecipeAndMask(
+            IDataVault vault,
+            int recipeIndex,
+            in CraftingRecipeDTO recipe,
+            in CraftingRecipeMaskDTO mask)
+        {
+            if (!TryAcquireEditorWriteView(vault, BufferID.ShinobuRecipeDtos, out VaultGenerationHandle<CraftingRecipeDTO> recipeHandle, out NativeArray<CraftingRecipeDTO> recipes))
+                return false;
+
+            bool maskLocked = false;
+            VaultGenerationHandle<CraftingRecipeMaskDTO> maskHandle = default;
+            try
+            {
+                if ((uint)recipeIndex >= (uint)recipes.Length)
+                    return false;
+
+                if (!TryAcquireEditorWriteView(vault, BufferID.ShinobuRecipeMasks, out maskHandle, out NativeArray<CraftingRecipeMaskDTO> masks))
+                    return false;
+
+                maskLocked = true;
+                if ((uint)recipeIndex >= (uint)masks.Length)
+                    return false;
+
+                recipes[recipeIndex] = recipe;
+                masks[recipeIndex] = mask;
+                return true;
+            }
+            finally
+            {
+                if (maskLocked)
+                    vault.ReleaseWriteLock(in maskHandle, SystemID.CoreDiagnostics);
+                vault.ReleaseWriteLock(in recipeHandle, SystemID.CoreDiagnostics);
+            }
+        }
+
+        private static bool TryWriteIngredientRecipeAndMask(
+            IDataVault vault,
+            int ingredientIndex,
+            in CraftingIngredientDTO ingredient,
+            int recipeIndex,
+            in CraftingRecipeDTO recipe)
+        {
+            if (!TryAcquireEditorWriteView(vault, BufferID.ShinobuRecipeIngredients, out VaultGenerationHandle<CraftingIngredientDTO> ingredientHandle, out NativeArray<CraftingIngredientDTO> ingredients))
+                return false;
+
+            bool recipeLocked = false;
+            bool maskLocked = false;
+            VaultGenerationHandle<CraftingRecipeDTO> recipeHandle = default;
+            VaultGenerationHandle<CraftingRecipeMaskDTO> maskHandle = default;
+            try
+            {
+                if ((uint)ingredientIndex >= (uint)ingredients.Length)
+                    return false;
+
+                if (!TryAcquireEditorWriteView(vault, BufferID.ShinobuRecipeDtos, out recipeHandle, out NativeArray<CraftingRecipeDTO> recipes))
+                    return false;
+
+                recipeLocked = true;
+                if ((uint)recipeIndex >= (uint)recipes.Length)
+                    return false;
+
+                if (!TryAcquireEditorWriteView(vault, BufferID.ShinobuRecipeMasks, out maskHandle, out NativeArray<CraftingRecipeMaskDTO> masks))
+                    return false;
+
+                maskLocked = true;
+                if ((uint)recipeIndex >= (uint)masks.Length)
+                    return false;
+
+                ingredients[ingredientIndex] = ingredient;
+                recipes[recipeIndex] = recipe;
+                masks[recipeIndex] = Shinobu19EconomyLedger.BuildRecipeMask(in recipe, (uint)recipeIndex, ingredients);
+                return true;
+            }
+            finally
+            {
+                if (maskLocked)
+                    vault.ReleaseWriteLock(in maskHandle, SystemID.CoreDiagnostics);
+                if (recipeLocked)
+                    vault.ReleaseWriteLock(in recipeHandle, SystemID.CoreDiagnostics);
+                vault.ReleaseWriteLock(in ingredientHandle, SystemID.CoreDiagnostics);
+            }
         }
 
         private static bool TryResolveIngredientWindow(

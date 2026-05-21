@@ -17,7 +17,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/LifePod Tactile Prologue Controller")]
-    public sealed class LifePodTactilePrologueController : MonoBehaviour, IUpdatable
+    public sealed class LifePodTactilePrologueController : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const uint StateCrashActive = 1u << 0;
         private const uint StateStrapsLocked = 1u << 1;
@@ -143,7 +143,10 @@ namespace Hecton8.Gameplay
         private uint _biosLootCacheFrameCounter;
         private bool _cachedHasLootSphereAup;
         private bool _registeredTick;
+        private bool _registeredHotSwapListener;
+        private bool _tickDormant;
         private uint _coldReferenceSearchMask;
+        private IPlayerRuntimeContext _playerRuntime;
         private HectonPlayerMovement _cachedObserverMovement;
         private Vector4 _cachedLootSphereAup;
         private Vector4 _lastSmokeParams = Vector4.positiveInfinity;
@@ -195,6 +198,7 @@ namespace Hecton8.Gameplay
             _smoke01 = _resolvedInitialSmoke01;
             CacheFakePodGravityVector();
             ResolveColdReferences();
+            RefreshColdRegistryReferences();
             RefreshValveTelemetryCache();
             RefreshBiosLootCache();
             PublishShaderState();
@@ -204,12 +208,15 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             CacheScalarConfig();
+            RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
             if (autoBeginOnEnable)
                 BeginCrashSequence(impactSeed, _resolvedImpactSeverity01);
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterTick();
             HectonBiosDiagnosticState.SetActive(false, 0f);
             if (damageSystem != null)
@@ -222,6 +229,7 @@ namespace Hecton8.Gameplay
             _visorVibrationHoldTimer = 0f;
             _cachedValveOpen01 = 0f;
             _cachedValveAngular01 = 0f;
+            _tickDormant = true;
             InvalidateColdReferenceCache();
             InvalidatePublishedShaderCache();
             PublishShaderState();
@@ -269,6 +277,7 @@ namespace Hecton8.Gameplay
             InvalidatePublishedShaderCache();
             PublishShaderState();
             WriteBiosDiagnostic();
+            _tickDormant = false;
             TryRegisterTick();
         }
 
@@ -320,6 +329,7 @@ namespace Hecton8.Gameplay
             _foam01 = math.saturate(_foam01 + delta);
             _stateBits |= StateFoamActive;
             PublishShaderState();
+            _tickDormant = false;
             TryRegisterTick();
         }
 
@@ -345,6 +355,9 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            if (_tickDormant)
+                return;
+
             float dt = SanitizeAtLeast(deltaTime, 0f);
             RefreshValveTelemetryCache();
             RefreshStrapState();
@@ -359,7 +372,7 @@ namespace Hecton8.Gameplay
 
             if (!NeedsActiveTick())
             {
-                TryUnregisterTick();
+                _tickDormant = true;
             }
         }
 
@@ -540,7 +553,7 @@ namespace Hecton8.Gameplay
             {
                 _visorVibration01 = math.max(_visorVibration01, _resolvedVrVisorVibrationIntensity * severity01);
                 _visorVibrationHoldTimer = math.max(_visorVibrationHoldTimer, _resolvedVrVisorVibrationHoldSeconds);
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntime;
                 VisorHUDController visor = playerContext != null ? playerContext.VisorController : null;
                 if (visor != null)
                 {
@@ -780,7 +793,7 @@ namespace Hecton8.Gameplay
         {
             if (_cachedObserverMovement == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntime;
                 _cachedObserverMovement = playerContext != null ? playerContext.PlayerMovement : null;
             }
 
@@ -796,7 +809,11 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
+                return;
+
+            _tickDormant = false;
+            if (_registeredTick)
                 return;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
@@ -809,6 +826,50 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registeredTick = false;
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _playerRuntime = GlobalRegistry.Player;
+            _cachedObserverMovement = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntime = currentService as IPlayerRuntimeContext;
+                    _cachedObserverMovement = null;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null && NeedsActiveTick())
+                    {
+                        _tickDormant = false;
+                        TryRegisterTick();
+                    }
+                    break;
+            }
         }
 
         private bool NeedsActiveTick()

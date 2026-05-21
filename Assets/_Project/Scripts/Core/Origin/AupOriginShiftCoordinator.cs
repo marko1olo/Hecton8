@@ -414,20 +414,16 @@ namespace Hecton8.Core
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (handle.BufferID != 0u &&
-                vault.TryResolveHandle(in handle, out buffer) &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
+            if (TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer))
             {
                 return true;
             }
 
-            if (vault.TryGetGenerationHandle<T>(bufferId, out handle) &&
-                vault.TryResolveHandle(in handle, out buffer) &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle))
             {
-                return true;
+                handle = existingHandle;
+                if (TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer))
+                    return true;
             }
 
             handle = vault.GetGenerationHandle<T>(
@@ -437,37 +433,67 @@ namespace Hecton8.Core
                 options);
             allocatedOrResized = true;
 
-            return handle.BufferID != 0u &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenExistingVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
+                return false;
+
+            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0 || !IsMatchingVaultHandle(in handle, bufferId))
+                return false;
+
+            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) && handle.Generation != 0u;
         }
 
         private static bool TryResolveMockCamera(IDataVault vault, out NativeArray<MockCameraAUP> camera)
         {
-            camera = default;
-            return vault != null &&
-                   vault.TryResolveHandle(in _mockCameraHandle, out camera) &&
-                   camera.IsCreated &&
-                   camera.Length >= MockCameraCount;
+            return TryOpenVaultBuffer(vault, in _mockCameraHandle, MockCameraBuffer, MockCameraCount, out camera);
         }
 
         private static bool TryResolveCounter(IDataVault vault, out NativeArray<AupPaddedAtomicCounter> counters)
         {
-            counters = default;
-            return vault != null &&
-                   vault.TryResolveHandle(in _counterHandle, out counters) &&
-                   counters.IsCreated &&
-                   counters.Length >= CounterCount;
+            return TryOpenVaultBuffer(vault, in _counterHandle, CounterBuffer, CounterCount, out counters);
         }
 
         private static bool TryResolveCsvScratch(IDataVault vault, out NativeArray<byte> scratch)
         {
-            scratch = default;
-            return vault != null &&
-                   vault.TryResolveHandle(in _csvScratchHandle, out scratch) &&
-                   scratch.IsCreated &&
-                   scratch.Length >= CsvScratchCapacity;
+            return TryOpenVaultBuffer(vault, in _csvScratchHandle, CsvScratchBuffer, CsvScratchCapacity, out scratch);
         }
 
         private static void ReleaseVaultHandles(IDataVault vault)
@@ -782,7 +808,7 @@ namespace Hecton8.Core
         /// <summary>Cold editor/development bridge for designer CSV reloads; never called from the simulation tick.</summary>
         public static bool TryReloadCsvOverrideFromDisk(IDataVault vault)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
                 return false;
 
@@ -858,7 +884,7 @@ namespace Hecton8.Core
             if (requestedCount <= 0)
                 return dependency;
 
-            if (!vault.TryGetBuffer<float3>(bufferId, out NativeArray<float3> points) || !points.IsCreated || points.Length <= 0)
+            if (!TryOpenExistingVaultBuffer(vault, bufferId, 1, out NativeArray<float3> points))
                 return dependency;
 
             int count = ResolveHistoricalBatchCount(points, points.Length, startIndex, requestedCount, out int clampedStart);
@@ -1022,8 +1048,7 @@ namespace Hecton8.Core
             ref AupOriginShiftScheduleInfo info)
         {
             if (requestedCount <= 0 ||
-                !vault.TryGetBuffer<VaultHotEntityData>(BufferID.VaultHotEntityData, out NativeArray<VaultHotEntityData> hotEntities) ||
-                !hotEntities.IsCreated)
+                !TryOpenExistingVaultBuffer(vault, BufferID.VaultHotEntityData, 1, out NativeArray<VaultHotEntityData> hotEntities))
                 return dependency;
 
             int hotCount = math.min(math.max(activeCount, 0), hotEntities.Length);
@@ -1051,8 +1076,7 @@ namespace Hecton8.Core
             uint shiftFrameId)
         {
             if (requestedCount <= 0 ||
-                !vault.TryGetBuffer<VaultHotEntityData>(BufferID.VaultHotEntityData, out NativeArray<VaultHotEntityData> hotEntities) ||
-                !hotEntities.IsCreated)
+                !TryOpenExistingVaultBuffer(vault, BufferID.VaultHotEntityData, 1, out NativeArray<VaultHotEntityData> hotEntities))
                 return 0;
 
             int hotCount = math.min(math.max(activeCount, 0), hotEntities.Length);
@@ -1131,9 +1155,7 @@ namespace Hecton8.Core
             float3 shiftDelta)
         {
             if (requestedCount <= 0 ||
-                !vault.TryGetBuffer<float3>(bufferId, out NativeArray<float3> points) ||
-                !points.IsCreated ||
-                points.Length <= 0)
+                !TryOpenExistingVaultBuffer(vault, bufferId, 1, out NativeArray<float3> points))
             {
                 return 0;
             }
@@ -1166,7 +1188,7 @@ namespace Hecton8.Core
 
         private static int ResolveFloat3BufferLength(IDataVault vault, BufferID bufferId)
         {
-            return vault.TryGetBuffer<float3>(bufferId, out NativeArray<float3> points) && points.IsCreated
+            return TryOpenExistingVaultBuffer(vault, bufferId, 1, out NativeArray<float3> points)
                 ? points.Length
                 : 0;
         }
@@ -1416,8 +1438,14 @@ namespace Hecton8.Core
             if (!string.IsNullOrEmpty(_csvPath))
                 return _csvPath;
 
-            string streamingAssets = Application.streamingAssetsPath;
-            _csvPath = Path.Combine(streamingAssets, "aup_constants.csv");
+#if UNITY_EDITOR
+            string dataPath = Application.dataPath;
+            _csvPath = string.IsNullOrEmpty(dataPath)
+                ? null
+                : Path.Combine(dataPath, "_SourceData", "Core", "Origin", "aup_constants.csv");
+#else
+            _csvPath = null;
+#endif
             return _csvPath;
         }
 

@@ -70,16 +70,90 @@ namespace Hecton8.UI
     {
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 8;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint BaseIntegrityListenerRejectedWarningHash = 0x4249524Au; // BIRJ
         private const uint BaseIntegrityListenerExceptionWarningHash = 0x42494558u; // BIEX
         private const uint BaseIntegrityListenerContextHash = 0x42494C53u; // BILS
 
-        // COLD ALLOC: RegistryBucket<IBaseIntegrityEventListener>[8] — base integrity listeners drained by SystemDispatcher LateUpdate — owner: BaseIntegrityEvents
-        private static readonly RegistryBucket<IBaseIntegrityEventListener> _listeners = new RegistryBucket<IBaseIntegrityEventListener>(ListenerCapacity);
-        // COLD ALLOC: IBaseIntegrityEventListener[8] — listener additions deferred while dispatching base integrity events — owner: BaseIntegrityEvents
-        private static readonly IBaseIntegrityEventListener[] _deferredRegisterListeners = new IBaseIntegrityEventListener[ListenerCapacity];
-        // COLD ALLOC: IBaseIntegrityEventListener[8] — listener removals deferred while dispatching base integrity events — owner: BaseIntegrityEvents
-        private static readonly IBaseIntegrityEventListener[] _deferredUnregisterListeners = new IBaseIntegrityEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public IBaseIntegrityEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct BaseIntegrityListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public BaseIntegrityListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IBaseIntegrityEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IBaseIntegrityEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public bool TryUnregister(IBaseIntegrityEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return true;
+                }
+
+                return false;
+            }
+
+            public IBaseIntegrityEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - base integrity listeners drained by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
+        private static BaseIntegrityListenerRegistry _listeners = new BaseIntegrityListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[8] - listener additions deferred while dispatching base integrity events - owner: BaseIntegrityEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener removals deferred while dispatching base integrity events - owner: BaseIntegrityEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<BaseIntegrityEventPayload> _pendingEvents;
         private static NativeQueue<BaseIntegrityEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -244,14 +318,13 @@ namespace Hecton8.UI
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IBaseIntegrityEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IBaseIntegrityEventListener listener = rawArray[i];
+                        IBaseIntegrityEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -301,7 +374,7 @@ namespace Hecton8.UI
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<BaseIntegrityEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] — deferred base integrity lane flushed by SystemDispatcher LateUpdate — owner: BaseIntegrityEvents
+                _pendingEvents = new NativeQueue<BaseIntegrityEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] — deferred base integrity lane flushed by SystemDispatcher LateUpdate — owner: BaseIntegrityEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -313,7 +386,7 @@ namespace Hecton8.UI
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<BaseIntegrityEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] — next-frame base integrity lane prevents same-frame reentrant dispatch — owner: BaseIntegrityEvents
+                _nextFrameEvents = new NativeQueue<BaseIntegrityEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] — next-frame base integrity lane prevents same-frame reentrant dispatch — owner: BaseIntegrityEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -436,7 +509,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IBaseIntegrityEventListener listener)
@@ -453,19 +526,19 @@ namespace Hecton8.UI
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IBaseIntegrityEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -476,12 +549,12 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -490,7 +563,7 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -501,7 +574,7 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -518,8 +591,8 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IBaseIntegrityEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IBaseIntegrityEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -528,8 +601,8 @@ namespace Hecton8.UI
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IBaseIntegrityEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IBaseIntegrityEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }
@@ -739,7 +812,7 @@ namespace Hecton8.UI
             moduleAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return MathGuard.IsFinite(in moduleAup);
+            return moduleAup.IsFinite();
         }
 
         private void CheckIntegrityWarnings(BaseModule module, float integrity)
@@ -894,7 +967,7 @@ namespace Hecton8.UI
                 return false;
 
             playerAup = playerMovement.CurrentAup;
-            return MathGuard.IsFinite(in playerAup);
+            return playerAup.IsFinite();
         }
 
         private HectonPlayerMovement ResolvePlayerMovement(Transform playerTransform)

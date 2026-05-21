@@ -46,8 +46,7 @@ namespace Hecton8.UI
             TryRegisterHotSwapListener();
             ResolveReferences();
             _focusActive = focusActiveOnEnable;
-            if (_focusActive)
-                TryRegisterTick();
+            TryRegisterTick();
         }
 
         private void OnDisable()
@@ -70,24 +69,18 @@ namespace Hecton8.UI
             {
                 _nextResolveFrame = 0;
                 _lastRaycastFrame = -1;
-                TryRegisterTick();
             }
             else
             {
                 if (disableDepthOfFieldWhenNoHit && _depthOfField != null)
                     _depthOfField.active = false;
-
-                TryUnregisterTick();
             }
         }
 
         public void LateFrameTick()
         {
             if (!_focusActive)
-            {
-                TryUnregisterTick();
                 return;
-            }
 
             int frame = Time.frameCount;
             if ((_cameraTransform == null || _depthOfField == null) && frame >= _nextResolveFrame)
@@ -129,6 +122,13 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterTick();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Player)
                 return;
 
@@ -199,7 +199,7 @@ namespace Hecton8.UI
 
         private void TryRegisterTick()
         {
-            if (_registered || !_focusActive)
+            if (_registered || !Application.isPlaying)
                 return;
 
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);

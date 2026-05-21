@@ -285,17 +285,18 @@ namespace Hecton8.UI
                 return true;
             }
 
-            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(handPosition);
+            if (!TryResolveRuntimeAup(handPosition, out double3 absoluteHitPoint))
+                return false;
+
             Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
             if (!IsFinite(fallbackForward))
                 fallbackForward = Vector3.forward;
-            if (!math.all(math.isfinite(absoluteHitPoint)))
-                return false;
 
             Vector3 safeDirection = ResolveApproxPressDirection(handForward, fallbackForward);
+            float3 hitPointAup = new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z);
             InteractionPacket packet = new InteractionPacket(
                 PhysicalPanelToolId,
-                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
+                hitPointAup,
                 (float3)safeDirection,
                 1f,
                 _resolvedPressDepthMeters,
@@ -305,11 +306,13 @@ namespace Hecton8.UI
             InteractionSignal signal = new InteractionSignal(
                 packet,
                 0,
-                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
+                hitPointAup,
                 (float3)(-safeDirection),
                 1f,
                 (byte)signalEffectType,
-                0);
+                0,
+                absoluteHitPoint,
+                InteractionSignal.HitPointAupDoubleValid);
 
             if (!interactionSignals.Publish(in signal, activationVolume))
                 return false;
@@ -613,6 +616,26 @@ namespace Hecton8.UI
         private static bool IsFinite(Vector3 value)
         {
             return math.all(math.isfinite((float3)value));
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 positionAup)
+        {
+            positionAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!resolvedAup.IsFinite())
+                return false;
+
+            positionAup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(positionAup));
         }
 
         private static float SanitizeButtonDeltaSeconds(float value)

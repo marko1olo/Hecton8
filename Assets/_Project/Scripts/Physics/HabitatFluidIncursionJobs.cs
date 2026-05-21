@@ -12,6 +12,8 @@ namespace Hecton8.Physics
 {
     internal static class HabitatFluidIncursionMath
     {
+        public const float AuthoritativeQualityWeight = 1f;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveIngressVolume(
             float currentVolume,
@@ -65,7 +67,7 @@ namespace Hecton8.Physics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ApproximateSqrtPositive(float value)
+        public static float ApproximateSqrtPositive(float value)
         {
             float safeValue = math.max(0f, value);
             if (safeValue <= 0f)
@@ -79,6 +81,14 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct FluidCompartmentClearJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Compartments and Integrity are owner-resolved contiguous lanes. The job validates index < ActiveCount before
+        // writing each row, while NativeArray side lanes carry their own safety handles.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Managed compartment objects were rejected because the solver is Burst/rollback-facing. A temporary clear buffer
+        // was rejected because it adds a copyback pass for data this job can overwrite deterministically.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is one compartment/integrity row per worker index; no reader is scheduled until this clear handle is fenced.
         [NoAlias, NativeDisableUnsafePtrRestriction] public FluidCompartmentDTO* Compartments;
         [NoAlias, NativeDisableUnsafePtrRestriction] public IntegrityStateDTO* Integrity;
         [NoAlias] public NativeArray<float3> LocalCentroids;
@@ -140,6 +150,14 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct MockHullBreachJob : IJob
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Mock breach mutates exactly one compartment and one integrity row selected by clamped BreachIndex. Raw pointers
+        // are required because the director owns the active compartment buffers outside this job.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A managed mock event was rejected because it would allocate and delay deterministic seeding. Duplicating the
+        // active buffers was rejected because it creates shadow state.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is a single writer job for the selected mock breach row before ingress/equalization jobs are scheduled.
         [NoAlias, NativeDisableUnsafePtrRestriction] public FluidCompartmentDTO* Compartments;
         [NoAlias, NativeDisableUnsafePtrRestriction] public IntegrityStateDTO* Integrity;
         public int CompartmentCount;
@@ -168,9 +186,32 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct FluidIngressJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // ReadCompartments, WriteCompartments, and Integrity are owner-provided non-overlapping lanes. The job validates
+        // index and writes only the matching compartment output row.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // In-place ingress was rejected because pressure equalization needs a stable read buffer. Managed event expansion
+        // was rejected because this is a Burst hot path.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is double-buffered compartment ownership: ReadCompartments is immutable, WriteCompartments[index]
+        // is exclusively written by worker index N, and Integrity is read-only during this stage.
         [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public FluidCompartmentDTO* ReadCompartments;
         [NoAlias, NativeDisableUnsafePtrRestriction] public FluidCompartmentDTO* WriteCompartments;
         [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public IntegrityStateDTO* Integrity;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // IncursionWriter is the only FluidIngressJob output queue lane. Execute only enqueues
+        // FluidIncursionSignal payloads and never drains, resizes, disposes, or reads the queue.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // HabitatFluidIncursionDirector schedules FluidIngressJob first, then chains BFS, mass,
+        // and telemetry jobs into _simulationHandle. PostFixedTick swaps buffers only after
+        // DispatcherJobFence.TryFinalizeCompleted observes that handle as finished.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Authoritative topology/CSV/mock writes call CompleteScheduledSimulationForAuthoritativeWrite
+        // before mutating Vault lanes. TryLockJobBuffers keeps front/back buffers locked until the
+        // chained handle is fenced, so no second writer mutates the SignalBus lane or backing buffers.
+        [NoAlias, NativeDisableContainerSafetyRestriction]
         public NativeQueue<FluidIncursionSignal>.ParallelWriter IncursionWriter;
         public int CompartmentCount;
         public float DeltaTime;
@@ -199,7 +240,7 @@ namespace Hecton8.Physics
             if (breached && !sealed && breachArea > HabitatFluidIncursionConstants.WaterEpsilonM3)
             {
                 float depthMeters = math.max(0f, ResolveWaterlineDepthMeters(in integrity, dto.FloorHeightLocal));
-                float maxIngress = math.lerp(0.08f, math.max(0.08f, MaxIngressPerSecondNormalized), math.saturate(GlobalQualityWeight));
+                float maxIngress = math.max(0.08f, MaxIngressPerSecondNormalized);
                 float nextWater = FluidMathCore.ResolveIngressVolume(
                     currentWater,
                     dto.MaxVolume,
@@ -270,6 +311,15 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct FluidBfsPressureEqualizationJob : IJob
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Compartments is the active pressure graph lane and Integrity is read-only breach metadata. Raw pointer access is
+        // bounded by the graph counts and BFS queue limits owned by the director.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A recursive managed graph traversal was rejected for stack/GC risk. Per-edge job fanout was rejected because the
+        // graph is small enough that extra scheduling would cost more than the solve.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is a single BFS writer over Compartments for the frame; no other compartment writer runs until
+        // this job's handle completes.
         [NoAlias, NativeDisableUnsafePtrRestriction] public FluidCompartmentDTO* Compartments;
         [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public IntegrityStateDTO* Integrity;
         [NoAlias, ReadOnly] public NativeArray<int> EdgeOffsets;
@@ -505,7 +555,8 @@ namespace Hecton8.Physics
             if (dampingFactor <= epsilon)
                 return 0f;
 
-            float velocityMetersPerSecond = math.sqrt(math.max(0f, 2f * math.max(0f, gravityMetersPerSecondSquared) * absHeadDifferenceMeters));
+            float velocityMetersPerSecond = HabitatFluidIncursionMath.ApproximateSqrtPositive(
+                2f * math.max(0f, gravityMetersPerSecondSquared) * absHeadDifferenceMeters);
             if (!math.isfinite(velocityMetersPerSecond))
                 return 0f;
 
@@ -538,6 +589,15 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct FluidWaterlineMassSummaryJob : IJob
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Compartments is read-only mass input while Waterlines, CompartmentTelemetry, and MassState are separate NativeArray
+        // outputs. The raw compartment pointer is bounded by the caller-provided active counts.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Copying compartment rows into a NativeArray facade was rejected because it duplicates bandwidth. Managed summary
+        // objects were rejected because the telemetry row must remain blittable and Burst-friendly.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is read-only compartment traversal in this summary stage; all mutable output lanes are distinct
+        // NativeArrays and are fenced by this returned handle.
         [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public FluidCompartmentDTO* Compartments;
         [NoAlias, ReadOnly] public NativeArray<float3> LocalCentroids;
         [NoAlias] public NativeArray<FluidWaterlineShaderDTO> Waterlines;
@@ -629,7 +689,7 @@ namespace Hecton8.Physics
             float fillRatio = totalCapacityM3 > HabitatFluidIncursionConstants.WaterEpsilonM3
                 ? math.saturate(totalWaterM3 * math.rcp(totalCapacityM3))
                 : 0f;
-            float angularDragMultiplier = 1f + (fillRatio * math.lerp(0.35f, 0.95f, math.saturate(GlobalQualityWeight)));
+            float angularDragMultiplier = 1f + (fillRatio * 0.95f);
 
             if (MassState.IsCreated && MassState.Length > 0)
             {

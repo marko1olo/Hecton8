@@ -1,20 +1,17 @@
-**WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
-
 # Archive Index
 
-Date: `2026-04-29`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-21
+Status: HISTORICAL SNAPSHOTS
+Owner: SHINOBU_ARCHIVARIUS_SURGEON
+Evidence class: STATIC_DOC
 
-Purpose: top-level index for documentation bundles removed from active workspace use.
+This folder stores old documentation bundles removed from active workspace use.
 
-## Bundles
+Do not load archived documents as active contracts. Promote only current technical facts into `Docs/README.md`, `Docs/QUALITY_GATES.md`, `Docs/SYSTEMS_CONTRACTS.md`, or `Docs/ARCHITECTURE`.
 
-- `2026-04-16_Workspace_Cleanup/` - large workspace cleanup pass covering root noise, old agent drops, stale audits, shell completion reports, and document reclassification.
-- `2026-04-29_Two_Day_Stale_Active_Docs/` - active `Docs/` items older than two days archived during the forensic compliance pass.
+Archive rules:
 
-## Archive Rules
-
-- archive bundles should be dated
-- each archive bundle should contain a `README.md`
-- large archive bundles should also contain a `MANIFEST.md`
-- archived documents may preserve historical paths and should not be treated as active authority without explicit promotion
+- bundles must be dated
+- each bundle should contain `README.md`
+- large bundles should contain `MANIFEST.md`
+- archived paths may contain stale constants and stale readiness labels

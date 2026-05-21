@@ -64,11 +64,85 @@ namespace Hecton8.Gameplay
         private const uint ListenerExceptionWarningHash = 0x46484558u;
         private const uint EventContextHash = 0x46484D53u;
         private const uint ListenerContextHash = 0x46484C53u;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<IFirstHourEventListener>[8] - first-hour milestone listeners drained by SystemDispatcher LateUpdate - owner: FirstHourEvents
-        private static readonly RegistryBucket<IFirstHourEventListener> _listeners = new RegistryBucket<IFirstHourEventListener>(ListenerCapacity);
-        private static readonly IFirstHourEventListener[] _deferredRegisterListeners = new IFirstHourEventListener[ListenerCapacity];
-        private static readonly IFirstHourEventListener[] _deferredUnregisterListeners = new IFirstHourEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public IFirstHourEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct FirstHourListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public FirstHourListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IFirstHourEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IFirstHourEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public bool TryUnregister(IFirstHourEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return true;
+                }
+
+                return false;
+            }
+
+            public IFirstHourEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - first-hour milestone listeners drained by SystemDispatcher LateUpdate - owner: FirstHourEvents
+        private static FirstHourListenerRegistry _listeners = new FirstHourListenerRegistry(ListenerCapacity);
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<FirstHourEventPayload> _pendingEvents;
         private static NativeQueue<FirstHourEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -222,14 +296,13 @@ namespace Hecton8.Gameplay
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IFirstHourEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IFirstHourEventListener listener = rawArray[i];
+                        IFirstHourEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -254,7 +327,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<FirstHourEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate — owner: FirstHourEvents
+                _pendingEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate — owner: FirstHourEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -266,7 +339,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — next-frame first-hour milestone lane prevents same-frame reentrant dispatch — owner: FirstHourEvents
+                _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — next-frame first-hour milestone lane prevents same-frame reentrant dispatch — owner: FirstHourEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -330,7 +403,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IFirstHourEventListener listener)
@@ -347,19 +420,19 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IFirstHourEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -370,12 +443,12 @@ namespace Hecton8.Gameplay
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -384,7 +457,7 @@ namespace Hecton8.Gameplay
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -395,7 +468,7 @@ namespace Hecton8.Gameplay
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -406,8 +479,8 @@ namespace Hecton8.Gameplay
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IFirstHourEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IFirstHourEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -416,8 +489,8 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IFirstHourEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IFirstHourEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }

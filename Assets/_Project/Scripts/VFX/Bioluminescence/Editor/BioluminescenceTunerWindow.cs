@@ -15,6 +15,7 @@ namespace Hecton8.VFX.Bioluminescence.Editor
         private const float MinWaveSpeed = 1f;
         private const float MaxWaveSpeed = 180f;
         private const float DefaultWaveSpeed = 48f;
+        private const int TelemetryGraphSampleCount = 16;
 
         private VisualElement _playModeRoot;
         private Label _playModeWarning;
@@ -28,6 +29,8 @@ namespace Hecton8.VFX.Bioluminescence.Editor
         private Slider _pulseWaveSpeedSlider;
         private ColorField _pulseColorField;
         private VisualElement[] _pulseBoxes;
+        private VisualElement[] _telemetryBars;
+        private BiolumPulseSyncRuntime.BiolumPulseTelemetryEntry[] _telemetryScratch;
         private Label[] _speciesLabels;
         private ColorField[] _speciesColorFields;
         private Slider[] _speciesFrequencySliders;
@@ -131,6 +134,29 @@ namespace Hecton8.VFX.Bioluminescence.Editor
             }
             root.Add(pulseBoxRow);
 
+            Label telemetryHeader = CreateHeader("Black Box Amplitude");
+            telemetryHeader.style.marginTop = 4f;
+            root.Add(telemetryHeader);
+
+            VisualElement telemetryRow = new VisualElement();
+            telemetryRow.style.flexDirection = FlexDirection.Row;
+            telemetryRow.style.alignItems = Align.FlexEnd;
+            telemetryRow.style.height = 36f;
+            telemetryRow.style.marginBottom = 6f;
+            _telemetryBars = new VisualElement[TelemetryGraphSampleCount];
+            _telemetryScratch = new BiolumPulseSyncRuntime.BiolumPulseTelemetryEntry[TelemetryGraphSampleCount];
+            for (int i = 0; i < _telemetryBars.Length; i++)
+            {
+                VisualElement bar = new VisualElement();
+                bar.style.flexGrow = 1f;
+                bar.style.marginRight = 2f;
+                bar.style.height = 4f;
+                bar.style.backgroundColor = new Color(0.08f, 0.72f, 0.86f, 0.25f);
+                telemetryRow.Add(bar);
+                _telemetryBars[i] = bar;
+            }
+            root.Add(telemetryRow);
+
             _pulseWaveSpeedSlider = CreateSlider("Wave Speed", MinWaveSpeed, MaxWaveSpeed);
             _pulseWaveSpeedSlider.SetValueWithoutNotify(DefaultWaveSpeed);
             _pulseColorField = new ColorField("Pulse Color");
@@ -214,14 +240,14 @@ namespace Hecton8.VFX.Bioluminescence.Editor
             _suppressCallbacks = true;
             try
             {
-                if (BiolumPulseSyncRuntime.TryReadEditorMockWeather(out MockWeatherSignal weather))
+                if (BiolumPulseSyncRuntime.CopyEditorMockWeather(out MockWeatherSignal weather))
                 {
                     _ambientSlider.SetValueWithoutNotify(weather.AmbientLightLevel);
                     _o2Slider.SetValueWithoutNotify(weather.O2Level01);
                     _healthSlider.SetValueWithoutNotify(weather.SystemHealthIndex01);
                 }
 
-                if (BiolumPulseSyncRuntime.TryReadEditorPulseControls(
+                if (BiolumPulseSyncRuntime.CopyEditorPulseControls(
                         out float baseFrequency,
                         out float spatialOffsetMultiplier,
                         out float darknessActivationThreshold,
@@ -234,10 +260,11 @@ namespace Hecton8.VFX.Bioluminescence.Editor
                 }
 
                 RefreshPulseBoxes();
+                RefreshTelemetryGraph();
 
                 for (int i = 0; i < _speciesLabels.Length; i++)
                 {
-                    if (!BiolumPulseSyncRuntime.TryReadEditorSpeciesTuning(i, out BiolumSpeciesTuningDTO tuning))
+                    if (!BiolumPulseSyncRuntime.CopyEditorSpeciesTuning(i, out BiolumSpeciesTuningDTO tuning))
                         continue;
 
                     _speciesLabels[i].text = FormatSpeciesHash(tuning.SpeciesHash);
@@ -257,7 +284,7 @@ namespace Hecton8.VFX.Bioluminescence.Editor
             if (_suppressCallbacks || !Application.isPlaying)
                 return;
 
-            if (!BiolumPulseSyncRuntime.TryReadEditorMockWeather(out MockWeatherSignal weather))
+            if (!BiolumPulseSyncRuntime.CopyEditorMockWeather(out MockWeatherSignal weather))
                 return;
 
             weather.AmbientLightLevel = _ambientSlider.value;
@@ -281,7 +308,7 @@ namespace Hecton8.VFX.Bioluminescence.Editor
         private void RefreshPulseBoxes()
         {
             if (_pulseBoxes == null ||
-                !BiolumPulseSyncRuntime.TryReadEditorPulseState(out BiolumPulseStateDTO pulseState))
+                !BiolumPulseSyncRuntime.CopyEditorPulseState(out BiolumPulseStateDTO pulseState))
             {
                 return;
             }
@@ -296,12 +323,46 @@ namespace Hecton8.VFX.Bioluminescence.Editor
             }
         }
 
+        private void RefreshTelemetryGraph()
+        {
+            if (_telemetryBars == null || _telemetryScratch == null)
+                return;
+
+            int copied = BiolumPulseSyncRuntime.CopyEditorTelemetryEntries(_telemetryScratch);
+            for (int i = 0; i < _telemetryBars.Length; i++)
+            {
+                if (i >= copied)
+                {
+                    _telemetryBars[i].style.height = 4f;
+                    _telemetryBars[i].style.backgroundColor = new Color(0.08f, 0.72f, 0.86f, 0.18f);
+                    continue;
+                }
+
+                BiolumPulseSyncRuntime.BiolumPulseTelemetryEntry entry = _telemetryScratch[i];
+                if (entry.Frame == 0u && entry.ActiveGlowingInstances == 0u && entry.OscillatorComputeTimeMs <= 0f)
+                {
+                    _telemetryBars[i].style.height = 4f;
+                    _telemetryBars[i].style.backgroundColor = new Color(0.08f, 0.72f, 0.86f, 0.18f);
+                    continue;
+                }
+
+                float amplitude01 = math.saturate(entry.PrimaryAmplitudeHdr * 0.1f);
+                float fault01 = entry.Flags == 0 ? 0f : 1f;
+                _telemetryBars[i].style.height = 4f + amplitude01 * 30f;
+                _telemetryBars[i].style.backgroundColor = new Color(
+                    math.lerp(0.08f, 1f, fault01),
+                    math.lerp(0.72f, 0.24f, fault01),
+                    math.lerp(0.86f, 0.12f, fault01),
+                    0.35f + amplitude01 * 0.65f);
+            }
+        }
+
         private void WriteSpecies(int index)
         {
             if (_suppressCallbacks || !Application.isPlaying || index < 0)
                 return;
 
-            if (!BiolumPulseSyncRuntime.TryReadEditorSpeciesTuning(index, out BiolumSpeciesTuningDTO tuning))
+            if (!BiolumPulseSyncRuntime.CopyEditorSpeciesTuning(index, out BiolumSpeciesTuningDTO tuning))
                 return;
 
             Color color = _speciesColorFields[index].value;

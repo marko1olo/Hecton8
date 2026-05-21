@@ -1,4 +1,5 @@
 using Hecton8.Caves;
+using Hecton8.Core;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
@@ -128,7 +129,7 @@ namespace Hecton8.Dev
                     dirtyBlendValues = dirty
                 }.Schedule(2, 1);
                 // COLD SYNC JOB: dev smoke tester validates a two-vertex UV2 kernel outside gameplay.
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
 
                 return Require(dirty[0] > 0.99f && dirty[1] < 0.001f, "Dirty blend UV2 kernel failed.");
             }
@@ -171,7 +172,7 @@ namespace Hecton8.Dev
                     Result = result
                 }.Schedule();
                 // COLD SYNC JOB: dev smoke tester validates scanner SDF raymarch kernel outside gameplay.
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
 
                 return Require(result[0].Hit != 0 && result[0].Distance > 0.5f && result[0].Distance < 2.5f, "AUP SDF raymarch missed open-to-solid crossing.");
             }
@@ -203,7 +204,7 @@ namespace Hecton8.Dev
                     SolidThreshold = 0f
                 }.Schedule(1, 1);
                 // COLD SYNC JOB: dev smoke tester validates one-cell localized nav update outside gameplay.
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
 
                 return Require(passability[7] == VoxelDynamicNavGridRuntime.SolidCell && passability[0] == 0, "Localized nav patch mutated wrong cells.");
             }

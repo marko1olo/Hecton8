@@ -22,13 +22,14 @@ namespace Hecton8.Ecosystem
 
         private void OnDrawGizmos()
         {
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+#if UNITY_EDITOR
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
                 return;
 
-            if (vault == null ||
-                !vault.TryGetBuffer<EcosystemSectorDTO>(BufferID.ShinobuMacroEcosystemSectorFront, out NativeArray<EcosystemSectorDTO> sectors) ||
-                !vault.TryGetBuffer<EcosystemSectorCoordDTO>(BufferID.ShinobuMacroEcosystemSectorCoords, out NativeArray<EcosystemSectorCoordDTO> coords) ||
-                !vault.TryGetBuffer<MacroEcosystemTuningDTO>(BufferID.ShinobuMacroEcosystemTuning, out NativeArray<MacroEcosystemTuningDTO> tuning) ||
+            if (!TryReadBuffer(vault, BufferID.ShinobuMacroEcosystemSectorFront, out NativeArray<EcosystemSectorDTO> sectors) ||
+                !TryReadBuffer(vault, BufferID.ShinobuMacroEcosystemSectorCoords, out NativeArray<EcosystemSectorCoordDTO> coords) ||
+                !TryReadBuffer(vault, BufferID.ShinobuMacroEcosystemTuning, out NativeArray<MacroEcosystemTuningDTO> tuning) ||
                 !sectors.IsCreated ||
                 !coords.IsCreated ||
                 !tuning.IsCreated ||
@@ -54,6 +55,20 @@ namespace Hecton8.Ecosystem
                     new Vector3((float)coord.SectorX * 1000f, (float)coord.SectorY * 1000f, (float)coord.SectorZ * 1000f),
                     size);
             }
+#endif
+        }
+
+        private static bool TryReadBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return
+                vault != null &&
+                vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                vault.TryReadHandle(in handle, out buffer) &&
+                buffer.IsCreated;
         }
     }
 }

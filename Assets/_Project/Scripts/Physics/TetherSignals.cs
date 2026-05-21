@@ -1,7 +1,6 @@
 using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Gameplay;
 using Unity.Mathematics;
 using UnityEngine;
 using CoreTetherFiredSignal = Hecton8.Core.Contracts.Signals.TetherFiredSignal;
@@ -36,16 +35,14 @@ namespace Hecton8.Physics
         }
 
         public static bool PublishFire(
-            TetherManager manager,
-            HeavyTowWinch owner,
-            HectonPlayerMotor playerMotor,
-            Rigidbody playerBody,
-            Rigidbody payloadBody,
-            Collider payloadCollider,
+            int managerInstanceId,
+            int ownerInstanceId,
+            int payloadBodyInstanceId,
+            int payloadColliderInstanceId,
             float initialDistance,
             uint frameIndex)
         {
-            if (manager == null || owner == null || playerBody == null || payloadBody == null || payloadCollider == null)
+            if (managerInstanceId == 0 || ownerInstanceId == 0 || payloadBodyInstanceId == 0 || payloadColliderInstanceId == 0)
                 return false;
 
             if (!math.isfinite(initialDistance) || initialDistance < 0f)
@@ -55,10 +52,10 @@ namespace Hecton8.Physics
 
             CoreTetherFiredSignal signal = new CoreTetherFiredSignal
             {
-                ManagerInstanceId = ResolveStableObjectId(manager),
-                OwnerInstanceId = ResolveStableObjectId(owner),
-                PayloadBodyInstanceId = ResolveStableObjectId(payloadBody),
-                PayloadColliderInstanceId = ResolveStableObjectId(payloadCollider),
+                ManagerInstanceId = managerInstanceId,
+                OwnerInstanceId = ownerInstanceId,
+                PayloadBodyInstanceId = payloadBodyInstanceId,
+                PayloadColliderInstanceId = payloadColliderInstanceId,
                 RequestSlot = -1,
                 RequestVersion = 0u,
                 FrameIndex = frameIndex,
@@ -111,11 +108,6 @@ namespace Hecton8.Physics
 
             signal = snapshot[_snapSnapshotReadCursor++];
             return true;
-        }
-
-        private static int ResolveStableObjectId(UnityEngine.Object unityObject)
-        {
-            return unityObject != null ? unchecked((int)EntityId.ToULong(unityObject.GetEntityId())) : 0;
         }
     }
 }

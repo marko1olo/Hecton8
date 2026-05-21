@@ -9,6 +9,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -956,36 +957,39 @@ namespace Hecton8.QA.Headless
             array = default;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 88)]
         private struct GhostState
         {
-            public AbsoluteUniversePosition Aup;
-            public double3 AbsoluteMeters;
-            public float3 RuntimeMeters;
+            [FieldOffset(0)] public AbsoluteUniversePosition Aup;
+            [FieldOffset(48)] public double3 AbsoluteMeters;
+            [FieldOffset(72)] public float3 RuntimeMeters;
+            [FieldOffset(84)] private uint _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 72)]
         private struct HeadlessTelemetryEntry
         {
-            public uint Frame;
-            public int Day;
-            public uint StateHash;
-            public long GridX;
-            public long GridY;
-            public long GridZ;
-            public float3 Local;
-            public float PreyBiomass;
-            public float PredatorBiomass;
-            public float NativeBytesMb;
-            public uint Flags;
+            [FieldOffset(0)] public uint Frame;
+            [FieldOffset(4)] public int Day;
+            [FieldOffset(8)] public uint StateHash;
+            [FieldOffset(12)] private uint _pad0;
+            [FieldOffset(16)] public long GridX;
+            [FieldOffset(24)] public long GridY;
+            [FieldOffset(32)] public long GridZ;
+            [FieldOffset(40)] public float3 Local;
+            [FieldOffset(52)] public float PreyBiomass;
+            [FieldOffset(56)] public float PredatorBiomass;
+            [FieldOffset(60)] public float NativeBytesMb;
+            [FieldOffset(64)] public uint Flags;
+            [FieldOffset(68)] private uint _pad1;
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct GhostAupJob : IJob
         {
-            [ReadOnly]
+            [ReadOnly, NoAlias]
             public NativeArray<GhostState> Current;
-            [WriteOnly]
+            [WriteOnly, NoAlias]
             public NativeArray<GhostState> Next;
             public float DeltaSeconds;
             public double SimulatedSeconds;

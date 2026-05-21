@@ -59,19 +59,44 @@ namespace Hecton8.Core
                 return pending < _capacity ? pending : _capacity;
             }
         }
-        public ParallelEventWriter ParallelWriter => new ParallelEventWriter(_events, _pendingCount, _capacity);
+        /// <summary>Compatibility property for a low-frequency Burst callback writer. Prefer <see cref="OpenParallelWriter"/>.</summary>
+        public ParallelEventWriter ParallelWriter => OpenParallelWriter();
+
+        /// <summary>
+        /// Opens the retained low-frequency MPSC callback writer.
+        /// High-frequency event storms require owner-local batching before this queue.
+        /// </summary>
+        public ParallelEventWriter OpenParallelWriter()
+        {
+            NativeQueue<int>.ParallelWriter writer = _events.IsCreated ? _events.AsParallelWriter() : default;
+            return new ParallelEventWriter(writer, _pendingCount, _capacity);
+        }
 
         public BurstCallbackQueue(int expectedCapacity)
         {
             _capacity = expectedCapacity <= 0 ? 1 : expectedCapacity;
             _events = new NativeQueue<int>(Allocator.Persistent);
-            _pendingCount = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _pendingCount = Hecton8.Core.Memory.H8Memory.Allocate<int>(
+                1,
+                Hecton8.Core.Memory.SystemID.CoreDiagnostics,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeQueue(
                 _events,
                 _capacity,
                 nameof(BurstCallbackQueue),
                 nameof(_events),
                 NativeAllocationLifetime.Session);
+            if (!_pendingCount.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(BurstCallbackQueue), nameof(_events));
+                _events.Dispose();
+                _events = default;
+                _capacity = 0;
+                _counterSentinelId = 0;
+                return;
+            }
+
             _counterSentinelId = NativeMemorySentinel.RegisterNativeArray(
                 _pendingCount,
                 nameof(BurstCallbackQueue),
@@ -170,7 +195,9 @@ namespace Hecton8.Core
 
             MemoryBudgetTracker.Unregister(BudgetOwner);
             _events.Dispose();
-            _pendingCount.Dispose();
+            Hecton8.Core.Memory.H8Memory.Release(
+                ref _pendingCount,
+                Hecton8.Core.Memory.SystemID.CoreDiagnostics);
             _capacity = 0;
         }
 
@@ -189,9 +216,11 @@ namespace Hecton8.Core
 
             MemoryBudgetTracker.Unregister(BudgetOwner);
             JobHandle eventsDisposeHandle = _events.Dispose(inputDeps);
-            JobHandle counterDisposeHandle = _pendingCount.Dispose(inputDeps);
+            JobHandle counterDisposeHandle = Hecton8.Core.Memory.H8Memory.Release(
+                ref _pendingCount,
+                inputDeps,
+                Hecton8.Core.Memory.SystemID.CoreDiagnostics);
             _events = default;
-            _pendingCount = default;
             _capacity = 0;
             return JobHandle.CombineDependencies(eventsDisposeHandle, counterDisposeHandle);
         }
@@ -212,9 +241,9 @@ namespace Hecton8.Core
             [NativeDisableUnsafePtrRestriction] private readonly int* _pendingCount;
             private readonly int _capacity;
 
-            internal ParallelEventWriter(NativeQueue<int> events, NativeArray<int> pendingCount, int capacity)
+            internal ParallelEventWriter(NativeQueue<int>.ParallelWriter events, NativeArray<int> pendingCount, int capacity)
             {
-                _events = events.IsCreated ? events.AsParallelWriter() : default;
+                _events = events;
                 _pendingCount = pendingCount.IsCreated ? (int*)NativeArrayUnsafeUtility.GetUnsafePtr(pendingCount) : null;
                 _capacity = capacity;
             }

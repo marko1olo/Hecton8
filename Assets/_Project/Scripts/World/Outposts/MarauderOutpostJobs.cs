@@ -97,29 +97,55 @@ namespace Hecton8.World.Outposts
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct OutpostTelemetryEntry
     {
+        [FieldOffset(0)]
         public uint Frame;
+        [FieldOffset(4)]
         public uint Flags;
+        [FieldOffset(8)]
         public ulong SectorHash;
+        [FieldOffset(16)]
         public uint Seed;
+        [FieldOffset(20)]
         public uint GenerationSequence;
+        [FieldOffset(24)]
         public float3 OriginMeters;
+        [FieldOffset(36)]
         public int3 Dimensions;
+        [FieldOffset(48)]
         public int MatrixCount;
+        [FieldOffset(52)]
         public int InteractableCount;
+        [FieldOffset(56)]
         public int SolidCellCount;
+        [FieldOffset(60)]
         public int SupportCount;
+        [FieldOffset(64)]
         public float OutpostAge01;
+        [FieldOffset(68)]
         public uint ShiftFrameId;
+        [FieldOffset(72)]
+        private ulong _pad0;
+        [FieldOffset(80)]
+        private ulong _pad1;
+        [FieldOffset(88)]
+        private ulong _pad2;
+        [FieldOffset(96)]
+        private ulong _pad3;
+        [FieldOffset(104)]
+        private ulong _pad4;
+        [FieldOffset(112)]
+        private ulong _pad5;
+        [FieldOffset(120)]
+        private ulong _pad6;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct MarauderOutpostSolveJob : IJob
     {
-        public NativeArray<byte> WfcGrid;
+        [NoAlias] public NativeArray<byte> WfcGrid;
         public int3 Dimensions;
         public uint Seed;
         public byte LowTier;
@@ -252,17 +278,16 @@ namespace Hecton8.World.Outposts
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct MarauderOutpostMatrixExtractionJob : IJob
     {
-        [ReadOnly] public NativeArray<byte> WfcGrid;
-        [ReadOnly] public NativeArray<byte> MutableGrid;
-        [ReadOnly] public NativeArray<ushort> HeightSamples;
-        public NativeArray<float4x4> ShellMatrices;
-        public NativeArray<uint> CellTypes;
-        public NativeArray<OutpostInteractableSpawn> InteractableSpawns;
-        public NativeArray<int> Counters;
+        [ReadOnly, NoAlias] public NativeArray<byte> WfcGrid;
+        [NoAlias] public NativeArray<byte> MutableGrid;
+        [ReadOnly, NoAlias] public NativeArray<ushort> HeightSamples;
+        [NoAlias] public NativeArray<float4x4> ShellMatrices;
+        [NoAlias] public NativeArray<uint> CellTypes;
+        [NoAlias] public NativeArray<OutpostInteractableSpawn> InteractableSpawns;
+        [NoAlias] public NativeArray<int> Counters;
         public int3 Dimensions;
         public float3 OriginMeters;
         public float3 TerrainPosition;
@@ -452,11 +477,10 @@ namespace Hecton8.World.Outposts
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct MarauderOutpostAupShiftJob : IJobParallelFor
     {
-        public NativeArray<float4x4> ShellMatrices;
+        [NoAlias] public NativeArray<float4x4> ShellMatrices;
         public float3 ShiftMeters;
 
         public void Execute(int index)

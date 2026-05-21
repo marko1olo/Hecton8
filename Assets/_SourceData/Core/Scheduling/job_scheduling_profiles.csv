@@ -1,0 +1,8 @@
+# job_type_full_name,min_batch,max_batch
+Hecton8.World.RadiusBasedStreamingJob,64,256
+Hecton8.AI.PredatorCognitionDomain+SwarmAnalysisJob,64,256
+Hecton8.AI.PredatorCognitionDomain+PredatorCognitionJob,32,128
+Hecton8.AI.MesofaunaBehaviorJob,32,128
+Hecton8.Equipment.Auxiliary.GenerateMockAuxiliaryDeploymentsJob,32,128
+Hecton8.Equipment.Auxiliary.UpdateDeployedAuxiliaryJob,32,128
+Hecton8.Equipment.Auxiliary.StageAuxiliaryVFXJob,32,128

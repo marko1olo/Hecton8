@@ -1,6 +1,7 @@
 using Hecton8.AtlasSignal;
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Narrative;
@@ -212,7 +213,9 @@ namespace Hecton8.Progression
                 if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                     return false;
 
-                AbsoluteUniversePosition podAup = AbsoluteUniversePosition.FromRuntimePosition(lifePodExitReferenceWorld);
+                if (!TryResolveAupFromRuntimeOrigin(lifePodExitReferenceWorld, out AbsoluteUniversePosition podAup))
+                    return false;
+
                 double requiredDistanceSq = (double)lifePodExitMinimumDistanceMeters * lifePodExitMinimumDistanceMeters;
                 if (AbsoluteUniversePosition.DistanceSq(in playerAup, in podAup) < requiredDistanceSq)
                     return false;
@@ -234,6 +237,26 @@ namespace Hecton8.Progression
 
             playerAup = default;
             return false;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return absoluteAup.IsFinite();
         }
 
         private static Vector3 ResolvePlayerRuntimePosition()

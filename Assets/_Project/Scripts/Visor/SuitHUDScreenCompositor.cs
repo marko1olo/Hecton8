@@ -12,7 +12,7 @@ namespace NASAPunk.Visor
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/HUD/Suit HUD Screen Compositor")]
-    public sealed class SuitHUDScreenCompositor : MonoBehaviour, ITickable
+    public sealed class SuitHUDScreenCompositor : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
     {
         private static readonly List<SuitHUDScreenCompositor> s_activeCompositors = new List<SuitHUDScreenCompositor>(2);
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
@@ -51,6 +51,7 @@ namespace NASAPunk.Visor
         private CanvasGroup _overlayCanvasGroup;
         private float _nextAutoResolveAt;
         private bool _tickRegistered;
+        private bool _hotSwapRegistered;
         private bool _pendingRefresh = true;
         private string _appliedOverlayName;
 
@@ -78,6 +79,7 @@ namespace NASAPunk.Visor
             }
 
             RegisterActiveCompositor();
+            TryRegisterHotSwapListener();
             _pendingRefresh = true;
             if (!Application.isPlaying)
                 return;
@@ -89,12 +91,14 @@ namespace NASAPunk.Visor
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegisterRuntimeTick();
         }
 
         private void OnDisable()
         {
             UnregisterActiveCompositor();
+            TryUnregisterHotSwapListener();
             UnregisterRuntimeTick();
 #if UNITY_EDITOR
             EditorApplication.update -= EditorTick;
@@ -139,13 +143,19 @@ namespace NASAPunk.Visor
             _pendingRefresh = true;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+                TryRegisterRuntimeTick();
+        }
+
         public void Tick(float deltaTime)
         {
             if (!_pendingRefresh && !NeedsAutoResolve())
-            {
-                UnregisterRuntimeTick();
                 return;
-            }
 
             RefreshCompositor(allowOverlayCreation: false);
             _pendingRefresh = false;
@@ -472,11 +482,7 @@ namespace NASAPunk.Visor
             if (!Application.isPlaying || _tickRegistered)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterRuntimeTick()
@@ -487,6 +493,23 @@ namespace NASAPunk.Visor
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
             _tickRegistered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         public void SetSharedProjectionTexture(RenderTexture texture)

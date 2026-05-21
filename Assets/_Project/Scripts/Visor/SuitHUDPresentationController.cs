@@ -31,11 +31,12 @@ namespace NASAPunk.Visor
             LegacyOverlay,
             ModernOverlay,
             ModernProjectedSharedRT,
-            ModernProjectedRuntimeRT
+            ModernProjectedRuntimeRT,
+            StencilRenderGraph
         }
 
         [Header("Mode")]
-        [SerializeField] private PresentationMode presentationMode = PresentationMode.ModernProjectedSharedRT;
+        [SerializeField] private PresentationMode presentationMode = PresentationMode.StencilRenderGraph;
 
         [Header("Core References")]
         [SerializeField] private HectonSuitHUD_v4 overlayModernHud;
@@ -53,7 +54,7 @@ namespace NASAPunk.Visor
         [SerializeField] private SuitHUDScreenCompositor screenCompositor;
         [SerializeField] private bool suppressOverlaysInProjectedMode = true;
         [SerializeField] private bool previewProjectedSourceOnScreen = false;
-        [SerializeField] private bool preferCanvasProjectionSource = true;
+        [SerializeField] private bool preferCanvasProjectionSource = false;
         [SerializeField] private bool syncProjectionLayoutFromOverlay = false;
 
         [Header("Diegetic Projection Fit")]
@@ -304,6 +305,7 @@ namespace NASAPunk.Visor
             }
 
             bool projectedCanvasSourceNeeded =
+                !IsStencilRenderGraphMode() &&
                 preferCanvasProjectionSource &&
                 (presentationMode == PresentationMode.ModernProjectedSharedRT ||
                  presentationMode == PresentationMode.ModernProjectedRuntimeRT);
@@ -343,6 +345,9 @@ namespace NASAPunk.Visor
 
         private bool NeedsAutoResolve()
         {
+            if (IsStencilRenderGraphMode())
+                return false;
+
             if (projectedModernHud == null ||
                 visorProjectionCamera == null ||
                 overlayPresentationCamera == null ||
@@ -356,6 +361,7 @@ namespace NASAPunk.Visor
             }
 
             bool projectedCanvasSourceNeeded =
+                !IsStencilRenderGraphMode() &&
                 preferCanvasProjectionSource &&
                 (presentationMode == PresentationMode.ModernProjectedSharedRT ||
                  presentationMode == PresentationMode.ModernProjectedRuntimeRT);
@@ -365,11 +371,32 @@ namespace NASAPunk.Visor
 
         private void ApplyPresentation(bool force, bool allowProjectionSourceCreation = true)
         {
+            if (Application.isPlaying && presentationMode != PresentationMode.StencilRenderGraph)
+            {
+                presentationMode = PresentationMode.StencilRenderGraph;
+                force = true;
+            }
+
+            bool stencilRenderGraphMode = IsStencilRenderGraphMode();
+            if (!Application.isPlaying)
+            {
+                ARWaypointOverlay.SetStencilRenderGraphActive(stencilRenderGraphMode);
+                SuitHUDV4CanvasOverlay.SetStencilRenderGraphRuntimeActive(stencilRenderGraphMode);
+            }
+
             bool screenOverlayFallbackAllowed = IsScreenOverlayFallbackAllowed();
+            if (Application.isPlaying &&
+                stencilRenderGraphMode &&
+                !SuitHUDV4CanvasOverlay.IsStencilRenderGraphRuntimeActive())
+            {
+                screenOverlayFallbackAllowed = true;
+            }
+
             bool projectedModeRequested =
-                presentationMode == PresentationMode.ModernProjectedSharedRT ||
-                presentationMode == PresentationMode.ModernProjectedRuntimeRT ||
-                !screenOverlayFallbackAllowed;
+                !stencilRenderGraphMode &&
+                (presentationMode == PresentationMode.ModernProjectedSharedRT ||
+                 presentationMode == PresentationMode.ModernProjectedRuntimeRT ||
+                 !screenOverlayFallbackAllowed);
             PresentationMode projectedProjectionMode = presentationMode == PresentationMode.ModernProjectedRuntimeRT
                 ? PresentationMode.ModernProjectedRuntimeRT
                 : PresentationMode.ModernProjectedSharedRT;
@@ -397,16 +424,29 @@ namespace NASAPunk.Visor
 
             if (visorController != null)
             {
-                visorController.SetSharedRenderTexture(sharedProjectionTexture);
-                visorController.SetProjectionMode(ResolveProjectionMode(projectedMode
-                    ? projectedProjectionMode
-                    : screenOverlayFallbackAllowed
-                        ? PresentationMode.ModernOverlay
-                        : projectedProjectionMode));
+                if (stencilRenderGraphMode)
+                {
+                    visorController.SetProjectionMode(VisorHUDController.ProjectionMode.Disabled);
+                }
+                else
+                {
+                    visorController.SetSharedRenderTexture(sharedProjectionTexture);
+                    visorController.SetProjectionMode(ResolveProjectionMode(projectedMode
+                        ? projectedProjectionMode
+                        : screenOverlayFallbackAllowed
+                            ? PresentationMode.ModernOverlay
+                            : projectedProjectionMode));
+                }
             }
 
-            if (preferCanvasProjectionSource && projectedMode && projectionSourceOverlay != null)
+            if (!stencilRenderGraphMode && preferCanvasProjectionSource && projectedMode && projectionSourceOverlay != null)
                 useProjectedModern = false;
+
+            if (stencilRenderGraphMode)
+            {
+                useOverlayModern = false;
+                useProjectedModern = false;
+            }
 
             SetBehaviourEnabledIfChanged(overlayModernHud, useOverlayModern);
             SetBehaviourEnabledIfChanged(projectedModernHud, useProjectedModern);
@@ -436,6 +476,7 @@ namespace NASAPunk.Visor
         private void AutoRecoverInvisibleHybridOverlay()
         {
             if (!Application.isPlaying ||
+                IsStencilRenderGraphMode() ||
                 presentationMode != PresentationMode.ModernOverlay ||
                 !preferCanvasProjectionSource ||
                 visorProjectionCamera == null ||
@@ -833,10 +874,15 @@ namespace NASAPunk.Visor
         private bool IsProjectionSourcePreviewEnabled()
         {
 #if UNITY_EDITOR
-            return previewProjectedSourceOnScreen;
+            return !IsStencilRenderGraphMode() && previewProjectedSourceOnScreen;
 #else
             return false;
 #endif
+        }
+
+        private bool IsStencilRenderGraphMode()
+        {
+            return presentationMode == PresentationMode.StencilRenderGraph;
         }
 
         private static bool IsScreenOverlayFallbackAllowed()
@@ -858,6 +904,7 @@ namespace NASAPunk.Visor
                 case PresentationMode.ModernOverlay: return "ModernOverlay";
                 case PresentationMode.ModernProjectedSharedRT: return "ModernProjectedSharedRT";
                 case PresentationMode.ModernProjectedRuntimeRT: return "ModernProjectedRuntimeRT";
+                case PresentationMode.StencilRenderGraph: return "StencilRenderGraph";
                 default: return "UnknownPresentationMode";
             }
         }

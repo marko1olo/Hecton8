@@ -28,11 +28,11 @@ namespace Hecton8.Core.Data
                 switch (entry.RecordType)
                 {
                     case H8StaticDataFormat.RecordTypeItem:
-                        ref readonly H8ItemStaticRecord item = ref store.GetRecord<H8ItemStaticRecord>(entry.Hash);
+                        ref readonly H8ItemStaticRecord item = ref store.FetchRecord<H8ItemStaticRecord>(entry.Hash);
                         finite = math.isfinite(item.MassKg) && math.isfinite(item.AccessFrequency);
                         break;
                     case H8StaticDataFormat.RecordTypeEconomy:
-                        ref readonly H8EconomyStaticRecord economy = ref store.GetRecord<H8EconomyStaticRecord>(entry.Hash);
+                        ref readonly H8EconomyStaticRecord economy = ref store.FetchRecord<H8EconomyStaticRecord>(entry.Hash);
                         finite =
                             math.isfinite(economy.BasePrice) &&
                             math.isfinite(economy.Scarcity01) &&
@@ -41,7 +41,7 @@ namespace Hecton8.Core.Data
                             math.isfinite(economy.AccessFrequency);
                         break;
                     case H8StaticDataFormat.RecordTypePhysics:
-                        ref readonly H8PhysicsStaticRecord physics = ref store.GetRecord<H8PhysicsStaticRecord>(entry.Hash);
+                        ref readonly H8PhysicsStaticRecord physics = ref store.FetchRecord<H8PhysicsStaticRecord>(entry.Hash);
                         finite =
                             math.isfinite(physics.MassKg) &&
                             math.isfinite(physics.AddedMass) &&
@@ -51,7 +51,7 @@ namespace Hecton8.Core.Data
                             math.isfinite(physics.AccessFrequency);
                         break;
                     case H8StaticDataFormat.RecordTypeFauna:
-                        ref readonly H8FaunaStaticRecord fauna = ref store.GetRecord<H8FaunaStaticRecord>(entry.Hash);
+                        ref readonly H8FaunaStaticRecord fauna = ref store.FetchRecord<H8FaunaStaticRecord>(entry.Hash);
                         finite =
                             math.isfinite(fauna.SwimSpeed) &&
                             math.isfinite(fauna.TurnRate) &&

@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Narrative;
 using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace Hecton8.SaveSystem
 {
@@ -2714,7 +2716,7 @@ namespace Hecton8.SaveSystem
 
             if (version < 55)
             {
-                AbsoluteUniversePosition legacyAup = AbsoluteUniversePosition.FromRuntimePosition(value.GetPosition());
+                TryResolveAupFromRuntimeOrigin(value.GetPosition(), out AbsoluteUniversePosition legacyAup);
                 value.SetAup(in legacyAup);
                 return true;
             }
@@ -2726,6 +2728,22 @@ namespace Hecton8.SaveSystem
                 && reader.ReadFloat(out value.aupLocalX)
                 && reader.ReadFloat(out value.aupLocalY)
                 && reader.ReadFloat(out value.aupLocalZ);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z))))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return absoluteAup.IsFinite();
         }
 
         private static bool WriteProceduralLorePlacement(ref BufferWriter writer, in ProceduralLorePlacementDTO value)

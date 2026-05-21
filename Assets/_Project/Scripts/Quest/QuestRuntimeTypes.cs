@@ -219,13 +219,13 @@ namespace Hecton8.Quest
         public QuestRuntimeResult(int questIndex, bool completed, QuestTransitionType transitionType)
         {
             QuestIndex = questIndex;
-            Completed = completed;
+            Completed = completed ? (byte)1 : (byte)0;
             TransitionType = transitionType;
         }
 
-        public int QuestIndex { get; }
-        public bool Completed { get; }
-        public QuestTransitionType TransitionType { get; }
+        public readonly int QuestIndex;
+        public readonly byte Completed;
+        public readonly QuestTransitionType TransitionType;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]

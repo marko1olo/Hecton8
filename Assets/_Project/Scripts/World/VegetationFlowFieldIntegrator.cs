@@ -713,7 +713,7 @@ namespace Hecton8.World
                 float movement01 = InverseLerpSpeedSq(0.5f, 8.5f, signal.MovementSpeedSqr);
                 float tool01 = math.saturate(signal.ToolUseNoise01);
                 float transport01 = math.saturate(signal.TransportBoost01 * math.max(1f, signal.TransportSignature));
-                float flashlight01 = signal.FlashlightOn ? 1f : 0f;
+                float flashlight01 = NoiseSystem.PlayerNoiseSignal.IsFlashlightOn(in signal) ? 1f : 0f;
                 float radius01 = math.saturate(math.max(math.max(movement01, tool01), math.max(signal.TransportBoost01, flashlight01 * 0.7f)));
                 emissionRadius = LerpClamped(threatEmissionRadiusMin, threatEmissionRadiusMax, radius01);
                 emissionStrength =
@@ -1127,18 +1127,17 @@ namespace Hecton8.World
             return DominantAxisOrDefault(math.lerp(sampleX0, sampleX1, fracZ), float2.zero);
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct GenerateAnchoredVegetationJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<byte> SandMask;
-            [ReadOnly] public NativeArray<byte> RockMask;
-            [ReadOnly] public NativeArray<ushort> HeightSamples;
-            [ReadOnly] public NativeArray<TerrainHoleRecord> TerrainHoles;
-            [ReadOnly] public NativeArray<byte> ThreatEchoFlags;
-            [ReadOnly] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
-            [ReadOnly] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
-            public NativeArray<JobInstanceRecord> Output;
+            [ReadOnly, NoAlias] public NativeArray<byte> SandMask;
+            [ReadOnly, NoAlias] public NativeArray<byte> RockMask;
+            [ReadOnly, NoAlias] public NativeArray<ushort> HeightSamples;
+            [ReadOnly, NoAlias] public NativeArray<TerrainHoleRecord> TerrainHoles;
+            [ReadOnly, NoAlias] public NativeArray<byte> ThreatEchoFlags;
+            [ReadOnly, NoAlias] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
+            [ReadOnly, NoAlias] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
+            [NoAlias] public NativeArray<JobInstanceRecord> Output;
             public int TerrainHoleCount;
             public float3 TerrainPosition;
             public float3 TerrainSize;
@@ -1584,15 +1583,14 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct GenerateFloatingVegetationJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<byte> SandMask;
-            [ReadOnly] public NativeArray<byte> RockMask;
-            [ReadOnly] public NativeArray<ushort> HeightSamples;
-            [ReadOnly] public NativeArray<TerrainHoleRecord> TerrainHoles;
-            public NativeArray<JobInstanceRecord> Output;
+            [ReadOnly, NoAlias] public NativeArray<byte> SandMask;
+            [ReadOnly, NoAlias] public NativeArray<byte> RockMask;
+            [ReadOnly, NoAlias] public NativeArray<ushort> HeightSamples;
+            [ReadOnly, NoAlias] public NativeArray<TerrainHoleRecord> TerrainHoles;
+            [NoAlias] public NativeArray<JobInstanceRecord> Output;
             public int TerrainHoleCount;
             public float3 TerrainPosition;
             public float3 TerrainSize;
@@ -1718,14 +1716,13 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct SampleBiomassDensityJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float3> Positions;
-            [ReadOnly] public NativeArray<VegetationDensityChunkRecord> Chunks;
-            [ReadOnly] public NativeArray<float3> DensityGrid;
-            [WriteOnly] public NativeArray<float> Output;
+            [ReadOnly, NoAlias] public NativeArray<float3> Positions;
+            [ReadOnly, NoAlias] public NativeArray<VegetationDensityChunkRecord> Chunks;
+            [ReadOnly, NoAlias] public NativeArray<float3> DensityGrid;
+            [WriteOnly, NoAlias] public NativeArray<float> Output;
             public int ChunkCount;
             public int TypeMask;
 
@@ -1738,14 +1735,13 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public struct VegetationDensityQueryJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<Vector3> Positions;
-            [ReadOnly] public NativeArray<VegetationDensityChunkRecord> Chunks;
-            [ReadOnly] public NativeArray<float3> DensityGrid;
-            [WriteOnly] public NativeArray<float> Output;
+            [ReadOnly, NoAlias] public NativeArray<Vector3> Positions;
+            [ReadOnly, NoAlias] public NativeArray<VegetationDensityChunkRecord> Chunks;
+            [ReadOnly, NoAlias] public NativeArray<float3> DensityGrid;
+            [WriteOnly, NoAlias] public NativeArray<float> Output;
             public int ChunkCount;
             public float GrassVisibilityWeight;
             public float KelpVisibilityWeight;
@@ -1777,19 +1773,18 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ThreatPropagationJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float> CurrentThreat;
-            [ReadOnly] public NativeArray<byte> CurrentEchoFlags;
-            [ReadOnly] public NativeArray<VegetationDensityChunkRecord> ThreatChunks;
-            [ReadOnly] public NativeArray<float2> ThreatAttractorGrid;
-            [ReadOnly] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
-            [ReadOnly] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
-            [WriteOnly] public NativeArray<float> NextThreat;
-            [WriteOnly] public NativeArray<byte> NextThreatCompressed;
-            [WriteOnly] public NativeArray<byte> NextEchoFlags;
+            [ReadOnly, NoAlias] public NativeArray<float> CurrentThreat;
+            [ReadOnly, NoAlias] public NativeArray<byte> CurrentEchoFlags;
+            [ReadOnly, NoAlias] public NativeArray<VegetationDensityChunkRecord> ThreatChunks;
+            [ReadOnly, NoAlias] public NativeArray<float2> ThreatAttractorGrid;
+            [ReadOnly, NoAlias] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
+            [ReadOnly, NoAlias] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
+            [WriteOnly, NoAlias] public NativeArray<float> NextThreat;
+            [WriteOnly, NoAlias] public NativeArray<byte> NextThreatCompressed;
+            [WriteOnly, NoAlias] public NativeArray<byte> NextEchoFlags;
             public int GridResolution;
             public int ThreatChunkCount;
             public int ShiftX;
@@ -1985,20 +1980,19 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ThreatVoxelizationJob : IJobParallelFor
         {
             private const byte SolidThreat = 255;
 
-            [ReadOnly] public NativeArray<float> ThreatGrid;
-            [ReadOnly] public NativeArray<VegetationDensityChunkRecord> DensityChunks;
-            [ReadOnly] public NativeArray<float3> DensityGrid;
-            [ReadOnly] public NativeArray<float2> ThreatAttractorGrid;
-            [ReadOnly] public NativeParallelMultiHashMap<int, int> ChunkHash;
-            [ReadOnly] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
-            [ReadOnly] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
-            [WriteOnly] public NativeArray<byte> Output;
+            [ReadOnly, NoAlias] public NativeArray<float> ThreatGrid;
+            [ReadOnly, NoAlias] public NativeArray<VegetationDensityChunkRecord> DensityChunks;
+            [ReadOnly, NoAlias] public NativeArray<float3> DensityGrid;
+            [ReadOnly, NoAlias] public NativeArray<float2> ThreatAttractorGrid;
+            [ReadOnly, NoAlias] public NativeParallelMultiHashMap<int, int> ChunkHash;
+            [ReadOnly, NoAlias] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
+            [ReadOnly, NoAlias] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
+            [WriteOnly, NoAlias] public NativeArray<byte> Output;
             public int GridResolutionXZ;
             public int GridResolutionY;
             public float CellSizeXZ;
@@ -2123,27 +2117,33 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct SwarmWakeImpulse
         {
+            [FieldOffset(0)]
             public float3 Position;
+
+            [FieldOffset(12)]
             public float Radius;
+
+            [FieldOffset(16)]
             public float3 FlowVector;
+
+            [FieldOffset(28)]
             public float Strength;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildAbyssalFlowFieldJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float> ThreatGrid;
-            [ReadOnly] public NativeArray<VegetationDensityChunkRecord> FlowChunks;
-            [ReadOnly] public NativeArray<float3> FlowDensityGrid;
-            [ReadOnly] public NativeArray<float2> ThreatAttractorGrid;
-            [ReadOnly] public NativeParallelMultiHashMap<int, int> ChunkHash;
-            [ReadOnly] public NativeArray<float> NavSupportGrid;
-            [ReadOnly] public NativeArray<SwarmWakeImpulse> ExternalWakeImpulses;
-            [WriteOnly] public NativeArray<float2> Output;
+            [ReadOnly, NoAlias] public NativeArray<float> ThreatGrid;
+            [ReadOnly, NoAlias] public NativeArray<VegetationDensityChunkRecord> FlowChunks;
+            [ReadOnly, NoAlias] public NativeArray<float3> FlowDensityGrid;
+            [ReadOnly, NoAlias] public NativeArray<float2> ThreatAttractorGrid;
+            [ReadOnly, NoAlias] public NativeParallelMultiHashMap<int, int> ChunkHash;
+            [ReadOnly, NoAlias] public NativeArray<float> NavSupportGrid;
+            [ReadOnly, NoAlias] public NativeArray<SwarmWakeImpulse> ExternalWakeImpulses;
+            [WriteOnly, NoAlias] public NativeArray<float2> Output;
             public int GridResolution;
             public int ChunkCount;
             public int ExternalWakeImpulseCount;
@@ -2350,14 +2350,13 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildAbyssalThermalGridJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<VegetationDensityChunkRecord> ThreatChunks;
-            [ReadOnly] public NativeArray<float2> ThreatAttractorGrid;
+            [ReadOnly, NoAlias] public NativeArray<VegetationDensityChunkRecord> ThreatChunks;
+            [ReadOnly, NoAlias] public NativeArray<float2> ThreatAttractorGrid;
             [NativeDisableParallelForRestriction]
-            [WriteOnly] public NativeArray<float> Output;
+            [WriteOnly, NoAlias] public NativeArray<float> Output;
             public int ChunkCount;
             public int HorizontalResolution;
             public int VerticalResolution;
@@ -2477,8 +2476,7 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildAbyssalFlowVolumeJob : IJobParallelFor
         {
             private const float ThermoclineHalfBandMeters = 8f;
@@ -2486,10 +2484,10 @@ namespace Hecton8.World
             private const float SurfaceStormLayerDepthMeters = 50f;
             private const float StormSurfaceTurbulenceStrength = 0.4f;
 
-            [ReadOnly] public NativeArray<float> ThermalGrid;
-            [ReadOnly] public NativeArray<SwarmWakeImpulse> ExternalWakeImpulses;
+            [ReadOnly, NoAlias] public NativeArray<float> ThermalGrid;
+            [ReadOnly, NoAlias] public NativeArray<SwarmWakeImpulse> ExternalWakeImpulses;
             [NativeDisableParallelForRestriction]
-            [WriteOnly] public NativeArray<float3> Output;
+            [WriteOnly, NoAlias] public NativeArray<float3> Output;
             public int HorizontalResolution;
             public int VerticalResolution;
             public int RingOffsetX;
@@ -2617,24 +2615,23 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct NativeAStarJob : IJob
         {
-            [ReadOnly] public NativeArray<Vector3> Nodes;
-            [ReadOnly] public NativeArray<byte> NodeTypes;
-            [ReadOnly] public NativeArray<Vector3> ConduitVectors;
-            [ReadOnly] public NativeArray<float> ConduitStrengths;
-            [ReadOnly] public NativeArray<float> ThreatGrid;
-            [ReadOnly] public NativeArray<byte> ThreatVoxelGrid;
-            [ReadOnly] public NativeArray<PredatorFearNodeSnapshot> PredatorFearNodes;
-            public NativeArray<int> Parents;
-            public NativeArray<float> GScore;
-            public NativeArray<float> FScore;
-            public NativeArray<byte> ClosedFlags;
-            public NativeArray<int> HeapNodes;
-            public NativeArray<int> HeapPositions;
-            public NativeList<Vector3> Path;
+            [ReadOnly, NoAlias] public NativeArray<Vector3> Nodes;
+            [ReadOnly, NoAlias] public NativeArray<byte> NodeTypes;
+            [ReadOnly, NoAlias] public NativeArray<Vector3> ConduitVectors;
+            [ReadOnly, NoAlias] public NativeArray<float> ConduitStrengths;
+            [ReadOnly, NoAlias] public NativeArray<float> ThreatGrid;
+            [ReadOnly, NoAlias] public NativeArray<byte> ThreatVoxelGrid;
+            [ReadOnly, NoAlias] public NativeArray<PredatorFearNodeSnapshot> PredatorFearNodes;
+            [NoAlias] public NativeArray<int> Parents;
+            [NoAlias] public NativeArray<float> GScore;
+            [NoAlias] public NativeArray<float> FScore;
+            [NoAlias] public NativeArray<byte> ClosedFlags;
+            [NoAlias] public NativeArray<int> HeapNodes;
+            [NoAlias] public NativeArray<int> HeapPositions;
+            [NoAlias] public NativeList<Vector3> Path;
             public float3 ThreatGridCenter;
             public float ThreatGridCellSize;
             public int ThreatGridResolution;
@@ -3260,7 +3257,6 @@ namespace Hecton8.World
             [FieldOffset(28)] public float Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct StringPullPathJob : IJob
         {

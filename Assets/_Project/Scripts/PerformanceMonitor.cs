@@ -68,16 +68,16 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable performance event payload drained by <see cref="SystemDispatcher"/> in LateUpdate.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PerformanceEventPayload
     {
-        public long CurrentRawValue;
-        public long ThresholdRawValue;
-        public float CurrentValue;
-        public float ThresholdValue;
-        public int FrameCount;
-        public ushort EventType;
-        public ushort Reserved;
+        [FieldOffset(0)] public long CurrentRawValue;
+        [FieldOffset(8)] public long ThresholdRawValue;
+        [FieldOffset(16)] public float CurrentValue;
+        [FieldOffset(20)] public float ThresholdValue;
+        [FieldOffset(24)] public int FrameCount;
+        [FieldOffset(28)] public ushort EventType;
+        [FieldOffset(30)] public ushort Reserved;
     }
 
     /// <summary>
@@ -94,11 +94,24 @@ namespace Hecton8.Core
     public static class PerformanceEvents
     {
         private const int PendingEventCapacity = 16;
+        private const int ListenerCapacity = 8;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<IPerformanceEventListener>[8] - performance threshold listeners drained by SystemDispatcher LateUpdate - owner: PerformanceEvents
-        private static readonly RegistryBucket<IPerformanceEventListener> _listeners = new RegistryBucket<IPerformanceEventListener>(8);
+        private struct ListenerSlot
+        {
+            public IPerformanceEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - performance threshold listeners drained by SystemDispatcher LateUpdate - owner: PerformanceEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<PerformanceEventPayload> _pendingEvents;
         private static NativeQueue<PerformanceEventPayload> _nextFrameEvents;
+        private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -118,7 +131,16 @@ namespace Hecton8.Core
                 return;
 
             EnsureInitialized();
-            _listeners.TryRegister(listener);
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
         }
 
         /// <summary>
@@ -130,7 +152,18 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            _listeners.Unregister(listener);
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = --_listenerCount;
+                if (i != lastIndex)
+                    _listeners[i].Listener = _listeners[lastIndex].Listener;
+
+                _listeners[lastIndex].Clear();
+                return;
+            }
         }
 
         /// <summary>
@@ -138,7 +171,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            if (!_pendingEvents.IsCreated || _listenerCount <= 0)
             {
                 DrainWithoutDispatch();
                 return;
@@ -159,11 +192,10 @@ namespace Hecton8.Core
                     if (_pendingEventCount > 0)
                         _pendingEventCount--;
 
-                    IPerformanceEventListener[] rawArray = _listeners.RawArray;
-                    int count = _listeners.Count;
+                    int count = _listenerCount;
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IPerformanceEventListener listener = rawArray[i];
+                        IPerformanceEventListener listener = _listeners[i].Listener;
                         if (listener != null)
                             listener.OnPerformanceEvent(in payload);
                     }
@@ -185,7 +217,7 @@ namespace Hecton8.Core
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<PerformanceEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PerformanceEventPayload>[16] - deferred performance threshold lane flushed by SystemDispatcher LateUpdate - owner: PerformanceEvents
+                _pendingEvents = new NativeQueue<PerformanceEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PerformanceEventPayload>[16] - deferred performance threshold lane flushed by SystemDispatcher LateUpdate - owner: PerformanceEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -197,7 +229,7 @@ namespace Hecton8.Core
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<PerformanceEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PerformanceEventPayload>[16] - next-frame performance events raised by listeners - owner: PerformanceEvents
+                _nextFrameEvents = new NativeQueue<PerformanceEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PerformanceEventPayload>[16] - next-frame performance events raised by listeners - owner: PerformanceEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -299,7 +331,10 @@ namespace Hecton8.Core
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
+            for (int i = 0; i < ListenerCapacity; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
@@ -307,7 +342,7 @@ namespace Hecton8.Core
 
         private static void Enqueue(in PerformanceEventPayload payload)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureInitialized();
@@ -369,43 +404,48 @@ namespace Hecton8.Core
     /// Single frame's performance metrics snapshot.
     /// Struct — zero heap allocation, all stack-based.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct PerformanceSnapshot
     {
         /// <summary>Frame time in milliseconds (measured via Stopwatch).</summary>
-        public float frameTimeMs;
+        [FieldOffset(24)] public float frameTimeMs;
 
         /// <summary>Deltatime from Time.deltaTime (not measured, just cached).</summary>
-        public float deltaTime;
+        [FieldOffset(28)] public float deltaTime;
 
         /// <summary>Frame count when sampled.</summary>
-        public int frameCount;
+        [FieldOffset(36)] public int frameCount;
 
         /// <summary>Physics.RaycastAll + Physics.Raycast + Physics.OverlapSphere calls this frame.</summary>
-        public int physicsCallCount;
+        [FieldOffset(40)] public int physicsCallCount;
 
         /// <summary>Estimated time spent in physics (calls × avg time per call).</summary>
-        public float physicsTimeMs;
+        [FieldOffset(32)] public float physicsTimeMs;
 
         /// <summary>Pending jobs in job system (JobHandle.IsCompleted checks).</summary>
-        public int pendingJobCount;
+        [FieldOffset(44)] public int pendingJobCount;
 
         /// <summary>Coroutine instances still running.</summary>
-        public int activeCoroutineCount;
+        [FieldOffset(48)] public int activeCoroutineCount;
 
         /// <summary>Total heap memory allocated this frame (tracked via Profiler).</summary>
-        public long gcAllocatedThisFrame;
+        [FieldOffset(0)] public long gcAllocatedThisFrame;
 
         /// <summary>Total managed memory currently in use.</summary>
-        public long gcTotalMemory;
+        [FieldOffset(8)] public long gcTotalMemory;
 
         /// <summary>Peak GC memory since startup.</summary>
-        public long gcPeakMemory;
+        [FieldOffset(16)] public long gcPeakMemory;
 
         /// <summary>GC collections since last sample.</summary>
-        public int gcCollectionCount;
+        [FieldOffset(52)] public int gcCollectionCount;
 
-        /// <summary>Was a GC collection detected this frame?</summary>
-        public bool gcCollectionDetected;
+        /// <summary>1 when a GC collection was detected this frame; 0 otherwise.</summary>
+        [FieldOffset(56)] public byte gcCollectionDetected;
+
+        [FieldOffset(57)] private byte _pad0;
+        [FieldOffset(58)] private ushort _pad1;
+        [FieldOffset(60)] private uint _pad2;
 
         public PerformanceSnapshot(
             float frameTimeMs, float deltaTime, int frameCount,
@@ -425,7 +465,10 @@ namespace Hecton8.Core
             this.gcTotalMemory = gcTotalMemory;
             this.gcPeakMemory = gcPeakMemory;
             this.gcCollectionCount = gcCollectionCount;
-            this.gcCollectionDetected = gcCollectionDetected;
+            this.gcCollectionDetected = gcCollectionDetected ? (byte)1 : (byte)0;
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0;
         }
     }
 

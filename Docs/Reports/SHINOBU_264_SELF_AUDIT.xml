@@ -1,0 +1,90 @@
+<SELF_AUDIT agent="SHINOBU_264" domain="ASYNC_BUOYANCY_READBACK_ENGINEER" generated="2026-05-21">
+  <TASK_RECONCILIATION>
+    <TASK id="01" name="SYNCHRONOUS_READBACK_INQUISITION" status="PASS" proof="Physics/Vehicles scan plus Roslyn scanner route; no hot synchronous GPU readback route added." />
+    <TASK id="02" name="MONOBEHAVIOUR_SAMPLING_PURGE" status="PASS" proof="Central AsyncBuoyancyReadbackRuntime batches one request buffer and one AsyncGPUReadback request per frame." />
+    <TASK id="03" name="CS1612_METADATA_STATE_ANNIHILATION" status="PASS" proof="DTOs use raw public fields only; jobs mutate NativeArray rows through UnsafeUtility.AsRef." />
+    <TASK id="04" name="ARM64_READBACK_LAYOUT_ASSERTION" status="PASS" proof="Editor validator checks size 16, offsets 0/8/12, 16-byte stride, and temp NativeArray base pointer 16B alignment for ReadbackRequestDTO." />
+    <TASK id="05" name="EMERGENCY_MOCK_READBACK_GENERATOR" status="PASS" proof="GenerateMockAsyncReadbackJob simulates 3-frame deterministic latency into a fixed Vault ring." />
+    <TASK id="06" name="BATCHED_COMPUTE_SAMPLING_KERNEL" status="PASS" proof="SampleBuoyancyReadbackRequests kernel writes ResultHeight in-place in the 16-byte payload after Gerstner waves plus AUP-stable _H8OceanWakeDisplacement wake/shoreline texture sampling at request.LocalXZ + camera projection." />
+    <TASK id="07" name="ASYNCHRONOUS_REQUEST_ORCHESTRATION" status="PASS" proof="PreSimulation dispatches compute and stores AsyncGPUReadbackRequest in a fixed three-slot ring; no wait call; ring backlog is distinct from GPU unavailable." />
+    <TASK id="08" name="THE_DEAR_LIE_LATENCY_HIDING" status="PASS" proof="Simulation consumes completed old packets or smoothed dead-reckoned fallback using large-vessel inertia; fixed delta and readback/mock time accumulation come from DispatcherTimingDTO.FixedDelta, not Unity Time or frame delta; mock is not injected for normal ring backlog." />
+    <TASK id="09" name="RING_BUFFER_STATE_MANAGEMENT" status="PASS" proof="Three scalar ring slots track request/count/frame/active; failed/backed-up slots increment counters and keep cached heights; teardown resets all pending slot metadata." />
+    <TASK id="10" name="CONTINUOUS_SCALABILITY_SAMPLE_DENSITY" status="PASS" proof="ResolveSampleBudget uses smoothstep-polynomial GlobalQualityWeight from min to max samples; apply job lanes are bounded by actual active sample count and skipped entirely on empty frames." />
+    <TASK id="11" name="DEAD_RECKONING_FALLBACK" status="PASS" proof="ApplyDelayedBuoyancyReadbackJob extrapolates stale rows from cached wave velocity after MaxFreshAgeFrames." />
+    <TASK id="12" name="AUP_PRECISION_LOCALIZATION_MATH" status="PASS" proof="TryQueueSample subtracts cameraAup from sampleAup in double precision before float2 LocalXZ; shift-sequenced owner camera AUP publication is supported; Transform fallback is UNITY_EDITOR only." />
+    <TASK id="13" name="ROLLBACK_NETCODE_EXCLUSION_FENCE" status="PASS" proof="Route card and buffer ledger mark readback lanes 71820..71831 as latency-dependent and excluded from deterministic truth." />
+    <TASK id="14" name="ZERO_INIT_OVERHEAD_BYPASS" status="PASS" proof="Requests/completed/mock/fallback/csv scratch buffers are requested with UninitializedMemory where overwritten." />
+    <TASK id="15" name="TELEMETRY_READBACK_RECORDER" status="PASS_WITH_LIMIT" proof="ReadbackTelemetryEntry[300] Vault ring records samples, latency, drops, failures, and microsecond counters through one direct 64B PostSimulation write; ApplyMicros is schedule-side and flagged FlagApplyMicrosScheduleOnly until Unity Profiler/SystemDispatcher worker timing is available." />
+    <TASK id="16" name="READBACK_PIPELINE_XRAY_WINDOW" status="PASS" proof="AsyncGpuReadbackXRayWindow uses UI Toolkit controls and reads Vault telemetry/counters directly." />
+    <TASK id="17" name="CSV_VEHICLE_SAMPLING_PROFILES_INGESTOR" status="PASS" proof="Cold parser reads bytes into Vault CsvScratch, slices ReadOnlySpan&lt;byte&gt;, hashes FNV-1a, and avoids string.Split/float.Parse." />
+    <TASK id="18" name="LIVE_LATENCY_DEBUG_GIZMO" status="PASS" proof="Editor gizmo reads result states and draws latency-scaled markers without runtime debug GameObjects." />
+    <TASK id="19" name="ARCHITECTURAL_METRIC_VALIDATOR" status="PASS" proof="Synchronous_GPU_Scanner wrapper routes to Roslyn AST scanner and report generation." />
+    <TASK id="20" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" status="PASS_STATIC" proof="This XML records layout, Vault IDs, scalability, dependency route, and verification limits; Unity compile pending CPU gate." />
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <STRUCT name="ReadbackRequestDTO" sizeBytes="16" alignment="4">
+      <FIELD name="LocalXZ" offset="0" bytes="8" type="float2" />
+      <FIELD name="ResultHeight" offset="8" bytes="4" type="float" />
+      <FIELD name="EntityHash" offset="12" bytes="4" type="uint" />
+      <MATH>8 + 4 + 4 = 16 bytes. Size is divisible by 16. Editor validator checks row stride 16 and temp NativeArray base pointer modulo 16 equals 0; no Pack=1 risk.</MATH>
+    </STRUCT>
+    <STRUCT name="AsyncBuoyancyWaveParametersDTO" sizeBytes="64" alignment="16">
+      <FIELD name="Wave1" offset="0" bytes="16" type="float4" />
+      <FIELD name="Wave2" offset="16" bytes="16" type="float4" />
+      <FIELD name="Wave3" offset="32" bytes="16" type="float4" />
+      <FIELD name="GlobalWindAndStorm" offset="48" bytes="16" type="float4" />
+      <MATH>16 * 4 = 64 bytes, one L1 cache line and shader-structured-buffer row.</MATH>
+    </STRUCT>
+    <STRUCT name="AsyncReadbackCounterDTO" sizeBytes="64" alignment="8" falseSharing="isolated">
+      <MATH>Counter lanes occupy exactly 64 bytes; concurrent high-frequency counter row does not share a cache line with another counter row.</MATH>
+    </STRUCT>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    <![CDATA[
+    GlobalQualityWeight is continuous. Sample budget uses q*q*(3-2q) to move from minimum hull corners to maximum hull grid; smoothing alpha and dead-reckoning decay are lerped. Below 0.3 the path collapses toward 4 samples and a cheap triangle-wave mock/fallback, reducing readback bytes from 2048 at 128 samples to 64 at 4 samples. Apply job lanes are bounded by actual max(dispatchCount, completedCount), and empty frames return the inbound dispatcher handle without scheduling a tiny job. The wake/shoreline path remains a bounded one-tap shader sample per requested point and automatically collapses with sample count. Above 0.7 it increases samples and wave lanes, spending saved CPU stall time on richer shader-side water rather than deterministic state bloat.
+    ]]>
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS privateNativeAllocations="zero">
+    <BUFFER id="71820" name="Requests" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+    <BUFFER id="71821" name="CompletedRequests" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+    <BUFFER id="71822" name="ResolvedHeights" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+    <BUFFER id="71823" name="ResultStates" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+    <BUFFER id="71824" name="Tuning" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+    <BUFFER id="71825" name="TelemetryRing" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+    <BUFFER id="71826" name="TelemetryCursor" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+    <BUFFER id="71827" name="MockRing" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+    <BUFFER id="71828" name="FallbackWaves" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+    <BUFFER id="71829" name="VehicleSamplingProfiles" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+    <BUFFER id="71830" name="CsvScratch" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+    <BUFFER id="71831" name="Counter" owner="SystemID.Physics" lifecycle="cold boot Vault handle" rollback="excluded" />
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <JOB name="GenerateMockAsyncReadbackJob" consumes="dispatcher dependsOn" outputs="JobHandle scheduled after dependsOn" noAlias="Requests, MockRing, CompletedRequests, Counters" />
+    <JOB name="ApplyDelayedBuoyancyReadbackJob" consumes="mock/readback handle" outputs="JobHandle returned to dispatcher" noAlias="CompletedRequests, ResolvedHeights, ResultStates, Counters" />
+    <RULE>Runtime does not call JobHandle.Complete inside the readback path; handles are returned to SystemDispatcher.</RULE>
+    <RULE>Scheduled job output buffers are held under Vault writer locks until PostSimulation releases them in the dispatcher completion window.</RULE>
+    <RULE>ApplyDelayedBuoyancyReadbackJob is skipped when no samples are active; the deleted RecordReadbackTelemetryJob is absent from source.</RULE>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD status="STATIC_PASS">
+    <RULE>Runtime files are isolated in Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback under Hecton8.Physics.Buoyancy.Runtime.asmdef.</RULE>
+    <RULE>Hecton8.Physics.Buoyancy.Runtime references Hecton8.Core, Hecton8.Core.Contracts, Hecton8.Core.Memory, Unity.Mathematics, Unity.Burst, Unity.Collections, and Unity.Jobs only; no sibling domain runtime assembly is referenced.</RULE>
+    <RULE>Hecton8.Physics.Buoyancy.Editor references the runtime assembly for proof tooling; no root Buoyancy asmdef was added because it would capture neighboring agents' files.</RULE>
+    <RULE>No Hecton8.Atmosphere using or concrete runtime type remains in AsyncBuoyancyReadbackRuntime.</RULE>
+    <RULE>Runtime route uses local Physics DTOs plus Core/Core.Memory dispatcher and Vault APIs.</RULE>
+    <RULE>Owned runtime uses TryReadHandle for pure reads, TryAcquireWriteLock for direct writes, and no TryResolveHandle calls remain in the file.</RULE>
+    <RULE>GPU uploads use private LockBufferForWrite helpers; no internal GraphicsBufferUploadUtility dependency remains.</RULE>
+    <RULE>Owned async runtime/job/contract files contain no Unity Time reads; simulation delta and readback/mock time accumulation are dispatcher-fixed-delta owned.</RULE>
+    <RULE>Wake displacement is consumed through shader globals _H8OceanWakeDisplacement and _H8OceanShorelineDepthParams, not through a sibling renderer assembly reference.</RULE>
+    <RULE>Origin AUP is cached through IOriginShiftListener; hot PreSimulation does not call HectonFloatingOrigin.CurrentTotalOffsetDouble or poll GlobalRegistry.</RULE>
+  </COMPILE_GUARD>
+  <GPU_RING_AND_WAKE_PROJECTION>
+    <RULE>Request buffers and wave-parameter buffers are slot-matched three-ring GraphicsBuffers. Per-slot wave hashes/counts prevent overwriting wave data still consumed by pending GPU dispatches.</RULE>
+    <RULE>Runtime writes camera AUP modulo wake texture world size to _H8OceanCameraAupLocalProjection.xy; compute samples wake at request.LocalXZ + cameraProjection for origin-stable wake UV.</RULE>
+    <RULE>Ready AsyncGPUReadbackRequest slots are not cleared until completed-results Vault write lock acquisition and payload copy succeed, so transient writer contention retries instead of silently dropping data.</RULE>
+  </GPU_RING_AND_WAKE_PROJECTION>
+  <DEAR_LIE_CONFIRMATION>
+    <BEFORE complexity="O(N current-frame GPU fence + possible millisecond stall)">Synchronous ReadPixels/GetData style readback blocks CPU until GPU completes.</BEFORE>
+    <AFTER complexity="O(N) bounded buffer upload + O(1) async request issue + delayed O(N) apply job)">Current-frame truth is replaced with two-to-three-frame delayed height plus smoothing/dead reckoning. Large vessel inertia masks the phase error.</AFTER>
+  </DEAR_LIE_CONFIRMATION>
+  <VERIFICATION status="COMPILE_GATE_BLOCKED_BY_CPU_AND_STALE_PROJECT_FILES" cpuLoadPercent="98-100" dotnetProcesses="1" cscProcesses="1" note="Protocol forbids dotnet build while CPU load exceeds 50 percent or dotnet/csc is active; generated .csproj files currently omit SHINOBU_264 assets until Unity regenerates project files." />
+</SELF_AUDIT>

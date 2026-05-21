@@ -181,7 +181,7 @@ Each card shows:
 - public/private/reserved state;
 - required owner;
 - runtime risk;
-- low-tier budget;
+- minimum-budget;
 - rejection reasons;
 - sample graph.
 
@@ -227,7 +227,7 @@ Every graph must display:
 - local memory footprint;
 - deterministic state count;
 - rollback behavior;
-- low-tier shed behavior.
+- minimum-budget shed behavior.
 
 The graph compiler fails on:
 
@@ -490,7 +490,7 @@ Trigger: OnZoneHashEntered(zone=0x12A9FE04)
 Condition: Cooldown(300 ticks)
 Action: Emit CosmeticSpawn asset=0x7788AA10 localOffset=(0, 1.2, 0)
 Budget: max 1 envelope per trigger
-Low-tier behavior: drop if quality < 0.2
+Budget pressure: cosmetic drop probability = smoothstep(0.0, 0.35, 1.0 - GlobalQualityWeight) when the queue is over budget
 ```
 
 ### Acoustic Lure Preset
@@ -623,7 +623,7 @@ Ship first:
 - asset CRC manifest;
 - envelope packer;
 - static validator;
-- low/ultra simulator;
+- continuous quality sweep simulator;
 - package report;
 - two sample cosmetic packages;
 - one sample rejected survival cheat showing honest failure.
@@ -655,7 +655,7 @@ Do not ship first:
 - preview scene;
 - Workshop draft exporter;
 - package signing;
-- low/ultra comparison report;
+- continuous quality sweep report;
 - compatibility checker.
 
 ### Do Not Build Yet

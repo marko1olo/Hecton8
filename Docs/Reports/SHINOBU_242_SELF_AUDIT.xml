@@ -1,0 +1,36 @@
+<SELF_AUDIT agent="SHINOBU_242" status="PENDING_VERIFICATION" evidence="STATIC_SOURCE_NO_UNITY_IMPORT">
+  <TASK_RECONCILIATION total="20">
+    <TASK id="01" status="PASS" name="REALTIME_EROSION_INQUISITION" evidence="Terrain_Runtime_Scanner_Erosion exists; runtime terrain mutation remains scanner-reported debt, not modified here." />
+    <TASK id="02" status="PASS" name="MANAGED_PARTICLE_PURGE" evidence="Droplets are NativeArray&lt;ErosionDropletDTO&gt;, no managed droplet objects." />
+    <TASK id="03" status="PASS" name="CS1612_METADATA_STATE_ANNIHILATION" evidence="Hot DTOs use raw unmanaged fields." />
+    <TASK id="04" status="PASS" name="ARM64_DROPLET_LAYOUT_ASSERTION" evidence="ErosionDropletDTO explicit 32 bytes: Position@0 Direction@8 Velocity@16 Water@20 Sediment@24 pad@28." />
+    <TASK id="05" status="PASS" name="EMERGENCY_MOCK_HEIGHTMAP_BENCHMARK" evidence="GenerateMockHeightmapJob populates deterministic cone/ridge/basin input." />
+    <TASK id="06" status="PASS" name="BURST_DROPLET_SIMULATION_KERNEL" evidence="SimulateHydraulicErosionJob uses Burst Fast/Standard and finite guards." />
+    <TASK id="07" status="PASS" name="THREAD_SAFE_HEIGHTMAP_MODIFICATION" evidence="Single writer mutates heightmap; no unsafe parallel float writes." />
+    <TASK id="08" status="PASS" name="THE_DEAR_LIE_SEDIMENT_MASKING" evidence="Silt mask is baked as payload kind 2 for shader blending." />
+    <TASK id="09" status="PASS" name="SEAMLESS_CHUNK_CROSSING" evidence="Directional queues are prewarmed, captured into HSEM .h8seam sidecars before TempJob disposal, and zero-count sidecars prevent stale handoff reuse." />
+    <TASK id="10" status="PASS" name="ASYNCHRONOUS_HEIGHTMAP_SERIALIZATION" evidence="Awaitable writer emits HHE2 payloads from Persistent native arrays." />
+    <TASK id="11" status="PASS" name="CONTINUOUS_LOD_BAKING" evidence="GenerateMacroErosionMapJob emits macro_erosion.h8bin." />
+    <TASK id="12" status="PASS" name="AUP_PRECISION_SEEDING_MATH" evidence="AUP quantizes to millimeters before FNV and seeds Unity.Mathematics.Random." />
+    <TASK id="13" status="PASS" name="ROLLBACK_NETCODE_EXCLUSION_FENCE" evidence="PayloadFlagRollbackExcluded is mandatory in HHE2/HSEM headers." />
+    <TASK id="14" status="PASS" name="ZERO_INIT_OVERHEAD_BYPASS" evidence="UninitializedMemory used where kernels overwrite payloads." />
+    <TASK id="15" status="PASS" name="TELEMETRY_EROSION_REPORT_GENERATOR" evidence="Bake report path and black-box dump route exist." />
+    <TASK id="16" status="PASS" name="PROCEDURAL_EROSION_FORGE_WINDOW" evidence="UI Toolkit forge window exposes weather sliders, numeric input fields, zero-droplet baseline diagnostics, and GlobalQualityWeight." />
+    <TASK id="17" status="PASS" name="CSV_WEATHERING_PROFILES_INGESTOR" evidence="Byte-scanning CSV bridge and fallback profile exist." />
+    <TASK id="18" status="PASS" name="LIVE_EROSION_PREVIEW_GIZMO" evidence="Preview job writes RGBA Texture2D data and slider changes coalesce into delayed preview refresh." />
+    <TASK id="19" status="PASS" name="ARCHITECTURAL_METRIC_VALIDATOR" evidence="Scanner writes WORLD_OPTIMIZATION_REPORT.json." />
+    <TASK id="20" status="PASS" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" evidence="Self-audit code validates layout, HHE2 payloads, and HSEM seams." />
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DTO name="ErosionDropletDTO" size="32" math="8+8+4+4+4+4=32" cache="one half 64-byte cache line" />
+    <DTO name="ErosionBakeTelemetryEntry" size="64" falseSharing="one row per cache line" />
+    <DTO name="ErosionHeightmapFileHeaderDTO" size="160" alignment="multiple of 32" endianMarker="0x01020304" />
+    <DTO name="ErosionSeamTransferFileHeaderDTO" size="160" alignment="multiple of 32" endianMarker="0x01020304" />
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE low="nearest-biased sampling, shorter droplet lifetime, lower capacity and erosion spread" mid="smoothstep interpolation/capacity/lifetime ramp" high="bilinear sampling, longer lifetime, wider erosion detail" />
+  <H_PHI_VAULT_STATUS handles="0" reason="Editor-only sidecar baker; future runtime terrain streamer owns any Vault import route." />
+  <SEAM_QUEUE_MEMORY prewarm="true" phase="cold editor setup before Burst schedule" sentinel="registered after prewarm" />
+  <POINTER_ALIASING noAlias="true" graph="GenerateMockHeightmapJob -> InitializeErosionDropletsJob -> SimulateHydraulicErosionJob -> scan/macro/sanitize -> cold editor file IO" />
+  <COMPILE_GUARD assembly="Hecton8.World.HydraulicErosionForge.Editor" siblingRuntimeRefs="0" />
+  <DEAR_LIE before="Runtime erosion O(droplets*lifetime)" after="Offline bake O(droplets*lifetime) once; runtime samples height/silt payloads O(1)" />
+</SELF_AUDIT>

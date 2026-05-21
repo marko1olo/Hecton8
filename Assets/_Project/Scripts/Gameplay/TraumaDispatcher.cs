@@ -40,7 +40,6 @@ namespace Hecton8.Gameplay
 
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
-        private HectonPlayerHealth _playerHealth;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private bool _registered;
         private float _integrityChannel01;
@@ -60,7 +59,6 @@ namespace Hecton8.Gameplay
         private MonoBehaviour _activeTransportEmitterBehaviour;
         private int _lastPublishedTraumaSignature = int.MinValue;
         private int _lastPublishedInteractionSignature = int.MinValue;
-        private float _radiationExposureSeconds;
         private float _empSensorBlindTimer;
         private float _parasiteSporeDamageAccumulator;
         private int _lastPublishedParasiteAudioCount = int.MinValue;
@@ -174,7 +172,6 @@ namespace Hecton8.Gameplay
             TryUnregisterLateFrame();
             DisposeParasiteSporeLosBuffers();
             ResetChannels();
-            ResetRadiationFatigue();
             PublishSignals(true);
         }
 
@@ -375,9 +372,6 @@ namespace Hecton8.Gameplay
             if (_playerMovement == null)
                 TryGetComponent(out _playerMovement);
 
-            if (_playerHealth == null)
-                TryGetComponent(out _playerHealth);
-
             if (_playerTransportCoordinator == null)
                 TryGetComponent(out _playerTransportCoordinator);
         }
@@ -496,13 +490,6 @@ namespace Hecton8.Gameplay
             ResetParasiteSporeLosState();
         }
 
-        private void ResetRadiationFatigue()
-        {
-            _radiationExposureSeconds = 0f;
-            if (_playerHealth != null)
-                _playerHealth.ClearRadiationFatigue();
-        }
-
         private void PublishSignals(bool force)
         {
             float underwaterStress01 = _playerMovement != null
@@ -610,15 +597,16 @@ namespace Hecton8.Gameplay
 
         private void UpdateRadiationFatigue(float deltaTime)
         {
-            if (_playerHealth == null)
+            if (_playerMovement == null)
                 return;
 
             float radiationSignal = math.saturate(_hazardRadiationSignal01);
             if (radiationSignal <= RadiationFatigueSignalThreshold)
                 return;
 
-            _radiationExposureSeconds += math.max(0f, deltaTime) * radiationSignal;
-            _playerHealth.ApplyRadiationExposure(_radiationExposureSeconds);
+            float exposureStep = math.max(0f, deltaTime) * radiationSignal;
+            AbsoluteUniversePosition playerAup = _playerMovement.CurrentAup;
+            RadiationHazardGrid.ReportExternalDose(exposureStep, radiationSignal, in playerAup);
         }
 
         private void UpdateActiveParasiteSporeHazard(float deltaTime)

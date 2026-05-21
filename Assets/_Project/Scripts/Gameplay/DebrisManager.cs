@@ -16,7 +16,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8920)]
-    public sealed class DebrisManager : MonoBehaviour, IUpdatable, ILateFrameTickable, IDebrisService, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class DebrisManager : MonoBehaviour, IUpdatable, ILateFrameTickable, IDebrisService, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int MaxActiveChunks = 192;
         private const int MaxPendingBursts = 24;
@@ -89,10 +89,12 @@ namespace Hecton8.Gameplay
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
         private bool _originShiftRegistered;
+        private bool _hotSwapRegistered;
         private bool _clearRequested;
         private bool _isInitialized;
         private bool _debrisSolveWarningArmed;
         private float _lastTickDeltaTime;
+        private AbyssalThermalManager _thermalRuntime;
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
@@ -125,6 +127,7 @@ namespace Hecton8.Gameplay
             if (_isInitialized)
                 return;
 
+            RefreshColdRegistryReferences();
             EnsureRuntimeResources();
             GlobalRegistry.RegisterDebrisService(this);
             _isInitialized = ReferenceEquals(GlobalRegistry.Debris, this);
@@ -132,6 +135,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            RefreshColdRegistryReferences();
             if (GlobalRegistry.Debris is DebrisManager registeredManager && registeredManager != this)
             {
                 Destroy(gameObject);
@@ -143,21 +147,19 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            RefreshColdRegistryReferences();
             EnsureRuntimeResources();
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
             if (!_dispatcherRegistered)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _dispatcherRegistered = GlobalRegistry.Updatables.Contains(this);
-            }
+                _dispatcherRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
 
             if (!_lateFrameRegistered)
-            {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
-            }
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+
+            if (!_hotSwapRegistered)
+                _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
 
             if (!_originShiftRegistered)
             {
@@ -217,6 +219,12 @@ namespace Hecton8.Gameplay
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _lateFrameRegistered = false;
+            }
+
+            if (_hotSwapRegistered)
+            {
+                GlobalRegistry.UnregisterHotSwapListener(this);
+                _hotSwapRegistered = false;
             }
 
             if (_originShiftRegistered)
@@ -758,7 +766,7 @@ namespace Hecton8.Gameplay
             if (!_frontStates.IsCreated)
                 return;
 
-            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
+            AbyssalThermalManager thermalManager = _thermalRuntime;
             if (thermalManager == null)
                 return;
 
@@ -808,7 +816,9 @@ namespace Hecton8.Gameplay
                     continue;
                 }
 
-                double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+                if (!TryResolveRuntimeAup(runtimePosition, out double3 absolutePosition))
+                    continue;
+
                 if (HectonVoxelVolume.TryDepositAdditiveSdfSphere(
                         absolutePosition,
                         ThermalPetrificationSdfRadius * math.max(0.5f, state.MassScale),
@@ -826,6 +836,39 @@ namespace Hecton8.Gameplay
                     _thermalPetrificationHotFlags[slotIndex] = 0;
                 }
             }
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 absolutePosition)
+        {
+            absolutePosition = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!positionAup.IsFinite())
+                return false;
+
+            absolutePosition = positionAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absolutePosition));
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _thermalRuntime = GlobalRegistry.Thermodynamics;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsRuntime)
+                _thermalRuntime = currentService as AbyssalThermalManager;
         }
 
         private void PublishDebrisSolveWarningIfNeeded(long startTimestamp)
@@ -1025,11 +1068,11 @@ namespace Hecton8.Gameplay
             public byte SettledStatic;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct DebrisSimulationJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<DebrisChunkState> ReadStates;
-            public NativeArray<DebrisChunkState> WriteStates;
+            [ReadOnly, NoAlias] public NativeArray<DebrisChunkState> ReadStates;
+            [WriteOnly, NoAlias] public NativeArray<DebrisChunkState> WriteStates;
             public float DeltaTime;
             public float PhysicsPhaseDuration;
             public float PoolReturnDelay;

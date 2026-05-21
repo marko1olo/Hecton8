@@ -70,20 +70,33 @@ namespace Hecton8.Construction
         private const string DeconstructionDumpRelativePath = "Docs/AgentLogs/Dump_BASE_DECONSTRUCTION_SYS.bin";
         private const string NativeMemoryOwner = nameof(ConstructionManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct HabitatDeconstructionTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint TargetEntityId;
+            [FieldOffset(8)]
             public uint RequesterEntityId;
+            [FieldOffset(12)]
             public float DistanceMeters;
+            [FieldOffset(16)]
             public ushort DfsVisitedCount;
+            [FieldOffset(18)]
             public ushort DfsExpectedCount;
+            [FieldOffset(20)]
             public byte Result;
+            [FieldOffset(21)]
             public byte Reason;
+            [FieldOffset(22)]
             public byte Flags;
+            [FieldOffset(23)]
             public byte Reserved;
+            [FieldOffset(24)]
+            private ulong _pad0;
         }
 
         internal static ConstructionManager ActiveRuntimeInstance { get; private set; }
@@ -216,6 +229,14 @@ namespace Hecton8.Construction
 
         /// <summary>Read-only access to placed modules for UI and minimap consumers.</summary>
         public IReadOnlyList<GameObject> SpawnedModules => _spawnedModules;
+
+        /// <summary>Indexed placed-module access for hot-path construction consumers that must avoid interface-list dispatch.</summary>
+        internal GameObject GetSpawnedModuleAt(int index)
+        {
+            return _spawnedModules != null && (uint)index < (uint)_spawnedModules.Count
+                ? _spawnedModules[index]
+                : null;
+        }
 
         /// <summary>Cached BaseModule count for hot-path gameplay systems that must not scan components.</summary>
         internal int SpawnedBaseModuleCount => _spawnedBaseModules != null ? _spawnedBaseModules.Count : 0;
@@ -588,12 +609,11 @@ namespace Hecton8.Construction
             if (_habitatGraphDirty)
                 RefreshHabitatGraph();
 
-            bool skipDfs = ShouldSkipDeconstructionDfsForTier();
+            const bool skipDfs = false;
             EnsureDeconstructionNativeBuffers(Mathf.Max(initialCapacity, ModuleCount));
             if (_habitatGraphManager != null &&
                 !_habitatGraphManager.TryValidateDeconstructionRollback(
                     module,
-                    skipDfs,
                     _deconstructionDfsStack,
                     _deconstructionDfsVisited,
                     _deconstructionDfsResult,
@@ -942,14 +962,6 @@ namespace Hecton8.Construction
             return ReferenceEquals(hitModule, module);
         }
 
-        private static bool ShouldSkipDeconstructionDfsForTier()
-        {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
-        }
-
         private static PlayerInventory ResolvePlayerInventory()
         {
             IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
@@ -1112,7 +1124,7 @@ namespace Hecton8.Construction
             int capacity = Mathf.Max(1, requestedCapacity);
             if (!_deconstructionDfsStack.IsCreated)
             {
-                _deconstructionDfsStack = new NativeList<long>(capacity, Allocator.Persistent); // COLD ALLOC: NativeList<long>[module capacity] - rollback DFS stack - owner: ConstructionManager
+                _deconstructionDfsStack = new NativeList<long>(capacity, DataVaultExemptSceneScratchAllocator); // COLD ALLOC: NativeList<long>[module capacity] - rollback DFS stack - owner: ConstructionManager
                 NativeMemorySentinel.RegisterNativeList(_deconstructionDfsStack, NativeMemoryOwner, nameof(_deconstructionDfsStack), NativeMemoryLifetime);
             }
             else if (_deconstructionDfsStack.Capacity < capacity)
@@ -1862,7 +1874,7 @@ namespace Hecton8.Construction
             if (module == null)
                 return;
 
-            if (module.TryGetComponent(out ConstructionRuntimeProxyTag _))
+            if (module.GetComponent("ConstructionRuntimeProxyTag") != null)
             {
                 Destroy(module);
                 return;
@@ -2106,7 +2118,7 @@ namespace Hecton8.Construction
                 return;
 
             GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+            _hotSwapListenerRegistered = GlobalRegistry.IsHotSwapListenerRegistered(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -2114,7 +2126,7 @@ namespace Hecton8.Construction
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.HotSwapListeners.Contains(this))
+            if (GlobalRegistry.IsHotSwapListenerRegistered(this))
                 GlobalRegistry.UnregisterHotSwapListener(this);
 
             _hotSwapListenerRegistered = false;
@@ -2293,7 +2305,7 @@ namespace Hecton8.Construction
             AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
             double3 localDelta = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             positionAup = AbsoluteUniversePosition.OffsetMeters(in originAup, localDelta);
-            return MathGuard.IsFinite(in positionAup);
+            return positionAup.IsFinite();
         }
 
         private void TryTriggerAmbientAccident()

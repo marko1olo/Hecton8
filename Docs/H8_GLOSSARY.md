@@ -4,7 +4,7 @@ Date: 2026-05-14
 Status: STATIC_DOC REVIEWED / RUNTIME PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,13 +14,11 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; runtime proof remains absent.
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Evidence class: STATIC_DOC
-Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HÃÂ¤; ÃÂÃ‘Ë†-ÃÂ¤ÃÂ¸; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 Scope: shared terminology for agents and developers. Runtime proof is out of scope.
 
@@ -38,7 +36,7 @@ Scope: shared terminology for agents and developers. Runtime proof is out of sco
 | EventBus | Legacy/general queue term. New gameplay broadcasts use typed SignalBus lanes, not string events. |
 | FrostTick | Very low-frequency cadence for cold audits, memory checks, and broad policy updates. |
 | H-Phi | Static architecture pressure score combining data sovereignty, synaptic density, phase discipline, and evidence multiplier. It is triage, not runtime proof. |
-| Math LOD | Tiered math fidelity. Low tier uses cheap approximations; high and ultra spend saved cycles on richer visuals, not uncontrolled simulation. |
+| Math LOD | Continuous math fidelity driven by `GlobalQualityWeight`, distance, and owner budget. Lower weights use cheaper approximations; higher weights spend saved cycles on richer visuals, not uncontrolled simulation. |
 | MX350 | Minimum GPU target with 2 GB VRAM. It drives hard frame, memory, shader, post-process, and visual-fake constraints. |
 | Sentinel | Runtime guard or monitor that tracks memory, native allocation, health, or fault state and emits telemetry before failure becomes silent. |
 | SHI | System Health Index. A scalar health/pressure indicator used for load shedding or warnings; high SHI means system pressure is dangerous, recovery must use hysteresis. |
@@ -48,7 +46,7 @@ Scope: shared terminology for agents and developers. Runtime proof is out of sco
 | Vault | Short name for the DataVault-owned native buffer authority. If a runtime system says "the vault", it means the central owner of native memory handles, not a local cache. |
 | Vault handle | Stable reference to a DataVault-owned buffer with buffer id, system id, generation, count, capacity, and safety checks. |
 | Visual fake | Deterministic presentation shortcut that preserves player belief without simulating invisible physical causes. |
-| Visual overkill | High/ultra-tier spending of saved performance on richer presentation after gameplay truth stays within budget. |
+| Visual overkill | Presentation work enabled by spare budget after gameplay truth stays within budget. It must be additive and driven by continuous quality weight. |
 
 ## Required Five
 

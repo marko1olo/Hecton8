@@ -32,6 +32,7 @@ using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
 using Hecton8.Visor;
+using Hecton8.World;
 
 namespace Hecton8.Core
 {
@@ -110,7 +111,6 @@ namespace Hecton8.Core
         private const uint MasterDispatcherDumpVersion = 1u;
         private const string ShinobuFenceDumpPath = "Docs/AgentLogs/Dump_SHINOBU_206.bin";
         private const int DispatcherDependencyRetryFrames = 8;
-        private const int CameraJuiceResolveRetryFrames = 30;
         private const float AdrenalineHealthThreshold01 = 0.1f;
         private const float AdrenalineTargetTimeDilationScalar = 0.5f;
         private const float AdrenalineRampSeconds = 1.0f;
@@ -440,9 +440,6 @@ namespace Hecton8.Core
         private ISimulationBucketer _simulationBucketer;
         private IJobAdmissionService _jobAdmission;
         private IInputDeterminismService _inputDeterminism;
-        private int _nextSimulationBucketerResolveFrame;
-        private int _nextJobAdmissionResolveFrame;
-        private int _nextInputDeterminismResolveFrame;
         private VRAMMonitor _vramMonitor;
         private VRAMPressureMonitor _vramPressure;
         private IMacroDatabaseService _macroDatabase;
@@ -462,7 +459,7 @@ namespace Hecton8.Core
         private uint _timeDilationSequence;
         private uint _lastPublishedTimeDilationSequence;
         private uint _aupPreShiftPauseSequence;
-        private int _aupPreShiftPauseFrame = -1;
+        private uint _aupPreShiftPauseFrameId;
         private uint _adrenalineDilationSourceHash;
         private byte _adrenalineDilationPhase;
         private bool _coreTickDilationRestorePending;
@@ -505,7 +502,10 @@ namespace Hecton8.Core
         private bool _masterHealthPressureShedThisFrame;
         private uint _masterRollbackFenceFlagsThisFrame;
         private bool _serviceRegistered;
-        private int _lastMemoryDefragPressureWarningFrame = -1;
+        private uint _dispatcherFrameSequence;
+        private uint _currentDispatcherFrameId;
+        private uint _memoryTelemetrySequence;
+        private uint _lastMemoryDefragPressureWarningFrame;
         private static int _lateFrameEventDispatchBudget;
         private static bool _lateFrameEventBudgetActive;
         private static bool _lateFrameCircuitBreakerTripped;
@@ -530,7 +530,6 @@ namespace Hecton8.Core
         private static bool _dispatcherPlayerLoopInstalled;
         private static IDataVault _cachedDispatcherDataVault;
         private static ICameraJuiceSystem _cachedCameraJuiceSystem;
-        private static int _nextCameraJuiceResolveFrame;
 
         internal static float CurrentFrameDeltaTime { get; private set; }
 
@@ -926,11 +925,22 @@ namespace Hecton8.Core
             signal.RuleHash = ruleHash;
             signal.SystemHash = _SystemDispatcherHash;
             signal.ContextHash = contextHash;
-            signal.Frame = unchecked((uint)math.max(0, Time.frameCount));
+            signal.Frame = ReadPublishedDispatcherFrameId();
             signal.Severity = severity;
             signal.Flags = flags;
             GlobalSignals.Publish(in signal);
         }
+
+        internal static uint ReadPublishedDispatcherFrameId()
+        {
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher != null && dispatcher._currentDispatcherFrameId != 0u)
+                return dispatcher._currentDispatcherFrameId;
+
+            return TimeSliceScheduler.CurrentFrameId;
+        }
+
+        public static uint CurrentFrameId => TimeSliceScheduler.CurrentFrameId;
 
         internal static void ApplyHomeostasisKillSwitch(
             ulong mask,
@@ -963,7 +973,7 @@ namespace Hecton8.Core
                 _baseStressCascadeBreakerFrame = currentFrame;
 
             int safeIslandId = math.max(0, islandId);
-            int slot = ResolveBaseStressCascadeSlot(safeIslandId);
+            int slot = ClaimBaseStressCascadeSlot(safeIslandId);
             if (slot < 0)
             {
                 if (_baseStressCascadeTableOverflowTelemetryFrame != currentFrame)
@@ -1056,7 +1066,7 @@ namespace Hecton8.Core
             }
         }
 
-        private static int ResolveBaseStressCascadeSlot(int islandId)
+        private static int ClaimBaseStressCascadeSlot(int islandId)
         {
             int slot = FindBaseStressCascadeSlot(islandId);
             if (slot >= 0)
@@ -1133,8 +1143,7 @@ namespace Hecton8.Core
 
             EnsureDispatcherRaycastBuffers();
             if (!TryResolveDispatcherRaycastCommands(
-                    ref _pendingDispatcherRaycastCommandsHandle,
-                    BufferID.SystemDispatcherRaycastPendingCommands,
+                    in _pendingDispatcherRaycastCommandsHandle,
                     out NativeArray<RaycastCommand> pendingCommands) ||
                 _pendingDispatcherRaycastCount >= MaxQueuedDispatcherRaycasts)
                 return false;
@@ -1727,11 +1736,25 @@ namespace Hecton8.Core
 
         public void RequestAupPreShiftPause(uint shiftFrameId)
         {
-            RefreshDataVaultDependency();
+            SetAupJobAdmissionBarrier(active: true);
             _dataVault?.LockAllocationsForAupShift(shiftFrameId);
             ForceCompleteMasterFencesForAupRebase(shiftFrameId);
             _aupPreShiftPauseSequence = shiftFrameId;
-            _aupPreShiftPauseFrame = Time.frameCount;
+            _aupPreShiftPauseFrameId = ResolveCurrentDispatcherFrameId();
+        }
+
+        public void ReleaseAupPreShiftPause(uint shiftFrameId)
+        {
+            SetAupJobAdmissionBarrier(active: false);
+        }
+
+        private void SetAupJobAdmissionBarrier(bool active)
+        {
+            IJobAdmissionService jobAdmission = _jobAdmission;
+            if (jobAdmission == null || !jobAdmission.IsInitialized)
+                return;
+
+            jobAdmission.SetAupBarrierActive(active);
         }
 
         public static void RequestDebugAupHardFence()
@@ -1740,7 +1763,7 @@ namespace Hecton8.Core
             if (dispatcher == null)
                 return;
 
-            dispatcher.RequestAupPreShiftPause(unchecked((uint)math.max(0, Time.frameCount)));
+            dispatcher.RequestAupPreShiftPause(dispatcher.ResolveCurrentDispatcherFrameId());
         }
 
         public static int ResolveInnerloopBatchCount(int elementCount, int minBatch, int maxBatch)
@@ -1871,7 +1894,7 @@ namespace Hecton8.Core
 
             _lastPublishedTimeDilationSequence = _timeDilationSequence;
             float scalar = _timeDilationScalar;
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = ResolveCurrentDispatcherFrameId();
             TimeDilationSignal dilationSignal = default;
             dilationSignal.Scalar = scalar;
             dilationSignal.UnscaledDeltaTime = CurrentFrameUnscaledDeltaTime;
@@ -1986,7 +2009,7 @@ namespace Hecton8.Core
             _timeDilationSequence = 0u;
             _lastPublishedTimeDilationSequence = 0u;
             _aupPreShiftPauseSequence = 0u;
-            _aupPreShiftPauseFrame = -1;
+            _aupPreShiftPauseFrameId = 0u;
             ClearCoreTickDilationBurst();
             ClearAdrenalineDilation();
             _dataVault = null;
@@ -1995,13 +2018,9 @@ namespace Hecton8.Core
             _lastVaultMaintenanceFlags = 0u;
             _cachedDispatcherDataVault = null;
             _cachedCameraJuiceSystem = null;
-            _nextCameraJuiceResolveFrame = 0;
             _simulationBucketer = null;
             _jobAdmission = null;
             _inputDeterminism = null;
-            _nextSimulationBucketerResolveFrame = 0;
-            _nextJobAdmissionResolveFrame = 0;
-            _nextInputDeterminismResolveFrame = 0;
             _vramMonitor = null;
             _vramPressure = null;
             _macroDatabase = null;
@@ -2035,7 +2054,10 @@ namespace Hecton8.Core
             CurrentFrameUnscaledDeltaTime = 0f;
             CurrentFixedInterpolationAlpha = 0f;
             _serviceRegistered = false;
-            _lastMemoryDefragPressureWarningFrame = -1;
+            _dispatcherFrameSequence = 0u;
+            _currentDispatcherFrameId = 0u;
+            _memoryTelemetrySequence = 0u;
+            _lastMemoryDefragPressureWarningFrame = 0u;
             Volatile.Write(ref _homeostasisKillSwitchMaskBits, 0L);
             Volatile.Write(ref _homeostasisPressureLevel, 0);
             Volatile.Write(ref _homeostasisSlowTick2Hz, 0);
@@ -2051,10 +2073,10 @@ namespace Hecton8.Core
                 return;
 
             ThreadSafeCommandQueue.Initialize();
-            JobSchedulingProfileCatalog.LoadColdBootProfiles();
+            RefreshDataVaultDependency();
+            JobSchedulingProfileCatalog.LoadColdBootProfiles(_dataVault);
             UIStateStore.EnsureInitialized();
             BaseAirlockEvents.Prewarm();
-            RefreshDataVaultDependency();
             RefreshSimulationBucketerDependency();
             RefreshJobAdmissionDependency();
             RefreshInputDeterminismDependency();
@@ -2080,8 +2102,9 @@ namespace Hecton8.Core
 
             EnsureMasterDispatcherTopology();
             _dispatcherState = default;
-            _dispatcherState.CurrentFrame = unchecked((uint)math.max(0, Time.frameCount));
-            _dispatcherState.ActiveBucket = unchecked((uint)(Time.frameCount & MasterDispatcherBucketMask));
+            uint frameId = ResolveCurrentDispatcherFrameId();
+            _dispatcherState.CurrentFrame = frameId;
+            _dispatcherState.ActiveBucket = ResolveMasterActiveBucket(frameId);
             _dispatcherState.SortedSystemCount = unchecked((uint)math.max(0, _masterSortedSystemCount));
         }
 
@@ -2089,15 +2112,9 @@ namespace Hecton8.Core
         {
             IDataVault dataVault = _dataVault;
             if (dataVault == null)
-            {
-                RefreshDataVaultDependency();
-                dataVault = _dataVault;
-            }
-
-            if (dataVault == null)
                 return;
 
-            TryResolveOrAcquireDispatcherVaultBuffer(
+            TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _masterSimulationJobHandlesHandle,
                 BufferID.SystemDispatcherMasterJobHandles,
@@ -2105,7 +2122,7 @@ namespace Hecton8.Core
                 NativeArrayOptions.UninitializedMemory,
                 out NativeArray<JobHandle> _);
 
-            TryResolveOrAcquireDispatcherVaultBuffer(
+            TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _masterDependencyScratchHandlesHandle,
                 BufferID.SystemDispatcherMasterDependencyScratch,
@@ -2113,7 +2130,7 @@ namespace Hecton8.Core
                 NativeArrayOptions.UninitializedMemory,
                 out NativeArray<JobHandle> _);
 
-            TryResolveOrAcquireDispatcherVaultBuffer(
+            TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _masterJobDependencyTelemetryHandle,
                 BufferID.SystemDispatcherMasterJobDependencyTelemetry,
@@ -2121,7 +2138,7 @@ namespace Hecton8.Core
                 NativeArrayOptions.UninitializedMemory,
                 out NativeArray<JobDependencyDTO> _);
 
-            TryResolveOrAcquireDispatcherVaultBuffer(
+            TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _masterPipelineTelemetryRingHandle,
                 BufferID.SystemDispatcherMasterPipelineTelemetry,
@@ -2129,7 +2146,7 @@ namespace Hecton8.Core
                 NativeArrayOptions.UninitializedMemory,
                 out NativeArray<DispatcherTimingDTO> _);
 
-            TryResolveOrAcquireDispatcherVaultBuffer(
+            TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _masterPipelineTelemetryCursorHandle,
                 BufferID.SystemDispatcherMasterPipelineCursor,
@@ -2137,7 +2154,7 @@ namespace Hecton8.Core
                 NativeArrayOptions.ClearMemory,
                 out NativeArray<int> _);
 
-            TryResolveOrAcquireDispatcherVaultBuffer(
+            TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _masterMockTimeDilationSignalsHandle,
                 BufferID.SystemDispatcherMasterMockTimeDilationSignals,
@@ -2145,7 +2162,7 @@ namespace Hecton8.Core
                 NativeArrayOptions.UninitializedMemory,
                 out NativeArray<MockTimeDilationSignal> _);
 
-            TryResolveOrAcquireDispatcherVaultBuffer(
+            TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _masterPresentationSuppressionHandle,
                 BufferID.SystemDispatcherMasterPresentationSuppression,
@@ -2153,7 +2170,7 @@ namespace Hecton8.Core
                 NativeArrayOptions.UninitializedMemory,
                 out NativeArray<DispatcherPresentationSuppressionDTO> _);
 
-            TryResolveOrAcquireDispatcherVaultBuffer(
+            TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _masterDomainFenceHandlesHandle,
                 BufferID.SystemDispatcherDomainFenceHandles,
@@ -2161,7 +2178,7 @@ namespace Hecton8.Core
                 NativeArrayOptions.UninitializedMemory,
                 out NativeArray<JobHandle> _);
 
-            TryResolveOrAcquireDispatcherVaultBuffer(
+            TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _masterFenceTelemetryRingHandle,
                 BufferID.SystemDispatcherFenceTelemetry,
@@ -2169,7 +2186,7 @@ namespace Hecton8.Core
                 NativeArrayOptions.UninitializedMemory,
                 out NativeArray<DispatcherFenceTelemetryEntry> _);
 
-            TryResolveOrAcquireDispatcherVaultBuffer(
+            TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _masterFenceTelemetryCursorHandle,
                 BufferID.SystemDispatcherFenceTelemetryCursor,
@@ -2185,7 +2202,7 @@ namespace Hecton8.Core
 
         private void DisposeMasterDispatcherRuntime(IDataVault dataVault)
         {
-            ForceCompleteMasterFencesForAupRebase(unchecked((uint)math.max(0, Time.frameCount)));
+            ForceCompleteMasterFencesForAupRebase(ResolveCurrentDispatcherFrameId());
 
             ReleaseDispatcherVaultHandle(dataVault, ref _masterSimulationJobHandlesHandle);
             ReleaseDispatcherVaultHandle(dataVault, ref _masterDependencyScratchHandlesHandle);
@@ -2203,7 +2220,21 @@ namespace Hecton8.Core
             _masterFixedJobsPending = false;
         }
 
-        private bool TryResolveMasterSimulationBuffers(
+        private bool TryEnsureMasterSimulationBuffers(
+            out NativeArray<JobHandle> simulationJobHandles,
+            out NativeArray<JobHandle> dependencyScratchHandles,
+            out NativeArray<JobDependencyDTO> jobDependencyTelemetry,
+            out NativeArray<MockTimeDilationSignal> mockTimeDilationSignals)
+        {
+            EnsureMasterDispatcherNativeBuffers();
+            return TryReadMasterSimulationBuffers(
+                out simulationJobHandles,
+                out dependencyScratchHandles,
+                out jobDependencyTelemetry,
+                out mockTimeDilationSignals);
+        }
+
+        private bool TryReadMasterSimulationBuffers(
             out NativeArray<JobHandle> simulationJobHandles,
             out NativeArray<JobHandle> dependencyScratchHandles,
             out NativeArray<JobDependencyDTO> jobDependencyTelemetry,
@@ -2213,8 +2244,6 @@ namespace Hecton8.Core
             dependencyScratchHandles = default;
             jobDependencyTelemetry = default;
             mockTimeDilationSignals = default;
-            EnsureMasterDispatcherNativeBuffers();
-
             IDataVault dataVault = _dataVault;
             if (dataVault == null)
                 return false;
@@ -2250,14 +2279,20 @@ namespace Hecton8.Core
                    mockTimeDilationSignals.Length >= 8;
         }
 
-        private bool TryResolveMasterTelemetryBuffers(
+        private bool TryEnsureMasterTelemetryBuffers(
+            out NativeArray<DispatcherTimingDTO> telemetryRing,
+            out NativeArray<int> telemetryCursor)
+        {
+            EnsureMasterDispatcherNativeBuffers();
+            return TryReadMasterTelemetryBuffers(out telemetryRing, out telemetryCursor);
+        }
+
+        private bool TryReadMasterTelemetryBuffers(
             out NativeArray<DispatcherTimingDTO> telemetryRing,
             out NativeArray<int> telemetryCursor)
         {
             telemetryRing = default;
             telemetryCursor = default;
-            EnsureMasterDispatcherNativeBuffers();
-
             IDataVault dataVault = _dataVault;
             if (dataVault == null)
                 return false;
@@ -2278,7 +2313,16 @@ namespace Hecton8.Core
                    telemetryCursor.Length >= 1;
         }
 
-        private bool TryResolveMasterDomainFenceBuffers(
+        private bool TryEnsureMasterDomainFenceBuffers(
+            out NativeArray<JobHandle> domainFenceHandles,
+            out NativeArray<DispatcherFenceTelemetryEntry> telemetryRing,
+            out NativeArray<int> telemetryCursor)
+        {
+            EnsureMasterDispatcherNativeBuffers();
+            return TryReadMasterDomainFenceBuffers(out domainFenceHandles, out telemetryRing, out telemetryCursor);
+        }
+
+        private bool TryReadMasterDomainFenceBuffers(
             out NativeArray<JobHandle> domainFenceHandles,
             out NativeArray<DispatcherFenceTelemetryEntry> telemetryRing,
             out NativeArray<int> telemetryCursor)
@@ -2286,8 +2330,6 @@ namespace Hecton8.Core
             domainFenceHandles = default;
             telemetryRing = default;
             telemetryCursor = default;
-            EnsureMasterDispatcherNativeBuffers();
-
             IDataVault dataVault = _dataVault;
             if (dataVault == null)
                 return false;
@@ -2455,6 +2497,16 @@ namespace Hecton8.Core
             _masterTopologyValid = true;
         }
 
+        private static bool TryReadMasterDispatcherTopology(out int sortedSystemCount)
+        {
+            sortedSystemCount = 0;
+            if (!_masterTopologyValid)
+                return false;
+
+            sortedSystemCount = math.clamp(_masterSortedSystemCount, 0, MasterDispatcherMaxSystems);
+            return true;
+        }
+
         private static string BuildMasterCycleTrace(int count, int sortedCount)
         {
             char[] buffer = new char[1024];
@@ -2599,28 +2651,50 @@ namespace Hecton8.Core
 
         private DispatcherTimingDTO BuildMasterDispatcherTiming(float deltaTime, float unscaledDeltaTime, float fixedDeltaTime = 0f)
         {
-            uint activeBucket = ResolveMasterActiveBucket();
+            uint frameId = ResolveCurrentDispatcherFrameId();
+            uint activeBucket = ResolveMasterActiveBucket(frameId);
             uint activeBucketMask = 1u << (int)(activeBucket & 31u);
             DispatcherTimingDTO timing = default;
             timing.FrameDelta = deltaTime;
             timing.FixedDelta = fixedDeltaTime;
             timing.TimeScale = unscaledDeltaTime > 0f ? math.saturate(deltaTime / unscaledDeltaTime) : 0f;
             timing.ActiveBucketMask = activeBucketMask;
-            timing.FrameId = unchecked((uint)math.max(0, Time.frameCount));
+            timing.FrameId = frameId;
             return timing;
         }
 
-        private static uint ResolveMasterActiveBucket()
+        private uint ResolveCurrentDispatcherFrameId()
         {
-            return unchecked((uint)math.max(0, Time.frameCount)) & MasterDispatcherBucketMask;
+            if (_currentDispatcherFrameId == 0u)
+                return AdvanceDispatcherFrameId();
+            return _currentDispatcherFrameId;
+        }
+
+        private uint AdvanceDispatcherFrameId()
+        {
+            _dispatcherFrameSequence++;
+            if (_dispatcherFrameSequence == 0u)
+                _dispatcherFrameSequence = 1u;
+            _currentDispatcherFrameId = _dispatcherFrameSequence;
+            return _currentDispatcherFrameId;
+        }
+
+        private uint ResolveMasterActiveBucket()
+        {
+            return ResolveMasterActiveBucket(ResolveCurrentDispatcherFrameId());
+        }
+
+        private static uint ResolveMasterActiveBucket(uint frameId)
+        {
+            return frameId & MasterDispatcherBucketMask;
         }
 
         private void SetMasterDispatcherPhase(DispatcherPhase phase, in DispatcherTimingDTO timing)
         {
             ref DispatcherStateDTO state = ref GetDispatcherStateRef();
             state.CurrentPhaseId = (uint)phase;
-            state.CurrentFrame = unchecked((uint)math.max(0, Time.frameCount));
-            state.ActiveBucket = ResolveMasterActiveBucket();
+            state.CurrentFrame = timing.FrameId;
+            state.ActiveBucket = ResolveMasterActiveBucket(timing.FrameId);
             state.ActiveBucketMask = timing.ActiveBucketMask;
             state.SortedSystemCount = unchecked((uint)math.max(0, _masterSortedSystemCount));
             state.DisabledSystemCount = unchecked((uint)math.max(0, _masterDisabledSystemCount));
@@ -2686,7 +2760,7 @@ namespace Hecton8.Core
         {
             SetMasterDispatcherPhase(DispatcherPhase.Simulation, in timing);
             EnsureMasterDispatcherTopology();
-            if (!TryResolveMasterSimulationBuffers(
+            if (!TryEnsureMasterSimulationBuffers(
                     out NativeArray<JobHandle> simulationJobHandles,
                     out NativeArray<JobHandle> dependencyScratchHandles,
                     out NativeArray<JobDependencyDTO> jobDependencyTelemetry,
@@ -2695,7 +2769,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            bool hasDomainFenceBuffers = TryResolveMasterDomainFenceBuffers(
+            bool hasDomainFenceBuffers = TryEnsureMasterDomainFenceBuffers(
                 out NativeArray<JobHandle> domainFenceHandles,
                 out NativeArray<DispatcherFenceTelemetryEntry> _,
                 out NativeArray<int> _);
@@ -2724,8 +2798,8 @@ namespace Hecton8.Core
             DispatcherJobContext context = default;
             context.MockTimeDilationSignals = mockTimeDilationSignals;
             context.JobDependencyTelemetry = jobDependencyTelemetry;
-            context.Frame = unchecked((uint)math.max(0, Time.frameCount));
-            context.ActiveBucket = ResolveMasterActiveBucket();
+            context.Frame = timing.FrameId;
+            context.ActiveBucket = ResolveMasterActiveBucket(timing.FrameId);
 
             using (_masterSimulationProfilerMarker.Auto())
             {
@@ -2740,7 +2814,7 @@ namespace Hecton8.Core
                     if (!ShouldRunMasterSystemInActiveBucket(system, context.ActiveBucket))
                         continue;
 
-                    JobHandle dependencyHandle = ResolveMasterDependencyHandle(
+                    JobHandle dependencyHandle = BuildMasterDependencyHandleIntoScratch(
                         system,
                         simulationJobHandles,
                         dependencyScratchHandles);
@@ -2751,7 +2825,7 @@ namespace Hecton8.Core
                         DispatcherFenceDomain domain = ResolveMasterFenceDomain(system);
                         if (hasDomainFenceBuffers)
                             AccumulateDomainFence(domainFenceHandles, domain, ref handle);
-                        jobDependencyTelemetry[sortedIndex] = BuildJobDependencyTelemetry(system, domain, ref handle);
+                        jobDependencyTelemetry[sortedIndex] = BuildJobDependencyTelemetry(system, domain, ref handle, timing.FrameId);
                         _masterPendingSimulationJobCount++;
                         int bucket = system.GetBucketId() & MasterDispatcherBucketMask;
                         _masterBucketLoadCounters[bucket]++;
@@ -2796,7 +2870,7 @@ namespace Hecton8.Core
                         _masterLastSimWaitMs = ElapsedMilliseconds(waitStart);
                         _masterSimulationJobsPending = false;
                         _masterPendingSimulationJobCount = 0;
-                        ApplyMockTimeDilationSignals(unchecked((uint)math.max(0, Time.frameCount)));
+                        ApplyMockTimeDilationSignals(timing.FrameId);
                     }
                     else
                     {
@@ -2843,12 +2917,12 @@ namespace Hecton8.Core
             _masterHealthPressureShedThisFrame = ShouldShedMasterVisualSync();
             _masterRollbackFenceThisFrame = TryFenceRollbackBeforeVisualSync();
             _masterVisualSyncShedThisFrame = _masterHealthPressureShedThisFrame || _masterRollbackFenceThisFrame;
-            WriteMasterPresentationSuppression(unchecked((uint)math.max(0, Time.frameCount)));
+            WriteMasterPresentationSuppression(timing.FrameId);
             SetMasterDispatcherPhase(DispatcherPhase.VisualSync, in timing);
             if (_masterVisualSyncShedThisFrame)
             {
                 _masterLastVisualSyncMs = 0f;
-                RecordMasterPipelineTelemetry(unchecked((uint)math.max(0, Time.frameCount)));
+                RecordMasterPipelineTelemetry(timing.FrameId);
                 return;
             }
 
@@ -2878,7 +2952,7 @@ namespace Hecton8.Core
 
             _masterLastVisualSyncMs = ElapsedMilliseconds(_masterVisualSyncStartTimestamp);
             _masterPhaseTimingSnapshotMs[3] = _masterLastVisualSyncMs;
-            RecordMasterPipelineTelemetry(unchecked((uint)math.max(0, Time.frameCount)));
+            RecordMasterPipelineTelemetry(timing.FrameId);
         }
 
         private void RunMasterFixedSimulationBridge(float fixedDeltaTime)
@@ -2984,7 +3058,7 @@ namespace Hecton8.Core
             PublishDispatcherComplianceViolation(_DispatcherBlackBoxFaultHash, shiftFrameId, 3, 0);
         }
 
-        private JobHandle ResolveMasterDependencyHandle(
+        private JobHandle BuildMasterDependencyHandleIntoScratch(
             IDispatcherSystem system,
             NativeArray<JobHandle> simulationJobHandles,
             NativeArray<JobHandle> dependencyScratchHandles)
@@ -3093,12 +3167,13 @@ namespace Hecton8.Core
         private static JobDependencyDTO BuildJobDependencyTelemetry(
             IDispatcherSystem system,
             DispatcherFenceDomain domain,
-            ref JobHandle handle)
+            ref JobHandle handle,
+            uint frameId)
         {
             JobDependencyDTO dto = default;
             dto.JobHandlePtr = CaptureJobHandleBits(ref handle);
             dto.SystemIdHash = system.GetSystemIdHash();
-            dto.FrameId = unchecked((uint)math.max(0, Time.frameCount));
+            dto.FrameId = frameId;
             dto.DependencyHash0 = system.GetDependencyCount() > 0 ? system.GetDependencyHash(0) : 0u;
             dto.PhaseId = (byte)system.GetDispatcherPhase();
             dto.DomainId = (byte)domain;
@@ -3117,7 +3192,7 @@ namespace Hecton8.Core
 
         private void ApplyMockTimeDilationSignals(uint frame)
         {
-            if (!TryResolveMasterSimulationBuffers(
+            if (!TryEnsureMasterSimulationBuffers(
                     out NativeArray<JobHandle> _,
                     out NativeArray<JobHandle> _,
                     out NativeArray<JobDependencyDTO> _,
@@ -3171,12 +3246,6 @@ namespace Hecton8.Core
         private bool TryFenceRollbackBeforeVisualSync()
         {
             IDataVault dataVault = _dataVault;
-            if (dataVault == null)
-            {
-                RefreshDataVaultDependency();
-                dataVault = _dataVault;
-            }
-
             if (dataVault == null ||
                 !dataVault.TryGetBuffer(
                     MasterRollbackRuntimeStateBuffer,
@@ -3239,7 +3308,7 @@ namespace Hecton8.Core
 
         private void RecordMasterPipelineTelemetry(uint frame)
         {
-            if (!TryResolveMasterTelemetryBuffers(
+            if (!TryEnsureMasterTelemetryBuffers(
                     out NativeArray<DispatcherTimingDTO> telemetryRing,
                     out NativeArray<int> telemetryCursor))
             {
@@ -3275,7 +3344,7 @@ namespace Hecton8.Core
 
         private void RecordMasterFenceTelemetry(uint frame)
         {
-            if (!TryResolveMasterDomainFenceBuffers(
+            if (!TryEnsureMasterDomainFenceBuffers(
                     out NativeArray<JobHandle> _,
                     out NativeArray<DispatcherFenceTelemetryEntry> telemetryRing,
                     out NativeArray<int> telemetryCursor))
@@ -3307,13 +3376,20 @@ namespace Hecton8.Core
                 cursor = 0;
             telemetryCursor[0] = cursor;
 
-            if (entry.SimulationWaitMs > MasterDispatcherStallDumpThresholdMs && !_masterFenceTelemetryDumped)
+            if (ShouldDumpMasterFenceTelemetry(in entry) && !_masterFenceTelemetryDumped)
             {
                 _masterFenceTelemetryDumped = true;
                 DumpMasterFenceTelemetry(telemetryRing, cursor);
             }
 
             _masterLastAupHardFenceMs = 0f;
+        }
+
+        private static bool ShouldDumpMasterFenceTelemetry(in DispatcherFenceTelemetryEntry entry)
+        {
+            return entry.SimulationWaitMs > MasterDispatcherStallDumpThresholdMs ||
+                   entry.FixedWaitMs > MasterDispatcherStallDumpThresholdMs ||
+                   entry.AupHardFenceMs > MasterDispatcherStallDumpThresholdMs;
         }
 
         private static unsafe void DumpMasterFenceTelemetry(NativeArray<DispatcherFenceTelemetryEntry> ring, int cursor)
@@ -3666,8 +3742,10 @@ namespace Hecton8.Core
             if (dispatcher == null)
                 return false;
 
-            EnsureMasterDispatcherTopology();
-            int copyCount = _masterSortedSystemCount;
+            if (!TryReadMasterDispatcherTopology(out int sortedSystemCount))
+                return false;
+
+            int copyCount = sortedSystemCount;
             if (systemHashes != null)
                 copyCount = math.min(copyCount, systemHashes.Length);
             if (dependencyHashes != null)
@@ -3712,8 +3790,10 @@ namespace Hecton8.Core
             if (dispatcher == null)
                 return false;
 
-            EnsureMasterDispatcherTopology();
-            systemCount = _masterSortedSystemCount;
+            if (!TryReadMasterDispatcherTopology(out int sortedSystemCount))
+                return false;
+
+            systemCount = sortedSystemCount;
             int capacity = int.MaxValue;
             if (systemHashes != null)
                 capacity = math.min(capacity, systemHashes.Length);
@@ -3724,7 +3804,7 @@ namespace Hecton8.Core
             if (capacity == int.MaxValue)
                 capacity = 0;
 
-            for (int systemIndex = 0; systemIndex < _masterSortedSystemCount; systemIndex++)
+            for (int systemIndex = 0; systemIndex < sortedSystemCount; systemIndex++)
             {
                 if (edgeCount >= capacity)
                     break;
@@ -3774,7 +3854,7 @@ namespace Hecton8.Core
             if (dispatcher == null)
                 return false;
 
-            if (!dispatcher.TryResolveMasterSimulationBuffers(
+            if (!dispatcher.TryReadMasterSimulationBuffers(
                     out NativeArray<JobHandle> _,
                     out NativeArray<JobHandle> _,
                     out NativeArray<JobDependencyDTO> jobDependencyTelemetry,
@@ -3814,7 +3894,7 @@ namespace Hecton8.Core
             if (dispatcher == null)
                 return false;
 
-            if (!dispatcher.TryResolveMasterDomainFenceBuffers(
+            if (!dispatcher.TryReadMasterDomainFenceBuffers(
                     out NativeArray<JobHandle> _,
                     out NativeArray<DispatcherFenceTelemetryEntry> telemetryRing,
                     out NativeArray<int> telemetryCursor))
@@ -3836,7 +3916,7 @@ namespace Hecton8.Core
         {
             if (phaseMilliseconds == null || phaseMilliseconds.Length < 4)
                 return false;
-            if (!TryResolveMasterTelemetryBuffers(
+            if (!TryReadMasterTelemetryBuffers(
                     out NativeArray<DispatcherTimingDTO> telemetryRing,
                     out NativeArray<int> telemetryCursor))
             {
@@ -3864,15 +3944,9 @@ namespace Hecton8.Core
         {
             IDataVault dataVault = _dataVault;
             if (dataVault == null)
-            {
-                RefreshDataVaultDependency();
-                dataVault = _dataVault;
-            }
-
-            if (dataVault == null)
                 return false;
 
-            return TryResolveOrAcquireDispatcherVaultBuffer(
+            return TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _h8TimeHandle,
                 BufferID.H8Time,
@@ -3884,16 +3958,7 @@ namespace Hecton8.Core
         private bool TryResolveH8TimeArray(out NativeArray<double> h8Time)
         {
             h8Time = default;
-            if (!EnsureH8TimeArray())
-                return false;
-
             IDataVault dataVault = _dataVault;
-            if (dataVault == null)
-            {
-                RefreshDataVaultDependency();
-                dataVault = _dataVault;
-            }
-
             if (dataVault == null)
                 return false;
 
@@ -3906,15 +3971,19 @@ namespace Hecton8.Core
 
         private void RefreshDataVaultDependency()
         {
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault dataVault))
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            if (dataVault == null)
             {
-                if (_dataVault != null && !ReferenceEquals(_dataVault, dataVault))
-                    ReleaseSystemDispatcherVaultHandles(_dataVault);
-
-                _dataVault = dataVault;
-                _cachedDispatcherDataVault = dataVault;
-                VaultSovereigntyTelemetry.EnsureRing(dataVault);
+                _cachedDispatcherDataVault = null;
+                return;
             }
+
+            if (_dataVault != null && !ReferenceEquals(_dataVault, dataVault))
+                ReleaseSystemDispatcherVaultHandles(_dataVault);
+
+            _dataVault = dataVault;
+            _cachedDispatcherDataVault = dataVault;
+            VaultSovereigntyTelemetry.EnsureRing(dataVault);
         }
 
         private static bool TryResolveCachedDataVault(out IDataVault dataVault)
@@ -3927,25 +3996,10 @@ namespace Hecton8.Core
             if (dispatcher != null)
             {
                 dataVault = dispatcher._dataVault;
-                if (dataVault == null)
-                {
-                    dispatcher.RefreshDataVaultDependency();
-                    dataVault = dispatcher._dataVault;
-                }
-
-                if (dataVault != null)
-                {
-                    _cachedDispatcherDataVault = dataVault;
-                    return true;
-                }
+                return dataVault != null;
             }
 
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                return false;
-
-            dataVault = latestVault;
-            _cachedDispatcherDataVault = latestVault;
-            return true;
+            return false;
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -3975,7 +4029,7 @@ namespace Hecton8.Core
             return true;
         }
 
-        private static bool TryResolveOrAcquireDispatcherVaultBuffer<T>(
+        private static bool TryEnsureDispatcherVaultBuffer<T>(
             IDataVault dataVault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -4079,16 +4133,10 @@ namespace Hecton8.Core
             ObjectPoolManager objectPool = GlobalRegistry.ObjectPool;
             if (objectPool != null)
                 _objectPool = objectPool;
-        }
 
-        private static bool ShouldRetryDependencyResolve(ref int nextResolveFrame)
-        {
-            int frame = Time.frameCount;
-            if (frame < nextResolveFrame)
-                return false;
-
-            nextResolveFrame = frame + DispatcherDependencyRetryFrames;
-            return true;
+            ICameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
+            if (cameraJuice != null)
+                _cachedCameraJuiceSystem = cameraJuice;
         }
 
         void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(
@@ -4152,13 +4200,8 @@ namespace Hecton8.Core
         {
             SystemDispatcher dispatcher = ActiveRuntimeInstance;
             if (dispatcher == null)
-                return GlobalRegistry.VRAMMonitor;
+                return null;
 
-            VRAMMonitor monitor = dispatcher._vramMonitor;
-            if (monitor != null)
-                return monitor;
-
-            dispatcher.RefreshPeripheralDependencies();
             return dispatcher._vramMonitor;
         }
 
@@ -4166,13 +4209,8 @@ namespace Hecton8.Core
         {
             SystemDispatcher dispatcher = ActiveRuntimeInstance;
             if (dispatcher == null)
-                return GlobalRegistry.VRAMPressure;
+                return null;
 
-            VRAMPressureMonitor pressure = dispatcher._vramPressure;
-            if (pressure != null)
-                return pressure;
-
-            dispatcher.RefreshPeripheralDependencies();
             return dispatcher._vramPressure;
         }
 
@@ -4180,13 +4218,8 @@ namespace Hecton8.Core
         {
             SystemDispatcher dispatcher = ActiveRuntimeInstance;
             if (dispatcher == null)
-                return GlobalRegistry.MacroDatabase;
+                return null;
 
-            IMacroDatabaseService macroDatabase = dispatcher._macroDatabase;
-            if (macroDatabase != null)
-                return macroDatabase;
-
-            dispatcher.RefreshPeripheralDependencies();
             return dispatcher._macroDatabase;
         }
 
@@ -4194,13 +4227,8 @@ namespace Hecton8.Core
         {
             SystemDispatcher dispatcher = ActiveRuntimeInstance;
             if (dispatcher == null)
-                return GlobalRegistry.ObjectPool;
+                return null;
 
-            ObjectPoolManager objectPool = dispatcher._objectPool;
-            if (objectPool != null)
-                return objectPool;
-
-            dispatcher.RefreshPeripheralDependencies();
             return dispatcher._objectPool;
         }
 
@@ -4231,12 +4259,6 @@ namespace Hecton8.Core
         private void RunPreSimulationMemoryDefrag(float unscaledDeltaTime)
         {
             IDataVault dataVault = _dataVault;
-            if (dataVault == null)
-            {
-                RefreshDataVaultDependency();
-                dataVault = _dataVault;
-            }
-
             if (dataVault == null || unscaledDeltaTime < 0f)
                 return;
 
@@ -4255,6 +4277,8 @@ namespace Hecton8.Core
             _memoryDefragAccumulator = 0d;
             float compactionStress01 = ResolveMemoryCompactionStress01(unscaledDeltaTime);
             uint activeBurstLockMask = dataVault.ActiveBurstLockMask;
+            uint telemetryFrameId = ResolveMemoryTelemetryFrameId();
+            H8Memory.SetTelemetryFrameId(telemetryFrameId);
             long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             VaultSovereigntyMaintenanceStats sovereigntyStats = default;
             TryPollVaultMemoryProfileCsv(dataVault);
@@ -4268,15 +4292,15 @@ namespace Hecton8.Core
                 sovereigntyStats = VaultSovereigntyMaintenance.RunPreSimulationFrost(
                     dataVault,
                     HomeostasisBrain.GlobalQualityWeight,
-                    unchecked((uint)Time.frameCount));
+                    telemetryFrameId);
             }
 
             double elapsedMilliseconds =
                 (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0d /
                 System.Diagnostics.Stopwatch.Frequency;
             PublishMemoryAddressShiftSignals(dataVault);
-            RecordVaultSovereigntyTelemetry(dataVault, elapsedMilliseconds, in sovereigntyStats);
-            PublishDataVaultDefragTelemetry(dataVault, elapsedMilliseconds);
+            RecordVaultSovereigntyTelemetry(dataVault, elapsedMilliseconds, in sovereigntyStats, telemetryFrameId);
+            PublishDataVaultDefragTelemetry(dataVault, elapsedMilliseconds, telemetryFrameId);
             EmitVramPressureDefragSignalIfNeeded();
         }
 
@@ -4296,7 +4320,8 @@ namespace Hecton8.Core
         private void RecordVaultSovereigntyTelemetry(
             IDataVault dataVault,
             double elapsedMilliseconds,
-            in VaultSovereigntyMaintenanceStats sovereigntyStats)
+            in VaultSovereigntyMaintenanceStats sovereigntyStats,
+            uint frameId = 0u)
         {
             if (dataVault == null)
                 return;
@@ -4318,7 +4343,7 @@ namespace Hecton8.Core
                 _lastVaultMaintenanceFlags = flags;
             VaultSovereigntyTelemetry.TryRecord(
                 dataVault,
-                unchecked((uint)Time.frameCount),
+                frameId != 0u ? frameId : ResolveMemoryTelemetryFrameId(),
                 generationMissDelta,
                 stride,
                 maxJobUs > 0f ? maxJobUs : _lastVaultMemoryJobUs,
@@ -4333,6 +4358,22 @@ namespace Hecton8.Core
             return math.clamp((int)math.round(math.lerp(4f, 1f, curved)), 1, 4);
         }
 
+        private uint ResolveMemoryTelemetryFrameId()
+        {
+            uint frameId = TimeSliceScheduler.CurrentFrameId;
+            if (frameId != 0u)
+                return frameId;
+
+            unchecked
+            {
+                _memoryTelemetrySequence++;
+            }
+
+            if (_memoryTelemetrySequence == 0u)
+                _memoryTelemetrySequence = 1u;
+            return _memoryTelemetrySequence;
+        }
+
         private void RecordVaultSovereigntyPostSimulationHeartbeat()
         {
             IDataVault dataVault = _dataVault;
@@ -4344,25 +4385,20 @@ namespace Hecton8.Core
             VaultSovereigntyMaintenanceStats stats = default;
             stats.MaxJobUs = _lastVaultMemoryJobUs;
             stats.Flags = _lastVaultMaintenanceFlags;
-            RecordVaultSovereigntyTelemetry(dataVault, 0.0d, in stats);
+            RecordVaultSovereigntyTelemetry(dataVault, 0.0d, in stats, ResolveMemoryTelemetryFrameId());
         }
 
         private void RecordMemoryBlackBoxHeartbeat()
         {
+            H8Memory.SetTelemetryFrameId(TimeSliceScheduler.CurrentFrameId);
             H8Memory.RecordHeartbeat();
             IDataVault dataVault = _dataVault;
-            if (dataVault == null)
-            {
-                RefreshDataVaultDependency();
-                dataVault = _dataVault;
-            }
-
             dataVault?.RecordHeartbeat();
         }
 
         private void RecordDispatcherBlackBoxHeartbeat(IDataVault dataVault)
         {
-            if (dataVault == null || !EnsureDispatcherBlackBox())
+            if (dataVault == null)
                 return;
 
             if (!TryResolveDispatcherVaultBuffer(
@@ -4383,6 +4419,7 @@ namespace Hecton8.Core
             if ((uint)cursor >= (uint)DispatcherBlackBoxFrameCount)
                 cursor = 0;
 
+            uint dispatcherFrameId = ResolveCurrentDispatcherFrameId();
             bool nonFinite =
                 !math.isfinite(CurrentFrameDeltaTime) ||
                 !math.isfinite(CurrentFrameUnscaledDeltaTime) ||
@@ -4393,7 +4430,7 @@ namespace Hecton8.Core
             ushort flags = 0;
             if (SimulationPaused)
                 flags |= DispatcherBlackBoxFlagPaused;
-            if (_aupPreShiftPauseFrame == Time.frameCount)
+            if (_aupPreShiftPauseFrameId == dispatcherFrameId)
                 flags |= DispatcherBlackBoxFlagAupBarrier;
             if (IsOriginShiftBootstrapLocked || IsOriginShiftFrameLockedForCurrentFrame)
                 flags |= DispatcherBlackBoxFlagOriginShiftLock;
@@ -4409,7 +4446,7 @@ namespace Hecton8.Core
                 flags |= DispatcherBlackBoxFlagAdrenalineDilation;
 
             DispatcherBlackBoxEntry entry = default;
-            entry.Frame = unchecked((uint)math.max(0, Time.frameCount));
+            entry.Frame = dispatcherFrameId;
             entry.Sequence = ++_dispatcherBlackBoxSequence;
             entry.DilatedTime = IsFiniteDouble(_timeSnapshot.Time) && _timeSnapshot.Time >= 0d ? _timeSnapshot.Time : 0d;
             entry.UnscaledTime = IsFiniteDouble(_timeSnapshot.UnscaledTime) && _timeSnapshot.UnscaledTime >= 0d ? _timeSnapshot.UnscaledTime : 0d;
@@ -4425,7 +4462,7 @@ namespace Hecton8.Core
             entry.HomeostasisPressureLevel = HomeostasisPressureLevel;
             entry.HomeostasisFoveatedTier = HomeostasisFoveatedTier;
             entry.AupPreShiftSequence = _aupPreShiftPauseSequence;
-            entry.StateHash = ResolveDispatcherStateHash(flags);
+            entry.StateHash = ResolveDispatcherStateHash(flags, dispatcherFrameId);
             entry.KillSwitchMask = KillSwitchMask;
             ring[cursor] = entry;
 
@@ -4443,10 +4480,10 @@ namespace Hecton8.Core
             }
         }
 
-        private uint ResolveDispatcherStateHash(ushort flags)
+        private uint ResolveDispatcherStateHash(ushort flags, uint dispatcherFrameId)
         {
             uint hash = 2166136261u;
-            hash = unchecked((hash ^ (uint)Time.frameCount) * 16777619u);
+            hash = unchecked((hash ^ dispatcherFrameId) * 16777619u);
             hash = unchecked((hash ^ (uint)_pendingDispatcherRaycastCount) * 16777619u);
             hash = unchecked((hash ^ (uint)_scheduledDispatcherRaycastCount) * 16777619u);
             hash = unchecked((hash ^ (uint)flags) * 16777619u);
@@ -4596,8 +4633,11 @@ namespace Hecton8.Core
             shiftCount[0] = 0;
         }
 
-        private void PublishDataVaultDefragTelemetry(IDataVault dataVault, double elapsedMilliseconds)
+        private void PublishDataVaultDefragTelemetry(IDataVault dataVault, double elapsedMilliseconds, uint frameId)
         {
+            if (frameId == 0u)
+                frameId = ResolveMemoryTelemetryFrameId();
+
             float vaultPressure01 = dataVault.CapacityPressure01;
             if (vaultPressure01 >= 0.8f)
             {
@@ -4605,7 +4645,7 @@ namespace Hecton8.Core
                 pressureSignal.ReservedMemoryBytes = dataVault.AllocatedBytes;
                 pressureSignal.PhysicalMemoryBytes = dataVault.ArenaBytes;
                 pressureSignal.UsageRatio = vaultPressure01;
-                pressureSignal.Frame = unchecked((uint)Time.frameCount);
+                pressureSignal.Frame = frameId;
                 pressureSignal.Severity = vaultPressure01 >= 0.95f ? (byte)2 : (byte)1;
                 pressureSignal.Flags = 2;
                 GlobalSignals.Publish(in pressureSignal);
@@ -4640,9 +4680,9 @@ namespace Hecton8.Core
             }
 
             if (dataVault.PendingMassiveMoveBytes >= 50L * 1024L * 1024L &&
-                _lastMemoryDefragPressureWarningFrame != Time.frameCount)
+                _lastMemoryDefragPressureWarningFrame != frameId)
             {
-                _lastMemoryDefragPressureWarningFrame = Time.frameCount;
+                _lastMemoryDefragPressureWarningFrame = frameId;
                 GlobalTelemetryBus.PublishPerformanceWarning(
                     _DataVaultMassiveMoveHash,
                     _DataVaultDefragContextHash,
@@ -4681,22 +4721,16 @@ namespace Hecton8.Core
         {
             IDataVault dataVault = _dataVault;
             if (dataVault == null)
-            {
-                RefreshDataVaultDependency();
-                dataVault = _dataVault;
-            }
-
-            if (dataVault == null)
                 return false;
 
-            if (TryResolveOrAcquireDispatcherVaultBuffer(
+            if (TryEnsureDispatcherVaultBuffer(
                     dataVault,
                     ref _dispatcherBlackBoxHandle,
                     BufferID.SystemDispatcherBlackBox,
                     DispatcherBlackBoxFrameCount,
                     NativeArrayOptions.ClearMemory,
                     out NativeArray<DispatcherBlackBoxEntry> _) &&
-                TryResolveOrAcquireDispatcherVaultBuffer(
+                TryEnsureDispatcherVaultBuffer(
                     dataVault,
                     ref _dispatcherBlackBoxCursorHandle,
                     BufferID.SystemDispatcherBlackBoxCursor,
@@ -4751,7 +4785,7 @@ namespace Hecton8.Core
             _timeSnapshot = new H8TimeSnapshot(dilatedTime, safeDilatedDeltaTime, unscaledTime, safeUnscaledDeltaTime);
         }
 
-        private float ResolveFrameTimeDilationScalar()
+        private float ConsumeFrameTimeDilationScalar()
         {
             if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
                 return 0f;
@@ -4916,8 +4950,8 @@ namespace Hecton8.Core
 
         private void RunDispatcherUpdate()
         {
-            GlobalRegistry.PublishAbsoluteUniverseTime(Time.timeAsDouble);
-            GlobalRegistry.TickMathPrecisionTransition(Time.frameCount);
+            AdvanceDispatcherFrameId();
+            FrameTimeWatchdog.TickMathPrecisionTransition(Time.frameCount);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherUpdate);
 #endif
@@ -4941,12 +4975,6 @@ namespace Hecton8.Core
                 CurrentFrameUnscaledDeltaTime = unscaledDeltaTime;
                 HomeostasisBrain.PreSimulationTick(unscaledDeltaTime);
                 IInputDeterminismService inputDeterminism = _inputDeterminism;
-                if (inputDeterminism == null && ShouldRetryDependencyResolve(ref _nextInputDeterminismResolveFrame))
-                {
-                    RefreshInputDeterminismDependency();
-                    inputDeterminism = _inputDeterminism;
-                }
-
                 if (inputDeterminism != null && inputDeterminism.IsInitialized)
                     inputDeterminism.PreSimulationInputTick(unscaledDeltaTime);
                 GlobalSignals.FlushPreSimulation();
@@ -4957,12 +4985,6 @@ namespace Hecton8.Core
                 RecordMemoryBlackBoxHeartbeat();
                 RunPreSimulationMemoryDefrag(unscaledDeltaTime);
                 IJobAdmissionService jobAdmission = _jobAdmission;
-                if (jobAdmission == null && ShouldRetryDependencyResolve(ref _nextJobAdmissionResolveFrame))
-                {
-                    RefreshJobAdmissionDependency();
-                    jobAdmission = _jobAdmission;
-                }
-
                 byte globalQualityWeightByte = EncodeGlobalQualityWeightByte(globalQualityWeight01);
                 if (jobAdmission != null && jobAdmission.IsInitialized)
                 {
@@ -4974,7 +4996,7 @@ namespace Hecton8.Core
                 Hecton8.Modding.ModCommandDispatcher.DrainPreSimulation();
                 DrainSimulationPauseSignals();
                 DrainAdrenalineDilationSignals(unscaledDeltaTime);
-                float frameDilationScalar = ResolveFrameTimeDilationScalar();
+                float frameDilationScalar = ConsumeFrameTimeDilationScalar();
                 if (!math.isfinite(frameDilationScalar) || frameDilationScalar < 0f)
                     frameDilationScalar = 0f;
 
@@ -4983,6 +5005,7 @@ namespace Hecton8.Core
                     deltaTime = 0f;
                 CurrentFrameDeltaTime = deltaTime;
                 DispatcherTimingDTO masterTiming = BuildMasterDispatcherTiming(deltaTime, unscaledDeltaTime);
+                uint dispatcherFrameId = masterTiming.FrameId;
                 RunMasterPreSimulationPhase(in masterTiming);
                 UpdateH8TimeState(deltaTime, unscaledDeltaTime);
                 PublishTimeDilationState(0u);
@@ -4993,15 +5016,9 @@ namespace Hecton8.Core
                 float preSimulationCostMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - preSimulationStartTimestamp) * 1000.0 /
                                                     System.Diagnostics.Stopwatch.Frequency);
                 ISimulationBucketer simulationBucketer = _simulationBucketer;
-                if (simulationBucketer == null && ShouldRetryDependencyResolve(ref _nextSimulationBucketerResolveFrame))
-                {
-                    RefreshSimulationBucketerDependency();
-                    simulationBucketer = _simulationBucketer;
-                }
-
                 bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
                                         IsOriginShiftFrameLockedForCurrentFrame ||
-                                        _aupPreShiftPauseFrame == Time.frameCount;
+                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
                 if (simulationBucketer != null && simulationBucketer.IsInitialized)
                 {
                     simulationBucketer.ReportPreSimulationCostMs(preSimulationCostMs);
@@ -5027,7 +5044,7 @@ namespace Hecton8.Core
                 if (IsOriginShiftFrameLockedForCurrentFrame)
                     return;
 
-                if (_aupPreShiftPauseFrame == Time.frameCount)
+                if (_aupPreShiftPauseFrameId == dispatcherFrameId)
                 {
                     RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
                     return;
@@ -5250,23 +5267,7 @@ namespace Hecton8.Core
 
         private static ICameraJuiceSystem ResolveCameraJuiceSystem()
         {
-            ICameraJuiceSystem cameraJuice = _cachedCameraJuiceSystem;
-            if (cameraJuice != null)
-                return cameraJuice;
-
-            int frame = Time.frameCount;
-            if (frame < _nextCameraJuiceResolveFrame)
-                return null;
-
-            _nextCameraJuiceResolveFrame = frame + CameraJuiceResolveRetryFrames;
-            cameraJuice = GlobalRegistry.CameraJuice;
-            if (cameraJuice != null)
-            {
-                _cachedCameraJuiceSystem = cameraJuice;
-                _nextCameraJuiceResolveFrame = 0;
-            }
-
-            return cameraJuice;
+            return _cachedCameraJuiceSystem;
         }
 
         private static void TickPauseDepthOfField(float unscaledTime)
@@ -5499,7 +5500,7 @@ namespace Hecton8.Core
                     AudioLogEvents.PendingCount +
                     HectonSubmarineOsEvents.PendingCount +
                     FlashlightEvents.PendingCount +
-                    LaserCutterEvents.PendingCount +
+                    LaserCutterEvents.ReadPendingCount() +
                     SuitMeshUpdateEvents.PendingCount +
                     PlayerSignalEvents.PendingCount +
                     InventoryEvents.PendingCount +
@@ -6391,11 +6392,11 @@ namespace Hecton8.Core
 
         private static void EnsureDispatcherRaycastBuffers()
         {
-            TryResolveDispatcherRaycastCommands(
+            TryEnsureDispatcherRaycastCommands(
                 ref _pendingDispatcherRaycastCommandsHandle,
                 BufferID.SystemDispatcherRaycastPendingCommands,
                 out NativeArray<RaycastCommand> _);
-            TryResolveDispatcherRaycastCommands(
+            TryEnsureDispatcherRaycastCommands(
                 ref _scheduledDispatcherRaycastCommandsHandle,
                 BufferID.SystemDispatcherRaycastScheduledCommands,
                 out NativeArray<RaycastCommand> _);
@@ -6403,7 +6404,7 @@ namespace Hecton8.Core
             if (!TryResolveCachedDataVault(out IDataVault dataVault))
                 return;
 
-            TryResolveOrAcquireDispatcherVaultBuffer(
+            TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref _scheduledDispatcherRaycastHitsHandle,
                 BufferID.DispatcherRaycastHits,
@@ -6412,7 +6413,7 @@ namespace Hecton8.Core
                 out NativeArray<RaycastHit> _);
         }
 
-        private static bool TryResolveDispatcherRaycastCommands(
+        private static bool TryEnsureDispatcherRaycastCommands(
             ref VaultGenerationHandle<RaycastCommand> handle,
             BufferID bufferId,
             out NativeArray<RaycastCommand> commands)
@@ -6421,7 +6422,7 @@ namespace Hecton8.Core
             if (!TryResolveCachedDataVault(out IDataVault dataVault))
                 return false;
 
-            return TryResolveOrAcquireDispatcherVaultBuffer(
+            return TryEnsureDispatcherVaultBuffer(
                 dataVault,
                 ref handle,
                 bufferId,
@@ -6430,11 +6431,24 @@ namespace Hecton8.Core
                 out commands);
         }
 
+        private static bool TryResolveDispatcherRaycastCommands(
+            in VaultGenerationHandle<RaycastCommand> handle,
+            out NativeArray<RaycastCommand> commands)
+        {
+            commands = default;
+            if (!TryResolveCachedDataVault(out IDataVault dataVault))
+                return false;
+
+            return TryResolveDispatcherVaultBuffer(
+                dataVault,
+                in handle,
+                MaxQueuedDispatcherRaycasts,
+                out commands);
+        }
+
         private static bool TryResolveDispatcherRaycastHits(out NativeArray<RaycastHit> scheduledHits)
         {
             scheduledHits = default;
-            EnsureDispatcherRaycastBuffers();
-
             if (!TryResolveCachedDataVault(out IDataVault dataVault))
                 return false;
 
@@ -6515,12 +6529,10 @@ namespace Hecton8.Core
 
             EnsureDispatcherRaycastBuffers();
             if (!TryResolveDispatcherRaycastCommands(
-                    ref _pendingDispatcherRaycastCommandsHandle,
-                    BufferID.SystemDispatcherRaycastPendingCommands,
+                    in _pendingDispatcherRaycastCommandsHandle,
                     out NativeArray<RaycastCommand> pendingCommands) ||
                 !TryResolveDispatcherRaycastCommands(
-                    ref _scheduledDispatcherRaycastCommandsHandle,
-                    BufferID.SystemDispatcherRaycastScheduledCommands,
+                    in _scheduledDispatcherRaycastCommandsHandle,
                     out NativeArray<RaycastCommand> scheduledCommands) ||
                 !TryResolveDispatcherRaycastHits(out NativeArray<RaycastHit> scheduledHits))
             {
@@ -6779,7 +6791,7 @@ namespace Hecton8.Core
             if (cameraTransform == null)
                 return;
 
-            uint frame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            uint frame = SystemDispatcher.ReadPublishedDispatcherFrameId();
             Vector3 position = cameraTransform.position;
             Vector3 forward = cameraTransform.forward;
             Vector3 up = cameraTransform.up;

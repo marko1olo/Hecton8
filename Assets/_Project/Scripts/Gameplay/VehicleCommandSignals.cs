@@ -1,9 +1,9 @@
 using System.Runtime.InteropServices;
-using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Collections;
 using UnityEngine;
 
-namespace Hecton8.Gameplay
+namespace Hecton8.Core.Contracts.Signals
 {
     [System.Flags]
     public enum VehicleCommandSignalFlags : byte
@@ -18,7 +18,7 @@ namespace Hecton8.Gameplay
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct VehicleCommandSignal
+    public struct VehicleCommandSignal : ISignal
     {
         [FieldOffset(0)] public int TargetInstanceId;
         [FieldOffset(4)] public float Pitch;
@@ -36,7 +36,10 @@ namespace Hecton8.Gameplay
     {
         void OnVehicleCommandSignal(in VehicleCommandSignal signal);
     }
+}
 
+namespace Hecton8.Core
+{
     /// <summary>
     /// Native queued command lane between input-facing transport owners and vehicle-domain controllers.
     /// </summary>
@@ -44,10 +47,83 @@ namespace Hecton8.Gameplay
     {
         private const int PendingCommandCapacity = 32;
         private const int ListenerCapacity = 16;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<IVehicleCommandSignalListener>[16] - vehicle command listeners - owner: VehicleCommandSignalBus
-        private static readonly RegistryBucket<IVehicleCommandSignalListener> _listeners =
-            new RegistryBucket<IVehicleCommandSignalListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IVehicleCommandSignalListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct VehicleCommandListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public VehicleCommandListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IVehicleCommandSignalListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IVehicleCommandSignalListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public bool TryUnregister(IVehicleCommandSignalListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return true;
+                }
+
+                return false;
+            }
+
+            public IVehicleCommandSignalListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[16] - vehicle command listeners - owner: VehicleCommandSignalBus
+        private static VehicleCommandListenerRegistry _listeners = new VehicleCommandListenerRegistry(ListenerCapacity);
 
         private static NativeQueue<VehicleCommandSignal> _pendingCommands;
         private static NativeQueue<VehicleCommandSignal> _nextFrameCommands;
@@ -62,7 +138,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+                _listeners.TryRegister(listener);
         }
 
         public static void Unregister(IVehicleCommandSignalListener listener)
@@ -115,11 +191,10 @@ namespace Hecton8.Gameplay
                 while (_pendingCommandCount > 0 && _pendingCommands.TryDequeue(out VehicleCommandSignal signal))
                 {
                     _pendingCommandCount--;
-                    IVehicleCommandSignalListener[] raw = _listeners.RawArray;
                     int count = _listeners.Count;
                     for (int i = 0; i < count; i++)
                     {
-                        IVehicleCommandSignalListener listener = raw[i];
+                        IVehicleCommandSignalListener listener = _listeners.GetAt(i);
                         if (listener != null)
                             listener.OnVehicleCommandSignal(in signal);
                     }
@@ -148,7 +223,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingCommands.IsCreated)
             {
-                _pendingCommands = new NativeQueue<VehicleCommandSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<VehicleCommandSignal>[32] - fixed vehicle command ingress lane - owner: VehicleCommandSignalBus
+                _pendingCommands = new NativeQueue<VehicleCommandSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<VehicleCommandSignal>[32] - fixed vehicle command ingress lane - owner: VehicleCommandSignalBus
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingCommands,
                     PendingCommandCapacity,
@@ -160,7 +235,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameCommands.IsCreated)
             {
-                _nextFrameCommands = new NativeQueue<VehicleCommandSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<VehicleCommandSignal>[32] - next-frame command lane for reentrant publishes - owner: VehicleCommandSignalBus
+                _nextFrameCommands = new NativeQueue<VehicleCommandSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<VehicleCommandSignal>[32] - next-frame command lane for reentrant publishes - owner: VehicleCommandSignalBus
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameCommands,
                     PendingCommandCapacity,

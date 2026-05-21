@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using System.Text;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
@@ -15,9 +14,8 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/PDA Exchange System")]
-    public sealed class PDAExchangeSystem : MonoBehaviour, ISaveable, IUpdatable
+    public sealed class PDAExchangeSystem : MonoBehaviour, ISaveable, IUpdatable, IGlobalRegistryHotSwapListener
     {
-        [StructLayout(LayoutKind.Sequential)]
         public readonly struct TransactionSnapshot
         {
             public readonly BarterOfferData Offer;
@@ -76,7 +74,6 @@ namespace Hecton8.Gameplay
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
         public readonly struct OfferSnapshot
         {
             public readonly BarterOfferData Offer;
@@ -162,9 +159,12 @@ namespace Hecton8.Gameplay
         private int _recentTransactionCount;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _registeredHotSwapListener;
         private uint _signalSourceId;
         private PlayerInventory _boundInventory;
         private ScanLogSystem _boundScanLog;
+        private IPlayerRuntimeContext _playerRuntime;
+        private ScanLogSystem _scanLogRuntime;
         private uint _inventorySignalHash;
         private uint _scanLogSourceId;
 
@@ -183,14 +183,17 @@ namespace Hecton8.Gameplay
             }
 
             _signalSourceId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
-            AutoResolve();
+            RefreshColdRegistryReferences();
+            AutoResolve(true);
             CacheCatalogRuntimeHashes();
         }
 
         private void OnEnable()
         {
+            RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
             TryRegisterService();
-            AutoResolve();
+            AutoResolve(true);
             RefreshSignalFilters();
             CacheCatalogRuntimeHashes();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
@@ -207,6 +210,7 @@ namespace Hecton8.Gameplay
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             TryUnregister();
             TryUnregisterService();
+            TryUnregisterHotSwapListener();
         }
 
         private void TryRegisterService()
@@ -228,9 +232,6 @@ namespace Hecton8.Gameplay
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
@@ -604,11 +605,17 @@ namespace Hecton8.Gameplay
             PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonLoaded);
         }
 
-        private void AutoResolve()
+        private void RefreshColdRegistryReferences()
+        {
+            _playerRuntime = GlobalRegistry.Player;
+            _scanLogRuntime = GlobalRegistry.ScanLog;
+        }
+
+        private void AutoResolve(bool resolveHud)
         {
             if (playerInventory == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntime;
                 if (playerContext != null &&
                     playerContext.PlayerObject != null)
                 {
@@ -616,15 +623,57 @@ namespace Hecton8.Gameplay
                 }
             }
             if (scanLogSystem == null)
-                scanLogSystem = Hecton8.Core.GlobalRegistry.ScanLog;
-            if (hudNotification == null)
+                scanLogSystem = _scanLogRuntime;
+            if (resolveHud && hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntime = currentService as IPlayerRuntimeContext;
+                    if (playerInventory == null)
+                        AutoResolve(false);
+                    break;
+                case GlobalRegistryServiceSlot.ScanLogRuntime:
+                    _scanLogRuntime = currentService as ScanLogSystem;
+                    if (scanLogSystem == null || ReferenceEquals(scanLogSystem, previousService))
+                        scanLogSystem = _scanLogRuntime;
+                    RefreshSignalFilters();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                        TryRegister();
+                    break;
+            }
         }
 
         public void Tick(float deltaTime)
         {
             if (playerInventory == null || scanLogSystem == null)
-                AutoResolve();
+                AutoResolve(false);
 
             RefreshSignalFilters();
             byte dirtyFlags = 0;

@@ -10,45 +10,50 @@ namespace Hecton8.World.VoxelSurfaceNets
 {
     public struct VoxelSurfaceNetsVaultHandles
     {
-        public VaultBufferHandle<sbyte> Density;
-        public VaultBufferHandle<VoxelVertexDTO> Vertices;
-        public VaultBufferHandle<uint> Indices;
-        public VaultBufferHandle<int> CellVertexMap;
-        public VaultBufferHandle<ChunkMeshingStateDTO> States;
-        public VaultBufferHandle<VoxelMeshingTuningDTO> Tuning;
-        public VaultBufferHandle<VoxelMeshingTelemetryEntry> TelemetryRing;
-        public VaultBufferHandle<int> TelemetryCursor;
-        public VaultBufferHandle<byte> CsvScratch;
-        public VaultBufferHandle<uint> SurfaceEdgeMasks;
-        public VaultBufferHandle<float3> RawDebugVertices;
-        public VaultBufferHandle<VoxelSurfaceAabbDTO> ChunkAabbs;
-        public VaultBufferHandle<VoxelSurfaceModifiedSignal> ModifiedSignals;
-        public VaultBufferHandle<VoxelSurfacePriorityDTO> Priorities;
-        public VaultBufferHandle<VoxelSurfaceIndirectArgsDTO> IndirectArgs;
-        public VaultBufferHandle<MockVoxelDensityArray> MockDensityConfig;
-        public VaultBufferHandle<VoxelSurfacePhysicsBakeRequestDTO> PhysicsBakeRequests;
-        public VaultBufferHandle<VoxelSurfaceHzbTileDTO> HzbTiles;
+        public VaultGenerationHandle<sbyte> Density;
+        public VaultGenerationHandle<VoxelVertexDTO> Vertices;
+        public VaultGenerationHandle<uint> Indices;
+        public VaultGenerationHandle<int> CellVertexMap;
+        public VaultGenerationHandle<ChunkMeshingStateDTO> States;
+        public VaultGenerationHandle<VoxelMeshingTuningDTO> Tuning;
+        public VaultGenerationHandle<VoxelMeshingTelemetryEntry> TelemetryRing;
+        public VaultGenerationHandle<int> TelemetryCursor;
+        public VaultGenerationHandle<byte> CsvScratch;
+        public VaultGenerationHandle<uint> SurfaceEdgeMasks;
+        public VaultGenerationHandle<float3> RawDebugVertices;
+        public VaultGenerationHandle<VoxelSurfaceAabbDTO> ChunkAabbs;
+        public VaultGenerationHandle<VoxelSurfaceModifiedSignal> ModifiedSignals;
+        public VaultGenerationHandle<VoxelSurfacePriorityDTO> Priorities;
+        public VaultGenerationHandle<VoxelSurfaceIndirectArgsDTO> IndirectArgs;
+        public VaultGenerationHandle<MockVoxelDensityArray> MockDensityConfig;
+        public VaultGenerationHandle<VoxelSurfacePhysicsBakeRequestDTO> PhysicsBakeRequests;
+        public VaultGenerationHandle<VoxelSurfaceHzbTileDTO> HzbTiles;
 
         public bool IsCreated()
         {
-            return Density.IsCreated &&
-                   Vertices.IsCreated &&
-                   Indices.IsCreated &&
-                   CellVertexMap.IsCreated &&
-                   States.IsCreated &&
-                   Tuning.IsCreated &&
-                   TelemetryRing.IsCreated &&
-                   TelemetryCursor.IsCreated &&
-                   CsvScratch.IsCreated &&
-                   SurfaceEdgeMasks.IsCreated &&
-                   RawDebugVertices.IsCreated &&
-                   ChunkAabbs.IsCreated &&
-                   ModifiedSignals.IsCreated &&
-                   Priorities.IsCreated &&
-                   IndirectArgs.IsCreated &&
-                   MockDensityConfig.IsCreated &&
-                   PhysicsBakeRequests.IsCreated &&
-                   HzbTiles.IsCreated;
+            return IsHandleValid(in Density) &&
+                   IsHandleValid(in Vertices) &&
+                   IsHandleValid(in Indices) &&
+                   IsHandleValid(in CellVertexMap) &&
+                   IsHandleValid(in States) &&
+                   IsHandleValid(in Tuning) &&
+                   IsHandleValid(in TelemetryRing) &&
+                   IsHandleValid(in TelemetryCursor) &&
+                   IsHandleValid(in CsvScratch) &&
+                   IsHandleValid(in SurfaceEdgeMasks) &&
+                   IsHandleValid(in RawDebugVertices) &&
+                   IsHandleValid(in ChunkAabbs) &&
+                   IsHandleValid(in ModifiedSignals) &&
+                   IsHandleValid(in Priorities) &&
+                   IsHandleValid(in IndirectArgs) &&
+                   IsHandleValid(in MockDensityConfig) &&
+                   IsHandleValid(in PhysicsBakeRequests) &&
+                   IsHandleValid(in HzbTiles);
+        }
+
+        private static bool IsHandleValid<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u;
         }
     }
 
@@ -126,92 +131,92 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return handles.IsCreated();
             }
 
-            handles.Density = vault.GetBufferHandle<sbyte>(
+            handles.Density = vault.GetGenerationHandle<sbyte>(
                 VoxelSurfaceNetsVaultBufferIds.Density,
                 VoxelSurfaceNetsConstants.DensitySampleCount,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Vertices = vault.GetBufferHandle<VoxelVertexDTO>(
+            handles.Vertices = vault.GetGenerationHandle<VoxelVertexDTO>(
                 VoxelSurfaceNetsVaultBufferIds.Vertices,
                 VoxelSurfaceNetsConstants.MaxVertices,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Indices = vault.GetBufferHandle<uint>(
+            handles.Indices = vault.GetGenerationHandle<uint>(
                 VoxelSurfaceNetsVaultBufferIds.Indices,
                 VoxelSurfaceNetsConstants.MaxIndices,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.CellVertexMap = vault.GetBufferHandle<int>(
+            handles.CellVertexMap = vault.GetGenerationHandle<int>(
                 VoxelSurfaceNetsVaultBufferIds.CellVertexMap,
                 VoxelSurfaceNetsConstants.CellCount,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.States = vault.GetBufferHandle<ChunkMeshingStateDTO>(
+            handles.States = vault.GetGenerationHandle<ChunkMeshingStateDTO>(
                 VoxelSurfaceNetsVaultBufferIds.States,
                 VoxelSurfaceNetsConstants.MaxTrackedChunks,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Tuning = vault.GetBufferHandle<VoxelMeshingTuningDTO>(
+            handles.Tuning = vault.GetGenerationHandle<VoxelMeshingTuningDTO>(
                 VoxelSurfaceNetsVaultBufferIds.Tuning,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryRing = vault.GetBufferHandle<VoxelMeshingTelemetryEntry>(
+            handles.TelemetryRing = vault.GetGenerationHandle<VoxelMeshingTelemetryEntry>(
                 VoxelSurfaceNetsVaultBufferIds.TelemetryRing,
                 VoxelSurfaceNetsConstants.TelemetryFrames,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetBufferHandle<int>(
+            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
                 VoxelSurfaceNetsVaultBufferIds.TelemetryCursor,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.GetBufferHandle<byte>(
+            handles.CsvScratch = vault.GetGenerationHandle<byte>(
                 VoxelSurfaceNetsVaultBufferIds.CsvScratch,
                 VoxelSurfaceNetsConstants.CsvScratchBytes,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.SurfaceEdgeMasks = vault.GetBufferHandle<uint>(
+            handles.SurfaceEdgeMasks = vault.GetGenerationHandle<uint>(
                 VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks,
                 VoxelSurfaceNetsConstants.LookupCaseCount,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.RawDebugVertices = vault.GetBufferHandle<float3>(
+            handles.RawDebugVertices = vault.GetGenerationHandle<float3>(
                 VoxelSurfaceNetsVaultBufferIds.RawDebugVertices,
                 VoxelSurfaceNetsConstants.MaxRawDebugVertices,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.ChunkAabbs = vault.GetBufferHandle<VoxelSurfaceAabbDTO>(
+            handles.ChunkAabbs = vault.GetGenerationHandle<VoxelSurfaceAabbDTO>(
                 VoxelSurfaceNetsVaultBufferIds.ChunkAabbs,
                 VoxelSurfaceNetsConstants.MaxTrackedChunks,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.ModifiedSignals = vault.GetBufferHandle<VoxelSurfaceModifiedSignal>(
+            handles.ModifiedSignals = vault.GetGenerationHandle<VoxelSurfaceModifiedSignal>(
                 VoxelSurfaceNetsVaultBufferIds.ModifiedSignals,
                 VoxelSurfaceNetsConstants.MaxModifiedSignals,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Priorities = vault.GetBufferHandle<VoxelSurfacePriorityDTO>(
+            handles.Priorities = vault.GetGenerationHandle<VoxelSurfacePriorityDTO>(
                 VoxelSurfaceNetsVaultBufferIds.Priorities,
                 VoxelSurfaceNetsConstants.MaxTrackedChunks,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.IndirectArgs = vault.GetBufferHandle<VoxelSurfaceIndirectArgsDTO>(
+            handles.IndirectArgs = vault.GetGenerationHandle<VoxelSurfaceIndirectArgsDTO>(
                 VoxelSurfaceNetsVaultBufferIds.IndirectArgs,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.MockDensityConfig = vault.GetBufferHandle<MockVoxelDensityArray>(
+            handles.MockDensityConfig = vault.GetGenerationHandle<MockVoxelDensityArray>(
                 VoxelSurfaceNetsVaultBufferIds.MockDensityConfig,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.PhysicsBakeRequests = vault.GetBufferHandle<VoxelSurfacePhysicsBakeRequestDTO>(
+            handles.PhysicsBakeRequests = vault.GetGenerationHandle<VoxelSurfacePhysicsBakeRequestDTO>(
                 VoxelSurfaceNetsVaultBufferIds.PhysicsBakeRequests,
                 VoxelSurfaceNetsConstants.MaxTrackedChunks,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.HzbTiles = vault.GetBufferHandle<VoxelSurfaceHzbTileDTO>(
+            handles.HzbTiles = vault.GetGenerationHandle<VoxelSurfaceHzbTileDTO>(
                 VoxelSurfaceNetsVaultBufferIds.HzbTiles,
                 VoxelSurfaceNetsConstants.MaxHzbTiles,
                 SystemID.WorldStreaming,
@@ -232,24 +237,24 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (vault == null)
                 return false;
 
-            return vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.Density, out handles.Density) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.Vertices, out handles.Vertices) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.Indices, out handles.Indices) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.CellVertexMap, out handles.CellVertexMap) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.States, out handles.States) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.Tuning, out handles.Tuning) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.CsvScratch, out handles.CsvScratch) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks, out handles.SurfaceEdgeMasks) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.RawDebugVertices, out handles.RawDebugVertices) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.ChunkAabbs, out handles.ChunkAabbs) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.ModifiedSignals, out handles.ModifiedSignals) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.Priorities, out handles.Priorities) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.IndirectArgs, out handles.IndirectArgs) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.MockDensityConfig, out handles.MockDensityConfig) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.PhysicsBakeRequests, out handles.PhysicsBakeRequests) &&
-                   vault.TryGetBufferHandle(VoxelSurfaceNetsVaultBufferIds.HzbTiles, out handles.HzbTiles);
+            return vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.Density, out handles.Density) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.Vertices, out handles.Vertices) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.Indices, out handles.Indices) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.CellVertexMap, out handles.CellVertexMap) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.States, out handles.States) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.Tuning, out handles.Tuning) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.CsvScratch, out handles.CsvScratch) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks, out handles.SurfaceEdgeMasks) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.RawDebugVertices, out handles.RawDebugVertices) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.ChunkAabbs, out handles.ChunkAabbs) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.ModifiedSignals, out handles.ModifiedSignals) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.Priorities, out handles.Priorities) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.IndirectArgs, out handles.IndirectArgs) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.MockDensityConfig, out handles.MockDensityConfig) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.PhysicsBakeRequests, out handles.PhysicsBakeRequests) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.HzbTiles, out handles.HzbTiles);
         }
 
         public static bool TryResolveViews(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, out VoxelSurfaceNetsVaultBuffers buffers)
@@ -258,35 +263,63 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (vault == null || !handles.IsCreated())
                 return false;
 
-            buffers.Density = handles.Density.Resolve(vault);
-            buffers.Vertices = handles.Vertices.Resolve(vault);
-            buffers.Indices = handles.Indices.Resolve(vault);
-            buffers.CellVertexMap = handles.CellVertexMap.Resolve(vault);
-            buffers.States = handles.States.Resolve(vault);
-            buffers.Tuning = handles.Tuning.Resolve(vault);
-            buffers.TelemetryRing = handles.TelemetryRing.Resolve(vault);
-            buffers.TelemetryCursor = handles.TelemetryCursor.Resolve(vault);
-            buffers.CsvScratch = handles.CsvScratch.Resolve(vault);
-            buffers.SurfaceEdgeMasks = handles.SurfaceEdgeMasks.Resolve(vault);
-            buffers.RawDebugVertices = handles.RawDebugVertices.Resolve(vault);
-            buffers.ChunkAabbs = handles.ChunkAabbs.Resolve(vault);
-            buffers.ModifiedSignals = handles.ModifiedSignals.Resolve(vault);
-            buffers.Priorities = handles.Priorities.Resolve(vault);
-            buffers.IndirectArgs = handles.IndirectArgs.Resolve(vault);
-            buffers.MockDensityConfig = handles.MockDensityConfig.Resolve(vault);
-            buffers.PhysicsBakeRequests = handles.PhysicsBakeRequests.Resolve(vault);
-            buffers.HzbTiles = handles.HzbTiles.Resolve(vault);
-            return buffers.IsCreated();
+            return TryResolveView(vault, in handles.Density, out buffers.Density) &&
+                   TryResolveView(vault, in handles.Vertices, out buffers.Vertices) &&
+                   TryResolveView(vault, in handles.Indices, out buffers.Indices) &&
+                   TryResolveView(vault, in handles.CellVertexMap, out buffers.CellVertexMap) &&
+                   TryResolveView(vault, in handles.States, out buffers.States) &&
+                   TryResolveView(vault, in handles.Tuning, out buffers.Tuning) &&
+                   TryResolveView(vault, in handles.TelemetryRing, out buffers.TelemetryRing) &&
+                   TryResolveView(vault, in handles.TelemetryCursor, out buffers.TelemetryCursor) &&
+                   TryResolveView(vault, in handles.CsvScratch, out buffers.CsvScratch) &&
+                   TryResolveView(vault, in handles.SurfaceEdgeMasks, out buffers.SurfaceEdgeMasks) &&
+                   TryResolveView(vault, in handles.RawDebugVertices, out buffers.RawDebugVertices) &&
+                   TryResolveView(vault, in handles.ChunkAabbs, out buffers.ChunkAabbs) &&
+                   TryResolveView(vault, in handles.ModifiedSignals, out buffers.ModifiedSignals) &&
+                   TryResolveView(vault, in handles.Priorities, out buffers.Priorities) &&
+                   TryResolveView(vault, in handles.IndirectArgs, out buffers.IndirectArgs) &&
+                   TryResolveView(vault, in handles.MockDensityConfig, out buffers.MockDensityConfig) &&
+                   TryResolveView(vault, in handles.PhysicsBakeRequests, out buffers.PhysicsBakeRequests) &&
+                   TryResolveView(vault, in handles.HzbTiles, out buffers.HzbTiles) &&
+                   buffers.IsCreated();
         }
 
         public static ref ChunkMeshingStateDTO GetStateAsRef(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, int index)
         {
-            return ref handles.States.GetElementAsRef(vault, index);
+            if (!TryResolveView(vault, in handles.States, out NativeArray<ChunkMeshingStateDTO> states) ||
+                (uint)index >= (uint)states.Length)
+            {
+                throw new InvalidOperationException("Voxel surface state view unavailable.");
+            }
+
+            return ref UnsafeUtility.ArrayElementAsRef<ChunkMeshingStateDTO>(
+                NativeArrayUnsafeUtility.GetUnsafePtr(states),
+                index);
         }
 
         public static ref readonly ChunkMeshingStateDTO GetStateAsReadOnlyRef(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, int index)
         {
-            return ref handles.States.GetElementAsReadOnlyRef(vault, index);
+            if (!TryResolveView(vault, in handles.States, out NativeArray<ChunkMeshingStateDTO> states) ||
+                (uint)index >= (uint)states.Length)
+            {
+                throw new InvalidOperationException("Voxel surface state view unavailable.");
+            }
+
+            return ref UnsafeUtility.ArrayElementAsRef<ChunkMeshingStateDTO>(
+                (void*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states),
+                index);
+        }
+
+        private static bool TryResolveView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
 
         public static bool TryCreateMockDensityJob(

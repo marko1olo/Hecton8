@@ -20,6 +20,7 @@ namespace Hecton8.UI
     {
         private const float AutoResolveRetryInterval = 1f;
         private const string ModuleIndexTemplate = "MODULE {0}/{1}  //  BUILT {2}";
+        private const int BuildCostDigestCapacity = 32;
         private static readonly char[] TitleChars = "CONSTRUCTION STATUS".ToCharArray();
         private static readonly char[] ModuleIndexTemplateChars = ModuleIndexTemplate.ToCharArray();
         private static readonly Color PanelColor = new Color(0.03f, 0.1f, 0.12f, 0.66f);
@@ -111,10 +112,7 @@ namespace Hecton8.UI
         {
             float safeDeltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             if (!ShouldKeepTicking(safeDeltaTime))
-            {
-                UnregisterTick();
                 return;
-            }
 
             if (ConsumeInventoryChangedSignals())
             {
@@ -125,7 +123,6 @@ namespace Hecton8.UI
 
             if (ConsumeToolLoadoutChangedSignals())
             {
-                EvaluateTickRegistration();
                 ForceRefresh();
                 return;
             }
@@ -178,6 +175,13 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null && isActiveAndEnabled)
+                    EvaluateTickRegistration();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
                 _cachedPlayerContext = currentService as IPlayerRuntimeContext;
@@ -576,22 +580,12 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (ShouldKeepTicking())
-            {
-                RegisterTick();
-            }
-            else
-            {
-                UnregisterTick();
-            }
+            RegisterTick();
         }
 
         private void RegisterTick()
         {
             if (_tickRegistered || !Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
@@ -689,27 +683,102 @@ namespace Hecton8.UI
             int length = 0;
             length = Append(_costBuffer, length, "COST // ");
 
-            for (int i = 0; i < data.buildCost.Count; i++)
+            Span<int> costHashes = stackalloc int[BuildCostDigestCapacity];
+            Span<int> costAmounts = stackalloc int[BuildCostDigestCapacity];
+            Span<int> costIndices = stackalloc int[BuildCostDigestCapacity];
+            int groupedCostCount = PrepareBuildCostDigestGroups(data, costHashes, costAmounts, costIndices);
+            if (groupedCostCount < 0)
             {
-                var cost = data.buildCost[i];
+                _costLine.color = WarnColor;
+                SetLiteral(_costLine, _costBuffer, "COST // OVERFLOW");
+                return;
+            }
+
+            int appendedCosts = 0;
+            for (int i = 0; i < groupedCostCount; i++)
+            {
+                var cost = data.buildCost[costIndices[i]];
                 if (cost == null || cost.item == null)
                     continue;
 
-                int owned = inventory != null && cost.item != null
-                    ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
+                int owned = inventory != null
+                    ? inventory.CountAvailableTotal(costHashes[i])
                     : 0;
-                if (length > 8)
+                if (appendedCosts > 0)
                     length = Append(_costBuffer, length, "  |  ");
 
                 length = Append(_costBuffer, length, cost.item.itemName);
                 length = Append(_costBuffer, length, ' ');
                 length = AppendInt(_costBuffer, length, owned);
                 length = Append(_costBuffer, length, '/');
-                length = AppendInt(_costBuffer, length, cost.amount);
+                length = AppendInt(_costBuffer, length, costAmounts[i]);
+                appendedCosts++;
             }
+
+            if (appendedCosts == 0)
+                length = Append(_costBuffer, length, "NONE");
 
             _costLine.color = hasResources ? DimColor : WarnColor;
             SetBufferText(_costLine, _costBuffer, length);
+        }
+
+        private static int PrepareBuildCostDigestGroups(
+            BuildableData data,
+            Span<int> costHashes,
+            Span<int> costAmounts,
+            Span<int> costIndices)
+        {
+            if (data == null || data.buildCost == null || data.buildCost.Count == 0)
+                return 0;
+
+            int groupedCount = 0;
+            int sourceCount = data.buildCost.Count;
+            for (int i = 0; i < sourceCount; i++)
+            {
+                var cost = data.buildCost[i];
+                if (cost == null || cost.item == null || cost.amount <= 0)
+                    continue;
+
+                int itemHashId = LocHash.Compute(cost.item.PersistentId);
+                if (itemHashId == 0)
+                    continue;
+
+                int groupIndex = FindBuildCostDigestGroup(costHashes, groupedCount, itemHashId);
+                if (groupIndex < 0)
+                {
+                    if (groupedCount >= costHashes.Length ||
+                        groupedCount >= costAmounts.Length ||
+                        groupedCount >= costIndices.Length)
+                    {
+                        return -1;
+                    }
+
+                    groupIndex = groupedCount;
+                    costHashes[groupIndex] = itemHashId;
+                    costAmounts[groupIndex] = 0;
+                    costIndices[groupIndex] = i;
+                    groupedCount++;
+                }
+
+                int current = costAmounts[groupIndex];
+                if (current > int.MaxValue - cost.amount)
+                    return -1;
+
+                costAmounts[groupIndex] = current + cost.amount;
+            }
+
+            return groupedCount;
+        }
+
+        private static int FindBuildCostDigestGroup(Span<int> costHashes, int groupedCount, int itemHashId)
+        {
+            for (int i = 0; i < groupedCount; i++)
+            {
+                if (costHashes[i] == itemHashId)
+                    return i;
+            }
+
+            return -1;
         }
 
         private static RectTransform CreateRect(string name, RectTransform parent)

@@ -34,10 +34,12 @@ namespace Hecton8.Core
 
         private delegate void MathPrecisionLevelWriter(MathPrecisionLevel precisionLevel);
         private delegate void MathPrecisionDegradationWriter(int frame);
+        private delegate void MathPrecisionTransitionTicker(int frame);
 
-        // COLD ALLOC: delegates[2] - boot-bound GlobalRegistry writers; hot code invokes cached routes, not registry lookups - owner: FrameTimeWatchdog
+        // COLD ALLOC: delegates[3] - boot-bound GlobalRegistry writers; hot code invokes cached routes, not registry lookups - owner: FrameTimeWatchdog
         private static readonly MathPrecisionLevelWriter s_registerMathPrecisionLevel = GlobalRegistry.RegisterMathPrecisionLevel;
         private static readonly MathPrecisionDegradationWriter s_beginMathPrecisionDegradation = GlobalRegistry.BeginMathPrecisionDegradation;
+        private static readonly MathPrecisionTransitionTicker s_tickMathPrecisionTransition = GlobalRegistry.TickMathPrecisionTransition;
 
         private static NativeRingBuffer<float> _frameTimeSamples;
 
@@ -62,6 +64,11 @@ namespace Hecton8.Core
         public static float ParticleEmissionScale => _particleEmissionScale;
         public static bool IsVoxelAmbientOcclusionEnabled => _voxelAoEnabled;
         public static MathLodMode CurrentMathLodMode => _mathLodMode;
+
+        internal static void TickMathPrecisionTransition(int frame)
+        {
+            s_tickMathPrecisionTransition(frame);
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()

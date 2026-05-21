@@ -17,7 +17,6 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public const float MinRsqrtDistanceSq = 0.0001f;
         public const float MinForceDistanceSq = 0.1f;
         public const float MinDistanceSq = MinRsqrtDistanceSq;
-        public const float LowTierLerpRate = 5f;
         public const float DefaultPullRadiusMeters = 8f;
         public const float DefaultPullStrength = 18f;
         public const float DefaultMaxVelocityMetersPerSecond = 12f;
@@ -119,13 +118,15 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public NativeArray<LootMagnetSignalEvent> SignalEvents;
         public NativeArray<LootMagnetTelemetryEntry> Telemetry;
 
-        public bool IsCreated =>
-            EntityAups.IsCreated &&
-            EntityFlags.IsCreated &&
-            EntityVelocities.IsCreated &&
-            EntityItemHashes.IsCreated &&
-            EntityQuantities.IsCreated &&
-            SignalEvents.IsCreated &&
-            Telemetry.IsCreated;
+        public static bool IsCreated(in LootMagnetVaultViews views)
+        {
+            return views.EntityAups.IsCreated &&
+                   views.EntityFlags.IsCreated &&
+                   views.EntityVelocities.IsCreated &&
+                   views.EntityItemHashes.IsCreated &&
+                   views.EntityQuantities.IsCreated &&
+                   views.SignalEvents.IsCreated &&
+                   views.Telemetry.IsCreated;
+        }
     }
 }

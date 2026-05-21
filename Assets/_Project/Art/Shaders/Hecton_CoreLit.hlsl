@@ -61,13 +61,6 @@ float4 _HectonBiolumVolumeParams;
 float4 _HectonGlowPointPositionRange[HECTON_GLOW_POINT_MAX];
 float4 _HectonGlowPointColorIntensity[HECTON_GLOW_POINT_MAX];
 float4 _HectonGlowPointParams; // x=count, y=sonar pulse gain, z/w=reserved
-float4 _HectonProjectedCausticsWorldRect;
-float4 _HectonProjectedCausticsParams;
-float4 _HectonProjectedCausticsColor;
-TEXTURE2D(_HectonCausticsMap);
-SAMPLER(sampler_HectonCausticsMap);
-float4 _HectonCausticsAUP;            // xy=projection origin xz, z=inv world size, w=compute active
-float4 _HectonCausticsRuntimeParams;  // x=compute active, y=wave count, z=cloud cover, w=intensity
 float4 _BrineColor;
 float _BrineHeightY;
 float4 _FinalGiantAbyssLight;
@@ -77,9 +70,6 @@ float4 _HectonEclipseWaterShadowParams;    // xy=center xz, z=radius, w=darkenin
 float4 _HectonEclipseWaterShadowDirection; // xy=travel direction, z=softness, w=penumbra
 float4 _HectonRingCausticsParams;          // x=strength, y=stripe scale, z=phase, w=softness
 float4 _HectonRingCausticsDirection;       // xy=band direction, z=sun alignment, w=reserved
-float4 _HectonCausticsSimulationParamsA;
-float4 _HectonCausticsSimulationParamsB;
-float4 _HectonCausticsSimulationParamsC;
 float4 _AbyssalFlowWeatherCurrent;
 float4 _HectonPhotophobiaFieldOriginScale;
 float4 _HectonPhotophobiaFieldState;
@@ -1169,35 +1159,7 @@ float HectonCoreLitCheapCausticRidge(float2 uv, float cellDensity, float timePha
 
 float HectonCoreLitEvaluateProceduralCaustics(float2 uv)
 {
-    float primaryDensity = max(_HectonCausticsSimulationParamsA.x, 0.5);
-    float primarySpeed = max(abs(_HectonCausticsSimulationParamsA.z), 0.025);
-    float timeValue = _Time.y + _HectonCausticsSimulationParamsB.z;
-    float waveDisplacement = _HectonCausticsSimulationParamsC.x;
-    float2 waveFlow = _HectonCausticsSimulationParamsC.yz;
-    float wavePhase = _HectonCausticsSimulationParamsC.w;
-    float waveDisplacementAbs = abs(waveDisplacement);
-    float waveFlowSq = dot(waveFlow, waveFlow);
-    float waveFlowMotionMask = saturate(waveFlowSq * 0.001225);
-    float2 waveOffset = waveFlow * 0.0125 + float2(waveDisplacement * 0.018, -waveDisplacement * 0.013);
-    float2 currentOffset = clamp(_AbyssalFlowWeatherCurrent.xz, -20.0, 20.0) * (timeValue * 0.0025);
-    float2 animatedUv = uv + waveOffset + currentOffset;
-
-    primaryDensity *= lerp(0.94, 1.08, saturate(waveDisplacementAbs * 0.2));
-
-    float causticTime = timeValue * primarySpeed + wavePhase;
-    float2 scaledUv = animatedUv * primaryDensity;
-    float waveA = sin(dot(scaledUv, float2(6.2831853, 2.3911011)) + causticTime);
-    float waveB = sin(dot(scaledUv, float2(-3.117142, 7.214377)) - causticTime * 1.37 + 1.71);
-    float waveC = sin(dot(scaledUv, float2(4.421307, -5.873011)) + causticTime * 0.73 + waveDisplacement * 0.2);
-    float combined = saturate((waveA + waveB + waveC) * 0.16666667 + 0.5);
-
-    if (combined <= 0.0001)
-        return 0.0;
-
-    combined = combined * combined * (3.0 - 2.0 * combined);
-    combined = saturate(combined * combined * 1.85);
-    combined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + waveFlowMotionMask));
-    return saturate(combined * 1.35);
+    return 0.0;
 }
 
 float HectonCoreLitResolveFlashlightShadowFloor()
@@ -1384,103 +1346,18 @@ float HectonCoreLitEvaluateCaveAmbientFactorFromSignedDistance(float signedDista
 float HectonCoreLitEvaluateProjectedCausticsMaskFromUnitNormal(float3 positionWS, float3 normalizedNormalWS, out float celestialShadow)
 {
     celestialShadow = 1.0;
-
-    if (_HectonProjectedCausticsParams.x <= 0.0001)
-        return 0.0;
-
-    if (_BrineColor.a > 0.0001 && positionWS.y < _BrineHeightY)
-        return 0.0;
-
-    if (normalizedNormalWS.y <= 0.0)
-        return 0.0;
-
-    float2 uv = float2(
-        (positionWS.x - _HectonProjectedCausticsWorldRect.x) * _HectonProjectedCausticsWorldRect.z,
-        (positionWS.z - _HectonProjectedCausticsWorldRect.y) * _HectonProjectedCausticsWorldRect.w);
-    if (any(uv < 0.0) || any(uv > 1.0))
-        return 0.0;
-
-    float upFacing = HectonCoreLitEvaluateCausticsUpMaskFromUnitNormal(normalizedNormalWS);
-    if (upFacing <= 0.0001)
-        return 0.0;
-
-    float directionalWeight = HectonCoreLitEvaluateDirectionalCausticsWeightFromUnitNormal(normalizedNormalWS);
-    if (directionalWeight <= 0.0001)
-        return 0.0;
-
-    float depthBelowWater = max(0.0, _HectonProjectedCausticsParams.y - positionWS.y);
-    float depthFade = 1.0 - saturate((depthBelowWater - _HectonProjectedCausticsParams.z) * _HectonProjectedCausticsParams.w);
-    if (depthFade <= 0.0)
-        return 0.0;
-
-    depthFade *= HectonCoreLitEvaluateCausticsSceneDepthFade(positionWS);
-    if (depthFade <= 0.0)
-        return 0.0;
-
-    float shadowTerm = HectonCoreLitEvaluateMainLightCausticShadow(positionWS);
-    if (shadowTerm <= 0.0001)
-        return 0.0;
-
-    if (_HectonCaveVoxelActive > 0.5)
-    {
-        float caveSignedDistance = HectonCoreLitSampleCaveVoxelSignedDistance(positionWS + normalizedNormalWS * 0.03);
-        if (caveSignedDistance <= 0.02)
-            return 0.0;
-
-        shadowTerm *= HectonCoreLitEvaluateCaveAmbientFactorFromSignedDistance(caveSignedDistance);
-    }
-
-    celestialShadow = HectonCoreLitEvaluateCelestialWaterShadow(positionWS);
-    if (celestialShadow <= 0.0001)
-        return 0.0;
-
-    float caustics;
-    if (_HectonCausticsAUP.w > 0.5)
-    {
-        float3 analytical = SAMPLE_TEXTURE2D(_HectonCausticsMap, sampler_HectonCausticsMap, uv).rgb;
-        caustics = dot(analytical, float3(0.27, 0.54, 0.19));
-    }
-    else
-    {
-        caustics = HectonCoreLitEvaluateProceduralCaustics(uv);
-    }
-
-    return caustics * depthFade * upFacing * directionalWeight * shadowTerm * celestialShadow * _HectonProjectedCausticsParams.x;
+    return 0.0;
 }
 
 float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 normalWS, out float celestialShadow)
 {
     celestialShadow = 1.0;
-    if (normalWS.y <= 0.0)
-        return 0.0;
-
-    return HectonCoreLitEvaluateProjectedCausticsMaskFromUnitNormal(
-        positionWS,
-        HectonCoreLitSafeNormalize(normalWS),
-        celestialShadow);
+    return 0.0;
 }
 
 half3 HectonCoreLitEvaluateProjectedCausticsScattering(float3 positionWS, float3 normalWS)
 {
-    if (_HectonProjectedCausticsParams.x <= 0.0001 || normalWS.y <= 0.0)
-        return half3(0.0h, 0.0h, 0.0h);
-
-    float causticColorEnergy = max(max(_HectonProjectedCausticsColor.r, _HectonProjectedCausticsColor.g), _HectonProjectedCausticsColor.b);
-    float giantLightEnergy = max(max(_FinalGiantAbyssLight.r, _FinalGiantAbyssLight.g), _FinalGiantAbyssLight.b);
-    if (causticColorEnergy <= 0.0001 && giantLightEnergy <= 0.0001)
-        return half3(0.0h, 0.0h, 0.0h);
-
-    float3 normalizedNormalWS = HectonCoreLitSafeNormalize(normalWS);
-    float celestialShadow;
-    float mask = HectonCoreLitEvaluateProjectedCausticsMaskFromUnitNormal(positionWS, normalizedNormalWS, celestialShadow);
-    if (mask <= 0.0)
-        return half3(0.0h, 0.0h, 0.0h);
-
-    half3 color = (half3)(_HectonProjectedCausticsColor.rgb * mask);
-    if (giantLightEnergy > 0.0001 && celestialShadow > 0.0001)
-        color += HectonCoreLitEvaluateGiantAbyssLightFromUnitNormal(normalizedNormalWS) * (half)(mask * 0.35 * celestialShadow);
-
-    return color;
+    return half3(0.0h, 0.0h, 0.0h);
 }
 
 half HectonCoreLitEvaluateNoirFog(half fogRaw)
@@ -1504,7 +1381,7 @@ half3 HectonCoreLitApplyNoirBlackCrush(half3 color, half depth01)
 half3 HectonCoreLitApplyDepthCrushCurve(half3 color, float3 positionWS)
 {
     const half3 abyssFloor = half3(0.0015h, 0.0023h, 0.0031h);
-    float surfaceY = _HectonProjectedCausticsParams.y;
+    float surfaceY = _InternalWaterlineY;
     float depthMeters = max(0.0, surfaceY - positionWS.y);
     half crushWeight = (half)saturate((depthMeters - 500.0) * 0.002);
     half3 safeColor = max(color, abyssFloor);

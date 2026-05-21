@@ -1,10 +1,11 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts.Signals;
 using Unity.Mathematics;
 
 namespace Hecton8.World
 {
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct TerrainChunkGeneratedSignal
+    public struct TerrainChunkGeneratedSignal : ISignal
     {
         [FieldOffset(0)] public int ChunkX;
         [FieldOffset(4)] public int ChunkZ;

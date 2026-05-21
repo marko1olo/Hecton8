@@ -313,7 +313,8 @@ namespace Hecton8.Atmosphere
         private bool _isLocallySheltered;
         private float _stormEquipmentPulseTimer;
         private SurfaceWeatherBindingSnapshot _computedBindings;
-        private VaultBufferHandle<SurfaceWeatherJobOutput> _weatherJobOutputHandle;
+        private VaultGenerationHandle<SurfaceWeatherJobOutput> _weatherJobOutputHandle;
+        private IDataVault _dataVault;
         private JobHandle _weatherJobHandle;
         private bool _weatherJobScheduled;
         private bool _weatherJobPrimed;
@@ -362,12 +363,14 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
             TryAssignEditorAuthoringDefaults();
 #endif
+            CacheDataVaultCold();
             TryResolveDependencies(true);
             InitializeRuntimeStateIfNeeded();
         }
 
         private void OnEnable()
         {
+            CacheDataVaultCold();
             TryRegisterService();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterTickManagers();
@@ -404,8 +407,6 @@ namespace Hecton8.Atmosphere
         {
             long solveStartTicks = Stopwatch.GetTimestamp();
 
-            TryRegisterTickManagers();
-            TryResolveDependencies(false);
             InitializeRuntimeStateIfNeeded();
 
             if (!_runtimeStateInitialized)
@@ -422,7 +423,6 @@ namespace Hecton8.Atmosphere
 
         public void SlowTick()
         {
-            TryRegisterTickManagers();
             TryResolveDependencies(true);
             CacheOceanDefaults();
             InitializeRuntimeStateIfNeeded();
@@ -446,34 +446,26 @@ namespace Hecton8.Atmosphere
 
         private void TryRegisterTickManagers()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
             if (!_registeredTick)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this) ||
-                                  SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+                bool registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+                bool registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredTick = registeredUpdate || registeredLate;
             }
 
             if (!_registeredSlowTick)
-            {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
-            }
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTickManagers()
         {
             if (_registeredTick)
             {
-                if (GlobalRegistry.Updatables.Contains(this))
-                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-
-                if (SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this))
-                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredTick = false;
             }
 
@@ -637,6 +629,11 @@ namespace Hecton8.Atmosphere
             _cachedOceanDefaults = true;
         }
 
+        private void CacheDataVaultCold()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+        }
+
         private void InitializeRuntimeStateIfNeeded()
         {
             if (_runtimeStateInitialized)
@@ -661,26 +658,30 @@ namespace Hecton8.Atmosphere
 
         private bool EnsureWeatherMathBuffers()
         {
-            if (_weatherJobOutputHandle.IsCreated)
+            if (TryOpenWeatherJobOutput(out _))
                 return true;
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null)
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsAllocationLocked)
                 return false;
 
-            _weatherJobOutputHandle = vault.GetBufferHandle<SurfaceWeatherJobOutput>(
+            _weatherJobOutputHandle = vault.GetGenerationHandle<SurfaceWeatherJobOutput>(
                 BufferID.SurfaceWeatherJobOutput,
                 1,
                 SystemID.HabitatAtmosphere,
                 NativeArrayOptions.ClearMemory);
-            return _weatherJobOutputHandle.IsCreated;
+            return TryOpenWeatherJobOutput(out _);
         }
 
         private void DisposeWeatherMathBuffers()
         {
-            if (_weatherJobScheduled)
-                DispatcherJobSwap.TryComplete(ref _weatherJobHandle, forceComplete: true);
+            if (_weatherJobScheduled &&
+                !DispatcherJobSwap.TryComplete(ref _weatherJobHandle, forceComplete: false))
+            {
+                return;
+            }
 
+            ReleaseWeatherJobOutputHandle(_dataVault);
             _weatherJobOutputHandle = default;
             _weatherJobScheduled = false;
             _weatherJobPrimed = false;
@@ -691,7 +692,7 @@ namespace Hecton8.Atmosphere
             if (!_runtimeStateInitialized)
                 return;
 
-            if (!TryResolveWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
+            if (!TryOpenOrAcquireWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
                 return;
 
             SurfaceWeatherMathJob job = new SurfaceWeatherMathJob
@@ -714,7 +715,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             _weatherJobScheduled = false;
-            if (!TryResolveWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
+            if (!TryOpenOrAcquireWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
                 return;
 
             CommitWeatherMathOutput(weatherJobOutput[0]);
@@ -726,7 +727,7 @@ namespace Hecton8.Atmosphere
             if (!_runtimeStateInitialized || _weatherJobScheduled)
                 return;
 
-            if (!TryResolveWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
+            if (!TryOpenOrAcquireWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput))
                 return;
 
             SurfaceWeatherMathJob job = new SurfaceWeatherMathJob
@@ -739,21 +740,43 @@ namespace Hecton8.Atmosphere
             _weatherJobScheduled = true;
         }
 
-        private bool TryResolveWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput)
+        private bool TryOpenOrAcquireWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput)
         {
             weatherJobOutput = default;
             if (!EnsureWeatherMathBuffers())
                 return false;
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            weatherJobOutput = _weatherJobOutputHandle.Resolve(vault);
-            return weatherJobOutput.IsCreated && weatherJobOutput.Length > 0;
+            return TryOpenWeatherJobOutput(out weatherJobOutput);
+        }
+
+        private bool TryOpenWeatherJobOutput(out NativeArray<SurfaceWeatherJobOutput> weatherJobOutput)
+        {
+            IDataVault vault = _dataVault;
+            weatherJobOutput = default;
+            return vault != null &&
+                   _weatherJobOutputHandle.BufferID != 0u &&
+                   _weatherJobOutputHandle.Generation != 0u &&
+                   vault.TryResolveHandle(in _weatherJobOutputHandle, out weatherJobOutput) &&
+                   weatherJobOutput.IsCreated &&
+                   weatherJobOutput.Length > 0;
+        }
+
+        private void ReleaseWeatherJobOutputHandle(IDataVault vault)
+        {
+            if (vault != null &&
+                _weatherJobOutputHandle.BufferID != 0u &&
+                _weatherJobOutputHandle.Generation != 0u)
+            {
+                vault.ReleaseBuffer(in _weatherJobOutputHandle);
+            }
         }
 
         private SurfaceWeatherJobInput BuildWeatherJobInput(float deltaTime)
         {
             Vector3 followPosition = ResolveFollowPosition();
-            double3 absoluteOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            double3 absoluteOffset = TryResolveCurrentRuntimeOriginDouble3(out double3 resolvedOffset)
+                ? resolvedOffset
+                : double3.zero;
             return new SurfaceWeatherJobInput
             {
                 currentState = ToMathState(_currentState),
@@ -1259,9 +1282,54 @@ namespace Hecton8.Atmosphere
 
         private static float ResolveAupThunderDistanceMeters(Vector3 strikePosition, Vector3 listenerPosition)
         {
-            AbsoluteUniversePosition strikeAup = AbsoluteUniversePosition.FromRuntimePosition(strikePosition);
-            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerPosition);
+            if (!TryResolveAupFromRuntimeOrigin(strikePosition, out AbsoluteUniversePosition strikeAup) ||
+                !TryResolveAupFromRuntimeOrigin(listenerPosition, out AbsoluteUniversePosition listenerAup))
+            {
+                return ApproximateLocalDistanceMeters(strikePosition, listenerPosition);
+            }
+
             return ApproximateDistanceMeters(AbsoluteUniversePosition.DeltaMetersClamped(in strikeAup, in listenerAup));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return absoluteAup.IsFinite();
+        }
+
+        private static bool TryResolveCurrentRuntimeOriginDouble3(out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = originAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static float ApproximateLocalDistanceMeters(Vector3 a, Vector3 b)
+        {
+            if (!IsFinite(a) || !IsFinite(b))
+                return 0f;
+
+            Vector3 delta = a - b;
+            return ApproximateDistanceMeters(new double3(delta.x, delta.y, delta.z));
         }
 
         private static Vector2 RotateDirection(Vector2 direction, float angleRadians)

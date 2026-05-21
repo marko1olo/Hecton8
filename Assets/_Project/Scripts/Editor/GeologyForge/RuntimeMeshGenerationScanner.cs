@@ -14,15 +14,15 @@ namespace Hecton8.Editor.GeologyForge
         private const string AsyncScanProgressMessage = "Scanning source files";
 
         private static readonly Stopwatch _AsyncScanStopwatch = new Stopwatch();
-        private static List<string> _asyncFiles;
-        private static List<string> _asyncDirectoryStack;
-        private static List<Finding> _asyncFindings;
+        private static readonly List<string> _asyncFiles = new List<string>(64);
+        private static readonly List<string> _asyncDirectoryStack = new List<string>(16);
+        private static readonly List<Finding> _asyncFindings = new List<Finding>(64);
         private static int _asyncScannedFileCount;
+        private static bool _asyncScanActive;
 
         private static readonly string[] _ScanRoots =
         {
-            "Assets/_Project/Scripts/World",
-            "Assets/_Project/Scripts/Environment"
+            "Assets/_Project/Scripts"
         };
 
         private static readonly string[] _ForbiddenPatterns =
@@ -52,17 +52,13 @@ namespace Hecton8.Editor.GeologyForge
         [MenuItem("HECTON-8/Geology Forge/Cancel Runtime Mesh Scan", false, 182)]
         public static void CancelAsyncScan()
         {
-            if (_asyncFindings == null)
+            if (!_asyncScanActive)
                 return;
 
             EditorApplication.update -= TickAsyncScan;
             if (!Application.isBatchMode)
                 EditorUtility.ClearProgressBar();
-            _asyncFiles = null;
-            _asyncDirectoryStack = null;
-            _asyncFindings = null;
-            _asyncScannedFileCount = 0;
-            _AsyncScanStopwatch.Reset();
+            ClearAsyncScanState();
         }
 
         public static List<Finding> Scan()
@@ -77,16 +73,14 @@ namespace Hecton8.Editor.GeologyForge
 
         private static bool StartAsyncScan()
         {
-            if (_asyncFindings != null)
+            if (_asyncScanActive)
             {
                 Debug.LogWarning("[SHINOBU_208] Runtime mesh generation scan request ignored: scan already active.");
                 return true;
             }
 
-            _asyncFiles = new List<string>(64);
-            _asyncDirectoryStack = new List<string>(_ScanRoots.Length);
-            _asyncFindings = new List<Finding>(64);
-            _asyncScannedFileCount = 0;
+            ClearAsyncScanState();
+            _asyncScanActive = true;
             SeedAsyncScanRoots();
             EditorApplication.update -= TickAsyncScan;
             EditorApplication.update += TickAsyncScan;
@@ -95,7 +89,7 @@ namespace Hecton8.Editor.GeologyForge
 
         private static void TickAsyncScan()
         {
-            if (_asyncFiles == null || _asyncDirectoryStack == null || _asyncFindings == null)
+            if (!_asyncScanActive)
                 return;
 
             try
@@ -145,18 +139,33 @@ namespace Hecton8.Editor.GeologyForge
 
         private static void FinishAsyncScan()
         {
-            List<Finding> completedFindings = _asyncFindings;
+            if (!_asyncScanActive)
+                return;
+
+            int completedFindingCount = _asyncFindings.Count;
             EditorApplication.update -= TickAsyncScan;
-            _asyncFiles = null;
-            _asyncDirectoryStack = null;
-            _asyncFindings = null;
-            _asyncScannedFileCount = 0;
-            _AsyncScanStopwatch.Reset();
             if (!Application.isBatchMode)
                 EditorUtility.ClearProgressBar();
 
-            WriteReport(completedFindings);
-            Debug.Log("[SHINOBU_208] Runtime mesh generation scan wrote " + GeologyForgeConstants.ScannerReportPath + " with " + completedFindings.Count + " findings.");
+            try
+            {
+                WriteReport(_asyncFindings);
+                Debug.Log("[SHINOBU_208] Runtime mesh generation scan wrote " + GeologyForgeConstants.ScannerReportPath + " with " + completedFindingCount + " findings.");
+            }
+            finally
+            {
+                ClearAsyncScanState();
+            }
+        }
+
+        private static void ClearAsyncScanState()
+        {
+            _asyncFiles.Clear();
+            _asyncDirectoryStack.Clear();
+            _asyncFindings.Clear();
+            _asyncScannedFileCount = 0;
+            _asyncScanActive = false;
+            _AsyncScanStopwatch.Reset();
         }
 
         private static void SeedAsyncScanRoots()
@@ -168,9 +177,6 @@ namespace Hecton8.Editor.GeologyForge
                     _asyncDirectoryStack.Add(root.Replace('\\', '/'));
             }
 
-            string voxelPath = "Assets/_Project/Scripts/HectonVoxelEngine.cs";
-            if (File.Exists(voxelPath))
-                _asyncFiles.Add(voxelPath);
         }
 
         private static void ExpandNextAsyncDirectory()
@@ -207,7 +213,7 @@ namespace Hecton8.Editor.GeologyForge
 
         private static float EstimateAsyncProgress()
         {
-            int queuedWork = (_asyncFiles != null ? _asyncFiles.Count : 0) + (_asyncDirectoryStack != null ? _asyncDirectoryStack.Count : 0);
+            int queuedWork = _asyncFiles.Count + _asyncDirectoryStack.Count;
             int totalKnown = _asyncScannedFileCount + queuedWork;
             if (totalKnown <= 0)
                 return 0.95f;
@@ -234,10 +240,6 @@ namespace Hecton8.Editor.GeologyForge
                     files.Add(path);
                 }
             }
-
-            string voxelPath = "Assets/_Project/Scripts/HectonVoxelEngine.cs";
-            if (File.Exists(voxelPath))
-                files.Add(voxelPath);
 
             return files;
         }
@@ -330,7 +332,7 @@ namespace Hecton8.Editor.GeologyForge
             }
 
             var builder = new StringBuilder(4096);
-            builder.Append("{\n  \"agent\": \"SHINOBU_208\",\n  \"schemaVersion\": 2,\n  \"status\": \"PENDING_VERIFICATION\",\n  \"runtimeMeshAllocationsEradicated\": ");
+            builder.Append("{\n  \"agent\": \"SHINOBU_208\",\n  \"schemaVersion\": 2,\n  \"status\": \"PENDING_VERIFICATION\",\n  \"scanScope\": \"Assets/_Project/Scripts excluding Editor folders\",\n  \"runtimeMeshAllocationsEradicated\": ");
             builder.Append(actionableCount == 0 ? "true" : "false");
             builder.Append(",\n  \"findingCount\": ");
             builder.Append(findings.Count);
@@ -367,7 +369,7 @@ namespace Hecton8.Editor.GeologyForge
                 builder.Append(" }");
             }
 
-            builder.Append("\n  ],\n  \"note\": \"Editor-only Geology Forge added. Remaining runtime topology sites require owner-specific removal, not blind cross-domain deletion. Schema v2 classifies context/risk so integrators can route SIMULATION_RUNTIME before comment-only archaeology.\"\n}\n");
+            builder.Append("\n  ],\n  \"note\": \"Editor-only Geology Forge added. Remaining runtime topology sites require owner-specific removal, not blind cross-domain deletion. Schema v2 scans the project runtime script surface and classifies context/risk so integrators can route SIMULATION_RUNTIME before comment-only archaeology.\"\n}\n");
             WriteAtomicText(GeologyForgeConstants.ScannerReportPath, builder.ToString());
         }
 

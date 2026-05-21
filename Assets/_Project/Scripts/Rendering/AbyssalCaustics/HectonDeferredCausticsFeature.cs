@@ -60,7 +60,7 @@ namespace Hecton8.Rendering
                 if (!Application.isPlaying || _settings == null || _material == null)
                     return;
 
-                if (!AbyssalDeferredCausticsRuntime.TryGetActiveConstantBuffer(out GraphicsBuffer constantBuffer))
+                if (!AbyssalDeferredCausticsRuntime.TryGetActiveConstantBuffer(out GraphicsBuffer constantBuffer, out _))
                     return;
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
@@ -85,6 +85,7 @@ namespace Hecton8.Rendering
                 destinationDesc.useMipMap = false;
                 destinationDesc.autoGenerateMips = false;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
+                BufferHandle constantBufferHandle = renderGraph.ImportBuffer(constantBuffer);
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PassData>(
                            "Hecton Deferred Caustics",
@@ -94,19 +95,24 @@ namespace Hecton8.Rendering
                     passData.Source = sourceTexture;
                     passData.Depth = depthTexture;
                     passData.Material = _material;
-                    passData.ConstantBuffer = constantBuffer;
+                    passData.ConstantBuffer = constantBufferHandle;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.UseBuffer(constantBufferHandle, AccessFlags.Read);
                     builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
                     builder.AllowGlobalStateModification(true);
                     builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
                     {
-                        context.cmd.SetGlobalTexture(AbyssalCausticsShaderIds.BlitTextureId, data.Source);
-                        context.cmd.SetGlobalTexture(AbyssalCausticsShaderIds.CameraDepthTextureId, data.Depth);
+                        GraphicsBuffer constantBuffer = data.ConstantBuffer;
+                        if (constantBuffer == null)
+                            return;
+
+                        context.cmd.SetGlobalTexture(AbyssalCausticsShaderIds.SourceTextureId, data.Source);
+                        context.cmd.SetGlobalTexture(AbyssalCausticsShaderIds.DepthTextureId, data.Depth);
                         context.cmd.SetGlobalConstantBuffer(
+                            constantBuffer,
                             AbyssalCausticsShaderIds.ConstantBufferId,
-                            data.ConstantBuffer,
                             0,
                             AbyssalCausticsConstants.CBufferBytes);
                         CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
@@ -121,7 +127,7 @@ namespace Hecton8.Rendering
                 internal TextureHandle Source;
                 internal TextureHandle Depth;
                 internal Material Material;
-                internal GraphicsBuffer ConstantBuffer;
+                internal BufferHandle ConstantBuffer;
             }
         }
 
@@ -141,7 +147,6 @@ namespace Hecton8.Rendering
                 ? settings.shader
                 : Shader.Find("Hidden/Hecton8/DeferredCaustics");
             RecreateMaterial(ref _material, shader);
-            WarmupMaterialPass(_material);
             _pass ??= new DeferredCausticsPass();
         }
 
@@ -178,18 +183,6 @@ namespace Hecton8.Rendering
 
             DisposeMaterial(ref material);
             material = CoreUtils.CreateEngineMaterial(shader);
-        }
-
-        private static void WarmupMaterialPass(Material material)
-        {
-            if (!Application.isPlaying || material == null)
-                return;
-
-            Shader shader = material.shader;
-            if (shader == null || !shader.isSupported)
-                return;
-
-            material.SetPass(0);
         }
 
         private static void DisposeMaterial(ref Material material)

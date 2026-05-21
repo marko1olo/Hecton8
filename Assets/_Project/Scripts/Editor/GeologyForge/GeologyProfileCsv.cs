@@ -10,12 +10,16 @@ namespace Hecton8.Editor.GeologyForge
 {
     internal static unsafe class GeologyProfileCsv
     {
-        public static List<GeologyBakeProfile> LoadProfiles()
-        {
-            List<GeologyBakeProfile> profiles = new List<GeologyBakeProfile>(16);
-            LoadProfiles(profiles);
-            return profiles;
-        }
+        private const int CsvErrorMalformedCell = 1001;
+        private const int CsvErrorIntegerOverflow = 1002;
+        private const int CsvErrorNonFiniteFloat = 1003;
+        private const int CsvErrorNonPositiveValue = 1004;
+        private const int CsvErrorInvalidTerminator = 1005;
+        private const int CsvErrorColumnCount = 1006;
+        private const int CsvErrorHeaderSchema = 1007;
+        private const int CsvErrorFileSize = 1008;
+        private const int CsvErrorNoProfiles = 1009;
+        private const int MaximumCsvBytes = 4 * 1024 * 1024;
 
         public static void LoadProfiles(List<GeologyBakeProfile> profiles)
         {
@@ -33,14 +37,11 @@ namespace Hecton8.Editor.GeologyForge
             NativeArray<byte> bytes = default;
             try
             {
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     long length64 = stream.Length;
-                    if (length64 <= 0L || length64 > int.MaxValue)
-                    {
-                        profiles.Add(DefaultProfile());
-                        return;
-                    }
+                    if (length64 <= 0L || length64 > MaximumCsvBytes)
+                        throw new InvalidDataException("Geology profile CSV error " + CsvErrorFileSize + ": invalid file size " + length64 + " bytes.");
 
                     int length = (int)length64;
                     bytes = new NativeArray<byte>(length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
@@ -55,16 +56,23 @@ namespace Hecton8.Editor.GeologyForge
                         read += chunk;
                     }
 
-                    bool hasIsoLevel = HeaderHasIsoLevel(ptr, read);
-                    if (!HeaderMatchesExpectedSchema(ptr, read, hasIsoLevel))
-                        throw new InvalidDataException("Geology profile CSV header mismatch. Expected SHINOBU_208 schema with optional iso_level column.");
+                    if (read != length || stream.Length != length64)
+                        throw new InvalidDataException("Geology profile CSV error " + CsvErrorFileSize + ": unstable file size while reading " + read + " of " + length + " bytes.");
+
+                    int dataOffset = Utf8BomOffset(ptr, read);
+                    byte* csv = ptr + dataOffset;
+                    int csvLength = read - dataOffset;
+                    bool hasIsoLevel = HeaderHasIsoLevel(csv, csvLength);
+                    ValidateHeaderSchema(csv, csvLength, hasIsoLevel);
 
                     int cursor = 0;
-                    SkipLine(ptr, read, ref cursor);
-                    while (cursor < read)
+                    int rowIndex = 2;
+                    SkipLine(csv, csvLength, ref cursor);
+                    while (cursor < csvLength)
                     {
-                        if (TryReadProfile(ptr, read, hasIsoLevel, ref cursor, out GeologyBakeProfile profile))
+                        if (TryReadProfile(csv, csvLength, hasIsoLevel, rowIndex, ref cursor, out GeologyBakeProfile profile))
                             profiles.Add(profile);
+                        rowIndex++;
                     }
                 }
             }
@@ -75,7 +83,7 @@ namespace Hecton8.Editor.GeologyForge
             }
 
             if (profiles.Count == 0)
-                profiles.Add(DefaultProfile());
+                throw new InvalidDataException("Geology profile CSV error " + CsvErrorNoProfiles + ": existing profile file contains no data rows.");
         }
 
         public static GeologyBakeProfile DefaultProfile()
@@ -102,38 +110,56 @@ namespace Hecton8.Editor.GeologyForge
             return profile;
         }
 
-        private static bool TryReadProfile(byte* bytes, int length, bool hasIsoLevel, ref int cursor, out GeologyBakeProfile profile)
+        private static bool TryReadProfile(byte* bytes, int length, bool hasIsoLevel, int rowIndex, ref int cursor, out GeologyBakeProfile profile)
         {
             profile = default;
             SkipBlank(bytes, length, ref cursor);
             if (cursor >= length)
                 return false;
 
+            ValidateRowColumnCount(bytes, length, cursor, hasIsoLevel, rowIndex);
+
             profile.Name = ReadFixedString(bytes, length, ref cursor);
-            profile.Seed = ReadUInt(bytes, length, ref cursor, 1u);
-            profile.Resolution = math.clamp(ReadInt(bytes, length, ref cursor, GeologyForgeConstants.DefaultResolution), GeologyForgeConstants.MinimumResolution, GeologyForgeConstants.MaximumResolution);
-            profile.Variations = math.clamp(ReadInt(bytes, length, ref cursor, 1), 1, GeologyForgeConstants.MaximumVariations);
-            profile.RadiusMeters = SafePositive(ReadFloat(bytes, length, ref cursor, 2.2f), 2.2f);
-            profile.HeightScale = SafePositive(ReadFloat(bytes, length, ref cursor, 1.2f), 1.2f);
-            profile.Frequency = SafePositive(ReadFloat(bytes, length, ref cursor, 1f), 1f);
-            profile.NoiseAmplitude = math.max(0f, ReadFloat(bytes, length, ref cursor, 0.25f));
-            profile.RidgedWeight = math.saturate(ReadFloat(bytes, length, ref cursor, 0.5f));
-            profile.VoronoiWeight = math.saturate(ReadFloat(bytes, length, ref cursor, 0.2f));
-            profile.Octaves = math.clamp(ReadInt(bytes, length, ref cursor, 4), 1, 8);
-            profile.AmbientOcclusionRays = math.clamp(ReadInt(bytes, length, ref cursor, GeologyForgeConstants.DefaultAoRays), 1, GeologyForgeConstants.MaximumAoRays);
-            profile.IsoLevel = hasIsoLevel ? math.clamp(ReadFloat(bytes, length, ref cursor, 0f), -0.5f, 0.5f) : 0f;
-            profile.GlobalQualityWeight = math.saturate(ReadFloat(bytes, length, ref cursor, 0.5f));
-            profile.Lod0Budget = math.max(32, ReadInt(bytes, length, ref cursor, GeologyForgeConstants.Lod0TriangleBudget));
-            profile.Lod1Budget = math.max(16, ReadInt(bytes, length, ref cursor, GeologyForgeConstants.Lod1TriangleBudget));
-            profile.Lod2Budget = math.max(8, ReadInt(bytes, length, ref cursor, GeologyForgeConstants.Lod2TriangleBudget));
-            double sx = ReadFloat(bytes, length, ref cursor, 0f);
-            double sy = ReadFloat(bytes, length, ref cursor, 0f);
-            double sz = ReadFloat(bytes, length, ref cursor, 0f);
+            int column = 2;
+            profile.Seed = ReadUInt(bytes, length, ref cursor, rowIndex, column++, "seed");
+            profile.Resolution = math.clamp(ReadInt(bytes, length, ref cursor, rowIndex, column++, "resolution"), GeologyForgeConstants.MinimumResolution, GeologyForgeConstants.MaximumResolution);
+            profile.Variations = math.clamp(ReadInt(bytes, length, ref cursor, rowIndex, column++, "variations"), 1, GeologyForgeConstants.MaximumVariations);
+            profile.RadiusMeters = RequirePositive(ReadFloat(bytes, length, ref cursor, rowIndex, column, "radius"), rowIndex, column++, "radius");
+            profile.HeightScale = RequirePositive(ReadFloat(bytes, length, ref cursor, rowIndex, column, "height"), rowIndex, column++, "height");
+            profile.Frequency = RequirePositive(ReadFloat(bytes, length, ref cursor, rowIndex, column, "frequency"), rowIndex, column++, "frequency");
+            profile.NoiseAmplitude = math.max(0f, ReadFloat(bytes, length, ref cursor, rowIndex, column++, "amplitude"));
+            profile.RidgedWeight = math.saturate(ReadFloat(bytes, length, ref cursor, rowIndex, column++, "ridged"));
+            profile.VoronoiWeight = math.saturate(ReadFloat(bytes, length, ref cursor, rowIndex, column++, "voronoi"));
+            profile.Octaves = math.clamp(ReadInt(bytes, length, ref cursor, rowIndex, column++, "octaves"), 1, 8);
+            profile.AmbientOcclusionRays = math.clamp(ReadInt(bytes, length, ref cursor, rowIndex, column++, "ao_rays"), 1, GeologyForgeConstants.MaximumAoRays);
+            profile.IsoLevel = hasIsoLevel ? math.clamp(ReadFloat(bytes, length, ref cursor, rowIndex, column++, "iso_level"), -0.5f, 0.5f) : 0f;
+            profile.GlobalQualityWeight = math.saturate(ReadFloat(bytes, length, ref cursor, rowIndex, column++, "quality"));
+            profile.Lod0Budget = math.max(32, ReadInt(bytes, length, ref cursor, rowIndex, column++, "lod0"));
+            profile.Lod1Budget = math.max(16, ReadInt(bytes, length, ref cursor, rowIndex, column++, "lod1"));
+            profile.Lod2Budget = math.max(8, ReadInt(bytes, length, ref cursor, rowIndex, column++, "lod2"));
+            double sx = ReadDouble(bytes, length, ref cursor, rowIndex, column++, "sector_x");
+            double sy = ReadDouble(bytes, length, ref cursor, rowIndex, column++, "sector_y");
+            double sz = ReadDouble(bytes, length, ref cursor, rowIndex, column, "sector_z");
             profile.SectorAup = new double3(sx, sy, sz);
-            SkipLine(bytes, length, ref cursor);
             if (profile.Name.Length == 0)
                 profile.Name = new FixedString64Bytes("Unnamed_Geology");
             return true;
+        }
+
+        private static void ValidateRowColumnCount(byte* bytes, int length, int cursor, bool hasIsoLevel, int rowIndex)
+        {
+            int expected = hasIsoLevel ? 20 : 19;
+            int columns = 1;
+            int scan = cursor;
+            while (scan < length && bytes[scan] != '\n' && bytes[scan] != '\r')
+            {
+                if (bytes[scan] == ',')
+                    columns++;
+                scan++;
+            }
+
+            if (columns != expected)
+                throw new InvalidDataException("Geology profile CSV error " + CsvErrorColumnCount + ": row " + rowIndex + " column count mismatch; expected " + expected + ", got " + columns + ".");
         }
 
         private static bool HeaderHasIsoLevel(byte* bytes, int length)
@@ -159,7 +185,12 @@ namespace Hecton8.Editor.GeologyForge
             return false;
         }
 
-        private static bool HeaderMatchesExpectedSchema(byte* bytes, int length, bool hasIsoLevel)
+        private static int Utf8BomOffset(byte* bytes, int length)
+        {
+            return length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF ? 3 : 0;
+        }
+
+        private static void ValidateHeaderSchema(byte* bytes, int length, bool hasIsoLevel)
         {
             int cursor = 0;
             int column = 0;
@@ -171,14 +202,16 @@ namespace Hecton8.Editor.GeologyForge
 
                 string expected = ExpectedHeaderToken(column, hasIsoLevel);
                 if (string.IsNullOrEmpty(expected) || !TokenEquals(bytes, start, cursor, expected))
-                    return false;
+                    ThrowHeaderMismatch(column + 1, string.IsNullOrEmpty(expected) ? "unexpected_column" : expected);
 
                 column++;
                 if (cursor < length && bytes[cursor] == ',')
                     cursor++;
             }
 
-            return column == (hasIsoLevel ? 20 : 19);
+            int expectedColumns = hasIsoLevel ? 20 : 19;
+            if (column != expectedColumns)
+                throw new InvalidDataException("Geology profile CSV error " + CsvErrorHeaderSchema + ": header column count mismatch at row 1, column " + (column + 1) + " (header); expected " + expectedColumns + ", got " + column + ".");
         }
 
         private static string ExpectedHeaderToken(int column, bool hasIsoLevel)
@@ -207,6 +240,11 @@ namespace Hecton8.Editor.GeologyForge
                 case 19: return hasIsoLevel ? "sector_z" : string.Empty;
                 default: return string.Empty;
             }
+        }
+
+        private static void ThrowHeaderMismatch(int column, string expected)
+        {
+            throw new InvalidDataException("Geology profile CSV error " + CsvErrorHeaderSchema + ": header mismatch at row 1, column " + column + " (" + expected + ").");
         }
 
         private static bool TokenEquals(byte* bytes, int start, int end, string expected)
@@ -240,7 +278,7 @@ namespace Hecton8.Editor.GeologyForge
             return value;
         }
 
-        private static int ReadInt(byte* bytes, int length, ref int cursor, int fallback)
+        private static int ReadInt(byte* bytes, int length, ref int cursor, int row, int column, string field)
         {
             SkipColumnWhitespace(bytes, length, ref cursor);
             bool negative = false;
@@ -253,6 +291,7 @@ namespace Hecton8.Editor.GeologyForge
             long limit = negative ? 2147483648L : int.MaxValue;
             long value = 0L;
             bool hasDigit = false;
+            bool overflow = false;
             while (cursor < length)
             {
                 byte b = bytes[cursor];
@@ -260,23 +299,28 @@ namespace Hecton8.Editor.GeologyForge
                     break;
                 hasDigit = true;
                 long digit = b - '0';
-                value = value <= (limit - digit) / 10L ? (value * 10L) + digit : limit;
+                if (value <= (limit - digit) / 10L)
+                    value = (value * 10L) + digit;
+                else
+                    overflow = true;
                 cursor++;
             }
 
-            SkipToNextColumn(bytes, length, ref cursor);
-            if (!hasDigit)
-                return fallback;
+            if (!hasDigit || overflow)
+                ThrowInvalidCell(row, column, field, overflow ? CsvErrorIntegerOverflow : CsvErrorMalformedCell);
+
+            ConsumeColumnTerminatorOrThrow(bytes, length, ref cursor, row, column, field);
             if (negative)
-                return value >= 2147483648L ? int.MinValue : -(int)value;
-            return value >= int.MaxValue ? int.MaxValue : (int)value;
+                return value == 2147483648L ? int.MinValue : -(int)value;
+            return (int)value;
         }
 
-        private static uint ReadUInt(byte* bytes, int length, ref int cursor, uint fallback)
+        private static uint ReadUInt(byte* bytes, int length, ref int cursor, int row, int column, string field)
         {
             SkipColumnWhitespace(bytes, length, ref cursor);
             ulong value = 0UL;
             bool hasDigit = false;
+            bool overflow = false;
             while (cursor < length)
             {
                 byte b = bytes[cursor];
@@ -284,15 +328,31 @@ namespace Hecton8.Editor.GeologyForge
                     break;
                 hasDigit = true;
                 ulong digit = (ulong)(b - '0');
-                value = value <= (uint.MaxValue - digit) / 10UL ? (value * 10UL) + digit : uint.MaxValue;
+                if (value <= (uint.MaxValue - digit) / 10UL)
+                    value = (value * 10UL) + digit;
+                else
+                    overflow = true;
                 cursor++;
             }
 
-            SkipToNextColumn(bytes, length, ref cursor);
-            return hasDigit ? (uint)value : fallback;
+            if (!hasDigit || overflow)
+                ThrowInvalidCell(row, column, field, overflow ? CsvErrorIntegerOverflow : CsvErrorMalformedCell);
+
+            ConsumeColumnTerminatorOrThrow(bytes, length, ref cursor, row, column, field);
+            return (uint)value;
         }
 
-        private static float ReadFloat(byte* bytes, int length, ref int cursor, float fallback)
+        private static float ReadFloat(byte* bytes, int length, ref int cursor, int row, int column, string field)
+        {
+            double value = ReadDouble(bytes, length, ref cursor, row, column, field);
+            float result = (float)value;
+            if (!math.isfinite(result))
+                ThrowInvalidCell(row, column, field, CsvErrorNonFiniteFloat);
+
+            return result;
+        }
+
+        private static double ReadDouble(byte* bytes, int length, ref int cursor, int row, int column, string field)
         {
             SkipColumnWhitespace(bytes, length, ref cursor);
             bool negative = false;
@@ -330,17 +390,25 @@ namespace Hecton8.Editor.GeologyForge
                 }
             }
 
-            SkipToNextColumn(bytes, length, ref cursor);
             if (!hasDigit)
-                return fallback;
+                ThrowInvalidCell(row, column, field);
 
-            float result = (float)(negative ? -value : value);
-            return math.isfinite(result) ? result : fallback;
+            double result = negative ? -value : value;
+            if (result == 0d)
+                result = 0d;
+            if (!math.isfinite(result))
+                ThrowInvalidCell(row, column, field, CsvErrorNonFiniteFloat);
+
+            ConsumeColumnTerminatorOrThrow(bytes, length, ref cursor, row, column, field);
+            return result;
         }
 
-        private static float SafePositive(float value, float fallback)
+        private static float RequirePositive(float value, int row, int column, string field)
         {
-            return math.isfinite(value) && value > 0f ? value : fallback;
+            if (!math.isfinite(value) || value <= 0f)
+                ThrowInvalidCell(row, column, field, CsvErrorNonPositiveValue);
+
+            return value;
         }
 
         private static void SkipColumnWhitespace(byte* bytes, int length, ref int cursor)
@@ -349,19 +417,27 @@ namespace Hecton8.Editor.GeologyForge
                 cursor++;
         }
 
-        private static void SkipToNextColumn(byte* bytes, int length, ref int cursor)
+        private static void ConsumeColumnTerminatorOrThrow(byte* bytes, int length, ref int cursor, int row, int column, string field)
         {
-            while (cursor < length)
+            SkipColumnWhitespace(bytes, length, ref cursor);
+            if (cursor >= length)
+                return;
+
+            byte b = bytes[cursor++];
+            if (b == ',' || b == '\n')
+                return;
+            if (b == '\r')
             {
-                byte b = bytes[cursor++];
-                if (b == ',' || b == '\n')
-                    return;
-                if (b == '\r')
-                {
-                    ConsumeLineBreakRemainder(bytes, length, ref cursor);
-                    return;
-                }
+                ConsumeLineBreakRemainder(bytes, length, ref cursor);
+                return;
             }
+
+            ThrowInvalidCell(row, column, field, CsvErrorInvalidTerminator);
+        }
+
+        private static void ThrowInvalidCell(int row, int column, string field, int errorCode = CsvErrorMalformedCell)
+        {
+            throw new InvalidDataException("Geology profile CSV error " + errorCode + ": invalid value at row " + row + ", column " + column + " (" + field + ").");
         }
 
         private static void SkipLine(byte* bytes, int length, ref int cursor)

@@ -18,7 +18,7 @@ namespace Hecton8.Dev
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Dev/Bot Controller")]
-    public sealed class BotController : MonoBehaviour, IUpdatable
+    public sealed class BotController : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float DefaultTargetDistanceMeters = 10000f;
         private const float DefaultAccelerationMetersPerSecondSq = 12f;
@@ -102,10 +102,12 @@ namespace Hecton8.Dev
         private int _maxLodChangesSinceSample;
         private int _emergencyTickOperations;
         private bool _registered;
+        private bool _registeredHotSwap;
         private bool _running;
         private bool _csvDirty;
         private bool _hasFailure;
         private bool _hasDriveCommand;
+        private IPlayerRuntimeContext _playerRuntime;
         private string _csvDirectoryPath;
         private string _failureReason = FailureNone;
 
@@ -143,10 +145,13 @@ namespace Hecton8.Dev
         {
             _cachedTransform = transform;
             TryGetComponent(out _playerBody);
+            CachePlayerRuntimeCold();
         }
 
         private void OnEnable()
         {
+            CachePlayerRuntimeCold();
+            TryRegisterHotSwapListener();
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             if (_autoStart)
                 StartExpedition();
@@ -155,6 +160,7 @@ namespace Hecton8.Dev
         private void OnDisable()
         {
             StopExpedition();
+            TryUnregisterHotSwapListener();
             if (_registered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
@@ -294,12 +300,45 @@ namespace Hecton8.Dev
             }
 
             _resolveTimer = ResolveIntervalSeconds;
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = _playerRuntime;
             if (player != null && player.PlayerRigidbody != null)
             {
                 _playerBody = player.PlayerRigidbody;
                 return;
             }
+        }
+
+        private void CachePlayerRuntimeCold()
+        {
+            _playerRuntime = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _playerRuntime = currentService as IPlayerRuntimeContext;
         }
 
         private void RecordCsvSample(float sampleSeconds, int sampleFrames)

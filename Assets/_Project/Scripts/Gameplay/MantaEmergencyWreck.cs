@@ -551,7 +551,7 @@ namespace Hecton8.Gameplay
             _preserveResidencyOnDespawn = false;
             _currentAup = ReadPoolSlotPosition(s_residencySlots[slotIndex]);
             _currentRuntimePosition = runtimePosition;
-            _hasCurrentAup = MathGuard.IsFinite(in _currentAup);
+            _hasCurrentAup = _currentAup.IsFinite();
 
             transform.SetPositionAndRotation(runtimePosition, state.rotation);
 
@@ -817,7 +817,7 @@ namespace Hecton8.Gameplay
             }
 
             playerAup = runtimeContext.MovementState.PredictedAup;
-            if (MathGuard.IsFinite(in playerAup))
+            if (playerAup.IsFinite())
                 return true;
 
             HectonPlayerMovement playerMovement = runtimeContext.PlayerMovement;
@@ -825,7 +825,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             playerAup = playerMovement.CurrentAup;
-            return MathGuard.IsFinite(in playerAup);
+            return playerAup.IsFinite();
         }
 
         private static AbsoluteUniversePosition ReadPoolSlotPosition(PoolSlotData slotData)
@@ -858,7 +858,7 @@ namespace Hecton8.Gameplay
 
             if (_hasCurrentAup &&
                 IsFinite(_currentRuntimePosition) &&
-                MathGuard.IsFinite(in _currentAup) &&
+                _currentAup.IsFinite() &&
                 TryOffsetAupByRuntimeDelta(in _currentAup, _currentRuntimePosition, runtimePosition, out wreckAup))
             {
                 _currentAup = wreckAup;
@@ -904,7 +904,7 @@ namespace Hecton8.Gameplay
             out AbsoluteUniversePosition targetAup)
         {
             targetAup = default;
-            if (!MathGuard.IsFinite(in referenceAup) ||
+            if (!referenceAup.IsFinite() ||
                 !IsFinite(referenceRuntimePosition) ||
                 !IsFinite(targetRuntimePosition))
             {
@@ -916,7 +916,7 @@ namespace Hecton8.Gameplay
                 (double)targetRuntimePosition.y - referenceRuntimePosition.y,
                 (double)targetRuntimePosition.z - referenceRuntimePosition.z);
             targetAup = AbsoluteUniversePosition.OffsetMeters(in referenceAup, localDelta);
-            return MathGuard.IsFinite(in targetAup);
+            return targetAup.IsFinite();
         }
     }
 }

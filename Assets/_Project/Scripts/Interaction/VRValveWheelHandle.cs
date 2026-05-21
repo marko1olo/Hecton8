@@ -47,6 +47,7 @@ namespace Hecton8.Interaction
         private bool _hasPreviousVector;
         private bool _grabPoseCached;
         private bool _registeredMomentumTick;
+        private bool _momentumTickDormant;
 
         public float IsOpen01 => _isOpen01;
         public bool IsGrabbed => _grabbed;
@@ -147,6 +148,9 @@ namespace Hecton8.Interaction
 
         public void Tick(float deltaTime)
         {
+            if (_momentumTickDormant)
+                return;
+
             if (_grabbed)
                 return;
 
@@ -158,7 +162,7 @@ namespace Hecton8.Interaction
             if (speed <= _resolvedMinimumMomentumDegreesPerSecond || safeDeltaTime <= 0f)
             {
                 _angularVelocityDegreesPerSecond = 0f;
-                TryUnregisterMomentumTick();
+                _momentumTickDormant = true;
                 return;
             }
 
@@ -168,7 +172,7 @@ namespace Hecton8.Interaction
                 (_accumulatedDegrees <= 0f || _accumulatedDegrees >= _resolvedDegreesToOpen))
             {
                 _angularVelocityDegreesPerSecond = 0f;
-                TryUnregisterMomentumTick();
+                _momentumTickDormant = true;
                 return;
             }
 
@@ -400,10 +404,12 @@ namespace Hecton8.Interaction
 
         private void TryRegisterMomentumTick()
         {
-            if (_registeredMomentumTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredMomentumTick || !Application.isPlaying)
                 return;
 
             _registeredMomentumTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (_registeredMomentumTick)
+                _momentumTickDormant = false;
         }
 
         private void TryUnregisterMomentumTick()
@@ -413,6 +419,7 @@ namespace Hecton8.Interaction
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredMomentumTick = false;
+            _momentumTickDormant = false;
         }
 
         private void OnDisable()

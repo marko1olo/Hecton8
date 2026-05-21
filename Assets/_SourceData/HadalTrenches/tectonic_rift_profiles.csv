@@ -1,0 +1,4 @@
+name,seed,cell_size,width,depth,noise,frequency,quality,sector_x,sector_y,sector_z
+Mariana_Drop,1397246286,3200,420,5000,96,0.0025,0.70,-50000,-6200,-50000
+Shallow_Crevice,1397246287,2200,160,1400,38,0.0040,0.35,-16000,-2600,-12000
+Basalt_Overkill,1397246288,4100,690,6200,140,0.0018,1.00,22000,-7200,18000

@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -129,10 +130,10 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct FloraGenomeDecoderJob : IJob
     {
-        [ReadOnly] public NativeArray<byte> RawBytes;
+        [ReadOnly, NoAlias] public NativeArray<byte> RawBytes;
         public int RawByteCount;
-        public NativeArray<FloraGenomeDTO> Genomes;
-        public NativeArray<FloraGenomeJobStats> Stats;
+        [NoAlias] public NativeArray<FloraGenomeDTO> Genomes;
+        [NoAlias] public NativeArray<FloraGenomeJobStats> Stats;
 
         public void Execute()
         {
@@ -238,15 +239,15 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct IterativeLSystemExpanderJob : IJob
     {
-        [ReadOnly] public NativeArray<FloraGenomeDTO> Genomes;
+        [ReadOnly, NoAlias] public NativeArray<FloraGenomeDTO> Genomes;
         public int GenomeIndex;
         public byte HardwareTier;
-        public NativeArray<byte> ExpandedSymbols;
-        public NativeArray<byte> ScratchSymbols;
-        public NativeArray<FloraGenomeJobStats> Stats;
+        [NoAlias] public NativeArray<byte> ExpandedSymbols;
+        [NoAlias] public NativeArray<byte> ScratchSymbols;
+        [NoAlias] public NativeArray<FloraGenomeJobStats> Stats;
 
         public void Execute()
         {
@@ -418,26 +419,26 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct TurtleGraphicsJob : IJob
     {
-        [ReadOnly] public NativeArray<FloraGenomeDTO> Genomes;
-        [ReadOnly] public NativeArray<FloraPlantSeedDTO> PlantSeeds;
-        [ReadOnly] public NativeArray<byte> Symbols;
+        [ReadOnly, NoAlias] public NativeArray<FloraGenomeDTO> Genomes;
+        [ReadOnly, NoAlias] public NativeArray<FloraPlantSeedDTO> PlantSeeds;
+        [ReadOnly, NoAlias] public NativeArray<byte> Symbols;
         public int GenomeIndex;
         public int PlantIndex;
         public uint FrameIndex;
         public byte HardwareTier;
-        public NativeArray<TurtleStackFrameDTO> TurtleStack;
-        public NativeArray<BranchMatrixDTO> BranchMatrices;
+        [NoAlias] public NativeArray<TurtleStackFrameDTO> TurtleStack;
+        [NoAlias] public NativeArray<BranchMatrixDTO> BranchMatrices;
         public int MatrixWriteOffset;
         public int MatrixWriteCapacity;
-        public NativeArray<HazardZoneDTO> HazardZones;
+        [NoAlias] public NativeArray<HazardZoneDTO> HazardZones;
         public int HazardWriteOffset;
         public int HazardWriteCapacity;
-        public NativeArray<FloraGenomeBlackBoxEntry> BlackBox;
-        public NativeArray<int> BlackBoxCursor;
-        public NativeArray<FloraGenomeJobStats> Stats;
+        [NoAlias] public NativeArray<FloraGenomeBlackBoxEntry> BlackBox;
+        [NoAlias] public NativeArray<int> BlackBoxCursor;
+        [NoAlias] public NativeArray<FloraGenomeJobStats> Stats;
         private int _branchMatrixCount;
         private int _hazardZoneCount;
 

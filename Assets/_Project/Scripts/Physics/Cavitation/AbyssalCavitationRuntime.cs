@@ -1,8 +1,10 @@
 using System;
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -15,16 +17,17 @@ namespace Hecton8.Physics
 {
     public static class AbyssalCavitationRuntime
     {
-        private const SystemID OwnerSystem = SystemID.Physics;
+        private const SystemID OwnerSystem = SystemID.VehiclesPhysics;
         private static readonly int _shockwavesShaderId = Shader.PropertyToID("_H8CavitationShockwaves");
         private static readonly int _shockwaveCountShaderId = Shader.PropertyToID("_H8CavitationShockwaveCount");
         private static readonly int _shockwaveParamsShaderId = Shader.PropertyToID("_H8CavitationShockwaveParams");
 
         private static IDataVault _vault;
-        private static uint _resolvedVaultGeneration;
         private static bool _initialized;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static bool _layoutValidated;
+        private static bool _faultHookRegistered;
+        private static int _faultDumpInProgress;
 #endif
         private static bool _jobScheduled;
         private static bool _csvLoaded;
@@ -34,17 +37,18 @@ namespace Hecton8.Physics
         private static float _lastSolveMicroseconds;
         private static uint _frameIndex;
 
-        private static VaultBufferHandle<ShockwaveEventDTO> _shockwaveHandle;
-        private static VaultBufferHandle<ShockwaveCounterBlock> _counterHandle;
-        private static VaultBufferHandle<ShockwaveEntitySnapshotDTO> _entityHandle;
-        private static VaultBufferHandle<ShockwaveForcePacketDTO> _forceHandle;
-        private static VaultBufferHandle<CavitationVisualSphereDTO> _visualHandle;
-        private static VaultBufferHandle<ShockwaveTelemetryEntry> _telemetryHandle;
-        private static VaultBufferHandle<OrdnanceProfileDTO> _profileHandle;
-        private static VaultBufferHandle<byte> _csvScratchHandle;
-        private static VaultBufferHandle<AbyssalCavitationTuningDTO> _tuningHandle;
-        private static VaultBufferHandle<AbyssalCavitationSdfVolumeDTO> _sdfDescriptorHandle;
-        private static VaultBufferHandle<sbyte> _sdfVoxelsHandle;
+        private static VaultGenerationHandle<ShockwaveEventDTO> _shockwaveHandle;
+        private static VaultGenerationHandle<ShockwaveCounterBlock> _counterHandle;
+        private static VaultGenerationHandle<ShockwaveEntitySnapshotDTO> _entityHandle;
+        private static VaultGenerationHandle<ShockwaveForcePacketDTO> _forceHandle;
+        private static VaultGenerationHandle<ForcePacketDTO> _forceTransportHandle;
+        private static VaultGenerationHandle<CavitationVisualSphereDTO> _visualHandle;
+        private static VaultGenerationHandle<ShockwaveTelemetryEntry> _telemetryHandle;
+        private static VaultGenerationHandle<OrdnanceProfileDTO> _profileHandle;
+        private static VaultGenerationHandle<byte> _csvScratchHandle;
+        private static VaultGenerationHandle<AbyssalCavitationTuningDTO> _tuningHandle;
+        private static VaultGenerationHandle<AbyssalCavitationSdfVolumeDTO> _sdfDescriptorHandle;
+        private static VaultGenerationHandle<sbyte> _sdfVoxelsHandle;
 
         private static GraphicsBuffer _visualBufferA;
         private static GraphicsBuffer _visualBufferB;
@@ -58,77 +62,96 @@ namespace Hecton8.Physics
 
         public static uint FrameIndex => _frameIndex;
         public static bool HasScheduledWork => _jobScheduled;
+        public static bool IsRuntimeReady => _initialized &&
+                                            HasRuntimeDescriptorProof(_vault);
+
+        public static bool TryBorrowRuntimeVault(out IDataVault vault)
+        {
+            vault = IsRuntimeReady ? _vault : null;
+            return vault != null;
+        }
 
         public static bool EnsureInitialized(IDataVault explicitVault = null)
         {
             if (_initialized && _vault != null)
             {
-                if (explicitVault == null && _resolvedVaultGeneration == _vault.VaultGenerationID)
+                if (explicitVault == null && HasRuntimeDescriptorProof(_vault))
+                {
+                    RegisterFaultDumpHookCold();
                     return true;
-                if (explicitVault != null && ReferenceEquals(_vault, explicitVault) && _resolvedVaultGeneration == explicitVault.VaultGenerationID)
+                }
+                if (explicitVault != null && ReferenceEquals(_vault, explicitVault) && HasRuntimeDescriptorProof(explicitVault))
+                {
+                    RegisterFaultDumpHookCold();
                     return true;
+                }
             }
 
             IDataVault vault = explicitVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                vault = latestVault;
+            if (vault == null)
+                vault = GlobalRegistry.DataVault;
 
             if (vault == null)
                 return false;
 
             ValidateLayoutColdOnce();
             _vault = vault;
-            _shockwaveHandle = vault.GetBufferHandle<ShockwaveEventDTO>(
+            _shockwaveHandle = vault.GetGenerationHandle<ShockwaveEventDTO>(
                 AbyssalCavitationVaultBufferIds.ShockwaveEvents,
                 AbyssalCavitationConstants.MaxShockwaves,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _counterHandle = vault.GetBufferHandle<ShockwaveCounterBlock>(
+            _counterHandle = vault.GetGenerationHandle<ShockwaveCounterBlock>(
                 AbyssalCavitationVaultBufferIds.ShockwaveCounters,
                 AbyssalCavitationConstants.CounterBlockCount,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _entityHandle = vault.GetBufferHandle<ShockwaveEntitySnapshotDTO>(
+            _entityHandle = vault.GetGenerationHandle<ShockwaveEntitySnapshotDTO>(
                 AbyssalCavitationVaultBufferIds.EntitySnapshots,
                 AbyssalCavitationConstants.MaxEntitySnapshots,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _forceHandle = vault.GetBufferHandle<ShockwaveForcePacketDTO>(
+            _forceHandle = vault.GetGenerationHandle<ShockwaveForcePacketDTO>(
                 AbyssalCavitationVaultBufferIds.ForcePackets,
                 AbyssalCavitationConstants.MaxForcePackets,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _visualHandle = vault.GetBufferHandle<CavitationVisualSphereDTO>(
+            _forceTransportHandle = vault.GetGenerationHandle<ForcePacketDTO>(
+                AbyssalCavitationVaultBufferIds.ForceTransportPackets,
+                AbyssalCavitationConstants.MaxForcePackets,
+                OwnerSystem,
+                NativeArrayOptions.UninitializedMemory);
+            _visualHandle = vault.GetGenerationHandle<CavitationVisualSphereDTO>(
                 AbyssalCavitationVaultBufferIds.VisualSpheres,
                 AbyssalCavitationConstants.MaxVisualSpheres,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetBufferHandle<ShockwaveTelemetryEntry>(
+            _telemetryHandle = vault.GetGenerationHandle<ShockwaveTelemetryEntry>(
                 AbyssalCavitationVaultBufferIds.TelemetryRing,
                 AbyssalCavitationConstants.TelemetryCapacity,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _profileHandle = vault.GetBufferHandle<OrdnanceProfileDTO>(
+            _profileHandle = vault.GetGenerationHandle<OrdnanceProfileDTO>(
                 AbyssalCavitationVaultBufferIds.OrdnanceProfiles,
                 AbyssalCavitationConstants.OrdnanceProfileCapacity,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetBufferHandle<byte>(
+            _csvScratchHandle = vault.GetGenerationHandle<byte>(
                 AbyssalCavitationVaultBufferIds.CsvScratch,
                 AbyssalCavitationConstants.CsvScratchBytes,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetBufferHandle<AbyssalCavitationTuningDTO>(
+            _tuningHandle = vault.GetGenerationHandle<AbyssalCavitationTuningDTO>(
                 AbyssalCavitationVaultBufferIds.Tuning,
                 1,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _sdfDescriptorHandle = vault.GetBufferHandle<AbyssalCavitationSdfVolumeDTO>(
+            _sdfDescriptorHandle = vault.GetGenerationHandle<AbyssalCavitationSdfVolumeDTO>(
                 AbyssalCavitationVaultBufferIds.SdfDescriptor,
                 AbyssalCavitationConstants.SdfDescriptorCount,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _sdfVoxelsHandle = vault.GetBufferHandle<sbyte>(
+            _sdfVoxelsHandle = vault.GetGenerationHandle<sbyte>(
                 AbyssalCavitationVaultBufferIds.SdfVoxels,
                 AbyssalCavitationConstants.SdfVoxelCapacity,
                 OwnerSystem,
@@ -137,10 +160,52 @@ namespace Hecton8.Physics
             InitializeBuffersCold(vault);
             _csvLoaded = false;
             _defaultCsvLoadAttempted = false;
-            _resolvedVaultGeneration = vault.VaultGenerationID;
             _initialized = true;
+            RegisterFaultDumpHookCold();
             return true;
         }
+
+        private static void RegisterFaultDumpHookCold()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_faultHookRegistered)
+                return;
+
+            Application.logMessageReceived += OnUnityLogFault;
+            _faultHookRegistered = true;
+#endif
+        }
+
+        private static void UnregisterFaultDumpHookCold()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_faultHookRegistered)
+                return;
+
+            Application.logMessageReceived -= OnUnityLogFault;
+            _faultHookRegistered = false;
+#endif
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static void OnUnityLogFault(string condition, string stackTrace, LogType type)
+        {
+            if (type != LogType.Exception && type != LogType.Error && type != LogType.Assert)
+                return;
+
+            if (System.Threading.Interlocked.Exchange(ref _faultDumpInProgress, 1) != 0)
+                return;
+
+            try
+            {
+                TryDumpBlackBox(AbyssalCavitationTelemetryFlags.NonFiniteRecovered | 0x80000000u);
+            }
+            finally
+            {
+                System.Threading.Interlocked.Exchange(ref _faultDumpInProgress, 0);
+            }
+        }
+#endif
 
         private static void ValidateLayoutColdOnce()
         {
@@ -153,13 +218,69 @@ namespace Hecton8.Physics
 #endif
         }
 
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static bool HasRuntimeDescriptorProof(IDataVault vault)
+        {
+            return vault != null &&
+                   CanReadVaultDescriptor(vault, in _shockwaveHandle, AbyssalCavitationVaultBufferIds.ShockwaveEvents, AbyssalCavitationConstants.MaxShockwaves) &&
+                   CanReadVaultDescriptor(vault, in _counterHandle, AbyssalCavitationVaultBufferIds.ShockwaveCounters, AbyssalCavitationConstants.CounterBlockCount) &&
+                   CanReadVaultDescriptor(vault, in _entityHandle, AbyssalCavitationVaultBufferIds.EntitySnapshots, AbyssalCavitationConstants.MaxEntitySnapshots) &&
+                   CanReadVaultDescriptor(vault, in _forceHandle, AbyssalCavitationVaultBufferIds.ForcePackets, AbyssalCavitationConstants.MaxForcePackets) &&
+                   CanReadVaultDescriptor(vault, in _forceTransportHandle, AbyssalCavitationVaultBufferIds.ForceTransportPackets, AbyssalCavitationConstants.MaxForcePackets) &&
+                   CanReadVaultDescriptor(vault, in _visualHandle, AbyssalCavitationVaultBufferIds.VisualSpheres, AbyssalCavitationConstants.MaxVisualSpheres) &&
+                   CanReadVaultDescriptor(vault, in _telemetryHandle, AbyssalCavitationVaultBufferIds.TelemetryRing, AbyssalCavitationConstants.TelemetryCapacity) &&
+                   CanReadVaultDescriptor(vault, in _profileHandle, AbyssalCavitationVaultBufferIds.OrdnanceProfiles, AbyssalCavitationConstants.OrdnanceProfileCapacity) &&
+                   CanReadVaultDescriptor(vault, in _csvScratchHandle, AbyssalCavitationVaultBufferIds.CsvScratch, AbyssalCavitationConstants.CsvScratchBytes) &&
+                   CanReadVaultDescriptor(vault, in _tuningHandle, AbyssalCavitationVaultBufferIds.Tuning, 1) &&
+                   CanReadVaultDescriptor(vault, in _sdfDescriptorHandle, AbyssalCavitationVaultBufferIds.SdfDescriptor, AbyssalCavitationConstants.SdfDescriptorCount) &&
+                   CanReadVaultDescriptor(vault, in _sdfVoxelsHandle, AbyssalCavitationVaultBufferIds.SdfVoxels, AbyssalCavitationConstants.SdfVoxelCapacity);
+        }
+
+        private static bool CanReadVaultDescriptor<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return vault != null &&
+                   requiredLength > 0 &&
+                   handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)OwnerSystem &&
+                   handle.Generation != 0u &&
+                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static NativeArray<T> OpenVaultView<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return OpenVaultView(_vault, in handle);
+        }
+
+        private static NativeArray<T> OpenVaultView<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault == null ||
+                !IsVaultHandleCreated(in handle) ||
+                handle.SystemID != (uint)OwnerSystem ||
+                !vault.TryResolveHandle(in handle, out NativeArray<T> buffer))
+            {
+                return default;
+            }
+
+            return buffer;
+        }
+
         public static bool TryGetTuning(out AbyssalCavitationTuningDTO tuning)
         {
             tuning = default;
-            if (!EnsureInitialized())
+            if (!_initialized || _vault == null || !IsVaultHandleCreated(in _tuningHandle))
                 return false;
 
-            NativeArray<AbyssalCavitationTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
+            NativeArray<AbyssalCavitationTuningDTO> tuningArray = OpenVaultView(in _tuningHandle);
             if (!tuningArray.IsCreated || tuningArray.Length == 0)
                 return false;
 
@@ -169,10 +290,10 @@ namespace Hecton8.Physics
 
         public static bool TryApplyTuning(in AbyssalCavitationTuningDTO tuning)
         {
-            if (!EnsureInitialized() || _jobScheduled)
+            if (!IsRuntimeReady || _jobScheduled)
                 return false;
 
-            NativeArray<AbyssalCavitationTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
+            NativeArray<AbyssalCavitationTuningDTO> tuningArray = OpenVaultView(in _tuningHandle);
             if (!tuningArray.IsCreated || tuningArray.Length == 0)
                 return false;
 
@@ -190,11 +311,11 @@ namespace Hecton8.Physics
             uint entityHash,
             uint flags)
         {
-            if (!EnsureInitialized() || _jobScheduled)
+            if (!IsRuntimeReady || _jobScheduled)
                 return false;
 
-            NativeArray<ShockwaveEntitySnapshotDTO> entities = _entityHandle.Resolve(_vault);
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(_vault);
+            NativeArray<ShockwaveEntitySnapshotDTO> entities = OpenVaultView(in _entityHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
             if (!entities.IsCreated || !counters.IsCreated || (uint)slot >= (uint)entities.Length)
                 return false;
 
@@ -226,10 +347,10 @@ namespace Hecton8.Physics
 
         public static bool TryClearEntitySnapshots()
         {
-            if (!EnsureInitialized() || _jobScheduled)
+            if (!IsRuntimeReady || _jobScheduled)
                 return false;
 
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(_vault);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
             if (!counters.IsCreated || counters.Length <= AbyssalCavitationCounterIndex.CandidateCount)
                 return false;
 
@@ -247,7 +368,7 @@ namespace Hecton8.Physics
             NativeArray<sbyte> signedDistanceBytes,
             uint version)
         {
-            if (!EnsureInitialized() || !signedDistanceBytes.IsCreated || _jobScheduled)
+            if (!IsRuntimeReady || !signedDistanceBytes.IsCreated || _jobScheduled)
                 return false;
 
             int3 maxDimensions = new int3(
@@ -265,8 +386,8 @@ namespace Hecton8.Physics
             }
 
             int voxelCount = dimensions.x * dimensions.y * dimensions.z;
-            NativeArray<AbyssalCavitationSdfVolumeDTO> descriptors = _sdfDescriptorHandle.Resolve(_vault);
-            NativeArray<sbyte> voxels = _sdfVoxelsHandle.Resolve(_vault);
+            NativeArray<AbyssalCavitationSdfVolumeDTO> descriptors = OpenVaultView(in _sdfDescriptorHandle);
+            NativeArray<sbyte> voxels = OpenVaultView(in _sdfVoxelsHandle);
             if (!descriptors.IsCreated ||
                 descriptors.Length == 0 ||
                 !voxels.IsCreated ||
@@ -296,10 +417,10 @@ namespace Hecton8.Physics
 
         public static bool TryClearSdfVolume()
         {
-            if (!EnsureInitialized() || _jobScheduled)
+            if (!IsRuntimeReady || _jobScheduled)
                 return false;
 
-            NativeArray<AbyssalCavitationSdfVolumeDTO> descriptors = _sdfDescriptorHandle.Resolve(_vault);
+            NativeArray<AbyssalCavitationSdfVolumeDTO> descriptors = OpenVaultView(in _sdfDescriptorHandle);
             if (!descriptors.IsCreated || descriptors.Length == 0)
                 return false;
 
@@ -314,7 +435,9 @@ namespace Hecton8.Physics
             float expansionSpeed,
             uint sourceHash)
         {
-            double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            if (!TryResolveRuntimeAup(runtimePosition, out double3 aup))
+                return false;
+
             return TryQueueDetonationAup(aup, maxRadius, peakPressure, expansionSpeed, sourceHash);
         }
 
@@ -325,11 +448,11 @@ namespace Hecton8.Physics
             float expansionSpeed,
             uint sourceHash)
         {
-            if (!EnsureInitialized() || _jobScheduled)
+            if (!IsRuntimeReady || _jobScheduled)
                 return false;
 
-            NativeArray<ShockwaveEventDTO> shockwaves = _shockwaveHandle.Resolve(_vault);
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(_vault);
+            NativeArray<ShockwaveEventDTO> shockwaves = OpenVaultView(in _shockwaveHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
             if (!shockwaves.IsCreated || !counters.IsCreated)
                 return false;
 
@@ -356,10 +479,10 @@ namespace Hecton8.Physics
 
         public static bool TryQueueOrdnanceDetonationAup(double3 epicenterAup, uint profileHash)
         {
-            if (!EnsureInitialized() || _jobScheduled)
+            if (!IsRuntimeReady || _jobScheduled)
                 return false;
 
-            NativeArray<OrdnanceProfileDTO> profiles = _profileHandle.Resolve(_vault);
+            NativeArray<OrdnanceProfileDTO> profiles = OpenVaultView(in _profileHandle);
             if (!profiles.IsCreated)
                 return false;
 
@@ -376,21 +499,23 @@ namespace Hecton8.Physics
 
         public static bool GenerateMockDetonations(uint sectorHash = 0x5348494Eu)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!EnsureInitialized() || _jobScheduled)
                 return false;
 
-            NativeArray<ShockwaveEventDTO> shockwaves = _shockwaveHandle.Resolve(_vault);
-            NativeArray<ShockwaveEntitySnapshotDTO> entities = _entityHandle.Resolve(_vault);
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(_vault);
+            NativeArray<ShockwaveEventDTO> shockwaves = OpenVaultView(in _shockwaveHandle);
+            NativeArray<ShockwaveEntitySnapshotDTO> entities = OpenVaultView(in _entityHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
             if (!shockwaves.IsCreated || !entities.IsCreated || !counters.IsCreated)
                 return false;
 
+            double3 originAup = ResolveCurrentRuntimeOriginDouble3();
             var job = new GenerateMockDetonationsJob
             {
                 Shockwaves = shockwaves,
                 Entities = entities,
                 Counters = counters,
-                OriginAUP = HectonFloatingOrigin.CurrentTotalOffsetDouble,
+                OriginAUP = originAup,
                 FrameIndex = ++_frameIndex,
                 SectorHash = sectorHash != 0u ? sectorHash : 0x5348494Eu,
                 GlobalQualityWeight = ResolveGlobalQualityWeight()
@@ -399,28 +524,73 @@ namespace Hecton8.Physics
             H8Memory.RegisterActiveJob(OwnerSystem, handle);
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: CI/editor fallback injection, never the live propagation path.
             return true;
+#else
+            return false;
+#endif
+        }
+
+        public static bool GenerateMockSingularityExplosion(uint sectorHash = AbyssalCavitationConstants.SourceHash)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!EnsureInitialized() || _jobScheduled)
+                return false;
+
+            NativeArray<ShockwaveEventDTO> shockwaves = OpenVaultView(in _shockwaveHandle);
+            NativeArray<ShockwaveEntitySnapshotDTO> entities = OpenVaultView(in _entityHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
+            NativeArray<ShockwaveForcePacketDTO> forcePackets = OpenVaultView(in _forceHandle);
+            NativeArray<ForcePacketDTO> transportPackets = OpenVaultView(in _forceTransportHandle);
+            if (!shockwaves.IsCreated ||
+                !entities.IsCreated ||
+                !counters.IsCreated ||
+                !forcePackets.IsCreated ||
+                !transportPackets.IsCreated)
+            {
+                return false;
+            }
+
+            var job = new GenerateMockSingularityExplosionJob
+            {
+                Shockwaves = shockwaves,
+                Entities = entities,
+                Counters = counters,
+                ForcePackets = forcePackets,
+                TransportPackets = transportPackets,
+                OriginAUP = ResolveCurrentRuntimeOriginDouble3(),
+                FrameIndex = ++_frameIndex,
+                SourceHash = sectorHash != 0u ? sectorHash : AbyssalCavitationConstants.SourceHash
+            };
+            JobHandle handle = job.Schedule(1, 1);
+            H8Memory.RegisterActiveJob(OwnerSystem, handle);
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SINGULARITY HARNESS: deterministic proof input for epsilon clamp.
+            return true;
+#else
+            return false;
+#endif
         }
 
         public static JobHandle ScheduleSimulation(
             float simulationTickDelta,
             JobHandle inputDependency = default)
         {
-            if (!EnsureInitialized() || _jobScheduled)
+            if (!IsRuntimeReady || _jobScheduled)
                 return inputDependency;
 
-            NativeArray<ShockwaveEventDTO> shockwaves = _shockwaveHandle.Resolve(_vault);
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(_vault);
-            NativeArray<ShockwaveEntitySnapshotDTO> entities = _entityHandle.Resolve(_vault);
-            NativeArray<ShockwaveForcePacketDTO> forcePackets = _forceHandle.Resolve(_vault);
-            NativeArray<CavitationVisualSphereDTO> visuals = _visualHandle.Resolve(_vault);
-            NativeArray<ShockwaveTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
-            NativeArray<AbyssalCavitationTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
-            NativeArray<AbyssalCavitationSdfVolumeDTO> sdfDescriptors = _sdfDescriptorHandle.Resolve(_vault);
-            NativeArray<sbyte> sdfVoxels = _sdfVoxelsHandle.Resolve(_vault);
+            NativeArray<ShockwaveEventDTO> shockwaves = OpenVaultView(in _shockwaveHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
+            NativeArray<ShockwaveEntitySnapshotDTO> entities = OpenVaultView(in _entityHandle);
+            NativeArray<ShockwaveForcePacketDTO> forcePackets = OpenVaultView(in _forceHandle);
+            NativeArray<ForcePacketDTO> forceTransportPackets = OpenVaultView(in _forceTransportHandle);
+            NativeArray<CavitationVisualSphereDTO> visuals = OpenVaultView(in _visualHandle);
+            NativeArray<ShockwaveTelemetryEntry> telemetry = OpenVaultView(in _telemetryHandle);
+            NativeArray<AbyssalCavitationTuningDTO> tuningArray = OpenVaultView(in _tuningHandle);
+            NativeArray<AbyssalCavitationSdfVolumeDTO> sdfDescriptors = OpenVaultView(in _sdfDescriptorHandle);
+            NativeArray<sbyte> sdfVoxels = OpenVaultView(in _sdfVoxelsHandle);
             if (!shockwaves.IsCreated ||
                 !counters.IsCreated ||
                 !entities.IsCreated ||
                 !forcePackets.IsCreated ||
+                !forceTransportPackets.IsCreated ||
                 !visuals.IsCreated ||
                 !telemetry.IsCreated ||
                 !tuningArray.IsCreated ||
@@ -446,6 +616,7 @@ namespace Hecton8.Physics
             };
 
             uint frame = ++_frameIndex;
+            double3 originAup = ResolveCurrentRuntimeOriginDouble3();
             JobHandle propagateHandle = new PropagateShockwavesJob
             {
                 Shockwaves = shockwaves,
@@ -458,26 +629,27 @@ namespace Hecton8.Physics
                 Counters = counters
             }.Schedule(propagateHandle);
 
-            JobHandle pressureHandle = new EvaluateShockwavePressureJob
+            JobHandle pressureHandle = new EvaluateSanitizedShockwaveJob
             {
                 Shockwaves = shockwaves,
                 Counters = counters,
                 Entities = entities,
                 ForcePackets = forcePackets,
+                TransportPackets = forceTransportPackets,
                 SdfVoxels = sdfVoxels,
                 Tuning = tuning,
                 SdfVolume = sdfDescriptors.Length > 0 ? sdfDescriptors[0] : default,
                 MockSdf = mockSdf,
-                SdfReferenceAUP = HectonFloatingOrigin.CurrentTotalOffsetDouble,
+                SdfReferenceAUP = originAup,
                 FrameIndex = frame
             }.Schedule(entities.Length, 32, compactHandle);
 
-            JobHandle visualHandle = new BuildCavitationVisualsJob
+            JobHandle visualHandle = new UpdateCavityShaderParamsJob
             {
                 Shockwaves = shockwaves,
                 Counters = counters,
                 Visuals = visuals,
-                LocalOriginAUP = HectonFloatingOrigin.CurrentTotalOffsetDouble,
+                LocalOriginAUP = originAup,
                 Tuning = tuning,
                 FrameIndex = frame
             }.Schedule(visuals.Length, 32, compactHandle);
@@ -541,8 +713,8 @@ namespace Hecton8.Physics
 
         private static void PatchLatestTelemetryCpu(float microseconds)
         {
-            NativeArray<ShockwaveTelemetryEntry> ring = _telemetryHandle.Resolve(_vault);
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(_vault);
+            NativeArray<ShockwaveTelemetryEntry> ring = OpenVaultView(in _telemetryHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
             if (!ring.IsCreated || !counters.IsCreated || ring.Length == 0)
                 return;
 
@@ -557,20 +729,22 @@ namespace Hecton8.Physics
 
         public static int FlushForcesToPhysics(double3 localOriginAUP, uint frameIndex = 0u, int maxPackets = 64)
         {
-            if (!EnsureInitialized())
+            if (!IsRuntimeReady)
                 return 0;
 
             if (!TryFinalizeScheduledNoWait())
                 return 0;
 
-            NativeArray<ShockwaveForcePacketDTO> packets = _forceHandle.Resolve(_vault);
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(_vault);
-            NativeArray<AbyssalCavitationTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
-            if (!packets.IsCreated || !counters.IsCreated || !tuningArray.IsCreated || tuningArray.Length == 0)
+            NativeArray<ShockwaveForcePacketDTO> packets = OpenVaultView(in _forceHandle);
+            NativeArray<ForcePacketDTO> transportPackets = OpenVaultView(in _forceTransportHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
+            NativeArray<AbyssalCavitationTuningDTO> tuningArray = OpenVaultView(in _tuningHandle);
+            if (!packets.IsCreated || !transportPackets.IsCreated || !counters.IsCreated || !tuningArray.IsCreated || tuningArray.Length == 0)
                 return 0;
 
             PhysicsApplySystem.DrainCavitationForcePackets(
                 packets,
+                transportPackets,
                 counters,
                 AbyssalCavitationSanitizer.SanitizeTuning(tuningArray[0]),
                 localOriginAUP,
@@ -584,16 +758,17 @@ namespace Hecton8.Physics
 
         public static int FlushForcesToPhysics(Rigidbody[] bodySlots, double3 localOriginAUP, uint frameIndex = 0u, int maxPackets = 64)
         {
-            if (bodySlots == null || bodySlots.Length == 0 || !EnsureInitialized())
+            if (bodySlots == null || bodySlots.Length == 0 || !IsRuntimeReady)
                 return 0;
 
             if (!TryFinalizeScheduledNoWait())
                 return 0;
 
-            NativeArray<ShockwaveForcePacketDTO> packets = _forceHandle.Resolve(_vault);
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(_vault);
-            NativeArray<AbyssalCavitationTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
-            if (!packets.IsCreated || !counters.IsCreated || !tuningArray.IsCreated || tuningArray.Length == 0)
+            NativeArray<ShockwaveForcePacketDTO> packets = OpenVaultView(in _forceHandle);
+            NativeArray<ForcePacketDTO> transportPackets = OpenVaultView(in _forceTransportHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
+            NativeArray<AbyssalCavitationTuningDTO> tuningArray = OpenVaultView(in _tuningHandle);
+            if (!packets.IsCreated || !transportPackets.IsCreated || !counters.IsCreated || !tuningArray.IsCreated || tuningArray.Length == 0)
                 return 0;
 
             AbyssalCavitationTuningDTO tuning = AbyssalCavitationSanitizer.SanitizeTuning(tuningArray[0]);
@@ -607,8 +782,11 @@ namespace Hecton8.Physics
             for (int i = 0; i < safeLimit; i++)
             {
                 ShockwaveForcePacketDTO packet = packets[i];
-                if ((packet.Flags & AbyssalCavitationPacketFlags.Active) == 0u)
+                ForcePacketDTO transport = i < transportPackets.Length ? transportPackets[i] : default;
+                uint packetFlags = packet.Flags | transport.ApplicationFlags;
+                if ((packetFlags & AbyssalCavitationPacketFlags.Active) == 0u)
                     continue;
+                float3 transportForce = transport.TargetEntityHash != 0u ? transport.ForceVector : packet.Force;
                 if (frameIndex != 0u && packet.FrameIndex != frameIndex)
                     continue;
                 if ((uint)packet.RigidbodySlot >= (uint)bodySlots.Length)
@@ -618,7 +796,7 @@ namespace Hecton8.Physics
                 if (body == null)
                     continue;
 
-                float3 force = packet.Force;
+                float3 force = transportForce;
                 float forceSq = math.lengthsq(force);
                 if (!math.isfinite(forceSq) || forceSq <= 0.000001f)
                     continue;
@@ -656,6 +834,7 @@ namespace Hecton8.Physics
 
         public static void ReleaseGraphicsBuffers()
         {
+            UnregisterFaultDumpHookCold();
             _visualBufferA?.Dispose();
             _visualBufferB?.Dispose();
             _emptyVisualBuffer?.Dispose();
@@ -671,16 +850,16 @@ namespace Hecton8.Physics
 
         public static int SyncShaderVisuals(CommandBuffer commandBuffer = null)
         {
-            if (!EnsureInitialized())
+            if (!IsRuntimeReady)
                 return 0;
 
             if (!TryFinalizeScheduledNoWait())
                 return math.max(0, _lastUploadedVisualCount);
             EnsureGraphicsBuffers();
 
-            NativeArray<CavitationVisualSphereDTO> visuals = _visualHandle.Resolve(_vault);
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(_vault);
-            NativeArray<AbyssalCavitationTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
+            NativeArray<CavitationVisualSphereDTO> visuals = OpenVaultView(in _visualHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
+            NativeArray<AbyssalCavitationTuningDTO> tuningArray = OpenVaultView(in _tuningHandle);
             if (!visuals.IsCreated || !counters.IsCreated || !tuningArray.IsCreated || tuningArray.Length == 0)
                 return 0;
 
@@ -689,7 +868,7 @@ namespace Hecton8.Physics
             int active = math.clamp(counters[AbyssalCavitationCounterIndex.VisualCount].Value, 0, visuals.Length);
             int qualityLimit = math.clamp((int)math.round(math.lerp(2f, AbyssalCavitationConstants.MaxVisualSpheres, q)), 1, AbyssalCavitationConstants.MaxVisualSpheres);
             int uploadCount = math.min(active, qualityLimit);
-            float visualIntensity = tuning.VisualIntensityScale;
+            float visualIntensity = math.max(0f, tuning.VisualIntensityScale) * q;
             bool reuseUploadedBuffer = _lastUploadedBuffer != null &&
                                        _lastUploadedFrameIndex == _frameIndex &&
                                        _lastUploadedVisualCount == uploadCount &&
@@ -751,8 +930,12 @@ namespace Hecton8.Physics
                 return false;
 
             _defaultCsvLoadAttempted = true;
-            string path = Path.Combine(Application.dataPath, "_Project", "Data", "Combat", "ordnance_specs.csv");
-            return TryLoadOrdnanceCsv(path);
+            string path = Path.Combine(Application.dataPath, "_Project", "Data", "Combat", "ordnance_blast_profiles.csv");
+            if (TryLoadOrdnanceCsv(path))
+                return true;
+
+            string legacyPath = Path.Combine(Application.dataPath, "_Project", "Data", "Combat", "ordnance_specs.csv");
+            return TryLoadOrdnanceCsv(legacyPath);
         }
 
         public static bool TryLoadOrdnanceCsv(string csvPath)
@@ -760,9 +943,9 @@ namespace Hecton8.Physics
             if (!EnsureInitialized() || _jobScheduled || string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
                 return false;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(_vault);
-            NativeArray<OrdnanceProfileDTO> profiles = _profileHandle.Resolve(_vault);
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(_vault);
+            NativeArray<byte> scratch = OpenVaultView(in _csvScratchHandle);
+            NativeArray<OrdnanceProfileDTO> profiles = OpenVaultView(in _profileHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
             if (!scratch.IsCreated || !profiles.IsCreated || !counters.IsCreated)
                 return false;
 
@@ -786,7 +969,7 @@ namespace Hecton8.Physics
             catch (Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SHINOBU_156] Ordnance CSV load failed.");
+                Debug.LogWarning("[SHINOBU_248] Ordnance CSV load failed.");
 #endif
                 return false;
             }
@@ -808,11 +991,11 @@ namespace Hecton8.Physics
         public static bool TrySampleLatestTelemetry(out ShockwaveTelemetryEntry telemetry)
         {
             telemetry = default;
-            if (!EnsureInitialized() || _jobScheduled)
+            if (!_initialized || _vault == null || _jobScheduled || !IsVaultHandleCreated(in _telemetryHandle) || !IsVaultHandleCreated(in _counterHandle))
                 return false;
 
-            NativeArray<ShockwaveTelemetryEntry> ring = _telemetryHandle.Resolve(_vault);
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(_vault);
+            NativeArray<ShockwaveTelemetryEntry> ring = OpenVaultView(in _telemetryHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
             if (!ring.IsCreated || !counters.IsCreated || ring.Length == 0)
                 return false;
 
@@ -824,23 +1007,51 @@ namespace Hecton8.Physics
             return telemetry.FrameIndex != 0u;
         }
 
-        public static bool TryDumpBlackBox(uint reasonFlags)
+        public static bool TrySampleTelemetryEntry(int ageFromLatest, out ShockwaveTelemetryEntry telemetry)
         {
-            if (!EnsureInitialized() || _jobScheduled)
+            telemetry = default;
+            if (ageFromLatest < 0 ||
+                !_initialized ||
+                _vault == null ||
+                _jobScheduled ||
+                !IsVaultHandleCreated(in _telemetryHandle) ||
+                !IsVaultHandleCreated(in _counterHandle))
+            {
+                return false;
+            }
+
+            NativeArray<ShockwaveTelemetryEntry> ring = OpenVaultView(in _telemetryHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
+            if (!ring.IsCreated || !counters.IsCreated || ring.Length == 0 || ageFromLatest >= ring.Length)
                 return false;
 
-            NativeArray<ShockwaveTelemetryEntry> ring = _telemetryHandle.Resolve(_vault);
+            int head = counters[AbyssalCavitationCounterIndex.TelemetryHead].Value;
+            int index = head - 1 - ageFromLatest;
+            while (index < 0)
+                index += ring.Length;
+
+            telemetry = ring[index];
+            return telemetry.FrameIndex != 0u;
+        }
+
+        public static bool TryDumpBlackBox(uint reasonFlags)
+        {
+            if (!IsRuntimeReady || _jobScheduled)
+                return false;
+
+            NativeArray<ShockwaveTelemetryEntry> ring = OpenVaultView(in _telemetryHandle);
             if (!ring.IsCreated)
                 return false;
 
-            string path = Path.Combine(Directory.GetCurrentDirectory(), AbyssalCavitationConstants.DumpRelativePath);
+            string path = ResolveAgentLogPath(AbyssalCavitationConstants.DumpRelativePath);
+            string tempPath = path + ".tmp";
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
             try
             {
-                using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = File.Open(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     unsafe
                     {
@@ -855,15 +1066,69 @@ namespace Hecton8.Physics
                     }
                 }
 
+                ReplaceDumpFile(tempPath, path);
+
                 return true;
             }
             catch (Exception)
             {
+                try
+                {
+                    if (File.Exists(tempPath))
+                        File.Delete(tempPath);
+                }
+                catch (Exception)
+                {
+                }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[SHINOBU_156] Cavitation black-box dump failed.");
+                Debug.LogError("[SHINOBU_248] Cavitation black-box dump failed.");
 #endif
                 return false;
             }
+        }
+
+        private static void ReplaceDumpFile(string tempPath, string path)
+        {
+            if (!File.Exists(path))
+            {
+                File.Move(tempPath, path);
+                return;
+            }
+
+            try
+            {
+                File.Replace(tempPath, path, null, true);
+            }
+            catch (PlatformNotSupportedException)
+            {
+                File.Delete(path);
+                File.Move(tempPath, path);
+            }
+            catch (IOException)
+            {
+                File.Delete(path);
+                File.Move(tempPath, path);
+            }
+        }
+
+        private static string ResolveAgentLogPath(string relativePath)
+        {
+#if UNITY_EDITOR
+            string dataPath = Application.dataPath;
+            if (!string.IsNullOrEmpty(dataPath))
+            {
+                DirectoryInfo projectRoot = Directory.GetParent(dataPath);
+                if (projectRoot != null)
+                    return Path.Combine(projectRoot.FullName, relativePath);
+            }
+#endif
+
+            string root = Directory.GetCurrentDirectory();
+            if (string.IsNullOrEmpty(root))
+                root = Application.persistentDataPath;
+
+            return Path.Combine(root, relativePath);
         }
 
         public static bool IsCsvLoaded()
@@ -873,16 +1138,17 @@ namespace Hecton8.Physics
 
         private static void InitializeBuffersCold(IDataVault vault)
         {
-            NativeArray<ShockwaveEventDTO> shockwaves = _shockwaveHandle.Resolve(vault);
-            NativeArray<ShockwaveCounterBlock> counters = _counterHandle.Resolve(vault);
-            NativeArray<ShockwaveEntitySnapshotDTO> entities = _entityHandle.Resolve(vault);
-            NativeArray<ShockwaveForcePacketDTO> forcePackets = _forceHandle.Resolve(vault);
-            NativeArray<CavitationVisualSphereDTO> visuals = _visualHandle.Resolve(vault);
-            NativeArray<ShockwaveTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            NativeArray<OrdnanceProfileDTO> profiles = _profileHandle.Resolve(vault);
-            NativeArray<AbyssalCavitationTuningDTO> tuning = _tuningHandle.Resolve(vault);
-            NativeArray<AbyssalCavitationSdfVolumeDTO> sdfDescriptors = _sdfDescriptorHandle.Resolve(vault);
-            NativeArray<sbyte> sdfVoxels = _sdfVoxelsHandle.Resolve(vault);
+            NativeArray<ShockwaveEventDTO> shockwaves = OpenVaultView(vault, in _shockwaveHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(vault, in _counterHandle);
+            NativeArray<ShockwaveEntitySnapshotDTO> entities = OpenVaultView(vault, in _entityHandle);
+            NativeArray<ShockwaveForcePacketDTO> forcePackets = OpenVaultView(vault, in _forceHandle);
+            NativeArray<ForcePacketDTO> forceTransportPackets = OpenVaultView(vault, in _forceTransportHandle);
+            NativeArray<CavitationVisualSphereDTO> visuals = OpenVaultView(vault, in _visualHandle);
+            NativeArray<ShockwaveTelemetryEntry> telemetry = OpenVaultView(vault, in _telemetryHandle);
+            NativeArray<OrdnanceProfileDTO> profiles = OpenVaultView(vault, in _profileHandle);
+            NativeArray<AbyssalCavitationTuningDTO> tuning = OpenVaultView(vault, in _tuningHandle);
+            NativeArray<AbyssalCavitationSdfVolumeDTO> sdfDescriptors = OpenVaultView(vault, in _sdfDescriptorHandle);
+            NativeArray<sbyte> sdfVoxels = OpenVaultView(vault, in _sdfVoxelsHandle);
 
             int count = math.max(
                 math.max(
@@ -895,6 +1161,7 @@ namespace Hecton8.Physics
                 Counters = counters,
                 Entities = entities,
                 ForcePackets = forcePackets,
+                ForceTransportPackets = forceTransportPackets,
                 Visuals = visuals,
                 Telemetry = telemetry,
                 Profiles = profiles,
@@ -913,10 +1180,11 @@ namespace Hecton8.Physics
             AbsoluteUniversePosition position = AbsoluteUniversePosition.FromAbsolutePosition(wave.EpicenterAUP);
             float intensity = math.saturate(wave.PeakPressure * 0.00008f);
 
+            AcousticDeafeningSignal deafening = AcousticDeafeningSignal.FromShockwave(in wave, intensity);
             AcousticPingSignal ping = default;
             ping.PositionAup = position;
             ping.RadiusMeters = wave.MaxRadius;
-            ping.Intensity01 = intensity;
+            ping.Intensity01 = deafening.Intensity01;
             ping.SourceId = wave.SourceHashID;
             ping.Channel = AcousticPingSignal.ChannelMetalStress;
             ping.Flags = AcousticPingSignal.FlagActiveSonar;
@@ -948,6 +1216,34 @@ namespace Hecton8.Physics
             return math.all(math.isfinite(local)) ? local : float3.zero;
         }
 
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 positionAup)
+        {
+            positionAup = default;
+            float3 local = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(local)))
+                return false;
+
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(origin)))
+                return false;
+
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(local.x, local.y, local.z));
+            if (!resolvedAup.IsFinite())
+                return false;
+
+            positionAup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(positionAup));
+        }
+
+        private static double3 ResolveCurrentRuntimeOriginDouble3()
+        {
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            return math.all(math.isfinite(origin)) ? origin : double3.zero;
+        }
+
         private static float Smooth01(float value)
         {
             float x = math.saturate(value);
@@ -961,7 +1257,9 @@ namespace Hecton8.Physics
     {
         [SerializeField] private bool autoLoadCsv = true;
         [SerializeField] private bool uploadShaderVisuals = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         [SerializeField] private bool injectMockOnEnable;
+#endif
         [SerializeField] private bool drawDebugGizmos = true;
 
         private bool _registeredFixed;
@@ -978,14 +1276,18 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
+            AbyssalCavitationRuntime.EnsureInitialized();
+            AbyssalCavitationRuntime.EnsureGraphicsBuffers();
             if (!_registeredFixed)
                 _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             if (!_registeredLate)
                 _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             if (!_registeredSlow)
                 _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (injectMockOnEnable)
                 AbyssalCavitationRuntime.GenerateMockDetonations();
+#endif
         }
 
         private void OnDisable()
@@ -1000,6 +1302,7 @@ namespace Hecton8.Physics
             _registeredFixed = false;
             _registeredLate = false;
             _registeredSlow = false;
+            AbyssalCavitationRuntime.ReleaseGraphicsBuffers();
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -1016,7 +1319,9 @@ namespace Hecton8.Physics
 
         public void SlowTick()
         {
-            AbyssalCavitationRuntime.EnsureInitialized();
+            if (!AbyssalCavitationRuntime.IsRuntimeReady)
+                return;
+
             if (autoLoadCsv && !AbyssalCavitationRuntime.IsCsvLoaded())
                 AbyssalCavitationRuntime.TryLoadDefaultOrdnanceCsv();
         }
@@ -1026,26 +1331,28 @@ namespace Hecton8.Physics
             if (!drawDebugGizmos || !Application.isPlaying)
                 return;
 
-            if (!AbyssalCavitationRuntime.EnsureInitialized())
+            if (!AbyssalCavitationRuntime.TryBorrowRuntimeVault(out IDataVault vault))
                 return;
             if (AbyssalCavitationRuntime.HasScheduledWork)
                 return;
 
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
-                return;
-            if (!vault.TryGetBufferHandle(AbyssalCavitationVaultBufferIds.ShockwaveEvents, out VaultBufferHandle<ShockwaveEventDTO> waveHandle) ||
-                !vault.TryGetBufferHandle(AbyssalCavitationVaultBufferIds.ShockwaveCounters, out VaultBufferHandle<ShockwaveCounterBlock> counterHandle))
+            if (!vault.TryGetGenerationHandle(AbyssalCavitationVaultBufferIds.ShockwaveEvents, out VaultGenerationHandle<ShockwaveEventDTO> waveHandle) ||
+                !vault.TryGetGenerationHandle(AbyssalCavitationVaultBufferIds.ShockwaveCounters, out VaultGenerationHandle<ShockwaveCounterBlock> counterHandle) ||
+                !vault.TryGetGenerationHandle(AbyssalCavitationVaultBufferIds.EntitySnapshots, out VaultGenerationHandle<ShockwaveEntitySnapshotDTO> entityHandle) ||
+                !vault.TryGetGenerationHandle(AbyssalCavitationVaultBufferIds.ForceTransportPackets, out VaultGenerationHandle<ForcePacketDTO> forceHandle))
             {
                 return;
             }
 
-            NativeArray<ShockwaveEventDTO> waves = waveHandle.Resolve(vault);
-            NativeArray<ShockwaveCounterBlock> counters = counterHandle.Resolve(vault);
-            if (!waves.IsCreated || !counters.IsCreated)
+            NativeArray<ShockwaveEventDTO> waves = OpenVaultView(vault, in waveHandle);
+            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(vault, in counterHandle);
+            NativeArray<ShockwaveEntitySnapshotDTO> entities = OpenVaultView(vault, in entityHandle);
+            NativeArray<ForcePacketDTO> forces = OpenVaultView(vault, in forceHandle);
+            if (!waves.IsCreated || !counters.IsCreated || !entities.IsCreated || !forces.IsCreated)
                 return;
 
             int count = math.clamp(counters[AbyssalCavitationCounterIndex.ActiveShockwaves].Value, 0, waves.Length);
-            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            double3 origin = ResolveCurrentRuntimeOriginDouble3();
             for (int i = 0; i < count; i++)
             {
                 ShockwaveEventDTO wave = waves[i];
@@ -1053,7 +1360,7 @@ namespace Hecton8.Physics
                     continue;
 
                 double3 delta = wave.EpicenterAUP - origin;
-                float3 local = new float3((float)delta.x, (float)delta.y, (float)delta.z);
+                float3 local = AupPrecisionMath.DowncastLocalDelta(delta, float3.zero);
                 if (!math.all(math.isfinite(local)))
                     continue;
 
@@ -1062,6 +1369,86 @@ namespace Hecton8.Physics
                 Gizmos.color = new Color(1f, 0.12f, 0.08f, 0.42f);
                 Gizmos.DrawWireSphere(new Vector3(local.x, local.y, local.z), math.max(0.01f, wave.CurrentRadius));
             }
+
+            int forceCount = math.min(
+                math.clamp(counters[AbyssalCavitationCounterIndex.CandidateCount].Value, 0, forces.Length),
+                entities.Length);
+            for (int i = 0; i < forceCount; i++)
+            {
+                ForcePacketDTO force = forces[i];
+                if ((force.ApplicationFlags & AbyssalCavitationPacketFlags.Active) == 0u)
+                    continue;
+
+                float forceSq = math.lengthsq(force.ForceVector);
+                if (!math.isfinite(forceSq) || forceSq <= 0.000001f)
+                    continue;
+
+                double3 delta = entities[i].AUP - origin;
+                float3 start = AupPrecisionMath.DowncastLocalDelta(delta, float3.zero);
+                if (!math.all(math.isfinite(start)))
+                    continue;
+
+                float magnitude = AbyssalCavitationSimdMath.LengthFromSq(forceSq);
+                float3 direction = force.ForceVector * math.rsqrt(math.max(forceSq, 0.000001f));
+                float arrowLength = math.clamp(magnitude * 0.00035f, 0.2f, 18f);
+                float3 end = start + direction * arrowLength;
+                float3 sideVector = math.cross(direction, new float3(0f, 1f, 0f));
+                float sideSq = math.lengthsq(sideVector);
+                float3 side = math.select(new float3(1f, 0f, 0f), sideVector * math.rsqrt(math.max(sideSq, 0.000001f)), math.isfinite(sideSq) & sideSq > 0.000001f);
+                float3 back = direction * (arrowLength * 0.18f);
+                float3 wing = side * (arrowLength * 0.08f);
+
+                Vector3 startV = new Vector3(start.x, start.y, start.z);
+                Vector3 endV = new Vector3(end.x, end.y, end.z);
+                Gizmos.color = new Color(1f, 0.02f, 0.02f, 0.86f);
+                Gizmos.DrawLine(startV, endV);
+                float3 left = end - back + wing;
+                float3 right = end - back - wing;
+                Gizmos.DrawLine(endV, new Vector3(left.x, left.y, left.z));
+                Gizmos.DrawLine(endV, new Vector3(right.x, right.y, right.z));
+            }
+        }
+
+        private static NativeArray<T> OpenVaultView<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                handle.Generation == 0u ||
+                handle.SystemID != (uint)SystemID.VehiclesPhysics ||
+                !vault.TryResolveHandle(in handle, out NativeArray<T> buffer))
+            {
+                return default;
+            }
+
+            return buffer;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 positionAup)
+        {
+            positionAup = default;
+            float3 local = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(local)))
+                return false;
+
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(origin)))
+                return false;
+
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(local.x, local.y, local.z));
+            if (!resolvedAup.IsFinite())
+                return false;
+
+            positionAup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(positionAup));
+        }
+
+        private static double3 ResolveCurrentRuntimeOriginDouble3()
+        {
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            return math.all(math.isfinite(origin)) ? origin : double3.zero;
         }
     }
 
@@ -1072,6 +1459,7 @@ namespace Hecton8.Physics
         [NoAlias] public NativeArray<ShockwaveCounterBlock> Counters;
         [NoAlias] public NativeArray<ShockwaveEntitySnapshotDTO> Entities;
         [NoAlias] public NativeArray<ShockwaveForcePacketDTO> ForcePackets;
+        [NoAlias] public NativeArray<ForcePacketDTO> ForceTransportPackets;
         [NoAlias] public NativeArray<CavitationVisualSphereDTO> Visuals;
         [NoAlias] public NativeArray<ShockwaveTelemetryEntry> Telemetry;
         [NoAlias] public NativeArray<OrdnanceProfileDTO> Profiles;
@@ -1102,6 +1490,8 @@ namespace Hecton8.Physics
 
             if (ForcePackets.IsCreated && index < ForcePackets.Length)
                 ForcePackets[index] = default;
+            if (ForceTransportPackets.IsCreated && index < ForceTransportPackets.Length)
+                ForceTransportPackets[index] = default;
             if (Visuals.IsCreated && index < Visuals.Length)
                 Visuals[index] = default;
             if (Telemetry.IsCreated && index < Telemetry.Length)
@@ -1142,7 +1532,8 @@ namespace Hecton8.Physics
             {
                 Unity.Mathematics.Random rng = new Unity.Mathematics.Random(SafeSeed(SectorHash ^ FrameIndex ^ ((uint)index * 0x9E3779B9u)));
                 float angle = rng.NextFloat(0f, 6.2831855f);
-                math.sincos(angle, out float s, out float c);
+                float s = AbyssalCavitationSimdMath.SinPolynomial7(angle);
+                float c = AbyssalCavitationSimdMath.CosPolynomial7(angle);
                 float ring = math.lerp(4f, 22f, rng.NextFloat());
                 Shockwaves[index] = new ShockwaveEventDTO
                 {
@@ -1159,7 +1550,8 @@ namespace Hecton8.Physics
             {
                 Unity.Mathematics.Random rng = new Unity.Mathematics.Random(SafeSeed(SectorHash ^ FrameIndex ^ 0xC2B2AE35u ^ ((uint)index * 0x27D4EB2Du)));
                 float angle = rng.NextFloat(0f, 6.2831855f);
-                math.sincos(angle, out float s, out float c);
+                float s = AbyssalCavitationSimdMath.SinPolynomial7(angle);
+                float c = AbyssalCavitationSimdMath.CosPolynomial7(angle);
                 float ring = math.lerp(3f, 72f, rng.NextFloat());
                 uint flags = AbyssalCavitationEntityFlags.Active | AbyssalCavitationEntityFlags.ForceReceiver;
                 if ((index & 7) == 0)
@@ -1198,6 +1590,74 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal struct GenerateMockSingularityExplosionJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<ShockwaveEventDTO> Shockwaves;
+        [NoAlias] public NativeArray<ShockwaveEntitySnapshotDTO> Entities;
+        [NoAlias] public NativeArray<ShockwaveCounterBlock> Counters;
+        [NoAlias] public NativeArray<ShockwaveForcePacketDTO> ForcePackets;
+        [NoAlias] public NativeArray<ForcePacketDTO> TransportPackets;
+        public double3 OriginAUP;
+        public uint FrameIndex;
+        public uint SourceHash;
+
+        public void Execute(int index)
+        {
+            if (index != 0)
+                return;
+
+            if (Shockwaves.IsCreated && Shockwaves.Length > 0)
+            {
+                Shockwaves[0] = new ShockwaveEventDTO
+                {
+                    EpicenterAUP = OriginAUP,
+                    CurrentRadius = 0f,
+                    MaxRadius = 12f,
+                    PeakPressure = 50000f,
+                    ExpansionSpeed = 0f,
+                    SourceHashID = SourceHash
+                };
+            }
+
+            if (Entities.IsCreated && Entities.Length > 0)
+            {
+                Entities[0] = new ShockwaveEntitySnapshotDTO
+                {
+                    AUP = OriginAUP,
+                    Velocity = float3.zero,
+                    EffectiveArea = 1f,
+                    InverseMass = 1f,
+                    RigidbodySlot = 0,
+                    EntityHash = SourceHash ^ 0x9E3779B9u,
+                    Flags = AbyssalCavitationEntityFlags.Active |
+                            AbyssalCavitationEntityFlags.Critical |
+                            AbyssalCavitationEntityFlags.ForceReceiver
+                };
+            }
+
+            if (ForcePackets.IsCreated && ForcePackets.Length > 0)
+                ForcePackets[0] = default;
+            if (TransportPackets.IsCreated && TransportPackets.Length > 0)
+                TransportPackets[0] = default;
+
+            if (Counters.IsCreated && Counters.Length >= AbyssalCavitationConstants.CounterBlockCount)
+            {
+                WriteCounter(AbyssalCavitationCounterIndex.ActiveShockwaves, 1);
+                WriteCounter(AbyssalCavitationCounterIndex.CandidateCount, 1);
+                WriteCounter(AbyssalCavitationCounterIndex.FaultFlags, (int)AbyssalCavitationTelemetryFlags.MockFallback);
+                WriteCounter(AbyssalCavitationCounterIndex.LastFrame, unchecked((int)FrameIndex));
+            }
+        }
+
+        private void WriteCounter(int counterIndex, int value)
+        {
+            ShockwaveCounterBlock block = Counters[counterIndex];
+            block.Value = value;
+            Counters[counterIndex] = block;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct PropagateShockwavesJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<ShockwaveEventDTO> Shockwaves;
@@ -1229,6 +1689,10 @@ namespace Hecton8.Physics
                    wave.CurrentRadius <= wave.MaxRadius &&
                    wave.MaxRadius > 0f &&
                    wave.PeakPressure > 0f &&
+                   math.isfinite(wave.CurrentRadius) &&
+                   math.isfinite(wave.MaxRadius) &&
+                   math.isfinite(wave.PeakPressure) &&
+                   math.isfinite(wave.ExpansionSpeed) &&
                    math.all(math.isfinite(wave.EpicenterAUP));
         }
     }
@@ -1248,7 +1712,8 @@ namespace Hecton8.Physics
             int i = 0;
             while (i < count)
             {
-                if (IsActive(in Shockwaves[i]))
+                ShockwaveEventDTO wave = Shockwaves[i];
+                if (IsActive(in wave))
                 {
                     i++;
                     continue;
@@ -1273,17 +1738,22 @@ namespace Hecton8.Physics
                    wave.CurrentRadius <= wave.MaxRadius &&
                    wave.MaxRadius > 0f &&
                    wave.PeakPressure > 0f &&
+                   math.isfinite(wave.CurrentRadius) &&
+                   math.isfinite(wave.MaxRadius) &&
+                   math.isfinite(wave.PeakPressure) &&
+                   math.isfinite(wave.ExpansionSpeed) &&
                    math.all(math.isfinite(wave.EpicenterAUP));
         }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct EvaluateShockwavePressureJob : IJobParallelFor
+    internal struct EvaluateSanitizedShockwaveJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<ShockwaveEventDTO> Shockwaves;
         [ReadOnly, NoAlias] public NativeArray<ShockwaveCounterBlock> Counters;
         [ReadOnly, NoAlias] public NativeArray<ShockwaveEntitySnapshotDTO> Entities;
         [NoAlias] public NativeArray<ShockwaveForcePacketDTO> ForcePackets;
+        [NoAlias] public NativeArray<ForcePacketDTO> TransportPackets;
         [ReadOnly, NoAlias] public NativeArray<sbyte> SdfVoxels;
         public AbyssalCavitationTuningDTO Tuning;
         public AbyssalCavitationSdfVolumeDTO SdfVolume;
@@ -1297,6 +1767,8 @@ namespace Hecton8.Physics
                 return;
 
             ForcePackets[index] = default;
+            if (TransportPackets.IsCreated && (uint)index < (uint)TransportPackets.Length)
+                TransportPackets[index] = default;
             int candidateCount = ReadCounter(AbyssalCavitationCounterIndex.CandidateCount, Entities.Length);
             if ((uint)index >= (uint)candidateCount)
                 return;
@@ -1321,6 +1793,9 @@ namespace Hecton8.Physics
             float peakPressure = 0f;
             float minSdfDamp = 1f;
             uint flags = 0u;
+            float epsilon = math.max(Tuning.EpsilonClampValue, 0.000001f);
+            float nonCriticalRadiusScale = math.lerp(0.5f, 1.0f, q);
+            float inverseSquareMultiplier = math.max(0.0001f, Tuning.InverseSquareMultiplier);
 
             for (int i = 0; i < waveCount; i++)
             {
@@ -1330,8 +1805,16 @@ namespace Hecton8.Physics
 
                 double3 deltaD = entity.AUP - wave.EpicenterAUP;
                 float3 delta = LocalDeltaToFloat3(deltaD, ref flags);
-                float distanceSq = math.max(math.lengthsq(delta), 0.0001f);
-                float distance = math.sqrt(distanceSq);
+                float rawDistanceSq = math.lengthsq(delta);
+                bool epsilonClamped = !math.isfinite(rawDistanceSq) || rawDistanceSq <= epsilon;
+                float distanceSq = math.max(math.select(0f, rawDistanceSq, math.isfinite(rawDistanceSq)), epsilon);
+                if (epsilonClamped)
+                    flags |= AbyssalCavitationPacketFlags.EpsilonClamped;
+                float distance = AbyssalCavitationSimdMath.LengthFromSq(distanceSq);
+                float effectiveMaxRadius = math.select(wave.MaxRadius * nonCriticalRadiusScale, wave.MaxRadius, critical);
+                if (distance > math.max(0.01f, effectiveMaxRadius))
+                    continue;
+
                 float shellWidth = math.max(
                     Tuning.CavitationShellMeters,
                     math.max(0.05f, wave.ExpansionSpeed * Tuning.SimulationTickDelta) * math.lerp(0.35f, 1.1f, q));
@@ -1339,28 +1822,35 @@ namespace Hecton8.Physics
                 if (shell <= 0f)
                     continue;
 
-                double3 midpoint = wave.EpicenterAUP + (double3)delta * 0.5;
-                float sdfDistance = SampleSdfDistance(midpoint);
-                float sdfDamp = ResolveSdfDampening(sdfDistance, Tuning.SdfSoftnessMeters, Tuning.SdfHardDampening);
+                float sdfDamp = ResolveSdfRayDampening(wave.EpicenterAUP, entity.AUP, Tuning.SdfSoftnessMeters, Tuning.SdfOcclusionDampening, q);
                 if (sdfDamp < 0.999f)
                     flags |= AbyssalCavitationPacketFlags.SdfDampened;
 
                 minSdfDamp = math.min(minSdfDamp, sdfDamp);
-                float inverseSquare = math.rcp(math.max(1f, distanceSq));
+                float inverseSquare = inverseSquareMultiplier * math.rcp(distanceSq);
                 float pressure = wave.PeakPressure * inverseSquare * shell * sdfDamp;
                 peakPressure = math.max(peakPressure, pressure);
                 if (pressure <= Tuning.MinPressure)
                     continue;
 
-                float3 direction = distanceSq > 0.0001f ? delta * math.rsqrt(distanceSq) : new float3(0f, 1f, 0f);
+                float3 direction = ResolveShockDirection(
+                    delta,
+                    rawDistanceSq,
+                    distanceSq,
+                    epsilon,
+                    entity.EntityHash,
+                    wave.SourceHashID,
+                    FrameIndex);
                 float area = math.clamp(math.isfinite(entity.EffectiveArea) ? entity.EffectiveArea : 1f, 0.05f, 64f);
-                accumulatedForce += direction * (pressure * area * math.max(0.00001f, Tuning.ForceScale));
+                float inverseMass = math.clamp(math.isfinite(entity.InverseMass) ? entity.InverseMass : 1f, 0f, 1000f);
+                accumulatedForce += direction * (pressure * area * inverseMass * math.max(0.00001f, Tuning.ForceScale));
             }
 
             float forceSq = math.lengthsq(accumulatedForce);
             if (!math.isfinite(forceSq))
             {
                 accumulatedForce = float3.zero;
+                forceSq = 0f;
                 flags |= AbyssalCavitationPacketFlags.NonFiniteRecovered;
             }
 
@@ -1389,6 +1879,17 @@ namespace Hecton8.Physics
                 Flags = flags | AbyssalCavitationPacketFlags.Active,
                 SdfDampening = minSdfDamp
             };
+
+            if (TransportPackets.IsCreated && (uint)index < (uint)TransportPackets.Length)
+            {
+                TransportPackets[index] = new ForcePacketDTO
+                {
+                    ForceVector = accumulatedForce,
+                    TorqueScalar = 0f,
+                    TargetEntityHash = entity.EntityHash,
+                    ApplicationFlags = flags | AbyssalCavitationPacketFlags.Active
+                };
+            }
         }
 
         private int ReadCounter(int index, int maxValue)
@@ -1397,6 +1898,26 @@ namespace Hecton8.Physics
                 return 0;
 
             return math.clamp(Counters[index].Value, 0, maxValue);
+        }
+
+        private float ResolveSdfRayDampening(double3 epicenterAup, double3 targetAup, float softnessMeters, float hardDampening, float quality)
+        {
+            double3 ray = targetAup - epicenterAup;
+            double3 p25 = epicenterAup + ray * 0.25;
+            double3 p50 = epicenterAup + ray * 0.5;
+            double3 p75 = epicenterAup + ray * 0.75;
+
+            float midDamp = ResolveSdfDampening(SampleSdfDistance(p50), softnessMeters, hardDampening);
+            float multiTapWeight = SmoothRange(0.35f, 0.85f, quality);
+            if (multiTapWeight <= 0f)
+                return midDamp;
+
+            float rayDamp = math.min(
+                ResolveSdfDampening(SampleSdfDistance(p25), softnessMeters, hardDampening),
+                ResolveSdfDampening(SampleSdfDistance(p75), softnessMeters, hardDampening));
+            rayDamp = math.min(rayDamp, midDamp);
+
+            return math.lerp(midDamp, rayDamp, multiTapWeight);
         }
 
         private float SampleSdfDistance(double3 midpointAup)
@@ -1421,7 +1942,7 @@ namespace Hecton8.Physics
 
             float3 cellSize = math.max(SdfVolume.CellSizeMeters, new float3(0.0001f));
             float3 local = LocalDeltaToFloat3NoFlags(midpointAup - SdfVolume.OriginAUP);
-            float3 grid = local / cellSize;
+            float3 grid = local * math.rcp(math.max(cellSize, new float3(0.0001f)));
             float3 maxGrid = new float3(dimensions - 1);
             if (math.any(grid < 0f) || math.any(grid > maxGrid))
                 return 1f;
@@ -1429,8 +1950,8 @@ namespace Hecton8.Physics
             int3 nearestCoord = (int3)math.floor(grid + 0.5f);
             nearestCoord = math.clamp(nearestCoord, int3.zero, dimensions - 1);
             float nearest = DecodeSdfByte(SdfVoxels[FlatIndex(nearestCoord, dimensions)]);
-            float highTapWeight = math.step(0.3f, Smooth01(Tuning.GlobalQualityWeight));
-            if (highTapWeight <= 0f)
+            float interpolationWeight = Smooth01(math.saturate((Smooth01(Tuning.GlobalQualityWeight) - 0.18f) * math.rcp(0.52f)));
+            if (interpolationWeight <= 0f)
                 return nearest;
 
             int3 baseCoord = (int3)math.floor(grid);
@@ -1454,7 +1975,7 @@ namespace Hecton8.Physics
             float c0 = math.lerp(c00, c10, t.y);
             float c1 = math.lerp(c01, c11, t.y);
             float trilinear = math.lerp(c0, c1, t.z);
-            return math.lerp(nearest, trilinear, highTapWeight);
+            return math.lerp(nearest, trilinear, interpolationWeight);
         }
 
         private float DecodeSdfByte(sbyte encoded)
@@ -1473,6 +1994,55 @@ namespace Hecton8.Physics
             float softness = math.max(0.05f, math.isfinite(softnessMeters) ? softnessMeters : 4f);
             float open = SmoothRange(-softness, softness, math.isfinite(sdfDistance) ? sdfDistance : softness);
             return math.lerp(math.saturate(hardDampening), 1f, open);
+        }
+
+        private static float3 ResolveShockDirection(
+            float3 delta,
+            float rawDistanceSq,
+            float distanceSq,
+            float epsilon,
+            uint entityHash,
+            uint sourceHash,
+            uint frameIndex)
+        {
+            bool hasDirection = math.isfinite(rawDistanceSq) && rawDistanceSq > epsilon;
+            float3 radial = delta * math.rsqrt(math.max(distanceSq, epsilon));
+            if (hasDirection)
+                return radial;
+
+            uint seed = unchecked(entityHash ^ (sourceHash * 747796405u) ^ (frameIndex * 2891336453u) ^ 0x53323438u);
+            return HashUnitDirection(seed);
+        }
+
+        private static float3 HashUnitDirection(uint seed)
+        {
+            uint hx = MixHash(seed ^ 0xA511E9B3u);
+            uint hy = MixHash(seed ^ 0x63D83595u);
+            uint hz = MixHash(seed ^ 0x9E3779B9u);
+            float3 value = new float3(HashToSigned(hx), HashToSigned(hy), HashToSigned(hz));
+            float lengthSq = math.lengthsq(value);
+            return math.select(
+                new float3(0f, 1f, 0f),
+                value * math.rsqrt(math.max(lengthSq, 0.000001f)),
+                math.isfinite(lengthSq) & lengthSq > 0.000001f);
+        }
+
+        private static uint MixHash(uint value)
+        {
+            unchecked
+            {
+                value ^= value >> 16;
+                value *= 0x7FEB352Du;
+                value ^= value >> 15;
+                value *= 0x846CA68Bu;
+                value ^= value >> 16;
+                return value;
+            }
+        }
+
+        private static float HashToSigned(uint value)
+        {
+            return ((value & 0x00FFFFFFu) * (1f / 8388607.5f)) - 1f;
         }
 
         private static float3 LocalDeltaToFloat3(double3 delta, ref uint flags)
@@ -1510,6 +2080,10 @@ namespace Hecton8.Physics
                    wave.CurrentRadius <= wave.MaxRadius &&
                    wave.MaxRadius > 0f &&
                    wave.PeakPressure > 0f &&
+                   math.isfinite(wave.CurrentRadius) &&
+                   math.isfinite(wave.MaxRadius) &&
+                   math.isfinite(wave.PeakPressure) &&
+                   math.isfinite(wave.ExpansionSpeed) &&
                    math.all(math.isfinite(wave.EpicenterAUP));
         }
 
@@ -1537,7 +2111,7 @@ namespace Hecton8.Physics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct BuildCavitationVisualsJob : IJobParallelFor
+    internal struct UpdateCavityShaderParamsJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<ShockwaveEventDTO> Shockwaves;
         [ReadOnly, NoAlias] public NativeArray<ShockwaveCounterBlock> Counters;
@@ -1568,11 +2142,16 @@ namespace Hecton8.Physics
             float q = Smooth01(Tuning.GlobalQualityWeight);
             float intensity = math.saturate(wave.PeakPressure * 0.00008f) * math.max(0f, Tuning.VisualIntensityScale);
             float phase = Hash01(wave.SourceHashID ^ FrameIndex * 747796405u);
+            float phaseRadians = phase * 6.2831855f;
             Visuals[index] = new CavitationVisualSphereDTO
             {
                 CenterRadius = new float4(center, wave.CurrentRadius),
                 IntensityAgeQualityFlags = new float4(intensity, age01, q, flags),
-                CurlPhase = new float4(math.sin(phase * 6.2831855f), math.cos(phase * 6.2831855f), phase, wave.MaxRadius),
+                CurlPhase = new float4(
+                    AbyssalCavitationSimdMath.SinPolynomial7(phaseRadians),
+                    AbyssalCavitationSimdMath.CosPolynomial7(phaseRadians),
+                    phase,
+                    wave.MaxRadius),
                 Reserved = new float4(wave.ExpansionSpeed, wave.PeakPressure, wave.SourceHashID & 0xFFFFu, 0f)
             };
         }
@@ -1627,6 +2206,7 @@ namespace Hecton8.Physics
             int active = ReadCounter(AbyssalCavitationCounterIndex.ActiveShockwaves, Shockwaves.IsCreated ? Shockwaves.Length : 0);
             int candidates = ReadCounter(AbyssalCavitationCounterIndex.CandidateCount, ForcePackets.IsCreated ? ForcePackets.Length : 0);
             int forcePackets = 0;
+            int epsilonClampCount = 0;
             float peakForce = 0f;
             float peakPressure = 0f;
             uint flags = (uint)math.max(0, ReadCounter(AbyssalCavitationCounterIndex.FaultFlags, int.MaxValue));
@@ -1660,11 +2240,16 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                peakForce = math.max(peakForce, math.sqrt(math.max(forceSq, 0f)));
+                peakForce = math.max(peakForce, AbyssalCavitationSimdMath.LengthFromSq(forceSq));
                 if ((packet.Flags & AbyssalCavitationPacketFlags.SdfDampened) != 0u)
                     flags |= AbyssalCavitationTelemetryFlags.SdfDampened;
                 if ((packet.Flags & AbyssalCavitationPacketFlags.ForceSaturated) != 0u)
                     flags |= AbyssalCavitationTelemetryFlags.ForceSaturated;
+                if ((packet.Flags & AbyssalCavitationPacketFlags.EpsilonClamped) != 0u)
+                {
+                    flags |= AbyssalCavitationTelemetryFlags.EpsilonClamped;
+                    epsilonClampCount++;
+                }
                 if ((packet.Flags & AbyssalCavitationPacketFlags.NonFiniteRecovered) != 0u)
                     flags |= AbyssalCavitationTelemetryFlags.NonFiniteRecovered;
             }
@@ -1685,6 +2270,8 @@ namespace Hecton8.Physics
                 StateHash = hash,
                 ActiveShockwaves = active,
                 CandidateCount = candidates,
+                AffectedEntities = forcePackets,
+                EpsilonClampCount = epsilonClampCount,
                 CpuMicroseconds = math.isfinite(CpuMicroseconds) ? math.max(0f, CpuMicroseconds) : 0f,
                 Flags = flags
             };
@@ -1725,6 +2312,7 @@ namespace Hecton8.Physics
     {
         internal static void DrainCavitationForcePackets(
             NativeArray<ShockwaveForcePacketDTO> packets,
+            NativeArray<ForcePacketDTO> transportPackets,
             NativeArray<ShockwaveCounterBlock> counters,
             AbyssalCavitationTuningDTO tuning,
             double3 localOriginAUP,
@@ -1736,6 +2324,7 @@ namespace Hecton8.Physics
             accepted = 0;
             unresolved = 0;
             if (!packets.IsCreated ||
+                !transportPackets.IsCreated ||
                 packets.Length <= 0 ||
                 !counters.IsCreated ||
                 counters.Length <= AbyssalCavitationCounterIndex.CandidateCount)
@@ -1744,25 +2333,57 @@ namespace Hecton8.Physics
             }
 
             PhysicsApplySystem system = EnsureRuntimeInstance();
+            GlobalPhysicsStateManager.TryGetBuoyancyBodyResolver(out GlobalPhysicsStateManager bodyResolver);
             int candidateCount = math.clamp(counters[AbyssalCavitationCounterIndex.CandidateCount].Value, 0, packets.Length);
             int budget = math.min(candidateCount, math.clamp(maxPackets, 0, packets.Length));
             float maxForce = math.max(1f, AbyssalCavitationSanitizer.SanitizeTuning(tuning).MaxForceNewton);
             for (int i = 0; i < budget; i++)
             {
                 ShockwaveForcePacketDTO packet = packets[i];
-                if ((packet.Flags & AbyssalCavitationPacketFlags.Active) == 0u)
+                ForcePacketDTO transport = i < transportPackets.Length ? transportPackets[i] : default;
+                uint packetFlags = packet.Flags | transport.ApplicationFlags;
+                if ((packetFlags & AbyssalCavitationPacketFlags.Active) == 0u)
                     continue;
                 if (frameIndex != 0u && packet.FrameIndex != frameIndex)
                     continue;
-                if (system == null ||
-                    packet.TargetEntityHash == 0u ||
-                    !GlobalPhysicsStateManager.TryResolveTrackedBodyByFoldedEntityHash(packet.TargetEntityHash, out Rigidbody body))
+                uint targetHash = transport.TargetEntityHash != 0u ? transport.TargetEntityHash : packet.TargetEntityHash;
+                if (system == null || targetHash == 0u)
                 {
                     unresolved++;
                     continue;
                 }
 
-                float3 force = packet.Force;
+                Rigidbody body;
+                bool resolved = false;
+                if (packet.RigidbodySlot >= 0)
+                {
+                    resolved = GlobalPhysicsStateManager.TryResolveTrackedBodyByIndex(
+                        bodyResolver,
+                        packet.RigidbodySlot,
+                        targetHash,
+                        out body);
+                }
+                else
+                {
+                    body = null;
+                }
+
+                if (!resolved)
+                {
+                    resolved = GlobalPhysicsStateManager.TryFindTrackedBodyByFoldedEntityHash(
+                        bodyResolver,
+                        targetHash,
+                        out body,
+                        out _);
+                }
+
+                if (!resolved)
+                {
+                    unresolved++;
+                    continue;
+                }
+
+                float3 force = transport.TargetEntityHash != 0u ? transport.ForceVector : packet.Force;
                 float forceSq = math.lengthsq(force);
                 if (!math.isfinite(forceSq) || forceSq <= 0.000001f)
                 {

@@ -35,43 +35,47 @@ namespace Hecton8.World
                 int nativeAllocationCountAfter,
                 int expectedNativeAllocationDelta)
             {
-                Passed = passed;
-                FieldSamplerRegistered = fieldSamplerRegistered;
-                FieldSamplerReleased = fieldSamplerReleased;
-                ResourceDistributionRegistered = resourceDistributionRegistered;
-                ResourceDistributionReleased = resourceDistributionReleased;
-                GeologyTerrainSeamRegistered = geologyTerrainSeamRegistered;
-                GeologyTerrainSeamReleased = geologyTerrainSeamReleased;
-                GeologyVoxelBridgeRegistered = geologyVoxelBridgeRegistered;
-                GeologyVoxelBridgeReleased = geologyVoxelBridgeReleased;
-                WorldGenRegistered = worldGenRegistered;
-                WorldGenReleased = worldGenReleased;
+                Passed = passed ? (byte)1 : (byte)0;
+                FieldSamplerRegistered = fieldSamplerRegistered ? (byte)1 : (byte)0;
+                FieldSamplerReleased = fieldSamplerReleased ? (byte)1 : (byte)0;
+                ResourceDistributionRegistered = resourceDistributionRegistered ? (byte)1 : (byte)0;
+                ResourceDistributionReleased = resourceDistributionReleased ? (byte)1 : (byte)0;
+                GeologyTerrainSeamRegistered = geologyTerrainSeamRegistered ? (byte)1 : (byte)0;
+                GeologyTerrainSeamReleased = geologyTerrainSeamReleased ? (byte)1 : (byte)0;
+                GeologyVoxelBridgeRegistered = geologyVoxelBridgeRegistered ? (byte)1 : (byte)0;
+                GeologyVoxelBridgeReleased = geologyVoxelBridgeReleased ? (byte)1 : (byte)0;
+                WorldGenRegistered = worldGenRegistered ? (byte)1 : (byte)0;
+                WorldGenReleased = worldGenReleased ? (byte)1 : (byte)0;
                 PendingReboundCountBefore = pendingReboundCountBefore;
                 PendingReboundCountAfter = pendingReboundCountAfter;
                 NativeAllocationCountBefore = nativeAllocationCountBefore;
                 NativeAllocationCountAfter = nativeAllocationCountAfter;
                 ExpectedNativeAllocationDelta = expectedNativeAllocationDelta;
+                NativeAllocationDelta = nativeAllocationCountAfter - nativeAllocationCountBefore;
+                NativeAllocationDeltaWithinExpectedRegistryQueueBudget =
+                    NativeAllocationDelta >= 0 && NativeAllocationDelta <= ExpectedNativeAllocationDelta
+                        ? (byte)1
+                        : (byte)0;
             }
 
-            public bool Passed { get; }
-            public bool FieldSamplerRegistered { get; }
-            public bool FieldSamplerReleased { get; }
-            public bool ResourceDistributionRegistered { get; }
-            public bool ResourceDistributionReleased { get; }
-            public bool GeologyTerrainSeamRegistered { get; }
-            public bool GeologyTerrainSeamReleased { get; }
-            public bool GeologyVoxelBridgeRegistered { get; }
-            public bool GeologyVoxelBridgeReleased { get; }
-            public bool WorldGenRegistered { get; }
-            public bool WorldGenReleased { get; }
-            public int PendingReboundCountBefore { get; }
-            public int PendingReboundCountAfter { get; }
-            public int NativeAllocationCountBefore { get; }
-            public int NativeAllocationCountAfter { get; }
-            public int NativeAllocationDelta => NativeAllocationCountAfter - NativeAllocationCountBefore;
-            public int ExpectedNativeAllocationDelta { get; }
-            public bool NativeAllocationDeltaWithinExpectedRegistryQueueBudget =>
-                NativeAllocationDelta >= 0 && NativeAllocationDelta <= ExpectedNativeAllocationDelta;
+            public readonly byte Passed;
+            public readonly byte FieldSamplerRegistered;
+            public readonly byte FieldSamplerReleased;
+            public readonly byte ResourceDistributionRegistered;
+            public readonly byte ResourceDistributionReleased;
+            public readonly byte GeologyTerrainSeamRegistered;
+            public readonly byte GeologyTerrainSeamReleased;
+            public readonly byte GeologyVoxelBridgeRegistered;
+            public readonly byte GeologyVoxelBridgeReleased;
+            public readonly byte WorldGenRegistered;
+            public readonly byte WorldGenReleased;
+            public readonly int PendingReboundCountBefore;
+            public readonly int PendingReboundCountAfter;
+            public readonly int NativeAllocationCountBefore;
+            public readonly int NativeAllocationCountAfter;
+            public readonly int NativeAllocationDelta;
+            public readonly int ExpectedNativeAllocationDelta;
+            public readonly byte NativeAllocationDeltaWithinExpectedRegistryQueueBudget;
         }
 
         [ContextMenu("Run World Gen Registry Smoke Test")]
@@ -80,7 +84,7 @@ namespace Hecton8.World
             RunHeadlessSmokeTest(out WorldGenRegistrySmokeReport report);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log(
-                report.Passed
+                report.Passed != 0
                     ? "[WorldGenRegistrySmokeTester] PASS"
                     : "[WorldGenRegistrySmokeTester] FAIL",
                 this);
@@ -262,9 +266,9 @@ namespace Hecton8.World
 #endif
         }
 
-        private static int Bool01(bool value)
+        private static int Bool01(byte value)
         {
-            return value ? 1 : 0;
+            return value != 0 ? 1 : 0;
         }
 
         private sealed class SmokeWorldGenService : IWorldGenService

@@ -1,5 +1,6 @@
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
@@ -24,6 +25,7 @@ namespace Hecton8.Physics
         public const int TelemetryCapacity = 300;
         public const int BootstrapMagic = 0x53483135;
         public const float SafeLocalAupSpanMeters = 32768f;
+        public const float MaxTensionForceNewtons = 250000f;
     }
 
     internal static class TetherNodeRuntimeFlags
@@ -259,7 +261,9 @@ namespace Hecton8.Physics
                 }
 
                 int constraintOffset = cable * constraintsPerTether;
-                float restLength = (float)math.length(payload - anchor) * math.rcp(math.max(1, constraintsPerTether));
+                double3 restDeltaAup = payload - anchor;
+                float3 restLocal = AupPrecisionMath.DowncastLocalDelta(restDeltaAup, float3.zero);
+                float restLength = LengthFromSq(math.lengthsq(restLocal)) * math.rcp(math.max(1, constraintsPerTether));
                 for (int segment = 0; segment < constraintsPerTether; segment++)
                 {
                     Constraints[constraintOffset + segment] = new TetherConstraintDTO
@@ -284,6 +288,13 @@ namespace Hecton8.Physics
         private static float Sanitize01(float value)
         {
             return math.saturate(math.isfinite(value) ? value : 1f);
+        }
+
+        private static float LengthFromSq(float lengthSq)
+        {
+            float finiteSq = math.select(0f, lengthSq, math.isfinite(lengthSq));
+            float safeSq = math.max(finiteSq, 0.0001f);
+            return math.select(0f, safeSq * math.rsqrt(math.max(safeSq, 0.0001f)), finiteSq > 0.0001f);
         }
     }
 
@@ -476,10 +487,10 @@ namespace Hecton8.Physics
     internal struct SolveTetherConstraintsJob : IJob
     {
         [NoAlias] public NativeArray<TetherNodeDTO> Nodes;
-        [NoAlias] public NativeArray<TetherConstraintDTO> Constraints;
-        [NoAlias] public NativeArray<float> SegmentTensions;
-        [NoAlias] public NativeArray<float> SolverStats;
-        [NoAlias] public NativeArray<TetherForcePacketDTO> ForcePackets;
+        [ReadOnly, NoAlias] public NativeArray<TetherConstraintDTO> Constraints;
+        [WriteOnly, NoAlias] public NativeArray<float> SegmentTensions;
+        [WriteOnly, NoAlias] public NativeArray<float> SolverStats;
+        [WriteOnly, NoAlias] public NativeArray<TetherForcePacketDTO> ForcePackets;
 
         public int ActiveConstraintCount;
         public int IterationCount;
@@ -521,18 +532,18 @@ namespace Hecton8.Physics
                         continue;
                     }
 
-                    float invLen = math.rsqrt(math.max(lenSq, VerletCableLayout.MinConstraintLengthSq));
-                    float distance = lenSq * invLen;
+                    float distance = math.max(lenSq * math.rsqrt(math.max(lenSq, 0.0001f)), 0.0001f);
+                    float invDistance = math.rcp(distance);
                     float restLength = math.max(VerletCableLayout.MinConstraintLength, constraint.RestLength);
                     float error = distance - restLength;
                     float stretch = math.max(0f, error);
                     float stiffness = math.saturate(constraint.Stiffness);
-                    float tension = stretch * stiffness * math.max(0f, TensionScale);
+                    float tension = ClampTension(stretch * stiffness * SanitizeNonNegative(TensionScale));
                     peakTension = math.max(peakTension, tension);
                     maxError = math.max(maxError, math.abs(error));
                     WriteTension(i, tension);
 
-                    float3 direction = delta * invLen;
+                    float3 direction = SanitizeDirection(delta * invDistance);
                     WriteEndpointForces(i, constraint, a.CurrentAUP, b.CurrentAUP, direction, tension);
                     if (math.abs(error) <= VerletCableLayout.MinConstraintLength)
                         continue;
@@ -562,6 +573,8 @@ namespace Hecton8.Physics
                 }
             }
 
+            ClearInactiveOutputs(constraintCount);
+
             if (SolverStats.IsCreated)
             {
                 if (SolverStats.Length > 0)
@@ -576,7 +589,7 @@ namespace Hecton8.Physics
         private void WriteTension(int index, float tension)
         {
             if (SegmentTensions.IsCreated && index >= 0 && index < SegmentTensions.Length)
-                SegmentTensions[index] = math.isfinite(tension) ? math.max(0f, tension) : 0f;
+                SegmentTensions[index] = ClampTension(tension);
         }
 
         private void WriteEndpointForces(
@@ -592,7 +605,9 @@ namespace Hecton8.Physics
 
             int first = constraintIndex * 2;
             int second = first + 1;
-            if (tension <= 0f || !math.isfinite(tension) || !math.all(math.isfinite(direction)))
+            float safeTension = ClampTension(tension);
+            float3 safeDirection = SanitizeDirection(direction);
+            if (safeTension <= 0f || !math.all(math.isfinite(safeDirection)))
             {
                 if (first < ForcePackets.Length)
                     ForcePackets[first] = default;
@@ -606,8 +621,8 @@ namespace Hecton8.Physics
                 ForcePackets[first] = new TetherForcePacketDTO
                 {
                     ApplicationAUP = aupA,
-                    Force = direction * tension,
-                    Tension = tension,
+                    Force = safeDirection * safeTension,
+                    Tension = safeTension,
                     CableId = unchecked((int)constraint.CableId),
                     BodySlot = 0,
                     Flags = TetherForcePacketFlags.EndpointAnchor,
@@ -620,8 +635,8 @@ namespace Hecton8.Physics
                 ForcePackets[second] = new TetherForcePacketDTO
                 {
                     ApplicationAUP = aupB,
-                    Force = -direction * tension,
-                    Tension = tension,
+                    Force = -safeDirection * safeTension,
+                    Tension = safeTension,
                     CableId = unchecked((int)constraint.CableId),
                     BodySlot = 1,
                     Flags = TetherForcePacketFlags.EndpointPayload,
@@ -643,6 +658,23 @@ namespace Hecton8.Physics
                 ForcePackets[second] = default;
         }
 
+        private void ClearInactiveOutputs(int activeConstraintCount)
+        {
+            if (SegmentTensions.IsCreated)
+            {
+                int tensionStart = math.clamp(activeConstraintCount, 0, SegmentTensions.Length);
+                for (int i = tensionStart; i < SegmentTensions.Length; i++)
+                    SegmentTensions[i] = 0f;
+            }
+
+            if (ForcePackets.IsCreated)
+            {
+                int packetStart = math.clamp(activeConstraintCount * 2, 0, ForcePackets.Length);
+                for (int i = packetStart; i < ForcePackets.Length; i++)
+                    ForcePackets[i] = default;
+            }
+        }
+
         private static float3 LocalDeltaToFloat3(double3 delta, ref uint flags)
         {
             if (!math.all(math.isfinite(delta)))
@@ -659,6 +691,21 @@ namespace Hecton8.Physics
 
             flags |= TetherNodeRuntimeFlags.ConstraintFault;
             return float3.zero;
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float ClampTension(float tension)
+        {
+            return math.min(SanitizeNonNegative(tension), TetherAupRuntimeConstants.MaxTensionForceNewtons);
+        }
+
+        private static float3 SanitizeDirection(float3 direction)
+        {
+            return math.all(math.isfinite(direction)) ? direction : float3.zero;
         }
     }
 
@@ -706,7 +753,7 @@ namespace Hecton8.Physics
             float3 tangent = p2 - p1;
             float tangentSq = math.lengthsq(tangent);
             tangent = math.isfinite(tangentSq) && tangentSq > 0.000001f
-                ? tangent * math.rsqrt(tangentSq)
+                ? tangent * math.rsqrt(math.max(tangentSq, 0.000001f))
                 : new float3(0f, 0f, 1f);
 
             float tension = SegmentTensions.IsCreated && segment < SegmentTensions.Length
@@ -761,6 +808,17 @@ namespace Hecton8.Physics
     internal unsafe struct TetherSplineGpuMemcpyJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<TetherSplineVertexDTO> Source;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Destination is an externally owned graphics/upload pointer, so Unity's container safety system cannot attach
+        // a NativeContainer handle to it. The job bounds the copy by Source.Length, Count, and DestinationBytes before
+        // performing a single MemCpy from the read-only source lane into the write-only upload region.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A managed byte[] staging copy was rejected because it adds GC and an extra memory pass. A NativeArray wrapper
+        // around the graphics pointer was rejected because this upload route receives a raw mapped pointer from the
+        // render owner and must not create fake ownership over that memory.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is single producer for the destination during the scheduled upload phase: no other job writes
+        // Destination until this handle is returned and fenced by the caller, and Source is read-only for the same range.
         [NoAlias, NativeDisableUnsafePtrRestriction, WriteOnly] public void* Destination;
         public int Count;
         public long DestinationBytes;
@@ -952,26 +1010,104 @@ namespace Hecton8.Physics
         }
     }
 
-    public static class TetherAupRuntimeIntrospection
+    internal static class TetherAupVaultRoute
     {
-        public static bool TrySampleLatestTelemetry(out TetherAupTelemetryEntry telemetry)
+        public static bool TryOpenExistingBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
         {
-            telemetry = default;
-            return TrySampleLatestTelemetry(GlobalRegistry.DataVault, out telemetry);
-        }
-
-        public static bool TrySampleLatestTelemetry(IDataVault vault, out TetherAupTelemetryEntry telemetry)
-        {
-            telemetry = default;
+            buffer = default;
             if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.Shinobu143TetherTelemetryRing, out VaultBufferHandle<TetherAupTelemetryEntry> ringHandle) ||
-                !vault.TryGetBufferHandle(BufferID.Shinobu143TetherTelemetryHead, out VaultBufferHandle<int> headHandle))
+                requiredLength <= 0 ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
             {
                 return false;
             }
 
-            NativeArray<TetherAupTelemetryEntry> ring = ringHandle.Resolve(vault);
-            NativeArray<int> head = headHandle.Resolve(vault);
+            return TryOpenBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        public static bool OpenOrAcquireBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            if (TryOpenExistingBuffer(vault, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null || requiredLength <= 0 || vault.IsAllocationLocked)
+            {
+                buffer = default;
+                return false;
+            }
+
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.Physics,
+                options);
+            return TryOpenBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsPhysicsHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsPhysicsHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.Physics &&
+                   handle.Generation != 0u;
+        }
+    }
+
+    public static class TetherAupRuntimeIntrospection
+    {
+        public static bool TrySampleLatestTelemetry(IDataVault vault, out TetherAupTelemetryEntry telemetry)
+        {
+            telemetry = default;
+            if (!TetherAupVaultRoute.TryOpenExistingBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherTelemetryRing,
+                    TetherAupRuntimeConstants.TelemetryCapacity,
+                    out NativeArray<TetherAupTelemetryEntry> ring) ||
+                !TetherAupVaultRoute.TryOpenExistingBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherTelemetryHead,
+                    1,
+                    out NativeArray<int> head))
+            {
+                return false;
+            }
+
             if (!ring.IsCreated || ring.Length == 0 || !head.IsCreated || head.Length == 0)
                 return false;
 
@@ -984,11 +1120,6 @@ namespace Hecton8.Physics
 
             telemetry = ring[index];
             return telemetry.NodeCount > 0 || telemetry.FrameIndex != 0u;
-        }
-
-        public static bool TryDumpCableSurgeon(uint reasonFlags)
-        {
-            return TryDumpCableSurgeon(GlobalRegistry.DataVault, reasonFlags);
         }
 
         public static bool TryDumpCableSurgeon(IDataVault vault, uint reasonFlags)
@@ -1008,14 +1139,20 @@ namespace Hecton8.Physics
         {
             if (vault == null || string.IsNullOrEmpty(projectRoot))
                 return false;
-            if (!vault.TryGetBufferHandle(BufferID.Shinobu143TetherTelemetryRing, out VaultBufferHandle<TetherAupTelemetryEntry> ringHandle) ||
-                !vault.TryGetBufferHandle(BufferID.Shinobu143TetherTelemetryHead, out VaultBufferHandle<int> headHandle))
+            if (!TetherAupVaultRoute.TryOpenExistingBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherTelemetryRing,
+                    TetherAupRuntimeConstants.TelemetryCapacity,
+                    out NativeArray<TetherAupTelemetryEntry> ring) ||
+                !TetherAupVaultRoute.TryOpenExistingBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherTelemetryHead,
+                    1,
+                    out NativeArray<int> head))
             {
                 return false;
             }
 
-            NativeArray<TetherAupTelemetryEntry> ring = ringHandle.Resolve(vault);
-            NativeArray<int> head = headHandle.Resolve(vault);
             if (!ring.IsCreated || ring.Length == 0 || !head.IsCreated || head.Length == 0)
                 return false;
 
@@ -1045,82 +1182,110 @@ namespace Hecton8.Physics
             if (vault == null)
                 return;
 
-            VaultBufferHandle<int> stateHandle = vault.GetBufferHandle<int>(
-                BufferID.Shinobu143TetherBootstrapState,
-                1,
-                SystemID.Physics,
-                NativeArrayOptions.ClearMemory);
-            NativeArray<int> state = stateHandle.Resolve(vault);
+            if (!TetherAupVaultRoute.OpenOrAcquireBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherBootstrapState,
+                    1,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<int> state))
+            {
+                return;
+            }
+
             if (state.IsCreated && state.Length > 0 && state[0] == TetherAupRuntimeConstants.BootstrapMagic)
                 return;
 
-            NativeArray<TetherNodeDTO> nodes = vault.GetBufferHandle<TetherNodeDTO>(
-                BufferID.Shinobu143TetherAupNodes,
-                TetherAupRuntimeConstants.MockNodeCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<TetherConstraintDTO> constraints = vault.GetBufferHandle<TetherConstraintDTO>(
-                BufferID.Shinobu143TetherConstraints,
-                TetherAupRuntimeConstants.MockConstraintCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<TetherEndpointAupDTO> endpoints = vault.GetBufferHandle<TetherEndpointAupDTO>(
-                BufferID.Shinobu143TetherEndpoints,
-                TetherAupRuntimeConstants.MockTetherCount,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            vault.GetBufferHandle<TetherSplineVertexDTO>(
-                BufferID.Shinobu143TetherSplineVertices,
-                TetherAupRuntimeConstants.MockSplineVertexCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            vault.GetBufferHandle<TetherForcePacketDTO>(
-                BufferID.Shinobu143TetherForcePackets,
-                TetherAupRuntimeConstants.MockForcePacketCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<float> segmentTensions = vault.GetBufferHandle<float>(
-                BufferID.Shinobu143TetherSegmentTensions,
-                TetherAupRuntimeConstants.MockConstraintCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<float> solverStats = vault.GetBufferHandle<float>(
-                BufferID.Shinobu143TetherSolverStats,
-                TetherAupRuntimeConstants.SolverStatsCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.ClearMemory).Resolve(vault);
-            NativeArray<double3> pinnedAups = vault.GetBufferHandle<double3>(
-                BufferID.Shinobu143TetherPinnedAups,
-                TetherAupRuntimeConstants.MockNodeCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<byte> pinnedMask = vault.GetBufferHandle<byte>(
-                BufferID.Shinobu143TetherPinnedMask,
-                TetherAupRuntimeConstants.MockNodeCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            vault.GetBufferHandle<TetherAupTelemetryEntry>(
-                BufferID.Shinobu143TetherTelemetryRing,
-                TetherAupRuntimeConstants.TelemetryCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            vault.GetBufferHandle<int>(
-                BufferID.Shinobu143TetherTelemetryHead,
-                1,
-                SystemID.Physics,
-                NativeArrayOptions.ClearMemory).Resolve(vault);
-            NativeArray<CableMaterialDTO> materials = vault.GetBufferHandle<CableMaterialDTO>(
-                BufferID.Shinobu143CableMaterials,
-                TetherAupRuntimeConstants.MaterialCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            vault.GetBufferHandle<byte>(
-                BufferID.Shinobu143CableMaterialCsvScratch,
-                16 * 1024,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
+            NativeArray<TetherNodeDTO> nodes = default;
+            NativeArray<TetherConstraintDTO> constraints = default;
+            NativeArray<TetherEndpointAupDTO> endpoints = default;
+            NativeArray<float> segmentTensions = default;
+            NativeArray<float> solverStats = default;
+            NativeArray<double3> pinnedAups = default;
+            NativeArray<byte> pinnedMask = default;
+            NativeArray<CableMaterialDTO> materials = default;
 
-            if (!nodes.IsCreated ||
+            bool buffersReady =
+                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherAupNodes,
+                    TetherAupRuntimeConstants.MockNodeCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out nodes) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherConstraints,
+                    TetherAupRuntimeConstants.MockConstraintCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out constraints) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherEndpoints,
+                    TetherAupRuntimeConstants.MockTetherCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out endpoints) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer<TetherSplineVertexDTO>(
+                    vault,
+                    BufferID.Shinobu143TetherSplineVertices,
+                    TetherAupRuntimeConstants.MockSplineVertexCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer<TetherForcePacketDTO>(
+                    vault,
+                    BufferID.Shinobu143TetherForcePackets,
+                    TetherAupRuntimeConstants.MockForcePacketCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherSegmentTensions,
+                    TetherAupRuntimeConstants.MockConstraintCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out segmentTensions) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherSolverStats,
+                    TetherAupRuntimeConstants.SolverStatsCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out solverStats) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherPinnedAups,
+                    TetherAupRuntimeConstants.MockNodeCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out pinnedAups) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                    vault,
+                    BufferID.Shinobu143TetherPinnedMask,
+                    TetherAupRuntimeConstants.MockNodeCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out pinnedMask) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer<TetherAupTelemetryEntry>(
+                    vault,
+                    BufferID.Shinobu143TetherTelemetryRing,
+                    TetherAupRuntimeConstants.TelemetryCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer<int>(
+                    vault,
+                    BufferID.Shinobu143TetherTelemetryHead,
+                    1,
+                    NativeArrayOptions.ClearMemory,
+                    out _) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer(
+                    vault,
+                    BufferID.Shinobu143CableMaterials,
+                    TetherAupRuntimeConstants.MaterialCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out materials) &&
+                TetherAupVaultRoute.OpenOrAcquireBuffer<byte>(
+                    vault,
+                    BufferID.Shinobu143CableMaterialCsvScratch,
+                    16 * 1024,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _);
+
+            if (!buffersReady ||
+                !nodes.IsCreated ||
                 !constraints.IsCreated ||
                 !endpoints.IsCreated ||
                 !materials.IsCreated ||

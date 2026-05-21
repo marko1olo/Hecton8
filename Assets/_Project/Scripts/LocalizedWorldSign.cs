@@ -243,7 +243,7 @@ namespace Hecton.Localization
             }
 
             AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!MathGuard.IsFinite(in originAup))
+            if (!originAup.IsFinite())
                 return false;
 
             absoluteAup = originAup.ToAbsoluteDouble3() + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);

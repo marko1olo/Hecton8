@@ -9,6 +9,7 @@ using Hecton.Localization;
 using Hecton8.Input;
 using TMPro;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
@@ -161,7 +162,7 @@ namespace Hecton8.UI
         private IDataVault _glitchVault;
         private LocalizationManager _localization;
         private InputManager _nativeInputManager;
-        private VaultBufferHandle<byte> _glitchTableHandle;
+        private VaultGenerationHandle<byte> _glitchTableHandle;
         private bool _glitchTableHandleReady;
         private bool _hotSwapRegistered;
 
@@ -180,7 +181,7 @@ namespace Hecton8.UI
             TryRegisterHotSwapListener();
             Subscribe();
             RefreshChrome();
-            EvaluateTickRegistration();
+            RegisterToTickManager();
         }
 
         private void OnDisable()
@@ -189,6 +190,7 @@ namespace Hecton8.UI
             TryUnregisterHotSwapListener();
             Unsubscribe();
             UnregisterFromTickManager();
+            ClearGlitchTableBinding();
         }
 
         private void OnDestroy()
@@ -205,6 +207,7 @@ namespace Hecton8.UI
             DestroyMaterialInstance(ref _contextTagMaterial);
             DestroyMaterialInstance(ref _leftFooterMaterial);
             DestroyMaterialInstance(ref _rightFooterMaterial);
+            ClearGlitchTableBinding();
         }
 
         private void AutoResolve()
@@ -320,6 +323,12 @@ namespace Hecton8.UI
                 _nativeInputManager = GlobalRegistry.NativeInputManager;
                 _cachedRebootBindingLength = 0;
                 _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            {
+                RegisterToTickManager();
             }
         }
 
@@ -343,34 +352,38 @@ namespace Hecton8.UI
         private void CacheGlitchTableVaultCold()
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                vault = latestVault;
-
             BindGlitchTableVault(vault);
         }
 
         private void BindGlitchTableVault(IDataVault vault)
         {
+            if (!ReferenceEquals(_glitchVault, vault))
+                ClearGlitchTableBinding();
+
             _glitchVault = vault;
-            _glitchTableHandle = default;
             _glitchTableHandleReady = false;
             if (vault == null)
                 return;
 
-            _glitchTableHandle = vault.GetBufferHandle<byte>(
-                (BufferID)DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw,
-                DiegeticGlitchSurgeonRuntime.GlitchTableCapacity,
-                SystemID.UI,
-                NativeArrayOptions.UninitializedMemory);
-            _glitchTableHandleReady = _glitchTableHandle.IsCreated;
-            if (!_glitchTableHandleReady)
+            if (!vault.TryGetGenerationHandle(
+                    (BufferID)DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw,
+                    out VaultGenerationHandle<byte> acquired) ||
+                !IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out NativeArray<byte> glitchTable) ||
+                !glitchTable.IsCreated ||
+                glitchTable.Length < DiegeticGlitchSurgeonRuntime.GlitchTableCapacity)
+            {
                 return;
+            }
+
+            _glitchTableHandle = acquired;
+            _glitchTableHandleReady = true;
 
             unsafe
             {
-                byte* table = (byte*)_glitchTableHandle.ResolvePointer(vault);
-                if (table != null && !GlitchTable.IsValidGlyphTable(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity))
-                    GlitchTable.CopyEmbeddedGlyphsTo(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity);
+                byte* table = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(glitchTable);
+                if (table == null || !GlitchTable.IsValidGlyphTable(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity))
+                    ClearGlitchTableBinding();
             }
         }
 
@@ -381,12 +394,31 @@ namespace Hecton8.UI
             if (!_glitchTableHandleReady || _glitchVault == null)
                 return false;
 
-            table = (byte*)_glitchTableHandle.ResolvePointer(_glitchVault);
+            if (!_glitchVault.TryResolveHandle(in _glitchTableHandle, out NativeArray<byte> glitchTable) ||
+                !glitchTable.IsCreated ||
+                glitchTable.Length < DiegeticGlitchSurgeonRuntime.GlitchTableCapacity)
+            {
+                return false;
+            }
+
+            table = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(glitchTable);
             if (table == null)
                 return false;
 
             tableLength = DiegeticGlitchSurgeonRuntime.GlitchTableCapacity;
             return true;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private void ClearGlitchTableBinding()
+        {
+            _glitchVault = null;
+            _glitchTableHandle = default;
+            _glitchTableHandleReady = false;
         }
 
         private void CacheRegistryServicesCold()
@@ -421,12 +453,10 @@ namespace Hecton8.UI
         {
             RefreshBindings();
             RefreshChrome();
-            EvaluateTickRegistration();
         }
         private void HandlePdaClosed(float _)
         {
             RefreshChrome();
-            EvaluateTickRegistration();
         }
 
         private void HandleTabChanged(int _, int __)
@@ -444,7 +474,6 @@ namespace Hecton8.UI
                 _lastVaultPressureBucket = int.MinValue;
                 _vaultPressureWarningActive = false;
                 _lastRebootProgressPercent = -1;
-                UnregisterFromTickManager();
                 return;
             }
 
@@ -727,7 +756,6 @@ namespace Hecton8.UI
             _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
             InvalidateAppliedLabelVersions();
             RefreshChrome();
-            EvaluateTickRegistration();
         }
 
         private void RefreshChrome()
@@ -1408,16 +1436,11 @@ namespace Hecton8.UI
         {
             if (PlayerPDA.IsOpen)
                 RegisterToTickManager();
-            else
-                UnregisterFromTickManager();
         }
 
         private void RegisterToTickManager()
         {
             if (_registeredToTickManager || !Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);

@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Hecton8.Logistics.Grid.Contracts;
 using Unity.Burst;
 using Unity.Collections;
@@ -10,17 +9,17 @@ namespace Hecton8.Logistics.Grid
     /// <summary>
     /// Converts a packed WFC outpost grid into SOA power nodes and logical adjacency edges.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct WfcOutpostGraphTranslationJob : IJob
     {
-        [ReadOnly] public NativeArray<byte> Cells;
+        [ReadOnly]
+        [NoAlias] public NativeArray<byte> Cells;
         public WfcOutpostGridDescriptor Descriptor;
-        public NativeArray<WfcOutpostPowerNode> Nodes;
-        public NativeArray<int> CellToNode;
-        public NativeParallelMultiHashMap<int, int> PowerEdges;
-        public NativeArray<int> Counts;
-        public NativeArray<int> GeneratorNodeIndex;
+        [NoAlias] public NativeArray<WfcOutpostPowerNode> Nodes;
+        [NoAlias] public NativeArray<int> CellToNode;
+        [NoAlias] public NativeParallelMultiHashMap<int, int> PowerEdges;
+        [NoAlias] public NativeArray<int> Counts;
+        [NoAlias] public NativeArray<int> GeneratorNodeIndex;
 
         public void Execute()
         {

@@ -16,6 +16,13 @@ namespace Hecton8.Tools.Editor
         private static readonly Regex VirtualApplyModifier = new Regex(@"\bvirtual\s+\w+\s+ApplyModifier\s*\(", RegexOptions.Compiled);
         private static readonly Regex ApplyModifierCall = new Regex(@"\.ApplyModifier\s*\(", RegexOptions.Compiled);
         private static readonly Regex ListUpgrade = new Regex(@"\bList\s*<\s*\w*Upgrade\w*\s*>", RegexOptions.Compiled);
+        private static readonly Regex ManagedUpgradeArray = new Regex(@"\b(?:private|protected|internal)\s+(?:readonly\s+)?(?:ToolUpgradeData|ToolModuleData|SuitUpgradeData)\s*\[\s*\]\s+[_A-Za-z]\w*", RegexOptions.Compiled);
+        private static readonly Regex ManagedToolStatTotals = new Regex(@"\.\s*GetTotal(?:Efficiency|Speed|EnergyConsumption)\s*\(", RegexOptions.Compiled);
+        private static readonly Regex ManagedCompileRuntimeStats = new Regex(@"\bCompileRuntimeStats\s*\(", RegexOptions.Compiled);
+        private static readonly Regex VehicleCompileStats = new Regex(@"\bCompileStats\s*\(", RegexOptions.Compiled);
+        private static readonly Regex UpgradeTelemetryNativeArray = new Regex(@"\bprivate\s+NativeArray\s*<\s*\w*Upgrade\w*Telemetry\w*\s*>", RegexOptions.Compiled);
+        private static readonly Regex HotEvaluateBranchToken = new Regex(@"\b(?:if|else|switch)\b|\?", RegexOptions.Compiled);
+        private static readonly Regex HotEvaluateAupDowncast = new Regex(@"\bAupPrecisionMath\s*\.\s*DowncastLocalDelta\s*\(", RegexOptions.Compiled);
 
         [MenuItem("HECTON-8/Tools/Polymorphic Modifier Scanner")]
         public static void Run()
@@ -24,11 +31,12 @@ namespace Hecton8.Tools.Editor
             string scriptsRoot = Path.Combine(projectRoot, "Assets", "_Project", "Scripts");
             int scanned = 0;
             int findingsCount = 0;
+            int hotEvaluateFindingsCount = 0;
             StringBuilder findings = new StringBuilder(8192);
 
-            ScanDirectory(Path.Combine(scriptsRoot, "Tools"), projectRoot, ref scanned, ref findingsCount, findings);
-            ScanDirectory(Path.Combine(scriptsRoot, "Vehicles"), projectRoot, ref scanned, ref findingsCount, findings);
-            ScanDirectory(Path.Combine(scriptsRoot, "Gameplay"), projectRoot, ref scanned, ref findingsCount, findings);
+            ScanDirectory(Path.Combine(scriptsRoot, "Tools"), projectRoot, ref scanned, ref findingsCount, ref hotEvaluateFindingsCount, findings);
+            ScanDirectory(Path.Combine(scriptsRoot, "Vehicles"), projectRoot, ref scanned, ref findingsCount, ref hotEvaluateFindingsCount, findings);
+            ScanDirectory(Path.Combine(scriptsRoot, "Gameplay"), projectRoot, ref scanned, ref findingsCount, ref hotEvaluateFindingsCount, findings);
 
             string reportFullPath = Path.Combine(projectRoot, ReportPath);
             string directory = Path.GetDirectoryName(reportFullPath);
@@ -36,25 +44,122 @@ namespace Hecton8.Tools.Editor
                 Directory.CreateDirectory(directory);
 
             StringBuilder json = new StringBuilder(12288);
-            json.AppendLine("{");
-            json.AppendLine("  \"agent\": \"SHINOBU_231\",");
-            json.AppendLine("  \"scanner\": \"Polymorphic_Modifier_Scanner\",");
-            json.AppendLine("  \"summary\": \"Virtual Method Invocations Eradicated\",");
-            json.Append("  \"scannedFiles\": ").Append(scanned).AppendLine(",");
-            json.Append("  \"forbiddenPatternHits\": ").Append(findingsCount).AppendLine(",");
-            json.AppendLine("  \"branchlessAuthority\": \"UpgradeMaskDTO[16], UpgradeLutEntryDTO[128], EvaluateUpgradeMasksJob, BuildUpgradeLUTJob\",");
-            json.Append("  \"verdict\": \"").Append(findingsCount == 0 ? "PASS" : "FAIL").AppendLine("\",");
-            json.AppendLine("  \"findings\": [");
+            json.AppendLine("    {");
+            json.AppendLine("      \"agent\": \"SHINOBU_231\",");
+            json.AppendLine("      \"scanner\": \"Polymorphic_Modifier_Scanner\",");
+            json.AppendLine("      \"summary\": \"Virtual Method Invocations Eradicated; packed tool module mirrors use ToolUpgradeModuleRuleDTO\",");
+            json.Append("      \"scannedFiles\": ").Append(scanned).AppendLine(",");
+            json.Append("      \"forbiddenPatternHits\": ").Append(findingsCount).AppendLine(",");
+            json.AppendLine("      \"branchlessAuthority\": \"UpgradeMaskDTO[16], UpgradeLutEntryDTO[128], ToolUpgradeModuleRuleDTO[96] via BufferID 71410, UpgradeTelemetryEntry[64] via BufferID 71385/71386, UpgradeVisualStateDTO[64] via BufferID 71389, SuitUpgradeTelemetryEntry[64] via BufferID 71411, ToolRuntimeProfile[48] via BufferID 71412, ToolState.UpgradeBitmask64, VehicleUpgradeBits:ulong transport masks, deterministic owner-local upgrade frame counters, EvaluateUpgradeMasksJob, BuildUpgradeLUTJob, live ModularEquipmentEngine post-integration BuildToolModuleLUTJob -> EvaluateToolModuleLUTJob -> CompileToolRuntimeStatsJob -> PublishUpgradeVisualStateJob -> RecordUpgradeTelemetryJob chain\",");
+            json.AppendLine("      \"editorOnlyIgnored\": \"SuitUpgradeManager OnValidate catalog List<SuitUpgradeData> is inside UNITY_EDITOR and is not a runtime stat modifier chain.\",");
+            json.AppendLine("      \"authoringAllowance\": \"Public ToolMetadata defaultModules and [SerializeField] ScriptableObject catalog arrays remain authoring data only; runtime mirrors are packed DTO rules or Vault generation handles.\",");
+            json.AppendLine("      \"scannerScopeExpanded\": \"Runtime scan matches virtual ApplyModifier(), ApplyModifier calls, List<Upgrade>, private/protected/internal managed upgrade arrays, managed stat-total call sites, CompileRuntimeStats(), CompileStats(), private upgrade telemetry NativeArray ownership, and branch/helper regressions inside EvaluateUpgradeMasksJob.Execute.\",");
+            json.Append("      \"hotEvaluateForbiddenMatches\": ").Append(hotEvaluateFindingsCount).AppendLine(",");
+            json.Append("      \"verdict\": \"").Append(findingsCount == 0 ? "PASS" : "FAIL").AppendLine("\",");
+            json.AppendLine("      \"findings\": [");
             json.Append(findings);
             json.AppendLine();
-            json.AppendLine("  ]");
-            json.AppendLine("}");
-            File.WriteAllText(reportFullPath, json.ToString());
+            json.AppendLine("      ]");
+            json.Append("    }");
+            WriteReportPreservingAggregate(reportFullPath, json.ToString());
             AssetDatabase.Refresh();
             Debug.Log("[SHINOBU_231] Polymorphic modifier scan wrote " + ReportPath + ". Findings=" + findingsCount + ".");
         }
 
-        private static void ScanDirectory(string directory, string projectRoot, ref int scanned, ref int findingsCount, StringBuilder findings)
+        private static void WriteReportPreservingAggregate(string reportFullPath, string entryJson)
+        {
+            if (!File.Exists(reportFullPath))
+            {
+                File.WriteAllText(reportFullPath, "{\n  \"reports\": [\n" + entryJson + "\n  ]\n}\n");
+                return;
+            }
+
+            string existing = File.ReadAllText(reportFullPath);
+            int reportsIndex = existing.IndexOf("\"reports\"", StringComparison.Ordinal);
+            if (reportsIndex < 0)
+            {
+                File.WriteAllText(reportFullPath, "{\n  \"reports\": [\n" + entryJson + "\n  ]\n}\n");
+                return;
+            }
+
+            int agentIndex = existing.IndexOf("\"agent\": \"SHINOBU_231\"", reportsIndex, StringComparison.Ordinal);
+            if (agentIndex >= 0)
+            {
+                int objectStart = existing.LastIndexOf('{', agentIndex);
+                int objectEnd = FindObjectEnd(existing, objectStart);
+                if (objectStart >= 0 && objectEnd > objectStart)
+                {
+                    File.WriteAllText(reportFullPath, existing.Substring(0, objectStart) + entryJson + existing.Substring(objectEnd + 1));
+                    return;
+                }
+            }
+
+            int arrayEnd = existing.LastIndexOf(']');
+            if (arrayEnd < 0)
+            {
+                File.WriteAllText(reportFullPath, "{\n  \"reports\": [\n" + entryJson + "\n  ]\n}\n");
+                return;
+            }
+
+            string beforeArrayEnd = existing.Substring(0, arrayEnd);
+            string separator = beforeArrayEnd.TrimEnd().EndsWith("[", StringComparison.Ordinal) ? "\n" : ",\n";
+            File.WriteAllText(reportFullPath, beforeArrayEnd.TrimEnd() + separator + entryJson + "\n" + existing.Substring(arrayEnd));
+        }
+
+        private static int FindObjectEnd(string source, int objectStart)
+        {
+            if (objectStart < 0 || objectStart >= source.Length)
+                return -1;
+
+            int depth = 0;
+            bool inString = false;
+            bool escaped = false;
+            for (int i = objectStart; i < source.Length; i++)
+            {
+                char c = source[i];
+                if (inString)
+                {
+                    if (escaped)
+                    {
+                        escaped = false;
+                    }
+                    else if (c == '\\')
+                    {
+                        escaped = true;
+                    }
+                    else if (c == '"')
+                    {
+                        inString = false;
+                    }
+                    continue;
+                }
+
+                if (c == '"')
+                {
+                    inString = true;
+                    continue;
+                }
+
+                if (c == '{')
+                    depth++;
+                else if (c == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                        return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static void ScanDirectory(
+            string directory,
+            string projectRoot,
+            ref int scanned,
+            ref int findingsCount,
+            ref int hotEvaluateFindingsCount,
+            StringBuilder findings)
         {
             if (!Directory.Exists(directory))
                 return;
@@ -74,29 +179,116 @@ namespace Hecton8.Tools.Editor
                 AppendMatches(relative, sanitized, VirtualApplyModifier, "VIRTUAL_APPLY_MODIFIER", ref findingsCount, findings);
                 AppendMatches(relative, sanitized, ApplyModifierCall, "APPLY_MODIFIER_CALL", ref findingsCount, findings);
                 AppendMatches(relative, sanitized, ListUpgrade, "LIST_UPGRADE", ref findingsCount, findings);
+                AppendMatches(relative, sanitized, ManagedUpgradeArray, "MANAGED_UPGRADE_ARRAY", ref findingsCount, findings, skipSerializedAuthoring: true);
+                AppendMatches(relative, sanitized, ManagedToolStatTotals, "MANAGED_TOOL_STAT_TOTAL", ref findingsCount, findings);
+                AppendMatches(relative, sanitized, ManagedCompileRuntimeStats, "MANAGED_COMPILE_RUNTIME_STATS", ref findingsCount, findings);
+                AppendMatches(relative, sanitized, VehicleCompileStats, "VEHICLE_COMPILE_STATS", ref findingsCount, findings);
+                AppendMatches(relative, sanitized, UpgradeTelemetryNativeArray, "UPGRADE_TELEMETRY_NATIVEARRAY_OWNER", ref findingsCount, findings);
+                AppendHotEvaluateMatches(relative, sanitized, ref findingsCount, ref hotEvaluateFindingsCount, findings);
             }
         }
 
-        private static void AppendMatches(string relative, string source, Regex regex, string kind, ref int findingsCount, StringBuilder findings)
+        private static void AppendHotEvaluateMatches(
+            string relative,
+            string source,
+            ref int findingsCount,
+            ref int hotEvaluateFindingsCount,
+            StringBuilder findings)
+        {
+            string normalized = relative.Replace('\\', '/');
+            if (!normalized.EndsWith("Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs", StringComparison.Ordinal))
+                return;
+
+            const string structNeedle = "public unsafe struct EvaluateUpgradeMasksJob";
+            const string executeNeedle = "public void Execute";
+            int structStart = source.IndexOf(structNeedle, StringComparison.Ordinal);
+            if (structStart < 0)
+                return;
+
+            int executeStart = source.IndexOf(executeNeedle, structStart, StringComparison.Ordinal);
+            if (executeStart < 0)
+                return;
+
+            int nextJob = source.IndexOf("[BurstCompile", executeStart + executeNeedle.Length, StringComparison.Ordinal);
+            int hotLength = (nextJob < 0 ? source.Length : nextJob) - executeStart;
+            if (hotLength <= 0)
+                return;
+
+            string hotSource = source.Substring(executeStart, hotLength);
+            AppendHotMatches(relative, source, hotSource, executeStart, HotEvaluateBranchToken, "HOT_EVALUATE_MASKS_BRANCH", ref findingsCount, ref hotEvaluateFindingsCount, findings);
+            AppendHotMatches(relative, source, hotSource, executeStart, HotEvaluateAupDowncast, "HOT_EVALUATE_AUP_HELPER_DOWNCAST", ref findingsCount, ref hotEvaluateFindingsCount, findings);
+        }
+
+        private static void AppendHotMatches(
+            string relative,
+            string fullSource,
+            string hotSource,
+            int hotOffset,
+            Regex regex,
+            string kind,
+            ref int findingsCount,
+            ref int hotEvaluateFindingsCount,
+            StringBuilder findings)
+        {
+            MatchCollection matches = regex.Matches(hotSource);
+            for (int i = 0; i < matches.Count; i++)
+            {
+                int fullIndex = hotOffset + matches[i].Index;
+                AppendFinding(relative, fullSource, fullIndex, kind, ref findingsCount, findings);
+                hotEvaluateFindingsCount++;
+            }
+        }
+
+        private static void AppendMatches(
+            string relative,
+            string source,
+            Regex regex,
+            string kind,
+            ref int findingsCount,
+            StringBuilder findings,
+            bool skipSerializedAuthoring = false)
         {
             MatchCollection matches = regex.Matches(source);
             for (int i = 0; i < matches.Count; i++)
             {
-                if (findingsCount > 0)
-                    findings.AppendLine(",");
-
                 Match match = matches[i];
-                findings.Append("    { \"file\": \"")
-                    .Append(Escape(relative))
-                    .Append("\", \"line\": ")
-                    .Append(CountLine(source, match.Index))
-                    .Append(", \"kind\": \"")
-                    .Append(kind)
-                    .Append("\", \"snippet\": \"")
-                    .Append(Escape(ExtractSnippet(source, match.Index)))
-                    .Append("\" }");
-                findingsCount++;
+                if (skipSerializedAuthoring && HasSerializedAuthoringAttributeOnLine(source, match.Index))
+                    continue;
+
+                AppendFinding(relative, source, match.Index, kind, ref findingsCount, findings);
             }
+        }
+
+        private static void AppendFinding(
+            string relative,
+            string source,
+            int index,
+            string kind,
+            ref int findingsCount,
+            StringBuilder findings)
+        {
+            if (findingsCount > 0)
+                findings.AppendLine(",");
+
+            findings.Append("    { \"file\": \"")
+                .Append(Escape(relative))
+                .Append("\", \"line\": ")
+                .Append(CountLine(source, index))
+                .Append(", \"kind\": \"")
+                .Append(kind)
+                .Append("\", \"snippet\": \"")
+                .Append(Escape(ExtractSnippet(source, index)))
+                .Append("\" }");
+            findingsCount++;
+        }
+
+        private static bool HasSerializedAuthoringAttributeOnLine(string source, int index)
+        {
+            int start = index;
+            while (start > 0 && source[start - 1] != '\n' && source[start - 1] != '\r')
+                start--;
+
+            return source.IndexOf("SerializeField", start, index - start, StringComparison.Ordinal) >= 0;
         }
 
         private static string StripCommentsAndStrings(string source)

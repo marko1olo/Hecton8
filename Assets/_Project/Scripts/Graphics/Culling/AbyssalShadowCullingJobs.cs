@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
@@ -9,7 +8,6 @@ using Unity.Mathematics;
 namespace Hecton8.Graphics.Culling
 {
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     public struct GenerateMockCullingDataJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<ShadowCullInstanceDTO> Instances;
@@ -82,7 +80,6 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     public struct GenerateMockHzbTilesJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<ShadowCullHzbTileDTO> HzbTiles;
@@ -146,7 +143,6 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct EvaluateShadowCullingJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<ShadowCullInstanceDTO> Instances;
@@ -474,7 +470,6 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ReduceShadowCullTelemetryJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<ShadowCullStateDTO> States;
@@ -531,7 +526,6 @@ namespace Hecton8.Graphics.Culling
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     public struct BuildShadowIndirectArgsJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<ShadowCullCountersDTO> Counters;

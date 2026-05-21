@@ -1,7 +1,5 @@
 using Hecton8.Global.Contracts;
 using Hecton8.MockDomain.Contracts;
-using Unity.Burst;
-using Unity.Mathematics;
 
 namespace Hecton8.MockDomain.Runtime
 {
@@ -11,9 +9,6 @@ namespace Hecton8.MockDomain.Runtime
     public readonly struct MockContractImplementation : IMockContractImplementation
     {
         public const uint NodeId = 0x4D4F434Bu;
-
-        private static readonly Unity.Burst.FunctionPointer<PhysicsApplyForceDelegate> _applyForcePointer =
-            BurstCompiler.CompileFunctionPointer<PhysicsApplyForceDelegate>(MockApplyForce);
 
         private static MockDomainState _state;
 
@@ -62,7 +57,7 @@ namespace Hecton8.MockDomain.Runtime
 
         public PhysicsFacade CreatePhysicsFacade(GlobalNativeBufferHandle bodyBuffer)
         {
-            return new PhysicsFacade(_applyForcePointer, bodyBuffer);
+            return new PhysicsFacade(default, bodyBuffer);
         }
 
         public ref MockDomainState GetStateRef()
@@ -70,9 +65,5 @@ namespace Hecton8.MockDomain.Runtime
             return ref _state;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private static void MockApplyForce(GlobalNativeBufferHandle bodyBuffer, int bodyIndex, float3 force, float deltaTime)
-        {
-        }
     }
 }

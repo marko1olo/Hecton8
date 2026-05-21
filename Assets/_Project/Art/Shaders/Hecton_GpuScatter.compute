@@ -476,9 +476,9 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float safeCellSize = SanitizePositiveFinite(_HectonScatterCellSize, 0.0001);
     float2 fieldOrigin = SanitizeFinite2(_HectonScatterFieldRect.xy, 0.0.xx);
-    float2 aupGridOffset = SanitizeFinite2(_HectonScatterAupGridOffset.xy, 0.0.xx);
+    float2 stableCellBase = SanitizeFinite2(_HectonScatterAupGridOffset.xy, 0.0.xx);
     float2 cellAnchorWorldXZ = fieldOrigin + float2(cellX, cellZ) * safeCellSize;
-    int2 stableCellCoord = (int2)floor((cellAnchorWorldXZ + aupGridOffset) * rcp(safeCellSize));
+    int2 stableCellCoord = (int2)floor(stableCellBase + float2(cellX, cellZ));
     uint stableCellHash = ((uint)stableCellCoord.x * 73856093u) ^ ((uint)stableCellCoord.y * 19349663u);
     uint baseHash = HashUint(stableCellHash ^ instanceIndex ^ (uint)_HectonScatterSeed);
     float2 jitter = Hash02(baseHash);

@@ -1,0 +1,14 @@
+base_mass,8000
+hydraulic_latency,0.50
+thruster_force,42000
+magnetic_clamp_range,2.0
+drag,0.45
+radius,1.2
+global_quality_weight,0.62
+purge_impulse,14
+footstep_stride,3.0
+max_speed,9.0
+crush_depth,4000
+sdf_epsilon,0.04
+gravity_multiplier,0.35
+max_substeps,8

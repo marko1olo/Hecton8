@@ -45,30 +45,33 @@ namespace Hecton8.Scavenging
             public byte weight;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct LootRuntimeEntry
         {
-            public int ItemHashId;
-            public ushort MinimumAmount;
-            public ushort MaximumAmount;
-            public byte Weight;
-            public byte Reserved0;
-            public ushort Reserved1;
-            public uint Reserved2;
-            public uint Reserved3;
+            [FieldOffset(0)] public int ItemHashId;
+            [FieldOffset(4)] public ushort MinimumAmount;
+            [FieldOffset(6)] public ushort MaximumAmount;
+            [FieldOffset(8)] public byte Weight;
+            [FieldOffset(9)] public byte Reserved0;
+            [FieldOffset(10)] public ushort Reserved1;
+            [FieldOffset(12)] public uint Reserved2;
+            [FieldOffset(16)] public uint Reserved3;
+            [FieldOffset(20)] private uint _pad0;
+            [FieldOffset(24)] private ulong _pad1;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct RuntimeDescriptor
         {
-            public int StableHashId;
-            public float BaseHealth;
-            public float ToolResistance;
-            public int LootStartIndex;
-            public byte LootCount;
-            public byte MaterialClassId;
-            public ushort Reserved0;
-            public uint Reserved1;
+            [FieldOffset(0)] public int StableHashId;
+            [FieldOffset(4)] public float BaseHealth;
+            [FieldOffset(8)] public float ToolResistance;
+            [FieldOffset(12)] public int LootStartIndex;
+            [FieldOffset(16)] public byte LootCount;
+            [FieldOffset(17)] public byte MaterialClassId;
+            [FieldOffset(18)] public ushort Reserved0;
+            [FieldOffset(20)] public uint Reserved1;
+            [FieldOffset(24)] private ulong _pad0;
         }
 
         [Header("Identity")]

@@ -219,7 +219,7 @@ Source-backed hooks:
 Source-backed limits:
 
 - Current mod API version: 2.
-- Projected event cap: 10 low tier / 50 high tier.
+- Projected event cap: `round(lerp(10, 50, GlobalQualityWeight))`, before backlog and thermal-pressure reductions.
 - Command drain cap: 256 per late frame.
 - Per-mod command cap: 128 per tick.
 - Raycast result cap: 128.
@@ -354,8 +354,8 @@ Required evidence:
 - Test mod receives `ModEventDto.EventHash = 0x57454154` for weather change.
 - `UnexpectedEventHashCount = 0`.
 - No other `GlobalSignals.cs` `ISignal` type reaches `SubscribeProjected`.
-- Low tier sets `ModEventDto.LowTierSampleFlag` when capped.
-- High tier does not exceed 50 projected events per frame.
+- Minimum-budget pressure sets the mod-facing sampled-event flag when capped.
+- Maximum-quality projection does not exceed 50 projected events per frame.
 
 ### Step 4 - Native Byte Event Gate
 

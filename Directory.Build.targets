@@ -48,8 +48,8 @@
     <Compile Remove="Assets\_Project\Scripts\Ecosystem\FaunaGenome64.cs" />
     <Compile Remove="Assets\_Project\Scripts\Fauna\FaunaKinematicsRuntime.cs" />
     <Compile Remove="Assets\_Project\Scripts\Fauna\ProceduralLeviathanSpineIK.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Gameplay\HectonScannerProjectionState.cs" />
     <Compile Remove="Assets\_Project\Scripts\Gameplay\PlayerMovementBrineRuntimeSystem.cs" />
-    <Compile Remove="Assets\_Project\Scripts\ModularEquipmentEngine.cs" />
     <Compile Remove="Assets\_Project\Scripts\Physics\Vehicles\Automation\DockingAutopilotService.cs" />
     <Compile Remove="Assets\_Project\Scripts\Logistics\Grid\Contracts\WfcOutpostGridContracts.cs" />
     <Compile Remove="Assets\_Project\Scripts\Logistics\Grid\WfcOutpostGraphTranslationJob.cs" />
@@ -70,6 +70,7 @@
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonContractValidator.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonContractVersion.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonDataSovereigntyContract.cs" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonPhysicsContract.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\HectonPhysicsContract.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonPlatformContract.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonVisualOverkillContract.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonMmfPagingContract.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\HectonMmfPagingContract.cs'))" />
@@ -77,11 +78,20 @@
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonLoreContract.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\HectonLoreContract.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonVaultOffsetContract.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\HectonVaultOffsetContract.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonEcologyContract.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\HectonEcologyContract.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\FoveatedSimulationContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\FoveatedSimulationContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\JobAdmissionContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\JobAdmissionContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\MacroDatabaseContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\MacroDatabaseContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\PersistencePagingContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\PersistencePagingContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\InertialNavigationContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\InertialNavigationContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\PlayerMovementContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\PlayerMovementContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\PrologueSequenceContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\PrologueSequenceContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\ScannerFaunaScientificContact.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\ScannerFaunaScientificContact.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\CoreContractsAssemblyMarker.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\DrsContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\DrsContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\SimulationBucketingContracts.cs" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\MacroEcosystemVaultContract.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\MacroEcosystemVaultContract.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\Signals\DynamicMusicScalarSignal.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\Signals\DynamicMusicScalarSignal.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\Signals\ReactorDamageSignal.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\Signals\ReactorDamageSignal.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\Signals\PlayerRespawnSignal.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\Signals\PlayerRespawnSignal.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\Signals\InventoryDeathPenaltyRuleDTO.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\Signals\InventoryDeathPenaltyRuleDTO.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Contracts\HectonSurvivalContract.cs" />
@@ -107,6 +117,59 @@
     <Compile Include="Assets\_Project\Scripts\Environment\Fluids\Contracts\BrineLayerConstants.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Environment\Fluids\Contracts\BrineLayerConstants.cs'))" />
     <Compile Include="Assets\_Project\Scripts\AI\Ecology\Migration\MacroSwarm.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\AI\Ecology\Migration\MacroSwarm.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Audio\Propagation\AcousticPortalPropagation.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Audio\Propagation\AcousticPortalPropagation.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\AupPrecisionContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\AupPrecisionContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\AlignmentTelemetryContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\AlignmentTelemetryContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\BinaryBlittableSafeAttribute.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\BinaryBlittableSafeAttribute.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\MemorySentinelContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\MemorySentinelContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\VaultLegacyBinaryArchaeology.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\VaultLegacyBinaryArchaeology.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\VaultMemoryContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\VaultMemoryContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Memory\VaultMockSignalBus.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Memory\VaultMockSignalBus.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Scheduling\BurstTokenBucketJobAdmissionService.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Scheduling\BurstTokenBucketJobAdmissionService.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Scheduling\JobAdmissionHash.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Scheduling\JobAdmissionHash.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Scheduling\JobAdmissionScheduleExtensions.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Scheduling\JobAdmissionScheduleExtensions.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Scheduling\JobAdmissionSchedulerBridge.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Scheduling\JobAdmissionSchedulerBridge.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Database\H8MacroDatabaseFileFormat.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Database\H8MacroDatabaseFileFormat.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Database\H8MacroDatabaseService.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Database\H8MacroDatabaseService.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Persistence\Paging\PersistencePagingAssemblyMarker.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Persistence\Paging\PersistencePagingAssemblyMarker.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Scheduling\JobSchedulingProfileCatalog.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Scheduling\JobSchedulingProfileCatalog.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\BinaryLayoutManifest.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\BinaryLayoutManifest.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\BatteryChargerLogisticsBridge.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\BatteryChargerLogisticsBridge.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\GlobalRegistry.BatteryChargerLogistics.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\GlobalRegistry.BatteryChargerLogistics.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\BulkheadContainmentIntentBus.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\BulkheadContainmentIntentBus.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\BulkheadContainmentContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\BulkheadContainmentContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Construction\BulkheadContainmentContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Construction\BulkheadContainmentContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\ExosuitKinematicAuthority.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\ExosuitKinematicAuthority.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\UI\Localization\H8LocHashes.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\UI\Localization\H8LocHashes.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\UI\BabelSubtitleSyncRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\UI\BabelSubtitleSyncRuntime.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\UI\HphiReactiveUiTelemetry.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\UI\HphiReactiveUiTelemetry.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\FabricationAssemblerRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\FabricationAssemblerRuntime.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\TerrainChunkGeneratedEvents.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\TerrainChunkGeneratedEvents.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Ecosystem\FaunaGenome64.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Ecosystem\FaunaGenome64.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Gameplay\PlayerMovementBrineRuntimeSystem.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Gameplay\PlayerMovementBrineRuntimeSystem.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Gameplay\PlayerDeathReconciliationBridge.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Gameplay\PlayerDeathReconciliationBridge.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Gameplay\VRSomaticProvider.Comfort.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Gameplay\VRSomaticProvider.Comfort.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Gameplay\Combat\BallisticsRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Gameplay\Combat\BallisticsRuntime.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsTypes.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsTypes.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsJobs.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsJobs.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsRuntime.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Power\BatteryChargerLogistics\BatteryChargerLogisticsContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Power\BatteryChargerLogistics\BatteryChargerLogisticsContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Power\BatteryChargerLogistics\BatteryChargerLogisticsRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Power\BatteryChargerLogistics\BatteryChargerLogisticsRuntime.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\ModdingAPI\ModEventProjectionBridge.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\ModdingAPI\ModEventProjectionBridge.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\SaveSystem\SaveStateMerkleTree.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\SaveSystem\SaveStateMerkleTree.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Core\Contracts\ExosuitKinematicsContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Contracts\ExosuitKinematicsContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Tools\LaserCutterDodContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Tools\LaserCutterDodContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Tools\LaserCutterDodJobs.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Tools\LaserCutterDodJobs.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Tools\LaserCutterSpecsCsvParser.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Tools\LaserCutterSpecsCsvParser.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Tools\LaserCutterDodRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Tools\LaserCutterDodRuntime.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Physics\CablePhysicsSolver132.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\CablePhysicsSolver132.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Physics\TetherAupVerletJobs.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\TetherAupVerletJobs.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Physics\Seaglide\SeaglideHydrodynamicsContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\Seaglide\SeaglideHydrodynamicsContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\World\HectonOctahedralImpostorTypes.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\World\HectonOctahedralImpostorTypes.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Fauna\FaunaKinematicsRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Fauna\FaunaKinematicsRuntime.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Physics\Vehicles\Automation\DockingAutopilotService.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\Vehicles\Automation\DockingAutopilotService.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Logistics\Grid\Contracts\WfcOutpostGridContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Logistics\Grid\Contracts\WfcOutpostGridContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Logistics\Grid\WfcOutpostGraphTranslationJob.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Logistics\Grid\WfcOutpostGraphTranslationJob.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\SaveSystem\H8BinaryWorldPager.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\SaveSystem\H8BinaryWorldPager.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\MacroDatabaseSignalBridge.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\MacroDatabaseSignalBridge.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\Generated\H8Hashes.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\Generated\H8Hashes.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Core\PlayerLookTargetPromptCache.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Core\PlayerLookTargetPromptCache.cs'))" />
@@ -121,6 +184,11 @@
     <Compile Include="Assets\_Project\Scripts\World\ShinobuStreamingRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\World\ShinobuStreamingRuntime.cs'))" />
     <Compile Include="Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanCognitionContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanCognitionContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanStalkContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\AI\Cognition\AlphaLeviathanStalkContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryEquipmentContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryEquipmentContracts.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryEquipmentJobs.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryEquipmentJobs.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryEquipmentProfilesCsvParser.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryEquipmentProfilesCsvParser.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryEquipmentRouterRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryEquipmentRouterRuntime.cs'))" />
+    <Compile Include="Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryDeploymentDebugGizmo.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryDeploymentDebugGizmo.cs'))" />
     <Reference Include="Hecton8.Audio.Echolocation" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Audio.Echolocation.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Audio.Echolocation'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Audio.Echolocation.dll</HintPath>
       <Private>False</Private>
@@ -218,12 +286,11 @@
     <Compile Remove="Assets\_Project\Scripts\World\Contracts\OutpostGenerationContracts.cs" />
     <Compile Remove="Assets\_Project\Scripts\World\Contracts\TerrainChunkGeneratedSignal.cs" />
 
-    <Compile Include="Assets\_Project\Scripts\World\Contracts\GroundRadarContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\World\Contracts\GroundRadarContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\World\Contracts\OutpostGenerationContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\World\Contracts\OutpostGenerationContracts.cs'))" />
-    <Compile Include="Assets\_Project\Scripts\World\Contracts\TerrainChunkGeneratedSignal.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\World\Contracts\TerrainChunkGeneratedSignal.cs'))" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Editor'">
+    <Compile Include="Assets\_Project\Scripts\Equipment\Auxiliary\Editor\AuxiliaryEquipmentEditorTools.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Equipment\Auxiliary\Editor\AuxiliaryEquipmentEditorTools.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Editor\ResidencyStreamingTunerWindow.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\ResidencyStreamingTunerWindow.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Editor\GeologyForge\GeologyForgeGenerator.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\GeologyForge\GeologyForgeGenerator.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Editor\GeologyForge\GeologyForgeJobs.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Editor\GeologyForge\GeologyForgeJobs.cs'))" />
@@ -272,6 +339,52 @@
                                        Condition="$([System.String]::Copy('%(Analyzer.Identity)').Contains('com.unity.entities@')) And !Exists('%(Analyzer.Identity)')" />
       <Analyzer Remove="@(_HectonMissingGeneratedAnalyzer)" />
       <_HectonMissingGeneratedAnalyzer Remove="@(_HectonMissingGeneratedAnalyzer)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="HectonPruneMissingWaveHarmonicCrestPackageItems"
+          BeforeTargets="ResolveProjectReferences;ResolveAssemblyReferences;CoreCompile"
+          Condition="!Exists('$(MSBuildThisFileDirectory)Packages\com.waveharmonic.crest')">
+    <ItemGroup>
+      <_HectonMissingWaveHarmonicCrestCompile Include="@(Compile)"
+                                              Condition="$([System.String]::Copy('%(Compile.Identity)').Contains('Packages\com.waveharmonic.crest'))" />
+      <Compile Remove="@(_HectonMissingWaveHarmonicCrestCompile)" />
+      <_HectonMissingWaveHarmonicCrestCompile Remove="@(_HectonMissingWaveHarmonicCrestCompile)" />
+
+      <_HectonMissingWaveHarmonicCrestNone Include="@(None)"
+                                           Condition="$([System.String]::Copy('%(None.Identity)').Contains('Packages\com.waveharmonic.crest'))" />
+      <None Remove="@(_HectonMissingWaveHarmonicCrestNone)" />
+      <_HectonMissingWaveHarmonicCrestNone Remove="@(_HectonMissingWaveHarmonicCrestNone)" />
+
+      <_HectonMissingWaveHarmonicCrestContent Include="@(Content)"
+                                              Condition="$([System.String]::Copy('%(Content.Identity)').Contains('Packages\com.waveharmonic.crest'))" />
+      <Content Remove="@(_HectonMissingWaveHarmonicCrestContent)" />
+      <_HectonMissingWaveHarmonicCrestContent Remove="@(_HectonMissingWaveHarmonicCrestContent)" />
+
+      <_HectonMissingWaveHarmonicCrestProject Include="@(ProjectReference)"
+                                              Condition="$([System.String]::Copy('%(ProjectReference.Identity)').Contains('WaveHarmonic.Crest'))" />
+      <ProjectReference Remove="@(_HectonMissingWaveHarmonicCrestProject)" />
+      <_HectonMissingWaveHarmonicCrestProject Remove="@(_HectonMissingWaveHarmonicCrestProject)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="HectonPruneMissingGeneratedCompileItems"
+          BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <_HectonMissingGeneratedCompile Include="@(Compile)"
+                                      Condition="'%(Compile.FullPath)' != '' And !Exists('%(Compile.FullPath)')" />
+      <Compile Remove="@(_HectonMissingGeneratedCompile)" />
+      <_HectonMissingGeneratedCompile Remove="@(_HectonMissingGeneratedCompile)" />
+
+      <_HectonMissingGeneratedNone Include="@(None)"
+                                   Condition="'%(None.FullPath)' != '' And !Exists('%(None.FullPath)')" />
+      <None Remove="@(_HectonMissingGeneratedNone)" />
+      <_HectonMissingGeneratedNone Remove="@(_HectonMissingGeneratedNone)" />
+
+      <_HectonMissingGeneratedContent Include="@(Content)"
+                                      Condition="'%(Content.FullPath)' != '' And !Exists('%(Content.FullPath)')" />
+      <Content Remove="@(_HectonMissingGeneratedContent)" />
+      <_HectonMissingGeneratedContent Remove="@(_HectonMissingGeneratedContent)" />
     </ItemGroup>
   </Target>
 

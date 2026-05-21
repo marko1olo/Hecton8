@@ -10,45 +10,50 @@ namespace Hecton8.World.ProceduralWreckage
 {
     public struct ProceduralWreckageVaultHandles
     {
-        public VaultBufferHandle<WreckageRuleDTO> Rules;
-        public VaultBufferHandle<WreckageGridCellDTO> Grid;
-        public VaultBufferHandle<WreckageNodeDTO> Nodes;
-        public VaultBufferHandle<WreckageNodeDTO> DebrisNodes;
-        public VaultBufferHandle<float4x4> RenderMatrices;
-        public VaultBufferHandle<WreckageIndirectArgsDTO> IndirectArgs;
-        public VaultBufferHandle<WreckageSectorTriggerDTO> SectorTriggers;
-        public VaultBufferHandle<LootSpawnRequestDTO> LootRequests;
-        public VaultBufferHandle<WreckageBoxColliderDTO> CollisionProxies;
-        public VaultBufferHandle<WreckageGenerationTelemetryEntry> TelemetryRing;
-        public VaultBufferHandle<int> TelemetryCursor;
-        public VaultBufferHandle<WreckageTuningDTO> Tuning;
-        public VaultBufferHandle<byte> CsvScratch;
-        public VaultBufferHandle<WreckagePaddedCounterDTO> Counters;
-        public VaultBufferHandle<WreckageDebugCellDTO> DebugCells;
-        public VaultBufferHandle<WreckageGpuScalarDTO> GpuScalars;
-        public VaultBufferHandle<WreckageSelfAuditResultDTO> SelfAudit;
-        public VaultBufferHandle<WreckageHzbTileDTO> HzbTiles;
+        public VaultGenerationHandle<WreckageRuleDTO> Rules;
+        public VaultGenerationHandle<WreckageGridCellDTO> Grid;
+        public VaultGenerationHandle<WreckageNodeDTO> Nodes;
+        public VaultGenerationHandle<WreckageNodeDTO> DebrisNodes;
+        public VaultGenerationHandle<float4x4> RenderMatrices;
+        public VaultGenerationHandle<WreckageIndirectArgsDTO> IndirectArgs;
+        public VaultGenerationHandle<WreckageSectorTriggerDTO> SectorTriggers;
+        public VaultGenerationHandle<LootSpawnRequestDTO> LootRequests;
+        public VaultGenerationHandle<WreckageBoxColliderDTO> CollisionProxies;
+        public VaultGenerationHandle<WreckageGenerationTelemetryEntry> TelemetryRing;
+        public VaultGenerationHandle<int> TelemetryCursor;
+        public VaultGenerationHandle<WreckageTuningDTO> Tuning;
+        public VaultGenerationHandle<byte> CsvScratch;
+        public VaultGenerationHandle<WreckagePaddedCounterDTO> Counters;
+        public VaultGenerationHandle<WreckageDebugCellDTO> DebugCells;
+        public VaultGenerationHandle<WreckageGpuScalarDTO> GpuScalars;
+        public VaultGenerationHandle<WreckageSelfAuditResultDTO> SelfAudit;
+        public VaultGenerationHandle<WreckageHzbTileDTO> HzbTiles;
 
         public bool IsCreated()
         {
-            return Rules.IsCreated &&
-                   Grid.IsCreated &&
-                   Nodes.IsCreated &&
-                   DebrisNodes.IsCreated &&
-                   RenderMatrices.IsCreated &&
-                   IndirectArgs.IsCreated &&
-                   SectorTriggers.IsCreated &&
-                   LootRequests.IsCreated &&
-                   CollisionProxies.IsCreated &&
-                   TelemetryRing.IsCreated &&
-                   TelemetryCursor.IsCreated &&
-                   Tuning.IsCreated &&
-                   CsvScratch.IsCreated &&
-                   Counters.IsCreated &&
-                   DebugCells.IsCreated &&
-                   GpuScalars.IsCreated &&
-                   SelfAudit.IsCreated &&
-                   HzbTiles.IsCreated;
+            return IsHandleValid(in Rules) &&
+                   IsHandleValid(in Grid) &&
+                   IsHandleValid(in Nodes) &&
+                   IsHandleValid(in DebrisNodes) &&
+                   IsHandleValid(in RenderMatrices) &&
+                   IsHandleValid(in IndirectArgs) &&
+                   IsHandleValid(in SectorTriggers) &&
+                   IsHandleValid(in LootRequests) &&
+                   IsHandleValid(in CollisionProxies) &&
+                   IsHandleValid(in TelemetryRing) &&
+                   IsHandleValid(in TelemetryCursor) &&
+                   IsHandleValid(in Tuning) &&
+                   IsHandleValid(in CsvScratch) &&
+                   IsHandleValid(in Counters) &&
+                   IsHandleValid(in DebugCells) &&
+                   IsHandleValid(in GpuScalars) &&
+                   IsHandleValid(in SelfAudit) &&
+                   IsHandleValid(in HzbTiles);
+        }
+
+        private static bool IsHandleValid<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u;
         }
     }
 
@@ -121,92 +126,92 @@ namespace Hecton8.World.ProceduralWreckage
                 return handles.IsCreated();
             }
 
-            handles.Rules = vault.GetBufferHandle<WreckageRuleDTO>(
+            handles.Rules = vault.GetGenerationHandle<WreckageRuleDTO>(
                 ProceduralWreckageVaultBufferIds.Rules,
                 ProceduralWreckageConstants.MaxModuleRules,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Grid = vault.GetBufferHandle<WreckageGridCellDTO>(
+            handles.Grid = vault.GetGenerationHandle<WreckageGridCellDTO>(
                 ProceduralWreckageVaultBufferIds.Grid,
                 ProceduralWreckageConstants.MaxGridCells,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Nodes = vault.GetBufferHandle<WreckageNodeDTO>(
+            handles.Nodes = vault.GetGenerationHandle<WreckageNodeDTO>(
                 ProceduralWreckageVaultBufferIds.Nodes,
                 ProceduralWreckageConstants.MaxWreckNodes,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.DebrisNodes = vault.GetBufferHandle<WreckageNodeDTO>(
+            handles.DebrisNodes = vault.GetGenerationHandle<WreckageNodeDTO>(
                 ProceduralWreckageVaultBufferIds.DebrisNodes,
                 ProceduralWreckageConstants.MaxDebrisNodes,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.RenderMatrices = vault.GetBufferHandle<float4x4>(
+            handles.RenderMatrices = vault.GetGenerationHandle<float4x4>(
                 ProceduralWreckageVaultBufferIds.RenderMatrices,
                 ProceduralWreckageConstants.MaxRenderMatrices,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.IndirectArgs = vault.GetBufferHandle<WreckageIndirectArgsDTO>(
+            handles.IndirectArgs = vault.GetGenerationHandle<WreckageIndirectArgsDTO>(
                 ProceduralWreckageVaultBufferIds.IndirectArgs,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.SectorTriggers = vault.GetBufferHandle<WreckageSectorTriggerDTO>(
+            handles.SectorTriggers = vault.GetGenerationHandle<WreckageSectorTriggerDTO>(
                 ProceduralWreckageVaultBufferIds.SectorTriggers,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.LootRequests = vault.GetBufferHandle<LootSpawnRequestDTO>(
+            handles.LootRequests = vault.GetGenerationHandle<LootSpawnRequestDTO>(
                 ProceduralWreckageVaultBufferIds.LootRequests,
                 ProceduralWreckageConstants.MaxLootRequests,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.CollisionProxies = vault.GetBufferHandle<WreckageBoxColliderDTO>(
+            handles.CollisionProxies = vault.GetGenerationHandle<WreckageBoxColliderDTO>(
                 ProceduralWreckageVaultBufferIds.CollisionProxies,
                 ProceduralWreckageConstants.MaxCollisionProxies,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.TelemetryRing = vault.GetBufferHandle<WreckageGenerationTelemetryEntry>(
+            handles.TelemetryRing = vault.GetGenerationHandle<WreckageGenerationTelemetryEntry>(
                 ProceduralWreckageVaultBufferIds.TelemetryRing,
                 ProceduralWreckageConstants.TelemetryFrames,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetBufferHandle<int>(
+            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
                 ProceduralWreckageVaultBufferIds.TelemetryCursor,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.Tuning = vault.GetBufferHandle<WreckageTuningDTO>(
+            handles.Tuning = vault.GetGenerationHandle<WreckageTuningDTO>(
                 ProceduralWreckageVaultBufferIds.Tuning,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.GetBufferHandle<byte>(
+            handles.CsvScratch = vault.GetGenerationHandle<byte>(
                 ProceduralWreckageVaultBufferIds.CsvScratch,
                 ProceduralWreckageConstants.CsvScratchBytes,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Counters = vault.GetBufferHandle<WreckagePaddedCounterDTO>(
+            handles.Counters = vault.GetGenerationHandle<WreckagePaddedCounterDTO>(
                 ProceduralWreckageVaultBufferIds.Counters,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.DebugCells = vault.GetBufferHandle<WreckageDebugCellDTO>(
+            handles.DebugCells = vault.GetGenerationHandle<WreckageDebugCellDTO>(
                 ProceduralWreckageVaultBufferIds.DebugCells,
                 ProceduralWreckageConstants.MaxDebugCells,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.GpuScalars = vault.GetBufferHandle<WreckageGpuScalarDTO>(
+            handles.GpuScalars = vault.GetGenerationHandle<WreckageGpuScalarDTO>(
                 ProceduralWreckageVaultBufferIds.GpuScalars,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.SelfAudit = vault.GetBufferHandle<WreckageSelfAuditResultDTO>(
+            handles.SelfAudit = vault.GetGenerationHandle<WreckageSelfAuditResultDTO>(
                 ProceduralWreckageVaultBufferIds.SelfAudit,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.HzbTiles = vault.GetBufferHandle<WreckageHzbTileDTO>(
+            handles.HzbTiles = vault.GetGenerationHandle<WreckageHzbTileDTO>(
                 ProceduralWreckageVaultBufferIds.HzbTiles,
                 ProceduralWreckageConstants.MaxHzbTiles,
                 SystemID.WorldStreaming,
@@ -227,24 +232,24 @@ namespace Hecton8.World.ProceduralWreckage
             if (vault == null)
                 return false;
 
-            return vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.Rules, out handles.Rules) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.Grid, out handles.Grid) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.Nodes, out handles.Nodes) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.DebrisNodes, out handles.DebrisNodes) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.RenderMatrices, out handles.RenderMatrices) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.IndirectArgs, out handles.IndirectArgs) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.SectorTriggers, out handles.SectorTriggers) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.LootRequests, out handles.LootRequests) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.CollisionProxies, out handles.CollisionProxies) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.Tuning, out handles.Tuning) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.CsvScratch, out handles.CsvScratch) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.Counters, out handles.Counters) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.DebugCells, out handles.DebugCells) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.GpuScalars, out handles.GpuScalars) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.SelfAudit, out handles.SelfAudit) &&
-                   vault.TryGetBufferHandle(ProceduralWreckageVaultBufferIds.HzbTiles, out handles.HzbTiles);
+            return vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.Rules, out handles.Rules) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.Grid, out handles.Grid) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.Nodes, out handles.Nodes) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.DebrisNodes, out handles.DebrisNodes) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.RenderMatrices, out handles.RenderMatrices) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.IndirectArgs, out handles.IndirectArgs) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.SectorTriggers, out handles.SectorTriggers) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.LootRequests, out handles.LootRequests) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.CollisionProxies, out handles.CollisionProxies) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.Tuning, out handles.Tuning) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.CsvScratch, out handles.CsvScratch) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.Counters, out handles.Counters) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.DebugCells, out handles.DebugCells) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.GpuScalars, out handles.GpuScalars) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.SelfAudit, out handles.SelfAudit) &&
+                   vault.TryGetGenerationHandle(ProceduralWreckageVaultBufferIds.HzbTiles, out handles.HzbTiles);
         }
 
         public static bool TryResolveViews(IDataVault vault, ref ProceduralWreckageVaultHandles handles, out ProceduralWreckageVaultBuffers buffers)
@@ -253,25 +258,37 @@ namespace Hecton8.World.ProceduralWreckage
             if (vault == null || !handles.IsCreated())
                 return false;
 
-            buffers.Rules = handles.Rules.Resolve(vault);
-            buffers.Grid = handles.Grid.Resolve(vault);
-            buffers.Nodes = handles.Nodes.Resolve(vault);
-            buffers.DebrisNodes = handles.DebrisNodes.Resolve(vault);
-            buffers.RenderMatrices = handles.RenderMatrices.Resolve(vault);
-            buffers.IndirectArgs = handles.IndirectArgs.Resolve(vault);
-            buffers.SectorTriggers = handles.SectorTriggers.Resolve(vault);
-            buffers.LootRequests = handles.LootRequests.Resolve(vault);
-            buffers.CollisionProxies = handles.CollisionProxies.Resolve(vault);
-            buffers.TelemetryRing = handles.TelemetryRing.Resolve(vault);
-            buffers.TelemetryCursor = handles.TelemetryCursor.Resolve(vault);
-            buffers.Tuning = handles.Tuning.Resolve(vault);
-            buffers.CsvScratch = handles.CsvScratch.Resolve(vault);
-            buffers.Counters = handles.Counters.Resolve(vault);
-            buffers.DebugCells = handles.DebugCells.Resolve(vault);
-            buffers.GpuScalars = handles.GpuScalars.Resolve(vault);
-            buffers.SelfAudit = handles.SelfAudit.Resolve(vault);
-            buffers.HzbTiles = handles.HzbTiles.Resolve(vault);
-            return buffers.IsCreated();
+            return TryResolveView(vault, in handles.Rules, out buffers.Rules) &&
+                   TryResolveView(vault, in handles.Grid, out buffers.Grid) &&
+                   TryResolveView(vault, in handles.Nodes, out buffers.Nodes) &&
+                   TryResolveView(vault, in handles.DebrisNodes, out buffers.DebrisNodes) &&
+                   TryResolveView(vault, in handles.RenderMatrices, out buffers.RenderMatrices) &&
+                   TryResolveView(vault, in handles.IndirectArgs, out buffers.IndirectArgs) &&
+                   TryResolveView(vault, in handles.SectorTriggers, out buffers.SectorTriggers) &&
+                   TryResolveView(vault, in handles.LootRequests, out buffers.LootRequests) &&
+                   TryResolveView(vault, in handles.CollisionProxies, out buffers.CollisionProxies) &&
+                   TryResolveView(vault, in handles.TelemetryRing, out buffers.TelemetryRing) &&
+                   TryResolveView(vault, in handles.TelemetryCursor, out buffers.TelemetryCursor) &&
+                   TryResolveView(vault, in handles.Tuning, out buffers.Tuning) &&
+                   TryResolveView(vault, in handles.CsvScratch, out buffers.CsvScratch) &&
+                   TryResolveView(vault, in handles.Counters, out buffers.Counters) &&
+                   TryResolveView(vault, in handles.DebugCells, out buffers.DebugCells) &&
+                   TryResolveView(vault, in handles.GpuScalars, out buffers.GpuScalars) &&
+                   TryResolveView(vault, in handles.SelfAudit, out buffers.SelfAudit) &&
+                   TryResolveView(vault, in handles.HzbTiles, out buffers.HzbTiles) &&
+                   buffers.IsCreated();
+        }
+
+        private static bool TryResolveView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
 
         public static bool TryScheduleMockSectorTrigger(
@@ -580,7 +597,7 @@ namespace Hecton8.World.ProceduralWreckage
             uint magic = ReadUInt32Little(bytes, 0);
             if (magic != ProceduralWreckageConstants.RuleBinaryMagic)
             {
-                uint swappedMagic = math.reversebytes(magic);
+                uint swappedMagic = ReverseBytes(magic);
                 if (swappedMagic != ProceduralWreckageConstants.RuleBinaryMagic)
                     return 0;
 
@@ -1140,7 +1157,15 @@ namespace Hecton8.World.ProceduralWreckage
         private static uint ReadUInt32(NativeArray<byte> bytes, int offset, bool swapEndian)
         {
             uint value = ReadUInt32Little(bytes, offset);
-            return swapEndian ? math.reversebytes(value) : value;
+            return swapEndian ? ReverseBytes(value) : value;
+        }
+
+        private static uint ReverseBytes(uint value)
+        {
+            return ((value & 0x000000FFu) << 24) |
+                   ((value & 0x0000FF00u) << 8) |
+                   ((value & 0x00FF0000u) >> 8) |
+                   ((value & 0xFF000000u) >> 24);
         }
 
         private static ushort ReadUInt16(NativeArray<byte> bytes, int offset, bool swapEndian)

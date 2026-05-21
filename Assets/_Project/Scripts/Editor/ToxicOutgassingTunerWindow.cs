@@ -52,7 +52,12 @@ namespace Hecton8.Atmosphere
             EditorGUILayout.LabelField("Entities", _runtime.EntityCount.ToString());
             EditorGUILayout.LabelField("Density Version", _runtime.DensityVersion.ToString());
 
-            ref ToxicOutgassingConstants constants = ref _runtime.ConstantsRef;
+            if (!_runtime.TryReadConstants(out ToxicOutgassingConstants constants))
+            {
+                EditorGUILayout.HelpBox("Constants Vault lane is unavailable.", MessageType.Warning);
+                return;
+            }
+
             EditorGUI.BeginChangeCheck();
             constants.BaseDiffusionRate = EditorGUILayout.Slider("Base Diffusion Rate", constants.BaseDiffusionRate, 0f, 2f);
             constants.CurrentAdvectionMultiplier = EditorGUILayout.Slider("Current Advection Multiplier", constants.CurrentAdvectionMultiplier, 0f, 4f);
@@ -67,6 +72,7 @@ namespace Hecton8.Atmosphere
             _maxWireCells = EditorGUILayout.IntSlider("Max Wire Cells", _maxWireCells, 32, 2048);
             if (EditorGUI.EndChangeCheck())
             {
+                _runtime.TryWriteConstants(in constants);
                 SceneView.RepaintAll();
             }
 

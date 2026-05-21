@@ -1,4 +1,7 @@
+using Hecton8.Core;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.World;
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -25,6 +28,8 @@ namespace Hecton8.AI
         /// <summary>
         /// Snapshot of player-generated noise state for the current frame window.
         /// </summary>
+        [BinaryBlittableSafe]
+        [StructLayout(LayoutKind.Explicit, Size = 96)]
         public readonly struct PlayerNoiseSignal
         {
             public PlayerNoiseSignal(
@@ -41,55 +46,81 @@ namespace Hecton8.AI
                 float acousticLowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz,
                 float signalRadiusMeters = 0f)
             {
-                Position = position;
                 PositionAup = positionAup;
+                Position = position;
                 MovementSpeedSqr = movementSpeedSqr;
-                FlashlightOn = flashlightOn;
                 TransportBoost01 = transportBoost01;
                 TransportSignature = transportSignature;
                 ToolUseNoise01 = toolUseNoise01;
-                ReportedFrame = reportedFrame;
-                IsActiveSonarPing = isActiveSonarPing;
                 AcousticTransmission01 = acousticTransmission01;
                 AcousticLowPassCutoffHz = acousticLowPassCutoffHz;
                 SignalRadiusMeters = signalRadiusMeters;
+                ReportedFrame = reportedFrame;
+                FlashlightOnFlag = flashlightOn ? (byte)1 : (byte)0;
+                IsActiveSonarPingFlag = isActiveSonarPing ? (byte)1 : (byte)0;
+                _padFlags = 0;
             }
 
-            /// <summary>World position of the player noise source.</summary>
-            public Vector3 Position { get; }
-
             /// <summary>AUP of the player noise source for long-range sensory math.</summary>
-            public AbsoluteUniversePosition PositionAup { get; }
+            [FieldOffset(0)]
+            public readonly AbsoluteUniversePosition PositionAup;
+
+            /// <summary>World position of the player noise source.</summary>
+            [FieldOffset(48)]
+            public readonly Vector3 Position;
 
             /// <summary>Squared player movement speed at the time of the report.</summary>
-            public float MovementSpeedSqr { get; }
-
-            /// <summary>True when the player flashlight is active.</summary>
-            public bool FlashlightOn { get; }
+            [FieldOffset(60)]
+            public readonly float MovementSpeedSqr;
 
             /// <summary>Normalized transport boost reported by the active locomotion owner.</summary>
-            public float TransportBoost01 { get; }
+            [FieldOffset(64)]
+            public readonly float TransportBoost01;
 
             /// <summary>Species-facing transport detection signature multiplier.</summary>
-            public float TransportSignature { get; }
+            [FieldOffset(68)]
+            public readonly float TransportSignature;
 
             /// <summary>Short pulse emitted by active tool use.</summary>
-            public float ToolUseNoise01 { get; }
-
-            /// <summary>Frame index when the signal was last reported.</summary>
-            public int ReportedFrame { get; }
-
-            /// <summary>True when the signal originates from an active sonar ping.</summary>
-            public bool IsActiveSonarPing { get; }
+            [FieldOffset(72)]
+            public readonly float ToolUseNoise01;
 
             /// <summary>Acoustic transmission factor after path absorption is applied.</summary>
-            public float AcousticTransmission01 { get; }
+            [FieldOffset(76)]
+            public readonly float AcousticTransmission01;
 
             /// <summary>Occlusion-derived low-pass cutoff for the path.</summary>
-            public float AcousticLowPassCutoffHz { get; }
+            [FieldOffset(80)]
+            public readonly float AcousticLowPassCutoffHz;
 
             /// <summary>Authored audible radius for downstream evaluators.</summary>
-            public float SignalRadiusMeters { get; }
+            [FieldOffset(84)]
+            public readonly float SignalRadiusMeters;
+
+            /// <summary>Frame index when the signal was last reported.</summary>
+            [FieldOffset(88)]
+            public readonly int ReportedFrame;
+
+            /// <summary>True when the player flashlight is active.</summary>
+            [FieldOffset(92)]
+            public readonly byte FlashlightOnFlag;
+
+            /// <summary>True when the signal originates from an active sonar ping.</summary>
+            [FieldOffset(93)]
+            public readonly byte IsActiveSonarPingFlag;
+
+            [FieldOffset(94)]
+            private readonly ushort _padFlags;
+
+            public static bool IsFlashlightOn(in PlayerNoiseSignal signal)
+            {
+                return signal.FlashlightOnFlag != 0;
+            }
+
+            public static bool IsActiveSonarPing(in PlayerNoiseSignal signal)
+            {
+                return signal.IsActiveSonarPingFlag != 0;
+            }
         }
 
         private const int MaxPlayerSignalAgeFrames = 30;
@@ -117,7 +148,12 @@ namespace Hecton8.AI
             float transportSignature,
             float toolUseNoise01)
         {
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            if (!TryResolveSignalAup(position, out AbsoluteUniversePosition positionAup))
+            {
+                ClearPlayerSignal();
+                return;
+            }
+
             ReportPlayerSignal(
                 position,
                 in positionAup,
@@ -140,6 +176,12 @@ namespace Hecton8.AI
             float transportSignature,
             float toolUseNoise01)
         {
+            if (!AbsoluteUniversePosition.IsFinite(in positionAup))
+            {
+                ClearPlayerSignal();
+                return;
+            }
+
             _playerNoiseSignal = new PlayerNoiseSignal(
                 position,
                 in positionAup,
@@ -172,7 +214,12 @@ namespace Hecton8.AI
         public static void ReportActiveSonarPing(Vector3 position, float intensity01)
         {
             float clampedIntensity = math.saturate(intensity01);
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            if (!TryResolveSignalAup(position, out AbsoluteUniversePosition positionAup))
+            {
+                ClearPlayerSignal();
+                return;
+            }
+
             _playerNoiseSignal = new PlayerNoiseSignal(
                 position,
                 in positionAup,
@@ -196,6 +243,26 @@ namespace Hecton8.AI
                 SpatialTransientEventType.AcousticImpulse,
                 SpatialInteractionFlags.AcousticReceiver);
             DispatchActiveSonarPing(_playerNoiseSignal);
+        }
+
+        private static bool TryResolveSignalAup(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in aup);
         }
 
         /// <summary>
@@ -294,7 +361,7 @@ namespace Hecton8.AI
         {
             float dispatchRadius = 0f;
 
-            if (signal.FlashlightOn)
+            if (PlayerNoiseSignal.IsFlashlightOn(in signal))
                 dispatchRadius = FlashlightNoiseRadius;
 
             if (signal.MovementSpeedSqr >= MinimumMovementNoiseSqr)
@@ -325,7 +392,7 @@ namespace Hecton8.AI
                 dispatchRadius = math.max(dispatchRadius, transportRadius);
             }
 
-            if (signal.IsActiveSonarPing)
+            if (PlayerNoiseSignal.IsActiveSonarPing(in signal))
                 dispatchRadius = math.max(dispatchRadius, signal.SignalRadiusMeters);
 
             return dispatchRadius;
@@ -350,9 +417,9 @@ namespace Hecton8.AI
                 ? InverseLerpClamped(MinimumMovementNoiseSqr, 72.25f, signal.MovementSpeedSqr)
                 : 0f;
             float utilityIntensity = math.max(signal.ToolUseNoise01, signal.TransportBoost01);
-            if (signal.FlashlightOn)
+            if (PlayerNoiseSignal.IsFlashlightOn(in signal))
                 utilityIntensity = math.max(utilityIntensity, 0.25f);
-            if (signal.IsActiveSonarPing)
+            if (PlayerNoiseSignal.IsActiveSonarPing(in signal))
                 utilityIntensity = math.max(utilityIntensity, signal.ToolUseNoise01 * signal.AcousticTransmission01);
             return math.saturate(math.max(movementIntensity, utilityIntensity));
         }
@@ -369,7 +436,7 @@ namespace Hecton8.AI
                 float maxDistance = signal.SignalRadiusMeters > 0f ? signal.SignalRadiusMeters : 42f;
                 float distance01 = 1f - InverseLerpClamped(36f, maxDistance * maxDistance, distanceSqr);
                 float pulse01 = math.max(signal.TransportBoost01, signal.ToolUseNoise01);
-                if (signal.IsActiveSonarPing)
+                if (PlayerNoiseSignal.IsActiveSonarPing(in signal))
                     pulse01 = math.max(pulse01, signal.ToolUseNoise01 * signal.AcousticTransmission01);
                 return math.saturate(math.max(speed01 * distance01, pulse01 * distance01));
             }

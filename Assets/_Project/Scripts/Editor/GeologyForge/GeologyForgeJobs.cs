@@ -56,17 +56,17 @@ namespace Hecton8.Editor.GeologyForge
                 case 1:
                     return Pack3(Edge01, Edge02, Edge03);
                 case 14:
-                    return Pack3(Edge01, Edge03, Edge02);
+                    return Pack3(Edge03, Edge02, Edge01);
                 case 2:
                     return Pack3(Edge01, Edge13, Edge12);
                 case 13:
-                    return Pack3(Edge01, Edge12, Edge13);
+                    return Pack3(Edge12, Edge13, Edge01);
                 case 4:
                     return Pack3(Edge02, Edge12, Edge23);
                 case 11:
-                    return Pack3(Edge02, Edge23, Edge12);
+                    return Pack3(Edge23, Edge12, Edge02);
                 case 8:
-                    return Pack3(Edge03, Edge23, Edge13);
+                    return Pack3(Edge23, Edge13, Edge03);
                 case 7:
                     return Pack3(Edge03, Edge13, Edge23);
                 case 3:
@@ -294,6 +294,9 @@ namespace Hecton8.Editor.GeologyForge
     {
         [ReadOnly, NoAlias] public NativeArray<float> Density;
         [ReadOnly, NoAlias] public NativeArray<int> CellVertexOffsets;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: CellVertexOffsets is an exclusive prefix sum; each cell owns one disjoint RawVertices write range.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: RawVertices is allocated by this bake lane and is not aliased with Density or CellVertexOffsets.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: Later jobs consume RawVertices only through the returned JobHandle chain after extraction completes.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<GeologyRawVertex> RawVertices;
 
         public int Points;
@@ -460,6 +463,9 @@ namespace Hecton8.Editor.GeologyForge
     {
         [ReadOnly, NoAlias] public NativeArray<float> Density;
         [ReadOnly, NoAlias] public NativeParallelMultiHashMap<ulong, int> NormalBuckets;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: Vertices is acquired from the single RawVertices buffer and stays allocated until this job completes.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: Each worker writes only its own vertex row; triangle-neighbor reads use immutable position lanes.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: Density and NormalBuckets are separate read-only containers, and the caller chains disposal after this job.
         [NoAlias, NativeDisableUnsafePtrRestriction] public GeologyRawVertex* Vertices;
 
         public int VertexCount;
@@ -590,6 +596,9 @@ namespace Hecton8.Editor.GeologyForge
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct GenerateTriplanarUvsJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: The job maps Execute(index) to Vertices[index], so no two workers write the same row.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: Vertices is the sole mutable UV stream in this phase and is not passed as another job field.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: The dependency chain starts after normal smoothing and ends before AO or LOD reads the UV result.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<GeologyRawVertex> Vertices;
 
         public float TextureScale;
@@ -618,6 +627,9 @@ namespace Hecton8.Editor.GeologyForge
     internal struct BakeVertexOcclusionJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<float> Density;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: The AO job mutates only Vertices[index]; Density is read-only SDF storage in a separate allocation.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: No cross-index writes occur, and hemisphere probes only read Density through clamped nearest samples.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: The caller schedules this phase after UV generation and before LOD decimation consumes the vertices.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<GeologyRawVertex> Vertices;
 
         public int Points;
@@ -703,6 +715,9 @@ namespace Hecton8.Editor.GeologyForge
     internal struct GeologyLodDecimationJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<GeologyRawVertex> SourceVertices;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: Each triangle index writes exactly OutputVertices[dst..dst+2], where dst = triangleIndex * 3.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: OutputVertices is a distinct LOD allocation and never aliases SourceVertices in this bake phase.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: The caller sizes OutputVertices to OutputTriangleCount * 3 and chains upload after job completion.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<GeologyRawVertex> OutputVertices;
 
         public int SourceTriangleCount;

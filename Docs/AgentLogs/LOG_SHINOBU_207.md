@@ -51,6 +51,65 @@ Gaps:
 - Unity compile/profiler proof is blocked by CPU guard.
 </SELF_AUDIT>
 
+## Loop 23: Vault Mirror Generation Proof
+What was wrong: two fallback memory mirrors still had stale-pointer risk. `BabelDictionaryStore` cached `_ownedFallbackPointer` from a Vault byte buffer without persisting its generation descriptor. `PdaH8lrLoreStore` accepted a resolved H8LR mirror `NativeArray<byte>` and cached its pointer without retaining the originating `VaultGenerationHandle<byte>`.
+
+What was done: Babel padded fallback now persists `_mappedBytesHandle`, acquires `BufferID.BabelDictionaryMappedBytes` through `GetGenerationHandle<byte>`, resolves through `IDataVault.TryResolveHandle`, invalidates on close/Vault hot-swap, and uses `LoadFileIntoPaddedBufferCold` for the file copy. H8LR fallback `Open/OpenDefault` now takes `IDataVault` plus `in VaultGenerationHandle<byte>`, persists that descriptor, and resolves a phase-local view before `TryGetUtf8` / `TryGetRecord` reads. The scanner now gates both mirror-generation contracts and fixed method-body parsing so call sites are not mistaken for accessor bodies.
+
+Cinematic Cheats used: no physical simulation. The existing Dear Lie remains immutable binary topology and raw UTF-8 span streaming: cache-line B-Tree traversal and PDA source caching replace flat packed probes and managed text materialization.
+
+Exact Microseconds saved: no Unity/Burst runtime microsecond claim. Latest scanner after this patch reported packed-byte binary `20706.89 ns`, packed-byte B-Tree `19205.80 ns`, and theoretical `8.00` cache lines avoided per worst-case lookup. The pointer-safety gain is structural: one 16-byte generation descriptor per mirror route and no stale bare Vault pointer authority.
+
+Verification:
+- Cache scanner: PASS; `babelMirrorGenerationGuard=true`, `h8lrMirrorGenerationGuard=true`, `readAccessorPurity=true`, `sourceResidueClean=true`, shared report preserved.
+- In-memory Python compile: PASS for cache scanner, static upgrader, lore packer, lore verifier, localization compiler, and BufferID audit.
+- Static/Babel B-Tree check: PASS.
+- H8LR/lore checks: PASS, H8LR bytes `43536`, collisions `0`.
+- Localization verify: PASS, 188 entries.
+- BufferID sovereignty audit: PASS, duplicates `0`, local casts `823`, cast files `74`.
+- Direct static record alignment audit: PASS, records `13`, lookup `13`, file `1328/1328`, flags `0x101`, records offset `512`, payload CRC `0x598EF439`, bad offsets `0`, reserved `0,0,0`.
+- Report preservation: PASS, `reportOwner=shared`, `sections=["SHINOBU_207","SHINOBU_228"]`, `SHINOBU_228` preserved.
+- Targeted residue grep: PASS for old H8LR `NativeArray<byte>` open signatures, old Babel `ReadFileIntoPaddedBuffer`, direct Babel mapped-byte `GetBuffer<byte>`, old telemetry fetch names, old telemetry/tuning `TryGet*` names, and runtime latest-created Vault fallback.
+- `git diff --check`: PASS except existing LF/CRLF normalization warnings.
+- Build/rebuild: NOT RUN by user instruction and build-discipline rule.
+
+<SELF_AUDIT loop="23" agent="SHINOBU_207" domain="MEMORY_MAPPED_FILE_CACHE_OPTIMIZER">
+  <TASK_RECONCILIATION>
+    <TASK id="01">[PASS] MMF_LINEAR_SCAN_AUTOPSY: scanner still rejects legacy flat binary search and the current report preserves source-residue gates.</TASK>
+    <TASK id="02">[PASS] CACHE_LINE_NODE_STRUCT_DESIGN: B-Tree node ABI unchanged at explicit 64 bytes.</TASK>
+    <TASK id="03">[PASS] CS1612_PROPERTY_STRIP: no hot DTO properties introduced; read-accessor scanner now inspects real method definitions.</TASK>
+    <TASK id="04">[PASS] ARM64_BTREE_NODE_ALIGNMENT_ASSERTION: no `Pack=1`; direct static audit confirms 64-byte payload record starts and Hecton CRC match.</TASK>
+    <TASK id="05">[PASS] EMERGENCY_MOCK_TREE_GENERATOR: unchanged and still scanner-gated against full output clear/regression.</TASK>
+    <TASK id="06">[PASS] BURST_NODE_SCANNING_KERNEL: Burst search contracts unchanged; scanner remains green.</TASK>
+    <TASK id="07">[PASS] DETERMINISTIC_PAGE_TRAVERSAL_ALGORITHM: traversal truth unchanged; mirror fix changes pointer provenance, not ordering or lookup math.</TASK>
+    <TASK id="08">[PASS] THE_DEAR_LIE_WARM_CACHE_PREFETCH: quality-weighted cache touch path unchanged.</TASK>
+    <TASK id="09">[PASS] ASYNCHRONOUS_BULK_LOOKUP_DISPATCH: no new job dependency or `.Complete()` surface added.</TASK>
+    <TASK id="10">[PASS] CONTINUOUS_SCALABILITY_PREFETCH_STRIDING: `GlobalQualityWeight` still scales cadence/prefetch only; mirror generation handles do not affect truth/layout.</TASK>
+    <TASK id="11">[PASS] OFFLINE_BTREE_CONSTRUCTION_COMPILER: static/Babel/H8LR file checks pass after the source patch.</TASK>
+    <TASK id="12">[PASS] AUP_SPATIAL_LOG_INTEGRATION: Morton64 spatial cache topology unchanged.</TASK>
+    <TASK id="13">[PASS] ROLLBACK_NETCODE_EXCLUSION_FENCE: no rollback state or save identity route added.</TASK>
+    <TASK id="14">[PASS] ZERO_INIT_OVERHEAD_BYPASS: padded mirrors still use uninitialized Vault bytes when immediately filled; no hot zero-clear loop added.</TASK>
+    <TASK id="15">[PASS] TELEMETRY_CACHE_MISS_RECORDER: telemetry route unchanged and BufferID audit is now clean.</TASK>
+    <TASK id="16">[PASS] BTREE_PERFORMANCE_XRAY_WINDOW: editor X-Ray bridge unchanged; docs now match mirror pointer safety.</TASK>
+    <TASK id="17">[PASS] CSV_TREE_TUNING_INGESTOR: cold `ReadOnlySpan<byte>` parser intentionally retained; deleting it was rejected because it is a task requirement.</TASK>
+    <TASK id="18">[PASS] LIVE_SEARCH_DEBUG_GIZMO: unchanged.</TASK>
+    <TASK id="19">[PASS] ARCHITECTURAL_METRIC_VALIDATOR: scanner now gates mirror generation descriptors, read-accessor purity, and shared-report preservation.</TASK>
+    <TASK id="20">[FAIL] SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION: source/static/tool evidence improved; Unity compile, Burst Inspector, GC allocation capture, and profiler proof remain absent because no build/rebuild was launched.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <BTreeNodeDTO size="64">Offsets: Key0 0, Key1 4, Key2 8, Key3 12, Key4 16, Key5 20, Key6 24, Child0 28, Child1 32, Child2 36, Child3 40, Child4 44, Child5 48, Child6 52, Child7 56, Meta 60. Math: 7*4 + 8*4 + 1*4 = 64 bytes, final padding 0.</BTreeNodeDTO>
+    <PdaH8lrHeaderDTO size="16">Magic 0 size4, Version 4 size4, Count 8 size4, Reserved0 12 size4. Math: 4*4 = 16 bytes.</PdaH8lrHeaderDTO>
+    <PdaH8lrRecordDTO size="16">Hash 0 size4, ByteOffset 4 size4, ByteLength 8 size4, Reserved0 12 size4. Math: 4*4 = 16 bytes.</PdaH8lrRecordDTO>
+    <VaultGenerationHandleByte size="16">BufferID 0 size4, SystemID 4 size4, Generation 8 size4, Flags 12 size4. Math: 4*4 = 16 bytes, no pointer field.</VaultGenerationHandleByte>
+    <StaticPayloadAudit>H8StaticData.bin: header 64, flags 0x101, records 13, lookup 13, records offset 512, file 1328/1328, payload CRC 0x598EF439, bad offsets 0, reserved 0/0/0.</StaticPayloadAudit>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>Below `GlobalQualityWeight=0.3`, lookup authority remains the same B-Tree but prefetch touch cadence collapses through the existing continuous stride curve and PDA reveal/decode work can shed presentation cost. Middle tiers warm fewer nodes and reveal moderate chunks. High/ultra tiers touch each traversal depth and spend saved CPU on richer PDA presentation. The mirror generation-handle fix is quality-invariant: it changes pointer provenance, not DTO layout, save identity, or source ownership.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Zero new private native collections. Babel padded mirror uses `BufferID.BabelDictionaryMappedBytes` with `_mappedBytesHandle`. PDA H8LR mirror uses `(BufferID)70570` with `_h8lrMirrorHandle` passed to `PdaH8lrLoreStore`. Existing B-Tree telemetry buffers remain `72070` ring, `72071` cursor, `72072` accumulator, and `72073` tuning profiles.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No new jobs were added. Existing B-Tree jobs keep prior `[NoAlias]` lanes. Consumed handles in this loop are Vault generation descriptors only: Babel `_mappedBytesHandle`, PDA `_h8lrMirrorHandle`, H8LR `_vaultMirrorHandle`. Outputs are unchanged source spans/records and scanner report JSON. No `.Complete()` was added.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef, direct sibling runtime reference, or compile-wall dependency was introduced. No `dotnet build`, rebuild, or Unity compile was launched in Loop 23.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before: fallback mirrors could appear valid from stale raw pointers and flat lookup had historically probed packed records. After: immutable B-Tree topology plus generation-checked mirror provenance supplies the same visual/content result without managed dictionaries, file I/O read accessors, or heavier CPU simulation. Complexity remains O(log8 N) for real lookup and O(1) for deterministic PDA mock fallback.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
 ## 2026-05-20 Loop 16 Deterministic Source Contract Hardening
 
 What was wrong: the source still contradicted the Loop 14/15 report. Actual C# had `FloatMode.Fast` on `ScanBTreeNodeJob`, `TraverseBTreeJob`, `DispatchBulkBTreeSearchJob`, `TraceBTreeTraversalJob`, `SpatialMortonRangeQueryJob`, and `BabelBTreeSearchKernel`.
@@ -105,7 +164,7 @@ Verification:
   </STRUCT_LAYOUT_VERIFICATION>
   <SCALABILITY_CURVE>GlobalQualityWeight is finite-clamped and maps speculative cache touch stride from 4 to 1 through a continuous lerp. Under low weight it sparsely touches child nodes; at high weight it warms every level. Topology, node layout, and result path never switch by tier.</SCALABILITY_CURVE>
   <H_PHI_VAULT_STATUS>Runtime contour stores VaultGenerationHandle descriptors only. BufferIDs: 72070 ring, 72071 cursor, 72072 accumulator, 72073 tuning profiles. No private persistent NativeArray/NativeList/NativeHashMap state was introduced.</H_PHI_VAULT_STATUS>
-  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Search jobs mark BasePointer and containers with NoAlias where Unity permits. DispatchBulkBTreeSearchJob writes Output[index] only; FlushBTreeTelemetryPostSimulationJob chains through ScheduleTelemetryPostSimulationFlush(vault, dependency). No arbitrary mid-frame Complete was added in runtime search.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Search jobs mark BasePointer and containers with NoAlias where Unity permits. DispatchBulkBTreeSearchJob writes Output[index] only; TryResolveTelemetryVaultBuffers resolves existing views and FlushBTreeTelemetryPostSimulationJob chains through ScheduleTelemetryPostSimulationFlush(ring,cursor,accumulator,dependency). No arbitrary mid-frame Complete was added in runtime search.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
   <COMPILE_GUARD>No asmdef reference was added. No sibling runtime dependency was introduced. `dotnet rebuild` was not launched. Current compile proof remains blocked by the prior 188-error foreign dependency wall.</COMPILE_GUARD>
   <DEAR_LIE>Physical 64-byte node topology plus guarded cache-touch read replaces heavy cache simulation. Spatial logs use Morton64 linearization instead of Octree/KD-tree pointers. Flat legacy search is O(log2 N) random 16-byte probes; B-Tree is O(log8 N) one cache-line node per level.</DEAR_LIE>
   <LATEST_VERIFICATION>py_compile=PASS; payload_validators=PASS; scanner_source_contract_gate=PASS; deterministicSearchJobs=all_true; btreeNodeExplicit64=true; static_record_alignment=PASS; cache_scanner_binary=18239.09ns; cache_scanner_btree=20238.74ns; theoretical_cache_lines_saved=8.00; cpu_guard=100_no_build.</LATEST_VERIFICATION>
@@ -436,7 +495,7 @@ Verification:
     Runtime managers in the SHINOBU_207 contour declare zero private NativeArray/NativeList/NativeHashMap fields. Persistent evidence/tuning state uses VaultGenerationHandle fields only. BufferIDs: 72070 BTreeTelemetryRing, 72071 BTreeTelemetryCursor, 72072 BTreeTelemetryAccumulator, 72073 BTreeTuningProfiles. MMF pointers remain read-only file mappings, not rollback-owned state.
   </H_PHI_VAULT_STATUS>
   <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
-    All B-Tree jobs mark non-overlapping raw pointer/NativeArray fields with NoAlias. DispatchBulkBTreeSearchJob consumes caller-provided scheduling dependency externally and writes Output[index]. FlushBTreeTelemetryPostSimulationJob is scheduled by ScheduleTelemetryPostSimulationFlush(vault, dependency) and returns the chained JobHandle. TraceBTreeTraversalJob is editor/debug; X-Ray completes it only in editor tooling.
+    All B-Tree jobs mark non-overlapping raw pointer/NativeArray fields with NoAlias. DispatchBulkBTreeSearchJob consumes caller-provided scheduling dependency externally and writes Output[index]. TryResolveTelemetryVaultBuffers resolves existing views; FlushBTreeTelemetryPostSimulationJob is scheduled by ScheduleTelemetryPostSimulationFlush(ring,cursor,accumulator,dependency) and returns the chained JobHandle. TraceBTreeTraversalJob is editor/debug; X-Ray completes it only in editor tooling.
   </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
   <COMPILE_GUARD>
     No asmdef was mutated. The SHINOBU_207 files did not add sibling runtime assembly references. Targeted C# build proof remains blocked: last allowed build hit a 188-error foreign dependency wall; latest retry guard CPU=67 with no dotnet/csc, so no build was launched.
@@ -566,3 +625,304 @@ Verification:
   <COMPILE_GUARD>No asmdef or sibling runtime dependency was added. No build/rebuild was launched in Loop 18. Last C# evidence remains the prior foreign dependency wall, not a SHINOBU_207 isolated compile.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Legacy flat lookup is O(log2 N) random packed-table probing. B-Tree lookup is O(log8 N) one-cache-line nodes. PDA mock lookup is O(1) ordinal inverse. Scanner source gates now prevent those paths from drifting back toward flat probes.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
+
+## 2026-05-20 Loop 19 Global Systems Doctrine Read-Accessor Purge
+
+What was wrong: subagent audit found that the first doctrine pass was too shallow. `StaticDataStore.FetchRecord<T>` still performed telemetry writes, `BabelDictionaryStore.FetchUtf8` still mutated counters/telemetry and could publish linked audio, and cold Vault allocation helpers used `TryGet*` names. `PDAEncyclopediaStreamer` also retained a runtime latest-created Vault fallback in the SHINOBU_207-touched path.
+
+What was done: pure read/fetch paths were split from explicit tracked paths. `FetchRecord<T>` now returns only the mapped ref or zero record; `FetchRecordWithTelemetry<T>` is the explicit side-effect path. `FetchUtf8` now returns only the mapped UTF-8 span or empty span; `FetchUtf8WithTelemetry` owns counters, dumps, telemetry, and linked-audio publish. Telemetry recording/dump methods now use already-bound handles only and do not call `Ensure*` allocation/growth from lookup-side code. `TryGetTelemetryVaultBuffers` and `TryGetTuningProfileVaultBuffer` were renamed to cold `Ensure*` helpers. `PDAEncyclopediaStreamer.TryBindVaultCold` now binds only `GlobalRegistry.DataVault`.
+
+Cinematic Cheats used: no physical simulation was added. The Dear Lie remains topology and cache behavior: immutable cache-line B-Tree nodes plus quality-weighted cache touch prefetch instead of more logic. The PDA mock fallback remains O(1) ordinal inverse rather than a search structure.
+
+Exact Microseconds saved: static scanner after Loop 19 reports packed-byte binary `23036.44 ns/lookup`, packed-byte B-Tree `17337.46 ns/lookup`, static Python delta `5698.98 ns saved/lookup`, and theoretical `8.00` cache lines / `512.06` bytes saved. Additional telemetry-side savings are categorical only: pure `FetchUtf8` no longer increments counters, writes telemetry, dumps, or publishes signals.
+
+Verification:
+- SHINOBU_207 XML re-extraction: PASS, `Docs/Tasks/CURRENT_BATCH.md:463-527`, 20 tasks.
+- Subagent audit integrated: PASS; no subagent edits and no subagent compile run.
+- Targeted doctrine residue grep over SHINOBU_207 contour: PASS.
+- `python Tools/Cache_Miss_Eradication_Scanner.py`: PASS; `sourceContracts.sourceResidueClean.mutatingReadAccessorNames=true`.
+- In-memory Python compile: PASS for cache scanner, static upgrader, lore packer, lore verifier, and BufferID audit.
+- `python Tools/UpgradeStaticBTreePayloads.py --check`: PASS.
+- `python Tools/LorePacker.py --check --hash-audit --list`: PASS, H8LR bytes 43536, collisions 0.
+- `python Tools/VerifyLore.py --check --verify-manifest --list`: PASS.
+- `python Tools/LocToBinary.py --verify-only`: PASS, 188 entries.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS, duplicates 0, local casts 811, cast files 71.
+- Direct static record alignment audit: PASS, 13 records, records offset 512, file bytes 1328, payload CRC `0x598EF439`, bad offsets 0.
+- Shared report preservation: PASS, `SHINOBU_228` remains in `Docs/Reports/MEMORY_OPTIMIZATION_REPORT.json`.
+- `git diff --check`: PASS except existing CRLF normalization warnings.
+- C# build/profiler: NOT RUN. CPU guard reported `100%`; no active `dotnet`/`csc`; user forbids build/rebuild under load.
+
+<SELF_AUDIT agent="SHINOBU_207" loop="19" date="2026-05-20">
+  <TASK_RECONCILIATION>
+    <TASK id="01">[PASS] BINARY_SEARCH_PROFILING_AND_ERADICATION: hot lookup contour remains B-Tree; scanner fails if old flat search residue returns.</TASK>
+    <TASK id="02">[PASS] MANAGED_DICTIONARY_RESIDUE_PURGE: scanner still forbids managed lookup containers in target runtime contour.</TASK>
+    <TASK id="03">[PASS] CS1612_TRAVERSAL_STATE_ANNIHILATION: hot traversal state remains raw fields/stack primitives; this loop removed hidden read-path state mutation from public fetch APIs.</TASK>
+    <TASK id="04">[PASS] ARM64_BTREE_NODE_ALIGNMENT_ASSERTION: explicit 64-byte B-Tree node gate remains scanner-verified.</TASK>
+    <TASK id="05">[PASS] EMERGENCY_MOCK_TREE_GENERATOR: no regression to full mock output clear; PDA mock lookup remains O(1) ordinal inverse.</TASK>
+    <TASK id="06">[PASS] BURST_NODE_SCANNING_KERNEL: deterministic scan job gate remains intact.</TASK>
+    <TASK id="07">[PASS] DETERMINISTIC_PAGE_TRAVERSAL_ALGORITHM: named search/traversal jobs remain scanner-gated for `FloatMode.Deterministic`.</TASK>
+    <TASK id="08">[PASS] THE_DEAR_LIE_WARM_CACHE_PREFETCH: guarded cache-touch prefetch remains the cache latency fake.</TASK>
+    <TASK id="09">[PASS] ASYNCHRONOUS_BULK_LOOKUP_DISPATCH: bulk lookup job write lanes and dependency shape unchanged.</TASK>
+    <TASK id="10">[PASS] CONTINUOUS_SCALABILITY_PREFETCH_STRIDING: quality weight still controls only continuous prefetch cadence, not topology or result authority.</TASK>
+    <TASK id="11">[PASS] OFFLINE_BTREE_CONSTRUCTION_COMPILER: static/Babel B-Tree payload check passed after the doctrine patch.</TASK>
+    <TASK id="12">[PASS] AUP_SPATIAL_LOG_INTEGRATION: Morton64 B-Tree DTO and traversal remain unchanged and 64-byte aligned.</TASK>
+    <TASK id="13">[PASS] ROLLBACK_NETCODE_EXCLUSION_FENCE: MMF topology remains immutable and outside rollback state; no new runtime owner was added.</TASK>
+    <TASK id="14">[PASS] ZERO_INIT_OVERHEAD_BYPASS: no zero-init regression in target scanner contour.</TASK>
+    <TASK id="15">[PASS] TELEMETRY_CACHE_MISS_RECORDER: telemetry route remains Vault IDs `72070..72072`; recording now uses existing handles only from lookup-side code.</TASK>
+    <TASK id="16">[PASS] BTREE_PERFORMANCE_XRAY_WINDOW: X-Ray tuning route updated to `EnsureTuningProfileVaultBufferCold`; editor latest-created Vault diagnostic remains outside runtime contour.</TASK>
+    <TASK id="17">[PASS] CSV_TREE_TUNING_INGESTOR: tuning buffer helper renamed to cold `Ensure*`, preserving Vault ID `72073`.</TASK>
+    <TASK id="18">[PASS] LIVE_SEARCH_DEBUG_GIZMO: trace/debug path unchanged; read-path doctrine patch does not alter editor trace behavior.</TASK>
+    <TASK id="19">[PASS] ARCHITECTURAL_METRIC_VALIDATOR: scanner now gates mutating accessor names and preserves shared report sections.</TASK>
+    <TASK id="20">[FAIL] SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION: source/static/tool proof improved; Unity compile, Burst Inspector, profiler, and GC proof still absent due guard/dependency wall.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <BTreeNodeDTO size="64">Key0..Key6 offsets 0,4,8,12,16,20,24; Child0..Child7 offsets 28,32,36,40,44,48,52,56; Meta offset 60. Math: 7*4 + 8*4 + 4 = 64 bytes.</BTreeNodeDTO>
+    <MortonBTreeNodeDTO size="64">Key0..Key3 offsets 0,8,16,24; Child0..Child4 offsets 32,36,40,44,48; Meta=52; Reserved0=56; Reserved1=60. Math: 4*8 + 5*4 + 3*4 = 64 bytes.</MortonBTreeNodeDTO>
+    <TelemetryAndTuning size="64">`BTreeTelemetryEntry`, `BTreeTelemetryAccumulatorDTO`, and `BTreeTuningProfileDTO` remain one-cache-line explicit records.</TelemetryAndTuning>
+    <StaticPayloadRecordAlignment>Current static payload audit: 13 records, records offset `512`, file bytes `1328`, payload CRC `0x598EF439`, bad offsets `0`; every lookup record offset is `% 64 == 0`.</StaticPayloadRecordAlignment>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>Below `GlobalQualityWeight` 0.3 the B-Tree keeps the same truth path but reduces speculative cache touches through the existing continuous stride curve. Middle tiers warm intermediate depths. High/ultra touches each traversal depth. Pure fetch APIs do not alter cadence, topology, DTO layout, save identity, or ownership route.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No private persistent native arrays were introduced. Vault buffers requested by SHINOBU_207 remain `72070` BTreeTelemetryRing, `72071` BTreeTelemetryCursor, `72072` BTreeTelemetryAccumulator, and `72073` BTreeTuningProfiles. Lookup-side telemetry now resolves existing handles only.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Search/traversal jobs retain `[NoAlias]` lanes. Bulk search consumes external dependencies and writes caller output. Telemetry flush returns a chained POST_SIMULATION handle. This loop changed managed wrapper side-effect boundaries and scanner gates, not Burst pointer aliasing.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef or sibling runtime dependency was added. No build/rebuild was launched; CPU guard was `100%` and `dotnet`/`csc` were absent.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before: legacy flat lookup O(log2 N) random packed-table probes plus read-path telemetry/publish side effects. After: B-Tree O(log8 N) cache-line node traversal, PDA mock O(1) ordinal inverse, and pure fetch APIs separated from explicit tracked owner-phase methods. This is a topology/authority fake, not extra CPU simulation.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+## Loop 20: Post-Simulation Telemetry Schedule Allocation Facade Purge
+What was wrong: `ScheduleTelemetryPostSimulationFlush(IDataVault, JobHandle)` looked like a normal post-simulation scheduler but called `EnsureTelemetryVaultBuffersCold`, which can allocate/grow BufferID `72070`, `72071`, and `72072` through Vault `GetBuffer`.
+
+What was done: split the API. Cold setup keeps `EnsureTelemetryVaultBuffersCold`. Pure existing-buffer lookup is now `TryResolveTelemetryVaultBuffers` using `TryGetGenerationHandle<T>` plus `TryResolveHandle`. The scheduler is now `ScheduleTelemetryPostSimulationFlush(NativeArray<BTreeTelemetryEntry>, NativeArray<int>, NativeArray<BTreeTelemetryAccumulatorDTO>, JobHandle)` and only schedules from resolved views. `Tools/Cache_Miss_Eradication_Scanner.py` now fails on any return of `ScheduleTelemetryPostSimulationFlush(... IDataVault ...)`. `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` records the route correction.
+
+Cinematic Cheats used: no new simulation. The existing Dear Lie remains cache-topology substitution: one 64-byte B-Tree node fetch replaces random packed-table probing, and PDA mock lookup uses an O(1) ordinal inverse instead of scanning text rows.
+
+Exact Microseconds saved: static scanner after this loop reports packed-byte binary `51991.93 ns` versus packed-byte B-Tree `14611.39 ns`, a static Python delta of `37.38054 us` per sampled lookup and theoretical `8.00` cache lines avoided. The schedule split removes possible Vault allocation/growth from a frame-phase facade; no Unity profiler number is claimed.
+
+Verification:
+- Cache scanner: PASS.
+- Python compile: PASS for cache scanner, static upgrader, lore packer, lore verifier, and localization compiler.
+- Static/Babel B-Tree check: PASS.
+- H8LR/lore checks: PASS, bytes `43536`, collisions `0`.
+- Localization verify: PASS, 188 entries.
+- BufferID sovereignty audit: PASS, duplicates `0`, local casts `811`, cast files `71`.
+- Direct static record alignment audit: PASS, 13 records, flags `0x101`, B-Tree offset `320`, B-Tree bytes `192`, records offset `512`, file bytes `1328`, payload CRC `0x598EF439`, bad offsets `0`.
+- Targeted source residue: PASS for schedule-with-Vault facade, combined resolve/schedule facade, old telemetry/tuning `TryGet*` names, and runtime latest-created Vault fallback in the SHINOBU_207 contour.
+- `git diff --check`: PASS except existing CRLF normalization warnings.
+- Build guard: CPU `100%`; no active `dotnet`/`csc`; no build/rebuild launched.
+
+<SELF_AUDIT loop="20" agent="SHINOBU_207" domain="MEMORY_MAPPED_FILE_CACHE_OPTIMIZER">
+  <TASK_RECONCILIATION>
+    <TASK id="01">[PASS] MMF_LINEAR_SCAN_AUTOPSY: no regression to flat source loop in scanner contour.</TASK>
+    <TASK id="02">[PASS] CACHE_LINE_NODE_STRUCT_DESIGN: `BTreeNodeDTO` remains 64 bytes.</TASK>
+    <TASK id="03">[PASS] CS1612_PROPERTY_STRIP: no new hot DTO properties introduced.</TASK>
+    <TASK id="04">[PASS] ARM64_BTREE_NODE_ALIGNMENT_ASSERTION: static/tool alignment checks still pass.</TASK>
+    <TASK id="05">[PASS] EMERGENCY_MOCK_TREE_GENERATOR: no full output clear regression.</TASK>
+    <TASK id="06">[PASS] BURST_NODE_SCANNING_KERNEL: deterministic search job gate unchanged.</TASK>
+    <TASK id="07">[PASS] DETERMINISTIC_PAGE_TRAVERSAL_ALGORITHM: traversal jobs still use deterministic Burst mode where rollback/search determinism requires it.</TASK>
+    <TASK id="08">[PASS] THE_DEAR_LIE_WARM_CACHE_PREFETCH: prefetch remains continuous and cache-line bounded.</TASK>
+    <TASK id="09">[PASS] ASYNCHRONOUS_BULK_LOOKUP_DISPATCH: bulk lookup dependency/output lanes unchanged.</TASK>
+    <TASK id="10">[PASS] CONTINUOUS_SCALABILITY_PREFETCH_STRIDING: GlobalQualityWeight affects prefetch cadence only, not truth/layout.</TASK>
+    <TASK id="11">[PASS] OFFLINE_BTREE_CONSTRUCTION_COMPILER: static/Babel check passed.</TASK>
+    <TASK id="12">[PASS] AUP_SPATIAL_LOG_INTEGRATION: Morton64 B-Tree layout unchanged.</TASK>
+    <TASK id="13">[PASS] ROLLBACK_NETCODE_EXCLUSION_FENCE: transient MMF/cache telemetry remains outside authoritative rollback truth.</TASK>
+    <TASK id="14">[PASS] ZERO_INIT_OVERHEAD_BYPASS: no zero-init hot-path regression in touched code.</TASK>
+    <TASK id="15">[PASS] TELEMETRY_CACHE_MISS_RECORDER: telemetry flush scheduling no longer allocates/grows Vault buffers.</TASK>
+    <TASK id="16">[PASS] BTREE_PERFORMANCE_XRAY_WINDOW: editor diagnostic route remains editor-only.</TASK>
+    <TASK id="17">[PASS] CSV_TREE_TUNING_INGESTOR: tuning Vault helper remains cold `Ensure*`.</TASK>
+    <TASK id="18">[PASS] LIVE_SEARCH_DEBUG_GIZMO: debug trace path unchanged.</TASK>
+    <TASK id="19">[PASS] ARCHITECTURAL_METRIC_VALIDATOR: scanner now gates schedule-with-Vault facade and shared report remains merged.</TASK>
+    <TASK id="20">[FAIL] SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION: source/static/tool proof is stronger; Unity compile, Burst Inspector, profiler, and GC proof remain absent under CPU guard/dependency wall.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <BTreeNodeDTO size="64">Key0..Key6 offsets 0,4,8,12,16,20,24; Child0..Child7 offsets 28,32,36,40,44,48,52,56; Meta offset 60. Math: 7*4 + 8*4 + 4 = 64 bytes.</BTreeNodeDTO>
+    <BTreeTelemetryEntry size="64">One cache-line telemetry record remains explicitly laid out; used by Vault BufferID `72070` ring.</BTreeTelemetryEntry>
+    <BTreeTelemetryAccumulatorDTO size="64">One cache-line accumulator remains explicitly laid out; used by Vault BufferID `72072` accumulator.</BTreeTelemetryAccumulatorDTO>
+    <StaticPayloadRecordAlignment>Current audit: 13 lookup entries, records offset `512`, payload CRC `0x598EF439`, bad offsets `0`; every lookup record offset is `% 64 == 0`.</StaticPayloadRecordAlignment>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>Below `GlobalQualityWeight` 0.3, speculative B-Tree prefetch collapses through the existing stride curve while lookup truth, DTO layout, and save identity remain fixed. Middle tiers warm fewer depth levels; high/ultra can warm every traversal depth. The Loop 20 schedule split does not alter cadence; it prevents hidden Vault growth in the frame phase.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No new private native arrays. Cold-owned Vault IDs remain `72070` BTreeTelemetryRing, `72071` BTreeTelemetryCursor, `72072` BTreeTelemetryAccumulator, and `72073` BTreeTuningProfiles. Post-simulation scheduler now consumes resolved NativeArray views only.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>`FlushBTreeTelemetryPostSimulationJob` consumes caller-owned dependency and emits its scheduled JobHandle. Job fields `Ring`, `Cursor`, and `Accumulator` remain `[NoAlias]`. No `.Complete()` was added.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef or sibling runtime dependency was added. No build/rebuild launched because CPU guard read `100%` and active `dotnet`/`csc` was absent.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before: random packed lookup probes plus a frame-phase facade that could allocate telemetry storage. After: O(log8 N) cache-line B-Tree traversal and resolved-view-only telemetry flush scheduling. The visual/data fake is cache topology and prefetch, not heavier CPU simulation.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+## Loop 21: PDA Editor Facade Fence and H8LR Pure Read Fix
+What was wrong: source audit found two PDA editor x-ray methods publicly compiled into the runtime class while they could cold-bootstrap Vault buffers, and `PdaH8lrLoreStore.TryGetUtf8` still mutated last-depth/key/prefetch counters on a read-looking path.
+
+What was done: `EditorTrySnapshot`, `EditorUnlockAll`, `EditorLockAll`, `EditorSelectEntry`, `EditorIngestCsv`, and `EditorTryWriteRawUtf8Hex` are now inside `#if UNITY_EDITOR`. `PdaH8lrLoreStore.TryGetUtf8` now discards B-Tree traversal telemetry outputs and no longer has `_lastTreeDepth`, `_lastTreeKeysProcessed`, or `_lastPrefetchTouchCount` fields. The cache scanner now gates both conditions and the PDA architecture doc records the route.
+
+Cinematic Cheats used: no new physical simulation. The same H8LR/B-Tree lookup fake remains: cache-line topology plus source-span streaming replaces managed text materialization and flat row probing.
+
+Exact Microseconds saved: three 32-bit instance writes were removed per successful H8LR lookup. The latest Python microbench reported binary `103114.94 ns` and B-Tree `116533.44 ns`, so no speedup is claimed from that run. The stable static claim remains `8.00` theoretical cache lines avoided by the B-Tree topology.
+
+Verification:
+- Subagent source-only audit integrated and closed.
+- Cache scanner: PASS; report now records `h8lrMutableReadCountersRemoved=true` and six `pdaEditorFacadesFenced=true` entries.
+- In-memory Python compile: PASS for five tools.
+- Static/Babel B-Tree check: PASS.
+- H8LR/lore checks: PASS, bytes `43536`, collisions `0`.
+- Localization verify: PASS, 188 entries.
+- BufferID sovereignty audit: PASS, duplicates `0`, local casts `811`, cast files `71`.
+- Direct static record alignment audit: PASS, 13 records, flags `0x101`, B-Tree offset `320`, B-Tree bytes `192`, records offset `512`, file bytes `1328`, payload CRC `0x598EF439`, bad offsets `0`.
+- Report preservation: PASS, `reportOwner=shared`, `sections=["SHINOBU_207","SHINOBU_228"]`, `SHINOBU_228` preserved.
+- Targeted residue: PASS for H8LR mutable counters and SHINOBU_207 runtime latest-created/schedule facade residues.
+- `git diff --check`: PASS except existing CRLF normalization warnings.
+- Build guard: CPU `100%`; no active `dotnet`/`csc`; no build/rebuild launched.
+
+<SELF_AUDIT loop="21" agent="SHINOBU_207" domain="MEMORY_MAPPED_FILE_CACHE_OPTIMIZER">
+  <TASK_RECONCILIATION>
+    <TASK id="01">[PASS] MMF_LINEAR_SCAN_AUTOPSY: no flat scan regression in the SHINOBU_207 source contour.</TASK>
+    <TASK id="02">[PASS] CACHE_LINE_NODE_STRUCT_DESIGN: B-Tree node layout remains explicit 64 bytes.</TASK>
+    <TASK id="03">[PASS] CS1612_PROPERTY_STRIP: H8LR read accessor object counter mutation removed.</TASK>
+    <TASK id="04">[PASS] ARM64_BTREE_NODE_ALIGNMENT_ASSERTION: static alignment audit remains clean.</TASK>
+    <TASK id="05">[PASS] EMERGENCY_MOCK_TREE_GENERATOR: mock tree/full-clear gate unchanged.</TASK>
+    <TASK id="06">[PASS] BURST_NODE_SCANNING_KERNEL: deterministic source-contract gates unchanged.</TASK>
+    <TASK id="07">[PASS] DETERMINISTIC_PAGE_TRAVERSAL_ALGORITHM: traversal/search truth unchanged.</TASK>
+    <TASK id="08">[PASS] THE_DEAR_LIE_WARM_CACHE_PREFETCH: cache-line/prefetch fake unchanged.</TASK>
+    <TASK id="09">[PASS] ASYNCHRONOUS_BULK_LOOKUP_DISPATCH: no dependency-chain regression.</TASK>
+    <TASK id="10">[PASS] CONTINUOUS_SCALABILITY_PREFETCH_STRIDING: GlobalQualityWeight still affects cadence only.</TASK>
+    <TASK id="11">[PASS] OFFLINE_BTREE_CONSTRUCTION_COMPILER: payload checks pass.</TASK>
+    <TASK id="12">[PASS] AUP_SPATIAL_LOG_INTEGRATION: Morton64 topology unchanged.</TASK>
+    <TASK id="13">[PASS] ROLLBACK_NETCODE_EXCLUSION_FENCE: no rollback truth route added.</TASK>
+    <TASK id="14">[PASS] ZERO_INIT_OVERHEAD_BYPASS: no new zero-init hot clear added.</TASK>
+    <TASK id="15">[PASS] TELEMETRY_CACHE_MISS_RECORDER: explicit telemetry routes remain; H8LR pure read no longer shadows telemetry counters.</TASK>
+    <TASK id="16">[PASS] BTREE_PERFORMANCE_XRAY_WINDOW: editor x-ray facades are editor-only compile surfaces.</TASK>
+    <TASK id="17">[PASS] CSV_TREE_TUNING_INGESTOR: unchanged.</TASK>
+    <TASK id="18">[PASS] LIVE_SEARCH_DEBUG_GIZMO: unchanged.</TASK>
+    <TASK id="19">[PASS] ARCHITECTURAL_METRIC_VALIDATOR: scanner now gates H8LR read purity and editor facade fences.</TASK>
+    <TASK id="20">[FAIL] SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION: source/static/tool proof improved; Unity compile, Burst Inspector, GC, and profiler proof remain absent under CPU guard.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <BTreeNodeDTO size="64">7 uint keys + 8 uint children + 1 uint meta = 64 bytes.</BTreeNodeDTO>
+    <PdaH8lrRecordDTO size="16">Hash 4, ByteOffset 4, ByteLength 4, Reserved0 4 = 16 bytes.</PdaH8lrRecordDTO>
+    <PdaH8lrHeaderDTO size="16">Magic 4, EntryCount 4, BTreeOffset 4, Reserved0 4 = 16 bytes.</PdaH8lrHeaderDTO>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>The Loop 21 patch does not change scalability math. Low quality still reduces decode/reveal cadence and prefetch speculation; high/ultra keep richer PDA reveal while using the same H8LR/Babel/mock source authority and fixed DTO layouts.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No new Vault IDs or private native arrays. PDA editor facades that can call cold Vault allocation are editor-only. H8LR `TryGetUtf8` reads mapped/mirrored bytes and mutates no Vault/global state.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No new jobs or dependencies. Existing B-Tree jobs retain their prior `[NoAlias]` gates. No `.Complete()` was added.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef or sibling runtime dependency was added. No build/rebuild launched because CPU guard read `100%`.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>The Dear Lie remains data topology and text streaming: the PDA presents rich lore from a raw UTF-8 MMF/Vault mirror without managed strings or per-row scans.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+## Loop 22: Editor Bridge Fence and Command Verb Purge
+What was wrong: the SHINOBU_207 runtime contour still exposed designer/file-I/O bridges and side-effecting read-looking verbs. PDA metadata CSV ingest could compile into the player-visible class. `StaticDataStore.FetchRecordWithTelemetry<T>` and `BabelDictionaryStore.FetchUtf8WithTelemetry` still used accessor-like `Fetch*` names while writing telemetry, dumping rings, and in Babel's tracked path publishing linked audio. `H8DataBaker` and `H8DataHashTool.GenerateHashManifest` were runtime-folder surfaces for CSV read, binary write, and manifest file I/O.
+
+What was done: PDA CSV ingest methods moved under the existing `#if UNITY_EDITOR` facade. Side-effecting tracked lookup methods were renamed to command verbs: `TrackRecordLookup<T>` and `TrackUtf8Lookup`. Pure `FetchRecord<T>` and `FetchUtf8()` remain side-effect-free. `H8DataBaker` plus its CSV helper types are editor-only, and `GenerateHashManifest` is editor-only while pure hash helpers remain runtime. The cache scanner now fails on the old telemetry `Fetch*WithTelemetry` names, proves the PDA CSV bridges are editor-fenced, and records editor-only status for the baker and manifest writer. Architecture docs were updated to match the route.
+
+Cinematic Cheats used: no new simulation. The Dear Lie remains data topology and presentation control: cache-line B-Tree traversal, quality-weighted prefetch, raw UTF-8 span streaming, and O(1) PDA mock ordinal inverse replace flat packed-table probes, managed string materialization, and per-frame text/file parsing.
+
+Exact Microseconds saved: no Unity/Burst runtime microsecond number is claimed in this loop. The latest Python scanner reported packed-byte binary `12804.33 ns` and packed-byte B-Tree `14376.11 ns`, so it is source-contract evidence only, not speed proof. Stable topology evidence remains theoretical `8.00` cache lines, about `512` bytes, avoided per worst-case lookup compared with the legacy packed probe pattern. Player/runtime compile surface also no longer includes the static-data CSV baker and manifest writer.
+
+Verification:
+- Subagent source-only audit integrated and closed.
+- Cache scanner: PASS; report records old telemetry fetch names absent, PDA CSV ingest bridges editor-fenced, and editor-only designer bridges true.
+- Report preservation: PASS; `sections=["SHINOBU_207","SHINOBU_228"]` and `SHINOBU_228` remained intact.
+- In-memory Python compile: PASS for cache scanner, static upgrader, lore packer, lore verifier, and localization compiler.
+- Static/Babel B-Tree check: PASS.
+- H8LR/lore checks: PASS, bytes `43536`, collisions `0`.
+- Localization verify: PASS, 188 entries.
+- Direct static record alignment audit: PASS, records `13`, lookup offset `64`, records offset `512`, file bytes `1328`, payload CRC `0x598EF439`, bad offsets `0`.
+- Targeted residue grep: PASS for old SHINOBU_207 telemetry fetch names, old schedule-with-Vault facade, combined resolve/schedule facade, old telemetry/tuning `TryGet*` names, and runtime latest-created Vault fallback.
+- BufferID sovereignty audit: FAIL external. Duplicate values `70780..70789` now exist between non-SHINOBU_207 `Shinobu234Storm*` and `ShinobuFluid*` rows in `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`. SHINOBU_207 IDs `70560..70570` and `72070..72072` are not duplicated.
+- `git diff --check`: PASS except existing LF/CRLF normalization warnings.
+- Build guard: CPU `100%`; no active `dotnet` or `csc`; no build or rebuild launched.
+
+<SELF_AUDIT loop="22" agent="SHINOBU_207" domain="MEMORY_MAPPED_FILE_CACHE_OPTIMIZER">
+  <TASK_RECONCILIATION>
+    <TASK id="01">[PASS] MMF_LINEAR_SCAN_AUTOPSY: scanner still rejects the legacy flat binary-search API and loop residue in the SHINOBU_207 contour.</TASK>
+    <TASK id="02">[PASS] CACHE_LINE_NODE_STRUCT_DESIGN: `BTreeNodeDTO` remains explicit 64 bytes, one L1 cache line.</TASK>
+    <TASK id="03">[PASS] CS1612_PROPERTY_STRIP: no hot DTO properties were introduced; side-effecting accessor-looking methods were renamed to command verbs.</TASK>
+    <TASK id="04">[PASS] ARM64_BTREE_NODE_ALIGNMENT_ASSERTION: no `Pack=1`; static payload audit confirms 64-byte lookup offsets and aligned records.</TASK>
+    <TASK id="05">[PASS] EMERGENCY_MOCK_TREE_GENERATOR: no full-output clear regression; PDA mock remains ordinal O(1).</TASK>
+    <TASK id="06">[PASS] BURST_NODE_SCANNING_KERNEL: deterministic source-contract gates remain intact; no new scan kernel regression.</TASK>
+    <TASK id="07">[PASS] DETERMINISTIC_PAGE_TRAVERSAL_ALGORITHM: traversal truth and deterministic search route unchanged.</TASK>
+    <TASK id="08">[PASS] THE_DEAR_LIE_WARM_CACHE_PREFETCH: quality-weighted prefetch and cache-line topology remain the fake.</TASK>
+    <TASK id="09">[PASS] ASYNCHRONOUS_BULK_LOOKUP_DISPATCH: no dependency-chain or `.Complete()` regression was added.</TASK>
+    <TASK id="10">[PASS] CONTINUOUS_SCALABILITY_PREFETCH_STRIDING: `GlobalQualityWeight` remains a continuous cadence input and does not change layout, save identity, or authority route.</TASK>
+    <TASK id="11">[PASS] OFFLINE_BTREE_CONSTRUCTION_COMPILER: static/Babel B-Tree payload checks pass; `H8DataBaker` is now editor-only.</TASK>
+    <TASK id="12">[PASS] AUP_SPATIAL_LOG_INTEGRATION: Morton64 B-Tree topology unchanged and still aligned.</TASK>
+    <TASK id="13">[PASS] ROLLBACK_NETCODE_EXCLUSION_FENCE: MMF/static-cache topology remains immutable and outside rollback truth.</TASK>
+    <TASK id="14">[PASS] ZERO_INIT_OVERHEAD_BYPASS: no hot full-clear or zero-init loop added in the touched contour.</TASK>
+    <TASK id="15">[PASS] TELEMETRY_CACHE_MISS_RECORDER: telemetry remains explicit tracked owner-phase work; pure fetch paths no longer carry read-looking side effects.</TASK>
+    <TASK id="16">[PASS] BTREE_PERFORMANCE_XRAY_WINDOW: editor x-ray and CSV ingest facades are editor-only compile surfaces.</TASK>
+    <TASK id="17">[PASS] CSV_TREE_TUNING_INGESTOR: designer CSV/bake bridges are fenced from player/runtime compilation.</TASK>
+    <TASK id="18">[PASS] LIVE_SEARCH_DEBUG_GIZMO: debug/editor path unchanged and not widened into runtime.</TASK>
+    <TASK id="19">[PASS] ARCHITECTURAL_METRIC_VALIDATOR: scanner now gates command-verb purity, editor bridge fencing, and shared-report preservation.</TASK>
+    <TASK id="20">[FAIL] SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION: source/static/tool proof improved, but Unity compile, Burst Inspector, GC allocation, and profiler proof remain absent under CPU guard. BufferID audit also fails on foreign non-SHINOBU_207 duplicates.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <BTreeNodeDTO size="64">Offsets: Key0 0 size4, Key1 4 size4, Key2 8 size4, Key3 12 size4, Key4 16 size4, Key5 20 size4, Key6 24 size4, Child0 28 size4, Child1 32 size4, Child2 36 size4, Child3 40 size4, Child4 44 size4, Child5 48 size4, Child6 52 size4, Child7 56 size4, Meta 60 size4. Math: 7 keys * 4 + 8 children * 4 + 1 meta * 4 = 28 + 32 + 4 = 64 bytes. Final padding bytes: 0 because the explicit fields exactly occupy byte range 0..63.</BTreeNodeDTO>
+    <BTreeTelemetryEntry size="64">Offsets: twelve uint lanes and one float lane occupy explicit 4-byte slots through byte 60. It is a one-cache-line forensic record for BufferID `72070`, preventing partial-line false sharing by layout.</BTreeTelemetryEntry>
+    <BTreeTelemetryAccumulatorDTO size="64">Explicit one-cache-line accumulator for BufferID `72072`; the post-simulation flush job writes one accumulator lane and one ring entry route, not adjacent unmanaged counters.</BTreeTelemetryAccumulatorDTO>
+    <StaticPayloadRecordAlignment>Audit result: magic `0x44533848`, version `1`, header `64`, flags `0x101`, records `13`, lookup offset `64`, records offset `512`, file bytes `1328`, payload CRC `0x598EF439`, bad offsets `0`.</StaticPayloadRecordAlignment>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>When `GlobalQualityWeight` drops below 0.3, SHINOBU_207 does not switch authority routes or DTO layouts. The lookup truth remains the same B-Tree, but speculative cache touches collapse through the continuous prefetch stride curve; text presentation can reduce reveal/decode cadence while pure span fetch remains unchanged. Middle weights warm fewer depths and keep deterministic traversal. High and ultra weights can touch each traversal depth and enable richer PDA presentation using the same raw UTF-8 bytes. This is continuous scalability, not a low-end versus ultra binary branch.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No private persistent native arrays were introduced in Loop 22. SHINOBU_207 Vault IDs remain PDA/static text lanes `70560..70570` plus B-Tree telemetry IDs `72070` ring, `72071` cursor, `72072` accumulator, and `72073` tuning profile. Player/runtime CSV and baker bridges are editor-fenced; runtime lookup consumes mapped bytes or already-resolved Vault views.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Existing B-Tree batch/search jobs retain `[NoAlias]` on non-overlapping pointer and NativeArray lanes. `ScheduleTelemetryPostSimulationFlush(ring,cursor,accumulator,dependency)` consumes the caller-provided dependency and returns the scheduled flush JobHandle; it does not call `.Complete()`. Loop 22 changed facade fences and command names, not the job dependency topology.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No asmdef or sibling runtime dependency was added. No `dotnet build` or rebuild was launched because CPU guard read `100%`; active `dotnet` and `csc` process count was zero.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before: packed lookup behaved as O(log2 N) random probes with read-looking paths able to drag telemetry, dumps, signals, or file-ingest bridges into the runtime surface. After: B-Tree lookup is O(log8 N) cache-line traversal, PDA mock is O(1), pure fetch APIs return refs/spans only, and side effects sit behind explicit tracked owner-phase commands. The fake is cache topology plus presentation streaming, avoiding heavier CPU simulation or managed text materialization.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+## Loop 24: Vault Decrypt Fence / Shared Report Hardening
+What was wrong: the Babel padded fallback had a generation handle for acquisition and phase-local read resolution, but `TryScheduleLoreDecryption` still fed a raw pointer from the Vault mirror into `BabelLoreXorDecryptPointerJob`. A scheduled job can outlive a Vault generation relocation; `CloseFile()` fencing is not a DataVault relocation fence.
+
+What was done: `TryScheduleLoreDecryption` now branches by backing store. If `_ownedFallbackPointer != null`, it resolves `_mappedBytesHandle` to a local `NativeArray<byte>` and schedules `BabelLoreXorDecryptJob`. Only MMF-backed views use `BabelLoreXorDecryptPointerJob`. `FetchUtf8`, `TrackUtf8Lookup`, B-Tree validation, and decrypt scheduling all resolve the current readable view before payload dereference. The pointer-job safety comment now states MMF only.
+
+Cinematic Cheats used: no extra simulation and no duplicate byte staging for MMF. Low/no-MMF platforms use the Vault `NativeArray` safety route; desktop MMF keeps zero-copy pointer reads.
+
+Exact Microseconds saved: no Unity/Burst runtime microsecond number is claimed. Static scanner latest run: packed-byte binary `40547.62 ns/lookup`, packed-byte B-Tree `24841.87 ns/lookup`, topology-derived saving `8.00` cache lines / about `512` bytes per lookup. The Loop 24 win is safety proof plus static topology improvement, not Unity profiler proof.
+
+<SELF_AUDIT agent="SHINOBU_207" loop="24" date="2026-05-21" evidence="STATIC_SOURCE_PY_TOOL_NO_REBUILD">
+  <TASK_RECONCILIATION>
+    <TASK id="01">[PASS] STATIC_SOURCE: flat binary-search residue remains scanner-blocked.</TASK>
+    <TASK id="02">[PASS] STATIC_SOURCE: managed lookup container residue remains scanner-blocked in SHINOBU_207 contour.</TASK>
+    <TASK id="03">[PASS] STATIC_SOURCE: pure Babel fetch path now resolves view locally and avoids telemetry mutation.</TASK>
+    <TASK id="04">[PASS] STATIC_SOURCE/PY_TOOL: 64-byte BTreeNodeDTO and static payload alignment gates remain clean.</TASK>
+    <TASK id="05">[PASS] STATIC_SOURCE: mock tree generator unchanged; no full-output clear regression.</TASK>
+    <TASK id="06">[PASS] STATIC_SOURCE: Burst search job contracts remain scanner-gated.</TASK>
+    <TASK id="07">[PASS] STATIC_SOURCE: deterministic traversal truth unchanged; pointer provenance corrected.</TASK>
+    <TASK id="08">[PASS] STATIC_SOURCE: quality-weighted cache touch path unchanged.</TASK>
+    <TASK id="09">[PASS] STATIC_SOURCE: bulk dispatch topology unchanged; no new same-frame complete.</TASK>
+    <TASK id="10">[PASS] STATIC_SOURCE: `GlobalQualityWeight` remains continuous prefetch/presentation input only.</TASK>
+    <TASK id="11">[PASS] PY_TOOL: `UpgradeStaticBTreePayloads.py --check` validates static/Babel B-Trees.</TASK>
+    <TASK id="12">[PASS] STATIC_SOURCE: Morton spatial B-Tree code untouched in Loop 24.</TASK>
+    <TASK id="13">[PASS] STATIC_SOURCE: immutable MMF/Vault mirror data stays rollback-excluded; no state-ring copy added.</TASK>
+    <TASK id="14">[PASS] STATIC_SOURCE: no new zero-init path or private persistent native allocation added.</TASK>
+    <TASK id="15">[PASS] STATIC_SOURCE: telemetry flush route remains resolved-view scheduling only.</TASK>
+    <TASK id="16">[PASS] STATIC_SOURCE: X-Ray remains editor/debug; no runtime dependency added.</TASK>
+    <TASK id="17">[PASS] STATIC_SOURCE: CSV tuning bridge unchanged and still cold/editor-consumed.</TASK>
+    <TASK id="18">[PASS] STATIC_SOURCE: live trace debug surface unchanged.</TASK>
+    <TASK id="19">[PASS] PY_TOOL: scanner writes nested SHINOBU_207 report and preserves SHINOBU_228.</TASK>
+    <TASK id="20">[FAIL] RUNTIME_PROOF: Unity compile, Burst Inspector, GC, and profiler proof still not run in Loop 24 by explicit rebuild discipline.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    `BTreeNodeDTO`: explicit 64 bytes, one cache line. `H8StaticDataHeader`: 64 bytes with `FileByteLength@12`, `PayloadCrc32@16`, `LookupCount@20`, `RecordCount@24`, `LookupOffset@28`, `RecordsOffset@32`, `RecordBytes@36`, `BabelCrc32@40`, `Flags@44`, reserved zeros at 52/56/60. Direct audit: records 13, lookup 13, file 1328/1328, flags 0x101, records offset 512, record bytes 816, payload CRC 0x598EF439, Babel CRC 0xA1084F1D, bad offsets 0.
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION>
+    Loop 24 did not change lookup truth. `GlobalQualityWeight` still only controls prefetch cadence and presentation/telemetry budgets. Low/no-MMF platforms use the safer NativeArray decrypt source for the Vault mirror; MMF platforms preserve zero-copy pointer decrypt. No binary low/high quality branch was introduced.
+  </SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS>
+    No new private persistent NativeArray/NativeList/NativeHashMap fields. `BabelDictionaryMappedBytes` uses `_mappedBytesHandle`; B-Tree telemetry remains BufferID 72070 ring, 72071 cursor, 72072 accumulator, and 72073 tuning profiles.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Vault fallback decrypt consumes `_mappedBytesHandle` through `TryResolveMappedBytesView` and schedules `BabelLoreXorDecryptJob` with `[ReadOnly, NoAlias] NativeArray<byte> SourceBytes`. MMF decrypt uses `BabelLoreXorDecryptPointerJob` with `[NoAlias, NativeDisableUnsafePtrRestriction] byte* SourceBytes`. Both return a scheduled `JobHandle`; no arbitrary `.Complete()` was added. Close/reload still uses the documented structural close fence.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef or sibling runtime dependency was added. No `dotnet build`, `dotnet rebuild`, or Unity compile was launched in Loop 24.
+  </COMPILE_GUARD>
+  <THE_DEAR_LIE_CONFIRMATION>
+    The lookup algorithm still replaces flat random midpoint scans with 64-byte cache-line B-Tree traversal and deterministic cache touch. Complexity remains from flat O(log2 N) random table probes to O(log8 N) cache-line node probes. MMF decrypt stays zero-copy instead of staging duplicate bytes.
+  </THE_DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+Verification:
+- `python Tools/Cache_Miss_Eradication_Scanner.py`: PASS, binary `40547.62 ns`, B-Tree `24841.87 ns`, cache lines saved `8.00`, `babelReadableViewResolveGuard=true`.
+- `python -m py_compile Tools/Cache_Miss_Eradication_Scanner.py Tools/UpgradeStaticBTreePayloads.py Tools/LorePacker.py Tools/VerifyLore.py Tools/LocToBinary.py Tools/BufferIDSovereigntyAudit.py`: PASS.
+- `python Tools/UpgradeStaticBTreePayloads.py --check`: PASS.
+- `python Tools/LorePacker.py --check --hash-audit --list`: PASS, H8LR bytes `43536`, collisions `0`.
+- `python Tools/VerifyLore.py --check --verify-manifest --list`: PASS.
+- `python Tools/LocToBinary.py --verify-only`: PASS, 188 entries.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS, duplicates `0`, local casts `827`, cast files `74`.
+- Direct static lookup alignment audit: PASS, 13 records, 13 lookups, bad offsets `0`.
+- `python -m json.tool Docs/Reports/MEMORY_OPTIMIZATION_REPORT.json`: PASS.
+- `git diff --check`: PASS except existing LF/CRLF normalization warnings.
+- Build/rebuild: NOT RUN by explicit instruction.

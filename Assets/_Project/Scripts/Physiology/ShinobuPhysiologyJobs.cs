@@ -56,8 +56,140 @@ namespace Hecton8.Physiology
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveActiveCompartmentCount(float globalQualityWeight)
         {
-            float quality = math.saturate(SanitizeFinite(globalQualityWeight, 1f));
-            return math.clamp((int)math.lerp(4f, 16f, quality), 4, ShinobuPhysiologyConstants.TissueCompartmentCount);
+            return ShinobuPhysiologyConstants.TissueCompartmentCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveHypoxiaTunnel01(float oxygenPartialPressureAtm)
+        {
+            return ResolveHypoxiaTunnel01(oxygenPartialPressureAtm, BuildDefaultGasTuning());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveHypoxiaTunnel01(float oxygenPartialPressureAtm, GasPhysiologyTuningDTO gasTuning)
+        {
+            float ppO2 = math.max(0f, SanitizeFinite(oxygenPartialPressureAtm, ShinobuPhysiologyConstants.SurfaceOxygenPartialPressureAtm));
+            GasPhysiologyTuningDTO tuning = SanitizeGasTuning(gasTuning);
+            return math.saturate((tuning.HypoxiaPartialPressureAtm - ppO2) *
+                                 math.rcp(math.max(0.0001f, tuning.HypoxiaPartialPressureAtm - tuning.AnoxiaPartialPressureAtm)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveOxygenAvailability01(float oxygenPartialPressureAtm)
+        {
+            return ResolveOxygenAvailability01(oxygenPartialPressureAtm, BuildDefaultGasTuning());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveOxygenAvailability01(float oxygenPartialPressureAtm, GasPhysiologyTuningDTO gasTuning)
+        {
+            float ppO2 = math.max(0f, SanitizeFinite(oxygenPartialPressureAtm, ShinobuPhysiologyConstants.SurfaceOxygenPartialPressureAtm));
+            GasPhysiologyTuningDTO tuning = SanitizeGasTuning(gasTuning);
+            return math.saturate((ppO2 - tuning.AnoxiaPartialPressureAtm) *
+                                 math.rcp(math.max(0.0001f, ShinobuPhysiologyConstants.SurfaceOxygenPartialPressureAtm - tuning.AnoxiaPartialPressureAtm)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveCarbonDioxideToxicity01(float carbonDioxidePartialPressureAtm)
+        {
+            return ResolveCarbonDioxideToxicity01(carbonDioxidePartialPressureAtm, BuildDefaultGasTuning());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveCarbonDioxideToxicity01(float carbonDioxidePartialPressureAtm, GasPhysiologyTuningDTO gasTuning)
+        {
+            float ppCO2 = math.max(0f, SanitizeFinite(carbonDioxidePartialPressureAtm, ShinobuPhysiologyConstants.CarbonDioxideFraction));
+            GasPhysiologyTuningDTO tuning = SanitizeGasTuning(gasTuning);
+            return math.saturate((ppCO2 - tuning.CarbonDioxideToxicityStartAtm) *
+                                 math.rcp(math.max(0.0001f, tuning.CarbonDioxideToxicityFullAtm - tuning.CarbonDioxideToxicityStartAtm)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveNitrogenNarcosis01(float nitrogenPartialPressureAtm, PhysiologyTuningDTO tuning)
+        {
+            float start = math.max(0.5f, SanitizeFinite(tuning.NarcosisStartAtm, 4f));
+            float full = math.max(start + 0.25f, SanitizeFinite(tuning.NarcosisFullAtm, 7f));
+            float ppN2 = math.max(0f, SanitizeFinite(nitrogenPartialPressureAtm, ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm));
+            return math.saturate((ppN2 - start) * math.rcp(math.max(0.0001f, full - start)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveNitrogenNarcosis01(float nitrogenPartialPressureAtm, GasPhysiologyTuningDTO gasTuning)
+        {
+            GasPhysiologyTuningDTO tuning = SanitizeGasTuning(gasTuning);
+            float ppN2 = math.max(0f, SanitizeFinite(nitrogenPartialPressureAtm, ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm));
+            return math.saturate((ppN2 - tuning.NarcosisStartAtm) * math.rcp(math.max(0.0001f, tuning.NarcosisFullAtm - tuning.NarcosisStartAtm)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static BreathingGasFractionsDTO SanitizeBreathingGas(BreathingGasFractionsDTO gas)
+        {
+            float oxygen = math.clamp(SanitizeFinite(gas.OxygenFraction, ShinobuPhysiologyConstants.OxygenFraction), 0f, 1f);
+            float nitrogen = math.clamp(SanitizeFinite(gas.NitrogenFraction, ShinobuPhysiologyConstants.NitrogenFraction), 0f, 1f);
+            float carbonDioxide = math.clamp(SanitizeFinite(gas.CarbonDioxideFraction, ShinobuPhysiologyConstants.CarbonDioxideFraction), 0f, 0.2f);
+            float total = oxygen + nitrogen + carbonDioxide;
+            if (total > 1f)
+            {
+                float inverseTotal = math.rcp(total);
+                oxygen *= inverseTotal;
+                nitrogen *= inverseTotal;
+                carbonDioxide *= inverseTotal;
+                total = 1f;
+            }
+
+            gas.OxygenFraction = oxygen;
+            gas.NitrogenFraction = nitrogen;
+            gas.CarbonDioxideFraction = carbonDioxide;
+            gas.InertReserveFraction = math.max(0f, 1f - total);
+            gas.GasHash = gas.GasHash != 0u ? gas.GasHash : 0x41495231u; // AIR1
+            return gas;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static GasPhysiologyTuningDTO SanitizeGasTuning(GasPhysiologyTuningDTO tuning)
+        {
+            if (tuning.Version == 0u)
+                tuning = BuildDefaultGasTuning();
+
+            tuning.AnoxiaPartialPressureAtm = math.clamp(SanitizeFinite(tuning.AnoxiaPartialPressureAtm, ShinobuPhysiologyConstants.AnoxiaPartialPressureAtm), 0.02f, 0.14f);
+            tuning.HypoxiaPartialPressureAtm = math.clamp(SanitizeFinite(tuning.HypoxiaPartialPressureAtm, ShinobuPhysiologyConstants.HypoxiaPartialPressureAtm), tuning.AnoxiaPartialPressureAtm + 0.01f, 0.35f);
+            tuning.CnsToxicityStartAtm = math.clamp(SanitizeFinite(tuning.CnsToxicityStartAtm, ShinobuPhysiologyConstants.CnsToxicityStartAtm), 0.6f, 2.4f);
+            tuning.CnsToxicityExtremeAtm = math.max(tuning.CnsToxicityStartAtm + 0.05f, SanitizeFinite(tuning.CnsToxicityExtremeAtm, ShinobuPhysiologyConstants.CnsToxicityExtremeAtm));
+            tuning.CnsAccumulationRate = math.clamp(SanitizeFinite(tuning.CnsAccumulationRate, 0.035f), 0.001f, 0.25f);
+            tuning.CnsExtremeRate = math.clamp(SanitizeFinite(tuning.CnsExtremeRate, 0.08f), 0.001f, 0.6f);
+            tuning.CnsRecoveryPerSecond = math.clamp(SanitizeFinite(tuning.CnsRecoveryPerSecond, 0.012f), 0.0001f, 0.12f);
+            tuning.CnsRecoveryPressureScale = math.clamp(SanitizeFinite(tuning.CnsRecoveryPressureScale, 0.004f), 0f, 0.08f);
+            tuning.NarcosisStartAtm = math.clamp(SanitizeFinite(tuning.NarcosisStartAtm, 4f), 1f, 12f);
+            tuning.NarcosisFullAtm = math.max(tuning.NarcosisStartAtm + 0.25f, SanitizeFinite(tuning.NarcosisFullAtm, 7f));
+            tuning.CarbonDioxideToxicityStartAtm = math.clamp(SanitizeFinite(tuning.CarbonDioxideToxicityStartAtm, ShinobuPhysiologyConstants.CarbonDioxideToxicityStartAtm), 0.005f, 0.2f);
+            tuning.CarbonDioxideToxicityFullAtm = math.max(tuning.CarbonDioxideToxicityStartAtm + 0.005f, SanitizeFinite(tuning.CarbonDioxideToxicityFullAtm, ShinobuPhysiologyConstants.CarbonDioxideToxicityFullAtm));
+            tuning.ToxicDamageStart01 = math.clamp(SanitizeFinite(tuning.ToxicDamageStart01, 0.85f), 0.2f, 1f);
+            tuning.ToxicDamagePerSecond = math.clamp(SanitizeFinite(tuning.ToxicDamagePerSecond, 6f), 0.1f, 40f);
+            tuning.StaminaStressScale = math.clamp(SanitizeFinite(tuning.StaminaStressScale, 1f), 0f, 4f);
+            tuning.Version = 1u;
+            return tuning;
+        }
+
+        public static GasPhysiologyTuningDTO BuildDefaultGasTuning()
+        {
+            GasPhysiologyTuningDTO tuning = default;
+            tuning.HypoxiaPartialPressureAtm = ShinobuPhysiologyConstants.HypoxiaPartialPressureAtm;
+            tuning.AnoxiaPartialPressureAtm = ShinobuPhysiologyConstants.AnoxiaPartialPressureAtm;
+            tuning.CnsToxicityStartAtm = ShinobuPhysiologyConstants.CnsToxicityStartAtm;
+            tuning.CnsToxicityExtremeAtm = ShinobuPhysiologyConstants.CnsToxicityExtremeAtm;
+            tuning.CnsAccumulationRate = 0.035f;
+            tuning.CnsExtremeRate = 0.08f;
+            tuning.CnsRecoveryPerSecond = 0.012f;
+            tuning.CnsRecoveryPressureScale = 0.004f;
+            tuning.NarcosisStartAtm = 4f;
+            tuning.NarcosisFullAtm = 7f;
+            tuning.CarbonDioxideToxicityStartAtm = ShinobuPhysiologyConstants.CarbonDioxideToxicityStartAtm;
+            tuning.CarbonDioxideToxicityFullAtm = ShinobuPhysiologyConstants.CarbonDioxideToxicityFullAtm;
+            tuning.ToxicDamageStart01 = 0.85f;
+            tuning.ToxicDamagePerSecond = 6f;
+            tuning.StaminaStressScale = 1f;
+            tuning.Version = 1u;
+            return tuning;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -134,7 +266,7 @@ namespace Hecton8.Physiology
 
             TissueCompartments[index] = new TissueCompartmentDTO
             {
-                NitrogenTension = ShinobuPhysiologyConstants.AtmosphericPressureAtSurfaceAtm,
+                NitrogenTension = ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm,
                 Halftime = halfTime,
                 MValue = mValue,
                 Flags = 0u
@@ -282,6 +414,94 @@ namespace Hecton8.Physiology
     }
 
     /// <summary>
+    /// Deterministic breathing-gas source for isolated tests and bootstraps. Depth blends air toward heliox continuously.
+    /// </summary>
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct GenerateMockBreathingGasJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
+        [NoAlias] public NativeArray<BreathingGasFractionsDTO> BreathingGas;
+        public BreathingGasFractionsDTO OverrideGas;
+        public int Count;
+        public byte UseOverrideGas;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)Count || (uint)index >= (uint)BreathingGas.Length)
+                return;
+
+            if (UseOverrideGas != 0)
+            {
+                BreathingGas[index] = ShinobuPhysiologyJobMath.SanitizeBreathingGas(OverrideGas);
+                return;
+            }
+
+            MockEnvironmentVitalsSignal env = Environment.IsCreated && (uint)index < (uint)Environment.Length
+                ? Environment[index]
+                : default;
+            float depthMeters = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(env.DepthMeters, 0f));
+            float heliox01 = math.saturate((depthMeters - ShinobuPhysiologyConstants.HelioxTransitionStartMeters) *
+                                           math.rcp(math.max(0.0001f, ShinobuPhysiologyConstants.HelioxTransitionSpanMeters)));
+
+            BreathingGasFractionsDTO gas = default;
+            gas.OxygenFraction = math.lerp(ShinobuPhysiologyConstants.OxygenFraction, ShinobuPhysiologyConstants.HelioxOxygenFraction, heliox01);
+            gas.NitrogenFraction = math.lerp(ShinobuPhysiologyConstants.NitrogenFraction, ShinobuPhysiologyConstants.HelioxNitrogenFraction, heliox01);
+            gas.CarbonDioxideFraction = ShinobuPhysiologyConstants.CarbonDioxideFraction;
+            gas.InertReserveFraction = math.max(0f, 1f - gas.OxygenFraction - gas.NitrogenFraction - gas.CarbonDioxideFraction);
+            bool helioxIdentity = heliox01 >= 0.5f;
+            gas.GasHash = helioxIdentity ? 0x484C5831u : 0x41495231u; // HLX1 / AIR1
+            gas.Flags = ShinobuPhysiologyFlags.EmergencyMockCoefficients |
+                        (helioxIdentity ? ShinobuPhysiologyFlags.BreathingGasHeliox : 0u);
+            BreathingGas[index] = ShinobuPhysiologyJobMath.SanitizeBreathingGas(gas);
+        }
+    }
+
+    /// <summary>
+    /// Dalton's law kernel: partial pressure = gas fraction * ambient absolute pressure.
+    /// </summary>
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct CalculatePartialPressuresJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
+        [ReadOnly, NoAlias] public NativeArray<BreathingGasFractionsDTO> BreathingGas;
+        [NoAlias] public NativeArray<GasPhysiologyStateDTO> GasStates;
+        public int Count;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)Count || (uint)index >= (uint)GasStates.Length)
+                return;
+
+            MockEnvironmentVitalsSignal env = Environment.IsCreated && (uint)index < (uint)Environment.Length
+                ? Environment[index]
+                : default;
+            float ambient = env.AmbientPressureAtm > 0f
+                ? ShinobuPhysiologyJobMath.SanitizeFinite(env.AmbientPressureAtm, ShinobuPhysiologyJobMath.DepthToPressureAtm(env.DepthMeters))
+                : ShinobuPhysiologyJobMath.DepthToPressureAtm(env.DepthMeters);
+            ambient = math.max(0f, ambient);
+
+            BreathingGasFractionsDTO gas = BreathingGas.IsCreated && (uint)index < (uint)BreathingGas.Length
+                ? ShinobuPhysiologyJobMath.SanitizeBreathingGas(BreathingGas[index])
+                : default;
+            if (!BreathingGas.IsCreated || (uint)index >= (uint)BreathingGas.Length)
+            {
+                gas.OxygenFraction = ShinobuPhysiologyConstants.OxygenFraction;
+                gas.NitrogenFraction = ShinobuPhysiologyConstants.NitrogenFraction;
+                gas.CarbonDioxideFraction = ShinobuPhysiologyConstants.CarbonDioxideFraction;
+                gas.GasHash = 0x41495231u;
+            }
+
+            GasPhysiologyStateDTO state = GasStates[index];
+            state.OxygenPartialPressure = ambient * gas.OxygenFraction;
+            state.NitrogenPartialPressure = ambient * gas.NitrogenFraction;
+            state.CarbonDioxidePartialPressure = ambient * gas.CarbonDioxideFraction;
+            state.StaminaDrainRate = math.max(1f, ShinobuPhysiologyJobMath.SanitizeFinite(state.StaminaDrainRate, 1f));
+            state.Flags = gas.Flags;
+            GasStates[index] = state;
+        }
+    }
+
+    /// <summary>
     /// Drains local mock dependency packets into physiology state.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -379,17 +599,24 @@ namespace Hecton8.Physiology
     }
 
     /// <summary>
-    /// Deterministic Haldanean tissue saturation kernel. Active tissue count is driven by GlobalQualityWeight.
+    /// Haldanean blood-gas tension integrator. All 16 tissue compartments are authority state.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct TissueSaturationJob : IJobParallelFor
+    public unsafe struct IntegrateBloodGasTensionsJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<PhysiologyDTO> Vitals;
-        [NoAlias] public NativeArray<TissueCompartmentDTO> TissueCompartments;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: Execute(index) owns exactly one entity tissue slice:
+        // [index * TissueCompartmentCount, index * TissueCompartmentCount + TissueCompartmentCount).
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: No worker writes outside its derived slice, and the bounds guard
+        // proves the entire slice is inside the Vault array before unsafe ref mutation begins.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: ShinobuPhysiologyRuntime locks this Vault lane before scheduling
+        // the job and releases it only after the dispatcher-owned completion fence has run.
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<TissueCompartmentDTO> TissueCompartments;
         [NoAlias] public NativeArray<DecompressionStateDTO> DecompressionStates;
         [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
+        [ReadOnly, NoAlias] public NativeArray<GasPhysiologyStateDTO> GasStates;
         [NoAlias] public NativeArray<PhysiologyScalarsDTO> Scalars;
-        public NativeQueue<PhysiologyStateSignal>.ParallelWriter PhysiologyWriter;
+        [WriteOnly, NoAlias] public NativeQueue<PhysiologyStateSignal>.ParallelWriter PhysiologyWriter;
         public PhysiologyTuningDTO Tuning;
         public float DeltaSeconds;
         public float GlobalQualityWeight;
@@ -418,8 +645,14 @@ namespace Hecton8.Physiology
                 ? ShinobuPhysiologyJobMath.SanitizeFinite(env.AmbientPressureAtm, ShinobuPhysiologyJobMath.DepthToPressureAtm(env.DepthMeters))
                 : ShinobuPhysiologyJobMath.DepthToPressureAtm(env.DepthMeters);
             ambient = math.max(0.5f, ambient);
-            float ambientNitrogenPressure = ambient * ShinobuPhysiologyConstants.NitrogenFraction;
-            float tissueEquilibriumPressure = ambient;
+            GasPhysiologyStateDTO gas = GasStates.IsCreated && (uint)index < (uint)GasStates.Length
+                ? GasStates[index]
+                : default;
+            float ambientNitrogenPressure = gas.NitrogenPartialPressure > 0f
+                ? ShinobuPhysiologyJobMath.SanitizeFinite(gas.NitrogenPartialPressure, ambient * ShinobuPhysiologyConstants.NitrogenFraction)
+                : ambient * ShinobuPhysiologyConstants.NitrogenFraction;
+            ambientNitrogenPressure = math.max(0f, ambientNitrogenPressure);
+            float tissueEquilibriumPressure = ambientNitrogenPressure;
             float nitrogenScale = math.max(0.001f, tuning.NitrogenUptakeRate * tuning.HaldaneTimeScale);
             int activeCompartments = ShinobuPhysiologyJobMath.ResolveActiveCompartmentCount(GlobalQualityWeight);
             float maxTissue = 0f;
@@ -432,6 +665,7 @@ namespace Hecton8.Physiology
             state.AscentRate = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(env.AscentRateMetersPerSecond, 0f));
 
             float* stateTissues = state.TissueTensions;
+            // The full 16-row entity slice is bounds-checked above; the runtime locks this Vault lane before scheduling.
             void* tissueBasePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(TissueCompartments);
             int tissueStride = UnsafeUtility.SizeOf<TissueCompartmentDTO>();
             for (int tissueIndex = 0; tissueIndex < ShinobuPhysiologyConstants.TissueCompartmentCount; tissueIndex++)
@@ -475,8 +709,9 @@ namespace Hecton8.Physiology
 
             PhysiologyDTO vital = Vitals[index];
             PhysiologyScalarsDTO scalar = Scalars[index];
-            float narcosisDenominator = math.max(0.0001f, tuning.NarcosisFullAtm - tuning.NarcosisStartAtm);
-            float nitrogenNarcosis = math.saturate((ambientNitrogenPressure - tuning.NarcosisStartAtm) * math.rcp(narcosisDenominator));
+            float nitrogenNarcosis = GasStates.IsCreated && (uint)index < (uint)GasStates.Length && gas.NarcosisLevel01 > 0f
+                ? ShinobuPhysiologyJobMath.SanitizeUnit(gas.NarcosisLevel01)
+                : ShinobuPhysiologyJobMath.ResolveNitrogenNarcosis01(ambientNitrogenPressure, tuning);
             float supersaturation = math.saturate(risk);
             scalar.NarcosisSeverity = nitrogenNarcosis;
             scalar.BendsRisk = supersaturation;
@@ -519,6 +754,136 @@ namespace Hecton8.Physiology
     }
 
     /// <summary>
+    /// Integrates oxygen CNS toxicity, CO2 toxicity, hypoxia, narcosis, and unmanaged damage signals.
+    /// </summary>
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct CalculateCnsToxicityJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<GasPhysiologyStateDTO> GasStates;
+        [NoAlias] public NativeArray<PhysiologyScalarsDTO> Scalars;
+        [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
+        [WriteOnly, NoAlias] public NativeQueue<PhysiologyStateSignal>.ParallelWriter PhysiologyWriter;
+        [WriteOnly, NoAlias] public NativeQueue<CombatDamageSignal>.ParallelWriter DamageWriter;
+        public GasPhysiologyTuningDTO GasTuning;
+        public float DeltaSeconds;
+        public float GlobalQualityWeight;
+        public uint Frame;
+        public uint PlayerTargetHash;
+        public int Count;
+        public byte EmitSignals;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)Count ||
+                (uint)index >= (uint)GasStates.Length ||
+                (uint)index >= (uint)Scalars.Length)
+            {
+                return;
+            }
+
+            GasPhysiologyTuningDTO gasTuning = ShinobuPhysiologyJobMath.SanitizeGasTuning(GasTuning);
+            float dt = math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(DeltaSeconds, 0.016f), 0.0001f, ShinobuPhysiologyConstants.MaxSimulationStepSeconds);
+            GasPhysiologyStateDTO gas = GasStates[index];
+            PhysiologyScalarsDTO scalar = Scalars[index];
+
+            float ppO2 = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(gas.OxygenPartialPressure, ShinobuPhysiologyConstants.SurfaceOxygenPartialPressureAtm));
+            float ppN2 = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(gas.NitrogenPartialPressure, ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm));
+            float ppCO2 = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(gas.CarbonDioxidePartialPressure, ShinobuPhysiologyConstants.CarbonDioxideFraction));
+
+            float oxygenOverSafe = math.max(0f, ppO2 - gasTuning.CnsToxicityStartAtm);
+            float oxygenExtreme = math.max(0f, ppO2 - gasTuning.CnsToxicityExtremeAtm);
+            float cnsAccumulation = oxygenOverSafe * gasTuning.CnsAccumulationRate + (math.exp(math.min(4f, oxygenExtreme)) - 1f) * gasTuning.CnsExtremeRate;
+            float cnsRecovery = ppO2 < gasTuning.CnsToxicityStartAtm
+                ? (gasTuning.CnsRecoveryPerSecond + (gasTuning.CnsToxicityStartAtm - ppO2) * gasTuning.CnsRecoveryPressureScale)
+                : 0f;
+            gas.CnsToxicity01 = math.saturate(ShinobuPhysiologyJobMath.SanitizeUnit(gas.CnsToxicity01) + (cnsAccumulation - cnsRecovery) * dt);
+
+            float hypoxia01 = ShinobuPhysiologyJobMath.ResolveHypoxiaTunnel01(ppO2, gasTuning);
+            float anoxia01 = math.saturate((gasTuning.AnoxiaPartialPressureAtm - ppO2) *
+                                           math.rcp(math.max(0.0001f, gasTuning.AnoxiaPartialPressureAtm)));
+            float co2Toxicity01 = ShinobuPhysiologyJobMath.ResolveCarbonDioxideToxicity01(ppCO2, gasTuning);
+            float narcosis01 = ShinobuPhysiologyJobMath.ResolveNitrogenNarcosis01(ppN2, gasTuning);
+            gas.NarcosisLevel01 = narcosis01;
+            gas.StaminaDrainRate = math.max(1f, 1f + (hypoxia01 * 1.5f + co2Toxicity01 * 2f + gas.CnsToxicity01 + narcosis01 * 0.6f) * gasTuning.StaminaStressScale);
+
+            uint status = scalar.StatusFlags &
+                          ~(ShinobuPhysiologyFlags.Hypoxia |
+                            ShinobuPhysiologyFlags.Hyperoxia |
+                            ShinobuPhysiologyFlags.CarbonDioxideToxicity |
+                            ShinobuPhysiologyFlags.CnsOxygenToxicity |
+                            ShinobuPhysiologyFlags.FatalGasToxicity |
+                            ShinobuPhysiologyFlags.Narcosis);
+            uint gasFlags = gas.Flags &
+                            (ShinobuPhysiologyFlags.EmergencyMockCoefficients |
+                             ShinobuPhysiologyFlags.CsvOverride |
+                             ShinobuPhysiologyFlags.BreathingGasHeliox);
+            gasFlags |= hypoxia01 > 0f ? ShinobuPhysiologyFlags.Hypoxia : 0u;
+            gasFlags |= ppO2 > gasTuning.CnsToxicityStartAtm ? ShinobuPhysiologyFlags.Hyperoxia : 0u;
+            gasFlags |= gas.CnsToxicity01 > 0f ? ShinobuPhysiologyFlags.CnsOxygenToxicity : 0u;
+            gasFlags |= co2Toxicity01 > 0f ? ShinobuPhysiologyFlags.CarbonDioxideToxicity : 0u;
+            gasFlags |= narcosis01 > 0f ? ShinobuPhysiologyFlags.Narcosis : 0u;
+            gasFlags |= (gas.CnsToxicity01 >= 0.98f || co2Toxicity01 >= 0.98f || anoxia01 >= 0.98f)
+                ? ShinobuPhysiologyFlags.FatalGasToxicity
+                : 0u;
+            gas.Flags = gasFlags;
+
+            float gasStress01 = math.saturate(math.max(math.max(hypoxia01, co2Toxicity01), math.max(gas.CnsToxicity01, narcosis01)));
+            scalar.NarcosisSeverity = math.max(ShinobuPhysiologyJobMath.SanitizeUnit(scalar.NarcosisSeverity), narcosis01);
+            scalar.Toxemia = math.max(ShinobuPhysiologyJobMath.SanitizeUnit(scalar.Toxemia), math.max(co2Toxicity01, gas.CnsToxicity01));
+            scalar.FatigueMultiplier = math.max(ShinobuPhysiologyJobMath.SanitizeFinite(scalar.FatigueMultiplier, 1f), gas.StaminaDrainRate);
+            scalar.StatusFlags = status | gasFlags;
+
+            GasStates[index] = gas;
+            Scalars[index] = scalar;
+
+            if (EmitSignals != 0 && index == 0)
+            {
+                MockEnvironmentVitalsSignal env = Environment.IsCreated && Environment.Length > 0 ? Environment[0] : default;
+                PhysiologyStateSignal signal = default;
+                signal.PlayerStress01 = gasStress01;
+                signal.O2DrainMultiplier = gas.StaminaDrainRate;
+                signal.Recovery01 = 1f - gasStress01;
+                signal.Frame = Frame;
+                signal.Cause = ShinobuPhysiologyConstants.GasToxicitySignalCause;
+                signal.Flags = (byte)math.select(0, 1, gasStress01 > 0f);
+                signal.GasCnsSeverity = (byte)math.round(math.saturate(gas.CnsToxicity01) * 255f);
+                signal.GasCarbonDioxideSeverity = (byte)math.round(math.saturate(co2Toxicity01) * 255f);
+                signal.Supersaturation01 = hypoxia01;
+                signal.Narcosis01 = narcosis01;
+                signal.AmbientPressureAtm = math.max(0f, env.AmbientPressureAtm);
+                signal.NitrogenLoadAtm = ppN2;
+                signal.AscentRateMetersPerSecond = math.max(0f, env.AscentRateMetersPerSecond);
+                signal.TissueOverMValueMask = scalar.TissueOverMValueMask;
+                signal.SourceHash = ShinobuPhysiologyConstants.SourceHash;
+                signal.EntityIndex = index;
+                signal.ActiveCompartments = (byte)ShinobuPhysiologyJobMath.ResolveActiveCompartmentCount(GlobalQualityWeight);
+                signal.FatalSeverity = (byte)math.round(gasStress01 * 255f);
+                signal.StatusFlags = scalar.StatusFlags;
+                PhysiologyWriter.Enqueue(signal);
+
+                float damageMagnitude = math.max(0f, math.max(gasStress01, anoxia01) - gasTuning.ToxicDamageStart01) * dt * gasTuning.ToxicDamagePerSecond;
+                uint targetHash = PlayerTargetHash != 0u ? PlayerTargetHash : ShinobuPhysiologyConstants.PlayerTargetHash;
+                if (damageMagnitude > 0f && targetHash != 0u)
+                {
+                    CombatDamageSignal damage = default;
+                    damage.ImpactAup = double3.zero;
+                    damage.Direction = new float3(0f, 1f, 0f);
+                    damage.Magnitude = damageMagnitude;
+                    damage.DamageType = ShinobuPhysiologyConstants.CombatDamageTypeToxic;
+                    damage.TargetHash = targetHash;
+                    damage.SourceHash = ShinobuPhysiologyConstants.SourceHash;
+                    damage.Frame = Frame;
+                    damage.SourceId = unchecked((ushort)ShinobuPhysiologyConstants.SourceHash);
+                    damage.TargetId = 0;
+                    damage.Channel = 0;
+                    damage.Flags = CombatDamageSignal.DirectRuntimeFlag;
+                    DamageWriter.Enqueue(damage);
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Metabolic oxygen, temperature, toxemia, adrenaline, pulse, export, and black-box writer.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -528,10 +893,12 @@ namespace Hecton8.Physiology
         [NoAlias] public NativeArray<PhysiologyScalarsDTO> Scalars;
         [NoAlias] public NativeArray<CardiacPulseStateDTO> PulseStates;
         [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
+        [ReadOnly, NoAlias] public NativeArray<GasPhysiologyStateDTO> GasStates;
         [NoAlias] public NativeArray<VitalsExportDTO> VitalsExport;
         [NoAlias] public NativeArray<PhysiologyTelemetryEntry> Telemetry;
-        public NativeQueue<CardiacPulseSignal>.ParallelWriter CardiacPulseWriter;
+        [WriteOnly, NoAlias] public NativeQueue<CardiacPulseSignal>.ParallelWriter CardiacPulseWriter;
         public PhysiologyTuningDTO Tuning;
+        public GasPhysiologyTuningDTO GasTuning;
         public float DeltaSeconds;
         public uint Frame;
         public int TelemetryCursor;
@@ -550,6 +917,7 @@ namespace Hecton8.Physiology
             }
 
             PhysiologyTuningDTO tuning = ShinobuPhysiologyJobMath.SanitizeTuning(Tuning);
+            GasPhysiologyTuningDTO gasTuning = ShinobuPhysiologyJobMath.SanitizeGasTuning(GasTuning);
             float dt = math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(DeltaSeconds, 0.016f), 0.0001f, ShinobuPhysiologyConstants.MaxSimulationStepSeconds);
             MockEnvironmentVitalsSignal env = Environment.IsCreated && (uint)index < (uint)Environment.Length
                 ? Environment[index]
@@ -558,6 +926,9 @@ namespace Hecton8.Physiology
             PhysiologyDTO vital = Vitals[index];
             PhysiologyScalarsDTO scalar = Scalars[index];
             CardiacPulseStateDTO pulse = PulseStates[index];
+            GasPhysiologyStateDTO gas = GasStates.IsCreated && (uint)index < (uint)GasStates.Length
+                ? GasStates[index]
+                : default;
             uint status = scalar.StatusFlags;
 
             int traumaCount = ShinobuPhysiologyJobMath.CountFirstFourBits(vital.ActiveTraumaMask);
@@ -571,12 +942,12 @@ namespace Hecton8.Physiology
 
             if ((status & ShinobuPhysiologyFlags.AdrenalineSeen) != 0u && adrenaline <= 0.02f)
             {
-                scalar.FatigueMultiplier = 2f;
+                scalar.FatigueMultiplier = math.max(2f, math.max(1f, ShinobuPhysiologyJobMath.SanitizeFinite(gas.StaminaDrainRate, 1f)));
                 status |= ShinobuPhysiologyFlags.AdrenalineCrash;
             }
             else
             {
-                scalar.FatigueMultiplier = 1f;
+                scalar.FatigueMultiplier = math.max(1f, ShinobuPhysiologyJobMath.SanitizeFinite(gas.StaminaDrainRate, 1f));
                 status &= ~ShinobuPhysiologyFlags.AdrenalineCrash;
             }
 
@@ -614,21 +985,31 @@ namespace Hecton8.Physiology
                 ? ShinobuPhysiologyJobMath.SanitizeFinite(env.AmbientPressureAtm, ShinobuPhysiologyJobMath.DepthToPressureAtm(env.DepthMeters))
                 : ShinobuPhysiologyJobMath.DepthToPressureAtm(env.DepthMeters);
             float pressureBreathScale = math.max(1f, ambientPressureAtm);
+            float ppO2 = gas.OxygenPartialPressure > 0f
+                ? ShinobuPhysiologyJobMath.SanitizeFinite(gas.OxygenPartialPressure, ShinobuPhysiologyConstants.SurfaceOxygenPartialPressureAtm)
+                : ambientPressureAtm * ShinobuPhysiologyConstants.OxygenFraction;
+            float hypoxia01 = ShinobuPhysiologyJobMath.ResolveHypoxiaTunnel01(ppO2, gasTuning);
+            float oxygenAvailability01 = ShinobuPhysiologyJobMath.ResolveOxygenAvailability01(ppO2, gasTuning);
+            float carbonDioxideToxicity01 = ShinobuPhysiologyJobMath.ResolveCarbonDioxideToxicity01(gas.CarbonDioxidePartialPressure, gasTuning);
             float o2Drain = tuning.BaseO2DrainPerSecond *
                 (0.65f + heartScale * 0.35f + adrenaline * 0.42f) *
                 traumaDrain *
                 (1f + scalar.Toxemia * tuning.ToxemiaO2Penalty) *
                 (1f + scalar.HypothermiaShiver * 0.2f) *
-                pressureBreathScale;
+                pressureBreathScale *
+                math.max(1f, ShinobuPhysiologyJobMath.SanitizeFinite(gas.StaminaDrainRate, 1f));
 
             scalar.OxygenDrainPerSecond = math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(o2Drain, tuning.BaseO2DrainPerSecond));
-            vital.BloodOxygen = math.max(tuning.MinOxygen01, vital.BloodOxygen - scalar.OxygenDrainPerSecond * dt);
+            float saturationBlend = 1f - math.exp(-dt * 0.6f);
+            vital.BloodOxygen = math.lerp(vital.BloodOxygen, oxygenAvailability01, saturationBlend);
+            float hypoxicDrainScale = 0.2f + hypoxia01 + carbonDioxideToxicity01 * 0.5f;
+            vital.BloodOxygen = math.max(tuning.MinOxygen01, vital.BloodOxygen - scalar.OxygenDrainPerSecond * hypoxicDrainScale * dt);
             vital.BloodOxygen = math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(vital.BloodOxygen, 1f), 0f, 1f);
             vital.Adrenaline = adrenaline;
             scalar.SwimSpeedBonus = adrenaline * 0.2f;
 
             status &= ~ShinobuPhysiologyFlags.OxygenCritical;
-            if (vital.BloodOxygen <= 0.18f)
+            if (vital.BloodOxygen <= 0.18f || hypoxia01 > 0f)
                 status |= ShinobuPhysiologyFlags.OxygenCritical;
 
             pulse.Phase += math.max(0f, vital.HeartRate) * math.rcp(60f) * dt;
@@ -664,11 +1045,14 @@ namespace Hecton8.Physiology
             scalar.HeartbeatPhase = pulse.Phase;
 
             uint fatalFlags = 0u;
-            if (vital.BloodOxygen <= ShinobuPhysiologyConstants.OxygenDeathThreshold)
+            if (vital.BloodOxygen <= ShinobuPhysiologyConstants.OxygenDeathThreshold ||
+                (gas.Flags & ShinobuPhysiologyFlags.FatalGasToxicity) != 0u)
             {
                 status |= ShinobuPhysiologyFlags.FatalOxygen;
                 fatalFlags |= ShinobuPhysiologyFlags.FatalOxygen;
             }
+            if ((gas.Flags & ShinobuPhysiologyFlags.FatalGasToxicity) != 0u)
+                fatalFlags |= ShinobuPhysiologyFlags.FatalGasToxicity;
             if ((status & ShinobuPhysiologyFlags.FatalBends) != 0u)
                 fatalFlags |= ShinobuPhysiologyFlags.FatalBends;
             if ((status & ShinobuPhysiologyFlags.InvalidMath) != 0u)
@@ -709,6 +1093,9 @@ namespace Hecton8.Physiology
                 hash = ShinobuPhysiologyJobMath.MixStateHash(hash, math.asuint(vital.BloodOxygen));
                 hash = ShinobuPhysiologyJobMath.MixStateHash(hash, math.asuint(vital.TissueNitrogen));
                 hash = ShinobuPhysiologyJobMath.MixStateHash(hash, math.asuint(vital.CoreTemperature));
+                hash = ShinobuPhysiologyJobMath.MixStateHash(hash, math.asuint(gas.OxygenPartialPressure));
+                hash = ShinobuPhysiologyJobMath.MixStateHash(hash, math.asuint(gas.NitrogenPartialPressure));
+                hash = ShinobuPhysiologyJobMath.MixStateHash(hash, math.asuint(gas.CarbonDioxidePartialPressure));
                 hash = ShinobuPhysiologyJobMath.MixStateHash(hash, vital.ActiveTraumaMask);
                 hash = ShinobuPhysiologyJobMath.MixStateHash(hash, status);
 

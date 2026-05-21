@@ -90,7 +90,8 @@ namespace Hecton8.Dev
             string voxelStreamingSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs");
             string volumetricComputeSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_VolumetricLight.compute");
             string retinaShaderSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_RetinaDistortion.shader");
-            string causticsProjectorSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/Visor/CausticsProjectorManager.cs");
+            string causticsRuntimeSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs");
+            string causticsDeferredShaderSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_DeferredCaustics.shader");
             string underwaterVisualsSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs");
             string shadowGuardSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/Core/HectonUrpShadowBudgetGuard.cs");
             string coreLitSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl");
@@ -113,9 +114,9 @@ namespace Hecton8.Dev
             CheckNotContains(voxelStreamingSource, "$\"VoxelCave_", "voxel-streaming-hotpath-string-purged");
             CheckContains(volumetricComputeSource, "clamp((int)round(_HectonVolumetricShadowParams.x), 1, 7)", "volumetric-shadow-step-cap-mx350");
             CheckContains(retinaShaderSource, "_QUALITY_MX350", "retina-mx350-mode-toggle");
-            CheckNotContains(causticsProjectorSource, "TrySampleWaveKinematics", "caustics-ocean-kinematics-sample-purged");
-            CheckContains(causticsProjectorSource, "ResolveFakeWaveCoupling", "caustics-alu-wave-coupling");
-            CheckContains(causticsProjectorSource, "CausticsPublishBudgetWarningMilliseconds", "caustics-performance-warning-budget");
+            CheckNotContains(causticsRuntimeSource, "TrySampleWaveKinematics", "caustics-ocean-kinematics-sample-purged");
+            CheckContains(causticsRuntimeSource, "RunPendingCausticsKernel(job);", "caustics-one-dto-job-run-path");
+            CheckContains(causticsDeferredShaderSource, "sdfSampleBudget", "caustics-continuous-sdf-sample-budget");
             CheckNotContains(underwaterVisualsSource, "RaycastNonAlloc", "bottom-silt-raycast-purged");
             CheckContains(underwaterVisualsSource, "ResolveFakeBottomSiltDistance", "bottom-silt-alu-distance-fake");
             CheckContains(underwaterVisualsSource, "GlobalRegistry.MapMagic", "bottom-silt-mapmagic-registry-slot");

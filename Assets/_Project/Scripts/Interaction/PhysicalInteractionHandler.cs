@@ -896,8 +896,13 @@ namespace Hecton8.Interaction
                     return;
                 }
 
-                AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
-                AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(bodyPosition);
+                if (!TryResolveAupFromRuntimeOrigin(anchorPosition, out AbsoluteUniversePosition anchorAup) ||
+                    !TryResolveAupFromRuntimeOrigin(bodyPosition, out AbsoluteUniversePosition bodyAup))
+                {
+                    CancelActiveInteraction();
+                    return;
+                }
+
                 float breakDistance = ClampFiniteRange(heavyCarryBreakDistance, 1f, 12f, 5f);
                 if (AbsoluteUniversePosition.DistanceSq(in anchorAup, in bodyAup) > breakDistance * breakDistance)
                 {
@@ -1132,6 +1137,22 @@ namespace Hecton8.Interaction
         {
             return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
                      float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return aup.IsFinite();
         }
 
         private static float ClampInteractionDeltaTime(float deltaTime)

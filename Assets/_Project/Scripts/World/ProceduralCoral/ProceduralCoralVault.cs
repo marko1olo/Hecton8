@@ -10,49 +10,54 @@ namespace Hecton8.World.ProceduralCoral
 {
     public struct ProceduralCoralVaultHandles
     {
-        public VaultBufferHandle<CoralLSystemRuleDTO> Rules;
-        public VaultBufferHandle<uint> InstructionScratchA;
-        public VaultBufferHandle<uint> InstructionScratchB;
-        public VaultBufferHandle<CoralBranchDTO> Branches;
-        public VaultBufferHandle<CoralTurtleStateDTO> TurtleStack;
-        public VaultBufferHandle<CoralSpatialCellDTO> SpatialCells;
-        public VaultBufferHandle<float4x4> RenderMatrices;
-        public VaultBufferHandle<CoralIndirectArgsDTO> IndirectArgs;
-        public VaultBufferHandle<CoralSectorTriggerDTO> SectorTriggers;
-        public VaultBufferHandle<CapsuleColliderDTO> CollisionProxies;
-        public VaultBufferHandle<SyncPulseDTO> SyncPulses;
-        public VaultBufferHandle<CoralGenerationTelemetryEntry> TelemetryRing;
-        public VaultBufferHandle<int> TelemetryCursor;
-        public VaultBufferHandle<CoralTuningDTO> Tuning;
-        public VaultBufferHandle<byte> CsvScratch;
-        public VaultBufferHandle<CoralPaddedCounterDTO> Counters;
-        public VaultBufferHandle<CoralDebugSegmentDTO> DebugSegments;
-        public VaultBufferHandle<CoralGpuSwayDTO> GpuSway;
-        public VaultBufferHandle<CoralSelfAuditResultDTO> SelfAudit;
-        public VaultBufferHandle<CoralHzbTileDTO> HzbTiles;
+        public VaultGenerationHandle<CoralLSystemRuleDTO> Rules;
+        public VaultGenerationHandle<uint> InstructionScratchA;
+        public VaultGenerationHandle<uint> InstructionScratchB;
+        public VaultGenerationHandle<CoralBranchDTO> Branches;
+        public VaultGenerationHandle<CoralTurtleStateDTO> TurtleStack;
+        public VaultGenerationHandle<CoralSpatialCellDTO> SpatialCells;
+        public VaultGenerationHandle<float4x4> RenderMatrices;
+        public VaultGenerationHandle<CoralIndirectArgsDTO> IndirectArgs;
+        public VaultGenerationHandle<CoralSectorTriggerDTO> SectorTriggers;
+        public VaultGenerationHandle<CapsuleColliderDTO> CollisionProxies;
+        public VaultGenerationHandle<SyncPulseDTO> SyncPulses;
+        public VaultGenerationHandle<CoralGenerationTelemetryEntry> TelemetryRing;
+        public VaultGenerationHandle<int> TelemetryCursor;
+        public VaultGenerationHandle<CoralTuningDTO> Tuning;
+        public VaultGenerationHandle<byte> CsvScratch;
+        public VaultGenerationHandle<CoralPaddedCounterDTO> Counters;
+        public VaultGenerationHandle<CoralDebugSegmentDTO> DebugSegments;
+        public VaultGenerationHandle<CoralGpuSwayDTO> GpuSway;
+        public VaultGenerationHandle<CoralSelfAuditResultDTO> SelfAudit;
+        public VaultGenerationHandle<CoralHzbTileDTO> HzbTiles;
 
         public bool IsCreated()
         {
-            return Rules.IsCreated &&
-                   InstructionScratchA.IsCreated &&
-                   InstructionScratchB.IsCreated &&
-                   Branches.IsCreated &&
-                   TurtleStack.IsCreated &&
-                   SpatialCells.IsCreated &&
-                   RenderMatrices.IsCreated &&
-                   IndirectArgs.IsCreated &&
-                   SectorTriggers.IsCreated &&
-                   CollisionProxies.IsCreated &&
-                   SyncPulses.IsCreated &&
-                   TelemetryRing.IsCreated &&
-                   TelemetryCursor.IsCreated &&
-                   Tuning.IsCreated &&
-                   CsvScratch.IsCreated &&
-                   Counters.IsCreated &&
-                   DebugSegments.IsCreated &&
-                   GpuSway.IsCreated &&
-                   SelfAudit.IsCreated &&
-                   HzbTiles.IsCreated;
+            return IsHandleValid(in Rules) &&
+                   IsHandleValid(in InstructionScratchA) &&
+                   IsHandleValid(in InstructionScratchB) &&
+                   IsHandleValid(in Branches) &&
+                   IsHandleValid(in TurtleStack) &&
+                   IsHandleValid(in SpatialCells) &&
+                   IsHandleValid(in RenderMatrices) &&
+                   IsHandleValid(in IndirectArgs) &&
+                   IsHandleValid(in SectorTriggers) &&
+                   IsHandleValid(in CollisionProxies) &&
+                   IsHandleValid(in SyncPulses) &&
+                   IsHandleValid(in TelemetryRing) &&
+                   IsHandleValid(in TelemetryCursor) &&
+                   IsHandleValid(in Tuning) &&
+                   IsHandleValid(in CsvScratch) &&
+                   IsHandleValid(in Counters) &&
+                   IsHandleValid(in DebugSegments) &&
+                   IsHandleValid(in GpuSway) &&
+                   IsHandleValid(in SelfAudit) &&
+                   IsHandleValid(in HzbTiles);
+        }
+
+        private static bool IsHandleValid<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u;
         }
     }
 
@@ -129,102 +134,102 @@ namespace Hecton8.World.ProceduralCoral
                 return handles.IsCreated();
             }
 
-            handles.Rules = vault.GetBufferHandle<CoralLSystemRuleDTO>(
+            handles.Rules = vault.GetGenerationHandle<CoralLSystemRuleDTO>(
                 ProceduralCoralVaultBufferIds.Rules,
                 ProceduralCoralConstants.MaxRules,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.InstructionScratchA = vault.GetBufferHandle<uint>(
+            handles.InstructionScratchA = vault.GetGenerationHandle<uint>(
                 ProceduralCoralVaultBufferIds.InstructionScratchA,
                 ProceduralCoralConstants.MaxInstructions,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.InstructionScratchB = vault.GetBufferHandle<uint>(
+            handles.InstructionScratchB = vault.GetGenerationHandle<uint>(
                 ProceduralCoralVaultBufferIds.InstructionScratchB,
                 ProceduralCoralConstants.MaxInstructions,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Branches = vault.GetBufferHandle<CoralBranchDTO>(
+            handles.Branches = vault.GetGenerationHandle<CoralBranchDTO>(
                 ProceduralCoralVaultBufferIds.Branches,
                 ProceduralCoralConstants.MaxBranches,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.TurtleStack = vault.GetBufferHandle<CoralTurtleStateDTO>(
+            handles.TurtleStack = vault.GetGenerationHandle<CoralTurtleStateDTO>(
                 ProceduralCoralVaultBufferIds.TurtleStack,
                 ProceduralCoralConstants.MaxTurtleStack,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.SpatialCells = vault.GetBufferHandle<CoralSpatialCellDTO>(
+            handles.SpatialCells = vault.GetGenerationHandle<CoralSpatialCellDTO>(
                 ProceduralCoralVaultBufferIds.SpatialCells,
                 ProceduralCoralConstants.MaxSpatialCells,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.RenderMatrices = vault.GetBufferHandle<float4x4>(
+            handles.RenderMatrices = vault.GetGenerationHandle<float4x4>(
                 ProceduralCoralVaultBufferIds.RenderMatrices,
                 ProceduralCoralConstants.MaxRenderMatrices,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.IndirectArgs = vault.GetBufferHandle<CoralIndirectArgsDTO>(
+            handles.IndirectArgs = vault.GetGenerationHandle<CoralIndirectArgsDTO>(
                 ProceduralCoralVaultBufferIds.IndirectArgs,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.SectorTriggers = vault.GetBufferHandle<CoralSectorTriggerDTO>(
+            handles.SectorTriggers = vault.GetGenerationHandle<CoralSectorTriggerDTO>(
                 ProceduralCoralVaultBufferIds.SectorTriggers,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.CollisionProxies = vault.GetBufferHandle<CapsuleColliderDTO>(
+            handles.CollisionProxies = vault.GetGenerationHandle<CapsuleColliderDTO>(
                 ProceduralCoralVaultBufferIds.CollisionProxies,
                 ProceduralCoralConstants.MaxCollisionProxies,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.SyncPulses = vault.GetBufferHandle<SyncPulseDTO>(
+            handles.SyncPulses = vault.GetGenerationHandle<SyncPulseDTO>(
                 ProceduralCoralVaultBufferIds.SyncPulses,
                 ProceduralCoralConstants.MaxSyncPulses,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.TelemetryRing = vault.GetBufferHandle<CoralGenerationTelemetryEntry>(
+            handles.TelemetryRing = vault.GetGenerationHandle<CoralGenerationTelemetryEntry>(
                 ProceduralCoralVaultBufferIds.TelemetryRing,
                 ProceduralCoralConstants.TelemetryFrames,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetBufferHandle<int>(
+            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
                 ProceduralCoralVaultBufferIds.TelemetryCursor,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.Tuning = vault.GetBufferHandle<CoralTuningDTO>(
+            handles.Tuning = vault.GetGenerationHandle<CoralTuningDTO>(
                 ProceduralCoralVaultBufferIds.Tuning,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.GetBufferHandle<byte>(
+            handles.CsvScratch = vault.GetGenerationHandle<byte>(
                 ProceduralCoralVaultBufferIds.CsvScratch,
                 ProceduralCoralConstants.CsvScratchBytes,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Counters = vault.GetBufferHandle<CoralPaddedCounterDTO>(
+            handles.Counters = vault.GetGenerationHandle<CoralPaddedCounterDTO>(
                 ProceduralCoralVaultBufferIds.Counters,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.DebugSegments = vault.GetBufferHandle<CoralDebugSegmentDTO>(
+            handles.DebugSegments = vault.GetGenerationHandle<CoralDebugSegmentDTO>(
                 ProceduralCoralVaultBufferIds.DebugSegments,
                 ProceduralCoralConstants.MaxDebugSegments,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.UninitializedMemory);
-            handles.GpuSway = vault.GetBufferHandle<CoralGpuSwayDTO>(
+            handles.GpuSway = vault.GetGenerationHandle<CoralGpuSwayDTO>(
                 ProceduralCoralVaultBufferIds.GpuSway,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.SelfAudit = vault.GetBufferHandle<CoralSelfAuditResultDTO>(
+            handles.SelfAudit = vault.GetGenerationHandle<CoralSelfAuditResultDTO>(
                 ProceduralCoralVaultBufferIds.SelfAudit,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.HzbTiles = vault.GetBufferHandle<CoralHzbTileDTO>(
+            handles.HzbTiles = vault.GetGenerationHandle<CoralHzbTileDTO>(
                 ProceduralCoralVaultBufferIds.HzbTiles,
                 ProceduralCoralConstants.MaxHzbTiles,
                 SystemID.WorldStreaming,
@@ -245,26 +250,26 @@ namespace Hecton8.World.ProceduralCoral
             if (vault == null)
                 return false;
 
-            return vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.Rules, out handles.Rules) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.InstructionScratchA, out handles.InstructionScratchA) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.InstructionScratchB, out handles.InstructionScratchB) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.Branches, out handles.Branches) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.TurtleStack, out handles.TurtleStack) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.SpatialCells, out handles.SpatialCells) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.RenderMatrices, out handles.RenderMatrices) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.IndirectArgs, out handles.IndirectArgs) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.SectorTriggers, out handles.SectorTriggers) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.CollisionProxies, out handles.CollisionProxies) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.SyncPulses, out handles.SyncPulses) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.Tuning, out handles.Tuning) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.CsvScratch, out handles.CsvScratch) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.Counters, out handles.Counters) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.DebugSegments, out handles.DebugSegments) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.GpuSway, out handles.GpuSway) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.SelfAudit, out handles.SelfAudit) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.HzbTiles, out handles.HzbTiles);
+            return vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.Rules, out handles.Rules) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.InstructionScratchA, out handles.InstructionScratchA) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.InstructionScratchB, out handles.InstructionScratchB) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.Branches, out handles.Branches) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.TurtleStack, out handles.TurtleStack) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.SpatialCells, out handles.SpatialCells) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.RenderMatrices, out handles.RenderMatrices) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.IndirectArgs, out handles.IndirectArgs) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.SectorTriggers, out handles.SectorTriggers) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.CollisionProxies, out handles.CollisionProxies) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.SyncPulses, out handles.SyncPulses) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.Tuning, out handles.Tuning) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.CsvScratch, out handles.CsvScratch) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.Counters, out handles.Counters) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.DebugSegments, out handles.DebugSegments) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.GpuSway, out handles.GpuSway) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.SelfAudit, out handles.SelfAudit) &&
+                   vault.TryGetGenerationHandle(ProceduralCoralVaultBufferIds.HzbTiles, out handles.HzbTiles);
         }
 
         public static bool TryResolveViews(IDataVault vault, ref ProceduralCoralVaultHandles handles, out ProceduralCoralVaultBuffers buffers)
@@ -273,27 +278,39 @@ namespace Hecton8.World.ProceduralCoral
             if (vault == null || !handles.IsCreated())
                 return false;
 
-            buffers.Rules = handles.Rules.Resolve(vault);
-            buffers.InstructionScratchA = handles.InstructionScratchA.Resolve(vault);
-            buffers.InstructionScratchB = handles.InstructionScratchB.Resolve(vault);
-            buffers.Branches = handles.Branches.Resolve(vault);
-            buffers.TurtleStack = handles.TurtleStack.Resolve(vault);
-            buffers.SpatialCells = handles.SpatialCells.Resolve(vault);
-            buffers.RenderMatrices = handles.RenderMatrices.Resolve(vault);
-            buffers.IndirectArgs = handles.IndirectArgs.Resolve(vault);
-            buffers.SectorTriggers = handles.SectorTriggers.Resolve(vault);
-            buffers.CollisionProxies = handles.CollisionProxies.Resolve(vault);
-            buffers.SyncPulses = handles.SyncPulses.Resolve(vault);
-            buffers.TelemetryRing = handles.TelemetryRing.Resolve(vault);
-            buffers.TelemetryCursor = handles.TelemetryCursor.Resolve(vault);
-            buffers.Tuning = handles.Tuning.Resolve(vault);
-            buffers.CsvScratch = handles.CsvScratch.Resolve(vault);
-            buffers.Counters = handles.Counters.Resolve(vault);
-            buffers.DebugSegments = handles.DebugSegments.Resolve(vault);
-            buffers.GpuSway = handles.GpuSway.Resolve(vault);
-            buffers.SelfAudit = handles.SelfAudit.Resolve(vault);
-            buffers.HzbTiles = handles.HzbTiles.Resolve(vault);
-            return buffers.IsCreated();
+            return TryResolveView(vault, in handles.Rules, out buffers.Rules) &&
+                   TryResolveView(vault, in handles.InstructionScratchA, out buffers.InstructionScratchA) &&
+                   TryResolveView(vault, in handles.InstructionScratchB, out buffers.InstructionScratchB) &&
+                   TryResolveView(vault, in handles.Branches, out buffers.Branches) &&
+                   TryResolveView(vault, in handles.TurtleStack, out buffers.TurtleStack) &&
+                   TryResolveView(vault, in handles.SpatialCells, out buffers.SpatialCells) &&
+                   TryResolveView(vault, in handles.RenderMatrices, out buffers.RenderMatrices) &&
+                   TryResolveView(vault, in handles.IndirectArgs, out buffers.IndirectArgs) &&
+                   TryResolveView(vault, in handles.SectorTriggers, out buffers.SectorTriggers) &&
+                   TryResolveView(vault, in handles.CollisionProxies, out buffers.CollisionProxies) &&
+                   TryResolveView(vault, in handles.SyncPulses, out buffers.SyncPulses) &&
+                   TryResolveView(vault, in handles.TelemetryRing, out buffers.TelemetryRing) &&
+                   TryResolveView(vault, in handles.TelemetryCursor, out buffers.TelemetryCursor) &&
+                   TryResolveView(vault, in handles.Tuning, out buffers.Tuning) &&
+                   TryResolveView(vault, in handles.CsvScratch, out buffers.CsvScratch) &&
+                   TryResolveView(vault, in handles.Counters, out buffers.Counters) &&
+                   TryResolveView(vault, in handles.DebugSegments, out buffers.DebugSegments) &&
+                   TryResolveView(vault, in handles.GpuSway, out buffers.GpuSway) &&
+                   TryResolveView(vault, in handles.SelfAudit, out buffers.SelfAudit) &&
+                   TryResolveView(vault, in handles.HzbTiles, out buffers.HzbTiles) &&
+                   buffers.IsCreated();
+        }
+
+        private static bool TryResolveView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
 
         public static bool TryScheduleMockSectorTrigger(
@@ -932,7 +949,7 @@ namespace Hecton8.World.ProceduralCoral
             bool swapEndian = false;
             if (magic != ProceduralCoralConstants.RuleBinaryMagic)
             {
-                uint swapped = math.reversebytes(magic);
+                uint swapped = ReverseBytes(magic);
                 if (swapped != ProceduralCoralConstants.RuleBinaryMagic)
                     return 0;
 
@@ -1442,7 +1459,15 @@ namespace Hecton8.World.ProceduralCoral
         private static uint ReadUInt32(NativeArray<byte> bytes, int offset, bool swapEndian)
         {
             uint value = ReadUInt32Little(bytes, offset);
-            return swapEndian ? math.reversebytes(value) : value;
+            return swapEndian ? ReverseBytes(value) : value;
+        }
+
+        private static uint ReverseBytes(uint value)
+        {
+            return ((value & 0x000000FFu) << 24) |
+                   ((value & 0x0000FF00u) << 8) |
+                   ((value & 0x00FF0000u) >> 8) |
+                   ((value & 0xFF000000u) >> 24);
         }
 
         private static float ReadFloat32(NativeArray<byte> bytes, int offset, bool swapEndian)

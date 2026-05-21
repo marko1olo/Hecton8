@@ -207,7 +207,7 @@ namespace Hecton8.Optimization
                 RequestId = requestId,
                 AssetKey = assetKey,
                 Priority = priority,
-                IsDistantHlod = isDistantHlod,
+                IsDistantHlod = isDistantHlod ? (byte)1 : (byte)0,
                 AgeFrames = 0
             };
             return true;

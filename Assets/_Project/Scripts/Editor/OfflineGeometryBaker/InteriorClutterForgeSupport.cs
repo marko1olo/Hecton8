@@ -82,7 +82,7 @@ namespace Hecton8.Editor.OfflineGeometry
             {
                 if (_written < ringLength)
                 {
-                    WriteRange(stream, basePtr, entrySize, 0, ringLength);
+                    WriteRange(stream, basePtr, entrySize, 0, _written);
                 }
                 else
                 {
@@ -323,6 +323,13 @@ namespace Hecton8.Editor.OfflineGeometry
         }
     }
 
+    internal enum InteriorAtlasTextureRole
+    {
+        Albedo,
+        Normal,
+        Mask
+    }
+
     internal static class InteriorMaterialAtlasBuilder
     {
         private struct FreeRect
@@ -343,7 +350,7 @@ namespace Hecton8.Editor.OfflineGeometry
             NativeArray<InteriorClutterAtlasColor> nativeColors = default;
             Texture2D albedo;
             Texture2D normal;
-            Texture2D arm;
+            Texture2D mask;
             try
             {
                 // COLD ALLOC: NativeArray<InteriorClutterAtlasRect>[materials.Count] - editor atlas rect feed - owner: InteriorMaterialAtlasBuilder
@@ -358,13 +365,13 @@ namespace Hecton8.Editor.OfflineGeometry
                     {
                         AlbedoRgba = PackColor32(ResolveBaseColor(material)),
                         NormalRgba = PackColor32(new Color32(128, 128, 255, 255)),
-                        ArmRgba = PackColor32(ResolveArmColor(material))
+                        MaskRgba = PackColor32(ResolveMaskColor(material))
                     };
                 }
 
                 albedo = CreateAtlasTexture("TX_" + token + "_Interior_Albedo", atlasSize, PackColor32(new Color32(128, 128, 128, 255)), nativeRects, nativeColors, InteriorClutterForgeConstants.AtlasChannelAlbedo, false);
                 normal = CreateAtlasTexture("TX_" + token + "_Interior_Normal", atlasSize, PackColor32(new Color32(128, 128, 255, 255)), nativeRects, nativeColors, InteriorClutterForgeConstants.AtlasChannelNormal, true);
-                arm = CreateAtlasTexture("TX_" + token + "_Interior_ARM", atlasSize, PackColor32(new Color32(255, 128, 0, 255)), nativeRects, nativeColors, InteriorClutterForgeConstants.AtlasChannelArm, true);
+                mask = CreateAtlasTexture("TX_" + token + "_Interior_Mask", atlasSize, PackColor32(new Color32(0, 255, 0, 115)), nativeRects, nativeColors, InteriorClutterForgeConstants.AtlasChannelMask, true);
             }
             finally
             {
@@ -374,13 +381,25 @@ namespace Hecton8.Editor.OfflineGeometry
 
             bool copiedAny = false;
             bool scaledAny = false;
+            bool directCopyFallbackAny = false;
+            bool copyFailure = false;
             for (int i = 0; i < materials.Count; i++)
             {
                 Material material = materials[i];
                 InteriorClutterAtlasRect rect = rects[i];
-                copiedAny |= TryCopyTexture(ResolveTexture(material, "_BaseMap", "_MainTex"), albedo, rect, false, ref scaledAny);
-                copiedAny |= TryCopyTexture(ResolveTexture(material, "_BumpMap", "_NormalMap", "_Normal"), normal, rect, true, ref scaledAny);
-                copiedAny |= TryCopyTexture(ResolveTexture(material, "_MaskMap", "_MetallicGlossMap", "_OcclusionMap"), arm, rect, true, ref scaledAny);
+                Texture albedoSource = ResolveTexture(material, "_BaseMap", "_MainTex");
+                if (albedoSource != null)
+                {
+                    Color32 tint = ResolveBaseColor(material);
+                    bool tintMultiply = !HasWhiteBaseTint(tint);
+                    bool copied = TryCopyTexture(albedoSource, albedo, rect, false, tint, tintMultiply, ref scaledAny, ref directCopyFallbackAny, ref copyFailure);
+                    copiedAny |= copied;
+                    if (!copied && tintMultiply)
+                        metric.WarningFlags |= InteriorClutterWarningFlags.AtlasTintFallback;
+                }
+
+                copiedAny |= TryCopyTexture(ResolveTexture(material, "_BumpMap", "_NormalMap", "_Normal"), normal, rect, true, WhiteTint, false, ref scaledAny, ref directCopyFallbackAny, ref copyFailure);
+                copiedAny |= TryCopyTexture(ResolveMaskTexture(material), mask, rect, true, WhiteTint, false, ref scaledAny, ref directCopyFallbackAny, ref copyFailure);
             }
 
             if (!copiedAny)
@@ -389,37 +408,44 @@ namespace Hecton8.Editor.OfflineGeometry
             {
                 CommitGpuAtlasForSerialization(albedo, false);
                 CommitGpuAtlasForSerialization(normal, true);
-                CommitGpuAtlasForSerialization(arm, true);
+                CommitGpuAtlasForSerialization(mask, true);
                 metric.WarningFlags |= InteriorClutterWarningFlags.AtlasGpuSerializationSync;
             }
 
             if (scaledAny)
                 metric.WarningFlags |= InteriorClutterWarningFlags.AtlasScaledTexture;
+            if (directCopyFallbackAny)
+                metric.WarningFlags |= InteriorClutterWarningFlags.AtlasDirectCopyFallback;
+            if (copyFailure)
+                metric.WarningFlags |= InteriorClutterWarningFlags.AtlasCopyFailure;
 
             string textureRoot = InteriorClutterForgeConstants.TextureOutputFolder;
             InteriorClutterForge.EnsureAssetFolder(textureRoot);
-            albedo = SaveOrReplaceTexture(albedo, textureRoot + "/" + albedo.name + ".asset");
-            normal = SaveOrReplaceTexture(normal, textureRoot + "/" + normal.name + ".asset");
-            arm = SaveOrReplaceTexture(arm, textureRoot + "/" + arm.name + ".asset");
+            albedo = SaveOrReplaceTexture(albedo, textureRoot + "/" + albedo.name + ".asset", InteriorAtlasTextureRole.Albedo, ref metric);
+            normal = SaveOrReplaceTexture(normal, textureRoot + "/" + normal.name + ".asset", InteriorAtlasTextureRole.Normal, ref metric);
+            mask = SaveOrReplaceTexture(mask, textureRoot + "/" + mask.name + ".asset", InteriorAtlasTextureRole.Mask, ref metric);
 
             Shader shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null)
                 shader = Shader.Find("Standard");
-            Material atlasMaterial = new Material(shader != null ? shader : Shader.Find("Hidden/InternalErrorShader"))
+            if (shader == null)
+                shader = Shader.Find("Hidden/InternalErrorShader");
+            if (shader == null)
+                throw new InvalidOperationException("Interior atlas shader resolution failed.");
+
+            Material atlasMaterial = new Material(shader)
             {
                 name = "MAT_" + token + "_InteriorAtlas"
             };
             SetTexture(atlasMaterial, "_BaseMap", albedo);
             SetTexture(atlasMaterial, "_MainTex", albedo);
-            SetTexture(atlasMaterial, "_BumpMap", normal);
-            SetTexture(atlasMaterial, "_NormalMap", normal);
-            SetTexture(atlasMaterial, "_MaskMap", arm);
-            SetTexture(atlasMaterial, "_MetallicGlossMap", arm);
+            SetTexture(atlasMaterial, "_MaskMap", mask);
+            SetTexture(atlasMaterial, "_MetallicGlossMap", mask);
             SetColor(atlasMaterial, "_BaseColor", Color.white);
             SetFloat(atlasMaterial, "_Metallic", 0f);
             SetFloat(atlasMaterial, "_Smoothness", 0.45f);
-            atlasMaterial.EnableKeyword("_NORMALMAP");
             atlasMaterial.EnableKeyword("_METALLICSPECGLOSSMAP");
+            atlasMaterial.EnableKeyword("_METALLICGLOSSMAP");
             atlasMaterial.EnableKeyword("_MASKMAP");
             atlasMaterial.enableInstancing = true;
             return new InteriorMaterialAtlas(rects, atlasMaterial);
@@ -506,19 +532,20 @@ namespace Hecton8.Editor.OfflineGeometry
             {
                 // COLD ALLOC: NativeArray<uint>[atlas pixels] - editor atlas texel staging, one channel at a time - owner: InteriorMaterialAtlasBuilder
                 pixels = new NativeArray<uint>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                JobHandle fill = new FillAtlasSolidJob
+                JobHandle solidFillHandle = new FillAtlasSolidJob
                 {
                     Pixels = pixels,
                     PackedColorRgba = defaultColor
                 }.Schedule(pixelCount, 1024);
-                new FillAtlasRectColorsJob
+                JobHandle rectFillHandle = new FillAtlasRectColorsJob
                 {
                     Pixels = pixels,
                     Rects = rects,
                     Colors = colors,
                     AtlasSize = size,
                     Channel = channel
-                }.Schedule(fill).Complete();
+                }.Schedule(solidFillHandle);
+                rectFillHandle.Complete();
 
                 Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, true, linear)
                 {
@@ -542,7 +569,16 @@ namespace Hecton8.Editor.OfflineGeometry
             return (uint)(color.r | (color.g << 8) | (color.b << 16) | (color.a << 24));
         }
 
-        private static bool TryCopyTexture(Texture source, Texture2D atlas, InteriorClutterAtlasRect rect, bool linear, ref bool scaledAny)
+        private static bool TryCopyTexture(
+            Texture source,
+            Texture2D atlas,
+            InteriorClutterAtlasRect rect,
+            bool linear,
+            Color32 tint,
+            bool tintMultiply,
+            ref bool scaledAny,
+            ref bool directCopyFallbackAny,
+            ref bool copyFailure)
         {
             if (source == null || atlas == null)
                 return false;
@@ -555,31 +591,86 @@ namespace Hecton8.Editor.OfflineGeometry
             if (width <= 0 || height <= 0 || rect.X < 0 || rect.Y < 0)
                 return false;
 
-            try
+            bool exactSize = source.width == width && source.height == height;
+            if (exactSize && !tintMultiply)
             {
-                if (source.width == width && source.height == height)
+                try
                 {
                     Graphics.CopyTexture(source, 0, 0, 0, 0, width, height, atlas, 0, 0, rect.X, rect.Y);
                     return true;
                 }
+                catch (Exception)
+                {
+                    directCopyFallbackAny = true;
+                }
+            }
 
+            if (!exactSize)
                 scaledAny = true;
-                RenderTexture temp = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, ResolveReadWrite(linear));
-                try
-                {
-                    Graphics.Blit(source, temp);
-                    Graphics.CopyTexture(temp, 0, 0, 0, 0, width, height, atlas, 0, 0, rect.X, rect.Y);
-                }
-                finally
-                {
-                    RenderTexture.ReleaseTemporary(temp);
-                }
+
+            try
+            {
+                if (tintMultiply)
+                    CopyTextureViaTintedBlit(source, atlas, rect, linear, tint);
+                else
+                    CopyTextureViaBlit(source, atlas, rect, linear);
 
                 return true;
             }
             catch (Exception)
             {
+                copyFailure = true;
                 return false;
+            }
+        }
+
+        private static void CopyTextureViaBlit(Texture source, Texture2D atlas, InteriorClutterAtlasRect rect, bool linear)
+        {
+            RenderTexture temp = RenderTexture.GetTemporary(rect.Width, rect.Height, 0, RenderTextureFormat.ARGB32, ResolveReadWrite(linear));
+            try
+            {
+                Graphics.Blit(source, temp);
+                Graphics.CopyTexture(temp, 0, 0, 0, 0, rect.Width, rect.Height, atlas, 0, 0, rect.X, rect.Y);
+            }
+            finally
+            {
+                RenderTexture.ReleaseTemporary(temp);
+            }
+        }
+
+        private static void CopyTextureViaTintedBlit(Texture source, Texture2D atlas, InteriorClutterAtlasRect rect, bool linear, Color32 tint)
+        {
+            RenderTexture previous = RenderTexture.active;
+            RenderTexture temp = RenderTexture.GetTemporary(rect.Width, rect.Height, 0, RenderTextureFormat.ARGB32, ResolveReadWrite(linear));
+            Texture2D tile = null;
+            try
+            {
+                Graphics.Blit(source, temp);
+                tile = new Texture2D(rect.Width, rect.Height, TextureFormat.RGBA32, false, linear)
+                {
+                    name = atlas.name + "_TintTile",
+                    hideFlags = HideFlags.HideAndDontSave,
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear
+                };
+                RenderTexture.active = temp;
+                tile.ReadPixels(new Rect(0f, 0f, rect.Width, rect.Height), 0, 0, false);
+                NativeArray<uint> pixels = tile.GetRawTextureData<uint>();
+                JobHandle tintHandle = new TintAtlasTileJob
+                {
+                    Pixels = pixels,
+                    TintRgba = PackColor32(tint)
+                }.Schedule(pixels.Length, 1024);
+                tintHandle.Complete();
+                tile.Apply(false, false);
+                Graphics.CopyTexture(tile, 0, 0, 0, 0, rect.Width, rect.Height, atlas, 0, 0, rect.X, rect.Y);
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                RenderTexture.ReleaseTemporary(temp);
+                if (tile != null)
+                    Object.DestroyImmediate(tile);
             }
         }
 
@@ -637,6 +728,13 @@ namespace Hecton8.Editor.OfflineGeometry
             return null;
         }
 
+        private static Texture ResolveMaskTexture(Material material)
+        {
+            if (material != null && material.HasProperty("_MaskMap"))
+                return material.GetTexture("_MaskMap");
+            return null;
+        }
+
         private static Color32 ResolveBaseColor(Material material)
         {
             Color color = Color.gray;
@@ -651,17 +749,36 @@ namespace Hecton8.Editor.OfflineGeometry
             return color;
         }
 
-        private static Color32 ResolveArmColor(Material material)
+        private static readonly Color32 WhiteTint = new Color32(255, 255, 255, 255);
+
+        private static bool HasWhiteBaseTint(Color32 color)
         {
-            float metallic = material != null && material.HasProperty("_Metallic") ? material.GetFloat("_Metallic") : 0f;
-            float smoothness = material != null && material.HasProperty("_Smoothness") ? material.GetFloat("_Smoothness") : 0.45f;
-            byte roughness = (byte)math.round(math.saturate(1f - smoothness) * 255f);
-            byte metal = (byte)math.round(math.saturate(metallic) * 255f);
-            return new Color32(255, roughness, metal, 255);
+            return color.r >= 250 && color.g >= 250 && color.b >= 250 && color.a >= 250;
         }
 
-        private static Texture2D SaveOrReplaceTexture(Texture2D texture, string path)
+        private static Color32 ResolveMaskColor(Material material)
         {
+            float metallic = material != null && material.HasProperty("_Metallic") ? material.GetFloat("_Metallic") : 0f;
+            float smoothness = 0.45f;
+            if (material != null)
+            {
+                if (material.HasProperty("_Smoothness"))
+                    smoothness = material.GetFloat("_Smoothness");
+                else if (material.HasProperty("_Glossiness"))
+                    smoothness = material.GetFloat("_Glossiness");
+            }
+
+            float occlusion = material != null && material.HasProperty("_OcclusionStrength") ? material.GetFloat("_OcclusionStrength") : 1f;
+            byte metal = (byte)math.round(math.saturate(metallic) * 255f);
+            byte ao = (byte)math.round(math.saturate(occlusion) * 255f);
+            byte smooth = (byte)math.round(math.saturate(smoothness) * 255f);
+            return new Color32(metal, ao, 0, smooth);
+        }
+
+        private static Texture2D SaveOrReplaceTexture(Texture2D texture, string path, InteriorAtlasTextureRole role, ref InteriorClutterBakeMetric metric)
+        {
+            CompressAtlasTexture(texture, role, ref metric);
+
             Texture2D existing = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
             if (existing != null)
             {
@@ -674,6 +791,42 @@ namespace Hecton8.Editor.OfflineGeometry
             AssetDatabase.CreateAsset(texture, path);
             EditorUtility.SetDirty(texture);
             return texture;
+        }
+
+        private static void CompressAtlasTexture(Texture2D texture, InteriorAtlasTextureRole role, ref InteriorClutterBakeMetric metric)
+        {
+            if (texture == null)
+                return;
+
+            TextureFormat format = ResolveCompressionFormat(role, ref metric);
+            if (texture.format == format)
+                return;
+
+            try
+            {
+                EditorUtility.CompressTexture(texture, format, TextureCompressionQuality.Best);
+                texture.Apply(false, false);
+                metric.WarningFlags |= InteriorClutterWarningFlags.AtlasCompressedTexture;
+            }
+            catch (Exception)
+            {
+                metric.WarningFlags |= InteriorClutterWarningFlags.AtlasCompressionFallback;
+            }
+        }
+
+        private static TextureFormat ResolveCompressionFormat(InteriorAtlasTextureRole role, ref InteriorClutterBakeMetric metric)
+        {
+            if (role == InteriorAtlasTextureRole.Normal && SystemInfo.SupportsTextureFormat(TextureFormat.BC5))
+                return TextureFormat.BC5;
+
+            if (SystemInfo.SupportsTextureFormat(TextureFormat.BC7))
+                return TextureFormat.BC7;
+
+            if (SystemInfo.SupportsTextureFormat(TextureFormat.DXT5))
+                return TextureFormat.DXT5;
+
+            metric.WarningFlags |= InteriorClutterWarningFlags.AtlasCompressionFallback;
+            return TextureFormat.RGBA32;
         }
 
         private static void SetTexture(Material material, string property, Texture texture)
@@ -980,8 +1133,10 @@ namespace Hecton8.Editor.OfflineGeometry
                 for (int f = 0; f < filters.Count; f++)
                 {
                     MeshFilter meshFilter = filters[f];
-                    MeshRenderer renderer = meshFilter != null ? meshFilter.GetComponent<MeshRenderer>() : null;
-                    if (meshFilter == null || renderer == null || meshFilter.sharedMesh == null)
+                    if (meshFilter == null || meshFilter.sharedMesh == null)
+                        continue;
+
+                    if (!InteriorClutterForge.IsActiveInPrefabHierarchy(meshFilter.transform, prefab.transform) || !meshFilter.TryGetComponent(out MeshRenderer renderer) || !renderer.enabled)
                         continue;
 
                     if (filter.IsInteractiveOrExcluded(meshFilter.gameObject, componentScratch))
@@ -998,7 +1153,7 @@ namespace Hecton8.Editor.OfflineGeometry
                 }
 
                 finding.MaterialCount = materials.Count;
-                finding.EstimatedDrawCalls = math.max(1, finding.StaticChildRenderers);
+                finding.EstimatedDrawCalls = math.max(1, finding.StaticChildRenderers) + finding.InteractiveChildRenderers;
                 if (!AssetDatabase.IsValidFolder(InteriorClutterForgeConstants.DefaultHabitatRoot))
                     finding.Flags |= InteriorClutterWarningFlags.MissingHabitatRoot;
                 if (finding.StaticChildRenderers > 10 || finding.MaterialCount > 1)
@@ -1027,7 +1182,8 @@ namespace Hecton8.Editor.OfflineGeometry
                     builder.Append(", \"interactiveIgnored\": ").Append(f.InteractiveChildRenderers);
                     builder.Append(", \"materialCount\": ").Append(f.MaterialCount);
                     builder.Append(", \"estimatedDrawCallsBefore\": ").Append(f.EstimatedDrawCalls);
-                    builder.Append(", \"estimatedDrawCallsAfterForge\": 1");
+                    builder.Append(", \"estimatedStaticDrawCallsAfterForge\": 1");
+                    builder.Append(", \"estimatedDrawCallsAfterForge\": ").Append(1 + f.InteractiveChildRenderers);
                     builder.Append(", \"flags\": \"").Append(f.Flags == InteriorClutterWarningFlags.None ? "NONE" : f.Flags.ToString());
                     builder.Append("\" }");
                 }
@@ -1078,8 +1234,7 @@ namespace Hecton8.Editor.OfflineGeometry
                 for (int i = 0; i < filterScratch.Count; i++)
                 {
                     MeshFilter meshFilter = filterScratch[i];
-                    MeshRenderer renderer = meshFilter != null ? meshFilter.GetComponent<MeshRenderer>() : null;
-                    if (meshFilter == null || renderer == null)
+                    if (meshFilter == null || !InteriorClutterForge.IsActiveInPrefabHierarchy(meshFilter.transform, root.transform) || !meshFilter.TryGetComponent(out MeshRenderer renderer) || !renderer.enabled)
                         continue;
 
                     if (filter.IsInteractiveOrExcluded(meshFilter.gameObject, componentScratch))

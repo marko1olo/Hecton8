@@ -6,6 +6,15 @@ namespace Hecton8.World
     /// </summary>
     internal readonly struct ScatterBackendRuntimeStatus
     {
+        public readonly ScatterSimulationBackendKind ActiveBackendKind;
+        public readonly string ActiveBackendKindLabel;
+        public readonly ScatterBackendExecutionMode ResolvedExecutionMode;
+        public readonly string ResolvedExecutionModeLabel;
+        public readonly string ResolutionReason;
+        public readonly byte HasFacade;
+        public readonly byte IsJobActive;
+        public readonly byte IsJobCompleted;
+
         public ScatterBackendRuntimeStatus(
             ScatterSimulationBackendKind activeBackendKind,
             string activeBackendKindLabel,
@@ -21,18 +30,9 @@ namespace Hecton8.World
             ResolvedExecutionMode = resolvedExecutionMode;
             ResolvedExecutionModeLabel = resolvedExecutionModeLabel;
             ResolutionReason = resolutionReason;
-            HasFacade = hasFacade;
-            IsJobActive = isJobActive;
-            IsJobCompleted = isJobCompleted;
+            HasFacade = hasFacade ? (byte)1 : (byte)0;
+            IsJobActive = isJobActive ? (byte)1 : (byte)0;
+            IsJobCompleted = isJobCompleted ? (byte)1 : (byte)0;
         }
-
-        public ScatterSimulationBackendKind ActiveBackendKind { get; }
-        public string ActiveBackendKindLabel { get; }
-        public ScatterBackendExecutionMode ResolvedExecutionMode { get; }
-        public string ResolvedExecutionModeLabel { get; }
-        public string ResolutionReason { get; }
-        public bool HasFacade { get; }
-        public bool IsJobActive { get; }
-        public bool IsJobCompleted { get; }
     }
 }

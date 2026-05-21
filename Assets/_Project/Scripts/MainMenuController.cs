@@ -21,7 +21,7 @@ namespace Hecton.UI.MainMenu
     /// save slot generation, and async scene loading.
     /// All UI text is driven through LocalizationManager.
     /// </summary>
-    public sealed class MainMenuController : MonoBehaviour, ITickable, IUpdatable, ISaveEventListener, ILocalizationLanguageChangedListener
+    public sealed class MainMenuController : MonoBehaviour, ITickable, IUpdatable, ISaveEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private enum PanelTransitionState
         {
@@ -111,6 +111,8 @@ namespace Hecton.UI.MainMenu
         private UnityAction _backFromSettingsClickAction;
         private bool _runtimeBindingsReady;
         private bool _inputRoutingReady;
+        private bool _menuInputBound;
+        private bool _registeredHotSwapListener;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
 
@@ -148,6 +150,8 @@ namespace Hecton.UI.MainMenu
         private void OnEnable()
         {
             EnsureRuntimeMenuBindings(resetPanelState: _currentPanel == null);
+            TryRegisterHotSwapListener();
+            CacheInputManagerCold(GlobalRegistry.NativeInputManager);
             TryRegisterToTickManager();
             _lastUnscaledTickTime = Time.unscaledTime;
             BlockCancelInputBriefly();
@@ -167,6 +171,7 @@ namespace Hecton.UI.MainMenu
         private void OnDisable()
         {
             UnbindMenuInput();
+            TryUnregisterHotSwapListener();
 
             // TASK 31: Null-safe event unsubscription in OnDisable
             if (Hecton8.Core.GlobalRegistry.Localization != null)
@@ -177,6 +182,23 @@ namespace Hecton.UI.MainMenu
             
             UnregisterFromTickManager();
             _lastUnscaledTickTime = 0f;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime)
+            {
+                CacheInputManagerCold(currentService as InputManager);
+                if (isActiveAndEnabled)
+                    BindMenuInput();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+                TryRegisterToTickManager();
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -931,9 +953,7 @@ namespace Hecton.UI.MainMenu
                 return;
 
             MainMenuInputRoutingGuard.EnsureInputSystemEventRouting();
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
-            if (!ReferenceEquals(_inputManager, inputManager))
-                BindMenuInput();
+            BindMenuInput();
 
             EventSystem eventSystem = EventSystem.current;
             if (eventSystem == null || !eventSystem.enabled)
@@ -1009,28 +1029,38 @@ namespace Hecton.UI.MainMenu
 
         private void BindMenuInput()
         {
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
-            if (ReferenceEquals(_inputManager, inputManager))
+            InputManager inputManager = _inputManager;
+            if (inputManager == null)
             {
-                if (_inputManager != null && _inputManager.CanSwitchActionMaps)
-                    _inputManager.SwitchToUIInput();
-
+                _menuInputBound = false;
                 return;
             }
 
-            UnbindMenuInput();
-            _inputManager = inputManager;
-            if (_inputManager == null)
-                return;
+            if (!_menuInputBound)
+            {
+                BaselineCancelInputSignalSequence();
+                _menuInputBound = true;
+            }
 
-            BaselineCancelInputSignalSequence();
-            if (_inputManager.CanSwitchActionMaps)
-                _inputManager.SwitchToUIInput();
+            if (inputManager.CanSwitchActionMaps)
+                inputManager.SwitchToUIInput();
         }
 
         private void UnbindMenuInput()
         {
+            _menuInputBound = false;
             _inputManager = null;
+            _cancelRequested = false;
+        }
+
+        private void CacheInputManagerCold(InputManager inputManager)
+        {
+            if (ReferenceEquals(_inputManager, inputManager))
+                return;
+
+            _inputManager = inputManager;
+            _menuInputBound = false;
+            _inputRoutingReady = false;
             _cancelRequested = false;
         }
 
@@ -1436,11 +1466,7 @@ namespace Hecton.UI.MainMenu
             if (_registeredToTickManager || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -1450,6 +1476,23 @@ namespace Hecton.UI.MainMenu
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void SetPanelImmediate(CanvasGroup group, bool visible)

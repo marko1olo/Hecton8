@@ -39,6 +39,25 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(30)] public ushort Flags;
     }
 
+    /// <summary>Registry-owned emergency kill-switch bit delta. Size: 32 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct SystemKillSwitchBitsSignal : ISignal
+    {
+        public const byte FlagEnabled = 1 << 0;
+        public const byte FlagRegistryOwner = 1 << 1;
+
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint SourceHash;
+        [FieldOffset(8)] public uint PreviousMask;
+        [FieldOffset(12)] public uint CurrentMask;
+        [FieldOffset(16)] public uint ChangedMask;
+        [FieldOffset(20)] public uint EnabledMask;
+        [FieldOffset(24)] public byte Flags;
+        [FieldOffset(25)] private byte _pad0;
+        [FieldOffset(26)] private ushort _pad1;
+        [FieldOffset(28)] private uint _pad2;
+    }
+
     /// <summary>
     /// Last flushed state for one typed signal lane.
     /// </summary>
@@ -50,9 +69,13 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(8)] public int SnapshotCount;
         [FieldOffset(12)] public int DroppedCount;
         [FieldOffset(16)] public int CoalescedCount;
+        // Bits: 0 storm, 1 non-critical VFX, 2 fatal, 3 coalesced, 4 corrupt, 5 cache-line stride debt, 6 legacy MPSC writer opened.
         [FieldOffset(20)] public byte Flags;
+        // Payload stride bytes, saturated to 255.
         [FieldOffset(21)] public byte Reserved0;
+        // Low byte: layout policy flags. High byte: legacy MPSC writer opens last flush, saturated to 255.
         [FieldOffset(22)] public ushort Reserved1;
+        // Low32: pushed last flush. High32: corrupted total.
         [FieldOffset(24)] public ulong Reserved2;
     }
 
@@ -317,8 +340,10 @@ namespace Hecton8.Core.Contracts
         public const byte CameraJuiceImpactSignal = 127;
         public const byte DynamicMusicScalarSignal = 128;
         public const byte PlayerRespawnSignal = 129;
+        public const byte SystemKillSwitchBitsSignal = 130;
         public const uint PlayerRespawnSignalStableHash = 0x5253504Eu;
         public const uint ScalabilityChangedEventStableHash = 0x53434C54u;
+        public const uint SystemKillSwitchBitsSignalStableHash = 0x4B534257u;
         public const uint SignalLaneRegistryHash = 0x83E4FE14u;
     }
 }

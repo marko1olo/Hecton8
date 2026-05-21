@@ -44,7 +44,7 @@ using UnityEditor;
 namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
-    public sealed class ProximityColliderSystem : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable
+    public sealed class ProximityColliderSystem : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         internal static ProximityColliderSystem ActiveRuntimeInstance { get; private set; }
 #if UNITY_EDITOR
@@ -87,6 +87,7 @@ namespace Hecton8.Core
         // ── Job I/O (persistent allocations) ──
         private NativeArray<float3> _positions;      // pozitsii vseh tochek
         private NativeArray<byte>   _jobResults;     // rezultat Job: 0=far, 1=near
+        private ObjectPoolManager _objectPool;
 
         // ── Main-thread cached arrays (zero GC) ──
         private GameObject[] _activeColliders;       // null = net kollaydera
@@ -98,6 +99,7 @@ namespace Hecton8.Core
         private bool      _initialized;
         private bool      _registeredToDispatcher;
         private bool      _registeredLateFrame;
+        private bool      _hotSwapRegistered;
         private int       _jobPendingFrameCount;
 
         // ── Cached squared radii (avoid sqrt in Job) ──
@@ -122,7 +124,7 @@ namespace Hecton8.Core
         ///
         /// Eto pozvolyaet izbezhat mertsaniya kollayderov na granitse radiusa.
         /// </summary>
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct DistanceCalcJob : IJobParallelFor
         {
             [ReadOnly] public float3 playerPos;
@@ -318,6 +320,8 @@ namespace Hecton8.Core
 #endif
             // ── Avto-resolve igroka cherez bootstrap, esli ssylka ne zadana ──
             TryResolvePlayerTransform();
+            CacheObjectPool(GlobalRegistry.ObjectPool);
+            TryRegisterHotSwapListener();
 
             // ── Validatsiya ──
             if (colliderPrefab == null)
@@ -341,20 +345,7 @@ namespace Hecton8.Core
                 deactivateRadius = activateRadius + 5f;
             }
 
-            if (Application.isPlaying && GlobalRegistry.Dispatcher != null)
-            {
-                if (!_registeredToDispatcher)
-                {
-                    GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                    _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this);
-                }
-
-                if (!_registeredLateFrame)
-                {
-                    GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                    _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
-                }
-            }
+            TryRegisterDispatcherRoutes();
         }
 
         private void OnDisable()
@@ -371,9 +362,61 @@ namespace Hecton8.Core
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
             }
+
+            TryUnregisterHotSwapListener();
 #if UNITY_EDITOR
             ReleaseAssemblyReloadHook();
 #endif
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    CacheObjectPool(currentService as ObjectPoolManager);
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegisterDispatcherRoutes();
+                    break;
+            }
+        }
+
+        private void CacheObjectPool(ObjectPoolManager objectPool)
+        {
+            _objectPool = objectPool;
+        }
+
+        private void TryRegisterDispatcherRoutes()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (!_registeredToDispatcher)
+                _registeredToDispatcher = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void OnDestroy()
@@ -382,6 +425,7 @@ namespace Hecton8.Core
             JobHandle teardownDependency = CancelScheduledJobForTeardown();
             DespawnAllColliders();
             Cleanup(teardownDependency);
+            TryUnregisterHotSwapListener();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
         }
@@ -562,7 +606,7 @@ namespace Hecton8.Core
         /// </summary>
         private void ProcessJobResults()
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null) return;
 
             int operationsThisTick = 0;
@@ -698,7 +742,7 @@ namespace Hecton8.Core
         {
             if (_activeColliders == null) return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
 
             for (int i = 0; i < _activeColliders.Length; i++)
             {

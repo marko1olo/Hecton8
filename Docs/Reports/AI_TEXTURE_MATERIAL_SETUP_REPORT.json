@@ -1,0 +1,14 @@
+{
+  "schema": "hecton8.rendering_material_setup_scan.v1",
+  "agent": "SHINOBU_269",
+  "evidenceClass": "STATIC_SOURCE_PENDING_UNITY_MENU_SCAN",
+  "status": "PENDING_UNITY_MENU_SCAN",
+  "materialsScanned": 0,
+  "missingArmMap": 0,
+  "albedoSrgbErrors": 0,
+  "manualMaterialErrorsPrevented": 0,
+  "ownedReportPath": "Docs/Reports/AI_TEXTURE_MATERIAL_SETUP_REPORT.json",
+  "sharedMergePath": "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json",
+  "sharedMergeKey": "shinobu_269_ai_texture_control_maps",
+  "notes": "Material_Setup_Scanner source route exists. Unity menu scan has not executed in this CLI pass because compile/import verification is CPU-gated."
+}

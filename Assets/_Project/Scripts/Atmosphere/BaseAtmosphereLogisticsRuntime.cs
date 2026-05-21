@@ -17,7 +17,7 @@ using UnityEngine;
 
 namespace Hecton8.Atmosphere
 {
-    public sealed unsafe class BaseAtmosphereLogisticsRuntime
+    public sealed unsafe class BaseAtmosphereLogisticsRuntime : IGlobalRegistryHotSwapListener
     {
         private const uint SystemHash = 0x53483232u; // SH22
         private const SystemID OwnerSystemId = SystemID.HabitatAtmosphere;
@@ -42,7 +42,11 @@ namespace Hecton8.Atmosphere
         private readonly VisualSyncPhaseSystem _visualSyncPhase;
 
         private IDataVault _vault;
+        private IDataVault _pendingVault;
+        private IDataVault _lockedVault;
         private bool _shutdown;
+        private bool _registeredHotSwap;
+        private bool _hasPendingVaultRebind;
         private bool _registeredPreSimulation;
         private bool _registeredSimulation;
         private bool _registeredPostSimulation;
@@ -264,6 +268,7 @@ namespace Hecton8.Atmosphere
         {
             _shutdown = false;
             _vault = GlobalRegistry.DataVault;
+            TryRegisterHotSwapListener();
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
             SignalBus<PlayerBaseEnterSignal>.EnsureInitialized();
             SignalBus<PlayerBaseExitSignal>.EnsureInitialized();
@@ -282,8 +287,12 @@ namespace Hecton8.Atmosphere
             _shutdown = true;
             Application.quitting -= ShutdownActive;
             UnlockJobBuffers();
+            TryUnregisterHotSwapListener();
             UnregisterDispatcherPhases();
             _vault = null;
+            _pendingVault = null;
+            _lockedVault = null;
+            _hasPendingVaultRebind = false;
             _vaultInitialized = false;
             _defaultsInitialized = false;
             _layoutChecked = false;
@@ -333,15 +342,69 @@ namespace Hecton8.Atmosphere
             }
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            QueueOrApplyVaultRebind(currentService as IDataVault);
+        }
+
         private IDataVault ResolveVault()
         {
-            IDataVault vault = _vault;
-            if (vault != null)
-                return vault;
+            ApplyPendingVaultRebindIfSafe();
+            return _vault;
+        }
 
-            vault = GlobalRegistry.DataVault;
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        private void QueueOrApplyVaultRebind(IDataVault vault)
+        {
+            if (_simulationScheduled || _lockedBufferMask != 0)
+            {
+                _pendingVault = vault;
+                _hasPendingVaultRebind = true;
+                return;
+            }
+
+            ApplyVaultRebind(vault);
+        }
+
+        private void ApplyPendingVaultRebindIfSafe()
+        {
+            if (!_hasPendingVaultRebind || _simulationScheduled || _lockedBufferMask != 0)
+                return;
+
+            ApplyVaultRebind(_pendingVault);
+            _pendingVault = null;
+            _hasPendingVaultRebind = false;
+        }
+
+        private void ApplyVaultRebind(IDataVault vault)
+        {
             _vault = vault;
-            return vault;
+            _vaultInitialized = false;
+            _defaultsInitialized = false;
+            _layoutChecked = false;
+            _layoutValid = false;
         }
 
         private void PreSimulationTick(in DispatcherTimingDTO timing)
@@ -897,6 +960,20 @@ namespace Hecton8.Atmosphere
             out NativeArray<float> edgeConductance,
             out NativeArray<int> edgeWriteCursor)
         {
+            nodes = default;
+            connections = default;
+            front = default;
+            back = default;
+            consumers = default;
+            sources = default;
+            vents = default;
+            counters = default;
+            tuning = default;
+            edgeOffsets = default;
+            edgeDestinations = default;
+            edgeConductance = default;
+            edgeWriteCursor = default;
+
             return Resolve(in _nodes, out nodes) &&
                    Resolve(in _connections, out connections) &&
                    Resolve(in _frontCells, out front) &&
@@ -933,6 +1010,26 @@ namespace Hecton8.Atmosphere
             out NativeArray<AtmosphereGasRemainderDTO> remainders,
             out NativeArray<AtmosphereShaderPayloadDTO> shaderPayload)
         {
+            front = default;
+            back = default;
+            nodes = default;
+            edgeOffsets = default;
+            edgeDestinations = default;
+            edgeConductance = default;
+            consumers = default;
+            sources = default;
+            vents = default;
+            counters = default;
+            tuning = default;
+            telemetry = default;
+            oxygenDelta = default;
+            carbonDioxideDelta = default;
+            nitrogenDelta = default;
+            toxinDelta = default;
+            temperatureDelta = default;
+            remainders = default;
+            shaderPayload = default;
+
             return Resolve(in _frontCells, out front) &&
                    Resolve(in _backCells, out back) &&
                    Resolve(in _nodes, out nodes) &&
@@ -969,6 +1066,7 @@ namespace Hecton8.Atmosphere
         private bool TryLockJobBuffers(IDataVault vault)
         {
             UnlockJobBuffers();
+            _lockedVault = vault;
             _lockedFrontBufferId = ActiveFrontBufferId();
             _lockedBackBufferId = ActiveBackBufferId();
             if (!TryLock(vault, _lockedFrontBufferId, 1 << 0)) return false;
@@ -1007,10 +1105,12 @@ namespace Hecton8.Atmosphere
 
         private void UnlockJobBuffers()
         {
-            IDataVault vault = _vault;
+            IDataVault vault = _lockedVault != null ? _lockedVault : _vault;
             if (vault == null || _lockedBufferMask == 0)
             {
                 _lockedBufferMask = 0;
+                _lockedVault = null;
+                ApplyPendingVaultRebindIfSafe();
                 return;
             }
 
@@ -1034,8 +1134,10 @@ namespace Hecton8.Atmosphere
             if ((_lockedBufferMask & (1 << 1)) != 0) vault.TryUnlockBuffer(_lockedBackBufferId, OwnerSystemId);
             if ((_lockedBufferMask & 1) != 0) vault.TryUnlockBuffer(_lockedFrontBufferId, OwnerSystemId);
             _lockedBufferMask = 0;
+            _lockedVault = null;
             _lockedFrontBufferId = default;
             _lockedBackBufferId = default;
+            ApplyPendingVaultRebindIfSafe();
         }
 
         private BufferID ActiveFrontBufferId()

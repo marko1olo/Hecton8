@@ -31,9 +31,11 @@ One agent can hold multiple roles, but one output must exist per role before cla
 5. Pick one measurable output.
 6. Write output path before starting.
 
-## 2026-05-20 Current Cut
+## 2026-05-21 Current Cut
 
 The staged CRM-100 queue has 0 raw rows. Until the first real screenshot/clip packet exists, do not default to more lead verification. The bottleneck is asset proof, not lead volume.
+
+SN2 currentness: V6 on 2026-05-21 is the active same-day freshness row. Any SN2-derived pain bucket used for asset priority must name V6 or a newer same-day monitoring row in `pain_freshness_source`, fill `pain_freshness_checked_at`, and still require `viewer_named_decision` plus valid `capture_verdict` before it can affect Campaign 01, creator sends, Steam movement, spend, or public routes.
 
 Current default lane order:
 
@@ -45,7 +47,7 @@ Current default lane order:
 
 Do not expand raw leads unless a human explicitly asks for another source-backed lead sprint.
 
-## 2026-05-20 Active Control Tower Loop V1
+## 2026-05-21 Active Control Tower Loop V2
 
 This loop prevents agent labor from becoming more documents. Use it until the first real screenshot pack exists.
 
@@ -155,7 +157,7 @@ Input:
 
 - `Data/UNIQUE_CREATOR_VERIFICATION_QUEUE_2026-05-18.csv`
 - `Data/PRIORITY_CREATOR_SHORTLIST_FROM_RAW_2026-05-18.csv`
-- `AgentOps/VerificationBatches_2026-05-19/VERIFY_BATCH_01.md` as the first existing batch file; other batch files in the same folder follow the same parked raw-sprint rule.
+- `AgentOps/VerificationBatches_2026-05-19/VERIFY_BATCH_01.md` as the first existing batch file; other batch files in the same folder follow the same parked raw-sprint rule. Batch `TODO`, checked boxes, contact notes, public-index metrics, `Required asset`, and `Custom opener` fields are scratch values only; they do not promote a row to live CRM or send readiness.
 
 Steps:
 
@@ -169,6 +171,8 @@ Steps:
 8. Assign segment and pitch angle.
 9. Mark risk.
 10. Promote, hold, or reject.
+
+Promotion means live CRM/schema work, not batch scratch completion. Do not copy batch scratch values into `Data/CREATOR_VERIFICATION_TEMPLATE.csv` until current asset metadata gates, creator utility, route class, permission gate, provenance, source-ledger trace, and live CRM fields are ready.
 
 Forbidden:
 
@@ -302,7 +306,7 @@ Blocked items:
 Next recommended action:
 ```
 
-## End-Of-Change Validation Cut V0
+## End-Of-Change Validation Cut V1
 
 Run this after any Marketing docs/data change. Do not run `dotnet build` for docs-only marketing work.
 
@@ -380,6 +384,66 @@ Expected: no hits, unless the search is intentionally scoped to archive/history 
 Run the path audit when editing entry points, backlog, source ledger, campaign docs, presskit docs, or operation docs. Expected result: `BACKTICK_PATH_AUDIT_OK`.
 
 Do not create placeholder files just to satisfy this audit. If a name is a future packet artifact rather than a repo file, remove code-style formatting and describe it as a packet.
+
+```powershell
+$root = 'C:\hades\Hecton8'
+$marketing = Join-Path $root 'Docs\Marketing'
+$ext = '\.(md|csv|txt|json|toml|h8bin)$'
+$missing = New-Object System.Collections.Generic.List[string]
+foreach ($f in Get-ChildItem -LiteralPath $marketing -Recurse -Filter '*.md' -File) {
+  $inFence = $false
+  $lineNo = 0
+  foreach ($line in [System.IO.File]::ReadLines($f.FullName)) {
+    $lineNo++
+    if ($line.TrimStart().StartsWith('```')) { $inFence = -not $inFence; continue }
+    if ($inFence) { continue }
+    foreach ($m in [regex]::Matches($line, '`([^`]+)`')) {
+      $tok = $m.Groups[1].Value.Trim().Trim('.', ',', ';', ':', ')', ']', '}')
+      if ($tok -match '^(https?|mailto|steam):') { continue }
+      $looksFile = $tok -match $ext -or $tok -match '^[A-Za-z]:[\\/]' -or $tok -match '^(Docs|Hecton8)[\\/]'
+      if (-not $looksFile) { continue }
+      $candidates = @()
+      if ($tok -match '^[A-Za-z]:[\\/]') { $candidates += $tok }
+      elseif ($tok -match '^Docs[\\/]') { $candidates += (Join-Path $root $tok) }
+      elseif ($tok -match '^Hecton8[\\/]') { $candidates += (Join-Path 'C:\hades' $tok) }
+      else {
+        $candidates += (Join-Path $f.DirectoryName $tok)
+        $candidates += (Join-Path $marketing $tok)
+        $candidates += (Join-Path $root $tok)
+      }
+      $exists = $false
+      foreach ($candidate in $candidates) {
+        if ($candidate -match '[*?]') {
+          if (@(Get-ChildItem -Path $candidate -File -ErrorAction SilentlyContinue).Count -gt 0) { $exists = $true; break }
+        } elseif (Test-Path -LiteralPath $candidate) {
+          $exists = $true
+          break
+        }
+      }
+      if (-not $exists) { $missing.Add(('{0}:{1} -> `{2}`' -f $f.FullName,$lineNo,$tok)) }
+    }
+  }
+}
+if ($missing.Count) { $missing } else { 'BACKTICK_PATH_AUDIT_OK' }
+```
+
+Expected: `BACKTICK_PATH_AUDIT_OK`.
+
+### Rationale Order Audit
+
+Run this after updating `Docs/AgentLogs/Rationale_SHINOBU_81.md`. Expected result format: `RATIONALE_ORDER_OK last=<decision_id> count=<count>`.
+
+```powershell
+$path = 'C:\hades\Hecton8\Docs\AgentLogs\Rationale_SHINOBU_81.md'
+$ids = [regex]::Matches((Get-Content -LiteralPath $path -Raw), '^## Decision (\d+)', 'Multiline') | ForEach-Object { [int]$_.Groups[1].Value }
+$gaps = @()
+for ($i = 1; $i -lt $ids.Count; $i++) {
+  if ($ids[$i] -ne ($ids[$i - 1] + 1)) { $gaps += "$($ids[$i - 1])->$($ids[$i])" }
+}
+if ($gaps.Count) { "RATIONALE_ORDER_FAIL gaps=$($gaps -join ',')" }
+elseif ($ids.Count -eq 0) { 'RATIONALE_ORDER_FAIL no decisions found' }
+else { "RATIONALE_ORDER_OK last=$($ids[-1]) count=$($ids.Count)" }
+```
 
 ## Quality Bar
 

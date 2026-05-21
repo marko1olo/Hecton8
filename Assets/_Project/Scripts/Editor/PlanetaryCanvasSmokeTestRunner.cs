@@ -21,7 +21,7 @@ namespace Hecton8.Editor
             Hecton8.World.PlanetaryCanvasSmokeTester.Result result =
                 Hecton8.World.PlanetaryCanvasSmokeTester.RunSlopeCavitySplatmapSmoke();
             WriteReport(result);
-            if (!result.Passed)
+            if (result.Passed == 0)
                 throw new InvalidOperationException("Planetary canvas smoke failed.");
         }
 
@@ -30,7 +30,7 @@ namespace Hecton8.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(ArtifactPath) ?? ".");
             var builder = new StringBuilder(384);
             builder.AppendLine("{");
-            builder.Append("  \"passed\": ").Append(result.Passed ? "true" : "false").AppendLine(",");
+            builder.Append("  \"passed\": ").Append(result.Passed != 0 ? "true" : "false").AppendLine(",");
             builder.Append("  \"flatSandWeight\": ").Append(result.FlatSandWeight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
             builder.Append("  \"steepRockWeight\": ").Append(result.SteepRockWeight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
             builder.Append("  \"siltWeight\": ").Append(result.SiltWeight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");

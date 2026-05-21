@@ -291,6 +291,7 @@ namespace Hecton8.Gameplay
         internal const string WireShaderPath = "Assets/_Project/Art/Shaders/Hecton_BlueprintWireInstanced.shader";
 
         private const string NativeMemoryOwner = nameof(DataArchaeologyRuntime);
+        private const Allocator DataVaultExemptOwnerIndexAllocator = Allocator.Persistent;
         private const int MmfHeaderBytes = 16;
         private const int MmfFragmentRecordBytes = 16;
         private const int MmfPartialRecordBytes = 8;
@@ -350,12 +351,13 @@ namespace Hecton8.Gameplay
 
         private NativeParallelHashMap<uint, float3> _fragmentPositions;
         private NativeParallelHashMap<int, byte> _scanStates;
-        private VaultBufferHandle<ulong> _unlockedLoreWordsHandle;
-        private VaultBufferHandle<DataArchaeologyNotification> _notificationsHandle;
-        private VaultBufferHandle<DataArchaeologyTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<ulong> _unlockedLoreWordsHandle;
+        private VaultGenerationHandle<DataArchaeologyNotification> _notificationsHandle;
+        private VaultGenerationHandle<DataArchaeologyTelemetryEntry> _telemetryRingHandle;
         private LoreMmfEncyclopedia _loreMmf;
         private Material _runtimeMaterial;
         private Mesh _resolvedReconstructionMesh;
+        private IDataVault _dataVault;
         private int _partialCount;
         private int _fragmentCount;
         private int _hologramCount;
@@ -623,7 +625,7 @@ namespace Hecton8.Gameplay
         public bool TryDequeueNotification(out DataArchaeologyNotification notification)
         {
             notification = default;
-            if (!TryResolveNotifications(out NativeArray<DataArchaeologyNotification> notifications) || _notificationCount <= 0)
+            if (!TryOpenOrAcquireNotifications(out NativeArray<DataArchaeologyNotification> notifications) || _notificationCount <= 0)
                 return false;
 
             notification = notifications[_notificationRead];
@@ -790,9 +792,8 @@ namespace Hecton8.Gameplay
                 _scanStates = default;
             }
 
-            _unlockedLoreWordsHandle = default;
-            _notificationsHandle = default;
-            _telemetryRingHandle = default;
+            ReleaseVaultHandles(_dataVault);
+            _dataVault = null;
 
             if (_runtimeMaterial != null)
             {
@@ -803,14 +804,15 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            CacheRegistryServicesCold();
             EnsureNativeState();
             EnsureReconstructionResources();
         }
 
         private void OnEnable()
         {
-            EnsureNativeState();
             CacheRegistryServicesCold();
+            EnsureNativeState();
             TryRegisterHotSwapListener();
             RegisterOriginShiftListener();
             TryRegisterRuntime();
@@ -863,7 +865,16 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.LoreDatabaseRuntime)
+            {
                 _cachedLoreDatabase = currentService as LoreDatabaseManager;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                ReleaseVaultHandles(previousService as IDataVault ?? _dataVault);
+                _dataVault = currentService as IDataVault;
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -886,6 +897,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _cachedLoreDatabase = GlobalRegistry.LoreDatabase;
+            _dataVault = GlobalRegistry.DataVault;
         }
 
         private void TryRegisterRuntime()
@@ -938,88 +950,148 @@ namespace Hecton8.Gameplay
         {
             if (!_fragmentPositions.IsCreated)
             {
-                _fragmentPositions = new NativeParallelHashMap<uint, float3>(MaxDiscoveryCount, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<uint,float3>[1024] - fragment position hash table - owner: DataArchaeologyRuntime
+                _fragmentPositions = new NativeParallelHashMap<uint, float3>(MaxDiscoveryCount, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashMap<uint,float3>[1024] - fragment position hash table - owner: DataArchaeologyRuntime
                 NativeMemorySentinel.RegisterNativeParallelHashMap(_fragmentPositions, NativeMemoryOwner, nameof(_fragmentPositions), NativeAllocationLifetime.Scene);
             }
 
             if (!_scanStates.IsCreated)
             {
-                _scanStates = new NativeParallelHashMap<int, byte>(MaxDiscoveryCount, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<int,byte>[1024] - scanner AUP/entity scan state table - owner: DataArchaeologyRuntime
+                _scanStates = new NativeParallelHashMap<int, byte>(MaxDiscoveryCount, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashMap<int,byte>[1024] - scanner AUP/entity scan state table - owner: DataArchaeologyRuntime
                 NativeMemorySentinel.RegisterNativeParallelHashMap(_scanStates, NativeMemoryOwner, nameof(_scanStates), NativeAllocationLifetime.Scene);
             }
 
-            bool loreHandleWasCreated = _unlockedLoreWordsHandle.IsCreated;
-            if (TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords) && !loreHandleWasCreated)
+            bool loreHandleWasCreated = IsHandleCreated(in _unlockedLoreWordsHandle);
+            if (TryOpenOrAcquireUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords) && !loreHandleWasCreated)
                 SyncManagedLoreToNative(unlockedLoreWords);
 
-            TryResolveNotifications(out _);
-            TryResolveTelemetryRing(out _);
+            TryOpenOrAcquireNotifications(out _);
+            TryOpenOrAcquireTelemetryRing(out _);
         }
 
-        private bool TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords)
+        private bool TryOpenOrAcquireUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords)
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null)
+            return TryOpenOrAcquireVaultView(
+                ref _unlockedLoreWordsHandle,
+                BufferID.DataArchaeologyUnlockedLoreWords,
+                DiscoveryWordCount,
+                NativeArrayOptions.ClearMemory,
+                out unlockedLoreWords);
+        }
+
+        private bool TryOpenOrAcquireNotifications(out NativeArray<DataArchaeologyNotification> notifications)
+        {
+            return TryOpenOrAcquireVaultView(
+                ref _notificationsHandle,
+                BufferID.DataArchaeologyNotifications,
+                NotificationCapacity,
+                NativeArrayOptions.ClearMemory,
+                out notifications);
+        }
+
+        private bool TryOpenOrAcquireTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing)
+        {
+            return TryOpenOrAcquireVaultView(
+                ref _telemetryRingHandle,
+                BufferID.DataArchaeologyTelemetryRing,
+                TelemetryCapacity,
+                NativeArrayOptions.ClearMemory,
+                out telemetryRing);
+        }
+
+        private bool TryOpenOrAcquireVaultView<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || requiredLength <= 0)
             {
-                unlockedLoreWords = default;
+                buffer = default;
                 return false;
             }
 
-            if (!_unlockedLoreWordsHandle.IsCreated || _unlockedLoreWordsHandle.Length < DiscoveryWordCount)
+            if (TryOpenVaultView(vault, in handle, requiredLength, out buffer))
+                return true;
+
+            if (vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing) &&
+                TryOpenVaultView(vault, in existing, requiredLength, out buffer))
             {
-                _unlockedLoreWordsHandle = vault.GetBufferHandle<ulong>(
-                    BufferID.DataArchaeologyUnlockedLoreWords,
-                    DiscoveryWordCount,
-                    SystemID.GameplayTools,
-                    NativeArrayOptions.ClearMemory);
+                handle = existing;
+                return true;
             }
 
-            unlockedLoreWords = _unlockedLoreWordsHandle.Resolve(vault);
-            return unlockedLoreWords.IsCreated && unlockedLoreWords.Length >= DiscoveryWordCount;
-        }
-
-        private bool TryResolveNotifications(out NativeArray<DataArchaeologyNotification> notifications)
-        {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null)
+            if (vault.IsAllocationLocked)
             {
-                notifications = default;
+                handle = default;
+                buffer = default;
                 return false;
             }
 
-            if (!_notificationsHandle.IsCreated || _notificationsHandle.Length < NotificationCapacity)
-            {
-                _notificationsHandle = vault.GetBufferHandle<DataArchaeologyNotification>(
-                    BufferID.DataArchaeologyNotifications,
-                    NotificationCapacity,
-                    SystemID.GameplayTools,
-                    NativeArrayOptions.ClearMemory);
-            }
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GameplayTools,
+                options);
 
-            notifications = _notificationsHandle.Resolve(vault);
-            return notifications.IsCreated && notifications.Length >= NotificationCapacity;
-        }
-
-        private bool TryResolveTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing)
-        {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null)
+            if (!TryOpenVaultView(vault, in acquired, requiredLength, out buffer))
             {
-                telemetryRing = default;
+                handle = default;
+                buffer = default;
                 return false;
             }
 
-            if (!_telemetryRingHandle.IsCreated || _telemetryRingHandle.Length < TelemetryCapacity)
+            handle = acquired;
+            return true;
+        }
+
+        private static bool TryOpenVaultView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   requiredLength >= 0 &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
             {
-                _telemetryRingHandle = vault.GetBufferHandle<DataArchaeologyTelemetryEntry>(
-                    BufferID.DataArchaeologyTelemetryRing,
-                    TelemetryCapacity,
-                    SystemID.GameplayTools,
-                    NativeArrayOptions.ClearMemory);
+                _unlockedLoreWordsHandle = default;
+                _notificationsHandle = default;
+                _telemetryRingHandle = default;
+                return;
             }
 
-            telemetryRing = _telemetryRingHandle.Resolve(vault);
-            return telemetryRing.IsCreated && telemetryRing.Length >= TelemetryCapacity;
+            ReleaseVaultHandle(vault, ref _unlockedLoreWordsHandle);
+            ReleaseVaultHandle(vault, ref _notificationsHandle);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (IsHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void EnsureReconstructionResources()
@@ -1074,7 +1146,7 @@ namespace Hecton8.Gameplay
 
         private void SetNativeLoreBit(int bitIndex)
         {
-            if (!TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords) || (uint)bitIndex >= MaxDiscoveryCount)
+            if (!TryOpenOrAcquireUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords) || (uint)bitIndex >= MaxDiscoveryCount)
                 return;
 
             int word = bitIndex >> 6;
@@ -1085,7 +1157,7 @@ namespace Hecton8.Gameplay
 
         private void SyncManagedLoreToNative()
         {
-            if (!TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords))
+            if (!TryOpenOrAcquireUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords))
                 return;
 
             SyncManagedLoreToNative(unlockedLoreWords);
@@ -1099,7 +1171,7 @@ namespace Hecton8.Gameplay
 
         private void SyncNativeLoreToManaged()
         {
-            if (!TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords))
+            if (!TryOpenOrAcquireUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords))
                 return;
 
             for (int i = 0; i < DiscoveryWordCount; i++)
@@ -1108,7 +1180,7 @@ namespace Hecton8.Gameplay
 
         private void ClearNativeLoreWords()
         {
-            if (!TryResolveUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords))
+            if (!TryOpenOrAcquireUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords))
                 return;
 
             for (int i = 0; i < DiscoveryWordCount; i++)
@@ -1120,7 +1192,9 @@ namespace Hecton8.Gameplay
             if (hash == 0u || !math.all(math.isfinite(new float4(position, 1f))))
                 return;
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(position.x, position.y, position.z));
+            if (!TryResolveRuntimeAup(position, out AbsoluteUniversePosition aup))
+                return;
+
             uint frame = unchecked((uint)Time.frameCount);
             GlobalSignals.Publish(new ScanCompleteSignal
             {
@@ -1167,31 +1241,53 @@ namespace Hecton8.Gameplay
             });
         }
 
-        private static bool IsLowPresentationTier()
+        private static float ResolvePresentationQualityWeight01()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, qualityWeight, math.isfinite(qualityWeight)));
         }
 
         private void PublishScannerShaderPoint(float3 runtimePosition, float progress01)
         {
-            if (IsLowPresentationTier() || !math.all(math.isfinite(new float4(runtimePosition, progress01))))
+            if (!math.all(math.isfinite(new float4(runtimePosition, progress01))))
                 return;
 
             float clampedProgress = math.saturate(progress01);
+            float qualityCurve01 = math.smoothstep(0.08f, 1f, ResolvePresentationQualityWeight01());
+            float shaderProgress = clampedProgress * qualityCurve01;
             if (math.all(math.isfinite(new float4(_lastScannerShaderPoint, _lastScannerShaderProgress))) &&
                 math.lengthsq(runtimePosition - _lastScannerShaderPoint) <= 0.0001f &&
-                math.abs(clampedProgress - _lastScannerShaderProgress) < 0.01f)
+                math.abs(shaderProgress - _lastScannerShaderProgress) < 0.01f)
                 return;
 
-            double3 absolutePosition = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z) + HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            _scannerShaderPoints[0] = new Vector4((float)absolutePosition.x, (float)absolutePosition.y, (float)absolutePosition.z, clampedProgress);
+            if (!TryResolveRuntimeAup(runtimePosition, out AbsoluteUniversePosition shaderPointAup))
+                return;
+
+            double3 absolutePosition = shaderPointAup.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(absolutePosition)))
+                return;
+
+            _scannerShaderPoints[0] = new Vector4((float)absolutePosition.x, (float)absolutePosition.y, (float)absolutePosition.z, shaderProgress);
             _lastScannerShaderPoint = runtimePosition;
-            _lastScannerShaderProgress = clampedProgress;
+            _lastScannerShaderProgress = shaderProgress;
             Shader.SetGlobalInt(_HectonScannerPointCountId, 1);
             Shader.SetGlobalVectorArray(_HectonScannerPointsId, _scannerShaderPoints);
+        }
+
+        private static bool TryResolveRuntimeAup(float3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.all(math.isfinite(runtimePosition)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private void PublishToolAcoustic(uint hash, float progress01, float pitchScale, float intensity01)
@@ -1301,7 +1397,7 @@ namespace Hecton8.Gameplay
 
         private void EnqueueNotification(uint hash, ushort progressPermille, byte kind, byte flags)
         {
-            if (!TryResolveNotifications(out NativeArray<DataArchaeologyNotification> notifications))
+            if (!TryOpenOrAcquireNotifications(out NativeArray<DataArchaeologyNotification> notifications))
                 return;
 
             DataArchaeologyNotification notification = new DataArchaeologyNotification
@@ -1443,7 +1539,7 @@ namespace Hecton8.Gameplay
 
         private void RecordTelemetry(uint hash, byte flags, float3 position, float match01, ushort progressPermille)
         {
-            if (!TryResolveTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing))
+            if (!TryOpenOrAcquireTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing))
                 return;
 
             if (!math.all(math.isfinite(new float4(position, match01))))
@@ -1756,7 +1852,7 @@ namespace Hecton8.Gameplay
         private void DumpTelemetryCold()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!TryResolveTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing))
+            if (!TryOpenOrAcquireTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing))
                 return;
 
             try

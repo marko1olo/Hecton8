@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.World;
 using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -50,7 +51,7 @@ namespace Hecton8.Lighting.Shafts
     [DefaultExecutionOrder(-2550)]
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Lighting/Screen Space Light Shaft Runtime")]
-    public sealed class ScreenSpaceLightShaftRuntime : MonoBehaviour, ILateFrameTickable, IScalabilityChangedEventListener, IDisposable
+    public sealed class ScreenSpaceLightShaftRuntime : MonoBehaviour, ILateFrameTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int MaxTrackedSources = 3;
         private const int TelemetryCapacity = 300;
@@ -97,9 +98,10 @@ namespace Hecton8.Lighting.Shafts
         [SerializeField, Min(0.1f)] private float brownoutRecoveryPerSecond = 2.4f;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<LightShaftContribution> _topContributionsHandle;
-        private VaultBufferHandle<LightShaftContribution> _historyContributionsHandle;
-        private VaultBufferHandle<LightShaftTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<LightShaftContribution> _topContributionsHandle;
+        private VaultGenerationHandle<LightShaftContribution> _historyContributionsHandle;
+        private VaultGenerationHandle<LightShaftTelemetryEntry> _telemetryHandle;
+        private IPlayerRuntimeContext _playerContext;
         private Camera _renderCamera;
         private float _nextCameraResolveTime;
         private float _loadShedTimer;
@@ -107,8 +109,13 @@ namespace Hecton8.Lighting.Shafts
         private float _brownout01;
         private int _telemetryWriteIndex;
         private int _lastLightLevelSequence;
+        private float _qualityWeight01 = 1f;
         private bool _lowTier;
         private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
+        private bool _ownsTopContributions;
+        private bool _ownsHistoryContributions;
+        private bool _ownsTelemetry;
         private bool _disposed;
 
         /// <inheritdoc />
@@ -130,6 +137,7 @@ namespace Hecton8.Lighting.Shafts
             {
                 UpdateLoadShedState();
                 UpdateSignalCoupling();
+                RefreshQualityPolicy();
 
                 if (_renderCamera == null)
                     ResolveRenderCamera();
@@ -171,7 +179,8 @@ namespace Hecton8.Lighting.Shafts
         /// <inheritdoc />
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            _lowTier = IsLowTier(payload.CurrentQualityTier);
+            _ = payload.CurrentTier;
+            RefreshQualityPolicy();
         }
 
         /// <inheritdoc />
@@ -184,7 +193,10 @@ namespace Hecton8.Lighting.Shafts
         private void OnEnable()
         {
             _disposed = false;
-            _lowTier = IsLowTier(GlobalRegistry.ScalabilityTier);
+            RefreshQualityPolicy();
+            TryRegisterHotSwapListener();
+            CacheDataVaultCold(GlobalRegistry.DataVault);
+            CachePlayerCold(GlobalRegistry.Player);
             GlobalSignals.InitializeAllQueues();
             EnsureBuffers();
             ResolveRenderCamera();
@@ -202,6 +214,8 @@ namespace Hecton8.Lighting.Shafts
             }
 
             ScalabilityEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
+            CachePlayerCold(null);
             ClearShaderGlobals();
             ReleaseBuffers();
         }
@@ -212,39 +226,53 @@ namespace Hecton8.Lighting.Shafts
                 Dispose();
         }
 
-        private bool EnsureBuffers()
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                ResetVaultHandles();
-                return false;
+                ReleaseOwnedVaultHandles();
+                CacheDataVaultCold(currentService as IDataVault);
+                return;
             }
 
-            if (!ReferenceEquals(_dataVault, vault))
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                _dataVault = vault;
-                _topContributionsHandle = default;
-                _historyContributionsHandle = default;
-                _telemetryHandle = default;
+                CachePlayerCold(currentService as IPlayerRuntimeContext);
+            }
+        }
+
+        private bool EnsureBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+            {
+                ClearVaultDescriptors();
+                return false;
             }
 
             return EnsureVaultHandle(
                     ref _topContributionsHandle,
+                    ref _ownsTopContributions,
                     BufferID.LightShaftTopContributions,
                     MaxTrackedSources) &&
                 EnsureVaultHandle(
                     ref _historyContributionsHandle,
+                    ref _ownsHistoryContributions,
                     BufferID.LightShaftHistoryContributions,
                     MaxTrackedSources) &&
                 EnsureVaultHandle(
                     ref _telemetryHandle,
+                    ref _ownsTelemetry,
                     BufferID.LightShaftTelemetryRing,
                     TelemetryCapacity);
         }
 
         private bool EnsureVaultHandle<T>(
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
+            ref bool ownsHandle,
             BufferID bufferId,
             int requiredLength) where T : struct
         {
@@ -252,17 +280,22 @@ namespace Hecton8.Lighting.Shafts
             if (vault == null)
                 return false;
 
-            if (handle.IsCreated &&
-                handle.BufferId == bufferId &&
-                handle.Length >= requiredLength &&
-                vault.ResolveBuffer(ref handle))
+            if (IsVaultHandleCreated(in handle) &&
+                handle.BufferID == unchecked((uint)(int)bufferId) &&
+                vault.TryResolveHandle(in handle, out NativeArray<T> current) &&
+                current.IsCreated &&
+                current.Length >= requiredLength)
             {
                 return true;
             }
 
-            if (vault.TryGetBufferHandle(bufferId, out VaultBufferHandle<T> existing) &&
-                existing.IsCreated &&
-                existing.Length >= requiredLength)
+            handle = default;
+            ownsHandle = false;
+
+            if (vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing) &&
+                vault.TryResolveHandle(in existing, out NativeArray<T> existingBuffer) &&
+                existingBuffer.IsCreated &&
+                existingBuffer.Length >= requiredLength)
             {
                 handle = existing;
                 return true;
@@ -271,12 +304,22 @@ namespace Hecton8.Lighting.Shafts
             if (vault.IsAllocationLocked)
                 return false;
 
-            handle = vault.GetBufferHandle<T>(
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.Vfx,
                 NativeArrayOptions.ClearMemory);
-            return handle.IsCreated && handle.Length >= requiredLength;
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out NativeArray<T> acquiredBuffer) ||
+                !acquiredBuffer.IsCreated ||
+                acquiredBuffer.Length < requiredLength)
+            {
+                return false;
+            }
+
+            handle = acquired;
+            ownsHandle = true;
+            return true;
         }
 
         private bool TryLockFrameBuffers(
@@ -311,9 +354,9 @@ namespace Hecton8.Lighting.Shafts
                 return false;
             }
 
-            topContributions = _topContributionsHandle.Resolve(vault);
-            historyContributions = _historyContributionsHandle.Resolve(vault);
-            telemetry = _telemetryHandle.Resolve(vault);
+            vault.TryResolveHandle(in _topContributionsHandle, out topContributions);
+            vault.TryResolveHandle(in _historyContributionsHandle, out historyContributions);
+            vault.TryResolveHandle(in _telemetryHandle, out telemetry);
             if (topContributions.IsCreated &&
                 topContributions.Length >= MaxTrackedSources &&
                 historyContributions.IsCreated &&
@@ -325,6 +368,7 @@ namespace Hecton8.Lighting.Shafts
             }
 
             UnlockFrameBuffers();
+            ClearVaultDescriptors();
             return false;
         }
 
@@ -341,16 +385,93 @@ namespace Hecton8.Lighting.Shafts
 
         private void ReleaseBuffers()
         {
-            ResetVaultHandles();
+            ReleaseOwnedVaultHandles();
+            _dataVault = null;
             _telemetryWriteIndex = 0;
         }
 
-        private void ResetVaultHandles()
+        private void ClearVaultDescriptors()
         {
-            _dataVault = null;
             _topContributionsHandle = default;
             _historyContributionsHandle = default;
             _telemetryHandle = default;
+            _ownsTopContributions = false;
+            _ownsHistoryContributions = false;
+            _ownsTelemetry = false;
+        }
+
+        private void ReleaseOwnedVaultHandles()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                ReleaseOwnedVaultHandle(vault, ref _topContributionsHandle, ref _ownsTopContributions, BufferID.LightShaftTopContributions);
+                ReleaseOwnedVaultHandle(vault, ref _historyContributionsHandle, ref _ownsHistoryContributions, BufferID.LightShaftHistoryContributions);
+                ReleaseOwnedVaultHandle(vault, ref _telemetryHandle, ref _ownsTelemetry, BufferID.LightShaftTelemetryRing);
+            }
+
+            ClearVaultDescriptors();
+        }
+
+        private static void ReleaseOwnedVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            ref bool ownsHandle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault == null ||
+                !ownsHandle ||
+                !IsVaultHandleCreated(in handle) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> current) ||
+                current.Generation != handle.Generation)
+            {
+                handle = default;
+                ownsHandle = false;
+                return;
+            }
+
+            vault.ReleaseBuffer(in handle);
+            handle = default;
+            ownsHandle = false;
+        }
+
+        private void CacheDataVaultCold(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            ReleaseOwnedVaultHandles();
+            _dataVault = vault;
+        }
+
+        private void CachePlayerCold(IPlayerRuntimeContext playerContext)
+        {
+            _playerContext = playerContext;
+            _renderCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            _nextCameraResolveTime = 0f;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private void ResolveRenderCamera()
@@ -360,7 +481,7 @@ namespace Hecton8.Lighting.Shafts
                 return;
 
             _nextCameraResolveTime = now + CameraRetrySeconds;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerContext;
             _renderCamera = playerContext != null ? playerContext.PlayerCamera : null;
         }
 
@@ -436,13 +557,13 @@ namespace Hecton8.Lighting.Shafts
             return activeCount;
         }
 
-        private static double3 ResolveCameraAup()
+        private double3 ResolveCameraAup()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerContext;
             if (playerContext != null)
             {
                 if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                    MathGuard.IsFinite(in snapshot.Aup))
+                    snapshot.Aup.IsFinite())
                 {
                     return snapshot.Aup.ToAbsoluteDouble3();
                 }
@@ -451,7 +572,7 @@ namespace Hecton8.Lighting.Shafts
                 if (playerMovement != null)
                 {
                     AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                    if (MathGuard.IsFinite(in currentAup))
+                    if (currentAup.IsFinite())
                         return currentAup.ToAbsoluteDouble3();
                 }
             }
@@ -524,7 +645,8 @@ namespace Hecton8.Lighting.Shafts
         private void PushShaderGlobals(int activeCount, NativeArray<LightShaftContribution> topContributions)
         {
             activeCount = math.clamp(activeCount, 0, MaxTrackedSources);
-            float sampleBudget = _lowTier ? math.min(8f, lowTierSampleCount) : math.min(16f, highTierSampleCount);
+            float qualityCurve = math.smoothstep(0f, 1f, _qualityWeight01);
+            float sampleBudget = math.lerp(math.min(8f, lowTierSampleCount), math.min(16f, highTierSampleCount), qualityCurve);
             float brownoutStutter = ResolveBrownoutStutter();
             float intensity = shaftIntensityScale * brownoutStutter;
 
@@ -687,11 +809,22 @@ namespace Hecton8.Lighting.Shafts
                    math.isfinite(contribution.Score);
         }
 
-        private static bool IsLowTier(HectonQualityTier tier)
+        private void RefreshQualityPolicy()
         {
-            return tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350 ||
-                   (tier == HectonQualityTier.Unknown && GlobalRegistry.ScalabilityTierProfileByte == 0);
+            _qualityWeight01 = ResolveQualityWeight01();
+            _lowTier = ResolveLowTierFromQuality(_qualityWeight01);
+        }
+
+        private static bool ResolveLowTierFromQuality(float globalQualityWeight)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            return quality <= 0.3f;
+        }
+
+        private static float ResolveQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
 
         private static float SanitizeDelta(float dt)

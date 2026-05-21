@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
@@ -32,8 +33,7 @@ namespace Hecton8.Physiology
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveCadenceSeconds(float globalQualityWeight)
         {
-            float q = math.saturate(SanitizeFinite(globalQualityWeight, 1f));
-            return math.lerp(0.5f, 3f, 1f - q);
+            return ShinobuMetabolismConstants.NominalSlowTickSeconds;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -94,6 +94,7 @@ namespace Hecton8.UI
 
         private Camera _mainCamera;
         private Transform _cachedTransform;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private PlayerToolManager _toolManager;
         private PlayerInventory _inventory;
         private PlayerActionController _cachedPlayerActions;
@@ -172,6 +173,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            RefreshCachedRegistryServices();
             ResolvePlayerReferences();
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegisterHotSwapListener();
@@ -292,7 +294,7 @@ namespace Hecton8.UI
                 return false;
 
             _cameraRetryTimer = CameraRetryInterval;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null)
                 _mainCamera = playerContext.PlayerCamera;
 
@@ -683,17 +685,20 @@ namespace Hecton8.UI
 
         private void ResolvePlayerReferences()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext == null)
+            {
+                _toolManager = null;
+                _inventory = null;
+                _mainCamera = null;
                 return;
+            }
 
-            if (_toolManager == null)
-                _toolManager = playerContext.ToolManager;
+            _toolManager = playerContext.ToolManager;
 
-            if (_inventory == null)
-                _inventory = playerContext.Inventory;
+            _inventory = playerContext.Inventory;
 
-            if (_mainCamera == null)
+            if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
                 _mainCamera = playerContext.PlayerCamera;
         }
 
@@ -749,6 +754,7 @@ namespace Hecton8.UI
 
         private void RefreshCachedRegistryServices()
         {
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedInputManager = GlobalRegistry.NativeInputManager;
             _cachedPlayerActions = GlobalRegistry.PlayerActions;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
@@ -761,9 +767,18 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot != GlobalRegistryServiceSlot.Input &&
+                serviceSlot != GlobalRegistryServiceSlot.Player &&
                 serviceSlot != GlobalRegistryServiceSlot.PlayerActionRuntime &&
-                serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+                serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime &&
+                serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
             {
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (isActiveAndEnabled)
+                    RegisterToTick();
                 return;
             }
 
@@ -771,6 +786,11 @@ namespace Hecton8.UI
                 UnsubscribeInputManager();
 
             RefreshCachedRegistryServices();
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _mainCamera = null;
+                ResolvePlayerReferences();
+            }
 
             if (!isActiveAndEnabled)
                 return;
@@ -868,9 +888,6 @@ namespace Hecton8.UI
         private void RegisterToTick()
         {
             if (!Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             if (_registered)

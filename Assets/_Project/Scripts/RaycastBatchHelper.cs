@@ -13,7 +13,6 @@
 //
 // ============================================================================
 
-using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.World;
@@ -27,7 +26,6 @@ namespace Hecton8.Physics
     /// <summary>
     /// Single raycast result (hit or miss).
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
     public struct QueryResult
     {
         public bool hasHit;
@@ -52,6 +50,7 @@ namespace Hecton8.Physics
         private const int MaxCommandsPerRaycastJob = 16;
         private const float DirectionLengthMinSq = 0.000001f;
         private const float DirectionUnitToleranceSq = 0.0004f;
+        private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
 
         // ── Native Buffers (Persistent) ──
         private NativeArray<RaycastCommand> _commands;
@@ -373,7 +372,7 @@ namespace Hecton8.Physics
             if (!_commands.IsCreated)
             {
                 // COLD ALLOC: NativeArray<RaycastCommand>[512] — persistent batched raycast commands — owner: RaycastBatchHelper
-                _commands = new NativeArray<RaycastCommand>(MaxQueries, Allocator.Persistent);
+                _commands = new NativeArray<RaycastCommand>(MaxQueries, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
                 NativeMemorySentinel.RegisterNativeArray(
                     _commands,
                     nameof(RaycastBatchHelper),
@@ -384,7 +383,7 @@ namespace Hecton8.Physics
             if (!_hits.IsCreated)
             {
                 // COLD ALLOC: NativeArray<RaycastHit>[512] — persistent batched raycast hits — owner: RaycastBatchHelper
-                _hits = new NativeArray<RaycastHit>(MaxQueries, Allocator.Persistent);
+                _hits = new NativeArray<RaycastHit>(MaxQueries, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.ClearMemory);
                 NativeMemorySentinel.RegisterNativeArray(
                     _hits,
                     nameof(RaycastBatchHelper),

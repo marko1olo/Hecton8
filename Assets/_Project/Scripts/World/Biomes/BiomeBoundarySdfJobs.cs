@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Hecton8.World.Biomes.Contracts;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -13,20 +14,34 @@ namespace Hecton8.World.Biomes
         private const float MinBlendWidthMeters = 0.01f;
         private const float ExactCenterDistanceSq = 0.0001f;
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct BiomeWeightEntry
         {
-            public byte Biome;
+            [FieldOffset(0)]
             public uint Hash;
+
+            [FieldOffset(4)]
             public float Weight;
+
+            [FieldOffset(8)]
+            public byte Biome;
+
+            [FieldOffset(9)]
+            private byte _pad0;
+
+            [FieldOffset(10)]
+            private ushort _pad1;
+
+            [FieldOffset(12)]
+            private uint _pad2;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public struct BiomeBoundarySdfSampleJob : IJob
         {
-            [ReadOnly] public NativeArray<byte> GlobalBiomeMap;
-            [ReadOnly] public NativeArray<uint> BiomeHashMap;
-            [WriteOnly] public NativeArray<BiomeBoundarySdfResult> Result;
+            [ReadOnly, NoAlias] public NativeArray<byte> GlobalBiomeMap;
+            [ReadOnly, NoAlias] public NativeArray<uint> BiomeHashMap;
+            [WriteOnly, NoAlias] public NativeArray<BiomeBoundarySdfResult> Result;
 
             public BiomeBoundarySdfSettings Settings;
             public double2 SampleAupXZ;

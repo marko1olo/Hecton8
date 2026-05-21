@@ -1,8 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using Hecton8.Audio;
-using Hecton8.Audio.Propagation;
+using Hecton8.Audio.Virtualization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -180,6 +179,11 @@ namespace Hecton8.AI.Sensory
 
     public static class AcousticEchoLocationRuntime
     {
+        private const float Pi = 3.14159265358979323846f;
+        private const float TwoPi = 6.28318530717958647692f;
+        private const float HalfPi = 1.57079632679489661923f;
+        private const float InvTwoPi = 0.15915494309189533577f;
+
         public const byte FlagActiveTrail = 1 << 0;
         public const byte FlagPortalBreadcrumb = 1 << 1;
         public const byte FlagMovementBreadcrumb = 1 << 2;
@@ -188,6 +192,7 @@ namespace Hecton8.AI.Sensory
         public const byte FlagMinimumQualityDirectNode = 1 << 5;
         public const byte FlagDspEchoTap = 1 << 6;
         public const byte FlagSilenceLost = 1 << 7;
+        public const byte PortalEmissionFlagStationaryEmitter = 1 << 4;
 
         public const int MaxEchoTapsPerFrame = 32;
         public const int BlackBoxFrameCount = 300;
@@ -265,7 +270,7 @@ namespace Hecton8.AI.Sensory
                 return false;
             }
 
-            if (!TryResolvePendingTaps(out NativeArray<EchoTap> pendingTaps))
+            if (!EnsurePendingTaps(out NativeArray<EchoTap> pendingTaps))
                 return false;
 
             if (!pendingTaps.IsCreated || _queuedEchoTapCount >= pendingTaps.Length)
@@ -285,8 +290,8 @@ namespace Hecton8.AI.Sensory
                 !IsVaultHandleCreated(in _jobResultHandle) ||
                 !IsVaultHandleCreated(in _blackBoxHandle))
             {
-                if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                    vault = latest;
+                EnsureBootstrapVault();
+                vault = _dataVault;
             }
 
             if (vault == null)
@@ -300,30 +305,38 @@ namespace Hecton8.AI.Sensory
                 _dataVault = vault;
             }
 
-            return TryResolveOrAcquireVaultBuffer(
+            return EnsureVaultBuffer(
                        vault,
                        BufferID.AcousticEchoFrameTaps,
                        MaxEchoTapsPerFrame,
                        ref _frameTapsHandle,
                        out _) &&
-                   TryResolveOrAcquireVaultBuffer(
+                   EnsureVaultBuffer(
                        vault,
                        BufferID.AcousticEchoPendingTaps,
                        MaxQueuedEchoTaps,
                        ref _pendingTapsHandle,
                        out _) &&
-                   TryResolveOrAcquireVaultBuffer(
+                   EnsureVaultBuffer(
                        vault,
                        BufferID.AcousticEchoTrailState,
                        1,
                        ref _jobResultHandle,
                        out _) &&
-                   TryResolveOrAcquireVaultBuffer(
+                   EnsureVaultBuffer(
                        vault,
                        BufferID.AcousticEchoBlackBox,
                        BlackBoxFrameCount,
                        ref _blackBoxHandle,
                        out _);
+        }
+
+        private static void EnsureBootstrapVault()
+        {
+            if (_dataVault != null || _initialized != 0)
+                return;
+
+            _dataVault = GlobalRegistry.DataVault;
         }
 
         private static void ClearVaultHandles()
@@ -362,7 +375,7 @@ namespace Hecton8.AI.Sensory
                    buffer.Length >= requiredLength;
         }
 
-        private static bool TryResolveOrAcquireVaultBuffer<T>(
+        private static bool EnsureVaultBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -418,7 +431,7 @@ namespace Hecton8.AI.Sensory
             handle = default;
         }
 
-        private static bool TryResolveFrameViews(
+        private static bool EnsureFrameViews(
             out NativeArray<EchoTap> frameTaps,
             out NativeArray<AcousticEchoTrailState> jobResult)
         {
@@ -435,16 +448,9 @@ namespace Hecton8.AI.Sensory
                 return true;
             }
 
-            IDataVault refreshed = GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest)
-                ? latest
-                : null;
-            if (refreshed == null || ReferenceEquals(refreshed, vault))
-                return false;
-
             CompleteTrackingFenceForVaultRelease();
             ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
-            _dataVault = refreshed;
             if (!EnsureVaultBuffers())
                 return false;
 
@@ -452,7 +458,7 @@ namespace Hecton8.AI.Sensory
                    TryResolveVaultBuffer(in _jobResultHandle, 1, out jobResult);
         }
 
-        private static bool TryResolveBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox)
+        private static bool EnsureBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox)
         {
             blackBox = default;
             if (!EnsureVaultBuffers())
@@ -461,23 +467,16 @@ namespace Hecton8.AI.Sensory
             if (TryResolveVaultBuffer(in _blackBoxHandle, BlackBoxFrameCount, out blackBox))
                 return true;
 
-            IDataVault refreshed = GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest)
-                ? latest
-                : null;
-            if (refreshed == null || ReferenceEquals(refreshed, _dataVault))
-                return false;
-
             CompleteTrackingFenceForVaultRelease();
             ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
-            _dataVault = refreshed;
             if (!EnsureVaultBuffers())
                 return false;
 
             return TryResolveVaultBuffer(in _blackBoxHandle, BlackBoxFrameCount, out blackBox);
         }
 
-        private static bool TryResolvePendingTaps(out NativeArray<EchoTap> pendingTaps)
+        private static bool EnsurePendingTaps(out NativeArray<EchoTap> pendingTaps)
         {
             pendingTaps = default;
             return EnsureVaultBuffers() &&
@@ -486,7 +485,11 @@ namespace Hecton8.AI.Sensory
 
         public static bool TryEnqueuePortalEcho(
             in AbsoluteUniversePosition sourceAup,
-            in AcousticPathResult pathResult,
+            in AcousticAup lastPortalAup,
+            byte pathFound,
+            byte usedPortalPath,
+            float transmission01,
+            float delaySeconds,
             float volume01,
             uint sourceId,
             int frame,
@@ -494,21 +497,21 @@ namespace Hecton8.AI.Sensory
             byte qualityWeightByte,
             byte extraFlags = 0)
         {
-            if (pathResult.Status != AcousticPathStatus.PathFound ||
-                pathResult.UsedPortalPath == 0 ||
-                !AcousticAup.IsFinite(in pathResult.LastPortalAup) ||
-                !math.isfinite(pathResult.Transmission01) ||
-                !math.isfinite(pathResult.DelaySeconds))
+            if (pathFound == 0 ||
+                usedPortalPath == 0 ||
+                !AcousticAup.IsFinite(in lastPortalAup) ||
+                !math.isfinite(transmission01) ||
+                !math.isfinite(delaySeconds))
             {
                 return false;
             }
 
             EchoTap tap = default;
             tap.SourceAup = sourceAup;
-            tap.PortalAup = ToAbsoluteUniversePosition(in pathResult.LastPortalAup);
+            tap.PortalAup = ToAbsoluteUniversePosition(in lastPortalAup);
             tap.Volume01 = math.saturate(volume01);
-            tap.Transmission01 = math.saturate(pathResult.Transmission01);
-            tap.DelaySeconds = math.max(0f, pathResult.DelaySeconds);
+            tap.Transmission01 = math.saturate(transmission01);
+            tap.DelaySeconds = math.max(0f, delaySeconds);
             tap.LastHeardTime = math.max(0f, currentTime - tap.DelaySeconds);
             tap.SourceId = sourceId;
             tap.Sequence = NextSequence(frame);
@@ -518,28 +521,39 @@ namespace Hecton8.AI.Sensory
         }
 
         public static bool TryPublishPortalPropagationEcho(
-            in SoundEmissionSignal emission,
-            in AcousticPathResult pathResult,
+            in AcousticAup emissionSourceAup,
+            in AcousticAup lastPortalAup,
+            byte pathFound,
+            byte usedPortalPath,
+            float volume01,
+            float transmission01,
+            float delaySeconds,
+            uint eventId,
+            byte emissionFlags,
             int frame,
             float currentTime,
             byte qualityWeightByte)
         {
-            AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in emission.SourceAup);
-            byte flags = (emission.Flags & AcousticPortalFlags.StationaryEmitter) != 0
+            AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in emissionSourceAup);
+            byte flags = (emissionFlags & PortalEmissionFlagStationaryEmitter) != 0
                 ? FlagNoisemakerCandidate
                 : (byte)0;
             return TryEnqueuePortalEcho(
                 in sourceAup,
-                in pathResult,
-                emission.Volume,
-                emission.EventID,
+                in lastPortalAup,
+                pathFound,
+                usedPortalPath,
+                transmission01,
+                delaySeconds,
+                volume01,
+                eventId,
                 frame,
                 currentTime,
                 qualityWeightByte,
                 flags);
         }
 
-        public static bool TryResolvePredatorEcho(
+        public static bool TryUpdatePredatorEcho(
             int frame,
             in AbsoluteUniversePosition predatorAup,
             float currentTime,
@@ -581,36 +595,37 @@ namespace Hecton8.AI.Sensory
             return result.Intensity01 > 0.0001f;
         }
 
-        public static bool TryHydrateFromSonarEchoTaps(
-            NativeArray<SonarEchoTap>.ReadOnly sonarTaps,
+        public static bool TryHydrateFromAcousticEchoTaps(
+            NativeArray<AcousticEchoTap>.ReadOnly echoTaps,
             int tapCount,
-            in AbsoluteUniversePosition sourceAup,
-            float volume01,
-            uint sourceId,
             int frame,
             float currentTime,
             byte qualityWeightByte)
         {
             EnsureInitialized();
-            int safeCount = math.clamp(tapCount, 0, sonarTaps.IsCreated ? math.min(MaxEchoTapsPerFrame, sonarTaps.Length) : 0);
+            int safeCount = math.clamp(tapCount, 0, echoTaps.IsCreated ? math.min(MaxEchoTapsPerFrame, echoTaps.Length) : 0);
             bool any = false;
             for (int i = 0; i < safeCount; i++)
             {
-                SonarEchoTap sonarTap = sonarTaps[i];
-                if (!math.isfinite(sonarTap.DelaySeconds) ||
-                    !math.isfinite(sonarTap.Attenuation))
+                AcousticEchoTap echoTap = echoTaps[i];
+                if (!AcousticAup.IsFinite(in echoTap.SourceAup) ||
+                    !math.isfinite(echoTap.DelaySeconds) ||
+                    !math.isfinite(echoTap.Volume01) ||
+                    !math.isfinite(echoTap.Magnitude))
                 {
                     continue;
                 }
 
+                AbsoluteUniversePosition sourceAup = ToAbsoluteUniversePosition(in echoTap.SourceAup);
                 EchoTap tap = default;
                 tap.SourceAup = sourceAup;
                 tap.PortalAup = sourceAup;
-                tap.Volume01 = math.saturate(volume01);
-                tap.Transmission01 = math.saturate(sonarTap.Attenuation);
-                tap.DelaySeconds = math.max(0f, sonarTap.DelaySeconds);
+                tap.Volume01 = math.saturate(echoTap.Volume01);
+                tap.Transmission01 = math.saturate(echoTap.Magnitude);
+                tap.DelaySeconds = math.max(0f, echoTap.DelaySeconds);
                 tap.LastHeardTime = math.max(0f, currentTime - tap.DelaySeconds);
-                tap.SourceId = sourceId;
+                uint resolvedSourceId = echoTap.SourceId != 0u ? echoTap.SourceId : echoTap.SoundHash;
+                tap.SourceId = resolvedSourceId != 0u ? resolvedSourceId : 1u;
                 tap.Sequence = NextSequence(frame);
                 tap.Flags = (byte)(FlagDspEchoTap | FlagMinimumQualityDirectNode);
                 tap.QualityWeightByte = qualityWeightByte;
@@ -634,7 +649,7 @@ namespace Hecton8.AI.Sensory
 
             currentTime = math.max(0f, currentTime);
 
-            if (!TryResolveFrameViews(out NativeArray<EchoTap> frameTaps, out NativeArray<AcousticEchoTrailState> jobResult))
+            if (!EnsureFrameViews(out NativeArray<EchoTap> frameTaps, out NativeArray<AcousticEchoTrailState> jobResult))
             {
                 DropEchoTapQueue();
                 return;
@@ -683,7 +698,7 @@ namespace Hecton8.AI.Sensory
         {
             int count = 0;
             int limit = math.min(MaxEchoTapsPerFrame, frameTaps.IsCreated ? frameTaps.Length : 0);
-            if (!TryResolvePendingTaps(out NativeArray<EchoTap> pendingTaps))
+            if (!EnsurePendingTaps(out NativeArray<EchoTap> pendingTaps))
             {
                 _queuedEchoTapCount = 0;
                 return count;
@@ -814,12 +829,12 @@ namespace Hecton8.AI.Sensory
             float quality01 = DecodeQualityWeightByte(state.QualityWeightByte);
             float qualityCurve = SmoothStep01(math.saturate((quality01 - 0.12f) * math.rcp(0.88f)));
             float distance01 = math.saturate(1f - (float)(distanceSq * math.rcp(1600.0)));
-            return math.sin(currentTime * 4.65f) * math.saturate(state.Intensity01 * (0.45f + distance01)) * qualityCurve;
+            return SinPolynomial7(currentTime * 4.65f) * math.saturate(state.Intensity01 * (0.45f + distance01)) * qualityCurve;
         }
 
         private static void DropEchoTapQueue()
         {
-            if (!TryResolvePendingTaps(out NativeArray<EchoTap> pendingTaps))
+            if (!EnsurePendingTaps(out NativeArray<EchoTap> pendingTaps))
             {
                 _queuedEchoTapCount = 0;
                 return;
@@ -863,6 +878,15 @@ namespace Hecton8.AI.Sensory
         {
             float t = math.saturate(value);
             return t * t * (3f - 2f * t);
+        }
+
+        private static float SinPolynomial7(float angle)
+        {
+            float x = angle - TwoPi * math.floor((angle + Pi) * InvTwoPi);
+            x = math.select(x, Pi - x, x > HalfPi);
+            x = math.select(x, -Pi - x, x < -HalfPi);
+            float x2 = x * x;
+            return x * (1f + x2 * (-0.16666667f + x2 * (0.008333331f + x2 * -0.000198409f)));
         }
 
         private static void ConsumeScalabilityChangedSignals()
@@ -937,7 +961,7 @@ namespace Hecton8.AI.Sensory
 
         private static void WriteBlackBox(int frame, in AcousticEchoTrailState state, float silenceSeconds)
         {
-            if (!TryResolveBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox))
+            if (!EnsureBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox))
                 return;
 
             int index = _blackBoxCursor % blackBox.Length;
@@ -976,7 +1000,7 @@ namespace Hecton8.AI.Sensory
 
         private static void DumpBlackBox()
         {
-            if (!TryResolveBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox))
+            if (!EnsureBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox))
                 return;
 
             try

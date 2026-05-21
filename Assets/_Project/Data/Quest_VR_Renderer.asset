@@ -149,6 +149,7 @@ MonoBehaviour:
   - {fileID: 2190497963224564290}
   - {fileID: -2501237762034214547}
   - {fileID: 1193483708777696574}
+  - {fileID: 232232232000003}
   - {fileID: -6711189012746036237}
   - {fileID: -7876346766836879761}
   - {fileID: -5156602577924574680}
@@ -157,7 +158,7 @@ MonoBehaviour:
   - {fileID: 415103832360233407}
   - {fileID: 8595161897321640130}
   - {fileID: 7811646883630815038}
-  m_RendererFeatureMap: 428237b34a36661e6d5928ef81d149dd3e0de91a1c1b9010f39bc47a2611dda26f2ee4a25898b1922832f1b6461170b880a609021359b85943f85f998309d705bf29bc78bcbec205c230d4dc342648773e179ae9738b686c
+  m_RendererFeatureMap: 428237b34a36661e6d5928ef81d149dd3e0de91a1c1b9010039ab1c736d30000f39bc47a2611dda26f2ee4a25898b1922832f1b6461170b880a609021359b85943f85f998309d705bf29bc78bcbec205c230d4dc342648773e179ae9738b686c
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -244,6 +245,22 @@ MonoBehaviour:
     depthSigma: 18
     blurDepthThreshold: 0.18
     compositeStrength: 0.24
+--- !u!114 &232232232000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cbb8fb5b0c14e57aa7d232232ca0005, type: 3}
+  m_Name: HectonDeferredCausticsFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Rendering.HectonDeferredCausticsFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 4cbb8fb5b0c14e57aa7d232232ca0007, type: 3}
+    injectionPoint: 450
 --- !u!114 &2190497963224564290
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -295,7 +312,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVisorUberPostFeature
   m_Active: 1
   settings:
-    shader: {fileID: 4800000, guid: 6a291e321bfc47340ae08d76a1fee749, type: 3}
+    shader: {fileID: 4800000, guid: 2b2a9f18d90f4b35b8b4f9d1a8e23501, type: 3}
     reconstructionShader: {fileID: 4800000, guid: b104c09d7a4e49d69f0e8467bb15a104, type: 3}
     crackTexture: {fileID: 0}
     lensDirtTexture: {fileID: 0}

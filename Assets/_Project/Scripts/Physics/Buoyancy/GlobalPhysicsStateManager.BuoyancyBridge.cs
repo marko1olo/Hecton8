@@ -4,20 +4,20 @@ namespace Hecton8.Physics
 {
     public sealed partial class GlobalPhysicsStateManager
     {
-        internal static bool TryResolveTrackedBodyByFoldedEntityHash(uint entityHashID, out Rigidbody body)
+        internal static bool TryFindTrackedBodyByFoldedEntityHash(uint entityHashID, out Rigidbody body)
         {
             int bodyIndex;
-            return TryResolveTrackedBodyByFoldedEntityHash(entityHashID, out body, out bodyIndex);
+            return TryFindTrackedBodyByFoldedEntityHash(entityHashID, out body, out bodyIndex);
         }
 
-        internal static bool TryResolveTrackedBodyByFoldedEntityHash(uint entityHashID, out Rigidbody body, out int bodyIndex)
+        internal static bool TryFindTrackedBodyByFoldedEntityHash(uint entityHashID, out Rigidbody body, out int bodyIndex)
         {
             body = null;
             bodyIndex = -1;
             if (entityHashID == 0u || !TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
                 return false;
 
-            return manager.TryResolveTrackedBodyByFoldedEntityHashInternal(entityHashID, out body, out bodyIndex);
+            return manager.TryFindTrackedBodyByFoldedEntityHashInternal(entityHashID, out body, out bodyIndex);
         }
 
         internal static bool TryGetBuoyancyBodyResolver(out GlobalPhysicsStateManager manager)
@@ -25,7 +25,7 @@ namespace Hecton8.Physics
             return TryGetRuntimeManager(out manager);
         }
 
-        internal static bool TryResolveTrackedBodyByFoldedEntityHash(
+        internal static bool TryFindTrackedBodyByFoldedEntityHash(
             GlobalPhysicsStateManager manager,
             uint entityHashID,
             out Rigidbody body,
@@ -36,7 +36,7 @@ namespace Hecton8.Physics
             if (entityHashID == 0u || manager == null)
                 return false;
 
-            return manager.TryResolveTrackedBodyByFoldedEntityHashInternal(entityHashID, out body, out bodyIndex);
+            return manager.TryFindTrackedBodyByFoldedEntityHashInternal(entityHashID, out body, out bodyIndex);
         }
 
         internal static bool TryResolveTrackedBodyByIndex(int bodyIndex, uint entityHashID, out Rigidbody body)
@@ -61,7 +61,7 @@ namespace Hecton8.Physics
             return manager.TryResolveTrackedBodyByIndexInternal(bodyIndex, entityHashID, out body);
         }
 
-        private bool TryResolveTrackedBodyByFoldedEntityHashInternal(uint entityHashID, out Rigidbody body, out int bodyIndex)
+        private bool TryFindTrackedBodyByFoldedEntityHashInternal(uint entityHashID, out Rigidbody body, out int bodyIndex)
         {
             body = null;
             bodyIndex = -1;

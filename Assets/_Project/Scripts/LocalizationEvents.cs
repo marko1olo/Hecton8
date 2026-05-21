@@ -68,20 +68,161 @@ namespace Hecton.Localization
         private const uint ListenerExceptionWarningHash = 0x4C455645u; // LEVE
         private const uint ListenerExceptionLanguageContextHash = 0x4C455847u; // LEXG
         private const uint ListenerExceptionCorruptionContextHash = 0x4C455843u; // LEXC
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private static readonly uint _OverflowWarningHash = unchecked((uint)LocHash.Compute("LocalizationEvents.Overflow"));
 
-        // COLD ALLOC: RegistryBucket<ILocalizationLanguageChangedListener>[128] - language listeners drained by SystemDispatcher - owner: LocalizationEvents
-        private static readonly RegistryBucket<ILocalizationLanguageChangedListener> _languageListeners = new RegistryBucket<ILocalizationLanguageChangedListener>(LanguageListenerCapacity);
-        // COLD ALLOC: RegistryBucket<ILocalizationCorruptionVisualStateListener>[64] - corruption visual listeners drained by SystemDispatcher - owner: LocalizationEvents
-        private static readonly RegistryBucket<ILocalizationCorruptionVisualStateListener> _corruptionListeners = new RegistryBucket<ILocalizationCorruptionVisualStateListener>(CorruptionListenerCapacity);
-        // COLD ALLOC: ILocalizationLanguageChangedListener[128] - language listener additions deferred during localization dispatch - owner: LocalizationEvents
-        private static readonly ILocalizationLanguageChangedListener[] _deferredLanguageRegisterListeners = new ILocalizationLanguageChangedListener[LanguageListenerCapacity];
-        // COLD ALLOC: ILocalizationLanguageChangedListener[128] - language listener removals deferred during localization dispatch - owner: LocalizationEvents
-        private static readonly ILocalizationLanguageChangedListener[] _deferredLanguageUnregisterListeners = new ILocalizationLanguageChangedListener[LanguageListenerCapacity];
-        // COLD ALLOC: ILocalizationCorruptionVisualStateListener[64] - corruption listener additions deferred during localization dispatch - owner: LocalizationEvents
-        private static readonly ILocalizationCorruptionVisualStateListener[] _deferredCorruptionRegisterListeners = new ILocalizationCorruptionVisualStateListener[CorruptionListenerCapacity];
-        // COLD ALLOC: ILocalizationCorruptionVisualStateListener[64] - corruption listener removals deferred during localization dispatch - owner: LocalizationEvents
-        private static readonly ILocalizationCorruptionVisualStateListener[] _deferredCorruptionUnregisterListeners = new ILocalizationCorruptionVisualStateListener[CorruptionListenerCapacity];
+        private struct LanguageListenerSlot
+        {
+            public ILocalizationLanguageChangedListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct CorruptionListenerSlot
+        {
+            public ILocalizationCorruptionVisualStateListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct LanguageListenerRegistry
+        {
+            private readonly LanguageListenerSlot[] _slots;
+            private int _count;
+
+            public LanguageListenerRegistry(int capacity)
+            {
+                _slots = new LanguageListenerSlot[capacity]; // COLD ALLOC: LanguageListenerSlot[128] - fixed language listeners drained by SystemDispatcher - owner: LocalizationEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(ILocalizationLanguageChangedListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(ILocalizationLanguageChangedListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void TryUnregister(ILocalizationLanguageChangedListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public ILocalizationLanguageChangedListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private struct CorruptionListenerRegistry
+        {
+            private readonly CorruptionListenerSlot[] _slots;
+            private int _count;
+
+            public CorruptionListenerRegistry(int capacity)
+            {
+                _slots = new CorruptionListenerSlot[capacity]; // COLD ALLOC: CorruptionListenerSlot[64] - fixed corruption listeners drained by SystemDispatcher - owner: LocalizationEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(ILocalizationCorruptionVisualStateListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(ILocalizationCorruptionVisualStateListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void TryUnregister(ILocalizationCorruptionVisualStateListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public ILocalizationCorruptionVisualStateListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static LanguageListenerRegistry _languageListeners = new LanguageListenerRegistry(LanguageListenerCapacity);
+        private static CorruptionListenerRegistry _corruptionListeners = new CorruptionListenerRegistry(CorruptionListenerCapacity);
+        // COLD ALLOC: LanguageListenerSlot[128] - language listener additions deferred during localization dispatch - owner: LocalizationEvents
+        private static readonly LanguageListenerSlot[] _deferredLanguageRegisterListeners = new LanguageListenerSlot[LanguageListenerCapacity];
+        // COLD ALLOC: LanguageListenerSlot[128] - language listener removals deferred during localization dispatch - owner: LocalizationEvents
+        private static readonly LanguageListenerSlot[] _deferredLanguageUnregisterListeners = new LanguageListenerSlot[LanguageListenerCapacity];
+        // COLD ALLOC: CorruptionListenerSlot[64] - corruption listener additions deferred during localization dispatch - owner: LocalizationEvents
+        private static readonly CorruptionListenerSlot[] _deferredCorruptionRegisterListeners = new CorruptionListenerSlot[CorruptionListenerCapacity];
+        // COLD ALLOC: CorruptionListenerSlot[64] - corruption listener removals deferred during localization dispatch - owner: LocalizationEvents
+        private static readonly CorruptionListenerSlot[] _deferredCorruptionUnregisterListeners = new CorruptionListenerSlot[CorruptionListenerCapacity];
         private static NativeQueue<LocalizationEventPayload> _pendingEvents;
         private static NativeQueue<LocalizationEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -353,11 +494,10 @@ namespace Hecton.Localization
             {
                 case LocalizationEventType.LanguageChanged:
                 {
-                    ILocalizationLanguageChangedListener[] rawArray = _languageListeners.RawArray;
                     int count = _languageListeners.Count;
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        ILocalizationLanguageChangedListener listener = rawArray[i];
+                        ILocalizationLanguageChangedListener listener = _languageListeners.GetAt(i);
                         if (listener == null || IsDeferredLanguageUnregisterPending(listener))
                             continue;
 
@@ -368,11 +508,10 @@ namespace Hecton.Localization
 
                 case LocalizationEventType.CorruptionVisualStateChanged:
                 {
-                    ILocalizationCorruptionVisualStateListener[] rawArray = _corruptionListeners.RawArray;
                     int count = _corruptionListeners.Count;
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        ILocalizationCorruptionVisualStateListener listener = rawArray[i];
+                        ILocalizationCorruptionVisualStateListener listener = _corruptionListeners.GetAt(i);
                         if (listener == null || IsDeferredCorruptionUnregisterPending(listener))
                             continue;
 
@@ -454,16 +593,16 @@ namespace Hecton.Localization
         private static void ApplyDeferredListenerMutations()
         {
             for (int i = 0; i < _deferredLanguageUnregisterCount; i++)
-                _languageListeners.TryUnregister(_deferredLanguageUnregisterListeners[i]);
+                _languageListeners.TryUnregister(_deferredLanguageUnregisterListeners[i].Listener);
 
             for (int i = 0; i < _deferredCorruptionUnregisterCount; i++)
-                _corruptionListeners.TryUnregister(_deferredCorruptionUnregisterListeners[i]);
+                _corruptionListeners.TryUnregister(_deferredCorruptionUnregisterListeners[i].Listener);
 
             for (int i = 0; i < _deferredLanguageRegisterCount; i++)
-                RegisterLanguageListenerImmediate(_deferredLanguageRegisterListeners[i]);
+                RegisterLanguageListenerImmediate(_deferredLanguageRegisterListeners[i].Listener);
 
             for (int i = 0; i < _deferredCorruptionRegisterCount; i++)
-                RegisterCorruptionListenerImmediate(_deferredCorruptionRegisterListeners[i]);
+                RegisterCorruptionListenerImmediate(_deferredCorruptionRegisterListeners[i].Listener);
 
             ClearDeferredListeners(_deferredLanguageRegisterListeners, ref _deferredLanguageRegisterCount);
             ClearDeferredListeners(_deferredLanguageUnregisterListeners, ref _deferredLanguageUnregisterCount);
@@ -520,7 +659,10 @@ namespace Hecton.Localization
 #endif
         }
 
-        private static bool TryAppendDeferredListener<T>(T[] listeners, ref int count, T listener) where T : class
+        private static bool TryAppendDeferredListener(
+            LanguageListenerSlot[] listeners,
+            ref int count,
+            ILocalizationLanguageChangedListener listener)
         {
             if (listener == null)
                 return true;
@@ -531,41 +673,106 @@ namespace Hecton.Localization
             if (count >= listeners.Length)
                 return false;
 
-            listeners[count++] = listener;
+            listeners[count++].Listener = listener;
             return true;
         }
 
-        private static bool RemoveDeferredListener<T>(T[] listeners, ref int count, T listener) where T : class
+        private static bool TryAppendDeferredListener(
+            CorruptionListenerSlot[] listeners,
+            ref int count,
+            ILocalizationCorruptionVisualStateListener listener)
+        {
+            if (listener == null)
+                return true;
+
+            if (ContainsDeferredListener(listeners, count, listener))
+                return true;
+
+            if (count >= listeners.Length)
+                return false;
+
+            listeners[count++].Listener = listener;
+            return true;
+        }
+
+        private static bool RemoveDeferredListener(
+            LanguageListenerSlot[] listeners,
+            ref int count,
+            ILocalizationLanguageChangedListener listener)
         {
             for (int i = 0; i < count; i++)
             {
-                if (!ReferenceEquals(listeners[i], listener))
+                if (!ReferenceEquals(listeners[i].Listener, listener))
                     continue;
 
                 count--;
                 listeners[i] = listeners[count];
-                listeners[count] = null;
+                listeners[count].Clear();
                 return true;
             }
 
             return false;
         }
 
-        private static bool ContainsDeferredListener<T>(T[] listeners, int count, T listener) where T : class
+        private static bool RemoveDeferredListener(
+            CorruptionListenerSlot[] listeners,
+            ref int count,
+            ILocalizationCorruptionVisualStateListener listener)
         {
             for (int i = 0; i < count; i++)
             {
-                if (ReferenceEquals(listeners[i], listener))
+                if (!ReferenceEquals(listeners[i].Listener, listener))
+                    continue;
+
+                count--;
+                listeners[i] = listeners[count];
+                listeners[count].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsDeferredListener(
+            LanguageListenerSlot[] listeners,
+            int count,
+            ILocalizationLanguageChangedListener listener)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (ReferenceEquals(listeners[i].Listener, listener))
                     return true;
             }
 
             return false;
         }
 
-        private static void ClearDeferredListeners<T>(T[] listeners, ref int count) where T : class
+        private static bool ContainsDeferredListener(
+            CorruptionListenerSlot[] listeners,
+            int count,
+            ILocalizationCorruptionVisualStateListener listener)
         {
             for (int i = 0; i < count; i++)
-                listeners[i] = null;
+            {
+                if (ReferenceEquals(listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ClearDeferredListeners(LanguageListenerSlot[] listeners, ref int count)
+        {
+            for (int i = 0; i < count; i++)
+                listeners[i].Clear();
+
+            count = 0;
+        }
+
+        private static void ClearDeferredListeners(CorruptionListenerSlot[] listeners, ref int count)
+        {
+            for (int i = 0; i < count; i++)
+                listeners[i].Clear();
 
             count = 0;
         }
@@ -602,7 +809,7 @@ namespace Hecton.Localization
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<LocalizationEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<LocalizationEventPayload>[128] - deferred localization event lane flushed by SystemDispatcher LateUpdate - owner: LocalizationEvents
+                _pendingEvents = new NativeQueue<LocalizationEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<LocalizationEventPayload>[128] - deferred localization event lane flushed by SystemDispatcher LateUpdate - owner: LocalizationEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -614,7 +821,7 @@ namespace Hecton.Localization
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<LocalizationEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<LocalizationEventPayload>[128] - next-frame localization lane prevents same-frame reentrant dispatch - owner: LocalizationEvents
+                _nextFrameEvents = new NativeQueue<LocalizationEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<LocalizationEventPayload>[128] - next-frame localization lane prevents same-frame reentrant dispatch - owner: LocalizationEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

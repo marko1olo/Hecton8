@@ -1,7 +1,7 @@
 # SHINOBU_214 Rationale
 
 Date: 2026-05-20
-Status: STATIC POLISH + ISOLATED_ASMDEF + BLACKBOX + STRUCT_REQUEST_FIX + AXIS_DIMENSION_FIX + QUALITY_CURVE + CSV_PROFILE_AUTHORITY + PROPERTY_PURGE + BATCH_FAULT_ADVANCE APPLIED / COMPILE BLOCKED BY CPU GATE
+Status: STATIC POLISH + ISOLATED_ASMDEF + BLACKBOX + STRUCT_REQUEST_FIX + AXIS_DIMENSION_FIX + QUALITY_CURVE + CSV_PROFILE_AUTHORITY + PROPERTY_PURGE + BATCH_FAULT_ADVANCE + ACCESSOR_PURITY_GUARD + ATLAS_PATH_DRIFT_PRUNED APPLIED / COMPILE BLOCKED BY CPU GATE
 
 ## Decision 001: Offline-Only PBR Mask Authority
 
@@ -170,3 +170,19 @@ Solution: Move the texture packer files into `Assets/_Project/Scripts/Editor/Tex
 Rejected Alternatives: Editing the broad shared `Hecton8.Editor.asmdef` or leaving the code under that assembly were rejected. The first risks other editor tools owned by other agents; the second leaves a false compile-wall dependency surface.
 Scalability potential: No visual tier behavior changes. Iteration speed improves because texture-packer edits compile inside a narrower Editor assembly.
 Hardware Impact: Runtime remains 0 us. Developer compile churn is reduced; exact compile seconds require Unity import/build proof after CPU gate opens.
+
+## Decision 022: Accessor Purity Naming Guard
+
+Problem: Global Systems Doctrine requires `Get*`, `TryGet*`, `Resolve*`, and `Read*` accessors to be pure. Several owned Editor helpers used those names while creating folders, building strings, or advancing CSV parser cursors, which weakened static evidence even though the code remained Editor-only.
+Solution: Rename impure helpers to command/parser/build names: `CreateUniqueAssetPath`, `BuildSetKey`, `TryParseProfile`, `ParseFixedStringColumn`, `ParseFloatColumn`, `ParseFlagsColumn`, `BuildPrefabMaterialPath`, and `BuildFormatLabel`. Remaining `Resolve*` helpers are pure dimension/mip math. `.Complete()` sites now carry explicit Editor materialization comments.
+Rejected Alternatives: Leaving names unchanged with comments, or over-renaming pure math helpers, were rejected. Comments do not satisfy static audits; renaming pure math helpers would add churn without improving doctrine compliance.
+Scalability potential: No visual tier behavior changes. The same continuous `GlobalQualityWeight` macro bake and one-sampler ARM contract remain intact across Low/Middle/High/Ultra.
+Hardware Impact: Runtime remains 0 us. Editor behavior is unchanged; the gain is doctrine-proofed call semantics and reduced risk of future hot-path misuse.
+
+## Decision 023: Prune Atlas Stale Texture-Packer Paths Without Reopening Broad Editor Assembly
+
+Problem: `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` and `Tools/AtlasCheck.py` exposed stale references to `Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs` and `Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs` after the packer moved into the isolated `TextureChannelPacker` Editor asmdef. Restoring shim files at the old path would reattach texture-packer code to the broad editor assembly and violate the compile-wall goal.
+Solution: Update only the dependency graph/tooling/ledger references owned by the static atlas surface: the old mask hotspot now points to `HectonArmTextureChannelPacker.cs` at the actual RenderTexture capture path, the validator hotspot points to `TextureChannelPacker/HectonMaterialChannelPackValidator.cs`, and the atlas status/test/ledger strings reflect the current `ATLAS_CHECK_FAIL references=6779 missing=60` result.
+Rejected Alternatives: Recreating old files, editing broad `Hecton8.Editor.asmdef`, or rewriting all DOC_GLOBAL historical reports were rejected. Shims damage assembly isolation; broad asmdef edits touch other agents; historical report rewrites exceed SHINOBU_214 authority.
+Scalability potential: No visual tier behavior changes. The one-sampler ARM contract and continuous macro bake remain intact while documentation now points at the narrower Editor assembly.
+Hardware Impact: Runtime remains 0 us. Developer compile wall remains protected because no old-path source shim was introduced; static atlas noise from SHINOBU_214 dropped by two missing references.

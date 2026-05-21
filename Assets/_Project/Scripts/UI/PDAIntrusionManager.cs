@@ -26,13 +26,14 @@ namespace Hecton8.UI
     /// <summary>
     /// Blittable PDA intrusion payload flushed during dispatcher LateUpdate.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct PDAIntrusionEventPayload
     {
-        public uint SourceID;
-        public uint EventHashID;
-        public ushort EventType;
-        public ushort Reserved;
+        [FieldOffset(0)] public uint SourceID;
+        [FieldOffset(4)] public uint EventHashID;
+        [FieldOffset(8)] public ushort EventType;
+        [FieldOffset(10)] public ushort Reserved;
+        [FieldOffset(12)] private uint _pad0;
     }
 
     /// <summary>
@@ -50,18 +51,92 @@ namespace Hecton8.UI
     {
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 4;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint PDAIntrusionListenerOverflowWarningHash = 0x5049564Cu; // PIVL
         private const uint PDAIntrusionListenerContextHash = 0x50495652u; // PIVR
         private const uint PDAIntrusionListenerExceptionWarningHash = 0x50495645u; // PIVE
         private const uint PDAIntrusionListenerExceptionContextHash = 0x50495658u; // PIVX
         private static readonly uint _RebootCompletedEventHash = unchecked((uint)LocHash.Compute("PDAIntrusion.RebootCompleted"));
 
-        // COLD ALLOC: RegistryBucket<IPDAIntrusionEventListener>[8] - PDA intrusion listeners drained by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
-        private static readonly RegistryBucket<IPDAIntrusionEventListener> _listeners = new RegistryBucket<IPDAIntrusionEventListener>(ListenerCapacity);
-        // COLD ALLOC: IPDAIntrusionEventListener[8] - listener additions deferred while dispatching PDA intrusion events - owner: PDAIntrusionEvents
-        private static readonly IPDAIntrusionEventListener[] _deferredRegisterListeners = new IPDAIntrusionEventListener[ListenerCapacity];
-        // COLD ALLOC: IPDAIntrusionEventListener[8] - listener removals deferred while dispatching PDA intrusion events - owner: PDAIntrusionEvents
-        private static readonly IPDAIntrusionEventListener[] _deferredUnregisterListeners = new IPDAIntrusionEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public IPDAIntrusionEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct PDAIntrusionListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public PDAIntrusionListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IPDAIntrusionEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IPDAIntrusionEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public bool TryUnregister(IPDAIntrusionEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return true;
+                }
+
+                return false;
+            }
+
+            public IPDAIntrusionEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - PDA intrusion listeners drained by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
+        private static PDAIntrusionListenerRegistry _listeners = new PDAIntrusionListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[8] - listener additions deferred while dispatching PDA intrusion events - owner: PDAIntrusionEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener removals deferred while dispatching PDA intrusion events - owner: PDAIntrusionEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<PDAIntrusionEventPayload> _pendingEvents;
         private static NativeQueue<PDAIntrusionEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -198,14 +273,13 @@ namespace Hecton8.UI
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IPDAIntrusionEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IPDAIntrusionEventListener listener = rawArray[i];
+                        IPDAIntrusionEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -230,7 +304,7 @@ namespace Hecton8.UI
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<PDAIntrusionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAIntrusionEventPayload>[4] - deferred PDA intrusion lane flushed by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
+                _pendingEvents = new NativeQueue<PDAIntrusionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PDAIntrusionEventPayload>[4] - deferred PDA intrusion lane flushed by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -242,7 +316,7 @@ namespace Hecton8.UI
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<PDAIntrusionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAIntrusionEventPayload>[4] - next-frame PDA intrusion lane prevents same-frame reentrant dispatch - owner: PDAIntrusionEvents
+                _nextFrameEvents = new NativeQueue<PDAIntrusionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PDAIntrusionEventPayload>[4] - next-frame PDA intrusion lane prevents same-frame reentrant dispatch - owner: PDAIntrusionEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -369,7 +443,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IPDAIntrusionEventListener listener)
@@ -389,19 +463,19 @@ namespace Hecton8.UI
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IPDAIntrusionEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -412,12 +486,12 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -426,7 +500,7 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -437,7 +511,7 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -448,8 +522,8 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IPDAIntrusionEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IPDAIntrusionEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -458,8 +532,8 @@ namespace Hecton8.UI
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IPDAIntrusionEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IPDAIntrusionEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }

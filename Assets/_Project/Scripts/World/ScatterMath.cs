@@ -14,7 +14,7 @@ namespace Hecton8.World
             in WorldProceduralFieldSampler.FieldSample fieldSample,
             in WorldProceduralScatterDirector.ScatterRuntimeRuleEntry runtimeRule)
         {
-            if (fieldSample.isSecondaryDomain || fieldSample.verticalDomainWeight > 0f)
+            if (fieldSample.isSecondaryDomain != 0 || fieldSample.verticalDomainWeight > 0f)
                 return math.max(0, fieldSample.verticalDomainIndex);
 
             return ResolveHeightLayerIndex(
@@ -45,7 +45,7 @@ namespace Hecton8.World
             in WorldProceduralFieldSampler.FieldSample fieldSample,
             in WorldProceduralScatterDirector.ScatterRuntimeRuleEntry runtimeRule)
         {
-            if (!fieldSample.isSecondaryDomain)
+            if (fieldSample.isSecondaryDomain == 0)
                 return true;
 
             WorldPrefabFamilyProfile family = runtimeRule.Family;
@@ -62,7 +62,7 @@ namespace Hecton8.World
                    runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static float GetHorizontalDistanceSqr(Vector3 a, Vector3 b)
         {
             float dx = a.x - b.x;
@@ -70,7 +70,7 @@ namespace Hecton8.World
             return (dx * dx) + (dz * dz);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static long ComposeScatterGridKey(int cellX, int cellZ)
         {
             return ((long)cellX << 32) | (uint)cellZ;
@@ -124,7 +124,7 @@ namespace Hecton8.World
             return family != null ? math.max(0.5f, family.minSpacingMeters) : 1f;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static float EvaluateDepthLightProxy01(
             float depthMeters,
             float deepFloraMinDepthMeters,
@@ -136,7 +136,7 @@ namespace Hecton8.World
             return 1f - darkness01;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static float EvaluateClusterPatchMask01(
             float worldX,
             float worldZ,
@@ -161,14 +161,14 @@ namespace Hecton8.World
             return math.saturate((octaveA * 0.58f) + (octaveB * 0.28f) + (octaveC * 0.14f));
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static float ResolveDeterministicFloraYawDegrees(int stableHash, float3 absolutePosition)
         {
             uint hash = MixAupScatterHash(stableHash, absolutePosition, 0xA53A9D1Bu);
             return (hash & 0x00FFFFFFu) * (360f / 16777216f);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static float ResolveDeterministicFloraScaleMultiplier(
             float minScale,
             float maxScale,
@@ -185,7 +185,7 @@ namespace Hecton8.World
             return math.lerp(min, max, t);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static float ResolveDeterministicFloraSizeVariance(int stableHash, float3 absolutePosition)
         {
             uint hash = MixAupScatterHash(stableHash, absolutePosition, 0x4A6F7261u);
@@ -208,7 +208,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private static float ValueNoise01(float2 p, int salt)
         {
             float2 cell = math.floor(p);
@@ -223,7 +223,7 @@ namespace Hecton8.World
             return math.lerp(math.lerp(a, b, t.x), math.lerp(c, d, t.x), t.y);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private static float Hash01(uint value)
         {
             value ^= value >> 16;
@@ -234,7 +234,7 @@ namespace Hecton8.World
             return (value & 0x00FFFFFFu) * (1f / 16777215f);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private static uint MixAupScatterHash(int stableHash, float3 absolutePosition, uint salt)
         {
             int ix = (int)math.floor(absolutePosition.x * 4f);

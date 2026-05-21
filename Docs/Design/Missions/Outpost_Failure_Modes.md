@@ -131,10 +131,10 @@ Determinism:
 - If no interactable cell exists, the entry marker becomes the fallback relay target and the mission stays completable without spawning a new room.
 
 Presentation:
-- Low tier: one static panel glow and one short audio tick.
-- Middle: panel glow plus brownout flicker.
-- High: brownout flicker, relay hum, and a single wet spark VFX.
-- Ultra: richer relay arcing, layered alarm audio, and terminal CRT decay. Quest truth remains the same bit.
+- Minimum quality: one static panel glow and one short audio tick.
+- Intermediate quality: panel glow plus brownout flicker.
+- High quality: brownout flicker, relay hum, and a single wet spark VFX.
+- Maximum quality: richer relay arcing, layered alarm audio, and terminal CRT decay. Quest truth remains the same bit.
 
 Rejected alternative: forcing the WFC to always generate a Generator room. That hides the soft-lock instead of handling it, and the current source does not expose a Generator cell kind.
 
@@ -161,7 +161,7 @@ Rejected alternative: forcing the WFC to always generate a Generator room. That 
 | Breach lore mismatch | log mentions pressure loss but no `Breached` | physical/lore contradiction | require `Breached` or rewrite log |
 | WFC state lost on save/load | outpost mutation bitmask not restored | completed door/relay re-locks | block completion until `outpost.state_restored_from_save` verified |
 | Signal flood | many scan/quest/power events same frame | queue drop hides completion | single mission transition per signal; repeatable signals are idempotent |
-| Low-tier grid too small | 5x5x3 outpost lacks route variety | no alternate path | Ghost Power and fallback terminal are mandatory on low tier |
+| Minimum-budget grid too small | 5x5x3 outpost lacks route variety | no alternate path | Ghost Power and fallback terminal are mandatory on minimum-budget layouts |
 | Player repairs before tutorial | sequence broken by skilled play | tooltip order desync | tooltips suppress by flags; completion logic does not depend on seeing text |
 
 ## Diegetic Tooltip Text

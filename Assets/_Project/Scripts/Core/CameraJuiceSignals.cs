@@ -68,7 +68,7 @@ namespace Hecton8.Core
         /// <returns>True when a packet was dequeued.</returns>
         public static bool TryDequeueImpact(out CameraJuiceImpactSignal signal)
         {
-            return SignalBus<CameraJuiceImpactSignal>.TryReadFrame(out signal);
+            return SignalBus<CameraJuiceImpactSignal>.TryConsumeFrame(out signal);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

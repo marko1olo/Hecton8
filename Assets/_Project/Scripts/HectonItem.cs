@@ -27,12 +27,13 @@ using Hecton.Localization;
 
 namespace Hecton8.Items
 {
+    using Unity.Mathematics;
     using UnityEngine;
 
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
-    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable, IInventoryPickupSource, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
+    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
     {
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
@@ -40,6 +41,10 @@ namespace Hecton8.Items
         private const float DeepSeaSeawaterDensityKgPerM3 = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
         private const float LooseItemBuoyancyAngularDragMultiplier = 2.75f;
         private const ushort DefaultQualityMilli = 1000;
+        private static IPlayerRuntimeContext s_playerRuntimeContext;
+        private static IPlayerInventoryService s_playerInventoryService;
+        private static IPhysicsService s_physicsService;
+        private static ObjectPoolManager s_objectPool;
         // Data
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -86,9 +91,19 @@ namespace Hecton8.Items
         private ulong _geneticsMask;
         private ushort _qualityMilli = DefaultQualityMilli;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_playerRuntimeContext = null;
+            s_playerInventoryService = null;
+            s_physicsService = null;
+            s_objectPool = null;
+        }
+
         // Lifecycle
         private void Awake()
         {
+            CacheColdRegistryReferences();
             TryGetComponent(out _highlighter);
             TryGetComponent(out _rb);
             TryGetComponent(out _collider);
@@ -103,6 +118,7 @@ namespace Hecton8.Items
         // Pool-Safe Settle (v3.1)
         private void OnEnable()
         {
+            CacheColdRegistryReferences();
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildInteractTextCache();
 
@@ -114,6 +130,11 @@ namespace Hecton8.Items
                 _rb.WakeUp();
                 BeginSettle();
             }
+        }
+
+        private void Start()
+        {
+            CacheColdRegistryReferences();
         }
 
         private void OnDisable()
@@ -362,7 +383,8 @@ namespace Hecton8.Items
 
         public void Interact(Transform interactor)
         {
-            TryHandleInventoryPickup(Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime, interactor);
+            PlayerInventory inventory = s_playerInventoryService != null ? s_playerInventoryService.Inventory : null;
+            TryHandleInventoryPickup(inventory, interactor);
         }
 
         public bool TryHandleInventoryPickup(PlayerInventory inventory, Transform interactor)
@@ -398,6 +420,13 @@ namespace Hecton8.Items
             return true;
         }
 
+        public bool TryPeekInventoryPickup(out ItemData previewItemData, out int previewQuantity)
+        {
+            previewItemData = itemData;
+            previewQuantity = quantity;
+            return previewItemData != null && previewQuantity > 0;
+        }
+
         private void PublishItemAcquiredSignal(int addedQuantity, Transform interactor)
         {
             if (addedQuantity <= 0 || _cachedItemHashId == 0)
@@ -414,9 +443,15 @@ namespace Hecton8.Items
                 Quantity = (ushort)Mathf.Clamp(addedQuantity, 0, ushort.MaxValue),
                 SourceKind = InventoryPickupSignalConstants.ItemSourceManualPickup,
                 Flags = InventoryPickupSignalConstants.SignalFlagManualPickup,
-                Frame = unchecked((uint)Time.frameCount)
+                Frame = ResolveCurrentFrameId()
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<ItemAcquiredSignal>.Push(in signal);
+        }
+
+        private static uint ResolveCurrentFrameId()
+        {
+            uint frame = TimeSliceScheduler.CurrentFrameId;
+            return frame != 0u ? frame : 1u;
         }
 
         private bool TryResolveSignalAup(Transform interactor, out AbsoluteUniversePosition positionAup)
@@ -444,8 +479,31 @@ namespace Hecton8.Items
 
         private static bool TryBuildFiniteSignalAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
-            positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            positionAup = default;
+            IPlayerRuntimeContext playerContext = s_playerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) ||
+                !IsFiniteAup(in snapshot.Aup))
+            {
+                return false;
+            }
+
+            double3 deltaMeters = new double3(
+                (double)runtimePosition.x - snapshot.RuntimePosition.x,
+                (double)runtimePosition.y - snapshot.RuntimePosition.y,
+                (double)runtimePosition.z - snapshot.RuntimePosition.z);
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in snapshot.Aup,
+                deltaMeters);
             return IsFiniteAup(in positionAup);
+        }
+
+        private static void CacheColdRegistryReferences()
+        {
+            s_playerRuntimeContext = GlobalRegistry.Player;
+            s_playerInventoryService = GlobalRegistry.PlayerInventory;
+            s_physicsService = GlobalRegistry.Physics;
+            s_objectPool = GlobalRegistry.ObjectPool;
         }
 
         private static ushort NormalizeQualityMilli(ushort qualityMilli)
@@ -498,7 +556,7 @@ namespace Hecton8.Items
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = s_objectPool;
             if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
             {
                 pool.Despawn(gameObject);
@@ -513,6 +571,10 @@ namespace Hecton8.Items
             if (_rb == null || _rb.isKinematic)
                 return;
 
+            IPhysicsService physicsService = s_physicsService;
+            if (physicsService == null)
+                return;
+
             Vector3 scatterDirection = ResolveScatterDirection(interactor);
             Vector3 impulse = scatterDirection * OverflowScatterImpulse;
             impulse.y += OverflowScatterLiftImpulse;
@@ -521,7 +583,7 @@ namespace Hecton8.Items
                 return;
 
             _rb.WakeUp();
-            PhysicsForceRouter.QueueForce(_rb, impulse, ForceMode.Impulse);
+            physicsService.QueueForce(_rb, impulse, ForceMode.Impulse);
 
             Vector3 torqueAxis = Vector3.Cross(Vector3.up, scatterDirection);
             if (torqueAxis.sqrMagnitude <= 0.0001f)
@@ -529,7 +591,7 @@ namespace Hecton8.Items
 
             Vector3 torque = ResolveDominantPlanarDirection(torqueAxis) * OverflowScatterTorqueImpulse;
             if (IsFiniteVector(torque))
-                PhysicsForceRouter.QueueTorque(_rb, torque, ForceMode.Impulse);
+                physicsService.QueueTorque(_rb, torque, ForceMode.Impulse);
         }
 
         private Vector3 ResolveScatterDirection(Transform interactor)

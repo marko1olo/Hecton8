@@ -99,8 +99,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(30)] private ushort _pad0;
     }
 
-    [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, OptimizeFor = OptimizeFor.Performance)]
-    [StructLayout(LayoutKind.Sequential)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
     internal struct ContextualPhysicalIkApplyJob : IAnimationJob
     {
         public const int PelvisHandleIndex = 0;
@@ -108,20 +107,20 @@ namespace Hecton8.Gameplay
         private const float SpineSlopeLeanShare = 0.35f;
         private const int MaxAppendageIterations = 12;
 
-        [ReadOnly] public NativeArray<ContextualPhysicalIkTargetFrame> TargetFrames;
-        [ReadOnly] public NativeArray<TransformStreamHandle> StreamHandles;
-        [ReadOnly] public NativeArray<ContextualPhysicalIkTwoBoneSetup> TwoBoneSetups;
-        [ReadOnly] public NativeArray<ContextualPhysicalIkAppendageChainRuntime> AppendageChains;
-        [ReadOnly] public NativeArray<float> AppendageSegmentLengths;
-        [ReadOnly] public NativeArray<ContextualPhysicalIkAppendageTarget> AppendageTargets;
-        [ReadOnly] public NativeArray<ContextualPhysicalIkSpineChainRuntime> SpineChains;
-        [ReadOnly] public NativeArray<float3> SpineTargets;
-        [ReadOnly] public NativeArray<ContextualPhysicalIkSecondaryChainRuntime> SecondaryChains;
+        [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkTargetFrame> TargetFrames;
+        [ReadOnly, NoAlias] public NativeArray<TransformStreamHandle> StreamHandles;
+        [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkTwoBoneSetup> TwoBoneSetups;
+        [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkAppendageChainRuntime> AppendageChains;
+        [ReadOnly, NoAlias] public NativeArray<float> AppendageSegmentLengths;
+        [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkAppendageTarget> AppendageTargets;
+        [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkSpineChainRuntime> SpineChains;
+        [ReadOnly, NoAlias] public NativeArray<float3> SpineTargets;
+        [ReadOnly, NoAlias] public NativeArray<ContextualPhysicalIkSecondaryChainRuntime> SecondaryChains;
 
-        public NativeArray<float3> AppendageScratchPositions;
-        public NativeArray<ContextualPhysicalIkSecondaryState> SecondaryStates;
-        public NativeArray<ContextualPhysicalIkCachedPoseState> CachedLocalPoseStates;
-        public NativeArray<float> MuscleBulgeOutput;
+        [NoAlias] public NativeArray<float3> AppendageScratchPositions;
+        [NoAlias] public NativeArray<ContextualPhysicalIkSecondaryState> SecondaryStates;
+        [NoAlias] public NativeArray<ContextualPhysicalIkCachedPoseState> CachedLocalPoseStates;
+        [NoAlias] public NativeArray<float> MuscleBulgeOutput;
         public int EntityIndex;
         public float PelvisPositionBlend;
         public float PelvisRotationBlend;
@@ -915,7 +914,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Animator))]
     [AddComponentMenu("Hecton8/Gameplay/Contextual Physical IK Rig")]
-    public sealed class ContextualPhysicalIkRig : MonoBehaviour, IOriginShiftListener, IPhysicalHandIkTargetSink
+    public sealed class ContextualPhysicalIkRig : MonoBehaviour, IOriginShiftListener, IPhysicalHandIkTargetSink, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int PelvisHandleIndex = 0;
         private const int LeftLegUpperHandleIndex = 1;
@@ -1402,11 +1401,15 @@ namespace Hecton8.Gameplay
         private int _terminalRightHandSourceId;
         private int _spineHandleStartIndex = BaseHandleCount;
         private int _secondaryHandleStartIndex = BaseHandleCount;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private byte _stableThrottleTier;
         private bool _runtimeInitialized;
         private bool _animationInjected;
         private bool _registered;
         private bool _registeredOriginShiftListener;
+        private bool _registeredHotSwapListener;
+        private bool _registeredScalabilityListener;
         private bool _muscleBulgeMaterialInitialized;
         private bool _attemptedMuscleBulgeRendererResolve;
         private bool _hasPreviousLeftPredictiveControllerPose;
@@ -1417,6 +1420,9 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryResolveReferences();
+            RefreshColdRegistryDependencies();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             EnsureRuntimeInitialized();
             TryInitializeAnimationInjection();
             TryRegisterWithRuntime();
@@ -1425,6 +1431,9 @@ namespace Hecton8.Gameplay
 
         private void Start()
         {
+            RefreshColdRegistryDependencies();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             EnsureRuntimeInitialized();
             TryInitializeAnimationInjection();
             TryRegisterWithRuntime();
@@ -1433,6 +1442,8 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             SetUpperArmRenderersVisible(true);
+            TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             TryUnregisterOriginShiftListener();
             TryUnregisterFromRuntime();
             TearDownAnimationInjection();
@@ -1442,10 +1453,67 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             SetUpperArmRenderersVisible(true);
+            TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             TryUnregisterOriginShiftListener();
             TryUnregisterFromRuntime();
             TearDownAnimationInjection();
             DisposeRuntimeArrays();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _qualityTier = payload.CurrentQualityTier;
+        }
+
+        private void RefreshColdRegistryDependencies()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _qualityTier = GlobalRegistry.ScalabilityTier;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (!Application.isPlaying || _registeredHotSwapListener)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (!Application.isPlaying || _registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
         }
 
 #if UNITY_EDITOR
@@ -1590,7 +1658,7 @@ namespace Hecton8.Gameplay
             if (_entitySlot < 0)
                 return false;
 
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier tier = _qualityTier == HectonQualityTier.Unknown ? HectonQualityTier.Low : _qualityTier;
             bool lowTier = IsLowTier(tier);
             bool xrActive = HectonXRRuntimeState.IsXRActive;
             bool lowerBodyIkEnabled = enableFootPlacement && (xrActive || !lowTier);
@@ -1848,7 +1916,7 @@ namespace Hecton8.Gameplay
             if (!enableColdShiver)
                 return 0.0f;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             HectonSurvivalSystem survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
             if (survivalSystem == null)
                 return 0.0f;
@@ -1893,18 +1961,20 @@ namespace Hecton8.Gameplay
             Vector3 rightPosition = rightSource != null ? rightSource.position : Vector3.zero;
             bool hasFiniteLeftPosition = leftSource != null && IsFiniteVector(leftPosition);
             bool hasFiniteRightPosition = rightSource != null && IsFiniteVector(rightPosition);
-            AbsoluteUniversePosition leftAup = hasFiniteLeftPosition ? AbsoluteUniversePosition.FromRuntimePosition(leftPosition) : default;
-            AbsoluteUniversePosition rightAup = hasFiniteRightPosition ? AbsoluteUniversePosition.FromRuntimePosition(rightPosition) : default;
+            AbsoluteUniversePosition leftAup = default;
+            AbsoluteUniversePosition rightAup = default;
+            bool hasLeftAupProof = hasFiniteLeftPosition && TryResolveRuntimeAup(leftPosition, out leftAup);
+            bool hasRightAupProof = hasFiniteRightPosition && TryResolveRuntimeAup(rightPosition, out rightAup);
 
             Vector3 leftVelocity = Vector3.zero;
             Vector3 rightVelocity = Vector3.zero;
             float safeDeltaTime = math.max(SanitizeNonNegativeScalar(deltaTime), 0.0001f);
-            if (_hasPreviousLeftPredictiveControllerPose && hasFiniteLeftPosition)
+            if (_hasPreviousLeftPredictiveControllerPose && hasLeftAupProof)
                 leftVelocity = ResolveAupVelocity(in leftAup, in _previousLeftControllerAup, safeDeltaTime);
-            if (_hasPreviousRightPredictiveControllerPose && hasFiniteRightPosition)
+            if (_hasPreviousRightPredictiveControllerPose && hasRightAupProof)
                 rightVelocity = ResolveAupVelocity(in rightAup, in _previousRightControllerAup, safeDeltaTime);
 
-            if (hasFiniteLeftPosition)
+            if (hasLeftAupProof)
             {
                 _previousLeftControllerAup = leftAup;
                 _hasPreviousLeftPredictiveControllerPose = true;
@@ -1914,7 +1984,7 @@ namespace Hecton8.Gameplay
                 _hasPreviousLeftPredictiveControllerPose = false;
             }
 
-            if (hasFiniteRightPosition)
+            if (hasRightAupProof)
             {
                 _previousRightControllerAup = rightAup;
                 _hasPreviousRightPredictiveControllerPose = true;
@@ -1926,27 +1996,49 @@ namespace Hecton8.Gameplay
 
             if (_predictiveRepairTarget != null && enableHandBracing)
             {
-                ResolvePredictiveRepairLatch(
-                    leftSource,
-                    true,
-                    leftPosition,
-                    in leftAup,
-                    leftVelocity,
-                    safeDeltaTime,
-                    ref _predictiveLeftHandPosition,
-                    ref _predictiveLeftHandNormal,
-                    ref _predictiveLeftHandBlend);
+                if (hasLeftAupProof)
+                {
+                    ResolvePredictiveRepairLatch(
+                        leftSource,
+                        true,
+                        leftPosition,
+                        in leftAup,
+                        leftVelocity,
+                        safeDeltaTime,
+                        ref _predictiveLeftHandPosition,
+                        ref _predictiveLeftHandNormal,
+                        ref _predictiveLeftHandBlend);
+                }
+                else
+                {
+                    _predictiveLeftHandBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
+                        _predictiveLeftHandBlend,
+                        0.0f,
+                        predictiveRepairBlendSharpness,
+                        safeDeltaTime));
+                }
 
-                ResolvePredictiveRepairLatch(
-                    rightSource,
-                    false,
-                    rightPosition,
-                    in rightAup,
-                    rightVelocity,
-                    safeDeltaTime,
-                    ref _predictiveRightHandPosition,
-                    ref _predictiveRightHandNormal,
-                    ref _predictiveRightHandBlend);
+                if (hasRightAupProof)
+                {
+                    ResolvePredictiveRepairLatch(
+                        rightSource,
+                        false,
+                        rightPosition,
+                        in rightAup,
+                        rightVelocity,
+                        safeDeltaTime,
+                        ref _predictiveRightHandPosition,
+                        ref _predictiveRightHandNormal,
+                        ref _predictiveRightHandBlend);
+                }
+                else
+                {
+                    _predictiveRightHandBlend = SanitizeUnitScalar(ContextualPhysicalIkMath.SmoothScalar(
+                        _predictiveRightHandBlend,
+                        0.0f,
+                        predictiveRepairBlendSharpness,
+                        safeDeltaTime));
+                }
             }
             else
             {
@@ -2125,7 +2217,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Camera playerCamera = GlobalRegistry.Player != null ? GlobalRegistry.Player.PlayerCamera : null;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
             Transform cameraTransform = playerCamera != null ? playerCamera.transform : null;
             if (cameraTransform == null)
             {
@@ -2641,7 +2734,9 @@ namespace Hecton8.Gameplay
             if (!IsFiniteVector(headPosition))
                 return;
 
-            AbsoluteUniversePosition headAup = AbsoluteUniversePosition.FromRuntimePosition(headPosition);
+            if (!TryResolveRuntimeAup(headPosition, out AbsoluteUniversePosition headAup))
+                return;
+
             double3 headAbsolute = headAup.ToAbsoluteDouble3();
             Quaternion hmdRotation = IsFiniteQuaternion(headSource.rotation) ? headSource.rotation : Quaternion.identity;
 
@@ -3322,6 +3417,22 @@ namespace Hecton8.Gameplay
         {
             return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
                      float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static bool IsFiniteQuaternion(Quaternion value)

@@ -7,7 +7,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -117,7 +116,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
     [Preserve]
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5800)]
-    public sealed class ArchitectEyeVisualizer : MonoBehaviour, ISlowTickable, IRenderable
+    public sealed class ArchitectEyeVisualizer : MonoBehaviour, ISlowTickable, IRenderable, IGlobalRegistryHotSwapListener
     {
         private const int BlackBoxFrameCount = 300;
         private const int SignalLaneCapacity = 256;
@@ -186,8 +185,19 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private int _frontCount;
         private bool _slowRegistered;
         private bool _renderRegistered;
+        private bool _hotSwapRegistered;
         private bool _rawStpDebug;
         private bool _dumpWrittenThisFault;
+        private IDataVault _dataVault;
+        private IMacroDatabaseService _macroDatabase;
+        private IGasDynamicsSolver _gasDynamics;
+        private IResolutionScalerService _resolutionScaler;
+        private VaultGenerationHandle<ArchitectEyeRuntimeState> _runtimeStateHandle;
+        private VaultGenerationHandle<ArchitectEyeQuadInstance> _quadInstancesHandle;
+        private VaultGenerationHandle<SignalLaneTelemetry> _signalTelemetryHandle;
+        private VaultGenerationHandle<ulong> _sectorHashesHandle;
+        private VaultGenerationHandle<ArchitectEyeBlackBoxEntry> _blackBoxHandle;
+        private uint _lastKillSwitchMask;
 
         private void Awake()
         {
@@ -212,6 +222,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 return;
 
             ArchitectEyeDebugBus.EnsureInitialized();
+            CacheGlobalRegistryServicesCold();
+            TryRegisterHotSwapListener();
             _slowRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
             _renderRegistered = GlobalRegistry.Renderables.TryRegister(this);
         }
@@ -229,11 +241,75 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 GlobalRegistry.Renderables.TryUnregister(this);
                 _renderRegistered = false;
             }
+
+            TryUnregisterHotSwapListener();
+            _dataVault = null;
+            _macroDatabase = null;
+            _gasDynamics = null;
+            _resolutionScaler = null;
+            ResetVaultDescriptors();
         }
 
         private void OnDestroy()
         {
             ReleaseResources();
+        }
+
+        private void CacheGlobalRegistryServicesCold()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            _macroDatabase = GlobalRegistry.MacroDatabase;
+            _gasDynamics = GlobalRegistry.GasDynamics;
+            _resolutionScaler = GlobalRegistry.ResolutionScaler;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    _dataVault = currentService as IDataVault;
+                    ResetVaultDescriptors();
+                    break;
+                case GlobalRegistryServiceSlot.MacroDatabase:
+                    _macroDatabase = currentService as IMacroDatabaseService;
+                    break;
+                case GlobalRegistryServiceSlot.GasDynamicsRuntime:
+                    _gasDynamics = currentService as IGasDynamicsSolver;
+                    break;
+                case GlobalRegistryServiceSlot.ResolutionScalerService:
+                    _resolutionScaler = currentService as IResolutionScalerService;
+                    break;
+            }
+        }
+
+        private void ResetVaultDescriptors()
+        {
+            _runtimeStateHandle = default;
+            _quadInstancesHandle = default;
+            _signalTelemetryHandle = default;
+            _sectorHashesHandle = default;
+            _blackBoxHandle = default;
         }
 
 #if UNITY_EDITOR
@@ -255,6 +331,86 @@ namespace Hecton8.Core.Diagnostics.Visuals
             }
         }
 
+        private static bool OpenOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle))
+            {
+                handle = existingHandle;
+                if (TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer))
+                    return true;
+            }
+
+            if (vault.IsCompactionFenceActive)
+                return false;
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.CoreDiagnostics,
+                options);
+
+            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenExistingVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
+                return false;
+
+            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0 || !IsMatchingVaultHandle(in handle, bufferId))
+                return false;
+
+            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) && handle.Generation != 0u;
+        }
+
         public void SlowTick()
         {
             using (SlowTickMarker.Auto())
@@ -268,15 +424,21 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (!_enabled)
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 
-            NativeArray<ArchitectEyeRuntimeState> stateBuffer = vault.GetBuffer<ArchitectEyeRuntimeState>(
-                BufferID.ArchitectEyeRuntimeState,
-                1,
-                SystemID.CoreDiagnostics,
-                NativeArrayOptions.ClearMemory);
+            if (!OpenOrAcquireVaultBuffer(
+                    vault,
+                    ref _runtimeStateHandle,
+                    BufferID.ArchitectEyeRuntimeState,
+                    1,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<ArchitectEyeRuntimeState> stateBuffer))
+            {
+                return;
+            }
+
             if (!stateBuffer.IsCreated || stateBuffer.Length == 0)
                 return;
 
@@ -291,28 +453,37 @@ namespace Hecton8.Core.Diagnostics.Visuals
             long beginTicks = Stopwatch.GetTimestamp();
             int quadCapacity = ResolveQuadCapacity();
             EnsureBufferCapacity(quadCapacity);
-            NativeArray<ArchitectEyeQuadInstance> quads = vault.GetBuffer<ArchitectEyeQuadInstance>(
+            bool openedQuads = OpenOrAcquireVaultBuffer(
+                vault,
+                ref _quadInstancesHandle,
                 BufferID.ArchitectEyeQuadInstances,
                 quadCapacity,
-                SystemID.CoreDiagnostics,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<SignalLaneTelemetry> telemetry = vault.GetBuffer<SignalLaneTelemetry>(
+                NativeArrayOptions.UninitializedMemory,
+                out NativeArray<ArchitectEyeQuadInstance> quads);
+            bool openedTelemetry = OpenOrAcquireVaultBuffer(
+                vault,
+                ref _signalTelemetryHandle,
                 BufferID.ArchitectEyeSignalTelemetry,
                 SignalLaneCapacity,
-                SystemID.CoreDiagnostics,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<ulong> sectorHashes = vault.GetBuffer<ulong>(
+                NativeArrayOptions.UninitializedMemory,
+                out NativeArray<SignalLaneTelemetry> telemetry);
+            bool openedSectorHashes = OpenOrAcquireVaultBuffer(
+                vault,
+                ref _sectorHashesHandle,
                 BufferID.ArchitectEyeSectorHashes,
                 SectorHashCapacity,
-                SystemID.CoreDiagnostics,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<ArchitectEyeBlackBoxEntry> blackBox = vault.GetBuffer<ArchitectEyeBlackBoxEntry>(
+                NativeArrayOptions.UninitializedMemory,
+                out NativeArray<ulong> sectorHashes);
+            bool openedBlackBox = OpenOrAcquireVaultBuffer(
+                vault,
+                ref _blackBoxHandle,
                 BufferID.ArchitectEyeBlackBox,
                 BlackBoxFrameCount,
-                SystemID.CoreDiagnostics,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.ClearMemory,
+                out NativeArray<ArchitectEyeBlackBoxEntry> blackBox);
 
-            if (!quads.IsCreated || !telemetry.IsCreated || !sectorHashes.IsCreated || !blackBox.IsCreated)
+            if (!openedQuads || !openedTelemetry || !openedSectorHashes || !openedBlackBox ||
+                !quads.IsCreated || !telemetry.IsCreated || !sectorHashes.IsCreated || !blackBox.IsCreated)
                 return;
 
             int count = 0;
@@ -472,28 +643,19 @@ namespace Hecton8.Core.Diagnostics.Visuals
             ref int nonFiniteCount,
             ref float3 lastFaultPosition)
         {
-            if (!vault.TryGetBuffer<AbsoluteUniversePosition>(BufferID.EntityAUPs, out NativeArray<AbsoluteUniversePosition> aups) || !aups.IsCreated)
+            if (!TryResolveHotEntityData(vault, out NativeArray<VaultHotEntityData> hotEntities, out uint generation))
                 return;
 
-            uint generation = 0u;
-            vault.TryGetBufferGeneration(BufferID.EntityAUPs, out generation);
-            int budget = math.min(ResolveEntityBudget(), aups.Length);
-            int step = budget > 0 ? math.max(1, aups.Length / budget) : 1;
+            int budget = math.min(ResolveEntityBudget(), hotEntities.Length);
+            int step = budget > 0 ? math.max(1, hotEntities.Length / budget) : 1;
             int emitted = 0;
-            for (int i = 0; i < aups.Length && emitted < budget; i += step)
+            for (int i = 0; i < hotEntities.Length && emitted < budget; i += step)
             {
-                AbsoluteUniversePosition aup = aups[i];
-                if (!IsFiniteAup(in aup))
-                {
-                    nonFiniteCount++;
-                    continue;
-                }
-
-                float3 position = aup.ToRuntimeFloat3();
+                VaultHotEntityData hot = hotEntities[i];
+                float3 position = hot.LocalPosition;
                 if (!math.all(math.isfinite(position)))
                 {
                     nonFiniteCount++;
-                    lastFaultPosition = SanitizeFaultPosition(new float3(aup.LocalX, aup.LocalY, aup.LocalZ), lastFaultPosition);
                     continue;
                 }
 
@@ -502,7 +664,10 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
                 int length = 0;
                 AppendLiteral(_labelScratch, ref length, "E");
-                AppendInt(_labelScratch, ref length, i);
+                if (hot.EntityId != 0u)
+                    AppendUInt(_labelScratch, ref length, hot.EntityId);
+                else
+                    AppendInt(_labelScratch, ref length, i);
                 AppendLiteral(_labelScratch, ref length, " G");
                 AppendHex8(_labelScratch, ref length, generation);
                 EmitWorldText(quads, ref count, capacity, position + new float3(0f, 1.2f, 0f), _labelScratch, length, _labelMeters, new float4(0.55f, 0.95f, 1f, 0.9f));
@@ -513,7 +678,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private void BuildSdfWireframe(IDataVault vault, NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity)
         {
             float density = 0.15f;
-            if (vault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> sdf) && sdf.IsCreated && sdf.Length > 0)
+            if (TryOpenExistingVaultBuffer(vault, BufferID.VoxelSdfTexture3D, 1, out NativeArray<byte> sdf))
             {
                 int samples = math.min(sdf.Length, 64);
                 int positive = 0;
@@ -682,22 +847,21 @@ namespace Hecton8.Core.Diagnostics.Visuals
             int capacity,
             NativeArray<ulong> sectorHashes)
         {
-            IMacroDatabaseService macro = GlobalRegistry.MacroDatabase;
+            IMacroDatabaseService macro = _macroDatabase;
             if (macro == null || !sectorHashes.IsCreated)
                 return;
 
             MacroDatabaseAup anchor = default;
-            if (vault.TryGetBuffer<AbsoluteUniversePosition>(BufferID.EntityAUPs, out NativeArray<AbsoluteUniversePosition> aups) &&
-                aups.IsCreated &&
-                aups.Length > 0)
+            if (TryResolveHotEntityData(vault, out NativeArray<VaultHotEntityData> hotEntities, out _) &&
+                hotEntities.Length > 0)
             {
-                AbsoluteUniversePosition aup = aups[0];
-                anchor.GridX = aup.GridX;
-                anchor.GridY = aup.GridY;
-                anchor.GridZ = aup.GridZ;
-                anchor.LocalX = aup.LocalX;
-                anchor.LocalY = aup.LocalY;
-                anchor.LocalZ = aup.LocalZ;
+                float3 localPosition = hotEntities[0].LocalPosition;
+                if (math.all(math.isfinite(localPosition)))
+                {
+                    anchor.LocalX = localPosition.x;
+                    anchor.LocalY = localPosition.y;
+                    anchor.LocalZ = localPosition.z;
+                }
             }
 
             int sectorCount = macro.BuildSectorHashWindow(in anchor, ResolveMacroTier(), sectorHashes);
@@ -723,27 +887,21 @@ namespace Hecton8.Core.Diagnostics.Visuals
             ref int nonFiniteCount,
             ref float3 lastFaultPosition)
         {
-            bool hasAup = vault.TryGetBuffer<AbsoluteUniversePosition>(BufferID.RigidbodyAUPs, out NativeArray<AbsoluteUniversePosition> aups) && aups.IsCreated;
-            if (!hasAup)
-                hasAup = vault.TryGetBuffer<AbsoluteUniversePosition>(BufferID.EntityAUPs, out aups) && aups.IsCreated;
-            if (!hasAup ||
-                !vault.TryGetBuffer<float3>(BufferID.EntityVelocities, out NativeArray<float3> velocities) ||
-                !velocities.IsCreated)
+            if (!TryResolveHotEntityData(vault, out NativeArray<VaultHotEntityData> hotEntities, out _))
             {
                 return;
             }
 
-            int samples = math.min(math.min(aups.Length, velocities.Length), ResolveEntityBudget());
+            int samples = math.min(hotEntities.Length, ResolveEntityBudget());
             for (int i = 0; i < samples; i++)
             {
-                AbsoluteUniversePosition aup = aups[i];
-                float3 velocity = velocities[i];
-                bool finiteAup = IsFiniteAup(in aup);
-                if (!finiteAup || !math.all(math.isfinite(velocity)))
+                VaultHotEntityData hot = hotEntities[i];
+                float3 start = hot.LocalPosition;
+                float3 velocity = hot.Velocity;
+                if (!math.all(math.isfinite(start)) || !math.all(math.isfinite(velocity)))
                 {
                     nonFiniteCount++;
-                    if (finiteAup)
-                        lastFaultPosition = SanitizeFaultPosition(aup.ToRuntimeFloat3(), lastFaultPosition);
+                    lastFaultPosition = SanitizeFaultPosition(start, lastFaultPosition);
                     continue;
                 }
 
@@ -751,7 +909,6 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 if (speedSq < 0.0001f)
                     continue;
 
-                float3 start = aup.ToRuntimeFloat3();
                 float speed = math.sqrt(math.max(speedSq, 0.0001f));
                 float3 end = start + velocity * _vectorScale;
                 float heat = math.saturate(speed * 0.1f);
@@ -770,7 +927,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         {
             co201 = 0f;
             o201 = 0f;
-            IGasDynamicsSolver gas = GlobalRegistry.GasDynamics;
+            IGasDynamicsSolver gas = _gasDynamics;
             if (gas == null || !gas.IsInitialized || gas.RoomCount <= 0)
                 return;
 
@@ -1209,21 +1366,35 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private float3 ResolveFallbackProbePosition(IDataVault vault)
         {
-            if (vault != null &&
-                vault.TryGetBuffer<AbsoluteUniversePosition>(BufferID.EntityAUPs, out NativeArray<AbsoluteUniversePosition> aups) &&
-                aups.IsCreated &&
-                aups.Length > 0)
+            if (TryResolveHotEntityData(vault, out NativeArray<VaultHotEntityData> hotEntities, out _) &&
+                hotEntities.Length > 0)
             {
-                AbsoluteUniversePosition aup = aups[0];
-                if (IsFiniteAup(in aup))
-                {
-                    float3 position = aup.ToRuntimeFloat3();
-                    if (math.all(math.isfinite(position)))
-                        return position;
-                }
+                float3 position = hotEntities[0].LocalPosition;
+                if (math.all(math.isfinite(position)))
+                    return position;
             }
 
             return float3.zero;
+        }
+
+        private static bool TryResolveHotEntityData(
+            IDataVault vault,
+            out NativeArray<VaultHotEntityData> hotEntities,
+            out uint generation)
+        {
+            hotEntities = default;
+            generation = 0u;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle(
+                    BufferID.VaultHotEntityData,
+                    out VaultGenerationHandle<VaultHotEntityData> handle) ||
+                !TryOpenVaultBuffer(vault, in handle, BufferID.VaultHotEntityData, 1, out hotEntities))
+            {
+                return false;
+            }
+
+            generation = handle.Generation;
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1233,14 +1404,6 @@ namespace Hecton8.Core.Diagnostics.Visuals
                    math.all(math.isfinite(signal.Vector)) &&
                    math.isfinite(signal.Value0) &&
                    math.isfinite(signal.Value1);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsFiniteAup(in AbsoluteUniversePosition aup)
-        {
-            return math.isfinite(aup.LocalX) &&
-                   math.isfinite(aup.LocalY) &&
-                   math.isfinite(aup.LocalZ);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1268,7 +1431,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         {
             float health = HomeostasisBrain.SystemHealthIndex01;
             frameTimeMs = 0f;
-            killSwitchMask = GlobalRegistry.SystemKillSwitchMask;
+            killSwitchMask = _lastKillSwitchMask;
 
             ReadOnlySpan<SystemHealthSignal> healthSignals = SignalBus<SystemHealthSignal>.GetFrameSnapshot();
             if (healthSignals.Length > 0)
@@ -1277,6 +1440,12 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 health = signal.SystemHealthIndex01;
                 killSwitchMask = (uint)signal.KillSwitchMask;
             }
+
+            ReadOnlySpan<KillSwitchSignal> killSignals = SignalBus<KillSwitchSignal>.GetFrameSnapshot();
+            if (killSignals.Length > 0)
+                killSwitchMask = (uint)killSignals[killSignals.Length - 1].CurrentMask;
+
+            _lastKillSwitchMask = killSwitchMask;
 
             ReadOnlySpan<FrameTimeSignal> frameSignals = SignalBus<FrameTimeSignal>.GetFrameSnapshot();
             if (frameSignals.Length > 0)
@@ -1288,7 +1457,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private float ResolveStpScale01(out float stress01)
         {
             stress01 = 0f;
-            IResolutionScalerService scaler = GlobalRegistry.ResolutionScaler;
+            IResolutionScalerService scaler = _resolutionScaler;
             if (scaler == null || !scaler.TryGetScaleState(out ResolutionScaleState state))
                 return 1f;
 
@@ -1737,6 +1906,29 @@ namespace Hecton8.Core.Diagnostics.Visuals
             {
                 tmp[n++] = (char)('0' + (int)(magnitude % 10u));
                 magnitude /= 10u;
+            }
+
+            for (int i = n - 1; i >= 0 && length < buffer.Length; i--)
+                buffer[length++] = tmp[i];
+        }
+
+        private static void AppendUInt(char[] buffer, ref int length, uint value)
+        {
+            if (length >= buffer.Length)
+                return;
+
+            if (value == 0u)
+            {
+                buffer[length++] = '0';
+                return;
+            }
+
+            Span<char> tmp = stackalloc char[10];
+            int n = 0;
+            while (value > 0u && n < tmp.Length)
+            {
+                tmp[n++] = (char)('0' + (int)(value % 10u));
+                value /= 10u;
             }
 
             for (int i = n - 1; i >= 0 && length < buffer.Length; i--)

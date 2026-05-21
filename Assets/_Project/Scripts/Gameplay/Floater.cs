@@ -321,8 +321,14 @@ namespace Hecton8.Gameplay
             // Update position to follow attached object
             if (_attachedTransform != null)
             {
-                _transform.position = _attachedTransform.TransformPoint(_localAttachPosition);
+                ApplyRuntimePosition(_attachedTransform.TransformPoint(_localAttachPosition));
             }
+        }
+
+        private void ApplyRuntimePosition(Vector3 runtimePosition)
+        {
+            if (_transform != null)
+                _transform.position = runtimePosition;
         }
 
         // ══════════════════════════════════════════════════════════

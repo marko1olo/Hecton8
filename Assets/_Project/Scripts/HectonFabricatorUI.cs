@@ -176,6 +176,11 @@ namespace Hecton8.UI
         private bool _tickRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _originShiftListenerRegistered;
+        private IInputService _inputService;
+        private IPlayerInventoryService _playerInventoryService;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private InputManager _nativeInputManager;
+        private ResourceScarcityDirector _resourceScarcityRuntime;
         private InputManager _subscribedInputManager;
         private uint _lastPlayerInputSignalSequence;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
@@ -230,6 +235,7 @@ namespace Hecton8.UI
         {
             GlobalTelemetryBus.Initialize();
             CharBufferPool.Prewarm();
+            CacheRegistryServicesCold();
             ResolveRuntimeReferences(allowFallbackLookup: true);
             EnsureCanvasSplit();
 
@@ -239,6 +245,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
             TryRegisterUiService();
             TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
@@ -249,6 +256,7 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            CacheRegistryServicesCold();
             ResolveRuntimeReferences(allowFallbackLookup: true);
             TryRegisterHotSwapListener();
             SubscribeInputManagerIfAvailable();
@@ -423,7 +431,9 @@ namespace Hecton8.UI
             BaselinePlayerInputSignalSequence();
             RegisterTick();
 
-            GlobalRegistry.Input.SwitchToUIInput();
+            IInputService inputService = _inputService;
+            if (inputService != null)
+                inputService.SwitchToUIInput();
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = false;
@@ -563,7 +573,9 @@ namespace Hecton8.UI
 
             UnregisterTick();
 
-            GlobalRegistry.Input.SwitchToPlayerInput();
+            IInputService inputService = _inputService;
+            if (inputService != null)
+                inputService.SwitchToPlayerInput();
 
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -575,11 +587,7 @@ namespace Hecton8.UI
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterTick()
@@ -596,7 +604,7 @@ namespace Hecton8.UI
             if (_subscribedInputManager != null)
                 return;
 
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            InputManager inputManager = _nativeInputManager;
             if (inputManager == null)
                 return;
 
@@ -688,15 +696,26 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Input)
-                return;
-
-            UnsubscribeInputManager();
-
-            if (!isActiveAndEnabled)
-                return;
-
-            SubscribeInputManagerIfAvailable();
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Input:
+                    _inputService = currentService as IInputService;
+                    return;
+                case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
+                    RebindNativeInputManager(currentService as InputManager);
+                    return;
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    RebindPlayerInventoryService(currentService as IPlayerInventoryService);
+                    return;
+                case GlobalRegistryServiceSlot.Player:
+                    RebindPlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    return;
+                case GlobalRegistryServiceSlot.ResourceScarcityRuntime:
+                    _resourceScarcityRuntime = currentService as ResourceScarcityDirector;
+                    _lastRecipeVisualVersion = int.MinValue;
+                    InvalidateHologramMatrixCache();
+                    return;
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -704,8 +723,7 @@ namespace Hecton8.UI
             if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -713,7 +731,7 @@ namespace Hecton8.UI
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.HotSwapListeners.Contains(this))
+            if (GlobalRegistry.IsHotSwapListenerRegistered(this))
                 GlobalRegistry.UnregisterHotSwapListener(this);
 
             _hotSwapListenerRegistered = false;
@@ -1184,16 +1202,8 @@ namespace Hecton8.UI
 
         private void ResolveRuntimeReferences(bool allowFallbackLookup)
         {
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
-            if (inventoryService != null && inventoryService.Inventory != null)
-                playerInventory = inventoryService.Inventory;
-
-            if (hudCamera == null)
-            {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                if (playerContext != null)
-                    hudCamera = playerContext.PlayerCamera;
-            }
+            RebindPlayerInventoryService(_playerInventoryService);
+            RebindPlayerRuntimeContext(_playerRuntimeContext);
 
             if (allowFallbackLookup &&
                 playerInventory == null &&
@@ -1202,6 +1212,41 @@ namespace Hecton8.UI
             {
                 playerTransform.TryGetComponent(out playerInventory);
             }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _inputService = GlobalRegistry.Input;
+            _nativeInputManager = GlobalRegistry.NativeInputManager;
+            _resourceScarcityRuntime = GlobalRegistry.ResourceScarcity;
+            RebindPlayerInventoryService(GlobalRegistry.PlayerInventory);
+            RebindPlayerRuntimeContext(GlobalRegistry.Player);
+        }
+
+        private void RebindNativeInputManager(InputManager inputManager)
+        {
+            if (ReferenceEquals(_nativeInputManager, inputManager))
+                return;
+
+            UnsubscribeInputManager();
+            _nativeInputManager = inputManager;
+
+            if (isActiveAndEnabled)
+                SubscribeInputManagerIfAvailable();
+        }
+
+        private void RebindPlayerInventoryService(IPlayerInventoryService inventoryService)
+        {
+            _playerInventoryService = inventoryService;
+            if (inventoryService != null && inventoryService.Inventory != null)
+                playerInventory = inventoryService.Inventory;
+        }
+
+        private void RebindPlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext;
+            if (hudCamera == null && playerContext != null)
+                hudCamera = playerContext.PlayerCamera;
         }
 
         private void EnsureCanvasSplit()
@@ -1428,7 +1473,7 @@ namespace Hecton8.UI
             int recipeCount = _recipes != null ? _recipes.Count : 0;
             int inventoryVersion = playerInventory != null ? playerInventory.InventoryVersion : 0;
             int batchMultiplier = Mathf.Clamp(craftBatchMultiplier, 1, 99);
-            ResourceScarcityDirector scarcity = GlobalRegistry.ResourceScarcity;
+            ResourceScarcityDirector scarcity = _resourceScarcityRuntime;
             int scarcityVersion = scarcity != null ? scarcity.RuntimeVersion : 0;
             return recipeCount ^
                    (_selectedIndex << 8) ^

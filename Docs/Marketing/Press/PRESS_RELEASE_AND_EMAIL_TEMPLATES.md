@@ -51,13 +51,13 @@ HECTON-8 is a single player first NASA punk deep sea survival game about pressur
 ```text
 Title: HECTON-8
 Genre: Single player deep sea survival / base systems / sci fi
-Developer: [Studio/team name]
-Platform: PC / Steam [confirm]
-Release window: [Only if real]
-Demo: [Yes/No/TBD]
+Developer: HOLD_LEGAL_NAME_UNVERIFIED - use only owner-approved legal/public credit.
+Platform: HOLD_PLATFORM_LIST_UNVERIFIED - publish only after owner/platform source exists.
+Release window: HOLD_NO_RELEASE_WINDOW - omit until owner-approved timing exists.
+Demo: HOLD_NO_PUBLIC_DEMO_ACCESS - public demo/Playtest only after `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED`.
 Steam: [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
 Presskit: [gated presskit URL after `press_release_permission_gate` and `public_cta_permission_gate` pass]
-Contact: [owner-controlled email]
+Contact: HOLD_NO_PROJECT_INBOX_CUSTODY - official project email only after `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED`.
 ```
 
 ## Press Email   First Reveal
@@ -83,7 +83,7 @@ Presskit:
 Steam:
 [gated Steam URL after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass]
 
-If this fits your PC/indie/survival coverage, I can send a short preview build or a cleaner asset pack when it is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention preview build, asset pack, demo, press kit, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM/press send-log fields are ready.
 
 Best,
 [Name]

@@ -19,7 +19,7 @@ namespace Hecton8.Editor.OfflineGeometry
         public const int OverflowFallbackTileSize = 16;
         public const int AtlasChannelAlbedo = 0;
         public const int AtlasChannelNormal = 1;
-        public const int AtlasChannelArm = 2;
+        public const int AtlasChannelMask = 2;
         public const int MockClutterShapeCount = 500;
         public const int MockBoxVertexCount = 36;
         public const int SingleRoomTriangleBudget = 30000;
@@ -48,7 +48,12 @@ namespace Hecton8.Editor.OfflineGeometry
         InteractivePreserved = 1u << 5,
         AtlasScaledTexture = 1u << 6,
         AtlasGpuSerializationSync = 1u << 7,
-        BakeException = 1u << 8
+        BakeException = 1u << 8,
+        AtlasCopyFailure = 1u << 9,
+        AtlasCompressedTexture = 1u << 10,
+        AtlasCompressionFallback = 1u << 11,
+        AtlasTintFallback = 1u << 12,
+        AtlasDirectCopyFallback = 1u << 13
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -72,7 +77,7 @@ namespace Hecton8.Editor.OfflineGeometry
         [FieldOffset(60)] public uint _pad2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 160)]
+    [StructLayout(LayoutKind.Explicit, Size = 192)]
     internal struct InteriorClutterSegment
     {
         [FieldOffset(0)] public float4x4 LocalToRoom;
@@ -85,8 +90,9 @@ namespace Hecton8.Editor.OfflineGeometry
         [FieldOffset(112)] public uint StableHash;
         [FieldOffset(116)] public uint Flags;
         [FieldOffset(120)] public double3 RoomRelativeOffset;
-        [FieldOffset(144)] public ulong _pad0;
-        [FieldOffset(152)] public ulong _pad1;
+        [FieldOffset(144)] public float4 NormalToRoomC0;
+        [FieldOffset(160)] public float4 NormalToRoomC1;
+        [FieldOffset(176)] public float4 NormalToRoomC2;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -109,7 +115,7 @@ namespace Hecton8.Editor.OfflineGeometry
     {
         [FieldOffset(0)] public uint AlbedoRgba;
         [FieldOffset(4)] public uint NormalRgba;
-        [FieldOffset(8)] public uint ArmRgba;
+        [FieldOffset(8)] public uint MaskRgba;
         [FieldOffset(12)] public uint _pad0;
     }
 
@@ -132,23 +138,39 @@ namespace Hecton8.Editor.OfflineGeometry
 
     internal static class InteriorClutterVertexLayoutValidator
     {
-        internal static readonly VertexAttributeDescriptor[] Layout =
-        {
-            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3, 0),
-            new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, 0),
-            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2, 0)
-        };
-
         internal static void ValidateStructs()
         {
             ValidateSize<InteriorClutterRawVertex>(InteriorClutterForgeConstants.VertexStrideBytes);
             ValidateSize<InteriorClutterSourceVertex>(64);
-            ValidateSize<InteriorClutterSegment>(160);
+            ValidateSize<InteriorClutterSegment>(192);
             ValidateSize<InteriorClutterAtlasRect>(64);
             ValidateSize<InteriorClutterAtlasColor>(16);
             ValidateSize<InteriorClutterTelemetryEntry>(64);
             ValidateOffset<InteriorClutterSegment>(nameof(InteriorClutterSegment.MaterialUvScaleOffset), 80);
             ValidateOffset<InteriorClutterSegment>(nameof(InteriorClutterSegment.RoomRelativeOffset), 120);
+            ValidateOffset<InteriorClutterSegment>(nameof(InteriorClutterSegment.NormalToRoomC0), 144);
+            ValidateOffset<InteriorClutterSegment>(nameof(InteriorClutterSegment.NormalToRoomC1), 160);
+            ValidateOffset<InteriorClutterSegment>(nameof(InteriorClutterSegment.NormalToRoomC2), 176);
+        }
+
+        internal static void ApplyVertexBufferParams(Mesh mesh, int vertexCount)
+        {
+            if (mesh == null)
+                throw new ArgumentNullException(nameof(mesh));
+
+            NativeArray<VertexAttributeDescriptor> layout = default;
+            try
+            {
+                // COLD ALLOC: NativeArray<VertexAttributeDescriptor>[3] - editor mesh ABI descriptor, disposed before returning.
+                layout = new NativeArray<VertexAttributeDescriptor>(3, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                WriteLayout(layout);
+                mesh.SetVertexBufferParams(vertexCount, layout);
+            }
+            finally
+            {
+                if (layout.IsCreated)
+                    layout.Dispose();
+            }
         }
 
         internal static void ValidateMesh(Mesh mesh)
@@ -160,21 +182,29 @@ namespace Hecton8.Editor.OfflineGeometry
             if (stride != InteriorClutterForgeConstants.VertexStrideBytes)
                 throw new InvalidOperationException("Interior clutter mesh stride mismatch. Expected 32, got " + stride + " on " + mesh.name + ".");
 
-            VertexAttributeDescriptor[] attributes = mesh.GetVertexAttributes();
-            if (attributes.Length != Layout.Length)
+            if (mesh.vertexAttributeCount != 3)
                 throw new InvalidOperationException("Interior clutter mesh attribute count mismatch on " + mesh.name + ".");
 
-            for (int i = 0; i < Layout.Length; i++)
+            ValidateAttribute(mesh, VertexAttribute.Position, VertexAttributeFormat.Float32, 3, 0);
+            ValidateAttribute(mesh, VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, 0);
+            ValidateAttribute(mesh, VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2, 0);
+        }
+
+        private static void WriteLayout(NativeArray<VertexAttributeDescriptor> layout)
+        {
+            layout[0] = new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3, 0);
+            layout[1] = new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, 0);
+            layout[2] = new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2, 0);
+        }
+
+        private static void ValidateAttribute(Mesh mesh, VertexAttribute attribute, VertexAttributeFormat format, int dimension, int stream)
+        {
+            if (!mesh.HasVertexAttribute(attribute) ||
+                mesh.GetVertexAttributeFormat(attribute) != format ||
+                mesh.GetVertexAttributeDimension(attribute) != dimension ||
+                mesh.GetVertexAttributeStream(attribute) != stream)
             {
-                VertexAttributeDescriptor expected = Layout[i];
-                VertexAttributeDescriptor actual = attributes[i];
-                if (actual.attribute != expected.attribute ||
-                    actual.format != expected.format ||
-                    actual.dimension != expected.dimension ||
-                    actual.stream != expected.stream)
-                {
-                    throw new InvalidOperationException("Interior clutter mesh vertex layout mismatch at attribute " + i + " on " + mesh.name + ".");
-                }
+                throw new InvalidOperationException("Interior clutter mesh vertex layout mismatch at attribute " + attribute + " on " + mesh.name + ".");
             }
         }
 
@@ -197,7 +227,7 @@ namespace Hecton8.Editor.OfflineGeometry
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct FillAtlasSolidJob : IJobParallelFor
     {
         [WriteOnly, NoAlias] public NativeArray<uint> Pixels;
@@ -209,9 +239,10 @@ namespace Hecton8.Editor.OfflineGeometry
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct FillAtlasRectColorsJob : IJob
     {
+        // Invariant: IJob single-writer owns the atlas texel buffer after solid-fill dependency.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<uint> Pixels;
         [ReadOnly, NoAlias] public NativeArray<InteriorClutterAtlasRect> Rects;
         [ReadOnly, NoAlias] public NativeArray<InteriorClutterAtlasColor> Colors;
@@ -224,58 +255,120 @@ namespace Hecton8.Editor.OfflineGeometry
             int pixelCount = Pixels.Length;
             for (int rectIndex = 0; rectIndex < Rects.Length; rectIndex++)
             {
+                if ((uint)rectIndex >= (uint)Colors.Length)
+                    continue;
+
                 InteriorClutterAtlasRect rect = Rects[rectIndex];
-                int x0 = math.clamp(rect.X, 0, atlasSize);
-                int y0 = math.clamp(rect.Y, 0, atlasSize);
-                int x1 = math.clamp(rect.X + math.max(0, rect.Width), 0, atlasSize);
-                int y1 = math.clamp(rect.Y + math.max(0, rect.Height), 0, atlasSize);
+                int x0 = ClampToAtlas(rect.X, atlasSize);
+                int y0 = ClampToAtlas(rect.Y, atlasSize);
+                int x1 = ClampToAtlas((long)rect.X + math.max(0, rect.Width), atlasSize);
+                int y1 = ClampToAtlas((long)rect.Y + math.max(0, rect.Height), atlasSize);
+                if (x1 <= x0 || y1 <= y0)
+                    continue;
+
                 uint color = SelectColor(Colors[rectIndex], Channel);
 
                 for (int y = y0; y < y1; y++)
                 {
-                    int row = y * atlasSize;
                     for (int x = x0; x < x1; x++)
                     {
-                        int pixelIndex = row + x;
-                        if ((uint)pixelIndex < (uint)pixelCount)
-                            Pixels[pixelIndex] = color;
+                        long pixelIndex = (long)y * atlasSize + x;
+                        if ((ulong)pixelIndex < (ulong)pixelCount)
+                            Pixels[(int)pixelIndex] = color;
                     }
                 }
             }
+        }
+
+        private static int ClampToAtlas(long value, int atlasSize)
+        {
+            if (value <= 0L)
+                return 0;
+            if (value >= atlasSize)
+                return atlasSize;
+            return (int)value;
         }
 
         private static uint SelectColor(InteriorClutterAtlasColor color, int channel)
         {
             uint selected = color.AlbedoRgba;
             selected = channel == InteriorClutterForgeConstants.AtlasChannelNormal ? color.NormalRgba : selected;
-            selected = channel == InteriorClutterForgeConstants.AtlasChannelArm ? color.ArmRgba : selected;
+            selected = channel == InteriorClutterForgeConstants.AtlasChannelMask ? color.MaskRgba : selected;
             return selected;
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    internal struct TintAtlasTileJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<uint> Pixels;
+        public uint TintRgba;
+
+        public void Execute(int index)
+        {
+            uint source = Pixels[index];
+            uint tr = TintRgba & 0xffu;
+            uint tg = (TintRgba >> 8) & 0xffu;
+            uint tb = (TintRgba >> 16) & 0xffu;
+            uint ta = (TintRgba >> 24) & 0xffu;
+            uint r = ((source & 0xffu) * tr + 127u) / 255u;
+            uint g = (((source >> 8) & 0xffu) * tg + 127u) / 255u;
+            uint b = (((source >> 16) & 0xffu) * tb + 127u) / 255u;
+            uint a = (((source >> 24) & 0xffu) * ta + 127u) / 255u;
+            Pixels[index] = r | (g << 8) | (b << 16) | (a << 24);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct TransformAndAppendVerticesJob : IJobParallelFor
     {
+        // Invariant: Source/segment pointers are read-only, output points to a distinct LOD0 buffer, and the scheduled dependency owner completes before disposal/serialization.
         [NativeDisableUnsafePtrRestriction, NoAlias] public InteriorClutterSourceVertex* SourceVertices;
         [NativeDisableUnsafePtrRestriction, NoAlias] public InteriorClutterSegment* Segments;
         [NativeDisableUnsafePtrRestriction, NoAlias] public InteriorClutterRawVertex* OutputVertices;
         [ReadOnly, NoAlias] public NativeArray<int> SegmentByVertex;
+        public int VertexCount;
+        public int SegmentCount;
 
         public void Execute(int index)
         {
+            if ((uint)index >= (uint)VertexCount)
+                return;
+
+            int segmentIndex = (uint)index < (uint)SegmentByVertex.Length ? SegmentByVertex[index] : -1;
+            if ((uint)segmentIndex >= (uint)SegmentCount)
+            {
+                WriteFallback(index);
+                return;
+            }
+
             ref readonly InteriorClutterSourceVertex source = ref UnsafeUtility.AsRef<InteriorClutterSourceVertex>(SourceVertices + index);
-            int segmentIndex = SegmentByVertex[index];
             ref readonly InteriorClutterSegment segment = ref UnsafeUtility.AsRef<InteriorClutterSegment>(Segments + segmentIndex);
 
-            float4 transformed = math.mul(segment.LocalToRoom, new float4(source.Position, 1f));
-            float3x3 normalMatrix = new float3x3(segment.LocalToRoom.c0.xyz, segment.LocalToRoom.c1.xyz, segment.LocalToRoom.c2.xyz);
-            float3 normal = NormalizeOrFallback(math.mul(normalMatrix, source.Normal), new float3(0f, 1f, 0f));
+            float3 transformed =
+                segment.LocalToRoom.c0.xyz * source.Position.x +
+                segment.LocalToRoom.c1.xyz * source.Position.y +
+                segment.LocalToRoom.c2.xyz * source.Position.z +
+                segment.LocalToRoom.c3.xyz;
+            float3 transformedNormal =
+                segment.NormalToRoomC0.xyz * source.Normal.x +
+                segment.NormalToRoomC1.xyz * source.Normal.y +
+                segment.NormalToRoomC2.xyz * source.Normal.z;
+            float3 normal = NormalizeOrFallback(transformedNormal, new float3(0f, 1f, 0f));
             float2 uv = RemapUv(source.Uv0, segment.AtlasUvRect, segment.MaterialUvScaleOffset);
 
             ref InteriorClutterRawVertex output = ref UnsafeUtility.AsRef<InteriorClutterRawVertex>(OutputVertices + index);
-            output.Position = math.all(math.isfinite(transformed.xyz)) ? transformed.xyz : float3.zero;
+            output.Position = math.all(math.isfinite(transformed)) ? transformed : float3.zero;
             output.Normal = math.all(math.isfinite(normal)) ? normal : new float3(0f, 1f, 0f);
             output.Uv0 = math.all(math.isfinite(uv)) ? uv : float2.zero;
+        }
+
+        private void WriteFallback(int index)
+        {
+            ref InteriorClutterRawVertex output = ref UnsafeUtility.AsRef<InteriorClutterRawVertex>(OutputVertices + index);
+            output.Position = float3.zero;
+            output.Normal = new float3(0f, 1f, 0f);
+            output.Uv0 = float2.zero;
         }
 
         private static float2 RemapUv(float2 uv, float4 rect, float4 materialScaleOffset)
@@ -293,7 +386,7 @@ namespace Hecton8.Editor.OfflineGeometry
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct RemapUvCoordinatesJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<float2> SourceUvs;
@@ -303,25 +396,32 @@ namespace Hecton8.Editor.OfflineGeometry
 
         public void Execute(int index)
         {
+            if ((uint)index >= (uint)SourceUvs.Length || (uint)index >= (uint)OutputUvs.Length)
+                return;
+
             float2 uv = SourceUvs[index] * MaterialUvScaleOffset.xy + MaterialUvScaleOffset.zw;
             float2 wrapped = uv - math.floor(uv);
-            OutputUvs[index] = AtlasUvRect.xy + wrapped * AtlasUvRect.zw;
+            float2 remapped = AtlasUvRect.xy + wrapped * AtlasUvRect.zw;
+            OutputUvs[index] = math.all(math.isfinite(remapped)) ? remapped : float2.zero;
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct ExtractClutterUInt16Job : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<ushort> Indices;
+        // Invariant: caller schedules one submesh window at a time and proves DestinationStart + localIndex is exclusive before write.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<InteriorClutterSourceVertex> OutputVertices;
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> SegmentByVertex;
 
+        // Invariant: MeshData read-only pointers remain valid until this extraction handle completes.
         [NativeDisableUnsafePtrRestriction, NoAlias] public void* PositionPtr;
         [NativeDisableUnsafePtrRestriction, NoAlias] public void* NormalPtr;
         [NativeDisableUnsafePtrRestriction, NoAlias] public void* TangentPtr;
         [NativeDisableUnsafePtrRestriction, NoAlias] public void* Uv0Ptr;
 
         public int IndexStart;
+        public int BaseVertex;
         public int DestinationStart;
         public int SegmentIndex;
         public int PositionStride;
@@ -339,13 +439,19 @@ namespace Hecton8.Editor.OfflineGeometry
 
         public void Execute(int localIndex)
         {
-            int sourceIndex = Indices[IndexStart + localIndex];
+            long indexOffset = (long)IndexStart + localIndex;
+            int rawIndex = indexOffset >= 0L && indexOffset < Indices.Length ? Indices[(int)indexOffset] : -1;
+            long adjustedIndex = rawIndex >= 0 ? (long)rawIndex + BaseVertex : -1L;
+            int sourceIndex = adjustedIndex >= 0L && adjustedIndex <= int.MaxValue ? (int)adjustedIndex : -1;
             Write(localIndex, sourceIndex);
         }
 
         private void Write(int localIndex, int sourceIndex)
         {
             int dst = DestinationStart + localIndex;
+            if ((uint)dst >= (uint)OutputVertices.Length || (uint)dst >= (uint)SegmentByVertex.Length)
+                return;
+
             bool validSource = (uint)sourceIndex < (uint)SourceVertexCount;
             float3 position = validSource ? ReadPosition(sourceIndex) : float3.zero;
             float3 normal = validSource && HasNormals != 0 ? NormalizeOrFallback(ReadNormal(sourceIndex), new float3(0f, 1f, 0f)) : new float3(0f, 1f, 0f);
@@ -375,19 +481,22 @@ namespace Hecton8.Editor.OfflineGeometry
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct ExtractClutterUInt32Job : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<uint> Indices;
+        // Invariant: caller schedules one submesh window at a time and proves DestinationStart + localIndex is exclusive before write.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<InteriorClutterSourceVertex> OutputVertices;
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> SegmentByVertex;
 
+        // Invariant: MeshData read-only pointers remain valid until this extraction handle completes.
         [NativeDisableUnsafePtrRestriction, NoAlias] public void* PositionPtr;
         [NativeDisableUnsafePtrRestriction, NoAlias] public void* NormalPtr;
         [NativeDisableUnsafePtrRestriction, NoAlias] public void* TangentPtr;
         [NativeDisableUnsafePtrRestriction, NoAlias] public void* Uv0Ptr;
 
         public int IndexStart;
+        public int BaseVertex;
         public int DestinationStart;
         public int SegmentIndex;
         public int PositionStride;
@@ -405,13 +514,19 @@ namespace Hecton8.Editor.OfflineGeometry
 
         public void Execute(int localIndex)
         {
-            int sourceIndex = (int)Indices[IndexStart + localIndex];
+            long indexOffset = (long)IndexStart + localIndex;
+            long rawIndex = indexOffset >= 0L && indexOffset < Indices.Length ? Indices[(int)indexOffset] : -1L;
+            long adjustedIndex = rawIndex >= 0L ? rawIndex + BaseVertex : -1L;
+            int sourceIndex = adjustedIndex >= 0L && adjustedIndex <= int.MaxValue ? (int)adjustedIndex : -1;
             Write(localIndex, sourceIndex);
         }
 
         private void Write(int localIndex, int sourceIndex)
         {
             int dst = DestinationStart + localIndex;
+            if ((uint)dst >= (uint)OutputVertices.Length || (uint)dst >= (uint)SegmentByVertex.Length)
+                return;
+
             bool validSource = (uint)sourceIndex < (uint)SourceVertexCount;
             float3 position = validSource ? ReadPosition(sourceIndex) : float3.zero;
             float3 normal = validSource && HasNormals != 0 ? NormalizeOrFallback(ReadNormal(sourceIndex), new float3(0f, 1f, 0f)) : new float3(0f, 1f, 0f);
@@ -441,7 +556,7 @@ namespace Hecton8.Editor.OfflineGeometry
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct PackInteriorClutterVertexJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<InteriorClutterRawVertex> SourceVertices;
@@ -466,7 +581,7 @@ namespace Hecton8.Editor.OfflineGeometry
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct LinearIndexFillJob : IJobParallelFor
     {
         [WriteOnly, NoAlias] public NativeArray<uint> Indices;
@@ -477,10 +592,11 @@ namespace Hecton8.Editor.OfflineGeometry
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct DecimateTriangleSoupJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<InteriorClutterRawVertex> SourceVertices;
+        // Invariant: each worker owns exactly one dst triangle window; LOD1 and LOD2 use separate output arrays.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<InteriorClutterRawVertex> OutputVertices;
 
         public int SourceTriangleCount;
@@ -489,17 +605,37 @@ namespace Hecton8.Editor.OfflineGeometry
 
         public void Execute(int targetTriangleIndex)
         {
+            int dst = targetTriangleIndex * 3;
+            if ((uint)dst >= (uint)OutputVertices.Length)
+                return;
+
             int sourceTriangle = math.min(
                 math.max(0, SourceTriangleCount - 1),
                 (int)((long)targetTriangleIndex * math.max(1, SourceTriangleCount) / math.max(1, TargetTriangleCount)));
 
             int src = sourceTriangle * 3;
-            int dst = targetTriangleIndex * 3;
+            if ((uint)(src + 2) >= (uint)SourceVertices.Length || (uint)(dst + 2) >= (uint)OutputVertices.Length)
+            {
+                WriteFallbackTriangle(dst);
+                return;
+            }
+
             InteriorClutterRawVertex a = SourceVertices[src];
             InteriorClutterRawVertex b = SourceVertices[src + 1];
             InteriorClutterRawVertex c = SourceVertices[src + 2];
 
+            bool validTriangle =
+                math.all(math.isfinite(a.Position)) &
+                math.all(math.isfinite(b.Position)) &
+                math.all(math.isfinite(c.Position));
+            if (!validTriangle)
+            {
+                WriteFallbackTriangle(dst);
+                return;
+            }
+
             float area2 = math.length(math.cross(b.Position - a.Position, c.Position - a.Position));
+            area2 = math.select(0f, area2, math.isfinite(area2));
             float collapse = math.saturate(SmallDetailCollapse01) * math.saturate((0.02f - area2) * 50f);
             float3 center = (a.Position + b.Position + c.Position) * 0.33333334f;
             a.Position = math.lerp(a.Position, center, collapse);
@@ -510,11 +646,29 @@ namespace Hecton8.Editor.OfflineGeometry
             OutputVertices[dst + 1] = b;
             OutputVertices[dst + 2] = c;
         }
+
+        private void WriteFallbackTriangle(int dst)
+        {
+            InteriorClutterRawVertex fallback = new InteriorClutterRawVertex
+            {
+                Position = float3.zero,
+                Normal = new float3(0f, 1f, 0f),
+                Uv0 = float2.zero
+            };
+
+            if ((uint)dst < (uint)OutputVertices.Length)
+                OutputVertices[dst] = fallback;
+            if ((uint)(dst + 1) < (uint)OutputVertices.Length)
+                OutputVertices[dst + 1] = fallback;
+            if ((uint)(dst + 2) < (uint)OutputVertices.Length)
+                OutputVertices[dst + 2] = fallback;
+        }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct GenerateMockClutterCombineJob : IJobParallelFor
     {
+        // Invariant: baseVertex = shapeIndex * MockBoxVertexCount gives each worker a disjoint mock-box vertex window.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<InteriorClutterRawVertex> OutputVertices;
 
         public int ShapeCount;

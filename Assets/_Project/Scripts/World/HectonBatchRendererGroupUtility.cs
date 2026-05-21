@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -15,15 +16,15 @@ namespace Hecton8.World
     /// </summary>
     internal static class HectonBatchRendererGroupUtility
     {
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public struct BuildMatrixVisibilityMaskJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<Matrix4x4> Matrices;
-            [ReadOnly] public NativeArray<float4> CullingPlanes;
-            public NativeArray<byte> VisibilityMask;
+            [ReadOnly, NoAlias] public NativeArray<Matrix4x4> Matrices;
+            [ReadOnly, NoAlias] public NativeArray<float4> CullingPlanes;
+            [WriteOnly, NoAlias] public NativeArray<byte> VisibilityMask;
             public int InstanceCount;
             public int PlaneCount;
-            public bool EnableCpuCulling;
+            public byte EnableCpuCullingFlag;
             public float3 GlobalOffset;
             public float RadiusScale;
             public float MinRadius;
@@ -33,7 +34,7 @@ namespace Hecton8.World
                 if (index >= InstanceCount)
                     return;
 
-                if (!EnableCpuCulling)
+                if (EnableCpuCullingFlag == 0)
                 {
                     VisibilityMask[index] = 1;
                     return;
@@ -67,10 +68,10 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public unsafe struct FinalizeSingleDrawCommandOutputJob : IJob
         {
-            [ReadOnly] public NativeArray<byte> VisibilityMask;
+            [ReadOnly, NoAlias] public NativeArray<byte> VisibilityMask;
             public int InstanceCount;
             public BatchID BatchId;
             public BatchMeshID MeshId;
@@ -78,7 +79,7 @@ namespace Hecton8.World
             public int Layer;
             public int SubMeshIndex;
             public ShadowCastingMode ShadowCastingMode;
-            public bool ReceiveShadows;
+            public byte ReceiveShadowsFlag;
             public MotionVectorGenerationMode MotionMode;
             [NativeDisableUnsafePtrRestriction] public int* VisibleInstances;
             [NativeDisableUnsafePtrRestriction] public BatchDrawCommand* DrawCommands;
@@ -125,7 +126,7 @@ namespace Hecton8.World
                             rendererPriority = 0,
                             layer = (byte)math.clamp(Layer, byte.MinValue, byte.MaxValue),
                             shadowCastingMode = ShadowCastingMode,
-                            receiveShadows = ReceiveShadows,
+                            receiveShadows = ReceiveShadowsFlag != 0,
                             motionMode = MotionMode,
                             staticShadowCaster = false,
                             allDepthSorted = false

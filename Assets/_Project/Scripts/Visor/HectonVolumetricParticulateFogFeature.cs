@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.VFX;
@@ -26,7 +27,10 @@ namespace Hecton8.Visor
     public sealed class HectonVolumetricParticulateFogFeature : ScriptableRendererFeature
     {
         private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricFog.compute";
+        private const string DearLieProxyShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricFog_DearLie.shader";
+        private const string DearLieProxyShaderName = "Hidden/Hecton8/VolumetricFogDearLie";
         private const double SetupBudgetWarningMilliseconds = 0.2d;
+        private const int ColdStateRepairCadenceFrames = 30;
         private const uint SetupWarningHash = 0xA88120F0u;
         private const uint SetupContextHash = 0xC0120F6Au;
 
@@ -35,6 +39,21 @@ namespace Hecton8.Visor
             return cameraType == CameraType.Preview ||
                    cameraType == CameraType.Reflection ||
                    cameraType == CameraType.SceneView;
+        }
+
+        private static bool IsXrActive(XRPass xr)
+        {
+            return xr != null && xr.enabled;
+        }
+
+        private static bool UsesSinglePassTextureArray(XRPass xr)
+        {
+            return IsXrActive(xr) && xr.singlePassEnabled && xr.viewCount > 1;
+        }
+
+        private static int ResolveActiveViewCount(XRPass xr)
+        {
+            return UsesSinglePassTextureArray(xr) ? math.max(1, math.min(2, xr.viewCount)) : 1;
         }
 
         private static float ResolveFiniteSaturated(float value)
@@ -62,6 +81,9 @@ namespace Hecton8.Visor
         {
             [Tooltip("Compute shader that owns the reduced-resolution raymarch and depth-aware composite.")]
             public ComputeShader computeShader = null;
+
+            [Tooltip("Raster fallback shader for Dear Lie proxy and camera-format bilateral composite.")]
+            public Shader dearLieProxyShader = null;
 
             [Tooltip("Injection point. Runs after opaque depth and before final post.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
@@ -141,9 +163,40 @@ namespace Hecton8.Visor
         private sealed class VolumetricFogPass : ScriptableRenderPass, IDisposable
         {
             private const int RenderTextureBucketSize = 64;
+            private const int VolumeTextureBucketSize = 32;
+            private const int MinVolumeGridWidth = 64;
+            private const int MinVolumeGridHeight = 32;
+            private const int MaxVolumeGridWidth = 384;
+            private const int MaxVolumeGridHeight = 224;
             private const int ConstantBufferCount = 1;
+            private const int FrameParamsStrideBytes = 224;
             private const int DumpThresholdMicroseconds = 2000;
-            private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_120.bin";
+            private const float DearLieProxyBypassThreshold = 0.999f;
+            private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_233.bin";
+            private const string GridBuildKernelName = "BuildVolumetricFogGrid";
+            private const string RaymarchKernelName = "RaymarchVolumetricFog";
+            private const string RaymarchXrKernelName = "RaymarchVolumetricFogXR";
+            private const int DearLieProxyMaterialPass = 0;
+            private const int BilateralCompositeMaterialPass = 1;
+
+            [StructLayout(LayoutKind.Explicit, Size = FrameParamsStrideBytes)]
+            private struct FogFrameConstantsDTO
+            {
+                [FieldOffset(0)] public Vector4 FullSize;
+                [FieldOffset(16)] public Vector4 HalfSize;
+                [FieldOffset(32)] public Vector4 CompositeParams;
+                [FieldOffset(48)] public Vector4 DebugParams;
+                [FieldOffset(64)] public Vector4 MarineFogTexelSize;
+                [FieldOffset(80)] public Vector4 MarineFogParams;
+                [FieldOffset(96)] public Vector4 AbyssalFlowCenter;
+                [FieldOffset(112)] public Vector4 AbyssalFlowSpacing;
+                [FieldOffset(128)] public Vector4 AbyssalFlowTextureParams;
+                [FieldOffset(144)] public Vector4 AbyssalFlowActiveAndPad;
+                [FieldOffset(160)] public Vector4 InverseViewProjectionC0;
+                [FieldOffset(176)] public Vector4 InverseViewProjectionC1;
+                [FieldOffset(192)] public Vector4 InverseViewProjectionC2;
+                [FieldOffset(208)] public Vector4 InverseViewProjectionC3;
+            }
 
             private sealed class RaymarchPassData
             {
@@ -151,85 +204,115 @@ namespace Hecton8.Visor
                 internal int kernelIndex;
                 internal uint threadGroupSizeX;
                 internal uint threadGroupSizeY;
+                internal int activeViewCount;
                 internal TextureHandle depth;
+                internal TextureHandle volume;
                 internal TextureHandle result;
                 internal GraphicsBuffer paramsBuffer;
+                internal GraphicsBuffer frameParamsBuffer;
                 internal BufferHandle pointLightBuffer;
                 internal TextureHandle marineFogDensityTexture;
                 internal TextureHandle abyssalFlowTexture;
-                internal Vector4 fullSize;
                 internal Vector4 halfSize;
-                internal Vector4 compositeParams;
-                internal Vector4 debugParams;
-                internal Vector4 marineFogTexelSize;
-                internal Vector4 marineFogParams;
-                internal Vector4 abyssalFlowCenter;
-                internal Vector4 abyssalFlowSpacing;
-                internal Vector4 abyssalFlowTextureParams;
-                internal float abyssalFlowTextureActive;
-                internal Matrix4x4 inverseViewProjection;
             }
 
-            private sealed class CompositePassData
+            private sealed class GridBuildPassData
             {
                 internal ComputeShader computeShader;
                 internal int kernelIndex;
                 internal uint threadGroupSizeX;
                 internal uint threadGroupSizeY;
+                internal uint threadGroupSizeZ;
+                internal TextureHandle volume;
+                internal GraphicsBuffer paramsBuffer;
+                internal GraphicsBuffer frameParamsBuffer;
+                internal BufferHandle pointLightBuffer;
+                internal TextureHandle marineFogDensityTexture;
+                internal TextureHandle abyssalFlowTexture;
+                internal Vector4 volumeSize;
+                internal int activeDepthSlices;
+            }
+
+            private sealed class RasterCompositePassData
+            {
                 internal TextureHandle source;
                 internal TextureHandle depth;
                 internal TextureHandle halfInput;
-                internal TextureHandle destination;
-                internal GraphicsBuffer paramsBuffer;
-                internal Vector4 fullSize;
-                internal Vector4 halfSize;
-                internal Vector4 compositeParams;
-                internal Vector4 debugParams;
-                internal Vector4 marineFogTexelSize;
-                internal Vector4 marineFogParams;
-                internal Vector4 abyssalFlowCenter;
-                internal Vector4 abyssalFlowSpacing;
-                internal Vector4 abyssalFlowTextureParams;
-                internal float abyssalFlowTextureActive;
-                internal Matrix4x4 inverseViewProjection;
+                internal BufferHandle paramsBuffer;
+                internal BufferHandle frameParamsBuffer;
+                internal Material material;
+                internal bool hasHalfInput;
+                internal int passIndex;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Volumetric Particulate Fog");
             private FeatureSettings _settings;
             private ComputeShader _computeShader;
-            private RTHandle _halfTexture;
-            private RTHandle _compositeTexture;
             private RTHandle _marineFogDensityTextureHandle;
             private RTHandle _abyssalFlowTextureHandle;
-            private GraphicsBuffer _paramsBuffer;
+            private RTHandle _externalMarineFogDensityTextureHandle;
+            private RTHandle _externalAbyssalFlowTextureHandle;
+            private RTHandle _externalMarineFogDensityTextureHandleB;
+            private RTHandle _externalAbyssalFlowTextureHandleB;
+            private RTHandle _emptyVolumeTextureHandle;
+            private Material _dearLieProxyMaterial;
+            private GraphicsBuffer _paramsBufferA;
+            private GraphicsBuffer _paramsBufferB;
+            private GraphicsBuffer _frameParamsBufferA;
+            private GraphicsBuffer _frameParamsBufferB;
             private GraphicsBuffer _pointLightBufferA;
             private GraphicsBuffer _pointLightBufferB;
-            private VolumetricFogParamsDTO _lastUploadedParams;
-            private VolumetricFogParamsDTO _lastAuthoredParams;
-            private VolumetricFogParamsDTO _externalOverrideParams;
+            private FogConstantsDTO _lastUploadedParams;
+            private FogConstantsDTO _lastAuthoredParams;
+            private FogConstantsDTO _externalOverrideParams;
             private uint _lastUploadedParamsHash;
             private uint _lastUploadedPointLightsHash;
             private Texture _marineFogDensityTextureHandleSource;
             private Texture _abyssalFlowTextureHandleSource;
+            private Texture _externalMarineFogDensityTextureHandleSource;
+            private Texture _externalAbyssalFlowTextureHandleSource;
+            private Texture _externalMarineFogDensityTextureHandleSourceB;
+            private Texture _externalAbyssalFlowTextureHandleSourceB;
+            private Texture _emptyVolumeTextureHandleSource;
+            private Texture _bridgeMarineFogTexture;
+            private Texture _bridgeAbyssalFlowTexture;
+            private Shader _dearLieProxyShader;
+            private Vector4 _bridgeMarineFogTexelSize;
+            private Vector4 _bridgeMarineFogParams;
+            private Vector4 _bridgeAbyssalFlowCenter;
+            private Vector4 _bridgeAbyssalFlowSpacing;
+            private Vector4 _bridgeAbyssalFlowTextureParams;
+            private Vector4 _bridgeBiomeTransitionFogColor;
+            private Vector4 _bridgeBiomeTransitionAbsorption;
+            private Vector4 _bridgeBiomeTransitionWeights;
+            private float _bridgeAbyssalFlowTextureActive;
             private IDataVault _vault;
-            private VaultBufferHandle<VolumetricFogParamsDTO> _paramsHandle;
-            private VaultBufferHandle<PointLightDTO> _pointLightsHandle;
-            private VaultBufferHandle<VolumetricFogTelemetryEntry> _telemetryHandle;
-            private VaultBufferHandle<WaterExtinctionProfileDTO> _extinctionProfilesHandle;
+            private VaultGenerationHandle<FogConstantsDTO> _paramsHandle;
+            private VaultGenerationHandle<PointLightDTO> _pointLightsHandle;
+            private VaultGenerationHandle<VolumetricFogTelemetryEntry> _telemetryHandle;
+            private VaultGenerationHandle<WaterExtinctionProfileDTO> _extinctionProfilesHandle;
             private RenderTexture _emptyFogDensityTexture;
             private Texture3D _emptyAbyssalFlowTexture;
             private int _raymarchKernel = -1;
-            private int _compositeKernel = -1;
+            private int _raymarchXrKernel = -1;
+            private int _gridBuildKernel = -1;
+            private uint _gridBuildThreadGroupSizeX = 8;
+            private uint _gridBuildThreadGroupSizeY = 8;
+            private uint _gridBuildThreadGroupSizeZ = 1;
             private uint _raymarchThreadGroupSizeX = 8;
             private uint _raymarchThreadGroupSizeY = 8;
-            private uint _compositeThreadGroupSizeX = 8;
-            private uint _compositeThreadGroupSizeY = 8;
+            private uint _raymarchXrThreadGroupSizeX = 8;
+            private uint _raymarchXrThreadGroupSizeY = 8;
             private float _qualityWeight;
+            private double3 _runtimeOriginAup;
             private int _telemetryWriteIndex;
             private int _activePointLightBufferIndex;
+            private int _activeParamsBufferIndex;
+            private int _activeFrameParamsBufferIndex;
             private int _lastUploadedPointLightCount;
             private int _pendingPointLightCount;
             private int _lastScheduledPointLightCount;
+            private int _frameIndex;
             private uint _lastScheduledPointLightHash;
             private JobHandle _mockLightsJobHandle;
             private bool _mockLightsJobPending;
@@ -240,6 +323,7 @@ namespace Hecton8.Visor
             private bool _hasScheduledPointLightJob;
             private bool _hasAuthoredParams;
             private bool _hasExternalOverrideParams;
+            private bool _deferredDumpRequested;
 
             public VolumetricFogPass()
             {
@@ -247,31 +331,92 @@ namespace Hecton8.Visor
                 requiresIntermediateTexture = true;
             }
 
-            public void Setup(FeatureSettings settings, ComputeShader computeShader, float qualityWeight)
+            public bool Setup(FeatureSettings settings, ComputeShader computeShader, float qualityWeight, double3 runtimeOriginAup, int frameIndex)
             {
                 _settings = settings;
-                _computeShader = computeShader;
                 _qualityWeight = ResolveFiniteSaturated(qualityWeight);
+                _runtimeOriginAup = math.all(math.isfinite(runtimeOriginAup)) ? runtimeOriginAup : double3.zero;
+                _frameIndex = math.max(0, frameIndex);
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
+                return TryBindComputeShader(computeShader);
+            }
 
-                if (_computeShader != null && (_raymarchKernel < 0 || _compositeKernel < 0))
+            public bool PrepareComputeKernels(FeatureSettings settings, ComputeShader computeShader)
+            {
+                _settings = settings;
+                renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
+                return TryBindComputeShader(computeShader);
+            }
+
+            private bool TryBindComputeShader(ComputeShader computeShader)
+            {
+                if (!ReferenceEquals(_computeShader, computeShader))
                 {
-                    _raymarchKernel = _computeShader.FindKernel("RaymarchVolumetricFog");
-                    _compositeKernel = _computeShader.FindKernel("CompositeVolumetricFog");
-                    _computeShader.GetKernelThreadGroupSizes(_raymarchKernel, out _raymarchThreadGroupSizeX, out _raymarchThreadGroupSizeY, out _);
-                    _computeShader.GetKernelThreadGroupSizes(_compositeKernel, out _compositeThreadGroupSizeX, out _compositeThreadGroupSizeY, out _);
+                    _computeShader = computeShader;
+                    ResetComputeKernelState();
                 }
+
+                return TryInitializeComputeKernels();
+            }
+
+            private bool TryInitializeComputeKernels()
+            {
+                if (_computeShader == null)
+                    return false;
+
+                if (_gridBuildKernel >= 0 &&
+                    _raymarchKernel >= 0 &&
+                    _raymarchXrKernel >= 0)
+                {
+                    return true;
+                }
+
+                if (!_computeShader.HasKernel(GridBuildKernelName) ||
+                    !_computeShader.HasKernel(RaymarchKernelName) ||
+                    !_computeShader.HasKernel(RaymarchXrKernelName))
+                {
+                    ResetComputeKernelState();
+                    return false;
+                }
+
+                _gridBuildKernel = _computeShader.FindKernel(GridBuildKernelName);
+                _raymarchKernel = _computeShader.FindKernel(RaymarchKernelName);
+                _raymarchXrKernel = _computeShader.FindKernel(RaymarchXrKernelName);
+                _computeShader.GetKernelThreadGroupSizes(_gridBuildKernel, out _gridBuildThreadGroupSizeX, out _gridBuildThreadGroupSizeY, out _gridBuildThreadGroupSizeZ);
+                _computeShader.GetKernelThreadGroupSizes(_raymarchKernel, out _raymarchThreadGroupSizeX, out _raymarchThreadGroupSizeY, out _);
+                _computeShader.GetKernelThreadGroupSizes(_raymarchXrKernel, out _raymarchXrThreadGroupSizeX, out _raymarchXrThreadGroupSizeY, out _);
+                return true;
+            }
+
+            private void ResetComputeKernelState()
+            {
+                _gridBuildKernel = -1;
+                _raymarchKernel = -1;
+                _raymarchXrKernel = -1;
+                _gridBuildThreadGroupSizeX = 8;
+                _gridBuildThreadGroupSizeY = 8;
+                _gridBuildThreadGroupSizeZ = 1;
+                _raymarchThreadGroupSizeX = 8;
+                _raymarchThreadGroupSizeY = 8;
+                _raymarchXrThreadGroupSizeX = 8;
+                _raymarchXrThreadGroupSizeY = 8;
             }
 
             public void Dispose()
             {
-                _halfTexture?.Release();
-                _compositeTexture?.Release();
                 ReleaseExternalTextureHandle(ref _marineFogDensityTextureHandle, ref _marineFogDensityTextureHandleSource);
                 ReleaseExternalTextureHandle(ref _abyssalFlowTextureHandle, ref _abyssalFlowTextureHandleSource);
-                _paramsBuffer?.Release();
+                ReleaseExternalTextureHandle(ref _externalMarineFogDensityTextureHandle, ref _externalMarineFogDensityTextureHandleSource);
+                ReleaseExternalTextureHandle(ref _externalAbyssalFlowTextureHandle, ref _externalAbyssalFlowTextureHandleSource);
+                ReleaseExternalTextureHandle(ref _externalMarineFogDensityTextureHandleB, ref _externalMarineFogDensityTextureHandleSourceB);
+                ReleaseExternalTextureHandle(ref _externalAbyssalFlowTextureHandleB, ref _externalAbyssalFlowTextureHandleSourceB);
+                ReleaseExternalTextureHandle(ref _emptyVolumeTextureHandle, ref _emptyVolumeTextureHandleSource);
+                _paramsBufferA?.Release();
+                _paramsBufferB?.Release();
+                _frameParamsBufferA?.Release();
+                _frameParamsBufferB?.Release();
                 if (_mockLightsJobPending)
                 {
                     DispatcherJobFence.TryComplete(ref _mockLightsJobHandle, forceComplete: true); // COLD SYNC JOB: render-feature teardown cannot leave a vault writer running.
@@ -280,17 +425,21 @@ namespace Hecton8.Visor
 
                 _pointLightBufferA?.Release();
                 _pointLightBufferB?.Release();
-                _halfTexture = null;
-                _compositeTexture = null;
-                _paramsBuffer = null;
+                _paramsBufferA = null;
+                _paramsBufferB = null;
+                _frameParamsBufferA = null;
+                _frameParamsBufferB = null;
                 _pointLightBufferA = null;
                 _pointLightBufferB = null;
+                ReleaseVaultHandles();
                 _paramsHandle = default;
                 _pointLightsHandle = default;
                 _telemetryHandle = default;
                 _extinctionProfilesHandle = default;
                 _vault = null;
                 _activePointLightBufferIndex = 0;
+                _activeParamsBufferIndex = 0;
+                _activeFrameParamsBufferIndex = 0;
                 _lastUploadedPointLightCount = 0;
                 _pendingPointLightCount = 0;
                 _lastScheduledPointLightCount = 0;
@@ -303,17 +452,149 @@ namespace Hecton8.Visor
                 _hasUploadedPointLights = false;
                 _lastUploadedPointLightsHash = 0u;
                 _hasScheduledPointLightJob = false;
+                _deferredDumpRequested = false;
                 ReleaseFallbackTextures();
-                _raymarchKernel = -1;
-                _compositeKernel = -1;
+                DestroyUnityObject(_dearLieProxyMaterial);
+                _dearLieProxyMaterial = null;
+                _dearLieProxyShader = null;
+                _computeShader = null;
+                ResetComputeKernelState();
+            }
+
+            public bool HasNativeState => _vault != null &&
+                                          !_vault.IsCompactionFenceActive &&
+                                          _paramsHandle.BufferID != 0u &&
+                                          _pointLightsHandle.BufferID != 0u &&
+                                          _telemetryHandle.BufferID != 0u &&
+                                          _extinctionProfilesHandle.BufferID != 0u;
+
+            public bool HasGpuState => HasGpuBuffers() &&
+                                       _emptyFogDensityTexture != null &&
+                                       _emptyAbyssalFlowTexture != null &&
+                                       _dearLieProxyMaterial != null &&
+                                       _marineFogDensityTextureHandle != null &&
+                                       _abyssalFlowTextureHandle != null &&
+                                       _emptyVolumeTextureHandle != null;
+
+            public bool TryPrepareNativeState(IDataVault vault)
+            {
+                if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                    return false;
+
+                if (!ReferenceEquals(vault, _vault))
+                {
+                    if (_mockLightsJobPending)
+                    {
+                        if (!_mockLightsJobHandle.IsCompleted)
+                            return false;
+
+                        DispatcherJobFence.TryFinalizeCompleted(ref _mockLightsJobHandle);
+                        _mockLightsJobPending = false;
+                    }
+
+                    ReleaseVaultHandles();
+                    _vault = vault;
+                    _paramsHandle = default;
+                    _pointLightsHandle = default;
+                    _telemetryHandle = default;
+                    _extinctionProfilesHandle = default;
+                    _extinctionProfilesSeeded = false;
+                    ResetAuthoredOverrideState();
+                    ResetPointLightScheduleState();
+                    ClearPointLightBuffer(_pointLightBufferA);
+                    ClearPointLightBuffer(_pointLightBufferB);
+                }
+
+                if (_paramsHandle.BufferID == 0u)
+                    _paramsHandle = vault.GetGenerationHandle<FogConstantsDTO>(BufferID.ShinobuVolumetricFogParams, 1, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+                if (_pointLightsHandle.BufferID == 0u)
+                    _pointLightsHandle = vault.GetGenerationHandle<PointLightDTO>(BufferID.ShinobuVolumetricFogPointLights, VolumetricFogConstants.MaxPointLights, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+                if (_telemetryHandle.BufferID == 0u)
+                    _telemetryHandle = vault.GetGenerationHandle<VolumetricFogTelemetryEntry>(BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+                if (_extinctionProfilesHandle.BufferID == 0u)
+                    _extinctionProfilesHandle = vault.GetGenerationHandle<WaterExtinctionProfileDTO>(BufferID.ShinobuVolumetricFogExtinctionProfiles, VolumetricFogConstants.ExtinctionProfileCapacity, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+
+                if (!HasNativeState)
+                    return false;
+
+                SeedDefaultExtinctionProfiles();
+                return true;
+            }
+
+            public bool TryPrepareGpuState()
+            {
+                EnsureFallbackTextures();
+                if (!EnsureDearLieProxyMaterial())
+                    return false;
+
+                if (!EnsureGpuBuffers())
+                    return false;
+
+                return ResolveExternalTextureHandle(_emptyFogDensityTexture, ref _marineFogDensityTextureHandle, ref _marineFogDensityTextureHandleSource) != null &&
+                       ResolveExternalTextureHandle(_emptyAbyssalFlowTexture, ref _abyssalFlowTextureHandle, ref _abyssalFlowTextureHandleSource) != null &&
+                       ResolveExternalTextureHandle(_emptyAbyssalFlowTexture, ref _emptyVolumeTextureHandle, ref _emptyVolumeTextureHandleSource) != null;
+            }
+
+            public void RefreshExternalBridgeState()
+            {
+                _bridgeMarineFogTexelSize = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityTexelSizeId);
+                _bridgeMarineFogParams = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityParamsId);
+                _bridgeMarineFogTexture = Shader.GetGlobalTexture(ShaderConstants.MarineSnowDensityTextureId);
+                _bridgeAbyssalFlowTexture = Shader.GetGlobalTexture(ShaderConstants.AbyssalFlowTextureId);
+                _bridgeAbyssalFlowCenter = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowCenterId);
+                _bridgeAbyssalFlowSpacing = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowSpacingId);
+                _bridgeAbyssalFlowTextureParams = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowTextureParamsId);
+                _bridgeAbyssalFlowTextureActive = Shader.GetGlobalFloat(ShaderConstants.AbyssalFlowTextureActiveId);
+                _bridgeBiomeTransitionFogColor = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionFogColorId);
+                _bridgeBiomeTransitionAbsorption = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionAbsorptionId);
+                _bridgeBiomeTransitionWeights = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionWeightsId);
+
+                if (IsUsableMarineFogTexture(_bridgeMarineFogTexture, in _bridgeMarineFogParams) &&
+                    !ReferenceEquals(_bridgeMarineFogTexture, _emptyFogDensityTexture))
+                {
+                    ResolveCachedExternalTextureHandle(
+                        _bridgeMarineFogTexture,
+                        ref _externalMarineFogDensityTextureHandle,
+                        ref _externalMarineFogDensityTextureHandleSource,
+                        ref _externalMarineFogDensityTextureHandleB,
+                        ref _externalMarineFogDensityTextureHandleSourceB);
+                }
+
+                if (IsUsableAbyssalFlowTexture(_bridgeAbyssalFlowTexture) &&
+                    !ReferenceEquals(_bridgeAbyssalFlowTexture, _emptyAbyssalFlowTexture))
+                {
+                    ResolveCachedExternalTextureHandle(
+                        _bridgeAbyssalFlowTexture,
+                        ref _externalAbyssalFlowTextureHandle,
+                        ref _externalAbyssalFlowTextureHandleSource,
+                        ref _externalAbyssalFlowTextureHandleB,
+                        ref _externalAbyssalFlowTextureHandleSourceB);
+                }
+            }
+
+            public void FlushDeferredDiagnosticDump()
+            {
+                if (!_deferredDumpRequested || _vault == null || _telemetryHandle.BufferID == 0u)
+                    return;
+
+                if (!_vault.TryResolveHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry> telemetry) ||
+                    !telemetry.IsCreated ||
+                    telemetry.Length < VolumetricFogConstants.TelemetryCapacity)
+                {
+                    return;
+                }
+
+                DumpTelemetryRing(telemetry);
+                _deferredDumpRequested = false;
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
                 if (_settings == null ||
                     _computeShader == null ||
+                    _gridBuildKernel < 0 ||
                     _raymarchKernel < 0 ||
-                    _compositeKernel < 0 ||
+                    _raymarchXrKernel < 0 ||
                     !VolumetricFogNativeLayout.Validate())
                 {
                     return;
@@ -335,32 +616,60 @@ namespace Hecton8.Visor
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
                 int fullWidth = Mathf.Max(1, sourceDesc.width);
                 int fullHeight = Mathf.Max(1, sourceDesc.height);
-                float renderScale = _settings.ResolveInternalScale(_qualityWeight);
-                int halfWidth = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * renderScale)));
-                int halfHeight = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * renderScale)));
-                EnsureRenderTargets(halfWidth, halfHeight, fullWidth, fullHeight);
-                if (!EnsureGpuBuffers() || !EnsureVaultState())
+                XRPass xrPass = cameraData.xr;
+                bool xrActive = IsXrActive(xrPass);
+                bool requestedTextureArray = UsesSinglePassTextureArray(xrPass);
+                int requestedViewCount = ResolveActiveViewCount(xrPass);
+                bool useTextureArray = requestedTextureArray &&
+                    sourceDesc.dimension == TextureDimension.Tex2DArray &&
+                    sourceDesc.slices >= requestedViewCount;
+                if (requestedTextureArray && !useTextureArray)
                     return;
 
+                int activeViewCount = useTextureArray ? requestedViewCount : 1;
                 Camera camera = cameraData.camera;
-                Matrix4x4 projectionMatrix = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
-                Matrix4x4 viewProjection = projectionMatrix * camera.worldToCameraMatrix;
-                Matrix4x4 inverseViewProjection = viewProjection.inverse;
-                int raySteps = _settings.ResolveRaySteps(_qualityWeight);
-                int requestedPointLightCount = _settings.ResolvePointLightCount(_qualityWeight);
-                float visualPhaseSeconds = ResolveVisualPhaseSeconds(_qualityWeight);
-                float estimatedGpuMicroseconds = EstimateGpuMicroseconds(halfWidth, halfHeight, raySteps, requestedPointLightCount, renderScale);
-                Vector4 marineFogTexelSize = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityTexelSizeId);
-                Vector4 marineFogParams = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityParamsId);
-                Texture marineFogTexture = Shader.GetGlobalTexture(ShaderConstants.MarineSnowDensityTextureId);
-                Texture abyssalFlowTexture = Shader.GetGlobalTexture(ShaderConstants.AbyssalFlowTextureId);
-                Vector4 abyssalFlowCenter = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowCenterId);
-                Vector4 abyssalFlowSpacing = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowSpacingId);
-                Vector4 abyssalFlowTextureParams = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowTextureParamsId);
-                float abyssalFlowTextureActive = Shader.GetGlobalFloat(ShaderConstants.AbyssalFlowTextureActiveId);
-                Vector4 biomeTransitionFogColor = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionFogColorId);
-                Vector4 biomeTransitionAbsorption = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionAbsorptionId);
-                Vector4 biomeTransitionWeights = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionWeightsId);
+                float proxyBlend = _settings.ResolveProxyBlend(_qualityWeight);
+                float volumetricContribution = math.saturate(1f - proxyBlend);
+                float volumetricCurve = ResolveQualityCurve(volumetricContribution);
+                bool proxyOnly = proxyBlend >= DearLieProxyBypassThreshold || xrActive;
+                float effectiveProxyBlend = proxyOnly ? 1f : proxyBlend;
+                float effectiveVolumetricQuality = proxyOnly
+                    ? 0f
+                    : math.saturate(_qualityWeight * math.lerp(0.25f, 1f, volumetricCurve));
+                int raySteps = proxyOnly
+                    ? VolumetricFogConstants.MinRaySteps
+                    : _settings.ResolveRaySteps(effectiveVolumetricQuality);
+                float visualPhaseSeconds = ResolveVisualPhaseSeconds(_qualityWeight, _frameIndex);
+
+                float renderScale = proxyOnly
+                    ? ResolveFiniteClamped(_settings.minimumInternalScale, 0.2f, 0.5f, 0.25f)
+                    : math.lerp(
+                        ResolveFiniteClamped(_settings.minimumInternalScale, 0.2f, 0.5f, 0.25f),
+                        _settings.ResolveInternalScale(_qualityWeight),
+                        volumetricCurve);
+                int halfWidth = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(fullWidth * renderScale)));
+                int halfHeight = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(fullHeight * renderScale)));
+                int volumeWidth = ResolveVolumeGridDimension(halfWidth, _qualityWeight, MinVolumeGridWidth, MaxVolumeGridWidth);
+                int volumeHeight = ResolveVolumeGridDimension(halfHeight, _qualityWeight, MinVolumeGridHeight, MaxVolumeGridHeight);
+                if (!HasGpuState || !EnsureVaultState())
+                    return;
+
+                Matrix4x4 inverseViewProjection = ResolveInverseViewProjection(camera, proxyOnly);
+                int requestedPointLightCount = proxyOnly ? 0 : _settings.ResolvePointLightCount(effectiveVolumetricQuality);
+                float estimatedGpuMicroseconds = proxyOnly
+                    ? EstimateProxyMicroseconds(halfWidth, halfHeight, fullWidth, fullHeight, renderScale)
+                    : EstimateGpuMicroseconds(halfWidth, halfHeight, volumeWidth, volumeHeight, raySteps, requestedPointLightCount, renderScale);
+                Vector4 marineFogTexelSize = _bridgeMarineFogTexelSize;
+                Vector4 marineFogParams = _bridgeMarineFogParams;
+                Texture marineFogTexture = _bridgeMarineFogTexture;
+                Texture abyssalFlowTexture = _bridgeAbyssalFlowTexture;
+                Vector4 abyssalFlowCenter = _bridgeAbyssalFlowCenter;
+                Vector4 abyssalFlowSpacing = _bridgeAbyssalFlowSpacing;
+                Vector4 abyssalFlowTextureParams = _bridgeAbyssalFlowTextureParams;
+                float abyssalFlowTextureActive = _bridgeAbyssalFlowTextureActive;
+                Vector4 biomeTransitionFogColor = _bridgeBiomeTransitionFogColor;
+                Vector4 biomeTransitionAbsorption = _bridgeBiomeTransitionAbsorption;
+                Vector4 biomeTransitionWeights = _bridgeBiomeTransitionWeights;
 
                 if (!UpdateVaultAndGpuState(
                         camera,
@@ -369,22 +678,39 @@ namespace Hecton8.Visor
                         renderScale,
                         visualPhaseSeconds,
                         estimatedGpuMicroseconds,
+                        effectiveProxyBlend,
                         in biomeTransitionFogColor,
                         in biomeTransitionAbsorption,
                         in biomeTransitionWeights,
-                        marineFogTexture != null,
-                        abyssalFlowTexture != null && abyssalFlowTextureActive > 0.5f,
+                        IsUsableMarineFogTexture(marineFogTexture, in marineFogParams),
+                        IsUsableAbyssalFlowTexture(abyssalFlowTexture) && abyssalFlowTextureActive > 0.5f,
+                        !proxyOnly,
                         out int activePointLightCount,
                         out GraphicsBuffer activePointLightBuffer))
                 {
                     return;
                 }
 
-                TextureHandle halfTexture = renderGraph.ImportTexture(_halfTexture);
-                TextureHandle compositeTexture = renderGraph.ImportTexture(_compositeTexture);
-                BufferHandle paramsBufferHandle = renderGraph.ImportBuffer(_paramsBuffer);
-                BufferHandle pointLightBufferHandle = renderGraph.ImportBuffer(activePointLightBuffer);
-                Vector4 fullSize = new Vector4(sourceDesc.width, sourceDesc.height, 1f / Mathf.Max(1, sourceDesc.width), 1f / Mathf.Max(1, sourceDesc.height));
+                TextureDimension outputDimension = useTextureArray ? TextureDimension.Tex2DArray : TextureDimension.Tex2D;
+                int outputSlices = useTextureArray ? activeViewCount : 1;
+                VRTextureUsage outputVrUsage = useTextureArray ? sourceDesc.vrUsage : VRTextureUsage.None;
+                TextureHandle halfTexture = default;
+                TextureHandle volumeTexture = default;
+                if (!proxyOnly)
+                {
+                    TextureDesc halfDesc = CreateGraphTextureDesc(sourceDesc, halfWidth, halfHeight, outputSlices, outputDimension, FilterMode.Bilinear, "_HectonVolumetricFogHalf", GraphicsFormat.R16G16B16A16_SFloat, true, useTextureArray, outputVrUsage);
+                    halfTexture = renderGraph.CreateTexture(halfDesc);
+                    TextureDesc volumeDesc = CreateGraphTextureDesc(sourceDesc, volumeWidth, volumeHeight, raySteps, TextureDimension.Tex3D, FilterMode.Point, "_HectonVolumetricFogFrustumGrid", GraphicsFormat.R16G16B16A16_SFloat, true);
+                    volumeTexture = renderGraph.CreateTexture(volumeDesc);
+                }
+
+                TextureDesc compositeDesc = CreateGraphTextureDesc(sourceDesc, fullWidth, fullHeight, outputSlices, outputDimension, FilterMode.Bilinear, "_HectonVolumetricFogComposite", ResolveCompositeColorFormat(sourceDesc), false, useTextureArray, outputVrUsage);
+                TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
+                GraphicsBuffer activeParamsBuffer = GetActiveParamsBuffer();
+                if (activeParamsBuffer == null || !activeParamsBuffer.IsValid())
+                    return;
+
+                Vector4 fullSize = new Vector4(fullWidth, fullHeight, 1f / fullWidth, 1f / fullHeight);
                 Vector4 halfSize = new Vector4(halfWidth, halfHeight, 1f / Mathf.Max(1, halfWidth), 1f / Mathf.Max(1, halfHeight));
                 Vector4 compositeParams = new Vector4(
                     ResolveFiniteClamped(_settings.bilateralDepthScale, 0.01f, 96f, 24f),
@@ -396,204 +722,295 @@ namespace Hecton8.Visor
                     ResolveFiniteSaturated(_settings.ditherStrength),
                     renderScale,
                     estimatedGpuMicroseconds);
-                if (marineFogTexture == null || marineFogParams.w <= 0.5f)
+                if (!IsUsableMarineFogTexture(marineFogTexture, in marineFogParams))
                 {
-                    EnsureFallbackTextures();
                     marineFogTexture = _emptyFogDensityTexture;
                     marineFogParams = Vector4.zero;
                     marineFogTexelSize = new Vector4(1f, 1f, 1f, 1f);
                 }
 
-                if (abyssalFlowTexture == null)
+                if (!IsUsableAbyssalFlowTexture(abyssalFlowTexture))
                 {
-                    EnsureFallbackTextures();
                     abyssalFlowTexture = _emptyAbyssalFlowTexture;
+                    abyssalFlowTextureActive = 0f;
                 }
 
-                RTHandle marineFogTextureHandle = ResolveExternalTextureHandle(marineFogTexture, ref _marineFogDensityTextureHandle, ref _marineFogDensityTextureHandleSource);
-                RTHandle abyssalFlowTextureHandle = ResolveExternalTextureHandle(abyssalFlowTexture, ref _abyssalFlowTextureHandle, ref _abyssalFlowTextureHandleSource);
+                UploadFrameConstantBuffer(
+                    in fullSize,
+                    in halfSize,
+                    in compositeParams,
+                    in debugParams,
+                    in marineFogTexelSize,
+                    in marineFogParams,
+                    in abyssalFlowCenter,
+                    in abyssalFlowSpacing,
+                    in abyssalFlowTextureParams,
+                    abyssalFlowTextureActive,
+                    in inverseViewProjection);
+                GraphicsBuffer activeFrameParamsBuffer = GetActiveFrameParamsBuffer();
+                if (activeFrameParamsBuffer == null || !activeFrameParamsBuffer.IsValid())
+                    return;
+
+                if (proxyOnly)
+                {
+                    BufferHandle paramsBufferHandle = renderGraph.ImportBuffer(activeParamsBuffer);
+                    BufferHandle frameParamsBufferHandle = renderGraph.ImportBuffer(activeFrameParamsBuffer);
+                    if (!AddRasterFogCompositePass(
+                            renderGraph,
+                            "Hecton Dear Lie Fog Proxy",
+                            sourceTexture,
+                            depthTexture,
+                            TextureHandle.nullHandle,
+                            compositeTexture,
+                            paramsBufferHandle,
+                            frameParamsBufferHandle,
+                            false,
+                            DearLieProxyMaterialPass))
+                    {
+                        return;
+                    }
+
+                    resourceData.cameraColor = compositeTexture;
+                    return;
+                }
+
+                if (activePointLightBuffer == null || !activePointLightBuffer.IsValid())
+                    return;
+
+                BufferHandle paramsBufferHandle = renderGraph.ImportBuffer(activeParamsBuffer);
+                BufferHandle frameParamsBufferHandle = renderGraph.ImportBuffer(activeFrameParamsBuffer);
+                RTHandle marineFogTextureHandle = TryGetCachedExternalTextureHandle(
+                    marineFogTexture,
+                    _externalMarineFogDensityTextureHandle,
+                    _externalMarineFogDensityTextureHandleSource,
+                    _externalMarineFogDensityTextureHandleB,
+                    _externalMarineFogDensityTextureHandleSourceB);
+                if (marineFogTextureHandle == null)
+                {
+                    marineFogTexture = _emptyFogDensityTexture;
+                    marineFogParams = Vector4.zero;
+                    marineFogTexelSize = new Vector4(1f, 1f, 1f, 1f);
+                    marineFogTextureHandle = _marineFogDensityTextureHandle;
+                }
+
+                RTHandle abyssalFlowTextureHandle = TryGetCachedExternalTextureHandle(
+                    abyssalFlowTexture,
+                    _externalAbyssalFlowTextureHandle,
+                    _externalAbyssalFlowTextureHandleSource,
+                    _externalAbyssalFlowTextureHandleB,
+                    _externalAbyssalFlowTextureHandleSourceB);
+                if (abyssalFlowTextureHandle == null)
+                {
+                    abyssalFlowTexture = _emptyAbyssalFlowTexture;
+                    abyssalFlowTextureActive = 0f;
+                    abyssalFlowTextureHandle = _abyssalFlowTextureHandle;
+                }
+
                 if (marineFogTextureHandle == null || abyssalFlowTextureHandle == null)
                     return;
 
+                BufferHandle pointLightBufferHandle = renderGraph.ImportBuffer(activePointLightBuffer);
                 TextureHandle marineFogGraphTexture = renderGraph.ImportTexture(marineFogTextureHandle);
                 TextureHandle abyssalFlowGraphTexture = renderGraph.ImportTexture(abyssalFlowTextureHandle);
+
+                using (var builder = renderGraph.AddComputePass("Hecton Particulate Fog Frustum Grid", out GridBuildPassData passData, _profilingSampler))
+                {
+                    passData.computeShader = _computeShader;
+                    passData.kernelIndex = _gridBuildKernel;
+                    passData.threadGroupSizeX = _gridBuildThreadGroupSizeX;
+                    passData.threadGroupSizeY = _gridBuildThreadGroupSizeY;
+                    passData.threadGroupSizeZ = _gridBuildThreadGroupSizeZ;
+                    passData.volume = volumeTexture;
+                    passData.paramsBuffer = activeParamsBuffer;
+                    passData.frameParamsBuffer = activeFrameParamsBuffer;
+                    passData.pointLightBuffer = pointLightBufferHandle;
+                    passData.marineFogDensityTexture = marineFogGraphTexture;
+                    passData.abyssalFlowTexture = abyssalFlowGraphTexture;
+                    passData.volumeSize = new Vector4(volumeWidth, volumeHeight, 1f / Mathf.Max(1, volumeWidth), 1f / Mathf.Max(1, volumeHeight));
+                    passData.activeDepthSlices = raySteps;
+
+                    builder.UseTexture(volumeTexture, AccessFlags.Write);
+                    builder.UseTexture(marineFogGraphTexture, AccessFlags.Read);
+                    builder.UseTexture(abyssalFlowGraphTexture, AccessFlags.Read);
+                    builder.UseBuffer(paramsBufferHandle, AccessFlags.Read);
+                    builder.UseBuffer(frameParamsBufferHandle, AccessFlags.Read);
+                    builder.UseBuffer(pointLightBufferHandle, AccessFlags.Read);
+
+                    builder.SetRenderFunc(static (GridBuildPassData data, ComputeGraphContext context) =>
+                    {
+                        int dispatchX = Mathf.CeilToInt(data.volumeSize.x / Mathf.Max(1u, data.threadGroupSizeX));
+                        int dispatchY = Mathf.CeilToInt(data.volumeSize.y / Mathf.Max(1u, data.threadGroupSizeY));
+                        int dispatchZ = Mathf.CeilToInt(data.activeDepthSlices / (float)Mathf.Max(1u, data.threadGroupSizeZ));
+                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.VolumeWriteId, data.volume);
+                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.MarineSnowDensityTextureId, data.marineFogDensityTexture);
+                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.AbyssalFlowTextureId, data.abyssalFlowTexture);
+                        context.cmd.SetComputeConstantBufferParam(data.computeShader, ShaderConstants.ParamsBufferId, data.paramsBuffer, 0, VolumetricFogConstants.ParamsStrideBytes);
+                        context.cmd.SetComputeConstantBufferParam(data.computeShader, ShaderConstants.FrameParamsBufferId, data.frameParamsBuffer, 0, FrameParamsStrideBytes);
+                        context.cmd.SetComputeBufferParam(data.computeShader, data.kernelIndex, ShaderConstants.PointLightsBufferId, data.pointLightBuffer);
+                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, Mathf.Max(1, dispatchZ));
+                    });
+                }
 
                 using (var builder = renderGraph.AddComputePass("Hecton Particulate Fog Raymarch", out RaymarchPassData passData, _profilingSampler))
                 {
                     passData.computeShader = _computeShader;
-                    passData.kernelIndex = _raymarchKernel;
-                    passData.threadGroupSizeX = _raymarchThreadGroupSizeX;
-                    passData.threadGroupSizeY = _raymarchThreadGroupSizeY;
+                    passData.kernelIndex = useTextureArray ? _raymarchXrKernel : _raymarchKernel;
+                    passData.threadGroupSizeX = useTextureArray ? _raymarchXrThreadGroupSizeX : _raymarchThreadGroupSizeX;
+                    passData.threadGroupSizeY = useTextureArray ? _raymarchXrThreadGroupSizeY : _raymarchThreadGroupSizeY;
+                    passData.activeViewCount = activeViewCount;
                     passData.depth = depthTexture;
+                    passData.volume = volumeTexture;
                     passData.result = halfTexture;
-                    passData.paramsBuffer = _paramsBuffer;
+                    passData.paramsBuffer = activeParamsBuffer;
+                    passData.frameParamsBuffer = activeFrameParamsBuffer;
                     passData.pointLightBuffer = pointLightBufferHandle;
                     passData.marineFogDensityTexture = marineFogGraphTexture;
                     passData.abyssalFlowTexture = abyssalFlowGraphTexture;
-                    passData.fullSize = fullSize;
                     passData.halfSize = halfSize;
-                    passData.compositeParams = compositeParams;
-                    passData.debugParams = debugParams;
-                    passData.marineFogTexelSize = marineFogTexelSize;
-                    passData.marineFogParams = marineFogParams;
-                    passData.abyssalFlowCenter = abyssalFlowCenter;
-                    passData.abyssalFlowSpacing = abyssalFlowSpacing;
-                    passData.abyssalFlowTextureParams = abyssalFlowTextureParams;
-                    passData.abyssalFlowTextureActive = abyssalFlowTextureActive;
-                    passData.inverseViewProjection = inverseViewProjection;
 
                     builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.UseTexture(volumeTexture, AccessFlags.Read);
                     builder.UseTexture(halfTexture, AccessFlags.Write);
                     builder.UseTexture(marineFogGraphTexture, AccessFlags.Read);
                     builder.UseTexture(abyssalFlowGraphTexture, AccessFlags.Read);
                     builder.UseBuffer(paramsBufferHandle, AccessFlags.Read);
+                    builder.UseBuffer(frameParamsBufferHandle, AccessFlags.Read);
                     builder.UseBuffer(pointLightBufferHandle, AccessFlags.Read);
 
-                    builder.SetRenderFunc((RaymarchPassData data, ComputeGraphContext context) =>
+                    builder.SetRenderFunc(static (RaymarchPassData data, ComputeGraphContext context) =>
                     {
                         int dispatchX = Mathf.CeilToInt(data.halfSize.x / Mathf.Max(1u, data.threadGroupSizeX));
                         int dispatchY = Mathf.CeilToInt(data.halfSize.y / Mathf.Max(1u, data.threadGroupSizeY));
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
+                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.VolumeTextureId, data.volume);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.HalfResultId, data.result);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.MarineSnowDensityTextureId, data.marineFogDensityTexture);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.AbyssalFlowTextureId, data.abyssalFlowTexture);
                         context.cmd.SetComputeConstantBufferParam(data.computeShader, ShaderConstants.ParamsBufferId, data.paramsBuffer, 0, VolumetricFogConstants.ParamsStrideBytes);
+                        context.cmd.SetComputeConstantBufferParam(data.computeShader, ShaderConstants.FrameParamsBufferId, data.frameParamsBuffer, 0, FrameParamsStrideBytes);
                         context.cmd.SetComputeBufferParam(data.computeShader, data.kernelIndex, ShaderConstants.PointLightsBufferId, data.pointLightBuffer);
-                        SetFrameParams(data.computeShader, data.kernelIndex, context.cmd, in data.fullSize, in data.halfSize, in data.compositeParams, in data.debugParams, in data.marineFogTexelSize, in data.marineFogParams, in data.abyssalFlowCenter, in data.abyssalFlowSpacing, in data.abyssalFlowTextureParams, data.abyssalFlowTextureActive, in data.inverseViewProjection);
-                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
+                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, Mathf.Max(1, data.activeViewCount));
                     });
                 }
 
-                using (var builder = renderGraph.AddComputePass("Hecton Particulate Fog Composite", out CompositePassData passData, _profilingSampler))
+                if (!AddRasterFogCompositePass(
+                        renderGraph,
+                        "Hecton Particulate Fog Bilateral Composite",
+                        sourceTexture,
+                        depthTexture,
+                        halfTexture,
+                        compositeTexture,
+                        paramsBufferHandle,
+                        frameParamsBufferHandle,
+                        true,
+                        BilateralCompositeMaterialPass))
                 {
-                    passData.computeShader = _computeShader;
-                    passData.kernelIndex = _compositeKernel;
-                    passData.threadGroupSizeX = _compositeThreadGroupSizeX;
-                    passData.threadGroupSizeY = _compositeThreadGroupSizeY;
-                    passData.source = sourceTexture;
-                    passData.depth = depthTexture;
-                    passData.halfInput = halfTexture;
-                    passData.destination = compositeTexture;
-                    passData.paramsBuffer = _paramsBuffer;
-                    passData.fullSize = fullSize;
-                    passData.halfSize = halfSize;
-                    passData.compositeParams = compositeParams;
-                    passData.debugParams = debugParams;
-                    passData.marineFogTexelSize = marineFogTexelSize;
-                    passData.marineFogParams = marineFogParams;
-                    passData.abyssalFlowCenter = abyssalFlowCenter;
-                    passData.abyssalFlowSpacing = abyssalFlowSpacing;
-                    passData.abyssalFlowTextureParams = abyssalFlowTextureParams;
-                    passData.abyssalFlowTextureActive = abyssalFlowTextureActive;
-                    passData.inverseViewProjection = inverseViewProjection;
-
-                    builder.UseTexture(sourceTexture, AccessFlags.Read);
-                    builder.UseTexture(depthTexture, AccessFlags.Read);
-                    builder.UseTexture(halfTexture, AccessFlags.Read);
-                    builder.UseTexture(compositeTexture, AccessFlags.Write);
-                    builder.UseBuffer(paramsBufferHandle, AccessFlags.Read);
-
-                    builder.SetRenderFunc((CompositePassData data, ComputeGraphContext context) =>
-                    {
-                        int dispatchX = Mathf.CeilToInt(data.fullSize.x / Mathf.Max(1u, data.threadGroupSizeX));
-                        int dispatchY = Mathf.CeilToInt(data.fullSize.y / Mathf.Max(1u, data.threadGroupSizeY));
-                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceColorId, data.source);
-                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
-                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.HalfInputId, data.halfInput);
-                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.CompositeResultId, data.destination);
-                        context.cmd.SetComputeConstantBufferParam(data.computeShader, ShaderConstants.ParamsBufferId, data.paramsBuffer, 0, VolumetricFogConstants.ParamsStrideBytes);
-                        SetFrameParams(data.computeShader, data.kernelIndex, context.cmd, in data.fullSize, in data.halfSize, in data.compositeParams, in data.debugParams, in data.marineFogTexelSize, in data.marineFogParams, in data.abyssalFlowCenter, in data.abyssalFlowSpacing, in data.abyssalFlowTextureParams, data.abyssalFlowTextureActive, in data.inverseViewProjection);
-                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
-                    });
+                    return;
                 }
 
                 resourceData.cameraColor = compositeTexture;
             }
 
-            private static void SetFrameParams(
-                ComputeShader computeShader,
-                int kernelIndex,
-                CommandBuffer commandBuffer,
-                in Vector4 fullSize,
-                in Vector4 halfSize,
-                in Vector4 compositeParams,
-                in Vector4 debugParams,
-                in Vector4 marineFogTexelSize,
-                in Vector4 marineFogParams,
-                in Vector4 abyssalFlowCenter,
-                in Vector4 abyssalFlowSpacing,
-                in Vector4 abyssalFlowTextureParams,
-                float abyssalFlowTextureActive,
-                in Matrix4x4 inverseViewProjection)
+            private bool AddRasterFogCompositePass(
+                RenderGraph renderGraph,
+                string passName,
+                TextureHandle sourceTexture,
+                TextureHandle depthTexture,
+                TextureHandle halfInputTexture,
+                TextureHandle destinationTexture,
+                BufferHandle paramsBufferHandle,
+                BufferHandle frameParamsBufferHandle,
+                bool hasHalfInput,
+                int passIndex)
             {
-                commandBuffer.SetComputeVectorParam(computeShader, ShaderConstants.FullSizeId, fullSize);
-                commandBuffer.SetComputeVectorParam(computeShader, ShaderConstants.HalfSizeId, halfSize);
-                commandBuffer.SetComputeVectorParam(computeShader, ShaderConstants.CompositeParamsId, compositeParams);
-                commandBuffer.SetComputeVectorParam(computeShader, ShaderConstants.DebugParamsId, debugParams);
-                commandBuffer.SetComputeVectorParam(computeShader, ShaderConstants.MarineSnowDensityTexelSizeId, marineFogTexelSize);
-                commandBuffer.SetComputeVectorParam(computeShader, ShaderConstants.MarineSnowDensityParamsId, marineFogParams);
-                commandBuffer.SetComputeVectorParam(computeShader, ShaderConstants.AbyssalFlowCenterId, abyssalFlowCenter);
-                commandBuffer.SetComputeVectorParam(computeShader, ShaderConstants.AbyssalFlowSpacingId, abyssalFlowSpacing);
-                commandBuffer.SetComputeVectorParam(computeShader, ShaderConstants.AbyssalFlowTextureParamsId, abyssalFlowTextureParams);
-                commandBuffer.SetComputeFloatParam(computeShader, ShaderConstants.AbyssalFlowTextureActiveId, abyssalFlowTextureActive);
-                commandBuffer.SetComputeMatrixParam(computeShader, ShaderConstants.InverseViewProjectionId, inverseViewProjection);
+                if (_dearLieProxyMaterial == null ||
+                    !sourceTexture.IsValid() ||
+                    !depthTexture.IsValid() ||
+                    !destinationTexture.IsValid() ||
+                    (hasHalfInput && !halfInputTexture.IsValid()))
+                {
+                    return false;
+                }
+
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<RasterCompositePassData>(
+                           passName,
+                           out RasterCompositePassData passData,
+                           _profilingSampler))
+                {
+                    passData.source = sourceTexture;
+                    passData.depth = depthTexture;
+                    passData.halfInput = halfInputTexture;
+                    passData.paramsBuffer = paramsBufferHandle;
+                    passData.frameParamsBuffer = frameParamsBufferHandle;
+                    passData.material = _dearLieProxyMaterial;
+                    passData.hasHalfInput = hasHalfInput;
+                    passData.passIndex = passIndex;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.UseTexture(depthTexture, AccessFlags.Read);
+                    if (hasHalfInput)
+                        builder.UseTexture(halfInputTexture, AccessFlags.Read);
+                    builder.UseBuffer(paramsBufferHandle, AccessFlags.Read);
+                    builder.UseBuffer(frameParamsBufferHandle, AccessFlags.Read);
+                    builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (RasterCompositePassData data, RasterGraphContext context) =>
+                    {
+                        GraphicsBuffer paramsBuffer = data.paramsBuffer;
+                        GraphicsBuffer frameParamsBuffer = data.frameParamsBuffer;
+                        if (data.material == null ||
+                            paramsBuffer == null ||
+                            frameParamsBuffer == null)
+                        {
+                            return;
+                        }
+
+                        context.cmd.SetGlobalTexture(ShaderConstants.SourceColorId, data.source);
+                        context.cmd.SetGlobalTexture(ShaderConstants.SourceDepthId, data.depth);
+                        if (data.hasHalfInput)
+                            context.cmd.SetGlobalTexture(ShaderConstants.HalfInputId, data.halfInput);
+                        context.cmd.SetGlobalConstantBuffer(
+                            ShaderConstants.ParamsBufferId,
+                            paramsBuffer,
+                            0,
+                            VolumetricFogConstants.ParamsStrideBytes);
+                        context.cmd.SetGlobalConstantBuffer(
+                            ShaderConstants.FrameParamsBufferId,
+                            frameParamsBuffer,
+                            0,
+                            FrameParamsStrideBytes);
+                        CoreUtils.DrawFullScreen(context.cmd, data.material, null, data.passIndex);
+                    });
+                }
+
+                return true;
             }
 
             private bool EnsureVaultState()
             {
-                IDataVault vault = _vault;
-                if (vault == null || vault.IsCompactionFenceActive)
-                {
-                    vault = GlobalRegistry.DataVault;
-                    if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                        vault = latestVault;
-                }
-
-                if (vault == null || vault.IsCompactionFenceActive)
+                if (!HasNativeState)
                     return false;
 
-                if (!ReferenceEquals(vault, _vault))
-                {
-                    if (_mockLightsJobPending)
-                    {
-                        if (!_mockLightsJobHandle.IsCompleted)
-                            return false;
-
-                        DispatcherJobFence.TryFinalizeCompleted(ref _mockLightsJobHandle);
-                        _mockLightsJobPending = false;
-                    }
-
-                    _vault = vault;
-                    _paramsHandle = default;
-                    _pointLightsHandle = default;
-                    _telemetryHandle = default;
-                    _extinctionProfilesHandle = default;
-                    _extinctionProfilesSeeded = false;
-                    ResetAuthoredOverrideState();
-                    ResetPointLightScheduleState();
-                    ClearPointLightBuffer(_pointLightBufferA);
-                    ClearPointLightBuffer(_pointLightBufferB);
-                }
-
-                if (!_paramsHandle.IsCreated)
-                    _paramsHandle = vault.GetBufferHandle<VolumetricFogParamsDTO>(BufferID.ShinobuVolumetricFogParams, 1, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
-                if (!_pointLightsHandle.IsCreated)
-                    _pointLightsHandle = vault.GetBufferHandle<PointLightDTO>(BufferID.ShinobuVolumetricFogPointLights, VolumetricFogConstants.MaxPointLights, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
-                if (!_telemetryHandle.IsCreated)
-                    _telemetryHandle = vault.GetBufferHandle<VolumetricFogTelemetryEntry>(BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
-                if (!_extinctionProfilesHandle.IsCreated)
-                    _extinctionProfilesHandle = vault.GetBufferHandle<WaterExtinctionProfileDTO>(BufferID.ShinobuVolumetricFogExtinctionProfiles, VolumetricFogConstants.ExtinctionProfileCapacity, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
-
-                if (!_paramsHandle.IsCreated || !_pointLightsHandle.IsCreated || !_telemetryHandle.IsCreated || !_extinctionProfilesHandle.IsCreated)
-                    return false;
-
-                SeedDefaultExtinctionProfiles();
-                return true;
+                return _vault.TryResolveHandle(in _paramsHandle, out NativeArray<FogConstantsDTO> fogParams) &&
+                       fogParams.IsCreated &&
+                       fogParams.Length > 0 &&
+                       _vault.TryResolveHandle(in _pointLightsHandle, out NativeArray<PointLightDTO> pointLights) &&
+                       pointLights.IsCreated &&
+                       pointLights.Length >= VolumetricFogConstants.MaxPointLights &&
+                       _vault.TryResolveHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry> telemetry) &&
+                       telemetry.IsCreated &&
+                       telemetry.Length >= VolumetricFogConstants.TelemetryCapacity &&
+                       _vault.TryResolveHandle(in _extinctionProfilesHandle, out NativeArray<WaterExtinctionProfileDTO> profiles) &&
+                       profiles.IsCreated &&
+                       profiles.Length >= VolumetricFogConstants.ExtinctionProfileCapacity;
             }
 
             private void SeedDefaultExtinctionProfiles()
             {
-                NativeArray<WaterExtinctionProfileDTO> profiles = _extinctionProfilesHandle.Resolve(_vault);
+                if (_vault == null || !_vault.TryResolveHandle(in _extinctionProfilesHandle, out NativeArray<WaterExtinctionProfileDTO> profiles))
+                    return;
+
                 if (_extinctionProfilesSeeded || !profiles.IsCreated || profiles.Length <= 0)
                     return;
 
@@ -610,20 +1027,23 @@ namespace Hecton8.Visor
                 float renderScale,
                 float visualPhaseSeconds,
                 float estimatedGpuMicroseconds,
+                float proxyBlend,
                 in Vector4 biomeTransitionFogColor,
                 in Vector4 biomeTransitionAbsorption,
                 in Vector4 biomeTransitionWeights,
                 bool hasMarineFogTexture,
                 bool hasAbyssalFlowTexture,
+                bool allowMockLightSchedule,
                 out int activePointLightCount,
                 out GraphicsBuffer activePointLightBuffer)
             {
                 activePointLightCount = 0;
                 activePointLightBuffer = GetActivePointLightBuffer();
-                NativeArray<VolumetricFogParamsDTO> fogParams = _paramsHandle.Resolve(_vault);
-                NativeArray<PointLightDTO> pointLights = _pointLightsHandle.Resolve(_vault);
-                NativeArray<VolumetricFogTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
-                if (!fogParams.IsCreated ||
+                if (_vault == null ||
+                    !_vault.TryResolveHandle(in _paramsHandle, out NativeArray<FogConstantsDTO> fogParams) ||
+                    !_vault.TryResolveHandle(in _pointLightsHandle, out NativeArray<PointLightDTO> pointLights) ||
+                    !_vault.TryResolveHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry> telemetry) ||
+                    !fogParams.IsCreated ||
                     fogParams.Length <= 0 ||
                     !pointLights.IsCreated ||
                     pointLights.Length < VolumetricFogConstants.MaxPointLights ||
@@ -643,14 +1063,14 @@ namespace Hecton8.Visor
                 Color color = new Color(settingsColor.x, settingsColor.y, settingsColor.z, 1f);
                 float baseDensity = ResolveFiniteClamped(_settings.baseDensity, 0f, 0.3f, 0.045f);
                 float extinctionCoefficient = ResolveFiniteClamped(_settings.extinctionCoefficient, 0.0001f, 2f, 0.12f);
-                float3 cameraPosition = ResolveCameraAupLocalPosition(camera);
+                float3 cameraPosition = ResolveCameraAupLocalPosition(camera, _runtimeOriginAup);
                 float3 cameraForward = ResolveCameraForward(camera);
                 float3 wrappedNoiseOffset = ResolveWrappedNoiseOffset(cameraPosition);
-                ref VolumetricFogParamsDTO fogState = ref VolumetricFogParamsAccess.ElementAt(fogParams, 0);
-                VolumetricFogParamsDTO existing = fogState;
+                ref FogConstantsDTO fogState = ref VolumetricFogParamsAccess.ElementAt(fogParams, 0);
+                FogConstantsDTO existing = fogState;
                 UpdateExternalOverrideState(in existing);
                 bool useVaultOverride = _hasExternalOverrideParams;
-                VolumetricFogParamsDTO overrideParams = _externalOverrideParams;
+                FogConstantsDTO overrideParams = _externalOverrideParams;
                 float scatteringCoefficient = ResolveFiniteClamped(_settings.scatteringCoefficient, 0f, 4f, 0.85f);
                 float anisotropy = ResolveFiniteClamped(_settings.anisotropy, -0.95f, 0.95f, 0.42f);
                 float opacityEarlyBreak = ResolveFiniteClamped(_settings.opacityEarlyBreak, 0.25f, 0.995f, 0.97f);
@@ -675,7 +1095,7 @@ namespace Hecton8.Visor
                 float flowStrength = useVaultOverride
                     ? ResolveFiniteClamped(overrideParams.FlowAdvection.w, 0f, 8f, 2.25f)
                     : ResolveFiniteClamped(_settings.flowAdvectionStrength, 0f, 8f, 2.25f);
-                VolumetricFogParamsDTO dto = new VolumetricFogParamsDTO
+                FogConstantsDTO dto = new FogConstantsDTO
                 {
                     FogColorAndDensity = fogColorAndDensity,
                     ScatteringParams = scatteringParams,
@@ -684,22 +1104,23 @@ namespace Hecton8.Visor
                         _qualityWeight,
                         raySteps,
                         ResolveFiniteClamped(_settings.maxRayDistanceMeters, 0.25f, 140f, 70f),
-                        _settings.ResolveProxyBlend(_qualityWeight))
+                        ResolveFiniteSaturated(proxyBlend))
                 };
                 fogState = dto;
                 _lastAuthoredParams = dto;
                 _hasAuthoredParams = true;
 
                 UploadConstantBufferIfDirty(in dto);
-                ScheduleMockLightsIfIdle(pointLights, cameraPosition, cameraForward, pointLightCount, visualPhaseSeconds);
+                if (allowMockLightSchedule)
+                    ScheduleMockLightsIfIdle(pointLights, cameraPosition, cameraForward, pointLightCount, visualPhaseSeconds);
                 activePointLightBuffer = GetActivePointLightBuffer();
-                activePointLightCount = _lastUploadedPointLightCount;
+                activePointLightCount = allowMockLightSchedule ? _lastUploadedPointLightCount : 0;
                 if (telemetry.IsCreated && telemetry.Length >= VolumetricFogConstants.TelemetryCapacity)
                     RecordTelemetry(telemetry, in dto, cameraPosition, raySteps, renderScale, estimatedGpuMicroseconds, activePointLightCount, hasMarineFogTexture, hasAbyssalFlowTexture);
                 return true;
             }
 
-            private void UpdateExternalOverrideState(in VolumetricFogParamsDTO existing)
+            private void UpdateExternalOverrideState(in FogConstantsDTO existing)
             {
                 if (!IsUsableVaultOverride(in existing))
                 {
@@ -723,12 +1144,12 @@ namespace Hecton8.Visor
                 _hasExternalOverrideParams = false;
             }
 
-            private static bool IsUsableVaultOverride(in VolumetricFogParamsDTO dto)
+            private static bool IsUsableVaultOverride(in FogConstantsDTO dto)
             {
                 return VolumetricFogParamsAccess.IsUsableParams(in dto);
             }
 
-            private static float3 ResolveCameraAupLocalPosition(Camera camera)
+            private static float3 ResolveCameraAupLocalPosition(Camera camera, double3 runtimeOriginAup)
             {
                 if (camera == null)
                     return float3.zero;
@@ -738,9 +1159,9 @@ namespace Hecton8.Visor
                 if (!math.all(math.isfinite(runtime)))
                     return float3.zero;
 
-                double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-                double3 cameraAup = new double3(runtime.x, runtime.y, runtime.z) + committedOffset;
-                double3 local = cameraAup - committedOffset;
+                double3 safeOriginAup = math.all(math.isfinite(runtimeOriginAup)) ? runtimeOriginAup : double3.zero;
+                double3 cameraAup = safeOriginAup + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                double3 local = cameraAup - safeOriginAup;
                 float3 result = new float3((float)local.x, (float)local.y, (float)local.z);
                 return math.all(math.isfinite(result)) ? result : float3.zero;
             }
@@ -761,7 +1182,9 @@ namespace Hecton8.Visor
 
             private void ApplyExtinctionProfileFromVault(ref Color fogColor, ref float baseDensity, ref float extinctionCoefficient, float3 cameraPosition)
             {
-                NativeArray<WaterExtinctionProfileDTO> profiles = _extinctionProfilesHandle.Resolve(_vault);
+                if (_vault == null || !_vault.TryResolveHandle(in _extinctionProfilesHandle, out NativeArray<WaterExtinctionProfileDTO> profiles))
+                    return;
+
                 if (!profiles.IsCreated || profiles.Length <= 0)
                     return;
 
@@ -831,7 +1254,7 @@ namespace Hecton8.Visor
                 extinctionCoefficient = math.lerp(extinctionCoefficient, biomeExtinction, blend);
             }
 
-            private void UploadConstantBufferIfDirty(in VolumetricFogParamsDTO dto)
+            private void UploadConstantBufferIfDirty(in FogConstantsDTO dto)
             {
                 uint dtoHash = HashParams(in dto);
                 if (_hasUploadedParams &&
@@ -841,22 +1264,83 @@ namespace Hecton8.Visor
                     return;
                 }
 
-                NativeArray<VolumetricFogParamsDTO> mapped = _paramsBuffer.LockBufferForWrite<VolumetricFogParamsDTO>(0, ConstantBufferCount);
+                GraphicsBuffer target = GetInactiveParamsBuffer();
+                if (target == null || !target.IsValid())
+                    return;
+
+                NativeArray<FogConstantsDTO> mapped = target.LockBufferForWrite<FogConstantsDTO>(0, ConstantBufferCount);
                 try
                 {
-                    mapped[0] = dto;
+                    unsafe
+                    {
+                        FogConstantsDTO local = dto;
+                        void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                        void* source = UnsafeUtility.AddressOf(ref local);
+                        UnsafeUtility.MemCpy(destination, source, VolumetricFogConstants.ParamsStrideBytes);
+                    }
                 }
                 finally
                 {
-                    _paramsBuffer.UnlockBufferAfterWrite<VolumetricFogParamsDTO>(ConstantBufferCount);
+                    target.UnlockBufferAfterWrite<FogConstantsDTO>(ConstantBufferCount);
                 }
 
+                _activeParamsBufferIndex = 1 - _activeParamsBufferIndex;
                 _lastUploadedParams = dto;
                 _lastUploadedParamsHash = dtoHash;
                 _hasUploadedParams = true;
             }
 
-            private static uint HashParams(in VolumetricFogParamsDTO dto)
+            private unsafe void UploadFrameConstantBuffer(
+                in Vector4 fullSize,
+                in Vector4 halfSize,
+                in Vector4 compositeParams,
+                in Vector4 debugParams,
+                in Vector4 marineFogTexelSize,
+                in Vector4 marineFogParams,
+                in Vector4 abyssalFlowCenter,
+                in Vector4 abyssalFlowSpacing,
+                in Vector4 abyssalFlowTextureParams,
+                float abyssalFlowTextureActive,
+                in Matrix4x4 inverseViewProjection)
+            {
+                GraphicsBuffer target = GetInactiveFrameParamsBuffer();
+                if (target == null || !target.IsValid())
+                    return;
+
+                FogFrameConstantsDTO dto = new FogFrameConstantsDTO
+                {
+                    FullSize = fullSize,
+                    HalfSize = halfSize,
+                    CompositeParams = compositeParams,
+                    DebugParams = debugParams,
+                    MarineFogTexelSize = marineFogTexelSize,
+                    MarineFogParams = marineFogParams,
+                    AbyssalFlowCenter = abyssalFlowCenter,
+                    AbyssalFlowSpacing = abyssalFlowSpacing,
+                    AbyssalFlowTextureParams = abyssalFlowTextureParams,
+                    AbyssalFlowActiveAndPad = new Vector4(ResolveFiniteSaturated(abyssalFlowTextureActive), 0f, 0f, 0f),
+                    InverseViewProjectionC0 = inverseViewProjection.GetColumn(0),
+                    InverseViewProjectionC1 = inverseViewProjection.GetColumn(1),
+                    InverseViewProjectionC2 = inverseViewProjection.GetColumn(2),
+                    InverseViewProjectionC3 = inverseViewProjection.GetColumn(3)
+                };
+
+                NativeArray<FogFrameConstantsDTO> mapped = target.LockBufferForWrite<FogFrameConstantsDTO>(0, ConstantBufferCount);
+                try
+                {
+                    void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                    void* source = UnsafeUtility.AddressOf(ref dto);
+                    UnsafeUtility.MemCpy(destination, source, FrameParamsStrideBytes);
+                }
+                finally
+                {
+                    target.UnlockBufferAfterWrite<FogFrameConstantsDTO>(ConstantBufferCount);
+                }
+
+                _activeFrameParamsBufferIndex = 1 - _activeFrameParamsBufferIndex;
+            }
+
+            private static uint HashParams(in FogConstantsDTO dto)
             {
                 uint4 hashLane = new uint4(
                     math.hash(math.asuint(dto.FogColorAndDensity)),
@@ -866,7 +1350,7 @@ namespace Hecton8.Visor
                 return math.hash(hashLane);
             }
 
-            private static bool AreParamsEqual(in VolumetricFogParamsDTO left, in VolumetricFogParamsDTO right)
+            private static bool AreParamsEqual(in FogConstantsDTO left, in FogConstantsDTO right)
             {
                 return math.all(left.FogColorAndDensity == right.FogColorAndDensity) &&
                        math.all(left.ScatteringParams == right.ScatteringParams) &&
@@ -995,6 +1479,26 @@ namespace Hecton8.Visor
                 return _activePointLightBufferIndex == 0 ? _pointLightBufferB : _pointLightBufferA;
             }
 
+            private GraphicsBuffer GetActiveParamsBuffer()
+            {
+                return _activeParamsBufferIndex == 0 ? _paramsBufferA : _paramsBufferB;
+            }
+
+            private GraphicsBuffer GetInactiveParamsBuffer()
+            {
+                return _activeParamsBufferIndex == 0 ? _paramsBufferB : _paramsBufferA;
+            }
+
+            private GraphicsBuffer GetActiveFrameParamsBuffer()
+            {
+                return _activeFrameParamsBufferIndex == 0 ? _frameParamsBufferA : _frameParamsBufferB;
+            }
+
+            private GraphicsBuffer GetInactiveFrameParamsBuffer()
+            {
+                return _activeFrameParamsBufferIndex == 0 ? _frameParamsBufferB : _frameParamsBufferA;
+            }
+
             private static float3 ResolveWrappedNoiseOffset(float3 cameraPosition)
             {
                 const float wrapMeters = 256f;
@@ -1006,7 +1510,7 @@ namespace Hecton8.Visor
 
             private void RecordTelemetry(
                 NativeArray<VolumetricFogTelemetryEntry> telemetry,
-                in VolumetricFogParamsDTO dto,
+                in FogConstantsDTO dto,
                 float3 cameraPosition,
                 int raySteps,
                 float renderScale,
@@ -1036,7 +1540,7 @@ namespace Hecton8.Visor
 
                 telemetry[index] = new VolumetricFogTelemetryEntry
                 {
-                    FrameIndex = unchecked((uint)Time.frameCount),
+                    FrameIndex = unchecked((uint)_frameIndex),
                     RaySteps = raySteps,
                     RenderScale = renderScale,
                     EstimatedGpuMicroseconds = safeEstimatedGpuMicroseconds,
@@ -1052,7 +1556,7 @@ namespace Hecton8.Visor
                 if (!_dumpedThisSession &&
                     (invalidEstimatedGpuTime || safeEstimatedGpuMicroseconds > DumpThresholdMicroseconds))
                 {
-                    DumpTelemetryRing(telemetry);
+                    _deferredDumpRequested = true;
                     _dumpedThisSession = true;
                 }
             }
@@ -1095,43 +1599,171 @@ namespace Hecton8.Visor
                 return !float.IsNaN(value) && !float.IsInfinity(value);
             }
 
-            private static float ResolveVisualPhaseSeconds(float qualityWeight)
+            private static float ResolveVisualPhaseSeconds(float qualityWeight, int frameIndex)
             {
                 float curved = ResolveQualityCurve(qualityWeight);
                 float updateHz = math.lerp(5f, 60f, curved);
                 int cadenceFrames = math.clamp((int)math.round(60f / math.max(5f, updateHz)), 1, 12);
-                uint frame = unchecked((uint)Time.frameCount);
+                uint frame = unchecked((uint)math.max(0, frameIndex));
                 uint cadence = (uint)cadenceFrames;
                 uint quantizedFrame = frame - frame % cadence;
                 return quantizedFrame * (1f / 60f);
             }
 
-            private static float EstimateGpuMicroseconds(int width, int height, int raySteps, int pointLightCount, float renderScale)
+            private static float EstimateGpuMicroseconds(int halfWidth, int halfHeight, int volumeWidth, int volumeHeight, int raySteps, int pointLightCount, float renderScale)
             {
-                float pixels = math.max(1, width) * math.max(1, height);
+                float halfPixels = math.max(1, halfWidth) * math.max(1, halfHeight);
+                float volumeVoxels = math.max(1, volumeWidth) * math.max(1, volumeHeight) * math.max(1, raySteps);
                 float lightMultiplier = 1f + math.max(0, pointLightCount) * 0.075f;
                 float scalePenalty = math.lerp(0.85f, 1.25f, ResolveFiniteSaturated(renderScale));
-                return pixels * math.max(1, raySteps) * lightMultiplier * scalePenalty * 0.000018f;
+                return (halfPixels * math.max(1, raySteps) * 0.000011f + volumeVoxels * 0.000007f) * lightMultiplier * scalePenalty;
+            }
+
+            private static float EstimateProxyMicroseconds(int halfWidth, int halfHeight, int fullWidth, int fullHeight, float renderScale)
+            {
+                float halfPixels = math.max(1, halfWidth) * math.max(1, halfHeight);
+                float fullPixels = math.max(1, fullWidth) * math.max(1, fullHeight);
+                float scalePenalty = math.lerp(0.65f, 1f, ResolveFiniteSaturated(renderScale));
+                return (halfPixels * 0.000009f + fullPixels * 0.000003f) * scalePenalty;
+            }
+
+            private static bool IsUsableMarineFogTexture(Texture texture, in Vector4 marineFogParams)
+            {
+                if (texture == null ||
+                    texture.dimension != TextureDimension.Tex2D ||
+                    marineFogParams.w <= 0.5f)
+                {
+                    return false;
+                }
+
+                if (texture is RenderTexture renderTexture)
+                    return renderTexture.graphicsFormat == GraphicsFormat.R32_SInt ||
+                           renderTexture.format == RenderTextureFormat.RInt;
+
+                if (texture is Texture2D texture2D)
+                    return texture2D.graphicsFormat == GraphicsFormat.R32_SInt;
+
+                return false;
+            }
+
+            private static bool IsUsableAbyssalFlowTexture(Texture texture)
+            {
+                if (texture == null || texture.dimension != TextureDimension.Tex3D)
+                    return false;
+
+                if (texture is RenderTexture renderTexture)
+                {
+                    return renderTexture.IsCreated() &&
+                           renderTexture.volumeDepth > 0 &&
+                           IsSupportedFloat4VolumeFormat(renderTexture.graphicsFormat);
+                }
+
+                if (texture is Texture3D texture3D)
+                {
+                    return texture3D.width > 0 &&
+                           texture3D.height > 0 &&
+                           texture3D.depth > 0 &&
+                           IsSupportedFloat4VolumeFormat(texture3D.graphicsFormat);
+                }
+
+                return false;
+            }
+
+            private static bool IsSupportedFloat4VolumeFormat(GraphicsFormat format)
+            {
+                return format == GraphicsFormat.R16G16B16A16_SFloat ||
+                       format == GraphicsFormat.R32G32B32A32_SFloat;
+            }
+
+            private bool EnsureDearLieProxyMaterial()
+            {
+                Shader shader = _settings != null ? _settings.dearLieProxyShader : null;
+                if (shader == null)
+                    shader = Shader.Find(DearLieProxyShaderName);
+
+                if (shader == null)
+                    return false;
+
+                if (_settings != null && _settings.dearLieProxyShader == null)
+                    _settings.dearLieProxyShader = shader;
+
+                if (_dearLieProxyMaterial != null &&
+                    ReferenceEquals(_dearLieProxyShader, shader))
+                {
+                    return true;
+                }
+
+                DestroyUnityObject(_dearLieProxyMaterial);
+                _dearLieProxyMaterial = CoreUtils.CreateEngineMaterial(shader); // COLD ALLOC: material for raster Dear Lie proxy/composite only.
+                _dearLieProxyShader = shader;
+                return _dearLieProxyMaterial != null;
             }
 
             private bool EnsureGpuBuffers()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
-                    return false;
-
-                if (_paramsBuffer == null || !_paramsBuffer.IsValid())
+                if (!SystemInfo.supportsSetConstantBuffer ||
+                    !ValidateFrameConstantsLayout())
                 {
-                    _paramsBuffer?.Release();
-                    _paramsBuffer = new GraphicsBuffer(
+                    return false;
+                }
+
+                bool createdParamsBuffer = false;
+                if (_paramsBufferA == null || !_paramsBufferA.IsValid())
+                {
+                    _paramsBufferA?.Release();
+                    _paramsBufferA = new GraphicsBuffer(
                         GraphicsBuffer.Target.Constant,
                         GraphicsBuffer.UsageFlags.LockBufferForWrite,
                         ConstantBufferCount,
-                        VolumetricFogConstants.ParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - SHINOBU_120 volumetric fog params.
+                        VolumetricFogConstants.ParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - SHINOBU_233 volumetric fog params A.
+                    createdParamsBuffer = true;
+                }
+
+                if (_paramsBufferB == null || !_paramsBufferB.IsValid())
+                {
+                    _paramsBufferB?.Release();
+                    _paramsBufferB = new GraphicsBuffer(
+                        GraphicsBuffer.Target.Constant,
+                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                        ConstantBufferCount,
+                        VolumetricFogConstants.ParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[64B] - SHINOBU_233 volumetric fog params B.
+                    createdParamsBuffer = true;
+                }
+
+                if (createdParamsBuffer)
+                {
                     _hasUploadedParams = false;
                     _lastUploadedParams = default;
                     _lastUploadedParamsHash = 0u;
+                    _activeParamsBufferIndex = 0;
                     ResetAuthoredOverrideState();
                 }
+
+                bool createdFrameParamsBuffer = false;
+                if (_frameParamsBufferA == null || !_frameParamsBufferA.IsValid())
+                {
+                    _frameParamsBufferA?.Release();
+                    _frameParamsBufferA = new GraphicsBuffer(
+                        GraphicsBuffer.Target.Constant,
+                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                        ConstantBufferCount,
+                        FrameParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[224B] - SHINOBU_233 frame params A.
+                    createdFrameParamsBuffer = true;
+                }
+
+                if (_frameParamsBufferB == null || !_frameParamsBufferB.IsValid())
+                {
+                    _frameParamsBufferB?.Release();
+                    _frameParamsBufferB = new GraphicsBuffer(
+                        GraphicsBuffer.Target.Constant,
+                        GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                        ConstantBufferCount,
+                        FrameParamsStrideBytes); // COLD ALLOC: GraphicsBuffer[224B] - SHINOBU_233 frame params B.
+                    createdFrameParamsBuffer = true;
+                }
+
+                if (createdFrameParamsBuffer)
+                    _activeFrameParamsBufferIndex = 0;
 
                 bool createdPointLightBuffer = false;
                 if (_pointLightBufferA == null || !_pointLightBufferA.IsValid())
@@ -1141,7 +1773,7 @@ namespace Hecton8.Visor
                         GraphicsBuffer.Target.Structured,
                         GraphicsBuffer.UsageFlags.LockBufferForWrite,
                         VolumetricFogConstants.MaxPointLights,
-                        VolumetricFogConstants.PointLightStrideBytes); // COLD ALLOC: GraphicsBuffer[PointLightDTO x8] - SHINOBU_120 fog lights buffer A.
+                        VolumetricFogConstants.PointLightStrideBytes); // COLD ALLOC: GraphicsBuffer[PointLightDTO x8] - SHINOBU_233 fog lights buffer A.
                     createdPointLightBuffer = true;
                 }
 
@@ -1152,7 +1784,7 @@ namespace Hecton8.Visor
                         GraphicsBuffer.Target.Structured,
                         GraphicsBuffer.UsageFlags.LockBufferForWrite,
                         VolumetricFogConstants.MaxPointLights,
-                        VolumetricFogConstants.PointLightStrideBytes); // COLD ALLOC: GraphicsBuffer[PointLightDTO x8] - SHINOBU_120 fog lights buffer B.
+                        VolumetricFogConstants.PointLightStrideBytes); // COLD ALLOC: GraphicsBuffer[PointLightDTO x8] - SHINOBU_233 fog lights buffer B.
                     createdPointLightBuffer = true;
                 }
 
@@ -1164,9 +1796,41 @@ namespace Hecton8.Visor
                     ResetPointLightScheduleState();
                 }
 
-                return _paramsBuffer != null && _paramsBuffer.IsValid() &&
+                return HasGpuBuffers();
+            }
+
+            private bool HasGpuBuffers()
+            {
+                return _paramsBufferA != null && _paramsBufferA.IsValid() &&
+                       _paramsBufferB != null && _paramsBufferB.IsValid() &&
+                       _frameParamsBufferA != null && _frameParamsBufferA.IsValid() &&
+                       _frameParamsBufferB != null && _frameParamsBufferB.IsValid() &&
                        _pointLightBufferA != null && _pointLightBufferA.IsValid() &&
                        _pointLightBufferB != null && _pointLightBufferB.IsValid();
+            }
+
+            private static bool ValidateFrameConstantsLayout()
+            {
+                return UnsafeUtility.SizeOf<FogFrameConstantsDTO>() == FrameParamsStrideBytes &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.FullSize)) == 0 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.HalfSize)) == 16 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.CompositeParams)) == 32 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.DebugParams)) == 48 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.MarineFogTexelSize)) == 64 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.MarineFogParams)) == 80 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.AbyssalFlowCenter)) == 96 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.AbyssalFlowSpacing)) == 112 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.AbyssalFlowTextureParams)) == 128 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.AbyssalFlowActiveAndPad)) == 144 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.InverseViewProjectionC0)) == 160 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.InverseViewProjectionC1)) == 176 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.InverseViewProjectionC2)) == 192 &&
+                       OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.InverseViewProjectionC3)) == 208;
+            }
+
+            private static int OffsetOf<T>(string fieldName) where T : struct
+            {
+                return Marshal.OffsetOf<T>(fieldName).ToInt32();
             }
 
             private static void ClearPointLightBuffer(GraphicsBuffer buffer)
@@ -1201,38 +1865,67 @@ namespace Hecton8.Visor
                 _hasScheduledPointLightJob = false;
             }
 
-            private void EnsureRenderTargets(int halfWidth, int halfHeight, int fullWidth, int fullHeight)
+            private void ReleaseVaultHandles()
             {
-                if ((_halfTexture == null || _halfTexture.rt == null || _halfTexture.rt.width != halfWidth || _halfTexture.rt.height != halfHeight) ||
-                    (_compositeTexture == null || _compositeTexture.rt == null || _compositeTexture.rt.width != fullWidth || _compositeTexture.rt.height != fullHeight))
+                IDataVault vault = _vault;
+                if (vault == null)
+                    return;
+
+                if (_paramsHandle.BufferID != 0u)
+                    vault.ReleaseBuffer(in _paramsHandle);
+                if (_pointLightsHandle.BufferID != 0u)
+                    vault.ReleaseBuffer(in _pointLightsHandle);
+                if (_telemetryHandle.BufferID != 0u)
+                    vault.ReleaseBuffer(in _telemetryHandle);
+                if (_extinctionProfilesHandle.BufferID != 0u)
+                    vault.ReleaseBuffer(in _extinctionProfilesHandle);
+            }
+
+            private static TextureDesc CreateGraphTextureDesc(
+                in TextureDesc sourceDesc,
+                int width,
+                int height,
+                int slices,
+                TextureDimension dimension,
+                FilterMode filterMode,
+                string name,
+                GraphicsFormat colorFormat,
+                bool enableRandomWrite,
+                bool xrReady = false,
+                VRTextureUsage vrUsage = VRTextureUsage.None)
+            {
+                TextureDesc desc = new TextureDesc(math.max(1, width), math.max(1, height), false, xrReady);
+                desc.name = name;
+                desc.width = math.max(1, width);
+                desc.height = math.max(1, height);
+                desc.depthBufferBits = DepthBits.None;
+                desc.msaaSamples = MSAASamples.None;
+                desc.colorFormat = colorFormat != GraphicsFormat.None ? colorFormat : sourceDesc.colorFormat;
+                desc.clearBuffer = false;
+                desc.dimension = dimension;
+                desc.slices = math.max(1, slices);
+                desc.vrUsage = vrUsage;
+                desc.useDynamicScale = false;
+                desc.useDynamicScaleExplicit = false;
+                desc.enableRandomWrite = enableRandomWrite;
+                desc.filterMode = filterMode;
+                desc.wrapMode = TextureWrapMode.Clamp;
+                desc.useMipMap = false;
+                desc.autoGenerateMips = false;
+                return desc;
+            }
+
+            private static GraphicsFormat ResolveCompositeColorFormat(in TextureDesc sourceDesc)
+            {
+                GraphicsFormat sourceFormat = sourceDesc.colorFormat;
+                if (sourceFormat == GraphicsFormat.R16G16B16A16_SFloat ||
+                    sourceFormat == GraphicsFormat.R32G32B32A32_SFloat ||
+                    sourceFormat == GraphicsFormat.None)
                 {
-                    _halfTexture?.Release();
-                    _compositeTexture?.Release();
-
-                    _halfTexture = RTHandles.Alloc(
-                        halfWidth,
-                        halfHeight,
-                        1,
-                        DepthBits.None,
-                        GraphicsFormat.R16G16B16A16_SFloat,
-                        FilterMode.Bilinear,
-                        TextureWrapMode.Clamp,
-                        TextureDimension.Tex2D,
-                        true,
-                        name: "_HectonVolumetricFogHalf"); // COLD ALLOC: persistent reduced-resolution volumetric fog target.
-
-                    _compositeTexture = RTHandles.Alloc(
-                        fullWidth,
-                        fullHeight,
-                        1,
-                        DepthBits.None,
-                        GraphicsFormat.R16G16B16A16_SFloat,
-                        FilterMode.Bilinear,
-                        TextureWrapMode.Clamp,
-                        TextureDimension.Tex2D,
-                        true,
-                        name: "_HectonVolumetricFogComposite"); // COLD ALLOC: persistent full-resolution fog composite target.
+                    return GraphicsFormat.B10G11R11_UFloatPack32;
                 }
+
+                return sourceFormat;
             }
 
             private void EnsureFallbackTextures()
@@ -1277,6 +1970,11 @@ namespace Hecton8.Visor
             {
                 ReleaseExternalTextureHandle(ref _marineFogDensityTextureHandle, ref _marineFogDensityTextureHandleSource);
                 ReleaseExternalTextureHandle(ref _abyssalFlowTextureHandle, ref _abyssalFlowTextureHandleSource);
+                ReleaseExternalTextureHandle(ref _externalMarineFogDensityTextureHandle, ref _externalMarineFogDensityTextureHandleSource);
+                ReleaseExternalTextureHandle(ref _externalAbyssalFlowTextureHandle, ref _externalAbyssalFlowTextureHandleSource);
+                ReleaseExternalTextureHandle(ref _externalMarineFogDensityTextureHandleB, ref _externalMarineFogDensityTextureHandleSourceB);
+                ReleaseExternalTextureHandle(ref _externalAbyssalFlowTextureHandleB, ref _externalAbyssalFlowTextureHandleSourceB);
+                ReleaseExternalTextureHandle(ref _emptyVolumeTextureHandle, ref _emptyVolumeTextureHandleSource);
 
                 if (_emptyFogDensityTexture != null)
                 {
@@ -1307,6 +2005,58 @@ namespace Hecton8.Visor
                 return handle;
             }
 
+            private static RTHandle TryGetExistingExternalTextureHandle(Texture texture, RTHandle handle, Texture handleSource)
+            {
+                return texture != null && handle != null && ReferenceEquals(texture, handleSource) ? handle : null;
+            }
+
+            private static RTHandle TryGetCachedExternalTextureHandle(
+                Texture texture,
+                RTHandle handleA,
+                Texture handleSourceA,
+                RTHandle handleB,
+                Texture handleSourceB)
+            {
+                if (texture == null)
+                    return null;
+
+                if (handleA != null && ReferenceEquals(texture, handleSourceA))
+                    return handleA;
+
+                return handleB != null && ReferenceEquals(texture, handleSourceB) ? handleB : null;
+            }
+
+            private static RTHandle ResolveCachedExternalTextureHandle(
+                Texture texture,
+                ref RTHandle handleA,
+                ref Texture handleSourceA,
+                ref RTHandle handleB,
+                ref Texture handleSourceB)
+            {
+                if (texture == null)
+                    return null;
+
+                RTHandle cached = TryGetCachedExternalTextureHandle(texture, handleA, handleSourceA, handleB, handleSourceB);
+                if (cached != null)
+                    return cached;
+
+                if (handleA == null)
+                {
+                    handleSourceA = texture;
+                    handleA = RTHandles.Alloc(texture);
+                    return handleA;
+                }
+
+                if (handleB == null)
+                {
+                    handleSourceB = texture;
+                    handleB = RTHandles.Alloc(texture);
+                    return handleB;
+                }
+
+                return null;
+            }
+
             private static void ReleaseExternalTextureHandle(ref RTHandle handle, ref Texture handleSource)
             {
                 handle?.Release();
@@ -1325,21 +2075,40 @@ namespace Hecton8.Visor
                     UnityEngine.Object.DestroyImmediate(unityObject);
             }
 
+            private static Matrix4x4 ResolveInverseViewProjection(Camera camera, bool proxyOnly)
+            {
+                if (proxyOnly || camera == null)
+                    return Matrix4x4.identity;
+
+                Matrix4x4 projectionMatrix = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
+                return (projectionMatrix * camera.worldToCameraMatrix).inverse;
+            }
+
             private static int QuantizeDimension(int dimension)
             {
                 int safeDimension = Mathf.Max(1, dimension);
                 return ((safeDimension + RenderTextureBucketSize - 1) / RenderTextureBucketSize) * RenderTextureBucketSize;
+            }
+
+            private static int ResolveVolumeGridDimension(int halfDimension, float qualityWeight, int minDimension, int maxDimension)
+            {
+                float curvedQuality = ResolveQualityCurve(qualityWeight);
+                int cap = Mathf.RoundToInt(Mathf.Lerp(minDimension, maxDimension, curvedQuality));
+                int safeDimension = Mathf.Clamp(Mathf.Min(halfDimension, cap), minDimension, maxDimension);
+                return ((safeDimension + VolumeTextureBucketSize - 1) / VolumeTextureBucketSize) * VolumeTextureBucketSize;
             }
         }
 
         private static class ShaderConstants
         {
             internal static readonly int ParamsBufferId = Shader.PropertyToID("HectonVolumetricFogParams");
+            internal static readonly int FrameParamsBufferId = Shader.PropertyToID("HectonVolumetricFogFrameParams");
             internal static readonly int SourceColorId = Shader.PropertyToID("_HectonVolumetricFogSourceColor");
             internal static readonly int SourceDepthId = Shader.PropertyToID("_HectonVolumetricFogSourceDepth");
             internal static readonly int HalfInputId = Shader.PropertyToID("_HectonVolumetricFogHalfInput");
             internal static readonly int HalfResultId = Shader.PropertyToID("_HectonVolumetricFogHalfResult");
-            internal static readonly int CompositeResultId = Shader.PropertyToID("_HectonVolumetricFogCompositeResult");
+            internal static readonly int VolumeWriteId = Shader.PropertyToID("_HectonVolumetricFogVolumeRW");
+            internal static readonly int VolumeTextureId = Shader.PropertyToID("_HectonVolumetricFogVolume");
             internal static readonly int FullSizeId = Shader.PropertyToID("_HectonVolumetricFogFullSize");
             internal static readonly int HalfSizeId = Shader.PropertyToID("_HectonVolumetricFogHalfSize");
             internal static readonly int CompositeParamsId = Shader.PropertyToID("_HectonVolumetricFogCompositeParams");
@@ -1363,31 +2132,53 @@ namespace Hecton8.Visor
 
         private VolumetricFogPass _pass;
         private int _nextPerformanceWarningFrame;
+        private int _nextColdStateRepairFrame;
 
         public override void Create()
         {
 #if UNITY_EDITOR
             if (settings != null && settings.computeShader == null)
                 settings.computeShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(ComputeShaderAssetPath);
+            if (settings != null && settings.dearLieProxyShader == null)
+                settings.dearLieProxyShader = AssetDatabase.LoadAssetAtPath<Shader>(DearLieProxyShaderAssetPath);
 #endif
 
             _pass ??= new VolumetricFogPass();
+            _nextColdStateRepairFrame = 0;
+            _pass.PrepareComputeKernels(settings, settings != null ? settings.computeShader : null);
+            _pass.TryPrepareNativeState(GlobalRegistry.DataVault);
+            _pass.TryPrepareGpuState();
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (settings == null || settings.computeShader == null || _pass == null || !SystemInfo.supportsComputeShaders)
+            if (settings == null ||
+                settings.computeShader == null ||
+                _pass == null ||
+                !SystemInfo.supportsComputeShaders)
+            {
                 return;
+            }
 
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (IsUnsupportedCameraType(cameraType))
                 return;
 
             int currentFrame = Time.frameCount;
+            RunColdMaintenanceIfDue(currentFrame);
             bool sampleSetupCost = currentFrame >= _nextPerformanceWarningFrame;
             long setupStartTimestamp = sampleSetupCost ? Stopwatch.GetTimestamp() : 0L;
             float qualityWeight = ResolveFiniteSaturated(HomeostasisBrain.GlobalQualityWeight);
-            _pass.Setup(settings, settings.computeShader, qualityWeight);
+            if (!_pass.HasNativeState || !_pass.HasGpuState)
+            {
+                return;
+            }
+
+            double3 runtimeOriginAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!_pass.Setup(settings, settings.computeShader, qualityWeight, runtimeOriginAup, currentFrame))
+                return;
+
+            _pass.RefreshExternalBridgeState();
             renderer.EnqueuePass(_pass);
             PublishSetupWarningIfNeeded(setupStartTimestamp, currentFrame, sampleSetupCost);
         }
@@ -1396,6 +2187,24 @@ namespace Hecton8.Visor
         {
             _pass?.Dispose();
             _pass = null;
+        }
+
+        private void RunColdMaintenanceIfDue(int currentFrame)
+        {
+            if (_pass == null)
+                return;
+
+            if (currentFrame < _nextColdStateRepairFrame)
+                return;
+
+            _nextColdStateRepairFrame = currentFrame + ColdStateRepairCadenceFrames;
+            if (!_pass.HasNativeState)
+                _pass.TryPrepareNativeState(GlobalRegistry.DataVault);
+
+            if (!_pass.HasGpuState)
+                _pass.TryPrepareGpuState();
+
+            _pass.FlushDeferredDiagnosticDump();
         }
 
         private void PublishSetupWarningIfNeeded(long setupStartTimestamp, int currentFrame, bool sampleSetupCost)

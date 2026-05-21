@@ -26,7 +26,7 @@ Before public use, every claim must be backed by one of:
 - current platform rule;
 - creator-specific public contact route.
 
-If the claim sells gameplay, pressure, route risk, threat, salvage failure, base failure, or first-public agency proof, the evidence must also include AB-009/KPI decision-read fields: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. Creator, press, community, or feedback replies are not brand proof unless their route-specific class field and `reply_consent_provenance` are recorded.
+If the claim sells gameplay, pressure, route risk, threat, salvage failure, base failure, or first-public agency proof, the evidence must also include both structured asset handoff fields and AB-009/KPI decision-read fields: non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, plus `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. Creator, press, community, or feedback replies are not brand proof unless their route-specific class field and `reply_consent_provenance` are recorded.
 
 ## The Core Position
 
@@ -63,6 +63,16 @@ The visual identity is not bright alien wonder. It is salt, corrosion, floodligh
 ## Differentiation Against The Market
 
 Do not attack other games publicly. Use contrast in internal planning only.
+
+### 2026-05-21 SN2 Reality Boundary
+
+Current SN2 evidence does not support a competitor-weakness strategy. Steam API and public store checks on 2026-05-21 still read `Very Positive`, launch coverage reports massive sales/concurrency, and the official page owns co-op/feature breadth. The correct HECTON-8 response is narrower proof, not louder comparison.
+
+Operational rule:
+
+- SN2 pain buckets may influence private capture priority only through `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` V6 or a newer same-day row.
+- Public HECTON copy must not mention SN2 pain, EULA/privacy controversy, co-op limitations, performance anecdotes, or "players are disappointed" framing.
+- If a claim says HECTON answers a market pain, the asset must prove the HECTON answer with metadata `pain_freshness_source`, `pain_freshness_checked_at`, `viewer_named_decision`, `capture_verdict`, and AB-009/KPI decision-read fields before any public route, creator send, Steam movement, or spend gate can move.
 
 | Market expectation | HECTON-8 answer |
 |---|---|

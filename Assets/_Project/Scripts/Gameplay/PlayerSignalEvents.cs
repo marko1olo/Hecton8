@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using System.Runtime.InteropServices;
 using Unity.Collections;
 using UnityEngine;
 
@@ -7,6 +8,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// HUD-directed trauma packet raised by runtime damage owners without scene polling.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct TraumaHudSignal
     {
         public TraumaHudSignal(
@@ -20,19 +22,28 @@ namespace Hecton8.Gameplay
             RecoilScalar = recoilScalar;
             TransportPower01 = transportPower01;
             HullIntegrity01 = hullIntegrity01;
-            BiosRecoveryMode = biosRecoveryMode;
+            BiosRecoveryMode = biosRecoveryMode ? (byte)1 : (byte)0;
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0;
+            _pad3 = 0;
         }
 
-        public float GlitchIntensity { get; }
-        public float RecoilScalar { get; }
-        public float TransportPower01 { get; }
-        public float HullIntegrity01 { get; }
-        public bool BiosRecoveryMode { get; }
+        [FieldOffset(0)] public readonly float GlitchIntensity;
+        [FieldOffset(4)] public readonly float RecoilScalar;
+        [FieldOffset(8)] public readonly float TransportPower01;
+        [FieldOffset(12)] public readonly float HullIntegrity01;
+        [FieldOffset(16)] public readonly byte BiosRecoveryMode;
+        [FieldOffset(17)] private readonly byte _pad0;
+        [FieldOffset(18)] private readonly ushort _pad1;
+        [FieldOffset(20)] private readonly uint _pad2;
+        [FieldOffset(24)] private readonly ulong _pad3;
     }
 
     /// <summary>
     /// Audio-directed internal stress packet for heartbeat / breathing consumers.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public readonly struct PlayerInteractionStressSignal
     {
         public PlayerInteractionStressSignal(
@@ -47,23 +58,26 @@ namespace Hecton8.Gameplay
             Frequency01 = frequency01;
         }
 
-        public float Stress01 { get; }
-        public float Volume01 { get; }
-        public float PitchScale { get; }
-        public float Frequency01 { get; }
+        [FieldOffset(0)] public readonly float Stress01;
+        [FieldOffset(4)] public readonly float Volume01;
+        [FieldOffset(8)] public readonly float PitchScale;
+        [FieldOffset(12)] public readonly float Frequency01;
     }
 
     /// <summary>
     /// Raised when the equipped tool is exhausted and removed from the inventory.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public readonly struct ToolDepletedSignal
     {
         public ToolDepletedSignal(int toolHashId)
         {
             ToolHashId = toolHashId;
+            _pad0 = 0;
         }
 
-        public int ToolHashId { get; }
+        [FieldOffset(0)] public readonly int ToolHashId;
+        [FieldOffset(4)] private readonly uint _pad0;
     }
 
     /// <summary>
@@ -93,9 +107,80 @@ namespace Hecton8.Gameplay
         private const int PendingTraumaHudCapacity = 16;
         private const int PendingInteractionSignalCapacity = 16;
         private const int PendingToolDepletedCapacity = 16;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<IPlayerSignalEventListener>[16] - deferred player-signal listeners - owner: PlayerSignalEvents
-        private static readonly RegistryBucket<IPlayerSignalEventListener> _listeners = new RegistryBucket<IPlayerSignalEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IPlayerSignalEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct PlayerSignalListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public PlayerSignalListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity]; // COLD ALLOC: ListenerSlot[16] - fixed player-signal listener slots drained by SystemDispatcher LateUpdate - owner: PlayerSignalEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IPlayerSignalEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IPlayerSignalEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void Unregister(IPlayerSignalEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public IPlayerSignalEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static PlayerSignalListenerRegistry _listeners = new PlayerSignalListenerRegistry(ListenerCapacity);
         private static NativeQueue<TraumaHudSignal> _pendingTraumaHudSignals;
         private static NativeQueue<TraumaHudSignal> _nextFrameTraumaHudSignals;
         private static NativeQueue<PlayerInteractionStressSignal> _pendingInteractionSignals;
@@ -192,7 +277,7 @@ namespace Hecton8.Gameplay
 
             EnsureInitialized();
             if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+                _listeners.TryRegister(listener);
         }
 
         /// <summary>
@@ -320,7 +405,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingTraumaHudSignals.IsCreated)
             {
-                _pendingTraumaHudSignals = new NativeQueue<TraumaHudSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<TraumaHudSignal>[16] - deferred trauma HUD lane - owner: PlayerSignalEvents
+                _pendingTraumaHudSignals = new NativeQueue<TraumaHudSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<TraumaHudSignal>[16] - deferred trauma HUD lane - owner: PlayerSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingTraumaHudSignals,
                     PendingTraumaHudCapacity,
@@ -331,7 +416,7 @@ namespace Hecton8.Gameplay
             }
             if (!_nextFrameTraumaHudSignals.IsCreated)
             {
-                _nextFrameTraumaHudSignals = new NativeQueue<TraumaHudSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<TraumaHudSignal>[16] - next-frame trauma HUD lane - owner: PlayerSignalEvents
+                _nextFrameTraumaHudSignals = new NativeQueue<TraumaHudSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<TraumaHudSignal>[16] - next-frame trauma HUD lane - owner: PlayerSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameTraumaHudSignals,
                     PendingTraumaHudCapacity,
@@ -342,7 +427,7 @@ namespace Hecton8.Gameplay
             }
             if (!_pendingInteractionSignals.IsCreated)
             {
-                _pendingInteractionSignals = new NativeQueue<PlayerInteractionStressSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PlayerInteractionStressSignal>[16] - deferred interaction stress lane - owner: PlayerSignalEvents
+                _pendingInteractionSignals = new NativeQueue<PlayerInteractionStressSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerInteractionStressSignal>[16] - deferred interaction stress lane - owner: PlayerSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingInteractionSignals,
                     PendingInteractionSignalCapacity,
@@ -353,7 +438,7 @@ namespace Hecton8.Gameplay
             }
             if (!_nextFrameInteractionSignals.IsCreated)
             {
-                _nextFrameInteractionSignals = new NativeQueue<PlayerInteractionStressSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PlayerInteractionStressSignal>[16] - next-frame interaction stress lane - owner: PlayerSignalEvents
+                _nextFrameInteractionSignals = new NativeQueue<PlayerInteractionStressSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerInteractionStressSignal>[16] - next-frame interaction stress lane - owner: PlayerSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameInteractionSignals,
                     PendingInteractionSignalCapacity,
@@ -364,7 +449,7 @@ namespace Hecton8.Gameplay
             }
             if (!_pendingToolDepletedSignals.IsCreated)
             {
-                _pendingToolDepletedSignals = new NativeQueue<ToolDepletedSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ToolDepletedSignal>[16] - deferred tool depletion lane - owner: PlayerSignalEvents
+                _pendingToolDepletedSignals = new NativeQueue<ToolDepletedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ToolDepletedSignal>[16] - deferred tool depletion lane - owner: PlayerSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingToolDepletedSignals,
                     PendingToolDepletedCapacity,
@@ -375,7 +460,7 @@ namespace Hecton8.Gameplay
             }
             if (!_nextFrameToolDepletedSignals.IsCreated)
             {
-                _nextFrameToolDepletedSignals = new NativeQueue<ToolDepletedSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ToolDepletedSignal>[16] - next-frame tool depletion lane - owner: PlayerSignalEvents
+                _nextFrameToolDepletedSignals = new NativeQueue<ToolDepletedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ToolDepletedSignal>[16] - next-frame tool depletion lane - owner: PlayerSignalEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameToolDepletedSignals,
                     PendingToolDepletedCapacity,
@@ -416,11 +501,10 @@ namespace Hecton8.Gameplay
 
                 _pendingTraumaHudSignalCount--;
                 scanBudget--;
-                IPlayerSignalEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    IPlayerSignalEventListener listener = rawArray[i];
+                    IPlayerSignalEventListener listener = _listeners.GetAt(i);
                     if (listener == null)
                         continue;
 
@@ -450,11 +534,10 @@ namespace Hecton8.Gameplay
 
                 _pendingInteractionSignalCount--;
                 scanBudget--;
-                IPlayerSignalEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    IPlayerSignalEventListener listener = rawArray[i];
+                    IPlayerSignalEventListener listener = _listeners.GetAt(i);
                     if (listener == null)
                         continue;
 
@@ -484,11 +567,10 @@ namespace Hecton8.Gameplay
 
                 _pendingToolDepletedSignalCount--;
                 scanBudget--;
-                IPlayerSignalEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    IPlayerSignalEventListener listener = rawArray[i];
+                    IPlayerSignalEventListener listener = _listeners.GetAt(i);
                     if (listener == null)
                         continue;
 

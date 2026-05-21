@@ -6,7 +6,6 @@
 
 using System;
 using Hecton8.Building;
-using Hecton8.Bootstrap;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -22,7 +21,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Construction Tab")]
-    public sealed class PDAConstructionTab : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener, IQuestEventListener
+    public sealed class PDAConstructionTab : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener, IQuestEventListener, IGlobalRegistryHotSwapListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -35,6 +34,7 @@ namespace Hecton8.UI
         private static readonly Color Warn = new Color(1f, 0.75f, 0.28f, 0.94f);
         private static readonly Color Blocked = new Color(1f, 0.45f, 0.4f, 0.94f);
         private const float AutoResolveRetryInterval = 1f;
+        private const int BuildCostDigestCapacity = 32;
 
         [Header("References")]
         [SerializeField] private PlayerBuilder playerBuilder;
@@ -122,6 +122,9 @@ namespace Hecton8.UI
         private bool _questEventsRegistered;
         private readonly char[] _directiveAdviceScratchBuffer = new char[256];
         private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - construction PDA HUD notification staging buffer - owner: PDAConstructionTab
+        private bool _hotSwapListenerRegistered;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private IEnvironmentRuntimeContext _cachedEnvironmentContext;
 
         private bool IsTabActive =>
             isActiveAndEnabled &&
@@ -137,6 +140,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             AutoResolveTabIndex();
+            CacheRegistryServicesCold();
             AutoResolve(force: true);
         }
 
@@ -154,22 +158,28 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             AutoResolve(force: true);
             EnsureBuilt();
             Subscribe();
             MarkAllDirty();
             Refresh(true);
-            EvaluateTickRegistration();
+            RegisterTick();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             Unsubscribe();
             UnregisterTick();
         }
 
         private void AutoResolve(float deltaTime = 0f, bool force = false)
         {
+            if (force || !Application.isPlaying)
+                CacheRegistryServicesCold();
+
             if (!force)
                 _autoResolveRetryTimer = Mathf.Max(0f, _autoResolveRetryTimer - Mathf.Max(0f, deltaTime));
 
@@ -192,47 +202,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerBuilder == null && playerContext != null)
-                playerBuilder = playerContext.PlayerBuilder;
-            if (playerInventory == null && playerContext != null)
-                playerInventory = playerContext.Inventory;
-            if (toolManager == null && playerContext != null)
-                toolManager = playerContext.ToolManager;
-            if (playerPDA == null && playerContext != null)
-                playerPDA = playerContext.PlayerPDA;
-
-            if ((!playerBuilder || !playerInventory || !toolManager || !playerPDA) &&
-                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                if (playerBuilder == null)
-                    playerTransform.TryGetComponent(out playerBuilder);
-
-                if (playerInventory == null)
-                    playerTransform.TryGetComponent(out playerInventory);
-
-                if (toolManager == null)
-                    playerTransform.TryGetComponent(out toolManager);
-
-                if (playerPDA == null)
-                    playerTransform.TryGetComponent(out playerPDA);
-            }
-
-            if (constructionManager == null)
-                constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
-
-            if (playerPDA == null)
-            {
-                for (Transform current = transform; current != null; current = current.parent)
-                {
-                    if (current.TryGetComponent(out playerPDA))
-                        break;
-                }
-            }
-
-            if (hudNotification == null)
-                HUDNotification.TryGetActive(out hudNotification);
+            ApplyCachedPlayerContext(forceAssign: force);
+            ApplyCachedEnvironmentContext(forceAssign: force);
 
             ResolveFontsIfMissing();
             _autoResolveRetryTimer = Application.isPlaying ? AutoResolveRetryInterval : 0f;
@@ -270,8 +241,109 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             Unsubscribe();
+            UnregisterTick();
             PDAEvents.AssertUnregistered(this, nameof(PDAConstructionTab));
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                ApplyCachedPlayerContext(forceAssign: true);
+                RefreshSubscriptions();
+                MarkAllDirty();
+                if (isActiveAndEnabled)
+                    RegisterTick();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Environment)
+            {
+                _cachedEnvironmentContext = currentService as IEnvironmentRuntimeContext;
+                ApplyCachedEnvironmentContext(forceAssign: true);
+                MarkAllDirty();
+                if (isActiveAndEnabled)
+                    RegisterTick();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            {
+                RegisterTick();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedEnvironmentContext = GlobalRegistry.Environment;
+        }
+
+        private void ApplyCachedPlayerContext(bool forceAssign)
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null)
+            {
+                if (forceAssign)
+                {
+                    playerBuilder = null;
+                    playerInventory = null;
+                    toolManager = null;
+                    playerPDA = null;
+                    hudNotification = null;
+                }
+
+                return;
+            }
+
+            if (forceAssign || playerBuilder == null)
+                playerBuilder = playerContext.PlayerBuilder;
+            if (forceAssign || playerInventory == null)
+                playerInventory = playerContext.Inventory;
+            if (forceAssign || toolManager == null)
+                toolManager = playerContext.ToolManager;
+            if (forceAssign || playerPDA == null)
+                playerPDA = playerContext.PlayerPDA;
+            if (forceAssign || hudNotification == null)
+                hudNotification = playerContext.HudNotification;
+        }
+
+        private void ApplyCachedEnvironmentContext(bool forceAssign)
+        {
+            IEnvironmentRuntimeContext environmentContext = _cachedEnvironmentContext;
+            if (environmentContext == null)
+            {
+                if (forceAssign)
+                    constructionManager = null;
+
+                return;
+            }
+
+            if (forceAssign || constructionManager == null)
+                constructionManager = environmentContext.ConstructionManager;
         }
 
         private void TryRegisterPDAEvents()
@@ -436,17 +508,12 @@ namespace Hecton8.UI
                 AutoResolve(force: true);
                 MarkAllDirty();
                 Refresh(true);
-                EvaluateTickRegistration();
-            }
-            else
-            {
-                UnregisterTick();
+                RegisterTick();
             }
         }
 
         private void HandlePdaClosed(float _)
         {
-            UnregisterTick();
         }
 
         private void HandlePdaTabChanged(int _, int newTab)
@@ -456,22 +523,16 @@ namespace Hecton8.UI
                 AutoResolve(force: true);
                 MarkAllDirty();
                 Refresh(true);
-                EvaluateTickRegistration();
-            }
-            else
-            {
-                UnregisterTick();
+                RegisterTick();
             }
         }
 
         public void Tick(float deltaTime)
         {
             float safeDeltaTime = Mathf.Max(0f, deltaTime);
-            AutoResolve(safeDeltaTime);
 
             if (!IsTabActive)
             {
-                UnregisterTick();
                 return;
             }
 
@@ -781,19 +842,9 @@ namespace Hecton8.UI
         private void EvaluateTickRegistration()
         {
             if (!isActiveAndEnabled)
-            {
-                UnregisterTick();
                 return;
-            }
 
-            if (IsTabActive)
-            {
-                RegisterTick();
-            }
-            else
-            {
-                UnregisterTick();
-            }
+            RegisterTick();
         }
 
         private void RegisterTick()
@@ -801,11 +852,7 @@ namespace Hecton8.UI
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterTick()
@@ -1214,13 +1261,19 @@ namespace Hecton8.UI
             if (data == null || data.buildCost == null || playerInventory == null)
                 return false;
 
-            for (int i = 0; i < data.buildCost.Count; i++)
+            if (data.buildCost.Count == 0)
+                return true;
+
+            Span<int> costHashes = stackalloc int[BuildCostDigestCapacity];
+            Span<int> costAmounts = stackalloc int[BuildCostDigestCapacity];
+            Span<int> costIndices = stackalloc int[BuildCostDigestCapacity];
+            int groupedCostCount = PrepareBuildCostDigestGroups(data, costHashes, costAmounts, costIndices);
+            if (groupedCostCount < 0)
+                return false;
+
+            for (int i = 0; i < groupedCostCount; i++)
             {
-                InventoryCost cost = data.buildCost[i];
-                if (cost == null || cost.item == null)
-                    continue;
-                if (cost.item == null ||
-                    playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId)) < cost.amount)
+                if (playerInventory.CountAvailableTotal(costHashes[i]) < costAmounts[i])
                     return false;
             }
 
@@ -1860,17 +1913,24 @@ namespace Hecton8.UI
             if (data == null || data.buildCost == null || data.buildCost.Count == 0)
                 return TryAppend(buffer, ref cursor, "NONE".AsSpan());
 
+            Span<int> costHashes = stackalloc int[BuildCostDigestCapacity];
+            Span<int> costAmounts = stackalloc int[BuildCostDigestCapacity];
+            Span<int> costIndices = stackalloc int[BuildCostDigestCapacity];
+            int groupedCostCount = PrepareBuildCostDigestGroups(data, costHashes, costAmounts, costIndices);
+            if (groupedCostCount < 0)
+                return TryAppend(buffer, ref cursor, "OVERFLOW".AsSpan());
+
             int appendedCosts = 0;
-            for (int i = 0; i < data.buildCost.Count; i++)
+            for (int i = 0; i < groupedCostCount; i++)
             {
-                InventoryCost cost = data.buildCost[i];
+                InventoryCost cost = data.buildCost[costIndices[i]];
                 if (cost == null || cost.item == null)
                     continue;
                 if (appendedCosts > 0 && !TryAppend(buffer, ref cursor, " | ".AsSpan()))
                     return false;
                 if (!TryAppendUpperInvariant(buffer, ref cursor, cost.item.itemName, "UNKNOWN".AsSpan()) ||
                     !TryAppend(buffer, ref cursor, " ".AsSpan()) ||
-                    !TryAppendInt(buffer, ref cursor, cost.amount))
+                    !TryAppendInt(buffer, ref cursor, costAmounts[i]))
                 {
                     return false;
                 }
@@ -1886,15 +1946,22 @@ namespace Hecton8.UI
             if (data == null || data.buildCost == null || data.buildCost.Count == 0)
                 return TryAppend(buffer, ref cursor, "NO BUILD COST DATA.".AsSpan());
 
+            Span<int> costHashes = stackalloc int[BuildCostDigestCapacity];
+            Span<int> costAmounts = stackalloc int[BuildCostDigestCapacity];
+            Span<int> costIndices = stackalloc int[BuildCostDigestCapacity];
+            int groupedCostCount = PrepareBuildCostDigestGroups(data, costHashes, costAmounts, costIndices);
+            if (groupedCostCount < 0)
+                return TryAppend(buffer, ref cursor, "BUILD COST OVERFLOW.".AsSpan());
+
             int appendedCosts = 0;
-            for (int i = 0; i < data.buildCost.Count; i++)
+            for (int i = 0; i < groupedCostCount; i++)
             {
-                InventoryCost cost = data.buildCost[i];
+                InventoryCost cost = data.buildCost[costIndices[i]];
                 if (cost == null || cost.item == null)
                     continue;
 
-                int owned = playerInventory != null && cost.item != null
-                    ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
+                int owned = playerInventory != null
+                    ? playerInventory.CountAvailableTotal(costHashes[i])
                     : 0;
                 if (appendedCosts > 0 && !TryAppend(buffer, ref cursor, "  |  ".AsSpan()))
                     return false;
@@ -1902,7 +1969,7 @@ namespace Hecton8.UI
                     !TryAppend(buffer, ref cursor, " ".AsSpan()) ||
                     !TryAppendInt(buffer, ref cursor, owned) ||
                     !TryAppend(buffer, ref cursor, "/".AsSpan()) ||
-                    !TryAppendInt(buffer, ref cursor, cost.amount))
+                    !TryAppendInt(buffer, ref cursor, costAmounts[i]))
                 {
                     return false;
                 }
@@ -1911,6 +1978,65 @@ namespace Hecton8.UI
             }
 
             return appendedCosts > 0 || TryAppend(buffer, ref cursor, "NO BUILD COST DATA.".AsSpan());
+        }
+
+        private static int PrepareBuildCostDigestGroups(
+            BuildableData data,
+            Span<int> costHashes,
+            Span<int> costAmounts,
+            Span<int> costIndices)
+        {
+            if (data == null || data.buildCost == null || data.buildCost.Count == 0)
+                return 0;
+
+            int groupedCount = 0;
+            int sourceCount = data.buildCost.Count;
+            for (int i = 0; i < sourceCount; i++)
+            {
+                InventoryCost cost = data.buildCost[i];
+                if (cost == null || cost.item == null || cost.amount <= 0)
+                    continue;
+
+                int itemHashId = Hecton.Localization.LocHash.Compute(cost.item.PersistentId);
+                if (itemHashId == 0)
+                    continue;
+
+                int groupIndex = FindBuildCostDigestGroup(costHashes, groupedCount, itemHashId);
+                if (groupIndex < 0)
+                {
+                    if (groupedCount >= costHashes.Length ||
+                        groupedCount >= costAmounts.Length ||
+                        groupedCount >= costIndices.Length)
+                    {
+                        return -1;
+                    }
+
+                    groupIndex = groupedCount;
+                    costHashes[groupIndex] = itemHashId;
+                    costAmounts[groupIndex] = 0;
+                    costIndices[groupIndex] = i;
+                    groupedCount++;
+                }
+
+                int current = costAmounts[groupIndex];
+                if (current > int.MaxValue - cost.amount)
+                    return -1;
+
+                costAmounts[groupIndex] = current + cost.amount;
+            }
+
+            return groupedCount;
+        }
+
+        private static int FindBuildCostDigestGroup(Span<int> costHashes, int groupedCount, int itemHashId)
+        {
+            for (int i = 0; i < groupedCount; i++)
+            {
+                if (costHashes[i] == itemHashId)
+                    return i;
+            }
+
+            return -1;
         }
 
         private static RectTransform CreatePanel(RectTransform parent, string name, Vector2 min, Vector2 max, Vector2 offsetMin, Vector2 offsetMax)

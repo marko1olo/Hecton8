@@ -464,7 +464,7 @@ namespace Hecton8.Quest
             for (int i = 0; i < _stateManager.ResultCount; i++)
             {
                 QuestRuntimeResult result = _stateManager.GetResult(i);
-                EmitQuestTransition(result.QuestIndex, result.Completed, result.TransitionType);
+                EmitQuestTransition(result.QuestIndex, result.Completed != 0, result.TransitionType);
             }
         }
 

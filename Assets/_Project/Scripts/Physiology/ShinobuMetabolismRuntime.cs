@@ -1,8 +1,10 @@
 using System;
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -297,7 +299,7 @@ namespace Hecton8.Physiology
                 integrationJob.ThermalCellSizeMeters = thermalCellSizeMeters;
                 integrationJob.ChemicalCellSizeMeters = chemicalCellSizeMeters;
                 integrationJob.DeltaSeconds = dt;
-                integrationJob.GlobalQualityWeight = quality;
+                integrationJob.GlobalQualityWeight = 1f;
                 integrationJob.Frame = frame;
                 integrationJob.Count = count;
                 integrationJob.RuleCount = rules.Length;
@@ -909,9 +911,32 @@ namespace Hecton8.Physiology
             thermalResolution.x = width;
             thermalResolution.y = height;
             thermalResolution.z = depth;
-            thermalRootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(originWS);
             thermalCellSizeMeters = math.max(0.001f, cellSizeMeters);
-            hasThermalGrid = math.all(math.isfinite(thermalRootAup)) ? (byte)1 : (byte)0;
+            hasThermalGrid = TryResolveAupDoubleFromRuntimeOrigin(originWS, out thermalRootAup) ? (byte)1 : (byte)0;
+        }
+
+        private static bool TryResolveAupDoubleFromRuntimeOrigin(Vector3 runtimePosition, out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!positionAup.IsFinite())
+                return false;
+
+            absoluteAup = positionAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
         }
 
         private void TryResolveChemicalGrid(
@@ -1487,9 +1512,13 @@ namespace Hecton8.Physiology
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
+            if (!TryEnsureBlackBoxDirectory(_dumpPath))
+                return;
+
+            string tempPath = _dumpPath + ".tmp";
             try
             {
-                using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 {
                     Span<byte> header = stackalloc byte[32];
                     WriteUInt64LittleEndian(header.Slice(0, 8), DumpMagic);
@@ -1505,11 +1534,99 @@ namespace Hecton8.Physiology
                     int byteLength = telemetry.Length * UnsafeUtility.SizeOf<MetabolicTelemetryEntry>();
                     stream.Write(new ReadOnlySpan<byte>(telemetryPtr, byteLength));
                 }
+
+                ReplaceBlackBoxDump(tempPath, _dumpPath);
             }
             catch (IOException)
             {
+                TryDeleteBlackBoxDumpPath(tempPath);
             }
             catch (UnauthorizedAccessException)
+            {
+                TryDeleteBlackBoxDumpPath(tempPath);
+            }
+            catch (PlatformNotSupportedException)
+            {
+                TryDeleteBlackBoxDumpPath(tempPath);
+            }
+        }
+
+        private static bool TryEnsureBlackBoxDirectory(string path)
+        {
+            try
+            {
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static void ReplaceBlackBoxDump(string tempPath, string path)
+        {
+            if (!File.Exists(path))
+            {
+                File.Move(tempPath, path);
+                return;
+            }
+
+            try
+            {
+                File.Replace(tempPath, path, null, true);
+            }
+            catch (PlatformNotSupportedException)
+            {
+                ReplaceBlackBoxDumpByBackupMove(tempPath, path);
+            }
+            catch (IOException)
+            {
+                ReplaceBlackBoxDumpByBackupMove(tempPath, path);
+            }
+        }
+
+        private static void ReplaceBlackBoxDumpByBackupMove(string tempPath, string path)
+        {
+            string backupPath = path + ".bak";
+            if (File.Exists(backupPath))
+                File.Delete(backupPath);
+
+            File.Move(path, backupPath);
+            try
+            {
+                File.Move(tempPath, path);
+                TryDeleteBlackBoxDumpPath(backupPath);
+            }
+            catch (Exception)
+            {
+                TryRestoreBlackBoxDumpBackup(backupPath, path);
+                throw;
+            }
+        }
+
+        private static void TryRestoreBlackBoxDumpBackup(string backupPath, string path)
+        {
+            try
+            {
+                if (!File.Exists(path) && File.Exists(backupPath))
+                    File.Move(backupPath, path);
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private static void TryDeleteBlackBoxDumpPath(string targetPath)
+        {
+            try
+            {
+                if (File.Exists(targetPath))
+                    File.Delete(targetPath);
+            }
+            catch (Exception)
             {
             }
         }

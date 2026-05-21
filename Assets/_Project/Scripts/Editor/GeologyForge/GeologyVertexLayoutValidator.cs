@@ -16,15 +16,12 @@ namespace Hecton8.Editor.GeologyForge
             new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.UNorm16, 2, 0)
         };
 
-        public static VertexAttributeDescriptor[] GetLayout()
+        public static void ApplyVertexBufferParams(Mesh mesh, int vertexCount)
         {
-            return new[]
-            {
-                _GeologyLayout[0],
-                _GeologyLayout[1],
-                _GeologyLayout[2],
-                _GeologyLayout[3]
-            };
+            if (mesh == null)
+                throw new ArgumentNullException(nameof(mesh));
+
+            mesh.SetVertexBufferParams(vertexCount, _GeologyLayout);
         }
 
         public static void ValidateStruct()
@@ -65,7 +62,7 @@ namespace Hecton8.Editor.GeologyForge
             ValidateOffset<GeologyRawVertex>(nameof(GeologyRawVertex.Uv), 40);
             ValidateOffset<GeologyRawVertex>(nameof(GeologyRawVertex.AmbientOcclusion), 48);
             ValidateOffset<GeologyRawVertex>(nameof(GeologyRawVertex.Flags), 52);
-            ValidateOffset<GeologyRawVertex>(nameof(GeologyRawVertex.Padding0), 56);
+            ValidateOffset<GeologyRawVertex>(nameof(GeologyRawVertex._pad0), 56);
             ValidateOffset<GeologyBakeTelemetryEntry>(nameof(GeologyBakeTelemetryEntry.SectorAup), 0);
             ValidateOffset<GeologyBakeTelemetryEntry>(nameof(GeologyBakeTelemetryEntry.Seed), 24);
             ValidateOffset<GeologyBakeTelemetryEntry>(nameof(GeologyBakeTelemetryEntry.Stage), 28);

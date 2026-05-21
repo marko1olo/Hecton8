@@ -4,7 +4,6 @@ using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Physics;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -17,7 +16,7 @@ namespace Hecton8.Tools
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9916)]
-    public sealed class ToolHapticsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IPhysicsAcousticImpulseEventListener
+    public sealed class ToolHapticsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IPhysicsAcousticImpulseEventListener, IGlobalRegistryHotSwapListener
     {
         private const int BufferCapacity = 16;
         private const float DefaultDecayRate = 1.5f;
@@ -36,9 +35,11 @@ namespace Hecton8.Tools
         internal const byte BlendModeOverride = 0;
         internal const byte BlendModeAdditive = 1;
         internal const byte BlendModeMax = 2;
+        private static ToolHapticsRuntime s_runtime;
         private static int s_powerSaveMute;
 
         private IDataVault _dataVault;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private VaultGenerationHandle<HapticCommand> _frontBufferHandle;
         private VaultGenerationHandle<HapticCommand> _backBufferHandle;
         private int _frontCount;
@@ -48,23 +49,27 @@ namespace Hecton8.Tools
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
+        private bool _registeredHotSwap;
 
-        [StructLayout(LayoutKind.Sequential, Size = 40)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         public struct HapticCommand
         {
-            public float LowFreqIntensity;
-            public float HighFreqIntensity;
-            public float DurationRemaining;
-            public float DecayRate;
-            public float BaseLowFreqIntensity;
-            public float BaseHighFreqIntensity;
-            public float ElapsedSeconds;
-            public float FrequencyHz;
-            public byte Priority;
-            public byte MotorMask;
-            public byte BlendMode;
-            public byte Reserved;
-            private uint _pad0;
+            [FieldOffset(0)] public float LowFreqIntensity;
+            [FieldOffset(4)] public float HighFreqIntensity;
+            [FieldOffset(8)] public float DurationRemaining;
+            [FieldOffset(12)] public float DecayRate;
+            [FieldOffset(16)] public float BaseLowFreqIntensity;
+            [FieldOffset(20)] public float BaseHighFreqIntensity;
+            [FieldOffset(24)] public float ElapsedSeconds;
+            [FieldOffset(28)] public float FrequencyHz;
+            [FieldOffset(32)] public byte Priority;
+            [FieldOffset(33)] public byte MotorMask;
+            [FieldOffset(34)] public byte BlendMode;
+            [FieldOffset(35)] public byte Reserved;
+            [FieldOffset(36)] private uint _pad0;
+            [FieldOffset(40)] private ulong _pad1;
+            [FieldOffset(48)] private ulong _pad2;
+            [FieldOffset(56)] private ulong _pad3;
         }
 
         public static void EnqueueToolFeedback(float powerDelivered, float ratedPower, byte priority = 1)
@@ -125,18 +130,19 @@ namespace Hecton8.Tools
 
         public static ToolHapticsRuntime EnsureRuntimeInstance()
         {
-            return GlobalRegistry.ToolHaptics;
+            return s_runtime;
         }
 
         public static bool TryGetRuntime(out ToolHapticsRuntime runtime)
         {
-            runtime = GlobalRegistry.ToolHaptics;
+            runtime = s_runtime;
             return runtime != null;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_runtime = null;
             Volatile.Write(ref s_powerSaveMute, 0);
         }
 
@@ -152,8 +158,6 @@ namespace Hecton8.Tools
                 return;
 
             ClearBuffers();
-            TryUnregisterLateFrame();
-            TryUnregisterUpdate();
         }
 
         public void Tick(float deltaTime)
@@ -161,7 +165,6 @@ namespace Hecton8.Tools
             if (PowerSaveMuteActive)
             {
                 ClearBuffers();
-                TryUnregisterUpdate();
                 return;
             }
 
@@ -171,8 +174,6 @@ namespace Hecton8.Tools
 
             if (!TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer) || _frontCount <= 0)
             {
-                if (_backCount <= 0 && !HasActiveHapticCooldown())
-                    TryUnregisterUpdate();
                 return;
             }
 
@@ -214,8 +215,6 @@ namespace Hecton8.Tools
             }
 
             _frontCount = compactedCount;
-            if (_frontCount <= 0 && _backCount <= 0 && !HasActiveHapticCooldown())
-                TryUnregisterUpdate();
         }
 
         private static float ResolveHapticDecayFactor(float decayRate, float deltaTime)
@@ -236,23 +235,15 @@ namespace Hecton8.Tools
             if (PowerSaveMuteActive)
             {
                 ClearBuffers();
-                TryUnregisterLateFrame();
                 return;
             }
 
             if (!TryResolveBuffers(out NativeArray<HapticCommand> frontBuffer, out NativeArray<HapticCommand> backBuffer))
-            {
-                TryUnregisterLateFrame();
                 return;
-            }
 
             int commandCount = math.min(math.max(0, _backCount), BufferCapacity);
             if (commandCount <= 0)
-            {
-                if (_frontCount <= 0)
-                    TryUnregisterLateFrame();
                 return;
-            }
 
             for (int i = 0; i < commandCount; i++)
             {
@@ -261,10 +252,6 @@ namespace Hecton8.Tools
             }
 
             ClearBackBuffer(commandCount);
-            if (_frontCount > 0)
-                TryRegisterUpdate();
-            if (_backCount <= 0)
-                TryUnregisterLateFrame();
         }
 
         public unsafe ReadOnlySpan<HapticCommand> GetFrontBuffer()
@@ -311,6 +298,7 @@ namespace Hecton8.Tools
             if (!Application.isPlaying)
                 return;
 
+            CacheRegistryDependenciesCold();
             EnsureBuffers();
         }
 
@@ -319,8 +307,13 @@ namespace Hecton8.Tools
             if (!Application.isPlaying)
                 return;
 
+            CacheRegistryDependenciesCold();
+            s_runtime = this;
             EnsureBuffers();
             TryRegisterService();
+            TryRegisterHotSwap();
+            TryRegisterUpdate();
+            TryRegisterLateFrame();
             PhysicsEventBus.Register(this);
         }
 
@@ -335,7 +328,10 @@ namespace Hecton8.Tools
             PhysicsEventBus.Unregister(this);
             TryUnregisterLateFrame();
             TryUnregisterUpdate();
+            TryUnregisterHotSwap();
             TryUnregisterService();
+            if (ReferenceEquals(s_runtime, this))
+                s_runtime = null;
             ClearBuffers();
             DisposeBuffers();
         }
@@ -351,7 +347,10 @@ namespace Hecton8.Tools
             PhysicsEventBus.Unregister(this);
             TryUnregisterLateFrame();
             TryUnregisterUpdate();
+            TryUnregisterHotSwap();
             TryUnregisterService();
+            if (ReferenceEquals(s_runtime, this))
+                s_runtime = null;
             ClearBuffers();
             DisposeBuffers();
         }
@@ -370,7 +369,7 @@ namespace Hecton8.Tools
             if (!math.all(math.isfinite(direction3)))
                 localDirection = Vector3.zero;
 
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = _playerRuntimeContext;
             Transform playerTransform = player != null ? player.PlayerTransform : null;
             if (playerTransform != null)
                 localDirection = playerTransform.InverseTransformDirection(localDirection);
@@ -466,20 +465,6 @@ namespace Hecton8.Tools
 
         private IDataVault ResolveDataVault()
         {
-            IDataVault current = GlobalRegistry.DataVault;
-            if (current == null)
-            {
-                ReleaseVaultHandles();
-                _dataVault = null;
-                return null;
-            }
-
-            if (!ReferenceEquals(_dataVault, current))
-            {
-                ReleaseVaultHandles();
-                _dataVault = current;
-            }
-
             return _dataVault;
         }
 
@@ -590,8 +575,6 @@ namespace Hecton8.Tools
             command.BlendMode = BlendModeAdditive;
             command.FrequencyHz = 0f;
             StoreBackBufferCommand(slotIndex, in command);
-            TryRegisterUpdate();
-            TryRegisterLateFrame();
         }
 
         private void EnqueueBackBufferCommand(
@@ -645,8 +628,6 @@ namespace Hecton8.Tools
             command.BlendMode = (byte)math.clamp((int)blendMode, BlendModeOverride, BlendModeMax);
             command.FrequencyHz = math.isfinite(frequencyHz) ? math.clamp(frequencyHz, 0f, MaxCommandFrequencyHz) : 0f;
             StoreBackBufferCommand(slotIndex, in command);
-            TryRegisterUpdate();
-            TryRegisterLateFrame();
         }
 
         private bool TrySelectBackBufferSlot(byte priority, out int slotIndex)
@@ -749,8 +730,51 @@ namespace Hecton8.Tools
                 _leftHapticCooldownTimer = HapticDebounceWindowSeconds;
             if ((motorMask & RightMotorMask) != 0)
                 _rightHapticCooldownTimer = HapticDebounceWindowSeconds;
-            TryRegisterUpdate();
             return true;
+        }
+
+        private void CacheRegistryDependenciesCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+            _playerRuntimeContext = GlobalRegistry.Player;
+        }
+
+        private void RebindDataVault(IDataVault dataVault)
+        {
+            if (ReferenceEquals(_dataVault, dataVault))
+                return;
+
+            ReleaseVaultHandles();
+            _dataVault = dataVault;
+            _frontBufferHandle = default;
+            _backBufferHandle = default;
+            _frontCount = 0;
+            _backCount = 0;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault);
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null && isActiveAndEnabled)
+                    {
+                        TryRegisterUpdate();
+                        TryRegisterLateFrame();
+                    }
+
+                    break;
+            }
         }
 
         private bool HasActiveHapticCooldown()
@@ -801,6 +825,23 @@ namespace Hecton8.Tools
             if (ReferenceEquals(GlobalRegistry.ToolHaptics, this))
                 GlobalRegistry.UnregisterToolHapticsRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void TryUnregisterUpdate()

@@ -1,9 +1,7 @@
-using Hecton8.Caves;
-using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
@@ -17,7 +15,7 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9935)]
-    public sealed class EquipmentInteractionHandler : MonoBehaviour, IInteractionSignalService, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class EquipmentInteractionHandler : MonoBehaviour, IInteractionSignalService, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int MaxQueuedSignals = 256;
         private const int MaxInteractionPacketsPerFrame = 256;
@@ -31,6 +29,8 @@ namespace Hecton8.Interaction
         private static int _baseModuleLayer = int.MinValue;
         private static int _interactableLayer = int.MinValue;
         private static int _voxelLayer = int.MinValue;
+        private static ISubmarineRuntimeContext s_submarineRuntimeContext;
+        private static IOrganicToolHitService s_organicToolHits;
 
         // COLD ALLOC: Collider[256] - queued target side-channel aligned with the vault interaction queue - owner: EquipmentInteractionHandler
         private readonly Collider[] _queuedTargetColliders = new Collider[MaxQueuedSignals];
@@ -56,10 +56,10 @@ namespace Hecton8.Interaction
         private readonly bool[] _queuedHasPlatformLocalHit = new bool[MaxQueuedSignals];
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<InteractionSignal> _signalQueueHandle;
-        private VaultBufferHandle<RaycastCommand> _scheduledCommandsHandle;
-        private VaultBufferHandle<RaycastHit> _scheduledHitsHandle;
-        private VaultBufferHandle<RaycastCommand> _stagingCommandsHandle;
+        private VaultGenerationHandle<InteractionSignal> _signalQueueHandle;
+        private VaultGenerationHandle<RaycastCommand> _scheduledCommandsHandle;
+        private VaultGenerationHandle<RaycastHit> _scheduledHitsHandle;
+        private VaultGenerationHandle<RaycastCommand> _stagingCommandsHandle;
         private JobHandle _scheduledRaycastHandle;
         private int _queueHead;
         private int _queueTail;
@@ -76,6 +76,7 @@ namespace Hecton8.Interaction
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _scheduledRaycastVaultLocked;
+        private bool _hotSwapRegistered;
 
         internal static EquipmentInteractionHandler ActiveRuntimeInstance { get; private set; }
 
@@ -99,6 +100,8 @@ namespace Hecton8.Interaction
         /// </summary>
         public void InitializeService()
         {
+            CacheRegistryDependenciesCold();
+            TryRegisterHotSwapListenerCold();
             if (_isInitialized)
             {
                 TryRegisterSignalService();
@@ -114,10 +117,10 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public bool Publish(in InteractionSignal signal, Collider targetCollider)
         {
-            if (targetCollider == null || !IsValidSignal(in signal) || !EnsureSignalQueueHandle())
+            if (targetCollider == null || !IsValidSignal(in signal) || !EnsureSignalQueueHandle(createIfMissing: false))
                 return false;
 
-            int currentFrame = Time.frameCount;
+            int currentFrame = ResolveSimulationFrameIndex();
             if (_packetAdmissionFrame != currentFrame)
             {
                 _packetAdmissionFrame = currentFrame;
@@ -136,9 +139,15 @@ namespace Hecton8.Interaction
 
             try
             {
-                var signalQueue = _signalQueueHandle.Resolve(vault);
-                if (!signalQueue.IsCreated || signalQueue.Length < MaxQueuedSignals)
+                if (!TryOpenExistingInteractionVaultBuffer(
+                        vault,
+                        ref _signalQueueHandle,
+                        BufferID.InteractionSignalQueue,
+                        MaxQueuedSignals,
+                        out NativeArray<InteractionSignal> signalQueue))
+                {
                     return false;
+                }
 
                 signalQueue[_queueTail] = signal;
                 _queuedTargetColliders[_queueTail] = targetCollider;
@@ -177,7 +186,7 @@ namespace Hecton8.Interaction
                 return false;
             }
 
-            bool hasCompletedHit = TryGetCompletedRaycast(requesterId, Time.frameCount, out hit);
+            bool hasCompletedHit = TryGetCompletedRaycast(requesterId, ResolveSimulationFrameIndex(), out hit);
             Vector3 normalizedDirection = NormalizeFinite(direction, Vector3.forward);
             QueuePrimaryRaycast(requesterId, origin, normalizedDirection, range, layerMask, queryTriggerInteraction);
             return hasCompletedHit;
@@ -196,19 +205,25 @@ namespace Hecton8.Interaction
             if (vault != null)
             {
                 canClearVaultQueue = createVaultLane
-                    ? EnsureSignalQueueHandle()
-                    : _signalQueueHandle.IsCreated &&
-                      _signalQueueHandle.BufferId == BufferID.InteractionSignalQueue &&
-                      _signalQueueHandle.Length >= MaxQueuedSignals &&
-                      vault.ResolveBuffer(ref _signalQueueHandle);
+                    ? EnsureSignalQueueHandle(createIfMissing: true)
+                    : TryOpenExistingInteractionVaultBuffer(
+                        vault,
+                        ref _signalQueueHandle,
+                        BufferID.InteractionSignalQueue,
+                        MaxQueuedSignals,
+                        out NativeArray<InteractionSignal> _);
             }
 
             if (vault != null && canClearVaultQueue && vault.TryLockBuffer(BufferID.InteractionSignalQueue, SystemID.GameplayTools))
             {
                 try
                 {
-                    var signalQueue = _signalQueueHandle.Resolve(vault);
-                    if (signalQueue.IsCreated)
+                    if (TryOpenExistingInteractionVaultBuffer(
+                            vault,
+                            ref _signalQueueHandle,
+                            BufferID.InteractionSignalQueue,
+                            MaxQueuedSignals,
+                            out NativeArray<InteractionSignal> signalQueue))
                     {
                         for (int i = 0; i < signalQueue.Length; i++)
                             signalQueue[i] = default;
@@ -237,10 +252,12 @@ namespace Hecton8.Interaction
             if (ActiveRuntimeInstance == null)
                 ActiveRuntimeInstance = this;
 
+            CacheRegistryDependenciesCold();
+            TryRegisterHotSwapListenerCold();
             EnsureLayerCache();
-            EnsureSignalQueueHandle();
+            EnsureSignalQueueHandle(createIfMissing: true);
 
-            if (EnsureRaycastBufferHandles())
+            if (EnsureRaycastBufferHandles(createIfMissing: true))
             {
                 IDataVault vault = ResolveDataVault();
                 ResetCommandLaneLocked(
@@ -257,6 +274,8 @@ namespace Hecton8.Interaction
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            CacheRegistryDependenciesCold();
+            TryRegisterHotSwapListenerCold();
 
             if (!_isInitialized)
                 return;
@@ -272,6 +291,7 @@ namespace Hecton8.Interaction
 
             TryUnregisterFromDispatcher();
             TryUnregisterSignalService();
+            TryUnregisterHotSwapListenerCold();
         }
 
         private static void EnsureLayerCache()
@@ -314,12 +334,13 @@ namespace Hecton8.Interaction
         {
             TryUnregisterFromDispatcher();
             TryUnregisterSignalService();
+            TryUnregisterHotSwapListenerCold();
             _isInitialized = false;
 
             ClearQueuedSignals(createVaultLane: false);
 
+            ReleaseInteractionVaultDescriptor(_dataVault, ref _signalQueueHandle);
             DisposeRaycastBuffers();
-            _signalQueueHandle = default;
             _scheduledRaycastHandle = default;
             _scheduledRaycastActive = false;
             _scheduledRequestCount = 0;
@@ -436,8 +457,9 @@ namespace Hecton8.Interaction
             if (targetCollider == null || !TryResolvePlatformTransform(targetCollider, out Transform platformTransform))
                 return;
 
-            Vector3 absoluteHitPoint = new Vector3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z);
-            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(absoluteHitPoint);
+            if (!TryResolveSignalRuntimeHitPoint(in signal, out Vector3 runtimeHitPoint))
+                return;
+
             Vector3 hitNormal = new Vector3(signal.HitNormal.x, signal.HitNormal.y, signal.HitNormal.z);
             if (!IsFinite(runtimeHitPoint) || !IsFinite(hitNormal))
                 return;
@@ -462,8 +484,11 @@ namespace Hecton8.Interaction
             if (!IsFinite(runtimeHitPoint) || !IsFinite(runtimeHitNormal))
                 return;
 
-            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeHitPoint);
+            if (!TryResolveRuntimeAup(runtimeHitPoint, out double3 absoluteHitPoint))
+                return;
+
             signal.HitPoint = new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z);
+            signal.SetHitPointAupDouble(absoluteHitPoint);
             signal.HitNormal = new Unity.Mathematics.float3(runtimeHitNormal.x, runtimeHitNormal.y, runtimeHitNormal.z);
         }
 
@@ -505,6 +530,53 @@ namespace Hecton8.Interaction
             return math.all(math.isfinite(value));
         }
 
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 positionAup)
+        {
+            positionAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            var originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            var resolvedAup = originAup.OffsetMeters(new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!resolvedAup.IsFinite())
+                return false;
+
+            positionAup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(positionAup));
+        }
+
+        private static bool TryResolveSignalHitPointDouble(in InteractionSignal signal, out double3 absoluteHitPoint)
+        {
+            if (signal.TryGetHitPointAupDouble(out absoluteHitPoint))
+                return true;
+
+            if (!IsFinite(signal.HitPoint))
+            {
+                absoluteHitPoint = default;
+                return false;
+            }
+
+            absoluteHitPoint = new double3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z);
+            return math.all(math.isfinite(absoluteHitPoint));
+        }
+
+        private static bool TryResolveSignalRuntimeHitPoint(in InteractionSignal signal, out Vector3 runtimeHitPoint)
+        {
+            runtimeHitPoint = default;
+            if (!TryResolveSignalHitPointDouble(in signal, out double3 absoluteHitPoint))
+                return false;
+
+            Vector3 candidate = HectonFloatingOrigin.ToRuntimePosition(absoluteHitPoint);
+            if (!IsFinite(candidate))
+                return false;
+
+            runtimeHitPoint = candidate;
+            return true;
+        }
+
         private static bool IsValidSignal(in InteractionSignal signal)
         {
             return IsFinite(signal.Source.Origin) &&
@@ -539,15 +611,17 @@ namespace Hecton8.Interaction
             if (targetCollider == null)
                 return false;
 
-            if (!targetCollider.TryGetComponent(out HectonVoxelVolume volume))
+            if (!targetCollider.TryGetComponent(out IVoxelPlasmaCutTarget volume))
                 TryResolveParentComponent(targetCollider.transform, out volume);
 
             if (volume == null)
                 return false;
 
-            Vector3 absoluteHitPoint = new Vector3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z);
+            if (!TryResolveSignalHitPointDouble(in signal, out double3 absoluteHitPoint))
+                return false;
+
             Vector3 direction = new Vector3(signal.Source.Direction.x, signal.Source.Direction.y, signal.Source.Direction.z);
-            return volume.ApplyPlasmaCutDda(
+            return volume.TryApplyPlasmaCutDda(
                 absoluteHitPoint,
                 direction,
                 signal.Source.Power,
@@ -556,14 +630,16 @@ namespace Hecton8.Interaction
 
         private static void DispatchBoil(InteractionSignal signal)
         {
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
-            SubmarineFluidDynamics fluidDynamics = submarine != null ? submarine.FluidDynamics : null;
-            if (fluidDynamics == null || !fluidDynamics.isActiveAndEnabled)
+            ISubmarineRuntimeContext submarine = s_submarineRuntimeContext;
+            IWaterHeatInjectionService waterHeatInjection = submarine != null ? submarine.WaterHeatInjectionService : null;
+            if (waterHeatInjection == null)
                 return;
 
-            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(new Vector3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z));
+            if (!TryResolveSignalRuntimeHitPoint(in signal, out Vector3 runtimeHitPoint))
+                return;
+
             Vector3 direction = new Vector3(signal.Source.Direction.x, signal.Source.Direction.y, signal.Source.Direction.z);
-            fluidDynamics.InjectLocalizedWaterHeat(runtimeHitPoint, direction, signal.PowerDelivered, signal.Source.Power);
+            waterHeatInjection.TryInjectLocalizedWaterHeat(runtimeHitPoint, direction, signal.PowerDelivered, signal.Source.Power);
         }
 
         private static void DispatchCutDamage(InteractionSignal signal, Collider targetCollider)
@@ -571,7 +647,9 @@ namespace Hecton8.Interaction
             if (targetCollider == null || signal.PowerDelivered <= 0f)
                 return;
 
-            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(new Vector3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z));
+            if (!TryResolveSignalRuntimeHitPoint(in signal, out Vector3 runtimeHitPoint))
+                return;
+
             if (TryRouteBaseModuleAttachedFloraCut(targetCollider, runtimeHitPoint, in signal))
                 return;
 
@@ -591,21 +669,12 @@ namespace Hecton8.Interaction
             if (targetCollider == null || targetCollider.gameObject.layer != _baseModuleLayer)
                 return false;
 
-            if (!TryResolveParentComponent(targetCollider.transform, out BaseModule _))
+            if (!TryResolveParentComponent(targetCollider.transform, out IBaseModuleInteractionHost _))
                 return false;
 
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            IOrganicToolHitService organicManager = s_organicToolHits;
             if (organicManager == null)
                 return false;
-
-            if (!organicManager.TryResolveNearestConsumableFlora(
-                runtimeHitPoint,
-                AttachedFloraArbitrationRadiusMeters,
-                out Vector3 floraPosition,
-                out _))
-            {
-                return false;
-            }
 
             Vector3 direction = new Vector3(signal.Source.Direction.x, signal.Source.Direction.y, signal.Source.Direction.z);
             if (direction.sqrMagnitude < MinDirectionSqr)
@@ -613,22 +682,16 @@ namespace Hecton8.Interaction
             else
                 direction = NormalizeFinite(direction, Vector3.forward);
 
-            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
             uint capabilityMask = ToolCapabilityMasks.ResolveCapabilityMask((InteractionEffectType)signal.EffectType);
             Vector3 hitNormal = new Vector3(signal.HitNormal.x, signal.HitNormal.y, signal.HitNormal.z);
-            if (floraInteractionManager != null &&
-                floraInteractionManager.TryApplyModuleParasiteCut(
-                    floraPosition,
-                    hitNormal,
-                    direction,
-                    signal.PowerDelivered,
-                    signal.Source.Power,
-                    capabilityMask))
-            {
-                return true;
-            }
-
-            return true;
+            return organicManager.TryApplyAttachedFloraToolHit(
+                runtimeHitPoint,
+                AttachedFloraArbitrationRadiusMeters,
+                hitNormal,
+                direction,
+                signal.PowerDelivered,
+                signal.Source.Power,
+                capabilityMask);
         }
 
         private static bool CanApplyInteraction(in InteractionSignal signal, Collider targetCollider)
@@ -736,7 +799,7 @@ namespace Hecton8.Interaction
 
         private void QueuePrimaryRaycast(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
         {
-            if (!EnsureRaycastBufferHandles())
+            if (!EnsureRaycastBufferHandles(createIfMissing: false))
                 return;
 
             int requestIndex = FindStagedRequestIndex(requesterId);
@@ -750,14 +813,20 @@ namespace Hecton8.Interaction
             }
 
             IDataVault vault = ResolveDataVault();
-            if (vault == null || !vault.TryLockBuffer(_stagingCommandsHandle.BufferId, SystemID.GameplayTools))
+            if (vault == null || !vault.TryLockBuffer(BufferID.InteractionRaycastStagingCommands, SystemID.GameplayTools))
                 return;
 
             try
             {
-                var stagingCommands = _stagingCommandsHandle.Resolve(vault);
-                if (!stagingCommands.IsCreated || stagingCommands.Length < MaxQueuedRayRequests)
+                if (!TryOpenExistingInteractionVaultBuffer(
+                        vault,
+                        ref _stagingCommandsHandle,
+                        BufferID.InteractionRaycastStagingCommands,
+                        MaxQueuedRayRequests,
+                        out NativeArray<RaycastCommand> stagingCommands))
+                {
                     return;
+                }
 
                 if (newRequest)
                 {
@@ -769,7 +838,7 @@ namespace Hecton8.Interaction
             }
             finally
             {
-                vault.TryUnlockBuffer(_stagingCommandsHandle.BufferId, SystemID.GameplayTools);
+                vault.TryUnlockBuffer(BufferID.InteractionRaycastStagingCommands, SystemID.GameplayTools);
             }
         }
 
@@ -816,7 +885,7 @@ namespace Hecton8.Interaction
             if (!DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: false))
                 return;
 
-            if (!EnsureRaycastBufferHandles())
+            if (!EnsureRaycastBufferHandles(createIfMissing: false))
             {
                 UnlockScheduledRaycastVaultBuffers();
                 _scheduledRequestCount = 0;
@@ -833,12 +902,18 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            var scheduledCommands = _scheduledCommandsHandle.Resolve(vault);
-            var scheduledHits = _scheduledHitsHandle.Resolve(vault);
-            if (!scheduledCommands.IsCreated ||
-                scheduledCommands.Length < MaxQueuedRayRequests ||
-                !scheduledHits.IsCreated ||
-                scheduledHits.Length < MaxQueuedRayRequests)
+            if (!TryOpenExistingInteractionVaultBuffer(
+                    vault,
+                    ref _scheduledCommandsHandle,
+                    BufferID.InteractionRaycastScheduledCommands,
+                    MaxQueuedRayRequests,
+                    out NativeArray<RaycastCommand> scheduledCommands) ||
+                !TryOpenExistingInteractionVaultBuffer(
+                    vault,
+                    ref _scheduledHitsHandle,
+                    BufferID.InteractionRaycastScheduledHits,
+                    MaxQueuedRayRequests,
+                    out NativeArray<RaycastHit> scheduledHits))
             {
                 UnlockScheduledRaycastVaultBuffers();
                 _scheduledRequestCount = 0;
@@ -848,6 +923,7 @@ namespace Hecton8.Interaction
 
             _completedResultCount = _scheduledRequestCount;
 
+            int completionFrame = ResolveSimulationFrameIndex();
             for (int i = 0; i < _scheduledRequestCount; i++)
             {
                 RaycastCommand command = scheduledCommands[i];
@@ -856,7 +932,7 @@ namespace Hecton8.Interaction
                 _completedRequesterIds[i] = _scheduledRequesterIds[i];
                 _completedHasHit[i] = IsValidHit(command.from, command.direction, command.distance, layerMask, candidate);
                 _completedHits[i] = _completedHasHit[i] ? candidate : default;
-                _completedHitFrames[i] = Time.frameCount;
+                _completedHitFrames[i] = completionFrame;
                 _scheduledRequesterIds[i] = 0UL;
             }
 
@@ -880,7 +956,7 @@ namespace Hecton8.Interaction
             if (_scheduledRaycastActive || _stagedRequestCount <= 0)
                 return;
 
-            if (!EnsureRaycastBufferHandles())
+            if (!EnsureRaycastBufferHandles(createIfMissing: false))
                 return;
 
             IDataVault vault = ResolveDataVault();
@@ -893,30 +969,39 @@ namespace Hecton8.Interaction
 
             try
             {
-                if (!vault.TryLockBuffer(_stagingCommandsHandle.BufferId, SystemID.GameplayTools))
+                if (!vault.TryLockBuffer(BufferID.InteractionRaycastStagingCommands, SystemID.GameplayTools))
                     return;
 
                 stagingCommandsLocked = true;
 
-                if (!vault.TryLockBuffer(_scheduledCommandsHandle.BufferId, SystemID.GameplayTools))
+                if (!vault.TryLockBuffer(BufferID.InteractionRaycastScheduledCommands, SystemID.GameplayTools))
                     return;
 
                 scheduledCommandsLocked = true;
 
-                if (!vault.TryLockBuffer(_scheduledHitsHandle.BufferId, SystemID.GameplayTools))
+                if (!vault.TryLockBuffer(BufferID.InteractionRaycastScheduledHits, SystemID.GameplayTools))
                     return;
 
                 scheduledHitsLocked = true;
 
-                var stagingCommands = _stagingCommandsHandle.Resolve(vault);
-                var scheduledCommands = _scheduledCommandsHandle.Resolve(vault);
-                var scheduledHits = _scheduledHitsHandle.Resolve(vault);
-                if (!stagingCommands.IsCreated ||
-                    stagingCommands.Length < MaxQueuedRayRequests ||
-                    !scheduledCommands.IsCreated ||
-                    scheduledCommands.Length < MaxQueuedRayRequests ||
-                    !scheduledHits.IsCreated ||
-                    scheduledHits.Length < MaxQueuedRayRequests)
+                if (!TryOpenExistingInteractionVaultBuffer(
+                        vault,
+                        ref _stagingCommandsHandle,
+                        BufferID.InteractionRaycastStagingCommands,
+                        MaxQueuedRayRequests,
+                        out NativeArray<RaycastCommand> stagingCommands) ||
+                    !TryOpenExistingInteractionVaultBuffer(
+                        vault,
+                        ref _scheduledCommandsHandle,
+                        BufferID.InteractionRaycastScheduledCommands,
+                        MaxQueuedRayRequests,
+                        out NativeArray<RaycastCommand> scheduledCommands) ||
+                    !TryOpenExistingInteractionVaultBuffer(
+                        vault,
+                        ref _scheduledHitsHandle,
+                        BufferID.InteractionRaycastScheduledHits,
+                        MaxQueuedRayRequests,
+                        out NativeArray<RaycastHit> scheduledHits))
                 {
                     return;
                 }
@@ -947,13 +1032,13 @@ namespace Hecton8.Interaction
             finally
             {
                 if (stagingCommandsLocked)
-                    vault.TryUnlockBuffer(_stagingCommandsHandle.BufferId, SystemID.GameplayTools);
+                    vault.TryUnlockBuffer(BufferID.InteractionRaycastStagingCommands, SystemID.GameplayTools);
 
                 if (scheduledCommandsLocked)
-                    vault.TryUnlockBuffer(_scheduledCommandsHandle.BufferId, SystemID.GameplayTools);
+                    vault.TryUnlockBuffer(BufferID.InteractionRaycastScheduledCommands, SystemID.GameplayTools);
 
                 if (scheduledHitsLocked)
-                    vault.TryUnlockBuffer(_scheduledHitsHandle.BufferId, SystemID.GameplayTools);
+                    vault.TryUnlockBuffer(BufferID.InteractionRaycastScheduledHits, SystemID.GameplayTools);
             }
         }
 
@@ -963,24 +1048,91 @@ namespace Hecton8.Interaction
                 DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: true);
 
             UnlockScheduledRaycastVaultBuffers();
-            _scheduledCommandsHandle = default;
-            _scheduledHitsHandle = default;
-            _stagingCommandsHandle = default;
+            ReleaseInteractionVaultDescriptor(_dataVault, ref _scheduledCommandsHandle);
+            ReleaseInteractionVaultDescriptor(_dataVault, ref _scheduledHitsHandle);
+            ReleaseInteractionVaultDescriptor(_dataVault, ref _stagingCommandsHandle);
             _dataVault = null;
+        }
+
+        private void CacheRegistryDependenciesCold()
+        {
+            RebindDataVaultCold(GlobalRegistry.DataVault);
+            s_submarineRuntimeContext = GlobalRegistry.Submarine;
+            s_organicToolHits = GlobalRegistry.OrganicToolHits;
+        }
+
+        private void RebindDataVaultCold(IDataVault dataVault)
+        {
+            if (ReferenceEquals(_dataVault, dataVault))
+                return;
+
+            IDataVault oldVault = _dataVault;
+            if (_scheduledRaycastActive)
+                DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: true);
+
+            UnlockScheduledRaycastVaultBuffers();
+            ReleaseAllInteractionVaultDescriptors(oldVault);
+            _dataVault = dataVault;
+            _scheduledRaycastActive = false;
+            _scheduledRequestCount = 0;
+            _stagedRequestCount = 0;
+
+            if (_dataVault == null)
+                return;
+
+            EnsureSignalQueueHandle(createIfMissing: true);
+            EnsureRaycastBufferHandles(createIfMissing: true);
+        }
+
+        private void TryRegisterHotSwapListenerCold()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListenerCold()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVaultCold(currentService as IDataVault);
+                    break;
+
+                case GlobalRegistryServiceSlot.Submarine:
+                    s_submarineRuntimeContext = currentService as ISubmarineRuntimeContext;
+                    break;
+
+                case GlobalRegistryServiceSlot.DestructibleOrganicRuntime:
+                    s_organicToolHits = currentService as IOrganicToolHitService;
+                    break;
+            }
         }
 
         private IDataVault ResolveDataVault()
         {
-            IDataVault vault = _dataVault;
-            if (vault != null)
-                return vault;
-
-            vault = GlobalRegistry.DataVault;
-            _dataVault = vault;
-            return vault;
+            return _dataVault;
         }
 
-        private bool EnsureRaycastBufferHandles()
+        private static int ResolveSimulationFrameIndex()
+        {
+            return unchecked((int)SystemDispatcher.CurrentFrameId);
+        }
+
+        private bool EnsureRaycastBufferHandles(bool createIfMissing)
         {
             IDataVault vault = ResolveDataVault();
             if (vault == null)
@@ -990,51 +1142,69 @@ namespace Hecton8.Interaction
                     vault,
                     ref _scheduledCommandsHandle,
                     BufferID.InteractionRaycastScheduledCommands,
-                    MaxQueuedRayRequests))
+                    MaxQueuedRayRequests,
+                    createIfMissing))
                 return false;
 
             if (!EnsureRaycastBufferHandle(
                     vault,
                     ref _scheduledHitsHandle,
                     BufferID.InteractionRaycastScheduledHits,
-                    MaxQueuedRayRequests))
+                    MaxQueuedRayRequests,
+                    createIfMissing))
                 return false;
 
             if (!EnsureRaycastBufferHandle(
                     vault,
                     ref _stagingCommandsHandle,
                     BufferID.InteractionRaycastStagingCommands,
-                    MaxQueuedRayRequests))
+                    MaxQueuedRayRequests,
+                    createIfMissing))
                 return false;
 
             return true;
         }
 
-        private bool EnsureSignalQueueHandle()
+        private bool EnsureSignalQueueHandle(bool createIfMissing)
         {
             IDataVault vault = ResolveDataVault();
             if (vault == null)
                 return false;
 
-            if (!_signalQueueHandle.IsCreated ||
-                _signalQueueHandle.BufferId != BufferID.InteractionSignalQueue ||
-                _signalQueueHandle.Length < MaxQueuedSignals ||
-                !vault.ResolveBuffer(ref _signalQueueHandle))
-            {
-                _signalQueueHandle = vault.GetBufferHandle<InteractionSignal>(
+            if (!TryOpenExistingInteractionVaultBuffer(
+                    vault,
+                    ref _signalQueueHandle,
                     BufferID.InteractionSignalQueue,
                     MaxQueuedSignals,
-                    SystemID.GameplayTools,
-                    NativeArrayOptions.ClearMemory);
+                    out NativeArray<InteractionSignal> _))
+            {
+                if (!createIfMissing)
+                    return false;
+
+                if (!EnsureInteractionVaultBuffer(
+                        vault,
+                        ref _signalQueueHandle,
+                        BufferID.InteractionSignalQueue,
+                        MaxQueuedSignals,
+                        createIfMissing,
+                        out NativeArray<InteractionSignal> _))
+                {
+                    return false;
+                }
             }
 
-            return _signalQueueHandle.IsCreated && _signalQueueHandle.Length >= MaxQueuedSignals;
+            return TryOpenExistingInteractionVaultBuffer(
+                vault,
+                ref _signalQueueHandle,
+                BufferID.InteractionSignalQueue,
+                MaxQueuedSignals,
+                out NativeArray<InteractionSignal> _);
         }
 
         private bool TryReadQueuedSignal(int queueIndex, out InteractionSignal signal)
         {
             signal = default;
-            if ((uint)queueIndex >= MaxQueuedSignals || !EnsureSignalQueueHandle())
+            if ((uint)queueIndex >= MaxQueuedSignals || !EnsureSignalQueueHandle(createIfMissing: false))
                 return false;
 
             IDataVault vault = ResolveDataVault();
@@ -1043,9 +1213,15 @@ namespace Hecton8.Interaction
 
             try
             {
-                var signalQueue = _signalQueueHandle.Resolve(vault);
-                if (!signalQueue.IsCreated || signalQueue.Length < MaxQueuedSignals)
+                if (!TryOpenExistingInteractionVaultBuffer(
+                        vault,
+                        ref _signalQueueHandle,
+                        BufferID.InteractionSignalQueue,
+                        MaxQueuedSignals,
+                        out NativeArray<InteractionSignal> signalQueue))
+                {
                     return false;
+                }
 
                 signal = signalQueue[queueIndex];
                 signalQueue[queueIndex] = default;
@@ -1059,24 +1235,82 @@ namespace Hecton8.Interaction
 
         private static bool EnsureRaycastBufferHandle<T>(
             IDataVault vault,
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
-            int requiredLength)
+            int requiredLength,
+            bool createIfMissing)
             where T : struct
         {
-            if (!handle.IsCreated ||
-                handle.BufferId != bufferId ||
-                handle.Length < requiredLength ||
-                !vault.ResolveBuffer(ref handle))
+            return EnsureInteractionVaultBuffer(
+                vault,
+                ref handle,
+                bufferId,
+                requiredLength,
+                createIfMissing,
+                out NativeArray<T> _);
+        }
+
+        private static bool EnsureInteractionVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            bool createIfMissing,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            if (TryOpenExistingInteractionVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            buffer = default;
+            if (vault == null || requiredLength <= 0 || !createIfMissing)
+                return false;
+
+            if (vault.IsAllocationLocked)
             {
-                handle = vault.GetBufferHandle<T>(
-                    bufferId,
-                    requiredLength,
-                    SystemID.GameplayTools,
-                    NativeArrayOptions.ClearMemory);
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                    return false;
+
+                return TryOpenExistingInteractionVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
             }
 
-            return handle.IsCreated && handle.Length >= requiredLength;
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GameplayTools,
+                NativeArrayOptions.ClearMemory);
+            return TryOpenExistingInteractionVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenExistingInteractionVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsGameplayToolsVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsGameplayToolsVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.GameplayTools &&
+                   handle.Generation != 0u;
         }
 
         private void UnlockScheduledRaycastVaultBuffers()
@@ -1087,8 +1321,8 @@ namespace Hecton8.Interaction
             IDataVault vault = ResolveDataVault();
             if (vault != null)
             {
-                vault.TryUnlockBuffer(_scheduledCommandsHandle.BufferId, SystemID.GameplayTools);
-                vault.TryUnlockBuffer(_scheduledHitsHandle.BufferId, SystemID.GameplayTools);
+                vault.TryUnlockBuffer(BufferID.InteractionRaycastScheduledCommands, SystemID.GameplayTools);
+                vault.TryUnlockBuffer(BufferID.InteractionRaycastScheduledHits, SystemID.GameplayTools);
             }
 
             _scheduledRaycastVaultLocked = false;
@@ -1096,10 +1330,10 @@ namespace Hecton8.Interaction
 
         private static void ResetCommandLaneLocked(
             IDataVault vault,
-            ref VaultBufferHandle<RaycastCommand> handle,
+            ref VaultGenerationHandle<RaycastCommand> handle,
             BufferID bufferId)
         {
-            if (vault == null || !handle.IsCreated || handle.BufferId != bufferId)
+            if (vault == null || !IsGameplayToolsVaultHandle(in handle, bufferId))
                 return;
 
             if (!vault.TryLockBuffer(bufferId, SystemID.GameplayTools))
@@ -1107,8 +1341,12 @@ namespace Hecton8.Interaction
 
             try
             {
-                var commands = handle.Resolve(vault);
-                if (commands.IsCreated && commands.Length >= MaxQueuedRayRequests)
+                if (TryOpenExistingInteractionVaultBuffer(
+                        vault,
+                        ref handle,
+                        bufferId,
+                        MaxQueuedRayRequests,
+                        out NativeArray<RaycastCommand> commands))
                 {
                     for (int i = 0; i < commands.Length; i++)
                         commands[i] = CreateInvalidRaycastCommand();
@@ -1118,6 +1356,23 @@ namespace Hecton8.Interaction
             {
                 vault.TryUnlockBuffer(bufferId, SystemID.GameplayTools);
             }
+        }
+
+        private void ReleaseAllInteractionVaultDescriptors(IDataVault vault)
+        {
+            ReleaseInteractionVaultDescriptor(vault, ref _signalQueueHandle);
+            ReleaseInteractionVaultDescriptor(vault, ref _scheduledCommandsHandle);
+            ReleaseInteractionVaultDescriptor(vault, ref _scheduledHitsHandle);
+            ReleaseInteractionVaultDescriptor(vault, ref _stagingCommandsHandle);
+        }
+
+        private static void ReleaseInteractionVaultDescriptor<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static RaycastCommand CreateRaycastCommand(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)

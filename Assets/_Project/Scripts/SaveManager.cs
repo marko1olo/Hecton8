@@ -236,67 +236,104 @@ namespace Hecton8.SaveSystem
             public MemoryCorruptionException(string message) : base(message) { }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct AsyncPersistenceTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint OperationId;
+            [FieldOffset(8)]
             public uint SaveDurationMs;
+            [FieldOffset(12)]
             public uint CompressedSizeBytes;
+            [FieldOffset(16)]
             public uint RawPayloadBytes;
+            [FieldOffset(20)]
             public uint Flags;
+            [FieldOffset(24)]
             public uint SlotHash;
+            [FieldOffset(28)]
             public uint Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct WfcOutpostSnapshotCacheEntry
         {
+            [FieldOffset(0)]
             public ulong SectorHash;
+            [FieldOffset(8)]
             public ulong PayloadHash;
+            [FieldOffset(16)]
             public uint Flags;
+            [FieldOffset(20)]
             public uint LastAppendFrame;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct WfcOutpostTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint Operation;
+            [FieldOffset(8)]
             public uint Status;
+            [FieldOffset(12)]
             public uint Flags;
+            [FieldOffset(16)]
             public ulong SectorHash;
+            [FieldOffset(24)]
             public ulong PayloadHash;
+            [FieldOffset(32)]
             public ulong GridSectorHash;
+            [FieldOffset(40)]
             public uint PayloadBytes;
+            [FieldOffset(44)]
             public uint CellIndex;
+            [FieldOffset(48)]
             public uint PreviousFlags;
+            [FieldOffset(52)]
             public uint CurrentFlags;
+            [FieldOffset(56)]
             public uint SignalSourceHash;
+            [FieldOffset(60)]
             public uint Reserved0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct SaveStagingHeader
         {
+            [FieldOffset(0)]
             public uint OperationId;
+            [FieldOffset(4)]
             public uint SlotHash;
+            [FieldOffset(8)]
             public uint SaveableCount;
+            [FieldOffset(12)]
             public uint PersistentWorldRecordCount;
+            [FieldOffset(16)]
             public uint EcosystemRecordCount;
+            [FieldOffset(20)]
             public uint QuestWordCount;
+            [FieldOffset(24)]
             public uint VoxelDeltaBytes;
+            [FieldOffset(28)]
             public uint Frame;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private readonly struct SaveLoadCandidate
         {
             private const int BackupFlag = 1 << 0;
 
+            [FieldOffset(0)]
             public readonly int Flags;
+            [FieldOffset(4)]
             public readonly int BackupGeneration;
+            [FieldOffset(8)]
             public readonly int Reserved0;
+            [FieldOffset(12)]
             public readonly int Reserved1;
 
             public bool IsBackup => (Flags & BackupFlag) != 0;
@@ -889,18 +926,7 @@ namespace Hecton8.SaveSystem
 
         private static MacroDatabaseTier ResolveMacroDatabaseCompactionTier()
         {
-            switch (GlobalRegistry.ScalabilityTier)
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                    return MacroDatabaseTier.Low;
-                case HectonQualityTier.High:
-                    return MacroDatabaseTier.High;
-                case HectonQualityTier.Ultra:
-                    return MacroDatabaseTier.Ultra;
-                default:
-                    return MacroDatabaseTier.Middle;
-            }
+            return MacroDatabaseTier.Middle;
         }
 
         private void NotifyMacroDatabasePersistenceGate(bool blocked)
@@ -1004,11 +1030,18 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            wfcGrid = dataVault.GetBuffer<byte>(
+            VaultGenerationHandle<byte> wfcGridHandle = dataVault.GetGenerationHandle<byte>(
                 BufferID.WfcOutpostGrid,
                 WfcOutpostPersistenceConstants.CellCount,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.ClearMemory);
+            if (wfcGridHandle.BufferID != unchecked((uint)(int)BufferID.WfcOutpostGrid) ||
+                !dataVault.TryResolveHandle(in wfcGridHandle, out wfcGrid))
+            {
+                _wfcOutpostGrid = default;
+                _wfcOutpostDependenciesReady = false;
+                return false;
+            }
 
             if (!IsValidWfcOutpostGrid(wfcGrid))
             {
@@ -1452,7 +1485,7 @@ namespace Hecton8.SaveSystem
         {
             int drained = 0;
             while (drained < MaxChunkDehydrationSignalsPerTick &&
-                   SignalBus<ChunkDehydratedSignal>.TryReadFrame(out ChunkDehydratedSignal signal))
+                   SignalBus<ChunkDehydratedSignal>.TryConsumeFrame(out ChunkDehydratedSignal signal))
             {
                 drained++;
                 EnqueueChunkDehydrationPayloads(in signal);
@@ -2948,7 +2981,7 @@ namespace Hecton8.SaveSystem
                     compressedSizeBytes,
                     rawPayloadLength,
                     thumbnailCompletion.ByteLength,
-                    thumbnailCompletion.Succeeded ? 0u : 2u);
+                    thumbnailCompletion.Succeeded != 0 ? 0u : 2u);
                 PublishSaveCompleted(slotIndex, operationId, totalTimer.ElapsedMilliseconds, compressedSizeBytes, succeeded: true);
                 PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Completed, 1f, 0u);
                 RequestVramAbortGcIfNeeded();
@@ -3009,9 +3042,10 @@ namespace Hecton8.SaveSystem
                 $"Budget is {MainThreadSnapshotBudgetMs}ms. Snapshot purity is pending verification.");
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 4)]
         private readonly struct SaveContextFrameData
         {
+            [FieldOffset(0)]
             public readonly int FrameCount;
 
             private SaveContextFrameData(int frameCount)
@@ -3155,7 +3189,9 @@ namespace Hecton8.SaveSystem
             if (!IsFinite(savedRuntimePosition))
                 return false;
 
-            AbsoluteUniversePosition savedAup = AbsoluteUniversePosition.FromRuntimePosition(savedRuntimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(savedRuntimePosition, out AbsoluteUniversePosition savedAup))
+                return false;
+
             float3 resolvedRuntime3 = savedAup.ToRuntimeFloat3();
             if (!math.all(math.isfinite(resolvedRuntime3)))
                 return false;
@@ -3221,11 +3257,35 @@ namespace Hecton8.SaveSystem
             in AbsoluteUniversePosition savedAup,
             float terrainRuntimeY)
         {
-            double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            double3 committedOffset = ResolveCurrentRuntimeOriginDouble3();
             double savedRuntimeY = (savedAup.GridY * (double)AbsoluteUniversePosition.CellSizeMeters) +
                                    savedAup.LocalY -
                                    committedOffset.y;
             return terrainRuntimeY - savedRuntimeY;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
+        }
+
+        private static double3 ResolveCurrentRuntimeOriginDouble3()
+        {
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return originAup.IsFinite()
+                ? originAup.ToAbsoluteDouble3()
+                : double3.zero;
         }
 
         private static void TeleportLoadedPlayer(

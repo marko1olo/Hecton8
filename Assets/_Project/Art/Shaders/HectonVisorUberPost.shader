@@ -279,6 +279,18 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 crackNormal = normalSeed * rsqrt(max(dot(normalSeed, normalSeed), 0.0001));
             }
 
+            float ResolveTornVisorEdgeMask(float2 uv, float edge01, float damage01, float stress01)
+            {
+                float2 safeUv = all(isfinite(uv)) ? saturate(uv) : float2(0.5, 0.5);
+                float2 centered = safeUv * 2.0 - 1.0;
+                float radial = saturate(dot(centered, centered));
+                float angleWave = sin(atan2(centered.y, centered.x) * 11.0 + Hash21(floor(safeUv * 9.0)) * 6.2831853);
+                float serration = 0.58 + 0.42 * angleWave;
+                float edgeBand = smoothstep(0.54, 0.98, radial) * edge01;
+                float drive = HectonFinite01(max(damage01, stress01));
+                return saturate(edgeBand * drive * serration);
+            }
+
             float ResolveDitherNoise(float2 uv, float shiftSalt)
             {
                 float2 screenParams = max(HectonFinite4(_ScreenParams, float4(1.0, 1.0, 1.0, 1.0)).xy, float2(1.0, 1.0));
@@ -496,10 +508,14 @@ Shader "Hidden/Hecton8/VisorUberPost"
 
                 crackNormal = all(isfinite(crackNormal)) ? clamp(crackNormal, float2(-1.0, -1.0), float2(1.0, 1.0)) : float2(0.0, 0.0);
                 float crackMask = crackReveal * HectonFinite01(strengths0.w);
+                float tornEdgeMask = ResolveTornVisorEdgeMask(uv, edge01, damage01, max(stress01, hullStress01));
+                float2 visorEdgeSeed = (uv - 0.5) + float2(0.0007, -0.0004);
+                float2 visorEdgeNormal = visorEdgeSeed * rsqrt(max(dot(visorEdgeSeed, visorEdgeSeed), 0.0001));
 
                 float2 warpedUV = BarrelWarp(uv, pressure01, strengths0.z);
                 warpedUV += HeatHazeOffset(uv, heat01, lowTier01);
                 warpedUV += HectonClampUvOffset(crackNormal * (crackMask * HectonFiniteValue(strengths1.z, 0.0)), 0.1);
+                warpedUV += HectonClampUvOffset(visorEdgeNormal * (tornEdgeMask * HectonFiniteValue(strengths1.z, 0.0) * 0.35), 0.04);
                 warpedUV = saturate(warpedUV);
 
                 half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, warpedUV);
@@ -552,6 +568,9 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 half crackDarken = (half)(crackMask * (0.22 + edge01 * 0.18));
                 color.rgb *= 1.0h - crackDarken;
                 color.rgb += (half3(0.16h, 0.22h, 0.24h) * (half)(crackMask * 0.035));
+                half tornEdge = (half)tornEdgeMask;
+                color.rgb *= 1.0h - tornEdge * 0.14h;
+                color.rgb += half3(0.11h, 0.025h, 0.018h) * tornEdge * (half)(0.35 + HectonFinite01(_HectonUberBleeding01) * 0.65);
 
                 half luma = dot(color.rgb, half3(0.2126h, 0.7152h, 0.0722h));
                 half3 hypoxiaLuma = half3(luma, luma, luma);
@@ -579,7 +598,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 color.rgb *= 1.0h - (half)vignette;
 
                 float bleeding = HectonFinite01(_HectonUberBleeding01);
-                half bloodEdge = (half)(bleeding * edge01 * strengths1.w);
+                half bloodEdge = (half)(bleeding * saturate(edge01 + tornEdgeMask * 0.75) * strengths1.w);
                 color.rgb = lerp(color.rgb, half3(0.48h, 0.015h, 0.012h), bloodEdge);
                 color.rgb = max(color.rgb, half3(0.0015h, 0.0022h, 0.0030h));
                 return color;

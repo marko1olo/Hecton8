@@ -70,6 +70,7 @@ namespace Hecton8.VFX.Debris
         private const uint StressRecycleFlag = 1u << 4;
         private const uint WakeActiveFlag = 1u << 5;
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_05_DEBRIS_PHYSICS_FAKE.h8dump";
+        private const SystemID VaultOwnerSystem = SystemID.Vfx;
 
         private static readonly int CarveDebrisReadId = Shader.PropertyToID("_CarveDebrisRead");
         private static readonly int CarveDebrisWriteId = Shader.PropertyToID("_CarveDebrisWrite");
@@ -134,11 +135,11 @@ namespace Hecton8.VFX.Debris
         [SerializeField] private int renderLayer;
         [SerializeField] private ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off;
 
-        private VaultBufferHandle<float4> _debrisPositionsHandle;
-        private VaultBufferHandle<float4> _debrisVelocitiesHandle;
-        private VaultBufferHandle<CarveDebrisRequest> _carveRequestsHandle;
-        private VaultBufferHandle<int> _jobStateHandle;
-        private VaultBufferHandle<CarveDebrisTelemetryEntry> _blackBoxHandle;
+        private VaultGenerationHandle<float4> _debrisPositionsHandle;
+        private VaultGenerationHandle<float4> _debrisVelocitiesHandle;
+        private VaultGenerationHandle<CarveDebrisRequest> _carveRequestsHandle;
+        private VaultGenerationHandle<int> _jobStateHandle;
+        private VaultGenerationHandle<CarveDebrisTelemetryEntry> _blackBoxHandle;
         private IDataVault _registryDataVault;
         private IDataVault _dataVault;
         private GraphicsBuffer _positionBufferA;
@@ -176,11 +177,6 @@ namespace Hecton8.VFX.Debris
         private int _lastTelemetryFrame = -1;
         private uint _lastProcessedAupShiftFrameId;
         private uint _frameSequence;
-        private uint _positionVaultGeneration;
-        private uint _velocityVaultGeneration;
-        private uint _jobStateVaultGeneration;
-        private uint _requestVaultGeneration;
-        private uint _blackBoxVaultGeneration;
         private uint _cachedDrawIndexCount;
         private uint _cachedDrawIndexStart;
         private uint _cachedDrawBaseVertex;
@@ -192,6 +188,7 @@ namespace Hecton8.VFX.Debris
         private Mesh _cachedDrawMesh;
         private float _lastDeltaTime = 1f / 60f;
         private float _cachedSystemStress01;
+        private float _cachedGlobalQualityWeight01 = 1f;
         private float _cachedGlobalSdfActive;
         private float _configuredDebrisBounce = DefaultCarveDebrisBounce;
         private int _configuredMaxActiveDebris = MaxCarveDebrisCount;
@@ -285,7 +282,7 @@ namespace Hecton8.VFX.Debris
         public int ActiveDebrisCount => _activeMirrorCount;
 
         /// <inheritdoc />
-        public int ActiveParticleCapacity => ResolveActiveCapacity(_cachedLowTier, _cachedHighEndTier, _configuredMaxActiveDebris);
+        public int ActiveParticleCapacity => ResolveActiveCapacity(_cachedGlobalQualityWeight01, _configuredMaxActiveDebris);
 
         /// <inheritdoc />
         public bool IsLowTierActive => _cachedLowTier;
@@ -322,8 +319,8 @@ namespace Hecton8.VFX.Debris
             float dt = math.clamp(deltaTime, 0.0001f, 0.0666667f);
             _lastDeltaTime = dt;
             _cachedSystemStress01 = ResolveSystemStress01();
+            _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01();
             bool lowTier = IsLowTier();
-            bool highEndTier = _cachedHighEndTier;
             if (!TryResolveVaultBuffers(
                     out var debrisPositions,
                     out var debrisVelocities,
@@ -336,7 +333,7 @@ namespace Hecton8.VFX.Debris
             }
 
             RefreshDebrisTuningFromVault(jobState);
-            int activeCapacity = ResolveActiveCapacity(lowTier, highEndTier, _configuredMaxActiveDebris);
+            int activeCapacity = ResolveActiveCapacity(_cachedGlobalQualityWeight01, _configuredMaxActiveDebris);
             ApplyCapacityShed(activeCapacity, debrisPositions, debrisVelocities);
             DrainAupShiftSignals(jobState);
             if (_activeMirrorCount > 0)
@@ -344,7 +341,7 @@ namespace Hecton8.VFX.Debris
             else
                 ResetFrameJobState(activeCapacity, jobState);
 
-            int queuedCarves = DrainCarveSignals(lowTier, highEndTier, activeCapacity, debrisPositions, debrisVelocities, carveRequests, jobState);
+            int queuedCarves = DrainCarveSignals(_cachedGlobalQualityWeight01, activeCapacity, debrisPositions, debrisVelocities, carveRequests, jobState);
             DispatchGpu(dt, lowTier, activeCapacity);
             WriteBlackBox(queuedCarves, jobState.IsCreated ? jobState[JobStateInjectedIndex] : 0, lowTier, jobState, blackBox);
             RenderDebris();
@@ -530,46 +527,41 @@ namespace Hecton8.VFX.Debris
             _maxDispatchGroups = ResolveDispatchGroups(MaxCarveDebrisCount, _threadGroupSize);
             _lowDispatchGroups = ResolveDispatchGroups(LowTierActiveCarveDebrisCount, _threadGroupSize);
 
-            _debrisPositionsHandle = vault.GetBufferHandle<float4>(
-                BufferID.CarveDebris,
-                MaxCarveDebrisCount,
-                SystemID.Vfx,
-                NativeArrayOptions.ClearMemory);
-            _debrisVelocitiesHandle = vault.GetBufferHandle<float4>(
-                BufferID.CarveDebrisVelocity,
-                MaxCarveDebrisCount,
-                SystemID.Vfx,
-                NativeArrayOptions.ClearMemory);
-            _jobStateHandle = vault.GetBufferHandle<int>(
-                BufferID.CarveDebrisJobState,
-                JobStateLength,
-                SystemID.Vfx,
-                NativeArrayOptions.ClearMemory);
-            _blackBoxHandle = vault.GetBufferHandle<CarveDebrisTelemetryEntry>(
-                BufferID.CarveDebrisBlackBox,
-                BlackBoxCapacity,
-                SystemID.Vfx,
-                NativeArrayOptions.ClearMemory);
-            _carveRequestsHandle = vault.GetBufferHandle<CarveDebrisRequest>(
-                BufferID.CarveDebrisRequests,
-                MaxCarveSignalsPerFrame,
-                SystemID.Vfx,
-                NativeArrayOptions.ClearMemory);
-
             _dataVault = vault;
-            if (!TryResolveVaultBuffers(
-                    out var debrisPositions,
-                    out var debrisVelocities,
-                    out var carveRequests,
-                    out var jobState,
-                    out var blackBox))
+            if (!EnsureCarveDebrisVaultBuffer(
+                    ref _debrisPositionsHandle,
+                    BufferID.CarveDebris,
+                    MaxCarveDebrisCount,
+                    NativeArrayOptions.ClearMemory,
+                    out var debrisPositions) ||
+                !EnsureCarveDebrisVaultBuffer(
+                    ref _debrisVelocitiesHandle,
+                    BufferID.CarveDebrisVelocity,
+                    MaxCarveDebrisCount,
+                    NativeArrayOptions.ClearMemory,
+                    out var debrisVelocities) ||
+                !EnsureCarveDebrisVaultBuffer(
+                    ref _jobStateHandle,
+                    BufferID.CarveDebrisJobState,
+                    JobStateLength,
+                    NativeArrayOptions.ClearMemory,
+                    out var jobState) ||
+                !EnsureCarveDebrisVaultBuffer(
+                    ref _blackBoxHandle,
+                    BufferID.CarveDebrisBlackBox,
+                    BlackBoxCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out var blackBox) ||
+                !EnsureCarveDebrisVaultBuffer(
+                    ref _carveRequestsHandle,
+                    BufferID.CarveDebrisRequests,
+                    MaxCarveSignalsPerFrame,
+                    NativeArrayOptions.ClearMemory,
+                    out var carveRequests))
             {
                 InvalidateDataVaultLease();
                 return false;
             }
-
-            if (!TryCaptureVaultGenerations(vault))
-                return false;
 
             AllocateGraphicsBuffers();
             CreateEmptyResources();
@@ -596,35 +588,15 @@ namespace Hecton8.VFX.Debris
                    _emptyTexture3D != null;
         }
 
-        private bool TryCaptureVaultGenerations(IDataVault vault)
-        {
-            if (vault == null ||
-                !vault.TryGetBufferGeneration(BufferID.CarveDebris, out _positionVaultGeneration) ||
-                !vault.TryGetBufferGeneration(BufferID.CarveDebrisVelocity, out _velocityVaultGeneration) ||
-                !vault.TryGetBufferGeneration(BufferID.CarveDebrisJobState, out _jobStateVaultGeneration) ||
-                !vault.TryGetBufferGeneration(BufferID.CarveDebrisRequests, out _requestVaultGeneration) ||
-                !vault.TryGetBufferGeneration(BufferID.CarveDebrisBlackBox, out _blackBoxVaultGeneration))
-            {
-                InvalidateDataVaultLease();
-                return false;
-            }
-
-            return true;
-        }
-
         private void InvalidateDataVaultLease()
         {
+            IDataVault vault = _dataVault;
+            ReleaseCarveDebrisVaultHandle(vault, ref _debrisPositionsHandle);
+            ReleaseCarveDebrisVaultHandle(vault, ref _debrisVelocitiesHandle);
+            ReleaseCarveDebrisVaultHandle(vault, ref _carveRequestsHandle);
+            ReleaseCarveDebrisVaultHandle(vault, ref _jobStateHandle);
+            ReleaseCarveDebrisVaultHandle(vault, ref _blackBoxHandle);
             _dataVault = null;
-            _debrisPositionsHandle = default;
-            _debrisVelocitiesHandle = default;
-            _carveRequestsHandle = default;
-            _jobStateHandle = default;
-            _blackBoxHandle = default;
-            _positionVaultGeneration = 0u;
-            _velocityVaultGeneration = 0u;
-            _jobStateVaultGeneration = 0u;
-            _requestVaultGeneration = 0u;
-            _blackBoxVaultGeneration = 0u;
         }
 
         private bool TryResolveVaultBuffers(
@@ -644,65 +616,154 @@ namespace Hecton8.VFX.Debris
             if (vault == null || !ReferenceEquals(vault, _registryDataVault) || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BufferID.CarveDebris, out _debrisPositionsHandle) ||
-                !vault.TryGetBufferHandle(BufferID.CarveDebrisVelocity, out _debrisVelocitiesHandle) ||
-                !vault.TryGetBufferHandle(BufferID.CarveDebrisRequests, out _carveRequestsHandle) ||
-                !vault.TryGetBufferHandle(BufferID.CarveDebrisJobState, out _jobStateHandle) ||
-                !vault.TryGetBufferHandle(BufferID.CarveDebrisBlackBox, out _blackBoxHandle))
-            {
-                return false;
-            }
-
-            debrisPositions = _debrisPositionsHandle.Resolve(vault);
-            debrisVelocities = _debrisVelocitiesHandle.Resolve(vault);
-            carveRequests = _carveRequestsHandle.Resolve(vault);
-            jobState = _jobStateHandle.Resolve(vault);
-            blackBox = _blackBoxHandle.Resolve(vault);
-            return debrisPositions.IsCreated &&
-                   debrisVelocities.IsCreated &&
-                   carveRequests.IsCreated &&
-                   jobState.IsCreated &&
-                   blackBox.IsCreated &&
-                   debrisPositions.Length >= MaxCarveDebrisCount &&
-                   debrisVelocities.Length >= MaxCarveDebrisCount &&
-                   carveRequests.Length >= MaxCarveSignalsPerFrame &&
-                   jobState.Length >= JobStateLength &&
-                   blackBox.Length >= BlackBoxCapacity;
+            return TryResolveCarveDebrisVaultBuffer(
+                       ref _debrisPositionsHandle,
+                       BufferID.CarveDebris,
+                       MaxCarveDebrisCount,
+                       out debrisPositions) &&
+                   TryResolveCarveDebrisVaultBuffer(
+                       ref _debrisVelocitiesHandle,
+                       BufferID.CarveDebrisVelocity,
+                       MaxCarveDebrisCount,
+                       out debrisVelocities) &&
+                   TryResolveCarveDebrisVaultBuffer(
+                       ref _carveRequestsHandle,
+                       BufferID.CarveDebrisRequests,
+                       MaxCarveSignalsPerFrame,
+                       out carveRequests) &&
+                   TryResolveCarveDebrisVaultBuffer(
+                       ref _jobStateHandle,
+                       BufferID.CarveDebrisJobState,
+                       JobStateLength,
+                       out jobState) &&
+                   TryResolveCarveDebrisVaultBuffer(
+                       ref _blackBoxHandle,
+                       BufferID.CarveDebrisBlackBox,
+                       BlackBoxCapacity,
+                       out blackBox);
         }
 
         private bool IsDataVaultLeaseValid()
         {
-            if (_dataVault == null ||
-                !_debrisPositionsHandle.IsCreated ||
-                !_debrisVelocitiesHandle.IsCreated ||
-                !_jobStateHandle.IsCreated ||
-                !_blackBoxHandle.IsCreated ||
-                !_carveRequestsHandle.IsCreated ||
-                _debrisPositionsHandle.Length < MaxCarveDebrisCount ||
-                _debrisVelocitiesHandle.Length < MaxCarveDebrisCount ||
-                _jobStateHandle.Length < JobStateLength ||
-                _blackBoxHandle.Length < BlackBoxCapacity ||
-                _carveRequestsHandle.Length < MaxCarveSignalsPerFrame ||
-                _dataVault.IsCompactionFenceActive)
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !ReferenceEquals(vault, _registryDataVault) ||
+                vault.IsCompactionFenceActive)
             {
                 return false;
             }
 
-            if (!_dataVault.TryGetBufferGeneration(BufferID.CarveDebris, out uint positionGeneration) ||
-                !_dataVault.TryGetBufferGeneration(BufferID.CarveDebrisVelocity, out uint velocityGeneration) ||
-                !_dataVault.TryGetBufferGeneration(BufferID.CarveDebrisJobState, out uint jobStateGeneration) ||
-                !_dataVault.TryGetBufferGeneration(BufferID.CarveDebrisRequests, out uint requestGeneration) ||
-                !_dataVault.TryGetBufferGeneration(BufferID.CarveDebrisBlackBox, out uint blackBoxGeneration) ||
-                positionGeneration != _positionVaultGeneration ||
-                velocityGeneration != _velocityVaultGeneration ||
-                jobStateGeneration != _jobStateVaultGeneration ||
-                requestGeneration != _requestVaultGeneration ||
-                blackBoxGeneration != _blackBoxVaultGeneration)
+            return HasCarveDebrisVaultBuffer(
+                       vault,
+                       in _debrisPositionsHandle,
+                       BufferID.CarveDebris,
+                       MaxCarveDebrisCount) &&
+                   HasCarveDebrisVaultBuffer(
+                       vault,
+                       in _debrisVelocitiesHandle,
+                       BufferID.CarveDebrisVelocity,
+                       MaxCarveDebrisCount) &&
+                   HasCarveDebrisVaultBuffer(
+                       vault,
+                       in _carveRequestsHandle,
+                       BufferID.CarveDebrisRequests,
+                       MaxCarveSignalsPerFrame) &&
+                   HasCarveDebrisVaultBuffer(
+                       vault,
+                       in _jobStateHandle,
+                       BufferID.CarveDebrisJobState,
+                       JobStateLength) &&
+                   HasCarveDebrisVaultBuffer(
+                       vault,
+                       in _blackBoxHandle,
+                       BufferID.CarveDebrisBlackBox,
+                       BlackBoxCapacity);
+        }
+
+        private bool EnsureCarveDebrisVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (TryResolveCarveDebrisVaultBuffer(ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            return TryResolveCarveDebrisVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool TryResolveCarveDebrisVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (IsCarveDebrisVaultHandle(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
             {
+                return true;
+            }
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !IsCarveDebrisVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                handle = default;
+                buffer = default;
                 return false;
             }
 
-            return ReferenceEquals(_dataVault, _registryDataVault);
+            return true;
+        }
+
+        private static bool HasCarveDebrisVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsCarveDebrisVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsCarveDebrisVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
+        private static void ReleaseCarveDebrisVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void AllocateGraphicsBuffers()
@@ -821,8 +882,7 @@ namespace Hecton8.VFX.Debris
         }
 
         private int DrainCarveSignals(
-            bool lowTier,
-            bool highEndTier,
+            float globalQualityWeight01,
             int activeCapacity,
             NativeArray<float4> debrisPositions,
             NativeArray<float4> debrisVelocities,
@@ -831,7 +891,7 @@ namespace Hecton8.VFX.Debris
         {
             ReadOnlySpan<VoxelCarveEvent> carveSignals = SignalBus<VoxelCarveEvent>.GetFrameSnapshot();
             int signalCount = math.min(carveSignals.Length, MaxCarveSignalScanPerFrame);
-            int particlesPerCarve = ResolveParticlesPerCarve(lowTier, highEndTier);
+            int particlesPerCarve = ResolveParticlesPerCarve(globalQualityWeight01);
             int queuedCarves = 0;
             int requestCount = 0;
             for (int i = 0; i < signalCount && requestCount < MaxCarveSignalsPerFrame; i++)
@@ -1346,9 +1406,9 @@ namespace Hecton8.VFX.Debris
                    math.isfinite(invDoubleHalfExtents.z);
         }
 
-        private static int ResolveActiveCapacity(bool lowTier, bool highEndTier, int configuredCap)
+        private static int ResolveActiveCapacity(float globalQualityWeight01, int configuredCap)
         {
-            int cap = ShinobuDeltaCrusher.ResolveDebrisCap(lowTier, highEndTier, configuredCap);
+            int cap = ShinobuDeltaCrusher.ResolveDebrisCap(globalQualityWeight01, configuredCap);
             return math.clamp(cap, LowTierActiveCarveDebrisCount, MaxCarveDebrisCount);
         }
 
@@ -1384,14 +1444,20 @@ namespace Hecton8.VFX.Debris
                 : gravityMetersPerSecondSq;
         }
 
-        private static int ResolveParticlesPerCarve(bool lowTier, bool highEndTier)
+        private static int ResolveParticlesPerCarve(float globalQualityWeight01)
         {
-            if (lowTier)
-                return LowTierParticlesPerCarve;
+            float quality = ShinobuDeltaCrusher.SmoothQuality01(globalQualityWeight01);
+            float midBlend = math.saturate(quality * 2f);
+            float highBlend = math.saturate((quality - 0.5f) * 2f);
+            float middle = math.lerp(LowTierParticlesPerCarve, MidTierParticlesPerCarve, midBlend);
+            float high = math.lerp(middle, HighTierParticlesPerCarve, highBlend);
+            return math.clamp((int)math.round(high), LowTierParticlesPerCarve, HighTierParticlesPerCarve);
+        }
 
-            return highEndTier
-                ? HighTierParticlesPerCarve
-                : MidTierParticlesPerCarve;
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float quality = SignalBusRegistry.GlobalQualityWeight01;
+            return math.isfinite(quality) ? math.saturate(quality) : 0f;
         }
 
         private float ResolveLifetimeRcp()
@@ -2145,10 +2211,10 @@ namespace Hecton8.VFX.Debris
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct AgeCarveDebrisMirrorJob : IJob
         {
-            public NativeArray<float4> Positions;
+            [NoAlias] public NativeArray<float4> Positions;
             public int Capacity;
             public float LifeDelta;
-            public NativeArray<int> JobState;
+            [NoAlias] public NativeArray<int> JobState;
 
             public void Execute()
             {
@@ -2197,12 +2263,12 @@ namespace Hecton8.VFX.Debris
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CarveDebrisInjectBatchJob : IJob
         {
-            public NativeArray<float4> Positions;
-            public NativeArray<float4> Velocities;
-            [ReadOnly] public NativeArray<CarveDebrisRequest> Requests;
+            [NoAlias] public NativeArray<float4> Positions;
+            [NoAlias] public NativeArray<float4> Velocities;
+            [ReadOnly, NoAlias] public NativeArray<CarveDebrisRequest> Requests;
             public int RequestCount;
             public int Capacity;
-            public NativeArray<int> JobState;
+            [NoAlias] public NativeArray<int> JobState;
 
             public void Execute()
             {
@@ -2349,39 +2415,89 @@ namespace Hecton8.VFX.Debris
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct CarveDebrisRequest
         {
+            [FieldOffset(0)]
             public float3 Center;
+
+            [FieldOffset(12)]
             public float3 EjectionAxis;
+
+            [FieldOffset(24)]
             public float Radius;
+
+            [FieldOffset(28)]
             public int ParticlesToInject;
+
+            [FieldOffset(32)]
             public float InitialSpeed;
+
+            [FieldOffset(36)]
             public float Life;
+
+            [FieldOffset(40)]
             public uint Seed;
+
+            [FieldOffset(44)]
             private uint _pad0;
+
+            [FieldOffset(48)]
             private uint _pad1;
+
+            [FieldOffset(52)]
             private uint _pad2;
+
+            [FieldOffset(56)]
             private uint _pad3;
+
+            [FieldOffset(60)]
             private uint _pad4;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct CarveDebrisTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint FrameIndex;
+
+            [FieldOffset(4)]
             public int ActiveCarveDebrisCount;
+
+            [FieldOffset(8)]
             public int QueuedCarves;
+
+            [FieldOffset(12)]
             public int InjectedParticles;
+
+            [FieldOffset(16)]
             public uint Flags;
+
+            [FieldOffset(20)]
             public uint StateHash;
+
+            [FieldOffset(24)]
             public float3 AppliedAupShift;
+
+            [FieldOffset(36)]
             private uint _pad0;
+
+            [FieldOffset(40)]
             private uint _pad1;
+
+            [FieldOffset(44)]
             private uint _pad2;
+
+            [FieldOffset(48)]
             private uint _pad3;
+
+            [FieldOffset(52)]
             private uint _pad4;
+
+            [FieldOffset(56)]
             private uint _pad5;
+
+            [FieldOffset(60)]
             private uint _pad6;
         }
     }

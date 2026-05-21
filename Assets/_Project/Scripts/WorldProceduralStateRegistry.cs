@@ -17,8 +17,8 @@ namespace Hecton8.World
         private struct FaunaSpawnState
         {
             public float cooldownUntilPlayTime;
-            public bool isLargeThreatZone;
-            public bool blocked;
+            public byte isLargeThreatZone;
+            public byte blocked;
         }
 
         [Header("Settings")]
@@ -113,10 +113,10 @@ namespace Hecton8.World
             if (!_faunaSpawnStates.TryGetValue(runtimeKey, out FaunaSpawnState state))
                 return true;
 
-            if (state.isLargeThreatZone != isLargeThreatZone)
+            if ((state.isLargeThreatZone != 0) != isLargeThreatZone)
                 return true;
 
-            if (state.blocked)
+            if (state.blocked != 0)
                 return false;
 
             if (state.cooldownUntilPlayTime > currentPlayTime)
@@ -137,8 +137,8 @@ namespace Hecton8.World
             FaunaSpawnState state = _faunaSpawnStates.TryGetValue(runtimeKey, out FaunaSpawnState existing)
                 ? existing
                 : default;
-            state.isLargeThreatZone = isLargeThreatZone;
-            state.blocked = false;
+            state.isLargeThreatZone = isLargeThreatZone ? (byte)1 : (byte)0;
+            state.blocked = 0;
             state.cooldownUntilPlayTime = currentPlayTime + Mathf.Max(0f, cooldownSeconds);
             _faunaSpawnStates[runtimeKey] = state;
             MarkDiagnosticsDirty();
@@ -153,8 +153,8 @@ namespace Hecton8.World
             FaunaSpawnState state = _faunaSpawnStates.TryGetValue(runtimeKey, out FaunaSpawnState existing)
                 ? existing
                 : default;
-            state.isLargeThreatZone = isLargeThreatZone;
-            state.blocked = true;
+            state.isLargeThreatZone = isLargeThreatZone ? (byte)1 : (byte)0;
+            state.blocked = 1;
             float currentPlayTime = GetCurrentPlayTimeSeconds();
             state.cooldownUntilPlayTime = Mathf.Max(state.cooldownUntilPlayTime, currentPlayTime);
             _faunaSpawnStates[runtimeKey] = state;
@@ -228,9 +228,9 @@ namespace Hecton8.World
                     }
 
                     byte flags = 0;
-                    if (pair.Value.isLargeThreatZone)
+                    if (pair.Value.isLargeThreatZone != 0)
                         flags |= ProceduralFaunaStateDTO.FlagLargeThreatZone;
-                    if (pair.Value.blocked)
+                    if (pair.Value.blocked != 0)
                         flags |= ProceduralFaunaStateDTO.FlagBlocked;
 
                     dto.faunaStates[faunaIndex] = new ProceduralFaunaStateDTO
@@ -275,8 +275,8 @@ namespace Hecton8.World
                     _faunaSpawnStates[entry.runtimeKey] = new FaunaSpawnState
                     {
                         cooldownUntilPlayTime = entry.cooldownUntilPlayTime,
-                        isLargeThreatZone = (entry.flags & ProceduralFaunaStateDTO.FlagLargeThreatZone) != 0,
-                        blocked = (entry.flags & ProceduralFaunaStateDTO.FlagBlocked) != 0
+                        isLargeThreatZone = (entry.flags & ProceduralFaunaStateDTO.FlagLargeThreatZone) != 0 ? (byte)1 : (byte)0,
+                        blocked = (entry.flags & ProceduralFaunaStateDTO.FlagBlocked) != 0 ? (byte)1 : (byte)0
                     };
                 }
             }
@@ -310,7 +310,7 @@ namespace Hecton8.World
             while (enumerator.MoveNext())
             {
                 KeyValuePair<long, FaunaSpawnState> pair = enumerator.Current;
-                if (pair.Value.blocked)
+                if (pair.Value.blocked != 0)
                     continue;
 
                 if (pair.Value.cooldownUntilPlayTime > currentPlayTime)
@@ -370,9 +370,9 @@ namespace Hecton8.World
             while (enumerator.MoveNext())
             {
                 KeyValuePair<long, FaunaSpawnState> pair = enumerator.Current;
-                if (pair.Value.blocked)
+                if (pair.Value.blocked != 0)
                     _debugBlockedFaunaCount++;
-                if (pair.Value.isLargeThreatZone)
+                if (pair.Value.isLargeThreatZone != 0)
                     _debugLargeThreatFaunaStateCount++;
             }
             enumerator.Dispose();

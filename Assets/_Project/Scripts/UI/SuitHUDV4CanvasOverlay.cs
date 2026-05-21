@@ -16,6 +16,7 @@ using Hecton8.Tools;
 using Hecton8.World;
 using TMPro;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using Unity.Mathematics;
 using UnityEngine.Rendering;
@@ -36,6 +37,7 @@ namespace Hecton8.UI
     {
         // COLD ALLOC: List<SuitHUDV4CanvasOverlay>[4] — active HUD overlay registry — owner: SuitHUDV4CanvasOverlay
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
+        private static bool s_stencilRenderGraphRuntimeActive;
         // COLD ALLOC: List<VisorHUDController>[2] — controller resolve scratch — owner: SuitHUDV4CanvasOverlay
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
         // COLD ALLOC: List<GameObject>[16] — scene root resolve scratch — owner: SuitHUDV4CanvasOverlay
@@ -181,7 +183,6 @@ namespace Hecton8.UI
         private static readonly int _AcousticRadarBandThicknessId = Shader.PropertyToID("_BandThickness");
         private static readonly int _AcousticRadarPulseFrequencyId = Shader.PropertyToID("_PulseFrequency");
         private static readonly int _AcousticRadarRadarIntensityId = Shader.PropertyToID("_RadarIntensity");
-        private static readonly int _HectonUiAnalogJitterId = Shader.PropertyToID("_HectonUiAnalogJitter");
         private static readonly uint _HudSolveBudgetWarningHash = unchecked((uint)LocHash.Compute("HUD_CANVAS_SOLVE_OVER_BUDGET"));
         private static readonly uint _HudSolveBudgetContextHash = unchecked((uint)LocHash.Compute("SuitHUDV4CanvasOverlay.Tick"));
         private static readonly long _HudSolveBudgetWarningTicks = Math.Max(1L, Stopwatch.Frequency / 5000L);
@@ -256,6 +257,30 @@ namespace Hecton8.UI
             {
                 s_memorySubsystemBreachVersion++;
             }
+        }
+
+        public static void SetStencilRenderGraphRuntimeActive(bool active)
+        {
+            if (s_stencilRenderGraphRuntimeActive == active)
+                return;
+
+            s_stencilRenderGraphRuntimeActive = active;
+            for (int i = 0; i < s_activeOverlays.Count; i++)
+            {
+                SuitHUDV4CanvasOverlay overlay = s_activeOverlays[i];
+                if (overlay == null)
+                    continue;
+
+                if (active)
+                    overlay.ApplyStencilRenderGraphSuppressionIfNeeded();
+                else
+                    overlay.ReleaseStencilRenderGraphSuppressionIfNeeded();
+            }
+        }
+
+        public static bool IsStencilRenderGraphRuntimeActive()
+        {
+            return s_stencilRenderGraphRuntimeActive;
         }
 
         private static bool TryResolveMemorySubsystemBreach(out char[] buffer, out int length, out int version)
@@ -595,12 +620,13 @@ namespace Hecton8.UI
             s_memorySubsystemBreachUntilTime = 0d;
             s_memorySubsystemBreachCode = 0u;
             s_memorySubsystemBreachVersion = 0;
+            s_stencilRenderGraphRuntimeActive = false;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeHudCanvasBindings()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || s_stencilRenderGraphRuntimeActive)
                 return;
 
             Canvas canvas = FindSceneCanvasByName(PrimaryHudCanvasName);
@@ -746,11 +772,11 @@ namespace Hecton8.UI
         private char[] _pressureTemplateBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         private int _pressureTemplateLength;
         // COLD ALLOC: char[64] — depth meter display staging buffer — owner: SuitHUDV4CanvasOverlay
-        private char[] _depthDisplayBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity];
+        private char[] _depthDisplayBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         // COLD ALLOC: char[64] — temperature meter display staging buffer — owner: SuitHUDV4CanvasOverlay
-        private char[] _temperatureDisplayBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity];
+        private char[] _temperatureDisplayBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         // COLD ALLOC: char[64] — pressure meter display staging buffer — owner: SuitHUDV4CanvasOverlay
-        private char[] _pressureDisplayBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity];
+        private char[] _pressureDisplayBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         // COLD ALLOC: char[64] — compass ribbon display staging buffer — owner: SuitHUDV4CanvasOverlay
         private char[] _headingDisplayBuffer = new char[ZeroGCFormatter.HudMetricBufferCapacity];
         // COLD ALLOC: char[256] — LOAD telemetry fallback staging buffer — owner: SuitHUDV4CanvasOverlay
@@ -758,7 +784,7 @@ namespace Hecton8.UI
         // COLD ALLOC: char[256] — caller-owned HUD glitch scratch buffer — owner: SuitHUDV4CanvasOverlay
         private char[] _glitchScratchBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         private IDataVault _glitchVault;
-        private VaultBufferHandle<byte> _glitchTableHandle;
+        private VaultGenerationHandle<byte> _glitchTableHandle;
         private bool _glitchTableHandleReady;
         private Canvas _appliedCanvasTarget;
         private Camera _appliedProjectionCamera;
@@ -1081,13 +1107,75 @@ namespace Hecton8.UI
             HighCadence = 2
         }
 
-        public bool IsInitialized => isActiveAndEnabled && targetCanvas != null && _root != null && _layoutBuilt;
+        public bool IsInitialized => !IsStencilRenderGraphSuppressedRuntime() && isActiveAndEnabled && targetCanvas != null && _root != null && _layoutBuilt;
 
         private bool _ownsGlobalUiSlot;
         private bool _hotSwapRegistered;
         private bool _scalabilityRegistered;
+        private bool _floatingOriginRegistered;
         private int _hudProxyLightKey;
         private bool _hudProxyLightRegistered;
+
+        private static bool IsStencilRenderGraphSuppressedRuntime()
+        {
+            return Application.isPlaying && s_stencilRenderGraphRuntimeActive;
+        }
+
+        private void ApplyStencilRenderGraphSuppressionIfNeeded()
+        {
+            if (!IsStencilRenderGraphSuppressedRuntime())
+                return;
+
+            _pendingRuntimeCanvasRefresh = false;
+            _forceResolveOnSlowTick = false;
+            _pendingDepthSignalRefresh = false;
+            _layoutBuilt = false;
+            _canvasStateApplied = false;
+            UnregisterRuntimeTick();
+            UnregisterUiService();
+            UnregisterHudProxyLight();
+            ClearDepthSignalSubscription();
+
+            Canvas canvas = targetCanvas != null ? targetCanvas : ResolveTargetCanvas();
+            if (canvas != null && canvas.enabled)
+                canvas.enabled = false;
+
+            ResolveGraphicRaycasterCold();
+            if (_cachedGraphicRaycaster != null && _cachedGraphicRaycaster.enabled)
+                _cachedGraphicRaycaster.enabled = false;
+
+            if (_rootCanvasGroup != null)
+            {
+                _rootCanvasGroup.alpha = 0f;
+                _rootCanvasGroup.interactable = false;
+                _rootCanvasGroup.blocksRaycasts = false;
+                _appliedRootVisible = false;
+                _hasAppliedRootVisibility = true;
+            }
+        }
+
+        private void ReleaseStencilRenderGraphSuppressionIfNeeded()
+        {
+            if (IsStencilRenderGraphSuppressedRuntime() || !Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            Canvas canvas = targetCanvas != null ? targetCanvas : ResolveTargetCanvas();
+            if (canvas != null && !canvas.enabled)
+                canvas.enabled = true;
+
+            ResolveGraphicRaycasterCold();
+            if (_cachedGraphicRaycaster != null && !_cachedGraphicRaycaster.enabled)
+                _cachedGraphicRaycaster.enabled = true;
+
+            CacheRuntimeDependencies();
+            CacheGlitchTableVaultCold();
+            TryRegisterUiService();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
+            TryRegisterFloatingOriginListener();
+            QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
+            TryRegisterRuntimeTick();
+        }
 
         private void Awake()
         {
@@ -1105,6 +1193,13 @@ namespace Hecton8.UI
         {
             EnsureLayerCache();
             ResolveGraphicRaycasterCold();
+            RegisterActiveOverlay();
+            if (IsStencilRenderGraphSuppressedRuntime())
+            {
+                ApplyStencilRenderGraphSuppressionIfNeeded();
+                return;
+            }
+
             CacheRuntimeDependencies();
             CacheGlitchTableVaultCold();
             LocalizationEvents.RegisterLanguageListener(this);
@@ -1113,7 +1208,6 @@ namespace Hecton8.UI
             PlayerSignalEvents.Register(this);
             if (Application.isPlaying)
                 SaveEvents.Register(this);
-            RegisterActiveOverlay();
             _layoutBuilt = false;
             InvalidateVisualCaches();
             RebuildLocalizationCache();
@@ -1131,7 +1225,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            HectonFloatingOrigin.RegisterListener(this);
+            TryRegisterFloatingOriginListener();
             TryRegisterUiService();
             TryRegisterHotSwapListener();
             TryRegisterScalabilityListener();
@@ -1147,6 +1241,12 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            if (IsStencilRenderGraphSuppressedRuntime())
+            {
+                ApplyStencilRenderGraphSuppressionIfNeeded();
+                return;
+            }
+
             TryRegisterRuntimeTick();
             ProcessPendingRuntimeCanvasRefresh();
         }
@@ -1158,7 +1258,7 @@ namespace Hecton8.UI
             GameBootstrapper.Unregister(this);
             PlayerSignalEvents.Unregister(this);
             SaveEvents.Unregister(this);
-            HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterFloatingOriginListener();
             TryUnregisterHotSwapListener();
             TryUnregisterScalabilityListener();
             UnregisterUiService();
@@ -1171,7 +1271,6 @@ namespace Hecton8.UI
             _appliedStressPulseStrength = -1f;
             _appliedAnalogUiJitterStrength = -1f;
             _appliedAnalogUiJitterBucket = int.MinValue;
-            Shader.SetGlobalVector(_HectonUiAnalogJitterId, Vector4.zero);
             _toolDepletedWarningTimer = 0f;
             _savingProgressTargetAlpha = 0f;
             _savingProgressAlpha = 0f;
@@ -1192,6 +1291,7 @@ namespace Hecton8.UI
             DisposeSavingProgressPulseRuntimeResources();
             DisposeThreatChevronRuntimeResources();
             DisposeScannerHologramRuntimeResources();
+            ClearGlitchTableBinding();
 
             SetRootVisible(false);
         }
@@ -1208,6 +1308,7 @@ namespace Hecton8.UI
             DisposeSavingProgressPulseRuntimeResources();
             DisposeThreatChevronRuntimeResources();
             DisposeScannerHologramRuntimeResources();
+            ClearGlitchTableBinding();
         }
 
         private void HideIncompleteRootImmediately()
@@ -1421,6 +1522,12 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            if (IsStencilRenderGraphSuppressedRuntime())
+            {
+                ApplyStencilRenderGraphSuppressionIfNeeded();
+                return;
+            }
+
             RunReactiveLateFrameSolve(deltaTime);
         }
 
@@ -1476,6 +1583,12 @@ namespace Hecton8.UI
 
         public void SlowTick()
         {
+            if (IsStencilRenderGraphSuppressedRuntime())
+            {
+                ApplyStencilRenderGraphSuppressionIfNeeded();
+                return;
+            }
+
             if (!Application.isPlaying)
                 return;
 
@@ -1488,6 +1601,12 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            if (IsStencilRenderGraphSuppressedRuntime())
+            {
+                ApplyStencilRenderGraphSuppressionIfNeeded();
+                return;
+            }
+
             _canvasStateApplied = false;
             _rootBaseAnchoredPositionCaptured = false;
             _rootBaseAnchoredPosition = Vector2.zero;
@@ -1514,6 +1633,12 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            if (IsStencilRenderGraphSuppressedRuntime())
+            {
+                ApplyStencilRenderGraphSuppressionIfNeeded();
+                return;
+            }
+
             if (!Application.isPlaying || _root == null)
                 return;
 
@@ -1627,6 +1752,12 @@ namespace Hecton8.UI
             if (!isActiveAndEnabled)
                 return;
 
+            if (IsStencilRenderGraphSuppressedRuntime())
+            {
+                ApplyStencilRenderGraphSuppressionIfNeeded();
+                return;
+            }
+
             if (CacheRuntimeDependencies())
                 RebuildLocalizationCache();
             _layoutBuilt = false;
@@ -1674,7 +1805,7 @@ namespace Hecton8.UI
             _traumaRecoilScalar = math.saturate(signal.RecoilScalar);
             _traumaTransportPower01 = math.saturate(signal.TransportPower01);
             _traumaHullIntegrity01 = math.saturate(signal.HullIntegrity01);
-            _biosRecoveryMode = signal.BiosRecoveryMode;
+            _biosRecoveryMode = signal.BiosRecoveryMode != 0;
             _corruptionFrameVersion++;
             InvalidateVisualCaches();
         }
@@ -1697,6 +1828,14 @@ namespace Hecton8.UI
 
         private void QueueRuntimeCanvasRefresh(bool forceResolve, bool refreshDepthSignal)
         {
+            if (IsStencilRenderGraphSuppressedRuntime())
+            {
+                _pendingRuntimeCanvasRefresh = false;
+                _forceResolveOnSlowTick = false;
+                _pendingDepthSignalRefresh = false;
+                return;
+            }
+
             _pendingRuntimeCanvasRefresh = true;
             if (forceResolve)
                 _forceResolveOnSlowTick = true;
@@ -1706,6 +1845,12 @@ namespace Hecton8.UI
 
         private void ProcessPendingRuntimeCanvasRefresh()
         {
+            if (IsStencilRenderGraphSuppressedRuntime())
+            {
+                ApplyStencilRenderGraphSuppressionIfNeeded();
+                return;
+            }
+
             bool runtimeHierarchyReady = IsRuntimeHierarchyReady();
             bool needsRuntimeCanvasRefresh =
                 _pendingRuntimeCanvasRefresh ||
@@ -1873,6 +2018,8 @@ namespace Hecton8.UI
             _localizationRuntime = localizationRuntime;
             _spatialAudioManager = GlobalRegistry.Audio;
             _playerRuntimeContext = GlobalRegistry.Player;
+            if (_vegetationBridge == null)
+                _vegetationBridge = GlobalRegistry.MapMagicVegetation;
             RebindInventoryService(GlobalRegistry.PlayerInventory);
             RefreshQualityPolicy();
             return localizationChanged;
@@ -1918,6 +2065,10 @@ namespace Hecton8.UI
 
                 case GlobalRegistryServiceSlot.DataVault:
                     BindGlitchTableVault(currentService as IDataVault);
+                    return;
+
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
                     return;
 
                 default:
@@ -2005,37 +2156,59 @@ namespace Hecton8.UI
             _scalabilityRegistered = false;
         }
 
+        private void TryRegisterFloatingOriginListener()
+        {
+            if (_floatingOriginRegistered || !Application.isPlaying)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _floatingOriginRegistered = true;
+        }
+
+        private void TryUnregisterFloatingOriginListener()
+        {
+            if (!_floatingOriginRegistered)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _floatingOriginRegistered = false;
+        }
+
         private void CacheGlitchTableVaultCold()
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                vault = latestVault;
-
             BindGlitchTableVault(vault);
         }
 
         private void BindGlitchTableVault(IDataVault vault)
         {
+            if (!ReferenceEquals(_glitchVault, vault))
+                ClearGlitchTableBinding();
+
             _glitchVault = vault;
-            _glitchTableHandle = default;
             _glitchTableHandleReady = false;
             if (vault == null)
                 return;
 
-            _glitchTableHandle = vault.GetBufferHandle<byte>(
-                (BufferID)DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw,
-                DiegeticGlitchSurgeonRuntime.GlitchTableCapacity,
-                SystemID.UI,
-                NativeArrayOptions.UninitializedMemory);
-            _glitchTableHandleReady = _glitchTableHandle.IsCreated;
-            if (!_glitchTableHandleReady)
+            if (!vault.TryGetGenerationHandle(
+                    (BufferID)DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw,
+                    out VaultGenerationHandle<byte> borrowedHandle) ||
+                !IsVaultHandleCreated(in borrowedHandle) ||
+                !vault.TryResolveHandle(in borrowedHandle, out NativeArray<byte> glitchTable) ||
+                !glitchTable.IsCreated ||
+                glitchTable.Length < DiegeticGlitchSurgeonRuntime.GlitchTableCapacity)
+            {
                 return;
+            }
+
+            _glitchTableHandle = borrowedHandle;
+            _glitchTableHandleReady = true;
 
             unsafe
             {
-                byte* table = (byte*)_glitchTableHandle.ResolvePointer(vault);
-                if (table != null && !GlitchTable.IsValidGlyphTable(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity))
-                    GlitchTable.CopyEmbeddedGlyphsTo(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity);
+                byte* table = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(glitchTable);
+                if (table == null || !GlitchTable.IsValidGlyphTable(table, DiegeticGlitchSurgeonRuntime.GlitchTableCapacity))
+                    ClearGlitchTableBinding();
             }
         }
 
@@ -2046,12 +2219,32 @@ namespace Hecton8.UI
             if (!_glitchTableHandleReady || _glitchVault == null)
                 return false;
 
-            table = (byte*)_glitchTableHandle.ResolvePointer(_glitchVault);
+            if (!_glitchVault.TryResolveHandle(in _glitchTableHandle, out NativeArray<byte> glitchTable) ||
+                !glitchTable.IsCreated ||
+                glitchTable.Length < DiegeticGlitchSurgeonRuntime.GlitchTableCapacity)
+            {
+                ClearGlitchTableBinding();
+                return false;
+            }
+
+            table = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(glitchTable);
             if (table == null)
                 return false;
 
             tableLength = DiegeticGlitchSurgeonRuntime.GlitchTableCapacity;
             return true;
+        }
+
+        private void ClearGlitchTableBinding()
+        {
+            _glitchVault = null;
+            _glitchTableHandle = default;
+            _glitchTableHandleReady = false;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private void RebindInventoryService(IPlayerInventoryService inventoryService)
@@ -2088,6 +2281,12 @@ namespace Hecton8.UI
 
         private void NormalizeCanvas(bool allowUiScalerCreation = true)
         {
+            if (IsStencilRenderGraphSuppressedRuntime())
+            {
+                ApplyStencilRenderGraphSuppressionIfNeeded();
+                return;
+            }
+
             if (targetCanvas == null)
                 return;
 
@@ -2719,8 +2918,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_vegetationBridge == null)
-                _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (IsStencilRenderGraphSuppressedRuntime())
+                return;
 
             if (_vegetationBridge == null ||
                 !_vegetationBridge.TryGetEcosystemThreatGridPayload(
@@ -2734,9 +2933,13 @@ namespace Hecton8.UI
 
             Transform cameraTransform = projectionCamera.transform;
             Vector3 cameraPosition = cameraTransform.position;
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);
+            if (!TryResolveRuntimeAup(cameraPosition, out AbsoluteUniversePosition cameraAup))
+                return;
+
             double3 cameraAbsolute = cameraAup.ToAbsoluteDouble3();
-            AbsoluteUniversePosition gridCenterAup = AbsoluteUniversePosition.FromRuntimePosition(gridCenter);
+            if (!TryResolveRuntimeAup(gridCenter, out AbsoluteUniversePosition gridCenterAup))
+                return;
+
             float3 gridCenterRelativeToCamera = AbsoluteUniversePosition.ToCameraRelativeFloat3(in gridCenterAup, in cameraAup);
             float radius = math.max(1f, threatChevronRadiusMeters);
             float radiusSq = radius * radius;
@@ -2872,15 +3075,15 @@ namespace Hecton8.UI
 
         private static bool HasScannerHologramPayload(ScannerTool.ScientificScanSnapshot snapshot)
         {
-            return snapshot.IsActive &&
+            return snapshot.IsActive != 0 &&
                 (snapshot.Fragment != null ||
                  snapshot.ProxyMeshIndex >= 0 ||
                  snapshot.MaterialClass != ScannerTool.ScientificMaterialClass.None ||
-                 snapshot.HasFaunaContact ||
+                 snapshot.HasFaunaContact != 0 ||
                  snapshot.ChemicalLoad01 > ScannerEvidenceEpsilon ||
                  snapshot.Toxicity01 > ScannerEvidenceEpsilon ||
                  snapshot.OrganicBlood01 > ScannerTraceEvidenceThreshold01 ||
-                 snapshot.HasAttractantTrace);
+                 snapshot.HasAttractantTrace != 0);
         }
 
         private static float ResolveScannerHologramSignal01(ScannerTool.ScientificScanSnapshot snapshot)
@@ -2900,12 +3103,12 @@ namespace Hecton8.UI
             if (snapshot.ChemicalLoad01 > ScannerEvidenceEpsilon ||
                 snapshot.Toxicity01 > ScannerEvidenceEpsilon ||
                 snapshot.OrganicBlood01 > ScannerTraceEvidenceThreshold01 ||
-                snapshot.HasAttractantTrace)
+                snapshot.HasAttractantTrace != 0)
             {
                 signal01 = math.max(signal01, ScannerHologramTraceSignalFloor);
             }
 
-            if (snapshot.HasFaunaContact)
+            if (snapshot.HasFaunaContact != 0)
                 signal01 = math.max(signal01, ScannerHologramFaunaSignalFloor);
 
             return signal01;
@@ -3135,7 +3338,9 @@ namespace Hecton8.UI
             matrix = default;
             alpha01 = 0f;
             Vector3 cameraPosition = cameraTransform.position;
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);
+            if (!TryResolveRuntimeAup(cameraPosition, out AbsoluteUniversePosition cameraAup))
+                return false;
+
             float3 threatRelative = AbsoluteUniversePosition.ToCameraRelativeFloat3(in threatState.PositionAup, in cameraAup);
             float3 cameraForwardF3 = math.float3(cameraTransform.forward.x, cameraTransform.forward.y, cameraTransform.forward.z);
             float3 cameraRightF3 = math.float3(cameraTransform.right.x, cameraTransform.right.y, cameraTransform.right.z);
@@ -4583,8 +4788,19 @@ namespace Hecton8.UI
         private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)
         {
             return system != null
-                ? GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
+                ? FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
                 : 0u;
+        }
+
+        private static uint FoldEntityIdToSourceId(ulong entityId)
+        {
+            uint hash = unchecked((uint)entityId ^ (uint)(entityId >> 32));
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return hash == 0u ? 1u : hash;
         }
 
         private void RefreshDepthFromMovementFallback()
@@ -5986,7 +6202,7 @@ namespace Hecton8.UI
             int scentX = 0;
             int scentY = 0;
             int scentZ = 0;
-            if (snapshot.HasAttractantTrace)
+            if (snapshot.HasAttractantTrace != 0)
             {
                 scentX = RoundToIntFast(snapshot.ScentDirection.x * 100f);
                 scentY = RoundToIntFast(snapshot.ScentDirection.y * 100f);
@@ -6003,7 +6219,7 @@ namespace Hecton8.UI
             cursor = AppendInt(temperatureRounded, buffer, cursor);
             cursor = AppendLiteral("C // X ", buffer, cursor);
             cursor = AppendInt(toxicityPercent, buffer, cursor);
-            if (snapshot.HasAttractantTrace)
+            if (snapshot.HasAttractantTrace != 0)
             {
                 cursor = AppendLiteral(" // ", buffer, cursor);
                 cursor = AppendLiteral(DescribeScientificAttractantChannel(snapshot.AttractantChannel), buffer, cursor);
@@ -6018,7 +6234,7 @@ namespace Hecton8.UI
             {
                 cursor = AppendLiteral(" // BLOOD TRACE", buffer, cursor);
             }
-            if (snapshot.ThreatPredictionUnlocked && snapshot.FlankingManeuverDetected)
+            if (snapshot.ThreatPredictionUnlocked != 0 && snapshot.FlankingManeuverDetected != 0)
                 cursor = AppendLiteral(" // FLANKING MANEUVER DETECTED", buffer, cursor);
 
             length = math.clamp(cursor, 0, buffer.Length);
@@ -6033,9 +6249,9 @@ namespace Hecton8.UI
                 (scentX * 23) ^
                 (scentY * 29) ^
                 (scentZ * 31) ^
-                (snapshot.HasFaunaContact ? 911 : 0) ^
-                (snapshot.ThreatPredictionUnlocked ? 577 : 0) ^
-                (snapshot.FlankingManeuverDetected ? 839 : 0));
+                (snapshot.HasFaunaContact != 0 ? 911 : 0) ^
+                (snapshot.ThreatPredictionUnlocked != 0 ? 577 : 0) ^
+                (snapshot.FlankingManeuverDetected != 0 ? 839 : 0));
             return true;
         }
 
@@ -6075,7 +6291,7 @@ namespace Hecton8.UI
             Span<char> buffer,
             int cursor)
         {
-            if (snapshot.HasFaunaContact)
+            if (snapshot.HasFaunaContact != 0)
                 return AppendLiteral("BIOFORM", buffer, cursor);
 
             return snapshot.MaterialClass != ScannerTool.ScientificMaterialClass.None
@@ -6393,18 +6609,26 @@ namespace Hecton8.UI
 
             int totalLength = labelLength + 2 + (prependNegativeSign ? 1 : 0) + numberToken.Length + 1 + unitLength;
             EnsureCharCapacity(ref buffer, totalLength);
+            if (buffer == null || buffer.Length == 0)
+            {
+                length = 0;
+                return;
+            }
 
             int writeIndex = 0;
             CopyChars(labelBuffer, labelLength, buffer, ref writeIndex);
-            buffer[writeIndex++] = ':';
-            buffer[writeIndex++] = ' ';
-            if (prependNegativeSign)
+            if (writeIndex < buffer.Length)
+                buffer[writeIndex++] = ':';
+            if (writeIndex < buffer.Length)
+                buffer[writeIndex++] = ' ';
+            if (prependNegativeSign && writeIndex < buffer.Length)
                 buffer[writeIndex++] = '-';
 
-            for (int i = 0; i < numberToken.Length; i++)
+            for (int i = 0; i < numberToken.Length && writeIndex < buffer.Length; i++)
                 buffer[writeIndex++] = numberToken[i];
 
-            buffer[writeIndex++] = ' ';
+            if (writeIndex < buffer.Length)
+                buffer[writeIndex++] = ' ';
             CopyChars(unitBuffer, unitLength, buffer, ref writeIndex);
             length = writeIndex;
         }
@@ -6421,17 +6645,32 @@ namespace Hecton8.UI
         private static void CopyTextToBuffer(ReadOnlySpan<char> source, ref char[] buffer, out int length)
         {
             EnsureCharCapacity(ref buffer, source.Length);
-            for (int i = 0; i < source.Length; i++)
+            if (buffer == null || buffer.Length == 0)
+            {
+                length = 0;
+                return;
+            }
+
+            int copyLength = math.min(source.Length, buffer.Length);
+            for (int i = 0; i < copyLength; i++)
                 buffer[i] = source[i];
 
-            length = source.Length;
+            length = copyLength;
         }
 
         private static void WriteUppercaseTextToBuffer(ReadOnlySpan<char> source, bool replaceUnderscores, ref char[] buffer, out int length, out int version)
         {
             EnsureCharCapacity(ref buffer, source.Length);
+            if (buffer == null || buffer.Length == 0)
+            {
+                length = 0;
+                version = 0;
+                return;
+            }
+
             int hash = 17;
-            for (int i = 0; i < source.Length; i++)
+            int copyLength = math.min(source.Length, buffer.Length);
+            for (int i = 0; i < copyLength; i++)
             {
                 char character = source[i];
                 if (replaceUnderscores && character == '_')
@@ -6442,8 +6681,8 @@ namespace Hecton8.UI
                 hash = unchecked((hash * 397) ^ character);
             }
 
-            length = source.Length;
-            version = source.Length == 0 ? 0 : hash;
+            length = copyLength;
+            version = copyLength == 0 ? 0 : hash;
         }
 
         private static char ConvertUppercaseInvariantChar(char value)
@@ -6459,10 +6698,13 @@ namespace Hecton8.UI
 
         private static void EnsureCharCapacity(ref char[] buffer, int requiredLength)
         {
-            if (buffer != null && buffer.Length >= requiredLength)
+            if (buffer != null)
                 return;
 
-            int capacity = buffer == null ? CharBufferPool.RequiredVrTextCapacity : buffer.Length;
+            if (Application.isPlaying)
+                return;
+
+            int capacity = CharBufferPool.RequiredVrTextCapacity;
             int growthWatchdog = 31;
             while (capacity < requiredLength && growthWatchdog-- > 0)
             {
@@ -6483,7 +6725,11 @@ namespace Hecton8.UI
 
         private static void CopyChars(char[] source, int sourceLength, char[] destination, ref int destinationIndex)
         {
-            for (int i = 0; i < sourceLength; i++)
+            if (source == null || destination == null || destinationIndex >= destination.Length)
+                return;
+
+            int count = math.min(sourceLength, destination.Length - destinationIndex);
+            for (int i = 0; i < count; i++)
                 destination[destinationIndex++] = source[i];
         }
 
@@ -6548,7 +6794,12 @@ namespace Hecton8.UI
             }
 
             Color proxyColor = LerpColor(hudProxyLightColor, hudProxyLightStressColor, oxygenStress01).linear;
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition((Vector3)runtimePosition);
+            if (!TryResolveRuntimeAup((Vector3)runtimePosition, out AbsoluteUniversePosition aup))
+            {
+                UnregisterHudProxyLight();
+                return;
+            }
+
             float now = Time.unscaledTime;
             ProxyLightData lightData = ProxyLightData.CreateUiPanel(
                 in aup,
@@ -6564,6 +6815,25 @@ namespace Hecton8.UI
 
             if (ProxyLightRegistry.RegisterOrUpdate(_hudProxyLightKey, in lightData))
                 _hudProxyLightRegistered = true;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (IsStencilRenderGraphSuppressedRuntime())
+                return false;
+
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+                return false;
+
+            double3 originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(originAup)))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.FromAbsolutePosition(originAup + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private void UnregisterHudProxyLight()
@@ -6696,7 +6966,6 @@ namespace Hecton8.UI
                 return;
 
             float quantizedStrength = targetBucket * InvAnalogUiJitterQuantizationSteps;
-            Shader.SetGlobalVector(_HectonUiAnalogJitterId, new Vector4(quantizedStrength, 0f, 0f, 0f));
             _appliedAnalogUiJitterBucket = targetBucket;
             _appliedAnalogUiJitterStrength = quantizedStrength;
         }
@@ -6758,7 +7027,7 @@ namespace Hecton8.UI
         private float ResolveReticleHeat01()
         {
             if (_toolManager != null && _toolManager.CurrentTool is LaserCutter cutter)
-                return math.saturate(cutter.HeatLevel);
+                return math.saturate(cutter.ReadHeatLevel());
 
             if (flashlight != null && flashlight.IsOverheated)
                 return 1f;
@@ -7053,6 +7322,12 @@ namespace Hecton8.UI
         {
             if (Application.isPlaying)
             {
+                if (IsStencilRenderGraphSuppressedRuntime())
+                {
+                    ApplyStencilRenderGraphSuppressionIfNeeded();
+                    return;
+                }
+
                 QueueRuntimeCanvasRefresh(forceResolve: false, refreshDepthSignal: false);
                 TryRegisterRuntimeTick();
                 return;
@@ -7068,6 +7343,12 @@ namespace Hecton8.UI
         {
             if (!Application.isPlaying)
                 return;
+
+            if (IsStencilRenderGraphSuppressedRuntime())
+            {
+                ApplyStencilRenderGraphSuppressionIfNeeded();
+                return;
+            }
 
             if (GlobalRegistry.Dispatcher == null)
                 return;

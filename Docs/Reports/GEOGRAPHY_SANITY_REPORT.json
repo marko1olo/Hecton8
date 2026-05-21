@@ -1,0 +1,31 @@
+{
+  "schema": "hecton8.geography_sanity_report.v1",
+  "agent": "SHINOBU_247",
+  "mode": "static_source_compile_blocked",
+  "status": "PENDING_VERIFICATION",
+  "mathematicalRunExecuted": false,
+  "compileRunExecuted": true,
+  "compileStatus": "TIMED_OUT_NO_DIAGNOSTICS",
+  "anomalyRowsAuthoritative": false,
+  "blocker": "Hecton8.Editor.csproj build timed out after 124 seconds without compiler diagnostics; dotnet child processes were killed",
+  "sectorCount": 40000,
+  "completedSectors": 0,
+  "entityCount": 0,
+  "navigationRequestCount": 0,
+  "floatingCount": 0,
+  "buriedCount": 0,
+  "crushDepthCount": 0,
+  "navigationTrapCount": 0,
+  "fatalMathCount": 0,
+  "settings": {
+    "worldSizeMeters": 102400,
+    "sectorSizeMeters": 512,
+    "heightResolution": 64,
+    "sdfResolution": 32,
+    "connectivityResolution": 16,
+    "globalQualityWeight": 1.0
+  },
+  "rollbackNetcodeExcluded": true,
+  "runtimeAuthorityMutation": false,
+  "anomalies": []
+}

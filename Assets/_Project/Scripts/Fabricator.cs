@@ -220,6 +220,7 @@ namespace Hecton8.Crafting
         private float _sparkProxyLightRemainingSeconds;
         private bool _sparkProxyLightRegistered;
         private bool _sparkLightTickRegistered;
+        private bool _sparkLightTickSleeping;
         private float _weldingLoopNextPitchUpdateTime;
         private float _weldingLoopPitch = 1f;
         private uint _weldingLoopPitchSeed = 0x8F31C2A7u;
@@ -303,6 +304,7 @@ namespace Hecton8.Crafting
         private const float ProgressPublishThreshold = 0.01f;
         private const string NativeMemoryOwner = nameof(Fabricator);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
         // ══════════════════════════════════════════════════════════
@@ -787,10 +789,13 @@ namespace Hecton8.Crafting
         /// </summary>
         public void Tick(float deltaTime)
         {
+            if (_sparkLightTickSleeping)
+                return;
+
             if (!(_sparkProxyLightRemainingSeconds > 0f))
             {
                 UnregisterSparkProxyLight();
-                TryUnregisterSparkLightTick();
+                _sparkLightTickSleeping = true;
                 return;
             }
 
@@ -802,7 +807,7 @@ namespace Hecton8.Crafting
             }
 
             UnregisterSparkProxyLight();
-            TryUnregisterSparkLightTick();
+            _sparkLightTickSleeping = true;
         }
 
         public void SlowTick()
@@ -1344,7 +1349,7 @@ namespace Hecton8.Crafting
             if (!_craftInventoryCounts.IsCreated)
             {
                 // COLD ALLOC: NativeParallelHashMap<Int32,Int32>[128] — temporary per-craft accessible item counts — owner: Fabricator
-                _craftInventoryCounts = new NativeParallelHashMap<int, int>(128, Allocator.Persistent);
+                _craftInventoryCounts = new NativeParallelHashMap<int, int>(128, DataVaultExemptSceneScratchAllocator);
                 NativeMemorySentinel.RegisterNativeParallelHashMap(_craftInventoryCounts, NativeMemoryOwner, nameof(_craftInventoryCounts), NativeMemoryLifetime);
             }
 
@@ -1832,13 +1837,13 @@ namespace Hecton8.Crafting
                 return false;
 
             AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!MathGuard.IsFinite(in originAup))
+            if (!originAup.IsFinite())
                 return false;
 
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return MathGuard.IsFinite(in positionAup);
+            return positionAup.IsFinite();
         }
 
         private static bool TryOffsetAupByRuntimeDelta(
@@ -1848,7 +1853,7 @@ namespace Hecton8.Crafting
             out AbsoluteUniversePosition targetAup)
         {
             targetAup = default;
-            if (!MathGuard.IsFinite(in referenceAup) ||
+            if (!referenceAup.IsFinite() ||
                 !IsFiniteRuntimePosition(referenceRuntimePosition) ||
                 !IsFiniteRuntimePosition(targetRuntimePosition))
             {
@@ -1860,7 +1865,7 @@ namespace Hecton8.Crafting
                 (double)targetRuntimePosition.y - referenceRuntimePosition.y,
                 (double)targetRuntimePosition.z - referenceRuntimePosition.z);
             targetAup = AbsoluteUniversePosition.OffsetMeters(in referenceAup, localDelta);
-            return MathGuard.IsFinite(in targetAup);
+            return targetAup.IsFinite();
         }
 
         private static bool IsFiniteRuntimePosition(Vector3 position)
@@ -1962,6 +1967,7 @@ namespace Hecton8.Crafting
         private void TriggerSparkProxyLight()
         {
             _sparkProxyLightRemainingSeconds = Mathf.Max(_sparkProxyLightRemainingSeconds, Mathf.Max(0.01f, sparkProxyLightDurationSeconds));
+            _sparkLightTickSleeping = false;
             UpdateSparkProxyLightRegistration();
             TryRegisterSparkLightTick();
         }
@@ -1976,7 +1982,12 @@ namespace Hecton8.Crafting
                 return;
 
             Vector3 position = origin.position;
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
+            {
+                UnregisterSparkProxyLight();
+                return;
+            }
+
             float normalizedLifetime = Mathf.Clamp01(_sparkProxyLightRemainingSeconds / Mathf.Max(0.01f, sparkProxyLightDurationSeconds));
             float intensity = sparkProxyLightIntensity * normalizedLifetime * Mathf.Max(1f, _activeCraftPowerMultiplier);
             ProxyLightData lightData = ProxyLightData.CreateTransientPoint(
@@ -2358,9 +2369,12 @@ namespace Hecton8.Crafting
                 return;
 
             ResolveCraftOutputPose(out Vector3 spawnPosition, out _);
+            if (!TryResolveAupFromRuntimeOrigin(spawnPosition, out AbsoluteUniversePosition positionAup))
+                return;
+
             GlobalSignals.Publish(new ItemAcquiredSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition),
+                PositionAup = positionAup,
                 ItemHash = unchecked((uint)itemHash),
                 OreHash = 0u,
                 Quantity = (ushort)math.min(math.max(1, quantity), ushort.MaxValue),
@@ -2855,11 +2869,7 @@ namespace Hecton8.Crafting
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _tickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -2876,11 +2886,7 @@ namespace Hecton8.Crafting
             if (_sparkLightTickRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _sparkLightTickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _sparkLightTickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterSparkLightTick()
@@ -2890,6 +2896,7 @@ namespace Hecton8.Crafting
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _sparkLightTickRegistered = false;
+            _sparkLightTickSleeping = false;
         }
 
         private void RebuildInteractText()

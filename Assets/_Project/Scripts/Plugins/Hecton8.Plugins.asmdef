@@ -9,10 +9,7 @@
         "Unity.Burst",
         "Unity.Mathematics",
         "Den.Tools",
-        "MapMagic",
-        "Crest",
-        "WaveHarmonic.Crest",
-        "WaveHarmonic.Crest.Shared"
+        "MapMagic"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

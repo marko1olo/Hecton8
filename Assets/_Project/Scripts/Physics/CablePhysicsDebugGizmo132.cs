@@ -22,15 +22,16 @@ namespace Hecton8.Physics
             if (vault == null)
                 return;
 
-            if (!vault.TryGetBufferHandle(CablePhysics132BufferIds.CableNodes, out VaultBufferHandle<CableNodeDTO> nodeHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.CableConstraints, out VaultBufferHandle<TetherConstraintDTO> constraintHandle))
+            if (!vault.TryGetGenerationHandle<CableNodeDTO>(CablePhysics132BufferIds.CableNodes, out VaultGenerationHandle<CableNodeDTO> nodeHandle) ||
+                !vault.TryGetGenerationHandle<TetherConstraintDTO>(CablePhysics132BufferIds.CableConstraints, out VaultGenerationHandle<TetherConstraintDTO> constraintHandle))
             {
                 return;
             }
 
-            NativeArray<CableNodeDTO> nodes = nodeHandle.Resolve(vault);
-            NativeArray<TetherConstraintDTO> constraints = constraintHandle.Resolve(vault);
-            if (!nodes.IsCreated || !constraints.IsCreated)
+            if (!vault.TryReadHandle(in nodeHandle, out NativeArray<CableNodeDTO> nodes) ||
+                !vault.TryReadHandle(in constraintHandle, out NativeArray<TetherConstraintDTO> constraints) ||
+                !nodes.IsCreated ||
+                !constraints.IsCreated)
                 return;
 
             int cableLimit = math.clamp(visibleCableCount, 1, CablePhysics132Constants.MockTetherCount);

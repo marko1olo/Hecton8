@@ -405,9 +405,12 @@ namespace Hecton8.World
                 return math.saturate(fallbackBlend);
             }
 
-            double3 from = BiomeTransitionMath.ToAbsoluteDouble3(in FromAup[index]);
-            double3 to = BiomeTransitionMath.ToAbsoluteDouble3(in ToAup[index]);
-            double3 player = BiomeTransitionMath.ToAbsoluteDouble3(in PlayerAup[index]);
+            AbsoluteUniversePositionBlit128 fromAup = FromAup[index];
+            AbsoluteUniversePositionBlit128 toAup = ToAup[index];
+            AbsoluteUniversePositionBlit128 playerAup = PlayerAup[index];
+            double3 from = BiomeTransitionMath.ToAbsoluteDouble3(in fromAup);
+            double3 to = BiomeTransitionMath.ToAbsoluteDouble3(in toAup);
+            double3 player = BiomeTransitionMath.ToAbsoluteDouble3(in playerAup);
             float3 segment = (float3)(to - from);
             float3 playerFrom = (float3)(player - from);
             float lengthSq = math.lengthsq(segment);
@@ -429,8 +432,8 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct BuildEmergencyMockBiomesJob : IJob
     {
-        [NoAlias] public NativeArray<BiomeStateDTO> States;
-        [NoAlias] public NativeArray<BiomeCenterDTO> Centers;
+        [WriteOnly, NoAlias] public NativeArray<BiomeStateDTO> States;
+        [WriteOnly, NoAlias] public NativeArray<BiomeCenterDTO> Centers;
         [NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;
         public double3 OriginAup;
         public byte OnlyWhenCounterEmpty;
@@ -533,9 +536,9 @@ namespace Hecton8.World
         [ReadOnly, NoAlias] public NativeArray<BiomeCenterDTO> Centers;
         [ReadOnly, NoAlias] public NativeArray<BiomeStateDTO> States;
         [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePositionBlit128> MockPlayerAup;
-        [NoAlias] public NativeArray<BiomeInfluenceDTO> Influence;
+        [WriteOnly, NoAlias] public NativeArray<BiomeInfluenceDTO> Influence;
         [NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;
-        public NativeQueue<BiomeChangedSignal>.ParallelWriter BiomeChangedWriter;
+        [WriteOnly, NoAlias] public NativeQueue<BiomeChangedSignal>.ParallelWriter BiomeChangedWriter;
         public AbsoluteUniversePositionBlit128 PlayerAup;
         public float GlobalQualityWeight;
         public float RadiusScale;
@@ -802,8 +805,8 @@ namespace Hecton8.World
     {
         [ReadOnly, NoAlias] public NativeArray<BiomeStateDTO> States;
         [ReadOnly, NoAlias] public NativeArray<BiomeInfluenceDTO> Influence;
-        [NoAlias] public NativeArray<CurrentAtmosphereDTO> CurrentAtmosphere;
-        [NoAlias] public NativeArray<BiomeBlendMaskDTO> BlendMask;
+        [WriteOnly, NoAlias] public NativeArray<CurrentAtmosphereDTO> CurrentAtmosphere;
+        [WriteOnly, NoAlias] public NativeArray<BiomeBlendMaskDTO> BlendMask;
         [NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;
         public float GlobalQualityWeight;
         public float DitherStrength;
@@ -847,10 +850,12 @@ namespace Hecton8.World
 
             CurrentAtmosphere[0] = current;
 
+            BiomeBlendMaskDTO mask = default;
+            byte hasBlendMask = 0;
             if (BlendMask.IsCreated && BlendMask.Length > 0)
             {
                 uint flags = Counters.IsCreated && Counters.Length > 0 ? Counters[0].LastFlags : 0u;
-                BlendMask[0] = new BiomeBlendMaskDTO
+                mask = new BiomeBlendMaskDTO
                 {
                     BiomeHashes = influence.BiomeHashes,
                     Weights = normalized,
@@ -863,9 +868,11 @@ namespace Hecton8.World
                     FrameIndex = FrameIndex,
                     Flags = flags
                 };
+                BlendMask[0] = mask;
+                hasBlendMask = 1;
             }
 
-            UpdateCounters(weightSum, normalized, influence.BiomeHashes.x);
+            UpdateCounters(weightSum, normalized, influence.BiomeHashes.x, in mask, hasBlendMask);
         }
 
         private void Accumulate(int index, uint hash, float weight, ref float4 fog, ref float4 absorption, ref float ambient)
@@ -896,7 +903,12 @@ namespace Hecton8.World
             return -1;
         }
 
-        private void UpdateCounters(float weightSum, float4 normalized, uint dominant)
+        private void UpdateCounters(
+            float weightSum,
+            float4 normalized,
+            uint dominant,
+            in BiomeBlendMaskDTO mask,
+            byte hasBlendMask)
         {
             if (!Counters.IsCreated || Counters.Length == 0)
                 return;
@@ -904,8 +916,8 @@ namespace Hecton8.World
             BiomeTransitionCounterDTO counter = Counters[0];
             counter.LastWeightSum = weightSum;
             counter.LastBlendCount = CountActiveWeights(normalized);
-            counter.LastStateHash = BlendMask.IsCreated && BlendMask.Length > 0
-                ? BiomeTransitionMath.HashState(in BlendMask[0], FrameIndex)
+            counter.LastStateHash = hasBlendMask != 0
+                ? BiomeTransitionMath.HashState(in mask, FrameIndex)
                 : dominant;
             if (math.abs(math.csum(normalized) - 1f) > 0.001f)
                 counter.LastFlags |= BiomeTransitionConstants.FlagNonFiniteOutput;
@@ -929,7 +941,7 @@ namespace Hecton8.World
     {
         [ReadOnly, NoAlias] public NativeArray<CurrentAtmosphereDTO> CurrentAtmosphere;
         [ReadOnly, NoAlias] public NativeArray<BiomeBlendMaskDTO> BlendMask;
-        [NoAlias] public NativeArray<float4> ShaderPayload;
+        [WriteOnly, NoAlias] public NativeArray<float4> ShaderPayload;
 
         public unsafe void Execute()
         {
@@ -977,7 +989,7 @@ namespace Hecton8.World
     {
         [ReadOnly, NoAlias] public NativeArray<CurrentAtmosphereDTO> CurrentAtmosphere;
         [ReadOnly, NoAlias] public NativeArray<BiomeBlendMaskDTO> BlendMask;
-        [NoAlias] public NativeArray<BiomeAcousticStageDTO> AcousticStage;
+        [WriteOnly, NoAlias] public NativeArray<BiomeAcousticStageDTO> AcousticStage;
         [NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;
         public uint FrameIndex;
 
@@ -1005,7 +1017,7 @@ namespace Hecton8.World
     {
         [ReadOnly, NoAlias] public NativeArray<BiomeBlendMaskDTO> BlendMask;
         [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePositionBlit128> MockPlayerAup;
-        [NoAlias] public NativeArray<BiomeTransitionTelemetryEntry> TelemetryRing;
+        [WriteOnly, NoAlias] public NativeArray<BiomeTransitionTelemetryEntry> TelemetryRing;
         [NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;
         public AbsoluteUniversePositionBlit128 PlayerAup;
         public float CpuMicroseconds;
@@ -1043,9 +1055,9 @@ namespace Hecton8.World
     public struct BiomeAtmosphereCsvIngestJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<byte> CsvBytes;
-        [NoAlias] public NativeArray<BiomeStateDTO> States;
-        [NoAlias] public NativeArray<BiomeCenterDTO> Centers;
-        [NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;
+        [WriteOnly, NoAlias] public NativeArray<BiomeStateDTO> States;
+        [WriteOnly, NoAlias] public NativeArray<BiomeCenterDTO> Centers;
+        [WriteOnly, NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;
         public int ByteLength;
 
         public void Execute()

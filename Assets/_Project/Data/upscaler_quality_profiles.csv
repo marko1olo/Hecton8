@@ -1,0 +1,5 @@
+profile,minScale,maxScale,depthWeight,colorWeight,minRadius,maxRadius,qualityBias
+toaster,0.25,0.55,128,8,0.50,1.00,-0.20
+middle,0.45,0.75,168,12,0.56,1.65,0.00
+high,0.60,0.90,216,14,0.75,2.35,0.12
+ultra,0.70,1.00,256,16,0.90,3.25,0.22

@@ -13,7 +13,7 @@ namespace Hecton8.SaveSystem
         public byte ExpectedValid;
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct ValidateIndexedSectorBoundsProbeJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<IndexedSectorBoundsProbe> Probes;

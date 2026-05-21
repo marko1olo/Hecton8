@@ -20,6 +20,7 @@ namespace Hecton8.Construction
         private const string NativeMemoryOwner = nameof(FluidPipeGraphRuntime);
         private const float SlowTickStepSeconds = 0.1f;
         private const uint PipeImpactMaterialHash = 0x50495045u;
+        private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
 
         [Header("Graph")]
         [SerializeField, Min(16)] private int nodeCapacity = 512;
@@ -107,7 +108,7 @@ namespace Hecton8.Construction
                 return;
 
             _solveAccumulator += SlowTickStepSeconds;
-            float cadence = FluidPipeGraphConstants.ResolveCadenceSeconds(ResolveMathLod());
+            float cadence = FluidPipeGraphConstants.AuthoritativeCadenceSeconds;
             if (_solveAccumulator + 0.0001f < cadence)
                 return;
 
@@ -289,7 +290,7 @@ namespace Hecton8.Construction
             _telemetryRing = new NativeArray<FluidPipeTelemetryEntry>(FluidPipeGraphConstants.BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _ruptureTelemetryRing = new NativeArray<FluidPipeRuptureRecord>(FluidPipeGraphConstants.BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _pipeConnections = new NativeParallelMultiHashMap<int, int>(connectionCapacity, Allocator.Persistent);
-            _ruptureQueue = new NativeQueue<FluidPipeRuptureRecord>(Allocator.Persistent);
+            _ruptureQueue = new NativeQueue<FluidPipeRuptureRecord>(DataVaultExemptSceneScratchAllocator);
 
             RegisterNativeMemory();
             _initialized = true;
@@ -702,21 +703,6 @@ namespace Hecton8.Construction
             float capacity = math.max(FluidPipeGraphConstants.MinCapacity, _pipeCapacities[nodeIndex]);
             float maxPressure = math.max(FluidPipeGraphConstants.MinMaxPressureKPa, _pipeMaxPressure[nodeIndex]);
             return math.max(0f, contents) * math.rcp(capacity) * maxPressure;
-        }
-
-        private FluidPipeMathLod ResolveMathLod()
-        {
-            switch (GlobalRegistry.ScalabilityTier)
-            {
-                case HectonQualityTier.Ultra:
-                    return FluidPipeMathLod.Ultra;
-                case HectonQualityTier.High:
-                    return FluidPipeMathLod.High;
-                case HectonQualityTier.Mid:
-                    return FluidPipeMathLod.Middle;
-                default:
-                    return FluidPipeMathLod.Low;
-            }
         }
 
         private bool IsValidNode(int nodeIndex)

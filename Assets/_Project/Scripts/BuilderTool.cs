@@ -345,7 +345,7 @@ namespace Hecton8.Gameplay
         /// Vizualnyy rezultat: pri bystrom povorote myshi instrument
         /// «zapazdyvaet», sozdavaya oschuschenie massy (NASA-punk aesthetic).
         /// </summary>
-        public override string GetOperationalSummary()
+        public override string BuildLegacyOperationalSummaryString()
         {
             _legacyOperationalBuffer.Clear();
             WriteOperationalSummary(ref _legacyOperationalBuffer);
@@ -366,7 +366,7 @@ namespace Hecton8.Gameplay
             _playerBuilder.WriteActiveBuildStatusLabel(ref buffer);
         }
 
-        public override string GetOperationalDirective()
+        public override string BuildLegacyOperationalDirectiveString()
         {
             _legacyOperationalBuffer.Clear();
             WriteOperationalDirective(ref _legacyOperationalBuffer);

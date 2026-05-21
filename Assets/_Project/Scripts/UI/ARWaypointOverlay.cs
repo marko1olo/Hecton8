@@ -61,7 +61,9 @@ namespace Hecton8.UI
         private static readonly Color RelayColor = new Color(0.64f, 0.94f, 0.98f, 0.96f);
         private static readonly Color AnchorColor = new Color(0.98f, 0.74f, 0.22f, 0.96f);
         private static readonly Color OccludedColor = new Color(0.94f, 0.94f, 0.94f, 0.62f);
+        private static ARWaypointOverlay s_activeRuntimeInstance;
         private static IARWaypointService s_cachedWaypointService;
+        private static bool s_stencilRenderGraphActive;
         // COLD ALLOC: Quaternion[8] - precomputed edge-marker rotations, replaces Tick-path rotation construction - owner: ARWaypointOverlay
         private static readonly Quaternion[] s_edgeRotationLut =
         {
@@ -102,7 +104,6 @@ namespace Hecton8.UI
             "Waypoint_15"
         };
 
-        [StructLayout(LayoutKind.Sequential)]
         private struct ExternalWaypoint
         {
             public int Id;
@@ -115,7 +116,6 @@ namespace Hecton8.UI
             public bool UseTransform;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
         private struct RuntimeWaypoint
         {
             public AbsoluteUniversePosition PositionAup;
@@ -125,7 +125,6 @@ namespace Hecton8.UI
             public bool Occluded;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
         private struct WaypointSlot
         {
             public RectTransform Root;
@@ -150,19 +149,52 @@ namespace Hecton8.UI
             public Color CachedOutlineColor;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 112)]
         private struct WaypointProjectionFrame
         {
+            [FieldOffset(0)]
             public AbsoluteUniversePosition CameraAup;
+
+            [FieldOffset(48)]
             public float3 CameraRight;
+
+            [FieldOffset(60)]
             public float3 CameraUp;
+
+            [FieldOffset(72)]
             public float3 CameraForward;
+
+            [FieldOffset(84)]
             public float PlaneDistance;
+
+            [FieldOffset(88)]
             public float ScaleX;
+
+            [FieldOffset(92)]
             public float ScaleY;
+
+            [FieldOffset(96)]
             public float HalfWidth;
+
+            [FieldOffset(100)]
             public float HalfHeight;
-            public bool IsValid;
+
+            [FieldOffset(104)]
+            public uint IsValid;
+
+            [FieldOffset(108)]
+            private uint _pad0;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
+        public struct StencilTargetSourceDTO
+        {
+            [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
+            [FieldOffset(48)] public float4 Color;
+            [FieldOffset(64)] public uint Flags;
+            [FieldOffset(68)] public uint StableId;
+            [FieldOffset(72)] public uint Reserved0;
+            [FieldOffset(76)] public uint Reserved1;
         }
 
         // COLD ALLOC: ExternalWaypoint[8] - external AR waypoint registry - owner: ARWaypointOverlay
@@ -196,7 +228,51 @@ namespace Hecton8.UI
         {
             s_overlayResolveBuffer.Clear();
             s_directChildBuffer.Clear();
+            s_activeRuntimeInstance = null;
             s_cachedWaypointService = null;
+            s_stencilRenderGraphActive = false;
+        }
+
+        public static void SetStencilRenderGraphActive(bool active)
+        {
+            if (s_stencilRenderGraphActive == active)
+                return;
+
+            s_stencilRenderGraphActive = active;
+            if (active && s_activeRuntimeInstance != null)
+                s_activeRuntimeInstance.HideRenderedSlots();
+        }
+
+        public static int CopyStencilTargetSources(NativeArray<StencilTargetSourceDTO> destination, int maxCount)
+        {
+            if (!destination.IsCreated || maxCount <= 0)
+                return 0;
+
+            ARWaypointOverlay instance = s_activeRuntimeInstance;
+            if (instance == null || !instance.isActiveAndEnabled)
+                return 0;
+
+            int capacity = math.min(destination.Length, maxCount);
+            if (capacity <= 0)
+                return 0;
+
+            return instance.CopyRuntimeTargetsForStencil(destination, capacity);
+        }
+
+        public static int CopyStencilTargetSources(Span<StencilTargetSourceDTO> destination, int maxCount)
+        {
+            if (destination.Length <= 0 || maxCount <= 0)
+                return 0;
+
+            ARWaypointOverlay instance = s_activeRuntimeInstance;
+            if (instance == null || !instance.isActiveAndEnabled)
+                return 0;
+
+            int capacity = math.min(destination.Length, maxCount);
+            if (capacity <= 0)
+                return 0;
+
+            return instance.CopyRuntimeTargetsForStencil(destination, capacity);
         }
 
         /// <summary>
@@ -248,11 +324,16 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            s_activeRuntimeInstance = this;
             CacheRegistryServicesCold();
+            TryResolveVegetationBridgeCold();
             TryRegisterHotSwapListener();
             TryRegisterWaypointService();
             ResolveOwners(allowHierarchySearch: true);
-            EnsureUiBuilt(allowCreate: true);
+            if (!s_stencilRenderGraphActive)
+                EnsureUiBuilt(allowCreate: true);
+            else
+                HideRenderedSlots();
             HectonFloatingOrigin.RegisterListener(this);
             RegisterToTickManager();
             RegisterToSlowTickManager();
@@ -260,8 +341,12 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            TryResolveVegetationBridgeCold();
             ResolveOwners(allowHierarchySearch: true);
-            EnsureUiBuilt(allowCreate: true);
+            if (!s_stencilRenderGraphActive)
+                EnsureUiBuilt(allowCreate: true);
+            else
+                HideRenderedSlots();
             RegisterToTickManager();
             RegisterToSlowTickManager();
         }
@@ -274,6 +359,8 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             UnregisterFromSlowTickManager();
             HideAllSlots();
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
         }
 
         private void OnDestroy()
@@ -283,6 +370,8 @@ namespace Hecton8.UI
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterFromTickManager();
             UnregisterFromSlowTickManager();
+            if (ReferenceEquals(s_activeRuntimeInstance, this))
+                s_activeRuntimeInstance = null;
         }
 
         /// <inheritdoc />
@@ -291,6 +380,14 @@ namespace Hecton8.UI
             bool sampleSolveCost = ShouldSampleWaypointSolveCost();
             long solveStartTimestamp = sampleSolveCost ? Stopwatch.GetTimestamp() : 0L;
             ResolveOwners(allowHierarchySearch: false);
+            if (s_stencilRenderGraphActive)
+            {
+                CollectRuntimeWaypoints();
+                HideRenderedSlots();
+                PublishWaypointSolveWarningIfNeeded(sampleSolveCost, solveStartTimestamp);
+                return;
+            }
+
             if (!EnsureUiBuilt(allowCreate: false))
             {
                 HideRenderedSlots();
@@ -320,11 +417,13 @@ namespace Hecton8.UI
             _viewCamera = null;
             _uiBuilt = false;
             _root = null;
+            TryResolveVegetationBridgeCold();
             ResolveOwners(allowHierarchySearch: true);
-            EnsureUiBuilt(allowCreate: true);
+            if (!s_stencilRenderGraphActive)
+                EnsureUiBuilt(allowCreate: true);
         }
 
-        bool IARWaypointService.IsInitialized => _uiBuilt && _root != null && _targetCanvas != null;
+        bool IARWaypointService.IsInitialized => s_stencilRenderGraphActive || (_uiBuilt && _root != null && _targetCanvas != null);
 
         void IARWaypointService.SetWaypoint(int id, Transform target, string label, Color color)
         {
@@ -343,8 +442,18 @@ namespace Hecton8.UI
 
         private void ResolveOwners(bool allowHierarchySearch)
         {
-            if (_vegetationBridge == null)
-                _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (allowHierarchySearch)
+                TryResolveVegetationBridgeCold();
+
+            if (s_stencilRenderGraphActive)
+            {
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+                if (_viewCamera == null && playerContext != null)
+                    _viewCamera = playerContext.PlayerCamera;
+                if (_playerTransform == null && playerContext != null)
+                    _playerTransform = playerContext.PlayerTransform;
+                return;
+            }
 
             if (allowHierarchySearch || _targetCanvas == null || _viewCamera == null)
             {
@@ -415,6 +524,12 @@ namespace Hecton8.UI
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
+            {
+                _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.ARWaypointRuntime)
                 s_cachedWaypointService = currentService as IARWaypointService;
         }
@@ -444,6 +559,14 @@ namespace Hecton8.UI
                 _playerTransform = _cachedPlayerContext.PlayerTransform;
         }
 
+        private void TryResolveVegetationBridgeCold()
+        {
+            if (_vegetationBridge != null)
+                return;
+
+            _vegetationBridge = GlobalRegistry.MapMagicVegetation;
+        }
+
         private bool TryResolveCameraAup(out AbsoluteUniversePosition cameraAup)
         {
             cameraAup = default;
@@ -455,7 +578,7 @@ namespace Hecton8.UI
             if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 cameraAup = snapshot.Aup;
-                return MathGuard.IsFinite(in cameraAup);
+                return cameraAup.IsFinite();
             }
 
             var playerMovement = playerContext.PlayerMovement;
@@ -463,7 +586,7 @@ namespace Hecton8.UI
                 return false;
 
             cameraAup = playerMovement.CurrentAup;
-            return MathGuard.IsFinite(in cameraAup);
+            return cameraAup.IsFinite();
         }
 
         private bool TryResolvePresentationWaypointAup(Transform target, out AbsoluteUniversePosition waypointAup)
@@ -493,7 +616,7 @@ namespace Hecton8.UI
                 return false;
 
             waypointAup = AbsoluteUniversePosition.OffsetMeters(in cameraAup, cameraLocalDelta);
-            return MathGuard.IsFinite(in waypointAup);
+            return waypointAup.IsFinite();
         }
 
         private bool EnsureUiBuilt(bool allowCreate)
@@ -613,6 +736,62 @@ namespace Hecton8.UI
             _waypointCount = count;
         }
 
+        private int CopyRuntimeTargetsForStencil(NativeArray<StencilTargetSourceDTO> destination, int capacity)
+        {
+            int count = math.min(math.min(_waypointCount, _runtimeWaypoints.Length), capacity);
+            for (int i = 0; i < count; i++)
+            {
+                RuntimeWaypoint waypoint = _runtimeWaypoints[i];
+                if (!waypoint.Active)
+                {
+                    destination[i] = default;
+                    continue;
+                }
+
+                Color color = waypoint.Color;
+                destination[i] = new StencilTargetSourceDTO
+                {
+                    PositionAup = waypoint.PositionAup,
+                    Color = new float4(color.r, color.g, color.b, color.a),
+                    Flags = waypoint.Occluded ? 3u : 1u,
+                    StableId = unchecked((uint)(i + 1))
+                };
+            }
+
+            for (int i = count; i < capacity; i++)
+                destination[i] = default;
+
+            return count;
+        }
+
+        private int CopyRuntimeTargetsForStencil(Span<StencilTargetSourceDTO> destination, int capacity)
+        {
+            int count = math.min(math.min(_waypointCount, _runtimeWaypoints.Length), capacity);
+            for (int i = 0; i < count; i++)
+            {
+                RuntimeWaypoint waypoint = _runtimeWaypoints[i];
+                if (!waypoint.Active)
+                {
+                    destination[i] = default;
+                    continue;
+                }
+
+                Color color = waypoint.Color;
+                destination[i] = new StencilTargetSourceDTO
+                {
+                    PositionAup = waypoint.PositionAup,
+                    Color = new float4(color.r, color.g, color.b, color.a),
+                    Flags = waypoint.Occluded ? 3u : 1u,
+                    StableId = unchecked((uint)(i + 1))
+                };
+            }
+
+            for (int i = count; i < capacity; i++)
+                destination[i] = default;
+
+            return count;
+        }
+
         private void RenderWaypoints()
         {
             if (_root == null || _viewCamera == null || _waypointCount <= 0)
@@ -622,7 +801,7 @@ namespace Hecton8.UI
             }
 
             WaypointProjectionFrame projectionFrame = ResolveWaypointProjectionFrame();
-            if (!projectionFrame.IsValid)
+            if (projectionFrame.IsValid == 0u)
             {
                 HideRenderedSlots();
                 return;
@@ -773,7 +952,7 @@ namespace Hecton8.UI
             clampedToEdge = false;
             visibility01 = 0f;
 
-            if (!projectionFrame.IsValid)
+            if (projectionFrame.IsValid == 0u)
                 return false;
 
             float3 deltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in waypointAup, in projectionFrame.CameraAup);
@@ -857,7 +1036,7 @@ namespace Hecton8.UI
                 ScaleY = math.max(ProjectionDepthEpsilon, math.abs(lossyScale.y)),
                 HalfWidth = math.max(1f, (rootRect.width * 0.5f) - ScreenMargin),
                 HalfHeight = math.max(1f, (rootRect.height * 0.5f) - ScreenMargin),
-                IsValid = true
+                IsValid = 1u
             };
         }
 
@@ -1151,7 +1330,7 @@ namespace Hecton8.UI
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0f);
             rect.anchoredPosition = new Vector2(0f, 14f);
-            rect.sizeDelta = new Vector2(132f, 20f);
+            rect.sizeDelta = new Vector2(176f, 20f);
 
             TextMeshProUGUI label = go.AddComponent<TextMeshProUGUI>(); // COLD ALLOC: TextMeshProUGUI[1] - AR waypoint label owner - owner: ARWaypointOverlay
             label.font = LocalizedFontResolver.ResolveReadableFont(null);
@@ -1159,6 +1338,7 @@ namespace Hecton8.UI
             label.alignment = TextAlignmentOptions.Bottom;
             label.color = new Color(0.90f, 0.96f, 0.94f, 0.92f);
             label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.overflowMode = TextOverflowModes.Ellipsis;
             label.raycastTarget = false;
             TMP_TextRegistry.EnsureRegistered(label);
 
@@ -1188,8 +1368,16 @@ namespace Hecton8.UI
             }
 
             int length = math.min(value.Length, destination.Length);
+            if (value.Length > destination.Length && destination.Length >= 4)
+                length = destination.Length - 3;
             for (int i = 0; i < length; i++)
                 destination[i] = value[i];
+            if (value.Length > destination.Length && destination.Length >= 4)
+            {
+                destination[length++] = '.';
+                destination[length++] = '.';
+                destination[length++] = '.';
+            }
 
             return length;
         }
@@ -1198,16 +1386,16 @@ namespace Hecton8.UI
         {
             if (slot.FillRect != null)
             {
-                slot.FillRect.sizeDelta = edgeState
-                    ? new Vector2(EdgeMarkerWidth, EdgeMarkerHeight)
-                    : new Vector2(MarkerSize, MarkerSize);
+                slot.FillRect.localScale = edgeState
+                    ? new Vector3(EdgeMarkerWidth / MarkerSize, EdgeMarkerHeight / MarkerSize, 1f)
+                    : Vector3.one;
             }
 
             if (slot.OutlineRect != null)
             {
-                slot.OutlineRect.sizeDelta = edgeState
-                    ? new Vector2(EdgeOutlineWidth, EdgeOutlineHeight)
-                    : new Vector2(OutlineSize, OutlineSize);
+                slot.OutlineRect.localScale = edgeState
+                    ? new Vector3(EdgeOutlineWidth / OutlineSize, EdgeOutlineHeight / OutlineSize, 1f)
+                    : Vector3.one;
             }
         }
 

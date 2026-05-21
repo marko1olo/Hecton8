@@ -12,8 +12,13 @@
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": true,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],

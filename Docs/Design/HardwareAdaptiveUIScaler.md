@@ -35,11 +35,11 @@ The controller now writes TMP `_WeightNormal`, `_WeightBold`, `_FaceDilate`, and
 
 | Bucket | Resolution | `_WeightNormal` | `_WeightBold` | `_FaceDilate` Offset | `_OutlineSoftness` Offset | Intent |
 |---|---:|---:|---:|---:|---:|---|
-| TOASTER_800P | 1280x800 | 0.24 | 0.82 | +0.065 | -0.055 | Heavy SDF ink, minimal blur survival. |
-| LOW_900P | 1600x900 | 0.18 | 0.74 | +0.045 | -0.040 | Clear low-tier laptop output. |
+| MIN_800P | 1280x800 | 0.24 | 0.82 | +0.065 | -0.055 | Heavy SDF ink, minimal blur survival. |
+| BUDGET_900P | 1600x900 | 0.18 | 0.74 | +0.045 | -0.040 | Clear minimum-budget laptop output. |
 | STANDARD_1080P | 1920x1080 | 0.12 | 0.66 | +0.025 | -0.020 | Default crisp HUD. |
 | HIGH_1440P | 2560x1440 | 0.06 | 0.58 | +0.000 | +0.000 | Authored sharpness. |
-| GOD_MODE_4K | 3840x2160 | 0.00 | 0.50 | -0.018 | +0.018 | Thinner glyphs, richer post treatment. |
+| OVERKILL_4K | 3840x2160 | 0.00 | 0.50 | -0.018 | +0.018 | Thinner glyphs, richer post treatment. |
 
 Rejected: swapping font assets at runtime for each tier. It forces atlas churn and can trigger layout rebuilds. The matrix uses material scalar writes only.
 
@@ -58,21 +58,21 @@ Rules:
 - Edge buttons move horizontally first. Critical warnings move vertically toward the optical center before any font downscale.
 
 ## Contrast Profiles
-TOASTER uses solid high-contrast backgrounds and disables blur/chromatic effects. GOD_MODE uses blur and chromatic aberration only as a gated post pass on the HUD RT. Per-element shaders remain capped at two texture samples.
+Minimum-quality uses solid high-contrast backgrounds and disables blur/chromatic effects. Maximum-quality uses blur and chromatic aberration only as a gated post pass on the HUD RT. Per-element shaders remain capped at two texture samples.
 
 | Profile | Background | Primary | Warning | Critical | Blur | Chroma | Per-Element Samples |
 |---|---|---|---|---|---|---|---:|
-| TOASTER | `#020706E6` | `#B8FFF4` | `#FFB02E` | `#FF3B1F` | off | off | 2 |
+| MINIMUM | `#020706E6` | `#B8FFF4` | `#FFB02E` | `#FF3B1F` | off | off | 2 |
 | MIDDLE | `#03110FCC` | `#98F7E8` | `#FFC45A` | `#FF4A35` | off | off | 2 |
 | HIGH | `#03110F99` | `#82FFE8` | `#FFD66A` | `#FF5E47` | on | off | 2 |
-| GOD_MODE | `#03110F73` | `#D8FFF8` | `#FFE08A` | `#FF6D5A` | on | on | 2 |
+| MAXIMUM | `#03110F73` | `#D8FFF8` | `#FFE08A` | `#FF6D5A` | on | on | 2 |
 
 ## Icon Pixel-Snap
 Tool: `Tools/IconBaker.py`.
 
 The baker trims transparent borders, centers the source into a square canvas, then emits `32`, `128`, and `512` pixel variants. The 32 px variant receives nearest-neighbor alpha snapping after high-quality resize so small warning icons do not dissolve under bilinear filtering.
 
-Rejected: runtime icon scaling. It wastes bandwidth and makes low-tier icon edges unstable.
+Rejected: runtime icon scaling. It wastes bandwidth and makes minimum-budget icon edges unstable.
 
 ## Readability Test
 Tool: `Tools/UX/ui_readability_test.py`.

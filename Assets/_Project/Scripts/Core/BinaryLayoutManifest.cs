@@ -1,11 +1,10 @@
 using System;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
-using Hecton8.Construction;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.SaveSystem;
-using Hecton8.World;
+using Hecton8.Core.Memory.Layout;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
@@ -28,6 +27,12 @@ namespace Hecton8.Core
         private const uint DumpMagic = 0x4838424Cu; // H8BL
         private const int DumpVersion = 1;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_BINARY_LAYOUT_SENTINEL.bin";
+        private const string ConstructionLayoutNamespace = "Hecton8.Construction.";
+        private const string SaveLayoutNamespace = "Hecton8.SaveSystem.";
+        private const string WorldLayoutNamespace = "Hecton8.World.";
+        private const string PhysicsLayoutNamespace = "Hecton8.Physics.";
+        private const string AiLayoutNamespace = "Hecton8.AI.";
+        private const string GameplayLayoutNamespace = "Hecton8.Gameplay.";
         private static bool _verified;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -52,31 +57,36 @@ namespace Hecton8.Core
             VerifySaveLayouts();
             VerifyPersistentWorldLayouts();
             VerifySignalLayouts();
+            VerifyWorldScatterLayouts();
             VerifyRenderBlitLayouts();
             VerifyAmbientBiotaLayouts();
+            VerifyGameplayLayouts();
 
             _verified = true;
         }
 
         private static void VerifyAupLayouts()
         {
-            AssertSize<AbsoluteUniversePosition>(48);
-            AssertOffset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.GridX), 0);
-            AssertOffset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.GridY), 8);
-            AssertOffset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.GridZ), 16);
-            AssertOffset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.LocalX), 24);
-            AssertOffset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.LocalY), 28);
-            AssertOffset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.LocalZ), 32);
+            string aup = WorldLayoutNamespace + "AbsoluteUniversePosition";
+            AssertSize(aup, 48);
+            AssertOffset(aup, "GridX", 0);
+            AssertOffset(aup, "GridY", 8);
+            AssertOffset(aup, "GridZ", 16);
+            AssertOffset(aup, "LocalX", 24);
+            AssertOffset(aup, "LocalY", 28);
+            AssertOffset(aup, "LocalZ", 32);
 
-            AssertSize<AbsoluteUniversePositionBlit>(48);
-            AssertOffset<AbsoluteUniversePositionBlit>(nameof(AbsoluteUniversePositionBlit.GridX), 0);
-            AssertOffset<AbsoluteUniversePositionBlit>(nameof(AbsoluteUniversePositionBlit.Local), 24);
-            AssertOffset<AbsoluteUniversePositionBlit>(nameof(AbsoluteUniversePositionBlit.Reserved1), 40);
+            string blit = WorldLayoutNamespace + "AbsoluteUniversePositionBlit";
+            AssertSize(blit, 48);
+            AssertOffset(blit, "GridX", 0);
+            AssertOffset(blit, "Local", 24);
+            AssertOffset(blit, "Reserved1", 40);
 
-            AssertSize<AbsoluteUniversePositionBlit128>(48);
-            AssertOffset<AbsoluteUniversePositionBlit128>(nameof(AbsoluteUniversePositionBlit128.GridX), 0);
-            AssertOffset<AbsoluteUniversePositionBlit128>(nameof(AbsoluteUniversePositionBlit128.Local), 24);
-            AssertOffset<AbsoluteUniversePositionBlit128>(nameof(AbsoluteUniversePositionBlit128.Reserved), 40);
+            string blit128 = WorldLayoutNamespace + "AbsoluteUniversePositionBlit128";
+            AssertSize(blit128, 48);
+            AssertOffset(blit128, "GridX", 0);
+            AssertOffset(blit128, "Local", 24);
+            AssertOffset(blit128, "Reserved", 40);
         }
 
         private static void VerifyWeatherContractLayouts()
@@ -106,6 +116,50 @@ namespace Hecton8.Core
 
         private static void VerifyAmbientBiotaLayouts()
         {
+            string faunaInteraction = AiLayoutNamespace + "FaunaInteractionResponse";
+            AssertSize(faunaInteraction, 32);
+            AssertOffset(faunaInteraction, "DamageMultiplier", 0);
+            AssertOffset(faunaInteraction, "RetreatDurationSeconds", 4);
+            AssertOffset(faunaInteraction, "FearImpulse01", 8);
+            AssertOffset(faunaInteraction, "InteractionKind", 12);
+            AssertOffset(faunaInteraction, "ForceRetreatFlag", 13);
+
+            string playerNoiseSignal = AiLayoutNamespace + "NoiseSystem+PlayerNoiseSignal";
+            AssertSize(playerNoiseSignal, 96);
+            AssertOffset(playerNoiseSignal, "PositionAup", 0);
+            AssertOffset(playerNoiseSignal, "Position", 48);
+            AssertOffset(playerNoiseSignal, "MovementSpeedSqr", 60);
+            AssertOffset(playerNoiseSignal, "TransportBoost01", 64);
+            AssertOffset(playerNoiseSignal, "TransportSignature", 68);
+            AssertOffset(playerNoiseSignal, "ToolUseNoise01", 72);
+            AssertOffset(playerNoiseSignal, "AcousticTransmission01", 76);
+            AssertOffset(playerNoiseSignal, "AcousticLowPassCutoffHz", 80);
+            AssertOffset(playerNoiseSignal, "SignalRadiusMeters", 84);
+            AssertOffset(playerNoiseSignal, "ReportedFrame", 88);
+            AssertOffset(playerNoiseSignal, "FlashlightOnFlag", 92);
+            AssertOffset(playerNoiseSignal, "IsActiveSonarPingFlag", 93);
+
+            string creatureContext = AiLayoutNamespace + "CreatureUtilityContext";
+            AssertSize(creatureContext, 256);
+            AssertOffset(creatureContext, "SelfPosition", 0);
+            AssertOffset(creatureContext, "PlayerPosition", 36);
+            AssertOffset(creatureContext, "ScatterDirection", 156);
+            AssertOffset(creatureContext, "HealthNormalized", 168);
+            AssertOffset(creatureContext, "FoveatedImportanceScore", 224);
+            AssertOffset(creatureContext, "FlockCount", 228);
+            AssertOffset(creatureContext, "Flags", 232);
+
+            string creatureEvaluation = AiLayoutNamespace + "CreatureUtilityEvaluation";
+            AssertSize(creatureEvaluation, 80);
+            AssertOffset(creatureEvaluation, "DesiredDirection", 0);
+            AssertOffset(creatureEvaluation, "AcousticHeadLookTarget", 12);
+            AssertOffset(creatureEvaluation, "HungerScore", 24);
+            AssertOffset(creatureEvaluation, "AcousticHeadLookWeight", 48);
+            AssertOffset(creatureEvaluation, "PackRoleCode", 52);
+            AssertOffset(creatureEvaluation, "LegacyState", 56);
+            AssertOffset(creatureEvaluation, "Flags", 60);
+            AssertOffset(creatureEvaluation, "StateMask", 62);
+
             AssertSize<AmbientBiotaState>(32);
             AssertOffset<AmbientBiotaState>(nameof(AmbientBiotaState.StateFlags), 0);
             AssertOffset<AmbientBiotaState>(nameof(AmbientBiotaState.StableHash), 4);
@@ -121,373 +175,572 @@ namespace Hecton8.Core
             AssertOffset<AmbientBiotaTelemetryEntry>(nameof(AmbientBiotaTelemetryEntry.Flags), 62);
         }
 
+        private static void VerifyGameplayLayouts()
+        {
+            string survivalDeath = GameplayLayoutNamespace + "SurvivalDeathRecord";
+            AssertSize(survivalDeath, 64);
+            AssertOffset(survivalDeath, "LifeDurationSeconds", 0);
+            AssertOffset(survivalDeath, "PeakDepthMeters", 8);
+            AssertOffset(survivalDeath, "Position", 16);
+            AssertOffset(survivalDeath, "LowestOxygenNormalized", 28);
+            AssertOffset(survivalDeath, "LowestEnergyNormalized", 32);
+            AssertOffset(survivalDeath, "LowestIntegrityNormalized", 36);
+            AssertOffset(survivalDeath, "Cause", 40);
+        }
+
+        private static void VerifyWorldScatterLayouts()
+        {
+            string scatterLayerQuota = WorldLayoutNamespace + "ScatterSimulationLayerQuota";
+            AssertExternalContractSize(scatterLayerQuota, 16);
+            AssertOffset(scatterLayerQuota, "PlacementsPerCell", 0);
+            AssertOffset(scatterLayerQuota, "CellStride", 4);
+            AssertOffset(scatterLayerQuota, "FamilyIndex", 8);
+            AssertOffset(scatterLayerQuota, "_pad0", 12);
+
+            string scatterQuotaState = WorldLayoutNamespace + "ScatterSimulationQuotaState";
+            AssertExternalContractSize(scatterQuotaState, 64);
+            AssertOffset(scatterQuotaState, "Ground", 0);
+            AssertOffset(scatterQuotaState, "Cluster", 16);
+            AssertOffset(scatterQuotaState, "Structure", 32);
+            AssertOffset(scatterQuotaState, "Spawn", 48);
+
+            string scatterCellState = WorldLayoutNamespace + "ScatterSimulationCellState";
+            AssertExternalContractSize(scatterCellState, 32);
+            AssertOffset(scatterCellState, "CellKey", 0);
+            AssertOffset(scatterCellState, "CellX", 8);
+            AssertOffset(scatterCellState, "CellZ", 12);
+            AssertOffset(scatterCellState, "Height", 16);
+            AssertOffset(scatterCellState, "HeightSource", 20);
+            AssertOffset(scatterCellState, "BiomeInfluencePacked", 24);
+            AssertOffset(scatterCellState, "Eligibility", 28);
+            AssertOffset(scatterCellState, "Suppression", 29);
+            AssertOffset(scatterCellState, "DirtyFlags", 30);
+            AssertOffset(scatterCellState, "_pad0", 31);
+
+            string scatterParity = WorldLayoutNamespace + "ScatterSimulationParitySnapshot";
+            AssertExternalContractSize(scatterParity, 64);
+            AssertOffset(scatterParity, "CandidateChecksum", 0);
+            AssertOffset(scatterParity, "CellChecksum", 8);
+            AssertOffset(scatterParity, "CandidateCount", 16);
+            AssertOffset(scatterParity, "GroundCount", 20);
+            AssertOffset(scatterParity, "ClusterCount", 24);
+            AssertOffset(scatterParity, "StructureCount", 28);
+            AssertOffset(scatterParity, "SpawnCount", 32);
+            AssertOffset(scatterParity, "EligibleGroundCells", 36);
+            AssertOffset(scatterParity, "EligibleClusterCells", 40);
+            AssertOffset(scatterParity, "EligibleStructureCells", 44);
+            AssertOffset(scatterParity, "EligibleSpawnCells", 48);
+            AssertOffset(scatterParity, "DirtyCellCount", 52);
+            AssertOffset(scatterParity, "SuppressedCellCount", 56);
+            AssertOffset(scatterParity, "_pad0", 60);
+
+            string scatterConfig = WorldLayoutNamespace + "ScatterSimulationConfig";
+            AssertExternalContractSize(scatterConfig, 128);
+            AssertOffset(scatterConfig, "QuotaState", 0);
+            AssertOffset(scatterConfig, "PlayerPosition", 64);
+            AssertOffset(scatterConfig, "CellSize", 76);
+            AssertOffset(scatterConfig, "SurfaceYOffset", 80);
+            AssertOffset(scatterConfig, "Seed", 84);
+            AssertOffset(scatterConfig, "RadiusCells", 88);
+            AssertOffset(scatterConfig, "GroundPlacementsPerCell", 92);
+            AssertOffset(scatterConfig, "ClusterPlacementsPerCell", 96);
+            AssertOffset(scatterConfig, "StructureCellStride", 100);
+            AssertOffset(scatterConfig, "SpawnCellStride", 104);
+            AssertOffset(scatterConfig, "GroundFamilyIndex", 108);
+            AssertOffset(scatterConfig, "ClusterFamilyIndex", 112);
+            AssertOffset(scatterConfig, "StructureFamilyIndex", 116);
+            AssertOffset(scatterConfig, "SpawnFamilyIndex", 120);
+            AssertOffset(scatterConfig, "DefaultEligibility", 124);
+            AssertOffset(scatterConfig, "DefaultSuppressionState", 125);
+            AssertOffset(scatterConfig, "DirtyFlags", 126);
+            AssertOffset(scatterConfig, "_pad0", 127);
+
+            string scatterCandidate = WorldLayoutNamespace + "ScatterSimulationCandidate";
+            AssertExternalContractSize(scatterCandidate, 64);
+            AssertOffset(scatterCandidate, "CellKey", 0);
+            AssertOffset(scatterCandidate, "Position", 8);
+            AssertOffset(scatterCandidate, "Rotation", 20);
+            AssertOffset(scatterCandidate, "Scale", 24);
+            AssertOffset(scatterCandidate, "Score", 28);
+            AssertOffset(scatterCandidate, "FamilyIndex", 32);
+            AssertOffset(scatterCandidate, "LayerIndex", 36);
+            AssertOffset(scatterCandidate, "HeightSource", 40);
+            AssertOffset(scatterCandidate, "IsValid", 44);
+            AssertOffset(scatterCandidate, "_pad0", 45);
+            AssertOffset(scatterCandidate, "_pad1", 46);
+            AssertOffset(scatterCandidate, "_pad2", 48);
+            AssertOffset(scatterCandidate, "_pad3", 56);
+
+            string scatterBackendParity = WorldLayoutNamespace + "ScatterBackendParityReference";
+            AssertExternalContractSize(scatterBackendParity, 32);
+            AssertOffset(scatterBackendParity, "CandidateChecksum", 0);
+            AssertOffset(scatterBackendParity, "CandidateCount", 8);
+            AssertOffset(scatterBackendParity, "GroundCount", 12);
+            AssertOffset(scatterBackendParity, "ClusterCount", 16);
+            AssertOffset(scatterBackendParity, "StructureCount", 20);
+            AssertOffset(scatterBackendParity, "SpawnCount", 24);
+            AssertOffset(scatterBackendParity, "_pad0", 28);
+
+            string scatterBackendSchedule = WorldLayoutNamespace + "ScatterBackendScheduleRequest";
+            AssertExternalContractSize(scatterBackendSchedule, 96);
+            AssertOffset(scatterBackendSchedule, "ParityReference", 0);
+            AssertOffset(scatterBackendSchedule, "ObserverPosition", 32);
+            AssertOffset(scatterBackendSchedule, "CellSize", 44);
+            AssertOffset(scatterBackendSchedule, "SurfaceYOffset", 48);
+            AssertOffset(scatterBackendSchedule, "Seed", 52);
+            AssertOffset(scatterBackendSchedule, "TotalCells", 56);
+            AssertOffset(scatterBackendSchedule, "RadiusCells", 60);
+            AssertOffset(scatterBackendSchedule, "GroundBudget", 64);
+            AssertOffset(scatterBackendSchedule, "ClusterBudget", 68);
+            AssertOffset(scatterBackendSchedule, "StructureStride", 72);
+            AssertOffset(scatterBackendSchedule, "SpawnStride", 76);
+            AssertOffset(scatterBackendSchedule, "EligibilityMask", 80);
+            AssertOffset(scatterBackendSchedule, "DefaultSuppressionState", 81);
+            AssertOffset(scatterBackendSchedule, "DirtyFlags", 82);
+            AssertOffset(scatterBackendSchedule, "_pad0", 83);
+            AssertOffset(scatterBackendSchedule, "_pad1", 84);
+            AssertOffset(scatterBackendSchedule, "_pad2", 88);
+
+            string scatterBackendShadow = WorldLayoutNamespace + "ScatterBackendShadowCompletion";
+            AssertExternalContractSize(scatterBackendShadow, 128);
+            AssertOffset(scatterBackendShadow, "BackendParity", 0);
+            AssertOffset(scatterBackendShadow, "ClassicParity", 64);
+            AssertOffset(scatterBackendShadow, "CandidateCount", 96);
+            AssertOffset(scatterBackendShadow, "ClassicQueuedCandidateCount", 100);
+            AssertOffset(scatterBackendShadow, "CandidateDelta", 104);
+            AssertOffset(scatterBackendShadow, "GroundDelta", 108);
+            AssertOffset(scatterBackendShadow, "ClusterDelta", 112);
+            AssertOffset(scatterBackendShadow, "StructureDelta", 116);
+            AssertOffset(scatterBackendShadow, "SpawnDelta", 120);
+            AssertOffset(scatterBackendShadow, "CandidateChecksumMatchFlag", 124);
+            AssertOffset(scatterBackendShadow, "HasParityMatchFlag", 125);
+            AssertOffset(scatterBackendShadow, "IsJobActiveFlag", 126);
+            AssertOffset(scatterBackendShadow, "ParityStatusCode", 127);
+        }
+
         private static void VerifySaveLayouts()
         {
-            AssertSize<SaveVoxelDeltaRun5>(8);
-            AssertOffset<SaveVoxelDeltaRun5>(nameof(SaveVoxelDeltaRun5.StartIndex), 0);
-            AssertOffset<SaveVoxelDeltaRun5>(nameof(SaveVoxelDeltaRun5.RunLength), 2);
-            AssertOffset<SaveVoxelDeltaRun5>(nameof(SaveVoxelDeltaRun5.SdfValue), 4);
+            string save = SaveLayoutNamespace;
+            string saveVoxelDeltaRun5 = save + "SaveVoxelDeltaRun5";
+            AssertSize(saveVoxelDeltaRun5, 8);
+            AssertOffset(saveVoxelDeltaRun5, "StartIndex", 0);
+            AssertOffset(saveVoxelDeltaRun5, "RunLength", 2);
+            AssertOffset(saveVoxelDeltaRun5, "SdfValue", 4);
 
-            AssertSize<SaveVoxelDeltaRun8>(8);
-            AssertOffset<SaveVoxelDeltaRun8>(nameof(SaveVoxelDeltaRun8.StartIndex), 0);
-            AssertOffset<SaveVoxelDeltaRun8>(nameof(SaveVoxelDeltaRun8.RunLength), 2);
-            AssertOffset<SaveVoxelDeltaRun8>(nameof(SaveVoxelDeltaRun8.SdfValue), 4);
-            AssertOffset<SaveVoxelDeltaRun8>(nameof(SaveVoxelDeltaRun8.MaterialId), 5);
-            AssertOffset<SaveVoxelDeltaRun8>(nameof(SaveVoxelDeltaRun8.Flags), 6);
+            string saveVoxelDeltaRun8 = save + "SaveVoxelDeltaRun8";
+            AssertSize(saveVoxelDeltaRun8, 8);
+            AssertOffset(saveVoxelDeltaRun8, "StartIndex", 0);
+            AssertOffset(saveVoxelDeltaRun8, "RunLength", 2);
+            AssertOffset(saveVoxelDeltaRun8, "SdfValue", 4);
+            AssertOffset(saveVoxelDeltaRun8, "MaterialId", 5);
+            AssertOffset(saveVoxelDeltaRun8, "Flags", 6);
 
-            AssertSize<VoxelDeltaCellDTO>(24);
-            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.universeKey), 0);
-            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.sdfValue), 8);
-            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.materialId), 12);
-            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.flags), 13);
-            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.metadata), 14);
-            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO.reserved), 16);
-            AssertOffset<VoxelDeltaCellDTO>(nameof(VoxelDeltaCellDTO._pad0), 20);
+            string voxelDeltaCell = save + "VoxelDeltaCellDTO";
+            AssertSize(voxelDeltaCell, 24);
+            AssertOffset(voxelDeltaCell, "universeKey", 0);
+            AssertOffset(voxelDeltaCell, "sdfValue", 8);
+            AssertOffset(voxelDeltaCell, "materialId", 12);
+            AssertOffset(voxelDeltaCell, "flags", 13);
+            AssertOffset(voxelDeltaCell, "metadata", 14);
+            AssertOffset(voxelDeltaCell, "reserved", 16);
+            AssertOffset(voxelDeltaCell, "_pad0", 20);
 
-            AssertSize<VoxelCarvingOperationDTO>(24);
-            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.localPosition), 0);
-            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.radius), 12);
-            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.operation), 16);
-            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.materialId), 17);
-            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.flags), 18);
-            AssertOffset<VoxelCarvingOperationDTO>(nameof(VoxelCarvingOperationDTO.sequence), 20);
+            string voxelCarving = save + "VoxelCarvingOperationDTO";
+            AssertSize(voxelCarving, 24);
+            AssertOffset(voxelCarving, "localPosition", 0);
+            AssertOffset(voxelCarving, "radius", 12);
+            AssertOffset(voxelCarving, "operation", 16);
+            AssertOffset(voxelCarving, "materialId", 17);
+            AssertOffset(voxelCarving, "flags", 18);
+            AssertOffset(voxelCarving, "sequence", 20);
 
-            AssertSize<VoxelDeltaRleRunDTO>(8);
-            AssertOffset<VoxelDeltaRleRunDTO>(nameof(VoxelDeltaRleRunDTO.StartIndex), 0);
-            AssertOffset<VoxelDeltaRleRunDTO>(nameof(VoxelDeltaRleRunDTO.RunLength), 2);
-            AssertOffset<VoxelDeltaRleRunDTO>(nameof(VoxelDeltaRleRunDTO.SdfValue), 4);
-            AssertOffset<VoxelDeltaRleRunDTO>(nameof(VoxelDeltaRleRunDTO.MaterialId), 5);
-            AssertOffset<VoxelDeltaRleRunDTO>(nameof(VoxelDeltaRleRunDTO.Flags), 6);
+            string voxelRun = save + "VoxelDeltaRleRunDTO";
+            AssertSize(voxelRun, 8);
+            AssertOffset(voxelRun, "StartIndex", 0);
+            AssertOffset(voxelRun, "RunLength", 2);
+            AssertOffset(voxelRun, "SdfValue", 4);
+            AssertOffset(voxelRun, "MaterialId", 5);
+            AssertOffset(voxelRun, "Flags", 6);
 
-            AssertSize<VoxelDeltaHeaderDTO>(32);
-            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO.SectorHash), 0);
-            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO.CompressedSize), 8);
-            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO.UncompressedSize), 12);
-            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO.XXHash3Checksum), 16);
-            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO._pad0), 24);
-            AssertOffset<VoxelDeltaHeaderDTO>(nameof(VoxelDeltaHeaderDTO._pad1), 28);
+            string voxelHeader = save + "VoxelDeltaHeaderDTO";
+            AssertSize(voxelHeader, 32);
+            AssertOffset(voxelHeader, "SectorHash", 0);
+            AssertOffset(voxelHeader, "CompressedSize", 8);
+            AssertOffset(voxelHeader, "UncompressedSize", 12);
+            AssertOffset(voxelHeader, "XXHash3Checksum", 16);
+            AssertOffset(voxelHeader, "_pad0", 24);
+            AssertOffset(voxelHeader, "_pad1", 28);
 
-            AssertSize<VoxelDeltaBlockCounter64>(64);
-            AssertOffset<VoxelDeltaBlockCounter64>(nameof(VoxelDeltaBlockCounter64.RunCount), 0);
-            AssertOffset<VoxelDeltaBlockCounter64>(nameof(VoxelDeltaBlockCounter64.SectorHash), 16);
+            string voxelCounter = save + "VoxelDeltaBlockCounter64";
+            AssertSize(voxelCounter, 64);
+            AssertOffset(voxelCounter, "RunCount", 0);
+            AssertOffset(voxelCounter, "SectorHash", 16);
 
-            AssertSize<VoxelDeltaCompressionTelemetryEntry>(64);
-            AssertOffset<VoxelDeltaCompressionTelemetryEntry>(nameof(VoxelDeltaCompressionTelemetryEntry.SectorHash), 0);
-            AssertOffset<VoxelDeltaCompressionTelemetryEntry>(nameof(VoxelDeltaCompressionTelemetryEntry.PayloadHash), 8);
-            AssertOffset<VoxelDeltaCompressionTelemetryEntry>(nameof(VoxelDeltaCompressionTelemetryEntry.GlobalQualityWeight), 40);
+            string voxelTelemetry = save + "VoxelDeltaCompressionTelemetryEntry";
+            AssertSize(voxelTelemetry, 64);
+            AssertOffset(voxelTelemetry, "SectorHash", 0);
+            AssertOffset(voxelTelemetry, "PayloadHash", 8);
+            AssertOffset(voxelTelemetry, "GlobalQualityWeight", 40);
 
-            AssertSize<VoxelDeltaTelemetryDumpHeaderDTO>(64);
-            AssertOffset<VoxelDeltaTelemetryDumpHeaderDTO>(nameof(VoxelDeltaTelemetryDumpHeaderDTO.Magic), 0);
-            AssertOffset<VoxelDeltaTelemetryDumpHeaderDTO>(nameof(VoxelDeltaTelemetryDumpHeaderDTO.EntryStride), 12);
-            AssertOffset<VoxelDeltaTelemetryDumpHeaderDTO>(nameof(VoxelDeltaTelemetryDumpHeaderDTO.FirstSectorHash), 32);
-            AssertOffset<VoxelDeltaTelemetryDumpHeaderDTO>(nameof(VoxelDeltaTelemetryDumpHeaderDTO.LastFrame), 52);
+            string voxelDumpHeader = save + "VoxelDeltaTelemetryDumpHeaderDTO";
+            AssertSize(voxelDumpHeader, 64);
+            AssertOffset(voxelDumpHeader, "Magic", 0);
+            AssertOffset(voxelDumpHeader, "EntryStride", 12);
+            AssertOffset(voxelDumpHeader, "FirstSectorHash", 32);
+            AssertOffset(voxelDumpHeader, "LastFrame", 52);
 
-            AssertSize<VoxelDeltaCompressionTuningDTO>(64);
-            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.ProfileHash), 0);
-            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.PruneThreshold01), 16);
-            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.MaxBytesPerFrame), 48);
-            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.DepthMinMeters), 52);
-            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO.DepthMaxMeters), 56);
-            AssertOffset<VoxelDeltaCompressionTuningDTO>(nameof(VoxelDeltaCompressionTuningDTO._pad0), 60);
+            string voxelTuning = save + "VoxelDeltaCompressionTuningDTO";
+            AssertSize(voxelTuning, 64);
+            AssertOffset(voxelTuning, "ProfileHash", 0);
+            AssertOffset(voxelTuning, "PruneThreshold01", 16);
+            AssertOffset(voxelTuning, "MaxBytesPerFrame", 48);
+            AssertOffset(voxelTuning, "DepthMinMeters", 52);
+            AssertOffset(voxelTuning, "DepthMaxMeters", 56);
+            AssertOffset(voxelTuning, "_pad0", 60);
 
-            AssertSize<VoxelDeltaSectorStatsDTO>(64);
-            AssertOffset<VoxelDeltaSectorStatsDTO>(nameof(VoxelDeltaSectorStatsDTO.SectorHash), 0);
-            AssertOffset<VoxelDeltaSectorStatsDTO>(nameof(VoxelDeltaSectorStatsDTO.ModifiedRatio01), 36);
-            AssertOffset<VoxelDeltaSectorStatsDTO>(nameof(VoxelDeltaSectorStatsDTO._pad1), 56);
+            string voxelStats = save + "VoxelDeltaSectorStatsDTO";
+            AssertSize(voxelStats, 64);
+            AssertOffset(voxelStats, "SectorHash", 0);
+            AssertOffset(voxelStats, "ModifiedRatio01", 36);
+            AssertOffset(voxelStats, "_pad1", 56);
 
-            AssertSize<VoxelDeltaDearLieStateDTO>(32);
-            AssertOffset<VoxelDeltaDearLieStateDTO>(nameof(VoxelDeltaDearLieStateDTO.SectorHash), 0);
-            AssertOffset<VoxelDeltaDearLieStateDTO>(nameof(VoxelDeltaDearLieStateDTO.VisualFade01), 16);
+            string voxelDearLie = save + "VoxelDeltaDearLieStateDTO";
+            AssertSize(voxelDearLie, 32);
+            AssertOffset(voxelDearLie, "SectorHash", 0);
+            AssertOffset(voxelDearLie, "VisualFade01", 16);
 
-            AssertSize<VoxelDeltaMockSchemaDTO>(64);
-            AssertOffset<VoxelDeltaMockSchemaDTO>(nameof(VoxelDeltaMockSchemaDTO.Magic), 0);
-            AssertOffset<VoxelDeltaMockSchemaDTO>(nameof(VoxelDeltaMockSchemaDTO.Seed), 40);
+            string voxelMock = save + "VoxelDeltaMockSchemaDTO";
+            AssertSize(voxelMock, 64);
+            AssertOffset(voxelMock, "Magic", 0);
+            AssertOffset(voxelMock, "Seed", 40);
 
-            AssertSize<EntityDeltaHeaderDTO>(32);
-            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO.SectorHash), 0);
-            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO.CompressedSize), 8);
-            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO.UncompressedSize), 12);
-            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO.XXHash3Checksum), 16);
-            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO._pad0), 24);
-            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO._pad1), 28);
+            string entityHeader = save + "EntityDeltaHeaderDTO";
+            AssertSize(entityHeader, 32);
+            AssertOffset(entityHeader, "SectorHash", 0);
+            AssertOffset(entityHeader, "CompressedSize", 8);
+            AssertOffset(entityHeader, "UncompressedSize", 12);
+            AssertOffset(entityHeader, "XXHash3Checksum", 16);
+            AssertOffset(entityHeader, "_pad0", 24);
+            AssertOffset(entityHeader, "_pad1", 28);
 
-            AssertSize<EntityDeltaRleStreamHeaderDTO>(16);
-            AssertOffset<EntityDeltaRleStreamHeaderDTO>(nameof(EntityDeltaRleStreamHeaderDTO.Magic), 0);
-            AssertOffset<EntityDeltaRleStreamHeaderDTO>(nameof(EntityDeltaRleStreamHeaderDTO.Flags), 4);
-            AssertOffset<EntityDeltaRleStreamHeaderDTO>(nameof(EntityDeltaRleStreamHeaderDTO.DenseBytes), 8);
-            AssertOffset<EntityDeltaRleStreamHeaderDTO>(nameof(EntityDeltaRleStreamHeaderDTO.StoredBytes), 12);
+            string entityStream = save + "EntityDeltaRleStreamHeaderDTO";
+            AssertSize(entityStream, 16);
+            AssertOffset(entityStream, "Magic", 0);
+            AssertOffset(entityStream, "Flags", 4);
+            AssertOffset(entityStream, "DenseBytes", 8);
+            AssertOffset(entityStream, "StoredBytes", 12);
 
-            AssertSize<EntityDeltaDataRecordDTO>(80);
-            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.SectorX), 0);
-            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.SectorY), 8);
-            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.SectorZ), 16);
-            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.LocalX), 24);
-            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.EntityKindHash), 36);
-            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.StableEntityHash), 40);
-            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.InstanceUid), 56);
-            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.Flags), 68);
-            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.SimulationTick), 76);
+            string entityRecord = save + "EntityDeltaDataRecordDTO";
+            AssertSize(entityRecord, 80);
+            AssertOffset(entityRecord, "SectorX", 0);
+            AssertOffset(entityRecord, "SectorY", 8);
+            AssertOffset(entityRecord, "SectorZ", 16);
+            AssertOffset(entityRecord, "LocalX", 24);
+            AssertOffset(entityRecord, "EntityKindHash", 36);
+            AssertOffset(entityRecord, "StableEntityHash", 40);
+            AssertOffset(entityRecord, "InstanceUid", 56);
+            AssertOffset(entityRecord, "Flags", 68);
+            AssertOffset(entityRecord, "SimulationTick", 76);
 
-            AssertSize<EntityDeltaBlockCounter64>(64);
-            AssertOffset<EntityDeltaBlockCounter64>(nameof(EntityDeltaBlockCounter64.DeltaCount), 0);
-            AssertOffset<EntityDeltaBlockCounter64>(nameof(EntityDeltaBlockCounter64.SectorHash), 16);
-            AssertOffset<EntityDeltaBlockCounter64>(nameof(EntityDeltaBlockCounter64.HashXor), 32);
+            string entityCounter = save + "EntityDeltaBlockCounter64";
+            AssertSize(entityCounter, 64);
+            AssertOffset(entityCounter, "DeltaCount", 0);
+            AssertOffset(entityCounter, "SectorHash", 16);
+            AssertOffset(entityCounter, "HashXor", 32);
 
-            AssertSize<EntityCompressionTelemetryEntry>(64);
-            AssertOffset<EntityCompressionTelemetryEntry>(nameof(EntityCompressionTelemetryEntry.SectorHash), 0);
-            AssertOffset<EntityCompressionTelemetryEntry>(nameof(EntityCompressionTelemetryEntry.PayloadHash), 8);
-            AssertOffset<EntityCompressionTelemetryEntry>(nameof(EntityCompressionTelemetryEntry.GlobalQualityWeight), 48);
+            string entityTelemetry = save + "EntityCompressionTelemetryEntry";
+            AssertSize(entityTelemetry, 64);
+            AssertOffset(entityTelemetry, "SectorHash", 0);
+            AssertOffset(entityTelemetry, "PayloadHash", 8);
+            AssertOffset(entityTelemetry, "GlobalQualityWeight", 48);
 
-            AssertSize<EntityDeltaCompressionTuningDTO>(64);
-            AssertOffset<EntityDeltaCompressionTuningDTO>(nameof(EntityDeltaCompressionTuningDTO.ProfileHash), 0);
-            AssertOffset<EntityDeltaCompressionTuningDTO>(nameof(EntityDeltaCompressionTuningDTO.TombstoneMaxDays), 16);
-            AssertOffset<EntityDeltaCompressionTuningDTO>(nameof(EntityDeltaCompressionTuningDTO.MaxBytesPerFrame), 44);
-            AssertOffset<EntityDeltaCompressionTuningDTO>(nameof(EntityDeltaCompressionTuningDTO._pad0), 60);
+            string entityTuning = save + "EntityDeltaCompressionTuningDTO";
+            AssertSize(entityTuning, 64);
+            AssertOffset(entityTuning, "ProfileHash", 0);
+            AssertOffset(entityTuning, "TombstoneMaxDays", 16);
+            AssertOffset(entityTuning, "MaxBytesPerFrame", 44);
+            AssertOffset(entityTuning, "_pad0", 60);
 
-            AssertSize<EntityDeltaSectorStatsDTO>(64);
-            AssertOffset<EntityDeltaSectorStatsDTO>(nameof(EntityDeltaSectorStatsDTO.SectorHash), 0);
-            AssertOffset<EntityDeltaSectorStatsDTO>(nameof(EntityDeltaSectorStatsDTO.FullSnapshotBytes), 20);
-            AssertOffset<EntityDeltaSectorStatsDTO>(nameof(EntityDeltaSectorStatsDTO.CompressionRatio01), 44);
-            AssertOffset<EntityDeltaSectorStatsDTO>(nameof(EntityDeltaSectorStatsDTO._pad0), 56);
+            string entityStats = save + "EntityDeltaSectorStatsDTO";
+            AssertSize(entityStats, 64);
+            AssertOffset(entityStats, "SectorHash", 0);
+            AssertOffset(entityStats, "FullSnapshotBytes", 20);
+            AssertOffset(entityStats, "CompressionRatio01", 44);
+            AssertOffset(entityStats, "_pad0", 56);
 
-            AssertSize<EntityCompressionProfileDTO>(32);
-            AssertOffset<EntityCompressionProfileDTO>(nameof(EntityCompressionProfileDTO.ProfileHash), 0);
-            AssertOffset<EntityCompressionProfileDTO>(nameof(EntityCompressionProfileDTO.EntityKindHash), 8);
-            AssertOffset<EntityCompressionProfileDTO>(nameof(EntityCompressionProfileDTO.StateMask), 24);
+            string entityProfile = save + "EntityCompressionProfileDTO";
+            AssertSize(entityProfile, 32);
+            AssertOffset(entityProfile, "ProfileHash", 0);
+            AssertOffset(entityProfile, "EntityKindHash", 8);
+            AssertOffset(entityProfile, "StateMask", 24);
 
-            AssertSize<EntityDeltaMockSchemaDTO>(64);
-            AssertOffset<EntityDeltaMockSchemaDTO>(nameof(EntityDeltaMockSchemaDTO.Magic), 0);
-            AssertOffset<EntityDeltaMockSchemaDTO>(nameof(EntityDeltaMockSchemaDTO.Seed), 40);
+            string entityMock = save + "EntityDeltaMockSchemaDTO";
+            AssertSize(entityMock, 64);
+            AssertOffset(entityMock, "Magic", 0);
+            AssertOffset(entityMock, "Seed", 40);
 
-            AssertSize<EntityDeltaTelemetryDumpHeaderDTO>(64);
-            AssertOffset<EntityDeltaTelemetryDumpHeaderDTO>(nameof(EntityDeltaTelemetryDumpHeaderDTO.Magic), 0);
-            AssertOffset<EntityDeltaTelemetryDumpHeaderDTO>(nameof(EntityDeltaTelemetryDumpHeaderDTO.EntryStride), 12);
-            AssertOffset<EntityDeltaTelemetryDumpHeaderDTO>(nameof(EntityDeltaTelemetryDumpHeaderDTO.FirstSectorHash), 32);
+            string entityDumpHeader = save + "EntityDeltaTelemetryDumpHeaderDTO";
+            AssertSize(entityDumpHeader, 64);
+            AssertOffset(entityDumpHeader, "Magic", 0);
+            AssertOffset(entityDumpHeader, "EntryStride", 12);
+            AssertOffset(entityDumpHeader, "FirstSectorHash", 32);
 
-            AssertSize<PackedEntityState32>(8);
-            AssertSize<PackedSuitUpgradeState64>(8);
-            AssertSize<QuantizedLocalHalf3>(8);
-            AssertOffset<QuantizedLocalHalf3>(nameof(QuantizedLocalHalf3.X), 0);
-            AssertOffset<QuantizedLocalHalf3>(nameof(QuantizedLocalHalf3.Y), 2);
-            AssertOffset<QuantizedLocalHalf3>(nameof(QuantizedLocalHalf3.Z), 4);
+            AssertSize(save + "PackedEntityState32", 8);
+            AssertSize(save + "PackedSuitUpgradeState64", 8);
 
-            AssertSize<QuantizedAupSectorHalf3>(24);
-            AssertOffset<QuantizedAupSectorHalf3>(nameof(QuantizedAupSectorHalf3.SectorX), 0);
-            AssertOffset<QuantizedAupSectorHalf3>(nameof(QuantizedAupSectorHalf3.LocalOffset), 12);
+            string quantizedLocal = save + "QuantizedLocalHalf3";
+            AssertSize(quantizedLocal, 8);
+            AssertOffset(quantizedLocal, "X", 0);
+            AssertOffset(quantizedLocal, "Y", 2);
+            AssertOffset(quantizedLocal, "Z", 4);
 
-            AssertSize<SaveAupLocalOffset32>(32);
-            AssertOffset<SaveAupLocalOffset32>(nameof(SaveAupLocalOffset32.SectorKey), 0);
-            AssertOffset<SaveAupLocalOffset32>(nameof(SaveAupLocalOffset32.ShiftFrameId), 4);
-            AssertOffset<SaveAupLocalOffset32>(nameof(SaveAupLocalOffset32.LocalOffsetX), 8);
-            AssertOffset<SaveAupLocalOffset32>(nameof(SaveAupLocalOffset32.LocalOffsetY), 12);
-            AssertOffset<SaveAupLocalOffset32>(nameof(SaveAupLocalOffset32.LocalOffsetZ), 16);
-            AssertOffset<SaveAupLocalOffset32>(nameof(SaveAupLocalOffset32.Flags), 20);
-            AssertOffset<SaveAupLocalOffset32>(nameof(SaveAupLocalOffset32._pad0), 24);
-            AssertOffset<SaveAupLocalOffset32>(nameof(SaveAupLocalOffset32._pad1), 28);
+            string quantizedAup = save + "QuantizedAupSectorHalf3";
+            AssertSize(quantizedAup, 24);
+            AssertOffset(quantizedAup, "SectorX", 0);
+            AssertOffset(quantizedAup, "LocalOffset", 12);
 
-            AssertSize<StrictSaveFileHeader64>(64);
-            AssertOffset<StrictSaveFileHeader64>(nameof(StrictSaveFileHeader64.Magic), 0);
-            AssertOffset<StrictSaveFileHeader64>(nameof(StrictSaveFileHeader64.PlayTimeSeconds), 8);
-            AssertOffset<StrictSaveFileHeader64>(nameof(StrictSaveFileHeader64.AupX), 16);
-            AssertOffset<StrictSaveFileHeader64>(nameof(StrictSaveFileHeader64.Checksum), 40);
-            AssertOffset<StrictSaveFileHeader64>(nameof(StrictSaveFileHeader64.Version), 48);
+            string saveAup = save + "SaveAupLocalOffset32";
+            AssertSize(saveAup, 32);
+            AssertOffset(saveAup, "SectorKey", 0);
+            AssertOffset(saveAup, "ShiftFrameId", 4);
+            AssertOffset(saveAup, "LocalOffsetX", 8);
+            AssertOffset(saveAup, "LocalOffsetY", 12);
+            AssertOffset(saveAup, "LocalOffsetZ", 16);
+            AssertOffset(saveAup, "Flags", 20);
+            AssertOffset(saveAup, "_pad0", 24);
+            AssertOffset(saveAup, "_pad1", 28);
 
-            AssertSize<PlayerKinematicStateDTO>(48);
-            AssertOffset<PlayerKinematicStateDTO>(nameof(PlayerKinematicStateDTO.posX), 0);
-            AssertOffset<PlayerKinematicStateDTO>(nameof(PlayerKinematicStateDTO.rotX), 12);
-            AssertOffset<PlayerKinematicStateDTO>(nameof(PlayerKinematicStateDTO.velX), 28);
-            AssertOffset<PlayerKinematicStateDTO>(nameof(PlayerKinematicStateDTO.flags), 40);
+            string strictHeader = save + "StrictSaveFileHeader64";
+            AssertSize(strictHeader, 64);
+            AssertOffset(strictHeader, "Magic", 0);
+            AssertOffset(strictHeader, "PlayTimeSeconds", 8);
+            AssertOffset(strictHeader, "AupX", 16);
+            AssertOffset(strictHeader, "Checksum", 40);
+            AssertOffset(strictHeader, "Version", 48);
 
-            AssertSize<ExternalScavengerSiteDTO>(32);
-            AssertOffset<ExternalScavengerSiteDTO>(nameof(ExternalScavengerSiteDTO.chunkX), 0);
-            AssertOffset<ExternalScavengerSiteDTO>(nameof(ExternalScavengerSiteDTO.offsetX), 12);
-            AssertOffset<ExternalScavengerSiteDTO>(nameof(ExternalScavengerSiteDTO.remainingTime), 16);
-            AssertOffset<ExternalScavengerSiteDTO>(nameof(ExternalScavengerSiteDTO.seed), 20);
+            string playerKinematic = save + "PlayerKinematicStateDTO";
+            AssertSize(playerKinematic, 48);
+            AssertOffset(playerKinematic, "posX", 0);
+            AssertOffset(playerKinematic, "rotX", 12);
+            AssertOffset(playerKinematic, "velX", 28);
+            AssertOffset(playerKinematic, "flags", 40);
 
-            AssertSize<InventoryShadowDTO>(32);
-            AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.cellCount), 0);
-            AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.payloadHash), 8);
-            AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.totalWeight), 20);
-            AssertOffset<InventoryShadowDTO>(nameof(InventoryShadowDTO.flags), 24);
+            string scavenger = save + "ExternalScavengerSiteDTO";
+            AssertSize(scavenger, 32);
+            AssertOffset(scavenger, "chunkX", 0);
+            AssertOffset(scavenger, "offsetX", 12);
+            AssertOffset(scavenger, "remainingTime", 16);
+            AssertOffset(scavenger, "seed", 20);
 
-            AssertSize<ProceduralFaunaStateDTO>(16);
-            AssertOffset<ProceduralFaunaStateDTO>(nameof(ProceduralFaunaStateDTO.runtimeKey), 0);
-            AssertOffset<ProceduralFaunaStateDTO>(nameof(ProceduralFaunaStateDTO.cooldownUntilPlayTime), 8);
-            AssertOffset<ProceduralFaunaStateDTO>(nameof(ProceduralFaunaStateDTO.flags), 12);
+            string inventory = save + "InventoryShadowDTO";
+            AssertSize(inventory, 32);
+            AssertOffset(inventory, "cellCount", 0);
+            AssertOffset(inventory, "payloadHash", 8);
+            AssertOffset(inventory, "totalWeight", 20);
+            AssertOffset(inventory, "flags", 24);
 
-            AssertSize<HibernatedFaunaStateDTO>(112);
-            AssertOffset<HibernatedFaunaStateDTO>(nameof(HibernatedFaunaStateDTO.position), 16);
-            AssertOffset<HibernatedFaunaStateDTO>(nameof(HibernatedFaunaStateDTO.rotationX), 64);
-            AssertOffset<HibernatedFaunaStateDTO>(nameof(HibernatedFaunaStateDTO.uniqueInstanceUid), 104);
-            AssertOffset<HibernatedFaunaStateDTO>(nameof(HibernatedFaunaStateDTO.flags), 108);
+            string fauna = save + "ProceduralFaunaStateDTO";
+            AssertSize(fauna, 16);
+            AssertOffset(fauna, "runtimeKey", 0);
+            AssertOffset(fauna, "cooldownUntilPlayTime", 8);
+            AssertOffset(fauna, "flags", 12);
 
-            AssertSize<ProceduralGeologySeamStateDTO>(64);
-            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.runtimeKey), 0);
-            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.chunkX), 8);
-            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.absoluteTerrainHeight), 16);
-            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.terrainBlendWeight), 28);
-            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.absolutePositionX), 36);
-            AssertOffset<ProceduralGeologySeamStateDTO>(nameof(ProceduralGeologySeamStateDTO.absoluteVoxelCenterX), 48);
+            string hibernatedFauna = save + "HibernatedFaunaStateDTO";
+            AssertSize(hibernatedFauna, 112);
+            AssertOffset(hibernatedFauna, "position", 16);
+            AssertOffset(hibernatedFauna, "rotationX", 64);
+            AssertOffset(hibernatedFauna, "uniqueInstanceUid", 104);
+            AssertOffset(hibernatedFauna, "flags", 108);
 
-            AssertSize<ProceduralGeologyCaveEntranceDTO>(48);
-            AssertOffset<ProceduralGeologyCaveEntranceDTO>(nameof(ProceduralGeologyCaveEntranceDTO.runtimeKey), 0);
-            AssertOffset<ProceduralGeologyCaveEntranceDTO>(nameof(ProceduralGeologyCaveEntranceDTO.surfacePositionX), 8);
-            AssertOffset<ProceduralGeologyCaveEntranceDTO>(nameof(ProceduralGeologyCaveEntranceDTO.inwardDirectionX), 20);
-            AssertOffset<ProceduralGeologyCaveEntranceDTO>(nameof(ProceduralGeologyCaveEntranceDTO.radius), 32);
-            AssertOffset<ProceduralGeologyCaveEntranceDTO>(nameof(ProceduralGeologyCaveEntranceDTO.innerRadius), 40);
+            string geologySeam = save + "ProceduralGeologySeamStateDTO";
+            AssertSize(geologySeam, 64);
+            AssertOffset(geologySeam, "runtimeKey", 0);
+            AssertOffset(geologySeam, "chunkX", 8);
+            AssertOffset(geologySeam, "absoluteTerrainHeight", 16);
+            AssertOffset(geologySeam, "terrainBlendWeight", 28);
+            AssertOffset(geologySeam, "absolutePositionX", 36);
+            AssertOffset(geologySeam, "absoluteVoxelCenterX", 48);
 
-            AssertSize<SaveMasterHashV10Result>(32);
-            AssertOffset<SaveMasterHashV10Result>(nameof(SaveMasterHashV10Result.PlainLo), 0);
-            AssertOffset<SaveMasterHashV10Result>(nameof(SaveMasterHashV10Result.PlainHi), 8);
-            AssertOffset<SaveMasterHashV10Result>(nameof(SaveMasterHashV10Result.StoredLo), 16);
-            AssertOffset<SaveMasterHashV10Result>(nameof(SaveMasterHashV10Result.StoredHi), 24);
+            string caveEntrance = save + "ProceduralGeologyCaveEntranceDTO";
+            AssertSize(caveEntrance, 48);
+            AssertOffset(caveEntrance, "runtimeKey", 0);
+            AssertOffset(caveEntrance, "surfacePositionX", 8);
+            AssertOffset(caveEntrance, "inwardDirectionX", 20);
+            AssertOffset(caveEntrance, "radius", 32);
+            AssertOffset(caveEntrance, "innerRadius", 40);
 
-            AssertSize<SaveFileHeaderV10>(72);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.MagicValue), 0);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.Version), 4);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.CompatMask), 6);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.Flags), 7);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.TimestampUnixMs), 8);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.Checksum), 16);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.DeltaCount), 20);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.EntityCount), 24);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.PlayerOffset), 28);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.DeltaOffset), 32);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.EntityOffset), 36);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.HashPayload64), 40);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.HashHeader64), 48);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.MasterStateHashLo), SaveMasterHashV10.MasterStateHashLoOffset);
-            AssertOffset<SaveFileHeaderV10>(nameof(SaveFileHeaderV10.MasterStateHashHi), SaveMasterHashV10.MasterStateHashHiOffset);
+            string masterHash = save + "SaveMasterHashV10Result";
+            AssertSize(masterHash, 32);
+            AssertOffset(masterHash, "PlainLo", 0);
+            AssertOffset(masterHash, "PlainHi", 8);
+            AssertOffset(masterHash, "StoredLo", 16);
+            AssertOffset(masterHash, "StoredHi", 24);
 
-            AssertSize<MerkleNodeDTO>(32);
-            AssertOffset<MerkleNodeDTO>(nameof(MerkleNodeDTO.HashLo), 0);
-            AssertOffset<MerkleNodeDTO>(nameof(MerkleNodeDTO.HashHi), 8);
-            AssertOffset<MerkleNodeDTO>(nameof(MerkleNodeDTO.SectorKey), 16);
-            AssertOffset<MerkleNodeDTO>(nameof(MerkleNodeDTO.ChildMask), 20);
-            AssertOffset<MerkleNodeDTO>(nameof(MerkleNodeDTO._pad0), 24);
+            string saveHeader = save + "SaveFileHeaderV10";
+            AssertSize(saveHeader, 72);
+            AssertOffset(saveHeader, "MagicValue", 0);
+            AssertOffset(saveHeader, "Version", 4);
+            AssertOffset(saveHeader, "CompatMask", 6);
+            AssertOffset(saveHeader, "Flags", 7);
+            AssertOffset(saveHeader, "TimestampUnixMs", 8);
+            AssertOffset(saveHeader, "Checksum", 16);
+            AssertOffset(saveHeader, "DeltaCount", 20);
+            AssertOffset(saveHeader, "EntityCount", 24);
+            AssertOffset(saveHeader, "PlayerOffset", 28);
+            AssertOffset(saveHeader, "DeltaOffset", 32);
+            AssertOffset(saveHeader, "EntityOffset", 36);
+            AssertOffset(saveHeader, "HashPayload64", 40);
+            AssertOffset(saveHeader, "HashHeader64", 48);
+            AssertOffset(saveHeader, "MasterStateHashLo", 56);
+            AssertOffset(saveHeader, "MasterStateHashHi", 64);
 
-            AssertSize<SectorEntryDTO>(32);
-            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO.SectorHash), 0);
-            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO.ByteOffset), 8);
-            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO.CompressedSize), 16);
-            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO.DecompressedSize), 20);
-            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO.Checksum), 24);
-            AssertOffset<SectorEntryDTO>(nameof(SectorEntryDTO._pad0), 28);
+            string merkleNode = save + "MerkleNodeDTO";
+            AssertSize(merkleNode, 32);
+            AssertOffset(merkleNode, "HashLo", 0);
+            AssertOffset(merkleNode, "HashHi", 8);
+            AssertOffset(merkleNode, "SectorKey", 16);
+            AssertOffset(merkleNode, "ChildMask", 20);
+            AssertOffset(merkleNode, "_pad0", 24);
 
-            AssertSize<StateDeltaRecordDTO>(64);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.PreviousHashLo), 0);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.PreviousHashHi), 8);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.NewHashLo), 16);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.NewHashHi), 24);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.SourceOffsetBytes), 32);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.DataLength), 36);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.DeltaPayloadOffset), 40);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.CompressedOffset), 44);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.SectorKey), 48);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.Flags), 52);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO.Crc32), 56);
-            AssertOffset<StateDeltaRecordDTO>(nameof(StateDeltaRecordDTO._pad0), 60);
+            string sectorEntry = save + "SectorEntryDTO";
+            AssertSize(sectorEntry, 32);
+            AssertOffset(sectorEntry, "SectorHash", 0);
+            AssertOffset(sectorEntry, "ByteOffset", 8);
+            AssertOffset(sectorEntry, "CompressedSize", 16);
+            AssertOffset(sectorEntry, "DecompressedSize", 20);
+            AssertOffset(sectorEntry, "Checksum", 24);
+            AssertOffset(sectorEntry, "_pad0", 28);
 
-            AssertSize<StateLeafDescriptor>(32);
-            AssertOffset<StateLeafDescriptor>(nameof(StateLeafDescriptor.SectorKey), 0);
-            AssertOffset<StateLeafDescriptor>(nameof(StateLeafDescriptor.SourceOffsetBytes), 8);
-            AssertOffset<StateLeafDescriptor>(nameof(StateLeafDescriptor.TombstoneAliveMask), 24);
+            string stateDelta = save + "StateDeltaRecordDTO";
+            AssertSize(stateDelta, 64);
+            AssertOffset(stateDelta, "PreviousHashLo", 0);
+            AssertOffset(stateDelta, "PreviousHashHi", 8);
+            AssertOffset(stateDelta, "NewHashLo", 16);
+            AssertOffset(stateDelta, "NewHashHi", 24);
+            AssertOffset(stateDelta, "SourceOffsetBytes", 32);
+            AssertOffset(stateDelta, "DataLength", 36);
+            AssertOffset(stateDelta, "DeltaPayloadOffset", 40);
+            AssertOffset(stateDelta, "CompressedOffset", 44);
+            AssertOffset(stateDelta, "SectorKey", 48);
+            AssertOffset(stateDelta, "Flags", 52);
+            AssertOffset(stateDelta, "Crc32", 56);
+            AssertOffset(stateDelta, "_pad0", 60);
 
-            AssertSize<Lz4SubBlockHeader>(32);
-            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.Magic), 0);
-            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.RawBytes), 4);
-            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.StoredBytes), 8);
-            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.SourceOffsetBytes), 12);
-            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.Crc32), 16);
-            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.Flags), 20);
-            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.Version), 24);
-            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader.HeaderBytes), 26);
-            AssertOffset<Lz4SubBlockHeader>(nameof(Lz4SubBlockHeader._pad0), 28);
+            string stateLeaf = save + "StateLeafDescriptor";
+            AssertSize(stateLeaf, 32);
+            AssertOffset(stateLeaf, "SectorKey", 0);
+            AssertOffset(stateLeaf, "SourceOffsetBytes", 8);
+            AssertOffset(stateLeaf, "TombstoneAliveMask", 24);
 
-            AssertSize<SaveMerkleWalAppendHeader>(64);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.LogicalOffset), 0);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.TimestampTicks), 8);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.RootHashLo), 16);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.RootHashHi), 24);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.RawBytes), 32);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.StoredBytes), 36);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.Magic), 40);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.Flags), 44);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.BlockCount), 48);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.Frame), 52);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.RecordCrc32), 56);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.Version), 60);
-            AssertOffset<SaveMerkleWalAppendHeader>(nameof(SaveMerkleWalAppendHeader.HeaderBytes), 62);
+            string lz4 = save + "Lz4SubBlockHeader";
+            AssertSize(lz4, 32);
+            AssertOffset(lz4, "Magic", 0);
+            AssertOffset(lz4, "RawBytes", 4);
+            AssertOffset(lz4, "StoredBytes", 8);
+            AssertOffset(lz4, "SourceOffsetBytes", 12);
+            AssertOffset(lz4, "Crc32", 16);
+            AssertOffset(lz4, "Flags", 20);
+            AssertOffset(lz4, "Version", 24);
+            AssertOffset(lz4, "HeaderBytes", 26);
+            AssertOffset(lz4, "_pad0", 28);
 
-            AssertSize<SaveMerkleTelemetryEntry>(64);
-            AssertOffset<SaveMerkleTelemetryEntry>(nameof(SaveMerkleTelemetryEntry.RootHashLo), 0);
-            AssertOffset<SaveMerkleTelemetryEntry>(nameof(SaveMerkleTelemetryEntry.RootHashHi), 8);
-            AssertOffset<SaveMerkleTelemetryEntry>(nameof(SaveMerkleTelemetryEntry.TotalBytesHashed), 16);
-            AssertOffset<SaveMerkleTelemetryEntry>(nameof(SaveMerkleTelemetryEntry.Frame), 28);
-            AssertOffset<SaveMerkleTelemetryEntry>(nameof(SaveMerkleTelemetryEntry._pad1), 56);
+            string wal = save + "SaveMerkleWalAppendHeader";
+            AssertSize(wal, 64);
+            AssertOffset(wal, "LogicalOffset", 0);
+            AssertOffset(wal, "TimestampTicks", 8);
+            AssertOffset(wal, "RootHashLo", 16);
+            AssertOffset(wal, "RootHashHi", 24);
+            AssertOffset(wal, "RawBytes", 32);
+            AssertOffset(wal, "StoredBytes", 36);
+            AssertOffset(wal, "Magic", 40);
+            AssertOffset(wal, "Flags", 44);
+            AssertOffset(wal, "BlockCount", 48);
+            AssertOffset(wal, "Frame", 52);
+            AssertOffset(wal, "RecordCrc32", 56);
+            AssertOffset(wal, "Version", 60);
+            AssertOffset(wal, "HeaderBytes", 62);
 
-            AssertSize<SaveMerkleEditorSnapshot>(80);
-            AssertOffset<SaveMerkleEditorSnapshot>(nameof(SaveMerkleEditorSnapshot.RootHashLo), 0);
-            AssertOffset<SaveMerkleEditorSnapshot>(nameof(SaveMerkleEditorSnapshot.ChangedBranchBits0), 16);
-            AssertOffset<SaveMerkleEditorSnapshot>(nameof(SaveMerkleEditorSnapshot.ChangedLeafCount), 48);
-            AssertOffset<SaveMerkleEditorSnapshot>(nameof(SaveMerkleEditorSnapshot.StoredBytes), 64);
-            AssertOffset<SaveMerkleEditorSnapshot>(nameof(SaveMerkleEditorSnapshot._pad0), 76);
+            string merkleTelemetry = save + "SaveMerkleTelemetryEntry";
+            AssertSize(merkleTelemetry, 64);
+            AssertOffset(merkleTelemetry, "RootHashLo", 0);
+            AssertOffset(merkleTelemetry, "RootHashHi", 8);
+            AssertOffset(merkleTelemetry, "TotalBytesHashed", 16);
+            AssertOffset(merkleTelemetry, "Frame", 28);
+            AssertOffset(merkleTelemetry, "_pad1", 56);
 
-            AssertSize<SaveMerkleRuntimeConfig>(32);
-            AssertOffset<SaveMerkleRuntimeConfig>(nameof(SaveMerkleRuntimeConfig.SubBlockBytes), 0);
-            AssertOffset<SaveMerkleRuntimeConfig>(nameof(SaveMerkleRuntimeConfig.SchemaHash), 20);
-            AssertOffset<SaveMerkleRuntimeConfig>(nameof(SaveMerkleRuntimeConfig._pad0), 28);
+            string merkleEditor = save + "SaveMerkleEditorSnapshot";
+            AssertSize(merkleEditor, 80);
+            AssertOffset(merkleEditor, "RootHashLo", 0);
+            AssertOffset(merkleEditor, "ChangedBranchBits0", 16);
+            AssertOffset(merkleEditor, "ChangedLeafCount", 48);
+            AssertOffset(merkleEditor, "StoredBytes", 64);
+            AssertOffset(merkleEditor, "_pad0", 76);
 
-            AssertSize<MockStatePayload>(32);
-            AssertOffset<MockStatePayload>(nameof(MockStatePayload.LocalAup), 0);
+            string merkleConfig = save + "SaveMerkleRuntimeConfig";
+            AssertSize(merkleConfig, 32);
+            AssertOffset(merkleConfig, "SubBlockBytes", 0);
+            AssertOffset(merkleConfig, "SchemaHash", 20);
+            AssertOffset(merkleConfig, "_pad0", 28);
 
-            AssertSize<SaveMerkleEmergencyHeader64>(64);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.TimestampTicks), 0);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.RootHashLo), 8);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.RootHashHi), 16);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64._pad0), 24);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64._pad1), 32);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.Magic), 40);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.SectorEntryBytes), 44);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.MerkleNodeBytes), 48);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.Flags), 52);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.Checksum), 56);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.Version), 60);
-            AssertOffset<SaveMerkleEmergencyHeader64>(nameof(SaveMerkleEmergencyHeader64.HeaderBytes), 62);
+            string mockState = save + "MockStatePayload";
+            AssertSize(mockState, 32);
+            AssertOffset(mockState, "LocalAup", 0);
 
-            AssertSize<HabitatFloodStateDTO>(32);
-            AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.moduleHashId), 0);
-            AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.airReserveNormalized), 12);
-            AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.floodedReefFloodSeconds), 20);
-            AssertOffset<HabitatFloodStateDTO>(nameof(HabitatFloodStateDTO.flags), 24);
+            string emergency = save + "SaveMerkleEmergencyHeader64";
+            AssertSize(emergency, 64);
+            AssertOffset(emergency, "TimestampTicks", 0);
+            AssertOffset(emergency, "RootHashLo", 8);
+            AssertOffset(emergency, "RootHashHi", 16);
+            AssertOffset(emergency, "_pad0", 24);
+            AssertOffset(emergency, "_pad1", 32);
+            AssertOffset(emergency, "Magic", 40);
+            AssertOffset(emergency, "SectorEntryBytes", 44);
+            AssertOffset(emergency, "MerkleNodeBytes", 48);
+            AssertOffset(emergency, "Flags", 52);
+            AssertOffset(emergency, "Checksum", 56);
+            AssertOffset(emergency, "Version", 60);
+            AssertOffset(emergency, "HeaderBytes", 62);
 
-            AssertSize<ModuleBlitDTO>(64);
-            AssertOffset<ModuleBlitDTO>(nameof(ModuleBlitDTO.prefabHashId), 0);
-            AssertOffset<ModuleBlitDTO>(nameof(ModuleBlitDTO.aupGridX), 8);
-            AssertOffset<ModuleBlitDTO>(nameof(ModuleBlitDTO.aupLocalX), 32);
-            AssertOffset<ModuleBlitDTO>(nameof(ModuleBlitDTO.rotX), 44);
-            AssertOffset<ModuleBlitDTO>(nameof(ModuleBlitDTO.health), 60);
+            string flood = save + "HabitatFloodStateDTO";
+            AssertSize(flood, 32);
+            AssertOffset(flood, "moduleHashId", 0);
+            AssertOffset(flood, "airReserveNormalized", 12);
+            AssertOffset(flood, "floodedReefFloodSeconds", 20);
+            AssertOffset(flood, "flags", 24);
 
-            AssertSize<PDAContextualAdvisoryDTO>(48);
-            AssertOffset<PDAContextualAdvisoryDTO>(nameof(PDAContextualAdvisoryDTO.issuedFlags), 0);
-            AssertOffset<PDAContextualAdvisoryDTO>(nameof(PDAContextualAdvisoryDTO.deepExposureSeconds), 32);
+            string module = save + "ModuleBlitDTO";
+            AssertSize(module, 64);
+            AssertOffset(module, "prefabHashId", 0);
+            AssertOffset(module, "aupGridX", 8);
+            AssertOffset(module, "aupLocalX", 32);
+            AssertOffset(module, "rotX", 44);
+            AssertOffset(module, "health", 60);
 
-            AssertSize<EnvironmentalStrainDTO>(16);
-            AssertOffset<EnvironmentalStrainDTO>(nameof(EnvironmentalStrainDTO.microplasticStrain), 0);
-            AssertOffset<EnvironmentalStrainDTO>(nameof(EnvironmentalStrainDTO.recycledPlasticItemCount), 8);
+            string advisory = save + "PDAContextualAdvisoryDTO";
+            AssertSize(advisory, 48);
+            AssertOffset(advisory, "issuedFlags", 0);
+            AssertOffset(advisory, "deepExposureSeconds", 32);
 
-            AssertSize<ModuleGraphEdgeDTO>(16);
-            AssertOffset<ModuleGraphEdgeDTO>(nameof(ModuleGraphEdgeDTO.sourceNodeIndex), 0);
-            AssertOffset<ModuleGraphEdgeDTO>(nameof(ModuleGraphEdgeDTO.destinationNodeIndex), 4);
+            string strain = save + "EnvironmentalStrainDTO";
+            AssertSize(strain, 16);
+            AssertOffset(strain, "microplasticStrain", 0);
+            AssertOffset(strain, "recycledPlasticItemCount", 8);
 
-            AssertSize<SaveChunkHeader32>(32);
-            AssertOffset<SaveChunkHeader32>(nameof(SaveChunkHeader32.ChunkKey), 0);
-            AssertOffset<SaveChunkHeader32>(nameof(SaveChunkHeader32.PayloadLength), 12);
-            AssertOffset<SaveChunkHeader32>(nameof(SaveChunkHeader32.PayloadHash64), 16);
+            string graphEdge = save + "ModuleGraphEdgeDTO";
+            AssertSize(graphEdge, 16);
+            AssertOffset(graphEdge, "sourceNodeIndex", 0);
+            AssertOffset(graphEdge, "destinationNodeIndex", 4);
 
-            AssertSize<SectorPayloadDTO>(264);
-            AssertOffset<SectorPayloadDTO>(nameof(SectorPayloadDTO.SectorHash), 0);
-            AssertOffset<SectorPayloadDTO>(nameof(SectorPayloadDTO.DataLength), 4);
+            string chunk = save + "SaveChunkHeader32";
+            AssertSize(chunk, 32);
+            AssertOffset(chunk, "ChunkKey", 0);
+            AssertOffset(chunk, "PayloadLength", 12);
+            AssertOffset(chunk, "PayloadHash64", 16);
+
+            string sectorPayload = save + "SectorPayloadDTO";
+            AssertSize(sectorPayload, 264);
+            AssertOffset(sectorPayload, "SectorHash", 0);
+            AssertOffset(sectorPayload, "DataLength", 4);
 
             AssertExternalContractSize<H8WorldPageReadTicket>(32);
             AssertOffset<H8WorldPageReadTicket>(nameof(H8WorldPageReadTicket.SectorHash), 0);
@@ -501,59 +754,71 @@ namespace Hecton8.Core
             AssertOffset<H8WorldPagerTelemetrySnapshot>(nameof(H8WorldPagerTelemetrySnapshot.LastSectorHash), 48);
             AssertOffset<H8WorldPagerTelemetrySnapshot>(nameof(H8WorldPagerTelemetrySnapshot.LastPayloadType), 56);
 
-            AssertSize<SaveBinaryStorage.SectorEntry>(32);
-            AssertOffset<SaveBinaryStorage.SectorEntry>(nameof(SaveBinaryStorage.SectorEntry.SectorHash), 0);
-            AssertOffset<SaveBinaryStorage.SectorEntry>(nameof(SaveBinaryStorage.SectorEntry.ByteOffset), 8);
-            AssertOffset<SaveBinaryStorage.SectorEntry>(nameof(SaveBinaryStorage.SectorEntry.Checksum), 24);
-            AssertOffset<SaveBinaryStorage.SectorEntry>(nameof(SaveBinaryStorage.SectorEntry.Reserved0), 28);
+            string binary = save + "SaveBinaryStorage+";
+            string binarySector = binary + "SectorEntry";
+            AssertSize(binarySector, 32);
+            AssertOffset(binarySector, "SectorHash", 0);
+            AssertOffset(binarySector, "ByteOffset", 8);
+            AssertOffset(binarySector, "Checksum", 24);
+            AssertOffset(binarySector, "Reserved0", 28);
 
-            AssertSize<SaveBinaryStorage.QuantizedAupLocalOffsetShort3>(8);
-            AssertOffset<SaveBinaryStorage.QuantizedAupLocalOffsetShort3>(nameof(SaveBinaryStorage.QuantizedAupLocalOffsetShort3.XMillimeters), 0);
-            AssertOffset<SaveBinaryStorage.QuantizedAupLocalOffsetShort3>(nameof(SaveBinaryStorage.QuantizedAupLocalOffsetShort3.Reserved0), 6);
+            string binaryAupShort = binary + "QuantizedAupLocalOffsetShort3";
+            AssertSize(binaryAupShort, 8);
+            AssertOffset(binaryAupShort, "XMillimeters", 0);
+            AssertOffset(binaryAupShort, "Reserved0", 6);
 
-            AssertSize<SaveBinaryStorage.DeltaCell>(24);
-            AssertOffset<SaveBinaryStorage.DeltaCell>(nameof(SaveBinaryStorage.DeltaCell.UniverseKey), 0);
-            AssertOffset<SaveBinaryStorage.DeltaCell>(nameof(SaveBinaryStorage.DeltaCell.SdfValue), 8);
-            AssertOffset<SaveBinaryStorage.DeltaCell>(nameof(SaveBinaryStorage.DeltaCell.Reserved1), 20);
+            string binaryDeltaCell = binary + "DeltaCell";
+            AssertSize(binaryDeltaCell, 24);
+            AssertOffset(binaryDeltaCell, "UniverseKey", 0);
+            AssertOffset(binaryDeltaCell, "SdfValue", 8);
+            AssertOffset(binaryDeltaCell, "Reserved1", 20);
 
-            AssertSize<SaveBinaryStorage.ThermalGridRleRun>(8);
+            AssertSize(binary + "ThermalGridRleRun", 8);
 
-            AssertSize<AbsoluteUniversePositionV7>(36);
-            AssertSize<PayloadPrefixV7>(60);
-            AssertSize<PayloadPrefixV8>(72);
+            AssertSize(save + "AbsoluteUniversePositionV7", 36);
+            AssertSize(save + "PayloadPrefixV7", 60);
+            AssertSize(save + "PayloadPrefixV8", 72);
         }
 
         private static void VerifyPersistentWorldLayouts()
         {
-            AssertSize<PoolSlotData>(40);
-            AssertOffset<PoolSlotData>(nameof(PoolSlotData.BoundGuid), 0);
-            AssertOffset<PoolSlotData>(nameof(PoolSlotData.AupCell), 8);
-            AssertOffset<PoolSlotData>(nameof(PoolSlotData.LocalOffset), 20);
-            AssertOffset<PoolSlotData>(nameof(PoolSlotData.HydrationFrame), 32);
+            string world = WorldLayoutNamespace;
+            string poolSlot = world + "PoolSlotData";
+            AssertSize(poolSlot, 40);
+            AssertOffset(poolSlot, "BoundGuid", 0);
+            AssertOffset(poolSlot, "AupCell", 8);
+            AssertOffset(poolSlot, "LocalOffset", 20);
+            AssertOffset(poolSlot, "HydrationFrame", 32);
 
-            AssertSize<EntityDataRecord>(64);
-            AssertOffset<EntityDataRecord>(nameof(EntityDataRecord.Position), 0);
-            AssertOffset<EntityDataRecord>(nameof(EntityDataRecord.Quantity), 48);
-            AssertOffset<EntityDataRecord>(nameof(EntityDataRecord.Integrity01), 52);
-            AssertOffset<EntityDataRecord>(nameof(EntityDataRecord.InventoryHash), 56);
-            AssertOffset<EntityDataRecord>(nameof(EntityDataRecord.InstanceUid), 60);
+            string entity = world + "EntityDataRecord";
+            AssertSize(entity, 64);
+            AssertOffset(entity, "Position", 0);
+            AssertOffset(entity, "Quantity", 48);
+            AssertOffset(entity, "Integrity01", 52);
+            AssertOffset(entity, "InventoryHash", 56);
+            AssertOffset(entity, "InstanceUid", 60);
 
-            AssertSize<ResourceNodeTombstoneRecord>(80);
-            AssertOffset<ResourceNodeTombstoneRecord>(nameof(ResourceNodeTombstoneRecord.TombstoneId), 0);
-            AssertOffset<ResourceNodeTombstoneRecord>(nameof(ResourceNodeTombstoneRecord.Position), 16);
-            AssertOffset<ResourceNodeTombstoneRecord>(nameof(ResourceNodeTombstoneRecord.ChunkId), 64);
+            string tombstone = world + "ResourceNodeTombstoneRecord";
+            AssertSize(tombstone, 80);
+            AssertOffset(tombstone, "TombstoneId", 0);
+            AssertOffset(tombstone, "Position", 16);
+            AssertOffset(tombstone, "ChunkId", 64);
 
-            AssertSize<PersistentWorldItemRecord>(204);
-            AssertOffset<PersistentWorldItemRecord>(nameof(PersistentWorldItemRecord.Position), 0);
-            AssertOffset<PersistentWorldItemRecord>(nameof(PersistentWorldItemRecord.ChunkId), 48);
-            AssertOffset<PersistentWorldItemRecord>(nameof(PersistentWorldItemRecord.ItemPersistentIdHash), 60);
-            AssertOffset<PersistentWorldItemRecord>(nameof(PersistentWorldItemRecord.ItemPersistentId), 68);
-            AssertOffset<PersistentWorldItemRecord>(nameof(PersistentWorldItemRecord.InstanceUid), 200);
+            string item = world + "PersistentWorldItemRecord";
+            AssertSize(item, 256);
+            AssertOffset(item, "Position", 0);
+            AssertOffset(item, "ItemPersistentIdHash", 48);
+            AssertOffset(item, "ItemPersistentId", 56);
+            AssertOffset(item, "ChunkId", 184);
+            AssertOffset(item, "Quantity", 196);
+            AssertOffset(item, "InstanceUid", 200);
+            AssertOffset(item, "Flags", 204);
 
-            AssertSize<PersistentWorldCompactDeltaRecord>(16);
-            AssertOffset<PersistentWorldCompactDeltaRecord>(nameof(PersistentWorldCompactDeltaRecord.PackedLocalPosition), 0);
-            AssertOffset<PersistentWorldCompactDeltaRecord>(nameof(PersistentWorldCompactDeltaRecord.Quantity), 8);
-            AssertOffset<PersistentWorldCompactDeltaRecord>(nameof(PersistentWorldCompactDeltaRecord.ChunkIndex), 12);
+            string compact = world + "PersistentWorldCompactDeltaRecord";
+            AssertSize(compact, 16);
+            AssertOffset(compact, "PackedLocalPosition", 0);
+            AssertOffset(compact, "Quantity", 8);
+            AssertOffset(compact, "ChunkIndex", 12);
         }
 
         private static void VerifySignalLayouts()
@@ -564,29 +829,51 @@ namespace Hecton8.Core
             AssertOffset<ComplianceViolationSignal>(nameof(ComplianceViolationSignal.ContextHash), 8);
             AssertOffset<ComplianceViolationSignal>(nameof(ComplianceViolationSignal.Frame), 12);
             AssertOffset<ComplianceViolationSignal>(nameof(ComplianceViolationSignal.Severity), 16);
+
+            string physicsImpact = PhysicsLayoutNamespace + "PhysicsImpactSignal";
+            AssertSize(physicsImpact, 128);
+            AssertOffset(physicsImpact, "PrimaryBodyId", 0);
+            AssertOffset(physicsImpact, "SecondaryBodyId", 8);
+            AssertOffset(physicsImpact, "_pointAup", 16);
+            AssertOffset(physicsImpact, "Point", 64);
+            AssertOffset(physicsImpact, "Normal", 76);
+            AssertOffset(physicsImpact, "Force", 88);
+            AssertOffset(physicsImpact, "Intensity", 92);
+            AssertOffset(physicsImpact, "MassVelocity", 96);
+            AssertOffset(physicsImpact, "WeightClass", 100);
+            AssertOffset(physicsImpact, "PrimaryAudioMaterialId", 101);
+            AssertOffset(physicsImpact, "SecondaryAudioMaterialId", 102);
+            AssertOffset(physicsImpact, "_hasPointAup", 103);
         }
 
         private static void VerifyRenderBlitLayouts()
         {
-            AssertSize<HectonBlueprintPreviewBatch.BlueprintPreviewInstance>(64);
-            AssertOffset<HectonBlueprintPreviewBatch.BlueprintPreviewInstance>(
-                nameof(HectonBlueprintPreviewBatch.BlueprintPreviewInstance.Position),
-                0);
-            AssertOffset<HectonBlueprintPreviewBatch.BlueprintPreviewInstance>(
-                nameof(HectonBlueprintPreviewBatch.BlueprintPreviewInstance.Rotation),
-                12);
-            AssertOffset<HectonBlueprintPreviewBatch.BlueprintPreviewInstance>(
-                nameof(HectonBlueprintPreviewBatch.BlueprintPreviewInstance.RequirementMask),
-                40);
-            AssertSize<BuilderGhostStateDTO>(128);
-            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.LocalToWorld), 0);
-            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.AUP_TargetPosition), 64);
-            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.PrefabHashID), 88);
-            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.ValidationFlags), 92);
-            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.AnimationPhase), 96);
-            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.ValidationStateHash), 100);
-            AssertSize<BuilderGhostVisualDTO>(64);
-            AssertSize<HolographyTelemetryEntry>(64);
+            string construction = ConstructionLayoutNamespace;
+            string ghost = construction + "BuilderGhostStateDTO";
+            AssertSize(ghost, 128);
+            AssertOffset(ghost, "LocalToWorld", 0);
+            AssertOffset(ghost, "AUP_TargetPosition", 64);
+            AssertOffset(ghost, "PrefabHashID", 88);
+            AssertOffset(ghost, "ValidationFlags", 92);
+            AssertOffset(ghost, "AnimationPhase", 96);
+            AssertOffset(ghost, "ValidationStateHash", 100);
+
+            AssertSize(construction + "BuilderGhostVisualDTO", 64);
+            AssertSize(construction + "HolographyTelemetryEntry", 64);
+
+            string ghostArgs = construction + "BuilderGhostIndirectArgsDTO";
+            AssertSize(ghostArgs, 16);
+            AssertOffset(ghostArgs, "VertexCountPerInstance", 0);
+            AssertOffset(ghostArgs, "InstanceCount", 4);
+            AssertOffset(ghostArgs, "StartVertex", 8);
+            AssertOffset(ghostArgs, "StartInstance", 12);
+
+            string cultivationSlot = construction + "CultivationManager+CultivationSlotState";
+            AssertSize(cultivationSlot, 32);
+            AssertOffset(cultivationSlot, "GeneticsMask", 0);
+            AssertOffset(cultivationSlot, "SeedItemHashId", 8);
+            AssertOffset(cultivationSlot, "Growth01", 12);
+            AssertOffset(cultivationSlot, "Quality01", 16);
         }
 
         private static void AssertSize<T>(int expected) where T : unmanaged
@@ -607,12 +894,41 @@ namespace Hecton8.Core
                 Fail(ResolveTypeName<T>(), expected, observed, CombineHash(SizeContextHash, ResolveTypeHash<T>()));
         }
 
+        private static void AssertSize(string typeName, int expected)
+        {
+            Type type = ResolveLayoutType(typeName);
+            AssertBinarySafe(type);
+            int observed = Marshal.SizeOf(type);
+            UnityEngine.Debug.Assert(observed == expected, typeName);
+            if (observed != expected)
+                Fail(typeName, expected, observed, CombineHash(SizeContextHash, ResolveTypeHash(type)));
+        }
+
+        private static void AssertExternalContractSize(string typeName, int expected)
+        {
+            Type type = ResolveLayoutType(typeName);
+            AssertBlittable(type);
+            int observed = Marshal.SizeOf(type);
+            UnityEngine.Debug.Assert(observed == expected, typeName);
+            if (observed != expected)
+                Fail(typeName, expected, observed, CombineHash(SizeContextHash, ResolveTypeHash(type)));
+        }
+
         private static void AssertOffset<T>(string fieldName, int expected) where T : unmanaged
         {
             int observed = Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
             UnityEngine.Debug.Assert(observed == expected, ResolveTypeName<T>());
             if (observed != expected)
                 Fail(ResolveTypeName<T>(), expected, observed, CombineHash(OffsetContextHash, ComputeFnv1A32(fieldName)));
+        }
+
+        private static void AssertOffset(string typeName, string fieldName, int expected)
+        {
+            Type type = ResolveLayoutType(typeName);
+            int observed = Marshal.OffsetOf(type, fieldName).ToInt32();
+            UnityEngine.Debug.Assert(observed == expected, typeName);
+            if (observed != expected)
+                Fail(typeName, expected, observed, CombineHash(OffsetContextHash, ComputeFnv1A32(fieldName)));
         }
 
         private static void AssertBinarySafe<T>() where T : unmanaged
@@ -623,10 +939,66 @@ namespace Hecton8.Core
                 Fail(ResolveTypeName<T>(), expected: 1, observed: 0, CombineHash(AttributeContextHash, ResolveTypeHash<T>()));
         }
 
+        private static void AssertBinarySafe(Type type)
+        {
+            AssertBlittable(type);
+
+            if (!type.IsDefined(typeof(BinaryBlittableSafeAttribute), false))
+                Fail(ResolveTypeName(type), expected: 1, observed: 0, CombineHash(AttributeContextHash, ResolveTypeHash(type)));
+        }
+
         private static void AssertBlittable<T>() where T : unmanaged
         {
             if (!UnsafeUtility.IsBlittable<T>())
                 Fail(ResolveTypeName<T>(), expected: 1, observed: 0, CombineHash(BlittableContextHash, ResolveTypeHash<T>()));
+        }
+
+        private static void AssertBlittable(Type type)
+        {
+            if (!IsBlittableType(type, depth: 0))
+                Fail(ResolveTypeName(type), expected: 1, observed: 0, CombineHash(BlittableContextHash, ResolveTypeHash(type)));
+        }
+
+        private static bool IsBlittableType(Type type, int depth)
+        {
+            if (type == null || depth > 16)
+                return false;
+
+            if (type.IsPointer || type.IsEnum)
+                return true;
+
+            if (type.IsPrimitive)
+                return type != typeof(bool) && type != typeof(char);
+
+            if (!type.IsValueType)
+                return false;
+
+            FieldInfo[] fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            for (int i = 0; i < fields.Length; i++)
+            {
+                if (!IsBlittableType(fields[i].FieldType, depth + 1))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static Type ResolveLayoutType(string typeName)
+        {
+            Type type = Type.GetType(typeName, throwOnError: false);
+            if (type != null)
+                return type;
+
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int i = 0; i < assemblies.Length; i++)
+            {
+                type = assemblies[i].GetType(typeName, throwOnError: false);
+                if (type != null)
+                    return type;
+            }
+
+            Fail(typeName, expected: 1, observed: 0, CombineHash(AttributeContextHash, ComputeFnv1A32(typeName)));
+            return typeof(void);
         }
 
         private static void Fail(string structName, int expected, int observed, uint contextHash)
@@ -674,9 +1046,19 @@ namespace Hecton8.Core
             return typeof(T).FullName ?? typeof(T).Name;
         }
 
+        private static string ResolveTypeName(Type type)
+        {
+            return type.FullName ?? type.Name;
+        }
+
         private static uint ResolveTypeHash<T>() where T : unmanaged
         {
             return ComputeFnv1A32(ResolveTypeName<T>());
+        }
+
+        private static uint ResolveTypeHash(Type type)
+        {
+            return ComputeFnv1A32(ResolveTypeName(type));
         }
 
         private static uint CombineHash(uint left, uint right)

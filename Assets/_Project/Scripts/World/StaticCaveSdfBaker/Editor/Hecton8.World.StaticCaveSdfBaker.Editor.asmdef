@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.World.StaticCaveSdfBaker.Editor",
+    "rootNamespace": "Hecton8.World.StaticCaveSdfBaker.Editor",
+    "references": [
+        "Hecton8.World.StaticCaveSdfBaker",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

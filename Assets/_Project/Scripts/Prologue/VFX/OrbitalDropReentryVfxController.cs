@@ -56,25 +56,25 @@ namespace Hecton8.Prologue.VFX
             Complete = 4
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct ReentryVfxTelemetryEntry
         {
-            public uint Frame;
-            public ushort Sequence;
-            public ushort HydrationSequence;
-            public float Heat01;
-            public float Opacity01;
-            public float AltitudeMeters;
-            public float VelocityMetersPerSecond;
-            public float AmbientBlend01;
-            public float OverlayDistanceMeters;
-            public byte Phase;
-            public byte QualityTier;
-            public byte Flags;
-            public byte Reserved;
-            public uint StateHash;
-            public uint SectorHashLo;
-            public uint Reserved2;
+            [FieldOffset(0)] public uint Frame;
+            [FieldOffset(4)] public ushort Sequence;
+            [FieldOffset(6)] public ushort HydrationSequence;
+            [FieldOffset(8)] public float Heat01;
+            [FieldOffset(12)] public float Opacity01;
+            [FieldOffset(16)] public float AltitudeMeters;
+            [FieldOffset(20)] public float VelocityMetersPerSecond;
+            [FieldOffset(24)] public float AmbientBlend01;
+            [FieldOffset(28)] public float OverlayDistanceMeters;
+            [FieldOffset(32)] public byte Phase;
+            [FieldOffset(33)] public byte QualityTier;
+            [FieldOffset(34)] public byte Flags;
+            [FieldOffset(35)] public byte Reserved;
+            [FieldOffset(36)] public uint StateHash;
+            [FieldOffset(40)] public uint SectorHashLo;
+            [FieldOffset(44)] public uint Reserved2;
         }
 
         [Header("Bindings")]
@@ -133,9 +133,11 @@ namespace Hecton8.Prologue.VFX
         private float _whiteoutHoldSecondsRemaining;
         private float _audioCrossfadeElapsedSeconds;
         private float _audioCrossfadeTimer;
+        private float _qualityWeight = 1f;
         private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private byte _qualityTierByte;
         private bool _lowTier = true;
+        private bool _lowMemoryProfile;
         private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
         private bool _scalabilityEventsRegistered;
@@ -151,9 +153,9 @@ namespace Hecton8.Prologue.VFX
             EnsureNativeTelemetry();
             PrologueReentrySignalLanes.Warm();
             ResetTransientState();
-            ResolveDependencies();
+            ResolveColdDependencies();
             ApplyConfiguredMaterial();
-            RefreshQualityTier(force: true);
+            RefreshQualityPolicyCold();
             RegisterLateFrame();
             TryRegisterHotSwap();
             TryRegisterScalabilityEvents();
@@ -181,7 +183,7 @@ namespace Hecton8.Prologue.VFX
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
             _qualityRefreshFrame = Time.frameCount;
-            CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, GlobalRegistry.H8_LOW_MEMORY_PROFILE);
+            CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile, ResolveGlobalQualityWeight());
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -190,7 +192,11 @@ namespace Hecton8.Prologue.VFX
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
                 _tickDispatcher = currentService as ITickDispatcher;
+                if (_tickDispatcher != null)
+                    RegisterLateFrame();
+            }
         }
 
         private void OnDestroy()
@@ -211,10 +217,9 @@ namespace Hecton8.Prologue.VFX
             using (_lateFrameMarker.Auto())
             {
                 if (!_registeredLateFrame)
-                    RegisterLateFrame();
+                    return;
 
-                ResolveDependencies();
-                RefreshQualityTier(force: false);
+                ResolveMaterialDependencies();
 
                 float deltaTime = ResolveUnscaledDeltaTime();
                 ConsumeAtmosphericSignals();
@@ -262,11 +267,16 @@ namespace Hecton8.Prologue.VFX
             _hasSpatialAnchor = false;
         }
 
-        private void ResolveDependencies()
+        private void ResolveColdDependencies()
         {
             if (_tickDispatcher == null)
                 _tickDispatcher = GlobalRegistry.TickDispatcher;
 
+            ResolveMaterialDependencies();
+        }
+
+        private void ResolveMaterialDependencies()
+        {
             _activeMaterial = plasmaMaterial;
             if (_activeMaterial == null && capsuleWindowRenderer != null)
                 _activeMaterial = capsuleWindowRenderer.sharedMaterial;
@@ -328,31 +338,37 @@ namespace Hecton8.Prologue.VFX
                 plasmaOverlayRenderer.sharedMaterial = plasmaMaterial;
         }
 
-        private void RefreshQualityTier(bool force)
+        private void RefreshQualityPolicyCold()
         {
             int frame = Time.frameCount;
-            if (!force && frame - _qualityRefreshFrame < 60)
-                return;
-
             _qualityRefreshFrame = frame;
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            byte profileByte = GlobalRegistry.ScalabilityTierProfileByte;
-            CacheQualityPolicy(tier, profileByte, GlobalRegistry.H8_LOW_MEMORY_PROFILE);
+            CacheQualityPolicy(
+                GlobalRegistry.ScalabilityTier,
+                GlobalRegistry.ScalabilityTierProfileByte,
+                GlobalRegistry.H8_LOW_MEMORY_PROFILE,
+                ResolveGlobalQualityWeight());
         }
 
-        private void CacheQualityPolicy(HectonQualityTier tier, byte profileByte, bool lowMemoryProfile)
+        private void CacheQualityPolicy(HectonQualityTier tier, byte profileByte, bool lowMemoryProfile, float qualityWeight)
         {
             bool lowTier = tier == HectonQualityTier.Unknown ||
                            tier == HectonQualityTier.Low ||
                            tier == HectonQualityTier.Mx350 ||
                            lowMemoryProfile;
+            float safeQualityWeight = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 1f);
 
-            if (tier == _qualityTier && profileByte == _qualityTierByte && lowTier == _lowTier)
+            if (tier == _qualityTier &&
+                profileByte == _qualityTierByte &&
+                lowTier == _lowTier &&
+                lowMemoryProfile == _lowMemoryProfile &&
+                math.abs(_qualityWeight - safeQualityWeight) <= ShaderEpsilon)
                 return;
 
             _qualityTier = tier;
             _qualityTierByte = profileByte;
             _lowTier = lowTier;
+            _lowMemoryProfile = lowMemoryProfile;
+            _qualityWeight = safeQualityWeight;
         }
 
         private void ConsumeAtmosphericSignals()
@@ -571,7 +587,7 @@ namespace Hecton8.Prologue.VFX
             float velocityScale = PositiveFiniteOrMinimum(fullHeatVelocityMetersPerSecond, 1f);
             float velocity01 = math.saturate(_velocityMetersPerSecond * math.rcp(velocityScale));
             float altitude01 = 1f - ResolveAltitudeOpacity01(_altitudeMeters);
-            float lowTier01 = _lowTier ? 1f : 0f;
+            float lowTier01 = ResolveSurvivalPressure01();
             float phase = (float)_phase;
 
             if (material != null)
@@ -725,7 +741,7 @@ namespace Hecton8.Prologue.VFX
                 Intensity01 = 1f,
                 DebrisKind = MassiveSplashDebrisKind,
                 Flags = 1,
-                Quantity = _lowTier ? (ushort)24 : (ushort)96
+                Quantity = ResolveSplashDebrisQuantity()
             };
             GlobalSignals.Publish(in debris);
 
@@ -733,7 +749,7 @@ namespace Hecton8.Prologue.VFX
             {
                 PositionAup = _lastCapsuleAup,
                 Intensity01 = 1f,
-                DurationSeconds = _lowTier ? 1.35f : 2.2f,
+                DurationSeconds = ResolveDropletDurationSeconds(),
                 SourceHash = MassiveSplashHash,
                 DropletKind = VisorDropletSignal.DropletKindMassiveSplash,
                 Flags = VisorDropletSignal.FlagExternalSplash,
@@ -916,6 +932,35 @@ namespace Hecton8.Prologue.VFX
         private static float MoveTowards01(float current, float target, float maxDelta)
         {
             return math.saturate(current + math.clamp(target - current, -math.max(0f, maxDelta), math.max(0f, maxDelta)));
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 1f);
+        }
+
+        private float ResolveQualityCurve01()
+        {
+            return math.smoothstep(0f, 1f, math.saturate(_qualityWeight));
+        }
+
+        private float ResolveSurvivalPressure01()
+        {
+            float qualityPressure = 1f - ResolveQualityCurve01();
+            float profilePressure = _lowTier ? 0.85f : 0f;
+            return math.saturate(math.max(qualityPressure, profilePressure));
+        }
+
+        private ushort ResolveSplashDebrisQuantity()
+        {
+            float quantity = math.lerp(24f, 96f, ResolveQualityCurve01());
+            return (ushort)math.clamp((int)math.round(quantity), 24, 96);
+        }
+
+        private float ResolveDropletDurationSeconds()
+        {
+            return math.lerp(1.35f, 2.2f, ResolveQualityCurve01());
         }
 
         private static float PositiveFiniteOrMinimum(float value, float minimum)

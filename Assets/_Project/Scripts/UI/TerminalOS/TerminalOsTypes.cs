@@ -46,12 +46,30 @@ namespace Hecton8.UI
         public const uint CommandOpenDoor = 0x4F504452u; // OPDR
         public const uint CommandAcknowledge = 0x41434B30u; // ACK0
         public const uint TerminalHashSeed = 0x5445524Du; // TERM
+        public const int DecryptionPuzzleStrideBytes = 32;
+        public const int DecryptionTerminalStrideBytes = 64;
+        public const int DecryptionKnobInputStrideBytes = 64;
+        public const int DecryptionTelemetryStrideBytes = 64;
+        public const uint DecryptionFlagActive = 1u << 0;
+        public const uint DecryptionFlagSolved = 1u << 1;
+        public const uint DecryptionFlagInitialized = 1u << 2;
+        public const uint DecryptionFlagNonFinite = 1u << 3;
+        public const uint DecryptionFlagInteractionBlocked = 1u << 4;
+        public const uint DecryptionHoldFrameMask = 0xFFFF0000u;
+        public const int DecryptionHoldFrameShift = 16;
+        public const int DecryptionRequiredHoldFrames = 30;
+        public const float DecryptionSolveThreshold01 = 0.98f;
+        public const uint DecryptionKnobFlagActive = 1u << 0;
+        public const uint DecryptionKnobFlagGrab = 1u << 1;
+        public const uint DecryptionKnobFlagFrequency = 1u << 2;
+        public const uint DecryptionKnobFlagPhase = 1u << 3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.TerminalStateStrideBytes)]
     public struct TerminalStateDTO
     {
         [FieldOffset(0)] public uint TerminalHash;
+        // GPU ABI: byte 7 is the CPU dirty flag packed into the unused alpha byte; TerminalBlit.compute masks RGB only.
         [FieldOffset(4)] public uint BackgroundColor;
         [FieldOffset(7)] public byte IsDirty;
         [FieldOffset(8)] public float Value1;
@@ -172,6 +190,77 @@ namespace Hecton8.UI
         public uint CommandHash;
         [FieldOffset(8)]
         public float2 LocalUv;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.DecryptionPuzzleStrideBytes)]
+    public struct DecryptionPuzzleDTO
+    {
+        [FieldOffset(0)] public float PlayerFrequency;
+        [FieldOffset(4)] public float PlayerPhase;
+        [FieldOffset(8)] public float TargetFrequency;
+        [FieldOffset(12)] public float TargetPhase;
+        [FieldOffset(16)] public float AlignmentAccuracy01;
+        [FieldOffset(20)] public uint PuzzleID;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.DecryptionTerminalStrideBytes)]
+    public struct DecryptionTerminalDTO
+    {
+        [FieldOffset(0)] public double3 TerminalAupMeters;
+        [FieldOffset(24)] public uint TerminalHash;
+        [FieldOffset(28)] public uint NodeHash;
+        [FieldOffset(32)] public float InteractionRadiusMeters;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] public ulong _pad0;
+        [FieldOffset(48)] public ulong _pad1;
+        [FieldOffset(56)] public ulong _pad2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.DecryptionKnobInputStrideBytes)]
+    public struct DecryptionKnobInputDTO
+    {
+        [FieldOffset(0)] public double3 PlayerAupMeters;
+        [FieldOffset(24)] public uint TerminalHash;
+        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(32)] public float FrequencyDelta;
+        [FieldOffset(36)] public float PhaseDelta;
+        [FieldOffset(40)] public float DeltaTime;
+        [FieldOffset(44)] public uint Frame;
+        [FieldOffset(48)] public ulong _pad0;
+        [FieldOffset(56)] public ulong _pad1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public partial struct TerminalUnlockedSignal : Hecton8.Core.Contracts.Signals.ISignal
+    {
+        [FieldOffset(0)] public uint PuzzleID;
+        [FieldOffset(4)] public uint NodeHash;
+        [FieldOffset(8)] public uint TerminalHash;
+        [FieldOffset(12)] public uint Frame;
+        [FieldOffset(16)] public float AlignmentAccuracy01;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public ulong _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.DecryptionTelemetryStrideBytes)]
+    public struct DecryptionTelemetryEntry
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint PuzzleID;
+        [FieldOffset(8)] public float PlayerFrequency;
+        [FieldOffset(12)] public float PlayerPhase;
+        [FieldOffset(16)] public float TargetFrequency;
+        [FieldOffset(20)] public float TargetPhase;
+        [FieldOffset(24)] public float AlignmentAccuracy01;
+        [FieldOffset(28)] public float BurstMicroseconds;
+        [FieldOffset(32)] public uint Flags;
+        [FieldOffset(36)] public uint NodeHash;
+        [FieldOffset(40)] public uint TerminalHash;
+        [FieldOffset(44)] public uint FaultFlags;
+        [FieldOffset(48)] public ulong _pad0;
+        [FieldOffset(56)] public ulong _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 80)]
@@ -320,6 +409,11 @@ namespace Hecton8.UI
                 UnsafeUtility.SizeOf<TerminalPlaneDTO>() != TerminalOsConstants.TerminalPlaneStrideBytes ||
                 UnsafeUtility.SizeOf<GazeRayDTO>() != TerminalOsConstants.GazeRayStrideBytes ||
                 UnsafeUtility.SizeOf<ButtonAABBDTO>() != TerminalOsConstants.ButtonAabbStrideBytes ||
+                UnsafeUtility.SizeOf<DecryptionPuzzleDTO>() != TerminalOsConstants.DecryptionPuzzleStrideBytes ||
+                UnsafeUtility.SizeOf<DecryptionTerminalDTO>() != TerminalOsConstants.DecryptionTerminalStrideBytes ||
+                UnsafeUtility.SizeOf<DecryptionKnobInputDTO>() != TerminalOsConstants.DecryptionKnobInputStrideBytes ||
+                UnsafeUtility.SizeOf<TerminalUnlockedSignal>() != 32 ||
+                UnsafeUtility.SizeOf<DecryptionTelemetryEntry>() != TerminalOsConstants.DecryptionTelemetryStrideBytes ||
                 UnsafeUtility.SizeOf<TerminalTelemetryEntry>() != 64)
             {
                 return false;
@@ -541,7 +635,7 @@ namespace Hecton8.UI
             }
 
             float distanceSq = math.lengthsq(delta);
-            float maxDistance = math.max(0.1f, MaxDistanceMeters);
+            float maxDistance = math.isfinite(MaxDistanceMeters) ? math.max(0.1f, MaxDistanceMeters) : 0.1f;
             if (!math.isfinite(distanceSq) || distanceSq > maxDistance * maxDistance)
             {
                 result.InteractionFlags = TerminalOsConstants.InteractionFlagCulled;
@@ -558,8 +652,17 @@ namespace Hecton8.UI
             }
 
             result.InteractionFlags = TerminalOsConstants.InteractionFlagCandidate;
-            result.Distance = math.sqrt(math.max(0f, distanceSq));
+            result.Distance = SafeDistanceFromSq(distanceSq);
             Interactions[index] = result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SafeDistanceFromSq(float distanceSq)
+        {
+            return math.select(
+                0f,
+                distanceSq * math.rsqrt(math.max(distanceSq, 0.000001f)),
+                distanceSq > 0f && math.isfinite(distanceSq));
         }
     }
 
@@ -608,7 +711,7 @@ namespace Hecton8.UI
             }
 
             float distance = math.dot(centerFromOrigin, normal) / denom;
-            float maxDistance = math.max(0.1f, MaxDistanceMeters);
+            float maxDistance = math.isfinite(MaxDistanceMeters) ? math.max(0.1f, MaxDistanceMeters) : 0.1f;
             if (!math.isfinite(distance) || distance < 0f || distance > maxDistance)
             {
                 current.InteractionFlags |= TerminalOsConstants.InteractionFlagCulled;
@@ -638,6 +741,257 @@ namespace Hecton8.UI
                                                                  TerminalOsConstants.InteractionFlagRelease |
                                                                  TerminalOsConstants.InteractionFlagScroll));
             Interactions[index] = current;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct GenerateMockPuzzleDataJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<DecryptionPuzzleDTO> Puzzles;
+        [NoAlias] public NativeArray<DecryptionTerminalDTO> Terminals;
+        [ReadOnly, NoAlias] public NativeArray<TerminalPlaneDTO> Planes;
+        public int PuzzleCount;
+        public float BasePlayerFrequency;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)PuzzleCount)
+                return;
+
+            TerminalPlaneDTO plane = Planes.IsCreated && index < Planes.Length ? Planes[index] : default;
+            uint terminalHash = plane.TerminalHash != 0u ? plane.TerminalHash : TerminalOsHash.HashIndex(index);
+            uint seed = terminalHash ^ 0x9E3779B9u ^ ((uint)index * 747796405u);
+            float frequencyJitter = ((seed >> 8) & 255u) * (1f / 255f) * 0.35f;
+            float phaseJitter = ((seed >> 17) & 255u) * (1f / 255f) * 0.35f;
+            Puzzles[index] = new DecryptionPuzzleDTO
+            {
+                PlayerFrequency = SanitizeRange(BasePlayerFrequency, 0.1f, 12f, 3.25f),
+                PlayerPhase = 0.35f,
+                TargetFrequency = 4.5f + frequencyJitter,
+                TargetPhase = 1.2f + phaseJitter,
+                AlignmentAccuracy01 = 0f,
+                PuzzleID = terminalHash,
+                Flags = TerminalOsConstants.DecryptionFlagActive | TerminalOsConstants.DecryptionFlagInitialized
+            };
+
+            Terminals[index] = new DecryptionTerminalDTO
+            {
+                TerminalAupMeters = ToAbsoluteDouble3(in plane.CenterAup),
+                TerminalHash = terminalHash,
+                NodeHash = ResolveNodeHash(terminalHash),
+                InteractionRadiusMeters = 1.5f,
+                Flags = TerminalOsConstants.DecryptionFlagActive | TerminalOsConstants.DecryptionFlagInitialized
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ResolveNodeHash(uint terminalHash)
+        {
+            uint hash = terminalHash == 0u ? TerminalOsConstants.TerminalHashSeed : terminalHash;
+            hash = (hash ^ 0x42415345u) * 16777619u;
+            return hash == 0u ? 1u : hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeRange(float value, float min, float max, float fallback)
+        {
+            return math.isfinite(value) ? math.clamp(value, min, max) : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double3 ToAbsoluteDouble3(in AbsoluteUniversePosition aup)
+        {
+            double cell = AbsoluteUniversePosition.CellSizeMeters;
+            return new double3(
+                (aup.GridX * cell) + aup.LocalX,
+                (aup.GridY * cell) + aup.LocalY,
+                (aup.GridZ * cell) + aup.LocalZ);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct ClearDecryptionFlagsJob : IJobParallelFor
+    {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: Puzzles points to the Vault-owned TerminalDecryptionPuzzles buffer opened by the TerminalOS owner phase immediately before this cold boot job runs. The pointer is never stored outside the job value and the job writes only index-local Flags fields inside [0, PuzzleCount).
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: The alternative NativeArray indexer route was rejected for this specific cold scrub because the XML assignment requires direct unmanaged mutation via raw memory/UnsafeUtility.AsRef for the decryption DTO path. The bounds guard and owner-owned Vault handle are the invariants that replace Unity's container safety metadata.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: This job is executed with .Run during initialization before any decryption evaluation job is scheduled, so there is no concurrent writer and no alias with the shader upload path. If the pointer is null or index is outside PuzzleCount, the job writes nothing.
+        [NativeDisableUnsafePtrRestriction, NoAlias] public DecryptionPuzzleDTO* Puzzles;
+        public int PuzzleCount;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)PuzzleCount || Puzzles == null)
+                return;
+
+            ref DecryptionPuzzleDTO puzzle = ref UnsafeUtility.AsRef<DecryptionPuzzleDTO>(Puzzles + index);
+            puzzle.Flags = 0u;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct EvaluateDecryptionPipelineJob : IJob
+    {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: Puzzles points to the Vault-owned TerminalDecryptionPuzzles buffer for one owner-phase scheduled job. TerminalOS does not expose this pointer to consumers; public read/write accessors fail closed while _decryptionScheduled is true, preventing same-frame aliasing against editor reads or target mutation.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: Raw pointer mutation is retained instead of a NativeArray write-back loop because the prompt explicitly requires unmanaged DTO mutation through UnsafeUtility.AsRef and the DTO is fixed at 32 bytes. The job is fused as a serial IJob so adjacent 32-byte rows are not written by different workers on the same cache line.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: Terminals and Inputs are read-only, marked NoAlias, and obtained from distinct Vault buffer IDs. The only write outputs are the puzzle buffer and the SignalBus unlock queue; completion is returned as a JobHandle and finalized only by the TerminalOS owner phase.
+        [NativeDisableUnsafePtrRestriction, NoAlias] public DecryptionPuzzleDTO* Puzzles;
+        [ReadOnly, NoAlias] public NativeArray<DecryptionTerminalDTO> Terminals;
+        [ReadOnly, NoAlias] public NativeArray<DecryptionKnobInputDTO> Inputs;
+        public int PuzzleCount;
+        public float FrequencySensitivity;
+        public float PhaseSensitivity;
+        public float FreqWeight;
+        public float PhaseWeight;
+        public float SolveThreshold01;
+        public uint Frame;
+        public uint StepFrames;
+        public NativeQueue<TerminalUnlockedSignal>.ParallelWriter UnlockedSignals;
+
+        public void Execute()
+        {
+            if (Puzzles == null)
+                return;
+
+            int count = math.max(0, PuzzleCount);
+            DecryptionKnobInputDTO input = Inputs.IsCreated && Inputs.Length > 0 ? Inputs[0] : default;
+            bool inputGrabbed =
+                (input.Flags & (TerminalOsConstants.DecryptionKnobFlagActive | TerminalOsConstants.DecryptionKnobFlagGrab)) ==
+                (TerminalOsConstants.DecryptionKnobFlagActive | TerminalOsConstants.DecryptionKnobFlagGrab);
+            uint stepFrames = math.max(1u, StepFrames);
+
+            for (int index = 0; index < count; index++)
+            {
+                ref DecryptionPuzzleDTO puzzle = ref UnsafeUtility.AsRef<DecryptionPuzzleDTO>(Puzzles + index);
+                if ((puzzle.Flags & TerminalOsConstants.DecryptionFlagActive) == 0u)
+                    continue;
+
+                DecryptionTerminalDTO terminal = Terminals.IsCreated && index < Terminals.Length ? Terminals[index] : default;
+                if ((puzzle.Flags & TerminalOsConstants.DecryptionFlagSolved) == 0u)
+                    ApplyInput(ref puzzle, in terminal, in input, inputGrabbed);
+
+                EvaluateAlignment(ref puzzle);
+                EvaluateCompletion(index, ref puzzle, in terminal, stepFrames);
+            }
+        }
+
+        private void ApplyInput(
+            ref DecryptionPuzzleDTO puzzle,
+            in DecryptionTerminalDTO terminal,
+            in DecryptionKnobInputDTO input,
+            bool inputGrabbed)
+        {
+            if (!inputGrabbed)
+                return;
+
+            uint terminalHash = terminal.TerminalHash != 0u ? terminal.TerminalHash : puzzle.PuzzleID;
+            if (input.TerminalHash != 0u && input.TerminalHash != terminalHash)
+                return;
+
+            double3 deltaDouble = terminal.TerminalAupMeters - input.PlayerAupMeters;
+            float3 localDelta = new float3((float)deltaDouble.x, (float)deltaDouble.y, (float)deltaDouble.z);
+            float distanceSq = math.lengthsq(localDelta);
+            float radius = math.max(0.1f, terminal.InteractionRadiusMeters);
+            if (!math.isfinite(distanceSq) || distanceSq > radius * radius)
+            {
+                puzzle.Flags |= TerminalOsConstants.DecryptionFlagInteractionBlocked;
+                return;
+            }
+
+            float dt = math.saturate(input.DeltaTime * 60f);
+            float frequencyDelta = (input.Flags & TerminalOsConstants.DecryptionKnobFlagFrequency) != 0u
+                ? input.FrequencyDelta * FrequencySensitivity * math.max(0.05f, dt)
+                : 0f;
+            float phaseDelta = (input.Flags & TerminalOsConstants.DecryptionKnobFlagPhase) != 0u
+                ? input.PhaseDelta * PhaseSensitivity * math.max(0.05f, dt)
+                : 0f;
+
+            puzzle.PlayerFrequency = SanitizeRange(puzzle.PlayerFrequency + frequencyDelta, 0.1f, 12f, 3.25f);
+            puzzle.PlayerPhase = WrapPhase(puzzle.PlayerPhase + phaseDelta);
+            puzzle.Flags &= ~TerminalOsConstants.DecryptionFlagInteractionBlocked;
+        }
+
+        private void EvaluateAlignment(ref DecryptionPuzzleDTO puzzle)
+        {
+            float playerFrequency = Sanitize(puzzle.PlayerFrequency, 0f);
+            float playerPhase = Sanitize(puzzle.PlayerPhase, 0f);
+            float targetFrequency = Sanitize(puzzle.TargetFrequency, 0f);
+            float targetPhase = Sanitize(puzzle.TargetPhase, 0f);
+            float freqDiff = math.abs(playerFrequency - targetFrequency);
+            float phaseDiff = math.abs(WrapSignedPhase(playerPhase - targetPhase));
+            float alignment = math.saturate(1.0f - (freqDiff * math.max(0f, FreqWeight) + phaseDiff * math.max(0f, PhaseWeight)));
+            puzzle.AlignmentAccuracy01 = alignment;
+            if (!math.isfinite(alignment))
+            {
+                puzzle.AlignmentAccuracy01 = 0f;
+                puzzle.Flags |= TerminalOsConstants.DecryptionFlagNonFinite;
+            }
+            else
+            {
+                puzzle.Flags &= ~TerminalOsConstants.DecryptionFlagNonFinite;
+            }
+        }
+
+        private void EvaluateCompletion(
+            int index,
+            ref DecryptionPuzzleDTO puzzle,
+            in DecryptionTerminalDTO terminal,
+            uint stepFrames)
+        {
+            if ((puzzle.Flags & TerminalOsConstants.DecryptionFlagSolved) != 0u)
+                return;
+
+            uint hold = (puzzle.Flags & TerminalOsConstants.DecryptionHoldFrameMask) >> TerminalOsConstants.DecryptionHoldFrameShift;
+            float threshold = SanitizeRange(SolveThreshold01, 0.5f, 0.999f, TerminalOsConstants.DecryptionSolveThreshold01);
+            if (puzzle.AlignmentAccuracy01 >= threshold)
+                hold = math.min(0xFFFFu, hold + stepFrames);
+            else
+                hold = 0u;
+
+            uint lowFlags = puzzle.Flags & ~TerminalOsConstants.DecryptionHoldFrameMask;
+            puzzle.Flags = lowFlags | (hold << TerminalOsConstants.DecryptionHoldFrameShift);
+            if (hold < TerminalOsConstants.DecryptionRequiredHoldFrames)
+                return;
+
+            uint terminalHash = terminal.TerminalHash != 0u ? terminal.TerminalHash : puzzle.PuzzleID;
+            uint nodeHash = terminal.NodeHash != 0u ? terminal.NodeHash : terminalHash;
+            puzzle.Flags |= TerminalOsConstants.DecryptionFlagSolved;
+            UnlockedSignals.Enqueue(new TerminalUnlockedSignal
+            {
+                PuzzleID = puzzle.PuzzleID,
+                NodeHash = nodeHash,
+                TerminalHash = terminalHash,
+                Frame = Frame,
+                AlignmentAccuracy01 = puzzle.AlignmentAccuracy01,
+                Flags = puzzle.Flags
+            });
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Sanitize(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeRange(float value, float min, float max, float fallback)
+        {
+            return math.isfinite(value) ? math.clamp(value, min, max) : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float WrapPhase(float value)
+        {
+            const float twoPi = math.PI * 2f;
+            float safe = math.isfinite(value) ? value : 0f;
+            return safe - math.floor(safe * math.rcp(twoPi)) * twoPi;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float WrapSignedPhase(float value)
+        {
+            const float twoPi = math.PI * 2f;
+            float wrapped = value - math.floor((value + math.PI) * math.rcp(twoPi)) * twoPi;
+            return wrapped - math.PI;
         }
     }
 

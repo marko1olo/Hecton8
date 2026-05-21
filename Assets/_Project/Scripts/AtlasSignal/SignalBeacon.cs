@@ -49,7 +49,7 @@ namespace Hecton8.AtlasSignal
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Atlas Signal/Signal Beacon")]
-    public sealed class SignalBeacon : MonoBehaviour, IUpdatable
+    public sealed class SignalBeacon : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float DefaultBipPeriodSeconds = 0.1f;
         private const double TriangulationCentroidWeight = 1d / 3d;
@@ -96,8 +96,12 @@ namespace Hecton8.AtlasSignal
         private bool _aupCacheValid;
         private bool _beaconAupCacheValid;
         private bool _registered;
+        private bool _hotSwapRegistered;
         private bool _fragmentRecovered;
         private int _registrySlot = -1;
+        private AudioLogSystem _audioLogs;
+        private SpatialAudioManager _spatialAudio;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private SignalBeaconTelemetry _telemetry;
 
         private static readonly int _ShaderSignalStatic = Shader.PropertyToID("_AtlasSignalStatic");
@@ -120,6 +124,8 @@ namespace Hecton8.AtlasSignal
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             RefreshAupCache(force: true);
             RefreshBeaconAupCache(force: true);
             _registrySlot = SignalBeaconRegistry.Register(this);
@@ -130,12 +136,14 @@ namespace Hecton8.AtlasSignal
         private void OnDisable()
         {
             TryUnregisterTick();
+            TryUnregisterHotSwapListener();
             UnregisterBeaconAndRefreshShaderStatic();
         }
 
         private void OnDestroy()
         {
             TryUnregisterTick();
+            TryUnregisterHotSwapListener();
             UnregisterBeaconAndRefreshShaderStatic();
         }
 
@@ -169,6 +177,11 @@ namespace Hecton8.AtlasSignal
         private void SolveTelemetry()
         {
             RefreshAupCache(force: false);
+            if (!_aupCacheValid)
+            {
+                ClearPublishedTelemetry();
+                return;
+            }
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
             {
@@ -197,7 +210,7 @@ namespace Hecton8.AtlasSignal
             _telemetry.ErrorNoise01 = result.ErrorNoise01;
             _telemetry.Static01 = result.Static01;
 
-            AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
+            AudioLogSystem audioLogs = _audioLogs;
             _telemetry.RecoveredBits = audioLogs != null
                 ? audioLogs.GetRecoveredEncryptedBits(linkedAudioLogHash)
                 : 0u;
@@ -271,7 +284,7 @@ namespace Hecton8.AtlasSignal
             if (linkedAudioLogHash == 0u || fragmentHash == 0u)
                 return false;
 
-            AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
+            AudioLogSystem audioLogs = _audioLogs;
             if (audioLogs == null)
                 return false;
 
@@ -294,9 +307,16 @@ namespace Hecton8.AtlasSignal
             _cachedPoint0 = aupPoint0;
             _cachedPoint1 = aupPoint1;
             _cachedPoint2 = aupPoint2;
-            _pointAup0 = AbsoluteUniversePosition.FromRuntimePosition(aupPoint0);
-            _pointAup1 = AbsoluteUniversePosition.FromRuntimePosition(aupPoint1);
-            _pointAup2 = AbsoluteUniversePosition.FromRuntimePosition(aupPoint2);
+            if (!TryResolveAupFromRuntimeOrigin(aupPoint0, out _pointAup0) ||
+                !TryResolveAupFromRuntimeOrigin(aupPoint1, out _pointAup1) ||
+                !TryResolveAupFromRuntimeOrigin(aupPoint2, out _pointAup2))
+            {
+                _aupCacheValid = false;
+                _beaconAupCacheValid = false;
+                _cachedBeaconRuntimeFrame = -1;
+                return;
+            }
+
             _aupCacheValid = true;
             _beaconAupCacheValid = false;
             _cachedBeaconRuntimeFrame = -1;
@@ -324,6 +344,13 @@ namespace Hecton8.AtlasSignal
 
             if (!_aupCacheValid)
                 RefreshAupCache(force: true);
+            if (!_aupCacheValid)
+            {
+                _beaconAupCacheValid = false;
+                _cachedBeaconRuntimePosition = Vector3.zero;
+                _cachedBeaconRuntimeFrame = currentFrame;
+                return;
+            }
 
             _beaconAup = AbsoluteUniversePosition.WeightedAverage3(
                 in _pointAup0,
@@ -351,9 +378,26 @@ namespace Hecton8.AtlasSignal
             return true;
         }
 
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in aup);
+        }
+
         private float ResolveCaveErrorMultiplier()
         {
-            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudio &&
+            SpatialAudioManager spatialAudio = _spatialAudio;
+            if (spatialAudio != null &&
                 spatialAudio.IsListenerInsideCaveVolume)
             {
                 float caveInterior01 = math.saturate(spatialAudio.ListenerCaveInterior01);
@@ -367,18 +411,62 @@ namespace Hecton8.AtlasSignal
         {
             _playerMovement = null;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null)
                 _playerMovement = playerContext.PlayerMovement;
         }
 
-        private void TryRegisterTick()
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.AudioLogRuntime:
+                    _audioLogs = currentService as AudioLogSystem;
+                    return;
+                case GlobalRegistryServiceSlot.Audio:
+                    _spatialAudio = currentService as SpatialAudioManager;
+                    return;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    ResolvePlayer();
+                    return;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _audioLogs = GlobalRegistry.AudioLogs;
+            _spatialAudio = GlobalRegistry.Audio as SpatialAudioManager;
+            _playerRuntimeContext = GlobalRegistry.Player;
+            ResolvePlayer();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterTick()
+        {
+            if (_registered || !Application.isPlaying)
+                return;
+
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterTick()

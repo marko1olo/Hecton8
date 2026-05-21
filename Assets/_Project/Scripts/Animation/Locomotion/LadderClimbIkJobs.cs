@@ -122,7 +122,6 @@ namespace Hecton8.Animation.Locomotion
         public bool HasTelemetry => TelemetryRing.IsCreated && TelemetryRing.Length > 0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct LadderClimbIkSolveJob : IJob
     {

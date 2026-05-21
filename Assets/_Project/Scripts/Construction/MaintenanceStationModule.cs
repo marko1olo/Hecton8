@@ -299,7 +299,7 @@ namespace Hecton8.Construction
             if (currentDurability >= maxDurability - 0.001f)
                 return false;
 
-            ResolveRuntimeReferences();
+            CacheRegistryServicesCold();
             if (playerToolManager != null &&
                 playerToolManager.CurrentTool != null &&
                 ReferenceEquals(playerToolManager.CurrentTool.ToolData, item))

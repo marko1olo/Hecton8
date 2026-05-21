@@ -17,14 +17,14 @@ using UnityEngine;
 
 namespace Hecton8.Caves
 {
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct VoxelModifiedCell
     {
-        public half Density;
-        public byte MaterialId;
-        public byte Flags;
-        public ushort Reserved;
-        public ushort Reserved1;
+        [FieldOffset(0)] public half Density;
+        [FieldOffset(2)] public byte MaterialId;
+        [FieldOffset(3)] public byte Flags;
+        [FieldOffset(4)] public ushort Reserved;
+        [FieldOffset(6)] public ushort Reserved1;
     }
 
     /// <summary>
@@ -123,6 +123,8 @@ namespace Hecton8.Caves
         private const string VoxelBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_05_VOXEL_CARVE.h8dump";
         private const string NativeMemoryOwner = nameof(VoxelDeltaProcessor);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const Allocator DataVaultExemptVoxelCarveSignalLaneAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptVoxelModifiedCellScratchAllocator = Allocator.Persistent;
         private const uint TitaniumOreHash = 0x61C51592u;
         private const uint TitaniumScrapItemHash = 0xD150482Eu;
         private static readonly uint _VoxelDebrisSignalHash = unchecked((uint)Hecton.Localization.LocHash.Compute("voxel.debris.carve"));
@@ -181,7 +183,7 @@ namespace Hecton8.Caves
         private bool _scheduledCarveCommitPending;
         private int _scheduledCarveCommitIndex;
         private bool _carveCommitWarningArmed;
-        private VaultBufferHandle<VoxelCarveTelemetryEntry> _blackBoxHandle;
+        private VaultGenerationHandle<VoxelCarveTelemetryEntry> _blackBoxHandle;
         private int _blackBoxCursor;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private bool _blackBoxDumpedThisActivation;
@@ -192,7 +194,7 @@ namespace Hecton8.Caves
         private int _scheduledCarveDestroyedTitaniumCells;
         private int _scheduledCarveMassUnits;
         private int _totalVoxelsCarved;
-        private VaultBufferHandle<CarveCellWrite> _scheduledCarveWritesHandle;
+        private VaultGenerationHandle<CarveCellWrite> _scheduledCarveWritesHandle;
         private int _scheduledCarveWritesCapacity;
         private bool _scheduledCarveWritesLocked;
         // COLD ALLOC: PendingCompactionRequest[16] - bounded background dirty-chunk compaction queue - owner: VoxelDeltaProcessor
@@ -613,7 +615,7 @@ namespace Hecton8.Caves
             if (_queuedCarveEvents.IsCreated)
                 return;
 
-            _queuedCarveEvents = new NativeQueue<VoxelCarveEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<VoxelCarveEvent>[64] - bounded async voxel carve ingress lane - owner: VoxelDeltaProcessor
+            _queuedCarveEvents = new NativeQueue<VoxelCarveEvent>(DataVaultExemptVoxelCarveSignalLaneAllocator); // COLD ALLOC: NativeQueue<VoxelCarveEvent>[64] - bounded async voxel carve ingress lane - owner: VoxelDeltaProcessor
             NativeMemorySentinel.RegisterNativeQueue(
                 _queuedCarveEvents,
                 InitialCarveEventQueueCapacity,
@@ -650,13 +652,18 @@ namespace Hecton8.Caves
             if (vault == null)
                 return false;
 
-            _blackBoxHandle = vault.GetBufferHandle<VoxelCarveTelemetryEntry>(
+            _blackBoxHandle = vault.GetGenerationHandle<VoxelCarveTelemetryEntry>(
                 BufferID.ShinobuDeltaCrusherVoxelBlackBox,
                 VoxelBlackBoxCapacity,
                 SystemID.TerrainSeams,
                 NativeArrayOptions.ClearMemory);
             _blackBoxCursor = 0;
-            return _blackBoxHandle.IsCreated && _blackBoxHandle.Length >= VoxelBlackBoxCapacity;
+            return TryResolveVaultBuffer(
+                vault,
+                in _blackBoxHandle,
+                BufferID.ShinobuDeltaCrusherVoxelBlackBox,
+                VoxelBlackBoxCapacity,
+                out _);
         }
 
         private void DisposeBlackBox()
@@ -677,21 +684,41 @@ namespace Hecton8.Caves
             if (vault == null)
                 return false;
 
-            if (!_blackBoxHandle.IsCreated && !EnsureBlackBox())
+            if (!IsExactVaultHandle(in _blackBoxHandle, BufferID.ShinobuDeltaCrusherVoxelBlackBox) && !EnsureBlackBox())
                 return false;
 
-            blackBox = _blackBoxHandle.Resolve(vault);
-            if (!blackBox.IsCreated || blackBox.Length < VoxelBlackBoxCapacity)
+            if (!TryResolveVaultBuffer(vault, in _blackBoxHandle, BufferID.ShinobuDeltaCrusherVoxelBlackBox, VoxelBlackBoxCapacity, out blackBox))
             {
-                _blackBoxHandle = vault.GetBufferHandle<VoxelCarveTelemetryEntry>(
+                _blackBoxHandle = vault.GetGenerationHandle<VoxelCarveTelemetryEntry>(
                     BufferID.ShinobuDeltaCrusherVoxelBlackBox,
                     VoxelBlackBoxCapacity,
                     SystemID.TerrainSeams,
                     NativeArrayOptions.ClearMemory);
-                blackBox = _blackBoxHandle.Resolve(vault);
+                if (!TryResolveVaultBuffer(vault, in _blackBoxHandle, BufferID.ShinobuDeltaCrusherVoxelBlackBox, VoxelBlackBoxCapacity, out blackBox))
+                    return false;
             }
 
-            return blackBox.IsCreated && blackBox.Length >= VoxelBlackBoxCapacity;
+            return true;
+        }
+
+        private static bool TryResolveVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   IsExactVaultHandle(in handle, expectedBufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
         }
 
         private static void PrewarmCarveEventQueue(ref NativeQueue<VoxelCarveEvent> queue, int capacity)
@@ -924,7 +951,9 @@ namespace Hecton8.Caves
             if (volume == null || damage <= 0f || !volume.HasRuntimeData)
                 return;
 
-            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeHitPoint);
+            if (!TryResolveRuntimeAupDouble(runtimeHitPoint, out double3 absoluteHitPoint))
+                return;
+
             float mergeDistance = math.max(volume.VoxelSize * 2f, MinCarveRadiusMeters);
             double mergeDistanceSq = (double)mergeDistance * mergeDistance;
 
@@ -972,7 +1001,9 @@ namespace Hecton8.Caves
             if (volume == null || radius <= 0f || !volume.HasRuntimeData)
                 return;
 
-            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeHitPoint);
+            if (!TryResolveRuntimeAupDouble(runtimeHitPoint, out double3 absoluteHitPoint))
+                return;
+
             ApplyImmediateAbsoluteCrater(volume, absoluteHitPoint, radius, materialId);
         }
 
@@ -1275,7 +1306,7 @@ namespace Hecton8.Caves
             if (estimatedCount <= 0)
                 return false;
 
-            modifiedCells = new NativeParallelHashMap<int3, VoxelModifiedCell>(estimatedCount, Allocator.Persistent);
+            modifiedCells = new NativeParallelHashMap<int3, VoxelModifiedCell>(estimatedCount, DataVaultExemptVoxelModifiedCellScratchAllocator);
 
             for (int z = minChunk.z; z <= maxChunk.z; z++)
             {
@@ -1696,7 +1727,7 @@ namespace Hecton8.Caves
             CompactedChunkState compactedState,
             bool hasOverlay)
         {
-            return compactedState.IsRleCompressed &&
+            return compactedState.IsRleCompressed != 0 &&
                    compactedState.RleMaterialId == DefaultMaterialId &&
                    compactedState.RleCellFlags == DeltaModeReplace &&
                    !hasOverlay;
@@ -3610,18 +3641,18 @@ namespace Hecton8.Caves
             if (vault == null)
                 return false;
 
-            if (!_scheduledCarveWritesHandle.IsCreated ||
+            if (!IsExactVaultHandle(in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites) ||
                 _scheduledCarveWritesCapacity < requiredCount)
             {
-                _scheduledCarveWritesHandle = vault.GetBufferHandle<CarveCellWrite>(
+                _scheduledCarveWritesHandle = vault.GetGenerationHandle<CarveCellWrite>(
                     BufferID.ShinobuDeltaCrusherCarveWrites,
                     requiredCount,
                     SystemID.TerrainSeams,
                     NativeArrayOptions.ClearMemory);
-                _scheduledCarveWritesCapacity = _scheduledCarveWritesHandle.Length;
+                _scheduledCarveWritesCapacity = requiredCount;
             }
 
-            if (!_scheduledCarveWritesHandle.IsCreated ||
+            if (!IsExactVaultHandle(in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites) ||
                 _scheduledCarveWritesCapacity < requiredCount ||
                 !vault.TryLockBuffer(BufferID.ShinobuDeltaCrusherCarveWrites, SystemID.TerrainSeams))
             {
@@ -3629,17 +3660,16 @@ namespace Hecton8.Caves
             }
 
             _scheduledCarveWritesLocked = true;
-            writes = _scheduledCarveWritesHandle.Resolve(vault);
-            if (!writes.IsCreated || writes.Length < requiredCount)
+            if (!TryResolveVaultBuffer(vault, in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites, requiredCount, out writes))
             {
                 UnlockScheduledCarveWrites();
-                _scheduledCarveWritesHandle = vault.GetBufferHandle<CarveCellWrite>(
+                _scheduledCarveWritesHandle = vault.GetGenerationHandle<CarveCellWrite>(
                     BufferID.ShinobuDeltaCrusherCarveWrites,
                     requiredCount,
                     SystemID.TerrainSeams,
                     NativeArrayOptions.ClearMemory);
-                _scheduledCarveWritesCapacity = _scheduledCarveWritesHandle.Length;
-                if (!_scheduledCarveWritesHandle.IsCreated ||
+                _scheduledCarveWritesCapacity = requiredCount;
+                if (!IsExactVaultHandle(in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites) ||
                     _scheduledCarveWritesCapacity < requiredCount ||
                     !vault.TryLockBuffer(BufferID.ShinobuDeltaCrusherCarveWrites, SystemID.TerrainSeams))
                 {
@@ -3648,15 +3678,18 @@ namespace Hecton8.Caves
                 }
 
                 _scheduledCarveWritesLocked = true;
-                writes = _scheduledCarveWritesHandle.Resolve(vault);
-                if (writes.IsCreated && writes.Length >= requiredCount)
+                if (TryResolveVaultBuffer(vault, in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites, requiredCount, out writes))
+                {
+                    _scheduledCarveWritesCapacity = writes.Length;
                     return true;
+                }
 
                 UnlockScheduledCarveWrites();
                 writes = default;
                 return false;
             }
 
+            _scheduledCarveWritesCapacity = writes.Length;
             return true;
         }
 
@@ -3690,23 +3723,29 @@ namespace Hecton8.Caves
         {
             writes = default;
             IDataVault vault = ResolveDataVault();
-            if (vault == null || !_scheduledCarveWritesHandle.IsCreated)
+            if (vault == null || !IsExactVaultHandle(in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites))
                 return false;
 
-            writes = _scheduledCarveWritesHandle.Resolve(vault);
-            if ((!writes.IsCreated || writes.Length < _scheduledCarveWriteCount) &&
+            if (!TryResolveVaultBuffer(
+                    vault,
+                    in _scheduledCarveWritesHandle,
+                    BufferID.ShinobuDeltaCrusherCarveWrites,
+                    math.max(1, _scheduledCarveWriteCount),
+                    out writes) &&
                 _scheduledCarveWriteCount > 0)
             {
-                _scheduledCarveWritesHandle = vault.GetBufferHandle<CarveCellWrite>(
+                _scheduledCarveWritesHandle = vault.GetGenerationHandle<CarveCellWrite>(
                     BufferID.ShinobuDeltaCrusherCarveWrites,
                     _scheduledCarveWriteCount,
                     SystemID.TerrainSeams,
                     NativeArrayOptions.ClearMemory);
-                _scheduledCarveWritesCapacity = _scheduledCarveWritesHandle.Length;
-                writes = _scheduledCarveWritesHandle.Resolve(vault);
+                _scheduledCarveWritesCapacity = _scheduledCarveWriteCount;
+                if (!TryResolveVaultBuffer(vault, in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites, _scheduledCarveWriteCount, out writes))
+                    return false;
             }
 
-            return writes.IsCreated && writes.Length >= _scheduledCarveWriteCount;
+            _scheduledCarveWritesCapacity = math.max(_scheduledCarveWritesCapacity, writes.Length);
+            return true;
         }
 
         private static void ResetRecentCutHeatState()
@@ -3919,6 +3958,26 @@ namespace Hecton8.Caves
             return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
         }
 
+        private static bool TryResolveRuntimeAupDouble(Vector3 runtimePosition, out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            if (!IsFiniteVector3(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!resolvedAup.IsFinite())
+                return false;
+
+            absoluteAup = resolvedAup.ToAbsoluteDouble3();
+            return IsFiniteDouble3(absoluteAup);
+        }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct VoxelBlackBoxDumpHeader
@@ -4014,27 +4073,27 @@ namespace Hecton8.Caves
             return (half)math.clamp(value, -8f, 8f);
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct VoxelCarveTelemetryEntry
         {
-            public double3 LastHitAup;
-            public ulong FocusVolumeId;
-            public uint Frame;
-            public uint Flags;
-            public int TouchedMinX;
-            public int TouchedMinY;
-            public int TouchedMinZ;
-            public int TouchedMaxX;
-            public int TouchedMaxY;
-            public int TouchedMaxZ;
-            public ushort QueuedCarves;
-            public ushort PendingCarves;
-            public ushort ScheduledWrites;
-            public ushort DirtyChunks;
-            public byte ScheduledState;
-            public byte DrainBudget;
-            public ushort StateHash16;
-            private uint _pad0;
+            [FieldOffset(0)] public double3 LastHitAup;
+            [FieldOffset(24)] public ulong FocusVolumeId;
+            [FieldOffset(32)] public uint Frame;
+            [FieldOffset(36)] public uint Flags;
+            [FieldOffset(40)] public int TouchedMinX;
+            [FieldOffset(44)] public int TouchedMinY;
+            [FieldOffset(48)] public int TouchedMinZ;
+            [FieldOffset(52)] public int TouchedMaxX;
+            [FieldOffset(56)] public int TouchedMaxY;
+            [FieldOffset(60)] public int TouchedMaxZ;
+            [FieldOffset(64)] public ushort QueuedCarves;
+            [FieldOffset(66)] public ushort PendingCarves;
+            [FieldOffset(68)] public ushort ScheduledWrites;
+            [FieldOffset(70)] public ushort DirtyChunks;
+            [FieldOffset(72)] public byte ScheduledState;
+            [FieldOffset(73)] public byte DrainBudget;
+            [FieldOffset(74)] public ushort StateHash16;
+            [FieldOffset(76)] private uint _pad0;
         }
 
         private static int3 FloorDiv(int3 value, int divisor)
@@ -4183,7 +4242,7 @@ namespace Hecton8.Caves
             public Vector3 AbsoluteImpulseDirection;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct CarveSdfJob : IJobParallelFor
         {
             public double3 Center;
@@ -4268,21 +4327,21 @@ namespace Hecton8.Caves
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct CarveCellWrite
         {
-            public int AbsoluteCellX;
-            public int AbsoluteCellY;
-            public int AbsoluteCellZ;
-            public float BlendStrength;
-            public ushort SdfValueBits;
-            public byte MaterialId;
-            public byte DeltaFlags;
-            public byte IsActive;
-            private byte _pad0;
-            private ushort _pad1;
-            private uint _pad2;
-            private uint _pad3;
+            [FieldOffset(0)] public int AbsoluteCellX;
+            [FieldOffset(4)] public int AbsoluteCellY;
+            [FieldOffset(8)] public int AbsoluteCellZ;
+            [FieldOffset(12)] public float BlendStrength;
+            [FieldOffset(16)] public ushort SdfValueBits;
+            [FieldOffset(18)] public byte MaterialId;
+            [FieldOffset(19)] public byte DeltaFlags;
+            [FieldOffset(20)] public byte IsActive;
+            [FieldOffset(21)] private byte _pad0;
+            [FieldOffset(22)] private ushort _pad1;
+            [FieldOffset(24)] private uint _pad2;
+            [FieldOffset(28)] private uint _pad3;
 
             public int3 AbsoluteCell => new int3(AbsoluteCellX, AbsoluteCellY, AbsoluteCellZ);
         }
@@ -4294,7 +4353,7 @@ namespace Hecton8.Caves
             public NativeArray<ushort> SdfValueBits;
             public NativeArray<byte> MaterialIds;
             public NativeArray<byte> CellFlags;
-            public bool IsRleCompressed;
+            public byte IsRleCompressed;
             public ushort RleSdfValueBits;
             public byte RleMaterialId;
             public byte RleCellFlags;
@@ -4312,7 +4371,7 @@ namespace Hecton8.Caves
                 SdfValueBits = sdfValueBits;
                 MaterialIds = materialIds;
                 CellFlags = cellFlags;
-                IsRleCompressed = false;
+                IsRleCompressed = 0;
                 RleSdfValueBits = 0;
                 RleMaterialId = DefaultMaterialId;
                 RleCellFlags = DeltaModeReplace;
@@ -4332,7 +4391,7 @@ namespace Hecton8.Caves
                 SdfValueBits = default;
                 MaterialIds = default;
                 CellFlags = default;
-                IsRleCompressed = true;
+                IsRleCompressed = 1;
                 RleSdfValueBits = rleSdfValueBits;
                 RleMaterialId = rleMaterialId;
                 RleCellFlags = rleCellFlags;
@@ -4340,17 +4399,17 @@ namespace Hecton8.Caves
 
             public ushort GetSdfValueBits(int flatIndex)
             {
-                return IsRleCompressed ? RleSdfValueBits : SdfValueBits[flatIndex];
+                return IsRleCompressed != 0 ? RleSdfValueBits : SdfValueBits[flatIndex];
             }
 
             public byte GetMaterialId(int flatIndex)
             {
-                return IsRleCompressed ? RleMaterialId : MaterialIds[flatIndex];
+                return IsRleCompressed != 0 ? RleMaterialId : MaterialIds[flatIndex];
             }
 
             public byte GetCellFlags(int flatIndex)
             {
-                return IsRleCompressed ? RleCellFlags : CellFlags[flatIndex];
+                return IsRleCompressed != 0 ? RleCellFlags : CellFlags[flatIndex];
             }
 
             private bool TryPromoteUniformRun(in NativeArray<byte> rleUniformFlag)
@@ -4371,7 +4430,7 @@ namespace Hecton8.Caves
                 RleSdfValueBits = SdfValueBits[0];
                 RleMaterialId = MaterialIds[0];
                 RleCellFlags = CellFlags[0];
-                IsRleCompressed = true;
+                IsRleCompressed = 1;
                 DisposeTrackedNativeArray(ref SdfValueBits, default);
                 DisposeTrackedNativeArray(ref MaterialIds, default);
                 DisposeTrackedNativeArray(ref CellFlags, default);
@@ -4386,7 +4445,7 @@ namespace Hecton8.Caves
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct VoxelDeltaCompactionJob : IJobParallelFor
         {
             public double3 VolumeOrigin;
@@ -4483,7 +4542,7 @@ namespace Hecton8.Caves
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct VoxelDeltaUniformRunDetectJob : IJob
         {
             [ReadOnly] public NativeArray<ushort> SdfValueBits;
@@ -4521,7 +4580,7 @@ namespace Hecton8.Caves
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct VoxelDeltaRleByteMaskEncodeJob : IJob
         {
             [ReadOnly] public NativeArray<byte> Source;
@@ -4590,7 +4649,7 @@ namespace Hecton8.Caves
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct VoxelDeltaRleByteMaskDecodeJob : IJob
         {
             [ReadOnly] public NativeArray<byte> EncodedPairs;
@@ -4714,66 +4773,66 @@ namespace Hecton8.Caves
             return ((ulong)high << 32) | low;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct NativeSnapshotHeader
         {
-            public int Version;
-            public int ChunkCount;
-            public int TotalDirtyCellCount;
-            public int Reserved0;
+            [FieldOffset(0)] public int Version;
+            [FieldOffset(4)] public int ChunkCount;
+            [FieldOffset(8)] public int TotalDirtyCellCount;
+            [FieldOffset(12)] public int Reserved0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 8)]
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         private struct LegacyNativeSnapshotHeader
         {
-            public int ChunkCount;
-            public int TotalDirtyCellCount;
+            [FieldOffset(0)] public int ChunkCount;
+            [FieldOffset(4)] public int TotalDirtyCellCount;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct NativeSnapshotChunkHeader
         {
-            public int ChunkX;
-            public int ChunkY;
-            public int ChunkZ;
-            public float VoxelSize;
-            public int DirtyCellCount;
-            public int Reserved0;
+            [FieldOffset(0)] public int ChunkX;
+            [FieldOffset(4)] public int ChunkY;
+            [FieldOffset(8)] public int ChunkZ;
+            [FieldOffset(12)] public float VoxelSize;
+            [FieldOffset(16)] public int DirtyCellCount;
+            [FieldOffset(20)] public int Reserved0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct NativeSnapshotChunkHeaderRle
         {
-            public int ChunkX;
-            public int ChunkY;
-            public int ChunkZ;
-            public float VoxelSize;
-            public int DirtyCellCount;
-            public byte StorageFlags;
-            public byte Reserved0;
-            public ushort Reserved1;
-            public int PayloadByteLength;
-            public int Reserved2;
+            [FieldOffset(0)] public int ChunkX;
+            [FieldOffset(4)] public int ChunkY;
+            [FieldOffset(8)] public int ChunkZ;
+            [FieldOffset(12)] public float VoxelSize;
+            [FieldOffset(16)] public int DirtyCellCount;
+            [FieldOffset(20)] public byte StorageFlags;
+            [FieldOffset(21)] public byte Reserved0;
+            [FieldOffset(22)] public ushort Reserved1;
+            [FieldOffset(24)] public int PayloadByteLength;
+            [FieldOffset(28)] public int Reserved2;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 40)]
+        [StructLayout(LayoutKind.Explicit, Size = 40)]
         private struct NativeSnapshotChunkHeaderDeltaRle
         {
-            public int ChunkX;
-            public int ChunkY;
-            public int ChunkZ;
-            public float VoxelSize;
-            public int DirtyCellCount;
-            public byte StorageFlags;
-            public byte Reserved0;
-            public ushort Reserved1;
-            public int PayloadByteLength;
-            public uint PayloadHashLow;
-            public uint PayloadHashHigh;
-            public uint Reserved2;
+            [FieldOffset(0)] public int ChunkX;
+            [FieldOffset(4)] public int ChunkY;
+            [FieldOffset(8)] public int ChunkZ;
+            [FieldOffset(12)] public float VoxelSize;
+            [FieldOffset(16)] public int DirtyCellCount;
+            [FieldOffset(20)] public byte StorageFlags;
+            [FieldOffset(21)] public byte Reserved0;
+            [FieldOffset(22)] public ushort Reserved1;
+            [FieldOffset(24)] public int PayloadByteLength;
+            [FieldOffset(28)] public uint PayloadHashLow;
+            [FieldOffset(32)] public uint PayloadHashHigh;
+            [FieldOffset(36)] public uint Reserved2;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 8)]
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         private readonly struct ChunkAddress : IEquatable<ChunkAddress>
         {
             private const int CoordBits = 19;
@@ -4786,7 +4845,7 @@ namespace Hecton8.Caves
             private const float VoxelUnitMeters = 0.25f;
             private const float VoxelPackScale = 1f / VoxelUnitMeters;
 
-            private readonly ulong _packedKey;
+            [FieldOffset(0)] private readonly ulong _packedKey;
 
             public int3 ChunkCoord => new int3(
                 DecodeCoord(_packedKey),

@@ -5,6 +5,7 @@ using Hecton8.Caves;
 using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
@@ -58,6 +59,10 @@ namespace Hecton8.World
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const string ObstacleSnapshotNativeMemoryLabel = "VoxelDynamicNavGridRuntime.ObstacleSnapshot";
         private const string DynamicClearanceBudgetWarningMessage = "[VoxelDynamicNavGridRuntime] Partial clearance dilation exceeded 1ms; next destroyed-flora clear uses reduced clearance radius.";
+        private const Allocator DataVaultExemptNavGridQueueAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptDynamicObstacleAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptNavGridSnapshotAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptNavGridScratchAllocator = Allocator.Persistent;
 
         // COLD ALLOC: Dictionary<int, VolumeRecord>(512) - capped voxel navgrid snapshots keyed by runtime volume instance ID - owner: VoxelDynamicNavGridRuntime
         private static readonly Dictionary<int, VolumeRecord> _records = new Dictionary<int, VolumeRecord>(MaxTrackedVolumeRecords);
@@ -101,11 +106,11 @@ namespace Hecton8.World
             SolidVoxel = 2,
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct PassabilityBuildJob : Unity.Jobs.IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float> DensityField;
-            [WriteOnly] public NativeArray<byte> Output;
+            [ReadOnly, NoAlias] public NativeArray<float> DensityField;
+            [WriteOnly, NoAlias] public NativeArray<byte> Output;
             public float SolidThreshold;
 
             public void Execute(int index)
@@ -114,11 +119,11 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct UpdateNavCellsJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float> DensityField;
-            public NativeArray<byte> Passability;
+            [ReadOnly, NoAlias] public NativeArray<float> DensityField;
+            [NoAlias] public NativeArray<byte> Passability;
             public int3 Dimensions;
             public int3 RegionMin;
             public int3 RegionSize;
@@ -154,12 +159,12 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct PureVoidBlockScanJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<byte> Passability;
-            [ReadOnly] public NativeArray<ushort> DistanceMap;
-            [WriteOnly] public NativeArray<int> BlockFlags;
+            [ReadOnly, NoAlias] public NativeArray<byte> Passability;
+            [ReadOnly, NoAlias] public NativeArray<ushort> DistanceMap;
+            [WriteOnly, NoAlias] public NativeArray<int> BlockFlags;
             public int PointCount;
 
             public void Execute(int blockIndex)
@@ -208,11 +213,11 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct ClearanceDilationJob : Unity.Jobs.IJob
         {
-            public NativeArray<byte> Passability;
-            public NativeArray<ushort> DistanceMap;
+            [NoAlias] public NativeArray<byte> Passability;
+            [NoAlias] public NativeArray<ushort> DistanceMap;
             public int3 Dimensions;
             public int AgentRadiusCells;
 
@@ -281,11 +286,11 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct ObstacleStampJob : Unity.Jobs.IJobParallelFor
         {
-            public NativeArray<byte> Passability;
-            [ReadOnly] public NativeArray<NavObstaclePrimitive> Obstacles;
+            [NoAlias] public NativeArray<byte> Passability;
+            [ReadOnly, NoAlias] public NativeArray<NavObstaclePrimitive> Obstacles;
             public int3 Dimensions;
             public float3 Origin;
             public float CellSize;
@@ -325,11 +330,11 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct CopyByteBufferJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<byte> Source;
-            [WriteOnly] public NativeArray<byte> Destination;
+            [ReadOnly, NoAlias] public NativeArray<byte> Source;
+            [WriteOnly, NoAlias] public NativeArray<byte> Destination;
 
             public void Execute(int index)
             {
@@ -340,12 +345,12 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct PartialObstacleResetAndStampJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<byte> BasePassability;
-            public NativeArray<byte> Passability;
-            [ReadOnly] public NativeArray<NavObstaclePrimitive> Obstacles;
+            [ReadOnly, NoAlias] public NativeArray<byte> BasePassability;
+            [NoAlias] public NativeArray<byte> Passability;
+            [ReadOnly, NoAlias] public NativeArray<NavObstaclePrimitive> Obstacles;
             public int3 Dimensions;
             public int3 RegionMin;
             public int3 RegionMax;
@@ -417,12 +422,12 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct PartialClearanceDilationJob : IJob
         {
-            public NativeArray<byte> Passability;
-            [ReadOnly] public NativeArray<ushort> ReferenceDistanceMap;
-            public NativeArray<ushort> DistanceMap;
+            [NoAlias] public NativeArray<byte> Passability;
+            [ReadOnly, NoAlias] public NativeArray<ushort> ReferenceDistanceMap;
+            [NoAlias] public NativeArray<ushort> DistanceMap;
             public int3 Dimensions;
             public int3 RegionMin;
             public int3 RegionMax;
@@ -521,14 +526,14 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct DirtyVolumeRequest
         {
-            public int VolumeInstanceId;
-            public int RuntimeStamp;
+            [FieldOffset(0)] public int VolumeInstanceId;
+            [FieldOffset(4)] public int RuntimeStamp;
+            [FieldOffset(8)] private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
         private struct DeferredDirtyVolumeRequest
         {
             public HectonVoxelVolume Volume;
@@ -536,49 +541,59 @@ namespace Hecton8.World
             public int RemainingSlowTicks;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct DynamicObstacleClearRequest
         {
-            public float3 Center;
-            public float3 Extents;
+            [FieldOffset(0)] public float3 Center;
+            [FieldOffset(12)] public float3 Extents;
+            [FieldOffset(24)] private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct PortalNode
         {
-            public uint ChunkId;
-            public float3 Centroid;
-            public float Radius;
-            public int ConnectedPortalIndex;
-            public byte Face;
+            [FieldOffset(0)] public uint ChunkId;
+            [FieldOffset(4)] public float3 Centroid;
+            [FieldOffset(16)] public float Radius;
+            [FieldOffset(20)] public int ConnectedPortalIndex;
+            [FieldOffset(24)] public byte Face;
+            [FieldOffset(25)] private byte _pad0;
+            [FieldOffset(26)] private ushort _pad1;
+            [FieldOffset(28)] private uint _pad2;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct RouteNodeState
         {
-            public float GScore;
-            public float FScore;
-            public int ParentIndex;
-            public byte Flags;
+            [FieldOffset(0)] public float GScore;
+            [FieldOffset(4)] public float FScore;
+            [FieldOffset(8)] public int ParentIndex;
+            [FieldOffset(12)] public byte Flags;
+            [FieldOffset(13)] private byte _pad0;
+            [FieldOffset(14)] private ushort _pad1;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         internal struct NavObstaclePrimitive
         {
-            public float3 Center;
-            public float3 Extents;
+            [FieldOffset(0)] public float3 Center;
+            [FieldOffset(12)] public float3 Extents;
+            [FieldOffset(24)] private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         internal struct HybridNavigationSample
         {
-            public HybridNavigationMode Mode;
-            public byte Passability;
-            public float CellSize;
-            public float3 CellOrigin;
-            public float TerrainHeight;
-            public float FloorBoundaryY;
-            public byte HasTerrainHeight;
+            [FieldOffset(0)] public HybridNavigationMode Mode;
+            [FieldOffset(1)] public byte Passability;
+            [FieldOffset(2)] private ushort _pad0;
+            [FieldOffset(4)] public float CellSize;
+            [FieldOffset(8)] public float3 CellOrigin;
+            [FieldOffset(20)] public float TerrainHeight;
+            [FieldOffset(24)] public float FloorBoundaryY;
+            [FieldOffset(28)] public byte HasTerrainHeight;
+            [FieldOffset(29)] private byte _pad1;
+            [FieldOffset(30)] private ushort _pad2;
         }
 
         private sealed class VolumeRecord
@@ -788,10 +803,12 @@ namespace Hecton8.World
                 return;
             }
 
-            float3 minAup = new float3(minAbsoluteCell.x, minAbsoluteCell.y, minAbsoluteCell.z) * voxelSize;
-            float3 maxAup = (new float3(maxAbsoluteCell.x, maxAbsoluteCell.y, maxAbsoluteCell.z) + 1f) * voxelSize;
-            float3 centerAup = (minAup + maxAup) * 0.5f;
-            float3 extents = math.max((maxAup - minAup) * 0.5f, new float3(voxelSize));
+            double safeVoxelSize = math.max(0.0001d, (double)voxelSize);
+            double3 minAup = new double3(minAbsoluteCell.x, minAbsoluteCell.y, minAbsoluteCell.z) * safeVoxelSize;
+            double3 maxAup = (new double3(maxAbsoluteCell.x, maxAbsoluteCell.y, maxAbsoluteCell.z) + 1d) * safeVoxelSize;
+            double3 centerAup = (minAup + maxAup) * 0.5d;
+            double3 extentDouble = math.max((maxAup - minAup) * 0.5d, new double3(safeVoxelSize));
+            float3 extents = new float3((float)extentDouble.x, (float)extentDouble.y, (float)extentDouble.z);
             if (!math.all(math.isfinite(centerAup)) ||
                 !math.all(math.isfinite(extents)))
             {
@@ -799,7 +816,7 @@ namespace Hecton8.World
                 return;
             }
 
-            Vector3 runtimeCenter = HectonFloatingOrigin.ToRuntimePosition(new Vector3(centerAup.x, centerAup.y, centerAup.z));
+            Vector3 runtimeCenter = HectonFloatingOrigin.ToRuntimePosition(centerAup);
             TryEnqueueDynamicObstacleClear(new DynamicObstacleClearRequest
             {
                 Center = new float3(runtimeCenter.x, runtimeCenter.y, runtimeCenter.z),
@@ -1792,7 +1809,7 @@ namespace Hecton8.World
 
             if (!_dirtyVolumes.IsCreated)
             {
-                _dirtyVolumes = new NativeQueue<DirtyVolumeRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DirtyVolumeRequest>[32] - dirty voxel volume rebuild requests - owner: VoxelDynamicNavGridRuntime
+                _dirtyVolumes = new NativeQueue<DirtyVolumeRequest>(DataVaultExemptNavGridQueueAllocator); // COLD ALLOC: NativeQueue<DirtyVolumeRequest>[32] - dirty voxel volume rebuild requests - owner: VoxelDynamicNavGridRuntime
                 NativeMemorySentinel.RegisterNativeQueue(
                     _dirtyVolumes,
                     DirtyVolumeQueueCapacity,
@@ -1804,7 +1821,7 @@ namespace Hecton8.World
 
             if (!_pendingObstacleClears.IsCreated)
             {
-                _pendingObstacleClears = new NativeQueue<DynamicObstacleClearRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DynamicObstacleClearRequest>[16] - destroyed-organic obstacle clear queue - owner: VoxelDynamicNavGridRuntime
+                _pendingObstacleClears = new NativeQueue<DynamicObstacleClearRequest>(DataVaultExemptNavGridQueueAllocator); // COLD ALLOC: NativeQueue<DynamicObstacleClearRequest>[16] - destroyed-organic obstacle clear queue - owner: VoxelDynamicNavGridRuntime
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingObstacleClears,
                     PendingObstacleClearQueueCapacity,
@@ -1816,7 +1833,7 @@ namespace Hecton8.World
 
             if (!_persistentDynamicObstacles.IsCreated)
             {
-                _persistentDynamicObstacles = new NativeList<NavObstaclePrimitive>(MaxPersistentDynamicObstacleCount, Allocator.Persistent); // COLD ALLOC: NativeList<NavObstaclePrimitive>[512] - overgrowth/vine dynamic obstacle snapshot lane - owner: VoxelDynamicNavGridRuntime
+                _persistentDynamicObstacles = new NativeList<NavObstaclePrimitive>(MaxPersistentDynamicObstacleCount, DataVaultExemptDynamicObstacleAllocator); // COLD ALLOC: NativeList<NavObstaclePrimitive>[512] - overgrowth/vine dynamic obstacle snapshot lane - owner: VoxelDynamicNavGridRuntime
                 NativeMemorySentinel.RegisterNativeList(
                     _persistentDynamicObstacles,
                     nameof(VoxelDynamicNavGridRuntime),
@@ -2002,7 +2019,7 @@ namespace Hecton8.World
             if (buffer.IsCreated)
                 DisposeTrackedNativeArray(ref buffer);
 
-            buffer = new NativeArray<byte>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[pointCount] - double-buffered voxel passability snapshot - owner: VoxelDynamicNavGridRuntime
+            buffer = new NativeArray<byte>(length, DataVaultExemptNavGridSnapshotAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[pointCount] - double-buffered voxel passability snapshot - owner: VoxelDynamicNavGridRuntime
             NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
@@ -2014,7 +2031,7 @@ namespace Hecton8.World
             if (buffer.IsCreated)
                 DisposeTrackedNativeArray(ref buffer);
 
-            buffer = new NativeArray<ushort>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ushort>[pointCount] - double-buffered voxel clearance-distance snapshot - owner: VoxelDynamicNavGridRuntime
+            buffer = new NativeArray<ushort>(length, DataVaultExemptNavGridSnapshotAllocator, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ushort>[pointCount] - double-buffered voxel clearance-distance snapshot - owner: VoxelDynamicNavGridRuntime
             NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
@@ -2026,7 +2043,7 @@ namespace Hecton8.World
             if (buffer.IsCreated)
                 DisposeTrackedNativeArray(ref buffer);
 
-            buffer = new NativeArray<int>(length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[pureVoidBlockCount] - Burst pure-void block scan flags - owner: VoxelDynamicNavGridRuntime
+            buffer = new NativeArray<int>(length, DataVaultExemptNavGridScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[pureVoidBlockCount] - Burst pure-void block scan flags - owner: VoxelDynamicNavGridRuntime
             NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 

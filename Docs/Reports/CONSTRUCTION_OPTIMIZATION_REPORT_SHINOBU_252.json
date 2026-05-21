@@ -1,0 +1,23 @@
+{
+  "agent": "SHINOBU_252",
+  "domain": "FOUNDATION_SNAPPING_CALCULATOR",
+  "scanner": "Foundation_Physics_Inquisition_Static_Sidecar",
+  "pass": false,
+  "evidence_class": "STATIC_SOURCE_STATIC_DOC",
+  "runtime_ready": false,
+  "foundation_physics_raycast_sites": 0,
+  "foundation_raycast_command_sites": 0,
+  "foundation_instantiate_sites": 0,
+  "foundation_list_transform_sites": 0,
+  "owned_route": "ConstructionSocketModuleDTO -> FoundationModuleAupDTO -> CalculateFoundationPylonsJob -> CompactFoundationPylonDrawListJob -> camera-relative PylonMatrixDTO/FoundationPylonSurfaceDTO -> GraphicsBuffer.LockBufferForWrite -> shader camera-offset reconstruction",
+  "authority_route": "Construction owns module facts in DataVault; SHINOBU_252 owns presentation-only support matrices, surfaces, counters, debug rays, telemetry, and warning signals.",
+  "vault_lock_policy": "Scheduled jobs lock SHINOBU-owned buffers including telemetry/cursor rows, ConstructionSocketModules/ConstructionSocketCounters when consumed, and optional VoxelSdfTexture3D until finalize/upload or teardown; views are re-read after locks through pure TryReadHandle paths. Schedule failure cleanup releases profile/socket fences and Vault locks, force-completing only exceptional partial schedules before unlock.",
+  "socket_snapshot_policy": "Foundation holds ShinobuSocketConstructionRuntime.TryBeginModuleReadFence across scheduled socket-module reads; socket mock writes use TryBeginModuleWriteFence. Legacy TryResolveVaultViews now delegates to pure TryReadVaultViews, so old callers do not reintroduce resolve-side Vault telemetry mutation.",
+  "profile_reload_policy": "CSV profile reloads use a SHINOBU profile write fence plus Vault locks for ray origins/profile ranges/CSV scratch; scheduled pylon jobs hold a profile read fence until JobHandle finalization. The public byte parser owns the write fence, exact-matches header first tokens, rejects empty module hash cells, and file import releases only the profile locks actually acquired by that caller.",
+  "origin_policy": "Runtime schedule uses cached origin AUP from cold setup/IOriginShiftListener and cached player camera from cold GlobalRegistry.Player snapshot plus IGlobalRegistryHotSwapListener; shader receives scheduled camera world offset for world reconstruction.",
+  "gpu_policy": "One procedural indirect draw; no pylon GameObjects; inactive support slots are compacted out before upload and indirect InstanceCount. The shader is opaque ZWrite, always-included by GUID 0e3d6c95b94344c7b864f17da3f25205, and its variant collection GUID 0e3d6c95b94344c7b864f17da3f25207 is preloaded and serialized in 00_BOOTSTRAP.unity shaderVariantCollections for GameBootstrapper warmup. Matrix X/Z stores diameter for the local-radius-0.5 procedural cylinder. Runtime proof remains pending.",
+  "quality_route": "GlobalQualityWeight continuously drives shaped ray budget, radius, flare, march steps, SDF interpolation, and active draw pressure. Below 0.3: one nearest-neighbor SDF proxy read per ray and up-normal, with march and 6-sample gradient bypassed. Transitional rays fade by radius/flare scale instead of popping at full thickness; the default first ray slides from center to the fourth corner only near Ultra so the 4-ray budget covers all four corners.",
+  "rollback_fence": "PylonMatrixDTO and FoundationPylonSurfaceDTO are presentation-only and excluded from StateRingBuffer/Merkle ownership.",
+  "project_file_audit": "Generated .csproj files have EnableDefaultItems=false and no compile includes for new SHINOBU_252 files yet; Unity import/project regeneration must own those includes. Generated project files were not hand-edited.",
+  "compile_attempt": "Post-polish guarded build launched only after CPU/dotnet gate cleared (CPU=12%, dotnet/csc=0). dotnet build Assembly-CSharp.csproj restored/compiled until external missing source files stopped the build: Assets/_Project/Scripts/World/Contracts/GroundRadarContracts.cs and Assets/_Project/Scripts/IBuildPlacementRule.cs. No SHINOBU_252 source diagnostic was emitted before the wall. Latest Loop 20 build gate suppressed rebuild at CPU=100%, dotnet/csc=0."
+}

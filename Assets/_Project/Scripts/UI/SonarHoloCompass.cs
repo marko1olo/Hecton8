@@ -179,7 +179,6 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             TryCompleteProjectionIfScheduled();
-            RefreshLateFrameRegistration();
         }
 
         private void HandleSonarPingSent(float intensity)
@@ -386,7 +385,6 @@ namespace Hecton8.UI
             _projectionScheduled = false;
             ApplyProjectedDots(safeCount);
             _pendingProjectionCount = 0;
-            RefreshLateFrameRegistration();
         }
 
         private static AcousticRadarBlipOutput ProjectImpactBlip(
@@ -502,7 +500,6 @@ namespace Hecton8.UI
             _projectionScheduled = false;
             ApplyProjectedDots(_pendingProjectionCount);
             _pendingProjectionCount = 0;
-            RefreshLateFrameRegistration();
             return true;
         }
 
@@ -650,37 +647,9 @@ namespace Hecton8.UI
             if (_registeredToTick || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
-            RefreshLateFrameRegistration();
-        }
-
-        private void RefreshLateFrameRegistration()
-        {
-            bool shouldRegisterLateFrame =
-                isActiveAndEnabled &&
-                Application.isPlaying &&
-                GlobalRegistry.Dispatcher != null &&
-                _projectionScheduled;
-
-            if (shouldRegisterLateFrame)
-            {
-                if (_registeredLateFrame)
-                    return;
-
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-                _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
-                return;
-            }
-
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                _registeredLateFrame = false;
-            }
+            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -711,6 +680,10 @@ namespace Hecton8.UI
             else if (serviceSlot == GlobalRegistryServiceSlot.Audio)
             {
                 _cachedAudioManager = currentService as SpatialAudioManager;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            {
+                RegisterToTickManager();
             }
         }
 

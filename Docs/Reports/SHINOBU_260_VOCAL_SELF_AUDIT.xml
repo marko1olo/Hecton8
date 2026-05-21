@@ -1,0 +1,71 @@
+<SELF_AUDIT agent_id="SHINOBU_260" domain="VOCAL_SYNTHESIS_PIPELINE_AND_PLAYBACK" date="2026-05-21" evidence="STATIC_SOURCE">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS">Managed director/protagonist voice clip route removed from `VocalWarningSystem`; scanner reports zero SHINOBU_260 voice suspects.</TASK>
+    <TASK id="02" result="PASS">Playback route uses `VocalCueSignal.PhraseHashID`, not runtime string IDs.</TASK>
+    <TASK id="03" result="PASS">Hot DTOs use explicit raw fields; no `{ get; set; }` state properties.</TASK>
+    <TASK id="04" result="PASS">`VocalStateDTO` is explicit 32 bytes with validated offsets.</TASK>
+    <TASK id="05" result="PASS">`GenerateMockVocalBankJob` writes deterministic H8ADPCM H8VB fallback bytes.</TASK>
+    <TASK id="06" result="PASS">`Tools/voice_baker.py` reads CSV and supports local XTTS/RVC command hooks plus deterministic CI synthesis.</TASK>
+    <TASK id="07" result="PASS">Baker writes little-endian H8VB header, sorted 32-byte records, FNV bank hash, 16-byte aligned payloads, and atomic temp replace.</TASK>
+    <TASK id="08" result="PASS">Dear Lie radio filter is mathematical DSP: band state, one-pole low state, saturation, deterministic static, quantization.</TASK>
+    <TASK id="09" result="PASS_WITH_LIMIT">Burst function pointer decodes PCM16/H8ADPCM into `OnAudioFilterRead`; Vorbis runtime decode is explicitly fail-closed.</TASK>
+    <TASK id="10" result="PASS">Core update lane drains `SignalBus&lt;VocalCueSignal&gt;`, binary-searches MMF records, and writes state/codec rows before the next callback.</TASK>
+    <TASK id="11" result="PASS">Quality weight continuously maps sample stride 4..1 and filter/quantization density.</TASK>
+    <TASK id="12" result="PASS">Priority overwrites active state only when the new cue priority is high enough; low-priority cues are discarded.</TASK>
+    <TASK id="13" result="PASS">Vocal state/MMF pointers are presentation-only and documented outside rollback/save/Merkle/WAL truth.</TASK>
+    <TASK id="14" result="PASS">Vault buffers use `UninitializedMemory`; broad post-allocation `MemClear` was removed.</TASK>
+    <TASK id="15" result="PASS">300-entry `VocalTelemetryEntryDTO` ring and 64-byte counter lane feed black-box dump route.</TASK>
+    <TASK id="16" result="PASS">`DigitalVoiceForgeWindow` launches baker asynchronously and consumes stdout/stderr without blocking `WaitForExit` pipe reads.</TASK>
+    <TASK id="17" result="PASS">Cold CSV parser uses `ReadOnlySpan&lt;byte&gt;` and Vault scratch rows; repeated runtime reload is editor-only.</TASK>
+    <TASK id="18" result="PASS">Editor waveform view reads runtime Vault waveform samples and state scalars without owning playback.</TASK>
+    <TASK id="19" result="PASS">`AudioClip_Reference_Scanner.py` writes `AUDIO_OPTIMIZATION_REPORT.json` with zero director/protagonist suspects.</TASK>
+    <TASK id="20" result="PASS_WITH_BUILD_GATE">Static audit and Python gates ran; dotnet/Unity build skipped because CPU sampled at 100 percent.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <VocalStateDTO size="32" math="4+4+4+4+4+4+8=32">
+      <field name="PhraseHashID" offset="0" size="4"/>
+      <field name="CurrentSampleIndex" offset="4" size="4"/>
+      <field name="TotalSamples" offset="8" size="4"/>
+      <field name="PlaybackSpeed" offset="12" size="4"/>
+      <field name="VolumeScalar" offset="16" size="4"/>
+      <field name="Flags" offset="20" size="4"/>
+      <field name="Pad0..Pad7" offset="24" size="8"/>
+    </VocalStateDTO>
+    <VocalCodecStateDTO size="64" math="8+4+4+4+4+4+4+4+4+4+4+4+2+1+1+4+4=64"/>
+    <VocalTelemetryEntryDTO size="64" cache_line="true"/>
+    <VocalDecodeCounters64 size="64" false_sharing_guard="true"/>
+    <VocalCueSignal size="64" signal_payload="true"/>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    `GlobalQualityWeight` is clamped and smoothed with `q*q*(3-2*q)`. At low pressure it drives source stride toward 4 and increases radio quantization/static so the expensive ADPCM walk is amortized. At high quality it reaches stride 1 and cleaner filter density. No binary hardware switch changes DTO layout, phrase hash identity, BufferID ownership, or rollback boundary.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    Buffers: `AudioVocalSynthesisState=72420`, `CodecState=72421`, `Telemetry=72422`, `TelemetryCursor/Counters=72423`, `Waveform=72424`, `WaveformCursor=72425`, `MockBankBytes=72426`, `MockBankRecords=72427`, `CsvMetadata=72428`, `CsvScratch=72429`. Runtime stores Vault handles and raw resolved pointers; it declares no private persistent NativeArray ownership.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    `GenerateMockVocalBankJob` and `DecodeVocalStreamJob` use `[NoAlias]` on non-overlapping NativeArray fields. `DecodeVocalStreamJob` consumes caller dependency if scheduled; the `OnAudioFilterRead` function-pointer path consumes no JobHandle and performs no `.Complete()`. The only `.Complete()` is cold mock-bank generation.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    `Hecton8.Audio.Synthesis.asmdef` references Core/Core.Contracts/Core.Memory plus Burst/Collections/Jobs/Mathematics only. No sibling gameplay domain assembly is referenced for voice playback.
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION before="AudioClip residency + AudioMixer/effect graph or physical comms simulation" after="O(log records + samples/stride) H8ADPCM decode plus scalar radio fake" big_o_before="O(asset graph + samples + mixer graph)" big_o_after="O(logN + samples/stride)"/>
+  <VERIFICATION>
+    <check command="python -m py_compile Tools\voice_baker.py Tools\h8bin_validator.py Tools\test_h8bin_validator.py Tools\AudioClip_Reference_Scanner.py" result="PASS"/>
+    <check command="python Tools\voice_baker.py --csv Docs\Audio\dialogue_script.csv --out Assets\StreamingAssets\Hecton8\Audio\vocal_banks.h8bin --codec h8adpcm" result="PASS" bytes="36096"/>
+    <check command="python -B Tools\test_h8bin_validator.py" result="PASS" tests="52"/>
+    <check command="python Tools\AudioClip_Reference_Scanner.py" result="PASS" director_voice_suspects="0"/>
+    <check command="python -B Tools\h8bin_validator.py --target-dir Assets\StreamingAssets" result="FAIL_UNRELATED" h8vb="H8VB_SCHEMA_VALIDATED" unrelated="RUNTIME_TEXT_STREAMINGASSETS_LOAD,STATIC_DATA_MISSING"/>
+    <check command="dotnet build" result="SKIPPED_CPU_GATE" cpu_percent="100"/>
+  </VERIFICATION>
+  <SELF_AUDIT_UPDATE scope="DIRECT_REF_DSP_STATE">
+    <TASK id="03" result="PASS">`VocalDecodeKernel` binds state with `VocalStateDTO.AsRef(state)` and codec with `UnsafeUtility.AsRef&lt;VocalCodecStateDTO&gt;(codec)`.</TASK>
+    <TASK id="09" result="PASS_WITH_BUILD_GATE">ADPCM/PCM decode state now mutates playhead/filter/codec fields through refs; Unity compile/player proof remains gated by CPU policy.</TASK>
+    <VERIFICATION command="brace-count + python -m py_compile" result="PASS"/>
+  </SELF_AUDIT_UPDATE>
+  <SELF_AUDIT_UPDATE scope="DEAD_RENDERER_VWS_PCM_REMOVAL">
+    <TASK id="01" result="PASS">Dead `PlayerCriticalProceduralAudioRenderer` VWS PCM branch removed; warning voice remains hash-only through `VocalCueSignal`.</TASK>
+    <TASK id="19" result="PASS">`AudioClip_Reference_Scanner.py` still reports zero director/protagonist voice suspects.</TASK>
+    <TASK id="20" result="PASS_WITH_BUILD_GATE">No Unity compile launched because CPU gate remains closed.</TASK>
+    <VERIFICATION command="rg residual VWS PCM symbols" result="PASS"/>
+  </SELF_AUDIT_UPDATE>
+</SELF_AUDIT>

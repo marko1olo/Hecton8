@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -7,16 +8,157 @@ using Unity.Mathematics;
 
 namespace Hecton8.Physics.Exosuit
 {
+    internal static class ExosuitMathGuards
+    {
+        public const float AuthoritativeQualityWeight = 1f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeFloat(float value, float fallback)
+        {
+            return math.select(value, fallback, !math.isfinite(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeNonNegative(float value)
+        {
+            return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float2 SanitizeFloat2(float2 value, float2 fallback)
+        {
+            float2 safeFallback = math.select(fallback, float2.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 SanitizeFloat3(float3 value, float3 fallback)
+        {
+            float3 safeFallback = math.select(fallback, float3.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static double3 SanitizeDouble3(double3 value, double3 fallback)
+        {
+            double3 safeFallback = math.select(fallback, double3.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ExosuitTuningDTO SanitizeTuning(ExosuitTuningDTO tuning)
+        {
+            tuning.BaseMass = math.max(1.0f, SanitizeNonNegative(tuning.BaseMass));
+            float currentMass = SanitizeNonNegative(tuning.CurrentMass);
+            tuning.CurrentMass = math.select(tuning.BaseMass, math.max(1.0f, currentMass), currentMass > 0.0f);
+            tuning.Radius = math.clamp(SanitizeNonNegative(tuning.Radius), 0.25f, 5.0f);
+            tuning.SdfEpsilonMeters = math.clamp(SanitizeNonNegative(tuning.SdfEpsilonMeters), 0.005f, 0.25f);
+            tuning.GlobalQualityWeight = AuthoritativeQualityWeight;
+            tuning.MaxSubsteps = math.clamp(tuning.MaxSubsteps, 2u, 8u);
+            return tuning;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct GenerateMockExosuitInputsJob : IJob
+    {
+        [NoAlias] public NativeArray<ExosuitFrameInputDTO> Input;
+
+        public float2 MoveAxis;
+        public float VerticalAxis;
+        public float DesiredYawRadians;
+        public float GlobalQualityWeight;
+        public uint ActionMask;
+        public uint Frame;
+        public uint ProceduralWeightMilli;
+        public uint StableEntityHash;
+        public uint SectorHash;
+
+        public void Execute()
+        {
+            if (!Input.IsCreated || Input.Length <= 0)
+                return;
+
+            float proceduralWeight = math.saturate(ProceduralWeightMilli * 0.001f);
+            float2 safeMove = SanitizeFloat2(MoveAxis, float2.zero);
+            float safeVertical = math.clamp(SanitizeFloat(VerticalAxis, 0.0f), -1.0f, 1.0f);
+            float safeYaw = WrapRadians(SanitizeFloat(DesiredYawRadians, 0.0f));
+            if (proceduralWeight > 0.0001f)
+            {
+                uint seed = BuildDeterministicSeed(Frame, GlobalQualityWeight, ActionMask, StableEntityHash, SectorHash);
+                Unity.Mathematics.Random random = new Unity.Mathematics.Random(seed);
+                float2 drift = new float2(random.NextFloat(-1.0f, 1.0f), random.NextFloat(-1.0f, 1.0f)) * 0.18f;
+                safeMove = math.clamp(safeMove + drift * proceduralWeight, new float2(-1.0f), new float2(1.0f));
+                safeVertical = math.clamp(safeVertical + random.NextFloat(-1.0f, 1.0f) * 0.12f * proceduralWeight, -1.0f, 1.0f);
+                safeYaw = WrapRadians(safeYaw + random.NextFloat(-1.0f, 1.0f) * 0.08f * proceduralWeight);
+            }
+
+            ExosuitFrameInputDTO input = default;
+            input.MoveAxis = safeMove;
+            input.VerticalAxis = safeVertical;
+            input.DesiredYawRadians = safeYaw;
+            input.ActionMask = ActionMask;
+            input.Frame = Frame;
+            input.GlobalQualityWeight = math.saturate(SanitizeNonNegative(GlobalQualityWeight));
+            Input[0] = input;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint BuildDeterministicSeed(uint frame, float qualityWeight, uint actionMask, uint stableEntityHash, uint sectorHash)
+        {
+            const uint SourceHash = 0x53484E34u; // SHN4
+            uint seed = 2166136261u;
+            seed = (seed ^ SourceHash) * 16777619u;
+            seed = (seed ^ math.select(SourceHash, stableEntityHash, stableEntityHash != 0u)) * 16777619u;
+            seed = (seed ^ math.select(0x48534653u, sectorHash, sectorHash != 0u)) * 16777619u;
+            seed = (seed ^ math.select(1u, frame, frame != 0u)) * 16777619u;
+            seed = (seed ^ math.asuint(math.saturate(SanitizeNonNegative(qualityWeight)))) * 16777619u;
+            seed = (seed ^ actionMask) * 16777619u;
+            return math.select(1u, seed, seed != 0u);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float2 SanitizeFloat2(float2 value, float2 fallback)
+        {
+            float2 safeFallback = math.select(fallback, float2.zero, !math.all(math.isfinite(fallback)));
+            return math.select(value, safeFallback, !math.all(math.isfinite(value)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeFloat(float value, float fallback)
+        {
+            return math.select(value, fallback, !math.isfinite(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float WrapRadians(float value)
+        {
+            const float TwoPi = 6.2831853071795864769f;
+            const float InvTwoPi = 0.1591549430918953358f;
+            if (!math.isfinite(value))
+                return 0.0f;
+
+            return value - math.round(value * InvTwoPi) * TwoPi;
+        }
+    }
+
     /// <summary>
     /// Deterministic 6D kinematic exosuit solver over DataVault-owned buffers.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct Exosuit6DIntegratorJob : IJob
+    public struct ExosuitKinematicIntegrationJob : IJob
     {
         [NoAlias] public NativeArray<ExosuitStateDTO> State;
-        [ReadOnly, NoAlias] public NativeArray<MockInputBuffer> Input;
+        [NoAlias] public NativeArray<ExosuitFrameInputDTO> Input;
         [NoAlias] public NativeArray<ExosuitTuningDTO> Tuning;
         [ReadOnly, NoAlias] public NativeArray<MockTerrainSDF> Terrain;
+        [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfTexture3D;
         [ReadOnly, NoAlias] public NativeArray<MockFlowField> Flow;
         [ReadOnly, NoAlias] public NativeArray<MockCrushDepthSignal> CrushDepth;
         [NoAlias] public NativeArray<ExosuitSolverOutput> Output;
@@ -29,16 +171,23 @@ namespace Hecton8.Physics.Exosuit
         [NoAlias] public NativeArray<ExosuitAcousticEchoTap> AcousticTaps;
 
         public float DeltaTime;
+        public int3 VoxelSdfDimensions;
+        public float3 VoxelSdfOrigin;
+        public float3 VoxelSdfCellSize;
+        public float VoxelSdfRangeMeters;
         public uint Frame;
+        public uint ProceduralWeightMilli;
+        public uint StableEntityHash;
+        public uint SectorHash;
 
         private const float MinDt = 0.0001f;
         private const float MaxDt = 0.05f;
         private const float MinMass = 1.0f;
-        private const float LowProbeCutoff = 0.5f;
+        private const float ReducedProbeCutoff = 0.5f;
         private const float SecondaryProbeStart = 0.35f;
         private const float SecondaryProbeFull = 0.85f;
-        private const float LowTierSdfSkinMeters = 0.04f;
-        private const float UltraTierSdfSkinMeters = 0.015f;
+        private const float GravityMetersPerSecondSq = 9.80665f;
+        private const float InvEncodedByteMax = 0.0039215686274509803f;
         private const uint SourceHash = 0x53484E34u; // SHN4
         private const uint StompHash = 0x45584F53u; // EXOS
 
@@ -57,21 +206,28 @@ namespace Hecton8.Physics.Exosuit
             float dt = math.clamp(SanitizeNonNegative(DeltaTime), MinDt, MaxDt);
             ExosuitStateDTO state = State[0];
             ExosuitTuningDTO tuning = SanitizeTuning(Tuning[0]);
-            MockInputBuffer input = Input[0];
+            ExosuitFrameInputDTO input = Input[0];
+            if (ProceduralWeightMilli > 0u)
+            {
+                ApplyProceduralMockInput(ref input, ProceduralWeightMilli, StableEntityHash, SectorHash);
+                Input[0] = input;
+            }
             MockTerrainSDF terrain = Terrain[0];
             ExosuitSolverOutput previousOutput = Output[0];
             MockFlowField flow = Flow.IsCreated && Flow.Length > 0 ? Flow[0] : default;
             MockCrushDepthSignal crush = CrushDepth.IsCreated && CrushDepth.Length > 0 ? CrushDepth[0] : default;
 
-            state.AUP = SanitizeDouble3(state.AUP, terrain.CameraAup);
-            double3 cameraAup = SanitizeDouble3(terrain.CameraAup, state.AUP);
-            float3 localPosition = SanitizeFloat3(ToLocal(state.AUP, cameraAup), float3.zero);
+            state.AUP_Position = SanitizeDouble3(state.AUP_Position, terrain.CameraAup);
+            double3 cameraAup = SanitizeDouble3(terrain.CameraAup, state.AUP_Position);
+            float3 localPosition = SanitizeFloat3(ToLocal(state.AUP_Position, cameraAup), float3.zero);
             float3 velocity = SanitizeFloat3(state.Velocity, float3.zero);
-            uint previousMask = state.StateMask;
+            float3 angularVelocity = SanitizeFloat3(state.AngularVelocity, float3.zero);
+            uint previousMask = state.Flags;
             uint mask = ExosuitStateFlags.Active;
-            float inputQuality = SanitizeNonNegative(input.GlobalQualityWeight);
-            float tuningQuality = SanitizeNonNegative(tuning.GlobalQualityWeight);
-            float quality = math.saturate(math.min(inputQuality, tuningQuality));
+            float quality = ExosuitMathGuards.AuthoritativeQualityWeight;
+            bool voxelSdfAvailable = IsVoxelSdfPayloadValid();
+            if (voxelSdfAvailable)
+                mask |= ExosuitStateFlags.VoxelSdfSampled;
             float2 moveAxis = SanitizeFloat2(input.MoveAxis, float2.zero);
             float verticalAxis = math.clamp(SanitizeFloat(input.VerticalAxis, 0.0f), -1.0f, 1.0f);
             float desiredYaw = WrapRadians(SanitizeFloat(input.DesiredYawRadians, 0.0f));
@@ -85,7 +241,11 @@ namespace Hecton8.Physics.Exosuit
             float pressureTarget = inputMagnitude;
             float latencyScale = math.lerp(1.35f, 0.75f, Smooth01(0.0f, 1.0f, quality));
             float pressureStep = dt * math.rcp(math.max(0.05f, tuning.HydraulicLatencySeconds * latencyScale));
-            float pressure = MoveTowards(SanitizeNonNegative(state.HydraulicPressure), pressureTarget, pressureStep);
+            float previousHydraulicPressure = Screen.IsCreated && Screen.Length > 0
+                ? SanitizeNonNegative(Screen[0].HydraulicPressure)
+                : 0.0f;
+            float pressure = MoveTowards(previousHydraulicPressure, pressureTarget, pressureStep);
+            float heat = math.saturate(SanitizeNonNegative(state.ThrusterHeat));
             float externalPressure = math.saturate(SanitizeNonNegative(crush.ExternalPressure01));
             pressure *= math.saturate(1.0f - externalPressure * dt * 0.35f);
 
@@ -99,6 +259,7 @@ namespace Hecton8.Physics.Exosuit
             {
                 tuning.CurrentMass = math.max(MinMass, tuning.CurrentMass * 0.5f);
                 velocity.y = math.abs(velocity.y) + tuning.PurgeImpulse;
+                heat = math.min(1.0f, heat + 0.06f);
                 pressure = math.min(1.0f, pressure + 0.35f);
                 mask |= ExosuitStateFlags.PurgeLatched;
                 emitSilt = true;
@@ -119,9 +280,37 @@ namespace Hecton8.Physics.Exosuit
             float actuatorPressure = math.saturate(desiredSpeed * math.rcp(math.max(0.1f, tuning.MaxSpeedMetersPerSecond)));
             float3 actuatorDirection = NormalizeWithFallback(desiredVelocity, desiredDirection);
 
+            bool wasOverheated = (previousMask & ExosuitStateFlags.Overheated) != 0u;
+            bool overheated = wasOverheated && heat > 0.58f;
+            bool thrusterRequested = actuatorPressure > 0.0001f || jumpRequested;
+            if (heat >= 0.995f)
+                overheated = true;
+            if (overheated)
+                actuatorPressure = 0.0f;
+
+            if (thrusterRequested && !overheated)
+                heat += dt * (0.12f + actuatorPressure * math.lerp(0.18f, 0.34f, Smooth01(0.0f, 1.0f, pressure)));
+            else
+                heat -= dt * math.lerp(0.07f, 0.16f, Smooth01(0.0f, 1.0f, quality));
+
+            heat = math.saturate(heat);
+            if (heat >= 0.995f)
+            {
+                heat = 1.0f;
+                overheated = true;
+            }
+
+            if (overheated)
+                mask |= ExosuitStateFlags.Overheated;
+            else if (thrusterRequested)
+                mask |= ExosuitStateFlags.ThrusterActive;
+
             float3 thrustAcceleration = actuatorDirection * tuning.ThrusterForce * actuatorPressure * math.rcp(math.max(MinMass, tuning.CurrentMass));
             velocity += thrustAcceleration * dt;
+            if ((previousMask & ExosuitStateFlags.Clamped) == 0u)
+                velocity.y -= GravityMetersPerSecondSq * tuning.GravityMultiplier * dt;
             velocity = ApplyAnalyticalDrag(velocity, tuning.Drag, dt, quality);
+            angularVelocity = ApplyAngularHydraulicDamping(angularVelocity, pressure, dt, quality);
 
             if ((previousMask & ExosuitStateFlags.Clamped) == 0u)
             {
@@ -137,15 +326,14 @@ namespace Hecton8.Physics.Exosuit
                 velocity *= maxSpeed * math.rsqrt(math.max(speedSq, 0.0001f));
 
             localPosition += velocity * dt;
-            float sdfSkinMeters = math.lerp(LowTierSdfSkinMeters, UltraTierSdfSkinMeters, Smooth01(0.0f, 1.0f, quality));
+            float sdfSkinMeters = math.lerp(tuning.SdfEpsilonMeters * 1.5f, tuning.SdfEpsilonMeters * 0.55f, Smooth01(0.0f, 1.0f, quality));
             float contactRadius = tuning.Radius + sdfSkinMeters;
 
-            float lowProbeBudget = 1.0f - math.step(LowProbeCutoff, quality);
-            mask |= ((uint)lowProbeBudget) * ExosuitStateFlags.LowProbeBudget;
+            float reducedProbeBudget = 1.0f - Smooth01(0.05f, ReducedProbeCutoff, quality);
+            mask |= math.select(0u, ExosuitStateFlags.ReducedProbeBudget, reducedProbeBudget > 0.0001f);
 
             float secondaryWeight = Smooth01(SecondaryProbeStart, SecondaryProbeFull, quality);
-            if (secondaryWeight > 0.0001f)
-                mask |= ExosuitStateFlags.SecondaryProbeBlend;
+            mask |= ((uint)math.step(0.0001f, secondaryWeight)) * ExosuitStateFlags.SecondaryProbeBlend;
 
             float pushMagnitude = 0.0f;
             float lostVelocityMagnitude = 0.0f;
@@ -153,44 +341,45 @@ namespace Hecton8.Physics.Exosuit
             float pendingSecondaryPush = 0.0f;
             float3 pendingSecondaryNormal = pushNormal;
 
+            int maxSubsteps = math.clamp((int)tuning.MaxSubsteps, 2, 8);
+            int iterations = math.clamp((int)math.lerp(2.0f, maxSubsteps, quality), 2, maxSubsteps);
             float ccdWeight = Smooth01(0.72f, 1.0f, quality);
-            if (ccdWeight > 0.0001f)
+            for (int iteration = 0; iteration < iterations; iteration++)
             {
-                float3 midPosition = localPosition - velocity * (dt * 0.5f);
-                SdfSample midSdf = SampleCaveSdf(midPosition, terrain);
-                float midPenetration = contactRadius - midSdf.Distance;
-                if (midPenetration > 0.0f)
-                {
-                    float sweepPush = midPenetration * ccdWeight;
-                    float3 midNormal = NormalizeWithFallback(midSdf.Normal, pushNormal);
-                    localPosition += midNormal * sweepPush;
-                    pushMagnitude = math.max(pushMagnitude, sweepPush);
-                    pushNormal = midNormal;
-                }
-            }
+                float substepT = (iteration + 1.0f) * math.rcp(iterations);
+                float3 midPosition = localPosition - velocity * (dt * 0.5f * substepT);
+                SdfSample midSdf = SampleExosuitSdf(midPosition, terrain, quality);
+                float midPenetration = math.max(0.0f, contactRadius - midSdf.Distance);
+                float sweepPush = midPenetration * ccdWeight * math.rcp(iterations);
+                float3 midNormal = NormalizeWithFallback(midSdf.Normal, pushNormal);
+                localPosition += midNormal * sweepPush;
+                pushNormal = math.select(pushNormal, midNormal, sweepPush > pushMagnitude);
+                pushMagnitude = math.max(pushMagnitude, sweepPush);
 
-            SdfSample sdf = SampleCaveSdf(localPosition, terrain);
-            pushNormal = pushMagnitude > 0.0f ? pushNormal : sdf.Normal;
+                SdfSample sdf = SampleExosuitSdf(localPosition, terrain, quality);
+                pushNormal = math.select(sdf.Normal, pushNormal, pushMagnitude > 0.0f);
+                pendingSecondaryPush = 0.0f;
+                pendingSecondaryNormal = pushNormal;
 
-            if (secondaryWeight > 0.0001f)
-            {
                 ApplySecondaryProbe(
                     localPosition,
                     terrain,
                     contactRadius,
                     secondaryWeight,
+                    quality,
                     ref pendingSecondaryNormal,
                     ref pendingSecondaryPush);
-            }
 
-            float penetration = contactRadius - sdf.Distance;
-            float pendingPush = math.max(penetration, pendingSecondaryPush);
-            if (pendingPush > 0.0f)
-            {
-                pushNormal = pendingSecondaryPush > penetration ? pendingSecondaryNormal : sdf.Normal;
+                float penetration = contactRadius - sdf.Distance;
+                float pendingPush = math.max(penetration, pendingSecondaryPush);
+                if (pendingPush <= 0.0f)
+                    continue;
+
+                pushNormal = math.select(sdf.Normal, pendingSecondaryNormal, pendingSecondaryPush > penetration);
                 pushNormal = NormalizeWithFallback(pushNormal, sdf.Normal);
                 localPosition += pushNormal * pendingPush;
                 velocity = ApplyContactVelocityResponse(velocity, pushNormal, pendingPush, quality, out float contactLostSpeed);
+                angularVelocity *= math.lerp(0.45f, 0.76f, Smooth01(0.0f, 1.0f, quality));
                 lostVelocityMagnitude = math.max(lostVelocityMagnitude, contactLostSpeed);
 
                 pushMagnitude = math.max(pushMagnitude, pendingPush);
@@ -199,7 +388,7 @@ namespace Hecton8.Physics.Exosuit
             }
 
             bool grabRequested = (input.ActionMask & ExosuitInputActions.Grab) != 0u;
-            SdfSample postPushSdf = SampleCaveSdf(localPosition, terrain);
+            SdfSample postPushSdf = SampleExosuitSdf(localPosition, terrain, quality);
             float residualPenetration = contactRadius - postPushSdf.Distance;
             if (residualPenetration > 0.0001f)
             {
@@ -212,34 +401,33 @@ namespace Hecton8.Physics.Exosuit
                 if (residualNormal.y > 0.5f)
                     mask |= ExosuitStateFlags.Grounded;
 
-                postPushSdf = SampleCaveSdf(localPosition, terrain);
+                postPushSdf = SampleExosuitSdf(localPosition, terrain, quality);
             }
 
-            if (secondaryWeight > 0.0001f && pushMagnitude > 0.0f)
+            float residualSecondaryWeight = secondaryWeight * math.select(0.0f, 1.0f, pushMagnitude > 0.0f);
+            float residualSecondaryPush = 0.0f;
+            float3 residualSecondaryNormal = pushNormal;
+            ApplySecondaryProbe(
+                localPosition,
+                terrain,
+                contactRadius,
+                residualSecondaryWeight,
+                quality,
+                ref residualSecondaryNormal,
+                ref residualSecondaryPush);
+
+            if (residualSecondaryPush > 0.0001f)
             {
-                float residualSecondaryPush = 0.0f;
-                float3 residualSecondaryNormal = pushNormal;
-                ApplySecondaryProbe(
-                    localPosition,
-                    terrain,
-                    contactRadius,
-                    secondaryWeight,
-                    ref residualSecondaryNormal,
-                    ref residualSecondaryPush);
+                residualSecondaryNormal = NormalizeWithFallback(residualSecondaryNormal, pushNormal);
+                localPosition += residualSecondaryNormal * residualSecondaryPush;
+                velocity = ApplyContactVelocityResponse(velocity, residualSecondaryNormal, residualSecondaryPush, quality, out float residualSecondaryLostSpeed);
+                lostVelocityMagnitude = math.max(lostVelocityMagnitude, residualSecondaryLostSpeed);
+                pushMagnitude = math.max(pushMagnitude, residualSecondaryPush);
+                pushNormal = residualSecondaryNormal;
+                if (residualSecondaryNormal.y > 0.5f)
+                    mask |= ExosuitStateFlags.Grounded;
 
-                if (residualSecondaryPush > 0.0001f)
-                {
-                    residualSecondaryNormal = NormalizeWithFallback(residualSecondaryNormal, pushNormal);
-                    localPosition += residualSecondaryNormal * residualSecondaryPush;
-                    velocity = ApplyContactVelocityResponse(velocity, residualSecondaryNormal, residualSecondaryPush, quality, out float residualSecondaryLostSpeed);
-                    lostVelocityMagnitude = math.max(lostVelocityMagnitude, residualSecondaryLostSpeed);
-                    pushMagnitude = math.max(pushMagnitude, residualSecondaryPush);
-                    pushNormal = residualSecondaryNormal;
-                    if (residualSecondaryNormal.y > 0.5f)
-                        mask |= ExosuitStateFlags.Grounded;
-
-                    postPushSdf = SampleCaveSdf(localPosition, terrain);
-                }
+                postPushSdf = SampleExosuitSdf(localPosition, terrain, quality);
             }
 
             bool floorContact = postPushSdf.Normal.y > 0.5f && postPushSdf.Distance <= contactRadius + 0.05f;
@@ -262,7 +450,7 @@ namespace Hecton8.Physics.Exosuit
                 if (math.abs(clampCorrection) > 0.0001f)
                 {
                     localPosition += clampAnchorNormal * clampCorrection;
-                    postPushSdf = SampleCaveSdf(localPosition, terrain);
+                    postPushSdf = SampleExosuitSdf(localPosition, terrain, quality);
                     float clampResidual = contactRadius - postPushSdf.Distance;
                     if (clampResidual > 0.0001f)
                     {
@@ -271,24 +459,22 @@ namespace Hecton8.Physics.Exosuit
                         pushMagnitude = math.max(pushMagnitude, clampResidual);
                         if (clampResidualNormal.y > 0.5f)
                             mask |= ExosuitStateFlags.Grounded;
-                        postPushSdf = SampleCaveSdf(localPosition, terrain);
+                        postPushSdf = SampleExosuitSdf(localPosition, terrain, quality);
                     }
                 }
 
                 velocity = float3.zero;
+                angularVelocity = float3.zero;
                 desiredVelocity = float3.zero;
                 pushNormal = clampAnchorNormal;
-                state.AnchorNormal = clampAnchorNormal;
                 pushMagnitude = math.max(pushMagnitude, math.abs(clampCorrection));
                 mask |= ExosuitStateFlags.Clamped;
-            }
-            else
-            {
-                state.AnchorNormal = pushNormal;
             }
 
             bool badMath = !math.all(math.isfinite(localPosition)) ||
                            !math.all(math.isfinite(velocity)) ||
+                           !math.all(math.isfinite(angularVelocity)) ||
+                           !math.isfinite(heat) ||
                            !math.isfinite(pressure) ||
                            !math.all(math.isfinite(pushNormal)) ||
                            !math.isfinite(postPushSdf.Distance);
@@ -296,7 +482,9 @@ namespace Hecton8.Physics.Exosuit
             {
                 localPosition = float3.zero;
                 velocity = float3.zero;
+                angularVelocity = float3.zero;
                 pressure = 0.0f;
+                heat = 0.0f;
                 desiredVelocity = float3.zero;
                 pushMagnitude = 0.0f;
                 lostVelocityMagnitude = 0.0f;
@@ -307,11 +495,15 @@ namespace Hecton8.Physics.Exosuit
 
             float3 snappedLocalPosition = SnapMillimeter(localPosition);
             float3 snappedVelocity = SnapMillimeter(velocity);
-            state.AUP = cameraAup + new double3(snappedLocalPosition);
+            float3 snappedAngularVelocity = SnapMillimeter(angularVelocity);
+            if (pushMagnitude > 0.0001f)
+                mask |= ExosuitStateFlags.SdfContact;
+
+            state.AUP_Position = cameraAup + new double3(snappedLocalPosition);
             state.Velocity = snappedVelocity;
-            state.HydraulicPressure = math.saturate(pressure);
-            state.AnchorNormal = NormalizeWithFallback(state.AnchorNormal, pushNormal);
-            state.StateMask = mask | (tuning.Flags & ExosuitStateFlags.EmergencyMockData);
+            state.AngularVelocity = snappedAngularVelocity;
+            state.ThrusterHeat = heat;
+            state.Flags = mask | (tuning.Flags & ExosuitStateFlags.EmergencyMockData);
             State[0] = state;
             Tuning[0] = tuning;
 
@@ -326,9 +518,9 @@ namespace Hecton8.Physics.Exosuit
                 outputFlags |= ExosuitSolverOutput.FlagFault;
 
             if (floorContact)
-                outputFlags |= AccumulateFootstep(state.AUP, LengthFromSq(math.lengthsq(velocity)) * dt, tuning.FootstepStrideMeters);
+                outputFlags |= AccumulateFootstep(state.AUP_Position, LengthFromSq(math.lengthsq(velocity)) * dt, tuning.FootstepStrideMeters);
 
-            uint stateHash = ComputeStateHash(snappedLocalPosition, snappedVelocity, state.HydraulicPressure, state.StateMask);
+            uint stateHash = ComputeStateHash(snappedLocalPosition, snappedVelocity, pressure, state.ThrusterHeat, state.Flags);
             ExosuitSolverOutput solverOutput = default;
             solverOutput.LocalPosition = snappedLocalPosition;
             solverOutput.DesiredVelocity = SnapMillimeter(desiredVelocity);
@@ -342,8 +534,8 @@ namespace Hecton8.Physics.Exosuit
             Output[0] = solverOutput;
 
             WriteOptionalOutputs(state, crush, outputFlags, pushMagnitude, lostVelocityMagnitude, tuning.CurrentMass, quality, emitSilt);
-            WriteScreen(state, crush);
-            WriteTelemetry(state, pushMagnitude, stateHash, badMath ? 1u : 0u);
+            WriteScreen(state, crush, pressure);
+            WriteTelemetry(state, pushMagnitude, stateHash, math.select(0u, 1u, badMath));
         }
 
         private uint AccumulateFootstep(double3 aup, float distanceMeters, float strideMeters)
@@ -404,7 +596,7 @@ namespace Hecton8.Physics.Exosuit
                 SiltExplosionSignal silt = default;
                 if (emitSilt)
                 {
-                    silt.AUP = state.AUP;
+                    silt.AUP = state.AUP_Position;
                     silt.Intensity01 = 1.0f;
                     silt.SourceHash = SourceHash;
                 }
@@ -433,15 +625,15 @@ namespace Hecton8.Physics.Exosuit
             }
         }
 
-        private void WriteScreen(in ExosuitStateDTO state, in MockCrushDepthSignal crush)
+        private void WriteScreen(in ExosuitStateDTO state, in MockCrushDepthSignal crush, float hydraulicPressure)
         {
             if (!Screen.IsCreated || Screen.Length <= 0)
                 return;
 
             ExoScreenDTO screen = default;
-            screen.HydraulicPressure = state.HydraulicPressure;
+            screen.HydraulicPressure = math.saturate(hydraulicPressure);
             screen.DepthMeters = SanitizeNonNegative(crush.DepthMeters);
-            screen.StateMask = state.StateMask;
+            screen.Flags = state.Flags;
             screen.Frame = Frame;
             Screen[0] = screen;
         }
@@ -459,14 +651,16 @@ namespace Hecton8.Physics.Exosuit
                 cursor = 0;
 
             ExosuitTelemetryEntry entry = default;
-            entry.AUP = state.AUP;
+            entry.AUP = state.AUP_Position;
             entry.Velocity = state.Velocity;
-            entry.HydraulicPressure = state.HydraulicPressure;
+            entry.ThrusterHeat = state.ThrusterHeat;
+            entry.HydraulicPressure = Screen.IsCreated && Screen.Length > 0
+                ? math.saturate(Screen[0].HydraulicPressure)
+                : 0.0f;
             entry.SdfPushOutMagnitude = pushMagnitude;
             entry.SolverComputeTimeMs = 0.0f;
             entry.Frame = Frame;
-            entry.StateMask = state.StateMask;
-            entry.ErrorFlags = errorFlags;
+            entry.Flags = state.Flags | (errorFlags * ExosuitStateFlags.NaNDetected);
             entry.StateHash = stateHash;
             TelemetryRing[cursor] = entry;
 
@@ -477,44 +671,77 @@ namespace Hecton8.Physics.Exosuit
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ApplyProceduralMockInput(ref ExosuitFrameInputDTO input, uint proceduralWeightMilli, uint stableEntityHash, uint sectorHash)
+        {
+            float proceduralWeight = math.saturate(proceduralWeightMilli * 0.001f);
+            if (proceduralWeight <= 0.0001f)
+                return;
+
+            uint seed = BuildDeterministicSeed(input.Frame, input.GlobalQualityWeight, input.ActionMask, stableEntityHash, sectorHash);
+            Unity.Mathematics.Random random = new Unity.Mathematics.Random(seed);
+            float2 drift = new float2(random.NextFloat(-1.0f, 1.0f), random.NextFloat(-1.0f, 1.0f)) * 0.18f;
+            input.MoveAxis = math.clamp(input.MoveAxis + drift * proceduralWeight, new float2(-1.0f), new float2(1.0f));
+            input.VerticalAxis = math.clamp(input.VerticalAxis + random.NextFloat(-1.0f, 1.0f) * 0.12f * proceduralWeight, -1.0f, 1.0f);
+            input.DesiredYawRadians = WrapRadians(input.DesiredYawRadians + random.NextFloat(-1.0f, 1.0f) * 0.08f * proceduralWeight);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint BuildDeterministicSeed(uint frame, float qualityWeight, uint actionMask, uint stableEntityHash, uint sectorHash)
+        {
+            uint seed = 2166136261u;
+            seed = (seed ^ SourceHash) * 16777619u;
+            seed = (seed ^ math.select(SourceHash, stableEntityHash, stableEntityHash != 0u)) * 16777619u;
+            seed = (seed ^ math.select(0x48534653u, sectorHash, sectorHash != 0u)) * 16777619u;
+            seed = (seed ^ math.select(1u, frame, frame != 0u)) * 16777619u;
+            seed = (seed ^ math.asuint(math.saturate(SanitizeNonNegative(qualityWeight)))) * 16777619u;
+            seed = (seed ^ actionMask) * 16777619u;
+            return math.select(1u, seed, seed != 0u);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ExosuitTuningDTO SanitizeTuning(ExosuitTuningDTO tuning)
         {
             tuning.BaseMass = math.max(MinMass, SanitizeNonNegative(tuning.BaseMass));
             float currentMass = SanitizeNonNegative(tuning.CurrentMass);
-            tuning.CurrentMass = currentMass > 0.0f ? math.max(MinMass, currentMass) : tuning.BaseMass;
+            tuning.CurrentMass = math.select(tuning.BaseMass, math.max(MinMass, currentMass), currentMass > 0.0f);
             tuning.Drag = math.clamp(SanitizeNonNegative(tuning.Drag), 0.0f, 8.0f);
             tuning.ThrusterForce = math.max(0.0f, SanitizeNonNegative(tuning.ThrusterForce));
             tuning.Radius = math.clamp(SanitizeNonNegative(tuning.Radius), 0.25f, 5.0f);
             tuning.ClampRange = math.max(tuning.Radius, SanitizeNonNegative(tuning.ClampRange));
             tuning.HydraulicLatencySeconds = math.clamp(SanitizeNonNegative(tuning.HydraulicLatencySeconds), 0.05f, 3.0f);
             tuning.PurgeImpulse = math.clamp(SanitizeNonNegative(tuning.PurgeImpulse), 0.0f, 80.0f);
-            tuning.GlobalQualityWeight = math.saturate(SanitizeNonNegative(tuning.GlobalQualityWeight));
+            tuning.GlobalQualityWeight = ExosuitMathGuards.AuthoritativeQualityWeight;
             tuning.FootstepStrideMeters = math.clamp(SanitizeNonNegative(tuning.FootstepStrideMeters), 0.25f, 12.0f);
             tuning.MaxSpeedMetersPerSecond = math.clamp(SanitizeNonNegative(tuning.MaxSpeedMetersPerSecond), 0.25f, 40.0f);
             tuning.CrushDepthMeters = math.max(1.0f, SanitizeNonNegative(tuning.CrushDepthMeters));
+            tuning.SdfEpsilonMeters = math.clamp(SanitizeNonNegative(tuning.SdfEpsilonMeters), 0.005f, 0.25f);
+            tuning.GravityMultiplier = math.clamp(SanitizeNonNegative(tuning.GravityMultiplier), 0.0f, 2.0f);
+            tuning.MaxSubsteps = math.clamp(tuning.MaxSubsteps, 2u, 8u);
             return tuning;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void ApplySecondaryProbe(
+        private void ApplySecondaryProbe(
             float3 center,
             in MockTerrainSDF terrain,
             float radius,
             float weight,
+            float quality,
             ref float3 normal,
             ref float push)
         {
+            float safeWeight = math.saturate(weight);
             float probeOffset = radius * 0.65f;
-            float probeRadius = math.max(0.0f, radius - probeOffset) * math.saturate(weight);
+            float probeRadius = math.max(0.0f, radius - probeOffset) * safeWeight;
             float3 correction = float3.zero;
             float3 strongestNormal = normal;
             float strongestPush = 0.0f;
-            SdfSample px = SampleCaveSdf(center + new float3(probeOffset, 0.0f, 0.0f), terrain);
-            SdfSample nx = SampleCaveSdf(center - new float3(probeOffset, 0.0f, 0.0f), terrain);
-            SdfSample py = SampleCaveSdf(center + new float3(0.0f, probeOffset, 0.0f), terrain);
-            SdfSample ny = SampleCaveSdf(center - new float3(0.0f, probeOffset, 0.0f), terrain);
-            SdfSample pz = SampleCaveSdf(center + new float3(0.0f, 0.0f, probeOffset), terrain);
-            SdfSample nz = SampleCaveSdf(center - new float3(0.0f, 0.0f, probeOffset), terrain);
+            SdfSample px = SampleExosuitSdf(center + new float3(probeOffset, 0.0f, 0.0f), terrain, quality);
+            SdfSample nx = SampleExosuitSdf(center - new float3(probeOffset, 0.0f, 0.0f), terrain, quality);
+            SdfSample py = SampleExosuitSdf(center + new float3(0.0f, probeOffset, 0.0f), terrain, quality);
+            SdfSample ny = SampleExosuitSdf(center - new float3(0.0f, probeOffset, 0.0f), terrain, quality);
+            SdfSample pz = SampleExosuitSdf(center + new float3(0.0f, 0.0f, probeOffset), terrain, quality);
+            SdfSample nz = SampleExosuitSdf(center - new float3(0.0f, 0.0f, probeOffset), terrain, quality);
 
             AccumulateProbeCorrection(px, probeRadius, ref correction, ref strongestNormal, ref strongestPush);
             AccumulateProbeCorrection(nx, probeRadius, ref correction, ref strongestNormal, ref strongestPush);
@@ -523,6 +750,8 @@ namespace Hecton8.Physics.Exosuit
             AccumulateProbeCorrection(pz, probeRadius, ref correction, ref strongestNormal, ref strongestPush);
             AccumulateProbeCorrection(nz, probeRadius, ref correction, ref strongestNormal, ref strongestPush);
 
+            correction *= safeWeight;
+            strongestPush *= safeWeight;
             if (strongestPush <= 0.0f)
                 return;
 
@@ -566,6 +795,183 @@ namespace Hecton8.Physics.Exosuit
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private SdfSample SampleExosuitSdf(float3 localPosition, in MockTerrainSDF terrain, float quality)
+        {
+            SdfSample fallback = SampleCaveSdf(localPosition, terrain);
+            return TrySampleVoxelSdf(localPosition, fallback.Normal, math.saturate(quality), out SdfSample voxel)
+                ? voxel
+                : fallback;
+        }
+
+        private bool TrySampleVoxelSdf(float3 localPosition, float3 fallbackNormal, float quality, out SdfSample sample)
+        {
+            sample = default;
+            if (!IsVoxelSdfPayloadValid() ||
+                !math.all(math.isfinite(localPosition)) ||
+                !math.all(math.isfinite(VoxelSdfOrigin)) ||
+                !math.all(math.isfinite(VoxelSdfCellSize)) ||
+                !math.isfinite(VoxelSdfRangeMeters))
+            {
+                return false;
+            }
+
+            float3 safeCellSize = math.max(math.abs(VoxelSdfCellSize), new float3(0.0001f));
+            float3 grid = (localPosition - VoxelSdfOrigin) * math.rcp(safeCellSize);
+            if (!math.all(math.isfinite(grid)) ||
+                grid.x < 0.0f ||
+                grid.y < 0.0f ||
+                grid.z < 0.0f ||
+                grid.x > VoxelSdfDimensions.x - 1.0f ||
+                grid.y > VoxelSdfDimensions.y - 1.0f ||
+                grid.z > VoxelSdfDimensions.z - 1.0f)
+            {
+                return false;
+            }
+
+            float trilinearWeight = Smooth01(0.22f, 0.78f, quality);
+            float signedDistance = SampleVoxelSignedNearest(grid);
+            if (trilinearWeight > 0.0001f)
+            {
+                float trilinear = SampleVoxelSignedTrilinear(grid);
+                signedDistance = math.lerp(signedDistance, trilinear, trilinearWeight);
+            }
+
+            if (!math.isfinite(signedDistance))
+                return false;
+
+            float3 normal = ResolveCheapVoxelNormal(grid, fallbackNormal);
+            float gradientWeight = Smooth01(0.34f, 1.0f, quality);
+            if (gradientWeight > 0.0001f)
+            {
+                float3 gradient = ResolveVoxelSignedGradient(grid, safeCellSize);
+                float3 gradientNormal = NormalizeWithFallback(-gradient, normal);
+                normal = NormalizeWithFallback(math.lerp(normal, gradientNormal, gradientWeight), normal);
+            }
+
+            sample.Distance = -signedDistance;
+            sample.Normal = NormalizeWithFallback(normal, fallbackNormal);
+            return math.isfinite(sample.Distance) && math.all(math.isfinite(sample.Normal));
+        }
+
+        private bool IsVoxelSdfPayloadValid()
+        {
+            return VoxelSdfTexture3D.IsCreated &&
+                   TryResolveSdfVoxelCount(VoxelSdfDimensions, out int voxelCount) &&
+                   VoxelSdfTexture3D.Length >= voxelCount &&
+                   math.all(math.isfinite(VoxelSdfOrigin)) &&
+                   math.all(math.isfinite(VoxelSdfCellSize)) &&
+                   VoxelSdfCellSize.x > 0.0001f &&
+                   VoxelSdfCellSize.y > 0.0001f &&
+                   VoxelSdfCellSize.z > 0.0001f &&
+                   math.isfinite(VoxelSdfRangeMeters) &&
+                   VoxelSdfRangeMeters > 0.0001f;
+        }
+
+        public static bool TryResolveSdfVoxelCount(int3 dimensions, out int voxelCount)
+        {
+            voxelCount = 0;
+            if (dimensions.x <= 1 || dimensions.y <= 1 || dimensions.z <= 1)
+                return false;
+
+            long count = (long)dimensions.x * dimensions.y * dimensions.z;
+            if (count <= 0L || count > int.MaxValue)
+                return false;
+
+            voxelCount = (int)count;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float SampleVoxelSignedNearest(float3 grid)
+        {
+            int3 p = new int3(
+                (int)math.round(grid.x),
+                (int)math.round(grid.y),
+                (int)math.round(grid.z));
+            return DecodeVoxelSigned(ClampVoxelIndex(p));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float SampleVoxelSignedTrilinear(float3 grid)
+        {
+            float3 clamped = math.clamp(
+                grid,
+                float3.zero,
+                new float3(VoxelSdfDimensions.x - 1.001f, VoxelSdfDimensions.y - 1.001f, VoxelSdfDimensions.z - 1.001f));
+            float3 floorGrid = math.floor(clamped);
+            int3 p0 = new int3((int)floorGrid.x, (int)floorGrid.y, (int)floorGrid.z);
+            int3 maxIndex = new int3(VoxelSdfDimensions.x - 1, VoxelSdfDimensions.y - 1, VoxelSdfDimensions.z - 1);
+            int3 p1 = math.min(p0 + new int3(1, 1, 1), maxIndex);
+            float3 f = math.saturate(clamped - floorGrid);
+
+            float c000 = DecodeVoxelSigned(SdfIndex(p0.x, p0.y, p0.z));
+            float c100 = DecodeVoxelSigned(SdfIndex(p1.x, p0.y, p0.z));
+            float c010 = DecodeVoxelSigned(SdfIndex(p0.x, p1.y, p0.z));
+            float c110 = DecodeVoxelSigned(SdfIndex(p1.x, p1.y, p0.z));
+            float c001 = DecodeVoxelSigned(SdfIndex(p0.x, p0.y, p1.z));
+            float c101 = DecodeVoxelSigned(SdfIndex(p1.x, p0.y, p1.z));
+            float c011 = DecodeVoxelSigned(SdfIndex(p0.x, p1.y, p1.z));
+            float c111 = DecodeVoxelSigned(SdfIndex(p1.x, p1.y, p1.z));
+            float c00 = math.lerp(c000, c100, f.x);
+            float c10 = math.lerp(c010, c110, f.x);
+            float c01 = math.lerp(c001, c101, f.x);
+            float c11 = math.lerp(c011, c111, f.x);
+            float c0 = math.lerp(c00, c10, f.y);
+            float c1 = math.lerp(c01, c11, f.y);
+            return math.lerp(c0, c1, f.z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float3 ResolveCheapVoxelNormal(float3 grid, float3 fallbackNormal)
+        {
+            float3 center = (new float3(VoxelSdfDimensions.x, VoxelSdfDimensions.y, VoxelSdfDimensions.z) - 1.0f) * 0.5f;
+            return NormalizeWithFallback(center - grid, fallbackNormal);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float3 ResolveVoxelSignedGradient(float3 grid, float3 cellSize)
+        {
+            int3 p = new int3(
+                (int)math.round(grid.x),
+                (int)math.round(grid.y),
+                (int)math.round(grid.z));
+            float dx = DecodeVoxelSigned(ClampVoxelIndex(p + new int3(1, 0, 0))) -
+                       DecodeVoxelSigned(ClampVoxelIndex(p - new int3(1, 0, 0)));
+            float dy = DecodeVoxelSigned(ClampVoxelIndex(p + new int3(0, 1, 0))) -
+                       DecodeVoxelSigned(ClampVoxelIndex(p - new int3(0, 1, 0)));
+            float dz = DecodeVoxelSigned(ClampVoxelIndex(p + new int3(0, 0, 1))) -
+                       DecodeVoxelSigned(ClampVoxelIndex(p - new int3(0, 0, 1)));
+            return new float3(
+                dx * math.rcp(math.max(0.0001f, cellSize.x + cellSize.x)),
+                dy * math.rcp(math.max(0.0001f, cellSize.y + cellSize.y)),
+                dz * math.rcp(math.max(0.0001f, cellSize.z + cellSize.z)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ClampVoxelIndex(int3 p)
+        {
+            int x = math.clamp(p.x, 0, VoxelSdfDimensions.x - 1);
+            int y = math.clamp(p.y, 0, VoxelSdfDimensions.y - 1);
+            int z = math.clamp(p.z, 0, VoxelSdfDimensions.z - 1);
+            return SdfIndex(x, y, z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float DecodeVoxelSigned(int index)
+        {
+            if ((uint)index >= (uint)VoxelSdfTexture3D.Length)
+                return -math.max(0.0001f, VoxelSdfRangeMeters);
+
+            return ((VoxelSdfTexture3D[index] * InvEncodedByteMax) * 2.0f - 1.0f) * math.max(0.0001f, VoxelSdfRangeMeters);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int SdfIndex(int x, int y, int z)
+        {
+            return x + VoxelSdfDimensions.x * (y + VoxelSdfDimensions.y * z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static SdfSample SampleCaveSdf(float3 localPosition, in MockTerrainSDF terrain)
         {
             float radius = math.max(1.0f, SanitizeNonNegative(terrain.CaveRadius));
@@ -583,9 +989,10 @@ namespace Hecton8.Physics.Exosuit
             float ceilingDistance = ceilingY - localPosition.y;
 
             float distance = wallDistance;
-            float3 wallNormal = radialLength > 0.0001f
-                ? new float3(-radial.x, 0.0f, -radial.y) * math.rsqrt(math.max(radialSq, 0.0001f))
-                : new float3(1.0f, 0.0f, 0.0f);
+            float3 wallNormal = math.select(
+                new float3(1.0f, 0.0f, 0.0f),
+                new float3(-radial.x, 0.0f, -radial.y) * math.rsqrt(math.max(radialSq, 0.0001f)),
+                radialLength > 0.0001f);
             float3 normal = wallNormal;
 
             if (floorDistance < distance)
@@ -675,12 +1082,21 @@ namespace Hecton8.Physics.Exosuit
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ApplyAngularHydraulicDamping(float3 angularVelocity, float pressure, float dt, float quality)
+        {
+            float load = math.saturate(SanitizeNonNegative(pressure));
+            float qualityKeep = math.lerp(0.82f, 0.93f, Smooth01(0.0f, 1.0f, quality));
+            float damping = math.lerp(5.0f, 1.5f, load) * math.max(MinDt, dt);
+            return angularVelocity * math.rcp(1.0f + damping) * qualityKeep;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float2 DeterministicSinCos(float radians)
         {
             float sin = SinPolynomialDeterministic(radians);
             float cos = SinPolynomialDeterministic(radians + 1.57079632679f);
             float lenSq = math.max(0.0001f, (sin * sin) + (cos * cos));
-            float invLen = math.rsqrt(lenSq);
+            float invLen = math.rsqrt(math.max(lenSq, 0.0001f));
             return new float2(sin * invLen, cos * invLen);
         }
 
@@ -788,7 +1204,7 @@ namespace Hecton8.Physics.Exosuit
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint ComputeStateHash(float3 position, float3 velocity, float pressure, uint mask)
+        private static uint ComputeStateHash(float3 position, float3 velocity, float pressure, float heat, uint mask)
         {
             uint hash = 2166136261u;
             hash = Mix(hash, math.asuint(position.x));
@@ -798,8 +1214,9 @@ namespace Hecton8.Physics.Exosuit
             hash = Mix(hash, math.asuint(velocity.y));
             hash = Mix(hash, math.asuint(velocity.z));
             hash = Mix(hash, math.asuint(pressure));
+            hash = Mix(hash, math.asuint(heat));
             hash = Mix(hash, mask);
-            return hash != 0u ? hash : 1u;
+            return math.select(1u, hash, hash != 0u);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -812,6 +1229,219 @@ namespace Hecton8.Physics.Exosuit
         {
             public float Distance;
             public float3 Normal;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct ExosuitSdfCollisionJob : IJob
+    {
+        [NoAlias] public NativeArray<ExosuitStateDTO> State;
+        [ReadOnly, NoAlias] public NativeArray<ExosuitTuningDTO> Tuning;
+        [ReadOnly, NoAlias] public NativeArray<MockTerrainSDF> Terrain;
+        [NoAlias] public NativeArray<ExosuitSolverOutput> Output;
+        public float GlobalQualityWeight;
+
+        public void Execute()
+        {
+            if (!State.IsCreated || State.Length <= 0 ||
+                !Tuning.IsCreated || Tuning.Length <= 0 ||
+                !Terrain.IsCreated || Terrain.Length <= 0)
+            {
+                return;
+            }
+
+            ExosuitStateDTO state = State[0];
+            ExosuitTuningDTO tuning = ExosuitMathGuards.SanitizeTuning(Tuning[0]);
+            MockTerrainSDF terrain = Terrain[0];
+            double3 cameraAup = ExosuitMathGuards.SanitizeDouble3(terrain.CameraAup, state.AUP_Position);
+            state.AUP_Position = ExosuitMathGuards.SanitizeDouble3(state.AUP_Position, cameraAup);
+            state.Velocity = ExosuitMathGuards.SanitizeFloat3(state.Velocity, float3.zero);
+            state.AngularVelocity = ExosuitMathGuards.SanitizeFloat3(state.AngularVelocity, float3.zero);
+            float3 local = ExosuitMathGuards.SanitizeFloat3(new float3(
+                (float)(state.AUP_Position.x - cameraAup.x),
+                (float)(state.AUP_Position.y - cameraAup.y),
+                (float)(state.AUP_Position.z - cameraAup.z)), float3.zero);
+            float quality = ExosuitMathGuards.AuthoritativeQualityWeight;
+            float sdfEpsilon = tuning.SdfEpsilonMeters;
+            float radius = math.max(0.25f, tuning.Radius) + math.lerp(sdfEpsilon * 1.5f, sdfEpsilon * 0.55f, quality);
+            int maxSubsteps = math.clamp((int)tuning.MaxSubsteps, 2, 8);
+            int iterations = math.clamp((int)math.lerp(2.0f, maxSubsteps, quality), 2, maxSubsteps);
+            float push = 0.0f;
+            float3 normal = new float3(0.0f, 1.0f, 0.0f);
+            float floorY = ExosuitMathGuards.SanitizeFloat(terrain.FloorY, -2.0f);
+            float ceilingY = ExosuitMathGuards.SanitizeFloat(terrain.CeilingY, floorY + 2.0f);
+            floorY = math.min(floorY, ceilingY - 2.0f);
+            ceilingY = math.max(ceilingY, floorY + 2.0f);
+            float caveRadius = math.max(1.0f, ExosuitMathGuards.SanitizeNonNegative(terrain.CaveRadius));
+            float3 caveCenter = ExosuitMathGuards.SanitizeFloat3(terrain.CaveCenterLocal, float3.zero);
+
+            for (int i = 0; i < iterations; i++)
+            {
+                float floorDistance = local.y - floorY;
+                float ceilingDistance = ceilingY - local.y;
+                float2 radial = local.xz - caveCenter.xz;
+                float radialSq = math.max(0.0f, math.lengthsq(radial));
+                float radialLength = radialSq * math.rsqrt(math.max(radialSq, 0.0001f));
+                float wallDistance = caveRadius - radialLength;
+                float distance = wallDistance;
+                normal = radialLength > 0.0001f
+                    ? new float3(-radial.x, 0.0f, -radial.y) * math.rsqrt(math.max(radialSq, 0.0001f))
+                    : new float3(1.0f, 0.0f, 0.0f);
+                if (floorDistance < distance)
+                {
+                    distance = floorDistance;
+                    normal = new float3(0.0f, 1.0f, 0.0f);
+                }
+                if (ceilingDistance < distance)
+                {
+                    distance = ceilingDistance;
+                    normal = new float3(0.0f, -1.0f, 0.0f);
+                }
+
+                float penetration = radius - distance;
+                if (penetration <= 0.0f)
+                    continue;
+
+                local += normal * penetration;
+                state.Velocity = state.Velocity - normal * math.min(0.0f, math.dot(state.Velocity, normal));
+                push = math.max(push, penetration);
+            }
+
+            if (!math.all(math.isfinite(local)) ||
+                !math.all(math.isfinite(state.Velocity)) ||
+                !math.all(math.isfinite(normal)) ||
+                !math.isfinite(push))
+            {
+                local = float3.zero;
+                state.Velocity = float3.zero;
+                state.AngularVelocity = float3.zero;
+                normal = new float3(0.0f, 1.0f, 0.0f);
+                push = 0.0f;
+                state.Flags |= ExosuitStateFlags.NaNDetected;
+            }
+
+            if (push > 0.0f)
+                state.Flags |= ExosuitStateFlags.SdfContact;
+
+            state.AUP_Position = cameraAup + new double3(local);
+            State[0] = state;
+            if (Output.IsCreated && Output.Length > 0)
+            {
+                ExosuitSolverOutput output = Output[0];
+                output.LocalPosition = local;
+                output.PushNormal = normal;
+                output.PushOutMagnitude = math.max(output.PushOutMagnitude, push);
+                output.Flags |= math.select(0u, ExosuitSolverOutput.FlagCollision, push > 0.0f);
+                Output[0] = output;
+            }
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct ApplyHydraulicDampeningJob : IJob
+    {
+        [NoAlias] public NativeArray<ExosuitStateDTO> State;
+        [NoAlias] public NativeArray<ExoScreenDTO> Screen;
+        public float DeltaTime;
+        public float TargetPressure;
+        public float LatencySeconds;
+
+        public void Execute()
+        {
+            if (!State.IsCreated || State.Length <= 0 || !Screen.IsCreated || Screen.Length <= 0)
+                return;
+
+            float dt = math.clamp(ExosuitMathGuards.SanitizeFloat(DeltaTime, 0.02f), 0.0001f, 0.05f);
+            float latency = math.max(0.05f, ExosuitMathGuards.SanitizeNonNegative(LatencySeconds));
+            float pressure = MoveTowards(
+                math.saturate(ExosuitMathGuards.SanitizeFloat(Screen[0].HydraulicPressure, 0.0f)),
+                math.saturate(ExosuitMathGuards.SanitizeFloat(TargetPressure, 0.0f)),
+                dt * math.rcp(latency));
+            ExosuitStateDTO state = State[0];
+            state.Velocity = ExosuitMathGuards.SanitizeFloat3(state.Velocity, float3.zero);
+            state.AngularVelocity = ExosuitMathGuards.SanitizeFloat3(state.AngularVelocity, float3.zero);
+            state.Velocity *= math.rcp(1.0f + pressure * dt * 0.85f);
+            state.AngularVelocity *= math.rcp(1.0f + pressure * dt * 1.6f);
+            State[0] = state;
+            ExoScreenDTO screen = Screen[0];
+            screen.HydraulicPressure = pressure;
+            Screen[0] = screen;
+        }
+
+        private static float MoveTowards(float current, float target, float maxDelta)
+        {
+            float safeMaxDelta = ExosuitMathGuards.SanitizeNonNegative(maxDelta);
+            float delta = ExosuitMathGuards.SanitizeFloat(target - current, 0.0f);
+            return math.abs(delta) <= safeMaxDelta ? target : current + math.sign(delta) * safeMaxDelta;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct EvaluateMagneticClampsJob : IJob
+    {
+        [NoAlias] public NativeArray<ExosuitStateDTO> State;
+        [ReadOnly, NoAlias] public NativeArray<ExosuitFrameInputDTO> Input;
+        [ReadOnly, NoAlias] public NativeArray<ExosuitSolverOutput> Output;
+
+        public void Execute()
+        {
+            if (!State.IsCreated || State.Length <= 0 || !Input.IsCreated || Input.Length <= 0)
+                return;
+
+            ExosuitStateDTO state = State[0];
+            state.Velocity = ExosuitMathGuards.SanitizeFloat3(state.Velocity, float3.zero);
+            state.AngularVelocity = ExosuitMathGuards.SanitizeFloat3(state.AngularVelocity, float3.zero);
+            bool grab = (Input[0].ActionMask & ExosuitInputActions.Grab) != 0u;
+            float push = Output.IsCreated && Output.Length > 0
+                ? ExosuitMathGuards.SanitizeNonNegative(Output[0].PushOutMagnitude)
+                : 0.0f;
+            if (grab && push > 0.0001f)
+            {
+                state.Velocity = float3.zero;
+                state.AngularVelocity = float3.zero;
+                state.Flags |= ExosuitStateFlags.Clamped;
+            }
+            else
+            {
+                state.Flags &= ~ExosuitStateFlags.Clamped;
+            }
+
+            State[0] = state;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct EvaluateExosuitMetabolismJob : IJob
+    {
+        [NoAlias] public NativeArray<ExosuitStateDTO> State;
+        [ReadOnly, NoAlias] public NativeArray<ExosuitFrameInputDTO> Input;
+        public float DeltaTime;
+
+        public void Execute()
+        {
+            if (!State.IsCreated || State.Length <= 0)
+                return;
+
+            ExosuitStateDTO state = State[0];
+            float dt = math.clamp(ExosuitMathGuards.SanitizeFloat(DeltaTime, 0.02f), 0.0001f, 0.05f);
+            float activity = 0.0f;
+            if (Input.IsCreated && Input.Length > 0)
+            {
+                ExosuitFrameInputDTO input = Input[0];
+                float2 move = ExosuitMathGuards.SanitizeFloat2(input.MoveAxis, float2.zero);
+                float vertical = math.clamp(ExosuitMathGuards.SanitizeFloat(input.VerticalAxis, 0.0f), -1.0f, 1.0f);
+                activity = math.lengthsq(move) + math.abs(vertical);
+            }
+
+            bool active = activity > 0.0001f;
+            float heat = math.saturate(ExosuitMathGuards.SanitizeNonNegative(state.ThrusterHeat) + (active ? dt * 0.18f : -dt * 0.12f));
+            if (heat >= 0.995f)
+                state.Flags |= ExosuitStateFlags.Overheated;
+            else if (heat < 0.58f)
+                state.Flags &= ~ExosuitStateFlags.Overheated;
+
+            state.ThrusterHeat = heat;
+            State[0] = state;
         }
     }
 }

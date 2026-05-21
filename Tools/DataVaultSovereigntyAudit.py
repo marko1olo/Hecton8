@@ -26,14 +26,47 @@ DEFAULT_REPORT_PATH = (
     / "AgentLogs"
     / "DataVaultSovereigntyAudit_VAULT_SOVEREIGNTY_ENFORCER.md"
 )
-AUDIT_SCHEMA = "hecton8.datavault_sovereignty_audit.v2"
-BASELINE_SCHEMA = "hecton8.datavault_sovereignty_baseline.v2"
-REPORT_SCHEMA = "hecton8.datavault_sovereignty_audit_report.v1"
+AUDIT_SCHEMA = "hecton8.datavault_sovereignty_audit.v3"
+BASELINE_SCHEMA = "hecton8.datavault_sovereignty_baseline.v3"
+REPORT_SCHEMA = "hecton8.datavault_sovereignty_audit_report.v2"
 NATIVE_ARRAY_CONSTRUCTOR_RE = re.compile(r"\bnew\s+NativeArray\s*<")
-NATIVE_ARRAY_DECLARATION_RE = re.compile(
+NATIVE_ARRAY_ALLOCATOR_RE = re.compile(r"\bAllocator\s*\.\s*(?P<allocator>Persistent|TempJob|Temp)\b")
+NATIVE_COLLECTION_DECLARATION_RE = re.compile(
     r"^\s*(?:\[[^\]]+\]\s*)*"
     r"(?:(?:public|private|protected|internal|static|readonly|volatile|unsafe|new)\s+)+"
-    r"NativeArray\s*<[^>;]+>\s+[A-Za-z_]\w*(?:\s*;|\s*,|\s*=\s*(?!>))"
+    r"(?P<collection>NativeArray|NativeList|Native(?:Parallel)?HashMap)\s*<[^>;]+>\s+"
+    r"(?P<name>[A-Za-z_]\w*)\s*(?:;|,|=\s*(?!>))"
+)
+NATIVE_ARRAY_DECLARATION_RE = NATIVE_COLLECTION_DECLARATION_RE
+TYPE_DECLARATION_RE = re.compile(
+    r"\b(?P<kind>class|struct|interface|record\s+struct|record\s+class|record)\s+"
+    r"(?P<name>[A-Za-z_]\w*)"
+    r"(?:\s*:\s*(?P<bases>[^{]+))?"
+)
+JOB_INTERFACE_TOKENS = (
+    "IJob",
+    "IJobFor",
+    "IJobParallelFor",
+    "IJobParallelForTransform",
+    "IJobEntity",
+    "IJobChunk",
+)
+NATIVE_COLLECTION_TOKENS = (
+    "NativeArray",
+    "NativeList",
+    "NativeHashMap",
+    "NativeParallelHashMap",
+)
+NATIVE_VIEW_STRUCT_SUFFIXES = (
+    "Buffer",
+    "Buffers",
+    "BufferView",
+    "BufferViews",
+    "View",
+    "Views",
+    "Payload",
+    "Snapshot",
+    "Kernel",
 )
 DEFAULT_ALLOWED_PATH_SUFFIXES = (
     "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
@@ -51,6 +84,20 @@ SKIP_DIR_NAMES = {
     "Library",
     "Temp",
 }
+RUNTIME_SURFACE = "Runtime"
+EDITOR_OFFLINE_SURFACES = frozenset({"Editor", "Test", "Dev", "OfflineBake"})
+OFFLINE_BAKE_PATH_TOKENS = (
+    "offline",
+    "baker",
+    "bakepipeline",
+    "forge",
+    "geographysanity",
+    "topographysanity",
+    "topographyforge",
+    "seambinder",
+    "importer",
+    "exporter",
+)
 
 
 @dataclass(frozen=True)
@@ -59,6 +106,33 @@ class FileFinding:
     count: int
     lines: tuple[int, ...]
     allowed: bool
+    allocator_counts: tuple[tuple[str, int], ...] = ()
+    allocator_kinds: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class DeclarationFinding:
+    path: str
+    count: int
+    lines: tuple[int, ...]
+    allowed: bool
+    classification: str
+    collection_type: str
+    names: tuple[str, ...]
+    owner_type: str
+    owner_kind: str
+    owner_line: int
+    burst_owner: bool
+
+
+@dataclass(frozen=True)
+class TypeScope:
+    name: str
+    kind: str
+    bases: str
+    body_depth: int
+    line: int
+    burst: bool
 
 
 def normalize_path(path: Path, repo_root: Path = REPO_ROOT) -> str:
@@ -77,6 +151,14 @@ def is_allowed_path(relative_path: str, allowed_suffixes: Sequence[str]) -> bool
             return True
 
     return False
+
+
+def count_values(values: Iterable[str]) -> dict[str, int]:
+    result: dict[str, int] = {}
+    for value in values:
+        result[value] = result.get(value, 0) + 1
+
+    return result
 
 
 def should_skip(path: Path) -> bool:
@@ -98,14 +180,20 @@ def scan_source_tree(
             continue
 
         line_numbers: list[int] = []
+        allocator_kinds: list[str] = []
         try:
-            lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+            source = path.read_text(encoding="utf-8", errors="ignore")
         except OSError as exc:
             raise OSError(f"failed to read {path}") from exc
+        sanitized_lines = sanitize_csharp_source(source).splitlines()
 
-        for line_number, line in enumerate(lines, 1):
+        for line_index, line in enumerate(sanitized_lines):
             if NATIVE_ARRAY_CONSTRUCTOR_RE.search(line):
+                line_number = line_index + 1
                 line_numbers.append(line_number)
+                allocator_kinds.append(
+                    classify_constructor_allocator_at_line(sanitized_lines, line_index, source)
+                )
 
         if not line_numbers:
             continue
@@ -117,6 +205,8 @@ def scan_source_tree(
                 count=len(line_numbers),
                 lines=tuple(line_numbers),
                 allowed=is_allowed_path(relative_path, allowed_suffixes),
+                allocator_counts=tuple(sorted(count_values(allocator_kinds).items())),
+                allocator_kinds=tuple(allocator_kinds),
             )
         )
 
@@ -127,44 +217,414 @@ def strip_line_comment(line: str) -> str:
     return line.split("//", 1)[0]
 
 
+def sanitize_csharp_source(source: str) -> str:
+    result: list[str] = []
+    index = 0
+    in_block_comment = False
+    in_string = False
+    in_char = False
+    in_verbatim = False
+    while index < len(source):
+        char = source[index]
+        nxt = source[index + 1] if index + 1 < len(source) else ""
+
+        if in_block_comment:
+            if char == "*" and nxt == "/":
+                result.extend((" ", " "))
+                index += 2
+                in_block_comment = False
+                continue
+            result.append("\n" if char == "\n" else " ")
+            index += 1
+            continue
+
+        if in_string:
+            if in_verbatim:
+                if char == '"' and nxt == '"':
+                    result.extend((" ", " "))
+                    index += 2
+                    continue
+                if char == '"':
+                    result.append(" ")
+                    index += 1
+                    in_string = False
+                    in_verbatim = False
+                    continue
+                result.append("\n" if char == "\n" else " ")
+                index += 1
+                continue
+            if char == "\\" and nxt:
+                result.extend((" ", " "))
+                index += 2
+                continue
+            if char == '"':
+                result.append(" ")
+                index += 1
+                in_string = False
+                continue
+            result.append("\n" if char == "\n" else " ")
+            index += 1
+            continue
+
+        if in_char:
+            if char == "\\" and nxt:
+                result.extend((" ", " "))
+                index += 2
+                continue
+            if char == "'":
+                result.append(" ")
+                index += 1
+                in_char = False
+                continue
+            result.append("\n" if char == "\n" else " ")
+            index += 1
+            continue
+
+        if char == "/" and nxt == "/":
+            result.extend((" ", " "))
+            index += 2
+            while index < len(source) and source[index] != "\n":
+                result.append(" ")
+                index += 1
+            continue
+        if char == "/" and nxt == "*":
+            result.extend((" ", " "))
+            index += 2
+            in_block_comment = True
+            continue
+        if char == "@" and nxt == '"':
+            result.extend((" ", " "))
+            index += 2
+            in_string = True
+            in_verbatim = True
+            continue
+        if char == '"':
+            result.append(" ")
+            index += 1
+            in_string = True
+            in_verbatim = False
+            continue
+        if char == "'":
+            result.append(" ")
+            index += 1
+            in_char = True
+            continue
+
+        result.append(char)
+        index += 1
+
+    return "".join(result)
+
+
+def is_job_scope(scope: TypeScope | None) -> bool:
+    if scope is None:
+        return False
+    if "struct" not in scope.kind:
+        return False
+    return any(token in scope.bases for token in JOB_INTERFACE_TOKENS)
+
+
+def is_native_view_scope(scope: TypeScope | None) -> bool:
+    if scope is None:
+        return False
+    if "struct" not in scope.kind:
+        return False
+    return scope.name.endswith(NATIVE_VIEW_STRUCT_SUFFIXES)
+
+
+def classify_constructor_allocator(line: str) -> str:
+    match = NATIVE_ARRAY_ALLOCATOR_RE.search(line)
+    return match.group("allocator") if match else "Unknown"
+
+
+def constructor_window(lines: Sequence[str], line_index: int, max_lines: int = 8) -> str:
+    return "\n".join(lines[line_index : min(len(lines), line_index + max_lines)])
+
+
+def is_sentinel_tracked_constructor_wrapper(source: str, lines: Sequence[str], line_index: int) -> bool:
+    if "NativeMemorySentinel.RegisterNativeArray" not in source:
+        return False
+    if "NativeMemorySentinel.UnregisterNativeArray" not in source:
+        return False
+
+    lookback = "\n".join(lines[max(0, line_index - 12) : line_index + 1])
+    lookahead = "\n".join(lines[line_index : min(len(lines), line_index + 8)])
+    return "NewTrackedArray" in lookback and "RegisterNativeArray" in lookahead
+
+
+def classify_constructor_allocator_at_line(
+    lines: Sequence[str],
+    line_index: int,
+    source: str,
+) -> str:
+    if is_sentinel_tracked_constructor_wrapper(source, lines, line_index):
+        return "SentinelTracked"
+
+    return classify_constructor_allocator(constructor_window(lines, line_index))
+
+
+def constructor_is_gate_relevant(execution_surface: str, allocator: str) -> bool:
+    if execution_surface in EDITOR_OFFLINE_SURFACES and allocator in {"Temp", "TempJob"}:
+        return False
+    if execution_surface in EDITOR_OFFLINE_SURFACES and allocator == "SentinelTracked":
+        return False
+
+    return True
+
+
+def constructor_finding_to_dict(finding: FileFinding) -> dict[str, Any]:
+    execution_surface = extract_execution_surface(finding.path)
+    line_numbers = list(finding.lines)
+    allocator_kinds = list(finding.allocator_kinds)
+    forbidden_lines: list[int] = []
+    forbidden_allocators: list[str] = []
+    transient_lines: list[int] = []
+    transient_allocators: list[str] = []
+
+    for index, line_number in enumerate(line_numbers):
+        allocator = allocator_kinds[index] if index < len(allocator_kinds) else "Unknown"
+        if finding.allowed:
+            continue
+        if constructor_is_gate_relevant(execution_surface, allocator):
+            forbidden_lines.append(line_number)
+            forbidden_allocators.append(allocator)
+        else:
+            transient_lines.append(line_number)
+            transient_allocators.append(allocator)
+
+    forbidden_count = len(forbidden_lines)
+    return {
+        "path": finding.path,
+        "count": finding.count,
+        "lines": line_numbers,
+        "allowed": finding.allowed or forbidden_count == 0,
+        "pathAllowed": finding.allowed,
+        "executionSurface": execution_surface,
+        "domain": extract_domain(finding.path),
+        "allocatorCounts": dict(finding.allocator_counts),
+        "allocatorKinds": allocator_kinds,
+        "forbiddenCount": forbidden_count,
+        "forbiddenLines": forbidden_lines,
+        "forbiddenAllocatorCounts": count_values(forbidden_allocators),
+        "transientEditorScratchCount": len(transient_lines),
+        "transientEditorScratchLines": transient_lines,
+        "transientEditorScratchAllocatorCounts": count_values(transient_allocators),
+    }
+
+
+def is_editor_offline_surface(relative_path: str) -> bool:
+    return extract_execution_surface(relative_path) in EDITOR_OFFLINE_SURFACES
+
+
+def classify_declaration_scope(scope: TypeScope | None, relative_path: str = "") -> str:
+    if scope is None:
+        return "unknownOwnerField"
+    if is_job_scope(scope):
+        return "burstJobInput" if scope.burst else "jobInputStruct"
+    if is_native_view_scope(scope):
+        return "nativeViewStruct"
+    if is_editor_offline_surface(relative_path) and (scope.kind == "class" or scope.kind == "record class"):
+        lowered_name = scope.name.lower()
+        if "bakesession" in lowered_name or lowered_name.endswith("session"):
+            return "editorOfflineSessionScratchField"
+        if "previewstore" in lowered_name or "previewcache" in lowered_name:
+            return "editorOfflinePersistentPreviewField"
+    if scope.kind == "class" or scope.kind == "record class":
+        return "persistentOwnerField"
+    if "struct" in scope.kind:
+        return "unknownStructField"
+    return "unknownOwnerField"
+
+
+def declaration_is_gate_relevant(classification: str) -> bool:
+    return classification in {
+        "persistentOwnerField",
+        "editorOfflinePersistentPreviewField",
+        "unknownStructField",
+        "unknownOwnerField",
+    }
+
+
+def declaration_finding_to_dict(finding: DeclarationFinding) -> dict[str, Any]:
+    return {
+        "path": finding.path,
+        "count": finding.count,
+        "lines": list(finding.lines),
+        "allowed": finding.allowed,
+        "classification": finding.classification,
+        "collectionType": finding.collection_type,
+        "names": list(finding.names),
+        "ownerType": finding.owner_type,
+        "ownerKind": finding.owner_kind,
+        "ownerLine": finding.owner_line,
+        "burstOwner": finding.burst_owner,
+    }
+
+
+def scan_native_collection_declarations_in_source(
+    source: str,
+    relative_path: str,
+    allowed: bool = False,
+) -> list[DeclarationFinding]:
+    sanitized_lines = sanitize_csharp_source(source).splitlines()
+    original_lines = source.splitlines()
+    tracked_editor_preview = (
+        "H8MEMORY_TRACKED_EDITOR_PREVIEW" in source
+        and "H8Memory.Allocate" in source
+        and "H8Memory.Release" in source
+    )
+    scopes: list[TypeScope] = []
+    pending_scope: TypeScope | None = None
+    depth = 0
+    findings: list[DeclarationFinding] = []
+
+    for line_number, line in enumerate(sanitized_lines, 1):
+        if pending_scope is not None and "{" in line:
+            pending_scope = TypeScope(
+                pending_scope.name,
+                pending_scope.kind,
+                pending_scope.bases,
+                depth + 1,
+                pending_scope.line,
+                pending_scope.burst,
+            )
+            scopes.append(pending_scope)
+            pending_scope = None
+
+        type_match = TYPE_DECLARATION_RE.search(line)
+        if type_match:
+            lookback_start = max(0, line_number - 5)
+            burst = any("BurstCompile" in item for item in original_lines[lookback_start:line_number])
+            kind = " ".join(type_match.group("kind").split())
+            new_scope = TypeScope(
+                type_match.group("name"),
+                kind,
+                type_match.group("bases") or "",
+                depth + 1,
+                line_number,
+                burst,
+            )
+            if "{" in line[type_match.end() :]:
+                scopes.append(new_scope)
+            else:
+                pending_scope = new_scope
+
+        declaration_match = NATIVE_COLLECTION_DECLARATION_RE.search(line)
+        if declaration_match:
+            owner = scopes[-1] if scopes else None
+            classification = classify_declaration_scope(owner, relative_path)
+            collection = declaration_match.group("collection")
+            finding_allowed = (
+                allowed
+                or not declaration_is_gate_relevant(classification)
+                or (
+                    classification == "editorOfflinePersistentPreviewField"
+                    and tracked_editor_preview
+                )
+            )
+            findings.append(
+                DeclarationFinding(
+                    path=relative_path,
+                    count=1,
+                    lines=(line_number,),
+                    allowed=finding_allowed,
+                    classification=classification,
+                    collection_type=collection,
+                    names=(declaration_match.group("name"),),
+                    owner_type=owner.name if owner else "",
+                    owner_kind=owner.kind if owner else "",
+                    owner_line=owner.line if owner else 0,
+                    burst_owner=bool(owner and owner.burst),
+                )
+            )
+
+        depth += line.count("{") - line.count("}")
+        while scopes and depth < scopes[-1].body_depth:
+            scopes.pop()
+
+    return findings
+
+
+def group_declaration_findings(findings: Iterable[DeclarationFinding]) -> list[DeclarationFinding]:
+    grouped: dict[tuple[str, bool, str, str, str, int, bool], dict[str, Any]] = {}
+    for finding in findings:
+        key = (
+            finding.path,
+            finding.allowed,
+            finding.classification,
+            finding.collection_type,
+            finding.owner_type,
+            finding.owner_kind,
+            finding.owner_line,
+            finding.burst_owner,
+        )
+        entry = grouped.setdefault(
+            key,
+            {
+                "lines": [],
+                "names": [],
+                "sample": finding,
+            },
+        )
+        entry["lines"].extend(finding.lines)
+        entry["names"].extend(finding.names)
+
+    result: list[DeclarationFinding] = []
+    for entry in grouped.values():
+        sample = entry["sample"]
+        lines = tuple(sorted(int(line) for line in entry["lines"]))
+        names = tuple(str(name) for name in entry["names"])
+        result.append(
+            DeclarationFinding(
+                path=sample.path,
+                count=len(lines),
+                lines=lines,
+                allowed=sample.allowed,
+                classification=sample.classification,
+                collection_type=sample.collection_type,
+                names=names,
+                owner_type=sample.owner_type,
+                owner_kind=sample.owner_kind,
+                owner_line=sample.owner_line,
+                burst_owner=sample.burst_owner,
+            )
+        )
+
+    return sorted(result, key=lambda item: (item.path, item.lines[0], item.classification))
+
+
 def scan_native_array_declaration_tree(
     source_root: Path,
     repo_root: Path = REPO_ROOT,
     allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_DECLARATION_PATH_SUFFIXES,
-) -> list[FileFinding]:
+) -> list[DeclarationFinding]:
     if not source_root.exists():
         raise FileNotFoundError(f"source root not found: {source_root}")
 
-    findings: list[FileFinding] = []
+    findings: list[DeclarationFinding] = []
     for path in sorted(source_root.rglob("*.cs")):
         relative_scan_path = path.relative_to(source_root)
         if should_skip(relative_scan_path):
             continue
 
-        line_numbers: list[int] = []
         try:
-            lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+            source = path.read_text(encoding="utf-8", errors="ignore")
         except OSError as exc:
             raise OSError(f"failed to read {path}") from exc
 
-        for line_number, line in enumerate(lines, 1):
-            if NATIVE_ARRAY_DECLARATION_RE.search(strip_line_comment(line)):
-                line_numbers.append(line_number)
-
-        if not line_numbers:
+        if not any(token in source for token in NATIVE_COLLECTION_TOKENS):
             continue
 
         relative_path = normalize_path(path, repo_root)
-        findings.append(
-            FileFinding(
-                path=relative_path,
-                count=len(line_numbers),
-                lines=tuple(line_numbers),
-                allowed=is_allowed_path(relative_path, allowed_suffixes),
+        findings.extend(
+            scan_native_collection_declarations_in_source(
+                source,
+                relative_path,
+                is_allowed_path(relative_path, allowed_suffixes),
             )
         )
 
-    return findings
+    return group_declaration_findings(findings)
 
 
 def scan_source_tree_with_declarations(
@@ -172,34 +632,45 @@ def scan_source_tree_with_declarations(
     repo_root: Path = REPO_ROOT,
     constructor_allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_PATH_SUFFIXES,
     declaration_allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_DECLARATION_PATH_SUFFIXES,
-) -> tuple[list[FileFinding], list[FileFinding]]:
+) -> tuple[list[FileFinding], list[DeclarationFinding]]:
     if not source_root.exists():
         raise FileNotFoundError(f"source root not found: {source_root}")
 
     constructor_findings: list[FileFinding] = []
-    declaration_findings: list[FileFinding] = []
+    declaration_findings: list[DeclarationFinding] = []
     for path in sorted(source_root.rglob("*.cs")):
         relative_scan_path = path.relative_to(source_root)
         if should_skip(relative_scan_path):
             continue
 
         constructor_lines: list[int] = []
-        declaration_lines: list[int] = []
+        constructor_allocator_kinds: list[str] = []
         try:
-            lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+            source = path.read_text(encoding="utf-8", errors="ignore")
         except OSError as exc:
             raise OSError(f"failed to read {path}") from exc
+        sanitized_lines = sanitize_csharp_source(source).splitlines()
 
-        for line_number, line in enumerate(lines, 1):
+        for line_index, line in enumerate(sanitized_lines):
             if NATIVE_ARRAY_CONSTRUCTOR_RE.search(line):
+                line_number = line_index + 1
                 constructor_lines.append(line_number)
-            if NATIVE_ARRAY_DECLARATION_RE.search(strip_line_comment(line)):
-                declaration_lines.append(line_number)
-
-        if not constructor_lines and not declaration_lines:
-            continue
+                constructor_allocator_kinds.append(
+                    classify_constructor_allocator_at_line(sanitized_lines, line_index, source)
+                )
 
         relative_path = normalize_path(path, repo_root)
+        file_declaration_findings: list[DeclarationFinding] = []
+        if any(token in source for token in NATIVE_COLLECTION_TOKENS):
+            file_declaration_findings = scan_native_collection_declarations_in_source(
+                source,
+                relative_path,
+                is_allowed_path(relative_path, declaration_allowed_suffixes),
+            )
+
+        if not constructor_lines and not file_declaration_findings:
+            continue
+
         if constructor_lines:
             constructor_findings.append(
                 FileFinding(
@@ -207,19 +678,13 @@ def scan_source_tree_with_declarations(
                     count=len(constructor_lines),
                     lines=tuple(constructor_lines),
                     allowed=is_allowed_path(relative_path, constructor_allowed_suffixes),
+                    allocator_counts=tuple(sorted(count_values(constructor_allocator_kinds).items())),
+                    allocator_kinds=tuple(constructor_allocator_kinds),
                 )
             )
-        if declaration_lines:
-            declaration_findings.append(
-                FileFinding(
-                    path=relative_path,
-                    count=len(declaration_lines),
-                    lines=tuple(declaration_lines),
-                    allowed=is_allowed_path(relative_path, declaration_allowed_suffixes),
-                )
-            )
+        declaration_findings.extend(file_declaration_findings)
 
-    return constructor_findings, declaration_findings
+    return constructor_findings, group_declaration_findings(declaration_findings)
 
 
 def build_audit_payload(
@@ -227,18 +692,73 @@ def build_audit_payload(
     source_root: Path,
     repo_root: Path = REPO_ROOT,
     allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_PATH_SUFFIXES,
-    declaration_findings: Sequence[FileFinding] | None = None,
+    declaration_findings: Sequence[DeclarationFinding] | None = None,
     declaration_allowed_suffixes: Sequence[str] = DEFAULT_ALLOWED_DECLARATION_PATH_SUFFIXES,
 ) -> dict[str, Any]:
     total_direct = sum(finding.count for finding in findings)
-    allowed_direct = sum(finding.count for finding in findings if finding.allowed)
-    forbidden = [finding for finding in findings if not finding.allowed]
-    forbidden_direct = sum(finding.count for finding in forbidden)
+    constructor_findings = [constructor_finding_to_dict(finding) for finding in findings]
+    forbidden = [finding for finding in constructor_findings if int(finding["forbiddenCount"]) > 0]
+    forbidden_direct = sum(int(finding["forbiddenCount"]) for finding in forbidden)
+    allowed_direct = total_direct - forbidden_direct
+    editor_offline_transient_scratch_direct = sum(
+        int(finding["transientEditorScratchCount"])
+        for finding in constructor_findings
+        if finding["executionSurface"] in EDITOR_OFFLINE_SURFACES
+    )
+    forbidden_runtime_constructor_count = sum(
+        int(finding["forbiddenCount"])
+        for finding in constructor_findings
+        if int(finding["forbiddenCount"]) > 0 and finding["executionSurface"] == RUNTIME_SURFACE
+    )
+    forbidden_editor_offline_constructor_count = sum(
+        int(finding["forbiddenCount"])
+        for finding in constructor_findings
+        if int(finding["forbiddenCount"]) > 0 and finding["executionSurface"] in EDITOR_OFFLINE_SURFACES
+    )
+    forbidden_constructor_allocator_counts = aggregate_constructor_allocators(
+        [finding for finding in constructor_findings if int(finding["forbiddenCount"]) > 0]
+    )
+    editor_offline_forbidden_constructor_allocator_counts = aggregate_constructor_allocators(
+        [
+            finding
+            for finding in constructor_findings
+            if int(finding["forbiddenCount"]) > 0
+            and finding["executionSurface"] in EDITOR_OFFLINE_SURFACES
+        ]
+    )
     declaration_findings = tuple(declaration_findings or ())
     total_declarations = sum(finding.count for finding in declaration_findings)
     allowed_declarations = sum(finding.count for finding in declaration_findings if finding.allowed)
     forbidden_declarations = [finding for finding in declaration_findings if not finding.allowed]
     forbidden_declaration_count = sum(finding.count for finding in forbidden_declarations)
+    persistent_declarations = [
+        finding for finding in declaration_findings if finding.classification == "persistentOwnerField"
+    ]
+    job_input_declarations = [
+        finding for finding in declaration_findings if finding.classification in {"jobInputStruct", "burstJobInput"}
+    ]
+    burst_job_input_declarations = [
+        finding for finding in declaration_findings if finding.classification == "burstJobInput"
+    ]
+    unknown_struct_declarations = [
+        finding for finding in declaration_findings if finding.classification == "unknownStructField"
+    ]
+    unknown_owner_declarations = [
+        finding for finding in declaration_findings if finding.classification == "unknownOwnerField"
+    ]
+    native_view_declarations = [
+        finding for finding in declaration_findings if finding.classification == "nativeViewStruct"
+    ]
+    editor_offline_session_scratch_declarations = [
+        finding
+        for finding in declaration_findings
+        if finding.classification == "editorOfflineSessionScratchField"
+    ]
+    editor_offline_preview_declarations = [
+        finding
+        for finding in declaration_findings
+        if finding.classification == "editorOfflinePersistentPreviewField"
+    ]
 
     return {
         "schema": AUDIT_SCHEMA,
@@ -250,29 +770,62 @@ def build_audit_payload(
         "totalDirectConstructors": total_direct,
         "allowedDirectConstructors": allowed_direct,
         "forbiddenDirectConstructors": forbidden_direct,
+        "directConstructorsByExecutionSurface": aggregate_current_findings_by_surface(constructor_findings),
+        "forbiddenDirectConstructorsByExecutionSurface": aggregate_current_findings_by_surface(
+            [finding for finding in constructor_findings if int(finding["forbiddenCount"]) > 0],
+            "forbiddenCount",
+        ),
+        "forbiddenDirectConstructorsByAllocator": forbidden_constructor_allocator_counts,
+        "editorOfflineForbiddenDirectConstructorsByAllocator": editor_offline_forbidden_constructor_allocator_counts,
+        "editorOfflineTransientScratchDirectConstructors": editor_offline_transient_scratch_direct,
+        "runtimeForbiddenDirectConstructors": forbidden_runtime_constructor_count,
+        "editorOfflineForbiddenDirectConstructors": forbidden_editor_offline_constructor_count,
         "forbiddenFileCount": len(forbidden),
         "totalNativeArrayDeclarations": total_declarations,
+        "totalNativeCollectionDeclarations": total_declarations,
         "allowedNativeArrayDeclarations": allowed_declarations,
+        "allowedNativeCollectionDeclarations": allowed_declarations,
         "forbiddenNativeArrayDeclarations": forbidden_declaration_count,
+        "forbiddenNativeCollectionDeclarations": forbidden_declaration_count,
+        "persistentNativeCollectionDeclarations": sum(finding.count for finding in persistent_declarations),
+        "jobInputNativeCollectionDeclarations": sum(finding.count for finding in job_input_declarations),
+        "burstJobInputNativeCollectionDeclarations": sum(finding.count for finding in burst_job_input_declarations),
+        "transientJobDataNativeCollectionDeclarations": 0,
+        "nativeViewNativeCollectionDeclarations": sum(finding.count for finding in native_view_declarations),
+        "editorOfflineSessionScratchNativeCollectionDeclarations": sum(
+            finding.count for finding in editor_offline_session_scratch_declarations
+        ),
+        "editorOfflinePersistentPreviewNativeCollectionDeclarations": sum(
+            finding.count for finding in editor_offline_preview_declarations
+        ),
+        "unknownStructNativeCollectionDeclarations": sum(finding.count for finding in unknown_struct_declarations),
+        "unknownOwnerNativeCollectionDeclarations": sum(finding.count for finding in unknown_owner_declarations),
         "declarationFileCount": len(forbidden_declarations),
         "findingCount": len(findings),
-        "findings": [
-            {
-                "path": finding.path,
-                "count": finding.count,
-                "lines": list(finding.lines),
-                "allowed": finding.allowed,
-            }
-            for finding in findings
-        ],
+        "findings": constructor_findings,
         "declarationFindings": [
-            {
-                "path": finding.path,
-                "count": finding.count,
-                "lines": list(finding.lines),
-                "allowed": finding.allowed,
-            }
+            declaration_finding_to_dict(finding)
             for finding in declaration_findings
+        ],
+        "persistentDeclarationFindings": [
+            declaration_finding_to_dict(finding)
+            for finding in declaration_findings
+            if finding.classification == "persistentOwnerField"
+        ],
+        "jobInputDeclarationFindings": [
+            declaration_finding_to_dict(finding)
+            for finding in declaration_findings
+            if finding.classification in {"jobInputStruct", "burstJobInput"}
+        ],
+        "editorOfflineSessionScratchDeclarationFindings": [
+            declaration_finding_to_dict(finding)
+            for finding in declaration_findings
+            if finding.classification == "editorOfflineSessionScratchField"
+        ],
+        "editorOfflinePersistentPreviewDeclarationFindings": [
+            declaration_finding_to_dict(finding)
+            for finding in declaration_findings
+            if finding.classification == "editorOfflinePersistentPreviewField"
         ],
     }
 
@@ -281,8 +834,12 @@ def build_baseline(payload: dict[str, Any]) -> dict[str, Any]:
     forbidden_by_file: dict[str, int] = {}
     allowed_by_file: dict[str, int] = {}
     for finding in payload["findings"]:
-        target = allowed_by_file if finding["allowed"] else forbidden_by_file
-        target[finding["path"]] = int(finding["count"])
+        forbidden_count = int(finding.get("forbiddenCount", 0 if finding["allowed"] else finding["count"]))
+        allowed_count = int(finding["count"]) - forbidden_count
+        if forbidden_count > 0:
+            forbidden_by_file[finding["path"]] = forbidden_count
+        if allowed_count > 0:
+            allowed_by_file[finding["path"]] = allowed_count
 
     forbidden_declarations_by_file: dict[str, int] = {}
     allowed_declarations_by_file: dict[str, int] = {}
@@ -298,6 +855,16 @@ def build_baseline(payload: dict[str, Any]) -> dict[str, Any]:
         "totalDirectConstructors": payload["totalDirectConstructors"],
         "allowedDirectConstructors": payload["allowedDirectConstructors"],
         "forbiddenDirectConstructors": payload["forbiddenDirectConstructors"],
+        "forbiddenDirectConstructorsByExecutionSurface": payload.get(
+            "forbiddenDirectConstructorsByExecutionSurface",
+            {},
+        ),
+        "editorOfflineTransientScratchDirectConstructors": payload.get(
+            "editorOfflineTransientScratchDirectConstructors",
+            0,
+        ),
+        "runtimeForbiddenDirectConstructors": payload.get("runtimeForbiddenDirectConstructors", 0),
+        "editorOfflineForbiddenDirectConstructors": payload.get("editorOfflineForbiddenDirectConstructors", 0),
         "forbiddenFileCount": payload["forbiddenFileCount"],
         "totalNativeArrayDeclarations": payload.get("totalNativeArrayDeclarations", 0),
         "allowedNativeArrayDeclarations": payload.get("allowedNativeArrayDeclarations", 0),
@@ -336,10 +903,11 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
 def forbidden_by_file(payload: dict[str, Any]) -> dict[str, int]:
     result: dict[str, int] = {}
     for finding in payload["findings"]:
-        if finding["allowed"]:
+        forbidden_count = int(finding.get("forbiddenCount", 0 if finding["allowed"] else finding["count"]))
+        if forbidden_count <= 0:
             continue
 
-        result[finding["path"]] = int(finding["count"])
+        result[finding["path"]] = forbidden_count
 
     return result
 
@@ -379,12 +947,40 @@ def extract_execution_surface(relative_path: str) -> str:
         return "Test"
     if "dev" in parts or lowered.endswith("smoketester.cs") or "testharness" in lowered:
         return "Dev"
+    filename = parts[-1] if parts else lowered
+    if any(token in filename for token in OFFLINE_BAKE_PATH_TOKENS):
+        return "OfflineBake"
     if "/plugins/" in lowered:
         return "Plugin"
     if not normalized.startswith("Assets/_Project/Scripts/"):
         return "External"
 
-    return "Runtime"
+    return RUNTIME_SURFACE
+
+
+def aggregate_current_findings_by_surface(
+    findings: Sequence[dict[str, Any]],
+    count_key: str = "count",
+) -> dict[str, int]:
+    result: dict[str, int] = {}
+    for finding in findings:
+        surface = str(finding.get("executionSurface") or extract_execution_surface(str(finding["path"])))
+        result[surface] = result.get(surface, 0) + int(finding.get(count_key, 0))
+
+    return dict(sorted(result.items()))
+
+
+def aggregate_constructor_allocators(findings: Sequence[dict[str, Any]]) -> dict[str, int]:
+    result: dict[str, int] = {}
+    for finding in findings:
+        allocator_counts = finding.get("forbiddenAllocatorCounts", finding.get("allocatorCounts", {}))
+        if not isinstance(allocator_counts, dict):
+            continue
+        for allocator, count in allocator_counts.items():
+            key = str(allocator)
+            result[key] = result.get(key, 0) + int(count)
+
+    return dict(sorted(result.items()))
 
 
 def collect_regression_details(
@@ -470,6 +1066,35 @@ def collect_regression_details(
 def detect_regressions(payload: dict[str, Any], baseline: dict[str, Any] | None) -> list[str]:
     errors, _ = collect_regression_details(payload, baseline)
     return errors
+
+
+def collect_runtime_regression_details(
+    payload: dict[str, Any],
+    baseline: dict[str, Any] | None,
+) -> tuple[list[str], list[dict[str, Any]]]:
+    if baseline is None:
+        return ["Baseline missing; runtime no-regression gate fails closed."], []
+
+    errors: list[str] = []
+    if baseline.get("schema") != BASELINE_SCHEMA:
+        errors.append(f"Baseline schema mismatch: {baseline.get('schema')!r}.")
+
+    _, details = collect_regression_details(payload, baseline)
+    runtime_details = [
+        detail for detail in details if detail.get("executionSurface") == RUNTIME_SURFACE
+    ]
+    if runtime_details:
+        errors.append(
+            "Runtime DataVault native ownership regressions detected: "
+            f"{len(runtime_details)} file deltas."
+        )
+        for detail in runtime_details:
+            errors.append(
+                f"{detail['path']}: runtime {detail['kind']} increased "
+                f"from {detail['baseline']} to {detail['current']}."
+            )
+
+    return errors, runtime_details
 
 
 def aggregate_regression_details(details: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -581,7 +1206,8 @@ def top_findings(payload: dict[str, Any], allowed: bool, limit: int) -> list[dic
         for finding in payload["findings"]
         if bool(finding["allowed"]) == allowed
     ]
-    return sorted(findings, key=lambda item: (-int(item["count"]), str(item["path"])))[:limit]
+    count_key = "count" if allowed else "forbiddenCount"
+    return sorted(findings, key=lambda item: (-int(item.get(count_key, item["count"])), str(item["path"])))[:limit]
 
 
 def format_line_samples(lines: Iterable[int], limit: int = 8) -> str:
@@ -629,10 +1255,20 @@ def write_markdown_report(
         f"| Total direct `new NativeArray<T>` constructors | {payload['totalDirectConstructors']} |",
         f"| Allowed allocator-internal constructors | {payload['allowedDirectConstructors']} |",
         f"| Forbidden system constructors | {payload['forbiddenDirectConstructors']} |",
+        f"| Runtime forbidden constructors | {payload.get('runtimeForbiddenDirectConstructors', 0)} |",
+        f"| Editor/offline forbidden constructors | {payload.get('editorOfflineForbiddenDirectConstructors', 0)} |",
+        f"| Editor/offline transient scratch constructors | {payload.get('editorOfflineTransientScratchDirectConstructors', 0)} |",
         f"| Files with forbidden constructors | {payload['forbiddenFileCount']} |",
+        f"| Editor/offline session scratch declarations | {payload.get('editorOfflineSessionScratchNativeCollectionDeclarations', 0)} |",
+        f"| Editor/offline persistent preview declarations | {payload.get('editorOfflinePersistentPreviewNativeCollectionDeclarations', 0)} |",
         f"| Total field-like `NativeArray<T>` declarations | {payload.get('totalNativeArrayDeclarations', 0)} |",
         f"| Allowed DataVault/H8Memory declarations | {payload.get('allowedNativeArrayDeclarations', 0)} |",
         f"| Forbidden system declarations | {payload.get('forbiddenNativeArrayDeclarations', 0)} |",
+        f"| Persistent owner native collection declarations | {payload.get('persistentNativeCollectionDeclarations', 0)} |",
+        f"| Job input native collection declarations | {payload.get('jobInputNativeCollectionDeclarations', 0)} |",
+        f"| Burst job input native collection declarations | {payload.get('burstJobInputNativeCollectionDeclarations', 0)} |",
+        f"| Native view/payload/kernel struct declarations | {payload.get('nativeViewNativeCollectionDeclarations', 0)} |",
+        f"| Unknown struct native collection declarations | {payload.get('unknownStructNativeCollectionDeclarations', 0)} |",
         f"| Files with forbidden declarations | {payload.get('declarationFileCount', 0)} |",
         "",
     ]
@@ -641,6 +1277,48 @@ def write_markdown_report(
         lines.extend(["## Regression Findings", ""])
         for error in regression_errors:
             lines.append(f"- {error}")
+        lines.append("")
+
+    constructor_surface_totals = payload.get("forbiddenDirectConstructorsByExecutionSurface", {})
+    if constructor_surface_totals:
+        lines.extend(
+            [
+                "## Current Forbidden Constructors By Execution Surface",
+                "",
+                "| Surface | Count |",
+                "|---|---:|",
+            ]
+        )
+        for surface, count in sorted(constructor_surface_totals.items()):
+            lines.append(f"| `{surface}` | {count} |")
+        lines.append("")
+
+    allocator_totals = payload.get("forbiddenDirectConstructorsByAllocator", {})
+    if allocator_totals:
+        lines.extend(
+            [
+                "## Current Forbidden Constructors By Allocator",
+                "",
+                "| Allocator | Count |",
+                "|---|---:|",
+            ]
+        )
+        for allocator, count in sorted(allocator_totals.items()):
+            lines.append(f"| `{allocator}` | {count} |")
+        lines.append("")
+
+    editor_allocator_totals = payload.get("editorOfflineForbiddenDirectConstructorsByAllocator", {})
+    if editor_allocator_totals:
+        lines.extend(
+            [
+                "## Editor/Offline Forbidden Constructors By Allocator",
+                "",
+                "| Allocator | Count |",
+                "|---|---:|",
+            ]
+        )
+        for allocator, count in sorted(editor_allocator_totals.items()):
+            lines.append(f"| `{allocator}` | {count} |")
         lines.append("")
 
     domain_regressions = aggregate_regression_details(regression_details)
@@ -712,8 +1390,10 @@ def write_markdown_report(
         ]
     )
     for finding in top_findings(payload, allowed=False, limit=top_limit):
+        count = int(finding.get("forbiddenCount", finding["count"]))
+        lines_sample = finding.get("forbiddenLines", finding["lines"])
         lines.append(
-            f"| {finding['count']} | `{finding['path']}` | {format_line_samples(finding['lines'])} |"
+            f"| {count} | `{finding['path']}` | {format_line_samples(lines_sample)} |"
         )
 
     lines.extend(
@@ -802,6 +1482,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--audit-json", type=Path, default=None, help="Optional JSON report path.")
     parser.add_argument("--write-baseline", action="store_true", help="Overwrite the baseline with the current audit.")
     parser.add_argument("--fail-on-regression", action="store_true", help="Exit nonzero if forbidden constructor debt increases.")
+    parser.add_argument(
+        "--fail-on-runtime-regression",
+        action="store_true",
+        help="Exit nonzero only for runtime constructor or field declaration regressions.",
+    )
     parser.add_argument("--fail-on-any", action="store_true", help="Exit nonzero if any forbidden constructors remain.")
     parser.add_argument("--no-report", action="store_true", help="Do not write the Markdown report.")
     parser.add_argument("--top", type=int, default=40, help="Number of findings to include in the report.")
@@ -820,6 +1505,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.fail_on_regression:
         regression_errors, regression_details = collect_regression_details(payload, baseline)
+    elif args.fail_on_runtime_regression:
+        regression_errors, regression_details = collect_runtime_regression_details(payload, baseline)
     else:
         regression_errors, regression_details = [], []
     if not args.no_report:
@@ -858,9 +1545,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"direct={payload['totalDirectConstructors']}, "
         f"allowed={payload['allowedDirectConstructors']}, "
         f"forbidden={payload['forbiddenDirectConstructors']}, "
+        f"runtimeForbidden={payload.get('runtimeForbiddenDirectConstructors', 0)}, "
+        f"editorOfflineForbidden={payload.get('editorOfflineForbiddenDirectConstructors', 0)}, "
+        f"editorOfflineTransientScratch={payload.get('editorOfflineTransientScratchDirectConstructors', 0)}, "
+        f"editorOfflineAllocatorSplit={payload.get('editorOfflineForbiddenDirectConstructorsByAllocator', {})}, "
         f"files={payload['forbiddenFileCount']}, "
         f"declarations={payload.get('totalNativeArrayDeclarations', 0)}, "
         f"forbiddenDeclarations={payload.get('forbiddenNativeArrayDeclarations', 0)}, "
+        f"persistentDeclarations={payload.get('persistentNativeCollectionDeclarations', 0)}, "
+        f"editorSessionScratchDeclarations={payload.get('editorOfflineSessionScratchNativeCollectionDeclarations', 0)}, "
+        f"editorPreviewPersistentDeclarations={payload.get('editorOfflinePersistentPreviewNativeCollectionDeclarations', 0)}, "
+        f"jobInputDeclarations={payload.get('jobInputNativeCollectionDeclarations', 0)}, "
         f"declarationFiles={payload.get('declarationFileCount', 0)}"
     )
     for reason in failure_reasons:

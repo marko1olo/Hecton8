@@ -334,9 +334,63 @@ namespace Hecton8.Vehicles.Automation
         }
     }
 
+    internal static class SubmarineAutopilotSimdMath
+    {
+        private const float TwoPi = 6.28318530718f;
+        private const float InvTwoPi = 0.15915494309f;
+        private const float HalfPi = 1.57079632679f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float LengthFromSq(float lengthSq)
+        {
+            float finiteSq = math.select(0f, lengthSq, math.isfinite(lengthSq));
+            float safeSq = math.max(finiteSq, 0.0001f);
+            return math.select(0f, safeSq * math.rsqrt(math.max(safeSq, 0.0001f)), finiteSq > 0.0001f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SinPolynomial7(float radians)
+        {
+            float safeRadians = math.select(0f, radians, math.isfinite(radians));
+            float x = safeRadians - math.floor((safeRadians + math.PI) * InvTwoPi) * TwoPi;
+            x = math.select(x, math.PI - x, x > HalfPi);
+            x = math.select(x, -math.PI - x, x < -HalfPi);
+            float x2 = x * x;
+            return x * (1f + x2 * (-0.16666667f + x2 * (0.008333331f + x2 * -0.00019840874f)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float CosPolynomial7(float radians)
+        {
+            return SinPolynomial7(radians + HalfPi);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float AcosPolynomial(float value)
+        {
+            float x = math.clamp(math.select(1f, value, math.isfinite(value)), -1f, 1f);
+            float ax = math.abs(x);
+            float root = LengthFromSq(math.max(0f, 1f - ax));
+            float angle = (((-0.0187293f * ax + 0.0742610f) * ax - 0.2121144f) * ax + 1.5707288f) * root;
+            return math.select(angle, math.PI - angle, x < 0f);
+        }
+    }
+
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct InitializeAutopilotBuffersJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // These raw pointer lanes are generation-checked Vault slices resolved by the autopilot owner before scheduling.
+        // The safety system cannot see that shared descriptor proof once the slices are lowered to pointers, so each
+        // dereference is guarded by VehicleCapacity and null checks before lane writes.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rewrapping the lanes as NativeArray fields was rejected because the owner already resolves contiguous pointer
+        // views for several jobs in one phase. Duplicating the state into job-local scratch was rejected because it adds
+        // a full extra pass and breaks the one-owner Vault route.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is index-exclusive initialization: worker index N reads optional KinematicStates[N] and writes
+        // only AutopilotStates[N], Avoidance[N], and RouteRanges[N]; no second writer touches those rows before the
+        // returned JobHandle is chained.
         [NoAlias, NativeDisableUnsafePtrRestriction] public SubmarineKinematicState* KinematicStates;
         [NoAlias, NativeDisableUnsafePtrRestriction] public AutopilotStateDTO* AutopilotStates;
         [NoAlias, NativeDisableUnsafePtrRestriction] public AutopilotAvoidanceDTO* Avoidance;
@@ -386,6 +440,15 @@ namespace Hecton8.Vehicles.Automation
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct GenerateMockObstacleSDFJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // EncodedSdf is a single owner-provided byte field used as a deterministic mock SDF payload. Unity cannot track
+        // the raw pointer, but each worker validates index < Length and writes exactly one byte at EncodedSdf[index].
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A managed texture or byte[] fallback was rejected for GC and copy cost. A separate NativeArray mock buffer was
+        // rejected because it would create duplicate SDF ownership instead of filling the existing Vault lane.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is one SDF cell per worker index. The owner does not schedule readers over EncodedSdf until this
+        // generation job's handle is completed or combined into the downstream avoidance dependency.
         [NoAlias, NativeDisableUnsafePtrRestriction] public byte* EncodedSdf;
         public int Length;
         public int3 Dimensions;
@@ -406,7 +469,7 @@ namespace Hecton8.Vehicles.Automation
             int x = rem - y * width;
 
             float3 position = Origin + (new float3(x, y, z) + new float3(0.5f)) * CellSize;
-            float pillar = 18f - math.length(new float2(position.x, position.z - 18f));
+            float pillar = 18f - SubmarineAutopilotSimdMath.LengthFromSq(math.lengthsq(new float2(position.x, position.z - 18f)));
             float wall = 4f - math.abs(position.x + 38f);
             float ceiling = position.y - 28f;
             float trenchLip = math.max(wall, math.max(pillar, ceiling));
@@ -425,6 +488,16 @@ namespace Hecton8.Vehicles.Automation
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct GenerateMockFlowFieldJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // FlowSamples is the owner-resolved mock flow lane. Raw pointer use is required for the shared autopilot pointer
+        // pipeline, and every write is bounded by Length before FlowSamples[index] is assigned.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Creating a temporary NativeArray flow field was rejected because it adds allocation/fill/copy overhead. Folding
+        // flow generation into the avoidance job was rejected because it would duplicate flow math per vehicle instead
+        // of once per field sample.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is exclusive field generation: worker index N writes only FlowSamples[N], and downstream jobs can
+        // read the lane only through the generated JobHandle dependency.
         [NoAlias, NativeDisableUnsafePtrRestriction] public float3* FlowSamples;
         public int Length;
         public int3 Dimensions;
@@ -444,15 +517,25 @@ namespace Hecton8.Vehicles.Automation
             int x = rem - y * width;
             float3 p = Origin + (new float3(x, y, z) + new float3(0.5f)) * CellSize;
             FlowSamples[index] = new float3(
-                math.sin(p.z * 0.037f + p.y * 0.011f) * 0.32f,
-                math.sin(p.x * 0.021f) * 0.035f,
-                math.cos(p.x * 0.026f - p.y * 0.013f) * 0.26f);
+                SubmarineAutopilotSimdMath.SinPolynomial7(p.z * 0.037f + p.y * 0.011f) * 0.32f,
+                SubmarineAutopilotSimdMath.SinPolynomial7(p.x * 0.021f) * 0.035f,
+                SubmarineAutopilotSimdMath.CosPolynomial7(p.x * 0.026f - p.y * 0.013f) * 0.26f);
         }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct EvaluateCollisionAvoidanceJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // These pointer lanes are independent Vault slices: kinematics/autopilot state are input/output rows, avoidance
+        // and feeler rows are per-vehicle outputs, and EncodedSdf is read-only sample data. The safety system cannot prove
+        // that separation after pointer lowering, so the job enforces VehicleCount and SDF length bounds explicitly.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A Physics.Raycast/MeshCollider path was rejected as CPU-heavy and nondeterministic for the 100km AUP world.
+        // Duplicating the SDF into managed or temporary containers was rejected because it creates ownership and copy cost.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is per-vehicle row ownership: Execute(index) writes only the rows derived from index and its
+        // bounded feeler range, while EncodedSdf remains immutable until the returned avoidance handle is consumed.
         [NoAlias, NativeDisableUnsafePtrRestriction] public SubmarineKinematicState* KinematicStates;
         [NoAlias, NativeDisableUnsafePtrRestriction] public AutopilotStateDTO* AutopilotStates;
         [NoAlias, NativeDisableUnsafePtrRestriction] public AutopilotAvoidanceDTO* Avoidance;
@@ -487,6 +570,7 @@ namespace Hecton8.Vehicles.Automation
             float nearestHitDistance = float.MaxValue;
             uint hitCount = 0u;
             uint flags = SubmarineAutopilotConstants.NavFlagActive | (nav.NavFlags & SubmarineAutopilotConstants.NavFlagInitialized);
+            bool hasClearanceEarlyOut = TryResolveSdfClearanceEarlyOut(origin, threshold, out float clearanceDensity);
 
             int baseFeeler = index * SubmarineAutopilotConstants.MaxFeelersPerVehicle;
             for (int feeler = 0; feeler < SubmarineAutopilotConstants.MaxFeelersPerVehicle; feeler++)
@@ -507,7 +591,11 @@ namespace Hecton8.Vehicles.Automation
                     float hitDistance;
                     float hitDensity;
                     float3 hitPoint;
-                    if (TryMarchFeeler(
+                    if (hasClearanceEarlyOut)
+                    {
+                        result.SdfDensity = clearanceDensity;
+                    }
+                    else if (TryMarchFeeler(
                             origin,
                             direction,
                             feelerLength,
@@ -521,7 +609,7 @@ namespace Hecton8.Vehicles.Automation
                         float proximityWeight = 1f - math.saturate(hitDistance * math.rcp(feelerLength));
                         float3 weighted = repulsion * (repulsionWeight * (0.35f + proximityWeight));
                         totalRepulsion += weighted;
-                        pressureSum += math.length(weighted);
+                        pressureSum += SubmarineAutopilotSimdMath.LengthFromSq(math.lengthsq(weighted));
                         nearestHitDistance = math.min(nearestHitDistance, hitDistance);
                         hitCount++;
                         result.HitRuntime = hitPoint;
@@ -553,6 +641,19 @@ namespace Hecton8.Vehicles.Automation
             avoidance.HitFeelerCount = hitCount;
             avoidance.Flags = flags;
             Avoidance[index] = avoidance;
+        }
+
+        private bool TryResolveSdfClearanceEarlyOut(float3 origin, float threshold, out float density)
+        {
+            density = -threshold;
+            if (EncodedSdf == null || EncodedSdfLength <= 0 || !IsValidSdf(Tuning.SdfDimensions, EncodedSdfLength))
+                return false;
+
+            if (!TrySampleSdf(origin, out density) || !math.isfinite(density))
+                return false;
+
+            float boundingRadius = math.max(0.25f, threshold);
+            return density <= -(boundingRadius * 2f);
         }
 
         private bool TryMarchFeeler(
@@ -587,9 +688,14 @@ namespace Hecton8.Vehicles.Automation
                 if (pressure <= 0f)
                     continue;
 
-                float3 normal = ShouldSampleSdfGradient(GlobalQualityWeight) ? ResolveOpenNormal(p, direction) : -direction;
+                float3 cheapNormal = -direction;
+                float gradientWeight = ResolveSdfGradientWeight(GlobalQualityWeight);
+                float3 sampledNormal = cheapNormal;
+                if (gradientWeight > 0.0001f)
+                    sampledNormal = ResolveOpenNormal(p, direction);
+                float3 normal = NormalizeOrFallback(math.lerp(cheapNormal, sampledNormal, gradientWeight), cheapNormal);
                 if (math.lengthsq(normal) <= 0.000001f)
-                    normal = -direction;
+                    normal = cheapNormal;
 
                 repulsion = NormalizeOrFallback(normal, -direction) * pressure;
                 hitDistance = distance;
@@ -723,9 +829,9 @@ namespace Hecton8.Vehicles.Automation
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool ShouldSampleSdfGradient(float quality)
+        private static float ResolveSdfGradientWeight(float quality)
         {
-            return math.smoothstep(0.30f, 0.55f, ResolveQuality(quality)) > 0.0001f;
+            return math.smoothstep(0.30f, 0.55f, ResolveQuality(quality));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -760,10 +866,10 @@ namespace Hecton8.Vehicles.Automation
 
             const float goldenAngle = 2.39996322972865332f;
             float denom = math.max(1f, count - 1f);
-            float ring01 = math.sqrt((index) * math.rcp(denom));
+            float ring01 = SubmarineAutopilotSimdMath.LengthFromSq(index * math.rcp(denom));
             float angle = index * goldenAngle;
-            float lateral = math.cos(angle) * (0.18f + ring01 * 0.72f);
-            float vertical = math.sin(angle) * (0.08f + ring01 * 0.48f);
+            float lateral = SubmarineAutopilotSimdMath.CosPolynomial7(angle) * (0.18f + ring01 * 0.72f);
+            float vertical = SubmarineAutopilotSimdMath.SinPolynomial7(angle) * (0.08f + ring01 * 0.48f);
             return NormalizeOrFallback(forward + right * lateral + up * vertical, forward);
         }
 
@@ -788,13 +894,23 @@ namespace Hecton8.Vehicles.Automation
             lenSq = math.lengthsq(value);
             if (!math.all(math.isfinite(value)) || !math.isfinite(lenSq) || lenSq <= 0.000001f)
                 return new float3(0f, 0f, 1f);
-            return value * math.rsqrt(lenSq);
+            return value * math.rsqrt(math.max(lenSq, 0.000001f));
         }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct ComputeDesiredVelocityJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // The desired-velocity job consumes separately owned Vault lanes and writes only AutopilotStates[index]. Unity's
+        // raw pointer safety cannot observe the non-overlap contract, so each pointer is paired with explicit count
+        // metadata and index guards before dereference.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A polymorphic route-planner interface was rejected because it would block Burst devirtualization. A broad AoS
+        // vehicle DTO was rejected because this job needs only the compact SoA lanes listed here.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is one vehicle row per worker. Waypoint, route, flow, handling, kinematic, and avoidance lanes
+        // are read-only for this stage, and only AutopilotStates[index] is mutated under the returned JobHandle.
         [NoAlias, NativeDisableUnsafePtrRestriction] public SubmarineKinematicState* KinematicStates;
         [NoAlias, NativeDisableUnsafePtrRestriction] public AutopilotStateDTO* AutopilotStates;
         [NoAlias, NativeDisableUnsafePtrRestriction] public AutopilotAvoidanceDTO* Avoidance;
@@ -854,7 +970,7 @@ namespace Hecton8.Vehicles.Automation
 
             float flowWeight = math.max(0f, SanitizeFinite(Tuning.FlowCompensationWeight, 1f));
             desired -= flow * flowWeight;
-            desired = ClampMagnitude(SanitizeFloat3(desired, float3.zero), math.max(targetSpeed, math.length(repulsion)));
+            desired = ClampMagnitude(SanitizeFloat3(desired, float3.zero), math.max(targetSpeed, SubmarineAutopilotSimdMath.LengthFromSq(math.lengthsq(repulsion))));
             float turnRate = math.max(0.001f, SanitizeFinite(profile.MaxTurnRateRadians, Tuning.MaxTurnRateRadians));
             desired = ClampTurn(nav.DesiredVelocity, desired, turnRate * math.max(0.0001f, DeltaTime));
             desired = ClampAcceleration(nav.DesiredVelocity, desired, math.max(0f, SanitizeFinite(profile.AccelerationLimit, 0f)) * math.max(0.0001f, DeltaTime));
@@ -974,9 +1090,9 @@ namespace Hecton8.Vehicles.Automation
         {
             float phase = frame * 0.013f;
             return new float3(
-                math.sin(p.z * 0.031f + phase) * 0.24f,
-                math.sin(p.x * 0.017f + p.z * 0.009f) * 0.035f,
-                math.cos(p.x * 0.023f - phase) * 0.21f);
+                SubmarineAutopilotSimdMath.SinPolynomial7(p.z * 0.031f + phase) * 0.24f,
+                SubmarineAutopilotSimdMath.SinPolynomial7(p.x * 0.017f + p.z * 0.009f) * 0.035f,
+                SubmarineAutopilotSimdMath.CosPolynomial7(p.x * 0.023f - phase) * 0.21f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -999,15 +1115,15 @@ namespace Hecton8.Vehicles.Automation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 ClampTurn(float3 previous, float3 desired, float maxRadians)
         {
-            float previousLen = math.length(previous);
-            float desiredLen = math.length(desired);
+            float previousLen = SubmarineAutopilotSimdMath.LengthFromSq(math.lengthsq(previous));
+            float desiredLen = SubmarineAutopilotSimdMath.LengthFromSq(math.lengthsq(desired));
             if (!math.isfinite(previousLen) || previousLen <= 0.0001f || !math.isfinite(desiredLen) || desiredLen <= 0.0001f)
                 return desired;
 
             float3 previousDir = previous * math.rcp(previousLen);
             float3 desiredDir = desired * math.rcp(desiredLen);
             float cos = math.clamp(math.dot(previousDir, desiredDir), -1f, 1f);
-            float angle = math.acos(cos);
+            float angle = SubmarineAutopilotSimdMath.AcosPolynomial(cos);
             if (!math.isfinite(angle) || angle <= maxRadians)
                 return desired;
 
@@ -1042,7 +1158,7 @@ namespace Hecton8.Vehicles.Automation
                 return float3.zero;
             if (lenSq <= maxSq)
                 return value;
-            return value * (maxMagnitude * math.rsqrt(lenSq));
+            return value * (maxMagnitude * math.rsqrt(math.max(lenSq, 0.000001f)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1066,7 +1182,7 @@ namespace Hecton8.Vehicles.Automation
             lenSq = math.lengthsq(value);
             if (!math.all(math.isfinite(value)) || !math.isfinite(lenSq) || lenSq <= 0.000001f)
                 return float3.zero;
-            return value * math.rsqrt(lenSq);
+            return value * math.rsqrt(math.max(lenSq, 0.000001f));
         }
 
         private AutopilotHandlingProfileDTO ResolveHandlingProfile(uint profileHash)
@@ -1141,7 +1257,7 @@ namespace Hecton8.Vehicles.Automation
                 if (!math.isfinite(scaledLenSq))
                     return false;
 
-                double len = axisMax * math.sqrt(scaledLenSq);
+                double len = axisMax * SubmarineAutopilotSimdMath.LengthFromSq((float)math.min(scaledLenSq, 4.0d));
                 delta *= MaxAupSteerDeltaMeters / math.max(0.000001d, len);
             }
 
@@ -1176,6 +1292,15 @@ namespace Hecton8.Vehicles.Automation
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct RecordAutopilotTelemetryJob : IJob
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Telemetry recording uses raw pointers because the owner resolves a stable black-box ring and cursor from Vault.
+        // The job validates required pointers and VehicleCount before writing one ring row and one cursor value.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Managed logging was rejected because it allocates and cannot be replayed deterministically. Per-frame NativeQueue
+        // telemetry was rejected because it adds contention and destroys the fixed 300-frame ring contract.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is single telemetry producer: this job is the only writer to TelemetryRing/TelemetryCursor in the
+        // autopilot telemetry phase, and readers consume it after the returned handle is chained by the owner.
         [NoAlias, NativeDisableUnsafePtrRestriction] public SubmarineKinematicState* KinematicStates;
         [NoAlias, NativeDisableUnsafePtrRestriction] public AutopilotStateDTO* AutopilotStates;
         [NoAlias, NativeDisableUnsafePtrRestriction] public AutopilotAvoidanceDTO* Avoidance;
@@ -1235,7 +1360,7 @@ namespace Hecton8.Vehicles.Automation
             }
 
             uint resolvedFeelers = active > 0u ? feelers / active : 0u;
-            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
+            float quality = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
             int stepCount = math.clamp((int)math.round(math.lerp(1f, 12f, quality * quality)), 1, 12);
             float estimatedUs = active * math.max(1u, resolvedFeelers) * stepCount * 0.42f;
             if (estimatedUs > 1000f)
@@ -1245,7 +1370,7 @@ namespace Hecton8.Vehicles.Automation
             AutopilotTelemetryEntry entry = default;
             entry.FirstAUP = firstAup;
             entry.AverageRepulsion = avgRepulsion;
-            entry.AverageRepulsionMagnitude = math.length(avgRepulsion);
+            entry.AverageRepulsionMagnitude = SubmarineAutopilotSimdMath.LengthFromSq(math.lengthsq(avgRepulsion));
             entry.Frame = Frame;
             entry.ActiveAutopilots = active;
             entry.FeelerCount = resolvedFeelers;
@@ -1346,7 +1471,7 @@ namespace Hecton8.Vehicles.Automation
             _latest = this;
             _projectRoot = ResolveProjectRoot();
             _csvPath = ResolveHandlingProfilesCsvPath(_projectRoot);
-            ResolveDataVault();
+            EnsureDataVault();
             EnsureVaultBuffers();
             _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
@@ -1622,20 +1747,19 @@ namespace Hecton8.Vehicles.Automation
             }
         }
 
-        private bool ResolveDataVault()
+        private bool EnsureDataVault()
         {
             if (_dataVault != null)
                 return true;
 
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                _dataVault = latest;
+            _dataVault = GlobalRegistry.DataVault;
 
             return _dataVault != null;
         }
 
         private bool EnsureVaultBuffers()
         {
-            if (!ResolveDataVault())
+            if (!EnsureDataVault())
                 return false;
 
             int capacity = math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles);
@@ -2447,7 +2571,8 @@ namespace Hecton8.Vehicles.Automation
             tuning.WaypointAcceptanceRadius = math.isfinite(tuning.WaypointAcceptanceRadius) && tuning.WaypointAcceptanceRadius > 0f ? tuning.WaypointAcceptanceRadius : 10f;
             tuning.FlowCompensationWeight = math.isfinite(tuning.FlowCompensationWeight) && tuning.FlowCompensationWeight >= 0f ? tuning.FlowCompensationWeight : 1f;
             tuning.TargetSpeedFallback = math.isfinite(tuning.TargetSpeedFallback) && tuning.TargetSpeedFallback >= 0f ? tuning.TargetSpeedFallback : 8f;
-            tuning.GlobalQualityWeight = missingSource ? 1f : SanitizeQualityWeight(tuning.GlobalQualityWeight, 1f);
+            float sourceQuality = math.select(tuning.GlobalQualityWeight, 1f, missingSource);
+            tuning.GlobalQualityWeight = SanitizeQualityWeight(sourceQuality, 1f);
             tuning.ResolvedQualityWeight = SanitizeQualityWeight(tuning.ResolvedQualityWeight, tuning.GlobalQualityWeight);
             if (tuning.SdfDimensions.x <= 1 || tuning.SdfDimensions.y <= 1 || tuning.SdfDimensions.z <= 1)
                 tuning.SdfDimensions = new int3(SubmarineAutopilotConstants.MockSdfWidth, SubmarineAutopilotConstants.MockSdfHeight, SubmarineAutopilotConstants.MockSdfDepth);
@@ -2488,12 +2613,12 @@ namespace Hecton8.Vehicles.Automation
 
         private static float SanitizeQualityWeight(float value, float fallback)
         {
-            return math.saturate(math.isfinite(value) ? value : fallback);
+            return math.saturate(math.select(fallback, value, math.isfinite(value)));
         }
 
         private static float QuantizeQualityWeight(float value)
         {
-            float quality = math.saturate(math.isfinite(value) ? value : 1f);
+            float quality = math.saturate(math.select(1f, value, math.isfinite(value)));
             int milli = math.clamp((int)math.floor(quality * 1000f + 0.5f), 0, 1000);
             return milli * 0.001f;
         }

@@ -1,0 +1,53 @@
+{
+  "agent": "SHINOBU_268",
+  "scanner": "Flora_Collider_Scanner static shell fallback",
+  "verdict": "PASS_DEAR_LIE_ROUTE_PENDING_UNITY_EXECUTION",
+  "summary": "Ambient flora destruction route now bypasses Rigidbody debris, Physics.OverlapSphere, Physics.Raycast, Instantiate, and GameObject hierarchy targeting. Static prefab scan found no Rigidbody or BoxCollider under plant flora prefabs; 50 MeshCollider hits are PorousRock generator assets stored below the Flora folder and are not used by the Dear Lie plant destruction route.",
+  "generatedWithoutUnity": true,
+  "unityMenuRoute": "Hecton8/Diagnostics/Scan Flora Physics Dear Lie",
+  "reportOutput": "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_268.json",
+  "sharedReportPolicy": "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json is a shared multi-agent artifact; SHINOBU_268 adds a nested section there and does not overwrite sibling reports.",
+  "scanScope": [
+    "Assets/_Project/Prefabs/Nature/Flora",
+    "Assets/_Project/Prefabs/WorldRuntime/ProceduralPlaceholders/Flora"
+  ],
+  "physicsHitCount": 50,
+  "prefabsWithPhysics": 50,
+  "meshColliderHits": 50,
+  "boxColliderHits": 0,
+  "rigidbodyHits": 0,
+  "plantFloraRigidbodyHits": 0,
+  "plantFloraColliderHits": 0,
+  "knownOwnerBoundaryFindings": [
+    {
+      "path": "Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab",
+      "rigidbodies": 1,
+      "boxColliders": 1,
+      "ownerBoundary": "construction collapse chunk, not ambient plant instance matrix lane"
+    },
+    {
+      "path": "Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_FiberKelp.prefab",
+      "rigidbodies": 1,
+      "ownerBoundary": "pickup resource object, not ambient plant destruction target"
+    }
+  ],
+  "sampleFindings": [
+    "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/PorousRock/GEN_Shallows_PorousRock_014_Rock_44D67302.prefab:370 MeshCollider",
+    "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/PorousRock/GEN_Shallows_PorousRock_013_Rock_03102495.prefab:370 MeshCollider",
+    "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/PorousRock/GEN_Shallows_PorousRock_012_Rock_C149D628.prefab:126 MeshCollider",
+    "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/PorousRock/GEN_Shallows_PorousRock_011_Rock_7F8387BB.prefab:126 MeshCollider",
+    "Assets/_Project/Prefabs/Nature/Flora/BioForge/Shallows/PorousRock/GEN_Shallows_PorousRock_010_Rock_3DBD394E.prefab:370 MeshCollider"
+  ],
+  "runtimeRouteProof": {
+    "owner": "DestructibleOrganicManager",
+    "damageInput": "SignalBus<CombatDamageSignal>.GetFrameSnapshot copied to Vault 72982 FloraDestructionEventDTO[128]",
+    "query": "Burst flat bucket-head/next AUP cell lookup over native matrix lanes using Vault 72987..72990",
+    "resultLane": "FloraDearLieDestructionResult[256] covers surface and underwater lanes for 128 staged events",
+    "vaultBuffers": "72980 surface claims, 72981 underwater claims, 72982 damage events, 72983 results, 72984 counters, 72985 regen records, 72986 telemetry ring, 72987..72990 flat spatial buckets",
+    "vaultLockPolicy": "Job buffer locks are acquired in fixed 11-buffer order; partial failure unlocks only the acquired prefix, and dispatcher completion unlocks exactly the held count.",
+    "overflowGuard": "Result slot is reserved before matrix scale-zero; overflow increments counter slot 6, sets telemetry flag 16, and dumps blackbox without mutating the instance",
+    "visualFake": "matrix basis scale columns swapped to zero, then owner-fenced DebrisSpawnSignal.TryPush",
+    "forbiddenRuntimePatternsFoundInOwnedPath": 0
+  },
+  "verificationLimit": "Unity AssetDatabase scanner execution, Unity import, Burst Inspector, profiler, and compiler proof were not run because CPU LoadPercentage sampled at 100 and project protocol forbids builds above 50 percent."
+}

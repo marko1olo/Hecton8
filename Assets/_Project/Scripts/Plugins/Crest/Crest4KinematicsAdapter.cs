@@ -1,6 +1,9 @@
-using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hecton8.Physics
 {
@@ -22,12 +25,18 @@ namespace Hecton8.Physics
         [Tooltip("Explicit Crest ocean owner. Assign this directly or colocate the OceanRenderer on the same GameObject.")]
         [SerializeField] private Crest.OceanRenderer crestOceanRenderer;
 
+        [Header("Burst Sampling")]
+        [Tooltip("Depth below the resolved surface where Burst ocean kinematics returns a still-water result before trigonometry.")]
+        [SerializeField, Range(0f, 200f)] private float burstDepthCullingThresholdMeters = OceanKinematicsConstants.DefaultDepthCullMeters;
+        [Tooltip("Maximum Gerstner octaves available to the Burst analytical sampler. GlobalQualityWeight continuously resolves the active count.")]
+        [SerializeField, Range(1, OceanKinematicsConstants.WaveCapacity)] private int burstMaxOctaveLimit = 6;
+        [Tooltip("Continuous amplitude multiplier for the Burst analytical and emergency mock samplers.")]
+        [SerializeField, Range(0f, 4f)] private float burstWaveAmplitudeMultiplier = OceanKinematicsConstants.DefaultAmplitudeMultiplier;
+
         private int _heightQueryOwnerHash;
         private int _waveQueryOwnerHash;
         private int _displacementQueryOwnerHash;
         private int _flowQueryOwnerHash;
-        private bool _loggedMissingOceanRenderer;
-        private bool _loggedMissingCollisionProvider;
         // COLD ALLOC: Vector3[5] - native-to-managed Crest position bridge scratch for Crest 4 runtime fallback - owner: Crest4KinematicsAdapter
         private readonly Vector3[] _samplePositionScratch = new Vector3[MaxBatchSampleCount];
         // COLD ALLOC: Vector3[5] - native-to-managed Crest flow bridge scratch for Crest 4 runtime fallback - owner: Crest4KinematicsAdapter
@@ -49,19 +58,19 @@ namespace Hecton8.Physics
         {
             get
             {
-                Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
+                Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
                 return oceanRenderer != null && oceanRenderer.CollisionProvider != null;
             }
         }
 
         /// <inheritdoc />
-        public override float SeaLevel => ResolveSeaLevel(ResolveOceanRenderer());
+        public override float SeaLevel => ResolveSeaLevel(TryReadBoundOceanRenderer());
 
         /// <inheritdoc />
         public override bool TryGetSurfaceWeatherState(out HectonOceanSurfaceWeatherState state)
         {
             state = default;
-            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
+            Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
             if (oceanRenderer == null)
                 return false;
 
@@ -143,9 +152,391 @@ namespace Hecton8.Physics
             return true;
         }
 
+        /// <summary>
+        /// Builds the per-frame unmanaged tuning row from a deterministic simulation clock.
+        /// </summary>
+        /// <param name="simulationTimeSeconds">Dispatcher-owned simulation time, not variable frame delta.</param>
+        /// <param name="frameIndex">Dispatcher-owned rollback frame index.</param>
+        /// <param name="tuning">Resolved tuning row.</param>
+        /// <returns>True when a Crest ocean owner is bound and the row is finite-safe.</returns>
+        public bool TryBuildBurstTuning(float simulationTimeSeconds, uint frameIndex, out OceanKinematicsTuningDTO tuning)
+        {
+            tuning = default;
+            Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
+            if (oceanRenderer == null)
+                return false;
+
+            tuning.OceanRootAUP = ResolveOceanRootAUP(oceanRenderer);
+            tuning.OceanSurfaceY = ResolveSeaLevel(oceanRenderer);
+            tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
+            tuning.TimeSeconds = math.max(0f, math.select(0f, simulationTimeSeconds, math.isfinite(simulationTimeSeconds)));
+            tuning.DepthCullingThresholdMeters = Mathf.Max(0f, burstDepthCullingThresholdMeters);
+            tuning.MaxOctaveLimit = Mathf.Clamp(burstMaxOctaveLimit, 1, OceanKinematicsConstants.WaveCapacity);
+            tuning.WaveAmplitudeMultiplier = Mathf.Max(0f, burstWaveAmplitudeMultiplier);
+            tuning.FrameIndex = frameIndex;
+            tuning.Flags = OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagAnalyticalWave;
+            return true;
+        }
+
+        /// <summary>
+        /// Publishes the O(1) macro ocean state using dispatcher-owned deterministic tuning.
+        /// </summary>
+        public bool TryPublishVaultMacroState(
+            IDataVault vault,
+            in OceanKinematicsTuningDTO tuning,
+            NativeArray<GerstnerWaveDTO> waves,
+            int waveCount,
+            out OceanMacroStateDTO macroState)
+        {
+            OceanKinematicsTuningDTO sanitized = PrepareJobTuning(
+                in tuning,
+                requestCount: 0,
+                flags: tuning.Flags | OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagAnalyticalWave);
+            return OceanKinematicsVaultRuntime.TryPublishMacroState(vault, in sanitized, waves, waveCount, out macroState);
+        }
+
+        /// <summary>
+        /// Records post-simulation ocean kinematics telemetry using dispatcher-owned deterministic tuning.
+        /// </summary>
+        public bool TryRecordVaultTelemetry(
+            IDataVault vault,
+            in OceanKinematicsTuningDTO tuning,
+            NativeArray<int> queueCounters,
+            NativeArray<FluidSampleResultDTO> results,
+            int resultCount,
+            float burstExecutionMicros,
+            uint lastRequestHash)
+        {
+            OceanKinematicsTuningDTO sanitized = PrepareJobTuning(
+                in tuning,
+                math.max(0, resultCount),
+                tuning.Flags | OceanKinematicsConstants.FlagActive);
+            return OceanKinematicsVaultRuntime.TryRecordTelemetry(
+                vault,
+                in sanitized,
+                queueCounters,
+                results,
+                resultCount,
+                burstExecutionMicros,
+                lastRequestHash);
+        }
+
+        /// <summary>
+        /// Schedules Burst analytical wave sampling using dispatcher-owned deterministic tuning.
+        /// </summary>
+        public JobHandle ScheduleAnalyticalFluidSamples(
+            NativeArray<OceanKinematicsSampleRequestDTO> requests,
+            NativeArray<FluidSampleResultDTO> results,
+            NativeArray<GerstnerWaveDTO> waves,
+            int sampleCount,
+            in OceanKinematicsTuningDTO tuning,
+            JobHandle inputDeps)
+        {
+            if (!requests.IsCreated || !results.IsCreated || sampleCount <= 0)
+                return inputDeps;
+
+            int count = math.min(sampleCount, math.min(requests.Length, results.Length));
+            if (count <= 0)
+                return inputDeps;
+
+            int waveCount = waves.IsCreated ? math.min(waves.Length, OceanKinematicsConstants.WaveCapacity) : 0;
+            OceanKinematicsTuningDTO jobTuning = PrepareJobTuning(
+                in tuning,
+                count,
+                tuning.Flags | OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagAnalyticalWave);
+            EvaluateAnalyticalWavesJob job = new EvaluateAnalyticalWavesJob
+            {
+                Requests = requests,
+                Results = results,
+                Waves = waves,
+                Tuning = jobTuning,
+                RequestCount = count,
+                WaveCount = waveCount
+            };
+            return job.Schedule(count, ResolveInnerLoopBatchCount(count), inputDeps);
+        }
+
+        /// <summary>
+        /// Drains queued requests and schedules analytical sampling using dispatcher-owned deterministic tuning.
+        /// </summary>
+        public JobHandle ScheduleQueuedAnalyticalFluidSamples(
+            NativeQueue<OceanKinematicsSampleRequestDTO> pendingRequests,
+            NativeArray<OceanKinematicsSampleRequestDTO> packedRequests,
+            NativeArray<FluidSampleResultDTO> results,
+            NativeArray<GerstnerWaveDTO> waves,
+            NativeArray<int> queueCounters,
+            NativeParallelHashMap<uint, int> coalescingHashToIndex,
+            int maxDrainCount,
+            in OceanKinematicsTuningDTO tuning,
+            JobHandle inputDeps)
+        {
+            if (!pendingRequests.IsCreated ||
+                !packedRequests.IsCreated ||
+                !results.IsCreated ||
+                !queueCounters.IsCreated ||
+                queueCounters.Length <= OceanKinematicsConstants.QueueCounterPacked)
+            {
+                return inputDeps;
+            }
+
+            int capacity = math.min(packedRequests.Length, results.Length);
+            int drainBudget = math.max(0, maxDrainCount);
+            if (capacity <= 0 || drainBudget <= 0)
+                return inputDeps;
+            int scheduleCount = math.min(capacity, drainBudget);
+
+            JobHandle drainHandle = new DrainOceanSampleRequestQueueJob
+            {
+                PendingRequests = pendingRequests,
+                PackedRequests = packedRequests,
+                QueueCounters = queueCounters,
+                CoalescingHashToIndex = coalescingHashToIndex,
+                MaxDrainCount = drainBudget
+            }.Schedule(inputDeps);
+
+            int waveCount = waves.IsCreated ? math.min(waves.Length, OceanKinematicsConstants.WaveCapacity) : 0;
+            OceanKinematicsTuningDTO jobTuning = PrepareJobTuning(
+                in tuning,
+                scheduleCount,
+                tuning.Flags | OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagAnalyticalWave);
+            EvaluateAnalyticalWavesJob evaluateJob = new EvaluateAnalyticalWavesJob
+            {
+                Requests = packedRequests,
+                RequestCounter = queueCounters,
+                Results = results,
+                Waves = waves,
+                Tuning = jobTuning,
+                RequestCount = scheduleCount,
+                WaveCount = waveCount
+            };
+            JobHandle evaluateHandle = evaluateJob.Schedule(scheduleCount, ResolveInnerLoopBatchCount(scheduleCount), drainHandle);
+            return new CountOceanSampleDepthCullsJob
+            {
+                Requests = packedRequests,
+                QueueCounters = queueCounters,
+                Tuning = jobTuning,
+                RequestCount = scheduleCount,
+                WaveCount = waveCount
+            }.Schedule(evaluateHandle);
+        }
+
+        /// <summary>
+        /// Exposes the SPSC producer lane expected by KCC, submarine, and flora dispatchers.
+        /// </summary>
+        public static bool TryGetRequestParallelWriter(
+            NativeQueue<OceanKinematicsSampleRequestDTO> pendingRequests,
+            out NativeQueue<OceanKinematicsSampleRequestDTO>.ParallelWriter writer)
+        {
+            writer = default;
+            if (!pendingRequests.IsCreated)
+                return false;
+
+            writer = pendingRequests.AsParallelWriter();
+            return true;
+        }
+
+        /// <summary>
+        /// Drains queued requests and resolves previous-frame cached water using dispatcher-owned deterministic tuning.
+        /// </summary>
+        public JobHandle ScheduleQueuedDearLieCachedFluidSamples(
+            NativeQueue<OceanKinematicsSampleRequestDTO> pendingRequests,
+            NativeArray<OceanKinematicsSampleRequestDTO> packedRequests,
+            NativeArray<FluidSampleResultDTO> results,
+            NativeArray<int> queueCounters,
+            NativeParallelHashMap<uint, int> coalescingHashToIndex,
+            NativeArray<OceanCachedFluidSampleDTO> cachedReadbackResults,
+            int maxDrainCount,
+            in OceanKinematicsTuningDTO tuning,
+            JobHandle inputDeps)
+        {
+            if (!pendingRequests.IsCreated ||
+                !packedRequests.IsCreated ||
+                !results.IsCreated ||
+                !queueCounters.IsCreated ||
+                queueCounters.Length <= OceanKinematicsConstants.QueueCounterPacked)
+            {
+                return inputDeps;
+            }
+
+            int capacity = math.min(packedRequests.Length, results.Length);
+            int drainBudget = math.max(0, maxDrainCount);
+            if (capacity <= 0 || drainBudget <= 0)
+                return inputDeps;
+            int scheduleCount = math.min(capacity, drainBudget);
+
+            JobHandle drainHandle = new DrainOceanSampleRequestQueueJob
+            {
+                PendingRequests = pendingRequests,
+                PackedRequests = packedRequests,
+                QueueCounters = queueCounters,
+                CoalescingHashToIndex = coalescingHashToIndex,
+                MaxDrainCount = drainBudget
+            }.Schedule(inputDeps);
+
+            OceanKinematicsTuningDTO jobTuning = PrepareJobTuning(
+                in tuning,
+                scheduleCount,
+                tuning.Flags | OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagAsyncCached);
+            ResolveDearLieCachedResultsJob cacheJob = new ResolveDearLieCachedResultsJob
+            {
+                Requests = packedRequests,
+                RequestCounter = queueCounters,
+                CachedResults = cachedReadbackResults,
+                Results = results,
+                Tuning = jobTuning,
+                RequestCount = scheduleCount
+            };
+            JobHandle cacheHandle = cacheJob.Schedule(scheduleCount, ResolveInnerLoopBatchCount(scheduleCount), drainHandle);
+            return new CountOceanSampleDepthCullsJob
+            {
+                Requests = packedRequests,
+                QueueCounters = queueCounters,
+                Tuning = jobTuning,
+                RequestCount = scheduleCount,
+                WaveCount = OceanKinematicsConstants.WaveCapacity
+            }.Schedule(cacheHandle);
+        }
+
+        /// <summary>
+        /// Schedules deterministic emergency mock waves using dispatcher-owned deterministic tuning.
+        /// </summary>
+        public JobHandle ScheduleMockFluidSamples(
+            NativeArray<OceanKinematicsSampleRequestDTO> requests,
+            NativeArray<FluidSampleResultDTO> results,
+            int sampleCount,
+            in OceanKinematicsTuningDTO tuning,
+            JobHandle inputDeps)
+        {
+            if (!requests.IsCreated || !results.IsCreated || sampleCount <= 0)
+                return inputDeps;
+
+            int count = math.min(sampleCount, math.min(requests.Length, results.Length));
+            if (count <= 0)
+                return inputDeps;
+
+            OceanKinematicsTuningDTO jobTuning = PrepareJobTuning(
+                in tuning,
+                count,
+                tuning.Flags | OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagMockWave);
+            GenerateMockOceanWavesJob job = new GenerateMockOceanWavesJob
+            {
+                Requests = requests,
+                Results = results,
+                Tuning = jobTuning,
+                RequestCount = count
+            };
+            return job.Schedule(count, ResolveInnerLoopBatchCount(count), inputDeps);
+        }
+
+        /// <summary>
+        /// Schedules queued mock sampling using dispatcher-owned deterministic tuning.
+        /// </summary>
+        public JobHandle ScheduleQueuedMockFluidSamples(
+            NativeQueue<OceanKinematicsSampleRequestDTO> pendingRequests,
+            NativeArray<OceanKinematicsSampleRequestDTO> packedRequests,
+            NativeArray<FluidSampleResultDTO> results,
+            NativeArray<int> queueCounters,
+            NativeParallelHashMap<uint, int> coalescingHashToIndex,
+            int maxDrainCount,
+            in OceanKinematicsTuningDTO tuning,
+            JobHandle inputDeps)
+        {
+            if (!pendingRequests.IsCreated ||
+                !packedRequests.IsCreated ||
+                !results.IsCreated ||
+                !queueCounters.IsCreated ||
+                queueCounters.Length <= OceanKinematicsConstants.QueueCounterPacked)
+            {
+                return inputDeps;
+            }
+
+            int capacity = math.min(packedRequests.Length, results.Length);
+            int drainBudget = math.max(0, maxDrainCount);
+            if (capacity <= 0 || drainBudget <= 0)
+                return inputDeps;
+            int scheduleCount = math.min(capacity, drainBudget);
+
+            JobHandle drainHandle = new DrainOceanSampleRequestQueueJob
+            {
+                PendingRequests = pendingRequests,
+                PackedRequests = packedRequests,
+                QueueCounters = queueCounters,
+                CoalescingHashToIndex = coalescingHashToIndex,
+                MaxDrainCount = drainBudget
+            }.Schedule(inputDeps);
+
+            OceanKinematicsTuningDTO jobTuning = PrepareJobTuning(
+                in tuning,
+                scheduleCount,
+                tuning.Flags | OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagMockWave);
+            GenerateMockOceanWavesJob job = new GenerateMockOceanWavesJob
+            {
+                Requests = packedRequests,
+                RequestCounter = queueCounters,
+                Results = results,
+                Tuning = jobTuning,
+                RequestCount = scheduleCount
+            };
+            JobHandle mockHandle = job.Schedule(scheduleCount, ResolveInnerLoopBatchCount(scheduleCount), drainHandle);
+            return new CountOceanSampleDepthCullsJob
+            {
+                Requests = packedRequests,
+                QueueCounters = queueCounters,
+                Tuning = jobTuning,
+                RequestCount = scheduleCount,
+                WaveCount = 4
+            }.Schedule(mockHandle);
+        }
+
+        /// <summary>
+        /// Consumes a completed GPU readback into the previous-frame Dear Lie cache. Never blocks on pending requests.
+        /// </summary>
+        public static bool TryUpdateDearLieCacheFromReadback(
+            in AsyncGPUReadbackRequest readbackRequest,
+            NativeArray<OceanKinematicsSampleRequestDTO> completedRequests,
+            NativeArray<OceanCachedFluidSampleDTO> cachedReadbackResults,
+            int completedCount,
+            out int writtenCount)
+        {
+            writtenCount = 0;
+            if (!readbackRequest.done ||
+                readbackRequest.hasError ||
+                !completedRequests.IsCreated ||
+                !cachedReadbackResults.IsCreated ||
+                cachedReadbackResults.Length == 0 ||
+                completedCount <= 0)
+            {
+                return false;
+            }
+
+            NativeArray<float4> readbackData = readbackRequest.GetData<float4>();
+            int count = math.min(completedCount, math.min(completedRequests.Length, readbackData.Length));
+            for (int i = 0; i < count; i++)
+            {
+                OceanKinematicsSampleRequestDTO request = completedRequests[i];
+                uint hash = OceanKinematicsHashUtility.ResolveRequestHash(in request);
+                float4 sample = readbackData[i];
+                FluidSampleResultDTO result = default;
+                result.WaterHeight = math.select(0f, sample.x, math.isfinite(sample.x));
+                bool velocityFinite = math.isfinite(sample.y) && math.isfinite(sample.z) && math.isfinite(sample.w);
+                result.SurfaceVelocity = math.select(float3.zero, new float3(sample.y, sample.z, sample.w), velocityFinite);
+
+                uint slot = hash % unchecked((uint)cachedReadbackResults.Length);
+                OceanCachedFluidSampleDTO cached = default;
+                cached.RequestHash = hash;
+                cached.Result = result;
+                cached.Flags = OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagAsyncCached;
+                cachedReadbackResults[unchecked((int)slot)] = cached;
+
+                writtenCount++;
+            }
+
+            return writtenCount > 0;
+        }
+
         private void Awake()
         {
-            TryResolveLocalOceanRendererBinding();
+            BindLocalOceanRendererIfMissing();
             int ownerHash = unchecked((int)EntityId.ToULong(GetEntityId()));
             _heightQueryOwnerHash = ownerHash;
             _waveQueryOwnerHash = ownerHash ^ 0x2F31;
@@ -156,12 +547,12 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             OceanVisualBridgeRegistry.Register(this);
-            OceanKinematicsRuntimeService.RegisterProvider(this);
+            Hecton8.Core.OceanKinematicsRuntimeService.RegisterProvider(this);
         }
 
         private void OnDisable()
         {
-            OceanKinematicsRuntimeService.UnregisterProvider(this);
+            Hecton8.Core.OceanKinematicsRuntimeService.UnregisterProvider(this);
             OceanVisualBridgeRegistry.Unregister(this);
         }
 
@@ -171,7 +562,7 @@ namespace Hecton8.Physics
             if (!ValidateHeightRequest(samplePositions, sampleCount, waterHeights))
                 return false;
 
-            if (!TryResolveCollisionProvider(out Crest.ICollProvider collisionProvider))
+            if (!TryReadCollisionProvider(out Crest.ICollProvider collisionProvider))
                 return false;
 
             int queryStatus = collisionProvider.Query(
@@ -192,7 +583,10 @@ namespace Hecton8.Physics
 
             CopyNativePositions(samplePositions, sampleCount);
             bool succeeded = GetWaterHeight(_samplePositionScratch, sampleCount, minSpatialLength, _heightScratch);
-            CopyManagedHeightsToNative(_heightScratch, waterHeights, sampleCount);
+            if (succeeded)
+                CopyManagedHeightsToNative(_heightScratch, waterHeights, sampleCount);
+            else
+                FillNativeHeights(waterHeights, sampleCount, ResolveSeaLevel(TryReadBoundOceanRenderer()));
             return succeeded;
         }
 
@@ -202,7 +596,7 @@ namespace Hecton8.Physics
             if (!ValidateVectorRequest(samplePositions, sampleCount, surfaceFlows))
                 return false;
 
-            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
+            Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
             if (oceanRenderer == null || oceanRenderer.FlowProvider == null)
                 return false;
 
@@ -223,7 +617,10 @@ namespace Hecton8.Physics
 
             CopyNativePositions(samplePositions, sampleCount);
             bool succeeded = GetSurfaceFlow(_samplePositionScratch, sampleCount, minSpatialLength, _flowScratch);
-            CopyManagedVectorsToNative(_flowScratch, surfaceFlows, sampleCount);
+            if (succeeded)
+                CopyManagedVectorsToNative(_flowScratch, surfaceFlows, sampleCount);
+            else
+                FillNativeVectors(surfaceFlows, sampleCount, Vector3.zero);
             return succeeded;
         }
 
@@ -239,7 +636,7 @@ namespace Hecton8.Physics
             if (!ValidateWaveRequest(samplePositions, sampleCount, waveNormals, surfaceVelocities, displacements))
                 return false;
 
-            if (!TryResolveCollisionProvider(out Crest.ICollProvider collisionProvider))
+            if (!TryReadCollisionProvider(out Crest.ICollProvider collisionProvider))
                 return false;
 
             float resolvedMinSpatialLength = Mathf.Max(0.01f, minSpatialLength);
@@ -290,47 +687,60 @@ namespace Hecton8.Physics
                 _waveNormalScratch,
                 _surfaceVelocityScratch,
                 _displacementScratch);
-            CopyManagedVectorsToNative(_waveNormalScratch, waveNormals, sampleCount);
-            CopyManagedVectorsToNative(_surfaceVelocityScratch, surfaceVelocities, sampleCount);
-            CopyManagedVectorsToNative(_displacementScratch, displacements, sampleCount);
+            if (succeeded)
+            {
+                CopyManagedVectorsToNative(_waveNormalScratch, waveNormals, sampleCount);
+                CopyManagedVectorsToNative(_surfaceVelocityScratch, surfaceVelocities, sampleCount);
+                CopyManagedVectorsToNative(_displacementScratch, displacements, sampleCount);
+            }
+            else
+            {
+                FillNativeVectors(waveNormals, sampleCount, Vector3.up);
+                FillNativeVectors(surfaceVelocities, sampleCount, Vector3.zero);
+                FillNativeVectors(displacements, sampleCount, Vector3.zero);
+            }
+
             return succeeded;
         }
 
-        private bool TryResolveCollisionProvider(out Crest.ICollProvider collisionProvider)
+        private bool TryReadCollisionProvider(out Crest.ICollProvider collisionProvider)
         {
-            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
+            Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
             collisionProvider = oceanRenderer != null ? oceanRenderer.CollisionProvider : null;
-            if (collisionProvider == null && oceanRenderer != null && !_loggedMissingCollisionProvider)
-            {
-                _loggedMissingCollisionProvider = true;
-                Debug.LogError("[Crest4KinematicsAdapter] Crest OceanRenderer is bound but CollisionProvider is unavailable. Ocean sampling disabled.");
-            }
-
             return collisionProvider != null;
         }
 
-        private void TryResolveLocalOceanRendererBinding()
+        private void BindLocalOceanRendererIfMissing()
         {
             if (crestOceanRenderer == null)
                 TryGetComponent(out crestOceanRenderer);
         }
 
+        protected override Crest.OceanRenderer ReadBoundOceanRenderer()
+        {
+            return crestOceanRenderer;
+        }
+
+        private Crest.OceanRenderer TryReadBoundOceanRenderer()
+        {
+            return ReadBoundOceanRenderer();
+        }
+
         private Crest.OceanRenderer ResolveOceanRenderer()
         {
-            if (crestOceanRenderer != null)
-                return crestOceanRenderer;
+            return crestOceanRenderer;
+        }
 
-            TryResolveLocalOceanRendererBinding();
-            if (crestOceanRenderer != null)
-                return crestOceanRenderer;
+        private static double3 ResolveOceanRootAUP(Crest.OceanRenderer oceanRenderer)
+        {
+            double3 rootAup = Hecton8.Core.HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (oceanRenderer == null || oceanRenderer.Root == null)
+                return math.select(double3.zero, rootAup, math.isfinite(rootAup));
 
-            if (!_loggedMissingOceanRenderer)
-            {
-                _loggedMissingOceanRenderer = true;
-                Debug.LogError("[Crest4KinematicsAdapter] Missing Crest OceanRenderer binding. Assign crestOceanRenderer explicitly or colocate the OceanRenderer component.");
-            }
-
-            return null;
+            Vector3 rootPosition = oceanRenderer.Root.position;
+            rootAup.x += rootPosition.x;
+            rootAup.z += rootPosition.z;
+            return math.select(double3.zero, rootAup, math.isfinite(rootAup));
         }
 
         private static float ResolveSeaLevel(Crest.OceanRenderer oceanRenderer)
@@ -338,8 +748,43 @@ namespace Hecton8.Physics
             if (oceanRenderer != null && oceanRenderer.Root != null)
                 return oceanRenderer.Root.position.y;
 
-            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
-            return fluidEngine != null ? fluidEngine.WaterLevel : 0f;
+            return 0f;
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float weight = Hecton8.Core.HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, weight, math.isfinite(weight)));
+        }
+
+        private static int ResolveInnerLoopBatchCount(int count)
+        {
+            if (count >= 1024)
+                return 64;
+
+            if (count >= 128)
+                return 32;
+
+            return 16;
+        }
+
+        private static OceanKinematicsTuningDTO PrepareJobTuning(
+            in OceanKinematicsTuningDTO source,
+            int requestCount,
+            uint flags)
+        {
+            OceanKinematicsTuningDTO tuning = source;
+            tuning.OceanRootAUP = math.select(double3.zero, tuning.OceanRootAUP, math.isfinite(tuning.OceanRootAUP));
+            tuning.OceanSurfaceY = math.select(0f, tuning.OceanSurfaceY, math.isfinite(tuning.OceanSurfaceY));
+            tuning.GlobalQualityWeight = math.saturate(math.select(1f, tuning.GlobalQualityWeight, math.isfinite(tuning.GlobalQualityWeight)));
+            tuning.TimeSeconds = math.max(0f, math.select(0f, tuning.TimeSeconds, math.isfinite(tuning.TimeSeconds)));
+            tuning.DepthCullingThresholdMeters = math.max(0f, math.select(OceanKinematicsConstants.DefaultDepthCullMeters, tuning.DepthCullingThresholdMeters, math.isfinite(tuning.DepthCullingThresholdMeters)));
+            tuning.MaxOctaveLimit = math.clamp(tuning.MaxOctaveLimit, 1, OceanKinematicsConstants.WaveCapacity);
+            tuning.WaveAmplitudeMultiplier = math.max(0f, math.select(OceanKinematicsConstants.DefaultAmplitudeMultiplier, tuning.WaveAmplitudeMultiplier, math.isfinite(tuning.WaveAmplitudeMultiplier)));
+            tuning.RequestCount = math.max(0, requestCount);
+            tuning.MaxPeakHeight = math.max(0f, math.select(0f, tuning.MaxPeakHeight, math.isfinite(tuning.MaxPeakHeight)));
+            tuning.Flags = flags;
+            return tuning;
         }
 
         private static bool ValidateHeightRequest(Vector3[] samplePositions, int sampleCount, float[] heights)
@@ -426,6 +871,20 @@ namespace Hecton8.Physics
         {
             for (int i = 0; i < sampleCount; i++)
                 destination[i] = source[i];
+        }
+
+        private static void FillNativeHeights(NativeArray<float> destination, int sampleCount, float value)
+        {
+            int count = math.min(sampleCount, destination.Length);
+            for (int i = 0; i < count; i++)
+                destination[i] = value;
+        }
+
+        private static void FillNativeVectors(NativeArray<Vector3> destination, int sampleCount, Vector3 value)
+        {
+            int count = math.min(sampleCount, destination.Length);
+            for (int i = 0; i < count; i++)
+                destination[i] = value;
         }
     }
 }

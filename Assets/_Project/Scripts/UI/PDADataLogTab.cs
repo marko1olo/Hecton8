@@ -61,6 +61,9 @@ namespace Hecton8.UI
             new Quaternion(0f, 0.38268343f, 0f, -0.9238795f)
         };
         private static LocalizationManager s_cachedLocalization;
+        private static LoreDatabaseManager s_cachedLoreDatabase;
+        private static AudioLogSystem s_cachedAudioLogs;
+        private static IPlayerRuntimeContext s_cachedPlayerContext;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -410,7 +413,7 @@ namespace Hecton8.UI
         {
             if (_selectedIndex < 0 || _selectedIndex >= CatalogCount) return;
 
-            AudioLogSystem system = Hecton8.Core.GlobalRegistry.AudioLogs;
+            AudioLogSystem system = s_cachedAudioLogs;
             if (system == null) return;
 
             AudioLogData log = GetLog(_selectedIndex);
@@ -499,7 +502,8 @@ namespace Hecton8.UI
 
         private void HandlePlaybackStarted(float durationSeconds)
         {
-            AudioLogData data = Hecton8.Core.GlobalRegistry.AudioLogs != null ? Hecton8.Core.GlobalRegistry.AudioLogs.CurrentLog : null;
+            AudioLogSystem system = s_cachedAudioLogs;
+            AudioLogData data = system != null ? system.CurrentLog : null;
             _playbackRemaining = durationSeconds > 0f ? durationSeconds : (data != null ? data.Duration : 0f);
             if (_subtitleLabel != null && data != null)
             {
@@ -560,11 +564,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -581,13 +581,40 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (isActiveAndEnabled)
+                    TryRegister();
                 return;
+            }
 
-            s_cachedLocalization = currentService as LocalizationManager;
-            HandleLanguageChanged(s_cachedLocalization != null
-                ? s_cachedLocalization.CurrentLanguage
-                : GameLanguage.English);
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
+                s_cachedLocalization = currentService as LocalizationManager;
+                HandleLanguageChanged(s_cachedLocalization != null
+                    ? s_cachedLocalization.CurrentLanguage
+                    : GameLanguage.English);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.AudioLogRuntime)
+            {
+                s_cachedAudioLogs = currentService as AudioLogSystem;
+                _dirty = true;
+                RefreshPlayButton();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.LoreDatabaseRuntime)
+            {
+                s_cachedLoreDatabase = currentService as LoreDatabaseManager;
+                _catalogLoreBindingsDirty = true;
+                _dirty = true;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                s_cachedPlayerContext = currentService as IPlayerRuntimeContext;
         }
 
         private void TryRegisterHotSwapListener()
@@ -610,6 +637,9 @@ namespace Hecton8.UI
         private static void CacheRegistryServicesCold()
         {
             s_cachedLocalization = GlobalRegistry.Localization;
+            s_cachedLoreDatabase = GlobalRegistry.LoreDatabase;
+            s_cachedAudioLogs = GlobalRegistry.AudioLogs;
+            s_cachedPlayerContext = GlobalRegistry.Player;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -823,7 +853,7 @@ namespace Hecton8.UI
 
         private void RefreshList()
         {
-            LoreDatabaseManager database = Hecton8.Core.GlobalRegistry.LoreDatabase;
+            LoreDatabaseManager database = s_cachedLoreDatabase;
             int discovered = database != null ? database.UnlockedCount : 0;
             int logCount = CatalogCount;
 
@@ -940,7 +970,7 @@ namespace Hecton8.UI
 
         private void RefreshRowHighlights()
         {
-            AudioLogSystem system = Hecton8.Core.GlobalRegistry.AudioLogs;
+            AudioLogSystem system = s_cachedAudioLogs;
             string playingId = system != null && system.IsPlaying && system.CurrentLog != null
                 ? system.CurrentLog.logId
                 : null;
@@ -966,7 +996,7 @@ namespace Hecton8.UI
 
         private void RefreshPlayButton()
         {
-            AudioLogSystem system = Hecton8.Core.GlobalRegistry.AudioLogs;
+            AudioLogSystem system = s_cachedAudioLogs;
             AudioLogData selectedLog = GetSelectedLog();
             bool isDiscovered = selectedLog != null && IsCatalogLogUnlocked(_selectedIndex);
             bool isPlaying = system != null && system.IsPlaying;
@@ -1065,7 +1095,7 @@ namespace Hecton8.UI
             if (_catalogLoreRecordIndices.Length != logCount)
                 _catalogLoreRecordIndices = new int[logCount]; // COLD ALLOC: int[allLogs.Length] — lore record index cache aligned to PDA archive catalog — owner: PDADataLogTab
 
-            LoreDatabaseManager database = Hecton8.Core.GlobalRegistry.LoreDatabase;
+            LoreDatabaseManager database = s_cachedLoreDatabase;
             for (int i = 0; i < logCount; i++)
             {
                 AudioLogData log = GetLog(i);
@@ -1106,7 +1136,7 @@ namespace Hecton8.UI
                 return false;
 
             EnsureLoreBindingCache();
-            LoreDatabaseManager database = Hecton8.Core.GlobalRegistry.LoreDatabase;
+            LoreDatabaseManager database = s_cachedLoreDatabase;
             if (database == null || !database.TryGetPackedUnlockWords(out Unity.Collections.NativeArray<uint> words))
                 return false;
 
@@ -1312,7 +1342,7 @@ namespace Hecton8.UI
 
             if (_subtitleLabel != null)
             {
-                AudioLogSystem system = Hecton8.Core.GlobalRegistry.AudioLogs;
+                AudioLogSystem system = s_cachedAudioLogs;
                 AudioLogData subtitleLog = system != null && system.IsPlaying ? system.CurrentLog : GetSelectedLog();
                 string displaySubtitle = ResolveLogStressReactiveText(subtitleLog, "subtitle", _prevSubtitleText);
                 ApplyDynamicText(_subtitleLabel, displaySubtitle, ref _summaryTextBuffer);
@@ -1835,7 +1865,7 @@ namespace Hecton8.UI
             if (mesh == null)
                 return;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = s_cachedPlayerContext;
             Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
             if (playerCamera == null)
                 return;
@@ -1911,7 +1941,7 @@ namespace Hecton8.UI
 
             public void OnPointerClick(UnityEngine.EventSystems.PointerEventData e)
             {
-                AudioLogSystem sys = Hecton8.Core.GlobalRegistry.AudioLogs;
+                AudioLogSystem sys = PDADataLogTab.s_cachedAudioLogs;
                 if (sys != null && sys.IsPlaying)
                     sys.StopPlayback();
                 else

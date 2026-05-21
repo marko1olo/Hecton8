@@ -19,13 +19,23 @@ namespace Hecton8.Core
         internal const int UberNoirRuntimeSlot = 5;
         internal const int UberNoirFeatureMaskSlot = 6;
         internal const int PhysiologyDecompressionSlot = 7;
-        internal const int PowerBrownoutSlot = 8;
+        internal const int ShaderGlobalsDtoSlot = 8;
+        internal const int ShaderGlobalsDtoSlotCount = 3;
+        internal const int PhysiologyGasToxicitySlot = 11;
+        internal const int DispatcherRuntimeSlotStart = 12;
+        internal const int DispatcherRuntimeSlotCount = 7;
         internal const int RespawnDearLieSlot = 19;
+        internal const int PowerBrownoutSlot = 20;
+        internal const int ThermalPackedSlotStart = 32;
+        internal const int ThermalPackedSlotCount = 8;
+        internal const int TelemetrySlotStart = 64;
+        internal const int TelemetrySlotCount = 300;
         // Shared with GlobalShaderDispatcher: slots 64-363 are the 300-frame CBuffer blackbox.
         internal const int SlotCount = 512;
 
+        private static readonly bool s_slotMapValid = ValidateSharedSlotMap();
+
         private static readonly int _BiolumMasterPhaseId = Shader.PropertyToID("_BiolumMasterPhase");
-        private static readonly int _GlobalBiolumPhaseId = Shader.PropertyToID("_GlobalBiolumPhase");
         private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
         private static readonly int _TotalUniverseOffsetId = Shader.PropertyToID("_TotalUniverseOffset");
         private static readonly int _AupShiftOffsetId = Shader.PropertyToID("_AupShiftOffset");
@@ -36,14 +46,15 @@ namespace Hecton8.Core
         private static readonly int _HectonUberNoirRuntimeParamsId = Shader.PropertyToID("_HectonUberNoirRuntimeParams");
         private static readonly int _HectonActiveShaderFeatureMaskId = Shader.PropertyToID("_HectonActiveShaderFeatureMask");
         private static readonly int _HectonDcsPhysiologyParamsId = Shader.PropertyToID("_HectonDcsPhysiologyParams");
+        private static readonly int _HectonGasToxicityParamsId = Shader.PropertyToID("_HectonGasToxicityParams");
         private static readonly int _HectonSupersaturationScalarId = Shader.PropertyToID("_HectonSupersaturationScalar");
         private static readonly int _HectonNarcosisScalarId = Shader.PropertyToID("_HectonNarcosisScalar");
+        private static readonly int _HypoxiaSignalId = Shader.PropertyToID("_HypoxiaSignal");
         private static readonly int _HectonPowerBrownoutParamsId = Shader.PropertyToID("_HectonPowerBrownoutParams");
         private static readonly int _HectonRespawnDearLieParamsId = Shader.PropertyToID("_HectonRespawnDearLieParams");
         private static readonly int _HectonDeathFadeIntensityId = Shader.PropertyToID("_HectonDeathFadeIntensity");
 
         private static IDataVault _cachedVault;
-        private static uint _cachedVaultGeneration;
         private static VaultGenerationHandle<float4> _slotsHandle;
         private static float4 _fallbackBiolumMasterPhase;
         private static float4 _fallbackAupShiftOffset;
@@ -53,6 +64,7 @@ namespace Hecton8.Core
         private static float4 _fallbackUberNoirRuntime;
         private static float4 _fallbackUberNoirFeatureMask;
         private static float4 _fallbackPhysiologyDecompression;
+        private static float4 _fallbackPhysiologyGasToxicity;
         private static float4 _fallbackPowerBrownout;
         private static float4 _fallbackRespawnDearLie;
         private static bool _visualSyncDispatcherActive;
@@ -61,7 +73,6 @@ namespace Hecton8.Core
         private static void ResetStaticState()
         {
             _cachedVault = null;
-            _cachedVaultGeneration = 0u;
             _slotsHandle = default;
             _fallbackBiolumMasterPhase = default;
             _fallbackAupShiftOffset = default;
@@ -71,6 +82,7 @@ namespace Hecton8.Core
             _fallbackUberNoirRuntime = CreateFloat4(0f, 1f, 0f, 0f);
             _fallbackUberNoirFeatureMask = default;
             _fallbackPhysiologyDecompression = default;
+            _fallbackPhysiologyGasToxicity = default;
             _fallbackPowerBrownout = CreateFloat4(1f, 0f, 0f, 0f);
             _fallbackRespawnDearLie = default;
             _visualSyncDispatcherActive = false;
@@ -91,7 +103,6 @@ namespace Hecton8.Core
             if (!_visualSyncDispatcherActive)
             {
                 Shader.SetGlobalVector(_BiolumMasterPhaseId, bridgedPhase);
-                Shader.SetGlobalFloat(_GlobalBiolumPhaseId, bridgedPhase.x);
             }
         }
 
@@ -251,6 +262,29 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Publishes gas-toxicity presentation scalars; x=hypoxia tunnel, y=CNS O2, z=CO2 toxicity, w=quality.
+        /// </summary>
+        public static void PublishPhysiologyGasToxicity(Vector4 gasVector)
+        {
+            float4 value = ToFiniteFloat4(gasVector);
+            value.x = math.saturate(value.x);
+            value.y = math.saturate(value.y);
+            value.z = math.saturate(value.z);
+            value.w = math.saturate(value.w);
+            float4 stored = WriteReadSlot(
+                PhysiologyGasToxicitySlot,
+                value,
+                ref _fallbackPhysiologyGasToxicity);
+
+            if (!_visualSyncDispatcherActive)
+            {
+                Vector4 vector = ToVector4(stored);
+                Shader.SetGlobalVector(_HectonGasToxicityParamsId, vector);
+                Shader.SetGlobalFloat(_HypoxiaSignalId, vector.x);
+            }
+        }
+
+        /// <summary>
         /// Publishes base-grid brownout state once per telemetry tick; x=supply, y=severity, z=phase seconds, w=GlobalQualityWeight.
         /// </summary>
         public static void PublishPowerBrownout(Vector4 brownoutVector)
@@ -274,7 +308,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void PublishRespawnDearLie(Vector4 dearLieVector)
         {
-            PublishRespawnDearLie(ResolveSlotsVault(), dearLieVector);
+            PublishRespawnDearLie(AcquireCachedSlotsVaultNoAllocate(), dearLieVector);
         }
 
         /// <summary>
@@ -304,12 +338,12 @@ namespace Hecton8.Core
 
         private static float4 WriteReadSlot(int slot, float4 value, ref float4 fallback)
         {
-            return WriteReadSlot(ResolveSlotsVault(), slot, value, ref fallback);
-        }
-
-        private static float4 WriteReadSlot(IDataVault vault, int slot, float4 value, ref float4 fallback)
-        {
-            return WriteReadSlot(vault, slot, value, ref fallback, allowAllocation: true);
+            return WriteReadSlot(
+                AcquireCachedSlotsVaultNoAllocate(),
+                slot,
+                value,
+                ref fallback,
+                allowAllocation: false);
         }
 
         private static float4 WriteReadSlot(
@@ -343,21 +377,19 @@ namespace Hecton8.Core
             return fallback;
         }
 
-        private static IDataVault ResolveSlotsVault()
+        private static IDataVault AcquireCachedSlotsVaultNoAllocate()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            return TryPrepareSlotsVault(vault, allowAllocation: true) ? vault : null;
+            IDataVault vault = _cachedVault;
+            return TryPrepareSlotsVault(vault, allowAllocation: false) ? vault : null;
         }
 
         private static bool TryPrepareSlotsVault(IDataVault vault, bool allowAllocation)
         {
-            if (vault == null)
+            if (!s_slotMapValid || vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            uint generation = vault.VaultGenerationID;
             if (ReferenceEquals(vault, _cachedVault) &&
-                _cachedVaultGeneration == generation &&
-                IsSlotsHandleCreated(in _slotsHandle) &&
+                IsSlotsHandleOwned(in _slotsHandle) &&
                 vault.TryResolveHandle(in _slotsHandle, out NativeArray<float4> cachedSlots) &&
                 cachedSlots.IsCreated &&
                 cachedSlots.Length >= SlotCount)
@@ -365,15 +397,19 @@ namespace Hecton8.Core
                 return true;
             }
 
-            if (vault.TryGetGenerationHandle<float4>(BufferID.ShaderGlobalState, out VaultGenerationHandle<float4> existing) &&
-                vault.TryResolveHandle(in existing, out NativeArray<float4> existingSlots) &&
-                existingSlots.IsCreated &&
-                existingSlots.Length >= SlotCount)
+            if (vault.TryGetGenerationHandle<float4>(BufferID.ShaderGlobalState, out VaultGenerationHandle<float4> existing))
             {
-                _cachedVault = vault;
-                _cachedVaultGeneration = generation;
-                _slotsHandle = existing;
-                return true;
+                if (!IsSlotsHandleOwned(in existing))
+                    return false;
+
+                if (vault.TryResolveHandle(in existing, out NativeArray<float4> existingSlots) &&
+                    existingSlots.IsCreated &&
+                    existingSlots.Length >= SlotCount)
+                {
+                    _cachedVault = vault;
+                    _slotsHandle = existing;
+                    return true;
+                }
             }
 
             if (!allowAllocation || vault.IsAllocationLocked)
@@ -384,21 +420,76 @@ namespace Hecton8.Core
                 SlotCount,
                 SystemID.GraphicsScalability,
                 NativeArrayOptions.ClearMemory);
-            if (!vault.TryResolveHandle(in allocated, out NativeArray<float4> allocatedSlots) ||
+            if (!IsSlotsHandleOwned(in allocated) ||
+                !vault.TryResolveHandle(in allocated, out NativeArray<float4> allocatedSlots) ||
                 !allocatedSlots.IsCreated ||
                 allocatedSlots.Length < SlotCount)
                 return false;
 
             _cachedVault = vault;
-            _cachedVaultGeneration = generation;
             _slotsHandle = allocated;
             return true;
+        }
+
+        internal static bool ValidateSharedSlotMap()
+        {
+            return SlotCount >= TelemetrySlotStart + TelemetrySlotCount &&
+                   IsSlotRangeValid(ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
+                   IsSlotRangeValid(PhysiologyDecompressionSlot, 1) &&
+                   IsSlotRangeValid(PhysiologyGasToxicitySlot, 1) &&
+                   IsSlotRangeValid(DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
+                   IsSlotRangeValid(ThermalPackedSlotStart, ThermalPackedSlotCount) &&
+                   IsSlotRangeValid(TelemetrySlotStart, TelemetrySlotCount) &&
+                   DispatcherRuntimeSlotStart >= ShaderGlobalsDtoSlot + ShaderGlobalsDtoSlotCount &&
+                   PhysiologyDecompressionSlot < ShaderGlobalsDtoSlot &&
+                   PhysiologyGasToxicitySlot >= ShaderGlobalsDtoSlot + ShaderGlobalsDtoSlotCount &&
+                   PhysiologyGasToxicitySlot < DispatcherRuntimeSlotStart &&
+                   RespawnDearLieSlot >= DispatcherRuntimeSlotStart + DispatcherRuntimeSlotCount &&
+                   PowerBrownoutSlot > RespawnDearLieSlot &&
+                   PowerBrownoutSlot < ThermalPackedSlotStart &&
+                   !SlotInRange(RespawnDearLieSlot, ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
+                   !SlotInRange(PowerBrownoutSlot, ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
+                   !SlotInRange(PhysiologyDecompressionSlot, ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
+                   !SlotInRange(PhysiologyGasToxicitySlot, ShaderGlobalsDtoSlot, ShaderGlobalsDtoSlotCount) &&
+                   !SlotInRange(RespawnDearLieSlot, DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
+                   !SlotInRange(PowerBrownoutSlot, DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
+                   !SlotInRange(PhysiologyDecompressionSlot, DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
+                   !SlotInRange(PhysiologyGasToxicitySlot, DispatcherRuntimeSlotStart, DispatcherRuntimeSlotCount) &&
+                   !SlotInRange(RespawnDearLieSlot, ThermalPackedSlotStart, ThermalPackedSlotCount) &&
+                   !SlotInRange(PowerBrownoutSlot, ThermalPackedSlotStart, ThermalPackedSlotCount) &&
+                   !SlotInRange(PhysiologyDecompressionSlot, ThermalPackedSlotStart, ThermalPackedSlotCount) &&
+                   !SlotInRange(PhysiologyGasToxicitySlot, ThermalPackedSlotStart, ThermalPackedSlotCount) &&
+                   !SlotInRange(RespawnDearLieSlot, TelemetrySlotStart, TelemetrySlotCount) &&
+                   !SlotInRange(PowerBrownoutSlot, TelemetrySlotStart, TelemetrySlotCount) &&
+                   !SlotInRange(PhysiologyDecompressionSlot, TelemetrySlotStart, TelemetrySlotCount) &&
+                   !SlotInRange(PhysiologyGasToxicitySlot, TelemetrySlotStart, TelemetrySlotCount);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsSlotRangeValid(int start, int count)
+        {
+            return start >= 0 &&
+                   count > 0 &&
+                   start <= SlotCount - count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SlotInRange(int slot, int start, int count)
+        {
+            return slot >= start && slot < start + count;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsSlotsHandleCreated(in VaultGenerationHandle<float4> handle)
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsSlotsHandleOwned(in VaultGenerationHandle<float4> handle)
+        {
+            return IsSlotsHandleCreated(in handle) &&
+                   handle.SystemID == (uint)SystemID.GraphicsScalability;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

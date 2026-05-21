@@ -1209,9 +1209,7 @@ namespace Hecton8.World
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : _playerRigidbody;
             GameObject playerObject = playerContext != null ? playerContext.PlayerObject : playerTransform != null ? playerTransform.gameObject : null;
-            Vector3 playerPosition = playerContext != null && playerContext.PlayerTransform != null
-                ? playerContext.PlayerTransform.position
-                : playerTransform != null ? playerTransform.position : transform.position;
+            Vector3 playerPosition = ResolvePlayerRuntimePosition(playerContext, playerTransform);
             float playerTemperature = ResolveAmbientTemperatureCelsius(playerPosition);
 
             if (ProcessThermalGameplayTarget(playerBody, playerObject, playerPosition, fdt, publishPresentation: true, out playerTemperature))
@@ -1248,6 +1246,15 @@ namespace Hecton8.World
 
             if (_thermalRoarCooldown > 0f)
                 _thermalRoarCooldown = Mathf.Max(0f, _thermalRoarCooldown - fdt);
+        }
+
+        private Vector3 ResolvePlayerRuntimePosition(IPlayerRuntimeContext playerContext, Transform fallbackTransform)
+        {
+            Transform resolvedTransform = playerContext != null && playerContext.PlayerTransform != null
+                ? playerContext.PlayerTransform
+                : fallbackTransform != null ? fallbackTransform : transform;
+
+            return resolvedTransform != null ? resolvedTransform.position : Vector3.zero;
         }
 
         public bool TrySampleTemperatureCelsius(Vector3 positionWS, out float temperatureCelsius)

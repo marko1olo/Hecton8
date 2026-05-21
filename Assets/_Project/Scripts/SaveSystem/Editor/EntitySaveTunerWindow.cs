@@ -38,6 +38,7 @@ namespace Hecton8.SaveSystem.Editor
         private uint _lastSummaryDeltaBytes;
         private uint _lastSummaryStoredBytes;
         private uint _lastSummaryFlags;
+        private IDataVault _dataVault;
         private EventCallback<ChangeEvent<float>> _sliderChangedCallback;
         private EventCallback<ChangeEvent<int>> _integerChangedCallback;
 
@@ -49,6 +50,7 @@ namespace Hecton8.SaveSystem.Editor
 
         public void CreateGUI()
         {
+            _dataVault = GlobalRegistry.DataVault;
             VisualElement root = rootVisualElement;
             root.Clear();
             root.style.paddingLeft = 8f;
@@ -88,12 +90,19 @@ namespace Hecton8.SaveSystem.Editor
 
         private void OnEnable()
         {
+            _dataVault = GlobalRegistry.DataVault;
             SceneView.duringSceneGui += DrawEntityHeatmap;
         }
 
         private void OnDisable()
         {
             SceneView.duringSceneGui -= DrawEntityHeatmap;
+            _dataVault = null;
+        }
+
+        private void OnFocus()
+        {
+            _dataVault = GlobalRegistry.DataVault;
         }
 
         private void Update()
@@ -103,7 +112,7 @@ namespace Hecton8.SaveSystem.Editor
                 return;
 
             _nextTelemetryRefreshTime = now + TelemetryRefreshSeconds;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
             {
                 SetSummaryText("GlobalDataVault is not registered.");
@@ -150,21 +159,23 @@ namespace Hecton8.SaveSystem.Editor
 
         private void ReadFromVault()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault != null ? _dataVault : GlobalRegistry.DataVault;
+            _dataVault = vault;
             if (vault == null)
             {
                 SetSummaryText("GlobalDataVault is not registered.");
                 return;
             }
 
-            VaultBufferHandle<EntityDeltaCompressionTuningDTO> handle = vault.GetBufferHandle<EntityDeltaCompressionTuningDTO>(
-                BufferID.SaveEntityDeltaTuning,
-                1,
-                SystemID.SavePersistence,
-                NativeArrayOptions.ClearMemory);
-            NativeArray<EntityDeltaCompressionTuningDTO> tuningBuffer = handle.Resolve(vault);
-            if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
+            if (!OpenOrAcquireLane(
+                    vault,
+                    BufferID.SaveEntityDeltaTuning,
+                    1,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<EntityDeltaCompressionTuningDTO> tuningBuffer))
+            {
                 return;
+            }
 
             EntityDeltaCompressionTuningDTO tuning = tuningBuffer[0];
             if (tuning.SchemaHash == 0u)
@@ -193,18 +204,20 @@ namespace Hecton8.SaveSystem.Editor
 
         private void WriteDefaultTuning()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault != null ? _dataVault : GlobalRegistry.DataVault;
+            _dataVault = vault;
             if (vault == null)
                 return;
 
-            VaultBufferHandle<EntityDeltaCompressionTuningDTO> handle = vault.GetBufferHandle<EntityDeltaCompressionTuningDTO>(
-                BufferID.SaveEntityDeltaTuning,
-                1,
-                SystemID.SavePersistence,
-                NativeArrayOptions.ClearMemory);
-            NativeArray<EntityDeltaCompressionTuningDTO> tuningBuffer = handle.Resolve(vault);
-            if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
+            if (!OpenOrAcquireLane(
+                    vault,
+                    BufferID.SaveEntityDeltaTuning,
+                    1,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<EntityDeltaCompressionTuningDTO> tuningBuffer))
+            {
                 return;
+            }
 
             tuningBuffer[0] = EntityDeltaCompressionArchitecture.BuildDefaultTuning();
             ReadFromVault();
@@ -215,18 +228,20 @@ namespace Hecton8.SaveSystem.Editor
             if (_suppressCallbacks)
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault != null ? _dataVault : GlobalRegistry.DataVault;
+            _dataVault = vault;
             if (vault == null)
                 return;
 
-            VaultBufferHandle<EntityDeltaCompressionTuningDTO> handle = vault.GetBufferHandle<EntityDeltaCompressionTuningDTO>(
-                BufferID.SaveEntityDeltaTuning,
-                1,
-                SystemID.SavePersistence,
-                NativeArrayOptions.ClearMemory);
-            NativeArray<EntityDeltaCompressionTuningDTO> tuningBuffer = handle.Resolve(vault);
-            if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
+            if (!OpenOrAcquireLane(
+                    vault,
+                    BufferID.SaveEntityDeltaTuning,
+                    1,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<EntityDeltaCompressionTuningDTO> tuningBuffer))
+            {
                 return;
+            }
 
             EntityDeltaCompressionTuningDTO tuning = tuningBuffer[0];
             if (tuning.SchemaHash == 0u)
@@ -252,7 +267,7 @@ namespace Hecton8.SaveSystem.Editor
             if (_summary == null)
                 return false;
 
-            if (!TryResolveExistingBuffer(vault, BufferID.SaveEntityDeltaTelemetryRing, out NativeArray<EntityCompressionTelemetryEntry> telemetry) ||
+            if (!OpenExistingLane(vault, BufferID.SaveEntityDeltaTelemetryRing, 1, out NativeArray<EntityCompressionTelemetryEntry> telemetry) ||
                 telemetry.Length == 0)
             {
                 SetSummaryText("Entity delta WAL telemetry ring is empty.");
@@ -260,7 +275,7 @@ namespace Hecton8.SaveSystem.Editor
             }
 
             int cursorValue = 0;
-            if (TryResolveExistingBuffer(vault, BufferID.SaveEntityDeltaTelemetryCursor, out NativeArray<int> cursor) && cursor.Length > 0)
+            if (OpenExistingLane(vault, BufferID.SaveEntityDeltaTelemetryCursor, 1, out NativeArray<int> cursor) && cursor.Length > 0)
                 cursorValue = math.max(0, cursor[0]);
 
             int last = math.max(0, cursorValue - 1);
@@ -427,7 +442,7 @@ namespace Hecton8.SaveSystem.Editor
 
                 IDataVault vault = GlobalRegistry.DataVault;
                 if (vault == null ||
-                    !TryResolveExistingBuffer(vault, BufferID.SaveEntityDeltaTelemetryRing, out NativeArray<EntityCompressionTelemetryEntry> telemetry) ||
+                    !OpenExistingLane(vault, BufferID.SaveEntityDeltaTelemetryRing, 1, out NativeArray<EntityCompressionTelemetryEntry> telemetry) ||
                     telemetry.Length == 0)
                 {
                     painter.strokeColor = new Color(0.35f, 0.35f, 0.35f, 1f);
@@ -474,17 +489,63 @@ namespace Hecton8.SaveSystem.Editor
             }
         }
 
-        private static bool TryResolveExistingBuffer<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer) where T : struct
+        private static bool OpenOrAcquireLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (OpenExistingLane(vault, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.SavePersistence,
+                options);
+            return OpenLane(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool OpenExistingLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
+                   OpenLane(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool OpenLane<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            uint expectedBufferId = unchecked((uint)(int)bufferId);
             if (vault == null ||
-                !vault.TryGetBufferHandle(bufferId, out VaultBufferHandle<T> handle))
+                requiredLength <= 0 ||
+                handle.BufferID != expectedBufferId ||
+                handle.Generation == 0u)
             {
                 return false;
             }
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated;
+            return vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
     }
 }

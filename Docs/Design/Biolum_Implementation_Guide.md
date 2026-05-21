@@ -58,8 +58,8 @@ Header format: `<8sIIIIIIIIII`, 48 bytes.
 | paletteCount | `8` |
 | maxHarmonics | `8` |
 | curveSamples | `256` |
-| godColorCount | `10` |
-| toasterColorCount | `2` |
+| maxQualityColorCount | `10` |
+| minQualityColorCount | `2` |
 | profileStride | `1232` bytes |
 | paletteStride | `156` bytes |
 | payloadCrc32 | CRC32 of payload bytes |
@@ -77,7 +77,7 @@ Profile tail:
 Palette record format: `<III36f`, 156 bytes.
 
 Fields: `paletteHash`, `paletteIndex`, `flags`, then 36 floats:
-`TOASTER` two RGB HDR colors followed by `GOD_MODE` ten RGB HDR colors.
+Minimum-quality two RGB HDR colors followed by maximum-quality ten RGB HDR colors.
 
 ## Profile Flags
 
@@ -86,7 +86,7 @@ Fields: `paletteHash`, `paletteIndex`, `flags`, then 36 floats:
 | `1 << 0` | Safety clamp active because authored max frequency or strobe exceeded 15 Hz |
 | `1 << 1` | AcousticPing reactive |
 | `1 << 2` | Predator-visible warning/readability profile |
-| `1 << 3` | High-tier visual-overkill candidate |
+| `1 << 3` | High-fidelity visual-overkill candidate |
 
 Current clamped profiles:
 
@@ -97,13 +97,13 @@ Current clamped profiles:
 
 The global phase name is `_BiolumMasterPhase`.
 
-Low/TOASTER path:
+Minimum-quality path:
 
 1. Read profile `curveSamples[phaseIndex]`.
-2. Lerp the two TOASTER palette colors.
+2. Lerp the two minimum-quality palette colors.
 3. Multiply emissive intensity by bounded local mask and fog eligibility.
 
-High/GOD_MODE path:
+Maximum-quality path:
 
 1. Reconstruct harmonic sum with 4-8 sine terms.
 2. Apply deterministic phase/noise scalar from a precomputed or shader hash path.

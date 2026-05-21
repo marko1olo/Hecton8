@@ -54,7 +54,7 @@ namespace Hecton8.World
             return (int)clampedGrams;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private static float EvaluateYieldUnitsBurst(
             float toolPower,
             float nodeHardness,
@@ -65,7 +65,7 @@ namespace Hecton8.World
             return extractedMassKg / math.max(0.01f, unitItemMassKg);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private static float EvaluateExtractedMassKgBurst(
             float toolPower,
             float nodeHardness,

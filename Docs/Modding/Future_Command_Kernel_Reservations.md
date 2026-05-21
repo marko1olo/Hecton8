@@ -107,7 +107,7 @@ Every future command kernel must provide:
 - accepted/rejected telemetry;
 - unload/quarantine revocation;
 - save-exclusion policy unless the command writes a mod-owned payload through `HectonAPI.SaveState`;
-- low-tier budget and high-tier visual-overkill policy where presentation is involved;
+- minimum-budget and high-fidelity visual-overkill policy where presentation is involved;
 - runtime proof before the API spec status can improve beyond `PENDING RUNTIME VERIFICATION`.
 
 ## Reserved Kernels

@@ -12,7 +12,7 @@ namespace Hecton8.Biolum
     /// Publishes a player-centered 3D bioluminescence radiance volume for flora shading.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonBiolumDiffusionVolume : MonoBehaviour, ITickable, IUpdatable, IOriginShiftListener
+    public sealed class HectonBiolumDiffusionVolume : MonoBehaviour, ITickable, IUpdatable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int DefaultResolution = 64;
         private const float DefaultVolumeWorldSize = 72f;
@@ -100,6 +100,7 @@ namespace Hecton8.Biolum
         [SerializeField] private Vector3 _debugVolumeCenter;
 
         private bool _registered;
+        private bool _registeredHotSwapListener;
         private bool _needsClear = true;
         private bool _hasLastVolumeCenter;
         private int _clearKernel = -1;
@@ -116,6 +117,7 @@ namespace Hecton8.Biolum
         private uint _injectThreadGroupSizeZ = DefaultThreadGroupSize;
         private Transform _playerTransform;
         private HectonBiolumManager _biolumManager;
+        private ITickDispatcher _dispatcher;
         private Vector3 _lastVolumeCenter;
         private double _cascadeTimeSeconds;
         private int _lastUploadedPointCount = -1;
@@ -136,6 +138,7 @@ namespace Hecton8.Biolum
 
         private void Awake()
         {
+            CacheRegistryServicesCold();
             ResolveDependencies();
             EnsureResources();
             PublishGlobals();
@@ -143,6 +146,8 @@ namespace Hecton8.Biolum
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegister();
             ResolveDependencies();
@@ -154,6 +159,7 @@ namespace Hecton8.Biolum
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ReleaseResources();
             Shader.SetGlobalFloat(_GlobalActiveId, 0f);
             PublishGlowPointGlobals(0, force: true);
@@ -163,8 +169,26 @@ namespace Hecton8.Biolum
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ReleaseResources();
             PublishGlowPointGlobals(0, force: true);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.BiolumManagerRuntime:
+                    _biolumManager = currentService as HectonBiolumManager;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _dispatcher = currentService as ITickDispatcher;
+                    TryRegister();
+                    break;
+            }
         }
 
         /// <inheritdoc />
@@ -199,7 +223,7 @@ namespace Hecton8.Biolum
                 return;
             }
 
-            Vector3 volumeCenter = _playerTransform.position;
+            Vector3 volumeCenter = ResolveVolumeCenterRuntimePosition();
             if (!MathGuard.IsFinite(volumeCenter))
             {
                 ReportInvalidGlowInput();
@@ -286,13 +310,15 @@ namespace Hecton8.Biolum
             _hasLastVolumeCenter = true;
         }
 
+        private Vector3 ResolveVolumeCenterRuntimePosition()
+        {
+            return _playerTransform != null ? _playerTransform.position : Vector3.zero;
+        }
+
         private void ResolveDependencies()
         {
             if (_playerTransform == null && GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 _playerTransform = playerTransform;
-
-            if (_biolumManager == null)
-                _biolumManager = GlobalRegistry.BiolumManager;
         }
 
         private void EnsureResources()
@@ -592,7 +618,7 @@ namespace Hecton8.Biolum
 
         private float ResolveCascadeTimeSeconds(float safeDeltaTime)
         {
-            ITickDispatcher dispatcher = GlobalRegistry.Dispatcher;
+            ITickDispatcher dispatcher = _dispatcher;
             if (dispatcher != null)
             {
                 H8TimeSnapshot snapshot = dispatcher.TimeSnapshot;
@@ -637,7 +663,7 @@ namespace Hecton8.Biolum
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying || _dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -651,6 +677,32 @@ namespace Hecton8.Biolum
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            if (_biolumManager == null)
+                _biolumManager = GlobalRegistry.BiolumManager;
+
+            if (_dispatcher == null)
+                _dispatcher = GlobalRegistry.Dispatcher;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void ReleaseResources()

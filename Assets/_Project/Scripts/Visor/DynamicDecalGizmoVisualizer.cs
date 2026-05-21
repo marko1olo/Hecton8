@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 
 namespace Hecton8.Visor
@@ -7,11 +8,10 @@ namespace Hecton8.Visor
         [SerializeField] private bool drawDecalVolumes = true;
         [SerializeField, Range(1, 256)] private int maxDrawnVolumes = 64;
 
-#if UNITY_EDITOR
         private void OnDrawGizmos()
         {
             if (!drawDecalVolumes ||
-                !DynamicDecalVaultRuntime.TryAcquireDecalBufferRead(out Unity.Collections.NativeArray<DecalInstanceDTO> decals, out _, out Vector3 cameraWorldPosition))
+                !DynamicDecalVaultRuntime.TryAcquireDecalBufferRead(out Unity.Collections.NativeArray<VisorDecalDTO> decals, out _, out Vector3 cameraWorldPosition))
             {
                 return;
             }
@@ -23,7 +23,7 @@ namespace Hecton8.Visor
                 int drawn = 0;
                 for (int i = 0; i < decals.Length && drawn < maxDrawnVolumes; i++)
                 {
-                    DecalInstanceDTO decal = decals[i];
+                    VisorDecalDTO decal = decals[i];
                     if ((decal.Flags & DynamicDecalFlags.Active) == 0u || decal.Opacity01 <= 0.0001f)
                         continue;
 
@@ -54,6 +54,6 @@ namespace Hecton8.Visor
                 Gizmos.color = previousColor;
             }
         }
-#endif
     }
 }
+#endif

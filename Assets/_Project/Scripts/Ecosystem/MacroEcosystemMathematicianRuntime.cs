@@ -39,17 +39,17 @@ namespace Hecton8.Ecosystem
 
         private static MacroEcosystemMathematicianRuntime s_runtime;
 
-        private VaultBufferHandle<EcosystemSectorDTO> _frontHandle;
-        private VaultBufferHandle<EcosystemSectorDTO> _backHandle;
-        private VaultBufferHandle<EcosystemSectorRemainderDTO> _remainderHandle;
-        private VaultBufferHandle<EcosystemSectorCoordDTO> _coordHandle;
-        private VaultBufferHandle<EcosystemSectorIndexEntryDTO> _indexEntryHandle;
-        private VaultBufferHandle<BiomeEcosystemSpecDTO> _biomeSpecHandle;
-        private VaultBufferHandle<MacroEcosystemTuningDTO> _tuningHandle;
-        private VaultBufferHandle<MacroEcosystemCounterDTO> _counterHandle;
-        private VaultBufferHandle<MacroEcosystemTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<uint> _faultFlagHandle;
+        private VaultGenerationHandle<EcosystemSectorDTO> _frontHandle;
+        private VaultGenerationHandle<EcosystemSectorDTO> _backHandle;
+        private VaultGenerationHandle<EcosystemSectorRemainderDTO> _remainderHandle;
+        private VaultGenerationHandle<EcosystemSectorCoordDTO> _coordHandle;
+        private VaultGenerationHandle<EcosystemSectorIndexEntryDTO> _indexEntryHandle;
+        private VaultGenerationHandle<BiomeEcosystemSpecDTO> _biomeSpecHandle;
+        private VaultGenerationHandle<MacroEcosystemTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<MacroEcosystemCounterDTO> _counterHandle;
+        private VaultGenerationHandle<MacroEcosystemTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<uint> _faultFlagHandle;
 
         private IDataVault _vault;
         private JobHandle _activeJobHandle;
@@ -150,27 +150,15 @@ namespace Hecton8.Ecosystem
             if (vault == null || !TryLockJobBuffers(vault))
                 return;
 
-            NativeArray<EcosystemSectorDTO> front = _frontHandle.Resolve(vault);
-            NativeArray<EcosystemSectorDTO> back = _backHandle.Resolve(vault);
-            NativeArray<EcosystemSectorRemainderDTO> remainders = _remainderHandle.Resolve(vault);
-            NativeArray<EcosystemSectorCoordDTO> coords = _coordHandle.Resolve(vault);
-            NativeArray<BiomeEcosystemSpecDTO> biomeSpecs = _biomeSpecHandle.Resolve(vault);
-            NativeArray<MacroEcosystemTuningDTO> tuningArray = _tuningHandle.Resolve(vault);
-            NativeArray<MacroEcosystemCounterDTO> counters = _counterHandle.Resolve(vault);
-            NativeArray<MacroEcosystemTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            NativeArray<uint> faultFlags = _faultFlagHandle.Resolve(vault);
-            if (!front.IsCreated ||
-                !back.IsCreated ||
-                !remainders.IsCreated ||
-                !coords.IsCreated ||
-                !biomeSpecs.IsCreated ||
-                biomeSpecs.Length <= 0 ||
-                !tuningArray.IsCreated ||
-                tuningArray.Length <= 0 ||
-                !counters.IsCreated ||
-                !telemetry.IsCreated ||
-                telemetry.Length <= 0 ||
-                !faultFlags.IsCreated)
+            if (!TryOpenVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuMacroEcosystemSectorFront, SectorCapacity, out NativeArray<EcosystemSectorDTO> front) ||
+                !TryOpenVaultBuffer(vault, ref _backHandle, BufferID.ShinobuMacroEcosystemSectorBack, SectorCapacity, out NativeArray<EcosystemSectorDTO> back) ||
+                !TryOpenVaultBuffer(vault, ref _remainderHandle, BufferID.ShinobuMacroEcosystemRemainders, SectorCapacity, out NativeArray<EcosystemSectorRemainderDTO> remainders) ||
+                !TryOpenVaultBuffer(vault, ref _coordHandle, BufferID.ShinobuMacroEcosystemSectorCoords, SectorCapacity, out NativeArray<EcosystemSectorCoordDTO> coords) ||
+                !TryOpenVaultBuffer(vault, ref _biomeSpecHandle, BufferID.ShinobuMacroEcosystemBiomeSpecs, 1, out NativeArray<BiomeEcosystemSpecDTO> biomeSpecs) ||
+                !TryOpenVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuMacroEcosystemTuning, 1, out NativeArray<MacroEcosystemTuningDTO> tuningArray) ||
+                !TryOpenVaultBuffer(vault, ref _counterHandle, BufferID.ShinobuMacroEcosystemCounters, CounterCapacity, out NativeArray<MacroEcosystemCounterDTO> counters) ||
+                !TryOpenVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuMacroEcosystemTelemetryRing, TelemetryCapacity, out NativeArray<MacroEcosystemTelemetryEntry> telemetry) ||
+                !TryOpenVaultBuffer(vault, ref _faultFlagHandle, BufferID.ShinobuMacroEcosystemFaultFlags, SectorCapacity, out NativeArray<uint> faultFlags))
             {
                 UnlockJobBuffers();
                 return;
@@ -290,7 +278,7 @@ namespace Hecton8.Ecosystem
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            CompleteScheduledJobForTeardown();
+            CompleteScheduledJobForVaultSwapBarrier();
             UnlockJobBuffers();
             _vault = currentService as IDataVault;
             ResetVaultHandles();
@@ -323,13 +311,11 @@ namespace Hecton8.Ecosystem
 
         private void TryBindDataVaultCold()
         {
-            IDataVault vault = null;
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                vault = latestVault;
+            IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null || ReferenceEquals(_vault, vault))
                 return;
 
-            CompleteScheduledJobForTeardown();
+            CompleteScheduledJobForVaultSwapBarrier();
             UnlockJobBuffers();
             _vault = vault;
             ResetVaultHandles();
@@ -344,29 +330,17 @@ namespace Hecton8.Ecosystem
             if (vault == null)
                 return false;
 
-            _frontHandle = vault.GetBufferHandle<EcosystemSectorDTO>(BufferID.ShinobuMacroEcosystemSectorFront, SectorCapacity, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory);
-            _backHandle = vault.GetBufferHandle<EcosystemSectorDTO>(BufferID.ShinobuMacroEcosystemSectorBack, SectorCapacity, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory);
-            _remainderHandle = vault.GetBufferHandle<EcosystemSectorRemainderDTO>(BufferID.ShinobuMacroEcosystemRemainders, SectorCapacity, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory);
-            _coordHandle = vault.GetBufferHandle<EcosystemSectorCoordDTO>(BufferID.ShinobuMacroEcosystemSectorCoords, SectorCapacity, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory);
-            _indexEntryHandle = vault.GetBufferHandle<EcosystemSectorIndexEntryDTO>(BufferID.ShinobuMacroEcosystemIndexEntries, IndexCapacity, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory);
-            _biomeSpecHandle = vault.GetBufferHandle<BiomeEcosystemSpecDTO>(BufferID.ShinobuMacroEcosystemBiomeSpecs, BiomeSpecCapacity, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetBufferHandle<MacroEcosystemTuningDTO>(BufferID.ShinobuMacroEcosystemTuning, 1, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory);
-            _counterHandle = vault.GetBufferHandle<MacroEcosystemCounterDTO>(BufferID.ShinobuMacroEcosystemCounters, CounterCapacity, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetBufferHandle<MacroEcosystemTelemetryEntry>(BufferID.ShinobuMacroEcosystemTelemetryRing, TelemetryCapacity, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuMacroEcosystemCsvScratch, CsvScratchBytes, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory);
-            _faultFlagHandle = vault.GetBufferHandle<uint>(BufferID.ShinobuMacroEcosystemFaultFlags, SectorCapacity, SystemID.AIEcology, NativeArrayOptions.UninitializedMemory);
-
-            if (!_frontHandle.IsCreated ||
-                !_backHandle.IsCreated ||
-                !_remainderHandle.IsCreated ||
-                !_coordHandle.IsCreated ||
-                !_indexEntryHandle.IsCreated ||
-                !_biomeSpecHandle.IsCreated ||
-                !_tuningHandle.IsCreated ||
-                !_counterHandle.IsCreated ||
-                !_telemetryHandle.IsCreated ||
-                !_csvScratchHandle.IsCreated ||
-                !_faultFlagHandle.IsCreated)
+            if (!OpenOrAcquireVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuMacroEcosystemSectorFront, SectorCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _backHandle, BufferID.ShinobuMacroEcosystemSectorBack, SectorCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _remainderHandle, BufferID.ShinobuMacroEcosystemRemainders, SectorCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _coordHandle, BufferID.ShinobuMacroEcosystemSectorCoords, SectorCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _indexEntryHandle, BufferID.ShinobuMacroEcosystemIndexEntries, IndexCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _biomeSpecHandle, BufferID.ShinobuMacroEcosystemBiomeSpecs, BiomeSpecCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuMacroEcosystemTuning, 1, NativeArrayOptions.UninitializedMemory, out _) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _counterHandle, BufferID.ShinobuMacroEcosystemCounters, CounterCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuMacroEcosystemTelemetryRing, TelemetryCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _csvScratchHandle, BufferID.ShinobuMacroEcosystemCsvScratch, CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out _) ||
+                !OpenOrAcquireVaultBuffer(vault, ref _faultFlagHandle, BufferID.ShinobuMacroEcosystemFaultFlags, SectorCapacity, NativeArrayOptions.UninitializedMemory, out _))
             {
                 return false;
             }
@@ -379,34 +353,16 @@ namespace Hecton8.Ecosystem
 
         private void GenerateEmergencyMockEcosystem(IDataVault vault)
         {
-            NativeArray<EcosystemSectorDTO> front = _frontHandle.Resolve(vault);
-            NativeArray<EcosystemSectorDTO> back = _backHandle.Resolve(vault);
-            NativeArray<EcosystemSectorRemainderDTO> remainders = _remainderHandle.Resolve(vault);
-            NativeArray<EcosystemSectorCoordDTO> coords = _coordHandle.Resolve(vault);
-            NativeArray<EcosystemSectorIndexEntryDTO> indexEntries = _indexEntryHandle.Resolve(vault);
-            NativeArray<BiomeEcosystemSpecDTO> biomeSpecs = _biomeSpecHandle.Resolve(vault);
-            NativeArray<MacroEcosystemTuningDTO> tuning = _tuningHandle.Resolve(vault);
-            NativeArray<MacroEcosystemCounterDTO> counters = _counterHandle.Resolve(vault);
-            NativeArray<MacroEcosystemTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            NativeArray<uint> faultFlags = _faultFlagHandle.Resolve(vault);
-            if (!front.IsCreated ||
-                front.Length < SectorCapacity ||
-                !back.IsCreated ||
-                back.Length < SectorCapacity ||
-                !remainders.IsCreated ||
-                remainders.Length < SectorCapacity ||
-                !coords.IsCreated ||
-                coords.Length < SectorCapacity ||
-                !indexEntries.IsCreated ||
-                indexEntries.Length < IndexCapacity ||
-                !biomeSpecs.IsCreated ||
-                biomeSpecs.Length <= 0 ||
-                !tuning.IsCreated ||
-                tuning.Length <= 0 ||
-                !counters.IsCreated ||
-                !telemetry.IsCreated ||
-                !faultFlags.IsCreated ||
-                faultFlags.Length < SectorCapacity)
+            if (!TryOpenVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuMacroEcosystemSectorFront, SectorCapacity, out NativeArray<EcosystemSectorDTO> front) ||
+                !TryOpenVaultBuffer(vault, ref _backHandle, BufferID.ShinobuMacroEcosystemSectorBack, SectorCapacity, out NativeArray<EcosystemSectorDTO> back) ||
+                !TryOpenVaultBuffer(vault, ref _remainderHandle, BufferID.ShinobuMacroEcosystemRemainders, SectorCapacity, out NativeArray<EcosystemSectorRemainderDTO> remainders) ||
+                !TryOpenVaultBuffer(vault, ref _coordHandle, BufferID.ShinobuMacroEcosystemSectorCoords, SectorCapacity, out NativeArray<EcosystemSectorCoordDTO> coords) ||
+                !TryOpenVaultBuffer(vault, ref _indexEntryHandle, BufferID.ShinobuMacroEcosystemIndexEntries, IndexCapacity, out NativeArray<EcosystemSectorIndexEntryDTO> indexEntries) ||
+                !TryOpenVaultBuffer(vault, ref _biomeSpecHandle, BufferID.ShinobuMacroEcosystemBiomeSpecs, 1, out NativeArray<BiomeEcosystemSpecDTO> biomeSpecs) ||
+                !TryOpenVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuMacroEcosystemTuning, 1, out NativeArray<MacroEcosystemTuningDTO> tuning) ||
+                !TryOpenVaultBuffer(vault, ref _counterHandle, BufferID.ShinobuMacroEcosystemCounters, CounterCapacity, out NativeArray<MacroEcosystemCounterDTO> counters) ||
+                !TryOpenVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuMacroEcosystemTelemetryRing, TelemetryCapacity, out NativeArray<MacroEcosystemTelemetryEntry> telemetry) ||
+                !TryOpenVaultBuffer(vault, ref _faultFlagHandle, BufferID.ShinobuMacroEcosystemFaultFlags, SectorCapacity, out NativeArray<uint> faultFlags))
             {
                 return;
             }
@@ -464,8 +420,7 @@ namespace Hecton8.Ecosystem
             if (_jobScheduled)
                 return false;
 
-            NativeArray<MacroEcosystemTuningDTO> tuning = _tuningHandle.Resolve(vault);
-            if (!tuning.IsCreated || tuning.Length <= 0)
+            if (!TryOpenVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuMacroEcosystemTuning, 1, out NativeArray<MacroEcosystemTuningDTO> tuning))
                 return false;
 
             MacroEcosystemTuningDTO tuneBefore = tuning[0];
@@ -476,8 +431,8 @@ namespace Hecton8.Ecosystem
             if (!TryResolveSectorIndex(vault, hash, out int index))
                 return false;
 
-            NativeArray<EcosystemSectorDTO> front = _frontHandle.Resolve(vault);
-            if (!front.IsCreated || (uint)index >= (uint)front.Length)
+            if (!TryOpenVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuMacroEcosystemSectorFront, SectorCapacity, out NativeArray<EcosystemSectorDTO> front) ||
+                (uint)index >= (uint)front.Length)
                 return false;
 
             EcosystemSectorDTO sector = front[index];
@@ -501,8 +456,8 @@ namespace Hecton8.Ecosystem
         private bool TryResolveSectorIndex(IDataVault vault, ulong sectorHash, out int sectorIndex)
         {
             sectorIndex = -1;
-            NativeArray<EcosystemSectorIndexEntryDTO> entries = _indexEntryHandle.Resolve(vault);
-            if (!entries.IsCreated || entries.Length <= 0 || sectorHash == 0UL)
+            if (!TryOpenVaultBuffer(vault, ref _indexEntryHandle, BufferID.ShinobuMacroEcosystemIndexEntries, IndexCapacity, out NativeArray<EcosystemSectorIndexEntryDTO> entries) ||
+                sectorHash == 0UL)
                 return false;
 
             int slot = MacroEcosystemMath.ResolveOpenAddressSlot(sectorHash, entries.Length);
@@ -536,8 +491,7 @@ namespace Hecton8.Ecosystem
             if (_jobScheduled)
                 return false;
 
-            NativeArray<MacroEcosystemTuningDTO> tuning = _tuningHandle.Resolve(vault);
-            if (!tuning.IsCreated || tuning.Length <= 0)
+            if (!TryOpenVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuMacroEcosystemTuning, 1, out NativeArray<MacroEcosystemTuningDTO> tuning))
                 return false;
 
             MacroEcosystemTuningDTO tuneBefore = tuning[0];
@@ -548,8 +502,8 @@ namespace Hecton8.Ecosystem
             if (!TryResolveSectorIndex(vault, hash, out int index))
                 return false;
 
-            NativeArray<EcosystemSectorDTO> front = _frontHandle.Resolve(vault);
-            if (!front.IsCreated || (uint)index >= (uint)front.Length)
+            if (!TryOpenVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuMacroEcosystemSectorFront, SectorCapacity, out NativeArray<EcosystemSectorDTO> front) ||
+                (uint)index >= (uint)front.Length)
                 return false;
 
             EcosystemSectorDTO sector = front[index];
@@ -682,6 +636,18 @@ namespace Hecton8.Ecosystem
 
         private void CompleteScheduledJobForTeardown()
         {
+            // [BLOCKING_SYNC_POINT] Teardown cannot release Vault locks while the owner job may still write.
+            CompleteScheduledJobForTeardownOrVaultSwapBarrierBlocking();
+        }
+
+        private void CompleteScheduledJobForVaultSwapBarrier()
+        {
+            // [BLOCKING_SYNC_POINT] DataVault replacement cannot swap handles while the old writer job is active.
+            CompleteScheduledJobForTeardownOrVaultSwapBarrierBlocking();
+        }
+
+        private void CompleteScheduledJobForTeardownOrVaultSwapBarrierBlocking()
+        {
             if (!_jobScheduled)
                 return;
 
@@ -711,8 +677,7 @@ namespace Hecton8.Ecosystem
 
         private void ClearSnapshotWriteInFlight(IDataVault vault)
         {
-            NativeArray<MacroEcosystemTuningDTO> tuning = _tuningHandle.Resolve(vault);
-            if (!tuning.IsCreated || tuning.Length <= 0)
+            if (!TryOpenVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuMacroEcosystemTuning, 1, out NativeArray<MacroEcosystemTuningDTO> tuning))
                 return;
 
             MacroEcosystemTuningDTO value = tuning[0];
@@ -722,8 +687,8 @@ namespace Hecton8.Ecosystem
 
         private void PatchCompletedTelemetry(IDataVault vault, float solverMicros)
         {
-            NativeArray<MacroEcosystemTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            if (!telemetry.IsCreated || (uint)_lastTelemetrySlot >= (uint)telemetry.Length)
+            if (!TryOpenVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuMacroEcosystemTelemetryRing, TelemetryCapacity, out NativeArray<MacroEcosystemTelemetryEntry> telemetry) ||
+                (uint)_lastTelemetrySlot >= (uint)telemetry.Length)
                 return;
 
             MacroEcosystemTelemetryEntry entry = telemetry[_lastTelemetrySlot];
@@ -741,8 +706,7 @@ namespace Hecton8.Ecosystem
 
         private unsafe void DumpTelemetry(IDataVault vault)
         {
-            NativeArray<MacroEcosystemTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
+            if (!TryOpenVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuMacroEcosystemTelemetryRing, TelemetryCapacity, out NativeArray<MacroEcosystemTelemetryEntry> telemetry))
                 return;
 
             try
@@ -781,7 +745,7 @@ namespace Hecton8.Ecosystem
         private unsafe void TryLoadBiomeSpecsCsv()
         {
             IDataVault vault = _vault;
-            if (vault == null || !_csvScratchHandle.IsCreated || !_biomeSpecHandle.IsCreated)
+            if (vault == null)
                 return;
 
             string path = ResolveCsvPath();
@@ -792,11 +756,12 @@ namespace Hecton8.Ecosystem
             if (lastWriteUtc.Ticks == _csvTimestampTicks)
                 return;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(vault);
-            NativeArray<BiomeEcosystemSpecDTO> specs = _biomeSpecHandle.Resolve(vault);
-            NativeArray<MacroEcosystemCounterDTO> counters = _counterHandle.Resolve(vault);
-            if (!scratch.IsCreated || scratch.Length <= 0 || !specs.IsCreated)
+            if (!TryOpenVaultBuffer(vault, ref _csvScratchHandle, BufferID.ShinobuMacroEcosystemCsvScratch, CsvScratchBytes, out NativeArray<byte> scratch) ||
+                !TryOpenVaultBuffer(vault, ref _biomeSpecHandle, BufferID.ShinobuMacroEcosystemBiomeSpecs, BiomeSpecCapacity, out NativeArray<BiomeEcosystemSpecDTO> specs) ||
+                !TryOpenVaultBuffer(vault, ref _counterHandle, BufferID.ShinobuMacroEcosystemCounters, CounterCapacity, out NativeArray<MacroEcosystemCounterDTO> counters))
+            {
                 return;
+            }
 
             try
             {
@@ -843,6 +808,64 @@ namespace Hecton8.Ecosystem
         {
             float weight = HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, weight, math.isfinite(weight)));
+        }
+
+        private static bool OpenOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null)
+            {
+                buffer = default;
+                return false;
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.AIEcology,
+                options);
+            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            handle = default;
+            buffer = default;
+            return false;
+        }
+
+        private static bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsMatchingVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u;
         }
 
         private static void ResetVaultHandles()

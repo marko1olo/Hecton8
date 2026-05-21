@@ -36,7 +36,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Inventory Tab")]
-    public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable, IPDAEventListener, ILocalizationCorruptionVisualStateListener
+    public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable, IPDAEventListener, ILocalizationCorruptionVisualStateListener, IGlobalRegistryHotSwapListener
     {
         private static readonly char[] StackCountTemplateChars = "×{0}".ToCharArray();
         private static readonly char[] DetailWeightStackTemplateChars = "MASS: {0:0.0} kg  |  STACK x{1}  |  TOTAL {2:0.0} kg".ToCharArray();
@@ -256,6 +256,10 @@ namespace Hecton8.UI
 
         private bool _registeredToUpdateLoop;
         private Transform _dropOrigin;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private InputManager _nativeInputManager;
+        private IAudioService _audioService;
+        private bool _hotSwapRegistered;
 
         private bool IsTabActive =>
             isActiveAndEnabled &&
@@ -280,6 +284,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             AutoResolve();
             EnsureBuilt();
             Subscribe();
@@ -292,12 +298,15 @@ namespace Hecton8.UI
         {
             Unsubscribe();
             TryUnregisterTick();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
             Shader.SetGlobalVector(PdaInventoryParallaxId, Vector4.zero);
         }
 
         private void OnDestroy()
         {
             Unsubscribe();
+            TryUnregisterHotSwapListener();
             PDAEvents.AssertUnregistered(this, nameof(PDAInventoryTab));
             Shader.SetGlobalVector(PdaInventoryParallaxId, Vector4.zero);
         }
@@ -349,13 +358,67 @@ namespace Hecton8.UI
             _registeredToUpdateLoop = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                AutoResolve();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.NativeInputManagerRuntime ||
+                serviceSlot == GlobalRegistryServiceSlot.Input)
+            {
+                _nativeInputManager = currentService as InputManager ?? GlobalRegistry.NativeInputManager;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+                _audioService = currentService as IAudioService;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _nativeInputManager = GlobalRegistry.NativeInputManager;
+            _audioService = GlobalRegistry.Audio;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _playerRuntimeContext = null;
+            _nativeInputManager = null;
+            _audioService = null;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  AUTO-RESOLVE
         // ══════════════════════════════════════════════════════════
 
         private void AutoResolve()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (_dropOrigin == null && playerContext != null)
                 _dropOrigin = playerContext.PlayerCamera != null
                     ? playerContext.PlayerCamera.transform
@@ -412,7 +475,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            InputManager inputManager = _nativeInputManager;
             Vector2 pointerPosition = inputManager != null && inputManager.TryReadUiPoint(out Vector2 uiPoint)
                 ? uiPoint
                 : new Vector2(screenWidth * 0.5f, screenHeight * 0.5f);
@@ -2278,7 +2341,7 @@ namespace Hecton8.UI
         {
             if (clip == null) return;
 
-            var audio = Hecton8.Core.GlobalRegistry.Audio;
+            IAudioService audio = _audioService;
             if (audio != null)
                 audio.PlayStatic2D(clip, uiVolume);
         }

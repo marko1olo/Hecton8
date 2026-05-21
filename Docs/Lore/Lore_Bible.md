@@ -265,7 +265,7 @@ Depth language therefore maps as follows:
 - Deep Abyss 2500-4000 m: no unique depth-color promise. Use black water, sparse emissives, hostile oxygen pockets, and fauna vibration.
 - Thermal Fields 4000-5500 m: thermal palette and vent lighting carry the zone; depth palette remains saturated.
 
-Low tier keeps four snapped visual states. Middle tier may interpolate at slow cadence. High and Ultra can spend saved cycles on richer emissive accents, local fog texture, terminal glitch overlays, and scanner hue detail without changing lore truth.
+Minimum quality keeps four snapped visual states. Intermediate weights may interpolate at slow cadence. High and maximum quality can spend saved cycles on richer emissive accents, local fog texture, terminal glitch overlays, and scanner hue detail without changing lore truth.
 
 ## Inquisitor Audit Feed
 

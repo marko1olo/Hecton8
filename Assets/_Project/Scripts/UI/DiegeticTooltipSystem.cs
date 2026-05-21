@@ -1555,11 +1555,14 @@ namespace Hecton8.UI
             return matrix;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 96)]
         private struct TooltipGlyphInstance
         {
+            [FieldOffset(0)]
             public Matrix4x4 LocalToWorld;
+            [FieldOffset(64)]
             public Vector4 Tint;
+            [FieldOffset(80)]
             public Vector4 GlyphIndex;
         }
 

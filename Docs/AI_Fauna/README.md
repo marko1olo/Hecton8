@@ -63,7 +63,7 @@ Status: SOURCE-SCANNED, RUNTIME PENDING VERIFICATION.
 
 ### Navigation And Seams
 
-[REQ] Navigation must use A* over voxel/nav-grid data, then run funnel smoothing on the corridor. The smoother must respect Voxel SDF clearance and MapMagic seam boundaries before emitting steering points.
+[REQ] Navigation must use A* over voxel/nav-grid data, then run funnel smoothing on the corridor. The smoother must respect Voxel SDF clearance and terrain-page seam boundaries before emitting steering points.
 
 [REQ] The path system must store sector or AUP-relative positions, not raw long-distance world floats. Seam fixes must happen at graph or corridor level; physics raycast smoothing is not a scalable pathfinding replacement.
 
@@ -85,7 +85,7 @@ Status: SOURCE-SCANNED, RUNTIME PENDING VERIFICATION.
 
 [SOURCE] `EcosystemDirector.cs` sets whale-fall scavenger spawn pressure to 50x and acoustic lifetime to 7200 seconds. `MigrationDirector.cs` keeps blood-cloud POIs for 7200 game seconds, applies falloff-squared scavenger population pressure, and clamps whale-fall population multiplier to 50x. `SargassumMicroFaunaBoids.cs` renders whale-fall scavenger visuals through a 96-boid, 14 m ground-hugging ring when swarm LOD is Full.
 
-[REQ] Low-tier whale falls must remain honest fakes. If `SargassumMicroFaunaBoids` is not in Full LOD, the system must skip individual scavenger boid patching and rely on fear burst, acoustic POI, and `_DecayAmount` corpse crawl/bone reveal. Do not spawn crabs/eels as fallback GameObjects.
+[REQ] Minimum-budget whale falls must remain presentation fakes. If `SargassumMicroFaunaBoids` is not in Full LOD, the system must skip individual scavenger boid patching and rely on fear burst, acoustic POI, and `_DecayAmount` corpse crawl/bone reveal. Do not spawn crabs/eels as fallback GameObjects.
 
 [REQ] Food-chain GPU buffer edits must use `GraphicsBuffer.LockBufferForWrite` for single-boid consumed/scavenger patches. `BoidKillSignal` must stay a bounded native queue with an 8-signal drain cap. The 300-entry food-chain telemetry ring must dump `Docs/AgentLogs/Dump_ECOSYSTEM_FOOD_CHAIN.bin` on non-finite/anomaly state.
 
@@ -113,7 +113,7 @@ Status: SOURCE-SCANNED, RUNTIME PENDING VERIFICATION.
 
 [FAIL] Boids explode or vanish: check spatial grid cell size, bucket overflow rollback, ping-pong buffer parity, and validity masks before changing flock weights.
 
-[FAIL] Whale fall spawns no visible scavengers: check swarm LOD first. Low tier intentionally uses shader/acoustic fakes; Full LOD may patch up to 96 boids. Then verify AUP POI registration, source UID, MigrationDirector POI lifetime, and `LockBufferForWrite` patch path.
+[FAIL] Whale fall spawns no visible scavengers: check swarm LOD first. Minimum-quality weights intentionally use shader/acoustic fakes; maximum-quality weights may patch up to 96 boids. Then verify AUP POI registration, source UID, MigrationDirector POI lifetime, and `LockBufferForWrite` patch path.
 
 [FAIL] Path crosses a terrain seam: repair voxel/nav-grid seam metadata and rerun funnel smoothing. Do not patch it with per-agent physics raycasts.
 

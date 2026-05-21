@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using System.Collections.Generic;
@@ -515,10 +516,8 @@ namespace Hecton8.UI
 
             Vector3 cameraPosition = cameraTransform.position;
             Vector3 anchorPosition = anchor.position;
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);
-            AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
             double maxDistanceSq = (double)activeCameraDistanceMeters * activeCameraDistanceMeters;
-            if (AbsoluteUniversePosition.DistanceSq(in cameraAup, in anchorAup) > maxDistanceSq)
+            if (ResolveAupVisibilityDistanceSq(cameraPosition, anchorPosition) > maxDistanceSq)
                 return false;
 
             float3 toPda = (float3)(anchorPosition - cameraPosition);
@@ -536,6 +535,55 @@ namespace Hecton8.UI
                 return cameraForwardDot >= 0f || forwardDotSq <= distanceSq * frustumThresholdSq;
 
             return cameraForwardDot > 0f && forwardDotSq >= distanceSq * frustumThresholdSq;
+        }
+
+        private static double ResolveAupVisibilityDistanceSq(Vector3 cameraPosition, Vector3 anchorPosition)
+        {
+            if (!TryResolveAupFromRuntimeOrigin(cameraPosition, out AbsoluteUniversePosition cameraAup) ||
+                !TryResolveAupFromRuntimeOrigin(anchorPosition, out AbsoluteUniversePosition anchorAup))
+            {
+                return ResolveLocalDistanceSq(cameraPosition, anchorPosition);
+            }
+
+            return AbsoluteUniversePosition.DistanceSq(in cameraAup, in anchorAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return absoluteAup.IsFinite();
+        }
+
+        private static double ResolveLocalDistanceSq(Vector3 a, Vector3 b)
+        {
+            if (!float.IsFinite(a.x) ||
+                !float.IsFinite(a.y) ||
+                !float.IsFinite(a.z) ||
+                !float.IsFinite(b.x) ||
+                !float.IsFinite(b.y) ||
+                !float.IsFinite(b.z))
+            {
+                return double.MaxValue;
+            }
+
+            Vector3 delta = a - b;
+            return (double)delta.x * delta.x +
+                   (double)delta.y * delta.y +
+                   (double)delta.z * delta.z;
         }
 
         private Transform ResolveVisibilityAnchor()

@@ -103,12 +103,8 @@ Shader "Hecton8/Flora/ProceduralBio"
             float4 _HectonFloatingOffset;
             float4 _HectonFloraBiomeTint;
             float4 _HectonFloraBiomeTintParams;
-            float4 _BiolumMasterPhase;
-            float4 _BiolumIntensity;
             float4x4 _GlobalBiolumDearLieGroups;
             float4 _GlobalBiolumParams;
-            float4 _GlobalBiolumClock;
-            float4 _GlobalBiolumAupOffset;
 
             struct Attributes
             {
@@ -133,6 +129,7 @@ Shader "Hecton8/Flora/ProceduralBio"
                 half fogFactor : TEXCOORD4;
                 #if !defined(_MATH_LOD_LOW)
                 float seed : TEXCOORD5;
+                float3 biolumLocalAupCoord : TEXCOORD6;
                 #endif
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
@@ -258,22 +255,37 @@ Shader "Hecton8/Flora/ProceduralBio"
                 return lerp(half3(1.0h, 1.0h, 1.0h), tint, saturate(strength * globalStrength));
             }
 
-            half4 ResolveProceduralBioGlobalBiolum(float3 positionWS)
+            half3 ResolveProceduralBioBiolumGroupTint(int stateIndex)
             {
-                if (!all(isfinite(positionWS)))
+                half3 tint0 = half3(0.18h, 0.88h, 1.00h);
+                half3 tint1 = half3(0.32h, 1.00h, 0.62h);
+                half3 tint2 = half3(0.74h, 0.38h, 1.00h);
+                half3 tint3 = half3(1.00h, 0.72h, 0.32h);
+                half idx = (half)stateIndex;
+                half3 lowPair = lerp(tint0, tint1, step(0.5h, idx));
+                half3 highPair = lerp(tint2, tint3, step(2.5h, idx));
+                return lerp(lowPair, highPair, step(1.5h, idx));
+            }
+
+            half4 ResolveProceduralBioGlobalBiolum(float3 localAupCoord)
+            {
+                if (!all(isfinite(localAupCoord)))
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
                 float4 safeParams = all(isfinite(_GlobalBiolumParams)) ? _GlobalBiolumParams : float4(0.0, 0.0, 0.0, 0.0);
-                float4 safeAupOffset = all(isfinite(_GlobalBiolumAupOffset)) ? _GlobalBiolumAupOffset : float4(0.0, 0.0, 0.0, 0.0);
-                float safeClock = isfinite(_GlobalBiolumClock.x) ? _GlobalBiolumClock.x : 0.0;
+
                 int activeCount = min(max((int)floor(max(safeParams.x, 0.0)), 0), 4);
                 if (activeCount <= 0)
                     return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
-                float selector = frac(abs(positionWS.x * 0.037 + positionWS.z * 0.053 + safeAupOffset.x * 0.0013 + safeAupOffset.z * 0.0017));
+                float selector = frac(abs(localAupCoord.x * 0.037 + localAupCoord.z * 0.053));
                 int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
                 float4 stateRaw = _GlobalBiolumDearLieGroups[stateIndex];
                 float4 state = all(isfinite(stateRaw)) ? stateRaw : float4(0.0, 0.0, 0.0, 0.0);
+                const float invTwoPi = 0.159154943091895;
+                float frequency = max(abs(state.y), 0.0025);
+                float spatialPhase = dot(localAupCoord, float3(0.037, 0.021, 0.053)) + state.w;
+                half primaryPulse = (half)(1.0 - abs(frac(state.x * invTwoPi + spatialPhase * frequency) * 2.0 - 1.0));
                 half strobe = saturate((half)max(safeParams.z, 0.0));
                 half qualityCurve = saturate((half)max(safeParams.y, 0.0));
                 qualityCurve = qualityCurve * qualityCurve * (3.0h - 2.0h * qualityCurve);
@@ -282,32 +294,34 @@ Shader "Hecton8/Flora/ProceduralBio"
                     secondaryIndex = 0;
                 float4 secondaryStateRaw = _GlobalBiolumDearLieGroups[secondaryIndex];
                 float4 secondaryState = all(isfinite(secondaryStateRaw)) ? secondaryStateRaw : float4(0.0, 0.0, 0.0, 0.0);
+                float secondaryFrequency = max(abs(secondaryState.y), 0.0025);
+                float secondarySpatialPhase = dot(localAupCoord, float3(0.019, -0.013, 0.047)) + secondaryState.w;
+                half secondaryPulse = (half)(1.0 - abs(frac(secondaryState.x * invTwoPi + secondarySpatialPhase * secondaryFrequency) * 2.0 - 1.0));
                 half overdrive = 0.0h;
                 half godSpark = 0.0h;
                 half godHaze = 0.0h;
-                half overPulse = (half)(1.0 - abs(frac(safeClock * 0.07 + selector * 3.0) * 2.0 - 1.0));
-                half filament = (half)(1.0 - abs(frac(positionWS.x * 0.173 + positionWS.y * 0.097 + positionWS.z * 0.131 + safeClock * 0.23) * 2.0 - 1.0));
+                half overPulse = secondaryPulse;
+                half filament = (half)(1.0 - abs(frac(state.x * invTwoPi + dot(localAupCoord, float3(0.173, 0.097, 0.131)) * frequency + state.w) * 2.0 - 1.0));
                 godHaze = smoothstep(0.42h, 0.92h, overPulse) * (0.55h + filament * 0.45h) * qualityCurve;
                 godSpark = smoothstep(0.82h, 0.98h, filament) * overPulse * qualityCurve;
                 overdrive = saturate(overPulse * 0.35h + godSpark * 0.22h) * qualityCurve;
-                half3 color = lerp(saturate((half3)state.rgb), half3(1.0h, 1.0h, 1.0h), strobe);
-                half intensity = clamp(max((half)max(state.w, 0.0), strobe * 10.0h), 0.0h, 10.0h);
-                color = lerp(color, saturate((half3)secondaryState.rgb), overdrive);
+                half3 color = lerp(ResolveProceduralBioBiolumGroupTint(stateIndex), half3(1.0h, 1.0h, 1.0h), strobe);
+                half amplitude = (half)max(state.z, 0.0) * (0.62h + primaryPulse * 0.38h);
+                half secondaryAmplitude = (half)max(secondaryState.z, 0.0) * (0.58h + secondaryPulse * 0.42h);
+                half intensity = clamp(max(amplitude, strobe * 10.0h), 0.0h, 10.0h);
+                color = lerp(color, ResolveProceduralBioBiolumGroupTint(secondaryIndex), overdrive);
                 color = saturate(color + godHaze * half3(0.07h, 0.21h, 0.18h));
-                intensity = clamp(intensity + (half)max(secondaryState.w, 0.0) * overdrive + godSpark * 0.65h + godHaze * 0.32h, 0.0h, 10.0h);
+                intensity = clamp(intensity + secondaryAmplitude * overdrive + godSpark * 0.65h + godHaze * 0.32h, 0.0h, 10.0h);
                 return half4(color, intensity);
             }
 
-            half3 ResolveProceduralBioEmission(float3 positionWS, half height01, half mask)
+            half3 ResolveProceduralBioEmission(float3 localAupCoord, half height01, half mask)
             {
-                half4 globalState = ResolveProceduralBioGlobalBiolum(positionWS);
+                half4 globalState = ResolveProceduralBioGlobalBiolum(localAupCoord);
                 half hasGlobal = step(0.001h, globalState.w);
-                half master = max(max((half)_BiolumIntensity.x, 0.0h), globalState.w);
-                half phase = saturate((half)_BiolumMasterPhase.y);
-                half sharpMask = saturate((_BiolumPulseSharpness - 0.25h) * 0.12903225h);
-                half pulse = lerp(phase, phase * phase, sharpMask);
-                half seeded = (half)HectonProceduralBioHash13(positionWS * 0.03125 + height01);
-                half organicPulse = saturate(0.55h + seeded * 0.45h + pulse * 0.35h);
+                half master = globalState.w;
+                half seeded = (half)HectonProceduralBioHash13(localAupCoord * 0.03125 + height01);
+                half organicPulse = saturate(0.62h + seeded * 0.38h);
                 half3 emissionColor = lerp(_EmissionColor.rgb, globalState.rgb, hasGlobal);
                 half emissionEnergy = clamp(_EmissionStrength * master * organicPulse * mask * height01, 0.0h, 10.0h);
                 return emissionColor * emissionEnergy;
@@ -317,10 +331,8 @@ Shader "Hecton8/Flora/ProceduralBio"
             {
                 half4 globalState = ResolveProceduralBioGlobalBiolum(float3(0.0, 0.0, 0.0));
                 half hasGlobal = step(0.001h, globalState.w);
-                half master = max(max((half)_BiolumIntensity.x, 0.0h), globalState.w);
-                half phase = saturate((half)_BiolumMasterPhase.y);
-                half pulse = lerp(phase, phase * phase, 0.25h);
-                half cheapPulse = saturate(0.62h + pulse * 0.38h);
+                half master = globalState.w;
+                half cheapPulse = 0.82h;
                 half3 emissionColor = lerp(_EmissionColor.rgb, globalState.rgb, hasGlobal);
                 half emissionEnergy = clamp(_EmissionStrength * master * cheapPulse * mask * height01, 0.0h, 10.0h);
                 return emissionColor * emissionEnergy;
@@ -344,6 +356,7 @@ Shader "Hecton8/Flora/ProceduralBio"
                 output.positionWS = positionInputs.positionWS;
                 output.projectWS = ResolveProceduralBioProjectionPosition(positionInputs.positionWS);
                 output.seed = ResolveProceduralBioInstanceSeed();
+                output.biolumLocalAupCoord = positionInputs.positionWS - TransformObjectToWorld(float3(0.0, 0.0, 0.0));
                 output.viewDirWS = HectonProceduralBioNormalizeRsqrt(GetWorldSpaceViewDir(positionInputs.positionWS));
                 #endif
                 output.normalWS = HectonProceduralBioNormalizeRsqrt(normalInputs.normalWS);
@@ -417,7 +430,7 @@ Shader "Hecton8/Flora/ProceduralBio"
 
                 half rim = (half)HectonCoreLitFastPower01(1.0h - saturate(dot(normalWS, viewDirWS)), 3.0) * _RimStrength;
                 half3 subsurface = _TipTint.rgb * ((1.0h - NdotL) * _SubsurfaceStrength * height01 * mainLightAttenuation);
-                half3 emission = ResolveProceduralBioEmission(input.projectWS, height01, emissionMask);
+                half3 emission = ResolveProceduralBioEmission(input.biolumLocalAupCoord, height01, emissionMask);
 
                 half3 color = diffuse + specular + subsurface + _TipTint.rgb * rim + emission;
                 color = MixFog(color, input.fogFactor);

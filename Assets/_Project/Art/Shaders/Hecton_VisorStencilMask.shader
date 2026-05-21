@@ -3,7 +3,7 @@ Shader "Hecton8/Visor/StencilMask"
     Properties
     {
         _StencilRef ("Stencil Ref", Float) = 1
-        _StencilWriteMask ("Stencil Write Mask", Float) = 255
+        _StencilWriteMask ("Stencil Write Mask", Float) = 1
     }
 
     SubShader
@@ -16,7 +16,7 @@ Shader "Hecton8/Visor/StencilMask"
             "IgnoreProjector" = "True"
         }
 
-        Cull Front
+        Cull Off
         ZWrite Off
         ZTest LEqual
         ColorMask 0

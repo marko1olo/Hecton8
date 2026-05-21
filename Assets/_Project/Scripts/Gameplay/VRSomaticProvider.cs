@@ -521,9 +521,14 @@ namespace Hecton8.Gameplay
             }
 
             headRotation = sanitizedHeadRotation;
-            AbsoluteUniversePosition headAup = HectonXRRuntimeState.TryResolveCachedHeadAup(headPosition, out AbsoluteUniversePosition cachedHeadAup)
-                ? cachedHeadAup
-                : AbsoluteUniversePosition.FromRuntimePosition(headPosition);
+            if (!TryResolveXrCachedHeadAup(headPosition, out AbsoluteUniversePosition headAup) &&
+                !TryResolveRuntimeAup(headPosition, out headAup))
+            {
+                RecordBlackBoxFrame(headPosition, headRotation, BlackBoxFlagNonFinite);
+                ApplyInactiveState(safeDeltaTime);
+                RefreshLateFrameRegistration();
+                return;
+            }
             ResetHeadMotionIfAupShifted(headPosition, headRotation);
             UpdateHeadMotion(headPosition, headRotation, safeDeltaTime);
             UpdateKccAngularComfortState(safeDeltaTime);
@@ -2719,6 +2724,50 @@ namespace Hecton8.Gameplay
             return result;
         }
 
+        private static bool TryResolveXrCachedHeadAup(Vector3 runtimePosition, out AbsoluteUniversePosition headAup)
+        {
+            if (HectonXRRuntimeState.TryResolveCachedHeadAupFields(
+                    runtimePosition,
+                    out long gridX,
+                    out long gridY,
+                    out long gridZ,
+                    out float localX,
+                    out float localY,
+                    out float localZ))
+            {
+                headAup = new AbsoluteUniversePosition
+                {
+                    GridX = gridX,
+                    GridY = gridY,
+                    GridZ = gridZ,
+                    LocalX = localX,
+                    LocalY = localY,
+                    LocalZ = localZ
+                };
+                return true;
+            }
+
+            headAup = default;
+            return false;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
+        }
+
         private static void NormalizeAupLocalAxis(ref long grid, ref float local)
         {
             if (local >= 0f && local < AupCellSizeMeters)
@@ -2854,7 +2903,6 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
         private struct VRSomaticRootSyncJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<VRSomaticRootSyncInput> Input;
@@ -2935,7 +2983,6 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
         private struct VRSomaticHandKinematicsJob : IJobParallelFor
         {
             public float DeltaTime;
@@ -3013,7 +3060,6 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
         private struct BuildHeadCapsulecastCommandsJob : IJobParallelFor
         {
             public float3 HeadPosition;
@@ -3058,7 +3104,6 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
         private struct ProcessHeadCapsulecastHitsJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<RaycastHit> Hits;

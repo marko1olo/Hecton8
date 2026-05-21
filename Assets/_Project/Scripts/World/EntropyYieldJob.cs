@@ -7,73 +7,79 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct DestroyedOrganicEvent
     {
-        public float3 Position;
-        public float3 NavObstacleCenter;
-        public float3 NavObstacleExtents;
-        public float ToolPower;
-        public float ParentMassKg;
-        public float Damage01;
-        public uint InstanceUid;
-        public int TemplateIndex;
-        public int MaterialClassId;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 NavObstacleCenter;
+        [FieldOffset(24)] public float3 NavObstacleExtents;
+        [FieldOffset(36)] public float ToolPower;
+        [FieldOffset(40)] public float ParentMassKg;
+        [FieldOffset(44)] public float Damage01;
+        [FieldOffset(48)] public uint InstanceUid;
+        [FieldOffset(52)] public int TemplateIndex;
+        [FieldOffset(56)] public int MaterialClassId;
+        [FieldOffset(60)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct ItemDropData
     {
-        public float3 Position;
-        public int ItemHashId;
-        public ushort Quantity;
-        public half QualityFactor;
-        public byte MaterialClassId;
-        public byte RarityTier;
-        public ushort Reserved0;
-        public uint SourceInstanceUid;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public int ItemHashId;
+        [FieldOffset(16)] public ushort Quantity;
+        [FieldOffset(18)] public half QualityFactor;
+        [FieldOffset(20)] public byte MaterialClassId;
+        [FieldOffset(21)] public byte RarityTier;
+        [FieldOffset(22)] public ushort Reserved0;
+        [FieldOffset(24)] public uint SourceInstanceUid;
+        [FieldOffset(28)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct EntropyYieldMaterialLutEntry
     {
-        public float DensityKgPerM3;
-        public float UnitItemMassKg;
-        public float MinimumRecovery;
-        public float QualityBias;
+        [FieldOffset(0)] public float DensityKgPerM3;
+        [FieldOffset(4)] public float UnitItemMassKg;
+        [FieldOffset(8)] public float MinimumRecovery;
+        [FieldOffset(12)] public float QualityBias;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct FractionalDrillingYieldSample
     {
-        public float3 Position;
-        public float ToolPower;
-        public float NodeHardness;
-        public float DeltaSeconds;
-        public float UnitItemMassKg;
-        public float FractionalMassRemainderKg;
-        public int ItemHashId;
-        public uint SourceInstanceUid;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float ToolPower;
+        [FieldOffset(16)] public float NodeHardness;
+        [FieldOffset(20)] public float DeltaSeconds;
+        [FieldOffset(24)] public float UnitItemMassKg;
+        [FieldOffset(28)] public float FractionalMassRemainderKg;
+        [FieldOffset(32)] public int ItemHashId;
+        [FieldOffset(36)] public uint SourceInstanceUid;
+        [FieldOffset(40)] private ulong _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct FractionalDrillingYieldResult
     {
-        public float3 Position;
-        public float FractionalMassRemainderKg;
-        public int WholeItemCount;
-        public int ItemHashId;
-        public uint SourceInstanceUid;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float FractionalMassRemainderKg;
+        [FieldOffset(16)] public int WholeItemCount;
+        [FieldOffset(20)] public int ItemHashId;
+        [FieldOffset(24)] public uint SourceInstanceUid;
+        [FieldOffset(28)] private uint _pad0;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct FractionalDrillingYieldJob : IJobParallelFor
     {
         private const int GramsPerKilogram = 1000;
         private const float KilogramsPerGram = 0.001f;
 
-        [ReadOnly] public NativeArray<FractionalDrillingYieldSample> Samples;
-        public NativeArray<FractionalDrillingYieldResult> Results;
+        [NoAlias] [ReadOnly] public NativeArray<FractionalDrillingYieldSample> Samples;
+        [NoAlias] public NativeArray<FractionalDrillingYieldResult> Results;
         public int SampleCount;
 
         public void Execute(int index)
@@ -126,13 +132,13 @@ namespace Hecton8.World
     /// <summary>
     /// Burst deterministic flora yield generation. One stack-oriented drop record per destroyed instance.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct EntropyYieldJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<DestroyedOrganicEvent> Events;
-        [ReadOnly] public NativeArray<HarvestableTemplate.RuntimeDescriptor> TemplateDescriptors;
-        [ReadOnly] public NativeArray<HarvestableTemplate.LootRuntimeEntry> LootEntries;
-        [ReadOnly] public NativeArray<EntropyYieldMaterialLutEntry> MaterialLut;
+        [NoAlias] [ReadOnly] public NativeArray<DestroyedOrganicEvent> Events;
+        [NoAlias] [ReadOnly] public NativeArray<HarvestableTemplate.RuntimeDescriptor> TemplateDescriptors;
+        [NoAlias] [ReadOnly] public NativeArray<HarvestableTemplate.LootRuntimeEntry> LootEntries;
+        [NoAlias] [ReadOnly] public NativeArray<EntropyYieldMaterialLutEntry> MaterialLut;
         public NativeQueue<ItemDropData>.ParallelWriter DropWriter;
         public int EventCount;
 

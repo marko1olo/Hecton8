@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -8,15 +10,15 @@ namespace Hecton8.World
     /// <summary>
     /// Burst terrain seed job used by the editor erosion harness.
     /// </summary>
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ErosionFractalHeightmapJob : IJobParallelFor
     {
         /// <summary>Unmodified source height output.</summary>
-        [WriteOnly]
+        [WriteOnly, NoAlias]
         public NativeArray<float> Before;
 
         /// <summary>Mutable erosion input height output.</summary>
-        [WriteOnly]
+        [WriteOnly, NoAlias]
         public NativeArray<float> Height;
 
         /// <summary>Square heightmap resolution.</summary>
@@ -95,56 +97,69 @@ namespace Hecton8.World
     /// <summary>
     /// Blittable erosion smoke-test metrics.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct ErosionSmokeMetrics
     {
         /// <summary>Minimum source height.</summary>
+        [FieldOffset(0)]
         public float MinBefore;
 
         /// <summary>Maximum source height.</summary>
+        [FieldOffset(4)]
         public float MaxBefore;
 
         /// <summary>Minimum final height.</summary>
+        [FieldOffset(8)]
         public float MinAfter;
 
         /// <summary>Maximum final height.</summary>
+        [FieldOffset(12)]
         public float MaxAfter;
 
         /// <summary>Maximum normalized sediment accumulator before PNG normalization.</summary>
+        [FieldOffset(16)]
         public float MaxSediment;
 
         /// <summary>Maximum normalized wear accumulator before PNG normalization.</summary>
+        [FieldOffset(20)]
         public float MaxWear;
 
         /// <summary>Mean absolute height delta.</summary>
+        [FieldOffset(24)]
         public float MeanAbsoluteDelta;
 
         /// <summary>Cells with measurable height change.</summary>
+        [FieldOffset(28)]
         public int ChangedCellCount;
 
         /// <summary>Cells containing non-finite values in any sampled field.</summary>
+        [FieldOffset(32)]
         public int NonFiniteCellCount;
+
+        [FieldOffset(36)]
+        public int _pad0;
     }
 
     /// <summary>
     /// Burst reduction job for editor erosion smoke-test metrics.
     /// </summary>
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ErosionSmokeMetricsJob : IJob
     {
         /// <summary>Original heightmap.</summary>
-        [ReadOnly] public NativeArray<float> Before;
+        [ReadOnly, NoAlias] public NativeArray<float> Before;
 
         /// <summary>Eroded heightmap.</summary>
-        [ReadOnly] public NativeArray<float> After;
+        [ReadOnly, NoAlias] public NativeArray<float> After;
 
         /// <summary>Sediment mask accumulator.</summary>
-        [ReadOnly] public NativeArray<float> Sediment;
+        [ReadOnly, NoAlias] public NativeArray<float> Sediment;
 
         /// <summary>Wear mask accumulator.</summary>
-        [ReadOnly] public NativeArray<float> Wear;
+        [ReadOnly, NoAlias] public NativeArray<float> Wear;
 
         /// <summary>Single output metrics slot.</summary>
-        [WriteOnly]
+        [WriteOnly, NoAlias]
         public NativeArray<ErosionSmokeMetrics> Metrics;
 
         /// <inheritdoc />

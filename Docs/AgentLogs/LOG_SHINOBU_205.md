@@ -1601,3 +1601,2854 @@ Verification:
     <DEAR_LIE_CONFIRMATION>Heavy alternative rejected: meteor Navier-Stokes/splash particle storm, full acoustic propagation, and physical cave-collapse simulation. Actual route keeps O(1) owner-relative AUP proofs around existing O(n capped) overlap/voxel fake. Before fake: implicit runtime bridge could corrupt event payloads. After fake: explicit AUP proof plus bounded visual/event work.</DEAR_LIE_CONFIRMATION>
   </SELF_AUDIT>
 </LOOP_37_AUP_PRECISION_REPORT>
+
+<LOOP_38_AUP_PRECISION_REPORT agent_id="SHINOBU_205" date="2026-05-20" verification_state="STATIC_PASS_UNITY_PENDING">
+  <WHAT_WAS_WRONG>
+    `HectonPlayerMovement.cs` still contained hidden runtime-to-AUP bridge calls in brine offset sampling, fluid density publication, no-clip valid-position caching, transport platform/body carrier handoff, surface breach splash, wet-lens/water-transition publication, scrape acoustic ping, and heavy-brine sink sampling.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Player-owned movement boundaries now resolve AUP from `_playerState.AbsolutePosition` plus finite runtime deltas. Brine Y shift is derived from player AUP absolute Y and finite runtime Y. Transport carrier body AUP derives from cached transport platform AUP plus a local delta. Water, visor, scrape, and fluid-density signals fail closed when the player AUP route is invalid.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS_USED>
+    Brine, wet lens, and surface splash remain bounded shader/feedback fakes. Heavy alternatives rejected: full water physics, full brine volume reconstruction, and transport/KCC public contract rewrite.
+  </CINEMATIC_CHEATS_USED>
+  <MICROSECONDS_SAVED>
+    0 runtime us claimed. Static hidden bridge debt dropped 367 -> 359 globally and `HectonPlayerMovement.cs` direct bridge grep returned zero raw bridge calls. The value is player movement and water-feedback origin-shift correctness.
+  </MICROSECONDS_SAVED>
+  <STATIC_PROOF>
+    <Gate command="python Tools\AupPrecisionGate_SHINOBU_205.py" result="PASS_STATIC_GATE" filesScanned="2027" directAupFloat3CastCount="0" runtimeComponentFloatAupCastCount="0" editorComponentFloatAupCastReviewCount="0" strictTransformAuthorityReadCount="0" floatDistanceReviewCount="0" transformDistanceReviewCount="0" runtimeAupBridgeReviewCount="359" broadTransformPositionReviewCount="936" />
+    <SelfTest command="python Tools\TestAupPrecisionGate_SHINOBU_205.py" result="PASS" />
+    <PyCompile command="python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py" result="PASS" />
+    <MovementBridgeGrep command="rg FromRuntimePosition/ToAbsoluteUniversePositionDouble3/CurrentTotalOffsetDouble HectonPlayerMovement.cs" result="NO_DIRECT_BRIDGE_REMAINS" />
+    <DiffCheck command="git diff --check -- HectonPlayerMovement.cs SHINOBU reports" result="PASS_WARN_LF_CRLF_ONLY" />
+    <Build command="dotnet build" result="SKIPPED_BY_REBUILD_DISCIPLINE" />
+  </STATIC_PROOF>
+  <SELF_AUDIT agent="SHINOBU_205" role="AUP_PRECISION_INSPECTOR" task_count="20" state="STATIC_PASS_UNITY_PENDING">
+    <TASK_RECONCILIATION>
+      <Task id="01" result="[PASS]">Direct AUP/double3 float3 casts remain 0.</Task>
+      <Task id="02" result="[PASS]">Strict Transform.position authority blockers remain 0; player movement runtime bridges now use owner-relative AUP routes.</Task>
+      <Task id="03" result="[PASS]">No hot native DTO property or auto-property added.</Task>
+      <Task id="04" result="[PASS]">No runtime DTO layout changed; no Pack=1 introduced.</Task>
+      <Task id="05" result="[PASS]">Mock edge AUP tooling unchanged.</Task>
+      <Task id="06" result="[PASS]">Player water/transport/brine coordinates subtract finite runtime deltas before AUP-backed publication or caching.</Task>
+      <Task id="07" result="[PASS]">Sector hash conversion unchanged.</Task>
+      <Task id="08" result="[PASS]">Brine, wet lens, and surface splash remain visual fakes, not full physical simulation.</Task>
+      <Task id="09" result="[PASS]">No float-first AUP distance path added.</Task>
+      <Task id="10" result="[PASS]">No binary quality switch added; existing brine/water/transport cadence and cooldown budgets remain scalability surfaces.</Task>
+      <Task id="11" result="[PASS]">No unguarded division/rsqrt added; helper finite-gates player AUP and runtime vectors.</Task>
+      <Task id="12" result="[PASS]">Kinematic AUP accumulation unchanged.</Task>
+      <Task id="13" result="[PASS]">Rollback DTO layout unchanged.</Task>
+      <Task id="14" result="[PASS]">No allocation, MemClear, or private native container added.</Task>
+      <Task id="15" result="[PASS]">Telemetry/report route updated through scanner artifacts.</Task>
+      <Task id="16" result="[PASS]">Editor X-Ray unchanged.</Task>
+      <Task id="17" result="[PASS]">CSV parser unchanged.</Task>
+      <Task id="18" result="[PASS]">Debug gizmo unchanged.</Task>
+      <Task id="19" result="[PASS]">Static validator confirms hard gate pass and runtime bridge review count 359.</Task>
+      <Task id="20" result="[PASS_STATIC_ONLY]">Rationale/status/log updated; Unity/Burst/profiler proof pending.</Task>
+    </TASK_RECONCILIATION>
+    <STRUCT_LAYOUT_VERIFICATION>No primary runtime DTO layout changed in Loop 38. Player movement state, water signal payloads, transport cached state, and native movement buffers were not expanded. Field offsets, padding, queue payload size, and native buffer strides are unchanged. No Pack=1 or new sequential native DTO was introduced.</STRUCT_LAYOUT_VERIFICATION>
+    <SCALABILITY_CURVE>Below `GlobalQualityWeight` 0.3, existing brine shader globals, wet-lens cooldowns, compressed water transition signals, no-clip failsafe cadence, and transport smoothing budgets remain the load-shed surfaces. High/Ultra tiers can spend budget on richer droplets, brine feedback, splash visuals, scrape audio, and transport polish while the AUP truth route stays exact.</SCALABILITY_CURVE>
+    <H_PHI_VAULT_STATUS private_native_arrays="0">No new Vault IDs, no private `NativeArray`, no `NativeList`, no `NativeHashMap`, and no persistent native ownership added. Existing movement state storage was not moved or resized.</H_PHI_VAULT_STATUS>
+    <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No Burst jobs or JobHandle edges changed. Player movement scheduling and existing native buffers keep their current dispatch; no `[NoAlias]` surface changed.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <COMPILE_GUARD>No asmdef edited; no sibling runtime assembly reference added. The patch uses existing player state and Core contract AUP APIs already in the file.</COMPILE_GUARD>
+    <DEAR_LIE_CONFIRMATION>Heavy alternative rejected: full brine/water simulation, full splash physics, and KCC/transport API rewrite. Actual route keeps O(1) player-state-relative AUP proof at boundaries plus existing bounded shader/feedback fakes. Before fake: implicit runtime bridge could corrupt water/transport payloads. After fake: explicit AUP proof plus bounded visual/event work.</DEAR_LIE_CONFIRMATION>
+  </SELF_AUDIT>
+</LOOP_38_AUP_PRECISION_REPORT>
+
+<LOOP_39_AUP_PRECISION_REPORT agent_id="SHINOBU_205" date="2026-05-20" verification_state="STATIC_PASS_UNITY_PENDING">
+  <WHAT_WAS_WRONG>
+    `TetherInstance.cs` still contained eight hidden runtime-to-AUP bridge calls in tension creak impact, tether tension signal, snap impact, endpoint force packet handoff, and tether snapped signal publication.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Tether signal and force packet boundaries now resolve runtime midpoint, anchor, payload, and snap positions through finite current-origin AUP proof. Endpoint force packets capture the runtime origin AUP once and derive both endpoint absolute double AUPs from that same origin before flushing to the physics bridge.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS_USED>
+    Tether remains a bounded Verlet solver plus low-tier taut-line visual fake. Heavy alternatives rejected: full cable-fluid simulation, force packet ABI expansion, and broad physics/tether solver rewrite.
+  </CINEMATIC_CHEATS_USED>
+  <MICROSECONDS_SAVED>
+    0 runtime us claimed. Static hidden bridge debt dropped 359 -> 351 globally and `TetherInstance.cs` direct bridge grep returned zero raw bridge calls. The value is tether signal/force origin-shift correctness.
+  </MICROSECONDS_SAVED>
+  <STATIC_PROOF>
+    <Gate command="python Tools\AupPrecisionGate_SHINOBU_205.py" result="PASS_STATIC_GATE" filesScanned="2027" directAupFloat3CastCount="0" runtimeComponentFloatAupCastCount="0" editorComponentFloatAupCastReviewCount="0" strictTransformAuthorityReadCount="0" floatDistanceReviewCount="0" transformDistanceReviewCount="0" runtimeAupBridgeReviewCount="351" broadTransformPositionReviewCount="936" />
+    <SelfTest command="python Tools\TestAupPrecisionGate_SHINOBU_205.py" result="PASS" />
+    <PyCompile command="python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py" result="PASS" />
+    <TetherBridgeGrep command="rg FromRuntimePosition/ToAbsoluteUniversePositionDouble3/CurrentTotalOffsetDouble TetherInstance.cs" result="NO_DIRECT_BRIDGE_REMAINS" />
+    <DiffCheck command="git diff --check -- TetherInstance.cs SHINOBU reports" result="PASS_WARN_LF_CRLF_ONLY" />
+    <Build command="dotnet build" result="SKIPPED_BY_REBUILD_DISCIPLINE" />
+  </STATIC_PROOF>
+  <SELF_AUDIT agent="SHINOBU_205" role="AUP_PRECISION_INSPECTOR" task_count="20" state="STATIC_PASS_UNITY_PENDING">
+    <TASK_RECONCILIATION>
+      <Task id="01" result="[PASS]">Direct AUP/double3 float3 casts remain 0.</Task>
+      <Task id="02" result="[PASS]">Strict Transform.position authority blockers remain 0; tether signal/force runtime bridges now use explicit current-origin AUP routes.</Task>
+      <Task id="03" result="[PASS]">No hot native DTO property or auto-property added.</Task>
+      <Task id="04" result="[PASS]">No runtime DTO layout changed; no Pack=1 introduced.</Task>
+      <Task id="05" result="[PASS]">Mock edge AUP tooling unchanged.</Task>
+      <Task id="06" result="[PASS]">Tether midpoint, anchor, payload, and snap coordinates resolve through double AUP offset before signal/force handoff.</Task>
+      <Task id="07" result="[PASS]">Sector hash conversion unchanged.</Task>
+      <Task id="08" result="[PASS]">Tether remains Verlet plus taut-line visual fake, not full cable-fluid simulation.</Task>
+      <Task id="09" result="[PASS]">No float-first AUP distance path added.</Task>
+      <Task id="10" result="[PASS]">No binary quality switch added; existing iteration/segment counts and visual fake thresholds remain scalability surfaces.</Task>
+      <Task id="11" result="[PASS]">No unguarded division/rsqrt added; helper finite-gates runtime vectors and origin AUP.</Task>
+      <Task id="12" result="[PASS]">Kinematic AUP accumulation unchanged.</Task>
+      <Task id="13" result="[PASS]">Rollback DTO layout unchanged.</Task>
+      <Task id="14" result="[PASS]">No allocation, MemClear, or private native container added.</Task>
+      <Task id="15" result="[PASS]">Telemetry/report route updated through scanner artifacts.</Task>
+      <Task id="16" result="[PASS]">Editor X-Ray unchanged.</Task>
+      <Task id="17" result="[PASS]">CSV parser unchanged.</Task>
+      <Task id="18" result="[PASS]">Debug gizmo unchanged.</Task>
+      <Task id="19" result="[PASS]">Static validator confirms hard gate pass and runtime bridge review count 351.</Task>
+      <Task id="20" result="[PASS_STATIC_ONLY]">Rationale/status/log updated; Unity/Burst/profiler proof pending.</Task>
+    </TASK_RECONCILIATION>
+    <STRUCT_LAYOUT_VERIFICATION>No primary runtime DTO layout changed in Loop 39. `TetherForcePacketDTO` remains 64 bytes with `double3 ApplicationAUP` at offset 0, `float3 Force` at 24, scalar fields at 36..52, and 8 bytes padding at 56..63. `TetherEndpointAupDTO` remains 64 bytes with `double3` fields at offsets 0 and 24. No Pack=1 or new sequential native DTO was introduced.</STRUCT_LAYOUT_VERIFICATION>
+    <SCALABILITY_CURVE>Below `GlobalQualityWeight` 0.3, existing low-tier Verlet iteration count, taut-line visual fake, capped visual segment count, tension creak cooldown, and bounded force packet bridge remain the load-shed surfaces. High/Ultra tiers can spend budget on more Verlet iterations, segment stress detail, reactive VFX, and smoother tether visuals while the AUP truth route stays exact.</SCALABILITY_CURVE>
+    <H_PHI_VAULT_STATUS private_native_arrays="0">No new Vault IDs, no private `NativeArray`, no `NativeList`, no `NativeHashMap`, and no persistent native ownership added. Existing tether Vault handles and native solver buffers were not moved or resized.</H_PHI_VAULT_STATUS>
+    <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No Burst jobs or JobHandle edges changed. Tether Verlet integration/constraint/telemetry jobs keep their current dependencies and native buffers; no `[NoAlias]` surface changed.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <COMPILE_GUARD>No asmdef edited; no sibling runtime assembly reference added. The patch uses existing Core contract signal APIs already referenced by the file.</COMPILE_GUARD>
+    <DEAR_LIE_CONFIRMATION>Heavy alternative rejected: full cable-fluid simulation and physics solver rewrite. Actual route keeps O(1) current-origin AUP proof at signal/force boundaries plus the existing bounded Verlet/taut-line visual fake. Before fake: implicit runtime bridge could corrupt signal and force AUP payloads. After fake: explicit AUP proof plus bounded visual/physics work.</DEAR_LIE_CONFIRMATION>
+  </SELF_AUDIT>
+</LOOP_39_AUP_PRECISION_REPORT>
+
+<LOOP_40_AUP_PRECISION_REPORT agent_id="SHINOBU_205" date="2026-05-20" verification_state="STATIC_PASS_UNITY_PENDING">
+  <WHAT_WAS_WRONG>
+    `WorldGenerativeGeologyTerrainSeamApplier.cs` still contained hidden runtime-to-AUP bridges in terrain absolute position resolution, plan fallback localization, voxel modified cell bounds, plan patching, trench patching, and terrain/trench rect construction.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Terrain runtime positions now resolve through finite current-origin AUP helpers. Plan fallback positions derive from terrain AUP plus finite terrain-local runtime deltas. Voxel modified cell bounds now compute min/max in double and quantize through safe floor/ceil helpers rather than float-narrowing origin offsets.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS_USED>
+    Terrain seam work remains bounded by seam quality weights, scratch buffers, and visual-only low-tier path. Heavy alternatives rejected: full terrain/voxel contract rewrite and mandatory AUP expansion for every legacy seam plan.
+  </CINEMATIC_CHEATS_USED>
+  <MICROSECONDS_SAVED>
+    0 runtime us claimed. Static hidden bridge debt dropped 351 -> 343 globally and `WorldGenerativeGeologyTerrainSeamApplier.cs` direct bridge grep returned zero raw bridge calls. The value is terrain/voxel cell stability at extreme AUP.
+  </MICROSECONDS_SAVED>
+  <STATIC_PROOF>
+    <Gate command="python Tools\AupPrecisionGate_SHINOBU_205.py" result="PASS_STATIC_GATE" filesScanned="2027" directAupFloat3CastCount="0" runtimeComponentFloatAupCastCount="0" editorComponentFloatAupCastReviewCount="0" strictTransformAuthorityReadCount="0" floatDistanceReviewCount="0" transformDistanceReviewCount="0" runtimeAupBridgeReviewCount="343" broadTransformPositionReviewCount="936" />
+    <SelfTest command="python Tools\TestAupPrecisionGate_SHINOBU_205.py" result="PASS" />
+    <PyCompile command="python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py" result="PASS" />
+    <TerrainSeamBridgeGrep command="rg FromRuntimePosition/ToAbsoluteUniversePositionDouble3/CurrentTotalOffsetDouble WorldGenerativeGeologyTerrainSeamApplier.cs" result="NO_DIRECT_BRIDGE_REMAINS" />
+    <DiffCheck command="git diff --check -- WorldGenerativeGeologyTerrainSeamApplier.cs SHINOBU reports" result="PASS_WARN_LF_CRLF_ONLY" />
+    <Build command="dotnet build" result="SKIPPED_BY_REBUILD_DISCIPLINE" />
+  </STATIC_PROOF>
+  <SELF_AUDIT agent="SHINOBU_205" role="AUP_PRECISION_INSPECTOR" task_count="20" state="STATIC_PASS_UNITY_PENDING">
+    <TASK_RECONCILIATION>
+      <Task id="01" result="[PASS]">Direct AUP/double3 float3 casts remain 0.</Task>
+      <Task id="02" result="[PASS]">Strict Transform.position authority blockers remain 0; terrain seam runtime bridges now use explicit current-origin or terrain-relative AUP routes.</Task>
+      <Task id="03" result="[PASS]">No hot native DTO property or auto-property added.</Task>
+      <Task id="04" result="[PASS]">No runtime DTO layout changed; no Pack=1 introduced.</Task>
+      <Task id="05" result="[PASS]">Mock edge AUP tooling unchanged.</Task>
+      <Task id="06" result="[PASS]">Terrain seam positions resolve in double before local float patch math or voxel cell quantization.</Task>
+      <Task id="07" result="[PASS]">Sector hash conversion unchanged.</Task>
+      <Task id="08" result="[PASS]">Terrain seam path remains bounded hybrid projection/visual fake, not a full terrain physics rewrite.</Task>
+      <Task id="09" result="[PASS]">No float-first AUP distance path added; voxel cells now quantize from double.</Task>
+      <Task id="10" result="[PASS]">No binary quality switch added; seam expensive-weight and mask-detail weights remain continuous scalability surfaces.</Task>
+      <Task id="11" result="[PASS]">No unguarded division/rsqrt added; helper finite-gates runtime vectors, origin AUP, and double cell bounds.</Task>
+      <Task id="12" result="[PASS]">Kinematic AUP accumulation unchanged.</Task>
+      <Task id="13" result="[PASS]">Rollback DTO layout unchanged.</Task>
+      <Task id="14" result="[PASS]">No allocation, MemClear, or private native container added.</Task>
+      <Task id="15" result="[PASS]">Telemetry/report route updated through scanner artifacts.</Task>
+      <Task id="16" result="[PASS]">Editor X-Ray unchanged.</Task>
+      <Task id="17" result="[PASS]">CSV parser unchanged.</Task>
+      <Task id="18" result="[PASS]">Debug gizmo unchanged.</Task>
+      <Task id="19" result="[PASS]">Static validator confirms hard gate pass and runtime bridge review count 343.</Task>
+      <Task id="20" result="[PASS_STATIC_ONLY]">Rationale/status/log updated; Unity/Burst/profiler proof pending.</Task>
+    </TASK_RECONCILIATION>
+    <STRUCT_LAYOUT_VERIFICATION>No primary runtime DTO layout changed in Loop 40. `TerrainSeamTelemetryEntry` remains 64 bytes: uint/scalar fields at offsets 0..60 with no new fields. Hybrid terrain native job DTOs and Vault buffers were not expanded. No Pack=1 or new sequential native DTO was introduced.</STRUCT_LAYOUT_VERIFICATION>
+    <SCALABILITY_CURVE>Below `GlobalQualityWeight` 0.3, existing seam expensive-weight collapse, low-tier visual-only path, scratch buffer caps, chunk drain budget, and mask-detail weighting remain the load-shed surfaces. High/Ultra tiers can spend budget on hybrid mask detail, seam sampling, trench polish, and terrain blend precision while the AUP truth route stays exact.</SCALABILITY_CURVE>
+    <H_PHI_VAULT_STATUS private_native_arrays="0">No new Vault IDs, no private `NativeArray`, no `NativeList`, no `NativeHashMap`, and no persistent native ownership added. Existing terrain seam Vault handles and scratch buffers were not moved or resized.</H_PHI_VAULT_STATUS>
+    <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No Burst jobs or JobHandle edges changed. Hybrid projection, normal, and mask detail jobs keep their current dependencies and native buffers; no `[NoAlias]` surface changed.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <COMPILE_GUARD>No asmdef edited; no sibling runtime assembly reference added. The patch uses existing Core/World contracts already referenced by the file.</COMPILE_GUARD>
+    <DEAR_LIE_CONFIRMATION>Heavy alternative rejected: full terrain/voxel simulation rewrite. Actual route keeps O(1) current-origin AUP proof at terrain boundaries plus the existing bounded hybrid seam projection and visual-only low-tier path. Before fake: implicit runtime bridge and float offset cells could jitter. After fake: explicit AUP proof plus double cell quantization.</DEAR_LIE_CONFIRMATION>
+  </SELF_AUDIT>
+</LOOP_40_AUP_PRECISION_REPORT>
+
+<LOOP_41_AUP_PRECISION_REPORT agent_id="SHINOBU_205" date="2026-05-20" verification_state="STATIC_PASS_UNITY_PENDING">
+  <WHAT_WAS_WRONG>
+    `HectonVoxelVolume.cs` still contained hidden runtime-to-AUP bridges in crater stamps, mod SDF edits, organic root mounds, resource craters, parasite collapse, sediment rot, magma vein capsule welds, plasma cutter raster stamps, and defoliant raster stamps.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Voxel mutation boundaries now resolve runtime points through finite current-origin AUP helpers. Plasma/defoliant raster loops snapshot the current runtime origin AUP once and add per-voxel local runtime centers in double. Organic root mound marks bake state pending only after AUP proof succeeds.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS_USED>
+    Voxel edits remain bounded SDF stamps and async rebuild requests. Heavy alternatives rejected: broad voxel delta ABI rewrite, immediate full-volume physical recomputation, and sync rebuild.
+  </CINEMATIC_CHEATS_USED>
+  <MICROSECONDS_SAVED>
+    0 runtime us claimed. Static hidden bridge debt dropped 343 -> 335 globally and `HectonVoxelVolume.cs` direct bridge grep returned zero raw bridge calls. The value is voxel mutation correctness at extreme AUP.
+  </MICROSECONDS_SAVED>
+  <STATIC_PROOF>
+    <Gate command="python Tools\AupPrecisionGate_SHINOBU_205.py" result="PASS_STATIC_GATE" filesScanned="2027" directAupFloat3CastCount="0" runtimeComponentFloatAupCastCount="0" editorComponentFloatAupCastReviewCount="0" strictTransformAuthorityReadCount="0" floatDistanceReviewCount="0" transformDistanceReviewCount="0" runtimeAupBridgeReviewCount="335" broadTransformPositionReviewCount="936" />
+    <SelfTest command="python Tools\TestAupPrecisionGate_SHINOBU_205.py" result="PASS" />
+    <PyCompile command="python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py" result="PASS" />
+    <VoxelVolumeBridgeGrep command="rg FromRuntimePosition/ToAbsoluteUniversePositionDouble3/CurrentTotalOffsetDouble HectonVoxelVolume.cs" result="NO_DIRECT_BRIDGE_REMAINS" />
+    <DiffCheck command="git diff --check -- HectonVoxelVolume.cs SHINOBU reports" result="PASS_WARN_LF_CRLF_ONLY" />
+    <Build command="dotnet build" result="SKIPPED_BY_REBUILD_DISCIPLINE" />
+  </STATIC_PROOF>
+  <SELF_AUDIT agent="SHINOBU_205" role="AUP_PRECISION_INSPECTOR" task_count="20" state="STATIC_PASS_UNITY_PENDING">
+    <TASK_RECONCILIATION>
+      <Task id="01" result="[PASS]">Direct AUP/double3 float3 casts remain 0.</Task>
+      <Task id="02" result="[PASS]">Strict Transform.position authority blockers remain 0; voxel runtime mutation bridges now use explicit current-origin AUP routes.</Task>
+      <Task id="03" result="[PASS]">No hot native DTO property or auto-property added.</Task>
+      <Task id="04" result="[PASS]">No runtime DTO layout changed; no Pack=1 introduced.</Task>
+      <Task id="05" result="[PASS]">Mock edge AUP tooling unchanged.</Task>
+      <Task id="06" result="[PASS]">Voxel mutation coordinates resolve in double before SDF stamp or absolute delta processor handoff.</Task>
+      <Task id="07" result="[PASS]">Sector hash conversion unchanged.</Task>
+      <Task id="08" result="[PASS]">Voxel edits remain bounded SDF stamps and async rebuild fakes, not full physical recomputation.</Task>
+      <Task id="09" result="[PASS]">No float-first AUP distance path added.</Task>
+      <Task id="10" result="[PASS]">No binary quality switch added; existing stamp budgets and async rebuild gates remain scalability surfaces.</Task>
+      <Task id="11" result="[PASS]">No unguarded division/rsqrt added; helper finite-gates runtime vectors and origin AUP.</Task>
+      <Task id="12" result="[PASS]">Kinematic AUP accumulation unchanged.</Task>
+      <Task id="13" result="[PASS]">Rollback DTO layout unchanged.</Task>
+      <Task id="14" result="[PASS]">No allocation, MemClear, or private native container added.</Task>
+      <Task id="15" result="[PASS]">Telemetry/report route updated through scanner artifacts.</Task>
+      <Task id="16" result="[PASS]">Editor X-Ray unchanged.</Task>
+      <Task id="17" result="[PASS]">CSV parser unchanged.</Task>
+      <Task id="18" result="[PASS]">Debug gizmo unchanged.</Task>
+      <Task id="19" result="[PASS]">Static validator confirms hard gate pass and runtime bridge review count 335.</Task>
+      <Task id="20" result="[PASS_STATIC_ONLY]">Rationale/status/log updated; Unity/Burst/profiler proof pending.</Task>
+    </TASK_RECONCILIATION>
+    <STRUCT_LAYOUT_VERIFICATION>No primary runtime DTO layout changed in Loop 41. Voxel SDF job payloads, crater stamp records, delta processor payloads, and native buffers were not expanded. No Pack=1 or new sequential native DTO was introduced.</STRUCT_LAYOUT_VERIFICATION>
+    <SCALABILITY_CURVE>Below `GlobalQualityWeight` 0.3, existing SDF stamp caps, plasma/defoliant max steps, async rebuild gating, collider bake throttles, and delta processor batching remain the load-shed surfaces. High/Ultra tiers can spend budget on richer SDF stamps, magma/organic feedback, and rebuild polish while the AUP truth route stays exact.</SCALABILITY_CURVE>
+    <H_PHI_VAULT_STATUS private_native_arrays="0">No new Vault IDs, no private `NativeArray`, no `NativeList`, no `NativeHashMap`, and no persistent native ownership added. Existing voxel volume native buffers were not moved or resized.</H_PHI_VAULT_STATUS>
+    <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No Burst jobs or JobHandle edges changed. Voxel SDF raymarch/rebuild jobs keep their current dependencies and native buffers; no `[NoAlias]` surface changed.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <COMPILE_GUARD>No asmdef edited; no sibling runtime assembly reference added. The patch uses existing Core/World APIs already referenced by the file.</COMPILE_GUARD>
+    <DEAR_LIE_CONFIRMATION>Heavy alternative rejected: full voxel physical recomputation and synchronous rebuild. Actual route keeps O(1) current-origin AUP proof at mutation boundaries plus bounded SDF stamps and async rebuild. Before fake: implicit runtime bridge could stamp wrong absolute cells. After fake: explicit AUP proof plus bounded voxel work.</DEAR_LIE_CONFIRMATION>
+  </SELF_AUDIT>
+</LOOP_41_AUP_PRECISION_REPORT>
+<LOOP_AUDIT id="SHINOBU_205" loop="42" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/HectonVoxelEngine.cs</target>
+  <what_was_wrong>
+    HectonVoxelEngine retained eight counted runtime-to-AUP bridge calls in generation origin capture,
+    active-volume query math, deferred proxy AUP culling, proxy bounds caching, and distance LOD helpers.
+    These are voxel authority/collider decisions, not presentation-only visuals.
+  </what_was_wrong>
+  <what_was_done>
+    Replaced raw CurrentTotalOffsetDouble and FromRuntimePosition calls with local helpers that validate
+    GlobalSignals.CurrentRuntimeOriginAup(), resolve runtime deltas through AbsoluteUniversePosition.OffsetMeters,
+    and fail closed when origin/runtime coordinates are non-finite. Paired proxy and debug endpoints now share one
+    origin AUP snapshot.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved existing cinematic collider fake, deferred bake backpressure, pressure-based collider disable,
+    and distance LOD routes. No heavy physics or mesh rebuild path was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 335 -> 327.
+    The avoided cost is origin-shift corruption in voxel generation/collider/LOD decisions.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2027;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=327.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HectonVoxelEngine.cs: zero raw FromRuntimePosition, ToAbsoluteUniversePositionDouble3,
+    or CurrentTotalOffsetDouble hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="46" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs</target>
+  <target>Assets/_Project/Scripts/Physics/TetherAupVerletJobs.cs</target>
+  <what_was_wrong>
+    ProceduralWreckGenerator retained six counted runtime-to-AUP bridge calls in wreck seed/section
+    generation, burial cut absolute centers, and terrain height AUP queries. TetherAupVerletJobs also
+    had a concurrent runtime component AUP float cast that failed the hard SHINOBU gate.
+  </what_was_wrong>
+  <what_was_done>
+    Wreck runtime positions now resolve through finite current-origin AUP helpers or fail closed.
+    Burial records snapshot one origin absolute and add runtime centers against that origin. Terrain query
+    absolute doubles use the helper. Tether rest-length downcast now uses AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved WFC budgets, burial fraction, debris caps, terrain fallback, and tether visual/Verlet routes.
+    No synchronous terrain bake, voxel rebuild, or extra physics rope simulation was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 307 -> 301,
+    runtimeComponentFloatAupCastCount restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2027;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=301.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on ProceduralWreckGenerator.cs and TetherAupVerletJobs.cs: zero raw
+    FromRuntimePosition, ToAbsoluteUniversePositionDouble3, or CurrentTotalOffsetDouble hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="45" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs</target>
+  <what_was_wrong>
+    VRCableDragPlug retained six counted runtime-to-AUP bridge calls in cable endpoint tension checks,
+    clamp math, transform-to-AUP helper conversion, and zero-runtime fallback.
+  </what_was_wrong>
+  <what_was_done>
+    Cable endpoint AUP now derives from source socket AUP plus finite runtime delta in overstretch and
+    clamp paths. Socket helper conversion uses current runtime origin AUP plus OffsetMeters. Null fallback
+    no longer fabricates authority from Vector3.zero.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cubic spline/catenary cable visual fake and relay renderer path. No rope physics, collider
+    chain, or extra job was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 313 -> 307.
+    The avoided cost is cable tension/connection corruption during origin shifts.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2027;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=307.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on VRCableDragPlug.cs: zero raw FromRuntimePosition,
+    ToAbsoluteUniversePositionDouble3, or CurrentTotalOffsetDouble hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="44" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/HectonDirectorAI.cs</target>
+  <what_was_wrong>
+    HectonDirectorAI retained seven counted runtime-to-AUP bridge calls in sonar/deafening origins,
+    predator sight player AUP reconstruction, predator contact distance checks, and spatial hash refresh.
+  </what_was_wrong>
+  <what_was_done>
+    Sonar/deafening origins now require finite current-origin AUP proof. Predator contacts consume
+    SpatialQueryHit.PositionAup directly. Predator sight scheduling receives the player AUP already
+    resolved from PlayerRuntimeContextService instead of rebuilding authority from runtime position.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved sonar debounce, predator sight cadence, ray budget, spatial hash caps, and boid scatter
+    presentation pulses. No extra raycast, physics query, or AI job was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 320 -> 313.
+    The avoided cost is mixed-origin predator director decisions after origin shifts.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2027;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=313.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HectonDirectorAI.cs: zero raw FromRuntimePosition,
+    ToAbsoluteUniversePositionDouble3, or CurrentTotalOffsetDouble hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="43" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/World/DestructibleOrganicManager.cs</target>
+  <what_was_wrong>
+    DestructibleOrganicManager retained seven counted runtime-to-AUP bridge calls in corpse resource
+    facts, harvest interaction payloads, organic debris signals, and harvest/spore acoustic AUP playback.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver and converted corpse, harvest, debris, and AUP-backed
+    audio boundaries to use explicit proof. Existing PlayAtPoint audio fallback remains when AUP proof is
+    unavailable, so presentation audio does not fabricate authority.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved organic burst/debris and mature spore acoustic budget fakes. No per-fragment physics,
+    scene query expansion, or extra native job was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 327 -> 320.
+    The avoided cost is ecological corpse/harvest/audio fact corruption after origin shifts.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2027;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=320.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on DestructibleOrganicManager.cs: zero raw FromRuntimePosition,
+    ToAbsoluteUniversePositionDouble3, or CurrentTotalOffsetDouble hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="47" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs</target>
+  <target>Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <target>Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs</target>
+  <what_was_wrong>
+    FaunaKinematicsRuntime retained hidden runtime-to-AUP bridges in owner root capture, predator bite
+    job setup, jaw target centers, strike distance checks, bite debris, bite acoustic pings, and owner AUP
+    double resolution. UpgradeMatrixCompiler and CablePhysicsSolver132 had runtime component AUP float
+    casts that failed the hard SHINOBU gate.
+  </what_was_wrong>
+  <what_was_done>
+    FaunaKinematicsRuntime now caches FaunaBrain owner AUP, falls back through finite current-origin proof,
+    and fails closed before AUP-backed bite target/signal publication when proof is invalid. Upgrade and
+    cable rest/local deltas now downcast through AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved procedural spine GPU skinning, low-tier segment collapse, jaw feedback cooldowns, debris caps,
+    thermal lookup, and mock cable solver routes. No extra physics simulation, scene search, or rebuild was
+    introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 301 -> 294,
+    runtimeComponentFloatAupCastCount restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2027;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=294.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge/cast grep on FaunaKinematicsRuntime.cs, UpgradeMatrixCompiler.cs, and
+    CablePhysicsSolver132.cs: zero raw direct runtime AUP bridge or runtime component AUP float-cast hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="48" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Fauna/FaunaBrain.cs</target>
+  <target>Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    FaunaBrain retained safe-local hidden runtime-to-AUP bridges in player eye perception, flashlight
+    listener/light distance, biolum flash-bang publication, predator photophobia distance, and prey panic
+    spatial queries. UpgradeMatrixCompiler again reintroduced a raw runtime component AUP float cast.
+  </what_was_wrong>
+  <what_was_done>
+    Player/light perception now resolves through finite helper routes or movement predicted AUP. Biolum
+    flash and prey panic spatial query publication require explicit AUP proof or consume prey brain owner
+    AUP. UpgradeMatrixCompiler thermal lookup downcast was restored to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved perception cadence, photophobia scalar math, flash-bang shader radius, panic buffer cap,
+    and thermal LUT path. No scene search expansion, physics query, AI contract widening, or rebuild was
+    introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 294 -> 288,
+    runtimeComponentFloatAupCastCount restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2027;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=288.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge/cast grep on FaunaBrain.cs and UpgradeMatrixCompiler.cs: only six remaining
+    FaunaBrain contract-review bridge lines plus ToCommittedOriginOffset wrapper remain.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="49" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Construction/VehicleDockingModule.cs</target>
+  <what_was_wrong>
+    VehicleDockingModule retained hidden runtime-to-AUP bridges in docking spline start capture, docked
+    relative AUP refresh, black-box telemetry, wake/fluid impulse signal publication, docking complete
+    signal publication, and docking failure signal publication.
+  </what_was_wrong>
+  <what_was_done>
+    Added finite current-origin AUP helpers. Dock start AUP resolves once and anchor target AUP derives
+    from the same proof. Relative AUP refresh fails closed, telemetry dumps on invalid AUP proof, and
+    wake/complete/failure signals publish only after finite AUP proof.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved magnetic capture, spline interpolation, synthetic wake/fluid impulses, and fixed telemetry
+    ring. No extra physics simulation, new job, docking DTO widening, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 288 -> 282.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2028;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=282.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on VehicleDockingModule.cs: zero raw FromRuntimePosition,
+    ToAbsoluteUniversePositionDouble3, or CurrentTotalOffsetDouble hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="50" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs</target>
+  <target>Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    PDAMarkerRegistry retained hidden runtime-to-AUP bridges in marker creation/update, nearest HUD query,
+    and legacy save-load fallback for entries missing AUP. UpgradeMatrixCompiler again reintroduced the
+    raw runtime component AUP float cast.
+  </what_was_wrong>
+  <what_was_done>
+    PDA marker runtime routes now resolve through finite current-origin AUP helpers or fail/skip. Existing
+    save entries with AUP still load through their saved authority. UpgradeMatrixCompiler thermal lookup
+    downcast was restored to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved fixed marker array, HUD-only filtering, approximate distance sqrt, and thermal LUT lookup.
+    No managed lookup allocation, save DTO widening, UI rebuild, or profiler-irrelevant simulation was added.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 282 -> 277,
+    runtimeComponentFloatAupCastCount restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2028;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=277.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge/cast grep on PDAMarkerRegistry.cs and UpgradeMatrixCompiler.cs: zero raw direct
+    runtime AUP bridge or runtime component AUP float-cast hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="51" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs</target>
+  <what_was_wrong>
+    VegetationNavGridSynchronizer retained hidden runtime-to-AUP bridges in HLOD registration, fade
+    distance computation, runtime pair distance helper, and viewer fallback AUP construction.
+  </what_was_wrong>
+  <what_was_done>
+    Added finite current-origin AUP helpers. HLOD registration/fade now require explicit proof, runtime
+    pair distance returns double.MaxValue on invalid proof, and viewer fallback uses helper/default instead
+    of a hidden bridge.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved HLOD runtime-center frustum culling, native visibility flags, batch size, and existing fade
+    math. No extra scene query, job completion, or DTO widening was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 277 -> 272.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2030;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=272.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on VegetationNavGridSynchronizer.cs: zero raw FromRuntimePosition,
+    ToAbsoluteUniversePositionDouble3, or CurrentTotalOffsetDouble hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="52" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/WorldZoneAnchor.cs</target>
+  <target>Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    WorldZoneAnchor retained hidden runtime-to-AUP bridges in flat distance, squared distance, activation
+    weight, hold weight, and noise radius evaluation from player runtime vectors. UpgradeMatrixCompiler
+    reintroduced the recurring raw runtime component AUP float cast after the zone patch was clean.
+  </what_was_wrong>
+  <what_was_done>
+    WorldZoneAnchor now resolves player runtime vectors through finite current-origin AUP proof or fails
+    closed with caller-specific neutral values. UpgradeMatrixCompiler thermal lookup downcast was restored
+    to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved scalar zone fade/activation math, neutral noise multiplier fallback, and thermal LUT lookup.
+    No scene search, physics query, new job, DTO widening, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 272 -> 268,
+    runtimeComponentFloatAupCastCount restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2041;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=268.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge/cast grep on WorldZoneAnchor.cs and UpgradeMatrixCompiler.cs: zero raw direct runtime
+    AUP bridge or runtime component AUP float-cast hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="53" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs</target>
+  <target>Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    HazardZoneManager retained hidden runtime-to-AUP bridges in runtime hazard registration, point
+    intensity query, avoidance sampling, and collider bounds center fallback. UpgradeMatrixCompiler
+    reintroduced the recurring raw runtime component AUP float cast during the first Loop 53 gate.
+  </what_was_wrong>
+  <what_was_done>
+    Hazard runtime routes now resolve through finite current-origin AUP proof or fail closed. Collider
+    bounds center fallback uses existing fallback AUP or finite proof before feeding exposure evaluation.
+    UpgradeMatrixCompiler thermal lookup downcast was restored to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved fixed hazard capacity, spatial query cap, LUT attenuation, cheap avoidance direction, and
+    thermal LUT lookup. No job ABI change, scene search, new physics query, DTO widening, or rebuild was
+    introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 268 -> 262,
+    runtimeComponentFloatAupCastCount restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=262.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge/cast grep on HazardZoneManager.cs and UpgradeMatrixCompiler.cs: zero raw direct
+    runtime AUP bridge or runtime component AUP float-cast hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="54" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs</target>
+  <target>Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    ResourceScarcityDirector retained hidden runtime-to-AUP bridges in sector spawn-rate, value,
+    craft-inflation, inflated-ingredient, and extracted-unit lookups. UpgradeMatrixCompiler reintroduced
+    the recurring raw runtime component AUP float cast during the first Loop 54 gate.
+  </what_was_wrong>
+  <what_was_done>
+    Economy sector lookups now resolve through finite current-origin AUP proof or return neutral sector
+    values. Invalid proof preserves hoarding-only pressure for ingredient inflation. UpgradeMatrixCompiler
+    thermal lookup downcast was restored to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved fixed extraction record count, remembered cluster caps, directive cadence, simple sector hash,
+    and thermal LUT lookup. No save DTO change, new allocation, registry polling loop, or rebuild was
+    introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 262 -> 255,
+    runtimeComponentFloatAupCastCount restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2036;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=255.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge/cast grep on ResourceScarcityDirector.cs and UpgradeMatrixCompiler.cs: zero raw direct
+    runtime AUP bridge or runtime component AUP float-cast hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="55" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Construction/HabitatGraphManager.cs</target>
+  <what_was_wrong>
+    HabitatGraphManager used runtime-to-AUP round-trips to compute stress groan and rupture decal
+    midpoints from socket runtime endpoints. One additional socket-pose bridge remains in topology
+    quantization and requires a module-owner AUP contract.
+  </what_was_wrong>
+  <what_was_done>
+    Stress groan and rupture VFX midpoints now use direct socket runtime float3 midpoint math. Socket
+    topology authority was left unchanged and classified as contract-bound.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved audio/VFX midpoint fakes, stress groan cooldowns, rupture decal caps, and graph topology
+    jobs. No socket DTO widening, CSR rewrite, job change, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 255 -> 251.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2036;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=251.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HabitatGraphManager.cs: only the socket topology TryResolveSocketPose bridge
+    and runtime reconstruction from socket AUP remain.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="56" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/LaserCutter.cs</target>
+  <target>Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    LaserCutter used direct runtime-to-AUP bridge routes for primary cut signals, deconstruct requests,
+    salvage anchor intent, GPU spark staging, boil signals, and live DOD raycast requests. UpgradeMatrixCompiler
+    reintroduced the recurring raw runtime component AUP float cast during the first Loop 56 gate.
+  </what_was_wrong>
+  <what_was_done>
+    Cutter AUP-backed signal routes now require finite current-origin proof and fail closed when proof is
+    invalid. Anchor intent falls back to local transform vector math when player AUP proof is unavailable.
+    UpgradeMatrixCompiler thermal lookup downcast was restored to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved raycast cap, DOD request path, GPU spark staging, WFC progress fake, recoil fake, and thermal
+    LUT lookup. No signal ABI change, physics expansion, allocation, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 251 -> 247,
+    runtimeComponentFloatAupCastCount restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2036;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=247.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge/cast grep on LaserCutter.cs and UpgradeMatrixCompiler.cs: zero raw direct runtime AUP
+    bridge or runtime component AUP float-cast hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="57" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/HectonFluidEngine.cs</target>
+  <target>Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    HectonFluidEngine used direct runtime-to-AUP bridge wrappers for fluid impact facts, splash legacy
+    AUP payload hydration, debris spawn facts, and maelstrom acoustic pings. UpgradeMatrixCompiler
+    reintroduced the recurring raw runtime component AUP float cast during the first Loop 57 gate.
+  </what_was_wrong>
+  <what_was_done>
+    Fluid impact, splash, debris, and acoustic routes now share finite current-origin AUP proof and fail
+    closed when proof is invalid. UpgradeMatrixCompiler thermal lookup downcast was restored to
+    AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved splash/debris/acoustic fakes, fixed maelstrom audio cadence, feedback queues, and thermal
+    LUT lookup. No signal ABI change, fluid simulation expansion, allocation, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 247 -> 243,
+    runtimeComponentFloatAupCastCount restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=243.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge/cast grep on HectonFluidEngine.cs and UpgradeMatrixCompiler.cs: zero raw direct
+    runtime AUP bridge or runtime component AUP float-cast hits; only approved helper routes remain.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="58" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs</target>
+  <what_was_wrong>
+    HullIntegrityRuntime rebuilt AUP data from runtime points for combat visual impacts, local dent visual
+    impacts, acoustic stress pings, and fluid leak publications. One submarine-origin bridge remains in
+    the hull damage job origin path and is owner-contract debt.
+  </what_was_wrong>
+  <what_was_done>
+    Combat visual impacts now reuse finite owner-authored CombatDamageSignal.ImpactAup. Local dent, acoustic,
+    and leak AUP routes now use finite current-origin proof helpers and fail closed for AUP-backed
+    publications when proof is invalid. The submarine-origin job bridge was left explicit.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved breach jet caps, shader dent limits, acoustic stress threshold, visual impact queue limits,
+    and existing hull VFX fakes. No job DTO widening, owner-contract invention, allocation, or rebuild was
+    introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 243 -> 240.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=240.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HullIntegrityRuntime.cs leaves only ResolveSubmarineAupDouble, classified as
+    contract-bound owner-origin debt.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="59" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/VehicleMotor.cs</target>
+  <what_was_wrong>
+    VehicleMotor converted runtime positions to AUP directly for flora entanglement anchors, wake signals,
+    submarine vault state, and CCD impact consequences. The CCD damage route also hid the same bridge
+    behind CombatDamageSignalCodec.FromRuntimePoint.
+  </what_was_wrong>
+  <what_was_done>
+    Entanglement, wake, submarine state, and CCD impact routes now use one finite current-origin AUP proof
+    helper. Massive CCD combat damage reuses pointAup.ToAbsoluteDouble3 from the proven impact AUP.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved wake cadence, silt decal cooldown, CCD low-tier/corner-halt fakes, haptic feedback, and vehicle
+    state capacity. No vault DTO widening, new physics query, allocation, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 240 -> 236.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=236.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on VehicleMotor.cs returned zero raw direct runtime AUP bridge hits in touched
+    routes.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="60" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs</target>
+  <what_was_wrong>
+    SubmarineAutoLevelBallastController rebuilt AUP data from runtime hull positions for dynamic flood
+    pivot anchors, flood stress audio, tail-heavy bubble feedback, and PID hull stress audio.
+  </what_was_wrong>
+  <what_was_done>
+    All four routes now use finite current-origin AUP proof. Dynamic pivot falls back to the last finite
+    anchor on proof failure. Audio and bubble cooldowns are consumed only after AUP proof succeeds.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap flood pivot fallback, bubble cadence, haptic feedback, PID math LOD, hull groan
+    thresholds, and existing feedback fakes. No DTO widening, physics expansion, allocation, or rebuild
+    was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 236 -> 232.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=232.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on SubmarineAutoLevelBallastController.cs returned zero raw direct runtime AUP
+    bridge hits in touched routes.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="61" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/RepairTool.cs</target>
+  <what_was_wrong>
+    RepairTool converted runtime hit points to absolute AUP double3 for voxel DDA repair, spark debris,
+    repair blackbox entries, and hull repaired signals. Blackbox fallback could lose proof detail.
+  </what_was_wrong>
+  <what_was_done>
+    Repair hit, spark, hull repaired, and blackbox routes now use finite current-origin AUP proof. Blackbox
+    proof failure marks invalid math and stores default AUP intentionally.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved spark quantity LOD, repair beam fake, haptic feedback, weld particles, and fixed 300-frame
+    repair blackbox. No RepairTool API cleanup, allocation, physics expansion, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 232 -> 228.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=228.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on RepairTool.cs returned zero raw direct runtime AUP bridge hits in touched routes.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="62" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Visor/SpectrumSystem.cs</target>
+  <what_was_wrong>
+    SpectrumSystem acoustic echo and ping return payload constructors/resolvers rebuilt AUP from runtime
+    Vector3 positions inside value construction and legacy fallback paths.
+  </what_was_wrong>
+  <what_was_done>
+    Added SpectrumAupProof finite current-origin helper. Runtime-position payload constructors now mark
+    hasWorldAup from proof success, and legacy resolvers return proven AUP or default without direct runtime
+    bridge calls.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved sonar pulse caps, deferred listener budgets, NativeQueue-backed ping lanes, and 80-byte payload
+    layouts. No payload widening, managed wrapper allocation, queue redesign, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 228 -> 224.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=224.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on SpectrumSystem.cs returned zero raw direct runtime AUP bridge hits in touched
+    payload routes.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="63" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs</target>
+  <what_was_wrong>
+    RadiationHazardGrid rebuilt AUP from runtime Vector3 positions in public static source registration,
+    external dose reporting, runtime intensity sampling, and the no-context player fallback.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP proof helper. Source, dose, and sample entry points now fail closed
+    when runtime position or origin proof is invalid. Player fallback uses the same proof route for zero
+    runtime offset.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved inverse-square low-tier sampling, diffusion job cadence, visual static shader globals, Geiger
+    feedback, and existing 64-byte source/telemetry DTO layouts. No grid vault migration, DTO widening,
+    extra job, allocation, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 224 -> 220.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=220.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on RadiationHazardGrid.cs returned zero raw direct runtime AUP bridge hits in
+    touched source, dose, sample, and fallback routes.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="64" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Fauna/FaunaSensorSuite.cs; Assets/_Project/Scripts/Fauna/FaunaBrain.cs</target>
+  <what_was_wrong>
+    FaunaSensorSuite rebuilt self, player, and scavenge tool AUP from runtime Vector3 positions. Player
+    and tool routes were gameplay perception facts without producer-owned AUP proof.
+  </what_was_wrong>
+  <what_was_done>
+    FaunaBrain now resolves self AUP once and passes it to the sensor suite. FaunaPerceptionSnapshot carries
+    explicit scavenge tool AUP fields, and the suite requires producer-supplied finite player/tool AUP before
+    using those targets for distance or attraction.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved foveated cadence, deferred obstacle raycasts, static spatial query buffers, scavenge targeting,
+    and predator sensory fakes. No NativeArray allocation, DTO widening beyond local managed snapshot fields,
+    extra job, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 220 -> 216.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=216.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on FaunaSensorSuite.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="65" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs</target>
+  <what_was_wrong>
+    TerminalOsRuntime rebuilt AUP from runtime Vector3 positions for terminal plane centers and gaze ray
+    origins. These were presentation facts, but still hid origin proof inside DTO construction.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP proof helper and routed terminal plane center, camera gaze origin, and
+    fallback gaze origin through it. Missing proof defaults the AUP field without changing finite local forward
+    handling.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved low-resolution terminal textures, mock font generation, instanced panel path, interaction jobs,
+    and quality-driven CSV polling cadence. No terminal DTO layout change, SignalBus rewrite, extra job,
+    allocation, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 216 -> 213.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=213.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on TerminalOsRuntime.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="66" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/UI/DiegeticPanelController.cs</target>
+  <what_was_wrong>
+    DiegeticPanelController rebuilt AUP from runtime Vector3 positions for proxy light registration and
+    panel interaction/render distance checks.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP proof helper. Proxy light registration unregisters and returns when
+    proof fails, and AUP distance checks return double.MaxValue when either endpoint lacks proof.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap triangle-wave flicker, render-texture throttling, cursor smoothing, occlusion fade, and
+    proxy light clamps. No input DTO layout change, extra physics query, allocation, job, or rebuild was
+    introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 213 -> 210.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=210.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on DiegeticPanelController.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="67" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs</target>
+  <what_was_wrong>
+    AcousticEcholocationTranslator rebuilt AUP from runtime Vector3 positions for legacy contact fallback,
+    legacy abyssal anchor payloads, and visual sound-wave distance text.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP proof helper. Runtime-only contacts and anchors are skipped when proof
+    is unavailable, and acoustic impulse distance returns 0 on missing proof instead of deriving hidden AUP.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved bark throttling, stress mutation text, cheap distance rounding, fixed contact scan caps, and
+    legacy Vector3 compatibility fallback. No caption DTO change, allocation, extra query, job, or rebuild
+    was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 210 -> 207.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=207.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on AcousticEcholocationTranslator.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="68" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs</target>
+  <what_was_wrong>
+    AcousticOcclusionUtility rebuilt AUP from runtime Vector3 positions for SDF midpoint density probes and
+    source/listener acoustic distance attenuation.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP proof helper. Midpoint SDF shortcut skips when proof fails, and
+    source/listener distance returns float.MaxValue when either endpoint lacks proof.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved midpoint SDF shortcut, fake forward echo distance, flora scatter sample cap, and smooth
+    distance-shadow curve. No raymarch expansion, allocation, new job, unrelated layout rewrite, or rebuild
+    was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 207 -> 204.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=204.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on AcousticOcclusionUtility.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="69" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs</target>
+  <what_was_wrong>
+    SubmarineAtmosphereSystem rebuilt AUP from runtime module bounds, host module center, and submarine
+    center-of-mass in room lookup fallbacks.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP proof helper. Module/host room mapping fails closed on missing proof,
+    and submarine center fallback returns -1 when center-of-mass AUP cannot be proven.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved compartment graph routing, deferred native queues, pressure/implosion payloads, heat source
+    accumulation, and existing room lookup math. No event DTO change, native allocation, job, or rebuild was
+    introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 204 -> 201.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=201.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on SubmarineAtmosphereSystem.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="70" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/SubmarineFluidDynamics.cs</target>
+  <what_was_wrong>
+    SubmarineFluidDynamics rebuilt AUP directly from runtime points for brine acoustic pings, splash impact
+    signals, fluid impulse signals, and brine absolute-plane offset checks.
+  </what_was_wrong>
+  <what_was_done>
+    Added one finite current-origin AUP proof helper. Brine/splash/impulse publication now consumes proven
+    AUP, and brine layer plane checks consume origin AUP absolute Y instead of direct floating-origin offset.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved sampled-buoyancy splash proxy, kinetic-energy VFX impulse, and brine acoustic event fake. No
+    heavy fluid simulation, Navier-Stokes path, extra physics query, native allocation, job, or rebuild was
+    introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 201 -> 198.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=198.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on SubmarineFluidDynamics.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="71" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/SubmarineStationKeepingController.cs</target>
+  <what_was_wrong>
+    SubmarineStationKeepingController rebuilt AUP directly from Rigidbody.worldCenterOfMass for current hull
+    position and station-keeping target arming.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin absolute-position resolver. FixedTick, current-pose arming, and auto-level
+    arming now fail closed when hull center AUP cannot be proven; external target arming rejects non-finite
+    absolute targets.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cinematic velocity/rotation clamp and no-allocation fixed-step controller. No DataVault owner,
+    job, physics query, new scene object, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 198 -> 195.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=195.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on SubmarineStationKeepingController.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="72" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/World/HectonBrineToxicMudGrid.cs</target>
+  <what_was_wrong>
+    HectonBrineToxicMudGrid rebuilt AUP directly from runtime centers and runtime query positions for brine
+    mud broadphase registration and containment checks.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP proof helper. Runtime registration and runtime containment queries now
+    route through proven AUP before entering absolute broadphase math.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved fixed 256-cell broadphase, global bounds rejection, and cheap ellipse tests. No native owner
+    migration, allocation, job, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 195 -> 192.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=192.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HectonBrineToxicMudGrid.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="73" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs</target>
+  <what_was_wrong>
+    ProceduralAudioEvents rebuilt AUP directly from runtime source positions for hull stress audio,
+    structural stress audio, and payload decode fallback.
+  </what_was_wrong>
+  <what_was_done>
+    Added a shared finite current-origin source resolver. Hull stress constructors, structural stress
+    constructors, and decode fallback now route through proven AUP before storing SourceAup.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved bounded audio event rings, legacy WorldPosition presentation payloads, structural pitch/depth
+    cheats, and unrelated listener-registry edits. No dispatch rewrite, allocation, job, or rebuild was
+    introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 192 -> 189.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=189.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on ProceduralAudioEvents.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="74" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs</target>
+  <what_was_wrong>
+    SignalBeacon rebuilt AUP directly from serialized triangulation runtime points that feed PDA/HUD signal
+    strength, fragment recovery, and acoustic breadcrumb presentation.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver. Triangulation cache refresh now requires all three points to
+    prove AUP or invalidates the cache and clears published telemetry.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved the three-point triangulation fake, 0.1 s solve cadence, shader static scalar, and acoustic
+    breadcrumb path. No DataVault owner, allocation, job, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 189 -> 186.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=186.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on SignalBeacon.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="75" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs</target>
+  <what_was_wrong>
+    HectonVoxelStreamingBridge rebuilt AUP directly from runtime player positions and terrain-hole positions
+    before issuing voxel streaming requests and stale-volume despawn checks.
+  </what_was_wrong>
+  <what_was_done>
+    Added a player AUP resolver that prefers PlayerMovement.CurrentAup and uses finite current-origin proof only
+    as fallback. Terrain-hole runtime positions now route through the same proof helper before request math.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved bounded streaming request budgets, cheap distance gates, and existing typed voxel request buffers.
+    No new DataVault owner, allocation, job, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 186 -> 183.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=183.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HectonVoxelStreamingBridge.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="76" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs</target>
+  <what_was_wrong>
+    WorldGenerativeGeologyVoxelBridgeDirector rebuilt AUP directly from runtime seismic epicenters,
+    debris runtime positions, and thermal vent positions before publishing terrain seams, debris signals,
+    and deep mantle geode spawns.
+  </what_was_wrong>
+  <what_was_done>
+    Seismic epicenters now consume AUP line payloads in double space or finite current-origin proof. Debris
+    spawn AUPs derive from absolute doubles without runtime round-trips. Mantle geode spawns require proven
+    vent AUP.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap seismic trench stamping, bounded debris bursts, voxel pool warm batches, and existing
+    typed spawn signals. No new DataVault owner, allocation model, job, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 183 -> 180.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=180.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on WorldGenerativeGeologyVoxelBridgeDirector.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="77" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs</target>
+  <what_was_wrong>
+    FaunaSpatialHashRegistry rebuilt AUP directly from runtime query origins and fallback registered entry
+    positions inside the fauna sensing/native hash layer.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver. Vector-origin query overloads and fallback entry pose resolution
+    now use that route; AUP-native overloads and FaunaBrain.TryResolveLogicAup remain preferred.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved bounded query capacity, deferred cleanup, adjacent-cell caps, and AUP-native distance checks.
+    No native hash ownership rewrite, allocation model change, job, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 180 -> 177.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=177.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on FaunaSpatialHashRegistry.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="78" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs</target>
+  <what_was_wrong>
+    DeployableSdfDrillRuntime rebuilt AUP directly from runtime transform positions for drill anchor capture,
+    voxel carve events, and debris signals.
+  </what_was_wrong>
+  <what_was_done>
+    Added one finite current-origin AUP resolver. Anchor capture fails into the existing fault path when proof is
+    missing, voxel carve doubles derive from proven AUP, and debris signals publish proven AUP.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cold carve cadence, bounded Vault-backed inventory/blackbox buffers, Math LOD, and typed debris
+    spark signal. No Vault/job/snap ownership rewrite or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 177 -> 174.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=174.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on DeployableSdfDrillRuntime.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="79" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/World/Biolum/HectonBiolumZone.cs</target>
+  <what_was_wrong>
+    HectonBiolumZone rebuilt AUP directly from runtime zone positions and a zero-vector camera fallback for
+    zone AUP cache and LOD skip decisions.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver. Zone cache refresh now uses that route, and LOD falls open
+    when camera or zone proof is invalid instead of fabricating absolute position.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved frame-bucketed LOD skipping, update throttling, pooled light fakes, and spectrum lookup. No
+    manager rewrite, allocation model change, job, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 174 -> 171.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=171.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HectonBiolumZone.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="80" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs</target>
+  <what_was_wrong>
+    ModWorldPersistenceManager rebuilt AUP directly from runtime positions when creating mod persistent spawn
+    records, syncing live transforms, and backfilling missing spatial fields.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver. Spawn record creation fails before pool spawn when proof is
+    missing; live sync skips mutation; legacy backfill leaves fields unchanged on proof failure.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cold save/load paths, object pool spawning, and existing mod payload schema. No schema rewrite,
+    pool API change, allocation model change, job, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 171 -> 168.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=168.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on ModWorldPersistenceManager.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="81" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs</target>
+  <what_was_wrong>
+    HectonBlueprintPreviewBatch rebuilt AUP directly from manual preview runtime positions and from Vector3.zero
+    for SignalBus batch runtime-origin setup.
+  </what_was_wrong>
+  <what_was_done>
+    Added finite current-origin AUP proof helpers. Manual preview scheduling now requires a proven center and
+    runtime origin; SignalBus batch scheduling requires a proven runtime origin and skips non-finite preview AUPs.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved bounded preview capacity, cold Vault binding, indirect draw arguments, and the Dear-Lie hologram
+    wiggle path. No construction buffer lifecycle rewrite, allocation model change, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 168 -> 165.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=165.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HectonBlueprintPreviewBatch.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="82" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/PlayerBuilder.cs</target>
+  <what_was_wrong>
+    PlayerBuilder rebuilt builder ghost validation center/origin AUP through hidden floating-origin bridge calls
+    before scheduling construction ghost state and validation jobs.
+  </what_was_wrong>
+  <what_was_done>
+    Reused TryResolveConstructionPivotAup for center runtime position and runtime origin. Added origin-finite
+    validation inside that route so construction pivot conversion fails closed on invalid runtime origin proof.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved bounded SDF corner validation, cached readiness, socket Vault routes, and Dear-Lie preview visuals.
+    No large PlayerBuilder socket/vault refactor or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 165 -> 163.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=163.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on PlayerBuilder.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="83" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/NoiseSystem.cs</target>
+  <what_was_wrong>
+    NoiseSystem rebuilt AUP directly from runtime positions for player noise and active sonar signals that
+    publish transient spatial events and fauna hearing inputs.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver and fail-closed guards. Runtime-position overloads clear stale
+    player noise and return when proof is unavailable; caller-owned AUP overloads reject invalid AUPs.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved the fixed 64-listener non-alloc buffer, acoustic radius clamps, and existing occlusion dispatch.
+    No listener model, spatial hash, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 163 -> 161.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=161.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on NoiseSystem.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="84" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/PlayerTool.cs</target>
+  <what_was_wrong>
+    PlayerTool rebuilt absolute AUP coordinates through hidden floating-origin bridge calls for queued primary
+    interaction raycasts and cached tool AUP sampling.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver returning double3 absolute coordinates. Queued raycast and cached
+    AUP sampling now fail closed when the runtime point or current origin AUP is invalid.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cached transform sampling, single queued raycast packets, fixed runtime IDs, and the existing
+    interaction packet route. No tool lifecycle refactor, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 161 -> 159.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=159.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on PlayerTool.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="85" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Interaction/PhysicalInteractionHandler.cs</target>
+  <what_was_wrong>
+    PhysicalInteractionHandler rebuilt AUP directly from heavy-carry anchor and rigidbody center-of-mass
+    runtime positions when testing break distance.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver and routed anchor/body positions through it before distance
+    comparison. Heavy carry now cancels when either position lacks origin proof.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved approximate-magnitude movement, fixed hand/controller probes, bounded carry forces, and existing
+    rigidbody control. No physics model rewrite, allocation change, or rebuild was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 159 -> 157.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=157.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on PhysicalInteractionHandler.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="86" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/PhysicsApplySystem.cs</target>
+  <what_was_wrong>
+    PhysicsApplySystem rebuilt AUP directly from runtime positions for transient impact proxy lights and the
+    last-finite rigidbody AUP recovery cache.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver. Impact proxy-light registration now aborts without origin proof,
+    and rigidbody recovery cache mutation only writes proven AUP values.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved bounded proxy-light slots, fixed recovery cache size, validation buffers, and force packet routing.
+    No physics job, rigidbody router, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 157 -> 155.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=155.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on PhysicsApplySystem.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="87" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/VoxelDeltaProcessor.cs</target>
+  <what_was_wrong>
+    VoxelDeltaProcessor rebuilt absolute hit points from runtime positions for plasma-cut staging and immediate
+    crater entrypoints that mutate authoritative voxel delta state.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP-to-double resolver and routed both runtime hit-point entrypoints through it
+    before staging or applying carve mutations.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved deferred carve batching, merge-distance coalescing, bounded pending carve queues, and existing
+    save/RLE/job topology. No voxel job, layout, allocation, or rebuild change was introduced in this loop.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 155 -> 153.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=153.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on VoxelDeltaProcessor.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="88" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/HectonScanMarkerSystem.cs</target>
+  <what_was_wrong>
+    HectonScanMarkerSystem rebuilt AUP directly from scan node runtime positions and player fallback runtime
+    position while marker dedupe/distance sizing use AUP math.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver. Node-found insertion drops unproven positions, and marker
+    matrix building returns no markers when player AUP cannot be proven.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved 64 fixed marker slots, cached projection constants, instanced quad draw, and HUD marker Dear-Lie
+    projection. No HUD mesh/material or allocation change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 153 -> 151.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=151.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HectonScanMarkerSystem.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="89" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs</target>
+  <what_was_wrong>
+    MarauderOutpostGenerationService rebuilt AUP directly from generated runtime origin when registering WFC
+    outpost grid descriptors and replaying generated outpost signals.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver for generation origin. Grid registration faults and dumps blackbox
+    when proof is missing; generated signal replay skips unproven origin publication.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved low-tier descriptor flags, bounded WFC replay windows, grid handle reuse, render proxies, and
+    power-grid registry. No WFC generation, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 151 -> 149.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=149.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on MarauderOutpostGenerationService.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="90" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs</target>
+  <what_was_wrong>
+    HarvestableOutcrop rebuilt AUP directly from runtime hit/drop positions when publishing rock shard debris
+    and item-acquired gameplay signals.
+  </what_was_wrong>
+  <what_was_done>
+    Routed both harvest signal positions through a finite current-origin AUP resolver before SignalBus or
+    GlobalSignals publication. Invalid runtime positions or missing origin proof now fail closed before event emission.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved simple shard-count clamps, pooled hit/break VFX, direct inventory insertion, and existing collapse
+    presentation. No loot, object-pool, VFX, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 149 -> 147.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=147.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HarvestableOutcrop.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="91" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/HectonHazardManager.cs</target>
+  <what_was_wrong>
+    HectonHazardManager rebuilt AUP directly from runtime positions for hazard registration and runtime-point
+    intensity queries routed into HazardZoneManager authority/query math.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver and routed both runtime overloads through it. Invalid runtime
+    positions or missing runtime-origin proof now fail closed before registration or query dispatch.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved compatibility bridge behavior, existing environment runtime context routing, cheap query fallback,
+    and visor glitch scalar path. No hazard manager ownership, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 147 -> 145.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=145.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HectonHazardManager.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="92" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs</target>
+  <what_was_wrong>
+    EnvironmentalHazard rebuilt AUP directly from hazard/player runtime positions in the large-radius damage
+    intensity path.
+  </what_was_wrong>
+  <what_was_done>
+    Preserved the cheap local Vector3 squared-distance path for <=50m hazards. The large-radius AUP branch now
+    requires finite current-origin proof for both endpoints, and missing proof returns finite edge distance for zero intensity.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved small-radius local-distance approximation, zero-allocation trigger/overlap checks, material property
+    block visual feedback, and existing damage cadence. No hazard simulation or allocation change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 145 -> 143.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=143.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on EnvironmentalHazard.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="93" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs</target>
+  <what_was_wrong>
+    CombatDamageRuntime rebuilt AUP directly from resolved world hit points for blood debris and entity-death
+    side-effect signals.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver and routed both GlobalSignals payloads through it after existing
+    local hit-point resolution. Missing proof skips the AUP-carrying signal instead of publishing fabricated coordinates.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved fixed result buffers, bounded global signal drain, local blood scent queueing, poison diffusion,
+    pushback routing, and existing Burst job topology. No combat job, DTO, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 143 -> 141.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=141.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on CombatDamageRuntime.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="94" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Construction/WaterPumpModule.cs</target>
+  <what_was_wrong>
+    WaterPumpModule rebuilt AUP directly from runtime ingress and outlet positions while registering fluid pipe
+    graph nodes.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver and routed both pipe-node registration positions through it.
+    Missing proof now prevents graph registration instead of storing fabricated AUP.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved bounded active pump registry, cheap drain-budget math, existing pipe cache reuse, and graph
+    connection flow. No pipe graph service, pump registry, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 141 -> 139.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=139.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on WaterPumpModule.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="95" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/CurrentVolume.cs</target>
+  <what_was_wrong>
+    CurrentVolume rebuilt AUP directly from sample and cached volume runtime positions for large authored-current
+    culling.
+  </what_was_wrong>
+  <what_was_done>
+    Preserved the cheap local Vector3 cull for normal volumes and routed the large-volume AUP cull through finite
+    current-origin proof. Added an explicit cached-AUP validity bit.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved fixed active volume capacity, shared sample time, dominant-axis current fake, local culling for
+    <=50m volumes, and existing turbulence sampling. No force simulation or allocation change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 139 -> 137.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=137.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on CurrentVolume.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="96" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Fabricator.cs</target>
+  <what_was_wrong>
+    Fabricator rebuilt AUP directly for spark proxy light placement and crafted item-acquired output.
+  </what_was_wrong>
+  <what_was_done>
+    Reused the existing finite current-origin AUP helper for both paths. Spark proxy light registration now
+    unregisters stale proxy light state when proof is missing; crafted item-acquired publication skips unproven output positions.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved hologram Dear-Lie assembly, transient proxy light cadence, direct inventory output, fabrication
+    jobs, and power drain signals. No fabrication job, reservation, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 137 -> 135.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=135.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on Fabricator.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="97" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs</target>
+  <what_was_wrong>
+    GasDynamicsSolver rebuilt AUP directly from player runtime position for base hibernation distance and from
+    solver transform position for default base center fallback.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP resolver and routed both paths through it. Missing proof returns false/default
+    and lets existing finite-AUP guards avoid fabricated hibernation distance or base center authority.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved continuous hibernation cadence scaling, analytical leak fake, base awake masks, Vault-owned gas
+    lanes, and existing Burst gas jobs. No gas lane, job, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 135 -> 133.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=133.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on GasDynamicsSolver.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="98" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/BaseAirlock.cs</target>
+  <what_was_wrong>
+    BaseAirlock rebuilt AUP directly for left/right repair snap hand points in the non-probe API.
+  </what_was_wrong>
+  <what_was_done>
+    Reused the existing finite current-origin AUP helper for both runtime hand points. The probe-owned snap route
+    already offsets from caller-owned hit AUP and was preserved.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved pressure equalization Dear-Lie, math bulkhead plane, fixed repair hand offsets, airlock cycle, and
+    player docking snap. No airlock state, bulkhead intent, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 133 -> 131.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=131.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on BaseAirlock.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="99" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs</target>
+  <what_was_wrong>
+    BallisticsRuntime rebuilt AUP directly for trajectory origin and AABB primitive center, then read current
+    floating-origin offset directly for presentation/mock origins.
+  </what_was_wrong>
+  <what_was_done>
+    Added finite current-origin AUP helpers. Trajectory origin and primitive center now fail closed before native
+    buffer mutation when proof is absent. Presentation/mock origin reads use the same proof and fall back to zero only
+    for non-authoritative VFX/mock layout.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved analytic trajectory Dear-Lie, fixed native buffers, signal budget scaling, tracer/impact VFX routing,
+    and mock fallback generation. No ballistic job, buffer ownership, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 131 -> 129.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=129.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on BallisticsRuntime.cs returned zero raw direct runtime AUP bridge hits.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="100" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/VoxelRuntimeIntegrityUtility.cs</target>
+  <what_was_wrong>
+    VoxelRuntimeIntegrityUtility converted voxel world center and observer runtime vectors directly into AUP for
+    distance-based LOD selection.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP helper and routed both operands through it before absolute distance comparison.
+    Missing proof returns LOD level 1, the cheap/far path.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved the existing distance-based voxel LOD fake. Proof loss now sheds to cheaper voxel detail instead of
+    fabricating proximity. No voxel pool, mesh, save, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 129 -> 127.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=127.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on VoxelRuntimeIntegrityUtility.cs returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="101" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs</target>
+  <what_was_wrong>
+    Surface weather read the floating-origin offset directly for weather job input and rebuilt AUP directly for
+    thunder strike/listener distance.
+  </what_was_wrong>
+  <what_was_done>
+    Added finite current-origin AUP helpers. Weather job input receives a proven origin offset or zero presentation
+    fallback. Thunder distance uses AUP when proof exists and local audio-only distance when proof is absent.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved screen-space rain, polynomial gusts, shader weather parameters, lightning/tracer fakes, and audio-only
+    thunder delay. No weather profile, job ownership, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 127 -> 125.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=125.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HectonSurfaceWeatherDirector.cs returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="102" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs</target>
+  <what_was_wrong>
+    Internal flood waterline rebuilt camera AUP directly for fallback state and crossing acoustic ping publication,
+    while exhale debris reused cached camera AUP without an explicit validity bit.
+  </what_was_wrong>
+  <what_was_done>
+    Added a finite current-origin AUP helper and cached camera-AUP validity flag. Crossing acoustic ping fails closed
+    without proof, and exhale debris skips publication if the cached camera AUP is not proven.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved shader-only internal waterline, cheap refraction, screen-bubble debris fake, and droplet timer. No
+    waterline job, shader parameter layout, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 125 -> 123.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=123.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on InternalFloodWaterlineRuntime.cs returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="103" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs</target>
+  <what_was_wrong>
+    CameraJuiceSystem rebuilt AUP directly for camera/focus target distance used by cinematic DOF focus.
+  </what_was_wrong>
+  <what_was_done>
+    Replaced direct conversion with current-origin AUP proof for both operands. Proof loss falls back to local runtime
+    distance squared for presentation focus only.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved camera shake, DOF focus fake, post-processing modulation, and local focus fallback. No gameplay state,
+    save identity, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 123 -> 121.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=121.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on CameraJuiceSystem.cs returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="104" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs; Assets/_Project/Scripts/PlayerInventory.cs</target>
+  <what_was_wrong>
+    RTG fallback heat and inventory ocean-drop debris rebuilt AUP directly before publishing world-space signals.
+  </what_was_wrong>
+  <what_was_done>
+    Added finite current-origin AUP helpers. RTG skips fallback heat publication without proof. Inventory resolves drop
+    AUP before item mutation and returns false on proof failure.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved RTG decay cadence, radiation grid registration, inventory bulk-drop debris fake, and acoustic feedback.
+    No Vault layout, inventory SoA layout, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 121 -> 119.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=119.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on RadioisotopeThermalGenerator.cs and PlayerInventory.cs returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="105" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/World/ImpostorSystem.cs</target>
+  <what_was_wrong>
+    ImpostorSystem rebuilt AUP directly for candidate distance and billboard orientation in distant visual rendering.
+  </what_was_wrong>
+  <what_was_done>
+    Added finite current-origin AUP proof. Candidate distance fails to cheap/far impostor selection without proof;
+    billboard orientation uses local visual facing only when AUP proof is absent.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved the billboard impostor Dear-Lie, material fallback, object pooling, and hysteresis thresholds. No source
+    geometry, pool, material allocation policy, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 119 -> 117.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=117.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on ImpostorSystem.cs returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="106" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/WorldGenerativeGeologySeamExecutionDirector.cs</target>
+  <what_was_wrong>
+    Geology seam voxel request fallback rebuilt AUP directly for voxel center and terrain contact.
+  </what_was_wrong>
+  <what_was_done>
+    Preferred authored finite AUP fields and used current-origin proof as fallback. If either AUP is unproven, the
+    voxel blend request is skipped instead of passing ambiguity downstream.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved gap dither VFX, seam mesh construction, debris band fake, and voxel collar request structure. No seam
+    mesh topology, registry route, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 117 -> 115.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=115.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on WorldGenerativeGeologySeamExecutionDirector.cs returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="107" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/UI/DiegeticPDAController.cs</target>
+  <what_was_wrong>
+    Diegetic PDA visibility culling rebuilt AUP directly for camera-to-anchor distance.
+  </what_was_wrong>
+  <what_was_done>
+    Added current-origin AUP proof for camera and anchor positions. Proof loss falls back to local visual distance for
+    render-texture visibility only.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved render-texture pause culling, squared cone visibility, and tablet presentation. No UI authority route,
+    inventory route, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 115 -> 113.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=113.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on DiegeticPDAController.cs returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="108" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs</target>
+  <what_was_wrong>
+    Biolum manager rebuilt AUP directly for nearby-zone reference queries and cached camera sampling.
+  </what_was_wrong>
+  <what_was_done>
+    Added current-origin AUP proof. Nearby-zone copy returns no zones without proof; cached camera AUP uses proof or
+    current-origin visual fallback only.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved dominant-zone color sampling, shader global biolum, touch-ripple fake, and predator blackout visual
+    response. No biolum zone ownership, Vault buffer, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 113 -> 111.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=111.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on HectonBiolumManager.cs returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="109" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Physiology/PlayerStressMetricsRuntime.cs; Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs; Assets/_Project/Scripts/Progression/NarrativeProgressionBridge.cs; Assets/_Project/Scripts/Quest/MissionMarkerSystem.cs</target>
+  <what_was_wrong>
+    Stress pose fallback, metabolism thermal grid root, lifepod progression distance, and mission marker fallback
+    rebuilt AUP directly from runtime positions.
+  </what_was_wrong>
+  <what_was_done>
+    Routed all four through current-origin AUP proof. Unproven fallback now disables the specific state/presentation
+    path instead of publishing or caching fabricated AUP.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved stress scalar update, metabolism thermal-grid sampling, lifepod discovery gate, and instanced quest
+    marker fallback. No DTO layout, Vault handle, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 111 -> 107.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=107.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on PlayerStressMetricsRuntime.cs, ShinobuMetabolismRuntime.cs, NarrativeProgressionBridge.cs, and MissionMarkerSystem.cs returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="110" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs; Assets/_Project/Scripts/SaveBinaryStorage.cs</target>
+  <what_was_wrong>
+    Save binary legacy/runtime helpers rebuilt AUP directly from runtime positions in persistence code.
+  </what_was_wrong>
+  <what_was_done>
+    Added current-origin AUP proof helpers. Legacy PDA marker decode and save storage conversion now default the AUP
+    when legacy runtime data or origin proof is invalid.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cold binary codec/storage flow, legacy marker migration, and runtime-position serialization contract. No
+    save header, payload layout, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 107 -> 105.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=105.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on SaveBinaryPayloadCodec.cs and SaveBinaryStorage.cs returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="111" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Plugins/Crest/HectonCrestOceanDepthCacheBootstrap.cs; Assets/_Project/Scripts/Plugins/MapMagic/MapMagicRuntimeBridge.cs</target>
+  <what_was_wrong>
+    First-party Crest and MapMagic bridge wrappers read floating-origin absolute data directly for presentation/streaming
+    shader and depth-cache math.
+  </what_was_wrong>
+  <what_was_done>
+    Added current-origin proof helpers. Proof loss falls back to visual/runtime values only; no vendor asset or material
+    internals were changed.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved Crest depth-cache coverage, MapMagic terrain fade shader fake, and distant terrain shadow presentation.
+    No third-party asset, material, allocation, or rebuild change was introduced.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 105 -> 103.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=103.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on Crest and MapMagic first-party bridge files returned zero raw direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="112" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Items/PickupItem.cs; Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftSource.cs; Assets/_Project/Scripts/Interaction/PhysicalSnapSwitch.cs; Assets/_Project/Scripts/Interaction/PlayerInteraction.cs; Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs</target>
+  <what_was_wrong>
+    Five one-hit runtime bridge sites rebuilt AUP directly from localized Vector3 data in pickup, light-shaft,
+    interaction, look-target, and PDA reveal paths.
+  </what_was_wrong>
+  <what_was_done>
+    Added current-origin AUP proof offsets. Touched routes now add local runtime deltas to a proven origin in double
+    precision and fail closed on non-finite origin or output state.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved the cheap presentation fakes: screen-space shaft scoring, hover-target HUD packet, snap-switch haptics,
+    pickup signal identity, and PDA cartography reveal. No public interaction DTO, shader route, Vault handle, or rebuild
+    was changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 103 -> 98.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2037;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=98.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on touched files returned no raw direct bridge call except the PDA helper name itself.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="113" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/HectonItem.cs; Assets/_Project/Scripts/HectonUnderwaterVisuals.cs; Assets/_Project/Scripts/SubmarineElectrolysisModule.cs; Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs; Assets/_Project/Scripts/HectonAtmosphereManager.cs; Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs; Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    Six one-hit paths rebuilt AUP from localized runtime coordinates in item, visual fog, electrolysis, mod projection,
+    atmosphere hysteresis, and thermodynamics grid setup code. A concurrent rewrite also reintroduced a hard deltaAup
+    downcast in UpgradeMatrixCompiler.
+  </what_was_wrong>
+  <what_was_done>
+    Added current-origin AUP proof offsets for all six bridge routes and restored UpgradeMatrixCompiler to
+    AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved visual/projection fakes: biome fog blending, mod event projection caps, electrolysis cinematic pulse
+    placement, and thermodynamics grid fallback. No public DTO, shader route, Vault ownership, or rebuild was changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 98 -> 92; hard runtime
+    component cast count restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2036;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=92.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted exact bridge/cast grep returned zero raw direct bridge and deltaAup float-cast hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="114" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/ToolHitUtility.cs; Assets/_Project/Scripts/Gameplay/PlayerNoiseEmitter.cs; Assets/_Project/Scripts/Interaction/LifePodSeatStrapCoordinator.cs; Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs; Assets/_Project/Scripts/Gameplay/SargassumCutResponder.cs; Assets/_Project/Scripts/ModularEquipmentEngine.cs; Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs; Assets/_Project/Scripts/TetherManager.cs; Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    Eight leaf/runtime routes rebuilt AUP through direct floating-origin bridge calls. A concurrent tool-matrix rewrite
+    reintroduced one raw deltaAup float downcast, making the hard SHINOBU gate red.
+  </what_was_wrong>
+  <what_was_done>
+    Added current-origin proof offsets for impact, player-noise fallback, seat-lock, VR head fallback, sargassum debris,
+    modular equipment thermal grid, Atlas PDA distance, and tether camera context routes. Restored UpgradeMatrixCompiler
+    to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap presentation fakes: impact audio/signal packets, player-noise emissions, VR comfort state, organic
+    debris bursts, Atlas cinematic distance display, thermal grid readback, and tether mock camera context. No public DTO,
+    Vault handle, shader ABI, Addressables route, or rebuild was changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 92 -> 83; hard runtime
+    component cast count restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2036;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=83.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted exact bridge grep on Loop 114 files returned zero raw direct bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="115" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/HectonPlayerState.cs; Assets/_Project/Scripts/Gameplay/HostileFlora.cs; Assets/_Project/Scripts/Gameplay/MantaScooter.cs; Assets/_Project/Scripts/Gameplay/Loot/LootMagnetSystem.cs; Assets/_Project/Scripts/UI/PDASpectrumTab.cs; Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs; Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs; Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs; Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    Eight isolated producer routes rebuilt AUP from localized runtime positions. UpgradeMatrixCompiler also reintroduced
+    one raw deltaAup float downcast under concurrent edits.
+  </what_was_wrong>
+  <what_was_done>
+    Added current-origin proof offsets for player state, hostile flora seed hashing, scooter headlight signals, loot
+    magnet proxy registration, PDA spectrum distance, vegetation spore events, ore depletion signals, and marine-snow
+    wake/GPU binding routes. Restored UpgradeMatrixCompiler to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap fakes: deterministic flora spread seed, scooter headlight packets, PDA rounded distance, vegetation
+    spore queue, ore depletion signal, and marine-snow wake impulse. No public DTO, shader ABI, Vault handle, or rebuild
+    was changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 83 -> 76; hard runtime
+    component cast count restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2036;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=76.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted exact bridge grep on Loop 115 files returned zero raw direct bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="116" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/HectonPlayerState.cs; Assets/_Project/Scripts/Gameplay/DebrisManager.cs; Assets/_Project/Scripts/ScannerTool.cs; Assets/_Project/Scripts/Gameplay/HarvestablePlant.cs; Assets/_Project/Scripts/VFX/NativeTrailRenderer.cs; Assets/_Project/Scripts/World/HectonBrinePoolMeshGenerator.cs; Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs; Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs; Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs; Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs; Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    Runtime producers rebuilt AUP or absolute doubles from localized runtime positions. Player prediction inferred proof
+    from default AUP. UpgradeMatrixCompiler reintroduced one raw deltaAup float downcast under concurrent edits.
+  </what_was_wrong>
+  <what_was_done>
+    Added current-origin proof offsets for debris petrification, scanner and GPR pings, plant loot scatter, native trail
+    samples, brine pool centers, archaeology scan/shader points, decal ingress/mock origin, and sargassum save
+    quantization. Player prediction now uses an explicit hasAupProof boolean. Restored UpgradeMatrixCompiler to
+    AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap fakes: thermal debris petrification SDF deposit, scanner/GPR acoustic pings, deterministic loot
+    scatter, procedural trail mesh samples, generated brine hazard surfaces, archaeology scanner shader point, dynamic
+    decals, and sargassum scavenger persistence. No public DTO, shader ABI, Vault handle, or rebuild was changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 76 -> 68; hard runtime
+    component cast count restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2040;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=68.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted exact bridge grep on Loop 116 files returned zero raw direct bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="117" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs; Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs; Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    HUD threat/proxy-light presentation and migration ecology rebuilt AUP from localized runtime positions. UpgradeMatrixCompiler
+    reintroduced one raw deltaAup float downcast under concurrent edits.
+  </what_was_wrong>
+  <what_was_done>
+    Added current-origin proof offsets for HUD camera/grid/proxy-light conversions and migration blood-cloud,
+    whale-fall, target, and field wrapping routes. Restored UpgradeMatrixCompiler to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap fakes: HUD threat chevrons, HUD proxy light, migration blood-cloud POIs, whale-fall population
+    falloff, and route target generation. No public DTO, shader ABI, Vault handle, or rebuild was changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 68 -> 60; hard runtime
+    component cast count restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2043;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=60.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted exact bridge grep on Loop 117 files returned zero raw direct bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="118" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Fauna/FaunaBrain.cs; Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs; Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs</target>
+  <what_was_wrong>
+    Fauna gameplay/cognition/corpse routes rebuilt AUP from runtime positions or raw origin offsets. UpgradeMatrixCompiler
+    reintroduced one raw deltaAup float downcast under concurrent edits.
+  </what_was_wrong>
+  <what_was_done>
+    Reused current-origin proof for fauna spawn placement, cognition target AUPs, damage signals, hibernation hunt
+    targets, voxel route caches, director hunt targets, forced migration targets, and corpse origin offsets. Corpse sink
+    job now advances AUP from previous corpse AUP by Y delta. Restored UpgradeMatrixCompiler to
+    AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap fakes: predator cognition input, corpse sink visual death drift, voxel route guidance, EMP pulse
+    damage, kinetic impact publishing, and forced migration targets. No public DTO, shader ABI, Vault handle, or rebuild
+    was changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 60 -> 50; hard runtime
+    component cast count restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2045;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=50.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted exact bridge grep on Loop 118 files returned zero raw direct bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="119" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/Interaction/PhysicalHandController.cs;
+    Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs;
+    Assets/_Project/Scripts/HectonNarrativeDirector.cs;
+    Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs;
+    Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs;
+    Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs
+  </target>
+  <what_was_wrong>
+    Five leaf systems rebuilt authoritative AUP from runtime Vector3 or direct floating-origin offsets. The defects covered
+    hand/suit contact routes, sonar ping/camera capture, narrative trigger player/POI routes, critical audio target/ping
+    routes, absolute-depth surface offsets, and contextual IK controller/head anchors. UpgradeMatrixCompiler reintroduced
+    one raw deltaAup float downcast under concurrent edits.
+  </what_was_wrong>
+  <what_was_done>
+    Routed all runtime-coordinate AUP reconstruction through current-runtime-origin proof plus AbsoluteUniversePosition
+    OffsetMeters. Replaced same-frame hand span AUP round-trips with double local-delta squared distance. Sonar/audio/IK
+    fail closed on missing proof, and IK latch blend decays instead of storing default AUP. Restored UpgradeMatrixCompiler
+    to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap presentation/control fakes: same-frame hand local-span math, sonar mock SDF/raymarch budget, ping
+    return presentation signals, narrative cadence scanning, and IK latch blend decay. No public DTO, shader ABI, Vault
+    handle, or build route was changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 50 -> 35; hard runtime
+    component cast count restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2062;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=35.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted exact bridge grep on Loop 119 files returned zero raw direct bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="120" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/Gameplay/HectonScanRenderRegistry.cs;
+    Assets/_Project/Scripts/Gameplay/MantaScooter.cs;
+    Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs;
+    Assets/_Project/Scripts/Gameplay/BioReactor.cs;
+    Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs;
+    Assets/_Project/Scripts/Gameplay/BeaconRegistry.cs;
+    Assets/_Project/Scripts/Gameplay/BatteryCharger.cs;
+    Assets/_Project/Scripts/UI/PhysicalPanelButton.cs;
+    Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs;
+    Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs
+  </target>
+  <what_was_wrong>
+    One-off runtime-position AUP bridges remained in scanner loot spheres, scooter headlight signals, hull root capture,
+    reactor/charger/panel/equipment packets, beacon nearest queries, and mesofauna mock slot state. UpgradeMatrixCompiler
+    reintroduced one raw deltaAup float downcast under concurrent edits.
+  </what_was_wrong>
+  <what_was_done>
+    Routed leaf call sites through current-origin proof helpers. Reused existing HullIntegrity proof route. Scanner loot
+    cache now fails closed on invalid proof, and scanner shader-center construction no longer reads CurrentTotalOffsetDouble.
+    Restored UpgradeMatrixCompiler to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap presentation/control fakes: scanner proxy spheres, scooter light scalar signals, panel/equipment
+    hit packets, reactor/charger event packets, and mesofauna mock slots. No public DTO, shader ABI, Vault handle, or
+    build route was changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 35 -> 25; hard runtime
+    component cast count restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2080;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=25.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted exact bridge grep on Loop 120 files returned zero raw direct bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="121" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/Fauna/FaunaBrain.Foveated.cs;
+    Assets/_Project/Scripts/EncounterDirector.cs;
+    Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs;
+    Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs;
+    Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs;
+    Assets/_Project/Scripts/Gameplay/BaseAirlock.cs;
+    Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs
+  </target>
+  <what_was_wrong>
+    Runtime-position AUP bridges remained in foveated predator wrap, encounter headless spawns, seismic player AUP,
+    leviathan tentacle contact conversion, cavitation detonation/origin paths, and BaseAirlock bulkhead pose snapshots.
+    UpgradeMatrixCompiler reintroduced one raw deltaAup float downcast under concurrent edits.
+  </what_was_wrong>
+  <what_was_done>
+    Routed call sites through current-origin proof helpers. Leviathan and cavitation presentation locals now subtract in
+    double-domain AUP space before AupPrecisionMath.DowncastLocalDelta. BaseAirlock uses its existing proof helper for
+    the bulkhead pose snapshot. Restored UpgradeMatrixCompiler to AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap foveated wrap, headless encounter, seismic, tentacle, cavitation, and bulkhead presentation/control
+    fakes. No public DTO, shader ABI, Vault handle, asmdef edge, or build route was changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 25 -> 21;
+    strictTransformAuthorityReadCount 1 -> 0; hard runtime component cast count restored to 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2088;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=21.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted exact bridge grep on Loop 121 files plus BaseAirlock returned zero raw direct bridge hits.
+    Targeted compiler grep returned zero raw deltaAup float downcast hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="122" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/Gameplay/MantaScooter.cs;
+    Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs;
+    Assets/_Project/Scripts/CrashTelemetryBuffer.cs;
+    Assets/_Project/Scripts/Ecosystem/FaunaGeneticsManager.cs;
+    Assets/_Project/Scripts/WorldProceduralScatterDirectorSpatialHelpers.cs;
+    Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs;
+    Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs;
+    Assets/_Project/Scripts/BiomeMatrixDirector.cs;
+    Assets/_Project/Scripts/SaveManager.cs;
+    Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs;
+    Assets/_Project/Scripts/Gameplay/BaseAirlock.cs;
+    Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs
+  </target>
+  <what_was_wrong>
+    Leaf/cold routes still rebuilt AUP from runtime positions in scooter, physics culling, crash telemetry, fauna genetics,
+    procedural scatter, Atlas core, toxic outgassing, biome hysteresis, save safe-snap, and prologue origin setup.
+    Concurrent edits also restored BaseAirlock's strict Transform bridge and UpgradeMatrixCompiler's raw deltaAup downcast.
+  </what_was_wrong>
+  <what_was_done>
+    Routed runtime-position bridges through current-origin proof helpers, used authored absolute AUP for Atlas core,
+    preserved deterministic fallback hashing for fauna genetics, and restored BaseAirlock/UpgradeMatrixCompiler gate fixes.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap presentation/control/cold-path fakes: scooter headlight packets, physics culling camera fallback,
+    crash telemetry fallback, scatter proxy absolute positions, Atlas pulse distance, toxic grid origin, biome hysteresis,
+    save safe-snap, and prologue capsule-at-origin illusion. No public DTO, shader ABI, Vault handle, asmdef edge, or build route changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 21 -> 11; hard gate counts stayed 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2089;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=11.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted exact bridge grep on Loop 122 files plus BaseAirlock returned zero raw direct bridge hits.
+    Targeted compiler grep returned zero raw deltaAup float downcast hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="123" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/Construction/VRConstructionWeldTarget.cs;
+    Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs;
+    Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs;
+    Assets/_Project/Scripts/Construction/HabitatGraphManager.cs;
+    Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs;
+    Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs;
+    Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+  </target>
+  <what_was_wrong>
+    Leaf construction, atmosphere, VFX, and gameplay code still rebuilt AUP or absolute doubles from runtime presentation coordinates.
+    HectonMarineSnowRenderer and BatteryCharger were returned regressions after earlier leaf cleanup.
+  </what_was_wrong>
+  <what_was_done>
+    Routed weld glow, pipe rupture signals, rupture absolute cache, habitat socket root AUP, waterline signals,
+    marine snow local propwash positions, and charger AUP caches through current-origin proof helpers.
+    Marine snow now downcasts only after double-domain subtraction through AupPrecisionMath.DowncastLocalDelta.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Preserved cheap visual/control fakes: weld glow proxy light, local rupture spline flags, base breach effects,
+    habitat socket preview runtime projection, ocean waterline breach signal, marine snow compute binding, and charger LED state.
+    No public DTO, shader ABI, Vault handle, asmdef edge, or build route changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 11 -> 6; hard gate counts stayed 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2089;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=6.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted bridge grep on Loop 123 leaf files returned zero FromRuntimePosition, ToAbsoluteUniversePositionDouble3, or CurrentTotalOffsetDouble hits.
+    Targeted BaseAirlock/UpgradeMatrixCompiler regression grep returned zero hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="124" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/Core/GlobalSignals.cs;
+    Assets/_Project/Scripts/World/PersistentWorldRegistry.cs;
+    Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs;
+    Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+  </target>
+  <what_was_wrong>
+    Core runtime-position helper APIs still wrapped direct floating-origin conversion paths, keeping the final SHINOBU runtime AUP bridge review debt alive.
+    BatteryCharger also returned a direct bridge during validation due to concurrent write contention.
+  </what_was_wrong>
+  <what_was_done>
+    Made CurrentRuntimeOriginAup the finite committed-origin proof point; routed GlobalSignals, CombatDamageSignalCodec,
+    AbsoluteUniversePosition runtime helpers, and XRRuntimeAup48 conversion through current-origin AUP plus double offset math.
+    Restored the BatteryCharger current-origin proof helper after the concurrent regression.
+  </what_was_done>
+  <cinematic_cheats_used>
+    No physical simulation was added. The existing "runtime Vector3 is presentation/local space" lie remains contained behind one proofed origin bridge.
+    No public DTO layout, shader ABI, Vault handle, signal lane, asmdef edge, or build route changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: runtimeAupBridgeReviewCount 6 -> 0; hard gate counts stayed 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2088;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=0.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted core/BatteryCharger grep returned zero AbsoluteUniversePosition.FromRuntimePosition call-site or HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3 hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="125" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamPreviewGizmo.cs;
+    Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+  </target>
+  <what_was_wrong>
+    The seam preview editor cast absolute AUP endpoints directly to float3, and BatteryCharger was concurrently overwritten back to a direct floating-origin bridge.
+  </what_was_wrong>
+  <what_was_done>
+    Subtracted terrainRootAup in double precision before casting seam preview vertices to localized float3.
+    Restored BatteryCharger to current-origin AUP plus OffsetAbsoluteMeters.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Editor preview now renders a root-local seam-delta mesh instead of pretending absolute 100km coordinates are safe float world positions.
+    No runtime assembly reference, public DTO, shader ABI, Vault handle, signal lane, or build route changed.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static debt reduced: editorComponentFloatAupCastReviewCount 2 -> 0; runtimeAupBridgeReviewCount stayed 0.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2088;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    editorComponentFloatAupCastReviewCount=0; strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=0.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted seam preview component-cast grep returned zero hits.
+    Targeted BatteryCharger direct bridge grep returned zero hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warning only for BatteryCharger.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="126" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/Gameplay/BaseAirlock.cs;
+    Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+  </target>
+  <what_was_wrong>
+    Concurrent edits reopened direct floating-origin runtime bridges in BatteryCharger and BaseAirlock after the prior clean scan.
+  </what_was_wrong>
+  <what_was_done>
+    Restored both paths to GlobalSignals.CurrentRuntimeOriginAup plus AbsoluteUniversePosition.OffsetMeters/OffsetAbsoluteMeters.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Kept runtime-local presentation coordinates as the cheap visual/control input and reconstructed AUP only through the current-origin proof route.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static proof restored to zero review counts under active file contention.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2088;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    editorComponentFloatAupCastReviewCount=0; strictTransformAuthorityReadCount=0; runtimeAupBridgeReviewCount=0.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted grep on BaseAirlock and BatteryCharger returned zero direct runtime AUP bridge hits before the gate.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only for BaseAirlock and BatteryCharger.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="127" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Tools/AupPrecisionGate_SHINOBU_205.py;
+    Tools/TestAupPrecisionGate_SHINOBU_205.py;
+    Assets/_Project/Scripts/Interaction/EquipmentInteractionContracts.cs;
+    Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs;
+    Assets/_Project/Scripts/Interaction/PhysicalSnapSwitch.cs;
+    Assets/_Project/Scripts/UI/PhysicalPanelButton.cs;
+    Assets/_Project/Scripts/Gameplay/BaseAirlock.cs;
+    Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+  </target>
+  <what_was_wrong>
+    Concurrent edits reopened direct floating-origin bridges in BaseAirlock and BatteryCharger.
+    The scanner did not expose lowercase absolute double-to-float payload casts, and interaction hit routing collapsed precise double AUPs into legacy float3 HitPoint before central dispatch.
+  </what_was_wrong>
+  <what_was_done>
+    Restored BaseAirlock and BatteryCharger to current-origin AUP proof plus double-domain offset math.
+    Added legacyAbsoluteFloatPayloadReviewCount and by-file findings to the Python gate, with a self-test fixture.
+    Added InteractionSignal.CoordinateFlags at byte 98 and InteractionSignal.HitPointAupDouble at byte 104 while preserving the 128-byte stride and existing offsets.
+    Populated the double hit proof from PhysicalSnapSwitch, PhysicalPanelButton, and platform rehydration.
+    Routed central interaction dispatch through TryResolveSignalHitPointDouble and TryResolveSignalRuntimeHitPoint, including the double3 voxel plasma overload.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Kept the cheap legacy float payload as ABI/presentation fallback. The precise double proof rides existing padding only when a producer already resolved it; no physical simulation, queue widening, or packet repack was added.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Hard static counts stayed zero; the gain is preserved double hit proof through the interaction dispatcher and visibility into 16 remaining legacy absolute-float payload review sites.
+  </microseconds_saved>
+  <layout>
+    InteractionSignal remains 128 bytes: Source 0-63; TargetInstanceID 64-67; legacy HitPoint 68-79; HitNormal 80-91; PowerDelivered 92-95; EffectType 96; PenetrationOccurred 97; CoordinateFlags 98; pad byte 99; pad uint 100-103; double3 HitPointAupDouble 104-127. Offset 104 is divisible by 8.
+  </layout>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2089;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    editorComponentFloatAupCastReviewCount=0; strictTransformAuthorityReadCount=0;
+    runtimeAupBridgeReviewCount=0; legacyAbsoluteFloatPayloadReviewCount=16.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted grep on BaseAirlock and BatteryCharger returned zero direct runtime AUP bridge hits before post-log drift.
+    Targeted interaction grep returned zero new Vector3(signal.HitPoint) dispatch conversions.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="128" domain="AUP_PRECISION_INSPECTOR">
+  <target>Assets/_Project/Scripts/Gameplay/BaseAirlock.cs</target>
+  <what_was_wrong>
+    Post-log verification caught another concurrent BaseAirlock overwrite restoring HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition).
+  </what_was_wrong>
+  <what_was_done>
+    Restored the bridge to GlobalSignals.CurrentRuntimeOriginAup plus AbsoluteUniversePosition.OffsetMeters and reran the gate.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Kept runtime-local position as presentation input only; AUP is reconstructed through the current-origin proof route.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static proof restored under active file contention.
+  </microseconds_saved>
+  <verification>
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2090;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    editorComponentFloatAupCastReviewCount=0; strictTransformAuthorityReadCount=0;
+    runtimeAupBridgeReviewCount=0; legacyAbsoluteFloatPayloadReviewCount=16.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted grep on BaseAirlock and BatteryCharger returned zero direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="129" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/Gameplay/BaseAirlock.cs;
+    Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+  </target>
+  <what_was_wrong>
+    A later full SHINOBU gate reopened runtimeAupBridgeReviewCount=2 because BaseAirlock and BatteryCharger were both overwritten back to direct floating-origin bridge calls.
+  </what_was_wrong>
+  <what_was_done>
+    Restored both bridge sites to GlobalSignals.CurrentRuntimeOriginAup plus AbsoluteUniversePosition.OffsetMeters/OffsetAbsoluteMeters and reran the full gate.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Kept runtime-local presentation coordinates as cheap input; AUP reconstruction remains behind the current-origin proof route.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. This loop restores static proof under active write contention.
+  </microseconds_saved>
+  <verification>
+    Targeted grep on BaseAirlock and BatteryCharger returned zero direct runtime AUP bridge hits.
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2090;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    editorComponentFloatAupCastReviewCount=0; strictTransformAuthorityReadCount=0;
+    runtimeAupBridgeReviewCount=0; legacyAbsoluteFloatPayloadReviewCount=16.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="130" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/Gameplay/BaseAirlock.cs;
+    Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+  </target>
+  <what_was_wrong>
+    Loop 130 pre-scan again found BaseAirlock and BatteryCharger overwritten back to direct HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3 calls.
+  </what_was_wrong>
+  <what_was_done>
+    Restored both call sites to GlobalSignals.CurrentRuntimeOriginAup plus double-domain local offset math. Spawned a read-only side audit for the 16 review-only legacy absolute-float payload sites.
+  </what_was_done>
+  <cinematic_cheats_used>
+    None. This pass preserved coordinate authority; no physical simulation or render fake was added.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Static gate returned to zero hard/runtime bridge findings; remaining debt is review-only legacy payload classification.
+  </microseconds_saved>
+  <verification>
+    Targeted grep returned zero direct bridge hits.
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2090;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    editorComponentFloatAupCastReviewCount=0; strictTransformAuthorityReadCount=0;
+    runtimeAupBridgeReviewCount=0; legacyAbsoluteFloatPayloadReviewCount=16.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="131" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/World/SpaceEngine098/SpaceEngine098TerrainKernels.cs;
+    Assets/_Project/Scripts/Gameplay/BaseAirlock.cs;
+    Assets/_Project/Scripts/Gameplay/BatteryCharger.cs;
+    Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs
+  </target>
+  <what_was_wrong>
+    SpaceEngine ridged terrain cast an absolute sample coordinate to float before procedural phase evaluation. Concurrent validation also reopened direct runtime AUP bridge calls in BaseAirlock, BatteryCharger, and PlayerKinematicsRuntime.
+  </what_was_wrong>
+  <what_was_done>
+    Added a local finite SpaceEngine procedural-phase downcast helper and moved frequency scaling into double precision before the downcast. Restored all three runtime bridge regressions to current-origin AUP proof plus double-domain local offset math.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Kept ridged terrain as a deterministic procedural noise fake rather than adding terrain physics or mesh simulation. The change only improves phase precision before the existing cheap noise evaluation.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. Review-only legacy absolute-float payload count dropped 16 to 15; hard/runtime gate debt returned to 0.
+  </microseconds_saved>
+  <verification>
+    Re-extracted CURRENT_BATCH.md SHINOBU_205 prompt lines 331-395.
+    Targeted grep on BaseAirlock, BatteryCharger, and PlayerKinematicsRuntime returned zero direct runtime AUP bridge hits.
+    python Tools\AupPrecisionGate_SHINOBU_205.py: PASS_STATIC_GATE; filesScanned=2093;
+    directAupFloat3CastCount=0; runtimeComponentFloatAupCastCount=0;
+    editorComponentFloatAupCastReviewCount=0; strictTransformAuthorityReadCount=0;
+    runtimeAupBridgeReviewCount=0; legacyAbsoluteFloatPayloadReviewCount=15.
+    python Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    python -m py_compile Tools\AupPrecisionGate_SHINOBU_205.py Tools\TestAupPrecisionGate_SHINOBU_205.py: PASS.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="132" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs;
+    Assets/_Project/Scripts/WorldProceduralScatterDirector.cs;
+    Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+  </target>
+  <what_was_wrong>
+    Scatter sampling used a float absolute center to derive center-cell indices. BatteryCharger continued to be overwritten back to a direct floating-origin bridge during full-gate validation.
+  </what_was_wrong>
+  <what_was_done>
+    Added a double WorldToScatterCellIndex overload and routed scatter center-cell X/Z through centerAup.ToAbsoluteDouble3. Restored BatteryCharger.ResolveChargerAup to current-origin proof after the writer race.
+  </what_was_done>
+  <cinematic_cheats_used>
+    Kept scatter as the existing cell-budget procedural placement fake. No physics, scene search, or per-object GameObject instantiation was added.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. The improvement is precision stability for scatter cell selection; full-gate proof is currently blocked by active BatteryCharger write contention.
+  </microseconds_saved>
+  <verification>
+    Full gate during the race: PASS_STATIC_GATE with runtimeAupBridgeReviewCount=1 from BatteryCharger and legacyAbsoluteFloatPayloadReviewCount=15.
+    Immediate targeted grep after final repair on BaseAirlock, BatteryCharger, and PlayerKinematicsRuntime returned zero direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>
+<LOOP_AUDIT id="SHINOBU_205" loop="133" domain="AUP_PRECISION_INSPECTOR">
+  <target>
+    Assets/_Project/Scripts/Gameplay/BaseAirlock.cs;
+    Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs
+  </target>
+  <what_was_wrong>
+    Post-log checkpoint caught BaseAirlock and PlayerKinematicsRuntime reverted back to direct HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3 bridge calls.
+  </what_was_wrong>
+  <what_was_done>
+    Restored both call sites to GlobalSignals.CurrentRuntimeOriginAup plus AbsoluteUniversePosition.OffsetMeters.
+  </what_was_done>
+  <cinematic_cheats_used>
+    None. This was contention repair for coordinate authority.
+  </cinematic_cheats_used>
+  <microseconds_saved>
+    No runtime microsecond saving claimed. The gain is keeping the direct runtime AUP bridge out of the current working tree snapshot.
+  </microseconds_saved>
+  <verification>
+    Immediate targeted grep on BaseAirlock, BatteryCharger, and PlayerKinematicsRuntime returned zero direct runtime AUP bridge hits.
+    Targeted git diff --check returned 0 errors; Git emitted LF->CRLF warnings only.
+    Full-gate validation remains contention-blocked while these files are racing.
+    dotnet build/rebuild was not launched.
+  </verification>
+</LOOP_AUDIT>

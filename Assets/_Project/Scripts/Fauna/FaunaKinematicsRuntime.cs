@@ -17,7 +17,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(FaunaBrain))]
-    internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable, ILeviathanProceduralTunerSource
+    internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable, ILeviathanProceduralTunerSource, IScalabilityChangedEventListener
     {
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LEVIATHAN_RIGGER.bin";
         private const string BiteTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_FAUNA_BITE_IK_SOLVER.bin";
@@ -114,19 +114,20 @@ namespace Hecton8.AI
         private Transform _cachedTransform;
         private IDataVault _dataVault;
         private MapMagicBridge _mapMagic;
+        private FaunaBrain _faunaBrain;
 
-        private VaultBufferHandle<float3> _segmentPositionsHandle;
-        private VaultBufferHandle<float3> _previousSegmentPositionsHandle;
-        private VaultBufferHandle<LeviathanBoneDTO> _leviathanBonesHandle;
-        private VaultBufferHandle<LeviathanBoneConstraintsDTO> _boneConstraintsHandle;
-        private VaultBufferHandle<LeviathanCapsuleColliderDTO> _colliderProxiesHandle;
-        private VaultBufferHandle<byte> _rigCsvScratchHandle;
-        private VaultBufferHandle<LeviathanTerrainIkTelemetryEntry> _telemetryRingHandle;
-        private VaultBufferHandle<int> _telemetryCursorHandle;
-        private VaultBufferHandle<JawIkTarget> _jawIkTargetsHandle;
-        private VaultBufferHandle<CurrentJawPos> _currentJawPosHandle;
-        private VaultBufferHandle<BiteIkSolveEvent> _biteIkSolveEventsHandle;
-        private VaultBufferHandle<int> _biteIkTelemetryCursorHandle;
+        private VaultGenerationHandle<float3> _segmentPositionsHandle;
+        private VaultGenerationHandle<float3> _previousSegmentPositionsHandle;
+        private VaultGenerationHandle<LeviathanBoneDTO> _leviathanBonesHandle;
+        private VaultGenerationHandle<LeviathanBoneConstraintsDTO> _boneConstraintsHandle;
+        private VaultGenerationHandle<LeviathanCapsuleColliderDTO> _colliderProxiesHandle;
+        private VaultGenerationHandle<byte> _rigCsvScratchHandle;
+        private VaultGenerationHandle<LeviathanTerrainIkTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<int> _telemetryCursorHandle;
+        private VaultGenerationHandle<JawIkTarget> _jawIkTargetsHandle;
+        private VaultGenerationHandle<CurrentJawPos> _currentJawPosHandle;
+        private VaultGenerationHandle<BiteIkSolveEvent> _biteIkSolveEventsHandle;
+        private VaultGenerationHandle<int> _biteIkTelemetryCursorHandle;
 
         private GraphicsBuffer _bonesGraphicsBufferA;
         private GraphicsBuffer _bonesGraphicsBufferB;
@@ -140,6 +141,7 @@ namespace Hecton8.AI
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
+        private bool _registeredScalabilityListener;
         private bool _disposed;
         private bool _telemetryDumped;
         private bool _biteTelemetryDumped;
@@ -247,6 +249,7 @@ namespace Hecton8.AI
             EnsurePersistentBuffers();
             HydrateRigDefinitionsOrMockCold();
             ResetConstraintIterationHysteresis();
+            TryRegisterScalabilityListener();
             TryRegister();
             TryRegisterOriginShiftListener();
         }
@@ -257,6 +260,7 @@ namespace Hecton8.AI
                 return;
 
             TryUnregisterOriginShiftListener();
+            TryUnregisterScalabilityListener();
             TryUnregister();
             CompleteScheduledSolverForLifecycle();
             ClearGpuSkinningBinding();
@@ -274,6 +278,7 @@ namespace Hecton8.AI
 
             _disposed = true;
             TryUnregisterOriginShiftListener();
+            TryUnregisterScalabilityListener();
             TryUnregister();
             ClearGpuSkinningBinding();
             DisposePersistentBuffers();
@@ -300,7 +305,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier qualityTier = _qualityTier;
             float qualityWeight = ResolveGlobalQualityWeight();
             float safeDeltaTime = math.min(math.max(0f, deltaTime), 0.05f);
             _qualityTier = qualityTier;
@@ -385,6 +390,7 @@ namespace Hecton8.AI
             JobHandle scheduledHandle = job.Schedule();
             if (biteTargetReady)
             {
+                AbsoluteUniversePosition predatorAup = ResolveOwnerAup();
                 ProceduralBiteJob biteJob = new ProceduralBiteJob
                 {
                     JawIkTargets = jawIkTargets,
@@ -392,7 +398,7 @@ namespace Hecton8.AI
                     LeviathanBones = leviathanBones,
                     BiteIkSolveEvents = biteIkSolveEvents,
                     TelemetryCursor = biteIkTelemetryCursor,
-                    PredatorAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(ResolveOwnerRuntimePosition())),
+                    PredatorAup = predatorAup,
                     PredatorPosition = ResolveOwnerRuntimePosition(),
                     PredatorForward = ResolveOwnerForward(),
                     PredatorUp = new float3(0f, 1f, 0f),
@@ -480,6 +486,7 @@ namespace Hecton8.AI
 
         internal void BindFromFauna(FaunaBrain faunaBrain, Rigidbody body)
         {
+            _faunaBrain = faunaBrain;
             _body = body;
             _cachedTransform = faunaBrain != null ? faunaBrain.transform : transform;
             CompleteScheduledSolverForLifecycle();
@@ -557,14 +564,20 @@ namespace Hecton8.AI
         {
             _dataVault = GlobalRegistry.DataVault;
             _mapMagic = GlobalRegistry.MapMagic;
+            _qualityTier = GlobalRegistry.ScalabilityTier;
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _qualityTier = payload.CurrentQualityTier;
         }
 
         private void EnsurePersistentBuffers()
         {
-            if (TryResolveSpineVaultBuffers(out _, out _, out _, out _, out _))
+            if (TryResolveSpineVaultBuffers(out _, out _, out _, out _, out _) &&
+                TryResolveProceduralAuxVaultBuffers(out _, out _, out _) &&
+                TryResolveBiteIkVaultBuffers(out _, out _, out _, out _))
             {
-                TryResolveProceduralAuxVaultBuffers(out _, out _, out _);
-                TryResolveBiteIkVaultBuffers(out _, out _, out _, out _);
                 return;
             }
 
@@ -576,15 +589,17 @@ namespace Hecton8.AI
                 return;
             }
 
-            _segmentPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _previousSegmentPositionsHandle = vault.GetBufferHandle<float3>(BufferID.LeviathanPreviousSegmentPositions, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _leviathanBonesHandle = vault.GetBufferHandle<LeviathanBoneDTO>(BufferID.LeviathanBoneMatrices, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _boneConstraintsHandle = vault.GetBufferHandle<LeviathanBoneConstraintsDTO>(BufferID.LeviathanProceduralBoneConstraints, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _colliderProxiesHandle = vault.GetBufferHandle<LeviathanCapsuleColliderDTO>(BufferID.LeviathanCreatureColliderProxies, MaxSegments, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _rigCsvScratchHandle = vault.GetBufferHandle<byte>(BufferID.LeviathanRigCsvScratch, 4096, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = vault.GetBufferHandle<LeviathanTerrainIkTelemetryEntry>(BufferID.LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkConstants.TelemetryCapacity, SystemID.AnimationFauna, NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = vault.GetBufferHandle<int>(BufferID.LeviathanTerrainIkTelemetryCursor, 1, SystemID.AnimationFauna, NativeArrayOptions.ClearMemory);
-            EnsureBiteIkVaultHandles(vault);
+            bool primaryReady = OpenOrAcquireVaultBuffer(vault, ref _segmentPositionsHandle, BufferID.LeviathanSegmentPositions, MaxSegments, NativeArrayOptions.UninitializedMemory, out _) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _previousSegmentPositionsHandle, BufferID.LeviathanPreviousSegmentPositions, MaxSegments, NativeArrayOptions.UninitializedMemory, out _) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _leviathanBonesHandle, BufferID.LeviathanBoneMatrices, MaxSegments, NativeArrayOptions.UninitializedMemory, out _) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _telemetryRingHandle, BufferID.LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkConstants.TelemetryCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                                OpenOrAcquireVaultBuffer(vault, ref _telemetryCursorHandle, BufferID.LeviathanTerrainIkTelemetryCursor, 1, NativeArrayOptions.ClearMemory, out _);
+            bool auxReady = OpenOrAcquireVaultBuffer(vault, ref _boneConstraintsHandle, BufferID.LeviathanProceduralBoneConstraints, MaxSegments, NativeArrayOptions.UninitializedMemory, out _) &&
+                            OpenOrAcquireVaultBuffer(vault, ref _colliderProxiesHandle, BufferID.LeviathanCreatureColliderProxies, MaxSegments, NativeArrayOptions.UninitializedMemory, out _) &&
+                            OpenOrAcquireVaultBuffer(vault, ref _rigCsvScratchHandle, BufferID.LeviathanRigCsvScratch, 4096, NativeArrayOptions.UninitializedMemory, out _);
+            bool biteReady = EnsureBiteIkVaultHandles(vault);
+            if (!primaryReady || !auxReady || !biteReady)
+                ClearNativeBufferViews();
         }
 
         private bool TryResolveSpineVaultBuffers(
@@ -594,32 +609,23 @@ namespace Hecton8.AI
             out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
             out NativeArray<int> telemetryCursor)
         {
+            segmentPositions = default;
+            previousSegmentPositions = default;
+            leviathanBones = default;
+            telemetryRing = default;
+            telemetryCursor = default;
+
             IDataVault vault = _dataVault;
             if (vault == null)
             {
-                segmentPositions = default;
-                previousSegmentPositions = default;
-                leviathanBones = default;
-                telemetryRing = default;
-                telemetryCursor = default;
                 return false;
             }
 
-            segmentPositions = _segmentPositionsHandle.Resolve(vault);
-            previousSegmentPositions = _previousSegmentPositionsHandle.Resolve(vault);
-            leviathanBones = _leviathanBonesHandle.Resolve(vault);
-            telemetryRing = _telemetryRingHandle.Resolve(vault);
-            telemetryCursor = _telemetryCursorHandle.Resolve(vault);
-            return segmentPositions.IsCreated &&
-                   previousSegmentPositions.IsCreated &&
-                   leviathanBones.IsCreated &&
-                   telemetryRing.IsCreated &&
-                   telemetryCursor.IsCreated &&
-                   segmentPositions.Length >= MaxSegments &&
-                   previousSegmentPositions.Length >= MaxSegments &&
-                   leviathanBones.Length >= MaxSegments &&
-                   telemetryRing.Length >= LeviathanTerrainIkConstants.TelemetryCapacity &&
-                   telemetryCursor.Length >= 1;
+            return TryOpenVaultBuffer(vault, ref _segmentPositionsHandle, BufferID.LeviathanSegmentPositions, MaxSegments, out segmentPositions) &&
+                   TryOpenVaultBuffer(vault, ref _previousSegmentPositionsHandle, BufferID.LeviathanPreviousSegmentPositions, MaxSegments, out previousSegmentPositions) &&
+                   TryOpenVaultBuffer(vault, ref _leviathanBonesHandle, BufferID.LeviathanBoneMatrices, MaxSegments, out leviathanBones) &&
+                   TryOpenVaultBuffer(vault, ref _telemetryRingHandle, BufferID.LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkConstants.TelemetryCapacity, out telemetryRing) &&
+                   TryOpenVaultBuffer(vault, ref _telemetryCursorHandle, BufferID.LeviathanTerrainIkTelemetryCursor, 1, out telemetryCursor);
         }
 
         private bool TryResolveProceduralAuxVaultBuffers(
@@ -627,45 +633,19 @@ namespace Hecton8.AI
             out NativeArray<LeviathanCapsuleColliderDTO> colliderProxies,
             out NativeArray<byte> rigCsvScratch)
         {
+            boneConstraints = default;
+            colliderProxies = default;
+            rigCsvScratch = default;
+
             IDataVault vault = _dataVault;
             if (vault == null)
             {
-                boneConstraints = default;
-                colliderProxies = default;
-                rigCsvScratch = default;
                 return false;
             }
 
-            if (!_boneConstraintsHandle.IsCreated)
-                _boneConstraintsHandle = vault.GetBufferHandle<LeviathanBoneConstraintsDTO>(
-                    BufferID.LeviathanProceduralBoneConstraints,
-                    MaxSegments,
-                    SystemID.AnimationFauna,
-                    NativeArrayOptions.UninitializedMemory);
-
-            if (!_colliderProxiesHandle.IsCreated)
-                _colliderProxiesHandle = vault.GetBufferHandle<LeviathanCapsuleColliderDTO>(
-                    BufferID.LeviathanCreatureColliderProxies,
-                    MaxSegments,
-                    SystemID.AnimationFauna,
-                    NativeArrayOptions.UninitializedMemory);
-
-            if (!_rigCsvScratchHandle.IsCreated)
-                _rigCsvScratchHandle = vault.GetBufferHandle<byte>(
-                    BufferID.LeviathanRigCsvScratch,
-                    4096,
-                    SystemID.AnimationFauna,
-                    NativeArrayOptions.UninitializedMemory);
-
-            boneConstraints = _boneConstraintsHandle.Resolve(vault);
-            colliderProxies = _colliderProxiesHandle.Resolve(vault);
-            rigCsvScratch = _rigCsvScratchHandle.Resolve(vault);
-            return boneConstraints.IsCreated &&
-                   colliderProxies.IsCreated &&
-                   rigCsvScratch.IsCreated &&
-                   boneConstraints.Length >= MaxSegments &&
-                   colliderProxies.Length >= MaxSegments &&
-                   rigCsvScratch.Length >= 4096;
+            return TryOpenVaultBuffer(vault, ref _boneConstraintsHandle, BufferID.LeviathanProceduralBoneConstraints, MaxSegments, out boneConstraints) &&
+                   TryOpenVaultBuffer(vault, ref _colliderProxiesHandle, BufferID.LeviathanCreatureColliderProxies, MaxSegments, out colliderProxies) &&
+                   TryOpenVaultBuffer(vault, ref _rigCsvScratchHandle, BufferID.LeviathanRigCsvScratch, 4096, out rigCsvScratch);
         }
 
         private bool TryResolveBiteIkVaultBuffers(
@@ -674,74 +654,52 @@ namespace Hecton8.AI
             out NativeArray<BiteIkSolveEvent> biteIkSolveEvents,
             out NativeArray<int> biteIkTelemetryCursor)
         {
+            jawIkTargets = default;
+            currentJawPos = default;
+            biteIkSolveEvents = default;
+            biteIkTelemetryCursor = default;
+
             IDataVault vault = _dataVault;
             if (vault == null)
             {
                 _biteVaultReady = false;
-                jawIkTargets = default;
-                currentJawPos = default;
-                biteIkSolveEvents = default;
-                biteIkTelemetryCursor = default;
                 return false;
             }
 
-            if (!EnsureBiteIkVaultHandles(vault))
-            {
-                _biteVaultReady = false;
-                jawIkTargets = default;
-                currentJawPos = default;
-                biteIkSolveEvents = default;
-                biteIkTelemetryCursor = default;
-                return false;
-            }
-
-            jawIkTargets = _jawIkTargetsHandle.Resolve(vault);
-            currentJawPos = _currentJawPosHandle.Resolve(vault);
-            biteIkSolveEvents = _biteIkSolveEventsHandle.Resolve(vault);
-            biteIkTelemetryCursor = _biteIkTelemetryCursorHandle.Resolve(vault);
-            _biteVaultReady = jawIkTargets.IsCreated &&
-                              currentJawPos.IsCreated &&
-                              biteIkSolveEvents.IsCreated &&
-                              biteIkTelemetryCursor.IsCreated &&
-                              jawIkTargets.Length >= ProceduralBiteIkConstants.TargetCapacity &&
-                              currentJawPos.Length >= ProceduralBiteIkConstants.CurrentJawPoseCapacity &&
-                              biteIkSolveEvents.Length >= ProceduralBiteIkConstants.TelemetryCapacity &&
-                              biteIkTelemetryCursor.Length >= 1;
+            _biteVaultReady = TryOpenVaultBuffer(vault, ref _jawIkTargetsHandle, BufferID.JawIkTargets, ProceduralBiteIkConstants.TargetCapacity, out jawIkTargets) &&
+                              TryOpenVaultBuffer(vault, ref _currentJawPosHandle, BufferID.CurrentJawPos, ProceduralBiteIkConstants.CurrentJawPoseCapacity, out currentJawPos) &&
+                              TryOpenVaultBuffer(vault, ref _biteIkSolveEventsHandle, BufferID.BiteIkSolveEvents, ProceduralBiteIkConstants.TelemetryCapacity, out biteIkSolveEvents) &&
+                              TryOpenVaultBuffer(vault, ref _biteIkTelemetryCursorHandle, BufferID.BiteIkTelemetryCursor, 1, out biteIkTelemetryCursor);
             return _biteVaultReady;
         }
 
         private bool TryResolveCurrentJawPosVaultBuffer(out NativeArray<CurrentJawPos> currentJawPos)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !EnsureBiteIkVaultHandles(vault))
+            if (vault == null)
             {
                 currentJawPos = default;
                 return false;
             }
 
-            currentJawPos = _currentJawPosHandle.Resolve(vault);
-            return currentJawPos.IsCreated &&
-                   currentJawPos.Length >= ProceduralBiteIkConstants.CurrentJawPoseCapacity;
+            return TryOpenVaultBuffer(vault, ref _currentJawPosHandle, BufferID.CurrentJawPos, ProceduralBiteIkConstants.CurrentJawPoseCapacity, out currentJawPos);
         }
 
         private bool TryResolveBiteTelemetryVaultBuffers(
             out NativeArray<BiteIkSolveEvent> biteIkSolveEvents,
             out NativeArray<int> biteIkTelemetryCursor)
         {
+            biteIkSolveEvents = default;
+            biteIkTelemetryCursor = default;
+
             IDataVault vault = _dataVault;
-            if (vault == null || !EnsureBiteIkVaultHandles(vault))
+            if (vault == null)
             {
-                biteIkSolveEvents = default;
-                biteIkTelemetryCursor = default;
                 return false;
             }
 
-            biteIkSolveEvents = _biteIkSolveEventsHandle.Resolve(vault);
-            biteIkTelemetryCursor = _biteIkTelemetryCursorHandle.Resolve(vault);
-            return biteIkSolveEvents.IsCreated &&
-                   biteIkTelemetryCursor.IsCreated &&
-                   biteIkSolveEvents.Length >= ProceduralBiteIkConstants.TelemetryCapacity &&
-                   biteIkTelemetryCursor.Length >= 1;
+            return TryOpenVaultBuffer(vault, ref _biteIkSolveEventsHandle, BufferID.BiteIkSolveEvents, ProceduralBiteIkConstants.TelemetryCapacity, out biteIkSolveEvents) &&
+                   TryOpenVaultBuffer(vault, ref _biteIkTelemetryCursorHandle, BufferID.BiteIkTelemetryCursor, 1, out biteIkTelemetryCursor);
         }
 
         private bool EnsureBiteIkVaultHandles(IDataVault vault)
@@ -749,46 +707,87 @@ namespace Hecton8.AI
             if (vault == null)
                 return false;
 
-            if (!_jawIkTargetsHandle.IsCreated)
+            return OpenOrAcquireVaultBuffer(vault, ref _jawIkTargetsHandle, BufferID.JawIkTargets, ProceduralBiteIkConstants.TargetCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                   OpenOrAcquireVaultBuffer(vault, ref _currentJawPosHandle, BufferID.CurrentJawPos, ProceduralBiteIkConstants.CurrentJawPoseCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                   OpenOrAcquireVaultBuffer(vault, ref _biteIkSolveEventsHandle, BufferID.BiteIkSolveEvents, ProceduralBiteIkConstants.TelemetryCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                   OpenOrAcquireVaultBuffer(vault, ref _biteIkTelemetryCursorHandle, BufferID.BiteIkTelemetryCursor, 1, NativeArrayOptions.ClearMemory, out _);
+        }
+
+        private bool OpenOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null || requiredLength <= 0)
             {
-                _jawIkTargetsHandle = vault.GetBufferHandle<JawIkTarget>(
-                    BufferID.JawIkTargets,
-                    ProceduralBiteIkConstants.TargetCapacity,
-                    SystemID.AnimationFauna,
-                    NativeArrayOptions.ClearMemory);
+                buffer = default;
+                return false;
             }
 
-            if (!_currentJawPosHandle.IsCreated)
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.AnimationFauna,
+                options);
+            return TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsMatchingVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
             {
-                _currentJawPosHandle = vault.GetBufferHandle<CurrentJawPos>(
-                    BufferID.CurrentJawPos,
-                    ProceduralBiteIkConstants.CurrentJawPoseCapacity,
-                    SystemID.AnimationFauna,
-                    NativeArrayOptions.ClearMemory);
+                buffer = default;
+                return false;
             }
 
-            if (!_biteIkSolveEventsHandle.IsCreated)
+            return true;
+        }
+
+        private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.AnimationFauna &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool TryOpenExistingVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
+                handle.BufferID != (uint)bufferId ||
+                handle.Generation == 0u ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
             {
-                _biteIkSolveEventsHandle = vault.GetBufferHandle<BiteIkSolveEvent>(
-                    BufferID.BiteIkSolveEvents,
-                    ProceduralBiteIkConstants.TelemetryCapacity,
-                    SystemID.AnimationFauna,
-                    NativeArrayOptions.ClearMemory);
+                buffer = default;
+                return false;
             }
 
-            if (!_biteIkTelemetryCursorHandle.IsCreated)
-            {
-                _biteIkTelemetryCursorHandle = vault.GetBufferHandle<int>(
-                    BufferID.BiteIkTelemetryCursor,
-                    1,
-                    SystemID.AnimationFauna,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            return _jawIkTargetsHandle.IsCreated &&
-                   _currentJawPosHandle.IsCreated &&
-                   _biteIkSolveEventsHandle.IsCreated &&
-                   _biteIkTelemetryCursorHandle.IsCreated;
+            return true;
         }
 
         private void DisposePersistentBuffers()
@@ -977,7 +976,7 @@ namespace Hecton8.AI
             bool swapEndian = false;
             if (!IsLeviathanRigMagic(magic))
             {
-                uint swappedMagic = math.reversebytes(magic);
+                uint swappedMagic = ReverseBytes(magic);
                 if (!IsLeviathanRigMagic(swappedMagic))
                     return false;
 
@@ -1066,7 +1065,15 @@ namespace Hecton8.AI
         private static uint ReadUInt32(NativeArray<byte> bytes, int offset, bool swapEndian)
         {
             uint value = ReadUInt32Little(bytes, offset);
-            return swapEndian ? math.reversebytes(value) : value;
+            return swapEndian ? ReverseBytes(value) : value;
+        }
+
+        private static uint ReverseBytes(uint value)
+        {
+            return ((value & 0x000000FFu) << 24) |
+                   ((value & 0x0000FF00u) << 8) |
+                   ((value & 0x00FF0000u) >> 8) |
+                   ((value & 0xFF000000u) >> 24);
         }
 
         private static int ReadInt32(NativeArray<byte> bytes, int offset, bool swapEndian)
@@ -1141,6 +1148,9 @@ namespace Hecton8.AI
 
         private void TryHydrateRigConstraintsCsvCold()
         {
+#if !UNITY_EDITOR
+            return;
+#else
             if (!TryResolveProceduralAuxVaultBuffers(
                     out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints,
                     out _,
@@ -1151,7 +1161,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            string csvPath = Path.Combine(Application.streamingAssetsPath, "leviathan_rig_constraints.csv");
+            string csvPath = Path.Combine(Application.dataPath, "_SourceData", "Fauna", "leviathan_rig_constraints.csv");
             if (!File.Exists(csvPath))
                 return;
 
@@ -1175,6 +1185,7 @@ namespace Hecton8.AI
             catch (ArgumentException)
             {
             }
+#endif
         }
 
         private static void ParseConstraintCsv(
@@ -1355,9 +1366,12 @@ namespace Hecton8.AI
             if (targetHash == 0u)
                 targetHash = 1u;
 
+            if (!TryResolveAupFromRuntimeOrigin(center, out AbsoluteUniversePosition centerAup))
+                return false;
+
             JawIkTarget target = new JawIkTarget
             {
-                CenterAup = AbsoluteUniversePosition.FromRuntimePosition(center),
+                CenterAup = centerAup,
                 RuntimeCenter = SanitizeFiniteInputFloat3((float3)center, ResolveOwnerRuntimePosition()),
                 Extents = SanitizeFiniteInputFloat3((float3)extents, new float3(0.5f)),
                 Forward = targetTransform != null ? SanitizeFiniteInputFloat3((float3)targetTransform.forward, new float3(0f, 0f, 1f)) : new float3(0f, 0f, 1f),
@@ -1401,7 +1415,9 @@ namespace Hecton8.AI
             if (signals.Length <= 0)
                 return;
 
-            AbsoluteUniversePosition ownerAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(ResolveOwnerRuntimePosition()));
+            if (!TryResolveOwnerAup(out AbsoluteUniversePosition ownerAup))
+                return;
+
             for (int i = 0; i < signals.Length; i++)
             {
                 FaunaStateChangedSignal signal = signals[i];
@@ -1467,7 +1483,9 @@ namespace Hecton8.AI
                 frame - _lastBiteFeedbackFrame >= math.max(1, (int)math.ceil(BiteFeedbackCooldownSeconds * 60f)))
             {
                 _lastBiteFeedbackFrame = frame;
-                AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(pose.JawTipPosition));
+                if (!TryResolveAupFromRuntimeOrigin(pose.JawTipPosition, out AbsoluteUniversePosition pointAup))
+                    return;
+
                 DebrisSpawnSignal debris = default;
                 debris.PositionAup = pointAup;
                 debris.SpeciesHash = BiteSparksSignalHash;
@@ -1498,7 +1516,10 @@ namespace Hecton8.AI
             {
                 _lastBiteAudioFrame = frame;
                 AcousticPingSignal signal = default;
-                signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(pose.JawTipPosition));
+                if (!TryResolveAupFromRuntimeOrigin(pose.JawTipPosition, out AbsoluteUniversePosition jawTipAup))
+                    return;
+
+                signal.PositionAup = jawTipAup;
                 signal.RadiusMeters = 18f;
                 signal.Intensity01 = math.saturate(1f - pose.TargetDistanceMeters * 0.5f);
                 signal.SourceId = pose.TargetHash;
@@ -1699,9 +1720,7 @@ namespace Hecton8.AI
 
             NativeArray<byte> resolvedSdf = publishedSdf;
             IDataVault vault = _dataVault;
-            if (vault != null &&
-                vault.TryGetBuffer(BufferID.VoxelSdfTexture3D, out NativeArray<byte> vaultSdf) &&
-                vaultSdf.IsCreated &&
+            if (TryOpenExistingVaultBuffer(vault, BufferID.VoxelSdfTexture3D, expectedLength, out NativeArray<byte> vaultSdf) &&
                 vaultSdf.Length == expectedLength)
             {
                 resolvedSdf = vaultSdf;
@@ -1729,7 +1748,7 @@ namespace Hecton8.AI
                 return;
 
             if (!_mapMagic.TryGetQuantizedHeightmapPayload(targetPosition.x, targetPosition.z, out MapMagicBridge.QuantizedHeightmapPayload payload) ||
-                !payload.IsValid)
+                !MapMagicBridge.QuantizedHeightmapPayload.IsValid(in payload))
             {
                 return;
             }
@@ -1754,9 +1773,7 @@ namespace Hecton8.AI
 
             NativeArray<ushort> resolvedHeight = payload.HeightSamples;
             IDataVault vault = _dataVault;
-            if (vault != null &&
-                vault.TryGetBuffer(BufferID.TerrainSeamHeightmap, out NativeArray<ushort> vaultHeightmap) &&
-                vaultHeightmap.IsCreated &&
+            if (TryOpenExistingVaultBuffer(vault, BufferID.TerrainSeamHeightmap, expectedLength, out NativeArray<ushort> vaultHeightmap) &&
                 vaultHeightmap.Length == expectedLength)
             {
                 resolvedHeight = vaultHeightmap;
@@ -1934,6 +1951,24 @@ namespace Hecton8.AI
 
             _registeredUpdate = false;
             _registeredLateFrame = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
         }
 
         private void TryRegisterOriginShiftListener()
@@ -2237,7 +2272,6 @@ namespace Hecton8.AI
 
         private void ResetConstraintIterationHysteresis()
         {
-            _qualityTier = GlobalRegistry.ScalabilityTier;
             _globalQualityWeight = ResolveGlobalQualityWeight();
             float curve = SmoothQualityCurve(_globalQualityWeight);
             _activeSegmentCount = math.clamp(
@@ -2264,8 +2298,26 @@ namespace Hecton8.AI
 
         private double3 ResolveOwnerAupDouble3()
         {
-            AbsoluteUniversePosition ownerAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(ResolveOwnerRuntimePosition()));
+            AbsoluteUniversePosition ownerAup = ResolveOwnerAup();
             return ownerAup.ToAbsoluteDouble3();
+        }
+
+        private AbsoluteUniversePosition ResolveOwnerAup()
+        {
+            if (TryResolveOwnerAup(out AbsoluteUniversePosition ownerAup))
+                return ownerAup;
+
+            return TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
+                ? originAup
+                : default;
+        }
+
+        private bool TryResolveOwnerAup(out AbsoluteUniversePosition ownerAup)
+        {
+            if (_faunaBrain != null && _faunaBrain.TryResolveLogicAup(out ownerAup))
+                return IsFiniteAup(in ownerAup);
+
+            return TryResolveAupFromRuntimeOrigin(ResolveOwnerRuntimePosition(), out ownerAup);
         }
 
         private float3 ResolveOwnerForward()
@@ -2417,6 +2469,40 @@ namespace Hecton8.AI
         private static float3 SanitizeFiniteInputFloat3(float3 value, float3 fallback)
         {
             return math.all(math.isfinite(value)) ? value : fallback;
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
+        {
+            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return IsFiniteAup(in originAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(float3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.all(math.isfinite(runtimePosition)))
+                return false;
+
+            if (!TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            float3 runtimeLocal = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            return TryResolveAupFromRuntimeOrigin(runtimeLocal, out positionAup);
         }
 
         private static float SanitizePositiveFinite(float value, float fallback, float minValue)

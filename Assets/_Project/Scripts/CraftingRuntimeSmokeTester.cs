@@ -1,4 +1,5 @@
 using Hecton8.Crafting;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using UnityEngine;
 
@@ -51,8 +52,8 @@ namespace Hecton8.Debugging
             _ = durationSeconds;
             _ = thermalThrottleMultiplier;
 
-            if (!GlobalDataVault.TryGetLatestCreated(out _) && Application.isBatchMode)
-                GlobalDataVault.Create(64, BatchFallbackVaultBytes);
+            if (!EnsureBatchVaultRegistered())
+                return false;
 
             if (!FabricationAssemblerRuntime.EnsureRuntime() ||
                 !FabricationAssemblerRuntime.GenerateMockFabricationJobs())
@@ -77,6 +78,19 @@ namespace Hecton8.Debugging
                    lastSnapshot.TargetPrefabHash != 0u &&
                    averageMockProgress >= 0f &&
                    averageMockProgress <= 1f;
+        }
+
+        private static bool EnsureBatchVaultRegistered()
+        {
+            if (GlobalRegistry.DataVault != null)
+                return true;
+
+            if (!Application.isBatchMode)
+                return false;
+
+            GlobalDataVault vault = GlobalDataVault.Create(64, BatchFallbackVaultBytes);
+            GlobalRegistry.RegisterDataVault(vault);
+            return GlobalRegistry.DataVault != null;
         }
     }
 }

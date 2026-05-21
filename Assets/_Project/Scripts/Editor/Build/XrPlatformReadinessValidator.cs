@@ -1,11 +1,16 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEditor.XR.Management;
+using UnityEditor.XR.Management.Metadata;
 using UnityEngine;
+using UnityEngine.XR.Management;
+using UnityEngine.XR.OpenXR;
 
 namespace Hecton8.Editor.Build
 {
@@ -16,6 +21,8 @@ namespace Hecton8.Editor.Build
         private const string XrManagementPackage = "com.unity.xr.management";
         private const string OpenXrPackage = "com.unity.xr.openxr";
         private const string MetaOpenXrPackage = "com.unity.xr.meta-openxr";
+        private const string OpenXrLoaderTypeName = "UnityEngine.XR.OpenXR.OpenXRLoader";
+        private const string WireAndroidOpenXrMenuPath = "HECTON-8/Platform/Wire Android OpenXR Provider Route";
 
         public int callbackOrder => -4610;
 
@@ -43,6 +50,75 @@ namespace Hecton8.Editor.Build
         private static void ValidateActiveBuildTarget()
         {
             Validate(EditorUserBuildSettings.activeBuildTarget, hardFail: false);
+        }
+
+        public static void ValidateAndroidXrReadinessForCi()
+        {
+            Validate(BuildTarget.Android, hardFail: true);
+        }
+
+        [MenuItem(WireAndroidOpenXrMenuPath, priority = 422)]
+        private static void WireAndroidOpenXrProviderRouteFromMenu()
+        {
+            WireAndroidOpenXrProviderRouteForCi();
+        }
+
+        public static void WireAndroidOpenXrProviderRouteForCi()
+        {
+            string root = Directory.GetCurrentDirectory();
+            if (!PackageManifestContains(root, XrManagementPackage))
+            {
+                throw new BuildFailedException("Packages/manifest.json is missing " + XrManagementPackage + ".");
+            }
+
+            if (!PackageManifestContains(root, OpenXrPackage))
+            {
+                throw new BuildFailedException("Packages/manifest.json is missing " + OpenXrPackage + ".");
+            }
+
+            XRGeneralSettingsPerBuildTarget perTargetSettings = GetOrCreateXrGeneralSettingsPerBuildTarget();
+            if (perTargetSettings == null)
+            {
+                throw new BuildFailedException("XRGeneralSettingsPerBuildTarget.GetOrCreate returned null.");
+            }
+
+            if (!perTargetSettings.HasManagerSettingsForBuildTarget(BuildTargetGroup.Android))
+            {
+                perTargetSettings.CreateDefaultManagerSettingsForBuildTarget(BuildTargetGroup.Android);
+            }
+
+            XRManagerSettings managerSettings = perTargetSettings.ManagerSettingsForBuildTarget(BuildTargetGroup.Android);
+            if (managerSettings == null)
+            {
+                throw new BuildFailedException("XR Management Android manager settings are missing after creation.");
+            }
+
+            if (!XRPackageMetadataStore.AssignLoader(managerSettings, OpenXrLoaderTypeName, BuildTargetGroup.Android))
+            {
+                throw new BuildFailedException("Failed to assign " + OpenXrLoaderTypeName + " to Android XR Management settings.");
+            }
+
+            OpenXRSettings openXrSettings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
+            if (openXrSettings == null)
+            {
+                throw new BuildFailedException("OpenXR Android settings could not be created.");
+            }
+
+            openXrSettings.renderMode = OpenXRSettings.RenderMode.SinglePassInstanced;
+
+            XRGeneralSettings generalSettings = perTargetSettings.SettingsForBuildTarget(BuildTargetGroup.Android);
+            if (generalSettings != null)
+            {
+                EditorUtility.SetDirty(generalSettings);
+            }
+
+            EditorUtility.SetDirty(perTargetSettings);
+            EditorUtility.SetDirty(managerSettings);
+            EditorUtility.SetDirty(openXrSettings);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Validate(BuildTarget.Android, hardFail: false);
         }
 
         private static void Validate(BuildTarget target, bool hardFail)
@@ -80,10 +156,18 @@ namespace Hecton8.Editor.Build
                 Append(warnings, "Packages/manifest.json is missing com.unity.xr.meta-openxr; Quest-specific OpenXR feature validation will remain incomplete.");
             }
 
-            if (ProjectSettingsContain(root, "m_BuildTargetVRSettings: []"))
+            BuildTargetGroup targetGroup = BuildPipeline.GetBuildTargetGroup(target);
+            bool hasOpenXrProviderRoute = HasOpenXrProviderRoute(targetGroup);
+            if (ProjectSettingsContain(root, "m_BuildTargetVRSettings: []") && !hasOpenXrProviderRoute)
             {
-                Append(failures, "ProjectSettings has an empty build-target VR settings list.");
+                Append(failures, "ProjectSettings has an empty build-target VR settings list and XR Management does not expose an active OpenXR loader route for " + targetGroup + ".");
             }
+            else if (ProjectSettingsContain(root, "m_BuildTargetVRSettings: []"))
+            {
+                Append(warnings, "Legacy ProjectSettings build-target VR list is empty; XR Management OpenXR loader route is the authoritative provider proof for " + targetGroup + ".");
+            }
+
+            ValidateOpenXrProviderRoute(targetGroup, failures);
 
             if (target == BuildTarget.Android)
             {
@@ -184,6 +268,67 @@ namespace Hecton8.Editor.Build
             for (int i = 0; i < parts.Length; i++)
             {
                 if (string.Equals(parts[i].Trim(), define, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static XRGeneralSettingsPerBuildTarget GetOrCreateXrGeneralSettingsPerBuildTarget()
+        {
+            MethodInfo method = typeof(XRGeneralSettingsPerBuildTarget).GetMethod(
+                "GetOrCreate",
+                BindingFlags.Static | BindingFlags.NonPublic);
+
+            if (method == null)
+            {
+                throw new BuildFailedException("XRGeneralSettingsPerBuildTarget.GetOrCreate reflection hook is missing.");
+            }
+
+            return method.Invoke(null, null) as XRGeneralSettingsPerBuildTarget;
+        }
+
+        private static void ValidateOpenXrProviderRoute(BuildTargetGroup targetGroup, StringBuilder failures)
+        {
+            XRManagerSettings managerSettings = TryGetXrManagerSettings(targetGroup);
+            if (managerSettings == null)
+            {
+                Append(failures, "XR Management manager settings are missing for " + targetGroup + ".");
+                return;
+            }
+
+            if (!HasOpenXrLoader(managerSettings))
+            {
+                Append(failures, "XR Management active loader list for " + targetGroup + " does not include " + OpenXrLoaderTypeName + ".");
+            }
+        }
+
+        private static bool HasOpenXrProviderRoute(BuildTargetGroup targetGroup)
+        {
+            XRManagerSettings managerSettings = TryGetXrManagerSettings(targetGroup);
+            return managerSettings != null && HasOpenXrLoader(managerSettings);
+        }
+
+        private static XRManagerSettings TryGetXrManagerSettings(BuildTargetGroup targetGroup)
+        {
+            XRGeneralSettings settings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(targetGroup);
+            return settings != null ? settings.Manager : null;
+        }
+
+        private static bool HasOpenXrLoader(XRManagerSettings managerSettings)
+        {
+            if (managerSettings == null)
+            {
+                return false;
+            }
+
+            var loaders = managerSettings.activeLoaders;
+            for (int i = 0; i < loaders.Count; i++)
+            {
+                XRLoader loader = loaders[i];
+                if (loader != null && string.Equals(loader.GetType().FullName, OpenXrLoaderTypeName, StringComparison.Ordinal))
                 {
                     return true;
                 }

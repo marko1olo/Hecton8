@@ -24,7 +24,6 @@ namespace Hecton8.UI.Tools
         private const float TierHysteresisSeconds = 2f;
         private const float PoolRetrySeconds = 2f;
         private const float InvisibleReleaseSeconds = 0.75f;
-        private const float SlowTickRegistrationRetrySeconds = 0.5f;
         private const float PropertyEpsilon = 0.0005f;
         private const string ToolUiLayerName = "ToolUI";
         private const byte ForcedFallbackFlag = ToolStateChangedSignal.FlagLowTierFallback;
@@ -140,7 +139,6 @@ namespace Hecton8.UI.Tools
         private float _appliedFault01 = -1f;
         private float _appliedToolTypeHue01 = -1f;
         private int _toolUiMask;
-        private float _slowTickRetrySeconds;
         private bool _registeredSlowTick;
         private bool _registeredHotSwapListener;
 
@@ -161,12 +159,11 @@ namespace Hecton8.UI.Tools
             _stateDirty = true;
             _renderRequested = true;
             _notRenderableSeconds = 0f;
-            _slowTickRetrySeconds = 0f;
             ResolveQualityImmediate();
             TryRegisterHotSwapListener();
             TryRegisterScalabilityListener();
             TryRegisterUpdatable();
-            TryRegisterSlowTickable(force: true);
+            TryRegisterSlowTickable();
             ApplyScreenTexture(_fallbackEmissiveTexture, fallbackActive: true);
             ApplyCameraRenderState(renderThisFrame: false);
         }
@@ -175,7 +172,7 @@ namespace Hecton8.UI.Tools
         {
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
-            TryRegisterSlowTickable(force: true);
+            TryRegisterSlowTickable();
         }
 
         private void OnDisable()
@@ -189,7 +186,6 @@ namespace Hecton8.UI.Tools
             _cachedRenderTexturePool = null;
             _poolUnavailableFallback = false;
             _poolRetrySeconds = 0f;
-            _slowTickRetrySeconds = 0f;
             _notRenderableSeconds = 0f;
             ApplyScreenTexture(_fallbackEmissiveTexture, fallbackActive: true);
         }
@@ -204,6 +200,13 @@ namespace Hecton8.UI.Tools
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            {
+                TryRegisterUpdatable();
+                TryRegisterSlowTickable();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.RenderTexturePoolRuntime)
                 return;
 
@@ -230,14 +233,6 @@ namespace Hecton8.UI.Tools
         public void Tick(float deltaTime)
         {
             float safeDeltaTime = SanitizeSeconds(deltaTime);
-            if (!_registered)
-                TryRegisterUpdatable();
-            if (!_registeredSlowTick)
-            {
-                if (_slowTickRetrySeconds > 0f)
-                    _slowTickRetrySeconds = math.max(0f, _slowTickRetrySeconds - safeDeltaTime);
-                TryRegisterSlowTickable(force: false);
-            }
 
             if (_poolRetrySeconds > 0f)
                 _poolRetrySeconds = math.max(0f, _poolRetrySeconds - safeDeltaTime);
@@ -863,7 +858,7 @@ namespace Hecton8.UI.Tools
 
         private void TryRegisterUpdatable()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying)
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
@@ -878,22 +873,12 @@ namespace Hecton8.UI.Tools
             _registered = false;
         }
 
-        private void TryRegisterSlowTickable(bool force)
+        private void TryRegisterSlowTickable()
         {
             if (_registeredSlowTick || !Application.isPlaying)
                 return;
 
-            if (!force && _slowTickRetrySeconds > 0f)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
-            {
-                _slowTickRetrySeconds = SlowTickRegistrationRetrySeconds;
-                return;
-            }
-
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
-            _slowTickRetrySeconds = _registeredSlowTick ? 0f : SlowTickRegistrationRetrySeconds;
         }
 
         private void TryUnregisterSlowTickable()
@@ -903,7 +888,6 @@ namespace Hecton8.UI.Tools
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
             _registeredSlowTick = false;
-            _slowTickRetrySeconds = 0f;
         }
 
         private void TryRegisterHotSwapListener()

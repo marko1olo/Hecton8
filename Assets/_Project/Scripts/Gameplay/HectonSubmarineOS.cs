@@ -237,9 +237,81 @@ namespace Hecton8.Gameplay
         private const uint LifeSupportCriticalStatusBit = 1u << 9;
         private const uint StationKeepingStatusBit = 1u << 10;
         private const uint SubOsPoweredStatusBit = 1u << 11;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<ISubmarineOsEventListener>[16] - submarine OS deferred listeners - owner: HectonSubmarineOsEvents
-        private static readonly RegistryBucket<ISubmarineOsEventListener> _listeners = new RegistryBucket<ISubmarineOsEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public ISubmarineOsEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct SubmarineOsListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public SubmarineOsListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(ISubmarineOsEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(ISubmarineOsEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void Unregister(ISubmarineOsEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public ISubmarineOsEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[16] - submarine OS deferred listeners - owner: HectonSubmarineOsEvents
+        private static SubmarineOsListenerRegistry _listeners = new SubmarineOsListenerRegistry(ListenerCapacity);
         private static NativeQueue<SubmarineOsEventPayload> _pendingEvents;
         private static NativeQueue<SubmarineOsEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -281,7 +353,7 @@ namespace Hecton8.Gameplay
 
             EnsureInitialized();
             if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+                _listeners.TryRegister(listener);
         }
 
         /// <summary>
@@ -428,7 +500,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<SubmarineOsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] — deferred submarine OS event lane — owner: HectonSubmarineOsEvents
+                _pendingEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] — deferred submarine OS event lane — owner: HectonSubmarineOsEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -440,7 +512,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<SubmarineOsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] — next-frame submarine OS event lane prevents same-frame reentrant dispatch — owner: HectonSubmarineOsEvents
+                _nextFrameEvents = new NativeQueue<SubmarineOsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] — next-frame submarine OS event lane prevents same-frame reentrant dispatch — owner: HectonSubmarineOsEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -488,13 +560,12 @@ namespace Hecton8.Gameplay
             if (count <= 0)
                 return;
 
-            ISubmarineOsEventListener[] rawArray = _listeners.RawArray;
             _isDispatching = true;
             try
             {
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    ISubmarineOsEventListener listener = rawArray[i];
+                    ISubmarineOsEventListener listener = _listeners.GetAt(i);
                     if (listener != null)
                         listener.OnSubmarineOsEvent(in payload);
                 }
@@ -571,7 +642,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineCoreDirector))]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Hecton Submarine OS")]
-    public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable, IPowerGridTelemetryListener, IHighPressureEventListener, IFatalPressureImplosionEventListener, IDroneFleetSnapshotEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, IScalabilityChangedEventListener
+    public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable, IPowerGridTelemetryListener, IHighPressureEventListener, IFatalPressureImplosionEventListener, IDroneFleetSnapshotEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
     {
         private const float DefaultReferencePressureKPa = HectonSurvivalContract.KPaPerAtmosphere;
         private const float LowPowerThreshold01 = 0.20f;
@@ -675,6 +746,9 @@ namespace Hecton8.Gameplay
         private SubmarineCoreDirector _submarineCore;
         private SubmarineAtmosphereSystem _atmosphereSystem;
         private SubmarineStationKeepingController _stationKeepingController;
+        private IPowerGridService _powerGridService;
+        private SpectrumSystem _spectrumRuntime;
+        private IPlayerRuntimeContext _playerRuntime;
         private HectonSubmarineOsSnapshot _lastPublishedSnapshot;
         private SubsystemStatus _subsystemStatus;
         private SubmarineEmergencyLevel _emergencyLevel;
@@ -707,6 +781,8 @@ namespace Hecton8.Gameplay
         private bool _registeredRenderable;
         private bool _registeredSlowTick;
         private bool _registeredScalabilityListener;
+        private bool _registeredHotSwapListener;
+        private bool _runtimeDispatcherReady;
         private bool _runtimeLifecycleStarted;
         private bool _stationKeepingStateCached;
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Low;
@@ -768,10 +844,13 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             CacheReferences();
+            RefreshColdRegistryReferences();
         }
 
         private void OnEnable()
         {
+            RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
             RefreshCachedScalabilityTier();
             TryRegisterScalabilityListener();
             TryStartRuntimeLifecycle();
@@ -779,11 +858,15 @@ namespace Hecton8.Gameplay
 
         private void Start()
         {
+            RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
             TryStartRuntimeLifecycle();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
+
             if (!_runtimeLifecycleStarted && !_registeredUpdatable && !_registeredSlowTick && !_registeredRenderable && !_registeredScalabilityListener)
                 return;
 
@@ -801,6 +884,7 @@ namespace Hecton8.Gameplay
         {
             _runtimeLifecycleStarted = false;
             Unsubscribe();
+            TryUnregisterHotSwapListener();
             TryUnregisterScalabilityListener();
             TryUnregister();
             RestoreBrownoutVisualsImmediate();
@@ -920,6 +1004,14 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void RefreshColdRegistryReferences()
+        {
+            _runtimeDispatcherReady = GlobalRegistry.Dispatcher != null;
+            _powerGridService = GlobalRegistry.PowerGrid;
+            _spectrumRuntime = GlobalRegistry.Spectrum;
+            _playerRuntime = GlobalRegistry.Player;
+        }
+
         private void Subscribe()
         {
             PowerGridTelemetryEvents.Register(this);
@@ -989,7 +1081,7 @@ namespace Hecton8.Gameplay
 
             if (!_registeredUpdatable)
             {
-                _registeredUpdatable = _subOsPowered && GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+                _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredSlowTick)
@@ -999,40 +1091,13 @@ namespace Hecton8.Gameplay
 
             if (!_registeredRenderable)
             {
-                _registeredRenderable = _subOsPowered && GlobalRegistry.Renderables.TryRegister(this);
-            }
-        }
-
-        private void TryRegisterActiveLoops()
-        {
-            if (!CanUseRuntimeDispatcher() || !_subOsPowered)
-                return;
-
-            if (!_registeredUpdatable)
-                _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-
-            if (!_registeredRenderable)
                 _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
-        }
-
-        private void TryUnregisterActiveLoops()
-        {
-            if (_registeredUpdatable)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredUpdatable = false;
-            }
-
-            if (_registeredRenderable)
-            {
-                GlobalRegistry.Renderables.Unregister(this);
-                _registeredRenderable = false;
             }
         }
 
-        private static bool CanUseRuntimeDispatcher()
+        private bool CanUseRuntimeDispatcher()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || !_runtimeDispatcherReady)
                 return false;
 
 #if UNITY_EDITOR
@@ -1093,6 +1158,48 @@ namespace Hecton8.Gameplay
             _registeredScalabilityListener = false;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _runtimeDispatcherReady = currentService != null;
+                    if (_runtimeDispatcherReady)
+                        TryStartRuntimeLifecycle();
+                    break;
+                case GlobalRegistryServiceSlot.PowerGrid:
+                    _powerGridService = currentService as IPowerGridService;
+                    break;
+                case GlobalRegistryServiceSlot.SpectrumRuntime:
+                    _spectrumRuntime = currentService as SpectrumSystem;
+                    RefreshSubsystemStatus();
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntime = currentService as IPlayerRuntimeContext;
+                    break;
+            }
+        }
+
         private bool ResolveSubOsPowered()
         {
             return _powerNormalized > SubOsUnpoweredThreshold01 || _powerSupplyRatio > SubOsUnpoweredThreshold01;
@@ -1106,7 +1213,6 @@ namespace Hecton8.Gameplay
             _subOsPowered = powered;
             if (!powered)
             {
-                TryUnregisterActiveLoops();
                 _navigationRefreshAccumulator = 0f;
                 _diagnosticsRefreshAccumulator = 0f;
                 _sonarPingIntensity = 0f;
@@ -1118,7 +1224,6 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            TryRegisterActiveLoops();
             PublishLog(HectonSubmarineOsLogCode.ReactorStable, LogPriorityNormal);
             RefreshNavigationTelemetry();
             RefreshEngineDiagnosticsTelemetry(DiagnosticsRefreshIntervalSeconds);
@@ -1138,7 +1243,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshTelemetryFromServices()
         {
-            IPowerGridService powerGridService = GlobalRegistry.PowerGrid;
+            IPowerGridService powerGridService = _powerGridService;
             if (powerGridService != null)
             {
                 BatteryRuntimeSnapshot batterySnapshot = powerGridService.BatterySnapshot;
@@ -1197,7 +1302,7 @@ namespace Hecton8.Gameplay
             if (!_lowPowerModeActive)
                 subsystemStatus |= SubsystemStatus.Lights;
 
-            SpectrumSystem spectrumSystem = GlobalRegistry.Spectrum;
+            SpectrumSystem spectrumSystem = _spectrumRuntime;
             if (spectrumSystem != null && spectrumSystem.isActiveAndEnabled)
                 subsystemStatus |= SubsystemStatus.Sonar;
 
@@ -1264,11 +1369,11 @@ namespace Hecton8.Gameplay
                                  math.max(0, snapshot.SignalCount);
 
             int nearest = int.MaxValue;
-            if (snapshot.HasNearestResource)
+            if (SpatialSonarSnapshot.HasNearestResource(in snapshot))
                 nearest = math.min(nearest, math.max(0, snapshot.NearestResourceDistanceMeters));
-            if (snapshot.HasNearestBioform)
+            if (SpatialSonarSnapshot.HasNearestBioform(in snapshot))
                 nearest = math.min(nearest, math.max(0, snapshot.NearestBioformDistanceMeters));
-            if (snapshot.HasNearestSignal)
+            if (SpatialSonarSnapshot.HasNearestSignal(in snapshot))
                 nearest = math.min(nearest, math.max(0, snapshot.NearestSignalDistanceMeters));
 
             _nearestSonarContactMeters = nearest == int.MaxValue ? 0 : nearest;
@@ -1493,7 +1598,7 @@ namespace Hecton8.Gameplay
         {
             _powerNormalized = math.saturate(snapshot.AvailablePowerNormalized);
             _powerSupplyRatio = math.saturate(snapshot.SupplyRatio);
-            _highestBrownoutTier = snapshot.HighestBrownoutTier;
+            _highestBrownoutTier = PowerGridTelemetrySnapshot.GetHighestBrownoutTier(in snapshot);
             SetSubOsPowered(ResolveSubOsPowered());
             if (!_subOsPowered)
                 return;
@@ -1592,13 +1697,13 @@ namespace Hecton8.Gameplay
 
         private HectonSurvivalSystem ResolvePlayerSurvivalSystem()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntime;
             return playerContext != null ? playerContext.SurvivalSystem : null;
         }
 
         private bool ResolvePlayerVitalWarningActive()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntime;
             HectonPlayerHealth playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
             if (playerHealth == null)
                 return false;

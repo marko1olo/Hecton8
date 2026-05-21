@@ -42,8 +42,10 @@ $runtimeSignalPack1Count = 0
 $managedEventCount = 0
 $localNativeTelemetryCount = 0
 $registeredLocalTelemetryCount = 0
+$localNativeQueueCount = 0
 $hotPathRiskCount = 0
 $computeThreadGroupRiskCount = 0
+$cacheLineCriticalStrideDebtCount = 0
 
 function Convert-ToRelativePath {
     param([string]$Path)
@@ -263,7 +265,8 @@ function New-StructMetadata {
         [string]$RelativePath,
         [int]$LineNumber,
         [bool]$HasLayout,
-        [bool]$ImplementsISignal
+        [bool]$ImplementsISignal,
+        [int]$LayoutSize
     )
 
     return [pscustomobject]@{
@@ -273,6 +276,7 @@ function New-StructMetadata {
         line = $LineNumber
         hasStructLayout = $HasLayout
         implementsISignal = $ImplementsISignal
+        layoutSize = $LayoutSize
         isEditor = Test-IsEditorPath $RelativePath
         isCoreGlobalSignals = $RelativePath -eq "Assets/_Project/Scripts/Core/GlobalSignals.cs"
         isCoreSignalFile = Test-IsCoreSignalFile $RelativePath
@@ -297,6 +301,81 @@ function Test-HasStructLayoutBefore {
     }
 
     return $false
+}
+
+function Get-StructLayoutSizeBefore {
+    param(
+        [string[]]$CodeLines,
+        [int]$Index
+    )
+
+    $builder = New-Object System.Text.StringBuilder
+    $start = [Math]::Max(0, $Index - 8)
+    for ($i = $start; $i -le $Index; $i++) {
+        if ($CodeLines[$i] -match "\[StructLayout") {
+            [void]$builder.Clear()
+        }
+
+        if ($builder.Length -gt 0 -or $CodeLines[$i] -match "\[StructLayout") {
+            [void]$builder.Append(" ")
+            [void]$builder.Append($CodeLines[$i])
+            if ($CodeLines[$i] -match "\]") {
+                break
+            }
+        }
+    }
+
+    $attribute = $builder.ToString()
+    $match = [regex]::Match($attribute, "\bSize\s*=\s*(\d+)")
+    if ($match.Success) {
+        return [int]$match.Groups[1].Value
+    }
+
+    return 0
+}
+
+function Get-ForwardStatement {
+    param(
+        [string[]]$CodeLines,
+        [int]$Index,
+        [int]$MaxContinuation = 12
+    )
+
+    $builder = New-Object System.Text.StringBuilder
+    $endIndex = $Index
+    $limit = [Math]::Min($CodeLines.Length - 1, $Index + $MaxContinuation)
+    for ($i = $Index; $i -le $limit; $i++) {
+        [void]$builder.Append(" ")
+        [void]$builder.Append($CodeLines[$i])
+        $endIndex = $i
+        if ($CodeLines[$i].IndexOf(";", [System.StringComparison]::Ordinal) -ge 0) {
+            break
+        }
+    }
+
+    return [pscustomobject]@{
+        text = $builder.ToString()
+        endIndex = $endIndex
+    }
+}
+
+function Get-RawStatementEvidence {
+    param(
+        [string[]]$RawLines,
+        [int]$StartIndex,
+        [int]$EndIndex
+    )
+
+    $builder = New-Object System.Text.StringBuilder
+    for ($i = $StartIndex; $i -le $EndIndex; $i++) {
+        if ($builder.Length -gt 0) {
+            [void]$builder.Append(" ")
+        }
+
+        [void]$builder.Append($RawLines[$i].Trim())
+    }
+
+    return $builder.ToString()
 }
 
 function Test-StructImplementsISignal {
@@ -546,7 +625,8 @@ foreach ($file in $files) {
                 -RelativePath $relativePath `
                 -LineNumber ($lineIndex + 1) `
                 -HasLayout (Test-HasStructLayoutBefore $codeLines $lineIndex) `
-                -ImplementsISignal (Test-StructImplementsISignal $codeLines $lineIndex)
+                -ImplementsISignal (Test-StructImplementsISignal $codeLines $lineIndex) `
+                -LayoutSize (Get-StructLayoutSizeBefore $codeLines $lineIndex)
             $metadata | Add-Member -NotePropertyName index -NotePropertyValue $lineIndex
             $structs.Add($metadata) | Out-Null
             $structByIndex[$lineIndex] = $metadata
@@ -585,6 +665,50 @@ foreach ($file in $files) {
                     }
                 }
             }
+        }
+    }
+
+    $structByName = @{}
+    foreach ($metadata in $structs) {
+        if (-not $structByName.ContainsKey($metadata.name)) {
+            $structByName[$metadata.name] = $metadata
+        }
+    }
+
+    for ($lineIndex = 0; $lineIndex -lt $codeLines.Length; $lineIndex++) {
+        $code = $codeLines[$lineIndex]
+        if ($code.IndexOf("SignalBus", [System.StringComparison]::Ordinal) -lt 0) {
+            continue
+        }
+
+        $statement = Get-ForwardStatement $codeLines $lineIndex
+        if ($statement.text.IndexOf("ConfigureCacheLineCritical", [System.StringComparison]::Ordinal) -lt 0) {
+            continue
+        }
+
+        $match = [regex]::Match($statement.text, "(?:global::)?(?:(?:[A-Za-z_][A-Za-z0-9_]*\.)*)SignalBus\s*<\s*(?:global::)?(?:(?:[A-Za-z_][A-Za-z0-9_]*\.)*)([A-Za-z_][A-Za-z0-9_]*)\s*>\s*\.\s*ConfigureCacheLineCritical\b")
+        if (-not $match.Success) {
+            continue
+        }
+
+        $laneType = $match.Groups[1].Value
+        $layoutSize = 0
+        $layoutLine = 0
+        if ($structByName.ContainsKey($laneType)) {
+            $layoutSize = [int]$structByName[$laneType].layoutSize
+            $layoutLine = [int]$structByName[$laneType].line
+        }
+
+        if ($layoutSize -eq 64 -or $layoutSize -eq 128) {
+            continue
+        }
+
+        $cacheLineCriticalStrideDebtCount++
+        Add-Finding "INFO" "CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT" 88 "CACHELINE_CRITICAL_TELEMETRY_DEBT" "CONFIGURE_CACHELINE_CRITICAL_CALL" $relativePath ($lineIndex + 1) $laneType (Get-RawStatementEvidence $rawLines $lineIndex $statement.endIndex) "This cache-line-critical lane currently has a payload stride outside 64/128 bytes. Keep telemetry flag bit 32 active and migrate to a 64/128-byte payload or split gameplay truth from visual sidecar before raising cadence." @{
+            payloadSize = $layoutSize
+            expectedStride = "64_OR_128"
+            structLine = $layoutLine
+            statementLineSpan = (($statement.endIndex - $lineIndex) + 1)
         }
     }
 
@@ -912,6 +1036,7 @@ foreach ($file in $files) {
         if ($queueFieldMatch.Success -and $relativePath -notmatch "Core/GlobalSignals\.cs|Core/Signals/SignalWardenRuntime\.cs|Editor/") {
             $fieldName = $queueFieldMatch.Groups[2].Value
             $ownership = Test-FileHasOwnershipPath $rawText $line $fieldName "Queue"
+            $localNativeQueueCount++
             if ($ownership.isOwned) {
                 Add-Finding "INFO" "LOCAL_SIGNAL_QUEUE_REGISTERED_NON_BUS_REVIEW" 70 "REGISTERED_LOCAL_QUEUE_REVIEW" "FIELD_DECLARATION_PLUS_SENTINEL_SCAN" $relativePath $lineNumber $fieldName $line "This local signal queue has sentinel ownership, but confirm it intentionally bypasses SignalBus<T> and does not fragment the global signal corridor." @{
                     hasSentinelRegistration = $ownership.hasRegister
@@ -1094,8 +1219,10 @@ $result = [pscustomobject]@{
     managedEventSurfaceHits = $managedEventCount
     localNativeTelemetryRings = $localNativeTelemetryCount
     registeredLocalTelemetryRings = $registeredLocalTelemetryCount
+    localNativeSignalQueues = $localNativeQueueCount
     hotPathRiskHits = $hotPathRiskCount
     computeThreadGroupRiskHits = $computeThreadGroupRiskCount
+    cacheLineCriticalStrideDebtHits = $cacheLineCriticalStrideDebtCount
     signalDefinitions = $signalDefinitions.Count
     coreGlobalSignalDefinitions = $coreGlobalSignalDefinitions
     signalsWithoutLayout = $signalsWithoutLayout
@@ -1129,8 +1256,10 @@ $md = New-Object System.Text.StringBuilder
 [void]$md.AppendLine("- Managed event surface hits: $managedEventCount")
 [void]$md.AppendLine("- Local native telemetry ring hits: $localNativeTelemetryCount")
 [void]$md.AppendLine("- Registered local telemetry rings: $registeredLocalTelemetryCount")
+[void]$md.AppendLine("- Local native signal queue hits: $localNativeQueueCount")
 [void]$md.AppendLine("- Hot-path heuristic hits: $hotPathRiskCount")
 [void]$md.AppendLine("- Compute 1024-thread-group hits: $computeThreadGroupRiskCount")
+[void]$md.AppendLine("- Cache-line-critical stride debt hits: $cacheLineCriticalStrideDebtCount")
 [void]$md.AppendLine("- Errors: $errorCount")
 [void]$md.AppendLine("- Warnings: $warnCount")
 [void]$md.AppendLine("- Infos: $infoCount")

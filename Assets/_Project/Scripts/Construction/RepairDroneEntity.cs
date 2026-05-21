@@ -12,6 +12,11 @@ namespace Hecton8.Construction
     /// </summary>
     public readonly struct RepairDroneTorchAcousticEvent
     {
+        public readonly Vector3 Position;
+        public readonly AudioClip Clip;
+        public readonly float Volume;
+        public readonly float Pitch;
+
         public RepairDroneTorchAcousticEvent(Vector3 position, AudioClip clip, float volume, float pitch)
         {
             Position = position;
@@ -19,11 +24,6 @@ namespace Hecton8.Construction
             Volume = volume;
             Pitch = pitch;
         }
-
-        public Vector3 Position { get; }
-        public AudioClip Clip { get; }
-        public float Volume { get; }
-        public float Pitch { get; }
     }
 
     /// <summary>
@@ -65,17 +65,29 @@ namespace Hecton8.Construction
         private const int PendingEventCapacity = 32;
         private const int ReferenceSlotCapacity = 32;
         private const ushort TorchAcousticEventType = 1;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents"));
 
-        // COLD ALLOC: RegistryBucket<IRepairDroneTorchAcousticListener>[8] - repair drone torch acoustic listeners drained by SystemDispatcher LateUpdate - owner: RepairDroneTorchAcousticEvents
-        private static readonly RegistryBucket<IRepairDroneTorchAcousticListener> _listeners = new RegistryBucket<IRepairDroneTorchAcousticListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IRepairDroneTorchAcousticListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - repair drone torch acoustic listeners drained by SystemDispatcher LateUpdate - owner: RepairDroneTorchAcousticEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: AudioClip[32] - managed clip sidecar for deferred repair drone torch acoustic payloads - owner: RepairDroneTorchAcousticEvents
         private static readonly AudioClip[] _clipReferenceSlots = new AudioClip[ReferenceSlotCapacity];
         // COLD ALLOC: bool[32] - clip sidecar occupancy map prevents wrap overwrite before deferred flush - owner: RepairDroneTorchAcousticEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
         private static NativeQueue<RepairDroneTorchAcousticPayload> _pendingEvents;
         private static NativeQueue<RepairDroneTorchAcousticPayload> _nextFrameEvents;
+        private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -103,7 +115,10 @@ namespace Hecton8.Construction
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
             ClearReferenceSlots();
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
@@ -119,8 +134,16 @@ namespace Hecton8.Construction
             if (listener == null)
                 return;
 
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
         }
 
         /// <summary>Unregisters one deferred repair-drone torch acoustic listener.</summary>
@@ -129,11 +152,22 @@ namespace Hecton8.Construction
             if (listener == null)
                 return;
 
-            if (!_listeners.Contains(listener))
-                return;
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
 
-            _listeners.Unregister(listener);
-            if (_listeners.Count <= 0)
+                int lastIndex = --_listenerCount;
+                if (i != lastIndex)
+                    _listeners[i].Listener = _listeners[lastIndex].Listener;
+
+                _listeners[lastIndex].Clear();
+                if (_listenerCount <= 0)
+                    DropQueuedPayloads();
+                return;
+            }
+
+            if (_listenerCount <= 0)
                 DropQueuedPayloads();
         }
 
@@ -143,7 +177,7 @@ namespace Hecton8.Construction
             if (!_pendingEvents.IsCreated)
                 return;
 
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
             {
                 DropQueuedPayloads();
                 return;
@@ -176,7 +210,7 @@ namespace Hecton8.Construction
         /// <summary>Queues one repair-drone torch acoustic pulse.</summary>
         public static void Notify(in RepairDroneTorchAcousticEvent acousticEvent)
         {
-            if (_listeners.Count <= 0 || acousticEvent.Clip == null)
+            if (_listenerCount <= 0 || acousticEvent.Clip == null)
                 return;
 
             if (!TryReserveReferenceSlot(out int referenceSlot))
@@ -202,7 +236,7 @@ namespace Hecton8.Construction
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<RepairDroneTorchAcousticPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RepairDroneTorchAcousticPayload>[32] - deferred repair drone torch acoustic lane flushed by SystemDispatcher LateUpdate - owner: RepairDroneTorchAcousticEvents
+                _pendingEvents = new NativeQueue<RepairDroneTorchAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RepairDroneTorchAcousticPayload>[32] - deferred repair drone torch acoustic lane flushed by SystemDispatcher LateUpdate - owner: RepairDroneTorchAcousticEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -214,7 +248,7 @@ namespace Hecton8.Construction
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<RepairDroneTorchAcousticPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RepairDroneTorchAcousticPayload>[32] - next-frame repair drone torch acoustic lane prevents same-frame reentrant dispatch - owner: RepairDroneTorchAcousticEvents
+                _nextFrameEvents = new NativeQueue<RepairDroneTorchAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RepairDroneTorchAcousticPayload>[32] - next-frame repair drone torch acoustic lane prevents same-frame reentrant dispatch - owner: RepairDroneTorchAcousticEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -279,14 +313,13 @@ namespace Hecton8.Construction
                 payload.Volume,
                 payload.Pitch);
 
-            IRepairDroneTorchAcousticListener[] rawArray = _listeners.RawArray;
-            int count = _listeners.Count;
+            int count = _listenerCount;
             _isDispatching = true;
             try
             {
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    IRepairDroneTorchAcousticListener listener = rawArray[i];
+                    IRepairDroneTorchAcousticListener listener = _listeners[i].Listener;
                     if (listener != null)
                         listener.OnRepairDroneTorchAcoustic(in acousticEvent);
                 }

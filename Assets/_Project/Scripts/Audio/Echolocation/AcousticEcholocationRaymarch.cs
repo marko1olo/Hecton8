@@ -41,7 +41,7 @@ namespace Hecton8.Audio.Echolocation
     /// <summary>
     /// Burst SDF ray fan that converts one active ping into virtual acoustic reflection taps.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct AcousticEcholocationRaymarchJob : IJobParallelFor
     {
         public const byte AudioMaterialDefault = 0;

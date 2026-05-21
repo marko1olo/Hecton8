@@ -70,13 +70,15 @@ namespace Hecton8.Gameplay
             if (!_stationKeepingEnabled || _hullRigidbody == null || fixedDeltaTime <= 0f)
                 return;
 
-            double3 currentAbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(_hullRigidbody.worldCenterOfMass).ToAbsoluteDouble3();
+            if (!TryResolveAbsolutePositionFromRuntimeOrigin(_hullRigidbody.worldCenterOfMass, out double3 currentAbsolutePosition))
+                return;
+
             double3 offsetToTarget = _targetAbsolutePosition - currentAbsolutePosition;
             double offsetToTargetSq = math.lengthsq(offsetToTarget);
             if (!math.all(math.isfinite(offsetToTarget)) || !math.isfinite(offsetToTargetSq))
                 return;
 
-            Vector3 hullPosition = _hullRigidbody.position;
+            Vector3 hullPosition = ResolveHullRuntimePosition();
             Quaternion currentRotation = _hullRigidbody.rotation;
             if (offsetToTargetSq <= PositionHoldEpsilonMetersSq &&
                 IsRotationClose(currentRotation, _targetRotation))
@@ -138,7 +140,13 @@ namespace Hecton8.Gameplay
             if (_hullRigidbody == null)
                 return;
 
-            _targetAbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(_hullRigidbody.worldCenterOfMass).ToAbsoluteDouble3();
+            if (!TryResolveAbsolutePositionFromRuntimeOrigin(_hullRigidbody.worldCenterOfMass, out _targetAbsolutePosition))
+            {
+                _stationKeepingEnabled = false;
+                _stationKeepingSpeedMetersPerSecond = 0f;
+                return;
+            }
+
             _targetRotation = _hullRigidbody.rotation;
             _stationKeepingSpeedMetersPerSecond = 0f;
             _stationKeepingEnabled = true;
@@ -152,6 +160,13 @@ namespace Hecton8.Gameplay
             CacheReferences();
             if (_hullRigidbody == null)
                 return;
+
+            if (!math.all(math.isfinite(absoluteUniversePosition)))
+            {
+                _stationKeepingEnabled = false;
+                _stationKeepingSpeedMetersPerSecond = 0f;
+                return;
+            }
 
             _targetAbsolutePosition = absoluteUniversePosition;
             _targetRotation = _hullRigidbody.rotation;
@@ -193,7 +208,13 @@ namespace Hecton8.Gameplay
             if (_hullRigidbody == null)
                 return;
 
-            _targetAbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(_hullRigidbody.worldCenterOfMass).ToAbsoluteDouble3();
+            if (!TryResolveAbsolutePositionFromRuntimeOrigin(_hullRigidbody.worldCenterOfMass, out _targetAbsolutePosition))
+            {
+                _stationKeepingEnabled = false;
+                _stationKeepingSpeedMetersPerSecond = 0f;
+                return;
+            }
+
             _targetRotation = ResolveAutoLevelRotation(_hullRigidbody.rotation);
             _stationKeepingSpeedMetersPerSecond = 0f;
             _stationKeepingEnabled = true;
@@ -253,6 +274,31 @@ namespace Hecton8.Gameplay
         private static bool IsFinite(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private Vector3 ResolveHullRuntimePosition()
+        {
+            return _hullRigidbody != null ? _hullRigidbody.position : Vector3.zero;
+        }
+
+        private static bool TryResolveAbsolutePositionFromRuntimeOrigin(Vector3 runtimePosition, out double3 absolutePosition)
+        {
+            absolutePosition = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!AbsoluteUniversePosition.IsFinite(in positionAup))
+                return false;
+
+            absolutePosition = positionAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absolutePosition));
         }
 
         private static Vector3 ToVector3(double3 value)

@@ -254,7 +254,7 @@ namespace Hecton8.Editor
 
         private void LoadSignalTuningCsv()
         {
-            string csvPath = Path.Combine(Application.dataPath, "StreamingAssets", "signal_tuning_profiles.csv");
+            string csvPath = Path.Combine(Application.dataPath, "_SourceData", "Signals", "signal_tuning_profiles.csv");
             SignalTuningCsvHotSwap.TryLoad(csvPath);
             RefreshUi();
         }

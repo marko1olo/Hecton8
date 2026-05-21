@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Unity.Collections;
 
@@ -10,7 +9,6 @@ namespace Hecton8.Core
     /// Fixed-capacity persistent native ring. Writes advance monotonically and wrap over old slots.
     /// </summary>
     /// <typeparam name="T">Blittable payload type stored in contiguous native memory.</typeparam>
-    [StructLayout(LayoutKind.Sequential)]
     public struct NativeRingBuffer<T> : IDisposable where T : unmanaged
     {
         private NativeArray<T> _buffer;

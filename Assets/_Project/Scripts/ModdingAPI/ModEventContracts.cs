@@ -63,9 +63,9 @@ namespace Hecton8.Modding
             BiomeId = biomeId;
         }
 
-        public ulong PlayerId { get; }
-        public float3 AbsoluteUniversePosition { get; }
-        public int BiomeId { get; }
+        public readonly ulong PlayerId;
+        public readonly float3 AbsoluteUniversePosition;
+        public readonly int BiomeId;
     }
 
     /// <summary>
@@ -80,9 +80,9 @@ namespace Hecton8.Modding
             AbsoluteUniversePosition = absoluteUniversePosition;
         }
 
-        public int PreviousBiomeId { get; }
-        public int CurrentBiomeId { get; }
-        public float3 AbsoluteUniversePosition { get; }
+        public readonly int PreviousBiomeId;
+        public readonly int CurrentBiomeId;
+        public readonly float3 AbsoluteUniversePosition;
     }
 
     /// <summary>

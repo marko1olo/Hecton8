@@ -16,12 +16,13 @@ namespace Hecton8.Physics
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3420)]
-    public sealed unsafe class HabitatFluidIncursionDirector : MonoBehaviour, IFixedTickable, IPostFixedTickable, IRenderable
+    public sealed unsafe class HabitatFluidIncursionDirector : MonoBehaviour, IFixedTickable, IPostFixedTickable, IRenderable, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystem = SystemID.Fluid;
         private const string DumpPath = "Docs/AgentLogs/Dump_FLUID_INCURSION.bin";
         private const uint FloodMuffleLaneHash = 0x464C4D46u; // FLMF
         private const int FloodMuffleSignalCapacity = 32;
+        private const int FloodMuffleMinimumQualityFrameSignals = 8;
         private static readonly int s_WaterlineBufferId = Shader.PropertyToID("_H8HabitatFluidWaterlines");
         private static readonly int s_WaterlineCountId = Shader.PropertyToID("_H8HabitatFluidWaterlineCount");
         private static readonly int s_GlobalFloodScalarId = Shader.PropertyToID("_H8HabitatFloodScalar");
@@ -39,23 +40,23 @@ namespace Hecton8.Physics
         [SerializeField] private bool drawHeatmapGizmos = true;
 
         private IDataVault _vault;
-        private VaultBufferHandle<FluidCompartmentDTO> _frontHandle;
-        private VaultBufferHandle<FluidCompartmentDTO> _backHandle;
-        private VaultBufferHandle<IntegrityStateDTO> _integrityHandle;
-        private VaultBufferHandle<int> _edgeOffsetsHandle;
-        private VaultBufferHandle<int> _edgeDestinationsHandle;
-        private VaultBufferHandle<byte> _edgeFlagsHandle;
-        private VaultBufferHandle<float3> _centroidsHandle;
-        private VaultBufferHandle<FluidWaterlineShaderDTO> _waterlineHandle;
-        private VaultBufferHandle<FluidMassStateDTO> _massStateHandle;
-        private VaultBufferHandle<FluidIncursionTuningDTO> _tuningHandle;
-        private VaultBufferHandle<FluidIncursionTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<FluidCompartmentTelemetryDTO> _compartmentTelemetryHandle;
-        private VaultBufferHandle<int> _telemetryCursorHandle;
-        private VaultBufferHandle<int> _bfsQueueHandle;
-        private VaultBufferHandle<byte> _bfsVisitedHandle;
-        private VaultBufferHandle<float> _deltaVolumesHandle;
-        private VaultBufferHandle<FluidIncursionFrameSummaryDTO> _summaryHandle;
+        private VaultGenerationHandle<FluidCompartmentDTO> _frontHandle;
+        private VaultGenerationHandle<FluidCompartmentDTO> _backHandle;
+        private VaultGenerationHandle<IntegrityStateDTO> _integrityHandle;
+        private VaultGenerationHandle<int> _edgeOffsetsHandle;
+        private VaultGenerationHandle<int> _edgeDestinationsHandle;
+        private VaultGenerationHandle<byte> _edgeFlagsHandle;
+        private VaultGenerationHandle<float3> _centroidsHandle;
+        private VaultGenerationHandle<FluidWaterlineShaderDTO> _waterlineHandle;
+        private VaultGenerationHandle<FluidMassStateDTO> _massStateHandle;
+        private VaultGenerationHandle<FluidIncursionTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<FluidIncursionTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<FluidCompartmentTelemetryDTO> _compartmentTelemetryHandle;
+        private VaultGenerationHandle<int> _telemetryCursorHandle;
+        private VaultGenerationHandle<int> _bfsQueueHandle;
+        private VaultGenerationHandle<byte> _bfsVisitedHandle;
+        private VaultGenerationHandle<float> _deltaVolumesHandle;
+        private VaultGenerationHandle<FluidIncursionFrameSummaryDTO> _summaryHandle;
 
         private Transform _cachedTransform;
         private GraphicsBuffer _waterlineBufferA;
@@ -75,6 +76,7 @@ namespace Hecton8.Physics
         private bool _registeredFixed;
         private bool _registeredPostFixed;
         private bool _registeredRenderable;
+        private bool _registeredHotSwapListener;
         private bool _buffersReady;
         private bool _dumpWritten;
         private bool _waterlineUploadDirty;
@@ -83,10 +85,12 @@ namespace Hecton8.Physics
         {
             _cachedTransform = transform;
             _sourceBodyId = unchecked((uint)math.abs(GetInstanceID()));
-            _buffersReady = TryResolveAndInitializeBuffers();
+            TryRegisterHotSwapListener();
+            CacheDataVaultCold(GlobalRegistry.DataVault);
+            _buffersReady = EnsureBuffersInitialized();
             _waterlineUploadDirty = true;
-            GlobalSignals.InitializeAllQueues();
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
+            SignalBus<SubmarineFloodStateSignal>.EnsureInitialized();
             EnsureFloodMuffleSignalLane();
             PhysicsEventBus.EnsureReady();
 
@@ -107,6 +111,8 @@ namespace Hecton8.Physics
             if (_registeredRenderable)
                 GlobalRegistry.Renderables.TryUnregister(this);
 
+            TryUnregisterHotSwapListener();
+            ReleaseFluidVaultHandles(_vault);
             ReleaseGraphicsBuffer(ref _waterlineBufferA);
             ReleaseGraphicsBuffer(ref _waterlineBufferB);
             _registeredFixed = false;
@@ -114,6 +120,31 @@ namespace Hecton8.Physics
             _registeredRenderable = false;
             _buffersReady = false;
             _cachedTransform = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                CompleteScheduledSimulationForAuthoritativeWrite();
+                UnlockJobBuffers();
+                CacheDataVaultCold(currentService as IDataVault);
+                if (isActiveAndEnabled)
+                    _buffersReady = EnsureBuffersInitialized();
+                _waterlineUploadDirty = true;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            {
+                if (!_registeredFixed)
+                    _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+                if (!_registeredPostFixed)
+                    _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
+            }
         }
 
         private void OnValidate()
@@ -140,26 +171,27 @@ namespace Hecton8.Physics
                 return;
             float solverDeltaTime = _simulationAccumulator;
 
-            if (!_buffersReady && !TryResolveAndInitializeBuffers())
+            if (!_buffersReady && !EnsureBuffersInitialized())
                 return;
 
             NativeArray<FluidCompartmentDTO> read = ResolveActiveCompartments();
             NativeArray<FluidCompartmentDTO> write = ResolveInactiveCompartments();
-            NativeArray<IntegrityStateDTO> integrity = _integrityHandle.Resolve(_vault);
-            NativeArray<int> edgeOffsets = _edgeOffsetsHandle.Resolve(_vault);
-            NativeArray<int> edgeDestinations = _edgeDestinationsHandle.Resolve(_vault);
-            NativeArray<byte> edgeFlags = _edgeFlagsHandle.Resolve(_vault);
-            NativeArray<float3> centroids = _centroidsHandle.Resolve(_vault);
-            NativeArray<FluidWaterlineShaderDTO> waterlines = _waterlineHandle.Resolve(_vault);
-            NativeArray<FluidMassStateDTO> massState = _massStateHandle.Resolve(_vault);
-            NativeArray<FluidIncursionTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
-            NativeArray<FluidIncursionTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
-            NativeArray<FluidCompartmentTelemetryDTO> compartmentTelemetry = _compartmentTelemetryHandle.Resolve(_vault);
-            NativeArray<int> telemetryCursor = _telemetryCursorHandle.Resolve(_vault);
-            NativeArray<int> bfsQueue = _bfsQueueHandle.Resolve(_vault);
-            NativeArray<byte> bfsVisited = _bfsVisitedHandle.Resolve(_vault);
-            NativeArray<float> deltaVolumes = _deltaVolumesHandle.Resolve(_vault);
-            NativeArray<FluidIncursionFrameSummaryDTO> summary = _summaryHandle.Resolve(_vault);
+            int capacity = ResolveCompartmentCapacity();
+            NativeArray<IntegrityStateDTO> integrity = ResolveFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, capacity);
+            NativeArray<int> edgeOffsets = ResolveFluidVaultBuffer(ref _edgeOffsetsHandle, BufferID.ShinobuFluidEdgeOffsets, capacity + 1);
+            NativeArray<int> edgeDestinations = ResolveFluidVaultBuffer(ref _edgeDestinationsHandle, BufferID.ShinobuFluidEdgeDestinations, HabitatFluidIncursionConstants.MaxEdges);
+            NativeArray<byte> edgeFlags = ResolveFluidVaultBuffer(ref _edgeFlagsHandle, BufferID.ShinobuFluidEdgeFlags, HabitatFluidIncursionConstants.MaxEdges);
+            NativeArray<float3> centroids = ResolveFluidVaultBuffer(ref _centroidsHandle, BufferID.ShinobuFluidCompartmentCentroids, capacity);
+            NativeArray<FluidWaterlineShaderDTO> waterlines = ResolveFluidVaultBuffer(ref _waterlineHandle, BufferID.ShinobuFluidWaterlineShader, capacity);
+            NativeArray<FluidMassStateDTO> massState = ResolveFluidVaultBuffer(ref _massStateHandle, BufferID.ShinobuFluidMassState, 1);
+            NativeArray<FluidIncursionTuningDTO> tuningArray = ResolveFluidVaultBuffer(ref _tuningHandle, BufferID.ShinobuFluidTuning, 1);
+            NativeArray<FluidIncursionTelemetryEntry> telemetry = ResolveFluidVaultBuffer(ref _telemetryHandle, BufferID.ShinobuFluidTelemetryRing, HabitatFluidIncursionConstants.TelemetryFrameCount);
+            NativeArray<FluidCompartmentTelemetryDTO> compartmentTelemetry = ResolveFluidVaultBuffer(ref _compartmentTelemetryHandle, BufferID.ShinobuFluidCompartmentTelemetry, capacity);
+            NativeArray<int> telemetryCursor = ResolveFluidVaultBuffer(ref _telemetryCursorHandle, BufferID.ShinobuFluidTelemetryCursor, 1);
+            NativeArray<int> bfsQueue = ResolveFluidVaultBuffer(ref _bfsQueueHandle, BufferID.ShinobuFluidBfsQueue, capacity);
+            NativeArray<byte> bfsVisited = ResolveFluidVaultBuffer(ref _bfsVisitedHandle, BufferID.ShinobuFluidBfsVisited, capacity);
+            NativeArray<float> deltaVolumes = ResolveFluidVaultBuffer(ref _deltaVolumesHandle, BufferID.ShinobuFluidDeltaVolumes, capacity);
+            NativeArray<FluidIncursionFrameSummaryDTO> summary = ResolveFluidVaultBuffer(ref _summaryHandle, BufferID.ShinobuFluidFrameSummary, 1);
 
             if (!read.IsCreated || !write.IsCreated || !integrity.IsCreated || !edgeOffsets.IsCreated ||
                 !edgeDestinations.IsCreated || !edgeFlags.IsCreated || !centroids.IsCreated ||
@@ -267,7 +299,7 @@ namespace Hecton8.Physics
             _frontIsA = !_frontIsA;
             _waterlineUploadDirty = true;
 
-            NativeArray<FluidIncursionFrameSummaryDTO> summaryArray = _summaryHandle.Resolve(_vault);
+            NativeArray<FluidIncursionFrameSummaryDTO> summaryArray = ResolveFluidVaultBuffer(ref _summaryHandle, BufferID.ShinobuFluidFrameSummary, 1);
             if (!summaryArray.IsCreated || summaryArray.Length <= 0)
                 return;
 
@@ -277,7 +309,7 @@ namespace Hecton8.Physics
                 DumpBlackBoxOnce();
 
             _massPublishAccumulator += fixedDeltaTime;
-            NativeArray<FluidIncursionTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
+            NativeArray<FluidIncursionTuningDTO> tuningArray = ResolveFluidVaultBuffer(ref _tuningHandle, BufferID.ShinobuFluidTuning, 1);
             float publishInterval = tuningArray.IsCreated && tuningArray.Length > 0
                 ? math.max(0.02f, tuningArray[0].MassPublishIntervalSeconds)
                 : HabitatFluidIncursionConstants.DefaultMassPublishIntervalSeconds;
@@ -296,7 +328,7 @@ namespace Hecton8.Physics
             if (!uploadShaderWaterlines || !_buffersReady || _hasScheduled || !_waterlineUploadDirty)
                 return;
 
-            NativeArray<FluidWaterlineShaderDTO> waterlines = _waterlineHandle.Resolve(_vault);
+            NativeArray<FluidWaterlineShaderDTO> waterlines = ResolveFluidVaultBuffer(ref _waterlineHandle, BufferID.ShinobuFluidWaterlineShader, ResolveCompartmentCapacity());
             if (!waterlines.IsCreated)
                 return;
 
@@ -304,7 +336,7 @@ namespace Hecton8.Physics
             if (safeCount <= 0 || !EnsureWaterlineGraphicsBuffers(safeCount))
                 return;
 
-            GraphicsBuffer targetBuffer = ResolveNextWaterlineWriteBuffer();
+            GraphicsBuffer targetBuffer = AdvanceNextWaterlineWriteBuffer();
             if (targetBuffer == null || !targetBuffer.IsValid())
                 return;
 
@@ -345,12 +377,12 @@ namespace Hecton8.Physics
             int graphEdgeCount)
         {
             CompleteScheduledSimulationForAuthoritativeWrite();
-            if (!_buffersReady && !TryResolveAndInitializeBuffers())
+            if (!_buffersReady && !EnsureBuffersInitialized())
                 return false;
 
-            NativeArray<int> targetOffsets = _edgeOffsetsHandle.Resolve(_vault);
-            NativeArray<int> targetDestinations = _edgeDestinationsHandle.Resolve(_vault);
-            NativeArray<byte> targetFlags = _edgeFlagsHandle.Resolve(_vault);
+            NativeArray<int> targetOffsets = ResolveFluidVaultBuffer(ref _edgeOffsetsHandle, BufferID.ShinobuFluidEdgeOffsets, ResolveCompartmentCapacity() + 1);
+            NativeArray<int> targetDestinations = ResolveFluidVaultBuffer(ref _edgeDestinationsHandle, BufferID.ShinobuFluidEdgeDestinations, HabitatFluidIncursionConstants.MaxEdges);
+            NativeArray<byte> targetFlags = ResolveFluidVaultBuffer(ref _edgeFlagsHandle, BufferID.ShinobuFluidEdgeFlags, HabitatFluidIncursionConstants.MaxEdges);
             if (!edgeOffsets.IsCreated || !edgeDestinations.IsCreated || !edgeFlags.IsCreated ||
                 !targetOffsets.IsCreated || !targetDestinations.IsCreated || !targetFlags.IsCreated)
             {
@@ -375,7 +407,7 @@ namespace Hecton8.Physics
         public int ApplyCompartmentVolumeCsv(NativeArray<byte> csvBytes, int byteCount)
         {
             CompleteScheduledSimulationForAuthoritativeWrite();
-            if (!_buffersReady && !TryResolveAndInitializeBuffers())
+            if (!_buffersReady && !EnsureBuffersInitialized())
                 return 0;
 
             NativeArray<FluidCompartmentDTO> active = ResolveActiveCompartments();
@@ -392,12 +424,12 @@ namespace Hecton8.Physics
         public bool GenerateMockHullBreach(int breachIndex, float breachAreaM2, float ingressRateM3PerSecond)
         {
             CompleteScheduledSimulationForAuthoritativeWrite();
-            if (!_buffersReady && !TryResolveAndInitializeBuffers())
+            if (!_buffersReady && !EnsureBuffersInitialized())
                 return false;
 
-            NativeArray<FluidCompartmentDTO> front = _frontHandle.Resolve(_vault);
-            NativeArray<FluidCompartmentDTO> back = _backHandle.Resolve(_vault);
-            NativeArray<IntegrityStateDTO> integrity = _integrityHandle.Resolve(_vault);
+            NativeArray<FluidCompartmentDTO> front = ResolveFluidVaultBuffer(ref _frontHandle, BufferID.ShinobuFluidCompartmentFront, ResolveCompartmentCapacity());
+            NativeArray<FluidCompartmentDTO> back = ResolveFluidVaultBuffer(ref _backHandle, BufferID.ShinobuFluidCompartmentBack, ResolveCompartmentCapacity());
+            NativeArray<IntegrityStateDTO> integrity = ResolveFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, ResolveCompartmentCapacity());
             if (!front.IsCreated || !back.IsCreated || !integrity.IsCreated)
                 return false;
 
@@ -427,36 +459,191 @@ namespace Hecton8.Physics
             return true;
         }
 
-        private bool TryResolveAndInitializeBuffers()
+        private void CacheDataVaultCold(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            ReleaseFluidVaultHandles(_vault);
+            _vault = vault;
+            ClearVaultHandles();
+        }
+
+        private void ReleaseFluidVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+            {
+                ClearVaultHandles();
+                return;
+            }
+
+            ReleaseFluidVaultHandle(vault, ref _frontHandle);
+            ReleaseFluidVaultHandle(vault, ref _backHandle);
+            ReleaseFluidVaultHandle(vault, ref _integrityHandle);
+            ReleaseFluidVaultHandle(vault, ref _edgeOffsetsHandle);
+            ReleaseFluidVaultHandle(vault, ref _edgeDestinationsHandle);
+            ReleaseFluidVaultHandle(vault, ref _edgeFlagsHandle);
+            ReleaseFluidVaultHandle(vault, ref _centroidsHandle);
+            ReleaseFluidVaultHandle(vault, ref _waterlineHandle);
+            ReleaseFluidVaultHandle(vault, ref _massStateHandle);
+            ReleaseFluidVaultHandle(vault, ref _tuningHandle);
+            ReleaseFluidVaultHandle(vault, ref _telemetryHandle);
+            ReleaseFluidVaultHandle(vault, ref _compartmentTelemetryHandle);
+            ReleaseFluidVaultHandle(vault, ref _telemetryCursorHandle);
+            ReleaseFluidVaultHandle(vault, ref _bfsQueueHandle);
+            ReleaseFluidVaultHandle(vault, ref _bfsVisitedHandle);
+            ReleaseFluidVaultHandle(vault, ref _deltaVolumesHandle);
+            ReleaseFluidVaultHandle(vault, ref _summaryHandle);
+            ClearVaultHandles();
+        }
+
+        private static void ReleaseFluidVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private void ClearVaultHandles()
+        {
+            _frontHandle = default;
+            _backHandle = default;
+            _integrityHandle = default;
+            _edgeOffsetsHandle = default;
+            _edgeDestinationsHandle = default;
+            _edgeFlagsHandle = default;
+            _centroidsHandle = default;
+            _waterlineHandle = default;
+            _massStateHandle = default;
+            _tuningHandle = default;
+            _telemetryHandle = default;
+            _compartmentTelemetryHandle = default;
+            _telemetryCursorHandle = default;
+            _bfsQueueHandle = default;
+            _bfsVisitedHandle = default;
+            _deltaVolumesHandle = default;
+            _summaryHandle = default;
+            _edgeCount = 0;
+            _lockedBufferMask = 0;
+            _buffersReady = false;
+        }
+
+        private int ResolveCompartmentCapacity()
+        {
+            return math.clamp(compartmentCount, 1, HabitatFluidIncursionConstants.MaxCompartments);
+        }
+
+        private bool OpenOrAcquireFluidVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            if (TryOpenFluidVaultBuffer(ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (_vault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (_vault.IsAllocationLocked)
+            {
+                if (!_vault.TryGetGenerationHandle(bufferId, out handle))
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                return TryOpenFluidVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
+            }
+
+            handle = _vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                OwnerSystem,
+                options);
+            return TryOpenFluidVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool TryOpenFluidVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (_vault == null ||
+                requiredLength <= 0 ||
+                !IsFluidVaultHandle(in handle, bufferId) ||
+                !_vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private NativeArray<T> ResolveFluidVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength)
+            where T : struct
+        {
+            return TryOpenFluidVaultBuffer(ref handle, bufferId, requiredLength, out NativeArray<T> buffer)
+                ? buffer
+                : default;
+        }
+
+        private static bool IsFluidVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)OwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
+        private bool EnsureBuffersInitialized()
         {
             if (_cachedTransform == null)
                 _cachedTransform = transform;
-
-            if (_vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                _vault = latestVault;
 
             if (_vault == null)
                 return false;
 
             int safeCount = math.clamp(compartmentCount, 1, HabitatFluidIncursionConstants.MaxCompartments);
             int edgeCapacity = HabitatFluidIncursionConstants.MaxEdges;
-            _frontHandle = _vault.GetBufferHandle<FluidCompartmentDTO>(BufferID.ShinobuFluidCompartmentFront, safeCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _backHandle = _vault.GetBufferHandle<FluidCompartmentDTO>(BufferID.ShinobuFluidCompartmentBack, safeCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _integrityHandle = _vault.GetBufferHandle<IntegrityStateDTO>(BufferID.ShinobuFluidIntegrityState, safeCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _edgeOffsetsHandle = _vault.GetBufferHandle<int>(BufferID.ShinobuFluidEdgeOffsets, safeCount + 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _edgeDestinationsHandle = _vault.GetBufferHandle<int>(BufferID.ShinobuFluidEdgeDestinations, edgeCapacity, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _edgeFlagsHandle = _vault.GetBufferHandle<byte>(BufferID.ShinobuFluidEdgeFlags, edgeCapacity, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _centroidsHandle = _vault.GetBufferHandle<float3>(BufferID.ShinobuFluidCompartmentCentroids, safeCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _waterlineHandle = _vault.GetBufferHandle<FluidWaterlineShaderDTO>(BufferID.ShinobuFluidWaterlineShader, safeCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _massStateHandle = _vault.GetBufferHandle<FluidMassStateDTO>(BufferID.ShinobuFluidMassState, 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = _vault.GetBufferHandle<FluidIncursionTuningDTO>(BufferID.ShinobuFluidTuning, 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = _vault.GetBufferHandle<FluidIncursionTelemetryEntry>(BufferID.ShinobuFluidTelemetryRing, HabitatFluidIncursionConstants.TelemetryFrameCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _compartmentTelemetryHandle = _vault.GetBufferHandle<FluidCompartmentTelemetryDTO>(BufferID.ShinobuFluidCompartmentTelemetry, safeCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = _vault.GetBufferHandle<int>(BufferID.ShinobuFluidTelemetryCursor, 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _bfsQueueHandle = _vault.GetBufferHandle<int>(BufferID.ShinobuFluidBfsQueue, safeCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _bfsVisitedHandle = _vault.GetBufferHandle<byte>(BufferID.ShinobuFluidBfsVisited, safeCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _deltaVolumesHandle = _vault.GetBufferHandle<float>(BufferID.ShinobuFluidDeltaVolumes, safeCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _summaryHandle = _vault.GetBufferHandle<FluidIncursionFrameSummaryDTO>(BufferID.ShinobuFluidFrameSummary, 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            bool buffersReady =
+                OpenOrAcquireFluidVaultBuffer(ref _frontHandle, BufferID.ShinobuFluidCompartmentFront, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _backHandle, BufferID.ShinobuFluidCompartmentBack, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _edgeOffsetsHandle, BufferID.ShinobuFluidEdgeOffsets, safeCount + 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _edgeDestinationsHandle, BufferID.ShinobuFluidEdgeDestinations, edgeCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _edgeFlagsHandle, BufferID.ShinobuFluidEdgeFlags, edgeCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _centroidsHandle, BufferID.ShinobuFluidCompartmentCentroids, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _waterlineHandle, BufferID.ShinobuFluidWaterlineShader, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _massStateHandle, BufferID.ShinobuFluidMassState, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _tuningHandle, BufferID.ShinobuFluidTuning, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _telemetryHandle, BufferID.ShinobuFluidTelemetryRing, HabitatFluidIncursionConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _compartmentTelemetryHandle, BufferID.ShinobuFluidCompartmentTelemetry, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _telemetryCursorHandle, BufferID.ShinobuFluidTelemetryCursor, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _bfsQueueHandle, BufferID.ShinobuFluidBfsQueue, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _bfsVisitedHandle, BufferID.ShinobuFluidBfsVisited, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _deltaVolumesHandle, BufferID.ShinobuFluidDeltaVolumes, safeCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireFluidVaultBuffer(ref _summaryHandle, BufferID.ShinobuFluidFrameSummary, 1, NativeArrayOptions.UninitializedMemory, out _);
+            if (!buffersReady)
+                return false;
 
             if (!FluidCompartmentLayoutValidator.ValidateFluidCompartmentLayout())
                 return false;
@@ -469,11 +656,11 @@ namespace Hecton8.Physics
 
         private void InitializeColdBootBuffers(int safeCount)
         {
-            NativeArray<FluidCompartmentDTO> front = _frontHandle.Resolve(_vault);
-            NativeArray<FluidCompartmentDTO> back = _backHandle.Resolve(_vault);
-            NativeArray<IntegrityStateDTO> integrity = _integrityHandle.Resolve(_vault);
-            NativeArray<float3> centroids = _centroidsHandle.Resolve(_vault);
-            NativeArray<FluidWaterlineShaderDTO> waterlines = _waterlineHandle.Resolve(_vault);
+            NativeArray<FluidCompartmentDTO> front = ResolveFluidVaultBuffer(ref _frontHandle, BufferID.ShinobuFluidCompartmentFront, safeCount);
+            NativeArray<FluidCompartmentDTO> back = ResolveFluidVaultBuffer(ref _backHandle, BufferID.ShinobuFluidCompartmentBack, safeCount);
+            NativeArray<IntegrityStateDTO> integrity = ResolveFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, safeCount);
+            NativeArray<float3> centroids = ResolveFluidVaultBuffer(ref _centroidsHandle, BufferID.ShinobuFluidCompartmentCentroids, safeCount);
+            NativeArray<FluidWaterlineShaderDTO> waterlines = ResolveFluidVaultBuffer(ref _waterlineHandle, BufferID.ShinobuFluidWaterlineShader, safeCount);
             if (!front.IsCreated || !back.IsCreated || !integrity.IsCreated || !centroids.IsCreated || !waterlines.IsCreated)
                 return;
 
@@ -507,10 +694,10 @@ namespace Hecton8.Physics
             BuildDefaultLineTopology(safeCount);
             InitializeTuningBuffer(safeCount);
 
-            NativeArray<int> telemetryCursor = _telemetryCursorHandle.Resolve(_vault);
-            NativeArray<FluidCompartmentTelemetryDTO> compartmentTelemetry = _compartmentTelemetryHandle.Resolve(_vault);
-            NativeArray<FluidIncursionFrameSummaryDTO> summary = _summaryHandle.Resolve(_vault);
-            NativeArray<FluidMassStateDTO> massState = _massStateHandle.Resolve(_vault);
+            NativeArray<int> telemetryCursor = ResolveFluidVaultBuffer(ref _telemetryCursorHandle, BufferID.ShinobuFluidTelemetryCursor, 1);
+            NativeArray<FluidCompartmentTelemetryDTO> compartmentTelemetry = ResolveFluidVaultBuffer(ref _compartmentTelemetryHandle, BufferID.ShinobuFluidCompartmentTelemetry, safeCount);
+            NativeArray<FluidIncursionFrameSummaryDTO> summary = ResolveFluidVaultBuffer(ref _summaryHandle, BufferID.ShinobuFluidFrameSummary, 1);
+            NativeArray<FluidMassStateDTO> massState = ResolveFluidVaultBuffer(ref _massStateHandle, BufferID.ShinobuFluidMassState, 1);
             if (telemetryCursor.IsCreated && telemetryCursor.Length > 0)
                 telemetryCursor[0] = 0;
             if (compartmentTelemetry.IsCreated)
@@ -555,7 +742,10 @@ namespace Hecton8.Physics
                 runtimePosition = Vector3.zero;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            AbsoluteUniversePosition originAup = math.all(math.isfinite(origin))
+                ? AbsoluteUniversePosition.FromAbsolutePosition(origin)
+                : default;
             AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
@@ -564,9 +754,9 @@ namespace Hecton8.Physics
 
         private void BuildDefaultLineTopology(int safeCount)
         {
-            NativeArray<int> edgeOffsets = _edgeOffsetsHandle.Resolve(_vault);
-            NativeArray<int> edgeDestinations = _edgeDestinationsHandle.Resolve(_vault);
-            NativeArray<byte> edgeFlags = _edgeFlagsHandle.Resolve(_vault);
+            NativeArray<int> edgeOffsets = ResolveFluidVaultBuffer(ref _edgeOffsetsHandle, BufferID.ShinobuFluidEdgeOffsets, safeCount + 1);
+            NativeArray<int> edgeDestinations = ResolveFluidVaultBuffer(ref _edgeDestinationsHandle, BufferID.ShinobuFluidEdgeDestinations, HabitatFluidIncursionConstants.MaxEdges);
+            NativeArray<byte> edgeFlags = ResolveFluidVaultBuffer(ref _edgeFlagsHandle, BufferID.ShinobuFluidEdgeFlags, HabitatFluidIncursionConstants.MaxEdges);
             if (!edgeOffsets.IsCreated || !edgeDestinations.IsCreated || !edgeFlags.IsCreated)
                 return;
 
@@ -600,7 +790,7 @@ namespace Hecton8.Physics
 
         private void InitializeTuningBuffer(int safeCount)
         {
-            NativeArray<FluidIncursionTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
+            NativeArray<FluidIncursionTuningDTO> tuningArray = ResolveFluidVaultBuffer(ref _tuningHandle, BufferID.ShinobuFluidTuning, 1);
             if (!tuningArray.IsCreated || tuningArray.Length <= 0)
                 return;
 
@@ -649,7 +839,7 @@ namespace Hecton8.Physics
 
         private void PublishMassAndAcousticSignals(in FluidIncursionFrameSummaryDTO summary)
         {
-            NativeArray<FluidMassStateDTO> massStateArray = _massStateHandle.Resolve(_vault);
+            NativeArray<FluidMassStateDTO> massStateArray = ResolveFluidVaultBuffer(ref _massStateHandle, BufferID.ShinobuFluidMassState, 1);
             if (!massStateArray.IsCreated || massStateArray.Length <= 0)
                 return;
 
@@ -674,7 +864,7 @@ namespace Hecton8.Physics
                 floodState.Flags |= SubmarineFloodStateSignal.FlagCriticalFlood;
             if (summary.InvalidCount > 0)
                 floodState.Flags |= SubmarineFloodStateSignal.FlagInvalid;
-            GlobalSignals.Publish(in floodState);
+            SignalBus<SubmarineFloodStateSignal>.Push(in floodState);
 
             Vector3 dynamicCenter = new Vector3(
                 massState.DynamicCenterOfMassLocal.x,
@@ -722,7 +912,7 @@ namespace Hecton8.Physics
 
         private AbsoluteUniversePositionBlit ResolveSourceAupBlit()
         {
-            NativeArray<IntegrityStateDTO> integrity = _integrityHandle.Resolve(_vault);
+            NativeArray<IntegrityStateDTO> integrity = ResolveFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, ResolveCompartmentCapacity());
             if (integrity.IsCreated && integrity.Length > 0)
                 return integrity[0].CenterAup;
 
@@ -731,12 +921,16 @@ namespace Hecton8.Physics
 
         private NativeArray<FluidCompartmentDTO> ResolveActiveCompartments()
         {
-            return _frontIsA ? _frontHandle.Resolve(_vault) : _backHandle.Resolve(_vault);
+            return _frontIsA
+                ? ResolveFluidVaultBuffer(ref _frontHandle, BufferID.ShinobuFluidCompartmentFront, ResolveCompartmentCapacity())
+                : ResolveFluidVaultBuffer(ref _backHandle, BufferID.ShinobuFluidCompartmentBack, ResolveCompartmentCapacity());
         }
 
         private NativeArray<FluidCompartmentDTO> ResolveInactiveCompartments()
         {
-            return _frontIsA ? _backHandle.Resolve(_vault) : _frontHandle.Resolve(_vault);
+            return _frontIsA
+                ? ResolveFluidVaultBuffer(ref _backHandle, BufferID.ShinobuFluidCompartmentBack, ResolveCompartmentCapacity())
+                : ResolveFluidVaultBuffer(ref _frontHandle, BufferID.ShinobuFluidCompartmentFront, ResolveCompartmentCapacity());
         }
 
         private void CompleteScheduledSimulationForAuthoritativeWrite()
@@ -851,7 +1045,7 @@ namespace Hecton8.Physics
                 UnsafeUtility.SizeOf<FluidWaterlineShaderDTO>());
         }
 
-        private GraphicsBuffer ResolveNextWaterlineWriteBuffer()
+        private GraphicsBuffer AdvanceNextWaterlineWriteBuffer()
         {
             _waterlineWriteBufferIndex ^= 1;
             return _waterlineWriteBufferIndex == 0 ? _waterlineBufferA : _waterlineBufferB;
@@ -868,7 +1062,10 @@ namespace Hecton8.Physics
 
         private AbsoluteUniversePositionBlit ResolveExternalWaterlineAup()
         {
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            AbsoluteUniversePosition originAup = math.all(math.isfinite(origin))
+                ? AbsoluteUniversePosition.FromAbsolutePosition(origin)
+                : default;
             AbsoluteUniversePosition waterlineAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(0d, externalWaterlineRuntimeY, 0d));
@@ -877,16 +1074,12 @@ namespace Hecton8.Physics
 
         private static ushort ResolveSolverIterations(float quality)
         {
-            return (ushort)math.clamp((int)math.round(math.lerp(
-                HabitatFluidIncursionConstants.MinSolverIterations,
-                HabitatFluidIncursionConstants.MaxSolverIterations,
-                math.saturate(quality))), HabitatFluidIncursionConstants.MinSolverIterations, HabitatFluidIncursionConstants.MaxSolverIterations);
+            return HabitatFluidIncursionConstants.MaxSolverIterations;
         }
 
         private static float ResolveGlobalQualityWeight()
         {
-            float weight = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(weight) ? weight : 1f);
+            return HabitatFluidIncursionMath.AuthoritativeQualityWeight;
         }
 
         private static uint ResolveElapsedMicroseconds(long startTimestamp)
@@ -905,7 +1098,7 @@ namespace Hecton8.Physics
 
         private void StampSolverWallTime(uint solverWallMicroseconds)
         {
-            NativeArray<FluidIncursionFrameSummaryDTO> summaryArray = _summaryHandle.Resolve(_vault);
+            NativeArray<FluidIncursionFrameSummaryDTO> summaryArray = ResolveFluidVaultBuffer(ref _summaryHandle, BufferID.ShinobuFluidFrameSummary, 1);
             if (summaryArray.IsCreated && summaryArray.Length > 0)
             {
                 FluidIncursionFrameSummaryDTO summary = summaryArray[0];
@@ -913,8 +1106,8 @@ namespace Hecton8.Physics
                 summaryArray[0] = summary;
             }
 
-            NativeArray<int> telemetryCursor = _telemetryCursorHandle.Resolve(_vault);
-            NativeArray<FluidIncursionTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
+            NativeArray<int> telemetryCursor = ResolveFluidVaultBuffer(ref _telemetryCursorHandle, BufferID.ShinobuFluidTelemetryCursor, 1);
+            NativeArray<FluidIncursionTelemetryEntry> telemetry = ResolveFluidVaultBuffer(ref _telemetryHandle, BufferID.ShinobuFluidTelemetryRing, HabitatFluidIncursionConstants.TelemetryFrameCount);
             if (!telemetryCursor.IsCreated || telemetryCursor.Length <= 0 || !telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
@@ -942,11 +1135,28 @@ namespace Hecton8.Physics
 
             SignalBus<HabitatFloodAcousticMuffleSignal>.Configure(
                 FloodMuffleSignalCapacity,
-                maxFrameSignals: FloodMuffleSignalCapacity,
-                lowTierFrameSignals: 8,
-                laneHash: FloodMuffleLaneHash);
+                FloodMuffleSignalCapacity,
+                FloodMuffleMinimumQualityFrameSignals,
+                FloodMuffleLaneHash);
             SignalBus<HabitatFloodAcousticMuffleSignal>.EnsureInitialized();
             s_FloodMuffleLaneInitialized = true;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void DumpBlackBoxOnce()
@@ -954,7 +1164,7 @@ namespace Hecton8.Physics
             if (_dumpWritten)
                 return;
 
-            NativeArray<FluidIncursionTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
+            NativeArray<FluidIncursionTelemetryEntry> telemetry = ResolveFluidVaultBuffer(ref _telemetryHandle, BufferID.ShinobuFluidTelemetryRing, HabitatFluidIncursionConstants.TelemetryFrameCount);
             if (!telemetry.IsCreated)
                 return;
 
@@ -974,9 +1184,10 @@ namespace Hecton8.Physics
             if (!drawHeatmapGizmos || !TryGetActiveCompartmentSnapshot(out NativeArray<FluidCompartmentDTO> compartments, out int count))
                 return;
 
-            NativeArray<float3> centroids = _centroidsHandle.Resolve(_vault);
-            NativeArray<int> edgeOffsets = _edgeOffsetsHandle.Resolve(_vault);
-            NativeArray<int> edgeDestinations = _edgeDestinationsHandle.Resolve(_vault);
+            int capacity = ResolveCompartmentCapacity();
+            NativeArray<float3> centroids = ResolveFluidVaultBuffer(ref _centroidsHandle, BufferID.ShinobuFluidCompartmentCentroids, capacity);
+            NativeArray<int> edgeOffsets = ResolveFluidVaultBuffer(ref _edgeOffsetsHandle, BufferID.ShinobuFluidEdgeOffsets, capacity + 1);
+            NativeArray<int> edgeDestinations = ResolveFluidVaultBuffer(ref _edgeDestinationsHandle, BufferID.ShinobuFluidEdgeDestinations, HabitatFluidIncursionConstants.MaxEdges);
             if (!centroids.IsCreated)
                 return;
 

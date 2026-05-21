@@ -38,6 +38,11 @@ namespace Hecton8.Equipment.Auxiliary
         public const uint Faulted = 1u << 31;
     }
 
+    public static class AuxiliaryTuningFlags
+    {
+        public const uint OverrideGlobalQualityWeight = 1u << 0;
+    }
+
     public static class AuxiliaryEquipmentVaultIds
     {
         public const BufferID Deployments = BufferID.ShinobuAuxiliaryDeployments;
@@ -51,6 +56,7 @@ namespace Hecton8.Equipment.Auxiliary
         public const BufferID Profiles = BufferID.ShinobuAuxiliaryProfiles;
         public const BufferID CsvScratch = BufferID.ShinobuAuxiliaryCsvScratch;
         public const BufferID ActiveEquipmentState = BufferID.ShinobuAuxiliaryActiveEquipmentState;
+        public const BufferID TetherAnchors = BufferID.ShinobuAuxiliaryTetherAnchors;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -76,6 +82,26 @@ namespace Hecton8.Equipment.Auxiliary
         [FieldOffset(4)] public float Scalar0;
         [FieldOffset(8)] public float AccumulatedDelta;
         [FieldOffset(12)] public uint Flags;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct AuxiliaryTetherAnchorDTO
+    {
+        [FieldOffset(0)] public double3 AnchorAup;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct AuxiliaryActiveEquipmentDTO
+    {
+        [FieldOffset(0)] public uint ToolHashID;
+        [FieldOffset(4)] public float CurrentBattery;
+        [FieldOffset(8)] public float ThermalLoad;
+        [FieldOffset(12)] public uint StateFlags;
+        [FieldOffset(16)] public float PowerDrawRate;
+        [FieldOffset(20)] public float HeatGenerationRate;
+        [FieldOffset(24)] public ulong Reserved0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -164,8 +190,9 @@ namespace Hecton8.Equipment.Auxiliary
         [FieldOffset(32)] public uint FaultFlags;
         [FieldOffset(36)] public uint SnapshotHash;
         [FieldOffset(40)] public uint DroppedSlots;
-        [FieldOffset(44)] public uint Reserved0;
-        [FieldOffset(48)] public ulong Reserved1;
+        [FieldOffset(44)] public uint DroppedSignals;
+        [FieldOffset(48)] public uint CorruptedSignals;
+        [FieldOffset(52)] public uint PeakQueuedSignals;
         [FieldOffset(56)] public ulong Reserved2;
     }
 
@@ -244,7 +271,24 @@ namespace Hecton8.Equipment.Auxiliary
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sanitize01(float value, float fallback)
         {
-            return math.saturate(math.select(fallback, value, math.isfinite(value)));
+            float safeFallback = math.select(0f, fallback, math.isfinite(fallback));
+            return math.saturate(math.select(safeFallback, value, math.isfinite(value)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeNonNegative(float value, float fallback)
+        {
+            float safeFallback = math.select(0f, fallback, math.isfinite(fallback));
+            float safe = math.select(safeFallback, value, math.isfinite(value));
+            return math.max(0f, safe);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizePositive(float value, float fallback)
+        {
+            float safeFallback = math.select(0.01f, fallback, math.isfinite(fallback));
+            float safe = math.select(safeFallback, value, math.isfinite(value));
+            return math.max(0.01f, safe);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -261,11 +305,11 @@ namespace Hecton8.Equipment.Auxiliary
         public static float ResolveBaseLifetime(uint prefabHash, in AuxiliaryTuningDTO tuning)
         {
             if (prefabHash == AuxiliaryEquipmentConstants.FlarePrefabHash)
-                return math.max(0.01f, tuning.FlareBaseLifetime);
+                return SanitizePositive(tuning.FlareBaseLifetime, 60f);
             if (prefabHash == AuxiliaryEquipmentConstants.SensorPingPrefabHash)
-                return math.max(0.01f, tuning.PingBaseLifetime);
+                return SanitizePositive(tuning.PingBaseLifetime, 8f);
             if (prefabHash == AuxiliaryEquipmentConstants.GravityTetherPrefabHash)
-                return math.max(0.01f, tuning.TetherBaseLifetime);
+                return SanitizePositive(tuning.TetherBaseLifetime, 12f);
             return 0.01f;
         }
 

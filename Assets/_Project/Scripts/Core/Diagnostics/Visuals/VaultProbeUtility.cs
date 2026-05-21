@@ -21,7 +21,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             where T : unmanaged
         {
             bytes = ReadOnlySpan<byte>.Empty;
-            if (!TryResolveBuffer<T>(vault, bufferId, out NativeArray<T> buffer, out int byteLength))
+            if (!TryOpenReadBuffer<T>(vault, bufferId, out NativeArray<T> buffer, out int byteLength))
                 return false;
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer);
@@ -29,7 +29,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             return true;
         }
 
-        private static bool TryResolveBuffer<T>(
+        private static bool TryOpenReadBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
             out NativeArray<T> buffer,
@@ -41,8 +41,13 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (vault == null || bufferId == BufferID.Unknown)
                 return false;
 
-            if (!vault.TryGetBuffer(bufferId, out buffer) || !buffer.IsCreated || buffer.Length <= 0)
+            if (!vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
+                !vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length <= 0)
+            {
                 return false;
+            }
 
             int elementSize = UnsafeUtility.SizeOf<T>();
             long bytes = (long)buffer.Length * elementSize;

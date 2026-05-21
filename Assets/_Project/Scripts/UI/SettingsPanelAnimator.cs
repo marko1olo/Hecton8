@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Settings Panel Animator")]
-    public sealed class SettingsPanelAnimator : MonoBehaviour, ILateFrameTickable
+    public sealed class SettingsPanelAnimator : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
@@ -50,14 +50,24 @@ namespace Hecton8.UI
         private State _state;
         private float _timer;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private System.Action _onFadeOutComplete;
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct GroupState
         {
+            [FieldOffset(0)]
             public float startTime;
+            [FieldOffset(4)]
             public float duration;
+            [FieldOffset(8)]
             public byte completed;
+            [FieldOffset(9)]
+            private byte _pad0;
+            [FieldOffset(10)]
+            private ushort _pad1;
+            [FieldOffset(12)]
+            private uint _pad2;
         }
 
         private GroupState _headerState;
@@ -76,18 +86,29 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            if (_state != State.Idle)
-                TryRegister();
+            TryRegisterHotSwapListener();
+            TryRegister();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             Unregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             Unregister();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+                TryRegister();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -97,10 +118,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (_state == State.Idle)
-            {
-                Unregister();
                 return;
-            }
 
             float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             _timer += dt;
@@ -149,7 +167,6 @@ namespace Hecton8.UI
             if (IsAnimationComplete())
             {
                 _state = State.Idle;
-                Unregister();
             }
         }
 
@@ -190,7 +207,6 @@ namespace Hecton8.UI
                 System.Action onComplete = _onFadeOutComplete;
                 _onFadeOutComplete = null;
                 _state = State.Idle;
-                Unregister();
                 onComplete?.Invoke();
             }
         }
@@ -222,7 +238,6 @@ namespace Hecton8.UI
             {
                 _state = State.Idle;
                 _onFadeOutComplete = null;
-                Unregister();
                 onComplete?.Invoke();
                 return;
             }
@@ -241,7 +256,6 @@ namespace Hecton8.UI
             _state = State.Idle;
             _onFadeOutComplete = null;
             ShowAllGroups();
-            Unregister();
         }
 
         /// <summary>
@@ -430,9 +444,6 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             if (GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI))
             {
                 _registered = true;
@@ -448,6 +459,23 @@ namespace Hecton8.UI
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
 
             _registered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
     }
 }

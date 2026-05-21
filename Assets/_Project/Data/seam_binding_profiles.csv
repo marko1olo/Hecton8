@@ -1,0 +1,4 @@
+profile,global_quality_weight,snap_radius_m,normal_blend_m,texture_falloff_m,spatial_cell_m,lod_continuity_bias
+dear_lie_default,0.65,2.0,3.5,4.0,2.0,0.5
+sharp_basalt_cut,0.55,1.2,0.35,1.5,1.2,0.35
+soft_sand_dune,0.80,2.8,6.0,8.0,2.8,0.85

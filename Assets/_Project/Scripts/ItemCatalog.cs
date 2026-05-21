@@ -116,8 +116,8 @@ namespace Hecton8.SaveSystem
             public readonly float MassKg;
             public readonly float VolumeM3;
             public readonly float RadiationSvPerSecond;
-            public readonly bool Stackable;
-            public readonly bool IsConsumable;
+            public readonly byte Stackable;
+            public readonly byte IsConsumable;
             public readonly float OxygenRestore;
             public readonly float EnergyRestore;
             public readonly float IntegrityRestore;
@@ -161,8 +161,8 @@ namespace Hecton8.SaveSystem
                 MassKg = massKg;
                 VolumeM3 = volumeM3;
                 RadiationSvPerSecond = radiationSvPerSecond;
-                Stackable = stackable;
-                IsConsumable = isConsumable;
+                Stackable = stackable ? (byte)1 : (byte)0;
+                IsConsumable = isConsumable ? (byte)1 : (byte)0;
                 OxygenRestore = oxygenRestore;
                 EnergyRestore = energyRestore;
                 IntegrityRestore = integrityRestore;
@@ -171,7 +171,11 @@ namespace Hecton8.SaveSystem
                 UseDuration = useDuration;
             }
 
-            public bool IsValid => HashId != 0 && Width > 0 && Height > 0;
+        }
+
+        public static bool IsValidDescriptor(in ItemRuntimeDescriptor descriptor)
+        {
+            return descriptor.HashId != 0 && descriptor.Width > 0 && descriptor.Height > 0;
         }
 
         [Header("All item assets in the project")]
@@ -285,7 +289,7 @@ namespace Hecton8.SaveSystem
 
             return _runtimeDescriptorLookup != null &&
                    _runtimeDescriptorLookup.TryGetValue(hashId, out descriptor) &&
-                   descriptor.IsValid;
+                   IsValidDescriptor(in descriptor);
         }
 
         public bool QueueWorldPrefabPrewarm(int hashId)
@@ -1151,7 +1155,7 @@ namespace Hecton8.SaveSystem
                 return false;
 
             playerAup = snapshot.Aup;
-            return MathGuard.IsFinite(in playerAup);
+            return playerAup.IsFinite();
         }
 #endif
 
@@ -1438,7 +1442,7 @@ namespace Hecton8.SaveSystem
                     continue;
 
                 int hashId = LocHash.Compute(item.PersistentId);
-                if (!_runtimeDescriptorLookup.TryGetValue(hashId, out ItemRuntimeDescriptor descriptor) || !descriptor.IsValid)
+                if (!_runtimeDescriptorLookup.TryGetValue(hashId, out ItemRuntimeDescriptor descriptor) || !IsValidDescriptor(in descriptor))
                     continue;
 
                 if (TryFindTemplateIndex(destination, writeIndex, hashId) >= 0)

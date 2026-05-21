@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using System.Reflection;
 using Unity.Collections;
 using UnityEditor;
 
@@ -11,9 +12,17 @@ namespace Hecton8.Editor.OfflineGeometry
     {
         private const int RingCapacity = 300;
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_213.bin";
+        private const uint WarningNonFiniteAny = 0x80000000u;
+        private const uint WarningNonFiniteExtractionMs = 0x40000000u;
+        private const uint WarningNonFiniteSerializationMs = 0x20000000u;
+        private const uint WarningNonFiniteLod1Threshold = 0x10000000u;
+        private const uint WarningNonFiniteLod2Threshold = 0x08000000u;
+        private const uint WarningNonFiniteQuality = 0x04000000u;
+        private const uint WarningNonFiniteDepth = 0x02000000u;
 
         private static NativeArray<OfflineGeometryBakeTelemetryEntry> _ring;
         private static int _cursor;
+        private static bool _sentinelRegistered;
 
         static OfflineGeometryBakeBlackBox()
         {
@@ -26,10 +35,12 @@ namespace Hecton8.Editor.OfflineGeometry
         internal static void Record(in OfflineBakeMetrics metric)
         {
             EnsureAllocated();
+            uint nonFiniteFlags = BuildNonFiniteFlags(in metric);
+            uint nonFiniteFaultHash = nonFiniteFlags != 0u ? FoldNonFiniteFaultHash(in metric, nonFiniteFlags) : 0u;
             OfflineGeometryBakeTelemetryEntry entry = new OfflineGeometryBakeTelemetryEntry
             {
-                SourceHash = StableHash(metric.SourcePath.ToString()),
-                OutputHash = StableHash(metric.OutputPath.ToString()),
+                SourceHash = StableHash(in metric.SourcePath),
+                OutputHash = StableHash(in metric.OutputPath),
                 OriginalTriangles = metric.OriginalTriangles,
                 Lod0Triangles = metric.Lod0Triangles,
                 Lod1Triangles = metric.Lod1Triangles,
@@ -44,44 +55,64 @@ namespace Hecton8.Editor.OfflineGeometry
                 DepthMeters = Sanitize(metric.DepthMeters),
                 WarningFlags = metric.WarningFlags
             };
-            entry.StateHash = FoldStateHash(entry);
+            entry.WarningFlags |= nonFiniteFlags;
+
+            entry.StateHash = FoldStateHash(entry, nonFiniteFaultHash);
             _ring[_cursor] = entry;
             _cursor = (_cursor + 1) % RingCapacity;
 
-            if (!IsFinite(metric.ExtractionMilliseconds) ||
-                !IsFinite(metric.SerializationMilliseconds) ||
-                !IsFinite(metric.Lod1Threshold) ||
-                !IsFinite(metric.Lod2Threshold) ||
-                !IsFinite(metric.GlobalQualityWeight) ||
-                !IsFinite(metric.DepthMeters))
-            {
+            if (nonFiniteFlags != 0u)
                 Dump();
-            }
         }
 
         internal static void Dump()
         {
             EnsureAllocated();
             OfflineGeometryBaker.EnsureFileFolder(DumpPath);
-            using (FileStream stream = new FileStream(DumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            string tempPath = DumpPath + ".tmp";
+            try
             {
-                Span<byte> rowBytes = stackalloc byte[64];
-                for (int i = 0; i < _ring.Length; i++)
+                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    int index = (_cursor + i) % RingCapacity;
-                    OfflineGeometryBakeTelemetryEntry entry = _ring[index];
-                    WriteTelemetryEntryLittleEndian(rowBytes, in entry);
-                    stream.Write(rowBytes);
+                    Span<byte> rowBytes = stackalloc byte[64];
+                    for (int i = 0; i < _ring.Length; i++)
+                    {
+                        int index = (_cursor + i) % RingCapacity;
+                        OfflineGeometryBakeTelemetryEntry entry = _ring[index];
+                        WriteTelemetryEntryLittleEndian(rowBytes, in entry);
+                        stream.Write(rowBytes);
+                    }
+
+                    stream.Flush(true);
                 }
+
+                long expectedBytes = (long)RingCapacity * 64L;
+                long actualBytes = new FileInfo(tempPath).Length;
+                if (actualBytes != expectedBytes)
+                    throw new IOException("[SHINOBU_213] Torn black-box dump write.");
+
+                OfflineGeometryBaker.ReplaceTempFile(tempPath, DumpPath);
+            }
+            finally
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
             }
         }
 
         internal static void Dispose()
         {
-            if (_ring.IsCreated)
-                _ring.Dispose();
-            _ring = default;
-            _cursor = 0;
+            try
+            {
+                UnregisterNativeMemorySentinel();
+            }
+            finally
+            {
+                if (_ring.IsCreated)
+                    _ring.Dispose();
+                _ring = default;
+                _cursor = 0;
+            }
         }
 
         private static void EnsureAllocated()
@@ -96,6 +127,73 @@ namespace Hecton8.Editor.OfflineGeometry
             for (int i = 0; i < RingCapacity; i++)
                 _ring[i] = sentinel;
             _cursor = 0;
+            try
+            {
+                RegisterNativeMemorySentinel();
+            }
+            catch
+            {
+                _ring.Dispose();
+                _ring = default;
+                _cursor = 0;
+                throw;
+            }
+        }
+
+        private static void RegisterNativeMemorySentinel()
+        {
+            if (!_ring.IsCreated || _sentinelRegistered)
+                return;
+
+            Type sentinelType = FindType("Hecton8.Core.NativeMemorySentinel");
+            Type lifetimeType = FindType("Hecton8.Core.NativeAllocationLifetime");
+            if (sentinelType == null || lifetimeType == null)
+                throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel bridge unavailable for black-box ring.");
+
+            MethodInfo method = sentinelType.GetMethod("RegisterNativeArray", BindingFlags.Public | BindingFlags.Static);
+            if (method == null)
+                throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel.RegisterNativeArray unavailable.");
+
+            object lifetime = Enum.Parse(lifetimeType, "Session");
+            object id = method.MakeGenericMethod(typeof(OfflineGeometryBakeTelemetryEntry)).Invoke(
+                null,
+                new object[] { _ring, "SHINOBU_213", "OfflineGeometryBakeBlackBox.Ring", lifetime });
+            _sentinelRegistered = id is int value && value != 0;
+            if (!_sentinelRegistered)
+                throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel rejected black-box ring registration.");
+        }
+
+        private static void UnregisterNativeMemorySentinel()
+        {
+            if (!_ring.IsCreated || !_sentinelRegistered)
+                return;
+
+            Type sentinelType = FindType("Hecton8.Core.NativeMemorySentinel");
+            MethodInfo method = sentinelType != null ? sentinelType.GetMethod("UnregisterNativeArray", BindingFlags.Public | BindingFlags.Static) : null;
+            if (method == null)
+                throw new InvalidOperationException("[SHINOBU_213] NativeMemorySentinel.UnregisterNativeArray unavailable.");
+
+            try
+            {
+                method.MakeGenericMethod(typeof(OfflineGeometryBakeTelemetryEntry)).Invoke(null, new object[] { _ring });
+            }
+            finally
+            {
+                _sentinelRegistered = false;
+            }
+        }
+
+        private static Type FindType(string fullName)
+        {
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int i = 0; i < assemblies.Length; i++)
+            {
+                Type type = assemblies[i].GetType(fullName, false);
+                if (type != null)
+                    return type;
+            }
+
+            return null;
         }
 
         private static int ToMicroseconds(double milliseconds)
@@ -126,18 +224,79 @@ namespace Hecton8.Editor.OfflineGeometry
             return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
-        private static uint FoldStateHash(OfflineGeometryBakeTelemetryEntry entry)
+        private static uint BuildNonFiniteFlags(in OfflineBakeMetrics metric)
+        {
+            uint flags = 0u;
+            if (!IsFinite(metric.ExtractionMilliseconds))
+                flags |= WarningNonFiniteAny | WarningNonFiniteExtractionMs;
+            if (!IsFinite(metric.SerializationMilliseconds))
+                flags |= WarningNonFiniteAny | WarningNonFiniteSerializationMs;
+            if (!IsFinite(metric.Lod1Threshold))
+                flags |= WarningNonFiniteAny | WarningNonFiniteLod1Threshold;
+            if (!IsFinite(metric.Lod2Threshold))
+                flags |= WarningNonFiniteAny | WarningNonFiniteLod2Threshold;
+            if (!IsFinite(metric.GlobalQualityWeight))
+                flags |= WarningNonFiniteAny | WarningNonFiniteQuality;
+            if (!IsFinite(metric.DepthMeters))
+                flags |= WarningNonFiniteAny | WarningNonFiniteDepth;
+            return flags;
+        }
+
+        private static uint FoldNonFiniteFaultHash(in OfflineBakeMetrics metric, uint nonFiniteFlags)
         {
             unchecked
             {
                 uint hash = 2166136261u;
-                hash = (hash ^ entry.SourceHash) * 16777619u;
-                hash = (hash ^ entry.OutputHash) * 16777619u;
-                hash = (hash ^ (uint)entry.OriginalTriangles) * 16777619u;
-                hash = (hash ^ (uint)entry.Lod0Triangles) * 16777619u;
-                hash = (hash ^ (uint)entry.Lod1Triangles) * 16777619u;
-                hash = (hash ^ (uint)entry.Lod2Triangles) * 16777619u;
-                hash = (hash ^ entry.WarningFlags) * 16777619u;
+                hash = Fold(hash, nonFiniteFlags);
+                if ((nonFiniteFlags & WarningNonFiniteExtractionMs) != 0u)
+                    hash = FoldDoubleBits(hash, metric.ExtractionMilliseconds);
+                if ((nonFiniteFlags & WarningNonFiniteSerializationMs) != 0u)
+                    hash = FoldDoubleBits(hash, metric.SerializationMilliseconds);
+                if ((nonFiniteFlags & WarningNonFiniteLod1Threshold) != 0u)
+                    hash = Fold(hash, Unity.Mathematics.math.asuint(metric.Lod1Threshold));
+                if ((nonFiniteFlags & WarningNonFiniteLod2Threshold) != 0u)
+                    hash = Fold(hash, Unity.Mathematics.math.asuint(metric.Lod2Threshold));
+                if ((nonFiniteFlags & WarningNonFiniteQuality) != 0u)
+                    hash = Fold(hash, Unity.Mathematics.math.asuint(metric.GlobalQualityWeight));
+                if ((nonFiniteFlags & WarningNonFiniteDepth) != 0u)
+                    hash = Fold(hash, Unity.Mathematics.math.asuint(metric.DepthMeters));
+                return hash;
+            }
+        }
+
+        private static uint FoldDoubleBits(uint hash, double value)
+        {
+            ulong bits = AsUInt64(value);
+            hash = Fold(hash, (uint)bits);
+            return Fold(hash, (uint)(bits >> 32));
+        }
+
+        private static unsafe ulong AsUInt64(double value)
+        {
+            return *(ulong*)&value;
+        }
+
+        private static uint Fold(uint hash, uint value)
+        {
+            unchecked
+            {
+                return (hash ^ value) * 16777619u;
+            }
+        }
+
+        private static uint FoldStateHash(OfflineGeometryBakeTelemetryEntry entry, uint nonFiniteFaultHash)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = Fold(hash, entry.SourceHash);
+                hash = Fold(hash, entry.OutputHash);
+                hash = Fold(hash, (uint)entry.OriginalTriangles);
+                hash = Fold(hash, (uint)entry.Lod0Triangles);
+                hash = Fold(hash, (uint)entry.Lod1Triangles);
+                hash = Fold(hash, (uint)entry.Lod2Triangles);
+                hash = Fold(hash, entry.WarningFlags);
+                hash = Fold(hash, nonFiniteFaultHash);
                 return hash;
             }
         }
@@ -199,18 +358,15 @@ namespace Hecton8.Editor.OfflineGeometry
                    ((value & 0xFF000000u) >> 24);
         }
 
-        private static uint StableHash(string value)
+        private static uint StableHash(in FixedString128Bytes value)
         {
             unchecked
             {
                 uint hash = 2166136261u;
-                if (!string.IsNullOrEmpty(value))
+                for (int i = 0; i < value.Length; i++)
                 {
-                    for (int i = 0; i < value.Length; i++)
-                    {
-                        hash ^= value[i];
-                        hash *= 16777619u;
-                    }
+                    hash ^= value[i];
+                    hash *= 16777619u;
                 }
 
                 return hash;

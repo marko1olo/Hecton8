@@ -21,7 +21,7 @@ namespace Hecton8.AI.Pathfinding
         }
 
         /// <summary>
-        /// Reads a completed funnel result during the post-simulation swap window.
+        /// Consumes a completed funnel result during the post-simulation swap window.
         /// </summary>
         /// <param name="handle">Tracked funnel handle.</param>
         /// <param name="resultBuffer">Single-slot result buffer.</param>
@@ -31,7 +31,7 @@ namespace Hecton8.AI.Pathfinding
         /// This helper refuses to force-complete unfinished jobs. Callers can defer readback to the next
         /// late-frame pass instead of serializing the worker thread.
         /// </remarks>
-        public static bool TryReadPostSimulation(ref JobHandle handle, NativeArray<PathFunnelResult> resultBuffer, out PathFunnelResult result)
+        public static bool TryConsumeFinalizedPostSimulation(ref JobHandle handle, NativeArray<PathFunnelResult> resultBuffer, out PathFunnelResult result)
         {
             result = default;
             if (!resultBuffer.IsCreated || resultBuffer.Length <= 0 || !handle.IsCompleted)

@@ -1,0 +1,3 @@
+id,mass_kg,drag,buoyancy,crush_depth,integrity_cap,flags
+starter_sub_hull,18000,0.42,0.96,1200,100,1
+pressure_door_ring,420,0.08,0.10,900,35,1

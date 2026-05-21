@@ -431,8 +431,8 @@ namespace Hecton8.UI
             AppendInt(snapshot.SignalCount);
             SetLineText(_contactSummaryLabel);
 
-            SetDistanceLabel(_resourceSummaryLabel, "NEAREST RESOURCE // ", snapshot.HasNearestResource, snapshot.NearestResourceDistanceMeters, "NEAREST RESOURCE // NONE");
-            SetDistanceLabel(_bioformSummaryLabel, "NEAREST BIOFORM // ", snapshot.HasNearestBioform, snapshot.NearestBioformDistanceMeters, "NEAREST BIOFORM // NONE");
+            SetDistanceLabel(_resourceSummaryLabel, "NEAREST RESOURCE // ", SpatialSonarSnapshot.HasNearestResource(in snapshot), snapshot.NearestResourceDistanceMeters, "NEAREST RESOURCE // NONE");
+            SetDistanceLabel(_bioformSummaryLabel, "NEAREST BIOFORM // ", SpatialSonarSnapshot.HasNearestBioform(in snapshot), snapshot.NearestBioformDistanceMeters, "NEAREST BIOFORM // NONE");
             SetSignalDistanceLabel(snapshot);
         }
 
@@ -519,7 +519,7 @@ namespace Hecton8.UI
             if (TryAppendLastLossLabel())
                 return;
 
-            if (!snapshot.HasNearestSignal)
+            if (!SpatialSonarSnapshot.HasNearestSignal(in snapshot))
             {
                 SetLabelText(_signalSummaryLabel, "NEAREST SIGNAL // NONE");
                 return;
@@ -630,10 +630,29 @@ namespace Hecton8.UI
 
         private static int ResolveRoundedApproximateAupDistanceMeters(in AbsoluteUniversePosition fromAup, Vector3 toRuntimePosition)
         {
-            AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toRuntimePosition);
+            if (!TryResolveRuntimeAup(toRuntimePosition, out AbsoluteUniversePosition toAup))
+                return int.MaxValue;
+
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in fromAup, in toAup);
             float approximateMeters = ApproximateDistanceMetersFromSq(distanceSq);
             return approximateMeters >= int.MaxValue ? int.MaxValue : (int)math.round(approximateMeters);
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static float ApproximateDistanceMetersFromSq(double distanceSq)

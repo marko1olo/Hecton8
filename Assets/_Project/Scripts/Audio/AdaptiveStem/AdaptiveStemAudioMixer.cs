@@ -233,29 +233,32 @@ namespace Hecton8.Audio
         [SerializeField] private ulong _bossNarrativeMask = DefaultBossNarrativeMask;
         [SerializeField] private bool _autoStartSources = true;
 
-        private NativeArray<AudioStemStateDTO> _stemState; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<StemCommandDTO> _stemCommands; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<StemMixFrameDTO> _mixFrame; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<AudioStemRuleDTO> _rules; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<MockPredatorProximitySignal> _mockPredator; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<MockDepthSignal> _mockDepth; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<MockTensionSignal> _mockTension; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<AudioStemTelemetryEntry> _telemetryRing; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<int> _telemetryCursor; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<byte> _csvScratch; // Vault alias; GlobalDataVault owns backing memory.
-        private NativeArray<ScalabilityStateDTO> _scalabilityState; // Vault alias; HardwareHomeostasis owns backing memory.
+        private struct AdaptiveStemVaultViews
+        {
+            public NativeArray<AudioStemStateDTO> StemState;
+            public NativeArray<StemCommandDTO> StemCommands;
+            public NativeArray<StemMixFrameDTO> MixFrame;
+            public NativeArray<AudioStemRuleDTO> Rules;
+            public NativeArray<MockPredatorProximitySignal> MockPredator;
+            public NativeArray<MockDepthSignal> MockDepth;
+            public NativeArray<MockTensionSignal> MockTension;
+            public NativeArray<AudioStemTelemetryEntry> TelemetryRing;
+            public NativeArray<int> TelemetryCursor;
+            public NativeArray<byte> CsvScratch;
+        }
+
         private IDataVault _dataVault;
-        private VaultBufferHandle<AudioStemStateDTO> _stemStateHandle;
-        private VaultBufferHandle<StemCommandDTO> _stemCommandsHandle;
-        private VaultBufferHandle<StemMixFrameDTO> _mixFrameHandle;
-        private VaultBufferHandle<AudioStemRuleDTO> _rulesHandle;
-        private VaultBufferHandle<MockPredatorProximitySignal> _mockPredatorHandle;
-        private VaultBufferHandle<MockDepthSignal> _mockDepthHandle;
-        private VaultBufferHandle<MockTensionSignal> _mockTensionHandle;
-        private VaultBufferHandle<AudioStemTelemetryEntry> _telemetryRingHandle;
-        private VaultBufferHandle<int> _telemetryCursorHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<ScalabilityStateDTO> _scalabilityStateHandle;
+        private VaultGenerationHandle<AudioStemStateDTO> _stemStateHandle;
+        private VaultGenerationHandle<StemCommandDTO> _stemCommandsHandle;
+        private VaultGenerationHandle<StemMixFrameDTO> _mixFrameHandle;
+        private VaultGenerationHandle<AudioStemRuleDTO> _rulesHandle;
+        private VaultGenerationHandle<MockPredatorProximitySignal> _mockPredatorHandle;
+        private VaultGenerationHandle<MockDepthSignal> _mockDepthHandle;
+        private VaultGenerationHandle<MockTensionSignal> _mockTensionHandle;
+        private VaultGenerationHandle<AudioStemTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<int> _telemetryCursorHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityStateHandle;
         private string _resolvedCsvPath;
         private string _lastResolvedCsvRelativePath;
         private DateTime _lastCsvWriteUtc;
@@ -291,6 +294,7 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
+            CacheDataVaultCold();
             EnsureVaultStorage();
             RefreshCsvPathCold();
             ConfigureSourcesCold();
@@ -300,6 +304,7 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
+            CacheDataVaultCold();
             EnsureVaultStorage();
             RefreshCsvPathCold();
             ConfigureSourcesCold();
@@ -346,9 +351,12 @@ namespace Hecton8.Audio
             }
 
             DrainSignalInputs();
-            UpdateBeatAndBiomeState(safeDelta);
-            UpdateVaultRulesFromManagedState(safeDelta);
-            ScheduleAudioKernels();
+            if (!TryResolveStemViews(out AdaptiveStemVaultViews views))
+                return;
+
+            UpdateBeatAndBiomeState(ref views, safeDelta);
+            UpdateVaultRulesFromManagedState(ref views, safeDelta);
+            ScheduleAudioKernels(ref views);
         }
 
         public void LateFrameTick()
@@ -364,7 +372,7 @@ namespace Hecton8.Audio
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 return;
 
-            TryRefreshScalabilityStateAliasCold();
+            TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
             PollCsvRulesCold();
             ValidateStreamingClipsCold();
@@ -375,19 +383,26 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
-            if (serviceSlot == GlobalRegistryServiceSlot.Unknown)
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
+            IDataVault replacementVault = currentService as IDataVault;
+            if (!ReferenceEquals(_dataVault, replacementVault))
+            {
+                ForceFlushAudioJobsForShutdown();
+                DisposeVaultStorage();
+                _dataVault = replacementVault;
+            }
+
             EnsureVaultStorage();
-            TryRefreshScalabilityStateAliasCold();
+            TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
             _ = previousService;
-            _ = currentService;
         }
 
         public bool TryGetEditorRule(out AudioStemRuleDTO rule)
         {
-            if (Volatile.Read(ref _nativeAllocated) == 0 || !_rules.IsCreated)
+            if (Volatile.Read(ref _nativeAllocated) == 0)
             {
                 rule = default;
                 return false;
@@ -399,26 +414,35 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            rule = _rules[0];
+            if (!TryResolveStemViews(out AdaptiveStemVaultViews views) || views.Rules.Length <= 0)
+            {
+                rule = default;
+                return false;
+            }
+
+            rule = views.Rules[0];
             return true;
         }
 
         public bool TryWriteEditorRule(in AudioStemRuleDTO rule)
         {
-            if (Volatile.Read(ref _nativeAllocated) == 0 || !_rules.IsCreated)
+            if (Volatile.Read(ref _nativeAllocated) == 0)
                 return false;
 
             if (!TryFlushCompletedAudioJobs())
                 return false;
 
+            if (!TryResolveStemViews(out AdaptiveStemVaultViews views) || views.Rules.Length <= 0)
+                return false;
+
             AudioStemRuleDTO sanitized = SanitizeRule(rule);
-            _rules[0] = sanitized;
+            views.Rules[0] = sanitized;
             return true;
         }
 
         public bool TryGetEditorMixFrame(out StemMixFrameDTO frame)
         {
-            if (Volatile.Read(ref _nativeAllocated) == 0 || !_mixFrame.IsCreated)
+            if (Volatile.Read(ref _nativeAllocated) == 0)
             {
                 frame = default;
                 return false;
@@ -430,7 +454,13 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            frame = _mixFrame[0];
+            if (!TryResolveStemViews(out AdaptiveStemVaultViews views) || views.MixFrame.Length <= 0)
+            {
+                frame = default;
+                return false;
+            }
+
+            frame = views.MixFrame[0];
             return true;
         }
 
@@ -458,19 +488,25 @@ namespace Hecton8.Audio
         public bool TryGetEditorTelemetry(int offsetFromNewest, out AudioStemTelemetryEntry entry)
         {
             entry = default;
-            if (Volatile.Read(ref _nativeAllocated) == 0 || !_telemetryRing.IsCreated || !_telemetryCursor.IsCreated)
+            if (Volatile.Read(ref _nativeAllocated) == 0)
                 return false;
 
             if (!TryFlushCompletedAudioJobs())
                 return false;
 
-            int cursor = math.max(0, _telemetryCursor[0]);
-            int offset = math.clamp(offsetFromNewest, 0, TelemetryCapacity - 1);
+            if (!TryResolveStemViews(out AdaptiveStemVaultViews views) ||
+                views.TelemetryRing.Length <= 0 ||
+                views.TelemetryCursor.Length <= 0)
+                return false;
+
+            int cursor = math.max(0, views.TelemetryCursor[0]);
+            int capacity = math.min(TelemetryCapacity, views.TelemetryRing.Length);
+            int offset = math.clamp(offsetFromNewest, 0, capacity - 1);
             int index = cursor - 1 - offset;
             while (index < 0)
-                index += TelemetryCapacity;
+                index += capacity;
 
-            entry = _telemetryRing[index % TelemetryCapacity];
+            entry = views.TelemetryRing[index % capacity];
             return true;
         }
 
@@ -489,116 +525,97 @@ namespace Hecton8.Audio
             ForceFlushAudioJobsForShutdown();
         }
 
+        private void CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+        }
+
         private void EnsureVaultStorage()
         {
-            if (Volatile.Read(ref _nativeAllocated) != 0 &&
-                _stemState.IsCreated &&
-                _stemCommands.IsCreated &&
-                _mixFrame.IsCreated &&
-                _rules.IsCreated &&
-                _mockPredator.IsCreated &&
-                _mockDepth.IsCreated &&
-                _mockTension.IsCreated &&
-                _telemetryRing.IsCreated &&
-                _telemetryCursor.IsCreated &&
-                _csvScratch.IsCreated)
+            IDataVault vault = _dataVault;
+            if (Volatile.Read(ref _nativeAllocated) != 0)
             {
-                return;
+                if (TryResolveStemViews(out _))
+                    return;
+
+                DisposeVaultStorage();
+                _dataVault = vault;
             }
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            vault = _dataVault;
             if (vault == null)
                 return;
 
             _dataVault = vault;
-            _stemStateHandle = vault.GetBufferHandle<AudioStemStateDTO>(
+            _stemStateHandle = vault.GetGenerationHandle<AudioStemStateDTO>(
                 BufferID.AudioStemState,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _stemCommandsHandle = vault.GetBufferHandle<StemCommandDTO>(
+            _stemCommandsHandle = vault.GetGenerationHandle<StemCommandDTO>(
                 BufferID.AudioStemCommands,
                 2,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _mixFrameHandle = vault.GetBufferHandle<StemMixFrameDTO>(
+            _mixFrameHandle = vault.GetGenerationHandle<StemMixFrameDTO>(
                 BufferID.AudioStemMixFrame,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _rulesHandle = vault.GetBufferHandle<AudioStemRuleDTO>(
+            _rulesHandle = vault.GetGenerationHandle<AudioStemRuleDTO>(
                 BufferID.AudioStemRules,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _mockPredatorHandle = vault.GetBufferHandle<MockPredatorProximitySignal>(
+            _mockPredatorHandle = vault.GetGenerationHandle<MockPredatorProximitySignal>(
                 BufferID.AudioStemMockPredator,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _mockDepthHandle = vault.GetBufferHandle<MockDepthSignal>(
+            _mockDepthHandle = vault.GetGenerationHandle<MockDepthSignal>(
                 BufferID.AudioStemMockDepth,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _mockTensionHandle = vault.GetBufferHandle<MockTensionSignal>(
+            _mockTensionHandle = vault.GetGenerationHandle<MockTensionSignal>(
                 BufferID.AudioStemMockTension,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = vault.GetBufferHandle<AudioStemTelemetryEntry>(
+            _telemetryRingHandle = vault.GetGenerationHandle<AudioStemTelemetryEntry>(
                 BufferID.AudioStemTelemetry,
                 TelemetryCapacity,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = vault.GetBufferHandle<int>(
+            _telemetryCursorHandle = vault.GetGenerationHandle<int>(
                 BufferID.AudioStemTelemetryCursor,
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetBufferHandle<byte>(
+            _csvScratchHandle = vault.GetGenerationHandle<byte>(
                 BufferID.AudioStemCsvScratch,
                 CsvScratchBytes,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
 
-            _stemState = _stemStateHandle.Resolve(vault);
-            _stemCommands = _stemCommandsHandle.Resolve(vault);
-            _mixFrame = _mixFrameHandle.Resolve(vault);
-            _rules = _rulesHandle.Resolve(vault);
-            _mockPredator = _mockPredatorHandle.Resolve(vault);
-            _mockDepth = _mockDepthHandle.Resolve(vault);
-            _mockTension = _mockTensionHandle.Resolve(vault);
-            _telemetryRing = _telemetryRingHandle.Resolve(vault);
-            _telemetryCursor = _telemetryCursorHandle.Resolve(vault);
-            _csvScratch = _csvScratchHandle.Resolve(vault);
-
-            if (!_stemState.IsCreated ||
-                !_stemCommands.IsCreated ||
-                !_mixFrame.IsCreated ||
-                !_rules.IsCreated ||
-                !_mockPredator.IsCreated ||
-                !_mockDepth.IsCreated ||
-                !_mockTension.IsCreated ||
-                !_telemetryRing.IsCreated ||
-                !_telemetryCursor.IsCreated ||
-                !_csvScratch.IsCreated)
+            if (!TryResolveStemViews(out AdaptiveStemVaultViews views))
             {
                 DisposeVaultStorage();
                 return;
             }
 
-            MemClearArray(_stemState);
-            MemClearArray(_stemCommands);
-            MemClearArray(_mixFrame);
-            MemClearArray(_rules);
-            MemClearArray(_mockPredator);
-            MemClearArray(_mockDepth);
-            MemClearArray(_mockTension);
-            MemClearArray(_telemetryRing);
-            MemClearArray(_telemetryCursor);
-            MemClearArray(_csvScratch);
-            TryRefreshScalabilityStateAliasCold();
+            MemClearArray(views.StemState);
+            MemClearArray(views.StemCommands);
+            MemClearArray(views.MixFrame);
+            MemClearArray(views.Rules);
+            MemClearArray(views.MockPredator);
+            MemClearArray(views.MockDepth);
+            MemClearArray(views.MockTension);
+            MemClearArray(views.TelemetryRing);
+            MemClearArray(views.TelemetryCursor);
+            MemClearArray(views.CsvScratch);
+            TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
             Volatile.Write(ref _nativeAllocated, 1);
         }
@@ -606,35 +623,75 @@ namespace Hecton8.Audio
         private void DisposeVaultStorage()
         {
             IDataVault vault = _dataVault;
-            if (vault != null)
-                vault.ReleaseOwnerBuffers(VaultOwner, out _);
-
-            _stemState = default;
-            _stemCommands = default;
-            _mixFrame = default;
-            _rules = default;
-            _mockPredator = default;
-            _mockDepth = default;
-            _mockTension = default;
-            _telemetryRing = default;
-            _telemetryCursor = default;
-            _csvScratch = default;
-            _scalabilityState = default;
-            _stemStateHandle = default;
-            _stemCommandsHandle = default;
-            _mixFrameHandle = default;
-            _rulesHandle = default;
-            _mockPredatorHandle = default;
-            _mockDepthHandle = default;
-            _mockTensionHandle = default;
-            _telemetryRingHandle = default;
-            _telemetryCursorHandle = default;
-            _csvScratchHandle = default;
+            ReleaseVaultBuffer(vault, ref _stemStateHandle);
+            ReleaseVaultBuffer(vault, ref _stemCommandsHandle);
+            ReleaseVaultBuffer(vault, ref _mixFrameHandle);
+            ReleaseVaultBuffer(vault, ref _rulesHandle);
+            ReleaseVaultBuffer(vault, ref _mockPredatorHandle);
+            ReleaseVaultBuffer(vault, ref _mockDepthHandle);
+            ReleaseVaultBuffer(vault, ref _mockTensionHandle);
+            ReleaseVaultBuffer(vault, ref _telemetryRingHandle);
+            ReleaseVaultBuffer(vault, ref _telemetryCursorHandle);
+            ReleaseVaultBuffer(vault, ref _csvScratchHandle);
             _scalabilityStateHandle = default;
             _resolvedCsvPath = null;
             _lastResolvedCsvRelativePath = null;
             _dataVault = null;
             Volatile.Write(ref _nativeAllocated, 0);
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private bool TryResolveStemViews(out AdaptiveStemVaultViews views)
+        {
+            views = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (!vault.TryResolveHandle(in _stemStateHandle, out views.StemState) ||
+                !vault.TryResolveHandle(in _stemCommandsHandle, out views.StemCommands) ||
+                !vault.TryResolveHandle(in _mixFrameHandle, out views.MixFrame) ||
+                !vault.TryResolveHandle(in _rulesHandle, out views.Rules) ||
+                !vault.TryResolveHandle(in _mockPredatorHandle, out views.MockPredator) ||
+                !vault.TryResolveHandle(in _mockDepthHandle, out views.MockDepth) ||
+                !vault.TryResolveHandle(in _mockTensionHandle, out views.MockTension) ||
+                !vault.TryResolveHandle(in _telemetryRingHandle, out views.TelemetryRing) ||
+                !vault.TryResolveHandle(in _telemetryCursorHandle, out views.TelemetryCursor) ||
+                !vault.TryResolveHandle(in _csvScratchHandle, out views.CsvScratch) ||
+                !views.StemState.IsCreated ||
+                !views.StemCommands.IsCreated ||
+                !views.MixFrame.IsCreated ||
+                !views.Rules.IsCreated ||
+                !views.MockPredator.IsCreated ||
+                !views.MockDepth.IsCreated ||
+                !views.MockTension.IsCreated ||
+                !views.TelemetryRing.IsCreated ||
+                !views.TelemetryCursor.IsCreated ||
+                !views.CsvScratch.IsCreated ||
+                views.StemState.Length <= 0 ||
+                views.StemCommands.Length < 2 ||
+                views.MixFrame.Length <= 0 ||
+                views.Rules.Length <= 0 ||
+                views.MockPredator.Length <= 0 ||
+                views.MockDepth.Length <= 0 ||
+                views.MockTension.Length <= 0 ||
+                views.TelemetryRing.Length <= 0 ||
+                views.TelemetryCursor.Length <= 0 ||
+                views.CsvScratch.Length <= 0)
+            {
+                views = default;
+                return false;
+            }
+
+            return true;
         }
 
         private void ConfigureSourcesCold()
@@ -649,32 +706,29 @@ namespace Hecton8.Audio
             ValidateStreamingClipsCold();
         }
 
-        private void TryRefreshScalabilityStateAliasCold()
+        private void TryRefreshScalabilityStateHandleCold()
         {
             IDataVault vault = _dataVault;
             if (vault == null)
             {
-                _scalabilityState = default;
                 _scalabilityStateHandle = default;
                 return;
             }
 
-            if (!vault.TryGetBufferHandle<ScalabilityStateDTO>(BufferID.ShinobuScalabilityState, out _scalabilityStateHandle))
+            if (!vault.TryGetGenerationHandle<ScalabilityStateDTO>(BufferID.ShinobuScalabilityState, out _scalabilityStateHandle))
             {
-                _scalabilityState = default;
                 _scalabilityStateHandle = default;
                 return;
             }
-
-            _scalabilityState = _scalabilityStateHandle.Resolve(vault);
         }
 
         private void RefreshGlobalQualitySnapshotCold()
         {
-            if (!_scalabilityState.IsCreated || _scalabilityState.Length == 0)
+            if (!TryResolveScalabilityState(out NativeArray<ScalabilityStateDTO> scalabilityState) ||
+                scalabilityState.Length == 0)
                 return;
 
-            ScalabilityStateDTO state = _scalabilityState[0];
+            ScalabilityStateDTO state = scalabilityState[0];
             if (math.isfinite(state.GlobalQualityWeight))
                 _cachedGlobalQualityWeight = math.saturate(state.GlobalQualityWeight);
         }
@@ -748,7 +802,10 @@ namespace Hecton8.Audio
 
         private void GenerateEmergencyMockAudioProfiles()
         {
-            if (Volatile.Read(ref _nativeAllocated) == 0 || !_rules.IsCreated)
+            if (Volatile.Read(ref _nativeAllocated) == 0 ||
+                !TryResolveStemViews(out AdaptiveStemVaultViews views) ||
+                views.Rules.Length <= 0 ||
+                views.StemCommands.Length < 2)
                 return;
 
             AudioStemRuleDTO rule = default;
@@ -775,7 +832,7 @@ namespace Hecton8.Audio
             rule.StemDepthHash = StemDepthHash;
             rule.StemBossHash = StemBossHash;
             rule.KernelCadenceSeconds = ResolveKernelCadenceSeconds(rule.GlobalQualityWeight);
-            _rules[0] = rule;
+            views.Rules[0] = rule;
 
             StemCommandDTO primary = default;
             primary.StemHash_A = StemBaseHash;
@@ -787,8 +844,8 @@ namespace Hecton8.Audio
             secondary.Volume_A = 0f;
             secondary.StemHash_B = StemBossHash;
             secondary.Volume_B = 0f;
-            _stemCommands[0] = primary;
-            _stemCommands[1] = secondary;
+            views.StemCommands[0] = primary;
+            views.StemCommands[1] = secondary;
         }
 
         private void DrainSignalInputs()
@@ -839,12 +896,12 @@ namespace Hecton8.Audio
 
             ReadOnlySpan<ScalabilityChangedEvent> scalabilitySignals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
             for (int i = 0; i < scalabilitySignals.Length; i++)
-                _cachedGlobalQualityWeight = ResolveTierFallbackQualityWeight(scalabilitySignals[i].CurrentTier);
+                _cachedGlobalQualityWeight = ResolveQualityTierFallbackWeight(scalabilitySignals[i].CurrentQualityTier);
         }
 
-        private void UpdateBeatAndBiomeState(float deltaTime)
+        private void UpdateBeatAndBiomeState(ref AdaptiveStemVaultViews views, float deltaTime)
         {
-            AudioStemRuleDTO rule = _rules[0];
+            AudioStemRuleDTO rule = views.Rules[0];
             float bpm = math.clamp(FiniteOrFallback(rule.BeatBpm, DefaultBeatBpm), MinBpm, MaxBpm);
             float beatInterval = 60f / math.max(MinBpm, bpm);
             _beatTimerSeconds += deltaTime;
@@ -875,18 +932,18 @@ namespace Hecton8.Audio
             rule.GroupBlend01 = _biomeBlend01;
             rule.CurrentBiomeHash = _currentBiomeHash;
             rule.TargetBiomeHash = _targetBiomeHash;
-            _rules[0] = rule;
+            views.Rules[0] = rule;
 
-            StemMixFrameDTO frame = _mixFrame[0];
+            StemMixFrameDTO frame = views.MixFrame[0];
             frame.BeatPhase01 = beatPhase01;
             frame.Flags = flags;
             frame.GroupBlend01 = _biomeBlend01;
-            _mixFrame[0] = frame;
+            views.MixFrame[0] = frame;
         }
 
-        private void UpdateVaultRulesFromManagedState(float deltaTime)
+        private void UpdateVaultRulesFromManagedState(ref AdaptiveStemVaultViews views, float deltaTime)
         {
-            AudioStemRuleDTO rule = _rules[0];
+            AudioStemRuleDTO rule = views.Rules[0];
             float quality = ResolveGlobalQualityWeightFromSnapshot();
             float pressure01 = math.saturate(math.max(_lastIoPressure01, 1f - _lastSystemHealth01));
             float pressurePenalty = math.lerp(1f, 0.1f, Smooth01(pressure01));
@@ -898,16 +955,16 @@ namespace Hecton8.Audio
             rule.NarrativeStateMask = _narrativeStateMask;
             rule.KernelCadenceSeconds = ResolveKernelCadenceSeconds(rule.GlobalQualityWeight);
             _kernelAccumulatorSeconds += deltaTime;
-            _rules[0] = SanitizeRule(rule);
+            views.Rules[0] = SanitizeRule(rule);
         }
 
-        private void ScheduleAudioKernels()
+        private void ScheduleAudioKernels(ref AdaptiveStemVaultViews views)
         {
-            AudioStemRuleDTO rule = _rules[0];
+            AudioStemRuleDTO rule = views.Rules[0];
             float cadence = math.max(MinAudioDeltaSeconds, rule.KernelCadenceSeconds);
             if (_kernelAccumulatorSeconds + KernelCadenceEpsilonSeconds < cadence)
             {
-                WriteTelemetry(0f);
+                WriteTelemetry(ref views, 0f);
                 return;
             }
 
@@ -915,10 +972,10 @@ namespace Hecton8.Audio
             _kernelAccumulatorSeconds = 0f;
             MockAudioStimulusJob mockJob = new MockAudioStimulusJob
             {
-                Rules = (AudioStemRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_rules),
-                Predator = (MockPredatorProximitySignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_mockPredator),
-                Depth = (MockDepthSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_mockDepth),
-                Tension = (MockTensionSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_mockTension),
+                Rules = (AudioStemRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.Rules),
+                Predator = (MockPredatorProximitySignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.MockPredator),
+                Depth = (MockDepthSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.MockDepth),
+                Tension = (MockTensionSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.MockTension),
                 FrameIndex = _simulationFrameCounter,
                 DeltaSeconds = kernelDeltaSeconds,
                 MockDepthAmplitudeMeters = _mockDepthAmplitudeMeters,
@@ -928,11 +985,11 @@ namespace Hecton8.Audio
             JobHandle dependency = mockHandle;
             AudioStemTensionKernelJob tensionJob = new AudioStemTensionKernelJob
             {
-                State = (AudioStemStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_stemState),
-                Rules = (AudioStemRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_rules),
-                Predator = (MockPredatorProximitySignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_mockPredator),
-                Depth = (MockDepthSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_mockDepth),
-                MockTension = (MockTensionSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_mockTension),
+                State = (AudioStemStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.StemState),
+                Rules = (AudioStemRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.Rules),
+                Predator = (MockPredatorProximitySignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.MockPredator),
+                Depth = (MockDepthSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.MockDepth),
+                MockTension = (MockTensionSignal*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.MockTension),
                 DeltaSeconds = kernelDeltaSeconds
             };
             JobHandle tensionHandle = tensionJob.Schedule(dependency);
@@ -940,10 +997,10 @@ namespace Hecton8.Audio
 
             StemCrossfadeSolverJob solverJob = new StemCrossfadeSolverJob
             {
-                State = (AudioStemStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_stemState),
-                Rules = (AudioStemRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_rules),
-                Commands = (StemCommandDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_stemCommands),
-                MixFrame = (StemMixFrameDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_mixFrame),
+                State = (AudioStemStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.StemState),
+                Rules = (AudioStemRuleDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.Rules),
+                Commands = (StemCommandDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.StemCommands),
+                MixFrame = (StemMixFrameDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.MixFrame),
                 FrameIndex = _simulationFrameCounter,
                 DeltaSeconds = kernelDeltaSeconds
             };
@@ -964,10 +1021,13 @@ namespace Hecton8.Audio
                 return false;
 
             Volatile.Write(ref _audioJobsPending, 0);
-            ApplyMixFrameToUnityAudio();
+            if (!TryResolveStemViews(out AdaptiveStemVaultViews views))
+                return true;
+
+            ApplyMixFrameToUnityAudio(ref views);
             float elapsedMicroseconds = ResolveElapsedMicroseconds(startTicks);
-            WriteTelemetry(elapsedMicroseconds);
-            if (elapsedMicroseconds > MixerDumpThresholdMicroseconds || HasNonFiniteMixFrame())
+            WriteTelemetry(ref views, elapsedMicroseconds);
+            if (elapsedMicroseconds > MixerDumpThresholdMicroseconds || HasNonFiniteMixFrame(ref views))
                 DumpTelemetryOnce();
             return true;
         }
@@ -980,19 +1040,19 @@ namespace Hecton8.Audio
             long startTicks = Stopwatch.GetTimestamp();
             DispatcherJobFence.TryComplete(ref _audioJobHandle, forceComplete: true);
             Volatile.Write(ref _audioJobsPending, 0);
-            if (_mixFrame.IsCreated && _telemetryRing.IsCreated && _telemetryCursor.IsCreated)
+            if (TryResolveStemViews(out AdaptiveStemVaultViews views))
             {
                 float elapsedMicroseconds = ResolveElapsedMicroseconds(startTicks);
-                WriteTelemetry(elapsedMicroseconds);
+                WriteTelemetry(ref views, elapsedMicroseconds);
             }
         }
 
-        private void ApplyMixFrameToUnityAudio()
+        private void ApplyMixFrameToUnityAudio(ref AdaptiveStemVaultViews views)
         {
-            StemMixFrameDTO frame = _mixFrame[0];
+            StemMixFrameDTO frame = views.MixFrame[0];
             if (ProceduralSynthOwnsStemTransport)
             {
-                AudioStemRuleDTO rule = _rules.IsCreated ? _rules[0] : default;
+                AudioStemRuleDTO rule = views.Rules.IsCreated ? views.Rules[0] : default;
                 float depthMeters = math.max(0f, math.isfinite(rule.MockDepthMeters) ? rule.MockDepthMeters : 0f);
                 float quality = math.saturate(math.isfinite(frame.QualityWeight) ? frame.QualityWeight : 1f);
                 float tension = math.saturate(math.isfinite(frame.TensionIndex) ? frame.TensionIndex : 0f);
@@ -1071,15 +1131,23 @@ namespace Hecton8.Audio
             source.Play();
         }
 
-        private void WriteTelemetry(float elapsedMicroseconds)
+        private void WriteTelemetry(ref AdaptiveStemVaultViews views, float elapsedMicroseconds)
         {
-            if (!_telemetryRing.IsCreated || !_telemetryCursor.IsCreated)
+            if (!views.TelemetryRing.IsCreated ||
+                !views.TelemetryCursor.IsCreated ||
+                !views.MixFrame.IsCreated ||
+                !views.Rules.IsCreated ||
+                views.TelemetryRing.Length <= 0 ||
+                views.TelemetryCursor.Length <= 0 ||
+                views.MixFrame.Length <= 0 ||
+                views.Rules.Length <= 0)
                 return;
 
-            StemMixFrameDTO frame = _mixFrame[0];
-            AudioStemRuleDTO rule = _rules[0];
-            int cursor = _telemetryCursor[0];
-            int index = cursor % TelemetryCapacity;
+            StemMixFrameDTO frame = views.MixFrame[0];
+            AudioStemRuleDTO rule = views.Rules[0];
+            int cursor = views.TelemetryCursor[0];
+            int capacity = math.min(TelemetryCapacity, views.TelemetryRing.Length);
+            int index = cursor % capacity;
             AudioStemTelemetryEntry entry = default;
             entry.Frame = frame.Frame != 0u ? frame.Frame : _simulationFrameCounter;
             entry.ActiveStemHash = frame.ActiveStemHash;
@@ -1097,13 +1165,16 @@ namespace Hecton8.Audio
             entry.BeatPhase01 = frame.BeatPhase01;
             entry.IoPressure01 = frame.IoPressure01;
             entry.UpdateCadenceHz = 1f / math.max(MinAudioDeltaSeconds, rule.KernelCadenceSeconds);
-            _telemetryRing[index] = entry;
-            _telemetryCursor[0] = (cursor + 1) % TelemetryCapacity;
+            views.TelemetryRing[index] = entry;
+            views.TelemetryCursor[0] = (cursor + 1) % capacity;
         }
 
-        private bool HasNonFiniteMixFrame()
+        private bool HasNonFiniteMixFrame(ref AdaptiveStemVaultViews views)
         {
-            StemMixFrameDTO frame = _mixFrame[0];
+            if (!views.MixFrame.IsCreated || views.MixFrame.Length <= 0)
+                return false;
+
+            StemMixFrameDTO frame = views.MixFrame[0];
             if (!math.isfinite(frame.TensionIndex) ||
                 !math.isfinite(frame.DepthFilter) ||
                 !math.isfinite(frame.CutoffHz) ||
@@ -1113,7 +1184,7 @@ namespace Hecton8.Audio
                 !math.isfinite(frame.BossVolume))
             {
                 frame.Flags |= FlagNonFinite;
-                _mixFrame[0] = frame;
+                views.MixFrame[0] = frame;
                 return true;
             }
 
@@ -1127,14 +1198,19 @@ namespace Hecton8.Audio
 
             try
             {
+                if (!TryResolveStemViews(out AdaptiveStemVaultViews views) ||
+                    !views.TelemetryRing.IsCreated ||
+                    views.TelemetryRing.Length <= 0)
+                    return;
+
                 string repoRoot = ResolveRepoRootPath();
                 string dumpPath = Path.Combine(repoRoot, DumpRelativePath);
                 string directory = Path.GetDirectoryName(dumpPath);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                void* source = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_telemetryRing);
-                int byteCount = TelemetryCapacity * UnsafeUtility.SizeOf<AudioStemTelemetryEntry>();
+                void* source = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.TelemetryRing);
+                int byteCount = math.min(TelemetryCapacity, views.TelemetryRing.Length) * UnsafeUtility.SizeOf<AudioStemTelemetryEntry>();
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     stream.Write(new ReadOnlySpan<byte>(source, byteCount));
@@ -1148,7 +1224,9 @@ namespace Hecton8.Audio
 
         private void PollCsvRulesCold()
         {
-            if (!_csvScratch.IsCreated)
+            if (!TryResolveStemViews(out AdaptiveStemVaultViews views) ||
+                !views.CsvScratch.IsCreated ||
+                views.CsvScratch.Length <= 0)
                 return;
 
             if (_csvPollCountdown > 0)
@@ -1170,15 +1248,16 @@ namespace Hecton8.Audio
             try
             {
                 int bytesRead;
-                byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_csvScratch);
+                NativeArray<byte> csvScratch = views.CsvScratch;
+                byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(csvScratch);
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    int safeLength = (int)math.min(stream.Length, CsvScratchBytes);
+                    int safeLength = (int)math.min(stream.Length, math.min(CsvScratchBytes, csvScratch.Length));
                     Span<byte> scratchSpan = new Span<byte>(scratch, safeLength);
                     bytesRead = stream.Read(scratchSpan);
                 }
 
-                ParseCsvRules(bytesRead);
+                ParseCsvRules(bytesRead, ref views);
             }
             catch (Exception ex)
             {
@@ -1186,52 +1265,54 @@ namespace Hecton8.Audio
             }
         }
 
-        private void ParseCsvRules(int byteCount)
+        private void ParseCsvRules(int byteCount, ref AdaptiveStemVaultViews views)
         {
-            if (byteCount <= 0)
+            if (byteCount <= 0 || views.Rules.Length <= 0 || views.CsvScratch.Length <= 0)
                 return;
 
-            AudioStemRuleDTO rule = _rules[0];
+            NativeArray<byte> csvScratch = views.CsvScratch;
+            AudioStemRuleDTO rule = views.Rules[0];
+            int safeByteCount = math.min(byteCount, csvScratch.Length);
             int index = 0;
-            while (index < byteCount)
+            while (index < safeByteCount)
             {
-                while (index < byteCount && IsLineBreakOrSpace(_csvScratch[index]))
+                while (index < safeByteCount && IsLineBreakOrSpace(csvScratch[index]))
                     index++;
-                if (index >= byteCount)
+                if (index >= safeByteCount)
                     break;
 
-                if (_csvScratch[index] == (byte)'#')
+                if (csvScratch[index] == (byte)'#')
                 {
-                    while (index < byteCount && !IsLineBreak(_csvScratch[index]))
+                    while (index < safeByteCount && !IsLineBreak(csvScratch[index]))
                         index++;
                     continue;
                 }
 
                 int keyStart = index;
-                while (index < byteCount && _csvScratch[index] != (byte)',' && !IsLineBreak(_csvScratch[index]))
+                while (index < safeByteCount && csvScratch[index] != (byte)',' && !IsLineBreak(csvScratch[index]))
                     index++;
 
                 int keyEnd = index;
-                if (index >= byteCount || _csvScratch[index] != (byte)',')
+                if (index >= safeByteCount || csvScratch[index] != (byte)',')
                 {
-                    while (index < byteCount && !IsLineBreak(_csvScratch[index]))
+                    while (index < safeByteCount && !IsLineBreak(csvScratch[index]))
                         index++;
                     continue;
                 }
 
                 index++;
                 int valueStart = index;
-                while (index < byteCount && !IsLineBreak(_csvScratch[index]))
+                while (index < safeByteCount && !IsLineBreak(csvScratch[index]))
                     index++;
 
-                if (TryParseFloat(_csvScratch, valueStart, index, out float value))
+                if (TryParseFloat(csvScratch, valueStart, index, out float value))
                 {
-                    uint hash = HashCsvKey(_csvScratch, keyStart, keyEnd);
+                    uint hash = HashCsvKey(csvScratch, keyStart, keyEnd);
                     ApplyCsvRule(ref rule, hash, value);
                 }
             }
 
-            _rules[0] = SanitizeRule(rule);
+            views.Rules[0] = SanitizeRule(rule);
         }
 
         private static void ApplyCsvRule(ref AudioStemRuleDTO rule, uint hash, float value)
@@ -1426,9 +1507,10 @@ namespace Hecton8.Audio
 
         private float ResolveGlobalQualityWeightFromSnapshot()
         {
-            if (_scalabilityState.IsCreated && _scalabilityState.Length > 0)
+            if (TryResolveScalabilityState(out NativeArray<ScalabilityStateDTO> scalabilityState) &&
+                scalabilityState.Length > 0)
             {
-                ScalabilityStateDTO state = _scalabilityState[0];
+                ScalabilityStateDTO state = scalabilityState[0];
                 if (math.isfinite(state.GlobalQualityWeight))
                 {
                     _cachedGlobalQualityWeight = math.saturate(state.GlobalQualityWeight);
@@ -1439,9 +1521,21 @@ namespace Hecton8.Audio
             return math.saturate(_cachedGlobalQualityWeight);
         }
 
-        private static float ResolveTierFallbackQualityWeight(byte tierProfile)
+        private bool TryResolveScalabilityState(out NativeArray<ScalabilityStateDTO> scalabilityState)
         {
-            return ScalabilityTierProfiles.Normalize(tierProfile) == ScalabilityTierProfiles.LowMx350 ? 0.1f : 1f;
+            scalabilityState = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _scalabilityStateHandle.BufferID != 0u &&
+                   vault.TryResolveHandle(in _scalabilityStateHandle, out scalabilityState) &&
+                   scalabilityState.IsCreated;
+        }
+
+        private static float ResolveQualityTierFallbackWeight(HectonQualityTier qualityTier)
+        {
+            int tierIndex = (int)qualityTier - (int)HectonQualityTier.Low;
+            float tier01 = math.saturate(tierIndex * 0.25f);
+            return math.lerp(0.1f, 1f, Smooth01(tier01));
         }
 
         private static float ResolveElapsedMicroseconds(long startTicks)

@@ -1,0 +1,23 @@
+{
+    "name": "Hecton8.World.FloraAmbientSway",
+    "rootNamespace": "Hecton8.World.FloraAmbientSway",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

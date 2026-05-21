@@ -838,7 +838,7 @@ namespace Hecton8.Core.Database
 
         public void NotifyCriticalMemoryPressure(long reservedMemoryBytes, long physicalMemoryBytes, float usageRatio, uint frame, byte severity)
         {
-            int resumeTick = unchecked(Environment.TickCount + MemoryPressurePauseMilliseconds);
+            int resumeTick = unchecked(System.Environment.TickCount + MemoryPressurePauseMilliseconds);
             Volatile.Write(ref _compactionMemoryResumeTickMs, resumeTick);
             lock (_fileGate)
             {
@@ -1264,7 +1264,7 @@ namespace Hecton8.Core.Database
             if (resumeTick == 0)
                 return false;
 
-            int remaining = unchecked(resumeTick - Environment.TickCount);
+            int remaining = unchecked(resumeTick - System.Environment.TickCount);
             if (remaining > 0)
                 return true;
 
@@ -2059,7 +2059,7 @@ namespace Hecton8.Core.Database
         private void RecordPageFaultLocked(MacroDatabaseTier tier)
         {
             _pageFaults++;
-            int now = Environment.TickCount;
+            int now = System.Environment.TickCount;
             if (_pageFaultWindowStartTickMs == 0)
             {
                 _pageFaultWindowStartTickMs = now;

@@ -158,6 +158,7 @@ namespace Hecton8.UI.Navigation
     {
         private const int StateLength = 1;
         private const int BlackBoxCapacity = 300;
+        private const SystemID OwnerSystem = SystemID.UI;
         private const float DefaultSlowDeltaSeconds = 0.1f;
         private const float MaxIntegrationDeltaSeconds = 0.2f;
         private const float PowerDeathThreshold01 = 0.01f;
@@ -257,6 +258,10 @@ namespace Hecton8.UI.Navigation
         private float _fastCadenceAccumulatedDelta;
         private int _fastCadenceStride = 1;
         private int _fastCadenceCounter;
+        private VaultLane<CompassStateDTO> _stateLane;
+        private VaultLane<CompassPresentationStateDTO> _presentationLane;
+        private VaultLane<float> _headingOutputLane;
+        private VaultLane<CompassBlackBoxEntry> _blackBoxLane;
 
         private readonly char[] _cardinalBuffer = new char[2]; // COLD ALLOC: char[2] - diegetic compass cardinal text buffer - owner: DiegeticGyroCompassRuntime
         private readonly uint[] _indirectArgs = new uint[5]; // COLD ALLOC: uint[5] - compass indirect draw args - owner: DiegeticGyroCompassRuntime
@@ -274,6 +279,13 @@ namespace Hecton8.UI.Navigation
 
         /// <inheritdoc />
         public float GyroDriftError => TryGetSnapshot(out InertialNavigationSnapshot snapshot) ? snapshot.GyroDriftError : 0f;
+
+        private struct VaultLane<T> where T : struct
+        {
+            public VaultGenerationHandle<T> Handle;
+            public uint ExpectedBufferID;
+            public int Length;
+        }
 
         private void Awake()
         {
@@ -518,14 +530,12 @@ namespace Hecton8.UI.Navigation
         private bool TryGetExistingStateBuffer(out NativeSlice<CompassStateDTO> stateBuffer)
         {
             stateBuffer = default;
-            IDataVault vault = _vault;
-            if (vault == null ||
-                !vault.TryGetBuffer<CompassStateDTO>(BufferID.CompassState, out var buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < StateLength)
-            {
+            if (!TryOpenExistingLane(
+                    ref _stateLane,
+                    BufferID.CompassState,
+                    StateLength,
+                    out NativeArray<CompassStateDTO> buffer))
                 return false;
-            }
 
             stateBuffer = new NativeSlice<CompassStateDTO>(buffer);
             return true;
@@ -534,14 +544,12 @@ namespace Hecton8.UI.Navigation
         private bool TryGetExistingPresentationBuffer(out NativeSlice<CompassPresentationStateDTO> presentationBuffer)
         {
             presentationBuffer = default;
-            IDataVault vault = _vault;
-            if (vault == null ||
-                !vault.TryGetBuffer<CompassPresentationStateDTO>(BufferID.CompassPresentationState, out var buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < StateLength)
-            {
+            if (!TryOpenExistingLane(
+                    ref _presentationLane,
+                    BufferID.CompassPresentationState,
+                    StateLength,
+                    out NativeArray<CompassPresentationStateDTO> buffer))
                 return false;
-            }
 
             presentationBuffer = new NativeSlice<CompassPresentationStateDTO>(buffer);
             return true;
@@ -550,16 +558,12 @@ namespace Hecton8.UI.Navigation
         private bool TryGetPresentationBuffer(out NativeSlice<CompassPresentationStateDTO> presentationBuffer)
         {
             presentationBuffer = default;
-            IDataVault vault = _vault;
-            if (vault == null)
-                return false;
-
-            var buffer = vault.GetBuffer<CompassPresentationStateDTO>(
-                BufferID.CompassPresentationState,
-                StateLength,
-                SystemID.UI);
-
-            if (!buffer.IsCreated || buffer.Length < StateLength)
+            if (!TryOpenOrAcquireLane(
+                    ref _presentationLane,
+                    BufferID.CompassPresentationState,
+                    StateLength,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<CompassPresentationStateDTO> buffer))
                 return false;
 
             presentationBuffer = new NativeSlice<CompassPresentationStateDTO>(buffer);
@@ -650,27 +654,24 @@ namespace Hecton8.UI.Navigation
             if (vault == null)
                 return false;
 
-            var state = vault.GetBuffer<CompassStateDTO>(
-                BufferID.CompassState,
-                StateLength,
-                SystemID.UI);
-
-            var output = vault.GetBuffer<float>(
-                BufferID.CompassHeadingOutput,
-                (int)CompassOutputSlot.Count,
-                SystemID.UI);
-
-            var telemetry = vault.GetBuffer<CompassBlackBoxEntry>(
-                BufferID.CompassBlackBox,
-                BlackBoxCapacity,
-                SystemID.UI);
-
-            if (!state.IsCreated ||
-                state.Length < StateLength ||
-                !output.IsCreated ||
-                output.Length < (int)CompassOutputSlot.Count ||
-                !telemetry.IsCreated ||
-                telemetry.Length < BlackBoxCapacity)
+            if (!TryOpenOrAcquireLane(
+                    ref _stateLane,
+                    BufferID.CompassState,
+                    StateLength,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<CompassStateDTO> state) ||
+                !TryOpenOrAcquireLane(
+                    ref _headingOutputLane,
+                    BufferID.CompassHeadingOutput,
+                    (int)CompassOutputSlot.Count,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<float> output) ||
+                !TryOpenOrAcquireLane(
+                    ref _blackBoxLane,
+                    BufferID.CompassBlackBox,
+                    BlackBoxCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<CompassBlackBoxEntry> telemetry))
             {
                 return false;
             }
@@ -679,6 +680,105 @@ namespace Hecton8.UI.Navigation
             outputBuffer = new NativeSlice<float>(output);
             blackBox = new NativeSlice<CompassBlackBoxEntry>(telemetry);
             return true;
+        }
+
+        private bool TryOpenExistingLane<T>(
+            ref VaultLane<T> lane,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _vault;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (OpenLane(vault, in lane, out buffer))
+                return true;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existing))
+                return false;
+
+            lane = CreateLane(in existing, bufferId, requiredLength);
+            return OpenLane(vault, in lane, out buffer);
+        }
+
+        private bool TryOpenOrAcquireLane<T>(
+            ref VaultLane<T> lane,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (TryOpenExistingLane(ref lane, bufferId, requiredLength, out buffer))
+                return true;
+
+            IDataVault vault = _vault;
+            if (vault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            lane = AcquireLane<T>(vault, bufferId, requiredLength, options);
+            return OpenLane(vault, in lane, out buffer);
+        }
+
+        private static VaultLane<T> AcquireLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options) where T : struct
+        {
+            if (vault == null || requiredLength <= 0)
+                return default;
+
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                OwnerSystem,
+                options);
+            return CreateLane(in handle, bufferId, requiredLength);
+        }
+
+        private static VaultLane<T> CreateLane<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            uint expectedBufferId = unchecked((uint)(int)bufferId);
+            if (handle.BufferID != expectedBufferId || handle.Generation == 0u || requiredLength <= 0)
+                return default;
+
+            return new VaultLane<T>
+            {
+                Handle = handle,
+                ExpectedBufferID = expectedBufferId,
+                Length = requiredLength
+            };
+        }
+
+        private static bool IsLaneBound<T>(in VaultLane<T> lane) where T : struct
+        {
+            return lane.ExpectedBufferID != 0u &&
+                   lane.Handle.BufferID == lane.ExpectedBufferID &&
+                   lane.Handle.Generation != 0u &&
+                   lane.Length > 0;
+        }
+
+        private static bool OpenLane<T>(
+            IDataVault vault,
+            in VaultLane<T> lane,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || !IsLaneBound(in lane))
+                return false;
+
+            if (!vault.TryResolveHandle(in lane.Handle, out buffer))
+                return false;
+
+            return buffer.IsCreated && buffer.Length >= lane.Length;
         }
 
         public void OnGlobalRegistryServiceReplaced(

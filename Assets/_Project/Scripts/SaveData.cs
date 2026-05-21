@@ -463,7 +463,6 @@ namespace Hecton8.SaveSystem
     // ══════════════════════════════════════════════════════════════════
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct PlayerStatsDTO
     {
         public float oxygen;
@@ -619,7 +618,6 @@ namespace Hecton8.SaveSystem
     // ══════════════════════════════════════════════════════════════════
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct InventoryDTO
     {
         public int cellCount;
@@ -671,7 +669,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct InventoryCellDTO
     {
         public int x;
@@ -723,7 +720,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct WorldStateDTO
     {
         public int depletedCount;
@@ -832,7 +828,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ProceduralWorldStateDTO
     {
         public int suppressedPlacementCount;
@@ -867,7 +862,6 @@ namespace Hecton8.SaveSystem
     // ══════════════════════════════════════════════════════════════════
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ConstructionDTO
     {
         public int moduleCount;
@@ -978,7 +972,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ScanEntryDTO
     {
         public string id;
@@ -988,7 +981,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ScanLogDTO
     {
         public int entryCount;
@@ -1007,7 +999,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct BarterOfferStateDTO
     {
         public string offerId;
@@ -1015,7 +1006,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct BarterTransactionDTO
     {
         public string offerId;
@@ -1026,7 +1016,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct BarterDTO
     {
         public int stateCount;
@@ -1045,7 +1034,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct FieldOperationEntryDTO
     {
         public string source;
@@ -1055,7 +1043,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct FieldOperationLogDTO
     {
         public int recentCount;
@@ -1070,7 +1057,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct BeaconEntryDTO
     {
         public string id;
@@ -1104,7 +1090,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct BeaconNetworkDTO
     {
         public int activeCount;
@@ -1120,7 +1105,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ExplorationMapDTO
     {
         public int exploredChunkCount;
@@ -1187,7 +1171,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct PDALogbookEntryDTO
     {
         public int sequence;
@@ -1206,7 +1189,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct PDALogbookDTO
     {
         public int entryCount;
@@ -1229,7 +1211,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct PDAMarkerEntryDTO
     {
         public const int AupPositionEncodingVersion = 1;
@@ -1291,7 +1272,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct PDAMarkerRegistryDTO
     {
         public int markerCount;
@@ -1326,7 +1306,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ProceduralLorePlacementDTO
     {
         public string discoveryId;
@@ -1347,7 +1326,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ProceduralLoreStateDTO
     {
         public int activeCount;
@@ -1363,7 +1341,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct AchievementRegistryDTO
     {
         public float swamDistanceMeters;
@@ -1381,7 +1358,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct RunModifiersDTO
     {
         public bool isPermadeath;
@@ -1392,7 +1368,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct MetaCampaignDTO
     {
         public const int MaxGlobalVariables = 64;
@@ -1424,7 +1399,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ResourceScarcityDTO
     {
         public const int MaxTrackedResources = 96;
@@ -1454,7 +1428,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct EcosystemStateDTO
     {
         public const int MaxInfectedZones = 64;
@@ -1473,7 +1446,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ModuleDTO
     {
         public string prefabId;
@@ -1525,7 +1497,6 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ModuleGraphNodeDTO
     {
         public string prefabId;

@@ -19,7 +19,7 @@ namespace Hecton8.Physics.KCC
     {
         public const uint FlagActive = 1u << 0;
         public const uint FlagGradientValid = 1u << 1;
-        public const uint FlagLowTier = 1u << 2;
+        public const uint FlagReducedGradientSamples = 1u << 2;
         public const uint FlagNaNFallback = 1u << 3;
         public const uint FlagSlowCadence = 1u << 4;
         public const uint FlagSpeedPenalty = 1u << 5;
@@ -62,8 +62,8 @@ namespace Hecton8.Physics.KCC
         public float MaxPushOutSpeedMetersPerSecond;
         public float SpeedPenalty01;
         public float SystemStress01;
+        public float QualityWeight;
         public byte SampleMode;
-        public byte LowTier;
         public byte SlowCadence;
         public uint Frame;
 
@@ -103,6 +103,9 @@ namespace Hecton8.Physics.KCC
                 return;
             }
 
+            float quality = 1f;
+            float qualityCurve = Smooth01(quality);
+            float sampleStepMeters = SdfSampleStepMeters * math.lerp(2.0f, 1.0f, qualityCurve);
             if (!TryResolveOpenSpaceNormal(
                     VoxelSdfTexture3D,
                     VoxelSdfDimensions,
@@ -111,7 +114,7 @@ namespace Hecton8.Physics.KCC
                     VoxelSdfRange,
                     sdfTarget,
                     intended,
-                    SdfSampleStepMeters,
+                    sampleStepMeters,
                     SampleMode,
                     out float3 normal,
                     out float centerDensity))
@@ -147,9 +150,9 @@ namespace Hecton8.Physics.KCC
             uint flags = SdfSqueezeResult.FlagActive |
                          SdfSqueezeResult.FlagGradientValid |
                          SdfSqueezeResult.FlagSpeedPenalty;
-            if ((SampleMode & (byte)SdfSqueezeSampleMode.Tetra4) != 0 || LowTier != 0)
-                flags |= SdfSqueezeResult.FlagLowTier;
-            if (SlowCadence != 0 || SystemStress01 > 0.8f)
+            if ((SampleMode & (byte)SdfSqueezeSampleMode.Tetra4) != 0)
+                flags |= SdfSqueezeResult.FlagReducedGradientSamples;
+            if (SlowCadence != 0)
                 flags |= SdfSqueezeResult.FlagSlowCadence;
 
             result.Position = SnapMillimeter(position);
@@ -394,6 +397,19 @@ namespace Hecton8.Physics.KCC
         private static float SanitizeNonNegative(float value)
         {
             return math.select(math.max(0.0f, value), 0.0f, !math.isfinite(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeQuality01(float value)
+        {
+            return math.saturate(math.select(1.0f, value, math.isfinite(value) & value > 0.0f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Smooth01(float value)
+        {
+            float q = math.saturate(value);
+            return q * q * (3.0f - (2.0f * q));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

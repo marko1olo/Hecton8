@@ -1,0 +1,82 @@
+<SELF_AUDIT agent="SHINOBU_224" domain="ACTIVE_EQUIPMENT_PROCESSOR" taskCount="20" evidence="STATIC_SOURCE" generatedDate="2026-05-21">
+  <nonClaims>
+    <nonClaim>Unity import, Unity Console, Play Mode, profiler, GCMonitor, Burst Inspector, Quest runtime, RTX runtime, and player-build proof are not claimed in this artifact.</nonClaim>
+    <nonClaim>Build/rebuild was not launched for this audit because the active user gate forbids rebuild when CPU is above 50 percent or another compiler is active.</nonClaim>
+  </nonClaims>
+  <taskReconciliation>
+    <task id="01" name="MONOBEHAVIOUR_UPDATE_ERADICATION" status="[PASS]">Static inquisition route exists in Equipment_Update_Inquisition and sidecar JSON; focused SHINOBU tool candidates show no runtime tool Update/FixedUpdate/LateUpdate or coroutine ownership for battery/heat scalar math.</task>
+    <task id="02" name="MANAGED_LIST_PURGE" status="[PASS]">Active equipment truth is Vault-backed flat rows; ModularEquipmentEngine uses fixed cold mirrors for owner references and NativeArray views from GlobalDataVault for hot scalar state.</task>
+    <task id="03" name="CS1612_ENCAPSULATION_PURGE" status="[PASS]">Primary DTOs in EquipmentThermalBatteryContracts use raw public fields only. EquipmentStateIntegrationJob mutates ActiveEquipmentDTO with UnsafeUtility.AsRef.</task>
+    <task id="04" name="ARM64_PADDING_RECONSTRUCTION" status="[PASS]">ActiveEquipmentDTO is explicit 32 bytes with offset validation in EquipmentLayoutVerifier.</task>
+    <task id="05" name="EMERGENCY_MOCK_TOOL_USAGE" status="[PASS]">GenerateMockEquipmentState schedules GenerateMockEquipmentStateJob to inject deterministic synthetic active tools for throughput and UI proof.</task>
+    <task id="06" name="BURST_THERMO_ELECTRIC_KERNEL" status="[PASS]">EquipmentStateIntegrationJob is IJobParallelFor with BurstCompile(CompileSynchronously=true, FloatMode=Deterministic, FloatPrecision=Standard) and NoAlias raw pointer lanes.</task>
+    <task id="07" name="ENVIRONMENTAL_DISSIPATION_MATH" status="[PASS]">The job samples thermodynamic ambient cells by AUP-relative coordinates and applies guarded Newton-style cooling with water multiplier and quality-weighted cooling LOD.</task>
+    <task id="08" name="THE_DEAR_LIE_OVERHEAT_VFX" status="[PASS]">Overheat emits EquipmentOverheatSignal with VisualOnly=1 and scalar severity; no steam particle, audio source, prefab, or GameObject presentation is spawned by the solver.</task>
+    <task id="09" name="BATTERY_DEPLETION_ROUTING" status="[PASS]">Battery drain clamps at zero, clears active state via flags, and emits ToolDepletedSignal. The job does not disable tool GameObjects.</task>
+    <task id="10" name="ASYNCHRONOUS_STATE_PUBLICATION" status="[PASS]">Post-simulation readback copies ActiveEquipmentDTO rows into the published Vault buffer through UnsafeUtility.MemCpy after the dispatcher-owned job fence.</task>
+    <task id="11" name="CONTINUOUS_SCALABILITY_CADENCE_SHIFT" status="[PASS]">Tick cadence uses math.lerp between 0.016 and 0.2 seconds from GlobalQualityWeight, with accumulated dt preserving drain/cooling integral accuracy.</task>
+    <task id="12" name="EXTERNAL_POWER_GRID_BRIDGE" status="[PASS]">GridPowered rows skip internal battery drain and write EquipmentGridLoadRequest watt-second rows; downstream power owner remains the route for actual grid effects.</task>
+    <task id="13" name="AUP_PRECISION_GRID_MAPPING" status="[PASS]">Thermal sampling subtracts ThermalGridRootAup from ToolAups in double precision before casting the localized delta to float3.</task>
+    <task id="14" name="ROLLBACK_NETCODE_STATE_FENCE" status="[PASS]">Primary gameplay rows are blittable and explicitly sized; simulation job uses deterministic Burst float mode and published snapshots are MemCpy-compatible.</task>
+    <task id="15" name="TELEMETRY_EQUIPMENT_RECORDER" status="[PASS]">EquipmentTelemetryEntry[300] and cursor are Vault-backed; fault detection sets deferred dump intent for Docs/AgentLogs/Dump_SHINOBU_224.bin.</task>
+    <task id="16" name="EQUIPMENT_TUNER_EDITOR_WINDOW" status="[PASS]">EquipmentThermoElectricTunerWindow is editor-only UI Toolkit, graphs telemetry through TryGetEquipmentTelemetryEntry, and writes tuning/spec values through ModularEquipmentEngine editor facades.</task>
+    <task id="17" name="CSV_TOOL_SPECS_INGESTOR" status="[PASS]">tool_hardware_specs.csv exists under Assets/_Project/Data/Tools. EquipmentHardwareSpecsCsvParser parses ReadOnlySpan&lt;byte&gt;, supports numeric/hex or FNV-1a lowercase keys, and mutates EquipmentHardwareSpecDTO rows in the Vault-backed buffer.</task>
+    <task id="18" name="LIVE_THERMAL_DEBUG_GIZMO" status="[PASS]">Editor-only OnDrawGizmos and SceneView gizmo routes read published ActiveEquipmentDTO rows without create/grow calls and draw heat/battery labels plus blue-to-red wire shapes.</task>
+    <task id="19" name="ARCHITECTURAL_METRIC_VALIDATOR" status="[PASS]">Equipment_Update_Inquisition writes Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_224.json and preserves the shared report path only as compatibility metadata.</task>
+    <task id="20" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" status="[PASS]">This XML artifact records task reconciliation, byte layout, Vault status, aliasing/dependency graph, compile guard, and Dear Lie route. Runtime profiler proof remains a non-claim.</task>
+  </taskReconciliation>
+  <structLayoutVerification>
+    <struct name="ActiveEquipmentDTO" sizeBytes="32" alignment="32B">
+      <field name="ToolHashID" offset="0" sizeBytes="4" type="uint" />
+      <field name="CurrentBattery" offset="4" sizeBytes="4" type="float" />
+      <field name="ThermalLoad" offset="8" sizeBytes="4" type="float" />
+      <field name="StateFlags" offset="12" sizeBytes="4" type="uint" />
+      <field name="PowerDrawRate" offset="16" sizeBytes="4" type="float" />
+      <field name="HeatGenerationRate" offset="20" sizeBytes="4" type="float" />
+      <field name="_pad0.._pad7" offset="24" sizeBytes="8" type="byte[8]" />
+      <math>4+4+4+4+4+4+8=32. 32 % 8 == 0, 32 % 16 == 0, 32 % 32 == 0. No Pack=1.</math>
+    </struct>
+    <struct name="EquipmentIntegrationCounters" sizeBytes="64" falseSharingGuard="cacheLine">
+      <math>Fields 0..31 carry counters/fault state; offsets 32,40,48,56 are ulong reserved pads. Total 64 bytes, one L1 cache line, no Pack=1.</math>
+    </struct>
+    <struct name="EquipmentTelemetryEntry" sizeBytes="64" ringEntries="300">
+      <math>16 scalar lanes of 4 bytes from offsets 0..60 = 64 bytes. 64 % 8 == 0 and 64 % 64 == 0.</math>
+    </struct>
+    <struct name="EquipmentHardwareSpecDTO" sizeBytes="32">
+      <math>Eight 4-byte fields from offsets 0..28 = 32 bytes. Cold CSV/tuning row only.</math>
+    </struct>
+  </structLayoutVerification>
+  <scalabilityCurve>
+    <summary>GlobalQualityWeight is continuous. Cadence uses tickInterval = lerp(0.016, 0.2, 1-quality), so low thermal headroom integrates fewer times with a larger dt while preserving battery and heat totals. Thermal sampling blends from nearest cell to trilinear using step and a smooth polynomial: below roughly 0.25 quality the job returns one grid lookup; at middle weights it lerps between nearest and trilinear; at high/ultra it pays the full 8-tap trilinear sample. Cooling uses a quality-weighted polynomial coolingLod, and signal publication deltas narrow continuously from low-tier coarse thresholds to ultra-tier finer thresholds. DTO layout, BufferID identity, save/rollback truth, and authority route do not change with quality.</summary>
+  </scalabilityCurve>
+  <hPhiVaultStatus privateNativeArrays="0">
+    <buffer id="94" name="ToolRuntimeHeat01" type="float[16]" owner="Vault" />
+    <buffer id="95" name="ToolRuntimeBatteryCharge" type="float[16]" owner="Vault" />
+    <buffer id="71300" name="ShinobuActiveEquipmentState" type="ActiveEquipmentDTO[16]" owner="Vault" />
+    <buffer id="71301" name="ShinobuActiveEquipmentPublishedState" type="ActiveEquipmentDTO[16]" owner="Vault" />
+    <buffer id="71302" name="ShinobuActiveEquipmentAupSamples" type="double3[16]" owner="Vault" />
+    <buffer id="71303" name="ShinobuActiveEquipmentGridLoadRequests" type="EquipmentGridLoadRequest[16]" owner="Vault" />
+    <buffer id="71304" name="ShinobuActiveEquipmentTelemetryRing" type="EquipmentTelemetryEntry[300]" owner="Vault" />
+    <buffer id="71305" name="ShinobuActiveEquipmentTelemetryCursor" type="int[1]" owner="Vault" />
+    <buffer id="71306" name="ShinobuActiveEquipmentIntegrationCounters" type="EquipmentIntegrationCounters[16]" owner="Vault" />
+    <buffer id="71308" name="ShinobuActiveEquipmentTuning" type="EquipmentTuningDTO[1]" owner="Vault" />
+    <buffer id="71309" name="ShinobuActiveEquipmentHardwareSpecs" type="EquipmentHardwareSpecDTO[64]" owner="Vault" />
+    <buffer id="71311" name="ShinobuActiveEquipmentToolStates" type="ToolState[16]" owner="Vault" />
+    <buffer id="71312" name="ShinobuActiveEquipmentToolStats" type="ToolRuntimeStats[16]" owner="Vault" />
+    <buffer id="71313" name="ShinobuActiveEquipmentToolTypes" type="byte[16]" owner="Vault" />
+    <buffer id="71314" name="ShinobuActiveEquipmentStatusMasks" type="uint[16]" owner="Vault" />
+    <buffer id="71315" name="ShinobuActiveEquipmentEnvironmentHeat01" type="float[16]" owner="Vault" />
+    <buffer id="71316" name="ShinobuActiveEquipmentWearDrainRates" type="float[16]" owner="Vault" />
+    <lifecycle>InitializeActiveEquipmentNativeState and DataVault rebind are the create routes. Tick, readback, telemetry getters, CSV/tuning readers, and gizmos use no-acquire resolve paths and fail closed on missing/stale handles.</lifecycle>
+  </hPhiVaultStatus>
+  <pointerAliasingAndDependencyGraph>
+    <job name="EquipmentStateIntegrationJob" consumes="ActiveEquipmentDTO*, ToolState*, ToolRuntimeStats*, double3*, wear rates, thermodynamic grid, tuning, dispatcher dt/frame" outputs="ActiveEquipmentDTO*, ToolState*, grid load requests, integration counters, SignalBus parallel writers" aliasing="[NoAlias] on non-overlapping pointer lanes" handle="scheduled in SIMULATION and registered with dispatcher/H8Memory; finalized from LateFrameTick after IsCompleted gate" />
+    <job name="ClearActiveEquipmentNativeStateJob" consumes="Vault pointers and lengths" outputs="cleared equipment/published/aup/load/wear/telemetry/counter/spec rows" aliasing="[NoAlias] pointer lanes" handle="cold Run/forced complete only during initialization/reset" />
+    <job name="GenerateMockEquipmentStateJob" consumes="deterministic mock constants" outputs="ActiveEquipmentDTO and AUP sample rows" aliasing="[NoAlias] pointer lanes" handle="editor/test mock route; force-completed before readback only from explicit mock command" />
+  </pointerAliasingAndDependencyGraph>
+  <compileGuard>No direct sibling runtime assembly reference is introduced by the SHINOBU_224 route. Runtime data crosses domains through Core contracts, cached GlobalRegistry interfaces, typed SignalBus payloads, or generation-checked Vault rows. The current source sweep removed stale sibling namespace imports where they resolved no symbols, including the secondary MantaScooter physics import. Adjacent SHINOBU_225 DOD runtime imports are not counted as SHINOBU_224 proof debt. Remaining AUP-bearing SHINOBU_224 tool routes still reference the existing AbsoluteUniversePosition ABI and do not claim a global AUP type migration. Editor windows live under Editor folders and do not define gameplay truth.</compileGuard>
+  <dearLieConfirmation>
+    <description>Overheat and depletion are scalar facts. The solver emits EquipmentOverheatSignal and ToolDepletedSignal and writes shader/UI-readable scalar rows. VFX/audio/UI own boiling, distortion, haptics, and warnings downstream; the equipment solver does not instantiate particles, audio sources, meshes, or prefabs.</description>
+    <complexity before="O(N tools + presentation prefab/audio side effects + scattered per-tool updates)" after="O(N tools) scalar Burst pass plus bounded SignalBus edges" />
+  </dearLieConfirmation>
+</SELF_AUDIT>

@@ -9,7 +9,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Analog Gauge Needle 3D")]
-    public sealed class AnalogGaugeNeedle3D : MonoBehaviour, ILateFrameTickable
+    public sealed class AnalogGaugeNeedle3D : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float AngleWriteEpsilonDegrees = 0.001f;
         private const float SettleEpsilonDegrees = 0.01f;
@@ -42,21 +42,31 @@ namespace Hecton8.UI
         private float _lastTargetAngle;
         private float _lastAppliedAngle;
         private bool _rotationApplied;
+        private bool _hotSwapListenerRegistered;
 
         private void OnEnable()
         {
             CaptureInitialState();
+            TryRegisterHotSwapListener();
             TryRegisterTickManager();
         }
 
         private void Start()
         {
             CaptureInitialState();
+            TryRegisterHotSwapListener();
             TryRegisterTickManager();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
+            TryUnregisterTickManager();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
             TryUnregisterTickManager();
         }
 
@@ -64,10 +74,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (needle == null)
-            {
-                TryUnregisterTickManager();
                 return;
-            }
 
             CaptureInitialState();
             float dt = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
@@ -98,7 +105,6 @@ namespace Hecton8.UI
                 _currentAngle = targetAngle;
                 _overshootAngle = 0f;
                 ApplyNeedleRotationIfChanged();
-                TryUnregisterTickManager();
             }
         }
 
@@ -109,7 +115,15 @@ namespace Hecton8.UI
                 return;
 
             target01 = nextTarget01;
-            TryRegisterTickManager();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                TryRegisterTickManager();
         }
 
         public void SetTargetValue(float value)
@@ -185,10 +199,24 @@ namespace Hecton8.UI
             if (needle == null)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void TryUnregisterTickManager()

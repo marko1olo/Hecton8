@@ -1,0 +1,573 @@
+#pragma kernel ClearEdgeMask
+#pragma kernel ClearEdgeMaskArray
+#pragma kernel SobelDepthMask
+#pragma kernel SobelDepthMaskArray
+#pragma kernel BilateralUpscale
+#pragma kernel BilateralUpscaleArray
+#pragma kernel EdgeMaskDebugComposite
+#pragma kernel EdgeMaskDebugCompositeArray
+
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+#define H8_BILATERAL_THREADS_X 8
+#define H8_BILATERAL_THREADS_Y 8
+#define H8_MAX_RADIUS_PIXELS 2
+#define H8_QUALITY_GATE_START 0.015
+#define H8_QUALITY_GATE_END 0.075
+#define H8_FLT_MAX 3.402823466e+38
+#define H8_MAX_LOGICAL_DIM 65535.0
+
+CBUFFER_START(HectonBilateralUpscalerParams)
+    float4 ResolutionParams;
+    float4 FilterParams;
+CBUFFER_END
+
+Texture2D<float4> _H8LowResColor;
+Texture2D<float> _H8FullResDepth;
+Texture2D<float> _H8EdgeMaskRead;
+RWTexture2D<float> _H8EdgeMaskWrite;
+RWTexture2D<float4> _H8UpscaledColor;
+Texture2DArray<float4> _H8LowResColorArray;
+Texture2DArray<float> _H8FullResDepthArray;
+Texture2DArray<float> _H8EdgeMaskArrayRead;
+RWTexture2DArray<float> _H8EdgeMaskArrayWrite;
+RWTexture2DArray<float4> _H8UpscaledColorArray;
+
+uint2 ClampPixel(int2 pixel, uint2 dims)
+{
+    uint2 safeDims = max(dims, uint2(1u, 1u));
+    int2 maxPixel = int2(safeDims) - int2(1, 1);
+    return uint2(clamp(pixel, int2(0, 0), maxPixel));
+}
+
+bool H8Finite1(float value)
+{
+    return value == value && abs(value) <= H8_FLT_MAX;
+}
+
+bool H8Finite4(float4 value)
+{
+    return all(value == value) && all(abs(value) <= H8_FLT_MAX);
+}
+
+int3 LoadCoord(uint2 pixel)
+{
+    uint2 safePixel = min(pixel, uint2(2147483647u, 2147483647u));
+    return int3(int2(safePixel), 0);
+}
+
+int4 LoadArrayCoord(uint2 pixel, uint slice)
+{
+    uint2 safePixel = min(pixel, uint2(2147483647u, 2147483647u));
+    uint safeSlice = min(slice, 2047u);
+    return int4(int2(safePixel), (int)safeSlice, 0);
+}
+
+uint ResolveLogicalDim(float value, uint fallback)
+{
+    float safeFallback = max((float)max(fallback, 1u), 1.0);
+    float resolved = H8Finite1(value) ? value : safeFallback;
+    return (uint)floor(clamp(resolved, 1.0, H8_MAX_LOGICAL_DIM) + 0.5);
+}
+
+uint2 ResolveLogicalLowDims(uint2 physicalLowDims)
+{
+    uint2 safePhysical = max(physicalLowDims, uint2(1u, 1u));
+    uint2 logical = uint2(
+        ResolveLogicalDim(ResolutionParams.x, safePhysical.x),
+        ResolveLogicalDim(ResolutionParams.y, safePhysical.y));
+    return min(max(logical, uint2(1u, 1u)), safePhysical);
+}
+
+uint2 ResolveLogicalHighDims(uint2 fallbackDims)
+{
+    uint2 safeFallback = max(fallbackDims, uint2(1u, 1u));
+    return uint2(
+        ResolveLogicalDim(ResolutionParams.z, safeFallback.x),
+        ResolveLogicalDim(ResolutionParams.w, safeFallback.y));
+}
+
+uint2 ResolveLogicalHighDimsClamped(uint2 physicalHighDims)
+{
+    uint2 safePhysical = max(physicalHighDims, uint2(1u, 1u));
+    uint2 logical = ResolveLogicalHighDims(safePhysical);
+    return min(max(logical, uint2(1u, 1u)), safePhysical);
+}
+
+uint2 MapPixel(uint2 pixel, uint2 sourceDims, uint2 destinationDims)
+{
+    uint2 safeSourceDims = max(sourceDims, uint2(1u, 1u));
+    uint2 safeDestinationDims = max(destinationDims, uint2(1u, 1u));
+    uint2 sourcePixel = ClampPixel(int2(pixel), safeSourceDims);
+    float2 uv = (float2(sourcePixel) + 0.5) / float2(safeSourceDims);
+    return ClampPixel(int2(uv * float2(safeDestinationDims)), safeDestinationDims);
+}
+
+float SafeFinite1(float value, float fallback)
+{
+    return H8Finite1(value) ? value : fallback;
+}
+
+float4 SafeFinite4(float4 value, float4 fallback)
+{
+    return H8Finite4(value) ? value : fallback;
+}
+
+float LoadRawDepth(uint2 pixel, uint2 depthDims)
+{
+    float rawDepth = _H8FullResDepth.Load(LoadCoord(ClampPixel(int2(pixel), depthDims)));
+    if (!H8Finite1(rawDepth))
+    {
+#if UNITY_REVERSED_Z
+        return 0.0;
+#else
+        return 1.0;
+#endif
+    }
+
+    return saturate(rawDepth);
+}
+
+float LoadEyeDepth(uint2 pixel, uint2 depthDims)
+{
+    float eyeDepth = LinearEyeDepth(LoadRawDepth(pixel, depthDims), _ZBufferParams);
+    return H8Finite1(eyeDepth) ? max(eyeDepth, 0.0001) : 100000.0;
+}
+
+float LoadEyeDepthMapped(uint2 pixel, uint2 highDims, uint2 depthDims)
+{
+    return LoadEyeDepth(MapPixel(pixel, highDims, depthDims), depthDims);
+}
+
+float FastExpNeg(float value)
+{
+    float x = H8Finite1(value) ? clamp(value, 0.0, 64.0) : 64.0;
+    float x2 = x * x;
+    return rcp(1.0 + x + 0.48 * x2 + 0.235 * x2 * x);
+}
+
+float4 LoadLowColor(uint2 pixel, uint2 lowDims)
+{
+    float4 color = _H8LowResColor.Load(LoadCoord(ClampPixel(int2(pixel), lowDims)));
+    return SafeFinite4(color, float4(0.0, 0.0, 0.0, 1.0));
+}
+
+float LoadRawDepthArray(uint2 pixel, uint2 depthDims, uint slice)
+{
+    float rawDepth = _H8FullResDepthArray.Load(LoadArrayCoord(ClampPixel(int2(pixel), depthDims), slice));
+    if (!H8Finite1(rawDepth))
+    {
+#if UNITY_REVERSED_Z
+        return 0.0;
+#else
+        return 1.0;
+#endif
+    }
+
+    return saturate(rawDepth);
+}
+
+float LoadEyeDepthArray(uint2 pixel, uint2 depthDims, uint slice)
+{
+    float eyeDepth = LinearEyeDepth(LoadRawDepthArray(pixel, depthDims, slice), _ZBufferParams);
+    return H8Finite1(eyeDepth) ? max(eyeDepth, 0.0001) : 100000.0;
+}
+
+float LoadEyeDepthMappedArray(uint2 pixel, uint2 highDims, uint2 depthDims, uint slice)
+{
+    return LoadEyeDepthArray(MapPixel(pixel, highDims, depthDims), depthDims, slice);
+}
+
+float4 LoadLowColorArray(uint2 pixel, uint2 lowDims, uint slice)
+{
+    float4 color = _H8LowResColorArray.Load(LoadArrayCoord(ClampPixel(int2(pixel), lowDims), slice));
+    return SafeFinite4(color, float4(0.0, 0.0, 0.0, 1.0));
+}
+
+float4 BilinearLow(float2 lowPixel, uint2 lowDims)
+{
+    uint2 safeLowDims = max(lowDims, uint2(1u, 1u));
+    float2 clamped = clamp(lowPixel, float2(0.0, 0.0), float2((float)(safeLowDims.x - 1u), (float)(safeLowDims.y - 1u)));
+    int2 basePixel = int2(floor(clamped));
+    float2 fracPixel = saturate(clamped - basePixel);
+
+    float4 c00 = LoadLowColor(ClampPixel(basePixel, safeLowDims), safeLowDims);
+    float4 c10 = LoadLowColor(ClampPixel(basePixel + int2(1, 0), safeLowDims), safeLowDims);
+    float4 c01 = LoadLowColor(ClampPixel(basePixel + int2(0, 1), safeLowDims), safeLowDims);
+    float4 c11 = LoadLowColor(ClampPixel(basePixel + int2(1, 1), safeLowDims), safeLowDims);
+    float4 cx0 = lerp(c00, c10, fracPixel.x);
+    float4 cx1 = lerp(c01, c11, fracPixel.x);
+    return SafeFinite4(lerp(cx0, cx1, fracPixel.y), float4(0.0, 0.0, 0.0, 1.0));
+}
+
+float4 BilinearLowArray(float2 lowPixel, uint2 lowDims, uint slice)
+{
+    uint2 safeLowDims = max(lowDims, uint2(1u, 1u));
+    float2 clamped = clamp(lowPixel, float2(0.0, 0.0), float2((float)(safeLowDims.x - 1u), (float)(safeLowDims.y - 1u)));
+    int2 basePixel = int2(floor(clamped));
+    float2 fracPixel = saturate(clamped - basePixel);
+
+    float4 c00 = LoadLowColorArray(ClampPixel(basePixel, safeLowDims), safeLowDims, slice);
+    float4 c10 = LoadLowColorArray(ClampPixel(basePixel + int2(1, 0), safeLowDims), safeLowDims, slice);
+    float4 c01 = LoadLowColorArray(ClampPixel(basePixel + int2(0, 1), safeLowDims), safeLowDims, slice);
+    float4 c11 = LoadLowColorArray(ClampPixel(basePixel + int2(1, 1), safeLowDims), safeLowDims, slice);
+    float4 cx0 = lerp(c00, c10, fracPixel.x);
+    float4 cx1 = lerp(c01, c11, fracPixel.x);
+    return SafeFinite4(lerp(cx0, cx1, fracPixel.y), float4(0.0, 0.0, 0.0, 1.0));
+}
+
+float3 DecodeRadiusJitter(float packedRadius)
+{
+    float safePackedRadius = H8Finite1(packedRadius) ? max(packedRadius, 0.0) : 0.5625;
+    float radius = floor(safePackedRadius * 16.0) * 0.0625;
+    float residual = max(0.0, safePackedRadius - radius);
+    float jxQ = floor(residual * 1024.0 + 0.0001);
+    float jyQ = floor(max(0.0, residual * 32768.0 - jxQ * 32.0) + 0.0001);
+    float jitterX = saturate(jxQ * 0.03225806451612903) * 2.0 - 1.0;
+    float jitterY = saturate(jyQ * 0.03225806451612903) * 2.0 - 1.0;
+    return float3(clamp(radius, 0.25, 4.0), jitterX, jitterY);
+}
+
+float ResolveTapGate(int2 tapOffset, float radius, float quality)
+{
+    float2 o = float2(tapOffset);
+    float dist = length(o);
+    float radiusGate = saturate((radius + 0.35 - dist) * 2.0);
+    float diagonal = abs(o.x * o.y);
+    float diagonalGate = lerp(1.0 - saturate(diagonal), 1.0, smoothstep(0.28, 0.64, quality));
+    float wideGate = lerp(1.0 - smoothstep(1.15, 2.15, dist), 1.0, smoothstep(0.62, 1.0, quality));
+    float center = tapOffset.x == 0 && tapOffset.y == 0 ? 1.0 : 0.0;
+    return max(center, radiusGate * diagonalGate * wideGate);
+}
+
+[numthreads(H8_BILATERAL_THREADS_X, H8_BILATERAL_THREADS_Y, 1)]
+void ClearEdgeMask(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _H8EdgeMaskWrite.GetDimensions(width, height);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    _H8EdgeMaskWrite[dispatchThreadId.xy] = 0.0;
+}
+
+[numthreads(H8_BILATERAL_THREADS_X, H8_BILATERAL_THREADS_Y, 1)]
+void ClearEdgeMaskArray(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    uint slices;
+    _H8EdgeMaskArrayWrite.GetDimensions(width, height, slices);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height || dispatchThreadId.z >= slices)
+        return;
+
+    _H8EdgeMaskArrayWrite[dispatchThreadId.xyz] = 0.0;
+}
+
+[numthreads(H8_BILATERAL_THREADS_X, H8_BILATERAL_THREADS_Y, 1)]
+void SobelDepthMask(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _H8EdgeMaskWrite.GetDimensions(width, height);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    uint depthWidth;
+    uint depthHeight;
+    _H8FullResDepth.GetDimensions(depthWidth, depthHeight);
+    uint2 edgeDims = uint2(max(width, 1u), max(height, 1u));
+    uint2 depthDims = uint2(max(depthWidth, 1u), max(depthHeight, 1u));
+    uint2 highDims = ResolveLogicalHighDims(depthDims);
+    uint2 pixel = dispatchThreadId.xy;
+    uint2 highPixel = MapPixel(pixel, edgeDims, highDims);
+    float d00 = LoadEyeDepthMapped(ClampPixel(int2(highPixel) + int2(-1, -1), highDims), highDims, depthDims);
+    float d10 = LoadEyeDepthMapped(ClampPixel(int2(highPixel) + int2(0, -1), highDims), highDims, depthDims);
+    float d20 = LoadEyeDepthMapped(ClampPixel(int2(highPixel) + int2(1, -1), highDims), highDims, depthDims);
+    float d01 = LoadEyeDepthMapped(ClampPixel(int2(highPixel) + int2(-1, 0), highDims), highDims, depthDims);
+    float d21 = LoadEyeDepthMapped(ClampPixel(int2(highPixel) + int2(1, 0), highDims), highDims, depthDims);
+    float d02 = LoadEyeDepthMapped(ClampPixel(int2(highPixel) + int2(-1, 1), highDims), highDims, depthDims);
+    float d12 = LoadEyeDepthMapped(ClampPixel(int2(highPixel) + int2(0, 1), highDims), highDims, depthDims);
+    float d22 = LoadEyeDepthMapped(ClampPixel(int2(highPixel) + int2(1, 1), highDims), highDims, depthDims);
+    float centerDepth = LoadEyeDepthMapped(highPixel, highDims, depthDims);
+
+    float gx = -d00 - 2.0 * d01 - d02 + d20 + 2.0 * d21 + d22;
+    float gy = -d00 - 2.0 * d10 - d20 + d02 + 2.0 * d12 + d22;
+    float invCenterDepth = rcp(max(centerDepth, 0.25));
+    gx *= invCenterDepth;
+    gy *= invCenterDepth;
+    float sobel = sqrt(max(gx * gx + gy * gy, 0.0));
+    float edgeScale = max(FilterParams.x, 1.0) * 0.0125;
+    _H8EdgeMaskWrite[pixel] = saturate(SafeFinite1(sobel * edgeScale, 0.0));
+}
+
+[numthreads(H8_BILATERAL_THREADS_X, H8_BILATERAL_THREADS_Y, 1)]
+void SobelDepthMaskArray(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    uint edgeSlices;
+    _H8EdgeMaskArrayWrite.GetDimensions(width, height, edgeSlices);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height || dispatchThreadId.z >= edgeSlices)
+        return;
+
+    uint depthWidth;
+    uint depthHeight;
+    uint depthSlices;
+    _H8FullResDepthArray.GetDimensions(depthWidth, depthHeight, depthSlices);
+    uint slice = min(dispatchThreadId.z, max(depthSlices, 1u) - 1u);
+    uint2 edgeDims = uint2(max(width, 1u), max(height, 1u));
+    uint2 depthDims = uint2(max(depthWidth, 1u), max(depthHeight, 1u));
+    uint2 highDims = ResolveLogicalHighDims(depthDims);
+    uint2 pixel = dispatchThreadId.xy;
+    uint2 highPixel = MapPixel(pixel, edgeDims, highDims);
+    float d00 = LoadEyeDepthMappedArray(ClampPixel(int2(highPixel) + int2(-1, -1), highDims), highDims, depthDims, slice);
+    float d10 = LoadEyeDepthMappedArray(ClampPixel(int2(highPixel) + int2(0, -1), highDims), highDims, depthDims, slice);
+    float d20 = LoadEyeDepthMappedArray(ClampPixel(int2(highPixel) + int2(1, -1), highDims), highDims, depthDims, slice);
+    float d01 = LoadEyeDepthMappedArray(ClampPixel(int2(highPixel) + int2(-1, 0), highDims), highDims, depthDims, slice);
+    float d21 = LoadEyeDepthMappedArray(ClampPixel(int2(highPixel) + int2(1, 0), highDims), highDims, depthDims, slice);
+    float d02 = LoadEyeDepthMappedArray(ClampPixel(int2(highPixel) + int2(-1, 1), highDims), highDims, depthDims, slice);
+    float d12 = LoadEyeDepthMappedArray(ClampPixel(int2(highPixel) + int2(0, 1), highDims), highDims, depthDims, slice);
+    float d22 = LoadEyeDepthMappedArray(ClampPixel(int2(highPixel) + int2(1, 1), highDims), highDims, depthDims, slice);
+    float centerDepth = LoadEyeDepthMappedArray(highPixel, highDims, depthDims, slice);
+
+    float gx = -d00 - 2.0 * d01 - d02 + d20 + 2.0 * d21 + d22;
+    float gy = -d00 - 2.0 * d10 - d20 + d02 + 2.0 * d12 + d22;
+    float invCenterDepth = rcp(max(centerDepth, 0.25));
+    gx *= invCenterDepth;
+    gy *= invCenterDepth;
+    float sobel = sqrt(max(gx * gx + gy * gy, 0.0));
+    float edgeScale = max(FilterParams.x, 1.0) * 0.0125;
+    _H8EdgeMaskArrayWrite[uint3(pixel, dispatchThreadId.z)] = saturate(SafeFinite1(sobel * edgeScale, 0.0));
+}
+
+[numthreads(H8_BILATERAL_THREADS_X, H8_BILATERAL_THREADS_Y, 1)]
+void BilateralUpscale(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint highWidth;
+    uint highHeight;
+    _H8UpscaledColor.GetDimensions(highWidth, highHeight);
+    if (dispatchThreadId.x >= highWidth || dispatchThreadId.y >= highHeight)
+        return;
+
+    uint lowWidth;
+    uint lowHeight;
+    _H8LowResColor.GetDimensions(lowWidth, lowHeight);
+    uint edgeWidth;
+    uint edgeHeight;
+    _H8EdgeMaskRead.GetDimensions(edgeWidth, edgeHeight);
+    uint depthWidth;
+    uint depthHeight;
+    _H8FullResDepth.GetDimensions(depthWidth, depthHeight);
+    uint2 highPhysicalDims = uint2(max(highWidth, 1u), max(highHeight, 1u));
+    uint2 highDims = ResolveLogicalHighDimsClamped(highPhysicalDims);
+    uint2 lowDims = ResolveLogicalLowDims(uint2(max(lowWidth, 1u), max(lowHeight, 1u)));
+    uint2 edgeDims = uint2(max(edgeWidth, 1u), max(edgeHeight, 1u));
+    uint2 depthDims = uint2(max(depthWidth, 1u), max(depthHeight, 1u));
+    uint2 pixel = ClampPixel(int2(dispatchThreadId.xy), highDims);
+
+    float3 radiusJitter = DecodeRadiusJitter(FilterParams.z);
+    float quality = saturate(FilterParams.w);
+    float2 jitterPixels = radiusJitter.yz;
+    float2 uv = (float2(pixel) + 0.5 + jitterPixels) / float2(highDims);
+    float2 lowPixel = uv * float2(lowDims) - 0.5;
+    float4 bilinear = BilinearLow(lowPixel, lowDims);
+    float qualityGate = smoothstep(H8_QUALITY_GATE_START, H8_QUALITY_GATE_END, quality);
+    if (qualityGate == 0.0)
+    {
+        _H8UpscaledColor[pixel] = SafeFinite4(bilinear, float4(0.0, 0.0, 0.0, 1.0));
+        return;
+    }
+
+    uint2 edgePixel = MapPixel(pixel, highDims, edgeDims);
+    float edge = SafeFinite1(_H8EdgeMaskRead.Load(LoadCoord(edgePixel)), 0.0);
+    float bypassThreshold = lerp(0.38, 0.18, quality);
+
+    if (edge * qualityGate < bypassThreshold)
+    {
+        _H8UpscaledColor[pixel] = SafeFinite4(bilinear, float4(0.0, 0.0, 0.0, 1.0));
+        return;
+    }
+
+    float centerDepth = LoadEyeDepthMapped(pixel, highDims, depthDims);
+    float radius = radiusJitter.x;
+    float depthWeight = max(FilterParams.x, 1.0);
+    float colorWeight = max(FilterParams.y, 0.001);
+    float4 accum = 0.0;
+    float weightSum = 0.0;
+
+    [unroll]
+    for (int y = -H8_MAX_RADIUS_PIXELS; y <= H8_MAX_RADIUS_PIXELS; y++)
+    {
+        [unroll]
+        for (int x = -H8_MAX_RADIUS_PIXELS; x <= H8_MAX_RADIUS_PIXELS; x++)
+        {
+            int2 tap = int2(x, y);
+            float gate = ResolveTapGate(tap, radius, quality) * qualityGate;
+            if (gate == 0.0)
+                continue;
+
+            float2 tapLowPixel = lowPixel + float2(tap);
+            float2 tapHighFloat = ((tapLowPixel + 0.5) / float2(lowDims)) * float2(highDims) - 0.5;
+            uint2 tapHighPixel = ClampPixel(int2(round(tapHighFloat)), highDims);
+            float tapDepth = LoadEyeDepthMapped(tapHighPixel, highDims, depthDims);
+            float spatialDist = dot(float2(tap), float2(tap));
+            float spatialWeight = FastExpNeg(spatialDist * 0.52);
+            float depthWeightResolved = FastExpNeg(abs(tapDepth - centerDepth) * depthWeight);
+            float4 color = BilinearLow(tapLowPixel, lowDims);
+            float colorDelta = dot(abs(color.rgb - bilinear.rgb), float3(0.2126, 0.7152, 0.0722));
+            float colorWeightResolved = FastExpNeg(colorDelta * colorWeight);
+            float weight = gate * spatialWeight * depthWeightResolved * colorWeightResolved;
+            accum += color * weight;
+            weightSum += weight;
+        }
+    }
+
+    float4 bilateral = weightSum > 0.0001 ? accum / weightSum : bilinear;
+    float bilateralMix = saturate(edge * smoothstep(0.04, 0.22, quality));
+    float4 finalColor = lerp(bilinear, bilateral, bilateralMix);
+    _H8UpscaledColor[pixel] = SafeFinite4(finalColor, bilinear);
+}
+
+[numthreads(H8_BILATERAL_THREADS_X, H8_BILATERAL_THREADS_Y, 1)]
+void BilateralUpscaleArray(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint highWidth;
+    uint highHeight;
+    uint highSlices;
+    _H8UpscaledColorArray.GetDimensions(highWidth, highHeight, highSlices);
+    if (dispatchThreadId.x >= highWidth || dispatchThreadId.y >= highHeight || dispatchThreadId.z >= highSlices)
+        return;
+
+    uint lowWidth;
+    uint lowHeight;
+    uint lowSlices;
+    _H8LowResColorArray.GetDimensions(lowWidth, lowHeight, lowSlices);
+    uint edgeWidth;
+    uint edgeHeight;
+    uint edgeSlices;
+    _H8EdgeMaskArrayRead.GetDimensions(edgeWidth, edgeHeight, edgeSlices);
+    uint depthWidth;
+    uint depthHeight;
+    uint depthSlices;
+    _H8FullResDepthArray.GetDimensions(depthWidth, depthHeight, depthSlices);
+    uint lowSlice = min(dispatchThreadId.z, max(lowSlices, 1u) - 1u);
+    uint edgeSlice = min(dispatchThreadId.z, max(edgeSlices, 1u) - 1u);
+    uint depthSlice = min(dispatchThreadId.z, max(depthSlices, 1u) - 1u);
+    uint2 highPhysicalDims = uint2(max(highWidth, 1u), max(highHeight, 1u));
+    uint2 highDims = ResolveLogicalHighDimsClamped(highPhysicalDims);
+    uint2 lowDims = ResolveLogicalLowDims(uint2(max(lowWidth, 1u), max(lowHeight, 1u)));
+    uint2 edgeDims = uint2(max(edgeWidth, 1u), max(edgeHeight, 1u));
+    uint2 depthDims = uint2(max(depthWidth, 1u), max(depthHeight, 1u));
+    uint2 pixel = ClampPixel(int2(dispatchThreadId.xy), highDims);
+
+    float3 radiusJitter = DecodeRadiusJitter(FilterParams.z);
+    float quality = saturate(FilterParams.w);
+    float2 jitterPixels = radiusJitter.yz;
+    float2 uv = (float2(pixel) + 0.5 + jitterPixels) / float2(highDims);
+    float2 lowPixel = uv * float2(lowDims) - 0.5;
+    float4 bilinear = BilinearLowArray(lowPixel, lowDims, lowSlice);
+    float qualityGate = smoothstep(H8_QUALITY_GATE_START, H8_QUALITY_GATE_END, quality);
+    if (qualityGate == 0.0)
+    {
+        _H8UpscaledColorArray[uint3(pixel, dispatchThreadId.z)] = SafeFinite4(bilinear, float4(0.0, 0.0, 0.0, 1.0));
+        return;
+    }
+
+    uint2 edgePixel = MapPixel(pixel, highDims, edgeDims);
+    float edge = SafeFinite1(_H8EdgeMaskArrayRead.Load(LoadArrayCoord(edgePixel, edgeSlice)), 0.0);
+    float bypassThreshold = lerp(0.38, 0.18, quality);
+
+    if (edge * qualityGate < bypassThreshold)
+    {
+        _H8UpscaledColorArray[uint3(pixel, dispatchThreadId.z)] = SafeFinite4(bilinear, float4(0.0, 0.0, 0.0, 1.0));
+        return;
+    }
+
+    float centerDepth = LoadEyeDepthMappedArray(pixel, highDims, depthDims, depthSlice);
+    float radius = radiusJitter.x;
+    float depthWeight = max(FilterParams.x, 1.0);
+    float colorWeight = max(FilterParams.y, 0.001);
+    float4 accum = 0.0;
+    float weightSum = 0.0;
+
+    [unroll]
+    for (int y = -H8_MAX_RADIUS_PIXELS; y <= H8_MAX_RADIUS_PIXELS; y++)
+    {
+        [unroll]
+        for (int x = -H8_MAX_RADIUS_PIXELS; x <= H8_MAX_RADIUS_PIXELS; x++)
+        {
+            int2 tap = int2(x, y);
+            float gate = ResolveTapGate(tap, radius, quality) * qualityGate;
+            if (gate == 0.0)
+                continue;
+
+            float2 tapLowPixel = lowPixel + float2(tap);
+            float2 tapHighFloat = ((tapLowPixel + 0.5) / float2(lowDims)) * float2(highDims) - 0.5;
+            uint2 tapHighPixel = ClampPixel(int2(round(tapHighFloat)), highDims);
+            float tapDepth = LoadEyeDepthMappedArray(tapHighPixel, highDims, depthDims, depthSlice);
+            float spatialDist = dot(float2(tap), float2(tap));
+            float spatialWeight = FastExpNeg(spatialDist * 0.52);
+            float depthWeightResolved = FastExpNeg(abs(tapDepth - centerDepth) * depthWeight);
+            float4 color = BilinearLowArray(tapLowPixel, lowDims, lowSlice);
+            float colorDelta = dot(abs(color.rgb - bilinear.rgb), float3(0.2126, 0.7152, 0.0722));
+            float colorWeightResolved = FastExpNeg(colorDelta * colorWeight);
+            float weight = gate * spatialWeight * depthWeightResolved * colorWeightResolved;
+            accum += color * weight;
+            weightSum += weight;
+        }
+    }
+
+    float4 bilateral = weightSum > 0.0001 ? accum / weightSum : bilinear;
+    float bilateralMix = saturate(edge * smoothstep(0.04, 0.22, quality));
+    float4 finalColor = lerp(bilinear, bilateral, bilateralMix);
+    _H8UpscaledColorArray[uint3(pixel, dispatchThreadId.z)] = SafeFinite4(finalColor, bilinear);
+}
+
+[numthreads(H8_BILATERAL_THREADS_X, H8_BILATERAL_THREADS_Y, 1)]
+void EdgeMaskDebugComposite(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _H8UpscaledColor.GetDimensions(width, height);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    uint2 pixel = dispatchThreadId.xy;
+    uint edgeWidth;
+    uint edgeHeight;
+    _H8EdgeMaskRead.GetDimensions(edgeWidth, edgeHeight);
+    uint2 highDims = ResolveLogicalHighDimsClamped(uint2(max(width, 1u), max(height, 1u)));
+    uint2 edgeDims = uint2(max(edgeWidth, 1u), max(edgeHeight, 1u));
+    uint2 edgePixel = MapPixel(ClampPixel(int2(pixel), highDims), highDims, edgeDims);
+    float edge = SafeFinite1(_H8EdgeMaskRead.Load(LoadCoord(edgePixel)), 0.0);
+    float green = saturate(edge * 4.0);
+    float3 debugColor = lerp(float3(0.0, 0.0, 0.0), float3(0.02, 1.0, 0.12), green);
+    _H8UpscaledColor[pixel] = SafeFinite4(float4(debugColor, 1.0), float4(0.0, 0.0, 0.0, 1.0));
+}
+
+[numthreads(H8_BILATERAL_THREADS_X, H8_BILATERAL_THREADS_Y, 1)]
+void EdgeMaskDebugCompositeArray(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    uint highSlices;
+    _H8UpscaledColorArray.GetDimensions(width, height, highSlices);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height || dispatchThreadId.z >= highSlices)
+        return;
+
+    uint2 pixel = dispatchThreadId.xy;
+    uint edgeWidth;
+    uint edgeHeight;
+    uint edgeSlices;
+    _H8EdgeMaskArrayRead.GetDimensions(edgeWidth, edgeHeight, edgeSlices);
+    uint edgeSlice = min(dispatchThreadId.z, max(edgeSlices, 1u) - 1u);
+    uint2 highDims = ResolveLogicalHighDimsClamped(uint2(max(width, 1u), max(height, 1u)));
+    uint2 edgeDims = uint2(max(edgeWidth, 1u), max(edgeHeight, 1u));
+    uint2 edgePixel = MapPixel(ClampPixel(int2(pixel), highDims), highDims, edgeDims);
+    float edge = SafeFinite1(_H8EdgeMaskArrayRead.Load(LoadArrayCoord(edgePixel, edgeSlice)), 0.0);
+    float green = saturate(edge * 4.0);
+    float3 debugColor = lerp(float3(0.0, 0.0, 0.0), float3(0.02, 1.0, 0.12), green);
+    _H8UpscaledColorArray[uint3(pixel, dispatchThreadId.z)] = SafeFinite4(float4(debugColor, 1.0), float4(0.0, 0.0, 0.0, 1.0));
+}

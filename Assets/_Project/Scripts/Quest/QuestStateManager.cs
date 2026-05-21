@@ -41,6 +41,7 @@ namespace Hecton8.Quest
         private const string QuestAuditLogFileName = "quest_transition_audit.log";
         private const string NativeMemoryOwner = nameof(QuestStateManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const Allocator DataVaultExemptQuestStateAllocator = Allocator.Persistent;
         private static readonly uint _abyssalPhaseFlagHash = QuestFlagHashKernel.ComputeStableHash("phase.abyssal");
         private static readonly uint _thermalPhaseFlagHash = QuestFlagHashKernel.ComputeStableHash("phase.thermal");
 
@@ -406,8 +407,8 @@ namespace Hecton8.Quest
             if (_runtimeResults.Capacity < nodeCapacity + revertBuilder.Count)
                 _runtimeResults.Capacity = nodeCapacity + revertBuilder.Count;
 
-            _activatedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), Allocator.Persistent);
-            _completedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), Allocator.Persistent);
+            _activatedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), DataVaultExemptQuestStateAllocator);
+            _completedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), DataVaultExemptQuestStateAllocator);
             NativeMemorySentinel.RegisterNativeList(_activatedQuestIndices, NativeMemoryOwner, nameof(_activatedQuestIndices), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeList(_completedQuestIndices, NativeMemoryOwner, nameof(_completedQuestIndices), NativeMemoryLifetime);
             _revertDescriptors = CopyListToArray(revertBuilder);
@@ -1931,7 +1932,7 @@ namespace Hecton8.Quest
             };
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ComputePackedStateChecksumJob : IJob
         {
             [ReadOnly] public NativeArray<uint> GlobalPrerequisites;
@@ -1960,7 +1961,7 @@ namespace Hecton8.Quest
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ApplyQuestRevertMutationJob : IJob
         {
             public NativeArray<uint> GlobalPrerequisites;
@@ -2001,7 +2002,7 @@ namespace Hecton8.Quest
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateQuestSignalJob : IJob
         {
             public QuestSignalPayload Signal;

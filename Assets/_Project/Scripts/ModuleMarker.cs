@@ -44,6 +44,7 @@ namespace Hecton8.Construction
         /// Stroitsya odin raz v Initialize / Awake.
         /// </summary>
         private string _prefabId;
+        private uint _scannerEntryHash;
         private bool   _initialized;
         private int _spatialHandle;
         private FieldTargetRole _spatialRole = FieldTargetRole.Generic;
@@ -71,6 +72,9 @@ namespace Hecton8.Construction
 
         /// <summary>Current runtime field-semantics role exposed to scanner/sonar owners.</summary>
         public FieldTargetRole SpatialRole => _spatialRole;
+
+        /// <summary>Cold-cached FNV-1a module hash for scanner lore discovery.</summary>
+        public uint ScannerEntryHash => _scannerEntryHash;
 
         /// <summary>
         /// Programmnaya initsializatsiya (esli marker dobavlen v rantayme).
@@ -135,7 +139,18 @@ namespace Hecton8.Construction
         private void CacheId()
         {
             _prefabId    = buildableData != null ? buildableData.PersistentId : string.Empty;
+            _scannerEntryHash = ResolveScannerEntryHash(buildableData);
             _initialized = true;
+        }
+
+        private static uint ResolveScannerEntryHash(BuildableData data)
+        {
+            if (data == null)
+                return 0u;
+
+            BaseModuleTemplate template = data.ModuleTemplate;
+            int hashId = template != null ? template.TemplateHashId : data.ModuleHashId;
+            return hashId == 0 ? 0u : unchecked((uint)hashId);
         }
 
 #if UNITY_EDITOR

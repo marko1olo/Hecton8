@@ -1,10 +1,10 @@
 {
   "bufferEnumPath": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-  "bufferIdCount": 1332,
+  "bufferIdCount": 1467,
   "duplicateEntries": [],
   "duplicateValueCount": 0,
-  "localNumericCastCount": 758,
-  "localNumericCastFileCount": 63,
+  "localNumericCastCount": 838,
+  "localNumericCastFileCount": 74,
   "localNumericCasts": [
     {
       "enumNames": [],
@@ -473,7 +473,7 @@
       "enumNames": [
         "AudioStemState"
       ],
-      "line": 57,
+      "line": 58,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID DensityFrontBufferId = (BufferID)70800;",
       "value": 70800
@@ -482,7 +482,7 @@
       "enumNames": [
         "AudioStemCommands"
       ],
-      "line": 58,
+      "line": 59,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID DensityBackBufferId = (BufferID)70801;",
       "value": 70801
@@ -491,7 +491,7 @@
       "enumNames": [
         "AudioStemMixFrame"
       ],
-      "line": 59,
+      "line": 60,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID FlowFieldBufferId = (BufferID)70802;",
       "value": 70802
@@ -500,7 +500,7 @@
       "enumNames": [
         "AudioStemRules"
       ],
-      "line": 60,
+      "line": 61,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID WorldSamplerBufferId = (BufferID)70803;",
       "value": 70803
@@ -509,7 +509,7 @@
       "enumNames": [
         "AudioStemMockPredator"
       ],
-      "line": 61,
+      "line": 62,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID SourceBufferId = (BufferID)70804;",
       "value": 70804
@@ -518,7 +518,7 @@
       "enumNames": [
         "AudioStemMockDepth"
       ],
-      "line": 62,
+      "line": 63,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID SourceIdBufferId = (BufferID)70805;",
       "value": 70805
@@ -527,7 +527,7 @@
       "enumNames": [
         "AudioStemTelemetry"
       ],
-      "line": 63,
+      "line": 64,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID EntityAupBufferId = (BufferID)70806;",
       "value": 70806
@@ -536,7 +536,7 @@
       "enumNames": [
         "AudioStemTelemetryCursor"
       ],
-      "line": 64,
+      "line": 65,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID EntityIdBufferId = (BufferID)70807;",
       "value": 70807
@@ -545,7 +545,7 @@
       "enumNames": [
         "AudioStemCsvScratch"
       ],
-      "line": 65,
+      "line": 66,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID EntityCorrosionTimerBufferId = (BufferID)70808;",
       "value": 70808
@@ -554,108 +554,136 @@
       "enumNames": [
         "AudioStemMockTension"
       ],
-      "line": 66,
+      "line": 67,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID EntityExposureAccumulatorBufferId = (BufferID)70809;",
       "value": 70809
     },
     {
       "enumNames": [],
-      "line": 67,
+      "line": 68,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID ExposureSignalBufferId = (BufferID)70810;",
       "value": 70810
     },
     {
       "enumNames": [],
-      "line": 68,
+      "line": 69,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID CombatSignalBufferId = (BufferID)70811;",
       "value": 70811
     },
     {
       "enumNames": [],
-      "line": 69,
+      "line": 70,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID BiolumSignalBufferId = (BufferID)70812;",
       "value": 70812
     },
     {
       "enumNames": [],
-      "line": 70,
+      "line": 71,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID SignalCounterBufferId = (BufferID)70813;",
       "value": 70813
     },
     {
       "enumNames": [],
-      "line": 71,
+      "line": 72,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID TelemetryRingBufferId = (BufferID)70814;",
       "value": 70814
     },
     {
       "enumNames": [],
-      "line": 72,
+      "line": 73,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID TelemetryScratchBufferId = (BufferID)70815;",
       "value": 70815
     },
     {
       "enumNames": [],
-      "line": 73,
+      "line": 74,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID ConstantsBufferId = (BufferID)70816;",
       "value": 70816
     },
     {
       "enumNames": [],
-      "line": 74,
+      "line": 75,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID CsvByteBufferId = (BufferID)70817;",
       "value": 70817
     },
     {
       "enumNames": [],
-      "line": 75,
+      "line": 76,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID BinaryProbeByteBufferId = (BufferID)70818;",
       "value": 70818
     },
     {
       "enumNames": [],
-      "line": 76,
+      "line": 77,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID NanFlagBufferId = (BufferID)70819;",
       "value": 70819
     },
     {
       "enumNames": [],
-      "line": 77,
+      "line": 78,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID DensityMirrorBufferId = (BufferID)70820;",
       "value": 70820
     },
     {
       "enumNames": [],
-      "line": 78,
+      "line": 79,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID GridHeaderBufferId = (BufferID)70821;",
       "value": 70821
     },
     {
       "enumNames": [],
-      "line": 79,
+      "line": 80,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID CellStateFrontBufferId = (BufferID)70822;",
       "value": 70822
     },
     {
       "enumNames": [],
-      "line": 80,
+      "line": 81,
       "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
       "text": "private static readonly BufferID CellStateBackBufferId = (BufferID)70823;",
       "value": 70823
+    },
+    {
+      "enumNames": [],
+      "line": 289,
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "text": "private const BufferID PlayerCriticalSonarEchoTapUploadRingBufferId = (BufferID)70889;",
+      "value": 70889
+    },
+    {
+      "enumNames": [],
+      "line": 290,
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "text": "private const BufferID PlayerCriticalPrologueTransitionRingBufferId = (BufferID)70890;",
+      "value": 70890
+    },
+    {
+      "enumNames": [],
+      "line": 410,
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "text": "private const BufferID PendingAudioEventsBufferId = (BufferID)70885;",
+      "value": 70885
+    },
+    {
+      "enumNames": [],
+      "line": 411,
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "text": "private const BufferID NextFrameAudioEventsBufferId = (BufferID)70886;",
+      "value": 70886
     },
     {
       "enumNames": [],
@@ -780,7 +808,7 @@
       "enumNames": [
         "SaveMerkleNodeBack"
       ],
-      "line": 161,
+      "line": 176,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID PendingEventBufferId = (BufferID)70271;",
       "value": 70271
@@ -789,42 +817,42 @@
       "enumNames": [
         "SaveMerkleLeafDescriptors"
       ],
-      "line": 162,
+      "line": 177,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID NextFrameEventBufferId = (BufferID)70272;",
       "value": 70272
     },
     {
       "enumNames": [],
-      "line": 505,
+      "line": 551,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID DroneFleetStateDtoBufferId = (BufferID)70265;",
       "value": 70265
     },
     {
       "enumNames": [],
-      "line": 506,
+      "line": 552,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID DroneFleetTargetDtoBufferId = (BufferID)70266;",
       "value": 70266
     },
     {
       "enumNames": [],
-      "line": 507,
+      "line": 553,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID DroneFleetAssignmentTasksBufferId = (BufferID)70267;",
       "value": 70267
     },
     {
       "enumNames": [],
-      "line": 508,
+      "line": 554,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID DroneFleetProceduralArgsBufferId = (BufferID)70268;",
       "value": 70268
     },
     {
       "enumNames": [],
-      "line": 509,
+      "line": 555,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID DroneFleetServiceCommandsBufferId = (BufferID)70269;",
       "value": 70269
@@ -833,7 +861,7 @@
       "enumNames": [
         "SaveMerkleNodeFront"
       ],
-      "line": 510,
+      "line": 556,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID DroneFleetServiceCommandCursorBufferId = (BufferID)70270;",
       "value": 70270
@@ -842,7 +870,7 @@
       "enumNames": [
         "SaveMerkleDeltaRecords"
       ],
-      "line": 511,
+      "line": 557,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID DroneFleetSpatialBucketHeadsBufferId = (BufferID)70273;",
       "value": 70273
@@ -851,7 +879,7 @@
       "enumNames": [
         "SaveMerkleDeltaBytes"
       ],
-      "line": 512,
+      "line": 558,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID DroneFleetSpatialNextIndicesBufferId = (BufferID)70274;",
       "value": 70274
@@ -860,30 +888,100 @@
       "enumNames": [
         "SaveMerkleCompressedBytes"
       ],
-      "line": 513,
+      "line": 559,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID DroneFleetSpatialKeysBufferId = (BufferID)70275;",
       "value": 70275
     },
     {
       "enumNames": [],
-      "line": 514,
+      "line": 560,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID DroneFleetChassisSpecsBufferId = (BufferID)12870276;",
       "value": 12870276
     },
     {
       "enumNames": [],
-      "line": 515,
+      "line": 561,
       "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
       "text": "private const BufferID DroneFleetCsvScratchBufferId = (BufferID)12870277;",
       "value": 12870277
     },
     {
+      "enumNames": [],
+      "line": 38,
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "text": "private const BufferID IntegrityNodeBufferId = (BufferID)70949;",
+      "value": 70949
+    },
+    {
+      "enumNames": [],
+      "line": 39,
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "text": "private const BufferID IntegrityRangeBufferId = (BufferID)70950;",
+      "value": 70950
+    },
+    {
+      "enumNames": [],
+      "line": 40,
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "text": "private const BufferID IntegrityAdjacencyBufferId = (BufferID)70951;",
+      "value": 70951
+    },
+    {
+      "enumNames": [],
+      "line": 41,
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "text": "private const BufferID IntegrityQueueBufferId = (BufferID)70952;",
+      "value": 70952
+    },
+    {
+      "enumNames": [],
+      "line": 42,
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "text": "private const BufferID IntegrityDepthBufferId = (BufferID)70953;",
+      "value": 70953
+    },
+    {
+      "enumNames": [],
+      "line": 43,
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "text": "private const BufferID IntegrityResultBufferId = (BufferID)70954;",
+      "value": 70954
+    },
+    {
+      "enumNames": [],
+      "line": 44,
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "text": "private const BufferID IntegrityDegreeScratchBufferId = (BufferID)70955;",
+      "value": 70955
+    },
+    {
+      "enumNames": [],
+      "line": 45,
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "text": "private const BufferID IntegrityWriteScratchBufferId = (BufferID)70956;",
+      "value": 70956
+    },
+    {
+      "enumNames": [],
+      "line": 46,
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "text": "private const BufferID IntegrityConnectionBufferId = (BufferID)70957;",
+      "value": 70957
+    },
+    {
+      "enumNames": [],
+      "line": 47,
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "text": "private const BufferID IntegritySocketLookupBufferId = (BufferID)70958;",
+      "value": 70958
+    },
+    {
       "enumNames": [
         "SaveMacroDatabaseDirtyPayloadSlots"
       ],
-      "line": 200,
+      "line": 287,
       "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
       "text": "public const BufferID GhostPreviewBufferId = (BufferID)70370;",
       "value": 70370
@@ -892,7 +990,7 @@
       "enumNames": [
         "SaveMacroDatabaseDirtyPayloadKeys"
       ],
-      "line": 201,
+      "line": 288,
       "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
       "text": "public const BufferID SocketCsrRangesBufferId = (BufferID)70371;",
       "value": 70371
@@ -901,10 +999,52 @@
       "enumNames": [
         "SaveMacroDatabaseSectorCoordSlots"
       ],
-      "line": 202,
+      "line": 289,
       "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
       "text": "public const BufferID SocketCsrTargetIndicesBufferId = (BufferID)70372;",
       "value": 70372
+    },
+    {
+      "enumNames": [],
+      "line": 290,
+      "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+      "text": "public const BufferID BuilderGhostStateBufferId = (BufferID)70940;",
+      "value": 70940
+    },
+    {
+      "enumNames": [],
+      "line": 291,
+      "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+      "text": "public const BufferID BuilderGhostVisualBufferId = (BufferID)70941;",
+      "value": 70941
+    },
+    {
+      "enumNames": [],
+      "line": 292,
+      "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+      "text": "public const BufferID BuilderGhostTelemetryBufferId = (BufferID)70942;",
+      "value": 70942
+    },
+    {
+      "enumNames": [],
+      "line": 293,
+      "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+      "text": "public const BufferID BuilderGhostMockStateBufferId = (BufferID)70943;",
+      "value": 70943
+    },
+    {
+      "enumNames": [],
+      "line": 294,
+      "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+      "text": "public const BufferID BuilderGhostSdfSamplesBufferId = (BufferID)70944;",
+      "value": 70944
+    },
+    {
+      "enumNames": [],
+      "line": 295,
+      "path": "Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs",
+      "text": "public const BufferID BuilderGhostIndirectArgsBufferId = (BufferID)70945;",
+      "value": 70945
     },
     {
       "enumNames": [],
@@ -1076,6 +1216,27 @@
     },
     {
       "enumNames": [],
+      "line": 27,
+      "path": "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs",
+      "text": "private const BufferID PipeStateBufferId = (BufferID)70946;",
+      "value": 70946
+    },
+    {
+      "enumNames": [],
+      "line": 28,
+      "path": "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs",
+      "text": "private const BufferID PipeVisualBufferId = (BufferID)70947;",
+      "value": 70947
+    },
+    {
+      "enumNames": [],
+      "line": 29,
+      "path": "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs",
+      "text": "private const BufferID PipeIndirectArgsBufferId = (BufferID)70948;",
+      "value": 70948
+    },
+    {
+      "enumNames": [],
       "line": 393,
       "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
       "text": "public const BufferID BTreeTelemetryRingBufferId = (BufferID)72070;",
@@ -1223,108 +1384,122 @@
     },
     {
       "enumNames": [],
-      "line": 236,
+      "line": 234,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedScorePositionsBufferId = (BufferID)73220;",
       "value": 73220
     },
     {
       "enumNames": [],
-      "line": 237,
+      "line": 235,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedEntityAupsBufferId = (BufferID)73221;",
       "value": 73221
     },
     {
       "enumNames": [],
-      "line": 238,
+      "line": 236,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedImportanceScoresBufferId = (BufferID)73222;",
       "value": 73222
     },
     {
       "enumNames": [],
-      "line": 239,
+      "line": 237,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedTickRateCodesBufferId = (BufferID)73223;",
       "value": 73223
     },
     {
       "enumNames": [],
-      "line": 240,
+      "line": 238,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedInsideFrustumFlagsBufferId = (BufferID)73224;",
       "value": 73224
     },
     {
       "enumNames": [],
-      "line": 241,
+      "line": 239,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedEntitySimTiersBufferId = (BufferID)73225;",
       "value": 73225
     },
     {
       "enumNames": [],
-      "line": 242,
+      "line": 240,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedDistancesMetersBufferId = (BufferID)73226;",
       "value": 73226
     },
     {
       "enumNames": [],
-      "line": 243,
+      "line": 241,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedFromPositionsBufferId = (BufferID)73227;",
       "value": 73227
     },
     {
       "enumNames": [],
-      "line": 244,
+      "line": 242,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedToPositionsBufferId = (BufferID)73228;",
       "value": 73228
     },
     {
       "enumNames": [],
-      "line": 245,
+      "line": 243,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedAlphasBufferId = (BufferID)73229;",
       "value": 73229
     },
     {
       "enumNames": [],
-      "line": 246,
+      "line": 244,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedPendingRaycastCommandsBufferId = (BufferID)73230;",
       "value": 73230
     },
     {
       "enumNames": [],
-      "line": 247,
+      "line": 245,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedPendingRaycastCommandIndicesBufferId = (BufferID)73231;",
       "value": 73231
     },
     {
       "enumNames": [],
-      "line": 248,
+      "line": 246,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedDeferredRaycastCommandsBufferId = (BufferID)73232;",
       "value": 73232
     },
     {
       "enumNames": [],
-      "line": 249,
+      "line": 247,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedDeferredRaycastResultsBufferId = (BufferID)73233;",
       "value": 73233
     },
     {
       "enumNames": [],
-      "line": 250,
+      "line": 248,
       "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
       "text": "private const BufferID FoveatedTelemetryRingBufferId = (BufferID)73234;",
       "value": 73234
+    },
+    {
+      "enumNames": [],
+      "line": 23,
+      "path": "Assets/_Project/Scripts/Core/MathGuard.cs",
+      "text": "private const BufferID InvalidNumberCodesBufferId = (BufferID)70883;",
+      "value": 70883
+    },
+    {
+      "enumNames": [],
+      "line": 24,
+      "path": "Assets/_Project/Scripts/Core/MathGuard.cs",
+      "text": "private const BufferID InvalidNumberCounterBufferId = (BufferID)70884;",
+      "value": 70884
     },
     {
       "enumNames": [],
@@ -1538,105 +1713,105 @@
     },
     {
       "enumNames": [],
-      "line": 713,
+      "line": 744,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID SignalTelemetryRingBufferId = (BufferID)73038;",
       "value": 73038
     },
     {
       "enumNames": [],
-      "line": 714,
+      "line": 745,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID SignalTelemetryCursorBufferId = (BufferID)73039;",
       "value": 73039
     },
     {
       "enumNames": [],
-      "line": 2153,
+      "line": 2256,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID FrontBytesBufferId = (BufferID)73043;",
       "value": 73043
     },
     {
       "enumNames": [],
-      "line": 2154,
+      "line": 2257,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID BackBytesBufferId = (BufferID)73044;",
       "value": 73044
     },
     {
       "enumNames": [],
-      "line": 2155,
+      "line": 2258,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID FrontHeadersBufferId = (BufferID)73045;",
       "value": 73045
     },
     {
       "enumNames": [],
-      "line": 2156,
+      "line": 2259,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID BackHeadersBufferId = (BufferID)73046;",
       "value": 73046
     },
     {
       "enumNames": [],
-      "line": 2157,
+      "line": 2260,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID CommittedSignalsBufferId = (BufferID)73047;",
       "value": 73047
     },
     {
       "enumNames": [],
-      "line": 2158,
+      "line": 2261,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID CommittedCountBufferId = (BufferID)73048;",
       "value": 73048
     },
     {
       "enumNames": [],
-      "line": 2159,
+      "line": 2262,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID TelemetryRingBufferId = (BufferID)73049;",
       "value": 73049
     },
     {
       "enumNames": [],
-      "line": 2160,
+      "line": 2263,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID TelemetryCursorBufferId = (BufferID)73050;",
       "value": 73050
     },
     {
       "enumNames": [],
-      "line": 2161,
+      "line": 2264,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID TuningBufferId = (BufferID)73051;",
       "value": 73051
     },
     {
       "enumNames": [],
-      "line": 2162,
+      "line": 2265,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID CoalescenceBucketsBufferId = (BufferID)73052;",
       "value": 73052
     },
     {
       "enumNames": [],
-      "line": 2163,
+      "line": 2266,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID OverflowSignalsBufferId = (BufferID)73053;",
       "value": 73053
     },
     {
       "enumNames": [],
-      "line": 2164,
+      "line": 2267,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID OverflowHeaderBufferId = (BufferID)73054;",
       "value": 73054
     },
     {
       "enumNames": [],
-      "line": 2165,
+      "line": 2268,
       "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
       "text": "private const BufferID CsvScratchBufferId = (BufferID)73055;",
       "value": 73055
@@ -1670,6 +1845,34 @@
       "path": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
       "text": "private const BufferID DataMonolithTelemetryCursorBufferId = (BufferID)71105;",
       "value": 71105
+    },
+    {
+      "enumNames": [],
+      "line": 360,
+      "path": "Assets/_Project/Scripts/Editor/BuilderHolographyTools.cs",
+      "text": "bool habitatIntegrityGraphVaultOwned = habitatConstruction.Contains(\"IntegrityNodeBufferId = (BufferID)70949\") &&",
+      "value": 70949
+    },
+    {
+      "enumNames": [],
+      "line": 361,
+      "path": "Assets/_Project/Scripts/Editor/BuilderHolographyTools.cs",
+      "text": "habitatConstruction.Contains(\"IntegrityWriteScratchBufferId = (BufferID)70956\") &&",
+      "value": 70956
+    },
+    {
+      "enumNames": [],
+      "line": 362,
+      "path": "Assets/_Project/Scripts/Editor/BuilderHolographyTools.cs",
+      "text": "habitatConstruction.Contains(\"IntegrityConnectionBufferId = (BufferID)70957\") &&",
+      "value": 70957
+    },
+    {
+      "enumNames": [],
+      "line": 363,
+      "path": "Assets/_Project/Scripts/Editor/BuilderHolographyTools.cs",
+      "text": "habitatConstruction.Contains(\"IntegritySocketLookupBufferId = (BufferID)70958\") &&",
+      "value": 70958
     },
     {
       "enumNames": [],
@@ -1799,157 +2002,80 @@
     },
     {
       "enumNames": [],
-      "line": 523,
-      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
-      "text": "private const BufferID MesofaunaStateDTOsBufferId = (BufferID)71180;",
-      "value": 71180
-    },
-    {
-      "enumNames": [],
-      "line": 524,
-      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
-      "text": "private const BufferID MesofaunaMockPreyTargetsBufferId = (BufferID)71181;",
-      "value": 71181
-    },
-    {
-      "enumNames": [],
-      "line": 525,
-      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
-      "text": "private const BufferID MesofaunaVisualSyncBufferId = (BufferID)71182;",
-      "value": 71182
-    },
-    {
-      "enumNames": [],
-      "line": 526,
-      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
-      "text": "private const BufferID MesofaunaTelemetryRingBufferId = (BufferID)71183;",
-      "value": 71183
-    },
-    {
-      "enumNames": [],
-      "line": 527,
-      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
-      "text": "private const BufferID MesofaunaTuningBufferId = (BufferID)71184;",
-      "value": 71184
-    },
-    {
-      "enumNames": [],
-      "line": 528,
-      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
-      "text": "private const BufferID MesofaunaTargetHashBucketHeadsBufferId = (BufferID)71185;",
-      "value": 71185
-    },
-    {
-      "enumNames": [],
-      "line": 529,
-      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
-      "text": "private const BufferID MesofaunaTargetHashNextBufferId = (BufferID)71186;",
-      "value": 71186
-    },
-    {
-      "enumNames": [],
-      "line": 530,
-      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
-      "text": "private const BufferID MesofaunaSpeciesProfilesBufferId = (BufferID)71187;",
-      "value": 71187
-    },
-    {
-      "enumNames": [],
-      "line": 531,
-      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
-      "text": "private const BufferID MesofaunaSpeciesProfileCountBufferId = (BufferID)71188;",
-      "value": 71188
-    },
-    {
-      "enumNames": [],
-      "line": 532,
-      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
-      "text": "private const BufferID MesofaunaCsvScratchBufferId = (BufferID)71189;",
-      "value": 71189
-    },
-    {
-      "enumNames": [],
-      "line": 55,
+      "line": 56,
       "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
       "text": "public const BufferID TrajectoriesA = (BufferID)71270;",
       "value": 71270
     },
     {
       "enumNames": [],
-      "line": 56,
+      "line": 57,
       "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
       "text": "public const BufferID TrajectoriesB = (BufferID)71271;",
       "value": 71271
     },
     {
       "enumNames": [],
-      "line": 57,
+      "line": 58,
       "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
       "text": "public const BufferID AabbPrimitives = (BufferID)71272;",
       "value": 71272
     },
     {
       "enumNames": [],
-      "line": 58,
+      "line": 59,
       "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
       "text": "public const BufferID HitResults = (BufferID)71273;",
       "value": 71273
     },
     {
       "enumNames": [],
-      "line": 59,
+      "line": 60,
       "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
       "text": "public const BufferID PenetrationLut = (BufferID)71274;",
       "value": 71274
     },
     {
       "enumNames": [],
-      "line": 60,
+      "line": 61,
       "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
       "text": "public const BufferID TelemetryRing = (BufferID)71275;",
       "value": 71275
     },
     {
       "enumNames": [],
-      "line": 61,
+      "line": 62,
       "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
       "text": "public const BufferID Counters = (BufferID)71276;",
       "value": 71276
     },
     {
       "enumNames": [],
-      "line": 62,
+      "line": 63,
       "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
       "text": "public const BufferID Tuning = (BufferID)71277;",
       "value": 71277
     },
     {
       "enumNames": [],
-      "line": 63,
+      "line": 64,
       "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
       "text": "public const BufferID ImpactVfx = (BufferID)71278;",
       "value": 71278
     },
     {
       "enumNames": [],
-      "line": 64,
+      "line": 65,
       "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
       "text": "public const BufferID CsvScratch = (BufferID)71279;",
       "value": 71279
     },
     {
       "enumNames": [],
-      "line": 31,
-      "path": "Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs",
-      "text": "private const BufferID WaveUploadScratchBufferId = (BufferID)0x43415841; // \"CAXA\"",
-      "value": 1128355905
-    },
-    {
-      "enumNames": [],
-      "line": 32,
-      "path": "Assets/_Project/Scripts/Graphics/Caustics/AnalyticalCausticsService.cs",
-      "text": "private const BufferID BlackBoxBufferId = (BufferID)0x43415842; // \"CAXB\"",
-      "value": 1128355906
+      "line": 85,
+      "path": "Assets/_Project/Scripts/Gameplay/SuitUpgradeManager.cs",
+      "text": "private const BufferID SuitUpgradeTelemetryRingBuffer = (BufferID)71411;",
+      "value": 71411
     },
     {
       "enumNames": [],
@@ -2030,185 +2156,192 @@
     },
     {
       "enumNames": [],
-      "line": 297,
+      "line": 300,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID VertexBudgetCounters = (BufferID)70820;",
       "value": 70820
     },
     {
       "enumNames": [],
-      "line": 298,
+      "line": 301,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID TileWarnings = (BufferID)70821;",
       "value": 70821
     },
     {
       "enumNames": [],
-      "line": 299,
+      "line": 302,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID TransparentQuadCounters = (BufferID)70822;",
       "value": 70822
     },
     {
       "enumNames": [],
-      "line": 300,
+      "line": 303,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID TelemetryRing = (BufferID)70823;",
       "value": 70823
     },
     {
       "enumNames": [],
-      "line": 301,
+      "line": 304,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID MockVisibleInstances = (BufferID)70824;",
       "value": 70824
     },
     {
       "enumNames": [],
-      "line": 302,
+      "line": 305,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID SortScratch = (BufferID)70825;",
       "value": 70825
     },
     {
       "enumNames": [],
-      "line": 303,
+      "line": 306,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID MeshVertexCounts = (BufferID)70826;",
       "value": 70826
     },
     {
       "enumNames": [],
-      "line": 304,
+      "line": 307,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID RadixHistogram = (BufferID)70827;",
       "value": 70827
     },
     {
       "enumNames": [],
-      "line": 305,
+      "line": 308,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID VisibleCountOut = (BufferID)70828;",
       "value": 70828
     },
     {
       "enumNames": [],
-      "line": 306,
+      "line": 309,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID MockQualitySignal = (BufferID)70829;",
       "value": 70829
     },
     {
       "enumNames": [],
-      "line": 307,
+      "line": 310,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID MockCamera = (BufferID)70830;",
       "value": 70830
     },
     {
       "enumNames": [],
-      "line": 308,
+      "line": 311,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID SourceFrustumPlanes = (BufferID)70831;",
       "value": 70831
     },
     {
       "enumNames": [],
-      "line": 309,
+      "line": 312,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID SqueezedFrustumPlanes = (BufferID)70832;",
       "value": 70832
     },
     {
       "enumNames": [],
-      "line": 310,
+      "line": 313,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID HzbVisibilityMask = (BufferID)70833;",
       "value": 70833
     },
     {
       "enumNames": [],
-      "line": 311,
+      "line": 314,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "public const BufferID IndirectDrawArgs = (BufferID)70834;",
       "value": 70834
     },
     {
       "enumNames": [],
-      "line": 966,
+      "line": 969,
       "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
       "text": "SliceTableHandle = dataVault.GetBufferHandle<TextureStreamingSliceDTO>((BufferID)70835, SliceCapacity, SystemID.GraphicsScalability, NativeArrayOptions.UninitializedMemory);",
       "value": 70835
     },
     {
       "enumNames": [],
-      "line": 49,
+      "line": 50,
       "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
       "text": "private const BufferID DeformationStatesBufferId = (BufferID)70090;",
       "value": 70090
     },
     {
       "enumNames": [],
-      "line": 50,
+      "line": 51,
       "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
       "text": "private const BufferID HullImpactScratchBufferId = (BufferID)70091;",
       "value": 70091
     },
     {
       "enumNames": [],
-      "line": 51,
+      "line": 52,
       "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
       "text": "private const BufferID DeformationTelemetryBufferId = (BufferID)70092;",
       "value": 70092
     },
     {
       "enumNames": [],
-      "line": 52,
+      "line": 53,
       "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
       "text": "private const BufferID DeformationTelemetryCursorBufferId = (BufferID)70093;",
       "value": 70093
     },
     {
       "enumNames": [],
-      "line": 53,
+      "line": 54,
       "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
       "text": "private const BufferID BreachJetsBufferId = (BufferID)70094;",
       "value": 70094
     },
     {
       "enumNames": [],
-      "line": 54,
+      "line": 55,
       "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
       "text": "private const BufferID BreachJetArgsBufferId = (BufferID)70095;",
       "value": 70095
     },
     {
       "enumNames": [],
-      "line": 55,
+      "line": 56,
       "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
       "text": "private const BufferID HullMaterialStrengthBufferId = (BufferID)70096;",
       "value": 70096
     },
     {
       "enumNames": [],
-      "line": 56,
+      "line": 57,
       "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
       "text": "private const BufferID HullMaterialStrengthCsvScratchBufferId = (BufferID)70097;",
       "value": 70097
     },
     {
       "enumNames": [],
-      "line": 57,
+      "line": 58,
       "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
       "text": "private const BufferID ExternalPressure01BufferId = (BufferID)70098;",
       "value": 70098
     },
     {
       "enumNames": [],
-      "line": 58,
+      "line": 59,
       "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
       "text": "private const BufferID PendingVisualImpactsBufferId = (BufferID)70099;",
       "value": 70099
+    },
+    {
+      "enumNames": [],
+      "line": 347,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "text": "private const BufferID FluidImpactEventRingBufferId = (BufferID)70887;",
+      "value": 70887
     },
     {
       "enumNames": [],
@@ -2598,21 +2731,27 @@
       "value": 70774
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "ShinobuCausticsParameters"
+      ],
       "line": 103,
       "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
       "text": "public const BufferID MockJitterState = (BufferID)70775;",
       "value": 70775
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "ShinobuCausticsTuning"
+      ],
       "line": 104,
       "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
       "text": "public const BufferID VisualHistory = (BufferID)70776;",
       "value": 70776
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "ShinobuCausticsTelemetryRing"
+      ],
       "line": 105,
       "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
       "text": "public const BufferID RemoteMerkleNodes = (BufferID)70777;",
@@ -2620,91 +2759,91 @@
     },
     {
       "enumNames": [],
-      "line": 31,
+      "line": 32,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID CableNodes = (BufferID)71320;",
       "value": 71320
     },
     {
       "enumNames": [],
-      "line": 32,
+      "line": 33,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID CableConstraints = (BufferID)71321;",
       "value": 71321
     },
     {
       "enumNames": [],
-      "line": 33,
+      "line": 34,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID SplineVertices = (BufferID)71322;",
       "value": 71322
     },
     {
       "enumNames": [],
-      "line": 34,
+      "line": 35,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID SegmentTensions = (BufferID)71323;",
       "value": 71323
     },
     {
       "enumNames": [],
-      "line": 35,
+      "line": 36,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID PhysicsEvents = (BufferID)71324;",
       "value": 71324
     },
     {
       "enumNames": [],
-      "line": 36,
+      "line": 37,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID TelemetryRing = (BufferID)71325;",
       "value": 71325
     },
     {
       "enumNames": [],
-      "line": 37,
+      "line": 38,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID TelemetryHead = (BufferID)71326;",
       "value": 71326
     },
     {
       "enumNames": [],
-      "line": 38,
+      "line": 39,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID PinnedAups = (BufferID)71327;",
       "value": 71327
     },
     {
       "enumNames": [],
-      "line": 39,
+      "line": 40,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID PinnedMask = (BufferID)71328;",
       "value": 71328
     },
     {
       "enumNames": [],
-      "line": 40,
+      "line": 41,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID Tuning = (BufferID)71329;",
       "value": 71329
     },
     {
       "enumNames": [],
-      "line": 41,
+      "line": 42,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID CableMaterials = (BufferID)71330;",
       "value": 71330
     },
     {
       "enumNames": [],
-      "line": 42,
+      "line": 43,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID BootstrapState = (BufferID)71331;",
       "value": 71331
     },
     {
       "enumNames": [],
-      "line": 43,
+      "line": 44,
       "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
       "text": "public const BufferID Endpoints = (BufferID)71332;",
       "value": 71332
@@ -2785,6 +2924,13 @@
       "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
       "text": "public const BufferID SdfVoxels = (BufferID)71570;",
       "value": 71570
+    },
+    {
+      "enumNames": [],
+      "line": 47,
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+      "text": "public const BufferID ForceTransportPackets = (BufferID)71571;",
+      "value": 71571
     },
     {
       "enumNames": [],
@@ -2898,35 +3044,45 @@
       "value": 71642
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "ShinobuBuoyancySleepSdfDensity"
+      ],
       "line": 75,
       "path": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
       "text": "public const BufferID MockSignalBuffer = (BufferID)71643;",
       "value": 71643
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "ShinobuBuoyancySleepSdfConfig"
+      ],
       "line": 76,
       "path": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
       "text": "public const BufferID StateWriteBuffer = (BufferID)71644;",
       "value": 71644
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "ShinobuBuoyancySleepTelemetryRing"
+      ],
       "line": 77,
       "path": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
       "text": "public const BufferID StateReadBuffer = (BufferID)71645;",
       "value": 71645
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "ShinobuBuoyancySleepTelemetryCursor"
+      ],
       "line": 78,
       "path": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
       "text": "public const BufferID TuningBuffer = (BufferID)71646;",
       "value": 71646
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "ShinobuBuoyancyMaterialSettlingProfiles"
+      ],
       "line": 79,
       "path": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
       "text": "public const BufferID TelemetryRingBuffer = (BufferID)71647;",
@@ -2948,35 +3104,28 @@
     },
     {
       "enumNames": [],
-      "line": 34,
-      "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
-      "text": "public const BufferID MetabolismStatesBuffer = (BufferID)70265;",
-      "value": 70265
-    },
-    {
-      "enumNames": [],
-      "line": 35,
+      "line": 36,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID MetabolismEntityAupsBuffer = (BufferID)70266;",
       "value": 70266
     },
     {
       "enumNames": [],
-      "line": 36,
+      "line": 37,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID MetabolismExertionBuffer = (BufferID)70267;",
       "value": 70267
     },
     {
       "enumNames": [],
-      "line": 37,
+      "line": 38,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID MetabolismSpeciesRulesBuffer = (BufferID)70268;",
       "value": 70268
     },
     {
       "enumNames": [],
-      "line": 38,
+      "line": 39,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID MetabolismRuleIndicesBuffer = (BufferID)70269;",
       "value": 70269
@@ -2985,7 +3134,7 @@
       "enumNames": [
         "SaveMerkleNodeFront"
       ],
-      "line": 39,
+      "line": 40,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID MetabolismTelemetryRingBuffer = (BufferID)70270;",
       "value": 70270
@@ -2994,7 +3143,7 @@
       "enumNames": [
         "SaveMerkleNodeBack"
       ],
-      "line": 40,
+      "line": 41,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID MetabolismTuningBuffer = (BufferID)70271;",
       "value": 70271
@@ -3003,7 +3152,7 @@
       "enumNames": [
         "SaveMerkleLeafDescriptors"
       ],
-      "line": 41,
+      "line": 42,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID MetabolismToxinSamplesBuffer = (BufferID)70272;",
       "value": 70272
@@ -3012,7 +3161,7 @@
       "enumNames": [
         "SaveMerkleDeltaRecords"
       ],
-      "line": 42,
+      "line": 43,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID MetabolismCsvScratchBuffer = (BufferID)70273;",
       "value": 70273
@@ -3021,7 +3170,7 @@
       "enumNames": [
         "SaveMerkleDeltaBytes"
       ],
-      "line": 43,
+      "line": 44,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID MetabolismPhysiologySignalsBuffer = (BufferID)70274;",
       "value": 70274
@@ -3030,42 +3179,42 @@
       "enumNames": [
         "SaveMerkleCompressedBytes"
       ],
-      "line": 44,
+      "line": 45,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID MetabolismCombatSignalsBuffer = (BufferID)70275;",
       "value": 70275
     },
     {
       "enumNames": [],
-      "line": 45,
+      "line": 46,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID ChemicalPublishedGridReadbackBuffer = (BufferID)71152;",
       "value": 71152
     },
     {
       "enumNames": [],
-      "line": 46,
+      "line": 47,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID ChemicalOverlayGridReadbackBuffer = (BufferID)71153;",
       "value": 71153
     },
     {
       "enumNames": [],
-      "line": 47,
+      "line": 48,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID ChemicalTuningReadbackBuffer = (BufferID)71161;",
       "value": 71161
     },
     {
       "enumNames": [],
-      "line": 48,
+      "line": 49,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID ChemicalTelemetryReadbackBuffer = (BufferID)71162;",
       "value": 71162
     },
     {
       "enumNames": [],
-      "line": 49,
+      "line": 50,
       "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismData.cs",
       "text": "public const BufferID ChemicalTelemetryCursorReadbackBuffer = (BufferID)71163;",
       "value": 71163
@@ -3139,6 +3288,83 @@
       "path": "Assets/_Project/Scripts/Physiology/ShinobuRespawnData.cs",
       "text": "public const BufferID RespawnRequestBuffer = (BufferID)71613;",
       "value": 71613
+    },
+    {
+      "enumNames": [],
+      "line": 51,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "text": "public const BufferID Links = (BufferID)72300;",
+      "value": 72300
+    },
+    {
+      "enumNames": [],
+      "line": 52,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "text": "public const BufferID LinkAup = (BufferID)72301;",
+      "value": 72301
+    },
+    {
+      "enumNames": [],
+      "line": 53,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "text": "public const BufferID ExpectedPowerNodeHashes = (BufferID)72302;",
+      "value": 72302
+    },
+    {
+      "enumNames": [],
+      "line": 54,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "text": "public const BufferID VisualStates = (BufferID)72303;",
+      "value": 72303
+    },
+    {
+      "enumNames": [],
+      "line": 55,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "text": "public const BufferID Tuning = (BufferID)72304;",
+      "value": 72304
+    },
+    {
+      "enumNames": [],
+      "line": 56,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "text": "public const BufferID TelemetryRing = (BufferID)72305;",
+      "value": 72305
+    },
+    {
+      "enumNames": [],
+      "line": 57,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "text": "public const BufferID TelemetryCursor = (BufferID)72306;",
+      "value": 72306
+    },
+    {
+      "enumNames": [],
+      "line": 58,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "text": "public const BufferID AtomicCounters = (BufferID)72307;",
+      "value": 72307
+    },
+    {
+      "enumNames": [],
+      "line": 59,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "text": "public const BufferID Profiles = (BufferID)72308;",
+      "value": 72308
+    },
+    {
+      "enumNames": [],
+      "line": 60,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "text": "public const BufferID CsvScratch = (BufferID)72309;",
+      "value": 72309
+    },
+    {
+      "enumNames": [],
+      "line": 61,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "text": "public const BufferID MockInventorySlots = (BufferID)72310;",
+      "value": 72310
     },
     {
       "enumNames": [],
@@ -3247,140 +3473,140 @@
     },
     {
       "enumNames": [],
-      "line": 261,
+      "line": 265,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID NodesAId = (BufferID)731060;",
       "value": 731060
     },
     {
       "enumNames": [],
-      "line": 262,
+      "line": 266,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID NodesBId = (BufferID)731061;",
       "value": 731061
     },
     {
       "enumNames": [],
-      "line": 263,
+      "line": 267,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID EdgesId = (BufferID)731062;",
       "value": 731062
     },
     {
       "enumNames": [],
-      "line": 264,
+      "line": 268,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID InjectionsId = (BufferID)731063;",
       "value": 731063
     },
     {
       "enumNames": [],
-      "line": 265,
+      "line": 269,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID ExternalHeatId = (BufferID)731064;",
       "value": 731064
     },
     {
       "enumNames": [],
-      "line": 266,
+      "line": 270,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID AnchorsId = (BufferID)731065;",
       "value": 731065
     },
     {
       "enumNames": [],
-      "line": 267,
+      "line": 271,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID TuningId = (BufferID)731066;",
       "value": 731066
     },
     {
       "enumNames": [],
-      "line": 268,
+      "line": 272,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID TelemetryId = (BufferID)731067;",
       "value": 731067
     },
     {
       "enumNames": [],
-      "line": 269,
+      "line": 273,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID CountersId = (BufferID)731068;",
       "value": 731068
     },
     {
       "enumNames": [],
-      "line": 270,
+      "line": 274,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID SpecsId = (BufferID)731069;",
       "value": 731069
     },
     {
       "enumNames": [],
-      "line": 271,
+      "line": 275,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID CsvBytesId = (BufferID)731070;",
       "value": 731070
     },
     {
       "enumNames": [],
-      "line": 272,
+      "line": 276,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID VisualStateId = (BufferID)731071;",
       "value": 731071
     },
     {
       "enumNames": [],
-      "line": 273,
+      "line": 277,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID PendingNodesId = (BufferID)731072;",
       "value": 731072
     },
     {
       "enumNames": [],
-      "line": 274,
+      "line": 278,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID PendingEdgesId = (BufferID)731073;",
       "value": 731073
     },
     {
       "enumNames": [],
-      "line": 275,
+      "line": 279,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID PendingInjectionsId = (BufferID)731074;",
       "value": 731074
     },
     {
       "enumNames": [],
-      "line": 276,
+      "line": 280,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID PendingAnchorsId = (BufferID)731075;",
       "value": 731075
     },
     {
       "enumNames": [],
-      "line": 277,
+      "line": 281,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID PendingVisualStateId = (BufferID)731076;",
       "value": 731076
     },
     {
       "enumNames": [],
-      "line": 278,
+      "line": 282,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID PendingCountersId = (BufferID)731077;",
       "value": 731077
     },
     {
       "enumNames": [],
-      "line": 279,
+      "line": 283,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID ConvergenceStateId = (BufferID)731078;",
       "value": 731078
     },
     {
       "enumNames": [],
-      "line": 280,
+      "line": 284,
       "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
       "text": "private static readonly BufferID ResidualSamplesId = (BufferID)731079;",
       "value": 731079
@@ -3684,6 +3910,209 @@
     },
     {
       "enumNames": [],
+      "line": 35,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID RequestsBuffer = (BufferID)71320;",
+      "value": 71320
+    },
+    {
+      "enumNames": [],
+      "line": 36,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID RequestCountBuffer = (BufferID)71321;",
+      "value": 71321
+    },
+    {
+      "enumNames": [],
+      "line": 37,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID RaycastCommandsBuffer = (BufferID)71322;",
+      "value": 71322
+    },
+    {
+      "enumNames": [],
+      "line": 38,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID RaycastHitsBuffer = (BufferID)71323;",
+      "value": 71323
+    },
+    {
+      "enumNames": [],
+      "line": 39,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID HitResultsBuffer = (BufferID)71324;",
+      "value": 71324
+    },
+    {
+      "enumNames": [],
+      "line": 40,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID DeformationBuffer = (BufferID)71325;",
+      "value": 71325
+    },
+    {
+      "enumNames": [],
+      "line": 41,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID BatteryDrainBuffer = (BufferID)71326;",
+      "value": 71326
+    },
+    {
+      "enumNames": [],
+      "line": 42,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID GlowDecalBuffer = (BufferID)71327;",
+      "value": 71327
+    },
+    {
+      "enumNames": [],
+      "line": 43,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID ImpactVfxBuffer = (BufferID)71328;",
+      "value": 71328
+    },
+    {
+      "enumNames": [],
+      "line": 44,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID CooldownBuffer = (BufferID)71329;",
+      "value": 71329
+    },
+    {
+      "enumNames": [],
+      "line": 45,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID TelemetryRingBuffer = (BufferID)71330;",
+      "value": 71330
+    },
+    {
+      "enumNames": [],
+      "line": 46,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID TelemetryCursorBuffer = (BufferID)71331;",
+      "value": 71331
+    },
+    {
+      "enumNames": [],
+      "line": 47,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID TuningBuffer = (BufferID)71332;",
+      "value": 71332
+    },
+    {
+      "enumNames": [],
+      "line": 48,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID SpecBuffer = (BufferID)71333;",
+      "value": 71333
+    },
+    {
+      "enumNames": [],
+      "line": 49,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID CsvScratchBuffer = (BufferID)71334;",
+      "value": 71334
+    },
+    {
+      "enumNames": [],
+      "line": 50,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID CountersBuffer = (BufferID)71335;",
+      "value": 71335
+    },
+    {
+      "enumNames": [],
+      "line": 51,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+      "text": "public const BufferID RequestMetaBuffer = (BufferID)71336;",
+      "value": 71336
+    },
+    {
+      "enumNames": [],
+      "line": 35,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeMasksBuffer = (BufferID)71380;",
+      "value": 71380
+    },
+    {
+      "enumNames": [],
+      "line": 36,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeBaseStatsBuffer = (BufferID)71381;",
+      "value": 71381
+    },
+    {
+      "enumNames": [],
+      "line": 37,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeCompiledStatsBuffer = (BufferID)71382;",
+      "value": 71382
+    },
+    {
+      "enumNames": [],
+      "line": 38,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeLutBuffer = (BufferID)71383;",
+      "value": 71383
+    },
+    {
+      "enumNames": [],
+      "line": 39,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeRulesBuffer = (BufferID)71384;",
+      "value": 71384
+    },
+    {
+      "enumNames": [],
+      "line": 40,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeTelemetryRingBuffer = (BufferID)71385;",
+      "value": 71385
+    },
+    {
+      "enumNames": [],
+      "line": 41,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeTelemetryCursorBuffer = (BufferID)71386;",
+      "value": 71386
+    },
+    {
+      "enumNames": [],
+      "line": 42,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeInventorySlotsBuffer = (BufferID)71387;",
+      "value": 71387
+    },
+    {
+      "enumNames": [],
+      "line": 43,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeItemMapBuffer = (BufferID)71388;",
+      "value": 71388
+    },
+    {
+      "enumNames": [],
+      "line": 44,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeVisualStateBuffer = (BufferID)71389;",
+      "value": 71389
+    },
+    {
+      "enumNames": [],
+      "line": 46,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeToolModuleRulesBuffer = (BufferID)71410;",
+      "value": 71410
+    },
+    {
+      "enumNames": [],
+      "line": 47,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "text": "public const BufferID UpgradeToolProfilesBuffer = (BufferID)71412;",
+      "value": 71412
+    },
+    {
+      "enumNames": [],
       "line": 102,
       "path": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
       "text": "private const BufferID SubtitleCueStateBufferId = (BufferID)15070550;",
@@ -3709,7 +4138,7 @@
       "enumNames": [
         "ShinobuModSandboxBlackboxMemory"
       ],
-      "line": 235,
+      "line": 236,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID StateBufferId = (BufferID)70900;",
       "value": 70900
@@ -3718,7 +4147,7 @@
       "enumNames": [
         "ShinobuModSandboxTelemetryRing"
       ],
-      "line": 237,
+      "line": 238,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID OriginalTextBufferId = (BufferID)70902;",
       "value": 70902
@@ -3727,7 +4156,7 @@
       "enumNames": [
         "ShinobuModSandboxTelemetryCursor"
       ],
-      "line": 238,
+      "line": 239,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID WorkTextBufferId = (BufferID)70903;",
       "value": 70903
@@ -3736,7 +4165,7 @@
       "enumNames": [
         "ShinobuModSandboxCsvScratch"
       ],
-      "line": 239,
+      "line": 240,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID TextSpanBufferId = (BufferID)70904;",
       "value": 70904
@@ -3745,7 +4174,7 @@
       "enumNames": [
         "ShinobuModSandboxPendingRing"
       ],
-      "line": 240,
+      "line": 241,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID CorruptionSignalBufferId = (BufferID)70905;",
       "value": 70905
@@ -3754,7 +4183,7 @@
       "enumNames": [
         "ShinobuModSandboxDevNullRing"
       ],
-      "line": 241,
+      "line": 242,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID DepthSignalBufferId = (BufferID)70906;",
       "value": 70906
@@ -3763,7 +4192,7 @@
       "enumNames": [
         "ShinobuModSandboxStaging"
       ],
-      "line": 242,
+      "line": 243,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID BreachSignalBufferId = (BufferID)70907;",
       "value": 70907
@@ -3772,7 +4201,7 @@
       "enumNames": [
         "ShinobuModSandboxStats"
       ],
-      "line": 243,
+      "line": 244,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID TuningBufferId = (BufferID)70908;",
       "value": 70908
@@ -3781,7 +4210,7 @@
       "enumNames": [
         "ShinobuModSandboxOpcodeRecords"
       ],
-      "line": 244,
+      "line": 245,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID MockQuadBufferId = (BufferID)70909;",
       "value": 70909
@@ -3790,7 +4219,7 @@
       "enumNames": [
         "ShinobuModSandboxModCounters"
       ],
-      "line": 245,
+      "line": 246,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID RadarBlipBufferId = (BufferID)70910;",
       "value": 70910
@@ -3799,7 +4228,7 @@
       "enumNames": [
         "ShinobuModSandboxMemoryLeases"
       ],
-      "line": 246,
+      "line": 247,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID SynthParameterBufferId = (BufferID)70911;",
       "value": 70911
@@ -3808,7 +4237,7 @@
       "enumNames": [
         "ShinobuModSandboxApprovedAssets"
       ],
-      "line": 247,
+      "line": 248,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID TelemetryRingBufferId = (BufferID)70912;",
       "value": 70912
@@ -3817,14 +4246,14 @@
       "enumNames": [
         "ShinobuModSandboxRingState"
       ],
-      "line": 248,
+      "line": 249,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID TelemetryCursorBufferId = (BufferID)70913;",
       "value": 70913
     },
     {
       "enumNames": [],
-      "line": 249,
+      "line": 250,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID CsvScratchBufferId = (BufferID)70914;",
       "value": 70914
@@ -3833,84 +4262,77 @@
       "enumNames": [
         "ShinobuInputCurrentDto"
       ],
-      "line": 250,
+      "line": 251,
       "path": "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
       "text": "private const BufferID TerminalOsStateBridgeBufferId = (BufferID)70520;",
       "value": 70520
     },
     {
       "enumNames": [],
-      "line": 302,
+      "line": 196,
       "path": "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
       "text": "private const BufferID UnlockMaskBufferId = (BufferID)70560;",
       "value": 70560
     },
     {
       "enumNames": [],
-      "line": 303,
+      "line": 197,
       "path": "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
       "text": "private const BufferID RuntimeStateBufferId = (BufferID)70561;",
       "value": 70561
     },
     {
       "enumNames": [],
-      "line": 304,
+      "line": 198,
       "path": "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
       "text": "private const BufferID MetadataBufferId = (BufferID)70562;",
       "value": 70562
     },
     {
       "enumNames": [],
-      "line": 305,
+      "line": 199,
       "path": "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
       "text": "private const BufferID TelemetryBufferId = (BufferID)70563;",
       "value": 70563
     },
     {
       "enumNames": [],
-      "line": 306,
+      "line": 200,
       "path": "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
       "text": "private const BufferID TelemetryCursorBufferId = (BufferID)70564;",
       "value": 70564
     },
     {
       "enumNames": [],
-      "line": 307,
+      "line": 201,
       "path": "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
       "text": "private const BufferID MockUtf8BufferId = (BufferID)70565;",
       "value": 70565
     },
     {
       "enumNames": [],
-      "line": 308,
+      "line": 202,
       "path": "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
       "text": "private const BufferID MockIndexBufferId = (BufferID)70566;",
       "value": 70566
     },
     {
       "enumNames": [],
-      "line": 309,
+      "line": 203,
       "path": "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
       "text": "private const BufferID CsvScratchBufferId = (BufferID)70567;",
       "value": 70567
     },
     {
       "enumNames": [],
-      "line": 310,
-      "path": "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
-      "text": "private const BufferID MockLookupResultBufferId = (BufferID)70568;",
-      "value": 70568
-    },
-    {
-      "enumNames": [],
-      "line": 311,
+      "line": 204,
       "path": "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
       "text": "private const BufferID TypewriterStateBufferId = (BufferID)70569;",
       "value": 70569
     },
     {
       "enumNames": [],
-      "line": 312,
+      "line": 205,
       "path": "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
       "text": "private const BufferID H8lrMirrorBufferId = (BufferID)70570;",
       "value": 70570
@@ -4106,10 +4528,17 @@
     },
     {
       "enumNames": [],
-      "line": 217,
+      "line": 232,
       "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
       "text": "private const BufferID BiolumPulseStateBufferId = (BufferID)70311;",
       "value": 70311
+    },
+    {
+      "enumNames": [],
+      "line": 233,
+      "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+      "text": "private const BufferID BiolumBlackBoxDumpScratchBufferId = (BufferID)70312;",
+      "value": 70312
     },
     {
       "enumNames": [],
@@ -4182,53 +4611,85 @@
       "value": 71029
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "ShinobuAuxiliaryActiveEquipmentState"
+      ],
       "line": 22,
       "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
       "text": "public const BufferID Instances = (BufferID)71490;",
       "value": 71490
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "ShinobuAuxiliaryTetherAnchors"
+      ],
       "line": 23,
       "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
       "text": "public const BufferID UploadScratch = (BufferID)71491;",
       "value": 71491
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "PropwashGpuEventRing"
+      ],
       "line": 24,
       "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
       "text": "public const BufferID RuntimeState = (BufferID)71492;",
       "value": 71492
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "PropwashGpuRingCursor"
+      ],
       "line": 25,
       "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
       "text": "public const BufferID TelemetryRing = (BufferID)71493;",
       "value": 71493
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "PropwashGpuTelemetryRing"
+      ],
       "line": 26,
       "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
       "text": "public const BufferID Tuning = (BufferID)71494;",
       "value": 71494
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "PropwashGpuTuning"
+      ],
       "line": 27,
       "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
       "text": "public const BufferID MaterialProfiles = (BufferID)71495;",
       "value": 71495
     },
     {
-      "enumNames": [],
+      "enumNames": [
+        "PropwashGpuWakeProfiles"
+      ],
       "line": 28,
       "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
       "text": "public const BufferID CsvScratch = (BufferID)71496;",
       "value": 71496
+    },
+    {
+      "enumNames": [
+        "UberNoirReconstructionConstants"
+      ],
+      "line": 1517,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "text": "private static readonly BufferID AupDiscoveryGridBufferId = (BufferID)71030;",
+      "value": 71030
+    },
+    {
+      "enumNames": [
+        "UberNoirReconstructionTelemetry"
+      ],
+      "line": 1518,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "text": "private static readonly BufferID ActiveSonarGeoTelemetryRingBufferId = (BufferID)71031;",
+      "value": 71031
     },
     {
       "enumNames": [],
@@ -4365,126 +4826,126 @@
     },
     {
       "enumNames": [],
-      "line": 795,
+      "line": 796,
       "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
       "text": "private const BufferID FloraSwayDisplacementFieldBufferId = (BufferID)71650;",
       "value": 71650
     },
     {
       "enumNames": [],
-      "line": 796,
+      "line": 797,
       "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
       "text": "private const BufferID FloraSwayFieldMetaBufferId = (BufferID)71651;",
       "value": 71651
     },
     {
       "enumNames": [],
-      "line": 797,
+      "line": 798,
       "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
       "text": "private const BufferID FloraSwayFieldBlackBoxBufferId = (BufferID)71652;",
       "value": 71652
     },
     {
       "enumNames": [],
-      "line": 798,
+      "line": 799,
       "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
       "text": "private const BufferID FloraStiffnessRulesBufferId = (BufferID)71653;",
       "value": 71653
     },
     {
       "enumNames": [],
-      "line": 799,
+      "line": 800,
       "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
       "text": "private const BufferID FloraStiffnessCsvScratchBufferId = (BufferID)71654;",
       "value": 71654
     },
     {
       "enumNames": [],
-      "line": 2404,
+      "line": 2413,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeHeightSamplesBuffer = (BufferID)0x530401;",
       "value": 5440513
     },
     {
       "enumNames": [],
-      "line": 2405,
+      "line": 2414,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeHeightMaterialsBuffer = (BufferID)0x530402;",
       "value": 5440514
     },
     {
       "enumNames": [],
-      "line": 2406,
+      "line": 2415,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeEncodedSdfBuffer = (BufferID)0x530403;",
       "value": 5440515
     },
     {
       "enumNames": [],
-      "line": 2407,
+      "line": 2416,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeSdfMaterialsBuffer = (BufferID)0x530404;",
       "value": 5440516
     },
     {
       "enumNames": [],
-      "line": 2408,
+      "line": 2417,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeSectorMaskBuffer = (BufferID)0x530405;",
       "value": 5440517
     },
     {
       "enumNames": [],
-      "line": 2409,
+      "line": 2418,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeCountersBuffer = (BufferID)0x530406;",
       "value": 5440518
     },
     {
       "enumNames": [],
-      "line": 2410,
+      "line": 2419,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeTelemetryBuffer = (BufferID)0x530407;",
       "value": 5440519
     },
     {
       "enumNames": [],
-      "line": 2411,
+      "line": 2420,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeBiomeAtlasBuffer = (BufferID)0x530408;",
       "value": 5440520
     },
     {
       "enumNames": [],
-      "line": 2412,
+      "line": 2421,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeErosionMaskBuffer = (BufferID)0x530409;",
       "value": 5440521
     },
     {
       "enumNames": [],
-      "line": 2413,
+      "line": 2422,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeSdfOverrideBuffer = (BufferID)0x53040A;",
       "value": 5440522
     },
     {
       "enumNames": [],
-      "line": 2414,
+      "line": 2423,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeActiveSectorsBuffer = (BufferID)0x53040B;",
       "value": 5440523
     },
     {
       "enumNames": [],
-      "line": 2415,
+      "line": 2424,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeCounterBlocksBuffer = (BufferID)0x53040C;",
       "value": 5440524
     },
     {
       "enumNames": [],
-      "line": 2416,
+      "line": 2425,
       "path": "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
       "text": "private const BufferID ProbeCsvBuffer = (BufferID)0x53040D;",
       "value": 5440525
@@ -5075,6 +5536,139 @@
     },
     {
       "enumNames": [],
+      "line": 31,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID MetadataBufferId = (BufferID)71740;",
+      "value": 71740
+    },
+    {
+      "enumNames": [],
+      "line": 32,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID SectorCoordsBufferId = (BufferID)71741;",
+      "value": 71741
+    },
+    {
+      "enumNames": [],
+      "line": 33,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID StagingBytesBufferId = (BufferID)71742;",
+      "value": 71742
+    },
+    {
+      "enumNames": [],
+      "line": 34,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID ActiveBytesBufferId = (BufferID)71743;",
+      "value": 71743
+    },
+    {
+      "enumNames": [],
+      "line": 35,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID CompressedScratchBufferId = (BufferID)71744;",
+      "value": 71744
+    },
+    {
+      "enumNames": [],
+      "line": 36,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID WorkerRequestBufferId = (BufferID)71745;",
+      "value": 71745
+    },
+    {
+      "enumNames": [],
+      "line": 37,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID WorkerResultBufferId = (BufferID)71746;",
+      "value": 71746
+    },
+    {
+      "enumNames": [],
+      "line": 38,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID JobLoadRequestsBufferId = (BufferID)71747;",
+      "value": 71747
+    },
+    {
+      "enumNames": [],
+      "line": 39,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID JobLoadCountBufferId = (BufferID)71748;",
+      "value": 71748
+    },
+    {
+      "enumNames": [],
+      "line": 40,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID JobStaleSlotsBufferId = (BufferID)71749;",
+      "value": 71749
+    },
+    {
+      "enumNames": [],
+      "line": 41,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID JobStaleCountBufferId = (BufferID)71750;",
+      "value": 71750
+    },
+    {
+      "enumNames": [],
+      "line": 42,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID TelemetryRingBufferId = (BufferID)71751;",
+      "value": 71751
+    },
+    {
+      "enumNames": [],
+      "line": 43,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID TuningBufferId = (BufferID)71752;",
+      "value": 71752
+    },
+    {
+      "enumNames": [],
+      "line": 44,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID CountersBufferId = (BufferID)71753;",
+      "value": 71753
+    },
+    {
+      "enumNames": [],
+      "line": 45,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID FreedSlotsBufferId = (BufferID)71754;",
+      "value": 71754
+    },
+    {
+      "enumNames": [],
+      "line": 46,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID FreedCountBufferId = (BufferID)71755;",
+      "value": 71755
+    },
+    {
+      "enumNames": [],
+      "line": 47,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID HardwareProfilesBufferId = (BufferID)71756;",
+      "value": 71756
+    },
+    {
+      "enumNames": [],
+      "line": 48,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID CsvScratchBufferId = (BufferID)71757;",
+      "value": 71757
+    },
+    {
+      "enumNames": [],
+      "line": 49,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "text": "private const BufferID TelemetryDumpSnapshotBufferId = (BufferID)71758;",
+      "value": 71758
+    },
+    {
+      "enumNames": [],
       "line": 180,
       "path": "Assets/_Project/Scripts/World/VolcanicUpdraftDirector.cs",
       "text": "public const BufferID VentsBuffer = (BufferID)70750;",
@@ -5497,35 +6091,35 @@
     },
     {
       "enumNames": [],
-      "line": 62,
+      "line": 78,
       "path": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
       "text": "private const BufferID TerrainSeamBlackBoxBufferId = (BufferID)0x530421;",
       "value": 5440545
     },
     {
       "enumNames": [],
-      "line": 63,
+      "line": 79,
       "path": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
       "text": "private const BufferID TerrainSeamNativePlansBufferId = (BufferID)0x530422;",
       "value": 5440546
     },
     {
       "enumNames": [],
-      "line": 64,
+      "line": 80,
       "path": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
       "text": "private const BufferID TerrainSeamPatchHeightsBufferId = (BufferID)0x530423;",
       "value": 5440547
     },
     {
       "enumNames": [],
-      "line": 65,
+      "line": 81,
       "path": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
       "text": "private const BufferID TerrainSeamBlendMaskBufferId = (BufferID)0x530424;",
       "value": 5440548
     },
     {
       "enumNames": [],
-      "line": 66,
+      "line": 82,
       "path": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
       "text": "private const BufferID TerrainSeamNormalsBufferId = (BufferID)0x530425;",
       "value": 5440549

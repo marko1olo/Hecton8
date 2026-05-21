@@ -240,7 +240,8 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         public const uint TriggerLaserMode = 1u << 1;
         public const uint TriggerScannerMode = 1u << 2;
         public const uint TriggerWelderMode = 1u << 3;
-        public const uint TriggerLowTierSnap = 1u << 4;
+        public const uint TriggerLegacySnap = 1u << 4;
+        public const uint TriggerLowTierSnap = TriggerLegacySnap;
         public const int BlackBoxCapacity = 300;
         public const int MaxRaymarchStepsLow = 24;
         public const int MaxRaymarchStepsMiddle = 40;
@@ -268,32 +269,23 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ToolKinematicsMathLod ResolveLod(float systemHealthIndex)
+        public static float ResolveVisualQuality01FromStress(float systemHealthIndex)
         {
-            float stress = Clamp01Finite(systemHealthIndex);
-            if (stress > 0.85f)
-                return ToolKinematicsMathLod.Low;
-            if (stress > 0.62f)
-                return ToolKinematicsMathLod.Middle;
-            if (stress > 0.28f)
-                return ToolKinematicsMathLod.High;
-            return ToolKinematicsMathLod.Ultra;
+            return math.saturate(1f - Clamp01Finite(systemHealthIndex));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ResolveRaymarchSteps(ToolKinematicsMathLod lod)
+        public static int ResolveRaymarchSteps()
         {
-            switch (lod)
-            {
-                case ToolKinematicsMathLod.Low:
-                    return MaxRaymarchStepsLow;
-                case ToolKinematicsMathLod.Middle:
-                    return MaxRaymarchStepsMiddle;
-                case ToolKinematicsMathLod.High:
-                    return MaxRaymarchStepsHigh;
-                default:
-                    return MaxRaymarchStepsUltra;
-            }
+            return MaxRaymarchStepsUltra;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveBeamRingSides(float systemHealthIndex)
+        {
+            float quality01 = ResolveVisualQuality01FromStress(systemHealthIndex);
+            float curved = quality01 * quality01 * (3f - (2f * quality01));
+            return math.clamp((int)math.round(math.lerp(4f, 8f, curved)), 4, 8);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -392,12 +384,12 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct TwoBoneIKJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<ToolStateDTO> ToolStates;
-        [ReadOnly] public NativeArray<ToolKinematicsFrameInputDTO> FrameInputs;
-        public NativeArray<ToolIkOutputDTO> IkOutputs;
+        [ReadOnly, NoAlias] public NativeArray<ToolStateDTO> ToolStates;
+        [ReadOnly, NoAlias] public NativeArray<ToolKinematicsFrameInputDTO> FrameInputs;
+        [WriteOnly, NoAlias] public NativeArray<ToolIkOutputDTO> IkOutputs;
 
         public void Execute(int index)
         {
@@ -409,22 +401,12 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
             float3 shoulder = input.ShoulderLocalPosition;
             float3 target = input.ControllerLocalPosition;
             float3 pole = ToolKinematicsMath.SafeNormalize(input.PoleLocalDirection, new float3(0f, 1f, 0f));
-            bool lowTierSnap = (input.TriggerFlags & ToolKinematicsMath.TriggerLowTierSnap) != 0 ||
-                               ToolKinematicsMath.ResolveLod(input.SystemHealthIndex) == ToolKinematicsMathLod.Low;
 
             ToolIkOutputDTO output = default;
             output.Shoulder = shoulder;
             output.Wrist = target;
-            output.Flags = lowTierSnap ? (uint)ToolKinematicsFlags.LowTierSnap : 0u;
-            output.ComputeMicrosecondsEstimate = lowTierSnap ? 1.5f : 8.0f;
-
-            if (lowTierSnap)
-            {
-                output.Elbow = math.lerp(shoulder, target, 0.5f);
-                output.UpperRotation = controllerRotation;
-                IkOutputs[index] = output;
-                return;
-            }
+            output.Flags = 0u;
+            output.ComputeMicrosecondsEstimate = 8.0f;
 
             float upper = 0.34f;
             float lower = 0.34f;
@@ -457,19 +439,19 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct SdfRaymarchJob : IJobParallelFor
     {
-        public NativeArray<ToolStateDTO> ToolStates;
-        public NativeArray<ToolRecoilStateDTO> RecoilStates;
-        [ReadOnly] public NativeArray<ToolKinematicsFrameInputDTO> FrameInputs;
-        [ReadOnly] public NativeArray<ToolKinematicsTuningDTO> Tuning;
-        public NativeArray<ToolHitResultDTO> HitResults;
-        public NativeArray<ToolScreenExportDTO> ScreenExports;
-        public NativeArray<ToolPoseOutputDTO> PoseOutputs;
-        public NativeArray<ToolHeatSignal> HeatSignals;
-        public NativeArray<VfxSparkRequestSignal> SparkRequests;
-        public NativeArray<ToolKinematicsTelemetryEntry> TelemetryRing;
+        [NoAlias] public NativeArray<ToolStateDTO> ToolStates;
+        [NoAlias] public NativeArray<ToolRecoilStateDTO> RecoilStates;
+        [ReadOnly, NoAlias] public NativeArray<ToolKinematicsFrameInputDTO> FrameInputs;
+        [ReadOnly, NoAlias] public NativeArray<ToolKinematicsTuningDTO> Tuning;
+        [WriteOnly, NoAlias] public NativeArray<ToolHitResultDTO> HitResults;
+        [NoAlias] public NativeArray<ToolScreenExportDTO> ScreenExports;
+        [WriteOnly, NoAlias] public NativeArray<ToolPoseOutputDTO> PoseOutputs;
+        [WriteOnly, NoAlias] public NativeArray<ToolHeatSignal> HeatSignals;
+        [WriteOnly, NoAlias] public NativeArray<VfxSparkRequestSignal> SparkRequests;
+        [WriteOnly, NoAlias] public NativeArray<ToolKinematicsTelemetryEntry> TelemetryRing;
         public int TelemetryCursor;
 
         public void Execute(int index)
@@ -483,8 +465,6 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
             ToolRecoilStateDTO recoil = (uint)index < (uint)RecoilStates.Length ? RecoilStates[index] : default;
             quaternion controllerRotation = ToolKinematicsMath.SafeNormalizeQuaternion(input.ControllerRotation, quaternion.identity);
             float dt = math.clamp(ToolKinematicsMath.ClampPositiveFinite(input.DeltaTime, 0.0166667f), 0f, 0.05f);
-            float stress = ToolKinematicsMath.Clamp01Finite(input.SystemHealthIndex);
-            ToolKinematicsMathLod lod = ToolKinematicsMath.ResolveLod(stress);
             uint flags = (uint)index < (uint)ScreenExports.Length
                 ? ScreenExports[index].StateFlags
                 : (uint)ToolKinematicsFlags.Idle;
@@ -494,11 +474,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
                 flags &= ~(uint)ToolKinematicsFlags.CsvIoFault;
 
             bool trigger = (input.TriggerFlags & ToolKinematicsMath.TriggerPressed) != 0;
-            bool lowTierSnap = lod == ToolKinematicsMathLod.Low;
-            if (lowTierSnap)
-                flags |= (uint)ToolKinematicsFlags.LowTierSnap;
-            else
-                flags &= ~(uint)ToolKinematicsFlags.LowTierSnap;
+            flags &= ~(uint)ToolKinematicsFlags.LowTierSnap;
 
             float maxHeat = ToolKinematicsMath.ClampPositiveFinite(tuning.MaxHeat, 1f);
             bool overheated = (flags & (uint)ToolKinematicsFlags.Overheated) != 0;
@@ -552,50 +528,34 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
             if (tipSample.Distance < 0f)
             {
                 flags |= (uint)ToolKinematicsFlags.SdfPenetrating;
-                if (!lowTierSnap)
-                {
-                    float depth = math.min(0.35f, -tipSample.Distance);
-                    recoil.SpringVelocity += depth * math.max(0f, tuning.CollisionSpring);
-                    recoil.AngularOffsetAxis = math.cross(forward, ToolKinematicsMath.EstimateMockSdfNormal(tipLocal));
-                }
+                float depth = math.min(0.35f, -tipSample.Distance);
+                recoil.SpringVelocity += depth * math.max(0f, tuning.CollisionSpring);
+                recoil.AngularOffsetAxis = math.cross(forward, ToolKinematicsMath.EstimateMockSdfNormal(tipLocal));
             }
             else
             {
                 flags &= ~(uint)ToolKinematicsFlags.SdfPenetrating;
             }
 
-            if (lowTierSnap)
-            {
-                recoil.PositionOffset = default;
-                recoil.AngularOffsetAxis = default;
-                recoil.KickVelocity = 0f;
-                recoil.SpringVelocity = 0f;
-                recoil.RecoilTime = 0f;
-                recoil.Recoil01 = 0f;
-                recoil.Flags = 0u;
-            }
-            else
-            {
-                if (active)
-                    recoil.KickVelocity -= math.max(0f, tuning.RecoilStrength) * dt;
+            if (active)
+                recoil.KickVelocity -= math.max(0f, tuning.RecoilStrength) * dt;
 
-                float damping = math.max(0f, tuning.SpringDamping);
-                float springAccel = (-recoil.Recoil01 * damping * damping) - (2f * damping * recoil.SpringVelocity);
-                recoil.SpringVelocity += springAccel * dt;
-                recoil.Recoil01 += (recoil.SpringVelocity + recoil.KickVelocity) * dt;
-                recoil.KickVelocity *= math.saturate(1f - damping * dt);
-                recoil.Recoil01 = math.clamp(recoil.Recoil01, -0.35f, 0.35f);
-                recoil.PositionOffset = -forward * math.abs(recoil.Recoil01);
-                recoil.RecoilTime = active ? recoil.RecoilTime + dt : math.max(0f, recoil.RecoilTime - dt);
-                recoil.Flags = math.abs(recoil.Recoil01) > 0.0001f ? (uint)ToolKinematicsFlags.RecoilActive : 0u;
-            }
+            float damping = math.max(0f, tuning.SpringDamping);
+            float springAccel = (-recoil.Recoil01 * damping * damping) - (2f * damping * recoil.SpringVelocity);
+            recoil.SpringVelocity += springAccel * dt;
+            recoil.Recoil01 += (recoil.SpringVelocity + recoil.KickVelocity) * dt;
+            recoil.KickVelocity *= math.saturate(1f - damping * dt);
+            recoil.Recoil01 = math.clamp(recoil.Recoil01, -0.35f, 0.35f);
+            recoil.PositionOffset = -forward * math.abs(recoil.Recoil01);
+            recoil.RecoilTime = active ? recoil.RecoilTime + dt : math.max(0f, recoil.RecoilTime - dt);
+            recoil.Flags = math.abs(recoil.Recoil01) > 0.0001f ? (uint)ToolKinematicsFlags.RecoilActive : 0u;
 
             ToolHitResultDTO hit = default;
             int stepCount = 0;
             float traveled = 0f;
             float maxRange = math.max(0.1f, tuning.LaserRange);
             bool hasHit = false;
-            int maxSteps = ToolKinematicsMath.ResolveRaymarchSteps(lod);
+            int maxSteps = ToolKinematicsMath.ResolveRaymarchSteps();
             if (active && hasEnergy)
             {
                 float3 marchPos = tipLocal;
@@ -643,20 +603,13 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
             if ((uint)index < (uint)PoseOutputs.Length)
             {
                 float3 recoilAxis = ToolKinematicsMath.SafeNormalize(recoil.AngularOffsetAxis, new float3(1f, 0f, 0f));
-                float recoilRadians = lowTierSnap ? 0f : math.clamp(recoil.Recoil01, -0.35f, 0.35f);
+                float recoilRadians = math.clamp(recoil.Recoil01, -0.35f, 0.35f);
                 quaternion recoilRotation = quaternion.AxisAngle(recoilAxis, recoilRadians);
-                quaternion finalRotation = lowTierSnap
-                    ? controllerRotation
-                    : ToolKinematicsMath.SafeNormalizeQuaternion(math.mul(controllerRotation, recoilRotation), controllerRotation);
-                float3 pivotCompensation = default;
-                if (!lowTierSnap)
-                {
-                    float3 basePivot = math.rotate(controllerRotation, recoil.PivotLocal);
-                    float3 rotatedPivot = math.rotate(finalRotation, recoil.PivotLocal);
-                    pivotCompensation = basePivot - rotatedPivot;
-                }
-
-                float3 finalPosition = lowTierSnap ? toolLocal : toolLocal + recoil.PositionOffset + pivotCompensation;
+                quaternion finalRotation = ToolKinematicsMath.SafeNormalizeQuaternion(math.mul(controllerRotation, recoilRotation), controllerRotation);
+                float3 basePivot = math.rotate(controllerRotation, recoil.PivotLocal);
+                float3 rotatedPivot = math.rotate(finalRotation, recoil.PivotLocal);
+                float3 pivotCompensation = basePivot - rotatedPivot;
+                float3 finalPosition = toolLocal + recoil.PositionOffset + pivotCompensation;
                 float4x4 matrix = float4x4.TRS(finalPosition, finalRotation, new float3(1f, 1f, 1f));
                 if (!math.all(math.isfinite(matrix.c0)) ||
                     !math.all(math.isfinite(matrix.c1)) ||
@@ -738,7 +691,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
                     EnergyRemaining = ToolKinematicsMath.Clamp01Finite(state.EnergyRemaining),
                     HitDistance = hit.Distance,
                     RaymarchStepCount = stepCount,
-                    IkComputeTimeMicroseconds = lowTierSnap ? 1.5f : 8f,
+                    IkComputeTimeMicroseconds = 8f,
                     Flags = flags,
                     ToolLocalPosition = toolLocal,
                     HitPoint = hit.HitPoint,
@@ -749,14 +702,14 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockCarveRequestJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<ToolHitResultDTO> HitResults;
-        [ReadOnly] public NativeArray<ToolStateDTO> ToolStates;
-        [ReadOnly] public NativeArray<ToolKinematicsFrameInputDTO> FrameInputs;
-        [ReadOnly] public NativeArray<ToolScreenExportDTO> ScreenExports;
-        public NativeArray<MockCarveRequestSignal> CarveRequests;
+        [ReadOnly, NoAlias] public NativeArray<ToolHitResultDTO> HitResults;
+        [ReadOnly, NoAlias] public NativeArray<ToolStateDTO> ToolStates;
+        [ReadOnly, NoAlias] public NativeArray<ToolKinematicsFrameInputDTO> FrameInputs;
+        [ReadOnly, NoAlias] public NativeArray<ToolScreenExportDTO> ScreenExports;
+        [WriteOnly, NoAlias] public NativeArray<MockCarveRequestSignal> CarveRequests;
 
         public void Execute(int index)
         {
@@ -799,16 +752,16 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct ProceduralBeamMeshJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<ToolHitResultDTO> HitResults;
-        [ReadOnly] public NativeArray<ToolStateDTO> ToolStates;
-        [ReadOnly] public NativeArray<ToolKinematicsFrameInputDTO> FrameInputs;
-        [ReadOnly] public NativeArray<ToolScreenExportDTO> ScreenExports;
-        [ReadOnly] public NativeArray<ToolKinematicsTuningDTO> Tuning;
-        public NativeArray<ToolBeamVertexDTO> BeamVertices;
-        public NativeArray<int> BeamVertexCounts;
+        [ReadOnly, NoAlias] public NativeArray<ToolHitResultDTO> HitResults;
+        [ReadOnly, NoAlias] public NativeArray<ToolStateDTO> ToolStates;
+        [ReadOnly, NoAlias] public NativeArray<ToolKinematicsFrameInputDTO> FrameInputs;
+        [ReadOnly, NoAlias] public NativeArray<ToolScreenExportDTO> ScreenExports;
+        [ReadOnly, NoAlias] public NativeArray<ToolKinematicsTuningDTO> Tuning;
+        [WriteOnly, NoAlias] public NativeArray<ToolBeamVertexDTO> BeamVertices;
+        [WriteOnly, NoAlias] public NativeArray<int> BeamVertexCounts;
         public int VerticesPerTool;
 
         public void Execute(int index)
@@ -842,12 +795,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
             float3 axis = ToolKinematicsMath.SafeNormalize(endPos - startPos, state.Forward);
             float3 tangent = ToolKinematicsMath.SafeNormalize(math.cross(axis, new float3(0f, 1f, 0f)), new float3(1f, 0f, 0f));
             float3 bitangent = ToolKinematicsMath.SafeNormalize(math.cross(axis, tangent), new float3(0f, 1f, 0f));
-            int ringSides = 4;
-            ToolKinematicsMathLod lod = ToolKinematicsMath.ResolveLod(input.SystemHealthIndex);
-            if (lod == ToolKinematicsMathLod.High)
-                ringSides = 6;
-            else if (lod == ToolKinematicsMathLod.Ultra)
-                ringSides = 8;
+            int ringSides = ToolKinematicsMath.ResolveBeamRingSides(input.SystemHealthIndex);
 
             int rings = math.max(2, VerticesPerTool / ringSides);
             int written = 0;

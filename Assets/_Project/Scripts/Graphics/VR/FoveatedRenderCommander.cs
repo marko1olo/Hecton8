@@ -19,7 +19,7 @@ namespace Hecton8.Graphics.VR
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9946)]
     [AddComponentMenu("Hecton8/Graphics/VR/Foveated Render Commander")]
-    internal sealed unsafe class FoveatedRenderCommander : MonoBehaviour, IUpdatable, IRenderable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener, IDisposable
+    internal sealed class FoveatedRenderCommander : MonoBehaviour, IUpdatable, IRenderable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener, IDisposable
     {
         private const int TelemetryCapacity = 300;
         private const int TelemetryRecordSizeBytes = 64;
@@ -95,7 +95,7 @@ namespace Hecton8.Graphics.VR
         private LayerMask uiLayerMask = 1 << DefaultUiLayerIndex;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<FoveatedRenderTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<FoveatedRenderTelemetryEntry> _telemetryHandle;
         private IHardwareThermalService _hardwareThermal;
         private int _telemetryCursor;
         private int _framesUntilSample;
@@ -257,6 +257,8 @@ namespace Hecton8.Graphics.VR
             if (ownsRuntimeState)
                 ClearHardwareFoveation();
             _hardwareThermal = null;
+            ReleaseTelemetryBuffer();
+            _telemetryCursor = 0;
         }
 
         private void OnDestroy()
@@ -279,7 +281,7 @@ namespace Hecton8.Graphics.VR
             ScalabilityEvents.Unregister(this);
             if (ownsRuntimeState)
                 ClearHardwareFoveation();
-            _telemetryHandle = default;
+            ReleaseTelemetryBuffer();
             _telemetryVaultGeneration = 0u;
             _dataVault = null;
         }
@@ -380,8 +382,9 @@ namespace Hecton8.Graphics.VR
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                ReleaseVaultBuffer(previousService as IDataVault ?? _dataVault, ref _telemetryHandle);
                 _dataVault = currentService as IDataVault;
-                _telemetryHandle = default;
+                _telemetryCursor = 0;
                 _telemetryVaultGeneration = 0u;
                 EnsureTelemetry();
                 return;
@@ -819,8 +822,7 @@ namespace Hecton8.Graphics.VR
                 return;
             }
 
-            RegistryBucket<IGlobalRegistryHotSwapListener> listeners = GlobalRegistry.HotSwapListeners;
-            if (listeners.Contains(this))
+            if (GlobalRegistry.IsHotSwapListenerRegistered(this))
             {
                 _registeredHotSwap = true;
                 return;
@@ -831,8 +833,7 @@ namespace Hecton8.Graphics.VR
 
         private void TryUnregisterHotSwap()
         {
-            RegistryBucket<IGlobalRegistryHotSwapListener> listeners = GlobalRegistry.HotSwapListeners;
-            if (!_registeredHotSwap && !listeners.Contains(this))
+            if (!_registeredHotSwap && !GlobalRegistry.IsHotSwapListenerRegistered(this))
             {
                 _registeredHotSwap = false;
                 return;
@@ -880,31 +881,59 @@ namespace Hecton8.Graphics.VR
             IDataVault vault = _dataVault;
             if (vault == null)
             {
-                _telemetryHandle = default;
-                _telemetryVaultGeneration = 0u;
+                ClearTelemetryDescriptor();
                 return false;
             }
 
-            _dataVault = vault;
-            if (_telemetryHandle.IsCreated && vault.ResolveBuffer(ref _telemetryHandle))
+            if (vault.IsCompactionFenceActive)
             {
-                vault.TryGetBufferGeneration(BufferID.FoveatedRenderBlackBox, out _telemetryVaultGeneration);
-                return _telemetryHandle.Length >= TelemetryCapacity;
+                ClearTelemetryDescriptor();
+                return false;
             }
 
-            _telemetryHandle = vault.GetBufferHandle<FoveatedRenderTelemetryEntry>(
+            if (IsVaultHandleCreated(in _telemetryHandle) &&
+                vault.TryResolveHandle(in _telemetryHandle, out NativeArray<FoveatedRenderTelemetryEntry> currentTelemetry) &&
+                currentTelemetry.IsCreated &&
+                currentTelemetry.Length >= TelemetryCapacity)
+            {
+                _telemetryVaultGeneration = _telemetryHandle.Generation;
+                return true;
+            }
+
+            ClearTelemetryDescriptor();
+            if (vault.TryGetGenerationHandle(
+                    BufferID.FoveatedRenderBlackBox,
+                    out VaultGenerationHandle<FoveatedRenderTelemetryEntry> existing) &&
+                vault.TryResolveHandle(in existing, out NativeArray<FoveatedRenderTelemetryEntry> existingTelemetry) &&
+                existingTelemetry.IsCreated &&
+                existingTelemetry.Length >= TelemetryCapacity)
+            {
+                _telemetryHandle = existing;
+                _telemetryVaultGeneration = existing.Generation;
+                return true;
+            }
+
+            if (vault.IsAllocationLocked)
+                return false;
+
+            VaultGenerationHandle<FoveatedRenderTelemetryEntry> acquired = vault.GetGenerationHandle<FoveatedRenderTelemetryEntry>(
                 BufferID.FoveatedRenderBlackBox,
                 TelemetryCapacity,
                 SystemID.GraphicsScalability,
                 NativeArrayOptions.ClearMemory);
-            if (!_telemetryHandle.IsCreated)
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out NativeArray<FoveatedRenderTelemetryEntry> acquiredTelemetry) ||
+                !acquiredTelemetry.IsCreated ||
+                acquiredTelemetry.Length < TelemetryCapacity)
             {
-                _telemetryVaultGeneration = 0u;
+                ReleaseVaultBuffer(vault, ref acquired);
+                ClearTelemetryDescriptor();
                 return false;
             }
 
-            vault.TryGetBufferGeneration(BufferID.FoveatedRenderBlackBox, out _telemetryVaultGeneration);
-            return _telemetryHandle.Length >= TelemetryCapacity;
+            _telemetryHandle = acquired;
+            _telemetryVaultGeneration = acquired.Generation;
+            return true;
         }
 
         private static bool VerifyTelemetryLayout()
@@ -922,7 +951,7 @@ namespace Hecton8.Graphics.VR
 
         private void WriteTelemetry(ushort flags)
         {
-            if (!TryResolveTelemetryPointer(out FoveatedRenderTelemetryEntry* telemetry))
+            if (!TryResolveTelemetryRing(out NativeArray<FoveatedRenderTelemetryEntry> telemetry, allowEnsure: true))
                 return;
 
             bool nonFinite =
@@ -978,8 +1007,11 @@ namespace Hecton8.Graphics.VR
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !TryResolveTelemetryPointer(out FoveatedRenderTelemetryEntry* telemetry))
+            if (_blackBoxDumped ||
+                !TryResolveTelemetryRing(out NativeArray<FoveatedRenderTelemetryEntry> telemetry, allowEnsure: true))
+            {
                 return;
+            }
 
             _blackBoxDumped = true;
             try
@@ -1092,23 +1124,53 @@ namespace Hecton8.Graphics.VR
             }
         }
 
-        private bool TryResolveTelemetryPointer(out FoveatedRenderTelemetryEntry* telemetry)
+        private bool TryResolveTelemetryRing(out NativeArray<FoveatedRenderTelemetryEntry> telemetry, bool allowEnsure)
         {
-            telemetry = null;
-            if (!EnsureTelemetry())
+            telemetry = default;
+            if (allowEnsure && !EnsureTelemetry())
                 return false;
 
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || !IsVaultHandleCreated(in _telemetryHandle))
                 return false;
 
-            void* pointer = _telemetryHandle.ResolvePointer(vault);
-            if (pointer == null || _telemetryHandle.Length < TelemetryCapacity)
-                return false;
+            if (!vault.TryResolveHandle(in _telemetryHandle, out telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length < TelemetryCapacity)
+            {
+                if (allowEnsure)
+                    ClearTelemetryDescriptor();
 
-            vault.TryGetBufferGeneration(BufferID.FoveatedRenderBlackBox, out _telemetryVaultGeneration);
-            telemetry = (FoveatedRenderTelemetryEntry*)pointer;
+                return false;
+            }
+
+            _telemetryVaultGeneration = _telemetryHandle.Generation;
             return true;
+        }
+
+        private void ClearTelemetryDescriptor()
+        {
+            _telemetryHandle = default;
+            _telemetryVaultGeneration = 0u;
+        }
+
+        private void ReleaseTelemetryBuffer()
+        {
+            ReleaseVaultBuffer(_dataVault, ref _telemetryHandle);
+            _telemetryVaultGeneration = 0u;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static byte ResolveTargetLevelCode(

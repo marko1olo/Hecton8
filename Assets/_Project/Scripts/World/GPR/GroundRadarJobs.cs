@@ -10,7 +10,6 @@ namespace Hecton8.World.GPR
     public static class GroundRadarConstants
     {
         public const int MaxRays = 64;
-        public const int LowTierRays = 16;
         public const int MaxRaymarchSteps = 10;
         public const int MaxPings = 128;
         public const int TelemetryFrames = 300;
@@ -43,8 +42,8 @@ namespace Hecton8.World.GPR
     public struct GroundRadarRaymarchJob : IJob
     {
         [ReadOnly, NoAlias] public NativeSlice<byte> EncodedSdf;
-        [ReadOnly, NoAlias] public NativeSlice<float3> OrePositions;
-        [ReadOnly, NoAlias] public NativeSlice<int> OreTypes;
+        [ReadOnly, NoAlias] public NativeArray<float3>.ReadOnly OrePositions;
+        [ReadOnly, NoAlias] public NativeArray<int>.ReadOnly OreTypes;
 
         [NoAlias] public NativeSlice<float3> GprHits;
         [NoAlias] public NativeSlice<float> GprSignalStrength;
@@ -81,7 +80,7 @@ namespace Hecton8.World.GPR
             {
                 float scanRadius = math.max(1f, ScanRadiusMeters);
                 float stepMeters = math.max(0.5f, StepMeters);
-                int side = rayCount <= GroundRadarConstants.LowTierRays ? 4 : 8;
+                int side = math.clamp((int)math.ceil(math.sqrt((float)rayCount)), 2, 8);
                 float invSideMinusOne = math.rcp(math.max(1, side - 1));
                 int oreCount = math.min(math.min(OreScanCount, OrePositions.Length), OreTypes.Length);
 
@@ -101,7 +100,7 @@ namespace Hecton8.World.GPR
                         if (density <= GroundRadarConstants.SolidDensityThreshold)
                             continue;
 
-                        if (!TryResolveOreHit(samplePosition, oreCount, out float3 orePosition, out int oreType))
+                        if (!TryReadOreHit(samplePosition, oreCount, out float3 orePosition, out int oreType))
                             break;
 
                         if (writeIndex < GprHits.Length)
@@ -231,7 +230,7 @@ namespace Hecton8.World.GPR
             return signalStrength * GroundRadarConstants.FilteredOreAlphaScale;
         }
 
-        private bool TryResolveOreHit(float3 samplePosition, int oreCount, out float3 orePosition, out int oreType)
+        private bool TryReadOreHit(float3 samplePosition, int oreCount, out float3 orePosition, out int oreType)
         {
             orePosition = default;
             oreType = 0;

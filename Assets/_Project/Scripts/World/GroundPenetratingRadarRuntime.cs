@@ -1,13 +1,14 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using Hecton8.Caves;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.World.GPR;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -17,7 +18,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/World/Ground Penetrating Radar Runtime")]
-    public sealed class GroundPenetratingRadarRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, IGroundRadarService, IDisposable
+    public sealed class GroundPenetratingRadarRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, IGroundRadarService, IDisposable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const string OwnerName = "TERRAIN_GPR_SYSTEM";
         private const byte SubsurfaceAcousticChannel = 3;
@@ -25,13 +26,13 @@ namespace Hecton8.World
         private const uint GprSourceHash = 0x4750525Fu; // GPR_
         private const uint GprReturnHash = 0x47505252u; // GPRR
         private const uint TelemetryFaultFlag = 1u << 31;
+        private const uint GroundRadarProceduralVertexCount = 6u;
         private static readonly int GroundRadarPingsId = Shader.PropertyToID("_GroundRadarPings");
         private static readonly int GroundRadarPulseId = Shader.PropertyToID("_GroundRadarPulse");
         private static readonly int GroundRadarScaleId = Shader.PropertyToID("_GroundRadarScale");
 
         [Header("Dependencies")]
         [SerializeField] private MonoBehaviour worldResourceSpawner;
-        [SerializeField] private Mesh radarPingMesh;
         [SerializeField] private Material radarPingMaterial;
 
         [Header("Scan")]
@@ -45,48 +46,73 @@ namespace Hecton8.World
         [SerializeField] private float ringScaleMeters = 1.4f;
         [SerializeField] private ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off;
 
-        private VaultBufferHandle<float3> _gprHitsHandle;
-        private VaultBufferHandle<float> _gprSignalStrengthHandle;
-        private VaultBufferHandle<float> _gprAgeSecondsHandle;
-        private VaultBufferHandle<int> _gprOreTypesHandle;
-        private VaultBufferHandle<float4> _gprPingGpuHandle;
-        private VaultBufferHandle<int> _gprCountersHandle;
-        private VaultBufferHandle<float> _maxSignalStrengthHandle;
-        private VaultBufferHandle<GroundRadarTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<float3> _gprHitsHandle;
+        private VaultGenerationHandle<float> _gprSignalStrengthHandle;
+        private VaultGenerationHandle<float> _gprAgeSecondsHandle;
+        private VaultGenerationHandle<int> _gprOreTypesHandle;
+        private VaultGenerationHandle<float4> _gprPingGpuHandle;
+        private VaultGenerationHandle<int> _gprCountersHandle;
+        private VaultGenerationHandle<float> _maxSignalStrengthHandle;
+        private VaultGenerationHandle<GroundRadarTelemetryEntry> _telemetryRingHandle;
+        private IDataVault _dataVault;
         private GraphicsBuffer _gprPingBuffer;
         private GraphicsBuffer _gprArgsBuffer;
-        private Mesh _runtimeQuadMesh;
         private Material _runtimeMaterial;
+        private IPlayerRuntimeContext _playerContext;
+        private ISubmarineState _submarineState;
+        private Hecton8.Core.Contracts.IVoxelSonarSdfReadModel _voxelSdfReadModel;
         private IEcosystemDirectorService _ecosystemDirector;
         private IWorldResourceSpawnerReadModel _worldResourceSpawnerReadModel;
+        private IWorldResourceSpawnerReadDependencySink _worldResourceSpawnerReadDependencySink;
         private JobHandle _scanJobHandle;
         private Bounds _drawBounds;
-        private Transform _cachedPlayerTransform;
         private int _activeGprPings;
         private int _gprSequence;
+        private uint _fallbackFrameId;
         private int _telemetryWriteIndex;
         private int _lastScannerSignalSequence;
         private int _oreFilterType;
         private int _registeredUpdate;
         private int _registeredLateFrame;
         private int _registeredRenderable;
+        private int _hotSwapRegistered;
         private bool _scanJobScheduled;
+        private bool _gprReadSnapshotsValid;
+        private bool _pendingDataVaultRebind;
         private float _scanTimer;
+        private float _pulsePhaseSeconds;
         private float _highestSignalStrength;
         private float3 _lastProbeOrigin;
-        private readonly List<MonoBehaviour> _componentProbe = new List<MonoBehaviour>(16); // COLD ALLOC: List<MonoBehaviour>[16] - configured ore read-model probe scratch - owner: TERRAIN_GPR_SYSTEM
+        private IDataVault _pendingDataVault;
 
         public int ActiveGprPings => _activeGprPings;
         public int GprSequence => _gprSequence;
         public int OreFilterType => _oreFilterType;
         public float3 LastProbeOrigin => _lastProbeOrigin;
         public float ScanRadiusMeters => scanRadiusMeters;
-        public NativeArray<float3>.ReadOnly GprHitsReadOnly => TryResolveGprHits(out NativeArray<float3> hits) ? hits.AsReadOnly() : default;
-        public NativeArray<float>.ReadOnly GprSignalStrengthReadOnly => TryResolveGprSignalStrength(out NativeArray<float> signalStrength) ? signalStrength.AsReadOnly() : default;
+        public NativeArray<float3>.ReadOnly GprHitsReadOnly
+        {
+            get
+            {
+                return _gprReadSnapshotsValid && TryReadGprHits(out NativeArray<float3> hits)
+                    ? hits.AsReadOnly()
+                    : default;
+            }
+        }
+
+        public NativeArray<float>.ReadOnly GprSignalStrengthReadOnly
+        {
+            get
+            {
+                return _gprReadSnapshotsValid && TryReadGprSignalStrength(out NativeArray<float> signalStrength)
+                    ? signalStrength.AsReadOnly()
+                    : default;
+            }
+        }
 
         private void Awake()
         {
-            ResolveConfiguredOreReadModel();
+            CacheConfiguredOreReadModel();
         }
 
         private void OnEnable()
@@ -94,15 +120,16 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return;
 
+            TryRegisterHotSwapDependency();
+            CacheRuntimeServices();
             AllocatePersistentState();
             EnsureRuntimeDrawResources();
             GlobalRegistry.RegisterGroundRadarService(this);
-            ResolveConfiguredOreReadModel();
-            ResolveOreReadModelFromRegistry();
+            CacheConfiguredOreReadModel();
+            CacheOreReadModelFromRegistry();
             _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this) ? 1 : 0;
-            _ecosystemDirector = GlobalRegistry.EcosystemDirector;
         }
 
         private void OnDisable()
@@ -117,6 +144,7 @@ namespace Hecton8.World
 
         public void Dispose()
         {
+            UnregisterHotSwapDependency();
             if (_registeredRenderable != 0)
             {
                 GlobalRegistry.Renderables.Unregister(this);
@@ -139,6 +167,9 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterGroundRadarService(this);
 
             _ecosystemDirector = null;
+            _playerContext = null;
+            _submarineState = null;
+            _voxelSdfReadModel = null;
             if (_scanJobScheduled)
             {
                 if (DispatcherJobFence.TryComplete(ref _scanJobHandle, forceComplete: true))
@@ -155,14 +186,14 @@ namespace Hecton8.World
             _gprCountersHandle = default;
             _maxSignalStrengthHandle = default;
             _telemetryRingHandle = default;
+            _dataVault = null;
+            _pendingDataVault = null;
+            _pendingDataVaultRebind = false;
+            _gprReadSnapshotsValid = false;
             _activeGprPings = 0;
             _highestSignalStrength = 0f;
-
-            if (_runtimeQuadMesh != null)
-            {
-                Destroy(_runtimeQuadMesh);
-                _runtimeQuadMesh = null;
-            }
+            _worldResourceSpawnerReadModel = null;
+            _worldResourceSpawnerReadDependencySink = null;
 
             if (_runtimeMaterial != null)
             {
@@ -173,7 +204,7 @@ namespace Hecton8.World
 
         public void Tick(float deltaTime)
         {
-            if (_scanJobScheduled || !TryResolveGprHits(out _))
+            if (_scanJobScheduled || !TryApplyPendingDataVaultRebind() || !_gprReadSnapshotsValid)
                 return;
 
             bool scannerActive = TryResolveScannerActive(out int scannerSequence);
@@ -220,23 +251,27 @@ namespace Hecton8.World
                 return;
 
             Material material = ResolveRenderMaterial();
-            Mesh mesh = ResolveRenderMesh();
-            if (material == null || mesh == null)
+            if (material == null)
                 return;
 
             material.SetBuffer(GroundRadarPingsId, _gprPingBuffer);
-            material.SetFloat(GroundRadarPulseId, Time.time);
+            _pulsePhaseSeconds += math.max(0f, deltaTime);
+            if (_pulsePhaseSeconds > 4096f)
+                _pulsePhaseSeconds -= 4096f;
+            material.SetFloat(GroundRadarPulseId, _pulsePhaseSeconds);
             material.SetFloat(GroundRadarScaleId, math.max(0.1f, ringScaleMeters));
 
-            RenderParams renderParams = new RenderParams(material)
-            {
-                worldBounds = _drawBounds,
-                layer = renderLayer,
-                shadowCastingMode = shadowCastingMode,
-                receiveShadows = false,
-                motionVectorMode = MotionVectorGenerationMode.ForceNoMotion
-            };
-            UnityEngine.Graphics.RenderMeshIndirect(renderParams, mesh, _gprArgsBuffer, 1, 0);
+            UnityEngine.Graphics.DrawProceduralIndirect(
+                material,
+                _drawBounds,
+                MeshTopology.Triangles,
+                _gprArgsBuffer,
+                0,
+                null,
+                null,
+                shadowCastingMode,
+                false,
+                renderLayer);
         }
 
         public bool TryGetGprPingBuffer(out GraphicsBuffer buffer, out int activeCount, out int sequence)
@@ -252,7 +287,7 @@ namespace Hecton8.World
             copiedCount = 0;
             if (!destination.IsCreated ||
                 _activeGprPings <= 0 ||
-                !TryResolveGprPingGpu(out NativeArray<float4> pingGpu))
+                !TryReadGprPingGpu(out NativeArray<float4> pingGpu))
             {
                 return false;
             }
@@ -270,7 +305,7 @@ namespace Hecton8.World
 
         private void AllocatePersistentState()
         {
-            if (_gprHitsHandle.IsCreated && _gprPingBuffer != null && _gprArgsBuffer != null)
+            if (AreGprHandlesCreated() && _gprPingBuffer != null && _gprArgsBuffer != null)
                 return;
 
             if (!TryPrepareGprState(
@@ -294,14 +329,15 @@ namespace Hecton8.World
             ClearNativeArray(counters);
             ClearNativeArray(maxSignalStrength);
             ClearNativeArray(telemetryRing);
+            _gprReadSnapshotsValid = true;
             _activeGprPings = 0;
             _highestSignalStrength = 0f;
             _telemetryWriteIndex = 0;
 
             if (_gprPingBuffer == null)
-                _gprPingBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(GroundRadarConstants.MaxPings); // COLD ALLOC: GraphicsBuffer[128 float4] - shared GPR StructuredBuffer - owner: TERRAIN_GPR_SYSTEM
+                _gprPingBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(GroundRadarConstants.MaxPings); // COLD ALLOC: GraphicsBuffer[128 float4] — shared GPR StructuredBuffer — owner: TERRAIN_GPR_SYSTEM
             if (_gprArgsBuffer == null)
-                _gprArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPR indirect draw args - owner: TERRAIN_GPR_SYSTEM
+                _gprArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, UnsafeUtility.SizeOf<GroundRadarIndirectArgsDTO>()); // COLD ALLOC: GraphicsBuffer[1] — GPR procedural indirect args — owner: TERRAIN_GPR_SYSTEM
             UpdateIndirectArgsBuffer(0u);
         }
 
@@ -324,52 +360,52 @@ namespace Hecton8.World
             maxSignalStrength = default;
             telemetryRing = default;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            _gprHitsHandle = vault.GetBufferHandle<float3>(
+            _gprHitsHandle = vault.GetGenerationHandle<float3>(
                 BufferID.GroundRadarHits,
                 GroundRadarConstants.MaxPings,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            _gprSignalStrengthHandle = vault.GetBufferHandle<float>(
+            _gprSignalStrengthHandle = vault.GetGenerationHandle<float>(
                 BufferID.GroundRadarSignalStrength,
                 GroundRadarConstants.MaxPings,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            _gprAgeSecondsHandle = vault.GetBufferHandle<float>(
+            _gprAgeSecondsHandle = vault.GetGenerationHandle<float>(
                 BufferID.GroundRadarAgeSeconds,
                 GroundRadarConstants.MaxPings,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            _gprOreTypesHandle = vault.GetBufferHandle<int>(
+            _gprOreTypesHandle = vault.GetGenerationHandle<int>(
                 BufferID.GroundRadarOreTypes,
                 GroundRadarConstants.MaxPings,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            _gprPingGpuHandle = vault.GetBufferHandle<float4>(
+            _gprPingGpuHandle = vault.GetGenerationHandle<float4>(
                 BufferID.GroundRadarPingGpu,
                 GroundRadarConstants.MaxPings,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            _gprCountersHandle = vault.GetBufferHandle<int>(
+            _gprCountersHandle = vault.GetGenerationHandle<int>(
                 BufferID.GroundRadarCounters,
                 4,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            _maxSignalStrengthHandle = vault.GetBufferHandle<float>(
+            _maxSignalStrengthHandle = vault.GetGenerationHandle<float>(
                 BufferID.GroundRadarMaxSignalStrength,
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            _telemetryRingHandle = vault.GetBufferHandle<GroundRadarTelemetryEntry>(
+            _telemetryRingHandle = vault.GetGenerationHandle<GroundRadarTelemetryEntry>(
                 BufferID.GroundRadarTelemetryRing,
                 GroundRadarConstants.TelemetryFrames,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
 
-            return TryResolveGprState(
+            return TryOpenGprStateForOwnerWrite(
                 vault,
                 out hits,
                 out signalStrength,
@@ -381,7 +417,7 @@ namespace Hecton8.World
                 out telemetryRing);
         }
 
-        private bool TryResolveGprState(
+        private bool TryOpenGprStateForOwnerWrite(
             out NativeArray<float3> hits,
             out NativeArray<float> signalStrength,
             out NativeArray<float> ageSeconds,
@@ -391,8 +427,8 @@ namespace Hecton8.World
             out NativeArray<float> maxSignalStrength,
             out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
         {
-            return TryResolveGprState(
-                GlobalRegistry.DataVault,
+            return TryOpenGprStateForOwnerWrite(
+                _dataVault,
                 out hits,
                 out signalStrength,
                 out ageSeconds,
@@ -403,7 +439,7 @@ namespace Hecton8.World
                 out telemetryRing);
         }
 
-        private bool TryResolveGprState(
+        private bool TryOpenGprStateForOwnerWrite(
             IDataVault vault,
             out NativeArray<float3> hits,
             out NativeArray<float> signalStrength,
@@ -414,14 +450,14 @@ namespace Hecton8.World
             out NativeArray<float> maxSignalStrength,
             out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
         {
-            bool resolvedHits = TryResolveVaultBuffer(vault, ref _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
-            bool resolvedSignal = TryResolveVaultBuffer(vault, ref _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
-            bool resolvedAge = TryResolveVaultBuffer(vault, ref _gprAgeSecondsHandle, GroundRadarConstants.MaxPings, out ageSeconds);
-            bool resolvedOreTypes = TryResolveVaultBuffer(vault, ref _gprOreTypesHandle, GroundRadarConstants.MaxPings, out oreTypes);
-            bool resolvedPingGpu = TryResolveVaultBuffer(vault, ref _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
-            bool resolvedCounters = TryResolveVaultBuffer(vault, ref _gprCountersHandle, 4, out counters);
-            bool resolvedMaxSignal = TryResolveVaultBuffer(vault, ref _maxSignalStrengthHandle, 1, out maxSignalStrength);
-            bool resolvedTelemetry = TryResolveVaultBuffer(vault, ref _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
+            bool resolvedHits = TryOpenVaultBufferForOwnerWrite(vault, ref _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
+            bool resolvedSignal = TryOpenVaultBufferForOwnerWrite(vault, ref _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
+            bool resolvedAge = TryOpenVaultBufferForOwnerWrite(vault, ref _gprAgeSecondsHandle, GroundRadarConstants.MaxPings, out ageSeconds);
+            bool resolvedOreTypes = TryOpenVaultBufferForOwnerWrite(vault, ref _gprOreTypesHandle, GroundRadarConstants.MaxPings, out oreTypes);
+            bool resolvedPingGpu = TryOpenVaultBufferForOwnerWrite(vault, ref _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
+            bool resolvedCounters = TryOpenVaultBufferForOwnerWrite(vault, ref _gprCountersHandle, 4, out counters);
+            bool resolvedMaxSignal = TryOpenVaultBufferForOwnerWrite(vault, ref _maxSignalStrengthHandle, 1, out maxSignalStrength);
+            bool resolvedTelemetry = TryOpenVaultBufferForOwnerWrite(vault, ref _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
 
             return resolvedHits &&
                 resolvedSignal &&
@@ -433,38 +469,71 @@ namespace Hecton8.World
                 resolvedTelemetry;
         }
 
-        private bool TryResolveGprHits(out NativeArray<float3> hits)
+        private bool TryReadGprHits(out NativeArray<float3> hits)
         {
-            return TryResolveVaultBuffer(GlobalRegistry.DataVault, ref _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
+            return TryReadVaultBuffer(_dataVault, in _gprHitsHandle, GroundRadarConstants.MaxPings, out hits);
         }
 
-        private bool TryResolveGprSignalStrength(out NativeArray<float> signalStrength)
+        private bool TryReadGprSignalStrength(out NativeArray<float> signalStrength)
         {
-            return TryResolveVaultBuffer(GlobalRegistry.DataVault, ref _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
+            return TryReadVaultBuffer(_dataVault, in _gprSignalStrengthHandle, GroundRadarConstants.MaxPings, out signalStrength);
         }
 
-        private bool TryResolveGprPingGpu(out NativeArray<float4> pingGpu)
+        private bool TryReadGprPingGpu(out NativeArray<float4> pingGpu)
         {
-            return TryResolveVaultBuffer(GlobalRegistry.DataVault, ref _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
+            return TryReadVaultBuffer(_dataVault, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
         }
 
-        private bool TryResolveGprTelemetry(out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
+        private bool TryOpenGprTelemetryForOwnerWrite(out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
         {
-            return TryResolveVaultBuffer(GlobalRegistry.DataVault, ref _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
+            return TryOpenVaultBufferForOwnerWrite(_dataVault, in _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
         }
 
-        private static bool TryResolveVaultBuffer<T>(
+        private static bool TryOpenVaultBufferForOwnerWrite<T>(
             IDataVault vault,
-            ref VaultBufferHandle<T> handle,
+            in VaultGenerationHandle<T> handle,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            if (vault == null || requiredLength <= 0 || !handle.IsCreated)
+            if (vault == null || requiredLength <= 0 || !IsVaultHandleCreated(in handle))
                 return false;
 
-            buffer = handle.Resolve(vault);
+            if (!vault.TryResolveHandle(in handle, out buffer))
+                return false;
             return buffer.IsCreated && buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0 || !IsVaultHandleCreated(in handle))
+                return false;
+
+            if (!vault.TryReadHandle(in handle, out buffer))
+                return false;
+            return buffer.IsCreated && buffer.Length >= requiredLength;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private bool AreGprHandlesCreated()
+        {
+            return IsVaultHandleCreated(in _gprHitsHandle) &&
+                   IsVaultHandleCreated(in _gprSignalStrengthHandle) &&
+                   IsVaultHandleCreated(in _gprAgeSecondsHandle) &&
+                   IsVaultHandleCreated(in _gprOreTypesHandle) &&
+                   IsVaultHandleCreated(in _gprPingGpuHandle) &&
+                   IsVaultHandleCreated(in _gprCountersHandle) &&
+                   IsVaultHandleCreated(in _maxSignalStrengthHandle) &&
+                   IsVaultHandleCreated(in _telemetryRingHandle);
         }
 
         private static void ClearNativeArray<T>(NativeArray<T> buffer) where T : struct
@@ -478,7 +547,7 @@ namespace Hecton8.World
 
         private void ScheduleRadarJob(float3 probeOrigin, float deltaTime, bool scanDue, bool hasShift, float3 aupShift)
         {
-            if (!TryResolveGprState(
+            if (!TryOpenGprStateForOwnerWrite(
                 out NativeArray<float3> hits,
                 out NativeArray<float> signalStrength,
                 out NativeArray<float> ageSeconds,
@@ -498,16 +567,22 @@ namespace Hecton8.World
             float sdfRange = 0f;
 
             if (scanDue)
-                TryResolveNearestSdf(probeOrigin, out encodedSdf, out gridDimensions, out volumeOrigin, out cellSize, out sdfRange);
+                TryReadNearestSdf(probeOrigin, out encodedSdf, out gridDimensions, out volumeOrigin, out cellSize, out sdfRange);
 
-            TryResolveOreSource(out NativeArray<float3> orePositions, out NativeArray<int> oreTypes, out int oreCount);
+            NativeArray<float3>.ReadOnly orePositions = default;
+            NativeArray<int>.ReadOnly oreTypes = default;
+            int oreCount = 0;
+            IWorldResourceSpawnerReadDependencySink oreReadDependencySink = null;
+            if (scanDue)
+                TryResolveOreSource(out orePositions, out oreTypes, out oreCount, out oreReadDependencySink);
 
+            float qualityWeight01 = ReadGlobalQualityWeight01();
             maxSignalStrength[0] = 0f;
             GroundRadarRaymarchJob job = new GroundRadarRaymarchJob
             {
                 EncodedSdf = encodedSdf.IsCreated ? new NativeSlice<byte>(encodedSdf) : default,
-                OrePositions = orePositions.IsCreated ? new NativeSlice<float3>(orePositions) : default,
-                OreTypes = oreTypes.IsCreated ? new NativeSlice<int>(oreTypes) : default,
+                OrePositions = oreCount > 0 ? orePositions : default,
+                OreTypes = oreCount > 0 ? oreTypes : default,
                 GprHits = new NativeSlice<float3>(hits),
                 GprSignalStrength = new NativeSlice<float>(signalStrength),
                 GprAgeSeconds = new NativeSlice<float>(ageSeconds),
@@ -522,8 +597,8 @@ namespace Hecton8.World
                 OreScanCount = oreCount,
                 OreFilterType = _oreFilterType,
                 PreviousActiveCount = _activeGprPings,
-                RequestedRayCount = ResolveRayCount(),
-                MaxSteps = math.min(maxRaymarchSteps, GroundRadarConstants.MaxRaymarchSteps),
+                RequestedRayCount = SelectRayCount(qualityWeight01),
+                MaxSteps = SelectRaymarchStepCount(maxRaymarchSteps, qualityWeight01),
                 ProbeOrigin = probeOrigin,
                 ScanRadiusMeters = scanRadiusMeters,
                 StepMeters = stepMeters,
@@ -534,12 +609,14 @@ namespace Hecton8.World
             };
 
             _scanJobHandle = job.Schedule();
+            if (scanDue && oreCount > 0 && oreReadDependencySink != null)
+                oreReadDependencySink.RegisterOreReadDependency(_scanJobHandle);
             _scanJobScheduled = true;
         }
 
         private void CommitCompletedScan()
         {
-            if (!TryResolveGprState(
+            if (!TryOpenGprStateForOwnerWrite(
                 out _,
                 out _,
                 out _,
@@ -561,6 +638,7 @@ namespace Hecton8.World
             _highestSignalStrength = maxSignalStrength.IsCreated && maxSignalStrength.Length > 0
                 ? math.saturate(maxSignalStrength[0])
                 : 0f;
+            uint frameId = AdvanceRadarFrameId();
 
             int macroSwarmAddedCount = AppendMacroSwarmRadarPings();
             if (macroSwarmAddedCount > 0)
@@ -583,30 +661,24 @@ namespace Hecton8.World
                 UpdateIndirectArgsBuffer((uint)_activeGprPings);
             }
 
-            WriteTelemetry(addedCount, rayCount, _highestSignalStrength, 0u);
+            WriteTelemetry(frameId, addedCount, rayCount, _highestSignalStrength, 0u);
             if (!math.all(math.isfinite(_lastProbeOrigin)) || !math.isfinite(_highestSignalStrength))
             {
-                WriteTelemetry(addedCount, rayCount, _highestSignalStrength, TelemetryFaultFlag);
+                WriteTelemetry(frameId, addedCount, rayCount, _highestSignalStrength, TelemetryFaultFlag);
                 DumpBlackBox();
             }
 
             if (addedCount > 0)
-                PublishGprSignals(_highestSignalStrength);
+                PublishGprSignals(frameId, _highestSignalStrength);
         }
 
         private int AppendMacroSwarmRadarPings()
         {
             IEcosystemDirectorService ecosystem = _ecosystemDirector;
-            if (ecosystem == null || !ecosystem.IsInitialized)
-            {
-                ecosystem = GlobalRegistry.EcosystemDirector;
-                _ecosystemDirector = ecosystem;
-            }
-
             if (ecosystem == null ||
                 !ecosystem.IsInitialized ||
                 _activeGprPings >= GroundRadarConstants.MaxPings ||
-                !TryResolveGprState(
+                !TryOpenGprStateForOwnerWrite(
                     out NativeArray<float3> hits,
                     out NativeArray<float> signalStrength,
                     out NativeArray<float> ageSeconds,
@@ -679,7 +751,7 @@ namespace Hecton8.World
 
         private bool TryResolveProbeOrigin(out float3 probeOrigin)
         {
-            ISubmarineState state = GlobalRegistry.SubmarineState;
+            ISubmarineState state = _submarineState;
             if (state != null)
             {
                 probeOrigin = state.StateSnapshot.RuntimePosition;
@@ -687,28 +759,19 @@ namespace Hecton8.World
                     return true;
             }
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
-            Rigidbody hull = submarine != null ? submarine.HullRigidbody : null;
-            if (hull != null)
+            IPlayerRuntimeContext playerContext = _playerContext;
+            if (playerContext != null && playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot playerPose))
             {
-                Vector3 position = hull.position;
-                probeOrigin = new float3(position.x, position.y, position.z);
+                probeOrigin = playerPose.RuntimePosition;
                 if (math.all(math.isfinite(probeOrigin)))
                     return true;
-            }
-
-            if (WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _cachedPlayerTransform) && _cachedPlayerTransform != null)
-            {
-                Vector3 position = _cachedPlayerTransform.position;
-                probeOrigin = new float3(position.x, position.y, position.z);
-                return math.all(math.isfinite(probeOrigin));
             }
 
             probeOrigin = default;
             return false;
         }
 
-        private static bool TryResolveNearestSdf(
+        private bool TryReadNearestSdf(
             float3 probeOrigin,
             out NativeArray<byte> encodedSdf,
             out int3 gridDimensions,
@@ -722,97 +785,114 @@ namespace Hecton8.World
             cellSize = default;
             sdfRange = 0f;
 
-            HectonVoxelEngine voxelEngine = GlobalRegistry.VoxelEngine;
-            if (voxelEngine == null)
+            Hecton8.Core.Contracts.IVoxelSonarSdfReadModel voxelSdfReadModel = _voxelSdfReadModel;
+            if (voxelSdfReadModel == null)
                 return false;
 
-            Vector3 origin = new Vector3(probeOrigin.x, probeOrigin.y, probeOrigin.z);
-            if (!voxelEngine.TryGetNearestActiveVolume(origin, out HectonVoxelVolume volume) || volume == null)
-                return false;
-
-            if (!volume.TryGetPublishedSonarSdfPayload(
+            if (!voxelSdfReadModel.TryReadNearestSonarSdf(
+                    probeOrigin,
                     out NativeArray<byte> payload,
-                    out Vector3Int dimensions,
-                    out Vector3 payloadOrigin,
-                    out Vector3 payloadCellSize,
-                    out float payloadRange,
-                    out _))
+                    out int3 dimensions,
+                    out float3 payloadOrigin,
+                    out float3 payloadCellSize,
+                    out float payloadRange))
             {
                 return false;
             }
 
             encodedSdf = payload;
-            gridDimensions = new int3(dimensions.x, dimensions.y, dimensions.z);
-            volumeOrigin = new float3(payloadOrigin.x, payloadOrigin.y, payloadOrigin.z);
-            cellSize = new float3(payloadCellSize.x, payloadCellSize.y, payloadCellSize.z);
+            gridDimensions = dimensions;
+            volumeOrigin = payloadOrigin;
+            cellSize = payloadCellSize;
             sdfRange = payloadRange;
             return true;
         }
 
-        private static int ResolveRayCount()
+        private static float ReadGlobalQualityWeight01()
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350 || tier == HectonQualityTier.Unknown
-                ? GroundRadarConstants.LowTierRays
-                : GroundRadarConstants.MaxRays;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(0f, quality, math.isfinite(quality)));
         }
 
-        private void ResolveConfiguredOreReadModel()
+        private static int SelectRayCount(float qualityWeight01)
+        {
+            float q = math.saturate(math.select(0f, qualityWeight01, math.isfinite(qualityWeight01)));
+            float eased = math.smoothstep(0f, 1f, q);
+            return math.clamp((int)math.round(math.lerp(4f, GroundRadarConstants.MaxRays, eased)), 1, GroundRadarConstants.MaxRays);
+        }
+
+        private static int SelectRaymarchStepCount(int configuredMaxSteps, float qualityWeight01)
+        {
+            int maxSteps = math.clamp(configuredMaxSteps, 1, GroundRadarConstants.MaxRaymarchSteps);
+            float q = math.saturate(math.select(0f, qualityWeight01, math.isfinite(qualityWeight01)));
+            float eased = math.smoothstep(0f, 1f, q);
+            return math.clamp((int)math.round(math.lerp(1f, maxSteps, eased)), 1, GroundRadarConstants.MaxRaymarchSteps);
+        }
+
+        private void CacheConfiguredOreReadModel()
         {
             _worldResourceSpawnerReadModel = worldResourceSpawner as IWorldResourceSpawnerReadModel;
+            _worldResourceSpawnerReadDependencySink = worldResourceSpawner as IWorldResourceSpawnerReadDependencySink;
             if (_worldResourceSpawnerReadModel != null)
                 return;
 
-            _componentProbe.Clear();
-            GetComponents(_componentProbe);
-            for (int i = 0; i < _componentProbe.Count; i++)
-            {
-                MonoBehaviour component = _componentProbe[i];
-                if (ReferenceEquals(component, this))
-                    continue;
-                _worldResourceSpawnerReadModel = component as IWorldResourceSpawnerReadModel;
-                if (_worldResourceSpawnerReadModel != null)
-                {
-                    worldResourceSpawner = component;
-                    _componentProbe.Clear();
-                    return;
-                }
-            }
-
-            _componentProbe.Clear();
+            _worldResourceSpawnerReadDependencySink = null;
         }
 
-        private bool TryResolveOreSource(out NativeArray<float3> orePositions, out NativeArray<int> oreTypes, out int oreCount)
+        private bool TryResolveOreSource(
+            out NativeArray<float3>.ReadOnly orePositions,
+            out NativeArray<int>.ReadOnly oreTypes,
+            out int oreCount,
+            out IWorldResourceSpawnerReadDependencySink dependencySink)
         {
             IWorldResourceSpawnerReadModel configuredSpawner = _worldResourceSpawnerReadModel;
             if (configuredSpawner != null &&
-                configuredSpawner.TryGetOrePositions(out orePositions, out oreCount) &&
-                configuredSpawner.TryGetOreTypes(out oreTypes, out int typeCount))
+                configuredSpawner.TryGetOrePositionsReadOnly(out orePositions, out oreCount) &&
+                configuredSpawner.TryGetOreTypesReadOnly(out oreTypes, out int typeCount))
             {
-                oreCount = math.min(oreCount, typeCount);
-                return orePositions.IsCreated && oreTypes.IsCreated && oreCount > 0;
+                oreCount = math.min(math.min(oreCount, typeCount), math.min(orePositions.Length, oreTypes.Length));
+                dependencySink = _worldResourceSpawnerReadDependencySink;
+                return oreCount > 0;
             }
 
             orePositions = default;
             oreTypes = default;
             oreCount = 0;
+            dependencySink = null;
             return false;
         }
 
-        private bool ResolveOreReadModelFromRegistry()
+        private bool CacheOreReadModelFromRegistry()
         {
             if (_worldResourceSpawnerReadModel != null)
                 return true;
 
             _worldResourceSpawnerReadModel = GlobalRegistry.WorldResourceSpawner;
+            _worldResourceSpawnerReadDependencySink = _worldResourceSpawnerReadModel as IWorldResourceSpawnerReadDependencySink;
             return _worldResourceSpawnerReadModel != null;
         }
 
-        private void PublishGprSignals(float highestStrength)
+        private uint AdvanceRadarFrameId()
+        {
+            uint frameId = TimeSliceScheduler.CurrentFrameId;
+            if (frameId != 0u)
+                return frameId;
+
+            unchecked
+            {
+                _fallbackFrameId++;
+            }
+
+            if (_fallbackFrameId == 0u)
+                _fallbackFrameId = 1u;
+            return _fallbackFrameId;
+        }
+
+        private void PublishGprSignals(uint frameId, float highestStrength)
         {
             float clampedStrength = math.saturate(highestStrength);
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(
-                new Vector3(_lastProbeOrigin.x, _lastProbeOrigin.y, _lastProbeOrigin.z));
+            if (!TryResolveRuntimeAup(_lastProbeOrigin, out AbsoluteUniversePosition positionAup))
+                return;
 
             GlobalSignals.Publish(new AcousticPingSignal
             {
@@ -831,21 +911,148 @@ namespace Hecton8.World
                 Progress01 = clampedStrength,
                 PitchScale = 0.85f + clampedStrength * 0.5f,
                 Intensity01 = clampedStrength,
-                Frame = (uint)Time.frameCount,
+                Frame = frameId,
                 State = GprReturnState,
                 Flags = 1
             });
         }
 
-        private void WriteTelemetry(int addedCount, int rayCount, float highestStrength, uint flags)
+        private static bool TryResolveRuntimeAup(float3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
-            if (!TryResolveGprTelemetry(out NativeArray<GroundRadarTelemetryEntry> telemetryRing) || telemetryRing.Length == 0)
+            positionAup = default;
+            if (!math.all(math.isfinite(runtimePosition)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
+        }
+
+        void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            RebindCachedService(serviceSlot, currentService);
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            // Ref-forwarding hook above owns this cache update; avoid duplicate Vault rebinding.
+        }
+
+        private void TryRegisterHotSwapDependency()
+        {
+            if (_hotSwapRegistered == 0 && GlobalRegistry.TryRegisterHotSwapListener(this))
+                _hotSwapRegistered = 1;
+        }
+
+        private void UnregisterHotSwapDependency()
+        {
+            if (_hotSwapRegistered == 0)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = 0;
+        }
+
+        private void CacheRuntimeServices()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            _playerContext = GlobalRegistry.Player;
+            _submarineState = GlobalRegistry.SubmarineState;
+            _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
+            _ecosystemDirector = GlobalRegistry.EcosystemDirector;
+        }
+
+        private void RebindCachedService(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    QueueDataVaultRebind(currentService as IDataVault);
+                    return;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerContext = currentService as IPlayerRuntimeContext;
+                    return;
+                case GlobalRegistryServiceSlot.SubmarineState:
+                    _submarineState = currentService as ISubmarineState;
+                    return;
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    _voxelSdfReadModel = currentService as Hecton8.Core.Contracts.IVoxelSonarSdfReadModel;
+                    return;
+                case GlobalRegistryServiceSlot.EcosystemDirector:
+                    _ecosystemDirector = currentService as IEcosystemDirectorService;
+                    return;
+                case GlobalRegistryServiceSlot.WorldResourceSpawnerRuntime:
+                    _worldResourceSpawnerReadModel = currentService as IWorldResourceSpawnerReadModel;
+                    _worldResourceSpawnerReadDependencySink = currentService as IWorldResourceSpawnerReadDependencySink;
+                    return;
+            }
+        }
+
+        private void QueueDataVaultRebind(IDataVault currentVault)
+        {
+            _pendingDataVault = currentVault;
+            _pendingDataVaultRebind = true;
+            if (!_scanJobScheduled)
+                TryApplyPendingDataVaultRebind();
+        }
+
+        private bool TryApplyPendingDataVaultRebind()
+        {
+            if (!_pendingDataVaultRebind)
+                return _dataVault != null;
+
+            if (_scanJobScheduled)
+                return false;
+
+            _dataVault = _pendingDataVault;
+            _pendingDataVault = null;
+            _pendingDataVaultRebind = false;
+            ClearGprVaultDescriptors();
+            if (_dataVault == null)
+            {
+                UpdateIndirectArgsBuffer(0u);
+                return false;
+            }
+
+            AllocatePersistentState();
+            return _gprReadSnapshotsValid;
+        }
+
+        private void ClearGprVaultDescriptors()
+        {
+            _gprHitsHandle = default;
+            _gprSignalStrengthHandle = default;
+            _gprAgeSecondsHandle = default;
+            _gprOreTypesHandle = default;
+            _gprPingGpuHandle = default;
+            _gprCountersHandle = default;
+            _maxSignalStrengthHandle = default;
+            _telemetryRingHandle = default;
+            _gprReadSnapshotsValid = false;
+            _activeGprPings = 0;
+            _highestSignalStrength = 0f;
+            _telemetryWriteIndex = 0;
+        }
+
+        private void WriteTelemetry(uint frameId, int addedCount, int rayCount, float highestStrength, uint flags)
+        {
+            if (!TryOpenGprTelemetryForOwnerWrite(out NativeArray<GroundRadarTelemetryEntry> telemetryRing) || telemetryRing.Length == 0)
                 return;
 
             int index = _telemetryWriteIndex % telemetryRing.Length;
             telemetryRing[index] = new GroundRadarTelemetryEntry
             {
-                Frame = (uint)Time.frameCount,
+                Frame = frameId,
                 ActiveGprPings = _activeGprPings,
                 AddedGprPings = addedCount,
                 RayCount = rayCount,
@@ -858,14 +1065,14 @@ namespace Hecton8.World
 
         private void DumpBlackBox()
         {
-            if (!TryResolveGprTelemetry(out NativeArray<GroundRadarTelemetryEntry> telemetryRing))
+            if (!TryOpenGprTelemetryForOwnerWrite(out NativeArray<GroundRadarTelemetryEntry> telemetryRing))
                 return;
 
             try
             {
                 string path = Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_TERRAIN_GPR_SYSTEM.bin");
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
+                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read); // COLD ALLOC: FileStream[GPR telemetry dump] — blackbox dump file writer — owner: TERRAIN_GPR_SYSTEM
+                using BinaryWriter writer = new BinaryWriter(stream); // COLD ALLOC: BinaryWriter[GPR telemetry dump] — blackbox binary row serializer — owner: TERRAIN_GPR_SYSTEM
                 writer.Write(telemetryRing.Length);
                 writer.Write(_telemetryWriteIndex);
                 for (int i = 0; i < telemetryRing.Length; i++)
@@ -884,21 +1091,18 @@ namespace Hecton8.World
             }
             catch (Exception exception)
             {
-                Debug.LogError("[TERRAIN_GPR_SYSTEM] Failed to dump GPR blackbox: " + exception.Message, this);
+                Debug.LogException(exception, this);
             }
         }
 
         private void EnsureRuntimeDrawResources()
         {
-            if (radarPingMesh == null && _runtimeQuadMesh == null)
-                _runtimeQuadMesh = CreateQuadMesh();
-
             if (radarPingMaterial == null && _runtimeMaterial == null)
             {
                 Shader shader = Shader.Find("Hecton8/World/GroundRadarPingIndirect");
                 if (shader != null)
                 {
-                    _runtimeMaterial = new Material(shader)
+                    _runtimeMaterial = new Material(shader) // COLD ALLOC: Material[GroundRadarPingRuntime] — fallback GPR render material — owner: TERRAIN_GPR_SYSTEM
                     {
                         name = "GroundRadarPingRuntime",
                         hideFlags = HideFlags.DontSave
@@ -912,54 +1116,29 @@ namespace Hecton8.World
             return radarPingMaterial != null ? radarPingMaterial : _runtimeMaterial;
         }
 
-        private Mesh ResolveRenderMesh()
-        {
-            return radarPingMesh != null ? radarPingMesh : _runtimeQuadMesh;
-        }
-
-        private static Mesh CreateQuadMesh()
-        {
-            Mesh mesh = new Mesh
-            {
-                name = "GroundRadarPingQuad",
-                hideFlags = HideFlags.DontSave
-            };
-            mesh.vertices = new[]
-            {
-                new Vector3(-1f, 0f, -1f),
-                new Vector3(1f, 0f, -1f),
-                new Vector3(1f, 0f, 1f),
-                new Vector3(-1f, 0f, 1f)
-            };
-            mesh.uv = new[]
-            {
-                new Vector2(0f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(1f, 1f),
-                new Vector2(0f, 1f)
-            };
-            mesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
-            mesh.RecalculateBounds();
-            return mesh;
-        }
-
         private void UpdateIndirectArgsBuffer(uint instanceCount)
         {
             if (_gprArgsBuffer == null)
                 return;
 
-            Mesh mesh = ResolveRenderMesh();
-            NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
-                _gprArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
-            {
-                indexCountPerInstance = mesh != null ? mesh.GetIndexCount(0) : 0u,
-                instanceCount = instanceCount,
-                startIndex = mesh != null ? mesh.GetIndexStart(0) : 0u,
-                baseVertexIndex = mesh != null ? (uint)math.max(0, mesh.GetBaseVertex(0)) : 0u,
-                startInstance = 0u
-            };
-            _gprArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            NativeArray<GroundRadarIndirectArgsDTO> argsWrite =
+                _gprArgsBuffer.LockBufferForWrite<GroundRadarIndirectArgsDTO>(0, 1);
+            GroundRadarIndirectArgsDTO args = default;
+            args.VertexCountPerInstance = GroundRadarProceduralVertexCount;
+            args.InstanceCount = instanceCount;
+            args.StartVertex = 0u;
+            args.StartInstance = 0u;
+            argsWrite[0] = args;
+            _gprArgsBuffer.UnlockBufferAfterWrite<GroundRadarIndirectArgsDTO>(1);
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        private struct GroundRadarIndirectArgsDTO
+        {
+            [FieldOffset(0)] public uint VertexCountPerInstance;
+            [FieldOffset(4)] public uint InstanceCount;
+            [FieldOffset(8)] public uint StartVertex;
+            [FieldOffset(12)] public uint StartInstance;
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)

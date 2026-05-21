@@ -17,6 +17,7 @@ internal static class Program
     private static readonly Regex SyncIoRegex = new(@"\b(File|Directory)\.(Read|Write|Append|Open|Create|Delete)|new\s+FileStream\s*\(", RegexOptions.Compiled);
     private static readonly Regex Compute1024Regex = new(@"numthreads\s*\(\s*1024\s*,", RegexOptions.Compiled);
     private static readonly Regex ContainerTypeRegex = new(@"\b(?<kind>SignalBus|NativeQueue|NativeList|NativeArray)\s*<\s*(?<type>[A-Za-z_][A-Za-z0-9_]*)\s*>", RegexOptions.Compiled);
+    private static readonly Regex CacheLineCriticalConfigureRegex = new(@"(?:global::)?(?:(?:[A-Za-z_][A-Za-z0-9_]*\.)*)SignalBus\s*<\s*(?:global::)?(?:(?:[A-Za-z_][A-Za-z0-9_]*\.)*)(?<type>[A-Za-z_][A-Za-z0-9_]*)\s*>\s*\.\s*ConfigureCacheLineCritical\b", RegexOptions.Compiled);
     private static readonly Regex FieldDeclarationTypeRegex = new(@"^\s*(?:\[[^\]]+\]\s*)*(?:public|internal|private|protected)\s+(?:readonly\s+)?(?<type>(?:[A-Za-z_][A-Za-z0-9_]*\.)*[A-Za-z_][A-Za-z0-9_]*)\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*(?:[=;])", RegexOptions.Compiled);
     private static readonly Regex MethodDeclarationRegex = new(@"^\s*(?:(?:public|internal|private|protected)\s+)*(?:(?:static|unsafe|virtual|override|sealed|async|readonly|extern)\s+)*(?:[A-Za-z_][A-Za-z0-9_<>,\[\]\.?\s]*\s+)+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\([^;]*\)\s*(?:where\b[^{]+)?\{?", RegexOptions.Compiled);
     private static readonly Regex HotPathEnumerationRegex = new(@"\bforeach\s*\(|\.Where\s*\(|\.Select\s*\(|\.OrderBy\s*\(|\.ToList\s*\(|\.ToArray\s*\(|Enumerable\.", RegexOptions.Compiled);
@@ -82,6 +83,7 @@ internal static class Program
         private int _hotPathRiskCount;
         private int _coldSyncIoCount;
         private int _asmdefContractBoundaryCount;
+        private int _cacheLineCriticalStrideDebtCount;
 
         public AuditScanner(CliOptions options)
         {
@@ -200,6 +202,7 @@ internal static class Program
             var isCoreSignalFile = IsCoreSignalFile(relativePath);
             var containerTypes = GetContainerTypes(codeLines);
             var structs = CollectStructs(relativePath, rawLines, codeLines, containerTypes);
+            ScanCacheLineCriticalLanes(relativePath, rawLines, codeLines, structs);
             var structByIndex = structs.ToDictionary(item => item.Index);
 
             StructMetadata? currentStruct = null;
@@ -377,6 +380,7 @@ internal static class Program
                     lineIndex + 1,
                     lineIndex,
                     HasStructLayoutBefore(codeLines, lineIndex),
+                    StructLayoutSizeBefore(codeLines, lineIndex),
                     StructImplementsISignal(codeLines, lineIndex),
                     IsEditorPath(relativePath),
                     string.Equals(relativePath, "Assets/_Project/Scripts/Core/GlobalSignals.cs", StringComparison.Ordinal),
@@ -418,6 +422,68 @@ internal static class Program
             }
 
             return structs;
+        }
+
+        private void ScanCacheLineCriticalLanes(string relativePath, string[] rawLines, string[] codeLines, List<StructMetadata> structs)
+        {
+            var structByName = structs
+                .GroupBy(item => item.Name, StringComparer.Ordinal)
+                .ToDictionary(item => item.Key, item => item.First(), StringComparer.Ordinal);
+
+            for (var lineIndex = 0; lineIndex < codeLines.Length; lineIndex++)
+            {
+                var code = codeLines[lineIndex];
+                if (!code.Contains("SignalBus", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var statement = BuildForwardStatement(codeLines, lineIndex);
+                if (!statement.Text.Contains("ConfigureCacheLineCritical", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var match = CacheLineCriticalConfigureRegex.Match(statement.Text);
+                if (!match.Success)
+                {
+                    continue;
+                }
+
+                var laneType = match.Groups["type"].Value;
+                var layoutSize = 0;
+                var structLine = 0;
+                if (structByName.TryGetValue(laneType, out var metadata))
+                {
+                    layoutSize = metadata.LayoutSize;
+                    structLine = metadata.Line;
+                }
+
+                if (layoutSize is 64 or 128)
+                {
+                    continue;
+                }
+
+                _cacheLineCriticalStrideDebtCount++;
+                AddFinding(
+                    "INFO",
+                    "CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT",
+                    88,
+                    "CACHELINE_CRITICAL_TELEMETRY_DEBT",
+                    "CONFIGURE_CACHELINE_CRITICAL_CALL",
+                    relativePath,
+                    lineIndex + 1,
+                    laneType,
+                    BuildRawStatementEvidence(rawLines, lineIndex, statement.EndIndex),
+                    "This cache-line-critical lane currently has a payload stride outside 64/128 bytes. Keep telemetry flag bit 32 active and migrate to a 64/128-byte payload or split gameplay truth from visual sidecar before raising cadence.",
+                    new Dictionary<string, object?>
+                    {
+                        ["payloadSize"] = layoutSize,
+                        ["expectedStride"] = "64_OR_128",
+                        ["structLine"] = structLine,
+                        ["statementLineSpan"] = statement.EndIndex - lineIndex + 1
+                    });
+            }
         }
 
         private void ScanPack1(string relativePath, string rawLine, string code, string[] codeLines, int lineNumber, int lineIndex, bool isEditor, bool isCoreSignalFile, ContainerTypes containerTypes, List<StructMetadata> structs)
@@ -856,6 +922,7 @@ internal static class Program
                 _hotPathRiskCount,
                 _coldSyncIoCount,
                 _asmdefContractBoundaryCount,
+                _cacheLineCriticalStrideDebtCount,
                 _signalDefinitions.Count,
                 coreGlobalSignals,
                 signalsWithoutLayout,
@@ -1084,6 +1151,67 @@ internal static class Program
         }
 
         return false;
+    }
+
+    private static int StructLayoutSizeBefore(string[] codeLines, int index)
+    {
+        var builder = new StringBuilder();
+        var start = Math.Max(0, index - 8);
+        for (var i = start; i <= index; i++)
+        {
+            if (codeLines[i].Contains("[StructLayout", StringComparison.Ordinal))
+            {
+                builder.Clear();
+            }
+
+            if (builder.Length > 0 || codeLines[i].Contains("[StructLayout", StringComparison.Ordinal))
+            {
+                builder.Append(' ');
+                builder.Append(codeLines[i]);
+                if (codeLines[i].Contains(']'))
+                {
+                    break;
+                }
+            }
+        }
+
+        var match = Regex.Match(builder.ToString(), @"\bSize\s*=\s*(\d+)");
+        return match.Success && int.TryParse(match.Groups[1].Value, out var size) ? size : 0;
+    }
+
+    private static ForwardStatement BuildForwardStatement(string[] codeLines, int index, int maxContinuation = 12)
+    {
+        var builder = new StringBuilder();
+        var endIndex = index;
+        var limit = Math.Min(codeLines.Length - 1, index + maxContinuation);
+        for (var i = index; i <= limit; i++)
+        {
+            builder.Append(' ');
+            builder.Append(codeLines[i]);
+            endIndex = i;
+            if (codeLines[i].IndexOf(';') >= 0)
+            {
+                break;
+            }
+        }
+
+        return new ForwardStatement(builder.ToString(), endIndex);
+    }
+
+    private static string BuildRawStatementEvidence(string[] rawLines, int startIndex, int endIndex)
+    {
+        var builder = new StringBuilder();
+        for (var i = startIndex; i <= endIndex; i++)
+        {
+            if (builder.Length > 0)
+            {
+                builder.Append(' ');
+            }
+
+            builder.Append(rawLines[i].Trim());
+        }
+
+        return builder.ToString();
     }
 
     private static int FindStructDeclarationNearAttribute(string[] codeLines, int attributeIndex)
@@ -1430,6 +1558,7 @@ internal static class MarkdownWriter
         md.AppendLine("- Hot-path heuristic hits: " + result.HotPathRiskHits);
         md.AppendLine("- Cold/fatal sync I/O review hits: " + result.ColdSyncIoReviewHits);
         md.AppendLine("- Assembly contract boundary hits: " + result.AsmdefContractBoundaryHits);
+        md.AppendLine("- Cache-line-critical stride debt hits: " + result.CacheLineCriticalStrideDebtHits);
         md.AppendLine("- Errors: " + result.Errors);
         md.AppendLine("- Warnings: " + result.Warnings);
         md.AppendLine("- Infos: " + result.Infos);
@@ -1488,11 +1617,14 @@ internal sealed record StructMetadata(
     int Line,
     int Index,
     bool HasStructLayout,
+    int LayoutSize,
     bool ImplementsISignal,
     bool IsEditor,
     bool IsCoreGlobalSignals,
     bool IsCoreSignalFile,
     bool IsSignalLikeName);
+
+internal sealed record ForwardStatement(string Text, int EndIndex);
 
 internal sealed record SignalDefinition(string Name, string Path, int Line, bool HasStructLayout, bool ImplementsISignal, bool IsEditor, bool InCoreGlobalSignals, bool IsStrictRuntimeContract);
 
@@ -1565,6 +1697,7 @@ internal sealed record AuditResult(
     int HotPathRiskHits,
     int ColdSyncIoReviewHits,
     int AsmdefContractBoundaryHits,
+    int CacheLineCriticalStrideDebtHits,
     int SignalDefinitions,
     int CoreGlobalSignalDefinitions,
     int SignalsWithoutLayout,

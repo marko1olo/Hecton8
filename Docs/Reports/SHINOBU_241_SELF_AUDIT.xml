@@ -1,0 +1,44 @@
+<SELF_AUDIT agent="SHINOBU_241" domain="OFFLINE_HADAL_TRENCH_FAULT_GENERATOR" status="STATIC_SOURCE_ONLY_PENDING_COMPILE_BAKE_BOOT">
+  <TaskReconciliation>
+    <Task id="01" status="PASS_STATIC">Environment prefab folder is absent; fallback CLI scan found no strict trench/canyon/fault/chasm .fbx/.prefab rows in Assets.</Task>
+    <Task id="02" status="PASS_CODE">Runtime macroscopic seismic trench route is inert; localized gameplay crater/collapse code remains outside trench authority.</Task>
+    <Task id="03" status="PASS_CODE">Burst DTOs use raw fields; SDF jobs traverse NativeArray memory by pointer and UnsafeUtility.AsRef.</Task>
+    <Task id="04" status="PASS_CODE">FaultLineParamsDTO is explicit 64 bytes: StartAUP 0, EndAUP 24, Depth 48, Width 52, NoiseIntensity 56, pad 60. Layout validator checks every binary DTO field offset used by payload, telemetry, rollback exclusion, vent, adaptive, RLE, config, and CSV profile rows.</Task>
+    <Task id="05" status="PASS_CODE">GenerateMockTrenchJob fills a 256^3 solid block and subtracts a twisting fault; menu benchmark uses TempJob + UninitializedMemory.</Task>
+    <Task id="06" status="PASS_CODE">GenerateTectonicNetworkJob emits deterministic Voronoi fault edge segments in double3 AUP.</Task>
+    <Task id="07" status="PASS_CODE">ExecuteTrenchSubtractionJob applies density=max(density,-voidSdf) with NoAlias arrays.</Task>
+    <Task id="08" status="PASS_CODE">Ridged multifractal noise roughens cliff walls inside the carve kernel, no secondary geometry pass. Far faults are rejected by a conservative SDF lower bound before four-octave noise evaluation.</Task>
+    <Task id="09" status="PASS_CODE">GenerateThermalVentNodesJob emits 64-byte vent anchor DTOs; runtime hydration remains external.</Task>
+    <Task id="10" status="PASS_CODE">Bake session writes .h8bin sector payload through chunked FileStream BeginWrite/EndWrite using RLE plus LZ4-block attempt; no full MemoryStream.ToArray clone; validator streams header, density prelude, and hash ranges.</Task>
+    <Task id="11" status="PASS_CODE">Adaptive block summaries collapse uniform density; block size is driven by continuous GlobalQualityWeight.</Task>
+    <Task id="12" status="PASS_CODE">Voxel sample AUP is sector origin plus voxel offset in double precision; preview gizmo localizes before float conversion.</Task>
+    <Task id="13" status="PASS_CODE">Header flag marks static payload rollback-excluded; route card documents exclusion as pending runtime proof.</Task>
+    <Task id="14" status="PASS_DOD_OVERRIDE">Large multi-frame bake buffers use Allocator.Persistent plus UninitializedMemory because TempJob across EditorApplication.update violates Unity allocator lifetime; bounded mock benchmark uses TempJob.</Task>
+    <Task id="15" status="PASS_SOURCE">Pipeline writes TRENCH_BAKE_REPORT.json after bake; 300-entry telemetry ring is initialized before use and dumped to Dump_SHINOBU_241.bin on fatal state. Current artifact is pending-bake, not fake runtime proof.</Task>
+    <Task id="16" status="PASS_CODE">Hadal Trench Forge UI Toolkit window exposes Voronoi, width, depth, noise, quality, preview, scan, and CARVE TRENCHES.</Task>
+    <Task id="17" status="PASS_CODE">tectonic_rift_profiles.csv parser reads NativeArray bytes without string.Split or LINQ; profile rows are capped at 256 and inserted via AddNoResize after explicit capacity fencing; Forge config preserves profile seed and sector AUP while UI fields override exposed tuning values. CSV sector AUP values outside +/-100000m fail fast.</Task>
+    <Task id="18" status="PASS_CODE">Preview schedules Voronoi and vent jobs through an update-pumped chain and draws localized red faults / blue vents in Scene View without scene object injection. Preview NativeArrays are private inside an internal editor store and read only through pure accessors.</Task>
+    <Task id="19" status="PASS_STATIC">Manual_Trench_Scanner exists; per-agent report documents manual geometry status without overwriting other agent evidence.</Task>
+    <Task id="20" status="PASS_STATIC">This audit records layout, scaling, route-card, runtime exclusion, and validation status without claiming boot readiness.</Task>
+  </TaskReconciliation>
+  <StructLayoutVerification>
+    <Struct name="FaultLineParamsDTO" bytes="64" math="24+24+4+4+4+4=64" aligned8="true" cacheLine="one" />
+    <Struct name="ThermalVentSpawnDTO" bytes="64" aligned8="true" />
+    <Struct name="HadalTrenchBakeConfigDTO" bytes="160" aligned8="true" />
+    <Struct name="HadalTrenchChunkHeaderDTO" bytes="160" math="4+4+4+12+24+4+4+4+4+4+4+8+8+8+8+8+4+4+4+4+8+4+4+4+4=160" aligned8="true" />
+    <Struct name="HadalTrenchRleRunDTO" bytes="16" aligned8="true" />
+    <Struct name="HadalTrenchAdaptiveBlockDTO" bytes="32" aligned8="true" blockSizeField="BlockSizeVoxels" blockSizeEncoding="actual voxel edge length, not log2" />
+    <Struct name="TectonicRiftProfileDTO" bytes="128" aligned8="true" editorOnly="true" fields="SectorOriginAUP@0 Name@24 Seed@88 Quality@112 Pad@116/120" />
+    <Struct name="HadalTrenchBakeTelemetryEntry" bytes="64" frames="300" aligned8="true" initializedAfterAllocation="true" writeCursor="cursor modulo 300" />
+  </StructLayoutVerification>
+  <BinaryPayload route="Assets/StreamingAssets/Hecton8/HadalTrenches/hadal_trench_sector_0000.h8bin" tempRoute=".tmp" invalidRoute=".tmp.invalid" magic="0x54523848" littleEndianBytes="H8RT" headerBytes="160" endianMarker="0x01020304" schemaHash="0xA2410002" checksum="FNV1A64" writer="chunked BeginWrite/EndWrite" fullPayloadClone="false" validator="streaming header plus density prelude plus range hash" alignmentBytes="8" densityToVentPadding="explicit zero padding" ventToAdaptivePadding="explicit zero padding" hashExcludesPadding="true" dataMonolithStatus="OUTSIDE_DATAMONOLITH_SUBTREE_PENDING_CONSUMER" />
+  <CompressionEvidence compressionMode="0" uncompressedDensityBytes="0" compressedDensityBytes="0" payloadHash="0x0000000000000000" lz4HashTable="NativeArray&lt;int&gt; Allocator.Temp" status="PENDING_BAKE" />
+  <CsvBridge maxProfiles="256" insertion="AddNoResize after explicit capacity fence" diagnostics="1-based schema columns after name token" />
+  <Scalability>GlobalQualityWeight continuously scales fault width/depth, vent radius/heat, and adaptive block size. Low weight collapses more uniform regions; middle keeps readable cliffs; high/ultra preserve denser near-wall detail for visual dressing. The carve kernel rejects far faults through a conservative SDF lower bound before ridged-noise evaluation while near-fault quality remains continuous.</Scalability>
+  <NaNVaccine configFiniteClamp="true" previewFiniteClamp="true" csvAupBoundMeters="100000" noiseFrequencyMax="0.05" noiseIntensityMax="512" />
+  <RuntimeExclusion>No runtime Awake/Update macroscopic trench CSG is added. Existing seismic trench write paths are inert. Scene preview uses editor SceneView overlay without scene object injection. Payload is outside the DataMonolith subtree and Static Data Monolith integration is not claimed.</RuntimeExclusion>
+  <PreviewAuthority publicNativeArrays="false" storeVisibility="internal editor asmdef" readAccessor="TryReadPreview/TryGetCounts pure no allocation no job completion" />
+  <CallbackIsolation callbackExceptions="logged" writerLifecycle="unchanged" nativeDisposal="unchanged" />
+  <VaultStatus>No runtime Vault lane is allocated by SHINOBU_241 in this pass; bake scratch buffers are non-authority Persistent editor memory for the multi-frame session and are disposed on completion/cancel/reload/quit; CSV buffers and the LZ4 hash table use Temp native memory with explicit disposal.</VaultStatus>
+  <ProofArtifacts routeCard="Docs/ARCHITECTURE/HADAL_TRENCH_PAYLOAD_ROUTE_CARD.md" ledger="Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md" report="Docs/Reports/TRENCH_BAKE_REPORT.json" />
+</SELF_AUDIT>

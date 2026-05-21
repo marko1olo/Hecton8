@@ -162,7 +162,9 @@ namespace Hecton8.Construction
                 }
             }
 
-            AbsoluteUniversePosition nodeAup = AbsoluteUniversePosition.FromRuntimePosition(ResolvePipeRuntimePosition());
+            if (!TryResolveAupFromRuntimeOrigin(ResolvePipeRuntimePosition(), out AbsoluteUniversePosition nodeAup))
+                return false;
+
             if (!graph.TryRegisterPipeNode(
                     networkId,
                     ResolvePipeRoomIndex(),
@@ -305,7 +307,9 @@ namespace Hecton8.Construction
                 }
             }
 
-            AbsoluteUniversePosition nodeAup = AbsoluteUniversePosition.FromRuntimePosition(ResolvePipeOutletRuntimePosition());
+            if (!TryResolveAupFromRuntimeOrigin(ResolvePipeOutletRuntimePosition(), out AbsoluteUniversePosition nodeAup))
+                return false;
+
             if (!graph.TryRegisterPipeNode(
                     networkId,
                     -1,
@@ -351,6 +355,26 @@ namespace Hecton8.Construction
             Vector3 origin = ResolvePipeRuntimePosition();
             Transform pumpTransform = transform;
             return pumpTransform != null ? origin + (pumpTransform.up * 0.5f) : origin;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private int ResolvePipeNetworkId()

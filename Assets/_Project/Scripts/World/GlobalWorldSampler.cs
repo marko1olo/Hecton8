@@ -89,24 +89,26 @@ namespace Hecton8.World
         [FieldOffset(0)] public int Value;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct TerrainSampleDTO
     {
-        // 24 bytes: one 16-byte hot lane plus biome hash. No properties: CS1612-safe.
+        // 32 bytes: one 16-byte hot lane plus biome hash and deterministic tail padding.
         [FieldOffset(0)] public float3 Normal;
         [FieldOffset(12)] public float Distance;
         [FieldOffset(16)] public uint BiomeHash;
         [FieldOffset(20)] public uint _pad0;
+        [FieldOffset(24)] public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct MapMagicCellDTO
     {
-        // 8 bytes. Height is sampled first; type/wetness stay byte-addressable for Burst lanes.
+        // 16 bytes. Height is sampled first; type/wetness stay byte-addressable for Burst lanes.
         [FieldOffset(0)] public float Height;
         [FieldOffset(4)] public short TerrainType;
         [FieldOffset(6)] public byte Wetness;
         [FieldOffset(7)] private byte _alignmentPad;
+        [FieldOffset(8)] private ulong _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -179,7 +181,6 @@ namespace Hecton8.World
         [FieldOffset(28)] public uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     public struct GlobalWorldSamplerData
     {
         // Unity NativeArray<T> handles are pointer-bearing 8-byte-aligned job handles.
@@ -251,16 +252,18 @@ namespace Hecton8.World
         public const string DefaultDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_TERRAIN_SPLICER.bin";
         public const int CounterBlockSizeBytes = 64;
         public const int CounterBlockValueOffset = 0;
-        public const int TerrainSampleDTOSizeBytes = 24;
+        public const int TerrainSampleDTOSizeBytes = 32;
         public const int TerrainSampleDTONormalOffset = 0;
         public const int TerrainSampleDTODistanceOffset = 12;
         public const int TerrainSampleDTOBiomeHashOffset = 16;
         public const int TerrainSampleDTOPaddingOffset = 20;
-        public const int MapMagicCellDTOSizeBytes = 8;
+        public const int TerrainSampleDTOTailPaddingOffset = 24;
+        public const int MapMagicCellDTOSizeBytes = 16;
         public const int MapMagicCellDTOHeightOffset = 0;
         public const int MapMagicCellDTOTerrainTypeOffset = 4;
         public const int MapMagicCellDTOWetnessOffset = 6;
         public const int MapMagicCellDTOAlignmentPadOffset = 7;
+        public const int MapMagicCellDTOTailPaddingOffset = 8;
         public const int TerrainPayloadHeaderDTOSizeBytes = 64;
         public const int TerrainPayloadHeaderMagicOffset = 0;
         public const int TerrainPayloadHeaderPayloadBytesOffset = 8;
@@ -412,6 +415,7 @@ namespace Hecton8.World
             dto.Distance = result.Distance;
             dto.BiomeHash = result.BiomeHash;
             dto._pad0 = 0u;
+            dto._pad1 = 0UL;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -643,15 +647,13 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveSamplingCadenceDivisor(float qualityWeight)
         {
-            float expensiveWeight = ResolveExpensiveSamplingWeight(qualityWeight);
-            return math.max((int)math.round(math.lerp(LowQualityCadenceDivisor, 1f, expensiveWeight)), 1);
+            return 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ShouldSampleOnFrame(uint frame, float qualityWeight)
         {
-            int cadence = ResolveSamplingCadenceDivisor(qualityWeight);
-            return cadence <= 1 || frame % (uint)cadence == 0u;
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1275,7 +1277,8 @@ namespace Hecton8.World
             entry.SectorIndex = safeResult.SectorIndex;
             entry.Reserved0 = smoothMinEstimateNs;
             entry.Reserved1 = outOfBoundsCount;
-            entry.Reserved2 = (int)math.round(ResolveQualityWeight(data) * 1000000f);
+            float telemetryQuality = IsFinite(data.GlobalQualityWeight) ? math.saturate(data.GlobalQualityWeight) : DefaultQualityWeight;
+            entry.Reserved2 = (int)math.round(telemetryQuality * 1000000f);
             entry.Reserved3 = (int)(safeResult.BiomeHash & 0x7FFFFFFFu);
             telemetryRing[slot] = entry;
         }
@@ -1933,22 +1936,19 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float ResolveQualityWeight(in GlobalWorldSamplerData data)
         {
-            return IsFinite(data.GlobalQualityWeight) ? math.saturate(data.GlobalQualityWeight) : DefaultQualityWeight;
+            return 1f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveExpensiveSamplingWeight(float qualityWeight)
         {
-            float q = IsFinite(qualityWeight) ? math.saturate(qualityWeight) : DefaultQualityWeight;
-            float active = math.step(ExpensiveSamplingStartWeight, q);
-            return active * SmoothStep01(math.saturate((q - ExpensiveSamplingStartWeight) / math.max(1f - ExpensiveSamplingStartWeight, 0.0001f)));
+            return 1f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveOverkillSamplingWeight(float qualityWeight)
         {
-            float q = IsFinite(qualityWeight) ? math.saturate(qualityWeight) : DefaultQualityWeight;
-            return SmoothStep01(math.saturate((q - 0.70f) / 0.30f));
+            return 1f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2125,7 +2125,6 @@ namespace Hecton8.World
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct BatchSamplerJob : IJobParallelFor
     {
@@ -2162,7 +2161,6 @@ namespace Hecton8.World
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct BatchLocalSamplerJob : IJobParallelFor
     {
@@ -2201,7 +2199,6 @@ namespace Hecton8.World
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct QualityWeightFilterJob : IJobParallelFor
     {
@@ -2237,7 +2234,6 @@ namespace Hecton8.World
         private ulong _pad3;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockTerrainQueryStressJob : IJobParallelFor
     {
@@ -2291,7 +2287,6 @@ namespace Hecton8.World
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct GradientNormalEstimationBatchJob : IJobParallelForBatch
     {
@@ -2327,7 +2322,6 @@ namespace Hecton8.World
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockBoidRaymarchJob : IJobParallelFor
     {
@@ -2353,7 +2347,7 @@ namespace Hecton8.World
 
             float maxDistance = math.max(MaxDistance, 0.1f);
             float maxStep = math.max(MaxStepMeters, GlobalWorldSampler.MinimumRaymarchStep);
-            float qualityWeight = math.saturate(Data.GlobalQualityWeight);
+            float qualityWeight = 1f;
             float expensiveWeight = GlobalWorldSampler.ResolveExpensiveSamplingWeight(qualityWeight);
             int maxSteps = math.max((int)math.round(math.lerp(1f, math.max(MaxSteps, 1), expensiveWeight)), 1);
             float traveled = 0f;
@@ -2428,20 +2422,27 @@ namespace Hecton8.World
         private const int ProbeCsvBufferLength = 4096;
         private static readonly int3 SdfDimensions = GlobalWorldSampler.Int3(64, 40, 64);
 
+        private struct ProbeVaultLane<T> where T : struct
+        {
+            public VaultGenerationHandle<T> Handle;
+            public uint ExpectedBufferID;
+            public int Length;
+        }
+
         private IDataVault _probeVault;
-        private VaultBufferHandle<ushort> _heightSamplesHandle;
-        private VaultBufferHandle<byte> _heightMaterialsHandle;
-        private VaultBufferHandle<byte> _encodedSdfHandle;
-        private VaultBufferHandle<byte> _sdfMaterialsHandle;
-        private VaultBufferHandle<uint> _sectorMaskHandle;
-        private VaultBufferHandle<uint> _biomeAtlasHandle;
-        private VaultBufferHandle<byte> _erosionMaskHandle;
-        private VaultBufferHandle<uint> _sdfOverrideHandle;
-        private VaultBufferHandle<long> _activeSectorsHandle;
-        private VaultBufferHandle<int> _sampleCounterHandle;
-        private VaultBufferHandle<GlobalWorldSamplerCounterBlock> _counterBlocksHandle;
-        private VaultBufferHandle<GlobalWorldSamplerTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<byte> _csvBufferHandle;
+        private ProbeVaultLane<ushort> _heightSamplesHandle;
+        private ProbeVaultLane<byte> _heightMaterialsHandle;
+        private ProbeVaultLane<byte> _encodedSdfHandle;
+        private ProbeVaultLane<byte> _sdfMaterialsHandle;
+        private ProbeVaultLane<uint> _sectorMaskHandle;
+        private ProbeVaultLane<uint> _biomeAtlasHandle;
+        private ProbeVaultLane<byte> _erosionMaskHandle;
+        private ProbeVaultLane<uint> _sdfOverrideHandle;
+        private ProbeVaultLane<long> _activeSectorsHandle;
+        private ProbeVaultLane<int> _sampleCounterHandle;
+        private ProbeVaultLane<GlobalWorldSamplerCounterBlock> _counterBlocksHandle;
+        private ProbeVaultLane<GlobalWorldSamplerTelemetryEntry> _telemetryHandle;
+        private ProbeVaultLane<byte> _csvBufferHandle;
 
         private GlobalWorldSamplerData _data;
         private TerrainSampleResult _lastHit;
@@ -3045,77 +3046,111 @@ namespace Hecton8.World
             }
         }
 
+        private ProbeVaultLane<T> AcquireProbeLane<T>(
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options) where T : struct
+        {
+            if (_probeVault == null || requiredLength <= 0)
+                return default;
+
+            VaultGenerationHandle<T> handle = _probeVault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                ProbeOwner,
+                options);
+            uint expectedBufferId = unchecked((uint)(int)bufferId);
+            if (handle.BufferID != expectedBufferId || handle.Generation == 0u)
+                return default;
+
+            return new ProbeVaultLane<T>
+            {
+                Handle = handle,
+                ExpectedBufferID = expectedBufferId,
+                Length = requiredLength
+            };
+        }
+
+        private static bool IsProbeLaneBound<T>(in ProbeVaultLane<T> lane) where T : struct
+        {
+            return lane.ExpectedBufferID != 0u &&
+                   lane.Handle.BufferID == lane.ExpectedBufferID &&
+                   lane.Handle.Generation != 0u &&
+                   lane.Length > 0;
+        }
+
+        private NativeArray<T> OpenProbeLane<T>(in ProbeVaultLane<T> lane) where T : struct
+        {
+            if (_probeVault == null ||
+                !IsProbeLaneBound(in lane) ||
+                !_probeVault.TryResolveHandle(in lane.Handle, out NativeArray<T> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < lane.Length)
+            {
+                return default;
+            }
+
+            return buffer;
+        }
+
         private void Allocate()
         {
             Dispose();
             _probeVault = GlobalDataVault.Create(ProbeVaultBufferCapacity, ProbeVaultArenaBytes);
 
-            _heightSamplesHandle = _probeVault.GetBufferHandle<ushort>(
+            _heightSamplesHandle = AcquireProbeLane<ushort>(
                 ProbeHeightSamplesBuffer,
                 HeightResolution * HeightResolution,
-                ProbeOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _heightMaterialsHandle = _probeVault.GetBufferHandle<byte>(
+            _heightMaterialsHandle = AcquireProbeLane<byte>(
                 ProbeHeightMaterialsBuffer,
                 HeightResolution * HeightResolution,
-                ProbeOwner,
                 NativeArrayOptions.UninitializedMemory);
 
             int sdfCount = SdfDimensions.x * SdfDimensions.y * SdfDimensions.z;
-            _encodedSdfHandle = _probeVault.GetBufferHandle<byte>(
+            _encodedSdfHandle = AcquireProbeLane<byte>(
                 ProbeEncodedSdfBuffer,
                 sdfCount,
-                ProbeOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _sdfMaterialsHandle = _probeVault.GetBufferHandle<byte>(
+            _sdfMaterialsHandle = AcquireProbeLane<byte>(
                 ProbeSdfMaterialsBuffer,
                 sdfCount,
-                ProbeOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _sectorMaskHandle = _probeVault.GetBufferHandle<uint>(
+            _sectorMaskHandle = AcquireProbeLane<uint>(
                 ProbeSectorMaskBuffer,
                 4,
-                ProbeOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _biomeAtlasHandle = _probeVault.GetBufferHandle<uint>(
+            _biomeAtlasHandle = AcquireProbeLane<uint>(
                 ProbeBiomeAtlasBuffer,
                 HeightResolution * HeightResolution,
-                ProbeOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _erosionMaskHandle = _probeVault.GetBufferHandle<byte>(
+            _erosionMaskHandle = AcquireProbeLane<byte>(
                 ProbeErosionMaskBuffer,
                 HeightResolution * HeightResolution,
-                ProbeOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _sdfOverrideHandle = _probeVault.GetBufferHandle<uint>(
+            _sdfOverrideHandle = AcquireProbeLane<uint>(
                 ProbeSdfOverrideBuffer,
                 4,
-                ProbeOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _activeSectorsHandle = _probeVault.GetBufferHandle<long>(
+            _activeSectorsHandle = AcquireProbeLane<long>(
                 ProbeActiveSectorsBuffer,
                 4,
-                ProbeOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _sampleCounterHandle = _probeVault.GetBufferHandle<int>(
+            _sampleCounterHandle = AcquireProbeLane<int>(
                 ProbeCountersBuffer,
                 ProbeCounterLength,
-                ProbeOwner,
                 NativeArrayOptions.ClearMemory);
-            _counterBlocksHandle = _probeVault.GetBufferHandle<GlobalWorldSamplerCounterBlock>(
+            _counterBlocksHandle = AcquireProbeLane<GlobalWorldSamplerCounterBlock>(
                 ProbeCounterBlocksBuffer,
                 GlobalWorldSampler.CounterBlockCount,
-                ProbeOwner,
                 NativeArrayOptions.ClearMemory);
-            _telemetryHandle = _probeVault.GetBufferHandle<GlobalWorldSamplerTelemetryEntry>(
+            _telemetryHandle = AcquireProbeLane<GlobalWorldSamplerTelemetryEntry>(
                 ProbeTelemetryBuffer,
                 GlobalWorldSampler.TelemetryRingLength,
-                ProbeOwner,
                 NativeArrayOptions.ClearMemory);
-            _csvBufferHandle = _probeVault.GetBufferHandle<byte>(
+            _csvBufferHandle = AcquireProbeLane<byte>(
                 ProbeCsvBuffer,
                 ProbeCsvBufferLength,
-                ProbeOwner,
                 NativeArrayOptions.UninitializedMemory);
         }
 
@@ -3261,18 +3296,18 @@ namespace Hecton8.World
                 return false;
             }
 
-            heightSamples = _heightSamplesHandle.Resolve(_probeVault);
-            heightMaterials = _heightMaterialsHandle.Resolve(_probeVault);
-            encodedSdf = _encodedSdfHandle.Resolve(_probeVault);
-            sdfMaterials = _sdfMaterialsHandle.Resolve(_probeVault);
-            sectorMask = _sectorMaskHandle.Resolve(_probeVault);
-            biomeAtlas = _biomeAtlasHandle.Resolve(_probeVault);
-            erosionMask = _erosionMaskHandle.Resolve(_probeVault);
-            sdfOverrideMask = _sdfOverrideHandle.Resolve(_probeVault);
-            activeSectors = _activeSectorsHandle.Resolve(_probeVault);
-            sampleCounter = _sampleCounterHandle.Resolve(_probeVault);
-            counterBlocks = _counterBlocksHandle.Resolve(_probeVault);
-            telemetry = _telemetryHandle.Resolve(_probeVault);
+            heightSamples = OpenProbeLane(in _heightSamplesHandle);
+            heightMaterials = OpenProbeLane(in _heightMaterialsHandle);
+            encodedSdf = OpenProbeLane(in _encodedSdfHandle);
+            sdfMaterials = OpenProbeLane(in _sdfMaterialsHandle);
+            sectorMask = OpenProbeLane(in _sectorMaskHandle);
+            biomeAtlas = OpenProbeLane(in _biomeAtlasHandle);
+            erosionMask = OpenProbeLane(in _erosionMaskHandle);
+            sdfOverrideMask = OpenProbeLane(in _sdfOverrideHandle);
+            activeSectors = OpenProbeLane(in _activeSectorsHandle);
+            sampleCounter = OpenProbeLane(in _sampleCounterHandle);
+            counterBlocks = OpenProbeLane(in _counterBlocksHandle);
+            telemetry = OpenProbeLane(in _telemetryHandle);
 
             return heightSamples.IsCreated &&
                    heightMaterials.IsCreated &&
@@ -3291,12 +3326,12 @@ namespace Hecton8.World
         private bool TryResolveCsvBuffer(out NativeArray<byte> csvBuffer)
         {
             csvBuffer = default;
-            if (_probeVault == null || !_csvBufferHandle.IsCreated)
+            if (_probeVault == null || !IsProbeLaneBound(in _csvBufferHandle))
             {
                 return false;
             }
 
-            csvBuffer = _csvBufferHandle.Resolve(_probeVault);
+            csvBuffer = OpenProbeLane(in _csvBufferHandle);
             return csvBuffer.IsCreated && csvBuffer.Length >= ProbeCsvBufferLength;
         }
 

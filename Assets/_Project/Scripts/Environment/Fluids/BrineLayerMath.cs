@@ -6,7 +6,7 @@ namespace Hecton8.Environment.Fluids
     /// <summary>
     /// Burst-safe scalar brine-plane math. No object references, no allocations.
     /// </summary>
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public static class BrineLayerMath
     {
         public static int2 ResolveCartographySector(float3 runtimePosition, float3 shiftOffset)

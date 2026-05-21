@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -25,7 +26,7 @@ namespace Hecton8.Visor
             [Tooltip("Hidden fullscreen clear shader used to zero the dry stencil after restore or final resolve.")]
             public Shader clearShader = null;
 
-            [Tooltip("Where the dry-volume restore runs. Must stay after Crest underwater and before post-processing.")]
+            [Tooltip("Where the dry-volume restore runs. Must stay after the ocean underwater pass and before post-processing.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
 
             [Tooltip("Stencil reference used by the dry-volume writer and composite passes.")]
@@ -158,7 +159,7 @@ namespace Hecton8.Visor
                     _clearMaterial == null ||
                     HectonDryVolumeStencilSource.ActiveSources.Count <= 0 ||
                     IsUnsupportedCamera(frameData) ||
-                    Shader.GetGlobalTexture(ShaderConstants.CrestCameraColorTextureId) == null)
+                    !TryReadOceanCameraColorTexture())
                 {
                     return;
                 }
@@ -358,7 +359,12 @@ namespace Hecton8.Visor
         {
             internal static readonly int StencilRefId = Shader.PropertyToID("_StencilRef");
             internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
-            internal static readonly int CrestCameraColorTextureId = Shader.PropertyToID("_Crest_CameraColorTexture");
+        }
+
+        private static bool TryReadOceanCameraColorTexture()
+        {
+            IOceanVisualBridge bridge = OceanVisualBridgeRegistry.Active;
+            return bridge != null && Shader.GetGlobalTexture(bridge.CameraColorTextureId) != null;
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();

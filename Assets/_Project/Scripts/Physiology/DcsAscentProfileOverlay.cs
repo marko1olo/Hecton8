@@ -55,6 +55,20 @@ namespace Hecton8.Physiology
 
             float ceilingY = graph.yMax - math.saturate(worstCeiling / maxDepth) * graph.height;
             DrawLine(graph.xMin, ceilingY, graph.xMax, ceilingY, Color.yellow);
+
+            if (_runtime.TryGetGasPhysiologyState(0, out GasPhysiologyStateDTO gas))
+            {
+                float gasBaseY = graph.yMax - 8f;
+                float ppO2Width = math.saturate(gas.OxygenPartialPressure / 2f) * graph.width;
+                float ppCo2Width = math.saturate(gas.CarbonDioxidePartialPressure / 0.1f) * graph.width;
+                float cnsWidth = math.saturate(gas.CnsToxicity01) * graph.width;
+                Color o2Color = gas.OxygenPartialPressure > ShinobuPhysiologyConstants.CnsToxicityStartAtm
+                    ? Color.red
+                    : Color.green;
+                DrawLine(graph.xMin, gasBaseY, graph.xMin + ppO2Width, gasBaseY, o2Color);
+                DrawLine(graph.xMin, gasBaseY - 4f, graph.xMin + ppCo2Width, gasBaseY - 4f, new Color(1f, 0.55f, 0.1f, 1f));
+                DrawLine(graph.xMin, gasBaseY - 8f, graph.xMin + cnsWidth, gasBaseY - 8f, Color.magenta);
+            }
         }
 
         private static void DrawLine(float x0, float y0, float x1, float y1, Color color)

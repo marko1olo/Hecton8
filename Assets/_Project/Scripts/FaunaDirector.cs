@@ -66,7 +66,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IAcousticPingEventListener, RuntimeWatchdog.IEmergencyResetTarget, RuntimeWatchdog.IEmergencyColdTickCullTarget, IServiceHeartbeat, IServiceShutdown
+    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IAcousticPingEventListener, RuntimeWatchdog.IEmergencyResetTarget, RuntimeWatchdog.IEmergencyColdTickCullTarget, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int CreaturePoolMinimumReserve = 8;
         private const int CreaturePoolBurstReserveMultiplier = 2;
@@ -122,7 +122,6 @@ namespace Hecton8.AI
         /// Ð—Ð°Ð¿Ð¸ÑÑŒ Ð¾Ð± Ð°ÐºÑ‚Ð¸Ð²Ð½Ð¾Ð¼ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ðµ. Struct â€” zero GC Ð¿Ñ€Ð¸ Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ð¸ Ð² List.
         /// Ð¥Ñ€Ð°Ð½Ð¸Ñ‚ Ð¼Ð¸Ð½Ð¸Ð¼ÑƒÐ¼ Ð´Ð°Ð½Ð½Ñ‹Ñ… Ð´Ð»Ñ culling Ð¸ accounting.
         /// </summary>
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ActiveCreature
         {
             /// <summary>Ð¡ÑÑ‹Ð»ÐºÐ° Ð½Ð° GameObject (Ð¸Ð· Ð¿ÑƒÐ»Ð°).</summary>
@@ -449,6 +448,7 @@ namespace Hecton8.AI
         private HectonMapMagicVegetationBridge _vegetationThreatBridge;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
+        private bool _hotSwapRegistered;
         private float _slowTickAccumulator;
         // COLD ALLOC: AcousticPanicCommand[8] - active sonar panic bridge to GPU boids - owner: FaunaDirector
         private readonly AcousticPanicCommand[] _acousticPanicCommands = new AcousticPanicCommand[AcousticPanicCommandCapacity];
@@ -524,6 +524,13 @@ namespace Hecton8.AI
         private FaunaSimulationEngine _faunaSimulationEngine;
         private FaunaPresentationService _faunaPresentationService;
         private bool _faunaSimulationRegistered;
+        private MapMagicBridge _mapMagicRuntime;
+        private SargassumMicroFaunaBoids _sargassumMicroFauna;
+        private ObjectPoolManager _objectPool;
+        private EcosystemDirector _ecosystemDirector;
+        private PersistentWorldRegistry _persistentWorldRegistry;
+        private AbyssalThermalManager _thermalRuntime;
+        private DynamicResolutionScaler _dynamicResolutionRuntime;
         // COLD ALLOC: FaunaResidencyState[512] - resident fauna state cache for dehydration and restore - owner: FaunaDirector
         private FaunaResidencyState[] _dehydratedCreatureStates;
         // COLD ALLOC: int[512] - active dehydrated slot index list for rehydration scans - owner: FaunaDirector
@@ -603,6 +610,7 @@ namespace Hecton8.AI
             _faunaSimulationEngine.BindOwner(this);
             // COLD ALLOC: FaunaPresentationService[1] - spawn presentation service isolated from native simulation - owner: FaunaDirector
             _faunaPresentationService ??= new FaunaPresentationService();
+            RefreshColdRegistryDependencies();
             EnsureRuntimeStateInitialized();
             InitializeDehydrationResidencyState();
             _biomeSpawnRandom = CreateBiomeSpawnRandom();
@@ -614,7 +622,7 @@ namespace Hecton8.AI
             RefreshRuntimeStreamingSettings();
             TryWarmupCreaturePools();
             _runtimeSettingsDirty = false;
-            _nextRuntimeSettingsRefreshTime = Time.time + RuntimeSettingsRefreshInterval;
+            _nextRuntimeSettingsRefreshTime = ReadDispatcherTimeSeconds() + RuntimeSettingsRefreshInterval;
         }
 
         private void OnEnable()
@@ -622,25 +630,13 @@ namespace Hecton8.AI
             if (!Application.isPlaying)
                 return;
 
+            RefreshColdRegistryDependencies();
+            TryRegisterHotSwapListener();
             GlobalRegistry.Save?.Register(this);
             TryRegisterFaunaSimulationService();
             RuntimeWatchdog.RegisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
             SubscribeAcousticPingEvents();
-
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            if (!_dispatcherRegistered)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _dispatcherRegistered = GlobalRegistry.Updatables.Contains(this);
-            }
-
-            if (!_lateFrameRegistered)
-            {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
-            }
+            TryRegisterDispatcherTicks();
 
             InvalidatePlayerRuntimeContextCache();
             if (_playerTransform == null)
@@ -694,6 +690,7 @@ namespace Hecton8.AI
             InvalidatePlayerRuntimeContextCache();
             RuntimeWatchdog.UnregisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
             TryUnregisterFaunaSimulationService();
+            TryUnregisterHotSwapListener();
             UnsubscribeAcousticPingEvents();
             CompleteResidentDataOnlySimulation(forceComplete: false);
 
@@ -725,25 +722,99 @@ namespace Hecton8.AI
             ActiveRuntimeInstance = this;
             _faunaSimulationEngine ??= new FaunaSimulationEngine();
             _faunaSimulationEngine.BindOwner(this);
+            RefreshColdRegistryDependencies();
+            TryRegisterHotSwapListener();
             EnsureRuntimeStateInitialized();
             InitializeDehydrationResidencyState();
             TryRegisterFaunaSimulationService();
             RuntimeWatchdog.RegisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
             SubscribeAcousticPingEvents();
+            TryRegisterDispatcherTicks();
+        }
 
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+        private void TryRegisterDispatcherTicks()
+        {
+            if (!Application.isPlaying)
                 return;
 
             if (!_dispatcherRegistered)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _dispatcherRegistered = GlobalRegistry.Updatables.Contains(this);
-            }
+                _dispatcherRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
 
             if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void RefreshColdRegistryDependencies()
+        {
+            _mapMagicRuntime = GlobalRegistry.MapMagic;
+            _sargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
+            _objectPool = GlobalRegistry.ObjectPool;
+            _ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
+            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            _thermalRuntime = GlobalRegistry.Thermodynamics;
+            _dynamicResolutionRuntime = GlobalRegistry.DynamicResolution;
+            if (depthZoneDirector == null)
+                depthZoneDirector = GlobalRegistry.DepthZone;
+            if (_vegetationThreatBridge == null)
+                _vegetationThreatBridge = GlobalRegistry.MapMagicVegetation;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
             {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    _mapMagicRuntime = currentService as MapMagicBridge;
+                    _cachedBiomeIndex = -1;
+                    _nextBiomeCheckTime = float.NegativeInfinity;
+                    break;
+                case GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime:
+                    _sargassumMicroFauna = currentService as SargassumMicroFaunaBoids;
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPool = currentService as ObjectPoolManager;
+                    _creaturePoolsWarmed = false;
+                    break;
+                case GlobalRegistryServiceSlot.EcosystemDirector:
+                    _ecosystemDirector = currentService as EcosystemDirector;
+                    break;
+                case GlobalRegistryServiceSlot.PersistentWorldRegistry:
+                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    break;
+                case GlobalRegistryServiceSlot.ThermodynamicsRuntime:
+                    _thermalRuntime = currentService as AbyssalThermalManager;
+                    break;
+                case GlobalRegistryServiceSlot.DynamicResolutionRuntime:
+                    _dynamicResolutionRuntime = currentService as DynamicResolutionScaler;
+                    _runtimeSettingsDirty = true;
+                    break;
+                case GlobalRegistryServiceSlot.DepthZoneRuntime:
+                    depthZoneDirector = currentService as DepthZoneDirector;
+                    _runtimeSettingsDirty = true;
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    _vegetationThreatBridge = currentService as HectonMapMagicVegetationBridge;
+                    break;
             }
         }
 
@@ -903,7 +974,7 @@ namespace Hecton8.AI
             if (_acousticPanicCount <= 0)
                 return;
 
-            SargassumMicroFaunaBoids boids = GlobalRegistry.SargassumMicroFauna;
+            SargassumMicroFaunaBoids boids = _sargassumMicroFauna;
             while (_acousticPanicCount > 0)
             {
                 AcousticPanicCommand command = _acousticPanicCommands[_acousticPanicReadIndex];
@@ -936,11 +1007,12 @@ namespace Hecton8.AI
             ResolveVegetationThreatBridge();
             if (!_creaturePoolsWarmed)
                 TryWarmupCreaturePools();
-            if (_runtimeSettingsDirty || Time.time >= _nextRuntimeSettingsRefreshTime)
+            float nowSeconds = ReadDispatcherTimeSeconds();
+            if (_runtimeSettingsDirty || nowSeconds >= _nextRuntimeSettingsRefreshTime)
             {
                 RefreshRuntimeStreamingSettings();
                 _runtimeSettingsDirty = false;
-                _nextRuntimeSettingsRefreshTime = Time.time + RuntimeSettingsRefreshInterval;
+                _nextRuntimeSettingsRefreshTime = nowSeconds + RuntimeSettingsRefreshInterval;
             }
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  1. PLAYER CHECK
@@ -995,16 +1067,16 @@ namespace Hecton8.AI
             //     Ð¿Ñ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ð±Ð¸Ð¾Ð¼ Ñ€Ð°Ð· Ð² BiomeCheckInterval ÑÐµÐºÑƒÐ½Ð´.
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            MapMagicBridge bridge = GlobalRegistry.MapMagic;
+            MapMagicBridge bridge = _mapMagicRuntime;
             if (bridge == null)
             {
                 UpdateDiagnostics(cullCount, 0, spawnValidationAttempts, spawnValidationSuccesses, anchorBasedSpawns, fallbackRingSpawns);
                 return;
             }
 
-            if (Time.time >= _nextBiomeCheckTime)
+            if (nowSeconds >= _nextBiomeCheckTime)
             {
-                _nextBiomeCheckTime = Time.time + BiomeCheckInterval;
+                _nextBiomeCheckTime = nowSeconds + BiomeCheckInterval;
                 if (bridge.TryGetBiomeIndex(playerPos.x, playerPos.z, out int biome))
                 {
                     _cachedBiomeIndex = biome;
@@ -1046,6 +1118,7 @@ namespace Hecton8.AI
                     spawnAttempts = TrySpawnCreatures(
                         biomeData,
                         playerPos,
+                        in playerAup,
                         bridge,
                         ref spawnValidationAttempts,
                         ref spawnValidationSuccesses,
@@ -1068,7 +1141,7 @@ namespace Hecton8.AI
                 return 0;
 
             int dehydrated = 0;
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
 
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
@@ -1140,13 +1213,14 @@ namespace Hecton8.AI
         private int TrySpawnCreatures(
             FaunaBiomeData biomeData,
             Vector3 playerPos,
+            in AbsoluteUniversePosition playerAup,
             MapMagicBridge bridge,
             ref int spawnValidationAttempts,
             ref int spawnValidationSuccesses,
             ref int anchorBasedSpawns,
             ref int fallbackRingSpawns)
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null) return 0;
 
             int biomeIdx = biomeData.biomeIndex;
@@ -1221,6 +1295,7 @@ namespace Hecton8.AI
                 bool hasSpawnPoint = isLargeThreat
                     ? TryResolveLargeThreatSpawnLocation(
                         playerPos,
+                        in playerAup,
                         _playerViewTransform,
                         bridge,
                         biomeData,
@@ -1234,6 +1309,7 @@ namespace Hecton8.AI
                         ref fallbackRingSpawns)
                     : TryResolveOrdinarySpawnLocation(
                         playerPos,
+                        in playerAup,
                         _playerViewTransform,
                         bridge,
                         biomeData,
@@ -1398,6 +1474,7 @@ namespace Hecton8.AI
         /// </summary>
         private bool TryResolveOrdinarySpawnLocation(
             Vector3 playerPos,
+            in AbsoluteUniversePosition playerAup,
             Transform playerViewTransform,
             MapMagicBridge bridge,
             FaunaBiomeData biomeData,
@@ -1444,6 +1521,7 @@ namespace Hecton8.AI
 
         private bool TryResolveLargeThreatSpawnLocation(
             Vector3 playerPos,
+            in AbsoluteUniversePosition playerAup,
             Transform playerViewTransform,
             MapMagicBridge bridge,
             FaunaBiomeData biomeData,
@@ -2423,9 +2501,9 @@ namespace Hecton8.AI
             return value >= 0d ? (int)(value + 0.5d) : (int)(value - 0.5d);
         }
 
-        private static EcosystemDirector ResolveConcreteEcosystemDirector()
+        private EcosystemDirector ResolveConcreteEcosystemDirector()
         {
-            return GlobalRegistry.EcosystemDirector as EcosystemDirector;
+            return _ecosystemDirector;
         }
 
         private static uint BuildActiveCreatureWatchdogFlags(bool isPredator, FaunaBrain brain)
@@ -2552,10 +2630,10 @@ namespace Hecton8.AI
             PoolSlotData slotData = poolSlots[slotIndex];
             slotData.BoundGuid = unchecked((ulong)(slotIndex + 1));
             WritePoolSlotPosition(ref slotData, in positionAup);
-            slotData.HydrationFrame = unchecked((ushort)Time.frameCount);
+            slotData.HydrationFrame = ReadDispatcherFrame16();
             slotData.RefCount = 1;
             slotData.StateFlags = markDehydrated ? (byte)1 : (byte)0;
-            slotData.LastVisibleFrame = unchecked((ushort)Time.frameCount);
+            slotData.LastVisibleFrame = ReadDispatcherFrame16();
             poolSlots[slotIndex] = slotData;
 
             Vector3 linearVelocity = Vector3.zero;
@@ -2621,7 +2699,7 @@ namespace Hecton8.AI
             if (_activeDehydrationSlotCount <= 0 || _activeCreatures == null)
                 return 0;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return 0;
 
@@ -2717,8 +2795,8 @@ namespace Hecton8.AI
                 NativeArray<PoolSlotData> poolSlots = _faunaSimulationMemory.PoolSlots;
                 slotData = poolSlots[slotIndex];
                 slotData.StateFlags = 0;
-                slotData.HydrationFrame = unchecked((ushort)Time.frameCount);
-                slotData.LastVisibleFrame = unchecked((ushort)Time.frameCount);
+                slotData.HydrationFrame = ReadDispatcherFrame16();
+                slotData.LastVisibleFrame = ReadDispatcherFrame16();
                 poolSlots[slotIndex] = slotData;
                 NativeArray<byte> simulationFlags = _faunaSimulationMemory.SimulationFlags;
                 if (simulationFlags.IsCreated && slotIndex < simulationFlags.Length)
@@ -2736,7 +2814,7 @@ namespace Hecton8.AI
             if (_activeDehydrationSlotCount <= 0)
                 return;
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -2765,7 +2843,7 @@ namespace Hecton8.AI
                     in creatureAup,
                     state.isLargeThreat,
                     state.isPredator,
-                    Time.time,
+                    ReadDispatcherTimeSeconds(),
                     state.hunger01);
                 if (!registry.TryCacheFaunaHibernationState(in cachedState))
                     continue;
@@ -2777,18 +2855,19 @@ namespace Hecton8.AI
 
         private void ApplyThermalApexMigrationToPersistedTier2Fauna()
         {
-            if (Time.time < _nextThermalApexMigrationTime)
+            float nowSeconds = ReadDispatcherTimeSeconds();
+            if (nowSeconds < _nextThermalApexMigrationTime)
                 return;
 
-            _nextThermalApexMigrationTime = Time.time + ThermalApexMigrationIntervalSeconds;
-            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
+            _nextThermalApexMigrationTime = nowSeconds + ThermalApexMigrationIntervalSeconds;
+            AbyssalThermalManager thermalManager = _thermalRuntime;
             if (thermalManager == null ||
                 !thermalManager.TryResolveApexMigrationThermalAttractor(out Vector3 attractorPosition, out float strength01))
             {
                 return;
             }
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -2801,7 +2880,7 @@ namespace Hecton8.AI
 
         private void RestorePersistedTier2Fauna(in AbsoluteUniversePosition playerAup)
         {
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -2816,7 +2895,7 @@ namespace Hecton8.AI
             for (int i = 0; i < _persistedFaunaRestoreScratch.Count; i++)
             {
                 EntityDataRecord cachedState = _persistedFaunaRestoreScratch[i];
-                FaunaHibernationRestoreResult restoreResult = BuildPurgeHibernationRestoreResult(in cachedState, Time.time);
+                FaunaHibernationRestoreResult restoreResult = BuildPurgeHibernationRestoreResult(in cachedState, ReadDispatcherTimeSeconds());
                 if (!TryRestorePersistedTier2FaunaState(in cachedState, in restoreResult))
                 {
                     registry.TryCacheFaunaHibernationState(in cachedState);
@@ -2904,7 +2983,7 @@ namespace Hecton8.AI
             return true;
         }
 
-        private static bool TryResolveHibernationStarvationHuntTarget(Vector3 runtimePosition, out Vector3 huntTarget)
+        private bool TryResolveHibernationStarvationHuntTarget(Vector3 runtimePosition, out Vector3 huntTarget)
         {
             huntTarget = default;
             EcosystemDirector ecosystemDirector = ResolveConcreteEcosystemDirector();
@@ -3165,10 +3244,11 @@ namespace Hecton8.AI
             if (_playerTransform != null)
                 return;
 
-            if (!force && Time.time < _nextPlayerResolveTime)
+            float nowSeconds = ReadDispatcherTimeSeconds();
+            if (!force && nowSeconds < _nextPlayerResolveTime)
                 return;
 
-            _nextPlayerResolveTime = Time.time + PlayerResolveRetryInterval;
+            _nextPlayerResolveTime = nowSeconds + PlayerResolveRetryInterval;
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
 
             if (_playerTransform != null)
@@ -3197,7 +3277,7 @@ namespace Hecton8.AI
                     aimForwardLengthSq > MinimumSpawnViewDirectionMagnitudeSqr)
                 {
                     _playerLookViewPosition = (Vector3)lookState.EyePosition;
-                    _playerLookViewForward = (Vector3)(lookState.AimForward * math.rsqrt(aimForwardLengthSq));
+                    _playerLookViewForward = (Vector3)(lookState.AimForward * math.rsqrt(math.max(aimForwardLengthSq, MinimumSpawnViewDirectionMagnitudeSqr)));
                     _hasPlayerLookView = true;
                 }
             }
@@ -3229,26 +3309,46 @@ namespace Hecton8.AI
             if (!math.all(math.isfinite(runtime)))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!IsFiniteAup(in originAup))
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(origin)))
                 return false;
 
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtime.x, runtime.y, runtime.z));
-            return IsFiniteAup(in positionAup);
+            return positionAup.IsFinite();
         }
 
-        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        private static float ReadDispatcherTimeSeconds()
         {
-            return math.isfinite(position.LocalX) &&
-                   math.isfinite(position.LocalY) &&
-                   math.isfinite(position.LocalZ);
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            double seconds = dispatcher != null ? dispatcher.DilatedTimeSeconds : 0d;
+            if (!math.isfinite(seconds) || seconds <= 0d)
+                return 0f;
+
+            return seconds > float.MaxValue ? float.MaxValue : (float)seconds;
+        }
+
+        private static ushort ReadDispatcherFrame16()
+        {
+            return unchecked((ushort)ReadDispatcherFrameId());
+        }
+
+        private static int ReadDispatcherFrameInt()
+        {
+            return unchecked((int)ReadDispatcherFrameId());
+        }
+
+        private static uint ReadDispatcherFrameId()
+        {
+            uint frame = TimeSliceScheduler.CurrentFrameId;
+            return frame != 0u ? frame : 1u;
         }
 
         private bool TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext)
         {
-            int frame = Time.frameCount;
+            int frame = ReadDispatcherFrameInt();
             if (_playerRuntimeContextCacheFrame != frame)
             {
                 _playerRuntimeContextCacheFrame = frame;
@@ -3303,7 +3403,7 @@ namespace Hecton8.AI
         private void ResolveDepthZoneDirector()
         {
             if (depthZoneDirector == null)
-                depthZoneDirector = GlobalRegistry.DepthZone;
+                return;
         }
 
         private void ResolveVegetationThreatBridge()
@@ -3350,7 +3450,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
+            DynamicResolutionScaler scaler = _dynamicResolutionRuntime;
             if (scaler == null || !scaler.Enabled)
             {
                 ApplyAdaptiveBudgetResponse(1f, 1f);
@@ -3791,7 +3891,7 @@ namespace Hecton8.AI
             if (_creaturePoolsWarmed || biomeDatasets == null || biomeDatasets.Length == 0)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return;
 
@@ -3933,7 +4033,7 @@ namespace Hecton8.AI
             EnsureRuntimeStateInitialized();
             ResolvePlayerViewTransform();
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return false;
 
@@ -4079,7 +4179,7 @@ namespace Hecton8.AI
             if (instanceId == 0 || _activeCreatures == null || _activeCreatures.Count <= 0)
                 return false;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
                 ActiveCreature creature = _activeCreatures[i];
@@ -4116,7 +4216,7 @@ namespace Hecton8.AI
         public void DespawnAll()
         {
             CompleteResidentDataOnlySimulation(forceComplete: true);
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
 
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
@@ -4450,7 +4550,7 @@ namespace Hecton8.AI
 
             ResolvePlayerViewTransform();
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return;
 
@@ -4678,7 +4778,7 @@ namespace Hecton8.AI
             _debugEffectiveGlobalMaxCount = _currentEffectiveGlobalMaxCount;
             _debugEffectiveSpawnsPerTick = _currentEffectiveSpawnsPerTick;
             _debugEffectiveBiomeMaxCount = _cachedBiomeIndex >= 0 ? _currentEffectiveBiomeMaxCount : 0;
-            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
+            DynamicResolutionScaler scaler = _dynamicResolutionRuntime;
             _debugAdaptiveRenderScale = scaler != null ? scaler.CurrentRenderScale : 1f;
             _debugAdaptiveBudgetNormalized = _adaptiveBudgetNormalized;
             _debugAdaptiveGlobalBudgetScale = _adaptiveGlobalBudgetScale;
@@ -4810,7 +4910,7 @@ namespace Hecton8.AI
             _runtimeSettingsDirty = true;
             RefreshRuntimeStreamingSettings();
             _runtimeSettingsDirty = false;
-            _nextRuntimeSettingsRefreshTime = Time.time + RuntimeSettingsRefreshInterval;
+            _nextRuntimeSettingsRefreshTime = ReadDispatcherTimeSeconds() + RuntimeSettingsRefreshInterval;
         }
 
         public void SetSpawnRegistry(WorldFaunaSpawnRegistry registry)

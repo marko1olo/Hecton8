@@ -10,10 +10,8 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Data;
 using Hecton8.Core.Memory;
 using TMPro;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -159,110 +157,6 @@ namespace Hecton8.UI
         [FieldOffset(56)] public ulong Reserved3;
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct ClearPdaEncyclopediaRuntimeStateJob : IJob
-    {
-        [NoAlias] public NativeArray<PdaEncyclopediaRuntimeStateDTO> RuntimeState;
-        [NoAlias] public NativeArray<EncyclopediaStateDTO> UnlockMask;
-        [NoAlias] public NativeArray<PdaTypewriterStateDTO> TypewriterState;
-
-        public void Execute()
-        {
-            RuntimeState[0] = default;
-            UnlockMask[0] = default;
-            TypewriterState[0] = default;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct ExtractLoreSpanJob : IJob
-    {
-        [ReadOnly] [NoAlias] public NativeArray<BabelIndexDTO> Index;
-        [WriteOnly] [NoAlias] public NativeArray<BabelLookupResultDTO> Result;
-        public uint EntryHash;
-        public uint MockBaseHash;
-        public uint MockEntryCount;
-
-        public void Execute()
-        {
-            BabelLookupResultDTO result = default;
-            result.TextHash = EntryHash;
-            result.Flags = 1u;
-
-            if (EntryHash >= MockBaseHash)
-            {
-                uint ordinal = EntryHash - MockBaseHash;
-                if (ordinal < MockEntryCount && ordinal < (uint)Index.Length)
-                {
-                    BabelIndexDTO row = Index[(int)ordinal];
-                    if (row.StringHash == EntryHash)
-                    {
-                        result.ByteOffset = row.ByteOffset;
-                        result.ByteLength = row.ByteLength;
-                        result.Flags = 0u;
-                    }
-                }
-            }
-
-            Result[0] = result;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct TypewriterTextJob : IJob
-    {
-        [NoAlias] public NativeArray<PdaTypewriterStateDTO> State;
-        public float GlobalQualityWeight;
-        public float DeltaTime;
-        public int DecodedLength;
-        public int VisibleLength;
-        public uint Frame;
-
-        public void Execute()
-        {
-            PdaTypewriterStateDTO state = State[0];
-            float q = math.saturate(GlobalQualityWeight);
-            float dt = math.isfinite(DeltaTime) && DeltaTime > 0f ? DeltaTime : 1f / 60f;
-            int decoded = math.max(0, DecodedLength);
-            int visible = math.clamp(VisibleLength, 0, decoded);
-            if (visible >= decoded)
-            {
-                state.CharAccumulator = 0f;
-                state.GlobalQualityWeight = q;
-                state.VisibleChars = (uint)visible;
-                state.DecodedChars = (uint)decoded;
-                state.CharsRenderedThisFrame = 0u;
-                state.LastFrame = Frame;
-                State[0] = state;
-                return;
-            }
-
-            float curve = q * q * (3f - (2f * q));
-            float charsPerSecond = math.lerp(18f, 1600f, curve);
-            float accumulator = state.CharAccumulator + (charsPerSecond * dt);
-            int step = math.max(1, (int)math.floor(accumulator));
-            int nextVisible = math.min(decoded, visible + step);
-
-            state.CharAccumulator = math.max(0f, accumulator - step);
-            state.GlobalQualityWeight = q;
-            state.VisibleChars = (uint)nextVisible;
-            state.DecodedChars = (uint)decoded;
-            state.CharsRenderedThisFrame = (uint)math.max(0, nextVisible - visible);
-            state.LastFrame = Frame;
-            state.StateHash = HashTypewriterState(nextVisible, decoded, q);
-            State[0] = state;
-        }
-
-        private static uint HashTypewriterState(int visible, int decoded, float quality)
-        {
-            uint hash = 2166136261u;
-            hash = (hash ^ (uint)visible) * 16777619u;
-            hash = (hash ^ (uint)decoded) * 16777619u;
-            hash = (hash ^ math.asuint(quality)) * 16777619u;
-            return hash;
-        }
-    }
-
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Encyclopedia Streamer")]
     public sealed unsafe class PDAEncyclopediaStreamer :
@@ -307,7 +201,6 @@ namespace Hecton8.UI
         private const BufferID MockUtf8BufferId = (BufferID)70565;
         private const BufferID MockIndexBufferId = (BufferID)70566;
         private const BufferID CsvScratchBufferId = (BufferID)70567;
-        private const BufferID MockLookupResultBufferId = (BufferID)70568;
         private const BufferID TypewriterStateBufferId = (BufferID)70569;
         private const BufferID H8lrMirrorBufferId = (BufferID)70570;
 
@@ -348,17 +241,16 @@ namespace Hecton8.UI
         private CharBufferPool.Lease _metaLease;
         private CharBufferPool.EncyclopediaLease _bodyLease;
         private IDataVault _vault;
-        private VaultBufferHandle<EncyclopediaStateDTO> _unlockMaskHandle;
-        private VaultBufferHandle<PdaEncyclopediaRuntimeStateDTO> _runtimeStateHandle;
-        private VaultBufferHandle<PdaEncyclopediaEntryMetaDTO> _metadataHandle;
-        private VaultBufferHandle<PdaEncyclopediaTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<int> _telemetryCursorHandle;
-        private VaultBufferHandle<byte> _mockUtf8Handle;
-        private VaultBufferHandle<BabelIndexDTO> _mockIndexHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<BabelLookupResultDTO> _mockLookupResultHandle;
-        private VaultBufferHandle<PdaTypewriterStateDTO> _typewriterStateHandle;
-        private VaultBufferHandle<byte> _h8lrMirrorHandle;
+        private VaultGenerationHandle<EncyclopediaStateDTO> _unlockMaskHandle;
+        private VaultGenerationHandle<PdaEncyclopediaRuntimeStateDTO> _runtimeStateHandle;
+        private VaultGenerationHandle<PdaEncyclopediaEntryMetaDTO> _metadataHandle;
+        private VaultGenerationHandle<PdaEncyclopediaTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<int> _telemetryCursorHandle;
+        private VaultGenerationHandle<byte> _mockUtf8Handle;
+        private VaultGenerationHandle<BabelIndexDTO> _mockIndexHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<PdaTypewriterStateDTO> _typewriterStateHandle;
+        private VaultGenerationHandle<byte> _h8lrMirrorHandle;
         private IPlayerRuntimeContext _playerContext;
         private PdaH8lrLoreStore _h8lrLoreStore;
         private BabelDictionaryStore _babelStore;
@@ -384,17 +276,12 @@ namespace Hecton8.UI
         private int _activeSourceBytes;
         private float _charAccumulator;
         private uint _lastFaultHash;
-        private byte* _activeUtf8Ptr;
-        private int _activeUtf8Length;
         private uint _activeUtf8SourceFlags;
 
         private void Awake()
         {
-            if (playerPDA == null)
-                playerPDA = GetComponentInParent<PlayerPDA>();
-
             if (bodyText == null)
-                TryGetComponent(out bodyText);
+                bodyText = GetComponent<TMP_Text>();
 
             EnsureCanvasSplit();
         }
@@ -402,7 +289,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             EnsureTextLeases();
-            TryResolvePlayerContextCold();
+            TryBindPlayerContextCold();
             TryColdBootstrap();
             SignalBus<ScanCompleteSignal>.EnsureInitialized();
             SignalBus<LoreFragmentScannedSignal>.EnsureInitialized();
@@ -417,7 +304,7 @@ namespace Hecton8.UI
         private void Start()
         {
             TryColdBootstrap();
-            TryResolvePlayerContextCold();
+            TryBindPlayerContextCold();
             TryRegisterPdaEvents();
             TryRegisterHotSwapListener();
             TryRegisterDispatcherLanes();
@@ -476,7 +363,11 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             if (!_vaultReady)
-                return;
+            {
+                TryColdBootstrap();
+                if (!_vaultReady)
+                    return;
+            }
 
             ConsumeScanSignals();
             if (!_registeredPdaEvents)
@@ -502,7 +393,11 @@ namespace Hecton8.UI
             }
 
             if (!_vaultReady)
-                return;
+            {
+                TryColdBootstrap();
+                if (!_vaultReady)
+                    return;
+            }
 
             if (_needsEntryReload)
                 BeginEntry(_activeEntryHash != 0u ? _activeEntryHash : DefaultEntryHash);
@@ -515,7 +410,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            ReadOnlySpan<byte> source = ResolveActiveUtf8();
+            ReadOnlySpan<byte> source = SelectActiveUtf8Source();
             if (source.Length <= 0)
             {
                 SetFault(FaultMissingText);
@@ -596,7 +491,6 @@ namespace Hecton8.UI
             _mockUtf8Handle = default;
             _mockIndexHandle = default;
             _csvScratchHandle = default;
-            _mockLookupResultHandle = default;
             _typewriterStateHandle = default;
             _h8lrMirrorHandle = default;
             _mockSeeded = false;
@@ -617,6 +511,7 @@ namespace Hecton8.UI
             _needsEntryReload = true;
         }
 
+#if UNITY_EDITOR
         public bool EditorTrySnapshot(
             out PdaEncyclopediaRuntimeStateDTO runtimeState,
             out EncyclopediaStateDTO unlockMask)
@@ -627,8 +522,8 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return false;
 
-            runtimeState = _runtimeStateHandle.GetElementAsRef(_vault, 0);
-            unlockMask = _unlockMaskHandle.GetElementAsRef(_vault, 0);
+            runtimeState = GetVaultElementRef(in _runtimeStateHandle, 0);
+            unlockMask = GetVaultElementRef(in _unlockMaskHandle, 0);
             return true;
         }
 
@@ -638,11 +533,11 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return;
 
-            ref EncyclopediaStateDTO mask = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, 0);
             for (int word = 0; word < UnlockWordCount; word++)
                 GetMaskWordRef(ref mask, word) = ulong.MaxValue;
 
-            ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
             state.UnlockedCount = UnlockBitCount;
             state.Revision++;
             state.Magic = StateMagic;
@@ -660,11 +555,11 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return;
 
-            ref EncyclopediaStateDTO mask = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, 0);
             for (int word = 0; word < UnlockWordCount; word++)
                 GetMaskWordRef(ref mask, word) = 0UL;
 
-            ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
             state.UnlockedCount = 0u;
             state.Revision++;
             state.Magic = StateMagic;
@@ -701,7 +596,7 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers() || string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(_vault);
+            NativeArray<byte> scratch = ResolveVaultBuffer(in _csvScratchHandle);
             if (!scratch.IsCreated || scratch.Length <= 0)
                 return false;
 
@@ -733,6 +628,7 @@ namespace Hecton8.UI
 
             return ParseCsvMetadata(scratch, totalRead);
         }
+#endif
 
         public static bool ValidateEncyclopediaStateLayout(out int sizeBytes, out int mask0Offset, out int mask3Offset)
         {
@@ -785,6 +681,7 @@ namespace Hecton8.UI
                    h8lrRecordReserved0Offset == 12;
         }
 
+#if UNITY_EDITOR
         public bool EditorTryWriteRawUtf8Hex(uint hash, Span<char> destination, out int written)
         {
             written = 0;
@@ -805,7 +702,7 @@ namespace Hecton8.UI
                 EnsureBabelStore();
                 if (_babelStore != null && _babelStore.IsOpen)
                 {
-                    source = _babelStore.GetUtf8(hash);
+                    source = _babelStore.FetchUtf8(hash);
                     if (IsBabelErrorSentinel(source))
                         source = ReadOnlySpan<byte>.Empty;
                 }
@@ -850,6 +747,7 @@ namespace Hecton8.UI
 
             return true;
         }
+#endif
 
         private void ConsumeScanSignals()
         {
@@ -929,15 +827,15 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers() || hash == 0u)
                 return false;
 
-            ushort bitIndex = ResolveOrCreateBitIndex(hash);
+            ushort bitIndex = EnsureBitIndex(hash);
             int wordIndex = bitIndex >> 6;
             int bitInWord = bitIndex & 63;
             ulong bit = 1UL << bitInWord;
-            ref EncyclopediaStateDTO mask = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, 0);
             ref ulong word = ref GetMaskWordRef(ref mask, wordIndex);
             bool wasLocked = AtomicOr(ref word, bit);
 
-            ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
             state.Magic = StateMagic;
             state.LastEntryHash = hash;
             state.LastFrame = frame;
@@ -982,7 +880,7 @@ namespace Hecton8.UI
                 mask.Flags |= StateFlagPreciseAup;
             }
 
-            ref PdaEncyclopediaEntryMetaDTO meta = ref _metadataHandle.GetElementAsRef(_vault, bitIndex);
+            ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, bitIndex);
             meta.EntryHash = hash;
             meta.BitIndex = bitIndex;
             meta.SourceId = sourceId;
@@ -1010,13 +908,13 @@ namespace Hecton8.UI
             if (!TryFindBitIndex(hash, out ushort bitIndex))
                 return false;
 
-            ref EncyclopediaStateDTO mask = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, 0);
             ulong word = GetMaskWordRef(ref mask, bitIndex >> 6);
             ulong bit = 1UL << (bitIndex & 63);
             return (word & bit) != 0UL;
         }
 
-        private ushort ResolveOrCreateBitIndex(uint hash)
+        private ushort EnsureBitIndex(uint hash)
         {
             if (TryFindBitIndex(hash, out ushort existingBitIndex))
                 return existingBitIndex;
@@ -1025,15 +923,15 @@ namespace Hecton8.UI
             for (int probe = 0; probe < UnlockBitCount; probe++)
             {
                 int index = (start + probe) & (UnlockBitCount - 1);
-                ref PdaEncyclopediaEntryMetaDTO meta = ref _metadataHandle.GetElementAsRef(_vault, index);
+                ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, index);
                 if (meta.EntryHash != 0u && meta.EntryHash != hash)
                     continue;
 
                 if (meta.EntryHash == 0u)
                 {
-                    ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+                    ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
                     state.MetadataCount = math.min((uint)UnlockBitCount, state.MetadataCount + 1u);
-                    ref EncyclopediaStateDTO encyclopedia = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+                    ref EncyclopediaStateDTO encyclopedia = ref GetVaultElementRef(in _unlockMaskHandle, 0);
                     encyclopedia.MetadataCount = state.MetadataCount;
                     meta.EntryHash = hash;
                     meta.BitIndex = (ushort)index;
@@ -1048,7 +946,7 @@ namespace Hecton8.UI
 
         private bool TryFindBitIndex(uint hash, out ushort bitIndex)
         {
-            if (!EnsureVaultBuffers() || hash == 0u)
+            if (!_vaultReady || _vault == null || hash == 0u)
             {
                 bitIndex = 0;
                 return false;
@@ -1058,7 +956,7 @@ namespace Hecton8.UI
             for (int probe = 0; probe < UnlockBitCount; probe++)
             {
                 int index = (start + probe) & (UnlockBitCount - 1);
-                ref PdaEncyclopediaEntryMetaDTO meta = ref _metadataHandle.GetElementAsRef(_vault, index);
+                ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, index);
                 if (meta.EntryHash == hash)
                 {
                     bitIndex = (ushort)index;
@@ -1073,11 +971,8 @@ namespace Hecton8.UI
             return false;
         }
 
-        private ReadOnlySpan<byte> ResolveActiveUtf8()
+        private ReadOnlySpan<byte> SelectActiveUtf8Source()
         {
-            if (_activeUtf8Ptr != null && _activeUtf8Length > 0)
-                return new ReadOnlySpan<byte>(_activeUtf8Ptr, _activeUtf8Length);
-
             if (TryGetH8lrUtf8(_activeEntryHash, out ReadOnlySpan<byte> h8lrUtf8))
             {
                 CacheActiveSource(h8lrUtf8, TextSourceH8lr);
@@ -1086,7 +981,7 @@ namespace Hecton8.UI
 
             if (_babelStore != null && _babelStore.IsOpen)
             {
-                ReadOnlySpan<byte> mappedUtf8 = _babelStore.GetUtf8(_activeEntryHash);
+                ReadOnlySpan<byte> mappedUtf8 = _babelStore.FetchUtf8(_activeEntryHash);
                 if (mappedUtf8.Length > 0 && !IsBabelErrorSentinel(mappedUtf8))
                 {
                     CacheActiveSource(mappedUtf8, TextSourceBabel);
@@ -1118,19 +1013,12 @@ namespace Hecton8.UI
                 return;
             }
 
-            fixed (byte* ptr = source)
-            {
-                _activeUtf8Ptr = ptr;
-                _activeUtf8Length = source.Length;
-                _activeSourceBytes = source.Length;
-                _activeUtf8SourceFlags = sourceFlags;
-            }
+            _activeSourceBytes = source.Length;
+            _activeUtf8SourceFlags = sourceFlags;
         }
 
         private void ResetActiveSourceCache()
         {
-            _activeUtf8Ptr = null;
-            _activeUtf8Length = 0;
             _activeSourceBytes = 0;
             _activeUtf8SourceFlags = 0u;
         }
@@ -1283,7 +1171,7 @@ namespace Hecton8.UI
                 int meters = 0;
                 if (EnsureVaultBuffers())
                 {
-                    ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+                    ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
                     meters = (int)math.round(math.abs(state.LastDiscoveryLocalY));
                 }
 
@@ -1306,7 +1194,7 @@ namespace Hecton8.UI
                 if (!EnsureVaultBuffers())
                     return false;
 
-                ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+                ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
                 return ZeroGCFormatter.AppendInt(ClampLongToInt(state.LastDiscoveryGridX), destination, ref cursor) &&
                        ZeroGCFormatter.AppendChar('/', destination, ref cursor) &&
                        ZeroGCFormatter.AppendInt(ClampLongToInt(state.LastDiscoveryGridY), destination, ref cursor) &&
@@ -1336,7 +1224,7 @@ namespace Hecton8.UI
             if (player == null || !player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
                 return false;
 
-            ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
             PdaAup48 discovery = new PdaAup48
             {
                 GridX = state.LastDiscoveryGridX,
@@ -1370,24 +1258,13 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return StepVisibleCharactersScalar(quality);
 
-            NativeArray<PdaTypewriterStateDTO> typewriter = _typewriterStateHandle.Resolve(_vault);
+            NativeArray<PdaTypewriterStateDTO> typewriter = ResolveVaultBuffer(in _typewriterStateHandle);
             if (!typewriter.IsCreated)
                 return StepVisibleCharactersScalar(quality);
 
-            float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
-            TypewriterTextJob job = new TypewriterTextJob
-            {
-                State = typewriter,
-                GlobalQualityWeight = quality,
-                DeltaTime = deltaTime,
-                DecodedLength = _decodedLength,
-                VisibleLength = _visibleLength,
-                Frame = ResolvePdaFrame()
-            };
-            // UI presentation scalar: visible-char state is read below in the same frame, so execute directly instead of forcing the synchronous job runner.
-            job.Execute();
-
-            PdaTypewriterStateDTO state = typewriter[0];
+            ref PdaTypewriterStateDTO stateRef = ref GetVaultElementRef(in _typewriterStateHandle, 0);
+            StepTypewriterScalar(ref stateRef, quality, SystemDispatcher.CurrentFrameDeltaTime, _decodedLength, _visibleLength, ResolvePdaFrame());
+            PdaTypewriterStateDTO state = stateRef;
             int previousVisible = _visibleLength;
             _visibleLength = math.clamp((int)state.VisibleChars, 0, _decodedLength);
             _charAccumulator = state.CharAccumulator;
@@ -1417,12 +1294,60 @@ namespace Hecton8.UI
             return (uint)math.max(0, _visibleLength - previousVisible);
         }
 
+        private static void StepTypewriterScalar(
+            ref PdaTypewriterStateDTO state,
+            float globalQualityWeight,
+            float deltaTime,
+            int decodedLength,
+            int visibleLength,
+            uint frame)
+        {
+            float q = math.saturate(globalQualityWeight);
+            float dt = math.isfinite(deltaTime) && deltaTime > 0f ? deltaTime : 1f / 60f;
+            int decoded = math.max(0, decodedLength);
+            int visible = math.clamp(visibleLength, 0, decoded);
+            if (visible >= decoded)
+            {
+                state.CharAccumulator = 0f;
+                state.GlobalQualityWeight = q;
+                state.VisibleChars = (uint)visible;
+                state.DecodedChars = (uint)decoded;
+                state.CharsRenderedThisFrame = 0u;
+                state.LastFrame = frame;
+                state.StateHash = HashTypewriterState(visible, decoded, q);
+                return;
+            }
+
+            float curve = q * q * (3f - (2f * q));
+            float charsPerSecond = math.lerp(18f, 1600f, curve);
+            float accumulator = state.CharAccumulator + (charsPerSecond * dt);
+            int step = math.max(1, (int)math.floor(accumulator));
+            int nextVisible = math.min(decoded, visible + step);
+
+            state.CharAccumulator = math.max(0f, accumulator - step);
+            state.GlobalQualityWeight = q;
+            state.VisibleChars = (uint)nextVisible;
+            state.DecodedChars = (uint)decoded;
+            state.CharsRenderedThisFrame = (uint)math.max(0, nextVisible - visible);
+            state.LastFrame = frame;
+            state.StateHash = HashTypewriterState(nextVisible, decoded, q);
+        }
+
+        private static uint HashTypewriterState(int visible, int decoded, float quality)
+        {
+            uint hash = 2166136261u;
+            hash = (hash ^ (uint)visible) * 16777619u;
+            hash = (hash ^ (uint)decoded) * 16777619u;
+            hash = (hash ^ math.asuint(quality)) * 16777619u;
+            return hash;
+        }
+
         private void ResetTypewriterState()
         {
             if (!EnsureVaultBuffers())
                 return;
 
-            ref PdaTypewriterStateDTO state = ref _typewriterStateHandle.GetElementAsRef(_vault, 0);
+            ref PdaTypewriterStateDTO state = ref GetVaultElementRef(in _typewriterStateHandle, 0);
             state = default;
         }
 
@@ -1476,7 +1401,7 @@ namespace Hecton8.UI
 
             Span<char> span = _metaLease.Buffer.AsSpan(0, math.min(MetaBufferCapacity, _metaLease.Buffer.Length));
             int cursor = 0;
-            ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
             ZeroGCFormatter.AppendToSpan("UNLOCKED ".AsSpan(), span, ref cursor);
             ZeroGCFormatter.AppendInt((int)state.UnlockedCount, span, ref cursor);
             ZeroGCFormatter.AppendToSpan("/256 | BIT ".AsSpan(), span, ref cursor);
@@ -1499,7 +1424,7 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return;
 
-            ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
             state.Magic = StateMagic;
             state.GlobalQualityWeight = math.saturate(quality);
             state.LastEntryHash = _activeEntryHash;
@@ -1515,7 +1440,7 @@ namespace Hecton8.UI
             state.Flags = ComposeStateFlags(state.Flags);
             state.StateHash = ComputeRuntimeStateHash(in state);
 
-            ref EncyclopediaStateDTO encyclopedia = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+            ref EncyclopediaStateDTO encyclopedia = ref GetVaultElementRef(in _unlockMaskHandle, 0);
             encyclopedia.Magic = StateMagic;
             encyclopedia.LastEntryHash = _activeEntryHash;
             encyclopedia.GlobalQualityWeight = state.GlobalQualityWeight;
@@ -1531,15 +1456,15 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return;
 
-            ref int cursor = ref _telemetryCursorHandle.GetElementAsRef(_vault, 0);
+            ref int cursor = ref GetVaultElementRef(in _telemetryCursorHandle, 0);
             int index = cursor;
             if ((uint)index >= TelemetryFrameCount)
                 index = 0;
 
-            ref PdaEncyclopediaTelemetryEntry entry = ref _telemetryHandle.GetElementAsRef(_vault, index);
+            ref PdaEncyclopediaTelemetryEntry entry = ref GetVaultElementRef(in _telemetryHandle, index);
             entry.Frame = ResolvePdaFrame();
             entry.EntryHash = _activeEntryHash;
-            entry.UnlockedCount = _runtimeStateHandle.GetElementAsRef(_vault, 0).UnlockedCount;
+            entry.UnlockedCount = GetVaultElementRef(in _runtimeStateHandle, 0).UnlockedCount;
             entry.CharsRenderedThisFrame = charsRenderedThisFrame;
             entry.VisibleChars = (uint)math.max(0, _visibleLength);
             entry.DecodedChars = (uint)math.max(0, _decodedLength);
@@ -1563,13 +1488,91 @@ namespace Hecton8.UI
         {
             return _vaultReady &&
                    _vault != null &&
-                   _unlockMaskHandle.IsCreated &&
-                   _runtimeStateHandle.IsCreated &&
-                   _metadataHandle.IsCreated &&
-                   _telemetryHandle.IsCreated &&
-                   _mockLookupResultHandle.IsCreated &&
-                   _typewriterStateHandle.IsCreated &&
-                   _h8lrMirrorHandle.IsCreated;
+                   ArePdaHandlesCreated();
+        }
+
+        private NativeArray<T> ResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return TryResolveVaultBuffer(in handle, out NativeArray<T> buffer) ? buffer : default;
+        }
+
+        private ref T GetVaultElementRef<T>(in VaultGenerationHandle<T> handle, int index)
+            where T : struct
+        {
+            if (!TryResolveVaultBuffer(in handle, out NativeArray<T> buffer) ||
+                (uint)index >= (uint)buffer.Length)
+            {
+                FatalMemoryException.ThrowStaleVaultHandle();
+            }
+
+            void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
+            return ref UnsafeUtility.AsRef<T>((byte*)basePtr + (index * UnsafeUtility.SizeOf<T>()));
+        }
+
+        private bool TryResolveVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (_vault == null ||
+                !IsPdaHandleCreated(in handle) ||
+                !_vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length <= 0)
+            {
+                InvalidateVaultDescriptors();
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsPdaHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private bool ArePdaHandlesCreated()
+        {
+            return IsPdaHandleCreated(in _unlockMaskHandle) &&
+                   IsPdaHandleCreated(in _runtimeStateHandle) &&
+                   IsPdaHandleCreated(in _metadataHandle) &&
+                   IsPdaHandleCreated(in _telemetryHandle) &&
+                   IsPdaHandleCreated(in _telemetryCursorHandle) &&
+                   IsPdaHandleCreated(in _mockUtf8Handle) &&
+                   IsPdaHandleCreated(in _mockIndexHandle) &&
+                   IsPdaHandleCreated(in _csvScratchHandle) &&
+                   IsPdaHandleCreated(in _typewriterStateHandle) &&
+                   IsPdaHandleCreated(in _h8lrMirrorHandle);
+        }
+
+        private bool ArePdaBuffersResolvable()
+        {
+            return IsPdaBufferResolvable(in _unlockMaskHandle, 1) &&
+                   IsPdaBufferResolvable(in _runtimeStateHandle, 1) &&
+                   IsPdaBufferResolvable(in _metadataHandle, MaxMetadataEntries) &&
+                   IsPdaBufferResolvable(in _telemetryHandle, TelemetryFrameCount) &&
+                   IsPdaBufferResolvable(in _telemetryCursorHandle, 1) &&
+                   IsPdaBufferResolvable(in _mockUtf8Handle, MockUtf8Bytes) &&
+                   IsPdaBufferResolvable(in _mockIndexHandle, MockEntryCapacity) &&
+                   IsPdaBufferResolvable(in _csvScratchHandle, CsvScratchBytes) &&
+                   IsPdaBufferResolvable(in _typewriterStateHandle, 1) &&
+                   IsPdaBufferResolvable(in _h8lrMirrorHandle, H8lrMirrorBytes);
+        }
+
+        private bool IsPdaBufferResolvable<T>(in VaultGenerationHandle<T> handle, int requiredLength)
+            where T : struct
+        {
+            return TryResolveVaultBuffer(in handle, out NativeArray<T> buffer) &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private void InvalidateVaultDescriptors()
+        {
+            _vaultReady = false;
         }
 
         private void TryColdBootstrap()
@@ -1592,88 +1595,80 @@ namespace Hecton8.UI
             if (EnsureVaultBuffers())
                 return true;
 
-            if (!TryResolveVault())
+            if (!TryBindVaultCold())
             {
                 _lastFaultHash = FaultMissingVault;
                 _streamState = PdaEncyclopediaStreamState.Fault;
                 return false;
             }
 
-            _unlockMaskHandle = _vault.GetBufferHandle<EncyclopediaStateDTO>(
+            _unlockMaskHandle = _vault.GetGenerationHandle<EncyclopediaStateDTO>(
                 UnlockMaskBufferId,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _runtimeStateHandle = _vault.GetBufferHandle<PdaEncyclopediaRuntimeStateDTO>(
+            _runtimeStateHandle = _vault.GetGenerationHandle<PdaEncyclopediaRuntimeStateDTO>(
                 RuntimeStateBufferId,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _metadataHandle = _vault.GetBufferHandle<PdaEncyclopediaEntryMetaDTO>(
+            _metadataHandle = _vault.GetGenerationHandle<PdaEncyclopediaEntryMetaDTO>(
                 MetadataBufferId,
                 MaxMetadataEntries,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = _vault.GetBufferHandle<PdaEncyclopediaTelemetryEntry>(
+            _telemetryHandle = _vault.GetGenerationHandle<PdaEncyclopediaTelemetryEntry>(
                 TelemetryBufferId,
                 TelemetryFrameCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = _vault.GetBufferHandle<int>(
+            _telemetryCursorHandle = _vault.GetGenerationHandle<int>(
                 TelemetryCursorBufferId,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.ClearMemory);
-            _mockUtf8Handle = _vault.GetBufferHandle<byte>(
+            _mockUtf8Handle = _vault.GetGenerationHandle<byte>(
                 MockUtf8BufferId,
                 MockUtf8Bytes,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _mockIndexHandle = _vault.GetBufferHandle<BabelIndexDTO>(
+            _mockIndexHandle = _vault.GetGenerationHandle<BabelIndexDTO>(
                 MockIndexBufferId,
                 MockEntryCapacity,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = _vault.GetBufferHandle<byte>(
+            _csvScratchHandle = _vault.GetGenerationHandle<byte>(
                 CsvScratchBufferId,
                 CsvScratchBytes,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _mockLookupResultHandle = _vault.GetBufferHandle<BabelLookupResultDTO>(
-                MockLookupResultBufferId,
-                1,
-                SystemID.UI,
-                NativeArrayOptions.UninitializedMemory);
-            _typewriterStateHandle = _vault.GetBufferHandle<PdaTypewriterStateDTO>(
+            _typewriterStateHandle = _vault.GetGenerationHandle<PdaTypewriterStateDTO>(
                 TypewriterStateBufferId,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            _h8lrMirrorHandle = _vault.GetBufferHandle<byte>(
+            _h8lrMirrorHandle = _vault.GetGenerationHandle<byte>(
                 H8lrMirrorBufferId,
                 H8lrMirrorBytes,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
 
-            NativeArray<PdaEncyclopediaRuntimeStateDTO> state = _runtimeStateHandle.Resolve(_vault);
-            NativeArray<EncyclopediaStateDTO> mask = _unlockMaskHandle.Resolve(_vault);
-            NativeArray<PdaTypewriterStateDTO> typewriter = _typewriterStateHandle.Resolve(_vault);
+            if (!ArePdaBuffersResolvable())
+                return false;
+
+            NativeArray<PdaEncyclopediaRuntimeStateDTO> state = ResolveVaultBuffer(in _runtimeStateHandle);
+            NativeArray<EncyclopediaStateDTO> mask = ResolveVaultBuffer(in _unlockMaskHandle);
+            NativeArray<PdaTypewriterStateDTO> typewriter = ResolveVaultBuffer(in _typewriterStateHandle);
             if (!state.IsCreated || !mask.IsCreated || !typewriter.IsCreated)
                 return false;
 
             if (state[0].Magic != StateMagic || mask[0].Magic != StateMagic)
             {
-                ClearPdaEncyclopediaRuntimeStateJob job = new ClearPdaEncyclopediaRuntimeStateJob
-                {
-                    RuntimeState = state,
-                    UnlockMask = mask,
-                    TypewriterState = typewriter
-                };
-                job.Execute();
-                ref PdaEncyclopediaRuntimeStateDTO runtimeState = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+                ClearPdaRuntimeStateScalar(state, mask, typewriter);
+                ref PdaEncyclopediaRuntimeStateDTO runtimeState = ref GetVaultElementRef(in _runtimeStateHandle, 0);
                 runtimeState.Magic = StateMagic;
                 runtimeState.StreamState = (uint)PdaEncyclopediaStreamState.Idle;
-                ref EncyclopediaStateDTO encyclopedia = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+                ref EncyclopediaStateDTO encyclopedia = ref GetVaultElementRef(in _unlockMaskHandle, 0);
                 encyclopedia.Magic = StateMagic;
                 encyclopedia.StreamState = (uint)PdaEncyclopediaStreamState.Idle;
                 ClearMetadataBuffer();
@@ -1684,25 +1679,26 @@ namespace Hecton8.UI
             return true;
         }
 
-        private bool TryResolveVault()
+        private static void ClearPdaRuntimeStateScalar(
+            NativeArray<PdaEncyclopediaRuntimeStateDTO> runtimeState,
+            NativeArray<EncyclopediaStateDTO> unlockMask,
+            NativeArray<PdaTypewriterStateDTO> typewriterState)
+        {
+            runtimeState[0] = default;
+            unlockMask[0] = default;
+            typewriterState[0] = default;
+        }
+
+        private bool TryBindVaultCold()
         {
             if (_vault != null)
                 return true;
 
             _vault = GlobalRegistry.DataVault;
-            if (_vault != null)
-                return true;
-
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-            {
-                _vault = latest;
-                return true;
-            }
-
-            return false;
+            return _vault != null;
         }
 
-        private void TryResolvePlayerContextCold()
+        private void TryBindPlayerContextCold()
         {
             if (_playerContext != null)
                 return;
@@ -1736,10 +1732,9 @@ namespace Hecton8.UI
             if (_h8lrLoreStore == null)
                 _h8lrLoreStore = new PdaH8lrLoreStore();
 
-            NativeArray<byte> mirror = _h8lrMirrorHandle.Resolve(_vault);
             bool opened = !string.IsNullOrEmpty(h8lrPathOverride)
-                ? _h8lrLoreStore.Open(Path.GetFullPath(h8lrPathOverride), mirror)
-                : _h8lrLoreStore.OpenDefault(mirror);
+                ? _h8lrLoreStore.Open(Path.GetFullPath(h8lrPathOverride), _vault, in _h8lrMirrorHandle)
+                : _h8lrLoreStore.OpenDefault(_vault, in _h8lrMirrorHandle);
 
             if (opened)
                 SeedH8lrMetadata();
@@ -1784,8 +1779,8 @@ namespace Hecton8.UI
                 if (!store.TryGetRecord(i, out PdaH8lrRecordDTO record) || record.Hash == 0u)
                     continue;
 
-                ushort bitIndex = ResolveOrCreateBitIndex(record.Hash);
-                ref PdaEncyclopediaEntryMetaDTO meta = ref _metadataHandle.GetElementAsRef(_vault, bitIndex);
+                ushort bitIndex = EnsureBitIndex(record.Hash);
+                ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, bitIndex);
                 if (meta.SourceId != H8lrSourceId)
                     imported++;
 
@@ -1799,9 +1794,9 @@ namespace Hecton8.UI
 
             if (imported > 0)
             {
-                ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+                ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
                 state.Revision++;
-                ref EncyclopediaStateDTO encyclopedia = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+                ref EncyclopediaStateDTO encyclopedia = ref GetVaultElementRef(in _unlockMaskHandle, 0);
                 encyclopedia.Revision = state.Revision;
                 encyclopedia.MetadataCount = state.MetadataCount;
             }
@@ -1814,8 +1809,8 @@ namespace Hecton8.UI
             if (_mockSeeded || !EnsureVaultBuffers())
                 return;
 
-            NativeArray<byte> bytes = _mockUtf8Handle.Resolve(_vault);
-            NativeArray<BabelIndexDTO> index = _mockIndexHandle.Resolve(_vault);
+            NativeArray<byte> bytes = ResolveVaultBuffer(in _mockUtf8Handle);
+            NativeArray<BabelIndexDTO> index = ResolveVaultBuffer(in _mockIndexHandle);
             if (!bytes.IsCreated || !index.IsCreated)
                 return;
 
@@ -1841,9 +1836,9 @@ namespace Hecton8.UI
                 UnlockEntry(hash, in aup, sourceId, ResolvePdaFrame(), false);
             }
 
-            ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
             state.MockEntryCount = (uint)math.min(MockEntryCapacity, index.Length);
-            ref EncyclopediaStateDTO encyclopedia = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+            ref EncyclopediaStateDTO encyclopedia = ref GetVaultElementRef(in _unlockMaskHandle, 0);
             encyclopedia.MockEntryCount = state.MockEntryCount;
             _mockSeeded = true;
         }
@@ -1875,24 +1870,16 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers() || !_mockSeeded)
                 return false;
 
-            NativeArray<BabelIndexDTO> index = _mockIndexHandle.Resolve(_vault);
-            NativeArray<byte> bytes = _mockUtf8Handle.Resolve(_vault);
-            NativeArray<BabelLookupResultDTO> result = _mockLookupResultHandle.Resolve(_vault);
-            if (!index.IsCreated || !bytes.IsCreated || !result.IsCreated)
+            NativeArray<BabelIndexDTO> index = ResolveVaultBuffer(in _mockIndexHandle);
+            NativeArray<byte> bytes = ResolveVaultBuffer(in _mockUtf8Handle);
+            if (!index.IsCreated || !bytes.IsCreated)
                 return false;
 
-            ExtractLoreSpanJob job = new ExtractLoreSpanJob
-            {
-                Index = index,
-                Result = result,
-                EntryHash = hash,
-                MockBaseHash = DefaultEntryHash,
-                MockEntryCount = (uint)math.min(MockEntryCapacity, index.Length)
-            };
-            // One-row lookup consumed immediately by the streamer; direct Execute avoids a synchronous Job System run path.
-            job.Execute();
-
-            BabelLookupResultDTO row = result[0];
+            BabelLookupResultDTO row = ExtractMockLoreSpanScalar(
+                index,
+                hash,
+                DefaultEntryHash,
+                (uint)math.min(MockEntryCapacity, index.Length));
             if (row.Flags != 0u ||
                 row.ByteLength == 0u ||
                 (long)row.ByteOffset > (long)bytes.Length - row.ByteLength)
@@ -1903,6 +1890,34 @@ namespace Hecton8.UI
             byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes);
             utf8 = new ReadOnlySpan<byte>(ptr + row.ByteOffset, (int)row.ByteLength);
             return true;
+        }
+
+        private static BabelLookupResultDTO ExtractMockLoreSpanScalar(
+            NativeArray<BabelIndexDTO> index,
+            uint entryHash,
+            uint mockBaseHash,
+            uint mockEntryCount)
+        {
+            BabelLookupResultDTO result = default;
+            result.TextHash = entryHash;
+            result.Flags = 1u;
+
+            if (entryHash >= mockBaseHash)
+            {
+                uint ordinal = entryHash - mockBaseHash;
+                if (ordinal < mockEntryCount && ordinal < (uint)index.Length)
+                {
+                    BabelIndexDTO row = index[(int)ordinal];
+                    if (row.StringHash == entryHash)
+                    {
+                        result.ByteOffset = row.ByteOffset;
+                        result.ByteLength = row.ByteLength;
+                        result.Flags = 0u;
+                    }
+                }
+            }
+
+            return result;
         }
 
         private bool ParseCsvMetadata(NativeArray<byte> scratch, int byteLength)
@@ -1922,12 +1937,12 @@ namespace Hecton8.UI
                 ReadOnlySpan<byte> line = bytes.Slice(lineStart, i - lineStart);
                 if (TryParseCsvLine(line, out uint hash, out ushort bitIndex))
                 {
-                    ref PdaEncyclopediaEntryMetaDTO meta = ref _metadataHandle.GetElementAsRef(_vault, bitIndex);
+                    ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, bitIndex);
                     if (meta.EntryHash == 0u)
                     {
-                        ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+                        ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
                         state.MetadataCount = math.min((uint)UnlockBitCount, state.MetadataCount + 1u);
-                        ref EncyclopediaStateDTO encyclopedia = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+                        ref EncyclopediaStateDTO encyclopedia = ref GetVaultElementRef(in _unlockMaskHandle, 0);
                         encyclopedia.MetadataCount = state.MetadataCount;
                     }
 
@@ -1942,9 +1957,9 @@ namespace Hecton8.UI
 
             if (imported > 0)
             {
-                ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+                ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
                 state.Revision++;
-                ref EncyclopediaStateDTO encyclopedia = ref _unlockMaskHandle.GetElementAsRef(_vault, 0);
+                ref EncyclopediaStateDTO encyclopedia = ref GetVaultElementRef(in _unlockMaskHandle, 0);
                 encyclopedia.Revision = state.Revision;
             }
 
@@ -1990,20 +2005,20 @@ namespace Hecton8.UI
 
         private void ClearMetadataBuffer()
         {
-            if (!_metadataHandle.IsCreated)
+            if (!IsPdaHandleCreated(in _metadataHandle))
                 return;
 
             for (int i = 0; i < MaxMetadataEntries; i++)
-                _metadataHandle.GetElementAsRef(_vault, i) = default;
+                GetVaultElementRef(in _metadataHandle, i) = default;
         }
 
         private void ClearTelemetryBuffer()
         {
-            if (!_telemetryHandle.IsCreated)
+            if (!IsPdaHandleCreated(in _telemetryHandle))
                 return;
 
             for (int i = 0; i < TelemetryFrameCount; i++)
-                _telemetryHandle.GetElementAsRef(_vault, i) = default;
+                GetVaultElementRef(in _telemetryHandle, i) = default;
         }
 
         private void RefreshVisibility()
@@ -2019,12 +2034,6 @@ namespace Hecton8.UI
 
         private void EnsureCanvasSplit()
         {
-            if (dynamicTextCanvas == null && bodyText != null)
-                dynamicTextCanvas = bodyText.GetComponentInParent<Canvas>();
-
-            if (staticShellCanvas == null && titleText != null)
-                staticShellCanvas = titleText.GetComponentInParent<Canvas>();
-
             _canvasSplitReady = dynamicTextCanvas != null &&
                                 staticShellCanvas != null &&
                                 !ReferenceEquals(dynamicTextCanvas, staticShellCanvas);
@@ -2104,7 +2113,7 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return false;
 
-            ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
             aup.GridX = state.LastDiscoveryGridX;
             aup.GridY = state.LastDiscoveryGridY;
             aup.GridZ = state.LastDiscoveryGridZ;
@@ -2183,7 +2192,7 @@ namespace Hecton8.UI
             _streamState = PdaEncyclopediaStreamState.Fault;
             if (EnsureVaultBuffers())
             {
-                ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
+                ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
                 state.FaultHash = faultHash;
                 state.StreamState = (uint)PdaEncyclopediaStreamState.Fault;
             }
@@ -2194,7 +2203,7 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return;
 
-            NativeArray<PdaEncyclopediaTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
+            NativeArray<PdaEncyclopediaTelemetryEntry> telemetry = ResolveVaultBuffer(in _telemetryHandle);
             if (!telemetry.IsCreated)
                 return;
 

@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 namespace Hecton8.Power
 {
-    public sealed unsafe class SolverConvergenceXRayWindow : EditorWindow
+    public sealed class SolverConvergenceXRayWindow : EditorWindow
     {
         private const int SampleCount = SubmarineOsThermalGridRuntime.TelemetryFrameCount;
 
@@ -92,12 +92,12 @@ namespace Hecton8.Power
             _writeCursor = (_writeCursor + 1) % SampleCount;
             _graph.MarkDirtyRepaint();
 
-            if (runtime.TryGetTuningPointer(out SubmarineThermalGridTuningDTO* tuning))
+            if (runtime.TryReadTuning(out SubmarineThermalGridTuningDTO tuning))
             {
                 _suppress = true;
-                _toleranceSlider.SetValueWithoutNotify(tuning->JacobiTolerance);
-                _omegaSlider.SetValueWithoutNotify(tuning->BaseOmegaFactor);
-                _toleranceMultiplierSlider.SetValueWithoutNotify(tuning->ToleranceMultiplier);
+                _toleranceSlider.SetValueWithoutNotify(tuning.JacobiTolerance);
+                _omegaSlider.SetValueWithoutNotify(tuning.BaseOmegaFactor);
+                _toleranceMultiplierSlider.SetValueWithoutNotify(tuning.ToleranceMultiplier);
                 _suppress = false;
             }
         }
@@ -108,10 +108,11 @@ namespace Hecton8.Power
                 return;
 
             SubmarineOsThermalGridRuntime runtime = SubmarineOsThermalGridRuntime.Active;
-            if (runtime == null || !runtime.TryGetTuningPointer(out SubmarineThermalGridTuningDTO* tuning))
+            if (runtime == null || !runtime.TryReadTuning(out SubmarineThermalGridTuningDTO tuning))
                 return;
 
-            tuning->JacobiTolerance = Mathf.Max(0.0001f, evt.newValue);
+            tuning.JacobiTolerance = Mathf.Max(0.0001f, evt.newValue);
+            runtime.TryApplyTuning(in tuning);
         }
 
         private void OnOmegaChanged(ChangeEvent<float> evt)
@@ -120,10 +121,11 @@ namespace Hecton8.Power
                 return;
 
             SubmarineOsThermalGridRuntime runtime = SubmarineOsThermalGridRuntime.Active;
-            if (runtime == null || !runtime.TryGetTuningPointer(out SubmarineThermalGridTuningDTO* tuning))
+            if (runtime == null || !runtime.TryReadTuning(out SubmarineThermalGridTuningDTO tuning))
                 return;
 
-            tuning->BaseOmegaFactor = Mathf.Clamp(evt.newValue, 0.25f, 1.1f);
+            tuning.BaseOmegaFactor = Mathf.Clamp(evt.newValue, 0.25f, 1.1f);
+            runtime.TryApplyTuning(in tuning);
         }
 
         private void OnToleranceMultiplierChanged(ChangeEvent<float> evt)
@@ -132,10 +134,11 @@ namespace Hecton8.Power
                 return;
 
             SubmarineOsThermalGridRuntime runtime = SubmarineOsThermalGridRuntime.Active;
-            if (runtime == null || !runtime.TryGetTuningPointer(out SubmarineThermalGridTuningDTO* tuning))
+            if (runtime == null || !runtime.TryReadTuning(out SubmarineThermalGridTuningDTO tuning))
                 return;
 
-            tuning->ToleranceMultiplier = Mathf.Clamp(evt.newValue, 0.1f, 64f);
+            tuning.ToleranceMultiplier = Mathf.Clamp(evt.newValue, 0.1f, 64f);
+            runtime.TryApplyTuning(in tuning);
         }
 
         private static void TriggerOscillatorMock()

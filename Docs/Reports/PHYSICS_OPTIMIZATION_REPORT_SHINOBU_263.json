@@ -1,0 +1,61 @@
+{
+  "agent": "SHINOBU_263",
+  "scanner": "Wave_Math_Scanner fallback static report",
+  "verdict": "PASS_PENDING_COMPILE",
+  "summary": "OOP Wave Math Eradicated",
+  "generatedWithoutUnity": true,
+  "scannedRoots": [
+    "Assets/_Project/Scripts/Physics/Buoyancy",
+    "Assets/_Project/Scripts/Environment/Fluids"
+  ],
+  "projectScriptCsCountAtScan": 2173,
+  "physicsFluidsDirectoryPresent": false,
+  "forbiddenPatterns": [
+    "Mathf.Sin inside frame loop",
+    "Mathf.Cos inside frame loop",
+    "new float[] inside frame loop",
+    "class WaveComponent",
+    "HectonFloatingOrigin.CurrentTotalOffsetDouble inside AnalyticalGerstnerWave authority",
+    "GlobalRegistry/Application/Time/allocation/foreach/Complete inside SHINOBU_263 hot roots"
+  ],
+  "frameLoopTrigHits": 0,
+  "frameLoopFloatArrayAllocations": 0,
+  "asyncGpuReadbackTypeHits": 10,
+  "asyncGpuReadbackTypePolicy": "counted as non-blocking sibling references; not a synchronous wait failure",
+  "waveComponentClassHits": 0,
+  "solverForbiddenHotPathHits": 0,
+  "solverHotPathRoots": [
+    "FixedTick",
+    "PostFixedTick",
+    "Tick",
+    "LateTick",
+    "Execute",
+    "SHINOBU_263 solver helpers",
+    "TryPrepareRuntimeVault",
+    "TryResolveRuntimeBuffers",
+    "ResolveTelemetryBuffers",
+    "TryLockJobBuffers/TryLock",
+    "TryLockTelemetryBuffers",
+    "ResolveOctaveBudget/ResolveOctaveWeight",
+    "ClearCounterLanes",
+    "UnlockJobBuffers/Unlock"
+  ],
+  "hiddenOriginReadHits": 0,
+  "rawAupWithoutShiftHits": 0,
+  "aupShiftSequenceFields": 8,
+  "staleOriginRejectPolicy": "EvaluateAnalyticalWavesJob requires request ShiftFrameID to equal Tuning.OriginShiftSequence before LocalizeAupXZ; stale lanes write FlagStaleOrigin and counter lane 3",
+  "counterResetPolicy": "four 64-byte WaveMathCounterLane rows are cleared synchronously in the locked owner window; no ResetWaveMathCountersJob tiny job remains",
+  "telemetryFencePolicy": "PostFixedTick locks Shinobu263WaveTelemetryRing and Shinobu263WaveTelemetryCursor before telemetry writes and dump readback",
+  "macroAmplitudePolicy": "AnalyticalGerstnerWaveMath.ResolveAmplitude is shared by packed full evaluation and scalar macro-grid generation, including StormWeight01",
+  "octaveLodPolicy": "ResolveOctaveBudget uses math.smoothstep(GlobalQualityWeight), is cached once per SIMD group/scalar sample, and ResolveOctaveWeight fades the partially active final octave amplitude so thermal quality changes do not snap octave rows on or off",
+  "phaseTimePolicy": "GerstnerWaveTuningDTO uses double PhaseTimeSeconds at byte 120; ResolvePhaseTimeSeconds seeds from sanitized legacy TimeSeconds only when the double lane is not yet positive/finite; ResolveTimePhaseModulo wraps time phase in double before float SIMD trig",
+  "nanVaccinationPolicy": "StoreResult and scalar EvaluateScalar sanitize displacement vectors once, and both ResolveNormal helpers normalize only a finite safe vector before rsqrt",
+  "blackBoxDumpPolicy": "Dump_SHINOBU_263.bin writes a 32-byte little-endian H8S263 header with zeroed reserved bytes; TelemetryCursor is a monotonic write count; header stores row size, capacity, write count, kernel hash, oldest-start slot, and valid-row count; rows are oldest-to-newest with early unwritten rows kept zeroed",
+  "originSnapshotRoute": "cold lifecycle seeds cached AUP from HectonFloatingOrigin.LastShiftEvent; IOriginShiftListener updates thereafter; FixedTick uses cached double3 and never reads CurrentTotalOffsetDouble",
+  "editorOnlyFrameLoopHits": [
+    "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalWaveTunerWindow.Editor.cs:116 editor UI repaint only",
+    "Assets/_Project/Scripts/Physics/Buoyancy/Editor/PhysicsSleepStateXRayWindow.cs:65 sibling editor x-ray only"
+  ],
+  "compileProof": "not run: CPU sampled above the project gate; generated csproj is stale for SHINOBU_263 sources",
+  "findings": []
+}

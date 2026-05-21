@@ -8,8 +8,7 @@ using UnityEngine;
 namespace Hecton8.Construction
 {
     /// <summary>
-    /// Physical tool dock that recharges the active modular tool state through the base power grid.
-    /// Removable battery-cell charging remains owned by <see cref="Hecton8.Gameplay.BatteryCharger"/>.
+    /// Physical tool dock facade. Battery energy transfer is owned by the SOA/CSR charger logistics runtime.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
@@ -17,7 +16,6 @@ namespace Hecton8.Construction
     public sealed class BatteryChargerModule : MonoBehaviour, IPowerComponent, IInteractable, IPoolable
     {
         private const string EmptyPrompt = "Dock Tool";
-        private const string ChargingPrompt = "Charging Tool";
         private const string ReadyPrompt = "Retrieve Tool";
 
         [Header("Dock")]
@@ -32,7 +30,6 @@ namespace Hecton8.Construction
         [SerializeField] private bool _debugHasTool;
         [SerializeField] private float _debugBattery01;
 
-        private PowerNode _powerNode;
         private PlayerTool _slottedTool;
         private Transform _slottedToolTransform;
         private Transform _originalParent;
@@ -42,7 +39,6 @@ namespace Hecton8.Construction
         private PlayerToolManager _owningToolManager;
         private bool _registered;
         private bool _hasPower = true;
-        private bool _isCharging;
 
         public float PowerRating
         {
@@ -57,8 +53,7 @@ namespace Hecton8.Construction
 
         private void Awake()
         {
-            if (!TryGetComponent(out _powerNode))
-                _powerNode = null;
+            PreserveColdInspectorCompatibility();
         }
 
         private void OnEnable()
@@ -82,7 +77,6 @@ namespace Hecton8.Construction
         public void OnSpawn()
         {
             _hasPower = true;
-            SetChargingState(false);
             _slottedTool = null;
             _slottedToolTransform = null;
             TryRegister();
@@ -93,7 +87,6 @@ namespace Hecton8.Construction
         {
             TryRestoreToolPose();
             _hasPower = true;
-            SetChargingState(false);
             TryUnregister();
             RefreshDiagnostics();
         }
@@ -101,9 +94,6 @@ namespace Hecton8.Construction
         public void OnPowerStatusChanged(bool hasPower)
         {
             _hasPower = hasPower;
-            if (!hasPower)
-                SetChargingState(false);
-
             RefreshDiagnostics();
         }
 
@@ -120,7 +110,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            PlayerToolManager toolManager = ResolveToolManager(interactor);
+            PlayerToolManager toolManager = BindToolManagerForInteraction(interactor);
             if (toolManager == null || toolManager.CurrentTool == null)
                 return;
 
@@ -132,12 +122,12 @@ namespace Hecton8.Construction
             if (_slottedTool == null)
                 return EmptyPrompt;
 
-            return _isCharging ? ChargingPrompt : ReadyPrompt;
+            return ReadyPrompt;
         }
 
         public bool TryDockTool(PlayerTool tool)
         {
-            return TryDockTool(tool, ResolveToolManager(null));
+            return TryDockTool(tool, BindToolManagerForInteraction(null));
         }
 
         private bool TryDockTool(PlayerTool tool, PlayerToolManager toolManager)
@@ -162,8 +152,6 @@ namespace Hecton8.Construction
             _slottedToolTransform.localRotation = Quaternion.identity;
             _slottedToolTransform.localScale = Vector3.one;
 
-            MarkGridDirty();
-
             RefreshDiagnostics();
             return true;
         }
@@ -182,16 +170,13 @@ namespace Hecton8.Construction
             _slottedTool = null;
             _slottedToolTransform = null;
             _originalParent = null;
-            SetChargingState(false);
             if (_owningToolManager != null)
                 _owningToolManager.EndExternalToolDock(restoredTool);
 
             _owningToolManager = null;
-
-            MarkGridDirty();
         }
 
-        private static PlayerToolManager ResolveToolManager(Transform interactor)
+        private static PlayerToolManager BindToolManagerForInteraction(Transform interactor)
         {
             if (interactor != null)
             {
@@ -226,19 +211,13 @@ namespace Hecton8.Construction
             _debugHasTool = _slottedTool != null;
         }
 
-        private void SetChargingState(bool isCharging)
+        private void PreserveColdInspectorCompatibility()
         {
-            if (_isCharging == isCharging)
-                return;
-
-            _isCharging = isCharging;
-            MarkGridDirty();
-        }
-
-        private void MarkGridDirty()
-        {
-            if (_powerNode != null && _powerNode.Grid != null)
-                _powerNode.Grid.MarkDirty();
+            // Serialized tuning fields stay on prefabs for migration; runtime charging is SOA/CSR.
+            _ = chargeRateNormalizedPerSecond;
+            _ = standbyPowerDrawWatts;
+            _ = activePowerDrawWatts;
+            _ = _debugBattery01;
         }
     }
 }

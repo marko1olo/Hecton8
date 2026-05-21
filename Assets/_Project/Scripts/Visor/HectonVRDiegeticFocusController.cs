@@ -11,7 +11,7 @@ namespace Hecton8.Visor
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Visor/VR Diegetic Focus Controller")]
-    public sealed class HectonVRDiegeticFocusController : MonoBehaviour, ITickable
+    public sealed class HectonVRDiegeticFocusController : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
     {
         private const float GlobalWriteEpsilon = 0.001f;
         private const float FocusSleepEpsilon = 0.002f;
@@ -33,6 +33,7 @@ namespace Hecton8.Visor
         [SerializeField] private bool clearGlobalsOnDisable = true;
 
         private bool _registeredToTick;
+        private bool _hotSwapRegistered;
         private float _worldBlur;
         private float _hudBlur;
         private float _appliedWorldBlur = -1f;
@@ -40,16 +41,19 @@ namespace Hecton8.Visor
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             TryRegisterTick();
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegisterTick();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterTick();
             if (clearGlobalsOnDisable)
             {
@@ -62,14 +66,21 @@ namespace Hecton8.Visor
             }
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+                TryRegisterTick();
+        }
+
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
             if (!TryResolveEyeSelectionPose(out Vector3 rayOriginPosition, out Vector3 rayForward))
             {
                 ApplyFocusTargets(0f, 0f, deltaTime);
-                if (pdaPanel == null && AreFocusTargetsSettled(0f, 0f))
-                    TryUnregisterTick();
 
                 return;
             }
@@ -86,8 +97,6 @@ namespace Hecton8.Visor
             float worldTarget = pdaFocused ? worldBlurWhenPdaFocused : 0f;
             float hudTarget = pdaFocused ? 0f : hudBlurWhenSceneFocused;
             ApplyFocusTargets(worldTarget, hudTarget, deltaTime);
-            if (pdaPanel == null && AreFocusTargetsSettled(worldTarget, hudTarget))
-                TryUnregisterTick();
         }
 
         internal void OverrideFocusTargets(Transform selectionOrigin, DiegeticPanelController panel)
@@ -228,9 +237,6 @@ namespace Hecton8.Visor
             if (_registeredToTick || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
@@ -241,6 +247,23 @@ namespace Hecton8.Visor
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTick = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
 #if UNITY_EDITOR

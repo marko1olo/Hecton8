@@ -35,6 +35,7 @@ namespace Hecton8.SaveSystem
     {
         private const int PendingEventCapacity = 16;
         private const int ListenerCapacity = 16;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         public const int ManualSlotCount = 3;
         private const string Slot0Name = "slot_0";
         private const string Slot1Name = "slot_1";
@@ -54,12 +55,82 @@ namespace Hecton8.SaveSystem
         private const uint SaveEventSlotTruncatedContextHash = 0x5345534Cu; // SESL
         private const uint SaveEventMessageTruncatedContextHash = 0x53454D53u; // SEMS
 
-        // COLD ALLOC: RegistryBucket<ISaveEventListener>[16] — save event listener registry drained on dispatcher LateUpdate — owner: SaveEvents
-        private static readonly RegistryBucket<ISaveEventListener> _listeners = new RegistryBucket<ISaveEventListener>(ListenerCapacity);
-        // COLD ALLOC: ISaveEventListener[16] — listener additions deferred while dispatching save events — owner: SaveEvents
-        private static readonly ISaveEventListener[] _deferredRegisterListeners = new ISaveEventListener[ListenerCapacity];
-        // COLD ALLOC: ISaveEventListener[16] — listener removals deferred while dispatching save events — owner: SaveEvents
-        private static readonly ISaveEventListener[] _deferredUnregisterListeners = new ISaveEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public ISaveEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct SaveListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public SaveListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity]; // COLD ALLOC: ListenerSlot[16] — fixed save listener slots drained on dispatcher LateUpdate — owner: SaveEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(ISaveEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(ISaveEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void TryUnregister(ISaveEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public ISaveEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static SaveListenerRegistry _listeners = new SaveListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[16] — listener additions deferred while dispatching save events — owner: SaveEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[16] — listener removals deferred while dispatching save events — owner: SaveEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<SaveEventPayload> _pendingEvents;
         private static NativeQueue<SaveEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -264,14 +335,13 @@ namespace Hecton8.SaveSystem
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                ISaveEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        ISaveEventListener listener = rawArray[i];
+                        ISaveEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -371,7 +441,7 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredRegister(ISaveEventListener listener)
@@ -391,19 +461,19 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(ISaveEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -414,12 +484,12 @@ namespace Hecton8.SaveSystem
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -428,7 +498,7 @@ namespace Hecton8.SaveSystem
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -439,7 +509,7 @@ namespace Hecton8.SaveSystem
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -456,8 +526,8 @@ namespace Hecton8.SaveSystem
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                ISaveEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                ISaveEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }
@@ -469,8 +539,8 @@ namespace Hecton8.SaveSystem
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                ISaveEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                ISaveEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -491,7 +561,7 @@ namespace Hecton8.SaveSystem
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<SaveEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SaveEventPayload>[16] — deferred save event lane flushed by SystemDispatcher LateUpdate — owner: SaveEvents
+                _pendingEvents = new NativeQueue<SaveEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SaveEventPayload>[16] — deferred save event lane flushed by SystemDispatcher LateUpdate — owner: SaveEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -503,7 +573,7 @@ namespace Hecton8.SaveSystem
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<SaveEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SaveEventPayload>[16] — next-frame save event lane prevents same-frame reentrant dispatch — owner: SaveEvents
+                _nextFrameEvents = new NativeQueue<SaveEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SaveEventPayload>[16] — next-frame save event lane prevents same-frame reentrant dispatch — owner: SaveEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

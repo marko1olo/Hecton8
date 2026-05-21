@@ -71,7 +71,7 @@ namespace Hecton8.World
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-150)] // Run before gameplay systems
-    public sealed class LODSystemManager : MonoBehaviour, ITickable, ISaveable
+    public sealed class LODSystemManager : MonoBehaviour, ITickable, ISaveable, IGlobalRegistryHotSwapListener
     {
         private const float CameraResolveRetryInterval = 1f;
         private const int MaxHotPathLODGroupsPerFrame = 64;
@@ -136,6 +136,10 @@ namespace Hecton8.World
 
         private Camera _mainCamera;
         private Transform _cameraTransform;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private ITickDispatcher _dispatcher;
+        private DynamicResolutionScaler _dynamicResolutionScaler;
+        private ImpostorSystem _impostorSystem;
         private int _viewerAupCacheFrame = -1;
         private AbsoluteUniversePosition _viewerAupCache;
         private float _cameraResolveRetryTimer;
@@ -147,6 +151,7 @@ namespace Hecton8.World
         private int _scheduledLODGroupBatchCount;
         private int _nextLODPerformanceWarningFrame;
         private int _lastFrameTransitionCount;
+        private bool _registeredHotSwapListener;
 
         private float _lodSystemCPUTime;
 
@@ -195,6 +200,7 @@ namespace Hecton8.World
                 return;
             }
 
+            CacheRegistryServicesCold();
             EnsureDistanceScratchAllocated();
             _defaultLODBias = QualitySettings.lodBias;
             TryResolveMainCamera();
@@ -210,6 +216,8 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             InvalidateViewerAupCache();
             EnsureDistanceScratchAllocated();
             TryRegisterService();
@@ -221,9 +229,11 @@ namespace Hecton8.World
             RestoreDefaultLODBias();
             UnregisterAllImpostorCandidates();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
 
             ReleaseDistanceScratch();
+            ClearCachedRegistryServices();
             InvalidateViewerAupCache();
         }
 
@@ -237,7 +247,9 @@ namespace Hecton8.World
             RestoreDefaultLODBias();
             UnregisterAllImpostorCandidates();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
+            ClearCachedRegistryServices();
             InvalidateViewerAupCache();
         }
 
@@ -254,12 +266,10 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying || _dispatcher == null)
                 return;
 
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -290,6 +300,75 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterLODSystemRuntime(this);
 
             _serviceRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
+            if (_dispatcher == null)
+                _dispatcher = GlobalRegistry.Dispatcher;
+
+            if (_dynamicResolutionScaler == null)
+                _dynamicResolutionScaler = GlobalRegistry.DynamicResolution;
+
+            if (_impostorSystem == null)
+                _impostorSystem = GlobalRegistry.Impostors;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _playerRuntimeContext = null;
+            _dispatcher = null;
+            _dynamicResolutionScaler = null;
+            _impostorSystem = null;
+            _mainCamera = null;
+            _cameraTransform = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    _mainCamera = _cameraReference;
+                    _cameraTransform = _mainCamera != null ? _mainCamera.transform : null;
+                    _cameraResolveRetryTimer = 0f;
+                    InvalidateViewerAupCache();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _dispatcher = currentService as ITickDispatcher;
+                    TryRegister();
+                    break;
+                case GlobalRegistryServiceSlot.DynamicResolutionRuntime:
+                    _dynamicResolutionScaler = currentService as DynamicResolutionScaler;
+                    break;
+                case GlobalRegistryServiceSlot.ImpostorRuntime:
+                    _impostorSystem = currentService as ImpostorSystem;
+                    break;
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -638,7 +717,7 @@ namespace Hecton8.World
             _mainCamera = _cameraReference;
             if (_mainCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 _mainCamera = playerContext != null ? playerContext.PlayerCamera : null;
             }
 
@@ -666,10 +745,10 @@ namespace Hecton8.World
                 return _viewerAupCache;
 
             _viewerAupCacheFrame = frame;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null &&
                 playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                MathGuard.IsFinite(in snapshot.Aup))
+                snapshot.Aup.IsFinite())
             {
                 _viewerAupCache = snapshot.Aup;
                 return _viewerAupCache;
@@ -698,7 +777,7 @@ namespace Hecton8.World
             QualitySettings.lodBias = GetLODBias();
             DistanceMath.PushShaderMathLod(preset == LODQualityPreset.High ? MathLodMode.High : MathLodMode.Low);
 
-            GlobalRegistry.DynamicResolution?.SetQualityPreset(preset);
+            _dynamicResolutionScaler?.SetQualityPreset(preset);
         }
 
         private void RestoreDefaultLODBias()
@@ -711,7 +790,7 @@ namespace Hecton8.World
             if (!ShouldUseImpostorCandidate(lodGroup))
                 return;
 
-            ImpostorSystem impostorSystem = GlobalRegistry.Impostors;
+            ImpostorSystem impostorSystem = _impostorSystem;
             if (impostorSystem == null)
                 return;
 
@@ -726,7 +805,7 @@ namespace Hecton8.World
             if (lodGroup == null)
                 return;
 
-            ImpostorSystem impostorSystem = GlobalRegistry.Impostors;
+            ImpostorSystem impostorSystem = _impostorSystem;
             if (impostorSystem == null)
                 return;
 
@@ -735,7 +814,7 @@ namespace Hecton8.World
 
         private void UnregisterAllImpostorCandidates()
         {
-            ImpostorSystem impostorSystem = GlobalRegistry.Impostors;
+            ImpostorSystem impostorSystem = _impostorSystem;
             if (impostorSystem == null)
                 return;
 

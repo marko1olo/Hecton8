@@ -300,18 +300,19 @@ namespace Hecton8.EditorTools
             if (string.IsNullOrWhiteSpace(line))
                 return;
 
-            string[] fields = line.Split(',', ';');
-            if (fields.Length < 2)
+            ReadOnlySpan<char> row = line.AsSpan();
+            int separator = row.IndexOfAny(',', ';');
+            if (separator <= 0 || separator >= row.Length - 1)
                 return;
 
-            if (!TryParseHash(fields[0].AsSpan(), out uint hash))
+            if (!TryParseHash(row.Slice(0, separator), out uint hash))
                 return;
 
-            string name = fields[1].Trim();
-            if (name.Length <= 0)
+            ReadOnlySpan<char> nameSpan = Trim(row.Slice(separator + 1));
+            if (nameSpan.Length <= 0)
                 return;
 
-            _eventNames[hash] = name;
+            _eventNames[hash] = nameSpan.ToString();
         }
 
         private string ResolveEventName(uint hash)

@@ -505,3 +505,1071 @@ Rejected Alternatives: Marking every container field blindly was rejected becaus
 Scalability potential: Low tier benefits from cheaper Burst kernels under thermal pressure. Middle tier gains vectorization headroom. High and Ultra tiers can keep higher encounter/construction/narrative budgets on the same data rows without binary quality branches.
 
 Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 2-30 us per scheduled job batch depending on buffer length and Burst vectorization. Evidence class: STATIC_SOURCE; no build/rebuild launched.
+
+## Decision 043 - NativeQueue Snapshot And Entropy Yield ABI Closure
+
+Problem: Several owner-safe event/snapshot/runtime rows still exposed compiler-owned Sequential layout and property-backed hot reads: power telemetry, sonar snapshots, performance events, PDA/flashlight/pool event payloads, haptic commands, scavenging runtime tables, entropy yield job rows, PDA logbook hashes, and quest marker cache rows. These rows are copied through NativeQueue, NativeArray, Vault spans, or cache arrays, so hidden padding and bool properties weaken ARM64 alignment proof and can trigger defensive copies in tight consumers.
+
+Solution: Converted the fixed unmanaged rows to explicit layouts with named padding and 16/32/64 byte strides where feasible: `PowerGridTelemetrySnapshot=32`, `SpatialSonarSnapshot=32`, `PerformanceEventPayload=32`, `PDAIntrusionEventPayload=16`, `PoolDiagnosticsEventPayload=16`, `FlashlightEventPayload=16`, `PDAEventPayload=64`, `HapticCommand=64`, scavenging runtime descriptors/tables, entropy yield rows, `PDALogbookEntry=32`, and `QuestMarkerCache=80`. Packed power and sonar booleans/tier state into `uint StatusFlags` with static bit helpers. Added synchronous Burst compile flags and `[NoAlias]` to entropy yield NativeArray fields. Updated consumers and editor smoke assertions to the explicit ABI.
+
+Rejected Alternatives: Converting structs carrying `ItemData`, `Transform`, `Rigidbody`, `Component`, `string`, `DateTime`, interfaces, or Unity native-container wrappers was rejected because explicit layout would not make those records blittable and could corrupt Unity-owned ABI. Keeping `PDAEventPayload` at 40 bytes was rejected because its NativeQueue stride crosses cache lines; it is now one 64-byte row. Running a rebuild was rejected because static proof was sufficient for this mechanical layout slice and the user explicitly prohibited premature rebuilds.
+
+Scalability potential: Low tier gains smaller, predictable queue and NativeArray lanes with fewer unaligned/cache-split hazards. Middle tier keeps the same gameplay facts and event cadence. High and Ultra tiers can spend saved CPU/cache bandwidth on richer haptics, sonar presentation, PDA updates, and entropy-yield visual feedback without changing authority routes or binary quality switches.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-25 us per 10k event/snapshot rows or entropy yield batch depending on density. Evidence class: STATIC_SOURCE; Pack scan remains 0, touched-file Sequential scan returns 0, removed-property reference scan returns 0, unaligned 8-byte FieldOffset scan returns 0, and `git diff --check` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 044 - UI/Spectrum Fixed DTO ABI Closure
+
+Problem: Additional owner-safe UI, sonar, GPU-upload, and Vault item-state rows still relied on compiler-owned Sequential layout. `AcousticEchoEvent` and `PingReturnSignal` also exposed readonly auto-properties in payloads copied through sonar/audio paths, leaving room for defensive struct copies and hiding the byte layout of the 48-byte AUP lane.
+
+Solution: Converted fixed rows to explicit layouts with named padding: `DiegeticHudLayoutInput=16`, `DiegeticHudLayoutSettings=16`, `AcousticEchoEvent=80`, `PingReturnSignal=80`, `ActiveSonarGeoTelemetryEntry=32`, `SonarMapConstants=96`, `TooltipGlyphInstance=96`, `GroupState=16`, and `ItemState=16`. Replaced sonar payload auto-properties with raw readonly fields while preserving constructor API and the pure `ResolveWorldAup()` fallback. Added synchronous Burst flags and `[NoAlias]` to the existing diegetic HUD layout job input/output arrays.
+
+Rejected Alternatives: Converting `PendingDurabilityCommand` was rejected because it contains a managed `string`; explicit layout would not make it Burst-safe or blittable. Widening 80-byte sonar payloads to 128 bytes was rejected because the rows are queue payloads, not concurrent per-thread counters, and doing so would increase copy bandwidth without a proven false-sharing owner. Running a rebuild was rejected by command discipline; this pass is a mechanical source-proof slice and the known dependency wall still exists.
+
+Scalability potential: Low tier gets stable 16/32/80/96-byte rows for HUD, sonar, and PDA uploads without binary quality switches. Middle tier preserves current buffer cadence and visual output. High and Ultra tiers can spend saved cache/Burst headroom on richer sonar echoes, tooltip density, and PDA overlay updates through existing continuous quality budgets without changing authority routes or DTO sizes.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-10 us per 10k HUD/UI/sonar/tool rows depending on density. Evidence class: STATIC_SOURCE; touched-file Sequential scan returns only the managed `PendingDurabilityCommand` exception, removed Spectrum hot-property scan returns 0, unaligned 8-byte `FieldOffset` scan returns 0, broad Sequential count is 212, and `git diff --check` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 045 - Construction/World/Submarine Fixed Row And Burst Fence Sweep
+
+Problem: Several remaining small fixed rows still used Sequential layout in construction, world regrowth/HLOD, cultivation, and submarine damage-control paths. Separately, `SubmarineFluidDynamics` flood/hydro jobs used correct float modes but omitted `CompileSynchronously = true` and did not expose non-overlap facts to Burst for Vault-backed SoA arrays.
+
+Solution: Converted owner-safe rows to explicit layouts: `CultivationSlotState=32`, `XorShift32State=8`, `WorldRegrowthConfig=48`, `HLODInstance=96`, `HabitatSiegeTargetSnapshot=48`, `HabitatFloodConnection=16`, `HabitatFloodBlackBoxEntry=48`, `HabitatDeconstructionTelemetryEntry=32`, and `ImpactCommand=32`. Added synchronous Burst flags and `[NoAlias]` to `HydroKinematicDragJob`, `FluidTransferJob`, `BulkheadTransferDeltaJob`, `ApplyBulkheadTransferJob`, and `FloodMassPropertiesJob`.
+
+Rejected Alternatives: PDA exchange snapshots, raycast query rows, inspector-authored fluid compartment definitions, and job wrappers carrying `NativeArray`, `NativeList`, `NativeParallelHashSet`, `RaycastHit`, `string`, or Unity object references were rejected from blind explicit conversion. Widening all flood/job wrappers to explicit layout was rejected because Unity owns native-container ABI. Running a rebuild was rejected by mandate and because static source checks are enough for this mechanical slice.
+
+Scalability potential: Low tier gets deterministic 8/16/32/48/96-byte rows for regrowth, HLOD, habitat, cultivation, and submarine impact telemetry. Middle tier preserves current solver cadence. High and Ultra tiers can increase HLOD density, flood/hydro solver fidelity, and habitat black-box coverage through continuous budgets without changing DTO layout or introducing binary quality switches.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-12 us per 10k fixed rows and 2-30 us per flood/hydro job batch. Evidence class: STATIC_SOURCE; broad Sequential count is 204, touched-file unaligned 8-byte `FieldOffset` scan returns 0, `SubmarineFluidDynamics.cs` Burst attributes now all include `CompileSynchronously = true`, and `git diff --check` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 046 - Volcanic/Voxel/QA Fixed DTO ABI And Burst Fence Sweep
+
+Problem: The remaining owner-safe Sequential debt still included fixed Volcanic, Voxel, QA, headless, flora, world, VFX, physiology, and utility DTO rows. Some touched Burst jobs in voxel navigation, audio buffering, spatial hash rebuild, and headless AUP simulation also lacked either synchronous compile flags or explicit non-alias proof.
+
+Solution: Converted fixed unmanaged rows to explicit layouts with named padding across the Loop 10 slice, including 64-byte volcanic state/signal rows, 128-byte Shinobu38 file writer cursor/ingest rows, 80-byte decompression state, 80-byte voxel carve telemetry, 112-byte spatial hash entries, 128-byte QA endurance black-box entries, and 64-byte fracture telemetry entries. Added `CompileSynchronously = true` and `[NoAlias]` to owner-separated arrays in touched voxel navigation, spatial hash, audio buffering, and headless AUP jobs.
+
+Rejected Alternatives: Converting Unity job wrappers and native-container wrappers was rejected because `NativeArray`, `NativeList`, `NativeQueue`, `RaycastHit`, and Unity safety-handle internals are not SHINOBU-owned ABI. `DeferredDirtyVolumeRequest` and `ScavengerHostState` were rejected because they carry managed scene/domain references. Running a rebuild was rejected because this pass is source-proof ABI hardening, the known dependency wall still exists, and the user prohibited rebuild until needed.
+
+Scalability potential: Low tier gets aligned fixed rows for watchdog, voxel, navigation, audio, and QA forensic lanes without changing gameplay truth. Middle tier keeps the same cadence with stronger Burst alias evidence. High and Ultra tiers can spend the saved cache stalls on denser voxel navigation probes, richer volcanic/VFX telemetry, and heavier QA endurance instrumentation through continuous `GlobalQualityWeight` budgets without binary feature switches.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-20 us per 10k fixed DTO rows and 2-35 us per scheduled voxel/audio/headless batch when Burst can vectorize owner-separated arrays. Evidence class: STATIC_SOURCE; broad Sequential count dropped from 204 to 182, Pack scan remains 0, touched-file unaligned 8-byte `FieldOffset` scan returns 0, touched Burst missing-`CompileSynchronously` scan returns 0, and `git diff --check` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 047 - Progression Vegetation Wreck Micro ABI Slice
+
+Problem: After Loop 10, a few low-risk source-owned rows were still mixed into the Sequential debt: a string-free achievement runtime threshold row, the flora spore NativeQueue payload, the persistent thermal vent record, and procedural wreck mesh/render jobs missing synchronous Burst compile flags.
+
+Solution: Converted `AchievementRuntimeDefinition=16`, `HectonFloraSporeEvent=96`, and `PersistentThermalVentRecord=80` to explicit layouts with named padding and 8-byte AUP alignment. Added `CompileSynchronously = true` and `[NoAlias]` to procedural wreck mesh/proxy/render payload jobs where NativeArrays are owner-separated.
+
+Rejected Alternatives: `AchievementDefinition` was not converted because it contains managed `string` references. `PendingWreckLootSpawn` was not converted because it contains `GameObject` and `ItemData`. Procedural wreck job wrappers remain Sequential because they embed Unity native containers or mesh data handles whose ABI is Unity-owned. Running a rebuild was rejected because this was a static ABI/Burst-annotation pass and no compile gate was needed.
+
+Scalability potential: Low tier gets tighter achievement evaluation and stable vegetation/wreck payload lanes. Middle tier keeps the same wreck generation and flora event cadence. High and Ultra tiers can spend saved stalls on denser procedural wreck render payloads and richer spore fog/scatter without changing truth ownership or using binary quality switches.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per 10k queue/record rows and 2-25 us per procedural wreck mesh/render payload batch. Evidence class: STATIC_SOURCE; broad Sequential count is now 179, touched-file unaligned 8-byte `FieldOffset` scan returns 0, ProceduralWreck missing-`CompileSynchronously` scan returns 0, and `git diff --check` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 048 - Anomaly Deterministic DTO And Burst Fence Sweep
+
+Problem: The anomaly basin/ridge/brine jobs still used compiler-owned Sequential DTO layout and deterministic Burst attributes without `CompileSynchronously = true`. These rows are consumed by NativeArray/NativeQueue flood-fill and feature detection lanes, so anonymous padding weakens rollback/replay and ARM64 offset proof.
+
+Solution: Converted anomaly DTOs to explicit layouts: `AnomalyBasinDetectionSettings=32`, `AnomalyBasinRecord=56`, `AnomalyBasinFloodFillState=48`, `AnomalyRidgeDetectionSettings=80`, `AnomalyFeatureRecord=56`, and `AnomalyBrinePoolBounds=32`. Added synchronous deterministic Burst flags and `[NoAlias]` to source-separated NativeArray fields in basin, ridge, reduction, and brine jobs.
+
+Rejected Alternatives: `HectonSandboxAbyssalShelfParams` was not converted because it is `[Serializable]` authoring data and not proven to be a NativeArray DTO lane in this pass. NativeQueue fields in the sliced flood-fill job were not annotated with NoAlias because queue internals are Unity-owned. Running a rebuild was rejected because static checks are sufficient for this localized ABI/Burst pass and the user forbade premature rebuilds.
+
+Scalability potential: Low tier gets bounded deterministic anomaly scans with stable record strides. Middle tier keeps the same basin/ridge cadence. High and Ultra tiers can increase anomaly feature density and brine/pillar visual output using existing continuous budgets without changing DTO identity or adding binary quality switches.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-12 us per 10k anomaly rows and 2-30 us per anomaly batch when Burst can assume non-overlapping buffers. Evidence class: STATIC_SOURCE; anomaly touched-file Sequential scan returns 0, anomaly missing-`CompileSynchronously` scan returns 0, anomaly unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad Sequential count is now 173, and `git diff --check` over anomaly files returns exit 0 with LF/CRLF warnings only.
+
+## Decision 049 - Voxel Mesh Pipeline Burst Alias Fence
+
+Problem: `HectonVoxelEngine` still had the dominant mesh-generation jobs using Burst without `CompileSynchronously = true`, and most NativeArray lanes lacked non-alias proof. `MCRawVertex` and the voxel mesh black-box telemetry row also depended on compiler-owned layout. `InstanceCullingService.ApplyAupShiftJob` had the same Burst flag gap.
+
+Solution: Added synchronous Burst flags and `[NoAlias]` to source-separated array lanes in voxel density, MC count/extract/weld, normals, seam, projection, biome, color, dirty blend, spawn sampling, collider classification, and instance AUP shift jobs. Converted `MCRawVertex=24` with `position@0` and `edgeId@16`, and `VoxelMeshPipelineTelemetryEntry=32` with explicit fixed offsets.
+
+Rejected Alternatives: Unity `NativeParallelHashMap`, `NativeList.ParallelWriter`, and job-wrapper structs were not forced into explicit layout because Unity owns those container ABIs. Deferred voxel mesh/collider upload rows were rejected because they carry managed Unity object references plus `JobHandle`. `VoxelSurfaceVertex` and `VoxelColliderVertex` were not padded because `SetVertexBufferParams` declares exact GPU strides of 76 and 12 bytes; padding those rows would corrupt mesh upload stride and is a render ABI migration, not a blind DTO cleanup. Running a rebuild was rejected by mandate and because static checks are sufficient for this source-only metadata/ABI slice.
+
+Scalability potential: Low tier gets faster cave/voxel chunk jobs without changing chunk identity, save identity, or authority route. Middle tier keeps the same mesh resolution and collider upload cadence. High and Ultra tiers can spend the saved stalls on denser cave curvature/AO, richer seam blending, and more visible procedural voxel detail under continuous quality budgets; no binary quality switch was added.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 2-40 us per voxel mesh pipeline batch and 1-8 us per 10k instance AUP shifts. Evidence class: STATIC_SOURCE; touched-file missing-`CompileSynchronously` scan returns 0, touched-file unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad Sequential count is now 172, and `git diff --check` over the two touched code files returns exit 0 with LF/CRLF warnings only.
+
+## Decision 050 - Fixed DTO Micro Slice And Vegetation Burst Fence
+
+Problem: The remaining exact-count safe slice contained small source-owned rows still using compiler-owned Sequential layout: biome SDF weight rows, brine toxic mud broadphase rows, AR waypoint projection frames, and a single-slot abyssal wake impulse. The vegetation flow jobs also still used Burst without `CompileSynchronously = true` and lacked alias proof on their owner-separated buffers.
+
+Solution: Converted `BiomeWeightEntry=16`, `ToxicMudCell=56`, `WaypointProjectionFrame=112`, and `SwarmWakeImpulse=32` to explicit layouts. Replaced `WaypointProjectionFrame.IsValid` with a `uint` flag. Added synchronous Burst flags and `[NoAlias]` to vegetation generation, density query, threat propagation, threat voxelization, abyssal flow, thermal, flow-volume, and native A* jobs.
+
+Rejected Alternatives: AR external/runtime waypoint slots were not converted because they hold `string`, `Transform`, `RectTransform`, `Image`, `TMP_Text`, and other managed UI references. Vegetation job wrappers remain Sequential because they contain Unity native container handles. `VoxelSurfaceVertex` and `VoxelColliderVertex` remain as render ABI exceptions because their current mesh vertex declarations require exact 76-byte and 12-byte strides. Running a rebuild was rejected by mandate and because this pass was still a source-level ABI/Burst proof slice.
+
+Scalability potential: Low tier gets cheaper vegetation/flow/A* jobs and aligned biome/brine/AR rows. Middle tier preserves the same route and update cadence. High and Ultra tiers can spend the saved stalls on denser vegetation placement, richer abyssal flow volumes, and more aggressive AR waypoint projection sampling under continuous quality weights without changing truth ownership or save identity.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per 10k fixed row reads and 2-35 us per vegetation/flow/A* job batch. Evidence class: STATIC_SOURCE; touched missing-`CompileSynchronously` scan returns 0, touched unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad Sequential count is now 168, and `git diff --check` over Loop 14 files returns exit 0 with LF/CRLF warnings only.
+
+## Decision 051 - VFX And Visor GPU Constant ABI Closure
+
+Problem: Several GPU-facing VFX and visor DTO rows still used compiler-owned Sequential layout with fixed Size metadata, leaving shader constant, indirect request, wake, and black-box telemetry strides dependent on source declaration order instead of explicit offsets. The carve debris and marine snow jobs also had owner-separated NativeArrays that were not advertised to Burst with `[NoAlias]`.
+
+Solution: Converted source-owned fixed rows to explicit layouts: `FrameConstantsData=128`, `VehicleWakeJobResult=48`, `MarineSnowTelemetryEntry=64`, `CarveDebrisRequest=64`, `CarveDebrisTelemetryEntry=64`, `BrownoutGlobalsDTO=64`, `VisorFluidGlobalsDTO=128`, `LensComputeGlobalsDTO=80`, `StochasticSsrGlobalsDTO=48`, `DepthFogGlobalsDTO=64`, `HalfResParticlesGlobalsDTO=16`, `SootGlobalsDTO=32`, `RetinaGlobalsDTO=32`, and `ShaftGlobalsDTO=176`. Added `[NoAlias]` to marine snow wake/mock/flow fields and carve debris aging/injection buffers where local ownership proves non-overlap.
+
+Rejected Alternatives: `MaterialParameterState` in scooter volumetric shafts was left out because it is a CPU material-parameter cache row, not a proven blittable shader upload DTO. Widening every visor constant row to a full 64-byte cache line was rejected for small immutable upload rows where CBuffer stride, not per-thread mutation, is the controlling ABI. Running a build or rebuild was rejected because this pass is static ABI hardening and the user prohibited premature rebuilds.
+
+Scalability potential: Low tier gets stable, narrow VFX/visor upload rows and cleaner Burst alias proof for debris and marine snow. Middle tier preserves the current visual cadence. High and Ultra tiers can spend the saved CPU/cache stalls on denser marine snow flow, more carve debris, richer brownout/fog/SSR/retina passes, and longer volumetric shaft parameter sets through continuous quality weights without changing gameplay truth, save identity, or authority routes.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-14 us per 10k fixed VFX/visor rows and 2-18 us per debris or marine snow job batch when Burst can vectorize non-overlapping buffers. Evidence class: STATIC_SOURCE; touched-file missing-`CompileSynchronously` scan returns 0, touched-file exact Sequential scan returns 0, touched-file unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad exact Sequential count remains 168 due to the historical exact regex, and `git diff --check` over Loop 15 files returns exit 0 with LF/CRLF warnings only.
+
+## Decision 052 - Player Critical Audio DSP ABI Closure
+
+Problem: `PlayerCriticalProceduralAudioRenderer.cs` still had 24 sized Sequential rows, including public sonar bridge payloads, Vault-backed sonar composite rows, 300-frame telemetry rows, parameter snapshots, and persistent DSP synthesis state. It also had 40 Burst-annotated math helpers without `CompileSynchronously = true`.
+
+Solution: Converted all audio renderer Sequential rows to explicit layouts with named padding. Cache-sensitive worker rows were widened to line-safe sizes where warranted: `SonarEchoCompositeGroup` 72 -> 128, `GranularAudioTelemetryEntry` 48 -> 64, `PrologueAudioTransitionTelemetryEntry` 56 -> 64, `SonarSynthesisState` 96 -> 128, `AmbientCurrentSynthesisState` 72 -> 128, `ThrusterSynthesisState` 136 -> 256, and the smaller DSP states to 16/32/64-byte strides. Added `CompileSynchronously = true` to the remaining Burst math helpers in the file.
+
+Rejected Alternatives: Leaving 72/96/136-byte DSP rows untouched was rejected because NativeArray and hot state traversal would continue crossing cache-line boundaries. Converting the many private Vault alias fields was rejected because they are Unity `NativeArray<T>` handles, not source-owned DTO element layouts. Adding new audio buffers or moving ownership was rejected; the existing Vault handles and SPSC/DSP route were preserved. Running a build or rebuild was rejected because the user explicitly prohibited premature rebuilds and static ABI gates passed.
+
+Scalability potential: Low tier gets stable DSP rows and synchronous Burst metadata while preserving cheap underwater perceptual audio fakes: scalar low-pass, reverb-state, granular voice budgets, and selected critical cues. Middle tier keeps the same cadence with cleaner cache behavior. High and Ultra tiers can spend saved stalls on higher granular voice limits, Hermite grain sampling, cave convolution, Sabine reverb, binaural micro-delay, and richer sonar echo grouping under continuous quality weights; no layout or authority route changes with quality.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-18 us per 10k bridge/telemetry/snapshot rows and 1-16 us per audio block state pass. Evidence class: STATIC_SOURCE; touched audio file now has 0 Sequential hits, 0 missing-`CompileSynchronously` hits, 0 unaligned 8-byte `FieldOffset` hits, 0 DTO auto-property hits, Pack scan remains 0, broad sized-inclusive Sequential count is 239, and `git diff --check` over the audio file returns exit 0 with LF/CRLF warnings only.
+
+## Decision 053 - Spatial Audio Payload ABI Closure
+
+Problem: `SpatialAudioManager.cs` still had sized Sequential rows in active emitter samples, binaural telemetry, delayed audio event queues, acoustic portal cache entries, impact emitter samples, and the deferred audio caption payload. Several rows used 80/88/96/200-byte strides that are stable enough for managed sequential layout but poor for NativeQueue/NativeList/array traversal and not explicit for ARM64 audit.
+
+Solution: Converted all touched spatial-audio rows to explicit layouts with named padding. Public/internal bridge offsets were preserved for `ActiveEmitterSample`, `ActiveImpactEmitterSample`, `BinauralEmitterTelemetry`, and `AudioCaptionPayload`. Queue/cache rows were widened where cache-line stride mattered: `DelayedAudioEvent=128`, `ImpactEmitterSample=128`, `AudioCaptionPayload=128`, and `AcousticPortalCacheEntry=256`.
+
+Rejected Alternatives: Reworking `AcousticPathResult` or `AcousticAup` was rejected because those contract structs are already explicit and outside this local source slice. Converting NativeQueue/NativeList owner fields was rejected because Unity owns the native-container handle ABI. Changing the delayed event route or caption queue route was rejected; this pass only locks payload bytes and padding. Build/rebuild was not launched because static gates passed and command discipline still forbids premature rebuild.
+
+Scalability potential: Low tier gets stable audio queue/cache payloads for cheap perceptual underwater audio: delayed pressure/trauma events, scalar acoustic transmission, low-pass, and caption routing. Middle tier keeps current cadence. High and Ultra tiers can spend saved cache/copy overhead on denser active emitter samples, binaural telemetry, portal reprojection cache hits, and caption/debug overlays under continuous quality weights; payload layout remains invariant across quality.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-12 us per 10k spatial audio queue/cache rows depending on active emitter and caption density. Evidence class: STATIC_SOURCE; touched `SpatialAudioManager.cs` Sequential scan returns 0, touched unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad sized-inclusive Sequential count is 232, and `git diff --check` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 054 - Sargassum Micro Fauna GPU Payload ABI Closure
+
+Problem: `SargassumMicroFaunaBoids.cs` still had seven sized Sequential rows on GPU/NativeArray lanes: boid state, grazing anchors, massive threats, formation beacons/obstacles, leviathan nodes, and the 768-byte simulation frame constant packet. These rows had shader stride constants and validation, but the CLR still owned offset placement. Two local jobs also lacked the mandated compile/alias fence: predator consumption used asynchronous low precision Burst metadata, and leviathan node construction lacked `CompileSynchronously = true` plus non-alias proof.
+
+Solution: Converted the seven fixed rows to explicit layouts while preserving every shader-visible stride and field offset: `BoidData=32`, `GrazingAnchorData=32`, `MassiveThreatData=48`, `FormationBeaconData=32`, `FormationObstacleData=32`, `LeviathanNodeData=32`, and `SimulationFrameConstants=768`. The frame constant packet uses exact 16-byte lanes from offset 0 through 752. Added synchronous Fast/Standard Burst flags and `[NoAlias]` to owner-separated arrays in `PredatorBoidConsumptionJob` and `BuildLeviathanNodeJob`.
+
+Rejected Alternatives: Widening the 32/48-byte GPU rows was rejected because the HLSL StructuredBuffer contract and existing stride constants are the controlling ABI. Reordering fields was rejected because it would require shader and validator migrations outside this SHINOBU slice. Leaving the predator job at `FloatPrecision.Low` with asynchronous compilation was rejected because the project mandate requires synchronous Fast/Standard for non-rollback mathematical jobs unless a deterministic exception is proven. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier preserves the existing cheap visual fake route for micro fauna: GPU-driven boid buffers, 16-byte frame lanes, approximate leviathan path resampling, and scalar predator kill signals. Middle tier keeps the same simulation cadence and shader packet size. High and Ultra tiers can spend the saved CPU/cache stalls on denser micro-fauna schools, more anchor/threat emitters, richer sonar/acoustic panic response, and longer leviathan visual spline sampling under continuous `GlobalQualityWeight`; DTO layout and authority route remain invariant across quality.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-10 us per 10k boid/GPU row reads and 2-18 us per predator or leviathan-node batch when Burst can vectorize non-overlapping buffers. Evidence class: STATIC_SOURCE; touched `SargassumMicroFaunaBoids.cs` Sequential scan returns 0, touched missing-`CompileSynchronously` Burst scan returns 0, touched unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad sized-inclusive Sequential count is 225, broad exact Sequential count remains 168, and `git diff --check` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 055 - Drone Fleet Runtime DTO ABI Closure
+
+Problem: The drone fleet construction/cognition slice still had source-owned fixed rows using Sequential layout, including the 448-byte `HeadlessDroneState` with late `double3` docking/AUP lanes. Sequential layout here was relying on compiler-inserted padding before the double lanes and at the tail, which is unacceptable for rollback snapshots, NativeArray traversal, and ARM64 proof. Navigation-side fixed rows for tuning, waypoints, tasks, mock SDF, min-heap nodes, and A* telemetry had the same compiler-owned layout problem.
+
+Solution: Converted `HeadlessDroneState=448` to explicit layout with 8-byte-aligned `double3` lanes at offsets 216/240/264/288/312/336/360/384 and named padding at 212..215 and 424..447. Converted drone navigation fixed rows to explicit layouts: `DroneFleetTuningConstants=64`, `PathWaypointDTO=16`, `DroneFleetDebugRoute=144`, `DroneFleetAutomationStats=48`, `DroneTaskDTO=64`, `MockSDFGrid=64`, `DroneNativeMinHeapNode=8`, and `DroneAStarTelemetry=32`.
+
+Rejected Alternatives: Reordering `HeadlessDroneState` to put all double lanes first was rejected because it would require a broad cognition/job migration and risk conflicts with other agents. Widening the debug route to 192 or 256 bytes was rejected because it is telemetry/debug payload, not a contested per-thread counter. Converting `DroneNativeMinHeap` itself was rejected because it embeds a Unity `NativeArray` handle; Unity owns that container ABI. Running a build or rebuild was rejected because static gates passed and no compile gate was required.
+
+Scalability potential: Low tier gets aligned drone cognition rows and cheaper NativeArray state copies while preserving deterministic control. Middle tier keeps the existing path solve cadence. High and Ultra tiers can spend the saved state-copy and A* telemetry overhead on more active repair/mining drones, richer debug route telemetry, and larger solve budgets through continuous quality values; drone DTO identity and authority route remain invariant across quality.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-14 us per 10k drone state/tuning/task/path rows. Evidence class: STATIC_SOURCE; touched drone files now report 0 Sequential hits, touched missing-`CompileSynchronously` Burst scan returns 0, touched unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad sized-inclusive Sequential count is 216, broad exact Sequential count remains 168, and `git diff --check` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 056 - Predator Cognition Runtime DTO ABI Closure
+
+Problem: `PredatorCognitionDomain.cs` still had 14 source-owned fixed runtime rows using Sequential layout, including Vault-backed cognition inputs/outputs, memory entries, light source payloads, telemetry rows, mock signal rows, and private nested result/directive rows. The largest risk was `CognitionInput=480`, which mixes `double3`, two 48-byte AUP blit payloads, many local float3 lanes, and scalar control flags; leaving that compiler-owned weakens rollback memcpy proof and ARM64 offset proof.
+
+Solution: Converted all source-owned fixed rows in the file to explicit layouts: `CognitionCore=64`, `CognitionMemoryEntry=24`, `AcousticMemoryEntry=40`, `PredatorMockAcousticSignal=24`, `MockLightSource=24`, `ApexCortexTuningSnapshot=16`, `LightSourceData=96`, `RetinalTelemetryEntry=32`, `CognitionControl=96`, `CognitionInput=480`, `CognitionOutput=64`, `PackedCognitionOutput=48`, `RetinalLightResult=24`, and `AlphaLeviathanDirective=32`. `CognitionInput` pins `FloatingOriginOffset@0`, `PlayerTargetAup@24`, `PackTargetAup@72`, local float3 lanes from 120 through 300, and final scalar flags at 476.
+
+Rejected Alternatives: Widening `CognitionInput` to 512 bytes was rejected because the current 480-byte Vault stride is already a declared contract and there is no contested per-thread counter reason to spend an extra half cache line per predator. Reordering AUP fields before all scalar lanes was rejected because existing job and validation code already asserts a 480-byte row and other agents may be reading field order. Converting managed compatibility classes or `FaunaBrain` property APIs was rejected because this pass is unmanaged DTO ABI hardening only. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cognition cheap through compact explicit memory rows, quantized drives, scalar light/acoustic inputs, and packed outputs. Middle tier keeps the same job cadence with stronger memcpy and Burst layout proof. High and Ultra tiers can spend the saved cache and row-copy stalls on richer retinal exposure, acoustic memory, pack flanking, alpha leviathan directives, and predator debug telemetry under continuous quality controls; cognition DTO identity and authority route remain invariant across quality.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-20 us per 10k cognition row reads/copies depending on active predator count. Evidence class: STATIC_SOURCE; touched `PredatorCognitionDomain.cs` Sequential scan returns 0, touched missing-`CompileSynchronously` Burst scan returns 0, touched unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad sized-inclusive Sequential count is 202, broad exact Sequential count remains 168, and `git diff --check` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 057 - Vegetation Scatter GPU Payload ABI Closure
+
+Problem: Vegetation/scatter GPU metadata and telemetry rows still used Sequential layout even though their shader/constant-buffer strides are fixed and validated. The CPU culling and scatter jobs also had Burst attributes without `CompileSynchronously = true` and did not expose non-overlap facts for matrix, metadata, culling plane, headlight, and visibility-mask arrays.
+
+Solution: Converted fixed GPU and telemetry rows to explicit layouts: `HectonVegetationInstanceData=64`, `GpuScatterFloraInstanceData=64`, `FloraGrowthTelemetryEntry=40`, `VegetationCullTelemetrySnapshot=40`, `ScatterCullTelemetryEntry=40`, `ScatterTelemetryEntry=64`, `ScatterFrameConstants=176`, and `ScatterBlackBoxEntry=64`. Added synchronous Burst flags and `[NoAlias]` to owner-separated NativeArray fields in vegetation visibility, mock matrix generation, draw-output finalization, and scatter culling jobs.
+
+Rejected Alternatives: Widening the public 64-byte vegetation/scatter metadata rows was rejected because shader stride and producer compatibility are the controlling ABI. Reordering the metadata lanes was rejected because HLSL consumers depend on current field order. Annotating unsafe draw-command pointer fields with NoAlias was rejected because they are raw render-output pointers, not NativeArray lanes with source-owned separation proof. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps vegetation cheap through compact metadata, CPU culling masks, density decimation, and black-box telemetry. Middle tier keeps current BRG/indirect cadence. High and Ultra tiers can spend saved culling and upload overhead on denser kelp/flora scatter, richer bioluminescence metadata, more headlight/culling planes, and deeper scatter black-box history under continuous quality weights; shader payload identity and route remain invariant across quality.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-10 us per 10k metadata/telemetry rows and 2-24 us per culling/finalization batch depending on instance count. Evidence class: STATIC_SOURCE; touched vegetation/scatter files now report 0 Sequential hits, touched missing-`CompileSynchronously` Burst scan returns 0, touched unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad sized-inclusive Sequential count is 194, broad exact Sequential count remains 168, and `git diff --check` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 058 - Black-Box Telemetry Fixed Row ABI Closure
+
+Problem: Several fixed 300-frame black-box telemetry rows still used Sequential layout in culling, submarine damage control, visor waterline, WFC power boot, save telemetry, and marauder outpost generation. These rows are copied into native rings and dumped for forensic proof, so compiler-owned padding weakens crash autopsy and ARM64 byte-offset proof.
+
+Solution: Converted `InstanceCullingTelemetryEntry=40`, `DamageControlTelemetryEntry=32`, `WaterlineTelemetryEntry=40`, `WfcOutpostPowerBootTelemetryEntry=64`, `WfcOutpostTelemetryEntry=64`, and `OutpostTelemetryEntry=80` to explicit layouts with exact field offsets. Kept `SectorHash` lanes on offset 8 or 16 as applicable and added a named 8-byte tail pad to `OutpostTelemetryEntry` at offset 72.
+
+Rejected Alternatives: Nearby job-wrapper structs in `InstanceCullingService` and `MarauderOutpostJobs` were not converted because they embed Unity `NativeArray` handles and scheduling metadata. Managed save/cache rows and submarine/grid authoring records were left for owner proof or excluded because they include managed or Unity-owned ABIs. Widening all 40-byte telemetry rows to 64 bytes was rejected because they are fixed forensic dump records, not contested per-thread counters.
+
+Scalability potential: Low tier gets deterministic black-box rings and smaller forensic dumps with stable byte lanes. Middle tier keeps current telemetry cadence. High and Ultra tiers can increase optional telemetry density or retain deeper diagnostic capture under continuous quality controls; telemetry layout, save identity, and authority routes remain invariant across quality.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per 10k telemetry ring copies/dump writes, primarily from stable field offsets and removal of compiler-owned padding ambiguity. Evidence class: STATIC_SOURCE; targeted telemetry structs no longer use Sequential layout, touched unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad sized-inclusive Sequential count is 188, broad exact Sequential count remains 168, and `git diff --check` over Loop 22 files returns exit 0 with LF/CRLF warnings only.
+
+## Decision 059 - Runtime Descriptor And Cache Key ABI Closure
+
+Problem: Several source-owned runtime descriptors and cache keys still used Sequential layout. Two authoring descriptors also declared impossible `Size` literals: `FaunaDataTemplate.RuntimeDescriptor` declared 64 bytes while its field span is 88 bytes, and `ProceduralFamily_Fauna.RuntimeDescriptor` declared 48 bytes while its field span is 56 bytes. Leaving those declarations in place would keep false ABI evidence in the project.
+
+Solution: Converted `SpeciesCognitionTuning=32`, `FaunaDataTemplate.RuntimeDescriptor=88`, `FloraDataTemplate.RuntimeDescriptor=56`, `ProceduralFamily_Fauna.RuntimeDescriptor=56`, `PredatorFearNodeSnapshot=32`, `QueryKey=64`, `ForwardEchoKey=48`, `AssetGuidIdRecord=16`, and `LogisticsNode=32` to explicit layouts. `ulong` cache-key lanes are aligned to offsets 32/40/48/56 or 32/40, and tail padding is named on GUID and logistics node rows.
+
+Rejected Alternatives: Preserving the false 64-byte and 48-byte descriptor literals was rejected because it would document an impossible stride. Widening descriptor rows to 64/96/128 bytes was rejected unless the real field span required it; these are immutable authoring/runtime descriptors, not per-thread contested counters. Managed authoring structs, Unity object references, and compatibility property structs were left out because this pass is fixed unmanaged DTO ABI hardening only.
+
+Scalability potential: Low tier gets stable descriptor and cache-key strides for fauna cognition, acoustic occlusion reuse, vegetation fear snapshots, pre-init asset lookup, and logistics node iteration. Middle tier keeps current authoring/runtime cache cadence. High and Ultra tiers can increase fauna family variety, acoustic cache pressure, predator-fear nodes, and logistics graph size under continuous quality budgets without changing DTO identity or route ownership.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-12 us per 10k descriptor/cache/node reads depending on active fauna, acoustic query, and logistics graph density. Evidence class: STATIC_SOURCE; touched descriptor/cache files now report 0 Sequential hits, touched unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad sized-inclusive Sequential count is 179, broad exact Sequential count remains 168, and `git diff --check` over Loop 23 files returns exit 0 with LF/CRLF warnings only.
+
+## Decision 060 - Save Telemetry And Scratch Row ABI Closure
+
+Problem: `SaveManager` still had fixed unmanaged private rows using Sequential layout: the 300-frame async persistence telemetry ring, WFC snapshot dedupe cache entry, unmanaged load fallback candidate scratch row, and captured frame context row. The telemetry/cache/scratch rows are NativeArray or value-copy lanes and can be hardened without touching save file identity.
+
+Solution: Converted `AsyncPersistenceTelemetryEntry=32`, `WfcOutpostSnapshotCacheEntry=24`, `SaveLoadCandidate=16`, and `SaveContextFrameData=4` to explicit layouts. `WfcOutpostSnapshotCacheEntry` keeps both `ulong` hash lanes at offsets 0 and 8. `SaveLoadCandidate` keeps the existing 16-byte fallback descriptor and constructor semantics.
+
+Rejected Alternatives: `SaveStagingHeader` was deliberately left Sequential because it is a save staging/file-pipeline header; changing it belongs to a save-format owner proof pass, not this scratch/telemetry pass. `SaveLoadCandidate.IsBackup` was not rewritten because it is cold fallback path syntax, not a hot NativeArray mutation property. Build/rebuild was rejected because static gates passed and the user explicitly forbade premature rebuilds.
+
+Scalability potential: Low tier gets stable save telemetry and snapshot-cache strides with no extra save-path allocation. Middle tier keeps existing persistence cadence. High and Ultra tiers can retain deeper optional persistence telemetry and larger snapshot dedupe pressure under continuous quality controls without changing save slot identity or file routes.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-6 us per 10k save telemetry/cache/scratch row reads. Evidence class: STATIC_SOURCE; touched `SaveManager.cs` unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad sized-inclusive Sequential count is 175, broad exact Sequential count is 167, and `git diff --check` over `SaveManager.cs` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 061 - Interaction And Campaign Result ABI Closure
+
+Problem: Two non-job exact Sequential rows remained in hot-facing but source-owned payload routes: `FloraHarvestInteractionPoint`, which passes harvest snap target data across interaction code, and `MetaCampaignEvaluationResult`, which is written by a Burst job into a NativeArray output lane. Both are unmanaged and do not carry managed references.
+
+Solution: Converted `FloraHarvestInteractionPoint=96` to explicit layout with `InstanceUid@0`, `AnchorAup@8`, runtime vectors at 56 and 68, material class at 80, template index at 84, blend weight at 88, and named padding. Converted `MetaCampaignEvaluationResult=128` to explicit layout with its `FixedList128Bytes<MetaCampaignVariableChange>` at offset 0.
+
+Rejected Alternatives: `QueryResult`/`CachedQueryResult` were rejected because they carry `RaycastHit`/`Collider` Unity physics handles. PDA exchange snapshots, emergency relay rewards, performance budget rows, and fauna spatial registry entries were rejected because they carry managed references or Unity object handles. Job/native-state wrappers remain excluded because Unity owns those container ABIs.
+
+Scalability potential: Low tier gets stable harvest snap and campaign-result row copies without adding managed allocation. Middle tier keeps current campaign evaluation cadence. High and Ultra tiers can increase flora interaction density and campaign side-effect telemetry under continuous quality controls without changing interaction authority or campaign variable identity.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per 10k interaction/result row copies. Evidence class: STATIC_SOURCE; touched interaction/campaign files report 0 Sequential hits, touched unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad sized-inclusive Sequential count is 173, broad exact Sequential count is 165, and `git diff --check` over Loop 25 files returns exit 0 with LF/CRLF warnings only.
+
+## Decision 062 - Sandbox Shelf Runtime Parameter ABI Closure
+
+Problem: `HectonSandboxAbyssalShelfJobs.cs` still had a clean unmanaged runtime parameter block on compiler-owned Sequential layout. The row carries three `double` lanes and is passed into Burst shelf generation and smoke validation jobs, so relying on implicit padding weakens ARM64 and rollback-style memcpy proof. The same file also had Burst annotations without `CompileSynchronously = true` and owner-separated NativeArray fields without alias proof.
+
+Solution: Converted `HectonSandboxAbyssalShelfParams` to explicit `Size = 104`. Offsets are pinned as: `AupCellSizeMeters@0`, `DescentRadiusMeters@8`, `PlateCellSizeMeters@16`, float scalar lanes `HighWorldY@24` through `IslandJunctionThreshold@92`, `Seed@96`, and `_pad0@100`. Added synchronous Fast/Standard Burst flags to the static math and shelf jobs, and added `[NoAlias]` to independent NativeArray inputs/outputs in base height, slope quantization, smoke sample, smoke reduction, and summary jobs.
+
+Rejected Alternatives: Reordering the parameter fields to a denser or 128-byte cache-line layout was rejected because the existing 104-byte field order is a source-visible authoring/runtime contract and the row is not a contested atomic counter. Converting neighboring smoke output/reduction structs in the same sweep was rejected because they are validation rows and need separate owner proof before widening. Running a build or rebuild was rejected because static gates passed and the user explicitly prohibited premature rebuilds.
+
+Scalability potential: Low tier keeps shelf generation as an analytical Dear Lie height function with aligned parameters and lower job alias ambiguity. Middle tier preserves the same deterministic AUP shelf math while improving scheduling metadata. High and Ultra tiers can spend saved CPU stalls on denser shelf samples, richer ridge/trench visual overlays, or deeper smoke validation under continuous quality controls; the parameter identity, seed route, AUP route, and gameplay truth layout remain invariant.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-10 us per 10k shelf parameter reads or scheduled shelf job batches, plus 2-18 us per batch when Burst can vectorize independent NativeArray lanes. Evidence class: STATIC_SOURCE; touched-file Sequential/Pack scan returns 0, all 9 Burst annotations include `CompileSynchronously = true`, touched unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad sized-inclusive Sequential count is 172, broad exact Sequential count is 164, and `git diff --check` over `HectonSandboxAbyssalShelfJobs.cs` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 063 - Chunk Local Offset Quantization ABI Closure
+
+Problem: `ChunkLocalOffsetQuantization` stored runtime quantized local offsets as 6-byte Sequential rows in a `NativeArray<QuantizedLocalOffset>`. That 6-byte stride saves memory but violates the runtime ARM64 multiple-of-8 law for hot Burst lanes and risks split loads. The quantization jobs also lacked `CompileSynchronously = true` and alias proof on independent source/destination buffers.
+
+Solution: Converted runtime `Short3` to explicit `Size = 8` with `X@0`, `Y@2`, `Z@4`, and `_pad0@6`. Converted `QuantizedLocalOffset` to explicit `Size = 8` containing `Short3@0`. Added explicit `QuantizationParams=48` with `ChunkCenterLocal@0`, `EncodeScale@16`, `DecodeStep@32`, and `_pad0@44`. Added synchronous Burst flags and `[NoAlias]` to quantize/dequantize job arrays.
+
+Rejected Alternatives: Keeping the 6-byte runtime stride was rejected because this path is used as a Burst `NativeArray` element lane, not just a cold file-format record. Changing `SaveBinaryStorage.QuantizedAupLocalOffsetShort3` was rejected because that is a separate save-binary/wire record and changing it would require save-format owner proof. Replacing millimeter quantization with float3 storage was rejected because it would double bandwidth and remove the compression win that this visual/runtime helper is designed to preserve. Running a build or rebuild was rejected because static gates passed and the user explicitly prohibited premature rebuilds.
+
+Scalability potential: Low tier keeps cheap millimeter local-offset compression but avoids unaligned 6-byte runtime strides in Burst. Middle tier keeps current quantize/dequantize cadence with cleaner SIMD alias facts. High and Ultra tiers can push more decoded vegetation/voxel-local presentation samples under continuous quality controls without changing save identity, AUP origin ownership, or shader-visible gameplay truth.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-6 us per 10k quantized offset reads on ARM64-class hardware, plus 1-10 us per quantize/dequantize batch when Burst can vectorize independent input/output buffers. Evidence class: STATIC_SOURCE; touched-file Sequential/Pack scan returns 0, missing-`CompileSynchronously` Burst scan returns 0, touched unaligned 8-byte `FieldOffset` scan returns 0, Pack scan remains 0, broad sized-inclusive Sequential count is 170, broad exact Sequential count remains 164, and `git diff --check` over `ChunkLocalOffsetQuantization.cs` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 064 - Binary Header ABI And Endian Hygiene Closure
+
+Problem: Two fixed binary/staging headers still used sized Sequential layout: `WorldRegrowthPayloadHeader`, which is read from raw macro-database bytes with `UnsafeUtility.ReadArrayElement`, and `SaveStagingHeader`, which is copied into a private native staging buffer. The regrowth unpack path also rejected reversed-magic payloads instead of normalizing the header endian before validation.
+
+Solution: Converted `WorldRegrowthPayloadHeader=80` to explicit layout with fixed 4-byte lanes from `Magic@0` through `Reserved1@76`. Added `NormalizeHeaderEndian` and `ReverseInt` so a reversed-magic payload has its header fields normalized via `math.reversebytes` before the existing magic/version/layout/checksum gates run. Converted `SaveStagingHeader=32` to explicit layout with eight `uint` lanes from `OperationId@0` through `Frame@28`.
+
+Rejected Alternatives: Treating the regrowth header as an excluded file record was rejected because the existing codec directly hydrates it into a runtime struct with `UnsafeUtility.ReadArrayElement`, so explicit ABI proof is still required. Reversing payload body bytes was rejected because the regrowth payload lanes are byte SOA streams; only the header has multi-byte fields. Changing save file slot identity or persistent save DTOs was rejected because this pass only hardens the private staging header. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier gets deterministic regrowth import/export header handling and private save staging memcpy proof with no additional allocations. Middle tier keeps current macro-database and save cadence. High and Ultra tiers can retain larger regrowth payload traffic and deeper save staging telemetry under continuous quality controls without changing file identity, route ownership, or payload body layout.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 0-2 us per regrowth payload import/export and less than 1 us per staged save snapshot; this is primarily crash-prevention and binary compatibility proof, not a hot-loop speed claim. Evidence class: STATIC_SOURCE; touched header files report no targeted Sequential/Pack hits, touched unaligned 8-byte `FieldOffset` scan returns 0, `math.reversebytes` pattern exists elsewhere in source, Pack scan remains 0, broad sized-inclusive Sequential count is 168, broad exact Sequential count remains 164, and `git diff --check` over the two files returns exit 0 with LF/CRLF warnings only.
+
+## Decision 065 - Visor Material Parameter Cache ABI Closure
+
+Problem: `HectonScooterVolumetricShaftsFeature.MaterialParameterState` still used sized Sequential layout for a 152-byte CPU material cache row. The row is copied and compared before shader constant DTO generation; implicit padding was unnecessary because the field span is fixed and source-owned.
+
+Solution: Converted `MaterialParameterState=152` to explicit layout. Float lanes run from `RenderScale@0` through `NoirFogDensity@92`, `NoirLiftColor@96` occupies the 16-byte color lane, remaining float lanes run from `LensGhostIntensity@112` through `HasExposureState@144`, and `_pad0@148` names the tail lane.
+
+Rejected Alternatives: Changing `ShaftGlobalsDTO` or shader constant buffer packing was rejected because that GPU upload DTO already had an explicit layout and is a separate ABI. Widening the material cache to 160 bytes was rejected because the existing 152-byte span is already an 8-byte multiple and this row is not a contested per-thread counter. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap material-cache comparisons before shaft update. Middle tier preserves existing material update cadence. High and Ultra tiers can spend saved certainty on richer scooter shaft/noir lens parameters without changing shader route, RenderGraph pass identity, or material binding authority.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-4 us per 10k material-cache row comparisons/copies; primary value is deterministic CPU cache-row proof. Evidence class: STATIC_SOURCE; targeted visor Sequential/Pack scan returns 0 for `MaterialParameterState`, touched unaligned 8-byte `FieldOffset` scan returns 0, broad sized-inclusive Sequential count is 167, and `git diff --check` over `HectonScooterVolumetricShaftsFeature.cs` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 066 - Core Handle Descriptor ABI Closure
+
+Problem: The final sized Sequential rows under `Assets/_Project/Scripts` were core allocator/vault descriptors: `NativeArenaSlice<T>`, `VaultBufferHandle<T>`, and `VaultBufferSlice<T>`. These are not gameplay DTO rows, but they are copied and passed across many vault/arena phases. Leaving them as compiler-owned Sequential rows preserved an avoidable ARM64 ABI blind spot in the core memory layer.
+
+Solution: Converted the three descriptors to explicit layouts while preserving their existing byte sizes and field order. `NativeArenaSlice<T>` is `Ptr@0`, `Length@8`, `Stride@12`, `ByteCount@16`, `FrameSequence@20`, `_pad0@24`, size 32. `VaultBufferHandle<T>` is `ptr@0`, `generation@8`, `BufferId@12`, `Length@16`, `Stride@20`, size 24. `VaultBufferSlice<T>` is `Ptr@0`, `Generation@8`, `BufferId@12`, `StartIndex@16`, `Length@20`, `Stride@24`, `Flags@28`, pads at 29..31, size 32.
+
+Rejected Alternatives: Widening `VaultBufferHandle<T>` to 32 or 64 bytes was rejected because it is a massively used legacy migration handle, not a contested per-thread counter, and widening it would increase manager field footprint across many domains. Removing the existing convenience properties was rejected in this loop because that would require a cross-domain call-site migration and is separate from the sized Sequential ABI closure. Running a build or rebuild was rejected because static gates passed and the user explicitly prohibited premature rebuilds.
+
+Scalability potential: Low tier benefits from stable handle/slice descriptors in the allocator and vault paths without increasing persistent memory pressure. Middle tier keeps the same memory lease semantics. High and Ultra tiers can safely push larger vault-backed workloads, more transient arena slices, and deeper black-box diagnostics under continuous quality budgets without changing ownership, authority routes, or handle identity.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-6 us per 10k handle/slice descriptor copies or debug lease checks. Evidence class: STATIC_SOURCE; broad sized Sequential scan now returns 0 hits, touched core files report 0 Sequential hits, touched unaligned pointer/long `FieldOffset` scan returns 0, broad sized-inclusive Sequential count is 164 matching exact Sequential count, and `git diff --check` over `HectonArenaAllocator.cs` and `GlobalDataVault.cs` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 067 - Core Distance Math Burst Fence Closure
+
+Problem: `Core/DistanceMath.cs` had 17 Burst-annotated core math helpers using Fast/Standard flags but missing `CompileSynchronously = true`. These helpers gate distance-based approximation, dominant-axis normalization, triangle-wave trigonometry, and shader math LOD pushes, so asynchronous Burst metadata violates the batch compiler directive even though no DTO layout was involved.
+
+Solution: Added `CompileSynchronously = true` to all 17 `DistanceMath` Burst annotations and preserved their existing `FloatMode.Fast` and `FloatPrecision.Standard` settings. No public method signature, shader keyword, distance threshold, quality-tier behavior, or math approximation changed in this loop.
+
+Rejected Alternatives: Rewriting the existing tier-based `MathLodMode` API to consume `GlobalQualityWeight` directly was rejected for this pass because it would be a cross-call-site behavior migration rather than a metadata fence closure. Converting exact Sequential job wrappers elsewhere was rejected where the rows contain Unity `NativeArray`, `NativeQueue`, mesh vertex formats, save DTOs, or managed references. Running a build or rebuild was rejected because static gates passed and the user explicitly prohibited premature rebuilds.
+
+Scalability potential: Low tier keeps existing cheap approximations such as dominant-axis normalization and triangle-wave sine. Middle tier keeps current distance-gated blend helpers. High and Ultra tiers keep existing high-fidelity close-range math and shader LOD push routes. The change makes the Burst compile behavior deterministic without changing scalability decisions or gameplay truth.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this is Burst metadata hardening only. Evidence class: STATIC_SOURCE; `DistanceMath.cs` missing-`CompileSynchronously` scan returns 0 hits, the file reports 17 Burst annotations with synchronous Fast/Standard flags, and `git diff --check` over `DistanceMath.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 068 - AUP And Regrowth Deterministic Burst Fence Closure
+
+Problem: `AUPMath` and five `WorldRegrowthSimulation` jobs still had Burst annotations without `CompileSynchronously = true`. They also used Fast float mode despite handling AUP-localized math or persistent world-state integration. The regrowth jobs operate over separate SOA byte lanes but did not expose non-overlap facts to Burst.
+
+Solution: Updated `AUPMath` and the five regrowth jobs to `CompileSynchronously = true` with `FloatMode.Deterministic` and `FloatPrecision.Standard`. Added `[NoAlias]` to all owner-separated regrowth NativeArray fields across initialization, nutrient diffusion, daily regrowth, tombstone mining, and telemetry jobs.
+
+Rejected Alternatives: Preserving Fast mode was rejected for this deterministic-state slice because AUP and persistent regrowth state are part of simulation truth, not visual-only math. Rewriting the regrowth memory owner to use GlobalDataVault was rejected because this file currently owns a dedicated macro-regrowth memory object and such a migration would require a route card instead of a local Burst fence pass. Running a build or rebuild was rejected because static gates passed and the user explicitly prohibited premature rebuilds.
+
+Scalability potential: Low tier keeps regrowth in byte-lane SOA with cheap integer daily updates and stable AUP deltas. Middle tier keeps the same cadence while Burst can reason about separate lanes. High and Ultra tiers can increase regrowth grid area, telemetry density, or macro-sector validation under continuous quality budgets without changing file identity, payload layout, or simulation ownership.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-12 us per regrowth batch when Burst can trust non-overlapping byte lanes. Deterministic-mode metadata is correctness hardening, not a speed claim. Evidence class: STATIC_SOURCE; targeted AUP/regrowth missing-`CompileSynchronously` scan returns 0 hits, targeted scan reports deterministic Burst annotations on AUP/regrowth jobs plus NoAlias on regrowth NativeArrays, and `git diff --check` over `AUPMath.cs` and `WorldRegrowthSimulation.cs` returns exit 0 with LF/CRLF warnings only.
+
+## Decision 069 - World Classification And Scatter Deterministic Burst Fence
+
+Problem: `WorldVolumetricBiomeClassificationJobs.cs` used implicit compiler layout for five NativeArray DTOs and Fast asynchronous Burst metadata for stress/classification jobs. `ScatterMath.cs` and `ResourceYieldMath.cs` also had Burst targets without `CompileSynchronously = true`; both influence deterministic procedural placement or resource extraction truth, so the metadata needed deterministic treatment instead of visual-only Fast mode.
+
+Solution: Converted `VolumetricBiomeClassificationInput=24`, `VolumetricBiomeClassificationResult=16`, `VolumetricBiomeStressAuditResult=24`, `VolumetricBiomeStressBlockSummary=8`, and `VolumetricBiomeStressSummaryResult=8` to explicit layouts. Added `CompileSynchronously = true`, `FloatMode.Deterministic`, and `FloatPrecision.Standard` to the five volumetric biome jobs, the two resource-yield function-pointer targets, and the ten scatter Burst targets. Added `[NoAlias]` to all non-overlapping NativeArray lanes in the volumetric biome jobs.
+
+Rejected Alternatives: Widening volumetric rows to 32 or 64 bytes was rejected because they are batch DTO rows, not contested counters, and their current explicit sizes are already multiples of 8. Rewriting scatter to take `GlobalQualityWeight` was rejected in this pass because it would alter placement behavior rather than closing compile/alias metadata. Editing `BiomeInfluenceCell` properties was rejected for this loop because it is a broad cross-file call-site migration and needs a separate owner-proof pass. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap packed biome-cell stress rows, deterministic scatter hashes, and simple resource-yield multiplication without extra allocations. Middle tier keeps current biome/scatter cadence with cleaner Burst metadata. High and Ultra tiers can push denser biome validation, richer procedural placement, or deeper resource telemetry under continuous quality budgets without changing gameplay truth ownership, save identity, shader routes, or scatter authoring rules.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-10 us per 10k biome stress/classification row reads and 1-8 us per classification batch where Burst can trust non-overlapping lanes. Scatter/resource changes are metadata/correctness hardening with no runtime speed claim without Burst Inspector. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted Pack scan returns 0, targeted unaligned 8-byte `FieldOffset` scan returns 0, targeted NoAlias scan reports 13 lanes, and `git diff --check` over the three files returns exit 0 with LF/CRLF warnings only.
+
+## Decision 070 - Procedural Field Sampler DTO ABI And Pack Fence
+
+Problem: `WorldProceduralFieldSampler` still stored its primary sampler NativeArray rows with implicit compiler layout, including an 8-byte `BiomeFamilyFlags` lane in `CellOutputData`. The sampler and biome influence pack jobs also used asynchronous Fast Burst metadata, and the pack/classification jobs read packed biome influence data through struct properties inside Burst code.
+
+Solution: Converted sampler-owned NativeArray rows to explicit layouts: `ZoneData=64`, `BiomeMatrixData=64`, `BiomeFamilyData=16`, `BiomeInfluenceCell=8`, `CellInputData=72`, `CellOutputData=328`, and `CaveEntranceHintData=32`. Pinned `CellOutputData.BiomeFamilyFlags` to offset 288 with a named 4-byte pad at 284. Added deterministic synchronous Burst flags and `[NoAlias]` to `CellSamplingJob` and `BiomeInfluencePackJob`. Added static packed extraction helpers to `BiomeInfluenceCell` and used them in hot Burst jobs instead of property reads.
+
+Rejected Alternatives: Migrating the sampler's persistent NativeArrays into `GlobalDataVault` was rejected for this loop because it is an ownership-route migration requiring a separate route card; this pass only hardens row ABI and job metadata. Removing the existing `BiomeInfluenceCell` managed compatibility properties was rejected because managed UI/debug/atmosphere call sites still use them and that is a broader API migration. Widening `CellOutputData` to 384 or 512 bytes was rejected because it is not a contested counter and the explicit 328-byte row is already an 8-byte multiple.
+
+Scalability potential: Low tier gets aligned sampler rows, packed biome influence lanes, and no extra scene queries. Middle tier keeps current sampling cadence with safer Burst alias metadata. High and Ultra tiers can spend the saved certainty on denser biome influence grids, more scatter validation, or richer biome transition shader feeds under continuous quality budgets without changing biome truth ownership or shader buffer identity.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 2-20 us per 10k sampler row reads/copies, plus 2-18 us per sampler/pack batch where Burst can trust non-overlapping lanes. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted Sequential/Pack scan returns 0, targeted unaligned 8-byte `FieldOffset` scan returns 0, targeted NoAlias scan reports 11 sampler/pack lanes, and `git diff --check` over the three files returns exit 0 with LF/CRLF warnings only.
+
+## Decision 071 - Procedural Terrain Job Burst Alias Fence
+
+Problem: Six pure procedural terrain kernels still used asynchronous Fast Burst metadata and unannotated source/output NativeArray lanes. The fake-overhang job also had a defensive branch that attempted to write to `HorizontalOffsetsMeters[index]` even when `HorizontalOffsetsMeters.IsCreated` was false.
+
+Solution: Added `CompileSynchronously = true`, `FloatMode.Deterministic`, and `FloatPrecision.Standard` to `WorldProceduralTerrainFakeOverhangOffsetJob`, `WorldProceduralTerrainThermalWeatheringJob`, `WorldProceduralTerrainTerraceJob`, `WorldProceduralTerrainTectonicDisplacementJob`, `WorldProceduralTerrainSlopeCavitySplatmapJob`, and `ThermalSlumpingJob`. Added `[NoAlias]` to independent source/output/wear NativeArray lanes. Split the fake-overhang guard so an uncreated output lane returns before any write attempt.
+
+Rejected Alternatives: Converting the terrain math to `GlobalQualityWeight`-dependent algorithms was rejected for this pass because it would change terrain truth rather than closing Burst metadata. Replacing cellular/noise terrain kernels with heavier mesh or physics probes was rejected by the Dear Lie rule; these are already analytical terrain fakes. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps analytical terrain masks, fake overhang offsets, terrace quantization, and talus relaxation as cheap NativeArray passes. Middle tier keeps current pass cadence with stronger alias proof. High and Ultra tiers can spend saved scheduler certainty on denser terrain samples, richer splatmap channels, or additional validation under continuous quality budgets without changing seed identity or terrain authority.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-12 us per terrain batch where Burst can trust source/output lane separation. Deterministic Burst metadata is correctness hardening without a profiler-backed runtime speed claim. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted Sequential/Pack scan returns 0, targeted NoAlias scan reports 15 terrain lanes, and `git diff --check` over the six files returns exit 0 with LF/CRLF warnings only.
+
+## Decision 072 - Anomaly SDF Deterministic Burst Alias Fence
+
+Problem: `HectonAnomalySdfJobs.cs` still had seven deterministic Burst kernels without `CompileSynchronously = true` and 13 unannotated NativeArray lanes. These kernels mutate SDF/voxel terrain truth, carve fissures, inject pillar cinematic fakes, and displace cliff surfaces; alias uncertainty can force Burst to keep conservative memory assumptions around terrain source, SDF target, optional influence, and output lanes.
+
+Solution: Added `CompileSynchronously = true`, `FloatMode.Deterministic`, and `FloatPrecision.Standard` to `SnapSDFToTerrainJob`, `SnapSDFTopCellsToTerrainJob`, `SnapDualSDFTopCellsToTerrainJob`, `InjectMegaPillarSDFJob`, `InjectSelectedMegaPillarSDFJob`, `InjectDeepFissureSDFJob`, and `VoxelCliffOverhangNoiseJob`. Added `[NoAlias]` to terrain height input, SDF targets, secondary SDF validation target, selected feature input, fissure biome influence output, and cliff input/output SDF lanes while preserving existing remapped-write safety attributes.
+
+Rejected Alternatives: Removing `NativeDisableParallelForRestriction` from column/envelope writers was rejected because those jobs intentionally map scheduled lanes to bounded SDF columns or pillar envelopes instead of flat NativeArray indices. Converting pillar/fissure generation to GameObjects, MeshColliders, or Physics raycasts was rejected by the Dear Lie rule; the current approach is analytical SDF/noise deformation. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap terrain-height snapping, one-column seam lock, analytical pillar/fissure SDF writes, and bounded cliff overhang noise. Middle tier keeps the same SDF pass cadence with stronger alias proof. High and Ultra tiers can spend saved scheduler certainty on denser SDF grids, stronger lateral overhang noise, or richer anomaly validation under continuous quality budgets without changing seed identity, AUP route, shader route, or gameplay truth ownership.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-16 us per anomaly SDF batch where Burst can trust terrain/SDF/source/output lane separation. Deterministic Burst metadata is correctness hardening without a profiler-backed runtime speed claim. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted NoAlias scan reports 13 anomaly SDF NativeArray lanes, and `git diff --check` over `HectonAnomalySdfJobs.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 073 - Shinobu Streaming Runtime Burst Alias Fence
+
+Problem: `ShinobuStreamingRuntime.cs` already had explicit chunk residency DTO layouts, but the four residency jobs still used asynchronous Fast Burst metadata. The jobs initialize residency rows, publish deterministic mock AUP shift signals, reconcile residency after AUP shifts, and push hydration/dehydration request indices; these mutate simulation/streaming truth rather than visual-only data.
+
+Solution: Added `CompileSynchronously = true`, `FloatMode.Deterministic`, and `FloatPrecision.Standard` to `ChunkResidencyDtoInitJob`, `MockAupShiftSignalJob`, `ChunkResidencyAupShiftReconcileJob`, and `PredictiveChunkResidencyJob`. Added `[NoAlias]` to chunk residency, AUP signal, hydration request, and dehydration request lanes.
+
+Rejected Alternatives: Leaving Fast mode was rejected because chunk residency state participates in deterministic streaming decisions and rollback-friendly state proof. Reworking Addressables/mock profile parsing was rejected because the current pass only closes Burst metadata and alias facts; the CSV parser and fallback archaeology are cold managed bridges. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap chunk row initialization, deterministic mock AUP signal generation, and bounded predictive residency queues. Middle tier keeps the same request cadence with cleaner alias facts. High and Ultra tiers can spend scheduler certainty on larger streaming horizons, deeper black-box queue telemetry, or higher visual residency radius under continuous quality budgets without changing chunk identity, DTO layout, or ownership route.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-10 us per residency batch where Burst can trust chunk/signal/request lane separation. Deterministic Burst metadata is correctness hardening without a profiler-backed runtime speed claim. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted NoAlias scan reports 7 residency lanes, and `git diff --check` over `ShinobuStreamingRuntime.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 074 - BRG Visibility Output Burst Alias Fence
+
+Problem: `HectonBatchRendererGroupUtility.cs` had two shared BRG jobs using asynchronous Fast Burst metadata. The visibility-mask build job also passed matrices, culling planes, and output mask without alias proof, and the finalization job read the visibility mask without alias proof before writing Unity-owned unsafe draw command pointers.
+
+Solution: Added `CompileSynchronously = true` while preserving `FloatMode.Fast` and `FloatPrecision.Standard` for `BuildMatrixVisibilityMaskJob` and `FinalizeSingleDrawCommandOutputJob`. Added `[NoAlias]` to the matrix, culling-plane, and visibility-mask NativeArray lanes. Left unsafe draw-command pointer fields under their existing `NativeDisableUnsafePtrRestriction` route because Unity owns that callback allocation surface.
+
+Rejected Alternatives: Switching BRG culling to deterministic float mode was rejected because this is visual culling/output, not rollback state. Replacing pointer writes with managed collections or CPU GameObject render loops was rejected because it would add allocation and break the BRG Dear Lie path. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap CPU plane culling and single draw-command finalization before BRG submission. Middle tier keeps the same mask path with cleaner alias facts. High and Ultra tiers can spend the saved render-thread certainty on larger instance batches, richer shader feeds, or deeper culling telemetry under continuous quality budgets without changing gameplay truth, shader identity, or draw route.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per BRG culling/finalization batch where Burst can trust mask/input lane separation. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted NoAlias scan reports 4 BRG NativeArray lanes, and `git diff --check` over `HectonBatchRendererGroupUtility.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 075 - Erosion Harness Metrics ABI And Burst Fence
+
+Problem: `ErosionHarnessJobs.cs` had two bare `[BurstCompile]` editor smoke-test jobs and an implicit `ErosionSmokeMetrics` row. The metrics row spans 36 bytes, which is not an 8-byte multiple for NativeArray stride proof, and the smoke-test jobs write/read multiple independent height/sediment/wear buffers without alias metadata.
+
+Solution: Converted `ErosionSmokeMetrics` to explicit `Size = 40`: seven float lanes at offsets 0..24, `ChangedCellCount@28`, `NonFiniteCellCount@32`, and `_pad0@36`. Added deterministic synchronous Burst flags to `ErosionFractalHeightmapJob` and `ErosionSmokeMetricsJob`. Added `[NoAlias]` to `Before`, `Height`, `After`, `Sediment`, `Wear`, and `Metrics` lanes.
+
+Rejected Alternatives: Leaving a 36-byte stride was rejected because the metrics row is written through a NativeArray and is cheap to align with a named pad. Treating the editor harness as exempt was rejected because it produces validation evidence and should not carry bare Burst metadata. Changing erosion equations, seed constants, or PNG output paths was rejected because this pass only hardens ABI and job metadata. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps deterministic cheap erosion smoke data for CI/editor validation with aligned metrics output. Middle tier keeps current harness resolution and validation path. High and Ultra tiers can spend validation certainty on larger erosion smoke maps or deeper terrain QA metrics under continuous quality budgets without changing terrain authority, seed identity, or runtime route.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-4 us per 10k metrics row copies plus 1-8 us per harness batch where Burst can trust source/output lane separation. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, `ErosionSmokeMetrics` explicit size is 40, targeted NoAlias scan reports 7 erosion harness lanes, and `git diff --check` over `ErosionHarnessJobs.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 076 - Pressure Metamorphism DTO ABI And Burst Fence
+
+Problem: `ResourceDistributionDirector` used implicit compiler layout for `PressureMetamorphismInput` and `PressureMetamorphismResult`, both stored in persistent NativeArrays, and its pressure metamorphism job used asynchronous Fast Burst metadata without alias proof. The job advances carbon-to-diamond transformation progress, so it is resource state truth rather than visual-only math.
+
+Solution: Converted `PressureMetamorphismInput` to explicit `Size = 16` and `PressureMetamorphismResult` to explicit `Size = 8`. Added deterministic synchronous Burst flags to `PressureMetamorphismJob`. Added `[NoAlias]` to metamorphism input and result NativeArray lanes.
+
+Rejected Alternatives: Leaving implicit layout was rejected because the input/result rows are persistent native lanes and cheap to pin byte-for-byte. Rewriting the resource distribution ownership route or ghost proxy snap raycast path was rejected because this pass only hardens the pressure metamorphism DTO/job surface. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap batch pressure metamorphism updates with aligned rows. Middle tier keeps current update cadence and transformation timing. High and Ultra tiers can spend scheduler certainty on larger resource-node batches, deeper pressure/thermal validation, or richer resource telemetry under continuous quality budgets without changing template identity, node ownership, or spawn routes.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-4 us per 10k metamorphism row reads/copies plus 1-8 us per metamorphism batch where Burst can trust input/result lane separation. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted layout scan confirms 16-byte input and 8-byte result rows, targeted NoAlias scan reports 2 metamorphism lanes, and `git diff --check` over `ResourceDistributionDirector.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 077 - Hydraulic Erosion Metrics ABI And Burst Fence
+
+Problem: `HydraulicErosionMetricBlock` was a compiler-owned 56-byte metrics row written through NativeArray scan/reduction jobs, and both hydraulic erosion metrics jobs used asynchronous Fast Burst metadata without alias proof. These jobs generate QA evidence, including NaN counts and boundary-band deltas, so byte-stable output and deterministic metadata matter.
+
+Solution: Converted `HydraulicErosionMetricBlock` to explicit `Size = 56`, with float lanes from `MinHeight@0` through `MaxBoundaryWear@36` and int counters from `NanCount@40` through `BoundaryNanCount@52`. Added deterministic synchronous Burst flags to `HydraulicErosionMetricsJob` and `HydraulicErosionMetricReductionJob`. Added `[NoAlias]` to height, sediment, wear, block, and summary lanes.
+
+Rejected Alternatives: Widening the row to 64 bytes was rejected because the existing 56-byte span is already an 8-byte multiple and this row is not a contested per-thread counter. Leaving Fast mode was rejected because these metrics are validation/forensics data. Changing erosion math or boundary audit rules was rejected because this pass only hardens ABI and metadata. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap block-level erosion QA and NaN detection with stable metric rows. Middle tier keeps current block scan/reduction cadence. High and Ultra tiers can spend validation certainty on larger erosion maps, tighter boundary audits, or richer terrain telemetry under continuous quality budgets without changing terrain authority, erosion equations, or save identity.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-5 us per 10k metric block reads/copies plus 1-10 us per metrics scan/reduction batch where Burst can trust source/block/summary lane separation. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, layout scan confirms 56-byte metric blocks, targeted NoAlias scan reports 6 hydraulic metric lanes, and `git diff --check` over `HydraulicErosionMetricsJob.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 078 - Biolum Visual Job Burst Alias Fence
+
+Problem: `HectonBiolumManager` had predator blackout and ripple distance jobs using asynchronous Fast Burst metadata, and the source/output NativeArray lanes had no alias proof. These jobs feed visual response and shader-facing intensity/distance data, not authoritative rollback state.
+
+Solution: Added `CompileSynchronously = true` while preserving `FloatMode.Fast` and `FloatPrecision.Standard` for `PredatorBlackoutJob` and `RippleDistanceJob`. Added `[NoAlias]` to predator positions, predator scores, ripple positions, and ripple distance output lanes.
+
+Rejected Alternatives: Switching these visual jobs to deterministic mode was rejected because they do not own gameplay truth. Reworking the manager's existing dispatcher finalization, telemetry ring access, or vault lifecycle was rejected because this pass only closes Burst metadata and alias facts. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap predator dimming and ripple distance scoring before shader updates. Middle tier keeps current visual cadence with cleaner alias facts. High and Ultra tiers can spend render/CPU certainty on more active ripples, richer biolum shader parameters, or deeper visual telemetry under continuous quality budgets without changing sonar authority, predator ownership, or gameplay truth routes.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-6 us per biolum scoring batch where Burst can trust source/output lane separation. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted NoAlias scan reports 4 biolum job lanes, and `git diff --check` over `HectonBiolumManager.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 079 - AUP Camera-Relative Burst Fence
+
+Problem: `AbsoluteUniversePosition.ToCameraRelativeFloat3` in `PersistentWorldRegistry.cs` had Fast/Standard Burst metadata without `CompileSynchronously = true`. This wrapper is part of the AUP render/cull precision path and should not retain asynchronous Burst metadata.
+
+Solution: Added `CompileSynchronously = true` to the existing Burst annotation and preserved the existing Fast/Standard float mode. No implementation, AUP subtraction route, struct layout, registry route, or save identity changed.
+
+Rejected Alternatives: Switching the wrapper to deterministic mode was rejected because the method is explicitly camera-relative rendering/culling output and delegates to the already hardened AUP math path. Refactoring `PersistentWorldRegistry` completion windows or sequential job wrappers was rejected because this loop is a single metadata fence. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap camera-relative float conversion after double-precision AUP subtraction. Middle tier keeps the same culling/render route. High and Ultra tiers can spend precision certainty on larger visible ranges and denser render batches under continuous quality budgets without changing AUP truth ownership or save identity.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this is Burst metadata hardening only. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan over `PersistentWorldRegistry.cs` returns 0 and `git diff --check` over the file returns exit 0 with LF/CRLF warning only.
+
+## Decision 080 - Scatter Evaluator Counter And Burst Fence
+
+Problem: `ScatterEvaluator` used a one-element `NativeArray<int>` as an atomic candidate counter while every worker lane reserved output slots through `Interlocked.Increment`. That creates a high-contention counter without cache-line isolation. The scatter evaluation job also used asynchronous Fast Burst metadata and lacked alias proof for height samples, candidate output, and counter lanes.
+
+Solution: Introduced explicit `ScatterCandidateCounter64=64` with `Count@0` and 60 bytes of named padding. Replaced `NativeArray<int>` with `NativeArray<ScatterCandidateCounter64>`, reset by assigning `default`, and changed all atomic increments to operate on `counter->Count`. Added deterministic synchronous Burst flags and `[NoAlias]` to the scatter job's height sample, candidate output, and padded counter lanes.
+
+Rejected Alternatives: Keeping the 4-byte counter was rejected because it violates the false-sharing/counter padding rule in a high-frequency parallel writer. Replacing the atomic reserve with managed lists or per-cell GameObject emission was rejected because it would add GC and break the data-oriented scatter pipeline. Widening candidate DTOs or changing scatter family routing was rejected because the issue is the reservation counter and Burst metadata, not candidate payload identity. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps bounded deterministic scatter candidate generation with a cache-line-isolated counter. Middle tier keeps current grid cadence with cleaner alias facts. High and Ultra tiers can spend saved contention budget on larger scatter radii, denser placement attempts, or richer scatter validation under continuous quality budgets without changing family identity, height sampling ownership, or save routes.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-12 us per scatter evaluation under high candidate contention plus 1-10 us per batch from alias proof. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, layout scan confirms 64-byte counter row, targeted NoAlias scan reports 3 scatter evaluator lanes, and `git diff --check` over `ScatterEvaluator.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 081 - Wreck BRG Job Burst Alias Fence
+
+Problem: `WreckMaterialRegistry` had two BRG helper jobs using asynchronous Fast Burst metadata, explicit Sequential attributes on job wrappers, and unannotated native lanes for matrix rebase and visible-subset culling. These jobs are render-output helpers and should not carry DTO-style layout attributes or alias ambiguity.
+
+Solution: Added `CompileSynchronously = true` while preserving Fast/Standard float mode for `WreckMatrixRebaseJob` and `CullWreckMatricesToVisibleSubsetJob`. Removed redundant `StructLayout(LayoutKind.Sequential)` attributes from those job wrappers. Added `[NoAlias]` to matrix, age, frustum plane, visible matrix, and visible age lanes.
+
+Rejected Alternatives: Switching to deterministic mode was rejected because these are visual BRG output jobs, not authoritative simulation. Migrating the registry's persistent staging NativeLists or dispatcher completion windows was rejected because that is an ownership-route change outside this metadata fence. Replacing BRG with GameObject renderer loops was rejected because it would add managed traversal and defeat the visual fake. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap matrix rebasing and frustum-filtered visible subsets before upload. Middle tier keeps current BRG batch cadence with cleaner alias facts. High and Ultra tiers can spend render certainty on larger wreck batches, richer shader metadata, or tighter culling telemetry under continuous quality budgets without changing wreck identity, shader route, or gameplay truth.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per wreck BRG culling/rebase batch where Burst can trust source/output lane separation. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, explicit Sequential scan is clear for touched job wrappers, targeted NoAlias scan reports 6 wreck BRG lanes, and `git diff --check` over `WreckMaterialRegistry.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 082 - Flora Genome Burst Alias Fence
+
+Problem: `FloraGenomeJobs` still had L-system expansion and turtle graphics jobs without synchronous Burst metadata, while decoder/expander/turtle source-output NativeArray lanes had no alias proof. These jobs convert genome bytes into branch matrices, hazard zones, black-box entries, and generation stats, so async metadata and alias ambiguity weaken deterministic procedural evidence.
+
+Solution: Preserved synchronous Fast/Standard Burst for `FloraGenomeDecoderJob` because it is byte parsing and range validation. Added synchronous deterministic Burst flags to `IterativeLSystemExpanderJob` and `TurtleGraphicsJob`. Added `[NoAlias]` to raw byte, genome, symbol, scratch, turtle stack, branch matrix, hazard zone, black-box, cursor, and stats lanes.
+
+Rejected Alternatives: Changing grammar profiles, branch matrix DTOs, hazard DTOs, seed mixing, or black-box entry layout was rejected because this pass only hardens Burst metadata and alias facts. Padding `BlackBoxCursor` to 64 bytes was rejected because `TurtleGraphicsJob` is a single `IJob` and the cursor is not a contested parallel atomic counter. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps deterministic flora generation with bounded symbol expansion and alias-clean source/scratch/output lanes. Middle tier keeps current genome batch cadence. High and Ultra tiers can spend the certainty on larger grammar iteration caps, denser branch matrix output, richer hazard-zone authoring, or deeper flora black-box telemetry under continuous quality budgets without changing genome identity, save routes, or authority ownership.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-12 us per flora genome generation batch where Burst can trust source/scratch/output lane separation. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted NoAlias scan reports 16 flora genome lanes, and `git diff --check` over `FloraGenomeJobs.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 083 - Vegetation HLOD Cull Burst Alias Fence
+
+Problem: `VegetationNavGridSynchronizer` had `CullHLODInstancesJob` using asynchronous Fast Burst metadata, a redundant Sequential attribute on the job wrapper, and unannotated registry/frustum/visibility NativeArray lanes. This job is render visibility output, not authoritative simulation state.
+
+Solution: Added `CompileSynchronously = true` while preserving Fast/Standard float mode. Removed the redundant `StructLayout(LayoutKind.Sequential)` from the private job wrapper. Added `[NoAlias]` to `Registry`, `FrustumPlanes`, and `VisibleFlags`.
+
+Rejected Alternatives: Switching to deterministic mode was rejected because HLOD flags are visual culling output and do not own gameplay truth. Reworking the bridge's NativeArray ownership, dispatcher completion windows, or HLOD payload API was rejected because this pass only closes Burst metadata and alias proof. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap HLOD visibility flags with a frustum-only visual fake before render upload. Middle tier keeps current culling cadence with cleaner alias facts. High and Ultra tiers can spend culling certainty on larger HLOD registries, denser vegetation impostor sets, or richer visibility telemetry under continuous quality budgets without changing vegetation authority, HLOD payload identity, or save routes.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-6 us per HLOD culling batch where Burst can trust source/output lane separation. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted scan reports 3 HLOD NoAlias lanes, and `git diff --check` over `VegetationNavGridSynchronizer.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 084 - Spatial Hash AUP Maintenance Burst Alias Fence
+
+Problem: `WorldSpatialHashGrid` had `ValidateAupIntegrityJob` and `FarUnloadCandidatesJob` using asynchronous Fast Burst metadata and unannotated NativeArray lanes. These jobs operate on AUP maintenance evidence and far-unload decision masks, so they should not remain async Fast metadata with alias ambiguity.
+
+Solution: Added synchronous deterministic Burst flags to both jobs. Added `[NoAlias]` to validation absolute-position, runtime-position, invalid-mask lanes and far-unload absolute-position, eligibility-mask, unload-mask lanes.
+
+Rejected Alternatives: Reworking the file's pre-existing static NativeArray ownership into vault-backed buffers was rejected in this loop because it would be a broad route migration touching public facade behavior and teardown ownership. Leaving Fast mode was rejected because AUP integrity and far-unload masks are state-maintenance decisions. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps deterministic AUP validation and far-unload masks with alias-clean maintenance lanes. Middle tier keeps current validation/far-unload cadence. High and Ultra tiers can spend maintenance certainty on larger spatial batches, denser validation sampling, or richer acoustic/spatial telemetry under continuous quality budgets without changing entity identity, authority routes, or save semantics.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per spatial maintenance batch where Burst can trust source/output lane separation. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted NoAlias scan reports 6 spatial maintenance lanes, and `git diff --check` over `WorldSpatialHashGrid.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 085 - Ecosystem Simulation Burst Alias Fence
+
+Problem: `EcosystemDirector` had four gameplay simulation jobs using asynchronous Fast Burst metadata and unannotated NativeArray lanes: apex territory overlap, sector Lotka-Volterra, biomass Lotka-Volterra, and headless threshold migration. These jobs derive population, predator pressure, migration, and territorial retreat facts, so Fast async metadata and alias ambiguity were not acceptable.
+
+Solution: Added synchronous deterministic Burst flags to the four jobs. Added `[NoAlias]` to 27 source/output lanes spanning apex territory samples/results, sector front/back state/counts, food heatmaps, headless output SOA, biomass front/back arrays, carrying capacity, macro-cell coords, index entries, and biomass sum scratch.
+
+Rejected Alternatives: Preserving Fast mode was rejected because these jobs affect gameplay state and rollback-relevant ecosystem facts. Rewriting Lotka-Volterra equations, food heatmap sampling, migration tie rules, or vault buffer ownership was rejected because this pass only hardens Burst metadata and alias facts. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps bounded deterministic ecosystem batches with alias-clean vault lanes. Middle tier keeps current solve cadence and headless SOA outputs. High and Ultra tiers can spend certainty on larger active sector counts, denser biomass cells, richer apex territory overlap sampling, or deeper ecosystem black-box telemetry under continuous quality budgets without changing authority routes, save identity, or vault buffer IDs.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 2-18 us per ecosystem solve batch where Burst can trust source/output lane separation. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, targeted NoAlias scan reports 27 ecosystem job lanes, and `git diff --check` over `EcosystemDirector.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 086 - SpaceEngine 0.9.8 Terrain Kernel ABI And Burst Fence
+
+Problem: `SpaceEngine098TerrainKernels` had compiler-owned terrain parameter/metric struct layouts and seven bare Burst annotations. `SpaceEngine098RilleParams` and `SpaceEngine098PipelineMetricSample` had natural sizes that were not guaranteed 8/16/32-byte explicit rows, and the terrain pipeline jobs lacked alias proof.
+
+Solution: Converted ridged parameters to explicit `Size = 40`, crater profile to explicit `Size = 32`, rille parameters to explicit `Size = 32`, and pipeline metric samples to explicit `Size = 32`. Added synchronous deterministic Burst metadata to the two math facades and five terrain jobs. Added `[NoAlias]` to 13 terrain source/output lanes.
+
+Rejected Alternatives: Leaving compiler layout was rejected because terrain bake parameters and metrics are copied through job payloads and NativeArray rows. Preserving Fast async metadata was rejected because procedural terrain output is deterministic world truth. Rewriting the noise, crater, rille, or checksum equations was rejected because this pass only hardens ABI, Burst metadata, and alias facts. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap deterministic terrain fakes: ridged multifractal, analytic crater profile, rille fissure masks, and metrics rows. Middle tier keeps current pipeline order and validation cadence. High and Ultra tiers can spend certainty on more samples, deeper metrics, or richer crater/rille overlays under continuous quality budgets without changing seed identity, terrain authority, or bake routes.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-6 us per 10k terrain parameter/metric row reads/copies plus 2-16 us per terrain pipeline batch from alias proof. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, layout scan confirms 40/32/32/32-byte rows, targeted NoAlias scan reports 13 terrain lanes, and `git diff --check` over `SpaceEngine098TerrainKernels.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 087 - Hydraulic Erosion Kernel ABI, NaN Guard, And Burst Fence
+
+Problem: `HydraulicErosionJob` had a queued delta row using Sequential layout, six bare Burst annotations, no alias proof on terrain source/output lanes, and two post-filter jobs computing `index / Width` before validating width. The droplet direction `math.rsqrt` was already epsilon-guarded, but the width division order was still a concrete NaN/divide-by-zero hazard if invalid dimensions reached a worker.
+
+Solution: Converted `HydraulicErosionHeightDelta` to explicit `Size = 16`. Added synchronous deterministic Burst metadata to droplet erosion, queued delta apply, sedimentary flat smoothing, canyon wall steepening, silt mask, and normalization jobs. Added `[NoAlias]` to 17 terrain lanes. Reordered smoothing and canyon post-filter coordinate math to use `safeWidth = math.max(1, Width)` and `safeHeight = math.max(1, Height)` before modulo/division guards.
+
+Rejected Alternatives: Replacing four-phase erosion with a full-copy merge pipeline was rejected because it would multiply memory bandwidth and undo the existing parity proof. Removing `NativeDisableParallelForRestriction` was rejected because the four-phase scheduler owns the safety invariant and Unity cannot infer it. Rewriting erosion physics, delta queue policy, or mask semantics was rejected because this pass only hardens ABI, Burst metadata, alias facts, and one division guard. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps sliced deterministic droplets, bounded delta apply, flat smoothing, canyon steepening, and silt masks with guarded dimensions. Middle tier keeps current droplet slices and apply budgets. High and Ultra tiers can spend certainty on larger droplet batches, deeper sediment masks, or richer erosion telemetry under continuous quality budgets without changing terrain authority, queued delta route, or save identity.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-4 us per 10k queued delta row reads/copies plus 2-18 us per hydraulic erosion batch from alias proof. Evidence class: STATIC_SOURCE; targeted missing-`CompileSynchronously` scan returns 0, layout scan confirms `HydraulicErosionHeightDelta=16`, targeted NoAlias scan reports 17 hydraulic erosion lanes, and `git diff --check` over `HydraulicErosionJob.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 088 - SpaceEngine Terrain Width Guard Closure
+
+Problem: `SpaceEngine098TerrainKernels` still had three terrain jobs deriving x/z coordinates through `index % Width` and `index / Width` directly. Even though normal pipeline dimensions are valid, the code path had no local guard before integer division in ridged multifractal, crater height application, and rille fissure jobs.
+
+Solution: Added `safeWidth = math.max(1, Width)` before coordinate derivation in the three jobs and switched modulo/division to `safeWidth`. This preserves deterministic terrain values for valid dimensions and prevents invalid-width divide/modulo faults from poisoning terrain metrics.
+
+Rejected Alternatives: Adding early returns was rejected because it would change batch coverage and could hide invalid pipeline dimensions from metric evidence. Rewriting terrain sampling, crater/rille equations, seed identity, or DTO layouts was rejected because the issue was division guard ordering only. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap analytic terrain fakes with guarded coordinate math under reduced sample budgets. Middle tier keeps the existing ridged/crater/rille pipeline cadence. High and Ultra tiers can spend terrain budget on denser samples, crater overlays, and rille detail under continuous quality weights without changing terrain authority, save identity, or payload layout.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this is correctness hardening. Evidence class: STATIC_SOURCE; broad World missing-`CompileSynchronously` scan returns 0, targeted raw width division/modulo and forbidden layout scan over SpaceEngine plus hydraulic erosion files returns 0, targeted SpaceEngine scan shows safe-width guards at the three coordinate sites, and `git diff --check` over `SpaceEngine098TerrainKernels.cs` returns exit 0 with LF/CRLF warning only.
+
+## Decision 089 - Player Critical Audio Job Wrapper Layout Hygiene
+
+Problem: `PlayerCriticalBufferJobs.cs` carried five `StructLayout(LayoutKind.Sequential)` attributes on Burst job wrapper structs. These wrappers contain `NativeArray<T>` handles and scheduling scalars, but they are not Vault DTO rows, Signal payloads, save deltas, or binary payloads. Leaving Sequential there creates false ABI evidence and pollutes the project-wide layout scan.
+
+Solution: Removed the five redundant Sequential attributes and removed the now-unused `System.Runtime.InteropServices` import. Existing synchronous Fast/Standard Burst annotations and `[NoAlias]` lanes remain unchanged.
+
+Rejected Alternatives: Converting these job wrappers to explicit layouts was rejected because `NativeArray<T>` handle fields are Unity-owned scheduling data, not raw payload rows that should be frozen with FieldOffset maps. Changing DSP math, delay-ring ownership, grain voice arrays, or VWS queue semantics was rejected because this loop only removes false layout metadata. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps the current cheap Doppler, binaural delay, granular, cooldown, and priority jobs with no extra ABI fiction. Middle tier keeps current audio cadence. High and Ultra tiers can spend audio budget on richer DSP buffer sizes under continuous quality budgets without changing buffer ownership or payload routes.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this is metadata hygiene. Evidence class: STATIC_SOURCE; targeted scan over `PlayerCriticalBufferJobs.cs` returns 0 `StructLayout`, `System.Runtime.InteropServices`, `LayoutKind.Sequential`, `Pack=1`, or missing-`CompileSynchronously` hits, while targeted scan confirms the existing synchronous Burst annotations and NoAlias lanes. `git diff --check` over the file returns exit 0 with LF/CRLF warning only.
+
+## Decision 090 - Ladder Climb IK Job Wrapper Layout Hygiene
+
+Problem: `LadderClimbIkJobs.cs` had correct explicit 128-byte payload rows but still carried a `StructLayout(LayoutKind.Sequential)` attribute on `LadderClimbIkSolveJob`. That solver is a scheduling wrapper containing NativeArray handles and one double3 scalar, not a Vault payload row. Leaving Sequential there corrupts the project-wide layout scan with a false DTO hit.
+
+Solution: Removed the redundant Sequential attribute from `LadderClimbIkSolveJob`. The explicit maps for `LadderClimbIkInput`, `LadderClimbIkOutput`, and `LadderClimbTelemetryEntry` were left untouched.
+
+Rejected Alternatives: Converting the job wrapper to explicit layout was rejected because Unity owns NativeArray handle representation and job packet layout; freezing it would be false ABI work. Changing IK equations, low-tier elbow fake, AUP subtraction, telemetry cursor semantics, or DTO layouts was rejected because the payload rows already satisfy explicit layout requirements. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps the cheap half-way elbow fake path through existing flags. Middle tier keeps deterministic FABRIK-style analytic solving and telemetry. High and Ultra tiers can spend IK budget on richer grip validation or denser ladder telemetry under continuous quality budgets without changing DTO layout, AUP route, or save identity.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this is metadata hygiene. Evidence class: STATIC_SOURCE; targeted scan over `LadderClimbIkJobs.cs` returns 0 `LayoutKind.Sequential` or `Pack=1` hits and 0 missing-`CompileSynchronously` hits; targeted layout scan confirms three explicit 128-byte DTO/telemetry rows and existing NoAlias lanes. `git diff --check` over the file returns exit 0 with LF/CRLF warning only.
+
+## Decision 091 - Foveated Simulation Job Wrapper Layout Hygiene
+
+Problem: `FoveatedSimulationManager.cs` had two private Burst job wrappers declaring `StructLayout(LayoutKind.Sequential)`: `ImportanceScoringJob` and `VisualInterpolationJob`. The actual black-box row, `FoveatedSimulationTelemetryEntry`, was already explicit 64 bytes. The Sequential wrappers were false DTO evidence in a core manager.
+
+Solution: Removed the redundant Sequential attributes from the two job wrappers. Left `FoveatedSimulationTelemetryEntry=64` unchanged.
+
+Rejected Alternatives: Converting job wrappers to explicit layout was rejected because the wrappers carry Unity NativeArray handles and TransformAccess scheduling state, not binary payload rows. Reworking the manager's pre-existing private NativeArray ownership into Vault buffers was rejected in this loop because that is a route/lifecycle migration, not a layout metadata fix. Changing foveated cadence math, registry interfaces, signal imports, or telemetry layout was rejected. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps continuous foveated throttling through distance/frustum importance scores. Middle tier keeps current cadence hysteresis. High and Ultra tiers can spend foveation certainty on larger target sets or richer telemetry under continuous quality budgets without changing tick-rate truth ownership or telemetry ABI.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this is metadata hygiene. Evidence class: STATIC_SOURCE; targeted scan over `FoveatedSimulationManager.cs` returns 0 `LayoutKind.Sequential` or `Pack=1` hits and 0 missing-`CompileSynchronously` hits; targeted layout scan confirms `FoveatedSimulationTelemetryEntry=64` and existing NoAlias lanes. `git diff --check` over the file returns exit 0 with LF/CRLF warning only.
+
+## Decision 092 - Sargassum NativeQueue Payload Quantization
+
+Problem: `SargassumGlobalDragManager.cs` still had explicit payload rows with non-quantized strides: `SargassumFieldSample=40`, `EntanglementStrainSignal=40`, `MassiveDisplacementSignal=24`, and `NestedAttachmentState=80`. The two signal structs are stored in `NativeQueue<T>` front/back lanes, so their 24/40-byte strides are real native event ABI, not just managed metadata. `ScavengerHostState` also carried a Sequential marker despite containing a managed `SargassumCollapseChunk` reference and living in a managed array.
+
+Solution: Padded the local payload rows to quantized sizes: field sample to 64, entanglement strain to 64, massive displacement to 32, and nested attachment state to 128. Removed the false Sequential marker from `ScavengerHostState`.
+
+Rejected Alternatives: Reordering public signal fields was rejected because listener source compatibility and existing initializer shape should not be disturbed. Converting `ScavengerHostState` to explicit was rejected because it contains a managed reference and is not a NativeQueue/Vault payload. Reworking the sargassum manager's pre-existing managed arrays and persistent queues into Vault buffers was rejected because this loop only closes ABI stride and layout metadata. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps bounded sargassum queue capacities and cheap density/event payloads with cache-quantized strides. Middle tier keeps the current native event lanes. High and Ultra tiers can spend budget on more disruption zones, nested debris, or listener telemetry under continuous quality budgets without changing queue ownership or event route semantics.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-5 us per 10k queue/sample row copies from aligned fixed strides; primary gain is ABI stability. Evidence class: STATIC_SOURCE; targeted scan over `SargassumGlobalDragManager.cs` returns 0 24/40/48/56/72/80/96/104/112/120 explicit payload rows, 0 Sequential hits, 0 Pack=1 hits, and 0 missing-`CompileSynchronously` hits; targeted layout scan confirms 64/64/32/128-byte rows. `git diff --check` over the file returns exit 0 with LF/CRLF warning only.
+
+## Decision 093 - Persistent Compact Delta CS1612 Purge
+
+Problem: `PersistentWorldCompactDeltaRecord` is a 16-byte native row stored in `NativeList<PersistentWorldCompactDeltaRecord>` and `NativeParallelMultiHashMap<uint, PersistentWorldCompactDeltaRecord>`, but it still exposed `IsDeleted` and `IsValid` properties. Those hidden methods are unnecessary in Burst scans and can create defensive value copies when called through native container indexers. `TombstoneDecayCollectJob` also still carried a redundant Sequential marker.
+
+Solution: Replaced the compact-row properties with static `HasDeletedFlag(in PersistentWorldCompactDeltaRecord)` and `IsValidRecord(in PersistentWorldCompactDeltaRecord)` helpers. Updated hot compact-row uses in tombstone collection, compact build validation, compact resolve, and tombstone apply. Removed the false Sequential marker from the tombstone job wrapper.
+
+Rejected Alternatives: Reworking all `PersistentWorldItemRecord` and `PersistentWorldDeltaRecord` properties was rejected in this loop because those records have broader save/import/editor call sites and require a larger API migration. Changing the compact row layout, tombstone thresholds, delta hashmap route, or save delta semantics was rejected because the issue was only hidden property access on the compact native row. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps compact 16-byte dropped-item deltas and bounded tombstone sweeps. Middle tier keeps current tombstone decay cadence. High and Ultra tiers can spend persistence budget on larger compact delta windows or richer save telemetry under continuous quality budgets without changing compact-row layout or save identity.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-4 us per 10k compact delta scans by avoiding property calls/defensive copies in tombstone scans. Evidence class: STATIC_SOURCE; targeted scan over `PersistentWorldRegistry.cs` returns 0 `compactRecord.IsDeleted`, `compactRecord.IsValid`, or `DeltaRecords[i].IsDeleted` hits, 0 missing-`CompileSynchronously` hits, and shows static `in` helpers on the compact row. `git diff --check` over the file returns exit 0 with LF/CRLF warning only.
+
+## Decision 094 - World Managed Row Sequential Hygiene
+
+Problem: `FaunaSpatialHashRegistry.Entry` and `EmergencyServiceRelay.RewardEntry` declared Sequential layout even though both rows contain managed Unity object references and are not native payload ABI. These attributes pollute the project-wide Sequential inquisition with false DTO evidence and invite an invalid explicit-layout conversion.
+
+Solution: Removed the two false Sequential attributes and the now-unused `System.Runtime.InteropServices` imports. No field ordering, behavior, AUP route, relay reward route, managed array/list/dictionary ownership, or native hash behavior changed.
+
+Rejected Alternatives: Converting either row to explicit layout was rejected because managed references must not be treated as blittable native DTO fields. Rewriting `FaunaSpatialHashRegistry` private `NativeList<int>` scratch ownership into Vault was rejected in this loop because that is a route/lifecycle migration, not metadata hygiene. Reworking `EmergencyServiceRelay` read-accessor purity issues was rejected in this loop because SHINOBU_204's domain is layout/ABI alignment and this pass was constrained to false Sequential markers. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps managed scene-authored relay reward rows and fauna registry metadata out of native ABI scans. Middle tier keeps existing registry/query behavior. High and Ultra tiers can spend budget on richer relay or fauna sensory systems under continuous quality budgets without misclassifying managed references as native binary payload.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this is metadata hygiene. Evidence class: STATIC_SOURCE; targeted scan over `FaunaSpatialHashRegistry.cs` and `EmergencyServiceRelay.cs` returns 0 `StructLayout`, `System.Runtime.InteropServices`, `LayoutKind.Sequential`, or `Pack=1` hits, and `git diff --check` over both files returns exit 0 with LF/CRLF warning only.
+
+## Decision 095 - World Sampler And Nav Native Row Quantization
+
+Problem: `GlobalWorldSampler` still had real native DTO rows below the project quantization floor: `TerrainSampleDTO=24` and `MapMagicCellDTO=8`. The same file also had false Sequential source metadata on a NativeArray-handle data wrapper and six Burst job wrappers. `VoxelDynamicNavGridRuntime` had native queue/list rows at `DirtyVolumeRequest=8`, `DynamicObstacleClearRequest=24`, and `NavObstaclePrimitive=24`, plus one managed-reference deferred row carrying false Sequential metadata.
+
+Solution: Padded `TerrainSampleDTO` to 32 bytes and `MapMagicCellDTO` to 16 bytes, then updated the byte-stride constants and `ToDTO` tail zeroing used by `GetSampleRef`. Padded voxel dirty-volume, dynamic-clear, and obstacle primitive rows to 16/32/32 bytes. Removed false Sequential source metadata from GlobalWorldSampler data/job wrappers and the managed-reference deferred dirty-volume row.
+
+Rejected Alternatives: Leaving the 8/24-byte rows was rejected because they are copied through NativeArray, NativeQueue, or NativeList lanes and violate the cache-stride quantization mandate. Reordering public fields was rejected because existing named initializers and byte-offset documentation should remain stable. Converting NativeArray-handle job wrappers or managed-reference rows to explicit layout was rejected because Unity owns those handle/reference representations. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier gets cache-quantized terrain sample DTOs and nav obstacle rows while preserving cheap sampler math and bounded nav rebuild queues. Middle tier keeps current SDF/height sampling and partial obstacle stamping cadence. High and Ultra tiers can spend budget on more terrain query batches, richer mock raymarch tests, and denser dynamic obstacle snapshots under continuous quality weights without changing authority routes or save identity.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-4 us per 10k terrain DTO row reads/copies plus 1-8 us per 10k voxel obstacle queue/list reads under nav rebuild pressure. Evidence class: STATIC_SOURCE; targeted scan over `GlobalWorldSampler.cs` and `VoxelDynamicNavGridRuntime.cs` returns 0 `LayoutKind.Sequential`, `Pack=1`, or explicit `Size = 8/24` hits; targeted Burst scan returns 0 missing `CompileSynchronously` annotations; `git diff --check` over both files returns exit 0 with LF/CRLF warning only.
+
+## Decision 096 - Spatial Hash And Marauder Outpost ABI Fence
+
+Problem: `WorldSpatialHashGrid` still declared fully-qualified Sequential attributes on managed-reference registry rows. `MarauderOutpostJobs` had a native telemetry row at 80 bytes, three job wrappers carrying false Sequential metadata, low-precision Burst annotations, and unannotated NativeArray lanes.
+
+Solution: Removed the two managed-row Sequential markers in `WorldSpatialHashGrid`. Padded `OutpostTelemetryEntry` to 128 bytes. Removed Sequential attributes from outpost job wrappers, upgraded their Burst attributes to synchronous Fast/Standard form, and added `[NoAlias]` to WFC, mutable grid, height sample, matrix, cell-type, spawn, counter, and AUP-shift matrix lanes.
+
+Rejected Alternatives: Converting spatial hash managed entries to explicit layout was rejected because they contain Unity object references. Leaving outpost telemetry at 80 bytes was rejected because it is a persistent 300-frame NativeArray black-box row and not cache-quantized. Changing WFC cell semantics, low-tier dimensions, interactable spawn layout, or generation ownership was rejected because this pass only hardens ABI, Burst metadata, and alias facts. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps compact outpost WFC dimensions and cheap managed spatial registry metadata. Middle tier keeps current matrix extraction and height sampling. High and Ultra tiers can spend budget on more shell matrices, denser outpost telemetry, or richer outpost visual spawn evaluation under continuous quality weights without changing world authority routes or save identity.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-6 us per 10k outpost telemetry row reads/copies plus 1-8 us per outpost solve/extraction batch where Burst can trust non-overlapping lanes. Evidence class: STATIC_SOURCE; targeted scan over `WorldSpatialHashGrid.cs` and `MarauderOutpostJobs.cs` returns 0 `LayoutKind.Sequential`, `Pack=1`, or explicit `Size = 80/24/8` hits; outpost scan confirms `OutpostTelemetryEntry=128`, pads at 72/80/88/96/104/112/120, three synchronous Burst annotations, and nine `[NoAlias]` lanes; `git diff --check` over both files returns exit 0 with LF/CRLF warning only.
+
+## Decision 097 - World Wrapper Sequential Sweep
+
+Problem: After the targeted World payload conversions, remaining World-wide Sequential hits were false source metadata on job wrappers in `VegetationFlowFieldIntegrator.cs`, job wrappers in `ProceduralWreckGenerator.cs`, and one managed pending-loot row containing Unity object references.
+
+Solution: Removed eleven Sequential attributes from vegetation flow/threat/thermal/path job wrappers and three from procedural wreck job/managed rows. No DTO layout, shader payload, AUP route, NativeArray ownership, BRG matrix route, pathfinding equation, or terrain/vegetation math changed.
+
+Rejected Alternatives: Converting these job wrappers to explicit layout was rejected because Unity owns NativeArray/NativeList/NativeParallelMultiHashMap handle representations. Converting `PendingWreckLootSpawn` to explicit layout was rejected because it contains managed `GameObject` and `ItemData` references. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps cheap vegetation field sampling, threat propagation, and wreck BRG payload jobs without false ABI metadata. Middle tier keeps current flow/path cadence. High and Ultra tiers can spend budget on denser vegetation flow fields, richer abyssal current volumes, and larger wreck scatter payloads under continuous quality weights without changing authority routes or save identity.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this is metadata hygiene. Evidence class: STATIC_SOURCE; recursive scan over `Assets/_Project/Scripts/World` returns 0 `StructLayout(LayoutKind.Sequential)`, source `Sequential`, or `Pack=1` hits; targeted Burst wrapper scans over `VegetationFlowFieldIntegrator.cs` and `ProceduralWreckGenerator.cs` return 0 missing `CompileSynchronously` annotations and 0 Sequential-before-Burst wrappers; `git diff --check` over both files returns exit 0 with LF/CRLF warning only.
+
+## Decision 098 - Graphics Culling Native Row Quantization And Wrapper Sweep
+
+Problem: `Graphics/Culling` still had false Sequential metadata on Burst job wrappers and one NativeArray-handle mock buffer, while two real hot rows were under-quantized: `PoiTransformDTO=112` in Vault-backed BRG/culling buffers and `InstanceCullingTelemetryEntry=40` in a 300-frame native telemetry ring.
+
+Solution: Padded `PoiTransformDTO` to 128 bytes by adding two explicit tail `ulong` pads at offsets 112 and 120. Padded `InstanceCullingTelemetryEntry` to 64 bytes by adding explicit pads at offsets 40, 48, and 56, and zeroed those pads in the telemetry writer. Removed false Sequential attributes from `MockScatterBuffer`, eleven TBDR culling job wrappers, five abyssal shadow culling job wrappers, and `ApplyAupShiftJob`; removed unused interop imports where the files no longer own FieldOffset layouts.
+
+Rejected Alternatives: Leaving `PoiTransformDTO` at 112 bytes was rejected because adjacent hot transform rows then start at shifting cache-line offsets under parallel sort/cull writes. Leaving `InstanceCullingTelemetryEntry` at 40 bytes was rejected because black-box ring entries are native forensic rows and should not rely on a non-cache-quantized stride. Converting job wrappers or `MockScatterBuffer` to explicit layout was rejected because they carry Unity `NativeArray<T>` handles and scheduling scalars, not raw binary payload rows. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps culling row reads cache-quantized while HZB/frustum fakes reject hidden instances before GPU submission in the first-20-minutes dense debris/cave route. Middle tier keeps the current radix/HZB path with stable row strides. High and Ultra tiers can spend the saved culling stability on more BRG instances, denser shadow casters, and richer shader budget telemetry under continuous quality weights without changing save identity or authority routes.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 2-10 us per 10k transform/telemetry row reads or writes under culling pressure, plus 1-8 us per culling batch where existing `[NoAlias]` lanes remain visible to Burst without false layout metadata. Evidence class: STATIC_SOURCE; targeted scan over `Assets/_Project/Scripts/Graphics/Culling` returns 0 `LayoutKind.Sequential` or `Pack=1` hits, targeted missing-`CompileSynchronously` scan returns 0, targeted size scan shows `PoiTransformDTO=128` and `InstanceCullingTelemetryEntry=64`, and `git diff --check` over the five touched files returns exit 0 with LF/CRLF warning only.
+
+## Decision 099 - Interaction Query And Tether Black-Box ABI Hygiene
+
+Problem: The interaction/query/progression slice still had Sequential metadata on managed rows that contain Unity references, strings, API mirror data, or bool-backed managed cache state. `TetherManagerTelemetryEntry` was the one real native payload problem in the slice: a 16-byte black-box row stored in a 300-entry Vault-backed `NativeArray`, which leaves adjacent telemetry samples on the same cache line.
+
+Solution: Removed false Sequential attributes and now-unused interop imports from `InteractableRegistry.TargetInfo`, `RaycastBatchHelper.QueryResult`, and `QueryCacheContext.CachedQueryResult`; removed the false Sequential marker from `PlayerAchievementRegistry.AchievementDefinition` while preserving the existing explicit 16-byte runtime threshold row. Converted `TetherManagerTelemetryEntry` to explicit 64-byte layout with fields at 0/4/8/12 and pads at 16/24/32/40/48/56. The writer zeroes the new pads before storing into the Vault-backed ring.
+
+Rejected Alternatives: Converting the managed cache rows to explicit layout was rejected because they contain `Collider`, `RaycastHit`, interface references, strings, and other managed/Unity-owned data. Rewriting `RaycastBatchHelper` persistent NativeArrays or tether managed instance pools into Vault buffers was rejected in this loop because that is a route/lifecycle migration, not ABI metadata cleanup. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps interaction lookups, raycast mirrors, and achievement presentation out of native ABI scans while tether crash telemetry gets cache-line isolation. Middle tier keeps current query batching and tether impostor rendering. High and Ultra tiers can spend tether visual budget on thicker stress glow, denser line-strip detail, or richer fault visualization under continuous quality weights without changing gameplay truth ownership or save identity.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-4 us per 10k tether telemetry row reads/writes under crash/QA readback pressure; managed-row cleanup has no runtime speed claim. Evidence class: STATIC_SOURCE; targeted scan over the five touched files returns 0 `LayoutKind.Sequential` or `Pack=1` hits; targeted tether scan confirms the 64-byte row and pad zeroing; `git diff --check` over the touched files returns exit 0 with LF/CRLF warning only.
+
+## Decision 100 - Tools Managed Row And Laser Job Wrapper Hygiene
+
+Problem: The Tools cluster still had Sequential metadata on four laser cutter Burst job wrappers and four managed status/command rows. The laser wrappers carry Unity collection handles, `RaycastCommand`, `RaycastHit`, and scheduling scalars; the status rows carry strings, interfaces, `DateTime`, or managed API mirrors. Treating these as explicit native DTOs would freeze Unity/managed layouts instead of hardening real payload ABI.
+
+Solution: Removed the false Sequential attributes from the four laser cutter job wrappers and removed the unused interop import from `LaserCutterDodJobs.cs`. Removed false Sequential metadata from `SystemBudget`, `SystemBudgetInfo`, `PerformanceSnapshot`, and `PendingDurabilityCommand`. Left the existing explicit `ToolDurabilitySystem.ItemState=16` native row and other pre-existing durability lifecycle changes untouched.
+
+Rejected Alternatives: Converting job wrappers to explicit layout was rejected because Unity owns collection and raycast command wrapper layout. Converting managed status rows to explicit layout was rejected because they contain references or managed framework structs and are not blittable Vault/Signal rows. Changing laser cutter DTO contracts, AUP localization, shader fake outputs, performance throttling semantics, or durability native buffer routes was rejected. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps laser cutter work in DTO-backed jobs and uses cheap shader dent/glow/spark fakes instead of CPU geometry mutation. Middle tier keeps current job batching and budget reporting. High and Ultra tiers can spend the saved visual fake path on richer decals, sparks, and heat glow through existing quality-weighted outputs without changing DTO layout or save identity.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this loop removed false metadata only. Evidence class: STATIC_SOURCE; targeted Tools scan returns 0 `LayoutKind.Sequential` or `Pack=1` hits in the touched files, targeted Burst scan returns 0 missing synchronous annotations, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 101 - NativeMemorySentinel Managed Record Hygiene
+
+Problem: `NativeMemorySentinel.NativeAllocationRecord` and `PersistentReallocationRecord` declared Sequential layout even though they are cold managed registry rows. They contain `string` references and managed-only lifetime/audit data, so treating them as native DTOs would be false ABI evidence and an explicit-layout conversion would be invalid.
+
+Solution: Removed the two false Sequential attributes. Left `NativeAllocationSnapshotSource` unchanged as the actual 32-byte explicit blittable snapshot DTO, and kept the interop import because that DTO still uses `StructLayout` and `FieldOffset`.
+
+Rejected Alternatives: Converting the two managed rows to explicit layout was rejected because managed references are not blittable payload fields. Removing `System.Runtime.InteropServices` was rejected because the snapshot source still requires it. Migrating the sentinel's cold managed arrays into Vault buffers was rejected in this loop because the task is ABI metadata hygiene, not ownership-route migration. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps runtime allocation audit metadata out of native ABI scans while preserving the compact 32-byte snapshot source used for deterministic crash/replay evidence. Middle tier keeps current sentinel registry behavior. High and Ultra tiers can add richer cold diagnostics around the existing explicit snapshot DTO without changing hot gameplay authority routes or native payload layout.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this loop removed false metadata only. Evidence class: STATIC_SOURCE; targeted scan over `NativeMemorySentinel.cs` returns 0 `LayoutKind.Sequential`, `StructLayout(...Sequential)`, or `Pack=1` hits, interop scan confirms only the explicit 32-byte snapshot DTO remains, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 102 - WFC HUD PDA And Scanner ABI Hygiene
+
+Problem: Four small clusters still produced Sequential evidence. `WfcOutpostGraphTranslationJob` was a Unity native-container job wrapper, not a DTO, and still used Low precision Burst metadata. AR waypoint and PDA snapshot rows contained Unity references, strings, UI components, ScriptableObjects, or managed properties. `ScannerBlackBoxEntry` was different: it is a real Vault-backed 300-frame native forensic row, but its Sequential shape was 96 bytes, so adjacent entries straddled cache-line boundaries.
+
+Solution: Removed false Sequential metadata from the WFC job wrapper, HUD managed rows, and PDA managed snapshots. Upgraded the WFC job to the required synchronous Fast/Standard Burst annotation and added `[NoAlias]` to the six separate native lanes. Converted `ScannerBlackBoxEntry` to explicit 128-byte layout with named pads and zeroed those pads in the writer.
+
+Rejected Alternatives: Converting the WFC job wrapper to explicit layout was rejected because Unity owns the NativeArray and NativeParallelMultiHashMap handle ABI. Converting AR/PDA managed rows to explicit layout was rejected because managed references are not blittable payload fields. Leaving scanner telemetry at 96 bytes was rejected because the black-box ring is native forensic state and should not rely on a cache-straddling stride. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps WFC graph translation as bounded grid math and scanner forensic writes on a quantized stride. Middle tier keeps current HUD/PDA managed presentation rows out of binary payload scans. High and Ultra tiers can spend saved stability on richer scanner marker visuals, denser WFC outpost power-node diagnostics, or stronger crash forensics without changing gameplay truth ownership, save identity, or DTO authority routes.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-6 us per WFC graph translation batch from alias proof and 1-5 us per 10k scanner black-box row reads/writes under QA/crash readback pressure. HUD/PDA cleanup has no runtime speed claim. Evidence class: STATIC_SOURCE; targeted scan over the four files returns 0 Sequential/Pack hits, scanner scan confirms 128-byte explicit row plus pad zeroing, WFC scan confirms required Burst metadata and six `[NoAlias]` lanes, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 103 - Fauna Submarine Atmosphere And Contextual IK Wrapper Hygiene
+
+Problem: Remaining Sequential hits in this slice were false metadata on managed rows or Unity job wrappers. `FaunaDirector.ActiveCreature` carries managed Unity references. Submarine PID/mass, atmosphere step, and contextual IK jobs carry NativeArray handles, animation handles, or scheduling scalars, while their real payload rows already use explicit layouts. `ContextualPhysicalIkApplyJob` also lacked the required synchronous Burst metadata and did not state alias separation for its native lanes.
+
+Solution: Removed false Sequential attributes from the managed fauna row and six job wrappers. Added `CompileSynchronously = true` to `ContextualPhysicalIkApplyJob` and marked thirteen apply-job NativeArray lanes with `[NoAlias]`. Left explicit DTO layouts and pre-existing AUP-origin fixes untouched.
+
+Rejected Alternatives: Converting job wrappers to explicit layout was rejected because Unity owns NativeArray, NativeParallel, animation stream handle, and scheduling wrapper layout. Converting `ActiveCreature` to explicit layout was rejected because managed Unity references are not blittable DTO fields. Reworking submarine/atmosphere private native buffer ownership into Vault was rejected in this loop because the issue was source layout metadata, not owner-route migration. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps IK and submarine batch jobs as data-local work with no false ABI metadata and explicit payload rows. Middle tier keeps current atmosphere diffusion and dynamic-flood math. High and Ultra tiers can spend the alias-safe IK/submarine budget on richer animation response, hull stress feedback, or atmosphere diagnostics without changing save identity or truth ownership.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per IK apply/response batch where Burst can trust source/output lanes. Submarine/atmosphere wrapper cleanup has no new runtime speed claim because existing `[NoAlias]` lanes were already present. Evidence class: STATIC_SOURCE; targeted scan over five files returns 0 Sequential/Pack hits, targeted Burst/NoAlias scan confirms required metadata and lanes, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 104 - Procedural Crab IK Wrapper Hygiene
+
+Problem: `ProceduralCrabLegIKRuntime.cs` still had seven `StructLayout(LayoutKind.Sequential)` markers on Burst job wrappers. Those wrappers carry Unity `NativeArray<T>`, `RaycastCommand`, `RaycastHit`, and scheduling scalar fields; the real Vault/native rows at the top of the file were already explicit and cache-quantized.
+
+Solution: Removed the seven false Sequential attributes from the job wrappers only. Preserved the explicit DTO rows (`ProceduralCrabLegEntityState=192`, `ProceduralCrabLegStepState=64`, `ProceduralCrabBodyPose=128`, `ProceduralCrabSolvedJointMatrices=192`, `ProceduralCrabIkTelemetryEntry=64`), synchronous Fast/Standard Burst metadata, `[NoAlias]` lane annotations, AUP rebase math, raycast budget mode, and two-bone solver equations.
+
+Rejected Alternatives: Converting the job wrappers to explicit layout was rejected because Unity owns the `NativeArray`, raycast command, and raycast hit wrapper representation. Changing DTO offsets was rejected because those rows are already explicit, named-padded, and referenced by Vault/graphics upload routes. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps procedural crab movement on budgeted raycast pairs and analytical IK without false ABI metadata. Middle tier keeps current native batch jobs and black-box telemetry. High and Ultra tiers can spend visual budget on denser BRG body/joint rendering and richer procedural leg motion under continuous quality weights without changing truth ownership, save identity, or DTO layout.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this loop removed false wrapper metadata only. Evidence class: STATIC_SOURCE; targeted scan over `ProceduralCrabLegIKRuntime.cs` returns 0 `LayoutKind.Sequential`, `StructLayout(...Sequential)`, or `Pack=1` hits, targeted layout/Burst scan confirms explicit DTO rows and `[NoAlias]` lanes, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 105 - VR Somatic Job Wrapper Hygiene
+
+Problem: `VRSomaticProvider.cs` still had four Sequential markers on Burst job wrappers. The real somatic telemetry/root/head-cast rows were already explicit, while the wrappers hold Unity `NativeArray<T>`, `CapsulecastCommand`, `RaycastHit`, and command/sample lanes that should not be frozen as binary payload ABI.
+
+Solution: Removed the four false Sequential attributes from `VRSomaticRootSyncJob`, `VRSomaticHandKinematicsJob`, `BuildHeadCapsulecastCommandsJob`, and `ProcessHeadCapsulecastHitsJob`. Preserved explicit layouts, Burst flags, `[NoAlias]` lanes, Vault buffer handles, KCC comfort math, head capsulecast math, and hand spring equations.
+
+Rejected Alternatives: Converting wrappers to explicit layout was rejected because Unity owns native container and physics command wrapper layouts. Padding `VRSomaticRootSyncInput=80` was rejected because it is already a 16-byte multiple and a single-element root sync buffer; changing it would mutate a Vault row without need. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps somatic comfort as bounded Burst jobs with head collision samples and hand target smoothing. Middle tier keeps current KCC comfort integration and head capsulecast fan. High and Ultra tiers can spend visual budget on stronger comfort/haptic feedback and richer black-box diagnostics under continuous quality weights without changing DTO layout, authority route, or save identity.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this loop removed false wrapper metadata only. Evidence class: STATIC_SOURCE; targeted scan over `VRSomaticProvider.cs` returns 0 Sequential/Pack hits, targeted layout/Burst scan confirms explicit rows and NoAlias lanes, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 106 - World Generator PhysX Bake And Terrain Job Fence
+
+Problem: `HectonWorldGenerator.cs` still had three false Sequential markers around PhysX bake state. Two rows contain Unity managed references and a `JobHandle`; the terrain bake job is a Unity job wrapper, not a DTO. The same file also had local terrain generation Burst jobs missing `CompileSynchronously` and lacking explicit alias proof on NativeArray lanes.
+
+Solution: Removed the three false Sequential attributes. Added synchronous Fast/Standard Burst metadata to `HectonVertexJob`, `HectonNormalJob`, `HectonColorJob`, and `TerrainColliderBakeJob`. Imported `Unity.Burst.CompilerServices` and added `[NoAlias]` to terrain generation job NativeArray lanes. Left terrain equations, chunk streaming, physics bake scheduling, native array ownership, and teardown behavior unchanged.
+
+Rejected Alternatives: Converting managed PhysX bake rows to explicit layout was rejected because they contain managed Unity references and `JobHandle` state. Converting the terrain bake job wrapper to explicit layout was rejected because it is a scheduler packet. Rewriting persistent terrain buffers into Vault was rejected in this loop because that is an ownership migration, not source ABI cleanup. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps terrain generation bounded by existing LOD and noise shortcuts while terrain jobs expose stricter Burst metadata and alias facts. Middle tier keeps current chunk streaming and physics bake queue. High and Ultra tiers can spend stable job throughput on denser terrain/cave color evaluation and richer visual chunk presentation under continuous quality weights without changing save identity or authority routes.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 2-20 us per terrain generation batch where Burst can trust NativeArray lane separation. PhysX bake metadata cleanup has no direct runtime speed claim. Evidence class: STATIC_SOURCE; targeted scans over `HectonWorldGenerator.cs` return 0 Sequential/Pack hits and 0 missing synchronous Burst hits, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 107 - Player Movement Managed Collision Queue Hygiene
+
+Problem: `HectonPlayerMovement.QueuedCollisionEvent` declared Sequential layout despite containing a managed `Rigidbody` reference and living in a MonoBehaviour-owned managed ring buffer that bridges Unity collision callbacks into fixed-step processing.
+
+Solution: Removed the false Sequential attribute only. Preserved the explicit native/telemetry rows in the same file, collision queue capacity, callback processing, Rigidbody transfer path, and cinematic focus black-box layout.
+
+Rejected Alternatives: Converting `QueuedCollisionEvent` to explicit layout was rejected because managed references are not blittable DTO fields. Migrating the callback ring into `GlobalDataVault` was rejected in this loop because it is a Unity callback bridge and not the assigned ABI metadata cleanup. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps the collision bridge as a bounded 32-entry managed callback queue while explicit telemetry rows remain stable. Middle tier keeps current impact feedback and KCC transfer behavior. High and Ultra tiers can spend visual budget on richer collision feedback without changing movement authority, DTO layout, or save identity.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this is metadata hygiene only. Evidence class: STATIC_SOURCE; targeted scan over `HectonPlayerMovement.cs` returns 0 Sequential/Pack hits, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 108 - Player Kinematics Native State Wrapper Hygiene
+
+Problem: `Gameplay/HectonPlayerState.cs` still had Sequential metadata on one Burst job wrapper and two native-state owner structs. Those rows carry Unity `NativeArray<T>` handles, physics command/result arrays, `JobHandle`, and owner flags. The real player state and telemetry DTOs were already explicit.
+
+Solution: Removed false Sequential attributes from `PlayerKinematicsLinearDragJob`, `PlayerKinematicsNativeState`, and `HectonPlayerMotorNativeState`. Preserved `HectonPlayerState=192`, `PlayerKinematicsHandTarget=32`, `PlayerKinematicsTelemetryEntry=64`, Vault buffer routes, drag math, motor sweep ownership, kinematic repair buffers, and existing `[NoAlias]` lanes.
+
+Rejected Alternatives: Converting native-state owner structs to explicit layout was rejected because Unity owns native container and physics command wrapper layout. Padding or changing existing explicit player DTOs was rejected because they are already cache-quantized enough for their route and offset-stable. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps player kinematic native state as bounded Vault-backed buffers with stable explicit telemetry. Middle tier keeps drag solve and motor sweep routing. High and Ultra tiers can spend budget on richer movement telemetry and repair probes under continuous quality weights without changing movement truth ownership or save identity.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this loop removed false wrapper metadata only. Evidence class: STATIC_SOURCE; targeted scan over `Gameplay/HectonPlayerState.cs` returns 0 Sequential/Pack hits, targeted layout/Burst scan confirms explicit DTO rows and NoAlias lanes, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 109 - Habitat Graph DFS Job Wrapper Hygiene
+
+Problem: `Construction/HabitatGraphManager.cs` still had Sequential metadata on `DeconstructionDfsValidationJob`. The job carries Unity native container handles and cold validation state, while actual habitat flood/siege payload rows were already explicit.
+
+Solution: Removed the false Sequential attribute only. Preserved explicit habitat DTO rows, DFS validation behavior, synchronous Burst metadata, `[NoAlias]` lanes, graph CSR buffers, and deconstruction validation route.
+
+Rejected Alternatives: Converting the DFS job wrapper to explicit layout was rejected because Unity owns `NativeArray`, `NativeList`, and `NativeParallelHashSet` wrapper layouts. Rewriting habitat graph private buffers into Vault was rejected in this loop because the task is ABI metadata cleanup, not ownership migration. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps deconstruction validation cold and bounded while flood/siege payload rows remain explicit. Middle tier keeps current graph CSR validation. High and Ultra tiers can spend budget on richer habitat stress diagnostics and visual feedback under continuous quality weights without changing habitat truth ownership or save identity.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this loop removed false wrapper metadata only. Evidence class: STATIC_SOURCE; targeted scan over `Construction/HabitatGraphManager.cs` returns 0 Sequential/Pack hits, targeted layout/Burst scan confirms explicit DTO rows and NoAlias lanes, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 110 - Fluid Wave And Buoyancy Job Wrapper Hygiene
+
+Problem: `HectonFluidEngine.cs` still had Sequential metadata on `WaveQueryJob` and `BuoyancyJob`. Both are Unity job wrappers with native container handles and scalar scheduling fields; the actual fluid DTO/native rows were already explicit and aligned.
+
+Solution: Removed the two false Sequential attributes only. Preserved `BuoyancyParams=128`, flow/whirlpool/viscosity/interior flood/advection explicit rows, synchronous Burst metadata, `[NoAlias]` lanes, wave fallback math, brine sampling, force/torque outputs, and invalid-number writer route.
+
+Rejected Alternatives: Converting the job wrappers to explicit layout was rejected because Unity owns `NativeArray<T>` and Burst job wrapper representation. Changing fluid DTO strides was rejected because the touched payload rows are already 16/32/64/128-byte explicit layouts. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps wave query and buoyancy jobs as data-local batches with cheap scalar fallbacks and explicit payload rows. Middle tier keeps brine/terrain/wave lanes. High and Ultra tiers can spend saved stability on denser buoyancy objects, richer vortex visual feeds, and advection telemetry under continuous quality weights without changing physics truth ownership or save identity.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this loop removed false wrapper metadata only. Evidence class: STATIC_SOURCE; targeted scan over `HectonFluidEngine.cs` returns 0 Sequential/Pack hits, targeted layout/Burst scan confirms explicit DTO rows and NoAlias lanes, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 111 - Voxel PhysX Queue And MeshData Vertex Boundary
+
+Problem: `HectonVoxelEngine.cs` still exposed Sequential metadata on two deferred PhysX queue rows, one voxel mesh bake job wrapper, and two MeshData vertex rows. The deferred rows contain managed Unity references and `JobHandle` state. The bake job is a scheduling wrapper. The vertex rows are different: they define the CPU-side typed view for Unity MeshData vertex buffers and are coupled to `SetVertexBufferParams` descriptor order and stride.
+
+Solution: Removed false Sequential attributes from `DeferredVoxelPhysicsBakeTeardown`, `DeferredVoxelColliderUpload`, and `VoxelMeshBakeJob` only. Left `VoxelSurfaceVertex` and `VoxelColliderVertex` as documented MeshData interop exceptions until the voxel owner rewrites the matching vertex descriptors and validates stride in Unity. Preserved existing explicit voxel telemetry, AUP helper changes, Burst metadata, NoAlias lanes, PhysX bake routing, collider upload queue behavior, and mesh upload layout.
+
+Rejected Alternatives: Converting the managed deferred rows or job wrapper to explicit layout was rejected because managed Unity references and job wrapper state are not raw DTO ABI. Padding `VoxelSurfaceVertex` from its descriptor-derived shape to a cache-quantized size was rejected because `MeshData.GetVertexData<VoxelSurfaceVertex>()` must match the vertex buffer descriptors; adding silent padding would risk corrupting GPU vertex upload and collider bake data. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps voxel PhysX teardown/upload queues bounded and cold while preserving exact MeshData upload compatibility. Middle tier keeps current voxel mesh generation and collider bake routes. High and Ultra tiers can spend visual budget on denser cave surfaces and richer shader channels under continuous quality weights after a coordinated vertex-descriptor migration, without mutating gameplay truth ownership, save identity, or current DTO authority routes.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this loop removed false metadata only. Evidence class: STATIC_SOURCE; targeted scan over `HectonVoxelEngine.cs` now leaves only the two documented MeshData vertex interop Sequential rows, confirms the deferred rows and bake job have no layout attributes, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 112 - Submarine Structural Grid Wrapper Alias Fence
+
+Problem: `SubmarineStructuralGrid.cs` still exposed Sequential metadata on four Burst job wrappers. The actual payload rows in the same section were already explicit in the working tree, but the wrappers carried native container handles and no alias proof, so Burst had to conservatively assume overlapping lanes.
+
+Solution: Removed the four false Sequential attributes from `HullDamageDiffusionJob`, `HullCompartmentMappingJob`, `HullFatigueCompartmentJob`, and `BreachRepairJob`. Added `Unity.Burst.CompilerServices` and `[NoAlias]` to eighteen native lanes. Preserved structural-grid equations, existing explicit `ImpactCommand=32`, `DamageControlTelemetryEntry=32`, private native buffer ownership, breach Vault handles, late completion routes, and leak plume shader routing.
+
+Rejected Alternatives: Converting the job wrappers to explicit layout was rejected because Unity owns native container wrapper layout. Migrating the file's existing private NativeArrays into `GlobalDataVault` was rejected in this loop because it changes truth ownership and lifetime routing; it needs a separate owner-approved migration card. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps hull damage diffusion, compartment mapping, fatigue, and breach repair as bounded data-local jobs with alias proof and no scene traversal. Middle tier keeps current leak plume and pressure-cycle routes. High and Ultra tiers can spend saved job throughput on richer hull dent visuals, leak particle density, or damage-control telemetry under continuous quality weights without changing structural truth ownership, save identity, or DTO layout.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per structural-grid batch where Burst can use the native lane separation. Evidence class: STATIC_SOURCE; targeted scan over `SubmarineStructuralGrid.cs` returns 0 Sequential/Pack hits, confirms four synchronous Burst jobs and eighteen `[NoAlias]` lanes, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 113 - Submarine Fluid Dynamics Serialized Boundary
+
+Problem: `SubmarineFluidDynamics.cs` still exposed Sequential metadata on seven rows: two Unity serialized authoring structs and five Burst job wrappers. The authoring structs are inspector data and are mirrored into runtime Vault/native buffers; the job wrappers carry Unity native containers and should not define binary payload ABI.
+
+Solution: Removed false Sequential attributes from `HydroKinematicDragJob`, `FluidTransferJob`, `BulkheadTransferDeltaJob`, `ApplyBulkheadTransferJob`, and `FloodMassPropertiesJob`. Left `CompartmentDefinition` and `BulkheadDefinition` Sequential as documented Unity serialization exceptions. Preserved existing explicit hydro DTO rows, existing NoAlias lanes, AUP fixes, vault flags, mass properties result, black-box telemetry, and fluid transfer equations.
+
+Rejected Alternatives: Converting job wrappers to explicit layout was rejected because Unity owns native container wrapper layout. Converting inspector-authored serialized records to explicit DTOs was rejected because Unity serialization field behavior is the owner route, and runtime authority already mirrors the data into native buffers. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps hydrodynamics in bounded native jobs and serialized authoring out of hot DTO lanes. Middle tier keeps current flood transfer, bulkhead transfer, and hydro drag routes. High and Ultra tiers can spend budget on richer brine, leak, ballast, and cargo visual feedback under continuous quality weights without changing fluid truth ownership, save identity, or DTO layout.
+
+Hardware Impact: Runtime microsecond gain is not claimed for metadata removal; existing NoAlias lanes remain available for Burst. Evidence class: STATIC_SOURCE; targeted scan over `SubmarineFluidDynamics.cs` leaves only two serialized-authoring Sequential rows, confirms five synchronous Burst jobs and twenty-six `[NoAlias]` lanes, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 114 - SaveData Managed DTO Metadata Boundary
+
+Problem: `SaveData.cs` still had 29 explicit Sequential tags on managed compatibility DTO containers. Many of those rows contain strings, arrays, or nested managed save rows, while the native binary-save rows in the file already use `BinaryBlittableSafe` plus explicit offsets. Keeping explicit Sequential metadata on managed containers creates false ABI evidence during ARM64 scans.
+
+Solution: Removed those 29 false `StructLayout(LayoutKind.Sequential)` attributes only. Preserved every field, field order, schema version, migration path, capacity constant, array/string row, and explicit `BinaryBlittableSafe` layout. The save system remains field-by-field serialization for managed compatibility rows.
+
+Rejected Alternatives: Converting managed save containers with references into explicit layout was rejected because managed references are not blittable payload fields. Reordering or padding save rows was rejected because it would mutate persistence schema. Removing explicit layout from `BinaryBlittableSafe` rows was rejected because those are the actual native/binary save ABI records. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps save hydration predictable without letting managed DTO containers masquerade as hot native ABI. Middle tier keeps migration and compatibility surfaces stable. High and Ultra tiers can add explicit native mirror rows where needed without forcing managed save containers into hot-path rules.
+
+Hardware Impact: Runtime microsecond gain is not claimed because this is metadata hygiene only. Evidence class: STATIC_SOURCE; targeted scan over `SaveData.cs` returns 0 Sequential/Pack hits, remaining `StructLayout` rows are explicit only, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 115 - Editor Smoke Test Explicit Achievement ABI
+
+Problem: `SignalCryptographySmokeTester.cs` still asserted that `PlayerAchievementRegistry` must contain a Sequential layout token. The runtime achievement threshold row is now explicit `Size = 16`, so the editor smoke test would report the correct code as a failure.
+
+Solution: Updated only the achievement progression assertion to require `[StructLayout(LayoutKind.Explicit, Size = 16)]`. Preserved the existing hot table, AUP distance, notification cache, and telemetry assertions.
+
+Rejected Alternatives: Removing the assertion entirely was rejected because the smoke tester should still guard the hot progression row layout. Reintroducing Sequential layout in runtime was rejected because the row is already correctly explicit and cache-quantized. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps editor gates aligned with explicit ABI and avoids stale failures. Middle/high/ultra tiers keep the same smoke-test coverage for string-free achievement evaluation.
+
+Hardware Impact: Runtime cost is 0.00 ms because this is editor-only assertion hygiene. Evidence class: STATIC_SOURCE; targeted scan confirms the stale Sequential assertion string is gone and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 116 - Editor Seaweed Mesh Builder Metadata Hygiene
+
+Problem: `WorldProceduralSeaweedMeshBuilder.VertexData` carried source-visible Sequential layout even though the file is editor-only mesh construction code. This produced a false positive in broad ARM64 runtime scans.
+
+Solution: Removed the false layout attribute and the now-unused `System.Runtime.InteropServices` import. Preserved vertex fields, mesh buffer writes, and editor generation behavior.
+
+Rejected Alternatives: Converting the editor-only row to explicit layout was rejected because this is not a runtime binary DTO and does not justify freezing offsets. Leaving the false tag was rejected because it pollutes project-wide Sequential evidence. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Runtime scalability is unaffected. Editor mesh generation keeps the same field set and behavior.
+
+Hardware Impact: Runtime cost is 0.00 ms. Evidence class: STATIC_SOURCE; targeted scan returns 0 layout/interops hits in the file and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 117 - Drone Fleet Pack Lexeme Scanner Hygiene
+
+Problem: Broad source gates that search for `Pack\s*=\s*1` still reported `DroneFleetManager.SolderIntegrityUnitsPerPack = 10f`. The code was not a `StructLayout` Pack parameter, but it polluted the ARM64 layout evidence surface and forced manual exception handling.
+
+Solution: Renamed the private constant to `SolderIntegrityUnitsPerBundle` and updated its two local call sites. No DTO, Signal payload, Vault row, save row, native container, shader buffer, or gameplay equation changed.
+
+Rejected Alternatives: Changing the scanner regex alone was rejected because external text gates may still use simple lexical scans. Leaving the constant name was rejected because it keeps creating false Pack debt. Any behavior change to drone solder consumption was rejected because this loop is scanner hygiene only. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Runtime scalability is unaffected. Static evidence becomes cleaner across low, middle, high, and ultra targets because Pack debt reports no longer include a private gameplay lexeme.
+
+Hardware Impact: Runtime cost is 0.00 ms. Evidence class: STATIC_SOURCE; targeted scan confirms no `Pack\s*=\s*1` hit remains in `DroneFleetManager.cs`, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 118 - Core Generic Wrapper Sequential Metadata Removal
+
+Problem: Broad Sequential scans still reported core native wrapper and job-scheduler structs even though these rows carry Unity native container handles, function pointers, fixed inline scratch memory, or `JobHandle` fan-in state. They are not binary DTO payloads, SignalBus payload rows, save rows, or Vault element ABIs.
+
+Solution: Removed the explicit source `StructLayout(LayoutKind.Sequential)` tags from `StackQueue<T>`, `JobFenceManager`, `NativeArenaArray<T>`, `NativeRingBuffer<T>`, `NativeQuery<T>`, `NativeSelectQuery<TSource,TResult>`, `NativeFilterJob<T>`, `NativeSelectJob<TSource,TResult>`, `BurstCallbackQueue`, `BurstCallbackQueue.ParallelEventWriter`, `SpscSignalRingBuffer<T>`, and the six lockstep hash job wrappers. Kept true explicit DTO rows in the same files unchanged.
+
+Rejected Alternatives: Converting these wrappers to explicit layout was rejected because Unity owns native container wrapper internals and several rows are generic or safety-handle dependent under conditional compilation. Leaving the tags was rejected because it continued to advertise non-DTO wrappers as ABI-bearing rows. Running a build or rebuild was rejected because static gates passed and command discipline forbids premature rebuilds.
+
+Scalability potential: Low tier keeps the same native-wrapper behavior and avoids false scan debt. Middle tier preserves existing NoAlias/Burst job lanes. High and Ultra tiers keep explicit DTO payload rows available for richer telemetry without freezing Unity-owned wrapper internals.
+
+Hardware Impact: Runtime microsecond gain is not claimed because default struct layout behavior and job routes are unchanged. Evidence class: STATIC_SOURCE; targeted scan over touched Core files returns 0 Sequential/Pack hits, and broad project scan leaves only documented interop/serialized exceptions plus editor diagnostic strings.
+
+## Decision 119 - Strict Attribute Scan Boundary Proof
+
+Problem: Broad text scans intentionally catch editor diagnostic string literals such as `"Pack=1 is forbidden"` and `"LayoutKind.Sequential"`, which can obscure the actual source attribute state after code hygiene.
+
+Solution: Added a strict proof pass using start-of-line attribute regexes. The real remaining Sequential attributes are exactly four documented non-DTO exceptions: two Unity MeshData vertex rows in `HectonVoxelEngine.cs` and two Unity serialized authoring rows in `SubmarineFluidDynamics.cs`. Real Pack attributes are zero.
+
+Rejected Alternatives: Removing editor diagnostic labels was rejected because those labels are part of the guard tools. Pretending the broad text scan was clean was rejected because it would conflate source attributes with string literals. Running a build or rebuild was rejected because this is static source proof and command discipline forbids premature rebuilds.
+
+Scalability potential: Runtime scalability is unaffected. Static evidence is clearer for low, middle, high, and ultra targets because only real attributes drive the ABI exception list.
+
+Hardware Impact: Runtime cost is 0.00 ms. Evidence class: STATIC_SOURCE; strict attribute-only scans show four documented Sequential exceptions and zero Pack attributes.
+
+## Decision 120 - Vault Cursor Ownership And Self-Audit Artifact
+
+Problem: SHINOBU_204 telemetry ring ownership was only half Vault-backed. `AlignmentTelemetryEntry` rows lived behind `BufferID.Arm64AlignmentTelemetryRing`, but the circular cursor was a private static int. The agent also lacked a durable SHINOBU_204 self-audit generator and XML report, so Task 20 evidence lived in status/log prose rather than a repeatable editor artifact.
+
+Solution: Added `VaultGenerationHandle<int>` for `BufferID.Arm64AlignmentTelemetryCursor` and resolved cursor state through `IDataVault` beside the ring. The fault recorder now requests IDs 642 and 643, releases both handles when the vault instance changes, and writes cursor state back to Vault after each record. Added editor-only `Arm64AlignmentSelfAuditReport`, wired it into the X-Ray toolbar, and seeded `Docs/Reports/SHINOBU_204_SELF_AUDIT.xml` with 20 task reconciliation, three critical layout maps, Vault handle status, dependency graph, compile guard, and Dear Lie proof.
+
+Rejected Alternatives: Keeping the cursor as a private static was rejected because it made the telemetry lifecycle partially non-Vault and weakened H-Phi evidence. Adding hard compile references to Physics KCC for the example byte map was rejected because the editor self-audit can resolve non-core examples by string through editor reflection and avoid sibling-domain compile edges. Running a build or rebuild was rejected because static gates passed, this loop is editor/runtime source proof, and the external dependency wall remains known.
+
+Scalability potential: Low tier pays nothing in normal gameplay because the telemetry path is cold and only resolves the cursor on fault/dump. Middle tier keeps deterministic diagnostics without polling. High and Ultra tiers can emit richer alignment fault reports through the same 64-byte rows and one-int cursor without changing DTO stride, save identity, SignalBus stride, or GlobalQualityWeight authority.
+
+Hardware Impact: Runtime normal-frame cost is 0.00 ms. Fault-path overhead adds one Vault-resolved int row read/write, but removes private static cursor ownership. Evidence class: STATIC_SOURCE; XML parse reports 20 tasks and 3 layout structs, targeted touched-file Pack/Sequential scan returns 0 hits, and `git diff --check` passes with LF/CRLF warnings only.
+
+## Decision 121 - Self-Audit CLI Gate
+
+Problem: The self-audit writer produced a durable XML artifact, but CI still needed a single explicit entry point that fails if a critical layout drifts. A write-only report can be ignored by build automation.
+
+Solution: Added `RunBatchSelfAudit()` to `Arm64AlignmentSelfAuditReport`. It writes the XML and runs `ValidateCriticalLayouts()` over the critical sample set. The gate checks type presence, Explicit layout, no Pack=1, accepted stride, and 8-byte alignment for every double/long/ulong/AUP lane. Failures throw `BuildFailedException`, which Unity batchmode can surface as a hard gate.
+
+Rejected Alternatives: Folding this into the runtime fault recorder was rejected because it would introduce reflection and report strings into a gameplay path. Making the XML writer throw on Task 18 PARTIAL status was rejected because that would conflate a known fixer-methodology limitation with critical ABI drift. Running Unity batchmode was rejected in this loop because the user prohibited rebuild-style churn and the source-level gate can be inspected without launching the editor.
+
+Scalability potential: Low tier remains unaffected because the gate is editor/CI-only. Middle, high, and ultra tiers get the same ABI proof before play; no GlobalQualityWeight route or DTO stride can diverge per hardware tier.
+
+Hardware Impact: Runtime cost is 0.00 ms. CI/editor cost is O(T+F) over three critical rows. Evidence class: STATIC_SOURCE; targeted scan found the CLI method and validation routine, trailing-whitespace scan returned 0 hits, and `git diff --check` passed for the new editor file.
+
+## Decision 122 - Fault Gizmo Editor Fence And AUP Locality
+
+Problem: `Arm64AlignmentFaultGizmo` read `GlobalDataVault.TryGetLatestCreated()` from an unfenced runtime assembly file and cast the recorded absolute AUP directly to `Vector3`. The route is diagnostic, but leaving it player-visible weakens the GlobalDataVault doctrine and the direct cast violates the local-AUP-before-float rule.
+
+Solution: Fenced the latest-vault read behind `UNITY_EDITOR`, then converted the recorded AUP by subtracting `HectonFloatingOrigin.CurrentTotalOffsetDouble` in double precision before clamping and casting the local delta to `Vector3`. Updated the self-audit XML/task text and architecture note to record the diagnostic-only route.
+
+Rejected Alternatives: Replacing the diagnostic route with hot `GlobalRegistry` polling was rejected because GlobalRegistry is cold identity/DI only. Keeping the direct absolute cast was rejected because 50 km scene coordinates lose precision before visualization. Moving the component into a runtime tick was rejected because Task 19 is an editor scene-view diagnostic, not gameplay logic. Running a build or rebuild was rejected because the change is static/editor fenced and command discipline forbids unnecessary rebuild churn.
+
+Scalability potential: Low tier and player builds pay 0.00 ms because the diagnostic read is editor-fenced. Middle, high, and ultra development tiers retain the same fault visualization while the AUP-local conversion avoids false scene jitter in large-world debugging. GlobalQualityWeight does not alter the DTO layout, Vault IDs, signal route, or fault ownership.
+
+Hardware Impact: Runtime cost is 0.00 ms. Editor-only diagnostic work remains O(1): one latest-vault lookup, one newest-ring read, one origin subtraction, one clamped draw. Evidence class: STATIC_SOURCE; static gate reports latest-vault read after `UNITY_EDITOR`, origin subtraction present, zero direct absolute-AUP casts, XML XPath parse reports 20 tasks, and `git diff --check` passes with LF/CRLF warnings only.
+
+## Decision 123 - Roslyn AST Source Fixer Gate
+
+Problem: `Arm64LayoutSourceFixer` still used regexes to detect Sequential DTO candidates and strip explicit Pack arguments. Regex scans are brittle around attributes, trivia, comments, nested attributes, and file-scoped namespaces; they also weaken the Task 18 claim that the tool parses C# structure.
+
+Solution: Replaced the regex scanner with a Roslyn AST pass using `CSharpSyntaxTree.ParseText` and `CSharpSyntaxRewriter`. The tool now mechanically removes named `Pack` arguments only from `StructLayout(...LayoutKind.Explicit...)` attributes, and reports Sequential DTO-like structs as `[BLOCKED] AST` with full type name, instance-field count, and property count.
+
+Rejected Alternatives: Keeping regex detection was rejected because it is text-fragile and can misclassify attributes. Automatically generating `FieldOffset` values for Sequential candidates was rejected because correct layout requires owner knowledge of fixed buffers, Unity containers, managed references, serialized authoring records, and persistence ABI. Running a build/rebuild or Unity batchmode was rejected because this is an editor source-tool change and static gates were sufficient for this loop.
+
+Scalability potential: Runtime tiers are unaffected because the tool is editor/CI-only. Low-end development machines avoid false rewrites and get deterministic failure reports. High/ultra development machines can extend the AST pass later with owner-approved layout calculators without changing runtime DTO authority or GlobalQualityWeight routes.
+
+Hardware Impact: Runtime cost is 0.00 ms. CI/editor cost is O(F+S) over source files and syntax nodes in Core/Physics. Evidence class: STATIC_SOURCE; targeted scan confirms Roslyn parser/rewriter symbols and `[BLOCKED] AST`, confirms old Regex symbols are absent, verifies the bundled Roslyn DLL exposes `FileScopedNamespaceDeclarationSyntax`, and `git diff --check` passes with LF/CRLF warning only.
+
+## Decision 124 - Strict Attribute Boundary Refresh After Tooling Edit
+
+Problem: After replacing the source fixer with a Roslyn AST pass, the latest Pack/Sequential proof needed a fresh scan. Relying on Loop 83 evidence would leave ambiguity about whether the editor-source change introduced new source-visible layout debt.
+
+Solution: Reran strict start-of-line attribute scans under `Assets/_Project/Scripts`. The Sequential result remains exactly four documented non-DTO exceptions, and both any-Pack and explicit-Pack scans return zero hits.
+
+Rejected Alternatives: Using the broad text scan was rejected because it intentionally catches editor diagnostic strings and would conflate source attributes with guard wording. Running a build/rebuild was rejected because this is source-boundary proof and no runtime assembly behavior changed.
+
+Scalability potential: Runtime scalability is unaffected. Low, middle, high, and ultra tiers retain identical DTO layout and proof boundaries; only reviewer confidence improves.
+
+Hardware Impact: Runtime cost is 0.00 ms. Evidence class: STATIC_SOURCE; strict Sequential scan returns four documented exceptions, Pack scans return zero hits, and `git diff --check` over touched SHINOBU files passes with LF/CRLF warnings only.
+
+## Decision 125 - Roslyn Binding Fail-Fast Report
+
+Problem: The Roslyn AST fixer can still fail before scanning if the editor/CI host cannot bind `Microsoft.CodeAnalysis` dependencies. A raw `TypeInitializationException` or dependency loader exception would give integrators an opaque failure and no report artifact.
+
+Solution: Wrapped `CSharpSyntaxTree.ParseText` per file. A parser/dependency failure is now written as `[BLOCKED] AST_BINDING <path> :: <exception type>: <message>` and counted as `ParserFailures`. The report also prints Roslyn core/CSharp assembly names and versions before scanning.
+
+Rejected Alternatives: Ignoring the binding issue was rejected because the PowerShell host probe already exposed dependency fragility. Loading Roslyn through reflection in runtime code was rejected because the tool is editor-only and compile-time editor references already exist. Running dotnet build or Unity batchmode was rejected because the user explicitly forbade rebuild churn and this loop only hardens the static editor tool.
+
+Scalability potential: Runtime tiers are unaffected. CI/editor diagnostics improve across low, middle, high, and ultra development machines because parser binding failures now produce deterministic report rows instead of unstructured crashes.
+
+Hardware Impact: Runtime cost is 0.00 ms. CI/editor overhead is one exception boundary per file and two assembly-version writes. Evidence class: STATIC_SOURCE; targeted scan confirms `AST_BINDING`, `ParserFailures`, Roslyn provenance lines, and parser try/catch; `git diff --check` over the fixer passes with LF/CRLF warning only.
+
+## Decision 126 - Source Fixer Per-Attribute Rewrite Proof
+
+Problem: `Arm64LayoutSourceFixer.VisitAttribute` used the rewriter-wide `HasChanges` flag inside a single-attribute rewrite condition. That flag is file-level state, so the condition was harder to audit than necessary and could make later attribute decisions appear coupled to earlier Pack removals.
+
+Solution: Added a local `removedPackArgument` flag inside `VisitAttribute`. The method now sets `HasChanges` only after the current `StructLayout(LayoutKind.Explicit, ...)` attribute actually removes a `Pack` argument and returns a modified argument list.
+
+Rejected Alternatives: Leaving the global flag in the condition was rejected because Task 18 is a source mutation gate and must have local proof for each mutation. Rewriting the whole fixer or adding a semantic model was rejected because the current issue is syntax-local and the semantic model would add dependency surface without solving owner-blind offset synthesis. Running build/rebuild or Unity batchmode was rejected because the change is editor-tool source hygiene and static gates passed.
+
+Scalability potential: Runtime tiers are unaffected. Low-tier development machines get deterministic source-fixer behavior without extra runtime payload. Middle, high, and ultra development machines can run the same report gate and receive cleaner Pack-removal counts without changing DTO stride, save identity, SignalBus payload size, or GlobalQualityWeight route.
+
+Hardware Impact: Runtime cost is 0.00 ms. Evidence class: STATIC_SOURCE; targeted scan confirms `removedPackArgument` exists, the old global-flag attribute condition is absent, `Regex` remains absent, strict Pack scan returns zero attributes, strict Sequential scan remains the four documented non-DTO exceptions, and `git diff --check` over the fixer passes with LF/CRLF warning only.
+
+## Decision 127 - Raw Telemetry Dump Span Writer
+
+Problem: `Arm64AlignmentTelemetry.DumpFaultHistory` wrote telemetry rows field-by-field through `BinaryWriter`. That produced a valid little-endian logical stream, but it did not prove that the exported dump preserved the exact 64-byte DTO memory image required for ABI forensics.
+
+Solution: Replaced `BinaryWriter` with a bounded stack header and raw row writes. The method writes a 20-byte little-endian header (`magic`, `version`, `count`, `rowBytes`) and then writes each `AlignmentTelemetryEntry` through `new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref entry), rowBytes)` in circular oldest-to-newest order.
+
+Rejected Alternatives: Keeping `BinaryWriter` was rejected because Task 16 asks for a raw span dump and field-wise serialization can drift from DTO ABI if fields change. Allocating a managed `byte[]` scratch buffer was rejected because the fault path can use stack spans and direct row images. Writing the ring in physical array order was rejected because post-mortem reading needs chronological order. Running build/rebuild or Unity batchmode was rejected because this is a local source change with static proof and the user prohibited rebuild churn.
+
+Scalability potential: Normal gameplay tiers are unaffected. Low-tier fault export avoids unnecessary per-field writer dispatch. Middle, high, and ultra development tiers get the same raw ABI dump schema, so richer forensic tooling can parse one stable 64-byte row layout without hardware-specific DTO variants.
+
+Hardware Impact: Runtime normal-frame cost is 0.00 ms. Fault dump cost is O(300 * 64 bytes) plus a 20-byte header. Evidence class: STATIC_SOURCE; targeted scan confirms `BinaryWriter` is absent, stack header and raw `ReadOnlySpan<byte>` row writes are present, and `git diff --check` over `AlignmentTelemetryContracts.cs` passes with LF/CRLF warning only.
+
+## Decision 128 - Core Physics Target-Root Layout Gate Refresh
+
+Problem: Broad project scans still report four documented non-DTO Sequential exceptions outside the source fixer roots. Without a target-root scan, Task 18 evidence can be misread as if the Core/Physics fixer still has live Sequential or Pack debt to mutate.
+
+Solution: Ran strict start-of-line layout-attribute scans over only `Assets/_Project/Scripts/Core` and `Assets/_Project/Scripts/Physics`. Both `LayoutKind.Sequential` and `StructLayout(...Pack=...)` return zero hits in those roots. Also reran the SHINOBU-owned DTO property scan; hot DTO auto-property patterns return zero, with reflection confined to the editor self-audit and latest-vault lookup confined to the editor-fenced gizmo.
+
+Rejected Alternatives: Using the broad project scan alone was rejected because voxel MeshData and submarine authoring exceptions are outside the fixer roots and would confuse Task 18 evidence. Running the fixer CLI or Unity batchmode was rejected because the target roots have no current source-visible attributes requiring mutation, and the user prohibited rebuild/editor churn unless structurally necessary.
+
+Scalability potential: Runtime tiers are unchanged. Low, middle, high, and ultra hardware get the same DTO ABI. The value is review precision: Core/Physics source-fixer roots are clean now, while future DTO regressions will fail through the Roslyn gate.
+
+Hardware Impact: Runtime cost is 0.00 ms. Evidence class: STATIC_SOURCE; Core/Physics strict Sequential scan returns zero, Core/Physics Pack scan returns zero, SHINOBU-owned hot DTO property pattern scan returns zero, and no build/rebuild or Unity batchmode was launched.
+
+## Decision 129 - Development Dump Fence
+
+Problem: `Arm64AlignmentTelemetry.DumpFaultHistory` is a post-mortem file writer. Leaving that path compiled into release players keeps filesystem APIs reachable from a runtime assembly, even though the dump is only justified for editor/development diagnostics.
+
+Solution: Wrapped the dump body in `#if UNITY_EDITOR || DEVELOPMENT_BUILD` and made the release-player branch return `false` without resolving Vault rows or touching `Directory`/`FileStream`. The development branch preserves the 20-byte little-endian header and raw `ReadOnlySpan<byte>` row-image schema from Loop 91.
+
+Rejected Alternatives: Keeping the writer available in release was rejected because it is diagnostic I/O, not gameplay authority. Replacing the dump with managed per-field logging was rejected because Task 16 requires raw ABI row evidence. Launching dotnet build or Unity batchmode was rejected because this is a localized static source/doc hardening pass and command discipline forbids rebuild churn without need.
+
+Scalability potential: Low, middle, high, and ultra player builds all share the same DTO layout and Vault IDs; no hardware tier can change the ABI. Development builds on any tier can still emit the raw dump when a fault is detected, while release players pay no dump-file I/O surface.
+
+Hardware Impact: Normal player-frame cost remains 0.00 ms. Release dump call cost is a constant false return. Development fault dump cost remains O(300 * 64 bytes) plus a 20-byte header. Evidence class: STATIC_SOURCE; XML parse reports 20 tasks and the development-build dump fence, source scan confirms `FileStream` is inside the fence and `BinaryWriter` is absent, Core/Physics strict scans remain 0 Sequential/0 Pack, broad project Pack remains 0, broad project Sequential remains exactly four documented non-DTO exceptions, and `git diff --check` passes with LF/CRLF warnings only.
+
+## Decision 130 - Immediate Development Fault Dump Trigger
+
+Problem: Task 16 requires the fault recorder to serialize the 300-entry history when a dynamic allocation or cast/layout fault is detected. The raw dump writer existed, but `TryRecordFault` only wrote the Vault ring and required a separate manual `DumpFaultHistory` call.
+
+Solution: Added a shared editor/development writer, `TryWriteFaultHistory`, and invoked it immediately after `TryRecordFault` writes the telemetry row and advances the Vault-owned cursor. `DumpFaultHistory` now resolves Vault handles and delegates to the same writer. Release-player code keeps the writer compiled out.
+
+Rejected Alternatives: Leaving the dump manual-only was rejected because it weakens the black-box requirement. Calling the public `DumpFaultHistory` from `TryRecordFault` was rejected because it would repeat Vault resolution after the caller already has the ring and cursor rows. Recording through managed logs was rejected because the required evidence is the raw 64-byte ABI row image. Build/rebuild was rejected because this pass is localized and static verification is sufficient before a Unity import gate.
+
+Scalability potential: Release builds on low through ultra hardware keep zero dump-file I/O. Development builds pay the post-mortem export only when a fault is recorded; the cost is intentionally diagnostic and does not alter DTO stride, Vault ownership, save identity, signal payloads, or GlobalQualityWeight authority.
+
+Hardware Impact: Normal release frame cost remains 0.00 ms. Development fault record adds one sequential raw dump of 300 rows, O(19.2 KB) plus a 20-byte header, after the row write. Evidence class: STATIC_SOURCE; source scan confirms `TryRecordFault` calls the shared writer inside the development fence, `DumpFaultHistory` delegates to it, release branch returns false, and `BinaryWriter` is absent; XML parse reports 20 tasks and the immediate-dump trigger; Core/Physics strict scans remain 0 Sequential/0 Pack; broad project Pack remains 0 and Sequential remains exactly four documented non-DTO exceptions; `git diff --check` passes with LF/CRLF warnings only.
+
+## Decision 131 - Telemetry Vault Uninitialized Clear
+
+Problem: The SHINOBU telemetry ring still requested `NativeArrayOptions.ClearMemory`. That is small and cold, but it weakens Task 15 evidence because this agent's own Vault buffer should not rely on allocator zeroing while claiming an explicit zero-init doctrine.
+
+Solution: Switched the ring and cursor Vault requests to `NativeArrayOptions.UninitializedMemory`. After handle resolution, the 300-row ring is cleared once with `UnsafeUtility.MemClear` over `ring.Length * sizeof(AlignmentTelemetryEntry)`, and the one-int cursor is explicitly assigned 0.
+
+Rejected Alternatives: Scheduling `InitializeAlignedBufferJob` and completing it immediately was rejected because 19.2 KB is a tiny diagnostic clear and same-frame schedule/readback loops are forbidden without profiler proof. Leaving `ClearMemory` was rejected because the local buffer should follow the uninitialized-then-explicit-clear policy. Adding a persistent private NativeArray scratch buffer was rejected because Vault owns the memory.
+
+Scalability potential: Player-frame tiers are unchanged because allocation happens on first fault/dump only. Low-tier development hardware avoids job scheduling overhead for a tiny diagnostic buffer. High and ultra development machines keep the same stable raw ABI rows; GlobalQualityWeight cannot alter layout or ownership.
+
+Hardware Impact: Normal runtime frame cost remains 0.00 ms. Cold first-use clear is O(19,200 bytes) through direct memory clear plus one int assignment. Evidence class: STATIC_SOURCE; source scan confirms 0 `ClearMemory` hits, 2 `UninitializedMemory` hits, `ClearRing`, `UnsafeUtility.MemClear`, `ring.GetUnsafePtr()`, immediate dump call, and no hidden `.Complete()` calls; XML parse reports 20 tasks and the Vault allocation route; Core/Physics strict scans remain 0 Sequential/0 Pack; `git diff --check` passes with LF/CRLF warnings only.

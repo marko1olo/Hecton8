@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Determinism;
 using Hecton8.Core.Memory;
@@ -45,8 +46,11 @@ namespace Hecton8.Networking
         public const ulong BlackBoxDumpMagic = 0x504D4454454E3848UL;
         public const float DefaultVisualInterpolationSeconds = 0.05f;
         public const float DefaultPredictionAggressiveness = 0.6f;
-        public const float DefaultLookRollbackMinQuality = 0.55f;
+        public const float DefaultLookMismatchSeverityWeight = 0.55f;
+        public const float DefaultLookRollbackMinQuality = DefaultLookMismatchSeverityWeight;
+        public const uint DefaultExtrapolationDecayPermille = 350u;
         public const float ResimDumpThresholdMs = 5f;
+        public const float InputPredictionDumpThresholdMs = 0.1f;
         public const byte PhaseSimulation = 1 << 0;
         public const byte PhasePostSimulation = 1 << 1;
 
@@ -103,6 +107,7 @@ namespace Hecton8.Networking
         public const BufferID MockJitterState = (BufferID)70775;
         public const BufferID VisualHistory = (BufferID)70776;
         public const BufferID RemoteMerkleNodes = (BufferID)70777;
+        public const BufferID InputPredictionTelemetry = BufferID.ShinobuInputPredictionTelemetry;
     }
 
     public static class RollbackNetcodeFlags
@@ -125,7 +130,10 @@ namespace Hecton8.Networking
         public const uint HardResyncRequired = 1u << 14;
         public const uint MockJitterActive = 1u << 15;
         public const int MismatchShift = 16;
-        public const uint MismatchMask = 0x00070000u;
+        public const uint MismatchMask = 0x000F0000u;
+        public const uint InputPredictionSlow = 1u << 20;
+        public const uint InputPredictionNonFinite = 1u << 21;
+        public const uint DearLieExtrapolated = 1u << 22;
     }
 
     public static class RemoteInputFlags
@@ -144,6 +152,7 @@ namespace Hecton8.Networking
         public const uint Button = 1u << 0;
         public const uint Move = 1u << 1;
         public const uint Look = 1u << 2;
+        public const uint TargetAup = 1u << 3;
     }
 
     public static class RollbackMerkleFlags
@@ -218,12 +227,13 @@ namespace Hecton8.Networking
         [FieldOffset(120)] public ulong Reserved3;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct RemoteInputFrameDTO
     {
-        [FieldOffset(0)] public InputStateDTO Input;
-        [FieldOffset(24)] public uint Frame;
-        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(0)] public PredictedInputDTO Input;
+        [FieldOffset(32)] public uint Frame;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] public ulong _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -254,8 +264,8 @@ namespace Hecton8.Networking
         [FieldOffset(44)] public uint HashCadenceFrames;
         [FieldOffset(48)] public uint MaxMerkleLeaves;
         [FieldOffset(52)] public uint InputDelayFrames;
-        [FieldOffset(56)] public uint _pad0;
-        [FieldOffset(60)] public uint _pad1;
+        [FieldOffset(56)] public uint ExtrapolationDecayPermille;
+        [FieldOffset(60)] public uint PredictionWindowTicks;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 96)]
@@ -401,28 +411,30 @@ namespace Hecton8.Networking
         [FieldOffset(56)] public ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct RollbackInputJournalSlot64
     {
-        [FieldOffset(0)] public InputStateDTO Predicted;
-        [FieldOffset(24)] public InputStateDTO Remote;
-        [FieldOffset(48)] public uint Frame;
-        [FieldOffset(52)] public uint ReceivedMask;
-        [FieldOffset(56)] public uint ExpectedMask;
-        [FieldOffset(60)] public uint Flags;
+        [FieldOffset(0)] public PredictedInputDTO Predicted;
+        [FieldOffset(32)] public PredictedInputDTO Remote;
+        [FieldOffset(64)] public PredictedInputAupTargetDTO TargetAup;
+        [FieldOffset(96)] public uint Frame;
+        [FieldOffset(100)] public uint ReceivedMask;
+        [FieldOffset(104)] public uint ExpectedMask;
+        [FieldOffset(108)] public uint Flags;
+        [FieldOffset(112)] public ulong _pad0;
+        [FieldOffset(120)] public ulong _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MockNetworkJitterPacket64
     {
-        [FieldOffset(0)] public InputStateDTO Input;
-        [FieldOffset(24)] public uint SourceFrame;
-        [FieldOffset(28)] public uint ReleaseFrame;
-        [FieldOffset(32)] public uint Sequence;
-        [FieldOffset(36)] public uint Flags;
-        [FieldOffset(40)] public ulong HashSalt;
-        [FieldOffset(48)] public ulong _pad0;
-        [FieldOffset(56)] public ulong _pad1;
+        [FieldOffset(0)] public PredictedInputDTO Input;
+        [FieldOffset(32)] public uint SourceFrame;
+        [FieldOffset(36)] public uint ReleaseFrame;
+        [FieldOffset(40)] public uint Sequence;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public ulong HashSalt;
+        [FieldOffset(56)] public ulong _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -443,6 +455,19 @@ namespace Hecton8.Networking
         [FieldOffset(56)] public ulong _pad1;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct RollbackRequiredSignal : ISignal
+    {
+        [FieldOffset(0)] public uint CurrentFrame;
+        [FieldOffset(4)] public uint RollbackFrame;
+        [FieldOffset(8)] public uint MismatchFlags;
+        [FieldOffset(12)] public uint SourceHash;
+        [FieldOffset(16)] public float Severity01;
+        [FieldOffset(20)] public uint RedundancyCount;
+        [FieldOffset(24)] public uint FirstMismatchBufferId;
+        [FieldOffset(28)] public uint FirstMismatchByteOffset;
+    }
+
     public static class RollbackNetcodeLayoutGuard
     {
         public const uint FrameSnapshot = 1u << 0;
@@ -459,6 +484,10 @@ namespace Hecton8.Networking
         public const uint AudioSuppression = 1u << 11;
         public const uint BlackBoxHeader = 1u << 12;
         public const uint AupMirror = 1u << 13;
+        public const uint PredictedInput = 1u << 14;
+        public const uint RemoteInput = 1u << 15;
+        public const uint PredictionTelemetry = 1u << 16;
+        public const uint RollbackSignal = 1u << 17;
 
         public static uint Validate()
         {
@@ -467,9 +496,13 @@ namespace Hecton8.Networking
             mask |= SizeMask<StatePageHeaderDTO>(128, StatePageHeader);
             mask |= SizeMask<H8NetMerkleNodeRecord32>(32, MerkleNode);
             mask |= SizeMask<H8NetLeafDeltaRecord64>(64, LeafDelta);
-            mask |= SizeMask<RollbackInputJournalSlot64>(64, InputJournal);
+            mask |= SizeMask<RollbackInputJournalSlot64>(128, InputJournal);
             mask |= SizeMask<MockNetworkJitterPacket64>(64, MockJitterPacket);
             mask |= SizeMask<MockNetworkJitterState64>(64, MockJitterState);
+            mask |= SizeMask<PredictedInputDTO>(32, PredictedInput);
+            mask |= SizeMask<RemoteInputFrameDTO>(48, RemoteInput);
+            mask |= SizeMask<InputPredictionTelemetryEntry>(64, PredictionTelemetry);
+            mask |= SizeMask<RollbackRequiredSignal>(32, RollbackSignal);
             mask |= SizeMask<VisualStateHistoryDTO>(64, VisualHistory);
             mask |= SizeMask<NetTelemetryEntry64>(64, Telemetry);
             mask |= SizeMask<RollbackRuntimeStateDTO>(96, RuntimeState);
@@ -477,6 +510,7 @@ namespace Hecton8.Networking
             mask |= SizeMask<RollbackAudioSuppressionDTO>(16, AudioSuppression);
             mask |= SizeMask<RollbackBlackBoxDumpHeader32>(32, BlackBoxHeader);
             mask |= SizeMask<RollbackAup48>(48, AupMirror);
+            mask |= PredictedInputLayoutGuard.Validate();
             return mask;
         }
 
@@ -507,27 +541,46 @@ namespace Hecton8.Networking
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool ShouldRollback(uint mismatchFlags, float globalQualityWeight, float minQualityForLookRollback)
+        public static uint ResolveInputDifferenceFlags(in PredictedInputDTO predicted, in PredictedInputDTO remote, float moveEpsilon, float lookEpsilon)
         {
-            if ((mismatchFlags & (InputMismatchFlags.Button | InputMismatchFlags.Move)) != 0u)
-                return true;
+            uint flags = InputMismatchFlags.None;
+            if (predicted.ActionButtonsMask != remote.ActionButtonsMask)
+                flags |= InputMismatchFlags.Button;
 
-            if ((mismatchFlags & InputMismatchFlags.Look) == 0u)
-                return false;
+            float3 moveDelta = predicted.LocalMoveVector - remote.LocalMoveVector;
+            if (math.lengthsq(moveDelta) > moveEpsilon * moveEpsilon)
+                flags |= InputMismatchFlags.Move;
 
-            float lookGate = math.step(math.saturate(minQualityForLookRollback), math.saturate(globalQualityWeight));
-            return lookGate >= 0.5f;
+            float2 lookDelta = predicted.LookDelta - remote.LookDelta;
+            if (math.lengthsq(lookDelta) > lookEpsilon * lookEpsilon)
+                flags |= InputMismatchFlags.Look;
+
+            return flags;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ResolveMismatchSeverity(uint mismatchFlags, float globalQualityWeight)
+        public static bool ShouldRollback(uint mismatchFlags)
         {
+            return mismatchFlags != InputMismatchFlags.None;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveMismatchSeverity(uint mismatchFlags, float globalQualityWeight, float lookMismatchSeverityWeight)
+        {
+            float qualityWeight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float lookSeverityWeight = math.saturate(math.isfinite(lookMismatchSeverityWeight) ? lookMismatchSeverityWeight : RollbackNetcodeConstants.DefaultLookMismatchSeverityWeight);
             if ((mismatchFlags & InputMismatchFlags.Button) != 0u)
                 return 1f;
             if ((mismatchFlags & InputMismatchFlags.Move) != 0u)
-                return math.lerp(0.6f, 0.85f, Smooth01(math.saturate(globalQualityWeight)));
+                return math.lerp(0.6f, 0.85f, Smooth01(qualityWeight));
+            if ((mismatchFlags & InputMismatchFlags.TargetAup) != 0u)
+                return 0.9f;
             if ((mismatchFlags & InputMismatchFlags.Look) != 0u)
-                return 0.25f * Smooth01(math.saturate(globalQualityWeight));
+            {
+                float qualityCurve = Smooth01(qualityWeight);
+                float designerWeight = Smooth01(lookSeverityWeight);
+                return math.lerp(0.05f, 0.25f, qualityCurve) * math.lerp(0.5f, 1f, designerWeight);
+            }
             return 0f;
         }
 
@@ -546,6 +599,39 @@ namespace Hecton8.Networking
             float normalized = math.saturate((qualityWeight - 0.1f) * 1.1111112f);
             float budget = math.lerp(0.25f, 1f, Smooth01(normalized));
             return math.clamp((int)math.round(maxFrames * budget), 1, maxFrames);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ResolvePredictionWindowTicks(in RollbackTuningDTO tuning, float quality, uint pingFrames)
+        {
+            float qualityWeight = math.saturate(math.isfinite(quality) ? quality : 1f);
+            float latencyFactor = math.saturate(pingFrames * (1f / 30f));
+            float stress = math.saturate((latencyFactor * 0.72f) + ((1f - qualityWeight) * 0.28f));
+            float window = math.lerp(30f, 5f, Smooth01(stress));
+            if (tuning.PredictionWindowTicks != 0u)
+                window = math.lerp(window, math.clamp(tuning.PredictionWindowTicks, 5u, 30u), 0.5f);
+            return (uint)math.clamp((int)math.round(window), 5, 30);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ResolvePacketRedundancyCount(in RollbackTuningDTO tuning, float quality, uint pingFrames, uint packetLossPermille)
+        {
+            float qualityWeight = math.saturate(math.isfinite(quality) ? quality : 1f);
+            float latencyFactor = math.saturate(pingFrames * (1f / 30f));
+            float lossFactor = math.saturate(packetLossPermille * 0.001f);
+            float stress = math.saturate((latencyFactor * 0.55f) + (lossFactor * 0.35f) + ((1f - qualityWeight) * 0.1f));
+            float requested = tuning.RedundancyCount == 0u ? 1f : tuning.RedundancyCount;
+            float continuous = math.max(requested, math.lerp(1f, 5f, Smooth01(stress)));
+            return (uint)math.clamp((int)math.round(continuous), 1, 5);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveDearLieDecay(in RollbackTuningDTO tuning)
+        {
+            uint permille = tuning.ExtrapolationDecayPermille == 0u
+                ? RollbackNetcodeConstants.DefaultExtrapolationDecayPermille
+                : math.min(tuning.ExtrapolationDecayPermille, 2000u);
+            return permille * 0.001f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1193,20 +1279,39 @@ namespace Hecton8.Networking
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct DetectInputMismatchJob : IJob
+    public struct EvaluateInputMismatchJob : IJob
     {
-        [ReadOnly, NoAlias] public NativeArray<InputStateDTO> PredictedJournal;
-        [ReadOnly, NoAlias] public NativeArray<RemoteInputFrameDTO> RemoteInputRing;
+        [ReadOnly, NoAlias] public NativeArray<PredictedInputDTO> PredictedJournal;
+        [NoAlias] public NativeArray<RemoteInputFrameDTO> RemoteInputRing;
+        [ReadOnly, NoAlias] public NativeArray<PredictedInputAupTargetDTO> TargetAups;
         [NoAlias] public NativeArray<RollbackInputJournalSlot64> InputJournalRing;
         [NoAlias] public NativeArray<RollbackRuntimeStateDTO> RuntimeState;
+        // SAFETY_JUSTIFICATION_SHINOBU_278: The rollback signal writer is not sourced from the Vault and is not a view over
+        // PredictedJournal, RemoteInputRing, TargetAups, InputJournalRing, or RuntimeState. The runtime owner opens the
+        // SignalBus queue during cold buffer acquisition, verifies that the native queue is created, then stores only the
+        // NativeQueue parallel writer descriptor for later scheduling.
+        //
+        // The only operation performed through this writer is Enqueue of a 32-byte RollbackRequiredSignal after a mismatch
+        // has already been resolved from non-overlapping Vault arrays. RollbackSignalsEnabled gates the enqueue so a default
+        // writer is never used if cold initialization failed or the runtime was disabled and re-enabled.
+        //
+        // NativeDisableContainerSafetyRestriction is limited to this field because Unity's safety system cannot express
+        // the external SignalBus ownership relationship for a cached ParallelWriter. It does not relax safety on Vault
+        // arrays; all data inputs remain explicit NativeArray fields with NoAlias annotations.
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeQueue<RollbackRequiredSignal>.ParallelWriter RollbackSignals;
         public uint CurrentFrame;
         public uint PreviousFrame;
         public int MaxRollbackFrames;
         public float GlobalQualityWeight;
-        public float MinQualityForLookRollback;
         public float MoveEpsilon;
         public float LookEpsilon;
+        public float LookMismatchSeverityWeight;
         public uint InputDelayFrames;
+        public uint RedundancyCount;
+        public float ExtrapolationDecay;
+        public uint SourceHash;
+        public uint RollbackSignalsEnabled;
 
         public void Execute()
         {
@@ -1250,7 +1355,9 @@ namespace Hecton8.Networking
 
                 int ringIndex = (int)(frame % (uint)RemoteInputRing.Length);
                 RemoteInputFrameDTO remote = RemoteInputRing[ringIndex];
-                InputStateDTO predicted = PredictedJournal[(int)(frame % (uint)PredictedJournal.Length)];
+                PredictedInputDTO predicted = PredictedJournal[(int)(frame % (uint)PredictedJournal.Length)];
+                if ((predicted._pad0 & PredictedInputFlags.NonFiniteSanitized) != 0u)
+                    state.Flags |= RollbackNetcodeFlags.InputPredictionNonFinite;
                 RollbackInputJournalSlot64 slot = InputJournalRing[(int)(frame % (uint)InputJournalRing.Length)];
                 slot.Predicted = predicted;
                 slot.Frame = frame;
@@ -1266,9 +1373,16 @@ namespace Hecton8.Networking
                 }
                 else
                 {
-                    slot.ReceivedMask = 0u;
+                    remote = ExtrapolateMissingInput(frame);
+                    RemoteInputRing[ringIndex] = remote;
+                    slot.Remote = remote.Input;
+                    slot.ReceivedMask = 1u;
+                    slot.Flags |= remote.Flags;
+                    state.Flags |= RollbackNetcodeFlags.DearLieExtrapolated;
                 }
 
+                if (TargetAups.IsCreated && TargetAups.Length > 0)
+                    slot.TargetAup = TargetAups[(int)(frame % (uint)TargetAups.Length)];
                 InputJournalRing[(int)(frame % (uint)InputJournalRing.Length)] = slot;
                 if (slot.ReceivedMask != slot.ExpectedMask)
                 {
@@ -1288,12 +1402,12 @@ namespace Hecton8.Networking
                 }
 
                 uint mismatch = RollbackNetcodeMath.ResolveInputDifferenceFlags(predicted, remote.Input, MoveEpsilon, LookEpsilon);
-                if (!RollbackNetcodeMath.ShouldRollback(mismatch, GlobalQualityWeight, MinQualityForLookRollback))
+                if (!RollbackNetcodeMath.ShouldRollback(mismatch))
                     continue;
 
                 bestFrame = frame;
                 bestMask = mismatch;
-                bestSeverity = RollbackNetcodeMath.ResolveMismatchSeverity(mismatch, GlobalQualityWeight);
+                bestSeverity = RollbackNetcodeMath.ResolveMismatchSeverity(mismatch, GlobalQualityWeight, LookMismatchSeverityWeight);
                 found = true;
                 break;
             }
@@ -1303,16 +1417,97 @@ namespace Hecton8.Networking
                 state.LastMismatchFrame = bestFrame;
                 state.MismatchSeverity01 = bestSeverity;
                 state.Flags |= RollbackNetcodeFlags.RollbackRequired | (bestMask << RollbackNetcodeFlags.MismatchShift);
+                RollbackRequiredSignal signal = default;
+                signal.CurrentFrame = CurrentFrame;
+                signal.RollbackFrame = bestFrame;
+                signal.MismatchFlags = bestMask;
+                signal.SourceHash = SourceHash;
+                signal.Severity01 = bestSeverity;
+                signal.RedundancyCount = RedundancyCount;
+                signal.FirstMismatchBufferId = (uint)RollbackNetcodeVault.InputJournalRing;
+                signal.FirstMismatchByteOffset = (uint)((bestFrame % (uint)InputJournalRing.Length) * UnsafeUtility.SizeOf<RollbackInputJournalSlot64>());
+                if (RollbackSignalsEnabled != 0u)
+                    RollbackSignals.Enqueue(signal);
             }
 
             RuntimeState[0] = state;
+        }
+
+        private RemoteInputFrameDTO ExtrapolateMissingInput(uint frame)
+        {
+            uint previousFrame = frame == 0u ? 0u : frame - 1u;
+            RemoteInputFrameDTO previous = frame == 0u
+                ? default
+                : RemoteInputRing[(int)(previousFrame % (uint)RemoteInputRing.Length)];
+            PredictedInputDTO seed = frame != 0u &&
+                previous.Frame == previousFrame &&
+                (previous.Flags & RemoteInputFlags.Valid) != 0u
+                ? previous.Input
+                : PredictedJournal[(int)(frame % (uint)PredictedJournal.Length)];
+
+            float missingTicks = frame == 0u
+                ? 1f
+                : math.max(1f, RollbackNetcodeMath.ResolveRollbackFrameCount(previousFrame, frame));
+            float decay = math.exp(-math.max(0.001f, ExtrapolationDecay) * missingTicks);
+            seed.TickNumber = frame;
+            seed.LocalMoveVector *= decay;
+            seed.LookDelta *= decay;
+            seed._pad0 = (seed._pad0 | PredictedInputFlags.ExtrapolatedDearLie | PredictedInputFlags.Valid) &
+                ~PredictedInputFlags.Authoritative;
+
+            RemoteInputFrameDTO remote = default;
+            remote.Input = seed;
+            remote.Frame = frame;
+            remote.Flags = RemoteInputFlags.Predicted | RemoteInputFlags.Valid;
+            return remote;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct ExtrapolateMissingInputsJob : IJob
+    {
+        [ReadOnly, NoAlias] public NativeArray<PredictedInputDTO> PredictedJournal;
+        [NoAlias] public NativeArray<RemoteInputFrameDTO> RemoteInputRing;
+        public uint TargetFrame;
+        public float ExponentialDecay;
+
+        public void Execute()
+        {
+            if (!PredictedJournal.IsCreated || !RemoteInputRing.IsCreated || PredictedJournal.Length <= 0 || RemoteInputRing.Length <= 0)
+                return;
+
+            int targetIndex = (int)(TargetFrame % (uint)RemoteInputRing.Length);
+            RemoteInputFrameDTO current = RemoteInputRing[targetIndex];
+            if (current.Frame == TargetFrame && (current.Flags & RemoteInputFlags.Valid) != 0u)
+                return;
+
+            uint previousFrame = TargetFrame == 0u ? 0u : TargetFrame - 1u;
+            RemoteInputFrameDTO previous = TargetFrame == 0u
+                ? default
+                : RemoteInputRing[(int)(previousFrame % (uint)RemoteInputRing.Length)];
+            PredictedInputDTO seed = TargetFrame != 0u &&
+                previous.Frame == previousFrame &&
+                (previous.Flags & RemoteInputFlags.Valid) != 0u
+                ? previous.Input
+                : PredictedJournal[(int)(TargetFrame % (uint)PredictedJournal.Length)];
+            float decay = math.exp(-math.max(0.001f, ExponentialDecay));
+            seed.TickNumber = TargetFrame;
+            seed.LocalMoveVector *= decay;
+            seed.LookDelta *= decay;
+            seed._pad0 = (seed._pad0 | PredictedInputFlags.ExtrapolatedDearLie | PredictedInputFlags.Valid) &
+                ~PredictedInputFlags.Authoritative;
+
+            current.Input = seed;
+            current.Frame = TargetFrame;
+            current.Flags = RemoteInputFlags.Predicted | RemoteInputFlags.Valid;
+            RemoteInputRing[targetIndex] = current;
         }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct GenerateMockNetworkJitterJob : IJob
     {
-        [ReadOnly, NoAlias] public NativeArray<InputStateDTO> PredictedJournal;
+        [ReadOnly, NoAlias] public NativeArray<PredictedInputDTO> PredictedJournal;
         [NoAlias] public NativeArray<RemoteInputFrameDTO> RemoteInputRing;
         [NoAlias] public NativeArray<MockNetworkJitterPacket64> Packets;
         [NoAlias] public NativeArray<MockNetworkJitterState64> JitterState;
@@ -1339,7 +1534,7 @@ namespace Hecton8.Networking
             uint seed = Seed ^ CurrentFrame ^ (uint)PredictedJournal.Length;
             Unity.Mathematics.Random rng = RollbackNetcodeMath.CreateDeterministicRandom(seed, CurrentFrame);
 
-            InputStateDTO input = PredictedJournal[(int)(CurrentFrame % (uint)PredictedJournal.Length)];
+            PredictedInputDTO input = PredictedJournal[(int)(CurrentFrame % (uint)PredictedJournal.Length)];
             uint lossRoll = rng.NextUInt(1000u);
             if (lossRoll < state.PacketLossPermille)
             {
@@ -1360,7 +1555,7 @@ namespace Hecton8.Networking
             JitterState[0] = state;
         }
 
-        private void Enqueue(ref MockNetworkJitterState64 state, in InputStateDTO input, uint sourceFrame, uint releaseFrame, uint flags)
+        private void Enqueue(ref MockNetworkJitterState64 state, in PredictedInputDTO input, uint sourceFrame, uint releaseFrame, uint flags)
         {
             uint nextHead = (state.Head + 1u) % (uint)Packets.Length;
             if (nextHead == state.Tail)
@@ -1414,7 +1609,7 @@ namespace Hecton8.Networking
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ApplyRemoteInputCorrectionJob : IJob
     {
-        [NoAlias] public NativeArray<InputStateDTO> PredictedJournal;
+        [NoAlias] public NativeArray<PredictedInputDTO> PredictedJournal;
         [ReadOnly, NoAlias] public NativeArray<RemoteInputFrameDTO> RemoteInputRing;
         public uint RollbackFrame;
         public uint CurrentFrame;
@@ -1494,8 +1689,9 @@ namespace Hecton8.Networking
     {
         [NoAlias] public NativeArray<RollbackTuningDTO> Tuning;
         [NoAlias] public NativeArray<RollbackRuntimeStateDTO> RuntimeState;
-        [NoAlias] public NativeArray<InputStateDTO> PredictedJournal;
-        [ReadOnly, NoAlias] public NativeArray<RemoteInputFrameDTO> RemoteInputRing;
+        [NoAlias] public NativeArray<PredictedInputDTO> PredictedJournal;
+        [NoAlias] public NativeArray<RemoteInputFrameDTO> RemoteInputRing;
+        [ReadOnly, NoAlias] public NativeArray<PredictedInputAupTargetDTO> TargetAups;
         [NoAlias] public NativeArray<RollbackInputJournalSlot64> InputJournalRing;
         [NoAlias] public NativeArray<byte> StateRingBuffer;
         [NoAlias] public NativeArray<FrameSnapshotDTO> FrameSnapshots;
@@ -1508,6 +1704,7 @@ namespace Hecton8.Networking
         [NoAlias] public NativeArray<H8NetLeafDeltaRecord64> LeafDeltaRecords;
         [ReadOnly, NoAlias] public NativeArray<MockNetworkJitterState64> MockJitterState;
         [NoAlias] public NativeArray<NetTelemetryEntry64> Telemetry;
+        [NoAlias] public NativeArray<InputPredictionTelemetryEntry> InputPredictionTelemetry;
         [NoAlias] public NativeArray<double3> RigidbodyAups;
         [NoAlias] public NativeArray<LockstepPlayerKinematicState> PlayerStates;
         [NoAlias] public NativeArray<RollbackAup48> EntityAups;
@@ -1542,6 +1739,21 @@ namespace Hecton8.Networking
         public float LookEpsilon;
         public int TelemetryWriteIndex;
         public uint ModQuarantineMask;
+        // SAFETY_JUSTIFICATION_SHINOBU_278: This pipeline job does not write rollback signals directly; it forwards the
+        // cached SignalBus parallel writer into EvaluateInputMismatchJob inside the same synchronous pipeline execution.
+        // The writer is acquired during cold runtime setup and has no memory alias with the Vault-owned prediction,
+        // authoritative packet, telemetry, or snapshot arrays carried by this job.
+        //
+        // RollbackSignalsEnabled is forwarded with the writer, preserving the same enqueue guard used by the nested
+        // mismatch evaluator. If SignalBus initialization is unavailable, the pipeline still evaluates mismatch state and
+        // journal data but skips signal enqueue rather than touching an uncreated native queue.
+        //
+        // NativeDisableContainerSafetyRestriction is intentionally scoped to the writer descriptor because Unity cannot
+        // prove the cold SignalBus lifetime through a cached ParallelWriter value. The surrounding NativeArray fields retain
+        // normal safety metadata plus NoAlias proof for Burst vectorization and static review.
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeQueue<RollbackRequiredSignal>.ParallelWriter RollbackSignals;
+        public uint RollbackSignalsEnabled;
 
         public void Execute()
         {
@@ -1561,20 +1773,31 @@ namespace Hecton8.Networking
                   RollbackNetcodeFlags.MismatchMask);
             RuntimeState[0] = state;
 
-            DetectInputMismatchJob detect = new DetectInputMismatchJob
+            uint pingFrames = tuning.InputDelayFrames == 0u ? tuning.PingSimulatedFrames : tuning.InputDelayFrames;
+            tuning.RedundancyCount = RollbackNetcodeMath.ResolvePacketRedundancyCount(in tuning, GlobalQualityWeight, pingFrames, tuning.PacketLossPermille);
+            tuning.PredictionWindowTicks = RollbackNetcodeMath.ResolvePredictionWindowTicks(in tuning, GlobalQualityWeight, pingFrames);
+            if (Tuning.IsCreated && Tuning.Length > 0)
+                Tuning[0] = tuning;
+            EvaluateInputMismatchJob detect = new EvaluateInputMismatchJob
             {
                 PredictedJournal = PredictedJournal,
                 RemoteInputRing = RemoteInputRing,
+                TargetAups = TargetAups,
                 InputJournalRing = InputJournalRing,
                 RuntimeState = RuntimeState,
+                RollbackSignals = RollbackSignals,
                 CurrentFrame = CurrentFrame,
                 PreviousFrame = PreviousFrame,
                 MaxRollbackFrames = MaxRollbackFrames,
                 GlobalQualityWeight = GlobalQualityWeight,
-                MinQualityForLookRollback = tuning.MinQualityForLookRollback,
                 MoveEpsilon = MoveEpsilon,
                 LookEpsilon = LookEpsilon,
-                InputDelayFrames = tuning.InputDelayFrames == 0u ? tuning.PingSimulatedFrames : tuning.InputDelayFrames
+                LookMismatchSeverityWeight = tuning.MinQualityForLookRollback,
+                InputDelayFrames = pingFrames,
+                RedundancyCount = tuning.RedundancyCount,
+                ExtrapolationDecay = RollbackNetcodeMath.ResolveDearLieDecay(in tuning),
+                SourceHash = 0x53483237u,
+                RollbackSignalsEnabled = this.RollbackSignalsEnabled
             };
             detect.Execute();
 
@@ -1620,10 +1843,16 @@ namespace Hecton8.Networking
             tuning.GlobalQualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
             tuning.PacketLossPermille = math.min(tuning.PacketLossPermille, 1000u);
             tuning.DuplicatePermille = math.min(tuning.DuplicatePermille, 1000u);
-            tuning.RedundancyCount = math.min(tuning.RedundancyCount, 4u);
+            tuning.RedundancyCount = math.min(tuning.RedundancyCount, 5u);
             tuning.HashCadenceFrames = tuning.HashCadenceFrames == 0u ? RollbackNetcodeConstants.DesyncHashCadenceFrames : math.clamp(tuning.HashCadenceFrames, 15u, 180u);
             tuning.MaxMerkleLeaves = tuning.MaxMerkleLeaves == 0u ? RollbackNetcodeConstants.MerkleLeafCapacity : math.clamp(tuning.MaxMerkleLeaves, 1u, (uint)RollbackNetcodeConstants.MerkleLeafCapacity);
             tuning.InputDelayFrames = math.min(tuning.InputDelayFrames, 30u);
+            tuning.ExtrapolationDecayPermille = tuning.ExtrapolationDecayPermille == 0u
+                ? RollbackNetcodeConstants.DefaultExtrapolationDecayPermille
+                : math.min(tuning.ExtrapolationDecayPermille, 2000u);
+            tuning.PredictionWindowTicks = tuning.PredictionWindowTicks == 0u
+                ? RollbackNetcodeMath.ResolvePredictionWindowTicks(in tuning, GlobalQualityWeight, tuning.PingSimulatedFrames)
+                : math.clamp(tuning.PredictionWindowTicks, 5u, 30u);
             return tuning;
         }
 
@@ -1687,6 +1916,8 @@ namespace Hecton8.Networking
             int resimFrames = RollbackNetcodeMath.ResolveRollbackFrameCount(rollbackFrame, CurrentFrame);
             state.ResimComputeTimeMs = RollbackNetcodeMath.EstimateResimulationCostMs(resimFrames, GlobalQualityWeight, state.MismatchSeverity01);
             state.Flags &= ~RollbackNetcodeFlags.RollbackRequired;
+            if (state.ResimComputeTimeMs > RollbackNetcodeConstants.InputPredictionDumpThresholdMs)
+                state.Flags |= RollbackNetcodeFlags.InputPredictionSlow;
             if (state.ResimComputeTimeMs > RollbackNetcodeConstants.ResimDumpThresholdMs)
                 state.Flags |= RollbackNetcodeFlags.ResimBudgetExceeded;
             RuntimeState[0] = state;
@@ -1919,6 +2150,25 @@ namespace Hecton8.Networking
             entry.MismatchBufferId = state.FirstMismatchBufferId;
             entry.MismatchByteOffset = state.FirstMismatchByteOffset;
             Telemetry[index] = entry;
+
+            if (InputPredictionTelemetry.IsCreated && InputPredictionTelemetry.Length > 0)
+            {
+                InputPredictionTelemetryEntry inputEntry = default;
+                inputEntry.TickNumber = CurrentFrame;
+                inputEntry.PredictedInputCount = PredictedJournal.IsCreated ? (uint)PredictedJournal.Length : 0u;
+                inputEntry.DesyncCount = state.DesyncCount;
+                inputEntry.PacketRedundancyCount = ResolveTuning().RedundancyCount;
+                inputEntry.BurstExecutionMicroseconds = (uint)math.round(math.max(0f, state.ResimComputeTimeMs) * 1000f);
+                inputEntry.BufferCapacity = PredictedJournal.IsCreated ? (uint)PredictedJournal.Length : 0u;
+                inputEntry.ExtrapolatedInputCount = (state.Flags & RollbackNetcodeFlags.DearLieExtrapolated) != 0u ? 1u : 0u;
+                inputEntry.Flags = state.Flags;
+                inputEntry.LastPredictedHash64 = state.LastFrameHash64;
+                inputEntry.LastAuthoritativeHash64 = state.LastRemoteHash64;
+                inputEntry.GlobalQualityWeight = GlobalQualityWeight;
+                inputEntry.LatencyFactor01 = math.saturate((ResolveTuning().InputDelayFrames == 0u ? ResolveTuning().PingSimulatedFrames : ResolveTuning().InputDelayFrames) * (1f / 30f));
+                inputEntry.WriteIndex = (uint)index;
+                InputPredictionTelemetry[index % InputPredictionTelemetry.Length] = inputEntry;
+            }
         }
 
         private bool TelemetryTargetIsReady(ref int index)
@@ -1980,7 +2230,7 @@ namespace Hecton8.Networking
             if (!PredictedJournal.IsCreated || PredictedJournal.Length <= 0)
                 return 0u;
 
-            return PredictedJournal[(int)(CurrentFrame % (uint)PredictedJournal.Length)].ButtonMask;
+            return PredictedJournal[(int)(CurrentFrame % (uint)PredictedJournal.Length)].ActionButtonsMask;
         }
     }
 

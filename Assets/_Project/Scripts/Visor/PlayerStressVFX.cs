@@ -12,7 +12,7 @@ namespace Hecton8.Visor
     /// Applies critical-state pulse feedback through shader globals and heartbeat cues.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerStressVFX : MonoBehaviour, ITickable, IPlayerSignalEventListener
+    public sealed class PlayerStressVFX : MonoBehaviour, ITickable, IPlayerSignalEventListener, IGlobalRegistryHotSwapListener
     {
         [Header("── Audio ──────────────────")]
         [Tooltip("Helmet heartbeat cue played while the player approaches death.")]
@@ -81,9 +81,12 @@ namespace Hecton8.Visor
         private static readonly int HectonHudFogFrostId = Shader.PropertyToID("_HectonHudFogFrost");
 
         private bool _registered;
+        private bool _hotSwapRegistered;
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
         private HectonPlayerHealth _playerHealth;
+        private IAudioService _cachedAudioService;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private float _pulsePhase;
         private float _heartbeatTimer;
         private float _lastEnvironmentTemperature = 20f;
@@ -107,12 +110,15 @@ namespace Hecton8.Visor
 
         private void Awake()
         {
+            CacheRegistryServicesCold();
             TryResolveDependencies(force: true);
             _heartbeatTimer = heartbeatIntervalMaxSeconds;
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             PlayerSignalEvents.Register(this);
             TryRegisterTickHandler();
         }
@@ -120,6 +126,7 @@ namespace Hecton8.Visor
         private void OnDisable()
         {
             PlayerSignalEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
             TryUnregisterTickHandler();
             ResetRuntimeEffects();
             _heartbeatTimer = heartbeatIntervalMaxSeconds;
@@ -137,8 +144,30 @@ namespace Hecton8.Visor
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterTickHandler();
             ResetRuntimeEffects();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            {
+                TryRegisterTickHandler();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+            {
+                _cachedAudioService = currentService as IAudioService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
         }
 
         /// <summary>
@@ -291,9 +320,6 @@ namespace Hecton8.Visor
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
@@ -305,6 +331,29 @@ namespace Hecton8.Visor
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
             _registered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private float ResolveStress01()
@@ -407,7 +456,7 @@ namespace Hecton8.Visor
 
         private void PlayHeartbeat(float stress01)
         {
-            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            IAudioService audioManager = _cachedAudioService;
             if (heartbeatClip == null || audioManager == null)
                 return;
 
@@ -422,7 +471,7 @@ namespace Hecton8.Visor
             HectonPlayerMovement movement = _playerMovement;
             if (movement == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                 movement = playerContext != null ? playerContext.PlayerMovement : null;
             }
 

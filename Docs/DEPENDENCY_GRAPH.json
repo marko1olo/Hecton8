@@ -2,19 +2,19 @@
   "schema_version": 1,
   "status": "ATLAS GENERATED STATIC SOURCE / ATLASCHECK SEPARATE GATE REQUIRED / RUNTIME PENDING",
   "evidence_class": "STATIC_SOURCE/STATIC_DOC/FILESYSTEM/PY_TOOL",
-  "generated": "2026-05-20 15:52:17",
+  "generated": "2026-05-21 04:34:51",
   "summary": {
-    "source_file_count": 5289,
-    "source_line_count": 2067632,
-    "first_party_source_file_count": 2027,
-    "first_party_source_line_count": 1405085,
-    "asmdef_count": 203,
-    "first_party_asmdef_count": 143,
-    "exact_core_dependent_count": 66,
-    "core_family_dependent_count": 98,
-    "signal_count": 284,
+    "source_file_count": 5372,
+    "source_line_count": 2139957,
+    "first_party_source_file_count": 2106,
+    "first_party_source_line_count": 1476805,
+    "asmdef_count": 215,
+    "first_party_asmdef_count": 155,
+    "exact_core_dependent_count": 70,
+    "core_family_dependent_count": 102,
+    "signal_count": 287,
     "queue_lane_count": 56,
-    "sherst_hit_count": 2,
+    "sherst_hit_count": 13,
     "phi_exact_rationale_present": false
   },
   "assemblies": {
@@ -79,6 +79,29 @@
           "Hecton8.Core.Contracts",
           "Hecton8.Core.Memory",
           "Unity.Collections",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.Atmosphere.StormPropagation.Editor",
+        "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/Editor/Hecton8.Atmosphere.StormPropagation.Editor.asmdef",
+        "refs": [
+          "Hecton8.Atmosphere.StormPropagation.Runtime",
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Collections",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.Atmosphere.StormPropagation.Runtime",
+        "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/Hecton8.Atmosphere.StormPropagation.Runtime.asmdef",
+        "refs": [
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
           "Unity.Mathematics"
         ]
       },
@@ -212,6 +235,7 @@
           "Hecton8.Core",
           "Hecton8.Core.Contracts",
           "Hecton8.Core.Memory",
+          "Hecton8.Rendering.BilateralDrs",
           "Hecton8.Graphics.Scalability",
           "Hecton8.Bootstrap.Contracts",
           "Hecton8.Plugins",
@@ -223,6 +247,9 @@
           "Unity.ResourceManager",
           "Unity.Addressables.Editor",
           "Unity.InputSystem",
+          "Unity.XR.Management",
+          "Unity.XR.Management.Editor",
+          "Unity.XR.OpenXR",
           "Unity.Mathematics",
           "Unity.Burst",
           "Unity.Jobs",
@@ -582,6 +609,21 @@
         ]
       },
       {
+        "name": "Hecton8.Rendering.BilateralDrs",
+        "path": "Assets/_Project/Scripts/Rendering/BilateralDrs/Hecton8.Rendering.BilateralDrs.asmdef",
+        "refs": [
+          "Hecton8.Core",
+          "Hecton8.Core.Contracts",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics",
+          "Unity.RenderPipelines.Core.Runtime",
+          "Unity.RenderPipelines.Universal.Runtime"
+        ]
+      },
+      {
         "name": "Hecton8.SeedShipAnomaly.Editor",
         "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/Hecton8.SeedShipAnomaly.Editor.asmdef",
         "refs": [
@@ -799,6 +841,17 @@
         ]
       },
       {
+        "name": "Hecton8.World.HydraulicErosionForge.Editor",
+        "path": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/Hecton8.World.HydraulicErosionForge.Editor.asmdef",
+        "refs": [
+          "Hecton8.Core",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
         "name": "Hecton8.World.Outposts",
         "path": "Assets/_Project/Scripts/World/Outposts/Hecton8.World.Outposts.asmdef",
         "refs": [
@@ -981,6 +1034,29 @@
         "path": "Assets/_Project/Scripts/Animation/IK/Hecton8.Animation.IK.asmdef",
         "refs": [
           "Hecton8.Core.Contracts",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.Atmosphere.StormPropagation.Editor",
+        "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/Editor/Hecton8.Atmosphere.StormPropagation.Editor.asmdef",
+        "refs": [
+          "Hecton8.Atmosphere.StormPropagation.Runtime",
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Collections",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.Atmosphere.StormPropagation.Runtime",
+        "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/Hecton8.Atmosphere.StormPropagation.Runtime.asmdef",
+        "refs": [
+          "Hecton8.Core",
           "Hecton8.Core.Memory",
           "Unity.Burst",
           "Unity.Collections",
@@ -1245,6 +1321,7 @@
           "Hecton8.Core",
           "Hecton8.Core.Contracts",
           "Hecton8.Core.Memory",
+          "Hecton8.Rendering.BilateralDrs",
           "Hecton8.Graphics.Scalability",
           "Hecton8.Bootstrap.Contracts",
           "Hecton8.Plugins",
@@ -1256,6 +1333,9 @@
           "Unity.ResourceManager",
           "Unity.Addressables.Editor",
           "Unity.InputSystem",
+          "Unity.XR.Management",
+          "Unity.XR.Management.Editor",
+          "Unity.XR.OpenXR",
           "Unity.Mathematics",
           "Unity.Burst",
           "Unity.Jobs",
@@ -1682,6 +1762,21 @@
         ]
       },
       {
+        "name": "Hecton8.Rendering.BilateralDrs",
+        "path": "Assets/_Project/Scripts/Rendering/BilateralDrs/Hecton8.Rendering.BilateralDrs.asmdef",
+        "refs": [
+          "Hecton8.Core",
+          "Hecton8.Core.Contracts",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics",
+          "Unity.RenderPipelines.Core.Runtime",
+          "Unity.RenderPipelines.Universal.Runtime"
+        ]
+      },
+      {
         "name": "Hecton8.SeedShipAnomaly.Editor",
         "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/Hecton8.SeedShipAnomaly.Editor.asmdef",
         "refs": [
@@ -1929,6 +2024,17 @@
           "Hecton8.World.Contracts",
           "Hecton8.World.Economy",
           "Unity.Collections",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.World.HydraulicErosionForge.Editor",
+        "path": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/Hecton8.World.HydraulicErosionForge.Editor.asmdef",
+        "refs": [
+          "Hecton8.Core",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
           "Unity.Mathematics"
         ]
       },
@@ -2272,6 +2378,29 @@
         ]
       },
       {
+        "name": "Hecton8.Atmosphere.StormPropagation.Editor",
+        "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/Editor/Hecton8.Atmosphere.StormPropagation.Editor.asmdef",
+        "refs": [
+          "Hecton8.Atmosphere.StormPropagation.Runtime",
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Collections",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.Atmosphere.StormPropagation.Runtime",
+        "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/Hecton8.Atmosphere.StormPropagation.Runtime.asmdef",
+        "refs": [
+          "Hecton8.Core",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
         "name": "Hecton8.Audio.Echolocation",
         "path": "Assets/_Project/Scripts/Audio/Echolocation/Hecton8.Audio.Echolocation.asmdef",
         "refs": [
@@ -2388,12 +2517,14 @@
           "Hecton8.Core.Bucketing",
           "Hecton8.Core.Persistence.Paging",
           "Hecton8.Core.Memory",
+          "Hecton8.World.Contracts",
           "Hecton8.Audio.Virtualization.Contracts",
           "Hecton8.Input",
           "Unity.InputSystem",
           "Unity.Mathematics",
           "Unity.Burst",
           "Unity.Collections",
+          "Unity.Jobs",
           "Unity.Addressables",
           "Unity.ResourceManager",
           "Unity.Profiling.Core",
@@ -2574,6 +2705,7 @@
           "Hecton8.Core",
           "Hecton8.Core.Contracts",
           "Hecton8.Core.Memory",
+          "Hecton8.Rendering.BilateralDrs",
           "Hecton8.Graphics.Scalability",
           "Hecton8.Bootstrap.Contracts",
           "Hecton8.Plugins",
@@ -2585,6 +2717,9 @@
           "Unity.ResourceManager",
           "Unity.Addressables.Editor",
           "Unity.InputSystem",
+          "Unity.XR.Management",
+          "Unity.XR.Management.Editor",
+          "Unity.XR.OpenXR",
           "Unity.Mathematics",
           "Unity.Burst",
           "Unity.Jobs",
@@ -3220,6 +3355,21 @@
         ]
       },
       {
+        "name": "Hecton8.Rendering.BilateralDrs",
+        "path": "Assets/_Project/Scripts/Rendering/BilateralDrs/Hecton8.Rendering.BilateralDrs.asmdef",
+        "refs": [
+          "Hecton8.Core",
+          "Hecton8.Core.Contracts",
+          "Hecton8.Core.Memory",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics",
+          "Unity.RenderPipelines.Core.Runtime",
+          "Unity.RenderPipelines.Universal.Runtime"
+        ]
+      },
+      {
         "name": "Hecton8.Rendering.Editor",
         "path": "Assets/_Project/Scripts/Rendering/Editor/Hecton8.Rendering.Editor.asmdef",
         "refs": []
@@ -3406,6 +3556,7 @@
         "path": "Assets/_Project/Scripts/VFX/Bioluminescence/Editor/Hecton8.VFX.Bioluminescence.Editor.asmdef",
         "refs": [
           "Hecton8.VFX.Bioluminescence.Runtime",
+          "Unity.Collections",
           "Unity.Mathematics"
         ]
       },
@@ -3499,10 +3650,21 @@
         ]
       },
       {
+        "name": "Hecton8.World.BiomeWeightMapBaker.Editor",
+        "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/Hecton8.World.BiomeWeightMapBaker.Editor.asmdef",
+        "refs": [
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
         "name": "Hecton8.World.Contracts",
         "path": "Assets/_Project/Scripts/World/Contracts/Hecton8.World.Contracts.asmdef",
         "refs": [
           "Unity.Collections",
+          "Unity.Jobs",
           "Unity.Mathematics"
         ]
       },
@@ -3546,6 +3708,27 @@
         ]
       },
       {
+        "name": "Hecton8.World.GeographySanity.Editor",
+        "path": "Assets/_Project/Scripts/Editor/GeographySanity/Hecton8.World.GeographySanity.Editor.asmdef",
+        "refs": [
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.World.HydraulicErosionForge.Editor",
+        "path": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/Hecton8.World.HydraulicErosionForge.Editor.asmdef",
+        "refs": [
+          "Hecton8.Core",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
         "name": "Hecton8.World.OfflineGeology.Editor",
         "path": "Assets/_Project/Scripts/Editor/GeologyForge/Hecton8.World.OfflineGeology.Editor.asmdef",
         "refs": [
@@ -3583,6 +3766,24 @@
         "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/Hecton8.World.OfflineHadalArchBaker.Editor.asmdef",
         "refs": [
           "Hecton8.World.OfflineHadalArchBaker",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.World.OfflineHadalTrenchBaker",
+        "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Hecton8.World.OfflineHadalTrenchBaker.asmdef",
+        "refs": [
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.World.OfflineHadalTrenchBaker.Editor",
+        "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/Hecton8.World.OfflineHadalTrenchBaker.Editor.asmdef",
+        "refs": [
+          "Hecton8.World.OfflineHadalTrenchBaker",
           "Unity.Burst",
           "Unity.Collections",
           "Unity.Jobs",
@@ -3695,6 +3896,24 @@
         ]
       },
       {
+        "name": "Hecton8.World.StaticCaveSdfBaker",
+        "path": "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Hecton8.World.StaticCaveSdfBaker.asmdef",
+        "refs": [
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.World.StaticCaveSdfBaker.Editor",
+        "path": "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/Hecton8.World.StaticCaveSdfBaker.Editor.asmdef",
+        "refs": [
+          "Hecton8.World.StaticCaveSdfBaker",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
+          "Unity.Mathematics"
+        ]
+      },
+      {
         "name": "Hecton8.World.Streaming",
         "path": "Assets/_Project/Scripts/World/Streaming/Hecton8.World.Streaming.asmdef",
         "refs": [
@@ -3734,6 +3953,24 @@
           "Hecton8.Core.Contracts",
           "Hecton8.Core.Memory",
           "Unity.Collections",
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.World.VoxelTerrainSeamBinder",
+        "path": "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Hecton8.World.VoxelTerrainSeamBinder.asmdef",
+        "refs": [
+          "Unity.Mathematics"
+        ]
+      },
+      {
+        "name": "Hecton8.World.VoxelTerrainSeamBinder.Editor",
+        "path": "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/Hecton8.World.VoxelTerrainSeamBinder.Editor.asmdef",
+        "refs": [
+          "Hecton8.World.VoxelTerrainSeamBinder",
+          "Unity.Burst",
+          "Unity.Collections",
+          "Unity.Jobs",
           "Unity.Mathematics"
         ]
       },
@@ -4169,30 +4406,30 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9227
+        "line": 9338
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6654",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6764",
         "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2448",
-        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1817",
-        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1452",
-        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1204",
-        "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:923",
-        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:4375",
-        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:5409"
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1821",
+        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1454",
+        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1213",
+        "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:1125",
+        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:4412",
+        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:5599"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:756",
+        "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:771",
         "Assets/_Project/Scripts/Audio/Editor/ShinobuAcousticDspSmokeTester.cs:106",
         "Assets/_Project/Scripts/HectonBoidController.cs:1724",
-        "Assets/_Project/Scripts/SpatialAudioManager.cs:5075",
-        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:2068",
-        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4357",
-        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6075"
+        "Assets/_Project/Scripts/SpatialAudioManager.cs:5172",
+        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:2186",
+        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4523",
+        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6287"
       ]
     },
     {
@@ -4200,13 +4437,13 @@
       "declaration": {
         "namespace": "Hecton8.Environment",
         "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
-        "line": 3960
+        "line": 4000
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1808"
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1812"
       ],
       "consumers": []
     },
@@ -4215,7 +4452,7 @@
       "declaration": {
         "namespace": "Hecton8.Audio.Editor",
         "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs",
-        "line": 649
+        "line": 650
       },
       "methods": [
         "GetFrameSnapshot",
@@ -4224,7 +4461,7 @@
       "producers": [
         "Assets/_Project/Scripts/AcousticZoneController.cs:29",
         "Assets/_Project/Scripts/AcousticZoneController.cs:100",
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:651"
+        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:652"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:404",
@@ -4236,7 +4473,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8906
+        "line": 9017
       },
       "methods": [
         "GetFrameSnapshot",
@@ -4254,13 +4491,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8891
+        "line": 9002
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6533"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6643"
       ],
       "consumers": []
     },
@@ -4302,14 +4539,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9700
+        "line": 9811
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6935"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7045"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs:219",
@@ -4322,20 +4559,20 @@
       "declaration": {
         "namespace": "Hecton8.Audio.Editor",
         "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs",
-        "line": 639
+        "line": 640
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:633",
-        "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs:750",
+        "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:634",
+        "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs:842",
         "Assets/_Project/Scripts/PowerGrid.cs:1392"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:249",
-        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:5075"
+        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:5641"
       ]
     },
     {
@@ -4343,17 +4580,17 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8502
+        "line": 8613
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6448"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6556"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2448"
+        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2544"
       ]
     },
     {
@@ -4361,32 +4598,32 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8512
+        "line": 8623
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6456"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6566"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Core/Content/ContentRuntimeServices.cs:1059",
-        "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1097",
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7456",
+        "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1121",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7566",
         "Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:1383",
         "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:885",
-        "Assets/_Project/Scripts/HectonFluidEngine.cs:3370",
-        "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:545",
+        "Assets/_Project/Scripts/HectonFluidEngine.cs:3494",
+        "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:560",
         "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs:484",
         "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:859",
-        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:1936",
+        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:2054",
         "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:1657",
-        "Assets/_Project/Scripts/Visor/SpectrumSystem.cs:2758",
-        "Assets/_Project/Scripts/World/AbyssalThermalManager.cs:2231",
-        "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:669",
+        "Assets/_Project/Scripts/Visor/SpectrumSystem.cs:2948",
+        "Assets/_Project/Scripts/World/AbyssalThermalManager.cs:2243",
+        "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:721",
         "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs:555",
-        "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs:2022",
+        "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs:2414",
         "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:3953"
       ]
     },
@@ -4395,7 +4632,7 @@
       "declaration": {
         "namespace": "Hecton8.Equipment.Auxiliary",
         "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs",
-        "line": 182
+        "line": 209
       },
       "methods": [],
       "producers": [],
@@ -4406,7 +4643,7 @@
       "declaration": {
         "namespace": "Hecton8.Equipment.Auxiliary",
         "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs",
-        "line": 196
+        "line": 223
       },
       "methods": [],
       "producers": [],
@@ -4417,7 +4654,7 @@
       "declaration": {
         "namespace": "Hecton8.Equipment.Auxiliary",
         "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentContracts.cs",
-        "line": 211
+        "line": 238
       },
       "methods": [],
       "producers": [],
@@ -4439,14 +4676,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10355
+        "line": 10478
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6421",
-        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1244"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6530",
+        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1258"
       ],
       "consumers": []
     },
@@ -4455,13 +4692,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9870
+        "line": 9981
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6862",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6972",
         "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs:631"
       ],
       "consumers": []
@@ -4471,21 +4708,21 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8619
+        "line": 8730
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7227"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7337"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs:681",
-        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:824",
+        "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs:728",
+        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:864",
         "Assets/_Project/Scripts/Graphics/Materials/ProceduralFloraBiomeTintBridge.cs:70",
-        "Assets/_Project/Scripts/PlayerInventory.cs:4366",
-        "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs:1672"
+        "Assets/_Project/Scripts/PlayerInventory.cs:4384",
+        "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs:1673"
       ]
     },
     {
@@ -4493,7 +4730,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8630
+        "line": 8741
       },
       "methods": [
         "GetFrameSnapshot",
@@ -4504,9 +4741,9 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs:1426",
-        "Assets/_Project/Scripts/Lighting/HectonGIRelaySystem.cs:789",
-        "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs:1319",
-        "Assets/_Project/Scripts/World/EcosystemDirector.cs:2110"
+        "Assets/_Project/Scripts/Lighting/HectonGIRelaySystem.cs:786",
+        "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs:1317",
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs:2120"
       ]
     },
     {
@@ -4514,13 +4751,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9530
+        "line": 9641
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6777"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6887"
       ],
       "consumers": []
     },
@@ -4529,19 +4766,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8761
+        "line": 8872
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6477",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6587",
         "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:1476",
-        "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:498"
+        "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:513"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/SpatialAudioManager.cs:7702"
+        "Assets/_Project/Scripts/SpatialAudioManager.cs:7871"
       ]
     },
     {
@@ -4549,14 +4786,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8563
+        "line": 8674
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7206",
-        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1525"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7316",
+        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1531"
       ],
       "consumers": []
     },
@@ -4565,13 +4802,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
-        "line": 173
+        "line": 196
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7069"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7179"
       ],
       "consumers": []
     },
@@ -4580,18 +4817,18 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10224
+        "line": 10335
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:6766"
+        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:6782"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1079",
-        "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1512"
+        "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1103",
+        "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1525"
       ]
     },
     {
@@ -4599,7 +4836,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 911
+        "line": 912
       },
       "methods": [
         "Push"
@@ -4614,19 +4851,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10212
+        "line": 10323
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:6755"
+        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:6771"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1706",
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:596",
-        "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1066"
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1709",
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:644",
+        "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1090"
       ]
     },
     {
@@ -4645,14 +4882,14 @@
       "declaration": {
         "namespace": "Hecton8.Physics.Vehicles",
         "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
-        "line": 272
+        "line": 345
       },
       "methods": [
         "GetFrameSnapshot"
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:1097"
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:1404"
       ]
     },
     {
@@ -4660,7 +4897,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9311
+        "line": 9422
       },
       "methods": [
         "Push"
@@ -4675,27 +4912,27 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10240
+        "line": 10351
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6353",
-        "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs:272",
-        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1866"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6462",
+        "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs:273",
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1870"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:810",
-        "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:956",
-        "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1053",
-        "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:961",
+        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:850",
+        "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:944",
+        "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs:1077",
+        "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:1115",
         "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs:697",
-        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1120",
-        "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs:494",
-        "Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs:171",
-        "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs:1303"
+        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1124",
+        "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs:498",
+        "Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs:217",
+        "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs:1305"
       ]
     },
     {
@@ -4703,7 +4940,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10476
+        "line": 10599
       },
       "methods": [],
       "producers": [],
@@ -4714,7 +4951,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8944
+        "line": 9055
       },
       "methods": [
         "GetFrameSnapshot",
@@ -4732,13 +4969,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10013
+        "line": 10124
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6998"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7108"
       ],
       "consumers": []
     },
@@ -4754,7 +4991,7 @@
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs:319"
+        "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs:378"
       ]
     },
     {
@@ -4762,13 +4999,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8877
+        "line": 8988
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6526"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6636"
       ],
       "consumers": []
     },
@@ -4780,7 +5017,7 @@
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs:1241"
+        "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs:1270"
       ]
     },
     {
@@ -4805,7 +5042,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Physics/TetherSignals.cs:69"
+        "Assets/_Project/Scripts/Physics/TetherSignals.cs:66"
       ],
       "consumers": []
     },
@@ -4814,13 +5051,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9212
+        "line": 9323
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6645"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6755"
       ],
       "consumers": []
     },
@@ -4829,17 +5066,17 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9560
+        "line": 9671
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6797"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6907"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/PDA/PDALogbookManager.cs:616"
+        "Assets/_Project/Scripts/PDA/PDALogbookManager.cs:619"
       ]
     },
     {
@@ -4847,13 +5084,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9545
+        "line": 9656
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6784"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6894"
       ],
       "consumers": []
     },
@@ -4862,13 +5099,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8983
+        "line": 9094
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6547"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6657"
       ],
       "consumers": []
     },
@@ -4877,13 +5114,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9069
+        "line": 9180
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6589"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6699"
       ],
       "consumers": []
     },
@@ -4892,7 +5129,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
-        "line": 61
+        "line": 84
       },
       "methods": [
         "Push"
@@ -4907,13 +5144,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9115
+        "line": 9226
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6610"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6720"
       ],
       "consumers": []
     },
@@ -4922,7 +5159,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 299
+        "line": 300
       },
       "methods": [
         "Push"
@@ -4940,13 +5177,13 @@
       "declaration": {
         "namespace": "Hecton8.Environment",
         "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
-        "line": 3938
+        "line": 3978
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1776"
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1780"
       ],
       "consumers": []
     },
@@ -4966,30 +5203,29 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8776
+        "line": 8887
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs:1216",
-        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3282",
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6484",
-        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1123",
-        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1794",
-        "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs:1480",
-        "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs:260",
-        "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs:1393",
-        "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs:1203",
-        "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs:1775",
-        "Assets/_Project/Scripts/RepairTool.cs:1038",
+        "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs:1290",
+        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3345",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6594",
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1127",
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1798",
+        "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs:1504",
+        "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs:258",
+        "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs:1435",
+        "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs:1219",
+        "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs:1795",
+        "Assets/_Project/Scripts/RepairTool.cs:1045",
         "Assets/_Project/Scripts/ResourceNode.cs:947",
-        "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:384",
-        "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:3496",
-        "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs:2530",
-        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:5379",
-        "Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs:549"
+        "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:436",
+        "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:3500",
+        "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs:2632",
+        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:5565"
       ],
       "consumers": [
         "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:871"
@@ -5000,7 +5236,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 392
+        "line": 393
       },
       "methods": [
         "GetFrameSnapshot",
@@ -5010,7 +5246,7 @@
         "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeDebugSignal.cs:22"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:580"
+        "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:634"
       ]
     },
     {
@@ -5018,13 +5254,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9012
+        "line": 9123
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6561"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6671"
       ],
       "consumers": []
     },
@@ -5033,13 +5269,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9028
+        "line": 9139
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6568"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6678"
       ],
       "consumers": []
     },
@@ -5048,19 +5284,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 1178
+        "line": 1179
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/PhysicsApplySystem.cs:2784",
-        "Assets/_Project/Scripts/PhysicsApplySystem.cs:2842"
+        "Assets/_Project/Scripts/PhysicsApplySystem.cs:2963",
+        "Assets/_Project/Scripts/PhysicsApplySystem.cs:3021"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:424",
-        "Assets/_Project/Scripts/PhysicsApplySystem.cs:2797"
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:598",
+        "Assets/_Project/Scripts/PhysicsApplySystem.cs:2976"
       ]
     },
     {
@@ -5068,13 +5304,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8796
+        "line": 8907
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6491"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6601"
       ],
       "consumers": []
     },
@@ -5094,7 +5330,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 573
+        "line": 574
       },
       "methods": [
         "Push"
@@ -5109,13 +5345,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9776
+        "line": 9887
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6848"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6958"
       ],
       "consumers": []
     },
@@ -5132,7 +5368,7 @@
       ],
       "producers": [
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:466",
-        "Assets/_Project/Scripts/HectonDirectorAI.cs:247"
+        "Assets/_Project/Scripts/HectonDirectorAI.cs:262"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:408",
@@ -5144,15 +5380,15 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 803
+        "line": 804
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:2610",
-        "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs:1501"
+        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:2673",
+        "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs:1588"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:1060"
@@ -5163,15 +5399,15 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 824
+        "line": 825
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:2643",
-        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:2661",
-        "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs:1532"
+        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:2706",
+        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:2724",
+        "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs:1621"
       ],
       "consumers": []
     },
@@ -5180,14 +5416,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 782
+        "line": 783
       },
       "methods": [
         "GetFrameSnapshot"
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:2266"
+        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:2329"
       ]
     },
     {
@@ -5195,14 +5431,14 @@
       "declaration": {
         "namespace": "Hecton8.Construction",
         "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
-        "line": 724
+        "line": 775
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:2843",
-        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3030"
+        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:2906",
+        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3093"
       ],
       "consumers": []
     },
@@ -5211,14 +5447,14 @@
       "declaration": {
         "namespace": "Hecton8.Construction",
         "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
-        "line": 713
+        "line": 764
       },
       "methods": [
         "GetFrameSnapshot"
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3590"
+        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3653"
       ]
     },
     {
@@ -5226,13 +5462,13 @@
       "declaration": {
         "namespace": "Hecton8.Construction",
         "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
-        "line": 702
+        "line": 753
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3000"
+        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3063"
       ],
       "consumers": []
     },
@@ -5241,17 +5477,17 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8522
+        "line": 8633
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6463"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6573"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs:1608"
+        "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs:1980"
       ]
     },
     {
@@ -5266,7 +5502,7 @@
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:938"
+        "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:926"
       ]
     },
     {
@@ -5274,13 +5510,13 @@
       "declaration": {
         "namespace": "Hecton8.Environment",
         "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
-        "line": 3922
+        "line": 3962
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:2080"
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:2104"
       ],
       "consumers": []
     },
@@ -5300,13 +5536,13 @@
       "declaration": {
         "namespace": "Hecton8.Gameplay",
         "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
-        "line": 2643
+        "line": 2639
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs:984"
+        "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs:975"
       ],
       "consumers": []
     },
@@ -5315,19 +5551,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8818
+        "line": 8929
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs:669",
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6498"
+        "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs:666",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6608"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs:1604",
-        "Assets/_Project/Scripts/World/EcosystemDirector.cs:5267"
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs:5321"
       ]
     },
     {
@@ -5335,13 +5571,13 @@
       "declaration": {
         "namespace": "Hecton8.Gameplay",
         "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
-        "line": 2657
+        "line": 2653
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs:1009"
+        "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs:1001"
       ],
       "consumers": []
     },
@@ -5350,14 +5586,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8831
+        "line": 8942
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs:393",
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6505"
+        "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs:392",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6615"
       ],
       "consumers": []
     },
@@ -5394,7 +5630,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:624"
+        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:612"
       ],
       "consumers": []
     },
@@ -5425,19 +5661,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10141
+        "line": 10252
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7150"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7260"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1724",
-        "Assets/_Project/Scripts/Fauna/FaunaBrain.cs:4180",
-        "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs:1400"
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1727",
+        "Assets/_Project/Scripts/Fauna/FaunaBrain.cs:4285",
+        "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs:1420"
       ]
     },
     {
@@ -5467,13 +5703,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9432
+        "line": 9543
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6726"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6836"
       ],
       "consumers": []
     },
@@ -5482,17 +5718,17 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8544
+        "line": 8655
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7199",
-        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1549",
-        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:5051",
-        "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs:1350",
-        "Assets/_Project/Scripts/World/FloraInteractionManager.cs:4248"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7309",
+        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1555",
+        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:5093",
+        "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs:1656",
+        "Assets/_Project/Scripts/World/FloraInteractionManager.cs:4267"
       ],
       "consumers": []
     },
@@ -5501,15 +5737,15 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9396
+        "line": 9507
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6710",
-        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1243"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6820",
+        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1239"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs:705"
@@ -5520,13 +5756,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8690
+        "line": 8801
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7241"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7351"
       ],
       "consumers": []
     },
@@ -5535,13 +5771,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10453
+        "line": 10576
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:5139"
+        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:5160"
       ],
       "consumers": []
     },
@@ -5561,8 +5797,8 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs:1650",
-        "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1281",
-        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:2051"
+        "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1340",
+        "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:2169"
       ]
     },
     {
@@ -5570,13 +5806,13 @@
       "declaration": {
         "namespace": "Hecton8.Environment",
         "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
-        "line": 3982
+        "line": 4022
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1757"
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1761"
       ],
       "consumers": []
     },
@@ -5585,13 +5821,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
-        "line": 129
+        "line": 152
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7005"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7115"
       ],
       "consumers": []
     },
@@ -5600,13 +5836,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8598
+        "line": 8709
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7220"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7330"
       ],
       "consumers": []
     },
@@ -5615,13 +5851,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9761
+        "line": 9872
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6841",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6951",
         "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs:554",
         "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs:2432"
       ],
@@ -5632,13 +5868,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8999
+        "line": 9110
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6554"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6664"
       ],
       "consumers": []
     },
@@ -5647,7 +5883,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 77
+        "line": 78
       },
       "methods": [
         "Push"
@@ -5674,16 +5910,17 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8222
+        "line": 8333
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6379",
-        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1468",
-        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:595",
-        "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:409"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6488",
+        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:1471",
+        "Assets/_Project/Scripts/LaserCutter.cs:2037",
+        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:583",
+        "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:461"
       ],
       "consumers": []
     },
@@ -5710,22 +5947,22 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8178
+        "line": 8289
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6372"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6481"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:243",
-        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:3273",
-        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2509",
+        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:3785",
+        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2605",
         "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs:609",
         "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs:1559",
-        "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs:1270"
+        "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs:1272"
       ]
     },
     {
@@ -5733,20 +5970,20 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10313
+        "line": 10436
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6408",
-        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1937",
-        "Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs:594"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6517",
+        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1981",
+        "Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs:724"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:965",
-        "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs:1228",
+        "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:953",
+        "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs:1257",
         "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs:1542"
       ]
     },
@@ -5755,19 +5992,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10338
+        "line": 10461
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3119",
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6415",
-        "Assets/_Project/Scripts/RepairTool.cs:1515"
+        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3182",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6524",
+        "Assets/_Project/Scripts/RepairTool.cs:1653"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1162"
+        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1169"
       ]
     },
     {
@@ -5775,13 +6012,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9339
+        "line": 9450
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6682"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6792"
       ],
       "consumers": []
     },
@@ -5790,20 +6027,20 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8161
+        "line": 8272
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6365",
-        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1826",
-        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:5017",
-        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:5087"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6474",
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1830",
+        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:5057",
+        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:5128"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/World/SoundscapeSystem.cs:739"
+        "Assets/_Project/Scripts/World/SoundscapeSystem.cs:811"
       ]
     },
     {
@@ -5811,7 +6048,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 507
+        "line": 508
       },
       "methods": [
         "Push"
@@ -5826,21 +6063,21 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 967
+        "line": 968
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/InputDispatcher.cs:625"
+        "Assets/_Project/Scripts/Core/InputDispatcher.cs:629"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs:742",
         "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:598",
-        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:1665",
+        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:1753",
         "Assets/_Project/Scripts/UI/InteractionUI.cs:908",
-        "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5842"
+        "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5875"
       ]
     },
     {
@@ -5848,13 +6085,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9369
+        "line": 9480
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6696"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6806"
       ],
       "consumers": []
     },
@@ -5863,28 +6100,28 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8383
+        "line": 8494
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/PlayerInventory.cs:4216"
+        "Assets/_Project/Scripts/PlayerInventory.cs:4234"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Gameplay/PDAExchangeSystem.cs:669",
-        "Assets/_Project/Scripts/Gameplay/SuitUpgradeManager.cs:866",
-        "Assets/_Project/Scripts/HectonPlayerMovement.cs:4688",
-        "Assets/_Project/Scripts/PDAInventoryTab.cs:449",
-        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:373",
+        "Assets/_Project/Scripts/Gameplay/PDAExchangeSystem.cs:666",
+        "Assets/_Project/Scripts/Gameplay/SuitUpgradeManager.cs:869",
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs:4808",
+        "Assets/_Project/Scripts/PDAInventoryTab.cs:512",
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:547",
         "Assets/_Project/Scripts/PlayerToolManager.cs:1980",
-        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:2839",
+        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:2866",
         "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:279",
         "Assets/_Project/Scripts/UI/PDAConstructionTab.cs:326",
         "Assets/_Project/Scripts/UI/PDALoadoutTab.cs:288",
-        "Assets/_Project/Scripts/UI/PDAShellChrome.cs:537",
-        "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5820"
+        "Assets/_Project/Scripts/UI/PDAShellChrome.cs:563",
+        "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5853"
       ]
     },
     {
@@ -5892,14 +6129,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8367
+        "line": 8478
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3031",
+        "Assets/_Project/Scripts/Construction/DroneFleetManager.cs:3094",
         "Assets/_Project/Scripts/PlayerInventory.cs:2090"
       ],
       "consumers": [
@@ -5911,23 +6148,23 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8418
+        "line": 8529
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7104",
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7122",
-        "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:3515"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7214",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7232",
+        "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:3519"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs:1615",
-        "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:622",
-        "Assets/_Project/Scripts/PlayerInventory.cs:4380",
-        "Assets/_Project/Scripts/PlayerInventory.cs:4405",
-        "Assets/_Project/Scripts/World/EcosystemDirector.cs:5278"
+        "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:628",
+        "Assets/_Project/Scripts/PlayerInventory.cs:4398",
+        "Assets/_Project/Scripts/PlayerInventory.cs:4423",
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs:5332"
       ]
     },
     {
@@ -5935,13 +6172,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10057
+        "line": 10168
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7097"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7207"
       ],
       "consumers": []
     },
@@ -5950,21 +6187,21 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8397
+        "line": 8508
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6869",
-        "Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs:952"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6979",
+        "Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs:959"
       ],
       "consumers": [
         "Assets/_Project/Scripts/HUDQuickBar.cs:337",
         "Assets/_Project/Scripts/PlayerToolManager.cs:2012",
         "Assets/_Project/Scripts/UI/PDALoadoutTab.cs:307",
-        "Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs:292"
+        "Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs:293"
       ]
     },
     {
@@ -5972,7 +6209,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 631
+        "line": 632
       },
       "methods": [
         "GetFrameSnapshot",
@@ -5983,8 +6220,8 @@
         "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs:1515"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs:1217",
-        "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs:835"
+        "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs:1222",
+        "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs:837"
       ]
     },
     {
@@ -5995,19 +6232,22 @@
         "line": 30
       },
       "methods": [
+        "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
         "Assets/_Project/Scripts/Core/HomeostasisBrain.cs:864"
       ],
-      "consumers": []
+      "consumers": [
+        "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1334"
+      ]
     },
     {
       "name": "LaserCutterEventPayload",
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 1047
+        "line": 1048
       },
       "methods": [
         "GetFrameSnapshot"
@@ -6015,7 +6255,7 @@
       "producers": [],
       "consumers": [
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:247",
-        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:4840"
+        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:5406"
       ]
     },
     {
@@ -6026,11 +6266,10 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/LaserCutter.cs:288",
-        "Assets/_Project/Scripts/LaserCutter.cs:300"
+        "Assets/_Project/Scripts/LaserCutter.cs:379"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/LaserCutter.cs:115"
+        "Assets/_Project/Scripts/LaserCutter.cs:194"
       ]
     },
     {
@@ -6038,13 +6277,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10080
+        "line": 10191
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7136"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7246"
       ],
       "consumers": []
     },
@@ -6068,7 +6307,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 985
+        "line": 986
       },
       "methods": [
         "Push"
@@ -6083,7 +6322,7 @@
       "declaration": {
         "namespace": "Hecton8.Inventory",
         "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
-        "line": 137
+        "line": 126
       },
       "methods": [],
       "producers": [],
@@ -6094,17 +6333,17 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9516
+        "line": 9627
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6770"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6880"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs:868"
+        "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs:766"
       ]
     },
     {
@@ -6112,7 +6351,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
-        "line": 1142
+        "line": 1181
       },
       "methods": [],
       "producers": [],
@@ -6123,18 +6362,18 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9913
+        "line": 10024
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6970"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7080"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/SaveManager.cs:1406",
-        "Assets/_Project/Scripts/World/EcosystemDirector.cs:3899",
+        "Assets/_Project/Scripts/SaveManager.cs:1443",
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs:3947",
         "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs:540"
       ]
     },
@@ -6143,13 +6382,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9736
+        "line": 9847
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6949"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7059"
       ],
       "consumers": []
     },
@@ -6164,7 +6403,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:584"
+        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:572"
       ],
       "consumers": []
     },
@@ -6173,18 +6412,18 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9144
+        "line": 9255
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6624"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6734"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Core/Diagnostics/Visuals/VaultMemoryGizmoVisualizer.cs:41",
-        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:2023"
+        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:2050"
       ]
     },
     {
@@ -6208,18 +6447,18 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9130
+        "line": 9241
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6617"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6727"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:703",
-        "Assets/_Project/Scripts/UI/PDAShellChrome.cs:508",
+        "Assets/_Project/Scripts/UI/PDAShellChrome.cs:534",
         "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4085"
       ]
     },
@@ -6243,13 +6482,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8706
+        "line": 8817
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7248"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7358"
       ],
       "consumers": []
     },
@@ -6335,14 +6574,14 @@
       "declaration": {
         "namespace": "Hecton8.Physics.Vehicles",
         "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
-        "line": 237
+        "line": 310
       },
       "methods": [
         "GetFrameSnapshot"
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:414"
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:588"
       ]
     },
     {
@@ -6372,14 +6611,14 @@
       "declaration": {
         "namespace": "Hecton8.Physics.Vehicles",
         "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
-        "line": 255
+        "line": 328
       },
       "methods": [
         "GetFrameSnapshot"
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:439"
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:613"
       ]
     },
     {
@@ -6424,13 +6663,13 @@
       "declaration": {
         "namespace": "Hecton8.Environment",
         "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
-        "line": 3887
+        "line": 3927
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1680"
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1684"
       ],
       "consumers": []
     },
@@ -6439,7 +6678,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
-        "line": 1071
+        "line": 1110
       },
       "methods": [],
       "producers": [],
@@ -6450,7 +6689,7 @@
       "declaration": {
         "namespace": "Hecton8.Quest",
         "path": "Assets/_Project/Scripts/Quest/QuestDagRuntimeTypes.cs",
-        "line": 116
+        "line": 200
       },
       "methods": [],
       "producers": [],
@@ -6461,14 +6700,14 @@
       "declaration": {
         "namespace": "Hecton8.AI.Ecosystem",
         "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-        "line": 3275
+        "line": 3294
       },
       "methods": [
         "GetFrameSnapshot"
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1742"
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1745"
       ]
     },
     {
@@ -6476,7 +6715,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts",
         "path": "Assets/_Project/Scripts/Core/Contracts/DrsContracts.cs",
-        "line": 123
+        "line": 282
       },
       "methods": [],
       "producers": [],
@@ -6487,7 +6726,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts",
         "path": "Assets/_Project/Scripts/Core/Contracts/DrsContracts.cs",
-        "line": 155
+        "line": 314
       },
       "methods": [],
       "producers": [],
@@ -6498,7 +6737,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
-        "line": 1125
+        "line": 1164
       },
       "methods": [],
       "producers": [],
@@ -6509,7 +6748,7 @@
       "declaration": {
         "namespace": "Hecton8.Quest",
         "path": "Assets/_Project/Scripts/Quest/QuestDagRuntimeTypes.cs",
-        "line": 101
+        "line": 185
       },
       "methods": [],
       "producers": [],
@@ -6520,7 +6759,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Data",
         "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
-        "line": 1687
+        "line": 1734
       },
       "methods": [],
       "producers": [],
@@ -6612,13 +6851,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9041
+        "line": 9152
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6575"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6685"
       ],
       "consumers": []
     },
@@ -6627,19 +6866,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9254
+        "line": 9365
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6661"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6771"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:719",
-        "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs:707",
-        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6048"
+        "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:734",
+        "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs:730",
+        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6260"
       ]
     },
     {
@@ -6647,13 +6886,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8661
+        "line": 8772
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7234"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7344"
       ],
       "consumers": []
     },
@@ -6662,13 +6901,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8723
+        "line": 8834
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7255"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7365"
       ],
       "consumers": []
     },
@@ -6677,18 +6916,18 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8747
+        "line": 8858
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7269"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7379"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:1507",
-        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:836"
+        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:1515",
+        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:876"
       ]
     },
     {
@@ -6696,13 +6935,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9354
+        "line": 9465
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6689"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6799"
       ],
       "consumers": []
     },
@@ -6711,14 +6950,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9815
+        "line": 9926
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6904"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7014"
       ],
       "consumers": [
         "Assets/_Project/Scripts/UI/PDABarterTab.cs:198",
@@ -6730,7 +6969,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 1132
+        "line": 1133
       },
       "methods": [
         "GetFrameSnapshot",
@@ -6738,16 +6977,16 @@
       ],
       "producers": [
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:245",
-        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:5020",
-        "Assets/_Project/Scripts/PhysicsApplySystem.cs:923",
-        "Assets/_Project/Scripts/PhysicsApplySystem.cs:957"
+        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:5586",
+        "Assets/_Project/Scripts/PhysicsApplySystem.cs:915",
+        "Assets/_Project/Scripts/PhysicsApplySystem.cs:949"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:122",
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:244",
-        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:4981",
-        "Assets/_Project/Scripts/PhysicsApplySystem.cs:763",
-        "Assets/_Project/Scripts/SpatialAudioManager.cs:5055"
+        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:5547",
+        "Assets/_Project/Scripts/PhysicsApplySystem.cs:755",
+        "Assets/_Project/Scripts/SpatialAudioManager.cs:5152"
       ]
     },
     {
@@ -6755,13 +6994,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10154
+        "line": 10265
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7164"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7274"
       ],
       "consumers": []
     },
@@ -6770,13 +7009,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9445
+        "line": 9556
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6733"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6843"
       ],
       "consumers": []
     },
@@ -6796,7 +7035,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Data",
         "path": "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs",
-        "line": 1700
+        "line": 1747
       },
       "methods": [],
       "producers": [],
@@ -6807,14 +7046,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8339
+        "line": 8450
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6890"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7000"
       ],
       "consumers": [
         "Assets/_Project/Scripts/UI/ActionProgressHUD.cs:141"
@@ -6825,14 +7064,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8323
+        "line": 8434
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6883"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6993"
       ],
       "consumers": [
         "Assets/_Project/Scripts/UI/ActionProgressHUD.cs:137"
@@ -6843,14 +7082,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8304
+        "line": 8415
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6876"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6986"
       ],
       "consumers": [
         "Assets/_Project/Scripts/UI/ActionProgressHUD.cs:133"
@@ -6861,14 +7100,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10379
+        "line": 10502
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6428"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6537"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs:765",
@@ -6880,14 +7119,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10394
+        "line": 10517
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6435"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6544"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs:784",
@@ -6906,12 +7145,12 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10535"
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10729"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs:6071",
+        "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs:6106",
         "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:705",
-        "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs:322"
+        "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs:342"
       ]
     },
     {
@@ -6926,7 +7165,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10559"
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10753"
       ],
       "consumers": [
         "Assets/_Project/Scripts/UI/HectonOSBootManager.cs:215",
@@ -6945,7 +7184,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10501"
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10695"
       ],
       "consumers": [
         "Assets/_Project/Scripts/PlayerFootstepAudio.cs:224"
@@ -6956,32 +7195,32 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 1230
+        "line": 1231
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/InputDispatcher.cs:3202"
+        "Assets/_Project/Scripts/Core/InputDispatcher.cs:3194"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:567",
         "Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:584",
         "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:2191",
         "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs:2212",
-        "Assets/_Project/Scripts/HectonFabricatorUI.cs:620",
-        "Assets/_Project/Scripts/HectonFabricatorUI.cs:646",
+        "Assets/_Project/Scripts/HectonFabricatorUI.cs:628",
+        "Assets/_Project/Scripts/HectonFabricatorUI.cs:654",
         "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:314",
         "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:331",
         "Assets/_Project/Scripts/MainMenuController.cs:897",
         "Assets/_Project/Scripts/MainMenuController.cs:913",
-        "Assets/_Project/Scripts/PlayerBuilder.cs:709",
-        "Assets/_Project/Scripts/PlayerBuilder.cs:726",
-        "Assets/_Project/Scripts/PlayerFlashlight.cs:881",
-        "Assets/_Project/Scripts/PlayerFlashlight.cs:898",
-        "Assets/_Project/Scripts/PlayerPDA.cs:1606",
-        "Assets/_Project/Scripts/PlayerPDA.cs:1638",
+        "Assets/_Project/Scripts/PlayerBuilder.cs:715",
+        "Assets/_Project/Scripts/PlayerBuilder.cs:732",
+        "Assets/_Project/Scripts/PlayerFlashlight.cs:926",
+        "Assets/_Project/Scripts/PlayerFlashlight.cs:943",
+        "Assets/_Project/Scripts/PlayerPDA.cs:1660",
+        "Assets/_Project/Scripts/PlayerPDA.cs:1692",
         "Assets/_Project/Scripts/PlayerToolManager.cs:1205",
         "Assets/_Project/Scripts/PlayerToolManager.cs:1224",
         "Assets/_Project/Scripts/UI/PauseMenuController.cs:1836"
@@ -6992,7 +7231,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 1249
+        "line": 1250
       },
       "methods": [
         "GetFrameSnapshot",
@@ -7000,7 +7239,7 @@
       ],
       "producers": [
         "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:611",
-        "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:631"
+        "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:633"
       ],
       "consumers": [
         "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs:456"
@@ -7018,9 +7257,9 @@
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:1030",
-        "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs:2008",
-        "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:194"
+        "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:1184",
+        "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs:3181",
+        "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:201"
       ]
     },
     {
@@ -7035,7 +7274,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10547"
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10741"
       ],
       "consumers": [
         "Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs:1209"
@@ -7046,22 +7285,22 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8248
+        "line": 8359
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6388"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6497"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1695",
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:588",
-        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2079",
-        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2532",
-        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2633",
-        "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5803"
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1698",
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:636",
+        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2169",
+        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2628",
+        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2729",
+        "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5836"
       ]
     },
     {
@@ -7069,18 +7308,18 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10181
+        "line": 10292
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7178"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7288"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2550",
-        "Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs:321"
+        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2646",
+        "Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs:322"
       ]
     },
     {
@@ -7095,7 +7334,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10575"
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10769"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:1396"
@@ -7113,10 +7352,10 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10524"
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10718"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs:997",
+        "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs:999",
         "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:713"
       ]
     },
@@ -7125,13 +7364,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9636
+        "line": 9747
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6827"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6937"
       ],
       "consumers": []
     },
@@ -7140,7 +7379,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 323
+        "line": 324
       },
       "methods": [
         "Push"
@@ -7156,7 +7395,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 347
+        "line": 348
       },
       "methods": [
         "Push"
@@ -7172,13 +7411,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8585
+        "line": 8696
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7213"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7323"
       ],
       "consumers": []
     },
@@ -7187,19 +7426,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9719
+        "line": 9830
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6942"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7052"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs:259",
         "Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:226",
-        "Assets/_Project/Scripts/HectonFluidEngine.cs:3013",
+        "Assets/_Project/Scripts/HectonFluidEngine.cs:3137",
         "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs:415"
       ]
     },
@@ -7208,7 +7447,7 @@
       "declaration": {
         "namespace": "Hecton8.Quest",
         "path": "Assets/_Project/Scripts/Quest/QuestDagRuntimeTypes.cs",
-        "line": 132
+        "line": 216
       },
       "methods": [],
       "producers": [],
@@ -7230,19 +7469,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8431
+        "line": 8542
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7111",
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7125"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7221",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7235"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:670",
-        "Assets/_Project/Scripts/Rendering/GlobalShaderDispatcher.cs:1150",
+        "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:676",
+        "Assets/_Project/Scripts/Rendering/GlobalShaderDispatcher.cs:1039",
         "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs:858"
       ]
     },
@@ -7251,18 +7490,18 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8472
+        "line": 8583
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:99",
-        "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:112"
+        "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:101",
+        "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:114"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:646"
+        "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:652"
       ]
     },
     {
@@ -7285,13 +7524,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8867
+        "line": 8978
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6519"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6629"
       ],
       "consumers": []
     },
@@ -7300,13 +7539,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9885
+        "line": 9996
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6956"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7066"
       ],
       "consumers": []
     },
@@ -7315,7 +7554,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 456
+        "line": 457
       },
       "methods": [
         "Push"
@@ -7359,13 +7598,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9169
+        "line": 9280
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6631",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6741",
         "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:1636"
       ],
       "consumers": []
@@ -7375,14 +7614,15 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8488
+        "line": 8599
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7118",
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7128"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7228",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7238",
+        "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs:1022"
       ],
       "consumers": []
     },
@@ -7391,7 +7631,7 @@
       "declaration": {
         "namespace": "Hecton8.Physiology",
         "path": "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
-        "line": 1266
+        "line": 1469
       },
       "methods": [],
       "producers": [],
@@ -7402,13 +7642,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9473
+        "line": 9584
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6747"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6857"
       ],
       "consumers": []
     },
@@ -7417,13 +7657,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
-        "line": 92
+        "line": 115
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/SaveManager.cs:2198"
+        "Assets/_Project/Scripts/SaveManager.cs:2235"
       ],
       "consumers": []
     },
@@ -7432,13 +7672,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9898
+        "line": 10009
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6963"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7073"
       ],
       "consumers": []
     },
@@ -7447,7 +7687,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9987
+        "line": 10098
       },
       "methods": [
         "Push"
@@ -7462,13 +7702,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
-        "line": 108
+        "line": 131
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/SaveManager.cs:2172"
+        "Assets/_Project/Scripts/SaveManager.cs:2209"
       ],
       "consumers": []
     },
@@ -7477,7 +7717,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 36
+        "line": 37
       },
       "methods": [
         "GetFrameSnapshot",
@@ -7487,19 +7727,19 @@
         "Assets/_Project/Scripts/Core/IPlatformIntegration.cs:137"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:870",
-        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:840",
+        "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs:894",
+        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:880",
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:131",
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:271",
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:447",
         "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs:477",
-        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:2206",
+        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:2699",
         "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs:171",
-        "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:286",
+        "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:291",
         "Assets/_Project/Scripts/Core/IPlatformIntegration.cs:148",
-        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1732",
-        "Assets/_Project/Scripts/SpatialAudioManager.cs:1466",
-        "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:1837"
+        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1746",
+        "Assets/_Project/Scripts/SpatialAudioManager.cs:1557",
+        "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:1867"
       ]
     },
     {
@@ -7507,17 +7747,18 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9503
+        "line": 9614
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6763"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6873",
+        "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs:996"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs:856"
+        "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs:754"
       ]
     },
     {
@@ -7525,18 +7766,18 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9795
+        "line": 9906
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6897"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7007"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Gameplay/PDAExchangeSystem.cs:687",
-        "Assets/_Project/Scripts/PDA/PDALogbookManager.cs:638"
+        "Assets/_Project/Scripts/Gameplay/PDAExchangeSystem.cs:684",
+        "Assets/_Project/Scripts/PDA/PDALogbookManager.cs:641"
       ]
     },
     {
@@ -7544,18 +7785,34 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9486
+        "line": 9597
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6756"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6866",
+        "Assets/_Project/Scripts/ScannerTool.cs:1000"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs:444",
-        "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:646"
+        "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs:472",
+        "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:698"
+      ]
+    },
+    {
+      "name": "SeaglidePropulsionRequestSignal",
+      "declaration": {
+        "namespace": "Hecton8.Physics",
+        "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsContracts.cs",
+        "line": 119
+      },
+      "methods": [
+        "GetFrameSnapshot"
+      ],
+      "producers": [],
+      "consumers": [
+        "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:478"
       ]
     },
     {
@@ -7563,7 +7820,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9296
+        "line": 9407
       },
       "methods": [
         "GetFrameSnapshot",
@@ -7573,7 +7830,7 @@
         "Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs:566"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/World/EcosystemDirector.cs:3883"
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs:3931"
       ]
     },
     {
@@ -7581,7 +7838,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9281
+        "line": 9392
       },
       "methods": [
         "GetFrameSnapshot",
@@ -7593,7 +7850,7 @@
       ],
       "consumers": [
         "Assets/_Project/Scripts/Core/PrologueSequenceRegistryBridge.cs:271",
-        "Assets/_Project/Scripts/World/EcosystemDirector.cs:3908"
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs:3956"
       ]
     },
     {
@@ -7601,13 +7858,13 @@
       "declaration": {
         "namespace": "Hecton8.Environment",
         "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
-        "line": 3904
+        "line": 3944
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1748"
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1752"
       ],
       "consumers": []
     },
@@ -7616,14 +7873,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10028
+        "line": 10139
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7014"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7124"
       ],
       "consumers": [
         "Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs:1541"
@@ -7649,7 +7906,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
-        "line": 1104
+        "line": 1143
       },
       "methods": [],
       "producers": [],
@@ -7666,7 +7923,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:609"
+        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs:597"
       ],
       "consumers": []
     },
@@ -7675,13 +7932,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10438
+        "line": 10561
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:5098"
+        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:5119"
       ],
       "consumers": []
     },
@@ -7690,13 +7947,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
-        "line": 158
+        "line": 181
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7041"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7151"
       ],
       "consumers": []
     },
@@ -7705,13 +7962,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8852
+        "line": 8963
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6512"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6622"
       ],
       "consumers": []
     },
@@ -7720,13 +7977,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9326
+        "line": 9437
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6675"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6785"
       ],
       "consumers": []
     },
@@ -7735,13 +7992,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8736
+        "line": 8847
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7262"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7372"
       ],
       "consumers": []
     },
@@ -7750,13 +8007,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9458
+        "line": 9569
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6740"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6850"
       ],
       "consumers": []
     },
@@ -7765,18 +8022,18 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 1076
+        "line": 1077
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs:155",
-        "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs:176"
+        "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs:188",
+        "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs:208"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs:122"
+        "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs:155"
       ]
     },
     {
@@ -7784,7 +8041,7 @@
       "declaration": {
         "namespace": "Hecton8.Quest",
         "path": "Assets/_Project/Scripts/Quest/QuestDagRuntimeTypes.cs",
-        "line": 86
+        "line": 170
       },
       "methods": [
         "Push"
@@ -7799,7 +8056,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 538
+        "line": 539
       },
       "methods": [
         "Push"
@@ -7814,13 +8071,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9666
+        "line": 9777
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6921"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7031"
       ],
       "consumers": []
     },
@@ -7829,13 +8086,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9687
+        "line": 9798
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6928"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7038"
       ],
       "consumers": []
     },
@@ -7844,19 +8101,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9409
+        "line": 9520
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6717",
-        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:2684"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6827",
+        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs:2711"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:962",
-        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:405"
+        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:960",
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:579"
       ]
     },
     {
@@ -7864,19 +8121,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10108
+        "line": 10219
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7143"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7253"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:609",
-        "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3614",
-        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4229"
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs:657",
+        "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3784",
+        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:4395"
       ]
     },
     {
@@ -7891,7 +8148,7 @@
       ],
       "producers": [],
       "consumers": [
-        "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:515"
+        "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:555"
       ]
     },
     {
@@ -7899,14 +8156,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9085
+        "line": 9196
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6603"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6713"
       ],
       "consumers": [
         "Assets/_Project/Scripts/UI/SubtitleManager.cs:778"
@@ -7928,21 +8185,21 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8288
+        "line": 8399
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6401"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6510"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:817",
+        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:857",
         "Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs:1629",
         "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:843",
         "Assets/_Project/Scripts/UI/SuitAdvisoryController.cs:161",
-        "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:4564",
+        "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:4597",
         "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs:846",
         "Assets/_Project/Scripts/Visor/VisorHUDController.cs:1456"
       ]
@@ -7952,15 +8209,15 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9268
+        "line": 9379
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6668",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6778",
         "Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs:555",
-        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6127"
+        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6342"
       ],
       "consumers": []
     },
@@ -7969,7 +8226,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 598
+        "line": 599
       },
       "methods": [
         "Push"
@@ -7985,7 +8242,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 1007
+        "line": 1008
       },
       "methods": [
         "GetFrameSnapshot",
@@ -8003,34 +8260,33 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9192
+        "line": 9303
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6638",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6748",
         "Assets/_Project/Scripts/Core/HomeostasisBrain.cs:878",
         "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1072"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1764",
-        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:799",
-        "Assets/_Project/Scripts/Core/InputDispatcher.cs:3499",
-        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:3120",
-        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:4789",
-        "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs:1422",
-        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2603",
-        "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs:735",
-        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:993",
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1767",
+        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs:839",
+        "Assets/_Project/Scripts/Core/InputDispatcher.cs:3491",
+        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:3196",
+        "Assets/_Project/Scripts/Core/SystemDispatcher.cs:4810",
+        "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs:1444",
+        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs:2699",
+        "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs:747",
+        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:991",
         "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs:595",
-        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1741",
-        "Assets/_Project/Scripts/LaserCutter.cs:1615",
-        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:382",
+        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs:1755",
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:556",
         "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs:1663",
-        "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:730",
-        "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:309",
+        "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:747",
+        "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:362",
         "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs:866",
         "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:1408",
         "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:4093"
@@ -8041,7 +8297,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 421
+        "line": 422
       },
       "methods": [
         "GetFrameSnapshot",
@@ -8051,15 +8307,34 @@
         "Assets/_Project/Scripts/Core/HomeostasisBrain.cs:824"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1273",
+        "Assets/_Project/Scripts/Core/Diagnostics/Visuals/ArchitectEyeVisualizer.cs:1326",
         "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs:585",
         "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:848",
-        "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:423",
+        "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:426",
         "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:1078",
-        "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1536",
+        "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs:1549",
         "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:851",
-        "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5860",
-        "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:1842"
+        "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:5893",
+        "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:1872"
+      ]
+    },
+    {
+      "name": "SystemKillSwitchBitsSignal",
+      "declaration": {
+        "namespace": "Hecton8.Core.Contracts.Signals",
+        "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+        "line": 44
+      },
+      "methods": [
+        "GetFrameSnapshot",
+        "Push"
+      ],
+      "producers": [
+        "Assets/_Project/Scripts/Core/GlobalRegistry.cs:844"
+      ],
+      "consumers": [
+        "Assets/_Project/Scripts/HectonFluidEngine.cs:6062",
+        "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:5048"
       ]
     },
     {
@@ -8067,15 +8342,15 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10424
+        "line": 10547
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7049",
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7056",
-        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:1077"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7159",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7166",
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:1088"
       ],
       "consumers": []
     },
@@ -8084,13 +8359,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8968
+        "line": 9079
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6540"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6650"
       ],
       "consumers": []
     },
@@ -8099,13 +8374,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8444
+        "line": 8555
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6470"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6580"
       ],
       "consumers": []
     },
@@ -8136,7 +8411,7 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 751
+        "line": 752
       },
       "methods": [],
       "producers": [],
@@ -8147,17 +8422,17 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 714
+        "line": 715
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Physics/TetherSignals.cs:76"
+        "Assets/_Project/Scripts/Physics/TetherSignals.cs:73"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Physics/TetherSignals.cs:89"
+        "Assets/_Project/Scripts/Physics/TetherSignals.cs:86"
       ]
     },
     {
@@ -8165,13 +8440,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 669
+        "line": 670
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Physics/TetherSignals.cs:83"
+        "Assets/_Project/Scripts/Physics/TetherSignals.cs:80"
       ],
       "consumers": []
     },
@@ -8180,17 +8455,17 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8461
+        "line": 8572
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/World/AbyssalThermalManager.cs:3211"
+        "Assets/_Project/Scripts/World/AbyssalThermalManager.cs:3229"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.cs:514"
+        "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.cs:516"
       ]
     },
     {
@@ -8198,21 +8473,21 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9853
+        "line": 9964
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6855",
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6965",
         "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs:618"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs:602",
         "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs:878",
-        "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:445",
-        "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs:1542"
+        "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:448",
+        "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs:1552"
       ]
     },
     {
@@ -8226,7 +8501,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:923"
+        "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:940"
       ],
       "consumers": []
     },
@@ -8246,13 +8521,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
-        "line": 143
+        "line": 166
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7028"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7138"
       ],
       "consumers": []
     },
@@ -8261,15 +8536,17 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9617
+        "line": 9728
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6820",
-        "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:397",
-        "Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs:355"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6930",
+        "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs:961",
+        "Assets/_Project/Scripts/LaserCutter.cs:2018",
+        "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:449",
+        "Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs:356"
       ],
       "consumers": []
     },
@@ -8311,23 +8588,23 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9594
+        "line": 9705
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6813"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6923"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Gameplay/PlayerTransportCoordinator.cs:344",
         "Assets/_Project/Scripts/HUDQuickBar.cs:313",
-        "Assets/_Project/Scripts/PDAInventoryTab.cs:518",
+        "Assets/_Project/Scripts/PDAInventoryTab.cs:581",
         "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:320",
         "Assets/_Project/Scripts/UI/PDAConstructionTab.cs:367",
         "Assets/_Project/Scripts/UI/PDALoadoutTab.cs:342",
-        "Assets/_Project/Scripts/UI/PDAShellChrome.cs:577"
+        "Assets/_Project/Scripts/UI/PDAShellChrome.cs:603"
       ]
     },
     {
@@ -8335,13 +8612,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9574
+        "line": 9685
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6806"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6916"
       ],
       "consumers": []
     },
@@ -8350,13 +8627,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9651
+        "line": 9762
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6834"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6944"
       ],
       "consumers": []
     },
@@ -8387,13 +8664,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10196
+        "line": 10307
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7185"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7295"
       ],
       "consumers": []
     },
@@ -8402,14 +8679,25 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9382
+        "line": 9493
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6703"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6813"
       ],
+      "consumers": []
+    },
+    {
+      "name": "VehicleCommandSignal",
+      "declaration": {
+        "namespace": "Hecton8.Core.Contracts.Signals",
+        "path": "Assets/_Project/Scripts/Gameplay/VehicleCommandSignals.cs",
+        "line": 21
+      },
+      "methods": [],
+      "producers": [],
       "consumers": []
     },
     {
@@ -8428,13 +8716,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9836
+        "line": 9947
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6911"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7021"
       ],
       "consumers": []
     },
@@ -8465,18 +8753,18 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 485
+        "line": 486
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10595",
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10791",
         "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs:742"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs:352"
+        "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs:372"
       ]
     },
     {
@@ -8484,13 +8772,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 885
+        "line": 886
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftRuntime.cs:593"
+        "Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftRuntime.cs:701"
       ],
       "consumers": []
     },
@@ -8510,13 +8798,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9054
+        "line": 9165
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6582"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6692"
       ],
       "consumers": []
     },
@@ -8525,13 +8813,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9100
+        "line": 9211
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6596"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6706"
       ],
       "consumers": []
     },
@@ -8540,14 +8828,14 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 845
+        "line": 846
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:1218"
+        "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:1222"
       ],
       "consumers": [
         "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:832"
@@ -8558,19 +8846,19 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 8535
+        "line": 8646
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7192",
-        "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs:1287",
-        "Assets/_Project/Scripts/World/FloraInteractionManager.cs:2760"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7302",
+        "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs:1305",
+        "Assets/_Project/Scripts/World/FloraInteractionManager.cs:2772"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/World/FloraInteractionManager.cs:2765"
+        "Assets/_Project/Scripts/World/FloraInteractionManager.cs:2777"
       ]
     },
     {
@@ -8584,7 +8872,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:931"
+        "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:1133"
       ],
       "consumers": []
     },
@@ -8600,7 +8888,7 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10620"
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs:10818"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Gameplay/WaterTransitionHandler.cs:60"
@@ -8618,10 +8906,10 @@
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:1457"
+        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:1465"
       ],
       "consumers": [
-        "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:974"
+        "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:962"
       ]
     },
     {
@@ -8629,13 +8917,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10409
+        "line": 10532
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7090"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7200"
       ],
       "consumers": []
     },
@@ -8644,13 +8932,13 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 10042
+        "line": 10153
       },
       "methods": [
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7081"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7191"
       ],
       "consumers": []
     },
@@ -8659,15 +8947,15 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9964
+        "line": 10075
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6991",
-        "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:477"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7101",
+        "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:492"
       ],
       "consumers": [
         "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs:946"
@@ -8678,20 +8966,20 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9927
+        "line": 10038
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6977",
-        "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs:1305"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7087",
+        "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs:1317"
       ],
       "consumers": [
         "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:996",
-        "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:235",
-        "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:246"
+        "Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs:250",
+        "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs:305"
       ]
     },
     {
@@ -8699,19 +8987,20 @@
       "declaration": {
         "namespace": "Hecton8.Core.Contracts.Signals",
         "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-        "line": 9948
+        "line": 10059
       },
       "methods": [
         "GetFrameSnapshot",
         "Push"
       ],
       "producers": [
-        "Assets/_Project/Scripts/Core/GlobalSignals.cs:6984"
+        "Assets/_Project/Scripts/Core/GlobalSignals.cs:7094",
+        "Assets/_Project/Scripts/Gameplay/SealedDoor.cs:737"
       ],
       "consumers": [
         "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime.cs:110",
         "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:1028",
-        "Assets/_Project/Scripts/SaveManager.cs:1229"
+        "Assets/_Project/Scripts/SaveManager.cs:1266"
       ]
     }
   ],
@@ -25699,6 +25988,36 @@
   },
   "sherst": [
     {
+      "path": "Docs/AgentLogs/LOG_SHINOBU_242.md",
+      "line": 34,
+      "text": "- Static proof only: `git diff --check` passed; rg found no `get; set;`, `async void`, `TODO`, `NotImplemented`, `Mathf`, `System.Random`, runtime `ParticleSystem`, or runtime `..."
+    },
+    {
+      "path": "Docs/AgentLogs/LOG_SHINOBU_242.md",
+      "line": 248,
+      "text": "- Static gates: `git diff --check` passed for SHINOBU_242 paths; rg found no `Task`, `System.Threading.Tasks`, `async void`, `FloatMode.Deterministic`, auto-properties, `Pack=1`..."
+    },
+    {
+      "path": "Docs/AgentLogs/LOG_SHINOBU_244.md",
+      "line": 130,
+      "text": "Verification: Static scan for persistent native ownership, scene component preview, old helpers, async writer, best-point remnants, TODO/NotImplemented returns no hits in owned ..."
+    },
+    {
+      "path": "Docs/AgentLogs/LOG_SHINOBU_251.md",
+      "line": 10,
+      "text": "Exact Microseconds saved: Replacing Rigidbody.drag/mass tuning prevents managed scene-side force hacks and hot component writes. Diagonal low-tier path estimates 0.24 us/entity;..."
+    },
+    {
+      "path": "Docs/AgentLogs/LOG_SHINOBU_251.md",
+      "line": 12,
+      "text": "Verification: Static scan found no Rigidbody.mass/drag/angularDrag hack sites under Assets/_Project/Scripts/Vehicles. git diff --check passed with only existing LF/CRLF warnings..."
+    },
+    {
+      "path": "Docs/AgentLogs/LOG_SHINOBU_81.md",
+      "line": 1269,
+      "text": "What was wrong: parked verification batches already said \"do not contact\", but row bodies still contained operational scratch fields: `Custom opener: TODO`, `Required asset: TOD..."
+    },
+    {
       "path": "Docs/AgentLogs/Rationale_SHINOBU_155.md",
       "line": 23,
       "text": "Problem: `HectonPlayerHealth.Die()` has no reload path to delete, but it also has no authoritative AUP/physiology reset and leaves death as a managed event/TODO."
@@ -25707,6 +26026,31 @@
       "path": "Docs/AgentLogs/Rationale_SHINOBU_201.md",
       "line": 283,
       "text": "Rejected Alternatives: Keeping `sqrt` for readability was rejected by the i3/NEON mandate. Quake-style bit hacks were rejected by mandate. Lookup tables were rejected for this d..."
+    },
+    {
+      "path": "Docs/AgentLogs/Rationale_SHINOBU_251.md",
+      "line": 8,
+      "text": "Hardware Impact: i3/MX350 avoids scene polling and Rigidbody.drag hacks; expected low-tier saving is dominated by no managed hot path and no per-frame component search."
+    },
+    {
+      "path": "Docs/AgentLogs/Rationale_SHINOBU_251.md",
+      "line": 36,
+      "text": "Hardware Impact: Additional divide/multiply is below 0.1 us/entity on low-end silicon and replaces heavier managed tuning hacks."
+    },
+    {
+      "path": "Docs/AgentLogs/Rationale_SHINOBU_251.md",
+      "line": 63,
+      "text": "Scalability potential: Audit/docs do not change runtime quality behavior; they prevent future regressions that would reintroduce scalar Rigidbody hacks."
+    },
+    {
+      "path": "Docs/AgentLogs/Rationale_SHINOBU_81.md",
+      "line": 1471,
+      "text": "## Decision 268 - Verification Batch TODO Fields Are Scratch, Not Readiness"
+    },
+    {
+      "path": "Docs/AgentLogs/Rationale_SHINOBU_81.md",
+      "line": 1473,
+      "text": "Problem: `AgentOps/VerificationBatches_2026-05-19/VERIFY_BATCH_*.md` files are parked behind explicit raw sprints, but each row still contains operational-looking fields such as..."
     }
   ],
   "phi": {
@@ -25720,7 +26064,7 @@
     "generator": "Tools/BuildArchitectureAtlas.py",
     "validator": "Tools/AtlasCheck.py",
     "tests": "Tools/test_architecture_atlas.py",
-    "atlas_check_status": "RED: Tools/AtlasCheck.py exits 1 with ATLAS_CHECK_FAIL references=6781 missing=61; missing refs include one Dynamic Decals vendor asset reference, RealtimeCSG vendor icon/readme image references, Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs, Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs, and Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs. Generated atlas is STATIC_SOURCE only until AtlasCheck exits 0."
+    "atlas_check_status": "RED: Tools/AtlasCheck.py exits 1 with ATLAS_CHECK_FAIL references=6881 missing=60; missing refs currently include `Assets/Dynamic Decals/Resources/Decal.obj`, RealtimeCSG vendor icon/readme image references (57), `Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs`, `Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs`. Generated atlas is STATIC_SOURCE only until AtlasCheck exits 0."
   },
   "residual_risk": [
     "Unity import, runtime wiring, actual VRAM residency, profiler frame time, GC, build, and Play Mode remain PENDING VERIFICATION.",

@@ -1,4 +1,4 @@
-# Priority 50 Message Drafts From Raw Public Signals
+﻿# Priority 50 Message Drafts From Raw Public Signals
 
 Status: draft-from-public-index / must verify before sending
 Generated: 2026-05-19
@@ -9,7 +9,7 @@ Runtime impact: none
 
 These messages are not send-ready. They are first drafts generated from public index signals: source games, segment, country candidate, and repeated appearances. Before sending, verify the official channel, recent content, public contact route, brand safety, and a matching real HECTON-8 asset.
 
-## 2026-05-19 Data / 2026-05-20 V5-Gated SN2-Active Microbatch
+## 2026-05-19 Data / 2026-05-21 V6-Gated SN2-Active Microbatch
 
 Status: prepared / not send-ready
 
@@ -18,12 +18,13 @@ Use this section only after the first screenshot pack, Steam page, or playable d
 Hard rules:
 
 - Do not send before HECTON-8 has a real asset link.
+- Any `HOLD_PLACEHOLDER_ASSET` line is a hard stop, not copy; replace it with exact approved asset IDs/links only after the asset, route, creator utility, send-gate, and CRM send-log fields pass.
 - Do not mention "Subnautica killer".
 - Do not promise co-op.
 - Do not claim performance, zero-stutter, optimization, or deterministic tech without published proof.
 - Do not put `SN2`, `Subnautica 2`, competitor bugs, EULA, co-op issues, or performance pain in a subject line.
 - Treat recent Subnautica 2 coverage as CRM evidence only. Final send copy should say `recent underwater-survival coverage` or another neutral audience-fit phrase unless a human approves a direct title reference.
-- Before any pain-backed send, recheck the current monitoring section and record `Monitoring SN2 Steam API/Page Refresh V5` plus the exact private bucket in `pain_freshness_source`; V5 competitor-positive read forbids "players are angry" framing.
+- Before any pain-backed send, recheck the current monitoring section and record `Monitoring SN2 Steam API / Public-Source Refresh V6` or a newer same-day row plus the exact private bucket in `pain_freshness_source`; V6 competitor-positive read forbids "players are angry" framing.
 - If the only route is Twitch/Discord/Twitter, do not cold-DM unless that profile explicitly allows business contact.
 - Do not send any draft unless matching asset metadata claim checks pass, pain-backed angles have `pain_freshness_source` and `pain_freshness_checked_at`, creator utility is 3/4+, `creator_send_gate` is open, and CRM send-log fields are ready.
 - If the draft references gameplay proof, pressure decisions, route risk, threat, salvage failure, demo readiness, or first-public feedback, the packet must include one factual `AGENCY_PROOF_CANDIDATE` asset with `agency_decision_notes` and AB-009/KPI `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
@@ -52,9 +53,9 @@ HECTON-8 is single-player deep-sea survival focused on pressure, salvage, machin
 
 The useful video angle would be: scavenge, build, repair, descend, return, and understand why the base matters.
 
-Asset: [Steam/demo/20s loop clip - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If that fits your current coverage, I can send the demo or press kit when the slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### AldemarHD Draft
@@ -70,7 +71,7 @@ HECTON-8 ist ein Singleplayer-Deep-Sea-Survival-Spiel ueber Druck, Bergung, Masc
 
 Der konkrete Winkel fuer dein Publikum: eine Basis als Ueberlebensmaschine, Expeditionen unter Druck, schlechte Sicht und Entscheidungen, ob man noch tiefer geht oder zurueckkehrt.
 
-Asset: [Steam/Screenshots/Demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
 Wenn das zu deinem Format passt, schicke ich dir Material, sobald der spielbare Ausschnitt stark genug ist.
 ```
@@ -88,9 +89,9 @@ It is single-player deep-sea survival about pressure, salvage, machinery, and bl
 
 The useful angle would be blunt first-route feedback: does the player understand why they descend, what the machine is doing, and when the route becomes too risky?
 
-Asset: [private demo / feedback form - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If that fits your format, I can send a short build note when the route is stable.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### Zombyra Draft
@@ -106,7 +107,7 @@ Der Kern: Druck, Bergung, Maschinen, Wartung, schlechte Sicht und eine Basis, di
 
 Der passende Video-Winkel waere nicht "mehr vom selben", sondern: Wie lange kann man eine riskante Route unter Druck treiben, bevor Sauerstoff, Energie und Sicht die Rueckkehr erzwingen?
 
-Asset: [deutsche Screenshots / Steam / Demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
 Wenn das zu deinem aktuellen Survival-Format passt, schicke ich dir Material, sobald es wirklich vorzeigbar ist.
 ```
@@ -124,7 +125,7 @@ Kurzfassung: HECTON-8 ist Singleplayer-Deep-Sea-Survival ueber Druck, Bergung, M
 
 Der sinnvolle Winkel waere: langsamer Abstieg, Maschinenstress, schlechte Sicht, Basis-Sicherheit und die Frage, ob man noch eine Route riskiert.
 
-Asset: [Screenshots / Steam / Demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
 Nur senden, wenn ein oeffentlicher Business-Kontakt verifiziert ist.
 ```
@@ -142,7 +143,7 @@ HECTON-8 ist Singleplayer-Deep-Sea-Survival ueber Druck, Bergung, Maschinen und 
 
 Der konkrete Winkel: Die Basis ist nicht Deko, sondern ein Druckgefaess mit Energie, Sauerstoff, Wartung und Fehlern, die der Spieler verstehen kann.
 
-Asset: [deutsche Base-Screenshots / Steam / Demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
 Wenn das zu deinem Format passt, schicke ich dir Material, sobald die Systeme im Build sichtbar genug sind.
 ```
@@ -156,6 +157,7 @@ These drafts are for rows 51-100 promoted during the CRM closure pass. They are 
 Hard rules:
 
 - Do not send any draft in this section before a real screenshot pack, Steam page, 20s clip, or playable demo exists.
+- Any `HOLD_PLACEHOLDER_ASSET` line is a hard stop, not copy; replace it with exact approved asset IDs/links only after the asset, route, creator utility, send-gate, and CRM send-log fields pass.
 - Do not use LPI/public-stat pages as final contact permission.
 - Confirm official YouTube RSS/About or owner site route before sending.
 - Do not mention "Subnautica killer".
@@ -190,9 +192,9 @@ HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, 
 
 The angle that could fit your format: descend, salvage, manage pressure/machines, decide whether to keep pushing, and get back before the route becomes too expensive.
 
-Asset: [20s pressure/salvage loop or playable route - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If that sounds relevant, I can send the Steam page or demo when the route is stable enough to judge.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### Accurize2 Draft
@@ -208,9 +210,9 @@ HECTON-8 is single-player deep-sea survival about pressure, salvage, black water
 
 The useful angle for your audience: a route where oxygen, pressure, power, and salvage value force the player to decide when to turn back.
 
-Asset: [Steam page / 20s survival loop / demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If it fits your survival coverage, I can send the material once the slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### Aavak Draft
@@ -226,9 +228,9 @@ HECTON-8 is single-player deep-sea survival where pressure, salvage, power, pump
 
 The specific angle: the base is not decoration. It is a pressure machine with failures the player can understand and plan around.
 
-Asset: [machinery/base systems clip - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If that fits your current format, I can send a short build note once the systems are visible enough.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### EnterElysium Draft
@@ -244,9 +246,9 @@ HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, 
 
 The possible angle for your channel: an indie survival first look where the player reads the machine, takes a route, salvages under pressure, and decides whether returning is smarter than pushing deeper.
 
-Asset: [20s gameplay clip / Steam page / demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If the loop is clear enough, I can send a preview note later.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### Praetorian HiJynx Draft
@@ -262,9 +264,9 @@ The focus is pressure, salvage, machinery, poor visibility, and a base that func
 
 The useful angle would be a demo/clip where the player has to reason about route risk instead of just admiring underwater scenery.
 
-Asset: [demo or 20s route-risk clip - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If that fits your survival format, I can send material once the first route is stable.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### paulsoaresjr Draft
@@ -280,9 +282,9 @@ HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, 
 
 The angle that could fit: a survival episode where the route itself is the problem: descend, salvage, manage machines, and decide when to come back.
 
-Asset: [playable demo or first-route clip - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If that fits your coverage, I can send the demo when it is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### Wanderbots Draft
@@ -298,9 +300,9 @@ HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, 
 
 The possible fit for your channel is indie discovery: does the first playable verb read quickly, and does the pressure/machinery identity separate it from generic underwater survival?
 
-Asset: [real gameplay clip / Steam page / presskit - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If that matches your format, I can send material later after the asset and contact policy are verified.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### GameEdged Draft
@@ -316,9 +318,9 @@ It is single-player deep-sea survival about pressure, salvage, machinery, and ba
 
 The useful angle for your audience: practical progression, route risk, base machinery, and whether the player can keep pushing without losing the return path.
 
-Asset: [demo / 20s base-salvage loop / Steam page - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If that fits your survival coverage, I can send the slice when it is stable.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### Splattercatgaming Draft
@@ -334,9 +336,9 @@ HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, 
 
 The possible fit: a first-look demo where the hook is not "underwater", but the pressure/base/salvage loop.
 
-Asset: [excellent 20s clip / Steam page / demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If the material reaches that bar, I can send a concise preview note.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### TotalXclipse Draft
@@ -352,9 +354,9 @@ HECTON-8 is single-player deep-sea survival about pressure, salvage, and industr
 
 The useful clip would show a base or machinery loop that a systems audience can read without a paragraph.
 
-Asset: [base machinery clip / Steam page - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If that angle fits your audience, I can send material once the systems are visible enough.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ### Welonz Draft
@@ -370,9 +372,9 @@ HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, 
 
 The useful angle: a short route where the player understands the survival problem and the story hook without a lore wall.
 
-Asset: [Seed Ship/exploration clip / Steam page / demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If that fits your format, I can send material when the story/exploration proof exists.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 ## 1. CohhCarnage
@@ -394,9 +396,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -425,9 +427,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -456,9 +458,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -487,9 +489,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -518,9 +520,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -549,9 +551,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -580,9 +582,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -611,9 +613,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -642,9 +644,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -673,9 +675,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience responds to horror/abyss tension. HECTON-8 should be pitched through instruments, sound, pressure, and black-water dread rather than creature spam or jump scares.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -704,9 +706,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -735,9 +737,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -766,9 +768,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -797,9 +799,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -828,9 +830,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -859,9 +861,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -890,9 +892,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -921,9 +923,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience responds to horror/abyss tension. HECTON-8 should be pitched through instruments, sound, pressure, and black-water dread rather than creature spam or jump scares.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -952,9 +954,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -983,9 +985,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1014,9 +1016,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience responds to horror/abyss tension. HECTON-8 should be pitched through instruments, sound, pressure, and black-water dread rather than creature spam or jump scares.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1045,9 +1047,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1076,9 +1078,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1107,9 +1109,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1138,9 +1140,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1169,9 +1171,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1200,9 +1202,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1231,9 +1233,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1262,9 +1264,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1293,9 +1295,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1324,9 +1326,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1355,9 +1357,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1386,9 +1388,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1417,9 +1419,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1448,9 +1450,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1479,9 +1481,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience responds to horror/abyss tension. HECTON-8 should be pitched through instruments, sound, pressure, and black-water dread rather than creature spam or jump scares.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1510,9 +1512,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1541,9 +1543,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1572,9 +1574,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1603,9 +1605,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1634,9 +1636,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1665,9 +1667,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1696,9 +1698,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1727,9 +1729,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1758,9 +1760,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1789,9 +1791,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1820,9 +1822,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1851,9 +1853,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1882,9 +1884,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:
@@ -1913,9 +1915,9 @@ HECTON-8 is a single-player-first underwater survival game about pressure, machi
 
 The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
-Assets: [Steam/screenshots/clip/demo - TBD]
+Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.
 
-If this fits your current format, I can send a short press kit or demo when the playable slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, slice, Steam page, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 ```
 
 Verification notes:

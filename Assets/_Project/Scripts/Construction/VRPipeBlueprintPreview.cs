@@ -1,5 +1,4 @@
 using Hecton8.Core;
-using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Collections;
@@ -30,7 +29,6 @@ namespace Hecton8.Construction
         private const BufferID PipeIndirectArgsBufferId = (BufferID)70948;
 
         [Header("Preview")]
-        [SerializeField] private Mesh segmentMesh;
         [SerializeField] private Material previewMaterial;
         [SerializeField] private Shader previewShader;
         [SerializeField] private bool previewActive;
@@ -46,11 +44,17 @@ namespace Hecton8.Construction
         [SerializeField] private Transform point2;
         [SerializeField] private Transform point3;
 
-        private readonly AbsoluteUniversePosition[] _runtimePointAups = new AbsoluteUniversePosition[ControlPointCount]; // COLD ALLOC: AbsoluteUniversePosition[4] - AUP-stable pipe blueprint control points - owner: VRPipeBlueprintPreview
-        private readonly bool[] _hasRuntimePoint = new bool[ControlPointCount]; // COLD ALLOC: bool[4] - runtime point validity - owner: VRPipeBlueprintPreview
-        private VaultBufferHandle<BuilderGhostStateDTO> _stateHandle;
-        private VaultBufferHandle<BuilderGhostVisualDTO> _visualHandle;
-        private VaultBufferHandle<BuilderGhostIndirectArgsDTO> _argsHandle;
+        private AbsoluteUniversePosition _runtimePointAup0;
+        private AbsoluteUniversePosition _runtimePointAup1;
+        private AbsoluteUniversePosition _runtimePointAup2;
+        private AbsoluteUniversePosition _runtimePointAup3;
+        private bool _hasRuntimePoint0;
+        private bool _hasRuntimePoint1;
+        private bool _hasRuntimePoint2;
+        private bool _hasRuntimePoint3;
+        private VaultGenerationHandle<BuilderGhostStateDTO> _stateHandle;
+        private VaultGenerationHandle<BuilderGhostVisualDTO> _visualHandle;
+        private VaultGenerationHandle<BuilderGhostIndirectArgsDTO> _argsHandle;
         private IDataVault _vault;
         private GraphicsBuffer _stateBufferA;
         private GraphicsBuffer _stateBufferB;
@@ -72,11 +76,13 @@ namespace Hecton8.Construction
         private bool _pendingBuildScheduled;
         private bool _pendingBuildDiscard;
         private bool _drawBoundsValid;
+        private uint _previewFrameCounter;
         private Transform _cachedTransform;
         private int _uploadedCount;
         private int _writeBufferIndex;
         private GraphicsBuffer _boundStateBuffer;
         private GraphicsBuffer _boundVisualBuffer;
+        private HectonXRRuntimeState.XRActiveChangedHandler _xrActiveChangedHandler;
 
         private static readonly int BuilderGhostStatesId = Shader.PropertyToID("_H8BuilderGhostStates");
         private static readonly int BuilderGhostVisualsId = Shader.PropertyToID("_H8BuilderGhostVisuals");
@@ -98,17 +104,20 @@ namespace Hecton8.Construction
 
         private void Awake()
         {
+            EnsureXrActiveChangedHandlerCold();
             CacheRuntimeReferences();
-            EnsureBuffers();
+            EnsureBuffersCold();
             EnsureMaterial();
             EnsureGraphicsBuffers();
         }
 
         private void OnEnable()
         {
+            EnsureXrActiveChangedHandlerCold();
             CacheRuntimeReferences();
-            HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;
-            EnsureBuffers();
+            HectonXRRuntimeState.XRActiveChanged -= _xrActiveChangedHandler;
+            HectonXRRuntimeState.XRActiveChanged += _xrActiveChangedHandler;
+            EnsureBuffersCold();
             EnsureMaterial();
             EnsureGraphicsBuffers();
             RefreshXRRegistration();
@@ -116,7 +125,8 @@ namespace Hecton8.Construction
 
         private void OnDisable()
         {
-            HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
+            if (_xrActiveChangedHandler != null)
+                HectonXRRuntimeState.XRActiveChanged -= _xrActiveChangedHandler;
             TryUnregisterRuntime();
             CompletePendingBuildForTeardown();
             ClearPreparedPreview();
@@ -142,6 +152,14 @@ namespace Hecton8.Construction
                 Destroy(previewMaterial);
         }
 
+        private void EnsureXrActiveChangedHandlerCold()
+        {
+            if (_xrActiveChangedHandler != null)
+                return;
+
+            _xrActiveChangedHandler = HandleXRActiveChanged;
+        }
+
         public void Render(float deltaTime)
         {
             DrawPreparedPreview();
@@ -165,21 +183,26 @@ namespace Hecton8.Construction
             if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition runtimeAup))
                 return;
 
-            if (!_hasRuntimePoint[index] || AbsoluteUniversePosition.DistanceSq(in _runtimePointAups[index], in runtimeAup) > PointDirtyDistanceSq)
+            if (!TryGetRuntimePointAup(index, out AbsoluteUniversePosition previousAup) ||
+                AbsoluteUniversePosition.DistanceSq(in previousAup, in runtimeAup) > PointDirtyDistanceSq)
+            {
                 _stateFlags |= StateMatricesDirty;
+            }
 
-            _runtimePointAups[index] = runtimeAup;
-            _hasRuntimePoint[index] = true;
+            SetRuntimePointAup(index, in runtimeAup);
         }
 
         public void ClearRuntimePoints()
         {
-            bool hadRuntimePoint = false;
-            for (int i = 0; i < ControlPointCount; i++)
-            {
-                hadRuntimePoint |= _hasRuntimePoint[i];
-                _hasRuntimePoint[i] = false;
-            }
+            bool hadRuntimePoint = _hasRuntimePoint0 ||
+                                   _hasRuntimePoint1 ||
+                                   _hasRuntimePoint2 ||
+                                   _hasRuntimePoint3;
+
+            _hasRuntimePoint0 = false;
+            _hasRuntimePoint1 = false;
+            _hasRuntimePoint2 = false;
+            _hasRuntimePoint3 = false;
 
             if (hadRuntimePoint)
                 _stateFlags |= StateMatricesDirty;
@@ -218,7 +241,7 @@ namespace Hecton8.Construction
         private void SchedulePreviewBuild()
         {
             if (_pendingBuildScheduled ||
-                !TryEnsureAndResolveBuffers(
+                !TryReadCachedBuffers(
                     out NativeArray<BuilderGhostStateDTO> states,
                     out NativeArray<BuilderGhostVisualDTO> visuals,
                     out NativeArray<BuilderGhostIndirectArgsDTO> args))
@@ -226,7 +249,9 @@ namespace Hecton8.Construction
                 return;
             }
 
-            double3 runtimeOriginAup = GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+            if (!TryResolveRuntimeOriginAup(out double3 runtimeOriginAup))
+                return;
+
             float quality = ShinobuSocketConstructionRuntime.ResolveGlobalQualityWeight();
             BuildPipeBlueprintPreviewJob job = new BuildPipeBlueprintPreviewJob
             {
@@ -246,7 +271,7 @@ namespace Hecton8.Construction
                 ValidColor = new float4(validColor.r, validColor.g, validColor.b, validColor.a),
                 InvalidColor = new float4(invalidColor.r, invalidColor.g, invalidColor.b, invalidColor.a),
                 PrefabHashID = PipePreviewHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = CapturePreviewFrameId(),
                 MaxSegments = MaxPreviewInstances
             };
 
@@ -265,7 +290,7 @@ namespace Hecton8.Construction
                 return false;
 
             _pendingBuildScheduled = false;
-            if (!TryEnsureAndResolveBuffers(
+            if (!TryReadCachedBuffers(
                     out NativeArray<BuilderGhostStateDTO> states,
                     out NativeArray<BuilderGhostVisualDTO> visuals,
                     out NativeArray<BuilderGhostIndirectArgsDTO> args))
@@ -274,7 +299,12 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            EnsureGraphicsBuffers();
+            if (!HasGraphicsBuffers())
+            {
+                ClearPreparedPreview();
+                return false;
+            }
+
             int uploadCount = _pendingBuildDiscard || args.Length <= 0
                 ? 0
                 : math.clamp((int)args[0].InstanceCount, 0, math.min(states.Length, visuals.Length));
@@ -343,11 +373,8 @@ namespace Hecton8.Construction
             if (authoredPoint != null)
                 return authoredPoint.position;
 
-            if (_hasRuntimePoint[index])
-                return (Vector3)_runtimePointAups[index].ToRuntimeFloat3();
-
-            if (_cachedTransform == null)
-                CacheRuntimeReferences();
+            if (TryGetRuntimePointAup(index, out AbsoluteUniversePosition runtimeAup))
+                return (Vector3)runtimeAup.ToRuntimeFloat3();
 
             return _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
         }
@@ -360,16 +387,13 @@ namespace Hecton8.Construction
                 return authoredAup.ToAbsoluteDouble3();
             }
 
-            if (_hasRuntimePoint[index])
-                return _runtimePointAups[index].ToAbsoluteDouble3();
-
-            if (_cachedTransform == null)
-                CacheRuntimeReferences();
+            if (TryGetRuntimePointAup(index, out AbsoluteUniversePosition runtimeAup))
+                return runtimeAup.ToAbsoluteDouble3();
 
             Vector3 fallback = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
             return TryResolveAupFromRuntimeOrigin(fallback, out AbsoluteUniversePosition fallbackAup)
                 ? fallbackAup.ToAbsoluteDouble3()
-                : GlobalSignals.CurrentRuntimeOriginAup().ToAbsoluteDouble3();
+                : TryResolveRuntimeOriginAup(out double3 originAup) ? originAup : double3.zero;
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
@@ -382,59 +406,99 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            aup = AbsoluteUniversePosition.OffsetMeters(
-                in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return math.all(math.isfinite(aup.ToAbsoluteDouble3()));
+            if (!TryResolveRuntimeOriginAup(out double3 originAup))
+                return false;
+
+            double3 resolved = originAup + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(resolved)))
+                return false;
+
+            aup = AbsoluteUniversePosition.FromAbsolutePosition(resolved);
+            return AbsoluteUniversePosition.IsFinite(in aup);
         }
 
-        private void EnsureBuffers()
+        private bool TryGetRuntimePointAup(int index, out AbsoluteUniversePosition aup)
+        {
+            switch (index)
+            {
+                case 0:
+                    aup = _runtimePointAup0;
+                    return _hasRuntimePoint0;
+                case 1:
+                    aup = _runtimePointAup1;
+                    return _hasRuntimePoint1;
+                case 2:
+                    aup = _runtimePointAup2;
+                    return _hasRuntimePoint2;
+                case 3:
+                    aup = _runtimePointAup3;
+                    return _hasRuntimePoint3;
+                default:
+                    aup = default;
+                    return false;
+            }
+        }
+
+        private void SetRuntimePointAup(int index, in AbsoluteUniversePosition aup)
+        {
+            switch (index)
+            {
+                case 0:
+                    _runtimePointAup0 = aup;
+                    _hasRuntimePoint0 = true;
+                    break;
+                case 1:
+                    _runtimePointAup1 = aup;
+                    _hasRuntimePoint1 = true;
+                    break;
+                case 2:
+                    _runtimePointAup2 = aup;
+                    _hasRuntimePoint2 = true;
+                    break;
+                case 3:
+                    _runtimePointAup3 = aup;
+                    _hasRuntimePoint3 = true;
+                    break;
+            }
+        }
+
+        private void EnsureBuffersCold()
         {
             if (!TryResolveVault(out IDataVault vault))
                 return;
 
             _vault = vault;
-            if (_stateHandle.IsCreated &&
-                _visualHandle.IsCreated &&
-                _argsHandle.IsCreated &&
-                _stateHandle.Length >= MaxPreviewInstances &&
-                _visualHandle.Length >= MaxPreviewInstances &&
-                _argsHandle.Length >= 1 &&
-                vault.ResolveBuffer(ref _stateHandle) &&
-                vault.ResolveBuffer(ref _visualHandle) &&
-                vault.ResolveBuffer(ref _argsHandle))
+            if (vault.TryResolveHandle(in _stateHandle, out NativeArray<BuilderGhostStateDTO> states) &&
+                vault.TryResolveHandle(in _visualHandle, out NativeArray<BuilderGhostVisualDTO> visuals) &&
+                vault.TryResolveHandle(in _argsHandle, out NativeArray<BuilderGhostIndirectArgsDTO> args) &&
+                states.IsCreated &&
+                visuals.IsCreated &&
+                args.IsCreated &&
+                states.Length >= MaxPreviewInstances &&
+                visuals.Length >= MaxPreviewInstances &&
+                args.Length >= 1)
             {
                 return;
             }
 
-            _stateHandle = vault.GetBufferHandle<BuilderGhostStateDTO>(
+            _stateHandle = vault.GetGenerationHandle<BuilderGhostStateDTO>(
                 PipeStateBufferId,
                 MaxPreviewInstances,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
-            _visualHandle = vault.GetBufferHandle<BuilderGhostVisualDTO>(
+            _visualHandle = vault.GetGenerationHandle<BuilderGhostVisualDTO>(
                 PipeVisualBufferId,
                 MaxPreviewInstances,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
-            _argsHandle = vault.GetBufferHandle<BuilderGhostIndirectArgsDTO>(
+            _argsHandle = vault.GetGenerationHandle<BuilderGhostIndirectArgsDTO>(
                 PipeIndirectArgsBufferId,
                 1,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
         }
 
-        private bool TryEnsureAndResolveBuffers(
-            out NativeArray<BuilderGhostStateDTO> states,
-            out NativeArray<BuilderGhostVisualDTO> visuals,
-            out NativeArray<BuilderGhostIndirectArgsDTO> args)
-        {
-            EnsureBuffers();
-            return TryResolveBuffers(out states, out visuals, out args);
-        }
-
-        private bool TryResolveBuffers(
+        private bool TryReadCachedBuffers(
             out NativeArray<BuilderGhostStateDTO> states,
             out NativeArray<BuilderGhostVisualDTO> visuals,
             out NativeArray<BuilderGhostIndirectArgsDTO> args)
@@ -444,14 +508,15 @@ namespace Hecton8.Construction
             args = default;
 
             IDataVault vault = _vault;
-            if (vault == null && !TryResolveVault(out vault))
+            if (vault == null)
                 return false;
 
-            _vault = vault;
-            states = _stateHandle.Resolve(vault);
-            visuals = _visualHandle.Resolve(vault);
-            args = _argsHandle.Resolve(vault);
-            return states.IsCreated && visuals.IsCreated && args.IsCreated;
+            return vault.TryResolveHandle(in _stateHandle, out states) &&
+                   vault.TryResolveHandle(in _visualHandle, out visuals) &&
+                   vault.TryResolveHandle(in _argsHandle, out args) &&
+                   states.IsCreated &&
+                   visuals.IsCreated &&
+                   args.IsCreated;
         }
 
         private static bool TryResolveVault(out IDataVault vault)
@@ -486,6 +551,36 @@ namespace Hecton8.Construction
             _argsBufferB = CreateIndirectArgsBuffer();
             _boundStateBuffer = null;
             _boundVisualBuffer = null;
+        }
+
+        private bool HasGraphicsBuffers()
+        {
+            return _stateBufferA != null &&
+                   _stateBufferB != null &&
+                   _visualBufferA != null &&
+                   _visualBufferB != null &&
+                   _argsBufferA != null &&
+                   _argsBufferB != null;
+        }
+
+        private uint CapturePreviewFrameId()
+        {
+            uint dispatcherFrame = TimeSliceScheduler.CurrentFrameId;
+            if (dispatcherFrame != 0u)
+            {
+                if (dispatcherFrame > _previewFrameCounter)
+                    _previewFrameCounter = dispatcherFrame;
+                return dispatcherFrame;
+            }
+
+            _previewFrameCounter = unchecked(_previewFrameCounter + 1u);
+            return _previewFrameCounter != 0u ? _previewFrameCounter : 1u;
+        }
+
+        private static bool TryResolveRuntimeOriginAup(out double3 runtimeOriginAup)
+        {
+            runtimeOriginAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            return math.all(math.isfinite(runtimeOriginAup));
         }
 
         private void EnsureMaterial()
@@ -603,6 +698,7 @@ namespace Hecton8.Construction
             _stateFlags |= StateMatricesDirty;
             if (isActive)
             {
+                EnsureBuffersCold();
                 TryRegisterRuntime();
                 return;
             }
@@ -615,6 +711,7 @@ namespace Hecton8.Construction
         {
             if (HectonXRRuntimeState.IsXRActive)
             {
+                EnsureBuffersCold();
                 TryRegisterRuntime();
                 return;
             }

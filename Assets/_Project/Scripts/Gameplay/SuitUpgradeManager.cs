@@ -82,6 +82,7 @@ namespace Hecton8.Gameplay
         private const uint ItemEquipHudVisorAtlasHash = 0x7F5F6211u;
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 64;
+        private const BufferID SuitUpgradeTelemetryRingBuffer = (BufferID)71411;
         private const ulong TelemetryDumpMagic = 0x5250475055544953UL;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SUIT_UPGRADE_SYSTEM.bin";
         private const uint TelemetryFlagResolved = 1u << 0;
@@ -104,13 +105,16 @@ namespace Hecton8.Gameplay
         private uint _lastInventorySignalRevision;
         private int _lastInventoryVersion = -1;
         private ulong _inventoryUpgradeMask;
+        private ulong _authoredInstalledMask;
+        private ulong _authoredBrokenMask;
         private ulong _upgradeMask;
         private ulong _effectiveUpgradeMask;
         private SuitStats _baseSuitStats;
         private SuitStats _resolvedSuitStats;
-        private VaultBufferHandle<SuitStats> _resolverResultHandle;
-        private NativeArray<SuitUpgradeTelemetryEntry> _telemetryRing;
+        private VaultGenerationHandle<SuitStats> _resolverResultHandle;
+        private VaultGenerationHandle<SuitUpgradeTelemetryEntry> _telemetryRingHandle;
         private uint _meshSignalSequence;
+        private uint _telemetryFrameIndex;
         private uint _telemetrySequence;
         private int _telemetryCursor;
         private bool _telemetryDumped;
@@ -215,16 +219,7 @@ namespace Hecton8.Gameplay
             _runtimeStats = Instantiate(baseStats);
             _baseSuitStats = BuildBaselineSuitStats();
             _resolvedSuitStats = _baseSuitStats;
-            _ = TryResolveResolverResultBuffer(out _);
-            _telemetryRing = new NativeArray<SuitUpgradeTelemetryEntry>(
-                TelemetryCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SuitUpgradeTelemetryEntry>[300] - suit upgrade black-box ring - owner: SuitUpgradeManager
-            NativeMemorySentinel.RegisterNativeArray(
-                _telemetryRing,
-                nameof(SuitUpgradeManager),
-                nameof(_telemetryRing),
-                NativeAllocationLifetime.Scene);
+            EnsureSuitVaultBuffers();
             RebuildUpgradeLookupCache();
             ResolveAndApplyUpgradeMask(0UL);
         }
@@ -236,6 +231,7 @@ namespace Hecton8.Gameplay
 
             TryRegisterHotSwapListener();
             TryRegisterLateFrame();
+            EnsureSuitVaultBuffers();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
@@ -265,13 +261,7 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             _resolverResultHandle = default;
-
-            if (_telemetryRing.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
-                _telemetryRing.Dispose();
-                _telemetryRing = default;
-            }
+            _telemetryRingHandle = default;
 
             if (_runtimeStats != null && !ReferenceEquals(_runtimeStats, baseStats))
             {
@@ -315,6 +305,9 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             TryRegisterLateFrame();
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+                EnsureSuitVaultBuffers();
 
             if (serviceSlot != GlobalRegistryServiceSlot.PlayerInventory)
                 return;
@@ -441,6 +434,8 @@ namespace Hecton8.Gameplay
             if (!CanInstall(upgrade)) return false;
 
             _installedUpgrades.Add(upgrade.upgradeId);
+            _authoredInstalledMask |= (ulong)SuitUpgradeResolver.ResolveUpgradeBit(upgrade);
+            _authoredBrokenMask &= ~((ulong)SuitUpgradeResolver.ResolveUpgradeBit(upgrade));
             RebuildRuntimeStats();
 
             string displayName = upgrade.DisplayNameOrFallback;
@@ -506,6 +501,7 @@ namespace Hecton8.Gameplay
                 }
 
                 _brokenUpgrades.Add(upgrade.upgradeId);
+                _authoredBrokenMask |= (ulong)SuitUpgradeResolver.ResolveUpgradeBit(upgrade);
                 brokenUpgrade = upgrade;
                 RebuildRuntimeStats();
                 NotificationEvents.PushWarning("SUIT MODULE BROKEN: " + upgrade.DisplayNameOrFallback);
@@ -527,9 +523,17 @@ namespace Hecton8.Gameplay
             if (!_brokenUpgrades.Remove(upgradeId))
                 return false;
 
-            RebuildRuntimeStats();
-
             SuitUpgradeData upgrade = FindUpgradeById(upgradeId);
+            if (upgrade != null)
+            {
+                _authoredBrokenMask &= ~((ulong)SuitUpgradeResolver.ResolveUpgradeBit(upgrade));
+            }
+            else
+            {
+                RebuildAuthoredUpgradeMasksFromSets();
+            }
+
+            RebuildRuntimeStats();
             NotificationEvents.PushInfo("SUIT MODULE REPAIRED: " + (upgrade != null ? upgrade.DisplayNameOrFallback : upgradeId));
             LogUpgradeRepaired(upgradeId);
             return true;
@@ -843,14 +847,13 @@ namespace Hecton8.Gameplay
             if (!isActiveAndEnabled)
                 return;
 
-            TryBindInventory();
             if (ConsumeInventoryChangedSignals())
                 QueueInventoryMaskRebuild();
         }
 
         private bool ConsumeInventoryChangedSignals()
         {
-            PlayerInventory inventory = _subscribedInventory != null ? _subscribedInventory : GlobalRegistry.PlayerInventoryRuntime;
+            PlayerInventory inventory = _subscribedInventory;
             uint inventoryHash = ResolveInventorySignalHash(inventory);
             if (inventoryHash == 0u)
                 return false;
@@ -910,7 +913,6 @@ namespace Hecton8.Gameplay
                     if (cancellationToken.IsCancellationRequested || !isActiveAndEnabled)
                         break;
 
-                    TryBindInventory();
                     RefreshInventoryUpgradeMask(false);
                     ResolveAndApplyUpgradeMask(BuildInstalledUpgradeMask() | _inventoryUpgradeMask);
                 }
@@ -967,7 +969,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshInventoryUpgradeMask(bool force)
         {
-            PlayerInventory inventory = _subscribedInventory != null ? _subscribedInventory : GlobalRegistry.PlayerInventoryRuntime;
+            PlayerInventory inventory = _subscribedInventory;
             if (inventory == null)
             {
                 _inventoryUpgradeMask = 0UL;
@@ -985,25 +987,7 @@ namespace Hecton8.Gameplay
 
         private ulong BuildInstalledUpgradeMask()
         {
-            if (allUpgrades == null || allUpgrades.Length == 0)
-                return 0UL;
-
-            ulong mask = 0UL;
-            for (int i = 0; i < allUpgrades.Length; i++)
-            {
-                SuitUpgradeData upgrade = allUpgrades[i];
-                if (upgrade == null ||
-                    string.IsNullOrEmpty(upgrade.upgradeId) ||
-                    !_installedUpgrades.Contains(upgrade.upgradeId) ||
-                    _brokenUpgrades.Contains(upgrade.upgradeId))
-                {
-                    continue;
-                }
-
-                mask |= (ulong)SuitUpgradeResolver.ResolveUpgradeBit(upgrade);
-            }
-
-            return mask;
+            return (_authoredInstalledMask & ~_authoredBrokenMask) & SuitUpgradeResolver.SupportedMask;
         }
 
         private ulong ResolveMaskForItemHash(uint itemHash)
@@ -1039,21 +1023,9 @@ namespace Hecton8.Gameplay
             ulong previousEffectiveMask = _effectiveUpgradeMask;
             _upgradeMask = sanitized;
 
+            _resolvedSuitStats = SuitUpgradeResolver.Resolve(sanitized, in _baseSuitStats);
             if (TryResolveResolverResultBuffer(out NativeArray<SuitStats> resolverResult))
-            {
-                SuitUpgradeResolverJob job = new SuitUpgradeResolverJob
-                {
-                    Upgrades = sanitized,
-                    Baseline = _baseSuitStats,
-                    Result = new NativeSlice<SuitStats>(resolverResult)
-                };
-                job.Execute();
-                _resolvedSuitStats = resolverResult[0];
-            }
-            else
-            {
-                _resolvedSuitStats = SuitUpgradeResolver.Resolve(sanitized, in _baseSuitStats);
-            }
+                resolverResult[0] = _resolvedSuitStats;
 
             _effectiveUpgradeMask = SuitUpgradeResolver.NormalizeMask(sanitized);
             uint telemetryFlags = TelemetryFlagResolved;
@@ -1074,23 +1046,51 @@ namespace Hecton8.Gameplay
         {
             resolverResult = default;
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null)
+            if (vault == null || _resolverResultHandle.BufferID == 0u)
                 return false;
 
-            if (!_resolverResultHandle.IsCreated)
+            if (!vault.TryResolveHandle(in _resolverResultHandle, out resolverResult))
+                return false;
+
+            return resolverResult.IsCreated && resolverResult.Length >= ResolverResultLength;
+        }
+
+        private void EnsureSuitVaultBuffers()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return;
+
+            if (_resolverResultHandle.BufferID == 0u)
             {
-                _resolverResultHandle = vault.GetBufferHandle<SuitStats>(
+                _resolverResultHandle = vault.GetGenerationHandle<SuitStats>(
                     BufferID.SuitUpgradeResolverResult,
                     ResolverResultLength,
                     SystemID.GameplayPlayer,
                     NativeArrayOptions.UninitializedMemory);
             }
 
-            if (!_resolverResultHandle.IsCreated)
+            if (_telemetryRingHandle.BufferID == 0u)
+            {
+                _telemetryRingHandle = vault.GetGenerationHandle<SuitUpgradeTelemetryEntry>(
+                    SuitUpgradeTelemetryRingBuffer,
+                    TelemetryCapacity,
+                    SystemID.GameplayPlayer,
+                    NativeArrayOptions.ClearMemory);
+            }
+        }
+
+        private bool TryResolveTelemetryRing(out NativeArray<SuitUpgradeTelemetryEntry> telemetryRing)
+        {
+            telemetryRing = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || _telemetryRingHandle.BufferID == 0u)
                 return false;
 
-            resolverResult = _resolverResultHandle.Resolve(vault);
-            return resolverResult.IsCreated && resolverResult.Length >= ResolverResultLength;
+            if (!vault.TryResolveHandle(in _telemetryRingHandle, out telemetryRing))
+                return false;
+
+            return telemetryRing.IsCreated && telemetryRing.Length >= TelemetryCapacity;
         }
 
         private void ApplyResolvedSuitStatsToRuntimeStats(in SuitStats resolvedStats)
@@ -1121,7 +1121,7 @@ namespace Hecton8.Gameplay
 
         private void RecordTelemetry(uint flags)
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveTelemetryRing(out NativeArray<SuitUpgradeTelemetryEntry> telemetryRing))
                 return;
 
             int index = _telemetryCursor;
@@ -1130,9 +1130,9 @@ namespace Hecton8.Gameplay
 
             SuitStats stats = _resolvedSuitStats;
             uint stateHash = BuildTelemetryHash(_upgradeMask, _effectiveUpgradeMask, _inventoryUpgradeMask, in stats, flags);
-            _telemetryRing[index] = new SuitUpgradeTelemetryEntry
+            telemetryRing[index] = new SuitUpgradeTelemetryEntry
             {
-                FrameIndex = unchecked((uint)Mathf.Max(0, Time.frameCount)),
+                FrameIndex = ++_telemetryFrameIndex,
                 Sequence = _telemetrySequence++,
                 UpgradeMask = _upgradeMask,
                 EffectiveMask = _effectiveUpgradeMask,
@@ -1156,7 +1156,7 @@ namespace Hecton8.Gameplay
 
         private void DumpTelemetry(uint reasonFlags)
         {
-            if (_telemetryDumped || !_telemetryRing.IsCreated)
+            if (_telemetryDumped || !TryResolveTelemetryRing(out NativeArray<SuitUpgradeTelemetryEntry> telemetryRing))
                 return;
 
             _telemetryDumped = true;
@@ -1182,7 +1182,7 @@ namespace Hecton8.Gameplay
                         if (index >= TelemetryCapacity)
                             index -= TelemetryCapacity;
 
-                        SuitUpgradeTelemetryEntry entry = _telemetryRing[index];
+                        SuitUpgradeTelemetryEntry entry = telemetryRing[index];
                         WriteTelemetryEntry(writer, in entry);
                     }
                 }
@@ -1276,8 +1276,39 @@ namespace Hecton8.Gameplay
 
                 SuitUpgrades bit = SuitUpgradeResolver.ResolveUpgradeBit(upgrade);
                 if (bit != SuitUpgrades.None && (effectiveMask & (ulong)bit) != 0UL)
+                {
                     _installedUpgrades.Add(upgrade.upgradeId);
+                    _authoredInstalledMask |= (ulong)bit;
+                }
             }
+        }
+
+        private void RebuildAuthoredUpgradeMasksFromSets()
+        {
+            _authoredInstalledMask = 0UL;
+            _authoredBrokenMask = 0UL;
+            if (allUpgrades == null || allUpgrades.Length == 0)
+                return;
+
+            for (int i = 0; i < allUpgrades.Length; i++)
+            {
+                SuitUpgradeData upgrade = allUpgrades[i];
+                if (upgrade == null || string.IsNullOrEmpty(upgrade.upgradeId))
+                    continue;
+
+                SuitUpgrades bit = SuitUpgradeResolver.ResolveUpgradeBit(upgrade);
+                if (bit == SuitUpgrades.None)
+                    continue;
+
+                ulong bitMask = (ulong)bit;
+                if (_installedUpgrades.Contains(upgrade.upgradeId))
+                    _authoredInstalledMask |= bitMask;
+
+                if (_brokenUpgrades.Contains(upgrade.upgradeId))
+                    _authoredBrokenMask |= bitMask;
+            }
+
+            _authoredBrokenMask &= _authoredInstalledMask;
         }
 
         private void ApplyDeltasToRuntimeStats(
@@ -1334,6 +1365,8 @@ namespace Hecton8.Gameplay
             _installedUpgrades.Clear();
             _unlockedBlueprints.Clear();
             _brokenUpgrades.Clear();
+            _authoredInstalledMask = 0UL;
+            _authoredBrokenMask = 0UL;
 
             if (data == null)
             {
@@ -1373,6 +1406,7 @@ namespace Hecton8.Gameplay
                 }
             }
 
+            RebuildAuthoredUpgradeMasksFromSets();
             RebuildRuntimeStats();
         }
 

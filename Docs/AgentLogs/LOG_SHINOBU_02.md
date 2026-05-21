@@ -186,6 +186,233 @@ Telemetry DTO: `SignalTelemetryFrame`, explicit size 64.
 
 </SELF_AUDIT>
 
+## 2026-05-21 - Current53 Late Sidecar Read-Purity And Signal Flush Pass
+
+What was wrong:
+- Helmholtz's late report found mutating Core methods still named `Resolve*`/`TryResolve*`, including stress cascade slot claiming, master dependency scratch build, time dilation consumption, input device rebinding, XR trigger publishing, look blend advancement, foveated Vault ensure, and foveated camera/listener binding.
+- Foveated dispatcher-frame camera/listener binding still searched `GameBootstrapper`/scene components instead of using cached owner context only.
+- Zeno's late report found that `NativeQueue<T>.ParallelWriter` producers bypassed `TryPush` finite guards, letting corrupt payloads reach snapshot/coalescence without corruption telemetry.
+- Zeno also found per-signal `Interlocked.Increment(ref _coalescedTotal)` in the single-owner coalescence path.
+
+What was done:
+- Renamed the mutating Core helpers to explicit owner verbs: `ClaimBaseStressCascadeSlot`, `BuildMasterDependencyHandleIntoScratch`, `ConsumeFrameTimeDilationScalar`, `RefreshCachedGamepadBinding`, `RefreshCachedXRControllerBindings`, `CaptureXRToolActionBitsAndPublishSignal`, `AdvanceLookHotSwapBlend`, `TryEnsureVaultArray`, `RefreshViewCameraBinding`, and `RefreshListenerBinding`.
+- Removed foveated dispatcher-frame `GameBootstrapper`/`TryGetComponent` lookup. Camera/listener binding now uses cached `_playerContext.PlayerCamera` and `_playerContext.PlayerRigidbody`.
+- Added dequeue-side `SignalPayloadFiniteGuards.Sanitize(ref signal)` in `SignalBus<T>.FlushPreSimulation` before coalescence/snapshot append.
+- Replaced per-coalesced-signal atomics with local owner-flush counters and one `Interlocked.Add` commit for coalesced, load-shed, and corrupted totals.
+- Updated `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md` with the Current53 doctrine addendum.
+
+Cinematic Cheats used:
+- No simulation added. The cheat is a cheaper owner-flush filter: sanitize once at lane flush and coalesce with local counters instead of trusting every producer path or paying an atomic per coalesced payload.
+
+Exact Microseconds saved:
+- 0 measured us. Static-only pass. Expected savings are removal of dispatcher-frame scene/component lookup and per-coalesced-signal atomic barriers; no profiler claim is made.
+
+Verification:
+- Old-name scan returned no hits for the mutating `Resolve*` names reported by Helmholtz.
+- Foveated focused scan returned no `GameBootstrapper`, `CurrentPlayerObject`, `TryGetCurrentPlayerTransform`, or `TryGetComponent` in `FoveatedSimulationManager.cs`.
+- Targeted scanner import over touched Core files: `Hot_Registry_Polling=0`, `Hot_Helper_Registry_Polling=0`, `Mid_Frame_Complete=0`, `Hot_Helper_Complete=0`, `Runtime_Struct_Layout=0`, `Burst_Job_Directives=0`.
+- SignalCritical Current53 audit: files 9 C# / 67 compute, errors 0, warnings 0, infos 17, confirmed/probable errors 0.
+- `git diff --check` returned exit 0 with line-ending warnings only.
+- Build guard: `PRE_BUILD_GUARD_CURRENT53 CPU=100 SAMPLES=100,100,100 PROCS=0`; dotnet build skipped. Last actual Core build remains Current40: 311 errors / 19 warnings.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current53">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">Legacy `ParallelWriter` remains as migration debt, but dequeue-side finite guard now blocks corrupt payloads before snapshot/coalescence.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added; Current53 SignalCritical managed event surface remains clean.</task>
+    <task id="03" status="PASS">No signal DTO layout changed; runtime signal Pack=1 remains 0 and signalsWithoutLayout remains 0. Zeno's 192-byte/32-byte high-frequency layout split is deferred as ABI migration debt.</task>
+    <task id="04" status="PASS">No new queue added; existing typed lane queue now has flush-side guard coverage.</task>
+    <task id="05" status="PASS">Blind splicing/fence path unchanged.</task>
+    <task id="06" status="PASS">MPSC producer API unchanged; owner flush now reduces coalescence atomic contention.</task>
+    <task id="07" status="PASS">Frame flush parity unchanged.</task>
+    <task id="08" status="PASS">No binary quality switch added; existing continuous frame limit curve remains.</task>
+    <task id="09" status="PASS">Signal coalescence now commits counters once per owner flush.</task>
+    <task id="10" status="PASS">Mutating read-named Core helpers were renamed out of `Resolve*`/`TryResolve*` surfaces.</task>
+    <task id="11" status="PASS">Fatal interrupt bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP math changed; invalid payloads are sanitized before snapshot append.</task>
+    <task id="14" status="PASS">No sibling runtime reference added and no generated csproj edited.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged.</task>
+    <task id="16" status="PASS">Corrupt parallel-writer payloads now increment corruption telemetry and feed existing blackbox corruption reporting.</task>
+    <task id="17" status="PASS">No hot-path string formatting/concatenation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live signal injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV priority/input tuning paths unchanged.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalTelemetryFrame" size="64">
+    <field offset="0" size="4">Frame</field>
+    <field offset="4" size="4">TotalPushedSignals</field>
+    <field offset="8" size="4">PeakSignalsPerFrame</field>
+    <field offset="12" size="4">CoalescedSignals</field>
+    <field offset="16" size="4">DroppedSignals</field>
+    <field offset="20" size="4">CorruptedSignals</field>
+    <field offset="24" size="4">ActiveLaneCount</field>
+    <field offset="28" size="4">Flags</field>
+    <field offset="32" size="4">GlobalQualityMilli</field>
+    <field offset="36" size="4">SystemStressMilli</field>
+    <padding offset="40" size="8">Reserved0</padding>
+    <padding offset="48" size="8">Reserved1</padding>
+    <padding offset="56" size="8">Reserved2</padding>
+    <proof>Explicit layout, 64 bytes exactly, one cache line, no Pack=1. Current53 did not add a new DTO.</proof>
+  </struct_layout>
+  <scalability_curve>Low devices avoid dispatcher-frame scene/component searches and per-coalesced-signal atomic barriers. Middle/high/ultra tiers keep the same typed lane capacity scaling through `GlobalQualityWeight`; corrupt legacy-producer payloads are dropped before they can poison richer snapshots.</scalability_curve>
+  <h_phi_vault_status>No private NativeArray/NativeList/NativeHashMap added. Existing DataVault generation handles and SignalBus frame snapshot buffers remain the memory owners.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, `[NoAlias]` fields, or JobHandles changed. Current53 changes owner-phase naming, foveated cached binding, and SignalBus flush accounting only.</pointer_aliasing_dependency_graph>
+  <compile_guard>No direct sibling runtime assembly reference added. No generated `.csproj` edited. Build was not run because CPU guard reported max 100%.</compile_guard>
+  <dear_lie before="O(coalesced_payloads * atomic_barrier) plus possible scene/component lookup" after="O(coalesced_payloads + one atomic commit) and cached context binding">The fake is owner-phase aggregation: local counters and cached player context replace repeated synchronization/scene discovery.</dear_lie>
+  <verification>Static only. No Unity import, Console, Play Mode, profiler, GCMonitor, IL2CPP, ARM64 player, or Core compile proof in Current53.</verification>
+</SELF_AUDIT>
+
+## 2026-05-21 - Current52 XR Read-Accessor Purity Pass
+
+What was wrong:
+- Current51 removed XR/DataVault registry fallback, but `InputDispatcher` XR resolve helpers still had hidden ownership mutation.
+- `GetXRInputStatesReadOnly`, `GetXRLookAtRayCommandsReadOnly`, and `TryGetXRInputState` reached `TryResolveXR*`; those helpers could call `TryResolveOrAcquireInputBuffer` and acquire/grow Vault buffers from a read-named route.
+
+What was done:
+- Replaced `TryResolveXRInputStates` with a pure `TryResolveInputBuffer(in _xrInputStatesHandle, XRInputStateCapacity, out states)` call.
+- Replaced `TryResolveXRLookAtRayCommands` with a pure `TryResolveInputBuffer(in _xrLookAtRayCommandsHandle, XRLookAtCommandCapacity, out commands)` call.
+- Left XR buffer ownership in `EnsureXRNativeBuffers`; no BufferID, DTO, save identity, signal payload, or authority owner changed.
+- Updated `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md` with the Current52 XR read-facade rule note.
+
+Cinematic Cheats used:
+- No simulation added. The cheat is a cheaper authority path: read facades now do O(1) generation-handle validation and fail closed instead of performing hidden Vault allocation/acquisition.
+
+Exact Microseconds saved:
+- 0 measured us. Static-only pass. Expected effect is removing hidden Vault acquisition from XR read facades; no profiler claim is made.
+
+Verification:
+- Resolver proof: `TryResolveXRInputStates acquire=False registry=False pureResolve=True`; `TryResolveXRLookAtRayCommands acquire=False registry=False pureResolve=True`.
+- Targeted scanner import over `SystemDispatcher.cs` and `InputDispatcher.cs`: `Hot_Registry_Polling=0`, `Hot_Helper_Registry_Polling=0`, `Mid_Frame_Complete=0`, `Hot_Helper_Complete=0`.
+- SignalCritical Current52 audit: files 9 C# / 67 compute, errors 0, warnings 0, infos 17, confirmed/probable errors 0.
+- `git diff --check -- Assets/_Project/Scripts/Core/InputDispatcher.cs` returned exit 0 with line-ending warning only.
+- Build guard: `PRE_BUILD_GUARD_CURRENT52 CPU=100 SAMPLES=100,50,92 PROCS=0`; dotnet build skipped. Last actual Core build remains Current40: 311 errors / 19 warnings.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current52">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">No legacy binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added; Current52 SignalCritical managed event surface remains clean.</task>
+    <task id="03" status="PASS">No signal DTO layout changed; runtime signal Pack=1 remains 0 and signalsWithoutLayout remains 0.</task>
+    <task id="04" status="PASS">Queue model unchanged; no orphaned queue mutation.</task>
+    <task id="05" status="PASS">Blind splicing/fence path unchanged.</task>
+    <task id="06" status="PASS">MPSC writer semantics unchanged.</task>
+    <task id="07" status="PASS">Frame flush parity unchanged.</task>
+    <task id="08" status="PASS">No binary quality switch added.</task>
+    <task id="09" status="PASS">Signal aggregation/coalescing kernel unchanged.</task>
+    <task id="10" status="PASS">XR read facades no longer acquire/grow Vault buffers.</task>
+    <task id="11" status="PASS">Fatal interrupt bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP math changed; no absolute AUP-to-float cast added.</task>
+    <task id="14" status="PASS">No sibling runtime reference added and no generated csproj edited.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged.</task>
+    <task id="16" status="PASS">Blackbox telemetry unchanged.</task>
+    <task id="17" status="PASS">No hot-path string formatting/concatenation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live signal injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV priority/input tuning paths unchanged.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalTelemetryFrame" size="64">
+    <field offset="0" size="4">Frame</field>
+    <field offset="4" size="4">TotalPushedSignals</field>
+    <field offset="8" size="4">PeakSignalsPerFrame</field>
+    <field offset="12" size="4">CoalescedSignals</field>
+    <field offset="16" size="4">DroppedSignals</field>
+    <field offset="20" size="4">CorruptedSignals</field>
+    <field offset="24" size="4">ActiveLaneCount</field>
+    <field offset="28" size="4">Flags</field>
+    <field offset="32" size="4">GlobalQualityMilli</field>
+    <field offset="36" size="4">SystemStressMilli</field>
+    <padding offset="40" size="8">Reserved0</padding>
+    <padding offset="48" size="8">Reserved1</padding>
+    <padding offset="56" size="8">Reserved2</padding>
+    <proof>Explicit layout, 64 bytes exactly, one cache line, no Pack=1. Current52 did not add a new DTO.</proof>
+  </struct_layout>
+  <scalability_curve>At low quality and weak hardware, XR read paths now pay only cached-handle validation and fail closed if owner setup did not prepare buffers. Middle/high/ultra tiers keep the same DataVault-backed XR buffers for richer look-at and controller state consumers. `GlobalQualityWeight` truth, DTO layout, save identity, and authority route are unchanged.</scalability_curve>
+  <h_phi_vault_status>No private NativeArray/NativeList/NativeHashMap added. Current52 keeps existing Vault handles `ShinobuInputXRInputStates` and `ShinobuInputXRLookAtRayCommands`; ownership/acquisition remains in `EnsureXRNativeBuffers`.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, `[NoAlias]` fields, or JobHandles changed. Current52 consumes no new dependency and outputs none; it only removes Vault acquisition from read-named helper methods.</pointer_aliasing_dependency_graph>
+  <compile_guard>No direct sibling runtime assembly reference added. No generated `.csproj` edited. Build was not run because CPU guard reported max 100%.</compile_guard>
+  <dear_lie before="O(read_facade + possible Vault acquire/grow)" after="O(read_facade + cached generation handle validation)">The fake is authority discipline: prepared XR buffers are treated as snapshots, not lazily created state.</dear_lie>
+  <verification>Static only. No Unity import, Console, Play Mode, profiler, GCMonitor, IL2CPP, ARM64 player, or Core compile proof in Current52.</verification>
+</SELF_AUDIT>
+
+## 2026-05-20 - Current50 Global Authority Hot Registry Pass
+
+What was wrong:
+- `FoveatedSimulationManager.BeginDispatcherFrame()` could reach `GlobalRegistry.DataVault` through `EnsureNativeBuffersAllocated()`.
+- `FoveatedSimulationManager.TryResolveViewCamera()` could reach `GlobalRegistry.Player` from the dispatcher-frame camera resolve route.
+- `Tools/RunShinobu140StaticScanners.py` missed these because dispatcher phase names were not in the hot root set.
+
+What was done:
+- Added cached `_dataVault` and `_playerContext` fields to `FoveatedSimulationManager`.
+- Bound those dependencies from `InitializeRuntime()` and `IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(...)`.
+- Changed Foveated frame/schedule/camera/backpressure routes to use cached interfaces and fail closed when the owner route is absent.
+- Released Vault handles through the cached previous Vault during rebinding/disposal and cleared aliases before reuse.
+- Expanded SHINOBU_140 hot roots to include dispatcher phase names and `ReportFrame`.
+- Updated `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`.
+
+Cinematic Cheats used:
+- No new simulation. Existing foveated cadence remains the cheat: far/peripheral targets shed CPU cadence while interpolation preserves presentation.
+
+Exact Microseconds saved:
+- 0 measured us. Static-only estimate: removes two service-locator poll routes from Foveated frame-reachable execution and prevents late DataVault handle acquisition from acting as hidden hot-path recovery.
+
+Verification:
+- Targeted Foveated audit: `hotRegistryCritical=0`, `hotHelperRegistryCritical=0`, `hotHelperCompleteCritical=0`.
+- SignalCritical Current50 audit: errors 0, warnings 0, infos 17, confirmed errors 0, `signalsWithoutLayout=0`, runtime signal Pack=1 0.
+- `python -m py_compile Tools/RunShinobu140StaticScanners.py` passed.
+- `git diff --check` over Current50 touched files returned exit 0 with line-ending warnings only.
+- Full SHINOBU_140 repository scan exceeded the 180s local command budget and is not claimed.
+- Build guard: `PRE_BUILD_GUARD_CURRENT50 CPU=100 PROCS=0`; dotnet build skipped. Last actual Core build remains Current40: 311 errors / 19 warnings.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current50">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">Global authority doctrine re-read; no new binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added.</task>
+    <task id="03" status="PASS">SignalCritical runtime Pack=1 remains 0; Current50 added no signal DTO.</task>
+    <task id="04" status="PASS">No new local/orphaned signal queue added.</task>
+    <task id="05" status="PASS">Dispatcher fence semantics unchanged.</task>
+    <task id="06" status="PASS">MPSC writer model unchanged.</task>
+    <task id="07" status="PASS">Frame parity dispatch unchanged; Foveated dependency binding moved to cold/hot-swap route.</task>
+    <task id="08" status="PASS">No binary quality switch added.</task>
+    <task id="09" status="PASS">Signal aggregation/coalescing kernel unchanged.</task>
+    <task id="10" status="PASS">Read facades inspected; no hidden `TryGet*` bootstrap added.</task>
+    <task id="11" status="PASS">Fatal interrupt bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost/entity filtering unchanged.</task>
+    <task id="13" status="PASS">No absolute AUP-to-float cast added.</task>
+    <task id="14" status="PASS">No new sibling runtime assembly reference; Foveated uses Core contracts and cached Core registry interfaces.</task>
+    <task id="15" status="PASS">IL2CPP/AOT shape unchanged.</task>
+    <task id="16" status="PASS">Blackbox telemetry unchanged; Current50 adds targeted static audit artifact.</task>
+    <task id="17" status="PASS">No hot-path string formatting/concatenation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live signal injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV priority hot-swap release guard from Current49 preserved.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalTelemetryFrame" size="64">
+    <field offset="0" size="4">Frame</field>
+    <field offset="4" size="4">TotalPushedSignals</field>
+    <field offset="8" size="4">PeakSignalsPerFrame</field>
+    <field offset="12" size="4">CoalescedSignals</field>
+    <field offset="16" size="4">DroppedSignals</field>
+    <field offset="20" size="4">CorruptedSignals</field>
+    <field offset="24" size="4">ActiveLaneCount</field>
+    <field offset="28" size="4">Flags</field>
+    <field offset="32" size="4">GlobalQualityMilli</field>
+    <field offset="36" size="4">SystemStressMilli</field>
+    <padding offset="40" size="8">Reserved0</padding>
+    <padding offset="48" size="8">Reserved1</padding>
+    <padding offset="56" size="8">Reserved2</padding>
+    <proof>Explicit 64-byte layout, one cache line, no Pack=1. Current50 added no runtime DTO.</proof>
+  </struct_layout>
+  <scalability_curve>Foveated simulation still scales continuously through existing cadence and importance math. Current50 does not alter `GlobalQualityWeight` truth ownership or DTO layout; it only moves dependency resolution out of frame-reachable routes.</scalability_curve>
+  <h_phi_vault_status>Foveated native buffers remain DataVault-backed via existing BufferIDs `73220..73234`. Current50 adds no private NativeArray ownership; it caches `IDataVault` authority and releases generation handles through that owner.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst job fields or `[NoAlias]` contracts changed. Existing Foveated jobs still schedule through their current dispatcher handles; Current50 changes only dependency binding and handle lifecycle.</pointer_aliasing_dependency_graph>
+  <compile_guard>No generated project files edited. No direct sibling runtime reference added. Build was not launched because CPU guard reported 100%.</compile_guard>
+  <dear_lie before="O(frame_reachable service locator fallback)" after="O(cached interface read)">The cheat is cold dependency binding: frame phases use cached owner facts instead of searching global state.</dear_lie>
+  <verification>Static only. No Unity import, Console, Play Mode, profiler, GCMonitor, IL2CPP, ARM64 player, or Core compile-green proof in Current50.</verification>
+</SELF_AUDIT>
+
 ## 2026-05-20 - Current48 Signal Corruption Backoff And SignalCritical Audit Classifier
 
 What was wrong:
@@ -2140,4 +2367,543 @@ Verification:
   <compile_guard>No new direct sibling runtime assembly reference. No generated `.csproj` edited. C# audit CLI source was patched, but build was not run because CPU guard reported 100%.</compile_guard>
   <dear_lie before="O(file_exists + file_read) possible from public release-player call" after="O(1) false return in release player">The fake is a production no-op gate for manual tuning I/O; real priority truth remains boot/fallback table data.</dear_lie>
   <verification>Static only. No Unity import, Console, Play Mode, profiler, GCMonitor, IL2CPP, ARM64 player, Core compile, or C# audit CLI build proof in Current49.</verification>
+</SELF_AUDIT>
+
+## 2026-05-20 - Current51 System/Input Cold-DI Registry Pass
+
+What was wrong:
+- Core still had hidden DataVault service-locator recovery in frame-reachable dispatcher/input routes after the Foveated Current50 cleanup.
+- `SystemDispatcher` could refresh `GlobalRegistry.DataVault` from AUP pre-shift, master dispatcher buffer ensure, and H8 time ensure helper paths.
+- `InputDispatcher` could lazy-read `GlobalRegistry.DataVault` from deterministic input cadence and XR buffer resolve paths.
+
+What was done:
+- Removed `SystemDispatcher` DataVault self-refresh from AUP pre-shift, master dispatcher native buffer ensure, and H8 time ensure paths. These routes now use cached `_dataVault` and fail closed if the owner route is absent.
+- Kept DataVault binding in `SystemDispatcher.InitializeService()` and existing `GlobalRegistry` hot-swap callbacks.
+- Added `InputDispatcher.RefreshCachedDataVaultCold()` to cold lifecycle setup and added DataVault handling to `OnGlobalRegistryServiceRebound`.
+- Centralized Input DataVault replacement in `RebindCachedDataVault(...)`, preserving handle release and deterministic/XR readiness reset.
+- Removed five lazy input/XR `_dataVault = GlobalRegistry.DataVault` fallbacks.
+- Updated `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md` with the Current51 cold-DI addendum.
+
+Cinematic Cheats used:
+- No physical simulation added. The cheat is architectural: use the single owner-published Vault route and cached generation handles instead of runtime discovery. Missing authority becomes a cheap fail-closed branch, not scene/global search.
+
+Exact Microseconds saved:
+- 0 measured us. Static-only pass. Expected gain is removal of hidden service-locator branches from dispatcher/input frame paths; no profiler claim is made.
+
+Verification:
+- Targeted scanner import over `SystemDispatcher.cs` and `InputDispatcher.cs`: `Hot_Registry_Polling=0`, `Hot_Helper_Registry_Polling=0`, `Mid_Frame_Complete=0`, `Hot_Helper_Complete=0`.
+- SignalCritical Current51 audit: files 9 C# / 68 compute, errors 0, warnings 0, infos 17, confirmed/probable errors 0, `signalsWithoutLayout=0`, runtime signal `Pack=1=0`, managed event surface 0.
+- `git diff --check -- Assets/_Project/Scripts/Core/SystemDispatcher.cs Assets/_Project/Scripts/Core/InputDispatcher.cs` returned exit 0 with line-ending warnings only.
+- Build guard: `PRE_BUILD_GUARD_CURRENT51 CPU=100 PROCS=0`; dotnet build skipped. Last actual Core build remains Current40: 311 errors / 19 warnings.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current51">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">No legacy binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added; Current51 SignalCritical managed event surface is 0.</task>
+    <task id="03" status="PASS">No signal DTO layout changed; runtime signal Pack=1 remains 0 and signalsWithoutLayout remains 0.</task>
+    <task id="04" status="PASS">Queue model unchanged; no orphaned queue mutation.</task>
+    <task id="05" status="PASS">Blind splicing/fence path preserved; AUP pre-shift still forces master fences, only registry recovery was removed.</task>
+    <task id="06" status="PASS">MPSC writer semantics unchanged.</task>
+    <task id="07" status="PASS">Frame flush parity unchanged.</task>
+    <task id="08" status="PASS">No binary quality switch added; fail-closed cached dependency behavior does not alter `GlobalQualityWeight` truth.</task>
+    <task id="09" status="PASS">Signal aggregation/coalescing kernel unchanged.</task>
+    <task id="10" status="PASS">Read-only accessors no longer perform hidden Vault acquisition from registry in the touched Input XR helpers.</task>
+    <task id="11" status="PASS">Fatal interrupt bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP math changed; no absolute AUP-to-float cast added.</task>
+    <task id="14" status="PASS">No sibling runtime reference added and no generated csproj edited.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged.</task>
+    <task id="16" status="PASS">Blackbox telemetry unchanged; dispatcher/input Vault routes now use cached ownership.</task>
+    <task id="17" status="PASS">No hot-path string formatting/concatenation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live signal injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV priority/input tuning paths unchanged.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalTelemetryFrame" size="64">
+    <field offset="0" size="4">Frame</field>
+    <field offset="4" size="4">TotalPushedSignals</field>
+    <field offset="8" size="4">PeakSignalsPerFrame</field>
+    <field offset="12" size="4">CoalescedSignals</field>
+    <field offset="16" size="4">DroppedSignals</field>
+    <field offset="20" size="4">CorruptedSignals</field>
+    <field offset="24" size="4">ActiveLaneCount</field>
+    <field offset="28" size="4">Flags</field>
+    <field offset="32" size="4">GlobalQualityMilli</field>
+    <field offset="36" size="4">SystemStressMilli</field>
+    <padding offset="40" size="8">Reserved0</padding>
+    <padding offset="48" size="8">Reserved1</padding>
+    <padding offset="56" size="8">Reserved2</padding>
+    <proof>Explicit layout, 64 bytes exactly, one cache line, no Pack=1. Current51 did not add a new DTO.</proof>
+  </struct_layout>
+  <scalability_curve>Low devices now avoid late registry discovery from input/XR and dispatcher frame surfaces. Middle devices keep hot-swap recovery through explicit owner callbacks. High/Ultra devices keep the same DataVault-backed buffers for deterministic input, XR look-at commands, H8 time, raycast, and dispatcher telemetry without changing gameplay truth ownership.</scalability_curve>
+  <h_phi_vault_status>No private NativeArray/NativeList/NativeHashMap added. Touched routes continue using existing Vault generation handles: `SystemDispatcherMaster*`, `H8Time`, dispatcher raycast/blackbox handles, and `ShinobuInput*` deterministic/XR handles.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, `[NoAlias]` fields, or JobHandles changed. Current51 consumes no new dependency and outputs none; it only removes registry recovery branches around existing Vault handle resolution.</pointer_aliasing_dependency_graph>
+  <compile_guard>No direct sibling runtime assembly reference added. No generated `.csproj` edited. Build was not run because CPU guard reported 100%.</compile_guard>
+  <dear_lie before="O(frame_routes * possible registry recovery)" after="O(frame_routes * cached pointer/null branch)">The fake is ownership discipline: cached Vault handles and owner hot-swap replace runtime service discovery.</dear_lie>
+  <verification>Static only. No Unity import, Console, Play Mode, profiler, GCMonitor, IL2CPP, ARM64 player, or Core compile proof in Current51.</verification>
+</SELF_AUDIT>
+
+## 2026-05-21 - Current54 Cache-Line-Critical Signal Telemetry Pass
+
+What was wrong:
+- Current53 recorded high-frequency layout debt but did not expose it through runtime telemetry.
+- `SignalBus<T>.HasValidPayloadStride()` still accepted 16/32/64/128/192-byte payloads globally, hiding the fact that `ToolAcousticSignal` is 32 bytes and `TetherTensionSignal` is 192 bytes on lanes that need cache-line migration review.
+
+What was done:
+- Added `SignalBus<T>.ConfigureCacheLineCritical(...)` without changing the existing `Configure(...)` API.
+- Marked `ToolAcousticSignal` and `TetherTensionSignal` through that new boot path.
+- Added telemetry-only policy evidence: `SignalLaneTelemetry.Flags` bit `32` now marks cache-line-critical stride debt, `Reserved0` records payload stride bytes, and `Reserved1` records policy flags.
+- Preserved all payload field offsets and total sizes. No producer, consumer, queue, Vault snapshot, or assembly route was changed.
+- Updated `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md` with the Current54 telemetry contract.
+
+Cinematic Cheats used:
+- No physical simulation added. The cheat is diagnostic compression: two bytes and one flag in an existing telemetry DTO expose migration debt instead of forcing a costly same-pass ABI rewrite.
+
+Exact Microseconds saved:
+- 0 measured us. Static/source-only pass. Expected value is preventing hidden cache-line debt from surviving into stress testing; no profiler or runtime claim is made.
+
+Verification:
+- `SignalBus<ToolAcousticSignal>.ConfigureCacheLineCritical(...)` count: 1; plain `SignalBus<ToolAcousticSignal>.Configure(...)` count: 0.
+- `SignalBus<TetherTensionSignal>.ConfigureCacheLineCritical(...)` count: 1; plain `SignalBus<TetherTensionSignal>.Configure(...)` count: 0.
+- SignalCritical Current54 audit: files 9 C# / 67 compute, errors 0, warnings 0, infos 17, confirmed/probable errors 0, runtime signal Pack=1 0, managed event surface 0.
+- `git diff --check` over Current54 touched code/audit artifacts returned exit 0 with line-ending warning only.
+- Build skipped by guard: `PRE_BUILD_GUARD_CURRENT54 CPU=100 SAMPLES=100,100,100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current54">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">No legacy binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added; Current54 SignalCritical managed event surface is 0.</task>
+    <task id="03" status="PASS">No Pack=1. `SignalLaneTelemetry` now records cache-line-critical stride debt without changing payload layouts.</task>
+    <task id="04" status="PASS">No orphaned queue mutation; SignalBus queue ownership unchanged.</task>
+    <task id="05" status="PASS">Blind splicing/fence behavior unchanged.</task>
+    <task id="06" status="PASS">MPSC writer ABI unchanged; cache-line-critical policy is boot metadata only.</task>
+    <task id="07" status="PASS">Frame flush parity unchanged.</task>
+    <task id="08" status="PASS">No binary quality switch added.</task>
+    <task id="09" status="PASS">Aggregation/coalescing behavior unchanged from Current53.</task>
+    <task id="10" status="PASS">Read snapshot API unchanged; telemetry write is owner-flush metadata.</task>
+    <task id="11" status="PASS">Fatal interrupt bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost/entity filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP math changed; no absolute AUP-to-float cast added.</task>
+    <task id="14" status="PASS">No sibling runtime reference or generated project edit added.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged; old Configure API preserved.</task>
+    <task id="16" status="PASS">Blackbox telemetry enriched through existing `SignalLaneTelemetry` fields.</task>
+    <task id="17" status="PASS">No hot-path string formatting, LINQ, or managed allocation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live signal injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV priority hot swap unchanged.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalLaneTelemetry" size="32">
+    <field offset="0" size="4">LaneHash</field>
+    <field offset="4" size="4">QueuedBeforeFlush</field>
+    <field offset="8" size="4">SnapshotCount</field>
+    <field offset="12" size="4">DroppedCount</field>
+    <field offset="16" size="4">CoalescedCount</field>
+    <field offset="20" size="1">Flags; bit 32 = cache-line-critical stride debt</field>
+    <field offset="21" size="1">Reserved0 = payload stride bytes</field>
+    <field offset="22" size="2">Reserved1 = layout policy flags</field>
+    <field offset="24" size="8">Reserved2 = corruptedTotal high32 | pushedLastFlush low32</field>
+    <proof>Explicit layout, 32 bytes exactly, no Pack=1, no ABI size change.</proof>
+  </struct_layout>
+  <scalability_curve>Low devices gain visible telemetry for hot lanes that should be compressed or split before cache bandwidth becomes a frame risk. Middle devices keep current lane behavior while flagging migration candidates. High/Ultra can keep richer tether/acoustic visuals for now, but telemetry proves when overkill lanes are still riding oversized or sub-cache-line payloads.</scalability_curve>
+  <h_phi_vault_status>No private NativeArray/NativeList/NativeHashMap added. SignalBus frame snapshots remain Vault-backed through existing generation handles; `NativeQueue<T>` ingress remains the registered MPSC bridge lane from prior rationale.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, `[NoAlias]` fields, or JobHandles changed. Current54 consumes no dispatcher handle and outputs none.</pointer_aliasing_dependency_graph>
+  <compile_guard>No new direct sibling runtime assembly reference. Existing `Configure(...)` API preserved; `ConfigureCacheLineCritical(...)` is additive Core-owned source.</compile_guard>
+  <dear_lie before="O(payload ABI rewrite across producers/consumers)" after="O(1) telemetry flag plus two reserved fields">The fake is surfacing the debt in existing blackbox telemetry rather than simulating a full migration during a concurrent batch.</dear_lie>
+  <verification>Static only. No Unity import, Console, Play Mode, profiler, GCMonitor, IL2CPP, ARM64 player, or Core compile proof in Current54.</verification>
+</SELF_AUDIT>
+
+## 2026-05-21 - Current55 Legacy MPSC Writer Surface Telemetry
+
+What was wrong -> Retained `NativeQueue<T>.ParallelWriter` compatibility route was still named/documented as a normal producer open path and only visible via grep, not `SignalLaneTelemetry`. Broad migration would break sibling producers.
+
+What was done -> Added `OpenLegacyMpscWriter()`, kept old signatures as facades, routed `GlobalSignals.OpenSignalWriterForProducerPhase<TSignal>()` into the legacy-named path, added telemetry flag bit `64` and `Reserved1` high-byte writer-open count, updated contract comments and architecture docs.
+
+Cinematic Cheats used -> No gameplay simulation added. The pass is a diagnostic fake: it records writer-surface pressure at open/flush granularity instead of instrumenting every enqueue.
+
+Exact Microseconds saved -> 0 measured. No profiler proof. Expected normal-path cost is one `Interlocked.Increment` per writer open plus one `Interlocked.Exchange` per lane flush; no per-signal instrumentation.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current55_LegacyMpscWriterSurface">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <task_reconciliation>
+    <task id="01" status="PASS_STATIC_SOURCE">Legacy MPSC writer surface classified; no broad producer purge in this pass.</task>
+    <task id="02" status="PASS_STATIC_SOURCE">SignalCritical audit still reports runtime Pack=1=0 and cache-line debt as INFO telemetry for ToolAcoustic/Tether.</task>
+    <task id="03" status="DEFERRED">No new NativeSetThreadIndex producers; existing SignalWarden thread-local path remains owner route.</task>
+    <task id="04" status="PASS_STATIC_SOURCE">No hot DTO properties added.</task>
+    <task id="05" status="UNCHANGED">Mock contention job unchanged.</task>
+    <task id="06" status="UNCHANGED">Thread-local scratchpad unchanged.</task>
+    <task id="07" status="UNCHANGED">Batch commit unchanged.</task>
+    <task id="08" status="UNCHANGED">Dear Lie coalescence unchanged.</task>
+    <task id="09" status="UNCHANGED">Continuous frame limits unchanged.</task>
+    <task id="10" status="UNCHANGED">Ping-pong ownership unchanged.</task>
+    <task id="11" status="PASS_STATIC_SOURCE">Retained MPSC bridge explicitly named legacy and telemetry-visible.</task>
+    <task id="12" status="UNCHANGED">AUP hash route unchanged.</task>
+    <task id="13" status="PASS_STATIC_DOC">No rollback-owned state added.</task>
+    <task id="14" status="UNCHANGED">No lock sweep change.</task>
+    <task id="15" status="UNCHANGED">No zero-init route change.</task>
+    <task id="16" status="PASS_STATIC_SOURCE">SignalLaneTelemetry now reports writer-open pressure with bit 64 and Reserved1 high byte.</task>
+    <task id="17" status="UNCHANGED">No new Burst job.</task>
+    <task id="18" status="UNCHANGED">Editor tuner unchanged.</task>
+    <task id="19" status="UNCHANGED">CSV capacity ingestion unchanged.</task>
+    <task id="20" status="UNCHANGED">Heatmap gizmo unchanged.</task>
+  </task_reconciliation>
+  <struct_layout name="SignalLaneTelemetry" size="32" abiChanged="false">
+    <field name="LaneHash" offset="0" size="4" />
+    <field name="QueuedBeforeFlush" offset="4" size="4" />
+    <field name="SnapshotCount" offset="8" size="4" />
+    <field name="DroppedCount" offset="12" size="4" />
+    <field name="CoalescedCount" offset="16" size="4" />
+    <field name="Flags" offset="20" size="1" bits="0 storm,1 noncritical,2 fatal,3 coalesced,4 corrupt,5 strideDebt,6 legacyMpscWriterOpened" />
+    <field name="Reserved0" offset="21" size="1" meaning="payload stride bytes saturated" />
+    <field name="Reserved1" offset="22" size="2" meaning="low8 layoutPolicyFlags, high8 legacyWriterOpenCount saturated" />
+    <field name="Reserved2" offset="24" size="8" meaning="low32 pushedLastFlush, high32 corruptedTotal" />
+    <proof>Explicit layout, 32 bytes exactly, no Pack=1, no ABI size change.</proof>
+  </struct_layout>
+  <scalability_curve>Low devices expose which lanes still open the slower MPSC bridge. Middle devices retain compatibility while writer pressure is visible. High/Ultra devices can prioritize thread-local scratchpad migration by actual lane pressure before adding richer visual-overkill signal traffic.</scalability_curve>
+  <h_phi_vault_status>No new Vault buffers. Existing SignalBus snapshots and SHINOBU_200 buffers unchanged.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, NoAlias fields, or JobHandles changed. The owner flush consumes no new dispatcher handle and outputs none.</pointer_aliasing_dependency_graph>
+  <compile_guard>No sibling runtime assembly reference was added; no producer ABI was removed.</compile_guard>
+  <dear_lie before="O(producers * enqueue instrumentation or broad writer rewrite)" after="O(writer opens + lane flushes)">The fake is counting legacy writer surface pressure at facade-open time instead of adding per-signal instrumentation or rewriting producers.</dear_lie>
+  <proof>SignalCritical Current55 errors=0 warnings=0 infos=19; build skipped CPU=100,100,100 PROCS=0.</proof>
+</SELF_AUDIT>
+
+## 2026-05-21 - Current56 Cache-Line-Critical Audit Sidecar Pass
+
+What was wrong:
+- Current54 made cache-line-critical lane stride debt visible at runtime through `SignalLaneTelemetry`, but the static SignalCritical audit still did not report `ConfigureCacheLineCritical(...)` debt.
+- Current55 is occupied by the legacy MPSC writer visibility pass, so the audit-sidecar evidence is recorded as Current56.
+
+What was done:
+- Added mirrored INFO-level static reporting to `Tools/SignalBusContractAudit.ps1` and `Tools/SignalBusContractAuditCli/Program.cs`.
+- The scanners parse `SignalBus<T>.ConfigureCacheLineCritical(...)`, resolve same-file `[StructLayout(Size = N)]`, and emit `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT` when `N` is not 64 or 128.
+- Added `cacheLineCriticalStrideDebtHits` to JSON/Markdown summaries in both tools.
+- Preserved runtime payload ABI, queue ownership, producer callsites, `HasValidPayloadStride()`, and authority route.
+- Updated `GLOBAL_AUTHORITY_BOUNDARIES.md` and the SHINOBU_200 thread-contention route card with the Current56 audit contract.
+
+Cinematic Cheats used:
+- No simulation added. The cheat is audit-side debt compression: one static INFO row exposes the migration target instead of forcing a high-risk same-pass payload split.
+
+Exact Microseconds saved:
+- 0 measured us. Tool-only static-source pass. Expected value is CI/audit visibility, not runtime speed.
+
+Verification:
+- PowerShell SignalCritical Current56 audit: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, cache-line-critical stride debt hits 2.
+- Reported symbols: `ToolAcousticSignal` payload 32 bytes and `TetherTensionSignal` payload 192 bytes.
+- `git diff --check` over Current56 audit tool/artifact/docs files returned exit 0 with line-ending warnings only.
+- Dotnet/C# CLI compile skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT56 CPU=100,100,100 PROCS=0`.
+- Stale intermediate Current55 audit artifacts removed so Current55 remains reserved for the legacy MPSC writer visibility pass.
+- No Unity import, Console, Play Mode, profiler, GCMonitor, IL2CPP, ARM64 player, or Core compile proof in Current56.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current56">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">Legacy signal contention debt is now statically visible for cache-line-critical lanes.</task>
+    <task id="02" status="PASS">Static audit reads explicit payload `StructLayout(Size=N)`; no runtime DTO layout changed.</task>
+    <task id="03" status="PASS">No thread-index allocation, Burst job, or native queue ownership path changed.</task>
+    <task id="04" status="PASS">No hot-path properties or managed event routes added.</task>
+    <task id="05" status="PASS">Mock contention generator unchanged.</task>
+    <task id="06" status="PASS">Thread-local scratch architecture unchanged.</task>
+    <task id="07" status="PASS">Batch commit and owner flush behavior unchanged.</task>
+    <task id="08" status="PASS">Dear Lie remains audit-level debt compression; no physical simulation added.</task>
+    <task id="09" status="PASS">No binary quality switch added; `GlobalQualityWeight` truth is untouched.</task>
+    <task id="10" status="PASS">No Vault swap route changed.</task>
+    <task id="11" status="PASS">Legacy MPSC fallback route unchanged.</task>
+    <task id="12" status="PASS">No AUP math changed.</task>
+    <task id="13" status="PASS">No rollback state surface changed.</task>
+    <task id="14" status="PASS">No lock sweep job or compile-wall reference changed.</task>
+    <task id="15" status="PASS">No zero-init path changed.</task>
+    <task id="16" status="PASS">Existing telemetry is now mirrored by static audit reporting.</task>
+    <task id="17" status="PASS">No Burst job attributes changed.</task>
+    <task id="18" status="PASS">Editor/dashboard surfaces unchanged.</task>
+    <task id="19" status="PASS">Live injection facade unchanged.</task>
+    <task id="20" status="PASS">Self-audit and logs updated; compile proof remains pending.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalLaneTelemetry" size="32">
+    <field offset="0" size="4">LaneHash</field>
+    <field offset="4" size="4">QueuedBeforeFlush</field>
+    <field offset="8" size="4">SnapshotCount</field>
+    <field offset="12" size="4">DroppedCount</field>
+    <field offset="16" size="4">CoalescedCount</field>
+    <field offset="20" size="1">Flags; mask 32 = cache-line-critical stride debt; mask 64 = legacy MPSC writer opened</field>
+    <field offset="21" size="1">Reserved0 = payload stride bytes</field>
+    <field offset="22" size="2">Reserved1 = low byte layout flags, high byte saturated legacy writer open count</field>
+    <field offset="24" size="8">Reserved2 = corruptedTotal high32 | pushedLastFlush low32</field>
+    <proof>Explicit layout, 32 bytes exactly, no Pack=1. Current56 changes only tool reporting; runtime DTO ABI is unchanged.</proof>
+  </struct_layout>
+  <scalability_curve>Low devices gain a static gate before hot 32/192-byte lanes become hidden cache-bandwidth debt. Middle devices keep current ABI while migration is planned. High/Ultra can keep richer tether/acoustic diagnostics for now, but audit output prevents overkill traffic from expanding on debt lanes without evidence.</scalability_curve>
+  <h_phi_vault_status>No private NativeArray/NativeList/NativeHashMap added. Tool output writes JSON/Markdown artifacts only; SignalBus frame snapshots remain on the existing Vault-backed route.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, `[NoAlias]` fields, or JobHandles changed. Current56 consumes no dispatcher handle and outputs none.</pointer_aliasing_dependency_graph>
+  <compile_guard>No runtime assembly reference changed. C# audit CLI source changed but dotnet build was skipped by CPU guard.</compile_guard>
+  <dear_lie before="Manual review of telemetry mask 32 only" after="O(files) static INFO debt rows">The fake is audit-side visibility instead of ABI migration.</dear_lie>
+  <verification>Static PowerShell audit only. C# CLI compile and Core compile are pending hardware guard.</verification>
+</SELF_AUDIT>
+
+## 2026-05-21 - Current57 Cache-Line-Critical Audit Parser And Debt Ledger Pass
+
+What was wrong:
+- Current56 static audit found cache-line-critical stride debt only when `ConfigureCacheLineCritical(...)` was on the same line in the literal `SignalBus<T>` form.
+- The two open debt rows were visible but lacked a concrete action ledger, which makes audit INFO rows easy to ignore under later lane traffic growth.
+
+What was done:
+- Hardened `Tools/SignalBusContractAudit.ps1` to scan a bounded forward statement, support qualified `SignalBus<...>` receivers and qualified payload type names, and use raw full-statement evidence.
+- Mirrored the parser hardening in `Tools/SignalBusContractAuditCli/Program.cs`; the helper uses `IndexOf(';')` for target-framework-safe statement termination.
+- Added `statementLineSpan` to cache-line-critical debt findings.
+- Added the route-card action ledger for `ToolAcousticSignal` 32-byte debt and `TetherTensionSignal` 192-byte debt.
+- Preserved payload ABI, SignalBus runtime behavior, queue ownership, telemetry DTO layout, and producer callsites.
+
+Cinematic Cheats used:
+- No physical simulation or gameplay path was added. The cheat is static-source debt compression: one INFO row plus route-card action text replaces a risky same-pass ABI split.
+
+Exact Microseconds saved:
+- 0 measured us. Tool/docs-only pass. Expected value is preventing high-contention lane debt from becoming invisible after source formatting changes.
+
+Verification:
+- PowerShell SignalCritical Current57 audit: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, cache-line-critical stride debt hits 2.
+- Debt rows: `ToolAcousticSignal` payload 32 bytes at `GlobalSignals.cs:7966`, `TetherTensionSignal` payload 192 bytes at `GlobalSignals.cs:8025`.
+- JSON evidence includes `statementLineSpan=1` for both current rows.
+- `git diff --check` over Current57 audit tool/artifact/docs/log files returned exit 0 with line-ending warnings only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT57 CPU=100,100,100 PROCS=0`; final retry `PRE_BUILD_GUARD_CURRENT57_FINAL CPU=100,100,100 PROCS=0`.
+- No C# audit CLI compile, Core compile, Unity import, Play Mode, profiler, GCMonitor, IL2CPP, or ARM64 player proof in Current57.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current57">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">Legacy signal contention debt remains statically visible for cache-line-critical lanes.</task>
+    <task id="02" status="PASS">Audit reads explicit payload `StructLayout(Size=N)` evidence; runtime DTO layout unchanged.</task>
+    <task id="03" status="PASS">No thread-index allocation, Burst job, or native queue ownership path changed.</task>
+    <task id="04" status="PASS">No hot-path DTO properties, managed events, or interface arrays added.</task>
+    <task id="05" status="PASS">Mock contention generator unchanged.</task>
+    <task id="06" status="PASS">Thread-local scratch architecture unchanged.</task>
+    <task id="07" status="PASS">Batch commit and owner flush behavior unchanged.</task>
+    <task id="08" status="PASS">Dear Lie is static debt visibility instead of physical/runtime simulation.</task>
+    <task id="09" status="PASS">No binary quality switch added; `GlobalQualityWeight` truth and authority route untouched.</task>
+    <task id="10" status="PASS">No Vault swap route changed.</task>
+    <task id="11" status="PASS">Legacy MPSC fallback route unchanged and still telemetry-visible through Current55.</task>
+    <task id="12" status="PASS">No AUP math changed.</task>
+    <task id="13" status="PASS">No rollback state surface changed.</task>
+    <task id="14" status="PASS">No sibling runtime assembly reference added.</task>
+    <task id="15" status="PASS">No zero-init path changed.</task>
+    <task id="16" status="PASS">Telemetry bit 32 remains the runtime proof surface; static audit now supports formatted call shapes.</task>
+    <task id="17" status="PASS">No Burst job attributes changed.</task>
+    <task id="18" status="PASS">Editor/dashboard surfaces unchanged.</task>
+    <task id="19" status="PASS">Live injection facade unchanged.</task>
+    <task id="20" status="PASS">Logs/docs updated; compile proof remains pending under hardware guard.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalLaneTelemetry" size="32" abiChanged="false">
+    <field offset="0" size="4">LaneHash</field>
+    <field offset="4" size="4">QueuedBeforeFlush</field>
+    <field offset="8" size="4">SnapshotCount</field>
+    <field offset="12" size="4">DroppedCount</field>
+    <field offset="16" size="4">CoalescedCount</field>
+    <field offset="20" size="1">Flags; mask 32 = cache-line-critical stride debt; mask 64 = legacy MPSC writer opened</field>
+    <field offset="21" size="1">Reserved0 = payload stride bytes saturated</field>
+    <field offset="22" size="2">Reserved1 = low byte layout flags, high byte saturated legacy writer open count</field>
+    <field offset="24" size="8">Reserved2 = corruptedTotal high32 | pushedLastFlush low32</field>
+    <proof>Explicit layout, 32 bytes exactly, no Pack=1. Current57 changes only audit tooling and docs; runtime DTO ABI is unchanged.</proof>
+  </struct_layout>
+  <scalability_curve>When global quality is low, the current compact lanes continue to avoid broad payload inflation. Middle/high tiers keep richer tether/acoustic data while debt stays visible. Ultra-tier visual sidecars must be route-carded before raising cadence or stuffing more visual truth into the hot payload.</scalability_curve>
+  <h_phi_vault_status>No private NativeArray/NativeList/NativeHashMap added. No VaultBufferHandle lifecycle changed. SignalBus frame snapshots remain on the existing Vault-backed route.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, `[NoAlias]` fields, or JobHandles changed. Current57 consumes no dispatcher handle and outputs none.</pointer_aliasing_dependency_graph>
+  <compile_guard>No runtime assembly reference changed. C# audit CLI compile and Core compile were skipped because CPU guards reported 100,100,100.</compile_guard>
+  <dear_lie before="Manual same-line source review or risky ABI mutation" after="O(files * boundedStatementLength) static INFO debt rows">The fake is parser-visible migration debt and action ledger instead of hot-path runtime instrumentation or payload split.</dear_lie>
+  <verification>PowerShell SignalCritical audit only. C# CLI compile and Core compile remain pending hardware guard.</verification>
+</SELF_AUDIT>
+
+## 2026-05-21 - Current58 SignalWarden Read Contract And Audit Summary Drift Pass
+
+What was wrong:
+- `SignalThreadLocalScratchpad` had a private helper named `TryReadCommittedSignals(...)` that opened a mutable committed-signal `NativeArray`. The current behavior did not allocate or poll the registry, but the name violated the read-accessor doctrine and made the owner/read-only distinction mechanically weaker.
+- PowerShell audit drifted from the C# CLI: it could emit local `NativeQueue<Signal|Command|Packet>` findings but did not expose `localNativeSignalQueues` in summary JSON/markdown.
+- The cache-line-critical debt ledger named the two debt lanes but did not pin struct/boot/guard/telemetry source anchors.
+
+What was done:
+- Renamed the private helper to `TryOpenCommittedSignalsBuffer(...)`. Owner access remains `TryOpenCommittedSignalsForOwner(...)`; consumer access remains `TryGetCommittedSignalsReadOnly(...)` and returns `NativeArray<T>.ReadOnly`.
+- Added `$localNativeQueueCount`, `localNativeSignalQueues`, and a markdown summary row to `Tools/SignalBusContractAudit.ps1`.
+- Added struct declaration, boot call, size guard, and telemetry proof anchors to the `ToolAcousticSignal` and `TetherTensionSignal` debt ledger.
+- Preserved payload ABI, BufferIDs, queue type, producer callsites, committed count storage, and dispatcher job routing.
+
+Cinematic Cheats used:
+- No simulation was added. The cheat remains audit/doc proof instead of runtime churn: expose queue and cache-line debt statically, rather than padding payloads or adding hot-path instrumentation.
+
+Exact Microseconds saved:
+- 0 measured us. Static/source-only pass. Runtime paths changed only by method name; no new allocation, no new job, no new queue, no new SignalBus payload field.
+
+Verification:
+- `TryReadCommittedSignals` scan: 0 hits.
+- `TryOpenCommittedSignalsBuffer` scan: 3 hits, two callsites plus private declaration.
+- PowerShell parser check: `PS_PARSE_ERRORS=0`.
+- PowerShell SignalCritical Current58 audit: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, cache-line-critical stride debt hits 2, local native signal queue hits 0.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT58 CPU=100,100,100 PROCS=0`.
+- No C# audit CLI compile, Core compile, Unity import, Play Mode, profiler, GCMonitor, IL2CPP, or ARM64 player proof in Current58.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current58">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">Thread contention route remains Core-owned and did not introduce sibling runtime references.</task>
+    <task id="02" status="PASS">Mutable committed-buffer opener uses `TryOpen*`, not `TryRead*`.</task>
+    <task id="03" status="PASS">No DTO field, offset, size, Pack, or payload ABI changed.</task>
+    <task id="04" status="PASS">No hot-path property, managed event, interface array, LINQ, or foreach was added.</task>
+    <task id="05" status="PASS">Fallback/mock contention generator unchanged; editor blocking path remains explicit.</task>
+    <task id="06" status="PASS">Thread-local scratch architecture unchanged; owner route still opens mutable state.</task>
+    <task id="07" status="PASS">Batch commit and dispatcher JobHandle routing unchanged; no hidden `.Complete()` added.</task>
+    <task id="08" status="PASS">Dear Lie requirement satisfied by static/audit debt exposure instead of runtime payload simulation.</task>
+    <task id="09" status="PASS">No binary quality switch added; `GlobalQualityWeight` route and truth ownership unchanged.</task>
+    <task id="10" status="PASS">No Vault buffer ID or lifecycle changed.</task>
+    <task id="11" status="PASS">Legacy MPSC route remains telemetry-visible through Current55 and PowerShell summary now reports local queue count.</task>
+    <task id="12" status="PASS">No AUP math changed.</task>
+    <task id="13" status="PASS">Rollback/state snapshot ABI unchanged and still blittable.</task>
+    <task id="14" status="PASS">No asmdef or compile-wall reference changed.</task>
+    <task id="15" status="PASS">No zero-init or boot validation route changed.</task>
+    <task id="16" status="PASS">Black-box/audit evidence improved with `localNativeSignalQueues` and anchored debt ledger.</task>
+    <task id="17" status="PASS">No Burst job or `[NoAlias]` field changed.</task>
+    <task id="18" status="PASS">Editor/dashboard runtime behavior unchanged.</task>
+    <task id="19" status="PASS">Live injection/facade surfaces unchanged; only private helper naming changed.</task>
+    <task id="20" status="PASS">Status, rationale, route card, architecture doc, and log updated; compile proof remains blocked by guard.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalThreadContentionTelemetryEntry" size="64" abiChanged="false">
+    <field offset="0" size="4">Frame</field>
+    <field offset="4" size="4">Flags</field>
+    <field offset="8" size="4">WrittenSignals</field>
+    <field offset="12" size="4">CoalescedSignals</field>
+    <field offset="16" size="4">DroppedSignals</field>
+    <field offset="20" size="4">OverflowSignals</field>
+    <field offset="24" size="4">NonFiniteSignals</field>
+    <field offset="28" size="4">ThreadCount</field>
+    <field offset="32" size="4">ActiveStrideBytes</field>
+    <field offset="36" size="4">PeakThreadWriteBytes</field>
+    <field offset="40" size="4">GlobalQualityMilli</field>
+    <field offset="44" size="4">VramPressureMilli</field>
+    <field offset="48" size="4">BufferIndex</field>
+    <field offset="52" size="4">BatchId</field>
+    <field offset="56" size="4">CommitMicroseconds</field>
+    <field offset="60" size="4">LastAupHashLow</field>
+    <proof>Explicit layout, 64 bytes exactly, no Pack=1. Current58 changed names/audit/docs only; telemetry DTO ABI is unchanged.</proof>
+  </struct_layout>
+  <scalability_curve>Low devices benefit from keeping compact current payload ABI and from audit-visible local queue debt before fragmentation becomes hidden frame cost. Middle devices keep existing SignalBus behavior. High/Ultra devices can still spend saved CPU on richer acoustic/tether sidecars later, but the ledger now requires owner-approved migration proof before payload stride expansion or cadence increase.</scalability_curve>
+  <h_phi_vault_status>No private NativeArray/NativeList/NativeHashMap added. Existing Vault handles remain `73043..73055` for thread-local headers, bytes, committed signals/count/hash, telemetry/cursor, overflow signals/header, tuning, and CSV scratch. Current58 changes no handle lifecycle.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, `[NoAlias]` fields, or JobHandles changed. Current58 consumes no dispatcher handle and outputs none.</pointer_aliasing_dependency_graph>
+  <compile_guard>No runtime assembly reference changed. Dotnet/Core/C# CLI compile skipped because guard reported CPU 100,100,100 and 0 dotnet/csc/MSBuild/Unity processes.</compile_guard>
+  <dear_lie before="ABI padding/splitting or hot runtime queue instrumentation" after="O(files) static audit summary plus anchored ledger">The fake is static evidence and naming discipline instead of adding CPU simulation, payload expansion, or hot-path diagnostics.</dear_lie>
+  <verification>PowerShell parse and SignalCritical audit only. C# CLI compile, Core compile, Unity import, runtime profiler, GCMonitor, IL2CPP, and ARM64 proof remain pending.</verification>
+</SELF_AUDIT>
+
+## 2026-05-21 - Current59 Audit CLI SDK Floor Reduction Pass
+
+What was wrong:
+- `Tools/SignalBusContractAuditCli/SignalBusContractAuditCli.csproj` targeted `net10.0`.
+- There is no root `global.json`, so a non-.NET-10 CI/agent host can fail before compiling the audit source.
+- Current source inspection found C# 12 syntax but no observed net10-only library API.
+
+What was done:
+- Retargeted the C# audit CLI project to `net8.0`.
+- Added explicit `<LangVersion>12.0</LangVersion>` to preserve collection expressions and record syntax.
+- Left scanner logic, runtime Core code, DTOs, SignalBus routes, generated audit output, and PowerShell audit behavior unchanged.
+
+Cinematic Cheats used:
+- Toolchain floor reduction instead of runtime instrumentation. The proof tool becomes runnable on more machines without adding any player-frame work.
+
+Exact Microseconds saved:
+- 0 measured us. Build was not run. Expected saving is build-start portability, not runtime frame time.
+
+Verification:
+- `Test-Path global.json` returned false.
+- `SignalBusContractAuditCli.csproj` now shows `TargetFramework=net8.0` and `LangVersion=12.0`.
+- `git diff --check` over Current59/current touched files returned exit 0 with line-ending warnings only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT59 CPU=100,100,100 PROCS=0`.
+- No C# audit CLI compile, Core compile, Unity import, Play Mode, profiler, GCMonitor, IL2CPP, or ARM64 player proof in Current59.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current59">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">SignalBus runtime route unchanged.</task>
+    <task id="02" status="PASS">No DTO, Pack, field, or layout mutation.</task>
+    <task id="03" status="PASS">No thread-index allocation, queue, or Vault ownership path changed.</task>
+    <task id="04" status="PASS">No hot-path code added.</task>
+    <task id="05" status="PASS">Mock/fallback runtime generator unchanged.</task>
+    <task id="06" status="PASS">Thread-local scratch runtime unchanged.</task>
+    <task id="07" status="PASS">No JobHandle or `.Complete()` path changed.</task>
+    <task id="08" status="PASS">Dear Lie is offline toolchain portability instead of runtime work.</task>
+    <task id="09" status="PASS">No quality switch or `GlobalQualityWeight` truth change.</task>
+    <task id="10" status="PASS">No Vault buffer route changed.</task>
+    <task id="11" status="PASS">Legacy MPSC telemetry/audit behavior unchanged.</task>
+    <task id="12" status="PASS">No AUP math changed.</task>
+    <task id="13" status="PASS">No rollback state surface changed.</task>
+    <task id="14" status="PASS">No runtime asmdef reference changed; only audit CLI TFM changed.</task>
+    <task id="15" status="PASS">No zero-init or boot path changed.</task>
+    <task id="16" status="PASS">Evidence tooling SDK floor lowered.</task>
+    <task id="17" status="PASS">No Burst job changed.</task>
+    <task id="18" status="PASS">Editor UI unchanged.</task>
+    <task id="19" status="PASS">Live injection facade unchanged.</task>
+    <task id="20" status="PASS">Status, rationale, route card, and log updated; compile proof remains blocked by guard.</task>
+  </twenty_task_check>
+  <struct_layout primary="unchanged" abiChanged="false">Current59 edits only a tool `.csproj`; no runtime struct exists in the write set.</struct_layout>
+  <scalability_curve>Low/CI machines can run the C# audit CLI with an older SDK floor. Runtime quality scaling is unchanged because no player code changed.</scalability_curve>
+  <h_phi_vault_status>No private native containers or Vault handles changed.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, `[NoAlias]` fields, or JobHandles changed.</pointer_aliasing_dependency_graph>
+  <compile_guard>Dotnet build skipped because guard reported CPU 100,100,100 and 0 dotnet/csc/MSBuild/Unity processes.</compile_guard>
+  <dear_lie before="Require .NET 10 host for static audit CLI" after="Require .NET 8 host plus C# 12 language support">The fake is lowering proof-tool host cost instead of touching runtime.</dear_lie>
+  <verification>Static project-file inspection and diff check only. C# CLI compile remains pending hardware guard.</verification>
+</SELF_AUDIT>
+
+## 2026-05-21 - Current60 Tuning Read Split And Bootstrap Vault Cache Pass
+
+What was wrong:
+- `SignalTuningTable.ResolveBuffers(...)` returned mutable profile/count/scratch arrays and was shared by both `TryGetProfile(...)` and owner mutation paths.
+- `SignalThreadLocalScratchpad.ResolveBuffers(...)` was a readiness check under a stale `Resolve*` name.
+- `GlobalSignals.InitializeAllQueues()` read `GlobalRegistry.DataVault` more than once during bootstrap initialization.
+
+What was done:
+- Added `SignalTuningTable.TryReadProfiles(...)` for read-only profile lookup. It returns `NativeArray<SignalTuningProfile>.ReadOnly` and a copied, clamped count.
+- Renamed mutable tuning access to `TryOpenBuffersForOwner(...)` and kept it on initialization/upsert paths only.
+- Renamed scratch readiness validation to `AreVaultBuffersReady(...)`.
+- Cached `IDataVault dataVault = GlobalRegistry.DataVault` once in `GlobalSignals.InitializeAllQueues()` and passed that dependency into tuning/thread-contention bootstrap.
+- Preserved all BufferIDs, DTO layouts, CSV/source-data parsing behavior, SignalBus payloads, queue types, and producer callsites.
+
+Cinematic Cheats used:
+- No runtime simulation added. The cheat is proof-surface tightening: read-only views and cached bootstrap DI replace writable read exposure and duplicate registry reads.
+
+Exact Microseconds saved:
+- 0 measured us. Expected runtime effect is cold-path only: fewer bootstrap registry property reads and no extra player-frame work.
+
+Verification:
+- `ResolveBuffers` scan: 0 hits.
+- `TryReadProfiles` scan: read-only profile view plus copied count.
+- Read-name/mutable-array scan: remaining targeted Core hits are read-only `NativeArray<T>.ReadOnly` APIs and external `dataVault.TryGetBuffer(...)` pre-shift owner calls.
+- PowerShell parse check: `PS_PARSE_ERRORS=0`.
+- PowerShell SignalCritical Current60 audit: files 9 C# / 68 compute, errors 0, warnings 0, infos 19, confirmedErrors 0, cache-line-critical stride debt hits 2, local native signal queue hits 0.
+- Build skipped by hardware guards: `PRE_BUILD_GUARD_CURRENT60 CPU=100,100,100 PROCS=0`; `PRE_BUILD_GUARD_CURRENT60_POST_AUDIT CPU=100,100,100 PROCS=0`.
+- No C# audit CLI compile, Core compile, Unity import, Play Mode, profiler, GCMonitor, IL2CPP, or ARM64 player proof in Current60.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current60">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">Tuning/profile data remains one owner through Vault-backed SignalTuningTable.</task>
+    <task id="02" status="PASS">Read profile lookup uses `NativeArray<T>.ReadOnly`; mutable table access is owner-named.</task>
+    <task id="03" status="PASS">No thread-index allocation, queue, or local native ownership path added.</task>
+    <task id="04" status="PASS">No hot-path properties, LINQ, managed events, or interface arrays added.</task>
+    <task id="05" status="PASS">Mock contention/editor generator unchanged.</task>
+    <task id="06" status="PASS">Thread-local scratch runtime buffers unchanged; readiness helper renamed only.</task>
+    <task id="07" status="PASS">No JobHandle or hidden `.Complete()` path changed.</task>
+    <task id="08" status="PASS">Dear Lie is read-only view/cold DI cleanup instead of adding runtime instrumentation.</task>
+    <task id="09" status="PASS">No binary quality switch added; `GlobalQualityWeight` route unchanged.</task>
+    <task id="10" status="PASS">No Vault BufferID or lifecycle changed.</task>
+    <task id="11" status="PASS">Legacy MPSC writer and telemetry route unchanged.</task>
+    <task id="12" status="PASS">No AUP math changed.</task>
+    <task id="13" status="PASS">Rollback DTO and snapshot ABI unchanged.</task>
+    <task id="14" status="PASS">No runtime asmdef or sibling reference changed.</task>
+    <task id="15" status="PASS">Boot path still owner initializes Vault handles; duplicate registry reads reduced.</task>
+    <task id="16" status="PASS">Audit evidence regenerated with Current60 static proof.</task>
+    <task id="17" status="PASS">No Burst job or `[NoAlias]` field changed.</task>
+    <task id="18" status="PASS">Editor/source-data tuning bridge unchanged in behavior.</task>
+    <task id="19" status="PASS">Live injection facade unchanged.</task>
+    <task id="20" status="PASS">Status, rationale, route card, architecture doc, and log updated; compile proof remains blocked by guard.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalTuningProfile" abiChanged="false">Current60 changed access naming and read-only view exposure only. No SignalTuningProfile field, offset, size, Pack, or BufferID changed.</struct_layout>
+  <scalability_curve>Low devices keep compact tuning reads without opening writable arrays to consumers. Middle devices keep source-data/editor tuning. High/Ultra can raise lane detail through owner upsert while keeping consumer lookup pure.</scalability_curve>
+  <h_phi_vault_status>No private native containers added. Existing tuning handles remain `73040` profiles, `73041` count, and `73042` CSV scratch; thread-contention handles `73043..73055` unchanged.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, `[NoAlias]` fields, or JobHandles changed. Current60 consumes no dispatcher handle and outputs none.</pointer_aliasing_dependency_graph>
+  <compile_guard>No runtime assembly reference changed. Dotnet/Core/C# CLI compile skipped because guard reported CPU 100,100,100 and 0 dotnet/csc/MSBuild/Unity processes.</compile_guard>
+  <dear_lie before="Writable array exposure from shared resolve helper" after="O(1) read-only view plus copied count">The fake is access discipline and cold DI caching rather than new runtime validation work.</dear_lie>
+  <verification>PowerShell parse and SignalCritical audit only. C# CLI compile, Core compile, Unity import, runtime profiler, GCMonitor, IL2CPP, and ARM64 proof remain pending.</verification>
 </SELF_AUDIT>

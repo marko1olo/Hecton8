@@ -10,7 +10,7 @@ namespace Hecton8.Construction
     /// </summary>
     internal static class LogisticsPipeRoutingKernel
     {
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct RouteBfsJob : IJob
         {
             public int NodeCount;
@@ -38,7 +38,7 @@ namespace Hecton8.Construction
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct BuildLinearStressGraphJob : IJobParallelFor
         {
             public int NodeCount;

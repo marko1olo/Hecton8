@@ -46,19 +46,160 @@ namespace Hecton8.Core
         private const uint NarrativeListenerExceptionContextHash = 0x4E415658u; // NAVX
         private const uint NarrativeQueueOverflowWarningHash = 0x4E415651u; // NAVQ
         private const uint NarrativeQueueContextHash = 0x4E415650u; // NAVP
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<INarrativeEventListener>[16] - narrative event listener registry drained on dispatcher LateUpdate - owner: NarrativeEvents
-        private static readonly RegistryBucket<INarrativeEventListener> _listeners = new RegistryBucket<INarrativeEventListener>(ListenerCapacity);
-        // COLD ALLOC: INarrativeEventListener[16] - listener additions deferred while dispatching narrative events - owner: NarrativeEvents
-        private static readonly INarrativeEventListener[] _deferredRegisterListeners = new INarrativeEventListener[ListenerCapacity];
-        // COLD ALLOC: INarrativeEventListener[16] - listener removals deferred while dispatching narrative events - owner: NarrativeEvents
-        private static readonly INarrativeEventListener[] _deferredUnregisterListeners = new INarrativeEventListener[ListenerCapacity];
-        // COLD ALLOC: RegistryBucket<INarrativePointOfInterestListener>[8] - narrative POI listener registry for direct world authoring callbacks - owner: NarrativeEvents
-        private static readonly RegistryBucket<INarrativePointOfInterestListener> _pointOfInterestListeners = new RegistryBucket<INarrativePointOfInterestListener>(PointOfInterestListenerCapacity);
-        // COLD ALLOC: INarrativePointOfInterestListener[8] - POI listener additions deferred while dispatching direct callbacks - owner: NarrativeEvents
-        private static readonly INarrativePointOfInterestListener[] _deferredPoiRegisterListeners = new INarrativePointOfInterestListener[PointOfInterestListenerCapacity];
-        // COLD ALLOC: INarrativePointOfInterestListener[8] - POI listener removals deferred while dispatching direct callbacks - owner: NarrativeEvents
-        private static readonly INarrativePointOfInterestListener[] _deferredPoiUnregisterListeners = new INarrativePointOfInterestListener[PointOfInterestListenerCapacity];
+        private struct NarrativeListenerSlot
+        {
+            public INarrativeEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct NarrativePointOfInterestListenerSlot
+        {
+            public INarrativePointOfInterestListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct NarrativeListenerRegistry
+        {
+            private readonly NarrativeListenerSlot[] _slots;
+            private int _count;
+
+            public NarrativeListenerRegistry(int capacity)
+            {
+                _slots = new NarrativeListenerSlot[capacity]; // COLD ALLOC: NarrativeListenerSlot[16] - fixed narrative listeners drained on dispatcher LateUpdate - owner: NarrativeEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(INarrativeEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(INarrativeEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void TryUnregister(INarrativeEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public INarrativeEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private struct NarrativePointOfInterestListenerRegistry
+        {
+            private readonly NarrativePointOfInterestListenerSlot[] _slots;
+            private int _count;
+
+            public NarrativePointOfInterestListenerRegistry(int capacity)
+            {
+                _slots = new NarrativePointOfInterestListenerSlot[capacity]; // COLD ALLOC: NarrativePointOfInterestListenerSlot[8] - fixed narrative POI listeners - owner: NarrativeEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(INarrativePointOfInterestListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(INarrativePointOfInterestListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void TryUnregister(INarrativePointOfInterestListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public INarrativePointOfInterestListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static NarrativeListenerRegistry _listeners = new NarrativeListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: NarrativeListenerSlot[16] - listener additions deferred while dispatching narrative events - owner: NarrativeEvents
+        private static readonly NarrativeListenerSlot[] _deferredRegisterListeners = new NarrativeListenerSlot[ListenerCapacity];
+        // COLD ALLOC: NarrativeListenerSlot[16] - listener removals deferred while dispatching narrative events - owner: NarrativeEvents
+        private static readonly NarrativeListenerSlot[] _deferredUnregisterListeners = new NarrativeListenerSlot[ListenerCapacity];
+        private static NarrativePointOfInterestListenerRegistry _pointOfInterestListeners = new NarrativePointOfInterestListenerRegistry(PointOfInterestListenerCapacity);
+        // COLD ALLOC: NarrativePointOfInterestListenerSlot[8] - POI listener additions deferred while dispatching direct callbacks - owner: NarrativeEvents
+        private static readonly NarrativePointOfInterestListenerSlot[] _deferredPoiRegisterListeners = new NarrativePointOfInterestListenerSlot[PointOfInterestListenerCapacity];
+        // COLD ALLOC: NarrativePointOfInterestListenerSlot[8] - POI listener removals deferred while dispatching direct callbacks - owner: NarrativeEvents
+        private static readonly NarrativePointOfInterestListenerSlot[] _deferredPoiUnregisterListeners = new NarrativePointOfInterestListenerSlot[PointOfInterestListenerCapacity];
         // COLD ALLOC: Dictionary<uint,string>[64] - hashed narrative discovery id lookup for queue listeners that still persist authored ids - owner: NarrativeEvents
         private static readonly Dictionary<uint, string> _discoveryIdsByHash = new Dictionary<uint, string>(64);
         private static NativeQueue<NarrativeEventPayload> _pendingEvents;
@@ -180,7 +321,7 @@ namespace Hecton8.Core
             }
 
             if (_pointOfInterestListeners.Contains(listener))
-                _pointOfInterestListeners.Unregister(listener);
+                _pointOfInterestListeners.TryUnregister(listener);
         }
 
         public static void FlushPending()
@@ -204,14 +345,13 @@ namespace Hecton8.Core
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                INarrativeEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        INarrativeEventListener listener = rawArray[i];
+                        INarrativeEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -249,14 +389,13 @@ namespace Hecton8.Core
             if (poi == null || _pointOfInterestListeners.Count <= 0)
                 return;
 
-            INarrativePointOfInterestListener[] rawArray = _pointOfInterestListeners.RawArray;
             int count = _pointOfInterestListeners.Count;
             _isDispatchingPointOfInterest = true;
             try
             {
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    INarrativePointOfInterestListener listener = rawArray[i];
+                    INarrativePointOfInterestListener listener = _pointOfInterestListeners.GetAt(i);
                     if (listener == null || IsDeferredPointOfInterestUnregisterPending(listener))
                         continue;
 
@@ -283,14 +422,13 @@ namespace Hecton8.Core
             if (poi == null || _pointOfInterestListeners.Count <= 0)
                 return;
 
-            INarrativePointOfInterestListener[] rawArray = _pointOfInterestListeners.RawArray;
             int count = _pointOfInterestListeners.Count;
             _isDispatchingPointOfInterest = true;
             try
             {
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    INarrativePointOfInterestListener listener = rawArray[i];
+                    INarrativePointOfInterestListener listener = _pointOfInterestListeners.GetAt(i);
                     if (listener == null || IsDeferredPointOfInterestUnregisterPending(listener))
                         continue;
 
@@ -399,7 +537,7 @@ namespace Hecton8.Core
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<NarrativeEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<NarrativeEventPayload>[16] - deferred narrative event lane flushed by SystemDispatcher LateUpdate - owner: NarrativeEvents
+                _pendingEvents = new NativeQueue<NarrativeEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<NarrativeEventPayload>[16] - deferred narrative event lane flushed by SystemDispatcher LateUpdate - owner: NarrativeEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -411,7 +549,7 @@ namespace Hecton8.Core
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<NarrativeEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<NarrativeEventPayload>[16] - next-frame narrative event lane prevents same-frame reentrant dispatch - owner: NarrativeEvents
+                _nextFrameEvents = new NativeQueue<NarrativeEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<NarrativeEventPayload>[16] - next-frame narrative event lane prevents same-frame reentrant dispatch - owner: NarrativeEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -538,7 +676,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(INarrativeEventListener listener)
@@ -558,7 +696,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool IsDeferredUnregisterPending(INarrativeEventListener listener)
@@ -583,7 +721,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            _deferredPoiRegisterListeners[_deferredPoiRegisterCount++] = listener;
+            _deferredPoiRegisterListeners[_deferredPoiRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredPointOfInterestUnregister(INarrativePointOfInterestListener listener)
@@ -603,7 +741,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            _deferredPoiUnregisterListeners[_deferredPoiUnregisterCount++] = listener;
+            _deferredPoiUnregisterListeners[_deferredPoiUnregisterCount++].Listener = listener;
         }
 
         private static bool IsDeferredPointOfInterestUnregisterPending(INarrativePointOfInterestListener listener)
@@ -615,8 +753,8 @@ namespace Hecton8.Core
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                INarrativeEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                INarrativeEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -625,8 +763,8 @@ namespace Hecton8.Core
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                INarrativeEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                INarrativeEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }
@@ -638,18 +776,18 @@ namespace Hecton8.Core
         {
             for (int i = 0; i < _deferredPoiUnregisterCount; i++)
             {
-                INarrativePointOfInterestListener listener = _deferredPoiUnregisterListeners[i];
-                _deferredPoiUnregisterListeners[i] = null;
+                INarrativePointOfInterestListener listener = _deferredPoiUnregisterListeners[i].Listener;
+                _deferredPoiUnregisterListeners[i].Clear();
                 if (listener != null && _pointOfInterestListeners.Contains(listener))
-                    _pointOfInterestListeners.Unregister(listener);
+                    _pointOfInterestListeners.TryUnregister(listener);
             }
 
             _deferredPoiUnregisterCount = 0;
 
             for (int i = 0; i < _deferredPoiRegisterCount; i++)
             {
-                INarrativePointOfInterestListener listener = _deferredPoiRegisterListeners[i];
-                _deferredPoiRegisterListeners[i] = null;
+                INarrativePointOfInterestListener listener = _deferredPoiRegisterListeners[i].Listener;
+                _deferredPoiRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterPointOfInterestImmediate(listener);
             }
@@ -657,35 +795,66 @@ namespace Hecton8.Core
             _deferredPoiRegisterCount = 0;
         }
 
-        private static bool ContainsDeferredListener<TListener>(
-            TListener[] listeners,
+        private static bool ContainsDeferredListener(
+            NarrativeListenerSlot[] listeners,
             int listenerCount,
-            TListener listener)
-            where TListener : class
+            INarrativeEventListener listener)
         {
             for (int i = 0; i < listenerCount; i++)
             {
-                if (ReferenceEquals(listeners[i], listener))
+                if (ReferenceEquals(listeners[i].Listener, listener))
                     return true;
             }
 
             return false;
         }
 
-        private static bool RemoveDeferredListener<TListener>(
-            TListener[] listeners,
-            ref int listenerCount,
-            TListener listener)
-            where TListener : class
+        private static bool ContainsDeferredListener(
+            NarrativePointOfInterestListenerSlot[] listeners,
+            int listenerCount,
+            INarrativePointOfInterestListener listener)
         {
             for (int i = 0; i < listenerCount; i++)
             {
-                if (!ReferenceEquals(listeners[i], listener))
+                if (ReferenceEquals(listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool RemoveDeferredListener(
+            NarrativeListenerSlot[] listeners,
+            ref int listenerCount,
+            INarrativeEventListener listener)
+        {
+            for (int i = 0; i < listenerCount; i++)
+            {
+                if (!ReferenceEquals(listeners[i].Listener, listener))
                     continue;
 
                 listenerCount--;
                 listeners[i] = listeners[listenerCount];
-                listeners[listenerCount] = null;
+                listeners[listenerCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool RemoveDeferredListener(
+            NarrativePointOfInterestListenerSlot[] listeners,
+            ref int listenerCount,
+            INarrativePointOfInterestListener listener)
+        {
+            for (int i = 0; i < listenerCount; i++)
+            {
+                if (!ReferenceEquals(listeners[i].Listener, listener))
+                    continue;
+
+                listenerCount--;
+                listeners[i] = listeners[listenerCount];
+                listeners[listenerCount].Clear();
                 return true;
             }
 
@@ -694,8 +863,11 @@ namespace Hecton8.Core
 
         private static void RegisterPointOfInterestImmediate(INarrativePointOfInterestListener listener)
         {
-            if (!_pointOfInterestListeners.Contains(listener))
-                _pointOfInterestListeners.Register(listener);
+            if (_pointOfInterestListeners.Contains(listener))
+                return;
+
+            if (!_pointOfInterestListeners.TryRegister(listener))
+                ReportListenerRegistrationOverflow();
         }
 
         private static void RegisterImmediate(INarrativeEventListener listener)

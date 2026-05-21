@@ -27,8 +27,8 @@ namespace Hecton8.Physics
         public const int SdfVolumeDimZ = 64;
         public const int SdfVoxelCapacity = SdfVolumeDimX * SdfVolumeDimY * SdfVolumeDimZ;
         public const float SafeLocalAupSpanMeters = 32768f;
-        public const uint SourceHash = 0x53483135u; // SH15
-        public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_156.bin";
+        public const uint SourceHash = 0x53323438u; // S248
+        public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_248.bin";
     }
 
     internal static class AbyssalCavitationVaultBufferIds
@@ -44,6 +44,7 @@ namespace Hecton8.Physics
         public const BufferID Tuning = (BufferID)71568;
         public const BufferID SdfDescriptor = (BufferID)71569;
         public const BufferID SdfVoxels = (BufferID)71570;
+        public const BufferID ForceTransportPackets = (BufferID)71571;
     }
 
     internal static class AbyssalCavitationCounterIndex
@@ -56,6 +57,48 @@ namespace Hecton8.Physics
         public const int FaultFlags = 5;
         public const int CsvProfileCount = 6;
         public const int LastFrame = 7;
+    }
+
+    internal static class AbyssalCavitationSimdMath
+    {
+        private const float Pi = 3.14159265358979323846f;
+        private const float TwoPi = 6.28318530717958647692f;
+        private const float HalfPi = 1.57079632679489661923f;
+        private const float InvTwoPi = 0.15915494309189533577f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float LengthFromSq(float lengthSq)
+        {
+            float finiteSq = math.select(0f, lengthSq, math.isfinite(lengthSq) & lengthSq > 0f);
+            return finiteSq * math.rsqrt(math.max(finiteSq, 0.0001f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SinPolynomial7(float angle)
+        {
+            float x = angle - TwoPi * math.floor((angle + Pi) * InvTwoPi);
+            x = math.select(x, Pi - x, x > HalfPi);
+            x = math.select(x, -Pi - x, x < -HalfPi);
+            float x2 = x * x;
+            return x * (1f + x2 * (-0.16666667f + x2 * (0.008333331f + x2 * -0.000198409f)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float CosPolynomial7(float angle)
+        {
+            return SinPolynomial7(angle + HalfPi);
+        }
+
+        public static double DecimalScaleSigned(int signedExponent)
+        {
+            int exponent = math.clamp(signedExponent, -38, 38);
+            int steps = math.abs(exponent);
+            double scale = 1.0;
+            for (int i = 0; i < steps; i++)
+                scale *= 10.0;
+
+            return exponent >= 0 ? scale : 1.0 / scale;
+        }
     }
 
     public static class AbyssalCavitationEntityFlags
@@ -72,6 +115,7 @@ namespace Hecton8.Physics
         public const uint SdfDampened = 1u << 1;
         public const uint CriticalTarget = 1u << 2;
         public const uint ForceSaturated = 1u << 3;
+        public const uint EpsilonClamped = 1u << 4;
         public const uint NonFiniteRecovered = 1u << 31;
     }
 
@@ -82,6 +126,7 @@ namespace Hecton8.Physics
         public const uint SdfDampened = 1u << 1;
         public const uint ForceSaturated = 1u << 2;
         public const uint MockFallback = 1u << 3;
+        public const uint EpsilonClamped = 1u << 4;
     }
 
     public static class AbyssalCavitationSdfFlags
@@ -132,6 +177,48 @@ namespace Hecton8.Physics
         [FieldOffset(60)] public float SdfDampening;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct ForcePacketDTO
+    {
+        [FieldOffset(0)] public float3 ForceVector;
+        [FieldOffset(12)] public float TorqueScalar;
+        [FieldOffset(16)] public uint TargetEntityHash;
+        [FieldOffset(20)] public uint ApplicationFlags;
+        [FieldOffset(24)] public ulong _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AcousticDeafeningSignal
+    {
+        [FieldOffset(0)] public double3 EpicenterAUP;
+        [FieldOffset(24)] public float PeakPressure;
+        [FieldOffset(28)] public float RadiusMeters;
+        [FieldOffset(32)] public float DurationSeconds;
+        [FieldOffset(36)] public float LowPassCutoffHz;
+        [FieldOffset(40)] public float DuckingDb;
+        [FieldOffset(44)] public float Intensity01;
+        [FieldOffset(48)] public uint SourceHashID;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public ulong _pad0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static AcousticDeafeningSignal FromShockwave(in ShockwaveEventDTO wave, float intensity01)
+        {
+            float safeIntensity = math.saturate(math.isfinite(intensity01) ? intensity01 : 0f);
+            AcousticDeafeningSignal signal = default;
+            signal.EpicenterAUP = math.all(math.isfinite(wave.EpicenterAUP)) ? wave.EpicenterAUP : double3.zero;
+            signal.PeakPressure = math.max(0f, math.isfinite(wave.PeakPressure) ? wave.PeakPressure : 0f);
+            signal.RadiusMeters = math.max(0f, math.isfinite(wave.MaxRadius) ? wave.MaxRadius : 0f);
+            signal.DurationSeconds = math.lerp(0.35f, 2.0f, safeIntensity);
+            signal.LowPassCutoffHz = math.lerp(22000f, 450f, safeIntensity);
+            signal.DuckingDb = math.lerp(0f, -18f, safeIntensity);
+            signal.Intensity01 = safeIntensity;
+            signal.SourceHashID = wave.SourceHashID != 0u ? wave.SourceHashID : AbyssalCavitationConstants.SourceHash;
+            signal.Flags = 1u;
+            return signal;
+        }
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CavitationVisualSphereDTO
     {
@@ -141,7 +228,7 @@ namespace Hecton8.Physics
         [FieldOffset(48)] public float4 Reserved;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct ShockwaveTelemetryEntry
     {
         [FieldOffset(0)] public double3 EpicenterAUP;
@@ -153,8 +240,11 @@ namespace Hecton8.Physics
         [FieldOffset(44)] public uint StateHash;
         [FieldOffset(48)] public int ActiveShockwaves;
         [FieldOffset(52)] public int CandidateCount;
-        [FieldOffset(56)] public float CpuMicroseconds;
-        [FieldOffset(60)] public uint Flags;
+        [FieldOffset(56)] public int AffectedEntities;
+        [FieldOffset(60)] public int EpsilonClampCount;
+        [FieldOffset(64)] public float CpuMicroseconds;
+        [FieldOffset(68)] public uint Flags;
+        [FieldOffset(72)] public ulong _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -186,8 +276,10 @@ namespace Hecton8.Physics
         [FieldOffset(36)] public float CavitationShellMeters;
         [FieldOffset(40)] public uint SectorHash;
         [FieldOffset(44)] public uint Flags;
-        [FieldOffset(48)] public ulong _pad0;
-        [FieldOffset(56)] public ulong _pad1;
+        [FieldOffset(48)] public float InverseSquareMultiplier;
+        [FieldOffset(52)] public float EpsilonClampValue;
+        [FieldOffset(56)] public float SdfOcclusionDampening;
+        [FieldOffset(60)] public uint _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -224,8 +316,10 @@ namespace Hecton8.Physics
         public const int ShockwaveEventSize = 64;
         public const int EntitySnapshotSize = 64;
         public const int ForcePacketSize = 64;
+        public const int TransportForcePacketSize = 32;
+        public const int AcousticDeafeningSignalSize = 64;
         public const int VisualSphereSize = 64;
-        public const int TelemetryEntrySize = 64;
+        public const int TelemetryEntrySize = 80;
         public const int CounterBlockSize = 64;
         public const int TuningSize = 64;
         public const int OrdnanceProfileSize = 64;
@@ -246,10 +340,26 @@ namespace Hecton8.Physics
                    UnsafeUtility.GetFieldOffset(Field<ShockwaveEventDTO>(nameof(ShockwaveEventDTO._pad2))) == 56 &&
                    UnsafeUtility.SizeOf<ShockwaveEntitySnapshotDTO>() == EntitySnapshotSize &&
                    UnsafeUtility.SizeOf<ShockwaveForcePacketDTO>() == ForcePacketSize &&
+                   UnsafeUtility.SizeOf<ForcePacketDTO>() == TransportForcePacketSize &&
+                   UnsafeUtility.GetFieldOffset(Field<ForcePacketDTO>(nameof(ForcePacketDTO.ForceVector))) == 0 &&
+                   UnsafeUtility.GetFieldOffset(Field<ForcePacketDTO>(nameof(ForcePacketDTO.TorqueScalar))) == 12 &&
+                   UnsafeUtility.GetFieldOffset(Field<ForcePacketDTO>(nameof(ForcePacketDTO.TargetEntityHash))) == 16 &&
+                   UnsafeUtility.GetFieldOffset(Field<ForcePacketDTO>(nameof(ForcePacketDTO.ApplicationFlags))) == 20 &&
+                   UnsafeUtility.GetFieldOffset(Field<ForcePacketDTO>(nameof(ForcePacketDTO._pad0))) == 24 &&
+                   UnsafeUtility.SizeOf<AcousticDeafeningSignal>() == AcousticDeafeningSignalSize &&
                    UnsafeUtility.SizeOf<CavitationVisualSphereDTO>() == VisualSphereSize &&
                    UnsafeUtility.SizeOf<ShockwaveTelemetryEntry>() == TelemetryEntrySize &&
+                   UnsafeUtility.GetFieldOffset(Field<ShockwaveTelemetryEntry>(nameof(ShockwaveTelemetryEntry.AffectedEntities))) == 56 &&
+                   UnsafeUtility.GetFieldOffset(Field<ShockwaveTelemetryEntry>(nameof(ShockwaveTelemetryEntry.EpsilonClampCount))) == 60 &&
+                   UnsafeUtility.GetFieldOffset(Field<ShockwaveTelemetryEntry>(nameof(ShockwaveTelemetryEntry.CpuMicroseconds))) == 64 &&
+                   UnsafeUtility.GetFieldOffset(Field<ShockwaveTelemetryEntry>(nameof(ShockwaveTelemetryEntry.Flags))) == 68 &&
+                   UnsafeUtility.GetFieldOffset(Field<ShockwaveTelemetryEntry>(nameof(ShockwaveTelemetryEntry._pad0))) == 72 &&
                    UnsafeUtility.SizeOf<ShockwaveCounterBlock>() == CounterBlockSize &&
                    UnsafeUtility.SizeOf<AbyssalCavitationTuningDTO>() == TuningSize &&
+                   UnsafeUtility.GetFieldOffset(Field<AbyssalCavitationTuningDTO>(nameof(AbyssalCavitationTuningDTO.InverseSquareMultiplier))) == 48 &&
+                   UnsafeUtility.GetFieldOffset(Field<AbyssalCavitationTuningDTO>(nameof(AbyssalCavitationTuningDTO.EpsilonClampValue))) == 52 &&
+                   UnsafeUtility.GetFieldOffset(Field<AbyssalCavitationTuningDTO>(nameof(AbyssalCavitationTuningDTO.SdfOcclusionDampening))) == 56 &&
+                   UnsafeUtility.GetFieldOffset(Field<AbyssalCavitationTuningDTO>(nameof(AbyssalCavitationTuningDTO._pad0))) == 60 &&
                    UnsafeUtility.SizeOf<OrdnanceProfileDTO>() == OrdnanceProfileSize &&
                    UnsafeUtility.SizeOf<AbyssalCavitationSdfVolumeDTO>() == SdfVolumeSize &&
                    UnsafeUtility.GetFieldOffset(Field<AbyssalCavitationSdfVolumeDTO>(nameof(AbyssalCavitationSdfVolumeDTO.OriginAUP))) == 0 &&
@@ -268,7 +378,7 @@ namespace Hecton8.Physics
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!Validate())
-                throw new InvalidOperationException("SHINOBU_156 cavitation DTO layout mismatch. Expected explicit 64-byte cache-line DTOs.");
+                throw new InvalidOperationException("SHINOBU_248 cavitation DTO layout mismatch. Expected explicit 32-byte force packet and aligned shockwave DTOs.");
 #endif
         }
 
@@ -297,6 +407,9 @@ namespace Hecton8.Physics
             tuning.SimulationTickDelta = 0.02f;
             tuning.CavitationShellMeters = 1.25f;
             tuning.SectorHash = 0x5348494Eu;
+            tuning.InverseSquareMultiplier = 1.0f;
+            tuning.EpsilonClampValue = 0.0001f;
+            tuning.SdfOcclusionDampening = 0.12f;
             return tuning;
         }
 
@@ -315,6 +428,9 @@ namespace Hecton8.Physics
             value.SimulationTickDelta = SanitizePositive(value.SimulationTickDelta, fallback.SimulationTickDelta, 0.0001f, 0.1f);
             value.CavitationShellMeters = SanitizePositive(value.CavitationShellMeters, fallback.CavitationShellMeters, 0.05f, 32f);
             value.SectorHash = value.SectorHash != 0u ? value.SectorHash : fallback.SectorHash;
+            value.InverseSquareMultiplier = SanitizeStrictPositive(value.InverseSquareMultiplier, fallback.InverseSquareMultiplier, 0.0001f, 1000000f);
+            value.EpsilonClampValue = SanitizeStrictPositive(value.EpsilonClampValue, fallback.EpsilonClampValue, 0.000001f, 1f);
+            value.SdfOcclusionDampening = Sanitize01(value.SdfOcclusionDampening, fallback.SdfOcclusionDampening);
             return value;
         }
 
@@ -341,6 +457,13 @@ namespace Hecton8.Physics
         private static float SanitizePositive(float value, float fallback, float minimum, float maximum)
         {
             float safe = math.isfinite(value) ? value : fallback;
+            return math.clamp(safe, minimum, maximum);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeStrictPositive(float value, float fallback, float minimum, float maximum)
+        {
+            float safe = math.isfinite(value) && value > 0f ? value : fallback;
             return math.clamp(safe, minimum, maximum);
         }
     }
@@ -587,7 +710,7 @@ namespace Hecton8.Physics
                     index++;
                 }
 
-                result *= math.pow(10.0, exponent * exponentSign);
+                result *= AbyssalCavitationSimdMath.DecimalScaleSigned(exponent * exponentSign);
             }
 
             value = (float)(result * sign);

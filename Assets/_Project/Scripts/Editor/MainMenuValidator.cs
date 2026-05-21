@@ -18,7 +18,6 @@
 
 #if UNITY_EDITOR
 
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -62,9 +61,7 @@ namespace Hecton8.Editor
 
             // ── Check for Camera ──
             report += "\nCAMERA:\n";
-            Camera cam = mainMenuScene.GetRootGameObjects()
-                .SelectMany(go => go.GetComponentsInChildren<Camera>())
-                .FirstOrDefault();
+            Camera cam = FindComponentInScene<Camera>(mainMenuScene);
             if (cam != null)
             {
                 report += $"  ✓ Camera found: {cam.name}\n";
@@ -76,9 +73,7 @@ namespace Hecton8.Editor
 
             // ── Check for EventSystem ──
             report += "\nEVENT SYSTEM (UI Input):\n";
-            var eventSystem = mainMenuScene.GetRootGameObjects()
-                .SelectMany(go => go.GetComponentsInChildren<GraphicRaycaster>())
-                .FirstOrDefault();
+            GraphicRaycaster eventSystem = FindComponentInScene<GraphicRaycaster>(mainMenuScene);
             if (eventSystem != null)
             {
                 report += "  ✓ EventSystem/GraphicRaycaster found\n";
@@ -118,6 +113,19 @@ namespace Hecton8.Editor
                 if (controller != null)
                     return controller;
             }
+            return null;
+        }
+
+        private static T FindComponentInScene<T>(Scene scene) where T : Component
+        {
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                T component = roots[i].GetComponentInChildren<T>();
+                if (component != null)
+                    return component;
+            }
+
             return null;
         }
 

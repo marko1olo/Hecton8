@@ -1,0 +1,115 @@
+<SELF_AUDIT agent="SHINOBU_246" domain="Echelon 2 World Generation / offline editor seam baking" status="SOURCE_HARDENED_COMPILE_BLOCKED_BY_CPU_GATE">
+  <TWENTY_TASK_RECONCILIATION>
+    <Task id="01" status="[PASS]">Runtime mesh deformation scan route exists; no proved Environment runtime seam deformation was removed because static scans found no owned offender.</Task>
+    <Task id="02" status="[PASS]">Skirt/skirt artifact scan completed under assigned project scope; no deletion was performed without proof.</Task>
+    <Task id="03" status="[PASS]">Hot seam DTOs use raw public fields and Burst jobs mutate native memory through array writes or UnsafeUtility.AsRef.</Task>
+    <Task id="04" status="[PASS]">Layout validator asserts stitched 32-byte vertex stride and explicit DTO offsets/sizes.</Task>
+    <Task id="05" status="[PASS]">GenerateMockSeamJob creates deterministic 500x500 terrain/voxel stress planes with matching index buffers.</Task>
+    <Task id="06" status="[PASS]">ConstructBoundarySpatialHashJob builds a NativeParallelMultiHashMap keyed by double3 AUP spatial cells.</Task>
+    <Task id="07" status="[PASS]">EvaluateSeamSnappingJob probes bounded adjacent cells, snaps in double3 AUP, and writes local float3 after root subtraction.</Task>
+    <Task id="08" status="[PASS]">Dear Lie normal blend writes averaged boundary normals for terrain and voxel-side snap results.</Task>
+    <Task id="09" status="[PASS]">BakeSeamTransitionColorsJob writes seam-distance alpha into packed Color32 for shader-side material blending.</Task>
+    <Task id="10" status="[PASS]">Pipeline writes explicit vertex/index buffers and saves generated meshes under Assets/_Project/BakedGeometry/Stitched.</Task>
+    <Task id="11" status="[PASS]">LOD0, LOD1, and LOD2 are processed independently; profile resolution scales seam budget per LOD.</Task>
+    <Task id="12" status="[PASS]">Coordinate authority is root AUP plus local float promoted to double3; final mesh coordinates subtract TerrainRootAUP.</Task>
+    <Task id="13" status="[PASS]">Rollback exclusion sidecar and JSON flag document static mesh exclusion from StateRingBuffer/Merkle hashing.</Task>
+    <Task id="14" status="[PASS]">Large geometry scratch buffers use Allocator.TempJob with NativeArrayOptions.UninitializedMemory; no MemClear path exists.</Task>
+    <Task id="15" status="[PASS]">SEAM_STITCH_REPORT.json records LOD rows, snapped count, max error, Burst microseconds, warning flags, and critical no-snap warning.</Task>
+    <Task id="16" status="[PASS]">UI Toolkit Forge exposes LOD mesh pairs, AUP roots, profile/quality controls, stitch, preview, mock benchmark, clear, and scan actions.</Task>
+    <Task id="17" status="[PASS]">CSV profile loader uses FileStream plus short-lived native scratch exposed as ReadOnlySpan byte parsing and fixed profile cache capacity.</Task>
+    <Task id="18" status="[PASS]">PreviewLod0 runs copied native LOD0 buffers through the Burst seam route, uploads terrain-local thick SceneView pull ribbons to a hidden Mesh from Temp native buffers, queues debounced preview refreshes on Forge control changes, and does not save meshes.</Task>
+    <Task id="19" status="[PASS]">Dynamic_Vertex_Scanner uses Roslyn AST as the primary parser and writes WORLD_OPTIMIZATION_REPORT.json; lexical fallback is parser-failure only.</Task>
+    <Task id="20" status="[PASS]">Self-audit, architecture note, binary ledger row, rationale, and log artifacts exist. Unity compile/profiler proof remains blocked by CPU gate, not claimed.</Task>
+  </TWENTY_TASK_RECONCILIATION>
+
+  <STRUCT_LAYOUT_VERIFICATION status="PASS_SOURCE">
+    <Struct name="SeamBindVertex32" size="32" alignment="4">
+      <Field name="Position" offset="0" size="12" type="float3"/>
+      <Field name="Normal" offset="12" size="12" type="float3"/>
+      <Field name="PackedColor" offset="24" size="4" type="uint Color32/UNorm8x4"/>
+      <Field name="PackedUv0" offset="28" size="4" type="uint UNorm16x2"/>
+      <Math>12 + 12 + 4 + 4 = 32 bytes. 32 mod 16 = 0. GPU fetch stride is one half cache line and ARM64-safe.</Math>
+    </Struct>
+    <Struct name="SeamBoundaryVertex64" size="64" alignment="8">
+      <Field name="Aup" offset="0" size="24" type="double3"/>
+      <Field name="LocalPosition" offset="24" size="12" type="float3"/>
+      <Field name="Normal" offset="36" size="12" type="float3"/>
+      <Field name="VertexIndex" offset="48" size="4" type="int"/>
+      <Field name="Flags" offset="52" size="4" type="uint"/>
+      <Field name="BoundaryWeight" offset="56" size="4" type="float"/>
+      <Field name="_pad0" offset="60" size="4" type="uint"/>
+      <Math>24 + 12 + 12 + 4 + 4 + 4 + 4 = 64 bytes. 64 mod 64 = 0.</Math>
+    </Struct>
+    <Struct name="SeamSnapResult64" size="64" alignment="8">
+      <Field name="OriginalLocalPosition" offset="0" size="12" type="float3"/>
+      <Field name="VoxelVertexIndex" offset="12" size="4" type="int"/>
+      <Field name="SnappedLocalPosition" offset="16" size="12" type="float3"/>
+      <Field name="DistanceMeters" offset="28" size="4" type="float"/>
+      <Field name="BlendedNormal" offset="32" size="12" type="float3"/>
+      <Field name="Flags" offset="44" size="4" type="uint"/>
+      <Field name="_pad0" offset="48" size="8" type="ulong"/>
+      <Field name="_pad1" offset="56" size="8" type="ulong"/>
+      <Math>12 + 4 + 12 + 4 + 12 + 4 + 8 + 8 = 64 bytes.</Math>
+    </Struct>
+    <Struct name="SeamBindingProfileDTO" size="64" alignment="8">
+      <Field name="ProfileHash" offset="0" size="4"/>
+      <Field name="GlobalQualityWeight" offset="4" size="4"/>
+      <Field name="SnapRadiusMeters" offset="8" size="4"/>
+      <Field name="NormalBlendDistanceMeters" offset="12" size="4"/>
+      <Field name="TextureGradientFalloffMeters" offset="16" size="4"/>
+      <Field name="SpatialCellSizeMeters" offset="20" size="4"/>
+      <Field name="LodContinuityBias" offset="24" size="4"/>
+      <Field name="Flags" offset="28" size="4"/>
+      <Field name="PreviewLineColor" offset="32" size="12"/>
+      <Field name="_pad0" offset="44" size="4"/>
+      <Field name="_pad1" offset="48" size="8"/>
+      <Field name="_pad2" offset="56" size="8"/>
+      <Math>32 bytes scalar block + 12 color + 4 pad + 16 ulong pad = 64 bytes.</Math>
+    </Struct>
+    <Struct name="SeamBindCounters64" size="64" falseSharing="prevented_for_counter_record">
+      <Math>10 scalar fields through offset 36, then 24 padding bytes at offsets 40, 48, 56. Total 64 bytes.</Math>
+    </Struct>
+    <Struct name="SeamBindTelemetryEntry" size="64" falseSharing="fixed_ring_stride">
+      <Math>double3 root 24 + frame/count/error/timing/warning/hash/stage/reason fields 40 = 64 bytes.</Math>
+    </Struct>
+    <Struct name="SeamMeshRollbackFenceDTO" size="32">
+      <Field name="TerrainMeshHash" offset="0" size="4"/>
+      <Field name="VoxelMeshHash" offset="4" size="4"/>
+      <Field name="StitchedMeshHash" offset="8" size="4"/>
+      <Field name="RollbackExcluded" offset="12" size="4"/>
+      <Field name="Magic" offset="16" size="4"/>
+      <Field name="Version" offset="20" size="4"/>
+      <Field name="EndianMarker" offset="24" size="4"/>
+      <Field name="Reserved" offset="28" size="4"/>
+      <Math>8 uint fields * 4 = 32 bytes. Magic writes VTSF, Version writes 1, EndianMarker writes 0x01020304 through manual little-endian byte order.</Math>
+    </Struct>
+  </STRUCT_LAYOUT_VERIFICATION>
+
+  <SCALABILITY_CURVE_EXPLANATION status="PASS_SOURCE">
+    GlobalQualityWeight is consumed as a continuous scalar. ResolveLodProfile uses math.lerp over quality and LodContinuityBias to expand lower-LOD snap radius, normal blend distance, texture falloff, and hash cell size without binary low/high branches. EvaluateSeamSnappingJob and BakeSeamTransitionColorsJob lerp between a cheap linear distance ramp and a smoother polynomial ramp, so weights below 0.3 bias toward cheaper linear math and wider coarse-LOD tolerances, mid weights preserve stable blend, and high/ultra weights tighten positional error while spending saved runtime budget on shader interpretation of pre-baked vertex normals/alpha. Gameplay truth, DTO layout, rollback route, and save identity do not change with quality.
+  </SCALABILITY_CURVE_EXPLANATION>
+
+  <H_PHI_VAULT_STATUS status="PASS_EDITOR_ONLY_NO_PRIVATE_ARRAY_DECLARATIONS">
+    No runtime persistent NativeArray, NativeList, NativeHashMap, GlobalRegistry hot polling, GlobalDataVault buffer, or private managed array declaration is present in the SHINOBU_246 source domain after Loop 9 static scan. VaultBufferHandle IDs requested: none, because the system is an offline editor baker and owns no runtime fact. Geometry scratch memory is local Allocator.TempJob inside Forge execution and is disposed in finally blocks. CSV cold-load scratch uses a short-lived Allocator.Temp NativeArray byte buffer and disposes in finally. Preview upload uses short-lived Temp native buffers plus hidden editor Mesh/Material resources disposed on reload/quit. Future runtime streaming of the baked mesh assets must be owned by a world-streaming consumer, not this baker.
+  </H_PHI_VAULT_STATUS>
+
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH status="PASS_SOURCE">
+    <NoAlias>All non-overlapping NativeArray fields in Burst kernels are marked with [NoAlias] where Unity containers permit it: vertex sources, index sources, ranges, output buffers, boundary masks, snap result buffers, and hash map writers/readers.</NoAlias>
+    <Graph>Mock route: GenerateMockSeamJob -> GenerateMockPlaneIndicesJob terrain/voxel -> CombineDependencies -> editor completion boundary -> StitchBuffers.</Graph>
+    <Graph>Mesh extract route: ExtractSeamVerticesJob -> CopySeamIndex16RangesJob or CopySeamIndex32RangesJob -> editor completion boundary for MeshData disposal.</Graph>
+    <Graph>Stitch route: ClearBoundaryMaskJob -> BuildTriangleEdgeMapJob -> MarkBoundaryVerticesJob -> ConstructBoundarySpatialHashJob -> EvaluateSeamSnappingJob -> BlendSeamNormalsJob -> BakeSeamTransitionColorsJob terrain/voxel -> CombineDependencies -> editor AssetDatabase/report boundary.</Graph>
+    <CompletionPolicy>JobHandle.Complete exists only at offline editor boundaries where MeshData, AssetDatabase serialization, report counters, or preview line extraction require completed native buffers. No same-frame runtime job/readback path is introduced.</CompletionPolicy>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+
+  <COMPILE_GUARD status="PASS_SOURCE_COMPILE_PENDING">
+    Runtime assembly Hecton8.World.VoxelTerrainSeamBinder references only Unity.Mathematics. Editor assembly Hecton8.World.VoxelTerrainSeamBinder.Editor references Hecton8.World.VoxelTerrainSeamBinder plus Unity.Burst, Unity.Collections, Unity.Jobs, Unity.Mathematics, and explicit Roslyn precompiled DLLs for AST scanning. No sibling runtime domain reference is present. Unity/dotnet compile was not launched because the build gate still requires CPU below 50 percent and no dotnet/csc processes.
+  </COMPILE_GUARD>
+
+  <DEAR_LIE_CONFIRMATION status="PASS_SOURCE">
+    The physical truth is only vertex position sealing in baked geometry. The visual lie is averaged seam normals plus pre-baked vertex alpha falloff, allowing UberNoir/material code to render a smooth cave-to-terrain transition without runtime decals, skirt geometry, or physics smoothing. Rejected heavy route: runtime mesh deformation or O(N*M) nearest-neighbor scans plus cover-up geometry. Actual route: O(E) edge marking + O(Vboundary) hash build + O(Vterrain * 27 * localBucket) bounded hash probes. Runtime complexity after bake is O(0) for seam solving.
+  </DEAR_LIE_CONFIRMATION>
+
+  <VERIFICATION_STATUS status="BLOCKED_BY_CPU_GATE">
+    Static source checks are present: XML parse PASS, asmdef JSON parse PASS, Burst attribute scan 12/12 PASS, no private array declarations/List/DropdownField/lambdas/foreach/LINQ/DTO properties/MemClear/Persistent allocators/Time.deltaTime/UnityEngine.Random found in the owned C# domain, custom whitespace scan over 16 owned artifacts PASS, brace/preprocessor balance scan over 7 code files PASS, compile-wall reference scan PASS, rollback fence magic/version/endian offsets asserted, and subagent compile-risk audit findings were addressed where live. Unity import, C# compile, Burst Inspector, mock benchmark execution, generated mesh visual proof, profiler timing, and GCMonitor proof are not claimed because the latest CPU gate reported 100 percent with no dotnet/csc process.
+  </VERIFICATION_STATUS>
+</SELF_AUDIT>

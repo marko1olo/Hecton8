@@ -75,7 +75,7 @@ namespace Hecton8.Editor.GeologyForge
         public uint Flags;
 
         [FieldOffset(56)]
-        public ulong Padding0;
+        public ulong _pad0;
     }
 
     internal struct GeologyBakeProfile

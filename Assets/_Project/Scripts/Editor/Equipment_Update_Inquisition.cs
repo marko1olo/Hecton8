@@ -13,7 +13,8 @@ namespace Hecton8.Tools.Editor
     /// </summary>
     public static class Equipment_Update_Inquisition
     {
-        private const string ReportPath = "Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT.json";
+        private const string ReportPath = "Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_224.json";
+        private const string SharedReportCompatibilityPath = "Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT.json";
         private static readonly Regex ForbiddenUpdateRegex = new Regex(@"\b(?:public|private|protected|internal)?\s*(?:virtual|override|sealed|static)?\s*void\s+(Update|FixedUpdate|LateUpdate)\s*\(", RegexOptions.Compiled);
         private static readonly Regex ForbiddenCoroutineRegex = new Regex(@"\b(IEnumerator\s+\w+\s*\(|StartCoroutine\s*\()", RegexOptions.Compiled);
 
@@ -39,6 +40,10 @@ namespace Hecton8.Tools.Editor
             json.AppendLine("{");
             json.AppendLine("  \"agent\": \"SHINOBU_224\",");
             json.AppendLine("  \"scanner\": \"Equipment_Update_Inquisition\",");
+            json.Append("  \"sharedReportCompatibilityPath\": \"").Append(SharedReportCompatibilityPath).AppendLine("\",");
+            json.AppendLine("  \"scannerUsesStructuralSyntaxPass\": true,");
+            json.AppendLine("  \"scannerUsesRoslynAst\": false,");
+            json.AppendLine("  \"scannerParserRoute\": \"comment/string stripped declaration and invocation parser; Hecton8.Editor has no Roslyn asmdef reference\",");
             json.AppendLine("  \"summary\": \"Tool Updates Purged\",");
             json.Append("  \"scannedFiles\": ").Append(scannedFiles).AppendLine(",");
             json.Append("  \"candidateToolFiles\": ").Append(candidateFiles).AppendLine(",");

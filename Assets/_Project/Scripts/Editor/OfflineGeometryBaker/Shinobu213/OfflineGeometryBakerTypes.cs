@@ -13,6 +13,7 @@ namespace Hecton8.Editor.OfflineGeometry
     {
         public const int LodCount = 3;
         public const int VertexStrideBytes = 32;
+        public const int MinHullVertexCount = 8;
         public const int MaxHullVertexCount = 32;
         public const int MaxHullIndexCount = 2048;
         public const int HardLod0WarningTriangles = 20000;

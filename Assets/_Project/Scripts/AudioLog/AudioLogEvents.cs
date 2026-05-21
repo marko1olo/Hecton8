@@ -37,6 +37,7 @@ namespace Hecton8.Narrative
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 16;
         private const int ReferenceSlotCapacity = 128;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint AudioLogQueueOverflowWarningHash = 0x414C514Fu; // ALQO
         private const uint AudioLogReferenceSlotOverflowWarningHash = 0x414C5253u; // ALRS
         private const uint AudioLogListenerRejectedWarningHash = 0x414C524Au; // ALRJ
@@ -44,12 +45,84 @@ namespace Hecton8.Narrative
         private const uint AudioLogQueueContextHash = 0x414C5155u; // ALQU
         private const uint AudioLogReferenceSlotContextHash = 0x414C5246u; // ALRF
         private const uint AudioLogListenerContextHash = 0x414C4953u; // ALIS
-        // COLD ALLOC: RegistryBucket<IAudioLogEventListener>[16] — audio log event listener registry drained on dispatcher LateUpdate — owner: AudioLogEvents
-        private static readonly RegistryBucket<IAudioLogEventListener> _listeners = new RegistryBucket<IAudioLogEventListener>(ListenerCapacity);
-        // COLD ALLOC: IAudioLogEventListener[16] — listener additions deferred while dispatching audio-log events — owner: AudioLogEvents
-        private static readonly IAudioLogEventListener[] _deferredRegisterListeners = new IAudioLogEventListener[ListenerCapacity];
-        // COLD ALLOC: IAudioLogEventListener[16] — listener removals deferred while dispatching audio-log events — owner: AudioLogEvents
-        private static readonly IAudioLogEventListener[] _deferredUnregisterListeners = new IAudioLogEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public IAudioLogEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct AudioLogListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public AudioLogListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity]; // COLD ALLOC: ListenerSlot[16] - fixed audio-log listener slots drained on dispatcher LateUpdate - owner: AudioLogEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IAudioLogEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IAudioLogEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public bool TryUnregister(IAudioLogEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return true;
+                }
+
+                return false;
+            }
+
+            public IAudioLogEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static AudioLogListenerRegistry _listeners = new AudioLogListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[16] - listener additions deferred while dispatching audio-log events - owner: AudioLogEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[16] - listener removals deferred while dispatching audio-log events - owner: AudioLogEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private struct AudioLogReferenceSlot
         {
             public AudioLogData LogData;
@@ -181,14 +254,13 @@ namespace Hecton8.Narrative
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IAudioLogEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IAudioLogEventListener listener = rawArray[i];
+                        IAudioLogEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -245,7 +317,7 @@ namespace Hecton8.Narrative
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<AudioLogEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — deferred audio-log event lane flushed by SystemDispatcher LateUpdate — owner: AudioLogEvents
+                _pendingEvents = new NativeQueue<AudioLogEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — deferred audio-log event lane flushed by SystemDispatcher LateUpdate — owner: AudioLogEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -257,7 +329,7 @@ namespace Hecton8.Narrative
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<AudioLogEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — next-frame audio-log event lane prevents same-frame reentrant dispatch — owner: AudioLogEvents
+                _nextFrameEvents = new NativeQueue<AudioLogEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — next-frame audio-log event lane prevents same-frame reentrant dispatch — owner: AudioLogEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -426,7 +498,7 @@ namespace Hecton8.Narrative
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IAudioLogEventListener listener)
@@ -443,19 +515,19 @@ namespace Hecton8.Narrative
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IAudioLogEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -466,12 +538,12 @@ namespace Hecton8.Narrative
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -480,7 +552,7 @@ namespace Hecton8.Narrative
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -491,7 +563,7 @@ namespace Hecton8.Narrative
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -502,8 +574,8 @@ namespace Hecton8.Narrative
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IAudioLogEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IAudioLogEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -512,8 +584,8 @@ namespace Hecton8.Narrative
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IAudioLogEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IAudioLogEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }

@@ -63,16 +63,18 @@ namespace Hecton8.SaveSystem
                 InitialStatus = status;
                 ByteLength = byteLength;
                 ByteHash = byteHash;
+                IsValid = sequenceId > 0 ? (byte)1 : (byte)0;
+                IsTerminal = status != CaptureStatus.Queued && status != CaptureStatus.None ? (byte)1 : (byte)0;
             }
 
-            public int SequenceId { get; }
-            public uint OperationId { get; }
-            public uint SlotHash { get; }
-            public CaptureStatus InitialStatus { get; }
-            public int ByteLength { get; }
-            public uint ByteHash { get; }
-            public bool IsValid => SequenceId > 0;
-            public bool IsTerminal => InitialStatus != CaptureStatus.Queued && InitialStatus != CaptureStatus.None;
+            public readonly int SequenceId;
+            public readonly uint OperationId;
+            public readonly uint SlotHash;
+            public readonly CaptureStatus InitialStatus;
+            public readonly int ByteLength;
+            public readonly uint ByteHash;
+            public readonly byte IsValid;
+            public readonly byte IsTerminal;
         }
 
         public readonly struct CaptureCompletion
@@ -85,15 +87,18 @@ namespace Hecton8.SaveSystem
                 ByteLength = byteLength;
                 ByteHash = byteHash;
                 Status = status;
+                Succeeded = status == CaptureStatus.Completed || status == CaptureStatus.LowTierSkipped || status == CaptureStatus.ReusedExisting
+                    ? (byte)1
+                    : (byte)0;
             }
 
-            public int SequenceId { get; }
-            public uint OperationId { get; }
-            public uint SlotHash { get; }
-            public int ByteLength { get; }
-            public uint ByteHash { get; }
-            public CaptureStatus Status { get; }
-            public bool Succeeded => Status == CaptureStatus.Completed || Status == CaptureStatus.LowTierSkipped || Status == CaptureStatus.ReusedExisting;
+            public readonly int SequenceId;
+            public readonly uint OperationId;
+            public readonly uint SlotHash;
+            public readonly int ByteLength;
+            public readonly uint ByteHash;
+            public readonly CaptureStatus Status;
+            public readonly byte Succeeded;
         }
 
         private struct CaptureRequest
@@ -113,8 +118,8 @@ namespace Hecton8.SaveSystem
                 SequenceId = sequenceId;
             }
 
-            public Camera Camera { get; }
-            public int SequenceId { get; }
+            public readonly Camera Camera;
+            public readonly int SequenceId;
         }
 
         private static readonly Dictionary<string, Texture2D> _textureCache =
@@ -272,13 +277,13 @@ namespace Hecton8.SaveSystem
         /// </summary>
         public static async Awaitable<CaptureCompletion> WaitForCompletionAsync(CaptureTicket ticket, CancellationToken cancellationToken = default)
         {
-            if (!ticket.IsValid)
+            if (ticket.IsValid == 0)
                 return default;
 
             if (TryGetCompletion(ticket.SequenceId, out CaptureCompletion completion))
                 return completion;
 
-            if (ticket.IsTerminal)
+            if (ticket.IsTerminal != 0)
                 return new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, ticket.ByteLength, ticket.ByteHash, ticket.InitialStatus);
 
             int startFrame = Time.frameCount;

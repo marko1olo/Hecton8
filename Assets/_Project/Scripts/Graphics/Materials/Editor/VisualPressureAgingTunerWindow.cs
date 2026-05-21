@@ -18,6 +18,7 @@ namespace Hecton8.Graphics.Materials.Editor
         private Slider _biomassTemperature;
         private Slider _glassThreshold;
         private Slider _temperatureBoost;
+        private Slider _scorchIntensity;
         private Slider _qualityNoise;
         private AgingCurveElement _curve;
         private Label _runtimeLabel;
@@ -25,21 +26,11 @@ namespace Hecton8.Graphics.Materials.Editor
         private Label _flagsLabel;
 
         [MenuItem("Hecton8/Rendering/Visual Pressure Aging Tuner")]
+        [MenuItem("Hecton8/Rendering/UberNoir Degradation Tuner")]
         private static void Open()
         {
-            VisualPressureAgingTunerWindow window = GetWindow<VisualPressureAgingTunerWindow>("Abyssal Base Aging Tuner");
+            VisualPressureAgingTunerWindow window = GetWindow<VisualPressureAgingTunerWindow>("UberNoir Degradation Tuner");
             window.minSize = new Vector2(420f, 360f);
-        }
-
-        private void OnEnable()
-        {
-            EditorApplication.update -= RefreshRuntimeLabels;
-            EditorApplication.update += RefreshRuntimeLabels;
-        }
-
-        private void OnDisable()
-        {
-            EditorApplication.update -= RefreshRuntimeLabels;
         }
 
         public void CreateGUI()
@@ -64,6 +55,7 @@ namespace Hecton8.Graphics.Materials.Editor
             _biomassTemperature = AddSlider("Biomass Temperature", 0.0f, 2.0f);
             _glassThreshold = AddSlider("Glass Threshold", 0.0f, 1.0f);
             _temperatureBoost = AddSlider("Temperature Boost", 0.0f, 0.08f);
+            _scorchIntensity = AddSlider("Scorch Intensity", 0.0f, 3.0f);
             _qualityNoise = AddSlider("Quality Noise Scale", 0.0f, 1.0f);
 
             Button pushButton = new Button(PushToRuntime) { text = "Push Tuning" };
@@ -75,6 +67,11 @@ namespace Hecton8.Graphics.Materials.Editor
             rootVisualElement.Add(reloadCsvButton);
             rootVisualElement.Add(inquisitionButton);
             RefreshFromRuntime();
+        }
+
+        private void OnFocus()
+        {
+            RefreshRuntimeLabels();
         }
 
         private Slider AddSlider(string label, float min, float max)
@@ -98,7 +95,8 @@ namespace Hecton8.Graphics.Materials.Editor
                 _biomassTemperature.value,
                 _glassThreshold.value,
                 _temperatureBoost.value,
-                _qualityNoise.value);
+                _qualityNoise.value,
+                _scorchIntensity.value);
             RefreshRuntimeLabels();
         }
 
@@ -125,6 +123,7 @@ namespace Hecton8.Graphics.Materials.Editor
             SetWithoutNotify(_biomassTemperature, tuning.BiomassTemperatureMultiplier);
             SetWithoutNotify(_glassThreshold, tuning.GlassFractureThreshold);
             SetWithoutNotify(_temperatureBoost, tuning.TemperatureBoostMultiplier);
+            SetWithoutNotify(_scorchIntensity, tuning.ScorchIntensityMultiplier);
             SetWithoutNotify(_qualityNoise, tuning.QualityNoiseOctaveScale);
             RefreshRuntimeLabels();
         }
@@ -162,7 +161,8 @@ namespace Hecton8.Graphics.Materials.Editor
                 BiomassTemperatureMultiplier = 0.42f,
                 GlassFractureThreshold = 0.68f,
                 TemperatureBoostMultiplier = 0.018f,
-                QualityNoiseOctaveScale = 1.0f
+                QualityNoiseOctaveScale = 1.0f,
+                ScorchIntensityMultiplier = 1.0f
             };
         }
 
@@ -229,33 +229,61 @@ namespace Hecton8.Graphics.Materials.Editor
 
         private static void Draw(SceneView view)
         {
-            if (!VisualPressureAgingRuntime.TryAcquireAgingBufferRead(out NativeArray<VisualAgingParamsDTO> aging, out int activeCount))
+            bool hasAging = VisualPressureAgingRuntime.TryOpenAgingBufferSnapshotLease(out NativeArray<VisualAgingParamsDTO>.ReadOnly aging, out int agingCount);
+            bool hasDegradation = VisualPressureAgingRuntime.TryOpenDegradationBufferSnapshotLease(out NativeArray<InstanceDegradationDTO>.ReadOnly degradation, out int degradationCount);
+            if (!hasAging && !hasDegradation)
                 return;
 
             try
             {
-                int count = math.min(activeCount, math.min(aging.Length, 128));
+                int available = hasAging ? agingCount : degradationCount;
+                int count = math.min(available, 128);
                 for (int i = 0; i < count; i++)
                 {
-                    VisualAgingParamsDTO dto = aging[i];
-                    float pressure = math.saturate(dto.DepthAndPressure.w);
-                    float rust = math.saturate(dto.RustAndCorrosion.x);
-                    float fracture = math.saturate(dto.StressAndMicroFractures.y);
-                    Vector3 position = new Vector3(dto.DepthAndPressure.x, dto.DepthAndPressure.y, dto.DepthAndPressure.z);
-                    Handles.color = Color.Lerp(new Color(0.22f, 0.48f, 0.56f, 0.45f), new Color(0.95f, 0.24f, 0.12f, 0.72f), math.max(rust, fracture));
-                    Handles.DrawWireDisc(position, Vector3.up, 0.25f + pressure * 1.35f);
+                    VisualAgingParamsDTO agingDto = hasAging && i < aging.Length ? aging[i] : default;
+                    InstanceDegradationDTO degradationDto = hasDegradation && i < degradation.Length ? degradation[i] : default;
+                    if (hasAging &&
+                        (!math.all(math.isfinite(agingDto.RustAndCorrosion)) ||
+                         !math.all(math.isfinite(agingDto.StressAndMicroFractures)) ||
+                         !math.all(math.isfinite(agingDto.DepthAndPressure))))
+                    {
+                        continue;
+                    }
+
+                    if (hasDegradation &&
+                        (!math.isfinite(degradationDto.RustAmount) ||
+                         !math.isfinite(degradationDto.ScorchAmount) ||
+                         !math.isfinite(degradationDto.BioFouling) ||
+                         !math.isfinite(degradationDto.StructuralStress)))
+                    {
+                        continue;
+                    }
+
+                    float pressure = math.saturate(agingDto.DepthAndPressure.w);
+                    float rust = math.saturate(hasDegradation ? degradationDto.RustAmount : agingDto.RustAndCorrosion.x);
+                    float scorch = math.saturate(hasDegradation ? degradationDto.ScorchAmount : agingDto.SaltAndBiomass.z);
+                    float bio = math.saturate(hasDegradation ? degradationDto.BioFouling : agingDto.SaltAndBiomass.y);
+                    Vector3 position = hasAging
+                        ? new Vector3(agingDto.DepthAndPressure.x, agingDto.DepthAndPressure.y, agingDto.DepthAndPressure.z)
+                        : new Vector3((i & 31) * 2.0f, 0.0f, (i >> 5) * 2.0f);
+                    Color rustColor = Color.Lerp(new Color(0.12f, 0.42f, 0.18f, 0.45f), new Color(0.95f, 0.34f, 0.08f, 0.72f), rust);
+                    Color scorchColor = Color.Lerp(rustColor, new Color(0.02f, 0.015f, 0.012f, 0.85f), scorch);
+                    Handles.color = Color.Lerp(scorchColor, new Color(0.05f, 0.42f, 0.28f, 0.62f), bio * (1.0f - scorch));
+                    Handles.DrawWireDisc(position, Vector3.up, 0.25f + pressure * 1.35f + math.max(rust, scorch) * 0.35f);
                 }
             }
             finally
             {
-                VisualPressureAgingRuntime.ReleaseAgingBufferRead();
+                VisualPressureAgingRuntime.CloseAgingBufferSnapshotLease();
+                VisualPressureAgingRuntime.CloseDegradationBufferSnapshotLease();
             }
         }
     }
 
     internal static class VisualPressureAgingInquisition
     {
-        private const string ReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
+        private const string AgentId = "SHINOBU_219";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_219.bin";
         private const string DedicatedReportRelativePath = "Docs/Reports/VISUAL_AGING_INQUISITION_REPORT.json";
 
         [MenuItem("Hecton8/Rendering/Run Visual Aging Inquisition")]
@@ -268,26 +296,30 @@ namespace Hecton8.Graphics.Materials.Editor
         public static string Run()
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string reportPath = Path.Combine(root, ReportRelativePath);
             string dedicatedReportPath = Path.Combine(root, DedicatedReportRelativePath);
-            string reportDir = Path.GetDirectoryName(reportPath);
-            if (!string.IsNullOrEmpty(reportDir))
-                Directory.CreateDirectory(reportDir);
             string dedicatedReportDir = Path.GetDirectoryName(dedicatedReportPath);
             if (!string.IsNullOrEmpty(dedicatedReportDir))
                 Directory.CreateDirectory(dedicatedReportDir);
 
-            string previousReport = File.Exists(reportPath) ? File.ReadAllText(reportPath) : string.Empty;
-            bool preservePreviousReport = !string.IsNullOrEmpty(previousReport) &&
-                previousReport.IndexOf("\"agent\": \"SHINOBU_219\"", StringComparison.Ordinal) < 0;
-
             string baseDegradation = ReadTextIfExists(root, "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs");
             string runtime = ReadTextIfExists(root, "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs");
             string shader = ReadTextIfExists(root, "Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl");
+            string tuner = ReadTextIfExists(root, "Assets/_Project/Scripts/Graphics/Materials/Editor/VisualPressureAgingTunerWindow.cs");
+            string csvPath = Path.Combine(root, "Data/Visuals/environmental_aging_rules.csv");
 
             int activeMaterialMutations = Count(baseDegradation, ".material") + Count(runtime, ".material") + Count(baseDegradation, "MaterialPropertyBlock");
             int activeAuthoringDecals = Count(baseDegradation, "ApplyAuthoringDecal") + Count(baseDegradation, "LeakStripeDecal") + Count(baseDegradation, "LeakScuffDecal");
-            int shaderBufferBindings = Count(shader, "_GlobalBaseAgingParams") + Count(runtime, "_GlobalBaseAgingParams");
+            int shaderBufferBindings = Count(shader, "_GlobalUberNoirDegradation") + Count(runtime, "_GlobalUberNoirDegradation");
+            int legacyAgingShaderBindings = Count(shader, "_GlobalBaseAgingParams") + Count(runtime, "_GlobalBaseAgingParams");
+            int degradationDtoReferences = Count(runtime, "InstanceDegradationDTO") + Count(shader, "H8InstanceDegradationDTO");
+            int svInstanceIdReferences = Count(shader, "SV_InstanceID");
+            int qualityRouteReferences = Count(shader, "GlobalQualityWeight") + Count(runtime, "GlobalQualityWeight");
+            int scorchNormalReferences = Count(shader, "H8UberNoirApplyScorchDegradation") + Count(shader, "H8UberNoirDecodeRustNormalTS");
+            int csvRouteReferences = Count(runtime, "environmental_aging_rules.csv") + Count(runtime, "scorch_intensity") + Count(runtime, "quality_noise");
+            int gizmoSnapshotReferences = Count(tuner, "TryOpenDegradationBufferSnapshotLease") + Count(tuner, "TryOpenAgingBufferSnapshotLease");
+            int dumpIdentityReferences = Count(runtime, DumpRelativePath) + Count(tuner, DumpRelativePath);
+            int lockBufferForWriteReferences = Count(runtime, "LockBufferForWrite");
+            int setDataReferences = Count(runtime, ".SetData(") + Count(runtime, "SetData<");
             int projectMaterialMutationReferences = CountTokenInDirectory(root, "Assets/_Project/Scripts", "*.cs", ".material") +
                 CountTokenInDirectory(root, "Assets/_Project/Scripts", "*.cs", "MaterialPropertyBlock");
             int projectDynamicDecalReferences = CountTokenInDirectory(root, "Assets/_Project/Scripts", "*.cs", "DynamicDecal");
@@ -313,16 +345,27 @@ namespace Hecton8.Graphics.Materials.Editor
                 legacyRendererMaterialSetFloat == 0 &&
                 dynamicAgingDecalReferences == 0 &&
                 shaderBufferBindings >= 2 &&
+                degradationDtoReferences >= 2 &&
+                svInstanceIdReferences > 0 &&
+                qualityRouteReferences >= 2 &&
+                scorchNormalReferences >= 2 &&
+                csvRouteReferences >= 3 &&
+                gizmoSnapshotReferences >= 2 &&
+                dumpIdentityReferences >= 2 &&
+                lockBufferForWriteReferences >= 2 &&
+                setDataReferences == 0 &&
+                File.Exists(csvPath) &&
                 layoutValid;
 
             StringBuilder builder = new StringBuilder(1024);
             builder.AppendLine("{");
-            builder.AppendLine("  \"agent\": \"SHINOBU_219\",");
-            builder.AppendLine("  \"scope\": \"VISUAL_PRESSURE_AGING_SHADER\",");
+            builder.AppendLine("  \"agent\": \"" + AgentId + "\",");
+            builder.AppendLine("  \"domain\": \"VISUAL_PRESSURE_AGING_SHADER\",");
+            builder.AppendLine("  \"scope\": \"VISUAL_AGING_INQUISITION\",");
             builder.AppendLine("  \"scanScope\": \"Project scripts counted; pass/fail gated on BaseDegradation/UberNoir aging scope\",");
             builder.AppendLine("  \"summary\": \"Instance Material Mutations Purged\",");
             builder.AppendLine("  \"evidenceClass\": \"STATIC_SOURCE\",");
-            builder.AppendLine("  \"runtimeStatus\": \"PENDING_VERIFICATION\",");
+            builder.AppendLine("  \"runtimeStatus\": \"PENDING_UNITY_IMPORT_SHADER_COMPILE_PROFILER\",");
             builder.AppendLine("  \"instanceMaterialMutationsActive\": " + activeMaterialMutations + ",");
             builder.AppendLine("  \"authoringAgingDecalCallsActive\": " + activeAuthoringDecals + ",");
             builder.AppendLine("  \"projectMaterialMutationReferences\": " + projectMaterialMutationReferences + ",");
@@ -331,23 +374,31 @@ namespace Hecton8.Graphics.Materials.Editor
             builder.AppendLine("  \"legacyGlassFractureFiles\": " + legacyGlassFractureFiles + ",");
             builder.AppendLine("  \"legacyRendererMaterialSetFloat\": " + legacyRendererMaterialSetFloat + ",");
             builder.AppendLine("  \"dynamicAgingDecalReferences\": " + dynamicAgingDecalReferences + ",");
-            builder.AppendLine("  \"globalAgingShaderBindings\": " + shaderBufferBindings + ",");
+            builder.AppendLine("  \"globalUberNoirDegradationBindings\": " + shaderBufferBindings + ",");
+            builder.AppendLine("  \"legacyBaseAgingBindingsPreserved\": " + legacyAgingShaderBindings + ",");
+            builder.AppendLine("  \"instanceDegradationDtoReferences\": " + degradationDtoReferences + ",");
+            builder.AppendLine("  \"svInstanceIdReferences\": " + svInstanceIdReferences + ",");
+            builder.AppendLine("  \"globalQualityWeightReferences\": " + qualityRouteReferences + ",");
+            builder.AppendLine("  \"scorchNormalPerturbationReferences\": " + scorchNormalReferences + ",");
+            builder.AppendLine("  \"csvRouteReferences\": " + csvRouteReferences + ",");
+            builder.AppendLine("  \"gizmoSnapshotReferences\": " + gizmoSnapshotReferences + ",");
+            builder.AppendLine("  \"dumpIdentityReferences\": " + dumpIdentityReferences + ",");
+            builder.AppendLine("  \"lockBufferForWriteReferences\": " + lockBufferForWriteReferences + ",");
+            builder.AppendLine("  \"setDataReferences\": " + setDataReferences + ",");
+            builder.AppendLine("  \"csvProfileExists\": " + (File.Exists(csvPath) ? "true" : "false") + ",");
+            builder.AppendLine("  \"csvProfilePath\": \"Data/Visuals/environmental_aging_rules.csv\",");
             builder.AppendLine("  \"visualAgingParamsDTOBytes\": 64,");
+            builder.AppendLine("  \"instanceDegradationDTOBytes\": 32,");
+            builder.AppendLine("  \"blackBoxDumpPath\": \"" + DumpRelativePath + "\",");
             builder.AppendLine("  \"layoutValid\": " + (layoutValid ? "true" : "false") + ",");
             builder.AppendLine("  \"rollbackStateIncluded\": false,");
-            builder.AppendLine("  \"status\": \"" + (pass ? "STATIC_PASS" : "STATIC_FAIL") + "\",");
-            builder.AppendLine("  \"preservedPreviousReport\": " + (preservePreviousReport ? "true" : "false") + (preservePreviousReport ? "," : string.Empty));
-            if (preservePreviousReport)
-            {
-                builder.Append("  \"previousReportRaw\": ");
-                AppendJsonString(builder, previousReport);
-                builder.AppendLine();
-            }
+            builder.AppendLine("  \"aggregateReportPolicy\": \"DEDICATED_REPORT_ONLY_DO_NOT_OVERWRITE_SHARED_RENDERING_OPTIMIZATION_REPORT\",");
+            builder.AppendLine("  \"sharedAggregateReportTouched\": false,");
+            builder.AppendLine("  \"status\": \"" + (pass ? "STATIC_SOURCE_PASS" : "STATIC_SOURCE_FAIL") + "\"");
             builder.AppendLine("}");
             string report = builder.ToString();
-            File.WriteAllText(reportPath, report);
             File.WriteAllText(dedicatedReportPath, report);
-            return reportPath;
+            return dedicatedReportPath;
         }
 
         private static int Count(string text, string token)

@@ -136,8 +136,6 @@ GameObject:
   - component: {fileID: 5380700518078914826}
   - component: {fileID: 6846099205482869597}
   - component: {fileID: 3265406370731010970}
-  - component: {fileID: 9079297290110143596}
-  - component: {fileID: 4480347836946963800}
   - component: {fileID: 3941918104802718226}
   m_Layer: 0
   m_Name: Main Camera
@@ -371,54 +369,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &9079297290110143596
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193605564943894971}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b0c0a69611596146aceb2f60532940c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Crest::Crest.UnderwaterRenderer
-  _version: 0
-  _mode: 0
-  _filterOceanData: 13
-  _meniscus: 1
-  _depthFogDensityFactor: 1
-  _volumeGeometry: {fileID: 0}
-  _invertCulling: 0
-  _enableShaderAPI: 0
-  _transparentObjectLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  _copyOceanMaterialParamsEachFrame: 1
-  _farPlaneMultiplier: 0.68
-  _debug:
-    _viewOceanMask: 0
-    _disableOceanMask: 0
-    _viewStencil: 0
-    _disableHeightAboveWaterOptimization: 0
-    _disableArtifactCorrection: 0
---- !u!114 &4480347836946963800
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193605564943894971}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
-  m_IsGlobal: 1
-  priority: 0
-  blendDistance: 0
-  weight: 1
-  sharedProfile: {fileID: 11400000, guid: 4ca510dcadb483f49985cba92f01b880, type: 2}
 --- !u!114 &3941918104802718226
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1506,7 +1456,7 @@ MonoBehaviour:
   - {fileID: 0}
   survivalSystem: {fileID: 9217988090672240742}
   pdaSonarPointCloudShader: {fileID: 4800000, guid: 534bedadf69d41343b2dcf2900bbc44c, type: 3}
-  pdaSonarMapCompute: {fileID: 7200000, guid: 7d9f06381d803794a9ceb6ae78e2aa79, type: 3}
+  pdaSonarMapCompute: {fileID: 7200000, guid: a3f2b5e8d9a74c34aa4fba2a5ce18277, type: 3}
   defaultTab: 0
   fadeSpeed: 5
   enableBatteryDrain: 1

@@ -1,4 +1,6 @@
 using Hecton8.Atmosphere;
+using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -52,6 +54,9 @@ namespace Hecton8.Gameplay
 
         /// <summary>Optional fixed-step flooding owner attached to this submarine root.</summary>
         SubmarineFluidDynamics FluidDynamics { get; }
+
+        /// <summary>Optional localized water-heat command facade owned by the fluid runtime.</summary>
+        IWaterHeatInjectionService WaterHeatInjectionService { get; }
 
         /// <summary>Optional fixed-step atmosphere owner attached to this submarine root.</summary>
         SubmarineAtmosphereSystem AtmosphereSystem { get; }

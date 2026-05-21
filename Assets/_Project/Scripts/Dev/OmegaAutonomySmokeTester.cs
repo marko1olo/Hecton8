@@ -63,7 +63,7 @@ namespace Hecton8.Dev
                 out int burstClearNativeAllocationDelta);
             Hecton8.Debugging.AutomationOmegaSmokeResult constructionAutomationResult =
                 Hecton8.Debugging.AutomationOmegaSmokeTester.RunLogisticsRouteStressSmoke();
-            bool constructionAutomationPass = constructionAutomationResult.Passed;
+            bool constructionAutomationPass = constructionAutomationResult.Passed != 0;
             if (!globalTelemetryWasInitialized)
                 GlobalTelemetryBus.ResetForSmokeTest();
 
@@ -542,7 +542,7 @@ namespace Hecton8.Dev
             array = default;
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct FillBurstClearArraysJob : IJobParallelFor
         {
             public NativeArray<int> IntValues;
@@ -556,7 +556,7 @@ namespace Hecton8.Dev
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ClearIntArrayJob : IJobParallelFor
         {
             public NativeArray<int> Values;
@@ -567,7 +567,7 @@ namespace Hecton8.Dev
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ClearByteArrayJob : IJobParallelFor
         {
             public NativeArray<byte> Values;
@@ -578,7 +578,7 @@ namespace Hecton8.Dev
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BurstClearChecksumTermsJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<int> IntValues;
@@ -591,7 +591,7 @@ namespace Hecton8.Dev
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BurstClearChecksumSummaryJob : IJob
         {
             [ReadOnly] public NativeArray<int> ChecksumTerms;

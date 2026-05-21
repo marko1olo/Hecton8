@@ -94,7 +94,7 @@ Owner rule:
 - Photoreal shader contract is mandatory:
   - SSS approximation
   - curvature-driven wetness
-  - micro-parallax on HIGH tier
+  - micro-parallax at high quality weights
   - fresnel water film
   - `_NormalScale`
 - If exact API or package signature is unknown, stop and request the exact signature. Do not guess.
@@ -150,8 +150,8 @@ When real textures are needed:
 
 ## Default Working Assumptions
 
-- Use MX350-safe defaults first.
-- Keep default flora material quality on `_QUALITY_MX350` unless explicit high-tier authoring is being verified.
+- Use minimum-budget defaults first.
+- Keep default flora material features on low-cost scalar values unless explicit high-fidelity authoring is being verified.
 - Treat generated starter finals as fallback coverage, not as final art completion.
 - Every claimed fix remains `PENDING VERIFICATION` until logs, validator output, or profiler data confirms it.
 - Future dialogs should start from `/Docs` before touching root legacy markdown files.

@@ -7,10 +7,10 @@ namespace Hecton8.Construction
 {
     internal struct ModuleLifeSupportSignals
     {
-        public bool AirQualityWarningRaised;
-        public bool AirReserveDepletedRaised;
-        public bool Co2CriticalRaised;
-        public bool Co2HypoxiaRaised;
+        public byte AirQualityWarningRaised;
+        public byte AirReserveDepletedRaised;
+        public byte Co2CriticalRaised;
+        public byte Co2HypoxiaRaised;
     }
 
     /// <summary>
@@ -262,7 +262,7 @@ namespace Hecton8.Construction
             if (IsAirQualityLow && !_airReserveWarningLatched)
             {
                 _airReserveWarningLatched = true;
-                signals.AirQualityWarningRaised = true;
+                signals.AirQualityWarningRaised = 1;
             }
             else if (!IsAirQualityLow && _airReserveWarningLatched && AirReserveNormalized > _staleAirThreshold + 0.15f)
             {
@@ -273,7 +273,7 @@ namespace Hecton8.Construction
             if (depleted && !_airReserveDepletedLatched)
             {
                 _airReserveDepletedLatched = true;
-                signals.AirReserveDepletedRaised = true;
+                signals.AirReserveDepletedRaised = 1;
             }
             else if (!depleted && _airReserveDepletedLatched && AirReserveNormalized > 0.2f)
             {
@@ -283,7 +283,7 @@ namespace Hecton8.Construction
             if (IsCo2Critical && !_co2CriticalLatched)
             {
                 _co2CriticalLatched = true;
-                signals.Co2CriticalRaised = true;
+                signals.Co2CriticalRaised = 1;
             }
             else if (!IsCo2Critical && _co2CriticalLatched && Co2Normalized < 0.8f)
             {
@@ -294,7 +294,7 @@ namespace Hecton8.Construction
             if (hypoxia && !_co2HypoxiaLatched)
             {
                 _co2HypoxiaLatched = true;
-                signals.Co2HypoxiaRaised = true;
+                signals.Co2HypoxiaRaised = 1;
             }
             else if (!hypoxia && _co2HypoxiaLatched && Co2Normalized < HypoxiaCo2ThresholdNormalized - 0.08f)
             {

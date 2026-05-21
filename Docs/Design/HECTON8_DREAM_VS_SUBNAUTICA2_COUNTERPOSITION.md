@@ -44,7 +44,7 @@ The HECTON-8 first impression must communicate:
 - Sound is a threat surface.
 - The suit, visor, base, and vehicle are fragile instruments.
 - Every failure leaves evidence: telemetry, dents, leaks, pressure scars, corrupted logs.
-- High-tier hardware buys sensory overload, not more gameplay truth.
+- High-fidelity hardware buys sensory overload, not more gameplay truth.
 
 ## Dream Pillars
 
@@ -185,7 +185,7 @@ Borrow contract shapes, not content:
 - Vehicle silhouette discipline: instantly readable outline and cockpit framing.
 - Strong first-ten-hours loop: scan, craft, explore, return, upgrade.
 - Creature stimulus contract: light/sound/action -> readable reaction.
-- Platform preset discipline: low-tier is not a scaled-down accident.
+- Platform preset discipline: minimum-budget output is not a scaled-down accident.
 - Community cadence: feedback must map to telemetry and reproducible content state.
 - Co-op-safe thinking: save/schema/world-operation contracts should not block future shared worlds.
 
@@ -217,7 +217,7 @@ Required sequence:
 
 ## Tier Contract
 
-Low / toaster:
+Minimum-budget:
 
 - The dream survives through composition, fog LUTs, audio cues, scalar pressure, and clean route logic.
 - No expensive raymarching, no dense particles, no high-sample POM, no unbounded dynamic lights.
@@ -235,7 +235,7 @@ High:
 Ultra:
 
 - Visual overkill: salt crystals, volumetric silt, procedural hull dents, abyssal light shafts,
-  dense flora sway, high-tier POM/raymarch/VFX.
+  dense flora sway, high-fidelity POM/raymarch/VFX.
 - No Ultra feature may become required for gameplay understanding.
 
 ## Foundation Demands

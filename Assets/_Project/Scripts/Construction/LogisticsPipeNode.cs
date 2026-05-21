@@ -595,9 +595,13 @@ namespace Hecton8.Construction
         private void PublishRuptureSignals(Vector3 rupturePosition)
         {
             float ruptureSeverity = math.saturate(_overpressureStress / math.max(0.1f, ruptureStressThreshold));
-            AbsoluteUniversePosition ruptureAup = AbsoluteUniversePosition.FromRuntimePosition(rupturePosition);
             uint leftNodeId = (uint)(_pipeLinkId >> 32);
             uint rightNodeId = unchecked((uint)_pipeLinkId);
+            ConnectionSplineBatchRenderer.SetPipeNodeRuptured(leftNodeId, true);
+            ConnectionSplineBatchRenderer.SetPipeNodeRuptured(rightNodeId, true);
+
+            if (!TryResolveAupFromRuntimeOrigin(rupturePosition, out AbsoluteUniversePosition ruptureAup))
+                return;
 
             PipeRuptureSignal ruptureSignal = new PipeRuptureSignal
             {
@@ -621,9 +625,6 @@ namespace Hecton8.Construction
                 Flags = 1
             };
             GlobalSignals.Publish(in impactSignal);
-
-            ConnectionSplineBatchRenderer.SetPipeNodeRuptured(leftNodeId, true);
-            ConnectionSplineBatchRenderer.SetPipeNodeRuptured(rightNodeId, true);
         }
 
         internal void TriggerExternalRupture()
@@ -655,6 +656,23 @@ namespace Hecton8.Construction
 
             float invLength = math.rsqrt(lengthSq);
             return new Vector3(value.x * invLength, value.y * invLength, value.z * invLength);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(localRuntime.x, localRuntime.y, localRuntime.z));
+            return positionAup.IsFinite();
         }
 
         internal void RegisterEmergencyVentVisual(float normalizedIntensity)

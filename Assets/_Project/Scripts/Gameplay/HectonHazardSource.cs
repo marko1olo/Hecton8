@@ -13,7 +13,7 @@ namespace Hecton8.Gameplay
     /// Prikreplyaetsya k prefabam (geyzery, oblomki reaktorov).
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonHazardSource : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HectonHazardSource : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════════════
         //  INSPECTOR — SETTINGS
@@ -47,6 +47,9 @@ namespace Hecton8.Gameplay
         private Transform _tr;
         private float _timer;
         private bool _isRegisteredInTick;
+        private bool _hotSwapListenerRegistered;
+        private bool _registeredRadiationSource;
+        private IThermodynamicsService _thermodynamicsService;
 
         // ══════════════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -56,10 +59,13 @@ namespace Hecton8.Gameplay
         {
             _instanceID = unchecked((int)EntityId.ToULong(GetEntityId()));
             _tr = transform;
+            CacheRegistryServicesCold();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             InternalUpdateRegistry();
 
             if (!_isStatic)
@@ -68,15 +74,15 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            HectonHazardManager.Unregister(_instanceID);
-            RadiationHazardGrid.UnregisterSource(_instanceID);
+            TryUnregisterAuthority();
+            TryUnregisterHotSwapListener();
             TryUnregisterFromTickManager();
         }
 
         private void OnDestroy()
         {
-            HectonHazardManager.Unregister(_instanceID);
-            RadiationHazardGrid.UnregisterSource(_instanceID);
+            TryUnregisterAuthority();
+            TryUnregisterHotSwapListener();
             TryUnregisterFromTickManager();
         }
 
@@ -107,14 +113,20 @@ namespace Hecton8.Gameplay
             {
                 HectonHazardManager.Unregister(_instanceID);
                 RadiationHazardGrid.RegisterSource(_instanceID, _tr.position, _intensity, _radius);
+                _registeredRadiationSource = true;
                 return;
             }
 
-            RadiationHazardGrid.UnregisterSource(_instanceID);
+            if (_registeredRadiationSource)
+            {
+                RadiationHazardGrid.UnregisterSource(_instanceID);
+                _registeredRadiationSource = false;
+            }
+
             if (resolvedType == HazardType.Heat)
             {
                 HectonHazardManager.Unregister(_instanceID);
-                IThermodynamicsService thermodynamics = GlobalRegistry.ThermodynamicsService;
+                IThermodynamicsService thermodynamics = _thermodynamicsService;
                 if (thermodynamics != null && thermodynamics.IsInitialized)
                     thermodynamics.TryInjectTransientHeatSource(_tr.position, _radius, _intensity, unchecked((uint)_instanceID));
                 return;
@@ -128,6 +140,17 @@ namespace Hecton8.Gameplay
                 resolvedType,
                 ResolveVisorGlitchBias(),
                 _profile);
+        }
+
+        private void TryUnregisterAuthority()
+        {
+            if (_registeredRadiationSource)
+            {
+                RadiationHazardGrid.UnregisterSource(_instanceID);
+                _registeredRadiationSource = false;
+            }
+
+            HectonHazardManager.Unregister(_instanceID);
         }
 
         private HazardType ResolveHazardType()
@@ -144,11 +167,10 @@ namespace Hecton8.Gameplay
         {
             if (_isRegisteredInTick)
                 return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegisteredInTick = GlobalRegistry.Updatables.Contains(this);
+            _isRegisteredInTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterFromTickManager()
@@ -158,6 +180,37 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _isRegisteredInTick = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsService)
+                _thermodynamicsService = currentService as IThermodynamicsService;
         }
 
         // ══════════════════════════════════════════════════════════════════

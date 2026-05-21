@@ -61,12 +61,12 @@ namespace Hecton8.Visor
                 Aspect = aspect;
             }
 
-            public float Intensity { get; }
-            public float Radius { get; }
-            public float DitherStrength { get; }
-            public float DarkenStrength { get; }
-            public Vector2 Center { get; }
-            public float Aspect { get; }
+            public readonly float Intensity;
+            public readonly float Radius;
+            public readonly float DitherStrength;
+            public readonly float DarkenStrength;
+            public readonly Vector2 Center;
+            public readonly float Aspect;
         }
 
         private sealed class SootPass : ScriptableRenderPass
@@ -204,10 +204,13 @@ namespace Hecton8.Visor
                        Vector4Equals(left.SootCenter, right.SootCenter);
             }
 
-            [StructLayout(LayoutKind.Sequential, Size = SootGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Explicit, Size = SootGlobalsStrideBytes)]
             private struct SootGlobalsDTO
             {
+                [FieldOffset(0)]
                 public Vector4 SootParams;
+
+                [FieldOffset(16)]
                 public Vector4 SootCenter;
 
                 public SootGlobalsDTO(Vector4 sootParams, Vector4 sootCenter)

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -25,7 +24,6 @@ namespace Hecton8.World
     public sealed class EmergencyServiceRelay : MonoBehaviour, IInteractable
     {
         [Serializable]
-        [StructLayout(LayoutKind.Sequential)]
         public struct RewardEntry
         {
             [Tooltip("Reward item granted from the relay cache.")]
@@ -364,7 +362,7 @@ namespace Hecton8.World
             relayAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return MathGuard.IsFinite(in relayAup);
+            return relayAup.IsFinite();
         }
 
         private static double ResolveVerticalDeltaMeters(in AbsoluteUniversePosition from, in AbsoluteUniversePosition to)

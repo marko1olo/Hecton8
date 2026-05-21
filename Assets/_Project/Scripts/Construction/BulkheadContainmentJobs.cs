@@ -1,8 +1,11 @@
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Determinism;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
+using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -11,22 +14,22 @@ namespace Hecton8.Construction
 {
     public static class BulkheadContainmentMath
     {
-        public static double3 ToAbsoluteDouble3(in AbsoluteUniversePosition aup)
-        {
-            double cell = AbsoluteUniversePosition.CellSizeMeters;
-            return new double3(
-                aup.GridX * cell + aup.LocalX,
-                aup.GridY * cell + aup.LocalY,
-                aup.GridZ * cell + aup.LocalZ);
-        }
-
         public static double3 ToAbsoluteDouble3(in LockstepPlayerKinematicState state)
         {
-            double cell = AbsoluteUniversePosition.CellSizeMeters;
+            const double cell = HectonPhysicsContract.AupSectorSizeMetersDouble;
             return new double3(
                 state.SectorX * cell + state.LocalPosition.x,
                 state.SectorY * cell + state.LocalPosition.y,
                 state.SectorZ * cell + state.LocalPosition.z);
+        }
+
+        public static double3 ToAbsoluteDouble3(in AbsoluteUniversePosition position)
+        {
+            const double cell = HectonPhysicsContract.AupSectorSizeMetersDouble;
+            return new double3(
+                position.GridX * cell + position.LocalX,
+                position.GridY * cell + position.LocalY,
+                position.GridZ * cell + position.LocalZ);
         }
 
         public static float Sanitize01(float value, float fallback)
@@ -39,13 +42,18 @@ namespace Hecton8.Construction
             return math.isfinite(value) && value > 0f ? value : fallback;
         }
 
+        public static float SanitizeNonNegative(float value, float fallback)
+        {
+            return math.isfinite(value) && value >= 0f ? value : fallback;
+        }
+
         public static float3 SafeNormal(float3 value, float3 fallback)
         {
             if (!math.all(math.isfinite(value)))
                 return fallback;
 
             float lenSq = math.lengthsq(value);
-            return lenSq > 1e-6f ? value * math.rsqrt(lenSq) : fallback;
+            return math.isfinite(lenSq) && lenSq > 1e-6f ? value * math.rsqrt(lenSq) : fallback;
         }
 
         public static uint Hash(uint seed, uint value)
@@ -71,8 +79,14 @@ namespace Hecton8.Construction
 
         public void Execute(int index)
         {
-            if ((uint)index >= (uint)Count)
+            if ((uint)index >= (uint)Count ||
+                States == null ||
+                Aups == null ||
+                Planes == null ||
+                CsrEdges == null)
+            {
                 return;
+            }
 
             uint edgeHash = BulkheadContainmentMath.Hash(Seed, (uint)index + 1u);
             double3 center = OriginAup + new double3((index & 7) * 6.0, 0.0, (index >> 3) * 7.0);
@@ -120,8 +134,11 @@ namespace Hecton8.Construction
 
         public void Execute(int index)
         {
-            if ((uint)index >= (uint)Count)
+            if ((uint)index >= (uint)Count ||
+                States == null)
+            {
                 return;
+            }
 
             ref BulkheadStateDTO state = ref UnsafeUtility.AsRef<BulkheadStateDTO>(States + index);
             if ((state.Flags & BulkheadStateFlags.Active) == 0u)
@@ -137,14 +154,13 @@ namespace Hecton8.Construction
 
             if ((state.Flags & BulkheadStateFlags.Jammed) != 0u)
             {
-                state.ClosureProgress = math.saturate(math.max(previous, 0.73f));
+                state.ClosureProgress = previous < 0.73f ? 0.73f : previous;
                 state.Flags &= ~BulkheadStateFlags.Sealed;
                 return;
             }
 
-            float dt = math.clamp(DeltaSeconds, 0f, 0.1f);
-            float q = BulkheadContainmentMath.Sanitize01(GlobalQualityWeight, 0f);
-            float cadenceScale = math.lerp(0.75f, 1.2f, q);
+            float dt = math.min(BulkheadContainmentMath.SanitizeNonNegative(DeltaSeconds, 0f), 0.1f);
+            const float cadenceScale = 1.2f;
             float target = (state.AssociatedLock & 1u) != 0u ? 1f : 0f;
             float speed = target > previous
                 ? BulkheadContainmentMath.SanitizePositive(CloseSpeedPerSecond, 2f)
@@ -167,12 +183,21 @@ namespace Hecton8.Construction
         [NativeDisableUnsafePtrRestriction, NoAlias] public float* EdgeConductivity;
         [NativeDisableUnsafePtrRestriction, NoAlias] public float* EdgeFluidFlow;
         public int Count;
-        public int EdgeScalarCount;
+        public int ConductivityCount;
+        public int FluidFlowCount;
 
         public void Execute(int index)
         {
-            if ((uint)index >= (uint)Count)
+            if ((uint)index >= (uint)Count ||
+                States == null ||
+                CsrEdges == null ||
+                EdgeConductivity == null ||
+                EdgeFluidFlow == null ||
+                ConductivityCount <= 0 ||
+                FluidFlowCount <= 0)
+            {
                 return;
+            }
 
             ref BulkheadStateDTO state = ref UnsafeUtility.AsRef<BulkheadStateDTO>(States + index);
             ref BulkheadCsrEdgeDTO edge = ref UnsafeUtility.AsRef<BulkheadCsrEdgeDTO>(CsrEdges + index);
@@ -187,17 +212,19 @@ namespace Hecton8.Construction
             else
                 state.Flags &= ~BulkheadStateFlags.Sealed;
 
-            if ((uint)edge.ConductivityIndex < (uint)EdgeScalarCount)
-                EdgeConductivity[edge.ConductivityIndex] = sealedEdge ? 0f : math.max(edge.OpenConductivity, 0f);
-            if ((uint)edge.FluidFlowIndex < (uint)EdgeScalarCount)
-                EdgeFluidFlow[edge.FluidFlowIndex] = sealedEdge ? 0f : math.max(edge.OpenFluidFlow, 0f);
+            float openConductivity = BulkheadContainmentMath.SanitizeNonNegative(edge.OpenConductivity, 1f);
+            float openFluidFlow = BulkheadContainmentMath.SanitizeNonNegative(edge.OpenFluidFlow, 1f);
+            if ((uint)edge.ConductivityIndex < (uint)ConductivityCount)
+                EdgeConductivity[edge.ConductivityIndex] = sealedEdge ? 0f : openConductivity;
+            if ((uint)edge.FluidFlowIndex < (uint)FluidFlowCount)
+                EdgeFluidFlow[edge.FluidFlowIndex] = sealedEdge ? 0f : openFluidFlow;
         }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct ProcessDoorOverrideJob : IJob
     {
-        [NativeDisableUnsafePtrRestriction, NoAlias] public InteractionUiSignal* Signals;
+        [ReadOnly, NoAlias] public NativeArray<InteractionUiSignal>.ReadOnly Signals;
         [NativeDisableUnsafePtrRestriction, NoAlias] public BulkheadStateDTO* States;
         [NativeDisableUnsafePtrRestriction, NoAlias] public double3* Aups;
         public int SignalCount;
@@ -207,16 +234,34 @@ namespace Hecton8.Construction
 
         public void Execute()
         {
+            if (!Signals.IsCreated ||
+                SignalCount <= 0 ||
+                StateCount <= 0 ||
+                States == null ||
+                Aups == null)
+            {
+                return;
+            }
+
+            if (!math.all(math.isfinite(PlayerAup)))
+                return;
+
             float maxDistance = BulkheadContainmentMath.SanitizePositive(OverrideDistanceMeters, 3.0f);
             double maxDistanceSq = (double)maxDistance * maxDistance;
+            int signalCount = math.min(SignalCount, Signals.Length);
 
-            for (int signalIndex = 0; signalIndex < SignalCount; signalIndex++)
+            for (int signalIndex = 0; signalIndex < signalCount; signalIndex++)
             {
                 InteractionUiSignal signal = Signals[signalIndex];
-                if (signal.State == 0)
+                if (signal.State == 0 ||
+                    signal.ToolHash != BulkheadContainmentConstants.OverrideToolHash)
+                {
                     continue;
+                }
 
-                double3 signalAup = BulkheadContainmentMath.ToAbsoluteDouble3(in signal.TargetAup);
+                double3 signalAup = default;
+                bool signalAupResolved = false;
+                bool signalAupFinite = false;
                 for (int stateIndex = 0; stateIndex < StateCount; stateIndex++)
                 {
                     ref BulkheadStateDTO state = ref UnsafeUtility.AsRef<BulkheadStateDTO>(States + stateIndex);
@@ -224,11 +269,29 @@ namespace Hecton8.Construction
                         continue;
 
                     bool hashMatch = signal.TargetHash != 0u && signal.TargetHash == state.EdgeHashID;
-                    double3 center = Aups[stateIndex];
-                    double3 playerDelta = PlayerAup - center;
-                    double3 signalDelta = signalAup - center;
-                    bool distanceMatch = math.dot(playerDelta, playerDelta) <= maxDistanceSq &&
-                                         math.dot(signalDelta, signalDelta) <= maxDistanceSq;
+                    bool distanceMatch = false;
+                    if (!hashMatch)
+                    {
+                        if (!signalAupResolved)
+                        {
+                            signalAup = BulkheadContainmentMath.ToAbsoluteDouble3(in signal.TargetAup);
+                            signalAupFinite = math.all(math.isfinite(signalAup));
+                            signalAupResolved = true;
+                        }
+
+                        if (!signalAupFinite)
+                            continue;
+
+                        double3 center = Aups[stateIndex];
+                        if (!math.all(math.isfinite(center)))
+                            continue;
+
+                        double3 playerDelta = PlayerAup - center;
+                        double3 signalDelta = signalAup - center;
+                        distanceMatch = math.dot(playerDelta, playerDelta) <= maxDistanceSq &&
+                                        math.dot(signalDelta, signalDelta) <= maxDistanceSq;
+                    }
+
                     if (!hashMatch && !distanceMatch)
                         continue;
 
@@ -255,30 +318,80 @@ namespace Hecton8.Construction
         public void Execute()
         {
             BulkheadCollisionResultDTO best = default;
+            best.Frame = Frame;
+            if (Result == null)
+                return;
+
+            if (Count <= 0 ||
+                States == null ||
+                Planes == null)
+            {
+                Result[0] = best;
+                return;
+            }
+
+            if (!math.all(math.isfinite(PlayerStartAup)) ||
+                !math.all(math.isfinite(PlayerEndAup)))
+            {
+                best.Flags = BulkheadCollisionFlags.NonFinite;
+                Result[0] = best;
+                return;
+            }
+
             float bestDepth = 0f;
-            float radius = math.max(0.05f, PlayerRadiusMeters);
+            float radius = BulkheadContainmentMath.SanitizePositive(PlayerRadiusMeters, 0.05f);
+            const float crossEpsilon = BulkheadContainmentConstants.PlaneCrossEpsilonMeters;
 
             for (int index = 0; index < Count; index++)
             {
                 BulkheadStateDTO state = States[index];
+                float closure = state.ClosureProgress;
                 if ((state.Flags & BulkheadStateFlags.Active) == 0u ||
                     (state.Flags & BulkheadStateFlags.Destroyed) != 0u ||
-                    state.ClosureProgress <= 0.5f)
+                    state.EdgeHashID == 0u)
                 {
                     continue;
                 }
 
+                if (!math.isfinite(closure))
+                {
+                    best.Flags |= BulkheadCollisionFlags.NonFinite;
+                    continue;
+                }
+
+                if (closure <= 0.5f)
+                    continue;
+
                 BulkheadPlaneDTO plane = Planes[index];
+                if (!math.all(math.isfinite(plane.CenterAup)) ||
+                    !math.all(math.isfinite(plane.Normal)) ||
+                    !math.isfinite(plane.WidthMeters) ||
+                    !math.isfinite(plane.HeightMeters) ||
+                    !math.isfinite(plane.HalfThicknessMeters))
+                {
+                    best.Flags |= BulkheadCollisionFlags.NonFinite;
+                    continue;
+                }
+
                 float3 normal = BulkheadContainmentMath.SafeNormal(plane.Normal, new float3(0f, 0f, 1f));
                 double3 startDeltaD = PlayerStartAup - plane.CenterAup;
                 double3 endDeltaD = PlayerEndAup - plane.CenterAup;
                 float3 startDelta = (float3)startDeltaD;
                 float3 endDelta = (float3)endDeltaD;
+                if (!math.all(math.isfinite(startDelta)) ||
+                    !math.all(math.isfinite(endDelta)))
+                {
+                    best.Flags |= BulkheadCollisionFlags.NonFinite;
+                    continue;
+                }
+
                 float signedStart = math.dot(startDelta, normal);
                 float signedEnd = math.dot(endDelta, normal);
-                float halfThickness = math.max(0.05f, plane.HalfThicknessMeters);
+                float halfThickness = math.max(0.05f, BulkheadContainmentMath.SanitizePositive(plane.HalfThicknessMeters, 0.05f));
                 float depth = halfThickness + radius - math.abs(signedEnd);
-                bool crosses = signedStart == 0f || signedEnd == 0f || math.sign(signedStart) != math.sign(signedEnd);
+                bool crosses = math.abs(signedStart) <= crossEpsilon ||
+                               math.abs(signedEnd) <= crossEpsilon ||
+                               math.sign(signedStart) != math.sign(signedEnd);
                 bool insideSlab = depth > 0f || crosses;
                 if (!insideSlab)
                     continue;
@@ -286,8 +399,8 @@ namespace Hecton8.Construction
                 float3 axisSeed = math.abs(normal.y) < 0.8f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f);
                 float3 tangent = BulkheadContainmentMath.SafeNormal(math.cross(axisSeed, normal), new float3(1f, 0f, 0f));
                 float3 bitangent = BulkheadContainmentMath.SafeNormal(math.cross(normal, tangent), new float3(0f, 1f, 0f));
-                float halfWidth = math.max(0.1f, plane.WidthMeters * 0.5f) + radius;
-                float halfHeight = math.max(0.1f, plane.HeightMeters * 0.5f) + radius;
+                float halfWidth = math.max(0.1f, BulkheadContainmentMath.SanitizePositive(plane.WidthMeters, 0.2f) * 0.5f) + radius;
+                float halfHeight = math.max(0.1f, BulkheadContainmentMath.SanitizePositive(plane.HeightMeters, 0.2f) * 0.5f) + radius;
                 if (math.abs(math.dot(endDelta, tangent)) > halfWidth ||
                     math.abs(math.dot(endDelta, bitangent)) > halfHeight)
                 {
@@ -302,10 +415,12 @@ namespace Hecton8.Construction
                 best.Normal = signedEnd >= 0f ? normal : -normal;
                 best.DepthMeters = resolvedDepth;
                 best.EdgeHashID = state.EdgeHashID;
-                best.Flags = ((state.Flags & BulkheadStateFlags.Jammed) != 0u)
+                uint diagnosticFlags = best.Flags & BulkheadCollisionFlags.NonFinite;
+                uint blockFlags = (state.Flags & BulkheadStateFlags.Jammed) != 0u
                     ? (BulkheadCollisionFlags.Blocked | BulkheadCollisionFlags.Jammed)
                     : BulkheadCollisionFlags.Blocked;
-                best.ClosureProgress = state.ClosureProgress;
+                best.Flags = diagnosticFlags | blockFlags;
+                best.ClosureProgress = BulkheadContainmentMath.Sanitize01(closure, 0f);
                 best.Frame = Frame;
             }
 
@@ -325,8 +440,14 @@ namespace Hecton8.Construction
 
         public void Execute(int index)
         {
-            if ((uint)index >= (uint)Count)
+            if ((uint)index >= (uint)Count ||
+                States == null ||
+                CsrEdges == null ||
+                ParentModuleIntegrity01 == null ||
+                IntegrityCount <= 0)
+            {
                 return;
+            }
 
             ref BulkheadStateDTO state = ref UnsafeUtility.AsRef<BulkheadStateDTO>(States + index);
             ref BulkheadCsrEdgeDTO edge = ref UnsafeUtility.AsRef<BulkheadCsrEdgeDTO>(CsrEdges + index);
@@ -396,14 +517,23 @@ namespace Hecton8.Construction
                     flags |= BulkheadTelemetryFlags.NonFinite | BulkheadTelemetryFlags.DumpRequested;
                 }
 
-                sumClosure += math.saturate(closure);
+                float closure01 = BulkheadContainmentMath.Sanitize01(closure, 0f);
+                sumClosure += closure01;
                 sealedCount += (state.Flags & BulkheadStateFlags.Sealed) != 0u ? 1u : 0u;
                 jammed += (state.Flags & BulkheadStateFlags.Jammed) != 0u ? 1u : 0u;
-                stateHash = BulkheadContainmentMath.Hash(stateHash, state.EdgeHashID ^ math.asuint(math.saturate(closure)));
+                stateHash = BulkheadContainmentMath.Hash(stateHash, state.EdgeHashID ^ math.asuint(closure01));
             }
 
             int cursor = (int)(Cursor[0] % (uint)TelemetryCount);
             BulkheadCollisionResultDTO collision = CollisionResult[0];
+            if ((collision.Flags & BulkheadCollisionFlags.NonFinite) != 0u ||
+                !math.isfinite(collision.DepthMeters) ||
+                !math.all(math.isfinite(collision.Normal)))
+            {
+                flags |= BulkheadTelemetryFlags.NonFinite | BulkheadTelemetryFlags.DumpRequested;
+            }
+
+            float collisionDepth = BulkheadContainmentMath.SanitizePositive(collision.DepthMeters, 0f);
             Telemetry[cursor] = new BulkheadTelemetryEntry
             {
                 Frame = Frame,
@@ -411,12 +541,12 @@ namespace Hecton8.Construction
                 SealedCount = sealedCount,
                 JammedCount = jammed,
                 AverageClosure = active > 0u ? sumClosure / active : 0f,
-                AuthorityCadenceHz = AuthorityCadenceHz,
+                AuthorityCadenceHz = BulkheadContainmentMath.SanitizePositive(AuthorityCadenceHz, 5f),
                 GlobalQualityWeight = BulkheadContainmentMath.Sanitize01(GlobalQualityWeight, 0f),
-                LastScheduleMicroseconds = math.max(0f, LastScheduleMicroseconds),
+                LastScheduleMicroseconds = BulkheadContainmentMath.SanitizePositive(LastScheduleMicroseconds, 0f),
                 StateHash = stateHash,
                 CollisionEdgeHash = collision.EdgeHashID,
-                CollisionDepthMeters = collision.DepthMeters,
+                CollisionDepthMeters = collisionDepth,
                 Flags = flags
             };
             Cursor[0] = unchecked(Cursor[0] + 1u);

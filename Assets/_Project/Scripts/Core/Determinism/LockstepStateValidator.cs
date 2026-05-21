@@ -1551,49 +1551,29 @@ namespace Hecton8.Core.Determinism
             NativeArrayOptions options = NativeArrayOptions.ClearMemory)
             where T : struct
         {
-            IDataVault vault = ResolveDataVault();
-            if (vault == null)
+            if (!OpenOrAcquireVaultBuffer(bufferId, requiredLength, options, out NativeArray<T> buffer))
                 return default;
 
-            NativeArray<T> buffer = vault.GetBuffer<T>(bufferId, requiredLength, SystemID.CoreDeterminism, options);
             return HasRequiredLength(buffer, requiredLength) ? buffer : default;
         }
 
         private bool TryGetVaultBuffer<T>(BufferID bufferId, out NativeArray<T> buffer)
             where T : struct
         {
-            IDataVault vault = ResolveDataVault();
-            if (vault != null && vault.TryGetBuffer(bufferId, out buffer) && buffer.IsCreated)
-                return true;
-
-            buffer = default;
-            return false;
+            return TryOpenExistingVaultBuffer(bufferId, 0, out buffer);
         }
 
         private bool TryGetVaultBuffer<T>(BufferID bufferId, int requiredLength, out NativeArray<T> buffer)
             where T : struct
         {
-            if (TryGetVaultBuffer(bufferId, out buffer) && HasRequiredLength(buffer, requiredLength))
-                return true;
-
-            buffer = default;
-            return false;
+            return TryOpenExistingVaultBuffer(bufferId, requiredLength, out buffer);
         }
 
         private bool TryGetHashSourceBuffer<T>(BufferID bufferId, out NativeArray<T> buffer)
             where T : struct
         {
-            buffer = default;
-            IDataVault vault = ResolveDataVault();
-            if (vault == null ||
-                !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
-                handle.BufferID == 0u ||
-                !vault.TryResolveHandle(in handle, out buffer) ||
-                !buffer.IsCreated)
-            {
-                buffer = default;
+            if (!TryOpenExistingVaultBuffer(bufferId, 0, out buffer))
                 return false;
-            }
 
             unsafe
             {
@@ -1605,6 +1585,78 @@ namespace Hecton8.Core.Determinism
             }
 
             return true;
+        }
+
+        private bool OpenOrAcquireVaultBuffer<T>(
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || requiredLength < 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                !IsMatchingVaultHandle(in handle, bufferId))
+            {
+                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.CoreDeterminism, options);
+            }
+
+            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool TryOpenExistingVaultBuffer<T>(
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || requiredLength < 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
+                return false;
+
+            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0 || !IsMatchingVaultHandle(in handle, bufferId))
+                return false;
+
+            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated)
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (requiredLength > 0 && buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) && handle.Generation != 0u;
         }
 
         private static bool IsAlignedForNativeView<T>(void* pointer)
@@ -1926,7 +1978,6 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HashFloat3ArrayJob : IJobParallelFor
     {
@@ -1947,7 +1998,6 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HashDouble3ArrayJob : IJobParallelFor
     {
@@ -1968,7 +2018,6 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HashFloatArrayJob : IJobParallelFor
     {
@@ -1989,7 +2038,6 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HashPlayerKinematicArrayJob : IJobParallelFor
     {
@@ -2024,7 +2072,6 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct CombineElementHashesJob : IJob
     {
@@ -2062,7 +2109,6 @@ namespace Hecton8.Core.Determinism
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct MasterStateHashJob : IJob
     {

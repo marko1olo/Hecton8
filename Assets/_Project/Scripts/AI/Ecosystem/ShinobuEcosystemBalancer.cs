@@ -32,6 +32,10 @@ namespace Hecton8.AI.Ecosystem
         private const int SpatialHashBucketCapacity = 32768;
         private const int SpatialHashBucketMask = SpatialHashBucketCapacity - 1;
         private const int FrameJobBatchSize = 64;
+        private const float TrigPi = 3.14159265358979323846f;
+        private const float TrigTwoPi = 6.28318530717958647692f;
+        private const float TrigHalfPi = 1.57079632679489661923f;
+        private const float TrigInvTwoPi = 0.15915494309189533577f;
         private const int MaxNeighborSamples = 48;
         private const int MaxSpatialHashChainSteps = 64;
         private const int SwarmSpeciesProfileCapacity = 64;
@@ -46,6 +50,7 @@ namespace Hecton8.AI.Ecosystem
         private const float DefaultObstacleProbeMeters = 2f;
         private const float DefaultBoidSpeedMetersPerSecond = 5.5f;
         private const float DefaultSimulationTickDeltaSeconds = 1f / 60f;
+        private const float AuthoritativeQualityWeight = 1f;
         private const float TelemetryFaultThresholdMs = 1.5f;
         private const double AupCellSizeMetersDouble = HectonPhysicsContract.AupSectorSizeMetersDouble;
         private const byte ScheduledPipelineNone = 0;
@@ -107,25 +112,25 @@ namespace Hecton8.AI.Ecosystem
         private float rehydrationDistanceMeters = DefaultRehydrateDistanceMeters;
         private float obstacleProbeMeters = DefaultObstacleProbeMeters;
 
-        private VaultBufferHandle<AmbientEntityDTO> _entityHandle;
-        private VaultBufferHandle<AmbientEntityAupDTO> _aupHandle;
-        private VaultBufferHandle<BoidStateDTO> _boidStateHandle;
-        private VaultBufferHandle<AmbientEntityDTO> _entitySnapshotHandle;
-        private VaultBufferHandle<AmbientEntityAupDTO> _aupSnapshotHandle;
-        private VaultBufferHandle<BoidStateDTO> _boidStateSnapshotHandle;
-        private VaultBufferHandle<EcosystemSectorDTO> _sectorHandle;
-        private VaultBufferHandle<ShinobuEcosystemTuning> _tuningHandle;
-        private VaultBufferHandle<int> _counterHandle;
-        private VaultBufferHandle<ShinobuTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<ShinobuSpatialHashDebugCell> _debugCellHandle;
-        private VaultBufferHandle<BoidMatrixDTO> _renderMatrixHandle;
-        private VaultBufferHandle<float4> _renderCustomDataHandle;
-        private VaultBufferHandle<BoidIndirectArgsDTO> _indirectArgsHandle;
-        private VaultBufferHandle<int> _spatialHashBucketHeadHandle;
-        private VaultBufferHandle<int> _spatialHashNextHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<byte> _legacyScratchHandle;
-        private VaultBufferHandle<SwarmSpeciesProfileDTO> _swarmSpeciesProfileHandle;
+        private VaultGenerationHandle<AmbientEntityDTO> _entityHandle;
+        private VaultGenerationHandle<AmbientEntityAupDTO> _aupHandle;
+        private VaultGenerationHandle<BoidStateDTO> _boidStateHandle;
+        private VaultGenerationHandle<AmbientEntityDTO> _entitySnapshotHandle;
+        private VaultGenerationHandle<AmbientEntityAupDTO> _aupSnapshotHandle;
+        private VaultGenerationHandle<BoidStateDTO> _boidStateSnapshotHandle;
+        private VaultGenerationHandle<EcosystemSectorDTO> _sectorHandle;
+        private VaultGenerationHandle<ShinobuEcosystemTuning> _tuningHandle;
+        private VaultGenerationHandle<int> _counterHandle;
+        private VaultGenerationHandle<ShinobuTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<ShinobuSpatialHashDebugCell> _debugCellHandle;
+        private VaultGenerationHandle<BoidMatrixDTO> _renderMatrixHandle;
+        private VaultGenerationHandle<float4> _renderCustomDataHandle;
+        private VaultGenerationHandle<BoidIndirectArgsDTO> _indirectArgsHandle;
+        private VaultGenerationHandle<int> _spatialHashBucketHeadHandle;
+        private VaultGenerationHandle<int> _spatialHashNextHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<byte> _legacyScratchHandle;
+        private VaultGenerationHandle<SwarmSpeciesProfileDTO> _swarmSpeciesProfileHandle;
 
         private IDataVault _dataVault;
         private readonly ShinobuBoidGpuUploadDispatcher _gpuUploadDispatcher;
@@ -213,8 +218,8 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                vault = latestVault;
+            if (vault == null)
+                vault = GlobalRegistry.DataVault;
             if (vault == null)
                 return;
 
@@ -230,7 +235,7 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             SignalBus<MockPredatorSignal>.EnsureInitialized();
-            ResolveDataVaultCold();
+            EnsureDataVaultCold();
             TryRegisterHotSwapListener();
             if (EnsureVaultState())
                 TryRegisterTicks();
@@ -330,9 +335,10 @@ namespace Hecton8.AI.Ecosystem
             count = math.min(count, spatialHashNext.Length);
             count = math.min(count, matrices.Length);
             count = math.min(count, customData.Length);
-            float globalQualityWeight = ResolveGlobalQualityWeight01();
+            float visualQualityWeight = ResolveGlobalQualityWeight01();
+            const float authorityQualityWeight = AuthoritativeQualityWeight;
             float systemStress01 = ResolveSystemStress01();
-            count = ResolveActiveEntityBudget(count, globalQualityWeight);
+            count = ResolveActiveEntityBudget(count, authorityQualityWeight);
             if (count <= 0)
                 return;
 
@@ -358,10 +364,10 @@ namespace Hecton8.AI.Ecosystem
 
                 MockPredatorRuntime predator = ResolvePredatorRuntime();
                 bool debugGridEnabled = (tuning.Flags & TuningFlagEditorDebugGrid) != 0u && debugCells.IsCreated;
-                int maxNeighborSamples = ResolveNeighborSampleBudget(MaxNeighborSamples, globalQualityWeight);
-                int maxChainSteps = ResolveSpatialHashChainBudget(MaxSpatialHashChainSteps, globalQualityWeight);
-                int updateStride = ResolveUpdateStride(globalQualityWeight, systemStress01);
-                float simulationDeltaSeconds = ResolveSimulationTickDelta(globalQualityWeight);
+                int maxNeighborSamples = ResolveNeighborSampleBudget(MaxNeighborSamples, authorityQualityWeight);
+                int maxChainSteps = ResolveSpatialHashChainBudget(MaxSpatialHashChainSteps, authorityQualityWeight);
+                int updateStride = ResolveUpdateStride(authorityQualityWeight, systemStress01);
+                float simulationDeltaSeconds = ResolveSimulationTickDelta(authorityQualityWeight);
                 double3 cameraAbsolute = ToAbsoluteDouble3(in _cameraAup);
                 uint frame = AdvanceSimulationFrame();
                 var buildJob = new LocalShiftAndSpatialHashJob
@@ -376,7 +382,7 @@ namespace Hecton8.AI.Ecosystem
                     CellSizeMeters = math.max(0.25f, spatialCellSizeMeters),
                     SectorSizeMeters = math.max(1f, sectorSizeMeters),
                     SystemStress01 = systemStress01,
-                    GlobalQualityWeight = globalQualityWeight,
+                    GlobalQualityWeight = authorityQualityWeight,
                     UpdateStride = updateStride,
                     Frame = frame,
                     Count = count
@@ -433,7 +439,7 @@ namespace Hecton8.AI.Ecosystem
                     Predator = predator,
                     Tuning = tuning,
                     DeltaSeconds = simulationDeltaSeconds,
-                    GlobalQualityWeight = globalQualityWeight,
+                    GlobalQualityWeight = authorityQualityWeight,
                     CellSizeMeters = math.max(0.25f, spatialCellSizeMeters),
                     SectorSizeMeters = math.max(1f, sectorSizeMeters),
                     NeighborRadiusMeters = math.max(1f, neighborRadiusMeters),
@@ -453,7 +459,7 @@ namespace Hecton8.AI.Ecosystem
                     Matrices = matrices,
                     CustomData = customData,
                     CenterAbsolute = cameraAbsolute,
-                    GlobalQualityWeight = globalQualityWeight,
+                    GlobalQualityWeight = visualQualityWeight,
                     Count = count
                 };
                 handle = renderJob.Schedule(count, FrameJobBatchSize, handle);
@@ -480,7 +486,7 @@ namespace Hecton8.AI.Ecosystem
 
                 _activeJobHandle = handle;
                 _lastActiveBudget = count;
-                _lastGlobalQualityWeight = globalQualityWeight;
+                _lastGlobalQualityWeight = visualQualityWeight;
                 _lastSpatialHashMs = 0f;
                 _lastMatrixUploadMs = 0f;
                 _runtimeFlags &= ~TelemetryFlagMacroPass;
@@ -495,7 +501,7 @@ namespace Hecton8.AI.Ecosystem
                 {
                     _activeJobHandle = scheduledHandle;
                     _lastActiveBudget = count;
-                    _lastGlobalQualityWeight = globalQualityWeight;
+                    _lastGlobalQualityWeight = visualQualityWeight;
                     _scheduledPipelineKind = ScheduledPipelineFrame;
                     _jobScheduled = true;
                     _jobLocksHeld = true;
@@ -653,8 +659,7 @@ namespace Hecton8.AI.Ecosystem
             float quality = math.saturate(_lastGlobalQualityWeight);
             int occlusionEnabled = _proceduralCullDepthPyramid != null &&
                                    _proceduralCullDepthMipCount > 0 &&
-                                   _proceduralCullHasValidZBufferParams &&
-                                   math.step(0.3f, quality) > 0f
+                                   _proceduralCullHasValidZBufferParams
                 ? 1
                 : 0;
 
@@ -740,9 +745,9 @@ namespace Hecton8.AI.Ecosystem
                 size = Vector3.one * fallbackExtentMeters;
             }
 
-            size.x = Mathf.Max(1f, size.x);
-            size.y = Mathf.Max(1f, size.y);
-            size.z = Mathf.Max(1f, size.z);
+            size.x = math.max(1f, size.x);
+            size.y = math.max(1f, size.y);
+            size.z = math.max(1f, size.z);
             return new Bounds(center, size);
         }
 
@@ -754,14 +759,6 @@ namespace Hecton8.AI.Ecosystem
                    !float.IsInfinity(value.x) &&
                    !float.IsInfinity(value.y) &&
                    !float.IsInfinity(value.z);
-        }
-
-        internal static ref AmbientEntityDTO GetAmbientEntityRef(
-            IDataVault vault,
-            ref VaultBufferHandle<AmbientEntityDTO> handle,
-            int index)
-        {
-            return ref handle.GetElementAsRef(vault, index);
         }
 
         private bool EnsureVaultState()
@@ -781,124 +778,106 @@ namespace Hecton8.AI.Ecosystem
             rehydrationDistanceMeters = math.min(dehydrationDistanceMeters - 1f, math.max(8f, rehydrationDistanceMeters));
             obstacleProbeMeters = math.max(0.1f, obstacleProbeMeters);
 
-            if (_vaultBuffersReady && AreVaultHandlesCreated())
+            if (_vaultBuffersReady)
                 return true;
 
-            _entityHandle = vault.GetBufferHandle<AmbientEntityDTO>(
+            _entityHandle = ClaimVaultHandle<AmbientEntityDTO>(
+                vault,
                 BufferID.ShinobuAmbientEntities,
                 entityCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _aupHandle = vault.GetBufferHandle<AmbientEntityAupDTO>(
+            _aupHandle = ClaimVaultHandle<AmbientEntityAupDTO>(
+                vault,
                 BufferID.ShinobuAmbientAups,
                 entityCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _boidStateHandle = vault.GetBufferHandle<BoidStateDTO>(
+            _boidStateHandle = ClaimVaultHandle<BoidStateDTO>(
+                vault,
                 BufferID.ShinobuBoidStates,
                 entityCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _entitySnapshotHandle = vault.GetBufferHandle<AmbientEntityDTO>(
+            _entitySnapshotHandle = ClaimVaultHandle<AmbientEntityDTO>(
+                vault,
                 BufferID.ShinobuAmbientEntitySnapshot,
                 entityCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _aupSnapshotHandle = vault.GetBufferHandle<AmbientEntityAupDTO>(
+            _aupSnapshotHandle = ClaimVaultHandle<AmbientEntityAupDTO>(
+                vault,
                 BufferID.ShinobuAmbientAupSnapshot,
                 entityCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _boidStateSnapshotHandle = vault.GetBufferHandle<BoidStateDTO>(
+            _boidStateSnapshotHandle = ClaimVaultHandle<BoidStateDTO>(
+                vault,
                 BufferID.ShinobuBoidStateSnapshot,
                 entityCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _sectorHandle = vault.GetBufferHandle<EcosystemSectorDTO>(
+            _sectorHandle = ClaimVaultHandle<EcosystemSectorDTO>(
+                vault,
                 BufferID.ShinobuEcosystemSectors,
                 sectorCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.ClearMemory);
-            _tuningHandle = vault.GetBufferHandle<ShinobuEcosystemTuning>(
+            _tuningHandle = ClaimVaultHandle<ShinobuEcosystemTuning>(
+                vault,
                 BufferID.ShinobuEcosystemTuning,
                 1,
-                SystemID.AIEcology,
                 NativeArrayOptions.ClearMemory);
-            _counterHandle = vault.GetBufferHandle<int>(
+            _counterHandle = ClaimVaultHandle<int>(
+                vault,
                 BufferID.ShinobuEcosystemCounters,
                 CounterCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.ClearMemory);
-            _telemetryHandle = vault.GetBufferHandle<ShinobuTelemetryEntry>(
+            _telemetryHandle = ClaimVaultHandle<ShinobuTelemetryEntry>(
+                vault,
                 BufferID.ShinobuEcosystemTelemetryRing,
                 TelemetryCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.ClearMemory);
-            _debugCellHandle = vault.GetBufferHandle<ShinobuSpatialHashDebugCell>(
+            _debugCellHandle = ClaimVaultHandle<ShinobuSpatialHashDebugCell>(
+                vault,
                 BufferID.ShinobuSpatialHashDebugCells,
                 DebugCellCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.ClearMemory);
-            _renderMatrixHandle = vault.GetBufferHandle<BoidMatrixDTO>(
+            _renderMatrixHandle = ClaimVaultHandle<BoidMatrixDTO>(
+                vault,
                 BufferID.ShinobuRenderMatrices,
                 entityCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _renderCustomDataHandle = vault.GetBufferHandle<float4>(
+            _renderCustomDataHandle = ClaimVaultHandle<float4>(
+                vault,
                 BufferID.ShinobuRenderCustomData,
                 entityCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _indirectArgsHandle = vault.GetBufferHandle<BoidIndirectArgsDTO>(
+            _indirectArgsHandle = ClaimVaultHandle<BoidIndirectArgsDTO>(
+                vault,
                 BufferID.ShinobuBoidIndirectArgs,
                 1,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _spatialHashBucketHeadHandle = vault.GetBufferHandle<int>(
+            _spatialHashBucketHeadHandle = ClaimVaultHandle<int>(
+                vault,
                 BufferID.ShinobuSpatialHashBucketHeads,
                 SpatialHashBucketCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _spatialHashNextHandle = vault.GetBufferHandle<int>(
+            _spatialHashNextHandle = ClaimVaultHandle<int>(
+                vault,
                 BufferID.ShinobuSpatialHashNext,
                 entityCapacity + sectorCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetBufferHandle<byte>(
+            _csvScratchHandle = ClaimVaultHandle<byte>(
+                vault,
                 BufferID.ShinobuEcosystemCsvScratch,
                 CsvMaxBytes,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _legacyScratchHandle = vault.GetBufferHandle<byte>(
+            _legacyScratchHandle = ClaimVaultHandle<byte>(
+                vault,
                 BufferID.ShinobuEcosystemLegacyScratch,
                 LegacyProfileReadBytes,
-                SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            _swarmSpeciesProfileHandle = vault.GetBufferHandle<SwarmSpeciesProfileDTO>(
+            _swarmSpeciesProfileHandle = ClaimVaultHandle<SwarmSpeciesProfileDTO>(
+                vault,
                 BufferID.ShinobuSwarmSpeciesProfiles,
                 SwarmSpeciesProfileCapacity,
-                SystemID.AIEcology,
                 NativeArrayOptions.ClearMemory);
 
-            bool ready = _entityHandle.IsCreated &&
-                         _aupHandle.IsCreated &&
-                         _boidStateHandle.IsCreated &&
-                         _entitySnapshotHandle.IsCreated &&
-                         _aupSnapshotHandle.IsCreated &&
-                         _boidStateSnapshotHandle.IsCreated &&
-                         _sectorHandle.IsCreated &&
-                         _tuningHandle.IsCreated &&
-                         _counterHandle.IsCreated &&
-                         _telemetryHandle.IsCreated &&
-                         _debugCellHandle.IsCreated &&
-                         _renderMatrixHandle.IsCreated &&
-                         _renderCustomDataHandle.IsCreated &&
-                         _indirectArgsHandle.IsCreated &&
-                         _spatialHashBucketHeadHandle.IsCreated &&
-                         _spatialHashNextHandle.IsCreated &&
-                         _csvScratchHandle.IsCreated &&
-                         _legacyScratchHandle.IsCreated &&
-                         _swarmSpeciesProfileHandle.IsCreated;
+            bool ready = AreVaultHandlesCreated(vault);
             _vaultBuffersReady = ready;
             if (!ready)
                 return false;
@@ -909,27 +888,27 @@ namespace Hecton8.AI.Ecosystem
             return true;
         }
 
-        private bool AreVaultHandlesCreated()
+        private bool AreVaultHandlesCreated(IDataVault vault)
         {
-            return _entityHandle.IsCreated && _entityHandle.Length >= entityCapacity &&
-                   _aupHandle.IsCreated && _aupHandle.Length >= entityCapacity &&
-                   _boidStateHandle.IsCreated && _boidStateHandle.Length >= entityCapacity &&
-                   _entitySnapshotHandle.IsCreated && _entitySnapshotHandle.Length >= entityCapacity &&
-                   _aupSnapshotHandle.IsCreated && _aupSnapshotHandle.Length >= entityCapacity &&
-                   _boidStateSnapshotHandle.IsCreated && _boidStateSnapshotHandle.Length >= entityCapacity &&
-                   _sectorHandle.IsCreated && _sectorHandle.Length >= sectorCapacity &&
-                   _tuningHandle.IsCreated && _tuningHandle.Length >= 1 &&
-                   _counterHandle.IsCreated && _counterHandle.Length >= CounterCapacity &&
-                   _telemetryHandle.IsCreated && _telemetryHandle.Length >= TelemetryCapacity &&
-                   _debugCellHandle.IsCreated && _debugCellHandle.Length >= DebugCellCapacity &&
-                   _renderMatrixHandle.IsCreated && _renderMatrixHandle.Length >= entityCapacity &&
-                   _renderCustomDataHandle.IsCreated && _renderCustomDataHandle.Length >= entityCapacity &&
-                   _indirectArgsHandle.IsCreated && _indirectArgsHandle.Length >= 1 &&
-                   _spatialHashBucketHeadHandle.IsCreated && _spatialHashBucketHeadHandle.Length >= SpatialHashBucketCapacity &&
-                   _spatialHashNextHandle.IsCreated && _spatialHashNextHandle.Length >= entityCapacity + sectorCapacity &&
-                   _csvScratchHandle.IsCreated && _csvScratchHandle.Length >= CsvMaxBytes &&
-                   _legacyScratchHandle.IsCreated && _legacyScratchHandle.Length >= LegacyProfileReadBytes &&
-                   _swarmSpeciesProfileHandle.IsCreated && _swarmSpeciesProfileHandle.Length >= SwarmSpeciesProfileCapacity;
+            return TryOpenVaultView(vault, in _entityHandle, entityCapacity, out NativeArray<AmbientEntityDTO> _) &&
+                   TryOpenVaultView(vault, in _aupHandle, entityCapacity, out NativeArray<AmbientEntityAupDTO> _) &&
+                   TryOpenVaultView(vault, in _boidStateHandle, entityCapacity, out NativeArray<BoidStateDTO> _) &&
+                   TryOpenVaultView(vault, in _entitySnapshotHandle, entityCapacity, out NativeArray<AmbientEntityDTO> _) &&
+                   TryOpenVaultView(vault, in _aupSnapshotHandle, entityCapacity, out NativeArray<AmbientEntityAupDTO> _) &&
+                   TryOpenVaultView(vault, in _boidStateSnapshotHandle, entityCapacity, out NativeArray<BoidStateDTO> _) &&
+                   TryOpenVaultView(vault, in _sectorHandle, sectorCapacity, out NativeArray<EcosystemSectorDTO> _) &&
+                   TryOpenVaultView(vault, in _tuningHandle, 1, out NativeArray<ShinobuEcosystemTuning> _) &&
+                   TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> _) &&
+                   TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<ShinobuTelemetryEntry> _) &&
+                   TryOpenVaultView(vault, in _debugCellHandle, DebugCellCapacity, out NativeArray<ShinobuSpatialHashDebugCell> _) &&
+                   TryOpenVaultView(vault, in _renderMatrixHandle, entityCapacity, out NativeArray<BoidMatrixDTO> _) &&
+                   TryOpenVaultView(vault, in _renderCustomDataHandle, entityCapacity, out NativeArray<float4> _) &&
+                   TryOpenVaultView(vault, in _indirectArgsHandle, 1, out NativeArray<BoidIndirectArgsDTO> _) &&
+                   TryOpenVaultView(vault, in _spatialHashBucketHeadHandle, SpatialHashBucketCapacity, out NativeArray<int> _) &&
+                   TryOpenVaultView(vault, in _spatialHashNextHandle, entityCapacity + sectorCapacity, out NativeArray<int> _) &&
+                   TryOpenVaultView(vault, in _csvScratchHandle, CsvMaxBytes, out NativeArray<byte> _) &&
+                   TryOpenVaultView(vault, in _legacyScratchHandle, LegacyProfileReadBytes, out NativeArray<byte> _) &&
+                   TryOpenVaultView(vault, in _swarmSpeciesProfileHandle, SwarmSpeciesProfileCapacity, out NativeArray<SwarmSpeciesProfileDTO> _);
         }
 
         private void EnsureGpuUploadCapacity()
@@ -947,14 +926,58 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
-        private IDataVault ResolveDataVaultCold()
+        private IDataVault EnsureDataVaultCold()
         {
             if (_dataVault != null)
                 return _dataVault;
 
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                _dataVault = latest;
+            _dataVault = GlobalRegistry.DataVault;
             return _dataVault;
+        }
+
+        private static VaultGenerationHandle<T> ClaimVaultHandle<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options) where T : struct
+        {
+            if (vault == null || requiredLength <= 0)
+                return default;
+
+            if (vault.IsAllocationLocked)
+            {
+                return vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing)
+                    ? existing
+                    : default;
+            }
+
+            return vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.AIEcology,
+                options);
+        }
+
+        private static bool TryOpenVaultView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                handle.Generation == 0u ||
+                requiredLength < 0 ||
+                !vault.TryResolveHandle(in handle, out NativeArray<T> resolved) ||
+                !resolved.IsCreated ||
+                resolved.Length < requiredLength)
+            {
+                return false;
+            }
+
+            buffer = resolved;
+            return true;
         }
 
         private bool TryResolveBuffers(
@@ -976,38 +999,39 @@ namespace Hecton8.AI.Ecosystem
             out NativeArray<int> spatialHashBucketHeads,
             out NativeArray<int> spatialHashNext)
         {
-            entities = _entityHandle.Resolve(vault);
-            aups = _aupHandle.Resolve(vault);
-            boidStates = _boidStateHandle.Resolve(vault);
-            entitySnapshot = _entitySnapshotHandle.Resolve(vault);
-            aupSnapshot = _aupSnapshotHandle.Resolve(vault);
-            boidStateSnapshot = _boidStateSnapshotHandle.Resolve(vault);
-            sectors = _sectorHandle.Resolve(vault);
-            tuning = _tuningHandle.Resolve(vault);
-            counters = _counterHandle.Resolve(vault);
-            telemetry = _telemetryHandle.Resolve(vault);
-            debugCells = _debugCellHandle.Resolve(vault);
-            matrices = _renderMatrixHandle.Resolve(vault);
-            customData = _renderCustomDataHandle.Resolve(vault);
-            indirectArgs = _indirectArgsHandle.Resolve(vault);
-            spatialHashBucketHeads = _spatialHashBucketHeadHandle.Resolve(vault);
-            spatialHashNext = _spatialHashNextHandle.Resolve(vault);
-            return entities.IsCreated &&
-                   aups.IsCreated &&
-                   boidStates.IsCreated &&
-                   entitySnapshot.IsCreated &&
-                   aupSnapshot.IsCreated &&
-                   boidStateSnapshot.IsCreated &&
-                   sectors.IsCreated &&
-                   tuning.IsCreated &&
-                   counters.IsCreated &&
-                   telemetry.IsCreated &&
-                   debugCells.IsCreated &&
-                   matrices.IsCreated &&
-                   customData.IsCreated &&
-                   indirectArgs.IsCreated &&
-                   spatialHashBucketHeads.IsCreated &&
-                   spatialHashNext.IsCreated;
+            entities = default;
+            aups = default;
+            boidStates = default;
+            entitySnapshot = default;
+            aupSnapshot = default;
+            boidStateSnapshot = default;
+            sectors = default;
+            tuning = default;
+            counters = default;
+            telemetry = default;
+            debugCells = default;
+            matrices = default;
+            customData = default;
+            indirectArgs = default;
+            spatialHashBucketHeads = default;
+            spatialHashNext = default;
+
+            return TryOpenVaultView(vault, in _entityHandle, entityCapacity, out entities) &&
+                   TryOpenVaultView(vault, in _aupHandle, entityCapacity, out aups) &&
+                   TryOpenVaultView(vault, in _boidStateHandle, entityCapacity, out boidStates) &&
+                   TryOpenVaultView(vault, in _entitySnapshotHandle, entityCapacity, out entitySnapshot) &&
+                   TryOpenVaultView(vault, in _aupSnapshotHandle, entityCapacity, out aupSnapshot) &&
+                   TryOpenVaultView(vault, in _boidStateSnapshotHandle, entityCapacity, out boidStateSnapshot) &&
+                   TryOpenVaultView(vault, in _sectorHandle, sectorCapacity, out sectors) &&
+                   TryOpenVaultView(vault, in _tuningHandle, 1, out tuning) &&
+                   TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out counters) &&
+                   TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out telemetry) &&
+                   TryOpenVaultView(vault, in _debugCellHandle, DebugCellCapacity, out debugCells) &&
+                   TryOpenVaultView(vault, in _renderMatrixHandle, entityCapacity, out matrices) &&
+                   TryOpenVaultView(vault, in _renderCustomDataHandle, entityCapacity, out customData) &&
+                   TryOpenVaultView(vault, in _indirectArgsHandle, 1, out indirectArgs) &&
+                   TryOpenVaultView(vault, in _spatialHashBucketHeadHandle, SpatialHashBucketCapacity, out spatialHashBucketHeads) &&
+                   TryOpenVaultView(vault, in _spatialHashNextHandle, entityCapacity + sectorCapacity, out spatialHashNext);
         }
 
         private bool TryResolveBuffers(
@@ -1044,10 +1068,11 @@ namespace Hecton8.AI.Ecosystem
 
         private void EnsureProfilesLoaded(IDataVault vault)
         {
-            NativeArray<int> counters = _counterHandle.Resolve(vault);
-            NativeArray<ShinobuEcosystemTuning> tuning = _tuningHandle.Resolve(vault);
-            if (!counters.IsCreated || !tuning.IsCreated || tuning.Length <= 0)
+            if (!TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> counters) ||
+                !TryOpenVaultView(vault, in _tuningHandle, 1, out NativeArray<ShinobuEcosystemTuning> tuning))
+            {
                 return;
+            }
 
             if (counters.Length > CounterProfileLoaded && counters[CounterProfileLoaded] != 0)
                 return;
@@ -1067,8 +1092,7 @@ namespace Hecton8.AI.Ecosystem
                 if (string.IsNullOrEmpty(profilePath) || !File.Exists(profilePath))
                     return false;
 
-                NativeArray<byte> scratch = _legacyScratchHandle.Resolve(vault);
-                if (!scratch.IsCreated || scratch.Length < LegacyProfileReadBytes)
+                if (!TryOpenVaultView(vault, in _legacyScratchHandle, LegacyProfileReadBytes, out NativeArray<byte> scratch))
                     return false;
 
                 int bytesRead = ReadFileIntoNativeScratch(profilePath, scratch, LegacyProfileReadBytes, FileShare.Read);
@@ -1125,15 +1149,19 @@ namespace Hecton8.AI.Ecosystem
 
         private void EnsureInitialPopulation(IDataVault vault)
         {
-            NativeArray<int> counters = _counterHandle.Resolve(vault);
-            if (!counters.IsCreated || counters.Length <= CounterInitialized || counters[CounterInitialized] != 0)
+            if (!TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> counters) ||
+                counters.Length <= CounterInitialized ||
+                counters[CounterInitialized] != 0)
+            {
                 return;
+            }
 
-            NativeArray<AmbientEntityDTO> entities = _entityHandle.Resolve(vault);
-            NativeArray<AmbientEntityAupDTO> aups = _aupHandle.Resolve(vault);
-            NativeArray<EcosystemSectorDTO> sectors = _sectorHandle.Resolve(vault);
-            if (!entities.IsCreated || !aups.IsCreated || !sectors.IsCreated)
+            if (!TryOpenVaultView(vault, in _entityHandle, entityCapacity, out NativeArray<AmbientEntityDTO> entities) ||
+                !TryOpenVaultView(vault, in _aupHandle, entityCapacity, out NativeArray<AmbientEntityAupDTO> aups) ||
+                !TryOpenVaultView(vault, in _sectorHandle, sectorCapacity, out NativeArray<EcosystemSectorDTO> sectors))
+            {
                 return;
+            }
 
             int count = math.min(entityCapacity, math.min(entities.Length, aups.Length));
             uint seed = 0x53484E31u;
@@ -1146,7 +1174,7 @@ namespace Hecton8.AI.Ecosystem
                 float radius = 18f + ((seed & 1023u) * (90f / 1023f));
                 seed = NextLcg(seed);
                 float y = -8f + ((seed & 511u) * (16f / 511f));
-                float3 local = new float3(math.cos(angle) * radius, y, math.sin(angle) * radius);
+                float3 local = new float3(CosPolynomial7(angle) * radius, y, SinPolynomial7(angle) * radius);
                 uint speciesHash = (i % 5) == 0 ? 0x4341524Eu : 0x48455242u; // CARN/HERB
                 float biomass = (speciesHash == 0x4341524Eu) ? 2.5f : 1f;
                 uint flags = EntityFlagActive | EntityFlagHydrated |
@@ -1206,8 +1234,7 @@ namespace Hecton8.AI.Ecosystem
                 if (lastWriteUtc.Ticks == _csvTimestampTicks)
                     return;
 
-                NativeArray<byte> scratch = _csvScratchHandle.Resolve(vault);
-                if (!scratch.IsCreated || scratch.Length < CsvMaxBytes)
+                if (!TryOpenVaultView(vault, in _csvScratchHandle, CsvMaxBytes, out NativeArray<byte> scratch))
                     return;
 
                 int bytesRead = ReadFileIntoNativeScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
@@ -1215,11 +1242,10 @@ namespace Hecton8.AI.Ecosystem
                 if (bytesRead <= 0)
                     return;
 
-                NativeArray<ShinobuEcosystemTuning> tuning = _tuningHandle.Resolve(vault);
-                NativeArray<int> counters = _counterHandle.Resolve(vault);
-                if (!tuning.IsCreated || tuning.Length <= 0)
+                if (!TryOpenVaultView(vault, in _tuningHandle, 1, out NativeArray<ShinobuEcosystemTuning> tuning))
                     return;
 
+                TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> counters);
                 ShinobuEcosystemTuning profile = tuning[0];
                 ParseCsvOverrides(scratch, bytesRead, ref profile);
                 profile.Flags |= TuningFlagCsvOverride;
@@ -1247,16 +1273,17 @@ namespace Hecton8.AI.Ecosystem
                 if (lastWriteUtc.Ticks == _swarmSpeciesCsvTimestampTicks)
                     return;
 
-                NativeArray<byte> scratch = _csvScratchHandle.Resolve(vault);
-                NativeArray<SwarmSpeciesProfileDTO> profiles = _swarmSpeciesProfileHandle.Resolve(vault);
-                NativeArray<int> counters = _counterHandle.Resolve(vault);
-                if (!scratch.IsCreated || scratch.Length < CsvMaxBytes || !profiles.IsCreated || profiles.Length <= 0)
+                if (!TryOpenVaultView(vault, in _csvScratchHandle, CsvMaxBytes, out NativeArray<byte> scratch) ||
+                    !TryOpenVaultView(vault, in _swarmSpeciesProfileHandle, SwarmSpeciesProfileCapacity, out NativeArray<SwarmSpeciesProfileDTO> profiles))
+                {
                     return;
+                }
 
                 int bytesRead = ReadFileIntoNativeScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
                 if (bytesRead <= 0)
                     return;
 
+                TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> counters);
                 int parsed = ParseSwarmSpeciesProfiles(scratch, bytesRead, profiles);
                 if (counters.IsCreated && counters.Length > CounterProfileLoaded)
                     counters[CounterProfileLoaded] = math.max(counters[CounterProfileLoaded], parsed);
@@ -1301,7 +1328,7 @@ namespace Hecton8.AI.Ecosystem
             try
             {
                 ShinobuEcosystemTuning tuning = ShinobuEcosystemTuning.Sanitize(tuningArray[0]);
-                float globalQualityWeight = ResolveGlobalQualityWeight01();
+                float visualQualityWeight = ResolveGlobalQualityWeight01();
                 var job = new LotkaVolterraMacroJob
                 {
                     Entities = entities,
@@ -1312,7 +1339,7 @@ namespace Hecton8.AI.Ecosystem
                     Counters = counters,
                     CenterAup = _cameraAup,
                     Tuning = tuning,
-                    GlobalQualityWeight = globalQualityWeight,
+                    GlobalQualityWeight = AuthoritativeQualityWeight,
                     EntityCount = math.min(entityCapacity, math.min(entities.Length, aups.Length)),
                     SectorCount = math.min(sectorCapacity, sectors.Length),
                     SectorSizeMeters = math.max(1f, sectorSizeMeters),
@@ -1327,7 +1354,7 @@ namespace Hecton8.AI.Ecosystem
                 scheduledHandle = _activeJobHandle;
                 scheduledWork = true;
                 _lastActiveBudget = job.EntityCount;
-                _lastGlobalQualityWeight = globalQualityWeight;
+                _lastGlobalQualityWeight = visualQualityWeight;
                 _lastSpatialHashMs = 0f;
                 _lastMatrixUploadMs = 0f;
                 _runtimeFlags |= TelemetryFlagMacroPass;
@@ -1409,11 +1436,12 @@ namespace Hecton8.AI.Ecosystem
             if (Application.isBatchMode)
                 return;
 
-            NativeArray<BoidMatrixDTO> matrices = _renderMatrixHandle.Resolve(vault);
-            NativeArray<float4> customData = _renderCustomDataHandle.Resolve(vault);
-            NativeArray<BoidIndirectArgsDTO> indirectArgs = _indirectArgsHandle.Resolve(vault);
-            if (!matrices.IsCreated || !customData.IsCreated || !indirectArgs.IsCreated || indirectArgs.Length <= 0)
+            if (!TryOpenVaultView(vault, in _renderMatrixHandle, entityCapacity, out NativeArray<BoidMatrixDTO> matrices) ||
+                !TryOpenVaultView(vault, in _renderCustomDataHandle, entityCapacity, out NativeArray<float4> customData) ||
+                !TryOpenVaultView(vault, in _indirectArgsHandle, 1, out NativeArray<BoidIndirectArgsDTO> indirectArgs))
+            {
                 return;
+            }
 
             long startTicks = Stopwatch.GetTimestamp();
             bool uploaded = false;
@@ -1437,10 +1465,11 @@ namespace Hecton8.AI.Ecosystem
 
         private void WriteTelemetryAndFaultDump(IDataVault vault)
         {
-            NativeArray<ShinobuTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            NativeArray<int> counters = _counterHandle.Resolve(vault);
-            if (!telemetry.IsCreated || telemetry.Length <= 0 || !counters.IsCreated)
+            if (!TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<ShinobuTelemetryEntry> telemetry) ||
+                !TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> counters))
+            {
                 return;
+            }
 
             int cursor = _telemetryCursor;
             if (cursor < 0 || cursor >= int.MaxValue - telemetry.Length)
@@ -1786,15 +1815,7 @@ namespace Hecton8.AI.Ecosystem
 
         private static int ResolveActiveEntityBudget(int capacity, float globalQualityWeight)
         {
-            int safeCapacity = math.max(0, capacity);
-            if (safeCapacity <= MinimumVisualBoidBudget)
-                return safeCapacity;
-
-            float q = math.saturate(globalQualityWeight);
-            float survivalFraction = ResolveActiveBudgetFraction(q);
-            int minBudget = math.min(MinimumVisualBoidBudget, safeCapacity);
-            int scaledBudget = (int)math.round(safeCapacity * survivalFraction);
-            return math.clamp(scaledBudget, minBudget, safeCapacity);
+            return math.max(0, capacity);
         }
 
         private static float ResolveActiveBudgetFraction(float quality01)
@@ -1807,21 +1828,17 @@ namespace Hecton8.AI.Ecosystem
 
         private static int ResolveNeighborSampleBudget(int maxSamples, float globalQualityWeight)
         {
-            float q = Smooth01(math.saturate((globalQualityWeight - 0.08f) * 1.0869565f));
-            return math.clamp((int)math.round(math.lerp(4f, math.max(4, maxSamples), q)), 1, math.max(1, maxSamples));
+            return math.max(1, maxSamples);
         }
 
         private static int ResolveSpatialHashChainBudget(int maxChainSteps, float globalQualityWeight)
         {
-            float q = Smooth01(math.saturate((globalQualityWeight - 0.05f) * 1.0526316f));
-            return math.clamp((int)math.round(math.lerp(8f, math.max(8, maxChainSteps), q)), 1, math.max(1, maxChainSteps));
+            return math.max(1, maxChainSteps);
         }
 
         private static int ResolveUpdateStride(float globalQualityWeight, float systemStress01)
         {
-            float thermalCollapse01 = math.saturate(math.max(0f, systemStress01 - 0.55f) * 2.2222223f);
-            float q = Smooth01(math.saturate(globalQualityWeight * (1f - thermalCollapse01)));
-            return math.clamp((int)math.round(math.lerp(12f, 1f, q)), 1, 12);
+            return 1;
         }
 
         private uint AdvanceSimulationFrame()
@@ -1841,9 +1858,7 @@ namespace Hecton8.AI.Ecosystem
 
         private static float ResolveSimulationTickDelta(float globalQualityWeight)
         {
-            float lowCadenceDelta = DefaultSimulationTickDeltaSeconds * 12f;
-            float highCadenceDelta = DefaultSimulationTickDeltaSeconds;
-            return math.lerp(lowCadenceDelta, highCadenceDelta, Smooth01(globalQualityWeight));
+            return DefaultSimulationTickDeltaSeconds;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1856,7 +1871,7 @@ namespace Hecton8.AI.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float ResolveNeighborSolveWeight(float globalQualityWeight)
         {
-            return Smooth01(math.saturate((globalQualityWeight - 0.12f) * 5.5555553f));
+            return 1f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2525,14 +2540,30 @@ namespace Hecton8.AI.Ecosystem
         internal static float3 SafeNormalize(float3 value, float3 fallback)
         {
             float lenSq = math.lengthsq(value);
-            return math.isfinite(lenSq) && lenSq > 0.000001f ? value * math.rsqrt(lenSq) : fallback;
+            return math.isfinite(lenSq) && lenSq > 0.000001f ? value * math.rsqrt(math.max(lenSq, 0.000001f)) : fallback;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float SafeLength(float3 value)
         {
             float lenSq = math.lengthsq(value);
-            return math.isfinite(lenSq) && lenSq > 0.000001f ? lenSq * math.rsqrt(lenSq) : 0f;
+            return math.isfinite(lenSq) && lenSq > 0.000001f ? lenSq * math.rsqrt(math.max(lenSq, 0.000001f)) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float SinPolynomial7(float angle)
+        {
+            float x = angle - TrigTwoPi * math.floor((angle + TrigPi) * TrigInvTwoPi);
+            x = math.select(x, TrigPi - x, x > TrigHalfPi);
+            x = math.select(x, -TrigPi - x, x < -TrigHalfPi);
+            float x2 = x * x;
+            return x * (1f + x2 * (-0.16666667f + x2 * (0.008333331f + x2 * -0.000198409f)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float CosPolynomial7(float angle)
+        {
+            return SinPolynomial7(angle + TrigHalfPi);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3345,7 +3376,7 @@ namespace Hecton8.AI.Ecosystem
             float3 delta = position - center;
             float lenSq = math.lengthsq(delta);
             float safeLenSq = math.max(0.000001f, lenSq);
-            float invLen = math.rsqrt(safeLenSq);
+            float invLen = math.rsqrt(math.max(safeLenSq, 0.000001f));
             float len = safeLenSq * invLen;
             return new MockTerrainSample
             {
@@ -3617,7 +3648,7 @@ namespace Hecton8.AI.Ecosystem
             AmbientEntityDTO entity = UnsafeUtility.AsRef<AmbientEntityDTO>(entitySnapshots + index);
             BoidStateDTO boidState = UnsafeUtility.AsRef<BoidStateDTO>(boidStateSnapshots + index);
             double3 localDelta = boidState.AUP - CenterAbsolute;
-            float3 position = math.all(math.isfinite(localDelta)) ? (float3)localDelta : entity.Position;
+            float3 position = math.select(entity.Position, (float3)localDelta, math.all(math.isfinite(localDelta)));
             float3 velocity = entity.Velocity;
             bool invalid = !math.all(math.isfinite(position)) || !math.all(math.isfinite(velocity));
             if (invalid)
@@ -3669,26 +3700,18 @@ namespace Hecton8.AI.Ecosystem
             entity.Biomass = math.max(0.05f, entity.Biomass + (MockFloraSpawner.SampleFloraMass(position, entity.SpeciesHash) * Tuning.FeedRate * DeltaSeconds));
             velocity += acceleration * DeltaSeconds;
             float maxSpeed = math.max(0.5f, Tuning.MaxSpeedMetersPerSecond);
-            float speedSq = math.lengthsq(velocity);
-            float finalSpeed;
-            if (!math.isfinite(speedSq) || speedSq <= 0.00000001f)
-            {
-                velocity = forward * maxSpeed;
-                finalSpeed = maxSpeed;
-            }
-            else
-            {
-                float maxSpeedSq = maxSpeed * maxSpeed;
-                if (speedSq > maxSpeedSq)
-                {
-                    velocity = velocity * (maxSpeed * math.rsqrt(math.max(0.0001f, speedSq)));
-                    finalSpeed = maxSpeed;
-                }
-                else
-                {
-                    finalSpeed = speedSq * math.rsqrt(math.max(0.00000001f, speedSq));
-                }
-            }
+            float rawSpeedSq = math.lengthsq(velocity);
+            float speedSq = math.select(0f, rawSpeedSq, math.isfinite(rawSpeedSq));
+            float maxSpeedSq = maxSpeed * maxSpeed;
+            bool hasPositiveSpeed = speedSq > 0.00000001f;
+            bool overMaxSpeed = speedSq > maxSpeedSq;
+            float currentSpeed = speedSq * math.rsqrt(math.max(0.00000001f, speedSq));
+            float3 clampedVelocity = velocity * (maxSpeed * math.rsqrt(math.max(0.0001f, speedSq)));
+            float3 positiveVelocity = math.select(velocity, clampedVelocity, overMaxSpeed);
+            float positiveSpeed = math.select(currentSpeed, maxSpeed, overMaxSpeed);
+            bool positiveFinite = hasPositiveSpeed & math.all(math.isfinite(positiveVelocity));
+            velocity = math.select(forward * maxSpeed, positiveVelocity, positiveFinite);
+            float finalSpeed = math.select(maxSpeed, positiveSpeed, positiveFinite);
 
             position += velocity * DeltaSeconds;
             if (!math.all(math.isfinite(position)) || !math.all(math.isfinite(velocity)))
@@ -3953,16 +3976,16 @@ namespace Hecton8.AI.Ecosystem
             for (int i = 0; i < Count; i++)
             {
                 uint flags = Aups[i].Flags;
-                active += (flags & ShinobuEcosystemBalancer.EntityFlagActive) != 0u ? 1 : 0;
-                hydrated += (flags & ShinobuEcosystemBalancer.EntityFlagHydrated) != 0u ? 1 : 0;
-                free += (flags & ShinobuEcosystemBalancer.EntityFlagFree) != 0u ? 1 : 0;
-                skipped += (flags & ShinobuEcosystemBalancer.EntityFlagSkipUpdate) != 0u ? 1 : 0;
-                invalid += (flags & ShinobuEcosystemBalancer.EntityFlagInvalidMath) != 0u ? 1 : 0;
+                active += math.select(0, 1, (flags & ShinobuEcosystemBalancer.EntityFlagActive) != 0u);
+                hydrated += math.select(0, 1, (flags & ShinobuEcosystemBalancer.EntityFlagHydrated) != 0u);
+                free += math.select(0, 1, (flags & ShinobuEcosystemBalancer.EntityFlagFree) != 0u);
+                skipped += math.select(0, 1, (flags & ShinobuEcosystemBalancer.EntityFlagSkipUpdate) != 0u);
+                invalid += math.select(0, 1, (flags & ShinobuEcosystemBalancer.EntityFlagInvalidMath) != 0u);
             }
 
             int dehydratedSectors = 0;
             for (int i = 0; i < SectorCount; i++)
-                dehydratedSectors += (Sectors[i].Flags & ShinobuEcosystemBalancer.SectorFlagDehydrated) != 0u ? 1 : 0;
+                dehydratedSectors += math.select(0, 1, (Sectors[i].Flags & ShinobuEcosystemBalancer.SectorFlagDehydrated) != 0u);
 
             if (Counters.Length > 1) Counters[1] = active;
             if (Counters.Length > 2) Counters[2] = hydrated;
@@ -4045,7 +4068,7 @@ namespace Hecton8.AI.Ecosystem
 
                 AmbientEntityDTO entity = Entities[i];
                 int3 sectorCoord = ShinobuEcosystemBalancer.ResolveSectorCoord(in meta.PositionAup, SectorSizeMeters);
-                int sectorSlot = ResolveOrCreateSector(sectorCoord, ref sectorCursor, hashBucketCount);
+                int sectorSlot = EnsureSectorSlot(sectorCoord, ref sectorCursor, hashBucketCount);
                 if (sectorSlot >= 0)
                 {
                     EcosystemSectorDTO sector = Sectors[sectorSlot];
@@ -4265,7 +4288,7 @@ namespace Hecton8.AI.Ecosystem
             SectorBucketHeads[headIndex] = entityIndex;
         }
 
-        private int ResolveOrCreateSector(int3 coord, ref int freeSectorCursor, int hashBucketCount)
+        private int EnsureSectorSlot(int3 coord, ref int freeSectorCursor, int hashBucketCount)
         {
             uint hash = ShinobuEcosystemBalancer.ResolveSectorHash(coord);
             int bucket = hashBucketCount > 0 ? (int)(hash % (uint)hashBucketCount) : -1;

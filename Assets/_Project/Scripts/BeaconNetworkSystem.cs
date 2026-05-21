@@ -254,6 +254,39 @@ namespace Hecton8.Gameplay
             return runtime.TryGetNearestInternal(in originAup, out snapshot, out distance);
         }
 
+        public bool TryDeployBeaconFromTool(
+            GameObject worldBeaconPrefab,
+            Vector3 position,
+            Quaternion rotation,
+            Color color,
+            float lightRange,
+            Vector3 fallbackScale,
+            int maxActive,
+            out BeaconRuntime beacon,
+            out string label)
+        {
+            return TryDeployInternal(
+                worldBeaconPrefab,
+                position,
+                rotation,
+                color,
+                lightRange,
+                fallbackScale,
+                maxActive,
+                out beacon,
+                out label);
+        }
+
+        public bool TryRetractNearestFromTool(in AbsoluteUniversePosition originAup, out BeaconRuntime beacon, out float distance)
+        {
+            return TryRetractNearestInternal(in originAup, out beacon, out distance);
+        }
+
+        public bool TryGetNearestFromTool(in AbsoluteUniversePosition originAup, out BeaconSnapshot snapshot, out float distance)
+        {
+            return TryGetNearestInternal(in originAup, out snapshot, out distance);
+        }
+
         public int CopySnapshots(BeaconSnapshot[] buffer)
         {
             CleanupNullEntries();

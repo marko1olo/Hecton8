@@ -428,24 +428,25 @@ namespace Hecton8.Gameplay
         private VaultGenerationHandle<ScannerLoreIndexDTO> _loreIndexHandle;
         private VaultGenerationHandle<ScannerEncyclopediaStateDTO> _encyclopediaStateHandle;
         private JobHandle _queryHandle;
-        private JobHandle _completionHandle;
         private MockScannerInputSignal _lastInput;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private HectonPlayerMovement _cachedPlayerMovement;
-        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
         private float _cachedGlobalQualityWeight = 1f;
         private float _cachedSystemPressure01;
         private int _lastQueryFrame = -1024;
         private int _entityCount;
         private int _telemetryCursor;
         private uint _completionCount;
+        private ScannerVaultViews _cachedVaultViews;
         private bool _queryScheduled;
         private bool _queryBuffersLocked;
-        private bool _completionScheduled;
         private bool _completionBuffersLocked;
+        private bool _vaultViewsCached;
         private bool _registeredFast;
         private bool _registeredSlow;
         private bool _registeredLate;
+        private bool _disableCleanupPending;
+        private bool _lateTickDormant;
 
         private static ScannerVfxDTO s_lastVfxTarget;
         private static uint s_lastVfxFrame;
@@ -577,6 +578,9 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            _disableCleanupPending = false;
+            _lateTickDormant = false;
+
             if (!EnsureVaultState())
                 return;
 
@@ -584,40 +588,47 @@ namespace Hecton8.Gameplay
             if (seedMockData)
                 SeedMockGridFromPose();
 
-            _cachedQualityTier = GlobalRegistry.ScalabilityTier;
             _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
-            _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
-            _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
-            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            if (!_registeredFast)
+                _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Player);
+            if (!_registeredSlow)
+                _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+            if (!_registeredLate)
+                _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void OnDisable()
         {
-            CompleteScheduledQuery(forceComplete: true);
-            CompleteScheduledCompletion(forceComplete: true);
-            UnlockQueryBuffers();
-            UnlockCompletionBuffers();
+            scanActive = false;
+            _disableCleanupPending = true;
 
             if (_registeredFast)
                 GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
             if (_registeredSlow)
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
-            if (_registeredLate)
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
 
             _registeredFast = false;
             _registeredSlow = false;
-            _registeredLate = false;
-            ReleaseHandlesOnly();
+            UnlockCompletionBuffers();
+
+            if (_queryScheduled && !TryFinalizeScheduledQuery())
+            {
+                if (!_registeredLate)
+                    _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+                _lateTickDormant = false;
+                return;
+            }
+
+            FinalizeDisableCleanupAndUnregisterLateFrame();
         }
 
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
-            if (_queryScheduled || _completionScheduled)
+            if (_queryScheduled)
                 return;
 
-            if (!TryResolveVaultViews(out ScannerVaultViews views) ||
+            if (!TryReadVaultViews(out ScannerVaultViews views) ||
                 !views.Entities.IsCreated ||
                 !views.LoreIndex.IsCreated ||
                 !views.EncyclopediaState.IsCreated ||
@@ -665,10 +676,10 @@ namespace Hecton8.Gameplay
 
         public void FastTick(float deltaTime)
         {
-            if (!TryResolveVaultViews(out ScannerVaultViews views) || !views.HasCoreBuffers)
+            if (!TryReadVaultViews(out ScannerVaultViews views))
                 return;
 
-            if (_queryScheduled || _completionScheduled)
+            if (_queryScheduled)
                 return;
 
             ScannerSettingsDTO settings = ResolveCurrentSettings(views.Settings);
@@ -710,8 +721,17 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
-            if (_completionScheduled)
-                TryFinalizeScheduledCompletion();
+            if (_lateTickDormant)
+                return;
+
+            if (_disableCleanupPending)
+            {
+                if (_queryScheduled && !TryFinalizeScheduledQuery())
+                    return;
+
+                FinalizeDisableCleanupHot();
+                return;
+            }
 
             if (!_queryScheduled)
                 return;
@@ -720,7 +740,6 @@ namespace Hecton8.Gameplay
                 return;
 
             ProcessCompletedQuery(_lastInput.DeltaTime);
-            TryFinalizeScheduledCompletion();
         }
 
         public void SlowTick()
@@ -730,7 +749,6 @@ namespace Hecton8.Gameplay
             else if (_cachedPlayerMovement == null)
                 _cachedPlayerMovement = _cachedPlayerContext.PlayerMovement;
 
-            _cachedQualityTier = GlobalRegistry.ScalabilityTier;
             _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
             ReadOnlySpan<SystemHealthIndexSignal> healthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
             if (healthSignals.Length > 0)
@@ -750,41 +768,25 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private void CompleteScheduledQuery(bool forceComplete)
+        private void FinalizeDisableCleanupHot()
         {
-            if (!_queryScheduled)
-                return;
-
-            if (!DispatcherJobFence.TryComplete(ref _queryHandle, forceComplete))
-                return;
-
-            _queryScheduled = false;
             UnlockQueryBuffers();
+            UnlockCompletionBuffers();
+
+            _disableCleanupPending = false;
+            _lateTickDormant = _registeredLate;
+            ReleaseHandlesOnly();
         }
 
-        private bool TryFinalizeScheduledCompletion()
+        private void FinalizeDisableCleanupAndUnregisterLateFrame()
         {
-            if (!_completionScheduled)
-                return false;
-
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _completionHandle))
-                return false;
-
-            _completionScheduled = false;
-            UnlockCompletionBuffers();
-            return true;
-        }
-
-        private void CompleteScheduledCompletion(bool forceComplete)
-        {
-            if (!_completionScheduled)
+            FinalizeDisableCleanupHot();
+            if (!_registeredLate)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _completionHandle, forceComplete))
-                return;
-
-            _completionScheduled = false;
-            UnlockCompletionBuffers();
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLate = false;
+            _lateTickDormant = false;
         }
 
         private MockScannerInputSignal BuildInputSignal(float deltaTime, int frame, in ScannerSettingsDTO settings)
@@ -820,7 +822,7 @@ namespace Hecton8.Gameplay
             {
                 if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
                     (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
-                    MathGuard.IsFinite(in snapshot.Aup) &&
+                    snapshot.Aup.IsFinite() &&
                     math.all(math.isfinite(snapshot.RuntimePosition)))
                 {
                     if (!TryNormalizeScannerForward(snapshot.Forward, out forward))
@@ -846,7 +848,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             AbsoluteUniversePosition playerAup = cachedPlayerMovement.CurrentAup;
-            if (!MathGuard.IsFinite(in playerAup))
+            if (!playerAup.IsFinite())
                 return false;
 
             originAup = playerAup.ToAbsoluteDouble3();
@@ -876,7 +878,7 @@ namespace Hecton8.Gameplay
 
         private void ProcessCompletedQuery(float deltaTime)
         {
-            if (!TryResolveVaultViews(out ScannerVaultViews views) || !views.HasCoreBuffers)
+            if (!TryReadVaultViews(out ScannerVaultViews views))
                 return;
 
             ScannerSettingsDTO settings = ResolveCurrentSettings(views.Settings);
@@ -957,7 +959,7 @@ namespace Hecton8.Gameplay
             if (result.EntityHash == 0u || (state.Flags & StateFlagHasTarget) == 0u)
                 return;
 
-            GlobalSignals.Publish(new ToolAcousticSignal
+            ToolAcousticSignal acousticSignal = new ToolAcousticSignal
             {
                 ToolHash = ScannerToolHash,
                 TargetHash = result.EntityHash,
@@ -967,7 +969,8 @@ namespace Hecton8.Gameplay
                 Frame = ResolveSimulationFrame(),
                 State = ToolAcousticStateScanner,
                 Flags = 0
-            });
+            };
+            SignalBus<ToolAcousticSignal>.Push(in acousticSignal);
         }
 
         private void RouteCompletionIfNeeded(
@@ -993,7 +996,7 @@ namespace Hecton8.Gameplay
                 Reserved0 = 0u,
                 Reserved1 = 0UL
             });
-            GlobalSignals.Publish(new ScanCompleteSignal
+            ScanCompleteSignal scanComplete = new ScanCompleteSignal
             {
                 PositionAup = aup,
                 EntryHash = result.EntityHash,
@@ -1001,7 +1004,8 @@ namespace Hecton8.Gameplay
                 SourceId = ScannerToolHash,
                 ReconKind = (byte)ScanEntryKind.Scannable,
                 Flags = 0
-            });
+            };
+            SignalBus<ScanCompleteSignal>.Push(in scanComplete);
             ScanEvents.RaiseEntryDiscovered(result.EntityHash, result.EntityHash, 0u, 0u, ScanEntryKind.Scannable);
 
             if ((state.MetadataFlags & MetadataFlagDepletable) != 0u)
@@ -1017,7 +1021,7 @@ namespace Hecton8.Gameplay
                     SectorHash = state.SectorHash,
                     DepletionMask = state.DepletionMask
                 });
-                GlobalSignals.Publish(new ResourceDepletionDeltaSignal
+                ResourceDepletionDeltaSignal depletionDelta = new ResourceDepletionDeltaSignal
                 {
                     SectorHash = state.SectorHash,
                     DepletionMask = state.DepletionMask,
@@ -1026,7 +1030,8 @@ namespace Hecton8.Gameplay
                     WordIndex = (ushort)math.min(ushort.MaxValue, state.DepletionWordIndex),
                     Operation = 1,
                     Flags = 0
-                });
+                };
+                SignalBus<ResourceDepletionDeltaSignal>.Push(in depletionDelta);
             }
 
             GlobalSignals.Publish(new AcousticPingSignal
@@ -1039,17 +1044,17 @@ namespace Hecton8.Gameplay
                 Flags = AcousticPingSignal.FlagActiveSonar
             });
 
-            TryScheduleCompletionEvaluation(in result, in state, in views);
+            TryEvaluateCompletionScalar(in result, in state, in views);
             _completionCount++;
             state.Flags &= ~StateFlagCompletedThisFrame;
         }
 
-        private bool TryScheduleCompletionEvaluation(
+        private bool TryEvaluateCompletionScalar(
             in ScanResultDTO result,
             in ActiveScanStateDTO state,
             in ScannerVaultViews views)
         {
-            if (_completionScheduled ||
+            if (_completionBuffersLocked ||
                 !views.ScanProgress.IsCreated ||
                 views.ScanProgress.Length == 0 ||
                 !views.LoreIndex.IsCreated ||
@@ -1076,7 +1081,7 @@ namespace Hecton8.Gameplay
                 CompletedHash = result.EntityHash
             };
 
-            JobHandle progressHandle = new UpdateScanProgressJob
+            new UpdateScanProgressJob
             {
                 Progress = views.ScanProgress,
                 TargetHashID = result.EntityHash,
@@ -1084,8 +1089,8 @@ namespace Hecton8.Gameplay
                 ScanRate = 0f,
                 SimulationTickDelta = 0f,
                 Frame = frame
-            }.Schedule();
-            _completionHandle = new EvaluateScanCompletionJob
+            }.Execute();
+            new EvaluateScanCompletionJob
             {
                 Progress = views.ScanProgress,
                 LoreIndex = views.LoreIndex,
@@ -1093,9 +1098,8 @@ namespace Hecton8.Gameplay
                 Telemetry = views.Telemetry,
                 Frame = frame,
                 CompletionCount = _completionCount + 1u
-            }.Schedule(progressHandle);
-            H8Memory.RegisterActiveJob(OwnerSystemId, _completionHandle);
-            _completionScheduled = true;
+            }.Execute();
+            UnlockCompletionBuffers();
             return true;
         }
 
@@ -1284,7 +1288,7 @@ namespace Hecton8.Gameplay
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
 
-            if (!TryResolveVaultViews(out ScannerVaultViews views) || !views.HasCoreBuffers)
+            if (!TryRefreshVaultViewsCold(out ScannerVaultViews views))
             {
                 ReleaseHandlesOnly();
                 return false;
@@ -1306,12 +1310,22 @@ namespace Hecton8.Gameplay
             return bucketCapacity;
         }
 
-        private bool TryResolveVaultViews(out ScannerVaultViews views)
+        private bool TryReadVaultViews(out ScannerVaultViews views)
+        {
+            views = _cachedVaultViews;
+            return _vaultViewsCached && views.HasCoreBuffers;
+        }
+
+        private bool TryRefreshVaultViewsCold(out ScannerVaultViews views)
         {
             views = default;
             IDataVault vault = _dataVault;
             if (vault == null)
+            {
+                _cachedVaultViews = default;
+                _vaultViewsCached = false;
                 return false;
+            }
 
             vault.TryResolveHandle(in _entitiesHandle, out views.Entities);
             vault.TryResolveHandle(in _metadataHandle, out views.Metadata);
@@ -1328,7 +1342,9 @@ namespace Hecton8.Gameplay
             vault.TryResolveHandle(in _scanProgressHandle, out views.ScanProgress);
             vault.TryResolveHandle(in _loreIndexHandle, out views.LoreIndex);
             vault.TryResolveHandle(in _encyclopediaStateHandle, out views.EncyclopediaState);
-            return views.HasCoreBuffers;
+            _cachedVaultViews = views;
+            _vaultViewsCached = views.HasCoreBuffers;
+            return _vaultViewsCached;
         }
 
         private void ReleaseHandlesOnly()
@@ -1348,11 +1364,12 @@ namespace Hecton8.Gameplay
             _scanProgressHandle = default;
             _loreIndexHandle = default;
             _encyclopediaStateHandle = default;
+            _cachedVaultViews = default;
+            _vaultViewsCached = false;
             _dataVault = null;
             _entityCount = 0;
             _telemetryCursor = 0;
             _completionCount = 0u;
-            _completionScheduled = false;
             _completionBuffersLocked = false;
         }
 
@@ -1506,7 +1523,7 @@ namespace Hecton8.Gameplay
 
         private void SeedMockGridFromPose()
         {
-            if (!TryResolveVaultViews(out ScannerVaultViews views) || !views.HasCoreBuffers)
+            if (!TryReadVaultViews(out ScannerVaultViews views))
                 return;
 
             int count = math.clamp(mockEntityCount, 1, views.Entities.Length);
@@ -1547,7 +1564,7 @@ namespace Hecton8.Gameplay
 
         private void DumpTelemetryRing()
         {
-            if (!TryResolveVaultViews(out ScannerVaultViews views) || !views.Telemetry.IsCreated)
+            if (!TryReadVaultViews(out ScannerVaultViews views) || !views.Telemetry.IsCreated)
                 return;
 
             DumpTelemetryRing(views.Telemetry);
@@ -1634,15 +1651,6 @@ namespace Hecton8.Gameplay
             float baseCadence = math.lerp(lowCadence, ultraCadence, qualityCurve);
             float pressureMultiplier = math.lerp(1f, 3f, pressureCurve);
             return math.clamp((int)math.ceil(baseCadence * pressureMultiplier), 1, 16);
-        }
-
-        public static int ResolveQueryCadenceFrames(HectonQualityTier tier, float pressure01, in ScannerSettingsDTO settings)
-        {
-            float quality = tier == HectonQualityTier.Ultra ? 1f :
-                tier == HectonQualityTier.High ? 0.72f :
-                tier == HectonQualityTier.Mid ? 0.48f :
-                0.18f;
-            return ResolveQueryCadenceFrames(quality, pressure01, in settings);
         }
 
         private static float ResolveGlobalQualityWeight()
@@ -2433,11 +2441,11 @@ namespace Hecton8.Gameplay
         [ReadOnly, NoAlias] public NativeArray<MockSdfOcclusionZoneDTO> OcclusionZones;
         [ReadOnly, NoAlias] public NativeArray<int> BucketHeads;
         [ReadOnly, NoAlias] public NativeArray<int> BucketNext;
-        [NoAlias]
+        [WriteOnly, NoAlias]
         public NativeArray<ScanResultDTO> Results;
-        [NoAlias]
+        [WriteOnly, NoAlias]
         public NativeArray<int> ResultCount;
-        [NoAlias]
+        [WriteOnly, NoAlias]
         public NativeArray<ScannerQueryStatsDTO> QueryStats;
         public MockScannerInputSignal Input;
         public ScannerSettingsDTO Settings;

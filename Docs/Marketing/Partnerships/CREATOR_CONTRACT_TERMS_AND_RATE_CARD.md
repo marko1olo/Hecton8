@@ -105,10 +105,10 @@ Pitch: single-player-first underwater survival about pressure, machinery, salvag
 Do say: pressure, machinery, salvage, base survival, Seed Ship anomaly.
 Do not say: multiplayer scope, competitor-attack positioning, zero stutter, guaranteed FPS.
 Disclosure: demo/key/sponsorship provided by developer.
-Link: [Steam/demo]
-Build notes: [version, known issues]
+Link: HOLD_NO_LINK - public Steam/demo only after exact destination gate plus `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`; private access only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` and access-log fields.
+Build notes: HOLD_BUILD_NOTES_UNVERIFIED - use exact build ID, known issues, and access route only after private/public access gates pass.
 Route class: [NO_LINK_CREATOR_FEEDBACK / PUBLIC_CTA_CREATOR / PRIVATE_ACCESS_CREATOR]
 Paid creator permission gate: [ALLOW_PAID_CREATOR_TEST_VERIFIED / BLOCKED_*]
-Agency proof source, if claimed: [asset metadata row + AB-009/KPI field row]
-Embargo: [none/TBD]
+Agency proof source, if claimed: HOLD_NO_AGENCY_PROOF_SOURCE - fill exact asset metadata row plus AB-009/KPI field row or remove claim.
+Embargo: HOLD_NO_EMBARGO_DATE - owner must set exact date/time/timezone or explicit no-embargo state in the deal record.
 ```

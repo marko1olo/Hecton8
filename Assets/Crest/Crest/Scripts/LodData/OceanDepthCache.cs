@@ -21,6 +21,8 @@ namespace Crest
     [AddComponentMenu(Internal.Constants.MENU_PREFIX_SCRIPTS + "Ocean Depth Cache")]
     public partial class OceanDepthCache : CustomMonoBehaviour
     {
+        private static readonly bool HectonRealtimeDepthCacheDisabled = true;
+
         /// <summary>
         /// The version of this asset. Can be used to migrate across versions. This value should
         /// only be changed when the editor upgrades the version.
@@ -184,28 +186,29 @@ namespace Crest
 
         RenderTexture MakeRT(bool depthStencilTarget)
         {
-            RenderTextureFormat fmt;
-
-            if (depthStencilTarget)
-            {
-                fmt = RenderTextureFormat.Depth;
-            }
-            else
-            {
-                fmt = RenderTextureFormat.RFloat;
-            }
-
-            Debug.Assert(SystemInfo.SupportsRenderTextureFormat(fmt), "Crest: The graphics device does not support the render texture format " + fmt.ToString());
-            var result = new RenderTexture(_resolution, _resolution, depthStencilTarget ? 24 : 0);
-            result.name = gameObject.name + "_oceanDepth_" + (depthStencilTarget ? "DepthOnly" : "Cache");
-            result.format = fmt;
-            result.useMipMap = false;
-            result.anisoLevel = 0;
-            return result;
+            return null;
         }
 
         bool InitObjects(bool updateComponents)
         {
+            if (HectonRealtimeDepthCacheDisabled && _type == OceanDepthCacheType.Realtime)
+            {
+                if (_camDepthCache != null)
+                {
+                    Helpers.Destroy(_camDepthCache.gameObject);
+                    _camDepthCache = null;
+                }
+
+                if (_cacheTexture != null)
+                {
+                    _cacheTexture.Release();
+                    _cacheTexture = null;
+                }
+
+                InitCacheQuad();
+                return false;
+            }
+
             if (updateComponents && IsCacheTextureOutdated(_cacheTexture))
             {
                 // Destroy the texture so it can be recreated.
@@ -229,61 +232,7 @@ namespace Crest
 
             if (isDepthCacheCameraCreation)
             {
-                _camDepthCache = new GameObject("DepthCacheCam").AddComponent<Camera>();
-                _camDepthCache.transform.parent = transform;
-                _camDepthCache.transform.localEulerAngles = 90f * Vector3.right;
-                _camDepthCache.orthographic = true;
-                _camDepthCache.clearFlags = CameraClearFlags.SolidColor;
-                // Clear to 'very deep'
-                _camDepthCache.backgroundColor = Color.white * LodDataMgrSeaFloorDepth.k_DepthBaseline;
-                _camDepthCache.enabled = false;
-                _camDepthCache.allowMSAA = false;
-                _camDepthCache.allowDynamicResolution = false;
-                _camDepthCache.depthTextureMode = DepthTextureMode.Depth;
-                // Stops behaviour from changing in VR. I tried disabling XR before/after camera render but it makes the editor
-                // go bonkers with split windows.
-                _camDepthCache.cameraType = CameraType.Reflection;
-                // I'd prefer to destroy the camera object, but I found sometimes (on first start of editor) it will fail to render.
-                _camDepthCache.gameObject.SetActive(false);
-
-                if (RenderPipelineHelper.IsUniversal)
-                {
-#if CREST_URP
-                    var additionalCameraData = _camDepthCache.GetUniversalAdditionalCameraData();
-                    additionalCameraData.renderShadows = false;
-                    additionalCameraData.requiresColorTexture = false;
-                    additionalCameraData.requiresDepthTexture = false;
-                    additionalCameraData.renderPostProcessing = false;
-                    additionalCameraData.allowXRRendering = false;
-#endif
-                }
-                else if (RenderPipelineHelper.IsHighDefinition)
-                {
-#if CREST_HDRP
-                    var additionalCameraData = _camDepthCache.gameObject.AddComponent<HDAdditionalCameraData>();
-
-                    additionalCameraData.clearColorMode = HDAdditionalCameraData.ClearColorMode.Color;
-                    additionalCameraData.volumeLayerMask = 0;
-                    additionalCameraData.probeLayerMask = 0;
-                    additionalCameraData.xrRendering = false;
-
-                    // Override camera frame settings to disable most of the expensive rendering for this camera.
-                    // Most importantly, disable custom passes and post-processing as third-party stuff might throw
-                    // errors because of this camera. Even with excluding a lot of HDRP features, it still does a
-                    // lit pass which is not cheap.
-                    additionalCameraData.customRenderingSettings = true;
-
-                    foreach (FrameSettingsField frameSetting in Enum.GetValues(typeof(FrameSettingsField)))
-                    {
-                        if (!s_FrameSettingsFields.Contains(frameSetting))
-                        {
-                            // Enable override and then disable the feature.
-                            additionalCameraData.renderingPathCustomFrameSettingsOverrideMask.mask[(uint)frameSetting] = true;
-                            additionalCameraData.renderingPathCustomFrameSettings.SetEnabled(frameSetting, false);
-                        }
-                    }
-#endif
-                }
+                return false;
             }
 
             if (updateComponents || isDepthCacheCameraCreation)
@@ -368,6 +317,9 @@ namespace Crest
 
         internal void PopulateCacheInternal(bool updateComponents = false)
         {
+            if (HectonRealtimeDepthCacheDisabled)
+                return;
+
             if (OceanRenderer.RunningWithoutGPU)
             {
                 // Don't bake in headless mode
@@ -404,17 +356,7 @@ namespace Crest
 
             try
             {
-                // Render scene, saving depths in depth buffer.
-#if CREST_URP
-                if (RenderPipelineHelper.IsUniversal)
-                {
-                    Helpers.RenderCameraWithoutCustomPasses(_camDepthCache);
-                }
-                else
-#endif
-                {
-                    _camDepthCache.Render();
-                }
+                // HECTON-8 SHINOBU_262: Crest camera render path removed.
             }
             finally
             {

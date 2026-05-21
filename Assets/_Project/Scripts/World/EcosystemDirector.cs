@@ -7,11 +7,13 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Ecosystem;
 using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
 using Hecton8.Systems.AI;
 using Hecton8.UI;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -118,8 +120,8 @@ namespace Hecton8.World
         private const int MacroSwarmVisualBoidsPerBiomassUnit = 64;
         private const int FaunaMutationBlackBoxCapacity = 300;
         private const int MacroSwarmLowTierCap = 32;
-        private const int MacroSwarmMiddleTierCap = 64;
-        private const int MacroSwarmHighTierCap = 128;
+        private const float MacroSwarmMinimumMutationCadenceWeight01 = 0.00390625f;
+        private const float MacroSwarmDiffusionQualityStart01 = 0.3f;
         private const byte BiomassImpactKindDeath = 1;
         private const byte BiomassImpactKindFishing = 2;
         private const byte BiomassImpactKindPredation = 3;
@@ -264,43 +266,42 @@ namespace Hecton8.World
         {
             private IDataVault _vault;
             private VaultBufferHandle<T> _handle;
+            private NativeArray<T> _array;
 
             public static VaultNativeArray<T> Create(IDataVault vault, VaultBufferHandle<T> handle)
             {
                 return new VaultNativeArray<T>
                 {
                     _vault = vault,
-                    _handle = handle
+                    _handle = handle,
+                    _array = handle.Resolve(vault)
                 };
             }
 
-            public bool IsCreated => _handle.IsCreated;
+            public bool IsCreated => _array.IsCreated;
 
-            public int Length => Resolve().Length;
+            public int Length => _array.IsCreated ? _array.Length : 0;
 
             public T this[int index]
             {
                 get
                 {
-                    NativeArray<T> array = Resolve();
-                    return array[index];
+                    return _array[index];
                 }
                 set
                 {
-                    NativeArray<T> array = Resolve();
-                    array[index] = value;
+                    _array[index] = value;
                 }
             }
 
             public NativeArray<T> GetSubArray(int start, int length)
             {
-                NativeArray<T> array = Resolve();
-                return array.IsCreated ? array.GetSubArray(start, length) : default;
+                return _array.IsCreated ? _array.GetSubArray(start, length) : default;
             }
 
             public NativeArray<T> Resolve()
             {
-                return _handle.Resolve(_vault);
+                return _array.IsCreated ? _array : _handle.Resolve(_vault);
             }
 
             public static implicit operator NativeArray<T>(VaultNativeArray<T> view)
@@ -472,11 +473,11 @@ namespace Hecton8.World
             [FieldOffset(12)] public float Padding;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ApexTerritoryOverlapJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<ApexTerritorySample> Samples;
-            public NativeArray<ApexTerritoryOverlapResult> Results;
+            [ReadOnly, NoAlias] public NativeArray<ApexTerritorySample> Samples;
+            [NoAlias] public NativeArray<ApexTerritoryOverlapResult> Results;
             public int Count;
             public float OverlapThreshold01;
 
@@ -562,21 +563,21 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct LotkaVolterraPopulationJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<SectorPopulationState> FrontStates;
-            [ReadOnly] public NativeArray<int> PreyCounts;
-            [ReadOnly] public NativeArray<int> PredatorCounts;
-            [ReadOnly] public NativeArray<byte> FoodDensityHeatmapR8;
-            public NativeArray<SectorPopulationState> BackStates;
-            public NativeArray<int> PreyBackCounts;
-            public NativeArray<int> PredatorBackCounts;
-            public NativeArray<float3> HeadlessPositions;
-            public NativeArray<byte> HeadlessSpeciesID;
-            public NativeArray<byte> HeadlessHunger;
-            public NativeArray<int2> HeadlessSectorCoord;
-            public NativeArray<int> HeadlessSectorID;
+            [ReadOnly, NoAlias] public NativeArray<SectorPopulationState> FrontStates;
+            [ReadOnly, NoAlias] public NativeArray<int> PreyCounts;
+            [ReadOnly, NoAlias] public NativeArray<int> PredatorCounts;
+            [ReadOnly, NoAlias] public NativeArray<byte> FoodDensityHeatmapR8;
+            [NoAlias] public NativeArray<SectorPopulationState> BackStates;
+            [NoAlias] public NativeArray<int> PreyBackCounts;
+            [NoAlias] public NativeArray<int> PredatorBackCounts;
+            [NoAlias] public NativeArray<float3> HeadlessPositions;
+            [NoAlias] public NativeArray<byte> HeadlessSpeciesID;
+            [NoAlias] public NativeArray<byte> HeadlessHunger;
+            [NoAlias] public NativeArray<int2> HeadlessSectorCoord;
+            [NoAlias] public NativeArray<int> HeadlessSectorID;
             public int2 FoodDensityHeatmapSize;
             public float DeltaSeconds;
             public float PreyBirthRate;
@@ -684,24 +685,24 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct BiomassLotkaVolterraJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float> PreyFront;
-            [ReadOnly] public NativeArray<float> PredatorFront;
-            [ReadOnly] public NativeArray<float> CarryingCapacity;
-            [ReadOnly] public NativeArray<int2> MacroCellCoords;
-            [ReadOnly] public NativeArray<EcosystemIndexEntry> CellIndexEntries;
-            public NativeArray<float> PreyBack;
-            public NativeArray<float> PredatorBack;
-            public NativeArray<float> BiomassSumScratch;
+            [ReadOnly, NoAlias] public NativeArray<float> PreyFront;
+            [ReadOnly, NoAlias] public NativeArray<float> PredatorFront;
+            [ReadOnly, NoAlias] public NativeArray<float> CarryingCapacity;
+            [ReadOnly, NoAlias] public NativeArray<int2> MacroCellCoords;
+            [ReadOnly, NoAlias] public NativeArray<EcosystemIndexEntry> CellIndexEntries;
+            [NoAlias] public NativeArray<float> PreyBack;
+            [NoAlias] public NativeArray<float> PredatorBack;
+            [NoAlias] public NativeArray<float> BiomassSumScratch;
             public float DeltaSeconds;
             public float BirthRate;
             public float PredRate;
             public float FeedRate;
             public float DeathRate;
             public float DiffusionRate;
-            public int EnableDiffusion;
+            public float DiffusionWeight;
 
             public void Execute(int index)
             {
@@ -715,7 +716,8 @@ namespace Hecton8.World
                 float nextPrey = math.clamp(prey + (dPrey * dt), 0f, capacity);
                 float nextPredator = math.clamp(predator + (dPred * dt), 0f, capacity);
 
-                if (EnableDiffusion != 0 && DiffusionRate > 0f)
+                float diffusionWeight01 = math.saturate(DiffusionWeight);
+                if (diffusionWeight01 > 0f && DiffusionRate > 0f)
                 {
                     int2 coord = MacroCellCoords[index];
                     float neighborPrey = 0f;
@@ -728,7 +730,7 @@ namespace Hecton8.World
                     if (neighborCount > 0)
                     {
                         float invCount = math.rcp(neighborCount);
-                        float diffusion01 = math.saturate(DiffusionRate);
+                        float diffusion01 = math.saturate(DiffusionRate) * diffusionWeight01;
                         nextPrey = math.clamp(math.lerp(nextPrey, neighborPrey * invCount, diffusion01), 0f, capacity);
                         nextPredator = math.clamp(math.lerp(nextPredator, neighborPredator * invCount, diffusion01), 0f, capacity);
                     }
@@ -764,14 +766,14 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct HeadlessThresholdMigrationJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<SectorPopulationState> States;
-            [ReadOnly] public NativeArray<byte> FoodDensityHeatmapR8;
-            public NativeArray<float3> Positions;
-            public NativeArray<int2> SectorCoord;
-            public NativeArray<int> SectorID;
+            [ReadOnly, NoAlias] public NativeArray<SectorPopulationState> States;
+            [ReadOnly, NoAlias] public NativeArray<byte> FoodDensityHeatmapR8;
+            [NoAlias] public NativeArray<float3> Positions;
+            [NoAlias] public NativeArray<int2> SectorCoord;
+            [NoAlias] public NativeArray<int> SectorID;
             public int2 FoodDensityHeatmapSize;
             public float MigrationFoodThreshold01;
             public int MigrationPredatorTolerance;
@@ -1053,6 +1055,7 @@ namespace Hecton8.World
         private int _activeMacroSwarmCount;
         private int _macroSwarmActiveCap = MacroSwarmLowTierCap;
         private byte _macroSwarmQualityTierProfileByte;
+        private float _macroSwarmQualityWeight01;
         private float _macroSwarmSpeedCellsPerSecond = MacroSwarmDefaultSpeedCellsPerSecond * 0.5f;
         private int _lastMacroSwarmArrivalCount;
         private int _lastMacroSwarmsHydrated;
@@ -1090,6 +1093,7 @@ namespace Hecton8.World
         private int _nextHibernationPopulationSyncIndex;
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private PersistentWorldRegistry _cachedPersistentWorldRegistry;
+        private SargassumMicroFaunaBoids _cachedSargassumMicroFauna;
         private float _eclipsePredatorMigrationTimer;
         private float _eclipsePredatorMigrationIntensity01;
         private float _eclipsePredatorMigrationAccumulator;
@@ -1234,7 +1238,7 @@ namespace Hecton8.World
             if (mapMagicBridge != null)
                 depthMeters = math.max(0f, mapMagicBridge.WaterSurfaceLevel - worldPosition.y);
 
-            ResolveRuntimeReferences();
+            RefreshRuntimeReferences();
 
             float temperatureCelsius = _cachedVegetationBridge != null
                 ? _cachedVegetationBridge.GetWaterTemperature(worldPosition)
@@ -1801,28 +1805,29 @@ namespace Hecton8.World
 
         internal bool IsApexTombstoned(uint uniqueInstanceUid)
         {
-            ResolveRuntimeReferences();
+            RefreshRuntimeReferences();
             return _cachedPersistentWorldRegistry != null && _cachedPersistentWorldRegistry.IsTombstoned(uniqueInstanceUid);
         }
 
         internal void RegisterApexPredatorKill(uint uniqueInstanceUid, Vector3 worldPosition, float hostilityDelta)
         {
-            ResolveRuntimeReferences();
+            RefreshRuntimeReferences();
+            float nowSeconds = ReadDispatcherTimeSeconds();
             _cachedPersistentWorldRegistry?.TryRegisterFaunaTombstone(uniqueInstanceUid);
             if (_cachedPersistentWorldRegistry != null)
             {
                 if (TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition whaleFallAup))
-                    _cachedPersistentWorldRegistry.TryCacheWhaleFallPoiState(uniqueInstanceUid, unchecked((int)(uniqueInstanceUid & 0x00FFFFFFu)), in whaleFallAup, Time.time);
+                    _cachedPersistentWorldRegistry.TryCacheWhaleFallPoiState(uniqueInstanceUid, unchecked((int)(uniqueInstanceUid & 0x00FFFFFFu)), in whaleFallAup, nowSeconds);
             }
 
-            MigrationDirector.RegisterPredatorKillPoi(uniqueInstanceUid, worldPosition, Time.time);
-            SargassumMicroFaunaBoids microFaunaBoids = GlobalRegistry.SargassumMicroFauna;
+            MigrationDirector.RegisterPredatorKillPoi(uniqueInstanceUid, worldPosition, nowSeconds);
+            SargassumMicroFaunaBoids microFaunaBoids = _cachedSargassumMicroFauna;
             if (microFaunaBoids != null)
-                microFaunaBoids.RegisterWhaleFallScavengerBurst(worldPosition, uniqueInstanceUid, Time.time);
+                microFaunaBoids.RegisterWhaleFallScavengerBurst(worldPosition, uniqueInstanceUid, nowSeconds);
 
             _activeWhaleFallAcousticPosition = worldPosition;
             _activeWhaleFallAcousticUid = uniqueInstanceUid;
-            _activeWhaleFallAcousticUntilTime = Time.time + WhaleFallAcousticImpulseLifetimeSeconds;
+            _activeWhaleFallAcousticUntilTime = nowSeconds + WhaleFallAcousticImpulseLifetimeSeconds;
             ReportApexPredatorKilled(worldPosition, hostilityDelta);
         }
 
@@ -2099,7 +2104,7 @@ namespace Hecton8.World
 
         private void EmitWhaleFallAcousticImpulseSlowTick()
         {
-            if (_activeWhaleFallAcousticUid == 0u || Time.time > _activeWhaleFallAcousticUntilTime)
+            if (_activeWhaleFallAcousticUid == 0u || ReadDispatcherTimeSeconds() > _activeWhaleFallAcousticUntilTime)
                 return;
 
             AcousticPingSignal signal = default;
@@ -2111,7 +2116,7 @@ namespace Hecton8.World
             signal.SourceId = _activeWhaleFallAcousticUid;
             signal.Channel = AcousticPingSignal.ChannelLeviathanRoar;
             signal.Flags = AcousticPingSignal.FlagLeviathanRoar;
-            GlobalSignals.Publish(in signal);
+            SignalBus<AcousticPingSignal>.Push(in signal);
         }
 
         private void DrainBiomeGradientSignal()
@@ -2333,13 +2338,6 @@ namespace Hecton8.World
                 return false;
             }
 
-            if ((request.Flags & FaunaGenomeMutationRequestFlags.MacroSwarm) != 0 &&
-                _macroSwarmQualityTierProfileByte == 0)
-            {
-                request.ResultFlags = FaunaGenomeMutationRequestFlags.LowTierMacroSkipped;
-                return false;
-            }
-
             SampleMutationScalars(request.RuntimePosition, out float radiationRads, out float toxicity01, out float brineDepth01);
             request.RadiationRads = math.max(SanitizeMutationScalar01(request.RadiationRads), radiationRads);
             request.Toxicity01 = math.max(SanitizeMutationScalar01(request.Toxicity01), toxicity01);
@@ -2410,25 +2408,42 @@ namespace Hecton8.World
             return math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)));
         }
 
-        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
-        {
-            return math.all(math.isfinite(new double3(position.LocalX, position.LocalY, position.LocalZ)));
-        }
-
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
             positionAup = default;
             if (!IsFiniteRuntimePosition(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!IsFiniteAup(in originAup))
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(origin)))
                 return false;
 
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return IsFiniteAup(in positionAup);
+            return positionAup.IsFinite();
+        }
+
+        private static float ReadDispatcherTimeSeconds()
+        {
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            double seconds = dispatcher != null ? dispatcher.DilatedTimeSeconds : 0d;
+            if (!math.isfinite(seconds) || seconds <= 0d)
+                return 0f;
+
+            return seconds > float.MaxValue ? float.MaxValue : (float)seconds;
+        }
+
+        private static uint ReadDispatcherFrameId()
+        {
+            uint frame = TimeSliceScheduler.CurrentFrameId;
+            return frame != 0u ? frame : 1u;
+        }
+
+        private static int ReadDispatcherFrameInt()
+        {
+            return unchecked((int)ReadDispatcherFrameId());
         }
 
         private static Vector3 ResolveMacroSwarmRuntimePosition(in MacroSwarm swarm)
@@ -2508,7 +2523,7 @@ namespace Hecton8.World
 
         private void RecordInvalidMutationScalarSample(float radiationRads, float toxicity01, float brineDepth01)
         {
-            int frame = Time.frameCount;
+            int frame = ReadDispatcherFrameInt();
             if (_lastFaunaMutationInvalidScalarFrame == frame)
                 return;
 
@@ -2538,16 +2553,17 @@ namespace Hecton8.World
             if (!TryResolveAupFromRuntimeOrigin(request.RuntimePosition, out AbsoluteUniversePosition positionAup))
                 return;
 
-            GlobalSignals.Publish(new FaunaStateChangedSignal
+            FaunaStateChangedSignal signal = new FaunaStateChangedSignal
             {
                 PositionAup = positionAup,
                 SpeciesHash = request.StableEntityHash ^ (uint)request.SpeciesId,
                 StateFlags = request.ResultFlags,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = ReadDispatcherFrameId(),
                 Slot = request.Slot,
                 StateKind = FaunaStateChangedSignalKinds.Mutated,
                 Flags = FaunaStateChangedSignalFlags.StateActive
-            });
+            };
+            SignalBus<FaunaStateChangedSignal>.Push(in signal);
         }
 
         private void PublishBatchFaunaMutatedSignal(byte resultFlags)
@@ -2567,16 +2583,17 @@ namespace Hecton8.World
             if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
                 return;
 
-            GlobalSignals.Publish(new FaunaStateChangedSignal
+            FaunaStateChangedSignal signal = new FaunaStateChangedSignal
             {
                 PositionAup = positionAup,
                 SpeciesHash = FaunaGenomeSaveHeaderMarker,
                 StateFlags = resultFlags,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = ReadDispatcherFrameId(),
                 Slot = 0,
                 StateKind = FaunaStateChangedSignalKinds.Mutated,
                 Flags = FaunaStateChangedSignalFlags.StateActive
-            });
+            };
+            SignalBus<FaunaStateChangedSignal>.Push(in signal);
         }
 
         /// <inheritdoc />
@@ -2619,7 +2636,7 @@ namespace Hecton8.World
                 PredatorBiomassSum = predatorSum,
                 CarryingCapacitySum = capacitySum,
                 ActiveCellCount = count,
-                Sequence = unchecked((uint)Time.frameCount),
+                Sequence = ReadDispatcherFrameId(),
                 Flags = flags
             };
             return sample.IsFinite();
@@ -3100,11 +3117,13 @@ namespace Hecton8.World
             baitFeedingDistanceMeters = math.max(0.1f, baitFeedingDistanceMeters);
         }
 
-        private void ResolveRuntimeReferences()
+        private void RefreshRuntimeReferences()
         {
             _cachedVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (_cachedPersistentWorldRegistry == null)
                 _cachedPersistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            if (_cachedSargassumMicroFauna == null)
+                _cachedSargassumMicroFauna = GlobalRegistry.SargassumMicroFauna;
         }
 
         private static bool RequiresThermalEnvelope(CreatureArchetypeData archetype)
@@ -3171,7 +3190,7 @@ namespace Hecton8.World
             float liveCorpseInfluence01 = ResolveCorpseSpawnInfluence01(worldPosition, radiusMeters);
             PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             float persistentWhaleFallInfluence01 = registry != null
-                ? registry.ResolveWhaleFallSpawnInfluence01(worldPosition, Time.time, radiusMeters)
+                ? registry.ResolveWhaleFallSpawnInfluence01(worldPosition, ReadDispatcherTimeSeconds(), radiusMeters)
                 : 0f;
             return math.max(liveCorpseInfluence01, persistentWhaleFallInfluence01);
         }
@@ -3866,7 +3885,7 @@ namespace Hecton8.World
                     FeedRate = predatorGrowthRatePerSecond,
                     DeathRate = predatorDeathRatePerSecond,
                     DiffusionRate = biomassDiffusionRate,
-                    EnableDiffusion = ResolveBiomassDiffusionEnabled() ? 1 : 0
+                    DiffusionWeight = ResolveBiomassDiffusionWeight01()
                 };
                 _scheduledSolveHandle = biomassJob.Schedule(_activeBiomassCellCount, ResolveBiomassJobBatchSize(_activeBiomassCellCount), _scheduledSolveHandle);
             }
@@ -3921,7 +3940,7 @@ namespace Hecton8.World
 
         private void DrainSectorResidencySignalSnapshots()
         {
-            int frame = Time.frameCount;
+            int frame = ReadDispatcherFrameInt();
             if (_lastSectorResidencySignalDrainFrame == frame || HasPendingSimulationJob() || _macroSwarmTravelScheduled)
                 return;
 
@@ -4187,7 +4206,7 @@ namespace Hecton8.World
         {
             _scheduledHeadlessMutationCount = 0;
             _scheduledMacroSwarmMutationCount = 0;
-            if (_genomeMutationScheduled || _macroSwarmQualityTierProfileByte == 0)
+            if (_genomeMutationScheduled)
                 return default;
 
             JobHandle dependency = default;
@@ -4293,6 +4312,11 @@ namespace Hecton8.World
             }
 
             int count = math.min(_activeMacroSwarmCount, _macroSwarmMutationRadiation.Length);
+            if (count <= 0)
+                return 0;
+
+            float mutationWeight01 = math.max(MacroSwarmMinimumMutationCadenceWeight01, Smooth01(_macroSwarmQualityWeight01));
+            count = math.clamp((int)math.ceil(count * mutationWeight01), 1, count);
             for (int i = 0; i < count; i++)
             {
                 MacroSwarm swarm = _macroSwarms[i];
@@ -4542,18 +4566,37 @@ namespace Hecton8.World
 
         private void RefreshMacroSwarmScalabilityCache()
         {
-            byte tier = GlobalRegistry.ScalabilityTierProfileByte;
-            _macroSwarmQualityTierProfileByte = tier;
-            _macroSwarmActiveCap = tier switch
-            {
-                0 => MacroSwarmLowTierCap,
-                1 => MacroSwarmMiddleTierCap,
-                2 => MacroSwarmHighTierCap,
-                _ => MacroSwarmCapacity
-            };
-            _macroSwarmSpeedCellsPerSecond = tier == 0
-                ? MacroSwarmDefaultSpeedCellsPerSecond * 0.5f
-                : MacroSwarmDefaultSpeedCellsPerSecond;
+            float qualityWeight01 = ResolveGlobalQualityWeight01();
+            float qualityCurve01 = Smooth01(qualityWeight01);
+            _macroSwarmQualityWeight01 = qualityWeight01;
+            _macroSwarmQualityTierProfileByte = EncodeMacroSwarmVisualQualityByte(qualityWeight01);
+            _macroSwarmActiveCap = math.clamp(
+                (int)math.round(math.lerp((float)MacroSwarmLowTierCap, (float)MacroSwarmCapacity, qualityCurve01)),
+                MacroSwarmLowTierCap,
+                MacroSwarmCapacity);
+            _macroSwarmSpeedCellsPerSecond = MacroSwarmDefaultSpeedCellsPerSecond * math.lerp(0.5f, 1f, qualityCurve01);
+        }
+
+        private static byte EncodeMacroSwarmVisualQualityByte(float qualityWeight01)
+        {
+            return (byte)math.clamp((int)math.round(math.saturate(qualityWeight01) * 3f), 0, 3);
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(weight) ? weight : 1f);
+        }
+
+        private static float ResolveBiomassDiffusionWeight01()
+        {
+            return math.smoothstep(MacroSwarmDiffusionQualityStart01, 1f, ResolveGlobalQualityWeight01());
+        }
+
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - 2f * x);
         }
 
         private static int2 ResolveDeterministicMigrationDirection(int2 sourceCell)
@@ -4589,7 +4632,7 @@ namespace Hecton8.World
                 return;
 
             AbsoluteUniversePosition centerAup = ResolveBiomassMacroCellCenterAup(macroCell);
-            GlobalSignals.Publish(new SwarmDispersedSignal
+            SwarmDispersedSignal signal = new SwarmDispersedSignal
             {
                 PositionAup = centerAup,
                 RadiusMeters = math.max(BiomassMacroCellSizeMeters, radiusMetersQ),
@@ -4601,7 +4644,8 @@ namespace Hecton8.World
                     ushort.MaxValue),
                 Flags = 1,
                 QualityTier = _macroSwarmQualityTierProfileByte
-            });
+            };
+            SignalBus<SwarmDispersedSignal>.Push(in signal);
         }
 
         private void PushMacroSwarmBlackBox(int flags)
@@ -4627,7 +4671,7 @@ namespace Hecton8.World
             int index = _macroSwarmBlackBoxCursor % _macroSwarmBlackBox.Length;
             _macroSwarmBlackBox[index] = new MacroSwarmTelemetryEntry
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = ReadDispatcherFrameId(),
                 StateHash = stateHash,
                 ActiveMacroSwarms = _activeMacroSwarmCount,
                 ArrivalCount = _lastMacroSwarmArrivalCount,
@@ -4652,7 +4696,7 @@ namespace Hecton8.World
             int index = _macroSwarmBlackBoxCursor % _macroSwarmBlackBox.Length;
             _macroSwarmBlackBox[index] = new MacroSwarmTelemetryEntry
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = ReadDispatcherFrameId(),
                 StateHash = stateHash,
                 ActiveMacroSwarms = _activeMacroSwarmCount,
                 ArrivalCount = _lastMacroSwarmArrivalCount,
@@ -4724,7 +4768,7 @@ namespace Hecton8.World
             int index = _faunaMutationBlackBoxCursor % _faunaMutationBlackBox.Length;
             _faunaMutationBlackBox[index] = new FaunaMutationTelemetryEntry
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = ReadDispatcherFrameId(),
                 StateHash = MixFaunaMutationStateHash(_totalMutatedEntities, _lastMutationFlags, _lastMutationRadiationRads, _lastMutationToxicity01),
                 TotalMutatedEntities = _totalMutatedEntities,
                 HeadlessMutatedCount = _lastHeadlessMutationCount,
@@ -5311,7 +5355,7 @@ namespace Hecton8.World
 
         private void DrainBiomassSignalSnapshots()
         {
-            int frame = Time.frameCount;
+            int frame = ReadDispatcherFrameInt();
             if (_lastBiomassSignalDrainFrame == frame)
                 return;
 
@@ -5345,10 +5389,13 @@ namespace Hecton8.World
 
         private void PublishScannerEcologyWarningIfNeeded()
         {
-            if (Time.frameCount - _lastScannerWarningFrame < 120)
+            int frame = ReadDispatcherFrameInt();
+            if (frame - _lastScannerWarningFrame < 120)
                 return;
 
-            if (!GlobalSignals.TryGetLatestScannerToolActiveSignal(out ScannerToolActiveSignal scannerSignal, out _) ||
+            ReadOnlySpan<ScannerToolActiveSignal> scannerSignals = SignalBus<ScannerToolActiveSignal>.GetFrameSnapshot();
+            if (scannerSignals.Length == 0 ||
+                !TryReadLatestScannerToolActiveSignal(scannerSignals, out ScannerToolActiveSignal scannerSignal) ||
                 scannerSignal.Active == 0)
             {
                 return;
@@ -5363,16 +5410,29 @@ namespace Hecton8.World
             if (preyBiomass01 > 0.05f || predatorBiomass01 > 0.05f)
                 return;
 
-            _lastScannerWarningFrame = Time.frameCount;
-            GlobalSignals.Publish(new HUDNotificationSignal
+            _lastScannerWarningFrame = frame;
+            HUDNotificationSignal notification = new HUDNotificationSignal
             {
                 MessageHash = _EcologicalCollapseWarningHash,
                 ContextHash = _EcosystemDirectorContextHash,
                 SourceId = _BiomassTelemetryHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = ReadDispatcherFrameId(),
                 Severity = 3,
                 Flags = 0
-            });
+            };
+            SignalBus<HUDNotificationSignal>.Push(in notification);
+        }
+
+        private static bool TryReadLatestScannerToolActiveSignal(
+            ReadOnlySpan<ScannerToolActiveSignal> signals,
+            out ScannerToolActiveSignal signal)
+        {
+            signal = default;
+            if (signals.Length <= 0)
+                return false;
+
+            signal = signals[signals.Length - 1];
+            return true;
         }
 
         private void PublishBiomassTelemetryAndEvents()
@@ -5435,15 +5495,16 @@ namespace Hecton8.World
         private void PublishPredatorClearedEvent(int2 macroCellCoord)
         {
             AbsoluteUniversePosition centerAup = ResolveBiomassMacroCellCenterAup(macroCellCoord);
-            GlobalSignals.Publish(new ProgressionEventSignal
+            ProgressionEventSignal signal = new ProgressionEventSignal
             {
                 PositionAup = centerAup,
                 PoiHash = _SectorClearedEventHash,
                 QuestHash = 0u,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = ReadDispatcherFrameId(),
                 Source = 3,
                 Flags = 0
-            });
+            };
+            SignalBus<ProgressionEventSignal>.Push(in signal);
         }
 
         private void PushBiomassBlackBox(
@@ -5459,7 +5520,7 @@ namespace Hecton8.World
             int index = _biomassBlackBoxCursor % _biomassBlackBox.Length;
             _biomassBlackBox[index] = new BiomassTelemetryEntry
             {
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = ReadDispatcherFrameId(),
                 StateHash = MixBiomassStateHash(globalSum, preySum, predatorSum, _activeBiomassCellCount),
                 ActiveCellCount = _activeBiomassCellCount,
                 Flags = flags,
@@ -5587,11 +5648,6 @@ namespace Hecton8.World
             return new int2(
                 (int)math.floor(absolutePosition.x * InvBiomassMacroCellSizeMeters),
                 (int)math.floor(absolutePosition.z * InvBiomassMacroCellSizeMeters));
-        }
-
-        private static bool ResolveBiomassDiffusionEnabled()
-        {
-            return GlobalRegistry.ScalabilityTierProfileByte > 0;
         }
 
         private void CaptureBiomassSaveRuns()

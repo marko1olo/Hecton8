@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SELF_AUDIT agent_id="SHINOBU_263" domain="ECHELON_4_HYDRODYNAMIC_DRAG_BUOYANCY_ANALYTICAL_GERSTNER_WAVES" date="2026-05-21" evidence="STATIC_SOURCE" status="PASS_PENDING_UNITY_BURST_COMPILE">
+  <PROMPT_IDENTIFICATION task_count="20" source="Docs/Tasks/CURRENT_BATCH.md" extracted_prompt="Docs/Tasks/Prompt_SHINOBU_263.extracted.xml" />
+  <TASK_RECONCILIATION>
+    <TASK id="01" name="OOP_WAVE_SCRIPT_ERADICATION" status="[PASS]">No per-object wave script authority; Wave_Math_Scanner flags frame-loop Mathf.Sin, Mathf.Cos, and new float arrays.</TASK>
+    <TASK id="02" name="SYNCHRONOUS_GPU_WAIT_PURGE" status="[PASS]">CPU DataVault route is the buoyancy authority; GPU, Crest, and async readbacks remain non-authority presentation or sibling routes.</TASK>
+    <TASK id="03" name="CS1612_METADATA_STATE_ANNIHILATION" status="[PASS]">Hot DTOs use unmanaged public fields and explicit offsets; no get/set metadata state in analytical payloads.</TASK>
+    <TASK id="04" name="ARM64_WAVE_LAYOUT_ASSERTION" status="[PASS]">AnalyticalGerstnerWaveLayout validates sizes and key offsets with UnsafeUtility and Marshal.OffsetOf.</TASK>
+    <TASK id="05" name="EMERGENCY_MOCK_WEATHER_INJECTION" status="[PASS]">GenerateMockWaveSpectrumJob and guarded mock requests provide CI fallback without weather ownership.</TASK>
+    <TASK id="06" name="BURST_GERSTNER_EVALUATION_KERNEL" status="[PASS]">EvaluateAnalyticalWavesJob is Burst deterministic, IJobParallelFor, DataVault-backed, and NoAlias annotated.</TASK>
+    <TASK id="07" name="MATHEMATICAL_NORMAL_DERIVATION" status="[PASS]">Surface normals come from accumulated analytical slopes, not finite-difference neighbor samples.</TASK>
+    <TASK id="08" name="THE_DEAR_LIE_ITERATIVE_APPROXIMATION" status="[PASS]">No inverse Gerstner solve; requested XZ is the buoyancy truth column.</TASK>
+    <TASK id="09" name="CONTINUOUS_SCALABILITY_OCTAVE_CULLING" status="[PASS]">GlobalQualityWeight maps through smoothstep to octave budget, trig order, coarse macro-grid use, and fractional octave weight.</TASK>
+    <TASK id="10" name="SIMD_VECTORIZATION_OPTIMIZATION" status="[PASS]">Four sample lanes are evaluated per job index with float4 phase math and packed four-wave rows.</TASK>
+    <TASK id="11" name="MACRO_SWELL_CACHING" status="[PASS]">BuildMacroSwellGridJob caches low-octave swell for coarse lanes; full solver is skipped for all-coarse groups.</TASK>
+    <TASK id="12" name="AUP_PRECISION_PHASE_MATH" status="[PASS]">SampleAUP minus LocalOriginAUP is done in double, then absolute phase is reconstructed by origin projection modulo wavelength.</TASK>
+    <TASK id="13" name="ROLLBACK_NETCODE_STATE_FENCE" status="[PASS]">Requests/results/telemetry include origin shift proof fields and remain blittable fixed-size rows.</TASK>
+    <TASK id="14" name="ZERO_INIT_OVERHEAD_BYPASS" status="[PASS]">High-volume Vault buffers use uninitialized allocation where jobs overwrite scheduled rows.</TASK>
+    <TASK id="15" name="TELEMETRY_WAVE_MATH_RECORDER" status="[PASS]">A 300-entry WaveMathTelemetryEntry ring and Dump_SHINOBU_263.bin fault route exist.</TASK>
+    <TASK id="16" name="WAVE_MATH_TUNER_EDITOR_WINDOW" status="[PASS]">UI Toolkit tuner writes tuning through Vault locks; runtime serialized fields have tooltips.</TASK>
+    <TASK id="17" name="CSV_SPECTRUM_PROFILES_INGESTOR" status="[PASS]">Data/Physics/ocean_wave_spectra.csv feeds WaveSpectrumProfileDTO through a ReadOnlySpan&lt;byte&gt; parser that fails closed on trailing garbage.</TASK>
+    <TASK id="18" name="LIVE_AUP_SAMPLING_GIZMO" status="[PASS]">OnDrawGizmos is editor-only and consumes cached origin snapshot plus result rows for debug visualization.</TASK>
+    <TASK id="19" name="ARCHITECTURAL_METRIC_VALIDATOR" status="[PASS]">Wave_Math_Scanner writes SHINOBU_263 and shared physics optimization JSON without deleting sibling data.</TASK>
+    <TASK id="20" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" status="[PASS]">This XML, status file, rationale file, LOG file, route card, ledger, and JSON reports document the route. Unity/Burst compile proof is not claimed.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DTO name="GerstnerWaveParamsDTO" size_bytes="64" alignment_goal="16_or_64_byte_multiple">Wave1 offset=0 size=16; Wave2 offset=16 size=16; Wave3 offset=32 size=16; Wave4 offset=48 size=16. Total 4*16=64 bytes.</DTO>
+    <DTO name="GerstnerWaveTuningDTO" size_bytes="128" alignment_goal="8_and_64_byte_multiple">LocalOriginAUP offset=0 size=24; scalar tuning fields offset=24..111 size=88; OriginShiftSequence offset=112 size=4; OriginShiftFlags offset=116 size=4; PhaseTimeSeconds offset=120 size=8. Total 24+88+4+4+8=128 bytes.</DTO>
+    <DTO name="OceanSampleRequestDTO" size_bytes="64" alignment_goal="single_cache_line">SampleAUP offset=0 size=24; EntityHashID offset=24 size=4; Priority offset=28 size=1; Flags offset=29 size=1; _pad0 offset=30 size=2; MinSpatialLengthMeters offset=32 size=4; RadiusMeters offset=36 size=4; ShiftFrameID offset=40 size=4; RequestFrame offset=44 size=4; _pad1 offset=48 size=8; _pad2 offset=56 size=8. Total 64 bytes.</DTO>
+    <DTO name="OceanSampleResultDTO" size_bytes="64" alignment_goal="single_cache_line_primary_output">SampleAUP offset=0 size=24; WaterHeight offset=24 size=4; SurfaceNormal offset=28 size=12; Displacement offset=40 size=12; EntityHashID offset=52 size=4; Flags offset=56 size=4; OriginShiftSequence offset=60 size=4. Total 64 bytes, no padding after final proof field.</DTO>
+    <DTO name="WaveMathTelemetryEntry" size_bytes="64" alignment_goal="single_cache_line">FrameIndex offset=0 size=4; EvaluatedCoordinates offset=4 size=4; ActiveOctaves offset=8 size=4; CoarseGridSamples offset=12 size=4; BurstMicros offset=16 size=4; GlobalQualityWeight offset=20 size=4; Flags offset=24 size=4; NonFiniteCount offset=28 size=4; LastEntityHashID offset=32 size=4; MaxAbsHeight offset=36 size=4; MacroGridResolution offset=40 size=4; RequestCount offset=44 size=4; KernelHash offset=48 size=4; ProfileHash offset=52 size=4; OriginShiftSequence offset=56 size=4; _pad0 offset=60 size=4. Total 64 bytes.</DTO>
+    <DTO name="WaveMathCounterLane" size_bytes="64" false_sharing_proof="true">Value offset=0 size=4; _pad0 offset=4 size=4; _pad1.._pad7 offsets=8,16,24,32,40,48,56 size=8 each. Total 4+4+7*8=64 bytes; each atomic counter lane occupies an exclusive L1 cache line.</DTO>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    <GLOBAL_QUALITY_WEIGHT policy="continuous_no_binary_switch">At GlobalQualityWeight below 0.3 the octave budget resolves near the dominant swell plus one fractional transitional octave, coarse macro-grid sampling handles low-priority probes, and polynomial sine/cosine uses the low-order path. From middle tiers the smoothstep budget fades in additional octaves without row popping. High and Ultra reach full octave amplitude, denser debug visibility, and preserved storm weighting. Quality never changes BufferID identity, DTO layout, save identity, or owner route.</GLOBAL_QUALITY_WEIGHT>
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS private_native_arrays="0" private_native_lists="0" private_native_hashmaps="0">
+    <BUFFER id="Shinobu263WaveSpectrum" owner="GlobalDataVault" lifecycle="boot_allocate_generation_handle_release_on_disable" />
+    <BUFFER id="Shinobu263WaveTuning" owner="GlobalDataVault" lifecycle="boot_allocate_generation_handle_release_on_disable" />
+    <BUFFER id="Shinobu263WaveRequests" owner="GlobalDataVault" lifecycle="boot_allocate_generation_handle_release_on_disable" />
+    <BUFFER id="Shinobu263WaveResults" owner="GlobalDataVault" lifecycle="boot_allocate_generation_handle_release_on_disable" />
+    <BUFFER id="Shinobu263WaveMacroGrid" owner="GlobalDataVault" lifecycle="boot_allocate_generation_handle_release_on_disable" />
+    <BUFFER id="Shinobu263WaveTelemetryRing" owner="GlobalDataVault" lifecycle="boot_allocate_generation_handle_release_on_disable" />
+    <BUFFER id="Shinobu263WaveTelemetryCursor" owner="GlobalDataVault" lifecycle="boot_allocate_generation_handle_release_on_disable" />
+    <BUFFER id="Shinobu263WaveCsvScratch" owner="GlobalDataVault" lifecycle="boot_allocate_generation_handle_release_on_disable" />
+    <BUFFER id="Shinobu263WaveProfiles" owner="GlobalDataVault" lifecycle="boot_allocate_generation_handle_release_on_disable" />
+    <BUFFER id="Shinobu263WaveCounters" owner="GlobalDataVault" lifecycle="boot_allocate_generation_handle_release_on_disable" />
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH noalias="true">
+    <CONSUMED_HANDLES>inputDeps from IFixedTickable plus optional prior _pendingHandle when still valid.</CONSUMED_HANDLES>
+    <CHAIN>BuildMacroSwellGridJob depends on inputDeps. EvaluateAnalyticalWavesJob depends on macro grid and inputDeps. Mock spectrum and mock request jobs are cold/fallback seed branches chained before evaluation when used.</CHAIN>
+    <OUTPUT_HANDLES>EvaluateAnalyticalWavesJob JobHandle is registered through H8Memory.RegisterActiveJob and finalized in PostFixedTick by DispatcherJobFence.TryFinalizeCompleted. Telemetry write executes only after the solver handle is complete in the post-fixed owner phase.</OUTPUT_HANDLES>
+    <NOALIAS_FIELDS>Spectrum, Requests, Results, MacroGrid, Counters, TelemetryRing, and TelemetryCursor are passed as separate NativeArray fields with NoAlias where used by Burst kernels.</NOALIAS_FIELDS>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    <ASSEMBLY_ROUTING>SHINOBU_263 adds physics buoyancy files only and does not add sibling runtime assembly references. It routes through Hecton8.Core.Memory contracts, GlobalDataVault, cached origin listener data, and fixed DataVault BufferIDs.</ASSEMBLY_ROUTING>
+    <BUILD_STATUS>dotnet build was not launched because CPU/process gate blocked valid compile attempts and generated csproj files are stale for SHINOBU_263 sources. No compile proof is claimed.</BUILD_STATUS>
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    <CHEAT>No inverse Gerstner horizontal displacement solve is executed for buoyancy. Requested AUP XZ is treated as the physical query column, while visual water can remain richer in rendering-owned systems.</CHEAT>
+    <COMPLEXITY before="O(samples*octaves*newton_iterations)" after="O(samples*active_octaves) plus O(grid_cells*active_octaves) macro cache">The macro grid further collapses low-priority lanes to O(1) bilinear lookup after cache construction.</COMPLEXITY>
+  </DEAR_LIE_CONFIRMATION>
+  <GLOBAL_SYSTEMS_DOCTRINE>
+    <FACT owner="AnalyticalGerstnerWaveRuntime" route="GlobalDataVault" proof="WaveMathTelemetryEntry_and_Dump_SHINOBU_263.bin">CPU analytical buoyancy height, normal, displacement, flags, and origin shift sequence.</FACT>
+    <READ_ACCESSOR_PURITY>Read/resolve helpers do not publish, search scene state, allocate managed buffers, or call direct JobHandle.Complete.</READ_ACCESSOR_PURITY>
+    <REGISTRY_POLICY>GlobalRegistry is cold dependency injection only. FixedTick uses cached Vault and cached origin sequence.</REGISTRY_POLICY>
+  </GLOBAL_SYSTEMS_DOCTRINE>
+</SELF_AUDIT>

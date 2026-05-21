@@ -34,6 +34,11 @@ namespace Hecton8.Crafting
     /// </summary>
     public readonly struct CraftedItemSynthesisEvent
     {
+        public readonly ItemData Item;
+        public readonly int Quantity;
+        public readonly Vector3 SpawnPosition;
+        public readonly Vector3 VelocityChange;
+
         public CraftedItemSynthesisEvent(ItemData item, int quantity, Vector3 spawnPosition, Vector3 velocityChange)
         {
             Item = item;
@@ -41,11 +46,6 @@ namespace Hecton8.Crafting
             SpawnPosition = spawnPosition;
             VelocityChange = velocityChange;
         }
-
-        public ItemData Item { get; }
-        public int Quantity { get; }
-        public Vector3 SpawnPosition { get; }
-        public Vector3 VelocityChange { get; }
     }
 
     /// <summary>
@@ -85,6 +85,7 @@ namespace Hecton8.Crafting
         private const int ListenerCapacity = 32;
         private const int PendingEventCapacity = 128;
         private const int ReferenceSlotCapacity = 128;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint CraftingListenerOverflowWarningHash = 0x4345564Cu; // CEVL
         private const uint CraftingListenerContextHash = 0x43455652u; // CEVR
         private const uint CraftingListenerExceptionWarningHash = 0x43455645u; // CEVE
@@ -108,12 +109,82 @@ namespace Hecton8.Crafting
             }
         }
 
-        // COLD ALLOC: RegistryBucket<ICraftingEventListener>[32] - crafting listeners drained by SystemDispatcher LateUpdate - owner: CraftingEvents
-        private static readonly RegistryBucket<ICraftingEventListener> _listeners = new RegistryBucket<ICraftingEventListener>(ListenerCapacity);
-        // COLD ALLOC: ICraftingEventListener[32] - listener additions deferred while dispatching crafting events - owner: CraftingEvents
-        private static readonly ICraftingEventListener[] _deferredRegisterListeners = new ICraftingEventListener[ListenerCapacity];
-        // COLD ALLOC: ICraftingEventListener[32] - listener removals deferred while dispatching crafting events - owner: CraftingEvents
-        private static readonly ICraftingEventListener[] _deferredUnregisterListeners = new ICraftingEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public ICraftingEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct CraftingListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public CraftingListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity]; // COLD ALLOC: ListenerSlot[32] - fixed crafting listener slots drained by SystemDispatcher LateUpdate - owner: CraftingEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(ICraftingEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(ICraftingEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void TryUnregister(ICraftingEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public ICraftingEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static CraftingListenerRegistry _listeners = new CraftingListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[32] - listener additions deferred while dispatching crafting events - owner: CraftingEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[32] - listener removals deferred while dispatching crafting events - owner: CraftingEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: CraftingReferenceSlot[128] - managed reference sidecar for unmanaged crafting payloads - owner: CraftingEvents
         private static readonly CraftingReferenceSlot[] _referenceSlots = new CraftingReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[128] - reference slot occupancy map prevents wrap overwrite before deferred flush - owner: CraftingEvents
@@ -252,14 +323,13 @@ namespace Hecton8.Crafting
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                ICraftingEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        ICraftingEventListener listener = rawArray[i];
+                        ICraftingEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -485,7 +555,7 @@ namespace Hecton8.Crafting
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<CraftingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CraftingEventPayload>[128] - deferred crafting event lane flushed by SystemDispatcher LateUpdate - owner: CraftingEvents
+                _pendingEvents = new NativeQueue<CraftingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<CraftingEventPayload>[128] - deferred crafting event lane flushed by SystemDispatcher LateUpdate - owner: CraftingEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -497,7 +567,7 @@ namespace Hecton8.Crafting
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<CraftingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CraftingEventPayload>[128] - next-frame crafting event lane prevents same-frame reentrant dispatch - owner: CraftingEvents
+                _nextFrameEvents = new NativeQueue<CraftingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<CraftingEventPayload>[128] - next-frame crafting event lane prevents same-frame reentrant dispatch - owner: CraftingEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -703,7 +773,7 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(ICraftingEventListener listener)
@@ -723,19 +793,19 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(ICraftingEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -746,12 +816,12 @@ namespace Hecton8.Crafting
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -760,7 +830,7 @@ namespace Hecton8.Crafting
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -771,7 +841,7 @@ namespace Hecton8.Crafting
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -782,8 +852,8 @@ namespace Hecton8.Crafting
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                ICraftingEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                ICraftingEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -792,8 +862,8 @@ namespace Hecton8.Crafting
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                ICraftingEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                ICraftingEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }

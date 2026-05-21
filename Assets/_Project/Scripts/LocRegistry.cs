@@ -511,13 +511,13 @@ namespace Hecton.Localization
         private static NativeArray<BabelTelemetryEntry> _telemetryFrames;
         private static IDataVault _babelVault;
         private static IDataVault _stagedLocaleVault;
-        private static VaultBufferHandle<byte> _utf8BytesHandle;
-        private static VaultBufferHandle<byte> _stagedLocaleBytesHandle;
-        private static VaultBufferHandle<LocalizationEntryDTO> _utf8IndexHandle;
-        private static VaultBufferHandle<byte> _errorUtf8Handle;
-        private static VaultBufferHandle<byte> _decryptionMaskHandle;
-        private static VaultBufferHandle<byte> _overrideCsvScratchHandle;
-        private static VaultBufferHandle<BabelTelemetryEntry> _telemetryFramesHandle;
+        private static VaultGenerationHandle<byte> _utf8BytesHandle;
+        private static VaultGenerationHandle<byte> _stagedLocaleBytesHandle;
+        private static VaultGenerationHandle<LocalizationEntryDTO> _utf8IndexHandle;
+        private static VaultGenerationHandle<byte> _errorUtf8Handle;
+        private static VaultGenerationHandle<byte> _decryptionMaskHandle;
+        private static VaultGenerationHandle<byte> _overrideCsvScratchHandle;
+        private static VaultGenerationHandle<BabelTelemetryEntry> _telemetryFramesHandle;
         private static JobHandle _utf8ReaderHandle;
         private static NativeArray<byte> _stagedLocaleBytes;
         private static int _utf8IndexLength;
@@ -574,6 +574,7 @@ namespace Hecton.Localization
             DisposeOverrideCsvScratch();
             DisposeDecryptionMaskState();
             DisposeTelemetryState();
+            _babelVault = null;
             _telemetryFrameIndex = -1;
             _translationsThisFrame = 0;
             _bufferPoolLeasesActive = 0;
@@ -625,15 +626,14 @@ namespace Hecton.Localization
                 return false;
             }
 
-            _stagedLocaleBytesHandle = vault.GetBufferHandle<byte>(
-                BabelStagedLocaleBufferId,
-                paddedByteLength,
-                SystemID.UI,
-                NativeArrayOptions.UninitializedMemory);
-            _stagedLocaleBytes = _stagedLocaleBytesHandle.Resolve(vault);
-            if (!_stagedLocaleBytes.IsCreated || _stagedLocaleBytes.Length < paddedByteLength)
+            if (!TryAcquireBabelBuffer(
+                    vault,
+                    ref _stagedLocaleBytesHandle,
+                    BabelStagedLocaleBufferId,
+                    paddedByteLength,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _stagedLocaleBytes))
             {
-                _stagedLocaleBytesHandle = default;
                 _stagedLocaleBytes = default;
                 RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
                 return false;
@@ -641,7 +641,7 @@ namespace Hecton.Localization
 
             if (!vault.TryLockBuffer(BabelStagedLocaleBufferId, SystemID.UI))
             {
-                _stagedLocaleBytesHandle = default;
+                ReleaseBabelVaultHandle(vault, ref _stagedLocaleBytesHandle);
                 _stagedLocaleBytes = default;
                 RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
                 return false;
@@ -651,7 +651,7 @@ namespace Hecton.Localization
             if (destination == null)
             {
                 vault.TryUnlockBuffer(BabelStagedLocaleBufferId, SystemID.UI);
-                _stagedLocaleBytesHandle = default;
+                ReleaseBabelVaultHandle(vault, ref _stagedLocaleBytesHandle);
                 _stagedLocaleBytes = default;
                 RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
                 return false;
@@ -701,8 +701,12 @@ namespace Hecton.Localization
                 return false;
             }
 
-            NativeArray<byte> staged = _stagedLocaleBytesHandle.Resolve(_stagedLocaleVault);
-            if (!staged.IsCreated || staged.Length < _stagedLocaleByteLength)
+            if (!TryResolveBabelBuffer(
+                    _stagedLocaleVault,
+                    ref _stagedLocaleBytesHandle,
+                    BabelStagedLocaleBufferId,
+                    _stagedLocaleByteLength,
+                    out NativeArray<byte> staged))
             {
                 AbortBabelDictionaryStage();
                 RecordTelemetry(0u, 0, stage.ByteLength, BabelTelemetryFlags.AsyncCommitRejected);
@@ -1540,9 +1544,15 @@ namespace Hecton.Localization
                     if (!scratchLocked)
                         return false;
 
-                    NativeArray<byte> resolved = _overrideCsvScratchHandle.Resolve(_babelVault);
-                    if (resolved.IsCreated && resolved.Length >= maxBytes)
+                    if (TryResolveBabelBuffer(
+                            _babelVault,
+                            ref _overrideCsvScratchHandle,
+                            BabelOverrideCsvScratchBufferId,
+                            maxBytes,
+                            out NativeArray<byte> resolved))
+                    {
                         _overrideCsvScratch = resolved;
+                    }
                 }
 
                 byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(_overrideCsvScratch);
@@ -1749,13 +1759,13 @@ namespace Hecton.Localization
 
             if (TryResolveBabelVault(out IDataVault vault))
             {
-                _errorUtf8Handle = vault.GetBufferHandle<byte>(
-                    BabelErrorUtf8BufferId,
-                    16,
-                    SystemID.UI,
-                    NativeArrayOptions.ClearMemory);
-                NativeArray<byte> resolved = _errorUtf8Handle.Resolve(vault);
-                if (resolved.IsCreated && resolved.Length >= 16)
+                if (TryAcquireBabelBuffer(
+                        vault,
+                        ref _errorUtf8Handle,
+                        BabelErrorUtf8BufferId,
+                        16,
+                        NativeArrayOptions.ClearMemory,
+                        out NativeArray<byte> resolved))
                 {
                     _babelVault = vault;
                     _errorUtf8 = resolved;
@@ -1764,7 +1774,7 @@ namespace Hecton.Localization
                     return;
                 }
 
-                _errorUtf8Handle = default;
+                ReleaseBabelVaultHandle(vault, ref _errorUtf8Handle);
             }
         }
 
@@ -1799,13 +1809,13 @@ namespace Hecton.Localization
 
             if (TryResolveBabelVault(out IDataVault vault))
             {
-                _utf8IndexHandle = vault.GetBufferHandle<LocalizationEntryDTO>(
-                    BabelIndexTableBufferId,
-                    entryCapacity,
-                    SystemID.UI,
-                    NativeArrayOptions.UninitializedMemory);
-                NativeArray<LocalizationEntryDTO> resolved = _utf8IndexHandle.Resolve(vault);
-                if (resolved.IsCreated && resolved.Length >= entryCapacity)
+                if (TryAcquireBabelBuffer(
+                        vault,
+                        ref _utf8IndexHandle,
+                        BabelIndexTableBufferId,
+                        entryCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<LocalizationEntryDTO> resolved))
                 {
                     _babelVault = vault;
                     _utf8Index = resolved;
@@ -1813,7 +1823,7 @@ namespace Hecton.Localization
                     return;
                 }
 
-                _utf8IndexHandle = default;
+                ReleaseBabelVaultHandle(vault, ref _utf8IndexHandle);
             }
         }
 
@@ -1824,13 +1834,13 @@ namespace Hecton.Localization
 
             if (TryResolveBabelVault(out IDataVault vault))
             {
-                _decryptionMaskHandle = vault.GetBufferHandle<byte>(
-                    BabelDecryptionMaskBufferId,
-                    16,
-                    SystemID.UI,
-                    NativeArrayOptions.ClearMemory);
-                NativeArray<byte> resolved = _decryptionMaskHandle.Resolve(vault);
-                if (resolved.IsCreated && resolved.Length >= 16)
+                if (TryAcquireBabelBuffer(
+                        vault,
+                        ref _decryptionMaskHandle,
+                        BabelDecryptionMaskBufferId,
+                        16,
+                        NativeArrayOptions.ClearMemory,
+                        out NativeArray<byte> resolved))
                 {
                     _babelVault = vault;
                     _decryptionMask = resolved;
@@ -1847,13 +1857,13 @@ namespace Hecton.Localization
 
             if (TryResolveBabelVault(out IDataVault vault))
             {
-                _overrideCsvScratchHandle = vault.GetBufferHandle<byte>(
-                    BabelOverrideCsvScratchBufferId,
-                    OverrideCsvScratchBytes,
-                    SystemID.UI,
-                    NativeArrayOptions.UninitializedMemory);
-                NativeArray<byte> resolved = _overrideCsvScratchHandle.Resolve(vault);
-                if (resolved.IsCreated && resolved.Length >= OverrideCsvScratchBytes)
+                if (TryAcquireBabelBuffer(
+                        vault,
+                        ref _overrideCsvScratchHandle,
+                        BabelOverrideCsvScratchBufferId,
+                        OverrideCsvScratchBytes,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<byte> resolved))
                 {
                     _babelVault = vault;
                     _overrideCsvScratch = resolved;
@@ -1875,13 +1885,13 @@ namespace Hecton.Localization
 
             if (TryResolveBabelVault(out IDataVault vault))
             {
-                _utf8BytesHandle = vault.GetBufferHandle<byte>(
-                    BabelUtf8BlobBufferId,
-                    byteCapacity,
-                    SystemID.UI,
-                    NativeArrayOptions.UninitializedMemory);
-                NativeArray<byte> resolved = _utf8BytesHandle.Resolve(vault);
-                if (resolved.IsCreated && resolved.Length >= byteCapacity)
+                if (TryAcquireBabelBuffer(
+                        vault,
+                        ref _utf8BytesHandle,
+                        BabelUtf8BlobBufferId,
+                        byteCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<byte> resolved))
                 {
                     _babelVault = vault;
                     _utf8Bytes = resolved;
@@ -1889,23 +1899,114 @@ namespace Hecton.Localization
                     return;
                 }
 
-                _utf8BytesHandle = default;
+                ReleaseBabelVaultHandle(vault, ref _utf8BytesHandle);
             }
         }
 
         private static bool TryResolveBabelVault(out IDataVault vault)
         {
             vault = GlobalRegistry.DataVault;
-            if (vault != null)
-                return true;
+            if (vault == null)
+                return false;
 
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
+            if (_babelVault != null && !ReferenceEquals(_babelVault, vault))
+                ResetBabelVaultBackedStateForVaultSwap();
+
+            return true;
+        }
+
+        private static void ResetBabelVaultBackedStateForVaultSwap()
+        {
+            AbortBabelDictionaryStage();
+            DisposeUtf8State();
+            DisposeErrorUtf8State();
+            DisposeOverrideCsvScratch();
+            DisposeDecryptionMaskState();
+            DisposeTelemetryState();
+            _babelVault = null;
+        }
+
+        private static bool TryAcquireBabelBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.UI,
+                options);
+
+            if (HasBabelVaultHandle(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
             {
-                vault = latest;
                 return true;
             }
 
+            ReleaseBabelVaultHandle(vault, ref handle);
+            buffer = default;
             return false;
+        }
+
+        private static bool TryResolveBabelBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (HasBabelVaultHandle(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !HasBabelVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool HasBabelVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.UI &&
+                   handle.Generation != 0u;
+        }
+
+        private static void ReleaseBabelVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static void AbortBabelDictionaryStage()
@@ -1913,9 +2014,9 @@ namespace Hecton.Localization
             if (_stagedLocaleLocked && _stagedLocaleVault != null)
                 _stagedLocaleVault.TryUnlockBuffer(BabelStagedLocaleBufferId, SystemID.UI);
 
+            ReleaseBabelVaultHandle(_stagedLocaleVault, ref _stagedLocaleBytesHandle);
             _stagedLocaleLocked = false;
             _stagedLocaleVault = null;
-            _stagedLocaleBytesHandle = default;
             _stagedLocaleBytes = default;
             _stagedLocaleByteLength = 0;
             _stagedLocaleSourceByteLength = 0;
@@ -2013,9 +2114,15 @@ namespace Hecton.Localization
             if (!_utf8BytesVaultBacked)
                 return;
 
-            NativeArray<byte> resolved = _utf8BytesHandle.Resolve(_babelVault);
-            if (resolved.IsCreated && resolved.Length >= _utf8ByteLength)
+            if (TryResolveBabelBuffer(
+                    _babelVault,
+                    ref _utf8BytesHandle,
+                    BabelUtf8BlobBufferId,
+                    math.max(1, _utf8ByteLength),
+                    out NativeArray<byte> resolved))
+            {
                 _utf8Bytes = resolved;
+            }
         }
 
         private static int EstimateStaticArenaByteCapacity()
@@ -2192,14 +2299,16 @@ namespace Hecton.Localization
             if (!_utf8BytesVaultBacked || _babelVault == null)
                 return false;
 
-            _utf8BytesHandle = _babelVault.GetBufferHandle<byte>(
-                BabelUtf8BlobBufferId,
-                requiredLength,
-                SystemID.UI,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> resolved = _utf8BytesHandle.Resolve(_babelVault);
-            if (!resolved.IsCreated || resolved.Length < requiredLength)
+            if (!TryAcquireBabelBuffer(
+                    _babelVault,
+                    ref _utf8BytesHandle,
+                    BabelUtf8BlobBufferId,
+                    requiredLength,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<byte> resolved))
+            {
                 return false;
+            }
 
             _utf8Bytes = resolved;
             _utf8BytesVaultBacked = true;
@@ -2785,8 +2894,12 @@ namespace Hecton.Localization
         {
             if (_telemetryVaultBacked)
             {
-                NativeArray<BabelTelemetryEntry> resolved = _telemetryFramesHandle.Resolve(_babelVault);
-                if (resolved.IsCreated && resolved.Length >= BabelTelemetryFrameCapacity)
+                if (TryResolveBabelBuffer(
+                        _babelVault,
+                        ref _telemetryFramesHandle,
+                        BabelTelemetryBufferId,
+                        BabelTelemetryFrameCapacity,
+                        out NativeArray<BabelTelemetryEntry> resolved))
                 {
                     _telemetryFrames = resolved;
                     return;
@@ -2816,15 +2929,14 @@ namespace Hecton.Localization
             if (vault == null)
                 return false;
 
-            _telemetryFramesHandle = vault.GetBufferHandle<BabelTelemetryEntry>(
-                BabelTelemetryBufferId,
-                BabelTelemetryFrameCapacity,
-                SystemID.UI,
-                NativeArrayOptions.ClearMemory);
-            NativeArray<BabelTelemetryEntry> resolved = _telemetryFramesHandle.Resolve(vault);
-            if (!resolved.IsCreated || resolved.Length < BabelTelemetryFrameCapacity)
+            if (!TryAcquireBabelBuffer(
+                    vault,
+                    ref _telemetryFramesHandle,
+                    BabelTelemetryBufferId,
+                    BabelTelemetryFrameCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<BabelTelemetryEntry> resolved))
             {
-                _telemetryFramesHandle = default;
                 return false;
             }
 
@@ -2855,9 +2967,19 @@ namespace Hecton.Localization
         {
             if (_telemetryVaultBacked)
             {
-                NativeArray<BabelTelemetryEntry> resolved = _telemetryFramesHandle.Resolve(_babelVault);
-                if (resolved.IsCreated && resolved.Length >= BabelTelemetryFrameCapacity)
+                if (TryResolveBabelBuffer(
+                        _babelVault,
+                        ref _telemetryFramesHandle,
+                        BabelTelemetryBufferId,
+                        BabelTelemetryFrameCapacity,
+                        out NativeArray<BabelTelemetryEntry> resolved))
+                {
                     _telemetryFrames = resolved;
+                }
+                else
+                {
+                    return;
+                }
             }
 
             if (!_telemetryFrames.IsCreated)
@@ -2918,9 +3040,19 @@ namespace Hecton.Localization
         {
             if (_telemetryVaultBacked)
             {
-                NativeArray<BabelTelemetryEntry> resolved = _telemetryFramesHandle.Resolve(_babelVault);
-                if (resolved.IsCreated && resolved.Length >= BabelTelemetryFrameCapacity)
+                if (TryResolveBabelBuffer(
+                        _babelVault,
+                        ref _telemetryFramesHandle,
+                        BabelTelemetryBufferId,
+                        BabelTelemetryFrameCapacity,
+                        out NativeArray<BabelTelemetryEntry> resolved))
+                {
                     _telemetryFrames = resolved;
+                }
+                else
+                {
+                    return;
+                }
             }
 
             if (!_telemetryFrames.IsCreated)
@@ -2959,7 +3091,7 @@ namespace Hecton.Localization
                 if (_utf8BytesVaultBacked)
                 {
                     _utf8Bytes = default;
-                    _utf8BytesHandle = default;
+                    ReleaseBabelVaultHandle(_babelVault, ref _utf8BytesHandle);
                     _utf8BytesVaultBacked = false;
                     _utf8BytesRegistered = false;
                 }
@@ -2981,7 +3113,7 @@ namespace Hecton.Localization
                 if (_utf8IndexVaultBacked)
                 {
                     _utf8Index = default;
-                    _utf8IndexHandle = default;
+                    ReleaseBabelVaultHandle(_babelVault, ref _utf8IndexHandle);
                     _utf8IndexVaultBacked = false;
                     _utf8IndexRegistered = false;
                 }
@@ -3000,8 +3132,8 @@ namespace Hecton.Localization
 
             _utf8IndexLength = 0;
             _utf8ByteLength = 0;
-            _utf8BytesHandle = default;
-            _utf8IndexHandle = default;
+            ReleaseBabelVaultHandle(_babelVault, ref _utf8BytesHandle);
+            ReleaseBabelVaultHandle(_babelVault, ref _utf8IndexHandle);
             _utf8BytesVaultBacked = false;
             _utf8IndexVaultBacked = false;
         }
@@ -3010,7 +3142,7 @@ namespace Hecton.Localization
         {
             if (!_errorUtf8.IsCreated)
             {
-                _errorUtf8Handle = default;
+                ReleaseBabelVaultHandle(_babelVault, ref _errorUtf8Handle);
                 _errorUtf8VaultBacked = false;
                 _errorUtf8Registered = false;
                 return;
@@ -3019,7 +3151,7 @@ namespace Hecton.Localization
             if (_errorUtf8VaultBacked)
             {
                 _errorUtf8 = default;
-                _errorUtf8Handle = default;
+                ReleaseBabelVaultHandle(_babelVault, ref _errorUtf8Handle);
                 _errorUtf8VaultBacked = false;
                 _errorUtf8Registered = false;
                 return;
@@ -3033,7 +3165,7 @@ namespace Hecton.Localization
 
             _errorUtf8.Dispose();
             _errorUtf8 = default;
-            _errorUtf8Handle = default;
+            ReleaseBabelVaultHandle(_babelVault, ref _errorUtf8Handle);
         }
 
         private static void DisposeOverrideCsvScratch()
@@ -3044,7 +3176,7 @@ namespace Hecton.Localization
             if (_overrideCsvScratchVaultBacked)
             {
                 _overrideCsvScratch = default;
-                _overrideCsvScratchHandle = default;
+                ReleaseBabelVaultHandle(_babelVault, ref _overrideCsvScratchHandle);
                 _overrideCsvScratchVaultBacked = false;
                 _overrideCsvScratchRegistered = false;
                 return;
@@ -3058,7 +3190,7 @@ namespace Hecton.Localization
 
             _overrideCsvScratch.Dispose();
             _overrideCsvScratch = default;
-            _overrideCsvScratchHandle = default;
+            ReleaseBabelVaultHandle(_babelVault, ref _overrideCsvScratchHandle);
         }
 
         private static void DisposeDecryptionMaskState()
@@ -3069,7 +3201,7 @@ namespace Hecton.Localization
             if (_decryptionMaskVaultBacked)
             {
                 _decryptionMask = default;
-                _decryptionMaskHandle = default;
+                ReleaseBabelVaultHandle(_babelVault, ref _decryptionMaskHandle);
                 _decryptionMaskVaultBacked = false;
                 _decryptionMaskRegistered = false;
                 return;
@@ -3083,7 +3215,7 @@ namespace Hecton.Localization
 
             _decryptionMask.Dispose();
             _decryptionMask = default;
-            _decryptionMaskHandle = default;
+            ReleaseBabelVaultHandle(_babelVault, ref _decryptionMaskHandle);
         }
 
         private static void RegisterUtf8ReaderHandle(JobHandle handle)
@@ -3110,7 +3242,7 @@ namespace Hecton.Localization
         {
             if (!_telemetryFrames.IsCreated)
             {
-                _telemetryFramesHandle = default;
+                ReleaseBabelVaultHandle(_babelVault, ref _telemetryFramesHandle);
                 _telemetryVaultBacked = false;
                 return;
             }
@@ -3118,7 +3250,7 @@ namespace Hecton.Localization
             if (_telemetryVaultBacked)
             {
                 _telemetryFrames = default;
-                _telemetryFramesHandle = default;
+                ReleaseBabelVaultHandle(_babelVault, ref _telemetryFramesHandle);
                 _telemetryVaultBacked = false;
                 _telemetryRegistered = false;
                 _telemetryWriteIndex = 0;

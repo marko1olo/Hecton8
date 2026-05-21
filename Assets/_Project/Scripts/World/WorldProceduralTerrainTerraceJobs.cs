@@ -1,16 +1,17 @@
 using System.Runtime.CompilerServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.World
 {
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct WorldProceduralTerrainTerraceJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> InputHeights01;
-        [WriteOnly] public NativeArray<float> OutputHeights01;
+        [ReadOnly, NoAlias] public NativeArray<float> InputHeights01;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputHeights01;
         public float StepCount;
         public float Sharpness;
         public float Strength;

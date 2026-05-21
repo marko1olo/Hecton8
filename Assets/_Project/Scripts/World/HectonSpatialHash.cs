@@ -14,12 +14,12 @@ namespace Hecton8.World
     /// </summary>
     internal sealed class HectonSpatialHash : IDisposable
     {
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         internal struct Long3 : IEquatable<Long3>
         {
-            public long X;
-            public long Y;
-            public long Z;
+            [FieldOffset(0)] public long X;
+            [FieldOffset(8)] public long Y;
+            [FieldOffset(16)] public long Z;
 
             public Long3(long x, long y, long z)
             {
@@ -50,27 +50,32 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 112)]
         internal struct SpatialEntry
         {
-            public double3 AbsoluteCenter;
-            public float3 HalfExtents;
-            public Long3 MinCell;
-            public Long3 MaxCell;
-            public int KindMask;
-            public ulong EntityFlags;
-            public int PayloadId;
+            [FieldOffset(0)] public double3 AbsoluteCenter;
+            [FieldOffset(24)] public float3 HalfExtents;
+            [FieldOffset(36)] private uint _pad0;
+            [FieldOffset(40)] public Long3 MinCell;
+            [FieldOffset(64)] public Long3 MaxCell;
+            [FieldOffset(88)] public int KindMask;
+            [FieldOffset(92)] private uint _pad1;
+            [FieldOffset(96)] public ulong EntityFlags;
+            [FieldOffset(104)] public int PayloadId;
+            [FieldOffset(108)] private uint _pad2;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         internal readonly struct QueryStats
         {
-            public readonly int Mode;
-            public readonly int VisitedCellCount;
-            public readonly int CandidateHandleCount;
-            public readonly int DedupeHandleCount;
-            public readonly int ResultHandleCount;
-            public readonly byte Saturated;
+            [FieldOffset(0)] public readonly int Mode;
+            [FieldOffset(4)] public readonly int VisitedCellCount;
+            [FieldOffset(8)] public readonly int CandidateHandleCount;
+            [FieldOffset(12)] public readonly int DedupeHandleCount;
+            [FieldOffset(16)] public readonly int ResultHandleCount;
+            [FieldOffset(20)] public readonly byte Saturated;
+            [FieldOffset(21)] private readonly byte _pad0;
+            [FieldOffset(22)] private readonly ushort _pad1;
 
             public QueryStats(
                 int mode,
@@ -86,23 +91,29 @@ namespace Hecton8.World
                 DedupeHandleCount = dedupeHandleCount;
                 ResultHandleCount = resultHandleCount;
                 Saturated = saturated;
+                _pad0 = 0;
+                _pad1 = 0;
             }
 
             public bool IsSaturated => Saturated != 0;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         internal struct TransientEventRecord
         {
-            public uint EventId;
-            public double3 AbsoluteCenter;
-            public float RadiusMeters;
-            public float Intensity;
-            public float Temperature;
-            public double ExpirationTimestamp;
-            public uint EventTypeMask;
-            public ulong EventFlags;
-            public uint SourceKey;
+            [FieldOffset(0)] public uint EventId;
+            [FieldOffset(4)] private uint _pad0;
+            [FieldOffset(8)] public double3 AbsoluteCenter;
+            [FieldOffset(32)] public float RadiusMeters;
+            [FieldOffset(36)] public float Intensity;
+            [FieldOffset(40)] public float Temperature;
+            [FieldOffset(44)] private uint _pad1;
+            [FieldOffset(48)] public double ExpirationTimestamp;
+            [FieldOffset(56)] public uint EventTypeMask;
+            [FieldOffset(60)] private uint _pad2;
+            [FieldOffset(64)] public ulong EventFlags;
+            [FieldOffset(72)] public uint SourceKey;
+            [FieldOffset(76)] private uint _pad3;
         }
 
         private struct QueryScratchArena : IDisposable
@@ -118,14 +129,14 @@ namespace Hecton8.World
                 _sentinelOwner = sentinelOwner;
                 _lifetime = lifetime;
                 // COLD ALLOC: NativeList<int>[safeCapacity] — persistent query result staging arena for AUP spatial overlap queries — owner: HectonSpatialHash
-                Handles = new NativeList<int>(safeCapacity, Allocator.Persistent);
+                Handles = new NativeList<int>(safeCapacity, DataVaultExemptSpatialQueryScratchAllocator);
                 NativeMemorySentinel.RegisterNativeList(
                     Handles,
                     _sentinelOwner,
                     QueryScratchHandlesLabel,
                     _lifetime);
                 // COLD ALLOC: NativeParallelHashSet<int>[safeCapacity] — persistent dedupe arena for multi-cell overlap queries — owner: HectonSpatialHash
-                Dedup = new NativeParallelHashSet<int>(safeCapacity, Allocator.Persistent);
+                Dedup = new NativeParallelHashSet<int>(safeCapacity, DataVaultExemptSpatialQueryScratchAllocator);
                 NativeMemorySentinel.RegisterNativeParallelHashSet(
                     Dedup,
                     _sentinelOwner,
@@ -176,11 +187,11 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct RebuildCellOccupancyJob : IJob
         {
-            [ReadOnly] public NativeArray<int> Handles;
-            [ReadOnly] public NativeArray<SpatialEntry> Entries;
+            [ReadOnly, NoAlias] public NativeArray<int> Handles;
+            [ReadOnly, NoAlias] public NativeArray<SpatialEntry> Entries;
             public int Count;
             public NativeParallelMultiHashMap<Long3, int> BackBuffer;
 
@@ -217,6 +228,11 @@ namespace Hecton8.World
         private const string QueryScratchDedupLabel = "_queryScratch.Dedup";
         private const int QueryModeSphere = 1;
         private const int QueryModeAdjacent = 2;
+        private const Allocator DataVaultExemptSpatialQueryScratchAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptSpatialEntryAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptSpatialCellAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptTransientEventAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptSpatialCompactionAllocator = Allocator.Persistent;
 
         private static readonly ProfilerMarker _registerProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.Register");
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.Update");
@@ -268,13 +284,13 @@ namespace Hecton8.World
             _sentinelOwner = string.Concat(nameof(HectonSpatialHash), "_", ++_nextSentinelInstanceId);
             _allocationLifetime = allocationLifetime;
             // COLD ALLOC: NativeParallelHashMap<int,SpatialEntry>[safeEntryCapacity] — AUP spatial registry records — owner: HectonSpatialHash
-            _entries = new NativeParallelHashMap<int, SpatialEntry>(safeEntryCapacity, Allocator.Persistent);
+            _entries = new NativeParallelHashMap<int, SpatialEntry>(safeEntryCapacity, DataVaultExemptSpatialEntryAllocator);
             NativeMemorySentinel.RegisterNativeParallelHashMap(_entries, _sentinelOwner, nameof(_entries), _allocationLifetime);
             // COLD ALLOC: NativeList<int>[safeEntryCapacity] - dense active-handle list for zero-alloc hash rebuilds - owner: HectonSpatialHash
-            _entryHandles = new NativeList<int>(safeEntryCapacity, Allocator.Persistent);
+            _entryHandles = new NativeList<int>(safeEntryCapacity, DataVaultExemptSpatialEntryAllocator);
             NativeMemorySentinel.RegisterNativeList(_entryHandles, _sentinelOwner, nameof(_entryHandles), _allocationLifetime);
             // COLD ALLOC: NativeQueue<uint>[safeEntryCapacity] - generation-counted free handle queue - owner: HectonSpatialHash
-            _freeHandles = new NativeQueue<uint>(Allocator.Persistent);
+            _freeHandles = new NativeQueue<uint>(DataVaultExemptSpatialEntryAllocator);
             NativeMemorySentinel.RegisterNativeQueue(
                 _freeHandles,
                 safeEntryCapacity,
@@ -283,44 +299,44 @@ namespace Hecton8.World
                 _allocationLifetime);
             PrewarmFreeHandleQueue(ref _freeHandles, safeEntryCapacity);
             // COLD ALLOC: NativeParallelHashSet<uint>[safeEntryCapacity] - duplicate queued-handle guard - owner: HectonSpatialHash
-            _queuedFreeHandles = new NativeParallelHashSet<uint>(safeEntryCapacity, Allocator.Persistent);
+            _queuedFreeHandles = new NativeParallelHashSet<uint>(safeEntryCapacity, DataVaultExemptSpatialEntryAllocator);
             NativeMemorySentinel.RegisterNativeParallelHashSet(_queuedFreeHandles, _sentinelOwner, nameof(_queuedFreeHandles), _allocationLifetime);
             // COLD ALLOC: NativeParallelHashMap<uint,uint>[safeEntryCapacity] - current generation per spatial handle slot - owner: HectonSpatialHash
-            _slotGenerations = new NativeParallelHashMap<uint, uint>(safeEntryCapacity, Allocator.Persistent);
+            _slotGenerations = new NativeParallelHashMap<uint, uint>(safeEntryCapacity, DataVaultExemptSpatialEntryAllocator);
             NativeMemorySentinel.RegisterNativeParallelHashMap(_slotGenerations, _sentinelOwner, nameof(_slotGenerations), _allocationLifetime);
             // COLD ALLOC: NativeParallelMultiHashMap<long3,int>[safeCellCapacity] — AUP cell occupancy buckets — owner: HectonSpatialHash
-            _cellOccupancy = new NativeParallelMultiHashMap<Long3, int>(safeCellCapacity, Allocator.Persistent);
+            _cellOccupancy = new NativeParallelMultiHashMap<Long3, int>(safeCellCapacity, DataVaultExemptSpatialCellAllocator);
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_cellOccupancy, _sentinelOwner, nameof(_cellOccupancy), _allocationLifetime);
             // COLD ALLOC: NativeParallelMultiHashMap<long3,int>[safeCellCapacity] - spatial bucket compaction scratch - owner: HectonSpatialHash
-            _cellOccupancyScratch = new NativeParallelMultiHashMap<Long3, int>(safeCellCapacity, Allocator.Persistent);
+            _cellOccupancyScratch = new NativeParallelMultiHashMap<Long3, int>(safeCellCapacity, DataVaultExemptSpatialCellAllocator);
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_cellOccupancyScratch, _sentinelOwner, nameof(_cellOccupancyScratch), _allocationLifetime);
             int safeTransientCellCapacity = math.max(DefaultTransientCellCapacity, safeCellCapacity);
             // COLD ALLOC: NativeParallelMultiHashMap<uint,TransientEventRecord>[safeTransientCellCapacity] - transient acoustic/chemical event buckets - owner: HectonSpatialHash
-            _transientEvents = new NativeParallelMultiHashMap<uint, TransientEventRecord>(safeTransientCellCapacity, Allocator.Persistent);
+            _transientEvents = new NativeParallelMultiHashMap<uint, TransientEventRecord>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_transientEvents, _sentinelOwner, nameof(_transientEvents), _allocationLifetime);
             // COLD ALLOC: NativeParallelMultiHashMap<uint,TransientEventRecord>[safeTransientCellCapacity] - expired-event prune scratch buckets - owner: HectonSpatialHash
-            _transientEventsScratch = new NativeParallelMultiHashMap<uint, TransientEventRecord>(safeTransientCellCapacity, Allocator.Persistent);
+            _transientEventsScratch = new NativeParallelMultiHashMap<uint, TransientEventRecord>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_transientEventsScratch, _sentinelOwner, nameof(_transientEventsScratch), _allocationLifetime);
             // COLD ALLOC: NativeParallelHashSet<uint>[safeTransientCellCapacity] - unique transient cell keys - owner: HectonSpatialHash
-            _transientCellKeySet = new NativeParallelHashSet<uint>(safeTransientCellCapacity, Allocator.Persistent);
+            _transientCellKeySet = new NativeParallelHashSet<uint>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
             NativeMemorySentinel.RegisterNativeParallelHashSet(_transientCellKeySet, _sentinelOwner, nameof(_transientCellKeySet), _allocationLifetime);
             // COLD ALLOC: NativeParallelHashSet<uint>[safeTransientCellCapacity] - transient prune scratch key set - owner: HectonSpatialHash
-            _transientCellKeySetScratch = new NativeParallelHashSet<uint>(safeTransientCellCapacity, Allocator.Persistent);
+            _transientCellKeySetScratch = new NativeParallelHashSet<uint>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
             NativeMemorySentinel.RegisterNativeParallelHashSet(_transientCellKeySetScratch, _sentinelOwner, nameof(_transientCellKeySetScratch), _allocationLifetime);
             // COLD ALLOC: NativeParallelHashSet<uint>[safeTransientCellCapacity] - transient event id dedupe for multi-cell queries - owner: HectonSpatialHash
-            _transientQueryDedupe = new NativeParallelHashSet<uint>(safeTransientCellCapacity, Allocator.Persistent);
+            _transientQueryDedupe = new NativeParallelHashSet<uint>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
             NativeMemorySentinel.RegisterNativeParallelHashSet(_transientQueryDedupe, _sentinelOwner, nameof(_transientQueryDedupe), _allocationLifetime);
             // COLD ALLOC: NativeList<uint>[safeTransientCellCapacity] - active transient cell-key traversal list - owner: HectonSpatialHash
-            _transientCellKeys = new NativeList<uint>(safeTransientCellCapacity, Allocator.Persistent);
+            _transientCellKeys = new NativeList<uint>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
             NativeMemorySentinel.RegisterNativeList(_transientCellKeys, _sentinelOwner, nameof(_transientCellKeys), _allocationLifetime);
             // COLD ALLOC: NativeList<uint>[safeTransientCellCapacity] - transient prune scratch cell-key traversal list - owner: HectonSpatialHash
-            _transientCellKeysScratch = new NativeList<uint>(safeTransientCellCapacity, Allocator.Persistent);
+            _transientCellKeysScratch = new NativeList<uint>(safeTransientCellCapacity, DataVaultExemptTransientEventAllocator);
             NativeMemorySentinel.RegisterNativeList(_transientCellKeysScratch, _sentinelOwner, nameof(_transientCellKeysScratch), _allocationLifetime);
             // COLD ALLOC: NativeList<int>[safeEntryCapacity] - immutable handle snapshot for async occupancy compaction - owner: HectonSpatialHash
-            _compactionHandleSnapshot = new NativeList<int>(safeEntryCapacity, Allocator.Persistent);
+            _compactionHandleSnapshot = new NativeList<int>(safeEntryCapacity, DataVaultExemptSpatialCompactionAllocator);
             NativeMemorySentinel.RegisterNativeList(_compactionHandleSnapshot, _sentinelOwner, nameof(_compactionHandleSnapshot), _allocationLifetime);
             // COLD ALLOC: NativeList<SpatialEntry>[safeEntryCapacity] - immutable entry snapshot for async occupancy compaction - owner: HectonSpatialHash
-            _compactionEntrySnapshot = new NativeList<SpatialEntry>(safeEntryCapacity, Allocator.Persistent);
+            _compactionEntrySnapshot = new NativeList<SpatialEntry>(safeEntryCapacity, DataVaultExemptSpatialCompactionAllocator);
             NativeMemorySentinel.RegisterNativeList(_compactionEntrySnapshot, _sentinelOwner, nameof(_compactionEntrySnapshot), _allocationLifetime);
             _queryScratch = new QueryScratchArena(safeEntryCapacity, _sentinelOwner, _allocationLifetime);
             _nextSlot = 1u;

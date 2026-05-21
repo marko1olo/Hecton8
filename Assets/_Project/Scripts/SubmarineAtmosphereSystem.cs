@@ -84,25 +84,25 @@ namespace Hecton8.Atmosphere
         }
 
         /// <summary>Bulkhead edge index inside the compartment graph.</summary>
-        public int DoorIndex { get; }
+        public readonly int DoorIndex;
 
         /// <summary>First room linked by the opened bulkhead.</summary>
-        public int RoomA { get; }
+        public readonly int RoomA;
 
         /// <summary>Second room linked by the opened bulkhead.</summary>
-        public int RoomB { get; }
+        public readonly int RoomB;
 
         /// <summary>Pressure in room A at the moment of opening.</summary>
-        public float PressureAKPa { get; }
+        public readonly float PressureAKPa;
 
         /// <summary>Pressure in room B at the moment of opening.</summary>
-        public float PressureBKPa { get; }
+        public readonly float PressureBKPa;
 
         /// <summary>Absolute pressure difference across the opened bulkhead.</summary>
-        public float PressureDeltaKPa { get; }
+        public readonly float PressureDeltaKPa;
 
         /// <summary>Runtime-space midpoint for downstream VFX or alarm placement.</summary>
-        public Vector3 RuntimePosition { get; }
+        public readonly Vector3 RuntimePosition;
     }
 
     /// <summary>
@@ -140,11 +140,12 @@ namespace Hecton8.Atmosphere
     {
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 32;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("HighPressureEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("HighPressureEvents"));
 
-        // COLD ALLOC: RegistryBucket<IHighPressureEventListener>[16] - high-pressure listeners drained by SystemDispatcher LateUpdate - owner: HighPressureEvents
-        private static readonly RegistryBucket<IHighPressureEventListener> _listeners = new RegistryBucket<IHighPressureEventListener>(ListenerCapacity);
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - high-pressure listeners drained by SystemDispatcher LateUpdate - owner: HighPressureEvents
+        private static int _listenerCount;
         private static NativeQueue<HighPressureEventPayload> _pendingEvents;
         private static NativeQueue<HighPressureEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -172,7 +173,9 @@ namespace Hecton8.Atmosphere
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+            _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
@@ -185,10 +188,8 @@ namespace Hecton8.Atmosphere
             if (listener == null)
                 return;
 
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
-
             EnsureInitialized();
+            RegisterImmediate(listener);
         }
 
         /// <summary>Unregisters one high-pressure warning listener.</summary>
@@ -197,8 +198,7 @@ namespace Hecton8.Atmosphere
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            TryUnregisterImmediate(listener);
         }
 
         internal static void Shutdown()
@@ -246,7 +246,7 @@ namespace Hecton8.Atmosphere
         /// <summary>Emits a high-pressure warning payload.</summary>
         public static void Notify(in HighPressureEvent pressureEvent)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             Enqueue(new HighPressureEventPayload
@@ -264,7 +264,7 @@ namespace Hecton8.Atmosphere
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<HighPressureEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<HighPressureEventPayload>[32] - deferred submarine high-pressure warning lane flushed by SystemDispatcher LateUpdate - owner: HighPressureEvents
+                _pendingEvents = new NativeQueue<HighPressureEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<HighPressureEventPayload>[32] - deferred submarine high-pressure warning lane flushed by SystemDispatcher LateUpdate - owner: HighPressureEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -276,7 +276,7 @@ namespace Hecton8.Atmosphere
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<HighPressureEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<HighPressureEventPayload>[32] - next-frame high-pressure warning lane prevents same-frame reentrant dispatch - owner: HighPressureEvents
+                _nextFrameEvents = new NativeQueue<HighPressureEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<HighPressureEventPayload>[32] - next-frame high-pressure warning lane prevents same-frame reentrant dispatch - owner: HighPressureEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -289,7 +289,7 @@ namespace Hecton8.Atmosphere
 
         private static bool Enqueue(in HighPressureEventPayload payload)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return false;
 
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
@@ -313,7 +313,7 @@ namespace Hecton8.Atmosphere
 
         private static void Dispatch(in HighPressureEventPayload payload)
         {
-            int count = _listeners.Count;
+            int count = _listenerCount;
             if (count <= 0)
                 return;
 
@@ -325,12 +325,58 @@ namespace Hecton8.Atmosphere
                 payload.PressureBKPa,
                 payload.RuntimePosition);
 
-            IHighPressureEventListener[] rawArray = _listeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
             {
-                IHighPressureEventListener listener = rawArray[i];
+                IHighPressureEventListener listener = _listeners[i].Listener;
                 if (listener != null)
                     listener.OnHighPressure(in pressureEvent);
+            }
+        }
+
+        private static void RegisterImmediate(IHighPressureEventListener listener)
+        {
+            if (ContainsImmediate(listener) || _listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount].Listener = listener;
+            _listenerCount++;
+        }
+
+        private static bool TryUnregisterImmediate(IHighPressureEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = _listenerCount - 1;
+                _listeners[i] = _listeners[lastIndex];
+                _listeners[lastIndex].Clear();
+                _listenerCount = lastIndex;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsImmediate(IHighPressureEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private struct ListenerSlot
+        {
+            public IHighPressureEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
             }
         }
 
@@ -375,10 +421,10 @@ namespace Hecton8.Atmosphere
             RuntimePosition = AtmosphereEventPayloadSanitizer.RuntimePositionOrZero(runtimePosition);
         }
 
-        public uint NodeId { get; }
-        public int RoomIndex { get; }
-        public float TemperatureCelsius { get; }
-        public Vector3 RuntimePosition { get; }
+        public readonly uint NodeId;
+        public readonly int RoomIndex;
+        public readonly float TemperatureCelsius;
+        public readonly Vector3 RuntimePosition;
     }
 
     /// <summary>
@@ -414,11 +460,12 @@ namespace Hecton8.Atmosphere
     {
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 8;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents"));
 
-        // COLD ALLOC: RegistryBucket<IFatalPressureImplosionEventListener>[16] - fatal implosion listeners drained by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
-        private static readonly RegistryBucket<IFatalPressureImplosionEventListener> _listeners = new RegistryBucket<IFatalPressureImplosionEventListener>(ListenerCapacity);
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - fatal implosion listeners drained by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
+        private static int _listenerCount;
         private static NativeQueue<FatalPressureImplosionEventPayload> _pendingEvents;
         private static NativeQueue<FatalPressureImplosionEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -446,7 +493,9 @@ namespace Hecton8.Atmosphere
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+            _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
@@ -459,10 +508,8 @@ namespace Hecton8.Atmosphere
             if (listener == null)
                 return;
 
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
-
             EnsureInitialized();
+            RegisterImmediate(listener);
         }
 
         /// <summary>Unregisters one fatal pressure implosion listener.</summary>
@@ -471,8 +518,7 @@ namespace Hecton8.Atmosphere
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            TryUnregisterImmediate(listener);
         }
 
         internal static void Shutdown()
@@ -519,7 +565,7 @@ namespace Hecton8.Atmosphere
 
         public static void Notify(in FatalPressureImplosionEvent implosionEvent)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             Enqueue(new FatalPressureImplosionEventPayload
@@ -535,7 +581,7 @@ namespace Hecton8.Atmosphere
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<FatalPressureImplosionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FatalPressureImplosionEventPayload>[8] - deferred fatal pressure implosion lane flushed by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
+                _pendingEvents = new NativeQueue<FatalPressureImplosionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FatalPressureImplosionEventPayload>[8] - deferred fatal pressure implosion lane flushed by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -547,7 +593,7 @@ namespace Hecton8.Atmosphere
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<FatalPressureImplosionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FatalPressureImplosionEventPayload>[8] - next-frame fatal pressure implosion lane prevents same-frame reentrant dispatch - owner: FatalPressureImplosionEvents
+                _nextFrameEvents = new NativeQueue<FatalPressureImplosionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FatalPressureImplosionEventPayload>[8] - next-frame fatal pressure implosion lane prevents same-frame reentrant dispatch - owner: FatalPressureImplosionEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -560,7 +606,7 @@ namespace Hecton8.Atmosphere
 
         private static bool Enqueue(in FatalPressureImplosionEventPayload payload)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return false;
 
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
@@ -584,7 +630,7 @@ namespace Hecton8.Atmosphere
 
         private static void Dispatch(in FatalPressureImplosionEventPayload payload)
         {
-            int count = _listeners.Count;
+            int count = _listenerCount;
             if (count <= 0)
                 return;
 
@@ -594,12 +640,58 @@ namespace Hecton8.Atmosphere
                 payload.TemperatureCelsius,
                 payload.RuntimePosition);
 
-            IFatalPressureImplosionEventListener[] rawArray = _listeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
             {
-                IFatalPressureImplosionEventListener listener = rawArray[i];
+                IFatalPressureImplosionEventListener listener = _listeners[i].Listener;
                 if (listener != null)
                     listener.OnFatalPressureImplosion(in implosionEvent);
+            }
+        }
+
+        private static void RegisterImmediate(IFatalPressureImplosionEventListener listener)
+        {
+            if (ContainsImmediate(listener) || _listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount].Listener = listener;
+            _listenerCount++;
+        }
+
+        private static bool TryUnregisterImmediate(IFatalPressureImplosionEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = _listenerCount - 1;
+                _listeners[i] = _listeners[lastIndex];
+                _listeners[lastIndex].Clear();
+                _listenerCount = lastIndex;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsImmediate(IFatalPressureImplosionEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private struct ListenerSlot
+        {
+            public IFatalPressureImplosionEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
             }
         }
 
@@ -638,7 +730,7 @@ namespace Hecton8.Atmosphere
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineFluidDynamics))]
     [AddComponentMenu("Hecton/Atmosphere/Submarine Atmosphere System")]
-    public sealed class SubmarineAtmosphereSystem : MonoBehaviour, IFixedTickable, IPostFixedTickable, IInteractionSignalConsumer
+    public sealed class SubmarineAtmosphereSystem : MonoBehaviour, IFixedTickable, IPostFixedTickable, IInteractionSignalConsumer, IGlobalRegistryHotSwapListener
     {
         private const int RoomCapacity = 8;
         private const int DoorCapacity = 7;
@@ -897,7 +989,6 @@ namespace Hecton8.Atmosphere
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
         private struct AtmosphereStepJob : IJob
         {
             [NoAlias, ReadOnly] public NativeArray<float> O2Front;
@@ -1402,7 +1493,13 @@ namespace Hecton8.Atmosphere
         private Transform _playerTransform;
         private Camera _playerCamera;
         private Rigidbody _submarineBody;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private IPowerGridService _powerGridService;
+        private AudioLogSystem _audioLogs;
+        private IPlayerSensoryService _playerSensoryService;
+        private IAudioService _audioService;
         private bool _registered;
+        private bool _hotSwapRegistered;
         private bool _topologySeeded;
         private bool _thermalEmittersSeeded;
         private bool _emergencyVentPipesSeeded;
@@ -2173,7 +2270,7 @@ namespace Hecton8.Atmosphere
 
         private void Awake()
         {
-            CacheReferences();
+            CacheReferencesCold();
             SeedBoilingHazardIds();
             SeedAtmosphereHazardIds();
             RefreshDebugState();
@@ -2181,11 +2278,12 @@ namespace Hecton8.Atmosphere
 
         private void OnEnable()
         {
-            CacheReferences();
+            CacheReferencesCold();
             EnsureNativeState();
             if (_roomVolumes.IsCreated)
                 PrewarmAtmosphereAuthoringCaches();
 
+            TryRegisterHotSwapListener();
             TryRegister();
             RefreshDebugState();
         }
@@ -2193,12 +2291,14 @@ namespace Hecton8.Atmosphere
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             DisposeNativeStateDeferred();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             DisposeNativeStateDeferred();
         }
 
@@ -2207,7 +2307,7 @@ namespace Hecton8.Atmosphere
             if (fixedDeltaTime <= 0f)
                 return;
 
-            CacheReferences();
+            CacheReferencesFromCache();
             TryFinalizeDeferredNativeDisposal();
             if (fluidDynamics == null)
             {
@@ -2284,7 +2384,7 @@ namespace Hecton8.Atmosphere
             if (depthMeters < FiniteNonNegativeOrZero(deepFreezeDepthThresholdMeters))
                 return;
 
-            IPowerGridService powerGridService = GlobalRegistry.PowerGrid;
+            IPowerGridService powerGridService = _powerGridService;
             float totalConsumption = powerGridService != null ? FiniteNonNegativeOrZero(powerGridService.TotalConsumption) : 0f;
             float supplyRatio = totalConsumption > Epsilon
                 ? math.saturate(FiniteNonNegativeOrZero(powerGridService.TotalGeneration) / totalConsumption)
@@ -2746,7 +2846,18 @@ namespace Hecton8.Atmosphere
             _emergencyVentPipesSeeded = true;
         }
 
-        private void CacheReferences()
+        private void CacheReferencesCold()
+        {
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            _powerGridService = GlobalRegistry.PowerGrid;
+            _audioLogs = GlobalRegistry.AudioLogs;
+            _playerSensoryService = GlobalRegistry.PlayerSensory;
+            _audioService = GlobalRegistry.Audio;
+            _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
+            CacheReferencesFromCache();
+        }
+
+        private void CacheReferencesFromCache()
         {
             if (_cachedTransform == null)
                 _cachedTransform = transform;
@@ -2759,7 +2870,7 @@ namespace Hecton8.Atmosphere
 
             if (_playerTransform == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null)
                 {
                     _playerTransform = playerContext.PlayerTransform;
@@ -2768,13 +2879,13 @@ namespace Hecton8.Atmosphere
             }
             else if (_playerCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null)
                     _playerCamera = playerContext.PlayerCamera;
             }
 
-            if (_thermodynamicsService == null || IsUnityObjectInvalid(_thermodynamicsService))
-                _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
+            if (IsUnityObjectInvalid(_thermodynamicsService))
+                _thermodynamicsService = null;
         }
 
         private void SeedBoilingHazardIds()
@@ -3017,7 +3128,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
+            AudioLogSystem audioLogs = _audioLogs;
             if (audioLogs == null)
             {
                 _lowOxygenAudioCooldownRemaining = FiniteNonNegativeOrZero(lowOxygenAudioCooldownSeconds);
@@ -3033,11 +3144,11 @@ namespace Hecton8.Atmosphere
             if (_toxicRoomVisorPulseCooldownRemaining > 0f)
                 return;
 
-            IPlayerSensoryService sensoryService = GlobalRegistry.PlayerSensory;
+            IPlayerSensoryService sensoryService = _playerSensoryService;
             VisorHUDController visorController = sensoryService != null ? sensoryService.VisorController : null;
             if (visorController == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 visorController = playerContext != null ? playerContext.VisorController : null;
             }
 
@@ -3069,7 +3180,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            IAudioService audioService = GlobalRegistry.Audio;
+            IAudioService audioService = _audioService;
             if (audioService == null)
             {
                 _pressureScreechCooldownRemaining = FiniteNonNegativeOrZero(pressureScreechCooldownSeconds);
@@ -3140,7 +3251,7 @@ namespace Hecton8.Atmosphere
             Camera playerCamera = _playerCamera;
             if (playerCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null)
                 {
                     playerCamera = playerContext.PlayerCamera;
@@ -3303,7 +3414,9 @@ namespace Hecton8.Atmosphere
             if (module == null || !module.TryGetInteriorAabbBounds(out Vector3 worldCenter, out _))
                 return false;
 
-            AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);
+            if (!TryResolveAupFromRuntimeOrigin(worldCenter, out AbsoluteUniversePosition moduleAup))
+                return false;
+
             return ResolveNearestRoomIndex(in moduleAup) == roomIndex;
         }
 
@@ -3311,12 +3424,21 @@ namespace Hecton8.Atmosphere
         {
             if (_registered)
                 return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
-            _registered = SystemDispatcher.GetPostFixedLane(PriorityLayer.Environment).Contains(this);
+            bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+            bool postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
+            if (!fixedRegistered || !postFixedRegistered)
+            {
+                if (fixedRegistered)
+                    GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                if (postFixedRegistered)
+                    GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                return;
+            }
+
+            _registered = true;
         }
 
         private void TryUnregister()
@@ -3327,6 +3449,80 @@ namespace Hecton8.Atmosphere
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    ClearPlayerRuntimeContext(previousService as IPlayerRuntimeContext);
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.PowerGrid:
+                    _powerGridService = currentService as IPowerGridService;
+                    break;
+                case GlobalRegistryServiceSlot.AudioLogRuntime:
+                    _audioLogs = currentService as AudioLogSystem;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerSensory:
+                    _playerSensoryService = currentService as IPlayerSensoryService;
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.ThermodynamicsService:
+                    _thermodynamicsService = currentService as IThermodynamicsService;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegister();
+                    break;
+            }
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext;
+            if (playerContext == null)
+                return;
+
+            if (_playerTransform == null)
+                _playerTransform = playerContext.PlayerTransform;
+
+            if (_playerCamera == null)
+                _playerCamera = playerContext.PlayerCamera;
+        }
+
+        private void ClearPlayerRuntimeContext(IPlayerRuntimeContext previousContext)
+        {
+            if (previousContext == null)
+                return;
+
+            if (ReferenceEquals(_playerTransform, previousContext.PlayerTransform))
+                _playerTransform = null;
+
+            if (ReferenceEquals(_playerCamera, previousContext.PlayerCamera))
+                _playerCamera = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void EnsureNativeState()
@@ -3702,7 +3898,9 @@ namespace Hecton8.Atmosphere
 
                 if (hostModule.TryGetInteriorAabbBounds(out Vector3 hostCenter, out _))
                 {
-                    AbsoluteUniversePosition hostAup = AbsoluteUniversePosition.FromRuntimePosition(hostCenter);
+                    if (!TryResolveAupFromRuntimeOrigin(hostCenter, out AbsoluteUniversePosition hostAup))
+                        return -1;
+
                     return ResolveNearestRoomIndex(in hostAup);
                 }
             }
@@ -3715,7 +3913,9 @@ namespace Hecton8.Atmosphere
             if (_submarineBody == null)
                 return -1;
 
-            AbsoluteUniversePosition submarineCenterAup = AbsoluteUniversePosition.FromRuntimePosition(_submarineBody.worldCenterOfMass);
+            if (!TryResolveAupFromRuntimeOrigin(_submarineBody.worldCenterOfMass, out AbsoluteUniversePosition submarineCenterAup))
+                return -1;
+
             return ResolveNearestRoomIndex(in submarineCenterAup);
         }
 
@@ -3868,7 +4068,7 @@ namespace Hecton8.Atmosphere
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext == null || playerContext.PlayerMovement == null)
                 return false;
 
@@ -3876,6 +4076,22 @@ namespace Hecton8.Atmosphere
             _playerCamera = playerContext.PlayerCamera;
             playerAup = playerContext.PlayerMovement.CurrentAup;
             return true;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in positionAup);
         }
 
         private void AccumulateRoomHeatSources()

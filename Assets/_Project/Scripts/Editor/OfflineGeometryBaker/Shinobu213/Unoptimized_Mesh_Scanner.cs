@@ -136,7 +136,7 @@ namespace Hecton8.Editor.OfflineGeometry
             }
 
             builder.Append("\n  ],\n  \"policy\": \"Concave MeshCollider on high-poly visual meshes is forbidden. Generated output must use BoxCollider, SphereCollider, or convex MeshCollider only.\"\n}\n");
-            File.WriteAllText(OfflineGeometryBakerConstants.PhysicsReportPath, builder.ToString());
+            OfflineGeometryBaker.WriteTextFileAtomic(OfflineGeometryBakerConstants.PhysicsReportPath, builder.ToString());
         }
 
         private static void ScanPrefab(string path, List<UnoptimizedMeshFinding> findings)
@@ -215,7 +215,14 @@ namespace Hecton8.Editor.OfflineGeometry
                 }
 
                 if (repaired > 0)
-                    PrefabUtility.SaveAsPrefabAsset(root, path);
+                {
+                    PrefabUtility.SaveAsPrefabAsset(root, path, out bool saved);
+                    if (!saved)
+                    {
+                        Debug.LogWarning("[SHINOBU_213] Concave collider repair failed to save prefab: " + path);
+                        repaired = 0;
+                    }
+                }
             }
             finally
             {

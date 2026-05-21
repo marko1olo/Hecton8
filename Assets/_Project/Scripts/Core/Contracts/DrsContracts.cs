@@ -101,6 +101,165 @@ namespace Hecton8.Core.Contracts
     }
 
     /// <summary>
+    /// Contract-owned Vault IDs for the single-pass Deep Sea Noir post processor.
+    /// </summary>
+    public static class NoirPostProcessVaultIds
+    {
+        public const int Constants = 71040;
+        public const int Input = 71041;
+        public const int Telemetry = 71042;
+        public const int Tuning = 71043;
+        public const int ColorProfiles = 71044;
+        public const int CsvScratch = 71045;
+    }
+
+    /// <summary>
+    /// GPU constant-buffer payload for the pre-tonemap grain/glitch pass. Four float4 lanes, 64 bytes.
+    /// GrainParams: intensity, scale, speed, wrapped time.
+    /// AberrationParams: chroma intensity, X offset amplitude, Y offset amplitude, vignette.
+    /// ColorGrading: contrast, saturation, temperature, depth tint.
+    /// QualityAndLimits: quality, stress, toxicity, A/B split.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct NoirPostProcessDTO
+    {
+        public const int SizeBytes = 64;
+
+        [FieldOffset(0)]
+        public float4 GrainParams;
+        [FieldOffset(16)]
+        public float4 AberrationParams;
+        [FieldOffset(32)]
+        public float4 ColorGrading;
+        [FieldOffset(48)]
+        public float4 QualityAndLimits;
+    }
+
+    /// <summary>
+    /// Raw presentation-only post input. Never participates in rollback or gameplay state hashes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct NoirPostProcessInputDTO
+    {
+        [FieldOffset(0)]
+        public float Stress01;
+        [FieldOffset(4)]
+        public float DepthMeters;
+        [FieldOffset(8)]
+        public float Toxicity01;
+        [FieldOffset(12)]
+        public float Narcosis01;
+        [FieldOffset(16)]
+        public float Supersaturation01;
+        [FieldOffset(20)]
+        public float GlobalQualityWeight01;
+        [FieldOffset(24)]
+        public float TimeSecondsWrapped;
+        [FieldOffset(28)]
+        public uint FrameIndex;
+        [FieldOffset(32)]
+        public float AbSplit01;
+        [FieldOffset(36)]
+        public float VignetteOverride01;
+        [FieldOffset(40)]
+        public uint Flags;
+        [FieldOffset(44)]
+        public uint SourceHash;
+        [FieldOffset(48)]
+        public uint _pad0;
+        [FieldOffset(52)]
+        public uint _pad1;
+        [FieldOffset(56)]
+        public uint _pad2;
+        [FieldOffset(60)]
+        public uint _pad3;
+    }
+
+    /// <summary>
+    /// Cold editor/CSV tuning lane for the single-pass Noir shader.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct NoirPostProcessTuningDTO
+    {
+        [FieldOffset(0)]
+        public float4 BaseParams;
+        [FieldOffset(16)]
+        public float4 GradeParams;
+        [FieldOffset(32)]
+        public float4 StressResponse;
+        [FieldOffset(48)]
+        public float4 ProfileParams;
+    }
+
+    /// <summary>
+    /// Fixed-size presentation black-box entry. One 64-byte line per rendered frame sample.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct NoirTelemetryEntry
+    {
+        [FieldOffset(0)]
+        public uint Frame;
+        [FieldOffset(4)]
+        public uint Flags;
+        [FieldOffset(8)]
+        public float Stress01;
+        [FieldOffset(12)]
+        public float DepthMeters;
+        [FieldOffset(16)]
+        public float Toxicity01;
+        [FieldOffset(20)]
+        public float GlobalQualityWeight01;
+        [FieldOffset(24)]
+        public float Grain01;
+        [FieldOffset(28)]
+        public float Glitch01;
+        [FieldOffset(32)]
+        public float Vignette01;
+        [FieldOffset(36)]
+        public float AbSplit01;
+        [FieldOffset(40)]
+        public float WrappedTimeSeconds;
+        [FieldOffset(44)]
+        public uint ParameterHash;
+        [FieldOffset(48)]
+        public float EstimatedGpuCostMs;
+        [FieldOffset(52)]
+        public uint ActiveFeatureFlags;
+        [FieldOffset(56)]
+        public uint _pad0;
+        [FieldOffset(60)]
+        public uint _pad1;
+    }
+
+    /// <summary>
+    /// CSV-loaded color profile row keyed by deterministic token hash.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct NoirColorProfileDTO
+    {
+        [FieldOffset(0)]
+        public uint ProfileHash;
+        [FieldOffset(4)]
+        public uint Flags;
+        [FieldOffset(8)]
+        public float DepthMinMeters;
+        [FieldOffset(12)]
+        public float DepthMaxMeters;
+        [FieldOffset(16)]
+        public float StressMin01;
+        [FieldOffset(20)]
+        public float StressMax01;
+        [FieldOffset(24)]
+        public float4 GradeParams;
+        [FieldOffset(40)]
+        public float4 ResponseParams;
+        [FieldOffset(56)]
+        public uint _pad0;
+        [FieldOffset(60)]
+        public uint _pad1;
+    }
+
+    /// <summary>
     /// SIMD-aligned dynamic-resolution hot state. Size: 16 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 16)]

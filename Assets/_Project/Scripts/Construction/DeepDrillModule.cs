@@ -1,8 +1,6 @@
-using System.Collections.Generic;
 using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Gameplay;
-using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
@@ -20,20 +18,24 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Deep Drill Module")]
-    public sealed class DeepDrillModule : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent, IBuildPlacementRule
+    public sealed class DeepDrillModule : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent
     {
         private const float SlowTickDeltaTime = 0.5f;
         private const float OneOver24Bit = 1f / 16777216f;
         private const string DefaultPlacementBlockedReason = "SEABED FOOTING REQUIRED";
         private const string DefaultSlopeBlockedReason = "SEABED TOO STEEP";
-        private static readonly int _placementProbeToolId = Animator.StringToHash("deep_drill_placement_probe");
+        private const int MaxActiveModuleCapacity = 128;
 
-        private static readonly List<DeepDrillModule> s_ActiveModules = new List<DeepDrillModule>(8);
+        private static readonly DeepDrillModule[] s_ActiveModules = new DeepDrillModule[MaxActiveModuleCapacity];
+        private static int s_ActiveModuleCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            s_ActiveModules.Clear();
+            for (int i = 0; i < s_ActiveModuleCount; i++)
+                s_ActiveModules[i] = null;
+
+            s_ActiveModuleCount = 0;
         }
 
         [System.Serializable]
@@ -114,7 +116,7 @@ namespace Hecton8.Construction
         private ulong _placementRayRequesterId;
         private ulong _deterministicEntityId;
 
-        internal static int ActiveModuleCount => s_ActiveModules.Count;
+        internal static int ActiveModuleCount => s_ActiveModuleCount;
         internal bool IsOperating => _isOperating;
         internal int CompletedCycleCount => _completedCycleCount;
 
@@ -124,7 +126,7 @@ namespace Hecton8.Construction
 
         internal static DeepDrillModule GetActiveModuleAt(int index)
         {
-            return index >= 0 && index < s_ActiveModules.Count ? s_ActiveModules[index] : null;
+            return index >= 0 && index < s_ActiveModuleCount ? s_ActiveModules[index] : null;
         }
 
         private void Awake()
@@ -262,33 +264,33 @@ namespace Hecton8.Construction
             ClearBufferedOutputState();
         }
 
-        public bool ValidatePlacement(Vector3 position, Quaternion rotation, out string blockReason)
+        internal bool ValidatePlacementWithService(
+            IInteractionSignalService interactionService,
+            Vector3 position,
+            Quaternion rotation,
+            out string blockReason)
         {
             Vector3 origin = position + Vector3.up * placementProbeHeight;
+            if (!math.all(math.isfinite(new float3(origin.x, origin.y, origin.z))))
+            {
+                blockReason = DefaultPlacementBlockedReason;
+                return false;
+            }
+
             if (_placementRayRequesterId == 0UL)
                 _placementRayRequesterId = EntityId.ToULong(gameObject.GetEntityId()) ^ 0x4452494C4C504C41UL;
 
-            IInteractionSignalService interactionService = GlobalRegistry.InteractionSignals;
             if (interactionService == null || !interactionService.IsInitialized)
             {
                 blockReason = DefaultPlacementBlockedReason;
                 return false;
             }
 
-            double3 absoluteOrigin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin);
-            InteractionPacket packet = new InteractionPacket(
-                unchecked((uint)_placementProbeToolId),
-                new Unity.Mathematics.float3((float)absoluteOrigin.x, (float)absoluteOrigin.y, (float)absoluteOrigin.z),
-                new Unity.Mathematics.float3(0f, -1f, 0f),
-                1f,
-                placementProbeHeight + placementProbeDistance,
-                (byte)ToolActionMode.Primary,
-                (byte)ToolStateBits.Active,
-                unchecked((uint)Time.frameCount));
-
             if (!interactionService.TryRaycastPrimary(
                     _placementRayRequesterId,
-                    in packet,
+                    origin,
+                    Vector3.down,
+                    math.max(0.001f, placementProbeHeight + placementProbeDistance),
                     seabedMask.value,
                     QueryTriggerInteraction.Ignore,
                     out RaycastHit hit))
@@ -309,21 +311,31 @@ namespace Hecton8.Construction
 
         private void RegisterModuleInstance()
         {
-            for (int i = 0; i < s_ActiveModules.Count; i++)
+            for (int i = 0; i < s_ActiveModuleCount; i++)
             {
                 if (ReferenceEquals(s_ActiveModules[i], this))
                     return;
             }
 
-            s_ActiveModules.Add(this);
+            if (s_ActiveModuleCount >= s_ActiveModules.Length)
+                return;
+
+            s_ActiveModules[s_ActiveModuleCount] = this;
+            s_ActiveModuleCount++;
         }
 
         private void UnregisterModuleInstance()
         {
-            for (int i = s_ActiveModules.Count - 1; i >= 0; i--)
+            for (int i = s_ActiveModuleCount - 1; i >= 0; i--)
             {
-                if (ReferenceEquals(s_ActiveModules[i], this))
-                    s_ActiveModules.RemoveAt(i);
+                if (!ReferenceEquals(s_ActiveModules[i], this))
+                    continue;
+
+                int lastIndex = s_ActiveModuleCount - 1;
+                s_ActiveModules[i] = s_ActiveModules[lastIndex];
+                s_ActiveModules[lastIndex] = null;
+                s_ActiveModuleCount--;
+                return;
             }
         }
 

@@ -52,13 +52,14 @@ namespace Hecton8.Core
         DataBusSaturated = 4
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct PoolDiagnosticsEventPayload
     {
-        public uint PoolHash;
-        public float MetricValue;
-        public ushort EventType;
-        public ushort FlagValue;
+        [FieldOffset(0)] public uint PoolHash;
+        [FieldOffset(4)] public float MetricValue;
+        [FieldOffset(8)] public ushort EventType;
+        [FieldOffset(10)] public ushort FlagValue;
+        [FieldOffset(12)] private uint _pad0;
     }
 
     public interface IObjectPoolDiagnosticsListener
@@ -131,13 +132,27 @@ namespace Hecton8.Core
         //  EVENTS
         // ════════════════════════════════════════════════════════════
 
-        // COLD ALLOC: RegistryBucket<IObjectPoolDiagnosticsListener>[4] - pool diagnostics listeners drained on dispatcher LateUpdate - owner: ObjectPoolDiagnostics
-        private static readonly RegistryBucket<IObjectPoolDiagnosticsListener> _listeners = new RegistryBucket<IObjectPoolDiagnosticsListener>(4);
+        private const int ListenerCapacity = 4;
+
+        private struct ListenerSlot
+        {
+            public IObjectPoolDiagnosticsListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[4] - pool diagnostics listeners drained on dispatcher LateUpdate - owner: ObjectPoolDiagnostics
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private const int PendingEventCapacity = 4;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         // COLD ALLOC: Dictionary<uint,string>[32] - pool names keyed by FNV-1a hash for cold-path diagnostics resolution - owner: ObjectPoolDiagnostics
         private static readonly Dictionary<uint, string> _poolNamesByHash = new Dictionary<uint, string>(32);
         private static NativeQueue<PoolDiagnosticsEventPayload> _pendingEvents;
         private static NativeQueue<PoolDiagnosticsEventPayload> _nextFrameEvents;
+        private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -186,7 +201,10 @@ namespace Hecton8.Core
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
+            for (int i = 0; i < ListenerCapacity; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
             _poolNamesByHash.Clear();
             _poolMetrics.Clear();
             _pendingEventCount = 0;
@@ -206,7 +224,16 @@ namespace Hecton8.Core
                 return;
 
             EnsureInitialized();
-            _listeners.Register(listener);
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
         }
 
         public static void Unregister(IObjectPoolDiagnosticsListener listener)
@@ -214,12 +241,23 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            _listeners.Unregister(listener);
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = --_listenerCount;
+                if (i != lastIndex)
+                    _listeners[i].Listener = _listeners[lastIndex].Listener;
+
+                _listeners[lastIndex].Clear();
+                return;
+            }
         }
 
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            if (!_pendingEvents.IsCreated || _listenerCount <= 0)
             {
                 DrainWithoutDispatch();
                 return;
@@ -238,14 +276,13 @@ namespace Hecton8.Core
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
                 scanBudget--;
-                IObjectPoolDiagnosticsListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
+                int count = _listenerCount;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IObjectPoolDiagnosticsListener listener = rawArray[i];
+                        IObjectPoolDiagnosticsListener listener = _listeners[i].Listener;
                         if (listener != null)
                             listener.OnPoolDiagnosticsEvent(in payload);
                     }
@@ -490,7 +527,7 @@ namespace Hecton8.Core
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<PoolDiagnosticsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - deferred pool diagnostics lane flushed by SystemDispatcher LateUpdate - owner: ObjectPoolDiagnostics
+                _pendingEvents = new NativeQueue<PoolDiagnosticsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - deferred pool diagnostics lane flushed by SystemDispatcher LateUpdate - owner: ObjectPoolDiagnostics
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -502,7 +539,7 @@ namespace Hecton8.Core
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<PoolDiagnosticsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - next-frame pool diagnostics lane prevents same-frame reentrant dispatch - owner: ObjectPoolDiagnostics
+                _nextFrameEvents = new NativeQueue<PoolDiagnosticsEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - next-frame pool diagnostics lane prevents same-frame reentrant dispatch - owner: ObjectPoolDiagnostics
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

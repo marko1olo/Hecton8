@@ -47,6 +47,7 @@ namespace Hecton8.Core.Memory
         JobAdmission = 149,
         AnimationLocomotion = 150,
         TradeMarauders = 151,
+        WorldResourceSpawnerRuntime = 157,
         SimulationBucketer = 161,
         AmbientBiota = 162,
         Vfx = 192,
@@ -65,6 +66,8 @@ namespace Hecton8.Core.Memory
         AudioPlayerCritical = 261,
         AudioStemMixer = 262,
         AudioDynamicSynth = 263,
+        AudioVocalSynthesis = 264,
+        GameplayRadiation = 274,
         External = 65534
     }
 
@@ -481,6 +484,16 @@ namespace Hecton8.Core.Memory
         AudioDynamicSynthPresetRules = 71709,
         AudioDynamicSynthGrainBank = 71710,
         AudioDynamicSynthSharedState = 71711,
+        AudioVocalSynthesisState = 72420,
+        AudioVocalSynthesisCodecState = 72421,
+        AudioVocalSynthesisTelemetry = 72422,
+        AudioVocalSynthesisTelemetryCursor = 72423,
+        AudioVocalSynthesisWaveform = 72424,
+        AudioVocalSynthesisWaveformCursor = 72425,
+        AudioVocalSynthesisMockBankBytes = 72426,
+        AudioVocalSynthesisMockBankRecords = 72427,
+        AudioVocalSynthesisCsvMetadata = 72428,
+        AudioVocalSynthesisCsvScratch = 72429,
         Shinobu220BulkheadStates = 72000,
         Shinobu220BulkheadAups = 72001,
         Shinobu220BulkheadPlanes = 72002,
@@ -648,6 +661,10 @@ namespace Hecton8.Core.Memory
         PdaFrequencyGpuSegments = 515,
         PdaFrequencyStageTargets = 516,
         PdaFrequencyTelemetryRing = 517,
+        TerminalDecryptionPuzzles = 71376,
+        TerminalDecryptionTerminals = 71377,
+        TerminalDecryptionKnobInput = 71378,
+        TerminalDecryptionTelemetryRing = 71379,
         SurvivalDatabaseStableHashes = 518,
         SurvivalDatabaseMassKilograms = 519,
         SurvivalDatabaseVolumeLiters = 520,
@@ -690,6 +707,7 @@ namespace Hecton8.Core.Memory
         VehicleMotorSweepCommands = 557,
         VehicleMotorSweepResults = 558,
         VaultSovereigntyTelemetryRing = 559,
+        VoxelSdfPayloadDescriptor = 620,
         MarineSnowTuningConstants = 622,
         MarineSnowDynamicWakes = 623,
         MarineSnowMockFlowField = 624,
@@ -818,11 +836,17 @@ namespace Hecton8.Core.Memory
         ShinobuPlasmaBeamMockSignals = 71126,
         ShinobuPlasmaBeamAcousticTaps = 71127,
         ShinobuPlasmaBeamCsvScratch = 71128,
+        ShinobuWaterOpticsTuning = 71129,
         ShinobuVolumetricFogParams = 71130,
         ShinobuVolumetricFogPointLights = 71131,
         ShinobuVolumetricFogTelemetryRing = 71132,
         ShinobuVolumetricFogExtinctionProfiles = 71133,
         ShinobuVolumetricFogCsvScratch = 71134,
+        ShinobuWaterOpticsParams = 71135,
+        ShinobuWaterOpticsProfiles = 71136,
+        ShinobuWaterOpticsTelemetryRing = 71137,
+        ShinobuWaterOpticsTelemetryCursor = 71138,
+        ShinobuWaterOpticsCsvScratch = 71139,
         ShinobuFabricationJobs = 71140,
         ShinobuFabricationRuntime = 71141,
         ShinobuFabricationGpuPayload = 71142,
@@ -830,6 +854,29 @@ namespace Hecton8.Core.Memory
         ShinobuFabricationTuning = 71145,
         ShinobuFabricationTimingLookup = 71146,
         ShinobuFabricationCsvScratch = 71147,
+        ShinobuMesofaunaStates = 71180,
+        ShinobuMesofaunaMockPreyTargets = 71181,
+        ShinobuMesofaunaVisualSync = 71182,
+        ShinobuMesofaunaTelemetryRing = 71183,
+        ShinobuMesofaunaTuning = 71184,
+        ShinobuMesofaunaTargetHashBucketHeads = 71185,
+        ShinobuMesofaunaTargetHashNext = 71186,
+        ShinobuMesofaunaSpeciesProfiles = 71187,
+        ShinobuMesofaunaSpeciesProfileCount = 71188,
+        ShinobuMesofaunaCsvScratch = 71189,
+        ShinobuStressDirectorRules = 71190,
+        ShinobuStressDirectorRuleLinks = 71191,
+        ShinobuStressDirectorCandidates = 71192,
+        ShinobuStressDirectorSelection = 71193,
+        ShinobuStressDirectorInput = 71194,
+        ShinobuStressDirectorTuning = 71195,
+        ShinobuStressDirectorTelemetry = 71196,
+        ShinobuStressDirectorCounters = 71197,
+        ShinobuStressDirectorCsvScratch = 71198,
+        ShinobuStressDirectorFrustumPlanes = 71199,
+        ShinobuStressDirectorOwnedSlots = 71200,
+        ShinobuStressDirectorInventoryTickets = 71201,
+        ShinobuStressDirectorSpawnDebug = 71202,
         SaveWorldPagerWriteArena = 70200,
         SaveWorldPagerReadArena = 70201,
         SaveWorldPagerReadSlotStates = 70202,
@@ -1004,6 +1051,9 @@ namespace Hecton8.Core.Memory
         ShinobuInputXRInputStates = 70531,
         ShinobuInputXRLookAtRayCommands = 70532,
         ShinobuInputCsvScratch = 70533,
+        ShinobuPredictedInputRing = 75000,
+        ShinobuPredictedInputAupTargets = 75001,
+        ShinobuInputPredictionTelemetry = 75002,
         BabelUtf8Blob = 70541,
         BabelTelemetryRing = 70542,
         BabelStagedLocale = 70543,
@@ -1091,6 +1141,21 @@ namespace Hecton8.Core.Memory
         ConstructionSocketBounds = 70367,
         ConstructionSocketConnections = 70368,
         ConstructionSocketCsvScratch = 70369,
+        FoundationSnappingModules = 70960,
+        FoundationSnappingPylonMatrices = 70961,
+        FoundationSnappingPylonSurfaces = 70962,
+        FoundationSnappingPerModuleCounters = 70963,
+        FoundationSnappingFrameCounters = 70964,
+        FoundationSnappingTelemetryRing = 70965,
+        FoundationSnappingTelemetryCursor = 70966,
+        FoundationSnappingTuning = 70967,
+        FoundationSnappingMockSdfDistances = 70968,
+        FoundationSnappingSdfConfig = 70969,
+        FoundationSnappingRayOrigins = 70970,
+        FoundationSnappingProfileRanges = 70971,
+        FoundationSnappingCsvScratch = 70972,
+        FoundationSnappingDebugRays = 70973,
+        FoundationSnappingIndirectArgs = 70974,
         BaseModuleCatalogState = 70330,
         BaseModuleCatalogDefinitions = 70331,
         BaseModuleCatalogSockets = 70332,
@@ -1130,6 +1195,7 @@ namespace Hecton8.Core.Memory
         ShinobuTissueCompartments = 70235,
         ShinobuMockDiveProfile = 70236,
         ShinobuTissueCsvScratch = 70237,
+        ShinobuMetabolismStates = 70238,
         ShinobuDroneFleetStates = 70240,
         ShinobuDroneFleetStateBackBuffer = 70241,
         ShinobuDroneFleetRenderMatrices = 70242,
@@ -1182,6 +1248,8 @@ namespace Hecton8.Core.Memory
         SystemDispatcherDomainFenceHandles = 70627,
         SystemDispatcherFenceTelemetry = 70628,
         SystemDispatcherFenceTelemetryCursor = 70629,
+        SystemDispatcherJobSchedulingProfiles = 70638,
+        ShinobuScannerToolBlackBox = 70639,
         ShinobuScannerEntities = 70640,
         ShinobuScannerMetadata = 70641,
         ShinobuScannerOcclusionZones = 70642,
@@ -1278,6 +1346,24 @@ namespace Hecton8.Core.Memory
         ShinobuCausticsTelemetryCursor = 70778,
         ShinobuCausticsProfiles = 70779,
         ShinobuCausticsCsvScratch = 70799,
+        UberNoirReconstructionConstants = 71030,
+        UberNoirReconstructionTelemetry = 71031,
+        UberNoirReconstructionAestheticProfiles = 71032,
+        UberNoirReconstructionCsvScratch = 71033,
+        UberNoirReconstructionMockSignal = 71034,
+        Shinobu235NoirConstants = 71040,
+        Shinobu235NoirInput = 71041,
+        Shinobu235NoirTelemetry = 71042,
+        Shinobu235NoirTuning = 71043,
+        Shinobu235NoirColorProfiles = 71044,
+        Shinobu235NoirCsvScratch = 71045,
+        Shinobu236BilateralDrsParams = 71050,
+        Shinobu236BilateralDrsTuning = 71051,
+        Shinobu236BilateralDrsTelemetry = 71052,
+        Shinobu236BilateralDrsTelemetryCursor = 71053,
+        Shinobu236BilateralDrsProfiles = 71054,
+        Shinobu236BilateralDrsCsvScratch = 71055,
+        Shinobu236BilateralDrsMockState = 71056,
         BiomeTransitionStates = 71220,
         BiomeTransitionCenters = 71221,
         BiomeTransitionInfluences = 71222,
@@ -1297,6 +1383,9 @@ namespace Hecton8.Core.Memory
         VisualPressureAgingTuning = 71244,
         VisualPressureAgingCsvScratch = 71245,
         VisualPressureAgingMockTemperature = 71246,
+        UberNoirInstanceDegradation = 71247,
+        UberNoirDegradationTelemetryRing = 71248,
+        UberNoirDegradationTelemetryCursor = 71249,
         ShinobuFluidCompartmentFront = 70780,
         ShinobuFluidCompartmentBack = 70781,
         ShinobuFluidIntegrityState = 70782,
@@ -1316,6 +1405,23 @@ namespace Hecton8.Core.Memory
         ShinobuFluidCsvScratch = 70796,
         ShinobuFluidMockBreach = 70797,
         ShinobuFluidCompartmentTelemetry = 70798,
+        ShinobuNetcodeFuzzerInput = 71880,
+        ShinobuNetcodeFuzzerHostAuthoritativeInput = 71881,
+        ShinobuNetcodeFuzzerClientAuthoritativeInput = 71882,
+        ShinobuNetcodeFuzzerClientAppliedInput = 71883,
+        ShinobuNetcodeFuzzerHostKinematics = 71884,
+        ShinobuNetcodeFuzzerClientKinematics = 71885,
+        ShinobuNetcodeFuzzerHostInventory = 71886,
+        ShinobuNetcodeFuzzerClientInventory = 71887,
+        ShinobuNetcodeFuzzerHostEcosystem = 71888,
+        ShinobuNetcodeFuzzerClientEcosystem = 71889,
+        ShinobuNetcodeFuzzerSnapshotRing = 71890,
+        ShinobuNetcodeFuzzerTelemetryRing = 71891,
+        ShinobuNetcodeFuzzerVisualNoise = 71892,
+        ShinobuNetcodeFuzzerResult = 71893,
+        ShinobuNetcodeFuzzerDeliveryTicks = 71894,
+        ShinobuNetcodeFuzzerHostDispatcherState = 71895,
+        ShinobuNetcodeFuzzerClientDispatcherState = 71896,
         ShinobuActiveEquipmentState = 71300,
         ShinobuActiveEquipmentPublishedState = 71301,
         ShinobuActiveEquipmentAupSamples = 71302,
@@ -1344,6 +1450,19 @@ namespace Hecton8.Core.Memory
         ShinobuAuxiliaryProfiles = 71488,
         ShinobuAuxiliaryCsvScratch = 71489,
         ShinobuAuxiliaryActiveEquipmentState = 71490,
+        ShinobuAuxiliaryTetherAnchors = 71491,
+        PropwashGpuEventRing = 71492,
+        PropwashGpuRingCursor = 71493,
+        PropwashGpuTelemetryRing = 71494,
+        PropwashGpuTuning = 71495,
+        PropwashGpuWakeProfiles = 71496,
+        JacobianFoamParams = 71920,
+        JacobianFoamTuning = 71921,
+        JacobianFoamWakeImpacts = 71922,
+        JacobianFoamTelemetryRing = 71923,
+        JacobianFoamProfiles = 71924,
+        JacobianFoamCsvScratch = 71925,
+        JacobianFoamDumpScratch = 71926,
         ShinobuTradeMarauderStates = 70720,
         ShinobuTradeMarauderInventories = 70721,
         ShinobuTradeMarauderEconomyWeights = 70722,
@@ -1425,6 +1544,11 @@ namespace Hecton8.Core.Memory
         ShinobuSimdVisibleIndices = 71640,
         ShinobuSimdVisibleCount = 71641,
         ShinobuSimdHydrodynamicTuning = 71642,
+        ShinobuBuoyancySleepSdfDensity = 71643,
+        ShinobuBuoyancySleepSdfConfig = 71644,
+        ShinobuBuoyancySleepTelemetryRing = 71645,
+        ShinobuBuoyancySleepTelemetryCursor = 71646,
+        ShinobuBuoyancyMaterialSettlingProfiles = 71647,
         ShinobuSeaglideStates = 71660,
         ShinobuSeaglideRequests = 71661,
         ShinobuSeaglideForcePackets = 71662,
@@ -1437,7 +1561,58 @@ namespace Hecton8.Core.Memory
         ShinobuSeaglideVisualStates = 71669,
         ShinobuSeaglideAudioSignals = 71670,
         ShinobuSeaglideCavitationSignals = 71671,
-        ShinobuSeaglideCsvScratch = 71672
+        ShinobuSeaglideCsvScratch = 71672,
+        ShinobuStormPropagationState = 71712,
+        ShinobuStormPropagationWriteState = 71713,
+        ShinobuStormPropagationTuning = 71714,
+        ShinobuStormPropagationTelemetryRing = 71715,
+        ShinobuStormPropagationTelemetryCursor = 71716,
+        ShinobuStormPropagationMockWeather = 71717,
+        ShinobuStormPropagationImpactProfiles = 71718,
+        ShinobuStormPropagationCsvScratch = 71719,
+        ShinobuStormPropagationDumpScratch = 71720,
+        ShinobuStormPropagationFlowScalar = 71721,
+        ShinobuStormPropagationAudioScalar = 71722,
+        ShinobuStormPropagationBiolumScalar = 71723,
+        ShinobuStormPropagationFogScalar = 71724,
+        Shinobu251AddedMassProfiles = 71730,
+        Shinobu251HydrodynamicsTelemetry = 71731,
+        Shinobu251HullProfiles = 71732,
+        Shinobu251CsvScratch = 71733,
+        Shinobu251AddedMassTuning = 71734,
+        ShinobuKccEnvironmentProfile = 71760,
+        ShinobuKccEnvironmentGrid = 71761,
+        ShinobuKccEnvironmentFlowField = 71762,
+        ShinobuKccEnvironmentSdf = 71763,
+        ShinobuKccEnvironmentMockMetabolism = 71764,
+        ShinobuKccEnvironmentDebug = 71765,
+        ShinobuKccEnvironmentTelemetryRing = 71766,
+        ShinobuKccEnvironmentTelemetryCursor = 71767,
+        ShinobuKccEnvironmentProfiles = 71768,
+        ShinobuKccEnvironmentProfileBuckets = 71769,
+        ShinobuKccEnvironmentProfileHashes = 71770,
+        Shinobu263WaveSpectrum = 71800,
+        Shinobu263WaveTuning = 71801,
+        Shinobu263WaveRequests = 71802,
+        Shinobu263WaveResults = 71803,
+        Shinobu263WaveMacroGrid = 71804,
+        Shinobu263WaveTelemetryRing = 71805,
+        Shinobu263WaveTelemetryCursor = 71806,
+        Shinobu263WaveCsvScratch = 71807,
+        Shinobu263WaveProfiles = 71808,
+        Shinobu263WaveCounters = 71809,
+        Shinobu274RadiationStates = 72740,
+        Shinobu274RadiationSources = 72741,
+        Shinobu274RadiationSourceCount = 72742,
+        Shinobu274RadiationTelemetryRing = 72743,
+        Shinobu274RadiationTelemetryCursor = 72744,
+        Shinobu274RadiationProfiles = 72745,
+        Shinobu274RadiationCsvScratch = 72746,
+        Shinobu274RadiationTuning = 72747,
+        Shinobu274RadiationDamageSignal = 72748,
+        Shinobu274RadiationGridRead = 72749,
+        Shinobu274RadiationGridWrite = 72750,
+        Shinobu274RadiationGridSource = 72751
     }
 
     [Flags]
@@ -1636,6 +1811,7 @@ namespace Hecton8.Core.Memory
         private static int _eventBlackBoxRecordedCount;
         private static uint _blackBoxSequence;
         private static uint _eventBlackBoxSequence;
+        private static uint _telemetryFrameId;
         private static int _allocationGeneration = 1;
         private static int _transitionCutoffGeneration = NoTransitionCutoffGeneration;
         private static int _transitionSequence;
@@ -1695,6 +1871,17 @@ namespace Hecton8.Core.Memory
                 return;
 
             RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Heartbeat);
+        }
+
+        public static void SetTelemetryFrameId(uint frameId)
+        {
+            _telemetryFrameId = frameId;
+        }
+
+        internal static uint ResolveTelemetryFrame(uint sequence)
+        {
+            uint frameId = _telemetryFrameId;
+            return frameId != 0u ? frameId : sequence;
         }
 
 #if UNITY_EDITOR
@@ -1770,6 +1957,7 @@ namespace Hecton8.Core.Memory
             _eventBlackBoxRecordedCount = 0;
             _blackBoxSequence = 0u;
             _eventBlackBoxSequence = 0u;
+            _telemetryFrameId = 0u;
             _allocationGeneration = 1;
             _transitionCutoffGeneration = NoTransitionCutoffGeneration;
             _transitionSequence = 0;
@@ -2350,6 +2538,7 @@ namespace Hecton8.Core.Memory
             _eventBlackBoxRecordedCount = 0;
             _blackBoxSequence = 0u;
             _eventBlackBoxSequence = 0u;
+            _telemetryFrameId = 0u;
             _initialized = false;
         }
 
@@ -2936,7 +3125,7 @@ namespace Hecton8.Core.Memory
             entry.FatalLeakPreventedCount = _fatalLeakPreventedCount;
             entry.Owner = (ushort)owner;
             entry.Flags = (ushort)flags;
-            entry.Frame = unchecked((uint)Time.frameCount);
+            entry.Frame = ResolveTelemetryFrame(sequence);
             return entry;
         }
 

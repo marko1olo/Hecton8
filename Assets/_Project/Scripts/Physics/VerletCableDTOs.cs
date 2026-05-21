@@ -117,6 +117,38 @@ namespace Hecton8.Physics
         }
     }
 
+    internal static class VerletCableSimdMath
+    {
+        private const float TwoPi = 6.28318530718f;
+        private const float InvTwoPi = 0.15915494309f;
+        private const float HalfPi = 1.57079632679f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float LengthFromSq(float lengthSq)
+        {
+            float finiteSq = math.select(0f, lengthSq, math.isfinite(lengthSq));
+            float safeSq = math.max(finiteSq, 0.0001f);
+            return math.select(0f, safeSq * math.rsqrt(math.max(safeSq, 0.0001f)), finiteSq > 0.0001f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SinPolynomial7(float radians)
+        {
+            float safeRadians = math.select(0f, radians, math.isfinite(radians));
+            float x = safeRadians - math.floor((safeRadians + math.PI) * InvTwoPi) * TwoPi;
+            x = math.select(x, math.PI - x, x > HalfPi);
+            x = math.select(x, -math.PI - x, x < -HalfPi);
+            float x2 = x * x;
+            return x * (1f + x2 * (-0.16666667f + x2 * (0.008333331f + x2 * -0.00019840874f)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float CosPolynomial7(float radians)
+        {
+            return SinPolynomial7(radians + HalfPi);
+        }
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VerletNodeDTO
     {
@@ -257,7 +289,7 @@ namespace Hecton8.Physics
         [FieldOffset(0)] public float4 Color;
         [FieldOffset(16)] public float4 StressColor;
         [FieldOffset(32)] public float4 Params0; // x=global stress, y=segment stress scale, z=point count, w=radius.
-        [FieldOffset(48)] public float4 Params1; // x=indirect mode, y=visual tier, z=crystal density, w=silt intensity.
+        [FieldOffset(48)] public float4 Params1; // x=indirect mode, y=visual quality, z=crystal density, w=silt intensity.
         [FieldOffset(64)] public float4 Params2; // x=visual clock, yzw reserved for visual-only overkill.
     }
 
@@ -277,7 +309,7 @@ namespace Hecton8.Physics
         [FieldOffset(40)] public float ReelingSpeedMetersPerSecond;
         [FieldOffset(44)] public float MaxTension;
         [FieldOffset(48)] public float3 LocalOrigin;
-        [FieldOffset(60)] public float HardwareTier;
+        [FieldOffset(60)] public float VisualQualityWeight;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -405,7 +437,7 @@ namespace Hecton8.Physics
             if (!math.isfinite(lenSq))
                 return float.MaxValue;
 
-            return math.sqrt(math.max(lenSq, 0f)) - safeRadius;
+            return VerletCableSimdMath.LengthFromSq(lenSq) - safeRadius;
         }
 
         internal static float3 SafeNormal(float3 vector, float3 fallback)
@@ -414,7 +446,7 @@ namespace Hecton8.Physics
             if (!math.isfinite(lenSq) || lenSq <= 0.000001f)
                 return math.all(math.isfinite(fallback)) ? fallback : new float3(0f, 1f, 0f);
 
-            return vector * math.rsqrt(lenSq);
+            return vector * math.rsqrt(math.max(lenSq, 0.000001f));
         }
     }
 
@@ -638,10 +670,10 @@ namespace Hecton8.Physics
     {
         [NoAlias] public NativeArray<VerletNodeDTO> Nodes;
         [NoAlias] public NativeArray<VerletConstraintDTO> Constraints;
-        [NoAlias] public NativeArray<float> SegmentTensions;
-        [NoAlias] public NativeArray<float> SolverStats;
-        [NoAlias] public NativeArray<CableTensionForceDTO> TensionForces;
-        [NoAlias] public NativeArray<CableSnappedSignal> SnapSignals;
+        [WriteOnly, NoAlias] public NativeArray<float> SegmentTensions;
+        [WriteOnly, NoAlias] public NativeArray<float> SolverStats;
+        [WriteOnly, NoAlias] public NativeArray<CableTensionForceDTO> TensionForces;
+        [WriteOnly, NoAlias] public NativeArray<CableSnappedSignal> SnapSignals;
         [NoAlias] public NativeArray<int> SnapSignalCount;
         public int IterationCount;
         public int ActiveConstraintCount;
@@ -685,7 +717,8 @@ namespace Hecton8.Physics
                         continue;
                     }
 
-                    float distance = math.sqrt(lenSq);
+                    float distance = math.max(VerletCableSimdMath.LengthFromSq(lenSq), 0.0001f);
+                    float invDistance = math.rcp(distance);
                     float restLength = math.max(VerletCableLayout.MinConstraintLength, constraint.RestLength);
                     float error = distance - restLength;
                     float absError = math.abs(error);
@@ -695,10 +728,10 @@ namespace Hecton8.Physics
 
                     float stretch01 = math.max(0f, error) * math.rcp(math.max(restLength, VerletCableLayout.MinConstraintLength));
                     float stiffness = math.saturate(constraint.Stiffness);
-                    float tension = math.max(0f, error) * stiffness * math.max(0f, TensionScale);
+                    float tension = ClampTension(math.max(0f, error) * stiffness * SanitizeNonNegative(TensionScale));
                     peakTension = math.max(peakTension, tension);
                     WriteTension(constraintIndex, tension);
-                    WriteTensionForce(constraintIndex, delta * math.rsqrt(lenSq), tension, nodeA.Position);
+                    WriteTensionForce(constraintIndex, SanitizeDirection(delta * invDistance), tension, nodeA.Position);
 
                     if (SnapStretch01 > 0f && stretch01 >= SnapStretch01)
                     {
@@ -722,7 +755,7 @@ namespace Hecton8.Physics
                     if (invMassSum <= 0.000001f)
                         continue;
 
-                    float3 direction = delta * math.rsqrt(lenSq);
+                    float3 direction = SanitizeDirection(delta * invDistance);
                     float3 correction = direction * (error * stiffness);
                     if (invMassA > 0f)
                     {
@@ -741,11 +774,11 @@ namespace Hecton8.Physics
             if (SolverStats.IsCreated)
             {
                 if (SolverStats.Length > 0)
-                    SolverStats[0] = peakTension;
+                    SolverStats[0] = ClampTension(peakTension);
                 if (SolverStats.Length > 1)
-                    SolverStats[1] = errorSamples > 0 ? errorSum * math.rcp(errorSamples) : 0f;
+                    SolverStats[1] = errorSamples > 0 && math.isfinite(errorSum) ? math.max(0f, errorSum * math.rcp(errorSamples)) : 0f;
                 if (SolverStats.Length > 2)
-                    SolverStats[2] = maxError;
+                    SolverStats[2] = math.isfinite(maxError) ? math.max(0f, maxError) : 0f;
                 if (SolverStats.Length > 3)
                     SolverStats[3] = snappedCount;
             }
@@ -754,7 +787,7 @@ namespace Hecton8.Physics
         private void WriteTension(int index, float tension)
         {
             if (SegmentTensions.IsCreated && index >= 0 && index < SegmentTensions.Length)
-                SegmentTensions[index] = math.isfinite(tension) ? math.max(0f, tension) : 0f;
+                SegmentTensions[index] = ClampTension(tension);
         }
 
         private void WriteTensionForce(int index, float3 direction, float tension, float3 applicationPoint)
@@ -762,14 +795,30 @@ namespace Hecton8.Physics
             if (!TensionForces.IsCreated || index < 0 || index >= TensionForces.Length)
                 return;
 
-            float safeTension = math.isfinite(tension) ? math.max(0f, tension) : 0f;
+            float safeTension = ClampTension(tension);
+            float3 safeDirection = SanitizeDirection(direction);
             TensionForces[index] = new CableTensionForceDTO
             {
-                Force = direction * safeTension,
+                Force = safeDirection * safeTension,
                 ApplicationPoint = applicationPoint,
                 Tension = safeTension,
                 CableId = CableId
             };
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float ClampTension(float tension)
+        {
+            return math.min(SanitizeNonNegative(tension), TetherAupRuntimeConstants.MaxTensionForceNewtons);
+        }
+
+        private static float3 SanitizeDirection(float3 direction)
+        {
+            return math.all(math.isfinite(direction)) ? direction : float3.zero;
         }
 
         private void WriteSnapSignal(int constraintIndex, float3 position, float tension, float stretch01)

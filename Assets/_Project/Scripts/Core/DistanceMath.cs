@@ -39,21 +39,21 @@ namespace Hecton8.Core
             _hasPushedShaderMode = false;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsHighQuality(float distanceSq)
         {
             return math.isfinite(distanceSq) && distanceSq < HighQualityDistanceSq;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsHighQuality(float distanceSq, HectonQualityTier scalabilityTier)
         {
             return IsHighQualityTier(scalabilityTier) && IsHighQuality(distanceSq);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsHighQualityTier(HectonQualityTier scalabilityTier)
         {
@@ -61,35 +61,35 @@ namespace Hecton8.Core
             return tierOffset <= (uint)((int)HectonQualityTier.Ultra - (int)HectonQualityTier.High);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MathLodMode ResolveMathLodMode(HectonQualityTier scalabilityTier)
         {
             return IsHighQualityTier(scalabilityTier) ? MathLodMode.High : MathLodMode.Low;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 Normalize(float3 value, float distanceSq)
         {
             return Normalize(value, distanceSq, new float3(0f, 0f, 1f));
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 Normalize(float3 value, float distanceSq, HectonQualityTier scalabilityTier)
         {
             return Normalize(value, distanceSq, scalabilityTier, new float3(0f, 0f, 1f));
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 Normalize(float3 value, float distanceSq, float3 fallback)
         {
             return Normalize(value, distanceSq, HectonQualityTier.Ultra, fallback);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 Normalize(float3 value, float distanceSq, HectonQualityTier scalabilityTier, float3 fallback)
         {
@@ -105,14 +105,14 @@ namespace Hecton8.Core
                 : DominantAxisOrDefault(value, fallback);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sin(float radians, float distanceSq)
         {
             return Sin(radians, distanceSq, HectonQualityTier.Ultra);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sin(float radians, float distanceSq, HectonQualityTier scalabilityTier)
         {
@@ -121,21 +121,21 @@ namespace Hecton8.Core
                 : TriangleSin(radians);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Cos(float radians, float distanceSq)
         {
             return Sin(radians + HalfPi, distanceSq);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Cos(float radians, float distanceSq, HectonQualityTier scalabilityTier)
         {
             return Sin(radians + HalfPi, distanceSq, scalabilityTier);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float DistanceBlend01(float distanceSq, float nearDistanceSq, float farDistanceSq)
         {
@@ -143,7 +143,7 @@ namespace Hecton8.Core
             return math.saturate((distanceSq - nearDistanceSq) * math.rcp(spanSq));
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float DistanceBlendMeters01(float distanceSq, float nearDistanceMeters, float farDistanceMeters)
         {
@@ -153,21 +153,21 @@ namespace Hecton8.Core
             return math.saturate((distanceMeters - nearDistanceMeters) * math.rcp(spanMeters));
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float LerpByDistanceSq(float nearValue, float farValue, float distanceSq, float nearDistanceSq, float farDistanceSq)
         {
             return math.lerp(nearValue, farValue, DistanceBlend01(distanceSq, nearDistanceSq, farDistanceSq));
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 LerpByDistanceSq(float3 nearValue, float3 farValue, float distanceSq, float nearDistanceSq, float farDistanceSq)
         {
             return math.lerp(nearValue, farValue, DistanceBlend01(distanceSq, nearDistanceSq, farDistanceSq));
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 DominantAxisOrDefault(float3 value, float3 fallback)
         {

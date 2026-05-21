@@ -12,7 +12,7 @@ namespace Hecton8.Interaction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [AddComponentMenu("Hecton8/Interaction/Physical Snap Switch")]
-    public sealed class PhysicalSnapSwitch : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver
+    public sealed class PhysicalSnapSwitch : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver, IGlobalRegistryHotSwapListener
     {
         private const uint PhysicalSwitchToolId = 0x53574954u;
         private const float RadiansPerDegree = 0.0174532924f;
@@ -78,9 +78,12 @@ namespace Hecton8.Interaction
         private float _resolvedSignalRangeDegrees = 56f;
         private bool _isOn;
         private bool _registered;
+        private bool _registeredHotSwapListener;
+        private bool _tickDormant;
         private bool _receiverRegistered;
         private int _lastSampleFrame = -1;
         private Collider _registeredActivationVolume;
+        private IAudioService _audioService;
 
         public bool IsOn => _isOn;
         public Collider ActivationCollider => activationVolume;
@@ -137,6 +140,7 @@ namespace Hecton8.Interaction
         {
             _cachedTransform = transform;
             ResolveReferences();
+            RefreshColdRegistryReferences();
             _isOn = initialOn;
             _currentAngle = _isOn ? _resolvedOnAngleDegrees : _resolvedOffAngleDegrees;
             _targetAngle = _currentAngle;
@@ -146,6 +150,8 @@ namespace Hecton8.Interaction
         private void OnEnable()
         {
             ResolveReferences();
+            RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
             RegisterCollider();
             RefreshTickRegistration();
         }
@@ -153,6 +159,7 @@ namespace Hecton8.Interaction
         private void OnDisable()
         {
             Unregister();
+            TryUnregisterHotSwapListener();
             UnregisterCollider();
             _snapCooldownRemaining = 0f;
             _lastSampleFrame = -1;
@@ -161,11 +168,15 @@ namespace Hecton8.Interaction
         private void OnDestroy()
         {
             Unregister();
+            TryUnregisterHotSwapListener();
             UnregisterCollider();
         }
 
         public void Tick(float dt)
         {
+            if (_tickDormant)
+                return;
+
             float safeDeltaTime = SanitizeDeltaTime(dt);
             if (_snapCooldownRemaining > 0f)
                 _snapCooldownRemaining = math.max(0f, _snapCooldownRemaining - safeDeltaTime);
@@ -178,7 +189,7 @@ namespace Hecton8.Interaction
                 _currentAngle = _targetAngle;
                 ApplyAngle(_currentAngle);
                 if (_snapCooldownRemaining <= 0f)
-                    Unregister();
+                    _tickDormant = true;
                 return;
             }
 
@@ -252,10 +263,12 @@ namespace Hecton8.Interaction
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying)
                 return;
 
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (_registered)
+                _tickDormant = false;
         }
 
         private void RefreshTickRegistration()
@@ -270,6 +283,45 @@ namespace Hecton8.Interaction
         {
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
+            _tickDormant = false;
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _audioService = GlobalRegistry.Audio;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    RefreshTickRegistration();
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private bool ResolveDesiredState(Vector3 localPoint)
@@ -429,7 +481,9 @@ namespace Hecton8.Interaction
             if (interactionSignals == null || !interactionSignals.IsInitialized || !IsFiniteVector(handPosition))
                 return false;
 
-            double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(handPosition);
+            if (!TryResolveRuntimeAup(handPosition, out double3 absoluteHitPoint))
+                return false;
+
             Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
             if (!IsFiniteVector(fallbackForward))
                 fallbackForward = Vector3.forward;
@@ -438,9 +492,10 @@ namespace Hecton8.Interaction
             if (!math.all(math.isfinite(absoluteHitPoint)) || !IsFiniteVector(safeDirection))
                 return false;
 
+            float3 hitPointAup = new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z);
             InteractionPacket packet = new InteractionPacket(
                 PhysicalSwitchToolId,
-                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
+                hitPointAup,
                 (float3)safeDirection,
                 desiredOn ? 1f : 0.5f,
                 _resolvedSignalRangeDegrees,
@@ -450,13 +505,35 @@ namespace Hecton8.Interaction
             InteractionSignal signal = new InteractionSignal(
                 packet,
                 0,
-                new float3((float)absoluteHitPoint.x, (float)absoluteHitPoint.y, (float)absoluteHitPoint.z),
+                hitPointAup,
                 (float3)(-safeDirection),
                 desiredOn ? 1f : 0.5f,
                 (byte)InteractionEffectType.Drill,
-                0);
+                0,
+                absoluteHitPoint,
+                InteractionSignal.HitPointAupDoubleValid);
 
             return interactionSignals.Publish(in signal, activationVolume);
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!resolvedAup.IsFinite())
+                return false;
+
+            absoluteAup = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
         }
 
         private void EnqueueClickHaptic(Collider handSourceCollider, PhysicalHandSide fallbackHandSide)
@@ -472,7 +549,7 @@ namespace Hecton8.Interaction
 
         private void QueueSnapAudio(Vector3 handPosition)
         {
-            IAudioService audio = GlobalRegistry.Audio;
+            IAudioService audio = _audioService;
             if (!emitSnapAudio || snapAudioEventId == 0u || audio == null || !audio.IsInitialized)
                 return;
 

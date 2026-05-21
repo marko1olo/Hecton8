@@ -53,6 +53,148 @@ Verification:
   <compile status="BLOCKED_BY_CPU_RULE" observed_cpu_load="100" />
 </SELF_AUDIT>
 
+## 2026-05-21 - Tail Audit: Telemetry Schedule NaN Guard
+
+What was wrong:
+- Active telemetry rows used `math.max(0f, LastScheduleMicroseconds)`.
+- A schedule-time scalar should be finite-guarded before entering the 300-frame black-box ring.
+
+What was done:
+- Replaced the write with `BulkheadContainmentMath.SanitizePositive(LastScheduleMicroseconds, 0f)`.
+
+Cinematic Cheats used:
+- None needed. This is black-box hygiene; no gameplay truth or visual route changed.
+
+Exact Microseconds saved:
+- 0 us claimed. Added cost is one finite scalar check per active telemetry row. Avoided cost is forensic corruption from a non-finite timing scalar.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_TELEMETRY_SCHEDULE_NAN_GUARD">
+  <telemetry result="PASS_STATIC">Active black-box rows sanitize `LastScheduleMicroseconds` with `BulkheadContainmentMath.SanitizePositive`.</telemetry>
+  <dependency result="PASS_STATIC">No `JobHandle.Complete()` was added for timing; the metric remains schedule-time only.</dependency>
+  <hot_path result="PASS_STATIC">No allocation, DTO layout, BufferID, authority route, or assembly route changed.</hot_path>
+  <scan_guard result="PASS_STATIC">Targeted red-flag scan returned no stale AUP shortcut, hidden `.Complete()`, `StructLayout(Pack...)`, hot native allocation, `File.ReadAllBytes`, or `UnityEngine.Random` hits in the SHINOBU slice.</scan_guard>
+  <compile_guard result="NOT_RUN_CPU_GATE">No build/rebuild launched; no compiler process was visible, but CPU sampled `100.000000`.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Shader Buffer Fail-Closed Allocation And Upload
+
+What was wrong:
+- The bulkhead shader StructuredBuffer route was correctly double-buffered, but GPU allocation and `LockBufferForWrite` could still throw from VisualSync.
+- A visual-only deformation path must never become gameplay truth or a crash vector.
+
+What was done:
+- Wrapped the paired `GraphicsBuffer` allocation in `EnsureGraphicsBuffers`.
+- On allocation failure, partial buffers are released and shader globals stay disabled.
+- Wrapped `UploadNativeArray` around `LockBufferForWrite` and direct memcpy, returning false on graphics upload failure so the existing caller disables shader globals.
+
+Cinematic Cheats used:
+- The heavy door remains a shader illusion fed by unmanaged state. If the GPU buffer path is unavailable, the system fails to no visual deformation rather than falling back to CPU mesh/Transform/Animator work.
+
+Exact Microseconds saved:
+- 0 us claimed in the normal path. Failure path avoids a VisualSync exception and releases partial GPU buffers. No physics, collider, or CPU visual substitute is introduced.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_SHADER_BUFFER_FAIL_CLOSED">
+  <shader_route result="PASS_STATIC">`EnsureGraphicsBuffers` guards both StructuredBuffer allocations and releases partial buffers on failure.</shader_route>
+  <upload_route result="PASS_STATIC">`UploadNativeArray` returns false on graphics upload exceptions; VisualSync already disables shader globals when upload fails.</upload_route>
+  <dear_lie result="PASS_STATIC">The visual fallback is no deformation, not CPU mesh movement or a physical door object.</dear_lie>
+  <hot_path result="PASS_STATIC">No DTO layout, BufferID, job dependency, `.Complete()`, Vault route, or assembly route changed.</hot_path>
+  <scan_guard result="PASS_STATIC">Targeted red-flag scan returned no stale AUP shortcut, hidden `.Complete()`, `StructLayout(Pack...)`, hot native allocation, `File.ReadAllBytes`, or `UnityEngine.Random` hits in the SHINOBU slice.</scan_guard>
+  <compile_guard result="NOT_RUN_CPU_GATE">No build/rebuild launched; no compiler process was visible, but CPU sampled `100.000000`.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Override Signal Count Uncapped
+
+What was wrong:
+- SHINOBU read the exact-count `InteractionUiSignal` SignalBus snapshot, then hard-capped `signalCount` to 32.
+- Generated `InteractionUiSignal` capacity is 128, so a valid manual override packet after index 31 could be ignored.
+
+What was done:
+- Replaced the cap with `signalCount = signals.IsCreated ? signals.Length : 0`.
+- Kept the existing prefilter and Burst job guards: created snapshot, positive count, active state, override tool hash, finite player/signal AUP, exact target hash fast path.
+
+Cinematic Cheats used:
+- Manual override remains a data packet plus mathematical hash/AUP predicate. No scene search, collider, GameObject, or managed event route was introduced.
+
+Exact Microseconds saved:
+- 0 us claimed. This is correctness over an arbitrary cap. Worst case scans the actual frame snapshot instead of 32 rows; the bound remains SignalBus capacity, and the override job is still scheduled only if an override tool signal is present.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_OVERRIDE_SIGNAL_COUNT_UNCAPPED">
+  <input_truth result="PASS_STATIC">Manual override input is no longer quality-capped or index-capped at 32; the route consumes the SignalBus snapshot length returned by `GetFrameSnapshotArray()`.</input_truth>
+  <bounded_work result="PASS_STATIC">The scan is still bounded by the SignalBus snapshot count and filters by `State` plus `OverrideToolHash` before scheduling `ProcessDoorOverrideJob`.</bounded_work>
+  <hot_path result="PASS_STATIC">No allocation, `.Complete()`, BufferID, DTO layout, authority route, or assembly route changed.</hot_path>
+  <scan_guard result="PASS_STATIC">Targeted red-flag scan returned no stale AUP shortcut, hidden `.Complete()`, `StructLayout(Pack...)`, hot native allocation, `File.ReadAllBytes`, or `UnityEngine.Random` hits in the SHINOBU slice.</scan_guard>
+  <compile_guard result="NOT_RUN_CPU_GATE">No build/rebuild launched; no compiler process was visible, but CPU sampled `100.000000`.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Blackbox IO Fail-Closed Dump Path
+
+What was wrong:
+- `DumpBlackBox` wrote `Dump_SHINOBU_220.bin` directly from VisualSync after a `DumpRequested` telemetry row.
+- A denied path, transient IO failure, bad directory string, or telemetry entry size drift could throw during the diagnostic frame.
+- The same failed cursor could retry the same file-open path repeatedly.
+
+What was done:
+- Converted the writer to `TryDumpBlackBox`.
+- Validated `Path.GetDirectoryName(_dumpPath)` and the 64-byte `BulkheadTelemetryEntry` dump layout before file creation.
+- Added `_lastDumpAttemptTelemetryCursor` as a same-cursor attempt fence while keeping `_lastDumpedTelemetryCursor` as the success marker.
+- Caught only IO/path exceptions: `IOException`, `UnauthorizedAccessException`, `ArgumentException`, `NotSupportedException`.
+
+Cinematic Cheats used:
+- No gameplay simulation changed. This preserves the black-box autopsy route without adding a runtime object, scene search, collider, or frame-blocking completion.
+
+Exact Microseconds saved:
+- Hot path: 0 us claimed. Fault path avoids repeated same-cursor file-open attempts after a failed diagnostic write. Added live cost is one cursor compare only when a dump request is present.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_BLACKBOX_IO_FAIL_CLOSED">
+  <task_reconciliation result="PASS_STATIC">The SHINOBU assignment remains the 20-task `EMERGENCY_BULKHEAD_INJECTOR` block; no neighboring task changed this patch.</task_reconciliation>
+  <blackbox_dump result="PASS_STATIC">`TryDumpBlackBox` validates a 64-byte telemetry entry layout, writes explicit little-endian header and 300 ring rows, and returns false rather than throwing on IO/path failures.</blackbox_dump>
+  <fault_fence result="PASS_STATIC">`_lastDumpAttemptTelemetryCursor` prevents repeated same-cursor file attempts; `_lastDumpedTelemetryCursor` is only updated after successful file write.</fault_fence>
+  <hot_path result="PASS_STATIC">No job, `.Complete()`, native allocation, DTO layout, BufferID, authority route, or shader route changed.</hot_path>
+  <scan_guard result="PASS_STATIC">Targeted red-flag scan returned no stale AUP shortcut, hidden `.Complete()`, `StructLayout(Pack...)`, hot native allocation, `File.ReadAllBytes`, or `UnityEngine.Random` hits in the SHINOBU slice.</scan_guard>
+  <compile_guard result="NOT_RUN_CPU_GATE">No build/rebuild launched; no compiler process was visible, but CPU sampled `100.000000`.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Finite Intent Packet And KCC NaN Fence
+
+What was wrong:
+- The Core intent producer accepted non-finite normal/size/integrity values and relied on the Construction consumer to skip poisoned packets.
+- `ApplyAirlockBulkheadStateIntent` used `math.max` for width/height; NaN can remain NaN.
+- `EvaluateDoorCollisionsJob` could read a non-finite closure, player radius, player AUP, or plane row before telemetry sanitized the state.
+- A fresh static scan found `GlobalSignals.CurrentRuntimeOriginAup()` had resurfaced in `BaseAirlock.TryConvertRuntimePositionToAup`.
+
+What was done:
+- `BulkheadContainmentIntentBus.TryWriteAirlockBulkheadIntent` now rejects non-finite intent packets before writing the Vault ring.
+- `ApplyAirlockBulkheadStateIntent` now rejects non-finite lane inputs and uses `BulkheadContainmentMath.SanitizePositive` for width/height.
+- `EvaluateDoorCollisionsJob` now finite-checks player endpoints, plane center/normal/extents, closure, and radius; invalid rows set `BulkheadCollisionFlags.NonFinite` and fail inert.
+- `BaseAirlock.TryConvertRuntimePositionToAup` again uses `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3()` plus `AbsoluteUniversePosition.FromAbsolutePosition()`.
+
+Cinematic Cheats used:
+- Invalid containment data now disables mathematical collision proof instead of spawning a physical fallback door or collider. The visual route remains the shader-side Dear Lie.
+
+Exact Microseconds saved:
+- No profiler-backed speed claim. The change adds finite guards on cold/rare publish and per-active-plane KCC evaluation, preventing NaN propagation into KCC/telemetry without managed allocation, object instantiation, or main-thread job completion.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_FINITE_INTENT_PACKET_KCC_NAN_FENCE">
+  <task_reconciliation result="PASS_STATIC">Corrected tag-aware CLI extraction reports prompt bytes `15927`, task IDs `01..20`, task count `20`.</task_reconciliation>
+  <intent_boundary result="PASS_STATIC">Core intent bus rejects non-finite center AUP, normal, width, height, and parent integrity before resolving/writing the Vault ring.</intent_boundary>
+  <vault_owner_boundary result="PASS_STATIC">Construction owner apply path repeats finite guards and sanitizes positive dimensions before mutating AUP/plane/state lanes.</vault_owner_boundary>
+  <kcc_nan_fence result="PASS_STATIC">Collision job rejects non-finite player endpoints, plane rows, and closure values before producing a blocked proof; radius uses `SanitizePositive`.</kcc_nan_fence>
+  <aup_converter result="PASS_STATIC">After delayed re-read, targeted scan reports no `GlobalSignals.CurrentRuntimeOriginAup`, `AbsoluteUniversePosition.FromRuntimePosition`, or `.ToRuntimeFloat3(` hit in `BaseAirlock.cs`.</aup_converter>
+  <route_integrity result="PASS_STATIC">No DTO layout, BufferID, save identity, shader property, authority owner, or assembly route changed.</route_integrity>
+  <verification result="STATIC_ONLY">Targeted red-flag scan returned no stale AUP shortcuts, Unity time, hidden `.Complete()`, `Pack`, binary shader LOD, private native allocation, legacy Vault handle, `SetData`, or `File.ReadAllBytes` hits. `git diff --check` reports CRLF warnings only. No compiler process was active, but CPU sampled `73.681302`; no dotnet build or rebuild was launched.</verification>
+</SELF_AUDIT>
+
+## 2026-05-20 Tail Audit: UberNoir Compile-Time LOD Purge
+What was wrong: `Hecton8_UberNoir.hlsl` still contained `_MATH_LOD_LOW` compile-time quality forks after the bulkhead normalization pass. That left a binary shader variant route in the same visual path used by SHINOBU bulkhead deformation.
+
+What was done: Removed every `_MATH_LOD_LOW` token from the shader. Brownout flicker, dither, hull bending, bent normals, global wake deformation, biolum emission, caustics, main lighting, extinction, screen refraction, and vertex extinction now use continuous `H8UberNoirGlobalQualityWeight`, smooth ramps, `step`, and runtime feature gates. No SHINOBU DTO layout, Vault lane, authority cadence, or KCC collision state was changed.
+
+Cinematic cheats used: physical door panels remain a GPU-side deformation fake driven by `BulkheadStateDTO.ClosureProgress`; wake, caustics, biolum, extinction, and refraction stay shader illusions instead of CPU simulation.
+
+Exact microseconds saved: CPU remains 0 us because this pass is shader-side. Low-tier GPU contribution collapses by quality weights instead of variant bifurcation; no profiler capture was taken due active CPU saturation and the explicit rebuild gate.
+
+Verification: static scan reports no `_MATH_LOD_LOW` token in `Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl`. Build was not launched.
+
 ## 2026-05-20 - PreSimulation Fence Hardening
 
 What was wrong:
@@ -1092,4 +1234,829 @@ Exact Microseconds saved:
   <parser result="PASS_STATIC">Profile parsing still uses `ReadOnlySpan<byte>`, byte hashing, and manual float parsing.</parser>
   <hot_path result="PASS_STATIC">No gameplay-frame CSV polling or managed file loading was added.</hot_path>
   <build_gate result="NOT_RUN" cpu="19.442" active_processes="none">No rebuild launched because standalone dotnet is a false signal until Unity regenerates project files, and the last Unity/Bee import has unrelated blockers plus a hang history.</build_gate>
+</SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: SignalBus Override, Hot Refresh, Kernel Guards
+
+What was wrong:
+- Manual override read `BufferID.InteractionSignalQueue` as `InteractionUiSignal`, but that Vault lane is owned by GameplayTools as `InteractionSignal`.
+- Dispatcher phases could still enter `GetGenerationHandle` through the combined `EnsureVaultState` path.
+- Unsafe pointer jobs depended on caller guards, no-hit collision rows lost frame provenance, and the shader bulkhead path cast unsanitized floats to `uint`.
+
+What was done:
+- Manual override now reads `SignalBus<InteractionUiSignal>.GetFrameSnapshotArray()`, filters `OverrideToolHash`, and schedules the override job only when a matching row exists.
+- Vault owner allocation is split into `BootstrapVaultState`; PreSimulation/Simulation/VisualSync call `RefreshVaultState` and no longer create/grow SHINOBU lanes.
+- Added pointer/count fail gates to the SHINOBU Burst jobs, expanded DTO layout validation, fenced stale/future intent frames, stamped no-hit collision rows with dispatcher frame, and sanitized shader buffer indices.
+- Removed the `_MATH_LOD_LOW` binary branch from normalization used by bulkhead deformation; it now blends cheap axis approximation to precise rsqrt through continuous quality weight.
+
+Cinematic Cheats used:
+- Still no CPU door object. Door closure remains shader-side procedural deformation, while CSR/KCC truth is a flat Vault edge/plane fact.
+
+Exact Microseconds saved:
+- Ordinary frames avoid one serial override job schedule and one wrong-lane Vault resolve when no matching override signal exists.
+- No broader profiler claim; compile/import is still blocked by unrelated Bee errors and standalone dotnet remains a false signal until Unity regenerates project files.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_SIGNALBUS_OVERRIDE_HOT_REFRESH_KERNEL_GUARDS">
+  <task_reconciliation result="PASS_STATIC">Tasks 01-20 remain represented in `Docs/Tasks/Status_SHINOBU_220.md`; this pass hardens Task 04 layout proof, Task 09 manual override, Task 10 KCC proof, Task 15 telemetry provenance, and Task 08 shader Dear Lie.</task_reconciliation>
+  <struct_layout result="PASS_STATIC">`BulkheadStateLayoutGuard` now validates State 32B, Plane 64B, CSR 32B, Tuning 32B, Profile 32B, and Telemetry 64B field offsets through `UnsafeUtility`.</struct_layout>
+  <scalability_curve result="PASS_STATIC">Authority cadence still uses continuous `GlobalQualityWeight`; shader normalization now continuously blends axis approximation to precise rsqrt instead of using the `_MATH_LOD_LOW` branch for bulkhead deformation.</scalability_curve>
+  <h_phi_vault result="PASS_STATIC">No private persistent native collections were added. SHINOBU persistent buffers remain Vault IDs 72000-72015.</h_phi_vault>
+  <pointer_aliasing result="PASS_STATIC">All SHINOBU Burst kernels keep `[NoAlias]` on non-overlapping pointer/snapshot fields and now self-guard null/count inputs.</pointer_aliasing>
+  <dependency_graph result="PASS_STATIC">Override, collision, closure, damage, lock, mock, and telemetry jobs return chained `JobHandle`s; no gameplay-frame `.Complete()` was introduced.</dependency_graph>
+  <compile_guard result="PASS_STATIC">No new sibling Runtime reference was added; Gameplay still routes via `Hecton8.Core.Contracts.BulkheadContainmentIntentBus` and `BulkheadCollisionResultDTO`.</compile_guard>
+  <dear_lie result="PASS_STATIC">The heavy physical door remains replaced by shader deformation and flat CSR/KCC math. CPU object-door complexity remains O(0) for visuals and O(n active bulkhead planes) for owner math, with no GameObject/collider route.</dear_lie>
+  <build_gate result="NOT_RUN">No dotnet rebuild launched per mandate; static checks and `git diff --check` were used in this pass.</build_gate>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: UberNoir Runtime Cost Collapse
+
+What was wrong:
+- The `_MATH_LOD_LOW` purge removed binary shader variants, but masked work still remained in hot visual paths.
+- Global wakes still loaded and normalized up to 16 slots when low quality only needed one cheap wake lane.
+- Main lighting, extinction, and cavitation refraction paid shadow/LUT/trig work before the visual contribution was allowed by the continuous detail ramps.
+
+What was done:
+- `H8UberNoirApplyGlobalWakeWS` now clamps iteration count by `ceil(lerp(1, 16, detailWeight))` instead of masking a fixed 16-slot unroll.
+- `H8UberNoirEvaluateMainLighting` returns a cheap no-shadow/no-specular path while `detailWeight` is zero, then transitions into shadow/specular/caustic work as quality rises.
+- `H8UberNoirResolveExtinctionColor` returns the vertex-resolved cheap extinction until the rich world LUT ramp opens.
+- `H8UberNoirCavitationRefractionOffset` uses a squared-radius shell and triangle-wave curl at low detail; sine curl and precise shell distance are paid only in the rich band.
+
+Cinematic Cheats used:
+- Squared shockwave shell instead of true distance shell.
+- Triangle-wave curl instead of sine curl below the rich band.
+- Quality-scaled wake capacity rather than full wake physics.
+- Procedural caustic shimmer remains shader-only and does not create CPU simulation truth.
+
+Exact Microseconds saved:
+- CPU 0 us; no gameplay route changed.
+- GPU static estimate: low-tier wake work in each affected vertex/motion/shadow pass drops from 16 wake lanes to 1 lane. Fragment low-tier skips shadow-coordinate/main-light shadow path, rich extinction resolver, and cavitation sine curl until continuous quality ramps open. No profiler capture was taken in this CLI pass.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_UBERNOIR_RUNTIME_COST_COLLAPSE">
+  <shader_binary_lod result="PASS_STATIC">`rg "_MATH_LOD_LOW|MATH_LOD"` returns no shader hits.</shader_binary_lod>
+  <wake_cost result="PASS_STATIC">Global wake loop count is quality-scaled and no longer a masked 16-slot unroll.</wake_cost>
+  <lighting_extinction_cost result="PASS_STATIC">Cheap lighting and extinction paths bypass high-cost work until smooth detail ramps are nonzero.</lighting_extinction_cost>
+  <cavitation_cost result="PASS_STATIC">Low-detail cavitation uses squared shell and triangle curl; sine curl is inside the rich-detail branch.</cavitation_cost>
+  <truth_ownership result="PASS_STATIC">No `BulkheadStateDTO`, Vault lane, KCC collision route, save identity, or authority cadence was changed.</truth_ownership>
+  <build_gate result="NOT_RUN">No dotnet rebuild launched; verification used static shader scans, preprocessor-depth scan, and `git diff --check`.</build_gate>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: KCC Snapshot Fail-Inert Guard
+
+What was wrong:
+- `PreSimulationTick()` ignored the failure result from `TryResolvePlayerState()`.
+- If the player KCC snapshot was missing, SHINOBU still scheduled plane collision against `double3.zero`, which could write false blocked collision proof rows near origin.
+
+What was done:
+- Missing KCC snapshot now writes a no-hit `BulkheadCollisionResultDTO` stamped with `timing.FrameId`.
+- Active-count-zero also writes a no-hit row stamped with `timing.FrameId`, not `default`.
+- The collision job is not scheduled when the required player fact is absent.
+- No new registry poll, Kinematics dependency, or fallback scene search was introduced.
+
+Cinematic Cheats used:
+- No physical door route changed. The collision lane remains flat plane math; missing player truth fails inert instead of inventing a Transform/scene position.
+
+Exact Microseconds saved:
+- Absent-player frames save one `EvaluateDoorCollisionsJob` schedule and all plane iterations. Normal frames pay one branch after the existing Vault read attempt. No profiler capture was taken.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_KCC_SNAPSHOT_FAIL_INERT">
+  <authority result="PASS_STATIC">Missing KCC truth no longer creates a zero-AUP synthetic player fact.</authority>
+  <collision_lane result="PASS_STATIC">No-hit collision rows for both inactive and missing-player paths preserve dispatcher frame provenance through `Frame = timing.FrameId`.</collision_lane>
+  <dependency_guard result="PASS_STATIC">No new sibling dependency or hot registry poll was added.</dependency_guard>
+  <job_graph result="PASS_STATIC">No `.Complete()` was introduced; absent-player frames schedule no collision job.</job_graph>
+  <build_gate result="NOT_RUN">No dotnet rebuild launched; CPU gate currently reports 100% and static verification is sufficient for this narrow patch.</build_gate>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Vault Lane Bounds And KCC Freshness
+
+What was wrong:
+- KCC snapshots were checked for existence but not temporal freshness.
+- Collision proof rows were stamped from the producer snapshot frame instead of the dispatcher evaluation frame.
+- Intent ingestion and several unsafe-pointer jobs assumed companion Vault lanes matched `states.Length`; partial lane failure could overrun AUP, plane, CSR, integrity, conductivity, or fluid-flow buffers.
+
+What was done:
+- `TryResolvePlayerState()` now rejects frame zero, future frames, and player snapshots older than one dispatcher frame.
+- `EvaluateDoorCollisionsJob` receives `timing.FrameId` as the proof frame.
+- Intent allocation is bounded by `min(states, aups, planes, csrEdges, moduleIntegrity)`.
+- Override/collision count is bounded by `min(states, aups, planes)`.
+- Simulation mutation count is bounded by `min(states, csrEdges, conductivity, fluidFlow, moduleIntegrity)`.
+- `ApplyBulkheadLockJob` now receives separate conductivity and fluid-flow counts.
+
+Cinematic Cheats used:
+- None. This pass closes native memory and authority-proof defects; the physical bulkhead remains mathematical plane logic with shader-side visual closure.
+
+Exact Microseconds saved:
+- Normal frames add integer min operations and one KCC freshness check. Stale KCC or partial Vault frames avoid collision/mutation job schedules. No profiler capture was taken.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_VAULT_BOUNDS_KCC_FRESHNESS">
+  <kcc_freshness result="PASS_STATIC">Player KCC rows older than one dispatcher frame, future rows, and frame-zero rows are rejected before collision proof.</kcc_freshness>
+  <collision_proof_frame result="PASS_STATIC">Collision output uses dispatcher `timing.FrameId`, not stale producer frame.</collision_proof_frame>
+  <intent_bounds result="PASS_STATIC">Intent slot allocation is bounded by the shortest written Vault lane.</intent_bounds>
+  <job_bounds result="PASS_STATIC">Override, collision, damage, and lock jobs consume lane-compatible counts.</job_bounds>
+  <scalar_counts result="PASS_STATIC">Conductivity and fluid-flow buffers have separate bounds in `ApplyBulkheadLockJob`.</scalar_counts>
+  <build_gate result="NOT_RUN">Static scans passed except expected cold `OnEnable`/bootstrap hits and telemetry frame-parameter false positives. CPU gate reports 100%, so no dotnet rebuild was launched.</build_gate>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Locked Simulation Tick Delta
+
+What was wrong:
+- Bulkhead KCC prediction and closure authority cadence used dispatcher `FrameDelta`.
+- Variable frame pacing can desynchronize rollback-critical state even when the DTOs and jobs are otherwise deterministic.
+
+What was done:
+- Added `LockedSimulationTickDeltaSeconds = 1/60`.
+- Added `ResolveSimulationTickDelta(in DispatcherTimingDTO)`, using finite positive `FixedDelta` when present and the locked tick fallback otherwise.
+- Replaced PreSimulation prediction and Simulation authority accumulation with the locked tick helper.
+
+Cinematic Cheats used:
+- None. This is authority timing; the visual cheat remains shader deformation fed by Vault state.
+
+Exact Microseconds saved:
+- No speed claim. Normal path adds one finite check/clamp per phase and removes variable render-frame coupling from collision/closure truth.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_LOCKED_SIMULATION_TICK_DELTA">
+  <rollback_delta result="PASS_STATIC">Critical bulkhead closure and KCC prediction no longer consume dispatcher `FrameDelta`.</rollback_delta>
+  <fixed_delta_route result="PASS_STATIC">The runtime uses dispatcher `FixedDelta` when valid and a deterministic 1/60 fallback otherwise.</fixed_delta_route>
+  <quality_invariant result="PASS_STATIC">`GlobalQualityWeight` still scales cadence/visual fidelity, not DTO layout, save identity, or authoritative tick value.</quality_invariant>
+  <build_gate result="NOT_RUN">Static scans found no SHINOBU `FrameDelta`, stale KCC frame, `EdgeScalarCount`, `.Complete()`, `Pack=1`, or `_MATH_LOD_LOW` hits. `git diff --check` reports CRLF warnings only. `typeperf` reports CPU 100%, so no build was launched.</build_gate>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Inquisition, AUP Snapshot, Editor Telemetry Facade
+
+What was wrong:
+- `DoorPhysicsInquisition.Run()` previously risked overwriting the shared Construction aggregate instead of updating a SHINOBU-owned report object.
+- The report scanner used broad text matching and could misclassify cold AUP reads as transform door movement.
+- `BaseAirlock` still had a public repair-snap AUP conversion route tied to runtime origin instead of the cached owner pose.
+- The tuner status facade did not expose closure/collision/upload proof and rebuilt interpolated status text every inspector refresh.
+
+What was done:
+- `DoorPhysicsInquisition` now writes `Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_220.json` and `Docs/Reports/Door_Physics_Inquisition_SHINOBU_220.md`, then upserts only `shinobu_220_bulkhead_dod` into `CONSTRUCTION_OPTIMIZATION_REPORT.json`.
+- The scanner records line/snippet evidence, uses token boundaries, skips Editor code, and treats transform motion as transform writes or Animator usage.
+- `BaseAirlock` now uses cached bulkhead pose AUP for publish and repair-snap conversion, marks publish pending on origin shift, and uses dispatcher frame for the pressure whistle cadence.
+- `BulkheadContainmentRuntime.TryReadEditorState` returns cached telemetry frame, closure, collision edge/depth, and shader upload count. The editor window uses a reusable `StringBuilder` and updates the label only when values change.
+
+Cinematic Cheats used:
+- The emergency barrier remains CSR/KCC plane math plus shader deformation. No GameObject door body, collider slab, Animator door authority, or physical door simulation was introduced.
+
+Exact Microseconds saved:
+- Runtime publish avoids repeated transform-to-AUP conversion when the cached pose is valid.
+- Editor-only string churn is reduced by change-gated `StringBuilder` rebuilds.
+- Report generation is cold editor work. No profiler capture was taken; the estimates are static engineering estimates.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_INQUISITION_AUP_EDITOR_TELEMETRY">
+  <task_reconciliation>
+    <task id="01" result="PASS_STATIC">Door-object authority remains purged from SHINOBU closure; report proves owned route has zero collider/Animator/transform-motion door hits.</task>
+    <task id="02" result="PASS_STATIC">Collider door slab authority is absent from owned runtime files; legacy `SealedDoor.cs` is inventory outside the emergency bulkhead route.</task>
+    <task id="03" result="PASS_STATIC">Hot DTOs use raw fields; no hot-path DTO properties were introduced.</task>
+    <task id="04" result="PASS_STATIC">Primary DTO layout remains explicit: state 32B, plane 64B, telemetry 64B; layout guard validates exact offsets.</task>
+    <task id="05" result="PASS_STATIC">Mock bulkhead generation remains dispatched through Burst and protected from overwriting real airlock rows.</task>
+    <task id="06" result="PASS_STATIC">Closure math remains Burst job authority with deterministic tick delta.</task>
+    <task id="07" result="PASS_STATIC">CSR edge lock route remains Vault-owned and lane-bounds checked.</task>
+    <task id="08" result="PASS_STATIC">Dear Lie visual closure remains shader-side in `Hecton8_UberNoir`.</task>
+    <task id="09" result="PASS_STATIC">Manual override uses typed `SignalBus<InteractionUiSignal>` snapshot, not a wrong-owner Vault queue.</task>
+    <task id="10" result="PASS_STATIC">KCC collision proof fails inert on missing/stale player state and writes dispatcher-frame no-hit rows.</task>
+    <task id="11" result="PASS_STATIC">Continuous `GlobalQualityWeight` still scales cadence and shader fidelity without binary runtime switches.</task>
+    <task id="12" result="PASS_STATIC">Catastrophic damage job remains lane-bounds checked and NaN guarded.</task>
+    <task id="13" result="PASS_STATIC">AUP conversion subtracts or offsets from owner-local AUP facts; public repair snap no longer uses runtime-origin global reconstruction.</task>
+    <task id="14" result="PASS_STATIC">Rollback timing uses dispatcher `FixedDelta` or locked 1/60 fallback, not variable frame delta.</task>
+    <task id="15" result="PASS_STATIC">300-frame telemetry ring and little-endian dump writer remain in place; duplicate dump cursor fence remains active.</task>
+    <task id="16" result="PASS_STATIC">UI Toolkit tuner now exposes closure/collision/upload telemetry and avoids per-refresh interpolation churn.</task>
+    <task id="17" result="PASS_STATIC">CSV profile ingest remains ReadOnlySpan/Vault scratch backed; no `File.ReadAllBytes` in owned editor/runtime path.</task>
+    <task id="18" result="PASS_STATIC">Gizmo route remains editor-only and reads Vault state/planes without gameplay authority mutation.</task>
+    <task id="19" result="PASS_STATIC">Door Physics Inquisition emits sidecar JSON, markdown, and aggregate upsert with line/snippet evidence.</task>
+    <task id="20" result="PASS_STATIC">This audit is appended to disk-backed logs; build remains gated by CPU/proc doctrine.</task>
+  </task_reconciliation>
+  <struct_layout result="PASS_STATIC">`BulkheadStateDTO` 32B offsets: EdgeHashID 0, ClosureProgress 4, AssociatedLock 8, SiblingNodeHash 12, Flags 16, pad bytes 20..31. `BulkheadPlaneDTO` 64B offsets: double3 CenterAup 0..23, float3 Normal 24..35, Width 36, Height 40, HalfThickness 44, EdgeHashID 48, Flags 52, IntegrityIndex 56, Reserved 60. `BulkheadTelemetryEntry` 64B offsets: Frame 0, Active 4, Sealed 8, Jammed 12, AverageClosure 16, Cadence 20, Quality 24, ScheduleUs 28, StateHash 32, CollisionEdge 36, CollisionDepth 40, Flags 44, Reserved0 48, Reserved1 56.</struct_layout>
+  <scalability_curve result="PASS_STATIC">Below q=0.3 the authority route admits lower cadence through continuous cadence math while shader work collapses through runtime quality ramps: cheap wake slot counts, cheap lighting/extinction, squared-shell cavitation, and axis-biased normalization. High/ultra restore richer shader ALU and upload counts without changing DTO layout or route ownership.</scalability_curve>
+  <vault_status result="PASS_STATIC">No private persistent `NativeArray`/`NativeList`/`NativeHashMap` fields were added. Existing SHINOBU lanes remain `Shinobu220BulkheadStates`, `Aups`, `Planes`, `CsrEdges`, `Conductivity`, `FluidFlow`, `ModuleIntegrity`, `Tuning`, `TelemetryRing`, `TelemetryCursor`, `CollisionResults`, `Profiles`, `CsvScratch`, `IntentRing`, and `IntentControl` through generation handles.</vault_status>
+  <dependency_graph result="PASS_STATIC">Consumes dispatcher pre-simulation and simulation dependencies; outputs `_preSimulationHandle` and `_simulationHandle` through scheduler-owned chaining. Burst kernels retain `[NoAlias]` on non-overlapping native pointers/snapshots.</dependency_graph>
+  <compile_guard result="PASS_STATIC">Construction bulkhead runtime/jobs/contracts have no direct sibling runtime `using Hecton8.World|Vehicles|AI|Physics|Rendering|Tools|Gameplay` hit.</compile_guard>
+  <dear_lie result="PASS_STATIC">Before: physical door object, collider slab, or Animator route would be O(N GameObjects/colliders) plus scene sync. After: O(E) CSR/plane rows for authority and O(visible shader vertices/pixels) visual deformation; no physical door body is simulated for SHINOBU closure.</dear_lie>
+  <verification result="STATIC_ONLY">JSON parse passed for sidecar and aggregate. Targeted red-flag scans returned no hits. `git diff --check` reports CRLF warnings only. `typeperf` reported CPU 100%; no dotnet build or rebuild launched.</verification>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Pose Read Accessor Purity Correction
+
+What was wrong:
+- The cached-pose patch initially put a refresh side effect behind `TryResolveBulkheadPoseSnapshot`, a read-looking private accessor.
+
+What was done:
+- Renamed the pure read to `TryReadBulkheadPoseSnapshot`.
+- Moved `RefreshBulkheadPoseSnapshot()` into the explicit publish command path.
+- Repair-snap AUP conversion continues to fail inert when the cached pose is missing or an origin shift is active.
+
+Cinematic Cheats used:
+- None changed. The physical barrier remains mathematical plane state plus shader deformation.
+
+Exact Microseconds saved:
+- No speed claim. The correction removes hidden mutation from a read accessor and preserves valid publish behavior.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_POSE_READ_ACCESSOR_PURITY">
+  <read_accessor result="PASS_STATIC">`TryReadBulkheadPoseSnapshot` does not refresh, publish, allocate, complete jobs, or query global state.</read_accessor>
+  <command_path result="PASS_STATIC">`PublishBulkheadContainmentState` owns the explicit refresh attempt before reading cached AUP/normal.</command_path>
+  <scan result="PASS_STATIC">Targeted scan found no `TryResolveBulkheadPoseSnapshot`, `GlobalSignals.CurrentRuntimeOriginAup`, Unity `Time.*`, or `FrameDelta` hits in the SHINOBU-owned route.</scan>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Repair Snap Transform Authority Purge
+
+What was wrong:
+- `BaseAirlock` still used `Transform.right/up/forward` for repair snap basis.
+- `_cachedTransform.position` still anchored two cycle audio calls and the manual flood visual anchor.
+
+What was done:
+- `TryResolveRepairSnapRuntimePoints` now reads a cached basis derived from `_bulkheadPoseNormal`.
+- The basis read fails inert on invalid pose or active origin shift.
+- Cycle audio uses cached bulkhead AUP-to-runtime position.
+- Manual flood override attempts the cached AUP anchor after a command refresh; if unavailable, it passes a non-finite visual anchor so `BaseModule` uses its existing default breach anchor without a Transform read.
+
+Cinematic Cheats used:
+- The emergency barrier remains CSR/KCC plane data plus shader/audio illusion. Missing visual anchor uses the module default breach visual instead of reconstructing a physical door position.
+
+Exact Microseconds saved:
+- Estimate: three Transform property reads removed per repair snap query and three Transform position reads removed from cycle/manual routes. Dispatcher hot-frame cost remains 0 us.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_REPAIR_SNAP_TRANSFORM_AUTHORITY_PURGE">
+  <transform_residue result="PASS_STATIC">`rg --fixed-strings "_cachedTransform.position"` returns no hits in the SHINOBU target slice.</transform_residue>
+  <basis_read result="PASS_STATIC">Repair snap basis is derived from cached bulkhead normal with finite rsqrt guards; it does not read `Transform.right/up/forward`.</basis_read>
+  <read_purity result="PASS_STATIC">`TryReadBulkheadRuntimeBasis` only copies cached scalar state and returns false during origin shift or invalid snapshot.</read_purity>
+  <scan result="PASS_STATIC">Targeted scans returned no `Transform airlockTransform`, `NormalizeFiniteOrFallback`, `GlobalSignals.CurrentRuntimeOriginAup`, Unity `Time.*`, `FrameDelta`, `.Complete()`, `Pack=`, `_MATH_LOD_LOW`, or `MATH_LOD` hits in the SHINOBU target slice.</scan>
+  <build_gate result="NOT_RUN">No dotnet build or rebuild launched in this pass; the next gate is CPU/proc check.</build_gate>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Shift Sequence Fence And Committed AUP Converter
+
+What was wrong:
+- Cached bulkhead pose read paths accepted `_bulkheadPoseSnapshotValid` without proving the cached shift sequence still matched `HectonFloatingOrigin.CurrentShiftSequence`.
+- Repair snap basis preserved normal but not cached roll/up.
+- A previous patch left `RefreshBulkheadPoseSnapshot()` calling a deleted `TryResolveAupFromRuntimeOrigin` helper.
+
+What was done:
+- `OnOriginShift` now invalidates the pose snapshot immediately and marks the unmanaged intent publish pending.
+- `IsBulkheadPoseSnapshotCurrent()` fences every cached pose read against active shifts and stale shift sequences.
+- `RefreshBulkheadPoseSnapshot()` stores normalized forward and up vectors and stamps the current shift sequence.
+- `TryReadBulkheadRuntimeBasis()` orthogonalizes cached up against cached normal, preserving roll without reading `Transform.right/up/forward`.
+- `TryConvertRuntimePositionToAup()` converts command-phase runtime pose to AUP using committed floating-origin double offset, finite checks, and `AbsoluteUniversePosition.FromAbsolutePosition`.
+
+Cinematic Cheats used:
+- No CPU door body was reintroduced. The barrier remains CSR/KCC plane truth plus shader/audio presentation.
+
+Exact Microseconds saved:
+- No new speed claim. This loop buys correctness: one validity/sequence branch per cached pose read, no allocation, no job completion, no collider, and no global runtime-origin shortcut.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_SHIFT_SEQUENCE_FENCE_COMMITTED_AUP_CONVERTER">
+  <task_reconciliation result="PASS_STATIC">CLI extraction of `SHINOBU_220` reports unique task IDs 1..20.</task_reconciliation>
+  <compile_risk result="PASS_STATIC">Static scan reports no `TryResolveAupFromRuntimeOrigin` or `ToBulkheadAbsoluteDouble3` residue in `BaseAirlock.cs`.</compile_risk>
+  <origin_shift_fence result="PASS_STATIC">All cached pose read paths require `IsBulkheadPoseSnapshotCurrent()`, which rejects active shifts and mismatched shift sequences.</origin_shift_fence>
+  <aup_converter result="PASS_STATIC">Runtime-to-AUP conversion uses `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3()` and `AbsoluteUniversePosition.FromAbsolutePosition()` after finite checks; no `GlobalSignals.CurrentRuntimeOriginAup()` or `AbsoluteUniversePosition.FromRuntimePosition()` hit remains in `BaseAirlock.cs`.</aup_converter>
+  <basis_roll result="PASS_STATIC">Cached `frame.up` is stored and orthogonalized against the cached normal; arbitrary-axis fallback is only for invalid or parallel up vectors.</basis_roll>
+  <verification result="STATIC_ONLY">Targeted red-flag scans returned no hits. JSON aggregate and SHINOBU sidecar parse. `git diff --check` reports CRLF warnings only. No compiler processes were active, but `typeperf` reported CPU `100.000000`; build/rebuild not launched.</verification>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Source Reconciliation And Repair Snap AUP Runtime Conversion
+
+What was wrong:
+- The Loop 47 report claimed `GlobalSignals.CurrentRuntimeOriginAup()` was purged from `BaseAirlock`, but source still used it in `TryConvertRuntimePositionToAup()`.
+- `TryResolveKinematicRepairSnap()` still called `probe.HitAup.ToRuntimeFloat3()`, which internally routes through the same global runtime-origin shortcut.
+
+What was done:
+- `TryConvertRuntimePositionToAup()` now uses `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3()` and `AbsoluteUniversePosition.FromAbsolutePosition()` after finite and shift-in-progress checks.
+- Added `TryConvertAupToRuntimePosition()` for repair snap and audio anchor conversion. It resolves AUP to absolute double, subtracts the committed floating-origin double offset through `HectonFloatingOrigin.ToRuntimePosition()`, and rejects non-finite results.
+- Re-ran the `SHINOBU_220` XML extraction from `CURRENT_BATCH.md`; task IDs remain `01..20`.
+
+Cinematic Cheats used:
+- No CPU door body or collider was introduced. The route remains mathematical AUP/CSR/KCC proof plus shader/audio presentation.
+
+Exact Microseconds saved:
+- No profiler-backed speed claim. The repair snap correction is an interaction-path correctness fix: one committed-offset conversion and finite/shift gates, hot dispatcher cost 0 us.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_SOURCE_RECONCILIATION_REPAIR_SNAP_AUP_RUNTIME">
+  <task_reconciliation result="PASS_STATIC">CLI extraction of `SHINOBU_220` reports prompt bytes `15927`, task IDs `01..20`, task count `20`.</task_reconciliation>
+  <runtime_to_aup result="PASS_STATIC">`TryConvertRuntimePositionToAup` uses committed floating-origin double offset and `AbsoluteUniversePosition.FromAbsolutePosition`; it no longer calls `GlobalSignals.CurrentRuntimeOriginAup`.</runtime_to_aup>
+  <aup_to_runtime result="PASS_STATIC">Repair snap no longer calls `AbsoluteUniversePosition.ToRuntimeFloat3`; it uses explicit absolute-double to committed-runtime conversion with finite and origin-shift gates.</aup_to_runtime>
+  <scan result="PASS_STATIC">Targeted scan returned no hits for `TryResolveAupFromRuntimeOrigin`, `ToBulkheadAbsoluteDouble3`, `GlobalSignals.CurrentRuntimeOriginAup`, `AbsoluteUniversePosition.FromRuntimePosition`, `.ToRuntimeFloat3(`, `_cachedTransform.position`, `Transform airlockTransform`, `NormalizeFiniteOrFallback`, Unity time dependency, `.Complete(`, `Pack`, `_MATH_LOD_LOW`, or `MATH_LOD` in the SHINOBU target slice.</scan>
+  <build_gate result="NOT_RUN">No compiler processes were active, but CPU gate reported `100.000000`; no dotnet build or rebuild was launched.</build_gate>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: KCC Consumer Handle Bind And Collision Fault Telemetry
+
+What was wrong:
+- `PlayerKinematicsRuntime.TryApplyBulkheadCollisionResult` consumed the SHINOBU collision proof lane with `TryGetBuffer(BufferID.Shinobu220BulkheadCollisionResults)` in the fixed-tick path.
+- `EvaluateDoorCollisionsJob` could mark `BulkheadCollisionFlags.NonFinite`, but telemetry did not fold that collision fault into the 300-frame black-box flags.
+- `PlayerKinematicsRuntime.TryResolveAupFromRuntimeOrigin` still used `GlobalSignals.CurrentRuntimeOriginAup()`.
+
+What was done:
+- Added `_bulkheadCollisionResultsHandle` to the KCC consumer and resolved the collision proof row through the cached generation handle.
+- Added a throttled 16-frame late-bind path only for absent/stale collision proof handles.
+- Folded collision `NonFinite` into `BulkheadTelemetryFlags.NonFinite | DumpRequested` in both active and empty SHINOBU telemetry rows.
+- Sanitized collision depth before black-box writes.
+- Replaced the KCC runtime-to-AUP converter with `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3()` plus `AbsoluteUniversePosition.FromAbsolutePosition()`.
+
+Cinematic Cheats used:
+- No physical door, collider, Animator, or GameObject was introduced. The player remains blocked by one unmanaged collision proof row derived from mathematical bulkhead planes; visuals remain shader-side.
+
+Exact Microseconds saved:
+- Estimate: normal KCC fixed tick removes one BufferID lookup by consuming a generation handle; missing-handle rebinding is limited to once per 16 dispatcher frames. Telemetry adds finite checks only on the existing row write.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_KCC_CONSUMER_HANDLE_BIND_COLLISION_FAULT_TELEMETRY">
+  <task_reconciliation result="PASS_STATIC">CLI extraction of `SHINOBU_220` reports `PromptBytes=15927`, `TaskCount=20`, and task names 01 through 20.</task_reconciliation>
+  <kcc_consumer result="PASS_STATIC">`TryApplyBulkheadCollisionResult` resolves `Shinobu220BulkheadCollisionResults` through `_bulkheadCollisionResultsHandle`; no hot `TryGetBuffer(BufferID.Shinobu220BulkheadCollisionResults)` hit remains.</kcc_consumer>
+  <blackbox result="PASS_STATIC">Collision `NonFinite` now writes `BulkheadTelemetryFlags.NonFinite | DumpRequested` and clamps non-finite collision depth before the telemetry ring row is stored.</blackbox>
+  <aup_converter result="PASS_STATIC">`BaseAirlock` and KCC runtime-to-AUP conversion use the committed floating-origin converter; targeted scans report no `GlobalSignals.CurrentRuntimeOriginAup` or `AbsoluteUniversePosition.FromRuntimePosition` hit in the containment/KCC slice.</aup_converter>
+  <compile_guard result="PENDING_CPU_GATE">No compiler processes were active, but CPU sampled `100.000000`; build/rebuild intentionally not launched.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Construction KCC Snapshot Handle Bind
+
+What was wrong:
+- `BulkheadContainmentRuntime.TryResolvePlayerState` still used `TryGetBuffer(BufferID.PlayerKinematicState)` in the PreSimulation collision producer.
+
+What was done:
+- Added `_playerKinematicStateHandle` as a cached read handle for the KCC-owned player state lane.
+- Bound that handle with `TryGetGenerationHandle` only when Kinematics has already published the lane.
+- Added a 16-frame late-bind throttle for missing/stale KCC snapshot handles.
+- Left KCC ownership intact: SHINOBU does not allocate, release, or resize `PlayerKinematicState`.
+
+Cinematic Cheats used:
+- No physical player-door collider was introduced. The collision proof still consumes KCC state plus mathematical bulkhead planes.
+
+Exact Microseconds saved:
+- Estimate: normal PreSimulation collision proof removes one BufferID lookup by consuming a generation handle; missing/stale bind attempts are capped at once per 16 dispatcher frames.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_CONSTRUCTION_KCC_SNAPSHOT_HANDLE_BIND">
+  <kcc_snapshot_consumer result="PASS_STATIC">`TryResolvePlayerState` resolves `PlayerKinematicState` through `_playerKinematicStateHandle`; no hot `TryGetBuffer(BufferID.PlayerKinematicState)` hit remains.</kcc_snapshot_consumer>
+  <ownership result="PASS_STATIC">SHINOBU uses `TryGetGenerationHandle` only; it does not allocate or claim KCC player state ownership.</ownership>
+  <bridge_scan result="PASS_STATIC">Targeted scan reports no hot BufferID lookup for `PlayerKinematicState` or `Shinobu220BulkheadCollisionResults` in the Construction/KCC bridge slice.</bridge_scan>
+  <compile_guard result="PENDING_CPU_GATE">Build/rebuild remains blocked by the current CPU policy; latest sampled CPU was `100.000000`.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: AUP Converter Source-Churn Reconciliation
+
+What was wrong:
+- Two converter bodies resurfaced with `GlobalSignals.CurrentRuntimeOriginAup()` after the Construction KCC handle-bind pass.
+- The stale shortcut existed in both `BaseAirlock.TryConvertRuntimePositionToAup` and `PlayerKinematicsRuntime.TryResolveAupFromRuntimeOrigin`.
+
+What was done:
+- Replaced both converters with `HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3()` plus `AbsoluteUniversePosition.FromAbsolutePosition()` after finite gates.
+- Re-ran the shortcut/hot-lookup scan after a delay, caught a stale-buffer rewrite, re-patched, then held a 45-second stability watch that reported `STABLE_45S`.
+- Re-ran native allocation, `.Complete()`, packing, file-ingest, RNG, LINQ, diff, and JSON guards.
+
+Cinematic Cheats used:
+- No physical collider, GameObject, Animator, or CPU door simulation was introduced. The route remains mathematical AUP conversion, Vault-owned collision proof, and shader-side door presentation.
+
+Exact Microseconds saved:
+- No profiler-backed speed claim. The correction prevents wrong-origin AUP proof and keeps hot bridge routes free of global-origin shortcuts; normal KCC/PreSimulation BufferID lookups remain replaced by generation-handle resolves from Loops 50 and 51.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_AUP_CONVERTER_SOURCE_CHURN_RECONCILED">
+  <source_churn result="PASS_STATIC">`BaseAirlock.TryConvertRuntimePositionToAup` and `PlayerKinematicsRuntime.TryResolveAupFromRuntimeOrigin` use committed floating-origin conversion and `AbsoluteUniversePosition.FromAbsolutePosition`.</source_churn>
+  <delayed_scan result="PASS_STATIC">Initial delayed scan caught source churn; final 45-second stability watch after re-patch reported `STABLE_45S` with both converter bodies still on `ToAbsoluteUniversePositionDouble3`.</delayed_scan>
+  <zero_gc_guard result="PASS_STATIC">Targeted scan reports no `new NativeArray`, `new NativeList`, `new NativeHashMap`, `.Complete(`, `StructLayout(Pack...)`, `File.ReadAllBytes`, `UnityEngine.Random`, or LINQ token.</zero_gc_guard>
+  <artifact_guard result="PASS_STATIC">`CONSTRUCTION_OPTIMIZATION_REPORT.json` and `CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_220.json` parse; `git diff --check` reports CRLF warnings only.</artifact_guard>
+  <compile_guard result="NOT_RUN">No build/rebuild launched; `Win32_Processor.LoadPercentage = 100` and project CPU policy blocks compilation.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: KCC AUP Helper Rename
+
+What was wrong:
+- The private KCC helper name `TryResolveAupFromRuntimeOrigin` preserved stale authority language after the implementation moved to committed floating-origin conversion.
+
+What was done:
+- Renamed both overloads and all call sites to `TryConvertRuntimePositionToAup`.
+- Verified no old helper name, no `GlobalSignals.CurrentRuntimeOriginAup`, and no `AbsoluteUniversePosition.FromRuntimePosition` remain in the KCC/BaseAirlock AUP slice.
+
+Cinematic Cheats used:
+- No physical simulation path changed. This is source-authority hygiene only.
+
+Exact Microseconds saved:
+- 0 us. Rename only; no runtime code path widened.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_KCC_AUP_HELPER_RENAMED">
+  <name_scan result="PASS_STATIC">Targeted scan reports no `TryResolveAupFromRuntimeOrigin` in `PlayerKinematicsRuntime`.</name_scan>
+  <authority_scan result="PASS_STATIC">Targeted scan reports no `GlobalSignals.CurrentRuntimeOriginAup` and no `AbsoluteUniversePosition.FromRuntimePosition` in the KCC/BaseAirlock AUP slice.</authority_scan>
+  <runtime_cost result="UNCHANGED">Rename only; no DTO, Vault route, job dependency, or allocation changed.</runtime_cost>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Override AUP Overload Restore
+
+What was wrong:
+- `ProcessDoorOverrideJob` passed `InteractionUiSignal.TargetAup` (`AbsoluteUniversePosition`) into `BulkheadContainmentMath.ToAbsoluteDouble3`, while the active helper set only accepted `LockstepPlayerKinematicState`.
+- That made the manual override lane compile-risk and undermined the Task 09 proof.
+
+What was done:
+- Added a Construction-local `ToAbsoluteDouble3(in AbsoluteUniversePosition)` overload.
+- Kept the arithmetic explicit: `Grid * HectonPhysicsContract.AupSectorSizeMetersDouble + Local`.
+- Verified the delayed source scan still sees the overload and the override call.
+
+Cinematic Cheats used:
+- No collider, GameObject, Animator, or scene lookup was introduced. Manual override remains a SignalBus snapshot plus double-space AUP distance test.
+
+Exact Microseconds saved:
+- 0 us claimed. This is compile-risk removal and authority hygiene. Hot override cost remains fixed at three double multiply-adds for each accepted override signal before local distance checks.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_OVERRIDE_AUP_OVERLOAD_RESTORED">
+  <compile_risk result="PASS_STATIC">`BulkheadContainmentMath.ToAbsoluteDouble3(in AbsoluteUniversePosition)` exists and matches `ProcessDoorOverrideJob` usage of `signal.TargetAup`.</compile_risk>
+  <authority_math result="PASS_STATIC">The overload uses raw AUP grid/local arithmetic with `HectonPhysicsContract.AupSectorSizeMetersDouble`; it does not call `GlobalSignals.CurrentRuntimeOriginAup`, `AbsoluteUniversePosition.FromRuntimePosition`, or runtime-origin convenience paths.</authority_math>
+  <scan_guard result="PASS_STATIC">Targeted scans report no stale AUP shortcut, no hidden `.Complete()`, no `StructLayout(Pack...)`, no private native collection allocation, no Gameplay/KCC Construction import, and no unmanaged DTO auto-property in the SHINOBU slice.</scan_guard>
+  <diff_guard result="PASS_STATIC">`git diff --check` reports CRLF normalization warnings only.</diff_guard>
+  <compile_guard result="NOT_RUN_CPU_GATE">No build/rebuild launched; `typeperf` sampled CPU at `52.846826`, above the project 50% gate.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Override Hash Fast Path And NaN Guard
+
+What was wrong:
+- `ProcessDoorOverrideJob` converted `InteractionUiSignal.TargetAup` for every valid override signal before checking the exact `TargetHash`.
+- Non-finite `PlayerAup` or signal AUP values could enter double delta/dot-product math and rely on NaN comparison behavior to avoid mutation.
+
+What was done:
+- Added a job-entry finite gate for `PlayerAup`.
+- Moved signal AUP conversion behind `!hashMatch`.
+- Cached the converted signal AUP once per signal and reused it across distance fallback candidates.
+- Left exact hash override as the cheapest route: no signal AUP conversion, no AUP center read, no double3 deltas, no dot products.
+
+Cinematic Cheats used:
+- Manual override remains a flat SignalBus snapshot plus mathematical hash/distance test. No collider, GameObject, scene search, or physical door controller was introduced.
+
+Exact Microseconds saved:
+- Estimate only: exact-hash override saves one signal AUP conversion, one center lane read, two double3 subtractions, and two dot products per candidate state until the hash match. Distance fallback does not regress because the converted signal AUP is cached once per signal.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_OVERRIDE_FASTPATH_NAN_GUARD">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <nan_vaccine result="PASS_STATIC">`ProcessDoorOverrideJob` exits on non-finite `PlayerAup`, and distance fallback skips non-finite signal AUP or bulkhead center AUP before dot products.</nan_vaccine>
+  <fast_path result="PASS_STATIC">Exact `TargetHash` matches bypass signal AUP conversion, center lane reads, double3 subtraction, and dot products.</fast_path>
+  <no_alias_dependency result="PASS_STATIC">The job keeps `[ReadOnly, NoAlias] NativeArray&lt;InteractionUiSignal&gt;.ReadOnly` for signals and `[NoAlias]` raw pointers for state/AUP lanes; no new dependency handle, `.Complete()`, or allocation was introduced.</no_alias_dependency>
+  <scan_guard result="PASS_STATIC">Targeted red-flag scan returned no stale AUP shortcut, `.Complete()`, `StructLayout(Pack...)`, native allocation, `File.ReadAllBytes`, or `UnityEngine.Random` hits in the SHINOBU slice.</scan_guard>
+  <compile_guard result="NOT_RUN_ACTIVE_COMPILER">No build/rebuild launched; CPU sampled `38.746260`, but `dotnet` PID `29148` was active.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Quality Weight NaN Vaccine
+
+What was wrong:
+- `HomeostasisBrain.GlobalQualityWeight` was read as a raw float in editor state, tuning DTO writeback, Simulation cadence, and VisualSync shader params.
+- Invalid quality input could turn cadence/period math or shader params into NaN.
+- Editor tuning scalar writes used `math.max`/`math.saturate`, which does not provide an explicit NaN fallback.
+
+What was done:
+- Wrapped every SHINOBU quality read in `BulkheadContainmentMath.Sanitize01`.
+- Hardened `ResolveAuthorityCadenceHz` so invalid input collapses to the continuous minimum endpoint: `lerp(5, 30, 0)`.
+- Replaced editor tuning and tuning DTO raw scalar clamps with `SanitizePositive`/`Sanitize01`.
+- Sanitized `AuthorityCadenceHz` before writing both active and empty telemetry rows.
+
+Cinematic Cheats used:
+- No physical simulation path changed. Bad quality input now drops to the cheap visual/cadence approximation instead of creating a NaN authority path.
+
+Exact Microseconds saved:
+- No profiler-backed speed claim. The correction prevents accidental every-frame authority execution if cadence period becomes NaN. Added cost is one finite/saturate guard per quality read and one finite cadence guard per telemetry row.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_QUALITY_WEIGHT_NAN_VACCINE">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <quality_input result="PASS_STATIC">No raw `float q = HomeostasisBrain.GlobalQualityWeight` or `quality = HomeostasisBrain.GlobalQualityWeight` remains in `BulkheadContainmentRuntime`.</quality_input>
+  <continuous_scalability result="PASS_STATIC">Finite quality still follows `math.lerp(5f, 30f, q*q)`; non-finite quality collapses to q=0 without changing DTO layout, authority route, or save identity.</continuous_scalability>
+  <telemetry result="PASS_STATIC">Active and empty telemetry rows sanitize `AuthorityCadenceHz` before writing the 300-frame ring.</telemetry>
+  <scan_guard result="PASS_STATIC">Targeted red-flag scan returned no stale AUP shortcut, `.Complete()`, `StructLayout(Pack...)`, native allocation, `File.ReadAllBytes`, or `UnityEngine.Random` hits in the SHINOBU slice.</scan_guard>
+  <compile_guard result="NOT_RUN_CPU_GATE">No build/rebuild launched; no compiler process was visible, but CPU sampled `100.000000`.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Empty Telemetry And Shader Upload Cleanup
+
+What was wrong:
+- Empty-route telemetry wrote `_lastScheduleMicroseconds` raw after the active Burst row had been sanitized.
+- Collision depth used a finite ternary plus `math.max`, leaving a second style of NaN defense where the codebase already has `SanitizePositive`.
+- Shader upload catch scope covered lock, memcpy, and unlock together, with no explicit unlock cleanup after a successful lock and failed copy.
+
+What was done:
+- Sanitized empty-route `LastScheduleMicroseconds`.
+- Replaced active and empty collision-depth clamping with `BulkheadContainmentMath.SanitizePositive`.
+- Split `UploadNativeArray` into lock/copy and unlock phases; failed copy after lock attempts one guarded unlock, and failed unlock returns false to the caller.
+
+Cinematic Cheats used:
+- The Dear Lie remains visual-only: failed shader upload disables `_GlobalBulkheadParams` and `_GlobalBulkheadStates` instead of falling back to CPU transform doors.
+
+Exact Microseconds saved:
+- No profiler-backed speed claim. Normal upload cost is unchanged. Failure-path cleanup prevents a visual upload fault from destabilizing later frames.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_EMPTY_TELEMETRY_SHADER_UNLOCK">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <telemetry result="PASS_STATIC">Active and empty rows sanitize `LastScheduleMicroseconds`; no `math.max(0f, collision.DepthMeters)` path remains in SHINOBU telemetry.</telemetry>
+  <shader_upload result="PASS_STATIC">`UploadNativeArray` tracks a successful lock and calls `TryUnlockBufferAfterFailedWrite` only on post-lock copy failure.</shader_upload>
+  <scan_guard result="PASS_STATIC">Red-flag scan returned no stale AUP shortcut, `.Complete()`, `StructLayout(Pack...)`, native allocation, `File.ReadAllBytes`, `UnityEngine.Random`, or binary quality token in the SHINOBU target slice.</scan_guard>
+  <compile_guard result="NOT_RUN_CPU_AND_DOTNET_GATE">No build/rebuild launched; CPU sampled `100.000000` and multiple `dotnet` processes were active.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Layout Guard Fail-Closed
+
+What was wrong:
+- `BootstrapVaultState` and `RefreshVaultState` threw `FatalArchitectureException` on layout mismatch.
+- `RefreshVaultState` is reached from dispatcher phase ticks, so the throw was a hot-phase failure mode.
+
+What was done:
+- Replaced throw sites with `EnsureLayoutValid(vault)`.
+- Invalid layout returns false and leaves PreSimulation, Simulation, and VisualSync inert.
+- Added one-shot layout-fault telemetry with `NonFinite | DumpRequested | ScheduleTimeOnly` flags when telemetry/cursor handles are already bound.
+
+Cinematic Cheats used:
+- No physical simulation path was added. Layout failure disables both gameplay containment mutation and visual shader upload instead of creating a CPU fallback.
+
+Exact Microseconds saved:
+- Valid path is a cached layout bool after first check. Fault path writes one 64-byte row if telemetry exists; no runtime speed claim.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_LAYOUT_FAIL_CLOSED">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <layout_guard result="PASS_STATIC">No `FatalArchitectureException` token remains in `BulkheadContainmentRuntime`; invalid layout returns false through `EnsureLayoutValid`.</layout_guard>
+  <blackbox result="PASS_STATIC">`RecordLayoutFaultTelemetry` writes a single dump-request row if telemetry and cursor handles resolve.</blackbox>
+  <subagent_scope result="RECORDED_NOT_EDITED">KCC-wide `ToRuntimeFloat3`, quality enum branches, hot Vault lookups, and dispatcher-fence completion wrappers were reported by the sub-agent but kept out of SHINOBU edits because they are broader Kinematics ownership risks.</subagent_scope>
+  <compile_guard result="PENDING_GATE">Build/rebuild remains gated until CPU is <=50 and no `dotnet`/compiler process is active.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: KCC AUP Runtime Converter
+
+What was wrong:
+- Two `AbsoluteUniversePosition.ToRuntimeFloat3()` calls remained in `PlayerKinematicsRuntime`.
+- That helper reads `GlobalSignals.CurrentRuntimeOriginAup()` internally, bypassing the committed floating-origin route.
+
+What was done:
+- Added `TryConvertAupToRuntimePosition` next to the KCC AUP conversion helpers.
+- Replaced the environment IK impact point and state-correction AUP payload conversions with the new helper.
+- The helper converts AUP to absolute double space, then calls `HectonFloatingOrigin.ToRuntimePosition` and finite-checks the final `float3`.
+
+Cinematic Cheats used:
+- None. This is coordinate authority hygiene for KCC bridge data; it does not add simulation or visuals.
+
+Exact Microseconds saved:
+- No speed claim. This prevents wrong-origin runtime positions after rebases; cost is fixed scalar conversion on two existing signal/correction paths.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_KCC_AUP_RUNTIME_CONVERTER">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <aup_precision result="PASS_STATIC">No `.ToRuntimeFloat3(`, `GlobalSignals.CurrentRuntimeOriginAup`, or `AbsoluteUniversePosition.FromRuntimePosition` remains in `PlayerKinematicsRuntime.cs` or `BaseAirlock.cs`.</aup_precision>
+  <scope result="LIMITED_CROSS_DOMAIN_EDIT">The KCC edit is limited to coordinate conversion in a file already used by the bulkhead collision consumer. KCC-wide quality tier branches, hot Vault lookups, and dispatcher completion wrappers are still outside SHINOBU containment authority.</scope>
+  <compile_guard result="PENDING_GATE">Build/rebuild remains gated until CPU is <=50 and no `dotnet`/compiler process is active.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: CSV Cold IO Fail-Closed
+
+What was wrong:
+- `TryLoadProfilesFromCsvFile` opened and read designer CSV profiles without a filtered IO/path exception boundary.
+- A bad path or denied read could throw through an editor-facing tuning bridge.
+
+What was done:
+- Wrapped file open/read into a filtered fail-closed block.
+- Added `IsColdStorageException` and reused it for both CSV import and black-box dump writes.
+- Kept the CSV path on the existing Vault-owned scratch byte buffer; no `File.ReadAllBytes` fallback was introduced.
+
+Cinematic Cheats used:
+- None. This is human tuning bridge hardening; gameplay still uses unmanaged profile DTO rows and the existing shader Dear Lie.
+
+Exact Microseconds saved:
+- Hot frame cost is 0 us. Cold import now fails inert on IO/path errors instead of throwing; no runtime performance claim.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_CSV_COLD_IO_FAIL_CLOSED">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <human_tuning_bridge result="PASS_STATIC">`TryLoadProfilesFromCsvFile` reads into `Shinobu220BulkheadCsvScratch` and catches only storage/path exceptions through `IsColdStorageException`.</human_tuning_bridge>
+  <zero_gc_bridge result="PASS_STATIC">No `File.ReadAllBytes` fallback exists in the SHINOBU target slice.</zero_gc_bridge>
+  <scan_guard result="PASS_STATIC">Targeted red-flag scan returned no stale AUP shortcut, `.Complete()`, `StructLayout(Pack...)`, native allocation, `UnityEngine.Random`, managed publisher bridge, or legacy bulkhead bridge hit in the SHINOBU target slice.</scan_guard>
+  <compile_guard result="NOT_RUN_CPU_AND_DOTNET_GATE">No build/rebuild launched; CPU sampled `83.734934` and multiple `dotnet` processes were active.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Intent Bus Cached Generation Handles
+
+What was wrong:
+- `BulkheadContainmentIntentBus` looked up intent ring/control generation handles by BufferID for every airlock packet write.
+- The runtime already has a cold Vault bind/rebind point, so repeated producer-side descriptor lookup was unnecessary.
+
+What was done:
+- Added cached `VaultGenerationHandle` fields for the intent ring and control row.
+- Moved descriptor acquisition into `BindDataVault`/`TryBindDataVault`.
+- Write path now resolves cached handles and performs one bounded rebind retry only if resolution fails.
+
+Cinematic Cheats used:
+- None. This is route-cost reduction; the visible bulkhead remains the shader/Dear Lie path and the gameplay fact remains the Vault DTO lane.
+
+Exact Microseconds saved:
+- No profiler-backed timing claim. The theoretical saving is two BufferID descriptor lookups per successful publish after cold bind.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_INTENT_BUS_CACHED_GENERATION_HANDLES">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <authority_route result="PASS_STATIC">Intent writes still go through `Shinobu220BulkheadIntentRing` and `Shinobu220BulkheadIntentControl`; no new route or shadow owner was added.</authority_route>
+  <h_phi result="PASS_STATIC">The bus caches only 16-byte generation descriptors and resolves transient `NativeArray` views per write; it does not own private persistent arrays.</h_phi>
+  <lookup_cost result="PASS_STATIC">`TryGetGenerationHandle` now appears only inside `TryBindDataVault`, not in the normal write body.</lookup_cost>
+  <compile_guard result="NOT_RUN_CPU_AND_COMPILER_GATE">No build/rebuild launched; CPU sampled `100.000000` and `dotnet`/`VBCSCompiler` were active.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Burst NaN Guard Reinforcement
+
+What was wrong:
+- Closure integration clamped raw `DeltaSeconds`; NaN could survive into closure progress.
+- CSR lock writes used `math.max(edge.OpenConductivity, 0f)` and `math.max(edge.OpenFluidFlow, 0f)`.
+- Collision projection did not check localized `float3` deltas after double AUP subtraction and casting.
+
+What was done:
+- Added `SanitizeNonNegative` for zero-valid scalar lanes.
+- Sanitized closure dt before capping.
+- Sanitized open conductivity/flow before CSR writes.
+- Added post-cast finite gates before collision dot products.
+
+Cinematic Cheats used:
+- No new simulation. The collision route remains a direct plane/SDF-style mathematical gate; no collider, raycast, or mesh physics path was added.
+
+Exact Microseconds saved:
+- No speed claim. Added finite guards trade a few scalar/vector checks for avoiding NaN propagation into KCC, CSR, telemetry, and rollback state.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_BURST_NAN_GUARD_REINFORCEMENT">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <nan_vaccine result="PASS_STATIC">`SanitizeNonNegative` protects closure dt and CSR open scalar lanes; post-cast collision deltas are finite-gated.</nan_vaccine>
+  <burst_directives result="PASS_STATIC">All SHINOBU mathematical jobs still use deterministic Burst compile flags.</burst_directives>
+  <dear_lie result="PASS_STATIC">No Unity collider, raycast, GameObject, or CPU transform-door fallback was introduced.</dear_lie>
+  <compile_guard result="NOT_RUN_CPU_AND_COMPILER_GATE">No build/rebuild launched; CPU sampled `65.289396` and `VBCSCompiler` was active.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Explicit AUP Arithmetic At Producer/KCC Boundary
+
+What was wrong:
+- `BaseAirlock` bulkhead bridge code still used `AbsoluteUniversePosition.ToAbsoluteDouble3()`.
+- `PlayerKinematicsRuntime` still used the same convenience helper for SDF squeeze target AUP, sync-fence drift measurement, and KCC AUP-to-runtime conversion.
+
+What was done:
+- Added raw local AUP arithmetic helpers using `Grid * HectonPhysicsContract.AupSectorSizeMetersDouble + Local`.
+- Replaced those bridge conversions with the local helpers.
+
+Cinematic Cheats used:
+- None. This is coordinate authority cleanup. The physical bulkhead still remains a mathematical plane plus shader deformation, not a moving object.
+
+Exact Microseconds saved:
+- No speed claim. Runtime arithmetic remains three double multiply-adds per conversion; the gain is auditability and removal of hidden helper dependency at this boundary.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_EXPLICIT_AUP_ARITHMETIC">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <aup_precision result="PASS_STATIC">No `.ToAbsoluteDouble3()`, `.ToRuntimeFloat3()`, `GlobalSignals.CurrentRuntimeOriginAup`, or `AbsoluteUniversePosition.FromRuntimePosition` remains in `BaseAirlock.cs` or `PlayerKinematicsRuntime.cs`.</aup_precision>
+  <authority_route result="PASS_STATIC">No DTO layout, Vault route, save identity, or quality route changed.</authority_route>
+  <compile_guard result="NOT_RUN_COMPILER_GATE">No build/rebuild launched; CPU sampled `30.692579`, but `VBCSCompiler` was active.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: BaseAirlock Scalar NaN Vaccination
+
+What was wrong:
+- Several BaseAirlock producer-side scalar paths still used raw `math.max`, `math.saturate`, or division on designer/signal/module data.
+- NaN could affect local snap/audio/override state before the unmanaged intent bus had a chance to reject a bad packet.
+
+What was done:
+- Added finite scalar helpers.
+- Hardened docking snap dt, snapshot transition duration, weld duration, signal source power/range, parent integrity, pressure differential, SmoothStep, Nlerp, and quaternion normalization.
+
+Cinematic Cheats used:
+- The equalization duration remains the existing fixed cinematic fake; no fluid simulation or pressure solver was added.
+
+Exact Microseconds saved:
+- No speed claim. This adds finite scalar checks; the purpose is preventing NaN propagation, not shaving frame time.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_BASE_AIRLOCK_SCALAR_NAN_VACCINE">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <nan_vaccine result="PASS_STATIC">BaseAirlock producer scalars now pass finite guards before local snap/audio/override use.</nan_vaccine>
+  <zero_gc result="PASS_STATIC">No managed validation object, LINQ, foreach, or new runtime collection was introduced.</zero_gc>
+  <route_integrity result="PASS_STATIC">No DTO layout, BufferID, authority route, or shader path changed.</route_integrity>
+  <compile_guard result="NOT_RUN_CPU_AND_COMPILER_GATE">No build/rebuild launched; CPU sampled `78.988316` and `bee_backend`/`dotnet`/`Unity`/`VBCSCompiler` were active.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: CSV Profile Parser Strictness
+
+What was wrong:
+- `TryParseFloat` accepted malformed cells as finite zero or truncated numbers.
+- `ParseProfiles` ignored `TryParseFloat` failures and still wrote profile DTO rows.
+
+What was done:
+- Required digit consumption and full-cell consumption in `TryParseFloat`.
+- Added row-level validity tracking and required profile hash plus six numeric columns.
+- Sanitized accepted profile scalars before writing the Vault profile row.
+
+Cinematic Cheats used:
+- None. This is editor tuning ingestion hardening. The runtime still uses the existing shader Dear Lie for visible doors.
+
+Exact Microseconds saved:
+- Hot frame cost is 0 us. Cold CSV import gains branch checks; malformed tuning now fails inert instead of poisoning profile data.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_CSV_PROFILE_STRICTNESS">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <human_tuning_bridge result="PASS_STATIC">Malformed numeric CSV cells are rejected before profile DTO writes.</human_tuning_bridge>
+  <zero_gc result="PASS_STATIC">Parser remains `ReadOnlySpan<byte>` based; no managed CSV/string parser or `File.ReadAllBytes` fallback was added.</zero_gc>
+  <route_integrity result="PASS_STATIC">No DTO layout, BufferID, authority route, or shader path changed.</route_integrity>
+  <compile_guard result="NOT_RUN_COMPILER_GATE">No build/rebuild launched; CPU sampled `14.913088`, but `bee_backend`/`dotnet`/`Unity` were active.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Plane Dimension And Producer Override NaN Fence
+
+What was wrong:
+- Collision plane half-thickness, width, and height still depended on raw DTO fields before finite-positive sanitation.
+- Closure telemetry hashing still used a direct saturate call instead of hashing a named sanitized scalar.
+- BaseAirlock weld progress, repair hit distance, parent integrity, pressure whistle intensity, and override delta projection still had narrow NaN-preserving edges.
+
+What was done:
+- `EvaluateDoorCollisionsJob` now sanitizes plane dimensions before KCC depth tests and writes sanitized closure proof.
+- `RecordBulkheadTelemetryJob` computes `closure01` once and uses it for both average closure and state hash.
+- `BaseAirlock` now finite-gates weld progress, repair snap hit distance, docking snap normalized time, parent integrity ratio, pressure whistle intensity, signal source power, and override-signal delta/forward projection.
+
+Cinematic Cheats used:
+- No collider or physics fallback was added. The bulkhead remains a mathematical plane for KCC/CSR and a shader deformation for visible motion.
+
+Exact Microseconds saved:
+- No speed claim. This pass spends a few scalar finite checks to prevent NaN propagation. The retained win is still avoiding collider broadphase, moving GameObjects, and CPU door animation.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_PLANE_DIMENSION_PRODUCER_NAN_FENCE">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <nan_vaccine result="PASS_STATIC">Plane dimensions, collision closure proof, weld progress, repair hit distance, pressure intensity, and override projection now finite-gate before use.</nan_vaccine>
+  <dear_lie result="PASS_STATIC">No physical collider, raycast, GameObject movement, or CPU mesh deformation path was added.</dear_lie>
+  <zero_gc result="PASS_STATIC">No LINQ, foreach, managed validation object, native collection allocation, or string parser was introduced.</zero_gc>
+  <route_integrity result="PASS_STATIC">No DTO layout, BufferID, authority route, save identity, or shader route changed.</route_integrity>
+  <compile_guard result="NOT_RUN_UNITY_BEE_GATE">No build/rebuild launched; CPU sampled `10.091927`, but `bee_backend` and `Unity` remained active.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Authority Accumulator And Pose Normalization Fence
+
+What was wrong:
+- `_authorityAccumulator` could preserve stale NaN/Infinity if it was ever poisoned before this pass, even though new tick deltas were already sanitized.
+- Pose/vector/quaternion normalization rejected non-finite components but not infinite length squares from huge finite transform data.
+
+What was done:
+- Sanitized and capped `_authorityAccumulator` before authority period comparison and delta emission.
+- Sanitized cadence before period division.
+- Added finite length-square guards to `SafeNormal`, `TryNormalizeFinite`, pose snapshot validity, vector lerp, and quaternion nlerp.
+
+Cinematic Cheats used:
+- No collider, Animator, moving door GameObject, or CPU mesh deformation was added. The route remains CSR edge truth plus shader-visible bulkhead wall.
+
+Exact Microseconds saved:
+- No speed claim. This pass spends scalar finite checks to prevent poisoned math. The retained performance win remains avoiding object-door simulation and preserving O(1) per-door mathematical containment.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_AUTHORITY_ACCUMULATOR_POSE_NORMALIZATION_FENCE">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <nan_vaccine result="PASS_STATIC">Authority accumulation, cadence period division, KCC plane normal generation, snap vector interpolation, and snap quaternion interpolation now finite-gate stale or infinite scalar state.</nan_vaccine>
+  <scalability_curve result="PASS_STATIC">The same continuous `lerp(5,30,q*q)` cadence remains; invalid accumulator state collapses to the finite 0.2s authority ceiling without changing gameplay ownership or DTO layout.</scalability_curve>
+  <dear_lie result="PASS_STATIC">No physical door simulation path was reintroduced.</dear_lie>
+  <zero_gc result="PASS_STATIC">No LINQ, foreach, managed validator, native collection allocation, or string parser was introduced.</zero_gc>
+  <compile_guard result="NOT_RUN_CPU_GATE">No build/rebuild launched; CPU sampled `100.000000` twice.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Direct Vault Tuning Facade
+What was wrong:
+- Editor slider apply sanitized MonoBehaviour tuning fields immediately, but live `BulkheadTuningDTO` write was only guaranteed on the next boot/refresh path.
+- That left Task 16 with weaker proof: the facade could be described as field-backed first, Vault-backed later.
+
+What was done:
+- Added `TryWriteTuningRow` on the runtime.
+- Centralized `BulkheadTuningDTO` row hydration in `WriteTuningRow`.
+- Routed `TryApplyEditorTuning` and runtime boot/refresh through the same row writer.
+
+Cinematic Cheats used:
+- No physical door, collider, Animator, mesh deformation, or scene object synchronization was added. The facade still controls scalar containment math and shader-facing proof data.
+
+Exact Microseconds saved:
+- 0 hot-frame us. This pass removes a truth-latency defect in the editor/cold bridge and avoids adding a managed mirror or scene object synchronization path.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" state="TAIL_AUDIT_DIRECT_VAULT_TUNING_FACADE">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <tuning_facade result="PASS_STATIC">`TryApplyEditorTuning` sanitizes editor scalars and calls `TryWriteTuningRow`; `WriteTuningRow` is the only `BulkheadTuningDTO` row assignment.</tuning_facade>
+  <hphi_vault result="PASS_STATIC">The tuning route writes the existing Vault handle row only. No private native array, managed mirror, BufferID, or DTO layout change was introduced.</hphi_vault>
+  <scalability_curve result="PASS_STATIC">The row still uses sanitized `GlobalQualityWeight` and `ResolveAuthorityCadenceHz(q)`; quality scales cadence continuously without changing ownership or save identity.</scalability_curve>
+  <compile_guard result="NOT_RUN_CPU_GATE">No build/rebuild launched; CPU sampled `100.000000`.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Diagnostic Plane Fence And Count Clamp
+What was wrong:
+- Editor gizmo proof planes read raw Vault DTO scalars and vectors.
+- PreSimulation and Simulation count gates trusted `_activeCount` via `math.min` instead of explicit `[0, laneLength]` bounds.
+
+What was done:
+- Added non-finite AUP/local rejection to `OnDrawGizmos`.
+- Routed gizmo normal, closure, and dimensions through existing SHINOBU sanitizers.
+- Clamped active count before PreSimulation collision scheduling, Simulation authority work, and editor gizmo loops.
+
+Cinematic Cheats used:
+- No physical debug mesh, collider, scene search, or GameObject sync was added. The diagnostic remains a mathematical plane visualization over Vault truth.
+
+Exact Microseconds saved:
+- No speed claim. Runtime adds two integer clamps. The retained performance win is preserving the object-free mathematical bulkhead plane route.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" state="TAIL_AUDIT_DIAGNOSTIC_PLANE_FENCE_COUNT_CLAMP">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <diagnostic_plane result="PASS_STATIC">`OnDrawGizmos` now finite-gates AUP/local data and sanitizes normal, closure, width, height, and thickness before drawing.</diagnostic_plane>
+  <scheduler_bounds result="PASS_STATIC">PreSimulation, Simulation, and editor loops clamp `_activeCount` before count-driven work.</scheduler_bounds>
+  <zero_gc result="PASS_STATIC">No LINQ, foreach, native collection allocation, managed mirror, scene search, or hidden job completion was introduced.</zero_gc>
+  <compile_guard result="NOT_RUN_CPU_GATE">No build/rebuild launched; CPU sampled `100.000000`.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-21 - Tail Audit: Pure Accessor Naming Discipline
+What was wrong:
+- `TryResolvePlayerKinematicStateBuffer` could mutate cached player-state handle state.
+- `ReadLine` and `ReadCell` advanced parser cursors despite using a pure-read verb.
+
+What was done:
+- Renamed mutating KCC state path to `TryAcquirePlayerState` / `TryAcquirePlayerKinematicStateBuffer`.
+- Renamed cursor-moving CSV helpers to `SliceNextLine` / `SliceNextCell`.
+
+Cinematic Cheats used:
+- No simulation or rendering path changed. This pass preserves the existing mathematical fake and removes misleading method contracts.
+
+Exact Microseconds saved:
+- 0 us. This is signature-level doctrine compliance, not a performance claim.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" state="TAIL_AUDIT_PURE_ACCESSOR_NAMING">
+  <task_reconciliation result="PASS_STATIC">CLI extraction from `CURRENT_BATCH.md` reports prompt bytes `15927`, task IDs `01..20`, and task count `20` for `SHINOBU_220` only.</task_reconciliation>
+  <accessor_purity result="PASS_STATIC">Mutating player-state acquisition no longer uses `TryResolve*`; cursor-advancing CSV helpers no longer use `Read*`.</accessor_purity>
+  <zero_gc result="PASS_STATIC">The CSV parser remains `ReadOnlySpan<byte>` based with no managed CSV reader, string split, LINQ, or allocation.</zero_gc>
+  <compile_guard result="NOT_RUN_CPU_GATE">No build/rebuild launched; CPU sampled `100.000000`.</compile_guard>
 </SELF_AUDIT>

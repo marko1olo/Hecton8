@@ -1,0 +1,3 @@
+# asset_key,prefab_path,renderer_path,material_slot
+# Example:
+# MSH_SHINOBU_269_MockComplexKnot,Assets/_Project/Prefabs/AI_Texturing/MSH_SHINOBU_269_MockComplexKnot.prefab,Geometry/RenderMesh,0

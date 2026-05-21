@@ -378,3 +378,125 @@ Solution: update generator, generated atlas, tests, root/architecture docs, R47 
 Rejected Alternatives: calling the atlas verified because generation/tests/py_compile pass, or fabricating missing Dynamic Decals/RealtimeCSG/editor/Habitat paths.
 Scalability potential: missing payload/source references do not become green evidence on any device tier.
 Hardware Impact: 0 us frame-time impact.
+
+## R48 Decisions
+
+Problem: active root/architecture documents still carried R47/R46/R42 currentness residue after the date rollover and R48 report creation.
+Solution: promote R48 as the current local static DOC_GLOBAL boundary and patch root read orders, Reports index wording, project atlas wording, quality gates, procedural root docs, architecture actuality ledger, and newly active architecture files.
+Rejected Alternatives: leaving R47 as current because many boundary blocks already mentioned R48 elsewhere, or editing archives as if they were live authority.
+Scalability potential: no runtime effect; low/mid/high/ultra planning starts from one current static boundary instead of mixed date/currentness layers.
+Hardware Impact: 0 us frame-time impact on i3/MX350; documentation-only.
+
+Problem: source counters drifted during R48 under concurrent source changes.
+Solution: recapture and promote R48 counters: `ProjectCs=2153`, `ScriptCs=2089`, `NonTestCs=2125`, `ProjectLines=1475407`, `ScriptLines=1454328`, `NonTestLines=1468456`, `Asmdefs=152`, `NonTestAsmdefs=150`, `InterfaceHitsProject=343`, `InterfaceHitsScripts=340`, `InterfaceDeclsProject=317`, `InterfaceDeclsScripts=315`, `GlobalRegistryContractsPublicInterfaces=62`, `GlobalRegistryHits=6230`, `PublishSubscribeDirectCallLines=307`, `SignalCorridorBroadHits=2656`, `NativeHits=23919`, `NativeQueueRefs=904`, `CreateQueueSlots=73`, `EnsureLanes=277`, `ConfigureEnsure=505`, and `ScriptTypedLanes=1441`.
+Rejected Alternatives: keeping early R48 `2147/2083/2121`, `151/149`, or stale R47 counts after fresh scan disagreed; deleting exact counters instead of labeling them volatile STATIC_SOURCE orientation.
+Scalability potential: review estimates use current source mass and signal/native pressure before device-tier planning.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: route-card exact-field coverage expanded from 14 to 18 active route-card docs, and some new/active architecture docs lacked R48 boundaries.
+Solution: add R48 boundary blocks to active architecture docs without touching `.diff` evidence files, then scan route cards for `Route ID`, `Owner`, `Instrument`, producer/consumer phase, cadence/capacity, overflow/failure, shutdown/disposal, proof, and review disposition until `RouteCardFiles=18`, `Missing=0`.
+Rejected Alternatives: accepting old boundary absence in newly active docs, or allowing route-card prose to imply GREEN without exact review fields.
+Scalability potential: route growth remains owner-local and evidence-gated before low-tier/mobile or high-tier/ultra expansion.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: Data Monolith format documentation could be misread as runtime readiness proof.
+Solution: add `Docs/ARCHITECTURE/DATA_MONOLITH_RUNTIME_INTEGRATION.md` and link it from architecture README; the new contract separates `.h8bin` spec/source visibility from boot-load, checksum, section-count, Console, Play Mode, player-build, and profiler proof.
+Rejected Alternatives: treating `DATA_MONOLITH_H8BIN_SPEC.md`, source files, or h8bin validator source visibility as active player payload proof.
+Scalability potential: all device tiers require real binary payload and boot proof before static data readiness claims.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: historical Unity/readback wording in root ledgers could still be read as current runtime proof.
+Solution: demote `fresh Unity verification` and several `Unity compile/readback returned 0` roadmap rows to capture-time prose with no linked current artifact tuple.
+Rejected Alternatives: claiming Unity import, Console, Play Mode, profiler, or player-build proof from roadmap text.
+Scalability potential: performance/platform claims require current artifacts before low/mid/high/ultra acceptance.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: AtlasCheck remains red after regeneration and source/doc changes.
+Solution: keep generator, generated atlas, tests, report, status, and logs on `ATLAS_CHECK_FAIL references=6861 missing=64`, with missing Dynamic Decals, RealtimeCSG vendor icons/readme image refs, and missing HectonMaskChannelPacker/HectonMaterialChannelPackValidator/HectonScannerProjectionState/HabitatDamageBakePipeline/IBuildPlacementRule/PlacementGhost source refs listed explicitly.
+Rejected Alternatives: calling the atlas verified because generation, unit tests, and py_compile pass, or fabricating missing vendor/source files.
+Scalability potential: missing payload/source references do not become green evidence on any device tier.
+Hardware Impact: 0 us frame-time impact.
+
+## R49 Decisions
+
+Problem: active root/architecture documents still carried R48 currentness residue after R49 AtlasCheck and source-counter drift were identified.
+Solution: promote R49 as the current local static DOC_GLOBAL boundary in root read orders, Reports index, architecture README/actuality ledger, `Docs/PROJECT_ATLAS.md`, `Docs/TECH_ART_PBR_SURFACE_DOCTRINE.md`, and generated atlas metadata.
+Rejected Alternatives: leaving R48 as latest because the top boundary existed in many files, or editing historical dated reports as if they were current evidence.
+Scalability potential: no runtime effect; low/mid/high/ultra planning starts from one current static documentation boundary rather than mixed R48/R49 entrypoints.
+Hardware Impact: 0 us frame-time impact on i3/MX350; documentation-only.
+
+Problem: source counters drifted during R49 under concurrent source changes.
+Solution: recapture and promote R49 counters: `ProjectCs=2152`, `ScriptCs=2088`, `NonTestCs=2124`, `ProjectLines=1481474`, `ScriptLines=1460382`, `NonTestLines=1474507`, `Asmdefs=154`, `NonTestAsmdefs=152`, `InterfaceHitsProject=353`, `InterfaceHitsScripts=350`, `InterfaceDeclsProject=277`, `InterfaceDeclsScripts=276`, `GlobalRegistryContractsPublicInterfaces=62`, `GlobalRegistryHits=6223`, `PublishSubscribeDirectCallLines=307`, `SignalCorridorBroadHits=2685`, `NativeHits=19574`, `NativeQueueRefs=904`, `CreateQueueSlots=73`, `EnsureLanes=277`, `ConfigureEnsure=505`, and `ScriptTypedLanes=1440`.
+Rejected Alternatives: keeping earlier R49 `1480468/1459378/1473503`, `350/347`, `324/322`, `6224`, `2680`, `19161`, and `905` after fresh static source scan disagreed.
+Scalability potential: review estimates use current source mass and signal/native pressure before device-tier planning.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: route-card rows in `SHINOBU_235_DEEP_SEA_NOIR_ROUTE_CARD.md` and `HADAL_TRENCH_PAYLOAD_ROUTE_CARD.md` still had combined producer/consumer labels and a literal `` `n`` separator after automated normalization.
+Solution: split those rows into exact `Producer phase` and `Consumer phase` fields and rerun a route-card scan using the repository's current label style: `Cadence/capacity`, `Overflow/failure`, `Shutdown/disposal`, `Proof required before GREEN`, and `Review disposition`.
+Rejected Alternatives: accepting combined fields because readers can infer intent, or rewriting the global route-card template label style during a documentation-currentness pass.
+Scalability potential: route reviews stay owner-local and evidence-gated before any low-tier/mobile or high-tier/ultra expansion.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: AtlasCheck red tuple changed from R48's `missing=64` to `missing=65` after the generated atlas cache exposed `Assets/_Project/Scripts/Construction/AutonomousExtractorJobs.cs`.
+Solution: update generator, generated atlas, tests, root/architecture docs, report, status, and log to `ATLAS_CHECK_FAIL references=6861 missing=65`, and list the added missing source ref explicitly.
+Rejected Alternatives: deleting the stale cache key without understanding source ownership, calling the atlas verified because generation/tests pass, or fabricating missing vendor/source files.
+Scalability potential: missing payload/source references do not become green evidence on any device tier.
+Hardware Impact: 0 us frame-time impact.
+
+## R50 Decisions
+
+Problem: generated atlas files and tests could drift because `Tools/BuildArchitectureAtlas.py` carried a hard-coded AtlasCheck red tuple.
+Solution: make the atlas generator run `Tools/AtlasCheck.py`, summarize missing refs dynamically, write the current red-state into Markdown/JSON, and update atlas tests to assert R50/dynamic failure wording instead of a fixed R49 tuple.
+Rejected Alternatives: hand-editing generated atlas output, claiming atlas verification from generator/test PASS while `AtlasCheck.py` exits non-zero, or fabricating missing vendor/source files.
+Scalability potential: no runtime effect; root/architecture review starts from the current static evidence graph before low/mid/high/ultra runtime proof is requested.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: active root/architecture docs still carried stale R48 interior-boundary wording and stale AtlasCheck tuples after R50 generation.
+Solution: promote R50 as the current local static DOC_GLOBAL boundary across active root docs, top-level Docs entrypoints, `Docs/ARCHITECTURE/*.md`, `Docs/Reports/README.md`, and generated atlas metadata; current red-state is `ATLAS_CHECK_FAIL references=6868 missing=60`.
+Rejected Alternatives: leaving `6847 missing=61` or `6867 missing=60` in active boundary blocks, or editing archive reports as if they were live currentness.
+Scalability potential: no runtime effect; device-tier planning reads one current static boundary rather than mixed R48/R49/R50 entrypoints.
+Hardware Impact: 0 us frame-time impact on i3/MX350; documentation-only.
+
+Problem: source counters drifted again under concurrent source changes during R50.
+Solution: recapture and promote final R50 counters: `ProjectCs=2163`, `ScriptCs=2099`, `NonTestCs=2135`, `ProjectLines=1491028`, `ScriptLines=1469978`, `NonTestLines=1484103`, `Asmdefs=154`, `NonTestAsmdefs=152`, `InterfaceHitsProject=354`, `InterfaceHitsScripts=351`, `InterfaceDeclsProject=278`, `InterfaceDeclsScripts=277`, `GlobalRegistryContractsPublicInterfaces=62`, `GlobalRegistryDotHits=6212`, `PublishSubscribeDirectCallLines=306`, `SignalCorridorBroadHits=3210`, `NativeCollectionHits=19731`, `NativeQueueGenericRefs=904`, `CreateQueueCalls=73`, `SignalBusEnsureInitializedHits=279`, `SignalBusConfigureOrEnsureHits=512`, and `ScriptTypedLanes=1448`.
+Rejected Alternatives: keeping the earlier R50 `2156/2092/2128` snapshot after static source scan disagreed, or deleting exact counters instead of marking them volatile STATIC_SOURCE orientation.
+Scalability potential: review estimates use current source mass and signal/native pressure before device-tier planning.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: binary-payload and route-card wording allowed planned/generated-on-fault dump targets to read like existing runtime artifacts.
+Solution: label dump targets as planned/generated-on-fault and scan active architecture docs until no `Blackbox dump path:` or `Dump path:` overclaim labels remain.
+Rejected Alternatives: treating a path string as an existing `.bin` artifact without command, timestamp, environment, trigger, and output proof.
+Scalability potential: all device tiers require real artifact-backed crash telemetry before black-box readiness claims.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: a new active route-card file, `Docs/ARCHITECTURE/SHINOBU_248_SHOCKWAVE_NAN_ROUTE_CARD.md`, appeared during R50 without the current boundary or exact route-card fields.
+Solution: add the R50 actuality boundary and a minimal exact-field route table covering `Route ID`, owner, instrument, producer/consumer phase, cadence/capacity, overflow/failure, shutdown/disposal, proof required before GREEN, and review disposition.
+Rejected Alternatives: excluding the new route card from the scan because it appeared late, or marking it GREEN from static source prose without Unity/runtime/profiler evidence.
+Scalability potential: route review stays owner-local and evidence-gated before low-tier or ultra-tier physics/visual claims.
+Hardware Impact: 0 us frame-time impact.
+
+## R51 Decisions
+
+Problem: active root/architecture docs contained real encoding damage, including unreadable AGENTS checklist rows, a damaged procedural-asset pipeline, damaged architecture formulas/keywords, and stale encoded dump-name text.
+Solution: repair the active text, replace `Docs/PROCEDURAL_ASSET_PIPELINE.md` with a clean static production contract, and verify `MojibakeStrictFiles=0` over the active root/architecture scope.
+Rejected Alternatives: treating the files as current because boundary blocks existed, or preserving unreadable mojibake as historical evidence inside active docs.
+Scalability potential: no runtime effect; low/mid/high/ultra work now reads legible contracts for visual-fake-first asset production and proof boundaries.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: active architecture route cards changed under concurrent work and added new boundary/field defects.
+Solution: add R51 boundaries to newly visible architecture docs, split `SHINOBU_249` producer/consumer fields, add `SHINOBU_251` review disposition, and demote dump targets to planned/generated-on-fault wording. Final scans reached `R51BoundaryScope=140`, `Missing=0`, `RouteCardFiles=22`, `Missing=0`, and `DumpLabelOverclaimHits=0`.
+Rejected Alternatives: allowing combined fields because the prose was understandable, or treating dump path strings as existing runtime dump artifacts.
+Scalability potential: route ownership stays explicit before any device-tier or visual-overkill claims are accepted.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: source counters and AtlasCheck drifted again during R51 after concurrent source/doc churn.
+Solution: recapture source-scale counters and regenerate the atlas after all text repairs. Final orientation is `ProjectCs=2169`, `ScriptCs=2104`, `NonTestCs=2140`, `ProjectLines=1494334`, `ScriptLines=1473147`, `NonTestLines=1487272`, `Asmdefs=154`, `NonTestAsmdefs=152`, `InterfaceHitsProject=354`, `InterfaceHitsScripts=351`, `InterfaceDeclsProject=278`, `InterfaceDeclsScripts=277`, `GlobalRegistryContractsPublicInterfaces=62`, `GlobalRegistryDotHits=6192`, `PublishSubscribeDirectCallLines=306`, `SignalCorridorBroadHits=3210`, `NativeCollectionHits=19840`, `NativeQueueGenericRefs=904`, `CreateQueueCalls=73`, `SignalBusEnsureInitializedHits=279`, `SignalBusConfigureOrEnsureHits=512`, and `ScriptTypedLanes=1448`.
+Rejected Alternatives: preserving R50 `2163/2099/2135` and `ATLAS_CHECK_FAIL references=6868 missing=60` after fresh scans disagreed.
+Scalability potential: review estimates use the current static source mass and signal/native pressure before low-tier/mobile or high-tier/ultra work is planned.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: `Tools\AtlasCheck.py` remains red even after atlas regeneration.
+Solution: record the exact R51 red tuple, `ATLAS_CHECK_FAIL references=6881 missing=60`, and list the remaining missing refs instead of calling the generated atlas verified.
+Rejected Alternatives: claiming atlas verification from generation/tests/py_compile, or fabricating missing Dynamic Decals, RealtimeCSG, HectonMaskChannelPacker, or HectonMaterialChannelPackValidator files.
+Scalability potential: missing payload/source references do not become valid proof on any device tier.
+Hardware Impact: 0 us frame-time impact.

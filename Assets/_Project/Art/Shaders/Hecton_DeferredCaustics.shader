@@ -15,11 +15,12 @@ Shader "Hidden/Hecton8/DeferredCaustics"
 
         HLSLINCLUDE
         #pragma target 4.5
+        // This fullscreen composite is LIGHT_COOKIE independent. LIGHT_COOKIE variants are stripped deliberately:
+        // caustics come from screen depth + procedural math, not from LIGHT_COOKIE or PROJECTOR passes.
         #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
         #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
         CBUFFER_START(HectonAbyssalCaustics)
             float4 ProjectionVectorAndScale;   // xyz=sun-to-surface direction, w=noise scale
@@ -28,7 +29,8 @@ Shader "Hidden/Hecton8/DeferredCaustics"
             float4 QualityAndColor;            // x=GlobalQualityWeight, yzw=linear RGB tint
         CBUFFER_END
 
-        TEXTURE2D_X(_BlitTexture);
+        TEXTURE2D_X(_HectonDeferredCausticsSource);
+        TEXTURE2D_X_FLOAT(_HectonDeferredCausticsDepth);
         TEXTURE3D(_HectonCaveVoxelSdfTex);
         SAMPLER(sampler_HectonCaveVoxelSdfTex);
         float _HectonCaveVoxelActive;
@@ -39,17 +41,21 @@ Shader "Hidden/Hecton8/DeferredCaustics"
         struct Attributes
         {
             uint vertexID : SV_VertexID;
+            UNITY_VERTEX_INPUT_INSTANCE_ID
         };
 
         struct Varyings
         {
             float4 positionCS : SV_POSITION;
             float2 screenUV : TEXCOORD0;
+            UNITY_VERTEX_OUTPUT_STEREO
         };
 
         Varyings Vert(Attributes input)
         {
             Varyings output;
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
             output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
             output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
         #if UNITY_UV_STARTS_AT_TOP
@@ -65,6 +71,11 @@ Shader "Hidden/Hecton8/DeferredCaustics"
         #else
             return step(rawDepth, 0.9999);
         #endif
+        }
+
+        float SampleCausticsDepth(float2 screenUV)
+        {
+            return SAMPLE_TEXTURE2D_X(_HectonDeferredCausticsDepth, sampler_PointClamp, screenUV).r;
         }
 
         float SafeFinite(float value, float fallbackValue)
@@ -87,7 +98,7 @@ Shader "Hidden/Hecton8/DeferredCaustics"
             return frac((p3.xx + p3.yz) * p3.zy);
         }
 
-        float VoronoiDistance(float2 uv)
+        float VoronoiDistanceSq(float2 uv)
         {
             float2 cell = floor(uv);
             float2 local = frac(uv);
@@ -105,13 +116,13 @@ Shader "Hidden/Hecton8/DeferredCaustics"
                 }
             }
 
-            return sqrt(best);
+            return best;
         }
 
         float CausticLineLayer(float2 uv)
         {
-            float distanceToCell = VoronoiDistance(uv);
-            float line = saturate(1.0 - distanceToCell);
+            float distanceSqToCell = VoronoiDistanceSq(uv);
+            float line = saturate(1.0 - distanceSqToCell * 1.85);
             line *= line;
             return line * line;
         }
@@ -173,8 +184,10 @@ Shader "Hidden/Hecton8/DeferredCaustics"
 
         half4 Frag(Varyings input) : SV_Target
         {
-            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
-            float rawDepth = SampleSceneDepth(input.screenUV);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 screenUV = UnityStereoTransformScreenSpaceTex(input.screenUV);
+            half4 sourceColor = SAMPLE_TEXTURE2D_X(_HectonDeferredCausticsSource, sampler_LinearClamp, screenUV);
+            float rawDepth = SampleCausticsDepth(screenUV);
             [branch]
             if (ResolveDepthValid(rawDepth) <= 0.5)
                 return sourceColor;
@@ -191,7 +204,7 @@ Shader "Hidden/Hecton8/DeferredCaustics"
             if (intensity <= 0.0001 || quality <= 0.0001)
                 return sourceColor;
 
-            float3 worldPos = ComputeWorldSpacePosition(input.screenUV, rawDepth, UNITY_MATRIX_I_VP);
+            float3 worldPos = ComputeWorldSpacePosition(screenUV, rawDepth, UNITY_MATRIX_I_VP);
             float3 sunToSurface = SafeNormalize3(ProjectionVectorAndScale.xyz, float3(0.0, -1.0, 0.0));
             float baseScale = max(SafeFinite(ProjectionVectorAndScale.w, 0.05), 0.001);
             float2 uv0 = ProjectCausticUv(worldPos, sunToSurface, baseScale);

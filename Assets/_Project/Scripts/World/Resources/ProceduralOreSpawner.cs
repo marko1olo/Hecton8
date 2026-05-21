@@ -17,7 +17,7 @@ namespace Hecton8.World
     /// Deterministic sector ore generator with Vault DTO authority and indirect dormant matrix rendering.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ProceduralOreSpawner : MonoBehaviour, ISlowTickable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IWorldResourceSpawnerReadModel, IWorldResourceSpawnerCommandModel
+    public sealed class ProceduralOreSpawner : MonoBehaviour, ISlowTickable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IWorldResourceSpawnerReadModel, IWorldResourceSpawnerCommandModel, IWorldResourceSpawnerReadDependencySink
     {
         private const string OwnerName = nameof(ProceduralOreSpawner);
         private const int DefaultOreCapacity = 2048;
@@ -50,6 +50,7 @@ namespace Hecton8.World
         private const float OreProceduralLocalExtentY = 0.34f;
         private const float OreProceduralLocalExtentZ = 0.82f;
         private static readonly int _OreMatricesId = Shader.PropertyToID("_OreMatrices");
+        private static readonly int _QualityOverkillId = Shader.PropertyToID("_QualityOverkill");
 
         [Header("Generation")]
         [SerializeField, Tooltip("Maximum deterministic ore slots retained for the active sector."), Min(MinimumOreCapacity)] private int maxOreCapacity = DefaultOreCapacity;
@@ -69,7 +70,7 @@ namespace Hecton8.World
         [SerializeField, Tooltip("Procedural ore material with a StructuredBuffer named _OreMatrices and SV_VertexID expansion.")] private Material oreMaterial;
         [SerializeField, Tooltip("Shadow mode used by dormant ore indirect draws.")] private ShadowCastingMode shadowCastingMode = ShadowCastingMode.On;
         [SerializeField, Tooltip("Whether dormant ore indirect draws receive shadows.")] private bool receiveShadows = true;
-        [SerializeField, Tooltip("Disables visual-only dormant ore rendering without changing authoritative ore state.")] private bool renderDormantOres = true;
+        [SerializeField, Tooltip("Continuous presentation weight for dormant ore indirect draws. Set 0 only for editor diagnostics; gameplay truth is unchanged."), Range(0f, 1f)] private float dormantOreVisualWeight = 1f;
 #if UNITY_EDITOR
         [SerializeField, Tooltip("Editor-only x-ray of Vault-backed procedural geology matrices.")] private bool drawProceduralGeologyGizmos;
 #endif
@@ -111,10 +112,13 @@ namespace Hecton8.World
         private GraphicsBuffer _activeMatrixBuffer;
 
         private JobHandle _spawnJob;
+        private JobHandle _pendingOreReadDependency;
         private bool _spawnJobScheduled;
+        private bool _pendingOreReadDependencyValid;
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _renderUploadDirty;
+        private float _lastAppliedDormantOreVisualWeight = -1f;
         private bool _depletionLoaded;
         private bool _discardSpawnJobOutput;
         private bool _pendingDisableSpawnDrain;
@@ -222,38 +226,61 @@ namespace Hecton8.World
         /// <summary>Stable hash for the currently loaded AUP sector.</summary>
         public long CurrentSectorHash => _currentSectorHash;
 
-        public bool TryGetOrePositions(out NativeArray<float3> orePositions, out int scanCount)
+        public bool TryGetOrePositionsReadOnly(out NativeArray<float3>.ReadOnly orePositions, out int scanCount)
         {
-            if (!TryResolveBuffer(
-                    ref _orePositionsHandle,
-                    ProceduralGeologyVaultBufferIds.OrePositions,
-                    _oreCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out orePositions))
+            if (!CanExposeReadSnapshot())
             {
+                orePositions = default;
                 scanCount = 0;
                 return false;
             }
 
+            if (!TryReadExistingBuffer(in _orePositionsHandle, _oreCapacity, out NativeArray<float3> writableOrePositions))
+            {
+                orePositions = default;
+                scanCount = 0;
+                return false;
+            }
+
+            orePositions = writableOrePositions.AsReadOnly();
             scanCount = _renderInstanceCount;
             return _renderInstanceCount > 0 && _activeOreCount > 0;
         }
 
-        public bool TryGetOreTypes(out NativeArray<int> oreTypes, out int scanCount)
+        public bool TryGetOreTypesReadOnly(out NativeArray<int>.ReadOnly oreTypes, out int scanCount)
         {
-            if (!TryResolveBuffer(
-                    ref _oreTypesHandle,
-                    ProceduralGeologyVaultBufferIds.OreTypes,
-                    _oreCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out oreTypes))
+            if (!CanExposeReadSnapshot())
             {
+                oreTypes = default;
                 scanCount = 0;
                 return false;
             }
 
+            if (!TryReadExistingBuffer(in _oreTypesHandle, _oreCapacity, out NativeArray<int> writableOreTypes))
+            {
+                oreTypes = default;
+                scanCount = 0;
+                return false;
+            }
+
+            oreTypes = writableOreTypes.AsReadOnly();
             scanCount = _renderInstanceCount;
             return _renderInstanceCount > 0 && _activeOreCount > 0;
+        }
+
+        public void RegisterOreReadDependency(JobHandle readDependency)
+        {
+            TryFinalizeCompletedOreReadDependency();
+            if (readDependency.IsCompleted)
+            {
+                DispatcherJobFence.TryFinalizeCompleted(ref readDependency);
+                return;
+            }
+
+            _pendingOreReadDependency = _pendingOreReadDependencyValid
+                ? JobHandle.CombineDependencies(_pendingOreReadDependency, readDependency)
+                : readDependency;
+            _pendingOreReadDependencyValid = true;
         }
 
         public bool TryMarkOreDepleted(int oreIndex, out uint oreHash, out uint itemHash, out float3 depletedPosition)
@@ -264,30 +291,50 @@ namespace Hecton8.World
             if (_spawnJobScheduled || !EnsureNativeState())
                 return false;
 
-            if (!TryResolveVaultViews(out ProceduralGeologyVaultViews views))
+            if (!TryLockVaultDepletionBuffers())
                 return false;
 
-            if ((uint)oreIndex >= (uint)_renderInstanceCount ||
-                !views.OreTypes.IsCreated ||
-                !views.OrePositions.IsCreated ||
-                !views.CandidateSlots.IsCreated ||
-                views.OreTypes[oreIndex] == 0)
+            try
             {
+                if (!TryOpenExistingDepletionViews(out ProceduralGeologyVaultViews views))
+                    return false;
+
+                if ((uint)oreIndex >= (uint)_renderInstanceCount ||
+                    !views.ResourceNodes.IsCreated ||
+                    !views.OreTypes.IsCreated ||
+                    !views.OrePositions.IsCreated ||
+                    !views.CandidateSlots.IsCreated ||
+                    !views.DepletionMasks.IsCreated ||
+                    (uint)oreIndex >= (uint)views.ResourceNodes.Length ||
+                    (uint)oreIndex >= (uint)views.OreTypes.Length ||
+                    (uint)oreIndex >= (uint)views.OrePositions.Length ||
+                    views.OreTypes[oreIndex] == 0)
+                {
+                    return false;
+                }
+
+                int deterministicSlot = (uint)oreIndex < (uint)views.CandidateSlots.Length
+                    ? views.CandidateSlots[oreIndex]
+                    : oreIndex;
+                if (deterministicSlot < 0)
+                    return false;
+
+                int oreType = views.OreTypes[oreIndex];
+                oreHash = ComputeOreHash(_currentSectorHash, deterministicSlot);
+                itemHash = unchecked((uint)ResolveItemHash(oreType));
+                depletedPosition = views.OrePositions[oreIndex];
+                if (MarkDepleted(views, oreIndex))
+                    return true;
+
+                oreHash = 0u;
+                itemHash = 0u;
+                depletedPosition = default;
                 return false;
             }
-
-            int deterministicSlot = (uint)oreIndex < (uint)views.CandidateSlots.Length
-                ? views.CandidateSlots[oreIndex]
-                : oreIndex;
-            if (deterministicSlot < 0)
-                return false;
-
-            int oreType = views.OreTypes[oreIndex];
-            oreHash = ComputeOreHash(_currentSectorHash, deterministicSlot);
-            itemHash = unchecked((uint)ResolveItemHash(oreType));
-            depletedPosition = views.OrePositions[oreIndex];
-            MarkDepleted(views, oreIndex);
-            return true;
+            finally
+            {
+                UnlockVaultWriteBuffers();
+            }
         }
 
         private void Awake()
@@ -340,12 +387,7 @@ namespace Hecton8.World
             UnregisterSlowTickDispatcher();
             if (_spawnJobScheduled)
             {
-                _discardSpawnJobOutput = true;
-                _pendingDisableSpawnDrain = true;
-                if (!_lateFrameRegistered)
-                    _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-                ClearDisabledPresentationState();
-                return;
+                CompleteSpawnJobForDisable();
             }
 
             _pendingDisableSpawnDrain = false;
@@ -473,6 +515,7 @@ namespace Hecton8.World
         /// <summary>Slow-tick sector scan, terrain projection refresh, and AUP drift drain.</summary>
         public void SlowTick()
         {
+            TryFinalizeCompletedOreReadDependency();
             if (!EnsureNativeState())
                 return;
 
@@ -494,13 +537,12 @@ namespace Hecton8.World
         /// <summary>Late-frame job retirement, matrix upload, and dormant ore indirect draw.</summary>
         public void LateFrameTick()
         {
+            TryFinalizeCompletedOreReadDependency();
             if (_pendingDisableSpawnDrain)
             {
                 if (!_spawnJobScheduled)
                 {
                     _pendingDisableSpawnDrain = false;
-                    UnregisterLateFrameDispatcher();
-                    UnregisterHotSwapDependency();
                     return;
                 }
 
@@ -508,8 +550,6 @@ namespace Hecton8.World
                 {
                     DiscardSpawnJobOutput();
                     _pendingDisableSpawnDrain = false;
-                    UnregisterLateFrameDispatcher();
-                    UnregisterHotSwapDependency();
                 }
 
                 return;
@@ -548,9 +588,10 @@ namespace Hecton8.World
             {
                 DispatcherJobFence.TryComplete(ref _spawnJob, forceComplete: true);
                 _spawnJobScheduled = false;
-                UnlockVaultJobBuffers();
+                UnlockVaultWriteBuffers();
             }
 
+            CompletePendingOreReadDependencyForTeardown();
             ReleaseVaultViews();
             ClearPendingDataVaultRebind();
 
@@ -576,6 +617,20 @@ namespace Hecton8.World
             _simulationFrameCounter = 0u;
             _discardSpawnJobOutput = false;
             _pendingDisableSpawnDrain = false;
+        }
+
+        private void CompleteSpawnJobForDisable()
+        {
+            _discardSpawnJobOutput = true;
+            if (!TryCompleteFinishedSpawnJob())
+            {
+                // [BLOCKING_SYNC_POINT] Lifecycle teardown only. Disabled ore spawners must not keep Vault rows locked or remain registered for hot ticks.
+                DispatcherJobFence.TryComplete(ref _spawnJob, forceComplete: true);
+                _spawnJobScheduled = false;
+                UnlockVaultWriteBuffers();
+            }
+
+            DiscardSpawnJobOutput();
         }
 
         private void CacheRuntimeServices()
@@ -744,7 +799,7 @@ namespace Hecton8.World
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
 
-            if (!TryResolveVaultViews(vault, out ProceduralGeologyVaultViews views))
+            if (!AcquireVaultViews(vault, out ProceduralGeologyVaultViews views))
                 return false;
 
             EnsureDepletionCacheInitialized(views);
@@ -805,6 +860,9 @@ namespace Hecton8.World
                 DiscardSpawnJobOutput();
             }
 
+            if (HasPendingOreReadDependency())
+                return false;
+
             ClearPresentationState(true, false);
             ReleaseVaultViews();
             if (currentVault == null)
@@ -850,42 +908,110 @@ namespace Hecton8.World
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
-        private bool TryResolveVaultViews(out ProceduralGeologyVaultViews views)
-        {
-            return TryResolveVaultViews(_dataVault, out views);
-        }
-
-        private bool TryResolveVaultViews(IDataVault vault, out ProceduralGeologyVaultViews views)
+        private bool AcquireVaultViews(IDataVault vault, out ProceduralGeologyVaultViews views)
         {
             views = default;
             if (vault == null)
                 return false;
 
-            return TryResolveBuffer(vault, ref _resourceNodesHandle, ProceduralGeologyVaultBufferIds.ResourceNodes, _oreCapacity, NativeArrayOptions.UninitializedMemory, out views.ResourceNodes) &&
-                   TryResolveBuffer(vault, ref _orePositionsHandle, ProceduralGeologyVaultBufferIds.OrePositions, _oreCapacity, NativeArrayOptions.UninitializedMemory, out views.OrePositions) &&
-                   TryResolveBuffer(vault, ref _oreTypesHandle, ProceduralGeologyVaultBufferIds.OreTypes, _oreCapacity, NativeArrayOptions.UninitializedMemory, out views.OreTypes) &&
-                   TryResolveBuffer(vault, ref _depletionMasksHandle, ProceduralGeologyVaultBufferIds.DepletionMasks, _depletionWordCount, NativeArrayOptions.UninitializedMemory, out views.DepletionMasks) &&
-                   TryResolveBuffer(vault, ref _oreMatricesHandle, ProceduralGeologyVaultBufferIds.ResourceMatrices, _oreCapacity, NativeArrayOptions.UninitializedMemory, out views.OreMatrices) &&
-                   TryResolveBuffer(vault, ref _biomeHeatmapHandle, ProceduralGeologyVaultBufferIds.BiomeHeatmap, BiomeHeatmapResolution * BiomeHeatmapResolution, NativeArrayOptions.UninitializedMemory, out views.BiomeHeatmap) &&
-                   TryResolveBuffer(vault, ref _spawnCountsHandle, ProceduralGeologyVaultBufferIds.SpawnCounts, SpawnCounterCount, NativeArrayOptions.ClearMemory, out views.SpawnCounts) &&
-                   TryResolveBuffer(vault, ref _telemetryRingHandle, ProceduralGeologyVaultBufferIds.TelemetryRing, ProceduralGeologyConstants.TelemetryFrames, NativeArrayOptions.ClearMemory, out views.TelemetryRing) &&
-                   TryResolveBuffer(vault, ref _mockTerrainSdfHandle, ProceduralGeologyVaultBufferIds.MockTerrainSdf, ProceduralGeologyConstants.MockTerrainResolution * ProceduralGeologyConstants.MockTerrainResolution, NativeArrayOptions.UninitializedMemory, out views.MockTerrainSdf) &&
-                   TryResolveBuffer(vault, ref _distributionRulesHandle, ProceduralGeologyVaultBufferIds.DistributionRules, ProceduralGeologyConstants.DistributionRuleCapacity, NativeArrayOptions.UninitializedMemory, out views.DistributionRules) &&
-                   TryResolveBuffer(vault, ref _tuningHandle, ProceduralGeologyVaultBufferIds.Tuning, ProceduralGeologyConstants.TuningCapacity, NativeArrayOptions.ClearMemory, out views.GeologyTuning) &&
-                   TryResolveBuffer(vault, ref _csvScratchHandle, ProceduralGeologyVaultBufferIds.CsvScratch, ProceduralGeologyConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out views.CsvScratch) &&
-                   TryResolveBuffer(vault, ref _selfAuditHandle, ProceduralGeologyVaultBufferIds.SelfAudit, ProceduralGeologyConstants.SelfAuditCapacity, NativeArrayOptions.ClearMemory, out views.SelfAudit) &&
-                   TryResolveBuffer(vault, ref _candidateSlotsHandle, ProceduralGeologyVaultBufferIds.CandidateSlots, _oreCapacity, NativeArrayOptions.UninitializedMemory, out views.CandidateSlots) &&
-                   TryResolveBuffer(vault, ref _depletionCacheKeysHandle, ProceduralGeologyVaultBufferIds.DepletionCacheKeys, DepletionCacheCapacity, NativeArrayOptions.UninitializedMemory, out views.DepletionCacheKeys) &&
-                   TryResolveBuffer(vault, ref _depletionCacheMasksHandle, ProceduralGeologyVaultBufferIds.DepletionCacheMasks, DepletionCacheCapacity, NativeArrayOptions.UninitializedMemory, out views.DepletionCacheMasks) &&
-                   TryResolveBuffer(vault, ref _depletionCacheCountHandle, ProceduralGeologyVaultBufferIds.DepletionCacheCount, DepletionCacheCountLength, NativeArrayOptions.ClearMemory, out views.DepletionCacheCount) &&
-                   TryResolveBuffer(vault, ref _sectorHashGridHandle, ProceduralGeologyVaultBufferIds.SectorHashGrid, SectorHashGridCount, NativeArrayOptions.UninitializedMemory, out views.SectorHashGrid) &&
-                   TryResolveBuffer(vault, ref _indirectArgsHandle, ProceduralGeologyVaultBufferIds.IndirectArgs, IndirectArgsCount, NativeArrayOptions.UninitializedMemory, out views.IndirectArgs) &&
-                   TryResolveBuffer(vault, ref _hzbTilesHandle, ProceduralGeologyVaultBufferIds.HzbTiles, ProceduralGeologyConstants.HzbTileCapacity, NativeArrayOptions.ClearMemory, out views.HzbTiles) &&
-                   TryResolveBuffer(vault, ref _hzbMetaHandle, ProceduralGeologyVaultBufferIds.HzbMeta, ProceduralGeologyConstants.HzbMetaCapacity, NativeArrayOptions.ClearMemory, out views.HzbMeta) &&
+            return AcquireBuffer(vault, ref _resourceNodesHandle, ProceduralGeologyVaultBufferIds.ResourceNodes, _oreCapacity, NativeArrayOptions.UninitializedMemory, out views.ResourceNodes) &&
+                   AcquireBuffer(vault, ref _orePositionsHandle, ProceduralGeologyVaultBufferIds.OrePositions, _oreCapacity, NativeArrayOptions.UninitializedMemory, out views.OrePositions) &&
+                   AcquireBuffer(vault, ref _oreTypesHandle, ProceduralGeologyVaultBufferIds.OreTypes, _oreCapacity, NativeArrayOptions.UninitializedMemory, out views.OreTypes) &&
+                   AcquireBuffer(vault, ref _depletionMasksHandle, ProceduralGeologyVaultBufferIds.DepletionMasks, _depletionWordCount, NativeArrayOptions.UninitializedMemory, out views.DepletionMasks) &&
+                   AcquireBuffer(vault, ref _oreMatricesHandle, ProceduralGeologyVaultBufferIds.ResourceMatrices, _oreCapacity, NativeArrayOptions.UninitializedMemory, out views.OreMatrices) &&
+                   AcquireBuffer(vault, ref _biomeHeatmapHandle, ProceduralGeologyVaultBufferIds.BiomeHeatmap, BiomeHeatmapResolution * BiomeHeatmapResolution, NativeArrayOptions.UninitializedMemory, out views.BiomeHeatmap) &&
+                   AcquireBuffer(vault, ref _spawnCountsHandle, ProceduralGeologyVaultBufferIds.SpawnCounts, SpawnCounterCount, NativeArrayOptions.ClearMemory, out views.SpawnCounts) &&
+                   AcquireBuffer(vault, ref _telemetryRingHandle, ProceduralGeologyVaultBufferIds.TelemetryRing, ProceduralGeologyConstants.TelemetryFrames, NativeArrayOptions.ClearMemory, out views.TelemetryRing) &&
+                   AcquireBuffer(vault, ref _mockTerrainSdfHandle, ProceduralGeologyVaultBufferIds.MockTerrainSdf, ProceduralGeologyConstants.MockTerrainResolution * ProceduralGeologyConstants.MockTerrainResolution, NativeArrayOptions.UninitializedMemory, out views.MockTerrainSdf) &&
+                   AcquireBuffer(vault, ref _distributionRulesHandle, ProceduralGeologyVaultBufferIds.DistributionRules, ProceduralGeologyConstants.DistributionRuleCapacity, NativeArrayOptions.UninitializedMemory, out views.DistributionRules) &&
+                   AcquireBuffer(vault, ref _tuningHandle, ProceduralGeologyVaultBufferIds.Tuning, ProceduralGeologyConstants.TuningCapacity, NativeArrayOptions.ClearMemory, out views.GeologyTuning) &&
+                   AcquireBuffer(vault, ref _csvScratchHandle, ProceduralGeologyVaultBufferIds.CsvScratch, ProceduralGeologyConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out views.CsvScratch) &&
+                   AcquireBuffer(vault, ref _selfAuditHandle, ProceduralGeologyVaultBufferIds.SelfAudit, ProceduralGeologyConstants.SelfAuditCapacity, NativeArrayOptions.ClearMemory, out views.SelfAudit) &&
+                   AcquireBuffer(vault, ref _candidateSlotsHandle, ProceduralGeologyVaultBufferIds.CandidateSlots, _oreCapacity, NativeArrayOptions.UninitializedMemory, out views.CandidateSlots) &&
+                   AcquireBuffer(vault, ref _depletionCacheKeysHandle, ProceduralGeologyVaultBufferIds.DepletionCacheKeys, DepletionCacheCapacity, NativeArrayOptions.UninitializedMemory, out views.DepletionCacheKeys) &&
+                   AcquireBuffer(vault, ref _depletionCacheMasksHandle, ProceduralGeologyVaultBufferIds.DepletionCacheMasks, DepletionCacheCapacity, NativeArrayOptions.UninitializedMemory, out views.DepletionCacheMasks) &&
+                   AcquireBuffer(vault, ref _depletionCacheCountHandle, ProceduralGeologyVaultBufferIds.DepletionCacheCount, DepletionCacheCountLength, NativeArrayOptions.ClearMemory, out views.DepletionCacheCount) &&
+                   AcquireBuffer(vault, ref _sectorHashGridHandle, ProceduralGeologyVaultBufferIds.SectorHashGrid, SectorHashGridCount, NativeArrayOptions.UninitializedMemory, out views.SectorHashGrid) &&
+                   AcquireBuffer(vault, ref _indirectArgsHandle, ProceduralGeologyVaultBufferIds.IndirectArgs, IndirectArgsCount, NativeArrayOptions.UninitializedMemory, out views.IndirectArgs) &&
+                   AcquireBuffer(vault, ref _hzbTilesHandle, ProceduralGeologyVaultBufferIds.HzbTiles, ProceduralGeologyConstants.HzbTileCapacity, NativeArrayOptions.ClearMemory, out views.HzbTiles) &&
+                   AcquireBuffer(vault, ref _hzbMetaHandle, ProceduralGeologyVaultBufferIds.HzbMeta, ProceduralGeologyConstants.HzbMetaCapacity, NativeArrayOptions.ClearMemory, out views.HzbMeta) &&
                    views.IsCreated();
         }
 
-        private bool TryResolveBuffer<T>(
+        private bool TryOpenExistingVaultViews(out ProceduralGeologyVaultViews views)
+        {
+            views = default;
+            if (_dataVault == null)
+                return false;
+
+            return TryOpenExistingBuffer(in _resourceNodesHandle, _oreCapacity, out views.ResourceNodes) &&
+                   TryOpenExistingBuffer(in _orePositionsHandle, _oreCapacity, out views.OrePositions) &&
+                   TryOpenExistingBuffer(in _oreTypesHandle, _oreCapacity, out views.OreTypes) &&
+                   TryOpenExistingBuffer(in _depletionMasksHandle, _depletionWordCount, out views.DepletionMasks) &&
+                   TryOpenExistingBuffer(in _oreMatricesHandle, _oreCapacity, out views.OreMatrices) &&
+                   TryOpenExistingBuffer(in _biomeHeatmapHandle, BiomeHeatmapResolution * BiomeHeatmapResolution, out views.BiomeHeatmap) &&
+                   TryOpenExistingBuffer(in _spawnCountsHandle, SpawnCounterCount, out views.SpawnCounts) &&
+                   TryOpenExistingBuffer(in _telemetryRingHandle, ProceduralGeologyConstants.TelemetryFrames, out views.TelemetryRing) &&
+                   TryOpenExistingBuffer(in _mockTerrainSdfHandle, ProceduralGeologyConstants.MockTerrainResolution * ProceduralGeologyConstants.MockTerrainResolution, out views.MockTerrainSdf) &&
+                   TryOpenExistingBuffer(in _distributionRulesHandle, ProceduralGeologyConstants.DistributionRuleCapacity, out views.DistributionRules) &&
+                   TryOpenExistingBuffer(in _tuningHandle, ProceduralGeologyConstants.TuningCapacity, out views.GeologyTuning) &&
+                   TryOpenExistingBuffer(in _csvScratchHandle, ProceduralGeologyConstants.CsvScratchBytes, out views.CsvScratch) &&
+                   TryOpenExistingBuffer(in _selfAuditHandle, ProceduralGeologyConstants.SelfAuditCapacity, out views.SelfAudit) &&
+                   TryOpenExistingBuffer(in _candidateSlotsHandle, _oreCapacity, out views.CandidateSlots) &&
+                   TryOpenExistingBuffer(in _depletionCacheKeysHandle, DepletionCacheCapacity, out views.DepletionCacheKeys) &&
+                   TryOpenExistingBuffer(in _depletionCacheMasksHandle, DepletionCacheCapacity, out views.DepletionCacheMasks) &&
+                   TryOpenExistingBuffer(in _depletionCacheCountHandle, DepletionCacheCountLength, out views.DepletionCacheCount) &&
+                   TryOpenExistingBuffer(in _sectorHashGridHandle, SectorHashGridCount, out views.SectorHashGrid) &&
+                   TryOpenExistingBuffer(in _indirectArgsHandle, IndirectArgsCount, out views.IndirectArgs) &&
+                   TryOpenExistingBuffer(in _hzbTilesHandle, ProceduralGeologyConstants.HzbTileCapacity, out views.HzbTiles) &&
+                   TryOpenExistingBuffer(in _hzbMetaHandle, ProceduralGeologyConstants.HzbMetaCapacity, out views.HzbMeta) &&
+                   views.IsCreated();
+        }
+
+        private bool TryOpenExistingDepletionViews(out ProceduralGeologyVaultViews views)
+        {
+            views = default;
+            if (_dataVault == null)
+                return false;
+
+            return TryOpenExistingBuffer(in _resourceNodesHandle, _oreCapacity, out views.ResourceNodes) &&
+                   TryOpenExistingBuffer(in _orePositionsHandle, _oreCapacity, out views.OrePositions) &&
+                   TryOpenExistingBuffer(in _oreTypesHandle, _oreCapacity, out views.OreTypes) &&
+                   TryOpenExistingBuffer(in _depletionMasksHandle, _depletionWordCount, out views.DepletionMasks) &&
+                   TryOpenExistingBuffer(in _oreMatricesHandle, _oreCapacity, out views.OreMatrices) &&
+                   TryOpenExistingBuffer(in _candidateSlotsHandle, _oreCapacity, out views.CandidateSlots) &&
+                   TryOpenExistingBuffer(in _depletionCacheKeysHandle, DepletionCacheCapacity, out views.DepletionCacheKeys) &&
+                   TryOpenExistingBuffer(in _depletionCacheMasksHandle, DepletionCacheCapacity, out views.DepletionCacheMasks) &&
+                   TryOpenExistingBuffer(in _depletionCacheCountHandle, DepletionCacheCountLength, out views.DepletionCacheCount) &&
+                   TryOpenExistingBuffer(in _indirectArgsHandle, IndirectArgsCount, out views.IndirectArgs);
+        }
+
+        private bool TryOpenExistingDepletionMaskViews(out ProceduralGeologyVaultViews views)
+        {
+            views = default;
+            if (_dataVault == null)
+                return false;
+
+            return TryOpenExistingBuffer(in _depletionMasksHandle, _depletionWordCount, out views.DepletionMasks) &&
+                   TryOpenExistingBuffer(in _depletionCacheKeysHandle, DepletionCacheCapacity, out views.DepletionCacheKeys) &&
+                   TryOpenExistingBuffer(in _depletionCacheMasksHandle, DepletionCacheCapacity, out views.DepletionCacheMasks) &&
+                   TryOpenExistingBuffer(in _depletionCacheCountHandle, DepletionCacheCountLength, out views.DepletionCacheCount);
+        }
+
+        private bool TryOpenExistingRuntimeShiftViews(out ProceduralGeologyVaultViews views)
+        {
+            views = default;
+            if (_dataVault == null)
+                return false;
+
+            return TryOpenExistingBuffer(in _resourceNodesHandle, _oreCapacity, out views.ResourceNodes) &&
+                   TryOpenExistingBuffer(in _orePositionsHandle, _oreCapacity, out views.OrePositions) &&
+                   TryOpenExistingBuffer(in _oreTypesHandle, _oreCapacity, out views.OreTypes) &&
+                   TryOpenExistingBuffer(in _oreMatricesHandle, _oreCapacity, out views.OreMatrices) &&
+                   TryOpenExistingBuffer(in _telemetryRingHandle, ProceduralGeologyConstants.TelemetryFrames, out views.TelemetryRing);
+        }
+
+        private bool AcquireBuffer<T>(
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
@@ -893,10 +1019,10 @@ namespace Hecton8.World
             out NativeArray<T> view) where T : struct
         {
             IDataVault vault = _dataVault;
-            return TryResolveBuffer(vault, ref handle, bufferId, requiredLength, options, out view);
+            return AcquireBuffer(vault, ref handle, bufferId, requiredLength, options, out view);
         }
 
-        private static bool TryResolveBuffer<T>(
+        private static bool AcquireBuffer<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -926,6 +1052,74 @@ namespace Hecton8.World
             return vault.TryResolveHandle(in handle, out view) &&
                    view.IsCreated &&
                    view.Length >= requiredLength;
+        }
+
+        private bool TryOpenExistingBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> view) where T : struct
+        {
+            view = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsVaultHandleCreated(in handle) &&
+                   vault.TryResolveHandle(in handle, out view) &&
+                   view.IsCreated &&
+                   view.Length >= requiredLength;
+        }
+
+        private bool TryReadExistingBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> view) where T : struct
+        {
+            view = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsVaultHandleCreated(in handle) &&
+                   vault.TryReadHandle(in handle, out view) &&
+                   view.IsCreated &&
+                   view.Length >= requiredLength;
+        }
+
+        private bool CanExposeReadSnapshot()
+        {
+            return !_spawnJobScheduled && !_pendingDataVaultRebind && !_pendingOreReadDependencyValid;
+        }
+
+        private bool HasPendingOreReadDependency()
+        {
+            TryFinalizeCompletedOreReadDependency();
+            return _pendingOreReadDependencyValid;
+        }
+
+        private bool TryFinalizeCompletedOreReadDependency()
+        {
+            if (!_pendingOreReadDependencyValid || !_pendingOreReadDependency.IsCompleted)
+                return false;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _pendingOreReadDependency))
+                return false;
+
+            _pendingOreReadDependencyValid = false;
+            return true;
+        }
+
+        private void CompletePendingOreReadDependencyForTeardown()
+        {
+            if (!_pendingOreReadDependencyValid)
+                return;
+
+            // [BLOCKING_SYNC_POINT] Structural teardown only. Ore Vault rows must not be invalidated while a registered reader job can still touch them.
+            if (_pendingOreReadDependency.IsCompleted)
+                DispatcherJobFence.TryFinalizeCompleted(ref _pendingOreReadDependency);
+            else
+                DispatcherJobFence.TryComplete(ref _pendingOreReadDependency, forceComplete: true);
+
+            _pendingOreReadDependency = default;
+            _pendingOreReadDependencyValid = false;
         }
 
         private void ReleaseVaultViews()
@@ -1035,7 +1229,7 @@ namespace Hecton8.World
 
             try
             {
-                int byteCount = ReadCsvFileIntoScratch(csvPath, csvScratch);
+                int byteCount = LoadCsvFileIntoScratch(csvPath, csvScratch);
                 if (byteCount <= 0)
                     return 0;
 
@@ -1049,12 +1243,12 @@ namespace Hecton8.World
             }
         }
 
-        private static unsafe int ReadCsvFileIntoScratch(string csvPath, NativeArray<byte> scratch)
+        private static unsafe int LoadCsvFileIntoScratch(string csvPath, NativeArray<byte> scratch)
         {
             if (!scratch.IsCreated || scratch.Length <= 0)
                 return 0;
 
-            using FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite); // COLD ALLOC: FileStream[csv] — designer distribution CSV stream into Vault scratch — owner: ProceduralOreSpawner
             if (stream.Length <= 0L || stream.Length > scratch.Length)
                 return 0;
 
@@ -1108,6 +1302,27 @@ namespace Hecton8.World
             if (!views.SelfAudit.IsCreated || views.SelfAudit.Length == 0)
                 return;
 
+            bool releaseLock = false;
+            if ((_lockedVaultBufferMask & (1 << 18)) == 0)
+            {
+                if (_lockedVaultBufferMask != 0 || !TryLockVaultSelfAuditBuffer())
+                    return;
+                releaseLock = true;
+            }
+
+            try
+            {
+                WriteSelfAudit(views);
+            }
+            finally
+            {
+                if (releaseLock)
+                    UnlockVaultWriteBuffers();
+            }
+        }
+
+        private void WriteSelfAudit(ProceduralGeologyVaultViews views)
+        {
             uint probeA = ComputeDeterminismProbe(unchecked((ulong)_currentSectorHash), worldSeed);
             uint probeB = probeA;
             uint flags = ProceduralGeologyLayoutAudit.Validate() ? 0u : 1u;
@@ -1120,13 +1335,13 @@ namespace Hecton8.World
             }
 
             GeologySelfAuditResultDTO audit = default;
-            audit.Frame = ResolveSimulationFrameId();
+            audit.Frame = AdvanceSimulationFrameId();
             audit.Flags = flags;
             audit.ResourceNodeSize = (uint)UnsafeUtility.SizeOf<ResourceNodeDTO>();
             audit.TelemetrySize = (uint)UnsafeUtility.SizeOf<GeologyGenerationTelemetryEntry>();
             audit.DeterminismHashA = probeA;
             audit.DeterminismHashB = probeB;
-            audit.AliasFaults = _lockedVaultBufferMask == 0 ? 0u : 1u;
+            audit.AliasFaults = (_lockedVaultBufferMask & ~(1 << 18)) == 0 ? 0u : 1u;
             audit.ManagedAllocationFaults = 0u;
             audit.BufferMaskLow = 0x001FFFFFUL;
             audit.BufferMaskHigh = 0UL;
@@ -1150,6 +1365,36 @@ namespace Hecton8.World
 
         private bool TryLockVaultJobBuffers()
         {
+            if (HasPendingOreReadDependency())
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            int locked = 0;
+            if (!TryLockVaultBuffer(vault, ref _resourceNodesHandle, ProceduralGeologyVaultBufferIds.ResourceNodes, _oreCapacity, NativeArrayOptions.UninitializedMemory, 1 << 0, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _orePositionsHandle, ProceduralGeologyVaultBufferIds.OrePositions, _oreCapacity, NativeArrayOptions.UninitializedMemory, 1 << 1, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _oreTypesHandle, ProceduralGeologyVaultBufferIds.OreTypes, _oreCapacity, NativeArrayOptions.UninitializedMemory, 1 << 2, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _oreMatricesHandle, ProceduralGeologyVaultBufferIds.ResourceMatrices, _oreCapacity, NativeArrayOptions.UninitializedMemory, 1 << 4, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _spawnCountsHandle, ProceduralGeologyVaultBufferIds.SpawnCounts, SpawnCounterCount, NativeArrayOptions.ClearMemory, 1 << 5, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _mockTerrainSdfHandle, ProceduralGeologyVaultBufferIds.MockTerrainSdf, ProceduralGeologyConstants.MockTerrainResolution * ProceduralGeologyConstants.MockTerrainResolution, NativeArrayOptions.UninitializedMemory, 1 << 6, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _candidateSlotsHandle, ProceduralGeologyVaultBufferIds.CandidateSlots, _oreCapacity, NativeArrayOptions.UninitializedMemory, 1 << 9, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _indirectArgsHandle, ProceduralGeologyVaultBufferIds.IndirectArgs, IndirectArgsCount, NativeArrayOptions.UninitializedMemory, 1 << 10, ref locked))
+            {
+                UnlockVaultWriteBuffers(vault, locked);
+                return false;
+            }
+
+            _lockedVaultBufferMask = locked;
+            return true;
+        }
+
+        private bool TryLockVaultDepletionBuffers()
+        {
+            if (HasPendingOreReadDependency())
+                return false;
+
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
@@ -1160,16 +1405,142 @@ namespace Hecton8.World
                 !TryLockVaultBuffer(vault, ref _oreTypesHandle, ProceduralGeologyVaultBufferIds.OreTypes, _oreCapacity, NativeArrayOptions.UninitializedMemory, 1 << 2, ref locked) ||
                 !TryLockVaultBuffer(vault, ref _depletionMasksHandle, ProceduralGeologyVaultBufferIds.DepletionMasks, _depletionWordCount, NativeArrayOptions.UninitializedMemory, 1 << 3, ref locked) ||
                 !TryLockVaultBuffer(vault, ref _oreMatricesHandle, ProceduralGeologyVaultBufferIds.ResourceMatrices, _oreCapacity, NativeArrayOptions.UninitializedMemory, 1 << 4, ref locked) ||
-                !TryLockVaultBuffer(vault, ref _spawnCountsHandle, ProceduralGeologyVaultBufferIds.SpawnCounts, SpawnCounterCount, NativeArrayOptions.ClearMemory, 1 << 5, ref locked) ||
-                !TryLockVaultBuffer(vault, ref _mockTerrainSdfHandle, ProceduralGeologyVaultBufferIds.MockTerrainSdf, ProceduralGeologyConstants.MockTerrainResolution * ProceduralGeologyConstants.MockTerrainResolution, NativeArrayOptions.UninitializedMemory, 1 << 6, ref locked) ||
-                !TryLockVaultBuffer(vault, ref _biomeHeatmapHandle, ProceduralGeologyVaultBufferIds.BiomeHeatmap, BiomeHeatmapResolution * BiomeHeatmapResolution, NativeArrayOptions.UninitializedMemory, 1 << 7, ref locked) ||
-                !TryLockVaultBuffer(vault, ref _distributionRulesHandle, ProceduralGeologyVaultBufferIds.DistributionRules, ProceduralGeologyConstants.DistributionRuleCapacity, NativeArrayOptions.UninitializedMemory, 1 << 8, ref locked) ||
                 !TryLockVaultBuffer(vault, ref _candidateSlotsHandle, ProceduralGeologyVaultBufferIds.CandidateSlots, _oreCapacity, NativeArrayOptions.UninitializedMemory, 1 << 9, ref locked) ||
                 !TryLockVaultBuffer(vault, ref _indirectArgsHandle, ProceduralGeologyVaultBufferIds.IndirectArgs, IndirectArgsCount, NativeArrayOptions.UninitializedMemory, 1 << 10, ref locked) ||
-                !TryLockVaultBuffer(vault, ref _hzbTilesHandle, ProceduralGeologyVaultBufferIds.HzbTiles, ProceduralGeologyConstants.HzbTileCapacity, NativeArrayOptions.ClearMemory, 1 << 11, ref locked) ||
-                !TryLockVaultBuffer(vault, ref _hzbMetaHandle, ProceduralGeologyVaultBufferIds.HzbMeta, ProceduralGeologyConstants.HzbMetaCapacity, NativeArrayOptions.ClearMemory, 1 << 12, ref locked))
+                !TryLockVaultBuffer(vault, ref _depletionCacheKeysHandle, ProceduralGeologyVaultBufferIds.DepletionCacheKeys, DepletionCacheCapacity, NativeArrayOptions.UninitializedMemory, 1 << 13, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _depletionCacheMasksHandle, ProceduralGeologyVaultBufferIds.DepletionCacheMasks, DepletionCacheCapacity, NativeArrayOptions.UninitializedMemory, 1 << 14, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _depletionCacheCountHandle, ProceduralGeologyVaultBufferIds.DepletionCacheCount, DepletionCacheCountLength, NativeArrayOptions.ClearMemory, 1 << 15, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _telemetryRingHandle, ProceduralGeologyVaultBufferIds.TelemetryRing, ProceduralGeologyConstants.TelemetryFrames, NativeArrayOptions.ClearMemory, 1 << 16, ref locked))
             {
-                UnlockVaultJobBuffers(vault, locked);
+                UnlockVaultWriteBuffers(vault, locked);
+                return false;
+            }
+
+            _lockedVaultBufferMask = locked;
+            return true;
+        }
+
+        private bool TryLockVaultDepletionMaskBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            int locked = 0;
+            if (!TryLockVaultBuffer(vault, ref _depletionMasksHandle, ProceduralGeologyVaultBufferIds.DepletionMasks, _depletionWordCount, NativeArrayOptions.UninitializedMemory, 1 << 3, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _depletionCacheKeysHandle, ProceduralGeologyVaultBufferIds.DepletionCacheKeys, DepletionCacheCapacity, NativeArrayOptions.UninitializedMemory, 1 << 13, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _depletionCacheMasksHandle, ProceduralGeologyVaultBufferIds.DepletionCacheMasks, DepletionCacheCapacity, NativeArrayOptions.UninitializedMemory, 1 << 14, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _depletionCacheCountHandle, ProceduralGeologyVaultBufferIds.DepletionCacheCount, DepletionCacheCountLength, NativeArrayOptions.ClearMemory, 1 << 15, ref locked))
+            {
+                UnlockVaultWriteBuffers(vault, locked);
+                return false;
+            }
+
+            _lockedVaultBufferMask = locked;
+            return true;
+        }
+
+        private bool TryLockVaultBiomeHeatmapBuffer()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            int locked = 0;
+            if (!TryLockVaultBuffer(vault, ref _biomeHeatmapHandle, ProceduralGeologyVaultBufferIds.BiomeHeatmap, BiomeHeatmapResolution * BiomeHeatmapResolution, NativeArrayOptions.UninitializedMemory, 1 << 7, ref locked))
+            {
+                UnlockVaultWriteBuffers(vault, locked);
+                return false;
+            }
+
+            _lockedVaultBufferMask = locked;
+            return true;
+        }
+
+        private bool TryLockVaultSectorHashGridBuffer()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            int locked = 0;
+            if (!TryLockVaultBuffer(vault, ref _sectorHashGridHandle, ProceduralGeologyVaultBufferIds.SectorHashGrid, SectorHashGridCount, NativeArrayOptions.UninitializedMemory, 1 << 17, ref locked))
+            {
+                UnlockVaultWriteBuffers(vault, locked);
+                return false;
+            }
+
+            _lockedVaultBufferMask = locked;
+            return true;
+        }
+
+        private bool TryLockVaultRuntimeShiftBuffers()
+        {
+            if (HasPendingOreReadDependency())
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            int locked = 0;
+            if (!TryLockVaultBuffer(vault, ref _resourceNodesHandle, ProceduralGeologyVaultBufferIds.ResourceNodes, _oreCapacity, NativeArrayOptions.UninitializedMemory, 1 << 0, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _orePositionsHandle, ProceduralGeologyVaultBufferIds.OrePositions, _oreCapacity, NativeArrayOptions.UninitializedMemory, 1 << 1, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _oreMatricesHandle, ProceduralGeologyVaultBufferIds.ResourceMatrices, _oreCapacity, NativeArrayOptions.UninitializedMemory, 1 << 4, ref locked) ||
+                !TryLockVaultBuffer(vault, ref _telemetryRingHandle, ProceduralGeologyVaultBufferIds.TelemetryRing, ProceduralGeologyConstants.TelemetryFrames, NativeArrayOptions.ClearMemory, 1 << 16, ref locked))
+            {
+                UnlockVaultWriteBuffers(vault, locked);
+                return false;
+            }
+
+            _lockedVaultBufferMask = locked;
+            return true;
+        }
+
+        private bool TryLockVaultIndirectArgsBuffer()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            int locked = 0;
+            if (!TryLockVaultBuffer(vault, ref _indirectArgsHandle, ProceduralGeologyVaultBufferIds.IndirectArgs, IndirectArgsCount, NativeArrayOptions.UninitializedMemory, 1 << 10, ref locked))
+            {
+                UnlockVaultWriteBuffers(vault, locked);
+                return false;
+            }
+
+            _lockedVaultBufferMask = locked;
+            return true;
+        }
+
+        private bool TryLockVaultTelemetryBuffer()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            int locked = 0;
+            if (!TryLockVaultBuffer(vault, ref _telemetryRingHandle, ProceduralGeologyVaultBufferIds.TelemetryRing, ProceduralGeologyConstants.TelemetryFrames, NativeArrayOptions.ClearMemory, 1 << 16, ref locked))
+            {
+                UnlockVaultWriteBuffers(vault, locked);
+                return false;
+            }
+
+            _lockedVaultBufferMask = locked;
+            return true;
+        }
+
+        private bool TryLockVaultSelfAuditBuffer()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            int locked = 0;
+            if (!TryLockVaultBuffer(vault, ref _selfAuditHandle, ProceduralGeologyVaultBufferIds.SelfAudit, ProceduralGeologyConstants.SelfAuditCapacity, NativeArrayOptions.ClearMemory, 1 << 18, ref locked))
+            {
+                UnlockVaultWriteBuffers(vault, locked);
                 return false;
             }
 
@@ -1234,7 +1605,7 @@ namespace Hecton8.World
             return false;
         }
 
-        private void UnlockVaultJobBuffers()
+        private void UnlockVaultWriteBuffers()
         {
             IDataVault vault = _dataVault;
             if (vault == null || _lockedVaultBufferMask == 0)
@@ -1243,11 +1614,11 @@ namespace Hecton8.World
                 return;
             }
 
-            UnlockVaultJobBuffers(vault, _lockedVaultBufferMask);
+            UnlockVaultWriteBuffers(vault, _lockedVaultBufferMask);
             _lockedVaultBufferMask = 0;
         }
 
-        private void UnlockVaultJobBuffers(IDataVault vault, int locked)
+        private void UnlockVaultWriteBuffers(IDataVault vault, int locked)
         {
             if (vault == null || locked == 0)
                 return;
@@ -1265,6 +1636,12 @@ namespace Hecton8.World
             if ((locked & (1 << 10)) != 0) vault.ReleaseWriteLock(in _indirectArgsHandle, OwnerSystemId);
             if ((locked & (1 << 11)) != 0) vault.ReleaseWriteLock(in _hzbTilesHandle, OwnerSystemId);
             if ((locked & (1 << 12)) != 0) vault.ReleaseWriteLock(in _hzbMetaHandle, OwnerSystemId);
+            if ((locked & (1 << 13)) != 0) vault.ReleaseWriteLock(in _depletionCacheKeysHandle, OwnerSystemId);
+            if ((locked & (1 << 14)) != 0) vault.ReleaseWriteLock(in _depletionCacheMasksHandle, OwnerSystemId);
+            if ((locked & (1 << 15)) != 0) vault.ReleaseWriteLock(in _depletionCacheCountHandle, OwnerSystemId);
+            if ((locked & (1 << 16)) != 0) vault.ReleaseWriteLock(in _telemetryRingHandle, OwnerSystemId);
+            if ((locked & (1 << 17)) != 0) vault.ReleaseWriteLock(in _sectorHashGridHandle, OwnerSystemId);
+            if ((locked & (1 << 18)) != 0) vault.ReleaseWriteLock(in _selfAuditHandle, OwnerSystemId);
         }
 
         private void EnsureRenderBuffers()
@@ -1285,7 +1662,7 @@ namespace Hecton8.World
 
         private void RefreshSectorAndTerrain()
         {
-            if (!TryResolvePlayerPose(out AbsoluteUniversePosition playerAup, out float3 playerRuntimePosition))
+            if (!CapturePlayerPose(out AbsoluteUniversePosition playerAup, out float3 playerRuntimePosition))
                 return;
 
             double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
@@ -1294,7 +1671,6 @@ namespace Hecton8.World
             int2 sector = new int2(
                 (int)math.floor(playerAbsolute.x / safeSectorSize),
                 (int)math.floor(playerAbsolute.z / safeSectorSize));
-            WriteAupSectorHashGrid(sector);
 
             bool sectorChanged = !_depletionLoaded || !sector.Equals(_currentSector);
             bool anchorRefresh = _dropPodAnchorRequiresGenerationRefresh;
@@ -1312,20 +1688,20 @@ namespace Hecton8.World
                 {
                     _currentSector = sector;
                     _currentSectorHash = ComputeAupSectorHash(sector, worldSeed);
+                    WriteAupSectorHashGrid(sector);
                     LoadDepletionMasksForCurrentSector();
                 }
             }
 
-            RefreshTerrainPayload(playerAbsolute, out heightPayload);
-
             if ((sectorChanged || anchorRefresh) && !_spawnJobScheduled)
             {
+                RefreshTerrainPayload(playerAbsolute, out heightPayload);
                 _dropPodAnchorRequiresGenerationRefresh = false;
                 ScheduleSpawnJob(playerAbsolute, playerRuntimePosition, heightPayload);
             }
         }
 
-        private bool TryResolvePlayerPose(out AbsoluteUniversePosition playerAup, out float3 runtimePosition)
+        private bool CapturePlayerPose(out AbsoluteUniversePosition playerAup, out float3 runtimePosition)
         {
             playerAup = default;
             runtimePosition = default;
@@ -1355,7 +1731,7 @@ namespace Hecton8.World
             {
                 playerAup = snapshot.Aup;
                 runtimePosition = snapshot.RuntimePosition;
-                return MathGuard.IsFinite(in playerAup) && math.all(math.isfinite(runtimePosition));
+                return playerAup.IsFinite() && math.all(math.isfinite(runtimePosition));
             }
 
             var playerMovement = playerContext.PlayerMovement;
@@ -1363,7 +1739,7 @@ namespace Hecton8.World
                 return false;
 
             playerAup = playerMovement.CurrentAup;
-            if (!MathGuard.IsFinite(in playerAup))
+            if (!playerAup.IsFinite())
                 return false;
 
             runtimePosition = playerAup.ToRuntimeFloat3();
@@ -1396,24 +1772,32 @@ namespace Hecton8.World
 
         private void WriteAupSectorHashGrid(int2 centerSector)
         {
-            if (!TryResolveBuffer(
-                    ref _sectorHashGridHandle,
-                    ProceduralGeologyVaultBufferIds.SectorHashGrid,
-                    SectorHashGridCount,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<long> sectorHashGrid))
-            {
+            if (!TryLockVaultSectorHashGridBuffer())
                 return;
-            }
 
-            int write = 0;
-            for (int z = -1; z <= 1; z++)
+            try
             {
-                for (int x = -1; x <= 1; x++)
+                if (!TryOpenExistingBuffer(
+                        in _sectorHashGridHandle,
+                        SectorHashGridCount,
+                        out NativeArray<long> sectorHashGrid))
                 {
-                    int2 sector = new int2(centerSector.x + x, centerSector.y + z);
-                    sectorHashGrid[write++] = ComputeAupSectorHash(sector, worldSeed);
+                    return;
                 }
+
+                int write = 0;
+                for (int z = -1; z <= 1; z++)
+                {
+                    for (int x = -1; x <= 1; x++)
+                    {
+                        int2 sector = new int2(centerSector.x + x, centerSector.y + z);
+                        sectorHashGrid[write++] = ComputeAupSectorHash(sector, worldSeed);
+                    }
+                }
+            }
+            finally
+            {
+                UnlockVaultWriteBuffers();
             }
         }
 
@@ -1446,7 +1830,8 @@ namespace Hecton8.World
                 return;
             }
 
-            if (mapMagicBridge.TryGetQuantizedHeightmapPayload(runtimeProbe.x, runtimeProbe.z, out MapMagicBridge.QuantizedHeightmapPayload payload) && payload.IsValid)
+            if (mapMagicBridge.TryGetQuantizedHeightmapPayload(runtimeProbe.x, runtimeProbe.z, out MapMagicBridge.QuantizedHeightmapPayload payload) &&
+                MapMagicBridge.QuantizedHeightmapPayload.IsValid(in payload))
             {
                 heightPayload.HeightSamples = payload.HeightSamples;
                 heightPayload.TerrainSize = ToFloat3(payload.TerrainSize);
@@ -1468,17 +1853,27 @@ namespace Hecton8.World
 
         private void FillBiomeHeatmap(int biomeId)
         {
-            if (!TryResolveBuffer(
-                    ref _biomeHeatmapHandle,
-                    ProceduralGeologyVaultBufferIds.BiomeHeatmap,
-                    BiomeHeatmapResolution * BiomeHeatmapResolution,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<byte> biomeHeatmap))
+            if (!TryLockVaultBiomeHeatmapBuffer())
                 return;
 
-            byte packed = (byte)math.clamp(biomeId, 0, byte.MaxValue);
-            for (int i = 0; i < biomeHeatmap.Length; i++)
-                biomeHeatmap[i] = packed;
+            try
+            {
+                if (!TryOpenExistingBuffer(
+                        in _biomeHeatmapHandle,
+                        BiomeHeatmapResolution * BiomeHeatmapResolution,
+                        out NativeArray<byte> biomeHeatmap))
+                {
+                    return;
+                }
+
+                byte packed = (byte)math.clamp(biomeId, 0, byte.MaxValue);
+                for (int i = 0; i < biomeHeatmap.Length; i++)
+                    biomeHeatmap[i] = packed;
+            }
+            finally
+            {
+                UnlockVaultWriteBuffers();
+            }
         }
 
         private void ScheduleSpawnJob(double3 playerAbsolute, float3 playerRuntimePosition, GeologyHeightPayloadView payload)
@@ -1486,9 +1881,9 @@ namespace Hecton8.World
             if (!EnsureNativeState() || !TryLockVaultJobBuffers())
                 return;
 
-            if (!TryResolveVaultViews(out ProceduralGeologyVaultViews views))
+            if (!TryOpenExistingVaultViews(out ProceduralGeologyVaultViews views))
             {
-                UnlockVaultJobBuffers();
+                UnlockVaultWriteBuffers();
                 return;
             }
 
@@ -1662,13 +2057,13 @@ namespace Hecton8.World
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _spawnJob))
                 return false;
             _spawnJobScheduled = false;
-            UnlockVaultJobBuffers();
+            UnlockVaultWriteBuffers();
             return true;
         }
 
         private void CommitSpawnJobOutput()
         {
-            if (!TryResolveVaultViews(out ProceduralGeologyVaultViews views))
+            if (!TryOpenExistingVaultViews(out ProceduralGeologyVaultViews views))
                 return;
 
             _activeOreCount = math.max(0, views.SpawnCounts[0]);
@@ -1680,9 +2075,11 @@ namespace Hecton8.World
             _hzbCullCount = views.SpawnCounts.Length > 6 ? math.max(0, views.SpawnCounts[6]) : 0;
             if (_hasPendingRuntimeShift)
             {
-                ApplyRuntimeShift(views, _pendingRuntimeShift, false);
-                _pendingRuntimeShift = default;
-                _hasPendingRuntimeShift = false;
+                if (TryApplyRuntimeShiftWithFence(_pendingRuntimeShift, false))
+                {
+                    _pendingRuntimeShift = default;
+                    _hasPendingRuntimeShift = false;
+                }
             }
 
             _drawBounds = ResolveDrawBounds(views);
@@ -1740,20 +2137,30 @@ namespace Hecton8.World
 
         private void LoadDepletionMasksForCurrentSector()
         {
-            if (!TryResolveVaultViews(out ProceduralGeologyVaultViews views))
+            if (!TryLockVaultDepletionMaskBuffers())
                 return;
 
-            EnsureDepletionCacheInitialized(views);
-            for (int word = 0; word < _depletionWordCount; word++)
+            try
             {
-                ulong key = NormalizeDepletionWordKey(_currentSectorHash, word);
-                int slot = FindDepletionCacheSlot(views, key, out bool found);
-                views.DepletionMasks[word] = found && (uint)slot < (uint)views.DepletionCacheMasks.Length
-                    ? views.DepletionCacheMasks[slot]
-                    : ulong.MaxValue;
-            }
+                if (!TryOpenExistingDepletionMaskViews(out ProceduralGeologyVaultViews views))
+                    return;
 
-            _depletionLoaded = true;
+                EnsureDepletionCacheInitialized(views);
+                for (int word = 0; word < _depletionWordCount; word++)
+                {
+                    ulong key = NormalizeDepletionWordKey(_currentSectorHash, word);
+                    int slot = FindDepletionCacheSlot(views, key, out bool found);
+                    views.DepletionMasks[word] = found && (uint)slot < (uint)views.DepletionCacheMasks.Length
+                        ? views.DepletionCacheMasks[slot]
+                        : ulong.MaxValue;
+                }
+
+                _depletionLoaded = true;
+            }
+            finally
+            {
+                UnlockVaultWriteBuffers();
+            }
         }
 
         private void StoreDepletionWord(ProceduralGeologyVaultViews views, int wordIndex, ulong mask)
@@ -1831,34 +2238,41 @@ namespace Hecton8.World
             return key == 0UL ? 1UL : key;
         }
 
-        private void MarkDepleted(ProceduralGeologyVaultViews views, int oreIndex)
+        private bool MarkDepleted(ProceduralGeologyVaultViews views, int oreIndex)
         {
-            if ((uint)oreIndex >= (uint)_renderInstanceCount || views.OreTypes[oreIndex] == 0)
-                return;
+            if ((uint)oreIndex >= (uint)_renderInstanceCount ||
+                !views.ResourceNodes.IsCreated ||
+                !views.OreTypes.IsCreated ||
+                !views.DepletionMasks.IsCreated ||
+                (uint)oreIndex >= (uint)views.ResourceNodes.Length ||
+                (uint)oreIndex >= (uint)views.OreTypes.Length ||
+                views.OreTypes[oreIndex] == 0)
+                return false;
 
             int deterministicSlot = views.CandidateSlots.IsCreated && (uint)oreIndex < (uint)views.CandidateSlots.Length
                 ? views.CandidateSlots[oreIndex]
                 : oreIndex;
             if (deterministicSlot < 0)
-                return;
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromAbsolutePosition(views.ResourceNodes[oreIndex].SectorAUP);
+            if (!positionAup.IsFinite())
+                return false;
 
             int wordIndex = deterministicSlot >> 6;
             int bitIndex = deterministicSlot & 63;
             if ((uint)wordIndex >= (uint)views.DepletionMasks.Length)
-                return;
+                return false;
 
             ulong mask = views.DepletionMasks[wordIndex] & ~(1UL << bitIndex);
             views.DepletionMasks[wordIndex] = mask;
             StoreDepletionWord(views, wordIndex, mask);
 
             uint oreHash = ComputeOreHash(_currentSectorHash, deterministicSlot);
-            float3 position = views.OrePositions[oreIndex];
             int depletedOreType = views.OreTypes[oreIndex];
-            uint frame = ResolveSimulationFrameId();
+            uint frame = AdvanceSimulationFrameId();
             ItemAcquiredSignal acquiredSignal = default;
-            acquiredSignal.PositionAup = views.ResourceNodes.IsCreated && (uint)oreIndex < (uint)views.ResourceNodes.Length
-                ? AbsoluteUniversePosition.FromAbsolutePosition(views.ResourceNodes[oreIndex].SectorAUP)
-                : AbsoluteUniversePosition.FromRuntimePosition(new Vector3(position.x, position.y, position.z));
+            acquiredSignal.PositionAup = positionAup;
             acquiredSignal.ItemHash = unchecked((uint)ResolveItemHash(depletedOreType));
             acquiredSignal.OreHash = oreHash;
             acquiredSignal.Quantity = 1;
@@ -1885,6 +2299,7 @@ namespace Hecton8.World
             RefreshFirstLiveOreTelemetry(views);
             _renderUploadDirty = true;
             WriteTelemetrySample(1u);
+            return true;
         }
 
         private void ClearRenderedSlot(ProceduralGeologyVaultViews views, int deterministicSlot, int fallbackIndex)
@@ -2035,7 +2450,18 @@ namespace Hecton8.World
             }
 
             if (!sawShift)
+            {
+                if (_hasPendingRuntimeShift && !_spawnJobScheduled)
+                {
+                    if (!TryApplyRuntimeShiftWithFence(_pendingRuntimeShift, true))
+                        return false;
+
+                    _pendingRuntimeShift = default;
+                    _hasPendingRuntimeShift = false;
+                }
+
                 return true;
+            }
 
             if (_spawnJobScheduled)
             {
@@ -2057,10 +2483,34 @@ namespace Hecton8.World
                 CommitSpawnJobOutput();
             }
 
-            if (TryResolveVaultViews(out ProceduralGeologyVaultViews views))
-                ApplyRuntimeShift(views, totalShift, true);
+            if (!TryApplyRuntimeShiftWithFence(totalShift, true))
+            {
+                _pendingRuntimeShift += totalShift;
+                _hasPendingRuntimeShift = true;
+                return false;
+            }
+
             _lastAppliedAupShiftFrameId = newestShiftFrameId;
             return true;
+        }
+
+        private bool TryApplyRuntimeShiftWithFence(float3 totalShift, bool writeTelemetry)
+        {
+            if (!TryLockVaultRuntimeShiftBuffers())
+                return false;
+
+            try
+            {
+                if (!TryOpenExistingRuntimeShiftViews(out ProceduralGeologyVaultViews views))
+                    return false;
+
+                ApplyRuntimeShift(views, totalShift, writeTelemetry);
+                return true;
+            }
+            finally
+            {
+                UnlockVaultWriteBuffers();
+            }
         }
 
         private static bool IsNewAupShift(uint shiftFrameId, uint lastAppliedFrameId)
@@ -2116,12 +2566,7 @@ namespace Hecton8.World
 
         private void UploadRenderMatrices()
         {
-            if (!TryResolveBuffer(
-                    ref _oreMatricesHandle,
-                    ProceduralGeologyVaultBufferIds.ResourceMatrices,
-                    _oreCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<float4x4> oreMatrices) ||
+            if (!TryOpenExistingBuffer(in _oreMatricesHandle, _oreCapacity, out NativeArray<float4x4> oreMatrices) ||
                 _activeMatrixBuffer == null ||
                 _renderInstanceCount <= 0)
             {
@@ -2139,8 +2584,15 @@ namespace Hecton8.World
 
         private void RenderDormantOres()
         {
-            if (!renderDormantOres || _renderInstanceCount <= 0 || oreMaterial == null || _argsBuffer == null)
+            float visualWeight = ResolveDormantOreVisualWeight();
+            if (visualWeight <= 0.0001f || _renderInstanceCount <= 0 || oreMaterial == null || _argsBuffer == null)
                 return;
+
+            if (math.abs(_lastAppliedDormantOreVisualWeight - visualWeight) > 0.0001f)
+            {
+                oreMaterial.SetFloat(_QualityOverkillId, visualWeight);
+                _lastAppliedDormantOreVisualWeight = visualWeight;
+            }
 
             UnityEngine.Graphics.DrawProceduralIndirect(
                 oreMaterial,
@@ -2155,29 +2607,55 @@ namespace Hecton8.World
                 gameObject.layer);
         }
 
+        private float ResolveDormantOreVisualWeight()
+        {
+            float quality = ResolveGlobalQualityWeight();
+            float authoredWeight = math.saturate(math.isfinite(dormantOreVisualWeight) ? dormantOreVisualWeight : 1f);
+            float easedQuality = math.smoothstep(0f, 1f, quality);
+            return math.saturate(authoredWeight * easedQuality);
+        }
+
         private void UpdateIndirectArgsBuffer(uint instanceCount)
         {
-            if (_argsBuffer == null ||
-                !TryResolveBuffer(
-                    ref _indirectArgsHandle,
-                    ProceduralGeologyVaultBufferIds.IndirectArgs,
-                    IndirectArgsCount,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<GeologyIndirectArgsDTO> indirectArgs))
+            if (_argsBuffer == null)
                 return;
 
-            GeologyIndirectArgsDTO args = indirectArgs.Length > 0
-                ? indirectArgs[0]
-                : default;
-            args.VertexCountPerInstance = OreProceduralVertexCount;
-            args.InstanceCount = instanceCount;
-            args.StartVertex = 0u;
-            args.StartInstance = 0u;
+            bool releaseLock = false;
+            if ((_lockedVaultBufferMask & (1 << 10)) == 0)
+            {
+                if (_lockedVaultBufferMask != 0 || !TryLockVaultIndirectArgsBuffer())
+                    return;
+                releaseLock = true;
+            }
 
-            if (indirectArgs.Length > 0)
-                indirectArgs[0] = args;
+            try
+            {
+                if (!TryOpenExistingBuffer(
+                        in _indirectArgsHandle,
+                        IndirectArgsCount,
+                        out NativeArray<GeologyIndirectArgsDTO> indirectArgs))
+                {
+                    return;
+                }
 
-            WriteIndirectArgsGpu(in args);
+                GeologyIndirectArgsDTO args = indirectArgs.Length > 0
+                    ? indirectArgs[0]
+                    : default;
+                args.VertexCountPerInstance = OreProceduralVertexCount;
+                args.InstanceCount = instanceCount;
+                args.StartVertex = 0u;
+                args.StartInstance = 0u;
+
+                if (indirectArgs.Length > 0)
+                    indirectArgs[0] = args;
+
+                WriteIndirectArgsGpu(in args);
+            }
+            finally
+            {
+                if (releaseLock)
+                    UnlockVaultWriteBuffers();
+            }
         }
 
         private void WriteIndirectArgsGpu(uint instanceCount)
@@ -2262,21 +2740,33 @@ namespace Hecton8.World
 
         private void WriteTelemetrySample(uint flags)
         {
-            if (!TryResolveBuffer(
-                    ref _telemetryRingHandle,
-                    ProceduralGeologyVaultBufferIds.TelemetryRing,
-                    ProceduralGeologyConstants.TelemetryFrames,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<GeologyGenerationTelemetryEntry> telemetryRing))
-                return;
+            bool releaseLock = false;
+            if ((_lockedVaultBufferMask & (1 << 16)) == 0)
+            {
+                if (_lockedVaultBufferMask != 0 || !TryLockVaultTelemetryBuffer())
+                    return;
+                releaseLock = true;
+            }
 
-            TryResolveBuffer(
-                ref _depletionMasksHandle,
-                ProceduralGeologyVaultBufferIds.DepletionMasks,
-                _depletionWordCount,
-                NativeArrayOptions.UninitializedMemory,
-                out NativeArray<ulong> depletionMasks);
-            WriteTelemetrySample(telemetryRing, depletionMasks, flags);
+            try
+            {
+                if (!TryOpenExistingBuffer(
+                        in _telemetryRingHandle,
+                        ProceduralGeologyConstants.TelemetryFrames,
+                        out NativeArray<GeologyGenerationTelemetryEntry> telemetryRing))
+                    return;
+
+                TryOpenExistingBuffer(
+                    in _depletionMasksHandle,
+                    _depletionWordCount,
+                    out NativeArray<ulong> depletionMasks);
+                WriteTelemetrySample(telemetryRing, depletionMasks, flags);
+            }
+            finally
+            {
+                if (releaseLock)
+                    UnlockVaultWriteBuffers();
+            }
         }
 
         private void WriteTelemetrySample(
@@ -2284,7 +2774,7 @@ namespace Hecton8.World
             NativeArray<ulong> depletionMasks,
             uint flags)
         {
-            uint frame = ResolveSimulationFrameId();
+            uint frame = AdvanceSimulationFrameId();
             if (flags == 0u && _lastTelemetryFrameWritten == frame)
                 return;
             _lastTelemetryFrameWritten = frame;
@@ -2326,12 +2816,6 @@ namespace Hecton8.World
             return nodes * 0.045f;
         }
 
-        private void RefreshFirstLiveOreTelemetry()
-        {
-            if (TryResolveVaultViews(out ProceduralGeologyVaultViews views))
-                RefreshFirstLiveOreTelemetry(views);
-        }
-
         private void RefreshFirstLiveOreTelemetry(ProceduralGeologyVaultViews views)
         {
             _telemetryFirstOrePosition = default;
@@ -2371,7 +2855,7 @@ namespace Hecton8.World
             return hash;
         }
 
-        private uint ResolveSimulationFrameId()
+        private uint AdvanceSimulationFrameId()
         {
             uint dispatcherFrame = TimeSliceScheduler.CurrentFrameId;
             if (dispatcherFrame != 0u)
@@ -2389,11 +2873,9 @@ namespace Hecton8.World
 
         private void DumpTelemetry()
         {
-            if (!TryResolveBuffer(
-                    ref _telemetryRingHandle,
-                    ProceduralGeologyVaultBufferIds.TelemetryRing,
+            if (!TryOpenExistingBuffer(
+                    in _telemetryRingHandle,
                     ProceduralGeologyConstants.TelemetryFrames,
-                    NativeArrayOptions.ClearMemory,
                     out NativeArray<GeologyGenerationTelemetryEntry> telemetryRing))
                 return;
 
@@ -2406,8 +2888,8 @@ namespace Hecton8.World
         {
             try
             {
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
+                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read); // COLD ALLOC: FileStream[telemetry dump] — blackbox dump file writer — owner: ProceduralOreSpawner
+                using BinaryWriter writer = new BinaryWriter(stream); // COLD ALLOC: BinaryWriter[telemetry dump] — blackbox binary row serializer — owner: ProceduralOreSpawner
                 writer.Write(ProceduralGeologyConstants.DumpMagic);
                 writer.Write(ProceduralGeologyConstants.DumpVersion);
                 writer.Write(UnsafeUtility.SizeOf<GeologyGenerationTelemetryEntry>());
@@ -2519,11 +3001,9 @@ namespace Hecton8.World
             if (!drawProceduralGeologyGizmos || !Application.isPlaying)
                 return;
 
-            if (!TryResolveBuffer(
-                    ref _resourceNodesHandle,
-                    ProceduralGeologyVaultBufferIds.ResourceNodes,
+            if (!TryOpenExistingBuffer(
+                    in _resourceNodesHandle,
                     _oreCapacity,
-                    NativeArrayOptions.UninitializedMemory,
                     out NativeArray<ResourceNodeDTO> nodes))
             {
                 return;
@@ -2588,7 +3068,7 @@ namespace Hecton8.World
 
         private static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct
         {
-            return new GraphicsBuffer(
+            return new GraphicsBuffer( // COLD ALLOC: GraphicsBuffer[structured] — ore matrix upload lock buffer — owner: ProceduralOreSpawner
                 GraphicsBuffer.Target.Structured,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 count,
@@ -2703,14 +3183,14 @@ namespace Hecton8.World
                     double3 oreAbsolute = new double3(x, y + 0.08f, z);
                     float3 position = ResolveRuntimePosition(oreAbsolute);
                     float dropPodDistanceSq = ResolveDropPodDistanceSq(oreAbsolute);
-                    int oreType = ResolveOreType(ref state, SampleBiomeId(uv), y, dropPodDistanceSq, position, previousOrePosition, previousOreType, hasPreviousOre, slot);
+                    int oreType = SelectOreType(ref state, SampleBiomeId(uv), y, dropPodDistanceSq, position, previousOrePosition, previousOreType, hasPreviousOre, slot);
                     if (renderCount >= safeCapacity)
                     {
                         overflowCount++;
                         continue;
                     }
 
-                    float scale = ResolveSlotScale(slot, ref state);
+                    float scale = SampleSlotScale(slot, ref state);
                     bool coreHzbOccluded = IsHzbOccluded(position, scale);
                     if (coreHzbOccluded && IsAuthoritativeHzbCullEnabled())
                     {
@@ -2728,7 +3208,7 @@ namespace Hecton8.World
                     authoritativeCount++;
                     renderCount++;
 
-                    int visualClusterCount = coreHzbOccluded ? 0 : ResolveVisualClusterCount(ref state);
+                    int visualClusterCount = coreHzbOccluded ? 0 : SampleVisualClusterCount(ref state);
                     for (int cluster = 0; cluster < visualClusterCount; cluster++)
                     {
                         if (renderCount >= safeCapacity)
@@ -2737,7 +3217,7 @@ namespace Hecton8.World
                             break;
                         }
 
-                        float3 clusterPosition = position + ResolveClusterOffset(ref state, normal, cluster);
+                        float3 clusterPosition = position + SampleClusterOffset(ref state, normal, cluster);
                         float clusterScale = scale * (0.32f + 0.18f * Next01(ref state));
                         if (IsHzbOccluded(clusterPosition, clusterScale))
                         {
@@ -2796,13 +3276,14 @@ namespace Hecton8.World
             private uint ResolveSlotSeed(int slot)
             {
                 ulong slotKey = SectorHash ^ unchecked((ulong)(uint)slot * 0x9E3779B97F4A7C15UL) ^ Seed;
-                uint randomIndex = ProceduralGeologyHash.Mix64To32(slotKey);
-                if (randomIndex == 0u)
-                    randomIndex = 1u;
-
-                Unity.Mathematics.Random slotRandom = Unity.Mathematics.Random.CreateFromIndex(randomIndex);
-                uint lcgState = randomIndex ^ Seed ^ slotRandom.NextUInt();
-                lcgState = lcgState * 1664525u + 1013904223u;
+                uint lcgState = ProceduralGeologyHash.Mix64To32(slotKey ^ 0xD1B54A32D192ED03UL);
+                lcgState ^= Seed * 747796405u;
+                lcgState ^= unchecked((uint)slot) * 2891336453u;
+                lcgState ^= lcgState >> 16;
+                lcgState *= 2246822519u;
+                lcgState ^= lcgState >> 13;
+                lcgState *= 3266489917u;
+                lcgState ^= lcgState >> 16;
                 return lcgState == 0u ? 1u : lcgState;
             }
 
@@ -2868,7 +3349,7 @@ namespace Hecton8.World
                 return distanceSq;
             }
 
-            private int ResolveOreType(
+            private int SelectOreType(
                 ref uint state,
                 int dominantBiomeId,
                 float depth,
@@ -2886,11 +3367,11 @@ namespace Hecton8.World
                     return OreTypeCopper;
                 }
 
-                if (TryResolveDistributionRule(ref state, (uint)dominantBiomeId, depth, out int ruleOreType))
+                if (TrySelectDistributionRule(ref state, (uint)dominantBiomeId, depth, out int ruleOreType))
                     return ruleOreType;
 
                 if (HasDropPodAnchor == 0)
-                    return ResolveLegacyOreType(ref state, dominantBiomeId);
+                    return SelectLegacyOreType(ref state, dominantBiomeId);
 
                 ResolveOreWeights(dropPodDistanceSq, out int titaniumWeight, out int copperWeight, out int silverWeight);
                 int totalWeight = titaniumWeight + copperWeight + silverWeight;
@@ -2910,7 +3391,7 @@ namespace Hecton8.World
                 return silverWeight > 0 && totalWeight == 100 ? OreTypeSilver : OreTypeCopper;
             }
 
-            private bool TryResolveDistributionRule(ref uint state, uint biomeHash, float depth, out int oreType)
+            private bool TrySelectDistributionRule(ref uint state, uint biomeHash, float depth, out int oreType)
             {
                 oreType = 0;
                 if (!DistributionRules.IsCreated || DistributionRuleCount <= 0)
@@ -2973,7 +3454,7 @@ namespace Hecton8.World
                 silverWeight = math.max(0, 100 - titaniumWeight - copperWeight);
             }
 
-            private int ResolveLegacyOreType(ref uint state, int dominantBiomeId)
+            private int SelectLegacyOreType(ref uint state, int dominantBiomeId)
             {
                 uint roll = Next(ref state);
                 if (dominantBiomeId == CopperBiomeId && (roll & 3u) == 0u)
@@ -3121,7 +3602,7 @@ namespace Hecton8.World
                 return TerrainPosition.y + (waveA * 3.5f) + (waveB * 1.75f);
             }
 
-            private int ResolveVisualClusterCount(ref uint state)
+            private int SampleVisualClusterCount(ref uint state)
             {
                 float q = math.saturate(GlobalQualityWeight) * math.saturate(VisualClusterDensity);
                 float curve = q * q * (3f - (2f * q));
@@ -3133,7 +3614,7 @@ namespace Hecton8.World
                 return math.clamp(count, 0, ProceduralGeologyConstants.MaxVisualClusterNodesPerCore);
             }
 
-            private float3 ResolveClusterOffset(ref uint state, float3 normal, int clusterIndex)
+            private float3 SampleClusterOffset(ref uint state, float3 normal, int clusterIndex)
             {
                 float angle = (clusterIndex * 2.3999631f) + (Next01(ref state) * 0.35f);
                 float radius = ClusterSpreadRadius * (0.35f + 0.65f * Next01(ref state));
@@ -3200,7 +3681,7 @@ namespace Hecton8.World
                 return (Next(ref state) & 0x00FFFFFFu) * (1f / 16777216f);
             }
 
-            private static float ResolveSlotScale(int slot, ref uint state)
+            private static float SampleSlotScale(int slot, ref uint state)
             {
                 return 0.72f + ((Next(ref state) ^ (uint)slot) & 1023u) * (0.42f / 1023f);
             }

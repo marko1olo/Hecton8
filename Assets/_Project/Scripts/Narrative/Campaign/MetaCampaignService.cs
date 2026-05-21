@@ -47,9 +47,10 @@ namespace Hecton8.Narrative.Campaign
         private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct MetaCampaignEvaluationResult
     {
+        [FieldOffset(0)]
         public FixedList128Bytes<MetaCampaignVariableChange> Changes;
     }
 
@@ -180,6 +181,7 @@ namespace Hecton8.Narrative.Campaign
         private const uint ServiceHash = 0xAA625239u;
         private const uint StageHashMultiplier = 0x9E3779B9u;
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const Allocator DataVaultExemptOwnerIndexAllocator = Allocator.Persistent;
         private static readonly int _HectonOceanToxicityId = Shader.PropertyToID("_HectonOceanToxicity");
 
         private NativeParallelHashMap<uint, int> _globalVariables;
@@ -411,13 +413,13 @@ namespace Hecton8.Narrative.Campaign
 
             if (!_globalVariables.IsCreated)
             {
-                _globalVariables = new NativeParallelHashMap<uint, int>(GlobalVariableCapacity, Allocator.Persistent);
+                _globalVariables = new NativeParallelHashMap<uint, int>(GlobalVariableCapacity, DataVaultExemptOwnerIndexAllocator);
                 NativeMemorySentinel.RegisterNativeParallelHashMap(_globalVariables, NativeMemoryOwner, nameof(_globalVariables), NativeMemoryLifetime);
             }
 
             if (!_queryVariables.IsCreated)
             {
-                _queryVariables = new NativeParallelHashMap<uint, int>(GlobalVariableCapacity, Allocator.Persistent);
+                _queryVariables = new NativeParallelHashMap<uint, int>(GlobalVariableCapacity, DataVaultExemptOwnerIndexAllocator);
                 NativeMemorySentinel.RegisterNativeParallelHashMap(_queryVariables, NativeMemoryOwner, nameof(_queryVariables), NativeMemoryLifetime);
             }
 

@@ -158,11 +158,12 @@ namespace Hecton8.Editor
                 return;
             }
 
-            NativeArray<CableMaterialDTO> materials = vault.GetBufferHandle<CableMaterialDTO>(
-                CablePhysics132BufferIds.CableMaterials,
-                CablePhysics132Constants.MaterialCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.ClearMemory).Resolve(vault);
+            if (!CablePhysicsSolver132.TryOpenOrAcquireMaterialView(vault, out NativeArray<CableMaterialDTO> materials))
+            {
+                _status.text = "Cable material Vault lane unavailable.";
+                return;
+            }
+
             FileInfo info = new FileInfo(path);
             if (info.Length <= 0L || info.Length > 1048576L)
             {
@@ -216,11 +217,9 @@ namespace Hecton8.Editor
                 return false;
 
             CablePhysicsSolver132.EnsureMockBuffers(vault, HomeostasisBrain.GlobalQualityWeight, 0u);
-            tuning = vault.GetBufferHandle<VerletCableTuningDTO>(
-                CablePhysics132BufferIds.Tuning,
-                1,
-                SystemID.Physics,
-                NativeArrayOptions.ClearMemory).Resolve(vault);
+            if (!CablePhysicsSolver132.TryOpenOrAcquireTuningView(vault, out tuning))
+                return false;
+
             return tuning.IsCreated && tuning.Length > 0;
         }
 

@@ -15,18 +15,11 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(0.01f)] private float requestIntervalSeconds = 0.1f;
         [SerializeField] private Transform chestTarget;
 
-        private Transform _cachedTransform;
         private float _requestAccumulator;
-
-        private void Awake()
-        {
-            _cachedTransform = transform;
-        }
 
         public override void OnSpawn()
         {
             base.OnSpawn();
-            _cachedTransform = transform;
             _requestAccumulator = 0f;
         }
 
@@ -43,10 +36,14 @@ namespace Hecton8.Gameplay
                 return;
 
             _requestAccumulator = 0f;
-            Transform owner = _cachedTransform != null ? _cachedTransform : transform;
-            Transform anchor = chestTarget != null ? chestTarget : owner;
+            if (!TryResolveTetherPose(out Vector3 origin, out Vector3 forward))
+                return;
+
             float lifetime = math.max(0.01f, requestLifetimeSeconds);
-            AuxiliaryEquipmentRouterRuntime.TryDeployGravityTether(owner.position, anchor.position, lifetime);
+            float range = math.max(0.1f, GetRuntimeMaxRange(rangeMeters));
+            Vector3 anchorPosition = chestTarget != null ? chestTarget.position : origin;
+            Vector3 projectilePosition = chestTarget != null ? origin : origin + (forward * range);
+            AuxiliaryEquipmentRouterRuntime.TryDeployGravityTether(projectilePosition, anchorPosition, lifetime);
         }
 
         public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
@@ -70,6 +67,36 @@ namespace Hecton8.Gameplay
         private static bool AppendText(ref FixedCharBuffer buffer, string value)
         {
             return buffer.Append(value);
+        }
+
+        private bool TryResolveTetherPose(out Vector3 origin, out Vector3 forward)
+        {
+            origin = default;
+            forward = default;
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                return false;
+            }
+
+            float3 runtimePosition = snapshot.RuntimePosition;
+            float3 runtimeForward = snapshot.Forward;
+            float forwardLengthSq = math.lengthsq(runtimeForward);
+            if (!math.all(math.isfinite(runtimePosition)) ||
+                !math.all(math.isfinite(runtimeForward)) ||
+                !math.isfinite(forwardLengthSq) ||
+                forwardLengthSq <= 0.0001f)
+            {
+                return false;
+            }
+
+            float invForwardLength = math.rsqrt(math.max(forwardLengthSq, 0.0001f));
+            origin = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            forward = new Vector3(
+                runtimeForward.x * invForwardLength,
+                runtimeForward.y * invForwardLength,
+                runtimeForward.z * invForwardLength);
+            return true;
         }
     }
 }

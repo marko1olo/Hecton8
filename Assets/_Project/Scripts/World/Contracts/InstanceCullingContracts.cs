@@ -85,6 +85,7 @@ namespace Hecton8.World
         public float BoundsRadius;
         public float MaxCullDistanceMeters;
         public float VramUsedMb;
+        public float GlobalQualityWeight;
         public InstanceCullingQualityTier QualityTier;
         public InstanceCullingDispatchFlags Flags;
         public InstanceCullingIndirectArgs IndirectArgs;

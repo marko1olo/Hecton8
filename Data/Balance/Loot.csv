@@ -1,0 +1,5 @@
+table_id,item_id,weight
+salvage_basic,scrap_metal,100
+salvage_seal,pressure_gasket,35
+salvage_power,oxygen_cell,20
+salvage_sonar,sonar_crystal,12

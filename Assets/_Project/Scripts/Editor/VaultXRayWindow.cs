@@ -152,7 +152,8 @@ namespace Hecton8.Core.Memory.Editor
             _lastFaultMetaGeneration = 0u;
             _waterfallCount = 0;
 
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
                 return;
 
             _allocatedBytes = vault.AllocatedBytes;
@@ -224,7 +225,8 @@ namespace Hecton8.Core.Memory.Editor
 
         private void ForceDefragNextPreSimulation()
         {
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
             {
                 _overrideStatus = "No active vault.";
                 ApplySnapshotToUi();
@@ -238,7 +240,8 @@ namespace Hecton8.Core.Memory.Editor
 
         private void ReloadCsvOverride()
         {
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
             {
                 _overrideStatus = "No active vault.";
                 ApplySnapshotToUi();

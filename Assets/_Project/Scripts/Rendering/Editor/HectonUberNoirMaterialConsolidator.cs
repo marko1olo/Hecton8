@@ -15,7 +15,6 @@ namespace Hecton8.Rendering.Editor
         private const string WetGlassShaderName = "Triplebrick/Glass";
         private const string ToolDecayShaderName = "Hecton8/Tools/DecayLit";
         private const string UrpLitShaderName = "Universal Render Pipeline/Lit";
-        private const string CausticsKeyword = "H8_UBERNOIR_CAUSTICS_TEXTURED";
         private const string RefractionKeyword = "H8_UBERNOIR_SCREEN_REFRACTION";
         private const string ConstructionSearchRoot = "Assets/_Project/Art/Materials/Construction";
         private const string ToolsSearchRoot = "Assets/_Project/Art/Materials/Tools";
@@ -299,13 +298,11 @@ namespace Hecton8.Rendering.Editor
                 SetFloat(material, "_NoirFogAlpha", 0.62f);
                 SetVector(material, "_UberNoirFeatureFlags", ResolveFeatureFlags());
                 SetVector(material, "_UberNoirRustParams", ResolveRustParams());
-                SetVector(material, "_UberNoirCausticParams", ResolveCausticParams());
                 SetVector(material, "_UberNoirBiolumParams", new Vector4(1f, 0.35f, 4f, 1f));
                 SetVector(material, "_UberNoirDitherParams", ResolveDitherParams());
                 SetVector(material, "_UberNoirLightingParams", ResolveLightingParams());
                 SetVector(material, "_UberNoirRefractionParams", ResolveRefractionParams());
                 DisableLegacySourceKeywords(material);
-                SetKeyword(material, CausticsKeyword, Kind != ProjectionKind.WetGlassSheen);
                 SetKeyword(material, RefractionKeyword, RefractionStrength > 0.0001f);
                 ApplyRenderState(material);
                 EnableRequiredShaderPasses(material);
@@ -315,10 +312,9 @@ namespace Hecton8.Rendering.Editor
             private Vector4 ResolveFeatureFlags()
             {
                 float pom = Kind == ProjectionKind.WetGlassSheen ? 0f : 1f;
-                float caustics = 1f;
                 float bending = Kind == ProjectionKind.DryZoneHardSurface || Kind == ProjectionKind.WetGlassSheen ? 1f : 0f;
                 float dither = RequiresDitheredCutout() ? 1f : 0f;
-                return new Vector4(pom, caustics, bending, dither);
+                return new Vector4(pom, 0f, bending, dither);
             }
 
             private bool RequiresDitheredCutout()
@@ -344,13 +340,6 @@ namespace Hecton8.Rendering.Editor
                     normalStrength = 0.52f;
 
                 return new Vector4(strength, pomThreshold, normalStrength, Mathf.Max(0.45f, Smoothness));
-            }
-
-            private Vector4 ResolveCausticParams()
-            {
-                float intensity = Kind == ProjectionKind.WetGlassSheen ? 0.12f : Kind == ProjectionKind.ToolDecaySurface || Kind == ProjectionKind.UrpLitOpaqueConstructionSurface ? 0.22f : 0.35f;
-                float refractionOffset = Kind == ProjectionKind.WetGlassSheen ? 0.045f : 0.025f;
-                return new Vector4(intensity, 30f, 1f, refractionOffset);
             }
 
             private Vector4 ResolveDitherParams()

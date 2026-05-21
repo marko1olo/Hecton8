@@ -11,6 +11,7 @@ using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
+using AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition;
 
 namespace Hecton8.Habitat.Deformation
 {
@@ -1056,7 +1057,10 @@ namespace Hecton8.Habitat.Deformation
             if (!counters.IsCreated || !damageSignals.IsCreated || !AppendDentOnly(signal, true))
                 return false;
 
-            EnqueueVisualImpact(BuildDoubleAupFromLocal(signal.LocalPoint), signal.Magnitude, signal.DamageType);
+            if (TryBuildDoubleAupFromLocal(signal.LocalPoint, out double3 impactAup))
+            {
+                EnqueueVisualImpact(impactAup, signal.Magnitude, signal.DamageType);
+            }
 
             int damageCount = math.clamp(counters[HullIntegrityConstants.CounterPendingDamageCount], 0, damageSignals.Length);
             if (damageCount < damageSignals.Length)
@@ -1145,7 +1149,10 @@ namespace Hecton8.Habitat.Deformation
                 damageSignals[count] = mock;
                 count++;
                 AppendDentOnly(mock, true);
-                EnqueueVisualImpact(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint), magnitude, signal.DamageType);
+                if (CombatDamageSignalCodec.IsFiniteAup(signal.ImpactAup))
+                {
+                    EnqueueVisualImpact(signal.ImpactAup, magnitude, signal.DamageType);
+                }
             }
 
             counters[HullIntegrityConstants.CounterPendingDamageCount] = count;
@@ -1192,16 +1199,19 @@ namespace Hecton8.Habitat.Deformation
             if (ratio >= 0.8f && ratio <= 0.99f)
             {
                 float imminent = math.saturate((ratio - 0.8f) / 0.19f);
-                AcousticPingSignal acoustic = new AcousticPingSignal
+                if (TryBuildAupFromLocal(float3.zero, out AbsoluteUniversePosition acousticAup))
                 {
-                    PositionAup = BuildAupFromLocal(float3.zero),
-                    RadiusMeters = 32f,
-                    Intensity01 = imminent,
-                    SourceId = AcousticSignalHash,
-                    Channel = AcousticPingSignal.ChannelMetalStress,
-                    Flags = AcousticPingSignal.FlagActiveSonar
-                };
-                SignalBus<AcousticPingSignal>.Push(in acoustic);
+                    AcousticPingSignal acoustic = new AcousticPingSignal
+                    {
+                        PositionAup = acousticAup,
+                        RadiusMeters = 32f,
+                        Intensity01 = imminent,
+                        SourceId = AcousticSignalHash,
+                        Channel = AcousticPingSignal.ChannelMetalStress,
+                        Flags = AcousticPingSignal.FlagActiveSonar
+                    };
+                    SignalBus<AcousticPingSignal>.Push(in acoustic);
+                }
             }
 
             if (counters.Length <= HullIntegrityConstants.CounterBreachPending ||
@@ -1215,15 +1225,20 @@ namespace Hecton8.Habitat.Deformation
                 return;
 
             BaseModuleStateDTO module = modules[moduleIndex];
-            global::Hecton8.World.AbsoluteUniversePosition leakAup = BuildAupFromLocal(module.LocalCenter);
-            FluidIncursionSignal flood = new FluidIncursionSignal
+            bool hasLeakAup = TryBuildAupFromLocal(module.LocalCenter, out AbsoluteUniversePosition leakAup);
+            if (hasLeakAup)
             {
-                LeakAup = leakAup,
-                CompartmentId = module.NodeId,
-                FloodLevel01 = 1f,
-                FlowRate01 = math.saturate(ratio),
-                Flags = 1
-            };
+                FluidIncursionSignal flood = new FluidIncursionSignal
+                {
+                    LeakAup = leakAup,
+                    CompartmentId = module.NodeId,
+                    FloodLevel01 = 1f,
+                    FlowRate01 = math.saturate(ratio),
+                    Flags = 1
+                };
+                SignalBus<FluidIncursionSignal>.Push(in flood);
+            }
+
             BaseModuleCompromisedSignal compromised = new BaseModuleCompromisedSignal
             {
                 ModuleCenter = module.LocalCenter,
@@ -1240,7 +1255,6 @@ namespace Hecton8.Habitat.Deformation
                 QualityTier = _cachedScalabilityProfileByte
             };
 
-            SignalBus<FluidIncursionSignal>.Push(in flood);
             SignalBus<BaseModuleCompromisedSignal>.Push(in compromised);
             counters[HullIntegrityConstants.CounterBreachPending] = 0;
         }
@@ -1850,27 +1864,57 @@ namespace Hecton8.Habitat.Deformation
             return root != null ? root.worldToLocalMatrix : Matrix4x4.identity;
         }
 
-        private global::Hecton8.World.AbsoluteUniversePosition BuildAupFromLocal(float3 local)
+        private bool TryBuildAupFromLocal(float3 local, out AbsoluteUniversePosition positionAup)
         {
+            positionAup = default;
+            if (!math.all(math.isfinite(local)))
+                return false;
+
             Transform root = ResolveDentRoot();
             Vector3 localPoint = new Vector3(local.x, local.y, local.z);
             Vector3 runtime = root != null ? root.localToWorldMatrix.MultiplyPoint3x4(localPoint) : localPoint;
-            return global::Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(runtime);
+            return TryResolveAupFromRuntimeOrigin(runtime, out positionAup);
         }
 
-        private double3 BuildDoubleAupFromLocal(float3 local)
+        private bool TryBuildDoubleAupFromLocal(float3 local, out double3 impactAup)
         {
-            Transform root = ResolveDentRoot();
-            Vector3 localPoint = new Vector3(local.x, local.y, local.z);
-            Vector3 runtime = root != null ? root.localToWorldMatrix.MultiplyPoint3x4(localPoint) : localPoint;
-            return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtime);
+            impactAup = default;
+            if (!TryBuildAupFromLocal(local, out AbsoluteUniversePosition positionAup))
+                return false;
+
+            impactAup = positionAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(impactAup));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 runtime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtime)) ||
+                !TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup))
+            {
+                return false;
+            }
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in positionAup);
+        }
+
+        private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
+        {
+            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return AbsoluteUniversePosition.IsFinite(in originAup);
         }
 
         private double3 ResolveSubmarineAupDouble()
         {
             Transform root = submarineRoot != null ? submarineRoot : ResolveDentRoot();
             Vector3 runtime = root != null ? root.position : transform.position;
-            return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtime);
+            return TryResolveAupFromRuntimeOrigin(runtime, out AbsoluteUniversePosition submarineAup)
+                ? submarineAup.ToAbsoluteDouble3()
+                : double3.zero;
         }
 
         private bool EnqueueVisualImpact(double3 impactAup, float magnitude, uint damageTypeHash)

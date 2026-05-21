@@ -8,8 +8,8 @@ namespace Hecton8.World
     {
         private struct ScatterRefreshSampleState
         {
-            public bool HasSample;
-            public bool UsedFallbackOnly;
+            public byte HasSample;
+            public byte UsedFallbackOnly;
             public Vector3 AbsolutePosition;
             public int CenterCellX;
             public int CenterCellZ;
@@ -27,39 +27,56 @@ namespace Hecton8.World
 
         private struct ScatterStartupRuntimeState
         {
-            public bool StabilizationPending;
+            public byte StabilizationPending;
             public float StartTime;
         }
 
         private struct ScatterReconcileRuntimeState
         {
-            public bool HasPendingStartupPlacements;
-            public bool HasPendingRuntimePlacements;
+            public byte HasPendingStartupPlacements;
+            public byte HasPendingRuntimePlacements;
             public int PlanVersion;
-            public bool HasObserverSample;
+            public byte HasObserverSample;
             public Vector3 LastObserverPosition;
         }
 
         private struct ScatterBootstrapRuntimeState
         {
-            public bool PresenceResolved;
-            public bool Present;
-            public bool Failed;
-            public bool AllowPrimePass;
-            public bool SamplingPipelinePrewarmed;
+            public byte PresenceResolved;
+            public byte Present;
+            public byte Failed;
+            public byte AllowPrimePass;
+            public byte SamplingPipelinePrewarmed;
         }
 
         private struct ScatterLifecycleRuntimeState
         {
-            public bool RegisteredToTickManager;
-            public bool SubscribedToBootstrap;
-            public bool LoggedRuntimeStartState;
-            public bool LoggedFirstSlowTick;
+            public byte RegisteredToTickManager;
+            public byte SubscribedToBootstrap;
+            public byte LoggedRuntimeStartState;
+            public byte LoggedFirstSlowTick;
             public float NextTickDrivenScatterAttemptTime;
         }
 
         private readonly struct ScatterSamplingBeginContext
         {
+            public readonly IReadOnlyList<WorldProceduralPlacementRule> Rules;
+            public readonly Vector3 RuntimeCenter;
+            public readonly Vector3 AbsoluteCenter;
+            public readonly int CenterCellX;
+            public readonly int CenterCellZ;
+            public readonly float CellSize;
+            public readonly int RadiusCells;
+            public readonly int CellDiameter;
+            public readonly int TotalCells;
+            public readonly float Now;
+            public readonly int GroundBudget;
+            public readonly int ClusterBudget;
+            public readonly int StructureStride;
+            public readonly int StructureBudget;
+            public readonly int SpawnStride;
+            public readonly int SpawnBudget;
+
             public ScatterSamplingBeginContext(
                 IReadOnlyList<WorldProceduralPlacementRule> rules,
                 Vector3 runtimeCenter,
@@ -95,23 +112,6 @@ namespace Hecton8.World
                 SpawnStride = spawnStride;
                 SpawnBudget = spawnBudget;
             }
-
-            public IReadOnlyList<WorldProceduralPlacementRule> Rules { get; }
-            public Vector3 RuntimeCenter { get; }
-            public Vector3 AbsoluteCenter { get; }
-            public int CenterCellX { get; }
-            public int CenterCellZ { get; }
-            public float CellSize { get; }
-            public int RadiusCells { get; }
-            public int CellDiameter { get; }
-            public int TotalCells { get; }
-            public float Now { get; }
-            public int GroundBudget { get; }
-            public int ClusterBudget { get; }
-            public int StructureStride { get; }
-            public int StructureBudget { get; }
-            public int SpawnStride { get; }
-            public int SpawnBudget { get; }
         }
 
         private struct ScatterSamplingCompletionContext
@@ -130,7 +130,7 @@ namespace Hecton8.World
             public long SamplingInputsEndTimestamp;
             public int EvaluatedCells;
             public ScatterCandidate TopCandidate;
-            public bool HasTopCandidate;
+            public byte HasTopCandidate;
             public ScatterCandidate[] LayerTopCandidates;
             public bool[] LayerTopValid;
             public int[] LayerPlacementCounts;
@@ -161,7 +161,7 @@ namespace Hecton8.World
             public float RejectedResidencyRadius;
             public int MaxCandidatesBeforePrunePerCell;
             public int MaxCandidatesAfterPrunePerCell;
-            public bool CollectDetailedDiagnostics;
+            public byte CollectDetailedDiagnostics;
             public WorldZoneAnchor DebugZone;
             public WorldZoneAnchor.ZoneKind DebugResolvedZoneKind;
             public WorldProceduralPattern DebugPattern;
@@ -188,7 +188,7 @@ namespace Hecton8.World
                 SamplingInputsEndTimestamp = 0L;
                 EvaluatedCells = 0;
                 TopCandidate = default;
-                HasTopCandidate = false;
+                HasTopCandidate = 0;
                 LayerTopCandidates = null;
                 LayerTopValid = null;
                 LayerPlacementCounts = null;
@@ -219,7 +219,7 @@ namespace Hecton8.World
                 RejectedResidencyRadius = 0f;
                 MaxCandidatesBeforePrunePerCell = 0;
                 MaxCandidatesAfterPrunePerCell = 0;
-                CollectDetailedDiagnostics = false;
+                CollectDetailedDiagnostics = 0;
                 DebugZone = null;
                 DebugResolvedZoneKind = default;
                 DebugPattern = default;
@@ -243,13 +243,21 @@ namespace Hecton8.World
             public int ClusterRatioStart;
             public int PassiveSpawnMax;
             public int PredatorSpawnMax;
-            public bool UsesPatternAccentQuotas;
-            public bool CollectDetailedDiagnostics;
+            public byte UsesPatternAccentQuotas;
+            public byte CollectDetailedDiagnostics;
             public ScatterPlacementRegistrationContext PlacementRegistrationContext;
         }
 
         private readonly struct ScatterBiomeTransitionContext
         {
+            public readonly byte HasSecondary;
+            public readonly HectonBiomeMatrixProfile SecondaryProfile;
+            public readonly HectonBiomeFamilyProfile SecondaryFamily;
+            public readonly WorldProceduralBiomeFamilyContextProfile SecondaryBiomeContext;
+            public readonly ScatterBiomeScoreContext SecondaryScoreContext;
+            public readonly float PrimaryWeight;
+            public readonly float SecondaryWeight;
+
             public ScatterBiomeTransitionContext(
                 bool hasSecondary,
                 HectonBiomeMatrixProfile secondaryProfile,
@@ -258,22 +266,14 @@ namespace Hecton8.World
                 ScatterBiomeScoreContext secondaryScoreContext,
                 float secondaryWeight)
             {
-                HasSecondary = hasSecondary && secondaryProfile != null && secondaryWeight > 0f;
-                SecondaryProfile = HasSecondary ? secondaryProfile : null;
-                SecondaryFamily = HasSecondary ? secondaryFamily : null;
-                SecondaryBiomeContext = HasSecondary ? secondaryBiomeContext : null;
-                SecondaryScoreContext = HasSecondary ? secondaryScoreContext : default;
-                SecondaryWeight = HasSecondary ? Mathf.Clamp01(secondaryWeight) : 0f;
+                HasSecondary = hasSecondary && secondaryProfile != null && secondaryWeight > 0f ? (byte)1 : (byte)0;
+                SecondaryProfile = HasSecondary != 0 ? secondaryProfile : null;
+                SecondaryFamily = HasSecondary != 0 ? secondaryFamily : null;
+                SecondaryBiomeContext = HasSecondary != 0 ? secondaryBiomeContext : null;
+                SecondaryScoreContext = HasSecondary != 0 ? secondaryScoreContext : default;
+                SecondaryWeight = HasSecondary != 0 ? Mathf.Clamp01(secondaryWeight) : 0f;
                 PrimaryWeight = 1f - SecondaryWeight;
             }
-
-            public bool HasSecondary { get; }
-            public HectonBiomeMatrixProfile SecondaryProfile { get; }
-            public HectonBiomeFamilyProfile SecondaryFamily { get; }
-            public WorldProceduralBiomeFamilyContextProfile SecondaryBiomeContext { get; }
-            public ScatterBiomeScoreContext SecondaryScoreContext { get; }
-            public float PrimaryWeight { get; }
-            public float SecondaryWeight { get; }
         }
 
         private struct ScatterCellPlacementCounters

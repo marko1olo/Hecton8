@@ -4,7 +4,7 @@ Owner: `SHINOBU_119`
 Source anchors: `Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs`, `Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs`, `Assets/_Project/Scripts/Physics/HabitatFluidIncursionContracts.cs`.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,9 +14,8 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-
-R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Runtime Truth
@@ -36,7 +35,7 @@ Jobs mutate the DTO with raw pointers and `UnsafeUtility.AsRef`. The buffer can 
 
 `FluidIngressJob` applies Torricelli ingress from `IntegrityStateDTO` breach area and AUP-local water depth. `FluidBfsPressureEqualizationJob` traverses CSR topology and moves conserved scalar volume across unsealed edges using surface-head difference: AUP grid/local Y delta, floor-height delta, and fill-height delta. `GlobalQualityWeight` drives solver iterations continuously from 1 to 5.
 
-Runtime cadence is also continuous: the director accumulates deterministic fixed delta and lerps solver windows from 5Hz to 50Hz by `GlobalQualityWeight^2`. The accumulated delta is passed into ingress/equalization, so low-tier cadence drops solver calls without deleting water volume.
+Runtime cadence is also continuous: the director accumulates deterministic fixed delta and lerps solver windows from 5Hz to 50Hz by `GlobalQualityWeight^2`. The accumulated delta is passed into ingress/equalization, so minimum-quality cadence drops solver calls without deleting water volume.
 
 ## Bridges
 
@@ -63,6 +62,12 @@ Problem: Flood truth must be visible to Burst jobs, rollback snapshots, editor t
 Why owner-local data is insufficient: CSR topology, breach input, render upload, editor tuning, and rollback need stable native handles across phase boundaries.
 Why direct caller/owner interface is insufficient: Jobs need raw native buffers, not managed calls.
 Instrument: GlobalDataVault / IDataVault; Black-box/telemetry route.
+R48 exact route fields for the HFI route cards in this document:
+Producer/consumer phase: FixedTick/POST_FIXED producers write Vault state and bridge packets; PostFixed physics/audio and VISUAL_SYNC render/editor consumers read snapshots/signals in owned phases.
+Cadence/capacity: quality-scaled 5Hz..50Hz solver cadence; 256 compartments, 1024 directed edges, 300 telemetry frames, and bounded SignalBus event capacities.
+Overflow/failure: clamp invalid water, set fault flags, use bounded event overflow/circuit-breaker telemetry, and dump black-box targets only after timestamped runtime triggers.
+Shutdown/disposal: Vault owns native memory; director releases graphics buffers, unlocks handles, and unregisters dispatcher hooks.
+Review disposition: `YELLOW / STATIC_SOURCE_ONLY` until compile/import/runtime/profiler proof exists.
 Producer phase: FixedTick scheduled jobs; PostFixed telemetry stamp.
 Consumer phase: PostFixed bridge publish, VISUAL_SYNC render upload, editor debug, rollback snapshot.
 Cadence: quality-scaled 5Hz to fixed-frame solver; telemetry per solved frame.
@@ -138,13 +143,13 @@ Instrument: SignalBus<T> first-party broadcast; AcousticZoneEvents facade config
 Producer phase: PostFixed mass/acoustic publish window.
 Consumer phase: audio/acoustic zone snapshot drain.
 Cadence: default 0.1s, max 1 signal per director per publish window.
-Expected max events/reads per frame: 32 capacity, low-tier frame cap 8.
-GlobalQualityWeight behavior: payload is scalar; low tiers receive same bounded signal at coarser cadence.
+Expected max events/reads per frame: 32 capacity, minimum-quality frame cap 8.
+GlobalQualityWeight behavior: payload is scalar; lower quality weights receive the same bounded signal at coarser cadence.
 Payload/data shape: 64-byte unmanaged explicit-layout raw AUP grid/local + scalar muffle DTO.
 Managed fields present: no
 UnityEngine.Object fields present: no
 Layout proof: 8-byte long grid fields first, float3 at 24, uint/float, byte flags, explicit padding to 64.
-Capacity: 32 signals, 8 low-tier frame signals.
+Capacity: 32 signals, 8 minimum-quality frame signals.
 Overflow/failure: SignalBus drops/load-sheds with lane telemetry.
 Telemetry fields: pending SignalBus telemetry plus flood black-box summary intensity.
 Black-box fields: flood intensity and max fill in frame summary.

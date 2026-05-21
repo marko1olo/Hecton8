@@ -53,7 +53,7 @@ namespace Hecton8.Visor
             [Tooltip("GPU histogram compute shader used to resolve weighted EV and temporal exposure smoothing.")]
             public ComputeShader autoExposureComputeShader = null;
 
-            [Tooltip("Where the volumetric shaft pass is injected into URP. Before transparents keeps Crest water and camera-space UI on top of the shaft composite.")]
+            [Tooltip("Where the volumetric shaft pass is injected into URP. Before transparents keeps the ocean surface and camera-space UI on top of the shaft composite.")]
             public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingTransparents;
 
             [Tooltip("Internal render scale for the shaft target. Lower values save MX350 fill-rate.")]
@@ -745,19 +745,40 @@ namespace Hecton8.Visor
                 return configured;
             }
 
-            [StructLayout(LayoutKind.Sequential, Size = ShaftGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Explicit, Size = ShaftGlobalsStrideBytes)]
             private struct ShaftGlobalsDTO
             {
+                [FieldOffset(0)]
                 internal Vector4 PassRenderRayDistance;
+
+                [FieldOffset(16)]
                 internal Vector4 ScatteringDensityIgnBilateral;
+
+                [FieldOffset(32)]
                 internal Vector4 ShaftBiolumSilt;
+
+                [FieldOffset(48)]
                 internal Vector4 SiltContact;
+
+                [FieldOffset(64)]
                 internal Vector4 ContactFlashlight;
+
+                [FieldOffset(80)]
                 internal Vector4 FlashlightParams;
+
+                [FieldOffset(96)]
                 internal Vector4 NoirPowerDensityPad;
+
+                [FieldOffset(112)]
                 internal Vector4 NoirLiftColor;
+
+                [FieldOffset(128)]
                 internal Vector4 LensGhostChromatic;
+
+                [FieldOffset(144)]
                 internal Vector4 LensThermal;
+
+                [FieldOffset(160)]
                 internal Vector4 ExposurePad;
 
                 internal static ShaftGlobalsDTO FromParameters(in MaterialParameterState parameters)
@@ -778,43 +799,78 @@ namespace Hecton8.Visor
                 }
             }
 
-            [StructLayout(LayoutKind.Sequential, Size = MaterialParameterStateSizeBytes)]
+            [StructLayout(LayoutKind.Explicit, Size = MaterialParameterStateSizeBytes)]
             private struct MaterialParameterState
             {
+                [FieldOffset(0)]
                 internal float RenderScale;
+                [FieldOffset(4)]
                 internal float MaxRayDistance;
+                [FieldOffset(8)]
                 internal float ScatteringAnisotropy;
+                [FieldOffset(12)]
                 internal float Density;
+                [FieldOffset(16)]
                 internal float IgnJitter;
+                [FieldOffset(20)]
                 internal float BilateralDepthSigma;
+                [FieldOffset(24)]
                 internal float ShaftIntensity;
+                [FieldOffset(28)]
                 internal float BiolumPatternScale;
+                [FieldOffset(32)]
                 internal float BiolumProjectionStrength;
+                [FieldOffset(36)]
                 internal float SiltStrength;
+                [FieldOffset(40)]
                 internal float SiltNoiseScale;
+                [FieldOffset(44)]
                 internal float SiltFloorBoost;
+                [FieldOffset(48)]
                 internal float SiltDriftSpeed;
+                [FieldOffset(52)]
                 internal float ContactShadowStrength;
+                [FieldOffset(56)]
                 internal float ContactShadowSteps;
+                [FieldOffset(60)]
                 internal float ContactShadowBias;
+                [FieldOffset(64)]
                 internal float ContactShadowMaxDistance;
+                [FieldOffset(68)]
                 internal float FlashlightShadowSteps;
+                [FieldOffset(72)]
                 internal float FlashlightShadowSoftness;
+                [FieldOffset(76)]
                 internal float FlashlightShadowMinStep;
+                [FieldOffset(80)]
                 internal float FlashlightShadowBias;
+                [FieldOffset(84)]
                 internal float FlashlightShadowFloor;
+                [FieldOffset(88)]
                 internal float NoirPower;
+                [FieldOffset(92)]
                 internal float NoirFogDensity;
+                [FieldOffset(96)]
                 internal Color NoirLiftColor;
+                [FieldOffset(112)]
                 internal float LensGhostIntensity;
+                [FieldOffset(116)]
                 internal float LensGhostScale;
+                [FieldOffset(120)]
                 internal float LensChromaticAberration;
+                [FieldOffset(124)]
                 internal float LensEdgeWeight;
+                [FieldOffset(128)]
                 internal float LensDirtIntensity;
+                [FieldOffset(132)]
                 internal float CondensationIntensity;
+                [FieldOffset(136)]
                 internal float ThermalHazeIntensity;
+                [FieldOffset(140)]
                 internal float ThermalHazeScale;
+                [FieldOffset(144)]
                 internal float HasExposureState;
+                [FieldOffset(148)]
                 private float _pad0;
 
                 internal static MaterialParameterState Resolve(

@@ -1,0 +1,27 @@
+{
+    "name": "Hecton8.World.VoxelTerrainSeamBinder.Editor",
+    "rootNamespace": "Hecton8.World.VoxelTerrainSeamBinder.Editor",
+    "references": [
+        "Hecton8.World.VoxelTerrainSeamBinder",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

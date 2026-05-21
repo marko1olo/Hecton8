@@ -40,7 +40,7 @@ namespace Hecton8.AtlasSignal
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-120)]
-    public sealed class AtlasSignalSystem : MonoBehaviour, ISaveable, ISlowTickable
+    public sealed class AtlasSignalSystem : MonoBehaviour, ISaveable, ISlowTickable, IAtlasSignalReadModel
     {
         // ----------------------------------------------------------
         //  INSPECTOR
@@ -163,6 +163,39 @@ namespace Hecton8.AtlasSignal
 
         public AbsoluteUniversePosition AtlasCoreAup => ResolveAtlasCoreAup();
         public int CurrentRevealStage => _maxRevealStageUnlocked;
+
+        public bool TryReadAtlasSignalSnapshot(
+            in AbsoluteUniversePosition observerAup,
+            out AtlasSignalReadSnapshot snapshot)
+        {
+            snapshot = default;
+            if (!observerAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition coreAup = ResolveAtlasCoreAup();
+            if (!coreAup.IsFinite())
+                return false;
+
+            float strength = math.saturate(math.select(0f, _currentStrength, math.isfinite(_currentStrength)));
+            int revealStage = math.max(0, _maxRevealStageUnlocked);
+            Vector3 direction = SignalStrengthSystem.CalculateDirectionToCore(in observerAup, in coreAup);
+            float3 directionToCore = new float3(direction.x, direction.y, direction.z);
+            if (!math.all(math.isfinite(directionToCore)))
+                directionToCore = new float3(0f, -1f, 0f);
+
+            uint flags = 0u;
+            if (revealStage >= FormalDetectionRevealStage && strength >= detectionThreshold)
+                flags |= AtlasSignalReadSnapshot.IsDetectedFlag;
+            if (revealStage >= IdentityRevealStage)
+                flags |= AtlasSignalReadSnapshot.HasNavigationFlag;
+
+            snapshot.DirectionToCore = directionToCore;
+            snapshot.Strength01 = strength;
+            snapshot.RevealStage = revealStage;
+            snapshot.StrengthBand = math.max(0, _currentStrengthBand);
+            snapshot.Flags = flags;
+            return true;
+        }
 
         /// <summary>
         /// Direction from the current player position to the Atlas-6 core.
@@ -381,7 +414,10 @@ namespace Hecton8.AtlasSignal
             if (!_atlasCoreAupCached || _atlasCoreAupSource != atlasCorePosWorld)
             {
                 _atlasCoreAupSource = atlasCorePosWorld;
-                _atlasCoreAup = AbsoluteUniversePosition.FromRuntimePosition(atlasCorePosWorld);
+                double3 atlasCoreAup = new double3(atlasCorePosWorld.x, atlasCorePosWorld.y, atlasCorePosWorld.z);
+                _atlasCoreAup = math.all(math.isfinite(atlasCoreAup))
+                    ? AbsoluteUniversePosition.FromAbsolutePosition(atlasCoreAup)
+                    : default;
                 _atlasCoreAupCached = true;
             }
 

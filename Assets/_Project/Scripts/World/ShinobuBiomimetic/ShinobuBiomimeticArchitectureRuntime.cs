@@ -508,6 +508,7 @@ namespace Hecton8.World.ShinobuBiomimetic
     /// </summary>
     public static class ShinobuPoiVaultBridge
     {
+        private const SystemID OwnerSystem = SystemID.WorldStreaming;
         public const BufferID PoiTransformsBufferId = (BufferID)70420;
         public const BufferID PoiSortedTransformsBufferId = (BufferID)70421;
         public const BufferID PoiRoutesBufferId = (BufferID)70422;
@@ -541,34 +542,91 @@ namespace Hecton8.World.ShinobuBiomimetic
             if (vault == null)
                 return false;
 
-            bool hasPoi = vault.TryGetBuffer(PoiTransformsBufferId, out poiTransforms);
-            vault.TryGetBuffer(PoiNarrativeRulesBufferId, out narrativeRules);
-            vault.TryGetBuffer(PoiTelemetryRingBufferId, out telemetryRing);
+            bool hasPoi = TryOpenExistingWorldStreamingBuffer(vault, PoiTransformsBufferId, 1, out poiTransforms);
+            TryOpenExistingWorldStreamingBuffer(vault, PoiNarrativeRulesBufferId, 1, out narrativeRules);
+            TryOpenExistingWorldStreamingBuffer(vault, PoiTelemetryRingBufferId, BlackBoxFrameCount, out telemetryRing);
             return hasPoi;
         }
 
         public static NativeArray<PoiTransformDTO> AcquirePoiTransformBuffer(int capacity)
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            return vault != null
-                ? vault.GetBuffer<PoiTransformDTO>(PoiTransformsBufferId, math.max(1, capacity), SystemID.WorldStreaming, NativeArrayOptions.UninitializedMemory)
-                : default;
+            return AcquireWorldStreamingBuffer<PoiTransformDTO>(vault, PoiTransformsBufferId, capacity);
         }
 
         public static NativeArray<PoiChunkRouteDTO> AcquireRouteBuffer(int capacity)
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            return vault != null
-                ? vault.GetBuffer<PoiChunkRouteDTO>(PoiRoutesBufferId, math.max(1, capacity), SystemID.WorldStreaming, NativeArrayOptions.UninitializedMemory)
-                : default;
+            return AcquireWorldStreamingBuffer<PoiChunkRouteDTO>(vault, PoiRoutesBufferId, capacity);
         }
 
         public static NativeArray<PoiPlacementTelemetryEntry> AcquireTelemetryRing()
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            return vault != null
-                ? vault.GetBuffer<PoiPlacementTelemetryEntry>(PoiTelemetryRingBufferId, BlackBoxFrameCount, SystemID.WorldStreaming, NativeArrayOptions.UninitializedMemory)
+            return AcquireWorldStreamingBuffer<PoiPlacementTelemetryEntry>(vault, PoiTelemetryRingBufferId, BlackBoxFrameCount);
+        }
+
+        private static NativeArray<T> AcquireWorldStreamingBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            int length = math.max(1, requiredLength);
+            if (TryOpenExistingWorldStreamingBuffer(vault, bufferId, length, out NativeArray<T> existing))
+                return existing;
+
+            if (vault == null || vault.IsAllocationLocked)
+                return default;
+
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+                bufferId,
+                length,
+                OwnerSystem,
+                NativeArrayOptions.UninitializedMemory);
+            return TryOpenWorldStreamingBuffer(vault, in acquired, bufferId, length, out NativeArray<T> buffer)
+                ? buffer
                 : default;
+        }
+
+        private static bool TryOpenExistingWorldStreamingBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
+            {
+                return false;
+            }
+
+            return TryOpenWorldStreamingBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenWorldStreamingBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                handle.BufferID != (uint)bufferId ||
+                handle.SystemID != (uint)OwnerSystem ||
+                handle.Generation == 0u ||
+                !vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
     }
 

@@ -1,8 +1,6 @@
-using Hecton8.AI;
-using Hecton8.Bootstrap;
+using Hecton8.Core;
 using Hecton8.Building;
 using Hecton8.Construction;
-using Hecton8.Core;
 using Hecton8.Items;
 using Hecton8.Interaction;
 using Hecton8.Scavenging;
@@ -59,12 +57,13 @@ namespace Hecton8.Gameplay
         [SerializeField] private LayerMask analysisMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField] private float feedbackInterval = 0.45f;
 
-        private Transform _cachedTransform;
         private HectonSurvivalSystem _survival;
+        private ScanLogSystem _scanLog;
         private HUDNotification _notification;
         private float _cooldown;
-        private float _nextFeedbackAt;
-        private int _cachedTargetAssessmentFrame = -1;
+        private float _feedbackCooldownRemaining;
+        private uint _targetAssessmentEvaluationStamp;
+        private uint _cachedTargetAssessmentStamp = uint.MaxValue;
         private bool _cachedTargetAssessmentValid;
         private AnalyzerAssessment _cachedTargetAssessment;
         private FixedCharBuffer _hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — environmental analyzer HUD staging buffer — owner: EnvironmentalAnalyzerTool
@@ -74,9 +73,19 @@ namespace Hecton8.Gameplay
 
         [SerializeField] private string _debugLastMessage;
 
-        private void Awake()
+        public override void OnSpawn()
         {
-            _cachedTransform = transform;
+            base.OnSpawn();
+            _scanLog = GlobalRegistry.ScanLog;
+        }
+
+        public override void OnDespawn()
+        {
+            _scanLog = null;
+            _survival = null;
+            _notification = null;
+            InvalidateTargetAssessmentCache();
+            base.OnDespawn();
         }
 
         private bool TryResolveSurvival()
@@ -84,13 +93,11 @@ namespace Hecton8.Gameplay
             if (_survival != null)
                 return true;
 
-            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
-                playerTransform == null)
-            {
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext))
                 return false;
-            }
 
-            if (!playerTransform.TryGetComponent(out HectonSurvivalSystem survival))
+            HectonSurvivalSystem survival = playerContext.SurvivalSystem;
+            if (survival == null)
                 return false;
 
             _survival = survival;
@@ -101,6 +108,7 @@ namespace Hecton8.Gameplay
         {
             base.OnEquip();
 
+            _scanLog = GlobalRegistry.ScanLog;
             TryResolveSurvival();
 
             if (_notification == null)
@@ -119,28 +127,27 @@ namespace Hecton8.Gameplay
                 AnalyzerAssessment assessment = BuildTargetAssessment(hit);
                 Publish(assessment);
                 ArchiveTargetIntel(hit, assessment);
+                StoreTargetAssessment(assessment);
 
-                if (Time.time >= _nextFeedbackAt)
+                if (TryConsumeFeedbackGate())
                 {
                     RecordOperationAssessment(assessment);
-                    _nextFeedbackAt = Time.time + feedbackInterval;
                 }
             }
             else
             {
+                InvalidateTargetAssessmentCache();
                 PublishWarningMessage("ANALYZER: NO TARGET RETURN | Sweep a valid object to classify risk and opportunity.");
-                if (Time.time >= _nextFeedbackAt)
+                if (TryConsumeFeedbackGate())
                 {
                     FieldOperationLogSystem.RecordOperation(
                         "ANALYZER",
                         "NO TARGET RETURN",
                         "Sweep a valid object to classify risk and opportunity.",
                         "WARN");
-                    _nextFeedbackAt = Time.time + feedbackInterval;
                 }
             }
 
-            InvalidateTargetAssessmentCache();
             _cooldown = analysisCooldown;
         }
 
@@ -163,10 +170,9 @@ namespace Hecton8.Gameplay
                 Publish(assessment);
                 ArchiveSuitDiagnostic(assessment);
 
-                if (Time.time >= _nextFeedbackAt)
+                if (TryConsumeFeedbackGate())
                 {
                     RecordOperationAssessment(assessment);
-                    _nextFeedbackAt = Time.time + feedbackInterval;
                 }
             }
 
@@ -176,11 +182,31 @@ namespace Hecton8.Gameplay
 
         public override void ToolTick(float deltaTime)
         {
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             if (_cooldown > 0f)
-                _cooldown = math.max(0f, _cooldown - deltaTime);
+                _cooldown = math.max(0f, _cooldown - safeDeltaTime);
+
+            if (_feedbackCooldownRemaining > 0f)
+                _feedbackCooldownRemaining = math.max(0f, _feedbackCooldownRemaining - safeDeltaTime);
+
+            unchecked
+            {
+                _targetAssessmentEvaluationStamp++;
+            }
         }
 
-        public override string GetOperationalSummary()
+        private bool TryConsumeFeedbackGate()
+        {
+            if (_feedbackCooldownRemaining > 0f)
+                return false;
+
+            float safeInterval = math.isfinite(feedbackInterval) ? feedbackInterval : 0.45f;
+            _feedbackCooldownRemaining = math.max(0.05f, safeInterval);
+            return true;
+        }
+
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override string BuildLegacyOperationalSummaryString()
         {
             _legacyOperationalBuffer.Clear();
             WriteOperationalSummary(ref _legacyOperationalBuffer);
@@ -197,7 +223,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (_cachedTargetAssessmentFrame == Time.frameCount && _cachedTargetAssessmentValid)
+            if (_cachedTargetAssessmentStamp == _targetAssessmentEvaluationStamp && _cachedTargetAssessmentValid)
             {
                 AppendText(ref buffer, "ANALYZER // ");
                 AppendText(ref buffer, _cachedTargetAssessment.Headline);
@@ -207,7 +233,8 @@ namespace Hecton8.Gameplay
             AppendText(ref buffer, "ANALYZER // READY");
         }
 
-        public override string GetOperationalDirective()
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        public override string BuildLegacyOperationalDirectiveString()
         {
             _legacyOperationalBuffer.Clear();
             WriteOperationalDirective(ref _legacyOperationalBuffer);
@@ -222,7 +249,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (_cachedTargetAssessmentFrame == Time.frameCount && _cachedTargetAssessmentValid)
+            if (_cachedTargetAssessmentStamp == _targetAssessmentEvaluationStamp && _cachedTargetAssessmentValid)
             {
                 AppendText(ref buffer, _cachedTargetAssessment.Recommendation);
                 return;
@@ -285,9 +312,6 @@ namespace Hecton8.Gameplay
             {
                 return BuildModuleAssessment(module);
             }
-
-            if (collider.TryGetComponent(out FaunaBrain ai))
-                return BuildBioformAssessment(ai);
 
             if (ToolHitUtility.TryGetRigidbody(collider, out Rigidbody body))
             {
@@ -375,23 +399,30 @@ namespace Hecton8.Gameplay
 
         private bool TryGetTargetAssessmentCached(out AnalyzerAssessment assessment)
         {
-            int currentFrame = Time.frameCount;
-            if (_cachedTargetAssessmentFrame == currentFrame)
+            uint currentStamp = _targetAssessmentEvaluationStamp;
+            if (_cachedTargetAssessmentStamp == currentStamp)
             {
                 assessment = _cachedTargetAssessment;
                 return _cachedTargetAssessmentValid;
             }
 
             bool valid = TryReadTargetAssessment(out assessment);
-            _cachedTargetAssessmentFrame = currentFrame;
+            _cachedTargetAssessmentStamp = currentStamp;
             _cachedTargetAssessmentValid = valid;
             _cachedTargetAssessment = assessment;
             return valid;
         }
 
+        private void StoreTargetAssessment(AnalyzerAssessment assessment)
+        {
+            _cachedTargetAssessmentStamp = _targetAssessmentEvaluationStamp;
+            _cachedTargetAssessmentValid = true;
+            _cachedTargetAssessment = assessment;
+        }
+
         private void InvalidateTargetAssessmentCache()
         {
-            _cachedTargetAssessmentFrame = -1;
+            _cachedTargetAssessmentStamp = uint.MaxValue;
             _cachedTargetAssessmentValid = false;
             _cachedTargetAssessment = default;
         }
@@ -431,7 +462,43 @@ namespace Hecton8.Gameplay
 
         private bool TryGetAnalysisHit(out RaycastHit hit)
         {
-            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, range, analysisMask.value, QueryTriggerInteraction.Collide, out hit);
+            if (!TryResolveAnalysisRay(out Vector3 origin, out Vector3 direction))
+            {
+                hit = default;
+                return false;
+            }
+
+            return TryQueuePrimaryRaycast(origin, direction, range, analysisMask.value, QueryTriggerInteraction.Collide, out hit);
+        }
+
+        private bool TryResolveAnalysisRay(out Vector3 origin, out Vector3 direction)
+        {
+            origin = default;
+            direction = default;
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                return false;
+            }
+
+            float3 runtimePosition = snapshot.RuntimePosition;
+            float3 forward = snapshot.Forward;
+            float forwardLengthSq = math.lengthsq(forward);
+            if (!math.all(math.isfinite(runtimePosition)) ||
+                !math.all(math.isfinite(forward)) ||
+                !math.isfinite(forwardLengthSq) ||
+                forwardLengthSq <= 0.0001f)
+            {
+                return false;
+            }
+
+            float invForwardLength = math.rsqrt(math.max(forwardLengthSq, 0.0001f));
+            origin = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            direction = new Vector3(
+                forward.x * invForwardLength,
+                forward.y * invForwardLength,
+                forward.z * invForwardLength);
+            return true;
         }
 
         private void RecordOperationAssessment(AnalyzerAssessment assessment)
@@ -453,7 +520,8 @@ namespace Hecton8.Gameplay
 
         private void ArchiveTargetIntel(RaycastHit hit, AnalyzerAssessment assessment)
         {
-            if (Hecton8.Core.GlobalRegistry.ScanLog == null || hit.collider == null)
+            ScanLogSystem scanLog = _scanLog;
+            if (scanLog == null || hit.collider == null)
                 return;
 
             Collider collider = hit.collider;
@@ -462,7 +530,7 @@ namespace Hecton8.Gameplay
 
             if (FieldTargetDescriptor.TryResolveDirect(collider, out FieldTargetDescriptor descriptor))
             {
-                Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
+                scanLog.ArchiveEntry(
                     ResolveDescriptorArchiveId(descriptor.Role),
                     ResolveDescriptorArchiveTitle(descriptor.Role),
                     assessment.Category,
@@ -482,7 +550,7 @@ namespace Hecton8.Gameplay
                 if (!TryCreateArchiveText("analyzer.item.", itemId, out string entryId))
                     return;
 
-                Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
+                scanLog.ArchiveEntry(
                     entryId,
                     "ITEM PROFILE",
                     assessment.Category,
@@ -502,7 +570,7 @@ namespace Hecton8.Gameplay
                 if (!TryCreateArchiveText("analyzer.module.", moduleId, out string entryId))
                     return;
 
-                Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
+                scanLog.ArchiveEntry(
                     entryId,
                     "BASE MODULE ANALYSIS",
                     assessment.Category,
@@ -510,9 +578,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (collider.TryGetComponent(out FaunaBrain _))
+            if (FieldTargetDescriptor.TryResolveDirect(collider, out FieldTargetDescriptor bioDescriptor) &&
+                FieldTargetSemantics.IsBioformRole(bioDescriptor.Role))
             {
-                Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
+                scanLog.ArchiveEntry(
                     "analyzer.bioform.local",
                     "BIOFORM SIGNATURE",
                     assessment.Category,
@@ -522,7 +591,7 @@ namespace Hecton8.Gameplay
 
             if (collider.TryGetComponent(out ResourceNode _))
             {
-                Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
+                scanLog.ArchiveEntry(
                     "analyzer.resource_node",
                     "RESOURCE NODE ANALYSIS",
                     assessment.Category,
@@ -530,7 +599,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
+            scanLog.ArchiveEntry(
                 "analyzer.misc.unclassified",
                 "UNCLASSIFIED ANALYSIS",
                 assessment.Category,
@@ -539,13 +608,14 @@ namespace Hecton8.Gameplay
 
         private void ArchiveSuitDiagnostic(AnalyzerAssessment assessment)
         {
-            if (Hecton8.Core.GlobalRegistry.ScanLog == null || _survival == null)
+            ScanLogSystem scanLog = _scanLog;
+            if (scanLog == null || _survival == null)
                 return;
 
             if (!TryBuildArchiveSummary(assessment, out string archiveSummary))
                 return;
 
-            Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
+            scanLog.ArchiveEntry(
                 "analyzer.suit_status",
                 assessment.Headline,
                 assessment.Category,
@@ -739,99 +809,6 @@ namespace Hecton8.Gameplay
                     : "Reconnect power before assigning work.");
         }
 
-        private static AnalyzerAssessment BuildBioformAssessment(FaunaBrain ai)
-        {
-            bool lethalWindow = ai.HealthNormalized <= 0.3f;
-            bool hostile = ai.CurrentState == FaunaBrain.AIState.Aggressive;
-            bool warning = ai.CurrentState == FaunaBrain.AIState.Threaten;
-            bool stalking = ai.CurrentState == FaunaBrain.AIState.Stalk;
-            bool looming = ai.CurrentState == FaunaBrain.AIState.Loom;
-            bool feinting = ai.CurrentState == FaunaBrain.AIState.Feint;
-            bool evasive = ai.CurrentState == FaunaBrain.AIState.Escape;
-            bool sleeping = ai.IsSleeping;
-            bool packHunt = ai.UsesPackHuntBehavior && (hostile || stalking);
-            bool feintCapable = ai.UsesFeintRushBehavior && (stalking || looming || feinting);
-            bool ambushLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.AmbushBurst;
-            bool sentinelLeviathan = ai.LeviathanEncounter == Hecton8.AI.LeviathanEncounterType.SentinelPressure;
-            string severity = hostile ? "WARN" : (warning || stalking || looming || feinting ? "WARN" : "INFO");
-            string summary;
-            string recommendation;
-
-            if (sleeping)
-            {
-                summary = "Bioform is dormant and can be observed, scanned, or bypassed before wake-up.";
-                recommendation = "Approach carefully or act before it becomes active.";
-            }
-            else if (hostile)
-            {
-                summary = packHunt
-                    ? (lethalWindow
-                        ? "Pack-hunting bioform is weakened but the attack pattern is still active."
-                        : "Pack-hunting bioform is in an active kill phase.")
-                    : (lethalWindow
-                        ? "Hostile bioform is weakened but still dangerous at close range."
-                        : "Hostile bioform remains combat-capable.");
-                recommendation = lethalWindow
-                    ? "Knife finish or stun follow-up is viable."
-                    : (packHunt
-                        ? "Break line, watch the flanks, and prepare a fast stun response."
-                        : "Keep distance and prepare stun or harpoon control.");
-            }
-            else if (warning || stalking || looming || feinting)
-            {
-                summary = feinting
-                    ? "Large bioform is in a false-charge run and may peel away or snap into a real hit if you drift too close."
-                    : looming
-                    ? (ambushLeviathan
-                        ? "Large bioform is setting up a burst ambush and may snap into direct contact without a long warning."
-                        : (sentinelLeviathan
-                            ? "Large bioform is controlling a guarded route and pressing you away from its corridor."
-                            : "Large bioform is holding a pressure circle and may convert into a direct attack."))
-                    : warning
-                    ? "Bioform is warning you and holding pressure around its zone."
-                    : (packHunt
-                        ? "Predatory bioform is tracking you as part of a group attack pattern."
-                        : (feintCapable
-                            ? "Predatory bioform is tracking you and can throw a false charge before the real commit."
-                            : "Predatory bioform is tracking you and building attack pressure."));
-                recommendation = feinting
-                    ? "Do not counter-rush. Break the angle, let the pass go wide, and prepare for the second move."
-                    : looming
-                    ? (ambushLeviathan
-                        ? "Do not drift into close range. Break the angle and prepare for a sudden rush."
-                        : (sentinelLeviathan
-                            ? "Back off from the guarded route or prepare for a forced passage."
-                            : "Break line of sight, avoid closing distance, and prepare a stun or hard disengage."))
-                    : warning
-                    ? "Back off, avoid the protected area, or prepare to defend yourself."
-                    : (packHunt
-                        ? "Expect a flank or follow-up rush and keep stun or escape ready."
-                        : (feintCapable
-                            ? "Expect a fake entry before the real commit and do not spend your tool too early."
-                            : "Expect a fast commit soon and keep stun or escape ready."));
-            }
-            else
-            {
-                summary = evasive
-                    ? "Bioform is in an evasive state and likely to break contact."
-                    : (lethalWindow
-                        ? "Bioform is stressed and likely to flee."
-                        : "Bioform shows no immediate attack posture.");
-                recommendation = evasive
-                    ? "Scanner pass or cautious pursuit is viable."
-                    : (lethalWindow
-                        ? "Observe carefully or disengage."
-                        : "Scanner pass is safe if range is maintained.");
-            }
-
-            return new AnalyzerAssessment(
-                ResolveBioformHeadline(ai.CurrentState, sleeping, lethalWindow),
-                summary,
-                severity,
-                "Bioform",
-                recommendation);
-        }
-
         private static void PublishBySeverity(HUDNotification notification, in FixedCharBuffer messageBuffer, string severity)
         {
             if (severity == "CRITICAL")
@@ -863,26 +840,6 @@ namespace Hecton8.Gameplay
             return scannable != null && !string.IsNullOrWhiteSpace(scannable.EntryTitle)
                 ? scannable.EntryTitle
                 : "SCANNABLE TARGET";
-        }
-
-        private static string ResolveBioformHeadline(FaunaBrain.AIState state, bool sleeping, bool lethalWindow)
-        {
-            if (sleeping)
-                return "BIOFORM DORMANT";
-
-            if (lethalWindow)
-                return "BIOFORM FRACTURED";
-
-            return state switch
-            {
-                FaunaBrain.AIState.Aggressive => "BIOFORM AGGRESSIVE",
-                FaunaBrain.AIState.Threaten => "BIOFORM WARNING",
-                FaunaBrain.AIState.Stalk => "BIOFORM STALKING",
-                FaunaBrain.AIState.Loom => "BIOFORM LOOMING",
-                FaunaBrain.AIState.Feint => "BIOFORM FEINT",
-                FaunaBrain.AIState.Escape => "BIOFORM EVASIVE",
-                _ => "BIOFORM OBSERVATION"
-            };
         }
 
         private bool TryBuildArchiveSummary(AnalyzerAssessment assessment, out string summary)

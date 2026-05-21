@@ -546,7 +546,7 @@ namespace Hecton8.Animation.Locomotion
 
             if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
                 (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
-                MathGuard.IsFinite(in snapshot.Aup) &&
+                snapshot.Aup.IsFinite() &&
                 IsFinite(snapshot.RuntimePosition))
             {
                 return TryOffsetAupByRuntimeDelta(
@@ -561,7 +561,7 @@ namespace Hecton8.Animation.Locomotion
                 return false;
 
             AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
-            if (!MathGuard.IsFinite(in playerAup))
+            if (!playerAup.IsFinite())
                 return false;
 
             float3 playerRuntime = playerAup.ToRuntimeFloat3();
@@ -590,7 +590,7 @@ namespace Hecton8.Animation.Locomotion
                 return false;
 
             resolvedAup = AbsoluteUniversePosition.OffsetMeters(in referenceAup, localDelta);
-            return MathGuard.IsFinite(in resolvedAup);
+            return resolvedAup.IsFinite();
         }
 
         private bool TryReadLadderAup(out AbsoluteUniversePosition aup)

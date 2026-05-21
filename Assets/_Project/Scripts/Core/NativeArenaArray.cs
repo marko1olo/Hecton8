@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -13,7 +12,6 @@ namespace Hecton8.Core
     [NativeContainer]
     [NativeContainerSupportsMinMaxWriteRestriction]
     [NoAlias]
-    [StructLayout(LayoutKind.Sequential)]
     public unsafe struct NativeArenaArray<T> where T : unmanaged
     {
         [NativeDisableUnsafePtrRestriction]

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -24,7 +25,6 @@ namespace Hecton8.Power.Generators
     public sealed class RadioisotopeThermalGenerator : MonoBehaviour,
         IPowerComponent,
         IColdTickable,
-        IFrostTickable,
         ILateFrameTickable,
         IPoolable,
         ISaveable,
@@ -38,8 +38,7 @@ namespace Hecton8.Power.Generators
         private const float MinimumHalfLifeSeconds = 1f;
         private const float DeadOutputThreshold01 = 0.05f;
         private const float WarningOutputThreshold01 = 0.2f;
-        private const float DefaultHighTierCadenceSeconds = 1f;
-        private const float LowTierCadenceSeconds = 10f;
+        private const float DecayCadenceSeconds = 1f;
         private const float PowerDirtyDeltaWatts = 0.01f;
         private const float MinimumRadiationRadiusMeters = 0.5f;
         private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_VAULT_SOVEREIGNTY_ENFORCER_RTG_DECAY.bin";
@@ -68,15 +67,14 @@ namespace Hecton8.Power.Generators
         [SerializeField] private float radiationIntensityAtFullOutput = 0.55f;
         [SerializeField] private float deadRadiationIntensity = 0.35f;
         [SerializeField] private string depletedIsotopeItemId = "item.depleted_rtg_isotope";
-        [SerializeField] private bool forceLowTierCadence;
-
-        private static VaultBufferHandle<float> s_rtgStartTimesHandle;
-        private static VaultBufferHandle<float> s_rtgHalfLivesHandle;
-        private static VaultBufferHandle<float> s_rtgBaseOutputHandle;
-        private static VaultBufferHandle<float> s_rtgCurrentOutputHandle;
-        private static VaultBufferHandle<float> s_rtgOutputNormalizedHandle;
-        private static VaultBufferHandle<byte> s_rtgFlagsHandle;
-        private static VaultBufferHandle<RtgTelemetryEntry> s_telemetryRingHandle;
+        private static VaultGenerationHandle<float> s_rtgStartTimesHandle;
+        private static VaultGenerationHandle<float> s_rtgHalfLivesHandle;
+        private static VaultGenerationHandle<float> s_rtgBaseOutputHandle;
+        private static VaultGenerationHandle<float> s_rtgCurrentOutputHandle;
+        private static VaultGenerationHandle<float> s_rtgOutputNormalizedHandle;
+        private static VaultGenerationHandle<byte> s_rtgFlagsHandle;
+        private static VaultGenerationHandle<RtgTelemetryEntry> s_telemetryRingHandle;
+        private static IDataVault s_dataVault;
         private static RadioisotopeThermalGenerator[] s_instances;
         private static JobHandle s_decayJobHandle;
         private static bool s_decayJobPending;
@@ -98,7 +96,6 @@ namespace Hecton8.Power.Generators
         private bool _isDead;
         private bool _reprocessed;
         private bool _registeredCold;
-        private bool _registeredFrost;
         private bool _registeredLate;
         private bool _registeredSave;
 
@@ -136,22 +133,7 @@ namespace Hecton8.Power.Generators
                 return;
 
             TryRegisterSaveParticipant();
-            if (UsesLowTierCadence())
-                return;
-
-            TryRunDecayCadence(DefaultHighTierCadenceSeconds);
-        }
-
-        public void FrostTick()
-        {
-            if (_slot != s_leaderSlot)
-                return;
-
-            TryRegisterSaveParticipant();
-            if (!UsesLowTierCadence())
-                return;
-
-            TryRunDecayCadence(LowTierCadenceSeconds);
+            TryRunDecayCadence(DecayCadenceSeconds);
         }
 
         public void LateFrameTick()
@@ -370,6 +352,7 @@ namespace Hecton8.Power.Generators
             s_decayJobHandle = default;
             s_decayJobPending = false;
             s_blackBoxDumped = false;
+            s_dataVault = null;
             s_activeCount = 0;
             s_leaderSlot = -1;
             s_telemetryCursor = 0;
@@ -483,24 +466,56 @@ namespace Hecton8.Power.Generators
         }
 
         private static bool TryResolveVaultBuffer<T>(
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = ResolveDataVault();
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (!handle.IsCreated || handle.Length < requiredLength)
-                handle = vault.GetBufferHandle<T>(bufferId, requiredLength, SystemID.Power, NativeArrayOptions.ClearMemory);
+            if (IsHandleValid(in handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
 
-            if (!handle.IsCreated)
-                return false;
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                    return false;
+            }
+            else
+            {
+                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.Power, NativeArrayOptions.ClearMemory);
+            }
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated && buffer.Length >= requiredLength;
+            return vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static IDataVault ResolveDataVault()
+        {
+            IDataVault vault = s_dataVault;
+            if (vault != null)
+                return vault;
+
+            vault = GlobalRegistry.DataVault;
+            if (vault != null)
+                s_dataVault = vault;
+
+            return vault;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsHandleValid<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u;
         }
 
         private static void ClearNativeArray<T>(NativeArray<T> buffer) where T : struct
@@ -855,14 +870,37 @@ namespace Hecton8.Power.Generators
             if (injected)
                 return;
 
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
+                return;
+
             TemperatureChangedSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            signal.PositionAup = positionAup;
             signal.TemperatureCelsius = heatDelta;
             signal.DeltaCelsius = heatDelta;
             signal.Frame = unchecked((uint)Time.frameCount);
             signal.SourceId = (ushort)math.min(_sourceId, ushort.MaxValue);
             signal.Flags = TemperatureChangedSignal.FlagSubmarineAmbient;
             GlobalSignals.Publish(in signal);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return absoluteAup.IsFinite();
         }
 
         private void PublishLowOutputHudWarning()
@@ -947,8 +985,6 @@ namespace Hecton8.Power.Generators
 
             if (!_registeredCold)
                 _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
-            if (!_registeredFrost)
-                _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
             if (!_registeredLate)
                 _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
@@ -961,28 +997,11 @@ namespace Hecton8.Power.Generators
                 _registeredCold = false;
             }
 
-            if (_registeredFrost)
-            {
-                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
-                _registeredFrost = false;
-            }
-
             if (_registeredLate)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLate = false;
             }
-        }
-
-        private bool UsesLowTierCadence()
-        {
-            if (forceLowTierCadence)
-                return true;
-
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
         }
 
         private void ResolveIdentity()
@@ -1161,18 +1180,18 @@ namespace Hecton8.Power.Generators
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct RtgDecayJob : IJobParallelFor
     {
         public float CurrentTimeSeconds;
         public float DeadThreshold01;
 
-        [ReadOnly] public NativeSlice<float> RtgStartTimes;
-        [ReadOnly] public NativeSlice<float> RtgHalfLifeSeconds;
-        [ReadOnly] public NativeSlice<float> RtgBaseOutputWatts;
-        public NativeSlice<float> RtgCurrentOutputWatts;
-        public NativeSlice<float> RtgOutputNormalized;
-        public NativeSlice<byte> RtgFlags;
+        [ReadOnly, NoAlias] public NativeSlice<float> RtgStartTimes;
+        [ReadOnly, NoAlias] public NativeSlice<float> RtgHalfLifeSeconds;
+        [ReadOnly, NoAlias] public NativeSlice<float> RtgBaseOutputWatts;
+        [WriteOnly, NoAlias] public NativeSlice<float> RtgCurrentOutputWatts;
+        [WriteOnly, NoAlias] public NativeSlice<float> RtgOutputNormalized;
+        [NoAlias] public NativeSlice<byte> RtgFlags;
 
         public void Execute(int index)
         {

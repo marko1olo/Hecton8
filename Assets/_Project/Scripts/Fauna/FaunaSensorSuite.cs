@@ -13,18 +13,57 @@ namespace Hecton8.AI
 {
     public struct FaunaPerceptionSnapshot
     {
-        public bool HasPlayer;
-        public bool HasPlayerAup;
+        public const uint FlagHasPlayer = 1u << 0;
+        public const uint FlagHasPlayerAup = 1u << 1;
+        public const uint FlagHasPlayerVelocity = 1u << 2;
+        public const uint FlagHasPlayerForward = 1u << 3;
+        public const uint FlagPlayerFlashlightOn = 1u << 4;
+        public const uint FlagHasScavengeTool = 1u << 5;
+        public const uint FlagHasScavengeToolAup = 1u << 6;
+
         public AbsoluteUniversePosition PlayerAup;
         public Vector3 PlayerPosition;
         public Vector3 PlayerVelocity;
         public Vector3 PlayerForward;
-        public bool HasPlayerVelocity;
-        public bool HasPlayerForward;
-        public bool PlayerFlashlightOn;
-        public bool HasScavengeTool;
         public Vector3 ScavengeToolPosition;
+        public AbsoluteUniversePosition ScavengeToolAup;
         public Component ScavengeToolOwner;
+        public uint Flags;
+
+        public static bool HasPlayer(in FaunaPerceptionSnapshot snapshot)
+        {
+            return (snapshot.Flags & FlagHasPlayer) != 0u;
+        }
+
+        public static bool HasPlayerAup(in FaunaPerceptionSnapshot snapshot)
+        {
+            return (snapshot.Flags & FlagHasPlayerAup) != 0u;
+        }
+
+        public static bool HasPlayerVelocity(in FaunaPerceptionSnapshot snapshot)
+        {
+            return (snapshot.Flags & FlagHasPlayerVelocity) != 0u;
+        }
+
+        public static bool HasPlayerForward(in FaunaPerceptionSnapshot snapshot)
+        {
+            return (snapshot.Flags & FlagHasPlayerForward) != 0u;
+        }
+
+        public static bool IsPlayerFlashlightOn(in FaunaPerceptionSnapshot snapshot)
+        {
+            return (snapshot.Flags & FlagPlayerFlashlightOn) != 0u;
+        }
+
+        public static bool HasScavengeTool(in FaunaPerceptionSnapshot snapshot)
+        {
+            return (snapshot.Flags & FlagHasScavengeTool) != 0u;
+        }
+
+        public static bool HasScavengeToolAup(in FaunaPerceptionSnapshot snapshot)
+        {
+            return (snapshot.Flags & FlagHasScavengeToolAup) != 0u;
+        }
     }
 
     /// <summary>
@@ -162,7 +201,9 @@ namespace Hecton8.AI
         private Vector3 _cachedPlayerVelocity;
         private Vector3 _cachedPlayerForward;
         private bool _hasScavengeToolSnapshot;
+        private bool _hasScavengeToolAupSnapshot;
         private Vector3 _cachedScavengeToolPosition;
+        private AbsoluteUniversePosition _cachedScavengeToolAup;
         private Component _cachedScavengeToolOwner;
         private float _flashBlindUntilTimeSeconds;
         
@@ -207,7 +248,7 @@ namespace Hecton8.AI
             _queuedRightObstacleRayDirection = initialForward;
             _cachedSelfPosition = Vector3.zero;
             _cachedSelfForward = initialForward;
-            _cachedSelfAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedSelfPosition);
+            _cachedSelfAup = default;
             _cachedPlayerAup = default;
             _hasPlayerSnapshot = false;
             _hasPlayerVelocitySnapshot = false;
@@ -217,7 +258,9 @@ namespace Hecton8.AI
             _cachedPlayerVelocity = default;
             _cachedPlayerForward = Vector3.forward;
             _hasScavengeToolSnapshot = false;
+            _hasScavengeToolAupSnapshot = false;
             _cachedScavengeToolPosition = default;
+            _cachedScavengeToolAup = default;
             _cachedScavengeToolOwner = null;
             _flashBlindUntilTimeSeconds = float.NegativeInfinity;
             hasPlayerFlashlightConeHit = false;
@@ -231,13 +274,14 @@ namespace Hecton8.AI
             Vector3 selfPosition,
             Vector3 selfForward,
             Vector3 velocity,
+            in AbsoluteUniversePosition selfAup,
             in FaunaPerceptionSnapshot perceptionSnapshot,
             float currentTimeSeconds,
             bool forceLongRangeCognition)
         {
             float safeCurrentTimeSeconds = math.isfinite(currentTimeSeconds) ? currentTimeSeconds : _authoredTimeSeconds;
             _authoredTimeSeconds = safeCurrentTimeSeconds;
-            if (!IsFinite(selfPosition))
+            if (!IsFinite(selfPosition) || !IsFiniteAup(in selfAup))
             {
                 distSqrToPlayer = float.MaxValue;
                 lodDisabled = true;
@@ -259,7 +303,7 @@ namespace Hecton8.AI
 
             _cachedSelfPosition = selfPosition;
             _cachedSelfForward = ResolveDominantAxisDirection(selfForward, Vector3.forward);
-            _cachedSelfAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedSelfPosition);
+            _cachedSelfAup = selfAup;
             CachePerceptionSnapshot(in perceptionSnapshot);
             hasPlayerFlashlightConeHit = false;
             playerFlashlightExposure01 = 0f;
@@ -301,28 +345,35 @@ namespace Hecton8.AI
 
         private void CachePerceptionSnapshot(in FaunaPerceptionSnapshot perceptionSnapshot)
         {
-            _hasPlayerSnapshot = perceptionSnapshot.HasPlayer && IsFinite(perceptionSnapshot.PlayerPosition);
+            _hasPlayerSnapshot = FaunaPerceptionSnapshot.HasPlayer(in perceptionSnapshot) && IsFinite(perceptionSnapshot.PlayerPosition);
             _hasPlayerVelocitySnapshot = _hasPlayerSnapshot &&
-                                         perceptionSnapshot.HasPlayerVelocity &&
+                                         FaunaPerceptionSnapshot.HasPlayerVelocity(in perceptionSnapshot) &&
                                          IsFinite(perceptionSnapshot.PlayerVelocity);
             _hasPlayerForwardSnapshot = _hasPlayerSnapshot &&
-                                        perceptionSnapshot.HasPlayerForward &&
+                                        FaunaPerceptionSnapshot.HasPlayerForward(in perceptionSnapshot) &&
                                         IsFinite(perceptionSnapshot.PlayerForward);
-            _playerFlashlightOn = _hasPlayerSnapshot && perceptionSnapshot.PlayerFlashlightOn;
+            _playerFlashlightOn = _hasPlayerSnapshot && FaunaPerceptionSnapshot.IsPlayerFlashlightOn(in perceptionSnapshot);
             _cachedPlayerPosition = _hasPlayerSnapshot ? perceptionSnapshot.PlayerPosition : default;
             _cachedPlayerVelocity = _hasPlayerVelocitySnapshot ? perceptionSnapshot.PlayerVelocity : default;
             _cachedPlayerForward = _hasPlayerForwardSnapshot && perceptionSnapshot.PlayerForward.sqrMagnitude > 0.0001f
                 ? ResolveDominantAxisDirection(perceptionSnapshot.PlayerForward, Vector3.forward)
                 : Vector3.forward;
-            _cachedPlayerAup = _hasPlayerSnapshot && perceptionSnapshot.HasPlayerAup && IsFiniteAup(in perceptionSnapshot.PlayerAup)
-                ? perceptionSnapshot.PlayerAup
-                : _hasPlayerSnapshot
-                ? AbsoluteUniversePosition.FromRuntimePosition(_cachedPlayerPosition)
-                : default;
-            _hasScavengeToolSnapshot = perceptionSnapshot.HasScavengeTool &&
+            bool hasPlayerAup = _hasPlayerSnapshot &&
+                                FaunaPerceptionSnapshot.HasPlayerAup(in perceptionSnapshot) &&
+                                IsFiniteAup(in perceptionSnapshot.PlayerAup);
+            if (!hasPlayerAup)
+                _hasPlayerSnapshot = false;
+            _cachedPlayerAup = hasPlayerAup ? perceptionSnapshot.PlayerAup : default;
+            _hasScavengeToolSnapshot = FaunaPerceptionSnapshot.HasScavengeTool(in perceptionSnapshot) &&
                                        perceptionSnapshot.ScavengeToolOwner != null &&
                                        IsFinite(perceptionSnapshot.ScavengeToolPosition);
+            _hasScavengeToolAupSnapshot = _hasScavengeToolSnapshot &&
+                                           FaunaPerceptionSnapshot.HasScavengeToolAup(in perceptionSnapshot) &&
+                                           IsFiniteAup(in perceptionSnapshot.ScavengeToolAup);
+            if (!_hasScavengeToolAupSnapshot)
+                _hasScavengeToolSnapshot = false;
             _cachedScavengeToolPosition = _hasScavengeToolSnapshot ? perceptionSnapshot.ScavengeToolPosition : default;
+            _cachedScavengeToolAup = _hasScavengeToolAupSnapshot ? perceptionSnapshot.ScavengeToolAup : default;
             _cachedScavengeToolOwner = _hasScavengeToolSnapshot ? perceptionSnapshot.ScavengeToolOwner : null;
         }
 
@@ -337,7 +388,9 @@ namespace Hecton8.AI
             _cachedPlayerForward = Vector3.forward;
             _cachedPlayerAup = default;
             _hasScavengeToolSnapshot = false;
+            _hasScavengeToolAupSnapshot = false;
             _cachedScavengeToolPosition = default;
+            _cachedScavengeToolAup = default;
             _cachedScavengeToolOwner = null;
         }
 
@@ -526,7 +579,7 @@ namespace Hecton8.AI
             if (!IsAudiblePredatorNoise(_lastReportedPlayerNoise, distSqrToPlayer))
                 return false;
 
-            if (reactToPlayerLight && _lastReportedPlayerNoise.FlashlightOn)
+            if (reactToPlayerLight && NoiseSystem.PlayerNoiseSignal.IsFlashlightOn(in _lastReportedPlayerNoise))
                 return true;
 
             if (!reactToPlayerNoise)
@@ -554,8 +607,8 @@ namespace Hecton8.AI
             float movement01 = math.saturate(math.max(0f, signal.MovementSpeedSqr) * PredatorMovementNoiseInvReferenceSpeedSqr);
             float tool01 = math.saturate(signal.ToolUseNoise01);
             float transport01 = math.saturate(signal.TransportBoost01 * math.max(1f, signal.TransportSignature));
-            float flashlight01 = signal.FlashlightOn ? 0.2f : 0f;
-            float sonar01 = signal.IsActiveSonarPing ? tool01 * math.max(0.25f, signal.AcousticTransmission01) : 0f;
+            float flashlight01 = NoiseSystem.PlayerNoiseSignal.IsFlashlightOn(in signal) ? 0.2f : 0f;
+            float sonar01 = NoiseSystem.PlayerNoiseSignal.IsActiveSonarPing(in signal) ? tool01 * math.max(0.25f, signal.AcousticTransmission01) : 0f;
             return math.saturate(math.max(math.max(movement01, tool01), math.max(transport01, math.max(flashlight01, sonar01))));
         }
 
@@ -729,11 +782,11 @@ namespace Hecton8.AI
 
             if (_profile.isScavenger &&
                 _hasScavengeToolSnapshot &&
+                _hasScavengeToolAupSnapshot &&
                 _cachedScavengeToolOwner != null)
             {
-                AbsoluteUniversePosition toolAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedScavengeToolPosition);
                 float toolDistanceSqr = (float)math.min(
-                    AbsoluteUniversePosition.DistanceSq(in toolAup, in _cachedSelfAup),
+                    AbsoluteUniversePosition.DistanceSq(in _cachedScavengeToolAup, in _cachedSelfAup),
                     float.MaxValue);
                 if (toolDistanceSqr < distractorDetectRadius * distractorDetectRadius)
                 {

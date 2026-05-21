@@ -77,7 +77,7 @@ namespace Hecton8.EditorTools
                 AlbedoTexture = albedo,
                 Config = HectonArmTextureChannelPacker.DefaultConfig(flags),
                 OutputFolder = OutputFolder,
-                OutputName = ResolveOutputName(ao, roughness, metallic),
+                OutputName = BuildOutputName(ao, roughness, metallic),
                 MaxSize = MaxPackedMaskSize,
                 MacroNoiseStrength = 0.08f,
                 TileSizeMeters = 4.0f,
@@ -95,7 +95,7 @@ namespace Hecton8.EditorTools
             Debug.Log("[HectonMaskChannelPacker] Packed ARM texture: " + metrics.OutputPath);
         }
 
-        private static string ResolveOutputName(Texture2D ao, Texture2D roughness, Texture2D metallic)
+        private static string BuildOutputName(Texture2D ao, Texture2D roughness, Texture2D metallic)
         {
             string sourceName = ao != null ? ao.name : roughness != null ? roughness.name : metallic != null ? metallic.name : "TextureSet";
             sourceName = RemoveToken(sourceName, "_AmbientOcclusion");

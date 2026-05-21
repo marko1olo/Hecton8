@@ -1,8 +1,16 @@
+param(
+    [switch]$ForceRegenerate
+)
+
 $ErrorActionPreference = "Stop"
 
 $base = "C:\hades\Hecton8\Docs\Marketing"
 $data = Join-Path $base "Data\PRIORITY_CREATOR_SHORTLIST_FROM_RAW_2026-05-18.csv"
 $out = Join-Path $base "CreatorOutreach\PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md"
+if ((Test-Path -LiteralPath $out) -and -not $ForceRegenerate) {
+    Write-Output "HOLD_EXISTING_PRIORITY50_DRAFT - rerun with -ForceRegenerate only after preserving hand-curated gates and source-ledger/status/rationale trace."
+    exit 0
+}
 $rows = Import-Csv -LiteralPath $data | Select-Object -First 50
 
 function SubjectFor($segment) {
@@ -65,9 +73,9 @@ foreach ($row in $rows) {
     $lines.Add("") | Out-Null
     $lines.Add("The specific angle for your audience would be: $($row.personalized_pitch_stub)") | Out-Null
     $lines.Add("") | Out-Null
-    $lines.Add("Assets: [Steam/screenshots/clip/demo - TBD]") | Out-Null
+    $lines.Add("Asset gate: HOLD_PLACEHOLDER_ASSET - replace with exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, creator_send_gate open, route gate passes, and CRM send-log fields are ready.") | Out-Null
     $lines.Add("") | Out-Null
-    $lines.Add("If this fits your current format, I can send a short press kit or demo when the playable slice is ready.") | Out-Null
+    $lines.Add("HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.") | Out-Null
     $lines.Add('```') | Out-Null
     $lines.Add("") | Out-Null
     $lines.Add("Verification notes:") | Out-Null

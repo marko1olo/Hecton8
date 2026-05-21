@@ -135,7 +135,7 @@ namespace Hecton8.Editor
 
         private void PullSerializedValues()
         {
-            if (_runtime != null && _runtime.TryReadEditorTuning(out VehicleDamageTuningDTO tuning))
+            if (_runtime != null && _runtime.TryLockCopyEditorTuning(out VehicleDamageTuningDTO tuning))
             {
                 _armorSlider.SetValueWithoutNotify(tuning.BaseArmor);
                 _radiusSlider.SetValueWithoutNotify(tuning.ExplosiveRadiusMeters);
@@ -183,7 +183,7 @@ namespace Hecton8.Editor
 
         private void PullVehicleState()
         {
-            if (!_runtime.TryReadEditorDamageSnapshot(
+            if (!_runtime.TryLockCopyEditorDamageSnapshot(
                     out VehicleDamageStateDTO state,
                     out VehicleDamageTelemetryEntry telemetry,
                     out bool hasTelemetry))

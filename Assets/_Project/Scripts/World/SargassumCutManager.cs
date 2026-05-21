@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.Input;
 using Hecton8.Bootstrap;
@@ -16,7 +17,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-103)]
-    public sealed class SargassumCutManager : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class SargassumCutManager : MonoBehaviour, ITickable, ISlowTickable, IGlobalRegistryHotSwapListener, ISargassumCutWriteService
     {
         private const int StampCommandCapacity = 16;
         private const int StampThreadGroupSize = 8;
@@ -205,6 +206,8 @@ namespace Hecton8.World
         private int _debugLastStampCount;
 
         private Transform _playerTransform;
+        private IPlayerRuntimeContext _playerContext;
+        private IInputService _inputService;
         private PlayerToolManager _playerToolManager;
         private RenderTexture _maskRead;
         private RenderTexture _maskWrite;
@@ -219,6 +222,7 @@ namespace Hecton8.World
         private bool _serviceRegistered;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredHotSwap;
         private float _maskEnergy;
         private float _knifeStampCooldownRemaining;
         private Vector4 _maskWorldRect;
@@ -408,6 +412,11 @@ namespace Hecton8.World
             return wroteMask;
         }
 
+        bool ISargassumCutWriteService.TryRegisterExternalCut(Vector3 positionWS, float radiusWS, float strength01, Vector3 directionWS, float bubbleWeight)
+        {
+            return RegisterExternalCut(positionWS, radiusWS, strength01, directionWS, bubbleWeight);
+        }
+
         private void Awake()
         {
             SargassumCutManager registered = GlobalRegistry.SargassumCut;
@@ -429,13 +438,15 @@ namespace Hecton8.World
             damageVolumeRecoveryPerSecond = Mathf.Clamp01(damageVolumeRecoveryPerSecond);
             _maskQualityLevel = QualitySettings.GetQualityLevel();
             _maskRuntimeResolution = ResolveMaskResolutionForQuality(_maskQualityLevel);
-            ResolveDependencies();
+            CacheRegistryServicesCold();
             CreateResources();
             PublishGlobals();
         }
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
+            CacheRegistryServicesCold();
             CreateResources();
             PublishGlobals();
             TryRegisterService();
@@ -446,6 +457,7 @@ namespace Hecton8.World
         {
             TryUnregisterService();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             Shader.SetGlobalFloat(_CutMaskActiveId, 0f);
             Shader.SetGlobalFloat(_DamageVolumeActiveId, 0f);
             PublishRecentCutHeatCount(0);
@@ -455,6 +467,7 @@ namespace Hecton8.World
         {
             TryUnregisterService();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             ReleaseResources();
         }
 
@@ -541,18 +554,48 @@ namespace Hecton8.World
                 mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
 
             Transform runtimePlayerTransform = BootstrapState.CurrentPlayerTransform;
+            if (runtimePlayerTransform == null && _playerContext != null)
+                runtimePlayerTransform = _playerContext.PlayerTransform;
+
             _playerTransform = runtimePlayerTransform != null ? runtimePlayerTransform : playerTransformOverride;
             if (_playerToolManager == null)
             {
                 _playerToolManager = playerToolManagerOverride;
+                if (_playerToolManager == null && _playerContext != null)
+                    _playerToolManager = _playerContext.ToolManager;
+
                 if (_playerToolManager == null && _playerTransform != null && !_playerTransform.TryGetComponent(out _playerToolManager))
-                    _playerToolManager = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null
-                        ? Hecton8.Core.GlobalRegistry.Player.ToolManager
-                        : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<PlayerToolManager>(_playerTransform);
+                    _playerToolManager = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<PlayerToolManager>(_playerTransform);
             }
 
             if (debrisParticleSystem == null)
                 debrisParticleSystem = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<SargassumDebrisParticleSystem>(transform);
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _playerContext = GlobalRegistry.Player;
+            _inputService = GlobalRegistry.Input;
+            ResolveDependencies();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                if (playerToolManagerOverride == null)
+                    _playerToolManager = null;
+
+                _playerContext = currentService as IPlayerRuntimeContext;
+                ResolveDependencies();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Input)
+                _inputService = currentService as IInputService;
         }
 
         private void CreateResources()
@@ -759,7 +802,7 @@ namespace Hecton8.World
             if (!(_playerToolManager.CurrentTool is KnifeTool knife) || !knife.IsEquipped)
                 return false;
 
-            IInputService inputService = GlobalRegistry.Input;
+            IInputService inputService = _inputService;
             PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
                 ? inputService.GetState()
                 : default;
@@ -1317,6 +1360,23 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (!Application.isPlaying || _registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private RenderTexture CreateMaskTexture(string textureName)

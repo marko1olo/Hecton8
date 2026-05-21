@@ -6,6 +6,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using AudioEvent = Hecton8.Core.Contracts.Signals.AudioEvent;
 
@@ -153,7 +154,7 @@ namespace Hecton8.Audio
         {
             Vector3 safeWorldPosition = SanitizeWorldPosition(worldPosition);
             WorldPosition = safeWorldPosition;
-            SourceAup = AbsoluteUniversePosition.FromRuntimePosition(safeWorldPosition);
+            SourceAup = ResolveSourceAup(safeWorldPosition);
             Stress01 = Mathf.Clamp01(SanitizeFiniteValue(stress01));
             PressureDelta = SanitizeFiniteValue(pressureDelta);
             DepthMeters = Mathf.Max(0f, SanitizeFiniteValue(depthMeters));
@@ -249,6 +250,31 @@ namespace Hecton8.Audio
                 SanitizeFiniteValue(value.y),
                 SanitizeFiniteValue(value.z));
         }
+
+        internal static AbsoluteUniversePosition ResolveSourceAup(Vector3 safeWorldPosition)
+        {
+            if (TryResolveAupFromRuntimeOrigin(safeWorldPosition, out AbsoluteUniversePosition sourceAup))
+                return sourceAup;
+
+            AbsoluteUniversePosition fallbackAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return AbsoluteUniversePosition.IsFinite(in fallbackAup) ? fallbackAup : default;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition sourceAup)
+        {
+            sourceAup = default;
+            if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            sourceAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in sourceAup);
+        }
     }
 
     /// <summary>
@@ -264,7 +290,7 @@ namespace Hecton8.Audio
         {
             Vector3 safeWorldPosition = HullStressSignal.SanitizeWorldPosition(worldPosition);
             WorldPosition = safeWorldPosition;
-            SourceAup = AbsoluteUniversePosition.FromRuntimePosition(safeWorldPosition);
+            SourceAup = HullStressSignal.ResolveSourceAup(safeWorldPosition);
             Stress01 = Mathf.Clamp01(HullStressSignal.SanitizeFiniteValue(stress01));
             PitchScale = Mathf.Max(0.1f, HullStressSignal.SanitizeFiniteValue(pitchScale));
             PressureDelta = 0f;
@@ -392,12 +418,12 @@ namespace Hecton8.Audio
         private static readonly uint _listenerExceptionWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralAudioEvents.ListenerException"));
         private static readonly uint _listenerContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralAudioEvents.Listeners"));
 
-        // COLD ALLOC: RegistryBucket<IProceduralAudioEventListener>[8] - deferred procedural-audio listeners - owner: ProceduralAudioEvents
-        private static readonly RegistryBucket<IProceduralAudioEventListener> _listeners = new RegistryBucket<IProceduralAudioEventListener>(ListenerCapacity);
-        // COLD ALLOC: IProceduralAudioEventListener[8] - listener additions deferred while dispatching procedural audio events - owner: ProceduralAudioEvents
-        private static readonly IProceduralAudioEventListener[] _deferredRegisterListeners = new IProceduralAudioEventListener[ListenerCapacity];
-        // COLD ALLOC: IProceduralAudioEventListener[8] - listener removals deferred while dispatching procedural audio events - owner: ProceduralAudioEvents
-        private static readonly IProceduralAudioEventListener[] _deferredUnregisterListeners = new IProceduralAudioEventListener[ListenerCapacity];
+        // COLD ALLOC: ProceduralAudioListenerRegistry[8] - managed legacy listener bridge; hot audio truth uses SignalBus<AudioEvent> - owner: ProceduralAudioEvents
+        private static readonly ProceduralAudioListenerRegistry _listeners = new ProceduralAudioListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[8] - listener additions deferred while dispatching procedural audio events - owner: ProceduralAudioEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener removals deferred while dispatching procedural audio events - owner: ProceduralAudioEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         // VAULT ALIAS: NativeArray<AudioEvent>[16] - deferred procedural audio event ring - vault owner: SystemID.Audio
         private static NativeArray<AudioEvent> _pendingAudioEvents;
         // VAULT ALIAS: NativeArray<AudioEvent>[16] - next-frame procedural audio event ring - vault owner: SystemID.Audio
@@ -425,6 +451,73 @@ namespace Hecton8.Audio
         private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
         private static bool _typedSignalLaneConfigured;
+
+        private struct ListenerSlot
+        {
+            public IProceduralAudioEventListener Listener;
+        }
+
+        private sealed class ProceduralAudioListenerRegistry
+        {
+            private readonly ListenerSlot[] _items;
+            private readonly int _capacity;
+            private int _count;
+
+            public ProceduralAudioListenerRegistry(int capacity)
+            {
+                _capacity = Math.Max(1, capacity);
+                _items = new ListenerSlot[_capacity]; // COLD ALLOC: ListenerSlot[capacity] - managed procedural-audio legacy listener bridge - owner: ProceduralAudioEvents
+            }
+
+            public int Count => _count;
+
+            public IProceduralAudioEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _items[index].Listener : null;
+            }
+
+            public bool TryRegister(IProceduralAudioEventListener listener)
+            {
+                if (listener == null || _count >= _capacity || Contains(listener))
+                    return false;
+
+                _items[_count++].Listener = listener;
+                return true;
+            }
+
+            public bool TryUnregister(IProceduralAudioEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_items[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _items[i] = _items[_count];
+                    _items[_count] = default;
+                    return true;
+                }
+
+                return false;
+            }
+
+            public bool Contains(IProceduralAudioEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_items[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public void Clear()
+            {
+                Array.Clear(_items, 0, _count);
+                _count = 0;
+            }
+        }
 
         /// <summary>
         /// Number of procedural audio events waiting for LateUpdate dispatch.
@@ -925,11 +1018,10 @@ namespace Hecton8.Audio
 
                 DecrementFrontEventCount(audioEvent.Kind);
                 scanBudget--;
-                IProceduralAudioEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    IProceduralAudioEventListener listener = rawArray[i];
+                    IProceduralAudioEventListener listener = _listeners.GetAt(i);
                     if (listener == null || IsDeferredUnregisterPending(listener))
                         continue;
 
@@ -1022,7 +1114,7 @@ namespace Hecton8.Audio
         {
             AbsoluteUniversePosition sourceAup = (payload.Flags & StructuralStressAudioPayload.FlagHasSourceAup) != 0
                 ? ToAbsoluteUniversePosition(in payload.SourceAup)
-                : AbsoluteUniversePosition.FromRuntimePosition(payload.WorldPosition);
+                : HullStressSignal.ResolveSourceAup(payload.WorldPosition);
 
             return new StructuralStressAudioInfo(
                 in sourceAup,
@@ -1110,7 +1202,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IProceduralAudioEventListener listener)
@@ -1127,19 +1219,19 @@ namespace Hecton8.Audio
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IProceduralAudioEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount] = default;
                 return true;
             }
 
@@ -1150,12 +1242,12 @@ namespace Hecton8.Audio
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount] = default;
                 return;
             }
         }
@@ -1164,7 +1256,7 @@ namespace Hecton8.Audio
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -1175,7 +1267,7 @@ namespace Hecton8.Audio
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -1186,8 +1278,8 @@ namespace Hecton8.Audio
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IProceduralAudioEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IProceduralAudioEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i] = default;
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -1196,8 +1288,8 @@ namespace Hecton8.Audio
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IProceduralAudioEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IProceduralAudioEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i] = default;
                 if (listener != null)
                     RegisterImmediate(listener);
             }

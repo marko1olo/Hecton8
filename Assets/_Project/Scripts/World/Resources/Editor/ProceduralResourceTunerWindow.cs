@@ -20,6 +20,7 @@ namespace Hecton8.World.Editor
         private Slider _normalTolerance;
         private Slider _visualDensity;
         private readonly StringBuilder _statsBuilder = new StringBuilder(192); // COLD ALLOC: StringBuilder[192] — editor telemetry label formatter — owner: ProceduralResourceTunerWindow
+        private IDataVault _dataVault;
         private uint _lastStatsFrame;
         private bool _reportedVaultInactive;
         private bool _updateRegistered;
@@ -33,12 +34,13 @@ namespace Hecton8.World.Editor
         public void CreateGUI()
         {
             _lastStatsFrame = uint.MaxValue;
+            _dataVault = GlobalRegistry.DataVault;
             rootVisualElement.style.paddingLeft = 8;
             rootVisualElement.style.paddingRight = 8;
             rootVisualElement.style.paddingTop = 8;
             rootVisualElement.style.paddingBottom = 8;
 
-            _stats = new Label("Vault not active.");
+            _stats = new Label("Vault not active."); // COLD ALLOC: Label[status] — editor Vault telemetry status label — owner: ProceduralResourceTunerWindow
             rootVisualElement.Add(_stats);
 
             _baseDensity = CreateSlider("Base Node Density", 0.05f, 3f, 1f);
@@ -68,11 +70,18 @@ namespace Hecton8.World.Editor
                 EditorApplication.update -= Tick;
                 _updateRegistered = false;
             }
+
+            _dataVault = null;
+        }
+
+        private void OnFocus()
+        {
+            _dataVault = GlobalRegistry.DataVault;
         }
 
         private static Slider CreateSlider(string label, float low, float high, float value)
         {
-            Slider slider = new Slider(label, low, high)
+            Slider slider = new Slider(label, low, high) // COLD ALLOC: Slider[tuning] — editor designer tuning control — owner: ProceduralResourceTunerWindow
             {
                 value = value,
                 showInputField = true
@@ -82,7 +91,7 @@ namespace Hecton8.World.Editor
 
         private void Tick()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
             {
                 if (!_reportedVaultInactive)
@@ -142,11 +151,12 @@ namespace Hecton8.World.Editor
 
         private void WriteTuning()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault != null ? _dataVault : GlobalRegistry.DataVault;
+            _dataVault = vault;
             if (vault == null)
                 return;
 
-            if (!TryResolveOrCreateBuffer(
+            if (!AcquireOrCreateBuffer(
                     vault,
                     ProceduralGeologyVaultBufferIds.Tuning,
                     ProceduralGeologyConstants.TuningCapacity,
@@ -187,7 +197,7 @@ namespace Hecton8.World.Editor
             return true;
         }
 
-        private static bool TryResolveOrCreateBuffer<T>(
+        private static bool AcquireOrCreateBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,

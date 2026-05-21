@@ -57,11 +57,23 @@ namespace Hecton8.Modding
     {
         private const int ListenerCapacity = 32;
         private const int PendingEventCapacity = 4;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<IModRegistryEventListener>[32] - mod registry invalidation listeners drained by SystemDispatcher - owner: ModRegistryEvents
-        private static readonly RegistryBucket<IModRegistryEventListener> _listeners = new RegistryBucket<IModRegistryEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IModRegistryEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[32] - mod registry invalidation listeners drained by SystemDispatcher without interface array dispatch - owner: ModRegistryEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<ModRegistryEventPayload> _pendingEvents;
         private static NativeQueue<ModRegistryEventPayload> _nextFrameEvents;
+        private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -92,7 +104,10 @@ namespace Hecton8.Modding
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
@@ -112,8 +127,7 @@ namespace Hecton8.Modding
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -125,8 +139,7 @@ namespace Hecton8.Modding
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            TryUnregisterImmediate(listener);
         }
 
         /// <summary>
@@ -172,7 +185,7 @@ namespace Hecton8.Modding
             if (!_pendingEvents.IsCreated)
                 return;
 
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
             {
                 DrainPendingEventsWithoutDispatch();
                 return;
@@ -193,14 +206,13 @@ namespace Hecton8.Modding
 
                 ClearQueuedFlag(payload.EventType);
 
-                IModRegistryEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
+                int count = _listenerCount;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IModRegistryEventListener listener = rawArray[i];
+                        IModRegistryEventListener listener = _listeners[i].Listener;
                         if (listener != null)
                             listener.OnModRegistryEvent(in payload);
                     }
@@ -306,11 +318,41 @@ namespace Hecton8.Modding
             }
         }
 
+        private static void RegisterImmediate(IModRegistryEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
+        }
+
+        private static bool TryUnregisterImmediate(IModRegistryEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                _listenerCount--;
+                _listeners[i] = _listeners[_listenerCount];
+                _listeners[_listenerCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<ModRegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] — deferred coalesced mod registry event lane — owner: ModRegistryEvents
+                _pendingEvents = new NativeQueue<ModRegistryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] — deferred coalesced mod registry event lane — owner: ModRegistryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -322,7 +364,7 @@ namespace Hecton8.Modding
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<ModRegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] — next-frame mod registry lane prevents same-frame reentrant dispatch — owner: ModRegistryEvents
+                _nextFrameEvents = new NativeQueue<ModRegistryEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] — next-frame mod registry lane prevents same-frame reentrant dispatch — owner: ModRegistryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

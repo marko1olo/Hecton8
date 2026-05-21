@@ -66,6 +66,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
+using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;

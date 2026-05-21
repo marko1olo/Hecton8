@@ -1,0 +1,4 @@
+profile,maxSlopeAngle,currentAdvectionScalar,frictionCoefficient,exhaustionPenaltyMax
+default_abyssal_kcc,48,1,0.85,0.35
+silt_slope_drag,42,0.85,1.65,0.42
+storm_current_fatigue,52,1.8,1.1,0.55

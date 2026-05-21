@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
@@ -139,7 +140,8 @@ namespace Hecton8.World
                 };
 
                 // COLD SYNC JOB: deterministic smoke validation path, never part of gameplay sampling or per-frame scatter execution.
-                job.Schedule(1, 1).Complete();
+                JobHandle handle = job.Schedule(1, 1);
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 BiomeTransitionFogResult result = results[0];
                 fogDensity = result.Density;
                 absorption = result.Absorption;

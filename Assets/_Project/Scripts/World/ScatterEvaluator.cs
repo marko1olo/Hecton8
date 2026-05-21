@@ -12,8 +12,10 @@
 // ============================================================================
 
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -46,7 +48,7 @@ namespace Hecton8.World
 
         private NativeArray<ScatterSimulationCandidate> _candidates;
         private NativeArray<float> _heightSamples;
-        private NativeArray<int> _candidateCount;
+        private NativeArray<ScatterCandidateCounter64> _candidateCount;
         private bool _disposed;
         private bool _initialized;
         private JobHandle _activeHandle;
@@ -61,7 +63,7 @@ namespace Hecton8.World
         public bool IsJobCompleted => _hasActiveJob && _activeHandle.IsCompleted;
 
         /// <summary>Number of valid candidates from the last completed evaluation.</summary>
-        public int LastCandidateCount => _initialized && _candidateCount.IsCreated ? math.min(_candidateCount[0], _candidates.Length) : 0;
+        public int LastCandidateCount => _initialized && _candidateCount.IsCreated ? math.min(_candidateCount[0].Count, _candidates.Length) : 0;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -71,7 +73,7 @@ namespace Hecton8.World
         /// Allocates persistent native containers. Call once in Awake.
         /// </summary>
         /// <remarks>
-        /// COLD ALLOC: 4096 × ScatterSimulationCandidate (~200 KB) + 4096 × float (~16 KB) + 4 B counter.
+        /// COLD ALLOC: 4096 × ScatterSimulationCandidate (256 KiB) + 4096 × float (~16 KiB) + 64 B counter.
         /// Persistent alloc justified: reused every scatter evaluation cycle for entire scene lifetime.
         /// </remarks>
         public void Initialize()
@@ -90,8 +92,8 @@ namespace Hecton8.World
                 NativeArrayOptions.UninitializedMemory);
             NativeMemorySentinel.RegisterNativeArray(_heightSamples, NativeMemoryOwner, nameof(_heightSamples), NativeMemoryLifetime);
 
-            // COLD ALLOC: Atomic counter for candidate output.
-            _candidateCount = new NativeArray<int>(1, Allocator.Persistent,
+            // COLD ALLOC: 64-byte padded atomic counter for candidate output.
+            _candidateCount = new NativeArray<ScatterCandidateCounter64>(1, Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_candidateCount, NativeMemoryOwner, nameof(_candidateCount), NativeMemoryLifetime);
 
@@ -130,7 +132,7 @@ namespace Hecton8.World
             config.SpawnCellStride = math.max(1, config.SpawnCellStride);
 
             // Reset counter.
-            _candidateCount[0] = 0;
+            _candidateCount[0] = default;
 
             // Copy height data if provided externally.
             int heightSampleCount = 0;
@@ -181,7 +183,7 @@ namespace Hecton8.World
 
             _hasActiveJob = false;
 
-            return math.min(_candidateCount[0], _candidates.Length);
+            return math.min(_candidateCount[0].Count, _candidates.Length);
         }
 
         /// <summary>
@@ -244,16 +246,39 @@ namespace Hecton8.World
         /// Height sampling uses pre-filled NativeArray (main thread fills via
         /// Physics.RaycastNonAlloc or MapMagic queries before scheduling).
         /// </remarks>
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        private struct ScatterCandidateCounter64
+        {
+            [FieldOffset(0)]
+            public int Count;
+            [FieldOffset(4)]
+            public uint _pad0;
+            [FieldOffset(8)]
+            public ulong _pad1;
+            [FieldOffset(16)]
+            public ulong _pad2;
+            [FieldOffset(24)]
+            public ulong _pad3;
+            [FieldOffset(32)]
+            public ulong _pad4;
+            [FieldOffset(40)]
+            public ulong _pad5;
+            [FieldOffset(48)]
+            public ulong _pad6;
+            [FieldOffset(56)]
+            public ulong _pad7;
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct ScatterCellEvaluationJob : IJobParallelFor
         {
             [ReadOnly] public ScatterSimulationConfig Config;
-            [ReadOnly] public NativeArray<float> HeightSamples;
+            [ReadOnly, NoAlias] public NativeArray<float> HeightSamples;
             [ReadOnly] public int HeightSampleCount;
-            [NativeDisableParallelForRestriction]
+            [NativeDisableParallelForRestriction, NoAlias]
             public NativeArray<ScatterSimulationCandidate> Candidates;
-            [NativeDisableParallelForRestriction]
-            public NativeArray<int> CandidateCount;
+            [NativeDisableParallelForRestriction, NoAlias]
+            public NativeArray<ScatterCandidateCounter64> CandidateCount;
             public int MaxCandidates;
             public int TotalCells;
             public int Diameter;
@@ -300,7 +325,7 @@ namespace Hecton8.World
                     float scale = rng.NextFloat(0.75f, 1.25f);
 
                     // Atomic increment for output slot.
-                    int slot = System.Threading.Interlocked.Increment(ref ((int*)CandidateCount.GetUnsafePtr())[0]) - 1;
+                    int slot = IncrementCandidateCount() - 1;
                     if (slot >= MaxCandidates) return;
 
                     Candidates[slot] = new ScatterSimulationCandidate
@@ -325,7 +350,7 @@ namespace Hecton8.World
                     float yRotation = rng.NextFloat(0f, 360f);
                     float scale = rng.NextFloat(0.65f, 1.35f);
 
-                    int slot = System.Threading.Interlocked.Increment(ref ((int*)CandidateCount.GetUnsafePtr())[0]) - 1;
+                    int slot = IncrementCandidateCount() - 1;
                     if (slot >= MaxCandidates) return;
 
                     Candidates[slot] = new ScatterSimulationCandidate
@@ -350,7 +375,7 @@ namespace Hecton8.World
                     float yRotation = rng.NextFloat(0f, 360f);
                     float scale = rng.NextFloat(0.8f, 1.2f);
 
-                    int slot = System.Threading.Interlocked.Increment(ref ((int*)CandidateCount.GetUnsafePtr())[0]) - 1;
+                    int slot = IncrementCandidateCount() - 1;
                     if (slot >= MaxCandidates) return;
 
                     Candidates[slot] = new ScatterSimulationCandidate
@@ -374,7 +399,7 @@ namespace Hecton8.World
                 {
                     float yRotation = rng.NextFloat(0f, 360f);
 
-                    int slot = System.Threading.Interlocked.Increment(ref ((int*)CandidateCount.GetUnsafePtr())[0]) - 1;
+                    int slot = IncrementCandidateCount() - 1;
                     if (slot >= MaxCandidates) return;
 
                     Candidates[slot] = new ScatterSimulationCandidate
@@ -390,6 +415,12 @@ namespace Hecton8.World
                         IsValid = true
                     };
                 }
+            }
+
+            private int IncrementCandidateCount()
+            {
+                ScatterCandidateCounter64* counter = (ScatterCandidateCounter64*)CandidateCount.GetUnsafePtr();
+                return System.Threading.Interlocked.Increment(ref counter->Count);
             }
         }
     }

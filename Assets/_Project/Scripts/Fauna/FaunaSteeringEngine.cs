@@ -17,10 +17,6 @@ namespace Hecton8.AI
         private const float SwarmBankResponse = 5f;
         private const float MinDirectionSqr = 0.0001f;
         private const float MinQuaternionLengthSq = 0.000001f;
-        private const uint ApexSmoothSteeringTierMask =
-            (1u << (int)HectonQualityTier.High) |
-            (1u << (int)HectonQualityTier.Ultra);
-
         [Header("Configuration")]
         public float moveSpeed = 5f;
         [FormerlySerializedAs("maxSpeed")]
@@ -76,27 +72,27 @@ namespace Hecton8.AI
 
             desiredDirection = targetDir;
             float resolvedForceMultiplier = math.max(0.1f, forceMult);
-            bool useApexMathLod = UsesApexSmoothSteering();
+            bool useApexSteering = UsesApexSmoothSteering();
             
             // TACTICAL DIRECTION: Predator Retreat (User REQ: Flee strictly from threat)
             if (isRetreating && threatPos != default)
             {
-                Vector3 retreatDirection = _body.position - threatPos;
+                Vector3 retreatDirection = ResolveBodyRuntimePosition() - threatPos;
                 if (retreatDirection.sqrMagnitude > MinDirectionSqr)
-                    desiredDirection = ResolveMathLodDirection(retreatDirection, desiredDirection, useApexMathLod);
+                    desiredDirection = ResolveSteeringDirection(retreatDirection, desiredDirection, useApexSteering);
             }
 
             Vector3 fallbackForward = _smoothedSteerDirection.sqrMagnitude > MinDirectionSqr
-                ? ResolveMathLodDirection(_smoothedSteerDirection, Vector3.forward, useApexMathLod)
+                ? ResolveSteeringDirection(_smoothedSteerDirection, Vector3.forward, useApexSteering)
                 : (_body.rotation * Vector3.forward);
             if (fallbackForward.sqrMagnitude <= MinDirectionSqr)
                 fallbackForward = Vector3.forward;
 
             Vector3 steeringTarget = desiredDirection.sqrMagnitude > MinDirectionSqr
-                ? ResolveMathLodDirection(desiredDirection, fallbackForward, useApexMathLod)
-                : ResolveMathLodDirection(fallbackForward, Vector3.forward, useApexMathLod);
+                ? ResolveSteeringDirection(desiredDirection, fallbackForward, useApexSteering)
+                : ResolveSteeringDirection(fallbackForward, Vector3.forward, useApexSteering);
             float steeringSharpness = math.max(0.01f, turnSpeed * math.max(0.1f, turnMult) * resolvedForceMultiplier);
-            _smoothedSteerDirection = useApexMathLod
+            _smoothedSteerDirection = useApexSteering
                 ? ResolveApexSteeringArc(fallbackForward, steeringTarget, fdt, steeringSharpness * ApexSteeringResponseScale)
                 : steeringTarget;
 
@@ -121,13 +117,13 @@ namespace Hecton8.AI
             float maxVelocityDelta = math.max(0.01f, swimForce * resolvedForceMultiplier * fdt);
             if (_smoothedSteerDirection.sqrMagnitude > 0.01f)
             {
-                Vector3 desiredVelocityDirection = ResolveMathLodDirection(_smoothedSteerDirection, steeringTarget, useApexMathLod);
+                Vector3 desiredVelocityDirection = ResolveSteeringDirection(_smoothedSteerDirection, steeringTarget, useApexSteering);
                 Vector3 desiredVelocity = desiredVelocityDirection * speedTarget;
-                currentVelocity = MoveTowardsMathLod(currentVelocity, desiredVelocity, maxVelocityDelta, useApexMathLod);
+                currentVelocity = MoveTowardsSteering(currentVelocity, desiredVelocity, maxVelocityDelta, useApexSteering);
             }
             else
             {
-                currentVelocity = MoveTowardsMathLod(currentVelocity, Vector3.zero, maxVelocityDelta, useApexMathLod);
+                currentVelocity = MoveTowardsSteering(currentVelocity, Vector3.zero, maxVelocityDelta, useApexSteering);
             }
 
             if (!IsFinite(currentVelocity))
@@ -139,19 +135,19 @@ namespace Hecton8.AI
 
             // 3. DIRECTION & ROTATION
             Vector3 facingDirection = currentVelocity.sqrMagnitude > 0.01f
-                ? ResolveMathLodDirection(currentVelocity, currentDirection, useApexMathLod)
+                ? ResolveSteeringDirection(currentVelocity, currentDirection, useApexSteering)
                 : currentDirection;
             if (facingDirection.sqrMagnitude > 0.01f)
             {
-                Vector3 lookDir = ResolveMathLodDirection(facingDirection, Vector3.forward, useApexMathLod);
-                Quaternion targetRot = useApexMathLod
+                Vector3 lookDir = ResolveSteeringDirection(facingDirection, Vector3.forward, useApexSteering);
+                Quaternion targetRot = useApexSteering
                     ? ResolveApexRotation(lookDir, _body.rotation)
                     : ResolveDominantAxisRotation(lookDir);
                 
                 // Rotation Speed multiplier for aggressive/retreat states
                 float rotMod = (isRetreating || speedMult > 1.1f) ? 2.5f * turnMult : turnMult;
                 float turnResponse = turnSpeed * rotMod * resolvedForceMultiplier * fdt;
-                turnResponse = useApexMathLod
+                turnResponse = useApexSteering
                     ? SmoothStep01(turnResponse * ApexSteeringResponseScale)
                     : math.saturate(turnResponse);
                 Quaternion nextRotation = FastNlerp(_body.rotation, targetRot, turnResponse);
@@ -162,7 +158,7 @@ namespace Hecton8.AI
                 // Heavy banking for retreats (User REQ)
                 float bankMult = isRetreating ? 2.0f : 1.0f;
                 float targetRoll = -lateralTurn * bankingStrength * bankIntensity * bankMult;
-                float bankResponse = useApexMathLod ? ApexBankResponse : SwarmBankResponse;
+                float bankResponse = useApexSteering ? ApexBankResponse : SwarmBankResponse;
                 _lastBankingRoll = math.lerp(_lastBankingRoll, targetRoll, math.saturate(bankResponse * fdt));
 
                 Quaternion bankedRotation = NormalizeQuaternion(nextRotation * ResolveRollApprox(_lastBankingRoll));
@@ -193,9 +189,7 @@ namespace Hecton8.AI
             if (_speciesProfile == null || !_speciesProfile.isLeviathan)
                 return false;
 
-            uint tierBit = 1u << (int)GlobalRegistry.ScalabilityTier;
-            return (ApexSmoothSteeringTierMask & tierBit) != 0u &&
-                   GlobalRegistry.TargetMathPrecision == MathPrecisionLevel.High;
+            return true;
         }
 
         private static bool IsFinite(Vector3 value)
@@ -211,6 +205,11 @@ namespace Hecton8.AI
                    float.IsFinite(value.y) &&
                    float.IsFinite(value.z) &&
                    float.IsFinite(value.w);
+        }
+
+        private Vector3 ResolveBodyRuntimePosition()
+        {
+            return _body != null ? _body.position : Vector3.zero;
         }
 
         private static Vector3 ResolveDominantAxisDirection(Vector3 direction, Vector3 fallback)
@@ -233,9 +232,9 @@ namespace Hecton8.AI
             return direction.z < 0f ? Vector3.back : Vector3.forward;
         }
 
-        private static Vector3 ResolveMathLodDirection(Vector3 direction, Vector3 fallback, bool useApexMathLod)
+        private static Vector3 ResolveSteeringDirection(Vector3 direction, Vector3 fallback, bool useApexSteering)
         {
-            return useApexMathLod
+            return useApexSteering
                 ? ResolveApexSmoothDirection(direction, fallback)
                 : ResolveDominantAxisDirection(direction, fallback);
         }
@@ -274,9 +273,9 @@ namespace Hecton8.AI
             return current + ResolveDominantAxisDirection(delta, Vector3.zero) * maxDelta;
         }
 
-        private static Vector3 MoveTowardsMathLod(Vector3 current, Vector3 target, float maxDelta, bool useApexMathLod)
+        private static Vector3 MoveTowardsSteering(Vector3 current, Vector3 target, float maxDelta, bool useApexSteering)
         {
-            if (!useApexMathLod)
+            if (!useApexSteering)
                 return MoveTowardsAxis(current, target, maxDelta);
 
             Vector3 delta = target - current;

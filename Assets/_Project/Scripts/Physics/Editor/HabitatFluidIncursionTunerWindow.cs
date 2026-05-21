@@ -94,7 +94,7 @@ namespace Hecton8.Physics.Editor
 
         private void RefreshFromVault()
         {
-            if (!TryGetTuning(out NativeArray<FluidIncursionTuningDTO> tuning))
+            if (!TryReadTuning(out NativeArray<FluidIncursionTuningDTO> tuning))
             {
                 if (_readout != null)
                     _readout.text = "Vault buffer unavailable.";
@@ -156,7 +156,7 @@ namespace Hecton8.Physics.Editor
 
         private void UpdateVolumeBars()
         {
-            if (!TryGetCompartmentTelemetry(out NativeArray<FluidCompartmentTelemetryDTO> telemetry))
+            if (!TryReadCompartmentTelemetry(out NativeArray<FluidCompartmentTelemetryDTO> telemetry))
             {
                 ClearBars();
                 return;
@@ -192,59 +192,84 @@ namespace Hecton8.Physics.Editor
                 slider.SetValueWithoutNotify(value);
         }
 
-        private static bool TryGetTuning(out NativeArray<FluidIncursionTuningDTO> tuning)
+        private static bool TryReadTuning(out NativeArray<FluidIncursionTuningDTO> tuning)
         {
             tuning = default;
             IDataVault vault = GlobalRegistry.DataVault;
             return vault != null &&
                    vault.ActiveBurstLockMask == 0u &&
-                   vault.TryGetBuffer(BufferID.ShinobuFluidTuning, out tuning) &&
+                   vault.TryGetGenerationHandle<FluidIncursionTuningDTO>(
+                       BufferID.ShinobuFluidTuning,
+                       out VaultGenerationHandle<FluidIncursionTuningDTO> handle) &&
+                   vault.TryReadHandle(in handle, out tuning) &&
                    tuning.IsCreated &&
                    tuning.Length > 0;
         }
 
-        private static bool TryGetCompartmentTelemetry(out NativeArray<FluidCompartmentTelemetryDTO> telemetry)
+        private static bool TryReadCompartmentTelemetry(out NativeArray<FluidCompartmentTelemetryDTO> telemetry)
         {
             telemetry = default;
             IDataVault vault = GlobalRegistry.DataVault;
             return vault != null &&
                    vault.ActiveBurstLockMask == 0u &&
-                   vault.TryGetBuffer(BufferID.ShinobuFluidCompartmentTelemetry, out telemetry) &&
+                   vault.TryGetGenerationHandle<FluidCompartmentTelemetryDTO>(
+                       BufferID.ShinobuFluidCompartmentTelemetry,
+                       out VaultGenerationHandle<FluidCompartmentTelemetryDTO> handle) &&
+                   vault.TryReadHandle(in handle, out telemetry) &&
                    telemetry.IsCreated &&
                    telemetry.Length > 0;
         }
 
         private static void Mutate(TuningField field, float value)
         {
-            if (!TryGetTuning(out NativeArray<FluidIncursionTuningDTO> tuning))
-                return;
-
-            FluidIncursionTuningDTO dto = tuning[0];
-            switch (field)
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null ||
+                vault.ActiveBurstLockMask != 0u ||
+                !vault.TryGetGenerationHandle<FluidIncursionTuningDTO>(
+                    BufferID.ShinobuFluidTuning,
+                    out VaultGenerationHandle<FluidIncursionTuningDTO> handle))
             {
-                case TuningField.TransferRate:
-                    dto.TransferRate01PerSecond = math.max(0f, value);
-                    break;
-                case TuningField.MaxTransfer:
-                    dto.MaxTransferPerNodeM3 = math.max(0.01f, value);
-                    break;
-                case TuningField.IngressCap:
-                    dto.MaxIngressPerSecondNormalized = math.max(0.01f, value);
-                    break;
-                case TuningField.Discharge:
-                    dto.DischargeCoefficient = math.clamp(value, 0.1f, 1f);
-                    break;
-                case TuningField.WaterDensity:
-                    dto.WaterDensityKgPerM3 = math.max(1f, value);
-                    break;
-                case TuningField.VisualWobble:
-                    dto.VisualWobbleScalar = math.max(0f, value);
-                    break;
-                case TuningField.AcousticGain:
-                    dto.AcousticMuffleGain = math.max(0f, value);
-                    break;
+                return;
             }
-            tuning[0] = dto;
+
+            bool acquired = vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out NativeArray<FluidIncursionTuningDTO> tuning);
+            try
+            {
+                if (!acquired || !tuning.IsCreated || tuning.Length <= 0)
+                    return;
+
+                FluidIncursionTuningDTO dto = tuning[0];
+                switch (field)
+                {
+                    case TuningField.TransferRate:
+                        dto.TransferRate01PerSecond = math.max(0f, value);
+                        break;
+                    case TuningField.MaxTransfer:
+                        dto.MaxTransferPerNodeM3 = math.max(0.01f, value);
+                        break;
+                    case TuningField.IngressCap:
+                        dto.MaxIngressPerSecondNormalized = math.max(0.01f, value);
+                        break;
+                    case TuningField.Discharge:
+                        dto.DischargeCoefficient = math.clamp(value, 0.1f, 1f);
+                        break;
+                    case TuningField.WaterDensity:
+                        dto.WaterDensityKgPerM3 = math.max(1f, value);
+                        break;
+                    case TuningField.VisualWobble:
+                        dto.VisualWobbleScalar = math.max(0f, value);
+                        break;
+                    case TuningField.AcousticGain:
+                        dto.AcousticMuffleGain = math.max(0f, value);
+                        break;
+                }
+                tuning[0] = dto;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
         }
 
         private enum TuningField : byte

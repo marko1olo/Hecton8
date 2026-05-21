@@ -12,7 +12,7 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
 {
     public sealed class HadalStructureForgeWindow : EditorWindow
     {
-        private const string CsvPath = "Assets/StreamingAssets/HadalGraphs/hadal_structure_graphs.csv";
+        private const string CsvPath = "Assets/_SourceData/HadalGraphs/hadal_structure_graphs.csv";
         private readonly List<SdfShapeDTO> _shapes = new List<SdfShapeDTO>(HadalArchBakeConstants.MaxPreviewShapes);
         private TextField _assetNameField;
         private TextField _recipeField;

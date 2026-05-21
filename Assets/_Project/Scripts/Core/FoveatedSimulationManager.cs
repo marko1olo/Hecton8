@@ -6,6 +6,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Gameplay;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -66,13 +67,12 @@ namespace Hecton8.Core
     /// throttles opt-in targets, smooths low-frequency visual motion, and keeps
     /// audio/raycast side effects on an allocation-free path.
     /// </summary>
-    internal sealed class FoveatedSimulationManager : IFoveatedDispatcher, IFoveatedSimulationDirector, IOriginShiftListener
+    internal sealed class FoveatedSimulationManager : IFoveatedDispatcher, IFoveatedSimulationDirector, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const double SlowJobCompleteWarningMilliseconds = 100.0;
         private const string SlowJobCompleteWarningMessage = "[SystemDispatcher] JobHandle.Complete slow in foveated simulation swap window.";
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
         private struct ImportanceScoringJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<float3> Positions;
@@ -124,7 +124,6 @@ namespace Hecton8.Core
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
         private struct VisualInterpolationJob : IJobParallelForTransform
         {
             [ReadOnly, NoAlias] public NativeArray<float3> FromPositions;
@@ -304,6 +303,8 @@ namespace Hecton8.Core
         private NativeArray<int> _pendingDeferredRaycastCommandIndices;
         private NativeArray<RaycastCommand> _deferredRaycastCommands;
         private NativeArray<RaycastHit> _deferredRaycastResults;
+        private IDataVault _dataVault;
+        private IPlayerRuntimeContext _playerContext;
         private VaultGenerationHandle<float3> _jobScorePositionsHandle;
         private VaultGenerationHandle<float3> _jobEntityAupsHandle;
         private VaultGenerationHandle<float> _jobImportanceScoresHandle;
@@ -341,6 +342,7 @@ namespace Hecton8.Core
         private bool _listenerStateInitialized;
         private bool _originShiftListenerRegistered;
         private bool _nativeMemoryBudgetRegistered;
+        private bool _registeredHotSwapListener;
         private bool _voxelTeardownBackpressureActive;
         private bool _forceImmediateImportanceRefresh;
         private bool _hasSignalCameraPose;
@@ -380,6 +382,10 @@ namespace Hecton8.Core
 
         public void InitializeRuntime()
         {
+            TryRegisterHotSwapListener();
+            RebindDataVaultForOwnerRoute(_dataVault, GlobalRegistry.DataVault);
+            _playerContext = GlobalRegistry.Player;
+
             if (!_originShiftListenerRegistered)
             {
                 HectonFloatingOrigin.RegisterListener(this);
@@ -553,10 +559,10 @@ namespace Hecton8.Core
             if (!_deferredRaycastScheduled && _deferredRaycastCommands.IsCreated)
                 _deferredRaycastCommandCount = 0;
 
-            if (!TryResolveViewCamera(frameDeltaTime) && !_hasSignalCameraPose)
+            if (!RefreshViewCameraBinding(frameDeltaTime) && !_hasSignalCameraPose)
                 return;
 
-            TryResolveListener(frameDeltaTime);
+            RefreshListenerBinding(frameDeltaTime);
             UpdateListenerVelocity(frameDeltaTime);
             UpdateDopplerProtection();
         }
@@ -725,8 +731,9 @@ namespace Hecton8.Core
 
             _voxelTeardownBackpressureActive = active;
             _voxelTeardownBackpressurePendingCount = math.max(0, pendingChunkCount);
-            HectonPlayerMovement movement = GlobalRegistry.Player != null
-                ? GlobalRegistry.Player.PlayerMovement
+            IPlayerRuntimeContext playerContext = _playerContext;
+            HectonPlayerMovement movement = playerContext != null
+                ? playerContext.PlayerMovement
                 : null;
             if (movement == null)
                 return;
@@ -888,6 +895,7 @@ namespace Hecton8.Core
         public void Dispose()
         {
             GlobalRegistry.UnregisterFoveatedSimulationDirector(this);
+            TryUnregisterHotSwapListener();
             if (_originShiftListenerRegistered)
             {
                 HectonFloatingOrigin.UnregisterListener(this);
@@ -895,6 +903,23 @@ namespace Hecton8.Core
             }
 
             ResetRuntimeState();
+            _dataVault = null;
+            _playerContext = null;
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                RebindDataVaultForOwnerRoute(previousService as IDataVault, currentService as IDataVault);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _playerContext = currentService as IPlayerRuntimeContext;
         }
 
         private static bool TryCompleteJob(ref JobHandle handle, string systemName, bool forceComplete)
@@ -1397,26 +1422,26 @@ namespace Hecton8.Core
 
         private bool EnsureNativeBuffersAllocated()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
             bool resolved =
-                TryResolveVaultArray(vault, ref _jobScorePositionsHandle, FoveatedScorePositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobScorePositions) &&
-                TryResolveVaultArray(vault, ref _jobEntityAupsHandle, FoveatedEntityAupsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobEntityAups) &&
-                TryResolveVaultArray(vault, ref _jobImportanceScoresHandle, FoveatedImportanceScoresBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobImportanceScores) &&
-                TryResolveVaultArray(vault, ref _jobTickRateCodesHandle, FoveatedTickRateCodesBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobTickRateCodes) &&
-                TryResolveVaultArray(vault, ref _jobInsideFrustumFlagsHandle, FoveatedInsideFrustumFlagsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobInsideFrustumFlags) &&
-                TryResolveVaultArray(vault, ref _jobEntitySimTiersHandle, FoveatedEntitySimTiersBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobEntitySimTiers) &&
-                TryResolveVaultArray(vault, ref _jobDistancesMetersHandle, FoveatedDistancesMetersBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobDistancesMeters) &&
-                TryResolveVaultArray(vault, ref _jobFromPositionsHandle, FoveatedFromPositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobFromPositions) &&
-                TryResolveVaultArray(vault, ref _jobToPositionsHandle, FoveatedToPositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobToPositions) &&
-                TryResolveVaultArray(vault, ref _jobAlphasHandle, FoveatedAlphasBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobAlphas) &&
-                TryResolveVaultArray(vault, ref _pendingDeferredRaycastCommandsHandle, FoveatedPendingRaycastCommandsBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _pendingDeferredRaycastCommands) &&
-                TryResolveVaultArray(vault, ref _pendingDeferredRaycastCommandIndicesHandle, FoveatedPendingRaycastCommandIndicesBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _pendingDeferredRaycastCommandIndices) &&
-                TryResolveVaultArray(vault, ref _deferredRaycastCommandsHandle, FoveatedDeferredRaycastCommandsBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _deferredRaycastCommands) &&
-                TryResolveVaultArray(vault, ref _deferredRaycastResultsHandle, FoveatedDeferredRaycastResultsBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _deferredRaycastResults) &&
-                TryResolveVaultArray(vault, ref _telemetryRingHandle, FoveatedTelemetryRingBufferId, TelemetryCapacity, NativeArrayOptions.ClearMemory, out _telemetryRing);
+                TryEnsureVaultArray(vault, ref _jobScorePositionsHandle, FoveatedScorePositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobScorePositions) &&
+                TryEnsureVaultArray(vault, ref _jobEntityAupsHandle, FoveatedEntityAupsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobEntityAups) &&
+                TryEnsureVaultArray(vault, ref _jobImportanceScoresHandle, FoveatedImportanceScoresBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobImportanceScores) &&
+                TryEnsureVaultArray(vault, ref _jobTickRateCodesHandle, FoveatedTickRateCodesBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobTickRateCodes) &&
+                TryEnsureVaultArray(vault, ref _jobInsideFrustumFlagsHandle, FoveatedInsideFrustumFlagsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobInsideFrustumFlags) &&
+                TryEnsureVaultArray(vault, ref _jobEntitySimTiersHandle, FoveatedEntitySimTiersBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobEntitySimTiers) &&
+                TryEnsureVaultArray(vault, ref _jobDistancesMetersHandle, FoveatedDistancesMetersBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobDistancesMeters) &&
+                TryEnsureVaultArray(vault, ref _jobFromPositionsHandle, FoveatedFromPositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobFromPositions) &&
+                TryEnsureVaultArray(vault, ref _jobToPositionsHandle, FoveatedToPositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobToPositions) &&
+                TryEnsureVaultArray(vault, ref _jobAlphasHandle, FoveatedAlphasBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobAlphas) &&
+                TryEnsureVaultArray(vault, ref _pendingDeferredRaycastCommandsHandle, FoveatedPendingRaycastCommandsBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _pendingDeferredRaycastCommands) &&
+                TryEnsureVaultArray(vault, ref _pendingDeferredRaycastCommandIndicesHandle, FoveatedPendingRaycastCommandIndicesBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _pendingDeferredRaycastCommandIndices) &&
+                TryEnsureVaultArray(vault, ref _deferredRaycastCommandsHandle, FoveatedDeferredRaycastCommandsBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _deferredRaycastCommands) &&
+                TryEnsureVaultArray(vault, ref _deferredRaycastResultsHandle, FoveatedDeferredRaycastResultsBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _deferredRaycastResults) &&
+                TryEnsureVaultArray(vault, ref _telemetryRingHandle, FoveatedTelemetryRingBufferId, TelemetryCapacity, NativeArrayOptions.ClearMemory, out _telemetryRing);
 
             if (!resolved)
                 return false;
@@ -1427,7 +1452,7 @@ namespace Hecton8.Core
             return true;
         }
 
-        private static bool TryResolveVaultArray<T>(
+        private static bool TryEnsureVaultArray<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -1457,26 +1482,12 @@ namespace Hecton8.Core
             JobHandle disposeHandle = dependency;
             DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault != null)
-            {
-                ReleaseVaultHandle(vault, ref _jobScorePositionsHandle);
-                ReleaseVaultHandle(vault, ref _jobEntityAupsHandle);
-                ReleaseVaultHandle(vault, ref _jobImportanceScoresHandle);
-                ReleaseVaultHandle(vault, ref _jobTickRateCodesHandle);
-                ReleaseVaultHandle(vault, ref _jobInsideFrustumFlagsHandle);
-                ReleaseVaultHandle(vault, ref _jobEntitySimTiersHandle);
-                ReleaseVaultHandle(vault, ref _jobDistancesMetersHandle);
-                ReleaseVaultHandle(vault, ref _jobFromPositionsHandle);
-                ReleaseVaultHandle(vault, ref _jobToPositionsHandle);
-                ReleaseVaultHandle(vault, ref _jobAlphasHandle);
-                ReleaseVaultHandle(vault, ref _pendingDeferredRaycastCommandsHandle);
-                ReleaseVaultHandle(vault, ref _pendingDeferredRaycastCommandIndicesHandle);
-                ReleaseVaultHandle(vault, ref _deferredRaycastCommandsHandle);
-                ReleaseVaultHandle(vault, ref _deferredRaycastResultsHandle);
-                ReleaseVaultHandle(vault, ref _telemetryRingHandle);
-            }
+            ReleaseNativeVaultHandles(_dataVault);
+            ClearNativeBufferAliases();
+        }
 
+        private void ClearNativeBufferAliases()
+        {
             _jobScorePositions = default;
             _jobEntityAups = default;
             _jobImportanceScores = default;
@@ -1495,6 +1506,68 @@ namespace Hecton8.Core
             _deferredRaycastCommandCount = 0;
             DrainDeferredRaycastQueueResidue();
             _nativeMemoryBudgetRegistered = false;
+        }
+
+        private void ReleaseNativeVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _jobScorePositionsHandle);
+            ReleaseVaultHandle(vault, ref _jobEntityAupsHandle);
+            ReleaseVaultHandle(vault, ref _jobImportanceScoresHandle);
+            ReleaseVaultHandle(vault, ref _jobTickRateCodesHandle);
+            ReleaseVaultHandle(vault, ref _jobInsideFrustumFlagsHandle);
+            ReleaseVaultHandle(vault, ref _jobEntitySimTiersHandle);
+            ReleaseVaultHandle(vault, ref _jobDistancesMetersHandle);
+            ReleaseVaultHandle(vault, ref _jobFromPositionsHandle);
+            ReleaseVaultHandle(vault, ref _jobToPositionsHandle);
+            ReleaseVaultHandle(vault, ref _jobAlphasHandle);
+            ReleaseVaultHandle(vault, ref _pendingDeferredRaycastCommandsHandle);
+            ReleaseVaultHandle(vault, ref _pendingDeferredRaycastCommandIndicesHandle);
+            ReleaseVaultHandle(vault, ref _deferredRaycastCommandsHandle);
+            ReleaseVaultHandle(vault, ref _deferredRaycastResultsHandle);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void RebindDataVaultForOwnerRoute(IDataVault previousVault, IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+            {
+                if (_dataVault != null)
+                    EnsureNativeBuffersAllocated();
+                return;
+            }
+
+            IDataVault releaseVault = _dataVault ?? previousVault;
+            if (releaseVault != null)
+            {
+                TryCompleteFrameJobsInternal(true, forceComplete: true);
+                MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
+                ReleaseNativeVaultHandles(releaseVault);
+                ClearNativeBufferAliases();
+            }
+
+            _dataVault = nextVault;
+            if (_dataVault != null)
+                EnsureNativeBuffersAllocated();
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
@@ -1664,7 +1737,7 @@ namespace Hecton8.Core
                 _visualTransformAccessArray.Dispose();
         }
 
-        private bool TryResolveViewCamera(float frameDeltaTime)
+        private bool RefreshViewCameraBinding(float frameDeltaTime)
         {
             if (_cameraTransform != null)
                 return true;
@@ -1676,16 +1749,8 @@ namespace Hecton8.Core
             }
 
             _cameraResolveRetryTimer = CameraResolveRetryInterval;
-            _viewCamera = null;
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                if (!playerTransform.TryGetComponent(out _viewCamera))
-                {
-                    IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
-                    _viewCamera = playerContext != null ? playerContext.PlayerCamera : null;
-                }
-            }
+            IPlayerRuntimeContext playerContext = _playerContext;
+            _viewCamera = playerContext != null ? playerContext.PlayerCamera : null;
 
             if (_viewCamera == null)
                 return false;
@@ -1695,7 +1760,7 @@ namespace Hecton8.Core
             return true;
         }
 
-        private void TryResolveListener(float frameDeltaTime)
+        private void RefreshListenerBinding(float frameDeltaTime)
         {
             if (_listenerTransform != null)
                 return;
@@ -1708,11 +1773,8 @@ namespace Hecton8.Core
 
             _listenerResolveRetryTimer = ListenerResolveRetryInterval;
             _listenerTransform = _cameraTransform;
-            _listenerRigidbody = null;
-
-            GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
-            if (playerObject != null)
-                playerObject.TryGetComponent(out _listenerRigidbody);
+            IPlayerRuntimeContext playerContext = _playerContext;
+            _listenerRigidbody = playerContext != null ? playerContext.PlayerRigidbody : null;
 
             if (_listenerTransform != null)
                 _listenerResolveRetryTimer = 0.0f;

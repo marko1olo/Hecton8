@@ -17,7 +17,7 @@ namespace Hecton8.Atmosphere
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere/Gas Dynamics Solver")]
-    public sealed class GasDynamicsSolver : MonoBehaviour, IGasDynamicsSolver, IUpdatable, IFixedTickable, IPostFixedTickable, IFrostTickable
+    public sealed class GasDynamicsSolver : MonoBehaviour, IGasDynamicsSolver, IUpdatable, IFixedTickable, IPostFixedTickable, IFrostTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxRoomCapacity = 128;
         private const int MaxBulkheadCapacity = 256;
@@ -61,6 +61,7 @@ namespace Hecton8.Atmosphere
         private const ushort RoomFlagBreached = (ushort)GasDynamicsRoomFlags.Breached;
         private const ushort RoomFlagOccupied = (ushort)GasDynamicsRoomFlags.Occupied;
         private const string NativeMemoryOwner = nameof(GasDynamicsSolver);
+        private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
         private const string DumpFileName = "Dump_HABITAT_O2_SCRUBBER_LOD.bin";
 
         [SerializeField, Range(1, MaxRoomCapacity)] private int roomCapacity = 64;
@@ -138,6 +139,7 @@ namespace Hecton8.Atmosphere
         private bool _stepRunning;
         private bool _registeredTicks;
         private bool _registeredRegistry;
+        private bool _registeredHotSwap;
         private bool _baseAwakeVaultOwned;
         private bool _seededStandardAtmosphere;
         private bool _blackBoxDumped;
@@ -186,16 +188,17 @@ namespace Hecton8.Atmosphere
             if (!Application.isPlaying)
                 return;
 
+            CacheColdDependencies();
+            TryRegisterHotSwapListener();
+            TryRegisterRegistry();
             if (!TryFinalizeDeferredNativeDisposal())
             {
                 TryRegisterTicks();
                 return;
             }
 
-            CacheColdDependencies();
             EnsureNativeState();
             SeedStandardAtmosphereIfNeeded();
-            TryRegisterRegistry();
             TryRegisterTicks();
         }
 
@@ -203,6 +206,7 @@ namespace Hecton8.Atmosphere
         {
             TryUnregisterTicks();
             TryUnregisterRegistry();
+            TryUnregisterHotSwapListener();
             DisposeNativeStateDeferred();
         }
 
@@ -210,6 +214,7 @@ namespace Hecton8.Atmosphere
         {
             TryUnregisterTicks();
             TryUnregisterRegistry();
+            TryUnregisterHotSwapListener();
             DisposeNativeStateDeferred();
         }
 
@@ -221,11 +226,8 @@ namespace Hecton8.Atmosphere
             if (!TryFinalizeDeferredNativeDisposal())
                 return;
 
-            if (!IsInitialized)
-                CacheColdDependencies();
             EnsureNativeState();
             SeedStandardAtmosphereIfNeeded();
-            TryRegisterRegistry();
             bool canWake = !_stepRunning;
             DrainBaseTransitionSignals(canWake);
             if (canWake)
@@ -242,11 +244,8 @@ namespace Hecton8.Atmosphere
             if (!TryFinalizeDeferredNativeDisposal())
                 return;
 
-            if (!IsInitialized)
-                CacheColdDependencies();
             EnsureNativeState();
             SeedStandardAtmosphereIfNeeded();
-            TryRegisterRegistry();
             if (!TryCompleteStep())
             {
                 _tickAccumulator += math.max(0f, fixedDeltaTime);
@@ -283,11 +282,8 @@ namespace Hecton8.Atmosphere
             if (!TryFinalizeDeferredNativeDisposal() || !TryCompleteStep())
                 return;
 
-            if (!IsInitialized)
-                CacheColdDependencies();
             EnsureNativeState();
             SeedStandardAtmosphereIfNeeded();
-            TryRegisterRegistry();
             DrainBaseTransitionSignals(allowWake: true);
             DrainHullRepairedSignals();
             WakePlayerInsideSleepingBases(ResolveUnscaledTimeSeconds());
@@ -675,8 +671,6 @@ namespace Hecton8.Atmosphere
         {
             if (_registeredRegistry)
                 return;
-            if (!IsInitialized)
-                return;
 
             GlobalRegistry.RegisterGasDynamicsSolver(this);
             _registeredRegistry = ReferenceEquals(GlobalRegistry.GasDynamics, this);
@@ -690,6 +684,44 @@ namespace Hecton8.Atmosphere
             if (ReferenceEquals(GlobalRegistry.GasDynamics, this))
                 GlobalRegistry.UnregisterGasDynamicsSolver(this);
             _registeredRegistry = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Dispatcher:
+                case GlobalRegistryServiceSlot.TickManager:
+                    if (currentService == null || currentService is ITickDispatcher)
+                        _tickDispatcher = currentService as ITickDispatcher;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerMovementContracts:
+                    _playerMovementContracts = currentService as IPlayerMovementContracts;
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    _dataVault = currentService as IDataVault;
+                    break;
+            }
         }
 
         private void TryRegisterTicks()
@@ -735,7 +767,6 @@ namespace Hecton8.Atmosphere
                 return;
             if (RoomO2.IsCreated)
             {
-                TryUnregisterRegistry();
                 DisposeNativeStateDeferred();
                 if (RoomO2.IsCreated || !TryFinalizeDeferredNativeDisposal())
                     return;
@@ -753,6 +784,17 @@ namespace Hecton8.Atmosphere
             _baseCapacityLimit = safeBaseCapacity;
             _baseCount = 1;
             _sleepingBaseCount = 0;
+            NativeArray<byte> resolvedBaseAwakeState = ResolveBaseAwakeStateBuffer(safeBaseCapacity);
+            if (!resolvedBaseAwakeState.IsCreated)
+            {
+                BaseAwakeState = default;
+                IsInitialized = false;
+                _roomCount = 0;
+                _baseCount = 0;
+                _sleepingBaseCount = 0;
+                _bulkheadCount = 0;
+                return;
+            }
 
             RoomO2 = new NativeArray<float>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[roomCapacity] - oxygen partial pressure kPa - owner: GasDynamicsSolver
             RoomCO2 = new NativeArray<float>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[roomCapacity] - carbon dioxide partial pressure kPa - owner: GasDynamicsSolver
@@ -771,7 +813,7 @@ namespace Hecton8.Atmosphere
             _roomScrubberPowered = new NativeArray<byte>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _roomFlags = new NativeArray<ushort>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _roomBaseIndex = new NativeArray<int>(safeRoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            BaseAwakeState = ResolveBaseAwakeStateBuffer(safeBaseCapacity);
+            BaseAwakeState = resolvedBaseAwakeState;
             _basePlayerInside = new NativeArray<byte>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _basePlayerInsideCount = new NativeArray<int>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _baseRoomStart = new NativeArray<int>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -786,8 +828,8 @@ namespace Hecton8.Atmosphere
             _bulkheadRoomB = new NativeArray<int>(math.max(1, safeBulkheadCapacity), Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _bulkheadSealed = new NativeArray<byte>(math.max(1, safeBulkheadCapacity), Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _telemetryRing = new NativeArray<GasDynamicsTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _toxicitySignals = new NativeQueue<ToxicitySignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ToxicitySignal>[128] - gas-to-physiology event lane - owner: GasDynamicsSolver
-            _deferredBaseTransitions = new NativeList<PendingBaseTransitionSignal>(PendingBaseTransitionCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<PendingBaseTransitionSignal>[128] - base transition buffer held while gas job is running - owner: GasDynamicsSolver
+            _toxicitySignals = new NativeQueue<ToxicitySignal>(DataVaultExemptSceneScratchAllocator); // COLD ALLOC: NativeQueue<ToxicitySignal>[128] - gas-to-physiology event lane - owner: GasDynamicsSolver
+            _deferredBaseTransitions = new NativeList<PendingBaseTransitionSignal>(PendingBaseTransitionCapacity, DataVaultExemptSceneScratchAllocator); // COLD ALLOC: NativeList<PendingBaseTransitionSignal>[128] - base transition buffer held while gas job is running - owner: GasDynamicsSolver
 
             RegisterNativeArray(RoomO2, nameof(RoomO2));
             RegisterNativeArray(RoomCO2, nameof(RoomCO2));
@@ -846,12 +888,15 @@ namespace Hecton8.Atmosphere
             IDataVault vault = _dataVault;
             if (vault != null)
             {
-                NativeArray<byte> vaultBuffer = vault.GetBuffer<byte>(
+                VaultGenerationHandle<byte> handle = vault.GetGenerationHandle<byte>(
                     BufferID.HabitatBaseAwakeState,
                     safeBaseCapacity,
                     SystemID.HabitatAtmosphere,
                     NativeArrayOptions.ClearMemory);
-                if (vaultBuffer.IsCreated && vaultBuffer.Length >= safeBaseCapacity)
+                if (handle.BufferID == unchecked((uint)(int)BufferID.HabitatBaseAwakeState) &&
+                    vault.TryResolveHandle(in handle, out NativeArray<byte> vaultBuffer) &&
+                    vaultBuffer.IsCreated &&
+                    vaultBuffer.Length >= safeBaseCapacity)
                 {
                     _baseAwakeVaultOwned = true;
                     return vaultBuffer;
@@ -859,7 +904,7 @@ namespace Hecton8.Atmosphere
             }
 
             _baseAwakeVaultOwned = false;
-            return new NativeArray<byte>(safeBaseCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[baseCapacity] - fallback base awake mask when DataVault is unavailable - owner: GasDynamicsSolver
+            return default;
         }
 
         private void InitializeBaseSlots(int safeBaseCapacity, int safeRoomCapacity)
@@ -1034,11 +1079,11 @@ namespace Hecton8.Atmosphere
 
             double now = ResolveUnscaledTimeSeconds();
             ApplyDeferredBaseTransitions(now, allowWake);
-            while (SignalBus<PlayerBaseExitSignal>.TryReadFrame(out PlayerBaseExitSignal signal))
+            while (SignalBus<PlayerBaseExitSignal>.TryConsumeFrame(out PlayerBaseExitSignal signal))
                 ApplyBaseExitSignal(in signal);
 
             // Enter wins over exit for same-frame module-to-module trigger handoffs.
-            while (SignalBus<PlayerBaseEnterSignal>.TryReadFrame(out PlayerBaseEnterSignal signal))
+            while (SignalBus<PlayerBaseEnterSignal>.TryConsumeFrame(out PlayerBaseEnterSignal signal))
                 ApplyBaseEnterSignal(in signal, now, allowWake);
         }
 
@@ -1057,7 +1102,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            while (SignalBus<HullRepairedSignal>.TryReadFrame(out HullRepairedSignal signal))
+            while (SignalBus<HullRepairedSignal>.TryConsumeFrame(out HullRepairedSignal signal))
             {
                 ApplyOrDeferHullRepairedSignal(in signal);
             }
@@ -1065,7 +1110,7 @@ namespace Hecton8.Atmosphere
 
         private void CaptureHullRepairedSignalsForLater()
         {
-            while (SignalBus<HullRepairedSignal>.TryReadFrame(out HullRepairedSignal signal))
+            while (SignalBus<HullRepairedSignal>.TryConsumeFrame(out HullRepairedSignal signal))
                 QueueHullRepairSignal(in signal);
         }
 
@@ -1145,11 +1190,11 @@ namespace Hecton8.Atmosphere
 
         private void CaptureBaseTransitionSignalsForLater()
         {
-            while (SignalBus<PlayerBaseExitSignal>.TryReadFrame(out PlayerBaseExitSignal signal))
+            while (SignalBus<PlayerBaseExitSignal>.TryConsumeFrame(out PlayerBaseExitSignal signal))
                 EnqueueDeferredBaseTransition(in signal, isEnter: false);
 
             // Keep the existing same-frame rule: exit packets are staged before enter packets.
-            while (SignalBus<PlayerBaseEnterSignal>.TryReadFrame(out PlayerBaseEnterSignal signal))
+            while (SignalBus<PlayerBaseEnterSignal>.TryConsumeFrame(out PlayerBaseEnterSignal signal))
                 EnqueueDeferredBaseTransition(in signal, isEnter: true);
         }
 
@@ -1426,15 +1471,7 @@ namespace Hecton8.Atmosphere
             if (movement == null || !movement.TryGetRuntimePosition(out Vector3 runtimePosition))
                 return false;
 
-            if (!float.IsFinite(runtimePosition.x) ||
-                !float.IsFinite(runtimePosition.y) ||
-                !float.IsFinite(runtimePosition.z))
-            {
-                return false;
-            }
-
-            playerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-            return true;
+            return TryResolveAupFromRuntimeOrigin(runtimePosition, out playerAup);
         }
 
         private double ResolveUnscaledTimeSeconds()
@@ -1454,9 +1491,25 @@ namespace Hecton8.Atmosphere
         private AbsoluteUniversePosition ResolveDefaultBaseCenterAup()
         {
             Vector3 position = transform.position;
-            return IsFiniteVector3(position)
-                ? AbsoluteUniversePosition.FromRuntimePosition(position)
+            return TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition centerAup)
+                ? centerAup
                 : default;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteVector3(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2166,8 +2219,11 @@ namespace Hecton8.Atmosphere
             [ReadOnly, NoAlias] public NativeArray<int> BulkheadRoomA;
             [ReadOnly, NoAlias] public NativeArray<int> BulkheadRoomB;
             [ReadOnly, NoAlias] public NativeArray<byte> BulkheadSealed;
-            [NoAlias] public NativeQueue<ToxicitySignal>.ParallelWriter ToxicitySignals;
-            [NoAlias] public NativeArray<GasDynamicsTelemetryEntry> TelemetryRing;
+            // SAFETY_JUSTIFICATION_PARAGRAPH_1: ToxicitySignals is a producer-only SignalBus bridge owned by the Atmosphere gas-step route. The queue is trimmed before ScheduleStep, readers are gated by !_stepRunning in TryDequeueToxicitySignal, and the Burst job only enqueues bounded toxicity DTOs; it does not read or drain the queue while worker ownership is active.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_2: GasDynamicsStepJob is scheduled through job.Schedule() into _stepHandle and finalized only through DispatcherJobSwap.TryComplete(ref _stepHandle, forceComplete: false) or the existing deferred disposal fence. There is no same-frame schedule/readback loop on this writer route, and the queue lifetime is registered with NativeMemorySentinel during cold allocation/prewarm.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_3: The bypass exists because Unity container safety cannot model this single-owner NativeQueue<T>.ParallelWriter handoff across the Atmosphere owner phase. The route preserves one fact owner: gas-step writes toxicity signals, consumer code dequeues only after the dispatcher swap window reports the scheduled step complete, and shutdown/disposal is chained behind _stepHandle.
+            [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<ToxicitySignal>.ParallelWriter ToxicitySignals;
+            [WriteOnly, NoAlias] public NativeArray<GasDynamicsTelemetryEntry> TelemetryRing;
 
             public void Execute()
             {

@@ -173,7 +173,7 @@ Bad capsule ideas:
 5. Base under pressure/failure.
 6. Heavy machine/vehicle if real.
 7. Seed Ship anomaly.
-8. Low-tier/readability proof only if measured/appropriate.
+8. Minimum-budget/readability proof only if measured/appropriate.
 
 ## Feature Bullets
 

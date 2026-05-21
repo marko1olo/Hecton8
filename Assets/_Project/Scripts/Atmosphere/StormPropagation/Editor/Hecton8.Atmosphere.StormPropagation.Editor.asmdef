@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.Atmosphere.StormPropagation.Editor",
+    "rootNamespace": "Hecton8.Atmosphere.Editor",
+    "references": [
+        "Hecton8.Atmosphere.StormPropagation.Runtime",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

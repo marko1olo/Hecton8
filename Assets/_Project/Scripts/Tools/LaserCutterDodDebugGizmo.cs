@@ -19,7 +19,9 @@ namespace Hecton8.Tools
 
         private void OnDrawGizmos()
         {
-            double3 presentationOrigin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!LaserCutterDodRuntime.TryGetPresentationOriginForGizmo(out double3 presentationOrigin))
+                return;
+
             int safeCount = math.clamp(requestCount, 1, LaserCutterDodConstants.MaxRequests);
             for (int i = 0; i < safeCount; i++)
             {

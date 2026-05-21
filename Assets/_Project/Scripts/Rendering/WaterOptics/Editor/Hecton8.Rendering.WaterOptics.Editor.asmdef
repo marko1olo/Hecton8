@@ -1,0 +1,24 @@
+{
+    "name": "Hecton8.Rendering.WaterOptics.Editor",
+    "rootNamespace": "Hecton8.Rendering.WaterOptics.Editor",
+    "references": [
+        "Hecton8.Rendering.WaterOptics",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

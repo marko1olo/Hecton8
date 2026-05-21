@@ -1,0 +1,12 @@
+{
+  "schema": "hecton8.ai_texture_prefab_binding.v1",
+  "agent": "SHINOBU_269",
+  "assetKey": "",
+  "materialName": "",
+  "prefabPath": "",
+  "rendererPath": "",
+  "materialSlot": -1,
+  "manifestPath": "Assets/_Project/Data/AITexturing/ai_texture_prefab_bindings.csv",
+  "status": "MANIFEST_TEMPLATE_READY_NO_BINDINGS_EXECUTED",
+  "reason": "Prefab mutation is manifest-only down to renderer path plus material slot; the checked-in manifest is a template and no prefab assignment was executed in this pass."
+}

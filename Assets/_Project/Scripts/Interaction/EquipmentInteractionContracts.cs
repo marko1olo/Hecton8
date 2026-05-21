@@ -81,6 +81,56 @@ namespace Hecton8.Interaction
     }
 
     /// <summary>
+    /// Marker for habitat module owners that can host attached flora interaction routing.
+    /// </summary>
+    public interface IBaseModuleInteractionHost
+    {
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct ModuleRepairReadSnapshot
+    {
+        public const uint FlagFlooded = 1u << 0;
+        public const uint FlagDraining = 1u << 1;
+        public const uint FlagHasPower = 1u << 2;
+
+        [FieldOffset(0)] public float CurrentIntegrity;
+        [FieldOffset(4)] public float MaxIntegrity;
+        [FieldOffset(8)] public uint Flags;
+        [FieldOffset(12)] public uint Pad0;
+        [FieldOffset(16)] public ulong Pad1;
+        [FieldOffset(24)] public ulong Pad2;
+    }
+
+    /// <summary>
+    /// Repair-tool command/read surface for habitat module integrity. Implementations own mutable module state.
+    /// </summary>
+    public interface IRepairableModuleTarget : IBaseModuleInteractionHost
+    {
+        bool TryReadRepairState(out ModuleRepairReadSnapshot snapshot);
+        void ApplyRepair(float amount);
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct WfcDoorLaserCutReadSnapshot
+    {
+        [FieldOffset(0)] public ulong SectorHash;
+        [FieldOffset(8)] public ushort CellIndex;
+        [FieldOffset(10)] public byte CurrentFlags;
+        [FieldOffset(11)] public byte Pad0;
+        [FieldOffset(12)] public uint Pad1;
+    }
+
+    /// <summary>
+    /// Laser-cut command/read surface for WFC-backed sealed doors. Implementations own mutable door state.
+    /// </summary>
+    public interface IWfcDoorLaserCutTarget
+    {
+        bool TryReadWfcDoorLaserCutState(out WfcDoorLaserCutReadSnapshot snapshot);
+        void ApplyWfcDoorLaserCutProgress(float progress01, uint frame);
+    }
+
+    /// <summary>
     /// Optional physical-vulnerability contract used by tool-routing owners before applying damage.
     /// </summary>
     public interface IInteractionVulnerabilitySource
@@ -155,6 +205,8 @@ namespace Hecton8.Interaction
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct InteractionSignal
     {
+        public const byte HitPointAupDoubleValid = 1;
+
         public InteractionSignal(
             InteractionPacket source,
             int targetInstanceId,
@@ -171,11 +223,52 @@ namespace Hecton8.Interaction
             PowerDelivered = powerDelivered;
             EffectType = effectType;
             PenetrationOccurred = penetrationOccurred;
+            CoordinateFlags = 0;
             _padding0 = 0;
             _padding1 = 0u;
-            _padding2 = 0UL;
-            _padding3 = 0UL;
-            _padding4 = 0UL;
+            HitPointAupDouble = default;
+        }
+
+        public InteractionSignal(
+            InteractionPacket source,
+            int targetInstanceId,
+            float3 hitPoint,
+            float3 hitNormal,
+            float powerDelivered,
+            byte effectType,
+            byte penetrationOccurred,
+            double3 hitPointAupDouble,
+            byte coordinateFlags)
+        {
+            Source = source;
+            TargetInstanceID = targetInstanceId;
+            HitPoint = hitPoint;
+            HitNormal = hitNormal;
+            PowerDelivered = powerDelivered;
+            EffectType = effectType;
+            PenetrationOccurred = penetrationOccurred;
+            CoordinateFlags = math.all(math.isfinite(hitPointAupDouble))
+                ? coordinateFlags
+                : (byte)(coordinateFlags & ~HitPointAupDoubleValid);
+            _padding0 = 0;
+            _padding1 = 0u;
+            HitPointAupDouble = hitPointAupDouble;
+        }
+
+        public bool TryGetHitPointAupDouble(out double3 hitPointAupDouble)
+        {
+            hitPointAupDouble = HitPointAupDouble;
+            return (CoordinateFlags & HitPointAupDoubleValid) != 0 &&
+                   math.all(math.isfinite(hitPointAupDouble));
+        }
+
+        public void SetHitPointAupDouble(double3 hitPointAupDouble)
+        {
+            HitPointAupDouble = hitPointAupDouble;
+            if (math.all(math.isfinite(hitPointAupDouble)))
+                CoordinateFlags = (byte)(CoordinateFlags | HitPointAupDoubleValid);
+            else
+                CoordinateFlags = (byte)(CoordinateFlags & ~HitPointAupDoubleValid);
         }
 
         [FieldOffset(0)]
@@ -193,15 +286,13 @@ namespace Hecton8.Interaction
         [FieldOffset(97)]
         public byte PenetrationOccurred;
         [FieldOffset(98)]
-        private ushort _padding0;
+        public byte CoordinateFlags;
+        [FieldOffset(99)]
+        private byte _padding0;
         [FieldOffset(100)]
         private uint _padding1;
         [FieldOffset(104)]
-        private ulong _padding2;
-        [FieldOffset(112)]
-        private ulong _padding3;
-        [FieldOffset(120)]
-        private ulong _padding4;
+        public double3 HitPointAupDouble;
     }
 
     /// <summary>

@@ -3,28 +3,27 @@ using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Tools;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
     [Flags]
-    public enum VehicleUpgradeBits : uint
+    public enum VehicleUpgradeBits : ulong
     {
-        None = 0u,
-        ReinforcedHull = 1u << 0,
-        EfficientEngine = 1u << 1,
-        PressureCompensator = 1u << 2,
-        EngineOverdrive = 1u << 3,
-        HullArmorLattice = 1u << 4,
-        ThermalShielding = 1u << 5,
-        SonarAmplifier = 1u << 6,
-        ShockMountArray = 1u << 7,
-        BallastOptimizer = 1u << 8,
-        ReactorBypassCoupler = 1u << 9,
-        SilentRunningBaffle = 1u << 10,
-        AbyssalStabilizer = 1u << 11
+        None = 0UL,
+        ReinforcedHull = 1UL << 0,
+        EfficientEngine = 1UL << 1,
+        PressureCompensator = 1UL << 2,
+        EngineOverdrive = 1UL << 3,
+        HullArmorLattice = 1UL << 4,
+        ThermalShielding = 1UL << 5,
+        SonarAmplifier = 1UL << 6,
+        ShockMountArray = 1UL << 7,
+        BallastOptimizer = 1UL << 8,
+        ReactorBypassCoupler = 1UL << 9,
+        SilentRunningBaffle = 1UL << 10,
+        AbyssalStabilizer = 1UL << 11
     }
 
     /// <summary>
@@ -34,6 +33,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Transport/Vehicle Upgrade Module")]
     public sealed class VehicleUpgradeModule : MonoBehaviour
     {
+        private const ulong VisualFlagMask = 0xFFFF000000000000UL;
         private static readonly int _PressureCompensatorHashId = LocHash.Compute("Comp_PressureCompensator");
         private static readonly int _SonarAmplifierHashId = LocHash.Compute("Comp_SonarAmplifier");
         private static readonly int _ThermalShieldingHashId = LocHash.Compute("Comp_ThermalShielding");
@@ -100,42 +100,46 @@ namespace Hecton8.Gameplay
         [Tooltip("Multiplier applied to pressure damage transfer while the pressure compensator package is installed.")]
         [SerializeField, Range(0.1f, 1f)] private float pressureCompensatorDamageScale = 0.7f;
 
-        private uint _runtimeInstalledUpgradeMask;
+        private ulong _runtimeInstalledUpgradeMask;
         private float _permanentSafeDepthPenaltyMeters;
         private uint _signalSourceId;
+        private uint _upgradeSignalFrame;
+        private ulong _cachedCompiledMask = ulong.MaxValue;
+        private float _cachedPenaltyMeters = float.NaN;
+        private VehicleUpgradeCompiledStats _cachedStats;
 
         /// <summary>Combined authored plus runtime-installed upgrade bitmask.</summary>
-        public uint ActiveUpgradeBitmask => (uint)ActiveUpgradeMask64;
+        public uint ActiveUpgradeBitmask => (uint)(ActiveUpgradeMask64 & 0xFFFFFFFFUL);
 
         /// <summary>Combined authored plus runtime-installed upgrade bitmask in SHINOBU_231 64-bit form.</summary>
         public ulong ActiveUpgradeMask64 => ComposeAuthoredBitmask64() | _runtimeInstalledUpgradeMask;
 
         /// <summary>Additional safe-depth margin supplied by installed hull and pressure upgrades.</summary>
-        public float SafeDepthBonusMeters => CompileStats().SafeDepthBonusMeters;
+        public float SafeDepthBonusMeters => GetCompiledStats().SafeDepthBonusMeters;
 
         /// <summary>Permanent safe-depth rating loss accumulated by micro-fracture fatigue.</summary>
         public float PermanentSafeDepthPenaltyMeters => _permanentSafeDepthPenaltyMeters;
 
         /// <summary>Additional transport integrity supplied by installed armor and damping upgrades.</summary>
-        public float MaxIntegrityBonus => CompileStats().MaxIntegrityBonus;
+        public float MaxIntegrityBonus => GetCompiledStats().MaxIntegrityBonus;
 
         /// <summary>Multiplier injected into propulsion acceleration by installed thrust upgrades.</summary>
-        public float ThrustAccelerationMultiplier => CompileStats().ThrustAccelerationMultiplier;
+        public float ThrustAccelerationMultiplier => GetCompiledStats().ThrustAccelerationMultiplier;
 
         /// <summary>Multiplier injected into propulsion speed ceilings by installed drive upgrades.</summary>
-        public float MaxSpeedMultiplier => CompileStats().MaxSpeedMultiplier;
+        public float MaxSpeedMultiplier => GetCompiledStats().MaxSpeedMultiplier;
 
         /// <summary>Suit energy-drain multiplier injected by installed efficiency and stealth upgrades.</summary>
-        public float EnergyDrainScale => CompileStats().EnergyDrainScale;
+        public float EnergyDrainScale => GetCompiledStats().EnergyDrainScale;
 
         /// <summary>Battery or drive-charge drain multiplier injected by installed power-routing upgrades.</summary>
-        public float ChargeDrainScale => CompileStats().ChargeDrainScale;
+        public float ChargeDrainScale => GetCompiledStats().ChargeDrainScale;
 
         /// <summary>Thermal exposure multiplier injected by installed thermal shielding.</summary>
-        public float ThermalExposureScale => CompileStats().ThermalExposureScale;
+        public float ThermalExposureScale => GetCompiledStats().ThermalExposureScale;
 
         /// <summary>Pressure damage-transfer multiplier injected by installed pressure compensation.</summary>
-        public float PressureDamageScale => CompileStats().PressureDamageScale;
+        public float PressureDamageScale => GetCompiledStats().PressureDamageScale;
 
         /// <summary>Returns true when the supplied upgrade flag is active on this transport.</summary>
         public bool HasUpgrade(VehicleUpgradeBits flag)
@@ -165,8 +169,8 @@ namespace Hecton8.Gameplay
             if (bit == VehicleUpgradeBits.None)
                 return false;
 
-            uint bitMask = (uint)bit;
-            if ((_runtimeInstalledUpgradeMask & bitMask) != 0u)
+            ulong bitMask = (ulong)bit;
+            if ((_runtimeInstalledUpgradeMask & bitMask) != 0UL)
                 return false;
 
             _runtimeInstalledUpgradeMask |= bitMask;
@@ -183,8 +187,8 @@ namespace Hecton8.Gameplay
             {
                 SourceId = _signalSourceId,
                 UpgradeMask = ActiveUpgradeBitmask,
-                Frame = unchecked((uint)Time.frameCount),
-                SafeDepthBonusMeters = SafeDepthBonusMeters,
+                Frame = ++_upgradeSignalFrame,
+                SafeDepthBonusMeters = GetCompiledStats().SafeDepthBonusMeters,
                 PermanentSafeDepthPenaltyMeters = _permanentSafeDepthPenaltyMeters,
                 Reason = reason,
                 Flags = 0
@@ -195,16 +199,16 @@ namespace Hecton8.Gameplay
 
         private ulong ComposeAuthoredBitmask64()
         {
-            uint reinforced = (uint)math.select(0, 1, reinforcedHullInstalled);
-            uint efficient = (uint)math.select(0, 1, efficientEngineInstalled);
-            uint mask = ((uint)VehicleUpgradeBits.ReinforcedHull & (0u - reinforced)) |
-                        ((uint)VehicleUpgradeBits.EfficientEngine & (0u - efficient));
+            ulong reinforced = (ulong)math.select(0, 1, reinforcedHullInstalled);
+            ulong efficient = (ulong)math.select(0, 1, efficientEngineInstalled);
+            ulong mask = ((ulong)VehicleUpgradeBits.ReinforcedHull & (0UL - reinforced)) |
+                         ((ulong)VehicleUpgradeBits.EfficientEngine & (0UL - efficient));
             return mask;
         }
 
         private static VehicleUpgradeBits ResolveUpgradeBit(int itemHashId)
         {
-            uint mask =
+            ulong mask =
                 SelectBit(itemHashId, _PressureCompensatorHashId, VehicleUpgradeBits.PressureCompensator) |
                 SelectBit(itemHashId, _SonarAmplifierHashId, VehicleUpgradeBits.SonarAmplifier) |
                 SelectBit(itemHashId, _ThermalShieldingHashId, VehicleUpgradeBits.ThermalShielding) |
@@ -218,20 +222,33 @@ namespace Hecton8.Gameplay
             return (VehicleUpgradeBits)mask;
         }
 
-        private VehicleUpgradeCompiledStats CompileStats()
+        private VehicleUpgradeCompiledStats GetCompiledStats()
         {
             ulong mask = ActiveUpgradeMask64;
-            float reinforced = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.ReinforcedHull);
-            float efficient = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.EfficientEngine);
-            float pressure = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.PressureCompensator);
-            float overdrive = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.EngineOverdrive);
-            float armor = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.HullArmorLattice);
-            float thermal = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.ThermalShielding);
-            float shock = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.ShockMountArray);
-            float ballast = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.BallastOptimizer);
-            float reactor = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.ReactorBypassCoupler);
-            float silent = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.SilentRunningBaffle);
-            float stabilizer = UpgradeMatrixCompiler.Bit01(mask, (ulong)VehicleUpgradeBits.AbyssalStabilizer);
+            float penalty = _permanentSafeDepthPenaltyMeters;
+            if (_cachedCompiledMask != mask || _cachedPenaltyMeters != penalty)
+            {
+                _cachedStats = BuildCompiledStats(mask);
+                _cachedCompiledMask = mask;
+                _cachedPenaltyMeters = penalty;
+            }
+
+            return _cachedStats;
+        }
+
+        private VehicleUpgradeCompiledStats BuildCompiledStats(ulong mask)
+        {
+            float reinforced = Bit01(mask, (ulong)VehicleUpgradeBits.ReinforcedHull);
+            float efficient = Bit01(mask, (ulong)VehicleUpgradeBits.EfficientEngine);
+            float pressure = Bit01(mask, (ulong)VehicleUpgradeBits.PressureCompensator);
+            float overdrive = Bit01(mask, (ulong)VehicleUpgradeBits.EngineOverdrive);
+            float armor = Bit01(mask, (ulong)VehicleUpgradeBits.HullArmorLattice);
+            float thermal = Bit01(mask, (ulong)VehicleUpgradeBits.ThermalShielding);
+            float shock = Bit01(mask, (ulong)VehicleUpgradeBits.ShockMountArray);
+            float ballast = Bit01(mask, (ulong)VehicleUpgradeBits.BallastOptimizer);
+            float reactor = Bit01(mask, (ulong)VehicleUpgradeBits.ReactorBypassCoupler);
+            float silent = Bit01(mask, (ulong)VehicleUpgradeBits.SilentRunningBaffle);
+            float stabilizer = Bit01(mask, (ulong)VehicleUpgradeBits.AbyssalStabilizer);
 
             VehicleUpgradeCompiledStats stats = default;
             stats.SafeDepthBonusMeters =
@@ -259,15 +276,35 @@ namespace Hecton8.Gameplay
                 SelectMultiplier(math.max(0.1f, reactorBypassChargeDrainScale), reactor);
             stats.ThermalExposureScale = SelectMultiplier(math.max(0.1f, thermalShieldingExposureScale), thermal);
             stats.PressureDamageScale = SelectMultiplier(math.max(0.1f, pressureCompensatorDamageScale), pressure);
-            stats.VisualFlags = (uint)((mask & UpgradeMatrixConstants.VisualFlagMask) >> 48);
-            stats.StateHash = UpgradeMatrixCompiler.HashMask(mask, _signalSourceId, 0x56454855u);
+            stats.VisualFlags = (uint)((mask & VisualFlagMask) >> 48);
+            stats.StateHash = HashMask(mask, _signalSourceId, 0x56454855u);
             return stats;
         }
 
-        private static uint SelectBit(int itemHashId, int expectedHashId, VehicleUpgradeBits bit)
+        private static float Bit01(ulong mask, ulong bit)
         {
-            uint selected = (uint)math.select(0, 1, itemHashId == expectedHashId);
-            return (uint)bit & (0u - selected);
+            return math.select(0f, 1f, (mask & bit) != 0UL);
+        }
+
+        private static ulong HashMask(ulong mask, uint entityHash, uint equipmentHash)
+        {
+            ulong hash = 1469598103934665603UL;
+            hash = Mix(hash, mask);
+            hash = Mix(hash, entityHash);
+            hash = Mix(hash, equipmentHash);
+            return hash;
+        }
+
+        private static ulong Mix(ulong hash, ulong value)
+        {
+            hash ^= value + 0x9E3779B97F4A7C15UL + (hash << 6) + (hash >> 2);
+            return hash;
+        }
+
+        private static ulong SelectBit(int itemHashId, int expectedHashId, VehicleUpgradeBits bit)
+        {
+            ulong selected = (ulong)math.select(0, 1, itemHashId == expectedHashId);
+            return (ulong)bit & (0UL - selected);
         }
 
         private static float SelectMultiplier(float multiplier, float enabled01)

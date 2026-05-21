@@ -1,0 +1,53 @@
+{
+  "schema": "hecton8.world_optimization_report.v1",
+  "agent": "SHINOBU_247",
+  "scanner": "Runtime_Spatial_Query_Scanner",
+  "generatedLocal": "2026-05-21T05:50:45.9887230+04:00",
+  "evidenceClass": "STATIC_CLI_SOURCE",
+  "summary": "Runtime Safe-Spawn Checks Eradicated In Requested Scope",
+  "sharedReportPolicy": "Docs/Reports/WORLD_OPTIMIZATION_REPORT.json is preserved when owned by another agent; current shared owner observed as SHINOBU_245.",
+  "scannedFiles": 1586,
+  "requestedScopeFiles": 7,
+  "requestedEnvironmentFindings": 0,
+  "requestedWorldGenerationPathPresent": false,
+  "requestedWorldGenerationFindings": 0,
+  "blockingFindings": 0,
+  "externalRuntimePatternHits": 5,
+  "externalRuntimePatternHitSamples": [
+    {
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 3845,
+      "pattern": "Renderer.bounds",
+      "scope": "external_runtime_scope"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 1847,
+      "pattern": "Bounds.Intersects",
+      "scope": "external_runtime_scope"
+    },
+    {
+      "path": "Assets/_Project/Scripts/ResourceNode.cs",
+      "line": 162,
+      "pattern": "Renderer.bounds",
+      "scope": "external_runtime_scope"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3967,
+      "pattern": "Bounds.Intersects",
+      "scope": "external_runtime_scope"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "line": 3983,
+      "pattern": "Bounds.Intersects",
+      "scope": "external_runtime_scope"
+    }
+  ],
+  "notes": [
+    "Requested Environment scope has no Physics.SphereCast, Physics.CheckBox, Physics.CheckSphere, Physics.CheckCapsule, Renderer.bounds, or Bounds.Intersects hits.",
+    "Requested WorldGeneration path is absent in this workspace scan.",
+    "External runtime pattern hits are not edited by SHINOBU_247 because they are outside the requested Geography Sanity Checker domain boundary."
+  ]
+}

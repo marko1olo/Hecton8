@@ -19,7 +19,7 @@ namespace Hecton8.World.SeedShipAnomaly
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct SeedShipMockAupRebaseJob : IJob
     {
-        [NoAlias] public NativeArray<MockAupRebaseSignal> RebaseSignals;
+        [WriteOnly, NoAlias] public NativeArray<MockAupRebaseSignal> RebaseSignals;
         public uint Frame;
         public uint Seed;
         public uint SectorHash;
@@ -58,11 +58,11 @@ namespace Hecton8.World.SeedShipAnomaly
         [NoAlias] public NativeArray<AnomalyFieldDTO> Field;
         [NoAlias] public NativeArray<AnomalyTuningDTO> Tuning;
         [NoAlias] public NativeArray<AnomalyGlobalScalarsDTO> Globals;
-        [NoAlias] public NativeArray<GlitchCommandDTO> GlitchCommands;
-        [NoAlias] public NativeArray<MockHudSignal> HudSignals;
-        [NoAlias] public NativeArray<AnomalyThermoSourceDTO> ThermoSources;
-        [NoAlias] public NativeArray<MockAupRebaseSignal> RebaseSignals;
-        [NoAlias] public NativeArray<AnomalyTelemetryEntry> Telemetry;
+        [WriteOnly, NoAlias] public NativeArray<GlitchCommandDTO> GlitchCommands;
+        [WriteOnly, NoAlias] public NativeArray<MockHudSignal> HudSignals;
+        [WriteOnly, NoAlias] public NativeArray<AnomalyThermoSourceDTO> ThermoSources;
+        [ReadOnly, NoAlias] public NativeArray<MockAupRebaseSignal> RebaseSignals;
+        [WriteOnly, NoAlias] public NativeArray<AnomalyTelemetryEntry> Telemetry;
         public NativeQueue<RadarJamSignal>.ParallelWriter RadarJamWriter;
         public double3 PlayerAUP;
         public float DeltaSeconds;

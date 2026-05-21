@@ -104,7 +104,7 @@ namespace Hecton8.AI
         private bool TryApplyFoveatedFrozenPredatorWrap(Vector3 cameraPosition, Vector3 cameraForward, float distanceMeters)
         {
             float resolvedDistanceMeters = distanceMeters > 0.0f ? distanceMeters : _foveatedDistanceMeters;
-            if (_isDead || !_utilityBrain.IsActivePredator || resolvedDistanceMeters <= 600.0f)
+            if (_isDead || _utilityBrain.IsActivePredator == 0 || resolvedDistanceMeters <= 600.0f)
                 return false;
 
             Vector3 safeForward = cameraForward.sqrMagnitude > 0.0001f
@@ -124,7 +124,9 @@ namespace Hecton8.AI
 
             Vector3 preservedVelocity = _rb != null ? _rb.linearVelocity : Vector3.zero;
             Vector3 preservedAngularVelocity = _rb != null ? _rb.angularVelocity : Vector3.zero;
-            AbsoluteUniversePosition candidateAup = AbsoluteUniversePosition.FromRuntimePosition(candidate);
+            if (!TryResolveAupFromRuntimeOrigin(candidate, out AbsoluteUniversePosition candidateAup))
+                return false;
+
             ApplyAupPresentationPosition(in candidateAup);
             if (_rb != null)
             {

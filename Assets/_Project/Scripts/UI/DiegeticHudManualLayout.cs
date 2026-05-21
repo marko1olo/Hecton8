@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -238,28 +239,41 @@ namespace Hecton8.UI
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct DiegeticHudLayoutInput
     {
+        [FieldOffset(0)]
         public float Offset;
+        [FieldOffset(4)]
         public float CrossOffset;
+        [FieldOffset(8)]
         public float DepthOffset;
+        [FieldOffset(12)]
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct DiegeticHudLayoutSettings
     {
+        [FieldOffset(0)]
         public byte Axis;
+        [FieldOffset(1)]
+        private byte _pad0;
+        [FieldOffset(2)]
+        private ushort _pad1;
+        [FieldOffset(4)]
         public float StartOffset;
+        [FieldOffset(8)]
         public float ItemExtent;
+        [FieldOffset(12)]
         public float Spacing;
     }
 
-    [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct DiegeticHudLayoutJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<DiegeticHudLayoutInput> Inputs;
-        [WriteOnly] public NativeArray<float3> Outputs;
+        [NoAlias] [ReadOnly] public NativeArray<DiegeticHudLayoutInput> Inputs;
+        [NoAlias] [WriteOnly] public NativeArray<float3> Outputs;
         public DiegeticHudLayoutSettings Settings;
 
         public void Execute(int index)

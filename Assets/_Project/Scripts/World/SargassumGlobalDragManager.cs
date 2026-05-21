@@ -30,11 +30,11 @@ namespace Hecton8.World
 
     /// <summary>
     /// Builds a coarse world-space density field for floating sargassum and serves zero-allocation drag queries.
-    /// Also bakes a density texture used by Crest damping and GPU micro-fauna.
+    /// Also bakes a density texture used by ocean damping facades and GPU micro-fauna.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-104)]
-    public sealed class SargassumGlobalDragManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, ISargassumMassiveDisplacementReceiver, IOriginShiftListener, ISaveable
+    public sealed class SargassumGlobalDragManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, ISargassumMassiveDisplacementReceiver, IOriginShiftListener, ISaveable, IGlobalRegistryHotSwapListener
     {
         private static readonly int _GlobalDriftOffsetId = Shader.PropertyToID("_SargassumGlobalDriftOffset");
         private static readonly int _SinkTextureId = Shader.PropertyToID("_SargassumBuoyancySinkRT");
@@ -63,6 +63,10 @@ namespace Hecton8.World
         private const uint ListenerContextHash = 0x53474C53u;
         private const int DebrisPetrificationTimerCapacity = 128;
         private const int DebrisPetrificationDisableBudgetPerSlowTick = 16;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptDensityBuildAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptRenderStagingAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptSceneTimerAllocator = Allocator.Persistent;
         private const float DebrisPetrificationDelaySeconds = 4f;
         private const float DebrisPetrificationSlowTickSeconds = 0.5f;
         private const int ScavengerBrgMetadataPlaceholderCount = 1;
@@ -72,37 +76,46 @@ namespace Hecton8.World
         private static readonly Quaternion _yawPositiveX = new Quaternion(0f, 0.70710678118f, 0f, 0.70710678118f);
         private static readonly Quaternion _yawNegativeX = new Quaternion(0f, -0.70710678118f, 0f, 0.70710678118f);
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         internal struct SargassumFieldSample
         {
-            public bool HasInfluence;
-            public float SpeedMultiplier;
-            public float DragMultiplier;
-            public float Density01;
-            public Vector3 AnchorWS;
-            public float Entanglement01;
-            public float Window01;
-            public float Occlusion01;
+            [FieldOffset(0)] public byte HasInfluence;
+            [FieldOffset(1)] private byte _pad0;
+            [FieldOffset(2)] private ushort _pad1;
+            [FieldOffset(4)] public float SpeedMultiplier;
+            [FieldOffset(8)] public float DragMultiplier;
+            [FieldOffset(12)] public float Density01;
+            [FieldOffset(16)] public Vector3 AnchorWS;
+            [FieldOffset(28)] public float Entanglement01;
+            [FieldOffset(32)] public float Window01;
+            [FieldOffset(36)] public float Occlusion01;
+            [FieldOffset(40)] private ulong _pad2;
+            [FieldOffset(48)] private ulong _pad3;
+            [FieldOffset(56)] private ulong _pad4;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         public struct EntanglementStrainSignal
         {
-            public int SourceInstanceId;
-            public Vector3 PositionWS;
-            public Vector3 AnchorWS;
-            public float Tension01;
-            public float EscapeIntent01;
-            public float Shake01;
+            [FieldOffset(0)] public int SourceInstanceId;
+            [FieldOffset(4)] public Vector3 PositionWS;
+            [FieldOffset(16)] public Vector3 AnchorWS;
+            [FieldOffset(28)] public float Tension01;
+            [FieldOffset(32)] public float EscapeIntent01;
+            [FieldOffset(36)] public float Shake01;
+            [FieldOffset(40)] private ulong _pad0;
+            [FieldOffset(48)] private ulong _pad1;
+            [FieldOffset(56)] private ulong _pad2;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct MassiveDisplacementSignal
         {
-            public Vector3 PositionWS;
-            public float RadiusWS;
-            public float Duration;
-            public float ExtremePanicRadiusWS;
+            [FieldOffset(0)] public Vector3 PositionWS;
+            [FieldOffset(12)] public float RadiusWS;
+            [FieldOffset(16)] public float Duration;
+            [FieldOffset(20)] public float ExtremePanicRadiusWS;
+            [FieldOffset(24)] private ulong _pad0;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -114,7 +127,7 @@ namespace Hecton8.World
             [FieldOffset(12)] private uint _pad0;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Size = 128)]
         private struct NestedAttachmentState
         {
             [FieldOffset(0)] public Vector3 SampleSpaceAnchorWS;
@@ -129,6 +142,12 @@ namespace Hecton8.World
             [FieldOffset(69)] private byte _pad0;
             [FieldOffset(70)] private ushort _pad1;
             [FieldOffset(72)] private ulong _pad2;
+            [FieldOffset(80)] private ulong _pad3;
+            [FieldOffset(88)] private ulong _pad4;
+            [FieldOffset(96)] private ulong _pad5;
+            [FieldOffset(104)] private ulong _pad6;
+            [FieldOffset(112)] private ulong _pad7;
+            [FieldOffset(120)] private ulong _pad8;
         }
 
         private enum DisruptionZoneMode : byte
@@ -164,7 +183,6 @@ namespace Hecton8.World
             [FieldOffset(8)] private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
         private struct ScavengerHostState
         {
             public SargassumCollapseChunk Chunk;
@@ -283,9 +301,10 @@ namespace Hecton8.World
             public ShadowCastingMode ShadowCastingMode;
         }
 
-        private static readonly RegistryBucket<ISargassumGlobalDragEventListener> _listeners = new RegistryBucket<ISargassumGlobalDragEventListener>(EventListenerCapacity);
-        private static readonly ISargassumGlobalDragEventListener[] _deferredRegisterListeners = new ISargassumGlobalDragEventListener[EventListenerCapacity];
-        private static readonly ISargassumGlobalDragEventListener[] _deferredUnregisterListeners = new ISargassumGlobalDragEventListener[EventListenerCapacity];
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[EventListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - active sargassum drag event listeners - owner: SargassumGlobalDragManager
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[EventListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - deferred listener registers during event dispatch - owner: SargassumGlobalDragManager
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[EventListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - deferred listener unregisters during event dispatch - owner: SargassumGlobalDragManager
+        private static int _listenerCount;
         private static NativeQueue<EntanglementStrainSignal> _pendingEntanglementStrain;
         private static NativeQueue<EntanglementStrainSignal> _nextFrameEntanglementStrain;
         private static NativeQueue<MassiveDisplacementSignal> _pendingMassiveDisplacement;
@@ -364,8 +383,10 @@ namespace Hecton8.World
             _nextFrameEntanglementStrainCount = 0;
             _pendingMassiveDisplacementCount = 0;
             _nextFrameMassiveDisplacementCount = 0;
-            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
-            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
+            for (int i = 0; i < _deferredRegisterCount; i++)
+                _deferredRegisterListeners[i].Clear();
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+                _deferredUnregisterListeners[i].Clear();
             _deferredRegisterCount = 0;
             _deferredUnregisterCount = 0;
             _droppedEntanglementStrainCount = 0;
@@ -377,7 +398,9 @@ namespace Hecton8.World
             _lastListenerRejectedTelemetryFrame = -1;
             _lastListenerExceptionTelemetryFrame = -1;
             _isDispatchingEvents = false;
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+            _listenerCount = 0;
         }
 
         [Header("── Runtime Wiring ──────────────────")]
@@ -441,7 +464,7 @@ namespace Hecton8.World
 
         [Header("── Density Texture ──────────────────")]
         [SerializeField, Range(64, 256)]
-        [Tooltip("Resolution of the baked density texture consumed by Crest damping and GPU micro-fauna.")]
+        [Tooltip("Resolution of the baked density texture consumed by ocean damping facades and GPU micro-fauna.")]
         private int densityTextureResolution = DefaultDensityTextureResolution;
 
         [SerializeField, Min(0f)]
@@ -783,6 +806,7 @@ namespace Hecton8.World
         private Mesh _fallbackScavengerMesh;
         private Material _fallbackScavengerMaterial;
         private Shader _fallbackLitShader;
+        private SargassumCutManager _cutManager;
         private Bounds _scavengerDrawBounds;
         private Bounds _registeredScavengerDrawBounds;
         private bool _scavengerDrawBoundsRegistered;
@@ -790,6 +814,7 @@ namespace Hecton8.World
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
+        private bool _registeredHotSwap;
         private bool _saveRegistered;
         private int _editorValidateDepth;
         private int _cachedRenderLayer;
@@ -844,10 +869,10 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!_listeners.TryUnregister(listener))
+            if (!TryUnregisterImmediate(listener))
                 return;
 
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 DropQueuedEvents();
         }
 
@@ -862,7 +887,7 @@ namespace Hecton8.World
         public int FieldRevision => _fieldRevision;
 
         /// <summary>
-        /// Baked density texture consumed by Crest damping and GPU micro-fauna.
+        /// Baked density texture consumed by ocean damping facades and GPU micro-fauna.
         /// </summary>
         public Texture2D DensityFieldTexture => _densityFieldTexture;
 
@@ -897,7 +922,7 @@ namespace Hecton8.World
         /// </summary>
         public static void RaiseEntanglementStrain(EntanglementStrainSignal signal)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureEventQueues();
@@ -925,7 +950,7 @@ namespace Hecton8.World
         /// <param name="signal">Displacement payload.</param>
         public static void RaiseMassiveDisplacement(MassiveDisplacementSignal signal)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureEventQueues();
@@ -956,7 +981,7 @@ namespace Hecton8.World
             _isDispatchingEvents = true;
             try
             {
-                if (_listeners.Count <= 0)
+                if (_listenerCount <= 0)
                 {
                     DropQueuedEvents();
                     completed = true;
@@ -984,7 +1009,7 @@ namespace Hecton8.World
         {
             if (!_pendingEntanglementStrain.IsCreated)
             {
-                _pendingEntanglementStrain = new NativeQueue<EntanglementStrainSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntanglementStrainSignal>[16] - sargassum strain event lane flushed by SystemDispatcher - owner: SargassumGlobalDragManager
+                _pendingEntanglementStrain = new NativeQueue<EntanglementStrainSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EntanglementStrainSignal>[16] - sargassum strain event lane flushed by SystemDispatcher - owner: SargassumGlobalDragManager
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEntanglementStrain,
                     EntanglementStrainEventCapacity,
@@ -996,7 +1021,7 @@ namespace Hecton8.World
 
             if (!_nextFrameEntanglementStrain.IsCreated)
             {
-                _nextFrameEntanglementStrain = new NativeQueue<EntanglementStrainSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntanglementStrainSignal>[16] - next-frame sargassum strain lane - owner: SargassumGlobalDragManager
+                _nextFrameEntanglementStrain = new NativeQueue<EntanglementStrainSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EntanglementStrainSignal>[16] - next-frame sargassum strain lane - owner: SargassumGlobalDragManager
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEntanglementStrain,
                     EntanglementStrainEventCapacity,
@@ -1008,7 +1033,7 @@ namespace Hecton8.World
 
             if (!_pendingMassiveDisplacement.IsCreated)
             {
-                _pendingMassiveDisplacement = new NativeQueue<MassiveDisplacementSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<MassiveDisplacementSignal>[16] - sargassum displacement event lane flushed by SystemDispatcher - owner: SargassumGlobalDragManager
+                _pendingMassiveDisplacement = new NativeQueue<MassiveDisplacementSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MassiveDisplacementSignal>[16] - sargassum displacement event lane flushed by SystemDispatcher - owner: SargassumGlobalDragManager
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingMassiveDisplacement,
                     MassiveDisplacementEventCapacity,
@@ -1020,7 +1045,7 @@ namespace Hecton8.World
 
             if (!_nextFrameMassiveDisplacement.IsCreated)
             {
-                _nextFrameMassiveDisplacement = new NativeQueue<MassiveDisplacementSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<MassiveDisplacementSignal>[16] - next-frame sargassum displacement lane - owner: SargassumGlobalDragManager
+                _nextFrameMassiveDisplacement = new NativeQueue<MassiveDisplacementSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MassiveDisplacementSignal>[16] - next-frame sargassum displacement lane - owner: SargassumGlobalDragManager
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameMassiveDisplacement,
                     MassiveDisplacementEventCapacity,
@@ -1064,11 +1089,10 @@ namespace Hecton8.World
                 if (_pendingEntanglementStrainCount > 0)
                     _pendingEntanglementStrainCount--;
 
-                ISargassumGlobalDragEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
+                int count = _listenerCount;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    ISargassumGlobalDragEventListener listener = rawArray[i];
+                    ISargassumGlobalDragEventListener listener = _listeners[i].Listener;
                     if (listener == null || IsDeferredUnregisterPending(listener))
                         continue;
 
@@ -1101,11 +1125,10 @@ namespace Hecton8.World
                 if (_pendingMassiveDisplacementCount > 0)
                     _pendingMassiveDisplacementCount--;
 
-                ISargassumGlobalDragEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
+                int count = _listenerCount;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    ISargassumGlobalDragEventListener listener = rawArray[i];
+                    ISargassumGlobalDragEventListener listener = _listeners[i].Listener;
                     if (listener == null || IsDeferredUnregisterPending(listener))
                         continue;
 
@@ -1198,7 +1221,7 @@ namespace Hecton8.World
 
         private static void QueueDeferredRegister(ISargassumGlobalDragEventListener listener)
         {
-            if (_listeners.Contains(listener))
+            if (ContainsImmediate(listener))
             {
                 CancelDeferredUnregister(listener);
                 return;
@@ -1213,7 +1236,8 @@ namespace Hecton8.World
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount].Listener = listener;
+            _deferredRegisterCount++;
         }
 
         private static void QueueDeferredUnregister(ISargassumGlobalDragEventListener listener)
@@ -1221,7 +1245,7 @@ namespace Hecton8.World
             if (CancelDeferredRegister(listener))
                 return;
 
-            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+            if (!ContainsImmediate(listener) || IsDeferredUnregisterPending(listener))
                 return;
 
             if (_deferredUnregisterCount >= EventListenerCapacity)
@@ -1230,19 +1254,20 @@ namespace Hecton8.World
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount].Listener = listener;
+            _deferredUnregisterCount++;
         }
 
         private static bool CancelDeferredRegister(ISargassumGlobalDragEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -1253,12 +1278,12 @@ namespace Hecton8.World
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -1267,7 +1292,7 @@ namespace Hecton8.World
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -1278,7 +1303,7 @@ namespace Hecton8.World
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -1289,35 +1314,79 @@ namespace Hecton8.World
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                ISargassumGlobalDragEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                ISargassumGlobalDragEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
-                    _listeners.TryUnregister(listener);
+                    TryUnregisterImmediate(listener);
             }
 
             _deferredUnregisterCount = 0;
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                ISargassumGlobalDragEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                ISargassumGlobalDragEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }
 
             _deferredRegisterCount = 0;
 
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 DropQueuedEvents();
         }
 
         private static void RegisterImmediate(ISargassumGlobalDragEventListener listener)
         {
-            if (_listeners.Contains(listener))
+            if (ContainsImmediate(listener))
                 return;
 
-            if (!_listeners.TryRegister(listener))
+            if (_listenerCount >= EventListenerCapacity)
+            {
                 ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _listeners[_listenerCount].Listener = listener;
+            _listenerCount++;
+        }
+
+        private static bool TryUnregisterImmediate(ISargassumGlobalDragEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = _listenerCount - 1;
+                _listeners[i] = _listeners[lastIndex];
+                _listeners[lastIndex].Clear();
+                _listenerCount = lastIndex;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsImmediate(ISargassumGlobalDragEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private struct ListenerSlot
+        {
+            public ISargassumGlobalDragEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
         }
 
         private static void ReportEntanglementStrainOverflow()
@@ -1436,6 +1505,7 @@ namespace Hecton8.World
             }
 
             ResolveActiveNestingPrototypes();
+            RefreshColdRegistryDependencies();
             EnsureDisruptionStorage();
             EnsureScavengerStorage();
             EnsureScavengerRenderResources();
@@ -1448,6 +1518,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            _cutManager = null;
             TryUnregisterService();
             TryUnregister();
             ClearField();
@@ -1656,7 +1727,7 @@ namespace Hecton8.World
                 massiveDisplacementFadeDuration,
                 DisruptionZoneMode.MassiveDisplacement);
 
-            SargassumCutManager cutManager = GlobalRegistry.SargassumCut;
+            SargassumCutManager cutManager = _cutManager;
             if (cutManager != null)
                 cutManager.RegisterExternalCut(position, clampedRadius, massiveDisplacementCutStrength, Vector3.up, 1.15f);
 
@@ -1781,7 +1852,7 @@ namespace Hecton8.World
             sample.Window01 = EvaluateCanopyWindow01(sampledPositionWS);
             sample.Occlusion01 = Mathf.Clamp01(sample.Density01 * (1f - sample.Window01 * 0.78f));
             sample.Entanglement01 = ResolveEntanglement01(sample.Density01, currentSpeed);
-            sample.HasInfluence = true;
+            sample.HasInfluence = 1;
             return true;
         }
 
@@ -2071,7 +2142,7 @@ namespace Hecton8.World
             }
 
             // COLD ALLOC: NativeArray<DensitySourceData>[capacity] - transient Burst source staging for canopy density rebuilds - owner: SargassumGlobalDragManager
-            _densityBuildSources = new NativeArray<DensitySourceData>(safeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _densityBuildSources = new NativeArray<DensitySourceData>(safeCount, DataVaultExemptDensityBuildAllocator, NativeArrayOptions.UninitializedMemory);
             NativeMemorySentinel.RegisterNativeArray(
                 _densityBuildSources,
                 nameof(SargassumGlobalDragManager),
@@ -2094,7 +2165,7 @@ namespace Hecton8.World
             }
 
             // COLD ALLOC: NativeParallelMultiHashMap<long,DensityContributionData>[capacity] - Burst-built cell contribution fanout before dictionary compaction - owner: SargassumGlobalDragManager
-            _densityContributions = new NativeParallelMultiHashMap<long, DensityContributionData>(safeCount, Allocator.Persistent);
+            _densityContributions = new NativeParallelMultiHashMap<long, DensityContributionData>(safeCount, DataVaultExemptDensityBuildAllocator);
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(
                 _densityContributions,
                 nameof(SargassumGlobalDragManager),
@@ -2236,7 +2307,7 @@ namespace Hecton8.World
 
         private void EvaluateBuoyancyCollapseZones()
         {
-            SargassumCutManager cutManager = GlobalRegistry.SargassumCut;
+            SargassumCutManager cutManager = _cutManager;
             if (cutManager == null || _densityCells.Count == 0)
                 return;
 
@@ -2962,10 +3033,11 @@ namespace Hecton8.World
                 if (site.RemainingTime <= 0f)
                     continue;
 
-                snapshot[writeIndex++] = QuantizeExternalSite(site);
+                if (TryQuantizeExternalSite(site, out ExternalScavengerSiteDTO dto))
+                    snapshot[writeIndex++] = dto;
             }
 
-            data.externalScavengerSites = snapshot;
+            data.externalScavengerSites = writeIndex > 0 ? snapshot : null;
         }
 
         public void LoadFromSaveData(SaveData data)
@@ -2995,9 +3067,12 @@ namespace Hecton8.World
             _activeExternalScavengerSiteCount = writeIndex;
         }
 
-        private static ExternalScavengerSiteDTO QuantizeExternalSite(ExternalScavengerSiteState site)
+        private static bool TryQuantizeExternalSite(ExternalScavengerSiteState site, out ExternalScavengerSiteDTO dto)
         {
-            AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(site.AnchorWS);
+            dto = default;
+            if (!TryResolveRuntimeAup(site.AnchorWS, out AbsoluteUniversePosition anchorAup))
+                return false;
+
             int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in anchorAup, ExternalSiteChunkSizeMeters);
             double3 absolutePosition = anchorAup.ToAbsoluteDouble3();
             double3 chunkCenter = new double3(
@@ -3005,7 +3080,7 @@ namespace Hecton8.World
                 (chunkId.y * (double)ExternalSiteChunkSizeMeters) + (ExternalSiteChunkSizeMeters * 0.5d),
                 (chunkId.z * (double)ExternalSiteChunkSizeMeters) + (ExternalSiteChunkSizeMeters * 0.5d));
 
-            return new ExternalScavengerSiteDTO
+            dto = new ExternalScavengerSiteDTO
             {
                 chunkX = chunkId.x,
                 chunkY = chunkId.y,
@@ -3017,6 +3092,25 @@ namespace Hecton8.World
                 remainingTime = math.max(0f, site.RemainingTime),
                 seed = site.Seed
             };
+            return dto.IsValid();
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static ExternalScavengerSiteState DequantizeExternalSite(ExternalScavengerSiteDTO dto)
@@ -3070,7 +3164,7 @@ namespace Hecton8.World
             _scavengerHosts = new ScavengerHostState[hostCapacity];
             // COLD ALLOC: ExternalScavengerSiteState[externalSiteCapacity] - corpse/carcass scavenger targets without live chunk owners - owner: SargassumGlobalDragManager
             _externalScavengerSites = new ExternalScavengerSiteState[externalSiteCapacity];
-            _scavengerMatricesNative = new NativeArray<Matrix4x4>(instanceCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[instanceCapacity] - Burst-readable scavenger BRG culling payload mirror - owner: SargassumGlobalDragManager
+            _scavengerMatricesNative = new NativeArray<Matrix4x4>(instanceCapacity, DataVaultExemptRenderStagingAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[instanceCapacity] - Burst-readable scavenger BRG culling payload mirror - owner: SargassumGlobalDragManager
             NativeMemorySentinel.RegisterNativeArray(_scavengerMatricesNative, nameof(SargassumGlobalDragManager), nameof(_scavengerMatricesNative), NativeAllocationLifetime.Session);
             _scavengerInstanceCapacity = instanceCapacity;
         }
@@ -3107,7 +3201,7 @@ namespace Hecton8.World
                     userContext = IntPtr.Zero
                 });
 
-                _scavengerBatchMetadata = new NativeArray<MetadataValue>(ScavengerBrgMetadataPlaceholderCount, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for scavenger scatter - owner: SargassumGlobalDragManager
+                _scavengerBatchMetadata = new NativeArray<MetadataValue>(ScavengerBrgMetadataPlaceholderCount, DataVaultExemptRenderStagingAllocator); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for scavenger scatter - owner: SargassumGlobalDragManager
                 NativeMemorySentinel.RegisterNativeArray(_scavengerBatchMetadata, nameof(SargassumGlobalDragManager), nameof(_scavengerBatchMetadata), NativeAllocationLifetime.Session);
                 _scavengerBatchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for scavenger scatter - owner: SargassumGlobalDragManager
                 _scavengerBatchId = _scavengerBatchRendererGroup.AddBatch(_scavengerBatchMetadata, _scavengerBatchHandleBuffer.bufferHandle);
@@ -3619,7 +3713,7 @@ namespace Hecton8.World
             for (int i = 0; i < _nestedMatrixCounts.Length; i++)
                 _nestedMatrixCounts[i] = 0;
 
-            SargassumCutManager cutManager = GlobalRegistry.SargassumCut;
+            SargassumCutManager cutManager = _cutManager;
             bool boundsInitialized = false;
             Vector3 boundsMin = default;
             Vector3 boundsMax = default;
@@ -3769,7 +3863,13 @@ namespace Hecton8.World
                 }
             }
 
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
+                return;
+
+            if (!_registeredHotSwap)
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredTick)
@@ -3835,6 +3935,26 @@ namespace Hecton8.World
                 Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
                 _saveRegistered = false;
             }
+
+            if (_registeredHotSwap)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _registeredHotSwap = false;
+            }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.SargassumCutRuntime)
+                _cutManager = currentService as SargassumCutManager;
+        }
+
+        private void RefreshColdRegistryDependencies()
+        {
+            _cutManager = GlobalRegistry.SargassumCut;
         }
 
         private static float ExtractUniformScale(Matrix4x4 matrix)
@@ -4527,7 +4647,7 @@ namespace Hecton8.World
             if (_debrisPetrificationTimers.IsCreated)
                 return true;
 
-            _debrisPetrificationTimers = new NativeQueue<DebrisTimer>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DebrisTimer>[128] - slow-tick debris petrification timers - owner: SargassumGlobalDragManager
+            _debrisPetrificationTimers = new NativeQueue<DebrisTimer>(DataVaultExemptSceneTimerAllocator); // COLD ALLOC: NativeQueue<DebrisTimer>[128] - slow-tick debris petrification timers - owner: SargassumGlobalDragManager
             NativeMemorySentinel.RegisterNativeQueue(
                 _debrisPetrificationTimers,
                 DebrisPetrificationTimerCapacity,

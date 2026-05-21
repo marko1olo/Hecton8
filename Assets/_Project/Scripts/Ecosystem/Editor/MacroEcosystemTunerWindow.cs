@@ -81,7 +81,7 @@ namespace Hecton8.Editor
 
         private void RefreshSlidersFromVault()
         {
-            if (!TryGetTuning(out MacroEcosystemTuningDTO tuning, out _))
+            if (!TryReadTuning(out MacroEcosystemTuningDTO tuning))
                 return;
 
             _birthRate.SetValueWithoutNotify(tuning.BaseBirthRate);
@@ -107,36 +107,56 @@ namespace Hecton8.Editor
 
         private void MutateTuning(float birthRate, float predationRate, float starvationRate)
         {
-            if (!TryGetTuning(out MacroEcosystemTuningDTO tuning, out VaultBufferHandle<MacroEcosystemTuningDTO> handle))
+            if (!TryOpenTuningView(out NativeArray<MacroEcosystemTuningDTO> buffer))
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            ref MacroEcosystemTuningDTO slot = ref handle.GetElementAsRef(vault, 0);
+            MacroEcosystemTuningDTO tuning = buffer[0];
             tuning.BaseBirthRate = math.max(0f, birthRate);
             tuning.PredationRate = math.max(0f, predationRate);
             tuning.PredatorStarvationRate = math.max(0f, starvationRate);
-            slot = MacroEcosystemTuningDTO.Sanitize(tuning);
+            buffer[0] = MacroEcosystemTuningDTO.Sanitize(tuning);
             _status.text = "Tuning written to DataVault.";
         }
 
-        private static bool TryGetTuning(out MacroEcosystemTuningDTO tuning, out VaultBufferHandle<MacroEcosystemTuningDTO> handle)
+        private static bool TryReadTuning(out MacroEcosystemTuningDTO tuning)
         {
             tuning = default;
-            handle = default;
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuMacroEcosystemTuning, out handle) ||
-                !handle.IsCreated)
+            if (!TryReadVaultView(
+                    BufferID.ShinobuMacroEcosystemTuning,
+                    out NativeArray<MacroEcosystemTuningDTO> buffer))
             {
                 return false;
             }
 
-            NativeArray<MacroEcosystemTuningDTO> buffer = handle.Resolve(vault);
-            if (!buffer.IsCreated || buffer.Length <= 0)
-                return false;
-
             tuning = buffer[0];
             return true;
+        }
+
+        private static bool TryOpenTuningView(out NativeArray<MacroEcosystemTuningDTO> buffer)
+        {
+            return TryOpenVaultView(BufferID.ShinobuMacroEcosystemTuning, out buffer);
+        }
+
+        private static bool TryOpenVaultView<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length > 0;
+        }
+
+        private static bool TryReadVaultView<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length > 0;
         }
     }
 
@@ -149,10 +169,7 @@ namespace Hecton8.Editor
 
         private void OnGenerateVisualContent(MeshGenerationContext context)
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null ||
-                !vault.TryGetBuffer<MacroEcosystemTelemetryEntry>(BufferID.ShinobuMacroEcosystemTelemetryRing, out NativeArray<MacroEcosystemTelemetryEntry> telemetry) ||
-                !telemetry.IsCreated ||
+            if (!TryReadTelemetry(out NativeArray<MacroEcosystemTelemetryEntry> telemetry) ||
                 telemetry.Length <= 1)
             {
                 return;
@@ -202,6 +219,18 @@ namespace Hecton8.Editor
                     painter.LineTo(new Vector2(x, y));
             }
             painter.Stroke();
+        }
+
+        private static bool TryReadTelemetry(out NativeArray<MacroEcosystemTelemetryEntry> telemetry)
+        {
+            telemetry = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(
+                       BufferID.ShinobuMacroEcosystemTelemetryRing,
+                       out VaultGenerationHandle<MacroEcosystemTelemetryEntry> handle) &&
+                   vault.TryReadHandle(in handle, out telemetry) &&
+                   telemetry.IsCreated;
         }
     }
 }

@@ -177,18 +177,33 @@ namespace Hecton8.Core.Data
         }
 
         /// <summary>
-        /// Returns a direct readonly reference into the mapped binary. Missing hashes return a zero static record.
+        /// Fetches a direct readonly reference into the mapped binary. Missing hashes return a zero static record.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ref readonly T GetRecord<T>(uint hash) where T : unmanaged
+        public ref readonly T FetchRecord<T>(uint hash) where T : unmanaged
+        {
+            return ref FetchRecordInternal<T>(hash, false);
+        }
+
+        /// <summary>
+        /// Tracks a record lookup and explicitly records owner-phase diagnostics.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref readonly T TrackRecordLookup<T>(uint hash) where T : unmanaged
+        {
+            return ref FetchRecordInternal<T>(hash, true);
+        }
+
+        private ref readonly T FetchRecordInternal<T>(uint hash, bool recordTelemetry) where T : unmanaged
         {
             if (_basePointer == null || !_btreeAvailable || _lookupPointer == null)
             {
-                RecordTelemetry(StateMissHash, ErrorMissingHash, hash, 0L);
+                if (recordTelemetry)
+                    RecordTelemetry(StateMissHash, ErrorMissingHash, hash, 0L);
                 return ref MissingRecord<T>.Value;
             }
 
-            long searchStart = System.Diagnostics.Stopwatch.GetTimestamp();
+            long searchStart = recordTelemetry ? System.Diagnostics.Stopwatch.GetTimestamp() : 0L;
             bool found = H8CacheBTree.TryFindValue(
                 _basePointer,
                 _btreeOffset,
@@ -200,28 +215,34 @@ namespace Hecton8.Core.Data
                 out uint depth,
                 out uint keysProcessed,
                 out uint prefetchTouchCount);
-            long elapsedNs = ToNanoseconds(System.Diagnostics.Stopwatch.GetTimestamp() - searchStart);
-            _lastSearchComputeTimeNs = elapsedNs <= 0L
-                ? 0u
-                : elapsedNs >= uint.MaxValue
-                    ? uint.MaxValue
-                    : (uint)elapsedNs;
-            if (_lastSearchComputeTimeNs > H8CacheBTree.BTreeSlowBatchThresholdNs)
-                DumpBTreeTelemetry();
+            if (recordTelemetry)
+            {
+                long elapsedNs = ToNanoseconds(System.Diagnostics.Stopwatch.GetTimestamp() - searchStart);
+                _lastSearchComputeTimeNs = elapsedNs <= 0L
+                    ? 0u
+                    : elapsedNs >= uint.MaxValue
+                        ? uint.MaxValue
+                        : (uint)elapsedNs;
+                if (_lastSearchComputeTimeNs > H8CacheBTree.BTreeSlowBatchThresholdNs)
+                    DumpBTreeTelemetry();
 
-            _lastTreeDepth = depth;
-            _lastTreeKeysProcessed = keysProcessed;
-            _lastPrefetchTouchCount = prefetchTouchCount;
+                _lastTreeDepth = depth;
+                _lastTreeKeysProcessed = keysProcessed;
+                _lastPrefetchTouchCount = prefetchTouchCount;
+            }
+
             if (!found || lookupIndex >= _header.LookupCount)
             {
-                RecordTelemetry(StateMissHash, ErrorMissingHash, hash, 0L);
+                if (recordTelemetry)
+                    RecordTelemetry(StateMissHash, ErrorMissingHash, hash, 0L);
                 return ref MissingRecord<T>.Value;
             }
 
             H8StaticDataLookupEntry lookupEntry = UnsafeUtility.ReadArrayElement<H8StaticDataLookupEntry>(_lookupPointer, (int)lookupIndex);
             if (lookupEntry.Hash != hash)
             {
-                RecordTelemetry(StateMissHash, ErrorMissingHash, hash, lookupEntry.Offset);
+                if (recordTelemetry)
+                    RecordTelemetry(StateMissHash, ErrorMissingHash, hash, lookupEntry.Offset);
                 return ref MissingRecord<T>.Value;
             }
 
@@ -231,14 +252,16 @@ namespace Hecton8.Core.Data
             ushort expectedRecordType = RecordContract<T>.RecordType;
             if (expectedRecordType == 0 || actualRecordType != expectedRecordType)
             {
-                RecordTelemetry(StateErrorHash, ErrorTypeHash, hash, offset);
+                if (recordTelemetry)
+                    RecordTelemetry(StateErrorHash, ErrorTypeHash, hash, offset);
                 return ref MissingRecord<T>.Value;
             }
 
             int size = RecordContract<T>.SizeBytes;
             if (offset < 0L || offset > _mappedBytes - size)
             {
-                RecordTelemetry(StateErrorHash, ErrorMissingHash, hash, offset);
+                if (recordTelemetry)
+                    RecordTelemetry(StateErrorHash, ErrorMissingHash, hash, offset);
                 return ref MissingRecord<T>.Value;
             }
 
@@ -260,8 +283,7 @@ namespace Hecton8.Core.Data
 
         public void DumpBlackBox(string path = null)
         {
-            if (!EnsureBlackBox() ||
-                !TryResolveBlackBox(out NativeArray<H8StaticDataTelemetryEntry> ring, out NativeArray<int> cursor))
+            if (!TryResolveBlackBox(out NativeArray<H8StaticDataTelemetryEntry> ring, out NativeArray<int> cursor))
             {
                 return;
             }
@@ -280,8 +302,7 @@ namespace Hecton8.Core.Data
 
         public void DumpBTreeTelemetry(string path = null)
         {
-            if (!EnsureBTreeTelemetry() ||
-                !TryResolveBTreeTelemetry(
+            if (!TryResolveBTreeTelemetry(
                     out NativeArray<BTreeTelemetryEntry> ring,
                     out NativeArray<int> cursor,
                     out _))
@@ -642,8 +663,7 @@ namespace Hecton8.Core.Data
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void RecordTelemetry(uint stateHash, uint errorHash, uint requestedHash, long offset)
         {
-            if (!EnsureBlackBox() ||
-                !TryResolveBlackBox(out NativeArray<H8StaticDataTelemetryEntry> ring, out NativeArray<int> cursor))
+            if (!TryResolveBlackBox(out NativeArray<H8StaticDataTelemetryEntry> ring, out NativeArray<int> cursor))
             {
                 return;
             }
@@ -675,8 +695,7 @@ namespace Hecton8.Core.Data
 
         private void RecordBTreeTelemetry(bool found, uint errorHash, uint requestedHash, long offset)
         {
-            if (!EnsureBTreeTelemetry() ||
-                !TryResolveBTreeTelemetry(
+            if (!TryResolveBTreeTelemetry(
                     out NativeArray<BTreeTelemetryEntry> ring,
                     out NativeArray<int> cursor,
                     out NativeArray<BTreeTelemetryAccumulatorDTO> accumulatorBuffer))

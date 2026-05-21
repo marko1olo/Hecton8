@@ -93,8 +93,6 @@ namespace Hecton8.Gameplay.Loot
 
         private int Capacity => math.clamp(maxLootEntities, 1, LootMagnetConstants.MaxEntitiesHardCap);
 
-        private bool IsLowTier => _scalabilityTier == 0;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetBootstrapState()
         {
@@ -175,14 +173,14 @@ namespace Hecton8.Gameplay.Loot
         /// <inheritdoc />
         public void FastTick(float dt)
         {
-            if (IsLowTier || _pullScheduled || _activeCount <= 0 || _inventory == null)
+            if (_pullScheduled || _activeCount <= 0 || _inventory == null)
                 return;
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
             if (TryResolveVaultViews(out LootMagnetVaultViews views, Capacity, allowAllocate: true))
-                SchedulePull(dt, playerAup, lowTierMode: false, in views);
+                SchedulePull(dt, playerAup, in views);
         }
 
         /// <inheritdoc />
@@ -199,11 +197,6 @@ namespace Hecton8.Gameplay.Loot
                 return;
 
             RefreshPickupVaultFromRegistry(views);
-            if (!IsLowTier || _pullScheduled || _activeCount <= 0)
-                return;
-
-            if (TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
-                SchedulePull(0.1f, playerAup, lowTierMode: true, in views);
         }
 
         /// <inheritdoc />
@@ -405,7 +398,7 @@ namespace Hecton8.Gameplay.Loot
                 return false;
             }
 
-            if (!views.IsCreated ||
+            if (!LootMagnetVaultViews.IsCreated(in views) ||
                 views.Telemetry.Length < LootMagnetConstants.TelemetryFrameCount)
             {
                 _dependencyTelemetryFlags |= TelemetryVaultUnavailableFlag;
@@ -450,18 +443,20 @@ namespace Hecton8.Gameplay.Loot
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            VaultBufferHandle<T> handle = allowAllocate
-                ? vault.GetBufferHandle<T>(
+            VaultGenerationHandle<T> handle = allowAllocate
+                ? vault.GetGenerationHandle<T>(
                     bufferId,
                     requiredLength,
                     SystemID.GameplayLoot,
                     NativeArrayOptions.ClearMemory)
                 : default;
-            if (!allowAllocate && !vault.TryGetBufferHandle(bufferId, out handle))
+            if (!allowAllocate && !vault.TryGetGenerationHandle(bufferId, out handle))
                 return false;
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated && buffer.Length >= requiredLength;
+            return IsVaultHandleCreated(in handle) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
 
         private static bool ExistingVaultViewsCover(in LootMagnetVaultViews views, int requiredCapacity)
@@ -477,7 +472,7 @@ namespace Hecton8.Gameplay.Loot
 
         private int ResolveWritableCapacity(in LootMagnetVaultViews views)
         {
-            if (!views.IsCreated ||
+            if (!LootMagnetVaultViews.IsCreated(in views) ||
                 _pickupRefs == null ||
                 _pickupEntityIds == null)
             {
@@ -520,7 +515,7 @@ namespace Hecton8.Gameplay.Loot
                 return;
 
             _registryTelemetryFlags = 0u;
-            if (!views.IsCreated || _pickupRefs == null || _pickupEntityIds == null)
+            if (!LootMagnetVaultViews.IsCreated(in views) || _pickupRefs == null || _pickupEntityIds == null)
             {
                 ClearRuntimeVaultState();
                 return;
@@ -646,7 +641,7 @@ namespace Hecton8.Gameplay.Loot
             return false;
         }
 
-        private void SchedulePull(float dt, AbsoluteUniversePosition playerAup, bool lowTierMode, in LootMagnetVaultViews views)
+        private void SchedulePull(float dt, AbsoluteUniversePosition playerAup, in LootMagnetVaultViews views)
         {
             int scheduledCapacity = ResolveWritableCapacity(in views);
             int count = math.min(_activeCount, scheduledCapacity);
@@ -704,7 +699,6 @@ namespace Hecton8.Gameplay.Loot
                 PullStrength = safePullStrength,
                 MaxVelocityMetersPerSecond = safeMaxVelocity,
                 Frame = _frameCounter,
-                LowTierMode = lowTierMode ? (byte)1 : (byte)0,
                 EntityAups = views.EntityAups,
                 EntityFlags = views.EntityFlags,
                 EntityVelocities = views.EntityVelocities,
@@ -781,7 +775,7 @@ namespace Hecton8.Gameplay.Loot
             if (!_vaultBuffersLocked)
                 return;
 
-            IDataVault vault = _vault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _vault;
             if (vault != null)
             {
                 vault.TryUnlockBuffer(BufferID.EntityLootMagnetSignalEvents, SystemID.GameplayLoot);
@@ -1003,10 +997,10 @@ namespace Hecton8.Gameplay.Loot
             if (_pickupRefs == null || _pickupEntityIds == null)
                 return;
 
-            IDataVault vault = _vault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _vault;
             if (vault == null ||
                 !TryReadExistingVaultViews(vault, math.max(_activeCount, 1), out LootMagnetVaultViews views) ||
-                !views.IsCreated)
+                !LootMagnetVaultViews.IsCreated(in views))
             {
                 return;
             }
@@ -1026,6 +1020,11 @@ namespace Hecton8.Gameplay.Loot
 
                 ClearVaultSlot(views, index);
             }
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private void RestoreAllManagedProxyRuntimeStates()
@@ -1100,7 +1099,17 @@ namespace Hecton8.Gameplay.Loot
 
         private static bool TryBuildFiniteAup(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
         {
-            aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            aup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
             return IsFiniteAup(in aup);
         }
 

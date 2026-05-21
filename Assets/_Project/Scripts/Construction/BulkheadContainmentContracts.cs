@@ -10,6 +10,8 @@ namespace Hecton8.Construction
         public const int TelemetryFrameCount = 300;
         public const int ProfileCapacity = 32;
         public const int ShaderUploadCapacity = 256;
+        public const uint MaxIntentAgeFrames = 120u;
+        public const float PlaneCrossEpsilonMeters = 0.0001f;
         public const uint SystemHash = 0x53483232u;
         public const uint PreSimulationHash = 0x53483250u;
         public const uint SimulationHash = 0x53483253u;
@@ -135,23 +137,112 @@ namespace Hecton8.Construction
 
     public static class BulkheadStateLayoutGuard
     {
-        public const int SizeBytes = 32;
+        public const int StateSizeBytes = 32;
+        public const int PlaneSizeBytes = 64;
+        public const int CsrEdgeSizeBytes = 32;
+        public const int TuningSizeBytes = 32;
+        public const int ProfileSizeBytes = 32;
+        public const int TelemetrySizeBytes = 64;
+        public const int SizeBytes = StateSizeBytes;
 
         public static bool ValidateLayout()
         {
-            return UnsafeUtility.SizeOf<BulkheadStateDTO>() == SizeBytes &&
-                   GetOffset(nameof(BulkheadStateDTO.EdgeHashID)) == 0 &&
-                   GetOffset(nameof(BulkheadStateDTO.ClosureProgress)) == 4 &&
-                   GetOffset(nameof(BulkheadStateDTO.AssociatedLock)) == 8 &&
-                   GetOffset(nameof(BulkheadStateDTO.SiblingNodeHash)) == 12 &&
-                   GetOffset(nameof(BulkheadStateDTO.Flags)) == 16 &&
-                   GetOffset(nameof(BulkheadStateDTO._pad0)) == 20 &&
-                   GetOffset(nameof(BulkheadStateDTO._pad11)) == 31;
+            return ValidateStateLayout() &&
+                   ValidatePlaneLayout() &&
+                   ValidateCsrEdgeLayout() &&
+                   ValidateTuningLayout() &&
+                   ValidateProfileLayout() &&
+                   ValidateTelemetryLayout();
         }
 
-        private static int GetOffset(string fieldName)
+        private static bool ValidateStateLayout()
         {
-            var field = typeof(BulkheadStateDTO).GetField(fieldName);
+            return UnsafeUtility.SizeOf<BulkheadStateDTO>() == StateSizeBytes &&
+                   GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO.EdgeHashID)) == 0 &&
+                   GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO.ClosureProgress)) == 4 &&
+                   GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO.AssociatedLock)) == 8 &&
+                   GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO.SiblingNodeHash)) == 12 &&
+                   GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO.Flags)) == 16 &&
+                   GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO._pad0)) == 20 &&
+                   GetOffset<BulkheadStateDTO>(nameof(BulkheadStateDTO._pad11)) == 31;
+        }
+
+        private static bool ValidatePlaneLayout()
+        {
+            return UnsafeUtility.SizeOf<BulkheadPlaneDTO>() == PlaneSizeBytes &&
+                   GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.CenterAup)) == 0 &&
+                   GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.Normal)) == 24 &&
+                   GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.WidthMeters)) == 36 &&
+                   GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.HeightMeters)) == 40 &&
+                   GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.HalfThicknessMeters)) == 44 &&
+                   GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.EdgeHashID)) == 48 &&
+                   GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.Flags)) == 52 &&
+                   GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.IntegrityIndex)) == 56 &&
+                   GetOffset<BulkheadPlaneDTO>(nameof(BulkheadPlaneDTO.Reserved)) == 60;
+        }
+
+        private static bool ValidateCsrEdgeLayout()
+        {
+            return UnsafeUtility.SizeOf<BulkheadCsrEdgeDTO>() == CsrEdgeSizeBytes &&
+                   GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.EdgeHashID)) == 0 &&
+                   GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.ConductivityIndex)) == 4 &&
+                   GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.FluidFlowIndex)) == 8 &&
+                   GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.OpenConductivity)) == 12 &&
+                   GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.OpenFluidFlow)) == 16 &&
+                   GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.IntegrityIndex)) == 20 &&
+                   GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.Flags)) == 24 &&
+                   GetOffset<BulkheadCsrEdgeDTO>(nameof(BulkheadCsrEdgeDTO.Reserved)) == 28;
+        }
+
+        private static bool ValidateTuningLayout()
+        {
+            return UnsafeUtility.SizeOf<BulkheadTuningDTO>() == TuningSizeBytes &&
+                   GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.CloseSpeedPerSecond)) == 0 &&
+                   GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.OpenSpeedPerSecond)) == 4 &&
+                   GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.OverrideDistanceMeters)) == 8 &&
+                   GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.CatastrophicIntegrity01)) == 12 &&
+                   GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.GlobalQualityWeight)) == 16 &&
+                   GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.AuthorityCadenceHz)) == 20 &&
+                   GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.ActiveCount)) == 24 &&
+                   GetOffset<BulkheadTuningDTO>(nameof(BulkheadTuningDTO.Flags)) == 28;
+        }
+
+        private static bool ValidateProfileLayout()
+        {
+            return UnsafeUtility.SizeOf<BulkheadProfileDTO>() == ProfileSizeBytes &&
+                   GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.ProfileHash)) == 0 &&
+                   GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.CloseSpeedPerSecond)) == 4 &&
+                   GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.OpenSpeedPerSecond)) == 8 &&
+                   GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.OverrideDistanceMeters)) == 12 &&
+                   GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.CatastrophicIntegrity01)) == 16 &&
+                   GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.WidthMeters)) == 20 &&
+                   GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.HeightMeters)) == 24 &&
+                   GetOffset<BulkheadProfileDTO>(nameof(BulkheadProfileDTO.Flags)) == 28;
+        }
+
+        private static bool ValidateTelemetryLayout()
+        {
+            return UnsafeUtility.SizeOf<BulkheadTelemetryEntry>() == TelemetrySizeBytes &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.Frame)) == 0 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.ActiveCount)) == 4 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.SealedCount)) == 8 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.JammedCount)) == 12 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.AverageClosure)) == 16 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.AuthorityCadenceHz)) == 20 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.GlobalQualityWeight)) == 24 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.LastScheduleMicroseconds)) == 28 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.StateHash)) == 32 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.CollisionEdgeHash)) == 36 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.CollisionDepthMeters)) == 40 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.Flags)) == 44 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.Reserved0)) == 48 &&
+                   GetOffset<BulkheadTelemetryEntry>(nameof(BulkheadTelemetryEntry.Reserved1)) == 56;
+        }
+
+        private static int GetOffset<T>(string fieldName)
+            where T : struct
+        {
+            var field = typeof(T).GetField(fieldName);
             return field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
         }
     }

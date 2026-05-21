@@ -1,0 +1,94 @@
+#pragma kernel ClearWake
+#pragma kernel AccumulateWake
+#pragma require compute
+
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+#define H8_WAKE_THREADS_X 8
+#define H8_WAKE_THREADS_Y 8
+#define H8_WAKE_MAX_EVENTS 96
+#define H8_WAKE_TWO_PI 6.28318530718
+
+struct PropwashEventDTO
+{
+    float3 LocalPosition;
+    float3 ThrustVector;
+    float Intensity;
+    float Radius;
+};
+
+CBUFFER_START(HectonOceanVisualOverrides)
+    float4 _H8OceanFoamAndShadowParams;
+    float4 _H8OceanShorelineDepthParams;
+CBUFFER_END
+
+StructuredBuffer<PropwashEventDTO> _H8PropwashEvents;
+RWTexture2D<float4> _H8OceanWakeDisplacementWrite;
+
+int _H8PropwashEventCount;
+int _H8WakeResolution;
+float4 _H8OceanWakeParams;
+float4 _H8OceanWakeScrollOffset;
+
+bool H8WakeInside(uint2 pixel)
+{
+    uint resolution = (uint)max(_H8WakeResolution, 1);
+    return pixel.x < resolution && pixel.y < resolution;
+}
+
+float H8SafeFinite(float value, float fallback)
+{
+    return (value == value && abs(value) < 1.0e20) ? value : fallback;
+}
+
+float2 H8WakeWrapSigned(float2 delta)
+{
+    return frac(delta + 0.5) - 0.5;
+}
+
+[numthreads(H8_WAKE_THREADS_X, H8_WAKE_THREADS_Y, 1)]
+void ClearWake(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint2 pixel = dispatchThreadId.xy;
+    if (!H8WakeInside(pixel))
+        return;
+
+    _H8OceanWakeDisplacementWrite[pixel] = float4(0.0, 0.0, 0.0, 0.0);
+}
+
+[numthreads(H8_WAKE_THREADS_X, H8_WAKE_THREADS_Y, 1)]
+void AccumulateWake(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint2 pixel = dispatchThreadId.xy;
+    if (!H8WakeInside(pixel))
+        return;
+
+    float resolution = max((float)_H8WakeResolution, 1.0);
+    float2 uv = (float2(pixel) + 0.5) / resolution;
+    float worldSize = max(_H8OceanWakeParams.z, 1.0);
+    float quality = saturate(_H8OceanFoamAndShadowParams.w);
+    int eventBudget = min(min(_H8PropwashEventCount, H8_WAKE_MAX_EVENTS), (int)round(lerp(8.0, (float)H8_WAKE_MAX_EVENTS, quality * quality * (3.0 - 2.0 * quality))));
+    float wakeStrength = max(_H8OceanShorelineDepthParams.w, 0.0);
+    float4 accum = 0.0;
+
+    [loop]
+    for (int i = 0; i < eventBudget; i++)
+    {
+        PropwashEventDTO evt = _H8PropwashEvents[i];
+        float intensity = saturate(H8SafeFinite(evt.Intensity, 0.0));
+        float radius = max(H8SafeFinite(evt.Radius, 0.0), 0.05);
+        float2 eventUv = frac((evt.LocalPosition.xz + float2(worldSize * 0.5, worldSize * 0.5)) / worldSize + _H8OceanWakeScrollOffset.xy);
+        float2 deltaUv = H8WakeWrapSigned(uv - eventUv);
+        float2 deltaMeters = deltaUv * worldSize;
+        float dist = length(deltaMeters);
+        float falloff = saturate(1.0 - dist / radius);
+        float phase = dist * 0.42 - dot(evt.ThrustVector.xz, deltaMeters) * 0.035;
+        float ripple = sin(phase * H8_WAKE_TWO_PI) * falloff * falloff * intensity * wakeStrength;
+        float2 dir = dist > 0.0001 ? deltaMeters / dist : float2(0.0, 1.0);
+        accum.xy += dir * ripple;
+        accum.z += abs(ripple);
+        accum.w = max(accum.w, falloff * intensity);
+    }
+
+    _H8OceanWakeDisplacementWrite[pixel] = float4(accum.xy, saturate(accum.z), saturate(accum.w));
+}

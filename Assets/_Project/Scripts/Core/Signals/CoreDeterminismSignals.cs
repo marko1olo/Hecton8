@@ -177,7 +177,7 @@ namespace Hecton8.Core
             where T : unmanaged, ISignal
         {
             EnsureInitialized();
-            return SignalBus<T>.TryReadFrame(out signal);
+            return SignalBus<T>.TryConsumeFrame(out signal);
         }
 
         private static void ClearSidecars()

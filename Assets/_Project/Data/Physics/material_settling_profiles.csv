@@ -1,0 +1,8 @@
+material,linearSleepSpeedSq,angularSleepSpeedSq,forceSleepThresholdSq,requiredRestFrames,deepSleepTicks
+iron_heavy,0.0004,0.0002,0.12,4,240
+tool_steel,0.0009,0.00045,0.20,6,300
+ore_chunk,0.0012,0.0006,0.28,5,260
+glass_fragile,0.0016,0.0008,0.22,8,360
+rubber_scrap,0.0049,0.0024,0.70,12,480
+plastic_light,0.0036,0.0018,0.65,10,420
+foam_salvage,0.0064,0.0032,0.85,14,540

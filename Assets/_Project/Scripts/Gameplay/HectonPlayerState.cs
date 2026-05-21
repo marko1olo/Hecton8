@@ -50,11 +50,16 @@ namespace Hecton8.Gameplay
 
         public void SyncKinematic(Vector3 runtimePosition, Vector3 linearVelocity)
         {
-            AbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             LinearVelocity = new float3(linearVelocity.x, linearVelocity.y, linearVelocity.z);
-            PredictedAbsolutePosition = OffsetAup(in AbsolutePosition, LinearVelocity * PredictionHorizonSeconds);
-            PredictedRuntimePosition = PredictedAbsolutePosition.ToRuntimeFloat3();
+            bool hasAupProof = TryResolveRuntimeAup(runtimePosition, out AbsoluteUniversePosition resolvedAup);
+            AbsolutePosition = hasAupProof ? resolvedAup : default;
+            PredictedAbsolutePosition = hasAupProof
+                ? OffsetAup(in resolvedAup, LinearVelocity * PredictionHorizonSeconds)
+                : default;
+            PredictedRuntimePosition = hasAupProof && PredictedAbsolutePosition.IsFinite()
+                ? PredictedAbsolutePosition.ToRuntimeFloat3()
+                : RuntimePosition;
         }
 
         private static AbsoluteUniversePosition OffsetAup(in AbsoluteUniversePosition origin, float3 runtimeOffset)
@@ -62,6 +67,23 @@ namespace Hecton8.Gameplay
             return AbsoluteUniversePosition.OffsetMeters(
                 in origin,
                 new double3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z));
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         public void SyncExternalKinematic(Vector3 acceleration, Vector3 velocityChange)
@@ -114,7 +136,6 @@ namespace Hecton8.Gameplay
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     internal struct PlayerKinematicsLinearDragJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<float3> Velocities;
@@ -143,7 +164,6 @@ namespace Hecton8.Gameplay
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
     internal struct PlayerKinematicsNativeState : IDisposable
     {
         public const int KinematicCapacity = 1;
@@ -294,12 +314,14 @@ namespace Hecton8.Gameplay
         {
             if (vault != null)
             {
-                NativeArray<T> vaultArray = vault.GetBuffer<T>(
+                VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
                     bufferId,
                     math.max(1, count),
                     SystemID.GameplayPlayer,
                     NativeArrayOptions.ClearMemory);
-                if (vaultArray.IsCreated)
+                if (handle.BufferID == unchecked((uint)(int)bufferId) &&
+                    vault.TryResolveHandle(in handle, out NativeArray<T> vaultArray) &&
+                    vaultArray.IsCreated)
                 {
                     _vaultNativeStateMask |= vaultFlag;
                     return vaultArray;
@@ -342,7 +364,6 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Owns persistent native buffers used by <see cref="HectonPlayerMotor"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
     internal struct HectonPlayerMotorNativeState : IDisposable
     {
         public NativeArray<CapsulecastCommand> ScheduledSweepCommands;
@@ -443,12 +464,14 @@ namespace Hecton8.Gameplay
             int safeCount = math.max(1, count);
             if (vault != null)
             {
-                NativeArray<T> vaultArray = vault.GetBuffer<T>(
+                VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
                     bufferId,
                     safeCount,
                     SystemID.GameplayPlayer,
                     options);
-                if (vaultArray.IsCreated)
+                if (handle.BufferID == unchecked((uint)(int)bufferId) &&
+                    vault.TryResolveHandle(in handle, out NativeArray<T> vaultArray) &&
+                    vaultArray.IsCreated)
                 {
                     _vaultNativeStateMask |= vaultFlag;
                     return vaultArray;

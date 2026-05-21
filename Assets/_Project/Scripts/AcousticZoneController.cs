@@ -136,7 +136,7 @@ namespace Hecton8.Audio
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)] // Posle FluidEngine (-5000), do bolshinstva sistem
-    public sealed class AcousticZoneController : MonoBehaviour, ITickable, IUpdatable, ISoundscapeEventListener, IPhysicsImpactEventListener, ISonarPingEventListener, IAtmosphereStateEventListener
+    public sealed class AcousticZoneController : MonoBehaviour, ITickable, IUpdatable, ISoundscapeEventListener, IPhysicsImpactEventListener, ISonarPingEventListener, IAtmosphereStateEventListener, IToolAcousticCueService
     {
         private const float TwoPi = 6.28318530718f;
         private const float InvTwoPi = 0.15915494309f;
@@ -2133,7 +2133,7 @@ namespace Hecton8.Audio
 
             float proximity = 1f - math.saturate((float)(distanceSq / math.max(radiusSq, 0.0001d)));
             float impulse = math.saturate(impactSignal.Intensity * math.max(0.15f, proximity));
-            if (impactSignal.IsHeavy)
+            if (PhysicsImpactSignal.IsHeavy(in impactSignal))
                 impulse = math.max(impulse, 0.35f * math.max(0.35f, proximity));
 
             _acousticImpactImpulse = math.max(_acousticImpactImpulse, impulse);
@@ -2147,6 +2147,11 @@ namespace Hecton8.Audio
 
             float volume = math.lerp(mantaMisfireVolumeMin, mantaMisfireVolumeMax, math.saturate(intensity));
             sam.PlayStatic2D(mantaMisfireClip, volume, sam.InterfaceGroup);
+        }
+
+        void IToolAcousticCueService.PlayMantaMisfire(float intensity01)
+        {
+            PlayMantaMisfire(intensity01);
         }
 
         private void PlayStormInterferencePulse(float stormInterference, AcousticZoneState zone)

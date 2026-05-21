@@ -8,6 +8,19 @@ using Unity.Mathematics;
 
 namespace Hecton8.Physics
 {
+    internal static class SeaglideSimdMath
+    {
+        public const float AuthoritativeQualityWeight = 1f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float LengthFromSq(float lengthSq)
+        {
+            float finiteSq = math.select(0f, lengthSq, math.isfinite(lengthSq));
+            float safeSq = math.max(finiteSq, 0.0001f);
+            return math.select(0f, safeSq * math.rsqrt(math.max(safeSq, 0.0001f)), finiteSq > 0.0001f);
+        }
+    }
+
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct InitializeSeaglideColdBuffersJob : IJob
     {
@@ -45,13 +58,19 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct GenerateMockSeaglidePropulsionDataJob : IJobParallelFor
     {
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<SeaglideStateDTO> States;
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<SeaglidePropulsionRequestDTO> Requests;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity's parallel-for safety is kept enabled: this cold/editor mock job writes only States[index] and Requests[index], and the runtime clamps the scheduled count to the shared minimum capacity.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A serial mock hydrator was rejected because Task 05 requires worst-case vectorized request pressure. Temporary staging arrays were rejected because they would add non-Vault native ownership and extra copy bandwidth before the actual hydrodynamic solver.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is one producer job, one index owner, no cross-index reads, and no overlapping write ranges. Live solver scheduling is blocked while this cold/editor mock job runs to completion.
+        [NoAlias] public NativeArray<SeaglideStateDTO> States;
+        [NoAlias] public NativeArray<SeaglidePropulsionRequestDTO> Requests;
         public int ActiveMockCount;
         public double3 OriginAUP;
         public uint SimulationFrame;
 
-        public unsafe void Execute(int index)
+        public void Execute(int index)
         {
             if (!States.IsCreated || !Requests.IsCreated || (uint)index >= (uint)States.Length || (uint)index >= (uint)Requests.Length)
                 return;
@@ -78,16 +97,11 @@ namespace Hecton8.Physics
             state.MassKg = SeaglideHydrodynamicsConstants.DefaultBaseMassKg;
             state.AddedMassKg = SeaglideHydrodynamicsConstants.DefaultAddedMassKg;
             state.FrameIndex = SimulationFrame;
-            SeaglideStateDTO* statesPtr = (SeaglideStateDTO*)States.GetUnsafePtr();
-            ref SeaglideStateDTO stateRef = ref UnsafeUtility.AsRef<SeaglideStateDTO>(statesPtr + index);
-            stateRef = state;
+            States[index] = state;
 
             SeaglidePropulsionRequestDTO request = default;
             request.CurrentAUP = state.CurrentAUP;
-            request.PreviousAUP = state.CurrentAUP - new double3(
-                state.Velocity.x * 0.02f,
-                state.Velocity.y * 0.02f,
-                state.Velocity.z * 0.02f);
+            request.PreviousAUP = RewindAupByLocalVelocity(state.CurrentAUP, state.Velocity, 0.02f);
             request.InputVector = forward;
             request.ForwardVector = forward;
             request.Throttle01 = math.select(0f, throttle, active);
@@ -114,24 +128,49 @@ namespace Hecton8.Physics
             float sq = math.lengthsq(value);
             return math.select(fallback, value * math.rsqrt(math.max(sq, 0.000001f)), math.isfinite(sq) & sq > 0.000001f);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static double3 RewindAupByLocalVelocity(double3 currentAup, float3 velocity, float deltaTime)
+        {
+            if (!math.all(math.isfinite(currentAup)) || !math.all(math.isfinite(velocity)) || !math.isfinite(deltaTime))
+                return currentAup;
+
+            double safeDelta = math.max((double)deltaTime, 0.0001d);
+            double3 displacementMeters = new double3(
+                (double)velocity.x * safeDelta,
+                (double)velocity.y * safeDelta,
+                (double)velocity.z * safeDelta);
+            // Rewind in a local AUP frame, then rehydrate, so mock payloads follow the same precision rule as live requests.
+            double3 localOrigin = currentAup;
+            double3 currentLocal = AupPrecisionMath.LocalDeltaDouble(currentAup, localOrigin);
+            double3 previousLocal = currentLocal - displacementMeters;
+            double3 previous = localOrigin + previousLocal;
+            return math.all(math.isfinite(previous)) ? previous : currentAup;
+        }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct CalculateSeaglideThrustJob : IJobParallelFor
     {
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<SeaglideStateDTO> States;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity's parallel-for safety remains enabled: States, ForcePackets, VisualStates, and CavitationSignals are mutated only at Execute(index). The runtime locks all involved BufferIDs before scheduling and uses a clamped active row window.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Splitting this into separate jobs was rejected because it would add extra schedule overhead and additional Vault passes for the same per-row thrust solve. Atomic packet counters were rejected because packet validity is reduced after the parallel loop instead of using contended writes inside it.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is index-local mutation only: States[index], ForcePackets[index], VisualStates[index], and CavitationSignals[index] are the only rows written by Execute(index). Reductions and counts are written later by ReduceSeaglideTelemetryJob after this handle completes.
+        [NoAlias] public NativeArray<SeaglideStateDTO> States;
         [ReadOnly, NoAlias] public NativeArray<SeaglidePropulsionRequestDTO> Requests;
         [ReadOnly, NoAlias] public NativeArray<SeaglideFlowSampleDTO> FlowSamples;
         [ReadOnly, NoAlias] public NativeArray<SeaglideTuningDTO> Tuning;
-        [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<SeaglideForcePacketDTO> ForcePackets;
-        [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<SeaglideVisualStateDTO> VisualStates;
-        [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<SeaglideCavitationVfxSignalDTO> CavitationSignals;
+        [WriteOnly, NoAlias] public NativeArray<SeaglideForcePacketDTO> ForcePackets;
+        [WriteOnly, NoAlias] public NativeArray<SeaglideVisualStateDTO> VisualStates;
+        [WriteOnly, NoAlias] public NativeArray<SeaglideCavitationVfxSignalDTO> CavitationSignals;
         public int ActiveRequestCount;
         public uint SimulationFrame;
         public float SimulationTickDelta;
         public float GlobalQualityWeight;
 
-        public unsafe void Execute(int index)
+        public void Execute(int index)
         {
             if (!States.IsCreated || !Requests.IsCreated || !ForcePackets.IsCreated || (uint)index >= (uint)States.Length || (uint)index >= (uint)Requests.Length)
                 return;
@@ -143,10 +182,8 @@ namespace Hecton8.Physics
             if ((uint)index >= (uint)math.max(0, ActiveRequestCount))
                 return;
 
-            SeaglideTuningDTO tuning = ResolveTuning();
-            SeaglideStateDTO* statesPtr = (SeaglideStateDTO*)States.GetUnsafePtr();
-            ref SeaglideStateDTO stateRef = ref UnsafeUtility.AsRef<SeaglideStateDTO>(statesPtr + index);
-            SeaglideStateDTO state = stateRef;
+            SeaglideTuningDTO tuning = ReadTuning();
+            SeaglideStateDTO state = States[index];
             SeaglidePropulsionRequestDTO request = Requests[index];
             bool active = (request.Flags & SeaglideHydrodynamicsConstants.FlagActive) != 0u &&
                           request.TargetEntityHash != 0u &&
@@ -159,7 +196,7 @@ namespace Hecton8.Physics
                                math.isfinite(request.Throttle01) &
                                math.isfinite(request.BatteryLevel);
 
-            float quality = Smooth01(math.min(Sanitize01(GlobalQualityWeight), Sanitize01(tuning.GlobalQualityWeight)));
+            float quality = SeaglideSimdMath.AuthoritativeQualityWeight;
             double3 sector = math.select(double3.zero, tuning.SectorAUP, math.isfinite(tuning.SectorAUP));
             double3 currentAup = math.select(double3.zero, request.CurrentAUP, math.isfinite(request.CurrentAUP));
             double3 localAupDelta = AupPrecisionMath.LocalDeltaDouble(currentAup, sector);
@@ -179,7 +216,7 @@ namespace Hecton8.Physics
             float3 flowVelocity = ResolveFlowVelocity(request.CurrentAUP, localAup, FlowSamples, flowSampleCount, SimulationFrame, quality);
             float3 relativeVelocity = SanitizeFinite(state.Velocity - flowVelocity, float3.zero);
             float speedSq = math.lengthsq(relativeVelocity);
-            float exactSpeed = math.sqrt(math.max(speedSq, 0f));
+            float exactSpeed = SeaglideSimdMath.LengthFromSq(speedSq);
             float cheapSpeed = DominantAxisLength(relativeVelocity);
             float speed = math.lerp(cheapSpeed, exactSpeed, quality);
             float3 thrustForce = inputDirection * (maxThrust * throttle * battery);
@@ -198,7 +235,7 @@ namespace Hecton8.Physics
                               math.all(math.isfinite(netForce)) &
                               math.isfinite(forceMagnitudeSq);
             bool queue = mathFinite & forceMagnitudeSq > 0.000001f;
-            float forceMagnitude = math.select(0f, math.sqrt(math.max(forceMagnitudeSq, 0f)), queue);
+            float forceMagnitude = math.select(0f, SeaglideSimdMath.LengthFromSq(forceMagnitudeSq), queue);
 
             state.CurrentAUP = currentAup;
             state.Velocity = SanitizeFinite(state.Velocity, float3.zero);
@@ -209,7 +246,7 @@ namespace Hecton8.Physics
             state.MassKg = mass;
             state.AddedMassKg = addedMass;
             state.FrameIndex = SimulationFrame;
-            stateRef = state;
+            States[index] = state;
 
             SeaglideForcePacketDTO packet = default;
             packet.CurrentAUP = math.select(double3.zero, currentAup, queue);
@@ -254,7 +291,7 @@ namespace Hecton8.Physics
             WriteCavitation(index, cavitation);
         }
 
-        private SeaglideTuningDTO ResolveTuning()
+        private SeaglideTuningDTO ReadTuning()
         {
             return Tuning.IsCreated && Tuning.Length > 0 ? Tuning[0] : SeaglideTuningDTO.Default();
         }
@@ -291,7 +328,7 @@ namespace Hecton8.Physics
                 SeaglideFlowSampleDTO anchor = flowSamples[0];
                 float cell = math.max(1f, anchor.CellSizeMeters);
                 double3 localDelta = AupPrecisionMath.LocalDeltaDouble(currentAup, anchor.SampleAUP);
-                float3 local = AupPrecisionMath.DowncastLocalDelta(localDelta, float3.zero) * math.rcp(cell);
+                float3 local = AupPrecisionMath.DowncastLocalDelta(localDelta, float3.zero) * math.rcp(math.max(cell, SeaglideHydrodynamicsConstants.Epsilon));
                 float3 t = math.saturate(local);
                 float3 c00 = math.lerp(flowSamples[0].FlowVelocity, flowSamples[1].FlowVelocity, t.x);
                 float3 c10 = math.lerp(flowSamples[2].FlowVelocity, flowSamples[3].FlowVelocity, t.x);
@@ -317,7 +354,8 @@ namespace Hecton8.Physics
         {
             float safeStart = math.max(0.1f, SanitizeFinite(start, 7.5f));
             float safeFull = math.max(safeStart + 0.1f, SanitizeFinite(full, 14f));
-            float raw = math.saturate((speed - safeStart) * math.rcp(safeFull - safeStart));
+            float range = math.max(SeaglideHydrodynamicsConstants.Epsilon, safeFull - safeStart);
+            float raw = math.saturate((speed - safeStart) * math.rcp(range));
             return Smooth01(raw) * math.lerp(0.65f, 1f, quality);
         }
 
@@ -388,29 +426,33 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ProcessSeaglideMetabolismJob : IJobParallelFor
     {
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<SeaglideStateDTO> States;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity's parallel-for safety remains enabled: the runtime resolves the BufferIDs separately and this job mutates only the state row matching the parallel index.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Folding metabolism into the thrust job was rejected because low-quality cadence can skip metabolism independently from force generation. A serial SlowTick pass was rejected because it would touch active rows on the main thread and hide scaling cost.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is one write to States[index] after reading ForcePackets[index], with the job dependent on the thrust handle. No other scheduled Seaglide job writes States[index] concurrently outside that dependency chain.
+        [NoAlias] public NativeArray<SeaglideStateDTO> States;
         [ReadOnly, NoAlias] public NativeArray<SeaglideForcePacketDTO> ForcePackets;
         [ReadOnly, NoAlias] public NativeArray<SeaglideTuningDTO> Tuning;
         public int ActiveRequestCount;
         public int MetabolismEnabled;
         public float SimulationTickDelta;
 
-        public unsafe void Execute(int index)
+        public void Execute(int index)
         {
             if (MetabolismEnabled == 0 || !States.IsCreated || !ForcePackets.IsCreated || (uint)index >= (uint)States.Length || (uint)index >= (uint)ForcePackets.Length || (uint)index >= (uint)math.max(0, ActiveRequestCount))
                 return;
 
             SeaglideTuningDTO tuning = Tuning.IsCreated && Tuning.Length > 0 ? Tuning[0] : SeaglideTuningDTO.Default();
-            SeaglideStateDTO* statesPtr = (SeaglideStateDTO*)States.GetUnsafePtr();
-            ref SeaglideStateDTO stateRef = ref UnsafeUtility.AsRef<SeaglideStateDTO>(statesPtr + index);
-            SeaglideStateDTO state = stateRef;
+            SeaglideStateDTO state = States[index];
             SeaglideForcePacketDTO packet = ForcePackets[index];
             float dt = math.clamp(math.select(tuning.SimulationTickDelta, SimulationTickDelta, SimulationTickDelta > 0f), 0.0001f, 0.5f);
             float forceMagnitude = math.max(0f, packet.ForceMagnitude);
             float drain = (math.max(0f, tuning.BatteryBaseDrainPerSecond) + forceMagnitude * math.max(0f, tuning.BatteryLoadDrainPerNewton)) * dt;
             state.BatteryLevel = math.saturate(state.BatteryLevel - drain);
             state.ActiveFlags |= SeaglideHydrodynamicsConstants.FlagMetabolismEvaluated;
-            stateRef = state;
+            States[index] = state;
         }
     }
 
@@ -420,7 +462,13 @@ namespace Hecton8.Physics
         [ReadOnly, NoAlias] public NativeArray<SeaglidePropulsionRequestDTO> Requests;
         [ReadOnly, NoAlias] public NativeArray<SeaglideForcePacketDTO> ForcePackets;
         [ReadOnly, NoAlias] public NativeArray<SeaglideTuningDTO> Tuning;
-        [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<SeaglideAudioSignalDTO> AudioSignals;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity's parallel-for safety remains enabled: Runtime BufferIDs and NoAlias guarantee non-overlap, and Execute(index) writes only AudioSignals[index].
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Publishing SignalBus packets directly from this job was rejected because SignalBus publication is a post-simulation owner-phase action. A managed audio callback was rejected because it would reintroduce heap traffic and Unity-object coupling.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is that audio rows are presentation-only, index-local, and consumed only after the combined solver handle is finalized. The job is scheduled after thrust output exists and never mutates physics truth.
+        [WriteOnly, NoAlias] public NativeArray<SeaglideAudioSignalDTO> AudioSignals;
         public int ActiveRequestCount;
 
         public void Execute(int index)
@@ -438,10 +486,11 @@ namespace Hecton8.Physics
             if (packet.TargetEntityHash == 0u || !math.all(math.isfinite(packet.NetForce)))
                 return;
 
-            double3 deltaAup = request.CurrentAUP - request.PreviousAUP;
-            double distanceSq = math.lengthsq(deltaAup);
+            double3 deltaAup = AupPrecisionMath.LocalDeltaDouble(request.CurrentAUP, request.PreviousAUP);
+            float3 localDelta = AupPrecisionMath.DowncastLocalDelta(deltaAup, float3.zero);
+            float distanceSq = math.lengthsq(localDelta);
             float dt = math.max(0.0001f, math.select(tuning.SimulationTickDelta, request.DeltaTime, request.DeltaTime > 0f));
-            float speed = math.select(0f, (float)math.sqrt(math.max(0d, distanceSq)) * math.rcp(dt), math.isfinite(distanceSq));
+            float speed = math.select(0f, SeaglideSimdMath.LengthFromSq(math.max(0f, distanceSq)) * math.rcp(dt), math.isfinite(distanceSq));
             float cavitation01 = math.saturate((packet.CurrentSpeed - tuning.CavitationSpeedStart) * math.rcp(math.max(0.1f, tuning.CavitationSpeedFull - tuning.CavitationSpeedStart)));
 
             SeaglideAudioSignalDTO signal = default;
@@ -481,9 +530,17 @@ namespace Hecton8.Physics
             for (int i = 0; i < count; i++)
             {
                 SeaglideForcePacketDTO packet = ForcePackets[i];
-                bool valid = packet.TargetEntityHash != 0u && math.all(math.isfinite(packet.NetForce));
+                uint stateFlags = States.IsCreated && (uint)i < (uint)States.Length ? States[i].ActiveFlags : 0u;
+                bool packetFinite = math.all(math.isfinite(packet.NetForce)) &
+                                    math.all(math.isfinite(packet.ThrustForce)) &
+                                    math.all(math.isfinite(packet.DragForce)) &
+                                    math.all(math.isfinite(packet.FlowForce));
+                bool nonFinite = (stateFlags & SeaglideHydrodynamicsConstants.FlagNonFinite) != 0u || !packetFinite;
+                bool valid = packet.TargetEntityHash != 0u &&
+                             (packet.Flags & SeaglideHydrodynamicsConstants.FlagForceQueued) != 0u &&
+                             packetFinite;
                 counter.EvaluatedRequests++;
-                counter.NonFiniteCount += math.select(1, 0, valid);
+                counter.NonFiniteCount += math.select(0, 1, nonFinite);
                 if (!valid)
                     continue;
 
@@ -532,7 +589,7 @@ namespace Hecton8.Physics
         private static float Magnitude(float3 value)
         {
             float sq = math.lengthsq(value);
-            return math.select(0f, math.sqrt(math.max(sq, 0f)), math.isfinite(sq));
+            return math.select(0f, SeaglideSimdMath.LengthFromSq(sq), math.isfinite(sq));
         }
     }
 }

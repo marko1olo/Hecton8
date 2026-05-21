@@ -265,3 +265,152 @@ Status: SOURCE IMPLEMENTED / UNITY COMPILE BLOCKED BY FOREIGN DEPENDENCY WALL + 
 - Direct static record alignment audit: PASS, 13 records, flags `0x101`, records offset `512`, file bytes `1328`, Babel CRC `0xA1084F1D`, Hecton payload CRC `0x598EF439`, every lookup record offset `% 64 == 0`.
 - Targeted source-residue `rg`: PASS, no forbidden B-Tree contour matches.
 - `git diff --check` on SHINOBU_207 touched source/docs/report set: PASS.
+
+## Loop 19: Global Systems Doctrine Read-Accessor Purge
+- [x] Re-read Status/Rationale and re-extracted the full SHINOBU_207 XML block from `Docs/Tasks/CURRENT_BATCH.md` before editing. DOD: task matrix confirmed at lines 463-527 with 20 tasks. Rejected: using memory from the prior loop.
+- [x] Integrated subagent doctrine audit. DOD: audit findings for mutating `Get*`/`TryGet*`/`Resolve*` routes were checked against current source; already-fixed stale names were not double-patched, and remaining source defects were patched in the SHINOBU_207 contour. Rejected: broad edits to sibling UI systems outside this domain.
+- [x] Split read-looking record/text accessors from telemetry/publish side effects. DOD: `StaticDataStore.FetchRecord<T>` now returns the mapped ref without telemetry mutation; explicit `FetchRecordWithTelemetry<T>` is the tracked owner-phase path. `BabelDictionaryStore.FetchUtf8` now returns a pure span/empty span and does not mutate counters, write telemetry, dump, or publish audio; explicit `FetchUtf8WithTelemetry` retains the tracked/publish path. Rejected: cosmetic renames that left hidden telemetry in the hot accessor.
+- [x] Removed lookup-time Vault allocation/growth from telemetry recording. DOD: `RecordTelemetry`, `RecordBTreeTelemetry`, `DumpBlackBox`, and `DumpBTreeTelemetry` now use existing handles only; `Ensure*` allocation remains in boot/owner setup. Rejected: calling `EnsureBlackBox` or `EnsureBTreeTelemetry` from the lookup telemetry path.
+- [x] Renamed mutating Vault buffer helpers. DOD: `TryGetTelemetryVaultBuffers` became `EnsureTelemetryVaultBuffersCold`, and `TryGetTuningProfileVaultBuffer` became `EnsureTuningProfileVaultBufferCold`; the X-Ray editor call was updated. Rejected: keeping `TryGet*` names on methods that allocate/grow Vault buffers.
+- [x] Removed the PDA runtime `GlobalDataVault.TryGetLatestCreated` fallback inside the SHINOBU_207 touched path. DOD: `PDAEncyclopediaStreamer.TryBindVaultCold` now binds only `GlobalRegistry.DataVault`; editor diagnostics outside the target contour were left alone. Rejected: runtime fallback to the latest-created Vault.
+- [x] Hardened scanner/report ownership. DOD: `Tools/Cache_Miss_Eradication_Scanner.py` now fails on the old mutating read-accessor names and preserves shared report sections, including `SHINOBU_228`, when refreshing `Docs/Reports/MEMORY_OPTIMIZATION_REPORT.json`. Rejected: overwriting the shared report or relying on manual grep.
+- [x] Post-Loop-19 verification. DOD: cache scanner, in-memory Python compile, static/Babel B-Tree check, H8LR/lore checks, localization verify, BufferID audit, static record alignment audit, target residue grep, report preservation grep, and diff-check passed.
+- [ ] Unity compile/profiler proof. BLOCKED BY CPU GUARD + known foreign dependency wall; `Get-CimInstance Win32_Processor` reported `100%`, no `dotnet`/`csc` process was active, and no build/rebuild was launched.
+
+## Verification Delta Loop 19
+- `Select-String` extraction of `<AGENT_PROMPT id="SHINOBU_207">`: PASS, 20 tasks confirmed at `Docs/Tasks/CURRENT_BATCH.md:463-527`.
+- Subagent audit: PASS integrated; no subagent files edited, no subagent compile run.
+- Targeted doctrine-residue `rg` over SHINOBU_207 contour: PASS, no `GetRecord<`, `GetUtf8`, old PDA `Resolve*`, old Vault `TryGet*`, or runtime `GlobalDataVault.TryGetLatestCreated` match.
+- `python Tools/Cache_Miss_Eradication_Scanner.py`: PASS, packed-byte binary `23036.44 ns`, packed-byte B-Tree `17337.46 ns`, `nsPerLookupSaved=5698.98`, theoretical cacheLinesSaved `8.00`, `sourceContracts.sourceResidueClean.mutatingReadAccessorNames=true`.
+- In-memory Python compile for cache scanner, static upgrader, lore packer, lore verifier, and BufferID audit: PASS.
+- `python Tools/UpgradeStaticBTreePayloads.py --check`: PASS, static/Babel B-Trees present.
+- `python Tools/LorePacker.py --check --hash-audit --list`: PASS, H8LR bytes `43536`, collisions `0`.
+- `python Tools/VerifyLore.py --check --verify-manifest --list`: PASS.
+- `python Tools/LocToBinary.py --verify-only`: PASS, 188 entries.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS, duplicates `0`, local casts `811`, cast files `71`.
+- Direct static record alignment audit: PASS, 13 records, records offset `512`, file bytes `1328`, payload CRC `0x598EF439`, bad offsets `0`.
+- `Docs/Reports/MEMORY_OPTIMIZATION_REPORT.json`: PASS, `reportOwner=shared`, `sections` includes `SHINOBU_207` and `SHINOBU_228`, and `mutatingReadAccessorNames=true`.
+- `git diff --check` on SHINOBU_207 touched source/docs/report set: PASS except existing CRLF normalization warnings.
+- Build guard: CPU `100%`; `Get-Process dotnet,csc` returned no active process; no `dotnet build` or rebuild launched.
+
+## Loop 20: Post-Simulation Telemetry Schedule Allocation Facade Purge
+- [x] Re-read Status/Rationale before editing and re-checked the SHINOBU_207 XML task block plus Global Authority/DataVault mandates. DOD: the defect was scoped to the B-Tree telemetry route; no sibling runtime domain was edited. Rejected: widening into unrelated UI/editor `TryGetLatestCreated` matches.
+- [x] Removed the hot-looking schedule allocator facade. DOD: `ScheduleTelemetryPostSimulationFlush` no longer accepts `IDataVault` and no longer calls `EnsureTelemetryVaultBuffersCold`; it now schedules only from caller-provided `NativeArray<BTreeTelemetryEntry>`, `NativeArray<int>`, and `NativeArray<BTreeTelemetryAccumulatorDTO>` views. Rejected: a method name that hides allocation/growth behind `Schedule*`.
+- [x] Added pure existing-buffer resolution. DOD: `TryResolveTelemetryVaultBuffers` uses `IDataVault.TryGetGenerationHandle<T>` and `TryResolveHandle` only; it fails closed without `GetGenerationHandle`, `GetBuffer`, allocation, growth, signal publish, or job completion. Rejected: using `GlobalDataVault.TryGetLatestCreated` or resolving through cold registry fallback.
+- [x] Hardened the scanner gate. DOD: `Tools/Cache_Miss_Eradication_Scanner.py` now fails on `ScheduleTelemetryPostSimulationFlush(... IDataVault ...)` through `sourceResidueClean.hotScheduleVaultAllocationFacade`. Rejected: keeping this as a manual `rg` note.
+- [x] Updated the binary payload ledger. DOD: `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` documents BufferID `72070`, `72071`, `72072` as cold-ensured B-Tree telemetry buffers and states that post-simulation flush scheduling consumes resolved views only.
+- [x] Post-Loop-20 verification. DOD: cache scanner, Python compile, static/Babel B-Tree check, H8LR/lore checks, localization verify, BufferID audit, static record alignment audit, targeted residue grep, and diff-check passed.
+- [ ] Unity compile/profiler proof. BLOCKED BY CPU GUARD; CPU reported `100%`, no active `dotnet`/`csc`, and no build/rebuild was launched.
+
+## Verification Delta Loop 20
+- `python Tools/Cache_Miss_Eradication_Scanner.py`: PASS, packed-byte binary `51991.93 ns`, packed-byte B-Tree `14611.39 ns`, theoretical cacheLinesSaved `8.00`, and scanner report refreshed.
+- `python -m py_compile` for cache scanner, static upgrader, lore packer, lore verifier, and localization compiler: PASS.
+- `python Tools/UpgradeStaticBTreePayloads.py --check`: PASS, static/Babel B-Trees present.
+- `python Tools/LorePacker.py --check --hash-audit --list`: PASS, H8LR bytes `43536`, collisions `0`.
+- `python Tools/VerifyLore.py --check --verify-manifest --list`: PASS.
+- `python Tools/LocToBinary.py --verify-only`: PASS, 188 entries.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS, duplicates `0`, local casts `811`, cast files `71`.
+- Direct static record alignment audit: PASS after correcting the PowerShell inline Python invocation and header field offsets; 13 records, flags `0x101`, B-Tree offset `320`, B-Tree bytes `192`, records offset `512`, file bytes `1328`, payload CRC `0x598EF439`, bad offsets `0`.
+- Targeted residue `rg`: PASS, no runtime SHINOBU_207 contour match for `ScheduleTelemetryPostSimulationFlush(... IDataVault ...)`, `TryResolveAndScheduleTelemetryPostSimulationFlush`, old `TryGet*` telemetry/tuning names, or runtime `GlobalDataVault.TryGetLatestCreated`. Editor X-Ray diagnostics still use `TryGetLatestCreated`, which is diagnostic/editor scope.
+- `git diff --check`: PASS except existing CRLF normalization warnings.
+- Build guard: CPU `100%`; `Get-Process dotnet,csc` returned no active process; no `dotnet build` or rebuild launched.
+
+## Loop 21: PDA Editor Facade Fence and H8LR Pure Read Fix
+- [x] Re-read Status/Rationale before editing and integrated the subagent source-only audit. DOD: all three actionable findings were handled in the SHINOBU_207 touched PDA/H8LR contour. Rejected: editing unrelated UI latest-created Vault fallbacks outside this domain.
+- [x] Hard-fenced PDA editor x-ray facades. DOD: `EditorTrySnapshot`, `EditorUnlockAll`, `EditorLockAll`, `EditorSelectEntry`, `EditorIngestCsv`, and `EditorTryWriteRawUtf8Hex` are now compiled only inside `#if UNITY_EDITOR`, so their cold-bootstrap/Vault allocation route is not exposed in player/runtime builds. Rejected: relying on the method name prefix as the only guard.
+- [x] Made H8LR UTF-8 lookup pure. DOD: `PdaH8lrLoreStore.TryGetUtf8` no longer mutates `_lastTreeDepth`, `_lastTreeKeysProcessed`, or `_lastPrefetchTouchCount`; the fields were removed from the H8LR store. Rejected: keeping hidden per-read object mutation for unused diagnostics.
+- [x] Hardened scanner evidence. DOD: `Tools/Cache_Miss_Eradication_Scanner.py` now verifies `h8lrMutableReadCountersRemoved=true` and checks that every PDA editor facade is inside a live `UNITY_EDITOR` fence. Rejected: source-only subagent notes without a repeatable tool gate.
+- [x] Updated PDA route documentation. DOD: `Docs/ARCHITECTURE/PDA_ENCYCLOPEDIA_STREAMER.md` now states that H8LR `TryGetUtf8` is pure and that editor x-ray facades are editor-only compilation surfaces.
+- [x] Post-Loop-21 verification. DOD: cache scanner, in-memory Python compile, static/Babel B-Tree check, H8LR/lore checks, localization verify, BufferID audit, direct static alignment audit, report preservation/source-contract check, targeted residue grep, and diff-check passed.
+- [ ] Unity compile/profiler proof. BLOCKED BY CPU GUARD; CPU reported `100%`, no active `dotnet`/`csc`, and no build/rebuild was launched.
+
+## Verification Delta Loop 21
+- Subagent source-only audit: PASS integrated; closed after recording actionable items.
+- `python Tools/Cache_Miss_Eradication_Scanner.py`: PASS, packed-byte binary `103114.94 ns`, packed-byte B-Tree `116533.44 ns`, theoretical cacheLinesSaved `8.00`. This run does not prove runtime speed; it proves source gates and report refresh.
+- In-memory Python compile for cache scanner, static upgrader, lore packer, lore verifier, and localization compiler: PASS.
+- `python Tools/UpgradeStaticBTreePayloads.py --check`: PASS, static/Babel B-Trees present.
+- `python Tools/LorePacker.py --check --hash-audit --list`: PASS, H8LR bytes `43536`, collisions `0`.
+- `python Tools/VerifyLore.py --check --verify-manifest --list`: PASS.
+- `python Tools/LocToBinary.py --verify-only`: PASS, 188 entries.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS, duplicates `0`, local casts `811`, cast files `71`.
+- Direct static record alignment audit: PASS, 13 records, flags `0x101`, B-Tree offset `320`, B-Tree bytes `192`, records offset `512`, file bytes `1328`, payload CRC `0x598EF439`, bad offsets `0`.
+- Report/source-contract check: PASS, `reportOwner=shared`, `sections=["SHINOBU_207","SHINOBU_228"]`, `SHINOBU_228` preserved, `h8lrMutableReadCountersRemoved=true`, and all six `pdaEditorFacadesFenced` entries true.
+- Targeted H8LR/PDA residue `rg`: PASS, no `_lastTreeDepth`, `_lastTreeKeysProcessed`, or `_lastPrefetchTouchCount` remain in `PdaH8lrLoreStore.cs`; no runtime SHINOBU_207 contour match for the old schedule-with-Vault facade, combined resolve/schedule facade, old telemetry/tuning `TryGet*` names, or runtime latest-created Vault fallback.
+- `git diff --check`: PASS except existing CRLF normalization warnings.
+- Build guard: CPU `100%`; `Get-Process dotnet,csc` returned no active process; no `dotnet build` or rebuild launched.
+
+## Loop 22: Editor-Only Bridge and Command-Verb Purge
+- [x] Re-read Status/Rationale, AGENTS, the SHINOBU_207 XML block, Global Authority boundaries, and seven relevant mandates before editing. DOD: current loop scoped to memory-mapped data, PDA/H8LR fallback, and static-data designer bridges. Rejected: touching unrelated H8Memory duplicate BufferID ownership.
+- [x] Fenced PDA CSV ingest bridges. DOD: `TryIngestLoreMetadataCsvFromProject()` and `TryIngestLoreMetadataCsv()` now compile only inside the existing `#if UNITY_EDITOR` facade block because they call cold bootstrap, parse CSV, and perform file I/O. Rejected: exposing file I/O as a normal player/runtime API.
+- [x] Removed side-effecting public `Fetch*` telemetry verbs. DOD: `StaticDataStore.FetchRecord<T>()` remains the pure reference lookup; the side-effect path is now `TrackRecordLookup<T>()`. `BabelDictionaryStore.FetchUtf8()` remains the pure span lookup; the side-effect path is now `TrackUtf8Lookup()`. Rejected: leaving telemetry/dump/audio publication under read-looking `Fetch*WithTelemetry` names.
+- [x] Fenced designer bake/manifest tools. DOD: `H8DataBaker` and its CSV helper types are wrapped in `#if UNITY_EDITOR`; `H8DataHashTool.GenerateHashManifest()` is also editor-only. Rejected: moving files across folders during a multi-agent dirty tree and risking asset/meta churn.
+- [x] Hardened scanner evidence. DOD: `Tools/Cache_Miss_Eradication_Scanner.py` now rejects the old `FetchRecordWithTelemetry` / `FetchUtf8WithTelemetry` names, proves PDA CSV ingest bridges are editor-fenced, and records `editorOnlyDesignerBridges` for `H8DataBaker` and `H8DataHashTool.GenerateHashManifest`.
+- [x] Updated docs. DOD: `Docs/ARCHITECTURE/PDA_ENCYCLOPEDIA_STREAMER.md` documents pure `FetchUtf8()` and command-style `TrackUtf8Lookup()`; `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` labels `H8DataBaker` as editor-only.
+- [x] Post-Loop-22 verification. DOD: cache scanner, report preservation/source-contract check, Python compile, static/Babel B-Tree check, lore pack/verify, localization verify, static record alignment audit, targeted residue grep, and diff-check passed.
+- [x] Persistent report appended. DOD: `Docs/AgentLogs/LOG_SHINOBU_207.md` now contains Loop 22 with a 20-task self-audit, byte layout proof, scalability curve, Vault IDs, dependency graph, compile guard, Dear Lie statement, and external BufferID blocker.
+- [ ] BufferID sovereignty audit. BLOCKED BY FOREIGN DUPLICATES: `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates` now reports duplicate values `70780..70789` between `Shinobu234Storm*` entries and `ShinobuFluid*` entries in `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`. SHINOBU_207 BufferIDs `70560..70570` and `72070..72072` are not in the duplicate set.
+- [ ] Unity compile/profiler proof. BLOCKED BY CPU GUARD; CPU reported `100%`, no active `dotnet`/`csc`, and no build/rebuild was launched.
+
+## Verification Delta Loop 22
+- Subagent source-only audit: PASS integrated; four findings patched or fenced, then subagent closed.
+- `python Tools/Cache_Miss_Eradication_Scanner.py`: PASS, latest run packed-byte binary `12804.33 ns`, B-Tree `14376.11 ns`, theoretical cacheLinesSaved `8.00`. This run does not prove Unity/Burst speed; it proves source contracts and report refresh.
+- Report/source-contract check: PASS, `sections=["SHINOBU_207","SHINOBU_228"]`, `SHINOBU_228` preserved, `pdaCsvIngestBridgesFenced` true for both ingest methods, `editorOnlyDesignerBridges` true for `H8DataBaker` and `H8DataHashTool.GenerateHashManifest`, and all source-residue booleans true.
+- In-memory Python compile for cache scanner, static upgrader, lore packer, lore verifier, and localization compiler: PASS.
+- `python Tools/UpgradeStaticBTreePayloads.py --check`: PASS, static/Babel B-Trees present.
+- `python Tools/LorePacker.py --check --hash-audit --list`: PASS, H8LR bytes `43536`, collisions `0`.
+- `python Tools/VerifyLore.py --check --verify-manifest --list`: PASS.
+- `python Tools/LocToBinary.py --verify-only`: PASS, 188 entries.
+- Direct static record alignment audit: PASS after using the actual 64-byte `H8StaticDataHeader` layout, records `13`, lookup offset `64`, records offset `512`, file bytes `1328`, payload CRC `0x598EF439`, bad offsets `0`.
+- Targeted residue grep: PASS for SHINOBU_207 old telemetry fetch names, old schedule-with-Vault facade, combined resolve/schedule facade, old telemetry/tuning `TryGet*` names, and runtime latest-created Vault fallback.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: FAIL external, duplicates `10` in values `70780..70789` under non-SHINOBU_207 H8Memory rows.
+- `git diff --check`: PASS except existing LF/CRLF normalization warnings.
+- Build guard: CPU `100%`; `Get-Process dotnet,csc` returned no active process; no `dotnet build` or rebuild launched.
+
+## Loop 23: Vault Mirror Generation Proof / Read-Accessor Scanner Hardening
+- [x] Re-read Status/Rationale and continued from Loop 22 source state. DOD: SHINOBU_207 stayed scoped to memory-mapped cache/data lookup, PDA H8LR mirror fallback, and the B-Tree scanner/report. Rejected: editing unrelated sibling runtime systems or launching a rebuild.
+- [x] Integrated the new source-only subagent findings. DOD: accepted Babel padded mirror generation-handle defect and H8LR Vault mirror generation-handle defect; rejected deleting/fencing `BTreeTuningCsvParser` because Task 17 explicitly requires a cold `ReadOnlySpan<byte>` CSV tuning bridge, already editor-consumed and scanner-gated.
+- [x] Hardened `BabelDictionaryStore` padded fallback. DOD: `BufferID.BabelDictionaryMappedBytes` now persists `VaultGenerationHandle<byte> _mappedBytesHandle`, resolves the phase-local `NativeArray<byte>` through `IDataVault.TryResolveHandle`, invalidates the descriptor on close/Vault hot-swap, and renames the file-copy helper to `LoadFileIntoPaddedBufferCold`. Rejected: keeping a bare private Vault pointer acquired by `GetBuffer<byte>`.
+- [x] Hardened `PdaH8lrLoreStore` H8LR mirror fallback. DOD: `Open/OpenDefault` now take `IDataVault` plus `in VaultGenerationHandle<byte>`, the store persists the descriptor, and `TryGetUtf8` / `TryGetRecord` resolve a phase-local mirror view without retaining an unverified Vault pointer as authority. Rejected: passing a raw `NativeArray<byte>` and caching its pointer across Vault generations.
+- [x] Strengthened `Tools/Cache_Miss_Eradication_Scanner.py`. DOD: scanner now extracts method definitions instead of call sites for read-accessor purity, rejects the old `ReadFileIntoPaddedBuffer` helper name, and reports `babelMirrorGenerationGuard=true` plus `h8lrMirrorGenerationGuard=true`. Rejected: leaving this as manual grep evidence.
+- [x] Updated architecture docs. DOD: PDA streamer docs now record generation-handle H8LR mirror fallback; binary ledger now records Babel dictionary mirror as generation-handle backed and adds H8LR mirror generation-handle note. Rejected: stale docs claiming a `GetBuffer<byte>` external view.
+- [x] Post-Loop-23 verification. DOD: cache scanner, Python compile, static/Babel B-Tree check, H8LR/lore checks, localization verify, BufferID sovereignty audit, direct static alignment/CRC audit, report preservation/source-contract check, targeted residue grep, and diff-check passed.
+- [ ] Unity compile/profiler proof. NOT RUN: no `dotnet build`, rebuild, or Unity compile was launched this loop by user/build-discipline instruction.
+
+## Verification Delta Loop 23
+- `python Tools/Cache_Miss_Eradication_Scanner.py`: PASS, latest packed-byte binary `20706.89 ns`, packed-byte B-Tree `19205.80 ns`, theoretical cacheLinesSaved `8.00`, `babelMirrorGenerationGuard=true`, `h8lrMirrorGenerationGuard=true`, `readAccessorPurity=true`, and shared report preservation intact.
+- In-memory Python compile for cache scanner, static upgrader, lore packer, lore verifier, localization compiler, and BufferID audit: PASS.
+- `python Tools/UpgradeStaticBTreePayloads.py --check`: PASS, static/Babel B-Trees present.
+- `python Tools/LorePacker.py --check --hash-audit --list`: PASS, H8LR bytes `43536`, collisions `0`.
+- `python Tools/VerifyLore.py --check --verify-manifest --list`: PASS.
+- `python Tools/LocToBinary.py --verify-only`: PASS, 188 entries.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS, duplicates `0`, local casts `823`, cast files `74`.
+- Direct static record alignment audit: PASS with Hecton CRC scope `[HeaderSize..FileByteLength)`: records `13`, lookup `13`, file bytes `1328/1328`, flags `0x101`, records offset `512`, payload CRC `0x598EF439`, bad offsets `0`, reserved fields `0,0,0`.
+- Report/source-contract check: PASS, `reportOwner=shared`, `sections=["SHINOBU_207","SHINOBU_228"]`, `SHINOBU_228` preserved, mirror generation guards true, read-accessor purity true, and source residue clean true.
+- Targeted residue grep: PASS, no old H8LR `NativeArray<byte>` open signatures, old Babel `ReadFileIntoPaddedBuffer`, Babel mapped-byte `GetBuffer<byte>` direct acquisition, old telemetry fetch names, old telemetry/tuning `TryGet*` names, or runtime latest-created Vault fallback in the SHINOBU_207 contour.
+- `git diff --check`: PASS except existing LF/CRLF normalization warnings.
+
+## Loop 24: Vault Decrypt Fence / Shared Report Hardening
+- [x] Re-read Status/Rationale and continued from Loop 23. DOD: the loop stayed scoped to `BabelDictionaryStore`, the cache scanner/report, and SHINOBU_207 docs/logs. Rejected: launching `dotnet build` or editing sibling runtime assemblies.
+- [x] Integrated source-auditor finding. DOD: `TryScheduleLoreDecryption` now schedules `BabelLoreXorDecryptJob` with a `NativeArray<byte>` source when `_ownedFallbackPointer != null`; `BabelLoreXorDecryptPointerJob` is used only for true MMF-backed views. Rejected: letting a job hold a raw pointer into a Vault mirror across possible generation relocation.
+- [x] Completed phase-local Babel read resolution. DOD: pure `FetchUtf8`, tracked `TrackUtf8Lookup`, B-Tree validation, and scheduled decrypt resolve the current mapped view before payload dereference; fallback view resolution stays on existing `_mappedBytesHandle` and does not call `GlobalRegistry` or allocate/grow Vault buffers.
+- [x] Hardened scanner negative gates. DOD: `Tools/Cache_Miss_Eradication_Scanner.py` now rejects direct Babel mapped-byte `GetBuffer<byte>`/`TryGetBuffer<byte>`, raw `_basePointer` payload/decrypt regression, H8LR `NativeArray<byte>` open/mirror signatures, and records `babelReadableViewResolveGuard=true`.
+- [x] Hardened shared report ownership. DOD: scanner now writes SHINOBU_207 evidence under a `SHINOBU_207` object and preserves `SHINOBU_228`; no generic top-level `agent` key remains.
+- [x] Corrected stale persistent log strings. DOD: old scheduler-with-Vault wording now names `TryResolveTelemetryVaultBuffers(...)` plus `ScheduleTelemetryPostSimulationFlush(ring,cursor,accumulator,dependency)`.
+- [x] Post-Loop-24 verification. DOD: cache scanner, Python compile, static/Babel B-Tree check, H8LR/lore checks, localization verify, BufferID audit, direct static lookup alignment audit, report shape/source-contract check, JSON check, targeted residue grep, and diff-check passed.
+- [ ] Unity compile/profiler proof. NOT RUN: no `dotnet build`, rebuild, or Unity compile was launched this loop by explicit user/build-discipline instruction.
+
+## Verification Delta Loop 24
+- Subagent source audit: PASS integrated; Vault fallback decrypt raw-pointer job was patched.
+- Subagent docs/scanner audit: PASS integrated; negative regex gates, nested SHINOBU_207 report object, and stale telemetry schedule wording were patched.
+- `python Tools/Cache_Miss_Eradication_Scanner.py`: PASS, latest packed-byte binary `40547.62 ns`, packed-byte B-Tree `24841.87 ns`, theoretical cacheLinesSaved `8.00`, and `sourceContracts.babelReadableViewResolveGuard=true`.
+- `python -m py_compile Tools/Cache_Miss_Eradication_Scanner.py Tools/UpgradeStaticBTreePayloads.py Tools/LorePacker.py Tools/VerifyLore.py Tools/LocToBinary.py Tools/BufferIDSovereigntyAudit.py`: PASS.
+- `python Tools/UpgradeStaticBTreePayloads.py --check`: PASS, static/Babel B-Trees present.
+- `python Tools/LorePacker.py --check --hash-audit --list`: PASS, H8LR bytes `43536`, collisions `0`.
+- `python Tools/VerifyLore.py --check --verify-manifest --list`: PASS.
+- `python Tools/LocToBinary.py --verify-only`: PASS, 188 entries.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS, duplicates `0`, local casts `827`, cast files `74`.
+- Direct static lookup alignment audit: PASS with actual 64-byte `H8StaticDataHeader` and 16-byte `H8StaticDataLookupEntry`; records `13`, lookup `13`, file `1328/1328`, flags `0x101`, records offset `512`, record bytes `816`, payload CRC `0x598EF439`, Babel CRC `0xA1084F1D`, bad offsets `0`, reserved `0,0,0`.
+- Report/source-contract check: PASS, top-level keys are `SHINOBU_207`, `SHINOBU_228`, `reportOwner`, and `sections`; `SHINOBU_228` preserved; no generic top-level `agent`; mirror/readable-view guards true.
+- Targeted residue grep: PASS, no raw Babel base-pointer decrypt assignment, no raw Babel base-pointer payload dereference, no pointer-job claim for Vault mirror bytes, and no H8LR raw byte-array open/mirror signature.
+- `python -m json.tool Docs/Reports/MEMORY_OPTIMIZATION_REPORT.json`: PASS.
+- `git diff --check` on SHINOBU_207 touched source/docs/report set: PASS except existing LF/CRLF normalization warnings.

@@ -1,0 +1,206 @@
+#pragma kernel CS_CalculateFoam
+#pragma kernel CS_AdvectFoam
+#pragma kernel CS_ClearFoam
+#pragma require compute
+
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+#define HECTON_FOAM_THREAD_X 8
+#define HECTON_FOAM_THREAD_Y 8
+#define HECTON_FOAM_MAX_WAKES 64
+#define HECTON_FOAM_TWO_PI 6.28318530718
+
+CBUFFER_START(FoamComputeParamsDTO)
+float4 _FoamAdvectionVectors;   // xy wind flow m/s, zw wrapped AUP scroll meters.
+float4 _FoamDecayAndIntensity;  // x decay, y intensity, z jacobian threshold, w dt.
+CBUFFER_END
+
+RWTexture2D<float> _FoamGenerationTexture;
+Texture2D<float> _FoamHistoryTexture;
+RWTexture2D<float> _FoamOutputTexture;
+TEXTURE2D_FLOAT(_FoamSourceDepthTexture);
+SamplerState sampler_linear_clamp;
+
+struct FoamWakeImpactDTO
+{
+    float4 LocalPositionRadius;
+    float4 IntensityAgeFlags;
+};
+
+StructuredBuffer<FoamWakeImpactDTO> _FoamWakeImpacts;
+
+float4 _FoamGridParams;       // x width, y height, z invWidth, w invHeight.
+float4 _FoamWorldParams;      // xy previous scroll meters, z texture world size meters, w time seconds.
+float4 _FoamWakeParams;       // x wake count, y wake gain, z shoreline depth fade, w quality.
+float4 _FoamSourceDepthTexture_TexelSize;
+float4 _FoamWave0;            // x dirX, y dirZ, z steepness, w wavelength.
+float4 _FoamWave1;
+float4 _FoamWave2;
+float4 _FoamWave3;
+float4 _FoamWaveSpeed;        // xyzw phase speed.
+
+float2 FoamUv(uint2 id)
+{
+    return (float2(id) + float2(0.5, 0.5)) * _FoamGridParams.zw;
+}
+
+float FoamFiniteOr(float value, float fallbackValue)
+{
+    return ((value == value) && abs(value) < 1.0e20) ? value : fallbackValue;
+}
+
+float FoamFiniteSaturate(float value)
+{
+    return saturate(FoamFiniteOr(value, 0.0));
+}
+
+float FoamWrapPhase(float phase)
+{
+    float safePhase = FoamFiniteOr(phase, 0.0);
+    return safePhase - floor(safePhase / HECTON_FOAM_TWO_PI) * HECTON_FOAM_TWO_PI;
+}
+
+float2 FoamWorldXZ(float2 uv)
+{
+    return (uv - float2(0.5, 0.5)) * _FoamWorldParams.z + _FoamAdvectionVectors.zw;
+}
+
+void AccumulateJacobianTerms(float2 worldXZ, float4 wave, float speed, float time, float quality, inout float dXdx, inout float dXdz, inout float dZdx, inout float dZdz)
+{
+    float steepnessBase = max(0.0, wave.z);
+    [branch]
+    if (steepnessBase <= 0.00001)
+        return;
+
+    float2 axis = wave.xy;
+    float2 dir = axis * rsqrt(max(dot(axis, axis), 0.000001));
+    float steepness = steepnessBase * lerp(0.45, 1.0, quality);
+    float wavelength = max(0.5, wave.w);
+    float k = HECTON_FOAM_TWO_PI / wavelength;
+    float phase = FoamWrapPhase(k * dot(dir, worldXZ) + speed * time);
+    float crest = sin(phase);
+    float scalar = steepness * crest;
+
+    dXdx += scalar * dir.x * dir.x;
+    dXdz += scalar * dir.x * dir.y;
+    dZdx += scalar * dir.y * dir.x;
+    dZdz += scalar * dir.y * dir.y;
+}
+
+float EvaluateJacobianFoam(float2 worldXZ)
+{
+    float quality = saturate(_FoamWakeParams.w);
+    float time = _FoamWorldParams.w;
+    float dXdx = 0.0;
+    float dXdz = 0.0;
+    float dZdx = 0.0;
+    float dZdz = 0.0;
+
+    AccumulateJacobianTerms(worldXZ, _FoamWave0, _FoamWaveSpeed.x, time, quality, dXdx, dXdz, dZdx, dZdz);
+    AccumulateJacobianTerms(worldXZ, _FoamWave1, _FoamWaveSpeed.y, time, quality, dXdx, dXdz, dZdx, dZdz);
+    AccumulateJacobianTerms(worldXZ, _FoamWave2, _FoamWaveSpeed.z, time, quality, dXdx, dXdz, dZdx, dZdz);
+    AccumulateJacobianTerms(worldXZ, _FoamWave3, _FoamWaveSpeed.w, time, quality, dXdx, dXdz, dZdx, dZdz);
+
+    float jacobian = (1.0 - dXdx) * (1.0 - dZdz) - (dXdz * dZdx);
+    float threshold = _FoamDecayAndIntensity.z;
+    float pinch = saturate((threshold - jacobian) * (2.25 + quality * 3.5));
+    return pinch * _FoamDecayAndIntensity.y;
+}
+
+float EvaluateDepthShoreline(float2 uv)
+{
+    if (_FoamWakeParams.z <= 0.000001)
+        return 0.0;
+
+    uint depthWidth = (uint)max(1.0, _FoamSourceDepthTexture_TexelSize.z);
+    uint depthHeight = (uint)max(1.0, _FoamSourceDepthTexture_TexelSize.w);
+    if (depthWidth <= 1u || depthHeight <= 1u)
+        return 0.0;
+
+    float2 maxPixel = float2(max(1u, depthWidth) - 1u, max(1u, depthHeight) - 1u);
+    int2 basePixel = (int2)floor(saturate(uv) * maxPixel);
+    int2 maxPixelInt = int2((int)depthWidth - 1, (int)depthHeight - 1);
+    uint2 cPixel = (uint2)clamp(basePixel, int2(0, 0), maxPixelInt);
+    uint2 rPixel = (uint2)clamp(basePixel + int2(1, 0), int2(0, 0), maxPixelInt);
+    uint2 uPixel = (uint2)clamp(basePixel + int2(0, 1), int2(0, 0), maxPixelInt);
+    float c = FoamFiniteSaturate(LOAD_TEXTURE2D(_FoamSourceDepthTexture, cPixel).r);
+    float r = FoamFiniteSaturate(LOAD_TEXTURE2D(_FoamSourceDepthTexture, rPixel).r);
+    float u = FoamFiniteSaturate(LOAD_TEXTURE2D(_FoamSourceDepthTexture, uPixel).r);
+    float edge = abs(r - c) + abs(u - c);
+    float fade = max(0.0001, _FoamWakeParams.z);
+    float nearSolid = saturate(edge / fade);
+#if UNITY_REVERSED_Z
+    float depthSolid01 = c;
+#else
+    float depthSolid01 = 1.0 - c;
+#endif
+    float shallowBias = saturate(depthSolid01 * 0.18);
+    return saturate(nearSolid + shallowBias) * lerp(0.55, 1.75, saturate(_FoamWakeParams.w));
+}
+
+float EvaluateWakeFoam(float2 worldXZ)
+{
+    float wakeCountScalar = clamp(FoamFiniteOr(_FoamWakeParams.x, 0.0), 0.0, (float)HECTON_FOAM_MAX_WAKES);
+    int wakeCount = (int)wakeCountScalar;
+    float wakeFoam = 0.0;
+    [loop]
+    for (int i = 0; i < wakeCount; i++)
+    {
+        FoamWakeImpactDTO wake = _FoamWakeImpacts[i];
+        float radius = max(0.01, wake.LocalPositionRadius.w);
+        float2 delta = worldXZ - wake.LocalPositionRadius.xz;
+        float dist01 = length(delta) / radius;
+        float ring = saturate(1.0 - dist01);
+        ring = ring * ring * (3.0 - 2.0 * ring);
+        wakeFoam += ring * max(0.0, wake.IntensityAgeFlags.x);
+    }
+
+    return saturate(wakeFoam * _FoamWakeParams.y);
+}
+
+[numthreads(HECTON_FOAM_THREAD_X, HECTON_FOAM_THREAD_Y, 1)]
+void CS_CalculateFoam(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint2 id = dispatchThreadId.xy;
+    if (id.x >= (uint)_FoamGridParams.x || id.y >= (uint)_FoamGridParams.y)
+        return;
+
+    float2 uv = FoamUv(id);
+    float2 worldXZ = FoamWorldXZ(uv);
+    float jacobianFoam = EvaluateJacobianFoam(worldXZ);
+    float shorelineFoam = EvaluateDepthShoreline(uv);
+    float wakeFoam = EvaluateWakeFoam(worldXZ);
+    _FoamGenerationTexture[id] = FoamFiniteSaturate(jacobianFoam + shorelineFoam + wakeFoam);
+}
+
+[numthreads(HECTON_FOAM_THREAD_X, HECTON_FOAM_THREAD_Y, 1)]
+void CS_AdvectFoam(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint2 id = dispatchThreadId.xy;
+    if (id.x >= (uint)_FoamGridParams.x || id.y >= (uint)_FoamGridParams.y)
+        return;
+
+    float2 uv = FoamUv(id);
+    float dt = clamp(FoamFiniteOr(_FoamDecayAndIntensity.w, 0.0), 0.0, 0.1);
+    float worldSize = max(1.0, _FoamWorldParams.z);
+    float2 previousScroll = _FoamWorldParams.xy;
+    float2 currentScroll = _FoamAdvectionVectors.zw;
+    float2 scrollDeltaUv = (currentScroll - previousScroll) / worldSize;
+    float2 flowUv = (_FoamAdvectionVectors.xy * dt) / worldSize;
+    float2 sourceUv = frac(uv - flowUv - scrollDeltaUv);
+    float history = FoamFiniteOr(_FoamHistoryTexture.SampleLevel(sampler_linear_clamp, sourceUv, 0), 0.0);
+    float generation = FoamFiniteOr(_FoamGenerationTexture[id], 0.0);
+    float decay = exp2(-max(0.0, _FoamDecayAndIntensity.x) * dt * 1.44269504089);
+    _FoamOutputTexture[id] = FoamFiniteSaturate(history * decay + generation);
+}
+
+[numthreads(HECTON_FOAM_THREAD_X, HECTON_FOAM_THREAD_Y, 1)]
+void CS_ClearFoam(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint2 id = dispatchThreadId.xy;
+    if (id.x >= (uint)_FoamGridParams.x || id.y >= (uint)_FoamGridParams.y)
+        return;
+
+    _FoamGenerationTexture[id] = 0.0;
+    _FoamOutputTexture[id] = 0.0;
+}

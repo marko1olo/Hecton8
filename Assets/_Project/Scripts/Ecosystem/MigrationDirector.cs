@@ -70,10 +70,10 @@ namespace Hecton8.Ecosystem
         private IDataVault _migrationVault;
         private BufferID _migrationFieldWriteBufferId;
         private BufferID _migrationFieldPoiBufferId;
-        private VaultBufferHandle<MigrationGridCell> _migrationGridFrontHandle;
-        private VaultBufferHandle<MigrationGridCell> _migrationGridBackHandle;
-        private VaultBufferHandle<MigrationBloodCloudPoi> _bloodCloudPoisHandle;
-        private VaultBufferHandle<MigrationSwarmState> _migrationSwarmStatesHandle;
+        private VaultGenerationHandle<MigrationGridCell> _migrationGridFrontHandle;
+        private VaultGenerationHandle<MigrationGridCell> _migrationGridBackHandle;
+        private VaultGenerationHandle<MigrationBloodCloudPoi> _bloodCloudPoisHandle;
+        private VaultGenerationHandle<MigrationSwarmState> _migrationSwarmStatesHandle;
 
         private NativeArray<MigrationGridCell> _migrationGridFront;
         private NativeArray<MigrationGridCell> _migrationGridBack;
@@ -527,7 +527,9 @@ namespace Hecton8.Ecosystem
 
             float gameTimeSeconds = ResolveTimelineGameSeconds(fallbackRuntimeSeconds);
             PruneExpiredMigrationSwarmStates(gameTimeSeconds);
-            MigrationBloodCloudPoi poi = BuildBloodCloudPoi(uniqueInstanceUid, worldPosition, gameTimeSeconds);
+            if (!TryBuildBloodCloudPoi(uniqueInstanceUid, worldPosition, gameTimeSeconds, out MigrationBloodCloudPoi poi))
+                return;
+
             if (_migrationFieldScheduled)
             {
                 EnqueuePendingBloodCloudPoiWrite(in poi, gameTimeSeconds);
@@ -539,17 +541,20 @@ namespace Hecton8.Ecosystem
             RequestMigrationFieldRebuildSoon();
         }
 
-        private MigrationBloodCloudPoi BuildBloodCloudPoi(uint uniqueInstanceUid, Vector3 worldPosition, float gameTimeSeconds)
+        private bool TryBuildBloodCloudPoi(uint uniqueInstanceUid, Vector3 worldPosition, float gameTimeSeconds, out MigrationBloodCloudPoi poi)
         {
-            MigrationBloodCloudPoi poi = default;
-            poi.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition).ToAlignedBlit();
+            poi = default;
+            if (!TryResolveRuntimeAup(worldPosition, out AbsoluteUniversePosition positionAup))
+                return false;
+
+            poi.PositionAup = positionAup.ToAlignedBlit();
             poi.PositionFieldAupMeters = ResolveWrappedMigrationFieldPoint(worldPosition);
             poi.RadiusMeters = Mathf.Max(10f, bloodCloudPoiRadiusMeters);
             poi.Strength = Mathf.Max(0f, bloodCloudPoiStrength);
             poi.ExpireGameTimeSeconds = gameTimeSeconds + BloodCloudPoiLifetimeGameSeconds;
             poi.SourceId = unchecked((int)(uniqueInstanceUid & 0x7FFFFFFFu));
             poi.Flags = 1;
-            return poi;
+            return true;
         }
 
         private void WriteBloodCloudPoiToNative(in MigrationBloodCloudPoi poi, float gameTimeSeconds)
@@ -737,7 +742,7 @@ namespace Hecton8.Ecosystem
             NativeArray<MigrationGridCell> swap = _migrationGridFront;
             _migrationGridFront = _migrationGridBack;
             _migrationGridBack = swap;
-            VaultBufferHandle<MigrationGridCell> handleSwap = _migrationGridFrontHandle;
+            VaultGenerationHandle<MigrationGridCell> handleSwap = _migrationGridFrontHandle;
             _migrationGridFrontHandle = _migrationGridBackHandle;
             _migrationGridBackHandle = handleSwap;
             UnlockMigrationFieldJobBuffers();
@@ -832,7 +837,9 @@ namespace Hecton8.Ecosystem
                 return 1f;
 
             float multiplier = 1f;
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveRuntimeAup(origin, out AbsoluteUniversePosition originAup))
+                return multiplier;
+
             for (int i = 0; i < _bloodCloudPoiMirror.Length; i++)
             {
                 MigrationBloodCloudPoi poi = _bloodCloudPoiMirror[i];
@@ -1276,12 +1283,16 @@ namespace Hecton8.Ecosystem
 
         private static Vector3 BuildMigrationTargetRuntime(Vector3 origin, Vector3 direction, float routeDistanceMeters, float depthBiasMeters)
         {
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
-            double3 originAbsolute = originAup.ToAbsoluteDouble3();
             double3 routeOffset = new double3(
                 direction.x * (double)routeDistanceMeters,
                 direction.y * (double)routeDistanceMeters - depthBiasMeters,
                 direction.z * (double)routeDistanceMeters);
+            if (!TryResolveAupMeters(origin, out double3 originAbsolute))
+            {
+                Vector3 fallbackOffset = new Vector3((float)routeOffset.x, (float)routeOffset.y, (float)routeOffset.z);
+                return origin + fallbackOffset;
+            }
+
             AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromAbsolutePosition(originAbsolute + routeOffset);
             float3 runtimeTarget = targetAup.ToRuntimeFloat3();
             return new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
@@ -1339,13 +1350,8 @@ namespace Hecton8.Ecosystem
             if (_migrationVault != null)
                 return _migrationVault;
 
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-            {
-                _migrationVault = latest;
-                return _migrationVault;
-            }
-
-            return null;
+            _migrationVault = GlobalRegistry.DataVault;
+            return _migrationVault;
         }
 
         private bool RefreshMigrationNativeViews()
@@ -1354,19 +1360,82 @@ namespace Hecton8.Ecosystem
             if (vault == null)
                 return false;
 
-            if (!_migrationGridFrontHandle.IsCreated ||
-                !_migrationGridBackHandle.IsCreated ||
-                !_bloodCloudPoisHandle.IsCreated ||
-                !_migrationSwarmStatesHandle.IsCreated)
+            if (!TryOpenMigrationGridBuffer(vault, in _migrationGridFrontHandle, _migrationGridCellCount, out _migrationGridFront) ||
+                !TryOpenMigrationGridBuffer(vault, in _migrationGridBackHandle, _migrationGridCellCount, out _migrationGridBack) ||
+                !TryOpenVaultBuffer(vault, in _bloodCloudPoisHandle, BufferID.ShinobuMigrationBloodCloudPois, BloodCloudPoiCapacity, out _bloodCloudPois) ||
+                !TryOpenVaultBuffer(vault, in _migrationSwarmStatesHandle, BufferID.ShinobuMigrationSwarmStates, MigrationSwarmCapacity, out _migrationSwarmStates) ||
+                _migrationGridFrontHandle.BufferID == _migrationGridBackHandle.BufferID)
             {
                 return false;
             }
 
-            _migrationGridFront = _migrationGridFrontHandle.Resolve(vault);
-            _migrationGridBack = _migrationGridBackHandle.Resolve(vault);
-            _bloodCloudPois = _bloodCloudPoisHandle.Resolve(vault);
-            _migrationSwarmStates = _migrationSwarmStatesHandle.Resolve(vault);
             return IsMigrationNativeStateAllocated;
+        }
+
+        private static bool TryOpenMigrationGridBuffer(
+            IDataVault vault,
+            in VaultGenerationHandle<MigrationGridCell> handle,
+            int requiredLength,
+            out NativeArray<MigrationGridCell> buffer)
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0 || !IsMigrationGridHandle(in handle))
+                return false;
+
+            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength < 0 ||
+                handle.BufferID != unchecked((uint)(int)bufferId) ||
+                handle.Generation == 0u)
+            {
+                return false;
+            }
+
+            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsMigrationGridHandle(in VaultGenerationHandle<MigrationGridCell> handle)
+        {
+            return handle.Generation != 0u &&
+                   (handle.BufferID == unchecked((uint)(int)BufferID.ShinobuMigrationGridFront) ||
+                    handle.BufferID == unchecked((uint)(int)BufferID.ShinobuMigrationGridBack));
+        }
+
+        private static BufferID ToBufferId(in VaultGenerationHandle<MigrationGridCell> handle)
+        {
+            return (BufferID)unchecked((int)handle.BufferID);
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static bool AreMigrationDtoLayoutsValid()
@@ -1410,14 +1479,14 @@ namespace Hecton8.Ecosystem
             _migrationGridCellCount = requiredCellCount;
             _debugMigrationGridCellCount = requiredCellCount;
 
-            _migrationGridFrontHandle = vault.GetBufferHandle<MigrationGridCell>(BufferID.ShinobuMigrationGridFront, requiredCellCount, NativeMemorySystemId, NativeArrayOptions.ClearMemory);
-            _migrationGridBackHandle = vault.GetBufferHandle<MigrationGridCell>(BufferID.ShinobuMigrationGridBack, requiredCellCount, NativeMemorySystemId, NativeArrayOptions.UninitializedMemory);
-            _bloodCloudPoisHandle = vault.GetBufferHandle<MigrationBloodCloudPoi>(BufferID.ShinobuMigrationBloodCloudPois, BloodCloudPoiCapacity, NativeMemorySystemId, NativeArrayOptions.ClearMemory);
-            _migrationSwarmStatesHandle = vault.GetBufferHandle<MigrationSwarmState>(BufferID.ShinobuMigrationSwarmStates, MigrationSwarmCapacity, NativeMemorySystemId, NativeArrayOptions.ClearMemory);
-            _migrationGridFront = _migrationGridFrontHandle.Resolve(vault);
-            _migrationGridBack = _migrationGridBackHandle.Resolve(vault);
-            _bloodCloudPois = _bloodCloudPoisHandle.Resolve(vault);
-            _migrationSwarmStates = _migrationSwarmStatesHandle.Resolve(vault);
+            _migrationGridFrontHandle = vault.GetGenerationHandle<MigrationGridCell>(BufferID.ShinobuMigrationGridFront, requiredCellCount, NativeMemorySystemId, NativeArrayOptions.ClearMemory);
+            _migrationGridBackHandle = vault.GetGenerationHandle<MigrationGridCell>(BufferID.ShinobuMigrationGridBack, requiredCellCount, NativeMemorySystemId, NativeArrayOptions.UninitializedMemory);
+            _bloodCloudPoisHandle = vault.GetGenerationHandle<MigrationBloodCloudPoi>(BufferID.ShinobuMigrationBloodCloudPois, BloodCloudPoiCapacity, NativeMemorySystemId, NativeArrayOptions.ClearMemory);
+            _migrationSwarmStatesHandle = vault.GetGenerationHandle<MigrationSwarmState>(BufferID.ShinobuMigrationSwarmStates, MigrationSwarmCapacity, NativeMemorySystemId, NativeArrayOptions.ClearMemory);
+            TryOpenMigrationGridBuffer(vault, in _migrationGridFrontHandle, requiredCellCount, out _migrationGridFront);
+            TryOpenMigrationGridBuffer(vault, in _migrationGridBackHandle, requiredCellCount, out _migrationGridBack);
+            TryOpenVaultBuffer(vault, in _bloodCloudPoisHandle, BufferID.ShinobuMigrationBloodCloudPois, BloodCloudPoiCapacity, out _bloodCloudPois);
+            TryOpenVaultBuffer(vault, in _migrationSwarmStatesHandle, BufferID.ShinobuMigrationSwarmStates, MigrationSwarmCapacity, out _migrationSwarmStates);
 
             if (!IsMigrationNativeStateAllocated)
             {
@@ -1435,14 +1504,15 @@ namespace Hecton8.Ecosystem
         {
             CompleteMigrationFieldJob(forceComplete: true);
             UnlockMigrationFieldJobBuffers();
+            IDataVault vault = _migrationVault;
             _migrationGridFront = default;
             _migrationGridBack = default;
             _bloodCloudPois = default;
             _migrationSwarmStates = default;
-            _migrationGridFrontHandle = default;
-            _migrationGridBackHandle = default;
-            _bloodCloudPoisHandle = default;
-            _migrationSwarmStatesHandle = default;
+            ReleaseVaultBuffer(vault, ref _migrationGridFrontHandle);
+            ReleaseVaultBuffer(vault, ref _migrationGridBackHandle);
+            ReleaseVaultBuffer(vault, ref _bloodCloudPoisHandle);
+            ReleaseVaultBuffer(vault, ref _migrationSwarmStatesHandle);
             _migrationVault = null;
             _migrationGridCellCount = 0;
             _migrationGridResolution = int3.zero;
@@ -1476,14 +1546,15 @@ namespace Hecton8.Ecosystem
         {
             IDataVault vault = ResolveMigrationDataVault();
             if (vault == null ||
-                !_migrationGridBackHandle.IsCreated ||
-                !_bloodCloudPoisHandle.IsCreated)
+                !IsMigrationGridHandle(in _migrationGridBackHandle) ||
+                _bloodCloudPoisHandle.BufferID != unchecked((uint)(int)BufferID.ShinobuMigrationBloodCloudPois) ||
+                _bloodCloudPoisHandle.Generation == 0u)
             {
                 return false;
             }
 
-            BufferID writeBufferId = _migrationGridBackHandle.BufferId;
-            BufferID poiBufferId = _bloodCloudPoisHandle.BufferId;
+            BufferID writeBufferId = ToBufferId(in _migrationGridBackHandle);
+            BufferID poiBufferId = BufferID.ShinobuMigrationBloodCloudPois;
             if (!vault.TryLockBuffer(writeBufferId, NativeMemorySystemId))
                 return false;
 
@@ -1733,11 +1804,38 @@ namespace Hecton8.Ecosystem
 
         private static double3 ResolveAupMeters(Vector3 runtimePosition)
         {
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-            return new double3(
+            return TryResolveAupMeters(runtimePosition, out double3 aupMeters) ? aupMeters : double3.zero;
+        }
+
+        private static bool TryResolveAupMeters(Vector3 runtimePosition, out double3 aupMeters)
+        {
+            aupMeters = default;
+            if (!TryResolveRuntimeAup(runtimePosition, out AbsoluteUniversePosition aup))
+                return false;
+
+            aupMeters = new double3(
                 aup.GridX * (double)AbsoluteUniversePosition.CellSizeMeters + aup.LocalX,
                 aup.GridY * (double)AbsoluteUniversePosition.CellSizeMeters + aup.LocalY,
                 aup.GridZ * (double)AbsoluteUniversePosition.CellSizeMeters + aup.LocalZ);
+            return math.all(math.isfinite(aupMeters));
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static double WrapCoordinateToExtent(double value, double origin, double extent)

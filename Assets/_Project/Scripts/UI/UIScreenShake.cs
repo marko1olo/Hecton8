@@ -11,7 +11,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/UI Screen Shake")]
-    public sealed class UIScreenShake : MonoBehaviour, ILateFrameTickable
+    public sealed class UIScreenShake : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // INSPECTOR
@@ -32,6 +32,7 @@ namespace Hecton8.UI
         private float _shakeTimer;
         private float _activeShakeIntensity;
         private bool _registered;
+        private bool _hotSwapRegistered;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // LIFECYCLE
@@ -47,12 +48,13 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            if (_isShaking)
-                TryRegister();
+            TryRegisterHotSwapListener();
+            TryRegister();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             Unregister();
             _isShaking = false;
             ResetPosition();
@@ -60,7 +62,17 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             Unregister();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+                TryRegister();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -70,10 +82,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (!_isShaking)
-            {
-                Unregister();
                 return;
-            }
 
             float safeDeltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             float safeDuration = math.max(0.0001f, shakeDuration);
@@ -95,7 +104,6 @@ namespace Hecton8.UI
             {
                 _isShaking = false;
                 ResetPosition();
-                Unregister();
             }
         }
 
@@ -138,7 +146,6 @@ namespace Hecton8.UI
             _activeShakeIntensity = math.max(0f, intensity);
             _isShaking = true;
             _shakeTimer = 0f;
-            TryRegister();
         }
 
         private static float CheapSignedNoise(float value, float seed)
@@ -154,9 +161,6 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
@@ -167,6 +171,23 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

@@ -313,53 +313,27 @@ namespace Hecton8.Animation.IK
             int segmentCapacity = math.clamp(requestedSegmentCapacity, 2, LeviathanTerrainIkConstants.MaxSegments);
             int sdfVoxelCount = math.max(0, requestedSdfVoxelCount);
             int terrainSampleCount = math.max(0, requestedTerrainSampleCount);
-            segmentPositions = vault.GetBuffer<float3>(
-                BufferID.LeviathanSegmentPositions,
-                segmentCapacity,
-                SystemID.AnimationFauna);
-            previousSegmentPositions = vault.GetBuffer<float3>(
-                BufferID.LeviathanPreviousSegmentPositions,
-                segmentCapacity,
-                SystemID.AnimationFauna);
-            leviathanBones = vault.GetBuffer<LeviathanBoneDTO>(
-                BufferID.LeviathanBoneMatrices,
-                segmentCapacity,
-                SystemID.AnimationFauna);
-            boneConstraints = vault.GetBuffer<LeviathanBoneConstraintsDTO>(
-                BufferID.LeviathanProceduralBoneConstraints,
-                segmentCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.UninitializedMemory);
-            colliderProxies = vault.GetBuffer<LeviathanCapsuleColliderDTO>(
-                BufferID.LeviathanCreatureColliderProxies,
-                segmentCapacity,
-                SystemID.AnimationFauna,
-                NativeArrayOptions.UninitializedMemory);
-            telemetryRing = vault.GetBuffer<LeviathanTerrainIkTelemetryEntry>(
-                BufferID.LeviathanTerrainIkTelemetryRing,
-                LeviathanTerrainIkConstants.TelemetryCapacity,
-                SystemID.AnimationFauna);
-            telemetryCursor = vault.GetBuffer<int>(
-                BufferID.LeviathanTerrainIkTelemetryCursor,
-                1,
-                SystemID.AnimationFauna);
 
-            if (sdfVoxelCount > 0)
+            if (!TryResolveLane(vault, BufferID.LeviathanSegmentPositions, segmentCapacity, NativeArrayOptions.ClearMemory, out segmentPositions) ||
+                !TryResolveLane(vault, BufferID.LeviathanPreviousSegmentPositions, segmentCapacity, NativeArrayOptions.ClearMemory, out previousSegmentPositions) ||
+                !TryResolveLane(vault, BufferID.LeviathanBoneMatrices, segmentCapacity, NativeArrayOptions.ClearMemory, out leviathanBones) ||
+                !TryResolveLane(vault, BufferID.LeviathanProceduralBoneConstraints, segmentCapacity, NativeArrayOptions.UninitializedMemory, out boneConstraints) ||
+                !TryResolveLane(vault, BufferID.LeviathanCreatureColliderProxies, segmentCapacity, NativeArrayOptions.UninitializedMemory, out colliderProxies) ||
+                !TryResolveLane(vault, BufferID.LeviathanTerrainIkTelemetryRing, LeviathanTerrainIkConstants.TelemetryCapacity, NativeArrayOptions.ClearMemory, out telemetryRing) ||
+                !TryResolveLane(vault, BufferID.LeviathanTerrainIkTelemetryCursor, 1, NativeArrayOptions.ClearMemory, out telemetryCursor) ||
+                (sdfVoxelCount > 0 && !TryResolveLane(vault, BufferID.VoxelSdfTexture3D, sdfVoxelCount, NativeArrayOptions.UninitializedMemory, out voxelSdfTexture3D)) ||
+                (terrainSampleCount > 0 && !TryResolveLane(vault, BufferID.TerrainSeamHeightmap, terrainSampleCount, NativeArrayOptions.UninitializedMemory, out terrainHeightSamples)))
             {
-                voxelSdfTexture3D = vault.GetBuffer<byte>(
-                    BufferID.VoxelSdfTexture3D,
-                    sdfVoxelCount,
-                    SystemID.AnimationFauna,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (terrainSampleCount > 0)
-            {
-                terrainHeightSamples = vault.GetBuffer<ushort>(
-                    BufferID.TerrainSeamHeightmap,
-                    terrainSampleCount,
-                    SystemID.AnimationFauna,
-                    NativeArrayOptions.UninitializedMemory);
+                segmentPositions = default;
+                previousSegmentPositions = default;
+                leviathanBones = default;
+                boneConstraints = default;
+                colliderProxies = default;
+                telemetryRing = default;
+                telemetryCursor = default;
+                voxelSdfTexture3D = default;
+                terrainHeightSamples = default;
+                return false;
             }
 
             return segmentPositions.IsCreated &&
@@ -378,6 +352,25 @@ namespace Hecton8.Animation.IK
                    telemetryCursor.Length >= 1 &&
                    (sdfVoxelCount == 0 || (voxelSdfTexture3D.IsCreated && voxelSdfTexture3D.Length >= sdfVoxelCount)) &&
                    (terrainSampleCount == 0 || (terrainHeightSamples.IsCreated && terrainHeightSamples.Length >= terrainSampleCount));
+        }
+
+        private static bool TryResolveLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.AnimationFauna,
+                options);
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
     }
 

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -137,8 +138,8 @@ namespace Hecton8.World
             double3 absoluteCenter3 = centerAup.ToAbsoluteDouble3();
             Vector3 runtimeCenter = new Vector3(runtimeCenter3.x, runtimeCenter3.y, runtimeCenter3.z);
             Vector3 absoluteCenter = new Vector3((float)absoluteCenter3.x, (float)absoluteCenter3.y, (float)absoluteCenter3.z);
-            int centerCellX = WorldToScatterCellIndex(absoluteCenter.x, cellSize);
-            int centerCellZ = WorldToScatterCellIndex(absoluteCenter.z, cellSize);
+            int centerCellX = WorldToScatterCellIndex(absoluteCenter3.x, cellSize);
+            int centerCellZ = WorldToScatterCellIndex(absoluteCenter3.z, cellSize);
             int cellDiameter = (radiusCells * 2) + 1;
             int totalCells = cellDiameter * cellDiameter;
 
@@ -173,7 +174,7 @@ namespace Hecton8.World
             if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 playerAup = snapshot.Aup;
-                return MathGuard.IsFinite(in playerAup);
+                return playerAup.IsFinite();
             }
 
             var playerMovement = playerContext.PlayerMovement;
@@ -181,7 +182,7 @@ namespace Hecton8.World
                 return false;
 
             playerAup = playerMovement.CurrentAup;
-            return MathGuard.IsFinite(in playerAup);
+            return playerAup.IsFinite();
         }
 
         private void HandleScatterSamplingUnavailableDependencies()
@@ -397,7 +398,7 @@ namespace Hecton8.World
             int maxCandidatesBeforePrunePerCell = 0;
             int maxCandidatesAfterPrunePerCell = 0;
             ScatterClassicParityAccumulator classicParityAccumulator = default;
-            bool collectDetailedDiagnostics = completionContext.CollectDetailedDiagnostics;
+            bool collectDetailedDiagnostics = completionContext.CollectDetailedDiagnostics != 0;
             WorldZoneAnchor debugZone = completionContext.DebugZone;
             WorldZoneAnchor.ZoneKind debugResolvedZoneKind = completionContext.DebugResolvedZoneKind;
             WorldProceduralPattern debugPattern = completionContext.DebugPattern;
@@ -509,7 +510,7 @@ namespace Hecton8.World
                                 runtimeRule,
                                 activeFieldSample.biomeFamily,
                                 biomeTransitionContext.SecondaryFamily,
-                                biomeTransitionContext.HasSecondary,
+                                biomeTransitionContext.HasSecondary != 0,
                                 activeFieldSample.zone,
                                 activeFieldSample.resolvedZoneKind,
                                 activeFieldSample.depthMeters,
@@ -601,7 +602,7 @@ namespace Hecton8.World
                             continue;
                         }
 
-                        int secondaryLayerPreferredFamilyIndex = biomeTransitionContext.HasSecondary
+                        int secondaryLayerPreferredFamilyIndex = biomeTransitionContext.HasSecondary != 0
                             ? GetPreferredFamilyIndexForLayer(biomeTransitionContext.SecondaryProfile, family, layer)
                             : -1;
                         RegisterScatterBackendCellEligibility(ref backendCellState, layer);
@@ -704,8 +705,8 @@ namespace Hecton8.World
                         ClusterRatioStart = clusterRatioStart,
                         PassiveSpawnMax = passiveSpawnMax,
                         PredatorSpawnMax = predatorSpawnMax,
-                        UsesPatternAccentQuotas = usesPatternAccentQuotas,
-                        CollectDetailedDiagnostics = collectDetailedDiagnostics,
+                        UsesPatternAccentQuotas = usesPatternAccentQuotas ? (byte)1 : (byte)0,
+                        CollectDetailedDiagnostics = collectDetailedDiagnostics ? (byte)1 : (byte)0,
                         PlacementRegistrationContext = placementRegistrationContext
                     };
                     AcceptScatterCellCandidates(
@@ -899,11 +900,11 @@ namespace Hecton8.World
             _debugBiomeInfluenceGpuBufferCapacity = biomeInfluenceBufferCapacity;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct BiomeInfluencePackJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<WorldProceduralFieldSampler.BiomeInfluenceCell> Source;
-            [WriteOnly] public NativeArray<uint> Destination;
+            [ReadOnly, NoAlias] public NativeArray<WorldProceduralFieldSampler.BiomeInfluenceCell> Source;
+            [WriteOnly, NoAlias] public NativeArray<uint> Destination;
             public int CellCount;
 
             public void Execute(int index)
@@ -911,7 +912,8 @@ namespace Hecton8.World
                 if ((uint)index >= (uint)CellCount)
                     return;
 
-                Destination[index] = Source[index].GpuPacked;
+                WorldProceduralFieldSampler.BiomeInfluenceCell cell = Source[index];
+                Destination[index] = WorldProceduralFieldSampler.BiomeInfluenceCell.ExtractGpuPacked(in cell);
             }
         }
 
@@ -971,7 +973,7 @@ namespace Hecton8.World
             context.SampledPatternCounts = _sampledPatternCounts;
             context.SampledZoneCounts = _sampledZoneCounts;
             context.RejectedResidencyFamily = "None";
-            context.CollectDetailedDiagnostics = ShouldCollectScatterDetailedDiagnostics();
+            context.CollectDetailedDiagnostics = ShouldCollectScatterDetailedDiagnostics() ? (byte)1 : (byte)0;
             context.DebugPattern = WorldProceduralPattern.SedimentResources;
             context.DebugGroundBudgetScale = 1f;
             context.DebugClusterBudgetScale = 1f;
@@ -1072,7 +1074,7 @@ namespace Hecton8.World
                 out structureBudgetScale,
                 out spawnBudgetScale);
 
-            if (!biomeTransitionContext.HasSecondary)
+            if (biomeTransitionContext.HasSecondary == 0)
                 return;
 
             ResolveCombinedBudgetScales(
@@ -1104,12 +1106,12 @@ namespace Hecton8.World
                 primaryPreferredFamilyIndex,
                 patternScoreContext);
 
-            if (!biomeTransitionContext.HasSecondary)
+            if (biomeTransitionContext.HasSecondary == 0)
                 return primaryUpperBound;
 
             float secondaryUpperBound = ResolveBiomeMatrixScoreUpperBound(
                 runtimeRule,
-                biomeTransitionContext.SecondaryScoreContext.HasBiomeProfile,
+                biomeTransitionContext.SecondaryScoreContext.HasBiomeProfile != 0,
                 secondaryPreferredFamilyIndex,
                 patternScoreContext);
             return math.max(primaryUpperBound, secondaryUpperBound);
@@ -1397,7 +1399,7 @@ namespace Hecton8.World
             }
 
             float biomeMatrixScore = GetBiomeMatrixBonus(activeFieldSample.resolvedPattern, activeFieldSample.biomeProfile, runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext);
-            if (biomeTransitionContext.HasSecondary)
+            if (biomeTransitionContext.HasSecondary != 0)
             {
                 float secondaryBiomeMatrixScore = GetBiomeMatrixBonus(
                     activeFieldSample.resolvedPattern,
@@ -1480,7 +1482,7 @@ namespace Hecton8.World
                         ref classicParityAccumulator,
                         ref passiveSpawnCount,
                         ref predatorSpawnCount,
-                        acceptanceContext.CollectDetailedDiagnostics);
+                        acceptanceContext.CollectDetailedDiagnostics != 0);
                 }
 
                 return;
@@ -1517,7 +1519,7 @@ namespace Hecton8.World
                 }
 
                 if (!CanAcceptPatternAccentBudget(
-                        acceptanceContext.UsesPatternAccentQuotas,
+                        acceptanceContext.UsesPatternAccentQuotas != 0,
                         candidate,
                         clusterAccentCounts,
                         structureAccentCounts,
@@ -1561,7 +1563,7 @@ namespace Hecton8.World
                     ref classicParityAccumulator,
                     ref passiveSpawnCount,
                     ref predatorSpawnCount,
-                    acceptanceContext.CollectDetailedDiagnostics);
+                    acceptanceContext.CollectDetailedDiagnostics != 0);
             }
         }
 
@@ -1765,7 +1767,7 @@ namespace Hecton8.World
             _debugMaxCandidatesAfterPrunePerCell = maxCandidatesAfterPrunePerCell;
             _debugTrackedSpawnRescueCandidates = trackedSpawnRescueCandidates;
             _debugInjectedSpawnRescuePlacements = injectedSpawnRescuePlacements;
-            _scatterRefreshSampleState.UsedFallbackOnly = evaluatedCells > 0 && fallbackSamples >= evaluatedCells;
+            _scatterRefreshSampleState.UsedFallbackOnly = evaluatedCells > 0 && fallbackSamples >= evaluatedCells ? (byte)1 : (byte)0;
             _debugTargetGroundMin = ResolveMinimumGroundPlacements(debugPattern, dominantBiomeProfile);
             _debugTargetGroundMax = ResolvePatternLayerTargetMax(debugPattern, dominantBiomeProfile, WorldPrefabFamilyProfile.ScatterLayer.Ground);
             _debugTargetClusterMin = ResolveMinimumClusterPlacements(debugPattern, dominantBiomeProfile);

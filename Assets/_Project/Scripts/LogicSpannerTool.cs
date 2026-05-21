@@ -41,8 +41,8 @@ namespace Hecton8.Gameplay
 
         private SpannerState _state;
         private BaseModule _selectedSource;
+        private ConstructionManager _constructionManager;
         private int _selectedSourceModuleHashId;
-        private float _lastLinkPulse;
         private FixedCharBuffer _hudBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] — logic spanner HUD staging buffer — owner: LogicSpannerTool
 
         private enum SpannerState : byte
@@ -55,18 +55,21 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
+            _constructionManager = GlobalRegistry.ConstructionRuntime;
             ClearSelectionInternal();
         }
 
         public override void OnDespawn()
         {
             ClearSelectionInternal();
+            _constructionManager = null;
             base.OnDespawn();
         }
 
         public override void OnEquip()
         {
             base.OnEquip();
+            _constructionManager = GlobalRegistry.ConstructionRuntime;
             ConnectionSplineBatchRenderer.SetLogisticsPathHighlightActive(true);
         }
 
@@ -121,7 +124,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            ConstructionManager constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
+            ConstructionManager constructionManager = _constructionManager;
             if (constructionManager == null)
             {
                 PublishWarning(InvalidTargetMessage);
@@ -147,7 +150,6 @@ namespace Hecton8.Gameplay
             }
 
             _state = SpannerState.LinkCommitted;
-            _lastLinkPulse = Time.time;
             _selectedSource = null;
             _selectedSourceModuleHashId = 0;
             QueueToolHapticFeedback(math.max(0.1f, GetRuntimePowerScalar(1f)), 1f);
@@ -169,7 +171,7 @@ namespace Hecton8.Gameplay
                     AppendText(ref buffer, "SOURCE ARMED");
                     break;
                 case SpannerState.LinkCommitted:
-                    AppendText(ref buffer, Time.time - _lastLinkPulse <= 0.75f ? "BYPASS LINKED" : "STANDBY");
+                    AppendText(ref buffer, WasRecentlyUsed(0.75f) ? "BYPASS LINKED" : "STANDBY");
                     break;
                 default:
                     AppendText(ref buffer, _selectedSource != null ? "SOURCE ARMED" : "STANDBY");
@@ -190,10 +192,10 @@ namespace Hecton8.Gameplay
             PublishInfo(SelectionClearedMessage);
         }
 
-        public override string GetOperationalDirective()
+        public override string BuildLegacyOperationalDirectiveString()
         {
             if (IsBroken)
-                return base.GetOperationalDirective();
+                return base.BuildLegacyOperationalDirectiveString();
 
             switch (_state)
             {
@@ -201,7 +203,7 @@ namespace Hecton8.Gameplay
                     return ArmedDirective;
 
                 case SpannerState.LinkCommitted:
-                    return Time.time - _lastLinkPulse <= 0.75f ? LinkedDirective : IdleDirective;
+                    return WasRecentlyUsed(0.75f) ? LinkedDirective : IdleDirective;
 
                 default:
                     return _selectedSource != null ? ArmedDirective : IdleDirective;
@@ -223,7 +225,7 @@ namespace Hecton8.Gameplay
                     return;
 
                 case SpannerState.LinkCommitted:
-                    AppendText(ref buffer, Time.time - _lastLinkPulse <= 0.75f ? LinkedDirective : IdleDirective);
+                    AppendText(ref buffer, WasRecentlyUsed(0.75f) ? LinkedDirective : IdleDirective);
                     return;
 
                 default:
@@ -234,10 +236,15 @@ namespace Hecton8.Gameplay
 
         private bool TryResolveTargetModule(out BaseModule module)
         {
-            Transform cachedTransform = transform;
-            if (!TryResolveQueuedRaycast(
-                    cachedTransform.position,
-                    cachedTransform.forward,
+            if (!TryResolveActionRay(out Vector3 origin, out Vector3 direction))
+            {
+                module = null;
+                return false;
+            }
+
+            if (!TryQueuePrimaryRaycast(
+                    origin,
+                    direction,
                     GetRuntimeMaxRange(wiringRange),
                     wiringMask.value,
                     QueryTriggerInteraction.Ignore,
@@ -264,6 +271,36 @@ namespace Hecton8.Gameplay
             }
 
             return module != null;
+        }
+
+        private bool TryResolveActionRay(out Vector3 origin, out Vector3 direction)
+        {
+            origin = default;
+            direction = default;
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                return false;
+            }
+
+            float3 runtimePosition = snapshot.RuntimePosition;
+            float3 forward = snapshot.Forward;
+            float forwardLengthSq = math.lengthsq(forward);
+            if (!math.all(math.isfinite(runtimePosition)) ||
+                !math.all(math.isfinite(forward)) ||
+                !math.isfinite(forwardLengthSq) ||
+                forwardLengthSq <= 0.0001f)
+            {
+                return false;
+            }
+
+            float invForwardLength = math.rsqrt(math.max(forwardLengthSq, 0.0001f));
+            origin = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            direction = new Vector3(
+                forward.x * invForwardLength,
+                forward.y * invForwardLength,
+                forward.z * invForwardLength);
+            return true;
         }
 
         private static int ResolveModuleHashId(BaseModule module)

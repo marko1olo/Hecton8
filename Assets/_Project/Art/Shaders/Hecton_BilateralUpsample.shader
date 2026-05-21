@@ -260,10 +260,14 @@ Shader "Hidden/Hecton8/BilateralUpsample"
 
                 float3 bilateral = sum * rcp(max(weightSum, 0.0001));
                 float variance = saturate(abs(Luma(centerColor) - Luma(bilateral)) * 10.0);
-                float detailGain = sharpness * lerp(0.35, 1.0, variance);
+                float scaleDeficit01 = saturate(1.0 - safeScale);
+                float ringingGuard = lerp(1.0, 0.42, SmoothRange01(0.24, 0.52, scaleDeficit01));
+                float detailGain = sharpness * ringingGuard * lerp(0.35, 1.0, variance);
                 float3 reconstructed = centerColor + (centerColor - bilateral) * detailGain;
                 reconstructed = ApplyNeighborhoodClamp(reconstructed, minColor, maxColor);
                 reconstructed = ResolveTemporalHook(uv, reconstructed, minColor, maxColor);
+                float reconstructionDither = (InterleavedGradientNoise(uv) - 0.5) * scaleDeficit01 * (1.0 - ringingGuard) * 0.012;
+                reconstructed = ApplyNeighborhoodClamp(reconstructed + reconstructionDither.xxx, minColor, maxColor);
                 reconstructed = ApplyDearLie(uv, reconstructed);
                 return half4((half3)reconstructed, 1.0h);
             }

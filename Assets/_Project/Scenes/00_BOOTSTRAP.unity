@@ -577,7 +577,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37290befeffd3d94796e62b9097c7db9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  analyticalCausticsCompute: {fileID: 7200000, guid: 27b7cf5d630bd8d4dbc699ff38f19ac2, type: 3}
+  shaderVariantCollections:
+  - {fileID: 20000000, guid: 232232232ca00147aa7d232232ca0014, type: 3}
+  - {fileID: 20000000, guid: 0e3d6c95b94344c7b864f17da3f25207, type: 3}
+  - {fileID: 20000000, guid: 27027027027027027027027027027027, type: 3}
 --- !u!1001 &3987986218543343561
 PrefabInstance:
   m_ObjectHideFlags: 0

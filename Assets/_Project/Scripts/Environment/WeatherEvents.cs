@@ -42,16 +42,91 @@ namespace Hecton8.Environment
     {
         private const int ListenerCapacity = 32;
         private const int PendingEventCapacity = 32;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint EventOverflowWarningHash = 0x57454F46u;
         private const uint ListenerRejectedWarningHash = 0x5745524Au;
         private const uint ListenerExceptionWarningHash = 0x57454558u;
         private const uint EventContextHash = 0x5745534Eu;
         private const uint ListenerContextHash = 0x57454C53u;
 
-        // COLD ALLOC: RegistryBucket<IWeatherEventListener>[32] — deferred weather event listeners — owner: WeatherEvents
-        private static readonly RegistryBucket<IWeatherEventListener> _listeners = new RegistryBucket<IWeatherEventListener>(ListenerCapacity);
-        private static readonly IWeatherEventListener[] _deferredRegisterListeners = new IWeatherEventListener[ListenerCapacity];
-        private static readonly IWeatherEventListener[] _deferredUnregisterListeners = new IWeatherEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public IWeatherEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct WeatherListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public WeatherListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity]; // COLD ALLOC: ListenerSlot[32] - fixed weather listener slots drained on dispatcher LateUpdate - owner: WeatherEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IWeatherEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IWeatherEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public bool TryUnregister(IWeatherEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return true;
+                }
+
+                return false;
+            }
+
+            public IWeatherEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static WeatherListenerRegistry _listeners = new WeatherListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[32] - listener additions deferred while dispatching weather events - owner: WeatherEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[32] - listener removals deferred while dispatching weather events - owner: WeatherEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<WeatherEventPayload> _pendingEvents;
         private static NativeQueue<WeatherEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -155,14 +230,13 @@ namespace Hecton8.Environment
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IWeatherEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IWeatherEventListener listener = rawArray[i];
+                        IWeatherEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -249,7 +323,7 @@ namespace Hecton8.Environment
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<WeatherEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<WeatherEventPayload>[32] — deferred weather event lane — owner: WeatherEvents
+                _pendingEvents = new NativeQueue<WeatherEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<WeatherEventPayload>[32] — deferred weather event lane — owner: WeatherEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -261,7 +335,7 @@ namespace Hecton8.Environment
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<WeatherEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<WeatherEventPayload>[32] — next-frame weather event lane prevents same-frame reentrant dispatch — owner: WeatherEvents
+                _nextFrameEvents = new NativeQueue<WeatherEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<WeatherEventPayload>[32] — next-frame weather event lane prevents same-frame reentrant dispatch — owner: WeatherEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -325,7 +399,7 @@ namespace Hecton8.Environment
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IWeatherEventListener listener)
@@ -342,19 +416,19 @@ namespace Hecton8.Environment
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IWeatherEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -365,12 +439,12 @@ namespace Hecton8.Environment
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -379,7 +453,7 @@ namespace Hecton8.Environment
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -390,7 +464,7 @@ namespace Hecton8.Environment
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -401,8 +475,8 @@ namespace Hecton8.Environment
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IWeatherEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IWeatherEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -411,8 +485,8 @@ namespace Hecton8.Environment
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IWeatherEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IWeatherEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }

@@ -174,7 +174,7 @@ The dashboard does not replace asset metadata or the first-capture handoff packe
 | `pain_bucket_answered` | `pain_bucket_answered` | Private priority only; never public copy. |
 | `pain_proof_score` | `pain_proof_score` | 0 until QA assigns it; first-pack priority requires 4/5 after source/date freshness check. |
 | `pain_freshness_source` | `pain_freshness_source` | Must name the monitoring refresh/source row used for nonzero pain proof. |
-| `pain_freshness_checked_at` | `pain_freshness_checked_at` | Must be same-day/current-week for first-pack priority. |
+| `pain_freshness_checked_at` | `pain_freshness_checked_at` | Must be same-day for any SN2-derived pain bucket; current-week is not enough for first-pack priority. |
 | `public_comparison_gate` | `public_comparison_gate` | Must stay `PRIVATE_ONLY_NO_COMPETITOR_COPY` or stricter for first-pack use. |
 | `agency_decision_proof_gate` | `agency_decision_proof_gate` | Must be present; first-pack advance needs one `AGENCY_PROOF_CANDIDATE`. |
 | `agency_decision_notes` | `agency_decision_notes` | Must name the readable choice or explain non-proof status; blank notes force `decision=HOLD`. |

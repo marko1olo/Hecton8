@@ -18,7 +18,7 @@ namespace Hecton8.AI.Cognition
         public const int MaxAcousticTaps = 32;
         public const int CsvScratchBytes = 4096;
         public const float Epsilon = 0.0001f;
-        public const float LowQualityNodeHold = 0.1f;
+        public const float MinimumQualityNodeHold = 0.1f;
         public const float SdfMidsectionStartQuality = 0.25f;
         public const float SdfTailStartQuality = 0.55f;
         public const uint AbyssalTrenchBiomeHash = 0xA8B55110u;
@@ -61,7 +61,7 @@ namespace Hecton8.AI.Cognition
         public const byte SweetLieOccluded = 1 << 1;
         public const byte AcousticOverride = 1 << 2;
         public const byte StrikeCommitted = 1 << 3;
-        public const byte LowQualityCollapse = 1 << 4;
+        public const byte ReducedQualityNodeBudget = 1 << 4;
         public const byte TailSdfSampled = 1 << 5;
         public const byte Fault = 1 << 6;
         public const byte EmergencyMockStats = 1 << 7;

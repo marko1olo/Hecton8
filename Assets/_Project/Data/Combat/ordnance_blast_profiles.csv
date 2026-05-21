@@ -1,0 +1,5 @@
+name,peak_pressure,max_radius,expansion_speed,visual_intensity,force_scale,acoustic_intensity
+Standard_Torpedo,36000,74,340,1.65,0.022,0.92
+Reactor_Meltdown,95000,128,420,2.40,0.026,1.00
+Depth_Charge,18000,42,260,1.10,0.018,0.75
+Cave_Breacher,24000,36,210,1.35,0.020,0.82

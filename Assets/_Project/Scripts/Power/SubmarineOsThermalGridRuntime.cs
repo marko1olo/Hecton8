@@ -43,41 +43,33 @@ namespace Hecton8.Power
 
     public static class PowerSolverConvergenceMath
     {
+        public const float AuthoritativeQualityWeight = 1f;
         private const float Epsilon = 0.0001f;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolvePropagationIterations(float globalQualityWeight)
         {
-            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
-            return math.clamp((int)math.lerp(1f, 8f, weight), 1, 8);
+            return 8;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveSolverTargetTolerance(float baseTolerance, float globalQualityWeight)
         {
-            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
-            float curve = weight * weight * (3f - 2f * weight);
             float safeBase = math.max(Epsilon, math.isfinite(baseTolerance) ? baseTolerance : 0.001f);
-            float survivalTolerance = safeBase * 8f;
             float overkillTolerance = math.max(Epsilon * 0.25f, safeBase * 0.5f);
-            return math.max(Epsilon * 0.25f, math.lerp(survivalTolerance, overkillTolerance, curve));
+            return overkillTolerance;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveSolverOmega(float globalQualityWeight)
         {
-            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
-            float curve = weight * weight * (3f - 2f * weight);
-            return math.clamp(math.lerp(0.68f, 1f, curve), 0.55f, 1f);
+            return 1f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveResidualSampleMask(float globalQualityWeight)
         {
-            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
-            float curve = weight * weight * (3f - 2f * weight);
-            int exponent = math.clamp((int)math.round(math.lerp(3f, 0f, curve)), 0, 3);
-            return (1 << exponent) - 1;
+            return 0;
         }
     }
 
@@ -232,8 +224,10 @@ namespace Hecton8.Power
         public const int SolverConvergenceStateSizeBytes = 16;
         public const int SolverResidualSlotSizeBytes = 64;
         public const int ResidualThreadSlotCount = 128;
+#if UNITY_EDITOR
         private const int StandaloneVaultBufferCapacity = 32;
         private const long StandaloneVaultArenaBytes = 2L * 1024L * 1024L;
+#endif
 
         private const uint SourceHash = 0x53313036u; // S106
         private const uint DumpMagic = 0x54484752u; // THGR
@@ -256,7 +250,9 @@ namespace Hecton8.Power
         private static readonly int s_ThermalGridFlickerId = Shader.PropertyToID("_H8ThermalGridFlicker01");
         private static readonly int s_ThermalGridVisualOverkillId = Shader.PropertyToID("_H8ThermalGridVisualOverkill01");
         private static SubmarineOsThermalGridRuntime s_active;
+#if UNITY_EDITOR
         private static GlobalDataVault s_standaloneVault;
+#endif
 
         private static readonly BufferID NodesAId = (BufferID)731060;
         private static readonly BufferID NodesBId = (BufferID)731061;
@@ -280,26 +276,26 @@ namespace Hecton8.Power
         private static readonly BufferID ResidualSamplesId = (BufferID)731079;
 
         private IDataVault _vault;
-        private VaultBufferHandle<GridNodeDTO> _nodesAHandle;
-        private VaultBufferHandle<GridNodeDTO> _nodesBHandle;
-        private VaultBufferHandle<PowerEdgeDTO> _edgesHandle;
-        private VaultBufferHandle<float> _injectionsHandle;
-        private VaultBufferHandle<float> _externalHeatHandle;
-        private VaultBufferHandle<ThermalGridAnchorDTO> _anchorsHandle;
-        private VaultBufferHandle<SubmarineThermalGridTuningDTO> _tuningHandle;
-        private VaultBufferHandle<ThermalPowerGridTelemetrySnapshot> _telemetryHandle;
-        private VaultBufferHandle<int> _countersHandle;
-        private VaultBufferHandle<SubmarineGridSpecDTO> _specsHandle;
-        private VaultBufferHandle<byte> _csvBytesHandle;
-        private VaultBufferHandle<ThermalGridVisualStateDTO> _visualStateHandle;
-        private VaultBufferHandle<SolverConvergenceStateDTO> _convergenceStateHandle;
-        private VaultBufferHandle<SolverResidualSlot64> _residualSamplesHandle;
-        private VaultBufferHandle<GridNodeDTO> _pendingNodesHandle;
-        private VaultBufferHandle<PowerEdgeDTO> _pendingEdgesHandle;
-        private VaultBufferHandle<float> _pendingInjectionsHandle;
-        private VaultBufferHandle<ThermalGridAnchorDTO> _pendingAnchorsHandle;
-        private VaultBufferHandle<ThermalGridVisualStateDTO> _pendingVisualStateHandle;
-        private VaultBufferHandle<int> _pendingCountersHandle;
+        private VaultGenerationHandle<GridNodeDTO> _nodesAHandle;
+        private VaultGenerationHandle<GridNodeDTO> _nodesBHandle;
+        private VaultGenerationHandle<PowerEdgeDTO> _edgesHandle;
+        private VaultGenerationHandle<float> _injectionsHandle;
+        private VaultGenerationHandle<float> _externalHeatHandle;
+        private VaultGenerationHandle<ThermalGridAnchorDTO> _anchorsHandle;
+        private VaultGenerationHandle<SubmarineThermalGridTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<ThermalPowerGridTelemetrySnapshot> _telemetryHandle;
+        private VaultGenerationHandle<int> _countersHandle;
+        private VaultGenerationHandle<SubmarineGridSpecDTO> _specsHandle;
+        private VaultGenerationHandle<byte> _csvBytesHandle;
+        private VaultGenerationHandle<ThermalGridVisualStateDTO> _visualStateHandle;
+        private VaultGenerationHandle<SolverConvergenceStateDTO> _convergenceStateHandle;
+        private VaultGenerationHandle<SolverResidualSlot64> _residualSamplesHandle;
+        private VaultGenerationHandle<GridNodeDTO> _pendingNodesHandle;
+        private VaultGenerationHandle<PowerEdgeDTO> _pendingEdgesHandle;
+        private VaultGenerationHandle<float> _pendingInjectionsHandle;
+        private VaultGenerationHandle<ThermalGridAnchorDTO> _pendingAnchorsHandle;
+        private VaultGenerationHandle<ThermalGridVisualStateDTO> _pendingVisualStateHandle;
+        private VaultGenerationHandle<int> _pendingCountersHandle;
 
         private JobHandle _solveHandle;
         private JobHandle _topologyRebuildHandle;
@@ -348,12 +344,22 @@ namespace Hecton8.Power
             public NativeArray<int> PendingCounters;
         }
 
+        private struct CsvImportViews
+        {
+            public NativeArray<byte> CsvBytes;
+            public NativeArray<SubmarineGridSpecDTO> Specs;
+            public NativeArray<SubmarineThermalGridTuningDTO> Tuning;
+            public NativeArray<int> Counters;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             s_active = null;
+#if UNITY_EDITOR
             s_standaloneVault?.Dispose();
             s_standaloneVault = null;
+#endif
         }
 
         public void InjectDataVault(IDataVault vault)
@@ -453,11 +459,12 @@ namespace Hecton8.Power
             if (vault != null)
                 return vault;
 
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                return latest;
-
+#if UNITY_EDITOR
             s_standaloneVault ??= GlobalDataVault.Create(StandaloneVaultBufferCapacity, StandaloneVaultArenaBytes);
             return s_standaloneVault;
+#else
+            return null;
+#endif
         }
 
         public bool ScheduleEmergencyMockGrid(JobHandle dependency)
@@ -620,7 +627,7 @@ namespace Hecton8.Power
                 HazardAup = hazardAup,
                 HazardTemperatureCelsius = math.isfinite(hazardTemperatureCelsius) ? hazardTemperatureCelsius : 40f,
                 HazardRadiusMeters = math.max(1f, math.isfinite(hazardRadiusMeters) ? hazardRadiusMeters : 1f),
-                GlobalQualityWeight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f)
+                GlobalQualityWeight = PowerSolverConvergenceMath.AuthoritativeQualityWeight
             }.Schedule(nodeCount, 64, dependency);
             _externalHeatJobHandle = handle;
             _externalHeatPending = true;
@@ -645,7 +652,7 @@ namespace Hecton8.Power
             if (nodeCount <= 0)
                 return false;
 
-            float qualityWeight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            float qualityWeight = PowerSolverConvergenceMath.AuthoritativeQualityWeight;
             int iterations = ResolvePropagationIterations(qualityWeight);
             if (!TryLockSolveBuffers(out _solveLockedBufferCount))
                 return false;
@@ -874,14 +881,50 @@ namespace Hecton8.Power
             return true;
         }
 
-        public bool TryGetTuningPointer(out SubmarineThermalGridTuningDTO* tuning)
+        public bool TryReadTuning(out SubmarineThermalGridTuningDTO tuning)
         {
-            tuning = null;
-            if (!EnsureInitialized() || !TryResolveVaultBuffer(_tuningHandle, 1, out NativeArray<SubmarineThermalGridTuningDTO> tuningBuffer))
+            tuning = default;
+            if (!EnsureInitialized())
                 return false;
 
-            tuning = (SubmarineThermalGridTuningDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(tuningBuffer);
-            return tuning != null;
+            IDataVault vault = _vault;
+            if (vault == null ||
+                !IsHandleValid(in _tuningHandle) ||
+                !vault.TryReadHandle(in _tuningHandle, out NativeArray<SubmarineThermalGridTuningDTO> tuningBuffer) ||
+                !tuningBuffer.IsCreated ||
+                tuningBuffer.Length <= 0)
+            {
+                return false;
+            }
+
+            tuning = tuningBuffer[0];
+            return true;
+        }
+
+        public bool TryApplyTuning(in SubmarineThermalGridTuningDTO tuning)
+        {
+            if (!EnsureInitialized())
+                return false;
+
+            IDataVault vault = _vault;
+            if (vault == null ||
+                !IsHandleValid(in _tuningHandle) ||
+                !vault.TryAcquireWriteLock(in _tuningHandle, SystemID.CoreDiagnostics, out NativeArray<SubmarineThermalGridTuningDTO> tuningBuffer) ||
+                !tuningBuffer.IsCreated ||
+                tuningBuffer.Length <= 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                tuningBuffer[0] = SanitizeTuning(in tuning);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _tuningHandle, SystemID.CoreDiagnostics);
+            }
         }
 
         public bool TryUploadVisualScalars(GraphicsBuffer targetBuffer)
@@ -927,7 +970,10 @@ namespace Hecton8.Power
 
         public bool TryLoadCsvFromFile(string path)
         {
-            if (!EnsureInitialized() || !TryResolveVaultViews(out VaultViews views) || string.IsNullOrEmpty(path) || !File.Exists(path))
+            if (!EnsureInitialized() || string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            if (!TryAcquireCsvImportViews(out CsvImportViews views, out int lockedCount))
                 return false;
 
             try
@@ -963,10 +1009,14 @@ namespace Hecton8.Power
             }
             catch (Exception exception)
             {
-                if (TryResolveCounters(out NativeArray<int> counters))
-                    counters[CounterFaultFlags] |= (int)SubmarineThermalGridFaultFlags.CsvParseFault;
+                if (views.Counters.IsCreated && views.Counters.Length > CounterFaultFlags)
+                    views.Counters[CounterFaultFlags] |= (int)SubmarineThermalGridFaultFlags.CsvParseFault;
                 GlobalTelemetryBus.PublishPerformanceWarning(0x53314353u, SourceHash, exception.HResult);
                 return false;
+            }
+            finally
+            {
+                ReleaseCsvImportViews(lockedCount);
             }
         }
 
@@ -1129,11 +1179,11 @@ namespace Hecton8.Power
                    TelemetryFrameCount == 300 &&
                    SolverConvergenceStateSizeBytes == 16 &&
                    SolverResidualSlotSizeBytes == 64 &&
-                   lowTolerance > midTolerance &&
-                   midTolerance > highTolerance &&
-                   lowOmega <= highOmega &&
-                   ResolveResidualSampleMask(0f) >= ResolveResidualSampleMask(0.5f) &&
-                   ResolveResidualSampleMask(0.5f) >= ResolveResidualSampleMask(1f);
+                   lowTolerance == midTolerance &&
+                   midTolerance == highTolerance &&
+                   lowOmega == highOmega &&
+                   ResolveResidualSampleMask(0f) == ResolveResidualSampleMask(0.5f) &&
+                   ResolveResidualSampleMask(0.5f) == ResolveResidualSampleMask(1f);
         }
 
         private bool ResolveVaultBuffers(out VaultViews views)
@@ -1164,7 +1214,7 @@ namespace Hecton8.Power
 
         private static bool ResolveVaultBuffer<T>(
             IDataVault vault,
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
@@ -1175,20 +1225,21 @@ namespace Hecton8.Power
 
             if (vault.IsAllocationLocked)
             {
-                if (!handle.IsCreated && !vault.TryGetBufferHandle(bufferId, out handle))
+                if (!IsHandleValid(in handle) && !vault.TryGetGenerationHandle(bufferId, out handle))
                     return false;
             }
             else
             {
-                handle = vault.GetBufferHandle<T>(
+                handle = vault.GetGenerationHandle<T>(
                     bufferId,
                     requiredLength,
                     SystemID.Power,
                     NativeArrayOptions.UninitializedMemory);
             }
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated && buffer.Length >= requiredLength;
+            return vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
 
         private bool TryResolveVaultViews(out VaultViews views)
@@ -1221,18 +1272,86 @@ namespace Hecton8.Power
             return TryResolveVaultBuffer(_countersHandle, CounterCount, out counters);
         }
 
+        private bool TryAcquireCsvImportViews(out CsvImportViews views, out int lockedCount)
+        {
+            views = default;
+            lockedCount = 0;
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            if (!TryAcquireWriteView(vault, in _csvBytesHandle, CsvByteCapacity, out views.CsvBytes))
+                return false;
+            lockedCount++;
+
+            if (!TryAcquireWriteView(vault, in _specsHandle, CsvSpecCapacity, out views.Specs))
+            {
+                ReleaseCsvImportViews(lockedCount);
+                lockedCount = 0;
+                return false;
+            }
+            lockedCount++;
+
+            if (!TryAcquireWriteView(vault, in _tuningHandle, 1, out views.Tuning))
+            {
+                ReleaseCsvImportViews(lockedCount);
+                lockedCount = 0;
+                return false;
+            }
+            lockedCount++;
+
+            if (!TryAcquireWriteView(vault, in _countersHandle, CounterCount, out views.Counters))
+            {
+                ReleaseCsvImportViews(lockedCount);
+                lockedCount = 0;
+                return false;
+            }
+            lockedCount++;
+            return true;
+        }
+
+        private static bool TryAcquireWriteView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsHandleValid(in handle) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            buffer = default;
+            return false;
+        }
+
         private bool TryResolveVaultBuffer<T>(
-            VaultBufferHandle<T> handle,
+            VaultGenerationHandle<T> handle,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             IDataVault vault = _vault;
-            if (vault == null || !handle.IsCreated)
+            if (vault == null || !IsHandleValid(in handle))
                 return false;
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated && buffer.Length >= requiredLength;
+            return vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsHandleValid<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u;
         }
 
         private bool TryLockTopologyRebuildBuffers(out int lockedCount)
@@ -1349,6 +1468,18 @@ namespace Hecton8.Power
         {
             UnlockExternalHeatBuffers(_externalHeatLockedBufferCount);
             _externalHeatLockedBufferCount = 0;
+        }
+
+        private void ReleaseCsvImportViews(int lockedCount)
+        {
+            IDataVault vault = _vault;
+            if (vault == null || lockedCount <= 0)
+                return;
+
+            if (lockedCount >= 4) vault.ReleaseWriteLock(in _countersHandle, SystemID.CoreDiagnostics);
+            if (lockedCount >= 3) vault.ReleaseWriteLock(in _tuningHandle, SystemID.CoreDiagnostics);
+            if (lockedCount >= 2) vault.ReleaseWriteLock(in _specsHandle, SystemID.CoreDiagnostics);
+            if (lockedCount >= 1) vault.ReleaseWriteLock(in _csvBytesHandle, SystemID.CoreDiagnostics);
         }
 
         private void UnlockTopologyRebuildBuffers(int lockedCount)

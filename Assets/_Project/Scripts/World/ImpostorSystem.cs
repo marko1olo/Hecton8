@@ -39,6 +39,7 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
 using UnityEngine;
@@ -68,7 +69,7 @@ namespace Hecton8.World
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-130)]
-    public sealed class ImpostorSystem : MonoBehaviour, ITickable
+    public sealed class ImpostorSystem : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
     {
         private const float MinimumBillboardWidth = 0.25f;
         private const float MinimumBillboardHeight = 0.25f;
@@ -163,10 +164,16 @@ namespace Hecton8.World
         private PlayerRuntimeContext _playerRuntimeContextCache;
         private int _viewerAupCacheFrame = -1;
         private AbsoluteUniversePosition _viewerAupCache;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private ITickDispatcher _dispatcher;
+        private ObjectPoolManager _objectPool;
+        private LODSystemManager _lodSystemManager;
+        private DynamicResolutionScaler _dynamicResolutionScaler;
         private float _cameraResolveRetryTimer;
         private int _impostorTickCursor;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _registeredHotSwapListener;
 
         /// <summary>
         /// Registry-backed runtime instance. Null when the system is absent.
@@ -204,10 +211,14 @@ namespace Hecton8.World
                 Destroy(gameObject);
                 return;
             }
+
+            CacheRegistryServicesCold();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             InvalidatePlayerRuntimeCache();
             TryRegisterService();
             TryRegister();
@@ -218,7 +229,9 @@ namespace Hecton8.World
             RestoreAllOriginalVisibility();
             InvalidatePlayerRuntimeCache();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
+            ClearCachedRegistryServices();
         }
 
         private void OnDestroy()
@@ -226,7 +239,9 @@ namespace Hecton8.World
             RestoreAllOriginalVisibility();
             InvalidatePlayerRuntimeCache();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
+            ClearCachedRegistryServices();
 
             ReleaseCachedMaterials();
             _impostorBillboards.Clear();
@@ -239,12 +254,10 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying || _dispatcher == null)
                 return;
 
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -275,6 +288,82 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterImpostorRuntime(this);
 
             _serviceRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
+            if (_dispatcher == null)
+                _dispatcher = GlobalRegistry.Dispatcher;
+
+            if (_objectPool == null)
+                _objectPool = GlobalRegistry.ObjectPool;
+
+            if (_lodSystemManager == null)
+                _lodSystemManager = GlobalRegistry.LODSystem;
+
+            if (_dynamicResolutionScaler == null)
+                _dynamicResolutionScaler = GlobalRegistry.DynamicResolution;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _playerRuntimeContext = null;
+            _dispatcher = null;
+            _objectPool = null;
+            _lodSystemManager = null;
+            _dynamicResolutionScaler = null;
+            _mainCamera = null;
+            _cameraTransform = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    _mainCamera = _cameraReference;
+                    _cameraTransform = _mainCamera != null ? _mainCamera.transform : null;
+                    _cameraResolveRetryTimer = 0f;
+                    InvalidatePlayerRuntimeCache();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _dispatcher = currentService as ITickDispatcher;
+                    TryRegister();
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPool = currentService as ObjectPoolManager;
+                    break;
+                case GlobalRegistryServiceSlot.LODSystemRuntime:
+                    _lodSystemManager = currentService as LODSystemManager;
+                    break;
+                case GlobalRegistryServiceSlot.DynamicResolutionRuntime:
+                    _dynamicResolutionScaler = currentService as DynamicResolutionScaler;
+                    break;
+            }
         }
 
         /// <summary>
@@ -310,7 +399,7 @@ namespace Hecton8.World
                 Transform originalTransform = instance.OriginalTransform != null
                     ? instance.OriginalTransform
                     : instance.OriginalObject.transform;
-                Vector3 originalPosition = originalTransform.position;
+                Vector3 originalPosition = ResolveOriginalRuntimePosition(originalTransform);
                 float sqrDistance = ResolveCameraDistanceSqr(in cameraAup, originalPosition);
                 float activationDistanceSqr = instance.ActivationDistanceSqr * thresholdScaleSqr;
                 float deactivationDistanceSqr = instance.DeactivationDistanceSqr * thresholdScaleSqr;
@@ -343,11 +432,18 @@ namespace Hecton8.World
             }
         }
 
+        private static Vector3 ResolveOriginalRuntimePosition(Transform originalTransform)
+        {
+            return originalTransform != null ? originalTransform.position : Vector3.zero;
+        }
+
         private static float ResolveCameraDistanceSqr(
             in AbsoluteUniversePosition cameraAup,
             Vector3 objectPosition)
         {
-            AbsoluteUniversePosition objectAup = AbsoluteUniversePosition.FromRuntimePosition(objectPosition);
+            if (!TryResolveAupFromRuntimeOrigin(objectPosition, out AbsoluteUniversePosition objectAup))
+                return float.MaxValue;
+
             double distanceSqr = AbsoluteUniversePosition.DistanceSq(in cameraAup, in objectAup);
             return distanceSqr >= float.MaxValue ? float.MaxValue : (float)distanceSqr;
         }
@@ -447,7 +543,7 @@ namespace Hecton8.World
             _mainCamera = _cameraReference;
             if (_mainCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 _mainCamera = playerContext != null ? playerContext.PlayerCamera : null;
             }
 
@@ -477,7 +573,7 @@ namespace Hecton8.World
             if (!_textureCache.TryGetValue(instance.ImpostorID, out ImpostorTextureData data) || !data.IsLoaded)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (_billboardPrefab == null || pool == null)
                 return;
 
@@ -488,7 +584,7 @@ namespace Hecton8.World
             Transform originalTransform = instance.OriginalTransform != null
                 ? instance.OriginalTransform
                 : originalObject.transform;
-            Vector3 originalPosition = originalTransform.position;
+            Vector3 originalPosition = ResolveOriginalRuntimePosition(originalTransform);
             GameObject billboard = pool.Spawn(
                 _billboardPrefab,
                 originalPosition,
@@ -675,7 +771,7 @@ namespace Hecton8.World
         {
             if (instance.BillboardObject != null)
             {
-                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+                ObjectPoolManager pool = _objectPool;
                 if (pool != null)
                     pool.Despawn(instance.BillboardObject);
                 else
@@ -731,9 +827,18 @@ namespace Hecton8.World
 
             Transform billboardTransform = billboardObject.transform;
             Vector3 billboardPosition = originalPosition + instance.BillboardCenterOffset;
-            AbsoluteUniversePosition billboardAup = AbsoluteUniversePosition.FromRuntimePosition(billboardPosition);
-            float3 cameraDeltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in cameraAup, in billboardAup);
-            Vector3 cameraDelta = new Vector3(cameraDeltaAup.x, 0f, cameraDeltaAup.z);
+            Vector3 cameraDelta;
+            if (TryResolveAupFromRuntimeOrigin(billboardPosition, out AbsoluteUniversePosition billboardAup))
+            {
+                float3 cameraDeltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in cameraAup, in billboardAup);
+                cameraDelta = new Vector3(cameraDeltaAup.x, 0f, cameraDeltaAup.z);
+            }
+            else
+            {
+                Vector3 localDelta = billboardPosition - _cameraTransform.position;
+                cameraDelta = new Vector3(localDelta.x, 0f, localDelta.z);
+            }
+
             if (cameraDelta.sqrMagnitude <= 0.0001f)
                 cameraDelta = billboardTransform.forward;
             if (cameraDelta.sqrMagnitude <= 0.0001f)
@@ -751,7 +856,7 @@ namespace Hecton8.World
                 return _viewerAupCache;
 
             _viewerAupCacheFrame = frame;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement != null)
             {
@@ -774,6 +879,26 @@ namespace Hecton8.World
             return _viewerAupCache;
         }
 
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return absoluteAup.IsFinite();
+        }
+
         private bool TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext)
         {
             int frame = Time.frameCount;
@@ -794,7 +919,7 @@ namespace Hecton8.World
         private float ResolveThresholdScale()
         {
             float qualityScale = 1f;
-            LODSystemManager lodSystemManager = GlobalRegistry.LODSystem;
+            LODSystemManager lodSystemManager = _lodSystemManager;
             if (lodSystemManager != null)
             {
                 switch (lodSystemManager.QualityPreset)
@@ -812,7 +937,7 @@ namespace Hecton8.World
             if (!_enableAdaptiveThresholdScaling)
                 return qualityScale;
 
-            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
+            DynamicResolutionScaler scaler = _dynamicResolutionScaler;
             if (scaler == null)
                 return qualityScale;
 

@@ -12,12 +12,22 @@ namespace Hecton8.Interaction
         private const byte CacheSlotEmpty = 0;
         private const byte CacheSlotOccupied = 1;
 
+        private struct ReceiverSlot
+        {
+            public IPhysicalPanelButtonReceiver Receiver;
+
+            public void Clear()
+            {
+                Receiver = null;
+            }
+        }
+
         // COLD ALLOC: ulong[128] - fixed collider entity id keys for physical hand receiver lookup - owner: PhysicalHandReceiverRegistry
         private static readonly ulong[] s_receiverKeys = new ulong[MaxReceivers];
         // COLD ALLOC: Collider[128] - fixed collider refs for identity validation in physical hand receiver lookup - owner: PhysicalHandReceiverRegistry
         private static readonly Collider[] s_receiverColliders = new Collider[MaxReceivers];
-        // COLD ALLOC: IPhysicalPanelButtonReceiver[128] - fixed physical hand receiver values - owner: PhysicalHandReceiverRegistry
-        private static readonly IPhysicalPanelButtonReceiver[] s_receivers = new IPhysicalPanelButtonReceiver[MaxReceivers];
+        // COLD ALLOC: ReceiverSlot[128] - fixed physical hand receiver values - owner: PhysicalHandReceiverRegistry
+        private static readonly ReceiverSlot[] s_receivers = new ReceiverSlot[MaxReceivers];
         // COLD ALLOC: byte[128] - fixed open-address slot states for physical hand receiver lookup - owner: PhysicalHandReceiverRegistry
         private static readonly byte[] s_receiverStates = new byte[MaxReceivers];
         private static int s_registeredReceiverCount;
@@ -37,7 +47,7 @@ namespace Hecton8.Interaction
             {
                 s_receiverKeys[i] = 0UL;
                 s_receiverColliders[i] = null;
-                s_receivers[i] = null;
+                s_receivers[i].Clear();
                 s_receiverStates[i] = CacheSlotEmpty;
             }
 
@@ -112,7 +122,7 @@ namespace Hecton8.Interaction
                     s_receiverKeys[index] == key &&
                     ReferenceEquals(s_receiverColliders[index], collider))
                 {
-                    receiver = s_receivers[index];
+                    receiver = s_receivers[index].Receiver;
                     return receiver != null;
                 }
 
@@ -134,7 +144,7 @@ namespace Hecton8.Interaction
                     if (s_receiverKeys[index] == key &&
                         ReferenceEquals(s_receiverColliders[index], collider))
                     {
-                        s_receivers[index] = receiver;
+                        s_receivers[index].Receiver = receiver;
                         return true;
                     }
                 }
@@ -170,7 +180,7 @@ namespace Hecton8.Interaction
                 if (state == CacheSlotOccupied &&
                     s_receiverKeys[index] == key &&
                     ReferenceEquals(s_receiverColliders[index], collider) &&
-                    ReferenceEquals(s_receivers[index], receiver))
+                    ReferenceEquals(s_receivers[index].Receiver, receiver))
                 {
                     RemoveReceiverSlot(index);
                     return;
@@ -188,7 +198,7 @@ namespace Hecton8.Interaction
         {
             s_receiverKeys[index] = key;
             s_receiverColliders[index] = collider;
-            s_receivers[index] = receiver;
+            s_receivers[index].Receiver = receiver;
             s_receiverStates[index] = CacheSlotOccupied;
             s_registeredReceiverCount++;
         }
@@ -223,7 +233,7 @@ namespace Hecton8.Interaction
         {
             s_receiverKeys[index] = 0UL;
             s_receiverColliders[index] = null;
-            s_receivers[index] = null;
+            s_receivers[index].Clear();
             s_receiverStates[index] = CacheSlotEmpty;
         }
 

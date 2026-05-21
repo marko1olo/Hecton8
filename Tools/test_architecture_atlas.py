@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 import unittest
 from pathlib import Path
 
@@ -154,9 +154,10 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
         self.assertIn("## Phi-Resonance Connectivity Model", text)
         self.assertIn("Tools/BuildArchitectureAtlas.py", text)
         self.assertIn("Docs/DEPENDENCY_GRAPH.json", text)
-        self.assertIn("Current DOC_GLOBAL R47 blocker", text)
-        self.assertIn("Current DOC_GLOBAL boundary (2026-05-20 R47)", text)
-        self.assertIn("ATLAS_CHECK_FAIL references=6781 missing=61", text)
+        self.assertIn("Current DOC_GLOBAL R51 blocker", text)
+        self.assertIn("Current DOC_GLOBAL boundary (2026-05-21 R51)", text)
+        self.assertIn("ATLAS_CHECK_FAIL references=", text)
+        self.assertIn("missing=", text)
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-103)]
-    public sealed class AbyssalFluidDecalManager : MonoBehaviour, ITickable, IOriginShiftListener
+    public sealed class AbyssalFluidDecalManager : MonoBehaviour, ITickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
 #if UNITY_EDITOR
         private const string DecalMaterialAssetPath = "Assets/_Project/Art/Materials/VFX/MAT_AbyssalFluidDecal.mat";
@@ -25,7 +25,7 @@ namespace Hecton8.World
 
         private struct FluidDecalState
         {
-            public bool Active;
+            public byte Active;
             public Vector3 PositionWS;
             public Vector3 DriftVelocityWS;
             public byte DriftMode;
@@ -39,7 +39,7 @@ namespace Hecton8.World
 
         private struct PressureSprayState
         {
-            public bool Active;
+            public byte Active;
             public Vector3 PositionWS;
             public Vector3 DirectionWS;
             public float Width;
@@ -159,13 +159,17 @@ namespace Hecton8.World
         private Material _runtimeMaterial;
         private MaterialPropertyBlock _drawPropertyBlock;
         private Vector3 _previousGlobalDriftOffset;
+        private SargassumGlobalDragManager _sargassumDrag;
+        private IPlayerRuntimeContext _playerContext;
         private bool _serviceRegistered;
         private bool _registeredTick;
+        private bool _registeredHotSwapListener;
         private bool _loggedMissingDecalMaterial;
 
         private void Awake()
         {
             SanitizeSettings();
+            CacheRegistryServicesCold();
             EnsureStorage();
             EnsureRenderingResources(false);
             _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
@@ -174,10 +178,12 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
             EnsureStorage();
             EnsureRenderingResources(false);
             _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
             HectonFloatingOrigin.RegisterListener(this);
+            TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegister();
         }
@@ -185,6 +191,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             TryUnregister();
         }
@@ -192,6 +199,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             TryUnregister();
             _runtimeMaterial = null;
@@ -361,6 +369,27 @@ namespace Hecton8.World
             ApplyRuntimeOffsetToCachedState(-shiftData.ShiftOffset);
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.SargassumDragRuntime)
+            {
+                _sargassumDrag = currentService as SargassumGlobalDragManager;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+                TryRegister();
+        }
+
         /// <summary>
         /// Advances decal drift, spread, and draw.
         /// </summary>
@@ -375,14 +404,14 @@ namespace Hecton8.World
             _previousGlobalDriftOffset = currentDriftOffset;
             for (int i = 0; i < _decalStates.Length; i++)
             {
-                if (!_decalStates[i].Active)
+                if (_decalStates[i].Active == 0)
                     continue;
 
                 FluidDecalState decal = _decalStates[i];
                 decal.RemainingLifetime -= deltaTime;
                 if (decal.RemainingLifetime <= 0f)
                 {
-                    decal.Active = false;
+                    decal.Active = 0;
                     _decalStates[i] = decal;
                     continue;
                 }
@@ -421,7 +450,7 @@ namespace Hecton8.World
             float weakestLifetime = float.MaxValue;
             for (int i = 0; i < _decalStates.Length; i++)
             {
-                if (!_decalStates[i].Active)
+                if (_decalStates[i].Active == 0)
                 {
                     targetIndex = i;
                     break;
@@ -442,7 +471,7 @@ namespace Hecton8.World
                 : ResolveCurrentVelocity(positionWS) * 0.25f;
             _decalStates[targetIndex] = new FluidDecalState
             {
-                Active = true,
+                Active = 1,
                 PositionWS = positionWS,
                 DriftVelocityWS = currentVector,
                 DriftMode = driftMode,
@@ -575,7 +604,7 @@ namespace Hecton8.World
             float weakestLifetime = float.MaxValue;
             for (int i = 0; i < _pressureSprayStates.Length; i++)
             {
-                if (!_pressureSprayStates[i].Active)
+                if (_pressureSprayStates[i].Active == 0)
                 {
                     targetIndex = i;
                     break;
@@ -597,7 +626,7 @@ namespace Hecton8.World
             color.a *= LerpClamped(0.45f, 1f, clampedIntensity);
             _pressureSprayStates[targetIndex] = new PressureSprayState
             {
-                Active = true,
+                Active = 1,
                 PositionWS = positionWS,
                 DirectionWS = axisDirection,
                 Width = LerpClamped(0.12f, 0.42f, clampedIntensity),
@@ -618,14 +647,14 @@ namespace Hecton8.World
             int matrixCount = 0;
             for (int i = 0; i < _pressureSprayStates.Length; i++)
             {
-                if (!_pressureSprayStates[i].Active)
+                if (_pressureSprayStates[i].Active == 0)
                     continue;
 
                 PressureSprayState spray = _pressureSprayStates[i];
                 spray.RemainingLifetime -= deltaTime;
                 if (spray.RemainingLifetime <= 0f)
                 {
-                    spray.Active = false;
+                    spray.Active = 0;
                     _pressureSprayStates[i] = spray;
                     continue;
                 }
@@ -748,7 +777,7 @@ namespace Hecton8.World
             int count = 0;
             for (int i = 0; i < _decalStates.Length && count < safeCapacity; i++)
             {
-                if (!_decalStates[i].Active)
+                if (_decalStates[i].Active == 0)
                     continue;
 
                 if (!TryBuildFluidDecalDrawData(in _decalStates[i], out Matrix4x4 matrix, out Color drawColor))
@@ -834,9 +863,9 @@ namespace Hecton8.World
             return s_sharedQuadMesh;
         }
 
-        private static Transform ResolvePlayerCameraTransform()
+        private Transform ResolvePlayerCameraTransform()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerContext;
             Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
             if (playerCamera == null)
                 playerCamera = GlobalRenderContext.CurrentCamera;
@@ -845,7 +874,7 @@ namespace Hecton8.World
 
         private Vector3 ResolveGlobalDriftOffset()
         {
-            SargassumGlobalDragManager dragManager = GlobalRegistry.SargassumDrag;
+            SargassumGlobalDragManager dragManager = _sargassumDrag;
             return dragManager != null ? dragManager.GlobalDriftOffset : Vector3.zero;
         }
 
@@ -872,6 +901,32 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredTick = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            if (_playerContext == null)
+                _playerContext = GlobalRegistry.Player;
+
+            if (_sargassumDrag == null)
+                _sargassumDrag = GlobalRegistry.SargassumDrag;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void TryRegisterService()
@@ -910,7 +965,7 @@ namespace Hecton8.World
 
             for (int i = 0; i < _decalStates.Length; i++)
             {
-                if (!_decalStates[i].Active)
+                if (_decalStates[i].Active == 0)
                     continue;
 
                 FluidDecalState decal = _decalStates[i];
@@ -923,7 +978,7 @@ namespace Hecton8.World
 
             for (int i = 0; i < _pressureSprayStates.Length; i++)
             {
-                if (!_pressureSprayStates[i].Active)
+                if (_pressureSprayStates[i].Active == 0)
                     continue;
 
                 PressureSprayState spray = _pressureSprayStates[i];

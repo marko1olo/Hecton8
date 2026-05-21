@@ -4,7 +4,7 @@ Date: 2026-05-12
 Status: STATIC_SOURCE REVIEWED / RUNTIME PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,9 +14,8 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-
-R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Source Anchors
@@ -56,7 +55,9 @@ Owner Source: `Assets/_Project/Scripts/Core/GlobalSignals.cs`
 
 ## ParallelWriter Contract
 
-The `ParallelWriter` API exists only for job/background producers that cannot touch Unity objects and cannot block the main thread.
+The `ParallelWriter` API is a retained legacy MPSC bridge for low-frequency job/background producers that cannot touch Unity objects and cannot block the main thread. Cache-line-critical producer storms must not use it as the primary route; they use owner-local or Vault-backed thread-local scratch plus deterministic commit. `GlobalSignals.OpenSignalWriterForProducerPhase<TSignal>()` opens only the requested typed bridge lane; it must not prewarm every direct `GlobalSignals` queue.
+
+Adjacent Core helpers follow the same vocabulary: writer acquisition uses `Open*` names, while compatibility aliases must be treated as low-frequency bridge debt. `TryGet*` surfaces must not initialize queue storage.
 
 Exposed writer lanes:
 
@@ -78,11 +79,11 @@ with the grep command in `GLOBAL_AUTHORITY_MIGRATION_LEDGER.md` before exact use
 - `RigidbodySleepSignalWriter`
 - `GlobalTimeSyncSignalWriter`
 
-Rule:
+Legacy bridge rule:
 
 ```text
-producer job -> NativeQueue<T>.ParallelWriter.Enqueue
-main/thread owner -> TryDequeue* drain
+low-frequency producer job -> NativeQueue<T>.ParallelWriter.Enqueue
+main/thread owner -> TryConsumeFrame/TryDequeue* bridge drain
 ```
 
 No consumer is allowed to wait on the producer lane during frame-critical execution. The drain side must consume only the available packets for the current budget.
@@ -91,9 +92,9 @@ No consumer is allowed to wait on the producer lane during frame-critical execut
 
 `InitializeAllQueues()` allocates each lane with `Allocator.Persistent`, registers it with `NativeMemorySentinel`, and prewarms the queue by enqueue/dequeue cycling `expectedCapacity` packets. That moves the allocator cost to boot.
 
-`Publish(in T)` is a main-thread convenience wrapper over enqueue. It is not a dispatch callback. It does not invoke listeners.
+`Publish(in T)` and typed `SignalBus<T>.Push/TryPush` are producer-side enqueue/snapshot-entry surfaces. They are not dispatch callbacks and do not invoke listeners.
 
-`TryDequeue*` returns immediately. It is the only legal runtime consume model for this corridor.
+`TryConsumeFrame(...)` and retained bridge `TryDequeue*` drains return immediately. Snapshot reads remain read-only; destructive cursor drains must use explicit consume/dequeue names.
 
 ## Payload Law
 
@@ -110,9 +111,9 @@ Development/editor validation in `GlobalSignals` rejects managed-reference paylo
 
 ## SPSC Versus MPSC
 
-`SpscSignalRingBuffer<T>` is the single-producer/single-consumer escape hatch. It uses power-of-two capacity, `_head/_tail`, `Volatile.Read`, `Volatile.Write`, and a mask for wrapping.
+`SpscSignalRingBuffer<T>` is the single-producer/single-consumer escape hatch. It uses power-of-two capacity, `_head/_tail`, `Volatile.Read`, `Interlocked.Exchange`, and a mask for wrapping.
 
-`NativeQueue<T>.ParallelWriter` is the MPSC path. It is the correct choice when multiple jobs can produce the same event type.
+`NativeQueue<T>.ParallelWriter` is the legacy MPSC bridge path. It remains valid only for low-frequency or unpredictable producer traffic where a thread-local batch route would cost more than the event volume justifies. High-frequency same-lane producers must use the SHINOBU thread-local corridor: per-worker scratch, explicit 64-byte payload layout, deterministic post-simulation commit, coalescence, and telemetry-visible overflow.
 
 ## Integration Points
 

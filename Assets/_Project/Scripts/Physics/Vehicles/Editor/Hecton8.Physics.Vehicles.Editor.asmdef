@@ -1,0 +1,25 @@
+{
+    "name": "Hecton8.Physics.Vehicles.Editor",
+    "rootNamespace": "Hecton8.Physics.Vehicles.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Unity.Mathematics",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

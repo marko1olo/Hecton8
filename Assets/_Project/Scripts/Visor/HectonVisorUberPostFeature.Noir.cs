@@ -1,0 +1,1413 @@
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
+using UnityEngine.Rendering.Universal;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+namespace Hecton8.Visor
+{
+    public sealed partial class HectonVisorUberPostFeature
+    {
+#if UNITY_EDITOR
+        private const string NoirShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorGlitchACES.shader";
+#endif
+
+        private const uint NoirSourceHash = 0x53483235u; // SH25
+        private const uint NoirFlagMockInput = 1u << 0;
+        private const uint NoirFlagPhysiologyInput = 1u << 1;
+        private const uint NoirFlagVitalsInput = 1u << 2;
+        private const uint NoirFlagEditorOverride = 1u << 3;
+        private const uint NoirFlagInvalidMath = 1u << 31;
+        private const float NoirConstantsEpsilon = 0.0001f;
+        private const int NoirTelemetryCapacity = 300;
+        private const int NoirColorProfileCapacity = 32;
+        private const int NoirCsvScratchBytes = 16 * 1024;
+        private const string NoirDumpFileName = "Dump_SHINOBU_235.bin";
+        private const string NoirColorCsvFileName = "noir_color_grading_profiles.csv";
+        private const BufferID NoirConstantsVaultId = BufferID.Shinobu235NoirConstants;
+        private const BufferID NoirInputVaultId = BufferID.Shinobu235NoirInput;
+        private const BufferID NoirTelemetryVaultId = BufferID.Shinobu235NoirTelemetry;
+        private const BufferID NoirTuningVaultId = BufferID.Shinobu235NoirTuning;
+        private const BufferID NoirColorProfilesVaultId = BufferID.Shinobu235NoirColorProfiles;
+        private const BufferID NoirCsvScratchVaultId = BufferID.Shinobu235NoirCsvScratch;
+        private static readonly bool s_noirLayoutValid = ComputeNoirLayoutValid();
+
+        private sealed partial class FeatureSettings
+        {
+            [Tooltip("Bypasses the managed/Volume-style legacy visor path and runs one Vault-backed RenderGraph grain/glitch pre-grade pass. URP Volume owns final tonemapping.")]
+            public bool deepSeaNoirUnifiedPass = true;
+
+            [Tooltip("Cold-loads noir_color_grading_profiles.csv into Vault-backed profile rows.")]
+            public bool loadNoirColorCsv = true;
+
+            [Tooltip("Base film-grain intensity for the single-pass Noir shader.")]
+            [Range(0f, 0.16f)] public float noirBaseGrain = 0.035f;
+
+            [Tooltip("Base toxicity/stress block-glitch amplitude.")]
+            [Range(0f, 1f)] public float noirBaseGlitch = 0.18f;
+
+            [Tooltip("Single-sample channel-phase chroma fake strength.")]
+            [Range(0f, 0.012f)] public float noirChromaticStrength = 0.0025f;
+
+            [Tooltip("Noir vignette strength.")]
+            [Range(0f, 1f)] public float noirVignetteStrength = 0.24f;
+
+            [Tooltip("Pre-tonemap grade contrast.")]
+            [Range(0.5f, 1.8f)] public float noirContrast = 1.08f;
+
+            [Tooltip("Pre-tonemap grade saturation.")]
+            [Range(0f, 1.4f)] public float noirSaturation = 0.72f;
+
+            [Tooltip("Cold/warm grade bias.")]
+            [Range(-1f, 1f)] public float noirTemperature = -0.12f;
+
+            [Tooltip("Depth tint contribution.")]
+            [Range(0f, 1f)] public float noirDepthTone = 0.42f;
+
+            [Tooltip("Editor/debug split. Left half raw, right half Deep Sea Noir.")]
+            public bool noirAbSplit = false;
+        }
+
+        private sealed class NoirPostProcessPass : ScriptableRenderPass
+        {
+            private sealed class NoirPassData
+            {
+                public TextureHandle Source;
+                public Material Material;
+                public BufferHandle ConstantsBuffer;
+            }
+
+            private static readonly ProfilingSampler s_noirProfilingSampler =
+                new ProfilingSampler("Hecton Deep Sea Noir Post");
+            private static readonly int s_blitTextureId = Shader.PropertyToID("_BlitTexture");
+            private static readonly int s_noirConstantsBufferId = Shader.PropertyToID("NoirPostProcessDTO");
+
+            private FeatureSettings _settings;
+            private Material _material;
+            private GraphicsBuffer _constantsBuffer;
+
+            public NoirPostProcessPass()
+            {
+                profilingSampler = s_noirProfilingSampler;
+                requiresIntermediateTexture = true;
+            }
+
+            public void SetupNoir(
+                FeatureSettings settings,
+                Material material,
+                GraphicsBuffer constantsBuffer)
+            {
+                _settings = settings;
+                _material = material;
+                _constantsBuffer = constantsBuffer;
+                renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
+                ConfigureInput(ScriptableRenderPassInput.Color);
+                requiresIntermediateTexture = true;
+            }
+
+            public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
+            {
+                if (_settings == null ||
+                    _material == null ||
+                    _constantsBuffer == null ||
+                    !_constantsBuffer.IsValid())
+                {
+                    return;
+                }
+
+                UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
+                if (resourceData.isActiveTargetBackBuffer)
+                    return;
+
+                UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
+                CameraType cameraType = cameraData.cameraType;
+                if (cameraType == CameraType.Preview ||
+                    cameraType == CameraType.Reflection ||
+                    cameraType == CameraType.SceneView)
+                {
+                    return;
+                }
+
+                TextureHandle sourceTexture = resourceData.activeColorTexture;
+                if (!sourceTexture.IsValid())
+                    return;
+
+                TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
+                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                destinationDesc.name = "_HectonDeepSeaNoirPost";
+                destinationDesc.clearBuffer = false;
+                destinationDesc.depthBufferBits = DepthBits.None;
+                destinationDesc.msaaSamples = MSAASamples.None;
+                destinationDesc.colorFormat = sourceDesc.colorFormat;
+                destinationDesc.useMipMap = false;
+                destinationDesc.autoGenerateMips = false;
+                TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
+                BufferHandle constantsBuffer = renderGraph.ImportBuffer(_constantsBuffer);
+
+                using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<NoirPassData>(
+                           "Hecton Deep Sea Noir Post",
+                           out NoirPassData passData,
+                           s_noirProfilingSampler))
+                {
+                    passData.Source = sourceTexture;
+                    passData.Material = _material;
+                    passData.ConstantsBuffer = constantsBuffer;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.UseBuffer(constantsBuffer, AccessFlags.Read);
+                    builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (NoirPassData data, RasterGraphContext context) =>
+                    {
+                        context.cmd.SetGlobalTexture(s_blitTextureId, data.Source);
+                        GraphicsBuffer constants = data.ConstantsBuffer;
+                        if (constants == null)
+                            return;
+
+                        context.cmd.SetGlobalConstantBuffer(
+                            constants,
+                            s_noirConstantsBufferId,
+                            0,
+                            NoirPostProcessDTO.SizeBytes);
+                        CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
+                    });
+                }
+
+                resourceData.cameraColor = destinationTexture;
+            }
+        }
+
+        private NoirPostProcessPass _noirPass;
+        private GraphicsBuffer _noirConstantsBufferA;
+        private GraphicsBuffer _noirConstantsBufferB;
+        private GraphicsBuffer _activeNoirConstantsBuffer;
+        private VaultBufferHandle<NoirPostProcessDTO> _noirConstantsHandle;
+        private VaultBufferHandle<NoirPostProcessInputDTO> _noirInputHandle;
+        private VaultBufferHandle<NoirTelemetryEntry> _noirTelemetryHandle;
+        private VaultBufferHandle<NoirPostProcessTuningDTO> _noirTuningHandle;
+        private VaultBufferHandle<NoirColorProfileDTO> _noirColorProfileHandle;
+        private VaultBufferHandle<byte> _noirCsvScratchHandle;
+        private NoirPostProcessDTO _lastNoirConstants;
+        private NoirColorProfileDTO _cachedNoirColorProfile;
+        private uint _cachedNoirColorProfileLookupHash;
+        private int _cachedNoirColorProfileFrame = int.MinValue;
+        private int _noirBufferIndex;
+        private int _noirTelemetryCursor;
+        private int _nextNoirPlayerRefreshFrame;
+        private uint _noirFallbackFrameId;
+        private uint _lastNoirTimeFrameId;
+        private float _noirWrappedVisualTimeSeconds;
+        private bool _hasNoirConstants;
+        private bool _hasCachedNoirColorProfile;
+        private bool _hasCachedNoirColorProfileLookup;
+        private bool _noirDumpWritten;
+        private bool _noirColorCsvLoaded;
+        private bool _noirColorCsvLoadAttempted;
+        private bool _noirPlayerSnapshotsAvailable;
+        private bool _registeredNoirLateFrameTick;
+        private IPlayerRuntimeContext _noirPlayerContext;
+        private IResolutionScalerService _noirResolutionScaler;
+        private bool _hotSwapRegistered;
+
+#if UNITY_EDITOR
+        private static NoirPostProcessDTO s_lastEditorNoirConstants;
+        private static bool s_hasLastEditorNoirConstants;
+        private static bool s_noirEditorOverrideActive;
+        private static bool s_noirEditorMockActive;
+        private static bool s_noirEditorAbSplit;
+        private static float s_noirEditorBaseGrain = 0.035f;
+        private static float s_noirEditorBaseGlitch = 0.18f;
+        private static float s_noirEditorChroma = 0.0025f;
+        private static float s_noirEditorVignette = 0.24f;
+        private static float s_noirEditorContrast = 1.08f;
+        private static float s_noirEditorSaturation = 0.72f;
+        private static float s_noirEditorTemperature = -0.12f;
+        private static float s_noirEditorDepthTone = 0.42f;
+        private static float s_noirEditorMockStress = 0.65f;
+        private static float s_noirEditorMockDepth = 420f;
+        private static float s_noirEditorMockToxicity = 0.35f;
+
+        private void TryAssignNoirShaderEditor()
+        {
+            if (settings != null && settings.deepSeaNoirUnifiedPass)
+                settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(NoirShaderAssetPath);
+        }
+
+        public static void SetEditorNoirOverride(
+            bool active,
+            float baseGrain,
+            float baseGlitch,
+            float chroma,
+            float vignette,
+            float contrast,
+            float saturation,
+            float temperature,
+            float depthTone,
+            bool abSplit,
+            bool mockActive,
+            float mockStress,
+            float mockDepth,
+            float mockToxicity)
+        {
+            s_noirEditorOverrideActive = active;
+            s_noirEditorBaseGrain = math.clamp(SanitizeFinite(baseGrain, 0.035f), 0f, 0.35f);
+            s_noirEditorBaseGlitch = math.clamp(SanitizeFinite(baseGlitch, 0.18f), 0f, 1f);
+            s_noirEditorChroma = math.clamp(SanitizeFinite(chroma, 0.0025f), 0f, 0.024f);
+            s_noirEditorVignette = Sanitize01(vignette);
+            s_noirEditorContrast = math.clamp(SanitizeFinite(contrast, 1.08f), 0.35f, 2.4f);
+            s_noirEditorSaturation = math.clamp(SanitizeFinite(saturation, 0.72f), 0f, 1.5f);
+            s_noirEditorTemperature = math.clamp(SanitizeFinite(temperature, -0.12f), -1f, 1f);
+            s_noirEditorDepthTone = Sanitize01(depthTone);
+            s_noirEditorAbSplit = abSplit;
+            s_noirEditorMockActive = mockActive;
+            s_noirEditorMockStress = Sanitize01(mockStress);
+            s_noirEditorMockDepth = math.max(0f, SanitizeFinite(mockDepth, 160f));
+            s_noirEditorMockToxicity = Sanitize01(mockToxicity);
+        }
+
+        public static unsafe bool TryFetchEditorNoirConstants(out NoirPostProcessDTO constants)
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault != null &&
+                vault.TryGetBufferHandle<NoirPostProcessDTO>(
+                    NoirConstantsVaultId,
+                    out VaultBufferHandle<NoirPostProcessDTO> handle) &&
+                vault.TryLockBuffer(NoirConstantsVaultId, SystemID.GraphicsScalability))
+            {
+                try
+                {
+                    if (vault.TryResolveHandle(in handle, out NativeArray<NoirPostProcessDTO> buffer) &&
+                        buffer.IsCreated &&
+                        buffer.Length > 0)
+                    {
+                        constants = buffer[0];
+                        return true;
+                    }
+                }
+                finally
+                {
+                    vault.TryUnlockBuffer(NoirConstantsVaultId, SystemID.GraphicsScalability);
+                }
+            }
+
+            constants = s_lastEditorNoirConstants;
+            return s_hasLastEditorNoirConstants;
+        }
+
+        public static unsafe bool TryWriteEditorNoirTuning(in NoirPostProcessTuningDTO tuning)
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            VaultBufferHandle<NoirPostProcessTuningDTO> handle;
+            if (!vault.TryGetBufferHandle<NoirPostProcessTuningDTO>(NoirTuningVaultId, out handle))
+            {
+                if (vault.IsAllocationLocked)
+                    return false;
+
+                handle = vault.GetBufferHandle<NoirPostProcessTuningDTO>(
+                    NoirTuningVaultId,
+                    1,
+                    SystemID.GraphicsScalability,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!handle.IsCreated ||
+                handle.Length <= 0 ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.GraphicsScalability, out NativeArray<NoirPostProcessTuningDTO> tuningBuffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                    return false;
+
+                tuningBuffer[0] = tuning;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.GraphicsScalability);
+            }
+        }
+
+        public static bool ValidateNoirPostProcessLayoutForEditor()
+        {
+            return ValidateNoirLayout();
+        }
+
+        private static void ApplyEditorNoirInputOverride(
+            ref NoirPostProcessInputDTO input,
+            float quality01,
+            float wrappedTime,
+            uint frame,
+            ref bool hasRuntimeInput)
+        {
+            if (!s_noirEditorOverrideActive || !s_noirEditorMockActive)
+                return;
+
+            input = default;
+            input.Stress01 = math.saturate(s_noirEditorMockStress);
+            input.DepthMeters = math.max(0f, s_noirEditorMockDepth);
+            input.Toxicity01 = math.saturate(s_noirEditorMockToxicity);
+            input.Narcosis01 = input.Stress01 * 0.42f;
+            input.Supersaturation01 = input.Toxicity01 * 0.35f;
+            input.GlobalQualityWeight01 = math.saturate(quality01);
+            input.TimeSecondsWrapped = wrappedTime;
+            input.FrameIndex = frame;
+            input.AbSplit01 = s_noirEditorAbSplit ? 1f : 0f;
+            input.Flags = NoirFlagEditorOverride | NoirFlagMockInput;
+            input.SourceHash = NoirSourceHash;
+            hasRuntimeInput = true;
+        }
+
+        private static void ApplyEditorNoirTuningOverride(
+            ref float baseGrain,
+            ref float baseGlitch,
+            ref float baseChroma,
+            ref float baseVignette,
+            ref float contrast,
+            ref float saturation,
+            ref float temperature,
+            ref float depthTone)
+        {
+            if (!s_noirEditorOverrideActive)
+                return;
+
+            baseGrain = s_noirEditorBaseGrain;
+            baseGlitch = s_noirEditorBaseGlitch;
+            baseChroma = s_noirEditorChroma;
+            baseVignette = s_noirEditorVignette;
+            contrast = s_noirEditorContrast;
+            saturation = s_noirEditorSaturation;
+            temperature = s_noirEditorTemperature;
+            depthTone = s_noirEditorDepthTone;
+        }
+#endif
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    ReleaseNoirVaultHandles(_dataVault);
+                    _dataVault = currentService as IDataVault;
+                    _reconstructionConstantsHandle = default;
+                    _reconstructionTelemetryHandle = default;
+                    _aestheticProfileHandle = default;
+                    _csvScratchHandle = default;
+                    _mockSignalHandle = default;
+                    _aestheticCsvLoaded = false;
+                    _aestheticCsvLoadAttempted = false;
+                    _reconstructionTelemetryCursor = 0;
+                    if (_dataVault != null)
+                    {
+                        if (settings != null && settings.deepSeaNoirUnifiedPass)
+                        {
+                            EnsureNoirVaultHandles();
+                            if (settings.loadNoirColorCsv)
+                                TryLoadNoirColorCsvCold();
+                        }
+                        else
+                        {
+                            EnsureReconstructionVaultHandles();
+                            if (settings != null && settings.loadAestheticCsv)
+                                TryLoadAestheticCsvCold();
+                        }
+                    }
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _noirPlayerContext = currentService as IPlayerRuntimeContext;
+                    _nextNoirPlayerRefreshFrame = 0;
+                    RefreshNoirPlayerContextCold();
+                    break;
+                case GlobalRegistryServiceSlot.ResolutionScalerService:
+                    _noirResolutionScaler = currentService as IResolutionScalerService;
+                    break;
+            }
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            if (settings == null ||
+                !settings.deepSeaNoirUnifiedPass ||
+                _material == null ||
+                !NoirConstantsBuffersReady() ||
+                !NoirVaultHandlesReady())
+            {
+                return;
+            }
+
+            TryUpdateNoirConstants();
+        }
+
+        private void EnsureNoirPassCold()
+        {
+            _noirPass ??= new NoirPostProcessPass();
+        }
+
+        private void TryRegisterNoirLateFrameTickable()
+        {
+            if (_registeredNoirLateFrameTick ||
+                !Application.isPlaying ||
+                GlobalRegistry.Dispatcher == null)
+            {
+                return;
+            }
+
+            _registeredNoirLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterNoirLateFrameTickable()
+        {
+            if (!_registeredNoirLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredNoirLateFrameTick = false;
+        }
+
+        private void RefreshNoirCachedDependenciesCold()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            _noirResolutionScaler = GlobalRegistry.ResolutionScaler;
+            _noirPlayerContext = GlobalRegistry.Player;
+            RefreshNoirPlayerContextCold();
+        }
+
+        private void RefreshNoirPlayerContextCold()
+        {
+            RefreshNoirPlayerContextCold(ResolveNoirFrameIndex());
+        }
+
+        private void RefreshNoirPlayerContextCold(int frame)
+        {
+            _noirPlayerSnapshotsAvailable = false;
+
+            IPlayerRuntimeContext player = _noirPlayerContext;
+            if (player == null || !player.IsInitialized)
+            {
+                _nextNoirPlayerRefreshFrame = frame + ResolveNoirPlayerRefreshCadenceFrames(ResolveNoirQualityWeight01());
+                return;
+            }
+
+            bool hasMovement = player.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                               (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
+            bool hasSurvival = player.TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState survivalState) &&
+                               (survivalState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasSurvival) != 0u;
+            _noirPlayerSnapshotsAvailable = hasMovement || hasSurvival;
+            _nextNoirPlayerRefreshFrame = !_noirPlayerSnapshotsAvailable
+                ? frame + ResolveNoirPlayerRefreshCadenceFrames(ResolveNoirQualityWeight01())
+                : 0;
+        }
+
+        private void TryRefreshLateNoirPlayerContext(float quality01, int frame)
+        {
+            if (_noirPlayerSnapshotsAvailable)
+                return;
+
+            if (_noirPlayerContext == null)
+                return;
+
+            if (frame < _nextNoirPlayerRefreshFrame)
+                return;
+
+            RefreshNoirPlayerContextCold(frame);
+            if (!_noirPlayerSnapshotsAvailable)
+                _nextNoirPlayerRefreshFrame = frame + ResolveNoirPlayerRefreshCadenceFrames(quality01);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private bool EnsureNoirConstantsBuffersCold()
+        {
+            if (!SystemInfo.supportsSetConstantBuffer || !ValidateNoirLayout())
+            {
+                _noirConstantsBufferA?.Release();
+                _noirConstantsBufferA = null;
+                _noirConstantsBufferB?.Release();
+                _noirConstantsBufferB = null;
+                _activeNoirConstantsBuffer = null;
+                return false;
+            }
+
+            if (_noirConstantsBufferA == null || !_noirConstantsBufferA.IsValid())
+            {
+                _noirConstantsBufferA?.Release();
+                _noirConstantsBufferA = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    NoirPostProcessDTO.SizeBytes);
+            }
+
+            if (_noirConstantsBufferB == null || !_noirConstantsBufferB.IsValid())
+            {
+                _noirConstantsBufferB?.Release();
+                _noirConstantsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    NoirPostProcessDTO.SizeBytes);
+            }
+
+            return NoirConstantsBuffersReady();
+        }
+
+        private bool NoirConstantsBuffersReady()
+        {
+            return SystemInfo.supportsSetConstantBuffer &&
+                   _noirConstantsBufferA != null &&
+                   _noirConstantsBufferB != null &&
+                   _noirConstantsBufferA.IsValid() &&
+                   _noirConstantsBufferB.IsValid();
+        }
+
+        private bool EnsureNoirVaultHandles()
+        {
+            if (_dataVault == null)
+                return false;
+
+            if (!_noirConstantsHandle.IsCreated)
+            {
+                _noirConstantsHandle = _dataVault.GetBufferHandle<NoirPostProcessDTO>(
+                    NoirConstantsVaultId,
+                    1,
+                    SystemID.GraphicsScalability,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!_noirInputHandle.IsCreated)
+            {
+                _noirInputHandle = _dataVault.GetBufferHandle<NoirPostProcessInputDTO>(
+                    NoirInputVaultId,
+                    1,
+                    SystemID.GraphicsScalability,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!_noirTelemetryHandle.IsCreated)
+            {
+                _noirTelemetryHandle = _dataVault.GetBufferHandle<NoirTelemetryEntry>(
+                    NoirTelemetryVaultId,
+                    NoirTelemetryCapacity,
+                    SystemID.GraphicsScalability,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_noirTuningHandle.IsCreated)
+            {
+                _noirTuningHandle = _dataVault.GetBufferHandle<NoirPostProcessTuningDTO>(
+                    NoirTuningVaultId,
+                    1,
+                    SystemID.GraphicsScalability,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (!_noirColorProfileHandle.IsCreated)
+            {
+                _noirColorProfileHandle = _dataVault.GetBufferHandle<NoirColorProfileDTO>(
+                    NoirColorProfilesVaultId,
+                    NoirColorProfileCapacity,
+                    SystemID.GraphicsScalability,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_noirCsvScratchHandle.IsCreated)
+            {
+                _noirCsvScratchHandle = _dataVault.GetBufferHandle<byte>(
+                    NoirCsvScratchVaultId,
+                    NoirCsvScratchBytes,
+                    SystemID.GraphicsScalability,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            return NoirVaultHandlesReady();
+        }
+
+        private bool NoirVaultHandlesReady()
+        {
+            return _dataVault != null &&
+                   _noirConstantsHandle.IsCreated &&
+                   _noirInputHandle.IsCreated &&
+                   _noirTelemetryHandle.IsCreated &&
+                   _noirTuningHandle.IsCreated &&
+                   _noirColorProfileHandle.IsCreated &&
+                   _noirCsvScratchHandle.IsCreated;
+        }
+
+        private void ClearNoirVaultHandles()
+        {
+            _noirConstantsHandle = default;
+            _noirInputHandle = default;
+            _noirTelemetryHandle = default;
+            _noirTuningHandle = default;
+            _noirColorProfileHandle = default;
+            _noirCsvScratchHandle = default;
+            _hasCachedNoirColorProfile = false;
+            _hasCachedNoirColorProfileLookup = false;
+            _noirColorCsvLoaded = false;
+            _noirColorCsvLoadAttempted = false;
+            ResetNoirClockState();
+        }
+
+        private void ReleaseNoirVaultHandles(IDataVault vault)
+        {
+            if (vault != null)
+            {
+                if (_noirConstantsHandle.IsCreated)
+                    vault.ReleaseBuffer(in _noirConstantsHandle);
+                if (_noirInputHandle.IsCreated)
+                    vault.ReleaseBuffer(in _noirInputHandle);
+                if (_noirTelemetryHandle.IsCreated)
+                    vault.ReleaseBuffer(in _noirTelemetryHandle);
+                if (_noirTuningHandle.IsCreated)
+                    vault.ReleaseBuffer(in _noirTuningHandle);
+                if (_noirColorProfileHandle.IsCreated)
+                    vault.ReleaseBuffer(in _noirColorProfileHandle);
+                if (_noirCsvScratchHandle.IsCreated)
+                    vault.ReleaseBuffer(in _noirCsvScratchHandle);
+            }
+
+            ClearNoirVaultHandles();
+        }
+
+        private unsafe bool TryUpdateNoirConstants()
+        {
+            if (!NoirVaultHandlesReady())
+                return false;
+
+            if (!_dataVault.TryResolveHandle(in _noirInputHandle, out NativeArray<NoirPostProcessInputDTO> inputArray) ||
+                !_dataVault.TryResolveHandle(in _noirTuningHandle, out NativeArray<NoirPostProcessTuningDTO> tuningArray) ||
+                !_dataVault.TryResolveHandle(in _noirConstantsHandle, out NativeArray<NoirPostProcessDTO> constantsArray) ||
+                !inputArray.IsCreated ||
+                !tuningArray.IsCreated ||
+                !constantsArray.IsCreated ||
+                inputArray.Length <= 0 ||
+                tuningArray.Length <= 0 ||
+                constantsArray.Length <= 0)
+            {
+                return false;
+            }
+
+            void* inputPtr = inputArray.GetUnsafePtr();
+            void* tuningPtr = tuningArray.GetUnsafePtr();
+            void* constantsPtr = constantsArray.GetUnsafePtr();
+            float quality01 = ResolveNoirQualityWeight01();
+            uint frame = ResolveNoirFrameId();
+            int frameIndex = NoirFrameToIndex(frame);
+            TryRefreshLateNoirPlayerContext(quality01, frameIndex);
+            float wrappedTime = ResolveWrappedNoirTimeSeconds(frame);
+            bool hasRuntimeInput = TryBuildNoirInputSnapshot(quality01, wrappedTime, frame, out NoirPostProcessInputDTO input);
+#if UNITY_EDITOR
+            ApplyEditorNoirInputOverride(ref input, quality01, wrappedTime, frame, ref hasRuntimeInput);
+#endif
+            if (hasRuntimeInput)
+            {
+                UnsafeUtility.AsRef<NoirPostProcessInputDTO>(inputPtr) = input;
+            }
+            else
+            {
+                input = BuildMockNoirInput(wrappedTime, quality01, frame);
+                UnsafeUtility.AsRef<NoirPostProcessInputDTO>(inputPtr) = input;
+            }
+
+            NoirPostProcessTuningDTO tuning = BuildNoirTuning(settings, input);
+            UnsafeUtility.AsRef<NoirPostProcessTuningDTO>(tuningPtr) = tuning;
+
+            NoirPostProcessDTO constants = CalculateNoirParameters(in input, in tuning);
+            UnsafeUtility.AsRef<NoirPostProcessDTO>(constantsPtr) = constants;
+            bool validConstants = NoirConstantsFinite(in constants);
+            if (!validConstants)
+            {
+                constants = BuildNoirFailsafeConstants(quality01, wrappedTime);
+                UnsafeUtility.AsRef<NoirPostProcessDTO>(constantsPtr) = constants;
+                input.Flags |= NoirFlagInvalidMath;
+                UnsafeUtility.AsRef<NoirPostProcessInputDTO>(inputPtr) = input;
+            }
+
+            bool uploaded = UpdateNoirConstantsBuffer(in constants);
+            RecordNoirTelemetry(in input, in constants, validConstants);
+            if (!validConstants && !_noirDumpWritten)
+                _noirDumpWritten = TryDumpNoirTelemetry();
+            return uploaded;
+        }
+
+        private bool TryBuildNoirInputSnapshot(
+            float quality01,
+            float wrappedTime,
+            uint frame,
+            out NoirPostProcessInputDTO input)
+        {
+            input = default;
+            input.GlobalQualityWeight01 = math.saturate(quality01);
+            input.TimeSecondsWrapped = wrappedTime;
+            input.FrameIndex = frame;
+            input.AbSplit01 = ResolveNoirAbSplit01(settings);
+            input.SourceHash = NoirSourceHash;
+
+            bool hasSource = false;
+            IPlayerRuntimeContext playerContext = _noirPlayerContext;
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState survival))
+            {
+                input.Narcosis01 = Sanitize01(survival.NitrogenNarcosis01);
+                input.Toxicity01 = Sanitize01(survival.Toxicity01);
+                input.Supersaturation01 = Sanitize01(survival.PressureExposureSeverity01);
+                input.Stress01 = math.saturate(math.max(input.Narcosis01, math.max(input.Toxicity01, input.Supersaturation01)));
+                input.Flags |= NoirFlagPhysiologyInput | NoirFlagVitalsInput;
+                hasSource = true;
+            }
+
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movement))
+            {
+                float movementDepth = math.max(0f, SanitizeFinite(movement.DepthMeters, input.DepthMeters));
+                float movementStress01 = Sanitize01(movement.UnderwaterStressIntensity01);
+                input.DepthMeters = math.max(input.DepthMeters, movementDepth);
+                input.Stress01 = math.saturate(math.max(input.Stress01, movementStress01));
+                input.Flags |= NoirFlagVitalsInput;
+                hasSource = true;
+            }
+
+            _noirPlayerSnapshotsAvailable = hasSource;
+
+            if (hasSource)
+            {
+                if (input.Stress01 <= 0.0001f)
+                    input.Stress01 = math.saturate(math.max(input.Narcosis01, math.max(input.Toxicity01, input.Supersaturation01)));
+            }
+
+            return hasSource &&
+                   math.isfinite(input.Stress01) &&
+                   math.isfinite(input.DepthMeters) &&
+                   math.isfinite(input.Toxicity01);
+        }
+
+        private NoirPostProcessTuningDTO BuildNoirTuning(FeatureSettings currentSettings, NoirPostProcessInputDTO input)
+        {
+            NoirPostProcessTuningDTO tuning = default;
+            float baseGrain = currentSettings != null ? currentSettings.noirBaseGrain : 0.035f;
+            float baseGlitch = currentSettings != null ? currentSettings.noirBaseGlitch : 0.18f;
+            float baseChroma = currentSettings != null ? currentSettings.noirChromaticStrength : 0.0025f;
+            float baseVignette = currentSettings != null ? currentSettings.noirVignetteStrength : 0.24f;
+            float contrast = currentSettings != null ? currentSettings.noirContrast : 1.08f;
+            float saturation = currentSettings != null ? currentSettings.noirSaturation : 0.72f;
+            float temperature = currentSettings != null ? currentSettings.noirTemperature : -0.12f;
+            float depthTone = currentSettings != null ? currentSettings.noirDepthTone : 0.42f;
+
+            if (TrySelectNoirColorProfile(input, out NoirColorProfileDTO profile))
+            {
+                contrast = SanitizeFinite(profile.GradeParams.x, contrast);
+                saturation = SanitizeFinite(profile.GradeParams.y, saturation);
+                temperature = SanitizeFinite(profile.GradeParams.z, temperature);
+                depthTone = SanitizeFinite(profile.GradeParams.w, depthTone);
+                baseGrain *= math.max(0f, SanitizeFinite(profile.ResponseParams.x, 1f));
+                baseGlitch *= math.max(0f, SanitizeFinite(profile.ResponseParams.y, 1f));
+                baseChroma *= math.max(0f, SanitizeFinite(profile.ResponseParams.z, 1f));
+                baseVignette *= math.max(0f, SanitizeFinite(profile.ResponseParams.w, 1f));
+            }
+
+#if UNITY_EDITOR
+            ApplyEditorNoirTuningOverride(ref baseGrain, ref baseGlitch, ref baseChroma, ref baseVignette, ref contrast, ref saturation, ref temperature, ref depthTone);
+#endif
+
+            tuning.BaseParams = new float4(
+                math.clamp(SanitizeFinite(baseGrain, 0.035f), 0f, 0.35f),
+                math.clamp(SanitizeFinite(baseGlitch, 0.18f), 0f, 1f),
+                math.clamp(SanitizeFinite(baseChroma, 0.0025f), 0f, 0.024f),
+                Sanitize01(baseVignette));
+            tuning.GradeParams = new float4(
+                math.clamp(SanitizeFinite(contrast, 1.08f), 0.35f, 2.4f),
+                math.clamp(SanitizeFinite(saturation, 0.72f), 0f, 1.5f),
+                math.clamp(SanitizeFinite(temperature, -0.12f), -1f, 1f),
+                Sanitize01(depthTone));
+            tuning.StressResponse = new float4(0.72f, 0.82f, 0.94f, 0.22f);
+            tuning.ProfileParams = new float4(ResolveNoirAbSplit01(currentSettings), 1f, 0f, 0f);
+            return tuning;
+        }
+
+        private unsafe bool UpdateNoirConstantsBuffer(in NoirPostProcessDTO constants)
+        {
+            if (!NoirConstantsBuffersReady())
+                return false;
+
+            if (_hasNoirConstants && NoirConstantsEqual(in _lastNoirConstants, in constants))
+                return _activeNoirConstantsBuffer != null && _activeNoirConstantsBuffer.IsValid();
+
+            GraphicsBuffer target = (_noirBufferIndex & 1) == 0 ? _noirConstantsBufferA : _noirConstantsBufferB;
+            _noirBufferIndex++;
+            NativeArray<NoirPostProcessDTO> mapped = target.LockBufferForWrite<NoirPostProcessDTO>(0, 1);
+            try
+            {
+                NoirPostProcessDTO local = constants;
+                UnsafeUtility.MemCpy(
+                    mapped.GetUnsafePtr(),
+                    UnsafeUtility.AddressOf(ref local),
+                    NoirPostProcessDTO.SizeBytes);
+            }
+            finally
+            {
+                target.UnlockBufferAfterWrite<NoirPostProcessDTO>(1);
+            }
+
+            _lastNoirConstants = constants;
+            _hasNoirConstants = true;
+            _activeNoirConstantsBuffer = target;
+#if UNITY_EDITOR
+            s_lastEditorNoirConstants = constants;
+            s_hasLastEditorNoirConstants = true;
+#endif
+            return true;
+        }
+
+        private void RecordNoirTelemetry(
+            in NoirPostProcessInputDTO input,
+            in NoirPostProcessDTO constants,
+            bool validConstants)
+        {
+            if (!NoirVaultHandlesReady() ||
+                !_dataVault.TryResolveHandle(in _noirTelemetryHandle, out NativeArray<NoirTelemetryEntry> telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length <= 0)
+            {
+                return;
+            }
+
+            int index = _noirTelemetryCursor;
+            _noirTelemetryCursor = (_noirTelemetryCursor + 1) % telemetry.Length;
+            if ((uint)index >= (uint)telemetry.Length)
+                index = 0;
+
+            NoirTelemetryEntry entry = default;
+            entry.Frame = input.FrameIndex;
+            entry.Flags = input.Flags | (validConstants ? 0u : NoirFlagInvalidMath);
+            entry.Stress01 = input.Stress01;
+            entry.DepthMeters = input.DepthMeters;
+            entry.Toxicity01 = input.Toxicity01;
+            entry.GlobalQualityWeight01 = input.GlobalQualityWeight01;
+            entry.Grain01 = constants.GrainParams.x;
+            entry.Glitch01 = constants.AberrationParams.y;
+            entry.Vignette01 = constants.AberrationParams.w;
+            entry.AbSplit01 = constants.QualityAndLimits.w;
+            entry.WrappedTimeSeconds = input.TimeSecondsWrapped;
+            entry.ParameterHash = HashNoirConstants(in constants);
+            entry.EstimatedGpuCostMs = EstimateNoirGpuCostMs(in constants);
+            entry.ActiveFeatureFlags = ResolveNoirFeatureFlags(in constants);
+            telemetry[index] = entry;
+        }
+
+        private unsafe bool TryDumpNoirTelemetry()
+        {
+            if (_dataVault == null ||
+                !_noirTelemetryHandle.IsCreated ||
+                !_dataVault.TryResolveHandle(in _noirTelemetryHandle, out NativeArray<NoirTelemetryEntry> telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length <= 0)
+            {
+                return false;
+            }
+
+            string directory = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "AgentLogs");
+            Directory.CreateDirectory(directory);
+            string path = Path.Combine(directory, NoirDumpFileName);
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            {
+                byte* source = (byte*)telemetry.GetUnsafeReadOnlyPtr();
+                int totalBytes = telemetry.Length * UnsafeUtility.SizeOf<NoirTelemetryEntry>();
+                byte* chunk = stackalloc byte[1024];
+                int offset = 0;
+                while (offset < totalBytes)
+                {
+                    int count = math.min(1024, totalBytes - offset);
+                    UnsafeUtility.MemCpy(chunk, source + offset, count);
+                    stream.Write(new ReadOnlySpan<byte>(chunk, count));
+                    offset += count;
+                }
+            }
+
+            return true;
+        }
+
+        private bool TrySelectNoirColorProfile(
+            NoirPostProcessInputDTO input,
+            out NoirColorProfileDTO profile)
+        {
+            uint lookupHash = HashNoirProfileLookupKey(in input);
+            int frame = NoirFrameToIndex(input.FrameIndex);
+            int cadence = ResolveNoirProfileCadenceFrames(input.GlobalQualityWeight01);
+            if (_hasCachedNoirColorProfileLookup &&
+                _cachedNoirColorProfileLookupHash == lookupHash &&
+                frame - _cachedNoirColorProfileFrame < cadence)
+            {
+                profile = _cachedNoirColorProfile;
+                return _hasCachedNoirColorProfile;
+            }
+
+            if (!_noirColorCsvLoaded ||
+                _dataVault == null ||
+                !_noirColorProfileHandle.IsCreated ||
+                !_dataVault.TryResolveHandle(in _noirColorProfileHandle, out NativeArray<NoirColorProfileDTO> profiles) ||
+                !profiles.IsCreated ||
+                profiles.Length <= 0)
+            {
+                profile = default;
+                return false;
+            }
+
+            float depthMeters = math.max(0f, SanitizeFinite(input.DepthMeters, 0f));
+            float stress01 = Sanitize01(input.Stress01);
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                NoirColorProfileDTO candidate = profiles[i];
+                if (candidate.ProfileHash == 0u || candidate.Flags == 0u)
+                    continue;
+
+                if (depthMeters >= candidate.DepthMinMeters &&
+                    depthMeters <= candidate.DepthMaxMeters &&
+                    stress01 >= candidate.StressMin01 &&
+                    stress01 <= candidate.StressMax01)
+                {
+                    _cachedNoirColorProfile = candidate;
+                    _cachedNoirColorProfileLookupHash = lookupHash;
+                    _cachedNoirColorProfileFrame = frame;
+                    _hasCachedNoirColorProfile = true;
+                    _hasCachedNoirColorProfileLookup = true;
+                    profile = candidate;
+                    return true;
+                }
+            }
+
+            _cachedNoirColorProfile = default;
+            _cachedNoirColorProfileLookupHash = lookupHash;
+            _cachedNoirColorProfileFrame = frame;
+            _hasCachedNoirColorProfile = false;
+            _hasCachedNoirColorProfileLookup = true;
+            profile = default;
+            return false;
+        }
+
+        private unsafe bool TryLoadNoirColorCsvCold()
+        {
+            if (_noirColorCsvLoaded || _noirColorCsvLoadAttempted)
+                return _noirColorCsvLoaded;
+
+            if (!EnsureNoirVaultHandles() || _dataVault == null)
+                return false;
+
+            string path = ResolveNoirColorCsvPath();
+            _noirColorCsvLoadAttempted = true;
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            if (!_dataVault.TryLockBuffer(NoirCsvScratchVaultId, SystemID.GraphicsScalability))
+            {
+                _noirColorCsvLoadAttempted = false;
+                return false;
+            }
+
+            bool profileLocked = false;
+            try
+            {
+                if (!_dataVault.TryLockBuffer(NoirColorProfilesVaultId, SystemID.GraphicsScalability))
+                {
+                    _noirColorCsvLoadAttempted = false;
+                    return false;
+                }
+                profileLocked = true;
+
+                if (!_dataVault.TryResolveHandle(in _noirCsvScratchHandle, out NativeArray<byte> scratch) ||
+                    !_dataVault.TryResolveHandle(in _noirColorProfileHandle, out NativeArray<NoirColorProfileDTO> profiles) ||
+                    !scratch.IsCreated ||
+                    !profiles.IsCreated ||
+                    scratch.Length <= 0 ||
+                    profiles.Length <= 0)
+                {
+                    return false;
+                }
+
+                int read;
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
+                {
+                    int max = math.min(scratch.Length, NoirCsvScratchBytes);
+                    void* scratchPtr = scratch.GetUnsafePtr();
+                    read = stream.Read(new Span<byte>(scratchPtr, max));
+                }
+
+                if (read <= 0)
+                    return false;
+
+                int parsed = ParseNoirColorCsv(scratch, read, profiles);
+                _noirColorCsvLoaded = parsed > 0;
+                _hasCachedNoirColorProfile = false;
+                _hasCachedNoirColorProfileLookup = false;
+                return _noirColorCsvLoaded;
+            }
+            finally
+            {
+                if (profileLocked)
+                    _dataVault.TryUnlockBuffer(NoirColorProfilesVaultId, SystemID.GraphicsScalability);
+                _dataVault.TryUnlockBuffer(NoirCsvScratchVaultId, SystemID.GraphicsScalability);
+            }
+        }
+
+        private static int ParseNoirColorCsv(
+            NativeArray<byte> bytes,
+            int length,
+            NativeArray<NoirColorProfileDTO> profiles)
+        {
+            int limit = math.min(length, bytes.Length);
+            int cursor = 0;
+            int write = 0;
+            while (cursor < limit && write < profiles.Length)
+            {
+                SkipCsvWhitespace(bytes, limit, ref cursor);
+                if (cursor >= limit)
+                    break;
+
+                if (bytes[cursor] == (byte)'#' || bytes[cursor] == (byte)'\n' || bytes[cursor] == (byte)'\r')
+                {
+                    SkipCsvLine(bytes, limit, ref cursor);
+                    continue;
+                }
+
+                uint profileHash = ReadCsvTokenHash(bytes, limit, ref cursor);
+                if (!TryReadCsvFloatField(bytes, limit, ref cursor, out float depthMin) ||
+                    !TryReadCsvFloatField(bytes, limit, ref cursor, out float depthMax) ||
+                    !TryReadCsvFloatField(bytes, limit, ref cursor, out float stressMin) ||
+                    !TryReadCsvFloatField(bytes, limit, ref cursor, out float stressMax) ||
+                    !TryReadCsvFloatField(bytes, limit, ref cursor, out float contrast) ||
+                    !TryReadCsvFloatField(bytes, limit, ref cursor, out float saturation) ||
+                    !TryReadCsvFloatField(bytes, limit, ref cursor, out float temperature) ||
+                    !TryReadCsvFloatField(bytes, limit, ref cursor, out float depthTone) ||
+                    !TryReadCsvFloatField(bytes, limit, ref cursor, out float grainScale) ||
+                    !TryReadCsvFloatField(bytes, limit, ref cursor, out float glitchScale) ||
+                    !TryReadCsvFloatField(bytes, limit, ref cursor, out float chromaScale) ||
+                    !TryReadCsvFloatField(bytes, limit, ref cursor, out float vignetteScale))
+                {
+                    SkipCsvLine(bytes, limit, ref cursor);
+                    continue;
+                }
+
+                if (profileHash != 0u)
+                {
+                    NoirColorProfileDTO profile = default;
+                    profile.ProfileHash = profileHash;
+                    profile.Flags = 1u;
+                    profile.DepthMinMeters = math.min(depthMin, depthMax);
+                    profile.DepthMaxMeters = math.max(depthMin, depthMax);
+                    profile.StressMin01 = math.saturate(math.min(stressMin, stressMax));
+                    profile.StressMax01 = math.saturate(math.max(stressMin, stressMax));
+                    profile.GradeParams = new float4(
+                        math.clamp(contrast, 0.35f, 2.4f),
+                        math.clamp(saturation, 0f, 1.5f),
+                        math.clamp(temperature, -1f, 1f),
+                        math.saturate(depthTone));
+                    profile.ResponseParams = new float4(
+                        math.max(0f, grainScale),
+                        math.max(0f, glitchScale),
+                        math.max(0f, chromaScale),
+                        math.max(0f, vignetteScale));
+                    profiles[write++] = profile;
+                }
+
+                SkipCsvLine(bytes, limit, ref cursor);
+            }
+
+            for (int i = write; i < profiles.Length; i++)
+                profiles[i] = default;
+
+            return write;
+        }
+
+        private static string ResolveNoirColorCsvPath()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string path = Path.Combine(root, "Assets", "_Project", "Data", NoirColorCsvFileName);
+            if (File.Exists(path))
+                return path;
+
+            path = Path.Combine(root, "Data", "Visuals", NoirColorCsvFileName);
+            if (File.Exists(path))
+                return path;
+
+            path = Path.Combine(root, NoirColorCsvFileName);
+            return File.Exists(path) ? path : null;
+        }
+
+        private float ResolveNoirQualityWeight01()
+        {
+            IResolutionScalerService scaler = _noirResolutionScaler;
+            return scaler != null && scaler.TryGetScaleState(out ResolutionScaleState state)
+                ? Sanitize01(state.GlobalQualityWeight01)
+                : 1f;
+        }
+
+        private uint ResolveNoirFrameId()
+        {
+            uint dispatcherFrame = TimeSliceScheduler.CurrentFrameId;
+            if (dispatcherFrame != 0u)
+                return dispatcherFrame;
+
+            uint next = _noirFallbackFrameId + 1u;
+            if (next == 0u)
+                next = 1u;
+
+            _noirFallbackFrameId = next;
+            return next;
+        }
+
+        private int ResolveNoirFrameIndex()
+        {
+            return NoirFrameToIndex(ResolveNoirFrameId());
+        }
+
+        private float ResolveWrappedNoirTimeSeconds(uint frame)
+        {
+            if (_lastNoirTimeFrameId == frame)
+                return _noirWrappedVisualTimeSeconds;
+
+            float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f || deltaTime > 0.25f)
+                deltaTime = 0.016666668f;
+
+            float next = _noirWrappedVisualTimeSeconds + deltaTime;
+            if (!math.isfinite(next))
+                next = 0f;
+            if (next >= 1000f)
+                next -= math.floor(next * 0.001f) * 1000f;
+
+            _noirWrappedVisualTimeSeconds = next;
+            _lastNoirTimeFrameId = frame;
+            return next;
+        }
+
+        private void ResetNoirClockState()
+        {
+            _noirFallbackFrameId = 0u;
+            _lastNoirTimeFrameId = 0u;
+            _noirWrappedVisualTimeSeconds = 0f;
+        }
+
+        private static int NoirFrameToIndex(uint frame)
+        {
+            return frame <= int.MaxValue ? (int)frame : int.MaxValue;
+        }
+
+        private static float ResolveNoirAbSplit01(FeatureSettings currentSettings)
+        {
+            bool enabled = currentSettings != null && currentSettings.noirAbSplit;
+#if UNITY_EDITOR
+            enabled |= s_noirEditorAbSplit;
+#endif
+            return enabled ? 1f : 0f;
+        }
+
+        private static int ResolveNoirProfileCadenceFrames(float quality01)
+        {
+            float qualityCurve = Smooth01(math.saturate((Sanitize01(quality01) - 0.18f) * 1.2195122f));
+            return math.max(1, (int)math.round(math.lerp(18f, 2f, qualityCurve)));
+        }
+
+        private static int ResolveNoirPlayerRefreshCadenceFrames(float quality01)
+        {
+            float qualityCurve = Smooth01(math.saturate((Sanitize01(quality01) - 0.12f) * 1.1363636f));
+            return math.clamp((int)math.round(math.lerp(90f, 18f, qualityCurve)), 18, 90);
+        }
+
+        private static uint HashNoirProfileLookupKey(in NoirPostProcessInputDTO input)
+        {
+            uint depthBucket = (uint)math.clamp((int)math.floor(math.max(0f, SanitizeFinite(input.DepthMeters, 0f)) * 0.02f), 0, 65535);
+            uint stressBucket = (uint)math.clamp((int)math.floor(Sanitize01(input.Stress01) * 31f), 0, 31);
+            uint toxicityBucket = (uint)math.clamp((int)math.floor(Sanitize01(input.Toxicity01) * 31f), 0, 31);
+            uint hash = 2166136261u;
+            hash = (hash ^ depthBucket) * 16777619u;
+            hash = (hash ^ (stressBucket << 16)) * 16777619u;
+            hash = (hash ^ (toxicityBucket << 24)) * 16777619u;
+            return hash;
+        }
+
+        private static NoirPostProcessDTO BuildNoirFailsafeConstants(float quality01, float wrappedTime)
+        {
+            NoirPostProcessDTO constants = default;
+            constants.GrainParams = new float4(0.01f, 96f, 0.25f, wrappedTime);
+            constants.AberrationParams = new float4(0f, 0f, 0f, 0.12f);
+            constants.ColorGrading = new float4(1f, 0.75f, -0.08f, 0.2f);
+            constants.QualityAndLimits = new float4(Sanitize01(quality01), 0f, 0f, 0f);
+            return constants;
+        }
+
+        private static bool NoirConstantsFinite(in NoirPostProcessDTO constants)
+        {
+            return math.all(math.isfinite(constants.GrainParams)) &&
+                   math.all(math.isfinite(constants.AberrationParams)) &&
+                   math.all(math.isfinite(constants.ColorGrading)) &&
+                   math.all(math.isfinite(constants.QualityAndLimits));
+        }
+
+        private static bool NoirConstantsEqual(
+            in NoirPostProcessDTO left,
+            in NoirPostProcessDTO right)
+        {
+            return math.lengthsq(left.GrainParams - right.GrainParams) <= NoirConstantsEpsilon * NoirConstantsEpsilon &&
+                   math.lengthsq(left.AberrationParams - right.AberrationParams) <= NoirConstantsEpsilon * NoirConstantsEpsilon &&
+                   math.lengthsq(left.ColorGrading - right.ColorGrading) <= NoirConstantsEpsilon * NoirConstantsEpsilon &&
+                   math.lengthsq(left.QualityAndLimits - right.QualityAndLimits) <= NoirConstantsEpsilon * NoirConstantsEpsilon;
+        }
+
+        private static uint HashNoirConstants(in NoirPostProcessDTO constants)
+        {
+            uint hash = math.hash(constants.GrainParams);
+            hash = (hash * 16777619u) ^ math.hash(constants.AberrationParams);
+            hash = (hash * 16777619u) ^ math.hash(constants.ColorGrading);
+            hash = (hash * 16777619u) ^ math.hash(constants.QualityAndLimits);
+            return hash;
+        }
+
+        private static uint ResolveNoirFeatureFlags(in NoirPostProcessDTO constants)
+        {
+            uint flags = 0u;
+            float quality = Sanitize01(constants.QualityAndLimits.x);
+            if (quality < 0.34f)
+                flags |= 1u;
+            if (constants.AberrationParams.x > 0.0001f)
+                flags |= 1u << 1;
+            if (math.max(math.abs(constants.AberrationParams.y), math.abs(constants.AberrationParams.z)) > 0.001f)
+                flags |= 1u << 2;
+            if (constants.QualityAndLimits.w > 0.5f)
+                flags |= 1u << 3;
+            return flags;
+        }
+
+        private static float EstimateNoirGpuCostMs(in NoirPostProcessDTO constants)
+        {
+            float quality01 = Sanitize01(constants.QualityAndLimits.x);
+            float grain = Sanitize01(constants.GrainParams.x * 8f);
+            float glitch = Sanitize01(math.max(math.abs(constants.AberrationParams.y), math.abs(constants.AberrationParams.z)) * 2f);
+            float chroma = Sanitize01(math.abs(constants.AberrationParams.x) * 220f);
+            return math.max(0f, 0.028f + quality01 * 0.018f + grain * 0.01f + glitch * 0.014f + chroma * 0.18f);
+        }
+
+        private static bool ValidateNoirLayout()
+        {
+            return s_noirLayoutValid;
+        }
+
+        private static bool ComputeNoirLayoutValid()
+        {
+            return UnsafeUtility.SizeOf<NoirPostProcessDTO>() == NoirPostProcessDTO.SizeBytes &&
+                   Marshal.OffsetOf<NoirPostProcessDTO>(nameof(NoirPostProcessDTO.GrainParams)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<NoirPostProcessDTO>(nameof(NoirPostProcessDTO.AberrationParams)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<NoirPostProcessDTO>(nameof(NoirPostProcessDTO.ColorGrading)).ToInt32() == 32 &&
+                   Marshal.OffsetOf<NoirPostProcessDTO>(nameof(NoirPostProcessDTO.QualityAndLimits)).ToInt32() == 48;
+        }
+
+        private static NoirPostProcessInputDTO BuildMockNoirInput(
+            float wrappedTimeSeconds,
+            float globalQualityWeight01,
+            uint frameIndex)
+        {
+            float phase = wrappedTimeSeconds * 0.031f;
+            float wave = 0.5f + 0.5f * math.sin(phase * 6.2831853f);
+            float pulse = 0.5f + 0.5f * math.sin((phase * 2.71f + 0.37f) * 6.2831853f);
+            NoirPostProcessInputDTO input = default;
+            input.Stress01 = math.saturate(0.18f + wave * 0.62f);
+            input.DepthMeters = math.max(0f, 160f + pulse * 840f);
+            input.Toxicity01 = math.saturate(0.08f + (1f - wave) * 0.35f);
+            input.Narcosis01 = input.Stress01 * 0.35f;
+            input.Supersaturation01 = input.Toxicity01 * 0.22f;
+            input.GlobalQualityWeight01 = Sanitize01(globalQualityWeight01);
+            input.TimeSecondsWrapped = math.max(0f, SanitizeFinite(wrappedTimeSeconds, 0f));
+            input.FrameIndex = frameIndex;
+            input.AbSplit01 = 0f;
+            input.Flags = NoirFlagMockInput;
+            input.SourceHash = NoirSourceHash;
+            return input;
+        }
+
+        private static NoirPostProcessDTO CalculateNoirParameters(
+            in NoirPostProcessInputDTO input,
+            in NoirPostProcessTuningDTO tuning)
+        {
+            float stress01 = Sanitize01(input.Stress01);
+            float toxicity01 = Sanitize01(input.Toxicity01);
+            float depthMeters = math.max(0f, SanitizeFinite(input.DepthMeters, 0f));
+            float depth01 = math.saturate(depthMeters * 0.001f);
+            float quality01 = Sanitize01(input.GlobalQualityWeight01);
+            float qualityCurve = quality01 * quality01 * (3f - 2f * quality01);
+            float highDetail01 = math.saturate((quality01 - 0.22f) * 1.2820513f);
+            highDetail01 = highDetail01 * highDetail01 * (3f - 2f * highDetail01);
+
+            float baseGrain = math.max(0f, SanitizeFinite(tuning.BaseParams.x, 0.035f));
+            float baseGlitch = math.max(0f, SanitizeFinite(tuning.BaseParams.y, 0.18f));
+            float baseChroma = math.max(0f, SanitizeFinite(tuning.BaseParams.z, 0.0025f));
+            float baseVignette = Sanitize01(tuning.BaseParams.w);
+            float contrastBase = math.clamp(SanitizeFinite(tuning.GradeParams.x, 1.08f), 0.1f, 2.4f);
+            float saturationBase = math.clamp(SanitizeFinite(tuning.GradeParams.y, 0.72f), 0f, 1.5f);
+            float temperatureBase = math.clamp(SanitizeFinite(tuning.GradeParams.z, -0.12f), -1f, 1f);
+            float depthTone = Sanitize01(tuning.GradeParams.w);
+            float stressGrain = math.max(0f, SanitizeFinite(tuning.StressResponse.x, 0.72f));
+            float stressChroma = math.max(0f, SanitizeFinite(tuning.StressResponse.y, 0.82f));
+
+            float grain = baseGrain * math.lerp(0.42f, 1.65f, qualityCurve) * (1f + stress01 * stressGrain);
+            float grainScale = math.lerp(96f, 384f, highDetail01);
+            float grainSpeed = math.lerp(0.12f, 0.76f, highDetail01);
+            float chroma = baseChroma * highDetail01 * (0.35f + stress01 * stressChroma);
+            float glitch = baseGlitch * highDetail01 * (toxicity01 * 0.75f + stress01 * 0.25f);
+            float glitchY = glitch * math.lerp(0.32f, 0.72f, highDetail01);
+            float vignette = math.saturate(baseVignette + stress01 * 0.22f + depth01 * 0.18f);
+            float contrast = math.max(0.1f, contrastBase + stress01 * 0.08f);
+            float saturation = math.max(0f, saturationBase - stress01 * 0.18f - toxicity01 * 0.12f);
+            float temperature = math.clamp(temperatureBase - depth01 * depthTone, -1f, 1f);
+            float tint = math.saturate(depth01 * depthTone + toxicity01 * 0.2f);
+
+            float wrappedTime = math.max(0f, SanitizeFinite(input.TimeSecondsWrapped, 0f));
+            float abSplit01 = Sanitize01(input.AbSplit01);
+
+            NoirPostProcessDTO output = default;
+            output.GrainParams = new float4(grain, grainScale, grainSpeed, wrappedTime);
+            output.AberrationParams = new float4(chroma, glitch, glitchY, vignette);
+            output.ColorGrading = new float4(contrast, saturation, temperature, tint);
+            output.QualityAndLimits = new float4(quality01, stress01, toxicity01, abSplit01);
+            return output;
+        }
+    }
+}

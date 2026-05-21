@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -225,17 +226,24 @@ namespace Hecton8.Gameplay
         private static readonly ProfilerMarker _frameMarker = new ProfilerMarker("H8.Ballistics.FrameTick");
         private static readonly ProfilerMarker _queueMarker = new ProfilerMarker("H8.Ballistics.QueueTrajectory");
 
+        private struct VaultLane<T> where T : struct
+        {
+            public VaultGenerationHandle<T> Handle;
+            public uint ExpectedBufferID;
+            public int Length;
+        }
+
         private static IDataVault _vault;
-        private static VaultBufferHandle<BallisticTrajectoryDTO> _trajectoryAHandle;
-        private static VaultBufferHandle<BallisticTrajectoryDTO> _trajectoryBHandle;
-        private static VaultBufferHandle<AABBPrimitiveDTO> _primitiveHandle;
-        private static VaultBufferHandle<BallisticHitResultDTO> _hitHandle;
-        private static VaultBufferHandle<float> _penetrationLutHandle;
-        private static VaultBufferHandle<BallisticsTelemetryEntry> _telemetryHandle;
-        private static VaultBufferHandle<BallisticsCountersDTO> _counterHandle;
-        private static VaultBufferHandle<BallisticsTuningDTO> _tuningHandle;
-        private static VaultBufferHandle<BallisticImpactVfxDTO> _impactVfxHandle;
-        private static VaultBufferHandle<byte> _csvScratchHandle;
+        private static VaultLane<BallisticTrajectoryDTO> _trajectoryAHandle;
+        private static VaultLane<BallisticTrajectoryDTO> _trajectoryBHandle;
+        private static VaultLane<AABBPrimitiveDTO> _primitiveHandle;
+        private static VaultLane<BallisticHitResultDTO> _hitHandle;
+        private static VaultLane<float> _penetrationLutHandle;
+        private static VaultLane<BallisticsTelemetryEntry> _telemetryHandle;
+        private static VaultLane<BallisticsCountersDTO> _counterHandle;
+        private static VaultLane<BallisticsTuningDTO> _tuningHandle;
+        private static VaultLane<BallisticImpactVfxDTO> _impactVfxHandle;
+        private static VaultLane<byte> _csvScratchHandle;
 
         private static JobHandle _activeHandle;
         private static int _pendingTrajectoryCount;
@@ -289,56 +297,48 @@ namespace Hecton8.Gameplay
             }
 
             _vault = resolvedVault;
-            _trajectoryAHandle = _vault.GetBufferHandle<BallisticTrajectoryDTO>(
+            _trajectoryAHandle = AcquireVaultLane<BallisticTrajectoryDTO>(
                 BallisticsVaultBufferIds.TrajectoriesA,
                 MaxTrajectories,
-                OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _trajectoryBHandle = _vault.GetBufferHandle<BallisticTrajectoryDTO>(
+            _trajectoryBHandle = AcquireVaultLane<BallisticTrajectoryDTO>(
                 BallisticsVaultBufferIds.TrajectoriesB,
                 MaxTrajectories,
-                OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _primitiveHandle = _vault.GetBufferHandle<AABBPrimitiveDTO>(
+            _primitiveHandle = AcquireVaultLane<AABBPrimitiveDTO>(
                 BallisticsVaultBufferIds.AabbPrimitives,
                 MaxAabbPrimitives,
-                OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _hitHandle = _vault.GetBufferHandle<BallisticHitResultDTO>(
+            _hitHandle = AcquireVaultLane<BallisticHitResultDTO>(
                 BallisticsVaultBufferIds.HitResults,
                 MaxHitResults,
-                OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _penetrationLutHandle = _vault.GetBufferHandle<float>(
+            _penetrationLutHandle = AcquireVaultLane<float>(
                 BallisticsVaultBufferIds.PenetrationLut,
                 PenetrationLutLength,
-                OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = _vault.GetBufferHandle<BallisticsTelemetryEntry>(
+            _telemetryHandle = AcquireVaultLane<BallisticsTelemetryEntry>(
                 BallisticsVaultBufferIds.TelemetryRing,
                 TelemetryRingLength,
-                OwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            _counterHandle = _vault.GetBufferHandle<BallisticsCountersDTO>(
+            _counterHandle = AcquireVaultLane<BallisticsCountersDTO>(
                 BallisticsVaultBufferIds.Counters,
                 1,
-                OwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            _tuningHandle = _vault.GetBufferHandle<BallisticsTuningDTO>(
+            _tuningHandle = AcquireVaultLane<BallisticsTuningDTO>(
                 BallisticsVaultBufferIds.Tuning,
                 1,
-                OwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            _impactVfxHandle = _vault.GetBufferHandle<BallisticImpactVfxDTO>(
+            _impactVfxHandle = AcquireVaultLane<BallisticImpactVfxDTO>(
                 BallisticsVaultBufferIds.ImpactVfx,
                 MaxImpactVfx,
-                OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = _vault.GetBufferHandle<byte>(
+            _csvScratchHandle = AcquireVaultLane<byte>(
                 BallisticsVaultBufferIds.CsvScratch,
                 CsvScratchBytes,
-                OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
+            if (!AreVaultLanesBound())
+                return false;
 
             SeedDefaultTuning();
             SeedDefaultPenetrationLut();
@@ -428,13 +428,16 @@ namespace Hecton8.Gameplay
             if (safeVelocity <= Epsilon)
                 return false;
 
+            if (!TryResolveAupDoubleFromRuntimeOrigin(origin, out double3 originAup))
+                return false;
+
             NativeArray<BallisticTrajectoryDTO> writeTrajectories = ResolveWriteTrajectories();
             if (!writeTrajectories.IsCreated || _pendingTrajectoryCount >= math.min(writeTrajectories.Length, MaxTrajectories))
                 return false;
 
             int index = _pendingTrajectoryCount++;
             BallisticTrajectoryDTO trajectory = default;
-            trajectory.OriginAUP = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin);
+            trajectory.OriginAUP = originAup;
             trajectory.Direction = resolvedDirection;
             trajectory.Velocity = safeVelocity;
             trajectory.Mass = safeMass;
@@ -478,7 +481,7 @@ namespace Hecton8.Gameplay
 
             try
             {
-                NativeArray<AABBPrimitiveDTO> primitives = _primitiveHandle.Resolve(_vault);
+                NativeArray<AABBPrimitiveDTO> primitives = OpenVaultLane(in _primitiveHandle);
                 if (!primitives.IsCreated)
                     return false;
 
@@ -518,8 +521,11 @@ namespace Hecton8.Gameplay
                     }
                 }
 
+                if (!TryResolveAupDoubleFromRuntimeOrigin(center, out double3 centerAup))
+                    return false;
+
                 AABBPrimitiveDTO primitive = default;
-                primitive.CenterAUP = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(center);
+                primitive.CenterAUP = centerAup;
                 primitive.HalfExtents = math.max(math.abs(ToFloat3(halfExtents)), new float3(0.025f));
                 primitive.TargetEntityID = targetEntityId;
                 primitive.Rotation = NormalizeOrIdentity(new quaternion(rotation.x, rotation.y, rotation.z, rotation.w));
@@ -574,7 +580,7 @@ namespace Hecton8.Gameplay
 
             try
             {
-                NativeArray<AABBPrimitiveDTO> primitives = _primitiveHandle.Resolve(_vault);
+                NativeArray<AABBPrimitiveDTO> primitives = OpenVaultLane(in _primitiveHandle);
                 if (!primitives.IsCreated)
                     return false;
 
@@ -614,12 +620,12 @@ namespace Hecton8.Gameplay
                 float quality = ResolveGlobalQualityWeight();
                 BallisticsTuningDTO tuning = ResolveTuning(quality);
                 NativeArray<BallisticTrajectoryDTO> solverTrajectories = ResolveWriteTrajectories();
-                NativeArray<AABBPrimitiveDTO> primitives = _primitiveHandle.Resolve(_vault);
-                NativeArray<BallisticHitResultDTO> hitResults = _hitHandle.Resolve(_vault);
-                NativeArray<float> penetrationLut = _penetrationLutHandle.Resolve(_vault);
-                NativeArray<BallisticsTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
-                NativeArray<BallisticsCountersDTO> counters = _counterHandle.Resolve(_vault);
-                NativeArray<BallisticImpactVfxDTO> impactVfx = _impactVfxHandle.Resolve(_vault);
+                NativeArray<AABBPrimitiveDTO> primitives = OpenVaultLane(in _primitiveHandle);
+                NativeArray<BallisticHitResultDTO> hitResults = OpenVaultLane(in _hitHandle);
+                NativeArray<float> penetrationLut = OpenVaultLane(in _penetrationLutHandle);
+                NativeArray<BallisticsTelemetryEntry> telemetry = OpenVaultLane(in _telemetryHandle);
+                NativeArray<BallisticsCountersDTO> counters = OpenVaultLane(in _counterHandle);
+                NativeArray<BallisticImpactVfxDTO> impactVfx = OpenVaultLane(in _impactVfxHandle);
                 if (!solverTrajectories.IsCreated ||
                     !primitives.IsCreated ||
                     !hitResults.IsCreated ||
@@ -644,7 +650,9 @@ namespace Hecton8.Gameplay
                 _telemetryCursor++;
                 uint frame = ++_simulationFrame;
                 uint activeBufferId = (uint)ResolveActiveReadBufferId();
-                double3 presentationOriginAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+                if (!TryResolveCurrentRuntimeOriginDouble3(out double3 presentationOriginAup))
+                    presentationOriginAup = double3.zero;
+
                 int signalEmitBudget = ResolveDamageSignalBudget(quality);
 
                 ClearCounter(counters, frame, quality, activeBufferId);
@@ -733,7 +741,7 @@ namespace Hecton8.Gameplay
             if (!EnsureInitialized())
                 return false;
 
-            NativeArray<BallisticsTuningDTO> buffer = _tuningHandle.Resolve(_vault);
+            NativeArray<BallisticsTuningDTO> buffer = OpenVaultLane(in _tuningHandle);
             if (!buffer.IsCreated || buffer.Length <= 0)
                 return false;
 
@@ -752,7 +760,7 @@ namespace Hecton8.Gameplay
 
             try
             {
-                NativeArray<BallisticsTuningDTO> buffer = _tuningHandle.Resolve(_vault);
+                NativeArray<BallisticsTuningDTO> buffer = OpenVaultLane(in _tuningHandle);
                 if (!buffer.IsCreated || buffer.Length <= 0)
                     return false;
 
@@ -790,7 +798,7 @@ namespace Hecton8.Gameplay
                     return false;
 
                 NativeArray<BallisticTrajectoryDTO> trajectories = ResolveWriteTrajectories();
-                NativeArray<AABBPrimitiveDTO> primitives = _primitiveHandle.Resolve(_vault);
+                NativeArray<AABBPrimitiveDTO> primitives = OpenVaultLane(in _primitiveHandle);
                 if (!trajectories.IsCreated || !primitives.IsCreated)
                     return false;
 
@@ -804,7 +812,9 @@ namespace Hecton8.Gameplay
                     TrajectoryCount = safeTrajectoryCount,
                     PrimitiveCount = safePrimitiveCount,
                     GridSpacingMeters = math.max(0.5f, tuning.MockGridSpacingMeters),
-                    MockOriginAUP = HectonFloatingOrigin.CurrentTotalOffsetDouble,
+                    MockOriginAUP = TryResolveCurrentRuntimeOriginDouble3(out double3 mockOriginAup)
+                        ? mockOriginAup
+                        : double3.zero,
                     Frame = ++_simulationFrame
                 };
 
@@ -845,8 +855,8 @@ namespace Hecton8.Gameplay
                 if (!lutLocked)
                     return false;
 
-                NativeArray<byte> scratch = _csvScratchHandle.Resolve(_vault);
-                NativeArray<float> lut = _penetrationLutHandle.Resolve(_vault);
+                NativeArray<byte> scratch = OpenVaultLane(in _csvScratchHandle);
+                NativeArray<float> lut = OpenVaultLane(in _penetrationLutHandle);
                 if (!scratch.IsCreated || !lut.IsCreated || scratch.Length <= 0)
                     return false;
 
@@ -1068,8 +1078,8 @@ namespace Hecton8.Gameplay
                 return false;
 
             trajectories = ResolveActiveOrWriteTrajectories();
-            primitives = _primitiveHandle.Resolve(_vault);
-            hits = _hitHandle.Resolve(_vault);
+            primitives = OpenVaultLane(in _primitiveHandle);
+            hits = OpenVaultLane(in _hitHandle);
             trajectoryCount = _activeReadCount > 0 ? _activeReadCount : _pendingTrajectoryCount;
             primitiveCount = _primitiveCount;
             return trajectories.IsCreated && primitives.IsCreated && hits.IsCreated;
@@ -1090,8 +1100,8 @@ namespace Hecton8.Gameplay
             if (_jobScheduled)
                 return false;
 
-            impactVfx = _impactVfxHandle.Resolve(_vault);
-            NativeArray<BallisticsCountersDTO> counters = _counterHandle.Resolve(_vault);
+            impactVfx = OpenVaultLane(in _impactVfxHandle);
+            NativeArray<BallisticsCountersDTO> counters = OpenVaultLane(in _counterHandle);
             if (!impactVfx.IsCreated || !counters.IsCreated || counters.Length <= 0)
                 return false;
 
@@ -1137,8 +1147,8 @@ namespace Hecton8.Gameplay
 
         private static void RecordCompletedTelemetry(double elapsedUs)
         {
-            NativeArray<BallisticsCountersDTO> counters = _counterHandle.Resolve(_vault);
-            NativeArray<BallisticsTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
+            NativeArray<BallisticsCountersDTO> counters = OpenVaultLane(in _counterHandle);
+            NativeArray<BallisticsTelemetryEntry> telemetry = OpenVaultLane(in _telemetryHandle);
             if (!counters.IsCreated || counters.Length <= 0 || !telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
@@ -1209,7 +1219,7 @@ namespace Hecton8.Gameplay
 
         private static void SeedDefaultTuning()
         {
-            NativeArray<BallisticsTuningDTO> tuning = _tuningHandle.Resolve(_vault);
+            NativeArray<BallisticsTuningDTO> tuning = OpenVaultLane(in _tuningHandle);
             if (!tuning.IsCreated || tuning.Length <= 0)
                 return;
 
@@ -1234,7 +1244,7 @@ namespace Hecton8.Gameplay
 
         private static void SeedDefaultPenetrationLut()
         {
-            NativeArray<float> lut = _penetrationLutHandle.Resolve(_vault);
+            NativeArray<float> lut = OpenVaultLane(in _penetrationLutHandle);
             if (!lut.IsCreated || lut.Length < PenetrationLutLength)
                 return;
 
@@ -1267,9 +1277,70 @@ namespace Hecton8.Gameplay
             _lastTelemetry = default;
         }
 
+        private static VaultLane<T> AcquireVaultLane<T>(
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options) where T : struct
+        {
+            if (_vault == null || requiredLength <= 0)
+                return default;
+
+            VaultGenerationHandle<T> handle = _vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                OwnerSystem,
+                options);
+            uint expectedBufferId = unchecked((uint)(int)bufferId);
+            if (handle.BufferID != expectedBufferId || handle.Generation == 0u)
+                return default;
+
+            return new VaultLane<T>
+            {
+                Handle = handle,
+                ExpectedBufferID = expectedBufferId,
+                Length = requiredLength
+            };
+        }
+
+        private static bool IsVaultLaneBound<T>(in VaultLane<T> lane) where T : struct
+        {
+            return lane.ExpectedBufferID != 0u &&
+                   lane.Handle.BufferID == lane.ExpectedBufferID &&
+                   lane.Handle.Generation != 0u &&
+                   lane.Length > 0;
+        }
+
+        private static bool AreVaultLanesBound()
+        {
+            return IsVaultLaneBound(in _trajectoryAHandle) &&
+                   IsVaultLaneBound(in _trajectoryBHandle) &&
+                   IsVaultLaneBound(in _primitiveHandle) &&
+                   IsVaultLaneBound(in _hitHandle) &&
+                   IsVaultLaneBound(in _penetrationLutHandle) &&
+                   IsVaultLaneBound(in _telemetryHandle) &&
+                   IsVaultLaneBound(in _counterHandle) &&
+                   IsVaultLaneBound(in _tuningHandle) &&
+                   IsVaultLaneBound(in _impactVfxHandle) &&
+                   IsVaultLaneBound(in _csvScratchHandle);
+        }
+
+        private static NativeArray<T> OpenVaultLane<T>(in VaultLane<T> lane) where T : struct
+        {
+            if (_vault == null ||
+                !IsVaultLaneBound(in lane) ||
+                !_vault.TryResolveHandle(in lane.Handle, out NativeArray<T> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < lane.Length)
+            {
+                return default;
+            }
+
+            return buffer;
+        }
+
         private static BallisticsTuningDTO ResolveTuning(float quality)
         {
-            NativeArray<BallisticsTuningDTO> tuning = _tuningHandle.Resolve(_vault);
+            NativeArray<BallisticsTuningDTO> tuning = OpenVaultLane(in _tuningHandle);
             BallisticsTuningDTO value = tuning.IsCreated && tuning.Length > 0 ? tuning[0] : default;
             value = SanitizeTuning(value);
             value.GlobalQualityWeight = quality;
@@ -1295,8 +1366,8 @@ namespace Hecton8.Gameplay
         private static NativeArray<BallisticTrajectoryDTO> ResolveWriteTrajectories()
         {
             return (_writeTrajectoryBufferIndex & 1) == 0
-                ? _trajectoryAHandle.Resolve(_vault)
-                : _trajectoryBHandle.Resolve(_vault);
+                ? OpenVaultLane(in _trajectoryAHandle)
+                : OpenVaultLane(in _trajectoryBHandle);
         }
 
         private static NativeArray<BallisticTrajectoryDTO> ResolveActiveOrWriteTrajectories()
@@ -1304,8 +1375,8 @@ namespace Hecton8.Gameplay
             if (_jobScheduled || _activeReadCount > 0)
             {
                 return (_activeReadBufferIndex & 1) == 0
-                    ? _trajectoryAHandle.Resolve(_vault)
-                    : _trajectoryBHandle.Resolve(_vault);
+                    ? OpenVaultLane(in _trajectoryAHandle)
+                    : OpenVaultLane(in _trajectoryBHandle);
             }
 
             return ResolveWriteTrajectories();
@@ -1443,6 +1514,37 @@ namespace Hecton8.Gameplay
         private static bool IsFinite(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static bool TryResolveAupDoubleFromRuntimeOrigin(Vector3 runtimePosition, out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!positionAup.IsFinite())
+                return false;
+
+            absoluteAup = positionAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
+        }
+
+        private static bool TryResolveCurrentRuntimeOriginDouble3(out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absoluteAup = originAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

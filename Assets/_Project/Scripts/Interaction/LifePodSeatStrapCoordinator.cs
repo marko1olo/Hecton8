@@ -24,7 +24,7 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/LifePod Seat Strap Coordinator")]
-    public sealed class LifePodSeatStrapCoordinator : MonoBehaviour, IFixedTickable
+    public sealed class LifePodSeatStrapCoordinator : MonoBehaviour, IFixedTickable, IGlobalRegistryHotSwapListener
     {
         private const byte HapticPriorityCritical = ToolHapticsRuntime.PriorityCritical;
         private const byte LeftMotorMask = 0x01;
@@ -84,8 +84,11 @@ namespace Hecton8.Interaction
         private bool _rightLatched;
         private bool _seatLockActive;
         private bool _registeredFixedTick;
+        private bool _registeredHotSwapListener;
+        private bool _fixedTickDormant;
         private Transform _leftIkAnchor;
         private Transform _rightIkAnchor;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMotor _playerMotor;
         private HectonPlayerMovement _playerMovement;
         private AbsoluteUniversePosition _seatLockAup;
@@ -132,12 +135,15 @@ namespace Hecton8.Interaction
                 seatAnchor = transform;
 
             CacheScalarConfig();
+            RefreshColdRegistryReferences();
             TryCacheSeatLockPose();
         }
 
         private void OnEnable()
         {
             CacheScalarConfig();
+            RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
             if (_seatLockActive && TryCacheSeatLockPose())
                 TryRegisterFixedTick();
         }
@@ -147,6 +153,7 @@ namespace Hecton8.Interaction
             ReleaseSeatLock();
             InvalidatePlayerCache();
             TryUnregisterFixedTick();
+            TryUnregisterHotSwapListener();
         }
 
         /// <summary>
@@ -230,9 +237,12 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public void FixedTick(float fixedDeltaTime)
         {
+            if (_fixedTickDormant)
+                return;
+
             if (!_seatLockActive)
             {
-                TryUnregisterFixedTick();
+                _fixedTickDormant = true;
                 return;
             }
 
@@ -304,17 +314,18 @@ namespace Hecton8.Interaction
 
         private bool TryEnsurePlayerMotor()
         {
-            if (_playerMotor != null && _playerMotor.Body != null && _playerMovement != null)
+            HectonPlayerMotor motor = _playerMotor;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            HectonPlayerMovement movement = _playerMovement;
+            if (playerContext != null)
+                movement = playerContext.PlayerMovement;
+
+            _playerMovement = movement;
+
+            if (motor != null && motor.Body != null && movement != null)
                 return true;
 
-            HectonPlayerMotor motor = GlobalRegistry.PlayerMotor;
-            if (motor == null || motor.Body == null)
-                return false;
-
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            _playerMotor = motor;
-            _playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            return _playerMovement != null;
+            return false;
         }
 
         private void InvalidatePlayerCache()
@@ -354,9 +365,28 @@ namespace Hecton8.Interaction
             if (!IsFinite(targetPosition))
                 return false;
 
-            _seatLockAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);
+            if (!TryResolveRuntimeAup(targetPosition, out _seatLockAup))
+                return false;
+
             _seatLockPoseCached = true;
             return true;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private void QueueLatchHaptic(PhysicalHandSide handSide, LifePodSeatStrapSide strapSide)
@@ -375,10 +405,12 @@ namespace Hecton8.Interaction
 
         private void TryRegisterFixedTick()
         {
-            if (_registeredFixedTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredFixedTick || !Application.isPlaying)
                 return;
 
             _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+            if (_registeredFixedTick)
+                _fixedTickDormant = false;
         }
 
         private void TryUnregisterFixedTick()
@@ -388,6 +420,52 @@ namespace Hecton8.Interaction
 
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
             _registeredFixedTick = false;
+            _fixedTickDormant = false;
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _playerMotor = GlobalRegistry.PlayerMotor;
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerMovement = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerMovement : null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PlayerMotor:
+                    _playerMotor = currentService as HectonPlayerMotor;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    _playerMovement = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerMovement : null;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (_seatLockActive)
+                        TryRegisterFixedTick();
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private static byte ResolveMotorMask(PhysicalHandSide handSide, LifePodSeatStrapSide strapSide)

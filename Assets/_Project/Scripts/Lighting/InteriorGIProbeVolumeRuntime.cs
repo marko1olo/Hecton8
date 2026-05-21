@@ -192,7 +192,7 @@ namespace Hecton8.Lighting
 
     [DisallowMultipleComponent]
     [AddComponentMenu("HECTON-8/Lighting/Interior GI Probe Volume Runtime")]
-    public sealed unsafe class InteriorGIProbeVolumeRuntime : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener
+    public sealed unsafe class InteriorGIProbeVolumeRuntime : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
     {
         public const int MaxResolution = 32;
         public const int MinResolution = 12;
@@ -283,6 +283,7 @@ namespace Hecton8.Lighting
         private bool _registeredLateFrame;
         private bool _registeredScalability;
         private bool _registeredOriginShift;
+        private bool _registeredHotSwapListener;
         private bool _nativeReady;
         private bool _mockSourcesSeeded;
         private bool _mockOcclusionSeeded;
@@ -311,18 +312,18 @@ namespace Hecton8.Lighting
         private Vector4 _gpuUploadPendingState;
         private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
 
-        private VaultBufferHandle<CustomLightProbeDTO> _probeFront;
-        private VaultBufferHandle<CustomLightProbeDTO> _probeBack;
-        private VaultBufferHandle<InteriorGISourceDTO> _sources;
-        private VaultBufferHandle<InteriorGIOcclusionCellDTO> _occlusion;
-        private VaultBufferHandle<InteriorGITuningDTO> _tuning;
-        private VaultBufferHandle<InteriorGITelemetryEntry> _telemetryRing;
-        private VaultBufferHandle<InteriorGITelemetryEntry> _telemetryScratch;
-        private VaultBufferHandle<MockPowerState> _mockPower;
-        private VaultBufferHandle<int> _faults;
-        private VaultBufferHandle<byte> _csvBytes;
-        private VaultBufferHandle<AmbientLightingProfileDTO> _ambientProfiles;
-        private VaultBufferHandle<int> _ambientProfileCount;
+        private VaultGenerationHandle<CustomLightProbeDTO> _probeFront;
+        private VaultGenerationHandle<CustomLightProbeDTO> _probeBack;
+        private VaultGenerationHandle<InteriorGISourceDTO> _sources;
+        private VaultGenerationHandle<InteriorGIOcclusionCellDTO> _occlusion;
+        private VaultGenerationHandle<InteriorGITuningDTO> _tuning;
+        private VaultGenerationHandle<InteriorGITelemetryEntry> _telemetryRing;
+        private VaultGenerationHandle<InteriorGITelemetryEntry> _telemetryScratch;
+        private VaultGenerationHandle<MockPowerState> _mockPower;
+        private VaultGenerationHandle<int> _faults;
+        private VaultGenerationHandle<byte> _csvBytes;
+        private VaultGenerationHandle<AmbientLightingProfileDTO> _ambientProfiles;
+        private VaultGenerationHandle<int> _ambientProfileCount;
 
         private int ActiveCellCount => _activeResolution * _activeResolution * _activeResolution;
 
@@ -334,6 +335,8 @@ namespace Hecton8.Lighting
         private void OnEnable()
         {
             _cachedTransform = transform;
+            CacheDependencies();
+            TryRegisterHotSwapListener();
             EnsureNativeState();
             TryRegister();
         }
@@ -356,8 +359,6 @@ namespace Hecton8.Lighting
             if (!_nativeReady)
                 return;
 
-            TryRegister();
-
             if (_simulationJobActive)
                 return;
 
@@ -370,8 +371,8 @@ namespace Hecton8.Lighting
             if (_gridClearRequested)
             {
                 InteriorGITuningDTO clearTuning = BuildTuning(quality, 0f, cadence);
-                ref InteriorGITuningDTO storedClear = ref _tuning.GetElementAsRef(EnsureVault(), 0);
-                storedClear = clearTuning;
+                if (!TryWriteTuning(clearTuning))
+                    return;
                 _visualUploadAccumulator = math.max(_visualUploadAccumulator, math.max(0.05f, cadence));
                 ScheduleGridClear();
                 return;
@@ -389,8 +390,8 @@ namespace Hecton8.Lighting
             float dt = math.min(_solverAccumulator, 0.5f);
             _solverAccumulator = 0f;
             InteriorGITuningDTO tuning = BuildTuning(quality, dt, cadence);
-            ref InteriorGITuningDTO stored = ref _tuning.GetElementAsRef(EnsureVault(), 0);
-            stored = tuning;
+            if (!TryWriteTuning(tuning))
+                return;
             ScheduleSimulation(tuning);
         }
 
@@ -486,10 +487,10 @@ namespace Hecton8.Lighting
             rootAup = _rootAup;
             cellSize = cellSizeMeters;
             version = _gridVersion;
-            if (_scheduledBootClear || _simulationJobActive || !_probeFront.IsCreated)
+            if (_scheduledBootClear || _simulationJobActive || !HasInteriorGIHandle(in _probeFront, ProbeFrontBuffer))
                 return false;
 
-            probes = ResolveArray(ref _probeFront);
+            probes = ResolveProbeFront();
             return probes.IsCreated;
         }
 
@@ -497,10 +498,10 @@ namespace Hecton8.Lighting
         {
             occlusion = default;
             resolution = _activeResolution;
-            if (_scheduledBootClear || _simulationJobActive || !_occlusion.IsCreated)
+            if (_scheduledBootClear || _simulationJobActive || !HasInteriorGIHandle(in _occlusion, ProbeOcclusionBuffer))
                 return false;
 
-            occlusion = ResolveArray(ref _occlusion);
+            occlusion = ResolveOcclusion();
             return occlusion.IsCreated;
         }
 
@@ -508,32 +509,31 @@ namespace Hecton8.Lighting
         {
             telemetry = default;
             cursor = _telemetryCursor;
-            if (_simulationJobActive || !_telemetryRing.IsCreated)
+            if (_simulationJobActive || !HasInteriorGIHandle(in _telemetryRing, ProbeTelemetryRingBuffer))
                 return false;
 
-            telemetry = ResolveArray(ref _telemetryRing);
+            telemetry = ResolveTelemetryRing();
             return telemetry.IsCreated;
         }
 
         public bool TryGetTuningCopy(out InteriorGITuningDTO tuning)
         {
             tuning = default;
-            if (!_tuning.IsCreated)
+            if (!TryReadTuning(out tuning))
                 return false;
 
-            tuning = _tuning.GetElementAsRef(EnsureVault(), 0);
             return true;
         }
 
         public bool TryWriteOcclusionCell(int3 cell, float signedDistanceMeters, uint wallMask, float water01, float transferScale01, float floraGlow01, uint roomHash)
         {
-            if (_simulationJobActive || !_occlusion.IsCreated)
+            if (_simulationJobActive || !HasInteriorGIHandle(in _occlusion, ProbeOcclusionBuffer))
                 return false;
 
             if (!IsInside(cell, _activeResolution))
                 return false;
 
-            NativeArray<InteriorGIOcclusionCellDTO> occlusion = ResolveArray(ref _occlusion);
+            NativeArray<InteriorGIOcclusionCellDTO> occlusion = ResolveOcclusion();
             int index = ToIndex(cell, _activeResolution);
             occlusion[index] = new InteriorGIOcclusionCellDTO
             {
@@ -552,10 +552,10 @@ namespace Hecton8.Lighting
 
         public bool TryUpsertSource(uint sourceHash, double3 aup, float3 color, float intensity, float radiusMeters, uint flags, float3 direction)
         {
-            if (sourceHash == 0u || _simulationJobActive || !_sources.IsCreated || !math.all(math.isfinite(aup)))
+            if (sourceHash == 0u || _simulationJobActive || !HasInteriorGIHandle(in _sources, ProbeSourcesBuffer) || !math.all(math.isfinite(aup)))
                 return false;
 
-            NativeArray<InteriorGISourceDTO> sources = ResolveArray(ref _sources);
+            NativeArray<InteriorGISourceDTO> sources = ResolveSources();
             float safeIntensity = math.max(0f, math.isfinite(intensity) ? intensity : 0f);
             float safeRadius = math.max(0.25f, math.isfinite(radiusMeters) ? radiusMeters : 1f);
             float3 safeColor = math.select(new float3(1f, 0.2f, 0.1f), math.max(new float3(0f), color), math.all(math.isfinite(color)));
@@ -606,51 +606,51 @@ namespace Hecton8.Lighting
         public void SetEditorEmergencyOverride(float value)
         {
             emergencyOverride01 = math.saturate(value);
-            if (_tuning.IsCreated && !_simulationJobActive)
+            if (TryReadTuning(out InteriorGITuningDTO tuning) && !_simulationJobActive)
             {
-                ref InteriorGITuningDTO tuning = ref _tuning.GetElementAsRef(EnsureVault(), 0);
                 tuning.EmergencyOverride01 = emergencyOverride01;
                 tuning.RedOverride01 = emergencyOverride01;
+                TryWriteTuning(tuning);
             }
         }
 
         public void SetEditorPropagationSpeed(float value)
         {
             propagationSpeed = math.clamp(value, 0.05f, 4f);
-            if (_tuning.IsCreated && !_simulationJobActive)
+            if (TryReadTuning(out InteriorGITuningDTO tuning) && !_simulationJobActive)
             {
-                ref InteriorGITuningDTO tuning = ref _tuning.GetElementAsRef(EnsureVault(), 0);
                 tuning.PropagationSpeed = propagationSpeed;
+                TryWriteTuning(tuning);
             }
         }
 
         public void SetEditorWallAbsorption(float value)
         {
             wallAbsorption = math.saturate(value);
-            if (_tuning.IsCreated && !_simulationJobActive)
+            if (TryReadTuning(out InteriorGITuningDTO tuning) && !_simulationJobActive)
             {
-                ref InteriorGITuningDTO tuning = ref _tuning.GetElementAsRef(EnsureVault(), 0);
                 tuning.WallAbsorption = wallAbsorption;
+                TryWriteTuning(tuning);
             }
         }
 
         public void SetEditorEmergencyLightIntensity(float value)
         {
             emergencyLightIntensity = math.max(0f, value);
-            if (_tuning.IsCreated && !_simulationJobActive)
+            if (TryReadTuning(out InteriorGITuningDTO tuning) && !_simulationJobActive)
             {
-                ref InteriorGITuningDTO tuning = ref _tuning.GetElementAsRef(EnsureVault(), 0);
                 tuning.EmergencyLightIntensity = emergencyLightIntensity;
+                TryWriteTuning(tuning);
             }
         }
 
         public void SetEditorWaterAbsorption(float value)
         {
             waterAbsorption = math.saturate(value);
-            if (_tuning.IsCreated && !_simulationJobActive)
+            if (TryReadTuning(out InteriorGITuningDTO tuning) && !_simulationJobActive)
             {
-                ref InteriorGITuningDTO tuning = ref _tuning.GetElementAsRef(EnsureVault(), 0);
                 tuning.WaterAbsorption = waterAbsorption;
+                TryWriteTuning(tuning);
             }
         }
 
@@ -669,7 +669,6 @@ namespace Hecton8.Lighting
             if (_nativeReady)
                 return;
 
-            _vault = ResolveDataVault();
             if (_vault == null)
                 return;
 
@@ -695,10 +694,14 @@ namespace Hecton8.Lighting
             _ambientProfiles = AcquireBuffer<AmbientLightingProfileDTO>(ProbeAmbientProfileBuffer, MaxAmbientProfileCount);
             _ambientProfileCount = AcquireBuffer<int>(ProbeAmbientProfileCountBuffer, 1);
 
-            ref InteriorGITuningDTO tuning = ref _tuning.GetElementAsRef(EnsureVault(), 0);
             float bootQuality = ResolveQualityWeight();
             float bootCadence = ResolveCadenceSeconds(bootQuality);
-            tuning = BuildTuning(bootQuality, bootCadence, bootCadence);
+            InteriorGITuningDTO tuning = BuildTuning(bootQuality, bootCadence, bootCadence);
+            if (!TryWriteTuning(tuning))
+            {
+                _nativeReady = false;
+                return;
+            }
 
             if (enableGpuUpload)
                 EnsureGpuBuffers(MaxCellCount);
@@ -711,15 +714,21 @@ namespace Hecton8.Lighting
             ScheduleBootClearJob(tuning);
         }
 
-        private VaultBufferHandle<T> AcquireBuffer<T>(BufferID bufferId, int length) where T : struct
+        private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID bufferId, int length) where T : struct
         {
-            VaultBufferHandle<T> handle = EnsureVault().GetBufferHandle<T>(
+            IDataVault vault = EnsureVault();
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
                 bufferId,
                 length,
                 MemoryOwner,
                 NativeArrayOptions.UninitializedMemory);
-            if (!handle.IsCreated)
+            if (!IsInteriorGIHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out NativeArray<T> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < length)
+            {
                 throw new InvalidOperationException("Interior GI DataVault buffer acquisition failed.");
+            }
 
             return handle;
         }
@@ -731,25 +740,25 @@ namespace Hecton8.Lighting
 
             InteriorGIClearStateJob clearJob = new InteriorGIClearStateJob
             {
-                ProbeFront = ResolveArray(ref _probeFront),
-                ProbeBack = ResolveArray(ref _probeBack),
-                Sources = ResolveArray(ref _sources),
-                Occlusion = ResolveArray(ref _occlusion),
-                TelemetryRing = ResolveArray(ref _telemetryRing),
-                TelemetryScratch = ResolveArray(ref _telemetryScratch),
-                Power = ResolveArray(ref _mockPower),
-                Faults = ResolveArray(ref _faults),
-                CsvBytes = ResolveArray(ref _csvBytes),
-                AmbientProfiles = ResolveArray(ref _ambientProfiles),
-                AmbientProfileCount = ResolveArray(ref _ambientProfileCount)
+                ProbeFront = ResolveProbeFront(),
+                ProbeBack = ResolveProbeBack(),
+                Sources = ResolveSources(),
+                Occlusion = ResolveOcclusion(),
+                TelemetryRing = ResolveTelemetryRing(),
+                TelemetryScratch = ResolveTelemetryScratch(),
+                Power = ResolveMockPower(),
+                Faults = ResolveFaults(),
+                CsvBytes = ResolveCsvBytes(),
+                AmbientProfiles = ResolveAmbientProfiles(),
+                AmbientProfileCount = ResolveAmbientProfileCount()
             };
             JobHandle handle = clearJob.Schedule();
             if (enableMockLighting)
             {
                 GenerateMockProbeGridJob mockJob = new GenerateMockProbeGridJob
                 {
-                    Front = ResolveArray(ref _probeFront),
-                    Back = ResolveArray(ref _probeBack),
+                    Front = ResolveProbeFront(),
+                    Back = ResolveProbeBack(),
                     Tuning = tuning
                 };
                 int count = math.clamp(tuning.ActiveProbeCount, 0, MaxCellCount);
@@ -765,39 +774,154 @@ namespace Hecton8.Lighting
 
         private IDataVault EnsureVault()
         {
-            _vault ??= ResolveDataVault();
             if (_vault == null)
                 throw new InvalidOperationException("Interior GI GlobalDataVault unavailable.");
 
             return _vault;
         }
 
-        private static IDataVault ResolveDataVault()
+        private void CacheDependencies()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault != null)
-                return vault;
-
-            return GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest) ? latest : null;
+            _vault = GlobalRegistry.DataVault;
         }
 
-        private NativeArray<T> ResolveArray<T>(ref VaultBufferHandle<T> handle) where T : struct
+        private NativeArray<T> ResolveArray<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
         {
-            return handle.Resolve(EnsureVault());
+            IDataVault vault = EnsureVault();
+            if (IsInteriorGIHandle(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return buffer;
+            }
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !IsInteriorGIHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                return default;
+            }
+
+            return buffer;
+        }
+
+        private NativeArray<CustomLightProbeDTO> ResolveProbeFront()
+        {
+            return ResolveArray(ref _probeFront, ProbeFrontBuffer, MaxCellCount);
+        }
+
+        private NativeArray<CustomLightProbeDTO> ResolveProbeBack()
+        {
+            return ResolveArray(ref _probeBack, ProbeBackBuffer, MaxCellCount);
+        }
+
+        private NativeArray<InteriorGISourceDTO> ResolveSources()
+        {
+            return ResolveArray(ref _sources, ProbeSourcesBuffer, MaxSourceCount);
+        }
+
+        private NativeArray<InteriorGIOcclusionCellDTO> ResolveOcclusion()
+        {
+            return ResolveArray(ref _occlusion, ProbeOcclusionBuffer, MaxCellCount);
+        }
+
+        private NativeArray<InteriorGITelemetryEntry> ResolveTelemetryRing()
+        {
+            return ResolveArray(ref _telemetryRing, ProbeTelemetryRingBuffer, TelemetryCapacity);
+        }
+
+        private NativeArray<InteriorGITelemetryEntry> ResolveTelemetryScratch()
+        {
+            return ResolveArray(ref _telemetryScratch, ProbeTelemetryScratchBuffer, 1);
+        }
+
+        private NativeArray<MockPowerState> ResolveMockPower()
+        {
+            return ResolveArray(ref _mockPower, ProbeMockPowerBuffer, 1);
+        }
+
+        private NativeArray<int> ResolveFaults()
+        {
+            return ResolveArray(ref _faults, ProbeFaultBuffer, MaxCellCount);
+        }
+
+        private NativeArray<byte> ResolveCsvBytes()
+        {
+            return ResolveArray(ref _csvBytes, ProbeCsvBytesBuffer, CsvBufferBytes);
+        }
+
+        private NativeArray<AmbientLightingProfileDTO> ResolveAmbientProfiles()
+        {
+            return ResolveArray(ref _ambientProfiles, ProbeAmbientProfileBuffer, MaxAmbientProfileCount);
+        }
+
+        private NativeArray<int> ResolveAmbientProfileCount()
+        {
+            return ResolveArray(ref _ambientProfileCount, ProbeAmbientProfileCountBuffer, 1);
+        }
+
+        private bool TryReadTuning(out InteriorGITuningDTO tuning)
+        {
+            tuning = default;
+            NativeArray<InteriorGITuningDTO> rows = ResolveArray(ref _tuning, ProbeTuningBuffer, 1);
+            if (!rows.IsCreated)
+                return false;
+
+            tuning = rows[0];
+            return true;
+        }
+
+        private bool TryWriteTuning(in InteriorGITuningDTO tuning)
+        {
+            NativeArray<InteriorGITuningDTO> rows = ResolveArray(ref _tuning, ProbeTuningBuffer, 1);
+            if (!rows.IsCreated)
+                return false;
+
+            rows[0] = tuning;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasInteriorGIHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return IsInteriorGIHandle(in handle, bufferId);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsInteriorGIHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)MemoryOwner &&
+                   handle.Generation != 0u;
         }
 
         public void GenerateMockProbeGrid()
         {
-            if (_simulationJobActive || !_probeFront.IsCreated || !_probeBack.IsCreated || !_tuning.IsCreated)
+            if (_simulationJobActive ||
+                !HasInteriorGIHandle(in _probeFront, ProbeFrontBuffer) ||
+                !HasInteriorGIHandle(in _probeBack, ProbeBackBuffer) ||
+                !TryReadTuning(out InteriorGITuningDTO tuning))
+            {
                 return;
+            }
 
-            GenerateMockProbeGrid(_tuning.GetElementAsRef(EnsureVault(), 0));
+            GenerateMockProbeGrid(tuning);
         }
 
         private void GenerateMockProbeGrid(InteriorGITuningDTO tuning)
         {
-            NativeArray<CustomLightProbeDTO> front = ResolveArray(ref _probeFront);
-            NativeArray<CustomLightProbeDTO> back = ResolveArray(ref _probeBack);
+            NativeArray<CustomLightProbeDTO> front = ResolveProbeFront();
+            NativeArray<CustomLightProbeDTO> back = ResolveProbeBack();
             if (!front.IsCreated || !back.IsCreated)
                 return;
 
@@ -810,6 +934,7 @@ namespace Hecton8.Lighting
             int count = math.clamp(tuning.ActiveProbeCount, 0, MaxCellCount);
             JobHandle handle = job.Schedule(count, 64);
             H8Memory.RegisterActiveJob(MemoryOwner, handle);
+            // COLD/EDITOR SYNC FACADE: UI Toolkit mock-grid button drains isolated proof data outside frame cadence.
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
             _visualDirty = true;
         }
@@ -830,7 +955,6 @@ namespace Hecton8.Lighting
 
             if (!_registeredScalability)
             {
-                _cachedQualityTier = GlobalRegistry.ScalabilityTier;
                 ScalabilityEvents.Register(this);
                 _registeredScalability = true;
             }
@@ -873,6 +997,49 @@ namespace Hecton8.Lighting
                 HectonFloatingOrigin.UnregisterListener(this);
                 _registeredOriginShift = false;
             }
+
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    if (!ReferenceEquals(_vault, currentService))
+                    {
+                        ReleaseRuntimeState(blockingComplete: true);
+                        _vault = currentService as IDataVault;
+                    }
+
+                    if (_vault != null && isActiveAndEnabled)
+                        EnsureNativeState();
+                    break;
+
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegister();
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private bool ReleaseRuntimeState(bool blockingComplete)
@@ -892,6 +1059,7 @@ namespace Hecton8.Lighting
             _gridClearRequested = false;
             _nativeReady = false;
             CompletePendingGpuUpload();
+            ReleaseInteriorGIVaultHandles(_vault);
             _probeFront = default;
             _probeBack = default;
             _sources = default;
@@ -905,6 +1073,32 @@ namespace Hecton8.Lighting
             _ambientProfiles = default;
             _ambientProfileCount = default;
             return true;
+        }
+
+        private void ReleaseInteriorGIVaultHandles(IDataVault vault)
+        {
+            ReleaseInteriorGIVaultHandle(vault, ref _probeFront);
+            ReleaseInteriorGIVaultHandle(vault, ref _probeBack);
+            ReleaseInteriorGIVaultHandle(vault, ref _sources);
+            ReleaseInteriorGIVaultHandle(vault, ref _occlusion);
+            ReleaseInteriorGIVaultHandle(vault, ref _tuning);
+            ReleaseInteriorGIVaultHandle(vault, ref _telemetryRing);
+            ReleaseInteriorGIVaultHandle(vault, ref _telemetryScratch);
+            ReleaseInteriorGIVaultHandle(vault, ref _mockPower);
+            ReleaseInteriorGIVaultHandle(vault, ref _faults);
+            ReleaseInteriorGIVaultHandle(vault, ref _csvBytes);
+            ReleaseInteriorGIVaultHandle(vault, ref _ambientProfiles);
+            ReleaseInteriorGIVaultHandle(vault, ref _ambientProfileCount);
+        }
+
+        private static void ReleaseInteriorGIVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void ReleaseGpuBuffers()
@@ -957,10 +1151,10 @@ namespace Hecton8.Lighting
 
         private void EnsureMockSources()
         {
-            if (_mockSourcesSeeded || !_sources.IsCreated || _simulationJobActive)
+            if (_mockSourcesSeeded || !HasInteriorGIHandle(in _sources, ProbeSourcesBuffer) || _simulationJobActive)
                 return;
 
-            NativeArray<InteriorGISourceDTO> sources = ResolveArray(ref _sources);
+            NativeArray<InteriorGISourceDTO> sources = ResolveSources();
             _sourceCount = 0;
             double s = math.max(1.0, cellSizeMeters);
             double3 c = _rootAup + new double3(_activeResolution * s * 0.5, _activeResolution * s * 0.42, _activeResolution * s * 0.5);
@@ -983,10 +1177,10 @@ namespace Hecton8.Lighting
 
         private void EnsureMockOcclusionGrid()
         {
-            if (_mockOcclusionSeeded || !_occlusion.IsCreated || _simulationJobActive)
+            if (_mockOcclusionSeeded || !HasInteriorGIHandle(in _occlusion, ProbeOcclusionBuffer) || _simulationJobActive)
                 return;
 
-            NativeArray<InteriorGIOcclusionCellDTO> occlusion = ResolveArray(ref _occlusion);
+            NativeArray<InteriorGIOcclusionCellDTO> occlusion = ResolveOcclusion();
             int res = _activeResolution;
             float cell = math.max(1f, cellSizeMeters);
             for (int z = 0; z < res; z++)
@@ -1039,13 +1233,13 @@ namespace Hecton8.Lighting
 
         private void ScheduleSimulation(InteriorGITuningDTO tuning)
         {
-            NativeArray<CustomLightProbeDTO> front = ResolveArray(ref _probeFront);
-            NativeArray<CustomLightProbeDTO> back = ResolveArray(ref _probeBack);
-            NativeArray<InteriorGISourceDTO> sources = ResolveArray(ref _sources);
-            NativeArray<InteriorGIOcclusionCellDTO> occlusion = ResolveArray(ref _occlusion);
-            NativeArray<MockPowerState> power = ResolveArray(ref _mockPower);
-            NativeArray<int> faults = ResolveArray(ref _faults);
-            NativeArray<InteriorGITelemetryEntry> scratch = ResolveArray(ref _telemetryScratch);
+            NativeArray<CustomLightProbeDTO> front = ResolveProbeFront();
+            NativeArray<CustomLightProbeDTO> back = ResolveProbeBack();
+            NativeArray<InteriorGISourceDTO> sources = ResolveSources();
+            NativeArray<InteriorGIOcclusionCellDTO> occlusion = ResolveOcclusion();
+            NativeArray<MockPowerState> power = ResolveMockPower();
+            NativeArray<int> faults = ResolveFaults();
+            NativeArray<InteriorGITelemetryEntry> scratch = ResolveTelemetryScratch();
 
             InteriorGIMockPowerJob powerJob = new InteriorGIMockPowerJob
             {
@@ -1109,15 +1303,19 @@ namespace Hecton8.Lighting
 
         private void ScheduleGridClear()
         {
-            if (_simulationJobActive || !_probeFront.IsCreated || !_probeBack.IsCreated)
+            if (_simulationJobActive ||
+                !HasInteriorGIHandle(in _probeFront, ProbeFrontBuffer) ||
+                !HasInteriorGIHandle(in _probeBack, ProbeBackBuffer))
+            {
                 return;
+            }
 
             InteriorGIProbeGridClearJob clearJob = new InteriorGIProbeGridClearJob
             {
-                ProbeFront = ResolveArray(ref _probeFront),
-                ProbeBack = ResolveArray(ref _probeBack),
-                Faults = ResolveArray(ref _faults),
-                TelemetryScratch = ResolveArray(ref _telemetryScratch)
+                ProbeFront = ResolveProbeFront(),
+                ProbeBack = ResolveProbeBack(),
+                Faults = ResolveFaults(),
+                TelemetryScratch = ResolveTelemetryScratch()
             };
             JobHandle handle = clearJob.Schedule();
             H8Memory.RegisterActiveJob(MemoryOwner, handle);
@@ -1130,7 +1328,7 @@ namespace Hecton8.Lighting
 
         private void SwapFrontBack()
         {
-            VaultBufferHandle<CustomLightProbeDTO> swap = _probeFront;
+            VaultGenerationHandle<CustomLightProbeDTO> swap = _probeFront;
             _probeFront = _probeBack;
             _probeBack = swap;
             _visualDirty = true;
@@ -1138,11 +1336,14 @@ namespace Hecton8.Lighting
 
         private void CommitTelemetryScratch()
         {
-            if (!_telemetryScratch.IsCreated || !_telemetryRing.IsCreated)
+            if (!HasInteriorGIHandle(in _telemetryScratch, ProbeTelemetryScratchBuffer) ||
+                !HasInteriorGIHandle(in _telemetryRing, ProbeTelemetryRingBuffer))
+            {
                 return;
+            }
 
-            NativeArray<InteriorGITelemetryEntry> scratch = ResolveArray(ref _telemetryScratch);
-            NativeArray<InteriorGITelemetryEntry> ring = ResolveArray(ref _telemetryRing);
+            NativeArray<InteriorGITelemetryEntry> scratch = ResolveTelemetryScratch();
+            NativeArray<InteriorGITelemetryEntry> ring = ResolveTelemetryRing();
             if (!scratch.IsCreated || !ring.IsCreated || ring.Length < TelemetryCapacity)
                 return;
 
@@ -1213,10 +1414,15 @@ namespace Hecton8.Lighting
 
         private void TryStartGpuUploadIfDirty()
         {
-            if (!enableGpuUpload || !_visualDirty || _gpuUploadPending || !_probeFront.IsCreated)
+            if (!enableGpuUpload ||
+                !_visualDirty ||
+                _gpuUploadPending ||
+                !HasInteriorGIHandle(in _probeFront, ProbeFrontBuffer) ||
+                !TryReadTuning(out InteriorGITuningDTO tuning))
+            {
                 return;
+            }
 
-            InteriorGITuningDTO tuning = _tuning.GetElementAsRef(EnsureVault(), 0);
             if (_visualUploadAccumulator < math.max(0.05f, tuning.UploadCadenceSeconds))
                 return;
 
@@ -1230,7 +1436,7 @@ namespace Hecton8.Lighting
             if (target == null || target.count < activeCount)
                 return;
 
-            NativeArray<CustomLightProbeDTO> source = ResolveArray(ref _probeFront);
+            NativeArray<CustomLightProbeDTO> source = ResolveProbeFront();
             if (!source.IsCreated || source.Length < activeCount)
                 return;
 
@@ -1252,7 +1458,7 @@ namespace Hecton8.Lighting
             _gpuUploadPendingParams = new Vector4(_activeResolution, math.max(1f, cellSizeMeters), tuning.GlobalQualityWeight, tuning.DirectionalWeight);
             _gpuUploadPendingOrigin = new Vector4(runtimeRoot.x, runtimeRoot.y, runtimeRoot.z, 1f);
             _gpuUploadPendingRootAup = new Vector4(rootResidue.x, rootResidue.y, rootResidue.z, (float)_rootHash);
-            _gpuUploadPendingState = new Vector4(activeCount, _gridVersion, UnsafeUtility.SizeOf<CustomLightProbeDTO>(), _gpuProbeWriteIndex);
+            _gpuUploadPendingState = new Vector4(activeCount, _gridVersion, activeCount, _gpuProbeWriteIndex);
             _gpuUploadPending = true;
             _gpuProbeWriteIndex ^= 1;
             _visualDirty = false;
@@ -1335,10 +1541,12 @@ namespace Hecton8.Lighting
 
         private float3 ResolveProfileTint(uint biomeHash, byte biomeId)
         {
-            if (_ambientProfiles.IsCreated && _ambientProfileCount.IsCreated && !_simulationJobActive)
+            if (HasInteriorGIHandle(in _ambientProfiles, ProbeAmbientProfileBuffer) &&
+                HasInteriorGIHandle(in _ambientProfileCount, ProbeAmbientProfileCountBuffer) &&
+                !_simulationJobActive)
             {
-                NativeArray<AmbientLightingProfileDTO> profiles = ResolveArray(ref _ambientProfiles);
-                NativeArray<int> profileCount = ResolveArray(ref _ambientProfileCount);
+                NativeArray<AmbientLightingProfileDTO> profiles = ResolveAmbientProfiles();
+                NativeArray<int> profileCount = ResolveAmbientProfileCount();
                 if (profiles.IsCreated && profileCount.IsCreated && profileCount.Length > 0)
                 {
                     int count = math.clamp(profileCount[0], 0, profiles.Length);
@@ -1421,8 +1629,13 @@ namespace Hecton8.Lighting
 #if UNITY_EDITOR
         private void TryReloadCsvOverrides()
         {
-            if (!_csvReloadRequested || _simulationJobActive || !_csvBytes.IsCreated || !_sources.IsCreated)
+            if (!_csvReloadRequested ||
+                _simulationJobActive ||
+                !HasInteriorGIHandle(in _csvBytes, ProbeCsvBytesBuffer) ||
+                !HasInteriorGIHandle(in _sources, ProbeSourcesBuffer))
+            {
                 return;
+            }
 
             _csvReloadRequested = false;
             string path = Path.Combine(Application.dataPath, "..", csvOverrideRelativePath);
@@ -1431,9 +1644,9 @@ namespace Hecton8.Lighting
 
             try
             {
-                NativeArray<byte> csv = ResolveArray(ref _csvBytes);
+                NativeArray<byte> csv = ResolveCsvBytes();
                 int count = ReadFileIntoVaultBuffer(path, csv, CsvBufferBytes);
-                NativeArray<InteriorGISourceDTO> sources = ResolveArray(ref _sources);
+                NativeArray<InteriorGISourceDTO> sources = ResolveSources();
                 int parsedCount = InteriorGICsvParser.Parse(csv, count, sources, MaxSourceCount, _rootAup, out int rowsRejected);
                 if (parsedCount > 0)
                 {
@@ -1454,8 +1667,13 @@ namespace Hecton8.Lighting
 
         private void TryReloadAmbientProfileCsv()
         {
-            if (_simulationJobActive || !_csvBytes.IsCreated || !_ambientProfiles.IsCreated || !_ambientProfileCount.IsCreated)
+            if (_simulationJobActive ||
+                !HasInteriorGIHandle(in _csvBytes, ProbeCsvBytesBuffer) ||
+                !HasInteriorGIHandle(in _ambientProfiles, ProbeAmbientProfileBuffer) ||
+                !HasInteriorGIHandle(in _ambientProfileCount, ProbeAmbientProfileCountBuffer))
+            {
                 return;
+            }
 
             string path = Path.Combine(Application.dataPath, "..", ambientProfileCsvRelativePath);
             if (!File.Exists(path))
@@ -1463,11 +1681,11 @@ namespace Hecton8.Lighting
 
             try
             {
-                NativeArray<byte> csv = ResolveArray(ref _csvBytes);
+                NativeArray<byte> csv = ResolveCsvBytes();
                 int count = ReadFileIntoVaultBuffer(path, csv, CsvBufferBytes);
-                NativeArray<AmbientLightingProfileDTO> profiles = ResolveArray(ref _ambientProfiles);
+                NativeArray<AmbientLightingProfileDTO> profiles = ResolveAmbientProfiles();
                 int parsedCount = AmbientLightingProfileCsvParser.Parse(csv, count, profiles, MaxAmbientProfileCount, out int rowsRejected);
-                NativeArray<int> profileCount = ResolveArray(ref _ambientProfileCount);
+                NativeArray<int> profileCount = ResolveAmbientProfileCount();
                 if (profileCount.IsCreated && profileCount.Length > 0)
                     profileCount[0] = parsedCount;
 
@@ -1503,10 +1721,10 @@ namespace Hecton8.Lighting
 
         private void DumpTelemetryRing()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!HasInteriorGIHandle(in _telemetryRing, ProbeTelemetryRingBuffer))
                 return;
 
-            NativeArray<InteriorGITelemetryEntry> ring = ResolveArray(ref _telemetryRing);
+            NativeArray<InteriorGITelemetryEntry> ring = ResolveTelemetryRing();
             WriteTelemetryDump(Path.Combine(Application.dataPath, "..", "Docs/AgentLogs/Dump_LIGHTING_SURGEON.bin"), ring);
         }
 
@@ -1593,7 +1811,7 @@ namespace Hecton8.Lighting
             }
 
             AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!MathGuard.IsFinite(in originAup))
+            if (!originAup.IsFinite())
                 return false;
 
             absoluteAup = originAup.ToAbsoluteDouble3() + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);

@@ -31,7 +31,6 @@ using Hecton8.Narrative;
 using Hecton8.Optimization;
 using Hecton8.PDA;
 using Hecton8.Physics;
-using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
 using Hecton8.Tools;
 using Hecton8.UI;
@@ -71,7 +70,7 @@ namespace Hecton8.Core
     /// Static runtime service locator and dense bucket registry for first-party core systems.
     /// </summary>
     [Preserve]
-    public static class GlobalRegistry
+    public static partial class GlobalRegistry
     {
         /// <summary>
         /// BIOS lifecycle phase for the registry mutation gate.
@@ -95,6 +94,7 @@ namespace Hecton8.Core
         private const string MathLodHighKeyword = "_MATH_LOD_HIGH";
         private const int MathPrecisionTransitionFrameCount = 60;
         private const int MathPrecisionBlendScale = 1000;
+        private const uint SystemKillSwitchBitsSignalSourceHash = HectonSignalLaneContract.SystemKillSwitchBitsSignalStableHash;
         public const uint SystemKillSwitchLane4VfxMask = 1u << 4;
         public const uint TransientScalabilityThermalPressureMask = 1u << 0;
         public const uint TransientScalabilityPlatformPressureMask = 1u << 1;
@@ -104,7 +104,7 @@ namespace Hecton8.Core
         private static readonly long[] _requestedServiceSlotMask = new long[ServiceSlotMaskWordCount];
         // COLD ALLOC: long[4] - registered service-slot bitset for ghost-service detection - owner: GlobalRegistry
         private static readonly long[] _registeredServiceSlotMask = new long[ServiceSlotMaskWordCount];
-        // COLD ALLOC: string[173] - allocation-free ghost-service slot names; index matches GlobalRegistryServiceSlot numeric value - owner: GlobalRegistry
+        // COLD ALLOC: string[175] - allocation-free ghost-service slot names; index matches GlobalRegistryServiceSlot numeric value - owner: GlobalRegistry
         private static readonly string[] _serviceSlotNames =
         {
             nameof(GlobalRegistryServiceSlot.Input),
@@ -279,7 +279,9 @@ namespace Hecton8.Core
             nameof(GlobalRegistryServiceSlot.ResolutionScalerService),
             nameof(GlobalRegistryServiceSlot.AmbientBiotaRuntime),
             nameof(GlobalRegistryServiceSlot.DockingAutopilotRuntime),
-            nameof(GlobalRegistryServiceSlot.ProceduralLadderClimbRuntime)
+            nameof(GlobalRegistryServiceSlot.ProceduralLadderClimbRuntime),
+            nameof(GlobalRegistryServiceSlot.ChemicalInfluenceRuntime),
+            nameof(GlobalRegistryServiceSlot.DestructibleOrganicRuntime)
         };
         private static int _registryPhase = (int)RegistryPhase.Uninitialized;
         private static int _systemKillSwitchMask;
@@ -452,6 +454,8 @@ namespace Hecton8.Core
         private static IModularEquipmentService _modularEquipment;
         private static IPlayerSensoryService _playerSensory;
         private static IEnvironmentRuntimeContext _environment;
+        private static IChemicalInfluenceReadModel _chemicalInfluence;
+        private static IOrganicToolHitService _organicToolHits;
         private static IWeatherService _weather;
         private static ISeismicDirector _seismicDirectorRuntime;
         private static CelestialRuntimeSnapshot _celestialRuntimeSnapshot;
@@ -747,7 +751,7 @@ namespace Hecton8.Core
         public static IMacroDatabaseService MacroDatabase => _macroDatabase;
 
         /// <summary>
-        /// Registry-owned analytical caustics renderer service.
+        /// Registry-owned underwater caustics presentation service.
         /// </summary>
         public static ICausticsService Caustics => _causticsRuntime;
 
@@ -817,6 +821,31 @@ namespace Hecton8.Core
                     return;
             }
             while (Interlocked.CompareExchange(ref _systemKillSwitchMask, next, observed) != observed);
+
+            PublishSystemKillSwitchBitsSignal(
+                unchecked((uint)observed),
+                unchecked((uint)next),
+                mask,
+                enabled);
+        }
+
+        private static void PublishSystemKillSwitchBitsSignal(
+            uint previousMask,
+            uint currentMask,
+            uint changedMask,
+            bool enabled)
+        {
+            SystemKillSwitchBitsSignal signal = default;
+            signal.Frame = unchecked((uint)Math.Max(0, Time.frameCount));
+            signal.SourceHash = SystemKillSwitchBitsSignalSourceHash;
+            signal.PreviousMask = previousMask;
+            signal.CurrentMask = currentMask;
+            signal.ChangedMask = changedMask;
+            signal.EnabledMask = enabled ? changedMask : 0u;
+            signal.Flags = SystemKillSwitchBitsSignal.FlagRegistryOwner;
+            if (enabled)
+                signal.Flags |= SystemKillSwitchBitsSignal.FlagEnabled;
+            SignalBus<SystemKillSwitchBitsSignal>.Push(in signal);
         }
 
         /// <summary>
@@ -1145,6 +1174,16 @@ namespace Hecton8.Core
         public static IEnvironmentRuntimeContext Environment => _environment;
 
         /// <summary>
+        /// Registered chemical influence read-model slot.
+        /// </summary>
+        public static IChemicalInfluenceReadModel ChemicalInfluence => _chemicalInfluence;
+
+        /// <summary>
+        /// Registered organic tool-hit command slot.
+        /// </summary>
+        public static IOrganicToolHitService OrganicToolHits => _organicToolHits;
+
+        /// <summary>
         /// Registered weather service slot.
         /// </summary>
         public static IWeatherService Weather => _weather;
@@ -1286,6 +1325,11 @@ namespace Hecton8.Core
         public static ResourceDistributionDirector ResourceDistribution => _resourceDistributionRuntime;
 
         /// <summary>
+        /// Read-only brine density route exposed by the resource-distribution owner.
+        /// </summary>
+        public static IBrineFluidDensityReadModel BrineFluidDensity => _resourceDistributionRuntime as IBrineFluidDensityReadModel;
+
+        /// <summary>
         /// Registered terrain/voxel seam applier runtime owner.
         /// </summary>
         public static WorldGenerativeGeologyTerrainSeamApplier GeologyTerrainSeam => _geologyTerrainSeamRuntime;
@@ -1299,6 +1343,11 @@ namespace Hecton8.Core
         /// Registered voxel generation/runtime owner.
         /// </summary>
         public static HectonVoxelEngine VoxelEngine => _voxelEngineRuntime;
+
+        /// <summary>
+        /// Registered voxel sonar SDF read model exposed through a contract surface.
+        /// </summary>
+        public static Hecton8.Core.Contracts.IVoxelSonarSdfReadModel VoxelSonarSdf => _voxelEngineRuntime as Hecton8.Core.Contracts.IVoxelSonarSdfReadModel;
 
         /// <summary>
         /// Registered biome matrix runtime owner.
@@ -1456,6 +1505,11 @@ namespace Hecton8.Core
         public static AcousticZoneController AcousticZone => _acousticZoneRuntime;
 
         /// <summary>
+        /// Registered tool-facing acoustic cue service.
+        /// </summary>
+        public static IToolAcousticCueService ToolAcousticCues => _acousticZoneRuntime;
+
+        /// <summary>
         /// Registered surface-weather runtime owner.
         /// </summary>
         public static HectonSurfaceWeatherDirector SurfaceWeather => _surfaceWeatherRuntime;
@@ -1464,6 +1518,11 @@ namespace Hecton8.Core
         /// Registered Atlas signal runtime owner.
         /// </summary>
         public static AtlasSignalSystem AtlasSignal => _atlasSignalRuntime;
+
+        /// <summary>
+        /// Registered Atlas signal read model.
+        /// </summary>
+        public static IAtlasSignalReadModel AtlasSignalReadModel => _atlasSignalRuntime;
 
         /// <summary>
         /// Registered first-hour pacing runtime owner.
@@ -1582,6 +1641,11 @@ namespace Hecton8.Core
         public static LoreDatabaseManager LoreDatabase => _loreDatabaseRuntime;
 
         /// <summary>
+        /// Registered lore unlock read model.
+        /// </summary>
+        public static ILoreUnlockReadModel LoreUnlockReadModel => _loreDatabaseRuntime;
+
+        /// <summary>
         /// Registered player expression/profile runtime owner.
         /// </summary>
         public static PlayerExpressionManager PlayerExpression => _playerExpressionRuntime;
@@ -1640,6 +1704,11 @@ namespace Hecton8.Core
         /// Registered sargassum cut-mask runtime owner.
         /// </summary>
         public static SargassumCutManager SargassumCut => _sargassumCutRuntime;
+
+        /// <summary>
+        /// Registered sargassum cut-mask command facade.
+        /// </summary>
+        public static ISargassumCutWriteService SargassumCutWrite => _sargassumCutRuntime;
 
         /// <summary>
         /// Registered sargassum micro-fauna boid runtime owner.
@@ -1750,6 +1819,11 @@ namespace Hecton8.Core
         /// Registered hazard-zone runtime owner.
         /// </summary>
         public static HazardZoneManager HazardZones => _hazardZoneRuntime;
+
+        /// <summary>
+        /// Registered hazard-zone read model.
+        /// </summary>
+        public static IHazardZoneReadModel HazardZoneReadModel => _hazardZoneRuntime;
 
         /// <summary>
         /// Registered mission facade runtime owner.
@@ -2187,6 +2261,8 @@ namespace Hecton8.Core
             _modularEquipment = null;
             _playerSensory = null;
             _environment = null;
+            _chemicalInfluence = null;
+            _organicToolHits = null;
             _weather = null;
             _oceanKinematics = null;
             _powerGrid = null;
@@ -2791,6 +2867,24 @@ namespace Hecton8.Core
         {
             RegisterService(ref _environment, instance);
             _environmentRuntimeContextRuntime = instance as EnvironmentRuntimeContextService;
+        }
+
+        /// <summary>
+        /// Registers the authoritative chemical influence read model.
+        /// </summary>
+        /// <param name="instance">Chemical influence owner instance.</param>
+        public static void RegisterChemicalInfluenceReadModel(IChemicalInfluenceReadModel instance)
+        {
+            RegisterServiceAllowSameInstance(ref _chemicalInfluence, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative organic tool-hit command owner.
+        /// </summary>
+        /// <param name="instance">Organic command owner instance.</param>
+        public static void RegisterOrganicToolHitService(IOrganicToolHitService instance)
+        {
+            RegisterServiceAllowSameInstance(ref _organicToolHits, instance);
         }
 
         /// <summary>
@@ -4030,7 +4124,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Registers the authoritative analytical caustics service.
+        /// Registers the authoritative underwater caustics presentation service.
         /// </summary>
         public static void RegisterCausticsService(ICausticsService instance)
         {
@@ -4038,7 +4132,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Clears the authoritative analytical caustics service.
+        /// Clears the authoritative underwater caustics presentation service.
         /// </summary>
         public static void UnregisterCausticsService(ICausticsService instance)
         {
@@ -4549,6 +4643,24 @@ namespace Hecton8.Core
             UnregisterService(ref _environment, instance);
             if (ReferenceEquals(_environmentRuntimeContextRuntime, instance))
                 _environmentRuntimeContextRuntime = null;
+        }
+
+        /// <summary>
+        /// Unregisters the current chemical influence read model if the owner matches.
+        /// </summary>
+        /// <param name="instance">Read-model owner requesting unregistration.</param>
+        public static void UnregisterChemicalInfluenceReadModel(IChemicalInfluenceReadModel instance)
+        {
+            UnregisterService(ref _chemicalInfluence, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current organic tool-hit command owner if the owner matches.
+        /// </summary>
+        /// <param name="instance">Command owner requesting unregistration.</param>
+        public static void UnregisterOrganicToolHitService(IOrganicToolHitService instance)
+        {
+            UnregisterService(ref _organicToolHits, instance);
         }
 
         /// <summary>
@@ -6108,6 +6220,16 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Checks the service hot-swap listener lane without exposing the bucket to domain callers.
+        /// </summary>
+        /// <param name="listener">Hot-swap listener.</param>
+        /// <returns>True when the listener is currently registered.</returns>
+        public static bool IsHotSwapListenerRegistered(IGlobalRegistryHotSwapListener listener)
+        {
+            return listener != null && _hotSwapListeners.Contains(listener);
+        }
+
+        /// <summary>
         /// Registers a listener for deferred registry event payloads.
         /// </summary>
         public static void RegisterRegistryEventListener(IRegistryEventListener listener)
@@ -7079,6 +7201,8 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.ModularEquipment: return _modularEquipment;
                 case GlobalRegistryServiceSlot.PlayerSensory: return _playerSensory;
                 case GlobalRegistryServiceSlot.Environment: return _environment;
+                case GlobalRegistryServiceSlot.ChemicalInfluenceRuntime: return _chemicalInfluence;
+                case GlobalRegistryServiceSlot.DestructibleOrganicRuntime: return _organicToolHits;
                 case GlobalRegistryServiceSlot.Weather: return _weather;
                 case GlobalRegistryServiceSlot.SeismicDirectorRuntime: return _seismicDirectorRuntime;
                 case GlobalRegistryServiceSlot.OceanKinematics: return _oceanKinematics;
@@ -7343,6 +7467,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(IPhysicsService)) return GlobalRegistryServiceSlot.Physics;
             if (serviceType == typeof(IAudioService)) return GlobalRegistryServiceSlot.Audio;
             if (serviceType == typeof(IAudioVirtualizationService)) return GlobalRegistryServiceSlot.AudioVirtualization;
+            if (serviceType == typeof(IToolAcousticCueService)) return GlobalRegistryServiceSlot.AcousticZoneRuntime;
             if (serviceType == typeof(ISceneService)) return GlobalRegistryServiceSlot.Scene;
             if (serviceType == typeof(ISaveService)) return GlobalRegistryServiceSlot.Save;
             if (serviceType == typeof(IAsyncPersistenceService)) return GlobalRegistryServiceSlot.Save;
@@ -7366,6 +7491,8 @@ namespace Hecton8.Core
             if (serviceType == typeof(IModularEquipmentService)) return GlobalRegistryServiceSlot.ModularEquipment;
             if (serviceType == typeof(IPlayerSensoryService)) return GlobalRegistryServiceSlot.PlayerSensory;
             if (serviceType == typeof(IEnvironmentRuntimeContext)) return GlobalRegistryServiceSlot.Environment;
+            if (serviceType == typeof(IChemicalInfluenceReadModel)) return GlobalRegistryServiceSlot.ChemicalInfluenceRuntime;
+            if (serviceType == typeof(IOrganicToolHitService)) return GlobalRegistryServiceSlot.DestructibleOrganicRuntime;
             if (serviceType == typeof(IWeatherService)) return GlobalRegistryServiceSlot.Weather;
             if (serviceType == typeof(ISeismicDirector)) return GlobalRegistryServiceSlot.SeismicDirectorRuntime;
             if (serviceType == typeof(IHectonOceanKinematicsService)) return GlobalRegistryServiceSlot.OceanKinematics;
@@ -7392,6 +7519,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(IWorldGenService)) return GlobalRegistryServiceSlot.WorldGen;
             if (serviceType == typeof(IWorldSeedProvider)) return GlobalRegistryServiceSlot.WorldSeedProvider;
             if (serviceType == typeof(WorldProceduralFieldSampler)) return GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime;
+            if (serviceType == typeof(IBrineFluidDensityReadModel)) return GlobalRegistryServiceSlot.ResourceDistributionRuntime;
             if (serviceType == typeof(ResourceDistributionDirector)) return GlobalRegistryServiceSlot.ResourceDistributionRuntime;
             if (serviceType == typeof(HectonMapMagicVegetationBridge)) return GlobalRegistryServiceSlot.MapMagicVegetationRuntime;
             if (serviceType == typeof(WorldGenerativeGeologyTerrainSeamApplier)) return GlobalRegistryServiceSlot.GeologyTerrainSeamRuntime;
@@ -7438,6 +7566,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(VocalWarningSystem)) return GlobalRegistryServiceSlot.VocalWarningRuntime;
             if (serviceType == typeof(AcousticZoneController)) return GlobalRegistryServiceSlot.AcousticZoneRuntime;
             if (serviceType == typeof(HectonSurfaceWeatherDirector)) return GlobalRegistryServiceSlot.SurfaceWeatherRuntime;
+            if (serviceType == typeof(IAtlasSignalReadModel)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
             if (serviceType == typeof(AtlasSignalSystem)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
             if (serviceType == typeof(FirstHourDirector)) return GlobalRegistryServiceSlot.FirstHourRuntime;
             if (serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
@@ -7459,6 +7588,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(ToolDurabilitySystem)) return GlobalRegistryServiceSlot.ToolDurabilityRuntime;
             if (serviceType == typeof(ToolHapticsRuntime)) return GlobalRegistryServiceSlot.ToolHapticsRuntime;
             if (serviceType == typeof(IVRSomaticProvider)) return GlobalRegistryServiceSlot.VRSomaticProvider;
+            if (serviceType == typeof(ILoreUnlockReadModel)) return GlobalRegistryServiceSlot.LoreDatabaseRuntime;
             if (serviceType == typeof(LoreDatabaseManager)) return GlobalRegistryServiceSlot.LoreDatabaseRuntime;
             if (serviceType == typeof(PlayerExpressionManager)) return GlobalRegistryServiceSlot.PlayerExpressionRuntime;
             if (serviceType == typeof(SpectrumSystem)) return GlobalRegistryServiceSlot.SpectrumRuntime;
@@ -7471,6 +7601,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(RenderTexturePool)) return GlobalRegistryServiceSlot.RenderTexturePoolRuntime;
             if (serviceType == typeof(AbyssalFluidDecalManager)) return GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime;
             if (serviceType == typeof(SargassumGlobalDragManager)) return GlobalRegistryServiceSlot.SargassumDragRuntime;
+            if (serviceType == typeof(ISargassumCutWriteService)) return GlobalRegistryServiceSlot.SargassumCutRuntime;
             if (serviceType == typeof(SargassumCutManager)) return GlobalRegistryServiceSlot.SargassumCutRuntime;
             if (serviceType == typeof(SargassumMicroFaunaBoids)) return GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime;
             if (serviceType == typeof(HectonFloatingOrigin)) return GlobalRegistryServiceSlot.FloatingOriginRuntime;
@@ -7499,6 +7630,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(LoadingScreenController)) return GlobalRegistryServiceSlot.LoadingScreenRuntime;
             if (serviceType == typeof(EndingSystem)) return GlobalRegistryServiceSlot.EndingRuntime;
             if (serviceType == typeof(Atlas6DirectiveSystem)) return GlobalRegistryServiceSlot.Atlas6DirectiveRuntime;
+            if (serviceType == typeof(IHazardZoneReadModel)) return GlobalRegistryServiceSlot.HazardZoneRuntime;
             if (serviceType == typeof(HazardZoneManager)) return GlobalRegistryServiceSlot.HazardZoneRuntime;
             if (serviceType == typeof(MissionManager)) return GlobalRegistryServiceSlot.MissionRuntime;
             if (serviceType == typeof(HectonRockManager)) return GlobalRegistryServiceSlot.RockManagerRuntime;

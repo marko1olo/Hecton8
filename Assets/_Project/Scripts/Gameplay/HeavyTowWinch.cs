@@ -5,6 +5,7 @@
 
 namespace Hecton8.Gameplay
 {
+    using Hecton8.Core;
     using Hecton8.Physics;
     using Unity.Mathematics;
     using UnityEngine;
@@ -251,13 +252,14 @@ namespace Hecton8.Gameplay
             if (!TryResolveInitialAttachDistance(initialDistance, out float safeInitialDistance))
                 return false;
 
+            if (_playerMotor == null || _playerRigidbody == null)
+                return false;
+
             if (!TetherSignals.PublishFire(
-                    _tetherManager,
-                    this,
-                    _playerMotor,
-                    _playerRigidbody,
-                    payloadBody,
-                    payloadCollider,
+                    ResolveStableObjectId(_tetherManager),
+                    ResolveStableObjectId(this),
+                    ResolveStableObjectId(payloadBody),
+                    ResolveStableObjectId(payloadCollider),
                     safeInitialDistance,
                     _tetherManager.CurrentFixedFrameIndex))
             {
@@ -271,6 +273,11 @@ namespace Hecton8.Gameplay
                 payloadBody,
                 payloadCollider,
                 safeInitialDistance);
+        }
+
+        private static int ResolveStableObjectId(UnityEngine.Object unityObject)
+        {
+            return unityObject != null ? unchecked((int)EntityId.ToULong(unityObject.GetEntityId())) : 0;
         }
 
         internal bool CanTowMass(float mass)

@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using Hecton8.Core.Contracts;
-using Hecton8.Tools;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -40,8 +39,11 @@ namespace Hecton8.Equipment.Auxiliary
     {
         [NoAlias] public NativeArray<DeployedAuxiliaryDTO> Deployments;
         [NoAlias] public NativeArray<AuxiliaryStateDTO> States;
-        [NoAlias] public NativeArray<ActiveEquipmentDTO> ActiveEquipment;
-        [ReadOnly, NoAlias] public NativeArray<int> ActiveCount;
+        [NoAlias] public NativeArray<AuxiliaryTetherAnchorDTO> TetherAnchors;
+        [NoAlias] public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;
+        [NoAlias] public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;
+        [NoAlias] public NativeArray<AuxiliaryVfxMatrixDTO> VfxMatrices;
+        [NoAlias] public NativeArray<int> ActiveCount;
         public AuxiliaryTuningDTO Tuning;
         public double3 OriginAup;
         public int RequestedCount;
@@ -55,11 +57,18 @@ namespace Hecton8.Equipment.Auxiliary
 
             ref DeployedAuxiliaryDTO deployment = ref AuxiliaryNativeAccess.WriteRef(Deployments, index);
             ref AuxiliaryStateDTO state = ref AuxiliaryNativeAccess.WriteRef(States, index);
-            ref ActiveEquipmentDTO active = ref AuxiliaryNativeAccess.WriteRef(ActiveEquipment, index);
+            ref AuxiliaryActiveEquipmentDTO active = ref AuxiliaryNativeAccess.WriteRef(ActiveEquipment, index);
+            if ((uint)index < (uint)RouteCounters.Length)
+                AuxiliaryNativeAccess.WriteRef(RouteCounters, index) = default;
+            if ((uint)index < (uint)VfxMatrices.Length)
+                AuxiliaryNativeAccess.WriteRef(VfxMatrices, index) = default;
+
             if (index >= safeCount)
             {
                 deployment = default;
                 state = default;
+                if ((uint)index < (uint)TetherAnchors.Length)
+                    AuxiliaryNativeAccess.WriteRef(TetherAnchors, index) = default;
                 active = default;
                 return;
             }
@@ -80,10 +89,19 @@ namespace Hecton8.Equipment.Auxiliary
             state.AccumulatedDelta = 0f;
             state.Flags = AuxiliaryEquipmentMath.ResolveKindFlags(prefabHash) | AuxiliaryEquipmentFlags.Mock;
 
+            ref AuxiliaryTetherAnchorDTO tetherAnchor = ref AuxiliaryNativeAccess.WriteRef(TetherAnchors, index);
+            tetherAnchor = default;
+            if (prefabHash == AuxiliaryEquipmentConstants.GravityTetherPrefabHash)
+            {
+                float tetherDistance = AuxiliaryEquipmentMath.SanitizePositive(Tuning.TetherMaxDistance, 60f);
+                tetherAnchor.AnchorAup = aup - new double3(0.0, 0.0, tetherDistance);
+                tetherAnchor.Flags = AuxiliaryEquipmentFlags.Active | AuxiliaryEquipmentFlags.GravityTether | AuxiliaryEquipmentFlags.Mock;
+            }
+
             active.ToolHashID = prefabHash;
-            active.CurrentBattery = math.saturate(deployment.RemainingLifetime / baseLifetime);
+            active.CurrentBattery = math.saturate(deployment.RemainingLifetime / math.max(0.01f, baseLifetime));
             active.ThermalLoad = state.Scalar0;
-            active.StateFlags = ActiveEquipmentStateFlags.Active;
+            active.StateFlags = AuxiliaryEquipmentFlags.Active;
             active.PowerDrawRate = 0f;
             active.HeatGenerationRate = 0f;
         }
@@ -101,10 +119,10 @@ namespace Hecton8.Equipment.Auxiliary
         private static float ResolveMockScalar(uint prefabHash, in AuxiliaryTuningDTO tuning)
         {
             if (prefabHash == AuxiliaryEquipmentConstants.FlarePrefabHash)
-                return tuning.FlareIntensity;
+                return AuxiliaryEquipmentMath.SanitizeNonNegative(tuning.FlareIntensity, 3f);
             if (prefabHash == AuxiliaryEquipmentConstants.SensorPingPrefabHash)
-                return tuning.PingMaxRadius;
-            return tuning.TetherMaxDistance;
+                return AuxiliaryEquipmentMath.SanitizeNonNegative(tuning.PingMaxRadius, 96f);
+            return AuxiliaryEquipmentMath.SanitizeNonNegative(tuning.TetherMaxDistance, 60f);
         }
     }
 
@@ -113,14 +131,17 @@ namespace Hecton8.Equipment.Auxiliary
     {
         [NoAlias] public NativeArray<DeployedAuxiliaryDTO> Deployments;
         [NoAlias] public NativeArray<AuxiliaryStateDTO> States;
-        [NoAlias] public NativeArray<ActiveEquipmentDTO> ActiveEquipment;
+        [NoAlias] public NativeArray<AuxiliaryTetherAnchorDTO> TetherAnchors;
+        [NoAlias] public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;
         [ReadOnly, NoAlias] public NativeArray<int> ActiveCount;
         [NoAlias] public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;
-        public NativeQueue<AuxiliaryFlareLightSignal>.ParallelWriter FlareWriter;
-        public NativeQueue<AuxiliarySonarRequestSignal>.ParallelWriter SonarWriter;
-        public NativeQueue<AuxiliaryTetherConnectionSignal>.ParallelWriter TetherWriter;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: AuxiliaryEquipmentRouterRuntime schedules UpdateDeployedAuxiliaryJob with IJobParallelFor.Schedule, chains it into _pendingHandle through StageAuxiliaryVFXJob, and registers the combined handle through H8Memory.RegisterActiveJob(SystemID.GameplayTools, _pendingHandle).
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: These fields are SignalBus ParallelWriter producer lanes only; each Execute index appends independent signal records and never reads or aliases queue storage, deployment buffers, state buffers, tether buffers, or VFX buffers.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: LateFrameTick finalizes _pendingHandle through DispatcherJobFence.TryFinalizeCompleted before buffer unlock/readback, and teardown uses the forced dispatcher fence before releasing Vault handles, so queue writers cannot outlive the scheduled producer window.
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<AuxiliaryFlareLightSignal>.ParallelWriter FlareWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<AuxiliarySonarRequestSignal>.ParallelWriter SonarWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<AuxiliaryTetherConnectionSignal>.ParallelWriter TetherWriter;
         public AuxiliaryTuningDTO Tuning;
-        public double3 TetherAnchorAup;
         public uint FrameIndex;
         public float SimulationDeltaTime;
         public float GlobalQualityWeight;
@@ -130,7 +151,7 @@ namespace Hecton8.Equipment.Auxiliary
             ref AuxiliaryRouteCounterDTO counter = ref AuxiliaryNativeAccess.WriteRef(RouteCounters, index);
             counter = default;
 
-            ref ActiveEquipmentDTO active = ref AuxiliaryNativeAccess.WriteRef(ActiveEquipment, index);
+            ref AuxiliaryActiveEquipmentDTO active = ref AuxiliaryNativeAccess.WriteRef(ActiveEquipment, index);
             active = default;
 
             int activeLength = ActiveCount.IsCreated && ActiveCount.Length > 0
@@ -145,6 +166,8 @@ namespace Hecton8.Equipment.Auxiliary
                 deployment = default;
                 if ((uint)index < (uint)States.Length)
                     AuxiliaryNativeAccess.WriteRef(States, index) = default;
+                if ((uint)index < (uint)TetherAnchors.Length)
+                    AuxiliaryNativeAccess.WriteRef(TetherAnchors, index) = default;
                 return;
             }
 
@@ -157,10 +180,15 @@ namespace Hecton8.Equipment.Auxiliary
                 counter.FaultFlags = kindFlags | AuxiliaryEquipmentFlags.NonFiniteRecovered;
                 deployment = default;
                 state = default;
+                if ((uint)index < (uint)TetherAnchors.Length)
+                    AuxiliaryNativeAccess.WriteRef(TetherAnchors, index) = default;
                 return;
             }
 
-            float baseLifetime = state.BaseLifetime > 0f
+            if (!math.isfinite(state.AccumulatedDelta) || state.AccumulatedDelta < 0f)
+                state.AccumulatedDelta = 0f;
+
+            float baseLifetime = math.isfinite(state.BaseLifetime) && state.BaseLifetime > 0f
                 ? state.BaseLifetime
                 : AuxiliaryEquipmentMath.ResolveBaseLifetime(deployment.PrefabHashID, in Tuning);
             float cadenceHz = AuxiliaryEquipmentMath.ResolveCadenceHz(GlobalQualityWeight, in Tuning);
@@ -182,6 +210,8 @@ namespace Hecton8.Equipment.Auxiliary
             {
                 deployment = default;
                 state = default;
+                if ((uint)index < (uint)TetherAnchors.Length)
+                    AuxiliaryNativeAccess.WriteRef(TetherAnchors, index) = default;
                 return;
             }
 
@@ -208,16 +238,26 @@ namespace Hecton8.Equipment.Auxiliary
             float life01 = math.saturate(deployment.RemainingLifetime / math.max(0.01f, baseLifetime));
             float noise = AuxiliaryEquipmentMath.DeterministicNoise01(deployment.AUP_Position, FrameIndex, (uint)index);
             float flicker = math.lerp(0.82f, 1.12f, noise);
-            float intensity = math.max(0f, Tuning.FlareIntensity) * math.max(0f, Tuning.SignalIntensityScale) * life01 * flicker;
+            float intensity = AuxiliaryEquipmentMath.SanitizeNonNegative(Tuning.FlareIntensity, 0f) *
+                              AuxiliaryEquipmentMath.SanitizeNonNegative(Tuning.SignalIntensityScale, 1f) *
+                              life01 *
+                              flicker;
             AuxiliaryFlareLightSignal signal = default;
             signal.AUP_Position = deployment.AUP_Position;
             signal.Intensity = intensity;
-            signal.RangeMeters = math.max(0f, Tuning.FlareRange) * math.lerp(0.65f, 1.25f, AuxiliaryEquipmentMath.Sanitize01(GlobalQualityWeight, 1f));
+            signal.RangeMeters = AuxiliaryEquipmentMath.SanitizeNonNegative(Tuning.FlareRange, 15f) *
+                                 math.lerp(0.65f, 1.25f, AuxiliaryEquipmentMath.Sanitize01(GlobalQualityWeight, 1f));
             signal.SourceHash = AuxiliaryEquipmentMath.HashAupFrame(deployment.AUP_Position, 0u, deployment.PrefabHashID);
             signal.Frame = FrameIndex;
             signal.ColorRgb = new float3(1f, 0.55f, 0.22f);
             signal.QualityWeight = AuxiliaryEquipmentMath.Sanitize01(GlobalQualityWeight, 1f);
             signal.Flags = AuxiliaryEquipmentFlags.Flare;
+            if (!IsFinite(in signal))
+            {
+                counter.FaultFlags = AuxiliaryEquipmentFlags.Flare | AuxiliaryEquipmentFlags.NonFiniteRecovered;
+                return;
+            }
+
             FlareWriter.Enqueue(signal);
             counter.FlareSignals = 1u;
         }
@@ -225,9 +265,9 @@ namespace Hecton8.Equipment.Auxiliary
         private void RouteSensorPing(int index, in DeployedAuxiliaryDTO deployment, float baseLifetime, float authoredMaxRadius, ref AuxiliaryRouteCounterDTO counter)
         {
             float elapsed = math.max(0f, baseLifetime - deployment.RemainingLifetime);
-            float defaultMaxRadius = math.max(1f, Tuning.PingMaxRadius);
+            float defaultMaxRadius = math.max(1f, AuxiliaryEquipmentMath.SanitizeNonNegative(Tuning.PingMaxRadius, 96f));
             float maxRadius = math.select(defaultMaxRadius, math.max(1f, authoredMaxRadius), authoredMaxRadius > 0f & math.isfinite(authoredMaxRadius));
-            float baseRate = math.max(0f, Tuning.PingExpansionRate);
+            float baseRate = AuxiliaryEquipmentMath.SanitizeNonNegative(Tuning.PingExpansionRate, 24f);
             float lifetimeRate = maxRadius * math.rcp(math.max(0.01f, baseLifetime));
             float quality = AuxiliaryEquipmentMath.Sanitize01(GlobalQualityWeight, 1f);
             float rate = math.lerp(lifetimeRate * 0.65f, math.max(lifetimeRate, baseRate), math.smoothstep(0f, 1f, quality));
@@ -242,27 +282,95 @@ namespace Hecton8.Equipment.Auxiliary
             signal.ExpansionRate = rate;
             signal.MaxRadius = maxRadius;
             signal.Flags = AuxiliaryEquipmentFlags.SensorPing;
+            if (!IsFinite(in signal))
+            {
+                counter.FaultFlags = AuxiliaryEquipmentFlags.SensorPing | AuxiliaryEquipmentFlags.NonFiniteRecovered;
+                return;
+            }
+
             SonarWriter.Enqueue(signal);
             counter.PingSignals = 1u;
         }
 
         private void RouteGravityTether(int index, in DeployedAuxiliaryDTO deployment, ref AuxiliaryRouteCounterDTO counter)
         {
-            double3 delta = deployment.AUP_Position - TetherAnchorAup;
-            float restLength = (float)math.sqrt(math.max(0.0, math.dot(delta, delta)));
+            if ((uint)index >= (uint)TetherAnchors.Length)
+            {
+                counter.FaultFlags = AuxiliaryEquipmentFlags.GravityTether | AuxiliaryEquipmentFlags.Faulted;
+                return;
+            }
+
+            ref readonly AuxiliaryTetherAnchorDTO tetherAnchor = ref AuxiliaryNativeAccess.ReadOnlyRef(TetherAnchors, index);
+            if ((tetherAnchor.Flags & AuxiliaryEquipmentFlags.Active) == 0u ||
+                !math.all(math.isfinite(tetherAnchor.AnchorAup)))
+            {
+                counter.FaultFlags = AuxiliaryEquipmentFlags.GravityTether | AuxiliaryEquipmentFlags.NonFiniteRecovered;
+                return;
+            }
+
+            double3 delta = deployment.AUP_Position - tetherAnchor.AnchorAup;
+            double distanceSq = math.dot(delta, delta);
+            if (!math.isfinite(distanceSq))
+            {
+                counter.FaultFlags = AuxiliaryEquipmentFlags.GravityTether | AuxiliaryEquipmentFlags.NonFiniteRecovered;
+                return;
+            }
+
+            float maxLength = AuxiliaryEquipmentMath.SanitizePositive(Tuning.TetherMaxDistance, 60f);
+            float restLength = math.min(maxLength, (float)math.sqrt(math.max(0.0, distanceSq)));
+            if (!math.isfinite(restLength))
+            {
+                counter.FaultFlags = AuxiliaryEquipmentFlags.GravityTether | AuxiliaryEquipmentFlags.NonFiniteRecovered;
+                return;
+            }
+
             AuxiliaryTetherConnectionSignal signal = default;
             signal.ProjectileAup = deployment.AUP_Position;
-            signal.AnchorAup = TetherAnchorAup;
+            signal.AnchorAup = tetherAnchor.AnchorAup;
             signal.RestLength = restLength;
             signal.SourceHash = AuxiliaryEquipmentMath.HashAupFrame(deployment.AUP_Position, 0u, (uint)index ^ deployment.PrefabHashID);
             signal.Frame = FrameIndex;
             signal.Flags = AuxiliaryEquipmentFlags.GravityTether;
+            if (!IsFinite(in signal))
+            {
+                counter.FaultFlags = AuxiliaryEquipmentFlags.GravityTether | AuxiliaryEquipmentFlags.NonFiniteRecovered;
+                return;
+            }
+
             TetherWriter.Enqueue(signal);
             counter.TetherSignals = 1u;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFinite(in AuxiliaryFlareLightSignal signal)
+        {
+            return math.all(math.isfinite(signal.AUP_Position)) &&
+                   math.isfinite(signal.Intensity) &&
+                   math.isfinite(signal.RangeMeters) &&
+                   math.all(math.isfinite(signal.ColorRgb)) &&
+                   math.isfinite(signal.QualityWeight);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFinite(in AuxiliarySonarRequestSignal signal)
+        {
+            return math.all(math.isfinite(signal.AUP_Position)) &&
+                   math.isfinite(signal.CurrentRadius) &&
+                   math.isfinite(signal.Intensity) &&
+                   math.isfinite(signal.ExpansionRate) &&
+                   math.isfinite(signal.MaxRadius);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFinite(in AuxiliaryTetherConnectionSignal signal)
+        {
+            return math.all(math.isfinite(signal.ProjectileAup)) &&
+                   math.all(math.isfinite(signal.AnchorAup)) &&
+                   math.isfinite(signal.RestLength);
+        }
+
         private static void MirrorActiveEquipment(
-            ref ActiveEquipmentDTO active,
+            ref AuxiliaryActiveEquipmentDTO active,
             uint prefabHash,
             float remainingLifetime,
             float baseLifetime,
@@ -272,7 +380,7 @@ namespace Hecton8.Equipment.Auxiliary
             active.ToolHashID = prefabHash;
             active.CurrentBattery = math.saturate(remainingLifetime / math.max(0.01f, baseLifetime));
             active.ThermalLoad = scalar0;
-            active.StateFlags = ActiveEquipmentStateFlags.Active | kindFlags;
+            active.StateFlags = AuxiliaryEquipmentFlags.Active | kindFlags;
             active.PowerDrawRate = 0f;
             active.HeatGenerationRate = 0f;
         }
@@ -311,7 +419,7 @@ namespace Hecton8.Equipment.Auxiliary
             double3 localDelta = AupPrecisionMath.LocalDeltaDouble(deployment.AUP_Position, CameraAup);
             float3 local = AupPrecisionMath.DowncastLocalDelta(localDelta, float3.zero);
             float quality = AuxiliaryEquipmentMath.Sanitize01(GlobalQualityWeight, 1f);
-            float scale = math.max(0.01f, VfxScale) * math.lerp(0.55f, 1.75f, quality);
+            float scale = AuxiliaryEquipmentMath.SanitizePositive(VfxScale, 1f) * math.lerp(0.55f, 1.75f, quality);
             matrix.Row0 = new float4(scale, 0f, 0f, local.x);
             matrix.Row1 = new float4(0f, scale, 0f, local.y);
             matrix.Row2 = new float4(0f, 0f, scale, local.z);
@@ -319,18 +427,20 @@ namespace Hecton8.Equipment.Auxiliary
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct RecordAuxiliaryTelemetryJob : IJob
+    public struct RecordAuxiliaryTelemetryPass
     {
-        [ReadOnly, NoAlias] public NativeArray<DeployedAuxiliaryDTO> Deployments;
-        [ReadOnly, NoAlias] public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;
-        [NoAlias] public NativeArray<AuxiliaryTelemetryEntry> TelemetryRing;
-        [NoAlias] public NativeArray<int> TelemetryCursor;
-        [NoAlias] public NativeArray<int> ActiveCount;
+        public NativeArray<DeployedAuxiliaryDTO> Deployments;
+        public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;
+        public NativeArray<AuxiliaryTelemetryEntry> TelemetryRing;
+        public NativeArray<int> TelemetryCursor;
+        public NativeArray<int> ActiveCount;
         public uint FrameIndex;
         public float EffectiveCadenceHz;
         public float CpuMicroseconds;
         public float GlobalQualityWeight;
+        public uint LaneDroppedSignals;
+        public uint LaneCorruptedSignals;
+        public uint LanePeakQueuedSignals;
 
         public void Execute()
         {
@@ -387,6 +497,9 @@ namespace Hecton8.Equipment.Auxiliary
             entry.FaultFlags = faults;
             entry.SnapshotHash = hash;
             entry.DroppedSlots = dropped;
+            entry.DroppedSignals = LaneDroppedSignals;
+            entry.CorruptedSignals = LaneCorruptedSignals;
+            entry.PeakQueuedSignals = LanePeakQueuedSignals;
             TelemetryRing[write] = entry;
             TelemetryCursor[0] = cursor == int.MaxValue ? 0 : cursor + 1;
         }

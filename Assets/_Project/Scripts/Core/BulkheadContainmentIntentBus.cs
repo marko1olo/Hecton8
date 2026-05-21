@@ -9,10 +9,12 @@ namespace Hecton8.Core.Contracts
         public const int IntentCapacity = 256;
 
         private static IDataVault s_cachedVault;
+        private static VaultGenerationHandle<BulkheadContainmentIntentDTO> s_intentsHandle;
+        private static VaultGenerationHandle<BulkheadContainmentIntentControlDTO> s_controlHandle;
 
         public static void BindDataVault(IDataVault vault)
         {
-            s_cachedVault = vault;
+            TryBindDataVault(vault);
         }
 
         public static bool TryWriteAirlockBulkheadIntent(
@@ -51,29 +53,32 @@ namespace Hecton8.Core.Contracts
             uint siblingNodeHash,
             uint frame)
         {
+            bool finitePacket =
+                math.isfinite(centerAup.x) &&
+                math.isfinite(centerAup.y) &&
+                math.isfinite(centerAup.z) &&
+                math.isfinite(normal.x) &&
+                math.isfinite(normal.y) &&
+                math.isfinite(normal.z) &&
+                math.isfinite(widthMeters) &&
+                math.isfinite(heightMeters) &&
+                math.isfinite(parentIntegrity01);
+
             if (vault == null ||
                 edgeHash == 0u ||
-                !math.isfinite(centerAup.x) ||
-                !math.isfinite(centerAup.y) ||
-                !math.isfinite(centerAup.z))
+                !finitePacket)
             {
                 return false;
             }
 
-            if (!vault.TryGetGenerationHandle<BulkheadContainmentIntentDTO>(
-                    BufferID.Shinobu220BulkheadIntentRing,
-                    out VaultGenerationHandle<BulkheadContainmentIntentDTO> intentsHandle) ||
-                !vault.TryGetGenerationHandle<BulkheadContainmentIntentControlDTO>(
-                    BufferID.Shinobu220BulkheadIntentControl,
-                    out VaultGenerationHandle<BulkheadContainmentIntentControlDTO> controlHandle) ||
-                !vault.TryResolveHandle(in intentsHandle, out NativeArray<BulkheadContainmentIntentDTO> intents) ||
-                !vault.TryResolveHandle(in controlHandle, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows) ||
-                !intents.IsCreated ||
-                !controlRows.IsCreated ||
-                intents.Length == 0 ||
-                controlRows.Length == 0)
+            if (!TryEnsureBound(vault) ||
+                !TryResolveIntentViews(vault, out NativeArray<BulkheadContainmentIntentDTO> intents, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows))
             {
-                return false;
+                if (!TryBindDataVault(vault) ||
+                    !TryResolveIntentViews(vault, out intents, out controlRows))
+                {
+                    return false;
+                }
             }
 
             BulkheadContainmentIntentControlDTO control = controlRows[0];
@@ -94,15 +99,6 @@ namespace Hecton8.Core.Contracts
 
             uint flags = BulkheadContainmentIntentFlags.Valid;
             flags |= locked ? BulkheadContainmentIntentFlags.Locked : BulkheadContainmentIntentFlags.None;
-            if (!math.isfinite(normal.x) ||
-                !math.isfinite(normal.y) ||
-                !math.isfinite(normal.z) ||
-                !math.isfinite(widthMeters) ||
-                !math.isfinite(heightMeters) ||
-                !math.isfinite(parentIntegrity01))
-            {
-                flags |= BulkheadContainmentIntentFlags.NonFinite;
-            }
 
             intents[(int)(write % capacity)] = new BulkheadContainmentIntentDTO
             {
@@ -121,6 +117,69 @@ namespace Hecton8.Core.Contracts
             control.LastEdgeHashID = edgeHash;
             controlRows[0] = control;
             return true;
+        }
+
+        private static bool TryBindDataVault(IDataVault vault)
+        {
+            s_cachedVault = vault;
+            s_intentsHandle = default;
+            s_controlHandle = default;
+
+            if (vault == null)
+                return false;
+
+            bool bound =
+                vault.TryGetGenerationHandle<BulkheadContainmentIntentDTO>(
+                    BufferID.Shinobu220BulkheadIntentRing,
+                    out s_intentsHandle) &&
+                vault.TryGetGenerationHandle<BulkheadContainmentIntentControlDTO>(
+                    BufferID.Shinobu220BulkheadIntentControl,
+                    out s_controlHandle);
+
+            if (bound)
+                return true;
+
+            s_cachedVault = null;
+            s_intentsHandle = default;
+            s_controlHandle = default;
+            return false;
+        }
+
+        private static bool TryEnsureBound(IDataVault vault)
+        {
+            return vault != null &&
+                   (ReferenceEquals(vault, s_cachedVault) && HasBoundHandles() ||
+                    TryBindDataVault(vault));
+        }
+
+        private static bool TryResolveIntentViews(
+            IDataVault vault,
+            out NativeArray<BulkheadContainmentIntentDTO> intents,
+            out NativeArray<BulkheadContainmentIntentControlDTO> controlRows)
+        {
+            if (vault == null ||
+                !HasBoundHandles() ||
+                !vault.TryResolveHandle(in s_intentsHandle, out intents) ||
+                !vault.TryResolveHandle(in s_controlHandle, out controlRows) ||
+                !intents.IsCreated ||
+                !controlRows.IsCreated ||
+                intents.Length == 0 ||
+                controlRows.Length == 0)
+            {
+                intents = default;
+                controlRows = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool HasBoundHandles()
+        {
+            return s_intentsHandle.BufferID != 0u &&
+                   s_intentsHandle.Generation != 0u &&
+                   s_controlHandle.BufferID != 0u &&
+                   s_controlHandle.Generation != 0u;
         }
     }
 }

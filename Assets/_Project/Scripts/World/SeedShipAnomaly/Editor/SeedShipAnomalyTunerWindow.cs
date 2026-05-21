@@ -87,16 +87,13 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
             if (vault == null)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BufferID.ShinobuSeedShipAnomalyField, out VaultBufferHandle<AnomalyFieldDTO> fieldHandle) ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuSeedShipAnomalyTuning, out VaultBufferHandle<AnomalyTuningDTO> tuningHandle) ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuSeedShipAnomalyGlobals, out VaultBufferHandle<AnomalyGlobalScalarsDTO> globalsHandle))
+            if (!TryReadExistingView(vault, BufferID.ShinobuSeedShipAnomalyField, out NativeArray<AnomalyFieldDTO> fieldArray) ||
+                !TryReadExistingView(vault, BufferID.ShinobuSeedShipAnomalyTuning, out NativeArray<AnomalyTuningDTO> tuningArray) ||
+                !TryReadExistingView(vault, BufferID.ShinobuSeedShipAnomalyGlobals, out NativeArray<AnomalyGlobalScalarsDTO> globalsArray))
             {
                 return false;
             }
 
-            NativeArray<AnomalyFieldDTO> fieldArray = fieldHandle.Resolve(vault);
-            NativeArray<AnomalyTuningDTO> tuningArray = tuningHandle.Resolve(vault);
-            NativeArray<AnomalyGlobalScalarsDTO> globalsArray = globalsHandle.Resolve(vault);
             if (!fieldArray.IsCreated || fieldArray.Length == 0 ||
                 !tuningArray.IsCreated || tuningArray.Length == 0 ||
                 !globalsArray.IsCreated || globalsArray.Length == 0)
@@ -116,8 +113,8 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
             if (vault == null)
                 return;
 
-            if (!vault.TryGetBufferHandle(BufferID.ShinobuSeedShipAnomalyField, out VaultBufferHandle<AnomalyFieldDTO> fieldHandle) ||
-                !vault.TryGetBufferHandle(BufferID.ShinobuSeedShipAnomalyTuning, out VaultBufferHandle<AnomalyTuningDTO> tuningHandle))
+            if (!vault.TryGetGenerationHandle(BufferID.ShinobuSeedShipAnomalyField, out VaultGenerationHandle<AnomalyFieldDTO> fieldHandle) ||
+                !vault.TryGetGenerationHandle(BufferID.ShinobuSeedShipAnomalyTuning, out VaultGenerationHandle<AnomalyTuningDTO> tuningHandle))
             {
                 return;
             }
@@ -129,17 +126,18 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
             try
             {
                 tuningLocked = vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyTuning, SystemID.EndgameAnomaly);
-                NativeArray<AnomalyFieldDTO> fieldArray = fieldHandle.Resolve(vault);
-                NativeArray<AnomalyTuningDTO> tuningArray = tuningHandle.Resolve(vault);
-                if (fieldArray.IsCreated && fieldArray.Length > 0)
+                if (TryOpenExistingView(vault, in fieldHandle, out NativeArray<AnomalyFieldDTO> fieldArray))
                 {
                     field.Radius = math.max(0f, field.Radius);
                     field.CorruptionLevel = math.saturate(field.CorruptionLevel);
                     fieldArray[0] = field;
                 }
 
-                if (tuningLocked && tuningArray.IsCreated && tuningArray.Length > 0)
+                if (tuningLocked &&
+                    TryOpenExistingView(vault, in tuningHandle, out NativeArray<AnomalyTuningDTO> tuningArray))
+                {
                     tuningArray[0] = SeedShipAnomalyMath.SanitizeTuning(tuning);
+                }
             }
             finally
             {
@@ -171,6 +169,31 @@ namespace Hecton8.World.SeedShipAnomaly.Editor
             Handles.DrawWireDisc(center, Vector3.up, radius);
             Handles.DrawWireDisc(center, Vector3.right, radius);
             Handles.DrawWireDisc(center, Vector3.forward, radius);
+        }
+
+        private static bool TryReadExistingView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length > 0;
+        }
+
+        private static bool TryOpenExistingView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length > 0;
         }
     }
 }

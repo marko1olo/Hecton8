@@ -1,17 +1,17 @@
 // ============================================================================
 // HECTON-8 — BatteryCharger.cs
-// Wall-mounted device to recharge tool batteries.
+// Wall-mounted facade for tool battery logistics.
 //
 // ARCHITECTURE:
 //   • Passive ChargerLinkDTO registration for the Burst logistics kernel
 //   • IPowerComponent integration for power grid awareness
-//   • Slot system with per-slot charge tracking
-//   • Zero GC in hot paths: DTO registration, cached arrays
+//   • Cold slot facade; SOA ConditionFlags owns charge truth
+//   • Zero GC in hot paths; no charger Update loop
 //
 // INTEGRATION:
-//   • IPowerComponent.HasPower — checked before charging
-//   • ItemData with charge field (battery items)
-//   • UnityEvent for UI progress updates
+//   • IPowerComponent.HasPower — cold presentation cache only
+//   • ItemData identity hydrated into InventorySlotDTO
+//   • UnityEvent compatibility for cold UI call-sites
 // ============================================================================
 
 using Hecton.Localization;
@@ -68,20 +68,21 @@ namespace Hecton8.Gameplay
 
         [Header("── Slots ──────────────────────────────────────")]
         [Tooltip("Battery slots in this charger.")]
+        // COLD ALLOC: BatterySlot[2] - serialized facade slots for prefab migration - owner: BatteryCharger
         [SerializeField] private BatterySlot[] slots = new BatterySlot[2];
 
         [Header("── Charging Settings ──────────────────────────")]
         [Tooltip("Charge rate per second (units per second).")]
         [SerializeField, Range(1f, 50f)] private float chargeRate = 10f;
 
-        [Tooltip("Power consumption while charging (Watts).")]
+        [Tooltip("Legacy serialized wattage retained for prefab migration; runtime charge truth is SOA/CSR.")]
         [SerializeField, Range(10f, 200f)] private float powerConsumption = 50f;
 
         [Header("── Power Integration ─────────────────────────")]
         [Tooltip("Reference to the power node for this charger.")]
         [SerializeField] private MonoBehaviour powerNodeReference;
 
-        [Tooltip("First SOA inventory slot index owned by this charger.")]
+        [Tooltip("First SOA inventory slot index owned by this charger. 0 is unassigned and fails closed.")]
         [SerializeField] private uint inventorySlotStartIndex;
 
         [Tooltip("CSR power graph node index supplying this charger.")]
@@ -135,10 +136,13 @@ namespace Hecton8.Gameplay
 
         private const string DefaultInteractText = "Access Charger";
         private const string DefaultSwapBatteryText = "Swap Battery";
+        private const uint InvalidInventorySlotStartIndex = 0u;
         private string _cachedInteractText;
         private string _cachedSwapBatteryText;
         private PlayerToolManager _cachedToolManager;
         private PlayerInventory _cachedPlayerInventory;
+        // COLD ALLOC: PlayerInventory.CraftReservation[1] - inventory-owner reservation fence for charger insert handoff - owner: BatteryCharger
+        private readonly PlayerInventory.CraftReservation[] _inventoryReservationScratch = new PlayerInventory.CraftReservation[1];
 
         // ══════════════════════════════════════════════════════════
         //  IInteractable IMPLEMENTATION
@@ -157,7 +161,7 @@ namespace Hecton8.Gameplay
         void IInteractable.Interact(Transform interactor)
         {
             // Try to swap battery with held tool
-            PlayerToolManager toolManager = ResolveToolManager(interactor);
+            PlayerToolManager toolManager = BindToolManagerForInteraction(interactor);
 
             if (toolManager != null && toolManager.CurrentTool != null)
             {
@@ -166,7 +170,7 @@ namespace Hecton8.Gameplay
             }
 
             // Try to insert battery from inventory
-            PlayerInventory playerInventory = ResolvePlayerInventory(interactor);
+            PlayerInventory playerInventory = BindPlayerInventoryForInteraction(interactor);
 
             if (playerInventory != null)
             {
@@ -176,7 +180,7 @@ namespace Hecton8.Gameplay
 
         string IInteractable.GetInteractText()
         {
-            PlayerToolManager toolManager = ResolveToolManager();
+            PlayerToolManager toolManager = _cachedToolManager;
             if (toolManager != null && toolManager.CurrentTool != null)
             {
                 return _cachedSwapBatteryText;
@@ -184,7 +188,7 @@ namespace Hecton8.Gameplay
             return _cachedInteractText;
         }
 
-        private PlayerToolManager ResolveToolManager(Transform interactor = null)
+        private PlayerToolManager BindToolManagerForInteraction(Transform interactor = null)
         {
             if (_cachedToolManager != null)
                 return _cachedToolManager;
@@ -198,7 +202,7 @@ namespace Hecton8.Gameplay
             return _cachedToolManager;
         }
 
-        private PlayerInventory ResolvePlayerInventory(Transform interactor = null)
+        private PlayerInventory BindPlayerInventoryForInteraction(Transform interactor = null)
         {
             if (_cachedPlayerInventory != null)
                 return _cachedPlayerInventory;
@@ -243,23 +247,21 @@ namespace Hecton8.Gameplay
             // If tool has a battery, try to remove and insert into charger
             if (batteryTool.HasBattery)
             {
+                int emptySlot = FindEmptySlot();
+                if (emptySlot < 0 || !HasAuthoredInventorySlotRange())
+                    return false;
+
                 float toolBatteryCharge = batteryTool.BatteryCharge;
                 ItemData toolBattery = batteryTool.RemoveBattery();
                 if (toolBattery != null)
                 {
-                    // Find empty slot
-                    int emptySlot = FindEmptySlot();
-                    if (emptySlot >= 0)
-                    {
-                        InsertBattery(emptySlot, toolBattery, toolBatteryCharge);
+                    if (InsertBattery(emptySlot, toolBattery, toolBatteryCharge))
                         return true;
-                    }
-                    else
-                    {
-                        // Charger full, return battery to tool
-                        batteryTool.InsertBattery(toolBattery, toolBatteryCharge);
-                        return false;
-                    }
+
+                    if (!batteryTool.InsertBattery(toolBattery, toolBatteryCharge))
+                        ReportBridgeRollbackFailure();
+
+                    return false;
                 }
             }
 
@@ -267,11 +269,17 @@ namespace Hecton8.Gameplay
             int chargedSlot = FindChargedSlot();
             if (chargedSlot >= 0)
             {
+                float previousCharge = GetChargeProgress(chargedSlot);
                 ItemData chargedBattery = RemoveBattery(chargedSlot);
                 if (chargedBattery != null)
                 {
-                    batteryTool.InsertBattery(chargedBattery, 1f);
-                    return true;
+                    if (batteryTool.InsertBattery(chargedBattery, 1f))
+                        return true;
+
+                    if (!InsertBattery(chargedSlot, chargedBattery, previousCharge))
+                        ReportBridgeRollbackFailure();
+
+                    return false;
                 }
             }
 
@@ -285,7 +293,7 @@ namespace Hecton8.Gameplay
         /// <returns>True if a battery was inserted.</returns>
         public bool InsertBatteryFromInventory(PlayerInventory playerInventory)
         {
-            if (playerInventory == null || playerInventory.Grid == null)
+            if (playerInventory == null || playerInventory.Grid == null || !HasAuthoredInventorySlotRange())
                 return false;
 
             int emptySlot = FindEmptySlot();
@@ -315,12 +323,23 @@ namespace Hecton8.Gameplay
                     if (!IsBatteryItem(item))
                         continue;
 
-                    // Insert battery
-                    if (InsertBattery(emptySlot, item, 0f))
+                    int reservationCount = 0;
+                    if (!playerInventory.TryReserveQuantityForCraft(itemHashId, 1, _inventoryReservationScratch, ref reservationCount))
+                        continue;
+
+                    if (!InsertBattery(emptySlot, item, 0f))
                     {
-                        playerInventory.RemoveItemAt(x, y);
-                        return true;
+                        playerInventory.ReleaseCraftReservations(_inventoryReservationScratch, reservationCount);
+                        return false;
                     }
+
+                    if (playerInventory.CommitCraftReservations(_inventoryReservationScratch, reservationCount))
+                        return true;
+
+                    if (RemoveBattery(emptySlot) == null)
+                        ReportBridgeRollbackFailure();
+
+                    return false;
                 }
             }
 
@@ -338,6 +357,14 @@ namespace Hecton8.Gameplay
             if (playerInventory == null)
                 return false;
 
+            if (slots == null || slotIndex < 0 || slotIndex >= slots.Length || slots[slotIndex] == null)
+                return false;
+
+            ItemData candidateBattery = slots[slotIndex].batteryItem;
+            int candidateHash = unchecked((int)ComputeItemHash(candidateBattery));
+            if (candidateBattery == null || candidateHash == 0 || !playerInventory.CanAcceptItemQuantity(candidateHash, 1))
+                return false;
+
             float previousCharge = slots != null && slotIndex >= 0 && slotIndex < slots.Length && slots[slotIndex] != null
                 ? GetChargeProgress(slotIndex)
                 : 0f;
@@ -345,10 +372,12 @@ namespace Hecton8.Gameplay
             if (battery == null)
                 return false;
 
-            if (!playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(battery.PersistentId), 1))
+            if (!playerInventory.TryAddItem(candidateHash, 1))
             {
                 // Inventory full, re-insert battery
-                InsertBattery(slotIndex, battery, previousCharge);
+                if (!InsertBattery(slotIndex, battery, previousCharge))
+                    ReportBridgeRollbackFailure();
+
                 return false;
             }
 
@@ -381,7 +410,8 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < slots.Length; i++)
             {
-                if (slots[i].batteryItem == null)
+                BatterySlot slot = slots[i];
+                if (slot == null || slot.batteryItem == null)
                     return i;
             }
 
@@ -399,7 +429,8 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < slots.Length; i++)
             {
-                if (slots[i].batteryItem != null && GetChargeProgress(i) >= 0.999f)
+                BatterySlot slot = slots[i];
+                if (slot != null && slot.batteryItem != null && GetChargeProgress(i) >= 0.999f)
                     return i;
             }
 
@@ -412,7 +443,6 @@ namespace Hecton8.Gameplay
 
         private bool _hasPower = true;
         private bool _registered;
-        private bool _isCharging;
         private PowerNode _powerNode;
 
         // Cached for zero GC
@@ -443,7 +473,6 @@ namespace Hecton8.Gameplay
         public void OnPowerStatusChanged(bool hasPower)
         {
             _hasPower = hasPower;
-            RefreshChargingDemand();
             UpdateAllIndicators();
         }
 
@@ -453,6 +482,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            EnsureSlotObjects();
             _cachedTransform = transform;
             _powerNode = powerNodeReference as PowerNode;
             if (_powerNode == null && !TryGetComponent(out _powerNode))
@@ -466,14 +496,12 @@ namespace Hecton8.Gameplay
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
             RebuildLocalizedTextCache();
-            RefreshChargingDemand();
             UpdateAllIndicators();
         }
 
         private void OnDisable()
         {
             InteractableRegistry.InvalidateTree(this);
-            SetChargingState(false);
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
         }
@@ -481,7 +509,6 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             InteractableRegistry.InvalidateTree(this);
-            SetChargingState(false);
             TryUnregister();
         }
 
@@ -507,11 +534,10 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Legacy entrypoint retained for serialized call-sites. Charging is handled by BatteryChargerLogisticsRuntime.
+        /// Legacy entrypoint retained for serialized call-sites. Charging is handled by the charger logistics bridge.
         /// </summary>
         public void SlowTick()
         {
-            SetChargingState(false);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -527,15 +553,17 @@ namespace Hecton8.Gameplay
         /// <returns>True if battery was inserted successfully.</returns>
         public bool InsertBattery(int slotIndex, ItemData battery, float currentCharge = 0f)
         {
-            if (slots == null || slotIndex < 0 || slotIndex >= slots.Length)
+            if (slots == null || slotIndex < 0 || slotIndex >= slots.Length || slots[slotIndex] == null)
                 return false;
 
             if (slots[slotIndex].batteryItem != null)
                 return false; // Slot occupied
 
+            if (!WriteInventorySlotState(slotIndex, battery, currentCharge))
+                return false;
+
             slots[slotIndex].batteryItem = battery;
             slots[slotIndex].currentCharge = currentCharge;
-            WriteInventorySlotState(slotIndex, battery, currentCharge);
 
             // Play insert sound
             if (insertSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
@@ -545,7 +573,6 @@ namespace Hecton8.Gameplay
 
             OnBatteryInserted?.Invoke(slotIndex);
             UpdateSlotIndicator(slotIndex);
-            RefreshChargingDemand();
 
             return true;
         }
@@ -557,19 +584,23 @@ namespace Hecton8.Gameplay
         /// <returns>The removed battery item, or null if slot was empty.</returns>
         public ItemData RemoveBattery(int slotIndex)
         {
-            if (slots == null || slotIndex < 0 || slotIndex >= slots.Length)
+            if (slots == null || slotIndex < 0 || slotIndex >= slots.Length || slots[slotIndex] == null)
                 return null;
 
             ItemData battery = slots[slotIndex].batteryItem;
+            if (battery == null)
+                return null;
+
+            if (!WriteInventorySlotState(slotIndex, null, 0f))
+                return null;
+
             slots[slotIndex].batteryItem = null;
             slots[slotIndex].currentCharge = 0f;
-            WriteInventorySlotState(slotIndex, null, 0f);
 
             if (battery != null)
             {
                 OnBatteryRemoved?.Invoke(slotIndex);
                 UpdateSlotIndicator(slotIndex);
-                RefreshChargingDemand();
             }
 
             return battery;
@@ -582,15 +613,15 @@ namespace Hecton8.Gameplay
         /// <returns>Normalized charge (0-1), or 0 if invalid slot.</returns>
         public float GetChargeProgress(int slotIndex)
         {
-            if (slots == null || slotIndex < 0 || slotIndex >= slots.Length)
+            if (slots == null || slotIndex < 0 || slotIndex >= slots.Length || slots[slotIndex] == null)
                 return 0f;
 
+            if (!HasAuthoredInventorySlotRange())
+                return slots[slotIndex].currentCharge;
+
             uint inventorySlot = ResolveSlotInventoryIndex(slotIndex);
-            if (BatteryChargerLogisticsRuntime.TryReadCharge01(inventorySlot, out float vaultCharge))
-            {
-                slots[slotIndex].currentCharge = vaultCharge;
+            if (BatteryChargerLogisticsBridge.TryReadCharge01(inventorySlot, out float vaultCharge))
                 return vaultCharge;
-            }
 
             return slots[slotIndex].currentCharge;
         }
@@ -602,7 +633,7 @@ namespace Hecton8.Gameplay
         /// <returns>True if slot has a battery.</returns>
         public bool HasBatteryInSlot(int slotIndex)
         {
-            if (slots == null || slotIndex < 0 || slotIndex >= slots.Length)
+            if (slots == null || slotIndex < 0 || slotIndex >= slots.Length || slots[slotIndex] == null)
                 return false;
 
             return slots[slotIndex].HasBattery;
@@ -614,7 +645,7 @@ namespace Hecton8.Gameplay
 
         private bool RegisterLogisticsLinks()
         {
-            if (!registerLogisticsLinks || slots == null)
+            if (!registerLogisticsLinks || !HasAuthoredInventorySlotRange())
                 return false;
 
             bool anyRegistered = false;
@@ -622,9 +653,12 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < slots.Length; i++)
             {
                 BatterySlot slot = slots[i];
+                if (slot == null || !WriteInventorySlotState(i, slot.batteryItem, slot.currentCharge))
+                    continue;
+
                 float maxCharge = slot != null ? math.max(0.001f, slot.maxCharge) : 100f;
                 float normalizedRate = math.max(0f, chargeRate) / maxCharge;
-                if (BatteryChargerLogisticsRuntime.TryRegisterChargerLink(
+                if (BatteryChargerLogisticsBridge.TryRegisterChargerLink(
                         ResolveSlotInventoryIndex(i),
                         ResolvePowerNodeIndex(i),
                         normalizedRate,
@@ -634,9 +668,6 @@ namespace Hecton8.Gameplay
                 {
                     anyRegistered = true;
                 }
-
-                if (slot != null)
-                    WriteInventorySlotState(i, slot.batteryItem, slot.currentCharge);
             }
 
             return anyRegistered;
@@ -645,14 +676,22 @@ namespace Hecton8.Gameplay
         private void UnregisterLogisticsLinks()
         {
             int slotCount = slots?.Length ?? 0;
-            if (slotCount > 0)
-                BatteryChargerLogisticsRuntime.TryUnregisterChargerLinks(inventorySlotStartIndex, slotCount, powerGraphNodeIndex);
+            if (slotCount > 0 && HasAuthoredInventorySlotRange())
+                BatteryChargerLogisticsBridge.TryUnregisterChargerLinks(inventorySlotStartIndex, slotCount, powerGraphNodeIndex);
         }
 
-        private void WriteInventorySlotState(int slotIndex, ItemData battery, float charge01)
+        private bool WriteInventorySlotState(int slotIndex, ItemData battery, float charge01)
         {
+            if (!HasAuthoredInventorySlotRange())
+                return false;
+
             uint itemHash = ComputeItemHash(battery);
-            BatteryChargerLogisticsRuntime.TryWriteInventorySlotState(ResolveSlotInventoryIndex(slotIndex), itemHash, charge01);
+            return BatteryChargerLogisticsBridge.TryWriteInventorySlotState(ResolveSlotInventoryIndex(slotIndex), itemHash, charge01);
+        }
+
+        private bool HasAuthoredInventorySlotRange()
+        {
+            return inventorySlotStartIndex != InvalidInventorySlotStartIndex && slots != null && slots.Length > 0;
         }
 
         private uint ResolveSlotInventoryIndex(int slotIndex)
@@ -668,7 +707,46 @@ namespace Hecton8.Gameplay
         private double3 ResolveChargerAup()
         {
             Vector3 position = _cachedTransform != null ? _cachedTransform.position : transform.position;
-            return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);
+            if (!math.isfinite(position.x) ||
+                !math.isfinite(position.y) ||
+                !math.isfinite(position.z))
+            {
+                return double3.zero;
+            }
+
+            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return double3.zero;
+
+            double3 chargerAup = Hecton8.World.AbsoluteUniversePosition.OffsetAbsoluteMeters(
+                in originAup,
+                new double3(position.x, position.y, position.z));
+            return math.all(math.isfinite(chargerAup)) ? chargerAup : double3.zero;
+        }
+
+        private void EnsureSlotObjects()
+        {
+            if (slots == null || slots.Length == 0)
+            {
+                // COLD ALLOC: BatterySlot[2] - fallback for legacy prefab migration - owner: BatteryCharger
+                slots = new BatterySlot[2];
+            }
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i] == null)
+                {
+                    // COLD ALLOC: BatterySlot[1] - cold facade object for serialized slot metadata - owner: BatteryCharger
+                    slots[i] = new BatterySlot();
+                }
+            }
+        }
+
+        private static void ReportBridgeRollbackFailure()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError("BatteryCharger bridge rollback failed; Inventory-owner reservation route is required for a hard conservation proof.");
+#endif
         }
 
         private static uint ComputeItemHash(ItemData item)
@@ -705,42 +783,6 @@ namespace Hecton8.Gameplay
             _ = OnChargeComplete;
         }
 
-        private void RefreshChargingDemand()
-        {
-            SetChargingState(_hasPower && HasChargeWork());
-        }
-
-        private bool HasChargeWork()
-        {
-            if (slots == null)
-                return false;
-
-            int slotCount = slots.Length;
-            for (int i = 0; i < slotCount; i++)
-            {
-                BatterySlot slot = slots[i];
-                if (slot != null && slot.batteryItem != null && !slot.IsFullyCharged)
-                    return true;
-            }
-
-            return false;
-        }
-
-        private void SetChargingState(bool isCharging)
-        {
-            if (_isCharging == isCharging)
-                return;
-
-            _isCharging = isCharging;
-            MarkPowerGridDirty();
-        }
-
-        private void MarkPowerGridDirty()
-        {
-            if (_powerNode != null && _powerNode.Grid != null)
-                _powerNode.Grid.MarkDirty();
-        }
-
         // ══════════════════════════════════════════════════════════
         //  EDITOR
         // ══════════════════════════════════════════════════════════
@@ -751,11 +793,7 @@ namespace Hecton8.Gameplay
             if (chargeRate < 1f) chargeRate = 1f;
             if (powerConsumption < 1f) powerConsumption = 1f;
 
-            // Ensure slots array has at least one slot
-            if (slots == null || slots.Length == 0)
-            {
-                slots = new BatterySlot[2];
-            }
+            EnsureSlotObjects();
 
             RebuildLocalizedTextCache();
         }
@@ -769,7 +807,7 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < slots.Length; i++)
             {
-                if (slots[i].slotTransform != null)
+                if (slots[i] != null && slots[i].slotTransform != null)
                 {
                     Gizmos.DrawWireSphere(slots[i].slotTransform.position, 0.1f);
                 }
@@ -779,8 +817,8 @@ namespace Hecton8.Gameplay
 
         private void RebuildLocalizedTextCache()
         {
-            _cachedInteractText = ResolveLocalized(LocalizationKeys.INTERACT_ACCESS_CHARGER, DefaultInteractText);
-            _cachedSwapBatteryText = ResolveLocalized(LocalizationKeys.INTERACT_SWAP_BATTERY, DefaultSwapBatteryText);
+            _cachedInteractText = FetchLocalizedTextCold(LocalizationKeys.INTERACT_ACCESS_CHARGER, DefaultInteractText);
+            _cachedSwapBatteryText = FetchLocalizedTextCold(LocalizationKeys.INTERACT_SWAP_BATTERY, DefaultSwapBatteryText);
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -797,7 +835,7 @@ namespace Hecton8.Gameplay
             RebuildLocalizedTextCache();
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private static string FetchLocalizedTextCold(string key, string fallback)
         {
             LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null

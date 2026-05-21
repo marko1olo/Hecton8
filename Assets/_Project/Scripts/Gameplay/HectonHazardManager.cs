@@ -17,6 +17,12 @@ namespace Hecton8.Gameplay
     [DefaultExecutionOrder(-5700)]
     public sealed class HectonHazardManager : MonoBehaviour
     {
+        private const int MaxTrackedRadiationFacadeIds = 1024;
+
+        // COLD ALLOC: int[1024] - untyped compatibility radiation source IDs - owner: HectonHazardManager
+        private static readonly int[] _radiationFacadeIds = new int[MaxTrackedRadiationFacadeIds];
+        private static int _radiationFacadeIdCount;
+
         internal HazardZoneManager ResolveOrAddZoneManager()
         {
             return ResolveZoneManager();
@@ -53,10 +59,9 @@ namespace Hecton8.Gameplay
 
         internal static bool Register(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias, HazardZoneProfile profile)
         {
-            if (!IsFiniteRuntimePosition(runtimePosition))
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
                 return false;
 
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             return Register(id, in positionAup, intensity, radius, type, visorGlitchBias, profile);
         }
 
@@ -64,6 +69,18 @@ namespace Hecton8.Gameplay
         {
             if (!IsFiniteAup(in positionAup))
                 return false;
+
+            if (type == HazardType.Radiation)
+            {
+                if (!Application.isPlaying || id == 0 || !TrackRadiationFacadeId(id))
+                    return false;
+
+                RadiationHazardGrid.RegisterSource(id, in positionAup, intensity, radius);
+                return true;
+            }
+
+            if (UntrackRadiationFacadeId(id))
+                RadiationHazardGrid.UnregisterSource(id);
 
             HazardZoneManager zoneManager = ResolveZoneManager();
             return zoneManager != null && zoneManager.RegisterZone(id, in positionAup, intensity, radius, type, visorGlitchBias, profile);
@@ -74,6 +91,23 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static void Unregister(int id)
         {
+            if (UntrackRadiationFacadeId(id))
+                RadiationHazardGrid.UnregisterSource(id);
+
+            HazardZoneManager zoneManager = TryResolveZoneManager();
+            if (zoneManager != null)
+                zoneManager.UnregisterZone(id);
+        }
+
+        public static void Unregister(int id, HazardType type)
+        {
+            if (type == HazardType.Radiation)
+            {
+                _ = UntrackRadiationFacadeId(id);
+                RadiationHazardGrid.UnregisterSource(id);
+                return;
+            }
+
             HazardZoneManager zoneManager = TryResolveZoneManager();
             if (zoneManager != null)
                 zoneManager.UnregisterZone(id);
@@ -84,10 +118,12 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static float GetHazardIntensity(Vector3 runtimePoint, HazardType type)
         {
-            if (!IsFiniteRuntimePosition(runtimePoint))
+            if (!TryResolveAupFromRuntimeOrigin(runtimePoint, out AbsoluteUniversePosition pointAup))
                 return 0f;
 
-            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePoint);
+            if (type == HazardType.Radiation)
+                return RadiationHazardGrid.TrySampleRadiationIntensity01(in pointAup, out float radiation01) ? radiation01 : 0f;
+
             HazardZoneManager zoneManager = TryResolveZoneManager();
             return zoneManager != null
                 ? zoneManager.GetHazardIntensity(in pointAup, type)
@@ -103,6 +139,9 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromAbsolutePosition(absolutePoint);
+            if (type == HazardType.Radiation)
+                return RadiationHazardGrid.TrySampleRadiationIntensity01(in pointAup, out float radiation01) ? radiation01 : 0f;
+
             HazardZoneManager zoneManager = TryResolveZoneManager();
             return zoneManager != null
                 ? zoneManager.GetHazardIntensity(in pointAup, type)
@@ -116,6 +155,9 @@ namespace Hecton8.Gameplay
         {
             if (!IsFiniteAup(in pointAup))
                 return 0f;
+
+            if (type == HazardType.Radiation)
+                return RadiationHazardGrid.TrySampleRadiationIntensity01(in pointAup, out float radiation01) ? radiation01 : 0f;
 
             HazardZoneManager zoneManager = TryResolveZoneManager();
             return zoneManager != null
@@ -143,11 +185,65 @@ namespace Hecton8.Gameplay
             return GlobalRegistry.HazardZones;
         }
 
+        private static bool TrackRadiationFacadeId(int id)
+        {
+            if (id == 0)
+                return false;
+
+            for (int i = 0; i < _radiationFacadeIdCount; i++)
+            {
+                if (_radiationFacadeIds[i] == id)
+                    return true;
+            }
+
+            if (_radiationFacadeIdCount >= _radiationFacadeIds.Length)
+                return false;
+
+            _radiationFacadeIds[_radiationFacadeIdCount] = id;
+            _radiationFacadeIdCount++;
+            return true;
+        }
+
+        private static bool UntrackRadiationFacadeId(int id)
+        {
+            if (id == 0)
+                return false;
+
+            for (int i = 0; i < _radiationFacadeIdCount; i++)
+            {
+                if (_radiationFacadeIds[i] != id)
+                    continue;
+
+                _radiationFacadeIdCount--;
+                _radiationFacadeIds[i] = _radiationFacadeIds[_radiationFacadeIdCount];
+                _radiationFacadeIds[_radiationFacadeIdCount] = 0;
+                return true;
+            }
+
+            return false;
+        }
+
         private static bool IsFiniteRuntimePosition(Vector3 runtimePosition)
         {
             return math.isfinite(runtimePosition.x) &&
                    math.isfinite(runtimePosition.y) &&
                    math.isfinite(runtimePosition.z);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
         }
 
         private static bool IsFiniteAup(in AbsoluteUniversePosition positionAup)

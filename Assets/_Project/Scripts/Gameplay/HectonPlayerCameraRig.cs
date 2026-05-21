@@ -10,7 +10,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Hecton Player Camera Rig")]
-    public sealed class HectonPlayerCameraRig : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener
+    public sealed class HectonPlayerCameraRig : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const float MinimumBlendSharpness = 0.01f;
         private const float MinimumBlendDeltaTime = 0.0001f;
@@ -32,6 +32,7 @@ namespace Hecton8.Gameplay
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
+        private bool _registeredHotSwapListener;
         private bool _hasPendingState;
         private HectonCameraState _pendingState;
         private bool _hasLastAppliedTrackingState;
@@ -86,23 +87,25 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void Start()
         {
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
         /// <inheritdoc />
         public void Tick(float dt)
         {
-            TryRegister();
             if (_registeredLateFrame)
                 return;
 
@@ -284,9 +287,6 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             if (!_registered)
                 _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             if (!_registeredLateFrame)
@@ -317,6 +317,32 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
                 _registered = false;
             }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+                TryRegister();
         }
     }
 }

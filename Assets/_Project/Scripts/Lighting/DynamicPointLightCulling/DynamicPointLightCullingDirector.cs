@@ -17,7 +17,7 @@ namespace Hecton8.Lighting
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-2300)]
-    public sealed unsafe class DynamicPointLightCullingDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IDisposable
+    public sealed unsafe class DynamicPointLightCullingDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener
     {
         private const SystemID MemoryOwner = SystemID.GraphicsScalability;
         private const int DefaultCsvScratchBytes = 32 * 1024;
@@ -85,25 +85,25 @@ namespace Hecton8.Lighting
         private IDataVault _vault;
         private IPlayerRuntimeContext _playerContext;
         private Transform _cachedTransform;
-        private VaultBufferHandle<DynamicPointLightSourceDTO> _sources;
-        private VaultBufferHandle<LightCullStateDTO> _states;
-        private VaultBufferHandle<DynamicPointLightSourceManifestDTO> _sourceManifest;
-        private VaultBufferHandle<DynamicPointLightCullingSettingsDTO> _settings;
-        private VaultBufferHandle<DynamicPointLightGpuDTO> _gpuPayloadFront;
-        private VaultBufferHandle<DynamicPointLightGpuDTO> _gpuPayloadBack;
-        private VaultBufferHandle<DynamicPointLightCullingTelemetryEntry> _telemetryRing;
-        private VaultBufferHandle<int> _telemetryCursor;
-        private VaultBufferHandle<uint> _importanceKeys;
-        private VaultBufferHandle<int> _importanceIndices;
-        private VaultBufferHandle<uint> _sortScratchKeys;
-        private VaultBufferHandle<int> _sortScratchIndices;
-        private VaultBufferHandle<byte> _csvScratch;
-        private VaultBufferHandle<DynamicPointLightProfileRuleDTO> _profileRules;
-        private VaultBufferHandle<float> _mockSdfSamples;
-        private VaultBufferHandle<CustomDynamicProbeLightDTO> _dynamicProbeLights;
-        private VaultBufferHandle<DynamicPointLightRuntimeCountersDTO> _runtimeCounters;
-        private VaultBufferHandle<float4> _frustumPlanes;
-        private VaultBufferHandle<DynamicPointLightSelfAuditDTO> _selfAudit;
+        private VaultGenerationHandle<DynamicPointLightSourceDTO> _sources;
+        private VaultGenerationHandle<LightCullStateDTO> _states;
+        private VaultGenerationHandle<DynamicPointLightSourceManifestDTO> _sourceManifest;
+        private VaultGenerationHandle<DynamicPointLightCullingSettingsDTO> _settings;
+        private VaultGenerationHandle<DynamicPointLightGpuDTO> _gpuPayloadFront;
+        private VaultGenerationHandle<DynamicPointLightGpuDTO> _gpuPayloadBack;
+        private VaultGenerationHandle<DynamicPointLightCullingTelemetryEntry> _telemetryRing;
+        private VaultGenerationHandle<int> _telemetryCursor;
+        private VaultGenerationHandle<uint> _importanceKeys;
+        private VaultGenerationHandle<int> _importanceIndices;
+        private VaultGenerationHandle<uint> _sortScratchKeys;
+        private VaultGenerationHandle<int> _sortScratchIndices;
+        private VaultGenerationHandle<byte> _csvScratch;
+        private VaultGenerationHandle<DynamicPointLightProfileRuleDTO> _profileRules;
+        private VaultGenerationHandle<float> _mockSdfSamples;
+        private VaultGenerationHandle<CustomDynamicProbeLightDTO> _dynamicProbeLights;
+        private VaultGenerationHandle<DynamicPointLightRuntimeCountersDTO> _runtimeCounters;
+        private VaultGenerationHandle<float4> _frustumPlanes;
+        private VaultGenerationHandle<DynamicPointLightSelfAuditDTO> _selfAudit;
 
         private GraphicsBuffer _gpuBufferA;
         private GraphicsBuffer _gpuBufferB;
@@ -122,6 +122,7 @@ namespace Hecton8.Lighting
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
+        private bool _registeredHotSwapListener;
         private bool _jobActive;
         private bool _csvReloadRequested;
         private bool _blackBoxDumped;
@@ -168,6 +169,7 @@ namespace Hecton8.Lighting
 #endif
             _cachedTransform = transform;
             CacheDependencies();
+            TryRegisterHotSwapListener();
             EnsureNativeStorage();
             TryRegisterDispatch();
         }
@@ -354,7 +356,7 @@ namespace Hecton8.Lighting
         {
             telemetry = default;
             cursor = _telemetryWriteCursor;
-            if (_jobActive || !_telemetryRing.IsCreated)
+            if (_jobActive || !HasDynamicPointLightHandle(in _telemetryRing, DynamicPointLightCullingVaultIds.TelemetryRing))
                 return false;
 
             telemetry = ResolveArray(ref _telemetryRing);
@@ -367,7 +369,9 @@ namespace Hecton8.Lighting
             states = default;
             sources = default;
             count = 0;
-            if (_jobActive || !_states.IsCreated || !_sources.IsCreated)
+            if (_jobActive ||
+                !HasDynamicPointLightHandle(in _states, DynamicPointLightCullingVaultIds.States) ||
+                !HasDynamicPointLightHandle(in _sources, DynamicPointLightCullingVaultIds.Sources))
                 return false;
 
             states = ResolveArray(ref _states);
@@ -383,7 +387,7 @@ namespace Hecton8.Lighting
         public bool TryGetSettingsCopy(out DynamicPointLightCullingSettingsDTO settings)
         {
             settings = default;
-            if (!_settings.IsCreated)
+            if (!HasDynamicPointLightHandle(in _settings, DynamicPointLightCullingVaultIds.Settings))
                 return false;
 
             NativeArray<DynamicPointLightCullingSettingsDTO> array = ResolveArray(ref _settings);
@@ -398,7 +402,7 @@ namespace Hecton8.Lighting
         public bool TryGetCountersCopy(out DynamicPointLightRuntimeCountersDTO counters)
         {
             counters = default;
-            if (!_runtimeCounters.IsCreated)
+            if (!HasDynamicPointLightHandle(in _runtimeCounters, DynamicPointLightCullingVaultIds.RuntimeCounters))
                 return false;
 
             NativeArray<DynamicPointLightRuntimeCountersDTO> array = ResolveArray(ref _runtimeCounters);
@@ -414,7 +418,7 @@ namespace Hecton8.Lighting
         {
             lights = default;
             count = 0;
-            if (_jobActive || !_dynamicProbeLights.IsCreated)
+            if (_jobActive || !HasDynamicPointLightHandle(in _dynamicProbeLights, DynamicPointLightCullingVaultIds.DynamicProbeLights))
                 return false;
 
             if (!TryGetCountersCopy(out DynamicPointLightRuntimeCountersDTO counters))
@@ -477,7 +481,7 @@ namespace Hecton8.Lighting
         public bool TryGetSourceManifestCopy(out DynamicPointLightSourceManifestDTO manifest)
         {
             manifest = default;
-            if (!_sourceManifest.IsCreated)
+            if (!HasDynamicPointLightHandle(in _sourceManifest, DynamicPointLightCullingVaultIds.SourceManifest))
                 return false;
 
             NativeArray<DynamicPointLightSourceManifestDTO> array = ResolveArray(ref _sourceManifest);
@@ -515,7 +519,7 @@ namespace Hecton8.Lighting
         /// <summary>Writes the 300-frame black box to Docs/AgentLogs/Dump_LIGHT_DIRECTOR.bin.</summary>
         public bool DumpBlackBoxNow()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!HasDynamicPointLightHandle(in _telemetryRing, DynamicPointLightCullingVaultIds.TelemetryRing))
                 return false;
 
             NativeArray<DynamicPointLightCullingTelemetryEntry> ring = ResolveArray(ref _telemetryRing);
@@ -582,29 +586,27 @@ namespace Hecton8.Lighting
 
         private bool EnsureNativeStorage(bool allowMockGeneration = true)
         {
-            IDataVault vault = _vault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _vault;
             if (vault == null || vault.IsAllocationLocked)
                 return false;
 
-            _vault = vault;
             int safeSourceCapacity = math.clamp(sourceCapacity, 128, 16384);
             int gpuCapacity = DynamicPointLightCullingMath.MaximumActiveLights;
             int sdfResolution = math.clamp(mockSdfResolution, 4, 32);
             int sdfCapacity = sdfResolution * sdfResolution * sdfResolution;
-            bool hadSourceHandles = _sources.IsCreated || _states.IsCreated;
+            bool hadSourceHandles =
+                HasDynamicPointLightHandle(in _sources, DynamicPointLightCullingVaultIds.Sources) ||
+                HasDynamicPointLightHandle(in _states, DynamicPointLightCullingVaultIds.States);
             bool vaultHasSourceWindow =
-                vault.TryGetBufferHandle(DynamicPointLightCullingVaultIds.Sources, out VaultBufferHandle<DynamicPointLightSourceDTO> existingSources) &&
-                existingSources.Length >= safeSourceCapacity &&
-                vault.TryGetBufferHandle(DynamicPointLightCullingVaultIds.States, out VaultBufferHandle<LightCullStateDTO> existingStates) &&
-                existingStates.Length >= safeSourceCapacity;
+                TryOpenExistingDynamicPointLightBuffer<DynamicPointLightSourceDTO>(DynamicPointLightCullingVaultIds.Sources, safeSourceCapacity, out _) &&
+                TryOpenExistingDynamicPointLightBuffer<LightCullStateDTO>(DynamicPointLightCullingVaultIds.States, safeSourceCapacity, out _);
+            bool currentSourceWindowValid =
+                TryResolveDynamicPointLightBuffer(ref _sources, DynamicPointLightCullingVaultIds.Sources, safeSourceCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _states, DynamicPointLightCullingVaultIds.States, safeSourceCapacity, out _);
             bool sourceBuffersWillChange =
                 !vaultHasSourceWindow ||
-                (hadSourceHandles &&
-                (!_sources.IsCreated ||
-                _sources.Length < safeSourceCapacity ||
-                !_states.IsCreated ||
-                _states.Length < safeSourceCapacity));
-            bool sdfBufferWillChange = !_mockSdfSamples.IsCreated || _mockSdfSamples.Length < sdfCapacity;
+                (hadSourceHandles && !currentSourceWindowValid);
+            bool sdfBufferWillChange = !TryOpenExistingDynamicPointLightBuffer<float>(DynamicPointLightCullingVaultIds.MockSdfSamples, sdfCapacity, out _);
 
             _sources = AcquireBuffer(ref _sources, DynamicPointLightCullingVaultIds.Sources, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
             _states = AcquireBuffer(ref _states, DynamicPointLightCullingVaultIds.States, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
@@ -636,25 +638,25 @@ namespace Hecton8.Lighting
             _selfAudit = AcquireBuffer(ref _selfAudit, DynamicPointLightCullingVaultIds.SelfAudit, 1, NativeArrayOptions.UninitializedMemory);
 
             _nativeStorageReady =
-                _sources.IsCreated &&
-                _states.IsCreated &&
-                _sourceManifest.IsCreated &&
-                _settings.IsCreated &&
-                _gpuPayloadFront.IsCreated &&
-                _gpuPayloadBack.IsCreated &&
-                _telemetryRing.IsCreated &&
-                _telemetryCursor.IsCreated &&
-                _importanceKeys.IsCreated &&
-                _importanceIndices.IsCreated &&
-                _sortScratchKeys.IsCreated &&
-                _sortScratchIndices.IsCreated &&
-                _csvScratch.IsCreated &&
-                _profileRules.IsCreated &&
-                _mockSdfSamples.IsCreated &&
-                _dynamicProbeLights.IsCreated &&
-                _runtimeCounters.IsCreated &&
-                _frustumPlanes.IsCreated &&
-                _selfAudit.IsCreated;
+                TryResolveDynamicPointLightBuffer(ref _sources, DynamicPointLightCullingVaultIds.Sources, safeSourceCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _states, DynamicPointLightCullingVaultIds.States, safeSourceCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _sourceManifest, DynamicPointLightCullingVaultIds.SourceManifest, 1, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _settings, DynamicPointLightCullingVaultIds.Settings, 1, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _gpuPayloadFront, DynamicPointLightCullingVaultIds.GpuPayloadFront, gpuCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _gpuPayloadBack, DynamicPointLightCullingVaultIds.GpuPayloadBack, gpuCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _telemetryRing, DynamicPointLightCullingVaultIds.TelemetryRing, DynamicPointLightCullingMath.TelemetryCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _telemetryCursor, DynamicPointLightCullingVaultIds.TelemetryCursor, 1, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _importanceKeys, DynamicPointLightCullingVaultIds.ImportanceKeys, safeSourceCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _importanceIndices, DynamicPointLightCullingVaultIds.ImportanceIndices, safeSourceCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _sortScratchKeys, DynamicPointLightCullingVaultIds.SortScratchKeys, safeSourceCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _sortScratchIndices, DynamicPointLightCullingVaultIds.SortScratchIndices, safeSourceCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _csvScratch, DynamicPointLightCullingVaultIds.CsvScratch, DefaultCsvScratchBytes, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _profileRules, DynamicPointLightCullingVaultIds.ProfileRules, DefaultProfileCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _mockSdfSamples, DynamicPointLightCullingVaultIds.MockSdfSamples, sdfCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _dynamicProbeLights, DynamicPointLightCullingVaultIds.DynamicProbeLights, gpuCapacity, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _runtimeCounters, DynamicPointLightCullingVaultIds.RuntimeCounters, 1, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _frustumPlanes, DynamicPointLightCullingVaultIds.FrustumPlanes, 6, out _) &&
+                TryResolveDynamicPointLightBuffer(ref _selfAudit, DynamicPointLightCullingVaultIds.SelfAudit, 1, out _);
 
             if (!_nativeStorageReady)
                 return false;
@@ -668,8 +670,8 @@ namespace Hecton8.Lighting
             return true;
         }
 
-        private VaultBufferHandle<T> AcquireBuffer<T>(
-            ref VaultBufferHandle<T> handle,
+        private VaultGenerationHandle<T> AcquireBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int length,
             NativeArrayOptions options) where T : struct
@@ -678,16 +680,128 @@ namespace Hecton8.Lighting
             if (vault == null)
                 return default;
 
-            if (!handle.IsCreated || handle.Length < length || !vault.ResolveBuffer(ref handle))
-                handle = vault.GetBufferHandle<T>(bufferId, length, MemoryOwner, options);
+            if (TryResolveDynamicPointLightBuffer(ref handle, bufferId, length, out _))
+                return handle;
+
+            handle = vault.GetGenerationHandle<T>(bufferId, length, MemoryOwner, options);
+            if (!TryResolveDynamicPointLightBuffer(ref handle, bufferId, length, out _))
+                return default;
 
             return handle;
         }
 
-        private NativeArray<T> ResolveArray<T>(ref VaultBufferHandle<T> handle) where T : struct
+        private NativeArray<T> ResolveArray<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
         {
+            return TryResolveDynamicPointLightBuffer(ref handle, bufferId, requiredLength, out NativeArray<T> buffer)
+                ? buffer
+                : default;
+        }
+
+        private NativeArray<T> ResolveArray<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID == 0u)
+                return default;
+
+            BufferID bufferId = unchecked((BufferID)(int)handle.BufferID);
+            return ResolveArray(ref handle, bufferId, 1);
+        }
+
+        private bool TryOpenExistingDynamicPointLightBuffer<T>(
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
             IDataVault vault = _vault;
-            return vault != null && handle.IsCreated ? handle.Resolve(vault) : default;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                !HasDynamicPointLightHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryResolveDynamicPointLightBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            if (HasDynamicPointLightHandle(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !HasDynamicPointLightHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool HasDynamicPointLightHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)MemoryOwner &&
+                   handle.Generation != 0u;
+        }
+
+        private void ReleaseDynamicPointLightVaultHandles(IDataVault vault)
+        {
+            ReleaseDynamicPointLightVaultHandle(vault, ref _sources);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _states);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _sourceManifest);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _settings);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _gpuPayloadFront);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _gpuPayloadBack);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _telemetryRing);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _telemetryCursor);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _importanceKeys);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _importanceIndices);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _sortScratchKeys);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _sortScratchIndices);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _csvScratch);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _profileRules);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _mockSdfSamples);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _dynamicProbeLights);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _runtimeCounters);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _frustumPlanes);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _selfAudit);
+        }
+
+        private static void ReleaseDynamicPointLightVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u && handle.Generation != 0u && vault != null)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void TryRegisterDispatch()
@@ -710,7 +824,14 @@ namespace Hecton8.Lighting
                 _jobActive = false;
             }
 
+            UnlockMockSeedBuffers();
+            UnlockMockSdfBuffer();
             UnlockSourceManifestBuffer();
+            ReleaseDynamicPointLightVaultHandles(_vault);
+            _nativeStorageReady = false;
+            _sourceBufferSeeded = false;
+            _mockSdfSeeded = false;
+            _activeSourceCount = 0;
 
             if (_registeredTick)
             {
@@ -729,6 +850,68 @@ namespace Hecton8.Lighting
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
             }
+
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    if (!ReferenceEquals(_vault, currentService))
+                    {
+                        IDataVault oldVault = _vault;
+                        if (_jobActive)
+                        {
+                            DispatcherJobFence.TryComplete(ref _pendingCullHandle, forceComplete: true);
+                            UnlockJobBuffers();
+                            _jobActive = false;
+                        }
+
+                        UnlockMockSeedBuffers();
+                        UnlockMockSdfBuffer();
+                        UnlockSourceManifestBuffer();
+                        ReleaseDynamicPointLightVaultHandles(oldVault);
+                        _vault = currentService as IDataVault;
+                        _nativeStorageReady = false;
+                        _sourceBufferSeeded = false;
+                        _mockSdfSeeded = false;
+                        _activeSourceCount = 0;
+                    }
+
+                    if (_vault != null && isActiveAndEnabled)
+                        EnsureNativeStorage(false);
+                    break;
+
+                case GlobalRegistryServiceSlot.Player:
+                    _playerContext = currentService as IPlayerRuntimeContext;
+                    break;
+
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegisterDispatch();
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private DynamicPointLightCullingSettingsDTO BuildSettings(float quality)
@@ -787,7 +970,7 @@ namespace Hecton8.Lighting
             if (playerMovement != null)
             {
                 AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                if (MathGuard.IsFinite(in currentAup))
+                if (currentAup.IsFinite())
                     return currentAup.ToAbsoluteDouble3();
             }
 
@@ -851,7 +1034,7 @@ namespace Hecton8.Lighting
 
             DynamicPointLightSourceManifestDTO manifest = default;
             manifest.SourceCapacity = math.max(0, capacity);
-            manifest.VaultGeneration = _vault != null ? _vault.VaultGenerationID : 0u;
+            manifest.VaultGeneration = _sourceManifest.Generation;
             array[0] = manifest;
         }
 
@@ -872,7 +1055,7 @@ namespace Hecton8.Lighting
             manifest.Flags = flags;
             manifest.LastCommitFrame = _frameSequence;
             manifest.RejectedSourceCount = math.max(0, count - safeCount);
-            manifest.VaultGeneration = _vault != null ? _vault.VaultGenerationID : 0u;
+            manifest.VaultGeneration = _sourceManifest.Generation;
             array[0] = manifest;
 
             _activeSourceCount = safeCount;
@@ -1252,7 +1435,7 @@ namespace Hecton8.Lighting
             entry.MaxDistanceSq = counters.MaxDistanceSq;
             entry.AverageIntensity = counters.AverageSubmittedIntensity;
             entry.LastGpuUploadBytes = _lastGpuUploadBytes;
-            entry.VaultGeneration = _vault != null ? _vault.VaultGenerationID : 0u;
+            entry.VaultGeneration = _telemetryRing.Generation;
             ring[cursor] = entry;
 
             cursor++;

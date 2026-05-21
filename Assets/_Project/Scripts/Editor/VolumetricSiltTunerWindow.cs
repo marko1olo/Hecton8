@@ -39,22 +39,20 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            NativeArray<VfxConfigurationDTO> tuning = vault.GetBuffer<VfxConfigurationDTO>(
-                BufferID.MarineSnowTuningConstants,
-                1,
-                SystemID.Vfx,
-                NativeArrayOptions.ClearMemory);
-            if (!tuning.IsCreated || tuning.Length <= 0)
+            if (!TryReadFirst(vault, BufferID.MarineSnowTuningConstants, out VfxConfigurationDTO snapshot))
             {
-                EditorGUILayout.HelpBox("Silt tuning buffer unavailable.", MessageType.Warning);
-                return;
+                snapshot = VolumetricSiltConfigurationAccess.CreateDefault(100000);
+                if (!TryWriteFirstOrAcquire(vault, BufferID.MarineSnowTuningConstants, snapshot))
+                {
+                    EditorGUILayout.HelpBox("Silt tuning buffer unavailable.", MessageType.Warning);
+                    return;
+                }
             }
 
-            VfxConfigurationDTO snapshot = tuning[0];
             if (snapshot.Version == 0u)
             {
                 snapshot = VolumetricSiltConfigurationAccess.CreateDefault(100000);
-                tuning[0] = snapshot;
+                TryWriteFirstOrAcquire(vault, BufferID.MarineSnowTuningConstants, snapshot);
             }
 
             EditorGUI.BeginChangeCheck();
@@ -67,9 +65,15 @@ namespace Hecton8.EditorTools
             if (EditorGUI.EndChangeCheck())
             {
                 snapshot.Version++;
-                tuning[0] = snapshot;
-                _status = "Vault tuning updated.";
-                SceneView.RepaintAll();
+                if (TryWriteFirstOrAcquire(vault, BufferID.MarineSnowTuningConstants, snapshot))
+                {
+                    _status = "Vault tuning updated.";
+                    SceneView.RepaintAll();
+                }
+                else
+                {
+                    _status = "Vault tuning write rejected.";
+                }
             }
 
             _drawWakeGizmos = EditorGUILayout.Toggle("Draw Wake Gizmos", _drawWakeGizmos);
@@ -87,8 +91,7 @@ namespace Hecton8.EditorTools
             if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
-            if (!vault.TryGetBuffer<DynamicWakeDTO>(BufferID.MarineSnowDynamicWakes, out NativeArray<DynamicWakeDTO> wakes) ||
-                !wakes.IsCreated)
+            if (!TryReadExistingVaultView(vault, BufferID.MarineSnowDynamicWakes, out NativeArray<DynamicWakeDTO> wakes))
                 return;
 
             Handles.color = Color.yellow;
@@ -107,6 +110,85 @@ namespace Hecton8.EditorTools
                 Vector3 force = new Vector3(wake.Force.x, wake.Force.y, wake.Force.z);
                 Handles.DrawLine(center, center + force);
             }
+        }
+
+        private static bool TryReadFirst<T>(IDataVault vault, BufferID bufferId, out T value)
+            where T : struct
+        {
+            value = default;
+            if (!TryReadExistingVaultView(vault, bufferId, out NativeArray<T> buffer) || buffer.Length <= 0)
+                return false;
+
+            value = buffer[0];
+            return true;
+        }
+
+        private static bool TryWriteFirstOrAcquire<T>(IDataVault vault, BufferID bufferId, in T value)
+            where T : struct
+        {
+            if (!TryAcquireEditorWriteView(vault, bufferId, 1, out VaultGenerationHandle<T> handle, out NativeArray<T> buffer))
+                return false;
+
+            try
+            {
+                if (buffer.Length <= 0)
+                    return false;
+
+                buffer[0] = value;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
+        }
+
+        private static bool TryReadExistingVaultView<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool TryAcquireEditorWriteView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            handle = default;
+            buffer = default;
+            if (vault == null)
+                return false;
+
+            if (vault.TryGetGenerationHandle(bufferId, out handle))
+            {
+                if (!vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
+                    return false;
+
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                    return true;
+
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+                buffer = default;
+            }
+
+            if (vault.IsAllocationLocked)
+                return false;
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.Vfx,
+                NativeArrayOptions.ClearMemory);
+            return vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
     }
 }

@@ -1,6 +1,7 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -28,14 +29,15 @@ namespace Hecton8.World
         private const double BrgUploadTelemetryThresholdMs = 0.2d;
         private const uint WreckBrgUploadWarningHash = 0x5755504Cu; // WUPL
         private const uint WreckBrgContextHash = 0x57425247u; // WBRG
+        private const Allocator DataVaultExemptRenderStagingAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
         private static readonly int _WreckMatricesId = Shader.PropertyToID("_HectonWreckMatrices");
         private static readonly int _WreckAgesId = Shader.PropertyToID("_HectonWreckAges");
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct WreckMatrixRebaseJob : IJobParallelFor
         {
-            public NativeArray<Matrix4x4> Matrices;
+            [NoAlias] public NativeArray<Matrix4x4> Matrices;
             public float3 RuntimeOffset;
 
             public unsafe void Execute(int index)
@@ -48,15 +50,14 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CullWreckMatricesToVisibleSubsetJob : IJob
         {
-            [ReadOnly] public NativeArray<Matrix4x4> SourceMatrices;
-            [ReadOnly] public NativeArray<float> SourceAges;
-            [ReadOnly] public NativeArray<float4> FrustumPlanes;
-            public NativeList<Matrix4x4> VisibleMatrices;
-            public NativeList<float> VisibleAges;
+            [ReadOnly, NoAlias] public NativeArray<Matrix4x4> SourceMatrices;
+            [ReadOnly, NoAlias] public NativeArray<float> SourceAges;
+            [ReadOnly, NoAlias] public NativeArray<float4> FrustumPlanes;
+            [NoAlias] public NativeList<Matrix4x4> VisibleMatrices;
+            [NoAlias] public NativeList<float> VisibleAges;
             public float3 LocalBoundsCenter;
             public float3 LocalBoundsExtents;
             public int SourceCount;
@@ -209,11 +210,11 @@ namespace Hecton8.World
                 int fixedCapacity = _owner.ResolveMaxInstancesPerWreckBatch();
                 if (!_matrices.IsCreated)
                 {
-                    _matrices = new NativeList<Matrix4x4>(fixedCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[maxInstancesPerWreckBatch] - BRG wreck module matrix staging - owner: WreckMaterialRegistry
-                    _ages = new NativeList<float>(fixedCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<float>[maxInstancesPerWreckBatch] - BRG wreck module age metadata staging - owner: WreckMaterialRegistry
-                    _visibleMatrices = new NativeList<Matrix4x4>(fixedCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[maxInstancesPerWreckBatch] - BRG visible wreck matrix upload subset - owner: WreckMaterialRegistry
-                    _visibleAges = new NativeList<float>(fixedCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<float>[maxInstancesPerWreckBatch] - BRG visible wreck age upload subset - owner: WreckMaterialRegistry
-                    _frustumPlaneSnapshot = new NativeArray<float4>(FrustumPlaneCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[6] - per-module immutable BRG cull plane snapshot - owner: WreckMaterialRegistry
+                    _matrices = new NativeList<Matrix4x4>(fixedCapacity, DataVaultExemptRenderStagingAllocator); // COLD ALLOC: NativeList<Matrix4x4>[maxInstancesPerWreckBatch] - BRG wreck module matrix staging - owner: WreckMaterialRegistry
+                    _ages = new NativeList<float>(fixedCapacity, DataVaultExemptRenderStagingAllocator); // COLD ALLOC: NativeList<float>[maxInstancesPerWreckBatch] - BRG wreck module age metadata staging - owner: WreckMaterialRegistry
+                    _visibleMatrices = new NativeList<Matrix4x4>(fixedCapacity, DataVaultExemptRenderStagingAllocator); // COLD ALLOC: NativeList<Matrix4x4>[maxInstancesPerWreckBatch] - BRG visible wreck matrix upload subset - owner: WreckMaterialRegistry
+                    _visibleAges = new NativeList<float>(fixedCapacity, DataVaultExemptRenderStagingAllocator); // COLD ALLOC: NativeList<float>[maxInstancesPerWreckBatch] - BRG visible wreck age upload subset - owner: WreckMaterialRegistry
+                    _frustumPlaneSnapshot = new NativeArray<float4>(FrustumPlaneCount, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[6] - per-module immutable BRG cull plane snapshot - owner: WreckMaterialRegistry
                     NativeMemorySentinel.RegisterNativeList(_matrices, nameof(WreckMaterialRegistry), _matrixSentinelLabel, NativeAllocationLifetime.Scene);
                     NativeMemorySentinel.RegisterNativeList(_ages, nameof(WreckMaterialRegistry), _ageSentinelLabel, NativeAllocationLifetime.Scene);
                     NativeMemorySentinel.RegisterNativeList(_visibleMatrices, nameof(WreckMaterialRegistry), _visibleMatrixSentinelLabel, NativeAllocationLifetime.Scene);
@@ -224,25 +225,25 @@ namespace Hecton8.World
 
                 if (!_ages.IsCreated)
                 {
-                    _ages = new NativeList<float>(fixedCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<float>[maxInstancesPerWreckBatch] - BRG wreck module age metadata staging - owner: WreckMaterialRegistry
+                    _ages = new NativeList<float>(fixedCapacity, DataVaultExemptRenderStagingAllocator); // COLD ALLOC: NativeList<float>[maxInstancesPerWreckBatch] - BRG wreck module age metadata staging - owner: WreckMaterialRegistry
                     NativeMemorySentinel.RegisterNativeList(_ages, nameof(WreckMaterialRegistry), _ageSentinelLabel, NativeAllocationLifetime.Scene);
                 }
 
                 if (!_visibleMatrices.IsCreated)
                 {
-                    _visibleMatrices = new NativeList<Matrix4x4>(fixedCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[maxInstancesPerWreckBatch] - BRG visible wreck matrix upload subset - owner: WreckMaterialRegistry
+                    _visibleMatrices = new NativeList<Matrix4x4>(fixedCapacity, DataVaultExemptRenderStagingAllocator); // COLD ALLOC: NativeList<Matrix4x4>[maxInstancesPerWreckBatch] - BRG visible wreck matrix upload subset - owner: WreckMaterialRegistry
                     NativeMemorySentinel.RegisterNativeList(_visibleMatrices, nameof(WreckMaterialRegistry), _visibleMatrixSentinelLabel, NativeAllocationLifetime.Scene);
                 }
 
                 if (!_visibleAges.IsCreated)
                 {
-                    _visibleAges = new NativeList<float>(fixedCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<float>[maxInstancesPerWreckBatch] - BRG visible wreck age upload subset - owner: WreckMaterialRegistry
+                    _visibleAges = new NativeList<float>(fixedCapacity, DataVaultExemptRenderStagingAllocator); // COLD ALLOC: NativeList<float>[maxInstancesPerWreckBatch] - BRG visible wreck age upload subset - owner: WreckMaterialRegistry
                     NativeMemorySentinel.RegisterNativeList(_visibleAges, nameof(WreckMaterialRegistry), _visibleAgeSentinelLabel, NativeAllocationLifetime.Scene);
                 }
 
                 if (!_frustumPlaneSnapshot.IsCreated)
                 {
-                    _frustumPlaneSnapshot = new NativeArray<float4>(FrustumPlaneCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[6] - per-module immutable BRG cull plane snapshot - owner: WreckMaterialRegistry
+                    _frustumPlaneSnapshot = new NativeArray<float4>(FrustumPlaneCount, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[6] - per-module immutable BRG cull plane snapshot - owner: WreckMaterialRegistry
                     NativeMemorySentinel.RegisterNativeArray(_frustumPlaneSnapshot, nameof(WreckMaterialRegistry), _frustumPlaneSentinelLabel, NativeAllocationLifetime.Scene);
                 }
             }
@@ -643,7 +644,7 @@ namespace Hecton8.World
                     cullingCallback = OnPerformCulling,
                     userContext = System.IntPtr.Zero
                 });
-                _batchMetadata = new NativeArray<MetadataValue>(WreckBrgMetadataCount, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG age metadata declaration for wreck module renderer - owner: WreckMaterialRegistry
+                _batchMetadata = new NativeArray<MetadataValue>(WreckBrgMetadataCount, DataVaultExemptRenderStagingAllocator); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG age metadata declaration for wreck module renderer - owner: WreckMaterialRegistry
                 _batchMetadata[0] = new MetadataValue
                 {
                     NameID = _WreckAgesId,
@@ -1386,7 +1387,7 @@ namespace Hecton8.World
 
             if (!_frustumPlanes.IsCreated)
             {
-                _frustumPlanes = new NativeArray<float4>(FrustumPlaneCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[6] - Burst frustum planes for wreck BRG upload culling - owner: WreckMaterialRegistry
+                _frustumPlanes = new NativeArray<float4>(FrustumPlaneCount, DataVaultExemptSceneScratchAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[6] - Burst frustum planes for wreck BRG upload culling - owner: WreckMaterialRegistry
                 NativeMemorySentinel.RegisterNativeArray(_frustumPlanes, nameof(WreckMaterialRegistry), nameof(_frustumPlanes), NativeAllocationLifetime.Scene);
             }
         }

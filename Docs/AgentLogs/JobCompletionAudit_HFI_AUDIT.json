@@ -1,0 +1,4718 @@
+{
+  "byClassification": {
+    "DispatcherFenceInternalRawComplete": 2,
+    "EditorOrTestComplete": 154,
+    "FramePathDispatcherComplete": 1,
+    "FramePathPolledDispatcherComplete": 25,
+    "PluginSynchronousGeneratorRawComplete": 4,
+    "RuntimeOtherDispatcherComplete": 46,
+    "RuntimeOtherForcedDispatcherComplete": 125,
+    "RuntimeOtherPolledDispatcherComplete": 44,
+    "RuntimeOtherRawComplete": 6,
+    "RuntimeScheduleCompleteChain": 6,
+    "TeardownDispatcherComplete": 5,
+    "TeardownForcedDispatcherComplete": 135
+  },
+  "byDomain": {
+    "AI": 7,
+    "Animation": 3,
+    "Atmosphere": 8,
+    "Audio": 7,
+    "Bootstrap": 1,
+    "Construction": 18,
+    "Core": 24,
+    "Dev": 11,
+    "Ecosystem": 3,
+    "Editor": 81,
+    "Environment": 2,
+    "Equipment": 1,
+    "Fauna": 12,
+    "Gameplay": 43,
+    "Graphics": 4,
+    "Habitat": 8,
+    "Interaction": 4,
+    "Lighting": 9,
+    "ModdingAPI": 3,
+    "Optimization": 1,
+    "PDA": 1,
+    "Physics": 39,
+    "Physiology": 5,
+    "Plugins": 9,
+    "Power": 12,
+    "QA": 13,
+    "Rendering": 1,
+    "Root": 83,
+    "SaveSystem": 1,
+    "Scavenging": 4,
+    "Thermodynamics": 4,
+    "Tools": 7,
+    "UI": 9,
+    "VFX": 1,
+    "Visor": 5,
+    "World": 109
+  },
+  "bySurface": {
+    "EditorOrTest": 154,
+    "FramePath": 26,
+    "RuntimeOther": 233,
+    "Teardown": 140
+  },
+  "csFileCount": 2197,
+  "findingCount": 553,
+  "findings": [
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "AI",
+      "line": 1257,
+      "method": "CompleteActiveJobForTeardown",
+      "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "AI",
+      "line": 189,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _balancerHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "AI",
+      "line": 688,
+      "method": "CompleteScheduledJobForTeardown",
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _balancerHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "AI",
+      "line": 1401,
+      "method": "CompleteFrameJobForTeardown",
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "AI",
+      "line": 851,
+      "method": "CompleteFrameJobForTeardown",
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "AI",
+      "line": 244,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _trackingHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "AI",
+      "line": 355,
+      "method": "CompleteTrackingFenceForVaultRelease",
+      "path": "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _trackingHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Animation",
+      "line": 710,
+      "method": "CompletePendingSolverForTeardown",
+      "path": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Animation",
+      "line": 900,
+      "method": "CompletePendingSolverForTeardown",
+      "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Animation",
+      "line": 1093,
+      "method": "CompleteOutstandingJobForBarrier",
+      "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Atmosphere",
+      "line": 556,
+      "method": "TryCompleteColdTick",
+      "path": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereEngine.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _coldTickHandle, forceComplete: false))"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Atmosphere",
+      "line": 1046,
+      "method": "TryCompleteStep",
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _stepHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownDispatcherComplete",
+      "domain": "Atmosphere",
+      "line": 679,
+      "method": "DisposeWeatherMathBuffers",
+      "path": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "surface": "Teardown",
+      "text": "!DispatcherJobSwap.TryComplete(ref _weatherJobHandle, forceComplete: false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Atmosphere",
+      "line": 714,
+      "method": "TryCompleteWeatherMathJob",
+      "path": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _weatherJobHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Atmosphere",
+      "line": 1083,
+      "method": "CompleteWaveParameterKernelForShutdown",
+      "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _waveParameterJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Atmosphere",
+      "line": 725,
+      "method": "CompleteScheduledJobsForShutdown",
+      "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _attenuationJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Atmosphere",
+      "line": 731,
+      "method": "CompleteScheduledJobsForShutdown",
+      "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _mockHurricaneJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Atmosphere",
+      "line": 964,
+      "method": "CompleteScheduledWorkForTeardown",
+      "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Audio",
+      "line": 1041,
+      "method": "ForceFlushAudioJobsForShutdown",
+      "path": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _audioJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Audio",
+      "line": 73,
+      "method": "Run",
+      "path": "Assets/_Project/Scripts/Audio/Editor/AudioOmegaAutonomySmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "AppendCheck(\"hot DSP block has no JobHandle completion\", !ExtractMethodBody(renderer, \"private void MixAndFilterBlock\").Contains(\".Complete()\"), ref passedCount, ref failedCount, checks);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Audio",
+      "line": 153,
+      "method": "Run",
+      "path": "Assets/_Project/Scripts/Audio/Editor/DSPThreadSafetySmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "AssertNotContains(bufferJobs, \".Complete(\", \"PlayerCriticalBufferJobs.Clear has no JobHandle.Complete barrier\", builder, ref failureCount);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Audio",
+      "line": 4339,
+      "method": "TryCompleteSdfSonarEchoJob",
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _sonarEcholocationJobHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Audio",
+      "line": 4652,
+      "method": "CompleteSonarEchoCompositeHashJob",
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _sonarEchoCompositeHashHandle, forceComplete))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Audio",
+      "line": 1118,
+      "method": "ForceFlushSynthJobForShutdown",
+      "path": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _synthJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "Audio",
+      "line": 677,
+      "method": "GenerateMockBankCold",
+      "path": "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 77,
+      "method": "RunLogisticsRouteStressSmoke",
+      "path": "Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "Hecton8.World.DispatcherJobSwap.TryComplete(ref buildHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Bootstrap",
+      "line": 5135,
+      "method": "WaitForJobCompletionAsync",
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Construction",
+      "line": 299,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledJobHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 378,
+      "method": "DrainScheduledJobsForTeardown",
+      "path": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _preSimulationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 384,
+      "method": "DrainScheduledJobsForTeardown",
+      "path": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Construction",
+      "line": 2198,
+      "method": "CompleteHeadlessSimulationAndApply",
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref s_HeadlessJobHandle, false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 2239,
+      "method": "CompletePendingHeadlessJobForReset",
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref s_HeadlessJobHandle, true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 2264,
+      "method": "ApplyOriginShift",
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 2499,
+      "method": "CompleteDockingObstacleAbortsForReset",
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref s_DockingRaycastHandle, true))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Construction",
+      "line": 443,
+      "method": "CompleteSolve",
+      "path": "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _solveHandle, force))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 402,
+      "method": "TrySchedulePylonBuild",
+      "path": "Assets/_Project/Scripts/Construction/FoundationPylonGpuBatch.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref lastScheduledHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 1056,
+      "method": "CompletePendingForTeardown",
+      "path": "Assets/_Project/Scripts/Construction/FoundationPylonGpuBatch.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 1394,
+      "method": "CompletePendingValidationForTeardown",
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _validationHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 1960,
+      "method": "CompleteFloodPropagationJobForTeardown",
+      "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _floodPropagationHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 809,
+      "method": "CompletePendingBuildForTeardown",
+      "path": "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingBuildHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 123,
+      "method": "Shutdown",
+      "path": "Assets/_Project/Scripts/Construction/LogisticsPipeTransportScheduler.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref teardownDependency, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Construction",
+      "line": 358,
+      "method": "CompletePendingSort",
+      "path": "Assets/_Project/Scripts/Construction/LogisticsPipeTransportScheduler.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _pendingSortHandle, forceComplete))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 602,
+      "method": "CompleteMockSeedForTeardown",
+      "path": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _mockSeedHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 616,
+      "method": "CompleteScheduledSolverForTeardown",
+      "path": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _solverHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Construction",
+      "line": 727,
+      "method": "CompletePendingBuildForTeardown",
+      "path": "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingBuildHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 1251,
+      "method": "CompleteDeferredDeconstructionRaycastForTeardown",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _deconstructionRaycastHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 497,
+      "method": "ReleaseHandlesOnly",
+      "path": "Assets/_Project/Scripts/Core/Bucketing/ModuloSimulationBucketer.cs",
+      "surface": "Teardown",
+      "text": "Hecton8.Core.DispatcherJobFence.TryComplete(ref _rebalanceHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 1038,
+      "method": "CompleteActiveLoreReadsForClose",
+      "path": "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _activeLoreReadHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Core",
+      "line": 485,
+      "method": "RunLiveSearch",
+      "path": "Assets/_Project/Scripts/Core/Data/Editor/CacheBTreeTopologyXRayWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 769,
+      "method": "ExecuteHashJobs",
+      "path": "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs",
+      "surface": "RuntimeOther",
+      "text": "Hecton8.Core.DispatcherJobFence.TryComplete(ref masterHandle, forceComplete: true);"
+    },
+    {
+      "classification": "DispatcherFenceInternalRawComplete",
+      "domain": "Core",
+      "line": 78,
+      "method": "TryComplete",
+      "path": "Assets/_Project/Scripts/Core/DispatcherJobFence.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "DispatcherFenceInternalRawComplete",
+      "domain": "Core",
+      "line": 89,
+      "method": "TryFinalizeCompleted",
+      "path": "Assets/_Project/Scripts/Core/DispatcherJobFence.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 932,
+      "method": "TryCompleteJob",
+      "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 940,
+      "method": "TryCompleteJob",
+      "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 1483,
+      "method": "DisposeNativeBuffers",
+      "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 322,
+      "method": "ShutdownScalabilityDictator",
+      "path": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _mockTerrainSamplerJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 375,
+      "method": "ResetScalabilityDictatorVaultHandles",
+      "path": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _mockTerrainSamplerJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 2688,
+      "method": "CompleteOwnerJobs",
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "surface": "RuntimeOther",
+      "text": "Hecton8.Core.DispatcherJobFence.TryComplete(ref ownerHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 2705,
+      "method": "CompleteAllOwnerJobs",
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "surface": "RuntimeOther",
+      "text": "Hecton8.Core.DispatcherJobFence.TryComplete(ref ownerHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 765,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Core/Memory/VaultMemoryContracts.cs",
+      "surface": "RuntimeOther",
+      "text": "Hecton8.Core.DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 1098,
+      "method": "CompleteValidationJob",
+      "path": "Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _validationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 3519,
+      "method": "RunMockContentionEditorBlocking",
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 3523,
+      "method": "RunMockContentionEditorBlocking",
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref commitHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 2869,
+      "method": "RunMasterPostSimulationPhase",
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _masterSimulationCombinedHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 2995,
+      "method": "CompleteMasterFixedSimulationBridge",
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _masterFixedCombinedHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 3024,
+      "method": "ForceCompleteMasterFencesForAupRebase",
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _masterSimulationCombinedHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 3031,
+      "method": "ForceCompleteMasterFencesForAupRebase",
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _masterFixedCombinedHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Core",
+      "line": 6589,
+      "method": "CompleteDispatcherRaycasts",
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _scheduledDispatcherRaycastHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 6642,
+      "method": "DisposeDispatcherRaycastBuffers",
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _scheduledDispatcherRaycastHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Core",
+      "line": 488,
+      "method": "Shutdown",
+      "path": "Assets/_Project/Scripts/Core/UIStateStore.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Dev",
+      "line": 181,
+      "method": "RunHeadless",
+      "path": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref warmupHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Dev",
+      "line": 203,
+      "method": "RunHeadless",
+      "path": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref timedHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Dev",
+      "line": 482,
+      "method": "ClearIntArray",
+      "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Dev",
+      "line": 491,
+      "method": "ClearByteArray",
+      "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Dev",
+      "line": 501,
+      "method": "FillBurstClearArrays",
+      "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Dev",
+      "line": 522,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Dev",
+      "line": 186,
+      "method": "RunPipeline",
+      "path": "Assets/_Project/Scripts/Dev/SpaceEngine098/SpaceEngine098TerrainSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Dev",
+      "line": 215,
+      "method": "RunPipeline",
+      "path": "Assets/_Project/Scripts/Dev/SpaceEngine098/SpaceEngine098TerrainSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Dev",
+      "line": 244,
+      "method": "RunPipeline",
+      "path": "Assets/_Project/Scripts/Dev/SpaceEngine098/SpaceEngine098TerrainSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Dev",
+      "line": 262,
+      "method": "RunPipeline",
+      "path": "Assets/_Project/Scripts/Dev/SpaceEngine098/SpaceEngine098TerrainSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Dev",
+      "line": 289,
+      "method": "RunPipeline",
+      "path": "Assets/_Project/Scripts/Dev/SpaceEngine098/SpaceEngine098TerrainSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Ecosystem",
+      "line": 408,
+      "method": "GenerateEmergencyMockEcosystem",
+      "path": "Assets/_Project/Scripts/Ecosystem/MacroEcosystemMathematicianRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref indexHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Ecosystem",
+      "line": 654,
+      "method": "CompleteScheduledJobForTeardownOrVaultSwapBarrierBlocking",
+      "path": "Assets/_Project/Scripts/Ecosystem/MacroEcosystemMathematicianRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Ecosystem",
+      "line": 739,
+      "method": "CompleteMigrationFieldJob",
+      "path": "Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _migrationFieldHandle, forceComplete))"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 176,
+      "method": "GenerateMockComplexMeshAsset",
+      "path": "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269/AITextureMockMeshJobs.cs",
+      "surface": "EditorOrTest",
+      "text": "JobHandle.CombineDependencies(vertexHandle, indexHandle).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 224,
+      "method": "AssertPillarBaseInjectionDoesNotCreateAirGap",
+      "path": "Assets/_Project/Scripts/Editor/AnomalySmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "pillarHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 298,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Editor/AnomalySmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 183,
+      "method": "RunBrineBoundsJobRecordIntegrityAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 200,
+      "method": "RunBrineBoundsJobRecordIntegrityAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 217,
+      "method": "RunBrineBoundsJobRecordIntegrityAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 427,
+      "method": "RunPerfectBowlAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 497,
+      "method": "RunOpenEdgeBowlRejectionAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 573,
+      "method": "RunTimeSlicedPerfectBowlAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "scanHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 595,
+      "method": "RunTimeSlicedPerfectBowlAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "sliceHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 709,
+      "method": "RunTimeSlicedStampOverflowAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "sliceHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 731,
+      "method": "RunTimeSlicedStampOverflowAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "sliceHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 759,
+      "method": "RunTimeSlicedStampOverflowAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "sliceHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 867,
+      "method": "RunTimeSlicedCorruptStateRecoveryAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "sliceHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 919,
+      "method": "RunCliffOverhangAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 1003,
+      "method": "RunFeatureDetectionAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 1059,
+      "method": "RunSeamStitchAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 1134,
+      "method": "RunSdfInjectionAssertion",
+      "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "fissureHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 87,
+      "method": "GenerateMockLayoutStressTest",
+      "path": "Assets/_Project/Scripts/Editor/Arm64MemoryAlignmentXRayWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(input.Length, 16).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 225,
+      "method": "Run",
+      "path": "Assets/_Project/Scripts/Editor/ErosionTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 244,
+      "method": "Run",
+      "path": "Assets/_Project/Scripts/Editor/ErosionTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 316,
+      "method": "WriteMacroShelfPreviewArtifacts",
+      "path": "Assets/_Project/Scripts/Editor/ErosionTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 329,
+      "method": "WriteMacroShelfPreviewArtifacts",
+      "path": "Assets/_Project/Scripts/Editor/ErosionTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 458,
+      "method": "WriteHeightPng",
+      "path": "Assets/_Project/Scripts/Editor/ErosionTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 466,
+      "method": "WriteHeightPng",
+      "path": "Assets/_Project/Scripts/Editor/ErosionTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 495,
+      "method": "WriteNormalPng",
+      "path": "Assets/_Project/Scripts/Editor/ErosionTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 503,
+      "method": "WriteNormalPng",
+      "path": "Assets/_Project/Scripts/Editor/ErosionTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 542,
+      "method": "WriteMaskPng",
+      "path": "Assets/_Project/Scripts/Editor/ErosionTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref bakeHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 550,
+      "method": "WriteMaskPng",
+      "path": "Assets/_Project/Scripts/Editor/ErosionTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref bakeHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 552,
+      "method": "WriteMaskPng",
+      "path": "Assets/_Project/Scripts/Editor/ErosionTestHarness.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref maxHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 429,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Editor/GeographySanity/GeographySanityPipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "finalHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 307,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "sdfHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 323,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "countHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 354,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "extractHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 388,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "uvHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 407,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "aoHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 650,
+      "method": "BuildLodMesh",
+      "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "decimateHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 681,
+      "method": "CreateUnityMesh",
+      "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "indexHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 95,
+      "method": "RunMockSectorBenchmark",
+      "path": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(cellCount, ResolveBatchCount(cellCount, settings.GlobalQualityWeight)).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 276,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "JobHandle.CombineDependencies(riftHandle, biomeMaskHandle).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 359,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Editor/GeologyForge/TopographyForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "JobHandle.CombineDependencies(macroHandle, maskHandle).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 143,
+      "method": "RunMockCaptureBenchmark",
+      "path": "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(pointCount, 128).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 154,
+      "method": "RunMockCaptureBenchmark",
+      "path": "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 252,
+      "method": "BakeGameObject",
+      "path": "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 385,
+      "method": "TryBuildPreviewAngles",
+      "path": "Assets/_Project/Scripts/Editor/HectonOctahedralImpostorBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 165,
+      "method": "BuildPreviewTexture",
+      "path": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/HydraulicErosionForgeBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 261,
+      "method": "RunMockSectorBakeInternalAsync",
+      "path": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/HydraulicErosionForgeBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 283,
+      "method": "RunMockSectorBakeInternalAsync",
+      "path": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/HydraulicErosionForgeBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "macroHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 295,
+      "method": "RunMockSectorBakeInternalAsync",
+      "path": "Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/HydraulicErosionForgeBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "sanitizeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 247,
+      "method": "RunScenario",
+      "path": "Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 263,
+      "method": "RunScenario",
+      "path": "Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 141,
+      "method": "GenerateMockNetwork",
+      "path": "Assets/_Project/Scripts/Editor/InventoryRouting/InventoryRoutingNetworkTunerWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 445,
+      "method": "BakePrefab",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs",
+      "surface": "EditorOrTest",
+      "text": "lodHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 506,
+      "method": "GenerateMockClutterBenchmark",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs",
+      "surface": "EditorOrTest",
+      "text": "mockHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 867,
+      "method": "InvalidOperationException",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs",
+      "surface": "EditorOrTest",
+      "text": "extractHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 898,
+      "method": "InvalidOperationException",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs",
+      "surface": "EditorOrTest",
+      "text": "extractHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 1026,
+      "method": "CreateMeshFromRaw",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs",
+      "surface": "EditorOrTest",
+      "text": "indexHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 548,
+      "method": "CreateAtlasTexture",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForgeSupport.cs",
+      "surface": "EditorOrTest",
+      "text": "rectFillHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 664,
+      "method": "CopyTextureViaTintedBlit",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForgeSupport.cs",
+      "surface": "EditorOrTest",
+      "text": "tintHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 411,
+      "method": "GenerateMockBenchmarkMesh",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(quadCount, 64).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 467,
+      "method": "TryBuildPreviewHull",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 490,
+      "method": "TryBuildPreviewHull",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 614,
+      "method": "BuildLodMesh",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 682,
+      "method": "CreateUnityMesh",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "indexHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 856,
+      "method": "CreateCollider",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 953,
+      "method": "BuildConvexHullMesh",
+      "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 246,
+      "method": "BuildMeshesFromSdf",
+      "path": "Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "extractHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 271,
+      "method": "BuildMeshesFromSdf",
+      "path": "Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "bakeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 316,
+      "method": "BuildLodMesh",
+      "path": "Assets/_Project/Scripts/Editor/ProceduralGen/BioForgeGenerator.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 250,
+      "method": "RunAtlas6EventsAudit",
+      "path": "Assets/_Project/Scripts/Editor/SignalCryptographySmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "AssertNotContains(enqueueBody, \".Complete(\", \"Atlas-6 enqueue path has no job barrier\", report, ref failureCount);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 535,
+      "method": "RunSpectrogramAudit",
+      "path": "Assets/_Project/Scripts/Editor/SignalCryptographySmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "AssertNotContains(tickBody, \".Complete(\", \"Spectrogram Tick does not complete jobs in the update lane\", report, ref failureCount);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 343,
+      "method": "AuditRecentScope",
+      "path": "Assets/_Project/Scripts/Editor/SpaceEngineResearchSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "result.JobBarrierTokenCount += CountToken(text, \".Complete()\") + CountToken(text, \".Run()\");"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 40,
+      "method": "Run",
+      "path": "Assets/_Project/Scripts/Editor/Stall_Eradication_Scanner.cs",
+      "surface": "EditorOrTest",
+      "text": "bool hasComplete = line.Contains(\".Complete(\") || line.Contains(\"CompleteAll(\");"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 173,
+      "method": "CheckForensicStaticRules",
+      "path": "Assets/_Project/Scripts/Editor/TechArtPipelineSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "bool noJobBarrier = !FileContains(BridgePath, \".Complete()\") &&"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 196,
+      "method": "TryPackArmAsset",
+      "path": "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs",
+      "surface": "EditorOrTest",
+      "text": "packHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 352,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(currentArm.Length, JobBatchSize).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 368,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(currentNormal.Length, JobBatchSize).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 418,
+      "method": "WriteNormalMips",
+      "path": "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(current.Length, JobBatchSize).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 539,
+      "method": "RunMockBenchmark",
+      "path": "Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs",
+      "surface": "EditorOrTest",
+      "text": "normalHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 410,
+      "method": "RebuildPreview",
+      "path": "Assets/_Project/Scripts/Editor/TextureChannelPacker/TextureChannelPackerWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(sourcePixels.Length, 128).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Editor",
+      "line": 285,
+      "method": "TrySnapProxyToScatterSurface",
+      "path": "Assets/_Project/Scripts/Editor/WorldProceduralProxySceneBuilder.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Root",
+      "line": 507,
+      "method": "CompleteReadyOutput",
+      "path": "Assets/_Project/Scripts/EncounterDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _activeJobHandle, forceComplete))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 681,
+      "method": "ForceCompleteActiveJobForTeardown",
+      "path": "Assets/_Project/Scripts/EncounterDirector.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _activeJobHandle, true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Environment",
+      "line": 2176,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _celestialMechanicsJob, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Environment",
+      "line": 2494,
+      "method": "CompleteSeismicEvaluationJob",
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _seismicEvaluationJob, force))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Equipment",
+      "line": 664,
+      "method": "CompletePendingJobForTeardown",
+      "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Fauna",
+      "line": 6303,
+      "method": "CompleteCorpseSinkingKinematicsIfReady",
+      "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _corpseSinkJobHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Fauna",
+      "line": 6424,
+      "method": "ReleaseCorpseSinkingKinematicsBuffers",
+      "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _corpseSinkJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Fauna",
+      "line": 442,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Fauna",
+      "line": 797,
+      "method": "DisposePersistentBuffers",
+      "path": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Fauna",
+      "line": 832,
+      "method": "CompleteScheduledSolverForLifecycle",
+      "path": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Fauna",
+      "line": 777,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _pendingSolverHandle, forceComplete: false))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Fauna",
+      "line": 890,
+      "method": "CompletePendingJob",
+      "path": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _pendingSolverHandle, force))"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Fauna",
+      "line": 1445,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledEvaluationHandle, false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Fauna",
+      "line": 1702,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref releaseDependency, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Fauna",
+      "line": 801,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _pendingHandle, forceComplete: false))"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Fauna",
+      "line": 759,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Fauna",
+      "line": 832,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Root",
+      "line": 2343,
+      "method": "CompleteResidentDataOnlySimulation",
+      "path": "Assets/_Project/Scripts/FaunaDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _residentDataOnlyLodHandle, forceComplete))"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 215,
+      "method": "RunAupDriftStressJob",
+      "path": "Assets/_Project/Scripts/FaunaRuntimeSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref handle, forceComplete: true))"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 285,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/FaunaRuntimeSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref handle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Root",
+      "line": 882,
+      "method": "PumpAsyncJob",
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _calculationJobHandle, timedOut))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 1501,
+      "method": "OnDisable",
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _calculationJobHandle, true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 823,
+      "method": "GenerateMockBallistics",
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: editor/manual mock injection before profiling solver."
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1131,
+      "method": "CompleteScheduledForTeardown",
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: true))"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 847,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+      "surface": "FramePath",
+      "text": "if (_damageJobScheduled && DispatcherJobSwap.TryComplete(ref _damageJobHandle, forceComplete: false))"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 854,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+      "surface": "FramePath",
+      "text": "if (_statusJobScheduled && DispatcherJobSwap.TryComplete(ref _statusJobHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 876,
+      "method": "Shutdown",
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _damageJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 882,
+      "method": "Shutdown",
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _statusJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1691,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: false))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1950,
+      "method": "CompletePendingGroundResponseForOriginShift",
+      "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1964,
+      "method": "CompletePendingGroundResponseForStructuralMutation",
+      "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1977,
+      "method": "CompletePendingGroundResponseForRuntimeDisable",
+      "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 406,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Gameplay/DebrisManager.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _simulationHandle, forceComplete: false))"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Gameplay",
+      "line": 351,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Gameplay/Editor/ScannerLoreDatabaseSyncTunerWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "\".Complete(\","
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 826,
+      "method": "ResetRuntimeState",
+      "path": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _nativeState.ScheduledSweepHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 828,
+      "method": "ResetRuntimeState",
+      "path": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _nativeState.KinematicRepairTargetHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1952,
+      "method": "CompleteScheduledSweepInLateFrameSwapWindow",
+      "path": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _nativeState.ScheduledSweepHandle, forceComplete: false))"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 2440,
+      "method": "CompleteKinematicRepairTargetProbeInLateFrameSwapWindow",
+      "path": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _nativeState.KinematicRepairTargetHandle, forceComplete: false))"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 227,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Gameplay/Loot/LootMagnetSystem.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: false))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1429,
+      "method": "ForceCompletePendingJobForBarrier",
+      "path": "Assets/_Project/Scripts/Gameplay/Loot/LootMagnetSystem.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _pullHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 881,
+      "method": "CancelTerrainSnap",
+      "path": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _snapHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1008,
+      "method": "CompleteExtractionJobForBarrier",
+      "path": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _extractionHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 2997,
+      "method": "TryFinalizeHandProbe",
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": ": DispatcherJobSwap.TryComplete(ref _handProbeHandle, false);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 3010,
+      "method": "CompleteHandProbeForTeardown",
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _handProbeHandle, true))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 3062,
+      "method": "TryFinalizeHandPlacement",
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": ": DispatcherJobSwap.TryComplete(ref _handPlacementHandle, false);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 3075,
+      "method": "CompleteHandPlacementForTeardown",
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _handPlacementHandle, true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1363,
+      "method": "CompleteDiffusionJobForReadback",
+      "path": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _diffusionJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1375,
+      "method": "CompleteRadiationJobsForReadback",
+      "path": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _radiationSimulationJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1479,
+      "method": "CompletePendingJob",
+      "path": "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!Hecton8.World.DispatcherJobSwap.TryComplete(ref _pendingJob, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1608,
+      "method": "CompletePidJob",
+      "path": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _pidHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1762,
+      "method": "CompleteFloodMassJob",
+      "path": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _floodMassHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 719,
+      "method": "CompleteParasiteSporeLosQuery",
+      "path": "Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _parasiteSporeLosHandle, force))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1993,
+      "method": "TryFinalizeScheduledSweep",
+      "path": "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledSweepHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 2014,
+      "method": "DisposeScheduledSweepState",
+      "path": "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _scheduledSweepHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 647,
+      "method": "CompleteSomaticComfortIfReady",
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _somaticComfortHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 658,
+      "method": "CompleteSomaticComfortForBarrier",
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _somaticComfortHandle, true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 464,
+      "method": "OnOriginShift",
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _headCollisionHandle, true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 465,
+      "method": "OnOriginShift",
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _rootSyncHandle, true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 466,
+      "method": "OnOriginShift",
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _handKinematicsHandle, true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 567,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _headCollisionHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1650,
+      "method": "CompleteRootSyncIfReady",
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _rootSyncHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 1708,
+      "method": "CompleteHandKinematicsIfReady",
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _handKinematicsHandle, false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 2883,
+      "method": "DisposeNativeBuffers",
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _headCollisionHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 2884,
+      "method": "DisposeNativeBuffers",
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _rootSyncHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Gameplay",
+      "line": 2885,
+      "method": "DisposeNativeBuffers",
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _handKinematicsHandle, true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 3017,
+      "method": "CompletePhysicsCullingJobForStateMutationBarrier",
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "surface": "RuntimeOther",
+      "text": "? DispatcherJobSwap.TryComplete(ref _physicsCullingJobHandle, forceComplete: true)"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Graphics",
+      "line": 854,
+      "method": "CompletePendingJobForBarrier",
+      "path": "Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _cullingHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Graphics",
+      "line": 271,
+      "method": "ApplyAupShift",
+      "path": "Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Graphics",
+      "line": 264,
+      "method": "RunMockPipelineOnce",
+      "path": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Graphics",
+      "line": 1373,
+      "method": "CompletePendingStressJobForTeardown",
+      "path": "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _stressEwmaHandle, forceComplete: true))"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Habitat",
+      "line": 1145,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Habitat",
+      "line": 1257,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Habitat",
+      "line": 240,
+      "method": "OnDisable",
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
+      "surface": "Teardown",
+      "text": "Hecton8.Core.DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Habitat",
+      "line": 1632,
+      "method": "ClearBootBuffers",
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Habitat",
+      "line": 622,
+      "method": "ClearBootBuffers",
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref clearHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Habitat",
+      "line": 745,
+      "method": "GenerateEmergencyMockStressData",
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Habitat",
+      "line": 877,
+      "method": "CompleteScheduled",
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "Hecton8.Core.DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Habitat",
+      "line": 1369,
+      "method": "ApplyMaterialsToStatesCold",
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref materialHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownDispatcherComplete",
+      "domain": "Root",
+      "line": 2872,
+      "method": "DisposeCelestialRuntimeBuffers",
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _orbitJobHandle, forceCompleteOrbitJob);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Root",
+      "line": 4172,
+      "method": "TryCompleteOrbitMathJob",
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _orbitJobHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Root",
+      "line": 1357,
+      "method": "CompletePredatorSpatialHashBuild",
+      "path": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _predatorSpatialHashBuildHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Root",
+      "line": 1411,
+      "method": "CompletePredatorSightBatch",
+      "path": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _predatorSightRaycastHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 1123,
+      "method": "AwaitTransformShiftJobAsync",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 1529,
+      "method": "ConsumeCompletedDriftCheck",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _driftCheckHandle, false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 1804,
+      "method": "DisposeDriftCheckState",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _driftCheckHandle, true);"
+    },
+    {
+      "classification": "TeardownDispatcherComplete",
+      "domain": "Root",
+      "line": 4080,
+      "method": "TryDrainScheduledBuoyancyJob",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledBuoyancyHandle, false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 507,
+      "method": "DisposeSpatialNativeStorage",
+      "path": "Assets/_Project/Scripts/HectonNarrativeDirector.cs",
+      "surface": "Teardown",
+      "text": "Hecton8.Core.DispatcherJobFence.TryComplete(ref _scanJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 3522,
+      "method": "TryCompleteBiomeFogBlendJob",
+      "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _biomeFogBlendHandle, forceComplete: false))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 5057,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2162,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2665,
+      "method": "GenerateWorldPreview",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref previewVertexHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2676,
+      "method": "GenerateWorldPreview",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref previewNormalHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2691,
+      "method": "GenerateWorldPreview",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref previewColorHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Interaction",
+      "line": 884,
+      "method": "CompleteScheduledRaycasts",
+      "path": "Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Interaction",
+      "line": 1047,
+      "method": "DisposeRaycastBuffers",
+      "path": "Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Interaction",
+      "line": 1070,
+      "method": "RebindDataVaultCold",
+      "path": "Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Interaction",
+      "line": 1702,
+      "method": "CompleteScheduledFingerPose",
+      "path": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _fingerPoseHandle, forceComplete: false))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Lighting",
+      "line": 325,
+      "method": "GenerateMockLightCullingData",
+      "path": "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Lighting",
+      "line": 709,
+      "method": "ShutdownRuntime",
+      "path": "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingCullHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Lighting",
+      "line": 749,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingCullHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Lighting",
+      "line": 1356,
+      "method": "GenerateMockSdfSamples",
+      "path": "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Lighting",
+      "line": 263,
+      "method": "ShutdownRuntime",
+      "path": "Assets/_Project/Scripts/Lighting/HectonGIRelaySystem.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingSHJob, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Lighting",
+      "line": 309,
+      "method": "DisposeNativeStorage",
+      "path": "Assets/_Project/Scripts/Lighting/HectonGIRelaySystem.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingSHJob, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Lighting",
+      "line": 809,
+      "method": "GenerateMockProbeGrid",
+      "path": "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownDispatcherComplete",
+      "domain": "Lighting",
+      "line": 923,
+      "method": "ReleaseRuntimeState",
+      "path": "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _simulationHandle, blockingComplete);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Lighting",
+      "line": 1240,
+      "method": "CompletePendingGpuUpload",
+      "path": "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _gpuUploadHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 3099,
+      "method": "CompleteUtf8ReadersForMutation",
+      "path": "Assets/_Project/Scripts/LocRegistry.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _utf8ReaderHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "ModdingAPI",
+      "line": 710,
+      "method": "CompleteScheduledPreSimulationForBarrier",
+      "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _scheduledValidationHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "ModdingAPI",
+      "line": 185,
+      "method": "Shutdown",
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _projectionHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "ModdingAPI",
+      "line": 279,
+      "method": "DispatchLateFrame",
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _projectionHandle, forceComplete: false))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 800,
+      "method": "GenerateMockEquipmentState",
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 1133,
+      "method": "ClearActiveEquipmentNativeState",
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref clearHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2523,
+      "method": "ApplyDataVaultRebind",
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _equipmentIntegrationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2750,
+      "method": "DisposeNativeState",
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _equipmentIntegrationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Optimization",
+      "line": 1326,
+      "method": "CompleteTtlEvaluationForTeardown",
+      "path": "Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _ttlEvaluationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "PDA",
+      "line": 974,
+      "method": "CompleteCartographyUploadJobBlocking",
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "surface": "RuntimeOther",
+      "text": "!DispatcherJobFence.TryComplete(ref _cartographyUploadHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 696,
+      "method": "CompletePendingForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 564,
+      "method": "GenerateMockBuoyantObjects",
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 630,
+      "method": "GenerateMockSimdBenchmark",
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 644,
+      "method": "GenerateMockSimdBenchmark",
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref scalarHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 666,
+      "method": "GenerateMockSimdBenchmark",
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 687,
+      "method": "GenerateMockSimdBenchmark",
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref telemetryHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 1088,
+      "method": "InitializeColdBuffersIfNeeded",
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 1180,
+      "method": "CompletePendingSolverForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 220,
+      "method": "EnsureMockBuffers",
+      "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 617,
+      "method": "ForceFinalizeSplineVertexUpload",
+      "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 706,
+      "method": "ForceFinalizeSplineIndirectArgsUpload",
+      "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 494,
+      "method": "GenerateMockDetonations",
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: CI/editor fallback injection, never the live propagation path."
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 534,
+      "method": "GenerateMockSingularityExplosion",
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SINGULARITY HARNESS: deterministic proof input for epsilon clamp."
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 661,
+      "method": "CompleteScheduledForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 1144,
+      "method": "InitializeBuffersCold",
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: required after UninitializedMemory vault acquisition."
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 451,
+      "method": "GenerateMockHullBreach",
+      "path": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref breachFrontHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 457,
+      "method": "GenerateMockHullBreach",
+      "path": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref breachBackHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 686,
+      "method": "InitializeColdBootBuffers",
+      "path": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref clearFrontHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 692,
+      "method": "InitializeColdBootBuffers",
+      "path": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref clearBackHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 726,
+      "method": "InitializeColdBootBuffers",
+      "path": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref breachFrontHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 731,
+      "method": "InitializeColdBootBuffers",
+      "path": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref breachBackHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 942,
+      "method": "CompleteScheduledSimulationForAuthoritativeWrite",
+      "path": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 3447,
+      "method": "AbortScheduledBatchForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _postSimulationHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 3448,
+      "method": "AbortScheduledBatchForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _hitExtractHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 3449,
+      "method": "AbortScheduledBatchForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _collisionHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 3450,
+      "method": "AbortScheduledBatchForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _commandHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 3451,
+      "method": "AbortScheduledBatchForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _integrationHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 3452,
+      "method": "AbortScheduledBatchForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _environmentMockHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 3453,
+      "method": "AbortScheduledBatchForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _inputHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 3454,
+      "method": "AbortScheduledBatchForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _externalInputHandle, true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 474,
+      "method": "GenerateMockPropulsionRequests",
+      "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 612,
+      "method": "EnsureColdBooted",
+      "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 798,
+      "method": "CompletePendingSolverForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 2081,
+      "method": "CompleteJobHandleForTeardown",
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+      "surface": "Teardown",
+      "text": "return DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 133,
+      "method": "OnDisable",
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Physics",
+      "line": 258,
+      "method": "PostFixedTick",
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 115,
+      "method": "OnDisable",
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _damageHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Physics",
+      "line": 282,
+      "method": "PostFixedTick",
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _damageHandle, forceComplete: false))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physics",
+      "line": 430,
+      "method": "InitializeGridBuffers",
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref readHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 3156,
+      "method": "CompleteFrontPacketValidationInLateFrameSwapWindow",
+      "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _packetValidationHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 3513,
+      "method": "ReleaseValidationBufferViews",
+      "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _packetValidationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physiology",
+      "line": 396,
+      "method": "GenerateMockEcosystemMetabolism",
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref initMock, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physiology",
+      "line": 570,
+      "method": "CompleteFrameJobForTeardown",
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Physiology",
+      "line": 775,
+      "method": "InitializeRulesAndTuningOnly",
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref initInactive, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physiology",
+      "line": 1214,
+      "method": "CompleteFrameJobForTeardown",
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Physiology",
+      "line": 1245,
+      "method": "CompleteActiveJobForTeardown",
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2271,
+      "method": "CompleteShinobuSocketSnapForTeardown",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _shinobuSocketSnapHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2282,
+      "method": "CompleteBuilderGhostValidationForTeardown",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _builderGhostValidationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2137,
+      "method": "SortInventory",
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref sortHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2912,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref validationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 3115,
+      "method": "TryCompactIdenticalHashesAfterBulkTransfer",
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref compactionHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Root",
+      "line": 4972,
+      "method": "CompleteInventoryMassRecomputeJob",
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _massVolumeJobHandle, forceComplete))"
+    },
+    {
+      "classification": "PluginSynchronousGeneratorRawComplete",
+      "domain": "Plugins",
+      "line": 311,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonAnomalyMapMagicNode.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "PluginSynchronousGeneratorRawComplete",
+      "domain": "Plugins",
+      "line": 141,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonBiomeMatrixMapMagicPostProcessNode.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Plugins",
+      "line": 475,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonHydraulicErosionMapMagicNode.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Plugins",
+      "line": 495,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonHydraulicErosionMapMagicNode.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Plugins",
+      "line": 194,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonSandboxAbyssalShelfMapMagicNode.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref generationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Plugins",
+      "line": 218,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonSandboxAbyssalShelfMapMagicNode.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref generationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Plugins",
+      "line": 549,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonSpaceEngine098MapMagicNodes.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "PluginSynchronousGeneratorRawComplete",
+      "domain": "Plugins",
+      "line": 165,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonTerrainSplatmapMapMagicNode.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "PluginSynchronousGeneratorRawComplete",
+      "domain": "Plugins",
+      "line": 180,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonTerrainSplatmapMapMagicNode.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Power",
+      "line": 605,
+      "method": "Shutdown",
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Power",
+      "line": 612,
+      "method": "Shutdown",
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _mockGenerationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Power",
+      "line": 762,
+      "method": "CompleteDecayJobForTeardown",
+      "path": "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref s_decayJobHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Power",
+      "line": 2668,
+      "method": "TryCompleteEvaluation",
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _evaluateGraphJobHandle, forceComplete: false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Power",
+      "line": 3002,
+      "method": "TryCompleteNodeStatePublish",
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _publishNodeStatesJobHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Power",
+      "line": 945,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Power",
+      "line": 951,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _csrRebuildHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Power",
+      "line": 957,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _localShiftHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Power",
+      "line": 432,
+      "method": "EnsureInitialized",
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _topologyRebuildHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Power",
+      "line": 1042,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Power",
+      "line": 1050,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _topologyRebuildHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Power",
+      "line": 1058,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _externalHeatJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 1096,
+      "method": "TryCommitCableThermalSharing",
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _thermalDissipationHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 1344,
+      "method": "CompleteThermalDissipationForTeardown",
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _thermalDissipationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 531,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/ProximityColliderSystem.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _jobHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "QA",
+      "line": 259,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "preSimulationHandle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "QA",
+      "line": 284,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "solverHandle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "QA",
+      "line": 298,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "simulationHandle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "QA",
+      "line": 319,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "postSimulationHandle.Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 463,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule(config.NodeCount, PowerJacobiStressFuzzerConstants.DefaultBatchSize).Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 475,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule(config.NodeCount, PowerJacobiStressFuzzerConstants.DefaultBatchSize).Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 494,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 529,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 540,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 551,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "QA",
+      "line": 537,
+      "method": "OnDestroy",
+      "path": "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (DispatcherJobFence.TryComplete(ref _navigationHandle, forceComplete: true))"
+    },
+    {
+      "classification": "FramePathDispatcherComplete",
+      "domain": "QA",
+      "line": 620,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _navigationHandle, forceComplete: Application.isBatchMode))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "QA",
+      "line": 715,
+      "method": "InitializeColdState",
+      "path": "Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref clearHandle, forceComplete: true); // COLD SYNC JOB: init-only MemClear before first watchdog frame - owner: Shinobu38QaWatchdogRuntime"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Root",
+      "line": 237,
+      "method": "TryConsumeScheduledBatch",
+      "path": "Assets/_Project/Scripts/RaycastBatchHelper.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _lastJobHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Rendering",
+      "line": 463,
+      "method": "RunBurstCullAuditOnce",
+      "path": "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: explicit manual audit, never part of the shipping Tick path."
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 4551,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref writeHandle.Handle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 116,
+      "method": "TryRunBurstSubtractionBoundsStress",
+      "path": "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 185,
+      "method": "TryRunRuntimeBarrierSourceAudit",
+      "path": "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "return ContainsNone(ReadProjectFile(\"Assets/_Project/Scripts/SaveManager.cs\"), \".Complete(\", \".Run(\") &&"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 186,
+      "method": "TryRunRuntimeBarrierSourceAudit",
+      "path": "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "ContainsNone(ReadProjectFile(\"Assets/_Project/Scripts/SaveBinaryStorage.cs\"), \".Complete(\", \".Run(\") &&"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 187,
+      "method": "TryRunRuntimeBarrierSourceAudit",
+      "path": "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "ContainsNone(ReadProjectFile(\"Assets/_Project/Scripts/World/PersistentWorldRegistry.cs\"), \".Complete(\", \".Run(\") &&"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 188,
+      "method": "TryRunRuntimeBarrierSourceAudit",
+      "path": "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "ContainsNone(ReadProjectFile(\"Assets/_Project/Scripts/SaveIndexedSectorBoundsMath.cs\"), \".Complete(\", \".Run(\");"
+    },
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "SaveSystem",
+      "line": 1575,
+      "method": "CompleteColdValidationBarrier",
+      "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Scavenging",
+      "line": 1161,
+      "method": "GenerateEmergencyMockLootTables",
+      "path": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Scavenging",
+      "line": 1359,
+      "method": "TryRunDistributionSelfAudit",
+      "path": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Scavenging",
+      "line": 1376,
+      "method": "DrawHighestProbabilityGizmo",
+      "path": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Scavenging",
+      "line": 1488,
+      "method": "TryCompletePendingPublish",
+      "path": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _pendingPublishHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 759,
+      "method": "CompleteSeamRaycastBatchIfReady",
+      "path": "Assets/_Project/Scripts/SeamGapDitherRenderer.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _seamRaycastHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2977,
+      "method": "CompleteAcousticOcclusionForBarrier",
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _acousticOcclusionHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 3043,
+      "method": "CompleteVirtualVoiceSortJobForBarrier",
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _virtualVoiceSortHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 4490,
+      "method": "ConsumeCompletedJob",
+      "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _atmosphereJobHandle, false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2419,
+      "method": "DisposeNativeStateDeferred",
+      "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _disposeHandle, true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2582,
+      "method": "CompletePendingFluidTransferForAuthoritativeWrite",
+      "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _fluidJobHandle, true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 2592,
+      "method": "CompletePendingFloodMassPropertiesForAuthoritativeWrite",
+      "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _massPropertiesJobHandle, true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 2601,
+      "method": "CompleteFluidTransferInPostFixedSwapWindow",
+      "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _fluidJobHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 2624,
+      "method": "CompleteFloodMassPropertiesInPostFixedSwapWindow",
+      "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _massPropertiesJobHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 2771,
+      "method": "CompleteHydroKinematicJobInPostFixedSwapWindow",
+      "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _hydroKinematicJobHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 1188,
+      "method": "ConsumeCompletedBreachRepairJob",
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _breachRepairJobHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 2093,
+      "method": "ConsumeCompletedMappingJob",
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _mappingJobHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 2166,
+      "method": "ConsumeCompletedFatigueJob",
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _fatigueJobHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 2215,
+      "method": "ConsumeCompletedDamageJob",
+      "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _damageJobHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 1934,
+      "method": "FinalizePendingVerletSolveForBarrier",
+      "path": "Assets/_Project/Scripts/TetherInstance.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 911,
+      "method": "CompleteShinobu132CableMockForTeardown",
+      "path": "Assets/_Project/Scripts/TetherManager.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _shinobu132CableMockHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 1058,
+      "method": "CompleteShinobu143AupMockForTeardown",
+      "path": "Assets/_Project/Scripts/TetherManager.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _shinobu143AupMockHandle, forceComplete: true))"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 131,
+      "method": "ValidateDirtyBlendJob",
+      "path": "Assets/_Project/Scripts/ThermalMeltSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 174,
+      "method": "ValidateAupRaymarchJob",
+      "path": "Assets/_Project/Scripts/ThermalMeltSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 206,
+      "method": "ValidateLocalizedNavPatchJob",
+      "path": "Assets/_Project/Scripts/ThermalMeltSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Thermodynamics",
+      "line": 146,
+      "method": "OnDisable",
+      "path": "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Thermodynamics",
+      "line": 150,
+      "method": "OnDisable",
+      "path": "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _sampleReadHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Thermodynamics",
+      "line": 848,
+      "method": "EnsureNative",
+      "path": "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref initHandle, forceComplete: true); // COLD SYNC JOB: deterministic first frame, no OS zero-fill dependency."
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Thermodynamics",
+      "line": 713,
+      "method": "ReleaseNativeState",
+      "path": "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Tools",
+      "line": 230,
+      "method": "GenerateMockCutterTriggers",
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Tools",
+      "line": 1209,
+      "method": "ReleaseVaultHandles",
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _scheduledRaycastHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Tools",
+      "line": 1210,
+      "method": "ReleaseVaultHandles",
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _scheduledEvaluationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "Tools",
+      "line": 298,
+      "method": "LateFrameTick",
+      "path": "Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledDecayHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Tools",
+      "line": 827,
+      "method": "DisposeNativeState",
+      "path": "Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _scheduledDecayHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "Tools",
+      "line": 1173,
+      "method": "TryCompleteDecayJobIfScheduled",
+      "path": "Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledDecayHandle, forceComplete))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Tools",
+      "line": 284,
+      "method": "CompletePendingFrameForTeardown",
+      "path": "Assets/_Project/Scripts/Tools/ToolKinematics/ToolKinematicsRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "UI",
+      "line": 394,
+      "method": "CompletePendingCueEvaluationForTeardown",
+      "path": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref s_pendingCueEvaluationHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "UI",
+      "line": 333,
+      "method": "CompleteVisibleHashPrefetchForTeardown",
+      "path": "Assets/_Project/Scripts/UI/FontStreamingManager.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _visiblePrefetchHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "UI",
+      "line": 1082,
+      "method": "CompletePendingJob",
+      "path": "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "Hecton8.Core.DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "UI",
+      "line": 989,
+      "method": "CompleteWaveJobForTeardown",
+      "path": "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs",
+      "surface": "Teardown",
+      "text": "Hecton8.Core.DispatcherJobFence.TryComplete(ref _waveJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "UI",
+      "line": 3351,
+      "method": "ForceCompleteJobForTeardown",
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "UI",
+      "line": 658,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs",
+      "surface": "Teardown",
+      "text": "if (DispatcherJobFence.TryComplete(ref _scanHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "UI",
+      "line": 664,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs",
+      "surface": "Teardown",
+      "text": "if (DispatcherJobFence.TryComplete(ref _fadeHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "UI",
+      "line": 2327,
+      "method": "CompleteButtonJobForTeardown",
+      "path": "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _buttonJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "UI",
+      "line": 1110,
+      "method": "CompletePendingJob",
+      "path": "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "Hecton8.Core.DispatcherJobFence.TryComplete(ref _pendingJob, forceComplete);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "VFX",
+      "line": 3221,
+      "method": "CompleteScheduledJobForTeardown",
+      "path": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _stateJobHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Visor",
+      "line": 607,
+      "method": "CompleteScheduledWorkForTeardown",
+      "path": "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Visor",
+      "line": 225,
+      "method": "ResetStaticState",
+      "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingVisualSyncHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Visor",
+      "line": 493,
+      "method": "GenerateMockVisorWounds",
+      "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD PROFILE PATH: deterministic mock injection requested by tools/tests."
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "Visor",
+      "line": 655,
+      "method": "ForceCompletePendingVisualSync",
+      "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _pendingVisualSyncHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Visor",
+      "line": 422,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _mockLightsJobHandle, forceComplete: true); // COLD SYNC JOB: render-feature teardown cannot leave a vault writer running."
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 245,
+      "method": "ValidatePureVoidNavGrid",
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 286,
+      "method": "ValidateVoidChunkBoundsEarlyExit",
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 299,
+      "method": "ValidateVoidChunkBoundsEarlyExit",
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "Root",
+      "line": 352,
+      "method": "ValidateVertexAmbientOcclusion",
+      "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 2708,
+      "method": "TryCommitScheduledCarve",
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledCarveHandle, false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "Root",
+      "line": 3226,
+      "method": "TryCommitScheduledCompaction",
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledCompactionHandle, false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "Root",
+      "line": 3701,
+      "method": "DisposeScheduledCarveBuffers",
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "World",
+      "line": 1976,
+      "method": "CompleteThermalMapJobIfReady",
+      "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _thermalMapJobHandle, forceComplete: false))"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "World",
+      "line": 2302,
+      "method": "CompleteCrystallizationJobIfReady",
+      "path": "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _crystallizationJobHandle, forceComplete: false))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1094,
+      "method": "CompleteRuntimeJobsForTeardown",
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "surface": "Teardown",
+      "text": "if (_predatorJobScheduled && DispatcherJobSwap.TryComplete(ref _predatorJobHandle, true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1097,
+      "method": "CompleteRuntimeJobsForTeardown",
+      "path": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "surface": "Teardown",
+      "text": "if (_rippleJobScheduled && DispatcherJobSwap.TryComplete(ref _rippleJobHandle, true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1217,
+      "method": "CompletePipelineForShutdown",
+      "path": "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _seedHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1228,
+      "method": "CompletePipelineForShutdown",
+      "path": "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref _pipelineHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 142,
+      "method": "RunFogBlendSmokeTest",
+      "path": "Assets/_Project/Scripts/World/BiomeTransitionSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "job.Schedule(1, 1).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 252,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "finalHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 292,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "cleanupHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 424,
+      "method": "BakePreviewTexture",
+      "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 436,
+      "method": "BakePreviewTexture",
+      "path": "Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/BiomeWeightMapBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "cleanupHandle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 898,
+      "method": "TryInitializeVaultBuffers",
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref zeroHandle, true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 1635,
+      "method": "CompleteScheduledWorkForTeardown",
+      "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledHandle, true))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 1629,
+      "method": "CompleteDearLieJobIfNeeded",
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _dearLieJobHandle, force))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 3357,
+      "method": "CompleteYieldJobIfNeeded",
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _yieldJobHandle, force))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 68,
+      "method": "TryComplete",
+      "path": "Assets/_Project/Scripts/World/DispatcherJobSwap.cs",
+      "surface": "RuntimeOther",
+      "text": "return DispatcherJobFence.TryComplete(ref handle, forceComplete);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 1542,
+      "method": "CompleteApexSpawnGate",
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _apexSpawnGateHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 3911,
+      "method": "CompleteScheduledSolve",
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledSolveHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 4354,
+      "method": "CompleteScheduledGenomeMutation",
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledGenomeMutationHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 4433,
+      "method": "CompleteScheduledMacroSwarmTravel",
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _macroSwarmTravelHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 4949,
+      "method": "CompleteScheduledApexTerritoryOverlap",
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _scheduledApexTerritoryOverlapHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 5888,
+      "method": "ClearMacroSwarmRuntimeState",
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobFence.TryComplete(ref _macroSwarmTravelHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 2976,
+      "method": "CompleteWakeDecayJob",
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "surface": "RuntimeOther",
+      "text": "? DispatcherJobSwap.TryComplete(ref _wakeDecayHandle, forceComplete)"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 3479,
+      "method": "CompleteFloraSwayFieldJobForTeardown",
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "surface": "Teardown",
+      "text": "if (!DispatcherJobFence.TryComplete(ref _floraSwayFieldBuildHandle, forceComplete: true))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 6422,
+      "method": "CompleteCascadePhaseSeedJob",
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _underwaterCascadePhaseSeedHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 6437,
+      "method": "CompleteCascadePhaseSeedJob",
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _surfaceCascadePhaseSeedHandle, forceComplete))"
+    },
+    {
+      "classification": "RuntimeOtherDispatcherComplete",
+      "domain": "World",
+      "line": 866,
+      "method": "TryCompleteVegetationJob",
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "surface": "RuntimeOther",
+      "text": "return DispatcherJobSwap.TryComplete(ref handle, forceComplete);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 175,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+      "surface": "Teardown",
+      "text": "if (DispatcherJobFence.TryComplete(ref _scanJobHandle, forceComplete: true))"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 3751,
+      "method": "ReleaseCpuCullingScratch",
+      "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobFence.TryComplete(ref scratch.ActiveHandle, forceComplete: true);"
+    },
+    {
+      "classification": "TeardownForcedDispatcherComplete",
+      "domain": "World",
+      "line": 4540,
+      "method": "DisposeAllChunkBuildJobs",
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "surface": "Teardown",
+      "text": "DispatcherJobSwap.TryComplete(ref jobState.Handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "World",
+      "line": 5987,
+      "method": "TryPrepareRendererWriteBuffer",
+      "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref readerHandle, forceComplete: false);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 148,
+      "method": "RunSmokeTest",
+      "path": "Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref sampleHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 203,
+      "method": "RunSmokeTest",
+      "path": "Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "DispatcherJobSwap.TryComplete(ref sampleHandle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "World",
+      "line": 904,
+      "method": "TrySwapCompletedCompaction",
+      "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+      "surface": "RuntimeOther",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _readerFence, forceComplete: false) ||"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "World",
+      "line": 905,
+      "method": "TrySwapCompletedCompaction",
+      "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+      "surface": "RuntimeOther",
+      "text": "!DispatcherJobSwap.TryComplete(ref _cellCompactionHandle, forceComplete: false))"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 153,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "sealHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 159,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "cavityHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 170,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 185,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 204,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 214,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 597,
+      "method": "Update",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "_activeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 689,
+      "method": "Cancel",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "_activeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 694,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "_activeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 347,
+      "method": "Rebuild",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalStructureForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "}.Schedule(rayCount, 64).Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 379,
+      "method": "Update",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "_activeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 434,
+      "method": "Cancel",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "_activeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 441,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+      "surface": "EditorOrTest",
+      "text": "_activeHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 287,
+      "method": "Rebuild",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "s_previewHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 328,
+      "method": "PumpPreview",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "s_previewHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 370,
+      "method": "Dispose",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "s_previewHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 38,
+      "method": "Run",
+      "path": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchMockBenchmark.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 143,
+      "method": "RunAndWriteReport",
+      "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageMockBenchmark.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 266,
+      "method": "PreviewSelectedMesh",
+      "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "previewHandle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 377,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 541,
+      "method": "TryBuildBaseBuffers",
+      "path": "Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 6312,
+      "method": "CompleteTombstoneDecaySweepForDeltaMutationBarrier",
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref _tombstoneDecaySweepHandle, forceComplete: true);"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 67,
+      "method": "RunSlopeCavitySplatmapSmoke",
+      "path": "Assets/_Project/Scripts/World/PlanetaryCanvasSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "EditorOrTestComplete",
+      "domain": "World",
+      "line": 83,
+      "method": "RunSlopeCavitySplatmapSmoke",
+      "path": "Assets/_Project/Scripts/World/PlanetaryCanvasSmokeTester.cs",
+      "surface": "EditorOrTest",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 2251,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 2363,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherForcedDispatcherComplete",
+      "domain": "World",
+      "line": 3490,
+      "method": "WaitForJobHandleAsync",
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+    },
+    {
+      "classification": "RuntimeOtherPolledDispatcherComplete",
+      "domain": "World",
+      "line": 3498,
+      "method": "WaitForJobHandleAsync",
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "surface": "RuntimeOther",
+      "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);"
+    },
+    {
+      "classification": "FramePathPolledDispatcherComplete",
+      "domain": "World",
+      "line": 1494,
+      "method": "ProcessCompletedGhostProxySnaps",
+      "path": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+      "surface": "FramePath",
+      "text": "if (!DispatcherJobSwap.TryComplete(ref _ghostProxySnapHandle, forceComplete: false))"
+    }
+  ],
+  "framePathBlockerCount": 0,
+  "framePathBlockers": [],
+  "pluginSyncCompleteCount": 4,
+  "pluginSyncCompletes": [
+    {
+      "classification": "PluginSynchronousGeneratorRawComplete",
+      "domain": "Plugins",
+      "line": 311,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonAnomalyMapMagicNode.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "PluginSynchronousGeneratorRawComplete",
+      "domain": "Plugins",
+      "line": 141,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonBiomeMatrixMapMagicPostProcessNode.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "PluginSynchronousGeneratorRawComplete",
+      "domain": "Plugins",
+      "line": 165,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonTerrainSplatmapMapMagicNode.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "PluginSynchronousGeneratorRawComplete",
+      "domain": "Plugins",
+      "line": 180,
+      "method": "Generate",
+      "path": "Assets/_Project/Scripts/Plugins/MapMagic/HectonTerrainSplatmapMapMagicNode.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    }
+  ],
+  "rawRuntimeBlockerCount": 12,
+  "rawRuntimeBlockers": [
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "Audio",
+      "line": 677,
+      "method": "GenerateMockBankCold",
+      "path": "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "QA",
+      "line": 259,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "preSimulationHandle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "QA",
+      "line": 284,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "solverHandle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "QA",
+      "line": 298,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "simulationHandle.Complete();"
+    },
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "QA",
+      "line": 319,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "postSimulationHandle.Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 463,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule(config.NodeCount, PowerJacobiStressFuzzerConstants.DefaultBatchSize).Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 475,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule(config.NodeCount, PowerJacobiStressFuzzerConstants.DefaultBatchSize).Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 494,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 529,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 540,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "RuntimeScheduleCompleteChain",
+      "domain": "QA",
+      "line": 551,
+      "method": "<global>",
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "surface": "RuntimeOther",
+      "text": "}.Schedule().Complete();"
+    },
+    {
+      "classification": "RuntimeOtherRawComplete",
+      "domain": "SaveSystem",
+      "line": 1575,
+      "method": "CompleteColdValidationBarrier",
+      "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs",
+      "surface": "RuntimeOther",
+      "text": "handle.Complete();"
+    }
+  ],
+  "schema": "hecton8.job_completion_audit.v1",
+  "sourceRoot": "Assets/_Project/Scripts"
+}

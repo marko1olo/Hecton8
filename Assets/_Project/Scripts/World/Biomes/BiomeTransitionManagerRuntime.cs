@@ -57,18 +57,18 @@ namespace Hecton8.World.Biomes
 
         private IDataVault _vault;
         private IPlayerRuntimeContext _playerContext;
-        private VaultBufferHandle<BiomeStateDTO> _statesHandle;
-        private VaultBufferHandle<BiomeCenterDTO> _centersHandle;
-        private VaultBufferHandle<BiomeInfluenceDTO> _influenceHandle;
-        private VaultBufferHandle<CurrentAtmosphereDTO> _currentAtmosphereHandle;
-        private VaultBufferHandle<BiomeBlendMaskDTO> _blendMaskHandle;
-        private VaultBufferHandle<float4> _shaderPayloadHandle;
-        private VaultBufferHandle<BiomeAcousticStageDTO> _acousticStageHandle;
-        private VaultBufferHandle<BiomeTransitionTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<BiomeTransitionCounterDTO> _countersHandle;
-        private VaultBufferHandle<BiomeTransitionTuningDTO> _tuningHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<AbsoluteUniversePositionBlit128> _mockCameraAupHandle;
+        private VaultGenerationHandle<BiomeStateDTO> _statesHandle;
+        private VaultGenerationHandle<BiomeCenterDTO> _centersHandle;
+        private VaultGenerationHandle<BiomeInfluenceDTO> _influenceHandle;
+        private VaultGenerationHandle<CurrentAtmosphereDTO> _currentAtmosphereHandle;
+        private VaultGenerationHandle<BiomeBlendMaskDTO> _blendMaskHandle;
+        private VaultGenerationHandle<float4> _shaderPayloadHandle;
+        private VaultGenerationHandle<BiomeAcousticStageDTO> _acousticStageHandle;
+        private VaultGenerationHandle<BiomeTransitionTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<BiomeTransitionCounterDTO> _countersHandle;
+        private VaultGenerationHandle<BiomeTransitionTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<AbsoluteUniversePositionBlit128> _mockCameraAupHandle;
 
         private GraphicsBuffer _shaderPayloadBufferA;
         private GraphicsBuffer _shaderPayloadBufferB;
@@ -138,8 +138,7 @@ namespace Hecton8.World.Biomes
             TryUnregisterTickables();
             TryUnregisterOriginShift();
             TryUnregisterHotSwapListener();
-            CompletePipelineForShutdown();
-            ReleaseShaderPayloadBuffers();
+            ClearVaultBinding();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -150,8 +149,7 @@ namespace Hecton8.World.Biomes
             TryUnregisterTickables();
             TryUnregisterOriginShift();
             TryUnregisterHotSwapListener();
-            CompletePipelineForShutdown();
-            ReleaseShaderPayloadBuffers();
+            ClearVaultBinding();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -359,6 +357,15 @@ namespace Hecton8.World.Biomes
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                if (currentService is IDataVault vault)
+                    BindVault(vault);
+                else
+                    ClearVaultBinding();
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Player && currentService == null)
                 _playerContext = null;
         }
@@ -450,8 +457,6 @@ namespace Hecton8.World.Biomes
             if (_vault == null || !_vaultReady)
             {
                 IDataVault vault = GlobalRegistry.DataVault;
-                if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                    vault = latest;
                 if (vault != null)
                     BindVault(vault);
             }
@@ -492,7 +497,10 @@ namespace Hecton8.World.Biomes
             if (!ReferenceEquals(_vault, vault))
             {
                 if (_vault != null)
+                {
                     CompletePipelineForShutdown();
+                    ReleaseBiomeVaultHandles(_vault);
+                }
 
                 ReleaseShaderPayloadBuffers();
                 _tuningInitialized = false;
@@ -507,79 +515,26 @@ namespace Hecton8.World.Biomes
             }
 
             _vault = vault;
-            _statesHandle = vault.GetBufferHandle<BiomeStateDTO>(
-                BufferID.BiomeTransitionStates,
-                BiomeTransitionConstants.MaxActiveBiomes,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            _centersHandle = vault.GetBufferHandle<BiomeCenterDTO>(
-                BufferID.BiomeTransitionCenters,
-                BiomeTransitionConstants.MaxActiveBiomes,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            _influenceHandle = vault.GetBufferHandle<BiomeInfluenceDTO>(
-                BufferID.BiomeTransitionInfluences,
-                1,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            _currentAtmosphereHandle = vault.GetBufferHandle<CurrentAtmosphereDTO>(
-                BufferID.BiomeTransitionCurrentAtmosphere,
-                1,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            _blendMaskHandle = vault.GetBufferHandle<BiomeBlendMaskDTO>(
-                BufferID.BiomeTransitionBlendMask,
-                1,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            _shaderPayloadHandle = vault.GetBufferHandle<float4>(
-                BufferID.BiomeTransitionShaderPayload,
-                BiomeTransitionConstants.ShaderPayloadFloat4Count,
-                SystemID.GraphicsScalability,
-                NativeArrayOptions.UninitializedMemory);
-            _acousticStageHandle = vault.GetBufferHandle<BiomeAcousticStageDTO>(
-                BufferID.BiomeTransitionAcousticStage,
-                1,
-                SystemID.Audio,
-                NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetBufferHandle<BiomeTransitionTelemetryEntry>(
-                BufferID.BiomeTransitionTelemetryRing,
-                BiomeTransitionConstants.TelemetryCapacity,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            _countersHandle = vault.GetBufferHandle<BiomeTransitionCounterDTO>(
-                BufferID.BiomeTransitionCounters,
-                1,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetBufferHandle<BiomeTransitionTuningDTO>(
-                BufferID.BiomeTransitionTuning,
-                1,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetBufferHandle<byte>(
-                BufferID.BiomeTransitionCsvScratch,
-                BiomeTransitionConstants.CsvScratchBytes,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            _mockCameraAupHandle = vault.GetBufferHandle<AbsoluteUniversePositionBlit128>(
-                BufferID.BiomeTransitionMockCameraAup,
-                1,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
+            _vaultReady =
+                EnsureBiomeVaultBuffer(vault, ref _statesHandle, BufferID.BiomeTransitionStates, OwnerSystem, BiomeTransitionConstants.MaxActiveBiomes, NativeArrayOptions.UninitializedMemory, out _) &&
+                EnsureBiomeVaultBuffer(vault, ref _centersHandle, BufferID.BiomeTransitionCenters, OwnerSystem, BiomeTransitionConstants.MaxActiveBiomes, NativeArrayOptions.UninitializedMemory, out _) &&
+                EnsureBiomeVaultBuffer(vault, ref _influenceHandle, BufferID.BiomeTransitionInfluences, OwnerSystem, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                EnsureBiomeVaultBuffer(vault, ref _currentAtmosphereHandle, BufferID.BiomeTransitionCurrentAtmosphere, OwnerSystem, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                EnsureBiomeVaultBuffer(vault, ref _blendMaskHandle, BufferID.BiomeTransitionBlendMask, OwnerSystem, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                EnsureBiomeVaultBuffer(vault, ref _shaderPayloadHandle, BufferID.BiomeTransitionShaderPayload, SystemID.GraphicsScalability, BiomeTransitionConstants.ShaderPayloadFloat4Count, NativeArrayOptions.UninitializedMemory, out _) &&
+                EnsureBiomeVaultBuffer(vault, ref _acousticStageHandle, BufferID.BiomeTransitionAcousticStage, SystemID.Audio, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                EnsureBiomeVaultBuffer(vault, ref _telemetryHandle, BufferID.BiomeTransitionTelemetryRing, OwnerSystem, BiomeTransitionConstants.TelemetryCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                EnsureBiomeVaultBuffer(vault, ref _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                EnsureBiomeVaultBuffer(vault, ref _tuningHandle, BufferID.BiomeTransitionTuning, OwnerSystem, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                EnsureBiomeVaultBuffer(vault, ref _csvScratchHandle, BufferID.BiomeTransitionCsvScratch, OwnerSystem, BiomeTransitionConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out _) &&
+                EnsureBiomeVaultBuffer(vault, ref _mockCameraAupHandle, BufferID.BiomeTransitionMockCameraAup, OwnerSystem, 1, NativeArrayOptions.UninitializedMemory, out _);
+            if (!_vaultReady)
+            {
+                ReleaseBiomeVaultHandles(vault);
+                _vault = null;
+                return;
+            }
 
-            _vaultReady = _statesHandle.IsCreated &&
-                          _centersHandle.IsCreated &&
-                          _influenceHandle.IsCreated &&
-                          _currentAtmosphereHandle.IsCreated &&
-                          _blendMaskHandle.IsCreated &&
-                          _shaderPayloadHandle.IsCreated &&
-                          _acousticStageHandle.IsCreated &&
-                          _telemetryHandle.IsCreated &&
-                          _countersHandle.IsCreated &&
-                          _tuningHandle.IsCreated &&
-                          _csvScratchHandle.IsCreated &&
-                          _mockCameraAupHandle.IsCreated;
             if (_vaultReady)
             {
                 NativeQueue<BiomeChangedSignal>.ParallelWriter unusedWriter = SignalBus<BiomeChangedSignal>.ParallelWriter;
@@ -593,20 +548,10 @@ namespace Hecton8.World.Biomes
         {
             CompletePipelineForShutdown();
             _pendingShaderPayloadUpload = false;
+            IDataVault vault = _vault;
+            ReleaseBiomeVaultHandles(vault);
             ReleaseShaderPayloadBuffers();
             _vault = null;
-            _statesHandle = default;
-            _centersHandle = default;
-            _influenceHandle = default;
-            _currentAtmosphereHandle = default;
-            _blendMaskHandle = default;
-            _shaderPayloadHandle = default;
-            _acousticStageHandle = default;
-            _telemetryHandle = default;
-            _countersHandle = default;
-            _tuningHandle = default;
-            _csvScratchHandle = default;
-            _mockCameraAupHandle = default;
             _vaultReady = false;
             _seedScheduled = false;
             _seededBiomeData = false;
@@ -617,11 +562,10 @@ namespace Hecton8.World.Biomes
 
         private void EnsureTuningDefaultNoRead()
         {
-            if (_tuningInitialized || !_vaultReady || _vault == null || !_tuningHandle.IsCreated)
+            if (_tuningInitialized || !_vaultReady || _vault == null)
                 return;
 
-            NativeArray<BiomeTransitionTuningDTO> tuning = _tuningHandle.Resolve(_vault);
-            if (!tuning.IsCreated || tuning.Length == 0)
+            if (!TryResolveBiomeVaultBuffer(_vault, ref _tuningHandle, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO> tuning))
                 return;
 
             tuning[0] = CreateDefaultTuning();
@@ -657,28 +601,17 @@ namespace Hecton8.World.Biomes
             if (vault == null || !_vaultReady)
                 return false;
 
-            states = _statesHandle.Resolve(vault);
-            centers = _centersHandle.Resolve(vault);
-            influence = _influenceHandle.Resolve(vault);
-            currentAtmosphere = _currentAtmosphereHandle.Resolve(vault);
-            blendMask = _blendMaskHandle.Resolve(vault);
-            shaderPayload = _shaderPayloadHandle.Resolve(vault);
-            acousticStage = _acousticStageHandle.Resolve(vault);
-            telemetry = _telemetryHandle.Resolve(vault);
-            counters = _countersHandle.Resolve(vault);
-            tuning = _tuningHandle.Resolve(vault);
-            mockCameraAup = _mockCameraAupHandle.Resolve(vault);
-            return states.IsCreated &&
-                   centers.IsCreated &&
-                   influence.IsCreated &&
-                   currentAtmosphere.IsCreated &&
-                   blendMask.IsCreated &&
-                   shaderPayload.IsCreated &&
-                   acousticStage.IsCreated &&
-                   telemetry.IsCreated &&
-                   counters.IsCreated &&
-                   tuning.IsCreated &&
-                   mockCameraAup.IsCreated;
+            return TryResolveBiomeVaultBuffer(vault, ref _statesHandle, BufferID.BiomeTransitionStates, OwnerSystem, BiomeTransitionConstants.MaxActiveBiomes, out states) &&
+                   TryResolveBiomeVaultBuffer(vault, ref _centersHandle, BufferID.BiomeTransitionCenters, OwnerSystem, BiomeTransitionConstants.MaxActiveBiomes, out centers) &&
+                   TryResolveBiomeVaultBuffer(vault, ref _influenceHandle, BufferID.BiomeTransitionInfluences, OwnerSystem, 1, out influence) &&
+                   TryResolveBiomeVaultBuffer(vault, ref _currentAtmosphereHandle, BufferID.BiomeTransitionCurrentAtmosphere, OwnerSystem, 1, out currentAtmosphere) &&
+                   TryResolveBiomeVaultBuffer(vault, ref _blendMaskHandle, BufferID.BiomeTransitionBlendMask, OwnerSystem, 1, out blendMask) &&
+                   TryResolveBiomeVaultBuffer(vault, ref _shaderPayloadHandle, BufferID.BiomeTransitionShaderPayload, SystemID.GraphicsScalability, BiomeTransitionConstants.ShaderPayloadFloat4Count, out shaderPayload) &&
+                   TryResolveBiomeVaultBuffer(vault, ref _acousticStageHandle, BufferID.BiomeTransitionAcousticStage, SystemID.Audio, 1, out acousticStage) &&
+                   TryResolveBiomeVaultBuffer(vault, ref _telemetryHandle, BufferID.BiomeTransitionTelemetryRing, OwnerSystem, BiomeTransitionConstants.TelemetryCapacity, out telemetry) &&
+                   TryResolveBiomeVaultBuffer(vault, ref _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out counters) &&
+                   TryResolveBiomeVaultBuffer(vault, ref _tuningHandle, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out tuning) &&
+                   TryResolveBiomeVaultBuffer(vault, ref _mockCameraAupHandle, BufferID.BiomeTransitionMockCameraAup, OwnerSystem, 1, out mockCameraAup);
         }
 
         private void TrySeedBiomeData()
@@ -765,15 +698,14 @@ namespace Hecton8.World.Biomes
             out JobHandle handle)
         {
             handle = default;
-            if (!_csvScratchHandle.IsCreated || _vault == null)
+            if (_vault == null)
                 return false;
 
             string fullPath = Path.Combine(ProjectRoot(), CsvRelativePath);
             if (!File.Exists(fullPath))
                 return false;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(_vault);
-            if (!scratch.IsCreated || scratch.Length == 0)
+            if (!TryResolveBiomeVaultBuffer(_vault, ref _csvScratchHandle, BufferID.BiomeTransitionCsvScratch, OwnerSystem, BiomeTransitionConstants.CsvScratchBytes, out NativeArray<byte> scratch))
                 return false;
 
             int bytesRead = ReadFileIntoNativeScratch(fullPath, scratch);
@@ -1071,12 +1003,11 @@ namespace Hecton8.World.Biomes
         private bool TryReadCounters(out BiomeTransitionCounterDTO counters)
         {
             counters = default;
-            if (_vault == null || !_countersHandle.IsCreated)
+            if (_vault == null ||
+                !TryReadBiomeVaultBuffer(_vault, in _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO> counterArray))
+            {
                 return false;
-
-            NativeArray<BiomeTransitionCounterDTO> counterArray = _countersHandle.Resolve(_vault);
-            if (!counterArray.IsCreated || counterArray.Length == 0)
-                return false;
+            }
 
             counters = counterArray[0];
             return true;
@@ -1085,12 +1016,11 @@ namespace Hecton8.World.Biomes
         private bool TryReadCachedTuning(out BiomeTransitionTuningDTO tuning)
         {
             tuning = default;
-            if (_vault == null || !_tuningHandle.IsCreated)
+            if (_vault == null ||
+                !TryReadBiomeVaultBuffer(_vault, in _tuningHandle, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO> tuningArray))
+            {
                 return false;
-
-            NativeArray<BiomeTransitionTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
-            if (!tuningArray.IsCreated || tuningArray.Length == 0)
-                return false;
+            }
 
             tuning = tuningArray[0];
             return true;
@@ -1098,12 +1028,11 @@ namespace Hecton8.World.Biomes
 
         private void PublishShaderPayloadToUnityGlobals()
         {
-            if (_vault == null || !_shaderPayloadHandle.IsCreated)
+            if (_vault == null ||
+                !TryResolveBiomeVaultBuffer(_vault, ref _shaderPayloadHandle, BufferID.BiomeTransitionShaderPayload, SystemID.GraphicsScalability, BiomeTransitionConstants.ShaderPayloadFloat4Count, out NativeArray<float4> payload))
+            {
                 return;
-
-            NativeArray<float4> payload = _shaderPayloadHandle.Resolve(_vault);
-            if (!payload.IsCreated || payload.Length < BiomeTransitionConstants.ShaderPayloadFloat4Count)
-                return;
+            }
 
             TryUploadShaderPayloadCBuffer(payload);
 
@@ -1267,17 +1196,16 @@ namespace Hecton8.World.Biomes
         private void PatchCompletedPipelineTiming(float cpuMicroseconds)
         {
             if (cpuMicroseconds <= 0f ||
-                _vault == null ||
-                !_telemetryHandle.IsCreated ||
-                !_countersHandle.IsCreated)
+                _vault == null)
             {
                 return;
             }
 
-            NativeArray<BiomeTransitionTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
-            NativeArray<BiomeTransitionCounterDTO> counters = _countersHandle.Resolve(_vault);
-            if (!telemetry.IsCreated || telemetry.Length == 0 || !counters.IsCreated || counters.Length == 0)
+            if (!TryResolveBiomeVaultBuffer(_vault, ref _telemetryHandle, BufferID.BiomeTransitionTelemetryRing, OwnerSystem, BiomeTransitionConstants.TelemetryCapacity, out NativeArray<BiomeTransitionTelemetryEntry> telemetry) ||
+                !TryResolveBiomeVaultBuffer(_vault, ref _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO> counters))
+            {
                 return;
+            }
 
             BiomeTransitionCounterDTO counter = counters[0];
             int cursor = math.clamp(counter.TelemetryCursor, 0, telemetry.Length - 1);
@@ -1320,15 +1248,15 @@ namespace Hecton8.World.Biomes
 
         private void DumpBlackBox()
         {
-            if (_vault == null || !_telemetryHandle.IsCreated)
+            if (_vault == null)
                 return;
 
-            NativeArray<BiomeTransitionTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
-            NativeArray<BiomeTransitionCounterDTO> counters = _countersHandle.Resolve(_vault);
-            if (!telemetry.IsCreated || telemetry.Length == 0)
+            if (!TryResolveBiomeVaultBuffer(_vault, ref _telemetryHandle, BufferID.BiomeTransitionTelemetryRing, OwnerSystem, BiomeTransitionConstants.TelemetryCapacity, out NativeArray<BiomeTransitionTelemetryEntry> telemetry))
                 return;
 
-            int cursor = counters.IsCreated && counters.Length > 0 ? counters[0].TelemetryCursor : 0;
+            int cursor = TryResolveBiomeVaultBuffer(_vault, ref _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO> counters)
+                ? counters[0].TelemetryCursor
+                : 0;
             TryDumpTelemetry(telemetry, cursor, ProjectRoot(), BlackBoxDumpPath);
             GlobalTelemetryBus.PublishPerformanceWarning(NonFiniteStateHash, RuntimeContextHash, 1f);
         }
@@ -1340,19 +1268,15 @@ namespace Hecton8.World.Biomes
                 return;
 
             IDataVault vault = _vault;
-            if (vault == null ||
-                !_centersHandle.IsCreated ||
-                !_blendMaskHandle.IsCreated ||
-                !_countersHandle.IsCreated)
+            if (vault == null)
+                return;
+
+            if (!TryResolveBiomeVaultBuffer(vault, ref _centersHandle, BufferID.BiomeTransitionCenters, OwnerSystem, BiomeTransitionConstants.MaxActiveBiomes, out NativeArray<BiomeCenterDTO> centers) ||
+                !TryResolveBiomeVaultBuffer(vault, ref _blendMaskHandle, BufferID.BiomeTransitionBlendMask, OwnerSystem, 1, out NativeArray<BiomeBlendMaskDTO> blendMask) ||
+                !TryResolveBiomeVaultBuffer(vault, ref _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO> counters))
             {
                 return;
             }
-
-            NativeArray<BiomeCenterDTO> centers = _centersHandle.Resolve(vault);
-            NativeArray<BiomeBlendMaskDTO> blendMask = _blendMaskHandle.Resolve(vault);
-            NativeArray<BiomeTransitionCounterDTO> counters = _countersHandle.Resolve(vault);
-            if (!centers.IsCreated || !counters.IsCreated || counters.Length == 0)
-                return;
 
             int count = math.clamp(counters[0].ActiveBiomeCount, 0, centers.Length);
             for (int i = 0; i < count; i++)
@@ -1434,20 +1358,9 @@ namespace Hecton8.World.Biomes
             mask = default;
             counters = default;
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.BiomeTransitionCurrentAtmosphere, out VaultBufferHandle<CurrentAtmosphereDTO> atmosphereHandle) ||
-                !vault.TryGetBufferHandle(BufferID.BiomeTransitionBlendMask, out VaultBufferHandle<BiomeBlendMaskDTO> maskHandle) ||
-                !vault.TryGetBufferHandle(BufferID.BiomeTransitionCounters, out VaultBufferHandle<BiomeTransitionCounterDTO> countersHandle))
-            {
-                return false;
-            }
-
-            NativeArray<CurrentAtmosphereDTO> atmosphereArray = atmosphereHandle.Resolve(vault);
-            NativeArray<BiomeBlendMaskDTO> maskArray = maskHandle.Resolve(vault);
-            NativeArray<BiomeTransitionCounterDTO> counterArray = countersHandle.Resolve(vault);
-            if (!atmosphereArray.IsCreated || atmosphereArray.Length == 0 ||
-                !maskArray.IsCreated || maskArray.Length == 0 ||
-                !counterArray.IsCreated || counterArray.Length == 0)
+            if (!TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionCurrentAtmosphere, OwnerSystem, 1, out NativeArray<CurrentAtmosphereDTO> atmosphereArray) ||
+                !TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionBlendMask, OwnerSystem, 1, out NativeArray<BiomeBlendMaskDTO> maskArray) ||
+                !TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO> counterArray))
             {
                 return false;
             }
@@ -1465,14 +1378,7 @@ namespace Hecton8.World.Biomes
         {
             tuning = default;
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.BiomeTransitionTuning, out VaultBufferHandle<BiomeTransitionTuningDTO> tuningHandle))
-            {
-                return false;
-            }
-
-            NativeArray<BiomeTransitionTuningDTO> tuningArray = tuningHandle.Resolve(vault);
-            if (!tuningArray.IsCreated || tuningArray.Length == 0)
+            if (!TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO> tuningArray))
                 return false;
 
             tuning = tuningArray[0];
@@ -1517,14 +1423,7 @@ namespace Hecton8.World.Biomes
         public static bool TryWriteTuning(in BiomeTransitionTuningDTO tuning)
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.BiomeTransitionTuning, out VaultBufferHandle<BiomeTransitionTuningDTO> tuningHandle))
-            {
-                return false;
-            }
-
-            NativeArray<BiomeTransitionTuningDTO> tuningArray = tuningHandle.Resolve(vault);
-            if (!tuningArray.IsCreated || tuningArray.Length == 0)
+            if (!TryOpenExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionTuning, OwnerSystem, 1, out NativeArray<BiomeTransitionTuningDTO> tuningArray))
                 return false;
 
             tuningArray[0] = tuning;
@@ -1536,20 +1435,171 @@ namespace Hecton8.World.Biomes
         public static bool TryDumpBlackBoxFromEditor()
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.BiomeTransitionTelemetryRing, out VaultBufferHandle<BiomeTransitionTelemetryEntry> telemetryHandle) ||
-                !vault.TryGetBufferHandle(BufferID.BiomeTransitionCounters, out VaultBufferHandle<BiomeTransitionCounterDTO> countersHandle))
+            if (!TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionTelemetryRing, OwnerSystem, BiomeTransitionConstants.TelemetryCapacity, out NativeArray<BiomeTransitionTelemetryEntry> telemetry))
+                return false;
+
+            int cursor = TryReadExistingBiomeVaultBuffer(vault, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO> counters)
+                ? counters[0].TelemetryCursor
+                : 0;
+            return TryDumpTelemetry(telemetry, cursor, ProjectRoot(), BlackBoxDumpPath);
+        }
+
+        private void ReleaseBiomeVaultHandles(IDataVault vault)
+        {
+            ReleaseBiomeVaultHandle(vault, ref _statesHandle, BufferID.BiomeTransitionStates, OwnerSystem);
+            ReleaseBiomeVaultHandle(vault, ref _centersHandle, BufferID.BiomeTransitionCenters, OwnerSystem);
+            ReleaseBiomeVaultHandle(vault, ref _influenceHandle, BufferID.BiomeTransitionInfluences, OwnerSystem);
+            ReleaseBiomeVaultHandle(vault, ref _currentAtmosphereHandle, BufferID.BiomeTransitionCurrentAtmosphere, OwnerSystem);
+            ReleaseBiomeVaultHandle(vault, ref _blendMaskHandle, BufferID.BiomeTransitionBlendMask, OwnerSystem);
+            ReleaseBiomeVaultHandle(vault, ref _shaderPayloadHandle, BufferID.BiomeTransitionShaderPayload, SystemID.GraphicsScalability);
+            ReleaseBiomeVaultHandle(vault, ref _acousticStageHandle, BufferID.BiomeTransitionAcousticStage, SystemID.Audio);
+            ReleaseBiomeVaultHandle(vault, ref _telemetryHandle, BufferID.BiomeTransitionTelemetryRing, OwnerSystem);
+            ReleaseBiomeVaultHandle(vault, ref _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem);
+            ReleaseBiomeVaultHandle(vault, ref _tuningHandle, BufferID.BiomeTransitionTuning, OwnerSystem);
+            ReleaseBiomeVaultHandle(vault, ref _csvScratchHandle, BufferID.BiomeTransitionCsvScratch, OwnerSystem);
+            ReleaseBiomeVaultHandle(vault, ref _mockCameraAupHandle, BufferID.BiomeTransitionMockCameraAup, OwnerSystem);
+        }
+
+        private static bool EnsureBiomeVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID owner,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (TryResolveBiomeVaultBuffer(vault, ref handle, bufferId, owner, requiredLength, out buffer))
+                return true;
+
+            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, owner, options);
+            return TryResolveBiomeVaultBuffer(vault, ref handle, bufferId, owner, requiredLength, out buffer);
+        }
+
+        private static bool TryResolveBiomeVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID owner,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (IsBiomeVaultHandle(in handle, bufferId, owner) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
             {
+                return true;
+            }
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !IsBiomeVaultHandle(in handle, bufferId, owner) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                handle = default;
+                buffer = default;
                 return false;
             }
 
-            NativeArray<BiomeTransitionTelemetryEntry> telemetry = telemetryHandle.Resolve(vault);
-            NativeArray<BiomeTransitionCounterDTO> counters = countersHandle.Resolve(vault);
-            if (!telemetry.IsCreated || telemetry.Length == 0)
+            return true;
+        }
+
+        private static bool TryReadBiomeVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID owner,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsBiomeVaultHandle(in handle, bufferId, owner) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryOpenExistingBiomeVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            SystemID owner,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
                 return false;
 
-            int cursor = counters.IsCreated && counters.Length > 0 ? counters[0].TelemetryCursor : 0;
-            return TryDumpTelemetry(telemetry, cursor, ProjectRoot(), BlackBoxDumpPath);
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                !IsBiomeVaultHandle(in handle, bufferId, owner) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryReadExistingBiomeVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            SystemID owner,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                !IsBiomeVaultHandle(in handle, bufferId, owner) ||
+                !vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsBiomeVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID owner) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)owner &&
+                   handle.Generation != 0u;
+        }
+
+        private static void ReleaseBiomeVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID owner) where T : struct
+        {
+            if (vault != null && IsBiomeVaultHandle(in handle, bufferId, owner))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static bool TryDumpTelemetry(

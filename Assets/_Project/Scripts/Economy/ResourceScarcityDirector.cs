@@ -247,7 +247,9 @@ namespace Hecton8.Economy
         /// </summary>
         public float GetSectorSpawnRateScalar(int itemHashId, Vector3 worldPosition)
         {
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition positionAup))
+                return 1f;
+
             return GetSectorSpawnRateScalar(itemHashId, in positionAup);
         }
 
@@ -264,7 +266,9 @@ namespace Hecton8.Economy
         /// </summary>
         public float GetSectorValueScalar(int itemHashId, Vector3 worldPosition)
         {
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition positionAup))
+                return 1f;
+
             return GetSectorValueScalar(itemHashId, in positionAup);
         }
 
@@ -281,7 +285,9 @@ namespace Hecton8.Economy
         /// </summary>
         public float GetSectorCraftInflationScalar(int itemHashId, Vector3 worldPosition)
         {
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition positionAup))
+                return 0f;
+
             return GetSectorCraftInflationScalar(itemHashId, in positionAup);
         }
 
@@ -311,7 +317,9 @@ namespace Hecton8.Economy
         /// </summary>
         public int ResolveInflatedIngredientAmount(int itemHashId, int baseAmount, Vector3 worldPosition, int accessibleUnits)
         {
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition positionAup))
+                return ResolveInflatedIngredientAmountWithoutSector(itemHashId, baseAmount, accessibleUnits);
+
             return ResolveInflatedIngredientAmount(itemHashId, baseAmount, in positionAup, accessibleUnits);
         }
 
@@ -323,6 +331,15 @@ namespace Hecton8.Economy
             float multiplier = Mathf.Max(
                 1f + GetSectorCraftInflationScalar(itemHashId, in worldPosition),
                 ResolveHoardingIngredientMultiplier(itemHashId, accessibleUnits));
+            return Mathf.Max(baseAmount, (int)math.ceil(baseAmount * multiplier));
+        }
+
+        private static int ResolveInflatedIngredientAmountWithoutSector(int itemHashId, int baseAmount, int accessibleUnits)
+        {
+            if (itemHashId == 0 || baseAmount <= 0)
+                return Mathf.Max(0, baseAmount);
+
+            float multiplier = ResolveHoardingIngredientMultiplier(itemHashId, accessibleUnits);
             return Mathf.Max(baseAmount, (int)math.ceil(baseAmount * multiplier));
         }
 
@@ -613,11 +630,46 @@ namespace Hecton8.Economy
             if (playerContext != null && playerContext.PlayerMovement != null)
             {
                 playerAup = playerContext.PlayerMovement.CurrentAup;
-                return true;
+                return IsFiniteAup(in playerAup);
             }
 
             playerAup = default;
             return false;
+        }
+
+        private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
+        {
+            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return IsFiniteAup(in originAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition) ||
+                !TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup))
+            {
+                return false;
+            }
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
+        }
+
+        private static bool IsFiniteRuntimePosition(Vector3 runtimePosition)
+        {
+            return math.isfinite(runtimePosition.x) &&
+                   math.isfinite(runtimePosition.y) &&
+                   math.isfinite(runtimePosition.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition positionAup)
+        {
+            return math.isfinite(positionAup.LocalX) &&
+                   math.isfinite(positionAup.LocalY) &&
+                   math.isfinite(positionAup.LocalZ);
         }
 
         private void AccumulateSectorExtraction(int itemHashId, in AbsoluteUniversePosition worldAup, int quantity)
@@ -658,7 +710,9 @@ namespace Hecton8.Economy
 
         private int GetSectorExtractedUnits(int itemHashId, Vector3 worldPosition)
         {
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition positionAup))
+                return 0;
+
             return GetSectorExtractedUnits(itemHashId, in positionAup);
         }
 

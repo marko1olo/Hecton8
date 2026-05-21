@@ -143,16 +143,8 @@ namespace Hecton8.Tools
         /// </summary>
         public float GetTotalEfficiency()
         {
-            float total = efficiency;
-
-            for (int i = 0; i < maxUpgradeSlots && i < installedUpgrades.Length; i++)
-            {
-                ToolUpgradeData upgrade = installedUpgrades[i];
-                if (upgrade != null)
-                    total += upgrade.efficiencyBonus;
-            }
-
-            return total;
+            // Legacy authoring facade only; runtime upgrades compile through ToolUpgradeSystem DTO rules.
+            return Math.Max(0.1f, efficiency);
         }
 
         /// <summary>
@@ -160,16 +152,8 @@ namespace Hecton8.Tools
         /// </summary>
         public float GetTotalSpeed()
         {
-            float total = speed;
-
-            for (int i = 0; i < maxUpgradeSlots && i < installedUpgrades.Length; i++)
-            {
-                ToolUpgradeData upgrade = installedUpgrades[i];
-                if (upgrade != null)
-                    total += upgrade.speedBonus;
-            }
-
-            return total;
+            // Legacy authoring facade only; runtime upgrades compile through ToolUpgradeSystem DTO rules.
+            return Math.Max(0.1f, speed);
         }
 
         /// <summary>
@@ -177,16 +161,8 @@ namespace Hecton8.Tools
         /// </summary>
         public float GetTotalEnergyConsumption()
         {
-            float total = energyConsumptionRate;
-
-            for (int i = 0; i < maxUpgradeSlots && i < installedUpgrades.Length; i++)
-            {
-                ToolUpgradeData upgrade = installedUpgrades[i];
-                if (upgrade != null)
-                    total += upgrade.energyConsumptionModifier;
-            }
-
-            return Mathf.Max(0.1f, total); // minimum 0.1
+            // Legacy authoring facade only; runtime upgrades compile through ToolUpgradeSystem DTO rules.
+            return Math.Max(0.1f, energyConsumptionRate);
         }
 
         /// <summary>
@@ -242,17 +218,25 @@ namespace Hecton8.Tools
         /// Copies the authored modular loadout into the caller-provided scratch buffer.
         /// Runtime systems must not retain or mutate the ScriptableObject array directly.
         /// </summary>
-        public int CopyDefaultModules(ToolModuleData[] destination)
+        public int CopyDefaultModuleRules(ToolUpgradeModuleRuleDTO[] destination, uint toolId)
         {
-            if (destination == null || destination.Length == 0 || defaultModules == null || defaultModules.Length == 0)
+            if (destination == null || destination.Length == 0)
                 return 0;
+
+            if (defaultModules == null || defaultModules.Length == 0)
+            {
+                for (int i = 0; i < destination.Length; i++)
+                    destination[i] = default;
+
+                return 0;
+            }
 
             int copyCount = Math.Min(Math.Min(destination.Length, defaultModules.Length), Math.Max(0, maxUpgradeSlots));
             for (int i = 0; i < copyCount; i++)
-                destination[i] = defaultModules[i];
+                destination[i] = ToolUpgradeSystem.BuildModuleRule(defaultModules[i], i, toolId);
 
             for (int i = copyCount; i < destination.Length; i++)
-                destination[i] = null;
+                destination[i] = default;
 
             return copyCount;
         }

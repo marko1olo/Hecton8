@@ -344,7 +344,7 @@ namespace Hecton8.World
         {
             _activeArtificialInteriorState = new ArtificialInteriorState
             {
-                IsActive = true,
+                IsActive = 1,
                 Type = type,
                 StructureId = structureId,
                 Bounds = bounds
@@ -916,8 +916,8 @@ namespace Hecton8.World
                 DisposeNativeArray(
                     ref state.TerrainHoleMaskNative,
                     state.TerrainHolesJobScheduled ? state.TerrainHolesJobHandle : default);
-                // COLD ALLOC: NativeArray<bool>[safeLength] - deferred terrain-hole mask build output for one MapMagic tile - owner: HectonMapMagicVegetationBridge
-                state.TerrainHoleMaskNative = new NativeArray<bool>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeArray<byte>[safeLength] - deferred terrain-hole mask build output for one MapMagic tile - owner: HectonMapMagicVegetationBridge
+                state.TerrainHoleMaskNative = new NativeArray<byte>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
 
             if (state.TerrainHoleMaskManaged == null ||
@@ -1019,7 +1019,7 @@ namespace Hecton8.World
                     if ((uint)flatIndex >= (uint)length)
                         break;
 
-                    state.TerrainHoleMaskManaged[y, x] = state.TerrainHoleMaskNative[flatIndex];
+                    state.TerrainHoleMaskManaged[y, x] = state.TerrainHoleMaskNative[flatIndex] != 0;
                 }
             }
 

@@ -801,7 +801,7 @@ Keep outside:
 
 ## Scatter
 
-### Why It Is Ready
+### Static Readiness Notes
 
 Evidence already exists:
 

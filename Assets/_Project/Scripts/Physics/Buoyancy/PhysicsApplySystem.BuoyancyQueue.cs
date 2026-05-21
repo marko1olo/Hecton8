@@ -64,7 +64,7 @@ namespace Hecton8.Physics
                 BuoyancyForcePacketDTO packet = packets[i];
                 if (packet.EntityHashID == 0u ||
                     !math.all(math.isfinite(packet.NetForce)) ||
-                    !TryResolveBuoyancyBody(packet, bodyBindings, bodyResolver, out Rigidbody body))
+                    !EnsureBuoyancyBodyBinding(packet, bodyBindings, bodyResolver, out Rigidbody body))
                 {
                     unresolved++;
                     continue;
@@ -84,7 +84,7 @@ namespace Hecton8.Physics
             }
         }
 
-        private static bool TryResolveBuoyancyBody(
+        private static bool EnsureBuoyancyBodyBinding(
             BuoyancyForcePacketDTO packet,
             NativeArray<BuoyancyBodyBindingDTO> bodyBindings,
             GlobalPhysicsStateManager bodyResolver,
@@ -112,7 +112,7 @@ namespace Hecton8.Physics
                 }
             }
 
-            if (!GlobalPhysicsStateManager.TryResolveTrackedBodyByFoldedEntityHash(
+            if (!GlobalPhysicsStateManager.TryFindTrackedBodyByFoldedEntityHash(
                     bodyResolver,
                     packet.EntityHashID,
                     out body,

@@ -1,1632 +1,0 @@
-﻿diff --git a/Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader b/Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader
-index 8730183c..cbeee388 100644
---- a/Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader
-+++ b/Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader
-@@ -47,6 +47,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
-         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
-+        #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
- 
-         CBUFFER_START(UnityPerMaterial)
-             float4 _Instance_Color;
-@@ -72,6 +73,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
-         CBUFFER_END
- 
-         float4 _SargassumCutMaskWorldRect;
-+        float4 _HectonDamageVolumeWorldMin;
-+        float4 _HectonDamageVolumeInvSize;
-         float4 _HectonFloatingOriginOffset;
-         float4 _HectonNoirResolveSettings;
-         float4 _HectonNoirFogStratification;
-@@ -80,6 +83,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
-         float4 _HectonNoirCausticsShape;
-         float4 _HectonNoirCaveAttenuation;
-         float _SargassumCutMaskActive;
-+        float _HectonDamageVolumeActive;
-         float _HectonVoxelSSAOActive;
-         int _HectonRecentCutHeatCount;
-         float3 _LightDirection;
-@@ -98,6 +102,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
-         SAMPLER(sampler_HectonVoxelSSAOTex);
-         TEXTURE2D(_SargassumCutMaskRT);
-         SAMPLER(sampler_SargassumCutMaskRT);
-+        TEXTURE3D(_HectonDamageVolumeTex);
-+        SAMPLER(sampler_HectonDamageVolumeTex);
- 
-         struct Attributes
-         {
-@@ -252,9 +258,26 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
-             return SAMPLE_TEXTURE2D_LOD(_SargassumCutMaskRT, sampler_SargassumCutMaskRT, uv, 0).r;
-         }
- 
-+        half EvaluateDamageVolumeMask(float3 positionWS)
-+        {
-+            if (_HectonDamageVolumeActive < 0.5)
-+                return 0.0h;
-+
-+            float3 uvw = (positionWS - _HectonDamageVolumeWorldMin.xyz) * _HectonDamageVolumeInvSize.xyz;
-+            if (uvw.x < 0.0 || uvw.x > 1.0 || uvw.y < 0.0 || uvw.y > 1.0 || uvw.z < 0.0 || uvw.z > 1.0)
-+                return 0.0h;
-+
-+            return SAMPLE_TEXTURE3D_LOD(_HectonDamageVolumeTex, sampler_HectonDamageVolumeTex, uvw, 0).r;
-+        }
-+
-+        half ResolveSkirtCoverageMask(half vertexAlpha)
-+        {
-+            return saturate(pow(saturate(vertexAlpha), max(_SkirtBlendContrast, 0.1)));
-+        }
-+
-         half ResolveSkirtCoverage(half vertexAlpha, float2 positionCS)
-         {
--            half shapedAlpha = saturate(pow(saturate(vertexAlpha), max(_SkirtBlendContrast, 0.1)));
-+            half shapedAlpha = ResolveSkirtCoverageMask(vertexAlpha);
-             clip(shapedAlpha - ResolveDitherNoise(positionCS));
-             return shapedAlpha;
-         }
-@@ -370,7 +393,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
- 
-         half3 EvaluateLighting(float3 positionWS, half3 normalWS, half3 viewDirWS, half3 albedo, half metallic, half smoothness, half occlusion, half localCausticMask)
-         {
--            half3 color = SampleSH(normalWS) * albedo * occlusion;
-+            half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
-+            half3 color = SampleSH(normalWS) * albedo * occlusion * caveAmbientFactor;
-             half specularStrength = lerp(0.04h, 0.22h, metallic);
-             half specularPower = lerp(16.0h, 96.0h, smoothness);
- 
-@@ -391,10 +415,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
-                 half3 additionalHalfDir = SafeNormalize3(additionalDir + viewDirWS);
-                 half additionalSpecular = pow(saturate(dot(normalWS, additionalHalfDir)), specularPower) * smoothness * specularStrength;
-                 half causticLightMask = lerp(1.0h, localCausticMask, saturate(additionalNdotL * light.distanceAttenuation));
--                color += ((albedo * additionalNdotL + additionalSpecular) * causticLightMask) * light.color * (light.distanceAttenuation * light.shadowAttenuation);
-+                float additionalShadowAttenuation = HectonCoreLitResolveFlashlightAdditionalShadow(lightIndex, positionWS, normalWS, light.shadowAttenuation);
-+                color += ((albedo * additionalNdotL + additionalSpecular) * causticLightMask) * light.color * (light.distanceAttenuation * additionalShadowAttenuation);
-             LIGHT_LOOP_END
-             #endif
- 
-+            color += HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS) * albedo;
-+
-             return color;
-         }
- 
-@@ -405,7 +432,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
-             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
-             output.positionCS = positionInputs.positionCS;
-             output.positionWS = positionInputs.positionWS;
--            output.normalWS = normalize(normalInputs.normalWS);
-+            output.normalWS = SafeNormalize3(normalInputs.normalWS);
-             output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(positionInputs.positionWS));
-             output.skirtAlpha = saturate(input.color.b);
-             output.absolutePositionWS = input.absolutePositionWS;
-@@ -431,7 +458,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
-             VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
-             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
-             output.positionWS = positionInputs.positionWS;
--            output.normalWS = normalize(normalInputs.normalWS);
-+            output.normalWS = SafeNormalize3(normalInputs.normalWS);
-             output.skirtAlpha = saturate(input.color.b);
-             output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionInputs.positionWS, output.normalWS, _LightDirection));
-             output.positionCS = ApplySkirtDepthBias(output.positionCS, output.skirtAlpha);
-@@ -454,6 +481,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
-             Cull [_Cull]
-             ZWrite On
-             ZTest LEqual
-+            AlphaToMask On
-             Stencil
-             {
-                 Ref 128
-@@ -471,8 +499,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
- 
-             half4 Frag(SurfaceVaryings input) : SV_Target
-             {
--                half skirtCoverage = ResolveSkirtCoverage(input.skirtAlpha, input.positionCS.xy);
--                half3 baseNormalWS = normalize(input.normalWS);
-+                half skirtCoverage = ResolveSkirtCoverageMask(input.skirtAlpha);
-+                half3 baseNormalWS = SafeNormalize3(input.normalWS);
-                 half3 triplanarWeights = ComputeTriplanarWeights(baseNormalWS);
-                 float3 samplePositionWS = input.absolutePositionWS;
-                 half3 triplanarNormalWS = SampleTriplanarNormal(samplePositionWS, baseNormalWS, triplanarWeights);
-@@ -480,7 +508,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
- 
-                 half4 baseSample = SampleTriplanarColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, triplanarWeights);
-                 half4 maskSample = SampleTriplanarColor(TEXTURE2D_ARGS(_Mask_Map, sampler_Mask_Map), samplePositionWS, triplanarWeights);
--                half cutMask = EvaluateGlobalCutMask(input.positionWS);
-+                half cutMask = max(EvaluateGlobalCutMask(input.positionWS), EvaluateDamageVolumeMask(input.positionWS));
-                 half scarMask = pow(saturate(cutMask), max(_CutScarSharpness, 0.5h));
-                 half recentHeatMask;
-                 half recentHeatAge01;
-@@ -506,11 +534,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
-                 half ambientOcclusion = saturate(maskSample.g * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
-                 half localCausticMask = ResolveLocalLightCaustic(samplePositionWS, normalWS, input.positionCS);
- 
--                half3 litColor = EvaluateLighting(input.positionWS, normalWS, normalize(input.viewDirWS), albedo, metallic, smoothness, ambientOcclusion, localCausticMask);
-+                half3 litColor = EvaluateLighting(input.positionWS, normalWS, SafeNormalize3(input.viewDirWS), albedo, metallic, smoothness, ambientOcclusion, localCausticMask);
-                 half thermalEmission = _CutScarEmission * recentHeatMask * lerp(0.22h, 1.0h, saturate(1.0h - recentHeatAge01));
-                 half3 emission = (_CutScarWarmColor.rgb * (_CutScarEmission * scarMask * 0.12h)) + (thermalColor * thermalEmission);
-                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);
--                return half4(finalColor, 1.0h);
-+                return half4(finalColor, skirtCoverage);
-             }
-             ENDHLSL
-         }
-@@ -531,7 +559,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
- 
-             half4 ShadowFrag(ShadowVaryings input) : SV_Target
-             {
--                half scarMask = pow(saturate(EvaluateGlobalCutMask(input.positionWS)), max(_CutScarSharpness, 0.5h));
-+                half scarMask = pow(saturate(max(EvaluateGlobalCutMask(input.positionWS), EvaluateDamageVolumeMask(input.positionWS))), max(_CutScarSharpness, 0.5h));
-                 ResolveShadowCoverage(input.skirtAlpha, input.positionCS.xy, scarMask, input.positionWS);
-                 return 0.0h;
-             }
-diff --git a/Assets/_Project/Art/Shaders/Hecton_DryZoneLit.shader b/Assets/_Project/Art/Shaders/Hecton_DryZoneLit.shader
-index d163464a..d8db7362 100644
---- a/Assets/_Project/Art/Shaders/Hecton_DryZoneLit.shader
-+++ b/Assets/_Project/Art/Shaders/Hecton_DryZoneLit.shader
-@@ -68,6 +68,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
-             Blend[_SrcBlend][_DstBlend], [_SrcBlendAlpha][_DstBlendAlpha]
-             ZWrite[_ZWrite]
-             Cull[_Cull]
-+            AlphaToMask On
- 
-             Stencil
-             {
-@@ -87,6 +88,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
- 
-             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-+            #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
- 
-             CBUFFER_START(UnityPerMaterial)
-                 float4 _BaseColor;
-@@ -144,7 +146,8 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
- 
-             half3 EvaluateLighting(float3 positionWS, half3 normalWS, half3 viewDirWS, half3 albedo, half metallic, half smoothness, half occlusion)
-             {
--                half3 color = SampleSH(normalWS) * albedo * occlusion;
-+                half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
-+                half3 color = SampleSH(normalWS) * albedo * occlusion * caveAmbientFactor;
-                 half specularStrength = lerp(0.04h, 0.22h, metallic);
-                 half specularPower = lerp(16.0h, 96.0h, smoothness);
- 
-@@ -164,18 +167,22 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
-                     half additionalNdotL = saturate(dot(normalWS, additionalDir));
-                     half3 additionalHalfDir = SafeNormalize3(additionalDir + viewDirWS);
-                     half additionalSpecular = pow(saturate(dot(normalWS, additionalHalfDir)), specularPower) * smoothness * specularStrength;
--                    color += (albedo * additionalNdotL + additionalSpecular) * light.color * (light.distanceAttenuation * light.shadowAttenuation);
-+                    float additionalShadowAttenuation = HectonCoreLitResolveFlashlightAdditionalShadow(lightIndex, positionWS, normalWS, light.shadowAttenuation);
-+                    color += (albedo * additionalNdotL + additionalSpecular) * light.color * (light.distanceAttenuation * additionalShadowAttenuation);
-                 LIGHT_LOOP_END
-                 #endif
- 
-+                color += HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS) * albedo;
-+
-                 return color;
-             }
- 
-             half4 Frag(Varyings input) : SV_Target
-             {
-                 half4 albedoSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
-+                half coverage = 1.0h;
-                 #if defined(_ALPHATEST_ON)
--                clip(albedoSample.a - _Cutoff);
-+                coverage = saturate((albedoSample.a - _Cutoff) * 14.0h + 0.5h);
-                 #endif
- 
-                 half occlusion = lerp(1.0h, SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, input.uv).g, _OcclusionStrength);
-@@ -189,7 +196,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
-                     saturate(occlusion));
-                 half3 emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, input.uv).rgb * _EmissionColor.rgb;
-                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);
--                return half4(finalColor, albedoSample.a);
-+                return half4(finalColor, coverage);
-             }
-             ENDHLSL
-         }
-diff --git a/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader b/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
-index 19be75b2..9abddd6e 100644
---- a/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
-+++ b/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
-@@ -43,30 +43,64 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
-             float _HectonContactShadowSteps;
-             float _HectonContactShadowBias;
-             float _HectonContactShadowMaxDistance;
-+            float _HectonFlashlightShadowSteps;
-+            float _HectonFlashlightShadowSoftness;
-+            float _HectonFlashlightShadowMinStep;
-+            float _HectonFlashlightShadowBias;
-+            float _HectonFlashlightShadowFloor;
-+            float _HectonNoirPower;
-+            float _HectonNoirFogDensity;
-+            float4 _HectonNoirLiftColor;
-+            float _HectonLensGhostIntensity;
-+            float _HectonLensGhostScale;
-+            float _HectonLensChromaticAberration;
-+            float _HectonLensEdgeWeight;
-+            float _HectonHasExposureState;
-             float _HectonHasBlueNoiseTex;
-+            float _HectonFrameCount;
-         CBUFFER_END
- 
-+        StructuredBuffer<float4> _HectonNoirExposureState;
-         int _HectonScooterHeadlightCount;
-         float4 _HectonScooterHeadlightPositionsWS[HECTON_MAX_SCOOTER_HEADLIGHTS];
-         float4 _HectonScooterHeadlightDirectionsWS[HECTON_MAX_SCOOTER_HEADLIGHTS];
-         float4 _HectonScooterHeadlightColors[HECTON_MAX_SCOOTER_HEADLIGHTS];
-         float4 _HectonScooterHeadlightConeData[HECTON_MAX_SCOOTER_HEADLIGHTS];
-+        float4 _HectonFlashlightPositionWS;
-+        float4 _HectonFlashlightDirectionWS;
-+        float4 _HectonFlashlightColor;
-+        float4 _HectonFlashlightConeData;
-+        float4 _HectonFlashlightVoxelHalfExtents;
-+        float4x4 _HectonFlashlightVoxelWorldToLocal;
-+        float4 _HectonCaveVoxelHalfExtents;
-+        float4x4 _HectonCaveVoxelWorldToLocal;
-+        float4 _SunDirection;
-         float4 _HectonScooterVelocityWS;
-         float4 _HectonFloorBiolumColor;
--        float4 _HectonVegetationWakeTrailWorldRect;
-+        float4 _HectonShallowWaterFieldWorldRect;
-+        float4 _HectonCaveVoxelAoParams;
-         float4 _GlobalDriftOffset;
-         float4 _BlitTexture_TexelSize;
-         float4 _BlueNoiseTex_TexelSize;
-+        float4 _HectonShaftsTexture_TexelSize;
-+        float _EclipseOcclusion;
-         float _HectonFloorBiolumStrength;
--        float _HectonVegetationWakeTrailActive;
-+        float _HectonShallowWaterFieldActive;
-         float _HectonScooterBrakeCloud;
-+        float _HectonFlashlightActive;
-+        float _HectonFlashlightVoxelActive;
-+        float _HectonCaveVoxelActive;
- 
-         TEXTURE2D_X(_BlitTexture);
-         TEXTURE2D(_BlueNoiseTex);
-         SAMPLER(sampler_BlueNoiseTex);
--        TEXTURE2D(_HectonVegetationWakeTrailRT);
--        SAMPLER(sampler_HectonVegetationWakeTrailRT);
-+        TEXTURE2D(_HectonShallowWaterFieldRT);
-+        SAMPLER(sampler_HectonShallowWaterFieldRT);
-         TEXTURE2D_X(_HectonShaftsTexture);
-+        TEXTURE3D(_VoxelDensityTex);
-+        SAMPLER(sampler_VoxelDensityTex);
-+        TEXTURE3D(_HectonCaveVoxelSdfTex);
-+        SAMPLER(sampler_HectonCaveVoxelSdfTex);
- 
-         struct Attributes
-         {
-@@ -101,22 +135,62 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
-             return lenSq > 0.00001 ? value * rsqrt(lenSq) : float3(0.0, 0.0, 1.0);
-         }
- 
-+        float ResolveSpotConeAttenuation(float cosAngle, float innerCos, float outerCos)
-+        {
-+            float coneRange = max(innerCos - outerCos, 0.0001);
-+            return saturate((cosAngle - outerCos) / coneRange);
-+        }
-+
-+        float ResolveVolumetricLightDistanceFade(float3 lightPositionWS)
-+        {
-+            float lightDistanceToCamera = distance(_WorldSpaceCameraPos, lightPositionWS);
-+            float safeDistance = isfinite(lightDistanceToCamera) ? lightDistanceToCamera : HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE;
-+            float fadeRange = max(HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE - HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START, 0.0001);
-+            float fade = 1.0 - saturate((safeDistance - HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START) / fadeRange);
-+            return max(fade, 0.0);
-+        }
-+
-+        float ResolveTemporalFrameIndex()
-+        {
-+            return max(_HectonFrameCount, floor(_Time.y * 60.0));
-+        }
-+
-+        float2 ResolveTemporalR2Offset()
-+        {
-+            const float2 r2Sequence = float2(0.7548776662466927, 0.5698402909980532);
-+            return frac(ResolveTemporalFrameIndex() * r2Sequence);
-+        }
-+
-+        float2 ResolveBlueNoiseTexelScale()
-+        {
-+            float useImportedTexelScale = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
-+            return lerp(float2(1.0 / 64.0, 1.0 / 64.0), _BlueNoiseTex_TexelSize.xy, useImportedTexelScale);
-+        }
-+
-         float ResolveInterleavedNoise(float2 screenUV)
-         {
--            float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
-+            float2 temporalOffset = ResolveTemporalR2Offset() * _ScaledScreenParams.xy;
-+            float2 pixel = floor(screenUV * _ScaledScreenParams.xy + temporalOffset);
-             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
-         }
- 
-         float ResolveBlueNoise(float2 screenUV)
-         {
-             float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
--            float2 blueNoiseUV = frac(pixel / 64.0);
-+            float2 temporalOffset = ResolveTemporalR2Offset();
-+            float2 blueNoiseUV = frac(pixel * ResolveBlueNoiseTexelScale() + temporalOffset);
-             float sampled = _HectonHasBlueNoiseTex > 0.5 ? SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r : 0.0;
-             float fallback = ResolveInterleavedNoise(screenUV);
-             float useBlueNoise = step(0.5, _HectonHasBlueNoiseTex) * step(0.0001, _BlueNoiseTex_TexelSize.z);
-             return lerp(fallback, sampled, useBlueNoise);
-         }
- 
-+        half3 ApplyResolveBlueNoiseDither(half3 color, float2 screenUV)
-+        {
-+            float dither = (ResolveBlueNoise(screenUV) - 0.5) * (1.0 / 255.0);
-+            return max(color + (half)dither.xxx, 0.0h);
-+        }
-+
-         float ResolveFarRawDepth()
-         {
-         #if UNITY_REVERSED_Z
-@@ -145,11 +219,12 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
-             linearEyeDepth = LinearEyeDepth(resolvedRawDepth, _ZBufferParams);
-         }
- 
--        float EvaluateSchlickPhase(float cosTheta, float anisotropy)
-+        float PhaseHG(float cosTheta, float anisotropy)
-         {
--            float k = anisotropy * 0.5;
--            float denominator = max(1.0 - k * cosTheta, 0.08);
--            return (1.0 - k * k) / (12.56637 * denominator * denominator);
-+            float g = clamp(anisotropy, -0.95, 0.95);
-+            float gSq = g * g;
-+            float denominator = max(1.0 + gSq - 2.0 * g * cosTheta, 0.0001);
-+            return (1.0 - gSq) * SafeRcp(12.56637 * denominator * sqrt(denominator));
-         }
- 
-         float Hash31(float3 value)
-@@ -196,18 +271,18 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
-             return density * floorBoost * _HectonSiltStrength;
-         }
- 
--        float4 EvaluateWakeTrailData(float3 positionWS)
-+        float4 EvaluateShallowWaterFieldData(float3 positionWS)
-         {
--            if (_HectonVegetationWakeTrailActive < 0.5)
-+            if (_HectonShallowWaterFieldActive < 0.5)
-                 return float4(0.5, 0.5, 0.0, 0.0);
- 
-             float2 uv = float2(
--                (positionWS.x - _HectonVegetationWakeTrailWorldRect.x) * _HectonVegetationWakeTrailWorldRect.z,
--                (positionWS.z - _HectonVegetationWakeTrailWorldRect.y) * _HectonVegetationWakeTrailWorldRect.w);
-+                (positionWS.x - _HectonShallowWaterFieldWorldRect.x) * _HectonShallowWaterFieldWorldRect.z,
-+                (positionWS.z - _HectonShallowWaterFieldWorldRect.y) * _HectonShallowWaterFieldWorldRect.w);
-             if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
-                 return float4(0.5, 0.5, 0.0, 0.0);
- 
--            return SAMPLE_TEXTURE2D_LOD(_HectonVegetationWakeTrailRT, sampler_HectonVegetationWakeTrailRT, uv, 0);
-+            return SAMPLE_TEXTURE2D_LOD(_HectonShallowWaterFieldRT, sampler_HectonShallowWaterFieldRT, uv, 0);
-         }
- 
-         float ResolveBrakeSiltImpulse(float3 cameraPositionWS, float3 samplePositionWS, float3 rayDirectionWS)
-@@ -345,16 +420,161 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
-             return 1.0 - saturate(shadowOcclusion * _HectonContactShadowStrength);
-         }
- 
--        float ResolveSpotConeAttenuation(float cosAngle, float innerCos, float outerCos)
-+        float ResolveFlashlightShadowFloor()
-         {
--            float coneRange = max(innerCos - outerCos, 0.0001);
--            return saturate((cosAngle - outerCos) / coneRange);
-+            float noirLiftFloor = max(_HectonNoirLiftColor.r, max(_HectonNoirLiftColor.g, _HectonNoirLiftColor.b));
-+            return max(_HectonFlashlightShadowFloor, noirLiftFloor);
-         }
- 
--        float ResolveVolumetricLightDistanceFade(float3 lightPositionWS)
-+        float3 TransformFlashlightVoxelLocal(float3 positionWS)
-         {
--            float lightDistanceToCamera = distance(_WorldSpaceCameraPos, lightPositionWS);
--            return 1.0 - smoothstep(HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START, HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE, lightDistanceToCamera);
-+            return mul(_HectonFlashlightVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
-+        }
-+
-+        float SampleFlashlightVoxelSignedDistance(float3 positionWS)
-+        {
-+            if (_HectonFlashlightVoxelActive <= 0.5)
-+                return _HectonFlashlightVoxelHalfExtents.w;
-+
-+            float3 halfExtents = max(_HectonFlashlightVoxelHalfExtents.xyz, float3(0.001, 0.001, 0.001));
-+            float3 localPosition = TransformFlashlightVoxelLocal(positionWS);
-+            float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
-+            if (sampleUv.x <= 0.0 || sampleUv.x >= 1.0 ||
-+                sampleUv.y <= 0.0 || sampleUv.y >= 1.0 ||
-+                sampleUv.z <= 0.0 || sampleUv.z >= 1.0)
-+            {
-+                return _HectonFlashlightVoxelHalfExtents.w;
-+            }
-+
-+            float encoded = SAMPLE_TEXTURE3D_LOD(_VoxelDensityTex, sampler_VoxelDensityTex, sampleUv, 0).r;
-+            return lerp(-_HectonFlashlightVoxelHalfExtents.w, _HectonFlashlightVoxelHalfExtents.w, encoded);
-+        }
-+
-+        float SampleCaveVoxelSignedDistance(float3 positionWS)
-+        {
-+            if (_HectonCaveVoxelActive <= 0.5)
-+                return _HectonCaveVoxelHalfExtents.w;
-+
-+            float3 halfExtents = max(_HectonCaveVoxelHalfExtents.xyz, float3(0.001, 0.001, 0.001));
-+            float3 localPosition = mul(_HectonCaveVoxelWorldToLocal, float4(positionWS, 1.0)).xyz;
-+            float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
-+            if (sampleUv.x <= 0.0 || sampleUv.x >= 1.0 ||
-+                sampleUv.y <= 0.0 || sampleUv.y >= 1.0 ||
-+                sampleUv.z <= 0.0 || sampleUv.z >= 1.0)
-+            {
-+                return _HectonCaveVoxelHalfExtents.w;
-+            }
-+
-+            float encoded = SAMPLE_TEXTURE3D_LOD(_HectonCaveVoxelSdfTex, sampler_HectonCaveVoxelSdfTex, sampleUv, 0).r;
-+            return lerp(-_HectonCaveVoxelHalfExtents.w, _HectonCaveVoxelHalfExtents.w, encoded);
-+        }
-+
-+        float EvaluateFlashlightVoxelShadowRay(float3 rayOriginWS, float3 rayDirectionWS, float rayLength)
-+        {
-+            if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5 || rayLength <= 0.0001)
-+                return 1.0;
-+
-+            int stepCount = max(1, (int)round(_HectonFlashlightShadowSteps));
-+            float minStep = max(_HectonFlashlightShadowMinStep, 0.01);
-+            float shadowFloor = ResolveFlashlightShadowFloor();
-+            float result = 1.0;
-+            float travel = minStep;
-+
-+            [loop]
-+            for (int stepIndex = 0; stepIndex < 32; stepIndex++)
-+            {
-+                if (stepIndex >= stepCount || travel >= rayLength)
-+                    break;
-+
-+                float3 samplePositionWS = rayOriginWS + rayDirectionWS * travel;
-+                float h = SampleFlashlightVoxelSignedDistance(samplePositionWS);
-+                if (h <= 0.02)
-+                    return shadowFloor;
-+
-+                result = min(result, _HectonFlashlightShadowSoftness * h / max(travel, 0.001));
-+                travel += max(minStep, h);
-+            }
-+
-+            return max(saturate(result), shadowFloor);
-+        }
-+
-+        float EvaluateFlashlightSurfaceMask(float3 surfacePositionWS, float3 normalWS)
-+        {
-+            if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5)
-+                return 0.0;
-+
-+            float3 lightPositionWS = _HectonFlashlightPositionWS.xyz;
-+            float lightRange = max(0.1, _HectonFlashlightPositionWS.w);
-+            float3 toSurfaceWS = surfacePositionWS - lightPositionWS;
-+            float surfaceDistance = length(toSurfaceWS);
-+            if (surfaceDistance <= 0.0001 || surfaceDistance >= lightRange)
-+                return 0.0;
-+
-+            float3 surfaceDirectionWS = toSurfaceWS * SafeRcp(surfaceDistance);
-+            float3 lightDirectionWS = SafeNormalize3(_HectonFlashlightDirectionWS.xyz);
-+            float coneAttenuation = ResolveSpotConeAttenuation(
-+                dot(lightDirectionWS, surfaceDirectionWS),
-+                _HectonFlashlightDirectionWS.w,
-+                _HectonFlashlightConeData.x);
-+            if (coneAttenuation <= 0.0001)
-+                return 0.0;
-+
-+            float rangeAttenuation = saturate(1.0 - surfaceDistance * _HectonFlashlightConeData.z);
-+            rangeAttenuation *= rangeAttenuation;
-+            float noL = saturate(dot(normalWS, -surfaceDirectionWS));
-+            return coneAttenuation * rangeAttenuation * noL * saturate(_HectonFlashlightColor.w * 0.35);
-+        }
-+
-+        float EvaluateFlashlightSurfaceShadow(float3 surfacePositionWS, float3 normalWS)
-+        {
-+            if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5)
-+                return 1.0;
-+
-+            float3 lightRayWS = _HectonFlashlightPositionWS.xyz - surfacePositionWS;
-+            float lightDistance = length(lightRayWS);
-+            if (lightDistance <= 0.0001)
-+                return 1.0;
-+
-+            float3 rayDirectionWS = lightRayWS * SafeRcp(lightDistance);
-+            float3 rayOriginWS = surfacePositionWS + normalWS * _HectonFlashlightShadowBias;
-+            float rayLength = max(lightDistance - _HectonFlashlightShadowBias, 0.0);
-+            return EvaluateFlashlightVoxelShadowRay(rayOriginWS, rayDirectionWS, rayLength);
-+        }
-+
-+        half3 EvaluateFlashlightScattering(float3 samplePositionWS, float3 rayDirectionWS)
-+        {
-+            if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5)
-+                return half3(0.0, 0.0, 0.0);
-+
-+            float3 lightPositionWS = _HectonFlashlightPositionWS.xyz;
-+            float lightRange = max(0.1, _HectonFlashlightPositionWS.w);
-+            float3 lightDirectionWS = SafeNormalize3(_HectonFlashlightDirectionWS.xyz);
-+            float3 sampleVectorWS = samplePositionWS - lightPositionWS;
-+            float sampleDistance = length(sampleVectorWS);
-+            if (sampleDistance <= 0.0001 || sampleDistance >= lightRange)
-+                return half3(0.0, 0.0, 0.0);
-+
-+            float3 sampleDirectionWS = sampleVectorWS * SafeRcp(sampleDistance);
-+            float coneAttenuation = ResolveSpotConeAttenuation(
-+                dot(lightDirectionWS, sampleDirectionWS),
-+                _HectonFlashlightDirectionWS.w,
-+                _HectonFlashlightConeData.x);
-+            if (coneAttenuation <= 0.0001)
-+                return half3(0.0, 0.0, 0.0);
-+
-+            float rangeAttenuation = saturate(1.0 - sampleDistance * _HectonFlashlightConeData.z);
-+            rangeAttenuation *= rangeAttenuation;
-+            float halo = exp2(-sampleDistance * (1.35 * _HectonFlashlightConeData.z));
-+            float phaseCos = saturate(dot(sampleDirectionWS, -rayDirectionWS));
-+            float phase = PhaseHG(phaseCos, _HectonShaftScatteringAnisotropy);
-+            float volumetricEnergy = (coneAttenuation * rangeAttenuation * phase * _HectonFlashlightConeData.y) + (halo * 0.08);
-+            float shadow = EvaluateFlashlightVoxelShadowRay(
-+                samplePositionWS - sampleDirectionWS * _HectonFlashlightShadowBias,
-+                -sampleDirectionWS,
-+                max(sampleDistance - _HectonFlashlightShadowBias, 0.0));
-+            half3 lightColor = _HectonFlashlightColor.rgb;
-+            float lightIntensity = _HectonFlashlightColor.w;
-+            return lightColor * (lightIntensity * volumetricEnergy * shadow);
-         }
- 
-         half3 EvaluateHeadlightScattering(float3 samplePositionWS, float3 rayDirectionWS)
-@@ -393,7 +613,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
-                 rangeAttenuation *= rangeAttenuation;
-                 float halo = exp2(-sampleDistance * (1.35 * inverseRange));
-                 float phaseCos = saturate(dot(sampleDirectionWS, -rayDirectionWS));
--                float phase = EvaluateSchlickPhase(phaseCos, _HectonShaftScatteringAnisotropy);
-+                float phase = PhaseHG(phaseCos, _HectonShaftScatteringAnisotropy);
-                 float volumetricEnergy = ((coneAttenuation * rangeAttenuation * phase * shaftStrength) + (halo * 0.08)) * volumetricLightFade;
-                 half3 lightColor = _HectonScooterHeadlightColors[lightIndex].rgb;
-                 float lightIntensity = _HectonScooterHeadlightColors[lightIndex].w;
-@@ -405,8 +625,11 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
- 
-         half3 IntegrateHeadlightShafts(float2 screenUV)
-         {
--            if (_HectonScooterHeadlightCount <= 0)
-+            if (_HectonScooterHeadlightCount <= 0 &&
-+                (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5))
-+            {
-                 return half3(0.0, 0.0, 0.0);
-+            }
- 
-             float rawDepth;
-             float depthValid;
-@@ -423,29 +646,32 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
-             float3 rayDirectionWS = rayVectorWS * SafeRcp(rayLength);
-             float noise = ResolveBlueNoise(screenUV);
-             float jitter = lerp(0.5, noise, _HectonShaftBlueNoiseJitter);
--            int steps = max(1, (int)round(_HectonShaftRaymarchSteps));
-+            const int steps = 8;
-             float stepLength = rayLength * SafeRcp((float)steps);
-             float extinction = max(0.0001, _HectonShaftDensity * 0.08);
-             half3 accumulated = half3(0.0, 0.0, 0.0);
- 
--            [loop]
--            for (int stepIndex = 0; stepIndex < 32; stepIndex++)
-+            [unroll(8)]
-+            for (int stepIndex = 0; stepIndex < steps; stepIndex++)
-             {
--                if (stepIndex >= steps)
--                    break;
--
-                 float travelDistance = min(rayLength, ((stepIndex + jitter) * stepLength));
-                 float3 samplePositionWS = cameraPositionWS + rayDirectionWS * travelDistance;
--                half3 scattering = EvaluateHeadlightScattering(samplePositionWS, rayDirectionWS);
-+                if (_HectonCaveVoxelActive > 0.5 && SampleCaveVoxelSignedDistance(samplePositionWS) <= 0.02)
-+                    break;
-+
-+                half3 scattering =
-+                    EvaluateHeadlightScattering(samplePositionWS, rayDirectionWS) +
-+                    EvaluateFlashlightScattering(samplePositionWS, rayDirectionWS);
-                 float surfaceProximity = saturate(travelDistance * SafeRcp(rayLength));
--                float4 wakeTrailData = EvaluateWakeTrailData(samplePositionWS);
--                float wakeIntensity = saturate(wakeTrailData.b);
--                float2 wakeDirection = wakeTrailData.rg * 2.0 - 1.0;
--                float3 wakeTurbulence = float3(wakeDirection.x, 0.0, wakeDirection.y) * (wakeIntensity * 2.1);
-+                float4 wakeTrailData = EvaluateShallowWaterFieldData(samplePositionWS);
-+                float wakeDisplacement = saturate(wakeTrailData.b);
-+                float2 wakeVelocity = wakeTrailData.rg * 2.0 - 1.0;
-+                float wakeVelocityMagnitude = saturate(length(wakeVelocity));
-+                float3 wakeTurbulence = float3(wakeVelocity.x, 0.0, wakeVelocity.y) * (wakeDisplacement * 1.4 + wakeVelocityMagnitude * 0.7);
-                 float brakeImpulse = ResolveBrakeSiltImpulse(cameraPositionWS, samplePositionWS, rayDirectionWS);
-                 float3 brakeTurbulence = SafeNormalize3(_HectonScooterVelocityWS.xyz) * (brakeImpulse * 1.8);
-                 float siltField = ResolveSiltField(samplePositionWS + wakeTurbulence + brakeTurbulence, rayDirectionWS, surfaceProximity);
--                siltField *= lerp(1.0, 1.0 + wakeIntensity * 1.35, wakeIntensity);
-+                siltField *= lerp(1.0, 1.0 + wakeDisplacement * 1.35, wakeDisplacement);
-                 siltField *= 1.0 + brakeImpulse * 2.4;
-                 scattering *= (1.0 + siltField);
-                 float distanceFade = exp2(-travelDistance * extinction);
-@@ -493,6 +719,124 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
-             return half4(accumulated * SafeRcp(weightSum), 1.0);
-         }
- 
-+        float ResolveNoirFogFactor(float linearEyeDepth)
-+        {
-+            float depthLinear = max(0.0, linearEyeDepth);
-+            float fogNoir = pow(saturate(1.0 - exp(-depthLinear * max(_HectonNoirFogDensity, 0.0001))), max(_HectonNoirPower, 0.001));
-+            return saturate(fogNoir);
-+        }
-+
-+        float ResolveExposureMultiplier()
-+        {
-+            if (_HectonHasExposureState <= 0.5)
-+                return 1.0;
-+
-+            return max(_HectonNoirExposureState[0].z, 0.05);
-+        }
-+
-+        half3 ResolveNoirMinimumColor()
-+        {
-+            return max(_HectonNoirLiftColor.rgb, half3(0.01h, 0.012h, 0.016h));
-+        }
-+
-+        float2 ResolveSunScreenUv(out float visibility)
-+        {
-+            float3 toSunWS = SafeNormalize3(-_SunDirection.xyz);
-+            if (dot(toSunWS, toSunWS) <= 0.0001)
-+            {
-+                visibility = 0.0;
-+                return float2(0.5, 0.5);
-+            }
-+
-+            float3 cameraPositionWS = GetCameraPositionWS();
-+            float4 clip = TransformWorldToHClip(cameraPositionWS + toSunWS * 4096.0);
-+            if (clip.w <= 0.0)
-+            {
-+                visibility = 0.0;
-+                return float2(0.5, 0.5);
-+            }
-+
-+            float2 uv = clip.xy * SafeRcp(clip.w) * 0.5 + 0.5;
-+            float inside =
-+                step(-0.25, uv.x) *
-+                step(uv.x, 1.25) *
-+                step(-0.25, uv.y) *
-+                step(uv.y, 1.25);
-+            visibility = inside * saturate(1.0 - _EclipseOcclusion);
-+            return uv;
-+        }
-+
-+        half3 EvaluateLensGhost(float2 screenUV, float2 ghostCenter, float ghostRadius, float2 aberrationOffset, float intensity)
-+        {
-+            float2 deltaR = screenUV - (ghostCenter + aberrationOffset);
-+            float2 deltaG = screenUV - ghostCenter;
-+            float2 deltaB = screenUV - (ghostCenter - aberrationOffset);
-+            float radiusSq = max(ghostRadius * ghostRadius, 0.000001);
-+            float maskR = saturate(1.0 - dot(deltaR, deltaR) * SafeRcp(radiusSq));
-+            float maskG = saturate(1.0 - dot(deltaG, deltaG) * SafeRcp(radiusSq));
-+            float maskB = saturate(1.0 - dot(deltaB, deltaB) * SafeRcp(radiusSq));
-+            maskR *= maskR;
-+            maskG *= maskG;
-+            maskB *= maskB;
-+            return half3(maskR, maskG, maskB) * intensity;
-+        }
-+
-+        half3 EvaluateProceduralLensArtifacts(float2 screenUV)
-+        {
-+            if (_HectonLensGhostIntensity <= 0.0001)
-+                return half3(0.0, 0.0, 0.0);
-+
-+            float sunVisibility;
-+            float2 sunUV = ResolveSunScreenUv(sunVisibility);
-+            if (sunVisibility <= 0.0001)
-+                return half3(0.0, 0.0, 0.0);
-+
-+            float2 centerUV = float2(0.5, 0.5);
-+            float2 flareVector = centerUV - sunUV;
-+            float2 radialFromCenter = screenUV - centerUV;
-+            float edgeFactor = saturate(dot(radialFromCenter, radialFromCenter) * 4.84);
-+            float edgeWeight = saturate(edgeFactor * max(_HectonLensEdgeWeight, 0.0));
-+            float2 aberrationDirection = SafeNormalize3(float3(flareVector, 0.0)).xy;
-+            float2 aberrationOffset = aberrationDirection * (_HectonLensChromaticAberration * lerp(0.35, 1.0, edgeFactor));
-+            float baseRadius = max(_HectonLensGhostScale, 0.001);
-+            float ghostFade = saturate(1.0 - dot(sunUV - centerUV, sunUV - centerUV) * 1.6);
-+            float visibility = sunVisibility * ghostFade * _HectonLensGhostIntensity;
-+            if (visibility <= 0.0001)
-+                return half3(0.0, 0.0, 0.0);
-+
-+            half3 ghosts = half3(0.0, 0.0, 0.0);
-+            ghosts += EvaluateLensGhost(screenUV, centerUV + flareVector * 0.35, baseRadius * 1.20, aberrationOffset * 0.7, visibility * 0.75);
-+            ghosts += EvaluateLensGhost(screenUV, centerUV + flareVector * 0.68, baseRadius * 0.94, aberrationOffset * 1.0, visibility * 0.55);
-+            ghosts += EvaluateLensGhost(screenUV, centerUV + flareVector * 1.05, baseRadius * 0.72, aberrationOffset * 1.35, visibility * 0.42);
-+            return ghosts * lerp(0.32, 1.0, edgeWeight);
-+        }
-+
-+        half3 BilateralUpsampleShafts(float2 screenUV, float centerDepth)
-+        {
-+            float2 texelSize = _HectonShaftsTexture_TexelSize.xy;
-+            float2 lowPixel = screenUV * _HectonShaftsTexture_TexelSize.zw - 0.5;
-+            float2 basePixel = floor(lowPixel);
-+            half3 accumulated = half3(0.0, 0.0, 0.0);
-+            float weightSum = 0.0;
-+
-+            [unroll(4)]
-+            for (int tapIndex = 0; tapIndex < 4; tapIndex++)
-+            {
-+                float2 tapOffset = float2((tapIndex & 1) != 0 ? 1.0 : 0.0, tapIndex >= 2 ? 1.0 : 0.0);
-+                float2 sampleUV = (basePixel + tapOffset + 0.5) * texelSize;
-+                float2 sampleDelta = (sampleUV - screenUV) * _HectonShaftsTexture_TexelSize.zw;
-+                float spatialWeight = exp2(-dot(sampleDelta, sampleDelta));
-+                float sampleDepth = ResolveLinearEyeDepthAtUv(saturate(sampleUV));
-+                float depthDelta = abs(sampleDepth - centerDepth);
-+                float depthWeight = exp2(-depthDelta * max(0.01, _HectonShaftBilateralDepthSigma));
-+                float weight = spatialWeight * depthWeight;
-+                accumulated += SAMPLE_TEXTURE2D_X(_HectonShaftsTexture, sampler_LinearClamp, saturate(sampleUV)).rgb * weight;
-+                weightSum += weight;
-+            }
-+
-+            return accumulated * SafeRcp(weightSum);
-+        }
-+
-         float3 ApproximateWorldNormal(float2 screenUV, float3 centerPositionWS)
-         {
-             float2 texel = 1.0 / _ScaledScreenParams.xy;
-@@ -562,22 +906,41 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
-         half4 FragComposite(Varyings input) : SV_Target
-         {
-             half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
--            half3 shafts = SAMPLE_TEXTURE2D_X(_HectonShaftsTexture, sampler_LinearClamp, input.screenUV).rgb;
--            half3 biolumProjection = EvaluateBiolumFloorProjection(input.screenUV);
-             float rawDepth;
-             float depthValid;
-             float3 scenePositionWS;
-             float linearEyeDepth;
-             ResolveDepthData(input.screenUV, rawDepth, depthValid, scenePositionWS, linearEyeDepth);
-+            float exposureMultiplier = ResolveExposureMultiplier();
-+            half3 noirMinimum = ResolveNoirMinimumColor();
-+            sourceColor.rgb *= exposureMultiplier;
-+            half3 shafts = BilateralUpsampleShafts(input.screenUV, linearEyeDepth);
-+            shafts *= exposureMultiplier;
-+            half3 biolumProjection = EvaluateBiolumFloorProjection(input.screenUV) * exposureMultiplier;
-+            half3 lensGhosts = EvaluateProceduralLensArtifacts(input.screenUV) * exposureMultiplier;
-             if (depthValid > 0.5)
-             {
-                 float3 normalWS = ApproximateWorldNormal(input.screenUV, scenePositionWS);
-                 float headlightMask = EvaluateSurfaceHeadlightMask(scenePositionWS, normalWS);
-                 float contactShadow = EvaluateContactShadow(scenePositionWS, normalWS);
-                 sourceColor.rgb *= lerp(1.0, contactShadow, headlightMask);
-+                float flashlightMask = EvaluateFlashlightSurfaceMask(scenePositionWS, normalWS);
-+                float flashlightShadow = EvaluateFlashlightSurfaceShadow(scenePositionWS, normalWS);
-+                sourceColor.rgb *= lerp(1.0, flashlightShadow, flashlightMask);
-+
-+                float fogNoir = ResolveNoirFogFactor(linearEyeDepth);
-+                sourceColor.rgb = lerp(sourceColor.rgb, max(noirMinimum, sourceColor.rgb * 0.14h + noirMinimum), fogNoir);
-+                sourceColor.rgb = max(sourceColor.rgb, noirMinimum);
-+            }
-+            else
-+            {
-+                sourceColor.rgb = max(sourceColor.rgb, noirMinimum);
-             }
- 
--            return half4(sourceColor.rgb + shafts + biolumProjection, sourceColor.a);
-+            half3 finalColor = sourceColor.rgb + shafts + biolumProjection + lensGhosts;
-+            finalColor = max(finalColor, noirMinimum);
-+            finalColor = ApplyResolveBlueNoiseDither(finalColor, input.screenUV);
-+            return half4(finalColor, sourceColor.a);
-         }
-         ENDHLSL
- 
-d i f f   - - g i t   a / A s s e t s / _ P r o j e c t / A r t / S h a d e r s / H e c t o n _ C o r e L i t . h l s l   b / A s s e t s / _ P r o j e c t / A r t / S h a d e r s / H e c t o n _ C o r e L i t . h l s l  
- n e w   f i l e   m o d e   1 0 0 6 4 4  
- i n d e x   0 0 0 0 0 0 0 0 . . 0 a f c c 9 9 e  
- - - -   / d e v / n u l l  
- + + +   b / A s s e t s / _ P r o j e c t / A r t / S h a d e r s / H e c t o n _ C o r e L i t . h l s l  
- @ @   - 0 , 0   + 1 , 2 1 0   @ @  
- + # i f n d e f   H E C T O N _ C O R E _ L I T _ I N C L U D E D  
- + # d e f i n e   H E C T O N _ C O R E _ L I T _ I N C L U D E D  
- +  
- + # i f n d e f   H E C T O N _ F L A S H L I G H T _ S D F _ S H A D O W _ M A X _ S T E P S  
- + # d e f i n e   H E C T O N _ F L A S H L I G H T _ S D F _ S H A D O W _ M A X _ S T E P S   2 4  
- + # e n d i f  
- +  
- + f l o a t 4   _ H e c t o n F l a s h l i g h t P o s i t i o n W S ;  
- + f l o a t 4   _ H e c t o n F l a s h l i g h t D i r e c t i o n W S ;  
- + f l o a t 4   _ H e c t o n F l a s h l i g h t C o l o r ;  
- + f l o a t 4   _ H e c t o n F l a s h l i g h t C o n e D a t a ;  
- + f l o a t 4   _ H e c t o n F l a s h l i g h t V o x e l H a l f E x t e n t s ;  
- + f l o a t 4 x 4   _ H e c t o n F l a s h l i g h t V o x e l W o r l d T o L o c a l ;  
- + f l o a t   _ H e c t o n F l a s h l i g h t A c t i v e ;  
- + f l o a t   _ H e c t o n F l a s h l i g h t V o x e l A c t i v e ;  
- + f l o a t   _ H e c t o n F l a s h l i g h t S h a d o w S t e p s ;  
- + f l o a t   _ H e c t o n F l a s h l i g h t S h a d o w S o f t n e s s ;  
- + f l o a t   _ H e c t o n F l a s h l i g h t S h a d o w M i n S t e p ;  
- + f l o a t   _ H e c t o n F l a s h l i g h t S h a d o w B i a s ;  
- + f l o a t   _ H e c t o n F l a s h l i g h t S h a d o w F l o o r ;  
- + f l o a t 4   _ H e c t o n C a v e V o x e l H a l f E x t e n t s ;  
- + f l o a t 4 x 4   _ H e c t o n C a v e V o x e l W o r l d T o L o c a l ;  
- + f l o a t 4   _ H e c t o n C a v e V o x e l A o P a r a m s ;  
- + f l o a t 4   _ H e c t o n P r o j e c t e d C a u s t i c s W o r l d R e c t ;  
- + f l o a t 4   _ H e c t o n P r o j e c t e d C a u s t i c s P a r a m s ;  
- + f l o a t 4   _ H e c t o n P r o j e c t e d C a u s t i c s C o l o r ;  
- + f l o a t   _ H e c t o n C a v e V o x e l A c t i v e ;  
- +  
- + T E X T U R E 3 D ( _ V o x e l D e n s i t y T e x ) ;  
- + S A M P L E R ( s a m p l e r _ V o x e l D e n s i t y T e x ) ;  
- + T E X T U R E 3 D ( _ H e c t o n C a v e V o x e l S d f T e x ) ;  
- + S A M P L E R ( s a m p l e r _ H e c t o n C a v e V o x e l S d f T e x ) ;  
- + T E X T U R E 2 D ( _ H e c t o n P r o j e c t e d C a u s t i c s T e x ) ;  
- + S A M P L E R ( s a m p l e r _ H e c t o n P r o j e c t e d C a u s t i c s T e x ) ;  
- +  
- + f l o a t 3   H e c t o n C o r e L i t S a f e N o r m a l i z e ( f l o a t 3   v a l u e )  
- + {  
- +         f l o a t   l e n S q   =   d o t ( v a l u e ,   v a l u e ) ;  
- +         r e t u r n   l e n S q   >   0 . 0 0 0 1   ?   v a l u e   *   r s q r t ( l e n S q )   :   f l o a t 3 ( 0 . 0 ,   1 . 0 ,   0 . 0 ) ;  
- + }  
- +  
- + f l o a t   H e c t o n C o r e L i t R e s o l v e F l a s h l i g h t S h a d o w F l o o r ( )  
- + {  
- +         r e t u r n   m a x ( _ H e c t o n F l a s h l i g h t S h a d o w F l o o r ,   0 . 0 2 ) ;  
- + }  
- +  
- + f l o a t   H e c t o n C o r e L i t E v a l u a t e P r o j e c t e d C a u s t i c s M a s k ( f l o a t 3   p o s i t i o n W S ,   f l o a t 3   n o r m a l W S )  
- + {  
- +         i f   ( _ H e c t o n P r o j e c t e d C a u s t i c s P a r a m s . x   < =   0 . 0 0 0 1 )  
- +                 r e t u r n   0 . 0 ;  
- +  
- +         f l o a t 2   u v   =   f l o a t 2 (  
- +                 ( p o s i t i o n W S . x   -   _ H e c t o n P r o j e c t e d C a u s t i c s W o r l d R e c t . x )   *   _ H e c t o n P r o j e c t e d C a u s t i c s W o r l d R e c t . z ,  
- +                 ( p o s i t i o n W S . z   -   _ H e c t o n P r o j e c t e d C a u s t i c s W o r l d R e c t . y )   *   _ H e c t o n P r o j e c t e d C a u s t i c s W o r l d R e c t . w ) ;  
- +         i f   ( a n y ( u v   <   0 . 0 )   | |   a n y ( u v   >   1 . 0 ) )  
- +                 r e t u r n   0 . 0 ;  
- +  
- +         f l o a t   d e p t h B e l o w W a t e r   =   m a x ( 0 . 0 ,   _ H e c t o n P r o j e c t e d C a u s t i c s P a r a m s . y   -   p o s i t i o n W S . y ) ;  
- +         f l o a t   d e p t h F a d e   =   1 . 0   -   s a t u r a t e ( ( d e p t h B e l o w W a t e r   -   _ H e c t o n P r o j e c t e d C a u s t i c s P a r a m s . z )   *   _ H e c t o n P r o j e c t e d C a u s t i c s P a r a m s . w ) ;  
- +         i f   ( d e p t h F a d e   < =   0 . 0 )  
- +                 r e t u r n   0 . 0 ;  
- +  
- +         f l o a t   u p F a c i n g   =   s a t u r a t e ( n o r m a l W S . y   *   1 . 2 5 ) ;  
- +         f l o a t   c a u s t i c s   =   S A M P L E _ T E X T U R E 2 D _ L O D ( _ H e c t o n P r o j e c t e d C a u s t i c s T e x ,   s a m p l e r _ H e c t o n P r o j e c t e d C a u s t i c s T e x ,   u v ,   0 ) . r ;  
- +         r e t u r n   c a u s t i c s   *   d e p t h F a d e   *   u p F a c i n g   *   _ H e c t o n P r o j e c t e d C a u s t i c s P a r a m s . x ;  
- + }  
- +  
- + h a l f 3   H e c t o n C o r e L i t E v a l u a t e P r o j e c t e d C a u s t i c s S c a t t e r i n g ( f l o a t 3   p o s i t i o n W S ,   f l o a t 3   n o r m a l W S )  
- + {  
- +         f l o a t   m a s k   =   H e c t o n C o r e L i t E v a l u a t e P r o j e c t e d C a u s t i c s M a s k ( p o s i t i o n W S ,   n o r m a l W S ) ;  
- +         r e t u r n   ( h a l f 3 ) ( _ H e c t o n P r o j e c t e d C a u s t i c s C o l o r . r g b   *   m a s k ) ;  
- + }  
- +  
- + f l o a t   H e c t o n C o r e L i t S a m p l e C a v e V o x e l S i g n e d D i s t a n c e ( f l o a t 3   p o s i t i o n W S )  
- + {  
- +         i f   ( _ H e c t o n C a v e V o x e l A c t i v e   < =   0 . 5 )  
- +                 r e t u r n   _ H e c t o n C a v e V o x e l H a l f E x t e n t s . w ;  
- +  
- +         f l o a t 3   h a l f E x t e n t s   =   m a x ( _ H e c t o n C a v e V o x e l H a l f E x t e n t s . x y z ,   f l o a t 3 ( 0 . 0 0 1 ,   0 . 0 0 1 ,   0 . 0 0 1 ) ) ;  
- +         f l o a t 3   l o c a l P o s i t i o n   =   m u l ( _ H e c t o n C a v e V o x e l W o r l d T o L o c a l ,   f l o a t 4 ( p o s i t i o n W S ,   1 . 0 ) ) . x y z ;  
- +         f l o a t 3   s a m p l e U v   =   l o c a l P o s i t i o n   /   ( h a l f E x t e n t s   *   2 . 0 )   +   0 . 5 ;  
- +         i f   ( a n y ( s a m p l e U v   <   0 . 0 )   | |   a n y ( s a m p l e U v   >   1 . 0 ) )  
- +                 r e t u r n   _ H e c t o n C a v e V o x e l H a l f E x t e n t s . w ;  
- +  
- +         f l o a t   e n c o d e d   =   S A M P L E _ T E X T U R E 3 D _ L O D ( _ H e c t o n C a v e V o x e l S d f T e x ,   s a m p l e r _ H e c t o n C a v e V o x e l S d f T e x ,   s a m p l e U v ,   0 ) . r ;  
- +         r e t u r n   l e r p ( - _ H e c t o n C a v e V o x e l H a l f E x t e n t s . w ,   _ H e c t o n C a v e V o x e l H a l f E x t e n t s . w ,   e n c o d e d ) ;  
- + }  
- +  
- + f l o a t   H e c t o n C o r e L i t E v a l u a t e C a v e A m b i e n t F a c t o r ( f l o a t 3   p o s i t i o n W S ,   f l o a t 3   n o r m a l W S )  
- + {  
- +         i f   ( _ H e c t o n C a v e V o x e l A c t i v e   < =   0 . 5 )  
- +                 r e t u r n   1 . 0 ;  
- +  
- +         f l o a t   s i g n e d D i s t a n c e   =   H e c t o n C o r e L i t S a m p l e C a v e V o x e l S i g n e d D i s t a n c e ( p o s i t i o n W S   +   n o r m a l W S   *   0 . 0 3 ) ;  
- +         f l o a t   f a d e S t a r t   =   m a x ( _ H e c t o n C a v e V o x e l A o P a r a m s . x ,   0 . 0 0 1 ) ;  
- +         f l o a t   f a d e E n d   =   m a x ( _ H e c t o n C a v e V o x e l A o P a r a m s . y ,   f a d e S t a r t   +   0 . 0 0 1 ) ;  
- +         f l o a t   i n t e n s i t y   =   s a t u r a t e ( _ H e c t o n C a v e V o x e l A o P a r a m s . z ) ;  
- +         f l o a t   f l o o r V a l u e   =   s a t u r a t e ( _ H e c t o n C a v e V o x e l A o P a r a m s . w ) ;  
- +         f l o a t   w a l l P r o x i m i t y   =   1 . 0   -   s m o o t h s t e p ( f a d e S t a r t ,   f a d e E n d ,   s i g n e d D i s t a n c e ) ;  
- +         f l o a t   a t t e n u a t i o n   =   s a t u r a t e ( w a l l P r o x i m i t y   *   i n t e n s i t y ) ;  
- +         r e t u r n   l e r p ( 1 . 0 ,   f l o o r V a l u e ,   a t t e n u a t i o n ) ;  
- + }  
- +  
- + b o o l   H e c t o n C o r e L i t I s I n s i d e C a v e S o l i d ( f l o a t 3   p o s i t i o n W S ,   f l o a t   s u r f a c e E p s i l o n )  
- + {  
- +         r e t u r n   _ H e c t o n C a v e V o x e l A c t i v e   >   0 . 5   & &   H e c t o n C o r e L i t S a m p l e C a v e V o x e l S i g n e d D i s t a n c e ( p o s i t i o n W S )   < =   s u r f a c e E p s i l o n ;  
- + }  
- +  
- + f l o a t   H e c t o n C o r e L i t S a m p l e F l a s h l i g h t S i g n e d D i s t a n c e ( f l o a t 3   p o s i t i o n W S )  
- + {  
- +         i f   ( _ H e c t o n F l a s h l i g h t V o x e l A c t i v e   < =   0 . 5 )  
- +                 r e t u r n   _ H e c t o n F l a s h l i g h t V o x e l H a l f E x t e n t s . w ;  
- +  
- +         f l o a t 3   h a l f E x t e n t s   =   m a x ( _ H e c t o n F l a s h l i g h t V o x e l H a l f E x t e n t s . x y z ,   f l o a t 3 ( 0 . 0 0 1 ,   0 . 0 0 1 ,   0 . 0 0 1 ) ) ;  
- +         f l o a t 3   l o c a l P o s i t i o n   =   m u l ( _ H e c t o n F l a s h l i g h t V o x e l W o r l d T o L o c a l ,   f l o a t 4 ( p o s i t i o n W S ,   1 . 0 ) ) . x y z ;  
- +         f l o a t 3   s a m p l e U v   =   l o c a l P o s i t i o n   /   ( h a l f E x t e n t s   *   2 . 0 )   +   0 . 5 ;  
- +         i f   ( a n y ( s a m p l e U v   <   0 . 0 )   | |   a n y ( s a m p l e U v   >   1 . 0 ) )  
- +                 r e t u r n   _ H e c t o n F l a s h l i g h t V o x e l H a l f E x t e n t s . w ;  
- +  
- +         f l o a t   e n c o d e d   =   S A M P L E _ T E X T U R E 3 D _ L O D ( _ V o x e l D e n s i t y T e x ,   s a m p l e r _ V o x e l D e n s i t y T e x ,   s a m p l e U v ,   0 ) . r ;  
- +         r e t u r n   l e r p ( - _ H e c t o n F l a s h l i g h t V o x e l H a l f E x t e n t s . w ,   _ H e c t o n F l a s h l i g h t V o x e l H a l f E x t e n t s . w ,   e n c o d e d ) ;  
- + }  
- +  
- + f l o a t   H e c t o n C o r e L i t E v a l u a t e F l a s h l i g h t S h a d o w ( f l o a t 3   s u r f a c e P o s i t i o n W S ,   f l o a t 3   n o r m a l W S )  
- + {  
- +         i f   ( _ H e c t o n F l a s h l i g h t A c t i v e   < =   0 . 5   | |   _ H e c t o n F l a s h l i g h t V o x e l A c t i v e   < =   0 . 5 )  
- +                 r e t u r n   1 . 0 ;  
- +  
- +         f l o a t 3   l i g h t V e c t o r   =   _ H e c t o n F l a s h l i g h t P o s i t i o n W S . x y z   -   s u r f a c e P o s i t i o n W S ;  
- +         f l o a t   l i g h t D i s t a n c e   =   l e n g t h ( l i g h t V e c t o r ) ;  
- +         i f   ( l i g h t D i s t a n c e   < =   0 . 0 0 0 1 )  
- +                 r e t u r n   1 . 0 ;  
- +  
- +         f l o a t   s h a d o w F l o o r   =   H e c t o n C o r e L i t R e s o l v e F l a s h l i g h t S h a d o w F l o o r ( ) ;  
- +         f l o a t   s h a d o w B i a s   =   m a x ( _ H e c t o n F l a s h l i g h t S h a d o w B i a s ,   0 . 0 0 1 ) ;  
- +         f l o a t   r a y L e n g t h   =   m a x ( l i g h t D i s t a n c e   -   s h a d o w B i a s ,   0 . 0 ) ;  
- +         i f   ( r a y L e n g t h   < =   0 . 0 0 0 1 )  
- +                 r e t u r n   1 . 0 ;  
- +  
- +         f l o a t 3   r a y D i r e c t i o n W S   =   l i g h t V e c t o r   /   l i g h t D i s t a n c e ;  
- +         f l o a t 3   r a y O r i g i n W S   =   s u r f a c e P o s i t i o n W S   +   H e c t o n C o r e L i t S a f e N o r m a l i z e ( n o r m a l W S )   *   s h a d o w B i a s ;  
- +         c o n s t   i n t   m a x V o x e l S h a d o w S t e p s   =   H E C T O N _ F L A S H L I G H T _ S D F _ S H A D O W _ M A X _ S T E P S ;  
- +         i n t   s t e p C o u n t   =   m i n ( m a x V o x e l S h a d o w S t e p s ,   c l a m p ( ( i n t ) r o u n d ( _ H e c t o n F l a s h l i g h t S h a d o w S t e p s ) ,   1 ,   m a x V o x e l S h a d o w S t e p s ) ) ;  
- +         f l o a t   m i n S t e p   =   m a x ( _ H e c t o n F l a s h l i g h t S h a d o w M i n S t e p ,   0 . 0 1 ) ;  
- +         f l o a t   r e s   =   1 . 0 ;  
- +         f l o a t   t   =   m i n S t e p ;  
- +  
- +         [ l o o p ]  
- +         f o r   ( i n t   s t e p I n d e x   =   0 ;   s t e p I n d e x   <   m a x V o x e l S h a d o w S t e p s ;   + + s t e p I n d e x )  
- +         {  
- +                 i f   ( s t e p I n d e x   > =   s t e p C o u n t   | |   t   > =   r a y L e n g t h )  
- +                         b r e a k ;  
- +  
- +                 f l o a t 3   s a m p l e P o s i t i o n W S   =   r a y O r i g i n W S   +   r a y D i r e c t i o n W S   *   t ;  
- +                 f l o a t   h   =   H e c t o n C o r e L i t S a m p l e F l a s h l i g h t S i g n e d D i s t a n c e ( s a m p l e P o s i t i o n W S ) ;  
- +                 i f   ( h   < =   0 . 0 0 0 1 )  
- +                         r e t u r n   s h a d o w F l o o r ;  
- +  
- +                 r e s   =   m i n ( r e s ,   _ H e c t o n F l a s h l i g h t S h a d o w S o f t n e s s   *   h   /   m a x ( t ,   0 . 0 0 1 ) ) ;  
- +                 t   + =   m a x ( h ,   m i n S t e p ) ;  
- +         }  
- +  
- +         r e t u r n   s a t u r a t e ( m a x ( r e s ,   s h a d o w F l o o r ) ) ;  
- + }  
- +  
- + b o o l   H e c t o n C o r e L i t T r y R e s o l v e A d d i t i o n a l L i g h t ( u i n t   l i g h t L o o p I n d e x ,   o u t   f l o a t 3   l i g h t P o s i t i o n W S ,   o u t   f l o a t 3   s p o t D i r e c t i o n W S )  
- + {  
- + # i f   U S E _ C L U S T E R _ L I G H T _ L O O P  
- +         i n t   l i g h t I n d e x   =   l i g h t L o o p I n d e x ;  
- + # e l s e  
- +         i n t   l i g h t I n d e x   =   G e t P e r O b j e c t L i g h t I n d e x ( l i g h t L o o p I n d e x ) ;  
- + # e n d i f  
- +  
- + # i f   U S E _ S T R U C T U R E D _ B U F F E R _ F O R _ L I G H T _ D A T A  
- +         f l o a t 4   l i g h t P o s i t i o n   =   _ A d d i t i o n a l L i g h t s B u f f e r [ l i g h t I n d e x ] . p o s i t i o n ;  
- +         h a l f 4   s p o t D i r e c t i o n   =   _ A d d i t i o n a l L i g h t s B u f f e r [ l i g h t I n d e x ] . s p o t D i r e c t i o n ;  
- + # e l s e  
- +         f l o a t 4   l i g h t P o s i t i o n   =   _ A d d i t i o n a l L i g h t s P o s i t i o n [ l i g h t I n d e x ] ;  
- +         h a l f 4   s p o t D i r e c t i o n   =   _ A d d i t i o n a l L i g h t s S p o t D i r [ l i g h t I n d e x ] ;  
- + # e n d i f  
- +  
- +         l i g h t P o s i t i o n W S   =   l i g h t P o s i t i o n . x y z ;  
- +         s p o t D i r e c t i o n W S   =   s p o t D i r e c t i o n . x y z ;  
- +         r e t u r n   l i g h t P o s i t i o n . w   >   0 . 5 ;  
- + }  
- +  
- + f l o a t   H e c t o n C o r e L i t R e s o l v e F l a s h l i g h t A d d i t i o n a l S h a d o w ( u i n t   l i g h t L o o p I n d e x ,   f l o a t 3   p o s i t i o n W S ,   f l o a t 3   n o r m a l W S ,   f l o a t   d e f a u l t S h a d o w A t t e n u a t i o n )  
- + {  
- +         i f   ( _ H e c t o n F l a s h l i g h t A c t i v e   < =   0 . 5   | |   _ H e c t o n F l a s h l i g h t V o x e l A c t i v e   < =   0 . 5 )  
- +                 r e t u r n   d e f a u l t S h a d o w A t t e n u a t i o n ;  
- +  
- +         f l o a t 3   a d d i t i o n a l L i g h t P o s i t i o n W S ;  
- +         f l o a t 3   a d d i t i o n a l S p o t D i r e c t i o n W S ;  
- +         i f   ( ! H e c t o n C o r e L i t T r y R e s o l v e A d d i t i o n a l L i g h t ( l i g h t L o o p I n d e x ,   a d d i t i o n a l L i g h t P o s i t i o n W S ,   a d d i t i o n a l S p o t D i r e c t i o n W S ) )  
- +                 r e t u r n   d e f a u l t S h a d o w A t t e n u a t i o n ;  
- +  
- +         f l o a t 3   p o s i t i o n D e l t a   =   a d d i t i o n a l L i g h t P o s i t i o n W S   -   _ H e c t o n F l a s h l i g h t P o s i t i o n W S . x y z ;  
- +         i f   ( d o t ( p o s i t i o n D e l t a ,   p o s i t i o n D e l t a )   >   0 . 0 6 2 5 )  
- +                 r e t u r n   d e f a u l t S h a d o w A t t e n u a t i o n ;  
- +  
- +         f l o a t   d i r e c t i o n M a t c h   =   d o t (  
- +                 H e c t o n C o r e L i t S a f e N o r m a l i z e ( a d d i t i o n a l S p o t D i r e c t i o n W S ) ,  
- +                 H e c t o n C o r e L i t S a f e N o r m a l i z e ( _ H e c t o n F l a s h l i g h t D i r e c t i o n W S . x y z ) ) ;  
- +         i f   ( d i r e c t i o n M a t c h   <   0 . 9 8 )  
- +                 r e t u r n   d e f a u l t S h a d o w A t t e n u a t i o n ;  
- +  
- +         r e t u r n   m i n ( d e f a u l t S h a d o w A t t e n u a t i o n ,   H e c t o n C o r e L i t E v a l u a t e F l a s h l i g h t S h a d o w ( p o s i t i o n W S ,   n o r m a l W S ) ) ;  
- + }  
- +  
- + # e n d i f  
- d i f f   - - g i t   a / A s s e t s / _ P r o j e c t / S c r i p t s / E d i t o r / H e c t o n M a t e r i a l K e y w o r d S a n i t i z e r . c s   b / A s s e t s / _ P r o j e c t / S c r i p t s / E d i t o r / H e c t o n M a t e r i a l K e y w o r d S a n i t i z e r . c s  
- n e w   f i l e   m o d e   1 0 0 6 4 4  
- i n d e x   0 0 0 0 0 0 0 0 . . a 9 a 4 7 8 6 2  
- - - -   / d e v / n u l l  
- + + +   b / A s s e t s / _ P r o j e c t / S c r i p t s / E d i t o r / H e c t o n M a t e r i a l K e y w o r d S a n i t i z e r . c s  
- @ @   - 0 , 0   + 1 , 9 3   @ @  
- + # i f   U N I T Y _ E D I T O R  
- + u s i n g   S y s t e m . C o l l e c t i o n s . G e n e r i c ;  
- + u s i n g   S y s t e m . T e x t ;  
- + u s i n g   U n i t y E d i t o r ;  
- + u s i n g   U n i t y E n g i n e ;  
- +  
- + n a m e s p a c e   H e c t o n 8 . E d i t o r T o o l s  
- + {  
- +         / / /   < s u m m a r y >  
- +         / / /   S t r i p s   b l a n k   a n d   d u p l i c a t e   s h a d e r   k e y w o r d s   f r o m   f i r s t - p a r t y   m a t e r i a l s .  
- +         / / /   T h i s   i s   a   m a t e r i a l - h y g i e n e   p a s s ,   n o t   a   r u n t i m e   s h a d e r - v a r i a n t   s t r i p p e r .  
- +         / / /   < / s u m m a r y >  
- +         i n t e r n a l   s t a t i c   c l a s s   H e c t o n M a t e r i a l K e y w o r d S a n i t i z e r  
- +         {  
- +                 p r i v a t e   s t a t i c   r e a d o n l y   s t r i n g [ ]   M a t e r i a l R o o t s   =  
- +                 {  
- +                         " A s s e t s / _ P r o j e c t / A r t / M a t e r i a l s "  
- +                 } ;  
- +  
- +                 [ M e n u I t e m ( " H e c t o n / V a l i d a t i o n / A s s e t   P i p e l i n e / S a n i t i z e   M a t e r i a l   K e y w o r d s " ,   p r i o r i t y   =   1 9 7 ) ]  
- +                 p r i v a t e   s t a t i c   v o i d   S a n i t i z e K e y w o r d s ( )  
- +                 {  
- +                         s t r i n g [ ]   g u i d s   =   A s s e t D a t a b a s e . F i n d A s s e t s ( " t : M a t e r i a l " ,   M a t e r i a l R o o t s ) ;  
- +                         i n t   s c a n n e d C o u n t   =   0 ;  
- +                         i n t   c h a n g e d C o u n t   =   0 ;  
- +                         i n t   r e m o v e d K e y w o r d C o u n t   =   0 ;  
- +                         S t r i n g B u i l d e r   r e p o r t   =   n e w   S t r i n g B u i l d e r ( 5 1 2 ) ;  
- +  
- +                         A s s e t D a t a b a s e . S t a r t A s s e t E d i t i n g ( ) ;  
- +                         t r y  
- +                         {  
- +                                 f o r   ( i n t   g u i d I n d e x   =   0 ;   g u i d I n d e x   <   g u i d s . L e n g t h ;   g u i d I n d e x + + )  
- +                                 {  
- +                                         s t r i n g   a s s e t P a t h   =   A s s e t D a t a b a s e . G U I D T o A s s e t P a t h ( g u i d s [ g u i d I n d e x ] ) ;  
- +                                         M a t e r i a l   m a t e r i a l   =   A s s e t D a t a b a s e . L o a d A s s e t A t P a t h < M a t e r i a l > ( a s s e t P a t h ) ;  
- +                                         i f   ( m a t e r i a l   = =   n u l l )  
- +                                                 c o n t i n u e ;  
- +  
- +                                         s c a n n e d C o u n t + + ;  
- +                                         s t r i n g [ ]   k e y w o r d s   =   m a t e r i a l . s h a d e r K e y w o r d s ;  
- +                                         i f   ( k e y w o r d s   = =   n u l l   | |   k e y w o r d s . L e n g t h   < =   0 )  
- +                                                 c o n t i n u e ;  
- +  
- +                                         L i s t < s t r i n g >   s a n i t i z e d K e y w o r d s   =   n e w   L i s t < s t r i n g > ( k e y w o r d s . L e n g t h ) ;  
- +                                         H a s h S e t < s t r i n g >   s e e n K e y w o r d s   =   n e w   H a s h S e t < s t r i n g > ( ) ;  
- +                                         i n t   r e m o v e d F o r M a t e r i a l   =   0 ;  
- +  
- +                                         f o r   ( i n t   k e y w o r d I n d e x   =   0 ;   k e y w o r d I n d e x   <   k e y w o r d s . L e n g t h ;   k e y w o r d I n d e x + + )  
- +                                         {  
- +                                                 s t r i n g   k e y w o r d   =   k e y w o r d s [ k e y w o r d I n d e x ] ;  
- +                                                 i f   ( s t r i n g . I s N u l l O r W h i t e S p a c e ( k e y w o r d )   | |   ! s e e n K e y w o r d s . A d d ( k e y w o r d ) )  
- +                                                 {  
- +                                                         r e m o v e d F o r M a t e r i a l + + ;  
- +                                                         c o n t i n u e ;  
- +                                                 }  
- +  
- +                                                 s a n i t i z e d K e y w o r d s . A d d ( k e y w o r d ) ;  
- +                                         }  
- +  
- +                                         i f   ( r e m o v e d F o r M a t e r i a l   < =   0 )  
- +                                                 c o n t i n u e ;  
- +  
- +                                         m a t e r i a l . s h a d e r K e y w o r d s   =   s a n i t i z e d K e y w o r d s . T o A r r a y ( ) ;  
- +                                         E d i t o r U t i l i t y . S e t D i r t y ( m a t e r i a l ) ;  
- +                                         c h a n g e d C o u n t + + ;  
- +                                         r e m o v e d K e y w o r d C o u n t   + =   r e m o v e d F o r M a t e r i a l ;  
- +  
- +                                         i f   ( r e p o r t . L e n g t h   <   4 0 0 0 )  
- +                                         {  
- +                                                 r e p o r t . A p p e n d ( a s s e t P a t h )  
- +                                                         . A p p e n d ( "   r e m o v e d = " )  
- +                                                         . A p p e n d ( r e m o v e d F o r M a t e r i a l )  
- +                                                         . A p p e n d ( ' \ n ' ) ;  
- +                                         }  
- +                                 }  
- +                         }  
- +                         f i n a l l y  
- +                         {  
- +                                 A s s e t D a t a b a s e . S t o p A s s e t E d i t i n g ( ) ;  
- +                         }  
- +  
- +                         A s s e t D a t a b a s e . S a v e A s s e t s ( ) ;  
- +                         A s s e t D a t a b a s e . R e f r e s h ( ) ;  
- +  
- +                         D e b u g . L o g (  
- +                                 " [ H e c t o n M a t e r i a l K e y w o r d S a n i t i z e r ]   s c a n n e d = "   +   s c a n n e d C o u n t   +  
- +                                 " ,   c h a n g e d = "   +   c h a n g e d C o u n t   +  
- +                                 " ,   r e m o v e d K e y w o r d s = "   +   r e m o v e d K e y w o r d C o u n t   +  
- +                                 ( r e p o r t . L e n g t h   >   0   ?   " \ n "   +   r e p o r t   :   s t r i n g . E m p t y ) ) ;  
- +                 }  
- +         }  
- + }  
- + # e n d i f  
- d i f f   - - g i t   a / A s s e t s / _ P r o j e c t / S c r i p t s / W o r l d / H e c t o n C a v e V o x e l L i g h t i n g V o l u m e . c s   b / A s s e t s / _ P r o j e c t / S c r i p t s / W o r l d / H e c t o n C a v e V o x e l L i g h t i n g V o l u m e . c s  
- n e w   f i l e   m o d e   1 0 0 6 4 4  
- i n d e x   0 0 0 0 0 0 0 0 . . 5 3 e 3 4 3 3 8  
- - - -   / d e v / n u l l  
- + + +   b / A s s e t s / _ P r o j e c t / S c r i p t s / W o r l d / H e c t o n C a v e V o x e l L i g h t i n g V o l u m e . c s  
- @ @   - 0 , 0   + 1 , 5 0 2   @ @  
- + u s i n g   H e c t o n 8 . C o r e ;  
- + u s i n g   U n i t y . C o l l e c t i o n s ;  
- + u s i n g   U n i t y E n g i n e ;  
- +  
- + n a m e s p a c e   H e c t o n 8 . W o r l d  
- + {  
- +         / / /   < s u m m a r y >  
- +         / / /   P u b l i s h e s   a   b o u n d e d   p l a y e r - c e n t e r e d   c a v e   S D F   v o l u m e   f o r   a m b i e n t   d a r k e n i n g   a n d   v o l u m e t r i c   r a y   t e r m i n a t i o n .  
- +         / / /   T h i s   i s   a   l o c a l   l i g h t i n g   p r o x y ,   n o t   a n   a u t h o r i t a t i v e   w o r l d - v o x e l   s t r e a m e r .  
- +         / / /   < / s u m m a r y >  
- +         [ D i s a l l o w M u l t i p l e C o m p o n e n t ]  
- +         p u b l i c   s e a l e d   c l a s s   H e c t o n C a v e V o x e l L i g h t i n g V o l u m e   :   M o n o B e h a v i o u r ,   I T i c k a b l e ,   I U p d a t a b l e  
- +         {  
- +                 p r i v a t e   c o n s t   i n t   M a x O v e r l a p H i t s   =   8 ;  
- +  
- +                 p r i v a t e   s t a t i c   r e a d o n l y   i n t   _ C a v e V o x e l A c t i v e I d   =   S h a d e r . P r o p e r t y T o I D ( " _ H e c t o n C a v e V o x e l A c t i v e " ) ;  
- +                 p r i v a t e   s t a t i c   r e a d o n l y   i n t   _ C a v e V o x e l W o r l d T o L o c a l I d   =   S h a d e r . P r o p e r t y T o I D ( " _ H e c t o n C a v e V o x e l W o r l d T o L o c a l " ) ;  
- +                 p r i v a t e   s t a t i c   r e a d o n l y   i n t   _ C a v e V o x e l H a l f E x t e n t s I d   =   S h a d e r . P r o p e r t y T o I D ( " _ H e c t o n C a v e V o x e l H a l f E x t e n t s " ) ;  
- +                 p r i v a t e   s t a t i c   r e a d o n l y   i n t   _ C a v e V o x e l A o P a r a m s I d   =   S h a d e r . P r o p e r t y T o I D ( " _ H e c t o n C a v e V o x e l A o P a r a m s " ) ;  
- +                 p r i v a t e   s t a t i c   r e a d o n l y   i n t   _ C a v e V o x e l S d f T e x I d   =   S h a d e r . P r o p e r t y T o I D ( " _ H e c t o n C a v e V o x e l S d f T e x " ) ;  
- +  
- +                 [ H e a d e r ( "  % %  R u n t i m e   V o l u m e    % % % % % % % % % % % % % % % % % %" ) ]  
- +                 [ S e r i a l i z e F i e l d ]  
- +                 [ T o o l t i p ( " O p t i o n a l   e x p l i c i t   f o l l o w   t a r g e t .   W h e n   n u l l ,   t h i s   G a m e O b j e c t   t r a n s f o r m   i s   u s e d . " ) ]  
- +                 p r i v a t e   T r a n s f o r m   f o l l o w T a r g e t ;  
- +  
- +                 [ S e r i a l i z e F i e l d ,   R a n g e ( 1 2 ,   2 4 ) ]  
- +                 [ T o o l t i p ( " L o c a l   c a v e - S D F   r e s o l u t i o n .   K e p t   l o w   f o r   M X 3 5 0   C P U   a n d   V R A M   s a f e t y . " ) ]  
- +                 p r i v a t e   i n t   v o x e l R e s o l u t i o n   =   2 0 ;  
- +  
- +                 [ S e r i a l i z e F i e l d ,   R a n g e ( 1 ,   8 ) ]  
- +                 [ T o o l t i p ( " N u m b e r   o f   Z   s l i c e s   s c a n n e d   p e r   t i c k   w h i l e   r e b u i l d i n g   t h e   l o c a l   c a v e   v o l u m e . " ) ]  
- +                 p r i v a t e   i n t   s l i c e s P e r T i c k   =   4 ;  
- +  
- +                 [ S e r i a l i z e F i e l d ]  
- +                 [ T o o l t i p ( " W o r l d   l a y e r s   t r e a t e d   a s   c a v e - s o l i d   o c c l u d e r s   f o r   t h e   l o c a l   S D F   v o l u m e . " ) ]  
- +                 p r i v a t e   L a y e r M a s k   o c c l u d e r L a y e r s   =   ~ 0 ;  
- +  
- +                 [ S e r i a l i z e F i e l d ]  
- +                 [ T o o l t i p ( " P h y s i c s   t r i g g e r   h a n d l i n g   u s e d   w h i l e   s c a n n i n g   c a v e - s o l i d   o c c u p a n c y . " ) ]  
- +                 p r i v a t e   Q u e r y T r i g g e r I n t e r a c t i o n   t r i g g e r I n t e r a c t i o n   =   Q u e r y T r i g g e r I n t e r a c t i o n . I g n o r e ;  
- +  
- +                 [ S e r i a l i z e F i e l d ]  
- +                 [ T o o l t i p ( " L o c a l   h a l f   e x t e n t s   o f   t h e   p l a y e r - c e n t e r e d   c a v e   l i g h t i n g   v o l u m e . " ) ]  
- +                 p r i v a t e   V e c t o r 3   v o l u m e H a l f E x t e n t s   =   n e w   V e c t o r 3 ( 1 8 f ,   1 0 f ,   1 8 f ) ;  
- +  
- +                 [ S e r i a l i z e F i e l d ,   R a n g e ( 0 . 5 f ,   1 f ) ]  
- +                 [ T o o l t i p ( " F r a c t i o n   o f   e a c h   v o x e l   c e l l   u s e d   f o r   t h e   o c c u p a n c y   o v e r l a p - b o x   q u e r y . " ) ]  
- +                 p r i v a t e   f l o a t   o c c u p a n c y P a d d i n g   =   0 . 9 f ;  
- +  
- +                 [ S e r i a l i z e F i e l d ,   R a n g e ( 2 f ,   6 f ) ]  
- +                 [ T o o l t i p ( " S i g n e d - d i s t a n c e   c l a m p   e x p r e s s e d   i n   c e l l   d i a g o n a l s   b e f o r e   e n c o d i n g   t o   R 8 . " ) ]  
- +                 p r i v a t e   f l o a t   s d f R a n g e I n C e l l D i a g o n a l s   =   4 f ;  
- +  
- +                 [ H e a d e r ( "  % %  R e f r e s h    % % % % % % % % % % % % % % % % % %" ) ]  
- +                 [ S e r i a l i z e F i e l d ,   R a n g e ( 0 . 1 f ,   4 f ) ]  
- +                 [ T o o l t i p ( " R e b u i l d   t h r e s h o l d   i n   m e t e r s   f o r   f o l l o w - t a r g e t   d r i f t . " ) ]  
- +                 p r i v a t e   f l o a t   p o s i t i o n R e f r e s h T h r e s h o l d   =   1 . 2 5 f ;  
- +  
- +                 [ S e r i a l i z e F i e l d ,   R a n g e ( 0 f ,   6 f ) ]  
- +                 [ T o o l t i p ( " O p t i o n a l   w o r l d - s p a c e   o f f s e t   a p p l i e d   t o   t h e   f o l l o w   t a r g e t   b e f o r e   c e n t e r i n g   t h e   v o l u m e . " ) ]  
- +                 p r i v a t e   f l o a t   v e r t i c a l C e n t e r O f f s e t   =   0 f ;  
- +  
- +                 [ H e a d e r ( "  % %  A m b i e n t   R e s p o n s e    % % % % % % % % % % % % % % % % % %" ) ]  
- +                 [ S e r i a l i z e F i e l d ,   R a n g e ( 0 . 0 2 f ,   1 . 5 f ) ]  
- +                 [ T o o l t i p ( " S i g n e d - d i s t a n c e   s t a r t   r a d i u s   w h e r e   a m b i e n t   d a r k e n i n g   b e g i n s . " ) ]  
- +                 p r i v a t e   f l o a t   a o F a d e S t a r t M e t e r s   =   0 . 1 5 f ;  
- +  
- +                 [ S e r i a l i z e F i e l d ,   R a n g e ( 0 . 1 f ,   3 f ) ]  
- +                 [ T o o l t i p ( " S i g n e d - d i s t a n c e   e n d   r a d i u s   w h e r e   c a v e   a m b i e n t   f u l l y   r e l a x e s   b a c k   t o   u n o c c l u d e d . " ) ]  
- +                 p r i v a t e   f l o a t   a o F a d e E n d M e t e r s   =   0 . 9 f ;  
- +  
- +                 [ S e r i a l i z e F i e l d ,   R a n g e ( 0 f ,   1 f ) ]  
- +                 [ T o o l t i p ( " H o w   a g g r e s s i v e l y   c a v e   p r o x i m i t y   d a r k e n s   a m b i e n t   l i g h t i n g . " ) ]  
- +                 p r i v a t e   f l o a t   a o I n t e n s i t y   =   0 . 8 2 f ;  
- +  
- +                 [ S e r i a l i z e F i e l d ,   R a n g e ( 0 f ,   1 f ) ]  
- +                 [ T o o l t i p ( " M i n i m u m   s u r v i v i n g   a m b i e n t   f a c t o r   w h e n   t h e   s a m p l e d   p o s i t i o n   i s   i n s i d e   o r   h u g g i n g   s o l i d   r o c k . " ) ]  
- +                 p r i v a t e   f l o a t   a o F l o o r   =   0 . 1 8 f ;  
- +  
- +                 [ H e a d e r ( "  % %  D i a g n o s t i c s    % % % % % % % % % % % % % % % % % %" ) ]  
- +                 [ S e r i a l i z e F i e l d ]   p r i v a t e   b o o l   _ d e b u g H a s V a l i d V o l u m e ;  
- +                 [ S e r i a l i z e F i e l d ]   p r i v a t e   i n t   _ d e b u g S l i c e C u r s o r ;  
- +                 [ S e r i a l i z e F i e l d ]   p r i v a t e   V e c t o r 3   _ d e b u g P u b l i s h e d C e n t e r W s ;  
- +                 [ S e r i a l i z e F i e l d ]   p r i v a t e   f l o a t   _ d e b u g P u b l i s h e d S d f R a n g e ;  
- +  
- +                 p r i v a t e   b o o l   _ r e g i s t e r e d ;  
- +                 p r i v a t e   b o o l   _ s c a n I n P r o g r e s s ;  
- +                 p r i v a t e   b o o l   _ r e s t a r t Q u e u e d ;  
- +                 p r i v a t e   b o o l   _ h a s V a l i d P u b l i s h e d V o l u m e ;  
- +                 p r i v a t e   i n t   _ r e s o l u t i o n R u n t i m e ;  
- +                 p r i v a t e   i n t   _ s c a n S l i c e C u r s o r ;  
- +                 p r i v a t e   T r a n s f o r m   _ f o l l o w T a r g e t R u n t i m e ;  
- +                 p r i v a t e   T r a n s f o r m   _ e x c l u d e d R o o t ;  
- +                 p r i v a t e   T e x t u r e 3 D   _ v o x e l D e n s i t y T e x t u r e ;  
- +                 p r i v a t e   N a t i v e A r r a y < b y t e >   _ o c c u p a n c y V o l u m e ;  
- +                 p r i v a t e   N a t i v e A r r a y < b y t e >   _ s d f V o l u m e ;  
- +                 p r i v a t e   C o l l i d e r [ ]   _ o v e r l a p H i t s ;  
- +                 p r i v a t e   V e c t o r 3 [ ]   _ s c a n L o c a l C e n t e r s ;  
- +                 p r i v a t e   V e c t o r 3 [ ]   _ o c c u p i e d C e n t e r s ;  
- +                 p r i v a t e   V e c t o r 3 [ ]   _ e m p t y C e n t e r s ;  
- +                 p r i v a t e   M a t r i x 4 x 4   _ s c a n L o c a l T o W o r l d   =   M a t r i x 4 x 4 . i d e n t i t y ;  
- +                 p r i v a t e   V e c t o r 3   _ s c a n C e n t e r W s ;  
- +                 p r i v a t e   V e c t o r 3   _ s c a n H a l f E x t e n t s ;  
- +                 p r i v a t e   V e c t o r 3   _ s c a n C e l l S i z e ;  
- +                 p r i v a t e   V e c t o r 3   _ s c a n C e l l H a l f E x t e n t s ;  
- +                 p r i v a t e   f l o a t   _ s c a n C e l l D i a g o n a l ;  
- +                 p r i v a t e   f l o a t   _ s c a n S d f R a n g e ;  
- +                 p r i v a t e   V e c t o r 3   _ p u b l i s h e d C e n t e r W s ;  
- +                 p r i v a t e   M a t r i x 4 x 4   _ p u b l i s h e d W o r l d T o L o c a l   =   M a t r i x 4 x 4 . i d e n t i t y ;  
- +                 p r i v a t e   V e c t o r 3   _ p u b l i s h e d H a l f E x t e n t s ;  
- +                 p r i v a t e   f l o a t   _ p u b l i s h e d S d f R a n g e ;  
- +  
- +                 p r i v a t e   v o i d   A w a k e ( )  
- +                 {  
- +                         R e s o l v e F o l l o w T a r g e t ( ) ;  
- +                         E n s u r e R e s o u r c e s ( ) ;  
- +                         P u b l i s h I n a c t i v e G l o b a l s ( ) ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   O n E n a b l e ( )  
- +                 {  
- +                         R e s o l v e F o l l o w T a r g e t ( ) ;  
- +                         T r y R e g i s t e r ( ) ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   O n D i s a b l e ( )  
- +                 {  
- +                         T r y U n r e g i s t e r ( ) ;  
- +                         P u b l i s h I n a c t i v e G l o b a l s ( ) ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   O n D e s t r o y ( )  
- +                 {  
- +                         T r y U n r e g i s t e r ( ) ;  
- +                         P u b l i s h I n a c t i v e G l o b a l s ( ) ;  
- +                         R e l e a s e R e s o u r c e s ( ) ;  
- +                 }  
- +  
- +                 / / /   < s u m m a r y >  
- +                 / / /   I n c r e m e n t a l l y   r e b u i l d s   a n d   p u b l i s h e s   t h e   l o c a l   c a v e - l i g h t i n g   S D F   v o l u m e .  
- +                 / / /   < / s u m m a r y >  
- +                 / / /   < p a r a m   n a m e = " d e l t a T i m e " > D i s p a t c h e r   d e l t a . < / p a r a m >  
- +                 p u b l i c   v o i d   T i c k ( f l o a t   d e l t a T i m e )  
- +                 {  
- +                         R e s o l v e F o l l o w T a r g e t ( ) ;  
- +                         E n s u r e R e s o u r c e s ( ) ;  
- +  
- +                         i f   ( _ f o l l o w T a r g e t R u n t i m e   = =   n u l l )  
- +                         {  
- +                                 P u b l i s h I n a c t i v e G l o b a l s ( ) ;  
- +                                 r e t u r n ;  
- +                         }  
- +  
- +                         B u i l d D e s i r e d V o l u m e D e s c r i p t o r ( o u t   V e c t o r 3   d e s i r e d C e n t e r W s ,   o u t   V e c t o r 3   d e s i r e d H a l f E x t e n t s ,   o u t   V e c t o r 3   d e s i r e d C e l l S i z e ,   o u t   f l o a t   d e s i r e d C e l l D i a g o n a l ,   o u t   f l o a t   d e s i r e d S d f R a n g e ) ;  
- +                         b o o l   r e f r e s h R e q u i r e d   =   R e q u i r e s R e f r e s h ( d e s i r e d C e n t e r W s ,   d e s i r e d H a l f E x t e n t s ) ;  
- +                         i f   ( ! _ s c a n I n P r o g r e s s   & &   ( ! _ h a s V a l i d P u b l i s h e d V o l u m e   | |   r e f r e s h R e q u i r e d   | |   _ r e s t a r t Q u e u e d ) )  
- +                         {  
- +                                 B e g i n S c a n ( d e s i r e d C e n t e r W s ,   d e s i r e d H a l f E x t e n t s ,   d e s i r e d C e l l S i z e ,   d e s i r e d C e l l D i a g o n a l ,   d e s i r e d S d f R a n g e ) ;  
- +                         }  
- +                         e l s e   i f   ( _ s c a n I n P r o g r e s s   & &   r e f r e s h R e q u i r e d )  
- +                         {  
- +                                 _ r e s t a r t Q u e u e d   =   t r u e ;  
- +                         }  
- +  
- +                         i n t   r e m a i n i n g S l i c e s   =   M a t h f . M a x ( 1 ,   s l i c e s P e r T i c k ) ;  
- +                         w h i l e   ( _ s c a n I n P r o g r e s s   & &   r e m a i n i n g S l i c e s   >   0   & &   _ s c a n S l i c e C u r s o r   <   _ r e s o l u t i o n R u n t i m e )  
- +                         {  
- +                                 S c a n S l i c e ( _ s c a n S l i c e C u r s o r ) ;  
- +                                 _ s c a n S l i c e C u r s o r + + ;  
- +                                 r e m a i n i n g S l i c e s - - ;  
- +                         }  
- +  
- +                         i f   ( _ s c a n I n P r o g r e s s   & &   _ s c a n S l i c e C u r s o r   > =   _ r e s o l u t i o n R u n t i m e )  
- +                         {  
- +                                 F i n a l i z e S c a n ( ) ;  
- +                                 i f   ( _ r e s t a r t Q u e u e d )  
- +                                 {  
- +                                         B e g i n S c a n ( d e s i r e d C e n t e r W s ,   d e s i r e d H a l f E x t e n t s ,   d e s i r e d C e l l S i z e ,   d e s i r e d C e l l D i a g o n a l ,   d e s i r e d S d f R a n g e ) ;  
- +                                         _ r e s t a r t Q u e u e d   =   f a l s e ;  
- +                                 }  
- +                         }  
- +  
- +                         P u b l i s h G l o b a l s ( _ h a s V a l i d P u b l i s h e d V o l u m e ) ;  
- +                         _ d e b u g H a s V a l i d V o l u m e   =   _ h a s V a l i d P u b l i s h e d V o l u m e ;  
- +                         _ d e b u g S l i c e C u r s o r   =   _ s c a n S l i c e C u r s o r ;  
- +                         _ d e b u g P u b l i s h e d C e n t e r W s   =   _ p u b l i s h e d C e n t e r W s ;  
- +                         _ d e b u g P u b l i s h e d S d f R a n g e   =   _ p u b l i s h e d S d f R a n g e ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   T r y R e g i s t e r ( )  
- +                 {  
- +                         i f   ( _ r e g i s t e r e d )  
- +                                 r e t u r n ;  
- +  
- +                         G l o b a l R e g i s t r y . R e g i s t e r U p d a t a b l e ( t h i s ,   P r i o r i t y L a y e r . E n v i r o n m e n t ) ;  
- +                         _ r e g i s t e r e d   =   t r u e ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   T r y U n r e g i s t e r ( )  
- +                 {  
- +                         i f   ( ! _ r e g i s t e r e d )  
- +                                 r e t u r n ;  
- +  
- +                         G l o b a l R e g i s t r y . U n r e g i s t e r U p d a t a b l e ( t h i s ,   P r i o r i t y L a y e r . E n v i r o n m e n t ) ;  
- +                         _ r e g i s t e r e d   =   f a l s e ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   R e s o l v e F o l l o w T a r g e t ( )  
- +                 {  
- +                         _ f o l l o w T a r g e t R u n t i m e   =   f o l l o w T a r g e t   ! =   n u l l   ?   f o l l o w T a r g e t   :   t r a n s f o r m ;  
- +                         _ e x c l u d e d R o o t   =   _ f o l l o w T a r g e t R u n t i m e   ! =   n u l l   ?   _ f o l l o w T a r g e t R u n t i m e . r o o t   :   n u l l ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   E n s u r e R e s o u r c e s ( )  
- +                 {  
- +                         i n t   c l a m p e d R e s o l u t i o n   =   M a t h f . C l a m p ( v o x e l R e s o l u t i o n ,   1 2 ,   2 4 ) ;  
- +                         i n t   v o x e l C o u n t   =   c l a m p e d R e s o l u t i o n   *   c l a m p e d R e s o l u t i o n   *   c l a m p e d R e s o l u t i o n ;  
- +                         i f   ( _ r e s o l u t i o n R u n t i m e   = =   c l a m p e d R e s o l u t i o n   & &  
- +                                 _ o c c u p a n c y V o l u m e . I s C r e a t e d   & &  
- +                                 _ o c c u p a n c y V o l u m e . L e n g t h   = =   v o x e l C o u n t   & &  
- +                                 _ s d f V o l u m e . I s C r e a t e d   & &  
- +                                 _ s d f V o l u m e . L e n g t h   = =   v o x e l C o u n t   & &  
- +                                 _ v o x e l D e n s i t y T e x t u r e   ! =   n u l l   & &  
- +                                 _ s c a n L o c a l C e n t e r s   ! =   n u l l   & &  
- +                                 _ s c a n L o c a l C e n t e r s . L e n g t h   = =   v o x e l C o u n t )  
- +                         {  
- +                                 r e t u r n ;  
- +                         }  
- +  
- +                         R e l e a s e R e s o u r c e s ( ) ;  
- +  
- +                         _ r e s o l u t i o n R u n t i m e   =   c l a m p e d R e s o l u t i o n ;  
- +                         / /   C O L D   A L L O C :   N a t i v e A r r a y < b y t e > [ v o x e l C o u n t ]   -   p l a y e r - c e n t e r e d   c a v e   o c c u p a n c y   s t a g i n g   v o l u m e   -   o w n e r :   H e c t o n C a v e V o x e l L i g h t i n g V o l u m e  
- +                         _ o c c u p a n c y V o l u m e   =   n e w   N a t i v e A r r a y < b y t e > ( v o x e l C o u n t ,   A l l o c a t o r . P e r s i s t e n t ,   N a t i v e A r r a y O p t i o n s . C l e a r M e m o r y ) ;  
- +                         / /   C O L D   A L L O C :   N a t i v e A r r a y < b y t e > [ v o x e l C o u n t ]   -   p l a y e r - c e n t e r e d   e n c o d e d   c a v e   s i g n e d - d i s t a n c e   v o l u m e   -   o w n e r :   H e c t o n C a v e V o x e l L i g h t i n g V o l u m e  
- +                         _ s d f V o l u m e   =   n e w   N a t i v e A r r a y < b y t e > ( v o x e l C o u n t ,   A l l o c a t o r . P e r s i s t e n t ,   N a t i v e A r r a y O p t i o n s . C l e a r M e m o r y ) ;  
- +                         / /   C O L D   A L L O C :   C o l l i d e r [ 8 ]   -   r e u s a b l e   o v e r l a p - b o x   h i t   c a c h e   f o r   c a v e   l i g h t i n g   v o l u m e   v o x e l i z a t i o n   -   o w n e r :   H e c t o n C a v e V o x e l L i g h t i n g V o l u m e  
- +                         _ o v e r l a p H i t s   =   n e w   C o l l i d e r [ M a x O v e r l a p H i t s ] ;  
- +                         / /   C O L D   A L L O C :   V e c t o r 3 [ v o x e l C o u n t ]   -   c u r r e n t   v o x e l - c e n t e r   c a c h e   f o r   l o c a l   c a v e   S D F   e n c o d i n g   -   o w n e r :   H e c t o n C a v e V o x e l L i g h t i n g V o l u m e  
- +                         _ s c a n L o c a l C e n t e r s   =   n e w   V e c t o r 3 [ v o x e l C o u n t ] ;  
- +                         / /   C O L D   A L L O C :   V e c t o r 3 [ v o x e l C o u n t ]   -   o c c u p i e d   v o x e l - c e n t e r   c a c h e   f o r   l o c a l   c a v e   S D F   e n c o d i n g   -   o w n e r :   H e c t o n C a v e V o x e l L i g h t i n g V o l u m e  
- +                         _ o c c u p i e d C e n t e r s   =   n e w   V e c t o r 3 [ v o x e l C o u n t ] ;  
- +                         / /   C O L D   A L L O C :   V e c t o r 3 [ v o x e l C o u n t ]   -   e m p t y   v o x e l - c e n t e r   c a c h e   f o r   l o c a l   c a v e   S D F   e n c o d i n g   -   o w n e r :   H e c t o n C a v e V o x e l L i g h t i n g V o l u m e  
- +                         _ e m p t y C e n t e r s   =   n e w   V e c t o r 3 [ v o x e l C o u n t ] ;  
- +  
- +                         T e x t u r e F o r m a t   t e x t u r e F o r m a t   =   S y s t e m I n f o . S u p p o r t s T e x t u r e F o r m a t ( T e x t u r e F o r m a t . R 8 )  
- +                                 ?   T e x t u r e F o r m a t . R 8  
- +                                 :   T e x t u r e F o r m a t . A l p h a 8 ;  
- +                         _ v o x e l D e n s i t y T e x t u r e   =   n e w   T e x t u r e 3 D ( c l a m p e d R e s o l u t i o n ,   c l a m p e d R e s o l u t i o n ,   c l a m p e d R e s o l u t i o n ,   t e x t u r e F o r m a t ,   f a l s e )  
- +                         {  
- +                                 n a m e   =   " _ _ H e c t o n C a v e V o x e l S d f T e x " ,  
- +                                 w r a p M o d e   =   T e x t u r e W r a p M o d e . C l a m p ,  
- +                                 f i l t e r M o d e   =   F i l t e r M o d e . B i l i n e a r ,  
- +                                 a n i s o L e v e l   =   0  
- +                         } ;   / /   C O L D   A L L O C :   T e x t u r e 3 D [ 1 ]   -   p l a y e r - c e n t e r e d   c a v e   l i g h t i n g   S D F   v o l u m e   -   o w n e r :   H e c t o n C a v e V o x e l L i g h t i n g V o l u m e  
- +  
- +                         _ s c a n S l i c e C u r s o r   =   0 ;  
- +                         _ r e s t a r t Q u e u e d   =   f a l s e ;  
- +                         _ h a s V a l i d P u b l i s h e d V o l u m e   =   f a l s e ;  
- +                         _ s c a n I n P r o g r e s s   =   f a l s e ;  
- +                         S h a d e r . S e t G l o b a l T e x t u r e ( _ C a v e V o x e l S d f T e x I d ,   _ v o x e l D e n s i t y T e x t u r e ) ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   R e l e a s e R e s o u r c e s ( )  
- +                 {  
- +                         i f   ( _ o c c u p a n c y V o l u m e . I s C r e a t e d )  
- +                                 _ o c c u p a n c y V o l u m e . D i s p o s e ( ) ;  
- +  
- +                         i f   ( _ s d f V o l u m e . I s C r e a t e d )  
- +                                 _ s d f V o l u m e . D i s p o s e ( ) ;  
- +  
- +                         i f   ( _ v o x e l D e n s i t y T e x t u r e   ! =   n u l l )  
- +                                 D e s t r o y ( _ v o x e l D e n s i t y T e x t u r e ) ;  
- +  
- +                         _ o v e r l a p H i t s   =   n u l l ;  
- +                         _ s c a n L o c a l C e n t e r s   =   n u l l ;  
- +                         _ o c c u p i e d C e n t e r s   =   n u l l ;  
- +                         _ e m p t y C e n t e r s   =   n u l l ;  
- +                         _ v o x e l D e n s i t y T e x t u r e   =   n u l l ;  
- +                         _ r e s o l u t i o n R u n t i m e   =   0 ;  
- +                         _ s c a n S l i c e C u r s o r   =   0 ;  
- +                         _ h a s V a l i d P u b l i s h e d V o l u m e   =   f a l s e ;  
- +                         _ s c a n I n P r o g r e s s   =   f a l s e ;  
- +                         _ r e s t a r t Q u e u e d   =   f a l s e ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   B u i l d D e s i r e d V o l u m e D e s c r i p t o r (  
- +                         o u t   V e c t o r 3   c e n t e r W s ,  
- +                         o u t   V e c t o r 3   h a l f E x t e n t s ,  
- +                         o u t   V e c t o r 3   c e l l S i z e ,  
- +                         o u t   f l o a t   c e l l D i a g o n a l ,  
- +                         o u t   f l o a t   s d f R a n g e )  
- +                 {  
- +                         V e c t o r 3   f o l l o w P o s i t i o n   =   _ f o l l o w T a r g e t R u n t i m e   ! =   n u l l   ?   _ f o l l o w T a r g e t R u n t i m e . p o s i t i o n   :   t r a n s f o r m . p o s i t i o n ;  
- +                         f o l l o w P o s i t i o n . y   + =   v e r t i c a l C e n t e r O f f s e t ;  
- +                         c e n t e r W s   =   f o l l o w P o s i t i o n ;  
- +                         h a l f E x t e n t s   =   n e w   V e c t o r 3 (  
- +                                 M a t h f . M a x ( 1 f ,   v o l u m e H a l f E x t e n t s . x ) ,  
- +                                 M a t h f . M a x ( 1 f ,   v o l u m e H a l f E x t e n t s . y ) ,  
- +                                 M a t h f . M a x ( 1 f ,   v o l u m e H a l f E x t e n t s . z ) ) ;  
- +                         c e l l S i z e   =   n e w   V e c t o r 3 (  
- +                                 ( h a l f E x t e n t s . x   *   2 f )   /   M a t h f . M a x ( 1 ,   _ r e s o l u t i o n R u n t i m e ) ,  
- +                                 ( h a l f E x t e n t s . y   *   2 f )   /   M a t h f . M a x ( 1 ,   _ r e s o l u t i o n R u n t i m e ) ,  
- +                                 ( h a l f E x t e n t s . z   *   2 f )   /   M a t h f . M a x ( 1 ,   _ r e s o l u t i o n R u n t i m e ) ) ;  
- +                         c e l l D i a g o n a l   =   c e l l S i z e . m a g n i t u d e ;  
- +                         s d f R a n g e   =   M a t h f . M a x ( c e l l D i a g o n a l   *   M a t h f . M a x ( 1 f ,   s d f R a n g e I n C e l l D i a g o n a l s ) ,   c e l l D i a g o n a l ) ;  
- +                 }  
- +  
- +                 p r i v a t e   b o o l   R e q u i r e s R e f r e s h ( V e c t o r 3   d e s i r e d C e n t e r W s ,   V e c t o r 3   d e s i r e d H a l f E x t e n t s )  
- +                 {  
- +                         i f   ( ! _ h a s V a l i d P u b l i s h e d V o l u m e )  
- +                                 r e t u r n   t r u e ;  
- +  
- +                         i f   ( ( _ p u b l i s h e d C e n t e r W s   -   d e s i r e d C e n t e r W s ) . s q r M a g n i t u d e   >   p o s i t i o n R e f r e s h T h r e s h o l d   *   p o s i t i o n R e f r e s h T h r e s h o l d )  
- +                                 r e t u r n   t r u e ;  
- +  
- +                         r e t u r n   ( _ p u b l i s h e d H a l f E x t e n t s   -   d e s i r e d H a l f E x t e n t s ) . s q r M a g n i t u d e   >   0 . 0 1 f ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   B e g i n S c a n (  
- +                         V e c t o r 3   c e n t e r W s ,  
- +                         V e c t o r 3   h a l f E x t e n t s ,  
- +                         V e c t o r 3   c e l l S i z e ,  
- +                         f l o a t   c e l l D i a g o n a l ,  
- +                         f l o a t   s d f R a n g e )  
- +                 {  
- +                         _ s c a n C e n t e r W s   =   c e n t e r W s ;  
- +                         _ s c a n H a l f E x t e n t s   =   h a l f E x t e n t s ;  
- +                         _ s c a n C e l l S i z e   =   c e l l S i z e ;  
- +                         _ s c a n C e l l H a l f E x t e n t s   =   c e l l S i z e   *   ( 0 . 5 f   *   M a t h f . C l a m p ( o c c u p a n c y P a d d i n g ,   0 . 5 f ,   1 f ) ) ;  
- +                         _ s c a n C e l l D i a g o n a l   =   c e l l D i a g o n a l ;  
- +                         _ s c a n S d f R a n g e   =   s d f R a n g e ;  
- +                         _ s c a n L o c a l T o W o r l d   =   M a t r i x 4 x 4 . T R S ( c e n t e r W s ,   Q u a t e r n i o n . i d e n t i t y ,   V e c t o r 3 . o n e ) ;  
- +                         _ s c a n S l i c e C u r s o r   =   0 ;  
- +                         _ s c a n I n P r o g r e s s   =   t r u e ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   S c a n S l i c e ( i n t   z I n d e x )  
- +                 {  
- +                         i n t   r e s o l u t i o n   =   _ r e s o l u t i o n R u n t i m e ;  
- +                         i n t   s l i c e O f f s e t   =   z I n d e x   *   r e s o l u t i o n   *   r e s o l u t i o n ;  
- +                         f l o a t   l o c a l Z   =   - _ s c a n H a l f E x t e n t s . z   +   ( z I n d e x   +   0 . 5 f )   *   _ s c a n C e l l S i z e . z ;  
- +  
- +                         f o r   ( i n t   y I n d e x   =   0 ;   y I n d e x   <   r e s o l u t i o n ;   y I n d e x + + )  
- +                         {  
- +                                 f l o a t   l o c a l Y   =   - _ s c a n H a l f E x t e n t s . y   +   ( y I n d e x   +   0 . 5 f )   *   _ s c a n C e l l S i z e . y ;  
- +  
- +                                 f o r   ( i n t   x I n d e x   =   0 ;   x I n d e x   <   r e s o l u t i o n ;   x I n d e x + + )  
- +                                 {  
- +                                         f l o a t   l o c a l X   =   - _ s c a n H a l f E x t e n t s . x   +   ( x I n d e x   +   0 . 5 f )   *   _ s c a n C e l l S i z e . x ;  
- +                                         i n t   v o x e l I n d e x   =   s l i c e O f f s e t   +   ( y I n d e x   *   r e s o l u t i o n )   +   x I n d e x ;  
- +                                         V e c t o r 3   l o c a l C e n t e r   =   n e w   V e c t o r 3 ( l o c a l X ,   l o c a l Y ,   l o c a l Z ) ;  
- +                                         _ s c a n L o c a l C e n t e r s [ v o x e l I n d e x ]   =   l o c a l C e n t e r ;  
- +  
- +                                         V e c t o r 3   w o r l d C e n t e r   =   _ s c a n L o c a l T o W o r l d . M u l t i p l y P o i n t 3 x 4 ( l o c a l C e n t e r ) ;  
- +                                         _ o c c u p a n c y V o l u m e [ v o x e l I n d e x ]   =   I s C e l l O c c u p i e d ( w o r l d C e n t e r )   ?   b y t e . M a x V a l u e   :   b y t e . M i n V a l u e ;  
- +                                 }  
- +                         }  
- +                 }  
- +  
- +                 p r i v a t e   b o o l   I s C e l l O c c u p i e d ( V e c t o r 3   w o r l d C e n t e r )  
- +                 {  
- +                         i n t   h i t C o u n t   =   P h y s i c s . O v e r l a p B o x N o n A l l o c (  
- +                                 w o r l d C e n t e r ,  
- +                                 _ s c a n C e l l H a l f E x t e n t s ,  
- +                                 _ o v e r l a p H i t s ,  
- +                                 Q u a t e r n i o n . i d e n t i t y ,  
- +                                 o c c l u d e r L a y e r s ,  
- +                                 t r i g g e r I n t e r a c t i o n ) ;  
- +  
- +                         f o r   ( i n t   h i t I n d e x   =   0 ;   h i t I n d e x   <   h i t C o u n t ;   h i t I n d e x + + )  
- +                         {  
- +                                 C o l l i d e r   h i t   =   _ o v e r l a p H i t s [ h i t I n d e x ] ;  
- +                                 i f   ( h i t   = =   n u l l   | |   ! h i t . e n a b l e d )  
- +                                         c o n t i n u e ;  
- +  
- +                                 T r a n s f o r m   h i t R o o t   =   h i t . t r a n s f o r m . r o o t ;  
- +                                 i f   ( _ e x c l u d e d R o o t   ! =   n u l l   & &   h i t R o o t   = =   _ e x c l u d e d R o o t )  
- +                                         c o n t i n u e ;  
- +  
- +                                 r e t u r n   t r u e ;  
- +                         }  
- +  
- +                         r e t u r n   f a l s e ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   F i n a l i z e S c a n ( )  
- +                 {  
- +                         E n c o d e S i g n e d D i s t a n c e F i e l d ( ) ;  
- +                         _ v o x e l D e n s i t y T e x t u r e . S e t P i x e l D a t a ( _ s d f V o l u m e ,   0 ) ;  
- +                         _ v o x e l D e n s i t y T e x t u r e . A p p l y ( f a l s e ,   f a l s e ) ;  
- +  
- +                         _ p u b l i s h e d C e n t e r W s   =   _ s c a n C e n t e r W s ;  
- +                         _ p u b l i s h e d H a l f E x t e n t s   =   _ s c a n H a l f E x t e n t s ;  
- +                         _ p u b l i s h e d S d f R a n g e   =   _ s c a n S d f R a n g e ;  
- +                         _ p u b l i s h e d W o r l d T o L o c a l   =   _ s c a n L o c a l T o W o r l d . i n v e r s e ;  
- +                         _ h a s V a l i d P u b l i s h e d V o l u m e   =   t r u e ;  
- +                         _ r e s t a r t Q u e u e d   =   f a l s e ;  
- +                         _ s c a n I n P r o g r e s s   =   f a l s e ;  
- +                         _ s c a n S l i c e C u r s o r   =   0 ;  
- +                         S h a d e r . S e t G l o b a l T e x t u r e ( _ C a v e V o x e l S d f T e x I d ,   _ v o x e l D e n s i t y T e x t u r e ) ;  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   E n c o d e S i g n e d D i s t a n c e F i e l d ( )  
- +                 {  
- +                         i n t   v o x e l C o u n t   =   _ r e s o l u t i o n R u n t i m e   *   _ r e s o l u t i o n R u n t i m e   *   _ r e s o l u t i o n R u n t i m e ;  
- +                         i n t   o c c u p i e d C o u n t   =   0 ;  
- +                         i n t   e m p t y C o u n t   =   0 ;  
- +  
- +                         f o r   ( i n t   v o x e l I n d e x   =   0 ;   v o x e l I n d e x   <   v o x e l C o u n t ;   v o x e l I n d e x + + )  
- +                         {  
- +                                 i f   ( _ o c c u p a n c y V o l u m e [ v o x e l I n d e x ]   >   0 )  
- +                                 {  
- +                                         _ o c c u p i e d C e n t e r s [ o c c u p i e d C o u n t ]   =   _ s c a n L o c a l C e n t e r s [ v o x e l I n d e x ] ;  
- +                                         o c c u p i e d C o u n t + + ;  
- +                                 }  
- +                                 e l s e  
- +                                 {  
- +                                         _ e m p t y C e n t e r s [ e m p t y C o u n t ]   =   _ s c a n L o c a l C e n t e r s [ v o x e l I n d e x ] ;  
- +                                         e m p t y C o u n t + + ;  
- +                                 }  
- +                         }  
- +  
- +                         i f   ( o c c u p i e d C o u n t   < =   0 )  
- +                         {  
- +                                 f o r   ( i n t   v o x e l I n d e x   =   0 ;   v o x e l I n d e x   <   v o x e l C o u n t ;   v o x e l I n d e x + + )  
- +                                         _ s d f V o l u m e [ v o x e l I n d e x ]   =   b y t e . M a x V a l u e ;  
- +                                 r e t u r n ;  
- +                         }  
- +  
- +                         i f   ( e m p t y C o u n t   < =   0 )  
- +                         {  
- +                                 f o r   ( i n t   v o x e l I n d e x   =   0 ;   v o x e l I n d e x   <   v o x e l C o u n t ;   v o x e l I n d e x + + )  
- +                                         _ s d f V o l u m e [ v o x e l I n d e x ]   =   b y t e . M i n V a l u e ;  
- +                                 r e t u r n ;  
- +                         }  
- +  
- +                         f l o a t   b o u n d a r y B i a s   =   _ s c a n C e l l D i a g o n a l   *   0 . 5 f ;  
- +                         f l o a t   i n v e r s e S d f R a n g e   =   _ s c a n S d f R a n g e   >   0 . 0 0 0 1 f   ?   1 f   /   _ s c a n S d f R a n g e   :   0 f ;  
- +  
- +                         f o r   ( i n t   v o x e l I n d e x   =   0 ;   v o x e l I n d e x   <   v o x e l C o u n t ;   v o x e l I n d e x + + )  
- +                         {  
- +                                 b o o l   o c c u p i e d   =   _ o c c u p a n c y V o l u m e [ v o x e l I n d e x ]   >   0 ;  
- +                                 V e c t o r 3   o r i g i n   =   _ s c a n L o c a l C e n t e r s [ v o x e l I n d e x ] ;  
- +                                 V e c t o r 3 [ ]   s e a r c h S e t   =   o c c u p i e d   ?   _ e m p t y C e n t e r s   :   _ o c c u p i e d C e n t e r s ;  
- +                                 i n t   s e a r c h C o u n t   =   o c c u p i e d   ?   e m p t y C o u n t   :   o c c u p i e d C o u n t ;  
- +                                 f l o a t   n e a r e s t D i s t a n c e S q   =   f l o a t . M a x V a l u e ;  
- +  
- +                                 f o r   ( i n t   s e a r c h I n d e x   =   0 ;   s e a r c h I n d e x   <   s e a r c h C o u n t ;   s e a r c h I n d e x + + )  
- +                                 {  
- +                                         f l o a t   c a n d i d a t e D i s t a n c e S q   =   ( o r i g i n   -   s e a r c h S e t [ s e a r c h I n d e x ] ) . s q r M a g n i t u d e ;  
- +                                         i f   ( c a n d i d a t e D i s t a n c e S q   <   n e a r e s t D i s t a n c e S q )  
- +                                                 n e a r e s t D i s t a n c e S q   =   c a n d i d a t e D i s t a n c e S q ;  
- +                                 }  
- +  
- +                                 f l o a t   u n s i g n e d D i s t a n c e   =   n e a r e s t D i s t a n c e S q   <   f l o a t . M a x V a l u e  
- +                                         ?   M a t h f . M a x ( 0 f ,   M a t h f . S q r t ( n e a r e s t D i s t a n c e S q )   -   b o u n d a r y B i a s )  
- +                                         :   _ s c a n S d f R a n g e ;  
- +                                 f l o a t   s i g n e d D i s t a n c e   =   o c c u p i e d   ?   - u n s i g n e d D i s t a n c e   :   u n s i g n e d D i s t a n c e ;  
- +                                 f l o a t   e n c o d e d   =   M a t h f . C l a m p 0 1 ( ( s i g n e d D i s t a n c e   *   i n v e r s e S d f R a n g e )   *   0 . 5 f   +   0 . 5 f ) ;  
- +                                 _ s d f V o l u m e [ v o x e l I n d e x ]   =   ( b y t e ) M a t h f . R o u n d T o I n t ( e n c o d e d   *   2 5 5 f ) ;  
- +                         }  
- +                 }  
- +  
- +                 p r i v a t e   v o i d   P u b l i s h G l o b a l s ( b o o l   h a s V o l u m e )  
- +                 {  
- +                         S h a d e r . S e t G l o b a l F l o a t ( _ C a v e V o x e l A c t i v e I d ,   h a s V o l u m e   ?   1 f   :   0 f ) ;  
- +                         S h a d e r . S e t G l o b a l V e c t o r (  
- +                                 _ C a v e V o x e l A o P a r a m s I d ,  
- +                                 n e w   V e c t o r 4 (  
- +                                         M a t h f . M a x ( 0 . 0 0 1 f ,   a o F a d e S t a r t M e t e r s ) ,  
- +                                         M a t h f . M a x ( a o F a d e S t a r t M e t e r s   +   0 . 0 0 1 f ,   a o F a d e E n d M e t e r s ) ,  
- +                                         M a t h f . C l a m p 0 1 ( a o I n t e n s i t y ) ,  
- +                                         M a t h f . C l a m p 0 1 ( a o F l o o r ) ) ) ;  
- +  
- +                         i f   ( ! h a s V o l u m e )  
- +                         {  
- +                                 S h a d e r . S e t G l o b a l V e c t o r ( _ C a v e V o x e l H a l f E x t e n t s I d ,   V e c t o r 4 . z e r o ) ;  
- +                                 S h a d e r . S e t G l o b a l M a t r i x ( _ C a v e V o x e l W o r l d T o L o c a l I d ,   M a t r i x 4 x 4 . i d e n t i t y ) ;  
- +                                 r e t u r n ;  
- +                         }  
- +  
- +                         S h a d e r . S e t G l o b a l M a t r i x ( _ C a v e V o x e l W o r l d T o L o c a l I d ,   _ p u b l i s h e d W o r l d T o L o c a l ) ;  
- +                         S h a d e r . S e t G l o b a l V e c t o r (  
- +                                 _ C a v e V o x e l H a l f E x t e n t s I d ,  
- +                                 n e w   V e c t o r 4 (  
- +                                         _ p u b l i s h e d H a l f E x t e n t s . x ,  
- +                                         _ p u b l i s h e d H a l f E x t e n t s . y ,  
- +                                         _ p u b l i s h e d H a l f E x t e n t s . z ,  
- +                                         _ p u b l i s h e d S d f R a n g e ) ) ;  
- +                         S h a d e r . S e t G l o b a l T e x t u r e ( _ C a v e V o x e l S d f T e x I d ,   _ v o x e l D e n s i t y T e x t u r e ) ;  
- +                 }  
- +  
- +                 p r i v a t e   s t a t i c   v o i d   P u b l i s h I n a c t i v e G l o b a l s ( )  
- +                 {  
- +                         S h a d e r . S e t G l o b a l F l o a t ( _ C a v e V o x e l A c t i v e I d ,   0 f ) ;  
- +                         S h a d e r . S e t G l o b a l V e c t o r ( _ C a v e V o x e l H a l f E x t e n t s I d ,   V e c t o r 4 . z e r o ) ;  
- +                         S h a d e r . S e t G l o b a l M a t r i x ( _ C a v e V o x e l W o r l d T o L o c a l I d ,   M a t r i x 4 x 4 . i d e n t i t y ) ;  
- +                 }  
- +         }  
- + }  
- 

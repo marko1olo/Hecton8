@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -10,13 +11,13 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that locks SDF density to a terrain heightfield, with hysteresis for micro-deltas.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SnapSDFToTerrainJob : Unity.Jobs.IJobParallelFor
     {
         private const double TerrainSampleTruncationScale = AUPDeterminism.AUP_DETERMINISM_MULTIPLIER;
 
         /// <summary>Terrain heights in meters.</summary>
-        [ReadOnly] public NativeArray<float> TerrainHeights;
+        [ReadOnly, NoAlias] public NativeArray<float> TerrainHeights;
 
         /// <summary>Terrain sample width.</summary>
         public int TerrainWidth;
@@ -31,7 +32,7 @@ namespace Hecton8.World
         public double3 TerrainOriginAup;
 
         /// <summary>SDF density array. Positive means solid.</summary>
-        public NativeArray<float> Sdf;
+        [NoAlias] public NativeArray<float> Sdf;
 
         /// <summary>SDF sample width.</summary>
         public int SdfWidth;
@@ -105,13 +106,13 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that locks the nearest terrain-roof voxel in each XZ column, with hysteresis for micro-deltas.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SnapSDFTopCellsToTerrainJob : Unity.Jobs.IJobParallelFor
     {
         private const double TerrainSampleTruncationScale = AUPDeterminism.AUP_DETERMINISM_MULTIPLIER;
 
         /// <summary>Terrain heights in meters.</summary>
-        [ReadOnly] public NativeArray<float> TerrainHeights;
+        [ReadOnly, NoAlias] public NativeArray<float> TerrainHeights;
 
         /// <summary>Terrain sample width.</summary>
         public int TerrainWidth;
@@ -139,7 +140,7 @@ namespace Hecton8.World
         // A full SDF-index pass was rejected for the production path because it schedules SdfWidth*SdfHeight*SdfDepth
         // lanes to update two cells per column. This column pass schedules only SdfWidth*SdfDepth lanes while keeping
         // deterministic AUP sampling and bounded top-surface density writes.
-        [NativeDisableParallelForRestriction]
+        [NativeDisableParallelForRestriction, NoAlias]
         public NativeArray<float> Sdf;
 
         /// <summary>SDF sample width.</summary>
@@ -233,12 +234,12 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that writes the same terrain seam lock into primary and secondary SDF arrays, with micro-delta hysteresis.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SnapDualSDFTopCellsToTerrainJob : Unity.Jobs.IJobParallelFor
     {
         private const double TerrainSampleTruncationScale = AUPDeterminism.AUP_DETERMINISM_MULTIPLIER;
         /// <summary>Terrain heights in meters.</summary>
-        [ReadOnly] public NativeArray<float> TerrainHeights;
+        [ReadOnly, NoAlias] public NativeArray<float> TerrainHeights;
 
         /// <summary>Terrain sample width.</summary>
         public int TerrainWidth;
@@ -265,7 +266,7 @@ namespace Hecton8.World
         // A full SDF-index pass was rejected for the production path because it schedules SdfWidth*SdfHeight*SdfDepth
         // lanes to update two cells per column. This column pass schedules only SdfWidth*SdfDepth lanes while keeping
         // deterministic AUP sampling and bounded top-surface density writes.
-        [NativeDisableParallelForRestriction]
+        [NativeDisableParallelForRestriction, NoAlias]
         public NativeArray<float> Sdf;
 
         /// <summary>Second SDF density array written only when an offline validation path explicitly requests it.</summary>
@@ -281,7 +282,7 @@ namespace Hecton8.World
         // The invariant is guarded by WriteSecondary. Production keeps it zero, so SecondarySdf is untouched. When
         // validation enables it, Sdf and SecondarySdf are distinct caller-owned arrays, and this job is the only
         // writer in the dependency chain before any consumer reads either field.
-        [NativeDisableParallelForRestriction]
+        [NativeDisableParallelForRestriction, NoAlias]
         public NativeArray<float> SecondarySdf;
 
         /// <summary>Non-zero only for cold validation jobs that intentionally mirror the seam lock.</summary>
@@ -390,7 +391,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that unions a 1 km chthonic pillar into an SDF density array.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct InjectMegaPillarSDFJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>SDF density array. Positive means solid.</summary>
@@ -409,7 +410,7 @@ namespace Hecton8.World
         // schedule: exactly (diameter * SdfHeight * diameter) lanes are launched for a single pillar envelope.
         // ExecuteLane derives x/y/z only from that lane and the immutable pillar base; the only write is Sdf[sdfIndex]
         // for that unique coordinate, after bounds and radius-envelope rejection.
-        [NativeDisableParallelForRestriction]
+        [NativeDisableParallelForRestriction, NoAlias]
         [NativeDisableContainerSafetyRestriction]
         public NativeArray<float> Sdf;
 
@@ -479,7 +480,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that unions the selected strongest pillar record into an SDF density array.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct InjectSelectedMegaPillarSDFJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>SDF density array. Positive means solid.</summary>
@@ -496,11 +497,11 @@ namespace Hecton8.World
         // The broadphase radius check executes before noise and before any SDF write. The visual warp is a
         // lateral XZ cinematic fake computed once per column; invalid lanes return without touching the NativeArray,
         // preserving single-writer behavior per SDF sample.
-        [NativeDisableParallelForRestriction]
+        [NativeDisableParallelForRestriction, NoAlias]
         [NativeDisableContainerSafetyRestriction]
         public NativeArray<float> Sdf;
 
-        [ReadOnly] public NativeArray<AnomalyFeatureRecord> SelectedFeature;
+        [ReadOnly, NoAlias] public NativeArray<AnomalyFeatureRecord> SelectedFeature;
         public int SdfWidth;
         public int SdfHeight;
         public int SdfDepth;
@@ -624,14 +625,14 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that carves a sharp vertical fissure into an SDF density array.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct InjectDeepFissureSDFJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>SDF density array. Positive means solid.</summary>
-        public NativeArray<float> Sdf;
+        [NoAlias] public NativeArray<float> Sdf;
 
         /// <summary>Optional packed biome influence cells, indexed like the SDF array.</summary>
-        public NativeArray<uint> BiomeInfluencePacked;
+        [NoAlias] public NativeArray<uint> BiomeInfluencePacked;
 
         /// <summary>SDF sample width.</summary>
         public int SdfWidth;
@@ -707,14 +708,14 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that applies lateral noise displacement to steep SDF slopes.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VoxelCliffOverhangNoiseJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>Input stitched SDF density array.</summary>
-        [ReadOnly] public NativeArray<float> InputSdf;
+        [ReadOnly, NoAlias] public NativeArray<float> InputSdf;
 
         /// <summary>Output displaced SDF density array.</summary>
-        [WriteOnly] public NativeArray<float> OutputSdf;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputSdf;
 
         /// <summary>SDF sample width.</summary>
         public int SdfWidth;

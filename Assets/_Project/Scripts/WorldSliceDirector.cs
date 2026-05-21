@@ -216,7 +216,7 @@ namespace Hecton8.World
             if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 playerAup = snapshot.Aup;
-                return MathGuard.IsFinite(in playerAup);
+                return playerAup.IsFinite();
             }
 
             var playerMovement = playerContext.PlayerMovement;
@@ -224,7 +224,7 @@ namespace Hecton8.World
                 return false;
 
             playerAup = playerMovement.CurrentAup;
-            return MathGuard.IsFinite(in playerAup);
+            return playerAup.IsFinite();
         }
     }
 }

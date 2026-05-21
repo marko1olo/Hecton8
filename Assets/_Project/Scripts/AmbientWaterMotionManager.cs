@@ -24,7 +24,7 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4900)]
     [AddComponentMenu("Hecton/Physics/Ambient Water Motion Manager")]
-    public sealed class AmbientWaterMotionManager : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener
+    public sealed class AmbientWaterMotionManager : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener, IGlobalRegistryHotSwapListener
     {
         private const float BiomeFlowBlendInvSeconds = 0.2f;
         private const float DegreesToHalfRadians = 0.008726646259971648f;
@@ -72,6 +72,8 @@ namespace Hecton8.Physics
         private int _cullFrameMask;
         private bool _tickRegistered;
         private bool _serviceRegistered;
+        private bool _hotSwapRegistered;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private Vector3 _biomeCurrentVector;
         private Vector3 _biomeCurrentStartVector;
         private Vector3 _biomeCurrentTargetVector;
@@ -97,12 +99,15 @@ namespace Hecton8.Physics
             }
 
             RefreshDistanceThresholds();
+            CacheRegistryServicesCold();
             // Resolve once during startup; later retries are throttled.
             TryResolveObserver(force: true);
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
             TryRegisterService();
             if (Application.isPlaying)
@@ -112,6 +117,7 @@ namespace Hecton8.Physics
         private void OnDisable()
         {
             BiomeMatrixEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnregisterService();
         }
@@ -119,9 +125,19 @@ namespace Hecton8.Physics
         private void OnDestroy()
         {
             BiomeMatrixEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnregisterService();
 
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
         }
 
         //  REGISTRATION - O(1) dedupe through HashSet
@@ -279,12 +295,12 @@ namespace Hecton8.Physics
                 : motion.RestLocalPosition;
         }
 
-        private static bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)
+        private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null &&
                 playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                MathGuard.IsFinite(in snapshot.Aup))
+                snapshot.Aup.IsFinite())
             {
                 observerAup = snapshot.Aup;
                 return true;
@@ -294,7 +310,7 @@ namespace Hecton8.Physics
             if (playerMovement != null)
             {
                 AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                if (MathGuard.IsFinite(in currentAup))
+                if (currentAup.IsFinite())
                 {
                     observerAup = currentAup;
                     return true;
@@ -497,11 +513,7 @@ namespace Hecton8.Physics
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -536,6 +548,28 @@ namespace Hecton8.Physics
 
             GlobalRegistry.UnregisterAmbientWaterMotionRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
 #if UNITY_EDITOR

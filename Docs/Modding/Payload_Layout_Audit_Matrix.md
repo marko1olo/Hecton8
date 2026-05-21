@@ -75,7 +75,7 @@ Legacy payloads below are retained for source-audit continuity only while the le
 |---|---:|---|
 | `CombatDamageEventHash` | `0x43444D47` | ASCII `CDMG` |
 | `WeatherChangedEventHash` | `0x57454154` | ASCII `WEAT` |
-| `LowTierSampleFlag` | `1 << 8` | Projected sample was low-tier capped. |
+| `LowTierSampleFlag` | `1 << 8` | Legacy API name. Projected sample was capped by continuous quality-budget pressure. |
 
 ## ModCommand Payload Words
 

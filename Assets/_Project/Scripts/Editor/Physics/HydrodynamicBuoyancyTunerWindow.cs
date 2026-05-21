@@ -306,7 +306,7 @@ namespace Hecton8.Editor.Physics
             telemetry = default;
             cursor = default;
             return BuoyancyDisplacementRuntime.TryGetActiveRuntimeInstance(out BuoyancyDisplacementRuntime runtime) &&
-                   runtime.TryResolveEditorViews(out tuning, out counters, out telemetry, out cursor);
+                   runtime.TryOpenEditorViews(out tuning, out counters, out telemetry, out cursor);
         }
     }
 }

@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Hecton8.Environment;
 using System.Collections.Generic;
 using Unity.Mathematics;
@@ -167,13 +168,17 @@ namespace Hecton8.World
 
         public float GetFlatDistance(Vector3 playerPosition)
         {
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup))
+                return float.MaxValue;
+
             return GetFlatDistance(in playerAup);
         }
 
         public float GetFlatDistanceSquared(Vector3 playerPosition)
         {
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup))
+                return float.MaxValue;
+
             return GetFlatDistanceSquared(in playerAup);
         }
 
@@ -191,7 +196,9 @@ namespace Hecton8.World
 
         public float EvaluateActivationWeight(Vector3 playerPosition)
         {
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup))
+                return 0f;
+
             return EvaluateActivationWeight(in playerAup);
         }
 
@@ -205,7 +212,9 @@ namespace Hecton8.World
 
         public float EvaluateHoldWeight(Vector3 playerPosition)
         {
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup))
+                return 0f;
+
             return EvaluateHoldWeight(in playerAup);
         }
 
@@ -269,7 +278,9 @@ namespace Hecton8.World
 
         private float EvaluateNoiseRadiusMultiplier(Vector3 playerPosition)
         {
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup))
+                return 1f;
+
             return EvaluateNoiseRadiusMultiplier(in playerAup);
         }
 
@@ -314,6 +325,41 @@ namespace Hecton8.World
             float max = Mathf.Max(ax, az);
             float min = Mathf.Min(ax, az);
             return max + (min * 0.41421356f);
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
+        {
+            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return IsFiniteAup(in originAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteVector(runtimePosition) ||
+                !TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup))
+            {
+                return false;
+            }
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
         }
 
         private static void RegisterActiveAnchor(WorldZoneAnchor anchor)

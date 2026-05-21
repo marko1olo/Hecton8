@@ -9,8 +9,7 @@
 //   • Kristallicheskie derevya svetyatsya ot davleniya (lor2 Razdel 7).
 //
 // ARHITEKTURA:
-//   • Publikuet _BiolumIntensity, _BiolumPulseTime v globalnye sheydery.
-//   • ISlowTickable — plavnoe izmenenie intensivnosti.
+//   • ISlowTickable — plavnoe izmenenie lokalnyh proxy-light reaktsiy.
 //   • Slushaet EclipseGameplayEvents i AtlasSignalEvents.
 // ============================================================================
 
@@ -83,10 +82,6 @@ namespace Hecton8.World
         private bool  _registered;
         private bool _runtimeRegistered;
 
-        // _BiolumIntensity is a vector global owned by HectonBiolumManager.
-        private static readonly int _ShaderLegacyBiolumIntensity = Shader.PropertyToID("_HectonLegacyBiolumIntensity");
-        private static readonly int _ShaderBiolumPulseTime  = Shader.PropertyToID("_BiolumPulseTime");
-
         public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => _runtimeRegistered;
 
@@ -107,7 +102,7 @@ namespace Hecton8.World
 
             TryRegister();
 
-            ResolveSurvivalSystem();
+            TryBindSurvivalSystemFromPlayerContext();
 
             EclipseGameplayEvents.Register(this);
             AtlasSignalEvents.Register(this);
@@ -120,7 +115,6 @@ namespace Hecton8.World
             _targetEclipseMultiplier = 1f;
             _atlasPulseBurst = 0f;
             _sonarPulseBurst = 0f;
-            ApplyShader();
             ApplyLocalProxyLights();
         }
 
@@ -137,8 +131,6 @@ namespace Hecton8.World
             _targetEclipseMultiplier = 1f;
             _currentEclipseMultiplier = 1f;
             ApplyLocalProxyLights();
-            Shader.SetGlobalFloat(_ShaderLegacyBiolumIntensity, 0f);
-            Shader.SetGlobalFloat(_ShaderBiolumPulseTime, 0f);
         }
 
         private void OnDestroy()
@@ -173,7 +165,7 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
-            if (survivalSystem == null && !ResolveSurvivalSystem())
+            if (survivalSystem == null && !TryBindSurvivalSystemFromPlayerContext())
                 return;
 
             const float dt = 0.5f;
@@ -209,7 +201,6 @@ namespace Hecton8.World
                 _sonarPulseBurst = math.max(0f, _sonarPulseBurst - pulseDecayRate * dt);
             }
 
-            ApplyShader();
             ApplyLocalProxyLights();
         }
 
@@ -225,11 +216,6 @@ namespace Hecton8.World
                 return target;
 
             return current + (math.sign(delta) * safeDelta);
-        }
-
-        private void ApplyShader()
-        {
-            Shader.SetGlobalFloat(_ShaderLegacyBiolumIntensity, _currentIntensity + _atlasPulseBurst + _sonarPulseBurst);
         }
 
         private void CacheLocalProxyLightBaselines()
@@ -284,7 +270,6 @@ namespace Hecton8.World
                 _currentEclipseMultiplier = clampedMultiplier;
                 _currentIntensity = Mathf.Max(_currentIntensity, baseIntensityWithoutEclipse * clampedMultiplier);
                 _targetIntensity = Mathf.Max(_targetIntensity, baseIntensityWithoutEclipse * clampedMultiplier);
-                ApplyShader();
                 ApplyLocalProxyLights();
             }
         }
@@ -316,8 +301,6 @@ namespace Hecton8.World
         private void HandleSignalPulse(float intensity)
         {
             _atlasPulseBurst = Mathf.Max(_atlasPulseBurst, signalPulseBoost * intensity);
-            Shader.SetGlobalFloat(_ShaderBiolumPulseTime, Time.time);
-            ApplyShader();
             ApplyLocalProxyLights();
         }
 
@@ -330,8 +313,6 @@ namespace Hecton8.World
             }
 
             _sonarPulseBurst = Mathf.Max(_sonarPulseBurst, sonarPulseBoost * normalizedRadius);
-            Shader.SetGlobalFloat(_ShaderBiolumPulseTime, Time.time);
-            ApplyShader();
         }
 
         void ISonarPulseEventListener.OnSonarPulse(float radius)
@@ -351,7 +332,7 @@ namespace Hecton8.World
             }
         }
 
-        private bool ResolveSurvivalSystem()
+        private bool TryBindSurvivalSystemFromPlayerContext()
         {
             if (survivalSystem != null)
                 return true;

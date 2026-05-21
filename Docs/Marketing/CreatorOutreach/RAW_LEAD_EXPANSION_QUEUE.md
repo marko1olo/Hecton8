@@ -26,6 +26,8 @@ Before outreach:
 7. remove co-op language;
 8. human approves.
 
+SN2/Subnautica rows are audience-fit seeds only. They do not prove competitor weakness, current viewer pain, contact permission, or an asset gap. If a future row uses SN2-derived pain to justify verification priority, it must name V6 or a newer same-day monitoring row in `pain_freshness_source`, fill `pain_freshness_checked_at`, and still route through live CRM send gates after a real HECTON asset exists.
+
 ## Subnautica / Underwater / Survival Raw Seeds
 
 | Status | Name | Public Seed URL | Source Type | Suggested Segment |
@@ -150,7 +152,7 @@ Target after asset-gap proof: 300 rows.
 
 Method:
 
-- up to 100 from Subnautica/Subnautica 2 indices only if first assets prove a direct-underwater-survival gap;
+- up to 100 from Subnautica/Subnautica 2 indices only if first assets prove a direct-underwater-survival audience gap the live CRM cannot cover; do not use SN2 pain, co-op, EULA, or performance discourse as the expansion reason;
 - 50 survival crafting;
 - 50 horror/atmosphere;
 - 40 simulation/engineering;

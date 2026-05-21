@@ -70,7 +70,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Subtitle Manager")]
-    public sealed class SubtitleManager : MonoBehaviour, ITickable, ILateFrameTickable, INotificationEventListener, IAudioLogEventListener
+    public sealed class SubtitleManager : MonoBehaviour, ITickable, ILateFrameTickable, INotificationEventListener, IAudioLogEventListener, IGlobalRegistryHotSwapListener
     {
         private enum SubtitleSource
         {
@@ -214,6 +214,8 @@ namespace Hecton8.UI
         private bool _registeredToTickManager;
         private bool _registeredLateFrameSwap;
         private bool _serviceRegistered;
+        private bool _hotSwapListenerRegistered;
+        private LocalizationManager _cachedLocalization;
         private string _currentMessage;
         private SubtitleSource _currentSource;
         private string _lastEnqueuedMessage;
@@ -316,18 +318,22 @@ namespace Hecton8.UI
                 return;
 
             TryRegisterToGlobalRegistry();
+            TryRegisterHotSwapListener();
+            CacheRegistryServicesCold();
             BabelSubtitleSyncRuntime.EnsureInitialized();
             font = LocalizedFontResolver.ResolveReadableFont(font);
             NotificationEvents.Register(this);
             AudioLogEvents.Register(this);
             EnsureBuilt();
             RegisterToTickManager();
+            RegisterLateFrameSwap();
         }
 
         private void OnDisable()
         {
             NotificationEvents.Unregister(this);
             AudioLogEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
             UnregisterLateFrameSwap();
             TryUnregisterFromGlobalRegistry();
@@ -338,6 +344,8 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
+            UnregisterFromTickManager();
             UnregisterLateFrameSwap();
             TryUnregisterFromGlobalRegistry();
 
@@ -363,6 +371,49 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterSubtitleRuntime(this);
             _serviceRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
+                _cachedLocalization = currentService as LocalizationManager;
+                _lastStressCorruptionBucket = int.MinValue;
+                if (_isShowing && _currentSource != SubtitleSource.AudioLog)
+                    RefreshStressCorruptionIfNeeded();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+            {
+                RegisterToTickManager();
+                RegisterLateFrameSwap();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
         }
 
         /// <summary>
@@ -580,8 +631,6 @@ namespace Hecton8.UI
                     else
                     {
                         ApplySubtitleBuffer(0);
-                        if (!_serviceRegistered)
-                            UnregisterFromTickManager();
                     }
                 }
             }
@@ -599,13 +648,9 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (!_subtitleSwapPending)
-            {
-                UnregisterLateFrameSwap();
                 return;
-            }
 
             FlushPendingSubtitleSwap();
-            UnregisterLateFrameSwap();
         }
 
         public void OnNotificationEvent(in NotificationEventPayload payload)
@@ -941,7 +986,6 @@ namespace Hecton8.UI
 
         private void ShowImmediate(string message, float duration, SubtitleSource source)
         {
-            RegisterToTickManager();
             _currentMessage = message;
             _currentUsesBufferedSubtitle = false;
             _currentBufferedSubtitleLength = 0;
@@ -979,7 +1023,6 @@ namespace Hecton8.UI
 
         private void ShowImmediate(ReadOnlySpan<char> message, float duration, SubtitleSource source)
         {
-            RegisterToTickManager();
             int safeLength = CopySpanToBuffer(message, _currentBufferedSubtitleBuffer);
             _currentBufferedSubtitleLength = safeLength;
             _currentUsesBufferedSubtitle = safeLength > 0;
@@ -1084,7 +1127,7 @@ namespace Hecton8.UI
 
             int safeLength = Mathf.Clamp(_currentBufferedSubtitleLength, 0, _currentBufferedSubtitleBuffer.Length);
             ReadOnlySpan<char> sourceSpan = _currentBufferedSubtitleBuffer.AsSpan(0, safeLength);
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _cachedLocalization;
             if (source != SubtitleSource.AudioLog &&
                 manager != null &&
                 manager.TryApplyHullStressCorruptionIfNeeded(sourceSpan, _subtitleRenderBuffer, out int corruptedLength))
@@ -1229,7 +1272,7 @@ namespace Hecton8.UI
             if (_currentSource == SubtitleSource.AudioLog)
                 return;
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _cachedLocalization;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             if (stressBucket == _lastStressCorruptionBucket)
                 return;
@@ -1251,7 +1294,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(message))
                 return string.Empty;
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _cachedLocalization;
             if (manager == null)
                 return message;
 
@@ -1643,7 +1686,7 @@ namespace Hecton8.UI
 
             _pendingSubtitleSwapLength = safeLength;
             _subtitleSwapPending = true;
-            if (!RegisterLateFrameSwap())
+            if (!_registeredLateFrameSwap)
                 FlushPendingSubtitleSwap();
         }
 
@@ -1652,11 +1695,7 @@ namespace Hecton8.UI
             if (_registeredToTickManager || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -1673,7 +1712,7 @@ namespace Hecton8.UI
             if (_registeredLateFrameSwap)
                 return true;
 
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return false;
 
             _registeredLateFrameSwap = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);

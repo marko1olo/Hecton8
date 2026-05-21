@@ -24,7 +24,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9500)] // Runs after GameTickManager singleton bootstrap and before most gameplay systems.
-    public sealed class CrashTelemetryBuffer : MonoBehaviour, ITickable, IUpdatable, IFixedTickable
+    public sealed class CrashTelemetryBuffer : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, IGlobalRegistryHotSwapListener
     {
         private const int RingCapacity = 1024;
         private const int RingCapacityMask = RingCapacity - 1;
@@ -285,7 +285,11 @@ namespace Hecton8.Core
         private bool _runtimeRegistered;
         private bool _registeredTick;
         private bool _registeredFixedTick;
+        private bool _registeredHotSwap;
         private bool _subscribed;
+        private int _fluidRuntimePresent;
+        private int _saveRuntimePresent;
+        private int _thermodynamicsRuntimePresent;
         private int _lastExportFrame = int.MinValue;
         private int _threadedFaultFlags;
         private int _exportState;
@@ -1044,6 +1048,8 @@ namespace Hecton8.Core
             if (!TryRegisterRuntimeService())
                 return;
 
+            CacheRegistryPresenceCold();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -1052,6 +1058,8 @@ namespace Hecton8.Core
             if (!TryRegisterRuntimeService())
                 return;
 
+            CacheRegistryPresenceCold();
+            TryRegisterHotSwapListener();
             Subscribe();
             TryRegister();
         }
@@ -1060,6 +1068,7 @@ namespace Hecton8.Core
         {
             Unsubscribe();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             TryUnregisterRuntimeService();
         }
 
@@ -1067,6 +1076,7 @@ namespace Hecton8.Core
         {
             Unsubscribe();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             DisposeBuffers();
             TryUnregisterRuntimeService();
         }
@@ -2509,19 +2519,56 @@ namespace Hecton8.Core
 
         private void TryRegister()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
             if (!_registeredTick)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
-            }
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
 
             if (!_registeredFixedTick)
+                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Core);
+        }
+
+        private void CacheRegistryPresenceCold()
+        {
+            Volatile.Write(ref _fluidRuntimePresent, GlobalRegistry.Fluid != null ? 1 : 0);
+            Volatile.Write(ref _saveRuntimePresent, GlobalRegistry.SaveRuntime != null ? 1 : 0);
+            Volatile.Write(ref _thermodynamicsRuntimePresent, GlobalRegistry.Thermodynamics != null ? 1 : 0);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
             {
-                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
-                _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    Volatile.Write(ref _fluidRuntimePresent, currentService is HectonFluidEngine ? 1 : 0);
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    Volatile.Write(ref _saveRuntimePresent, currentService is SaveManager ? 1 : 0);
+                    break;
+                case GlobalRegistryServiceSlot.ThermodynamicsRuntime:
+                    Volatile.Write(ref _thermodynamicsRuntimePresent, currentService is AbyssalThermalManager ? 1 : 0);
+                    break;
             }
         }
 
@@ -2592,10 +2639,10 @@ namespace Hecton8.Core
             }
         }
 
-        private static uint SampleSystemMask()
+        private uint SampleSystemMask()
         {
             uint systemMask = 0u;
-            if (GlobalRegistry.Fluid != null)
+            if (Volatile.Read(ref _fluidRuntimePresent) != 0)
             {
                 systemMask |= (uint)SystemBits.Physics;
                 systemMask |= (uint)SystemBits.Fluid;
@@ -2607,7 +2654,7 @@ namespace Hecton8.Core
             if (HectonDirectorAI.ActiveRuntimeInstance != null)
                 systemMask |= (uint)SystemBits.AI;
 
-            if (GlobalRegistry.SaveRuntime != null)
+            if (Volatile.Read(ref _saveRuntimePresent) != 0)
                 systemMask |= (uint)SystemBits.Save;
 
             return systemMask;
@@ -2672,8 +2719,30 @@ namespace Hecton8.Core
             double3 bridgeUniversePosition = HectonMapMagicVegetationBridge.ToUniverseSpaceDouble3(runtimePosition);
             double3 absolutePosition = math.lengthsq(bridgeUniversePosition - runtimePositionDouble) > 0.000000001d
                 ? bridgeUniversePosition
-                : HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+                : TryResolveRuntimeAupDouble(runtimePosition, out double3 resolvedAup)
+                    ? resolvedAup
+                    : double3.zero;
             return new float3((float)absolutePosition.x, (float)absolutePosition.y, (float)absolutePosition.z);
+        }
+
+        private static bool TryResolveRuntimeAupDouble(Vector3 runtimePosition, out double3 absolutePosition)
+        {
+            absolutePosition = default;
+            if (!math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z))))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!resolvedAup.IsFinite())
+                return false;
+
+            absolutePosition = resolvedAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absolutePosition));
         }
 
         private uint BuildErrorFlags(float dt, float reservedMemoryMb, float3 playerPos, bool hasPlayer)
@@ -2870,7 +2939,7 @@ namespace Hecton8.Core
             uint heat = QuantizeUnitToByte(heatSeverity);
             uint environment = QuantizeSignedTemperatureToByte(environmentTemperature);
             uint internalValue = QuantizeSignedTemperatureToByte(internalTemperature);
-            uint thermalRuntimePresent = GlobalRegistry.Thermodynamics != null ? 1u : 0u;
+            uint thermalRuntimePresent = Volatile.Read(ref _thermodynamicsRuntimePresent) != 0 ? 1u : 0u;
             return heat |
                    (environment << 8) |
                    (internalValue << 16) |

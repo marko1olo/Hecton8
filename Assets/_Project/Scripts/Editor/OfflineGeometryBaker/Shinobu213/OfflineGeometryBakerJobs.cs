@@ -515,7 +515,7 @@ namespace Hecton8.Editor.OfflineGeometry
                 return;
             }
 
-            float invCount = math.rcp(valid);
+            float invCount = math.rcp(math.max(1, valid));
             float3 centroid = sum * invCount;
             float3 size = math.max(max - min, new float3(0.01f));
             float3 center = (min + max) * 0.5f;
@@ -537,7 +537,8 @@ namespace Hecton8.Editor.OfflineGeometry
                 if (!math.all(math.isfinite(p)))
                     continue;
 
-                sphereError += math.abs(math.length(p - centroid) - radius) * math.rcp(radius);
+                float safeRadius = math.max(radius, 0.01f);
+                sphereError += math.abs(math.length(p - centroid) - safeRadius) * math.rcp(safeRadius);
                 float3 d = math.abs(p - center);
                 float3 planeDistance = math.abs(half - d);
                 boxSurfaceError += math.cmin(planeDistance) * math.rcp(minHalf);
@@ -545,20 +546,22 @@ namespace Hecton8.Editor.OfflineGeometry
 
             sphereError *= invCount;
             boxSurfaceError *= invCount;
-            float tolerance = math.max(0.001f, PrimitiveTolerance);
+            float toleranceSource = math.isfinite(PrimitiveTolerance) ? PrimitiveTolerance : 0.001f;
+            float tolerance = math.max(0.001f, toleranceSource);
             byte kind = (byte)OfflineColliderKind.ConvexHull;
             float error = math.min(sphereError, boxSurfaceError);
+            error = math.isfinite(error) ? error : float.MaxValue;
             if (sphereError <= tolerance * 1.2f)
             {
                 kind = (byte)OfflineColliderKind.Sphere;
                 center = centroid;
                 size = new float3(radius * 2f);
-                error = sphereError;
+                error = math.isfinite(sphereError) ? sphereError : float.MaxValue;
             }
             else if (boxSurfaceError <= tolerance)
             {
                 kind = (byte)OfflineColliderKind.Box;
-                error = boxSurfaceError;
+                error = math.isfinite(boxSurfaceError) ? boxSurfaceError : float.MaxValue;
             }
 
             Result[0] = new OfflinePrimitiveFitResult
@@ -614,8 +617,8 @@ namespace Hecton8.Editor.OfflineGeometry
 
             if (valid <= 0)
             {
-                min = new float3(-0.005f);
-                max = new float3(0.005f);
+                ClearHullOutput();
+                return;
             }
 
             float3 pad = math.max((max - min) * 0.0025f, new float3(0.002f));
@@ -646,16 +649,16 @@ namespace Hecton8.Editor.OfflineGeometry
                 AddUniqueSupport(bestPoint, epsSq, outputLimit, ref supportCount);
             }
 
-            if (supportCount < 4)
+            if (supportCount < OfflineGeometryBakerConstants.MinHullVertexCount)
             {
-                WriteBoxHull(min, max);
+                ClearHullOutput();
                 return;
             }
 
             int indexCount = BuildConvexFaces(supportCount, max - min);
             if (indexCount < 12)
             {
-                WriteBoxHull(min, max);
+                ClearHullOutput();
                 return;
             }
 
@@ -731,7 +734,7 @@ namespace Hecton8.Editor.OfflineGeometry
                             continue;
 
                         if (!AppendFaceFan(supportCount, normal, distance, epsilon, ref indexCount))
-                            return indexCount;
+                            return 0;
 
                         if (emittedPlanes.Length < emittedPlanes.Capacity)
                             emittedPlanes.Add(new float4(normal, distance));
@@ -739,7 +742,35 @@ namespace Hecton8.Editor.OfflineGeometry
                 }
             }
 
+            if (indexCount < 12 || !AllSourceVerticesInside(ref emittedPlanes, math.max(epsilon * 4f, 0.0001f)))
+                return 0;
+
             return indexCount;
+        }
+
+        private bool AllSourceVerticesInside(ref FixedList4096Bytes<float4> planes, float tolerance)
+        {
+            if (planes.Length <= 0)
+                return false;
+
+            bool hasFiniteSourceVertex = false;
+            for (int vertexIndex = 0; vertexIndex < Vertices.Length; vertexIndex++)
+            {
+                float3 point = Vertices[vertexIndex].Position;
+                if (!math.all(math.isfinite(point)))
+                    continue;
+
+                hasFiniteSourceVertex = true;
+                for (int planeIndex = 0; planeIndex < planes.Length; planeIndex++)
+                {
+                    float4 plane = planes[planeIndex];
+                    float side = math.dot(new float3(plane.x, plane.y, plane.z), point) - plane.w;
+                    if (!math.isfinite(side) || side > tolerance)
+                        return false;
+                }
+            }
+
+            return hasFiniteSourceVertex;
         }
 
         private bool AppendFaceFan(int supportCount, float3 normal, float distance, float epsilon, ref int indexCount)
@@ -827,41 +858,13 @@ namespace Hecton8.Editor.OfflineGeometry
             return false;
         }
 
-        private void WriteBoxHull(float3 min, float3 max)
+        private void ClearHullOutput()
         {
-            if (!HullVertices.IsCreated || HullVertices.Length < 8 || !HullIndices.IsCreated || HullIndices.Length < 36)
-            {
-                if (HullVertexCount.IsCreated && HullVertexCount.Length > 0)
-                {
-                    HullVertexCount[0] = 0;
-                }
+            if (HullVertexCount.IsCreated && HullVertexCount.Length > 0)
+                HullVertexCount[0] = 0;
 
-                if (HullIndexCount.IsCreated && HullIndexCount.Length > 0)
-                {
-                    HullIndexCount[0] = 0;
-                }
-
-                return;
-            }
-
-            HullVertices[0] = new float3(min.x, min.y, min.z);
-            HullVertices[1] = new float3(max.x, min.y, min.z);
-            HullVertices[2] = new float3(max.x, max.y, min.z);
-            HullVertices[3] = new float3(min.x, max.y, min.z);
-            HullVertices[4] = new float3(min.x, min.y, max.z);
-            HullVertices[5] = new float3(max.x, min.y, max.z);
-            HullVertices[6] = new float3(max.x, max.y, max.z);
-            HullVertices[7] = new float3(min.x, max.y, max.z);
-            HullVertexCount[0] = 8;
-            int i = 0;
-            HullIndices[i++] = 0; HullIndices[i++] = 2; HullIndices[i++] = 1; HullIndices[i++] = 0; HullIndices[i++] = 3; HullIndices[i++] = 2;
-            HullIndices[i++] = 4; HullIndices[i++] = 5; HullIndices[i++] = 6; HullIndices[i++] = 4; HullIndices[i++] = 6; HullIndices[i++] = 7;
-            HullIndices[i++] = 0; HullIndices[i++] = 1; HullIndices[i++] = 5; HullIndices[i++] = 0; HullIndices[i++] = 5; HullIndices[i++] = 4;
-            HullIndices[i++] = 1; HullIndices[i++] = 2; HullIndices[i++] = 6; HullIndices[i++] = 1; HullIndices[i++] = 6; HullIndices[i++] = 5;
-            HullIndices[i++] = 2; HullIndices[i++] = 3; HullIndices[i++] = 7; HullIndices[i++] = 2; HullIndices[i++] = 7; HullIndices[i++] = 6;
-            HullIndices[i++] = 3; HullIndices[i++] = 0; HullIndices[i++] = 4; HullIndices[i++] = 3; HullIndices[i++] = 4; HullIndices[i++] = 7;
             if (HullIndexCount.IsCreated && HullIndexCount.Length > 0)
-                HullIndexCount[0] = i;
+                HullIndexCount[0] = 0;
         }
 
         private static float3 Direction(int index)

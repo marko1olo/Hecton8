@@ -6,7 +6,7 @@
 //   • PlayerTool-derived for inventory/tool slot integration
 //   • IBatteryTool for BatteryCharger compatibility
 //   • ITickable for active propulsion logic
-//   • Zero GC: cached refs, MaterialPropertyBlock, pre-allocated arrays
+//   • Zero GC: cached refs and pre-allocated arrays
 //
 // FEATURES:
 //   • Increases swim speed while active and has battery
@@ -17,9 +17,8 @@
 namespace Hecton8.Gameplay
 {
     using Hecton.Localization;
-    using Hecton8.Audio;
-    using Hecton8.Bootstrap;
     using Hecton8.Core;
+    using Hecton8.Core.Contracts;
     using Hecton8.Core.Contracts.Signals;
     using Hecton8.Input;
     using Hecton8.Items;
@@ -27,7 +26,6 @@ namespace Hecton8.Gameplay
     using Hecton8.Tools;
     using Hecton8.UI;
     using System;
-    using System.Collections.Generic;
     using Unity.Mathematics;
     using UnityEngine;
 
@@ -37,7 +35,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Tools/Manta Scooter")]
-    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IUpdatable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, IDamageSignalEmitter, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IUpdatable, ILateFrameTickable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, IDamageSignalEmitter, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const float DefaultTransportPropulsionReference = 800f;
         private const float ThrottleBlendSpeedFloor = 0.01f;
@@ -71,13 +69,6 @@ namespace Hecton8.Gameplay
         [Tooltip("Minimum battery charge to activate (0-1).")]
         [SerializeField, Range(0f, 0.3f)] private float minChargeToActivate = 0.05f;
 
-        [Header("── Audio ──────────────────────────────────────")]
-        [Tooltip("Looping motor sound while active.")]
-        [SerializeField] private AudioClip motorLoopClip;
-
-        [Tooltip("Motor volume.")]
-        [SerializeField, Range(0f, 1f)] private float motorVolume = 0.6f;
-
         [Header("Drive Misfires")]
         [Tooltip("Hull-stress threshold where the scooter starts suffering propulsion misfires.")]
         [SerializeField, Range(0f, 1f)] private float misfireStressThreshold = 0.7f;
@@ -107,17 +98,8 @@ namespace Hecton8.Gameplay
         [Tooltip("Mesh to hide when battery is removed.")]
         [SerializeField] private GameObject batteryMesh;
 
-        [Tooltip("Renderer for power indicator light.")]
-        [SerializeField] private Renderer powerIndicatorRenderer;
-
         [Tooltip("Optional pooled world-body prefab used when a handheld Manta catastrophically bails out at speed. Falls back to ToolData.worldPrefab when unset.")]
         [SerializeField] private GameObject bailoutWreckPrefab;
-
-        [Tooltip("Emission color when powered.")]
-        [SerializeField] private Color powerOnColor = new Color(0f, 0.9f, 1f);
-
-        [Tooltip("Emission color when low battery.")]
-        [SerializeField] private Color lowBatteryColor = new Color(1f, 0.3f, 0f);
 
         [Header("── Headlights ────────────────────────────────")]
         [Tooltip("Optional primary spotlight used for scooter volumetric shafts and abyssal lens failure.")]
@@ -166,17 +148,22 @@ namespace Hecton8.Gameplay
         //  RUNTIME STATE
         // ══════════════════════════════════════════════════════════
 
-        private HectonPlayerMovement _playerMovement;
-        private HectonSurvivalSystem _mantaSurvivalSystem;
         private VehicleUpgradeModule _vehicleUpgradeModule;
-        private AudioSource _motorAudioSource;
         private IInputService _cachedInputService;
         private ObjectPoolManager _cachedObjectPool;
-        private SpatialAudioManager _cachedSpatialAudioManager;
+        private IToolAcousticCueService _cachedToolAcousticCues;
+        private IBabelLocalization _cachedBabelLocalization;
         private Transform _cachedTransform;
+        private bool _vehicleUpgradeModuleLookupAttempted;
+        private bool _seaglideMovementStateCacheResolved;
+        private bool _seaglideMovementStateCacheValid;
+        private bool _hasLastSeaglideMovementSnapshotAup;
+        private bool _headlightPresentationDirty;
+        private bool _registeredLateFrame;
         private bool _isActive;
         private bool _isMoving;
         private float _driveThrottleCurrent;
+        private float _headlightPresentationDeltaTime;
         private bool _registeredTick;
         private bool _hotSwapListenerRegistered;
         private bool _hudStateInitialized;
@@ -193,6 +180,12 @@ namespace Hecton8.Gameplay
         private bool _lastDirectiveHasBattery;
         private bool _lastDirectiveActive;
         private bool _lastDirectiveBatteryLow;
+        private byte _powerIndicatorVisualState = byte.MaxValue;
+        private uint _headlightPayloadHash = uint.MaxValue;
+        private int _lastPublishedHeadlightPayloadCount = -1;
+        private uint _headlightSignalDropCount;
+        private ushort _lastHeadlightSignalDropSlot;
+        private byte _lastHeadlightSignalDropOperation;
         private string _localizedNoBatteryWarning = "MANTA - NO BATTERY";
         private string _localizedBatteryDepletedWarning = "MANTA - BATTERY DEPLETED";
         private string _localizedSummaryNoBattery = "MANTA // NO BATTERY";
@@ -201,6 +194,8 @@ namespace Hecton8.Gameplay
         private string[] _localizedSummaryActiveCache;
         private string[] _localizedSummaryStandbyCache;
         private double3 _lastSeaglideAup;
+        private double3 _lastSeaglideMovementSnapshotAup;
+        private PlayerMovementRuntimeState _cachedSeaglideMovementState;
         private string _localizedDirectiveInsertBattery = "Insert a battery to activate propulsion.";
         private string _localizedDirectiveSwapRecharge = "Battery depleted. Swap or recharge.";
         private string _localizedDirectiveHoldForward = "Hold forward to propel. Release to coast.";
@@ -208,9 +203,6 @@ namespace Hecton8.Gameplay
         private string _localizedTransportBrokenWarning = "MANTA - DRIVE FAILURE";
         [SerializeField] private string _debugActivationState = ActivationStateIdle;
 
-        // MaterialPropertyBlock for power indicator
-        private MaterialPropertyBlock _mpb;
-        private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
         private const string ActivationStateIdle = "Idle";
         private const string ActivationStateSpawned = "Spawned";
         private const string ActivationStateEquipped = "Equipped";
@@ -251,11 +243,12 @@ namespace Hecton8.Gameplay
         private float _headlightGlitchPhase;
         private Vector3 _lastPublishedVolumetricVelocity;
         private bool _hasLastPublishedVolumetricVelocity;
-        // COLD ALLOC: List<IDamageSignalReceiver>[1] - handheld transport damage listeners (player trauma dispatcher) - owner: MantaScooter
-        private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(1);
+        // COLD ALLOC: IDamageSignalReceiver[4] - handheld transport damage listeners (player trauma dispatcher) - owner: MantaScooter
+        private readonly IDamageSignalReceiver[] _damageReceivers = new IDamageSignalReceiver[DamageReceiverCapacity];
+        private int _damageReceiverCount;
 
+        private const int DamageReceiverCapacity = 4;
         private const int MaxHeadlights = 2;
-        private const int ParentComponentResolveDepth = 32;
         private static readonly int _HeadlightCountId = Shader.PropertyToID("_HectonScooterHeadlightCount");
         private static readonly int _HeadlightPositionsWsId = Shader.PropertyToID("_HectonScooterHeadlightPositionsWS");
         private static readonly int _HeadlightDirectionsWsId = Shader.PropertyToID("_HectonScooterHeadlightDirectionsWS");
@@ -381,7 +374,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
-            TryGetComponent(out _vehicleUpgradeModule);
+            CacheVehicleUpgradeModuleCold();
             _headlightSlots = new Light[MaxHeadlights]; // COLD ALLOC: Light[2] â€” scooter headlight cache for volumetric shafts â€” owner: MantaScooter
             _headlightPositionsWs = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] â€” scooter headlight world-position payloads â€” owner: MantaScooter
             _headlightDirectionsWs = new Vector4[MaxHeadlights]; // COLD ALLOC: Vector4[2] â€” scooter headlight direction payloads â€” owner: MantaScooter
@@ -391,7 +384,6 @@ namespace Hecton8.Gameplay
             _headlightBaseSpotAngles = new float[MaxHeadlights]; // COLD ALLOC: float[2] â€” authored headlight cone cache for recovery after hull-stress glitches â€” owner: MantaScooter
             _headlightBaseIntensities = new float[MaxHeadlights]; // COLD ALLOC: float[2] â€” authored headlight intensity cache for recovery after hull-stress glitches â€” owner: MantaScooter
             _headlightBaseRanges = new float[MaxHeadlights]; // COLD ALLOC: float[2] â€” authored headlight range cache for shaft falloff publishing â€” owner: MantaScooter
-            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: MantaScooter
             _depthHudBuffer = new char[16]; // COLD ALLOC: char[16] - scooter depth HUD buffer - owner: MantaScooter
             _batteryHudBuffer = new char[8]; // COLD ALLOC: char[8] - scooter battery HUD buffer - owner: MantaScooter
             RefreshMantaLocalizationCache();
@@ -401,9 +393,6 @@ namespace Hecton8.Gameplay
             RegisterHeadlightShadowBudget();
             ClearHeadlightGlobals();
 
-            // Setup motor audio
-            TryGetComponent(out _motorAudioSource);
-            TryAssignMotorMixerRoute();
         }
 
         private void OnEnable()
@@ -413,13 +402,15 @@ namespace Hecton8.Gameplay
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshMantaLocalizationCache();
             RegisterHeadlightShadowBudget();
-            TryAssignMotorMixerRoute();
+            ConfigureMantaSignalLanesCold();
         }
 
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregisterHotSwapListener();
+            UnregisterFromTick();
+            UnregisterFromLateFrame();
             UnregisterHeadlightShadowBudget();
             RestoreHeadlightDefaults();
             ClearHeadlightGlobals();
@@ -428,7 +419,8 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
-            ResolveVehicleUpgradeModule();
+            _vehicleUpgradeModuleLookupAttempted = false;
+            CacheVehicleUpgradeModuleCold();
             _isActive = false;
             _registeredTick = false;
             _debugActivationState = ActivationStateSpawned;
@@ -436,7 +428,6 @@ namespace Hecton8.Gameplay
             _empMisfireTimer = 0f;
             BindTransportPresetToFeelContract();
             EnsureTransportLifecycleInitialized();
-            ResolvePlayerReferences();
             ResetHudStateCache();
             CacheHeadlightDefaults();
             RegisterHeadlightShadowBudget();
@@ -453,8 +444,9 @@ namespace Hecton8.Gameplay
             ClearHeadlightGlobals();
             UnregisterHeadlightShadowBudget();
             UnregisterFromTick();
+            UnregisterFromLateFrame();
             ResetHudStateCache();
-            _damageReceivers.Clear();
+            ClearDamageReceivers();
             base.OnDespawn();
         }
 
@@ -462,10 +454,10 @@ namespace Hecton8.Gameplay
         {
             base.OnEquip();
             BindTransportPresetToFeelContract();
-            ResolvePlayerReferences();
             _debugActivationState = ActivationStateEquipped;
             ResetHudStateCache();
             RegisterToTick();
+            RegisterToLateFrame();
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
         }
@@ -477,6 +469,7 @@ namespace Hecton8.Gameplay
             RestoreHeadlightDefaults();
             ClearHeadlightGlobals();
             UnregisterFromTick();
+            UnregisterFromLateFrame();
             _debugActivationState = ActivationStateUnequipped;
             ResetHudStateCache();
             base.OnUnequip();
@@ -488,7 +481,7 @@ namespace Hecton8.Gameplay
 
         public override void UsePrimary(float deltaTime)
         {
-            ResolvePlayerReferences();
+            ResetSeaglideMovementStateCache();
 
             if (!IsEquipped)
             {
@@ -528,17 +521,17 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // Check if player is swimming
-            if (_playerMovement == null)
+            RefreshSeaglideMovementStateSnapshot(deltaTime);
+            if (!TryResolveSeaglideMovementState(out PlayerMovementRuntimeState movementState))
             {
                 if (_isActive)
                     DeactivateScooter();
 
-                _debugActivationState = ActivationStateMissingPlayerMovement;
+                _debugActivationState = ActivationStateMissingRuntimeContext;
                 return;
             }
 
-            if (_playerMovement.CurrentLocomotionMode != PlayerLocomotionMode.UnderwaterSwim)
+            if (!IsMovementStateUnderwater(in movementState))
             {
                 if (_isActive)
                     DeactivateScooter();
@@ -551,12 +544,11 @@ namespace Hecton8.Gameplay
             if (!_isActive)
                 ActivateScooter();
 
-            // Check if player is moving
-            _isMoving = IsPlayerMoving();
-            _debugActivationState = _isMoving ? ActivationStateMoving : ActivationStateIdleInWater;
             _driveThrottleCurrent = AdvanceDriveThrottle(_driveThrottleCurrent, 1f, deltaTime);
-            UpdateHullStressMisfire(deltaTime, _isMoving);
             float driveThrottleOutput = ResolveEffectiveDriveThrottleOutput();
+            _isMoving = IsPlayerMoving() || driveThrottleOutput > 0.01f;
+            UpdateHullStressMisfire(deltaTime, _isMoving);
+            _debugActivationState = _isMoving ? ActivationStateMoving : ActivationStateIdleInWater;
 
             if (_isMoving)
             {
@@ -620,8 +612,12 @@ namespace Hecton8.Gameplay
 
         public void Tick(float deltaTime)
         {
+            ResetSeaglideMovementStateCache();
+
             if (!IsEquipped)
                 return;
+
+            RefreshSeaglideMovementStateSnapshot(deltaTime);
 
             if (_empMisfireTimer > 0f)
             {
@@ -630,7 +626,7 @@ namespace Hecton8.Gameplay
                     _empMisfireTimer = 0f;
             }
 
-            UpdateHeadlightState(deltaTime);
+            QueueHeadlightPresentation(deltaTime);
 
             if (_isActive)
             {
@@ -651,7 +647,18 @@ namespace Hecton8.Gameplay
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
 
-        public override string GetOperationalSummary()
+        public void LateFrameTick()
+        {
+            if (!_headlightPresentationDirty)
+                return;
+
+            float deltaTime = math.clamp(_headlightPresentationDeltaTime, 0.0001f, 0.2f);
+            _headlightPresentationDirty = false;
+            _headlightPresentationDeltaTime = 0f;
+            UpdateHeadlightState(deltaTime);
+        }
+
+        public override string BuildLegacyOperationalSummaryString()
         {
             int batteryPercent = RoundToIntPositive(BatteryCharge * 100f);
             if (!_summaryStateInitialized ||
@@ -687,7 +694,7 @@ namespace Hecton8.Gameplay
             AppendText(ref buffer, "%");
         }
 
-        public override string GetOperationalDirective()
+        public override string BuildLegacyOperationalDirectiveString()
         {
             bool batteryLow = _hasBattery && BatteryCharge < minChargeToActivate;
             if (!_directiveStateInitialized ||
@@ -734,35 +741,7 @@ namespace Hecton8.Gameplay
         {
             _isActive = true;
             _debugActivationState = ActivationStateActivated;
-
-            if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
-            {
-                if (_motorAudioSource != null && _motorAudioSource.isPlaying)
-                    _motorAudioSource.Stop();
-
-                UpdatePowerIndicator();
-                return;
-            }
-
-            // Start motor sound
-            if (_motorAudioSource != null && motorLoopClip != null && !_motorAudioSource.isPlaying)
-            {
-                TryAssignMotorMixerRoute();
-                _motorAudioSource.clip = motorLoopClip;
-                _motorAudioSource.volume = motorVolume;
-                _motorAudioSource.Play();
-            }
-
             UpdatePowerIndicator();
-        }
-
-        private void TryAssignMotorMixerRoute()
-        {
-            if (_motorAudioSource == null || _motorAudioSource.outputAudioMixerGroup != null)
-                return;
-
-            if (_cachedSpatialAudioManager != null)
-                _motorAudioSource.outputAudioMixerGroup = _cachedSpatialAudioManager.SfxGroup;
         }
 
         private void DeactivateScooter()
@@ -771,25 +750,10 @@ namespace Hecton8.Gameplay
             _isMoving = false;
             _driveThrottleCurrent = 0f;
             _hasLastSeaglideAup = false;
+            _hasLastSeaglideMovementSnapshotAup = false;
             MarkScooterActiveForCentralSolver(false, 0f);
             _debugActivationState = ActivationStateIdle;
             ResetMisfireState();
-
-            if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
-            {
-                if (_motorAudioSource != null && _motorAudioSource.isPlaying)
-                    _motorAudioSource.Stop();
-
-                RestoreHeadlightDefaults();
-                ClearHeadlightGlobals();
-                UpdatePowerIndicator();
-                return;
-            }
-
-            // Stop motor sound
-            if (_motorAudioSource != null && _motorAudioSource.isPlaying)
-                _motorAudioSource.Stop();
-
             RestoreHeadlightDefaults();
             ClearHeadlightGlobals();
             UpdatePowerIndicator();
@@ -821,12 +785,16 @@ namespace Hecton8.Gameplay
 
             double3 previousAup = _hasLastSeaglideAup
                 ? _lastSeaglideAup
-                : currentAup - new double3(
-                    movementState.Velocity.x * safeDelta,
-                    movementState.Velocity.y * safeDelta,
-                    movementState.Velocity.z * safeDelta);
+                : RewindAupByLocalVelocity(currentAup, movementState.Velocity, safeDelta);
 
             float3 forward = SafeDirection(movementState.CameraForward, SafeDirection(movementState.Forward, new float3(0f, 0f, 1f)));
+            if (!math.all(math.isfinite(previousAup)) ||
+                !math.all(math.isfinite(forward)) ||
+                !math.all(math.isfinite(movementState.Velocity)))
+            {
+                return false;
+            }
+
             SeaglidePropulsionRequestDTO request = default;
             request.CurrentAUP = currentAup;
             request.PreviousAUP = previousAup;
@@ -840,36 +808,118 @@ namespace Hecton8.Gameplay
             request.BatteryLevel = math.saturate(batteryCharge);
             request.SurfaceNormal = new float3(0f, 1f, 0f);
 
-            SeaglideStateDTO state = default;
-            state.CurrentAUP = currentAup;
-            state.Velocity = movementState.Velocity;
-            state.BatteryLevel = request.BatteryLevel;
-            state.ActiveFlags = request.Flags;
-            state.TargetEntityHash = request.TargetEntityHash;
-            state.MassKg = SeaglideHydrodynamicsConstants.DefaultBaseMassKg;
-            state.AddedMassKg = SeaglideHydrodynamicsConstants.DefaultAddedMassKg;
+            SeaglidePropulsionRequestSignal signal = default;
+            signal.Request = request;
+            signal.Velocity = movementState.Velocity;
+            signal.BatteryLevel = request.BatteryLevel;
+            signal.MassKg = SeaglideHydrodynamicsConstants.DefaultBaseMassKg;
+            signal.AddedMassKg = SeaglideHydrodynamicsConstants.DefaultAddedMassKg;
+            signal.TargetEntityHash = request.TargetEntityHash;
+            signal.FrameIndex = request.FrameIndex;
+            signal.Flags = request.Flags;
 
-            bool submitted = SeaglideHydrodynamicsRuntime.TrySubmitPlayerRequest(in request, in state);
-            _lastSeaglideAup = currentAup;
-            _hasLastSeaglideAup = true;
+            bool submitted = SignalBus<SeaglidePropulsionRequestSignal>.TryPush(in signal);
+            if (submitted)
+            {
+                _lastSeaglideAup = currentAup;
+                _hasLastSeaglideAup = true;
+            }
+
             return submitted;
         }
 
-        private static bool TryResolveSeaglideMovementState(out PlayerMovementRuntimeState movementState)
+        private void ResetSeaglideMovementStateCache()
         {
-            movementState = default;
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-                return false;
-
-            movementState = runtimeContext.MovementState;
-            bool hasPlayer = (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
-            return hasPlayer &&
-                   math.all(math.isfinite(movementState.Velocity)) &&
-                   math.all(math.isfinite(movementState.Forward)) &&
-                   math.all(math.isfinite(movementState.CameraForward));
+            _seaglideMovementStateCacheResolved = false;
+            _seaglideMovementStateCacheValid = false;
+            _cachedSeaglideMovementState = default;
         }
 
-        private static Vector3 ResolveSeaglidePresentationVelocity(bool allowHeadlights)
+        private void RefreshSeaglideMovementStateSnapshot(float deltaTime)
+        {
+            _seaglideMovementStateCacheResolved = true;
+            _seaglideMovementStateCacheValid = false;
+            _cachedSeaglideMovementState = default;
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) ||
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState publishedState))
+            {
+                _hasLastSeaglideMovementSnapshotAup = false;
+                return;
+            }
+
+            Hecton8.World.AbsoluteUniversePosition predictedPosition = publishedState.PredictedAup;
+            if (!predictedPosition.IsFinite())
+            {
+                _hasLastSeaglideMovementSnapshotAup = false;
+                return;
+            }
+
+            double3 currentAup = predictedPosition.ToAbsoluteDouble3();
+            if (!math.all(math.isfinite(currentAup)))
+            {
+                _hasLastSeaglideMovementSnapshotAup = false;
+                return;
+            }
+
+            float safeDelta = math.clamp(
+                math.select(0.0001f, deltaTime, math.isfinite(deltaTime) && deltaTime > 0f),
+                0.0001f,
+                0.2f);
+            float3 aupVelocity = ResolveSeaglideAupVelocity(currentAup, safeDelta);
+            float3 publishedVelocity = publishedState.Velocity;
+            bool publishedVelocityValid = math.all(math.isfinite(publishedVelocity));
+            bool shouldUseAupVelocity = !publishedVelocityValid ||
+                (math.lengthsq(publishedVelocity) <= 0.000001f && math.lengthsq(aupVelocity) > 0.000001f);
+            float3 velocity = shouldUseAupVelocity
+                ? aupVelocity
+                : publishedVelocity;
+            _lastSeaglideMovementSnapshotAup = currentAup;
+            _hasLastSeaglideMovementSnapshotAup = true;
+
+            float3 fallbackForward = SafeDirection(publishedState.Forward, new float3(0f, 0f, 1f));
+            float3 cameraForward = SafeDirection(publishedState.CameraForward, fallbackForward);
+
+            float3 currentRuntime = publishedState.WorldPosition;
+            if (!math.all(math.isfinite(currentRuntime)))
+                currentRuntime = predictedPosition.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(currentRuntime)))
+                currentRuntime = publishedState.PredictedWorldPosition;
+            if (!math.all(math.isfinite(currentRuntime)))
+                currentRuntime = float3.zero;
+
+            float3 predictedRuntime = publishedState.PredictedWorldPosition;
+            if (!math.all(math.isfinite(predictedRuntime)))
+                predictedRuntime = currentRuntime + (velocity * 0.1f);
+
+            PlayerMovementRuntimeState movementState = publishedState;
+            movementState.WorldPosition = currentRuntime;
+            movementState.PredictedWorldPosition = predictedRuntime;
+            movementState.PredictedAup = predictedPosition;
+            movementState.Velocity = math.all(math.isfinite(velocity)) ? velocity : float3.zero;
+            movementState.Forward = fallbackForward;
+            movementState.CameraForward = cameraForward;
+            movementState.DepthMeters = math.isfinite(publishedState.DepthMeters)
+                ? math.max(0f, publishedState.DepthMeters)
+                : 0f;
+            movementState.TransportSpeedMultiplier = math.max(0.01f, GetSpeedMultiplier());
+            movementState.UnderwaterStressIntensity01 = math.saturate(publishedState.UnderwaterStressIntensity01);
+
+            _cachedSeaglideMovementState = movementState;
+            _seaglideMovementStateCacheValid = true;
+        }
+
+        private bool TryResolveSeaglideMovementState(out PlayerMovementRuntimeState movementState)
+        {
+            movementState = _cachedSeaglideMovementState;
+            return _seaglideMovementStateCacheResolved && _seaglideMovementStateCacheValid;
+        }
+
+        private static bool IsMovementStateUnderwater(in PlayerMovementRuntimeState movementState)
+        {
+            return (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.Underwater) != 0u;
+        }
+
+        private Vector3 ResolveSeaglidePresentationVelocity(bool allowHeadlights)
         {
             if (!allowHeadlights || !TryResolveSeaglideMovementState(out PlayerMovementRuntimeState movementState))
                 return Vector3.zero;
@@ -883,9 +933,38 @@ namespace Hecton8.Gameplay
             return math.select(fallback, value * math.rsqrt(math.max(sq, 0.000001f)), math.isfinite(sq) && sq > 0.000001f);
         }
 
+        private float3 ResolveSeaglideAupVelocity(double3 currentAup, float deltaTime)
+        {
+            if (!_hasLastSeaglideMovementSnapshotAup || !math.all(math.isfinite(_lastSeaglideMovementSnapshotAup)))
+                return float3.zero;
+
+            double3 deltaAup = AupPrecisionMath.LocalDeltaDouble(currentAup, _lastSeaglideMovementSnapshotAup);
+            float3 localDelta = AupPrecisionMath.DowncastLocalDelta(deltaAup, float3.zero);
+            float3 velocity = localDelta * math.rcp(math.max(deltaTime, 0.0001f));
+            return math.all(math.isfinite(velocity)) ? velocity : float3.zero;
+        }
+
+        private static double3 RewindAupByLocalVelocity(double3 currentAup, float3 velocity, float deltaTime)
+        {
+            if (!math.all(math.isfinite(currentAup)) || !math.all(math.isfinite(velocity)) || !math.isfinite(deltaTime))
+                return currentAup;
+
+            double safeDelta = math.max((double)deltaTime, 0.0001d);
+            double3 displacementMeters = new double3(
+                (double)velocity.x * safeDelta,
+                (double)velocity.y * safeDelta,
+                (double)velocity.z * safeDelta);
+            // Rewind in a local AUP frame, then rehydrate, so the active path does not subtract from absolute coordinates directly.
+            double3 localOrigin = currentAup;
+            double3 currentLocal = AupPrecisionMath.LocalDeltaDouble(currentAup, localOrigin);
+            double3 previousLocal = currentLocal - displacementMeters;
+            double3 previous = localOrigin + previousLocal;
+            return math.all(math.isfinite(previous)) ? previous : currentAup;
+        }
+
         /// <summary>
         /// Gets the swim speed multiplier to apply when scooter is active.
-        /// Called by HectonPlayerMovement.SwimPhysics.
+        /// Consumed by the player transport coordinator when the scooter is active.
         /// </summary>
         public float GetSpeedMultiplier()
         {
@@ -897,7 +976,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Legacy transport force path is disabled. SHINOBU_227 emits AUP force packets through SeaglideHydrodynamicsRuntime.
+        /// Legacy transport force path is disabled. SHINOBU_227 emits AUP propulsion requests through typed SignalBus.
         /// </summary>
         public float GetPropulsionForce()
         {
@@ -997,7 +1076,10 @@ namespace Hecton8.Gameplay
                 return false;
 
             if (!wreckInstance.TryGetComponent(out MantaEmergencyWreck wreck))
-                wreck = wreckInstance.AddComponent<MantaEmergencyWreck>();
+            {
+                poolManager.Despawn(wreckInstance);
+                return false;
+            }
 
             wreck.BindResidencyPrefabSource(wreckPrefab);
             wreck.ActivateEmergencyDrift(inheritedVelocity, bailoutImpulse, severity);
@@ -1065,13 +1147,17 @@ namespace Hecton8.Gameplay
             if (receiver == null)
                 return;
 
-            for (int i = 0; i < _damageReceivers.Count; i++)
+            for (int i = 0; i < _damageReceiverCount; i++)
             {
                 if (ReferenceEquals(_damageReceivers[i], receiver))
                     return;
             }
 
-            _damageReceivers.Add(receiver);
+            if (_damageReceiverCount >= DamageReceiverCapacity)
+                return;
+
+            _damageReceivers[_damageReceiverCount] = receiver;
+            _damageReceiverCount++;
         }
 
         /// <summary>
@@ -1082,12 +1168,15 @@ namespace Hecton8.Gameplay
             if (receiver == null)
                 return;
 
-            for (int i = _damageReceivers.Count - 1; i >= 0; i--)
+            for (int i = _damageReceiverCount - 1; i >= 0; i--)
             {
                 if (ReferenceEquals(_damageReceivers[i], receiver))
                 {
-                    _damageReceivers.RemoveAt(i);
-                    break;
+                    int lastIndex = _damageReceiverCount - 1;
+                    _damageReceivers[i] = _damageReceivers[lastIndex];
+                    _damageReceivers[lastIndex] = null;
+                    _damageReceiverCount = lastIndex;
+                    return;
                 }
             }
         }
@@ -1095,6 +1184,14 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  PRIVATE — VISUALS
         // ══════════════════════════════════════════════════════════
+
+        private void ClearDamageReceivers()
+        {
+            for (int i = 0; i < _damageReceiverCount; i++)
+                _damageReceivers[i] = null;
+
+            _damageReceiverCount = 0;
+        }
 
         private void UpdateBatteryVisuals()
         {
@@ -1258,20 +1355,22 @@ namespace Hecton8.Gameplay
             return math.saturate((value - min) / range);
         }
 
-        private void ResolveVehicleUpgradeModule()
+        private void CacheVehicleUpgradeModuleCold()
         {
-            if (_vehicleUpgradeModule == null)
-                TryGetComponent(out _vehicleUpgradeModule);
+            if (_vehicleUpgradeModule != null || _vehicleUpgradeModuleLookupAttempted)
+                return;
+
+            _vehicleUpgradeModuleLookupAttempted = true;
+            TryGetComponent(out _vehicleUpgradeModule);
         }
 
         private float ResolveEffectiveBatteryDrainRate()
         {
-            ResolveVehicleUpgradeModule();
             float drainScale = _vehicleUpgradeModule != null
                 ? math.max(0.1f, _vehicleUpgradeModule.ChargeDrainScale)
                 : 1f;
-            float abyssalOverstrainMultiplier = _playerMovement != null
-                ? _playerMovement.CurrentAbyssalCounterDriveEnergyMultiplier
+            float abyssalOverstrainMultiplier = TryResolvePlayerMovementStressState(out PlayerMovementStressRuntimeState stressState)
+                ? math.max(1f, stressState.AbyssalCounterDriveEnergyMultiplier)
                 : 1f;
             return math.max(0f, batteryDrainRate * drainScale * abyssalOverstrainMultiplier);
         }
@@ -1288,13 +1387,13 @@ namespace Hecton8.Gameplay
 
         private float ResolveCurrentIntegrityNormalized()
         {
-            EnsureTransportLifecycleInitialized();
-            return math.saturate(_currentIntegrity / ResolveMaxIntegrity());
+            float maxIntegrity = ResolveMaxIntegrity();
+            float currentIntegrity = _transportLifecycleInitialized ? _currentIntegrity : maxIntegrity;
+            return math.saturate(currentIntegrity / math.max(1f, maxIntegrity));
         }
 
         private float ResolveMaxIntegrity()
         {
-            ResolveVehicleUpgradeModule();
             float integrityBonus = _vehicleUpgradeModule != null
                 ? math.max(0f, _vehicleUpgradeModule.MaxIntegrityBonus)
                 : 0f;
@@ -1339,7 +1438,7 @@ namespace Hecton8.Gameplay
 
         private void UpdateHullStressMisfire(float deltaTime, bool driveRequested)
         {
-            if (!driveRequested || (_playerMovement == null && _empMisfireTimer <= 0.0001f))
+            if (!driveRequested)
             {
                 ResetMisfireState();
                 return;
@@ -1378,10 +1477,25 @@ namespace Hecton8.Gameplay
         private float ResolveHullStressMisfire01()
         {
             float threshold = math.saturate(misfireStressThreshold);
-            if (_playerMovement == null || _playerMovement.CurrentHullStress01 <= threshold)
+            if (!TryResolvePlayerMovementStressState(out PlayerMovementStressRuntimeState stressState) ||
+                stressState.HullStress01 <= threshold)
+            {
                 return 0f;
+            }
 
-            return InverseLerpSaturated(threshold, 1f, _playerMovement.CurrentHullStress01);
+            return InverseLerpSaturated(threshold, 1f, stressState.HullStress01);
+        }
+
+        private bool TryResolvePlayerMovementStressState(out PlayerMovementStressRuntimeState stressState)
+        {
+            if (TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) &&
+                playerContext.TryGetMovementStressRuntimeState(out stressState))
+            {
+                return true;
+            }
+
+            stressState = default;
+            return false;
         }
 
         private void StartHullStressMisfire(float stress01)
@@ -1407,9 +1521,9 @@ namespace Hecton8.Gameplay
             _misfireDeviationPitchDegrees = signedPitch * deviationMagnitude * 0.55f;
             _misfireDeviationYawDegrees = signedYaw * deviationMagnitude;
 
-            AcousticZoneController controller = GlobalRegistry.AcousticZone;
-            if (controller != null)
-                controller.PlayMantaMisfire(stress01);
+            IToolAcousticCueService acousticCues = _cachedToolAcousticCues;
+            if (acousticCues != null)
+                acousticCues.PlayMantaMisfire(stress01);
         }
 
         private void ResetMisfireState()
@@ -1471,20 +1585,35 @@ namespace Hecton8.Gameplay
 
         private void DispatchIntegrityChanged(float prev, float next, HabitatDamageSignal signal)
         {
-            for (int i = 0; i < _damageReceivers.Count; i++)
-                _damageReceivers[i].OnIntegrityChanged(prev, next, signal);
+            int count = _damageReceiverCount;
+            for (int i = 0; i < count; i++)
+            {
+                IDamageSignalReceiver receiver = _damageReceivers[i];
+                if (receiver != null)
+                    receiver.OnIntegrityChanged(prev, next, signal);
+            }
         }
 
         private void DispatchPowerChanged(float prev, float next, HabitatDamageSignal signal)
         {
-            for (int i = 0; i < _damageReceivers.Count; i++)
-                _damageReceivers[i].OnPowerChanged(prev, next, signal);
+            int count = _damageReceiverCount;
+            for (int i = 0; i < count; i++)
+            {
+                IDamageSignalReceiver receiver = _damageReceivers[i];
+                if (receiver != null)
+                    receiver.OnPowerChanged(prev, next, signal);
+            }
         }
 
         private void DispatchClarityChanged(float prev, float next, HabitatDamageSignal signal)
         {
-            for (int i = 0; i < _damageReceivers.Count; i++)
-                _damageReceivers[i].OnClarityChanged(prev, next, signal);
+            int count = _damageReceiverCount;
+            for (int i = 0; i < count; i++)
+            {
+                IDamageSignalReceiver receiver = _damageReceivers[i];
+                if (receiver != null)
+                    receiver.OnClarityChanged(prev, next, signal);
+            }
         }
 
         private void DispatchTraumaThresholdCrossed(TraumaLevel level)
@@ -1492,8 +1621,13 @@ namespace Hecton8.Gameplay
             if (level == TraumaLevel.None)
                 return;
 
-            for (int i = 0; i < _damageReceivers.Count; i++)
-                _damageReceivers[i].OnTraumaThresholdCrossed(level);
+            int count = _damageReceiverCount;
+            for (int i = 0; i < count; i++)
+            {
+                IDamageSignalReceiver receiver = _damageReceivers[i];
+                if (receiver != null)
+                    receiver.OnTraumaThresholdCrossed(level);
+            }
         }
 
         private HabitatDamageSignal BuildDamageSignal(
@@ -1513,7 +1647,7 @@ namespace Hecton8.Gameplay
                 RoundToIntPositive(math.abs(nextIntegrityNormalized - previousIntegrityNormalized) * byte.MaxValue),
                 0,
                 byte.MaxValue);
-            signal.depth = _mantaSurvivalSystem != null ? math.max(0f, _mantaSurvivalSystem.Depth) : 0f;
+            signal.depth = ResolveCachedDepthMeters();
             signal.sourceID = DamageSourceIds.MantaScooter;
             return signal;
         }
@@ -1557,34 +1691,22 @@ namespace Hecton8.Gameplay
 
         private void UpdatePowerIndicator()
         {
-            if (powerIndicatorRenderer == null || _mpb == null)
+            byte nextState = ResolvePowerIndicatorState();
+            if (_powerIndicatorVisualState == nextState)
                 return;
 
-            powerIndicatorRenderer.GetPropertyBlock(_mpb);
+            _powerIndicatorVisualState = nextState;
+        }
+
+        private byte ResolvePowerIndicatorState()
+        {
             float currentCharge = BatteryCharge;
 
             if (!_hasBattery || currentCharge <= 0f)
-            {
-                // No power - dark
-                _mpb.SetColor(_EmissionColorID, Color.black);
-            }
-            else if (currentCharge <= 0.2f)
-            {
-                // Low battery - orange
-                _mpb.SetColor(_EmissionColorID, lowBatteryColor);
-            }
-            else if (_isActive)
-            {
-                // Active - bright cyan
-                _mpb.SetColor(_EmissionColorID, powerOnColor * 2f);
-            }
-            else
-            {
-                // Standby - dim cyan
-                _mpb.SetColor(_EmissionColorID, powerOnColor * 0.5f);
-            }
-
-            powerIndicatorRenderer.SetPropertyBlock(_mpb);
+                return 0;
+            if (currentCharge <= 0.2f)
+                return 1;
+            return _isActive ? (byte)2 : (byte)3;
         }
 
         private void CacheHeadlightDefaults()
@@ -1711,11 +1833,17 @@ namespace Hecton8.Gameplay
             }
 
             PublishVolumetricSiltGlobals(deltaTime, allowHeadlights);
-            Shader.SetGlobalInt(_HeadlightCountId, activeCount);
-            Shader.SetGlobalVectorArray(_HeadlightPositionsWsId, _headlightPositionsWs);
-            Shader.SetGlobalVectorArray(_HeadlightDirectionsWsId, _headlightDirectionsWs);
-            Shader.SetGlobalVectorArray(_HeadlightColorsId, _headlightColors);
-            Shader.SetGlobalVectorArray(_HeadlightConeDataId, _headlightConeData);
+            uint payloadHash = ComputeHeadlightPayloadHash(activeCount);
+            if (_headlightPayloadHash != payloadHash || _lastPublishedHeadlightPayloadCount != activeCount)
+            {
+                Shader.SetGlobalInt(_HeadlightCountId, activeCount);
+                Shader.SetGlobalVectorArray(_HeadlightPositionsWsId, _headlightPositionsWs);
+                Shader.SetGlobalVectorArray(_HeadlightDirectionsWsId, _headlightDirectionsWs);
+                Shader.SetGlobalVectorArray(_HeadlightColorsId, _headlightColors);
+                Shader.SetGlobalVectorArray(_HeadlightConeDataId, _headlightConeData);
+                _headlightPayloadHash = payloadHash;
+                _lastPublishedHeadlightPayloadCount = activeCount;
+            }
             PublishHeadlightSignals(activeCount, allowHeadlights);
         }
 
@@ -1842,6 +1970,39 @@ namespace Hecton8.Gameplay
                 1f);
         }
 
+        private uint ComputeHeadlightPayloadHash(int activeCount)
+        {
+            uint hash = 2166136261u;
+            hash = FoldHash(hash, (uint)math.clamp(activeCount, 0, MaxHeadlights));
+            int count = math.clamp(activeCount, 0, MaxHeadlights);
+            for (int payloadIndex = 0; payloadIndex < count; payloadIndex++)
+            {
+                hash = FoldVectorHash(hash, _headlightPositionsWs[payloadIndex]);
+                hash = FoldVectorHash(hash, _headlightDirectionsWs[payloadIndex]);
+                hash = FoldVectorHash(hash, _headlightColors[payloadIndex]);
+                hash = FoldVectorHash(hash, _headlightConeData[payloadIndex]);
+            }
+
+            return hash != 0u ? hash : 1u;
+        }
+
+        private static uint FoldVectorHash(uint hash, Vector4 value)
+        {
+            hash = FoldHash(hash, math.asuint(value.x));
+            hash = FoldHash(hash, math.asuint(value.y));
+            hash = FoldHash(hash, math.asuint(value.z));
+            return FoldHash(hash, math.asuint(value.w));
+        }
+
+        private static uint FoldHash(uint hash, uint value)
+        {
+            unchecked
+            {
+                hash ^= value;
+                return hash * 16777619u;
+            }
+        }
+
         private void RestoreHeadlightDefaults()
         {
             if (_headlightSlots == null)
@@ -1888,6 +2049,8 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalVectorArray(_HeadlightDirectionsWsId, _headlightDirectionsWs);
             Shader.SetGlobalVectorArray(_HeadlightColorsId, _headlightColors);
             Shader.SetGlobalVectorArray(_HeadlightConeDataId, _headlightConeData);
+            _headlightPayloadHash = uint.MaxValue;
+            _lastPublishedHeadlightPayloadCount = 0;
             Shader.SetGlobalVector(_ScooterVelocityWsId, Vector4.zero);
             Shader.SetGlobalFloat(_ScooterBrakeCloudId, 0f);
             _lastPublishedVolumetricVelocity = Vector3.zero;
@@ -1907,10 +2070,12 @@ namespace Hecton8.Gameplay
             }
 
             uint sourceId = ResolveHeadlightSignalSourceId();
+            PlayerMovementRuntimeState movementState = default;
+            bool hasMovementState = allowHeadlights && TryResolveSeaglideMovementState(out movementState);
             byte activeMask = 0;
             for (int payloadIndex = 0; payloadIndex < MaxHeadlights; payloadIndex++)
             {
-                bool hasPayload = allowHeadlights && payloadIndex < activeCount;
+                bool hasPayload = allowHeadlights && hasMovementState && payloadIndex < activeCount;
                 if (!hasPayload)
                     continue;
 
@@ -1922,24 +2087,66 @@ namespace Hecton8.Gameplay
                 if (position.w <= 0.1f || intensity <= HeadlightSignalMinIntensity)
                     continue;
 
-                activeMask |= (byte)(1 << payloadIndex);
+                byte payloadBit = (byte)(1 << payloadIndex);
                 Vector3 positionWs = new Vector3(position.x, position.y, position.z);
+                if (!TryResolveRuntimeAup(positionWs, in movementState, out Hecton8.World.AbsoluteUniversePosition positionAup))
+                    continue;
+
                 float3 forward = NormalizeHeadlightSignalDirection(new float3(direction.x, direction.y, direction.z));
-                GlobalSignals.Publish(new SubmarineLightsChangedSignal
+                SubmarineLightsChangedSignal signal = default;
+                signal.PositionAup = positionAup;
+                signal.Forward = forward;
+                signal.RangeMeters = math.max(0.1f, position.w);
+                signal.Intensity = intensity;
+                signal.SourceId = sourceId;
+                signal.Slot = (ushort)payloadIndex;
+                signal.Operation = SubmarineLightsChangedSignalOperations.Upsert;
+                signal.Flags = SubmarineLightsChangedSignalFlags.Powered;
+                signal.SpotOuterCos = math.clamp(cone.x, -1f, 1f);
+                if (SignalBus<SubmarineLightsChangedSignal>.TryPush(in signal))
                 {
-                    PositionAup = Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(positionWs),
-                    Forward = forward,
-                    RangeMeters = math.max(0.1f, position.w),
-                    Intensity = intensity,
-                    SourceId = sourceId,
-                    Slot = (ushort)payloadIndex,
-                    Operation = SubmarineLightsChangedSignalOperations.Upsert,
-                    Flags = SubmarineLightsChangedSignalFlags.Powered,
-                    SpotOuterCos = math.clamp(cone.x, -1f, 1f)
-                });
+                    activeMask |= payloadBit;
+                }
+                else
+                {
+                    RecordHeadlightSignalDrop(payloadIndex, SubmarineLightsChangedSignalOperations.Upsert);
+                    if ((_publishedHeadlightSignalMask & payloadBit) != 0)
+                        activeMask |= payloadBit;
+                }
             }
 
             PublishRetiredHeadlightSignals(sourceId, activeMask);
+        }
+
+        private static bool TryResolveRuntimeAup(
+            Vector3 runtimePosition,
+            in PlayerMovementRuntimeState movementState,
+            out Hecton8.World.AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            Hecton8.World.AbsoluteUniversePosition referenceAup = movementState.PredictedAup;
+            if (!referenceAup.IsFinite())
+                return false;
+
+            float3 referenceRuntime = movementState.PredictedWorldPosition;
+            if (!math.all(math.isfinite(referenceRuntime)))
+                return false;
+
+            double3 referenceAbsolute = referenceAup.ToAbsoluteDouble3();
+            float3 runtimeDelta = localRuntime - referenceRuntime;
+            if (!math.all(math.isfinite(referenceAbsolute)) ||
+                !math.all(math.isfinite(runtimeDelta)))
+            {
+                return false;
+            }
+
+            positionAup = Hecton8.World.AbsoluteUniversePosition.FromAbsolutePosition(
+                referenceAbsolute + new double3(runtimeDelta.x, runtimeDelta.y, runtimeDelta.z));
+            return positionAup.IsFinite();
         }
 
         private void PublishHeadlightClearSignals()
@@ -1949,40 +2156,92 @@ namespace Hecton8.Gameplay
                 return;
 
             uint sourceId = ResolveHeadlightSignalSourceId();
+            byte remainingMask = retiredMask;
             for (int payloadIndex = 0; payloadIndex < MaxHeadlights; payloadIndex++)
             {
                 if ((retiredMask & (1 << payloadIndex)) == 0)
                     continue;
 
-                PublishHeadlightRemoveSignal(sourceId, payloadIndex, SubmarineLightsChangedSignalFlags.BrownoutSuppressed);
+                if (PublishHeadlightRemoveSignal(sourceId, payloadIndex, SubmarineLightsChangedSignalFlags.BrownoutSuppressed))
+                {
+                    remainingMask = (byte)(remainingMask & ~(1 << payloadIndex));
+                }
+                else
+                {
+                    RecordHeadlightSignalDrop(payloadIndex, SubmarineLightsChangedSignalOperations.Remove);
+                }
             }
 
-            _publishedHeadlightSignalMask = 0;
+            _publishedHeadlightSignalMask = remainingMask;
         }
 
         private void PublishRetiredHeadlightSignals(uint sourceId, byte activeMask)
         {
             byte retiredMask = (byte)(_publishedHeadlightSignalMask & ~activeMask);
+            byte nextPublishedMask = activeMask;
             for (int payloadIndex = 0; payloadIndex < MaxHeadlights; payloadIndex++)
             {
                 if ((retiredMask & (1 << payloadIndex)) == 0)
                     continue;
 
-                PublishHeadlightRemoveSignal(sourceId, payloadIndex, SubmarineLightsChangedSignalFlags.BrownoutSuppressed);
+                if (!PublishHeadlightRemoveSignal(sourceId, payloadIndex, SubmarineLightsChangedSignalFlags.BrownoutSuppressed))
+                {
+                    nextPublishedMask = (byte)(nextPublishedMask | (1 << payloadIndex));
+                    RecordHeadlightSignalDrop(payloadIndex, SubmarineLightsChangedSignalOperations.Remove);
+                }
             }
 
-            _publishedHeadlightSignalMask = activeMask;
+            _publishedHeadlightSignalMask = nextPublishedMask;
         }
 
-        private void PublishHeadlightRemoveSignal(uint sourceId, int payloadIndex, byte flags)
+        private bool PublishHeadlightRemoveSignal(uint sourceId, int payloadIndex, byte flags)
         {
-            GlobalSignals.Publish(new SubmarineLightsChangedSignal
+            SubmarineLightsChangedSignal signal = default;
+            signal.SourceId = sourceId;
+            signal.Slot = (ushort)math.clamp(payloadIndex, 0, MaxHeadlights - 1);
+            signal.Operation = SubmarineLightsChangedSignalOperations.Remove;
+            signal.Flags = flags;
+            return SignalBus<SubmarineLightsChangedSignal>.TryPush(in signal);
+        }
+
+        private void RecordHeadlightSignalDrop(int payloadIndex, byte operation)
+        {
+            _headlightSignalDropCount++;
+            _lastHeadlightSignalDropSlot = (ushort)math.clamp(payloadIndex, 0, MaxHeadlights - 1);
+            _lastHeadlightSignalDropOperation = operation;
+        }
+
+        private static void ConfigureMantaSignalLanesCold()
+        {
+            SignalBus<SeaglidePropulsionRequestSignal>.Configure(
+                8,
+                maxFrameSignals: 16,
+                lowTierFrameSignals: 4,
+                laneHash: ComputeStableSignalLaneHash(nameof(SeaglidePropulsionRequestSignal)));
+            SignalBus<SeaglidePropulsionRequestSignal>.EnsureInitialized();
+            SignalBus<SubmarineLightsChangedSignal>.Configure(
+                64,
+                maxFrameSignals: 64,
+                lowTierFrameSignals: 16,
+                laneHash: ComputeStableSignalLaneHash(nameof(SubmarineLightsChangedSignal)));
+            SignalBus<SubmarineLightsChangedSignal>.EnsureInitialized();
+        }
+
+        private static uint ComputeStableSignalLaneHash(string label)
+        {
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            uint hash = fnvOffset;
+            if (!string.IsNullOrEmpty(label))
             {
-                SourceId = sourceId,
-                Slot = (ushort)math.clamp(payloadIndex, 0, MaxHeadlights - 1),
-                Operation = SubmarineLightsChangedSignalOperations.Remove,
-                Flags = flags
-            });
+                for (int i = 0; i < label.Length; i++)
+                {
+                    hash ^= label[i];
+                    hash *= fnvPrime;
+                }
+            }
+
+            return hash != 0u ? hash : 1u;
         }
 
         private uint ResolveHeadlightSignalSourceId()
@@ -2019,9 +2278,8 @@ namespace Hecton8.Gameplay
                 return;
 
             // Update depth display
-            if (depthText != null && _playerMovement != null)
+            if (depthText != null && TryResolveDepthTenths(out int depthTenths))
             {
-                int depthTenths = RoundToIntPositive(_playerMovement.CurrentDepth * 10f);
                 if (depthTenths != _lastDepthTenths)
                 {
                     SetDepthHudText(depthTenths);
@@ -2112,38 +2370,35 @@ namespace Hecton8.Gameplay
         //  PRIVATE — REFERENCES
         // ══════════════════════════════════════════════════════════
 
-        private void ResolvePlayerReferences()
+        private bool TryResolveDepthTenths(out int depthTenths)
         {
-            if (_playerMovement == null)
-                TryResolveParentComponent(_cachedTransform != null ? _cachedTransform : transform, out _playerMovement);
-
-            if (_mantaSurvivalSystem == null && _playerMovement != null)
-                _playerMovement.TryGetComponent(out _mantaSurvivalSystem);
-
-            if ((_playerMovement == null || _mantaSurvivalSystem == null) &&
-                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            float depthMeters = ResolveCachedDepthMeters();
+            if (!math.isfinite(depthMeters))
             {
-                if (_playerMovement == null)
-                    playerTransform.TryGetComponent(out _playerMovement);
-
-                if (_mantaSurvivalSystem == null)
-                    playerTransform.TryGetComponent(out _mantaSurvivalSystem);
+                depthTenths = 0;
+                return false;
             }
+
+            depthTenths = RoundToIntPositive(depthMeters * 10f);
+            return true;
         }
 
-        private static bool TryResolveParentComponent<T>(Transform start, out T component) where T : Component
+        private float ResolveCachedDepthMeters()
         {
-            component = null;
-            Transform current = start;
-            for (int depth = 0; current != null && depth < ParentComponentResolveDepth; depth++)
+            if (TryResolveSeaglideMovementState(out PlayerMovementRuntimeState movementState) &&
+                math.isfinite(movementState.DepthMeters))
             {
-                if (current.TryGetComponent(out component))
-                    return true;
-
-                current = current.parent;
+                return math.max(0f, movementState.DepthMeters);
             }
 
-            return false;
+            if (TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) &&
+                playerContext.TryGetMovementRuntimeState(out movementState) &&
+                math.isfinite(movementState.DepthMeters))
+            {
+                return math.max(0f, movementState.DepthMeters);
+            }
+
+            return 0f;
         }
 
         private void ResetHudStateCache()
@@ -2185,27 +2440,63 @@ namespace Hecton8.Gameplay
             _registeredTick = false;
         }
 
+        private void QueueHeadlightPresentation(float deltaTime)
+        {
+            _headlightPresentationDeltaTime = math.clamp(
+                math.select(0.0001f, deltaTime, math.isfinite(deltaTime) && deltaTime > 0f),
+                0.0001f,
+                0.2f);
+            _headlightPresentationDirty = true;
+        }
+
+        private void RegisterToLateFrame()
+        {
+            if (_registeredLateFrame)
+                return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void UnregisterFromLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = false;
+            _headlightPresentationDirty = false;
+            _headlightPresentationDeltaTime = 0f;
+        }
+
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
             object currentService)
         {
             if (serviceSlot != GlobalRegistryServiceSlot.Input &&
-                serviceSlot != GlobalRegistryServiceSlot.Audio &&
-                serviceSlot != GlobalRegistryServiceSlot.ObjectPool)
+                serviceSlot != GlobalRegistryServiceSlot.ObjectPool &&
+                serviceSlot != GlobalRegistryServiceSlot.AcousticZoneRuntime &&
+                serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
             {
                 return;
             }
 
             RefreshCachedRegistryServices();
-            TryAssignMotorMixerRoute();
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
+                RefreshMantaLocalizationCache();
+                ResetHudStateCache();
+            }
         }
 
         private void RefreshCachedRegistryServices()
         {
             _cachedInputService = GlobalRegistry.Input;
             _cachedObjectPool = GlobalRegistry.ObjectPool;
-            _cachedSpatialAudioManager = GlobalRegistry.Audio as SpatialAudioManager;
+            _cachedToolAcousticCues = GlobalRegistry.ToolAcousticCues;
+            _cachedBabelLocalization = GlobalRegistry.BabelLocalization;
         }
 
         private void TryRegisterHotSwapListener()
@@ -2226,15 +2517,11 @@ namespace Hecton8.Gameplay
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
-
         {
-
-            HandleMantaLanguageChanged((GameLanguage)payload.Language);
-
+            HandleMantaLanguageChanged();
         }
 
-
-        private void HandleMantaLanguageChanged(GameLanguage language)
+        private void HandleMantaLanguageChanged()
         {
             RefreshMantaLocalizationCache();
             ResetHudStateCache();
@@ -2242,18 +2529,18 @@ namespace Hecton8.Gameplay
 
         private void RefreshMantaLocalizationCache()
         {
-            _localizedNoBatteryWarning = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_HUD_NO_BATTERY, "MANTA - NO BATTERY");
-            _localizedBatteryDepletedWarning = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_HUD_BATTERY_DEPLETED, "MANTA - BATTERY DEPLETED");
-            _localizedSummaryNoBattery = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_SUMMARY_NO_BATTERY, "MANTA // NO BATTERY");
-            _localizedSummaryActiveFormat = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_SUMMARY_ACTIVE, "MANTA // ACTIVE // BAT {0}%");
-            _localizedSummaryStandbyFormat = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_SUMMARY_STANDBY, "MANTA // STANDBY // BAT {0}%");
+            _localizedNoBatteryWarning = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_HUD_NO_BATTERY, "MANTA - NO BATTERY");
+            _localizedBatteryDepletedWarning = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_HUD_BATTERY_DEPLETED, "MANTA - BATTERY DEPLETED");
+            _localizedSummaryNoBattery = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_SUMMARY_NO_BATTERY, "MANTA // NO BATTERY");
+            _localizedSummaryActiveFormat = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_SUMMARY_ACTIVE, "MANTA // ACTIVE // BAT {0}%");
+            _localizedSummaryStandbyFormat = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_SUMMARY_STANDBY, "MANTA // STANDBY // BAT {0}%");
             EnsureSummaryCache(ref _localizedSummaryActiveCache, _localizedSummaryActiveFormat);
             EnsureSummaryCache(ref _localizedSummaryStandbyCache, _localizedSummaryStandbyFormat);
-            _localizedDirectiveInsertBattery = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_INSERT_BATTERY, "Insert a battery to activate propulsion.");
-            _localizedDirectiveSwapRecharge = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_SWAP_OR_RECHARGE, "Battery depleted. Swap or recharge.");
-            _localizedDirectiveHoldForward = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_HOLD_FORWARD, "Hold forward to propel. Release to coast.");
-            _localizedDirectiveHoldPrimary = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_DIRECTIVE_HOLD_PRIMARY, "Hold primary to activate propulsion while swimming.");
-            _localizedTransportBrokenWarning = ResolveMantaLocalizedLabel(LocalizationKeys.MANTA_HUD_BATTERY_DEPLETED, "MANTA - DRIVE FAILURE");
+            _localizedDirectiveInsertBattery = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_DIRECTIVE_INSERT_BATTERY, "Insert a battery to activate propulsion.");
+            _localizedDirectiveSwapRecharge = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_DIRECTIVE_SWAP_OR_RECHARGE, "Battery depleted. Swap or recharge.");
+            _localizedDirectiveHoldForward = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_DIRECTIVE_HOLD_FORWARD, "Hold forward to propel. Release to coast.");
+            _localizedDirectiveHoldPrimary = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_DIRECTIVE_HOLD_PRIMARY, "Hold primary to activate propulsion while swimming.");
+            _localizedTransportBrokenWarning = ResolveMantaLocalizedLabel(H8LocHashes.MANTA_HUD_BATTERY_DEPLETED, "MANTA - DRIVE FAILURE");
         }
 
         private static string ResolveSummaryVariant(string[] cache, string fallbackFormat, int batteryPercent)
@@ -2331,12 +2618,15 @@ namespace Hecton8.Gameplay
             return digitCount;
         }
 
-        private static string ResolveMantaLocalizedLabel(string key, string fallback)
+        private string ResolveMantaLocalizedLabel(uint keyHash, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
+            IBabelLocalization localization = _cachedBabelLocalization;
+            return localization != null &&
+                   localization.TryGetLocalizedBuffer(keyHash, out char[] buffer, out int length) &&
+                   buffer != null &&
+                   length > 0
+                ? new string(buffer, 0, length)
+                : (fallback ?? string.Empty);
         }
 
         private static bool AppendText(ref FixedCharBuffer buffer, string value)

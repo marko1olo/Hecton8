@@ -1,4 +1,4 @@
-# SHINOBU_208 Agent Log
+﻿# SHINOBU_208 Agent Log
 
 ## 2026-05-20 - OFFLINE_GEOLOGY_MESH_BAKER
 
@@ -42,6 +42,142 @@ Compile / verification:
     <item>Project-wide runtime mesh generation is not fully eradicated; scanner found 34 remaining cross-domain sites.</item>
     <item>No runtime microseconds are claimed as measured until profiler data exists.</item>
   </limitations>
+</SELF_AUDIT>
+
+## SHINOBU_208 - ASYNC FINISH EXCEPTION ISOLATION
+
+What was wrong:
+- Setup/update catch blocks called `FinishAsyncBake(true)` directly.
+- If cleanup/report/progress callback code threw during that finish call, it could replace the original setup or bake exception.
+
+What was done:
+- Added `TryFinishAsyncBake(bool)`.
+- Routed only exception-path finish calls through it.
+- Left normal final finish and explicit cancel on direct `FinishAsyncBake` so their own failures remain visible.
+
+Cinematic Cheats used:
+- None added. This is editor exception-path evidence preservation.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor success path: 0 us change.
+- Editor failure path: one try/catch wrapper; preserves first causal exception under secondary IO/callback failure.
+
+<SELF_AUDIT async_finish_exception_patch="static_source">
+  <task-reconciliation>Task 10 and Task 20 failure containment strengthened. No runtime payload, DTO, or authority route changed.</task-reconciliation>
+  <dependency-graph>No runtime `JobHandle` route changed.</dependency-graph>
+  <compile-guard>No asmdef reference changed.</compile-guard>
+</SELF_AUDIT>
+
+## SHINOBU_208 - LEDGER SOURCE TRUTH CORRECTION
+
+What was wrong:
+- `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` still described asset editing as a current-variation save tranche rather than the actual `SaveMeshesAndManifest` LOD-write scope.
+- The same row still implied zero-output cancel behavior instead of the current record-gated manifest write and metrics-only report behavior.
+
+What was done:
+- Corrected the SHINOBU_208 primary ledger row to match source.
+- Corrected the offline geology architecture summary to avoid claiming one manifest is always written at finish/cancel.
+- Corrected the vertex-layout ledger row to name `ApplyVertexBufferParams(Mesh,int)` instead of removed `GetLayout()`.
+
+Cinematic Cheats used:
+- None added. Documentation now preserves the existing Dear Lie: editor-time static geology mesh/AO bake instead of runtime topology simulation.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor: documentation-only, but it protects the current source decision that keeps AssetDatabase editing out of SDF/extraction/AO/LOD job time.
+
+<SELF_AUDIT ledger_truth_patch="static_docs">
+  <compile-guard>No asmdef or source dependency changed.</compile-guard>
+  <hphi>No Vault, runtime owner, or payload ABI changed.</hphi>
+  <dear-lie>Offline bake boundary unchanged; runtime geology topology cost remains outside the simulation loop for this lane.</dear-lie>
+</SELF_AUDIT>
+
+## SHINOBU_208 - CURIE STATIC AUDIT PATCH SET
+
+What was wrong:
+- `TryReadProfile` consumed the `sector_z` row terminator and then called `SkipLine`, skipping the next authored profile row.
+- Existing header-only CSV files fell back to `DefaultProfile`, hiding corrupt authoring data.
+- Empty-surface bakes could write a zero-record `.h8geom` and overwrite a prior valid manifest.
+- `DumpBlackBox` calls inside catch paths could mask the root exception if dump IO failed.
+- Manifest audit accepted BRG-ready records with zero triangles or zero bounds extents.
+
+What was done:
+- Removed the redundant CSV `SkipLine` after `sector_z`.
+- Added `CsvErrorNoProfiles=1009` for existing CSV files with no parsed rows.
+- Gated manifest writes and `AssetDatabase.SaveAssets()` on positive manifest record count; metrics reports still write on metrics.
+- Added `TryDumpBlackBox` and routed all telemetry dump call sites through it.
+- Required positive LOD triangle counts and positive bounds extents in manifest audit.
+
+Cinematic Cheats used:
+- No new visual fake added in this patch. The existing Dear Lie remains static offline SDF/tetra extraction/AO baked into immutable mesh assets and `.h8geom` rather than runtime geology topology simulation.
+
+Exact Microseconds saved:
+- Runtime: 0 us; this lane remains Editor-only.
+- Editor empty-surface path: skips one manifest write and one `AssetDatabase.SaveAssets()`.
+- Editor CSV import: removes one redundant post-row scan per profile and prevents omitted-profile bake passes.
+
+Static verification:
+- `GeologyProfileCsv.cs BRACES=44/44`.
+- `GeologyForgeGenerator.cs BRACES=140/140`.
+- `GeologyForgeSelfAudit.cs BRACES=38/38`.
+- Current CSV imports as 3 rows: Basalt_Pillar, Abyssal_Boulder, Trench_Wall_Chunk.
+- `TRY_READ_PROFILE_HAS_SKIPLINE=False`.
+- `CSV_NO_PROFILES_GATE=True`.
+- `PUBLIC_MANIFEST_COUNT_GATE=True`.
+- `ASYNC_MANIFEST_COUNT_GATE=True`.
+- `MANIFEST_POSITIVE_TRI_GATE=True`.
+- `MANIFEST_POSITIVE_EXTENTS_GATE=True`.
+- `DIRECT_DUMP_CALL_SITES=none`.
+- `SHOULD_WRITE_ARTIFACTS_PRESENT=False`.
+- `WRITE_MANIFEST_EMPTY_GUARD=True`.
+- `TRAILING_WS=none`.
+- Targeted `git diff --check` reports LF-to-CRLF warnings only.
+- Build preflight: `CPU_SAMPLES=100,100,100`, `CPU_AVERAGE=100`, `BUILD_PROCS=none`, `PROJECT_TARGET_HITS=none`, `BUILD_LAUNCHED=no`.
+
+<SELF_AUDIT curie_static_patch="source_pass">
+  <task-reconciliation>Tasks 03, 08, 10, 13, 14, 18, and 20 strengthened. No runtime ABI or ownership route migration claimed.</task-reconciliation>
+  <struct-layout>No DTO layout changed. `GeologyVertex32` remains 32B, `GeologyRawVertex` 64B, telemetry 64B, manifest header 64B, manifest record 128B.</struct-layout>
+  <hphi>No runtime Vault handles changed. Editor Temp/TempJob scratch remains bake-local and disposed.</hphi>
+  <dependency-graph>No runtime dispatcher `JobHandle` route added. Existing editor jobs remain offline bake-local.</dependency-graph>
+  <compile-guard>No asmdef reference changed.</compile-guard>
+</SELF_AUDIT>
+
+## SHINOBU_208 - ASSET EDIT SCOPE TRUTH PATCH
+
+What was wrong:
+- `TickAsyncBake` still opened `AssetDatabase.StartAssetEditing()` before `BakeSingle`, so CPU bake work ran under the AssetDatabase edit lock while docs/status claimed only the save tranche was locked.
+
+What was done:
+- Removed tick-level asset editing from `TickAsyncBake`.
+- Moved edit-scope ownership into `SaveMeshesAndManifest`.
+- `StartAssetEditing()` now wraps only the three LOD `SaveMeshAsset` calls.
+- `StopAssetEditing()` runs in `finally` and clears `_asyncAssetEditing` even if the stop call faults.
+- Architecture ledger and offline geology docs were corrected to match source truth.
+
+Cinematic Cheats used:
+- None added in this patch. Existing SHINOBU_208 Dear Lie remains offline static geology mesh/AO baking instead of runtime topology/physics generation.
+
+Exact Microseconds saved:
+- Runtime: 0 us; this is editor-only.
+- Editor low-end: edit-scope wall time reduced from full variation bake to the asset-write tranche. Exact timing requires Unity Profiler; static proof removes the worst lock-window architecture.
+
+Static verification:
+- `GeologyForgeGenerator.cs BRACES=137/137`.
+- `TICK_HAS_START_ASSET_EDITING=False`.
+- `SAVE_HAS_START_ASSET_EDITING=True`.
+- `SAVE_HAS_STOP_FINALLY=True`.
+- `GUID_AFTER_STOP_SOURCE=True`.
+- `TRAILING_WS=none`.
+- Targeted `git diff --check` reports LF-to-CRLF warnings only.
+- Build preflight: `CPU_SAMPLES=100,94,61`, `CPU_AVERAGE=85`, `BUILD_PROCS=none`, `PROJECT_TARGET_HITS=none`, `BUILD_LAUNCHED=no`.
+
+<SELF_AUDIT asset_scope_patch="static">
+  <task-reconciliation>Task 15/16 authoring scalability and crash containment strengthened; no ABI/runtime ownership change claimed.</task-reconciliation>
+  <struct-layout>No DTO layout changed. `GeologyVertex32` remains 32B; manifest header 64B; manifest record 128B.</struct-layout>
+  <hphi>No private runtime arrays or Vault handles changed; SHINOBU_208 remains Editor-only static payload generation.</hphi>
+  <dependency-graph>No runtime `JobHandle` route added. Existing offline bake jobs still complete inside editor bake windows.</dependency-graph>
+  <compile-guard>No asmdef reference changed. `Hecton8.World.OfflineGeology.Editor` remains Editor-only with Unity package references only.</compile-guard>
 </SELF_AUDIT>
 
 ## 2026-05-20 - CSV Iso-Level Bridge Tail Report
@@ -201,7 +337,7 @@ Verification:
 ## 2026-05-20 - Cold Allocation Comment Canon Pass
 
 What was wrong:
-- Owned GeologyForge files had `COLD ALLOC` comments, but several used hyphen separators instead of the exact mandated `Type[count] — reason — owner` form.
+- Owned GeologyForge files had `COLD ALLOC` comments, but several used hyphen separators instead of the exact mandated `Type[count] â€” reason â€” owner` form.
 
 What was done:
 - Normalized all `COLD ALLOC` comments in `GeologyForgeGenerator.cs` and `GeologyForgeWindow.cs` to the local canonical string.
@@ -537,7 +673,7 @@ Compile / verification:
       <field name="Uv" offset="40" size="8" type="float2" />
       <field name="AmbientOcclusion" offset="48" size="4" type="float" />
       <field name="Flags" offset="52" size="4" type="uint" />
-      <field name="Padding0" offset="56" size="8" type="ulong" />
+      <field name="_pad0" offset="56" size="8" type="ulong" />
       <math>12+12+16+8+4+4+8=64 bytes; parallel row writes do not share a 64B cache line.</math>
     </dto>
   </struct-layout>
@@ -582,7 +718,7 @@ What was wrong:
 
 What was done:
 - Replaced preview point churn with one cold `Vector3[2048]` buffer and `_pointCount`.
-- Normalized all owned GeologyForge `COLD ALLOC` comments to `Type[count] — reason — owner`.
+- Normalized all owned GeologyForge `COLD ALLOC` comments to `Type[count] â€” reason â€” owner`.
 
 Cinematic cheats used:
 - The preview remains a low-cost SDF point cloud rather than a full mesh bake.
@@ -1503,3 +1639,513 @@ Verification:
     <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
   </remaining-failures>
 </SELF_AUDIT>
+
+## 2026-05-20 - Return-Allocated CSV Loader Removal Tail Report
+
+What was wrong:
+- After caller-owned CSV loading was introduced, the old internal `GeologyProfileCsv.LoadProfiles()` wrapper still existed.
+- That wrapper allocated a fresh `List<GeologyBakeProfile>` and preserved a stale facade path even though no owned source used it.
+
+What was done:
+- Removed the return-value loader.
+- `GeologyProfileCsv.LoadProfiles(List<GeologyBakeProfile>)` is now the only CSV ingestion API in the owned editor assembly.
+
+Cinematic cheats used:
+- None added in this tail patch. This is editor authoring API hardening for the offline bake lane.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime code changed.
+- Editor: no active measured path changed after the previous caller-owned patch, but the stale API can no longer reintroduce one transient profile-list allocation and copy route per reload/menu bake.
+
+Verification:
+- Static scan shows no declaration or call of return-value `GeologyProfileCsv.LoadProfiles()`.
+- Static scan shows only caller-owned `_profiles` and `_menuProfiles` CSV ingestion call sites.
+- Static scan: `GeologyProfileCsv.cs BRACES=41/41`, `GeologyForgeWindow.cs BRACES=40/40`, `GeologyForgeGenerator.cs BRACES=128/128`.
+- Targeted trailing-whitespace scan reported `TRAILING_WS=none`.
+- Targeted `git diff --check` reported only LF-to-CRLF working-copy warnings.
+- CPU/build preflight reported `CPU_AVERAGE=100`, `BUILD_PROCS=none`, and `PROJECT_TARGET_HITS=none`; no build command was launched because CPU violated the local rule and dotnet still has no generated target for this asmdef lane.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="RETURN_ALLOCATED_CSV_LOADER_REMOVAL_TAIL" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge CSV source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <allocation-proof>The return-allocated CSV loader no longer exists; all owned CSV ingestion must supply caller-owned storage.</allocation-proof>
+  <payload-boundary>No `.h8geom` header, record, vertex layout, BufferID, Vault route, runtime owner, or asmdef reference changed.</payload-boundary>
+  <remaining-failures>
+    <item>Compiler, Unity import, UI reload/menu execution proof, and Unity Profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - Validator Layout Apply And Preview Hook Tail Report
+
+What was wrong:
+- `GeologyVertexLayoutValidator.GetLayout()` allocated a fresh four-element descriptor array for every mesh upload.
+- `GeologyForgePreview.Build()` subscribed `SceneView.duringSceneGui` before preview density allocation, preview SDF execution, and point-buffer population were proven.
+
+What was done:
+- Replaced `GetLayout()` with `ApplyVertexBufferParams(Mesh,int)`, keeping the descriptor array private and applying it directly.
+- Updated `CreateUnityMesh()` to call the validator-owned apply method.
+- Moved preview hook subscription to the successful end of point generation after `_pointCount` is written.
+
+Cinematic cheats used:
+- The SceneView preview remains the same bounded SDF point-cloud fake. It still avoids full mesh extraction, AO, LOD decimation, mesh upload, or runtime simulation.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime code changed.
+- Editor: removes one managed descriptor-array allocation per generated LOD mesh. Preview success path timing is unchanged; fault paths no longer retain a dead draw callback.
+
+Verification:
+- Static scan found no `GetLayout()` declaration/call and found `ApplyVertexBufferParams(mesh, vertexCount)` as the mesh upload route.
+- Static scan found `EnsureSubscribed()` only after preview buffer fill.
+- Static scan reported `GeologyVertexLayoutValidator.cs BRACES=34/34`, `GeologyForgeGenerator.cs BRACES=128/128`, `GeologyForgeWindow.cs BRACES=40/40`, and `GeologyProfileCsv.cs BRACES=41/41`.
+- Targeted trailing-whitespace scan reported `TRAILING_WS=none`.
+- Targeted `git diff --check` reported only LF-to-CRLF working-copy warnings.
+- CPU/build preflight reported `CPU_AVERAGE=100`, `BUILD_PROCS=none`, and `PROJECT_TARGET_HITS=none`; no build command was launched because CPU violated the local rule and dotnet still has no generated target for this asmdef lane.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="VALIDATOR_LAYOUT_APPLY_PREVIEW_HOOK_TAIL" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge validator/generator/window source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <allocation-proof>Mesh upload no longer requests a fresh descriptor-array copy for every generated LOD mesh.</allocation-proof>
+  <hook-lifetime-proof>SceneView preview callback registration now follows successful point-buffer generation.</hook-lifetime-proof>
+  <payload-boundary>No `.h8geom` header, record, vertex layout, BufferID, Vault route, runtime owner, or asmdef reference changed.</payload-boundary>
+  <remaining-failures>
+    <item>Compiler, Unity import, mesh upload execution proof, preview exception-path proof, and Unity Profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - Runtime Scanner Reusable Async Buffers Tail Report
+
+What was wrong:
+- The non-batch `RuntimeMeshGenerationScanner` created fresh source-file, directory-stack, and finding lists on every scanner launch.
+- Scan active state was encoded through nullable list fields, so lifecycle and allocation state were coupled.
+
+What was done:
+- Converted async scanner queues/findings to static readonly reusable lists.
+- Added `_asyncScanActive` as the explicit scan sentinel.
+- Routed start/cancel/finish cleanup through `ClearAsyncScanState()`.
+- Preserved report writing before buffer clear and wrapped finish cleanup in `finally`.
+
+Cinematic cheats used:
+- None added in this patch. The scanner remains editor proof tooling; runtime geology still consumes static baked assets and the `.h8geom` manifest.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime code changed.
+- Editor: removes three list-container allocations per non-batch scanner launch after static initialization. Unity Profiler allocation proof remains pending.
+
+Verification:
+- Static scan shows `_asyncFiles`, `_asyncDirectoryStack`, and `_asyncFindings` are static readonly reusable lists.
+- Static scan shows no `_asyncFiles = null`, `_asyncFindings == null`, or `_asyncDirectoryStack == null` scanner lifecycle state.
+- Static scan shows `FinishAsyncScan()` writes the report before `ClearAsyncScanState()` and clears in `finally`.
+- Static scan reported `ASYNC_NULL_STATE=none`.
+- Static scan reported scanner raw braces `66/65` because JSON report string literals contain braces; structural closing braces are present at the file tail.
+- Targeted trailing-whitespace scan reported `TRAILING_WS=none`.
+- Targeted `git diff --check` reported only LF-to-CRLF working-copy warnings.
+- CPU/build preflight reported `CPU_SAMPLES=100,100,100`, `CPU_AVERAGE=100`, `BUILD_PROCS=none`, and `PROJECT_TARGET_HITS=none`; no build command was launched because CPU violated the local rule and dotnet still has no generated target for this asmdef lane.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="RUNTIME_SCANNER_REUSABLE_ASYNC_BUFFERS_TAIL" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge scanner source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <allocation-proof>Non-batch scanner startup no longer allocates three list containers per launch after static initialization.</allocation-proof>
+  <payload-boundary>No `.h8geom` header, record, vertex layout, BufferID, Vault route, runtime owner, or asmdef reference changed.</payload-boundary>
+  <remaining-failures>
+    <item>Compiler, Unity import, scanner menu execution proof, and Unity Profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - CSV Row And Numeric Cell Fail-Closed Tail Report
+
+What was wrong:
+- CSV headers were fail-closed, but row values still routed through fallback-return numeric readers.
+- Empty or malformed numeric cells could silently substitute defaults before generating mesh assets and `.h8geom` records.
+
+What was done:
+- Added per-row column-count validation before profile hydration.
+- Replaced fallback-return numeric readers with strict byte-level `ReadInt`, `ReadUInt`, and `ReadFloat` readers.
+- Added row/column/field `InvalidDataException` messages for malformed cells.
+- Positive-only physical fields now throw instead of falling back to safe defaults.
+
+Cinematic cheats used:
+- None added in this patch. This protects the human-readable authoring bridge feeding the existing offline SDF/vertex-AO Dear Lie pipeline.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime code changed.
+- Editor: no frame-time saving claimed. The gain is fail-fast authoring safety before expensive mesh/AO/manifest generation.
+
+Verification:
+- Static scan reported `GeologyProfileCsv.cs BRACES=43/43`.
+- Static scan found `ValidateRowColumnCount`, `ThrowInvalidCell`, strict `ReadInt`/`ReadUInt`/`ReadFloat` calls, and no `SafePositive` or fallback-return numeric reader path.
+- Static CSV schema check reported `CSV_ROW_0_COLS=20`, `CSV_ROW_1_COLS=20`, `CSV_ROW_2_COLS=20`, and `CSV_ROW_3_COLS=20`.
+- Targeted trailing-whitespace scan reported `TRAILING_WS=none`.
+- Targeted `git diff --check` reported only LF-to-CRLF working-copy warnings.
+- CPU/build preflight reported `CPU_SAMPLES=100,100,100`, `CPU_AVERAGE=100`, `BUILD_PROCS=none`, and `PROJECT_TARGET_HITS=none`; no build command was launched because CPU violated the local rule and dotnet still has no generated target for this asmdef lane.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="CSV_ROW_CELL_FAIL_CLOSED_TAIL" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge CSV source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <authoring-proof>Malformed CSV numeric cells now throw with row/column/field context instead of hydrating fallback values.</authoring-proof>
+  <payload-boundary>No `.h8geom` header, record, vertex layout, BufferID, Vault route, runtime owner, or asmdef reference changed.</payload-boundary>
+  <remaining-failures>
+    <item>Compiler, Unity import, malformed-row execution proof, and Unity Profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - CSV Integer Overflow Fail-Closed Tail Report
+
+What was wrong:
+- `GeologyProfileCsv.ReadInt` and `ReadUInt` still saturated oversized numeric cells after the strict row/cell parser patch.
+- A malformed overflow value could silently hydrate as a valid seed, resolution, variation count, AO ray count, or LOD budget before `.h8geom` generation.
+
+What was done:
+- Added explicit overflow tracking to signed and unsigned byte-digit accumulation.
+- Routed overflow through the existing row/column/field `ThrowInvalidCell` path.
+- Preserved the one valid signed minimum edge case: `-2147483648`.
+- Removed final integer saturation returns; valid parsed values now return directly.
+
+Cinematic cheats used:
+- None added in this patch. This hardens the CSV authoring bridge feeding the existing offline SDF extraction, LOD, and baked vertex-AO Dear Lie pipeline.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime code changed.
+- Editor: no frame-time saving claimed. The gain is fail-fast rejection before expensive SDF/AO/manifest generation from corrupt integer cells.
+
+Verification:
+- Static scan reported `GeologyProfileCsv.cs BRACES=43/43`.
+- Static scan found `bool overflow = false` and `if (!hasDigit || overflow)` in both `ReadInt` and `ReadUInt`.
+- Static scan found no `value = value <=` saturation assignment and no fallback-return numeric reader hit.
+- Static CSV schema check reported `CSV_ROW_0_COLS=20`, `CSV_ROW_1_COLS=20`, `CSV_ROW_2_COLS=20`, and `CSV_ROW_3_COLS=20`.
+- Targeted trailing-whitespace scan reported `TRAILING_WS=none`.
+- Targeted `git diff --check` reported only LF-to-CRLF working-copy warnings.
+- CPU/build preflight reported `CPU_SAMPLES=100,100,100`, `CPU_AVERAGE=100`, `BUILD_PROCS=none`, and `PROJECT_TARGET_HITS=none`; no build command was launched because CPU violated the local rule and dotnet still has no generated target for this asmdef lane.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="CSV_INTEGER_OVERFLOW_FAIL_CLOSED_TAIL" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge CSV source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <authoring-proof>Signed and unsigned CSV integer overflow now throws with row/column/field context instead of saturating into plausible bake values.</authoring-proof>
+  <payload-boundary>No `.h8geom` header, record, vertex layout, BufferID, Vault route, runtime owner, or asmdef reference changed.</payload-boundary>
+  <remaining-failures>
+    <item>Compiler, Unity import, malformed-overflow execution proof, and Unity Profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - CSV Numeric Error-Code Tail Report
+
+What was wrong:
+- CSV import failures reported row, column, and field context, but not stable numeric error codes.
+- The designer facade mandate requires numeric codes so CI/editor gates can classify header, column-count, terminator, overflow, and value-domain failures without parsing prose.
+
+What was done:
+- Added `CsvErrorMalformedCell=1001`, `CsvErrorIntegerOverflow=1002`, `CsvErrorNonFiniteFloat=1003`, `CsvErrorNonPositiveValue=1004`, `CsvErrorInvalidTerminator=1005`, `CsvErrorColumnCount=1006`, and `CsvErrorHeaderSchema=1007`.
+- Routed cell, integer overflow, float finite, positive-only, terminator, row-count, and header-schema failures through messages that include `Geology profile CSV error <code>`.
+- Kept row/column/field context on cell errors.
+
+Cinematic cheats used:
+- None added in this patch. This is authoring-gate hardening for the offline mesh/vertex-AO fake pipeline.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime code changed.
+- Editor: no success-path timing saving claimed. Failed imports now classify deterministically before expensive mesh/AO/manifest generation.
+
+Verification:
+- Static scan reported `GeologyProfileCsv.cs BRACES=43/43`.
+- Static scan found CSV error constants `1001..1007` and `Geology profile CSV error` on header, row-count, and cell error paths.
+- Static scan reported `CSV_CODE_GATE=pass`; no prose-only legacy invalid-value message, integer saturation assignment, or fallback parser token remains.
+- Static CSV schema check reported `CSV_ROW_0_COLS=20`, `CSV_ROW_1_COLS=20`, `CSV_ROW_2_COLS=20`, and `CSV_ROW_3_COLS=20`.
+- Targeted trailing-whitespace scan reported `TRAILING_WS=none`.
+- Targeted `git diff --check` reported only LF-to-CRLF working-copy warnings.
+- CPU/build preflight reported `CPU_SAMPLES=100,100,100`, `CPU_AVERAGE=100`, `BUILD_PROCS=none`, and `PROJECT_TARGET_HITS=none`; no build command was launched because CPU violated the local rule and dotnet still has no generated target for this asmdef lane.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="CSV_NUMERIC_ERROR_CODES_TAIL" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge CSV source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <authoring-proof>CSV import failures now include stable numeric codes plus row/column/field context for cell failures.</authoring-proof>
+  <payload-boundary>No `.h8geom` header, record, vertex layout, BufferID, Vault route, runtime owner, or asmdef reference changed.</payload-boundary>
+  <remaining-failures>
+    <item>Compiler, Unity import, malformed-row execution proof, and Unity Profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - CSV Header Schema Diagnostic Tail Report
+
+What was wrong:
+- Header validation used `HeaderMatchesExpectedSchema()` as a boolean gate and collapsed missing, reordered, or extra columns into one generic header mismatch.
+- That failed the same evidence standard as row cells: malformed imports need exact row/column classification before the bake lane runs.
+
+What was done:
+- Replaced `HeaderMatchesExpectedSchema()` with `ValidateHeaderSchema()`.
+- Added `ThrowHeaderMismatch()` for exact row-1/column-N schema token failures.
+- Added a header column-count diagnostic that reports row 1, the first unexpected/missing column index, expected count, and observed count.
+
+Cinematic cheats used:
+- None added in this patch. This only hardens authoring validation before the existing offline geology mesh bake and vertex-AO visual fake.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime code changed.
+- Editor: no success-path timing saving claimed. Bad headers now fail before SDF extraction, LOD generation, AO rays, mesh upload, and manifest writes.
+
+Verification:
+- Static scan reported `GeologyProfileCsv.cs BRACES=44/44`.
+- Static scan reported `CSV_HEADER_GATE=pass`; no `HeaderMatchesExpectedSchema` boolean gate remains.
+- Static CSV schema check reported `CSV_ROW_0_COLS=20`, `CSV_ROW_1_COLS=20`, `CSV_ROW_2_COLS=20`, and `CSV_ROW_3_COLS=20`.
+- Targeted trailing-whitespace scan reported `TRAILING_WS=none`.
+- Targeted `git diff --check` reported only LF-to-CRLF working-copy warnings.
+- CPU/build preflight reported `CPU_SAMPLES=93,100,100`, `CPU_AVERAGE=98`, `BUILD_PROCS=none`, and `PROJECT_TARGET_HITS=none`; no build command was launched because CPU violated the local rule and dotnet still has no generated target for this asmdef lane.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="CSV_HEADER_SCHEMA_DIAGNOSTICS_TAIL" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge CSV source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <authoring-proof>CSV header schema failures now report exact row-1/column diagnostics instead of a generic boolean mismatch.</authoring-proof>
+  <payload-boundary>No `.h8geom` header, record, vertex layout, BufferID, Vault route, runtime owner, or asmdef reference changed.</payload-boundary>
+  <remaining-failures>
+    <item>Compiler, Unity import, malformed-header execution proof, and Unity Profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - CSV Existing File Size Fail-Closed Tail Report
+
+What was wrong:
+- Missing CSV files intentionally used `DefaultProfile()` for mock/CI bootstrap, but existing empty or oversized CSV files also used fallback behavior.
+- That could bake fallback geology while hiding explicit corrupt source data.
+
+What was done:
+- Added `CsvErrorFileSize=1008`.
+- Existing zero-byte or larger-than-`int.MaxValue` CSV files now throw `InvalidDataException`.
+- The missing-file fallback remains intact for the emergency mock authoring route.
+
+Cinematic cheats used:
+- None added in this patch. This protects the human-readable CSV bridge that feeds the existing offline SDF/LOD/vertex-AO fake pipeline.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime code changed.
+- Editor: failed corrupt-file imports avoid all downstream SDF density generation, extraction, normal smoothing, AO, mesh upload, and manifest writes.
+
+Verification:
+- Static scan reported `GeologyProfileCsv.cs BRACES=43/43`.
+- Static scan reported `CSV_SIZE_GATE=pass`.
+- Static CSV schema check reported `CSV_ROW_0_COLS=20`, `CSV_ROW_1_COLS=20`, `CSV_ROW_2_COLS=20`, and `CSV_ROW_3_COLS=20`.
+- Targeted trailing-whitespace scan reported `TRAILING_WS=none`.
+- Targeted `git diff --check` reported only LF-to-CRLF working-copy warnings.
+- CPU/build preflight reported `CPU_SAMPLES=100,100,100`, `CPU_AVERAGE=100`, `BUILD_PROCS=none`, and `PROJECT_TARGET_HITS=none`; no build command was launched because CPU violated the local rule and dotnet still has no generated target for this asmdef lane.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="CSV_FILE_SIZE_FAIL_CLOSED_TAIL" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge CSV source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <authoring-proof>Existing empty or oversized CSV files now fail closed with numeric error code 1008 instead of using fallback profile truth.</authoring-proof>
+  <payload-boundary>No `.h8geom` header, record, vertex layout, BufferID, Vault route, runtime owner, or asmdef reference changed.</payload-boundary>
+  <remaining-failures>
+    <item>Compiler, Unity import, malformed-file execution proof, and Unity Profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - Profile Finite Vaccination Tail Report
+
+What was wrong:
+- CSV parsing rejected non-finite numbers, but non-CSV editor callers could still pass poisoned `GeologyBakeProfile` values directly to `BakeProfilesAsync` or `BakeSingle`.
+- `SanitizeProfile` clamped ranges without first replacing NaN/Infinity, allowing non-finite radius, quality, iso, or AUP values to reach SDF, AUP seed, AO, or LOD math.
+
+What was done:
+- Added `FiniteOr(float,float)` and `FiniteOr(double,double)`.
+- Routed radius, height, frequency, amplitude, ridged/voronoi weights, `IsoLevel`, `GlobalQualityWeight`, and all `SectorAup` lanes through finite fallbacks before clamp/hash/job setup.
+
+Cinematic cheats used:
+- None added in this patch. This protects the existing offline SDF extraction and baked vertex-AO Dear Lie from poisoned editor input.
+
+Exact microseconds saved:
+- Runtime: 0 us measured; no runtime code changed.
+- Editor: no success-path timing saving claimed. Invalid profiles are neutralized before wasting SDF/AO/mesh serialization work or poisoning telemetry.
+
+Verification:
+- Static scan reported `GeologyForgeGenerator.cs BRACES=130/130`.
+- Static scan reported `PROFILE_FINITE_GATE=pass`.
+- Targeted trailing-whitespace scan reported `TRAILING_WS=none`.
+- Targeted `git diff --check` reported only LF-to-CRLF working-copy warnings.
+- CPU/build preflight reported `CPU_SAMPLES=100,100,100`, `CPU_AVERAGE=100`, `BUILD_PROCS=none`, and `PROJECT_TARGET_HITS=none`; no build command was launched because CPU violated the local rule and dotnet still has no generated target for this asmdef lane.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="PROFILE_FINITE_VACCINATION_TAIL" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <runtime-boundary>No runtime code changed; patch is confined to Editor GeologyForge generator source and SHINOBU_208 docs/logs.</runtime-boundary>
+  <math-proof>Non-finite editor profile scalar and AUP inputs are replaced before SDF, AUP seed, AO, LOD, mesh, or manifest math can observe them.</math-proof>
+  <payload-boundary>No `.h8geom` header, record, vertex layout, BufferID, Vault route, runtime owner, or asmdef reference changed.</payload-boundary>
+  <remaining-failures>
+    <item>Compiler, Unity import, malformed-profile execution proof, and Unity Profiler proof remain pending.</item>
+    <item>Runtime-wide mesh generation eradication remains false due non-owned findings.</item>
+  </remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - CARVER AUDIT PATCHES STATIC TAIL REPORT
+
+What was wrong:
+- CSV import could accept a partial read from a concurrently modified profile file.
+- CSV `sector_x/y/z` lanes were parsed through float math before storage in `double3`, and `-0` could diverge from `0` in AUP seed hashing.
+- `BakeProfilesAsync` could assign `_asyncProfiles` before result-list setup finished, leaving a dead active latch on allocation/setup failure.
+- LOD construction and asset-save failures could retain unsaved transient Unity `Mesh` objects.
+- Manifest self-audit did not reject non-finite `SectorAup` lanes.
+- Manifest self-audit opened `.h8geom` with `FileShare.ReadWrite`, weakening the audit's immutable-payload proof.
+
+What was done:
+- `GeologyProfileCsv` now opens existing CSV files with `FileShare.Read`, rejects short/length-changing reads with `CsvErrorFileSize=1008`, and uses `ReadDouble` for sector lanes.
+- `SanitizeProfile` and `ResolveAupSeed` canonicalize finite AUP zero lanes before deterministic seed hashing.
+- `BakeProfilesAsync` stages profile snapshots and result containers in locals before assigning static runner state.
+- `BuildLods` constructs meshes sequentially with failure cleanup, and `SaveMeshesAndManifest` tracks per-LOD `AssetDatabase` ownership before destroying unsaved transients.
+- `GeologyForgeSelfAudit.ValidateManifestRecord` rejects non-finite manifest `SectorAup`.
+- `GeologyForgeSelfAudit.TryValidateManifest` now opens with `FileShare.Read` and rejects post-parse length drift as `UNSTABLE_FILE_LENGTH`.
+
+Cinematic Cheats used:
+- No runtime simulation added. Static authoring payload still buys runtime visuals through baked SDF mesh assets, vertex AO, and BRG-ready manifest records.
+
+Exact Microseconds saved:
+- Runtime: 0 us added, 0 us measured because no runtime code changed.
+- Editor fault paths: avoids full SDF/AO/LOD/asset bake after CSV instability and avoids retained native mesh cleanup cost after failed LOD/save paths. Profiler proof remains pending.
+
+Verification:
+- Static brace scan: `GeologyProfileCsv.cs BRACES=44/44`, `GeologyForgeGenerator.cs BRACES=136/136`, `GeologyForgeSelfAudit.cs BRACES=38/38`.
+- Static source gates: `ASYNC_ATOMIC_GATE=True`, `LOD_CLEANUP_GATE=True`, `AUP_CANON_GATE=True`, `CSV_STABLE_GATE=True`, `MANIFEST_AUP_GATE=True`, `MANIFEST_STABLE_GATE=True`.
+- Targeted trailing-whitespace scan: `TRAILING_WS=none`.
+- Targeted `git diff --check`: LF-to-CRLF working-copy warnings only.
+- CPU/build preflight: `CPU_SAMPLES=100,100,100`, `CPU_AVERAGE=100`, `BUILD_PROCS=none`, `PROJECT_TARGET_HITS=none`, `BUILD_LAUNCHED=no`.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="CARVER_AUDIT_PATCHES_STATIC_TAIL" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <task-reconciliation>Tasks 01-20 remain static-source implemented for SHINOBU-owned Editor bake lane; project-wide runtime mesh eradication remains false due non-owned scanner findings.</task-reconciliation>
+  <struct-layout>Primary runtime vertex DTO remains `GeologyVertex32` explicit 32B: position 0..11, normal 12..23, ColorRgba 24..27, Uv0Packed 28..31. Manifest header remains 64B; manifest record remains 128B. No ABI/schema migration claimed.</struct-layout>
+  <scalability>GlobalQualityWeight still scales SDF noise, octave contribution, AO rays/steps/range, UV scale, and LOD budgets continuously; this patch only fixes import/state/ownership/audit failure paths.</scalability>
+  <hphi>No runtime Vault buffers requested or changed. SHINOBU_208 remains Editor-only static payload generation; `.h8geom` is an immutable render handoff artifact, not global heap ownership.</hphi>
+  <dependency-graph>No new runtime `JobHandle` route added. Existing editor jobs remain batch-local with explicit completion inside offline bake windows; no runtime dispatcher route claimed.</dependency-graph>
+  <compile-guard>`Hecton8.World.OfflineGeology.Editor.asmdef` remains Editor-only and references only Unity Burst/Collections/Jobs/Mathematics. No sibling runtime assembly reference added.</compile-guard>
+  <dear-lie>The domain still bakes mesh/AO offline and feeds static BRG-ready artifacts instead of runtime geology topology or physics. Runtime topology cost stays O(0) for this lane after bake; editor bake remains O(grid cells + emitted vertices).</dear-lie>
+  <remaining-failures>Unity import, Burst compile, malformed CSV execution, manifest bake/audit execution, profiler proof, and runtime owner consumption proof remain pending. Full int64 AUP-sector ABI migration is not claimed.</remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-20 - MILL STATIC AUDIT HARDENING REPORT
+
+What was wrong:
+- `GEOLOGY_LAYOUT_AUDIT.json` could report `STATIC_LAYOUT_AUDIT_PASS` when no generated meshes and no manifest existed.
+- Manifest GUID fields only proved nonzero integers; stale nonzero GUIDs could pass without resolving to mesh assets.
+- `ResolveGuid128` converted missing or malformed GUID text into zero/truncated payload words.
+- A failed three-LOD save tranche could leave newly created partial `.asset` files without a manifest record.
+- CSV file-size validation only rejected files above `int.MaxValue`, allowing excessive Temp native allocation before parse failure.
+- UTF-8 BOM headers from designer-exported CSVs failed exact header validation at column 1.
+- `NativeDisableParallelForRestriction` and `NativeDisableUnsafePtrRestriction` fields in `GeologyForgeJobs.cs` lacked local safety invariants.
+
+What was done:
+- Layout audit pass now requires `meshCount > 0`, `manifestValid`, and `manifestRecords > 0`; reports include `noOutput`.
+- Manifest audit resolves each LOD GUID pair back through `AssetDatabase.GUIDToAssetPath`, loads a `Mesh`, and validates its 32B vertex layout.
+- Generator GUID hydration now throws on missing, non-32-character, or non-hex GUIDs before a record can be appended.
+- `SaveMeshesAndManifest` deletes newly created partial LOD assets after `AssetDatabase.StopAssetEditing()` when save fails, then destroys unsaved transient meshes through a wrapper that logs cleanup faults without masking the original save exception.
+- CSV import rejects existing files above `MaximumCsvBytes=4194304` before native scratch allocation.
+- CSV import skips optional UTF-8 BOM bytes before header token detection, schema validation, and first data-row cursor setup.
+- Unsafe Burst suppression fields now document disjoint ranges, physical non-aliasing, and returned-`JobHandle` dependency ownership.
+
+Cinematic Cheats used:
+- No runtime simulation added. This preserves the original Dear Lie: geology is baked offline into static mesh assets, vertex AO, and `.h8geom` manifest records instead of runtime terrain physics/topology.
+
+Exact Microseconds saved:
+- Runtime: 0 us added, 0 us measured; no runtime assembly or runtime route changed.
+- Editor failure paths: avoids full SDF/AO/LOD bake after oversized CSV input, avoids false-positive empty audits, and removes orphan newly-created LOD assets after failed saves. Exact Unity Editor timings remain pending.
+
+Verification:
+- Static brace scan: `GeologyProfileCsv.cs BRACES=45/45`, `GeologyForgeGenerator.cs BRACES=148/148`, `GeologyForgeSelfAudit.cs BRACES=42/42`, `GeologyForgeJobs.cs BRACES=79/79`.
+- Static source gates found `MaximumCsvBytes`, `Utf8BomOffset`, `TryCleanupFailedAssetSave`, `DeleteCreatedAssets`, strict GUID exceptions, `ValidateMeshGuid`, `noOutput`, and SAFETY comments on all GeologyForgeJobs unsafe suppressions.
+- Targeted trailing-whitespace scan reported `TRAILING_WS=none`.
+- Targeted `git diff --check` reported LF-to-CRLF working-copy warnings only.
+- CPU/build preflight reported `CPU_SAMPLES=100,100,100`, `CPU_AVERAGE=100`, `BUILD_PROCS=none`, `PROJECT_TARGET_HITS=none`, `BUILD_LAUNCHED=no`; no build command was legal or useful.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="MILL_STATIC_AUDIT_HARDENING" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <task-reconciliation>Tasks 01-20 remain implemented for SHINOBU-owned Editor bake lane. This pass hardens Task 10 asset serialization, Task 15 telemetry/audit evidence, Task 17 CSV bridge, and Task 20 self-audit proof.</task-reconciliation>
+  <struct-layout>Primary ABI unchanged: `GeologyVertex32` 32B, `GeologyRawVertex` 64B, manifest header 64B, manifest record 128B. No payload offset or save identity migration was introduced.</struct-layout>
+  <scalability>`GlobalQualityWeight` continuous bake math is unchanged. The patch rejects invalid authoring/audit states before expensive high/ultra SDF, AO, LOD, mesh upload, or manifest work can be trusted.</scalability>
+  <hphi>No runtime Vault buffers or private runtime arrays added. This remains Editor-only static payload generation; `.h8geom` is immutable render handoff evidence.</hphi>
+  <dependency-graph>No new runtime `JobHandle` route added. Unsafe suppression comments document existing editor job dependencies and disjoint write ranges.</dependency-graph>
+  <compile-guard>`Hecton8.World.OfflineGeology.Editor.asmdef` remains Editor-only with Unity Burst/Collections/Jobs/Mathematics references only; no sibling runtime assembly reference was added.</compile-guard>
+  <dear-lie>Offline static mesh/AO baking remains the fake replacing runtime geology simulation. Runtime topology cost remains O(0) after bake; editor bake cost remains O(grid cells + emitted vertices).</dear-lie>
+  <remaining-failures>Unity import/compile, actual AssetDatabase save-failure execution, manifest GUID audit execution, and Profiler allocation proof remain pending. Existing asset mutation rollback is not claimed because AssetDatabase has no verified atomic three-file transaction in this pass.</remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-21 - PAULI STATIC DEFECT INTEGRATION REPORT
+
+What was wrong:
+- Runtime mesh-generation scanner roots covered only `World`, `Environment`, and one special voxel file while the report verdict read like project-wide proof.
+- Asset save cleanup stopped after the LOD save tranche; GUID resolution or manifest-record append failure could leave new or overwritten LOD assets without a manifest record.
+- Layout self-audit accepted GUIDs resolving to any mesh path and did not reject extra top-level output meshes outside the manifest.
+- `GeologyRawVertex` padding was named `Padding0`, and the manifest record had an implicit 4-byte hole at bytes 68..71.
+- Editor `.Complete()` fences were visible in source but lacked local blocking-fence proof.
+
+What was done:
+- `RuntimeMeshGenerationScanner` now scans `Assets/_Project/Scripts` excluding `Editor` folders; the JSON report was refreshed with project-scope static evidence: `findingCount=137`, `actionableFindingCount=131`, `proceduralMaterialCloneFindingCount=66`, `runtimeMeshAllocationsEradicated=false`.
+- `SaveMeshesAndManifest` now creates `_H8Backups` for existing LOD assets, restores them on save/GUID/manifest-record failure, removes manifest-tail records on failure, deletes newly created partial assets, and deletes backups only after manifest append succeeds.
+- `GeologyForgeSelfAudit` now validates that manifest GUIDs resolve under the geology output folder, are unique, and match the top-level output mesh set exactly; foreign, duplicate, non-mesh, or unmanifested assets fail.
+- `GeologyRawVertex` padding is `_pad0`; `GeologyMeshManifestRecord.BoundsExtents` owns bytes 60..71 and GUID lanes start aligned at byte 72, so no manifest pad field is present.
+- Every SHINOBU-owned `.Complete()` fence now has a `BLOCKING_SYNC_POINT` reason.
+
+Cinematic Cheats used:
+- No runtime simulation added. The Dear Lie remains offline static mesh/AO baking plus BRG-ready manifest evidence; runtime geology topology cost remains outside the frame loop for this lane.
+
+Exact Microseconds saved:
+- Runtime: 0 us added, 0 us measured.
+- Editor: backup/restore work only occurs on existing-asset overwrite paths. The larger gain is failure containment: bad high/ultra bakes no longer leave orphan/foreign static payloads that would later waste render/import investigation time.
+
+Verification:
+- `GeologyForgeGenerator.cs BRACES=158/158`, `GeologyForgeSelfAudit.cs BRACES=46/46`, `GeologyForgeTypes.cs BRACES=10/10`, `GeologyVertexLayoutValidator.cs BRACES=34/34`, `GeologyForgeJobs.cs BRACES=79/79`.
+- `RuntimeMeshGenerationScanner.cs` structural lexer excluding string/char literals reports `62/62`.
+- `TRAILING_WS=none`.
+- Targeted `git diff --check` reports LF-to-CRLF working-copy warnings only.
+- `GEOMETRY_OPTIMIZATION_REPORT.json` parses via `ConvertFrom-Json` and reports project-scope false eradication.
+- Build not launched: `CPU_AVERAGE=100`, `BUILD_PROCS=none`, `PROJECT_TARGET_HITS=none`.
+
+<SELF_AUDIT agent="SHINOBU_208" pass="PAULI_STATIC_DEFECT_INTEGRATION" status="STATIC_PATCH_PROJECT_REGEN_REQUIRED">
+  <task-reconciliation>Tasks 01-20 remain static-source implemented for the SHINOBU-owned Editor bake lane. Task 19 evidence is now project runtime scope and remains false, which is the correct verdict until other owners migrate their runtime mesh/material clone sites.</task-reconciliation>
+  <struct-layout>`GeologyVertex32` remains explicit 32B. `GeologyRawVertex` remains explicit 64B with `_pad0@56`. `GeologyMeshManifestHeader` remains 64B. `GeologyMeshManifestRecord` remains 128B with `BoundsExtents` occupying bytes 60..71 and GUID lanes starting at byte 72; no ABI size change.</struct-layout>
+  <scalability>GlobalQualityWeight math was not changed. The patch hardens proof/asset failure paths while preserving continuous low/mid/high/ultra bake scaling.</scalability>
+  <hphi>No runtime Vault buffers, GlobalRegistry polling, signal routes, or runtime owners were added. The `.h8geom` file remains immutable static render handoff data.</hphi>
+  <dependency-graph>No runtime dispatcher route added. Editor-only job fences are documented as offline timing/readback/Unity Mesh API boundaries.</dependency-graph>
+  <compile-guard>`Hecton8.World.OfflineGeology.Editor.asmdef` remains Editor-only and Unity-only; no sibling runtime assembly reference was added.</compile-guard>
+  <dear-lie>Static rocks still use offline SDF extraction, triplanar UV, deterministic LODs, and baked vertex AO instead of runtime topology, runtime SSAO, or runtime physics.</dear-lie>
+  <remaining-failures>Unity import/compile, actual bake execution, AssetDatabase backup/restore execution, layout audit execution, profiler proof, and runtime BRG consumer proof remain pending.</remaining-failures>
+</SELF_AUDIT>
+
+## 2026-05-21 - MANIFEST ORPHAN COUNT CORRECTION REPORT
+
+What was wrong:
+- Layout self-audit failed empty or missing manifests, but did not increment `unmanifestedMeshCount` for top-level mesh assets when the manifest GUID set was empty.
+
+What was done:
+- `ValidateGeneratedMeshes` now checks every top-level geology mesh path against the manifest GUID set directly. Empty set means every top-level mesh is reported as `UNMANIFESTED_MESH_ASSET`.
+- Architecture notes and the binary payload ledger now state that orphan mesh accounting is unconditional against the manifest GUID set.
+
+Cinematic Cheats used:
+- No runtime route added. This preserves the offline mesh/AO/manifest Dear Lie and only hardens editor proof artifacts.
+
+Exact Microseconds saved:
+- Runtime: 0 us added, 0 us measured.
+- Editor: unchanged asymptotic audit cost; one existing hash lookup per top-level mesh now also produces accurate orphan counts in missing-manifest cases.
+
+Verification:
+- `GeologyForgeSelfAudit.cs STRUCTURAL_BRACES=39/39`.
+- `UNCONDITIONAL_ORPHAN_CHECK=True`; `OLD_ORPHAN_CHECK=False`.
+- Architecture and binary payload ledger both document empty/missing-manifest orphan accounting.
+- `TRAILING_WS=none`.
+- Targeted `git diff --check` reports LF-to-CRLF working-copy warnings only.
+- Build not launched: `CPU_SAMPLES=89,95,100`, `CPU_AVERAGE=95`, `BUILD_PROCS=none`, `PROJECT_TARGET_HITS=none`.
+
+## 2026-05-21 - KEPLER LUT AND MANIFEST LAYOUT CORRECTION REPORT
+
+What was wrong:
+- `ValidateComplementWinding()` would reject tetra LUT pairs `1/14`, `2/13`, `4/11`, and `7/8` because cases `14`, `13`, `11`, and `8` did not reverse the inverse-case edge order.
+- `GeologyMeshManifestRecord._pad0` at byte 68 overlapped `BoundsExtents.z`, corrupting bytes 68..71 while the validator accepted the overlap.
+
+What was done:
+- Reversed complement edge sequences: `14 -> Edge03,Edge02,Edge01`; `13 -> Edge12,Edge13,Edge01`; `11 -> Edge23,Edge12,Edge02`; `8 -> Edge23,Edge13,Edge03`.
+- Removed `GeologyMeshManifestRecord._pad0` and removed its validator offset check.
+- Updated architecture, ledger, status, and rationale to state the current manifest byte map: `BoundsExtents` owns bytes 60..71; GUID lanes start aligned at byte 72.
+
+Cinematic Cheats used:
+- No runtime route added. This keeps the offline SDF/tetra extraction plus baked AO fake intact and only corrects editor-time proof and payload layout.
+
+Exact Microseconds saved:
+- Runtime: 0 us added, 0 us measured.
+- Editor: validation cost unchanged. The saved cost is avoided failed audits and avoided rebakes from inverted complement triangles or corrupt manifest bounds.
+
+Verification:
+- `LUT_COMPLEMENT_WINDING=PASS`.
+- `MANIFEST_OVERLAP_RESIDUE=none`.
+- `EXPLICIT_LAYOUT_OVERLAP_SCAN=PASS` across six explicit DTO structs.
+- Structural braces: `GeologyForgeJobs.cs=79/79`, `GeologyForgeTypes.cs=10/10`, `GeologyVertexLayoutValidator.cs=9/9`, `GeologyForgeSelfAudit.cs=39/39`.
+- `TRAILING_WS=none`.
+- Targeted `git diff --check` reports LF-to-CRLF working-copy warnings only.
+- Build not launched: `CPU_SAMPLES=100,100,100`, `CPU_AVERAGE=100`, `BUILD_PROCS=none`, `PROJECT_TARGET_HITS=none`.

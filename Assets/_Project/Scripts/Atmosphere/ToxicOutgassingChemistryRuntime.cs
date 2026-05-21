@@ -6,6 +6,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Scheduling;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -79,30 +80,30 @@ namespace Hecton8.Atmosphere
         private static readonly BufferID CellStateFrontBufferId = (BufferID)70822;
         private static readonly BufferID CellStateBackBufferId = (BufferID)70823;
 
-        private VaultBufferHandle<float> _densityFront;
-        private VaultBufferHandle<float> _densityBack;
-        private VaultBufferHandle<float> _densityMirror;
-        private VaultBufferHandle<MockFlowField> _flowField;
-        private VaultBufferHandle<MockWorldSampler> _worldSampler;
-        private VaultBufferHandle<ToxicitySourceDTO> _sources;
-        private VaultBufferHandle<uint> _sourceIds;
-        private VaultBufferHandle<double3> _entityAups;
-        private VaultBufferHandle<uint> _entityIds;
-        private VaultBufferHandle<float> _entityCorrosionTimers;
-        private VaultBufferHandle<float> _entityExposureAccumulators;
-        private VaultBufferHandle<ToxicityExposureSignal> _exposureSignals;
-        private VaultBufferHandle<ToxicityCombatDamageSignal> _combatSignals;
-        private VaultBufferHandle<ToxicBioluminescenceSignal> _biolumSignals;
-        private VaultBufferHandle<int> _signalCounters;
-        private VaultBufferHandle<ToxicityGridTelemetryEntry> _telemetryRing;
-        private VaultBufferHandle<ToxicityGridTelemetryEntry> _telemetryScratch;
-        private VaultBufferHandle<ToxicOutgassingConstants> _constants;
-        private VaultBufferHandle<byte> _csvBytes;
-        private VaultBufferHandle<byte> _binaryProbeBytes;
-        private VaultBufferHandle<int> _nanFlags;
-        private VaultBufferHandle<ToxicOutgassingGridHeaderDTO> _gridHeader;
-        private VaultBufferHandle<ToxicityStateDTO> _cellStatesFront;
-        private VaultBufferHandle<ToxicityStateDTO> _cellStatesBack;
+        private VaultGenerationHandle<float> _densityFront;
+        private VaultGenerationHandle<float> _densityBack;
+        private VaultGenerationHandle<float> _densityMirror;
+        private VaultGenerationHandle<MockFlowField> _flowField;
+        private VaultGenerationHandle<MockWorldSampler> _worldSampler;
+        private VaultGenerationHandle<ToxicitySourceDTO> _sources;
+        private VaultGenerationHandle<uint> _sourceIds;
+        private VaultGenerationHandle<double3> _entityAups;
+        private VaultGenerationHandle<uint> _entityIds;
+        private VaultGenerationHandle<float> _entityCorrosionTimers;
+        private VaultGenerationHandle<float> _entityExposureAccumulators;
+        private VaultGenerationHandle<ToxicityExposureSignal> _exposureSignals;
+        private VaultGenerationHandle<ToxicityCombatDamageSignal> _combatSignals;
+        private VaultGenerationHandle<ToxicBioluminescenceSignal> _biolumSignals;
+        private VaultGenerationHandle<int> _signalCounters;
+        private VaultGenerationHandle<ToxicityGridTelemetryEntry> _telemetryRing;
+        private VaultGenerationHandle<ToxicityGridTelemetryEntry> _telemetryScratch;
+        private VaultGenerationHandle<ToxicOutgassingConstants> _constants;
+        private VaultGenerationHandle<byte> _csvBytes;
+        private VaultGenerationHandle<byte> _binaryProbeBytes;
+        private VaultGenerationHandle<int> _nanFlags;
+        private VaultGenerationHandle<ToxicOutgassingGridHeaderDTO> _gridHeader;
+        private VaultGenerationHandle<ToxicityStateDTO> _cellStatesFront;
+        private VaultGenerationHandle<ToxicityStateDTO> _cellStatesBack;
 
         private IDataVault _vault;
         private JobHandle _scheduledHandle;
@@ -136,13 +137,40 @@ namespace Hecton8.Atmosphere
         public float CellSizeMeters => _cellSizeMeters;
         public double3 GridOriginAup => _gridOriginAup;
 
-        public ref ToxicOutgassingConstants ConstantsRef
+        public bool TryReadConstants(out ToxicOutgassingConstants constants)
         {
-            get
+            if (!_nativeReady)
             {
-                EnsureNativeState();
-                return ref _constants.GetElementAsRef(EnsureVault(), 0);
+                constants = default;
+                return false;
             }
+
+            if (!TryOpenBuffer(in _constants, out NativeArray<ToxicOutgassingConstants> constantsArray) ||
+                constantsArray.Length == 0)
+            {
+                constants = default;
+                return false;
+            }
+
+            constants = constantsArray[0];
+            return true;
+        }
+
+        public bool TryWriteConstants(in ToxicOutgassingConstants constants)
+        {
+            if (!_nativeReady)
+            {
+                return false;
+            }
+
+            if (!TryOpenBuffer(in _constants, out NativeArray<ToxicOutgassingConstants> constantsArray) ||
+                constantsArray.Length == 0)
+            {
+                return false;
+            }
+
+            constantsArray[0] = SanitizeConstants(constants);
+            return true;
         }
 
         private void Awake()
@@ -266,8 +294,8 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            NativeArray<ToxicitySourceDTO> sources = _sources.Resolve(EnsureVault());
-            NativeArray<uint> sourceIds = _sourceIds.Resolve(EnsureVault());
+            NativeArray<ToxicitySourceDTO> sources = OpenBuffer(in _sources);
+            NativeArray<uint> sourceIds = OpenBuffer(in _sourceIds);
             int index = FindSourceIndex(sourceIds, sourceId, _sourceCount);
             if (index < 0)
             {
@@ -306,8 +334,8 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            NativeArray<ToxicitySourceDTO> sources = _sources.Resolve(EnsureVault());
-            NativeArray<uint> sourceIds = _sourceIds.Resolve(EnsureVault());
+            NativeArray<ToxicitySourceDTO> sources = OpenBuffer(in _sources);
+            NativeArray<uint> sourceIds = OpenBuffer(in _sourceIds);
             int index = FindSourceIndex(sourceIds, sourceId, _sourceCount);
             if (index < 0)
             {
@@ -341,8 +369,8 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            NativeArray<double3> entityAups = _entityAups.Resolve(EnsureVault());
-            NativeArray<uint> entityIds = _entityIds.Resolve(EnsureVault());
+            NativeArray<double3> entityAups = OpenBuffer(in _entityAups);
+            NativeArray<uint> entityIds = OpenBuffer(in _entityIds);
             int index = FindEntityIndex(entityIds, entityId, _entityCount);
             if (index < 0)
             {
@@ -373,10 +401,10 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            NativeArray<double3> entityAups = _entityAups.Resolve(EnsureVault());
-            NativeArray<uint> entityIds = _entityIds.Resolve(EnsureVault());
-            NativeArray<float> timers = _entityCorrosionTimers.Resolve(EnsureVault());
-            NativeArray<float> accumulators = _entityExposureAccumulators.Resolve(EnsureVault());
+            NativeArray<double3> entityAups = OpenBuffer(in _entityAups);
+            NativeArray<uint> entityIds = OpenBuffer(in _entityIds);
+            NativeArray<float> timers = OpenBuffer(in _entityCorrosionTimers);
+            NativeArray<float> accumulators = OpenBuffer(in _entityExposureAccumulators);
             int index = FindEntityIndex(entityIds, entityId, _entityCount);
             if (index < 0)
             {
@@ -409,8 +437,8 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            NativeArray<float> front = _densityFront.Resolve(EnsureVault());
-            float sampleBlend = Smooth01((ResolveQualityWeight() - 0.28f) * 1.6f);
+            NativeArray<float> front = OpenBuffer(in _densityFront);
+            float sampleBlend = Smooth01((ReadCachedQualityWeight() - 0.28f) * 1.6f);
             float nearest = SampleDensityNearest(front, _activeResolution, _gridOriginAup, _cellSizeMeters, aup);
             density = nearest;
             if (sampleBlend > 0.0001f)
@@ -433,7 +461,7 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            density = _densityFront.Resolve(EnsureVault());
+            density = OpenBuffer(in _densityFront);
             resolution = _activeResolution;
             originAup = _gridOriginAup;
             cellSize = _cellSizeMeters;
@@ -444,55 +472,56 @@ namespace Hecton8.Atmosphere
         public bool TryGetGridHeader(out ToxicOutgassingGridHeaderDTO header)
         {
             header = default;
-            if (!_nativeReady || !_gridHeader.IsCreated)
+            if (!_nativeReady || !IsHandleCreated(in _gridHeader))
             {
                 return false;
             }
 
-            header = _gridHeader.Resolve(EnsureVault())[0];
+            NativeArray<ToxicOutgassingGridHeaderDTO> headers = OpenBuffer(in _gridHeader);
+            if (!headers.IsCreated || headers.Length == 0)
+            {
+                return false;
+            }
+
+            header = headers[0];
             return true;
         }
 
         public bool TryGetCellStates(out NativeArray<ToxicityStateDTO> states)
         {
             states = default;
-            if (!_nativeReady || !_cellStatesFront.IsCreated)
+            if (!_nativeReady || !IsHandleCreated(in _cellStatesFront))
             {
                 return false;
             }
 
-            states = _cellStatesFront.Resolve(EnsureVault());
+            states = OpenBuffer(in _cellStatesFront);
             return states.IsCreated;
-        }
-
-        public bool TryGetConstantsPointer(out ToxicOutgassingConstants* constants)
-        {
-            EnsureNativeState();
-            NativeArray<ToxicOutgassingConstants> constantsArray = _constants.Resolve(EnsureVault());
-            constants = (ToxicOutgassingConstants*)NativeArrayUnsafeUtility.GetUnsafePtr(constantsArray);
-            return constants != null;
         }
 
         public void GenerateEmergencyMockChemistry()
         {
             EnsureNativeState();
-            ref ToxicOutgassingConstants constants = ref _constants.GetElementAsRef(EnsureVault(), 0);
-            constants.BaseDiffusionRate = 0.17f;
-            constants.CurrentAdvectionMultiplier = 0.85f;
-            constants.AcidCorrosionDamage = 0.045f;
-            constants.FloraAbsorptionRate = 0.11f;
-            constants.DensityDecayPerSecond = 0.032f;
-            constants.SourceRadiusMeters = 42f;
-            constants.ExposureToxemiaMultiplier = 0.075f;
-            constants.CausticDensityThreshold = 0.58f;
-            constants.BiolumDensityThreshold = 0.34f;
-            constants.MaxDensity = 1f;
-            constants.RadialFallbackRadiusScale = 1.65f;
-            constants.SdfWallLeakScale = 0f;
+            var constants = new ToxicOutgassingConstants
+            {
+                BaseDiffusionRate = 0.17f,
+                CurrentAdvectionMultiplier = 0.85f,
+                AcidCorrosionDamage = 0.045f,
+                FloraAbsorptionRate = 0.11f,
+                DensityDecayPerSecond = 0.032f,
+                SourceRadiusMeters = 42f,
+                ExposureToxemiaMultiplier = 0.075f,
+                CausticDensityThreshold = 0.58f,
+                BiolumDensityThreshold = 0.34f,
+                MaxDensity = 1f,
+                RadialFallbackRadiusScale = 1.65f,
+                SdfWallLeakScale = 0f,
+                ChemistryFlags = 1u,
+                _pad0 = 0u
+            };
             constants.GlobalQualityWeight = ResolveQualityWeight();
             constants.SimulationTickDelta = ResolveTickInterval(constants.GlobalQualityWeight);
-            constants.ChemistryFlags = 1u;
-            constants._pad0 = 0u;
+            TryWriteConstants(in constants);
             _mockChemistry = true;
         }
 
@@ -507,17 +536,20 @@ namespace Hecton8.Atmosphere
                     return false;
                 }
 
-                NativeArray<byte> csvBytes = _csvBytes.Resolve(EnsureVault());
+                NativeArray<byte> csvBytes = OpenBuffer(in _csvBytes);
                 int length = FillByteBufferFromFile(path, csvBytes);
                 if (length <= 0)
                 {
                     return false;
                 }
 
-                ref ToxicOutgassingConstants constants = ref _constants.GetElementAsRef(EnsureVault(), 0);
+                if (!TryReadConstants(out ToxicOutgassingConstants constants))
+                {
+                    return false;
+                }
+
                 ParseChemicalCsv(csvBytes, length, ref constants);
-                constants = SanitizeConstants(constants);
-                return true;
+                return TryWriteConstants(in constants);
             }
             catch (Exception ex)
             {
@@ -559,11 +591,17 @@ namespace Hecton8.Atmosphere
             _cellStatesFront = AcquireBuffer<ToxicityStateDTO>(CellStateFrontBufferId, MaxCellCount);
             _cellStatesBack = AcquireBuffer<ToxicityStateDTO>(CellStateBackBufferId, MaxCellCount);
 
+            if (!AreNativeHandlesReady())
+            {
+                _nativeReady = false;
+                return;
+            }
+
             ClearAllNativeBuffersWithMemClear();
             _activeResolution = ResolveResolution(ResolveQualityWeight());
             _activeCellCount = _activeResolution * _activeResolution * _activeResolution;
             _cellSizeMeters = DefaultCellSizeMeters;
-            _gridOriginAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);
+            _gridOriginAup = ResolveCurrentRuntimeOriginDouble3();
             _lastQualityWeight = ResolveQualityWeight();
             _nativeReady = true;
             PrewarmSignalLanes();
@@ -571,6 +609,42 @@ namespace Hecton8.Atmosphere
             TryReloadCsvOverrides();
             ProbeColdBinaryPayloads();
             UpdateGridHeader();
+        }
+
+        private bool AreNativeHandlesReady()
+        {
+            return IsHandleCreated(in _densityFront) &&
+                   IsHandleCreated(in _densityBack) &&
+                   IsHandleCreated(in _densityMirror) &&
+                   IsHandleCreated(in _flowField) &&
+                   IsHandleCreated(in _worldSampler) &&
+                   IsHandleCreated(in _sources) &&
+                   IsHandleCreated(in _sourceIds) &&
+                   IsHandleCreated(in _entityAups) &&
+                   IsHandleCreated(in _entityIds) &&
+                   IsHandleCreated(in _entityCorrosionTimers) &&
+                   IsHandleCreated(in _entityExposureAccumulators) &&
+                   IsHandleCreated(in _exposureSignals) &&
+                   IsHandleCreated(in _combatSignals) &&
+                   IsHandleCreated(in _biolumSignals) &&
+                   IsHandleCreated(in _signalCounters) &&
+                   IsHandleCreated(in _telemetryRing) &&
+                   IsHandleCreated(in _telemetryScratch) &&
+                   IsHandleCreated(in _constants) &&
+                   IsHandleCreated(in _csvBytes) &&
+                   IsHandleCreated(in _binaryProbeBytes) &&
+                   IsHandleCreated(in _nanFlags) &&
+                   IsHandleCreated(in _gridHeader) &&
+                   IsHandleCreated(in _cellStatesFront) &&
+                   IsHandleCreated(in _cellStatesBack);
+        }
+
+        private static double3 ResolveCurrentRuntimeOriginDouble3()
+        {
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return originAup.IsFinite()
+                ? originAup.ToAbsoluteDouble3()
+                : double3.zero;
         }
 
         private IDataVault EnsureVault()
@@ -589,37 +663,65 @@ namespace Hecton8.Atmosphere
             throw new InvalidOperationException("ToxicOutgassingChemistryRuntime requires GlobalDataVault before boot.");
         }
 
-        private VaultBufferHandle<T> AcquireBuffer<T>(BufferID id, int length) where T : struct
+        private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID id, int length) where T : struct
         {
-            return EnsureVault().GetBufferHandle<T>(id, length, SystemID.External, NativeArrayOptions.UninitializedMemory);
+            IDataVault vault = EnsureVault();
+            if (vault.IsAllocationLocked)
+            {
+                return vault.TryGetGenerationHandle(id, out VaultGenerationHandle<T> existing)
+                    ? existing
+                    : default;
+            }
+
+            return vault.GetGenerationHandle<T>(id, length, SystemID.External, NativeArrayOptions.UninitializedMemory);
+        }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u;
+        }
+
+        private bool TryOpenBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        {
+            IDataVault vault = EnsureVault();
+            return handle.BufferID != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private NativeArray<T> OpenBuffer<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return TryOpenBuffer(in handle, out NativeArray<T> buffer)
+                ? buffer
+                : default;
         }
 
         private void ClearAllNativeBuffersWithMemClear()
         {
-            MemClearArray(_densityFront.Resolve(EnsureVault()));
-            MemClearArray(_densityBack.Resolve(EnsureVault()));
-            MemClearArray(_densityMirror.Resolve(EnsureVault()));
-            MemClearArray(_flowField.Resolve(EnsureVault()));
-            MemClearArray(_worldSampler.Resolve(EnsureVault()));
-            MemClearArray(_sources.Resolve(EnsureVault()));
-            MemClearArray(_sourceIds.Resolve(EnsureVault()));
-            MemClearArray(_entityAups.Resolve(EnsureVault()));
-            MemClearArray(_entityIds.Resolve(EnsureVault()));
-            MemClearArray(_entityCorrosionTimers.Resolve(EnsureVault()));
-            MemClearArray(_entityExposureAccumulators.Resolve(EnsureVault()));
-            MemClearArray(_exposureSignals.Resolve(EnsureVault()));
-            MemClearArray(_combatSignals.Resolve(EnsureVault()));
-            MemClearArray(_biolumSignals.Resolve(EnsureVault()));
-            MemClearArray(_signalCounters.Resolve(EnsureVault()));
-            MemClearArray(_telemetryRing.Resolve(EnsureVault()));
-            MemClearArray(_telemetryScratch.Resolve(EnsureVault()));
-            MemClearArray(_constants.Resolve(EnsureVault()));
-            MemClearArray(_csvBytes.Resolve(EnsureVault()));
-            MemClearArray(_binaryProbeBytes.Resolve(EnsureVault()));
-            MemClearArray(_nanFlags.Resolve(EnsureVault()));
-            MemClearArray(_gridHeader.Resolve(EnsureVault()));
-            MemClearArray(_cellStatesFront.Resolve(EnsureVault()));
-            MemClearArray(_cellStatesBack.Resolve(EnsureVault()));
+            MemClearArray(OpenBuffer(in _densityFront));
+            MemClearArray(OpenBuffer(in _densityBack));
+            MemClearArray(OpenBuffer(in _densityMirror));
+            MemClearArray(OpenBuffer(in _flowField));
+            MemClearArray(OpenBuffer(in _worldSampler));
+            MemClearArray(OpenBuffer(in _sources));
+            MemClearArray(OpenBuffer(in _sourceIds));
+            MemClearArray(OpenBuffer(in _entityAups));
+            MemClearArray(OpenBuffer(in _entityIds));
+            MemClearArray(OpenBuffer(in _entityCorrosionTimers));
+            MemClearArray(OpenBuffer(in _entityExposureAccumulators));
+            MemClearArray(OpenBuffer(in _exposureSignals));
+            MemClearArray(OpenBuffer(in _combatSignals));
+            MemClearArray(OpenBuffer(in _biolumSignals));
+            MemClearArray(OpenBuffer(in _signalCounters));
+            MemClearArray(OpenBuffer(in _telemetryRing));
+            MemClearArray(OpenBuffer(in _telemetryScratch));
+            MemClearArray(OpenBuffer(in _constants));
+            MemClearArray(OpenBuffer(in _csvBytes));
+            MemClearArray(OpenBuffer(in _binaryProbeBytes));
+            MemClearArray(OpenBuffer(in _nanFlags));
+            MemClearArray(OpenBuffer(in _gridHeader));
+            MemClearArray(OpenBuffer(in _cellStatesFront));
+            MemClearArray(OpenBuffer(in _cellStatesBack));
         }
 
         private static void MemClearArray<T>(NativeArray<T> array) where T : struct
@@ -643,14 +745,14 @@ namespace Hecton8.Atmosphere
 
             _activeResolution = targetResolution;
             _activeCellCount = targetResolution * targetResolution * targetResolution;
-            NativeArray<float> front = _densityFront.Resolve(EnsureVault());
-            NativeArray<float> back = _densityBack.Resolve(EnsureVault());
-            NativeArray<float> mirror = _densityMirror.Resolve(EnsureVault());
-            NativeArray<MockFlowField> flow = _flowField.Resolve(EnsureVault());
-            NativeArray<MockWorldSampler> world = _worldSampler.Resolve(EnsureVault());
-            NativeArray<ToxicityStateDTO> stateFront = _cellStatesFront.Resolve(EnsureVault());
-            NativeArray<ToxicityStateDTO> stateBack = _cellStatesBack.Resolve(EnsureVault());
-            NativeArray<int> nan = _nanFlags.Resolve(EnsureVault());
+            NativeArray<float> front = OpenBuffer(in _densityFront);
+            NativeArray<float> back = OpenBuffer(in _densityBack);
+            NativeArray<float> mirror = OpenBuffer(in _densityMirror);
+            NativeArray<MockFlowField> flow = OpenBuffer(in _flowField);
+            NativeArray<MockWorldSampler> world = OpenBuffer(in _worldSampler);
+            NativeArray<ToxicityStateDTO> stateFront = OpenBuffer(in _cellStatesFront);
+            NativeArray<ToxicityStateDTO> stateBack = OpenBuffer(in _cellStatesBack);
+            NativeArray<int> nan = OpenBuffer(in _nanFlags);
 
             MemClearArray(front);
             MemClearArray(back);
@@ -668,33 +770,35 @@ namespace Hecton8.Atmosphere
         private void ScheduleSimulation(float simulationDelta, float qualityWeight)
         {
             _scheduledStartTicks = Stopwatch.GetTimestamp();
-            NativeArray<float> front = _densityFront.Resolve(EnsureVault());
-            NativeArray<float> back = _densityBack.Resolve(EnsureVault());
-            NativeArray<float> mirror = _densityMirror.Resolve(EnsureVault());
-            NativeArray<MockFlowField> flow = _flowField.Resolve(EnsureVault());
-            NativeArray<MockWorldSampler> world = _worldSampler.Resolve(EnsureVault());
-            NativeArray<ToxicitySourceDTO> sources = _sources.Resolve(EnsureVault());
-            NativeArray<uint> sourceIds = _sourceIds.Resolve(EnsureVault());
-            NativeArray<double3> entityAups = _entityAups.Resolve(EnsureVault());
-            NativeArray<uint> entityIds = _entityIds.Resolve(EnsureVault());
-            NativeArray<float> corrosionTimers = _entityCorrosionTimers.Resolve(EnsureVault());
-            NativeArray<float> exposureAccumulators = _entityExposureAccumulators.Resolve(EnsureVault());
-            NativeArray<ToxicityExposureSignal> exposureSignals = _exposureSignals.Resolve(EnsureVault());
-            NativeArray<ToxicityCombatDamageSignal> combatSignals = _combatSignals.Resolve(EnsureVault());
-            NativeArray<ToxicBioluminescenceSignal> biolumSignals = _biolumSignals.Resolve(EnsureVault());
-            NativeArray<int> signalCounters = _signalCounters.Resolve(EnsureVault());
-            NativeArray<int> nanFlags = _nanFlags.Resolve(EnsureVault());
-            NativeArray<ToxicityStateDTO> cellStatesBack = _cellStatesBack.Resolve(EnsureVault());
-            NativeArray<ToxicityGridTelemetryEntry> scratch = _telemetryScratch.Resolve(EnsureVault());
+            NativeArray<float> front = OpenBuffer(in _densityFront);
+            NativeArray<float> back = OpenBuffer(in _densityBack);
+            NativeArray<float> mirror = OpenBuffer(in _densityMirror);
+            NativeArray<MockFlowField> flow = OpenBuffer(in _flowField);
+            NativeArray<MockWorldSampler> world = OpenBuffer(in _worldSampler);
+            NativeArray<ToxicitySourceDTO> sources = OpenBuffer(in _sources);
+            NativeArray<uint> sourceIds = OpenBuffer(in _sourceIds);
+            NativeArray<double3> entityAups = OpenBuffer(in _entityAups);
+            NativeArray<uint> entityIds = OpenBuffer(in _entityIds);
+            NativeArray<float> corrosionTimers = OpenBuffer(in _entityCorrosionTimers);
+            NativeArray<float> exposureAccumulators = OpenBuffer(in _entityExposureAccumulators);
+            NativeArray<ToxicityExposureSignal> exposureSignals = OpenBuffer(in _exposureSignals);
+            NativeArray<ToxicityCombatDamageSignal> combatSignals = OpenBuffer(in _combatSignals);
+            NativeArray<ToxicBioluminescenceSignal> biolumSignals = OpenBuffer(in _biolumSignals);
+            NativeArray<int> signalCounters = OpenBuffer(in _signalCounters);
+            NativeArray<int> nanFlags = OpenBuffer(in _nanFlags);
+            NativeArray<ToxicityStateDTO> cellStatesBack = OpenBuffer(in _cellStatesBack);
+            NativeArray<ToxicityGridTelemetryEntry> scratch = OpenBuffer(in _telemetryScratch);
 
             MemClearArray(signalCounters);
             MemClearArray(nanFlags);
 
-            ref ToxicOutgassingConstants constantsRef = ref _constants.GetElementAsRef(EnsureVault(), 0);
-            constantsRef.GlobalQualityWeight = qualityWeight;
-            constantsRef.SimulationTickDelta = simulationDelta;
-            ToxicOutgassingConstants constants = SanitizeConstants(constantsRef);
-            constantsRef = constants;
+            ToxicOutgassingConstants constants = TryReadConstants(out ToxicOutgassingConstants currentConstants)
+                ? currentConstants
+                : default;
+            constants.GlobalQualityWeight = qualityWeight;
+            constants.SimulationTickDelta = simulationDelta;
+            constants = SanitizeConstants(constants);
+            TryWriteConstants(in constants);
 
             int sourceBudget = ResolveSourceBudget(qualityWeight, _sourceCount);
             int3 pendingRebase = _pendingRebaseCells;
@@ -871,11 +975,11 @@ namespace Hecton8.Atmosphere
             _scheduledStartTicks = 0L;
             _hasScheduledWork = false;
 
-            NativeArray<ToxicityExposureSignal> exposureSignals = _exposureSignals.Resolve(EnsureVault());
-            NativeArray<ToxicityCombatDamageSignal> combatSignals = _combatSignals.Resolve(EnsureVault());
-            NativeArray<ToxicBioluminescenceSignal> biolumSignals = _biolumSignals.Resolve(EnsureVault());
-            NativeArray<int> signalCounters = _signalCounters.Resolve(EnsureVault());
-            NativeArray<ToxicityGridTelemetryEntry> scratch = _telemetryScratch.Resolve(EnsureVault());
+            NativeArray<ToxicityExposureSignal> exposureSignals = OpenBuffer(in _exposureSignals);
+            NativeArray<ToxicityCombatDamageSignal> combatSignals = OpenBuffer(in _combatSignals);
+            NativeArray<ToxicBioluminescenceSignal> biolumSignals = OpenBuffer(in _biolumSignals);
+            NativeArray<int> signalCounters = OpenBuffer(in _signalCounters);
+            NativeArray<ToxicityGridTelemetryEntry> scratch = OpenBuffer(in _telemetryScratch);
 
             SwapDensityBuffers();
             _densityVersion++;
@@ -964,29 +1068,30 @@ namespace Hecton8.Atmosphere
 
         private void SwapDensityBuffers()
         {
-            VaultBufferHandle<float> previousFront = _densityFront;
+            VaultGenerationHandle<float> previousFront = _densityFront;
             _densityFront = _densityBack;
             _densityBack = previousFront;
 
-            VaultBufferHandle<ToxicityStateDTO> previousStateFront = _cellStatesFront;
+            VaultGenerationHandle<ToxicityStateDTO> previousStateFront = _cellStatesFront;
             _cellStatesFront = _cellStatesBack;
             _cellStatesBack = previousStateFront;
         }
 
         private void UpdateGridHeader()
         {
-            if (!_nativeReady || !_gridHeader.IsCreated)
+            if (!_nativeReady || !TryOpenBuffer(in _gridHeader, out NativeArray<ToxicOutgassingGridHeaderDTO> headers) ||
+                headers.Length == 0)
             {
                 return;
             }
 
-            ref ToxicOutgassingGridHeaderDTO header = ref _gridHeader.GetElementAsRef(EnsureVault(), 0);
+            ToxicOutgassingGridHeaderDTO header = headers[0];
             header.GridOriginAUP = _gridOriginAup;
             header.CellSizeMeters = _cellSizeMeters;
             header.GlobalQualityWeight = _lastQualityWeight;
-            header.ActiveDensityBufferId = BufferIdToUInt(_densityFront.BufferId);
-            header.BackDensityBufferId = BufferIdToUInt(_densityBack.BufferId);
-            header.StateBufferId = BufferIdToUInt(_cellStatesFront.BufferId);
+            header.ActiveDensityBufferId = HandleBufferIdToUInt(in _densityFront);
+            header.BackDensityBufferId = HandleBufferIdToUInt(in _densityBack);
+            header.StateBufferId = HandleBufferIdToUInt(in _cellStatesFront);
             header.DensityVersion = unchecked((uint)math.max(0, _densityVersion));
             header.Resolution = (ushort)math.clamp(_activeResolution, 0, ushort.MaxValue);
             header.ActiveSources = (ushort)math.clamp(_sourceCount, 0, ushort.MaxValue);
@@ -994,11 +1099,12 @@ namespace Hecton8.Atmosphere
             header.Flags = (byte)((_mockChemistry ? TelemetryFlagMockChemistry : 0) | (_activeResolution == LowResolution ? TelemetryFlagFallbackRadial : 0));
             header._pad0 = 0;
             header._pad1 = 0ul;
+            headers[0] = header;
         }
 
-        private static uint BufferIdToUInt(BufferID bufferId)
+        private static uint HandleBufferIdToUInt<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
-            return unchecked((uint)(int)bufferId);
+            return handle.BufferID;
         }
 
         private void CommitTelemetryScratch(NativeArray<ToxicityGridTelemetryEntry> scratch)
@@ -1008,7 +1114,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            NativeArray<ToxicityGridTelemetryEntry> ring = _telemetryRing.Resolve(EnsureVault());
+            NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing);
             ToxicityGridTelemetryEntry entry = scratch[0];
             entry.DiffusionCompleteMs = _lastCompleteMs;
             ring[_telemetryCursor] = entry;
@@ -1026,7 +1132,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            NativeArray<ToxicityGridTelemetryEntry> ring = _telemetryRing.Resolve(EnsureVault());
+            NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing);
             int index = _telemetryCursor - 1;
             if (index < 0)
             {
@@ -1039,7 +1145,11 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            ToxicOutgassingConstants constants = _constants.Resolve(EnsureVault())[0];
+            if (!TryReadConstants(out ToxicOutgassingConstants constants))
+            {
+                return;
+            }
+
             float threshold = math.max(constants.CausticDensityThreshold, NaNEpsilon);
             float acidCaustic01 = math.saturate(entry.MaxDensity / threshold);
             float visualOverkill = Smooth01(_lastQualityWeight);
@@ -1058,7 +1168,7 @@ namespace Hecton8.Atmosphere
                     Directory.CreateDirectory(directory);
                 }
 
-                NativeArray<ToxicityGridTelemetryEntry> ring = _telemetryRing.Resolve(EnsureVault());
+                NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing);
                 using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (var writer = new BinaryWriter(stream))
                 {
@@ -1120,7 +1230,7 @@ namespace Hecton8.Atmosphere
 
         private void ReadBinaryProbe(string path)
         {
-            NativeArray<byte> bytes = _binaryProbeBytes.Resolve(EnsureVault());
+            NativeArray<byte> bytes = OpenBuffer(in _binaryProbeBytes);
             int length = FillByteBufferFromFile(path, bytes);
             if (length >= 4)
             {
@@ -1331,6 +1441,11 @@ namespace Hecton8.Atmosphere
             weight = math.clamp(weight, 0f, 1f);
             _lastQualityWeight = weight;
             return weight;
+        }
+
+        private float ReadCachedQualityWeight()
+        {
+            return math.isfinite(_lastQualityWeight) ? math.saturate(_lastQualityWeight) : 0f;
         }
 
         private static int ResolveResolution(float qualityWeight)

@@ -1,35 +1,39 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct SpaceEngine098RidgedMultifractalParams
     {
-        public float Frequency;
-        public float Strength01;
-        public float Gain;
-        public float Warp;
-        public float FirstOctaveValue;
-        public float Lacunarity;
-        public float H;
-        public float Offset;
-        public float RidgeSmooth;
-        public int Octaves;
+        [FieldOffset(0)] public float Frequency;
+        [FieldOffset(4)] public float Strength01;
+        [FieldOffset(8)] public float Gain;
+        [FieldOffset(12)] public float Warp;
+        [FieldOffset(16)] public float FirstOctaveValue;
+        [FieldOffset(20)] public float Lacunarity;
+        [FieldOffset(24)] public float H;
+        [FieldOffset(28)] public float Offset;
+        [FieldOffset(32)] public float RidgeSmooth;
+        [FieldOffset(36)] public int Octaves;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct SpaceEngine098CraterProfile
     {
-        public float RadPeak;
-        public float RadInner;
-        public float RadRim;
-        public float RadOuter;
-        public float HeightFloor;
-        public float HeightPeak;
-        public float HeightRim;
-        public float Distortion;
+        [FieldOffset(0)] public float RadPeak;
+        [FieldOffset(4)] public float RadInner;
+        [FieldOffset(8)] public float RadRim;
+        [FieldOffset(12)] public float RadOuter;
+        [FieldOffset(16)] public float HeightFloor;
+        [FieldOffset(20)] public float HeightPeak;
+        [FieldOffset(24)] public float HeightRim;
+        [FieldOffset(28)] public float Distortion;
 
         public static SpaceEngine098CraterProfile OldDefault()
         {
@@ -47,33 +51,38 @@ namespace Hecton8.World
         }
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct SpaceEngine098RilleParams
     {
-        public float CellFrequency;
-        public float Depth01;
-        public float Narrowness;
-        public float Sharpness;
-        public float DomainWarpMeters;
-        public float DomainWarpFrequency;
-        public float RimLift01;
+        [FieldOffset(0)] public float CellFrequency;
+        [FieldOffset(4)] public float Depth01;
+        [FieldOffset(8)] public float Narrowness;
+        [FieldOffset(12)] public float Sharpness;
+        [FieldOffset(16)] public float DomainWarpMeters;
+        [FieldOffset(20)] public float DomainWarpFrequency;
+        [FieldOffset(24)] public float RimLift01;
+        [FieldOffset(28)] private uint _reserved0;
     }
 
     /// <summary>
     /// Per-sample terrain pipeline audit record produced by the Burst metrics pass.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct SpaceEngine098PipelineMetricSample
     {
-        public float MinHeight;
-        public float MaxHeight;
-        public float RidgedDelta;
-        public float CraterDelta;
-        public float RilleDelta;
-        public int ChecksumContribution;
-        public byte IsFinite;
-        public byte HasChecksumContribution;
+        [FieldOffset(0)] public float MinHeight;
+        [FieldOffset(4)] public float MaxHeight;
+        [FieldOffset(8)] public float RidgedDelta;
+        [FieldOffset(12)] public float CraterDelta;
+        [FieldOffset(16)] public float RilleDelta;
+        [FieldOffset(20)] public int ChecksumContribution;
+        [FieldOffset(24)] public byte IsFinite;
+        [FieldOffset(25)] public byte HasChecksumContribution;
+        [FieldOffset(26)] private ushort _reserved0;
+        [FieldOffset(28)] private uint _reserved1;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public static class SpaceEngine098TerrainMath
     {
         public const float DefaultLacunarity = 2.218281828459f;
@@ -118,6 +127,16 @@ namespace Hecton8.World
             }
 
             return sum;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 DowncastProceduralPhase(double3 phase, float3 fallback)
+        {
+            if (!math.all(math.isfinite(phase)))
+                return fallback;
+
+            float3 result = new float3((float)phase.x, (float)phase.y, (float)phase.z);
+            return math.all(math.isfinite(result)) ? result : fallback;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -342,7 +361,7 @@ namespace Hecton8.World
     /// Literal SpaceEngine 0.9.8 noise utility facade matching the research report naming.
     /// Existing jobs use <see cref="SpaceEngine098TerrainMath"/> directly; this type keeps integration code aligned with the extracted equations.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public static class SpaceEngineNoise098
     {
         public const float DefaultLacunarity = SpaceEngine098TerrainMath.DefaultLacunarity;
@@ -478,11 +497,11 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SpaceEngine098RidgedMultifractalJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> InputHeights01;
-        [WriteOnly] public NativeArray<float> OutputHeights01;
+        [ReadOnly, NoAlias] public NativeArray<float> InputHeights01;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputHeights01;
         public int Width;
         public double2 WorldOriginXZ;
         public double CellSizeMeters;
@@ -491,19 +510,23 @@ namespace Hecton8.World
 
         public void Execute(int index)
         {
-            int x = index % Width;
-            int z = index / Width;
-            double2 absolute = WorldOriginXZ + new double2(x, z) * math.max(0.001, CellSizeMeters);
-            float3 point = new float3((float)absolute.x, 0f, (float)absolute.y) * math.max(0.0000001f, Parameters.Frequency);
+            int safeWidth = math.max(1, Width);
+            int x = index % safeWidth;
+            int z = index / safeWidth;
+            double2 sample = WorldOriginXZ + new double2(x, z) * math.max(0.001, CellSizeMeters);
+            double safeFrequency = math.max(0.0000001d, (double)Parameters.Frequency);
+            float3 point = SpaceEngine098TerrainMath.DowncastProceduralPhase(
+                new double3(sample.x * safeFrequency, 0d, sample.y * safeFrequency),
+                float3.zero);
             float ridged = SpaceEngine098TerrainMath.RidgedMultifractalErodedDetail(point, in Parameters, Seed);
             OutputHeights01[index] = math.saturate(InputHeights01[index] + ridged * math.saturate(Parameters.Strength01));
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SpaceEngine098CraterPlacementJob : IJobParallelFor
     {
-        [WriteOnly] public NativeArray<float3> CraterAupCenters;
+        [WriteOnly, NoAlias] public NativeArray<float3> CraterAupCenters;
         public double2 WorldOriginXZ;
         public double2 WorldSizeXZ;
         public float RadiusMeters;
@@ -520,12 +543,12 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SpaceEngine098ApplyCraterHeightJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> InputHeights01;
-        [WriteOnly] public NativeArray<float> OutputHeights01;
-        [ReadOnly] public NativeArray<float3> CraterAupCenters;
+        [ReadOnly, NoAlias] public NativeArray<float> InputHeights01;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputHeights01;
+        [ReadOnly, NoAlias] public NativeArray<float3> CraterAupCenters;
         public int Width;
         public double2 WorldOriginXZ;
         public double CellSizeMeters;
@@ -535,8 +558,9 @@ namespace Hecton8.World
 
         public void Execute(int index)
         {
-            int x = index % Width;
-            int z = index / Width;
+            int safeWidth = math.max(1, Width);
+            int x = index % safeWidth;
+            int z = index / safeWidth;
             double2 absoluteDouble = WorldOriginXZ + new double2(x, z) * math.max(0.001, CellSizeMeters);
             float2 absolute = new float2((float)absoluteDouble.x, (float)absoluteDouble.y);
             float height = math.saturate(InputHeights01[index]);
@@ -562,11 +586,11 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SpaceEngine098RilleFissureJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> InputHeights01;
-        [WriteOnly] public NativeArray<float> OutputHeights01;
+        [ReadOnly, NoAlias] public NativeArray<float> InputHeights01;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputHeights01;
         public int Width;
         public double2 WorldOriginXZ;
         public double CellSizeMeters;
@@ -575,8 +599,9 @@ namespace Hecton8.World
 
         public void Execute(int index)
         {
-            int x = index % Width;
-            int z = index / Width;
+            int safeWidth = math.max(1, Width);
+            int x = index % safeWidth;
+            int z = index / safeWidth;
             double2 absoluteDouble = WorldOriginXZ + new double2(x, z) * math.max(0.001, CellSizeMeters);
             float2 absolute = new float2((float)absoluteDouble.x, (float)absoluteDouble.y);
             float2 warped = absolute + SpaceEngine098TerrainMath.DomainWarp2(
@@ -597,14 +622,14 @@ namespace Hecton8.World
     /// <summary>
     /// Computes per-sample validation metrics for the terrain pipeline without managed float-array reads.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct SpaceEngine098PipelineMetricsJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> InputHeights01;
-        [ReadOnly] public NativeArray<float> RidgedHeights01;
-        [ReadOnly] public NativeArray<float> CraterHeights01;
-        [ReadOnly] public NativeArray<float> RilleHeights01;
-        [WriteOnly] public NativeArray<SpaceEngine098PipelineMetricSample> Metrics;
+        [ReadOnly, NoAlias] public NativeArray<float> InputHeights01;
+        [ReadOnly, NoAlias] public NativeArray<float> RidgedHeights01;
+        [ReadOnly, NoAlias] public NativeArray<float> CraterHeights01;
+        [ReadOnly, NoAlias] public NativeArray<float> RilleHeights01;
+        [WriteOnly, NoAlias] public NativeArray<SpaceEngine098PipelineMetricSample> Metrics;
         public int ChecksumStride;
 
         public void Execute(int index)

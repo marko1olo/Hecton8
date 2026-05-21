@@ -1521,7 +1521,7 @@ namespace Hecton8.World
                 PredatorSpawnCount = predatorSpawnCount,
                 PassiveSpawnMax = acceptanceContext.PassiveSpawnMax,
                 PredatorSpawnMax = acceptanceContext.PredatorSpawnMax,
-                UsesPatternAccentQuotas = acceptanceContext.UsesPatternAccentQuotas ? (byte)1 : (byte)0,
+                UsesPatternAccentQuotas = acceptanceContext.UsesPatternAccentQuotas != 0 ? (byte)1 : (byte)0,
                 FloraChunkHardCap = FloraChunkInstanceHardCap,
                 MaxPoissonRejectionAttempts = PoissonDiskMaxRejectionAttempts
             };

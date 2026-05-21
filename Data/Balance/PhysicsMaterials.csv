@@ -1,0 +1,4 @@
+id,friction,restitution,flags
+wet_steel,0.62,0.08,1
+basalt_rough,0.88,0.03,1
+basalt_fractured,0.82,0.04,1

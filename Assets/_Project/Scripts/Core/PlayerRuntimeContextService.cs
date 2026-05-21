@@ -4,6 +4,7 @@ using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.UI;
+using Hecton8.World;
 using NASAPunk.Visor;
 using System.Collections.Generic;
 using Unity.Mathematics;
@@ -16,7 +17,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9930)]
-    public sealed class PlayerRuntimeContextService : MonoBehaviour, IPlayerRuntimeContext, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class PlayerRuntimeContextService : MonoBehaviour, IPlayerRuntimeContext, IPlayerSurvivalEnvironmentReadModel, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         private bool _isInitialized;
         private bool _registeredUpdatable;
@@ -64,7 +65,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _playerObject;
             }
         }
@@ -74,7 +74,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _playerTransform;
             }
         }
@@ -84,8 +83,16 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _playerMovement;
+            }
+        }
+
+        /// <inheritdoc />
+        public IPlayerCuttingTensionService CuttingTensionService
+        {
+            get
+            {
+                return _playerMovement as IPlayerCuttingTensionService;
             }
         }
 
@@ -94,7 +101,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _playerRigidbody;
             }
         }
@@ -104,7 +110,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _survivalSystem;
             }
         }
@@ -114,7 +119,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _playerHealth;
             }
         }
@@ -124,7 +128,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _traumaDispatcher;
             }
         }
@@ -134,7 +137,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _toolManager;
             }
         }
@@ -144,7 +146,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _inventory;
             }
         }
@@ -154,7 +155,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _playerTransportCoordinator;
             }
         }
@@ -164,7 +164,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _playerCamera;
             }
         }
@@ -174,7 +173,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _playerPda;
             }
         }
@@ -184,7 +182,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _playerBuilder;
             }
         }
@@ -194,7 +191,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _visorController;
             }
         }
@@ -204,7 +200,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _flashlight;
             }
         }
@@ -214,7 +209,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _thrusterAudio;
             }
         }
@@ -224,7 +218,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _underwaterVisuals;
             }
         }
@@ -234,7 +227,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _handAnchor;
             }
         }
@@ -244,7 +236,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _playerCollider;
             }
         }
@@ -254,7 +245,6 @@ namespace Hecton8.Core
         {
             get
             {
-                SyncPlayerContext();
                 return _hudNotification;
             }
         }
@@ -263,20 +253,62 @@ namespace Hecton8.Core
         public bool TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)
         {
             snapshot = default;
-            SyncPlayerContext();
-            if (!_runtimeContext.IsBound || _playerTransform == null)
+            if (!_runtimeContext.IsBound)
                 return false;
 
             PlayerMovementRuntimeState movementState = _runtimeContext.MovementState;
-            float3 runtimePosition = SafeFiniteVector(movementState.WorldPosition, (float3)_playerTransform.position);
-            var aup = movementState.PredictedAup;
-            if (!IsFinitePredictedAup(in movementState))
-                GlobalSignals.TryRuntimePositionToAup(runtimePosition, ref aup);
+            if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
+                return false;
 
-            float3 fallbackForward = SafeDirection((float3)_playerTransform.forward, new float3(0f, 0f, 1f));
+            if (!math.all(math.isfinite(movementState.WorldPosition)) ||
+                !IsFinitePredictedAup(in movementState))
+            {
+                return false;
+            }
+
+            float3 runtimePosition = movementState.WorldPosition;
+            AbsoluteUniversePosition aup = movementState.PredictedAup;
+            float3 fallbackForward = SafeDirection(movementState.Forward, new float3(0f, 0f, 1f));
             float3 forward = SafeDirection(movementState.CameraForward, fallbackForward);
             snapshot = new PlayerRuntimePoseSnapshot(runtimePosition, forward, aup, movementState.Flags);
             return true;
+        }
+
+        /// <inheritdoc />
+        public bool TryGetMovementRuntimeState(out PlayerMovementRuntimeState state)
+        {
+            state = _runtimeContext.MovementState;
+            return _isInitialized &&
+                   _runtimeContext.IsBound &&
+                   (state.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
+        }
+
+        /// <inheritdoc />
+        public bool TryGetMovementStressRuntimeState(out PlayerMovementStressRuntimeState state)
+        {
+            state = _runtimeContext.MovementStressState;
+            return _isInitialized &&
+                   _runtimeContext.IsBound &&
+                   (state.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
+        }
+
+        /// <inheritdoc />
+        public bool TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState state)
+        {
+            state = _runtimeContext.SurvivalState;
+            return _isInitialized &&
+                   _runtimeContext.IsBound &&
+                   (state.Flags & (uint)PlayerRuntimeSnapshotFlags.HasSurvival) != 0u;
+        }
+
+        public bool TryGetSurvivalEnvironmentSnapshot(out PlayerSurvivalEnvironmentSnapshot snapshot)
+        {
+            IPlayerSurvivalEnvironmentReadModel survivalReadModel = _survivalSystem as IPlayerSurvivalEnvironmentReadModel;
+            if (survivalReadModel != null)
+                return survivalReadModel.TryGetSurvivalEnvironmentSnapshot(out snapshot);
+
+            snapshot = default;
+            return false;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -324,7 +356,6 @@ namespace Hecton8.Core
             if (runtime == null)
                 return false;
 
-            runtime.SyncPlayerContext();
             runtimeContext = runtime._runtimeContext;
             return runtimeContext != null && runtimeContext.IsBound;
         }
@@ -583,11 +614,17 @@ namespace Hecton8.Core
             float3 forward = SafeDirection((float3)_playerTransform.forward, new float3(0f, 0f, 1f));
             Transform playerCameraTransform = ResolvePlayerCameraTransform();
             float3 cameraForward = SafeDirection(playerCameraTransform != null ? (float3)playerCameraTransform.forward : forward, forward);
-            float depthMeters = SanitizeNonNegative(_survivalSystem != null ? _survivalSystem.Depth : 0f);
+            float depthMeters = SanitizeNonNegative(_survivalSystem != null
+                ? _survivalSystem.Depth
+                : (_playerMovement != null ? _playerMovement.CurrentDepth : 0f));
             float transportSpeedMultiplier = _playerTransportCoordinator != null
                 ? math.max(0.01f, SanitizeNonNegative(_playerTransportCoordinator.ResolveTransportSpeedMultiplier()))
                 : 1f;
             float underwaterStress01 = _playerMovement != null ? Sanitize01(_playerMovement.CurrentUnderwaterStressIntensity01) : 0f;
+            float hullStress01 = _playerMovement != null ? Sanitize01(_playerMovement.CurrentHullStress01) : 0f;
+            float abyssalCounterDriveEnergyMultiplier = _playerMovement != null
+                ? math.max(1f, SanitizeNonNegative(_playerMovement.CurrentAbyssalCounterDriveEnergyMultiplier))
+                : 1f;
             Vector3 fallbackPlayerPosition = default;
             bool fallbackPlayerPositionResolved = false;
 
@@ -645,6 +682,13 @@ namespace Hecton8.Core
             movementState.UnderwaterStressIntensity01 = underwaterStress01;
             movementState.Flags = flags;
             _runtimeContext.PublishMovementState(in movementState);
+
+            PlayerMovementStressRuntimeState movementStressState = default;
+            movementStressState.HullStress01 = hullStress01;
+            movementStressState.UnderwaterStressIntensity01 = underwaterStress01;
+            movementStressState.AbyssalCounterDriveEnergyMultiplier = abyssalCounterDriveEnergyMultiplier;
+            movementStressState.Flags = flags;
+            _runtimeContext.PublishMovementStressState(in movementStressState);
 
             PlayerLookState lookState = default;
             if (playerCameraTransform != null)

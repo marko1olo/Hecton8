@@ -54,7 +54,7 @@ namespace Hecton8.Audio.Editor
                 string renderTinnitusSample = ExtractMethodBody(renderer, "private static float RenderTinnitusSample(");
                 string renderHullStressBlock = ExtractMethodBody(renderer, "private void RenderHullStressBlock(");
                 string renderThrusterBlock = ExtractMethodBody(renderer, "private void RenderThrusterBlock(");
-                string renderSonarBlock = ExtractMethodBody(renderer, "private void RenderSonarBlock(int frameCount, long blockStartFrame, double invSampleRate)");
+                string renderSonarBlock = ExtractMethodBody(renderer, "private void RenderSonarBlock(");
                 string linearSampleRing = ExtractMethodBody(renderer, "private static float LinearSampleRing(NativeArray<float> buffer, float cursor, int mask)");
                 string disposeBuffers = ExtractMethodBody(renderer, "private void DisposeBuffers(bool disposeSabineReverbDelay)");
                 string onDisable = ExtractMethodBody(renderer, "private void OnDisable()");
@@ -67,9 +67,9 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "diagnostics.OverflowDropCount = sampleRingBuffer.OverflowDropCount", "Audio diagnostics include overflow drop count", builder, ref failureCount);
                 AssertOccurrenceCount(produceAudioBlock, "Volatile.Read(ref _audioParameterSnapshotReadIndex)", 1, "Snapshot read occurs once per produced DSP block", builder, ref failureCount);
                 AssertContains(publishSnapshot, "Interlocked.Exchange(ref _audioParameterSnapshotReadIndex", "Main thread publishes inactive snapshot with Interlocked.Exchange", builder, ref failureCount);
-                AssertContains(renderer, "_workerSonarEchoTaps = ResolveVaultBuffer<SonarEchoTap>(vault, BufferID.PlayerCriticalWorkerSonarEchoTaps", "Sonar echo taps resolve from the player-critical DataVault slab", builder, ref failureCount);
-                AssertContains(tryConsumePendingSonarTrigger, "_workerSonarEchoTaps[tapIndex] = sourceTapBuffer[tapIndex]", "Sonar tap payload is copied once before block rendering", builder, ref failureCount);
-                AssertContains(renderSonarBlock, "NativeArray<SonarEchoTap> activeTapBuffer = _workerSonarEchoTaps", "Sonar render reads the worker tap snapshot, not the publish buffer", builder, ref failureCount);
+                AssertContains(renderer, "_ = ResolveVaultBuffer(vault, ref _workerSonarEchoTapsHandle, BufferID.PlayerCriticalWorkerSonarEchoTaps", "Sonar echo taps acquire a player-critical DataVault generation handle", builder, ref failureCount);
+                AssertContains(tryConsumePendingSonarTrigger, "tapViews.Worker[tapIndex] = sourceTapBuffer[tapIndex]", "Sonar tap payload is copied once before block rendering", builder, ref failureCount);
+                AssertContains(renderSonarBlock, "NativeArray<SonarEchoTap> activeTapBuffer = tapViews.Worker", "Sonar render reads the worker tap snapshot, not the publish buffer", builder, ref failureCount);
 
                 AssertNotContains(renderer, "OnAudioFilterRead", "Renderer has no managed Unity audio callback fallback", builder, ref failureCount);
                 AssertNotContains(renderer, "MixInterleavedInto", "Renderer has no managed float[] consumer bridge", builder, ref failureCount);
@@ -83,7 +83,7 @@ namespace Hecton8.Audio.Editor
                 AssertOccurrenceCount(renderThrusterBlock, "ComputeBandPassCoefficients(", 1, "Thruster block computes band-pass coefficients once", builder, ref failureCount);
                 AssertNotContains(renderThrusterBlock, "math.round(_sampleRate / math.max(1f, bladePassHz))", "Thruster render loop has no per-sample blade delay rounding", builder, ref failureCount);
 
-                AssertContains(renderSonarBlock, "LinearSampleRing(_sonarEchoDelay", "Sonar echo uses cheap linear delay sampling", builder, ref failureCount);
+                AssertContains(renderSonarBlock, "LinearSampleRing(dspViews.EchoDelay", "Sonar echo uses cheap linear delay sampling", builder, ref failureCount);
                 AssertContains(renderer, "public int DelaySamples;", "Sonar tap payload stores precomputed delay samples", builder, ref failureCount);
                 AssertContains(renderSonarBlock, "int echoDelaySamples = tap.DelaySamples;", "Sonar render loop reads precomputed delay samples", builder, ref failureCount);
                 AssertNotContains(renderSonarBlock, "math.round(tap.DelaySeconds", "Sonar render loop does not round delay per sample", builder, ref failureCount);
@@ -124,7 +124,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "BinauralMaximumMicroDelaySeconds = 0.0007f", "Binaural fake ITD caps micro-delay at 0.7 ms", builder, ref failureCount);
                 AssertContains(renderer, "math.abs(rightDot) * maxDelaySamples", "Renderer derives fake ITD delay from head-right dot", builder, ref failureCount);
 
-                AssertContains(renderer, "_sabineReverbDelay = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalSabineReverbDelay", "Sabine delay cache is player-critical DataVault audio memory", builder, ref failureCount);
+                AssertContains(renderer, "_ = ResolveVaultBuffer(vault, ref _sabineReverbDelayHandle, BufferID.PlayerCriticalSabineReverbDelay", "Sabine delay uses player-critical DataVault generation memory", builder, ref failureCount);
                 AssertNotContains(onDisable, "DisposeBuffers", "OnDisable does not dispose Sabine cache", builder, ref failureCount);
                 AssertContains(onDestroy, "DisposeBuffers(disposeSabineReverbDelay: true)", "OnDestroy owns final Sabine cache disposal", builder, ref failureCount);
                 AssertContains(disposeBuffers, "disposeSabineReverbDelay && _dataVault != null", "Player-critical DataVault release is gated to destroy path", builder, ref failureCount);

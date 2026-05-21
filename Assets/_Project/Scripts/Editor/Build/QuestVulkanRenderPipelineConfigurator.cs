@@ -21,7 +21,11 @@ namespace Hecton8.Editor.Build
         private const string QuestUrpAssetPath = "Assets/_Project/Data/URP_Quest_VR.asset";
         private const string QuestRendererAssetPath = "Assets/_Project/Data/Quest_VR_Renderer.asset";
         private const string AuditReportPath = "Docs/AgentLogs/Report_QUEST_VULKAN_RENDER_PIPELINE_Audit.md";
+        private const string QualitySettingsPath = "ProjectSettings/QualitySettings.asset";
+        private const string AndroidBuildTargetGroupName = "Android";
+        private const string QuestQualityName = "Quest (VR)";
         private const string ConfigureMenuPath = "HECTON-8/Platform/Configure Quest Vulkan Render Pipeline";
+        private const string WireQualityMenuPath = "HECTON-8/Platform/Wire Quest Android Quality Route";
 
         public int callbackOrder => -4590;
 
@@ -41,12 +45,29 @@ namespace Hecton8.Editor.Build
             ConfigureQuestAssetsForCi();
         }
 
+        [MenuItem(WireQualityMenuPath, priority = 421)]
+        private static void WireQualityFromMenu()
+        {
+            WireQuestAndroidQualityRouteForCi();
+        }
+
         public static void ConfigureQuestAssetsForCi()
         {
             EnsureQuestAssets(logSummary: true);
             ForceSinglePassInstanced();
             PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.Android, false);
             PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { GraphicsDeviceType.Vulkan });
+            WriteAuditReport();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        public static void WireQuestAndroidQualityRouteForCi()
+        {
+            UniversalRenderPipelineAsset urpAsset = EnsureQuestAssets(logSummary: true);
+            int questIndex = EnsureQuestQualityRow(urpAsset);
+            IsolateAndroidQualityLevel(questIndex);
+
             WriteAuditReport();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -178,6 +199,7 @@ namespace Hecton8.Editor.Build
             builder.AppendLine("- Quest renderer asset: `" + QuestRendererAssetPath + "`");
             builder.AppendLine("- Stereo rendering path: `" + PlayerSettings.stereoRenderingPath + "`");
             AppendGraphicsApiAudit(builder);
+            AppendQualityRouteAudit(builder);
             AppendRenderTextureAudit(builder);
             AppendComputeAudit(builder);
 
@@ -202,6 +224,193 @@ namespace Hecton8.Editor.Build
 
             if (apis[0] != GraphicsDeviceType.Vulkan)
                 builder.AppendLine("- BLOCKED: Vulkan is not first.");
+        }
+
+        private static void AppendQualityRouteAudit(StringBuilder builder)
+        {
+            builder.AppendLine();
+            builder.AppendLine("## Android Quality / Quest URP Route");
+
+            string questGuid = AssetDatabase.AssetPathToGUID(QuestUrpAssetPath);
+            builder.AppendLine("- Quest URP GUID: `" + FormatMissing(questGuid) + "`");
+            builder.AppendLine("- Quest quality row name: `" + QuestQualityName + "`");
+
+            string absoluteQualityPath = Path.GetFullPath(QualitySettingsPath);
+            if (!File.Exists(absoluteQualityPath))
+            {
+                builder.AppendLine("- BLOCKED: `" + QualitySettingsPath + "` missing.");
+                return;
+            }
+
+            string qualityText = File.ReadAllText(absoluteQualityPath);
+            int androidDefaultIndex = ParseAndroidDefaultQualityIndex(qualityText);
+            string androidQualityName;
+            int qualityRowCount;
+            string androidRenderPipelineGuid = ReadQualityRenderPipelineGuid(
+                qualityText,
+                androidDefaultIndex,
+                out androidQualityName,
+                out qualityRowCount);
+
+            builder.AppendLine("- Quality row count: `" + qualityRowCount + "`");
+            builder.AppendLine("- Android default quality index: `" + FormatInt(androidDefaultIndex) + "`");
+            builder.AppendLine("- Android default quality name: `" + FormatMissing(androidQualityName) + "`");
+            builder.AppendLine("- Android default render pipeline GUID: `" + FormatMissing(androidRenderPipelineGuid) + "`");
+
+            bool wired = !string.IsNullOrEmpty(questGuid) &&
+                         string.Equals(androidRenderPipelineGuid, questGuid, StringComparison.OrdinalIgnoreCase);
+            builder.AppendLine(wired
+                ? "- PASS: Android default quality resolves to the Quest URP asset."
+                : "- BLOCKED: Android default quality does not resolve to the Quest URP asset. Use a Unity import-aware QualitySettings route fix before claiming Quest runtime render readiness.");
+        }
+
+        private static int EnsureQuestQualityRow(UniversalRenderPipelineAsset urpAsset)
+        {
+            if (urpAsset == null)
+                throw new BuildFailedException("Quest URP asset is missing: " + QuestUrpAssetPath);
+
+            UnityEngine.Object qualityObject = QualitySettings.GetQualitySettings();
+            if (qualityObject == null)
+                throw new BuildFailedException("QualitySettings.GetQualitySettings() returned null.");
+
+            SerializedObject serialized = new SerializedObject(qualityObject);
+            SerializedProperty qualityRows = serialized.FindProperty("m_QualitySettings");
+            if (qualityRows == null || !qualityRows.isArray)
+                throw new BuildFailedException("QualitySettings `m_QualitySettings` array not found.");
+
+            int questIndex = FindQuestQualityRow(qualityRows, urpAsset);
+            if (questIndex < 0)
+            {
+                int oldSize = qualityRows.arraySize;
+                if (oldSize <= 0)
+                    throw new BuildFailedException("QualitySettings has no source row to duplicate for Quest.");
+
+                qualityRows.arraySize = oldSize + 1;
+                questIndex = oldSize;
+            }
+
+            SerializedProperty questRow = qualityRows.GetArrayElementAtIndex(questIndex);
+            ConfigureQuestQualityRow(questRow, urpAsset);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            serialized.Update();
+            string mapError;
+            if (!TrySetAndroidDefaultQualityIndex(serialized, questIndex, out mapError))
+                throw new BuildFailedException(mapError);
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return questIndex;
+        }
+
+        private static int FindQuestQualityRow(SerializedProperty qualityRows, UniversalRenderPipelineAsset urpAsset)
+        {
+            for (int i = 0; i < qualityRows.arraySize; i++)
+            {
+                SerializedProperty row = qualityRows.GetArrayElementAtIndex(i);
+                SerializedProperty nameProperty = row.FindPropertyRelative("name");
+                SerializedProperty pipelineProperty = row.FindPropertyRelative("customRenderPipeline");
+                bool nameMatches = nameProperty != null &&
+                                   string.Equals(nameProperty.stringValue, QuestQualityName, StringComparison.Ordinal);
+                bool pipelineMatches = pipelineProperty != null &&
+                                       pipelineProperty.objectReferenceValue == urpAsset;
+                if (nameMatches || pipelineMatches)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static void ConfigureQuestQualityRow(SerializedProperty row, UniversalRenderPipelineAsset urpAsset)
+        {
+            SetString(row, "name", QuestQualityName);
+            SetInt(row, "pixelLightCount", 1);
+            SetInt(row, "shadows", 1);
+            SetInt(row, "shadowResolution", 1);
+            SetInt(row, "shadowProjection", 1);
+            SetInt(row, "shadowCascades", 1);
+            SetFloat(row, "shadowDistance", 18f);
+            SetFloat(row, "shadowNearPlaneOffset", 3f);
+            SetInt(row, "skinWeights", 2);
+            SetInt(row, "globalTextureMipmapLimit", 1);
+            SetInt(row, "anisotropicTextures", 1);
+            SetInt(row, "antiAliasing", 0);
+            SetInt(row, "softParticles", 0);
+            SetInt(row, "softVegetation", 0);
+            SetInt(row, "realtimeReflectionProbes", 0);
+            SetInt(row, "billboardsFaceCameraPosition", 1);
+            SetInt(row, "vSyncCount", 0);
+            SetFloat(row, "lodBias", 1.15f);
+            SetInt(row, "maximumLODLevel", 0);
+            SetInt(row, "enableLODCrossFade", 1);
+            SetInt(row, "streamingMipmapsActive", 1);
+            SetInt(row, "streamingMipmapsAddAllCameras", 1);
+            SetInt(row, "streamingMipmapsMemoryBudget", 384);
+            SetInt(row, "streamingMipmapsRenderersPerFrame", 256);
+            SetInt(row, "streamingMipmapsMaxLevelReduction", 2);
+            SetInt(row, "streamingMipmapsMaxFileIORequests", 256);
+            SetInt(row, "particleRaycastBudget", 96);
+            SetInt(row, "asyncUploadTimeSlice", 1);
+            SetInt(row, "asyncUploadBufferSize", 8);
+            SetInt(row, "asyncUploadPersistentBuffer", 1);
+            SetFloat(row, "resolutionScalingFixedDPIFactor", 1f);
+            SetObject(row, "customRenderPipeline", urpAsset);
+            SetInt(row, "terrainQualityOverrides", 0);
+            SetFloat(row, "terrainPixelError", 1.5f);
+            SetFloat(row, "terrainDetailDensityScale", 0.6f);
+            SetFloat(row, "terrainBasemapDistance", 800f);
+            SetFloat(row, "terrainDetailDistance", 45f);
+            SetFloat(row, "terrainTreeDistance", 700f);
+            SetFloat(row, "terrainBillboardStart", 35f);
+            SetFloat(row, "terrainFadeLength", 5f);
+            SetInt(row, "terrainMaxTrees", 24);
+        }
+
+        private static void IsolateAndroidQualityLevel(int questIndex)
+        {
+            for (int i = 0; i < QualitySettings.count; i++)
+            {
+                Exception error;
+                bool ok = i == questIndex
+                    ? QualitySettings.TryIncludePlatformAt(AndroidBuildTargetGroupName, i, out error)
+                    : QualitySettings.TryExcludePlatformAt(AndroidBuildTargetGroupName, i, out error);
+
+                if (!ok)
+                {
+                    string message = error != null ? error.Message : "unknown Unity QualitySettings platform error";
+                    throw new BuildFailedException("Failed to update Android quality platform route for row " + i + ": " + message);
+                }
+            }
+        }
+
+        private static bool TrySetAndroidDefaultQualityIndex(SerializedObject serialized, int questIndex, out string error)
+        {
+            SerializedProperty defaults = serialized.FindProperty("m_PerPlatformDefaultQuality");
+            if (defaults == null)
+            {
+                error = "QualitySettings `m_PerPlatformDefaultQuality` map not found.";
+                return false;
+            }
+
+            SerializedProperty cursor = defaults.Copy();
+            SerializedProperty end = cursor.GetEndProperty();
+            bool enterChildren = true;
+            while (cursor.Next(enterChildren))
+            {
+                enterChildren = true;
+                if (SerializedProperty.EqualContents(cursor, end))
+                    break;
+
+                if (cursor.propertyType == SerializedPropertyType.Integer &&
+                    string.Equals(cursor.name, AndroidBuildTargetGroupName, StringComparison.Ordinal))
+                {
+                    cursor.intValue = questIndex;
+                    error = string.Empty;
+                    return true;
+                }
+            }
+
+            error = "QualitySettings `m_PerPlatformDefaultQuality.Android` integer entry not found.";
+            return false;
         }
 
         private static void AppendRenderTextureAudit(StringBuilder builder)
@@ -269,6 +478,101 @@ namespace Hecton8.Editor.Build
                 builder.AppendLine("- `" + token + "` hits truncated at 80 of " + hitCount + ".");
         }
 
+        private static int ParseAndroidDefaultQualityIndex(string qualityText)
+        {
+            if (string.IsNullOrEmpty(qualityText))
+                return -1;
+
+            int mapIndex = qualityText.IndexOf("m_PerPlatformDefaultQuality:", StringComparison.Ordinal);
+            if (mapIndex < 0)
+                return -1;
+
+            string[] lines = qualityText.Substring(mapIndex).Split('\n');
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string trimmed = lines[i].Trim();
+                if (!trimmed.StartsWith("Android:", StringComparison.Ordinal))
+                    continue;
+
+                string value = trimmed.Substring("Android:".Length).Trim();
+                int parsed;
+                return int.TryParse(value, out parsed) ? parsed : -1;
+            }
+
+            return -1;
+        }
+
+        private static string ReadQualityRenderPipelineGuid(
+            string qualityText,
+            int targetIndex,
+            out string qualityName,
+            out int rowCount)
+        {
+            qualityName = string.Empty;
+            rowCount = 0;
+            if (string.IsNullOrEmpty(qualityText))
+                return string.Empty;
+
+            string[] lines = qualityText.Split('\n');
+            int rowIndex = -1;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string trimmed = lines[i].Trim();
+                if (trimmed.StartsWith("m_TextureMipmapLimitGroupNames:", StringComparison.Ordinal))
+                    break;
+
+                if (trimmed.StartsWith("- serializedVersion:", StringComparison.Ordinal))
+                {
+                    rowIndex++;
+                    rowCount++;
+                    continue;
+                }
+
+                if (rowIndex != targetIndex)
+                    continue;
+
+                if (trimmed.StartsWith("name:", StringComparison.Ordinal))
+                    qualityName = trimmed.Substring("name:".Length).Trim();
+                else if (trimmed.StartsWith("customRenderPipeline:", StringComparison.Ordinal))
+                    return ExtractGuid(trimmed);
+            }
+
+            return string.Empty;
+        }
+
+        private static string ExtractGuid(string text)
+        {
+            int guidIndex = text.IndexOf("guid:", StringComparison.Ordinal);
+            if (guidIndex < 0)
+                return string.Empty;
+
+            int valueStart = guidIndex + "guid:".Length;
+            while (valueStart < text.Length && char.IsWhiteSpace(text[valueStart]))
+                valueStart++;
+
+            int valueEnd = valueStart;
+            while (valueEnd < text.Length)
+            {
+                char c = text[valueEnd];
+                if (c == ',' || c == '}' || char.IsWhiteSpace(c))
+                    break;
+
+                valueEnd++;
+            }
+
+            return valueEnd > valueStart ? text.Substring(valueStart, valueEnd - valueStart) : string.Empty;
+        }
+
+        private static string FormatInt(int value)
+        {
+            return value >= 0 ? value.ToString() : "<missing>";
+        }
+
+        private static string FormatMissing(string value)
+        {
+            return string.IsNullOrEmpty(value) ? "<missing>" : value;
+        }
+
         private static void SetBool(SerializedObject serialized, string propertyName, bool value)
         {
             SerializedProperty property = serialized.FindProperty(propertyName);
@@ -288,6 +592,34 @@ namespace Hecton8.Editor.Build
             SerializedProperty property = serialized.FindProperty(propertyName);
             if (property != null)
                 property.floatValue = value;
+        }
+
+        private static void SetString(SerializedProperty root, string propertyName, string value)
+        {
+            SerializedProperty property = root.FindPropertyRelative(propertyName);
+            if (property != null)
+                property.stringValue = value;
+        }
+
+        private static void SetInt(SerializedProperty root, string propertyName, int value)
+        {
+            SerializedProperty property = root.FindPropertyRelative(propertyName);
+            if (property != null)
+                property.intValue = value;
+        }
+
+        private static void SetFloat(SerializedProperty root, string propertyName, float value)
+        {
+            SerializedProperty property = root.FindPropertyRelative(propertyName);
+            if (property != null)
+                property.floatValue = value;
+        }
+
+        private static void SetObject(SerializedProperty root, string propertyName, UnityEngine.Object value)
+        {
+            SerializedProperty property = root.FindPropertyRelative(propertyName);
+            if (property != null)
+                property.objectReferenceValue = value;
         }
 
         private static void SetObjectInFirstArraySlot(SerializedObject serialized, string propertyName, UnityEngine.Object value)

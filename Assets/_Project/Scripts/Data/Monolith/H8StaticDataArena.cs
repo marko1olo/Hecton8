@@ -604,6 +604,7 @@ namespace Hecton8.Data
         /// <returns>True when a blob is loaded.</returns>
         public static bool TryGetArena(out NativeArray<byte> arena)
         {
+            arena = default;
             return IsLoaded && TryRefreshArenaView(out arena);
         }
 
@@ -612,6 +613,7 @@ namespace Hecton8.Data
         /// </summary>
         public static bool TryGetResidentBlob(out NativeArray<byte> arena, out int blobBytes)
         {
+            arena = default;
             blobBytes = _residentBlobBytes;
             return IsLoaded && TryRefreshArenaView(out arena) && _residentBlobBytes > 0;
         }
@@ -1321,8 +1323,8 @@ namespace Hecton8.Data
 #if !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
                 if (TryReadViaMemoryMappedFile(absolutePath, destination, arena.Length, expectedBytes))
                 {
-                    long elapsedTicks = Stopwatch.GetTimestamp() - readStart;
-                    _lastReadTicks = elapsedTicks;
+                    long mmfElapsedTicks = Stopwatch.GetTimestamp() - readStart;
+                    _lastReadTicks = mmfElapsedTicks;
                     _lastReadPathFlags = pathFlags | PathFlagMemoryMappedFile;
                     return true;
                 }
@@ -1341,8 +1343,8 @@ namespace Hecton8.Data
 
                 bool ok = totalRead == expectedBytes && stream.Length == expectedBytes;
                 status = ok ? H8DataBlobLoadStatus.None : H8DataBlobLoadStatus.ReadFailed;
-                long elapsedTicks = Stopwatch.GetTimestamp() - readStart;
-                _lastReadTicks = elapsedTicks;
+                long streamElapsedTicks = Stopwatch.GetTimestamp() - readStart;
+                _lastReadTicks = streamElapsedTicks;
                 _lastReadPathFlags = pathFlags | PathFlagFileStream;
                 return ok;
             }

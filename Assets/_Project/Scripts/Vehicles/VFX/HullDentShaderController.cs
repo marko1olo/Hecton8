@@ -15,7 +15,7 @@ namespace Hecton8.Vehicles.VFX
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Vehicles/VFX/Hull Dent Shader Controller")]
-    public sealed class HullDentShaderController : MonoBehaviour, ILateFrameTickable
+    public sealed class HullDentShaderController : MonoBehaviour, ILateFrameTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxHullDents = 16;
         private const int RadiusQuantizationStepsPerMeter = 16;
@@ -55,31 +55,39 @@ namespace Hecton8.Vehicles.VFX
         private ISubmarineHullBreachReadModel _breachReadModel;
         private ITickDispatcher _tickDispatcher;
         private IDataVault _dataVault;
-        private VaultBufferHandle<float4> _hullDentsHandle;
+        private VaultGenerationHandle<float4> _hullDentsHandle;
         private Transform _cachedRoot;
         private int _writeHead;
         private int _activeDentCount;
         private int _lastProcessedFrame = int.MinValue;
-        private int _qualityRefreshFrame = int.MinValue;
         private byte _qualityTier;
         private bool _lowTier;
         private bool _dirty;
         private bool _registeredLateFrame;
+        private bool _registeredHotSwap;
+        private bool _registeredScalabilityListener;
+        private bool _ownsHullDentsBuffer;
 
         private void OnEnable()
         {
             ResolveRoot();
             ResolveBreachReadModel();
             ResolveTickDispatcher();
-            RefreshQualityTier(force: true);
+            RefreshQualityTierCold();
+            CacheDataVaultCold();
             EnsureHullDentsBuffer();
             SyncDentBufferFromVault();
             TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             UploadShaderGlobals();
         }
 
         private void OnDisable()
         {
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
+
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -88,21 +96,49 @@ namespace Hecton8.Vehicles.VFX
 
             ClearLocalDentBuffer();
             UploadShaderGlobalsFromLocal();
+            ReleaseHullDentsBuffer();
             _tickDispatcher = null;
+            _dataVault = null;
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            ApplyQualityTierCandidate(payload.CurrentTier, payload.CurrentQualityTier);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _tickDispatcher = currentService as ITickDispatcher;
+                if (isActiveAndEnabled)
+                    TryRegisterLateFrameTickable();
+
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            ReleaseVaultBuffer(previousService as IDataVault ?? _dataVault, ref _hullDentsHandle, ref _ownsHullDentsBuffer);
+            _dataVault = currentService as IDataVault;
+            ClearLocalDentBuffer();
+            EnsureHullDentsBuffer();
+            SyncDentBufferFromVault();
+            UploadShaderGlobalsFromLocal();
         }
 
         public void LateFrameTick()
         {
             using (_lateFrameProfilerMarker.Auto())
             {
-                if (!_registeredLateFrame)
-                    TryRegisterLateFrameTickable();
-
                 ResolveRoot();
                 if (_cachedRoot == null)
                     return;
 
-                RefreshQualityTier(force: false);
                 int acceptedSignals = ConsumeCombatDamageSignals();
                 bool repairChanged = ApplyRepairCoupling(ResolveUnscaledDeltaTime());
 
@@ -123,6 +159,41 @@ namespace Hecton8.Vehicles.VFX
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_registeredScalabilityListener || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _registeredScalabilityListener = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_registeredScalabilityListener)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _registeredScalabilityListener = false;
+        }
+
         private void ResolveRoot()
         {
             _cachedRoot = submarineRoot != null ? submarineRoot : transform;
@@ -140,20 +211,26 @@ namespace Hecton8.Vehicles.VFX
             _tickDispatcher = GlobalRegistry.TickDispatcher;
         }
 
-        private void RefreshQualityTier(bool force)
+        private void CacheDataVaultCold()
         {
-            int frame = Time.frameCount;
-            if (!force && frame - _qualityRefreshFrame < 60)
-                return;
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+        }
 
-            _qualityRefreshFrame = frame;
+        private void RefreshQualityTierCold()
+        {
             byte newQualityTier = GlobalRegistry.ScalabilityTierProfileByte;
             HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
+            ApplyQualityTierCandidate(newQualityTier, tier);
+        }
+
+        private void ApplyQualityTierCandidate(byte newQualityTier, HectonQualityTier tier)
+        {
             bool newLowTier = tier == HectonQualityTier.Unknown ||
                               tier == HectonQualityTier.Low ||
                               tier == HectonQualityTier.Mx350;
 
-            if (!force && newQualityTier == _qualityTier && newLowTier == _lowTier)
+            if (newQualityTier == _qualityTier && newLowTier == _lowTier)
                 return;
 
             _qualityTier = newQualityTier;
@@ -385,7 +462,7 @@ namespace Hecton8.Vehicles.VFX
 
         private IDataVault ResolveDataVault()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            CacheDataVaultCold();
             return _dataVault;
         }
 
@@ -406,8 +483,7 @@ namespace Hecton8.Vehicles.VFX
 
             try
             {
-                var dents = _hullDentsHandle.Resolve(vault);
-                if (!dents.IsCreated || dents.Length < MaxHullDents)
+                if (!TryResolveHullDents(vault, out NativeArray<float4> dents, allowEnsure: false))
                     return false;
 
                 bool changed = false;
@@ -455,8 +531,7 @@ namespace Hecton8.Vehicles.VFX
 
             try
             {
-                var dents = _hullDentsHandle.Resolve(vault);
-                if (!dents.IsCreated || dents.Length < MaxHullDents)
+                if (!TryResolveHullDents(vault, out NativeArray<float4> dents, allowEnsure: false))
                     return false;
 
                 int count = math.min(MaxHullDents, dents.Length);
@@ -490,8 +565,8 @@ namespace Hecton8.Vehicles.VFX
 
             try
             {
-                var dents = _hullDentsHandle.Resolve(vault);
-                if (!dents.IsCreated || (uint)dentIndex >= (uint)dents.Length)
+                if (!TryResolveHullDents(vault, out NativeArray<float4> dents, allowEnsure: false) ||
+                    (uint)dentIndex >= (uint)dents.Length)
                 {
                     return false;
                 }
@@ -510,19 +585,105 @@ namespace Hecton8.Vehicles.VFX
             if (vault == null)
                 return false;
 
-            if (!_hullDentsHandle.IsCreated ||
-                _hullDentsHandle.BufferId != BufferID.HullDents ||
-                _hullDentsHandle.Length < MaxHullDents ||
-                !vault.ResolveBuffer(ref _hullDentsHandle))
+            if (vault.IsCompactionFenceActive)
             {
-                _hullDentsHandle = vault.GetBufferHandle<float4>(
-                    BufferID.HullDents,
-                    MaxHullDents,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
+                return false;
             }
 
-            return _hullDentsHandle.IsCreated && _hullDentsHandle.Length >= MaxHullDents;
+            if (IsVaultHandleCreated(in _hullDentsHandle) &&
+                vault.TryResolveHandle(in _hullDentsHandle, out NativeArray<float4> currentDents) &&
+                currentDents.IsCreated &&
+                currentDents.Length >= MaxHullDents)
+            {
+                return true;
+            }
+
+            ClearHullDentsDescriptor();
+            if (vault.TryGetGenerationHandle(BufferID.HullDents, out VaultGenerationHandle<float4> existing) &&
+                vault.TryResolveHandle(in existing, out NativeArray<float4> existingDents) &&
+                existingDents.IsCreated &&
+                existingDents.Length >= MaxHullDents)
+            {
+                _hullDentsHandle = existing;
+                _ownsHullDentsBuffer = false;
+                return true;
+            }
+
+            if (vault.IsAllocationLocked)
+                return false;
+
+            VaultGenerationHandle<float4> acquired = vault.GetGenerationHandle<float4>(
+                BufferID.HullDents,
+                MaxHullDents,
+                SystemID.Vfx,
+                NativeArrayOptions.ClearMemory);
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out NativeArray<float4> acquiredDents) ||
+                !acquiredDents.IsCreated ||
+                acquiredDents.Length < MaxHullDents)
+            {
+                bool ownsAcquired = true;
+                ReleaseVaultBuffer(vault, ref acquired, ref ownsAcquired);
+                ClearHullDentsDescriptor();
+                return false;
+            }
+
+            _hullDentsHandle = acquired;
+            _ownsHullDentsBuffer = true;
+            return true;
+        }
+
+        private bool TryResolveHullDents(IDataVault vault, out NativeArray<float4> dents, bool allowEnsure)
+        {
+            dents = default;
+            if (vault == null)
+                return false;
+
+            if (allowEnsure && !EnsureHullDentsHandle(vault))
+                return false;
+
+            if (!IsVaultHandleCreated(in _hullDentsHandle))
+                return false;
+
+            if (!vault.TryResolveHandle(in _hullDentsHandle, out dents) ||
+                !dents.IsCreated ||
+                dents.Length < MaxHullDents)
+            {
+                if (allowEnsure)
+                    ClearHullDentsDescriptor();
+
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ClearHullDentsDescriptor()
+        {
+            _hullDentsHandle = default;
+            _ownsHullDentsBuffer = false;
+        }
+
+        private void ReleaseHullDentsBuffer()
+        {
+            ReleaseVaultBuffer(_dataVault, ref _hullDentsHandle, ref _ownsHullDentsBuffer);
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static void ReleaseVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            ref bool ownsBuffer) where T : struct
+        {
+            if (ownsBuffer && vault != null && IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+            ownsBuffer = false;
         }
 
         private void RefreshDentWriteState()

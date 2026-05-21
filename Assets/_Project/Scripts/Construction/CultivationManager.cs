@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -37,24 +38,37 @@ namespace Hecton8.Construction
         /// <summary>
         /// Fixed cultivation slot payload shared with atmosphere jobs without managed allocation.
         /// </summary>
+        [BinaryBlittableSafe]
         [Serializable]
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct CultivationSlotState
         {
-            public int SeedItemHashId;
+            [FieldOffset(0)]
             public ulong GeneticsMask;
+            [FieldOffset(8)]
+            public int SeedItemHashId;
+            [FieldOffset(12)]
             public float Growth01;
+            [FieldOffset(16)]
             public float Quality01;
+            [FieldOffset(20)]
+            private uint _pad0;
+            [FieldOffset(24)]
+            private ulong _pad1;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         private struct XorShift32State
         {
+            [FieldOffset(0)]
             private uint _state;
+            [FieldOffset(4)]
+            private uint _pad0;
 
             public XorShift32State(uint seed)
             {
                 _state = seed != 0u ? seed : 0x6D2B79F5u;
+                _pad0 = 0u;
             }
 
             public uint NextUInt()

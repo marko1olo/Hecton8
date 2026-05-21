@@ -639,24 +639,24 @@ namespace Hecton8.Environment
         private float audioRumbleScale = 0.9f;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<SeismicTideTelemetryEntry> _tideTelemetryHandle;
-        private VaultBufferHandle<SeismicEventDTO> _seismicEventsHandle;
-        private VaultBufferHandle<ShakeOffsetDTO> _shakeOffsetHandle;
-        private VaultBufferHandle<float> _turbiditySpikeHandle;
-        private VaultBufferHandle<SeismicDirectorTelemetryEntry> _seismicTelemetryHandle;
-        private VaultBufferHandle<SeismicTuningDTO> _seismicTuningHandle;
-        private VaultBufferHandle<MockNarrativeTriggerSignal> _mockNarrativeTriggerHandle;
-        private VaultBufferHandle<MockCameraPosition> _mockCameraHandle;
-        private VaultBufferHandle<MockSiltSignal> _mockSiltHandle;
-        private VaultBufferHandle<SeismicBaseModuleMock> _mockBaseModuleHandle;
-        private VaultBufferHandle<CelestialStateDTO> _celestialStateWriteHandle;
-        private VaultBufferHandle<CelestialStateDTO> _celestialStateReadHandle;
-        private VaultBufferHandle<CelestialTelemetryEntry> _celestialTelemetryHandle;
-        private VaultBufferHandle<CelestialTuningDTO> _celestialTuningHandle;
-        private VaultBufferHandle<byte> _celestialCsvScratchHandle;
-        private VaultBufferHandle<CelestialFlowModifierDTO> _celestialFlowModifierHandle;
-        private VaultBufferHandle<double> _celestialMockTimelineHandle;
-        private VaultBufferHandle<CelestialOrbitalParameterDTO> _celestialOrbitalParametersHandle;
+        private VaultGenerationHandle<SeismicTideTelemetryEntry> _tideTelemetryHandle;
+        private VaultGenerationHandle<SeismicEventDTO> _seismicEventsHandle;
+        private VaultGenerationHandle<ShakeOffsetDTO> _shakeOffsetHandle;
+        private VaultGenerationHandle<float> _turbiditySpikeHandle;
+        private VaultGenerationHandle<SeismicDirectorTelemetryEntry> _seismicTelemetryHandle;
+        private VaultGenerationHandle<SeismicTuningDTO> _seismicTuningHandle;
+        private VaultGenerationHandle<MockNarrativeTriggerSignal> _mockNarrativeTriggerHandle;
+        private VaultGenerationHandle<MockCameraPosition> _mockCameraHandle;
+        private VaultGenerationHandle<MockSiltSignal> _mockSiltHandle;
+        private VaultGenerationHandle<SeismicBaseModuleMock> _mockBaseModuleHandle;
+        private VaultGenerationHandle<CelestialStateDTO> _celestialStateWriteHandle;
+        private VaultGenerationHandle<CelestialStateDTO> _celestialStateReadHandle;
+        private VaultGenerationHandle<CelestialTelemetryEntry> _celestialTelemetryHandle;
+        private VaultGenerationHandle<CelestialTuningDTO> _celestialTuningHandle;
+        private VaultGenerationHandle<byte> _celestialCsvScratchHandle;
+        private VaultGenerationHandle<CelestialFlowModifierDTO> _celestialFlowModifierHandle;
+        private VaultGenerationHandle<double> _celestialMockTimelineHandle;
+        private VaultGenerationHandle<CelestialOrbitalParameterDTO> _celestialOrbitalParametersHandle;
         private ITickDispatcher _tickDispatcher;
         private IWorldSeedProvider _worldSeedProvider;
         private IPlayerRuntimeContext _playerRuntime;
@@ -737,6 +737,117 @@ namespace Hecton8.Environment
 
         /// <inheritdoc />
         public int TickCount => _tickCount;
+
+        internal static bool OpenOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            VaultGenerationHandle<T> handle = default;
+            return OpenOrAcquireVaultBuffer(vault, ref handle, bufferId, requiredLength, options, out buffer);
+        }
+
+        internal static bool OpenOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle))
+            {
+                handle = existingHandle;
+                if (TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer))
+                    return true;
+            }
+
+            if (vault.IsCompactionFenceActive)
+                return false;
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SeismicDirectorConstants.SeismicSystemId,
+                options);
+
+            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        internal static bool TryOpenExistingVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
+                return false;
+
+            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        internal static bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0 || !IsMatchingVaultHandle(in handle, bufferId))
+                return false;
+
+            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        internal static unsafe T* OpenVaultPointer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength)
+            where T : unmanaged
+        {
+            return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out NativeArray<T> buffer)
+                ? (T*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer)
+                : null;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) && handle.Generation != 0u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return IsMatchingVaultHandle(in handle, bufferId);
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticShaderState()
@@ -1144,117 +1255,151 @@ namespace Hecton8.Environment
                 return false;
             }
 
-            NativeArray<SeismicEventDTO> events = vault.GetBuffer<SeismicEventDTO>(
-                SeismicDirectorConstants.EventSlotsBuffer,
-                SeismicDirectorConstants.MaxQuakeSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
-            _seismicEventsHandle = vault.GetBufferHandle<SeismicEventDTO>(
-                SeismicDirectorConstants.EventSlotsBuffer,
-                SeismicDirectorConstants.MaxQuakeSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
-            _shakeOffsetHandle = vault.GetBufferHandle<ShakeOffsetDTO>(
+            if (!OpenOrAcquireVaultBuffer(
+                    vault,
+                    ref _seismicEventsHandle,
+                    SeismicDirectorConstants.EventSlotsBuffer,
+                    SeismicDirectorConstants.MaxQuakeSlots,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<SeismicEventDTO> events))
+            {
+                _seismicVaultReady = false;
+                return false;
+            }
+
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _shakeOffsetHandle,
                 SeismicDirectorConstants.ShakeOffsetBuffer,
                 SeismicOutputSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
-            _turbiditySpikeHandle = vault.GetBufferHandle<float>(
+                NativeArrayOptions.ClearMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _turbiditySpikeHandle,
                 SeismicDirectorConstants.TurbiditySpikeBuffer,
                 SeismicOutputSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
-            _seismicTelemetryHandle = vault.GetBufferHandle<SeismicDirectorTelemetryEntry>(
+                NativeArrayOptions.ClearMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _seismicTelemetryHandle,
                 SeismicDirectorConstants.TelemetryRingBuffer,
                 SeismicDirectorConstants.TelemetryFrames,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
-            _seismicTuningHandle = vault.GetBufferHandle<SeismicTuningDTO>(
+                NativeArrayOptions.ClearMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _seismicTuningHandle,
                 SeismicDirectorConstants.TuningBuffer,
                 SeismicTuningSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
-            _mockNarrativeTriggerHandle = vault.GetBufferHandle<MockNarrativeTriggerSignal>(
+                NativeArrayOptions.ClearMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _mockNarrativeTriggerHandle,
                 SeismicDirectorConstants.MockNarrativeTriggerBuffer,
                 SeismicMockSignalSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
-            _mockCameraHandle = vault.GetBufferHandle<MockCameraPosition>(
+                NativeArrayOptions.ClearMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _mockCameraHandle,
                 SeismicDirectorConstants.MockCameraPositionBuffer,
                 SeismicMockSignalSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
-            _mockSiltHandle = vault.GetBufferHandle<MockSiltSignal>(
+                NativeArrayOptions.ClearMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _mockSiltHandle,
                 SeismicDirectorConstants.MockSiltSignalBuffer,
                 SeismicMockSignalSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
-            _mockBaseModuleHandle = vault.GetBufferHandle<SeismicBaseModuleMock>(
+                NativeArrayOptions.ClearMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _mockBaseModuleHandle,
                 SeismicDirectorConstants.MockBaseModulesBuffer,
                 SeismicDirectorConstants.MockBaseModuleSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
-            _celestialStateWriteHandle = vault.GetBufferHandle<CelestialStateDTO>(
+                NativeArrayOptions.ClearMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _celestialStateWriteHandle,
                 SeismicDirectorConstants.CelestialStateWriteBuffer,
                 SeismicDirectorConstants.CelestialStateSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.UninitializedMemory);
-            _celestialStateReadHandle = vault.GetBufferHandle<CelestialStateDTO>(
+                NativeArrayOptions.UninitializedMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _celestialStateReadHandle,
                 SeismicDirectorConstants.CelestialStateReadBuffer,
                 SeismicDirectorConstants.CelestialStateSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.UninitializedMemory);
-            _celestialTelemetryHandle = vault.GetBufferHandle<CelestialTelemetryEntry>(
+                NativeArrayOptions.UninitializedMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _celestialTelemetryHandle,
                 SeismicDirectorConstants.CelestialTelemetryBuffer,
                 SeismicDirectorConstants.TelemetryFrames,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.UninitializedMemory);
-            _celestialTuningHandle = vault.GetBufferHandle<CelestialTuningDTO>(
+                NativeArrayOptions.UninitializedMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _celestialTuningHandle,
                 SeismicDirectorConstants.CelestialTuningBuffer,
                 SeismicDirectorConstants.CelestialTuningSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.UninitializedMemory);
-            _celestialCsvScratchHandle = vault.GetBufferHandle<byte>(
+                NativeArrayOptions.UninitializedMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _celestialCsvScratchHandle,
                 SeismicDirectorConstants.CelestialCsvScratchBuffer,
                 SeismicDirectorConstants.CsvBufferBytes,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.UninitializedMemory);
-            _celestialFlowModifierHandle = vault.GetBufferHandle<CelestialFlowModifierDTO>(
+                NativeArrayOptions.UninitializedMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _celestialFlowModifierHandle,
                 SeismicDirectorConstants.CelestialFlowModifierBuffer,
                 SeismicDirectorConstants.CelestialFlowSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.UninitializedMemory);
-            _celestialMockTimelineHandle = vault.GetBufferHandle<double>(
+                NativeArrayOptions.UninitializedMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _celestialMockTimelineHandle,
                 SeismicDirectorConstants.CelestialMockTimelineBuffer,
                 SeismicDirectorConstants.CelestialStateSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.UninitializedMemory);
-            _celestialOrbitalParametersHandle = vault.GetBufferHandle<CelestialOrbitalParameterDTO>(
+                NativeArrayOptions.UninitializedMemory,
+                out _);
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _celestialOrbitalParametersHandle,
                 SeismicDirectorConstants.CelestialOrbitalParametersBuffer,
                 SeismicDirectorConstants.CelestialOrbitalParameterSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.UninitializedMemory);
+                NativeArrayOptions.UninitializedMemory,
+                out _);
 
             _seismicVaultReady =
                 events.IsCreated &&
-                _seismicEventsHandle.IsCreated &&
-                _shakeOffsetHandle.IsCreated &&
-                _turbiditySpikeHandle.IsCreated &&
-                _seismicTelemetryHandle.IsCreated &&
-                _seismicTuningHandle.IsCreated &&
-                _mockNarrativeTriggerHandle.IsCreated &&
-                _mockCameraHandle.IsCreated &&
-                _mockSiltHandle.IsCreated &&
-                _mockBaseModuleHandle.IsCreated;
+                IsHandleCreated(in _seismicEventsHandle, SeismicDirectorConstants.EventSlotsBuffer) &&
+                IsHandleCreated(in _shakeOffsetHandle, SeismicDirectorConstants.ShakeOffsetBuffer) &&
+                IsHandleCreated(in _turbiditySpikeHandle, SeismicDirectorConstants.TurbiditySpikeBuffer) &&
+                IsHandleCreated(in _seismicTelemetryHandle, SeismicDirectorConstants.TelemetryRingBuffer) &&
+                IsHandleCreated(in _seismicTuningHandle, SeismicDirectorConstants.TuningBuffer) &&
+                IsHandleCreated(in _mockNarrativeTriggerHandle, SeismicDirectorConstants.MockNarrativeTriggerBuffer) &&
+                IsHandleCreated(in _mockCameraHandle, SeismicDirectorConstants.MockCameraPositionBuffer) &&
+                IsHandleCreated(in _mockSiltHandle, SeismicDirectorConstants.MockSiltSignalBuffer) &&
+                IsHandleCreated(in _mockBaseModuleHandle, SeismicDirectorConstants.MockBaseModulesBuffer);
             _celestialVaultReady =
-                _celestialStateWriteHandle.IsCreated &&
-                _celestialStateReadHandle.IsCreated &&
-                _celestialTelemetryHandle.IsCreated &&
-                _celestialTuningHandle.IsCreated &&
-                _celestialCsvScratchHandle.IsCreated &&
-                _celestialFlowModifierHandle.IsCreated &&
-                _celestialMockTimelineHandle.IsCreated &&
-                _celestialOrbitalParametersHandle.IsCreated;
+                IsHandleCreated(in _celestialStateWriteHandle, SeismicDirectorConstants.CelestialStateWriteBuffer) &&
+                IsHandleCreated(in _celestialStateReadHandle, SeismicDirectorConstants.CelestialStateReadBuffer) &&
+                IsHandleCreated(in _celestialTelemetryHandle, SeismicDirectorConstants.CelestialTelemetryBuffer) &&
+                IsHandleCreated(in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer) &&
+                IsHandleCreated(in _celestialCsvScratchHandle, SeismicDirectorConstants.CelestialCsvScratchBuffer) &&
+                IsHandleCreated(in _celestialFlowModifierHandle, SeismicDirectorConstants.CelestialFlowModifierBuffer) &&
+                IsHandleCreated(in _celestialMockTimelineHandle, SeismicDirectorConstants.CelestialMockTimelineBuffer) &&
+                IsHandleCreated(in _celestialOrbitalParametersHandle, SeismicDirectorConstants.CelestialOrbitalParametersBuffer);
 
             if (!_seismicVaultReady || !_celestialVaultReady)
                 return false;
@@ -1320,7 +1465,7 @@ namespace Hecton8.Environment
 
         private void SeedDefaultSeismicTuning()
         {
-            NativeArray<SeismicTuningDTO> tuningBuffer = _seismicTuningHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _seismicTuningHandle, SeismicDirectorConstants.TuningBuffer, SeismicTuningSlots, out NativeArray<SeismicTuningDTO> tuningBuffer);
             if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
                 return;
 
@@ -1346,7 +1491,7 @@ namespace Hecton8.Environment
 
         private void SeedDefaultCelestialTuning()
         {
-            NativeArray<CelestialTuningDTO> tuningBuffer = _celestialTuningHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.CelestialTuningSlots, out NativeArray<CelestialTuningDTO> tuningBuffer);
             if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
                 return;
 
@@ -1380,12 +1525,12 @@ namespace Hecton8.Environment
             if (_celestialBuffersInitialized || _dataVault == null)
                 return;
 
-            CelestialStateDTO* writeState = (CelestialStateDTO*)_celestialStateWriteHandle.ResolvePointer(_dataVault);
-            CelestialStateDTO* readState = (CelestialStateDTO*)_celestialStateReadHandle.ResolvePointer(_dataVault);
-            CelestialFlowModifierDTO* flow = (CelestialFlowModifierDTO*)_celestialFlowModifierHandle.ResolvePointer(_dataVault);
-            CelestialTelemetryEntry* telemetry = (CelestialTelemetryEntry*)_celestialTelemetryHandle.ResolvePointer(_dataVault);
-            double* mockTimeline = (double*)_celestialMockTimelineHandle.ResolvePointer(_dataVault);
-            CelestialOrbitalParameterDTO* orbitalParameters = (CelestialOrbitalParameterDTO*)_celestialOrbitalParametersHandle.ResolvePointer(_dataVault);
+            CelestialStateDTO* writeState = OpenVaultPointer(_dataVault, in _celestialStateWriteHandle, SeismicDirectorConstants.CelestialStateWriteBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialStateDTO* readState = OpenVaultPointer(_dataVault, in _celestialStateReadHandle, SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialFlowModifierDTO* flow = OpenVaultPointer(_dataVault, in _celestialFlowModifierHandle, SeismicDirectorConstants.CelestialFlowModifierBuffer, SeismicDirectorConstants.CelestialFlowSlots);
+            CelestialTelemetryEntry* telemetry = OpenVaultPointer(_dataVault, in _celestialTelemetryHandle, SeismicDirectorConstants.CelestialTelemetryBuffer, SeismicDirectorConstants.TelemetryFrames);
+            double* mockTimeline = OpenVaultPointer(_dataVault, in _celestialMockTimelineHandle, SeismicDirectorConstants.CelestialMockTimelineBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialOrbitalParameterDTO* orbitalParameters = OpenVaultPointer(_dataVault, in _celestialOrbitalParametersHandle, SeismicDirectorConstants.CelestialOrbitalParametersBuffer, SeismicDirectorConstants.CelestialOrbitalParameterSlots);
             if (writeState == null || readState == null || flow == null || telemetry == null || mockTimeline == null || orbitalParameters == null)
                 return;
 
@@ -1409,7 +1554,7 @@ namespace Hecton8.Environment
 
         private void SeedMockCameraAndBaseModules()
         {
-            NativeArray<MockCameraPosition> camera = _mockCameraHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _mockCameraHandle, SeismicDirectorConstants.MockCameraPositionBuffer, SeismicMockSignalSlots, out NativeArray<MockCameraPosition> camera);
             if (camera.IsCreated && camera.Length > 0)
             {
                 MockCameraPosition mock = camera[0];
@@ -1424,7 +1569,7 @@ namespace Hecton8.Environment
                 camera[0] = mock;
             }
 
-            NativeArray<SeismicBaseModuleMock> modules = _mockBaseModuleHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _mockBaseModuleHandle, SeismicDirectorConstants.MockBaseModulesBuffer, SeismicDirectorConstants.MockBaseModuleSlots, out NativeArray<SeismicBaseModuleMock> modules);
             if (!modules.IsCreated)
                 return;
 
@@ -1482,8 +1627,10 @@ namespace Hecton8.Environment
             if (!H8StaticDataArena.TryGetSectionSpan((H8DataSectionId)sectionId, out ReadOnlySpan<SeismicEventDTO> records) || records.Length == 0)
                 return false;
 
-            for (int i = 0; i < events.Length; i++)
-                events[i] = default;
+            unsafe
+            {
+                ClearSeismicEvents(events);
+            }
 
             int writeCount = 0;
             int sourceCount = math.min(records.Length, events.Length);
@@ -1564,6 +1711,11 @@ namespace Hecton8.Environment
                 if (count <= 0)
                     return false;
 
+                unsafe
+                {
+                    ClearSeismicEvents(events);
+                }
+
                 int writeCount = math.min(events.Length, count);
                 int validCount = 0;
                 byte[] record = new byte[RecordBytes]; // COLD ALLOC: byte[40] - legacy seismic fault record staging - owner: HectonSeismicTideDirector
@@ -1640,8 +1792,10 @@ namespace Hecton8.Environment
             if (!events.IsCreated)
                 return;
 
-            for (int i = 0; i < events.Length; i++)
-                events[i] = default;
+            unsafe
+            {
+                ClearSeismicEvents(events);
+            }
 
             int count = math.min(events.Length, 4);
             for (int i = 0; i < count; i++)
@@ -1658,12 +1812,22 @@ namespace Hecton8.Environment
             _emergencyFaultsGenerated = true;
         }
 
+        private static unsafe void ClearSeismicEvents(NativeArray<SeismicEventDTO> events)
+        {
+            if (!events.IsCreated || events.Length <= 0)
+                return;
+
+            void* eventsPtr = NativeArrayUnsafeUtility.GetUnsafePtr(events);
+            long bytes = (long)UnsafeUtility.SizeOf<SeismicEventDTO>() * events.Length;
+            UnsafeUtility.MemClear(eventsPtr, bytes);
+        }
+
         private unsafe void ExecuteMockNarrativeTrigger()
         {
             if (!_seismicVaultReady || _dataVault == null)
                 return;
 
-            MockNarrativeTriggerSignal* signalPtr = (MockNarrativeTriggerSignal*)_mockNarrativeTriggerHandle.ResolvePointer(_dataVault);
+            MockNarrativeTriggerSignal* signalPtr = OpenVaultPointer(_dataVault, in _mockNarrativeTriggerHandle, SeismicDirectorConstants.MockNarrativeTriggerBuffer, SeismicMockSignalSlots);
             if (signalPtr == null)
                 return;
 
@@ -1694,9 +1858,12 @@ namespace Hecton8.Environment
             if (safeMagnitude <= 0f)
                 return false;
 
+            if (!TryOpenVaultBuffer(_dataVault, in _seismicEventsHandle, SeismicDirectorConstants.EventSlotsBuffer, SeismicDirectorConstants.MaxQuakeSlots, out NativeArray<SeismicEventDTO> events))
+                return false;
+
             for (int i = 0; i < SeismicDirectorConstants.MaxQuakeSlots; i++)
             {
-                ref SeismicEventDTO slot = ref _seismicEventsHandle.GetElementAsRef(_dataVault, i);
+                SeismicEventDTO slot = events[i];
                 if (slot.Magnitude > 0.01f)
                     continue;
 
@@ -1705,6 +1872,7 @@ namespace Hecton8.Environment
                 slot.Frequency = math.max(0.1f, frequency);
                 slot.DecayRate = math.max(0.001f, decayRate);
                 slot.EventTypeHash = eventTypeHash != 0u ? eventTypeHash : SeismicDirectorConstants.EmergencyFaultHash;
+                events[i] = slot;
                 _seismicEventSequence++;
                 PublishSeismicSpawnSignals(in slot, safeMagnitude);
                 return true;
@@ -1714,7 +1882,7 @@ namespace Hecton8.Environment
             float weakestMagnitude = float.MaxValue;
             for (int i = 0; i < SeismicDirectorConstants.MaxQuakeSlots; i++)
             {
-                ref SeismicEventDTO slot = ref _seismicEventsHandle.GetElementAsRef(_dataVault, i);
+                SeismicEventDTO slot = events[i];
                 if (slot.Magnitude < weakestMagnitude)
                 {
                     weakestMagnitude = slot.Magnitude;
@@ -1722,12 +1890,13 @@ namespace Hecton8.Environment
                 }
             }
 
-            ref SeismicEventDTO replacement = ref _seismicEventsHandle.GetElementAsRef(_dataVault, replaceIndex);
+            SeismicEventDTO replacement = events[replaceIndex];
             replacement.EpicenterAUP = epicenterAup;
             replacement.Magnitude = safeMagnitude;
             replacement.Frequency = math.max(0.1f, frequency);
             replacement.DecayRate = math.max(0.001f, decayRate);
             replacement.EventTypeHash = eventTypeHash != 0u ? eventTypeHash : SeismicDirectorConstants.EmergencyFaultHash;
+            events[replaceIndex] = replacement;
             _seismicEventSequence++;
             PublishSeismicSpawnSignals(in replacement, safeMagnitude);
             return true;
@@ -1832,7 +2001,7 @@ namespace Hecton8.Environment
 
         private void PublishKineticImpactRoute(in SeismicEventDTO seismicEvent, float intensity01, float radius, uint frame)
         {
-            NativeArray<SeismicBaseModuleMock> modules = _mockBaseModuleHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _mockBaseModuleHandle, SeismicDirectorConstants.MockBaseModulesBuffer, SeismicDirectorConstants.MockBaseModuleSlots, out NativeArray<SeismicBaseModuleMock> modules);
             if (!modules.IsCreated)
                 return;
 
@@ -1934,12 +2103,12 @@ namespace Hecton8.Environment
         {
             state = default;
             flowModifier = default;
-            CelestialStateDTO* writeState = (CelestialStateDTO*)_celestialStateWriteHandle.ResolvePointer(_dataVault);
-            CelestialStateDTO* readState = (CelestialStateDTO*)_celestialStateReadHandle.ResolvePointer(_dataVault);
-            CelestialFlowModifierDTO* flow = (CelestialFlowModifierDTO*)_celestialFlowModifierHandle.ResolvePointer(_dataVault);
-            CelestialTuningDTO* tuning = (CelestialTuningDTO*)_celestialTuningHandle.ResolvePointer(_dataVault);
-            double* mockTimeline = (double*)_celestialMockTimelineHandle.ResolvePointer(_dataVault);
-            CelestialOrbitalParameterDTO* orbitalParameters = (CelestialOrbitalParameterDTO*)_celestialOrbitalParametersHandle.ResolvePointer(_dataVault);
+            CelestialStateDTO* writeState = OpenVaultPointer(_dataVault, in _celestialStateWriteHandle, SeismicDirectorConstants.CelestialStateWriteBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialStateDTO* readState = OpenVaultPointer(_dataVault, in _celestialStateReadHandle, SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialFlowModifierDTO* flow = OpenVaultPointer(_dataVault, in _celestialFlowModifierHandle, SeismicDirectorConstants.CelestialFlowModifierBuffer, SeismicDirectorConstants.CelestialFlowSlots);
+            CelestialTuningDTO* tuning = OpenVaultPointer(_dataVault, in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.CelestialTuningSlots);
+            double* mockTimeline = OpenVaultPointer(_dataVault, in _celestialMockTimelineHandle, SeismicDirectorConstants.CelestialMockTimelineBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialOrbitalParameterDTO* orbitalParameters = OpenVaultPointer(_dataVault, in _celestialOrbitalParametersHandle, SeismicDirectorConstants.CelestialOrbitalParametersBuffer, SeismicDirectorConstants.CelestialOrbitalParameterSlots);
             if (writeState == null || readState == null || flow == null || tuning == null || mockTimeline == null || orbitalParameters == null)
                 return false;
 
@@ -2020,10 +2189,10 @@ namespace Hecton8.Environment
             bool telemetryRequested = _celestialMechanicsTelemetryRequested;
             _celestialMechanicsTelemetryRequested = false;
 
-            CelestialStateDTO* writeState = (CelestialStateDTO*)_celestialStateWriteHandle.ResolvePointer(_dataVault);
-            CelestialStateDTO* readState = (CelestialStateDTO*)_celestialStateReadHandle.ResolvePointer(_dataVault);
-            CelestialFlowModifierDTO* flow = (CelestialFlowModifierDTO*)_celestialFlowModifierHandle.ResolvePointer(_dataVault);
-            CelestialTuningDTO* tuning = (CelestialTuningDTO*)_celestialTuningHandle.ResolvePointer(_dataVault);
+            CelestialStateDTO* writeState = OpenVaultPointer(_dataVault, in _celestialStateWriteHandle, SeismicDirectorConstants.CelestialStateWriteBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialStateDTO* readState = OpenVaultPointer(_dataVault, in _celestialStateReadHandle, SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialFlowModifierDTO* flow = OpenVaultPointer(_dataVault, in _celestialFlowModifierHandle, SeismicDirectorConstants.CelestialFlowModifierBuffer, SeismicDirectorConstants.CelestialFlowSlots);
+            CelestialTuningDTO* tuning = OpenVaultPointer(_dataVault, in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.CelestialTuningSlots);
             if (writeState == null || readState == null || flow == null || tuning == null)
                 return false;
 
@@ -2065,8 +2234,8 @@ namespace Hecton8.Environment
             if (_dataVault == null || !_celestialVaultReady)
                 return;
 
-            CelestialStateDTO* writeState = (CelestialStateDTO*)_celestialStateWriteHandle.ResolvePointer(_dataVault);
-            CelestialStateDTO* readState = (CelestialStateDTO*)_celestialStateReadHandle.ResolvePointer(_dataVault);
+            CelestialStateDTO* writeState = OpenVaultPointer(_dataVault, in _celestialStateWriteHandle, SeismicDirectorConstants.CelestialStateWriteBuffer, SeismicDirectorConstants.CelestialStateSlots);
+            CelestialStateDTO* readState = OpenVaultPointer(_dataVault, in _celestialStateReadHandle, SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.CelestialStateSlots);
             if (writeState == null || readState == null)
                 return;
 
@@ -2117,7 +2286,7 @@ namespace Hecton8.Environment
 
         private bool TryReadCelestialState(out CelestialStateDTO state)
         {
-            NativeArray<CelestialStateDTO> states = _celestialStateReadHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _celestialStateReadHandle, SeismicDirectorConstants.CelestialStateReadBuffer, SeismicDirectorConstants.CelestialStateSlots, out NativeArray<CelestialStateDTO> states);
             if (states.IsCreated && states.Length > 0)
             {
                 state = states[0];
@@ -2130,7 +2299,7 @@ namespace Hecton8.Environment
 
         private bool TryReadCelestialFlow(out CelestialFlowModifierDTO flowModifier)
         {
-            NativeArray<CelestialFlowModifierDTO> flows = _celestialFlowModifierHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _celestialFlowModifierHandle, SeismicDirectorConstants.CelestialFlowModifierBuffer, SeismicDirectorConstants.CelestialFlowSlots, out NativeArray<CelestialFlowModifierDTO> flows);
             if (flows.IsCreated && flows.Length > 0)
             {
                 flowModifier = flows[0];
@@ -2143,7 +2312,7 @@ namespace Hecton8.Environment
 
         private CelestialTuningDTO ReadCelestialTuning()
         {
-            NativeArray<CelestialTuningDTO> tuningBuffer = _celestialTuningHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.CelestialTuningSlots, out NativeArray<CelestialTuningDTO> tuningBuffer);
             if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
                 return tuningBuffer[0];
 
@@ -2165,8 +2334,8 @@ namespace Hecton8.Environment
 
         private void WriteCelestialTelemetryEntry(float computeMs, in CelestialStateDTO state, in CelestialFlowModifierDTO flowModifier)
         {
-            NativeArray<CelestialTelemetryEntry> telemetry = _celestialTelemetryHandle.Resolve(_dataVault);
-            NativeArray<CelestialTuningDTO> tuningBuffer = _celestialTuningHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _celestialTelemetryHandle, SeismicDirectorConstants.CelestialTelemetryBuffer, SeismicDirectorConstants.TelemetryFrames, out NativeArray<CelestialTelemetryEntry> telemetry);
+            TryOpenVaultBuffer(_dataVault, in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.CelestialTuningSlots, out NativeArray<CelestialTuningDTO> tuningBuffer);
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
@@ -2273,11 +2442,11 @@ namespace Hecton8.Environment
             if (!_seismicVaultReady || _dataVault == null || _seismicEvaluationJobScheduled)
                 return;
 
-            SeismicEventDTO* events = (SeismicEventDTO*)_seismicEventsHandle.ResolvePointer(_dataVault);
-            ShakeOffsetDTO* shake = (ShakeOffsetDTO*)_shakeOffsetHandle.ResolvePointer(_dataVault);
-            float* turbidity = (float*)_turbiditySpikeHandle.ResolvePointer(_dataVault);
-            SeismicDirectorTelemetryEntry* telemetry = (SeismicDirectorTelemetryEntry*)_seismicTelemetryHandle.ResolvePointer(_dataVault);
-            MockSiltSignal* mockSilt = (MockSiltSignal*)_mockSiltHandle.ResolvePointer(_dataVault);
+            SeismicEventDTO* events = OpenVaultPointer(_dataVault, in _seismicEventsHandle, SeismicDirectorConstants.EventSlotsBuffer, SeismicDirectorConstants.MaxQuakeSlots);
+            ShakeOffsetDTO* shake = OpenVaultPointer(_dataVault, in _shakeOffsetHandle, SeismicDirectorConstants.ShakeOffsetBuffer, SeismicOutputSlots);
+            float* turbidity = OpenVaultPointer(_dataVault, in _turbiditySpikeHandle, SeismicDirectorConstants.TurbiditySpikeBuffer, SeismicOutputSlots);
+            SeismicDirectorTelemetryEntry* telemetry = OpenVaultPointer(_dataVault, in _seismicTelemetryHandle, SeismicDirectorConstants.TelemetryRingBuffer, SeismicDirectorConstants.TelemetryFrames);
+            MockSiltSignal* mockSilt = OpenVaultPointer(_dataVault, in _mockSiltHandle, SeismicDirectorConstants.MockSiltSignalBuffer, SeismicMockSignalSlots);
             if (events == null || shake == null || turbidity == null || telemetry == null || mockSilt == null)
                 return;
 
@@ -2339,7 +2508,7 @@ namespace Hecton8.Environment
             if (_lastScheduledTelemetryIndex < 0 || _dataVault == null)
                 return;
 
-            NativeArray<SeismicDirectorTelemetryEntry> telemetry = _seismicTelemetryHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _seismicTelemetryHandle, SeismicDirectorConstants.TelemetryRingBuffer, SeismicDirectorConstants.TelemetryFrames, out NativeArray<SeismicDirectorTelemetryEntry> telemetry);
             if (!telemetry.IsCreated || _lastScheduledTelemetryIndex >= telemetry.Length)
                 return;
 
@@ -2360,8 +2529,8 @@ namespace Hecton8.Environment
             if (_dataVault == null)
                 return;
 
-            NativeArray<ShakeOffsetDTO> shakeBuffer = _shakeOffsetHandle.Resolve(_dataVault);
-            NativeArray<float> turbidityBuffer = _turbiditySpikeHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _shakeOffsetHandle, SeismicDirectorConstants.ShakeOffsetBuffer, SeismicOutputSlots, out NativeArray<ShakeOffsetDTO> shakeBuffer);
+            TryOpenVaultBuffer(_dataVault, in _turbiditySpikeHandle, SeismicDirectorConstants.TurbiditySpikeBuffer, SeismicOutputSlots, out NativeArray<float> turbidityBuffer);
             if (!shakeBuffer.IsCreated || shakeBuffer.Length <= 0 || !turbidityBuffer.IsCreated || turbidityBuffer.Length <= 0)
                 return;
 
@@ -2386,7 +2555,7 @@ namespace Hecton8.Environment
 
         private SeismicTuningDTO ReadSeismicTuning()
         {
-            NativeArray<SeismicTuningDTO> tuningBuffer = _seismicTuningHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _seismicTuningHandle, SeismicDirectorConstants.TuningBuffer, SeismicTuningSlots, out NativeArray<SeismicTuningDTO> tuningBuffer);
             if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
                 return tuningBuffer[0];
 
@@ -2416,7 +2585,7 @@ namespace Hecton8.Environment
                     return true;
             }
 
-            NativeArray<MockCameraPosition> mockCamera = _mockCameraHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _mockCameraHandle, SeismicDirectorConstants.MockCameraPositionBuffer, SeismicMockSignalSlots, out NativeArray<MockCameraPosition> mockCamera);
             if (mockCamera.IsCreated && mockCamera.Length > 0)
             {
                 cameraAup = mockCamera[0].AUP;
@@ -2441,7 +2610,7 @@ namespace Hecton8.Environment
             if (_dataVault == null)
                 return;
 
-            NativeArray<SeismicDirectorTelemetryEntry> telemetry = _seismicTelemetryHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _seismicTelemetryHandle, SeismicDirectorConstants.TelemetryRingBuffer, SeismicDirectorConstants.TelemetryFrames, out NativeArray<SeismicDirectorTelemetryEntry> telemetry);
             if (!telemetry.IsCreated)
                 return;
 
@@ -2494,7 +2663,7 @@ namespace Hecton8.Environment
             if (_dataVault == null)
                 return;
 
-            NativeArray<CelestialTelemetryEntry> telemetry = _celestialTelemetryHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _celestialTelemetryHandle, SeismicDirectorConstants.CelestialTelemetryBuffer, SeismicDirectorConstants.TelemetryFrames, out NativeArray<CelestialTelemetryEntry> telemetry);
             if (!telemetry.IsCreated)
                 return;
 
@@ -2558,7 +2727,7 @@ namespace Hecton8.Environment
             _lastCsvWriteUtc = lastWrite;
             try
             {
-                NativeArray<byte> scratch = _celestialCsvScratchHandle.Resolve(_dataVault);
+                TryOpenVaultBuffer(_dataVault, in _celestialCsvScratchHandle, SeismicDirectorConstants.CelestialCsvScratchBuffer, SeismicDirectorConstants.CsvBufferBytes, out NativeArray<byte> scratch);
                 if (!scratch.IsCreated || scratch.Length <= 0)
                     return;
 
@@ -2566,9 +2735,9 @@ namespace Hecton8.Environment
                 {
                     byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
                     int bytesRead = stream.Read(new Span<byte>(scratchPtr, scratch.Length));
-                    NativeArray<SeismicTuningDTO> tuningBuffer = _seismicTuningHandle.Resolve(_dataVault);
-                    NativeArray<CelestialTuningDTO> celestialTuningBuffer = _celestialTuningHandle.Resolve(_dataVault);
-                    NativeArray<CelestialOrbitalParameterDTO> orbitalParameters = _celestialOrbitalParametersHandle.Resolve(_dataVault);
+                    TryOpenVaultBuffer(_dataVault, in _seismicTuningHandle, SeismicDirectorConstants.TuningBuffer, SeismicTuningSlots, out NativeArray<SeismicTuningDTO> tuningBuffer);
+                    TryOpenVaultBuffer(_dataVault, in _celestialTuningHandle, SeismicDirectorConstants.CelestialTuningBuffer, SeismicDirectorConstants.CelestialTuningSlots, out NativeArray<CelestialTuningDTO> celestialTuningBuffer);
+                    TryOpenVaultBuffer(_dataVault, in _celestialOrbitalParametersHandle, SeismicDirectorConstants.CelestialOrbitalParametersBuffer, SeismicDirectorConstants.CelestialOrbitalParameterSlots, out NativeArray<CelestialOrbitalParameterDTO> orbitalParameters);
                     if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0 ||
                         !celestialTuningBuffer.IsCreated || celestialTuningBuffer.Length <= 0)
                         return;
@@ -2595,18 +2764,20 @@ namespace Hecton8.Environment
 
         private void EnsureTelemetryRing()
         {
-            if (_tideTelemetryHandle.IsCreated)
+            if (IsHandleCreated(in _tideTelemetryHandle, SeismicDirectorConstants.TideTelemetryBuffer))
                 return;
 
             IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive)
                 return;
 
-            _tideTelemetryHandle = vault.GetBufferHandle<SeismicTideTelemetryEntry>(
+            OpenOrAcquireVaultBuffer(
+                vault,
+                ref _tideTelemetryHandle,
                 SeismicDirectorConstants.TideTelemetryBuffer,
                 TelemetryCapacity,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
+                NativeArrayOptions.ClearMemory,
+                out _);
         }
 
         private void DisposeTelemetryRing()
@@ -2619,7 +2790,7 @@ namespace Hecton8.Environment
 
         private void WriteTelemetryEntry()
         {
-            NativeArray<SeismicTideTelemetryEntry> telemetry = _tideTelemetryHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _tideTelemetryHandle, SeismicDirectorConstants.TideTelemetryBuffer, TelemetryCapacity, out NativeArray<SeismicTideTelemetryEntry> telemetry);
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
@@ -2647,7 +2818,7 @@ namespace Hecton8.Environment
 
         private void DumpTelemetryRing()
         {
-            NativeArray<SeismicTideTelemetryEntry> telemetry = _tideTelemetryHandle.Resolve(_dataVault);
+            TryOpenVaultBuffer(_dataVault, in _tideTelemetryHandle, SeismicDirectorConstants.TideTelemetryBuffer, TelemetryCapacity, out NativeArray<SeismicTideTelemetryEntry> telemetry);
             if (!telemetry.IsCreated)
                 return;
 
@@ -2688,8 +2859,12 @@ namespace Hecton8.Environment
             _dataVault = GlobalRegistry.DataVault;
             _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
             _playerRuntime = GlobalRegistry.Player;
-            _fallbackAbsoluteUniverseTime = GlobalRegistry.AbsoluteUniverseTime;
             _celestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshot;
+            _fallbackAbsoluteUniverseTime = (_celestialSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u
+                ? _celestialSnapshot.AbsoluteUniverseTime
+                : Time.timeAsDouble;
+            if (!math.isfinite(_fallbackAbsoluteUniverseTime) || _fallbackAbsoluteUniverseTime < 0d)
+                _fallbackAbsoluteUniverseTime = 0d;
 
             _cachedWorldSeed = _worldSeedProvider != null && _worldSeedProvider.IsInitialized
                 ? unchecked((uint)_worldSeedProvider.RuntimeWorldSeed)
@@ -2840,8 +3015,24 @@ namespace Hecton8.Environment
                 return false;
             }
 
-            aup = AbsoluteUniversePosition.FromRuntimePosition(position);
-            return true;
+            return TryResolveRuntimeAup(position, out aup);
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 local = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(local)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(local.x, local.y, local.z));
+            return positionAup.IsFinite();
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -3239,17 +3430,17 @@ namespace Hecton8.Environment
         private unsafe struct SeismicEvaluationJob : IJob
         {
             [NoAlias, NativeDisableUnsafePtrRestriction] public SeismicEventDTO* Events;
-            [NoAlias, NativeDisableUnsafePtrRestriction] public ShakeOffsetDTO* Shake;
-            [NoAlias, NativeDisableUnsafePtrRestriction] public float* TurbiditySpike;
-            [NoAlias, NativeDisableUnsafePtrRestriction] public SeismicDirectorTelemetryEntry* Telemetry;
-            [NoAlias, NativeDisableUnsafePtrRestriction] public MockSiltSignal* MockSilt;
+            [WriteOnly, NoAlias, NativeDisableUnsafePtrRestriction] public ShakeOffsetDTO* Shake;
+            [WriteOnly, NoAlias, NativeDisableUnsafePtrRestriction] public float* TurbiditySpike;
+            [WriteOnly, NoAlias, NativeDisableUnsafePtrRestriction] public SeismicDirectorTelemetryEntry* Telemetry;
+            [WriteOnly, NoAlias, NativeDisableUnsafePtrRestriction] public MockSiltSignal* MockSilt;
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
             // ShockwaveWriter is a write-only dispatcher signal lane. The job never reads queue state and never aliases the event/shake/turbidity pointers.
             // SAFETY_JUSTIFICATION_PARAGRAPH_2:
             // Rejected main-thread shockwave emission because it would force a synchronous scan after seismic solve. Rejected a NativeList handoff because it adds allocator ownership and a second compaction pass.
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
             // The scheduled handle is registered through H8Memory immediately after Schedule(), and LateFrame finalization uses DispatcherJobFence so consumers see this queue only after the swap fence resolves.
-            [NativeDisableContainerSafetyRestriction] public NativeQueue<SeismicShockwaveSignal>.ParallelWriter ShockwaveWriter;
+            [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<SeismicShockwaveSignal>.ParallelWriter ShockwaveWriter;
             public int EventCapacity;
             public int TelemetryIndex;
             public double3 CameraAUP;
@@ -3664,9 +3855,8 @@ namespace Hecton8.Environment
             _sineOnlyToggle.value = (seismic.Flags & SeismicTuningDTO.FlagSineOnly) != 0u;
             _suppressUiCallbacks = false;
 
-            if (vault.TryGetBufferHandle(SeismicDirectorConstants.CelestialStateReadBuffer, out VaultBufferHandle<CelestialStateDTO> stateHandle))
+            if (HectonSeismicTideDirector.TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.CelestialStateReadBuffer, 1, out NativeArray<CelestialStateDTO> states))
             {
-                NativeArray<CelestialStateDTO> states = stateHandle.Resolve(vault);
                 if (states.IsCreated && states.Length > 0)
                 {
                     CelestialStateDTO state = states[0];
@@ -3697,17 +3887,15 @@ namespace Hecton8.Environment
             DrawRect(painter, rect, new Color(0.012f, 0.018f, 0.022f, 1f));
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !vault.TryGetBufferHandle(SeismicDirectorConstants.CelestialTelemetryBuffer, out VaultBufferHandle<CelestialTelemetryEntry> telemetryHandle))
+                !HectonSeismicTideDirector.TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.CelestialTelemetryBuffer, 2, out NativeArray<CelestialTelemetryEntry> telemetry))
                 return;
 
-            NativeArray<CelestialTelemetryEntry> telemetry = telemetryHandle.Resolve(vault);
             if (!telemetry.IsCreated || telemetry.Length <= 1)
                 return;
 
             float amplitude = 1f;
-            if (vault.TryGetBufferHandle(SeismicDirectorConstants.CelestialTuningBuffer, out VaultBufferHandle<CelestialTuningDTO> tuningHandle))
+            if (HectonSeismicTideDirector.TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.CelestialTuningBuffer, 1, out NativeArray<CelestialTuningDTO> tuning))
             {
-                NativeArray<CelestialTuningDTO> tuning = tuningHandle.Resolve(vault);
                 if (tuning.IsCreated && tuning.Length > 0)
                     amplitude = math.max(0.0001f, tuning[0].TideAmplitudeMeters);
             }
@@ -3810,19 +3998,20 @@ namespace Hecton8.Environment
             out NativeArray<SeismicTuningDTO> seismicTuning,
             out NativeArray<CelestialTuningDTO> celestialTuning)
         {
-            VaultBufferHandle<SeismicTuningDTO> seismicHandle = vault.GetBufferHandle<SeismicTuningDTO>(
+            bool hasSeismic = HectonSeismicTideDirector.OpenOrAcquireVaultBuffer(
+                vault,
                 SeismicDirectorConstants.TuningBuffer,
                 1,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
-            VaultBufferHandle<CelestialTuningDTO> celestialHandle = vault.GetBufferHandle<CelestialTuningDTO>(
+                NativeArrayOptions.ClearMemory,
+                out seismicTuning);
+            bool hasCelestial = HectonSeismicTideDirector.OpenOrAcquireVaultBuffer(
+                vault,
                 SeismicDirectorConstants.CelestialTuningBuffer,
                 1,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.UninitializedMemory);
-            seismicTuning = seismicHandle.Resolve(vault);
-            celestialTuning = celestialHandle.Resolve(vault);
-            return seismicTuning.IsCreated && seismicTuning.Length > 0 &&
+                NativeArrayOptions.UninitializedMemory,
+                out celestialTuning);
+            return hasSeismic && hasCelestial &&
+                   seismicTuning.IsCreated && seismicTuning.Length > 0 &&
                    celestialTuning.IsCreated && celestialTuning.Length > 0;
         }
 
@@ -3838,17 +4027,12 @@ namespace Hecton8.Environment
             if (!Application.isPlaying || vault == null)
                 return;
 
-            if (!vault.TryGetBufferHandle(SeismicDirectorConstants.EventSlotsBuffer, out VaultBufferHandle<SeismicEventDTO> eventsHandle))
-                return;
-
-            NativeArray<SeismicEventDTO> events = eventsHandle.Resolve(vault);
-            if (!events.IsCreated)
+            if (!HectonSeismicTideDirector.TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.EventSlotsBuffer, 1, out NativeArray<SeismicEventDTO> events))
                 return;
 
             float radiusPerMagnitude = 125f;
-            if (vault.TryGetBufferHandle(SeismicDirectorConstants.TuningBuffer, out VaultBufferHandle<SeismicTuningDTO> tuningHandle))
+            if (HectonSeismicTideDirector.TryOpenExistingVaultBuffer(vault, SeismicDirectorConstants.TuningBuffer, 1, out NativeArray<SeismicTuningDTO> tuning))
             {
-                NativeArray<SeismicTuningDTO> tuning = tuningHandle.Resolve(vault);
                 if (tuning.IsCreated && tuning.Length > 0)
                     radiusPerMagnitude = math.max(1f, tuning[0].ShockwaveRadiusPerMagnitude);
             }
@@ -3873,16 +4057,20 @@ namespace Hecton8.Environment
 
         private static void InjectTestEvent(IDataVault vault, in SeismicTuningDTO tuning)
         {
-            VaultBufferHandle<SeismicEventDTO> handle = vault.GetBufferHandle<SeismicEventDTO>(
-                SeismicDirectorConstants.EventSlotsBuffer,
-                SeismicDirectorConstants.MaxQuakeSlots,
-                SeismicDirectorConstants.SeismicSystemId,
-                NativeArrayOptions.ClearMemory);
+            if (!HectonSeismicTideDirector.OpenOrAcquireVaultBuffer(
+                    vault,
+                    SeismicDirectorConstants.EventSlotsBuffer,
+                    SeismicDirectorConstants.MaxQuakeSlots,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<SeismicEventDTO> events))
+            {
+                return;
+            }
 
             int index = 0;
             for (int i = 0; i < SeismicDirectorConstants.MaxQuakeSlots; i++)
             {
-                ref SeismicEventDTO slot = ref handle.GetElementAsRef(vault, i);
+                SeismicEventDTO slot = events[i];
                 if (slot.Magnitude <= 0.01f)
                 {
                     index = i;
@@ -3890,12 +4078,13 @@ namespace Hecton8.Environment
                 }
             }
 
-            ref SeismicEventDTO target = ref handle.GetElementAsRef(vault, index);
+            SeismicEventDTO target = events[index];
             target.EpicenterAUP = new double3(0d, -2000d, 0d);
             target.Magnitude = 8.6f;
             target.Frequency = math.max(0.1f, tuning.NoiseFrequency);
             target.DecayRate = math.max(0.001f, tuning.DecayRate);
             target.EventTypeHash = SeismicDirectorConstants.EmergencyFaultHash;
+            events[index] = target;
             SceneView.RepaintAll();
         }
     }

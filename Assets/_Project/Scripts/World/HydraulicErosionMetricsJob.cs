@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -8,68 +10,83 @@ namespace Hecton8.World
     /// <summary>
     /// Block-level erosion result metrics for cold-path verification and editor smoke tests.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 56)]
     public struct HydraulicErosionMetricBlock
     {
         /// <summary>Minimum finite height in the block.</summary>
+        [FieldOffset(0)]
         public float MinHeight;
 
         /// <summary>Maximum finite height in the block.</summary>
+        [FieldOffset(4)]
         public float MaxHeight;
 
         /// <summary>Finite height sum in the block.</summary>
+        [FieldOffset(8)]
         public float SumHeight;
 
         /// <summary>Finite sediment mask sum in the block.</summary>
+        [FieldOffset(12)]
         public float SumSediment;
 
         /// <summary>Finite wear mask sum in the block.</summary>
+        [FieldOffset(16)]
         public float SumWear;
 
         /// <summary>Maximum finite sediment value in the block.</summary>
+        [FieldOffset(20)]
         public float MaxSediment;
 
         /// <summary>Maximum finite wear value in the block.</summary>
+        [FieldOffset(24)]
         public float MaxWear;
 
         /// <summary>Maximum finite height delta in the audited boundary band.</summary>
+        [FieldOffset(28)]
         public float MaxBoundaryHeightDelta;
 
         /// <summary>Maximum finite sediment value in the audited boundary band.</summary>
+        [FieldOffset(32)]
         public float MaxBoundarySediment;
 
         /// <summary>Maximum finite wear value in the audited boundary band.</summary>
+        [FieldOffset(36)]
         public float MaxBoundaryWear;
 
         /// <summary>Number of sampled cells with non-finite height, sediment, or wear.</summary>
+        [FieldOffset(40)]
         public int NanCount;
 
         /// <summary>Number of finite sampled cells in the block.</summary>
+        [FieldOffset(44)]
         public int SampleCount;
 
         /// <summary>Number of finite sampled cells in the audited boundary band.</summary>
+        [FieldOffset(48)]
         public int BoundarySampleCount;
 
         /// <summary>Number of boundary-band cells with non-finite height, sediment, wear, or neighbor data.</summary>
+        [FieldOffset(52)]
         public int BoundaryNanCount;
     }
 
     /// <summary>
     /// Burst scan over erosion buffers. It replaces editor cold-path scalar metric loops with block-parallel work.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct HydraulicErosionMetricsJob : IJobParallelFor
     {
         /// <summary>Eroded height buffer to scan.</summary>
-        [ReadOnly] public NativeArray<float> Heightmap;
+        [ReadOnly, NoAlias] public NativeArray<float> Heightmap;
 
         /// <summary>Sediment mask buffer to scan.</summary>
-        [ReadOnly] public NativeArray<float> SedimentMask;
+        [ReadOnly, NoAlias] public NativeArray<float> SedimentMask;
 
         /// <summary>Wear mask buffer to scan.</summary>
-        [ReadOnly] public NativeArray<float> WearMask;
+        [ReadOnly, NoAlias] public NativeArray<float> WearMask;
 
         /// <summary>Block metric output buffer.</summary>
-        [WriteOnly] public NativeArray<HydraulicErosionMetricBlock> Blocks;
+        [WriteOnly, NoAlias] public NativeArray<HydraulicErosionMetricBlock> Blocks;
 
         /// <summary>Total number of valid samples in the scanned buffers.</summary>
         public int SampleCount;
@@ -192,14 +209,14 @@ namespace Hecton8.World
     /// <summary>
     /// Burst reduction over metric blocks. Keeps smoke-test aggregation off the managed main-thread loop.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct HydraulicErosionMetricReductionJob : IJob
     {
         /// <summary>Metric blocks produced by <see cref="HydraulicErosionMetricsJob"/>.</summary>
-        [ReadOnly] public NativeArray<HydraulicErosionMetricBlock> Blocks;
+        [ReadOnly, NoAlias] public NativeArray<HydraulicErosionMetricBlock> Blocks;
 
         /// <summary>Single-element summary output.</summary>
-        [WriteOnly] public NativeArray<HydraulicErosionMetricBlock> Summary;
+        [WriteOnly, NoAlias] public NativeArray<HydraulicErosionMetricBlock> Summary;
 
         /// <summary>Number of valid metric blocks to reduce.</summary>
         public int BlockCount;

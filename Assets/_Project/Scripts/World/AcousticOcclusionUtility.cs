@@ -63,14 +63,14 @@ namespace Hecton8.World
         public float HitDistanceMeters;
         public float Transmission01;
         public float LowPassCutoffHz;
-        public bool HasHit;
+        public byte HasHit;
 
         public AcousticForwardEchoResult(float hitDistanceMeters, float transmission01, float lowPassCutoffHz, bool hasHit)
         {
             HitDistanceMeters = hitDistanceMeters;
             Transmission01 = transmission01;
             LowPassCutoffHz = lowPassCutoffHz;
-            HasHit = hasHit;
+            HasHit = hasHit ? (byte)1 : (byte)0;
         }
     }
 
@@ -163,16 +163,24 @@ namespace Hecton8.World
         private static int WaterLayer = -1;
         private static bool _layerCacheInitialized;
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct QueryKey
         {
+            [FieldOffset(0)]
             public Vector3 SourcePosition;
+            [FieldOffset(12)]
             public int LayerMask;
+            [FieldOffset(16)]
             public Vector3 ListenerPosition;
+            [FieldOffset(28)]
             private int _padding0;
+            [FieldOffset(32)]
             public ulong IgnoreOriginRootEntityId;
+            [FieldOffset(40)]
             public ulong IgnoreTargetRootEntityId;
+            [FieldOffset(48)]
             public ulong IgnoreOriginBodyEntityId;
+            [FieldOffset(56)]
             public ulong IgnoreTargetBodyEntityId;
         }
 
@@ -180,17 +188,23 @@ namespace Hecton8.World
         {
             public QueryKey Key;
             public AcousticOcclusionResult Result;
-            public bool Valid;
+            public byte Valid;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct ForwardEchoKey
         {
+            [FieldOffset(0)]
             public Vector3 OriginPosition;
+            [FieldOffset(12)]
             public float ProbeDistance;
+            [FieldOffset(16)]
             public Vector3 ForwardDirection;
+            [FieldOffset(28)]
             public int LayerMask;
+            [FieldOffset(32)]
             public ulong IgnoreRootEntityId;
+            [FieldOffset(40)]
             public ulong IgnoreBodyEntityId;
         }
 
@@ -198,7 +212,7 @@ namespace Hecton8.World
         {
             public ForwardEchoKey Key;
             public AcousticForwardEchoResult Result;
-            public bool Valid;
+            public byte Valid;
         }
 
         private static int _runtimeOwnerCount;
@@ -243,10 +257,10 @@ namespace Hecton8.World
             _nextCacheWriteIndex = 0;
             _triggerPresetActive = false;
             _triggerPresetResult = BuildOpenWaterResult(1f);
-            _cachedForwardEchoEntry.Valid = false;
+            _cachedForwardEchoEntry.Valid = 0;
 
             for (int i = 0; i < MaxQueuedRequests; i++)
-                _cachedEntries[i].Valid = false;
+                _cachedEntries[i].Valid = 0;
 
         }
 
@@ -265,10 +279,10 @@ namespace Hecton8.World
                 return;
 
             _nextCacheWriteIndex = 0;
-            _cachedForwardEchoEntry.Valid = false;
+            _cachedForwardEchoEntry.Valid = 0;
 
             for (int i = 0; i < MaxQueuedRequests; i++)
-                _cachedEntries[i].Valid = false;
+                _cachedEntries[i].Valid = 0;
         }
 
         public static int BuildSensoryMask()
@@ -345,7 +359,7 @@ namespace Hecton8.World
 
             _cachedForwardEchoEntry.Key = queryKey;
             _cachedForwardEchoEntry.Result = BuildDistanceForwardEchoResult(queryKey);
-            _cachedForwardEchoEntry.Valid = true;
+            _cachedForwardEchoEntry.Valid = 1;
         }
 
         public static bool TryGetCachedOcclusionPath(
@@ -469,7 +483,7 @@ namespace Hecton8.World
             result = BuildDistanceForwardEchoResult(queryKey);
             _cachedForwardEchoEntry.Key = queryKey;
             _cachedForwardEchoEntry.Result = result;
-            _cachedForwardEchoEntry.Valid = true;
+            _cachedForwardEchoEntry.Valid = 1;
             return true;
         }
 
@@ -598,7 +612,10 @@ namespace Hecton8.World
         {
             result = default;
             Vector3 midpointRuntime = sourcePosition + (listenerPosition - sourcePosition) * 0.5f;
-            double3 midpointAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(midpointRuntime);
+            if (!TryResolveAupFromRuntimeOrigin(midpointRuntime, out AbsoluteUniversePosition midpointPositionAup))
+                return false;
+
+            double3 midpointAup = midpointPositionAup.ToAbsoluteDouble3();
             if (!HectonVoxelVolume.GetSDFDensity(midpointAup, out float density) || !(density > 0f))
                 return false;
 
@@ -714,8 +731,12 @@ namespace Hecton8.World
 
         private static float ResolveAupDistanceMeters(Vector3 sourcePosition, Vector3 listenerPosition)
         {
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
-            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerPosition);
+            if (!TryResolveAupFromRuntimeOrigin(sourcePosition, out AbsoluteUniversePosition sourceAup) ||
+                !TryResolveAupFromRuntimeOrigin(listenerPosition, out AbsoluteUniversePosition listenerAup))
+            {
+                return float.MaxValue;
+            }
+
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in sourceAup, in listenerAup);
             if (distanceSq <= 0d)
                 return 0f;
@@ -725,6 +746,22 @@ namespace Hecton8.World
 
             double distanceMeters = distanceSq * math.rsqrt(distanceSq);
             return distanceMeters >= float.MaxValue ? float.MaxValue : (float)distanceMeters;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in positionAup);
         }
 
         private static void ApplyFloraScattering(
@@ -779,7 +816,7 @@ namespace Hecton8.World
         {
             for (int i = 0; i < MaxQueuedRequests; i++)
             {
-                if (!_cachedEntries[i].Valid)
+                if (_cachedEntries[i].Valid == 0)
                     continue;
 
                 if (!KeysMatch(_cachedEntries[i].Key, queryKey))
@@ -795,7 +832,7 @@ namespace Hecton8.World
 
         private static bool TryFindCachedForwardEchoResult(ForwardEchoKey queryKey, out AcousticForwardEchoResult result)
         {
-            if (_cachedForwardEchoEntry.Valid && ForwardEchoKeysMatch(_cachedForwardEchoEntry.Key, queryKey))
+            if (_cachedForwardEchoEntry.Valid != 0 && ForwardEchoKeysMatch(_cachedForwardEchoEntry.Key, queryKey))
             {
                 result = _cachedForwardEchoEntry.Result;
                 return true;
@@ -809,7 +846,7 @@ namespace Hecton8.World
         {
             for (int i = 0; i < MaxQueuedRequests; i++)
             {
-                if (_cachedEntries[i].Valid && KeysMatch(_cachedEntries[i].Key, queryKey))
+                if (_cachedEntries[i].Valid != 0 && KeysMatch(_cachedEntries[i].Key, queryKey))
                 {
                     _cachedEntries[i].Result = result;
                     return;
@@ -819,7 +856,7 @@ namespace Hecton8.World
             int writeIndex = _nextCacheWriteIndex;
             _cachedEntries[writeIndex].Key = queryKey;
             _cachedEntries[writeIndex].Result = result;
-            _cachedEntries[writeIndex].Valid = true;
+            _cachedEntries[writeIndex].Valid = 1;
             _nextCacheWriteIndex = (writeIndex + 1) & MaxQueuedRequestsMask;
         }
 

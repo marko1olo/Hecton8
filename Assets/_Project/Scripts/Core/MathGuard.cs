@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core.Memory;
-using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -20,7 +19,6 @@ namespace Hecton8.Core
         private const int MaxMainThreadDrainPerLateFrame = 32;
         private const float MinDirectionLengthSq = 0.000001f;
         private const float UnitDirectionLengthSqTolerance = 0.0625f;
-        private const float MinTransportSpeedMultiplier = 0.01f;
         private const int NaNErrorHash = unchecked((int)0x4E414E21); // "NAN!"
         private const BufferID InvalidNumberCodesBufferId = (BufferID)70883;
         private const BufferID InvalidNumberCounterBufferId = (BufferID)70884;
@@ -246,14 +244,6 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsFinite(in AbsoluteUniversePosition value)
-        {
-            return math.isfinite(value.LocalX) &&
-                   math.isfinite(value.LocalY) &&
-                   math.isfinite(value.LocalZ);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SanitizeFinite(float value, float fallback = 0f)
         {
             return math.isfinite(value) ? value : fallback;
@@ -320,35 +310,6 @@ namespace Hecton8.Core
             if (ay >= az)
                 return new float3(0f, value.y < 0f ? -1f : 1f, 0f);
             return new float3(0f, 0f, value.z < 0f ? -1f : 1f);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static AbsoluteUniversePosition SanitizeAup(
-            in AbsoluteUniversePosition value,
-            in AbsoluteUniversePosition fallback)
-        {
-            return IsFinite(in value) ? value : fallback;
-        }
-
-        public static PlayerMovementRuntimeState SanitizePlayerMovementRuntimeState(
-            in PlayerMovementRuntimeState value,
-            in PlayerMovementRuntimeState fallback)
-        {
-            PlayerMovementRuntimeState sanitized = value;
-            sanitized.WorldPosition = SanitizeFinite(value.WorldPosition, fallback.WorldPosition);
-            sanitized.PredictedWorldPosition = SanitizeFinite(value.PredictedWorldPosition, sanitized.WorldPosition);
-            sanitized.PredictedAup = SanitizeAup(in value.PredictedAup, in fallback.PredictedAup);
-            sanitized.Velocity = SanitizeFinite(value.Velocity, fallback.Velocity);
-            sanitized.Forward = SanitizeDirection(value.Forward, fallback.Forward);
-            sanitized.CameraForward = SanitizeDirection(value.CameraForward, sanitized.Forward);
-            sanitized.DepthMeters = SanitizeNonNegative(value.DepthMeters, fallback.DepthMeters);
-            sanitized.TransportSpeedMultiplier = math.max(
-                MinTransportSpeedMultiplier,
-                SanitizeFinite(value.TransportSpeedMultiplier, fallback.TransportSpeedMultiplier));
-            sanitized.UnderwaterStressIntensity01 = Sanitize01(
-                value.UnderwaterStressIntensity01,
-                fallback.UnderwaterStressIntensity01);
-            return sanitized;
         }
 
         private static bool EnsureInvalidNumberBuffers(bool allowAllocate)
@@ -453,12 +414,20 @@ namespace Hecton8.Core
             [FieldOffset(12)] public int OverflowFlag;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public unsafe struct InvalidNumberWriter
         {
-            [NativeDisableUnsafePtrRestriction] private int* _codes;
-            [NativeDisableUnsafePtrRestriction] private InvalidNumberCounter64* _counter;
-            private int _capacity;
+            [FieldOffset(0)]
+            [NativeDisableUnsafePtrRestriction]
+            private int* _codes;
+
+            [FieldOffset(8)]
+            [NativeDisableUnsafePtrRestriction]
+            private InvalidNumberCounter64* _counter;
+
+            [FieldOffset(16)] private int _capacity;
+            [FieldOffset(20)] private uint _pad0;
+            [FieldOffset(24)] private ulong _pad1;
 
             internal InvalidNumberWriter(
                 NativeArray<int> codes,
@@ -467,6 +436,8 @@ namespace Hecton8.Core
                 _codes = codes.IsCreated ? (int*)NativeArrayUnsafeUtility.GetUnsafePtr(codes) : null;
                 _counter = counters.IsCreated ? (InvalidNumberCounter64*)NativeArrayUnsafeUtility.GetUnsafePtr(counters) : null;
                 _capacity = codes.IsCreated ? codes.Length : 0;
+                _pad0 = 0u;
+                _pad1 = 0UL;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

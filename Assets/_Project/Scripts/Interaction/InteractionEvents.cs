@@ -66,6 +66,7 @@ namespace Hecton8.Interaction
         private const uint InteractionQueueContextHash = 0x49455650u; // IEVP
         private const uint InteractionReferenceSlotExhaustedWarningHash = 0x49524653u; // IRFS
         private const uint InteractionReferenceSlotContextHash = 0x49524643u; // IRFC
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
         private struct InteractionReferenceSlot
         {
@@ -81,12 +82,83 @@ namespace Hecton8.Interaction
             }
         }
 
-        // COLD ALLOC: RegistryBucket<IInteractionEventListener>[32] — interaction listeners drained by SystemDispatcher LateUpdate — owner: InteractionEvents
-        private static readonly RegistryBucket<IInteractionEventListener> _listeners = new RegistryBucket<IInteractionEventListener>(ListenerCapacity);
-        // COLD ALLOC: IInteractionEventListener[32] - listener additions deferred while dispatching interaction events - owner: InteractionEvents
-        private static readonly IInteractionEventListener[] _deferredRegisterListeners = new IInteractionEventListener[ListenerCapacity];
-        // COLD ALLOC: IInteractionEventListener[32] - listener removals deferred while dispatching interaction events - owner: InteractionEvents
-        private static readonly IInteractionEventListener[] _deferredUnregisterListeners = new IInteractionEventListener[ListenerCapacity];
+        // Fixed listener storage avoids interface-container array exposure during dispatcher drain.
+        private struct ListenerSlot
+        {
+            public IInteractionEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct InteractionListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public InteractionListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity]; // COLD ALLOC: ListenerSlot[32] - fixed interaction listener slots drained by SystemDispatcher LateUpdate - owner: InteractionEvents
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IInteractionEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IInteractionEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void TryUnregister(IInteractionEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public IInteractionEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        private static InteractionListenerRegistry _listeners = new InteractionListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: ListenerSlot[32] - listener additions deferred while dispatching interaction events - owner: InteractionEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[32] - listener removals deferred while dispatching interaction events - owner: InteractionEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: InteractionReferenceSlot[128] — managed reference sidecar for unmanaged interaction payloads — owner: InteractionEvents
         private static readonly InteractionReferenceSlot[] _referenceSlots = new InteractionReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[128] — reference slot occupancy map prevents wrap overwrite before deferred flush — owner: InteractionEvents
@@ -215,14 +287,13 @@ namespace Hecton8.Interaction
                 if (!_pendingEvents.TryDequeue(out InteractionEventPayload payload))
                     break;
 
-                IInteractionEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IInteractionEventListener listener = rawArray[i];
+                        IInteractionEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -394,7 +465,7 @@ namespace Hecton8.Interaction
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<InteractionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InteractionEventPayload>[128] — deferred interaction event lane flushed by SystemDispatcher LateUpdate — owner: InteractionEvents
+                _pendingEvents = new NativeQueue<InteractionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InteractionEventPayload>[128] — deferred interaction event lane flushed by SystemDispatcher LateUpdate — owner: InteractionEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -406,7 +477,7 @@ namespace Hecton8.Interaction
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<InteractionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InteractionEventPayload>[128] — next-frame interaction event lane prevents same-frame reentrant dispatch — owner: InteractionEvents
+                _nextFrameEvents = new NativeQueue<InteractionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<InteractionEventPayload>[128] — next-frame interaction event lane prevents same-frame reentrant dispatch — owner: InteractionEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -602,7 +673,7 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IInteractionEventListener listener)
@@ -622,19 +693,19 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IInteractionEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -645,12 +716,12 @@ namespace Hecton8.Interaction
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -659,7 +730,7 @@ namespace Hecton8.Interaction
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -670,7 +741,7 @@ namespace Hecton8.Interaction
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -681,8 +752,8 @@ namespace Hecton8.Interaction
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IInteractionEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IInteractionEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -691,8 +762,8 @@ namespace Hecton8.Interaction
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IInteractionEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IInteractionEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }

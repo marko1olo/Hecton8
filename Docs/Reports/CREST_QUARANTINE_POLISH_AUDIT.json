@@ -1,0 +1,209 @@
+{
+  "agent_id": "SHINOBU_260",
+  "checks": [
+    {
+      "detail": "Packages/com.waveharmonic.crest absent; archived package exists under Docs/Archive.",
+      "name": "crest5_package_outside_unity_visibility",
+      "status": "PASS"
+    },
+    {
+      "detail": "Crest-specific forensic MonoBehaviours and metas live under the Crest bridge folder, not World.",
+      "name": "crest_debuggers_owned_by_bridge_folder",
+      "status": "PASS"
+    },
+    {
+      "detail": "Core diagnostic text names the generic ocean route instead of the Crest donor implementation.",
+      "name": "core_no_crest_named_diagnostic_strings",
+      "status": "PASS"
+    },
+    {
+      "detail": "Ocean_Crest prefab no longer carries the quarantined Crest5 adapter component, script GUID, or fileID.",
+      "name": "crest5_prefab_adapter_reference_removed",
+      "status": "PASS"
+    },
+    {
+      "detail": "Player prefab no longer owns an active Crest.UnderwaterRenderer component; underwater pass ownership stays behind the bridge command path.",
+      "name": "player_prefab_has_no_direct_underwater_renderer",
+      "status": "PASS"
+    },
+    {
+      "detail": "Crest5 WaveHarmonic serialized settings assets and metas are archived under Docs/Archive, not active Assets/_Project/Data.",
+      "name": "crest5_migration_assets_outside_unity_visibility",
+      "status": "PASS"
+    },
+    {
+      "detail": "Crest-specific sargassum input shaders and metas live under the Crest bridge folder; direct Crest HLSL includes are no longer in shared Art/Shaders.",
+      "name": "crest_input_shaders_owned_by_bridge_folder",
+      "status": "PASS"
+    },
+    {
+      "detail": "Binary Crest5 sandbox scene and meta are archived outside Unity visibility.",
+      "name": "crest5_scene_outside_unity_visibility",
+      "status": "PASS"
+    },
+    {
+      "detail": "Easy Save global assembly scan defaults no longer list Crest or WaveHarmonic assemblies outside the bridge.",
+      "name": "easy_save_defaults_no_crest_assemblies",
+      "status": "PASS"
+    },
+    {
+      "detail": "Root InitTestScene YAML files no longer ask Unity TestRunner to load WaveHarmonic Crest assemblies.",
+      "name": "root_init_test_scenes_no_waveharmonic_crest",
+      "status": "PASS"
+    },
+    {
+      "detail": "Core visual bridge no longer exposes Crest-named underwater renderer verbs; vendor texture ID is read through the bridge.",
+      "name": "visual_bridge_contract_vendor_neutral",
+      "status": "PASS"
+    },
+    {
+      "detail": "Shared first-party ocean kinematics base no longer carries a Crest-specific type or filename.",
+      "name": "ocean_kinematics_base_vendor_neutral",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dry-volume render pass no longer hard-codes the Crest camera color global; it reads the active ocean visual bridge ID.",
+      "name": "dry_volume_reads_vendor_texture_id_through_bridge",
+      "status": "PASS"
+    },
+    {
+      "detail": "Comments/tooltips in low-risk non-bridge authoring text use ocean donor vocabulary; serialized Player/World ABI names remain documented debt.",
+      "name": "low_risk_non_bridge_text_uses_ocean_vocabulary",
+      "status": "PASS"
+    },
+    {
+      "detail": "Fallback adapter is a readonly struct, not a managed class container.",
+      "name": "emergency_mock_value_type",
+      "status": "PASS"
+    },
+    {
+      "detail": "Fallback sampling job keeps the explicit Burst compile flags.",
+      "name": "emergency_mock_burst_flags",
+      "status": "PASS"
+    },
+    {
+      "detail": "Fallback scheduling returns JobHandle and does not force same-frame completion.",
+      "name": "emergency_mock_no_hidden_complete",
+      "status": "PASS"
+    },
+    {
+      "detail": "OceanSampleRequestDTO offset contract matches the SHINOBU_260 mandate.",
+      "name": "request_dto_explicit_32_bytes",
+      "status": "PASS"
+    },
+    {
+      "detail": "Strict ocean DTO contract exposes raw fields, not hot-path properties.",
+      "name": "no_hot_dto_properties",
+      "status": "PASS"
+    },
+    {
+      "detail": "SHINOBU_260 owns local numeric Vault IDs 72960..72965 instead of reusing Atmosphere ShinobuOcean lanes.",
+      "name": "vault_lane_ids_do_not_reuse_atmosphere_ocean_ids",
+      "status": "PASS"
+    },
+    {
+      "detail": "Vault lane binding uses static validation helpers rather than struct properties.",
+      "name": "vault_lane_no_iscreated_property",
+      "status": "PASS"
+    },
+    {
+      "detail": "Request, result, telemetry, profile, global water, and CSV lanes request uninitialized memory.",
+      "name": "vault_uninitialized_lanes",
+      "status": "PASS"
+    },
+    {
+      "detail": "CSV profile header detection is byte-only and does not carry a managed string helper.",
+      "name": "csv_header_no_string_helper",
+      "status": "PASS"
+    },
+    {
+      "detail": "Editor AUP x-ray subtracts the floating origin before casting to Vector3.",
+      "name": "gizmo_aup_localizes_before_vector3",
+      "status": "PASS"
+    },
+    {
+      "detail": "Editor gizmo reads the cold diagnostic DataVault route and does not use latest-created fallback.",
+      "name": "gizmo_vault_read_editor_only",
+      "status": "PASS"
+    },
+    {
+      "detail": "Runtime Crest bridge stays opt-in and cannot leak into unrelated assemblies by auto-reference.",
+      "name": "bridge_asmdef_not_auto_referenced",
+      "status": "PASS"
+    },
+    {
+      "detail": "Base Crest visual bridge reads only cold-bound renderer/cache hooks and does not poll Crest singletons.",
+      "name": "base_bridge_no_ocean_singleton_polling",
+      "status": "PASS"
+    },
+    {
+      "detail": "Underwater Has/Try bridge reads use cached component identity; component lookup remains in Ensure command path only.",
+      "name": "base_bridge_underwater_reads_are_cache_only",
+      "status": "PASS"
+    },
+    {
+      "detail": "Depth-cache bootstrap uses its serialized/local Crest binding and does not recover through the Crest global singleton.",
+      "name": "depth_cache_bootstrap_no_ocean_singleton_fallback",
+      "status": "PASS"
+    },
+    {
+      "detail": "HectonUnderwaterVisuals routes Crest visual access through IOceanVisualBridge instead of string reflection fallbacks.",
+      "name": "underwater_visuals_no_crest_reflection_fallback",
+      "status": "PASS"
+    },
+    {
+      "detail": "Presentation code uses underwater pass vocabulary; the only retained Crest sky field name is serialized ABI migration metadata.",
+      "name": "underwater_visuals_vendor_neutral_pass_vocabulary",
+      "status": "PASS"
+    },
+    {
+      "detail": "ScheduleWaveHeightRequests uses cold cached binding/fallback AUP and does not repair dependencies in the hot submission path.",
+      "name": "runtime_adapter_no_hot_component_lookup",
+      "status": "PASS"
+    },
+    {
+      "detail": "Runtime adapter no longer reconstructs AUP authority from Transform.position.",
+      "name": "runtime_adapter_no_transform_root_aup_reconstruction",
+      "status": "PASS"
+    },
+    {
+      "detail": "Legacy Crest4 adapter no longer repairs component bindings from read accessors or ResolveOceanRenderer; binding discovery stays in Awake.",
+      "name": "legacy_crest4_adapter_no_hot_component_repair",
+      "status": "PASS"
+    },
+    {
+      "detail": "Legacy weather/sea-level/collision read paths use cached fields and do not log, poll GlobalRegistry, or repair bindings.",
+      "name": "legacy_crest4_read_accessors_do_not_log_or_poll_registry",
+      "status": "PASS"
+    },
+    {
+      "detail": "TryBuildBurstTuning reads the cached Crest owner and does not route through logging resolver or registry fallback.",
+      "name": "legacy_crest4_tuning_is_cached_read_only",
+      "status": "PASS"
+    },
+    {
+      "detail": "Crest bridge editor assembly no longer references the forbidden EasySave3 assembly.",
+      "name": "editor_bridge_no_easysave3_reference",
+      "status": "PASS"
+    },
+    {
+      "detail": "Last Crest dependency scanner report has breach_count=0.",
+      "name": "dependency_scanner_last_report_zero_breaches",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dependency scanner reports non-failing Crest vocabulary debt separately from asmdef/direct-reference breaches.",
+      "name": "dependency_scanner_tracks_vocabulary_debt",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dependency scanner uses ripgrep for the widened active serialized surface, keeps bounded Python fallback, and hard-fails visible Crest5 package reactivation.",
+      "name": "dependency_scanner_uses_rg_for_broad_serialized_surface",
+      "status": "PASS"
+    }
+  ],
+  "domain": "CREST_VERSION_QUARANTINE_DIRECTOR",
+  "evidence_class": "STATIC_SOURCE_ONLY_NO_REBUILD",
+  "failed_count": 0,
+  "status": "PASS"
+}

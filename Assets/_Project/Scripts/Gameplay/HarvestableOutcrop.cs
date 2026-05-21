@@ -242,9 +242,12 @@ namespace Hecton8.Gameplay
 
             float power01 = math.saturate(math.max(MinimumToolPower, toolPower));
             uint seed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ (uint)(Time.frameCount + 1);
+            if (!TryResolveAupFromRuntimeOrigin(hitPoint + normalizedHitNormal * 0.04f, out AbsoluteUniversePosition positionAup))
+                return;
+
             DebrisSpawnSignal signal = new DebrisSpawnSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint + normalizedHitNormal * 0.04f),
+                PositionAup = positionAup,
                 SpeciesHash = OutcropShardSpeciesHash,
                 SourceEntityId = seed == 0u ? 1u : seed,
                 Intensity01 = power01,
@@ -252,11 +255,6 @@ namespace Hecton8.Gameplay
                 Flags = DebrisSpawnSignal.FlagComputeShard,
                 Quantity = (ushort)math.clamp(8 + (int)(power01 * 48f), 8, 64)
             };
-            if (!math.isfinite(signal.PositionAup.LocalX) ||
-                !math.isfinite(signal.PositionAup.LocalY) ||
-                !math.isfinite(signal.PositionAup.LocalZ))
-                return;
-
             SignalBus<DebrisSpawnSignal>.Push(in signal);
         }
 
@@ -548,13 +546,8 @@ namespace Hecton8.Gameplay
             if (itemHashId == 0 || quantity <= 0)
                 return;
 
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-            if (!math.isfinite(positionAup.LocalX) ||
-                !math.isfinite(positionAup.LocalY) ||
-                !math.isfinite(positionAup.LocalZ))
-            {
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
                 return;
-            }
 
             ItemAcquiredSignal signal = new ItemAcquiredSignal
             {
@@ -567,6 +560,26 @@ namespace Hecton8.Gameplay
                 Frame = unchecked((uint)Time.frameCount)
             };
             GlobalSignals.Publish(in signal);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return aup.IsFinite();
         }
 
         private string ResolveLocalized(string key, string fallback)

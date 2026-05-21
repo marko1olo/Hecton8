@@ -1,5 +1,7 @@
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
@@ -102,74 +104,94 @@ namespace Hecton8.Physics
             if (vault == null)
                 return;
 
-            NativeArray<int> bootstrap = vault.GetBufferHandle<int>(
-                CablePhysics132BufferIds.BootstrapState,
-                1,
-                SystemID.Physics,
-                NativeArrayOptions.ClearMemory).Resolve(vault);
+            if (!TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.BootstrapState,
+                    1,
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<int> bootstrap))
+            {
+                return;
+            }
+
             if (bootstrap.IsCreated && bootstrap.Length > 0 && bootstrap[0] == CablePhysics132Constants.BootstrapMagic)
                 return;
 
-            NativeArray<CableNodeDTO> nodes = vault.GetBufferHandle<CableNodeDTO>(
-                CablePhysics132BufferIds.CableNodes,
-                CablePhysics132Constants.MockNodeCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<TetherConstraintDTO> constraints = vault.GetBufferHandle<TetherConstraintDTO>(
-                CablePhysics132BufferIds.CableConstraints,
-                CablePhysics132Constants.MockConstraintCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<TetherEndpointAupDTO> endpoints = vault.GetBufferHandle<TetherEndpointAupDTO>(
-                CablePhysics132BufferIds.Endpoints,
-                CablePhysics132Constants.MockTetherCount,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<TetherSplineVertexDTO> vertices = vault.GetBufferHandle<TetherSplineVertexDTO>(
-                CablePhysics132BufferIds.SplineVertices,
-                CablePhysics132Constants.MockSplineVertexCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<float> tensions = vault.GetBufferHandle<float>(
-                CablePhysics132BufferIds.SegmentTensions,
-                CablePhysics132Constants.MockConstraintCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<PhysicsEventPayload> events = vault.GetBufferHandle<PhysicsEventPayload>(
-                CablePhysics132BufferIds.PhysicsEvents,
-                CablePhysics132Constants.PhysicsEventCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<TetherTelemetryEntry> telemetryRing = vault.GetBufferHandle<TetherTelemetryEntry>(
-                CablePhysics132BufferIds.TelemetryRing,
-                CablePhysics132Constants.TelemetryCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<int> telemetryHead = vault.GetBufferHandle<int>(
-                CablePhysics132BufferIds.TelemetryHead,
-                1,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<double3> pinnedAups = vault.GetBufferHandle<double3>(
-                CablePhysics132BufferIds.PinnedAups,
-                CablePhysics132Constants.MockNodeCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<byte> pinnedMask = vault.GetBufferHandle<byte>(
-                CablePhysics132BufferIds.PinnedMask,
-                CablePhysics132Constants.MockNodeCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<VerletCableTuningDTO> tuning = vault.GetBufferHandle<VerletCableTuningDTO>(
-                CablePhysics132BufferIds.Tuning,
-                1,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
-            NativeArray<CableMaterialDTO> materials = vault.GetBufferHandle<CableMaterialDTO>(
-                CablePhysics132BufferIds.CableMaterials,
-                CablePhysics132Constants.MaterialCapacity,
-                SystemID.Physics,
-                NativeArrayOptions.UninitializedMemory).Resolve(vault);
+            if (!TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.CableNodes,
+                    CablePhysics132Constants.MockNodeCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<CableNodeDTO> nodes) ||
+                !TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.CableConstraints,
+                    CablePhysics132Constants.MockConstraintCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<TetherConstraintDTO> constraints) ||
+                !TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.Endpoints,
+                    CablePhysics132Constants.MockTetherCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<TetherEndpointAupDTO> endpoints) ||
+                !TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.SplineVertices,
+                    CablePhysics132Constants.MockSplineVertexCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<TetherSplineVertexDTO> vertices) ||
+                !TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.SegmentTensions,
+                    CablePhysics132Constants.MockConstraintCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<float> tensions) ||
+                !TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.PhysicsEvents,
+                    CablePhysics132Constants.PhysicsEventCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<PhysicsEventPayload> events) ||
+                !TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.TelemetryRing,
+                    CablePhysics132Constants.TelemetryCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<TetherTelemetryEntry> telemetryRing) ||
+                !TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.TelemetryHead,
+                    1,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<int> telemetryHead) ||
+                !TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.PinnedAups,
+                    CablePhysics132Constants.MockNodeCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<double3> pinnedAups) ||
+                !TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.PinnedMask,
+                    CablePhysics132Constants.MockNodeCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<byte> pinnedMask) ||
+                !TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.Tuning,
+                    1,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<VerletCableTuningDTO> tuning) ||
+                !TryOpenOrAcquireVaultView(
+                    vault,
+                    CablePhysics132BufferIds.CableMaterials,
+                    CablePhysics132Constants.MaterialCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<CableMaterialDTO> materials))
+            {
+                return;
+            }
 
             JobHandle zeroHandle = new ZeroInitCableBuffersJob
             {
@@ -224,42 +246,17 @@ namespace Hecton8.Physics
             pinnedMask = default;
             tuning = default;
 
-            if (vault == null ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.CableNodes, out VaultBufferHandle<CableNodeDTO> nodeHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.CableConstraints, out VaultBufferHandle<TetherConstraintDTO> constraintHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.Endpoints, out VaultBufferHandle<TetherEndpointAupDTO> endpointHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.SplineVertices, out VaultBufferHandle<TetherSplineVertexDTO> vertexHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.SegmentTensions, out VaultBufferHandle<float> tensionHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.PhysicsEvents, out VaultBufferHandle<PhysicsEventPayload> eventHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.TelemetryRing, out VaultBufferHandle<TetherTelemetryEntry> telemetryHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.TelemetryHead, out VaultBufferHandle<int> headHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.PinnedAups, out VaultBufferHandle<double3> pinnedAupHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.PinnedMask, out VaultBufferHandle<byte> pinnedMaskHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.Tuning, out VaultBufferHandle<VerletCableTuningDTO> tuningHandle))
-            {
-                return false;
-            }
-
-            nodes = nodeHandle.Resolve(vault);
-            constraints = constraintHandle.Resolve(vault);
-            endpoints = endpointHandle.Resolve(vault);
-            vertices = vertexHandle.Resolve(vault);
-            segmentTensions = tensionHandle.Resolve(vault);
-            physicsEvents = eventHandle.Resolve(vault);
-            telemetryRing = telemetryHandle.Resolve(vault);
-            telemetryHead = headHandle.Resolve(vault);
-            pinnedAups = pinnedAupHandle.Resolve(vault);
-            pinnedMask = pinnedMaskHandle.Resolve(vault);
-            tuning = tuningHandle.Resolve(vault);
-            return nodes.IsCreated &&
-                   constraints.IsCreated &&
-                   endpoints.IsCreated &&
-                   vertices.IsCreated &&
-                   segmentTensions.IsCreated &&
-                   physicsEvents.IsCreated &&
-                   telemetryRing.IsCreated &&
-                   telemetryHead.IsCreated &&
-                   tuning.IsCreated;
+            return TryOpenExistingVaultView(vault, CablePhysics132BufferIds.CableNodes, out nodes) &&
+                   TryOpenExistingVaultView(vault, CablePhysics132BufferIds.CableConstraints, out constraints) &&
+                   TryOpenExistingVaultView(vault, CablePhysics132BufferIds.Endpoints, out endpoints) &&
+                   TryOpenExistingVaultView(vault, CablePhysics132BufferIds.SplineVertices, out vertices) &&
+                   TryOpenExistingVaultView(vault, CablePhysics132BufferIds.SegmentTensions, out segmentTensions) &&
+                   TryOpenExistingVaultView(vault, CablePhysics132BufferIds.PhysicsEvents, out physicsEvents) &&
+                   TryOpenExistingVaultView(vault, CablePhysics132BufferIds.TelemetryRing, out telemetryRing) &&
+                   TryOpenExistingVaultView(vault, CablePhysics132BufferIds.TelemetryHead, out telemetryHead) &&
+                   TryOpenExistingVaultView(vault, CablePhysics132BufferIds.PinnedAups, out pinnedAups) &&
+                   TryOpenExistingVaultView(vault, CablePhysics132BufferIds.PinnedMask, out pinnedMask) &&
+                   TryOpenExistingVaultView(vault, CablePhysics132BufferIds.Tuning, out tuning);
         }
 
         public static JobHandle ScheduleMock(
@@ -405,24 +402,13 @@ namespace Hecton8.Physics
             return SignalBus<PhysicsEventPayload>.ParallelWriter;
         }
 
-        public static bool TrySampleLatestTelemetry(out TetherTelemetryEntry telemetry)
-        {
-            telemetry = default;
-            return TrySampleLatestTelemetry(GlobalRegistry.DataVault, out telemetry);
-        }
-
         public static bool TrySampleLatestTelemetry(IDataVault vault, out TetherTelemetryEntry telemetry)
         {
             telemetry = default;
-            if (vault == null ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.TelemetryRing, out VaultBufferHandle<TetherTelemetryEntry> ringHandle) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.TelemetryHead, out VaultBufferHandle<int> headHandle))
-            {
+            if (!TryReadExistingVaultView(vault, CablePhysics132BufferIds.TelemetryRing, out NativeArray<TetherTelemetryEntry> ring) ||
+                !TryReadExistingVaultView(vault, CablePhysics132BufferIds.TelemetryHead, out NativeArray<int> headArray))
                 return false;
-            }
 
-            NativeArray<TetherTelemetryEntry> ring = ringHandle.Resolve(vault);
-            NativeArray<int> headArray = headHandle.Resolve(vault);
             if (!ring.IsCreated || !headArray.IsCreated || ring.Length <= 0 || headArray.Length <= 0)
                 return false;
 
@@ -433,11 +419,6 @@ namespace Hecton8.Physics
             return telemetry.FrameIndex != 0u || telemetry.NodeCount > 0;
         }
 
-        public static bool TryDumpCableSurgeon(uint reasonFlags)
-        {
-            return TryDumpCableSurgeon(GlobalRegistry.DataVault, reasonFlags);
-        }
-
         public static bool TryDumpCableSurgeon(IDataVault vault, uint reasonFlags)
         {
             DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
@@ -446,14 +427,10 @@ namespace Hecton8.Physics
 
         public static bool TryDumpLatestVault(IDataVault vault, string projectRoot, uint reasonFlags)
         {
-            if (vault == null ||
-                string.IsNullOrEmpty(projectRoot) ||
-                !vault.TryGetBufferHandle(CablePhysics132BufferIds.TelemetryRing, out VaultBufferHandle<TetherTelemetryEntry> ringHandle))
-            {
+            if (string.IsNullOrEmpty(projectRoot) ||
+                !TryReadExistingVaultView(vault, CablePhysics132BufferIds.TelemetryRing, out NativeArray<TetherTelemetryEntry> ring))
                 return false;
-            }
 
-            NativeArray<TetherTelemetryEntry> ring = ringHandle.Resolve(vault);
             if (!ring.IsCreated || ring.Length <= 0)
                 return false;
 
@@ -462,6 +439,86 @@ namespace Hecton8.Physics
             WriteTelemetryDump(Path.Combine(logDirectory, "Dump_SHINOBU_132.bin"), ring, reasonFlags);
             WriteTelemetryDump(Path.Combine(logDirectory, "Dump_CABLE_SURGEON.bin"), ring, reasonFlags);
             return true;
+        }
+
+        public static bool TryOpenOrAcquireTuningView(IDataVault vault, out NativeArray<VerletCableTuningDTO> tuning)
+        {
+            return TryOpenOrAcquireVaultView(
+                vault,
+                CablePhysics132BufferIds.Tuning,
+                1,
+                NativeArrayOptions.ClearMemory,
+                out tuning);
+        }
+
+        public static bool TryOpenOrAcquireMaterialView(IDataVault vault, out NativeArray<CableMaterialDTO> materials)
+        {
+            return TryOpenOrAcquireVaultView(
+                vault,
+                CablePhysics132BufferIds.CableMaterials,
+                CablePhysics132Constants.MaterialCapacity,
+                NativeArrayOptions.ClearMemory,
+                out materials);
+        }
+
+        private static bool TryOpenOrAcquireVaultView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            int required = math.max(1, requiredLength);
+            if (vault == null)
+                return false;
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existing) &&
+                vault.TryResolveHandle(in existing, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= required)
+            {
+                return true;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                buffer = default;
+                return false;
+            }
+
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+                bufferId,
+                required,
+                SystemID.Physics,
+                options);
+            return vault.TryResolveHandle(in acquired, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= required;
+        }
+
+        private static bool TryOpenExistingVaultView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool TryReadExistingVaultView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
 
         private static void WriteTelemetryDump(string path, NativeArray<TetherTelemetryEntry> ring, uint reasonFlags)
@@ -680,9 +737,9 @@ namespace Hecton8.Physics
             float q = math.saturate(qualityWeight);
             float t = (frameIndex & 1023u) * 0.0125f;
             return new float3(
-                math.sin(t * 0.73f) * math.lerp(0.025f, 0.14f, q),
-                math.cos(t * 0.37f) * math.lerp(0.01f, 0.06f, q),
-                math.sin(t * 0.51f + 1.7f) * math.lerp(0.025f, 0.12f, q));
+                VerletCableSimdMath.SinPolynomial7(t * 0.73f) * math.lerp(0.025f, 0.14f, q),
+                VerletCableSimdMath.CosPolynomial7(t * 0.37f) * math.lerp(0.01f, 0.06f, q),
+                VerletCableSimdMath.SinPolynomial7(t * 0.51f + 1.7f) * math.lerp(0.025f, 0.12f, q));
         }
 
         private static float Smooth01(float value)
@@ -733,6 +790,14 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct GenerateMockTethersJob : IJob
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Nodes is a preallocated owner pointer lane filled deterministically during mock bootstrap. The job bounds writes
+        // by NodeCount and writes each row in a single sequential bootstrap phase.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Managed cable-node objects were rejected for GC and virtual dispatch. A temporary NativeArray node set was
+        // rejected because it would require a second copy into the owner lane.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is exclusive bootstrap ownership: no cable simulation job reads Nodes until this generation handle is fenced.
         [NoAlias, NativeDisableUnsafePtrRestriction] public CableNodeDTO* Nodes;
         public int NodeCount;
         [NoAlias] public NativeArray<TetherConstraintDTO> Constraints;
@@ -773,7 +838,7 @@ namespace Hecton8.Physics
                         continue;
 
                     float t = i * math.rcp(math.max(1, nodesPerTether - 1));
-                    double3 sag = new double3(0.0, -math.sin(t * math.PI) * math.lerp(0.35f, 2.25f, q), 0.0);
+                    double3 sag = new double3(0.0, -VerletCableSimdMath.SinPolynomial7(t * math.PI) * math.lerp(0.35f, 2.25f, q), 0.0);
                     double3 position = anchor + (payload - anchor) * (double)t + sag;
                     ref CableNodeDTO node = ref UnsafeUtility.AsRef<CableNodeDTO>((byte*)Nodes + nodeIndex * VerletCableLayout.CableNodeStrideBytes);
                     node.CurrentAUP = position;
@@ -798,7 +863,9 @@ namespace Hecton8.Physics
                     int nodeB = nodeA + 1;
                     ref CableNodeDTO a = ref UnsafeUtility.AsRef<CableNodeDTO>((byte*)Nodes + nodeA * VerletCableLayout.CableNodeStrideBytes);
                     ref CableNodeDTO b = ref UnsafeUtility.AsRef<CableNodeDTO>((byte*)Nodes + nodeB * VerletCableLayout.CableNodeStrideBytes);
-                    float restLength = (float)math.length(b.CurrentAUP - a.CurrentAUP);
+                    double3 restDeltaAup = b.CurrentAUP - a.CurrentAUP;
+                    float3 restLocal = AupPrecisionMath.DowncastLocalDelta(restDeltaAup, float3.zero);
+                    float restLength = VerletCableSimdMath.LengthFromSq(math.lengthsq(restLocal));
                     Constraints[constraintIndex] = new TetherConstraintDTO
                     {
                         NodeA = nodeA,
@@ -820,6 +887,15 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct AdvanceMockCableEndpointsJob : IJob
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Nodes is the mutable endpoint lane and endpoint/pin NativeArrays provide bounded driver data. Raw pointer access
+        // is gated by NodeCount and the fixed cable layout.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Updating endpoint Transforms or managed cable objects was rejected because the simulation is AUP/Burst-owned.
+        // Duplicating node state was rejected because it creates rollback shadow state.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is single endpoint advancement before point simulation; this job is the only writer to Nodes in
+        // that phase and its handle is chained forward.
         [NoAlias, NativeDisableUnsafePtrRestriction] public CableNodeDTO* Nodes;
         public int NodeCount;
         [NoAlias] public NativeArray<TetherEndpointAupDTO> Endpoints;
@@ -840,14 +916,14 @@ namespace Hecton8.Physics
                 double3 anchor = SanitizeAup(endpoint.AnchorAUP, new double3(cable * 4.0, -24.0, cable * 2.25));
                 double phase = time * (0.55 + cable * 0.05);
                 double3 payload = anchor + new double3(
-                    18.0 + math.sin((float)phase) * math.lerp(0.25f, 1.8f, q),
-                    -2.0 + math.cos((float)(phase * 0.73)) * math.lerp(0.12f, 0.65f, q),
-                    7.5 + math.sin((float)(phase * 0.37 + 1.1)) * math.lerp(0.25f, 1.2f, q));
+                    18.0 + VerletCableSimdMath.SinPolynomial7((float)phase) * math.lerp(0.25f, 1.8f, q),
+                    -2.0 + VerletCableSimdMath.CosPolynomial7((float)(phase * 0.73)) * math.lerp(0.12f, 0.65f, q),
+                    7.5 + VerletCableSimdMath.SinPolynomial7((float)(phase * 0.37 + 1.1)) * math.lerp(0.25f, 1.2f, q));
                 endpoint.PayloadAUP = payload;
                 endpoint.AbyssalCurrentAcceleration = new float3(
-                    math.sin(time * 0.71f + cable) * math.lerp(0.025f, 0.15f, q),
-                    math.cos(time * 0.49f + cable) * math.lerp(0.012f, 0.08f, q),
-                    math.sin(time * 0.61f + cable * 0.7f) * math.lerp(0.025f, 0.14f, q));
+                    VerletCableSimdMath.SinPolynomial7(time * 0.71f + cable) * math.lerp(0.025f, 0.15f, q),
+                    VerletCableSimdMath.CosPolynomial7(time * 0.49f + cable) * math.lerp(0.012f, 0.08f, q),
+                    VerletCableSimdMath.SinPolynomial7(time * 0.61f + cable * 0.7f) * math.lerp(0.025f, 0.14f, q));
                 endpoint.GlobalQualityWeight = q;
                 Endpoints[cable] = endpoint;
 
@@ -888,6 +964,14 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct SimulateCablePointsJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Nodes is a contiguous node lane partitioned by Execute index. Pin lanes are read-only NativeArrays and cannot
+        // alias the raw node pointer.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Per-node MonoBehaviour simulation was rejected for scale and GC. A full node copy per iteration was rejected
+        // because it doubles memory bandwidth in the hot Verlet loop.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is one node row per worker index; no other job writes Nodes during this simulation handle.
         [NoAlias, NativeDisableUnsafePtrRestriction] public CableNodeDTO* Nodes;
         public int NodeCount;
         [ReadOnly, NoAlias] public NativeArray<double3> PinnedAUPs;
@@ -940,7 +1024,7 @@ namespace Hecton8.Physics
             if (!math.isfinite(stepSq) || stepSq > maxStep * maxStep)
             {
                 step = IsFinite(step) && stepSq > 0.00000001
-                    ? step * (maxStep * math.rsqrt(stepSq))
+                    ? step * (maxStep * math.rsqrt(math.max(stepSq, 0.00000001)))
                     : double3.zero;
                 flags |= CableNodeFlags132.NonFiniteRecovered;
             }
@@ -964,6 +1048,15 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct SolveCableConstraintsJob : IJob
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Nodes is the mutable cable state lane and Constraints is read-only. The single constraint solve job owns node
+        // mutation for its iteration window, so raw pointer safety cannot infer but code order guarantees exclusivity.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Parallel atomics on node corrections were rejected because they cause contention and nondeterministic order.
+        // Duplicating node buffers for every iteration was rejected because it multiplies bandwidth.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is serialized constraint solve ownership: this IJob is the only writer to Nodes until it returns
+        // the handle consumed by spline generation and telemetry.
         [NoAlias, NativeDisableUnsafePtrRestriction] public CableNodeDTO* Nodes;
         public int NodeCount;
         [ReadOnly, NoAlias] public NativeArray<TetherConstraintDTO> Constraints;
@@ -978,7 +1071,7 @@ namespace Hecton8.Physics
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // The scheduler acquires one ParallelWriter for this solve pass, writes finite PhysicsEventPayload values during
         // the final constraint iteration only, and does not dispose or reconfigure the SignalBus lane while the handle lives.
-        [NativeDisableContainerSafetyRestriction]
+        [NoAlias, NativeDisableContainerSafetyRestriction]
         public NativeQueue<PhysicsEventPayload>.ParallelWriter PhysicsEventWriter;
         public byte PhysicsEventWriterEnabled;
         public double3 CameraAUP;
@@ -1122,6 +1215,15 @@ namespace Hecton8.Physics
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct GenerateSplineVerticesJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Nodes is read-only spline input lowered to a pointer for contiguous access. Vertex output is a separate NativeArray
+        // lane with its own safety handle and index bounds.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rebuilding spline control points as managed lists was rejected for GC. Copying Nodes into a temporary read array
+        // was rejected because it adds a full bandwidth pass before rendering.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is read-only node traversal in this stage; only Vertices[index] ranges are written by workers and
+        // the caller fences the generated vertices before GPU upload.
         [NoAlias, NativeDisableUnsafePtrRestriction] public CableNodeDTO* Nodes;
         public int NodeCount;
         [ReadOnly, NoAlias] public NativeArray<float> SegmentTensions;
@@ -1169,7 +1271,7 @@ namespace Hecton8.Physics
             float3 tangent = p2 - p1;
             float tangentSq = math.lengthsq(tangent);
             tangent = math.isfinite(tangentSq) && tangentSq > 0.000001f
-                ? tangent * math.rsqrt(tangentSq)
+                ? tangent * math.rsqrt(math.max(tangentSq, 0.000001f))
                 : new float3(0f, 0f, 1f);
 
             int tensionIndex = constraintOffset + segment;

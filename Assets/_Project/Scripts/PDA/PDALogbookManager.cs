@@ -14,7 +14,7 @@ namespace Hecton8.PDA
     /// <summary>
     /// Immutable PDA journal entry snapshot used by UI and debug consumers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct PDALogbookEntry
     {
         public PDALogbookEntry(int sequence, int dayIndex, float dayTimeHours, float playTimeSeconds, int titleHash, int messageHash, int originHash)
@@ -26,28 +26,31 @@ namespace Hecton8.PDA
             TitleHash = titleHash;
             MessageHash = messageHash;
             OriginHash = originHash;
+            _pad0 = 0u;
         }
 
         /// <summary>Monotonic insertion order for stable sorting.</summary>
-        public int Sequence { get; }
+        [FieldOffset(0)] public readonly int Sequence;
 
         /// <summary>Day number captured at the moment of the journal event.</summary>
-        public int DayIndex { get; }
+        [FieldOffset(4)] public readonly int DayIndex;
 
         /// <summary>Hour-of-day stamp captured at the moment of the journal event.</summary>
-        public float DayTimeHours { get; }
+        [FieldOffset(8)] public readonly float DayTimeHours;
 
         /// <summary>Total playtime in seconds when the event was recorded.</summary>
-        public float PlayTimeSeconds { get; }
+        [FieldOffset(12)] public readonly float PlayTimeSeconds;
 
         /// <summary>Short journal headline localization hash.</summary>
-        public int TitleHash { get; }
+        [FieldOffset(16)] public readonly int TitleHash;
 
         /// <summary>Long-form journal summary localization hash.</summary>
-        public int MessageHash { get; }
+        [FieldOffset(20)] public readonly int MessageHash;
 
         /// <summary>Deduplication event hash owned by the source event.</summary>
-        public int OriginHash { get; }
+        [FieldOffset(24)] public readonly int OriginHash;
+
+        [FieldOffset(28)] private readonly uint _pad0;
 
         /// <summary>Cold-path string reconstruction for legacy debug consumers.</summary>
         public string Title

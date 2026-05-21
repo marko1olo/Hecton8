@@ -116,12 +116,9 @@ namespace Hecton8.SaveSystem.Editor
                 return;
             }
 
-            VaultBufferHandle<VoxelDeltaCompressionTuningDTO> handle = vault.GetBufferHandle<VoxelDeltaCompressionTuningDTO>(
-                BufferID.SaveVoxelDeltaTuning,
-                1,
-                SystemID.SavePersistence,
-                NativeArrayOptions.ClearMemory);
-            NativeArray<VoxelDeltaCompressionTuningDTO> tuningBuffer = handle.Resolve(vault);
+            if (!TryOpenOrAcquireTuningBuffer(vault, out NativeArray<VoxelDeltaCompressionTuningDTO> tuningBuffer))
+                return;
+
             if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
                 return;
 
@@ -154,12 +151,9 @@ namespace Hecton8.SaveSystem.Editor
             if (vault == null)
                 return;
 
-            VaultBufferHandle<VoxelDeltaCompressionTuningDTO> handle = vault.GetBufferHandle<VoxelDeltaCompressionTuningDTO>(
-                BufferID.SaveVoxelDeltaTuning,
-                1,
-                SystemID.SavePersistence,
-                NativeArrayOptions.ClearMemory);
-            NativeArray<VoxelDeltaCompressionTuningDTO> tuningBuffer = handle.Resolve(vault);
+            if (!TryOpenOrAcquireTuningBuffer(vault, out NativeArray<VoxelDeltaCompressionTuningDTO> tuningBuffer))
+                return;
+
             if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
                 return;
 
@@ -176,12 +170,9 @@ namespace Hecton8.SaveSystem.Editor
             if (vault == null)
                 return;
 
-            VaultBufferHandle<VoxelDeltaCompressionTuningDTO> handle = vault.GetBufferHandle<VoxelDeltaCompressionTuningDTO>(
-                BufferID.SaveVoxelDeltaTuning,
-                1,
-                SystemID.SavePersistence,
-                NativeArrayOptions.ClearMemory);
-            NativeArray<VoxelDeltaCompressionTuningDTO> tuningBuffer = handle.Resolve(vault);
+            if (!TryOpenOrAcquireTuningBuffer(vault, out NativeArray<VoxelDeltaCompressionTuningDTO> tuningBuffer))
+                return;
+
             if (!tuningBuffer.IsCreated || tuningBuffer.Length == 0)
                 return;
 
@@ -208,7 +199,7 @@ namespace Hecton8.SaveSystem.Editor
             if (_summary == null)
                 return;
 
-            if (!TryResolveExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryRing, out NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetry) ||
+            if (!TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryRing, out NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetry) ||
                 telemetry.Length == 0)
             {
                 _summary.text = "Voxel delta WAL telemetry ring is empty.";
@@ -216,7 +207,7 @@ namespace Hecton8.SaveSystem.Editor
             }
 
             int last = 0;
-            if (TryResolveExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryCursor, out NativeArray<int> cursor) && cursor.Length > 0)
+            if (TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryCursor, out NativeArray<int> cursor) && cursor.Length > 0)
                 last = math.max(0, cursor[0] - 1);
 
             VoxelDeltaCompressionTelemetryEntry entry = telemetry[last % telemetry.Length];
@@ -238,7 +229,7 @@ namespace Hecton8.SaveSystem.Editor
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !TryResolveExistingBuffer(vault, BufferID.SaveVoxelDeltaSectorStats, out NativeArray<VoxelDeltaSectorStatsDTO> stats))
+                !TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaSectorStats, out NativeArray<VoxelDeltaSectorStatsDTO> stats))
             {
                 return;
             }
@@ -277,7 +268,7 @@ namespace Hecton8.SaveSystem.Editor
 
                 IDataVault vault = GlobalRegistry.DataVault;
                 if (vault == null ||
-                    !TryResolveExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryRing, out NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetry) ||
+                    !TryReadExistingBuffer(vault, BufferID.SaveVoxelDeltaTelemetryRing, out NativeArray<VoxelDeltaCompressionTelemetryEntry> telemetry) ||
                     telemetry.Length == 0)
                 {
                     painter.strokeColor = new Color(0.35f, 0.35f, 0.35f, 1f);
@@ -324,17 +315,47 @@ namespace Hecton8.SaveSystem.Editor
             }
         }
 
-        private static bool TryResolveExistingBuffer<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer) where T : struct
+        private static bool TryOpenOrAcquireTuningBuffer(
+            IDataVault vault,
+            out NativeArray<VoxelDeltaCompressionTuningDTO> buffer)
         {
             buffer = default;
-            if (vault == null ||
-                !vault.TryGetBufferHandle(bufferId, out VaultBufferHandle<T> handle))
+            if (vault == null)
+                return false;
+
+            if (vault.TryGetGenerationHandle(
+                    BufferID.SaveVoxelDeltaTuning,
+                    out VaultGenerationHandle<VoxelDeltaCompressionTuningDTO> existing) &&
+                vault.TryResolveHandle(in existing, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length > 0)
             {
+                return true;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                buffer = default;
                 return false;
             }
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated;
+            VaultGenerationHandle<VoxelDeltaCompressionTuningDTO> handle = vault.GetGenerationHandle<VoxelDeltaCompressionTuningDTO>(
+                BufferID.SaveVoxelDeltaTuning,
+                1,
+                SystemID.SavePersistence,
+                NativeArrayOptions.ClearMemory);
+            return vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length > 0;
+        }
+
+        private static bool TryReadExistingBuffer<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
     }
 }

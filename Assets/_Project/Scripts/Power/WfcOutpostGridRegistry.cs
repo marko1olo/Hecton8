@@ -11,14 +11,14 @@ namespace Hecton8.Power
     /// </summary>
     public readonly struct WfcOutpostGridLease
     {
+        public readonly WfcOutpostGridDescriptor Descriptor;
+        public readonly NativeArray<byte> Cells;
+
         public WfcOutpostGridLease(in WfcOutpostGridDescriptor descriptor, NativeArray<byte> cells)
         {
             Descriptor = descriptor;
             Cells = cells;
         }
-
-        public WfcOutpostGridDescriptor Descriptor { get; }
-        public NativeArray<byte> Cells { get; }
     }
 
     /// <summary>
@@ -27,12 +27,13 @@ namespace Hecton8.Power
     public static class WfcOutpostGridRegistry
     {
         private const int SlotCount = 4;
+        private const int DataVaultExemptGridSlotCount = SlotCount;
         private const SystemID LogisticsGridSystemId = (SystemID)512;
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
 
         // COLD ALLOC: NativeArray<byte>[4] - registered WFC grid slot handles - owner: WfcOutpostGridRegistry
-        private static readonly NativeArray<byte>[] _gridSlots = new NativeArray<byte>[SlotCount];
+        private static readonly NativeArray<byte>[] _gridSlots = new NativeArray<byte>[DataVaultExemptGridSlotCount];
         // COLD ALLOC: WfcOutpostGridDescriptor[4] - registered WFC grid descriptors - owner: WfcOutpostGridRegistry
         private static readonly WfcOutpostGridDescriptor[] _descriptors = new WfcOutpostGridDescriptor[SlotCount];
         // COLD ALLOC: uint[4] - stable WFC grid handles - owner: WfcOutpostGridRegistry

@@ -121,3 +121,23 @@ namespace Hecton8.Core.Contracts
         void SubmitDamageImpulse(float3 localImpulse, float weight01);
     }
 }
+
+namespace Hecton8.Inventory
+{
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct InventorySlotDTO
+    {
+        [FieldOffset(0)]
+        public uint ItemHashID;
+        [FieldOffset(4)]
+        public uint Quantity;
+        [FieldOffset(8)]
+        public ulong ContainerAUPHash;
+        [FieldOffset(16)]
+        public uint ConditionFlags;
+        [FieldOffset(20)]
+        public uint ReservedLock;
+        [FieldOffset(24)]
+        private ulong _pad0;
+    }
+}

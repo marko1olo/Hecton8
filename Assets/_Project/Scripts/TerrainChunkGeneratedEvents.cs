@@ -1,5 +1,5 @@
 using Hecton8.Core;
-using Unity.Collections;
+using Hecton8.Core.Contracts.Signals;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -7,14 +7,14 @@ namespace Hecton8.World
     public static class TerrainChunkGeneratedEvents
     {
         private const int Capacity = 32;
-        private const string NativeOwner = nameof(TerrainChunkGeneratedEvents);
-        private const string QueueLabel = "TerrainChunkGeneratedSignalQueue";
+        private const int SurvivalCapacity = 4;
+        private const uint LaneHash = 0x54434753u; // TCGS
 
-        private static NativeQueue<TerrainChunkGeneratedSignal> _events;
         private static int _pendingCount;
         private static int _droppedCount;
         private static int _rejectedCount;
         private static uint _lastRejectedTerrainHash;
+        private static bool _configured;
 
         public static int PendingCount => _pendingCount;
         public static int DebugCapacity => Capacity;
@@ -32,37 +32,39 @@ namespace Hecton8.World
             }
 
             EnsureInitialized();
-            if (_pendingCount >= Capacity && _events.TryDequeue(out _))
+            if (_pendingCount >= Capacity)
             {
-                _pendingCount--;
                 _droppedCount++;
+                _rejectedCount++;
+                _lastRejectedTerrainHash = signal.TerrainEntityHash;
+                return false;
             }
 
-            if (_pendingCount >= Capacity)
+            if (!SignalBus<TerrainChunkGeneratedSignal>.TryPush(in signal))
             {
                 _rejectedCount++;
                 _lastRejectedTerrainHash = signal.TerrainEntityHash;
                 return false;
             }
 
-            _events.Enqueue(signal);
             _pendingCount++;
             return true;
         }
 
         public static bool TryDequeue(out TerrainChunkGeneratedSignal signal)
         {
-            if (!_events.IsCreated)
+            EnsureInitialized();
+            bool dequeued = SignalBus<TerrainChunkGeneratedSignal>.TryConsumeFrame(out signal);
+            if (dequeued)
             {
-                signal = default;
-                return false;
+                if (_pendingCount > 0)
+                    _pendingCount--;
+
+                return true;
             }
 
-            bool dequeued = _events.TryDequeue(out signal);
-            if (dequeued && _pendingCount > 0)
-                _pendingCount--;
-
-            return dequeued;
+            _pendingCount = 0;
+            return false;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -80,47 +82,27 @@ namespace Hecton8.World
 
         private static void EnsureInitialized()
         {
-            if (_events.IsCreated)
-                return;
-
-            _events = new NativeQueue<TerrainChunkGeneratedSignal>(Allocator.Persistent);
-            NativeMemorySentinel.RegisterNativeQueue(
-                _events,
-                Capacity,
-                NativeOwner,
-                QueueLabel,
-                NativeAllocationLifetime.Session);
-            PrewarmQueue(ref _events, Capacity);
-            _pendingCount = 0;
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
+            if (!_configured)
             {
+                SignalBus<TerrainChunkGeneratedSignal>.Configure(
+                    Capacity,
+                    maxFrameSignals: Capacity,
+                    lowTierFrameSignals: SurvivalCapacity,
+                    laneHash: LaneHash);
+                _configured = true;
             }
+
+            SignalBus<TerrainChunkGeneratedSignal>.EnsureInitialized();
         }
 
         private static void DisposeAll()
         {
-            if (_events.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeOwner, QueueLabel);
-                _events.Dispose();
-            }
-
-            _events = default;
+            SignalBus<TerrainChunkGeneratedSignal>.Dispose();
             _pendingCount = 0;
             _droppedCount = 0;
             _rejectedCount = 0;
             _lastRejectedTerrainHash = 0u;
+            _configured = false;
         }
     }
 }

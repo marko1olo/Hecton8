@@ -32,7 +32,7 @@ namespace Hecton8.Logistics
         Ultra = 3
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct FluidPipeRuptureRecord
     {
         [FieldOffset(0)]
@@ -59,6 +59,8 @@ namespace Hecton8.Logistics
         public ushort Reserved;
         [FieldOffset(36)]
         private uint _pad0;
+        [FieldOffset(40)]
+        private ulong _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -92,22 +94,13 @@ namespace Hecton8.Logistics
         public const float MiddleCadenceSeconds = 0.25f;
         public const float HighCadenceSeconds = 0.1f;
         public const float UltraCadenceSeconds = 0.1f;
+        public const float AuthoritativeCadenceSeconds = 0.1f;
         public const uint FnvOffset = 2166136261u;
         public const uint FnvPrime = 16777619u;
 
         public static float ResolveCadenceSeconds(FluidPipeMathLod lod)
         {
-            switch (lod)
-            {
-                case FluidPipeMathLod.Ultra:
-                    return UltraCadenceSeconds;
-                case FluidPipeMathLod.High:
-                    return HighCadenceSeconds;
-                case FluidPipeMathLod.Middle:
-                    return MiddleCadenceSeconds;
-                default:
-                    return LowCadenceSeconds;
-            }
+            return AuthoritativeCadenceSeconds;
         }
 
         public static uint MixHash(uint hash, uint value)

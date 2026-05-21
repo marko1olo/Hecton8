@@ -1,0 +1,54 @@
+{
+    "name": "Hecton8.Crest.Bridge.Editor",
+    "rootNamespace": "Hecton8.Editor",
+    "references": [
+        "Hecton8.Crest.Bridge",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Rendering.BilateralDrs",
+        "Hecton8.Graphics.Scalability",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Environment.Fluids.Contracts",
+        "Hecton8.Dev.SpaceEngine098",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.Collections",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.Addressables.Editor",
+        "Unity.InputSystem",
+        "Unity.XR.Management",
+        "Unity.XR.Management.Editor",
+        "Unity.XR.OpenXR",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Jobs",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "GPUInstancer",
+        "Den.Tools",
+        "MapMagic",
+        "Crest",
+        "ShapesRuntime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.addressables",
+            "expression": "2.7.6",
+            "define": "UNITY_ADDRESSABLES_EXIST"
+        }
+    ],
+    "noEngineReferences": false
+}

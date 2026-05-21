@@ -18,7 +18,7 @@ namespace Hecton8.Progression
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Progression/Player Achievement Registry")]
-    public sealed class PlayerAchievementRegistry : MonoBehaviour, ITickable, ISlowTickable, ISaveable
+    public sealed class PlayerAchievementRegistry : MonoBehaviour, ITickable, ISlowTickable, ISaveable, IGlobalRegistryHotSwapListener
     {
         private enum AchievementMetric : byte
         {
@@ -27,7 +27,6 @@ namespace Hecton8.Progression
             DiscoveredBiomes = 2
         }
 
-        [StructLayout(LayoutKind.Sequential)]
         private readonly struct AchievementDefinition
         {
             public readonly uint IdHash;
@@ -46,18 +45,30 @@ namespace Hecton8.Progression
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private readonly struct AchievementRuntimeDefinition
         {
+            [FieldOffset(0)]
             public readonly uint IdHash;
+            [FieldOffset(4)]
             public readonly float Threshold;
+            [FieldOffset(8)]
             public readonly AchievementMetric Metric;
+            [FieldOffset(9)]
+            private readonly byte _pad0;
+            [FieldOffset(10)]
+            private readonly ushort _pad1;
+            [FieldOffset(12)]
+            private readonly uint _pad2;
 
             public AchievementRuntimeDefinition(AchievementDefinition definition)
             {
                 IdHash = definition.IdHash;
                 Threshold = definition.Threshold;
                 Metric = definition.Metric;
+                _pad0 = 0;
+                _pad1 = 0;
+                _pad2 = 0u;
             }
         }
 
@@ -100,10 +111,14 @@ namespace Hecton8.Progression
         private HectonSurvivalSystem _survivalSystem;
         private HectonDiscoveryManager _discoveryManager;
         private HectonPlayerMovement _playerMovement;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private IPDALogbookService _logbookManager;
+        private SaveManager _saveManager;
         private HectonEventSubscription _gameLoadedSubscription;
         private bool _registeredToTick;
         private bool _registeredToSlowTick;
         private bool _registeredToSave;
+        private bool _hotSwapRegistered;
         private bool _achievementPresentationCached;
         private bool _hasAupSample;
         private AbsoluteUniversePosition _lastAupSample;
@@ -159,6 +174,7 @@ namespace Hecton8.Progression
         private void OnEnable()
         {
             CacheAchievementPresentation();
+            TryRegisterHotSwapListener();
             ResolveOwnersCold();
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
@@ -183,6 +199,7 @@ namespace Hecton8.Progression
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
@@ -191,6 +208,7 @@ namespace Hecton8.Progression
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
+            TryUnregisterHotSwapListener();
         }
 
         /// <inheritdoc />
@@ -228,7 +246,6 @@ namespace Hecton8.Progression
         /// <inheritdoc />
         public void SlowTick()
         {
-            RefreshDiscoveryBindingCold();
             RefreshDiscoveredBiomeTotalCold();
             DrainPendingUnlocks();
         }
@@ -383,13 +400,6 @@ namespace Hecton8.Progression
 
         private bool ResolveOwnersHot()
         {
-            if (_playerMovement == null)
-            {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                if (playerContext != null)
-                    _playerMovement = playerContext.PlayerMovement;
-            }
-
             return _survivalSystem != null;
         }
 
@@ -400,21 +410,20 @@ namespace Hecton8.Progression
 
             if (_playerMovement == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                if (playerContext != null)
-                    _playerMovement = playerContext.PlayerMovement;
+                CachePlayerRuntimeContext(GlobalRegistry.Player);
 
                 if (_playerMovement == null)
                     TryGetComponent(out _playerMovement);
             }
 
-            ResolveOwnersHot();
-            RefreshDiscoveryBindingCold();
+            _logbookManager = GlobalRegistry.PDALogbook;
+            if (_saveManager == null)
+                _saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            RefreshDiscoveryBindingCold(GlobalRegistry.Discovery);
         }
 
-        private void RefreshDiscoveryBindingCold()
+        private void RefreshDiscoveryBindingCold(HectonDiscoveryManager discoveryManager)
         {
-            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
             if (ReferenceEquals(_discoveryManager, discoveryManager))
                 return;
 
@@ -443,7 +452,7 @@ namespace Hecton8.Progression
         {
             if (_playerMovement == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 if (playerContext != null)
                     _playerMovement = playerContext.PlayerMovement;
             }
@@ -569,7 +578,7 @@ namespace Hecton8.Progression
         {
             TryPushAchievementNotification(definitionIndex, definition.IdHash);
 
-            IPDALogbookService logbookManager = GlobalRegistry.PDALogbook;
+            IPDALogbookService logbookManager = _logbookManager;
             if (logbookManager != null && (uint)definitionIndex < (uint)_achievementLogOriginHashes.Length)
             {
                 int originHash = _achievementLogOriginHashes[definitionIndex];
@@ -683,20 +692,14 @@ namespace Hecton8.Progression
 
         private void TryRegisterWithTickManager()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
             if (!_registeredToTick)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-                _registeredToTick = GlobalRegistry.Updatables.Contains(this);
-            }
+                _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
 
             if (!_registeredToSlowTick)
-            {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-                _registeredToSlowTick = GlobalRegistry.SlowTickables.Contains(this);
-            }
+                _registeredToSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
         }
 
         private void UnregisterFromTickManager()
@@ -719,11 +722,15 @@ namespace Hecton8.Progression
             if (_registeredToSave)
                 return;
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = _saveManager;
+            if (saveManager == null)
+                saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+
             if (saveManager == null)
                 return;
 
             saveManager.Register(this);
+            _saveManager = saveManager;
             _registeredToSave = true;
         }
 
@@ -732,11 +739,73 @@ namespace Hecton8.Progression
             if (!_registeredToSave)
                 return;
 
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            SaveManager saveManager = _saveManager;
             if (saveManager != null)
                 saveManager.Unregister(this);
 
             _registeredToSave = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.DiscoveryRuntime:
+                    RefreshDiscoveryBindingCold(currentService as HectonDiscoveryManager);
+                    RefreshDiscoveredBiomeTotalCold();
+                    break;
+                case GlobalRegistryServiceSlot.PDALogbook:
+                    _logbookManager = currentService as IPDALogbookService;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    RebindSaveManager(previousService as SaveManager, currentService as SaveManager);
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegisterWithTickManager();
+                    break;
+            }
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerRuntimeContext)
+        {
+            _playerRuntimeContext = playerRuntimeContext;
+            _playerMovement = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerMovement : null;
+        }
+
+        private void RebindSaveManager(SaveManager previousSaveManager, SaveManager currentSaveManager)
+        {
+            SaveManager oldSaveManager = previousSaveManager != null ? previousSaveManager : _saveManager;
+            if (_registeredToSave && oldSaveManager != null)
+            {
+                oldSaveManager.Unregister(this);
+                _registeredToSave = false;
+            }
+
+            _saveManager = currentSaveManager;
+            TryRegisterWithSaveManager();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

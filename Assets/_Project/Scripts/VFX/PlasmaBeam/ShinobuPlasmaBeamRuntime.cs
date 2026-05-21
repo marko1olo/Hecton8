@@ -138,7 +138,7 @@ namespace Hecton8.VFX.PlasmaBeam
         [FieldOffset(24)] public ulong _pad0;
     }
 
-    public sealed unsafe class ShinobuPlasmaBeamRuntime
+    public sealed unsafe class ShinobuPlasmaBeamRuntime : IGlobalRegistryHotSwapListener
     {
         public const int MaxBeamCount = 20;
         public const int MinRadialSegments = 3;
@@ -194,15 +194,15 @@ namespace Hecton8.VFX.PlasmaBeam
         private static uint s_pendingRadialSegments = 0u;
 
         private IDataVault _vault;
-        private VaultBufferHandle<BeamStateDTO> _statesHandle;
-        private VaultBufferHandle<BeamVertexDTO> _verticesHandle;
-        private VaultBufferHandle<BeamTrigLutEntry> _trigHandle;
-        private VaultBufferHandle<PlasmaBeamRuntimeScalarsDTO> _scalarsHandle;
-        private VaultBufferHandle<PlasmaBeamIndirectArgsDTO> _argsHandle;
-        private VaultBufferHandle<PlasmaBeamTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<MockLaserFireSignal> _mockSignalsHandle;
-        private VaultBufferHandle<PlasmaBeamAcousticEchoTap> _acousticTapsHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<BeamStateDTO> _statesHandle;
+        private VaultGenerationHandle<BeamVertexDTO> _verticesHandle;
+        private VaultGenerationHandle<BeamTrigLutEntry> _trigHandle;
+        private VaultGenerationHandle<PlasmaBeamRuntimeScalarsDTO> _scalarsHandle;
+        private VaultGenerationHandle<PlasmaBeamIndirectArgsDTO> _argsHandle;
+        private VaultGenerationHandle<PlasmaBeamTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<MockLaserFireSignal> _mockSignalsHandle;
+        private VaultGenerationHandle<PlasmaBeamAcousticEchoTap> _acousticTapsHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
 
         private PreSimulationPhaseSystem _preSimulationPhase;
         private SimulationPhaseSystem _simulationPhase;
@@ -235,6 +235,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private bool _simulationScheduled;
         private bool _dumpedNonFinite;
         private bool _shutdown;
+        private bool _registeredHotSwapListener;
 
         public static bool TryWriteEditorTuning(float radius, float noiseFrequency, float noiseAmplitude, uint radialSegments)
         {
@@ -282,8 +283,12 @@ namespace Hecton8.VFX.PlasmaBeam
             if (vault == null || !active.EnsureVaultState(vault))
                 return false;
 
-            NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars = active._scalarsHandle.Resolve(vault);
-            if (scalars.IsCreated && scalars.Length > 0)
+            if (active.TryResolveVaultBuffer(
+                    vault,
+                    in active._scalarsHandle,
+                    BufferID.ShinobuPlasmaBeamRuntimeScalars,
+                    1,
+                    out NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars))
             {
                 PlasmaBeamRuntimeScalarsDTO dto = scalars[0];
                 radius = dto.BaseRadius;
@@ -318,7 +323,16 @@ namespace Hecton8.VFX.PlasmaBeam
             if (vault == null || !active.EnsureVaultState(vault))
                 return false;
 
-            vertices = active._verticesHandle.Resolve(vault);
+            if (!active.TryResolveVaultBuffer(
+                    vault,
+                    in active._verticesHandle,
+                    BufferID.ShinobuPlasmaBeamVertices,
+                    MaxVertexCount,
+                    out vertices))
+            {
+                return false;
+            }
+
             vertexCount = active._lastVertexCount;
             activeBeams = active._lastActiveBeamCount;
             return vertices.IsCreated && vertexCount > 0;
@@ -373,6 +387,7 @@ namespace Hecton8.VFX.PlasmaBeam
         {
             _shutdown = false;
             _vault = GlobalRegistry.DataVault;
+            TryRegisterHotSwapListener();
             SignalBus<PlasmaBeamAcousticEchoTap>.Configure(MaxBeamCount, maxFrameSignals: MaxBeamCount, lowTierFrameSignals: 4, laneHash: 0x504C4153u);
             SignalBus<PlasmaBeamAcousticEchoTap>.EnsureInitialized();
             EnsureGraphicsResources(allowAllocation: true);
@@ -389,6 +404,7 @@ namespace Hecton8.VFX.PlasmaBeam
             _shutdown = true;
             Application.quitting -= ShutdownActive;
             UnlockJobBuffers();
+            TryUnregisterHotSwapListener();
             UnregisterDispatcherPhases();
             ReleaseGraphicsResources();
             _vault = null;
@@ -442,13 +458,40 @@ namespace Hecton8.VFX.PlasmaBeam
 
         private IDataVault ResolveVault()
         {
-            IDataVault vault = _vault;
-            if (vault != null)
-                return vault;
+            return _vault;
+        }
 
-            vault = GlobalRegistry.DataVault;
-            _vault = vault;
-            return vault;
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            if (_simulationScheduled)
+                return;
+
+            _vault = currentService as IDataVault;
+            _vaultInitialized = false;
+            _defaultsInitialized = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void PreSimulationTick(in DispatcherTimingDTO timing)
@@ -473,17 +516,14 @@ namespace Hecton8.VFX.PlasmaBeam
 
             _lastDispatcherFrame = context.Frame;
 
-            NativeArray<BeamStateDTO> states = _statesHandle.Resolve(vault);
-            NativeArray<BeamVertexDTO> vertices = _verticesHandle.Resolve(vault);
-            NativeArray<BeamTrigLutEntry> trig = _trigHandle.Resolve(vault);
-            NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars = _scalarsHandle.Resolve(vault);
-            NativeArray<PlasmaBeamIndirectArgsDTO> args = _argsHandle.Resolve(vault);
-            NativeArray<PlasmaBeamTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            NativeArray<MockLaserFireSignal> mockSignals = _mockSignalsHandle.Resolve(vault);
-            NativeArray<PlasmaBeamAcousticEchoTap> acousticTaps = _acousticTapsHandle.Resolve(vault);
-
-            if (!states.IsCreated || !vertices.IsCreated || !trig.IsCreated || !scalars.IsCreated ||
-                !args.IsCreated || !telemetry.IsCreated || !mockSignals.IsCreated || !acousticTaps.IsCreated)
+            if (!TryResolveVaultBuffer(vault, in _statesHandle, BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, out NativeArray<BeamStateDTO> states) ||
+                !TryResolveVaultBuffer(vault, in _verticesHandle, BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, out NativeArray<BeamVertexDTO> vertices) ||
+                !TryResolveVaultBuffer(vault, in _trigHandle, BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, out NativeArray<BeamTrigLutEntry> trig) ||
+                !TryResolveVaultBuffer(vault, in _scalarsHandle, BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, out NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars) ||
+                !TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args) ||
+                !TryResolveVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, out NativeArray<PlasmaBeamTelemetryEntry> telemetry) ||
+                !TryResolveVaultBuffer(vault, in _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, out NativeArray<MockLaserFireSignal> mockSignals) ||
+                !TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> acousticTaps))
             {
                 return dependsOn;
             }
@@ -553,9 +593,9 @@ namespace Hecton8.VFX.PlasmaBeam
 
             _simulationScheduled = false;
 
-            NativeArray<PlasmaBeamIndirectArgsDTO> args = _argsHandle.Resolve(vault);
-            NativeArray<PlasmaBeamTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            NativeArray<PlasmaBeamAcousticEchoTap> taps = _acousticTapsHandle.Resolve(vault);
+            TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args);
+            TryResolveVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, out NativeArray<PlasmaBeamTelemetryEntry> telemetry);
+            TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> taps);
             if (args.IsCreated && args.Length > 0)
                 _lastVertexCount = (int)math.min(args[0].VertexCountPerInstance, (uint)MaxVertexCount);
 
@@ -594,11 +634,12 @@ namespace Hecton8.VFX.PlasmaBeam
             if (vault == null || !EnsureVaultState(vault) || !EnsureGraphicsResources(allowAllocation: false))
                 return;
 
-            NativeArray<BeamVertexDTO> vertices = _verticesHandle.Resolve(vault);
-            NativeArray<PlasmaBeamIndirectArgsDTO> args = _argsHandle.Resolve(vault);
-            NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars = _scalarsHandle.Resolve(vault);
-            if (!vertices.IsCreated || !args.IsCreated || !scalars.IsCreated || vertices.Length == 0 || args.Length == 0)
+            if (!TryResolveVaultBuffer(vault, in _verticesHandle, BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, out NativeArray<BeamVertexDTO> vertices) ||
+                !TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args) ||
+                !TryResolveVaultBuffer(vault, in _scalarsHandle, BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, out NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars))
+            {
                 return;
+            }
 
             int vertexCount = math.min(_lastVertexCount, math.min(vertices.Length, MaxVertexCount));
             if (vertexCount <= 0)
@@ -636,25 +677,26 @@ namespace Hecton8.VFX.PlasmaBeam
             if (_vaultInitialized && _defaultsInitialized)
                 return true;
 
-            _statesHandle = vault.GetBufferHandle<BeamStateDTO>(BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _verticesHandle = vault.GetBufferHandle<BeamVertexDTO>(BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _trigHandle = vault.GetBufferHandle<BeamTrigLutEntry>(BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _scalarsHandle = vault.GetBufferHandle<PlasmaBeamRuntimeScalarsDTO>(BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _argsHandle = vault.GetBufferHandle<PlasmaBeamIndirectArgsDTO>(BufferID.ShinobuPlasmaBeamIndirectArgs, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetBufferHandle<PlasmaBeamTelemetryEntry>(BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _mockSignalsHandle = vault.GetBufferHandle<MockLaserFireSignal>(BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _acousticTapsHandle = vault.GetBufferHandle<PlasmaBeamAcousticEchoTap>(BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuPlasmaBeamCsvScratch, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _statesHandle = vault.GetGenerationHandle<BeamStateDTO>(BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _verticesHandle = vault.GetGenerationHandle<BeamVertexDTO>(BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _trigHandle = vault.GetGenerationHandle<BeamTrigLutEntry>(BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _scalarsHandle = vault.GetGenerationHandle<PlasmaBeamRuntimeScalarsDTO>(BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            _argsHandle = vault.GetGenerationHandle<PlasmaBeamIndirectArgsDTO>(BufferID.ShinobuPlasmaBeamIndirectArgs, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _telemetryHandle = vault.GetGenerationHandle<PlasmaBeamTelemetryEntry>(BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
+            _mockSignalsHandle = vault.GetGenerationHandle<MockLaserFireSignal>(BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _acousticTapsHandle = vault.GetGenerationHandle<PlasmaBeamAcousticEchoTap>(BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _csvScratchHandle = vault.GetGenerationHandle<byte>(BufferID.ShinobuPlasmaBeamCsvScratch, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
 
-            _vaultInitialized = _statesHandle.IsCreated &&
-                _verticesHandle.IsCreated &&
-                _trigHandle.IsCreated &&
-                _scalarsHandle.IsCreated &&
-                _argsHandle.IsCreated &&
-                _telemetryHandle.IsCreated &&
-                _mockSignalsHandle.IsCreated &&
-                _acousticTapsHandle.IsCreated &&
-                _csvScratchHandle.IsCreated;
+            _vaultInitialized =
+                TryResolveVaultBuffer(vault, in _statesHandle, BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, out NativeArray<BeamStateDTO> _) &&
+                TryResolveVaultBuffer(vault, in _verticesHandle, BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, out NativeArray<BeamVertexDTO> _) &&
+                TryResolveVaultBuffer(vault, in _trigHandle, BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, out NativeArray<BeamTrigLutEntry> _) &&
+                TryResolveVaultBuffer(vault, in _scalarsHandle, BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, out NativeArray<PlasmaBeamRuntimeScalarsDTO> _) &&
+                TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> _) &&
+                TryResolveVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, out NativeArray<PlasmaBeamTelemetryEntry> _) &&
+                TryResolveVaultBuffer(vault, in _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, out NativeArray<MockLaserFireSignal> _) &&
+                TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> _) &&
+                TryResolveVaultBuffer(vault, in _csvScratchHandle, BufferID.ShinobuPlasmaBeamCsvScratch, CsvScratchBytes, out NativeArray<byte> _);
 
             if (!_vaultInitialized)
                 return false;
@@ -671,15 +713,31 @@ namespace Hecton8.VFX.PlasmaBeam
             return true;
         }
 
+        private bool TryResolveVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
         private void GenerateEmergencyMockBeams(IDataVault vault)
         {
-            NativeArray<BeamStateDTO> states = _statesHandle.Resolve(vault);
-            NativeArray<BeamTrigLutEntry> trig = _trigHandle.Resolve(vault);
-            NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars = _scalarsHandle.Resolve(vault);
-            NativeArray<PlasmaBeamIndirectArgsDTO> args = _argsHandle.Resolve(vault);
-            NativeArray<MockLaserFireSignal> mockSignals = _mockSignalsHandle.Resolve(vault);
-            if (!states.IsCreated || !trig.IsCreated || !scalars.IsCreated || !args.IsCreated || !mockSignals.IsCreated)
+            if (!TryResolveVaultBuffer(vault, in _statesHandle, BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, out NativeArray<BeamStateDTO> states) ||
+                !TryResolveVaultBuffer(vault, in _trigHandle, BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, out NativeArray<BeamTrigLutEntry> trig) ||
+                !TryResolveVaultBuffer(vault, in _scalarsHandle, BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, out NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars) ||
+                !TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args) ||
+                !TryResolveVaultBuffer(vault, in _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, out NativeArray<MockLaserFireSignal> mockSignals))
+            {
                 return;
+            }
 
             if (!_layoutChecked)
             {
@@ -742,9 +800,15 @@ namespace Hecton8.VFX.PlasmaBeam
 
         private void ApplyQualityAndEditorTuning(IDataVault vault)
         {
-            NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars = _scalarsHandle.Resolve(vault);
-            if (!scalars.IsCreated || scalars.Length == 0)
+            if (!TryResolveVaultBuffer(
+                    vault,
+                    in _scalarsHandle,
+                    BufferID.ShinobuPlasmaBeamRuntimeScalars,
+                    1,
+                    out NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars))
+            {
                 return;
+            }
 
             PlasmaBeamRuntimeScalarsDTO dto = scalars[0];
             dto.GlobalQualityWeight = ResolveGlobalQualityWeight();
@@ -903,10 +967,21 @@ namespace Hecton8.VFX.PlasmaBeam
                 return;
 
             _csvLastWriteTicks = ticks;
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(vault);
-            NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars = _scalarsHandle.Resolve(vault);
-            if (!scratch.IsCreated || !scalars.IsCreated || scalars.Length == 0)
+            if (!TryResolveVaultBuffer(
+                    vault,
+                    in _csvScratchHandle,
+                    BufferID.ShinobuPlasmaBeamCsvScratch,
+                    CsvScratchBytes,
+                    out NativeArray<byte> scratch) ||
+                !TryResolveVaultBuffer(
+                    vault,
+                    in _scalarsHandle,
+                    BufferID.ShinobuPlasmaBeamRuntimeScalars,
+                    1,
+                    out NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars))
+            {
                 return;
+            }
 
             using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {

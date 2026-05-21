@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -97,13 +98,13 @@ namespace Hecton8.Audio.Propagation
         [FieldOffset(100)]
         public int MaxNodeExpansions;
         [FieldOffset(104)]
-        public byte QualityTier;
-        [FieldOffset(105)]
-        public byte DisablePortalPath;
-        [FieldOffset(106)]
-        private ushort _reserved0;
+        public float GlobalQualityWeight;
         [FieldOffset(108)]
-        private uint _reserved1;
+        public byte DisablePortalPath;
+        [FieldOffset(109)]
+        private byte _reserved0;
+        [FieldOffset(110)]
+        private ushort _reserved1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -243,20 +244,26 @@ namespace Hecton8.Audio.Propagation
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
     public struct AcousticPathJob : IJob
     {
-        [ReadOnly] public NativeArray<AcousticPortalNode> Nodes;
-        [ReadOnly] public NativeArray<AcousticPortalEdge> Edges;
+        [ReadOnly, NoAlias] public NativeArray<AcousticPortalNode> Nodes;
+        [ReadOnly, NoAlias] public NativeArray<AcousticPortalEdge> Edges;
+        [NoAlias]
         public NativeList<int> OpenSet;
+        [NoAlias]
         public NativeList<int> ClosedSet;
+        [NoAlias]
         public NativeArray<float> Costs;
+        [NoAlias]
         public NativeArray<int> CameFrom;
+        [NoAlias]
         public NativeArray<byte> States;
-        public NativeArray<AcousticPathResult> Result;
+        [WriteOnly, NoAlias] public NativeArray<AcousticPathResult> Result;
         public AcousticPathQuery Query;
 
         public void Execute()
         {
+            float portalBudget01 = ResolvePortalBudget01(Query.GlobalQualityWeight);
             AcousticPathResult fallback = AcousticPathResult.Fallback(
-                Query.DisablePortalPath != 0 || Query.QualityTier <= 2
+                Query.DisablePortalPath != 0 || portalBudget01 <= 0.0001f
                     ? AcousticPathStatus.LowTierFallback
                     : AcousticPathStatus.NoGraph,
                 in Query);
@@ -266,7 +273,7 @@ namespace Hecton8.Audio.Propagation
 
             Result[0] = fallback;
 
-            if (Query.DisablePortalPath != 0 || Query.QualityTier <= 2)
+            if (Query.DisablePortalPath != 0 || portalBudget01 <= 0.0001f)
                 return;
 
             if (!AcousticAup.IsFinite(in Query.SourceAup) ||
@@ -295,8 +302,10 @@ namespace Hecton8.Audio.Propagation
                 AcousticPortalConstants.MaxPathNodes,
                 math.min(Query.NodeCount, math.min(Nodes.Length, math.min(Costs.Length, math.min(CameFrom.Length, States.Length)))));
             int edgeCount = math.min(AcousticPortalConstants.MaxPathEdges, math.min(Query.EdgeCount, Edges.Length));
+            int requestedExpansions = Query.MaxNodeExpansions <= 0 ? AcousticPortalConstants.MaxPathNodes : Query.MaxNodeExpansions;
+            int continuousExpansionBudget = (int)math.round(math.lerp(2f, requestedExpansions, portalBudget01));
             int maxExpansions = math.clamp(
-                Query.MaxNodeExpansions <= 0 ? AcousticPortalConstants.MaxPathNodes : Query.MaxNodeExpansions,
+                continuousExpansionBudget,
                 1,
                 AcousticPortalConstants.MaxPathNodes);
 
@@ -396,6 +405,14 @@ namespace Hecton8.Audio.Propagation
             }
 
             Result[0] = BuildResult(sourceNode, listenerNode, nodeCount, expanded);
+        }
+
+        private static float ResolvePortalBudget01(float globalQualityWeight)
+        {
+            float quality = math.isfinite(globalQualityWeight)
+                ? math.saturate(globalQualityWeight)
+                : 0f;
+            return math.smoothstep(0.12f, 0.92f, quality);
         }
 
         private int FindNearestNode(in AcousticAup aup, int nodeCount)

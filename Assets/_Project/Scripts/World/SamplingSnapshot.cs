@@ -4,6 +4,12 @@ namespace Hecton8.World
 {
     internal readonly struct SamplingSnapshot
     {
+        public readonly Vector3 RuntimeCenter;
+        public readonly Vector3 AbsoluteCenter;
+        public readonly int CenterCellX;
+        public readonly int CenterCellZ;
+        public readonly float CaptureTime;
+
         public SamplingSnapshot(Vector3 runtimeCenter, Vector3 absoluteCenter, int centerCellX, int centerCellZ, float captureTime)
         {
             RuntimeCenter = runtimeCenter;
@@ -13,16 +19,9 @@ namespace Hecton8.World
             CaptureTime = captureTime;
         }
 
-        public Vector3 RuntimeCenter { get; }
-
-        public Vector3 AbsoluteCenter { get; }
-
-        public int CenterCellX { get; }
-
-        public int CenterCellZ { get; }
-
-        public float CaptureTime { get; }
-
-        public Vector3 Center => AbsoluteCenter;
+        public static Vector3 GetCenter(in SamplingSnapshot snapshot)
+        {
+            return snapshot.AbsoluteCenter;
+        }
     }
 }

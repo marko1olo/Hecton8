@@ -16,7 +16,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst-safe Absolute Universe Position math shared by simulation systems.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal static class AUPMath
     {
         private const double CellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;

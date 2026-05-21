@@ -162,7 +162,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 scheduled = true;
 
                 // COLD SYNC JOB: MapMagic Generate must publish concrete splat matrices before returning to the graph.
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 scheduled = false;
 
                 if (stop != null && stop.stop)
@@ -177,7 +177,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (scheduled)
                 {
                     // COLD SYNC JOB: finalizer guard for MapMagic generator teardown.
-                    handle.Complete();
+                    DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 }
 
                 DisposeTracked(ref heights);

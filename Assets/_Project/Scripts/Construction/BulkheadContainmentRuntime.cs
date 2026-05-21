@@ -5,7 +5,6 @@ using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -23,6 +22,9 @@ namespace Hecton8.Construction
         private const float DefaultOpenSpeed = 3.0f;
         private const float DefaultOverrideDistance = 3.2f;
         private const float DefaultCatastrophicIntegrity = 0.18f;
+        private const float LockedSimulationTickDeltaSeconds = 1f / 60f;
+        private const float SimulationAuthorityDeltaCeilingSeconds = 0.2f;
+        private const float AuthoritativeQualityWeight = 1f;
         private const uint MockSeed = 0x53484E42u;
         private const SystemID OwnerSystemId = SystemID.Construction;
 
@@ -58,6 +60,7 @@ namespace Hecton8.Construction
         private VaultGenerationHandle<BulkheadStateDTO> _shaderUploadHandle;
         private VaultGenerationHandle<BulkheadContainmentIntentDTO> _intentRingHandle;
         private VaultGenerationHandle<BulkheadContainmentIntentControlDTO> _intentControlHandle;
+        private VaultGenerationHandle<LockstepPlayerKinematicState> _playerKinematicStateHandle;
         private PreSimulationPhaseSystem _preSimulationPhase;
         private SimulationPhaseSystem _simulationPhase;
         private PostSimulationPhaseSystem _postSimulationPhase;
@@ -72,11 +75,16 @@ namespace Hecton8.Construction
         private bool _defaultsInitialized;
         private bool _layoutChecked;
         private bool _layoutValid;
+        private bool _layoutFaultTelemetryWritten;
         private bool _mockGenerated;
         private int _activeCount;
         private uint _lastFrame;
         private float _authorityAccumulator;
         private float _lastScheduleMicroseconds;
+        private uint _lastTelemetryFrame;
+        private uint _lastTelemetryCollisionEdgeHash;
+        private float _lastTelemetryAverageClosure;
+        private float _lastTelemetryCollisionDepthMeters;
         private JobHandle _preSimulationHandle;
         private JobHandle _simulationHandle;
         private bool _preSimulationScheduled;
@@ -92,46 +100,43 @@ namespace Hecton8.Construction
         private bool _shaderUploadDirty = true;
         private bool _shutdownStarted;
         private uint _lastDumpedTelemetryCursor;
+        private uint _lastDumpAttemptTelemetryCursor;
+        private uint _nextPlayerStateHandleBindFrame;
         private string _dumpPath;
 
-        public static bool TryPublishAirlockBulkheadState(
-            uint edgeHash,
-            bool locked,
-            in AbsoluteUniversePosition centerAup,
-            float3 normal,
-            float widthMeters,
-            float heightMeters,
-            uint siblingNodeHash)
-        {
-            if (!Application.isPlaying || edgeHash == 0u)
-                return false;
-
-            return BulkheadContainmentIntentBus.TryWriteAirlockBulkheadIntent(
-                edgeHash,
-                locked,
-                BulkheadContainmentMath.ToAbsoluteDouble3(in centerAup),
-                normal,
-                widthMeters,
-                heightMeters,
-                1f,
-                siblingNodeHash,
-                0u);
-        }
-
-        public static bool TryReadEditorState(out int activeCount, out float quality, out float cadenceHz, out float lastScheduleMicroseconds)
+        public static bool TryReadEditorState(
+            out int activeCount,
+            out float quality,
+            out float cadenceHz,
+            out float lastScheduleMicroseconds,
+            out uint telemetryFrame,
+            out float averageClosure,
+            out uint collisionEdgeHash,
+            out float collisionDepthMeters,
+            out int shaderUploadCount)
         {
             activeCount = 0;
             quality = 0f;
             cadenceHz = 0f;
             lastScheduleMicroseconds = 0f;
+            telemetryFrame = 0u;
+            averageClosure = 0f;
+            collisionEdgeHash = 0u;
+            collisionDepthMeters = 0f;
+            shaderUploadCount = 0;
             BulkheadContainmentRuntime runtime = s_active;
             if (runtime == null)
                 return false;
 
             activeCount = runtime._activeCount;
-            quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = AuthoritativeQualityWeight;
             cadenceHz = runtime.ResolveAuthorityCadenceHz(quality);
             lastScheduleMicroseconds = runtime._lastScheduleMicroseconds;
+            telemetryFrame = runtime._lastTelemetryFrame;
+            averageClosure = runtime._lastTelemetryAverageClosure;
+            collisionEdgeHash = runtime._lastTelemetryCollisionEdgeHash;
+            collisionDepthMeters = runtime._lastTelemetryCollisionDepthMeters;
+            shaderUploadCount = runtime._lastShaderUploadCount;
             return true;
         }
 
@@ -141,10 +146,11 @@ namespace Hecton8.Construction
             if (runtime == null)
                 return false;
 
-            runtime.closeSpeedPerSecond = math.max(0.05f, closeSpeed);
-            runtime.openSpeedPerSecond = math.max(0.05f, openSpeed);
-            runtime.overrideDistanceMeters = math.max(0.5f, overrideDistance);
-            runtime.catastrophicIntegrity01 = math.saturate(catastrophicIntegrity);
+            runtime.closeSpeedPerSecond = math.max(0.05f, BulkheadContainmentMath.SanitizePositive(closeSpeed, 2f));
+            runtime.openSpeedPerSecond = math.max(0.05f, BulkheadContainmentMath.SanitizePositive(openSpeed, 2.5f));
+            runtime.overrideDistanceMeters = math.max(0.5f, BulkheadContainmentMath.SanitizePositive(overrideDistance, 3f));
+            runtime.catastrophicIntegrity01 = BulkheadContainmentMath.Sanitize01(catastrophicIntegrity, 0.35f);
+            runtime.TryWriteTuningRow();
             return true;
         }
 
@@ -155,7 +161,7 @@ namespace Hecton8.Construction
                 return false;
 
             IDataVault vault = runtime.ResolveVault();
-            if (vault == null || !runtime.EnsureVaultState(vault))
+            if (vault == null || !runtime.BootstrapVaultState(vault))
                 return false;
 
             if (!runtime.Resolve(in runtime._profilesHandle, out NativeArray<BulkheadProfileDTO> profiles))
@@ -170,7 +176,7 @@ namespace Hecton8.Construction
                 return false;
 
             IDataVault vault = runtime.ResolveVault();
-            if (vault == null || !runtime.EnsureVaultState(vault))
+            if (vault == null || !runtime.BootstrapVaultState(vault))
                 return false;
 
             if (!runtime.Resolve(in runtime._profilesHandle, out NativeArray<BulkheadProfileDTO> profiles) ||
@@ -183,23 +189,30 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            if (stream.Length <= 0L || stream.Length > scratch.Length)
-                return false;
-
-            int byteCount = (int)stream.Length;
-            byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-            int totalRead = 0;
-            while (totalRead < byteCount)
+            try
             {
-                Span<byte> destination = new Span<byte>(scratchPtr + totalRead, byteCount - totalRead);
-                int read = stream.Read(destination);
-                if (read <= 0)
-                    break;
-                totalRead += read;
-            }
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                if (stream.Length <= 0L || stream.Length > scratch.Length)
+                    return false;
 
-            return totalRead == byteCount && ParseProfiles(new ReadOnlySpan<byte>(scratchPtr, totalRead), profiles) > 0;
+                int byteCount = (int)stream.Length;
+                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                int totalRead = 0;
+                while (totalRead < byteCount)
+                {
+                    Span<byte> destination = new Span<byte>(scratchPtr + totalRead, byteCount - totalRead);
+                    int read = stream.Read(destination);
+                    if (read <= 0)
+                        break;
+                    totalRead += read;
+                }
+
+                return totalRead == byteCount && ParseProfiles(new ReadOnlySpan<byte>(scratchPtr, totalRead), profiles) > 0;
+            }
+            catch (Exception ex) when (IsColdStorageException(ex))
+            {
+                return false;
+            }
         }
 
         private void Awake()
@@ -217,7 +230,7 @@ namespace Hecton8.Construction
             _shutdownStarted = false;
             s_active = this;
             _vault = GlobalRegistry.DataVault;
-            BulkheadContainmentIntentBus.BindDataVault(_vault);
+            BulkheadContainmentIntentBus.BindDataVault(_vault != null && BootstrapVaultState(_vault) ? _vault : null);
             RegisterDispatcherPhases();
             TryRegisterHotSwapListener();
             Application.quitting -= ShutdownActive;
@@ -326,7 +339,7 @@ namespace Hecton8.Construction
         {
             if (!_vaultRebindPending && ReferenceEquals(_vault, currentVault))
             {
-                BulkheadContainmentIntentBus.BindDataVault(_vault);
+                BulkheadContainmentIntentBus.BindDataVault(_vault != null && BootstrapVaultState(_vault) ? _vault : null);
                 return;
             }
 
@@ -352,10 +365,10 @@ namespace Hecton8.Construction
             _vaultRebindPending = false;
             ReleaseVaultHandles();
             _vault = pendingVault;
-            BulkheadContainmentIntentBus.BindDataVault(_vault);
             _preSimulationHandle = default;
             _simulationHandle = default;
             ResetVaultRuntimeState(clearScheduledFlags: true);
+            BulkheadContainmentIntentBus.BindDataVault(_vault != null && BootstrapVaultState(_vault) ? _vault : null);
             return true;
         }
 
@@ -382,7 +395,15 @@ namespace Hecton8.Construction
             _activeCount = 0;
             _authorityAccumulator = 0f;
             _lastFrame = 0u;
+            _lastTelemetryFrame = 0u;
+            _lastTelemetryCollisionEdgeHash = 0u;
+            _lastTelemetryAverageClosure = 0f;
+            _lastTelemetryCollisionDepthMeters = 0f;
             _lastDumpedTelemetryCursor = 0u;
+            _lastDumpAttemptTelemetryCursor = 0u;
+            _layoutFaultTelemetryWritten = false;
+            _playerKinematicStateHandle = default;
+            _nextPlayerStateHandleBindFrame = 0u;
             if (clearScheduledFlags)
             {
                 _preSimulationScheduled = false;
@@ -393,10 +414,7 @@ namespace Hecton8.Construction
 
         private IDataVault ResolveVault()
         {
-            if (_vaultRebindPending && !TryFlushPendingDataVaultRebind())
-                return null;
-
-            return _vault;
+            return _vaultRebindPending ? null : _vault;
         }
 
         private bool Resolve<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
@@ -409,6 +427,69 @@ namespace Hecton8.Construction
             }
 
             return vault.TryResolveHandle(in handle, out buffer);
+        }
+
+        private bool EnsureLayoutValid(IDataVault vault)
+        {
+            if (!_layoutChecked)
+            {
+                _layoutValid = BulkheadStateLayoutGuard.ValidateLayout();
+                _layoutChecked = true;
+            }
+
+            if (_layoutValid)
+            {
+                _layoutFaultTelemetryWritten = false;
+                return true;
+            }
+
+            RecordLayoutFaultTelemetry(vault);
+            return false;
+        }
+
+        private void RecordLayoutFaultTelemetry(IDataVault vault)
+        {
+            if (_layoutFaultTelemetryWritten ||
+                vault == null ||
+                !IsVaultHandleCreated(in _telemetryHandle) ||
+                !IsVaultHandleCreated(in _telemetryCursorHandle) ||
+                !vault.TryResolveHandle(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
+                !vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<uint> cursor) ||
+                !telemetry.IsCreated ||
+                !cursor.IsCreated ||
+                telemetry.Length <= 0 ||
+                cursor.Length <= 0)
+            {
+                return;
+            }
+
+            uint writeCursor = cursor[0];
+            int telemetryIndex = (int)(writeCursor % (uint)telemetry.Length);
+            telemetry[telemetryIndex] = new BulkheadTelemetryEntry
+            {
+                Frame = _lastFrame,
+                ActiveCount = 0u,
+                SealedCount = 0u,
+                JammedCount = 0u,
+                AverageClosure = 0f,
+                AuthorityCadenceHz = 0f,
+                GlobalQualityWeight = AuthoritativeQualityWeight,
+                LastScheduleMicroseconds = 0f,
+                StateHash = 0x4C41594Fu,
+                CollisionEdgeHash = 0u,
+                CollisionDepthMeters = 0f,
+                Flags = BulkheadTelemetryFlags.NonFinite |
+                        BulkheadTelemetryFlags.DumpRequested |
+                        BulkheadTelemetryFlags.ScheduleTimeOnly
+            };
+            cursor[0] = unchecked(writeCursor + 1u);
+            _layoutFaultTelemetryWritten = true;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private void ReleaseVaultHandles()
@@ -450,6 +531,8 @@ namespace Hecton8.Construction
             _shaderUploadHandle = default;
             _intentRingHandle = default;
             _intentControlHandle = default;
+            _playerKinematicStateHandle = default;
+            _nextPlayerStateHandleBindFrame = 0u;
             _vault = null;
         }
 
@@ -462,19 +545,13 @@ namespace Hecton8.Construction
             handle = default;
         }
 
-        private bool EnsureVaultState(IDataVault vault)
+        private bool BootstrapVaultState(IDataVault vault)
         {
             if (vault == null)
                 return false;
 
-            if (!_layoutChecked)
-            {
-                _layoutValid = BulkheadStateLayoutGuard.ValidateLayout();
-                _layoutChecked = true;
-            }
-
-            if (!_layoutValid)
-                throw new FatalArchitectureException("SHINOBU_220 BulkheadStateDTO layout mismatch.");
+            if (!EnsureLayoutValid(vault))
+                return false;
 
             int capacity = math.clamp(bulkheadCapacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
             if (!_vaultInitialized)
@@ -498,6 +575,19 @@ namespace Hecton8.Construction
                 _vaultInitialized = true;
             }
 
+            TryBindPlayerKinematicStateHandle(vault);
+            return RefreshVaultState(vault);
+        }
+
+        private bool RefreshVaultState(IDataVault vault)
+        {
+            if (vault == null || !_vaultInitialized)
+                return false;
+
+            if (!EnsureLayoutValid(vault))
+                return false;
+
+            int capacity = math.clamp(bulkheadCapacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
             if (!Resolve(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
                 !Resolve(in _aupsHandle, out NativeArray<double3> aups) ||
                 !Resolve(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
@@ -511,7 +601,9 @@ namespace Hecton8.Construction
             }
 
             if (!states.IsCreated || !aups.IsCreated || !planes.IsCreated || !csrEdges.IsCreated ||
-                !conductivity.IsCreated || !fluidFlow.IsCreated || !moduleIntegrity.IsCreated || !tuning.IsCreated)
+                !conductivity.IsCreated || !fluidFlow.IsCreated || !moduleIntegrity.IsCreated || !tuning.IsCreated ||
+                states.Length <= 0 || aups.Length <= 0 || planes.Length <= 0 || csrEdges.Length <= 0 ||
+                conductivity.Length <= 0 || fluidFlow.Length <= 0 || moduleIntegrity.Length <= 0 || tuning.Length <= 0)
             {
                 return false;
             }
@@ -529,20 +621,44 @@ namespace Hecton8.Construction
                 _defaultsInitialized = true;
             }
 
-            float q = HomeostasisBrain.GlobalQualityWeight;
+            float q = AuthoritativeQualityWeight;
+            WriteTuningRow(tuning, capacity, q);
+
+            return true;
+        }
+
+        private bool TryWriteTuningRow()
+        {
+            if (!Resolve(in _tuningHandle, out NativeArray<BulkheadTuningDTO> tuning) ||
+                !tuning.IsCreated ||
+                tuning.Length <= 0)
+            {
+                return false;
+            }
+
+            int capacity = math.clamp(bulkheadCapacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
+            float q = AuthoritativeQualityWeight;
+            WriteTuningRow(tuning, capacity, q);
+            return true;
+        }
+
+        private void WriteTuningRow(NativeArray<BulkheadTuningDTO> tuning, int capacity, float quality)
+        {
+            if (!tuning.IsCreated || tuning.Length <= 0)
+                return;
+
+            float q = BulkheadContainmentMath.Sanitize01(quality, 0f);
             tuning[0] = new BulkheadTuningDTO
             {
-                CloseSpeedPerSecond = math.max(0.05f, closeSpeedPerSecond),
-                OpenSpeedPerSecond = math.max(0.05f, openSpeedPerSecond),
-                OverrideDistanceMeters = math.max(0.5f, overrideDistanceMeters),
-                CatastrophicIntegrity01 = math.saturate(catastrophicIntegrity01),
+                CloseSpeedPerSecond = math.max(0.05f, BulkheadContainmentMath.SanitizePositive(closeSpeedPerSecond, 2f)),
+                OpenSpeedPerSecond = math.max(0.05f, BulkheadContainmentMath.SanitizePositive(openSpeedPerSecond, 2.5f)),
+                OverrideDistanceMeters = math.max(0.5f, BulkheadContainmentMath.SanitizePositive(overrideDistanceMeters, 3f)),
+                CatastrophicIntegrity01 = BulkheadContainmentMath.Sanitize01(catastrophicIntegrity01, 0.35f),
                 GlobalQualityWeight = q,
                 AuthorityCadenceHz = ResolveAuthorityCadenceHz(q),
                 ActiveCount = (uint)math.clamp(_activeCount, 0, capacity),
                 Flags = uploadShaderBuffer ? 1u : 0u
             };
-
-            return true;
         }
 
         private JobHandle ScheduleMockDataIfRequired(
@@ -583,12 +699,52 @@ namespace Hecton8.Construction
             return handle;
         }
 
+        private static int CreatedLength<T>(NativeArray<T> buffer) where T : struct
+        {
+            return buffer.IsCreated && buffer.Length > 0 ? buffer.Length : 0;
+        }
+
+        private static int ResolveBulkheadWritableCount(
+            NativeArray<BulkheadStateDTO> states,
+            NativeArray<double3> aups,
+            NativeArray<BulkheadPlaneDTO> planes,
+            NativeArray<BulkheadCsrEdgeDTO> csrEdges,
+            NativeArray<float> moduleIntegrity)
+        {
+            int count = math.min(CreatedLength(states), CreatedLength(aups));
+            count = math.min(count, CreatedLength(planes));
+            count = math.min(count, CreatedLength(csrEdges));
+            return math.min(count, CreatedLength(moduleIntegrity));
+        }
+
+        private static int ResolveCollisionLaneCount(
+            NativeArray<BulkheadStateDTO> states,
+            NativeArray<double3> aups,
+            NativeArray<BulkheadPlaneDTO> planes)
+        {
+            return math.min(CreatedLength(states), math.min(CreatedLength(aups), CreatedLength(planes)));
+        }
+
+        private static int ResolveSimulationMutationCount(
+            NativeArray<BulkheadStateDTO> states,
+            NativeArray<BulkheadCsrEdgeDTO> csrEdges,
+            NativeArray<float> conductivity,
+            NativeArray<float> fluidFlow,
+            NativeArray<float> moduleIntegrity)
+        {
+            int count = math.min(CreatedLength(states), CreatedLength(csrEdges));
+            count = math.min(count, CreatedLength(conductivity));
+            count = math.min(count, CreatedLength(fluidFlow));
+            return math.min(count, CreatedLength(moduleIntegrity));
+        }
+
         private bool ApplyAirlockBulkheadStateIntent(
             NativeArray<BulkheadStateDTO> states,
             NativeArray<double3> aups,
             NativeArray<BulkheadPlaneDTO> planes,
             NativeArray<BulkheadCsrEdgeDTO> csrEdges,
             NativeArray<float> moduleIntegrity,
+            int writableCount,
             uint edgeHash,
             bool locked,
             double3 center,
@@ -598,7 +754,17 @@ namespace Hecton8.Construction
             float parentIntegrity01,
             uint siblingNodeHash)
         {
-            int slot = FindOrAllocateSlot(states, edgeHash);
+            if (edgeHash == 0u ||
+                !math.all(math.isfinite(center)) ||
+                !math.all(math.isfinite(normal)) ||
+                !math.isfinite(widthMeters) ||
+                !math.isfinite(heightMeters) ||
+                !math.isfinite(parentIntegrity01))
+            {
+                return false;
+            }
+
+            int slot = FindOrAllocateSlot(states, edgeHash, writableCount);
             if (slot < 0)
                 return false;
 
@@ -615,8 +781,8 @@ namespace Hecton8.Construction
             {
                 CenterAup = center,
                 Normal = BulkheadContainmentMath.SafeNormal(normal, new float3(0f, 0f, 1f)),
-                WidthMeters = math.max(0.25f, widthMeters),
-                HeightMeters = math.max(0.25f, heightMeters),
+                WidthMeters = BulkheadContainmentMath.SanitizePositive(widthMeters, 2.6f),
+                HeightMeters = BulkheadContainmentMath.SanitizePositive(heightMeters, 3.2f),
                 HalfThicknessMeters = 0.18f,
                 EdgeHashID = edgeHash,
                 Flags = BulkheadStateFlags.Active,
@@ -642,8 +808,13 @@ namespace Hecton8.Construction
             NativeArray<double3> aups,
             NativeArray<BulkheadPlaneDTO> planes,
             NativeArray<BulkheadCsrEdgeDTO> csrEdges,
-            NativeArray<float> moduleIntegrity)
+            NativeArray<float> moduleIntegrity,
+            uint currentFrame)
         {
+            int writableCount = ResolveBulkheadWritableCount(states, aups, planes, csrEdges, moduleIntegrity);
+            if (writableCount <= 0)
+                return;
+
             if (!Resolve(in _intentRingHandle, out NativeArray<BulkheadContainmentIntentDTO> intents) ||
                 !Resolve(in _intentControlHandle, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows) ||
                 !intents.IsCreated ||
@@ -671,7 +842,8 @@ namespace Hecton8.Construction
             {
                 BulkheadContainmentIntentDTO intent = intents[(int)((read + offset) % capacity)];
                 if ((intent.Flags & BulkheadContainmentIntentFlags.Valid) == 0u ||
-                    (intent.Flags & BulkheadContainmentIntentFlags.NonFinite) != 0u)
+                    (intent.Flags & BulkheadContainmentIntentFlags.NonFinite) != 0u ||
+                    !IsIntentFrameAccepted(intent.Frame, currentFrame))
                 {
                     continue;
                 }
@@ -682,6 +854,7 @@ namespace Hecton8.Construction
                     planes,
                     csrEdges,
                     moduleIntegrity,
+                    writableCount,
                     intent.EdgeHashID,
                     (intent.Flags & BulkheadContainmentIntentFlags.Locked) != 0u,
                     intent.CenterAup,
@@ -696,10 +869,43 @@ namespace Hecton8.Construction
             controlRows[0] = control;
         }
 
-        private int FindOrAllocateSlot(NativeArray<BulkheadStateDTO> states, uint edgeHash)
+        private static bool IsIntentFrameAccepted(uint intentFrame, uint currentFrame)
         {
+            if (intentFrame == 0u || currentFrame == 0u)
+                return true;
+
+            if (intentFrame > currentFrame)
+                return false;
+
+            return currentFrame - intentFrame <= BulkheadContainmentConstants.MaxIntentAgeFrames;
+        }
+
+        private static bool ContainsBulkheadOverrideSignal(
+            NativeArray<InteractionUiSignal>.ReadOnly signals,
+            int signalCount)
+        {
+            if (!signals.IsCreated || signalCount <= 0)
+                return false;
+
+            int count = math.min(signalCount, signals.Length);
+            for (int i = 0; i < count; i++)
+            {
+                InteractionUiSignal signal = signals[i];
+                if (signal.State != 0 &&
+                    signal.ToolHash == BulkheadContainmentConstants.OverrideToolHash)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private int FindOrAllocateSlot(NativeArray<BulkheadStateDTO> states, uint edgeHash, int slotLimit)
+        {
+            int count = math.min(states.Length, math.max(0, slotLimit));
             int firstFree = -1;
-            for (int i = 0; i < states.Length; i++)
+            for (int i = 0; i < count; i++)
             {
                 BulkheadStateDTO state = states[i];
                 if (state.EdgeHashID == edgeHash)
@@ -723,7 +929,7 @@ namespace Hecton8.Construction
             _preSimulationScheduled = false;
 
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultState(vault))
+            if (vault == null || !RefreshVaultState(vault))
                 return;
 
             if (!Resolve(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
@@ -741,27 +947,40 @@ namespace Hecton8.Construction
             if (collisions.Length <= 0)
                 return;
 
-            ConsumePublishedIntents(states, aups, planes, csrEdges, moduleIntegrity);
-            int count = math.min(_activeCount, states.Length);
+            ConsumePublishedIntents(states, aups, planes, csrEdges, moduleIntegrity, timing.FrameId);
+            int count = math.clamp(_activeCount, 0, ResolveCollisionLaneCount(states, aups, planes));
             if (count <= 0)
             {
-                collisions[0] = default;
+                collisions[0] = new BulkheadCollisionResultDTO
+                {
+                    Frame = timing.FrameId
+                };
                 return;
             }
 
-            TryResolvePlayerState(vault, out double3 playerAup, out float3 velocity, out uint frame);
-            double3 predictedAup = playerAup + (double3)(velocity * math.max(0f, timing.FrameDelta));
+            if (!TryAcquirePlayerState(vault, timing.FrameId, out double3 playerAup, out float3 velocity))
+            {
+                collisions[0] = new BulkheadCollisionResultDTO
+                {
+                    Frame = timing.FrameId
+                };
+                return;
+            }
+
+            float simulationTickDelta = ResolveSimulationTickDelta(in timing);
+            double3 predictedAup = playerAup + (double3)(velocity * simulationTickDelta);
             JobHandle dependency = _simulationScheduled ? _simulationHandle : default;
 
-            if (vault.TryGetBuffer(BufferID.InteractionSignalQueue, out NativeArray<InteractionUiSignal> signals) &&
-                signals.IsCreated && signals.Length > 0)
+            NativeArray<InteractionUiSignal>.ReadOnly signals = SignalBus<InteractionUiSignal>.GetFrameSnapshotArray();
+            int signalCount = signals.IsCreated ? signals.Length : 0;
+            if (ContainsBulkheadOverrideSignal(signals, signalCount))
             {
                 ProcessDoorOverrideJob overrideJob = new ProcessDoorOverrideJob
                 {
-                    Signals = (InteractionUiSignal*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(signals),
+                    Signals = signals,
                     States = (BulkheadStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(states),
                     Aups = (double3*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(aups),
-                    SignalCount = math.min(signals.Length, 32),
+                    SignalCount = signalCount,
                     StateCount = count,
                     PlayerAup = playerAup,
                     OverrideDistanceMeters = overrideDistanceMeters
@@ -778,7 +997,7 @@ namespace Hecton8.Construction
                 PlayerStartAup = playerAup,
                 PlayerEndAup = predictedAup,
                 PlayerRadiusMeters = DefaultPlayerRadiusMeters,
-                Frame = frame
+                Frame = timing.FrameId
             };
             _preSimulationHandle = collisionJob.Schedule(dependency);
             _preSimulationScheduled = true;
@@ -788,16 +1007,23 @@ namespace Hecton8.Construction
         private JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
         {
             JobHandle dependency = _preSimulationScheduled ? JobHandle.CombineDependencies(dependsOn, _preSimulationHandle) : dependsOn;
-            IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultState(vault))
+            if (_vaultRebindPending && !TryFlushPendingDataVaultRebind())
                 return dependency;
 
-            float q = HomeostasisBrain.GlobalQualityWeight;
+            IDataVault vault = ResolveVault();
+            if (vault == null || !RefreshVaultState(vault))
+                return dependency;
+
+            float q = AuthoritativeQualityWeight;
             float cadenceHz = ResolveAuthorityCadenceHz(q);
-            float dt = math.max(0f, timing.FrameDelta);
+            float dt = ResolveSimulationTickDelta(in timing);
             _lastFrame = context.Frame;
-            _authorityAccumulator += dt;
-            float period = 1f / math.max(1f, cadenceHz);
+            float accumulated = BulkheadContainmentMath.SanitizeNonNegative(_authorityAccumulator, 0f) + dt;
+            _authorityAccumulator = math.isfinite(accumulated) && accumulated < SimulationAuthorityDeltaCeilingSeconds
+                ? accumulated
+                : SimulationAuthorityDeltaCeilingSeconds;
+            float safeCadenceHz = BulkheadContainmentMath.SanitizePositive(cadenceHz, 5f);
+            float period = 1f / (safeCadenceHz < 1f ? 1f : safeCadenceHz);
 
             if (!Resolve(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
                 !Resolve(in _collisionResultsHandle, out NativeArray<BulkheadCollisionResultDTO> collisions) ||
@@ -836,7 +1062,7 @@ namespace Hecton8.Construction
                 dependency = ScheduleMockDataIfRequired(states, aups, planes, csrEdges, dependency);
             }
 
-            int count = math.min(_activeCount, states.Length);
+            int count = math.clamp(_activeCount, 0, CreatedLength(states));
             if (count <= 0)
             {
                 if (_preSimulationScheduled)
@@ -913,7 +1139,27 @@ namespace Hecton8.Construction
                     BulkheadTelemetryFlags.ScheduleTimeOnly);
             }
 
-            float authorityDelta = math.min(_authorityAccumulator, 0.2f);
+            count = math.min(count, ResolveSimulationMutationCount(states, csrEdges, conductivity, fluidFlow, moduleIntegrity));
+            if (count <= 0)
+            {
+                long telemetryStart = Stopwatch.GetTimestamp();
+                return ScheduleTelemetryJob(
+                    dependency,
+                    states,
+                    collisions,
+                    telemetry,
+                    cursor,
+                    0,
+                    context.Frame,
+                    q,
+                    cadenceHz,
+                    telemetryStart,
+                    BulkheadTelemetryFlags.ScheduleTimeOnly);
+            }
+
+            float authorityDelta = _authorityAccumulator < SimulationAuthorityDeltaCeilingSeconds
+                ? _authorityAccumulator
+                : SimulationAuthorityDeltaCeilingSeconds;
             _authorityAccumulator = 0f;
 
             long start = Stopwatch.GetTimestamp();
@@ -946,7 +1192,8 @@ namespace Hecton8.Construction
                 EdgeConductivity = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(conductivity),
                 EdgeFluidFlow = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(fluidFlow),
                 Count = count,
-                EdgeScalarCount = conductivity.Length
+                ConductivityCount = conductivity.Length,
+                FluidFlowCount = fluidFlow.Length
             };
             handle = lockJob.Schedule(count, 32, handle);
 
@@ -1000,7 +1247,7 @@ namespace Hecton8.Construction
                 Frame = frame,
                 GlobalQualityWeight = q,
                 AuthorityCadenceHz = cadenceHz,
-                LastScheduleMicroseconds = _lastScheduleMicroseconds,
+                LastScheduleMicroseconds = BulkheadContainmentMath.SanitizePositive(_lastScheduleMicroseconds, 0f),
                 Flags = flags
             };
             JobHandle handle = telemetryJob.Schedule(dependency);
@@ -1024,6 +1271,15 @@ namespace Hecton8.Construction
 
             int telemetryIndex = (int)(cursor[0] % (uint)telemetry.Length);
             BulkheadCollisionResultDTO collision = collisions.IsCreated && collisions.Length > 0 ? collisions[0] : default;
+            uint flags = BulkheadTelemetryFlags.ScheduleTimeOnly;
+            if ((collision.Flags & BulkheadCollisionFlags.NonFinite) != 0u ||
+                !math.isfinite(collision.DepthMeters) ||
+                !math.all(math.isfinite(collision.Normal)))
+            {
+                flags |= BulkheadTelemetryFlags.NonFinite | BulkheadTelemetryFlags.DumpRequested;
+            }
+
+            float collisionDepth = BulkheadContainmentMath.SanitizePositive(collision.DepthMeters, 0f);
             telemetry[telemetryIndex] = new BulkheadTelemetryEntry
             {
                 Frame = frame,
@@ -1031,13 +1287,13 @@ namespace Hecton8.Construction
                 SealedCount = 0u,
                 JammedCount = 0u,
                 AverageClosure = 0f,
-                AuthorityCadenceHz = cadenceHz,
+                AuthorityCadenceHz = BulkheadContainmentMath.SanitizePositive(cadenceHz, 5f),
                 GlobalQualityWeight = BulkheadContainmentMath.Sanitize01(q, 0f),
-                LastScheduleMicroseconds = _lastScheduleMicroseconds,
+                LastScheduleMicroseconds = BulkheadContainmentMath.SanitizePositive(_lastScheduleMicroseconds, 0f),
                 StateHash = 2166136261u,
                 CollisionEdgeHash = collision.EdgeHashID,
-                CollisionDepthMeters = collision.DepthMeters,
-                Flags = BulkheadTelemetryFlags.ScheduleTimeOnly
+                CollisionDepthMeters = collisionDepth,
+                Flags = flags
             };
             cursor[0] = unchecked(cursor[0] + 1u);
         }
@@ -1072,7 +1328,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (vault == null || !EnsureVaultState(vault) || !EnsureGraphicsBuffers())
+            if (vault == null || !RefreshVaultState(vault) || !EnsureGraphicsBuffers())
             {
                 DisableShaderGlobals();
                 return;
@@ -1098,6 +1354,10 @@ namespace Hecton8.Construction
 
             uint readCursor = cursor[0] == 0u ? 0u : cursor[0] - 1u;
             BulkheadTelemetryEntry entry = telemetry[(int)(readCursor % (uint)telemetry.Length)];
+            _lastTelemetryFrame = entry.Frame;
+            _lastTelemetryAverageClosure = entry.AverageClosure;
+            _lastTelemetryCollisionEdgeHash = entry.CollisionEdgeHash;
+            _lastTelemetryCollisionDepthMeters = entry.CollisionDepthMeters;
             int uploadCount = math.clamp(_activeCount <= 0 ? 1 : _activeCount, 1, math.min(states.Length, BulkheadContainmentConstants.ShaderUploadCapacity));
             uint stateHash = entry.StateHash;
             bool shouldUpload = !_shaderHasValidReadBuffer ||
@@ -1126,7 +1386,7 @@ namespace Hecton8.Construction
             }
 
             Shader.SetGlobalBuffer(GlobalBulkheadStatesId, readBuffer);
-            float q = HomeostasisBrain.GlobalQualityWeight;
+            float q = BulkheadContainmentMath.Sanitize01(HomeostasisBrain.GlobalQualityWeight, 0f);
             Shader.SetGlobalVector(GlobalBulkheadParamsId, new Vector4(uploadCount, uploadShaderBuffer ? 1f : 0f, _lastFrame, q));
             _shaderGlobalsActive = true;
 
@@ -1149,41 +1409,113 @@ namespace Hecton8.Construction
             }
 
             uint cursorValue = cursor[0];
-            if (cursorValue == _lastDumpedTelemetryCursor)
+            if (cursorValue == _lastDumpedTelemetryCursor ||
+                cursorValue == _lastDumpAttemptTelemetryCursor)
                 return;
 
             BulkheadTelemetryEntry entry = telemetry[(int)((cursorValue - 1u) % (uint)telemetry.Length)];
             if ((entry.Flags & BulkheadTelemetryFlags.DumpRequested) != 0u)
             {
-                DumpBlackBox(telemetry, cursorValue);
-                _lastDumpedTelemetryCursor = cursorValue;
+                _lastDumpAttemptTelemetryCursor = cursorValue;
+                if (TryDumpBlackBox(telemetry, cursorValue))
+                    _lastDumpedTelemetryCursor = cursorValue;
             }
         }
 
-        private bool TryResolvePlayerState(IDataVault vault, out double3 playerAup, out float3 velocity, out uint frame)
+        private bool TryAcquirePlayerState(IDataVault vault, uint currentFrame, out double3 playerAup, out float3 velocity)
         {
             playerAup = double3.zero;
             velocity = float3.zero;
-            frame = _lastFrame;
-            if (vault == null ||
-                !vault.TryGetBuffer(BufferID.PlayerKinematicState, out NativeArray<LockstepPlayerKinematicState> playerStates) ||
-                !playerStates.IsCreated ||
-                playerStates.Length == 0)
+            if (!TryAcquirePlayerKinematicStateBuffer(vault, currentFrame, out NativeArray<LockstepPlayerKinematicState> playerStates))
             {
                 return false;
             }
 
             LockstepPlayerKinematicState player = playerStates[0];
+            if (!IsPlayerFrameFresh(player.Frame, currentFrame))
+                return false;
+
             playerAup = BulkheadContainmentMath.ToAbsoluteDouble3(in player);
             velocity = player.Velocity;
-            frame = player.Frame;
+            return math.all(math.isfinite(playerAup)) && math.all(math.isfinite(velocity));
+        }
+
+        private bool TryAcquirePlayerKinematicStateBuffer(
+            IDataVault vault,
+            uint currentFrame,
+            out NativeArray<LockstepPlayerKinematicState> playerStates)
+        {
+            playerStates = default;
+            if (vault == null)
+                return false;
+
+            if (IsVaultHandleCreated(in _playerKinematicStateHandle) &&
+                vault.TryResolveHandle(in _playerKinematicStateHandle, out playerStates) &&
+                playerStates.IsCreated &&
+                playerStates.Length > 0)
+            {
+                return true;
+            }
+
+            if (currentFrame == 0u)
+            {
+                if (_nextPlayerStateHandleBindFrame != 0u)
+                    return false;
+                _nextPlayerStateHandleBindFrame = 16u;
+            }
+            else
+            {
+                if (currentFrame < _nextPlayerStateHandleBindFrame)
+                    return false;
+                _nextPlayerStateHandleBindFrame = unchecked(currentFrame + 16u);
+            }
+
+            return TryBindPlayerKinematicStateHandle(vault) &&
+                   vault.TryResolveHandle(in _playerKinematicStateHandle, out playerStates) &&
+                   playerStates.IsCreated &&
+                   playerStates.Length > 0;
+        }
+
+        private bool TryBindPlayerKinematicStateHandle(IDataVault vault)
+        {
+            if (vault == null)
+            {
+                _playerKinematicStateHandle = default;
+                return false;
+            }
+
+            if (!vault.TryGetGenerationHandle(
+                    BufferID.PlayerKinematicState,
+                    out VaultGenerationHandle<LockstepPlayerKinematicState> handle))
+            {
+                _playerKinematicStateHandle = default;
+                return false;
+            }
+
+            _playerKinematicStateHandle = handle;
             return true;
+        }
+
+        private static bool IsPlayerFrameFresh(uint playerFrame, uint currentFrame)
+        {
+            if (playerFrame == 0u || currentFrame == 0u || playerFrame > currentFrame)
+                return false;
+
+            return currentFrame - playerFrame <= 1u;
         }
 
         private float ResolveAuthorityCadenceHz(float q)
         {
-            float weight = math.saturate(q);
+            float weight = BulkheadContainmentMath.Sanitize01(q, 0f);
             return math.lerp(5f, 30f, weight * weight);
+        }
+
+        private static float ResolveSimulationTickDelta(in DispatcherTimingDTO timing)
+        {
+            float fixedDelta = timing.FixedDelta;
+            return math.isfinite(fixedDelta) && fixedDelta > 0f
+                ? math.clamp(fixedDelta, 0.0001f, 0.05f)
+                : LockedSimulationTickDeltaSeconds;
         }
 
         private bool EnsureGraphicsBuffers()
@@ -1197,21 +1529,29 @@ namespace Hecton8.Construction
             }
 
             ReleaseGraphicsBuffers();
-            _shaderStateBufferA = new GraphicsBuffer(
-                GraphicsBuffer.Target.Structured,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                count,
-                stride);
-            _shaderStateBufferB = new GraphicsBuffer(
-                GraphicsBuffer.Target.Structured,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                count,
-                stride);
-            _shaderWriteBufferSlot = 0;
-            _shaderReadBufferSlot = 0;
-            _shaderHasValidReadBuffer = false;
-            _shaderUploadDirty = true;
-            return _shaderStateBufferA != null && _shaderStateBufferB != null;
+            try
+            {
+                _shaderStateBufferA = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    count,
+                    stride);
+                _shaderStateBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    count,
+                    stride);
+                _shaderWriteBufferSlot = 0;
+                _shaderReadBufferSlot = 0;
+                _shaderHasValidReadBuffer = false;
+                _shaderUploadDirty = true;
+                return _shaderStateBufferA != null && _shaderStateBufferB != null;
+            }
+            catch (Exception)
+            {
+                ReleaseGraphicsBuffers();
+                return false;
+            }
         }
 
         private static bool IsGraphicsBufferValid(GraphicsBuffer buffer, int count, int stride)
@@ -1265,35 +1605,92 @@ namespace Hecton8.Construction
             if (safeCount <= 0 || destination.stride != UnsafeUtility.SizeOf<T>())
                 return false;
 
-            NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-            void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-            void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-            UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<T>());
-            destination.UnlockBufferAfterWrite<T>(safeCount);
-            return true;
+            bool locked = false;
+            try
+            {
+                NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
+                locked = true;
+                void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<T>());
+            }
+            catch (Exception)
+            {
+                if (locked)
+                    TryUnlockBufferAfterFailedWrite(destination, safeCount);
+
+                return false;
+            }
+
+            try
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
-        private void DumpBlackBox(NativeArray<BulkheadTelemetryEntry> telemetry, uint cursor)
+        private static void TryUnlockBufferAfterFailedWrite<T>(GraphicsBuffer destination, int count) where T : struct
+        {
+            try
+            {
+                destination.UnlockBufferAfterWrite<T>(count);
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private bool TryDumpBlackBox(NativeArray<BulkheadTelemetryEntry> telemetry, uint cursor)
         {
             if (!telemetry.IsCreated || telemetry.Length == 0 || string.IsNullOrEmpty(_dumpPath))
-                return;
+                return false;
 
-            Directory.CreateDirectory(Path.GetDirectoryName(_dumpPath));
-            using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            Span<byte> header = stackalloc byte[16];
-            WriteUInt(header, 0, 0x53483232u);
-            WriteUInt(header, 4, cursor);
-            WriteUInt(header, 8, (uint)telemetry.Length);
-            WriteUInt(header, 12, (uint)UnsafeUtility.SizeOf<BulkheadTelemetryEntry>());
-            stream.Write(header);
+            const int telemetryDumpEntryBytes = 64;
+            int entrySize = UnsafeUtility.SizeOf<BulkheadTelemetryEntry>();
+            if (entrySize != telemetryDumpEntryBytes)
+                return false;
 
-            Span<byte> entryBytes = stackalloc byte[64];
-            for (int i = 0; i < telemetry.Length; i++)
+            string dumpDirectory = Path.GetDirectoryName(_dumpPath);
+            if (string.IsNullOrEmpty(dumpDirectory))
+                return false;
+
+            try
             {
-                BulkheadTelemetryEntry entry = telemetry[i];
-                WriteTelemetryEntry(entryBytes, in entry);
-                stream.Write(entryBytes);
+                Directory.CreateDirectory(dumpDirectory);
+                using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+                Span<byte> header = stackalloc byte[16];
+                WriteUInt(header, 0, 0x53483232u);
+                WriteUInt(header, 4, cursor);
+                WriteUInt(header, 8, (uint)telemetry.Length);
+                WriteUInt(header, 12, (uint)entrySize);
+                stream.Write(header);
+
+                Span<byte> entryBytes = stackalloc byte[telemetryDumpEntryBytes];
+                for (int i = 0; i < telemetry.Length; i++)
+                {
+                    BulkheadTelemetryEntry entry = telemetry[i];
+                    WriteTelemetryEntry(entryBytes, in entry);
+                    stream.Write(entryBytes);
+                }
+
+                return true;
             }
+            catch (Exception ex) when (IsColdStorageException(ex))
+            {
+                return false;
+            }
+        }
+
+        private static bool IsColdStorageException(Exception ex)
+        {
+            return ex is IOException ||
+                   ex is UnauthorizedAccessException ||
+                   ex is ArgumentException ||
+                   ex is NotSupportedException;
         }
 
         private static void WriteUInt(Span<byte> destination, int offset, uint value)
@@ -1342,7 +1739,7 @@ namespace Hecton8.Construction
             int index = 0;
             while (index < csv.Length && count < profiles.Length)
             {
-                ReadOnlySpan<byte> line = ReadLine(csv, ref index);
+                ReadOnlySpan<byte> line = SliceNextLine(csv, ref index);
                 if (line.Length == 0 || line[0] == (byte)'#')
                     continue;
                 if (StartsWithAscii(line, "profile"))
@@ -1351,32 +1748,39 @@ namespace Hecton8.Construction
                 BulkheadProfileDTO profile = default;
                 int column = 0;
                 int cellIndex = 0;
+                bool rowValid = true;
                 while (cellIndex <= line.Length)
                 {
-                    ReadOnlySpan<byte> cell = ReadCell(line, ref cellIndex);
+                    ReadOnlySpan<byte> cell = SliceNextCell(line, ref cellIndex);
                     switch (column)
                     {
                         case 0: profile.ProfileHash = HashAscii(cell); break;
-                        case 1: TryParseFloat(cell, out profile.CloseSpeedPerSecond); break;
-                        case 2: TryParseFloat(cell, out profile.OpenSpeedPerSecond); break;
-                        case 3: TryParseFloat(cell, out profile.OverrideDistanceMeters); break;
-                        case 4: TryParseFloat(cell, out profile.CatastrophicIntegrity01); break;
-                        case 5: TryParseFloat(cell, out profile.WidthMeters); break;
-                        case 6: TryParseFloat(cell, out profile.HeightMeters); break;
+                        case 1: rowValid &= TryParseFloat(cell, out profile.CloseSpeedPerSecond); break;
+                        case 2: rowValid &= TryParseFloat(cell, out profile.OpenSpeedPerSecond); break;
+                        case 3: rowValid &= TryParseFloat(cell, out profile.OverrideDistanceMeters); break;
+                        case 4: rowValid &= TryParseFloat(cell, out profile.CatastrophicIntegrity01); break;
+                        case 5: rowValid &= TryParseFloat(cell, out profile.WidthMeters); break;
+                        case 6: rowValid &= TryParseFloat(cell, out profile.HeightMeters); break;
                         case 7: profile.Flags = HashAscii(cell); break;
                     }
                     column++;
                 }
 
-                if (profile.ProfileHash == 0u)
+                if (!rowValid || column < 7 || profile.ProfileHash == 0u)
                     continue;
+                profile.CloseSpeedPerSecond = math.max(0.05f, BulkheadContainmentMath.SanitizePositive(profile.CloseSpeedPerSecond, 2f));
+                profile.OpenSpeedPerSecond = math.max(0.05f, BulkheadContainmentMath.SanitizePositive(profile.OpenSpeedPerSecond, 2.5f));
+                profile.OverrideDistanceMeters = math.max(0.5f, BulkheadContainmentMath.SanitizePositive(profile.OverrideDistanceMeters, 3f));
+                profile.CatastrophicIntegrity01 = BulkheadContainmentMath.Sanitize01(profile.CatastrophicIntegrity01, 0.35f);
+                profile.WidthMeters = math.max(0.25f, BulkheadContainmentMath.SanitizePositive(profile.WidthMeters, 2.6f));
+                profile.HeightMeters = math.max(0.25f, BulkheadContainmentMath.SanitizePositive(profile.HeightMeters, 3.2f));
                 profiles[count++] = profile;
             }
 
             return count;
         }
 
-        private static ReadOnlySpan<byte> ReadLine(ReadOnlySpan<byte> csv, ref int index)
+        private static ReadOnlySpan<byte> SliceNextLine(ReadOnlySpan<byte> csv, ref int index)
         {
             int start = index;
             while (index < csv.Length && csv[index] != (byte)'\n' && csv[index] != (byte)'\r')
@@ -1387,7 +1791,7 @@ namespace Hecton8.Construction
             return Trim(line);
         }
 
-        private static ReadOnlySpan<byte> ReadCell(ReadOnlySpan<byte> line, ref int index)
+        private static ReadOnlySpan<byte> SliceNextCell(ReadOnlySpan<byte> line, ref int index)
         {
             int start = index;
             while (index < line.Length && line[index] != (byte)',')
@@ -1442,15 +1846,17 @@ namespace Hecton8.Construction
 
             int index = 0;
             float sign = 1f;
-            if (value[index] == (byte)'-')
+            if (value[index] == (byte)'-' || value[index] == (byte)'+')
             {
-                sign = -1f;
+                sign = value[index] == (byte)'-' ? -1f : 1f;
                 index++;
             }
 
             float whole = 0f;
+            bool hasDigit = false;
             while (index < value.Length && value[index] >= (byte)'0' && value[index] <= (byte)'9')
             {
+                hasDigit = true;
                 whole = whole * 10f + (value[index] - (byte)'0');
                 index++;
             }
@@ -1462,11 +1868,15 @@ namespace Hecton8.Construction
                 index++;
                 while (index < value.Length && value[index] >= (byte)'0' && value[index] <= (byte)'9')
                 {
+                    hasDigit = true;
                     fraction = fraction * 10f + (value[index] - (byte)'0');
                     scale *= 10f;
                     index++;
                 }
             }
+
+            if (!hasDigit || index != value.Length)
+                return false;
 
             result = sign * (whole + fraction / scale);
             return math.isfinite(result);
@@ -1484,7 +1894,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            int count = math.min(_activeCount, math.min(states.Length, planes.Length));
+            int count = math.clamp(_activeCount, 0, math.min(states.Length, planes.Length));
             for (int i = 0; i < count; i++)
             {
                 BulkheadStateDTO state = states[i];
@@ -1492,10 +1902,20 @@ namespace Hecton8.Construction
                     continue;
 
                 BulkheadPlaneDTO plane = planes[i];
+                if (!math.all(math.isfinite(plane.CenterAup)))
+                    continue;
+
                 float3 local = AupPrecisionMath.LocalDeltaFloat3(plane.CenterAup, HectonFloatingOrigin.CurrentTotalOffsetDouble, float3.zero);
+                if (!math.all(math.isfinite(local)))
+                    continue;
+
+                float3 normal3 = BulkheadContainmentMath.SafeNormal(plane.Normal, new float3(0f, 0f, 1f));
+                float width = math.max(0.25f, BulkheadContainmentMath.SanitizePositive(plane.WidthMeters, 2.6f));
+                float height = math.max(0.25f, BulkheadContainmentMath.SanitizePositive(plane.HeightMeters, 3.2f));
+                float thickness = math.max(0.05f, BulkheadContainmentMath.SanitizePositive(plane.HalfThicknessMeters, 0.18f)) * 2f;
                 Vector3 center = new Vector3(local.x, local.y, local.z);
-                Vector3 normal = new Vector3(plane.Normal.x, plane.Normal.y, plane.Normal.z);
-                float closure = math.saturate(state.ClosureProgress);
+                Vector3 normal = new Vector3(normal3.x, normal3.y, normal3.z);
+                float closure = BulkheadContainmentMath.Sanitize01(state.ClosureProgress, 0f);
                 if (closure >= 0.95f)
                     Gizmos.color = new Color(1f, 0.05f, 0.02f, 0.8f);
                 else if (closure >= 0.5f)
@@ -1504,7 +1924,7 @@ namespace Hecton8.Construction
                     Gizmos.color = new Color(0.1f, 0.95f, 0.35f, 0.45f);
 
                 Gizmos.DrawRay(center, normal * 0.75f);
-                Gizmos.DrawWireCube(center, new Vector3(plane.WidthMeters, plane.HeightMeters, plane.HalfThicknessMeters * 2f));
+                Gizmos.DrawWireCube(center, new Vector3(width, height, thickness));
                 Gizmos.color = Color.yellow;
                 Gizmos.DrawRay(center, normal * 1.25f);
             }

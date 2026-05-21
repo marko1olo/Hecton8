@@ -120,7 +120,7 @@ namespace Hecton8.VFX
                 return;
 
             _sampleTimer -= math.max(0f, deltaTime);
-            Vector3 runtimePosition = target.position;
+            Vector3 runtimePosition = ResolveTargetRuntimePosition(target);
             if (!IsFinite(runtimePosition))
                 return;
 
@@ -129,6 +129,11 @@ namespace Hecton8.VFX
 
             AddSample(runtimePosition);
             _sampleTimer = math.max(MinimumSampleIntervalSeconds, sampleIntervalSeconds);
+        }
+
+        private static Vector3 ResolveTargetRuntimePosition(Transform source)
+        {
+            return source != null ? source.position : Vector3.zero;
         }
 
         public void Render(float deltaTime)
@@ -303,7 +308,9 @@ namespace Hecton8.VFX
             if (_resolvedCapacity < MinimumCapacity)
                 return;
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveRuntimeAup(runtimePosition, out AbsoluteUniversePosition aup))
+                return;
+
             _headIndex = (_headIndex + 1) % _resolvedCapacity;
             _samples[_headIndex] = new TrailSample
             {
@@ -473,6 +480,22 @@ namespace Hecton8.VFX
 
             float invLength = math.rsqrt(lengthSq);
             return new Vector3(value.x * invLength, value.y * invLength, value.z * invLength);
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static bool IsFinite(Vector3 value)

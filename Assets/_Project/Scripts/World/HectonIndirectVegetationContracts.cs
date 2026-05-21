@@ -59,20 +59,33 @@ namespace Hecton8.World
         DefensiveBurst = 2
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     public struct HectonFloraSporeEvent
     {
+        [FieldOffset(0)]
         public AbsoluteUniversePositionBlit PositionAup;
+        [FieldOffset(48)]
         public float3 RuntimePosition;
+        [FieldOffset(60)]
         public float RadiusMeters;
+        [FieldOffset(64)]
         public float Intensity01;
+        [FieldOffset(68)]
         public float Age01;
+        [FieldOffset(72)]
         public int TemplateIndex;
+        [FieldOffset(76)]
         public int ActivePayloadIndex;
+        [FieldOffset(80)]
         public uint FrameIndex;
+        [FieldOffset(84)]
         public HectonFloraSporeEventKind Kind;
+        [FieldOffset(85)]
         public byte Underwater;
+        [FieldOffset(86)]
         public ushort Reserved0;
+        [FieldOffset(88)]
+        private ulong _pad0;
     }
 
     /// <summary>
@@ -81,6 +94,7 @@ namespace Hecton8.World
     public static class HectonFloraSporeEvents
     {
         public const int PendingEventCapacity = 64;
+        private const Allocator DataVaultExemptFloraSporeEventLaneAllocator = Allocator.Persistent;
 
         private static NativeQueue<HectonFloraSporeEvent> _pendingEvents;
         private static int _pendingEventCount;
@@ -192,7 +206,12 @@ namespace Hecton8.World
             }
 
             EnsureInitialized();
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveRuntimeAup(runtimePosition, out AbsoluteUniversePosition positionAup))
+            {
+                _droppedEventCount++;
+                return false;
+            }
+
             _pendingEvents.Enqueue(new HectonFloraSporeEvent
             {
                 PositionAup = AbsoluteUniversePositionBlit.FromAup(in positionAup),
@@ -211,12 +230,29 @@ namespace Hecton8.World
             return true;
         }
 
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
+        }
+
         private static void EnsureInitialized()
         {
             if (_pendingEvents.IsCreated)
                 return;
 
-            _pendingEvents = new NativeQueue<HectonFloraSporeEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<HectonFloraSporeEvent>[64] - flora spore event handoff lane for GPU fog/scatter consumers - owner: HectonFloraSporeEvents
+            _pendingEvents = new NativeQueue<HectonFloraSporeEvent>(DataVaultExemptFloraSporeEventLaneAllocator); // COLD ALLOC: NativeQueue<HectonFloraSporeEvent>[64] - flora spore event handoff lane for GPU fog/scatter consumers - owner: HectonFloraSporeEvents
             NativeMemorySentinel.RegisterNativeQueue(
                 _pendingEvents,
                 PendingEventCapacity,
@@ -249,7 +285,7 @@ namespace Hecton8.World
     /// <summary>
     /// Per-instance metadata payload consumed by the indirect vegetation shader.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = Stride)]
+    [StructLayout(LayoutKind.Explicit, Size = Stride)]
     public struct HectonVegetationInstanceData
     {
         /// <summary>Exact GPU stride in bytes.</summary>
@@ -261,6 +297,7 @@ namespace Hecton8.World
         public const float RuntimeStateDying = (float)HectonVegetationRuntimeState.Dying;
 
         /// <summary>Vegetation type flag: 0 grass, 1 giant kelp, 2 sargassum.</summary>
+        [FieldOffset(0)]
         public float Type;
 
         /// <summary>
@@ -268,39 +305,51 @@ namespace Hecton8.World
         /// Grass/sargassum: normalized short-range variation.
         /// Giant kelp: normalized 0..1 value mapped to 10-20 m length in shader.
         /// </summary>
+        [FieldOffset(4)]
         public float HeightScale;
 
         /// <summary>Width multiplier or silhouette variation.</summary>
+        [FieldOffset(8)]
         public float WidthScale;
 
         /// <summary>Stable per-instance variation value used for phase/randomization.</summary>
+        [FieldOffset(12)]
         public float Variation;
 
         /// <summary>Resolved flora-template index authored by the vegetation bridge. -1 when no template matched.</summary>
+        [FieldOffset(16)]
         public float TemplateIndex;
 
         /// <summary>Zero-state runtime animation lane: 0 idle, 1 agitated, 2 dying.</summary>
+        [FieldOffset(20)]
         public float RuntimeState;
 
         /// <summary>Explicit runtime flags consumed by shaders and gameplay instead of overloading variation bits.</summary>
+        [FieldOffset(24)]
         public float RuntimeFlags;
 
         /// <summary>Per-instance bioluminescence pulse frequency in Hertz.</summary>
+        [FieldOffset(28)]
         public float PulseFrequency;
 
         /// <summary>Per-instance bioluminescence color in linear space. Alpha packs emission intensity and damage state.</summary>
+        [FieldOffset(32)]
         public Vector4 BioluminescenceColor;
 
         /// <summary>Per-instance VAT sway speed multiplier stamped from flora authoring.</summary>
+        [FieldOffset(48)]
         public float SwaySpeed;
 
         /// <summary>Per-instance VAT bend amplitude multiplier stamped from flora authoring.</summary>
+        [FieldOffset(52)]
         public float BendAmplitude;
 
         /// <summary>Normalized health lane consumed by harvest visuals and emissive dimming.</summary>
+        [FieldOffset(56)]
         public float HealthNormalized;
 
         /// <summary>Optional cultivation growth lane. Negative means culled/harvested; zero means legacy/default mature when no cultivation data is authored.</summary>
+        [FieldOffset(60)]
         public float Reserved0;
 
         /// <summary>
@@ -501,38 +550,46 @@ namespace Hecton8.World
             InstanceCount = instanceCount;
             BufferIndex = bufferIndex;
             ProducerHandle = producerHandle;
-            HasExplicitBounds = hasExplicitBounds;
+            HasExplicitBoundsFlag = hasExplicitBounds ? (byte)1 : (byte)0;
             DrawBounds = drawBounds;
         }
 
         /// <summary>Native matrix payload exported by the producer.</summary>
-        public NativeArray<Matrix4x4> InstanceMatrices { get; }
+        public readonly NativeArray<Matrix4x4> InstanceMatrices;
 
         /// <summary>Native metadata payload exported by the producer.</summary>
-        public NativeArray<HectonVegetationInstanceData> InstanceData { get; }
+        public readonly NativeArray<HectonVegetationInstanceData> InstanceData;
 
         /// <summary>Valid entry count in both native arrays.</summary>
-        public int InstanceCount { get; }
+        public readonly int InstanceCount;
 
         /// <summary>Producer-owned front/back buffer index that was acquired for this read.</summary>
-        public int BufferIndex { get; }
+        public readonly int BufferIndex;
 
         /// <summary>Producer job fence that must complete before the renderer reads the arrays.</summary>
-        public JobHandle ProducerHandle { get; }
+        public readonly JobHandle ProducerHandle;
 
-        /// <summary>True when the producer exported explicit world-space bounds.</summary>
-        public bool HasExplicitBounds { get; }
+        /// <summary>Non-zero when the producer exported explicit world-space bounds.</summary>
+        public readonly byte HasExplicitBoundsFlag;
 
         /// <summary>Explicit world-space bounds for the acquired read token.</summary>
-        public Bounds DrawBounds { get; }
+        public readonly Bounds DrawBounds;
 
         /// <summary>True when the token contains enough data for upload.</summary>
-        public bool IsValid =>
-            InstanceCount > 0 &&
-            InstanceMatrices.IsCreated &&
-            InstanceData.IsCreated &&
-            InstanceMatrices.Length >= InstanceCount &&
-            InstanceData.Length >= InstanceCount;
+        public static bool IsValid(in HectonIndirectVegetationNativeReadBuffer readBuffer)
+        {
+            return readBuffer.InstanceCount > 0 &&
+                   readBuffer.InstanceMatrices.IsCreated &&
+                   readBuffer.InstanceData.IsCreated &&
+                   readBuffer.InstanceMatrices.Length >= readBuffer.InstanceCount &&
+                   readBuffer.InstanceData.Length >= readBuffer.InstanceCount;
+        }
+
+        /// <summary>True when the producer exported explicit world-space bounds.</summary>
+        public static bool HasExplicitBounds(in HectonIndirectVegetationNativeReadBuffer readBuffer)
+        {
+            return readBuffer.HasExplicitBoundsFlag != 0;
+        }
     }
 
     /// <summary>

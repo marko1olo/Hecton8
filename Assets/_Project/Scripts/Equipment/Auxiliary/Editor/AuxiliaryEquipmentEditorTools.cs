@@ -114,7 +114,7 @@ namespace Hecton8.Equipment.Auxiliary.Editor
 
             bool hasTelemetry = AuxiliaryEquipmentRouterRuntime.TryReadTelemetry(out AuxiliaryTelemetryEntry latest);
             _statusLabel.text = hasTelemetry
-                ? "Active " + latest.ActiveCount + " | Flare " + latest.FlareSignals + " | Ping " + latest.PingSignals + " | Tether " + latest.TetherSignals + " | CPUus " + latest.CpuMicroseconds.ToString("0.0")
+                ? "Active " + latest.ActiveCount + " | Flare " + latest.FlareSignals + " | Ping " + latest.PingSignals + " | Tether " + latest.TetherSignals + " | Drop " + latest.DroppedSignals + " | Wallus " + latest.CpuMicroseconds.ToString("0.0")
                 : "No runtime telemetry";
 
             if (AuxiliaryEquipmentRouterRuntime.TryReadTuning(out AuxiliaryTuningDTO tuning) && !_slidersBound)
@@ -152,6 +152,7 @@ namespace Hecton8.Equipment.Auxiliary.Editor
                 return;
 
             tuning.GlobalQualityWeight = math.saturate(_qualitySlider.value);
+            tuning.Flags |= AuxiliaryTuningFlags.OverrideGlobalQualityWeight;
             tuning.FlareBaseLifetime = math.max(5f, _flareLifetimeSlider.value);
             tuning.PingExpansionRate = math.max(1f, _pingRateSlider.value);
             AuxiliaryEquipmentRouterRuntime.TryWriteTuning(in tuning);

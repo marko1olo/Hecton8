@@ -1,6 +1,6 @@
 # DataVault Sovereignty Audit - VAULT_SOVEREIGNTY_ENFORCER
 
-Schema: `hecton8.datavault_sovereignty_audit.v2`
+Schema: `hecton8.datavault_sovereignty_audit.v3`
 Status: `FAIL_REGRESSION`
 Source root: `Assets/_Project/Scripts`
 Pattern: `\bnew\s+NativeArray\s*<`
@@ -10,73 +10,98 @@ Baseline: `Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json`
 
 | Metric | Count |
 |---|---:|
-| Total direct `new NativeArray<T>` constructors | 1156 |
+| Total direct `new NativeArray<T>` constructors | 1147 |
 | Allowed allocator-internal constructors | 6 |
-| Forbidden system constructors | 1150 |
-| Files with forbidden constructors | 177 |
-| Total field-like `NativeArray<T>` declarations | 5165 |
-| Allowed DataVault/H8Memory declarations | 14 |
-| Forbidden system declarations | 5151 |
-| Files with forbidden declarations | 348 |
+| Forbidden system constructors | 1141 |
+| Files with forbidden constructors | 173 |
+| Total field-like `NativeArray<T>` declarations | 5526 |
+| Allowed DataVault/H8Memory declarations | 3807 |
+| Forbidden system declarations | 1719 |
+| Persistent owner native collection declarations | 1043 |
+| Job input native collection declarations | 3788 |
+| Burst job input native collection declarations | 3785 |
+| Unknown struct native collection declarations | 695 |
+| Files with forbidden declarations | 264 |
 
 ## Regression Findings
 
-- Forbidden direct NativeArray constructors increased from 1149 to 1150.
+- Baseline schema mismatch: 'hecton8.datavault_sovereignty_baseline.v2'.
 - Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs: forbidden direct constructors increased from 15 to 18.
+- Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs: forbidden direct constructors increased from 0 to 16.
+- Assets/_Project/Scripts/Editor/TextureChannelPacker/TextureChannelPackerWindow.cs: forbidden direct constructors increased from 0 to 4.
+- Assets/_Project/Scripts/Gameplay/Editor/ScannerLoreDatabaseSyncTunerWindow.cs: forbidden direct constructors increased from 0 to 4.
 - Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs: forbidden direct constructors increased from 9 to 11.
 - Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs: forbidden direct constructors increased from 16 to 17.
-- Forbidden NativeArray field declarations increased from 5125 to 5151.
-- Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs: forbidden NativeArray field declarations increased from 12 to 14.
-- Assets/_Project/Scripts/Construction/SumpPumpPipeGridJobs.cs: forbidden NativeArray field declarations increased from 38 to 41.
-- Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs: forbidden NativeArray field declarations increased from 10 to 12.
-- Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBakerJobs.cs: forbidden NativeArray field declarations increased from 15 to 17.
-- Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs: forbidden NativeArray field declarations increased from 26 to 29.
-- Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs: forbidden NativeArray field declarations increased from 25 to 27.
-- Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs: forbidden NativeArray field declarations increased from 33 to 43.
-- Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs: forbidden NativeArray field declarations increased from 25 to 29.
-- Assets/_Project/Scripts/Tools/LaserCutterDodJobs.cs: forbidden NativeArray field declarations increased from 0 to 13.
-- Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageBakeJobs.cs: forbidden NativeArray field declarations increased from 31 to 33.
-- Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs: forbidden NativeArray field declarations increased from 35 to 36.
+- Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs: forbidden NativeArray field declarations increased from 0 to 2.
+- Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs: forbidden NativeArray field declarations increased from 12 to 19.
+- Assets/_Project/Scripts/Core/MathGuard.cs: forbidden NativeArray field declarations increased from 0 to 2.
+- Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs: forbidden NativeArray field declarations increased from 0 to 1.
+- Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs: forbidden NativeArray field declarations increased from 0 to 5.
+- Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs: forbidden NativeArray field declarations increased from 0 to 12.
+- Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs: forbidden NativeArray field declarations increased from 0 to 2.
+- Assets/_Project/Scripts/Inventory/ItemTemplateRegistry.cs: forbidden NativeArray field declarations increased from 0 to 1.
+- Assets/_Project/Scripts/ModdingAPI/IModResourceProxy.cs: forbidden NativeArray field declarations increased from 0 to 1.
+- Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs: forbidden NativeArray field declarations increased from 0 to 3.
+- Assets/_Project/Scripts/ModularEquipmentEngine.cs: forbidden NativeArray field declarations increased from 18 to 23.
+- Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs: forbidden NativeArray field declarations increased from 0 to 1.
+- Assets/_Project/Scripts/PrefabRegistry.cs: forbidden NativeArray field declarations increased from 0 to 1.
+- Assets/_Project/Scripts/SeamRegistry.cs: forbidden NativeArray field declarations increased from 0 to 1.
+- Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs: forbidden NativeArray field declarations increased from 0 to 12.
+- Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs: forbidden NativeArray field declarations increased from 0 to 1.
+- Assets/_Project/Scripts/World/HectonSpatialHash.cs: forbidden NativeArray field declarations increased from 2 to 5.
 
 ## Regression Delta By Execution Surface
 
 | Surface | Delta | Direct constructor delta | Field declaration delta | Files |
 |---|---:|---:|---:|---:|
-| `Runtime` | 38 | 0 | 38 | 8 |
-| `Editor` | 12 | 6 | 6 | 5 |
+| `Runtime` | 59 | 0 | 59 | 16 |
+| `Editor` | 31 | 30 | 1 | 6 |
 
 ## Regression Delta By Domain
 
 | Domain | Delta | Direct constructor delta | Field declaration delta | Files |
 |---|---:|---:|---:|---:|
-| `Tools` | 13 | 0 | 13 | 1 |
-| `Physics` | 10 | 0 | 10 | 1 |
-| `Construction` | 5 | 0 | 5 | 2 |
-| `Editor` | 5 | 3 | 2 | 2 |
-| `Habitat` | 4 | 2 | 2 | 1 |
-| `Power` | 4 | 0 | 4 | 1 |
-| `World` | 4 | 1 | 3 | 3 |
-| `Gameplay` | 3 | 0 | 3 | 1 |
+| `Editor` | 24 | 23 | 1 | 3 |
+| `Equipment` | 17 | 0 | 17 | 2 |
+| `Tools` | 12 | 0 | 12 | 1 |
+| `Construction` | 7 | 0 | 7 | 1 |
+| `Root` | 7 | 0 | 7 | 3 |
+| `Gameplay` | 6 | 4 | 2 | 2 |
+| `World` | 5 | 1 | 4 | 3 |
+| `ModdingAPI` | 4 | 0 | 4 | 2 |
+| `Audio` | 2 | 0 | 2 | 1 |
 | `Core` | 2 | 0 | 2 | 1 |
+| `Habitat` | 2 | 2 | 0 | 1 |
+| `Inventory` | 1 | 0 | 1 | 1 |
+| `PDA` | 1 | 0 | 1 | 1 |
 
 ## Regression Delta Details
 
 | Kind | Surface | Domain | Baseline | Current | Delta | Path |
 |---|---|---|---:|---:|---:|---|
-| `fieldDeclaration` | `Runtime` | `Tools` | 0 | 13 | 13 | `Assets/_Project/Scripts/Tools/LaserCutterDodJobs.cs` |
-| `fieldDeclaration` | `Runtime` | `Physics` | 33 | 43 | 10 | `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs` |
-| `fieldDeclaration` | `Runtime` | `Power` | 25 | 29 | 4 | `Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs` |
-| `fieldDeclaration` | `Runtime` | `Construction` | 38 | 41 | 3 | `Assets/_Project/Scripts/Construction/SumpPumpPipeGridJobs.cs` |
+| `directConstructor` | `Editor` | `Editor` | 0 | 16 | 16 | `Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs` |
+| `fieldDeclaration` | `Runtime` | `Equipment` | 0 | 12 | 12 | `Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs` |
+| `fieldDeclaration` | `Runtime` | `Tools` | 0 | 12 | 12 | `Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs` |
+| `fieldDeclaration` | `Runtime` | `Construction` | 12 | 19 | 7 | `Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs` |
+| `fieldDeclaration` | `Runtime` | `Equipment` | 0 | 5 | 5 | `Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs` |
+| `fieldDeclaration` | `Runtime` | `Root` | 18 | 23 | 5 | `Assets/_Project/Scripts/ModularEquipmentEngine.cs` |
+| `directConstructor` | `Editor` | `Editor` | 0 | 4 | 4 | `Assets/_Project/Scripts/Editor/TextureChannelPacker/TextureChannelPackerWindow.cs` |
+| `directConstructor` | `Editor` | `Gameplay` | 0 | 4 | 4 | `Assets/_Project/Scripts/Gameplay/Editor/ScannerLoreDatabaseSyncTunerWindow.cs` |
 | `directConstructor` | `Editor` | `Editor` | 15 | 18 | 3 | `Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs` |
-| `fieldDeclaration` | `Runtime` | `Gameplay` | 26 | 29 | 3 | `Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs` |
-| `fieldDeclaration` | `Runtime` | `Construction` | 12 | 14 | 2 | `Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs` |
-| `fieldDeclaration` | `Runtime` | `Core` | 10 | 12 | 2 | `Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs` |
-| `fieldDeclaration` | `Editor` | `Editor` | 15 | 17 | 2 | `Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBakerJobs.cs` |
+| `fieldDeclaration` | `Runtime` | `ModdingAPI` | 0 | 3 | 3 | `Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs` |
+| `fieldDeclaration` | `Runtime` | `World` | 2 | 5 | 3 | `Assets/_Project/Scripts/World/HectonSpatialHash.cs` |
+| `fieldDeclaration` | `Runtime` | `Audio` | 0 | 2 | 2 | `Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs` |
+| `fieldDeclaration` | `Runtime` | `Core` | 0 | 2 | 2 | `Assets/_Project/Scripts/Core/MathGuard.cs` |
+| `fieldDeclaration` | `Runtime` | `Gameplay` | 0 | 2 | 2 | `Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs` |
 | `directConstructor` | `Editor` | `Habitat` | 9 | 11 | 2 | `Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs` |
-| `fieldDeclaration` | `Editor` | `Habitat` | 25 | 27 | 2 | `Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs` |
-| `fieldDeclaration` | `Editor` | `World` | 31 | 33 | 2 | `Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageBakeJobs.cs` |
+| `fieldDeclaration` | `Editor` | `Editor` | 0 | 1 | 1 | `Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs` |
+| `fieldDeclaration` | `Runtime` | `Inventory` | 0 | 1 | 1 | `Assets/_Project/Scripts/Inventory/ItemTemplateRegistry.cs` |
+| `fieldDeclaration` | `Runtime` | `ModdingAPI` | 0 | 1 | 1 | `Assets/_Project/Scripts/ModdingAPI/IModResourceProxy.cs` |
+| `fieldDeclaration` | `Runtime` | `PDA` | 0 | 1 | 1 | `Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs` |
+| `fieldDeclaration` | `Runtime` | `Root` | 0 | 1 | 1 | `Assets/_Project/Scripts/PrefabRegistry.cs` |
+| `fieldDeclaration` | `Runtime` | `Root` | 0 | 1 | 1 | `Assets/_Project/Scripts/SeamRegistry.cs` |
+| `fieldDeclaration` | `Runtime` | `World` | 0 | 1 | 1 | `Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs` |
 | `directConstructor` | `Editor` | `World` | 16 | 17 | 1 | `Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs` |
-| `fieldDeclaration` | `Runtime` | `World` | 35 | 36 | 1 | `Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs` |
 
 ## Top 40 Forbidden Files
 
@@ -84,102 +109,140 @@ Baseline: `Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json`
 |---:|---|---|
 | 63 | `Assets/_Project/Scripts/PlayerInventory.cs` | 665, 667, 669, 671, 673, 675, 677, 678, ... |
 | 53 | `Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs` | 152, 153, 154, 319, 320, 396, 397, 398, ... |
-| 40 | `Assets/_Project/Scripts/HectonFluidEngine.cs` | 3567, 3576, 3585, 3594, 3603, 4469, 4471, 4473, ... |
-| 40 | `Assets/_Project/Scripts/HectonVoxelEngine.cs` | 129, 392, 3963, 3964, 3965, 3966, 3967, 5304, ... |
-| 33 | `Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs` | 3321, 3323, 3325, 3327, 3329, 3331, 3333, 3335, ... |
+| 40 | `Assets/_Project/Scripts/HectonFluidEngine.cs` | 3660, 3669, 3678, 3687, 3696, 4562, 4564, 4566, ... |
+| 40 | `Assets/_Project/Scripts/HectonVoxelEngine.cs` | 129, 392, 3989, 3990, 3991, 3992, 3993, 5342, ... |
+| 33 | `Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs` | 3342, 3344, 3346, 3348, 3350, 3352, 3354, 3356, ... |
 | 32 | `Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs` | 757, 758, 759, 760, 761, 762, 763, 764, ... |
-| 32 | `Assets/_Project/Scripts/SaveBinaryStorage.cs` | 587, 1068, 2606, 3705, 3728, 4092, 4205, 4279, ... |
-| 26 | `Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs` | 1480, 1483, 1486, 1489, 1491, 1493, 1495, 1497, ... |
-| 23 | `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` | 4530, 4532, 4534, 4536, 4538, 4540, 4542, 4544, ... |
-| 18 | `Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs` | 327, 378, 389, 391, 393, 395, 468, 560, ... |
-| 18 | `Assets/_Project/Scripts/SaveManager.cs` | 944, 954, 964, 1030, 1037, 1044, 1051, 1061, ... |
-| 18 | `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 3495, 3504, 3512, 3520, 3528, 3536, 3544, 3552, ... |
+| 32 | `Assets/_Project/Scripts/SaveBinaryStorage.cs` | 588, 1069, 2607, 3706, 3729, 4093, 4206, 4280, ... |
+| 26 | `Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs` | 1491, 1494, 1497, 1500, 1502, 1504, 1506, 1508, ... |
+| 23 | `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` | 4573, 4575, 4577, 4579, 4581, 4583, 4585, 4587, ... |
+| 18 | `Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs` | 338, 395, 406, 408, 410, 412, 485, 595, ... |
+| 18 | `Assets/_Project/Scripts/SaveManager.cs` | 981, 991, 1001, 1067, 1074, 1081, 1088, 1098, ... |
+| 18 | `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 3502, 3511, 3519, 3527, 3535, 3543, 3551, 3559, ... |
 | 17 | `Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs` | 274, 275, 276, 277, 278, 279, 280, 281, ... |
-| 17 | `Assets/_Project/Scripts/HectonNarrativeDirector.cs` | 434, 435, 436, 437, 438, 439, 440, 441, ... |
+| 17 | `Assets/_Project/Scripts/HectonNarrativeDirector.cs` | 453, 454, 455, 456, 457, 458, 459, 460, ... |
 | 17 | `Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/WreckageForgeWindow.cs` | 259, 260, 261, 262, 263, 311, 312, 313, ... |
-| 16 | `Assets/_Project/Scripts/Editor/HectonArmTextureChannelPacker.cs` | 145, 146, 147, 148, 181, 182, 337, 356, ... |
-| 15 | `Assets/_Project/Scripts/HectonWorldGenerator.cs` | 1042, 1404, 1405, 1406, 1407, 1408, 1409, 1410, ... |
-| 15 | `Assets/_Project/Scripts/SubmarineStructuralGrid.cs` | 1924, 1926, 1927, 1929, 1931, 1933, 1935, 1937, ... |
-| 15 | `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs` | 1777, 1799, 1802, 1805, 1811, 1814, 1817, 1820, ... |
-| 14 | `Assets/_Project/Scripts/VoxelDeltaProcessor.cs` | 1636, 3054, 3059, 3061, 3063, 3065, 3067, 3069, ... |
-| 13 | `Assets/_Project/Scripts/EncounterDirector.cs` | 280, 281, 282, 283, 284, 285, 286, 287, ... |
+| 16 | `Assets/_Project/Scripts/Editor/TextureChannelPacker/HectonArmTextureChannelPacker.cs` | 145, 146, 147, 148, 181, 182, 338, 358, ... |
+| 15 | `Assets/_Project/Scripts/HectonWorldGenerator.cs` | 1040, 1402, 1403, 1404, 1405, 1406, 1407, 1408, ... |
+| 15 | `Assets/_Project/Scripts/SubmarineStructuralGrid.cs` | 1938, 1940, 1941, 1943, 1945, 1947, 1949, 1951, ... |
+| 15 | `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs` | 1780, 1802, 1805, 1808, 1814, 1817, 1820, 1823, ... |
+| 14 | `Assets/_Project/Scripts/VoxelDeltaProcessor.cs` | 1640, 3058, 3063, 3065, 3067, 3069, 3071, 3073, ... |
+| 13 | `Assets/_Project/Scripts/EncounterDirector.cs` | 329, 330, 331, 332, 333, 334, 335, 336, ... |
 | 12 | `Assets/_Project/Scripts/Editor/ErosionTestHarness.cs` | 82, 83, 84, 85, 86, 91, 265, 266, ... |
 | 12 | `Assets/_Project/Scripts/Fabricator.cs` | 1354, 1361, 1368, 1375, 1381, 1387, 1393, 1399, ... |
-| 12 | `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs` | 2212, 2216, 2223, 2227, 2231, 2235, 2251, 2255, ... |
+| 12 | `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs` | 2221, 2225, 2232, 2236, 2240, 2244, 2260, 2264, ... |
 | 12 | `Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs` | 247, 248, 249, 250, 608, 609, 610, 611, ... |
-| 12 | `Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs` | 1933, 2760, 2833, 3039, 3516, 3517, 3652, 3653, ... |
-| 11 | `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs` | 1747, 1756, 1765, 1774, 1783, 1792, 1801, 1810, ... |
-| 11 | `Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonRuntime.cs` | 474, 475, 476, 477, 478, 479, 480, 481, ... |
-| 11 | `Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs` | 677, 930, 1051, 1052, 1053, 1054, 1055, 1056, ... |
+| 12 | `Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs` | 1963, 2790, 2863, 3069, 3546, 3547, 3682, 3683, ... |
+| 11 | `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs` | 1759, 1768, 1777, 1786, 1795, 1804, 1813, 1822, ... |
+| 11 | `Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonRuntime.cs` | 475, 476, 477, 478, 479, 480, 481, 482, ... |
+| 11 | `Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs` | 690, 952, 1073, 1074, 1075, 1076, 1077, 1078, ... |
 | 11 | `Assets/_Project/Scripts/PowerGrid.cs` | 1303, 1306, 1309, 1312, 1315, 1318, 1321, 1331, ... |
 | 10 | `Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs` | 150, 151, 152, 153, 154, 155, 385, 386, ... |
 | 10 | `Assets/_Project/Scripts/Editor/LSystemGenomeLabWindow.cs` | 109, 130, 131, 132, 133, 227, 228, 229, ... |
-| 10 | `Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs` | 340, 341, 342, 343, 385, 386, 387, 388, ... |
+| 10 | `Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs` | 343, 344, 345, 346, 388, 389, 390, 391, ... |
 | 10 | `Assets/_Project/Scripts/Plugins/MapMagic/HectonAnomalyMapMagicNode.cs` | 221, 222, 223, 224, 225, 226, 227, 228, ... |
 | 10 | `Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs` | 222, 223, 224, 272, 273, 320, 321, 322, ... |
 | 9 | `Assets/_Project/Scripts/Editor/AnomalySmokeTester.cs` | 75, 76, 77, 78, 79, 80, 81, 189, ... |
-| 9 | `Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs` | 57, 112, 171, 196, 208, 224, 460, 485, ... |
-| 9 | `Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs` | 396, 398, 400, 403, 424, 426, 493, 875, ... |
+| 9 | `Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs` | 112, 174, 275, 300, 312, 328, 623, 649, ... |
+| 9 | `Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs` | 397, 399, 401, 404, 428, 430, 498, 1018, ... |
 | 9 | `Assets/_Project/Scripts/InventoryGrid.cs` | 96, 97, 98, 99, 100, 101, 102, 103, ... |
-| 9 | `Assets/_Project/Scripts/World/AbyssalThermalManager.cs` | 2363, 2374, 2385, 2396, 2406, 2417, 2780, 2790, ... |
+| 9 | `Assets/_Project/Scripts/World/AbyssalThermalManager.cs` | 2375, 2386, 2397, 2408, 2418, 2429, 2792, 2802, ... |
 
 ## Top 40 Forbidden Declaration Files
 
 | Count | Path | Lines |
 |---:|---|---|
-| 118 | `Assets/_Project/Scripts/HectonVoxelEngine.cs` | 43, 44, 462, 465, 466, 467, 468, 469, ... |
-| 94 | `Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs` | 211, 212, 213, 214, 215, 216, 217, 218, ... |
-| 93 | `Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs` | 700, 701, 702, 703, 704, 705, 706, 707, ... |
-| 85 | `Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs` | 184, 187, 188, 189, 327, 328, 329, 330, ... |
-| 80 | `Assets/_Project/Scripts/SaveSystem/EntityDeltaCompressionArchitecture.cs` | 194, 195, 196, 197, 198, 199, 200, 201, ... |
-| 72 | `Assets/_Project/Scripts/HectonFluidEngine.cs` | 1382, 1383, 1384, 1385, 1386, 1387, 1388, 1389, ... |
-| 67 | `Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs` | 102, 103, 104, 105, 106, 107, 108, 109, ... |
-| 67 | `Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs` | 1134, 1135, 1136, 1137, 1138, 1139, 1141, 1591, ... |
-| 67 | `Assets/_Project/Scripts/World/VegetationMemoryPool.cs` | 21, 22, 23, 24, 25, 26, 27, 28, ... |
-| 66 | `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` | 573, 4819, 4821, 4822, 4914, 4916, 4917, 4918, ... |
-| 66 | `Assets/_Project/Scripts/PlayerInventory.cs` | 176, 177, 178, 179, 180, 213, 214, 215, ... |
-| 65 | `Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs` | 1943, 1944, 1945, 1958, 1959, 1960, 1961, 1974, ... |
-| 63 | `Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs` | 171, 172, 173, 174, 175, 176, 177, 178, ... |
-| 60 | `Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs` | 837, 838, 868, 869, 870, 871, 873, 1054, ... |
-| 59 | `Assets/_Project/Scripts/SaveSystem/VoxelDeltaCompressionArchitecture.cs` | 169, 170, 171, 172, 173, 174, 175, 176, ... |
-| 59 | `Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs` | 883, 884, 885, 886, 887, 888, 889, 890, ... |
-| 57 | `Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs` | 330, 331, 332, 333, 334, 335, 336, 337, ... |
-| 52 | `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` | 640, 642, 644, 646, 648, 650, 652, 654, ... |
-| 51 | `Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs` | 299, 301, 302, 303, 304, 305, 306, 307, ... |
-| 51 | `Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs` | 132, 133, 134, 135, 136, 137, 138, 139, ... |
-| 46 | `Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs` | 192, 193, 194, 195, 196, 197, 198, 199, ... |
-| 45 | `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs` | 160, 161, 163, 292, 338, 339, 340, 341, ... |
-| 44 | `Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs` | 309, 310, 529, 601, 602, 603, 639, 640, ... |
-| 43 | `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs` | 240, 241, 242, 297, 298, 299, 330, 331, ... |
-| 41 | `Assets/_Project/Scripts/Construction/SumpPumpPipeGridJobs.cs` | 16, 17, 18, 19, 20, 21, 22, 137, ... |
-| 40 | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs` | 3379, 3413, 3437, 3438, 3439, 3440, 3441, 3442, ... |
-| 39 | `Assets/_Project/Scripts/Construction/DroneFleetManager.cs` | 170, 171, 609, 610, 611, 612, 613, 614, ... |
-| 39 | `Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorTypes.cs` | 209, 210, 211, 212, 213, 214, 215, 241, ... |
-| 39 | `Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs` | 134, 138, 141, 231, 235, 239, 242, 245, ... |
-| 36 | `Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityTypes.cs` | 354, 355, 356, 435, 466, 467, 468, 545, ... |
-| 36 | `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs` | 2440, 2441, 2442, 2443, 2444, 2445, 2446, 2447, ... |
-| 36 | `Assets/_Project/Scripts/VoxelDeltaProcessor.cs` | 4150, 4151, 4152, 4153, 4154, 4155, 4156, 4157, ... |
-| 36 | `Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs` | 158, 159, 160, 161, 162, 163, 164, 165, ... |
-| 35 | `Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs` | 351, 352, 353, 354, 355, 356, 432, 433, ... |
-| 35 | `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs` | 205, 209, 212, 298, 302, 306, 310, 313, ... |
-| 34 | `Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs` | 113, 114, 115, 176, 177, 178, 179, 180, ... |
-| 33 | `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 1044, 1045, 1046, 1080, 1275, 1282, 1405, 1406, ... |
-| 33 | `Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/OfflineWreckageBakeJobs.cs` | 25, 29, 33, 37, 41, 47, 128, 248, ... |
-| 32 | `Assets/_Project/Scripts/SubmarineStructuralGrid.cs` | 137, 138, 139, 141, 142, 143, 250, 251, ... |
-| 31 | `Assets/_Project/Scripts/Fauna/MesofaunaBehavioralStateMachine.cs` | 271, 272, 273, 274, 275, 276, 277, 278, ... |
+| 52 | `Assets/_Project/Scripts/World/VegetationMemoryPool.cs` | 94, 95, 96, 97, 98, 99, 100, 101, ... |
+| 49 | `Assets/_Project/Scripts/PlayerInventory.cs` | 519, 520, 521, 522, 523, 524, 525, 526, ... |
+| 40 | `Assets/_Project/Scripts/HectonFluidEngine.cs` | 1380, 1381, 1382, 1383, 1384, 1385, 1386, 1387, ... |
+| 40 | `Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs` | 1411, 1412, 1413, 1414, 1415, 1416, 1422, 1423, ... |
+| 37 | `Assets/_Project/Scripts/Construction/DroneFleetManager.cs` | 643, 644, 645, 646, 647, 648, 649, 657, ... |
+| 33 | `Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs` | 1415, 1416, 1417, 1418, 1419, 1420, 1421, 1422, ... |
+| 32 | `Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs` | 102, 103, 104, 105, 106, 107, 108, 109, ... |
+| 28 | `Assets/_Project/Scripts/SpatialAudioManager.cs` | 916, 917, 1020, 1021, 1022, 1023, 1024, 1025, ... |
+| 25 | `Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs` | 211, 212, 213, 214, 215, 216, 217, 218, ... |
+| 25 | `Assets/_Project/Scripts/TetherInstance.cs` | 230, 231, 232, 233, 234, 235, 236, 237, ... |
+| 23 | `Assets/_Project/Scripts/ModularEquipmentEngine.cs` | 133, 134, 135, 136, 137, 138, 139, 140, ... |
+| 22 | `Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs` | 307, 309, 310, 311, 312, 313, 314, 315, ... |
+| 22 | `Assets/_Project/Scripts/HectonVoxelEngine.cs` | 3385, 3386, 3387, 3388, 3389, 3392, 3393, 3394, ... |
+| 21 | `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` | 272, 273, 274, 275, 276, 277, 278, 279, ... |
+| 21 | `Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs` | 161, 162, 163, 164, 165, 166, 167, 168, ... |
+| 20 | `Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs` | 329, 330, 331, 332, 333, 334, 335, 336, ... |
+| 20 | `Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralVault.cs` | 61, 62, 63, 64, 65, 66, 67, 68, ... |
+| 19 | `Assets/_Project/Scripts/Construction/ShinobuSocketConstructionData.cs` | 245, 246, 247, 248, 249, 250, 251, 252, ... |
+| 19 | `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs` | 361, 362, 363, 364, 365, 366, 387, 389, ... |
+| 18 | `Assets/_Project/Scripts/SaveSystem/EntityDeltaCompressionArchitecture.cs` | 194, 195, 196, 197, 198, 199, 200, 201, ... |
+| 18 | `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs` | 57, 58, 59, 60, 61, 62, 63, 64, ... |
+| 18 | `Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs` | 57, 58, 59, 60, 61, 62, 63, 64, ... |
+| 18 | `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs` | 843, 844, 851, 853, 854, 855, 856, 857, ... |
+| 17 | `Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs` | 330, 331, 332, 333, 334, 335, 336, 337, ... |
+| 17 | `Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs` | 37, 38, 39, 40, 41, 42, 43, 44, ... |
+| 17 | `Assets/_Project/Scripts/HectonNarrativeDirector.cs` | 183, 184, 185, 186, 187, 188, 189, 190, ... |
+| 17 | `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs` | 367, 368, 369, 370, 371, 372, 373, 374, ... |
+| 16 | `Assets/_Project/Scripts/Quest/QuestDagRuntimeTypes.cs` | 301, 302, 303, 304, 305, 306, 307, 308, ... |
+| 16 | `Assets/_Project/Scripts/SaveSystem/VoxelDeltaCompressionArchitecture.cs` | 169, 170, 171, 172, 173, 174, 175, 176, ... |
+| 15 | `Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs` | 79, 80, 81, 82, 83, 84, 85, 86, ... |
+| 15 | `Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs` | 290, 291, 292, 293, 294, 295, 296, 297, ... |
+| 15 | `Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs` | 455, 456, 457, 458, 459, 460, 461, 462, ... |
+| 15 | `Assets/_Project/Scripts/SubmarineStructuralGrid.cs` | 553, 554, 555, 556, 557, 558, 559, 560, ... |
+| 15 | `Assets/_Project/Scripts/Tools/ToolKinematics/ToolKinematicsRuntime.cs` | 1269, 1270, 1271, 1272, 1273, 1274, 1275, 1276, ... |
+| 14 | `Assets/_Project/Scripts/Core/DodReplayRecorder.cs` | 381, 382, 383, 384, 385, 386, 387, 388, ... |
+| 13 | `Assets/_Project/Scripts/EncounterDirector.cs` | 277, 278, 279, 280, 281, 282, 283, 284, ... |
+| 13 | `Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs` | 548, 549, 550, 551, 552, 553, 554, 555, ... |
+| 13 | `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs` | 110, 111, 112, 113, 114, 115, 116, 117, ... |
+| 13 | `Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs` | 1337, 1338, 1339, 1340, 1341, 1342, 1343, 1344, ... |
+| 13 | `Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs` | 160, 161, 162, 163, 164, 165, 166, 167, ... |
 
 ## Allowed Allocator-Internal Sites
 
 | Count | Path | Lines |
 |---:|---|---|
-| 6 | `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` | 1737, 1739, 1743, 1745, 1824, 3037 |
+| 6 | `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` | 1794, 1796, 1800, 1802, 1881, 3094 |
 
 ## Allowed DataVault/H8Memory Declaration Sites
 
 | Count | Path | Lines |
 |---:|---|---|
-| 10 | `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs` | 646, 649, 650, 651, 4506, 4519, 4530, 4560, ... |
-| 4 | `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` | 1607, 1608, 1610, 1611 |
+| 41 | `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` | 5409, 5410, 5411, 5412, 5413, 5414, 5415, 5416, ... |
+| 36 | `Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs` | 416, 418, 419, 420, 421, 427, 428, 429, ... |
+| 29 | `Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs` | 1495, 1496, 1497, 1498, 1499, 1500, 1501, 1502, ... |
+| 26 | `Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs` | 902, 903, 904, 905, 906, 907, 908, 909, ... |
+| 22 | `Assets/_Project/Scripts/HectonFluidEngine.cs` | 7117, 7118, 7119, 7120, 7121, 7122, 7123, 7124, ... |
+| 21 | `Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs` | 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, ... |
+| 21 | `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` | 5068, 5070, 5071, 5072, 5073, 5074, 5075, 5076, ... |
+| 18 | `Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs` | 2161, 2162, 2163, 2164, 2165, 2166, 2167, 2168, ... |
+| 18 | `Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs` | 1740, 1742, 1743, 1744, 1745, 1746, 1747, 1748, ... |
+| 17 | `Assets/_Project/Scripts/Construction/DroneCognitionJob.cs` | 310, 311, 312, 313, 314, 315, 316, 318, ... |
+| 17 | `Assets/_Project/Scripts/Inventory/Algorithms/InventoryDefragJob.cs` | 30, 31, 32, 33, 34, 35, 36, 37, ... |
+| 17 | `Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs` | 918, 919, 920, 921, 922, 923, 924, 925, ... |
+| 17 | `Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs` | 2671, 2672, 2676, 2677, 2678, 2679, 2680, 2681, ... |
+| 17 | `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` | 4627, 4629, 4630, 4631, 4632, 4633, 4634, 4635, ... |
+| 16 | `Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs` | 2063, 2064, 2065, 2066, 2067, 2068, 2069, 2070, ... |
+| 15 | `Assets/_Project/Scripts/Logistics/FluidPipePressureJobs.cs` | 18, 19, 20, 21, 22, 23, 24, 25, ... |
+| 15 | `Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs` | 700, 701, 702, 703, 704, 705, 706, 707, ... |
+| 15 | `Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs` | 1076, 1077, 1078, 1079, 1080, 1081, 1082, 1083, ... |
+| 14 | `Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs` | 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, ... |
+| 14 | `Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsJobs.cs` | 16, 17, 18, 19, 20, 21, 22, 23, ... |
+| 14 | `Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs` | 2115, 2116, 2117, 2118, 2119, 2120, 2121, 2122, ... |
+| 14 | `Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs` | 634, 635, 636, 637, 638, 639, 640, 641, ... |
+| 14 | `Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs` | 2671, 2672, 2673, 2674, 2675, 2676, 2677, 2678, ... |
+| 13 | `Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs` | 80, 81, 82, 83, 84, 85, 86, 87, ... |
+| 13 | `Assets/_Project/Scripts/Fauna/MesofaunaBehavioralStateMachine.cs` | 576, 577, 578, 579, 580, 581, 582, 583, ... |
+| 13 | `Assets/_Project/Scripts/HectonVoxelEngine.cs` | 466, 469, 470, 471, 472, 473, 474, 476, ... |
+| 13 | `Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs` | 2621, 2622, 2623, 2624, 2625, 2626, 2627, 2628, ... |
+| 12 | `Assets/_Project/Scripts/Inventory/InventorySoAUtility.cs` | 289, 290, 291, 292, 293, 294, 295, 296, ... |
+| 12 | `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs` | 3091, 3092, 3093, 3094, 3095, 3096, 3097, 3098, ... |
+| 12 | `Assets/_Project/Scripts/World/EcosystemDirector.cs` | 569, 570, 571, 572, 573, 574, 575, 576, ... |
+| 12 | `Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs` | 600, 601, 602, 603, 604, 605, 606, 607, ... |
+| 11 | `Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationJobs.cs` | 46, 47, 48, 49, 50, 51, 52, 53, ... |
+| 11 | `Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs` | 943, 944, 945, 946, 947, 948, 949, 950, ... |
+| 11 | `Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs` | 2078, 2079, 2080, 2081, 2082, 2083, 2084, 2085, ... |
+| 11 | `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs` | 2441, 2442, 2443, 2444, 2445, 2446, 2447, 2448, ... |
+| 11 | `Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs` | 231, 235, 239, 242, 245, 248, 251, 254, ... |
+| 11 | `Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs` | 757, 758, 759, 760, 761, 762, 763, 764, ... |
+| 11 | `Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsJobs.cs` | 55, 58, 61, 64, 67, 71, 75, 78, ... |
+| 10 | `Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs` | 1153, 1154, 1155, 1156, 1157, 1158, 1159, 1160, ... |
+| 10 | `Assets/_Project/Scripts/Data/Monolith/H8CreatureSoAReconstructJob.cs` | 55, 59, 60, 61, 62, 63, 64, 65, ... |
 
 ## Gate Commands
 

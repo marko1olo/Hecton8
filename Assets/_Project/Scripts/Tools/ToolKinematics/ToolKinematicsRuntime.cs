@@ -15,7 +15,7 @@ namespace Hecton8.Tools.ToolKinematics
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9917)]
-    public sealed class ToolKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable
+    public sealed class ToolKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         public const int MaxToolCapacity = 8;
         public const int BeamVerticesPerTool = 64;
@@ -24,7 +24,6 @@ namespace Hecton8.Tools.ToolKinematics
         private const uint MockCarveLaneHash = 0x54323243u; // T22C
         private const uint ToolHeatLaneHash = 0x54323248u; // T22H
         private const uint ToolSparkLaneHash = 0x54323253u; // T22S
-        private const float LodSwitchHoldSeconds = 2f;
         private const string EquipmentStatsFileName = "equipment_stats.csv";
         private const string BlackBoxDumpFileName = "Dump_TOOL_KINEMATICS.h8dump";
 
@@ -80,15 +79,14 @@ namespace Hecton8.Tools.ToolKinematics
         private uint _frameIndex;
         private int _activeToolCapacity;
         private int _telemetryCursor;
-        private ToolKinematicsMathLod _latchedLod;
-        private ToolKinematicsMathLod _pendingLod;
-        private float _pendingLodSeconds;
         private bool _frameScheduled;
         private bool _fixedRegistered;
         private bool _postFixedRegistered;
         private bool _slowRegistered;
+        private bool _registeredHotSwap;
+        private bool _pendingDataVaultRebind;
         private bool _abiValid;
-        private bool _lodInitialized;
+        private IDataVault _pendingDataVault;
 
         private enum EquipmentCsvKey : uint
         {
@@ -110,6 +108,7 @@ namespace Hecton8.Tools.ToolKinematics
             _abiValid = ValidateAbiLayout();
             _activeToolCapacity = math.clamp(toolCapacity, 1, MaxToolCapacity);
             _equipmentStatsPath = ResolveEquipmentStatsPath();
+            CacheRegistryDependenciesCold();
         }
 
         private void OnValidate()
@@ -123,16 +122,9 @@ namespace Hecton8.Tools.ToolKinematics
                 return;
 
             _activeToolCapacity = math.clamp(toolCapacity, 1, MaxToolCapacity);
-            if (!TryResolveAllBuffers(out ToolKinematicsBufferSet buffers))
-                return;
-
-            WriteTuning(buffers.Tuning);
-            SeedEmergencyMockTools(buffers.States, buffers.RecoilStates);
-            EnsureSignalLanesReady();
-            StartCsvWatcher();
-            TryRegisterFixed();
-            TryRegisterPostFixed();
-            TryRegisterSlow();
+            CacheRegistryDependenciesCold();
+            TryRegisterHotSwap();
+            TryBootstrapRuntime();
         }
 
         private void OnDisable()
@@ -142,6 +134,7 @@ namespace Hecton8.Tools.ToolKinematics
             TryUnregisterFixed();
             TryUnregisterPostFixed();
             TryUnregisterSlow();
+            TryUnregisterHotSwap();
             ReleaseVaultHandles();
             ClearHandles();
         }
@@ -149,6 +142,7 @@ namespace Hecton8.Tools.ToolKinematics
         private void OnDestroy()
         {
             CompletePendingFrameForTeardown();
+            TryUnregisterHotSwap();
             StopCsvWatcher();
             ReleaseVaultHandles();
             ClearHandles();
@@ -159,6 +153,7 @@ namespace Hecton8.Tools.ToolKinematics
             if (!_abiValid || _frameScheduled)
                 return;
 
+            ApplyPendingDataVaultRebindIfIdle();
             float safeDeltaTime = math.clamp(ToolKinematicsMath.ClampPositiveFinite(fixedDeltaTime, 0.0166667f), 0.001f, 0.05f);
             if (!TryResolveAllBuffers(out ToolKinematicsBufferSet buffers))
                 return;
@@ -221,6 +216,7 @@ namespace Hecton8.Tools.ToolKinematics
         public void PostFixedTick(float fixedDeltaTime)
         {
             TryFinalizePendingFrameNoWait();
+            ApplyPendingDataVaultRebindIfIdle();
         }
 
         public void SlowTick()
@@ -304,8 +300,7 @@ namespace Hecton8.Tools.ToolKinematics
         private void PrepareFrameInputs(ToolKinematicsBufferSet buffers, float safeDeltaTime)
         {
             double3 cameraAup = ResolveCameraAup();
-            float stress = ResolveHystereticSystemStress(buffers, safeDeltaTime);
-            bool lowTierSnap = _latchedLod == ToolKinematicsMathLod.Low;
+            float stress = ResolveSystemStress(buffers);
             for (int i = 0; i < _activeToolCapacity; i++)
             {
                 ToolStateDTO state = buffers.States[i];
@@ -317,8 +312,6 @@ namespace Hecton8.Tools.ToolKinematics
                 float3 shoulderLocal = ResolveShoulderLocal(i);
                 uint triggerFlags = mockTriggerHeld || !useMockInput ? ToolKinematicsMath.TriggerPressed : 0u;
                 triggerFlags |= ResolveToolModeFlag(state.ToolTypeHash);
-                if (lowTierSnap)
-                    triggerFlags |= ToolKinematicsMath.TriggerLowTierSnap;
 
                 state.AUP = cameraAup + ToolKinematicsMath.ToDouble3(controllerLocal);
                 state._pad0 = 0u;
@@ -348,59 +341,13 @@ namespace Hecton8.Tools.ToolKinematics
             }
         }
 
-        private float ResolveHystereticSystemStress(in ToolKinematicsBufferSet buffers, float safeDeltaTime)
+        private float ResolveSystemStress(in ToolKinematicsBufferSet buffers)
         {
             float rawStress = ToolKinematicsMath.Clamp01Finite(systemHealthIndex);
             if (buffers.Tuning.IsCreated && buffers.Tuning.Length > 0)
                 rawStress = math.max(rawStress, ToolKinematicsMath.Clamp01Finite(buffers.Tuning[0].SystemHealthIndex));
 
-            ToolKinematicsMathLod desiredLod = ToolKinematicsMath.ResolveLod(rawStress);
-            if (!_lodInitialized)
-            {
-                _latchedLod = desiredLod;
-                _pendingLod = desiredLod;
-                _pendingLodSeconds = 0f;
-                _lodInitialized = true;
-                return EncodeLodStress(_latchedLod);
-            }
-
-            if (desiredLod == _latchedLod)
-            {
-                _pendingLod = desiredLod;
-                _pendingLodSeconds = 0f;
-                return EncodeLodStress(_latchedLod);
-            }
-
-            if (desiredLod != _pendingLod)
-            {
-                _pendingLod = desiredLod;
-                _pendingLodSeconds = 0f;
-            }
-
-            _pendingLodSeconds = math.min(LodSwitchHoldSeconds, _pendingLodSeconds + safeDeltaTime);
-            if (_pendingLodSeconds >= LodSwitchHoldSeconds)
-            {
-                _latchedLod = desiredLod;
-                _pendingLod = desiredLod;
-                _pendingLodSeconds = 0f;
-            }
-
-            return EncodeLodStress(_latchedLod);
-        }
-
-        private static float EncodeLodStress(ToolKinematicsMathLod lod)
-        {
-            switch (lod)
-            {
-                case ToolKinematicsMathLod.Low:
-                    return 0.9f;
-                case ToolKinematicsMathLod.Middle:
-                    return 0.7f;
-                case ToolKinematicsMathLod.High:
-                    return 0.4f;
-                default:
-                    return 0f;
-            }
+            return rawStress;
         }
 
         private void PublishFrameSignals(in ToolKinematicsBufferSet buffers)
@@ -483,8 +430,6 @@ namespace Hecton8.Tools.ToolKinematics
         private static void PublishGlobalToolStateBridge(in ToolHeatSignal heat, in ToolScreenExportDTO screen)
         {
             byte flags = ToolStateChangedSignal.FlagEquipped | ToolStateChangedSignal.FlagVisible;
-            if ((heat.Flags & (uint)ToolKinematicsFlags.LowTierSnap) != 0u)
-                flags |= ToolStateChangedSignal.FlagLowTierFallback;
 
             ToolStateChangedSignal state = new ToolStateChangedSignal
             {
@@ -605,11 +550,10 @@ namespace Hecton8.Tools.ToolKinematics
         private bool TryResolveAllBuffers(out ToolKinematicsBufferSet buffers)
         {
             buffers = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            BindVault(vault);
             int count = math.clamp(toolCapacity, 1, MaxToolCapacity);
             _activeToolCapacity = count;
             int telemetryLength = count * ToolKinematicsMath.BlackBoxCapacity;
@@ -637,26 +581,70 @@ namespace Hecton8.Tools.ToolKinematics
 
         private bool TryResolveTuning(out NativeArray<ToolKinematicsTuningDTO> tuning)
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            BindVault(vault);
+            IDataVault vault = _dataVault;
             return TryResolveVaultView(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, NativeArrayOptions.ClearMemory, out tuning);
         }
 
         private bool TryResolveStates(out NativeArray<ToolStateDTO> states)
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            BindVault(vault);
+            IDataVault vault = _dataVault;
             return TryResolveVaultView(vault, ref _statesHandle, BufferID.ToolKinematicsStates, _activeToolCapacity, NativeArrayOptions.ClearMemory, out states);
         }
 
         private bool TryResolveHits(out NativeArray<ToolHitResultDTO> hits)
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            BindVault(vault);
+            IDataVault vault = _dataVault;
             return TryResolveVaultView(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, _activeToolCapacity, NativeArrayOptions.ClearMemory, out hits);
         }
 
-        private void BindVault(IDataVault vault)
+        private void CacheRegistryDependenciesCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+        }
+
+        private bool TryBootstrapRuntime()
+        {
+            if (!TryResolveAllBuffers(out ToolKinematicsBufferSet buffers))
+                return false;
+
+            WriteTuning(buffers.Tuning);
+            SeedEmergencyMockTools(buffers.States, buffers.RecoilStates);
+            EnsureSignalLanesReady();
+            StartCsvWatcher();
+            TryRegisterFixed();
+            TryRegisterPostFixed();
+            TryRegisterSlow();
+            return true;
+        }
+
+        private void QueueDataVaultRebind(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            if (_frameScheduled)
+            {
+                _pendingDataVaultRebind = true;
+                _pendingDataVault = vault;
+                return;
+            }
+
+            ApplyDataVaultRebind(vault);
+        }
+
+        private void ApplyPendingDataVaultRebindIfIdle()
+        {
+            if (!_pendingDataVaultRebind || _frameScheduled)
+                return;
+
+            IDataVault vault = _pendingDataVault;
+            _pendingDataVaultRebind = false;
+            _pendingDataVault = null;
+            ApplyDataVaultRebind(vault);
+        }
+
+        private void ApplyDataVaultRebind(IDataVault vault)
         {
             if (ReferenceEquals(_dataVault, vault))
                 return;
@@ -664,6 +652,30 @@ namespace Hecton8.Tools.ToolKinematics
             ReleaseVaultHandles();
             ClearHandles();
             _dataVault = vault;
+            if (isActiveAndEnabled)
+                TryBootstrapRuntime();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    QueueDataVaultRebind(currentService as IDataVault);
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null && isActiveAndEnabled)
+                    {
+                        TryRegisterFixed();
+                        TryRegisterPostFixed();
+                        TryRegisterSlow();
+                    }
+
+                    break;
+            }
         }
 
         private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
@@ -1149,6 +1161,23 @@ namespace Hecton8.Tools.ToolKinematics
             _slowRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
         }
 
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         private void TryUnregisterFixed()
         {
             if (!_fixedRegistered)
@@ -1262,6 +1291,8 @@ namespace Hecton8.Tools.ToolKinematics
             _beamVertexCountsHandle = default;
             _poseOutputsHandle = default;
             _dataVault = null;
+            _pendingDataVaultRebind = false;
+            _pendingDataVault = null;
         }
 
         private struct ToolKinematicsBufferSet

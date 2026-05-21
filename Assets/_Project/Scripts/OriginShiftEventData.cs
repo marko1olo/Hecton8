@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -6,6 +7,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable payload describing a committed floating-origin shift.
     /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 112)]
     public readonly struct OriginShiftEventData
     {
         /// <summary>
@@ -61,35 +63,44 @@ namespace Hecton8.Core
             Sequence = sequence;
             Frame = frame;
             FixedInterpolationAlpha = Mathf.Clamp01(fixedInterpolationAlpha);
-            IsSafeTeleport = isSafeTeleport;
+            IsSafeTeleport = isSafeTeleport ? (byte)1 : (byte)0;
+            _alignPad0 = 0u;
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0UL;
         }
 
         /// <summary>Offset subtracted from all loaded-scene root transforms.</summary>
-        public Vector3 ShiftOffset { get; }
+        [FieldOffset(0)] public readonly Vector3 ShiftOffset;
 
         /// <summary>Absolute-universe offset before the shift committed.</summary>
-        public Vector3 PreviousTotalOffset { get; }
+        [FieldOffset(12)] public readonly Vector3 PreviousTotalOffset;
 
         /// <summary>Absolute-universe offset after the shift committed.</summary>
-        public Vector3 NewTotalOffset { get; }
+        [FieldOffset(24)] public readonly Vector3 NewTotalOffset;
 
         /// <summary>Double-precision absolute-universe offset before the shift committed.</summary>
-        public double3 PreviousTotalOffsetDouble { get; }
+        [FieldOffset(40)] public readonly double3 PreviousTotalOffsetDouble;
 
         /// <summary>Double-precision absolute-universe offset after the shift committed.</summary>
-        public double3 NewTotalOffsetDouble { get; }
+        [FieldOffset(64)] public readonly double3 NewTotalOffsetDouble;
 
         /// <summary>Monotonic shift sequence number.</summary>
-        public uint Sequence { get; }
+        [FieldOffset(88)] public readonly uint Sequence;
 
         /// <summary>Frame when the shift committed.</summary>
-        public int Frame { get; }
+        [FieldOffset(92)] public readonly int Frame;
 
         /// <summary>Fractional fixed-step interpolation alpha captured before the shift committed.</summary>
-        public float FixedInterpolationAlpha { get; }
+        [FieldOffset(96)] public readonly float FixedInterpolationAlpha;
 
-        /// <summary>True when this payload was emitted by the safe teleport protocol.</summary>
-        public bool IsSafeTeleport { get; }
+        /// <summary>1 when this payload was emitted by the safe teleport protocol.</summary>
+        [FieldOffset(100)] public readonly byte IsSafeTeleport;
+
+        [FieldOffset(36)] private readonly uint _alignPad0;
+        [FieldOffset(101)] private readonly byte _pad0;
+        [FieldOffset(102)] private readonly ushort _pad1;
+        [FieldOffset(104)] private readonly ulong _pad2;
 
         /// <summary>
         /// Converts a runtime-space position captured under <paramref name="capturedTotalOffset"/>

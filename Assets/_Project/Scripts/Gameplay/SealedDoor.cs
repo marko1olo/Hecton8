@@ -26,6 +26,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -50,7 +51,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class SealedDoor : MonoBehaviour, ICuttable, ITickable, IUpdatable
+    public sealed class SealedDoor : MonoBehaviour, ICuttable, ITickable, IUpdatable, IWfcDoorLaserCutTarget
     {
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
@@ -149,6 +150,9 @@ namespace Hecton8.Gameplay
         private byte _wfcOutpostFlags;
         private bool _wfcOutpostPersistenceConfigured;
         private bool _wfcOutpostLaserUnlocked;
+        private IAudioService _cachedAudioService;
+        private AbsoluteUniversePosition _cachedRuntimeOriginAup;
+        private bool _hasCachedRuntimeOriginAup;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for progress VFX.
@@ -162,23 +166,8 @@ namespace Hecton8.Gameplay
         private int _openTriggerHash;
 
         // ══════════════════════════════════════════════════════════
-        //  PUBLIC ACCESSORS
+        //  PUBLIC WFC API
         // ══════════════════════════════════════════════════════════
-
-        /// <summary>Current state of the door.</summary>
-        public DoorState State => _state;
-
-        /// <summary>Current cutting progress (0 to requiredCuttingTime).</summary>
-        public float CurrentProgress => _currentProgress;
-
-        /// <summary>Normalized progress (0 to 1).</summary>
-        public float ProgressNormalized => requiredCuttingTime > 0f ? _currentProgress / requiredCuttingTime : 0f;
-
-        /// <summary>Is the door fully opened?</summary>
-        public bool IsOpened => _state == DoorState.Opened;
-
-        /// <summary>Can the door be cut?</summary>
-        public bool CanBeCut => canBeCut && _state == DoorState.Sealed;
 
         public void ConfigureWfcOutpostPersistence(ulong sectorHash, ushort cellIndex, byte initialFlags)
         {
@@ -273,6 +262,23 @@ namespace Hecton8.Gameplay
             PublishProgress(clampedProgress, false);
         }
 
+        bool IWfcDoorLaserCutTarget.TryReadWfcDoorLaserCutState(out WfcDoorLaserCutReadSnapshot snapshot)
+        {
+            snapshot = default;
+            if (!TryGetWfcOutpostCell(out ulong sectorHash, out ushort cellIndex, out byte flags))
+                return false;
+
+            snapshot.SectorHash = sectorHash;
+            snapshot.CellIndex = cellIndex;
+            snapshot.CurrentFlags = flags;
+            return true;
+        }
+
+        void IWfcDoorLaserCutTarget.ApplyWfcDoorLaserCutProgress(float progress01, uint frame)
+        {
+            ApplyWfcOutpostLaserCutProgress(progress01, frame);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -281,7 +287,10 @@ namespace Hecton8.Gameplay
         {
             _transform = transform;
             _collider = GetComponent<Collider>();
+            LaserCutterTargetRegistry.RegisterDoor(this, _collider);
             _openTriggerHash = Animator.StringToHash(string.IsNullOrEmpty(openTriggerName) ? "Open" : openTriggerName);
+            CacheColdDependencies();
+            RefreshCachedRuntimeOriginAup();
 
             // COLD ALLOC: MaterialPropertyBlock — progress VFX
             _mpb = new MaterialPropertyBlock();
@@ -299,16 +308,27 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CacheColdDependencies();
+            RefreshCachedRuntimeOriginAup();
+            LaserCutterTargetRegistry.RegisterDoor(this, _collider);
             ResetState();
         }
 
         private void OnDisable()
         {
+            LaserCutterTargetRegistry.UnregisterDoor(this, _collider);
             ClearWfcOutpostPersistence();
+            ClearColdDependencies();
+            _cachedRuntimeOriginAup = default;
+            _hasCachedRuntimeOriginAup = false;
         }
 
         private void OnDestroy()
         {
+            LaserCutterTargetRegistry.UnregisterDoor(this, _collider);
+            ClearColdDependencies();
+            _cachedRuntimeOriginAup = default;
+            _hasCachedRuntimeOriginAup = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -318,7 +338,7 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Compatibility tick surface. Cutting progress is driven by tool-hit cadence.
         /// </summary>
-        /// <param name="deltaTime">Time.deltaTime.</param>
+        /// <param name="deltaTime">Owner-provided simulation delta.</param>
         public void Tick(float deltaTime)
         {
             // Currently no per-frame logic needed
@@ -379,7 +399,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            PublishProgress(ProgressNormalized, false);
+            PublishProgress(ReadProgressNormalized(), false);
         }
 
         /// <summary>
@@ -405,6 +425,11 @@ namespace Hecton8.Gameplay
 
         }
 
+        private float ReadProgressNormalized()
+        {
+            return requiredCuttingTime > 0f ? _currentProgress / requiredCuttingTime : 0f;
+        }
+
         /// <summary>
         /// Resets the door to sealed state (for testing or special gameplay).
         /// </summary>
@@ -412,7 +437,7 @@ namespace Hecton8.Gameplay
         {
             _wfcOutpostLaserUnlocked = false;
             ResetState();
-            SetWfcOutpostFlags(0, (uint)Time.frameCount);
+            SetWfcOutpostFlags(0, ResolveCurrentFrameId());
         }
 
         /// <summary>
@@ -426,7 +451,7 @@ namespace Hecton8.Gameplay
             _state = DoorState.Locked;
             _wfcOutpostLaserUnlocked = false;
             StopCutting();
-            SetWfcOutpostFlags((byte)(_wfcOutpostFlags & ~WfcDoorUnlockedFlag), (uint)Time.frameCount);
+            SetWfcOutpostFlags((byte)(_wfcOutpostFlags & ~WfcDoorUnlockedFlag), ResolveCurrentFrameId());
         }
 
         /// <summary>
@@ -437,7 +462,7 @@ namespace Hecton8.Gameplay
             if (_state == DoorState.Locked)
             {
                 _state = DoorState.Sealed;
-                SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDoorUnlockedFlag), (uint)Time.frameCount);
+                SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDoorUnlockedFlag), ResolveCurrentFrameId());
             }
         }
 
@@ -453,7 +478,8 @@ namespace Hecton8.Gameplay
             PublishDoorGpuVfx(0.55f, DebrisSpawnSignal.DebrisKindSparks);
 
             // Play cutting sound
-            if (cuttingLoopSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            IAudioService audio = _cachedAudioService;
+            if (cuttingLoopSound != null && audio != null)
             {
                 audio.PlayAtPoint(cuttingLoopSound, _transform.position, cuttingVolume);
             }
@@ -472,7 +498,8 @@ namespace Hecton8.Gameplay
             PublishDoorGpuVfx(1f, DebrisSpawnSignal.DebrisKindRockShard);
 
             // Play open sound
-            if (openSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            IAudioService audio = _cachedAudioService;
+            if (openSound != null && audio != null)
             {
                 audio.PlayAtPoint(openSound, _transform.position, openVolume);
             }
@@ -492,7 +519,7 @@ namespace Hecton8.Gameplay
             // Optionally disable renderer (if no animation)
             // doorRenderer.enabled = false;
 
-            SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDoorOpenFlag), (uint)Time.frameCount);
+            SetWfcOutpostFlags((byte)(_wfcOutpostFlags | WfcDoorOpenFlag), ResolveCurrentFrameId());
 
             // Fire opened event
             OnDoorOpened?.Invoke();
@@ -588,7 +615,8 @@ namespace Hecton8.Gameplay
                 return;
 
             float intensity = math.saturate(intensity01);
-            if (!TryResolveDoorAup(_transform.position, out double3 centerAup))
+            if (!RefreshCachedRuntimeOriginAup() ||
+                !TryResolveDoorAup(_transform.position, in _cachedRuntimeOriginAup, out double3 centerAup))
                 return;
 
             float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
@@ -602,15 +630,15 @@ namespace Hecton8.Gameplay
                 SourceEntityId = source,
                 Intensity01 = intensity,
                 DebrisKind = debrisKind,
-                Flags = debrisKind == DebrisSpawnSignal.DebrisKindSparks
+                Flags = (byte)(debrisKind == DebrisSpawnSignal.DebrisKindSparks
                     ? DebrisSpawnSignal.FlagToolSparks | DebrisSpawnSignal.FlagComputeShard
-                    : DebrisSpawnSignal.FlagComputeShard,
+                    : DebrisSpawnSignal.FlagComputeShard),
                 Quantity = quantity
             };
             SignalBus<DebrisSpawnSignal>.TryPush(in debris);
         }
 
-        private static bool TryResolveDoorAup(Vector3 runtimePosition, out double3 doorAup)
+        private static bool TryResolveDoorAup(Vector3 runtimePosition, in AbsoluteUniversePosition originAup, out double3 doorAup)
         {
             doorAup = default;
             if (!math.isfinite(runtimePosition.x) ||
@@ -620,15 +648,29 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
             AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            if (!MathGuard.IsFinite(in resolvedAup))
+            if (!resolvedAup.IsFinite())
                 return false;
 
             doorAup = resolvedAup.ToAbsoluteDouble3();
             return math.all(math.isfinite(doorAup));
+        }
+
+        private bool RefreshCachedRuntimeOriginAup()
+        {
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(origin)))
+            {
+                _cachedRuntimeOriginAup = default;
+                _hasCachedRuntimeOriginAup = false;
+                return false;
+            }
+
+            _cachedRuntimeOriginAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
+            _hasCachedRuntimeOriginAup = _cachedRuntimeOriginAup.IsFinite();
+            return _hasCachedRuntimeOriginAup;
         }
 
         private void ApplyWfcOutpostFlagsToDoor(byte flags)
@@ -700,7 +742,23 @@ namespace Hecton8.Gameplay
                 SourceHash = WfcOutpostDoorSourceHash,
                 Flags = 0
             };
-            GlobalSignals.Publish(in signal);
+            SignalBus<WfcOutpostStateChangedSignal>.Push(in signal);
+        }
+
+        private static uint ResolveCurrentFrameId()
+        {
+            uint frame = TimeSliceScheduler.CurrentFrameId;
+            return frame != 0u ? frame : 1u;
+        }
+
+        private void CacheColdDependencies()
+        {
+            _cachedAudioService = GlobalRegistry.Audio;
+        }
+
+        private void ClearColdDependencies()
+        {
+            _cachedAudioService = null;
         }
 
         private static bool TryResolveOwnedComponent<T>(Transform root, out T component) where T : Component

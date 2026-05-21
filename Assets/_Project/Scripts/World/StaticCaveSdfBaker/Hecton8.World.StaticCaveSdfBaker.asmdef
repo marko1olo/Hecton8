@@ -1,0 +1,16 @@
+{
+    "name": "Hecton8.World.StaticCaveSdfBaker",
+    "rootNamespace": "Hecton8.World.StaticCaveSdfBaker",
+    "references": [
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

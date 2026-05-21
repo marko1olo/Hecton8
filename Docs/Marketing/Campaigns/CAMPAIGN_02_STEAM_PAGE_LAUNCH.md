@@ -60,7 +60,7 @@ The Steam page does not open outreach by itself. Every creator notification in t
 
 Subject:
 
-HECTON-8 Steam page is live - pressure/machinery underwater survival
+HOLD_STEAM_PAGE_LIVE_SUBJECT - use Steam-page-live subject only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`.
 
 Message:
 
@@ -70,21 +70,21 @@ Your channel fits because [verified specific content pattern].
 
 HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, and black-water exploration. Scope stays proof-first and competitor-neutral.
 
-The Steam page is now live: [link]
+HOLD_STEAM_PAGE_LINK - say the Steam page is live and include the exact link only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` pass.
 
 The specific angle for your audience is [segment-specific reason].
 
-If this looks useful for future coverage, I can send the demo when the slice is ready.
+HOLD_FUTURE_ROUTE_OFFER - mention demo, press kit, build, preview, or material only after exact public CTA, presskit, demo/public access, or recipient/batch private access gates pass and CRM send-log fields are ready.
 
 ## Steam Announcement
 
 Title:
 
-HECTON-8 Steam Page Is Live
+HOLD_STEAM_ANNOUNCEMENT_TITLE - use "HECTON-8 Steam Page Is Live" only after `steam_page_publish_permission_gate`, `steam_announcement_permission_gate`, and destination-specific `public_cta_permission_gate` pass.
 
 Body:
 
-HECTON-8 is now on Steam as a Coming Soon page.
+HOLD_STEAM_ANNOUNCEMENT_BODY - say HECTON-8 is now on Steam as a Coming Soon page only after app/page publication, Steam announcement permission, and public CTA custody pass.
 
 The current focus is single-player underwater survival: pressure, machinery, salvage, black-water exploration, and habitats that act like survival infrastructure.
 

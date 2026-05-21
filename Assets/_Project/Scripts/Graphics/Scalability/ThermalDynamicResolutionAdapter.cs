@@ -124,11 +124,11 @@ namespace Hecton8.Graphics.Scalability
         private UniversalRenderPipelineAsset _urpAsset;
         private IDynamicResolutionRuntime _dynamicResolutionRuntime;
         private IDataVault _dataVault;
-        private VaultBufferHandle<DrsStateDTO> _drsStateHandle;
-        private VaultBufferHandle<ResolutionScaleState> _scaleStateHandle;
-        private VaultBufferHandle<DrsTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<ScalabilityStateDTO> _scalabilityStateHandle;
-        private VaultBufferHandle<MockReconstructionInputSignal> _mockReconstructionInputHandle;
+        private VaultGenerationHandle<DrsStateDTO> _drsStateHandle;
+        private VaultGenerationHandle<ResolutionScaleState> _scaleStateHandle;
+        private VaultGenerationHandle<DrsTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityStateHandle;
+        private VaultGenerationHandle<MockReconstructionInputSignal> _mockReconstructionInputHandle;
         private JobHandle _stressEwmaHandle;
         private int _telemetryCursor;
         private uint _sequence;
@@ -466,6 +466,7 @@ namespace Hecton8.Graphics.Scalability
             _telemetryHandle = default;
             _drsStateHandle = default;
             _scalabilityStateHandle = default;
+            _mockReconstructionInputHandle = default;
             _dataVault = null;
             _blackBoxDumpPath = null;
         }
@@ -904,26 +905,22 @@ namespace Hecton8.Graphics.Scalability
                 return false;
 
             BufferID bufferId = (BufferID)UberNoirReconstructionVaultIds.MockSignal;
-            if (!_mockReconstructionInputHandle.IsCreated ||
-                _mockReconstructionInputHandle.BufferId != bufferId)
-            {
-                if (!vault.TryGetBufferHandle<MockReconstructionInputSignal>(bufferId, out _mockReconstructionInputHandle) ||
-                    !_mockReconstructionInputHandle.IsCreated)
-                {
-                    return false;
-                }
-            }
-
             if (!vault.TryLockBuffer(bufferId, SystemID.GraphicsScalability))
                 return false;
 
             try
             {
-                void* pointer = _mockReconstructionInputHandle.ResolvePointer(vault);
-                if (pointer == null || _mockReconstructionInputHandle.Length <= 0)
+                if (!TryOpenExistingVaultBuffer(
+                        vault,
+                        ref _mockReconstructionInputHandle,
+                        bufferId,
+                        1,
+                        out NativeArray<MockReconstructionInputSignal> buffer))
+                {
                     return false;
+                }
 
-                signal = UnsafeUtility.AsRef<MockReconstructionInputSignal>(pointer);
+                signal = buffer[0];
                 if (signal.Flags == 0u &&
                     !_mockReconstructionScaleActive &&
                     !_mockReconstructionQualityActive)
@@ -1037,17 +1034,13 @@ namespace Hecton8.Graphics.Scalability
             if (vault == null)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BufferID.ResolutionScaleState, out _scaleStateHandle) ||
-                !_scaleStateHandle.IsCreated)
-            {
-                _scaleStateHandle = vault.GetBufferHandle<ResolutionScaleState>(
-                    BufferID.ResolutionScaleState,
-                    1,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            return _scaleStateHandle.IsCreated;
+            return OpenOrAcquireVaultBuffer(
+                vault,
+                ref _scaleStateHandle,
+                BufferID.ResolutionScaleState,
+                1,
+                NativeArrayOptions.ClearMemory,
+                out _);
         }
 
         private bool TryEnsureDrsStateHandle()
@@ -1056,17 +1049,13 @@ namespace Hecton8.Graphics.Scalability
             if (vault == null)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BufferID.DrsState, out _drsStateHandle) ||
-                !_drsStateHandle.IsCreated)
-            {
-                _drsStateHandle = vault.GetBufferHandle<DrsStateDTO>(
-                    BufferID.DrsState,
-                    1,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            return _drsStateHandle.IsCreated;
+            return OpenOrAcquireVaultBuffer(
+                vault,
+                ref _drsStateHandle,
+                BufferID.DrsState,
+                1,
+                NativeArrayOptions.UninitializedMemory,
+                out _);
         }
 
         private bool TryLockDrsStatePointer(out DrsStateDTO* drsState, out int drsStateLength)
@@ -1079,15 +1068,26 @@ namespace Hecton8.Graphics.Scalability
             if (!_dataVault.TryLockBuffer(BufferID.DrsState, SystemID.GraphicsScalability))
                 return false;
 
-            void* pointer = _drsStateHandle.ResolvePointer(_dataVault);
-            if (pointer == null || _drsStateHandle.Length < 1)
+            if (!TryOpenVaultBuffer(
+                    _dataVault,
+                    ref _drsStateHandle,
+                    BufferID.DrsState,
+                    1,
+                    out NativeArray<DrsStateDTO> buffer))
+            {
+                _dataVault.TryUnlockBuffer(BufferID.DrsState, SystemID.GraphicsScalability);
+                return false;
+            }
+
+            void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
+            if (pointer == null)
             {
                 _dataVault.TryUnlockBuffer(BufferID.DrsState, SystemID.GraphicsScalability);
                 return false;
             }
 
             drsState = (DrsStateDTO*)pointer;
-            drsStateLength = _drsStateHandle.Length;
+            drsStateLength = buffer.Length;
             return true;
         }
 
@@ -1107,15 +1107,26 @@ namespace Hecton8.Graphics.Scalability
             if (!_dataVault.TryLockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability))
                 return false;
 
-            void* pointer = _scaleStateHandle.ResolvePointer(_dataVault);
-            if (pointer == null || _scaleStateHandle.Length < 1)
+            if (!TryOpenVaultBuffer(
+                    _dataVault,
+                    ref _scaleStateHandle,
+                    BufferID.ResolutionScaleState,
+                    1,
+                    out NativeArray<ResolutionScaleState> buffer))
+            {
+                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
+                return false;
+            }
+
+            void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
+            if (pointer == null)
             {
                 _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
                 return false;
             }
 
             scaleState = (ResolutionScaleState*)pointer;
-            scaleStateLength = _scaleStateHandle.Length;
+            scaleStateLength = buffer.Length;
             return true;
         }
 
@@ -1135,15 +1146,26 @@ namespace Hecton8.Graphics.Scalability
             if (!_dataVault.TryLockBuffer(BufferID.ResolutionScaleTelemetry, SystemID.GraphicsScalability))
                 return false;
 
-            void* pointer = _telemetryHandle.ResolvePointer(_dataVault);
-            if (pointer == null || _telemetryHandle.Length < TelemetryCapacity)
+            if (!TryOpenVaultBuffer(
+                    _dataVault,
+                    ref _telemetryHandle,
+                    BufferID.ResolutionScaleTelemetry,
+                    TelemetryCapacity,
+                    out NativeArray<DrsTelemetryEntry> buffer))
+            {
+                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleTelemetry, SystemID.GraphicsScalability);
+                return false;
+            }
+
+            void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
+            if (pointer == null)
             {
                 _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleTelemetry, SystemID.GraphicsScalability);
                 return false;
             }
 
             telemetryRing = (DrsTelemetryEntry*)pointer;
-            telemetryLength = _telemetryHandle.Length;
+            telemetryLength = buffer.Length;
             return true;
         }
 
@@ -1153,17 +1175,13 @@ namespace Hecton8.Graphics.Scalability
             if (vault == null)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BufferID.ResolutionScaleTelemetry, out _telemetryHandle) ||
-                !_telemetryHandle.IsCreated)
-            {
-                _telemetryHandle = vault.GetBufferHandle<DrsTelemetryEntry>(
-                    BufferID.ResolutionScaleTelemetry,
-                    TelemetryCapacity,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            return _telemetryHandle.IsCreated;
+            return OpenOrAcquireVaultBuffer(
+                vault,
+                ref _telemetryHandle,
+                BufferID.ResolutionScaleTelemetry,
+                TelemetryCapacity,
+                NativeArrayOptions.ClearMemory,
+                out _);
         }
 
         private void RebindDataVault(IDataVault vault)
@@ -1299,8 +1317,19 @@ namespace Hecton8.Graphics.Scalability
             if (_dataVault == null || !_dataVault.TryLockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability))
                 return;
 
-            void* pointer = _scaleStateHandle.ResolvePointer(_dataVault);
-            if (pointer == null || _scaleStateHandle.Length <= 0)
+            if (!TryOpenVaultBuffer(
+                    _dataVault,
+                    ref _scaleStateHandle,
+                    BufferID.ResolutionScaleState,
+                    1,
+                    out NativeArray<ResolutionScaleState> buffer))
+            {
+                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
+                return;
+            }
+
+            void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
+            if (pointer == null)
             {
                 _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
                 return;
@@ -1308,7 +1337,7 @@ namespace Hecton8.Graphics.Scalability
 
             SystemStressEwmaJob job = default;
             job.State = (ResolutionScaleState*)pointer;
-            job.StateLength = _scaleStateHandle.Length;
+            job.StateLength = buffer.Length;
             job.InputStress01 = inputStress01;
             job.Alpha = EwmaAlpha;
             _stressEwmaHandle = job.Schedule();
@@ -1352,14 +1381,15 @@ namespace Hecton8.Graphics.Scalability
             _stressEwmaScheduled = false;
             bool hasState = false;
             ResolutionScaleState state = default;
-            if (_dataVault != null && _scaleStateHandle.IsCreated)
+            if (TryOpenVaultBuffer(
+                    _dataVault,
+                    ref _scaleStateHandle,
+                    BufferID.ResolutionScaleState,
+                    1,
+                    out NativeArray<ResolutionScaleState> buffer))
             {
-                void* pointer = _scaleStateHandle.ResolvePointer(_dataVault);
-                if (pointer != null && _scaleStateHandle.Length > 0)
-                {
-                    state = ((ResolutionScaleState*)pointer)[0];
-                    hasState = true;
-                }
+                state = buffer[0];
+                hasState = true;
             }
 
             UnlockStressEwmaBufferIfNeeded();
@@ -2166,10 +2196,7 @@ namespace Hecton8.Graphics.Scalability
         {
             qualityWeight = PolicyMaxScale;
             IDataVault vault = _dataVault;
-            if (vault == null || !TryRefreshScalabilityStateHandle(vault))
-                return false;
-
-            if (_scalabilityStateHandle.Length <= 0)
+            if (vault == null)
                 return false;
 
             if (!vault.TryLockBuffer(BufferID.ShinobuScalabilityState, SystemID.GraphicsScalability))
@@ -2177,11 +2204,17 @@ namespace Hecton8.Graphics.Scalability
 
             try
             {
-                void* pointer = _scalabilityStateHandle.ResolvePointer(vault);
-                if (pointer == null)
+                if (!TryOpenExistingVaultBuffer(
+                        vault,
+                        ref _scalabilityStateHandle,
+                        BufferID.ShinobuScalabilityState,
+                        1,
+                        out NativeArray<ScalabilityStateDTO> buffer))
+                {
                     return false;
+                }
 
-                float value = *(float*)pointer;
+                float value = buffer[0].GlobalQualityWeight;
                 if (!math.isfinite(value))
                     return false;
 
@@ -2197,21 +2230,84 @@ namespace Hecton8.Graphics.Scalability
             }
         }
 
-        private bool TryRefreshScalabilityStateHandle(IDataVault vault)
+        private static bool OpenOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
         {
+            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
             if (vault == null)
-                return false;
-
-            if (_scalabilityStateHandle.IsCreated && vault.ResolveBuffer(ref _scalabilityStateHandle))
-                return _scalabilityStateHandle.Length > 0;
-
-            if (!vault.TryGetBufferHandle(BufferID.ShinobuScalabilityState, out _scalabilityStateHandle))
             {
-                _scalabilityStateHandle = default;
+                buffer = default;
                 return false;
             }
 
-            return _scalabilityStateHandle.IsCreated && _scalabilityStateHandle.Length > 0;
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GraphicsScalability,
+                options);
+            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            handle = default;
+            buffer = default;
+            return false;
+        }
+
+        private static bool TryOpenExistingVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null ||
+                !vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsMatchingVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u;
         }
 
         private float ResolveMinScaleLimit(HectonQualityTier tier)

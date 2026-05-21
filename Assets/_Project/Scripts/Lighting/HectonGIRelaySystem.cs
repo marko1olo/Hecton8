@@ -67,12 +67,12 @@ namespace Hecton8.Lighting
         [SerializeField, Range(0f, 1f)] private float depthPaletteStrength = 0.82f;
 
         private IDataVault _vault;
-        private VaultBufferHandle<float> _shDay;
-        private VaultBufferHandle<float> _shNight;
-        private VaultBufferHandle<float> _shDiscreteStates;
-        private VaultBufferHandle<float> _shOutput;
-        private VaultBufferHandle<float> _shLightningScratch;
-        private VaultBufferHandle<GIRelayTelemetryEntry> _telemetryRing;
+        private VaultGenerationHandle<float> _shDay;
+        private VaultGenerationHandle<float> _shNight;
+        private VaultGenerationHandle<float> _shDiscreteStates;
+        private VaultGenerationHandle<float> _shOutput;
+        private VaultGenerationHandle<float> _shLightningScratch;
+        private VaultGenerationHandle<GIRelayTelemetryEntry> _telemetryRing;
         private GraphicsBuffer _shUploadBufferA;
         private GraphicsBuffer _shUploadBufferB;
         private int _shUploadWriteIndex;
@@ -208,7 +208,7 @@ namespace Hecton8.Lighting
 
             if (_restoreBaseProbeAfterLightning)
             {
-                NativeArray<float> output = ResolveArray(ref _shOutput);
+                NativeArray<float> output = OpenGIRelayArray(in _shOutput, SHOutputBuffer, SHCoefficientCount);
                 TryPushAmbientProbeFrom(output);
                 _restoreBaseProbeAfterLightning = false;
                 _lightningScalar = 0f;
@@ -310,12 +310,7 @@ namespace Hecton8.Lighting
                 _hasPendingSHJob = false;
             }
 
-            _shDay = default;
-            _shNight = default;
-            _shDiscreteStates = default;
-            _shOutput = default;
-            _shLightningScratch = default;
-            _telemetryRing = default;
+            ReleaseGIRelayVaultDescriptors();
             ReleaseShUploadBuffers();
             _vault = null;
             _telemetryCursor = 0;
@@ -323,10 +318,10 @@ namespace Hecton8.Lighting
             _nativeStorageReady = false;
         }
 
-        private VaultBufferHandle<T> AcquireBuffer<T>(BufferID bufferId, int length) where T : struct
+        private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID bufferId, int length) where T : struct
         {
-            VaultBufferHandle<T> handle = _vault.GetBufferHandle<T>(bufferId, length, MemoryOwner, NativeArrayOptions.ClearMemory);
-            if (!handle.IsCreated)
+            VaultGenerationHandle<T> handle = _vault.GetGenerationHandle<T>(bufferId, length, MemoryOwner, NativeArrayOptions.ClearMemory);
+            if (!TryOpenGIRelayBuffer(in handle, bufferId, length, out NativeArray<T> buffer) || !buffer.IsCreated)
                 throw new InvalidOperationException("GI relay DataVault buffer acquisition failed.");
 
             return handle;
@@ -335,15 +330,66 @@ namespace Hecton8.Lighting
         private IDataVault ResolveDataVault()
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault != null)
-                return vault;
-
-            return GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest) ? latest : null;
+            return vault;
         }
 
-        private NativeArray<T> ResolveArray<T>(ref VaultBufferHandle<T> handle) where T : struct
+        private NativeArray<T> OpenGIRelayArray<T>(in VaultGenerationHandle<T> handle, BufferID bufferId, int requiredLength) where T : struct
         {
-            return handle.Resolve(_vault);
+            return TryOpenGIRelayBuffer(in handle, bufferId, requiredLength, out NativeArray<T> buffer)
+                ? buffer
+                : default;
+        }
+
+        private bool TryOpenGIRelayBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (_vault == null ||
+                requiredLength <= 0 ||
+                !IsGIRelayVaultHandle(in handle, bufferId) ||
+                !_vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsGIRelayVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)MemoryOwner &&
+                   handle.Generation != 0u;
+        }
+
+        private void ReleaseGIRelayVaultDescriptors()
+        {
+            ReleaseGIRelayDescriptor(in _shDay, SHDayBuffer);
+            ReleaseGIRelayDescriptor(in _shNight, SHNightBuffer);
+            ReleaseGIRelayDescriptor(in _shDiscreteStates, SHDiscreteStatesBuffer);
+            ReleaseGIRelayDescriptor(in _shOutput, SHOutputBuffer);
+            ReleaseGIRelayDescriptor(in _shLightningScratch, SHLightningScratchBuffer);
+            ReleaseGIRelayDescriptor(in _telemetryRing, SHTelemetryRingBuffer);
+            _shDay = default;
+            _shNight = default;
+            _shDiscreteStates = default;
+            _shOutput = default;
+            _shLightningScratch = default;
+            _telemetryRing = default;
+        }
+
+        private void ReleaseGIRelayDescriptor<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            if (_vault == null || !IsGIRelayVaultHandle(in handle, bufferId))
+                return;
+
+            _vault.ReleaseBuffer(in handle);
         }
 
         private void EnsureShUploadBuffers()
@@ -375,9 +421,9 @@ namespace Hecton8.Lighting
 
         private void BuildSHProfiles()
         {
-            NativeArray<float> day = ResolveArray(ref _shDay);
-            NativeArray<float> night = ResolveArray(ref _shNight);
-            NativeArray<float> states = ResolveArray(ref _shDiscreteStates);
+            NativeArray<float> day = OpenGIRelayArray(in _shDay, SHDayBuffer, SHCoefficientCount);
+            NativeArray<float> night = OpenGIRelayArray(in _shNight, SHNightBuffer, SHCoefficientCount);
+            NativeArray<float> states = OpenGIRelayArray(in _shDiscreteStates, SHDiscreteStatesBuffer, SHCoefficientCount * SHStateCount);
             WriteDirectionalAmbient(day, 0, new float3(0.62f, 0.78f, 0.96f) * daySHIntensity, 0.08f);
             WriteDirectionalAmbient(night, 0, new float3(0.055f, 0.075f, 0.125f) * nightSHIntensity, 0.025f);
             WriteDirectionalAmbient(states, 0, new float3(0.045f, 0.065f, 0.120f) * nightSHIntensity, 0.015f);
@@ -501,10 +547,10 @@ namespace Hecton8.Lighting
 
         private void ScheduleSHJob(in GIRelayRuntimeSnapshot snapshot, in BiomeGradientSignal biomeGradient)
         {
-            NativeArray<float> day = ResolveArray(ref _shDay);
-            NativeArray<float> night = ResolveArray(ref _shNight);
-            NativeArray<float> states = ResolveArray(ref _shDiscreteStates);
-            NativeArray<float> output = ResolveArray(ref _shOutput);
+            NativeArray<float> day = OpenGIRelayArray(in _shDay, SHDayBuffer, SHCoefficientCount);
+            NativeArray<float> night = OpenGIRelayArray(in _shNight, SHNightBuffer, SHCoefficientCount);
+            NativeArray<float> states = OpenGIRelayArray(in _shDiscreteStates, SHDiscreteStatesBuffer, SHCoefficientCount * SHStateCount);
+            NativeArray<float> output = OpenGIRelayArray(in _shOutput, SHOutputBuffer, SHCoefficientCount);
             if (!day.IsCreated || !night.IsCreated || !states.IsCreated || !output.IsCreated)
                 return;
 
@@ -534,7 +580,7 @@ namespace Hecton8.Lighting
 
             _hasPendingSHJob = false;
 
-            NativeArray<float> output = ResolveArray(ref _shOutput);
+            NativeArray<float> output = OpenGIRelayArray(in _shOutput, SHOutputBuffer, SHCoefficientCount);
             if (!TryPushAmbientProbeFrom(output))
             {
                 RecordTelemetry(in _snapshot, GIRelayTelemetryFlags.SHLayoutMismatch);
@@ -575,8 +621,8 @@ namespace Hecton8.Lighting
 
         private unsafe void PushLightningProbeOverlay()
         {
-            NativeArray<float> output = ResolveArray(ref _shOutput);
-            NativeArray<float> scratch = ResolveArray(ref _shLightningScratch);
+            NativeArray<float> output = OpenGIRelayArray(in _shOutput, SHOutputBuffer, SHCoefficientCount);
+            NativeArray<float> scratch = OpenGIRelayArray(in _shLightningScratch, SHLightningScratchBuffer, SHCoefficientCount);
             if (!output.IsCreated || !scratch.IsCreated)
                 return;
 
@@ -792,7 +838,7 @@ namespace Hecton8.Lighting
 
         private void RecordTelemetry(in GIRelayRuntimeSnapshot snapshot, GIRelayTelemetryFlags eventFlags)
         {
-            NativeArray<GIRelayTelemetryEntry> telemetryRing = ResolveArray(ref _telemetryRing);
+            NativeArray<GIRelayTelemetryEntry> telemetryRing = OpenGIRelayArray(in _telemetryRing, SHTelemetryRingBuffer, TelemetryCapacity);
             if (!telemetryRing.IsCreated || telemetryRing.Length <= 0)
                 return;
 
@@ -819,7 +865,7 @@ namespace Hecton8.Lighting
 
         private void DumpBlackBox()
         {
-            NativeArray<GIRelayTelemetryEntry> telemetryRing = ResolveArray(ref _telemetryRing);
+            NativeArray<GIRelayTelemetryEntry> telemetryRing = OpenGIRelayArray(in _telemetryRing, SHTelemetryRingBuffer, TelemetryCapacity);
             if (!telemetryRing.IsCreated || telemetryRing.Length <= 0)
                 return;
 

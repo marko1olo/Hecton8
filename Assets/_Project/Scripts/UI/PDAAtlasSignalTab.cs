@@ -32,7 +32,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Atlas Signal Tab")]
-    public sealed class PDAAtlasSignalTab : MonoBehaviour, ILateFrameTickable, IAtlasSignalEventListener, IPDAEventListener
+    public sealed class PDAAtlasSignalTab : MonoBehaviour, ILateFrameTickable, IAtlasSignalEventListener, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private const int DirectionDistanceNearStepMeters = 5;
         private const int DirectionDistanceMidStepMeters = 25;
@@ -80,6 +80,11 @@ namespace Hecton8.UI
         private RectTransform _root;
         private bool _built;
         private bool _registered;
+        private bool _hotSwapRegistered;
+        private AtlasSignalSystem _atlasSignalSystem;
+        private AtlasSignalDecoder _atlasSignalDecoder;
+        private FirstHourDirector _firstHourDirector;
+        private IPlayerRuntimeContext _playerRuntimeContext;
 
         // UI elements
         private TextMeshProUGUI _titleLabel;
@@ -192,6 +197,8 @@ namespace Hecton8.UI
         {
             if (!_built) EnsureBuilt();
 
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
 
             AtlasSignalEvents.Register(this);
@@ -204,6 +211,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
 
             AtlasSignalEvents.Unregister(this);
             PDAEvents.Unregister(this);
@@ -212,6 +220,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             AtlasSignalEvents.Unregister(this);
             PDAEvents.Unregister(this);
             PDAEvents.AssertUnregistered(this, nameof(PDAAtlasSignalTab));
@@ -302,9 +311,6 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
@@ -315,6 +321,57 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.AtlasSignalRuntime:
+                    _atlasSignalSystem = currentService as AtlasSignalSystem;
+                    _dirty = true;
+                    return;
+                case GlobalRegistryServiceSlot.AtlasSignalDecoderRuntime:
+                    _atlasSignalDecoder = currentService as AtlasSignalDecoder;
+                    _dirty = true;
+                    return;
+                case GlobalRegistryServiceSlot.FirstHourRuntime:
+                    _firstHourDirector = currentService as FirstHourDirector;
+                    _dirty = true;
+                    return;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    _dirty = true;
+                    return;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _atlasSignalSystem = GlobalRegistry.AtlasSignal;
+            _atlasSignalDecoder = GlobalRegistry.AtlasSignalDecoder;
+            _firstHourDirector = GlobalRegistry.FirstHour;
+            _playerRuntimeContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void EnsureBuilt()
@@ -481,8 +538,8 @@ namespace Hecton8.UI
 
         private void RefreshAll()
         {
-            AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
-            AtlasSignalDecoder decoder = Hecton8.Core.GlobalRegistry.AtlasSignalDecoder;
+            AtlasSignalSystem sys = _atlasSignalSystem;
+            AtlasSignalDecoder decoder = _atlasSignalDecoder;
             _signalBeaconContact = SignalBeaconRegistry.TryGetDominantTelemetry(out _beaconStrength01, out _beaconStatic01) &&
                                    _beaconStrength01 > 0f;
             _atlasTelemetryVisible = CanRevealAtlasTelemetry(sys);
@@ -641,7 +698,7 @@ namespace Hecton8.UI
         {
             if (_directionLabel == null) return;
 
-            AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalSystem sys = _atlasSignalSystem;
             int revealStage = sys != null ? sys.CurrentRevealStage : 0;
 
             if (_signalBeaconContact)
@@ -715,7 +772,7 @@ namespace Hecton8.UI
 
         private bool CanRevealAtlasTelemetry(AtlasSignalSystem sys)
         {
-            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
+            FirstHourDirector firstHourDirector = _firstHourDirector;
             if (firstHourDirector != null)
             {
                 return firstHourDirector.IsMilestoneComplete(minimumMilestoneToReveal) &&
@@ -732,22 +789,41 @@ namespace Hecton8.UI
                 sys.IsDetected;
         }
 
-        private static bool TryResolveAtlasCoreDistanceMeters(AtlasSignalSystem sys, out int distanceMeters)
+        private bool TryResolveAtlasCoreDistanceMeters(AtlasSignalSystem sys, out int distanceMeters)
         {
             distanceMeters = 0;
             if (sys == null)
                 return false;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement == null)
                 return false;
 
             AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
-            AbsoluteUniversePosition coreAup = AbsoluteUniversePosition.FromRuntimePosition(sys.AtlasCorePosition);
+            if (!TryResolveRuntimeAup(sys.AtlasCorePosition, out AbsoluteUniversePosition coreAup))
+                return false;
+
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
             distanceMeters = EstimateCinematicDistanceMeters(in playerAup, in coreAup, distanceSq);
             return true;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static int EstimateCinematicDistanceMeters(

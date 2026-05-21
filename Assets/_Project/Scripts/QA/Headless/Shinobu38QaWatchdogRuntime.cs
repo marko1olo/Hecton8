@@ -29,204 +29,204 @@ namespace Hecton8.QA.Headless
         Ultra = 3
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct WatchdogStateDTO
     {
-        public double3 CurrentTargetAUP;
-        public float DistanceTraveled;
-        public uint ErrorCount;
-        public float TestDuration;
-        public uint _pad0;
+        [FieldOffset(0)] public double3 CurrentTargetAUP;
+        [FieldOffset(24)] public float DistanceTraveled;
+        [FieldOffset(28)] public uint ErrorCount;
+        [FieldOffset(32)] public float TestDuration;
+        [FieldOffset(36)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct TelemetrySnapshotDTO
     {
-        public float FrameTimeMs;
-        public float GcAllocBytes;
-        public float VramUsed;
-        public float AupJitterError;
+        [FieldOffset(0)] public float FrameTimeMs;
+        [FieldOffset(4)] public float GcAllocBytes;
+        [FieldOffset(8)] public float VramUsed;
+        [FieldOffset(12)] public float AupJitterError;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct Shinobu38RouteWaypointDTO
     {
-        public double3 Aup;
-        public uint Flags;
-        public uint Pad0;
+        [FieldOffset(0)] public double3 Aup;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockRebaseSignal
     {
-        public double3 OffsetAUP;
-        public uint Frame;
-        public uint Flags;
+        [FieldOffset(0)] public double3 OffsetAUP;
+        [FieldOffset(24)] public uint Frame;
+        [FieldOffset(28)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct Shinobu38TuningDTO
     {
-        public float SwimSpeed;
-        public float ObstacleAvoidanceStrength;
-        public float TelemetryWriteFrequency;
-        public float FastForwardScale;
-        public uint Tier;
-        public uint _pad0;
-        public uint _pad1;
-        public uint _pad2;
+        [FieldOffset(0)] public float SwimSpeed;
+        [FieldOffset(4)] public float ObstacleAvoidanceStrength;
+        [FieldOffset(8)] public float TelemetryWriteFrequency;
+        [FieldOffset(12)] public float FastForwardScale;
+        [FieldOffset(16)] public uint Tier;
+        [FieldOffset(20)] public uint _pad0;
+        [FieldOffset(24)] public uint _pad1;
+        [FieldOffset(28)] public uint _pad2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct Shinobu38MockVaultDTO
     {
-        public double3 CurrentAUP;
-        public int CurrentWaypointIndex;
-        public uint Flags;
-        public uint FrameFlags;
-        public uint _pad0;
+        [FieldOffset(0)] public double3 CurrentAUP;
+        [FieldOffset(24)] public int CurrentWaypointIndex;
+        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(32)] public uint FrameFlags;
+        [FieldOffset(36)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct Shinobu38WatchdogTelemetryEntry
     {
-        public uint Frame;
-        public float TargetDistanceRemaining;
-        public float AvoidanceCorrections;
-        public float CsvWriteTimeMs;
-        public int LocalMillimetersX;
-        public int LocalMillimetersY;
-        public int LocalMillimetersZ;
-        public uint Flags;
-        public int SectorX;
-        public int SectorY;
-        public int SectorZ;
-        public uint ShiftFrameId;
-        public uint AupHash;
-        public uint _pad0;
-        public uint _pad1;
-        public uint _pad2;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public float TargetDistanceRemaining;
+        [FieldOffset(8)] public float AvoidanceCorrections;
+        [FieldOffset(12)] public float CsvWriteTimeMs;
+        [FieldOffset(16)] public int LocalMillimetersX;
+        [FieldOffset(20)] public int LocalMillimetersY;
+        [FieldOffset(24)] public int LocalMillimetersZ;
+        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(32)] public int SectorX;
+        [FieldOffset(36)] public int SectorY;
+        [FieldOffset(40)] public int SectorZ;
+        [FieldOffset(44)] public uint ShiftFrameId;
+        [FieldOffset(48)] public uint AupHash;
+        [FieldOffset(52)] public uint _pad0;
+        [FieldOffset(56)] public uint _pad1;
+        [FieldOffset(60)] public uint _pad2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct Shinobu38FileWriteCommand
     {
-        public long Sequence;
-        public int PayloadOffset;
-        public int PayloadLength;
-        public uint Target;
-        public uint Flags;
-        public uint _pad0;
-        public uint _pad1;
+        [FieldOffset(0)] public long Sequence;
+        [FieldOffset(8)] public int PayloadOffset;
+        [FieldOffset(12)] public int PayloadLength;
+        [FieldOffset(16)] public uint Target;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public uint _pad0;
+        [FieldOffset(28)] public uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct Shinobu38FileWriterStateDTO
     {
-        public long LastWriteTicks;
-        public int LastCsvWriteMicros;
-        public int LastAnyWriteMicros;
-        public uint CompletedWrites;
-        public uint WriterFlags;
-        public uint _pad0;
-        public uint _pad1;
-        public uint _pad2;
-        public uint _pad3;
-        public uint _pad4;
-        public uint _pad5;
-        public uint _pad6;
-        public uint _pad7;
-        public uint _pad8;
-        public uint _pad9;
-        public uint DroppedWrites;
-        public uint ProducerFlags;
-        public uint _pad10;
-        public uint _pad11;
-        public uint _pad12;
-        public uint _pad13;
-        public uint _pad14;
-        public uint _pad15;
-        public uint _pad16;
-        public uint _pad17;
-        public uint _pad18;
-        public uint _pad19;
-        public uint _pad20;
-        public uint _pad21;
-        public uint _pad22;
-        public uint _pad23;
+        [FieldOffset(0)] public long LastWriteTicks;
+        [FieldOffset(8)] public int LastCsvWriteMicros;
+        [FieldOffset(12)] public int LastAnyWriteMicros;
+        [FieldOffset(16)] public uint CompletedWrites;
+        [FieldOffset(20)] public uint WriterFlags;
+        [FieldOffset(24)] public uint _pad0;
+        [FieldOffset(28)] public uint _pad1;
+        [FieldOffset(32)] public uint _pad2;
+        [FieldOffset(36)] public uint _pad3;
+        [FieldOffset(40)] public uint _pad4;
+        [FieldOffset(44)] public uint _pad5;
+        [FieldOffset(48)] public uint _pad6;
+        [FieldOffset(52)] public uint _pad7;
+        [FieldOffset(56)] public uint _pad8;
+        [FieldOffset(60)] public uint _pad9;
+        [FieldOffset(64)] public uint DroppedWrites;
+        [FieldOffset(68)] public uint ProducerFlags;
+        [FieldOffset(72)] public uint _pad10;
+        [FieldOffset(76)] public uint _pad11;
+        [FieldOffset(80)] public uint _pad12;
+        [FieldOffset(84)] public uint _pad13;
+        [FieldOffset(88)] public uint _pad14;
+        [FieldOffset(92)] public uint _pad15;
+        [FieldOffset(96)] public uint _pad16;
+        [FieldOffset(100)] public uint _pad17;
+        [FieldOffset(104)] public uint _pad18;
+        [FieldOffset(108)] public uint _pad19;
+        [FieldOffset(112)] public uint _pad20;
+        [FieldOffset(116)] public uint _pad21;
+        [FieldOffset(120)] public uint _pad22;
+        [FieldOffset(124)] public uint _pad23;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct Shinobu38FileWriterCursorDTO
     {
-        public int Running;
-        public int Head;
-        public uint _pad0;
-        public uint _pad1;
-        public uint _pad2;
-        public uint _pad3;
-        public uint _pad4;
-        public uint _pad5;
-        public uint _pad6;
-        public uint _pad7;
-        public uint _pad8;
-        public uint _pad9;
-        public uint _pad10;
-        public uint _pad11;
-        public uint _pad12;
-        public uint _pad13;
-        public int Tail;
-        public uint _pad14;
-        public uint _pad15;
-        public uint _pad16;
-        public uint _pad17;
-        public uint _pad18;
-        public uint _pad19;
-        public uint _pad20;
-        public uint _pad21;
-        public uint _pad22;
-        public uint _pad23;
-        public uint _pad24;
-        public uint _pad25;
-        public uint _pad26;
-        public uint _pad27;
-        public uint _pad28;
+        [FieldOffset(0)] public int Running;
+        [FieldOffset(4)] public int Head;
+        [FieldOffset(8)] public uint _pad0;
+        [FieldOffset(12)] public uint _pad1;
+        [FieldOffset(16)] public uint _pad2;
+        [FieldOffset(20)] public uint _pad3;
+        [FieldOffset(24)] public uint _pad4;
+        [FieldOffset(28)] public uint _pad5;
+        [FieldOffset(32)] public uint _pad6;
+        [FieldOffset(36)] public uint _pad7;
+        [FieldOffset(40)] public uint _pad8;
+        [FieldOffset(44)] public uint _pad9;
+        [FieldOffset(48)] public uint _pad10;
+        [FieldOffset(52)] public uint _pad11;
+        [FieldOffset(56)] public uint _pad12;
+        [FieldOffset(60)] public uint _pad13;
+        [FieldOffset(64)] public int Tail;
+        [FieldOffset(68)] public uint _pad14;
+        [FieldOffset(72)] public uint _pad15;
+        [FieldOffset(76)] public uint _pad16;
+        [FieldOffset(80)] public uint _pad17;
+        [FieldOffset(84)] public uint _pad18;
+        [FieldOffset(88)] public uint _pad19;
+        [FieldOffset(92)] public uint _pad20;
+        [FieldOffset(96)] public uint _pad21;
+        [FieldOffset(100)] public uint _pad22;
+        [FieldOffset(104)] public uint _pad23;
+        [FieldOffset(108)] public uint _pad24;
+        [FieldOffset(112)] public uint _pad25;
+        [FieldOffset(116)] public uint _pad26;
+        [FieldOffset(120)] public uint _pad27;
+        [FieldOffset(124)] public uint _pad28;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct Shinobu38WaypointIngestStateDTO
     {
-        public long LastSeenTicks;
-        public int PendingLength;
-        public int PublishedVersion;
-        public uint ProducerFlags;
-        public uint _pad0;
-        public uint _pad1;
-        public uint _pad2;
-        public uint _pad3;
-        public uint _pad4;
-        public uint _pad5;
-        public uint _pad6;
-        public uint _pad7;
-        public uint _pad8;
-        public uint _pad9;
-        public uint _pad10;
-        public int AppliedVersion;
-        public int AppliedCount;
-        public uint ConsumerFlags;
-        public uint _pad12;
-        public uint _pad13;
-        public uint _pad14;
-        public uint _pad15;
-        public uint _pad16;
-        public uint _pad17;
-        public uint _pad18;
-        public uint _pad19;
-        public uint _pad20;
-        public uint _pad21;
-        public uint _pad22;
-        public uint _pad23;
-        public uint _pad24;
+        [FieldOffset(0)] public long LastSeenTicks;
+        [FieldOffset(8)] public int PendingLength;
+        [FieldOffset(12)] public int PublishedVersion;
+        [FieldOffset(16)] public uint ProducerFlags;
+        [FieldOffset(20)] public uint _pad0;
+        [FieldOffset(24)] public uint _pad1;
+        [FieldOffset(28)] public uint _pad2;
+        [FieldOffset(32)] public uint _pad3;
+        [FieldOffset(36)] public uint _pad4;
+        [FieldOffset(40)] public uint _pad5;
+        [FieldOffset(44)] public uint _pad6;
+        [FieldOffset(48)] public uint _pad7;
+        [FieldOffset(52)] public uint _pad8;
+        [FieldOffset(56)] public uint _pad9;
+        [FieldOffset(60)] public uint _pad10;
+        [FieldOffset(64)] public int AppliedVersion;
+        [FieldOffset(68)] public int AppliedCount;
+        [FieldOffset(72)] public uint ConsumerFlags;
+        [FieldOffset(76)] public uint _pad12;
+        [FieldOffset(80)] public uint _pad13;
+        [FieldOffset(84)] public uint _pad14;
+        [FieldOffset(88)] public uint _pad15;
+        [FieldOffset(92)] public uint _pad16;
+        [FieldOffset(96)] public uint _pad17;
+        [FieldOffset(100)] public uint _pad18;
+        [FieldOffset(104)] public uint _pad19;
+        [FieldOffset(108)] public uint _pad20;
+        [FieldOffset(112)] public uint _pad21;
+        [FieldOffset(116)] public uint _pad22;
+        [FieldOffset(120)] public uint _pad23;
+        [FieldOffset(124)] public uint _pad24;
     }
 
     [DisallowMultipleComponent]

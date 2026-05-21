@@ -56,15 +56,19 @@ namespace Hecton8.Gameplay
         FlickerStart = 3
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct FlashlightEventPayload
     {
-        public float BatteryPercent;
-        public float Heat01;
-        public ushort EventType;
-        public ushort StateBits;
+        [FieldOffset(0)] public float BatteryPercent;
+        [FieldOffset(4)] public float Heat01;
+        [FieldOffset(8)] public ushort EventType;
+        [FieldOffset(10)] public ushort StateBits;
+        [FieldOffset(12)] private uint _pad0;
 
-        public bool IsOn => (StateBits & 1u) != 0u;
+        public static bool IsOn(in FlashlightEventPayload payload)
+        {
+            return (payload.StateBits & 1u) != 0u;
+        }
     }
 
     public interface IFlashlightEventListener
@@ -76,11 +80,23 @@ namespace Hecton8.Gameplay
     {
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 16;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<IFlashlightEventListener>[16] - flashlight deferred listeners - owner: FlashlightEvents
-        private static readonly RegistryBucket<IFlashlightEventListener> _listeners = new RegistryBucket<IFlashlightEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IFlashlightEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[16] - flashlight deferred listeners without interface array dispatch - owner: FlashlightEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<FlashlightEventPayload> _pendingEvents;
         private static NativeQueue<FlashlightEventPayload> _nextFrameEvents;
+        private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -104,7 +120,10 @@ namespace Hecton8.Gameplay
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
@@ -116,8 +135,7 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            RegisterImmediate(listener);
         }
 
         public static void Unregister(IFlashlightEventListener listener)
@@ -125,8 +143,7 @@ namespace Hecton8.Gameplay
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            TryUnregisterImmediate(listener);
         }
 
         public static void FlushPending()
@@ -134,7 +151,7 @@ namespace Hecton8.Gameplay
             if (!_pendingEvents.IsCreated)
                 return;
 
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
             {
                 DrainWithoutDispatch();
                 return;
@@ -195,7 +212,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<FlashlightEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FlashlightEventPayload>[16] - deferred flashlight event lane - owner: FlashlightEvents
+                _pendingEvents = new NativeQueue<FlashlightEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FlashlightEventPayload>[16] - deferred flashlight event lane - owner: FlashlightEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -207,7 +224,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<FlashlightEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FlashlightEventPayload>[16] - next-frame flashlight event lane prevents same-frame reentrant dispatch - owner: FlashlightEvents
+                _nextFrameEvents = new NativeQueue<FlashlightEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FlashlightEventPayload>[16] - next-frame flashlight event lane prevents same-frame reentrant dispatch - owner: FlashlightEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -259,17 +276,46 @@ namespace Hecton8.Gameplay
 
         private static void DispatchRegisteredListeners(in FlashlightEventPayload payload)
         {
-            int count = _listeners.Count;
+            int count = _listenerCount;
             if (count <= 0)
                 return;
 
-            IFlashlightEventListener[] rawArray = _listeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
             {
-                IFlashlightEventListener listener = rawArray[i];
+                IFlashlightEventListener listener = _listeners[i].Listener;
                 if (listener != null)
                     listener.OnFlashlightEvent(in payload);
             }
+        }
+
+        private static void RegisterImmediate(IFlashlightEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
+        }
+
+        private static bool TryUnregisterImmediate(IFlashlightEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                _listenerCount--;
+                _listeners[i] = _listeners[_listenerCount];
+                _listeners[_listenerCount].Clear();
+                return true;
+            }
+
+            return false;
         }
 
         private static void DrainWithoutDispatch()

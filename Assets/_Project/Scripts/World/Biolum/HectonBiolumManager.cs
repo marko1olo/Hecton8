@@ -14,10 +14,10 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Physics;
-using System.Collections.Generic;
 using Hecton8.Visor;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -34,7 +34,7 @@ namespace Hecton8.Biolum
     /// - Floor zones (FloorBiolumZone)
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonBiolumManager : MonoBehaviour, ITickable, IUpdatable, ISonarPulseEventListener, IOriginShiftListener, IDisposable
+    public sealed class HectonBiolumManager : MonoBehaviour, ITickable, IUpdatable, ISonarPulseEventListener, IOriginShiftListener, IGlobalRegistryHotSwapListener, IDisposable
     {
         private static readonly int _FloraOceanBiolumColorId = Shader.PropertyToID("_HectonOceanBiolumColor");
         private static readonly int _FloraOceanBiolumStrengthId = Shader.PropertyToID("_HectonOceanBiolumStrength");
@@ -81,13 +81,13 @@ namespace Hecton8.Biolum
             public byte Flags;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct PredatorBlackoutJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float3> PredatorPositions;
+            [ReadOnly, NoAlias] public NativeArray<float3> PredatorPositions;
             public float3 ObserverPosition;
             public float RadiusSq;
-            [WriteOnly] public NativeArray<float> Scores;
+            [WriteOnly, NoAlias] public NativeArray<float> Scores;
 
             public void Execute(int index)
             {
@@ -104,12 +104,12 @@ namespace Hecton8.Biolum
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct RippleDistanceJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float3> RipplePositions;
+            [ReadOnly, NoAlias] public NativeArray<float3> RipplePositions;
             public float3 ObserverPosition;
-            [WriteOnly] public NativeArray<float> DistanceSq;
+            [WriteOnly, NoAlias] public NativeArray<float> DistanceSq;
 
             public void Execute(int index)
             {
@@ -189,19 +189,27 @@ namespace Hecton8.Biolum
         private const uint BiolumDirectorContextHash = 0xB101D1ECu;
         private const SystemID VaultOwnerSystem = SystemID.Vfx;
 
-        // COLD ALLOC: List<HectonBiolumZone>[32] - active cave-zone registry - owner: HectonBiolumManager
-        private readonly List<HectonBiolumZone> _activeCaveZones = new List<HectonBiolumZone>(ActiveZoneListCapacity);
-        // COLD ALLOC: List<HectonBiolumZone>[32] - active ocean-zone registry - owner: HectonBiolumManager
-        private readonly List<HectonBiolumZone> _activeOceanZones = new List<HectonBiolumZone>(ActiveZoneListCapacity);
-        // COLD ALLOC: List<HectonBiolumZone>[32] - active floor-zone registry - owner: HectonBiolumManager
-        private readonly List<HectonBiolumZone> _activeFloorZones = new List<HectonBiolumZone>(ActiveZoneListCapacity);
+        // COLD ALLOC: fixed zone registry arrays; bounded, no List growth in runtime route.
+        private readonly HectonBiolumZone[] _activeCaveZones = new HectonBiolumZone[ActiveZoneListCapacity];
+        private readonly HectonBiolumZone[] _activeOceanZones = new HectonBiolumZone[ActiveZoneListCapacity];
+        private readonly HectonBiolumZone[] _activeFloorZones = new HectonBiolumZone[ActiveZoneListCapacity];
+        private int _activeCaveZoneCount;
+        private int _activeOceanZoneCount;
+        private int _activeFloorZoneCount;
+        private int _zoneRegistryOverflowCount;
 
         private int _totalActiveLights = 0;
         private bool _initialized = false;
         private Camera _cachedCamera = null;
         private Transform _cachedCameraTransform = null;
+        private Vector3 _cachedCameraPosition = Vector3.zero;
         private bool _serviceRegistered = false;
         private bool _tickRegistered = false;
+        private bool _hotSwapRegistered = false;
+        private IDataVault _dataVault;
+        private ITickDispatcher _cachedTickDispatcher;
+        private HectonFluidEngine _cachedFluid;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private float _floraGlobalUpdateTimer = 0f;
         private float _nextCameraResolveTime = 0f;
         private float _sonarPulseBoost = 0f;
@@ -257,23 +265,22 @@ namespace Hecton8.Biolum
         private GraphicsBuffer _touchRippleBufferB;
         private GraphicsBuffer _publishedTouchRippleBuffer;
         private int _lastPublishedTouchRippleCount = -1;
-        private HectonQualityTier _lastPublishedTouchRippleTier = HectonQualityTier.Unknown;
-        private VaultBufferHandle<float3> _predatorJobPositionsHandle;
-        private VaultBufferHandle<float> _predatorJobScoresHandle;
+        private int _lastPublishedTouchRippleQualityBucket = -1;
+        private VaultGenerationHandle<float3> _predatorJobPositionsHandle;
+        private VaultGenerationHandle<float> _predatorJobScoresHandle;
         private JobHandle _predatorJobHandle;
         private bool _predatorJobScheduled = false;
         private bool _predatorJobBuffersLocked = false;
         private int _scheduledPredatorCount = 0;
-        private VaultBufferHandle<float3> _rippleJobPositionsHandle;
-        private VaultBufferHandle<float> _rippleJobDistancesHandle;
+        private VaultGenerationHandle<float3> _rippleJobPositionsHandle;
+        private VaultGenerationHandle<float> _rippleJobDistancesHandle;
         private JobHandle _rippleJobHandle;
         private bool _rippleJobScheduled = false;
         private bool _rippleJobBuffersLocked = false;
         private int _scheduledRippleCount = 0;
         private int _sortedTouchRippleCount = 0;
         private bool _rippleSortReady = false;
-        private VaultBufferHandle<BiolumTelemetryEntry> _telemetryRingHandle;
-        private uint _vaultGenerationId = 0u;
+        private VaultGenerationHandle<BiolumTelemetryEntry> _telemetryRingHandle;
         private bool _disposed = false;
         private double _fallbackCelestialTimeSeconds;
 
@@ -300,6 +307,7 @@ namespace Hecton8.Biolum
                 return;
             }
 
+            CacheGlobalRegistryServicesCold();
             EnsureRuntimeResources();
             ResetFloraShaderGlobals();
         }
@@ -311,6 +319,8 @@ namespace Hecton8.Biolum
 
         private void OnEnable()
         {
+            CacheGlobalRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegister();
             HectonFloatingOrigin.RegisterListener(this);
@@ -320,10 +330,12 @@ namespace Hecton8.Biolum
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             TryUnregister();
             HectonFloatingOrigin.UnregisterListener(this);
             CompleteRuntimeJobsForTeardown();
+            ReleaseVaultHandlesOnly();
             SpectrumEvents.UnregisterSonarPulseListener(this);
             _sonarPulseBoost = 0f;
 
@@ -332,6 +344,7 @@ namespace Hecton8.Biolum
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
             TryUnregister();
             HectonFloatingOrigin.UnregisterListener(this);
@@ -356,20 +369,20 @@ namespace Hecton8.Biolum
 
             zone.EnsureTickRegistration();
 
-            if (zone is CaveBiolumZone cave)
+            if (zone is CaveBiolumZone)
             {
-                if (!_activeCaveZones.Contains(zone))
-                    _activeCaveZones.Add(zone);
+                if (!TryAddZoneNonAlloc(_activeCaveZones, ref _activeCaveZoneCount, zone))
+                    NoteZoneRegistryOverflow();
             }
-            else if (zone is OceanBiolumZone ocean)
+            else if (zone is OceanBiolumZone)
             {
-                if (!_activeOceanZones.Contains(zone))
-                    _activeOceanZones.Add(zone);
+                if (!TryAddZoneNonAlloc(_activeOceanZones, ref _activeOceanZoneCount, zone))
+                    NoteZoneRegistryOverflow();
             }
-            else if (zone is FloorBiolumZone floor)
+            else if (zone is FloorBiolumZone)
             {
-                if (!_activeFloorZones.Contains(zone))
-                    _activeFloorZones.Add(zone);
+                if (!TryAddZoneNonAlloc(_activeFloorZones, ref _activeFloorZoneCount, zone))
+                    NoteZoneRegistryOverflow();
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -384,9 +397,9 @@ namespace Hecton8.Biolum
         {
             if (zone == null) return;
 
-            _activeCaveZones.Remove(zone);
-            _activeOceanZones.Remove(zone);
-            _activeFloorZones.Remove(zone);
+            RemoveZoneNonAlloc(_activeCaveZones, ref _activeCaveZoneCount, zone);
+            RemoveZoneNonAlloc(_activeOceanZones, ref _activeOceanZoneCount, zone);
+            RemoveZoneNonAlloc(_activeFloorZones, ref _activeFloorZoneCount, zone);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_debugLogUpdates) Debug.Log("[BiolumManager] Unregistered zone", this);
@@ -401,9 +414,61 @@ namespace Hecton8.Biolum
         /// <summary>
         /// Get zone count by type.
         /// </summary>
-        public int GetCaveZoneCount() => _activeCaveZones.Count;
-        public int GetOceanZoneCount() => _activeOceanZones.Count;
-        public int GetFloorZoneCount() => _activeFloorZones.Count;
+        public int GetCaveZoneCount() => _activeCaveZoneCount;
+        public int GetOceanZoneCount() => _activeOceanZoneCount;
+        public int GetFloorZoneCount() => _activeFloorZoneCount;
+
+        private void NoteZoneRegistryOverflow()
+        {
+            if (_zoneRegistryOverflowCount < int.MaxValue)
+                _zoneRegistryOverflowCount++;
+        }
+
+        private static bool TryAddZoneNonAlloc(HectonBiolumZone[] zones, ref int count, HectonBiolumZone zone)
+        {
+            int safeCount = math.clamp(count, 0, zones.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (ReferenceEquals(zones[i], zone))
+                {
+                    count = safeCount;
+                    return true;
+                }
+            }
+
+            if (safeCount >= zones.Length)
+            {
+                count = safeCount;
+                return false;
+            }
+
+            zones[safeCount] = zone;
+            count = safeCount + 1;
+            return true;
+        }
+
+        private static bool RemoveZoneNonAlloc(HectonBiolumZone[] zones, ref int count, HectonBiolumZone zone)
+        {
+            int safeCount = math.clamp(count, 0, zones.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (!ReferenceEquals(zones[i], zone))
+                    continue;
+
+                int last = safeCount - 1;
+                for (int move = i; move < last; move++)
+                {
+                    zones[move] = zones[move + 1];
+                }
+
+                zones[last] = null;
+                count = last;
+                return true;
+            }
+
+            count = safeCount;
+            return false;
+        }
 
         internal int CopyNearbyZonesNonAlloc(Vector3 referencePosition, float maxDistance, HectonBiolumZone[] destination, float[] weights, bool includeOcean = true, bool includeFloor = true)
         {
@@ -412,13 +477,14 @@ namespace Hecton8.Biolum
 
             int count = 0;
             float maxDistanceSq = maxDistance > 0f ? maxDistance * maxDistance : float.PositiveInfinity;
-            AbsoluteUniversePosition referenceAup = AbsoluteUniversePosition.FromRuntimePosition(referencePosition);
+            if (!TryBuildAupFromRuntimeOrigin(referencePosition, out AbsoluteUniversePosition referenceAup))
+                return 0;
 
             if (includeOcean)
-                count = CollectNearbyZonesNonAlloc(_activeOceanZones, in referenceAup, maxDistanceSq, destination, weights, count);
+                count = CollectNearbyZonesNonAlloc(_activeOceanZones, _activeOceanZoneCount, in referenceAup, maxDistanceSq, destination, weights, count);
 
             if (includeFloor)
-                count = CollectNearbyZonesNonAlloc(_activeFloorZones, in referenceAup, maxDistanceSq, destination, weights, count);
+                count = CollectNearbyZonesNonAlloc(_activeFloorZones, _activeFloorZoneCount, in referenceAup, maxDistanceSq, destination, weights, count);
 
             return count;
         }
@@ -428,8 +494,7 @@ namespace Hecton8.Biolum
         /// </summary>
         public Vector3 GetCameraPosition()
         {
-            TryResolveCameraReference(false);
-            return _cachedCameraTransform != null ? _cachedCameraTransform.position : Vector3.zero;
+            return _cachedCameraPosition;
         }
 
         /// <summary>
@@ -437,14 +502,27 @@ namespace Hecton8.Biolum
         /// </summary>
         public AbsoluteUniversePosition GetCameraAup()
         {
-            int frame = Time.frameCount;
-            if (_cachedCameraAupFrame != frame)
+            return _cachedCameraAup;
+        }
+
+        private static bool TryBuildAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
             {
-                _cachedCameraAup = AbsoluteUniversePosition.FromRuntimePosition(GetCameraPosition());
-                _cachedCameraAupFrame = frame;
+                return false;
             }
 
-            return _cachedCameraAup;
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in absoluteAup);
         }
 
         /// <summary>
@@ -479,6 +557,7 @@ namespace Hecton8.Biolum
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             TryFinalizeRuntimeJobsNoWait();
             EnsureRuntimeResources();
+            RefreshCameraSnapshotForOwnerPhase(false);
             DrainMovementAcousticSignals();
             UpdateTouchRipples(safeDeltaTime);
             UpdatePredatorBlackout(safeDeltaTime);
@@ -489,8 +568,8 @@ namespace Hecton8.Biolum
             _debugTickInvocations++;
             _debugLastTickFrame = Time.frameCount;
             _debugLastTickDelta = safeDeltaTime;
-            _debugOceanZoneCount = _activeOceanZones.Count;
-            _debugFloorZoneCount = _activeFloorZones.Count;
+            _debugOceanZoneCount = _activeOceanZoneCount;
+            _debugFloorZoneCount = _activeFloorZoneCount;
 #endif
             if (_sonarPulseBoost > 0f)
             {
@@ -523,7 +602,7 @@ namespace Hecton8.Biolum
                 FindExistingZones();
             }
 
-            TryResolveCameraReference(true);
+            RefreshCameraSnapshotForOwnerPhase(true);
 
             _initialized = true;
             UpdateFloraShaderGlobals();
@@ -538,7 +617,7 @@ namespace Hecton8.Biolum
         /// </summary>
         private void FindExistingZones()
         {
-            List<HectonBiolumZone> zones = HectonBiolumZone.ActiveZones;
+            var zones = HectonBiolumZone.ActiveZones;
             int count = zones.Count;
             for (int i = 0; i < count; i++)
             {
@@ -557,11 +636,11 @@ namespace Hecton8.Biolum
 
             Color oceanColor;
             float oceanStrength;
-            bool hasOcean = TrySampleDominantZone(_activeOceanZones, in cameraAup, out oceanColor, out oceanStrength);
+            bool hasOcean = TrySampleDominantZone(_activeOceanZones, _activeOceanZoneCount, in cameraAup, out oceanColor, out oceanStrength);
 
             Color floorColor;
             float floorStrength;
-            bool hasFloor = TrySampleDominantZone(_activeFloorZones, in cameraAup, out floorColor, out floorStrength);
+            bool hasFloor = TrySampleDominantZone(_activeFloorZones, _activeFloorZoneCount, in cameraAup, out floorColor, out floorStrength);
 
             _cachedOceanBiolumColor = hasOcean ? oceanColor : Color.black;
             _cachedFloorBiolumColor = hasFloor ? floorColor : Color.black;
@@ -585,8 +664,8 @@ namespace Hecton8.Biolum
 
         private void PublishGlobalBiolumPhase(float deltaTime)
         {
-            ResolveCelestialBiolumState(deltaTime, out double celestialTime);
-            ResolveAbyssalFlowFrequencyScale();
+            UpdateCelestialBiolumStateFromSnapshot(deltaTime, out double celestialTime);
+            UpdateAbyssalFlowFrequencyScale();
 
             float phaseStep = math.max(0f, deltaTime) * GlobalBiolumPhaseRateHz * _flowFrequencyScale;
             if (celestialTime > 0d)
@@ -612,7 +691,9 @@ namespace Hecton8.Biolum
             Vector4 phaseVector = new Vector4(_globalBiolumPhase, _masterPulse01, _flowFrequencyScale, _eclipseMask);
             Vector4 intensityVector = new Vector4(_masterIntensity, _predatorCurrentIntensity, _daylightMask, _activeTouchRippleCount);
 
-            if (VectorDeltaExceeds(_lastPublishedMasterPhase, phaseVector, GlobalBiolumPhasePublishEpsilon))
+            bool pulseSyncOwnsLegacyGlobals = IsGlobalPulseSyncOwningLegacyBiolumGlobals();
+            if (!pulseSyncOwnsLegacyGlobals &&
+                VectorDeltaExceeds(_lastPublishedMasterPhase, phaseVector, GlobalBiolumPhasePublishEpsilon))
             {
                 HectonShaderGlobalDataVaultBridge.PublishBiolumMasterPhase(phaseVector);
                 _lastPublishedMasterPhase = phaseVector;
@@ -622,7 +703,7 @@ namespace Hecton8.Biolum
             if (_biolumIntensitySuppressedByPulseSync ||
                 VectorDeltaExceeds(_lastPublishedBiolumIntensity, intensityVector, GlobalBiolumPhasePublishEpsilon))
             {
-                if (IsGlobalPulseSyncOwningLegacyIntensity())
+                if (pulseSyncOwnsLegacyGlobals)
                 {
                     _biolumIntensitySuppressedByPulseSync = true;
                     _lastPublishedBiolumIntensity = intensityVector;
@@ -635,13 +716,13 @@ namespace Hecton8.Biolum
             }
         }
 
-        private static bool IsGlobalPulseSyncOwningLegacyIntensity()
+        private static bool IsGlobalPulseSyncOwningLegacyBiolumGlobals()
         {
             Vector4 syncParams = Shader.GetGlobalVector(_GlobalBiolumParamsId);
             return syncParams.x > 0.5f;
         }
 
-        private void ResolveCelestialBiolumState(float safeDeltaTime, out double celestialTime)
+        private void UpdateCelestialBiolumStateFromSnapshot(float safeDeltaTime, out double celestialTime)
         {
             CelestialRuntimeSnapshot snapshot = GlobalRegistry.CelestialRuntimeSnapshot;
             bool valid = (snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u;
@@ -658,12 +739,12 @@ namespace Hecton8.Biolum
 
             _daylightMask = daylightShallow ? 0f : 1f;
             _eclipseMask = eclipse ? 1f : 0f;
-            celestialTime = valid ? snapshot.AbsoluteUniverseTime : ResolveFallbackCelestialTimeSeconds(safeDeltaTime);
+            celestialTime = valid ? snapshot.AbsoluteUniverseTime : AdvanceFallbackCelestialTimeSeconds(safeDeltaTime);
         }
 
-        private double ResolveFallbackCelestialTimeSeconds(float safeDeltaTime)
+        private double AdvanceFallbackCelestialTimeSeconds(float safeDeltaTime)
         {
-            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            ITickDispatcher dispatcher = _cachedTickDispatcher;
             if (dispatcher != null)
             {
                 H8TimeSnapshot timeSnapshot = dispatcher.TimeSnapshot;
@@ -685,10 +766,10 @@ namespace Hecton8.Biolum
             return _fallbackCelestialTimeSeconds;
         }
 
-        private void ResolveAbyssalFlowFrequencyScale()
+        private void UpdateAbyssalFlowFrequencyScale()
         {
             _flowFrequencyScale = 1f;
-            HectonFluidEngine fluid = GlobalRegistry.Fluid;
+            HectonFluidEngine fluid = _cachedFluid;
             if (fluid == null)
                 return;
 
@@ -855,13 +936,15 @@ namespace Hecton8.Biolum
             if (_touchRippleBufferA == null || _touchRippleBufferB == null)
                 return;
 
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            bool lowMathLod = !DistanceMath.IsHighQualityTier(tier);
-            int writeCount = lowMathLod ? 0 : StageTouchRippleUpload();
+            float qualityWeight = SampleLegacyTouchRippleQualityWeight();
+            int qualityBucket = (int)math.round(qualityWeight * 255f);
+            float uploadBlend = math.smoothstep(0.12f, 0.72f, qualityWeight);
+            int maxWriteCount = (int)math.round(math.lerp(0f, MaxTouchRipples, uploadBlend));
+            int writeCount = maxWriteCount > 0 ? StageTouchRippleUpload(maxWriteCount) : 0;
 
-            if (!lowMathLod && writeCount > 0)
+            if (writeCount > 0)
             {
-                GraphicsBuffer writeBuffer = ResolveTouchRippleWriteBuffer();
+                    GraphicsBuffer writeBuffer = SelectTouchRippleWriteBuffer();
                 if (writeBuffer != null)
                 {
                     GraphicsBufferUploadUtility.UploadArray(writeBuffer, _touchRippleUpload, MaxTouchRipples);
@@ -870,20 +953,28 @@ namespace Hecton8.Biolum
                 }
             }
 
-            if (writeCount != _lastPublishedTouchRippleCount || tier != _lastPublishedTouchRippleTier)
+            if (writeCount != _lastPublishedTouchRippleCount ||
+                qualityBucket != _lastPublishedTouchRippleQualityBucket)
             {
-                Shader.SetGlobalVector(_BiolumTouchRippleParamsId, new Vector4(writeCount, 0f, 0f, 0f));
+                Shader.SetGlobalVector(_BiolumTouchRippleParamsId, new Vector4(writeCount, uploadBlend, qualityWeight, 0f));
                 _lastPublishedTouchRippleCount = writeCount;
-                _lastPublishedTouchRippleTier = tier;
+                _lastPublishedTouchRippleQualityBucket = qualityBucket;
             }
         }
 
-        private int StageTouchRippleUpload()
+        private static float SampleLegacyTouchRippleQualityWeight()
         {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 1f);
+        }
+
+        private int StageTouchRippleUpload(int maxUploadCount)
+        {
+            int uploadLimit = math.clamp(maxUploadCount, 0, MaxTouchRipples);
             int count = 0;
             if (_rippleSortReady && _sortedTouchRippleCount > 0)
             {
-                for (int order = 0; order < _sortedTouchRippleCount && count < MaxTouchRipples; order++)
+                for (int order = 0; order < _sortedTouchRippleCount && count < uploadLimit; order++)
                 {
                     int slot = _sortedTouchRippleIndices[order];
                     StageTouchRippleSlot(slot, ref count);
@@ -895,7 +986,7 @@ namespace Hecton8.Biolum
                 return count;
             }
 
-            for (int i = 0; i < MaxTouchRipples; i++)
+            for (int i = 0; i < MaxTouchRipples && count < uploadLimit; i++)
                 StageTouchRippleSlot(i, ref count);
 
             for (int i = count; i < MaxTouchRipples; i++)
@@ -1011,7 +1102,7 @@ namespace Hecton8.Biolum
         {
             _predatorJobScheduled = false;
             float maxScore = 0f;
-            if (TryResolvePredatorScores(out NativeArray<float> predatorJobScores))
+            if (TryOpenPredatorScoresSnapshot(out NativeArray<float> predatorJobScores))
             {
                 for (int i = 0; i < _scheduledPredatorCount; i++)
                     maxScore = math.max(maxScore, predatorJobScores[i]);
@@ -1025,7 +1116,7 @@ namespace Hecton8.Biolum
         private void FinishRippleJob()
         {
             _rippleJobScheduled = false;
-            if (TryResolveRippleDistances(out NativeArray<float> rippleJobDistances))
+            if (TryOpenRippleDistancesSnapshot(out NativeArray<float> rippleJobDistances))
                 FinalizeRippleDistanceOrder(rippleJobDistances);
             _scheduledRippleCount = 0;
             UnlockRippleJobBuffers();
@@ -1105,82 +1196,37 @@ namespace Hecton8.Biolum
 
         private bool EnsureVaultBuffers()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            if (_vaultGenerationId != 0u && _vaultGenerationId != vault.VaultGenerationID)
-            {
-                if (_predatorJobScheduled || _rippleJobScheduled)
-                    return false;
-
-                ReleaseVaultHandlesOnly();
-            }
-
-            if (!_predatorJobPositionsHandle.IsCreated ||
-                _predatorJobPositionsHandle.BufferId != BufferID.BiolumLegacyPredatorPositions ||
-                _predatorJobPositionsHandle.Length < MaxPredatorContacts)
-            {
-                _predatorJobPositionsHandle = vault.GetBufferHandle<float3>(
+            bool ready =
+                EnsureBiolumVaultBuffer(
+                    ref _predatorJobPositionsHandle,
                     BufferID.BiolumLegacyPredatorPositions,
                     MaxPredatorContacts,
-                    VaultOwnerSystem,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_predatorJobScoresHandle.IsCreated ||
-                _predatorJobScoresHandle.BufferId != BufferID.BiolumLegacyPredatorScores ||
-                _predatorJobScoresHandle.Length < MaxPredatorContacts)
-            {
-                _predatorJobScoresHandle = vault.GetBufferHandle<float>(
+                    NativeArrayOptions.ClearMemory,
+                    out _) &
+                EnsureBiolumVaultBuffer(
+                    ref _predatorJobScoresHandle,
                     BufferID.BiolumLegacyPredatorScores,
                     MaxPredatorContacts,
-                    VaultOwnerSystem,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_rippleJobPositionsHandle.IsCreated ||
-                _rippleJobPositionsHandle.BufferId != BufferID.BiolumLegacyRipplePositions ||
-                _rippleJobPositionsHandle.Length < MaxTouchRipples)
-            {
-                _rippleJobPositionsHandle = vault.GetBufferHandle<float3>(
+                    NativeArrayOptions.ClearMemory,
+                    out _) &
+                EnsureBiolumVaultBuffer(
+                    ref _rippleJobPositionsHandle,
                     BufferID.BiolumLegacyRipplePositions,
                     MaxTouchRipples,
-                    VaultOwnerSystem,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_rippleJobDistancesHandle.IsCreated ||
-                _rippleJobDistancesHandle.BufferId != BufferID.BiolumLegacyRippleDistances ||
-                _rippleJobDistancesHandle.Length < MaxTouchRipples)
-            {
-                _rippleJobDistancesHandle = vault.GetBufferHandle<float>(
+                    NativeArrayOptions.ClearMemory,
+                    out _) &
+                EnsureBiolumVaultBuffer(
+                    ref _rippleJobDistancesHandle,
                     BufferID.BiolumLegacyRippleDistances,
                     MaxTouchRipples,
-                    VaultOwnerSystem,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_telemetryRingHandle.IsCreated ||
-                _telemetryRingHandle.BufferId != BufferID.BiolumLegacyTelemetryRing ||
-                _telemetryRingHandle.Length < BiolumTelemetryCapacity)
-            {
-                _telemetryRingHandle = vault.GetBufferHandle<BiolumTelemetryEntry>(
+                    NativeArrayOptions.ClearMemory,
+                    out _) &
+                EnsureBiolumVaultBuffer(
+                    ref _telemetryRingHandle,
                     BufferID.BiolumLegacyTelemetryRing,
                     BiolumTelemetryCapacity,
-                    VaultOwnerSystem,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            bool ready =
-                _predatorJobPositionsHandle.IsCreated &&
-                _predatorJobScoresHandle.IsCreated &&
-                _rippleJobPositionsHandle.IsCreated &&
-                _rippleJobDistancesHandle.IsCreated &&
-                _telemetryRingHandle.IsCreated;
-
-            if (ready)
-                _vaultGenerationId = vault.VaultGenerationID;
+                    NativeArrayOptions.ClearMemory,
+                    out _);
 
             return ready;
         }
@@ -1189,12 +1235,83 @@ namespace Hecton8.Biolum
         {
             UnlockPredatorJobBuffers();
             UnlockRippleJobBuffers();
-            _predatorJobPositionsHandle = default;
-            _predatorJobScoresHandle = default;
-            _rippleJobPositionsHandle = default;
-            _rippleJobDistancesHandle = default;
-            _telemetryRingHandle = default;
-            _vaultGenerationId = 0u;
+            IDataVault vault = _dataVault;
+            ReleaseBiolumVaultHandle(vault, ref _predatorJobPositionsHandle);
+            ReleaseBiolumVaultHandle(vault, ref _predatorJobScoresHandle);
+            ReleaseBiolumVaultHandle(vault, ref _rippleJobPositionsHandle);
+            ReleaseBiolumVaultHandle(vault, ref _rippleJobDistancesHandle);
+            ReleaseBiolumVaultHandle(vault, ref _telemetryRingHandle);
+        }
+
+        private bool EnsureBiolumVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (TryResolveBiolumVaultBuffer(ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            return TryResolveBiolumVaultBuffer(ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool TryResolveBiolumVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (HasBiolumVaultHandle(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !HasBiolumVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool HasBiolumVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
+        private static void ReleaseBiolumVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private bool TryLockPredatorJobBuffers(out NativeArray<float3> positions, out NativeArray<float> scores)
@@ -1204,7 +1321,7 @@ namespace Hecton8.Biolum
             if (!EnsureVaultBuffers())
                 return false;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null ||
                 !vault.TryLockBuffer(BufferID.BiolumLegacyPredatorPositions, VaultOwnerSystem))
             {
@@ -1217,9 +1334,18 @@ namespace Hecton8.Biolum
                 return false;
             }
 
-            positions = _predatorJobPositionsHandle.Resolve(vault);
-            scores = _predatorJobScoresHandle.Resolve(vault);
-            if (positions.IsCreated && scores.IsCreated)
+            bool resolved =
+                TryResolveBiolumVaultBuffer(
+                    ref _predatorJobPositionsHandle,
+                    BufferID.BiolumLegacyPredatorPositions,
+                    MaxPredatorContacts,
+                    out positions) &&
+                TryResolveBiolumVaultBuffer(
+                    ref _predatorJobScoresHandle,
+                    BufferID.BiolumLegacyPredatorScores,
+                    MaxPredatorContacts,
+                    out scores);
+            if (resolved && positions.IsCreated && scores.IsCreated)
             {
                 _predatorJobBuffersLocked = true;
                 return true;
@@ -1237,7 +1363,7 @@ namespace Hecton8.Biolum
             if (!EnsureVaultBuffers())
                 return false;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null ||
                 !vault.TryLockBuffer(BufferID.BiolumLegacyRipplePositions, VaultOwnerSystem))
             {
@@ -1250,9 +1376,18 @@ namespace Hecton8.Biolum
                 return false;
             }
 
-            positions = _rippleJobPositionsHandle.Resolve(vault);
-            distances = _rippleJobDistancesHandle.Resolve(vault);
-            if (positions.IsCreated && distances.IsCreated)
+            bool resolved =
+                TryResolveBiolumVaultBuffer(
+                    ref _rippleJobPositionsHandle,
+                    BufferID.BiolumLegacyRipplePositions,
+                    MaxTouchRipples,
+                    out positions) &&
+                TryResolveBiolumVaultBuffer(
+                    ref _rippleJobDistancesHandle,
+                    BufferID.BiolumLegacyRippleDistances,
+                    MaxTouchRipples,
+                    out distances);
+            if (resolved && positions.IsCreated && distances.IsCreated)
             {
                 _rippleJobBuffersLocked = true;
                 return true;
@@ -1263,26 +1398,32 @@ namespace Hecton8.Biolum
             return false;
         }
 
-        private bool TryResolvePredatorScores(out NativeArray<float> scores)
+        private bool TryOpenPredatorScoresSnapshot(out NativeArray<float> scores)
         {
             scores = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            scores = _predatorJobScoresHandle.Resolve(vault);
-            return scores.IsCreated;
+            return TryResolveBiolumVaultBuffer(
+                ref _predatorJobScoresHandle,
+                BufferID.BiolumLegacyPredatorScores,
+                MaxPredatorContacts,
+                out scores);
         }
 
-        private bool TryResolveRippleDistances(out NativeArray<float> distances)
+        private bool TryOpenRippleDistancesSnapshot(out NativeArray<float> distances)
         {
             distances = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            distances = _rippleJobDistancesHandle.Resolve(vault);
-            return distances.IsCreated;
+            return TryResolveBiolumVaultBuffer(
+                ref _rippleJobDistancesHandle,
+                BufferID.BiolumLegacyRippleDistances,
+                MaxTouchRipples,
+                out distances);
         }
 
         private bool TryLockTelemetryRing(out IDataVault vault, out NativeArray<BiolumTelemetryEntry> telemetryRing)
@@ -1292,7 +1433,7 @@ namespace Hecton8.Biolum
             if (!EnsureVaultBuffers())
                 return false;
 
-            vault = GlobalRegistry.DataVault;
+            vault = _dataVault;
             if (vault == null ||
                 !vault.TryLockBuffer(BufferID.BiolumLegacyTelemetryRing, VaultOwnerSystem))
             {
@@ -1300,9 +1441,15 @@ namespace Hecton8.Biolum
                 return false;
             }
 
-            telemetryRing = _telemetryRingHandle.Resolve(vault);
-            if (telemetryRing.IsCreated)
+            if (TryResolveBiolumVaultBuffer(
+                    ref _telemetryRingHandle,
+                    BufferID.BiolumLegacyTelemetryRing,
+                    BiolumTelemetryCapacity,
+                    out telemetryRing) &&
+                telemetryRing.IsCreated)
+            {
                 return true;
+            }
 
             vault.TryUnlockBuffer(BufferID.BiolumLegacyTelemetryRing, VaultOwnerSystem);
             vault = null;
@@ -1319,7 +1466,7 @@ namespace Hecton8.Biolum
             if (!_predatorJobBuffersLocked)
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault != null)
             {
                 vault.TryUnlockBuffer(BufferID.BiolumLegacyPredatorScores, VaultOwnerSystem);
@@ -1334,7 +1481,7 @@ namespace Hecton8.Biolum
             if (!_rippleJobBuffersLocked)
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault != null)
             {
                 vault.TryUnlockBuffer(BufferID.BiolumLegacyRippleDistances, VaultOwnerSystem);
@@ -1344,7 +1491,7 @@ namespace Hecton8.Biolum
             _rippleJobBuffersLocked = false;
         }
 
-        private GraphicsBuffer ResolveTouchRippleWriteBuffer()
+        private GraphicsBuffer SelectTouchRippleWriteBuffer()
         {
             if (_publishedTouchRippleBuffer == null)
                 return _touchRippleBufferA != null ? _touchRippleBufferA : _touchRippleBufferB;
@@ -1389,6 +1536,8 @@ namespace Hecton8.Biolum
                 cameraPosition3 = float3.zero;
                 dumpReason |= 8;
             }
+            if (_zoneRegistryOverflowCount > 0)
+                flags |= 16;
 
             float safeIntensity = math.isfinite(_masterIntensity) ? _masterIntensity : 0f;
             float safePhase = math.isfinite(_globalBiolumPhase) ? _globalBiolumPhase : 0f;
@@ -1502,12 +1651,26 @@ namespace Hecton8.Biolum
                 from.a + ((to.a - from.a) * t));
         }
 
-        private bool TryResolveCameraReference(bool force)
+        private void RefreshCameraSnapshotForOwnerPhase(bool force)
+        {
+            TryCacheCameraReferenceFromOwnerRoute(force);
+            int frame = Time.frameCount;
+            if (!force && _cachedCameraAupFrame == frame)
+                return;
+
+            _cachedCameraPosition = _cachedCameraTransform != null ? _cachedCameraTransform.position : Vector3.zero;
+            if (!TryBuildAupFromRuntimeOrigin(_cachedCameraPosition, out _cachedCameraAup))
+                _cachedCameraAup = GlobalSignals.CurrentRuntimeOriginAup();
+
+            _cachedCameraAupFrame = frame;
+        }
+
+        private bool TryCacheCameraReferenceFromOwnerRoute(bool force)
         {
             if (_cachedCameraTransform != null)
                 return true;
 
-            float currentTime = ResolveCameraResolveTimeSeconds();
+            float currentTime = SampleCameraCacheClockSeconds();
             if (!force && currentTime < _nextCameraResolveTime)
                 return false;
 
@@ -1515,7 +1678,7 @@ namespace Hecton8.Biolum
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                 Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
                 if (playerCamera == null)
                     playerTransform.TryGetComponent(out playerCamera);
@@ -1535,9 +1698,9 @@ namespace Hecton8.Biolum
             return false;
         }
 
-        private static float ResolveCameraResolveTimeSeconds()
+        private float SampleCameraCacheClockSeconds()
         {
-            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            ITickDispatcher dispatcher = _cachedTickDispatcher;
             if (dispatcher != null)
             {
                 H8TimeSnapshot snapshot = dispatcher.TimeSnapshot;
@@ -1551,12 +1714,12 @@ namespace Hecton8.Biolum
                 : 0f;
         }
 
-        private bool TrySampleDominantZone(List<HectonBiolumZone> zones, in AbsoluteUniversePosition referenceAup, out Color sampledColor, out float sampledStrength)
+        private bool TrySampleDominantZone(HectonBiolumZone[] zones, int zoneCount, in AbsoluteUniversePosition referenceAup, out Color sampledColor, out float sampledStrength)
         {
             sampledColor = Color.black;
             sampledStrength = 0f;
 
-            int count = zones.Count;
+            int count = math.clamp(zoneCount, 0, zones.Length);
             for (int i = 0; i < count; i++)
             {
                 HectonBiolumZone zone = zones[i];
@@ -1594,14 +1757,14 @@ namespace Hecton8.Biolum
             return sampledStrength > 0f;
         }
 
-        private static int CollectNearbyZonesNonAlloc(List<HectonBiolumZone> zones, in AbsoluteUniversePosition referenceAup, float maxDistanceSq, HectonBiolumZone[] destination, float[] weights, int count)
+        private static int CollectNearbyZonesNonAlloc(HectonBiolumZone[] zones, int zoneCount, in AbsoluteUniversePosition referenceAup, float maxDistanceSq, HectonBiolumZone[] destination, float[] weights, int count)
         {
             int destinationCapacity = destination.Length;
             if (destinationCapacity == 0)
                 return 0;
 
-            int zoneCount = zones.Count;
-            for (int i = 0; i < zoneCount; i++)
+            int safeZoneCount = math.clamp(zoneCount, 0, zones.Length);
+            for (int i = 0; i < safeZoneCount; i++)
             {
                 HectonBiolumZone zone = zones[i];
                 if (zone == null)
@@ -1679,19 +1842,19 @@ namespace Hecton8.Biolum
             Vector4 resetIntensity = Vector4.zero;
             _lastPublishedMasterPhase = resetPhase;
             _lastPublishedBiolumIntensity = resetIntensity;
-            HectonShaderGlobalDataVaultBridge.PublishBiolumMasterPhase(resetPhase);
-            if (IsGlobalPulseSyncOwningLegacyIntensity())
+            if (IsGlobalPulseSyncOwningLegacyBiolumGlobals())
             {
                 _biolumIntensitySuppressedByPulseSync = true;
             }
             else
             {
+                HectonShaderGlobalDataVaultBridge.PublishBiolumMasterPhase(resetPhase);
                 Shader.SetGlobalVector(_BiolumIntensityId, resetIntensity);
                 _biolumIntensitySuppressedByPulseSync = false;
             }
             Shader.SetGlobalVector(_BiolumTouchRippleParamsId, Vector4.zero);
             _lastPublishedTouchRippleCount = 0;
-            _lastPublishedTouchRippleTier = HectonQualityTier.Unknown;
+            _lastPublishedTouchRippleQualityBucket = -1;
         }
 
         private void PublishFloraShaderGlobals()
@@ -1734,6 +1897,67 @@ namespace Hecton8.Biolum
                    math.abs(left.g - right.g) <= epsilon &&
                    math.abs(left.b - right.b) <= epsilon &&
                    math.abs(left.a - right.a) <= epsilon;
+        }
+
+        private void CacheGlobalRegistryServicesCold()
+        {
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, currentVault))
+                ReleaseVaultHandlesOnly();
+
+            _dataVault = currentVault;
+            _cachedTickDispatcher = GlobalRegistry.TickDispatcher;
+            _cachedFluid = GlobalRegistry.Fluid;
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    if (ReferenceEquals(_dataVault, currentService))
+                        return;
+
+                    CompleteRuntimeJobsForTeardown();
+                    ReleaseVaultHandlesOnly();
+                    _dataVault = currentService as IDataVault;
+                    EnsureVaultBuffers();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _cachedTickDispatcher = currentService as ITickDispatcher;
+                    break;
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _cachedFluid = currentService as HectonFluidEngine;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    _cachedCamera = null;
+                    _cachedCameraTransform = null;
+                    _cachedCameraPosition = Vector3.zero;
+                    _cachedCameraAupFrame = -1;
+                    break;
+            }
         }
 
         private void TryRegisterService()
@@ -1798,6 +2022,7 @@ namespace Hecton8.Biolum
             if (_disposed)
                 return;
 
+            TryUnregisterHotSwapListener();
             CompleteRuntimeJobsForTeardown();
             ReleaseRuntimeResources();
             _disposed = true;

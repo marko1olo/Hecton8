@@ -29,8 +29,6 @@ namespace Hecton8.Core
         private const string ExtinctionH8DumpFileName = "Dump_EXTINCTION_LUT_SAMPLER.h8dump";
 
         private const uint FeaturePom = 1u << 0;
-        private const uint FeatureAnalyticalCaustics = 1u << 1;
-        private const uint FeatureSecondaryCaustics = 1u << 2;
         private const uint FeatureScreenRefraction = 1u << 3;
         private const uint FeatureSurvivalPressure = 1u << 4;
         private const uint FeatureHomeostasisShed = 1u << 5;
@@ -46,7 +44,7 @@ namespace Hecton8.Core
         private static HectonUberNoirRuntimeBridge s_runtimeInstance;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<UberNoirShaderTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<UberNoirShaderTelemetryEntry> _telemetryHandle;
         private Vector4 _lastRuntimeParams = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
         private float _lastFeatureMask = float.NaN;
         private int _telemetryCursor;
@@ -83,7 +81,7 @@ namespace Hecton8.Core
             [FieldOffset(32)]
             public float PomEnabled01;
             [FieldOffset(36)]
-            public float SecondaryCaustics01;
+            public float ReservedVisualDetail01;
             [FieldOffset(40)]
             public float Refraction01;
             [FieldOffset(44)]
@@ -148,13 +146,14 @@ namespace Hecton8.Core
 
             TryUnregisterHotSwapListener();
             UploadShaderGlobals(0f, 1f, 0u, 0f, force: true);
+            ReleaseTelemetryBuffer();
             _dataVault = null;
-            _telemetryHandle = default;
         }
 
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
+            ReleaseTelemetryBuffer();
             if (ReferenceEquals(s_runtimeInstance, this))
                 s_runtimeInstance = null;
         }
@@ -165,11 +164,17 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryRegisterLateFrameTickable();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
+            ReleaseVaultBuffer(previousService as IDataVault ?? _dataVault, ref _telemetryHandle);
             _dataVault = currentService as IDataVault;
-            _telemetryHandle = default;
         }
 
         /// <summary>
@@ -177,9 +182,6 @@ namespace Hecton8.Core
         /// </summary>
         public void LateFrameTick()
         {
-            if (!_registeredLateFrame)
-                TryRegisterLateFrameTickable();
-
             if (!ValidateTelemetryLayout())
             {
                 DumpBlackBox(TelemetryFlagLayoutFault);
@@ -246,8 +248,8 @@ namespace Hecton8.Core
             IDataVault vault = GlobalRegistry.DataVault;
             if (!ReferenceEquals(_dataVault, vault))
             {
+                ReleaseTelemetryBuffer();
                 _dataVault = vault;
-                _telemetryHandle = default;
             }
         }
 
@@ -256,42 +258,49 @@ namespace Hecton8.Core
             IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive)
             {
-                _dataVault = null;
                 _telemetryHandle = default;
                 return false;
             }
 
-            if (!ReferenceEquals(_dataVault, vault))
+            if (IsVaultHandleCreated(in _telemetryHandle) &&
+                vault.TryResolveHandle(in _telemetryHandle, out NativeArray<UberNoirShaderTelemetryEntry> currentRing) &&
+                currentRing.IsCreated &&
+                currentRing.Length >= TelemetryCapacity)
             {
-                _dataVault = vault;
+                return true;
+            }
+
+            _telemetryHandle = default;
+            if (vault.TryGetGenerationHandle(
+                    BufferID.ShaderFeatureTelemetryRing,
+                    out VaultGenerationHandle<UberNoirShaderTelemetryEntry> existing) &&
+                vault.TryResolveHandle(in existing, out NativeArray<UberNoirShaderTelemetryEntry> existingRing) &&
+                existingRing.IsCreated &&
+                existingRing.Length >= TelemetryCapacity)
+            {
+                _telemetryHandle = existing;
+                return true;
+            }
+
+            if (vault.IsAllocationLocked)
+                return false;
+
+            VaultGenerationHandle<UberNoirShaderTelemetryEntry> acquired = vault.GetGenerationHandle<UberNoirShaderTelemetryEntry>(
+                BufferID.ShaderFeatureTelemetryRing,
+                TelemetryCapacity,
+                SystemID.GraphicsScalability,
+                NativeArrayOptions.ClearMemory);
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out NativeArray<UberNoirShaderTelemetryEntry> acquiredRing) ||
+                !acquiredRing.IsCreated ||
+                acquiredRing.Length < TelemetryCapacity)
+            {
                 _telemetryHandle = default;
+                return false;
             }
 
-            if (!_telemetryHandle.IsCreated ||
-                _telemetryHandle.BufferId != BufferID.ShaderFeatureTelemetryRing ||
-                _telemetryHandle.Length < TelemetryCapacity)
-            {
-                if (vault.TryGetBufferHandle(
-                    BufferID.ShaderFeatureTelemetryRing,
-                    out VaultBufferHandle<UberNoirShaderTelemetryEntry> existing) &&
-                    existing.IsCreated &&
-                    existing.Length >= TelemetryCapacity)
-                {
-                    _telemetryHandle = existing;
-                    return true;
-                }
-
-                if (vault.IsAllocationLocked)
-                    return false;
-
-                _telemetryHandle = vault.GetBufferHandle<UberNoirShaderTelemetryEntry>(
-                    BufferID.ShaderFeatureTelemetryRing,
-                    TelemetryCapacity,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            return _telemetryHandle.IsCreated && _telemetryHandle.Length >= TelemetryCapacity;
+            _telemetryHandle = acquired;
+            return true;
         }
 
         private void PushBlackBox(
@@ -311,7 +320,9 @@ namespace Hecton8.Core
 
             try
             {
-                var ring = _telemetryHandle.Resolve(vault);
+                if (!vault.TryResolveHandle(in _telemetryHandle, out NativeArray<UberNoirShaderTelemetryEntry> ring))
+                    return;
+
                 if (!ring.IsCreated || ring.Length < TelemetryCapacity)
                     return;
 
@@ -330,7 +341,7 @@ namespace Hecton8.Core
                 uint lowTierBucket = (uint)math.round(math.saturate(lowTierWeight01) * 1000f);
                 entry.StateHash = Mix(featureMask ^ (stressBucket << 12) ^ (qualityByte << 24) ^ (highCostBucket << 2) ^ (overkillBucket << 14) ^ (lowTierBucket << 4));
                 entry.PomEnabled01 = math.saturate(highCostAllowed01);
-                entry.SecondaryCaustics01 = math.saturate(highCostAllowed01);
+                entry.ReservedVisualDetail01 = math.saturate(highCostAllowed01);
                 entry.Refraction01 = math.saturate(highCostAllowed01);
                 entry.Reserved0 = math.saturate(lowTierWeight01);
                 ring[_telemetryCursor] = entry;
@@ -370,7 +381,12 @@ namespace Hecton8.Core
             int entryCount = 0;
             try
             {
-                NativeArray<UberNoirShaderTelemetryEntry> ring = _telemetryHandle.Resolve(vault);
+                if (!vault.TryResolveHandle(in _telemetryHandle, out NativeArray<UberNoirShaderTelemetryEntry> ring))
+                {
+                    WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
+                    return;
+                }
+
                 if (!ring.IsCreated || ring.Length < TelemetryCapacity)
                 {
                     WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
@@ -455,7 +471,7 @@ namespace Hecton8.Core
                 writer.Write(entry.Flags);
                 writer.Write(entry.StateHash);
                 writer.Write(entry.PomEnabled01);
-                writer.Write(entry.SecondaryCaustics01);
+                writer.Write(entry.ReservedVisualDetail01);
                 writer.Write(entry.Refraction01);
                 writer.Write(entry.Reserved0);
             }
@@ -515,7 +531,7 @@ namespace Hecton8.Core
         private static uint BuildFeatureMask(float lowTierWeight01, bool stressShed, float highCostAllowed01, float visualOverkill01)
         {
             lowTierWeight01 = math.saturate(lowTierWeight01);
-            uint mask = FeatureAnalyticalCaustics | FeatureHullDents | FeatureWakeSilt;
+            uint mask = FeatureHullDents | FeatureWakeSilt;
             if (lowTierWeight01 > FeatureMaskEpsilon)
                 mask |= FeatureSurvivalPressure;
 
@@ -524,7 +540,7 @@ namespace Hecton8.Core
 
             if (highCostAllowed01 > FeatureMaskEpsilon)
             {
-                mask |= FeaturePom | FeatureSecondaryCaustics | FeatureScreenRefraction;
+                mask |= FeaturePom | FeatureScreenRefraction;
                 float ditherAllowance01 = highCostAllowed01 * Smooth01(1f - lowTierWeight01);
                 if (ditherAllowance01 > FeatureMaskEpsilon)
                     mask |= FeatureBlueNoiseDither;
@@ -585,6 +601,24 @@ namespace Hecton8.Core
         private static bool ValidateTelemetryLayout()
         {
             return UnsafeUtility.SizeOf<UberNoirShaderTelemetryEntry>() == TelemetryEntrySizeBytes;
+        }
+
+        private void ReleaseTelemetryBuffer()
+        {
+            ReleaseVaultBuffer(_dataVault, ref _telemetryHandle);
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static bool HasVectorChanged(Vector4 a, Vector4 b)

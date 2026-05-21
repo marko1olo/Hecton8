@@ -1,0 +1,23 @@
+{
+    "name": "Hecton8.World.FloraAmbientSway.Editor",
+    "rootNamespace": "Hecton8.Editor.FloraAmbientSway",
+    "references": [
+        "Hecton8.World.FloraAmbientSway",
+        "Hecton8.Core",
+        "Hecton8.Bootstrap.Contracts",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

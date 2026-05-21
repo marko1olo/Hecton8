@@ -76,6 +76,89 @@ public struct CleanJob {}
             self.assertEqual(cats["burstMissingFloatMode"]["matches"], 0)
             self.assertEqual(cats["burstMissingFloatPrecision"]["matches"], 0)
 
+    def test_ignores_forbidden_tokens_inside_string_literals(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "AuditSmoke.cs"
+            src.write_text(
+                """
+public static class AuditSmoke
+{
+    private static readonly string[] Forbidden =
+    {
+        "UnityEngine.Random",
+        "Random.Range",
+        "Time.deltaTime",
+        "IsLowEnd",
+        "[BurstCompile]",
+    };
+
+    public static void AssertNoRuntimeRandom(string source)
+    {
+        AssertNotContains(source, "UnityEngine.Random");
+    }
+}
+""",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+            cats = payload["categories"]
+            self.assertEqual(cats["unityRandom"]["matches"], 0)
+            self.assertEqual(cats["unityTimeCritical"]["matches"], 0)
+            self.assertEqual(cats["binaryHardwareSwitch"]["matches"], 0)
+            self.assertEqual(cats["burstCompile"]["matches"], 0)
+
+    def test_binary_hardware_switch_ignores_plain_dto_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "TierDto.cs"
+            src.write_text(
+                """
+public struct TierDto
+{
+    public byte QualityTier;
+}
+
+public static class TierWriter
+{
+    public static void Copy(TierDto state, TierDto entry, BinaryWriter writer)
+    {
+        entry.QualityTier = state.QualityTier;
+        writer.Write(entry.QualityTier);
+    }
+}
+""",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+            cats = payload["categories"]
+            self.assertEqual(cats["binaryHardwareSwitch"]["matches"], 0)
+
+    def test_binary_hardware_switch_ignores_pure_tier_accessors(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src = root / "TierAccessor.cs"
+            src.write_text(
+                """
+public static class TierAccessor
+{
+    public static HectonQualityTier QualityTier => _hasProfile ? _profile.QualityTier : HectonQualityTier.Unknown;
+
+    public static HectonQualityTier ReadTier(Profile profile)
+    {
+        return profile.QualityTier;
+    }
+}
+""",
+                encoding="utf-8",
+            )
+
+            payload = audit.build_payload(root)
+            cats = payload["categories"]
+            self.assertEqual(cats["binaryHardwareSwitch"]["matches"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

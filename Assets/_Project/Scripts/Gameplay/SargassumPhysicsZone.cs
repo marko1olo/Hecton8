@@ -89,15 +89,6 @@ namespace Hecton8.Gameplay
             TryRegisterCut(other);
         }
 
-        private void OnTriggerStay(Collider other)
-        {
-            if (!TryResolveInfluence(other, out SargassumMovementInfluence influence))
-                return;
-
-            influence.StayZone(speedMultiplier, dragMultiplier);
-            TryRegisterCut(other);
-        }
-
         private void OnTriggerExit(Collider other)
         {
             if (!TryResolveInfluence(other, out SargassumMovementInfluence influence))

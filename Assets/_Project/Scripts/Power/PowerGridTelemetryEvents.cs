@@ -8,9 +8,14 @@ namespace Hecton8.Power
     /// <summary>
     /// Aggregate runtime power snapshot published by <see cref="PowerGridManager"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct PowerGridTelemetrySnapshot
     {
+        private const uint HasPowerDeficitMask = 1u << 0;
+        private const uint EmergencyReserveActiveMask = 1u << 1;
+        private const int BrownoutTierShift = 8;
+        private const uint BrownoutTierMask = 0xFFu << BrownoutTierShift;
+
         public PowerGridTelemetrySnapshot(
             int gridCount,
             int deficitGridCount,
@@ -30,43 +35,64 @@ namespace Hecton8.Power
             SupplyRatio = supplyRatio;
             BatteryChargeNormalized = batteryChargeNormalized;
             AvailablePowerNormalized = availablePowerNormalized;
-            HighestBrownoutTier = highestBrownoutTier;
-            HasPowerDeficit = hasPowerDeficit;
-            EmergencyReserveActive = emergencyReserveActive;
+            StatusFlags = PackStatusFlags(highestBrownoutTier, hasPowerDeficit, emergencyReserveActive);
         }
 
         /// <summary>Connected runtime grid count.</summary>
-        public int GridCount { get; }
+        [FieldOffset(0)] public readonly int GridCount;
 
         /// <summary>How many grids currently report a deficit.</summary>
-        public int DeficitGridCount { get; }
+        [FieldOffset(4)] public readonly int DeficitGridCount;
 
         /// <summary>Total authored generation in watts.</summary>
-        public float TotalGeneration { get; }
+        [FieldOffset(8)] public readonly float TotalGeneration;
 
         /// <summary>Total authored demand in watts.</summary>
-        public float TotalConsumption { get; }
+        [FieldOffset(12)] public readonly float TotalConsumption;
 
         /// <summary>Aggregate generation to demand ratio for the current pass.</summary>
-        public float SupplyRatio { get; }
+        [FieldOffset(16)] public readonly float SupplyRatio;
 
         /// <summary>Aggregate battery charge normalized to 0..1.</summary>
-        public float BatteryChargeNormalized { get; }
+        [FieldOffset(20)] public readonly float BatteryChargeNormalized;
 
         /// <summary>
         /// Best-effort runtime power health normalized to 0..1.
         /// Uses battery charge when storage exists; otherwise falls back to supply ratio.
         /// </summary>
-        public float AvailablePowerNormalized { get; }
+        [FieldOffset(24)] public readonly float AvailablePowerNormalized;
 
-        /// <summary>Worst brownout tier observed across all active grids.</summary>
-        public LogisticsBrownoutTier HighestBrownoutTier { get; }
+        /// <summary>Bit-packed deficit, reserve, and brownout-tier status.</summary>
+        [FieldOffset(28)] public readonly uint StatusFlags;
 
-        /// <summary>True while any grid is undersupplied.</summary>
-        public bool HasPowerDeficit { get; }
+        public static bool HasPowerDeficit(in PowerGridTelemetrySnapshot snapshot)
+        {
+            return (snapshot.StatusFlags & HasPowerDeficitMask) != 0u;
+        }
 
-        /// <summary>True while any battery bank is in emergency-reserve mode.</summary>
-        public bool EmergencyReserveActive { get; }
+        public static bool IsEmergencyReserveActive(in PowerGridTelemetrySnapshot snapshot)
+        {
+            return (snapshot.StatusFlags & EmergencyReserveActiveMask) != 0u;
+        }
+
+        public static LogisticsBrownoutTier GetHighestBrownoutTier(in PowerGridTelemetrySnapshot snapshot)
+        {
+            uint tier = (snapshot.StatusFlags & BrownoutTierMask) >> BrownoutTierShift;
+            return (LogisticsBrownoutTier)tier;
+        }
+
+        private static uint PackStatusFlags(
+            LogisticsBrownoutTier highestBrownoutTier,
+            bool hasPowerDeficit,
+            bool emergencyReserveActive)
+        {
+            uint flags = (unchecked((uint)(int)highestBrownoutTier) & 0xFFu) << BrownoutTierShift;
+            if (hasPowerDeficit)
+                flags |= HasPowerDeficitMask;
+            if (emergencyReserveActive)
+                flags |= EmergencyReserveActiveMask;
+            return flags;
+        }
     }
 
     /// <summary>
@@ -88,11 +114,23 @@ namespace Hecton8.Power
     {
         private const int PendingEventCapacity = 8;
         private const int ListenerCapacity = 8;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<IPowerGridTelemetryListener>[8] - power telemetry listeners drained by SystemDispatcher LateUpdate - owner: PowerGridTelemetryEvents
-        private static readonly RegistryBucket<IPowerGridTelemetryListener> _listeners = new RegistryBucket<IPowerGridTelemetryListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IPowerGridTelemetryListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - power telemetry listeners drained by SystemDispatcher LateUpdate - owner: PowerGridTelemetryEvents
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<PowerGridTelemetrySnapshot> _pendingEvents;
         private static NativeQueue<PowerGridTelemetrySnapshot> _nextFrameEvents;
+        private static int _listenerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
@@ -112,7 +150,16 @@ namespace Hecton8.Power
                 return;
 
             EnsureInitialized();
-            _listeners.TryRegister(listener);
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return;
+            }
+
+            if (_listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount++].Listener = listener;
         }
 
         /// <summary>
@@ -121,10 +168,21 @@ namespace Hecton8.Power
         /// <param name="listener">Listener instance.</param>
         public static void Unregister(IPowerGridTelemetryListener listener)
         {
-            if (listener == null || !_listeners.Contains(listener))
+            if (listener == null)
                 return;
 
-            _listeners.Unregister(listener);
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = --_listenerCount;
+                if (i != lastIndex)
+                    _listeners[i].Listener = _listeners[lastIndex].Listener;
+
+                _listeners[lastIndex].Clear();
+                return;
+            }
         }
 
         /// <summary>
@@ -132,7 +190,7 @@ namespace Hecton8.Power
         /// </summary>
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            if (!_pendingEvents.IsCreated || _listenerCount <= 0)
             {
                 DrainWithoutDispatch();
                 return;
@@ -151,14 +209,13 @@ namespace Hecton8.Power
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IPowerGridTelemetryListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
+                int count = _listenerCount;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IPowerGridTelemetryListener listener = rawArray[i];
+                        IPowerGridTelemetryListener listener = _listeners[i].Listener;
                         if (listener != null)
                             listener.OnPowerGridTelemetryUpdated(in snapshot);
                     }
@@ -193,7 +250,10 @@ namespace Hecton8.Power
                 _nextFrameEvents = default;
             }
 
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+
+            _listenerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
@@ -204,7 +264,7 @@ namespace Hecton8.Power
         /// </summary>
         public static void Raise(in PowerGridTelemetrySnapshot snapshot)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureInitialized();
@@ -226,7 +286,7 @@ namespace Hecton8.Power
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<PowerGridTelemetrySnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PowerGridTelemetrySnapshot>[8] — deferred aggregate power telemetry lane flushed by SystemDispatcher LateUpdate — owner: PowerGridTelemetryEvents
+                _pendingEvents = new NativeQueue<PowerGridTelemetrySnapshot>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PowerGridTelemetrySnapshot>[8] — deferred aggregate power telemetry lane flushed by SystemDispatcher LateUpdate — owner: PowerGridTelemetryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -238,7 +298,7 @@ namespace Hecton8.Power
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<PowerGridTelemetrySnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PowerGridTelemetrySnapshot>[8] — next-frame power telemetry lane prevents same-frame reentrant dispatch — owner: PowerGridTelemetryEvents
+                _nextFrameEvents = new NativeQueue<PowerGridTelemetrySnapshot>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PowerGridTelemetrySnapshot>[8] — next-frame power telemetry lane prevents same-frame reentrant dispatch — owner: PowerGridTelemetryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

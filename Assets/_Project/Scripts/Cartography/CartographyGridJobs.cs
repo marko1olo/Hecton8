@@ -285,43 +285,48 @@ namespace Hecton8.Cartography
 
     public struct CartographyVaultHandles
     {
-        public VaultBufferHandle<ulong> DiscoveryWords;
-        public VaultBufferHandle<CartographySectorDTO> SectorTable;
-        public VaultBufferHandle<uint> UploadPackedR8;
-        public VaultBufferHandle<CartographyTelemetryEntry> TelemetryRing;
-        public VaultBufferHandle<int> TelemetryCursor;
-        public VaultBufferHandle<CartographyTuningDTO> Tuning;
-        public VaultBufferHandle<CartographyScannerProfileDTO> ScannerProfiles;
-        public VaultBufferHandle<byte> CsvScratch;
-        public VaultBufferHandle<MapRevealSignal> MockPings;
-        public VaultBufferHandle<MapRevealSignal> PendingPings;
-        public VaultBufferHandle<int> PendingSignalCounts;
-        public VaultBufferHandle<CartographyCounterDTO> Counters;
-        public VaultBufferHandle<ulong> ActiveSectorHashes;
-        public VaultBufferHandle<CartographyDebugVoxelDTO> DebugVoxels;
-        public VaultBufferHandle<CartographyRleRunDTO> RleRuns;
-        public VaultBufferHandle<ulong> SurfaceMaskWords;
-        public VaultBufferHandle<ulong> RollbackSnapshotWords;
+        public VaultGenerationHandle<ulong> DiscoveryWords;
+        public VaultGenerationHandle<CartographySectorDTO> SectorTable;
+        public VaultGenerationHandle<uint> UploadPackedR8;
+        public VaultGenerationHandle<CartographyTelemetryEntry> TelemetryRing;
+        public VaultGenerationHandle<int> TelemetryCursor;
+        public VaultGenerationHandle<CartographyTuningDTO> Tuning;
+        public VaultGenerationHandle<CartographyScannerProfileDTO> ScannerProfiles;
+        public VaultGenerationHandle<byte> CsvScratch;
+        public VaultGenerationHandle<MapRevealSignal> MockPings;
+        public VaultGenerationHandle<MapRevealSignal> PendingPings;
+        public VaultGenerationHandle<int> PendingSignalCounts;
+        public VaultGenerationHandle<CartographyCounterDTO> Counters;
+        public VaultGenerationHandle<ulong> ActiveSectorHashes;
+        public VaultGenerationHandle<CartographyDebugVoxelDTO> DebugVoxels;
+        public VaultGenerationHandle<CartographyRleRunDTO> RleRuns;
+        public VaultGenerationHandle<ulong> SurfaceMaskWords;
+        public VaultGenerationHandle<ulong> RollbackSnapshotWords;
 
         public bool IsCreated()
         {
-            return DiscoveryWords.IsCreated &&
-                   SectorTable.IsCreated &&
-                   UploadPackedR8.IsCreated &&
-                   TelemetryRing.IsCreated &&
-                   TelemetryCursor.IsCreated &&
-                   Tuning.IsCreated &&
-                   ScannerProfiles.IsCreated &&
-                   CsvScratch.IsCreated &&
-                   MockPings.IsCreated &&
-                   PendingPings.IsCreated &&
-                   PendingSignalCounts.IsCreated &&
-                   Counters.IsCreated &&
-                   ActiveSectorHashes.IsCreated &&
-                   DebugVoxels.IsCreated &&
-                   RleRuns.IsCreated &&
-                   SurfaceMaskWords.IsCreated &&
-                   RollbackSnapshotWords.IsCreated;
+            return IsHandleCreated(in DiscoveryWords) &&
+                   IsHandleCreated(in SectorTable) &&
+                   IsHandleCreated(in UploadPackedR8) &&
+                   IsHandleCreated(in TelemetryRing) &&
+                   IsHandleCreated(in TelemetryCursor) &&
+                   IsHandleCreated(in Tuning) &&
+                   IsHandleCreated(in ScannerProfiles) &&
+                   IsHandleCreated(in CsvScratch) &&
+                   IsHandleCreated(in MockPings) &&
+                   IsHandleCreated(in PendingPings) &&
+                   IsHandleCreated(in PendingSignalCounts) &&
+                   IsHandleCreated(in Counters) &&
+                   IsHandleCreated(in ActiveSectorHashes) &&
+                   IsHandleCreated(in DebugVoxels) &&
+                   IsHandleCreated(in RleRuns) &&
+                   IsHandleCreated(in SurfaceMaskWords) &&
+                   IsHandleCreated(in RollbackSnapshotWords);
+        }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u;
         }
     }
 
@@ -385,87 +390,87 @@ namespace Hecton8.Cartography
             if (vault.IsAllocationLocked)
                 return TryResolveExisting(vault, out handles);
 
-            handles.DiscoveryWords = vault.GetBufferHandle<ulong>(
+            handles.DiscoveryWords = vault.GetGenerationHandle<ulong>(
                 CartographyVaultBufferIds.DiscoveryWords,
                 CartographyGridConstants.TotalResidentWordCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.SectorTable = vault.GetBufferHandle<CartographySectorDTO>(
+            handles.SectorTable = vault.GetGenerationHandle<CartographySectorDTO>(
                 CartographyVaultBufferIds.SectorTable,
                 CartographyGridConstants.ResidentSectorCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.UploadPackedR8 = vault.GetBufferHandle<uint>(
+            handles.UploadPackedR8 = vault.GetGenerationHandle<uint>(
                 CartographyVaultBufferIds.UploadPackedR8,
                 CartographyGridConstants.PackedUploadWordCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.TelemetryRing = vault.GetBufferHandle<CartographyTelemetryEntry>(
+            handles.TelemetryRing = vault.GetGenerationHandle<CartographyTelemetryEntry>(
                 CartographyVaultBufferIds.TelemetryRing,
                 CartographyGridConstants.BlackBoxFrameCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.TelemetryCursor = vault.GetBufferHandle<int>(
+            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
                 CartographyVaultBufferIds.TelemetryCursor,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Tuning = vault.GetBufferHandle<CartographyTuningDTO>(
+            handles.Tuning = vault.GetGenerationHandle<CartographyTuningDTO>(
                 CartographyVaultBufferIds.Tuning,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.ScannerProfiles = vault.GetBufferHandle<CartographyScannerProfileDTO>(
+            handles.ScannerProfiles = vault.GetGenerationHandle<CartographyScannerProfileDTO>(
                 CartographyVaultBufferIds.ScannerProfiles,
                 CartographyGridConstants.ScannerProfileCapacity,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.CsvScratch = vault.GetBufferHandle<byte>(
+            handles.CsvScratch = vault.GetGenerationHandle<byte>(
                 CartographyVaultBufferIds.CsvScratch,
                 CartographyGridConstants.CsvScratchBytes,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.MockPings = vault.GetBufferHandle<MapRevealSignal>(
+            handles.MockPings = vault.GetGenerationHandle<MapRevealSignal>(
                 CartographyVaultBufferIds.MockPings,
                 CartographyGridConstants.MaxRevealSignalsPerSlowTick,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.PendingPings = vault.GetBufferHandle<MapRevealSignal>(
+            handles.PendingPings = vault.GetGenerationHandle<MapRevealSignal>(
                 CartographyVaultBufferIds.PendingPings,
                 CartographyGridConstants.MaxRevealSignalsPerSlowTick,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.PendingSignalCounts = vault.GetBufferHandle<int>(
+            handles.PendingSignalCounts = vault.GetGenerationHandle<int>(
                 CartographyVaultBufferIds.PendingSignalCounts,
                 1,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.Counters = vault.GetBufferHandle<CartographyCounterDTO>(
+            handles.Counters = vault.GetGenerationHandle<CartographyCounterDTO>(
                 CartographyVaultBufferIds.Counters,
                 CartographyGridConstants.ResidentSectorCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.ActiveSectorHashes = vault.GetBufferHandle<ulong>(
+            handles.ActiveSectorHashes = vault.GetGenerationHandle<ulong>(
                 CartographyVaultBufferIds.ActiveSectorHashes,
                 CartographyGridConstants.ResidentSectorCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.DebugVoxels = vault.GetBufferHandle<CartographyDebugVoxelDTO>(
+            handles.DebugVoxels = vault.GetGenerationHandle<CartographyDebugVoxelDTO>(
                 CartographyVaultBufferIds.DebugVoxels,
                 CartographyGridConstants.DebugVoxelCapacity,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.RleRuns = vault.GetBufferHandle<CartographyRleRunDTO>(
+            handles.RleRuns = vault.GetGenerationHandle<CartographyRleRunDTO>(
                 CartographyVaultBufferIds.RleRuns,
                 CartographyGridConstants.RleRunCapacity,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.SurfaceMaskWords = vault.GetBufferHandle<ulong>(
+            handles.SurfaceMaskWords = vault.GetGenerationHandle<ulong>(
                 CartographyVaultBufferIds.SurfaceMaskWords,
                 CartographyGridConstants.WordCount,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            handles.RollbackSnapshotWords = vault.GetBufferHandle<ulong>(
+            handles.RollbackSnapshotWords = vault.GetGenerationHandle<ulong>(
                 CartographyVaultBufferIds.RollbackSnapshotWords,
                 CartographyGridConstants.WordCount,
                 SystemID.UI,
@@ -483,23 +488,28 @@ namespace Hecton8.Cartography
             if (vault == null || !handles.IsCreated())
                 return false;
 
-            buffers.DiscoveryWords = handles.DiscoveryWords.Resolve(vault);
-            buffers.SectorTable = handles.SectorTable.Resolve(vault);
-            buffers.UploadPackedR8 = handles.UploadPackedR8.Resolve(vault);
-            buffers.TelemetryRing = handles.TelemetryRing.Resolve(vault);
-            buffers.TelemetryCursor = handles.TelemetryCursor.Resolve(vault);
-            buffers.Tuning = handles.Tuning.Resolve(vault);
-            buffers.ScannerProfiles = handles.ScannerProfiles.Resolve(vault);
-            buffers.CsvScratch = handles.CsvScratch.Resolve(vault);
-            buffers.MockPings = handles.MockPings.Resolve(vault);
-            buffers.PendingPings = handles.PendingPings.Resolve(vault);
-            buffers.PendingSignalCounts = handles.PendingSignalCounts.Resolve(vault);
-            buffers.Counters = handles.Counters.Resolve(vault);
-            buffers.ActiveSectorHashes = handles.ActiveSectorHashes.Resolve(vault);
-            buffers.DebugVoxels = handles.DebugVoxels.Resolve(vault);
-            buffers.RleRuns = handles.RleRuns.Resolve(vault);
-            buffers.SurfaceMaskWords = handles.SurfaceMaskWords.Resolve(vault);
-            buffers.RollbackSnapshotWords = handles.RollbackSnapshotWords.Resolve(vault);
+            if (!vault.TryResolveHandle(in handles.DiscoveryWords, out buffers.DiscoveryWords) ||
+                !vault.TryResolveHandle(in handles.SectorTable, out buffers.SectorTable) ||
+                !vault.TryResolveHandle(in handles.UploadPackedR8, out buffers.UploadPackedR8) ||
+                !vault.TryResolveHandle(in handles.TelemetryRing, out buffers.TelemetryRing) ||
+                !vault.TryResolveHandle(in handles.TelemetryCursor, out buffers.TelemetryCursor) ||
+                !vault.TryResolveHandle(in handles.Tuning, out buffers.Tuning) ||
+                !vault.TryResolveHandle(in handles.ScannerProfiles, out buffers.ScannerProfiles) ||
+                !vault.TryResolveHandle(in handles.CsvScratch, out buffers.CsvScratch) ||
+                !vault.TryResolveHandle(in handles.MockPings, out buffers.MockPings) ||
+                !vault.TryResolveHandle(in handles.PendingPings, out buffers.PendingPings) ||
+                !vault.TryResolveHandle(in handles.PendingSignalCounts, out buffers.PendingSignalCounts) ||
+                !vault.TryResolveHandle(in handles.Counters, out buffers.Counters) ||
+                !vault.TryResolveHandle(in handles.ActiveSectorHashes, out buffers.ActiveSectorHashes) ||
+                !vault.TryResolveHandle(in handles.DebugVoxels, out buffers.DebugVoxels) ||
+                !vault.TryResolveHandle(in handles.RleRuns, out buffers.RleRuns) ||
+                !vault.TryResolveHandle(in handles.SurfaceMaskWords, out buffers.SurfaceMaskWords) ||
+                !vault.TryResolveHandle(in handles.RollbackSnapshotWords, out buffers.RollbackSnapshotWords))
+            {
+                buffers = default;
+                return false;
+            }
+
             return buffers.IsCreated();
         }
 
@@ -678,23 +688,23 @@ namespace Hecton8.Cartography
         private static bool TryResolveExisting(IDataVault vault, out CartographyVaultHandles handles)
         {
             handles = default;
-            return vault.TryGetBufferHandle(CartographyVaultBufferIds.DiscoveryWords, out handles.DiscoveryWords) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.SectorTable, out handles.SectorTable) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.UploadPackedR8, out handles.UploadPackedR8) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.Tuning, out handles.Tuning) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.ScannerProfiles, out handles.ScannerProfiles) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.CsvScratch, out handles.CsvScratch) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.MockPings, out handles.MockPings) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.PendingPings, out handles.PendingPings) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.PendingSignalCounts, out handles.PendingSignalCounts) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.Counters, out handles.Counters) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.ActiveSectorHashes, out handles.ActiveSectorHashes) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.DebugVoxels, out handles.DebugVoxels) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.RleRuns, out handles.RleRuns) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.SurfaceMaskWords, out handles.SurfaceMaskWords) &&
-                   vault.TryGetBufferHandle(CartographyVaultBufferIds.RollbackSnapshotWords, out handles.RollbackSnapshotWords);
+            return vault.TryGetGenerationHandle(CartographyVaultBufferIds.DiscoveryWords, out handles.DiscoveryWords) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.SectorTable, out handles.SectorTable) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.UploadPackedR8, out handles.UploadPackedR8) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.Tuning, out handles.Tuning) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.ScannerProfiles, out handles.ScannerProfiles) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.CsvScratch, out handles.CsvScratch) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.MockPings, out handles.MockPings) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.PendingPings, out handles.PendingPings) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.PendingSignalCounts, out handles.PendingSignalCounts) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.Counters, out handles.Counters) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.ActiveSectorHashes, out handles.ActiveSectorHashes) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.DebugVoxels, out handles.DebugVoxels) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.RleRuns, out handles.RleRuns) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.SurfaceMaskWords, out handles.SurfaceMaskWords) &&
+                   vault.TryGetGenerationHandle(CartographyVaultBufferIds.RollbackSnapshotWords, out handles.RollbackSnapshotWords);
         }
 
         private static bool TryWriteScannerProfile(

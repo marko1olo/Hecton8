@@ -7,6 +7,9 @@ namespace Hecton8.Interaction
 {
     using System.Runtime.InteropServices;
     using Hecton8.Core;
+    using Hecton8.Core.Contracts;
+    using Hecton8.Core.Contracts.Signals;
+    using Hecton8.Core.Memory;
     using Hecton8.Gameplay;
     using Hecton8.Physics;
     using Hecton8.Tools;
@@ -85,6 +88,8 @@ namespace Hecton8.Interaction
         private const float MaximumSafeDeltaTime = 0.02f;
         private const float RadiansPerDegree = 0.0174532925f;
         private const int SuitOverlapCapacity = 8;
+        private const int KinematicBridgeColdRetryIntervalFrames = 30;
+        private const ulong KinematicBridgeMutationGuardMask = 1UL << 46;
         private const float HeavyTwoHandMassThreshold = 20f;
         private const float TwoHandReleaseAngularVelocity = 4.5f;
         private const float HapticDepthReferenceMeters = 1800f;
@@ -151,6 +156,9 @@ namespace Hecton8.Interaction
 
         [Tooltip("Opt-in VR collision shell. Leave disabled for non-VR desktop rigs.")]
         [SerializeField] private bool enableSuitCollisionShell;
+
+        [Tooltip("Uses the SHINOBU_271 kinematic SDF bridge instead of ArticulationBody/Rigidbody hand proxies.")]
+        [SerializeField] private bool useKinematicSdfHandBridge = true;
 
         [Tooltip("Layers considered crushing/scraping geometry for the physical hand shell.")]
         [SerializeField] private LayerMask suitCollisionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
@@ -241,13 +249,24 @@ namespace Hecton8.Interaction
         private SphereCollider _suitHandCollider;
         private Transform _cachedInteractionProbeColliderSource;
         private Collider _cachedInteractionProbeCollider;
+        private IDataVault _kinematicBridgeVault;
+        private Hecton8.Core.Contracts.IVoxelSonarSdfReadModel _kinematicSdfReadModel;
+        private VRInteractionKinematicBridgeViews _kinematicBridgeViews;
         private Vector3 _harvestSnapPosition;
         private float3 _lastXRIdleGripPosition;
+        private float3 _lastKinematicSurfaceNormal = new float3(0f, 1f, 0f);
         private Quaternion _harvestSnapRotation = Quaternion.identity;
         private float _harvestSnapTimer;
         private float _harvestSnapDuration;
+        private float _lastKinematicPenetration;
         private bool _harvestSnapActive;
         private int _terminalSnapSourceId;
+        private uint _lastKinematicVelocitySignalFrame = uint.MaxValue;
+        private int _lastKinematicDumpFrame = -1;
+        private int _lastKinematicBridgeCacheFrame = -KinematicBridgeColdRetryIntervalFrames;
+        private uint _kinematicBridgeFrameIndex;
+        private uint _lastKinematicSocketId;
+        private bool _kinematicBridgeReady;
 
         /// <summary>True while a heavy rigidbody is actively being held by the physical hand proxy.</summary>
         public bool IsGrabbing => _isGrabbing && _activeBody != null;
@@ -296,6 +315,12 @@ namespace Hecton8.Interaction
         public void SetSuitCollisionShellEnabled(bool enabled)
         {
             enableSuitCollisionShell = enabled;
+            if (useKinematicSdfHandBridge)
+            {
+                DisableSuitCollisionShell();
+                return;
+            }
+
             if (!enabled && _suitHandCollider != null)
                 _suitHandCollider.enabled = false;
         }
@@ -315,7 +340,7 @@ namespace Hecton8.Interaction
                 normal = NormalizeVectorApproxNoSqrt(normal, Vector3.up);
 
             Quaternion fallbackRotation = Quaternion.identity;
-            Transform attachment = ResolveRightHandAttachment();
+            Transform attachment = ReadRightHandAttachment();
             if (attachment != null)
                 fallbackRotation = attachment.rotation;
             else if (_runtimeGripPoint != null)
@@ -406,7 +431,7 @@ namespace Hecton8.Interaction
             if (TryGetHarvestSnapPose(out position, out rotation, out float snapBlend) && snapBlend > 0.0001f)
                 return true;
 
-            Transform attachment = ResolveRightHandAttachment();
+            Transform attachment = ReadRightHandAttachment();
             if (attachment != null)
             {
                 position = attachment.position;
@@ -435,21 +460,6 @@ namespace Hecton8.Interaction
             {
                 sourceCollider = _suitHandCollider;
                 return true;
-            }
-
-            Transform attachment = ResolveRightHandAttachment();
-            if (attachment == null)
-            {
-                sourceCollider = null;
-                _cachedInteractionProbeColliderSource = null;
-                _cachedInteractionProbeCollider = null;
-                return false;
-            }
-
-            if (!ReferenceEquals(_cachedInteractionProbeColliderSource, attachment))
-            {
-                _cachedInteractionProbeColliderSource = attachment;
-                attachment.TryGetComponent(out _cachedInteractionProbeCollider);
             }
 
             sourceCollider = _cachedInteractionProbeCollider;
@@ -595,7 +605,9 @@ namespace Hecton8.Interaction
 
             ApplyHarvestSnapPose(ref controllerPosition, ref controllerRotation);
 
-            if (IsFinite(controllerPosition) && IsFinite(controllerRotation))
+            if (useKinematicSdfHandBridge && IsFinite(controllerPosition) && IsFinite(controllerRotation))
+                StepKinematicSdfBridge(ref controllerPosition, controllerRotation, dt);
+            else if (IsFinite(controllerPosition) && IsFinite(controllerRotation))
                 StepSuitCollisionShell(controllerPosition, controllerRotation, dt);
 
             if (!IsGrabbing)
@@ -713,9 +725,11 @@ namespace Hecton8.Interaction
         private void Awake()
         {
             _cachedTransform = transform;
-            ResolveSwimBlockoutRig();
+            CacheSwimBlockoutRigCold();
+            CacheKinematicBridgeCold(true);
             EnsureRuntimeProxy();
-            ResolveOpposingHandAttachment();
+            CacheInteractionProbeColliderCold();
+            CacheOpposingHandAttachmentCold();
             if (HectonXRRuntimeState.IsXRActive)
                 AllocatePersistentBuffers();
             ResolveFingerSegments();
@@ -726,6 +740,8 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
+            CacheKinematicBridgeCold(true);
+            CacheInteractionProbeColliderCold();
             if (HectonXRRuntimeState.IsXRActive)
                 AllocatePersistentBuffers();
             if (enableSuitCollisionShell)
@@ -738,6 +754,7 @@ namespace Hecton8.Interaction
             _cachedInteractionProbeColliderSource = null;
             _cachedInteractionProbeCollider = null;
             _hasXRIdleGripPoseSample = false;
+            _kinematicBridgeReady = false;
             DisableSuitCollisionShell();
             if (IsGrabbing)
                 EndGrab(PhysicalHandGrabEndReason.Disabled);
@@ -766,6 +783,10 @@ namespace Hecton8.Interaction
             _runtimeGripPoint = null;
             _runtimeHandBody = null;
             _runtimeProxyCreated = false;
+            _kinematicBridgeVault = null;
+            _kinematicSdfReadModel = null;
+            _kinematicBridgeViews = default;
+            _kinematicBridgeReady = false;
         }
 
         private void EnsureRuntimeProxy()
@@ -777,22 +798,33 @@ namespace Hecton8.Interaction
             GameObject rootObject = new GameObject("[PhysicalHandRuntimeRoot]");
             rootObject.hideFlags = HideFlags.HideInHierarchy | HideFlags.DontSaveInEditor;
             _runtimeRoot = rootObject.transform;
-            Transform initialAttachment = ResolveRightHandAttachment();
+            Transform initialAttachment = CacheRightHandAttachmentCold();
             _runtimeRoot.position = initialAttachment != null ? initialAttachment.position : _cachedTransform.position;
             _runtimeRoot.rotation = Quaternion.identity;
-            ArticulationBody runtimeRootBody = rootObject.AddComponent<ArticulationBody>();
-            runtimeRootBody.immovable = true;
-            runtimeRootBody.useGravity = false;
-            runtimeRootBody.linearDamping = 0f;
-            runtimeRootBody.angularDamping = 0f;
+            if (!useKinematicSdfHandBridge)
+            {
+                ArticulationBody runtimeRootBody = rootObject.AddComponent<ArticulationBody>();
+                runtimeRootBody.immovable = true;
+                runtimeRootBody.useGravity = false;
+                runtimeRootBody.linearDamping = 0f;
+                runtimeRootBody.angularDamping = 0f;
+            }
 
             // COLD ALLOC: GameObject[1] — persistent articulation joint proxy for physical hand velocity drive — owner: PhysicalHandController
-            GameObject handObject = new GameObject("[PhysicalHandRuntimeJoint]");
+            GameObject handObject = new GameObject(useKinematicSdfHandBridge ? "[VRKinematicHandRuntimeTarget]" : "[PhysicalHandRuntimeJoint]");
             handObject.hideFlags = HideFlags.HideInHierarchy | HideFlags.DontSaveInEditor;
             Transform handTransform = handObject.transform;
             handTransform.SetParent(_runtimeRoot, false);
             handTransform.localPosition = Vector3.zero;
             handTransform.localRotation = Quaternion.identity;
+
+            if (useKinematicSdfHandBridge)
+            {
+                _runtimeHandBody = null;
+                _runtimeGripPoint = handTransform;
+                _runtimeProxyCreated = true;
+                return;
+            }
 
             _runtimeHandBody = handObject.AddComponent<ArticulationBody>();
             _runtimeHandBody.jointType = ArticulationJointType.SphericalJoint;
@@ -829,6 +861,12 @@ namespace Hecton8.Interaction
         private void EnsureSuitCollisionShell()
         {
             EnsureRuntimeProxy();
+
+            if (useKinematicSdfHandBridge)
+            {
+                DisableSuitCollisionShell();
+                return;
+            }
 
             if (_suitOverlapResults == null || _suitOverlapResults.Length != SuitOverlapCapacity)
             {
@@ -1073,6 +1111,405 @@ namespace Hecton8.Interaction
                 AcousticImpulseFlags.PlayerCollision | AcousticImpulseFlags.Critical));
         }
 
+        private void CacheKinematicBridgeCold(bool force = false)
+        {
+            if (!useKinematicSdfHandBridge)
+                return;
+
+            int frame = Time.frameCount;
+            if (!force && frame - _lastKinematicBridgeCacheFrame < KinematicBridgeColdRetryIntervalFrames)
+                return;
+
+            _lastKinematicBridgeCacheFrame = frame;
+            if (_kinematicBridgeVault == null)
+                _kinematicBridgeVault = GlobalRegistry.DataVault;
+            if (_kinematicSdfReadModel == null)
+                _kinematicSdfReadModel = GlobalRegistry.VoxelSonarSdf;
+            _kinematicBridgeReady = VRInteractionKinematicBridgeVault.EnsureBuffers(
+                _kinematicBridgeVault,
+                out _kinematicBridgeViews);
+        }
+
+        private void RefreshKinematicBridgeExisting()
+        {
+            _kinematicBridgeReady = VRInteractionKinematicBridgeVault.TryResolveExisting(
+                _kinematicBridgeVault,
+                out _kinematicBridgeViews);
+        }
+
+        private void StepKinematicSdfBridge(ref Vector3 controllerPosition, Quaternion controllerRotation, float dt)
+        {
+            EnsureRuntimeProxy();
+
+            if (!_kinematicBridgeReady || !_kinematicBridgeViews.IsValid())
+                RefreshKinematicBridgeExisting();
+
+            if (!_kinematicBridgeReady || !_kinematicBridgeViews.IsValid())
+            {
+                UpdateKinematicRuntimeTarget(controllerPosition, controllerRotation);
+                return;
+            }
+
+            double3 runtimeOriginAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!VRInteractionKinematicBridgeMath.IsFinite(runtimeOriginAup))
+            {
+                DumpKinematicBridgeOnFault();
+                return;
+            }
+
+            IDataVault mutationVault = _kinematicBridgeVault;
+            if (mutationVault == null || !mutationVault.TryAcquireMutationGuard(KinematicBridgeMutationGuardMask))
+            {
+                UpdateKinematicRuntimeTarget(controllerPosition, controllerRotation);
+                return;
+            }
+
+            bool dumpFaultAfterRelease = false;
+            try
+            {
+                StepKinematicSdfBridgeGuarded(
+                    ref controllerPosition,
+                    controllerRotation,
+                    dt,
+                    runtimeOriginAup,
+                    out dumpFaultAfterRelease);
+            }
+            finally
+            {
+                mutationVault.ReleaseMutationGuard(KinematicBridgeMutationGuardMask);
+            }
+
+            if (dumpFaultAfterRelease)
+                DumpKinematicBridgeOnFault();
+        }
+
+        private void StepKinematicSdfBridgeGuarded(
+            ref Vector3 controllerPosition,
+            Quaternion controllerRotation,
+            float dt,
+            double3 runtimeOriginAup,
+            out bool dumpFaultAfterRelease)
+        {
+            dumpFaultAfterRelease = false;
+            long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+            int handIndex = handSide == PhysicalHandSide.Left
+                ? VRInteractionKinematicBridgeConstants.LeftHandIndex
+                : VRInteractionKinematicBridgeConstants.RightHandIndex;
+
+            VRInteractionTuningDTO tuning = _kinematicBridgeViews.Tuning[0];
+            RefreshKinematicTuning(ref tuning, controllerPosition, runtimeOriginAup);
+
+            NativeArray<byte> encodedSdf = default;
+            int socketCount = ResolveActiveKinematicSocketCount(_kinematicBridgeViews.Sockets);
+            if (!TryBindNearestSdf(controllerPosition, runtimeOriginAup, ref tuning, out encodedSdf))
+                tuning.SdfDimensions = int3.zero;
+
+            _kinematicBridgeViews.Tuning[0] = tuning;
+            VRHandStateDTO previous = _kinematicBridgeViews.HandStates[handIndex];
+            VRControllerMatrixDTO controllerInput = BuildKinematicControllerMatrix(
+                handIndex,
+                controllerPosition,
+                controllerRotation,
+                runtimeOriginAup,
+                in tuning);
+            _kinematicBridgeViews.ControllerMatrices[handIndex] = controllerInput;
+            if (!VRInteractionKinematicBridgeMath.TryIngestControllerMatrix(in controllerInput, handIndex, out VRHandStateDTO state))
+            {
+                dumpFaultAfterRelease = true;
+                return;
+            }
+
+            if (!VRInteractionKinematicBridgeMath.IsFinite(previous.ResolvedHandAUP))
+                previous.ResolvedHandAUP = state.RawControllerAUP;
+
+            _kinematicBridgeViews.HandStates[handIndex] = state;
+            state = VRInteractionKinematicBridgeMath.ResolveHand(
+                state,
+                previous,
+                encodedSdf,
+                _kinematicBridgeViews.Sockets,
+                socketCount,
+                in tuning,
+                handIndex,
+                dt,
+                out _lastKinematicPenetration,
+                out _lastKinematicSurfaceNormal,
+                out _lastKinematicSocketId,
+                out int iterations);
+
+            _kinematicBridgeViews.HandStates[handIndex] = state;
+            _kinematicBridgeViews.PreviousHandStates[handIndex] = state;
+            WriteKinematicHandMatrix(handIndex, state.ResolvedHandAUP, controllerRotation, runtimeOriginAup);
+            _suitContactActive = (state.InteractionFlags & VRInteractionKinematicBridgeConstants.StateFlagSdfResolved) != 0u &&
+                                 _lastKinematicPenetration > 0f;
+
+            uint elapsedMicros = ResolveElapsedMicros(startTicks);
+            RecordKinematicBridgeTelemetry(handIndex, in state, elapsedMicros, (uint)iterations);
+
+            if ((state.InteractionFlags & VRInteractionKinematicBridgeConstants.StateFlagNonFinite) != 0u)
+            {
+                dumpFaultAfterRelease = true;
+                return;
+            }
+
+            if (VRInteractionKinematicBridgeMath.TryResolveRuntimePosition(state.ResolvedHandAUP, runtimeOriginAup, out Vector3 resolvedRuntimePosition))
+                controllerPosition = resolvedRuntimePosition;
+
+            TryPublishKinematicVelocitySignal(in state);
+            UpdateKinematicRuntimeTarget(controllerPosition, controllerRotation);
+            SyncDebugState();
+        }
+
+        private void RefreshKinematicTuning(ref VRInteractionTuningDTO tuning, Vector3 controllerPosition, double3 runtimeOriginAup)
+        {
+            Vector3 rootRuntimePosition = _cachedTransform != null ? _cachedTransform.position : controllerPosition;
+            if (!VRInteractionKinematicBridgeMath.TryResolveRuntimeAup(rootRuntimePosition, runtimeOriginAup, out double3 rootAup))
+                rootAup = runtimeOriginAup;
+
+            float side = handSide == PhysicalHandSide.Left ? -1f : 1f;
+            double3 shoulderAup = rootAup + new double3(side * 0.18d, 1.38d, 0.08d);
+            tuning.PlayerRootAUP = rootAup;
+            tuning.ShoulderAUP = shoulderAup;
+            tuning.HandRadiusMeters = ResolveSuitCollisionProbeRadius();
+            tuning.MaxArmLengthMeters = math.max(0.05f, tuning.MaxArmLengthMeters > 0f ? tuning.MaxArmLengthMeters : VRInteractionKinematicBridgeConstants.DefaultMaxArmLengthMeters);
+            tuning.SnapRadiusScale = math.max(0.05f, tuning.SnapRadiusScale > 0f ? tuning.SnapRadiusScale : 1f);
+            tuning.VelocitySignalThreshold = math.max(0.1f, tuning.VelocitySignalThreshold > 0f ? tuning.VelocitySignalThreshold : VRInteractionKinematicBridgeConstants.DefaultVelocitySignalThreshold);
+            tuning.GlobalQualityWeight = ResolveGlobalQualityWeight01();
+            tuning.FrameIndex = ++_kinematicBridgeFrameIndex;
+            tuning.Flags |=
+                VRInteractionKinematicBridgeConstants.TuningFlagInitialized |
+                VRInteractionKinematicBridgeConstants.TuningFlagSdfEnabled |
+                VRInteractionKinematicBridgeConstants.TuningFlagSocketSnapEnabled |
+                VRInteractionKinematicBridgeConstants.TuningFlagVelocitySignalEnabled;
+        }
+
+        private bool TryBindNearestSdf(Vector3 controllerPosition, double3 runtimeOriginAup, ref VRInteractionTuningDTO tuning, out NativeArray<byte> encodedSdf)
+        {
+            encodedSdf = default;
+            Hecton8.Core.Contracts.IVoxelSonarSdfReadModel readModel = _kinematicSdfReadModel;
+            if (readModel == null)
+                return false;
+
+            float3 runtimeOrigin = new float3(controllerPosition.x, controllerPosition.y, controllerPosition.z);
+            if (!readModel.TryReadNearestSonarSdf(
+                    runtimeOrigin,
+                    out encodedSdf,
+                    out int3 gridDimensions,
+                    out float3 volumeOrigin,
+                    out float3 cellSize,
+                    out float sdfRange) ||
+                !encodedSdf.IsCreated ||
+                gridDimensions.x <= 1 ||
+                gridDimensions.y <= 1 ||
+                gridDimensions.z <= 1 ||
+                !math.all(math.isfinite(volumeOrigin)) ||
+                !math.all(math.isfinite(cellSize)) ||
+                !math.isfinite(sdfRange) ||
+                sdfRange <= 0f)
+            {
+                encodedSdf = default;
+                return false;
+            }
+
+            tuning.SdfOriginAUP = runtimeOriginAup + new double3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z);
+            tuning.SdfCellSize = math.max(cellSize, new float3(0.0001f));
+            tuning.SdfDimensions = gridDimensions;
+            tuning.SdfRangeMeters = sdfRange;
+            return true;
+        }
+
+        private static VRControllerMatrixDTO BuildKinematicControllerMatrix(
+            int handIndex,
+            Vector3 controllerPosition,
+            Quaternion controllerRotation,
+            double3 runtimeOriginAup,
+            in VRInteractionTuningDTO tuning)
+        {
+            float3 runtimePosition = new float3(controllerPosition.x, controllerPosition.y, controllerPosition.z);
+            quaternion rotation = new quaternion(controllerRotation.x, controllerRotation.y, controllerRotation.z, controllerRotation.w);
+            if (!math.all(math.isfinite(runtimePosition)))
+                runtimePosition = float3.zero;
+            if (!math.all(math.isfinite(rotation.value)))
+                rotation = quaternion.identity;
+
+            double3 rootRuntimeDelta = tuning.PlayerRootAUP - runtimeOriginAup;
+            float3 rootRuntimePosition = new float3((float)rootRuntimeDelta.x, (float)rootRuntimeDelta.y, (float)rootRuntimeDelta.z);
+            if (!math.all(math.isfinite(rootRuntimePosition)))
+                rootRuntimePosition = float3.zero;
+
+            float3 controllerRootLocal = runtimePosition - rootRuntimePosition;
+            if (!math.all(math.isfinite(controllerRootLocal)))
+                controllerRootLocal = float3.zero;
+
+            double3 shoulderDelta = tuning.ShoulderAUP - tuning.PlayerRootAUP;
+            float3 shoulderRuntimeOffset = new float3((float)shoulderDelta.x, (float)shoulderDelta.y, (float)shoulderDelta.z);
+            if (!math.all(math.isfinite(shoulderRuntimeOffset)))
+                shoulderRuntimeOffset = float3.zero;
+
+            VRControllerMatrixDTO dto = default;
+            dto.ControllerLocalToWorld = float4x4.TRS(controllerRootLocal, rotation, new float3(1f));
+            dto.PlayerRootAUP = tuning.PlayerRootAUP;
+            dto.ShoulderRuntimeOffset = shoulderRuntimeOffset;
+            dto.Grip01 = 1f;
+            dto.Flags =
+                VRInteractionKinematicBridgeConstants.StateFlagValid |
+                VRInteractionKinematicBridgeConstants.StateFlagTracked |
+                VRInteractionKinematicBridgeConstants.StateFlagNoPhysicsProxy;
+            dto.FrameIndex = tuning.FrameIndex;
+            dto.HandIndex = (byte)handIndex;
+            dto.IsTracked = 1;
+            return dto;
+        }
+
+        private static int ResolveActiveKinematicSocketCount(NativeArray<VRInteractionSocketDTO> sockets)
+        {
+            if (!sockets.IsCreated)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < sockets.Length; i++)
+            {
+                if ((sockets[i].Flags & VRInteractionKinematicBridgeConstants.SocketFlagActive) != 0u)
+                    count = i + 1;
+            }
+
+            return count;
+        }
+
+        private void RecordKinematicBridgeTelemetry(int handIndex, in VRHandStateDTO state, uint elapsedMicros, uint iterations)
+        {
+            if (!_kinematicBridgeViews.TelemetryRing.IsCreated ||
+                _kinematicBridgeViews.TelemetryRing.Length < VRInteractionKinematicBridgeConstants.TelemetryCapacity)
+            {
+                return;
+            }
+
+            uint frame = _kinematicBridgeFrameIndex;
+            int baseSlot = (int)(frame % VRInteractionKinematicBridgeConstants.TelemetryFrameCapacity) * VRInteractionKinematicBridgeConstants.HandCount;
+            int slot = baseSlot + handIndex;
+            VRInteractionTelemetryEntry entry = default;
+            entry.FrameIndex = frame;
+            entry.StateHash = VRInteractionKinematicBridgeMath.HashState(in state, (uint)handIndex);
+            entry.Flags = state.InteractionFlags;
+            if (elapsedMicros > 100u)
+                entry.Flags |= VRInteractionKinematicBridgeConstants.TelemetryFlagBudgetExceeded;
+            if (VRInteractionKinematicBridgeMath.ResolveQualityIterationHint(_kinematicBridgeViews.Tuning[0].GlobalQualityWeight) < (int)iterations)
+                entry.Flags |= VRInteractionKinematicBridgeConstants.TelemetryFlagQualityScaled;
+            entry.CpuTimeMicros = elapsedMicros;
+            entry.RawControllerAUP = state.RawControllerAUP;
+            entry.ResolvedHandAUP = state.ResolvedHandAUP;
+            entry.Velocity = state.Velocity;
+            entry.MaxPenetrationMeters = _lastKinematicPenetration;
+            entry.SurfaceNormal = _lastKinematicSurfaceNormal;
+            entry.SocketId = _lastKinematicSocketId;
+            entry.SolverIterations = iterations;
+            entry.HandIndex = (uint)handIndex;
+            entry.Marker = VRInteractionKinematicBridgeConstants.TelemetryMarker;
+            _kinematicBridgeViews.TelemetryRing[slot] = entry;
+
+            if (_kinematicBridgeViews.TelemetryCursor.IsCreated && _kinematicBridgeViews.TelemetryCursor.Length > 0)
+                _kinematicBridgeViews.TelemetryCursor[0] = baseSlot;
+        }
+
+        private void TryPublishKinematicVelocitySignal(in VRHandStateDTO state)
+        {
+            if ((state.InteractionFlags & VRInteractionKinematicBridgeConstants.StateFlagVelocitySignal) == 0u)
+                return;
+
+            uint frame = _kinematicBridgeFrameIndex;
+            if (_lastKinematicVelocitySignalFrame == frame)
+                return;
+
+            float speedSq = math.lengthsq(state.Velocity);
+            if (!math.isfinite(speedSq) || speedSq <= 0.000001f)
+                return;
+
+            float invSpeed = math.rsqrt(speedSq);
+            float speed = math.sqrt(speedSq);
+            float threshold = math.max(0.0001f, _kinematicBridgeViews.Tuning[0].VelocitySignalThreshold);
+            float kinetic01 = math.saturate(speed * math.rcp(threshold));
+            CombatDamageSignal signal = default;
+            signal.ImpactAup = state.ResolvedHandAUP;
+            signal.Direction = state.Velocity * invSpeed;
+            signal.Magnitude = speed;
+            signal.DamageType = 0x56524844u; // VRHD
+            signal.TargetHash = _lastKinematicSocketId;
+            signal.SourceHash = 0x53483237u; // SH27
+            signal.Frame = frame;
+            signal.SourceId = (ushort)handSide;
+            signal.Channel = 1;
+            signal.Flags = CombatDamageSignal.DirectRuntimeFlag;
+            signal.IntegrityDelta = (byte)math.clamp((int)math.round(kinetic01 * 255f), 1, 255);
+            SignalBus<CombatDamageSignal>.TryPush(in signal);
+            _lastKinematicVelocitySignalFrame = frame;
+        }
+
+        private void WriteKinematicHandMatrix(int handIndex, double3 resolvedAup, Quaternion rotation, double3 runtimeOriginAup)
+        {
+            if (!_kinematicBridgeViews.HandMatrices.IsCreated ||
+                (uint)handIndex >= (uint)_kinematicBridgeViews.HandMatrices.Length ||
+                !VRInteractionKinematicBridgeMath.IsFinite(resolvedAup))
+            {
+                return;
+            }
+
+            double3 delta = resolvedAup - runtimeOriginAup;
+            float3 local = new float3((float)delta.x, (float)delta.y, (float)delta.z);
+            if (!math.all(math.isfinite(local)))
+                local = float3.zero;
+
+            quaternion q = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
+            if (!math.all(math.isfinite(q.value)))
+                q = quaternion.identity;
+
+            _kinematicBridgeViews.HandMatrices[handIndex] = float4x4.TRS(local, q, new float3(1f));
+        }
+
+        private void UpdateKinematicRuntimeTarget(Vector3 position, Quaternion rotation)
+        {
+            if (_runtimeRoot != null && !IsGrabbing)
+            {
+                _runtimeRoot.position = position;
+                _runtimeRoot.rotation = Quaternion.identity;
+            }
+
+            if (_runtimeGripPoint != null)
+            {
+                _runtimeGripPoint.localPosition = Vector3.zero;
+                _runtimeGripPoint.rotation = rotation;
+            }
+        }
+
+        private void DumpKinematicBridgeOnFault()
+        {
+            int frame = Time.frameCount;
+            if (_lastKinematicDumpFrame == frame)
+                return;
+
+            if (_kinematicBridgeVault != null)
+                VRInteractionKinematicBridgeVault.DumpTelemetryFaultOnly(_kinematicBridgeVault);
+            _lastKinematicDumpFrame = frame;
+        }
+
+        private static uint ResolveElapsedMicros(long startTicks)
+        {
+            long elapsed = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
+            if (elapsed <= 0L)
+                return 0u;
+
+            double micros = (elapsed * 1000000.0d) / System.Diagnostics.Stopwatch.Frequency;
+            if (double.IsNaN(micros) || double.IsInfinity(micros) || micros <= 0d)
+                return 0u;
+
+            return micros >= uint.MaxValue ? uint.MaxValue : (uint)micros;
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, weight, math.isfinite(weight)));
+        }
+
         private void AllocatePersistentBuffers()
         {
             DispatcherJobSwap.TryFinalizeCompleted(ref _fingerPoseDisposeHandle);
@@ -1083,19 +1520,19 @@ namespace Hecton8.Interaction
                 return;
 
             // COLD ALLOC: NativeArray<SpherecastCommand>[5] - persistent finger spherecast commands - owner: PhysicalHandController
-            _fingerCommands = new NativeArray<SpherecastCommand>(FingerCount, Allocator.Persistent);
+            _fingerCommands = new NativeArray<SpherecastCommand>(FingerCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_fingerCommands, NativeMemoryOwner, nameof(_fingerCommands), FingerNativeMemoryLifetime);
             // COLD ALLOC: NativeArray<RaycastHit>[5] - persistent finger spherecast results - owner: PhysicalHandController
-            _fingerHits = new NativeArray<RaycastHit>(FingerCount, Allocator.Persistent);
+            _fingerHits = new NativeArray<RaycastHit>(FingerCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_fingerHits, NativeMemoryOwner, nameof(_fingerHits), FingerNativeMemoryLifetime);
             // COLD ALLOC: NativeArray<FingerPoseData>[5] - persistent finger pose results - owner: PhysicalHandController
-            _fingerPoses = new NativeArray<FingerPoseData>(FingerCount, Allocator.Persistent);
+            _fingerPoses = new NativeArray<FingerPoseData>(FingerCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_fingerPoses, NativeMemoryOwner, nameof(_fingerPoses), FingerNativeMemoryLifetime);
             // COLD ALLOC: NativeArray<FingerRayDefinition>[5] - persistent local finger ray definitions - owner: PhysicalHandController
-            _fingerRayDefinitions = new NativeArray<FingerRayDefinition>(FingerCount, Allocator.Persistent);
+            _fingerRayDefinitions = new NativeArray<FingerRayDefinition>(FingerCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_fingerRayDefinitions, NativeMemoryOwner, nameof(_fingerRayDefinitions), FingerNativeMemoryLifetime);
             // COLD ALLOC: NativeArray<FingerRayRuntime>[5] - persistent world-space finger ray runtime data - owner: PhysicalHandController
-            _fingerRayRuntime = new NativeArray<FingerRayRuntime>(FingerCount, Allocator.Persistent);
+            _fingerRayRuntime = new NativeArray<FingerRayRuntime>(FingerCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_fingerRayRuntime, NativeMemoryOwner, nameof(_fingerRayRuntime), FingerNativeMemoryLifetime);
 
             _fingerRayDefinitions[0] = new FingerRayDefinition
@@ -1180,7 +1617,12 @@ namespace Hecton8.Interaction
             _fingerSegmentsResolved = true;
         }
 
-        private Transform ResolveRightHandAttachment()
+        private Transform ReadRightHandAttachment()
+        {
+            return _rightHandAttachmentResolved ? _resolvedRightHandAttachment : null;
+        }
+
+        private Transform CacheRightHandAttachmentCold()
         {
             if (_rightHandAttachmentResolved)
                 return _resolvedRightHandAttachment;
@@ -1192,7 +1634,7 @@ namespace Hecton8.Interaction
                 return _resolvedRightHandAttachment;
             }
 
-            ResolveSwimBlockoutRig();
+            CacheSwimBlockoutRigCold();
 
             if (swimBlockoutRig != null)
                 _resolvedRightHandAttachment = swimBlockoutRig.RightHandAttachment;
@@ -1201,12 +1643,17 @@ namespace Hecton8.Interaction
             return _resolvedRightHandAttachment;
         }
 
-        private Transform ResolveOpposingHandAttachment()
+        private Transform ReadOpposingHandAttachment()
+        {
+            return _opposingHandAttachmentResolved ? _resolvedOpposingHandAttachment : null;
+        }
+
+        private Transform CacheOpposingHandAttachmentCold()
         {
             if (_opposingHandAttachmentResolved)
                 return _resolvedOpposingHandAttachment;
 
-            ResolveSwimBlockoutRig();
+            CacheSwimBlockoutRigCold();
 
             if (swimBlockoutRig != null)
             {
@@ -1219,7 +1666,7 @@ namespace Hecton8.Interaction
             return _resolvedOpposingHandAttachment;
         }
 
-        private PlayerSwimBlockoutRig ResolveSwimBlockoutRig()
+        private PlayerSwimBlockoutRig CacheSwimBlockoutRigCold()
         {
             if (swimBlockoutRig != null)
                 return swimBlockoutRig;
@@ -1227,6 +1674,24 @@ namespace Hecton8.Interaction
             Transform root = _cachedTransform != null ? _cachedTransform : transform;
             swimBlockoutRig = ComponentReferenceUtility.ResolveOwnedComponent<PlayerSwimBlockoutRig>(root);
             return swimBlockoutRig;
+        }
+
+        private void CacheInteractionProbeColliderCold()
+        {
+            Transform attachment = CacheRightHandAttachmentCold();
+            if (attachment == null)
+            {
+                _cachedInteractionProbeColliderSource = null;
+                _cachedInteractionProbeCollider = null;
+                return;
+            }
+
+            if (ReferenceEquals(_cachedInteractionProbeColliderSource, attachment))
+                return;
+
+            _cachedInteractionProbeColliderSource = attachment;
+            _cachedInteractionProbeCollider = null;
+            attachment.TryGetComponent(out _cachedInteractionProbeCollider);
         }
 
         private void CompleteScheduledFingerPose(float dt)
@@ -1505,7 +1970,7 @@ namespace Hecton8.Interaction
             if (!_requiresTwoHandStabilization || body == null)
                 return;
 
-            Transform opposingHand = ResolveOpposingHandAttachment();
+            Transform opposingHand = ReadOpposingHandAttachment();
             if (opposingHand == null || !IsFinite(opposingHand.position))
             {
                 _twoHandStabilized = false;
@@ -1860,9 +2325,11 @@ namespace Hecton8.Interaction
             if (!IsFinite(a) || !IsFinite(b))
                 return float.MaxValue;
 
-            AbsoluteUniversePosition aupA = AbsoluteUniversePosition.FromRuntimePosition(a);
-            AbsoluteUniversePosition aupB = AbsoluteUniversePosition.FromRuntimePosition(b);
-            double distanceSq = AbsoluteUniversePosition.DistanceSq(in aupA, in aupB);
+            double3 delta = new double3(
+                (double)a.x - b.x,
+                (double)a.y - b.y,
+                (double)a.z - b.z);
+            double distanceSq = math.lengthsq(delta);
             return math.isfinite((float)distanceSq)
                 ? math.min((float)distanceSq, float.MaxValue)
                 : float.MaxValue;
@@ -1870,10 +2337,55 @@ namespace Hecton8.Interaction
 
         private static AbsoluteUniversePosition ResolveSuitContactAup(Vector3 contactPoint, Vector3 controllerPosition)
         {
-            if (HectonXRRuntimeState.TryResolveCachedHeadAup(controllerPosition, out AbsoluteUniversePosition controllerAup))
+            if (TryResolveXrCachedHeadAup(controllerPosition, out AbsoluteUniversePosition controllerAup))
                 return OffsetAupLocal(in controllerAup, contactPoint - controllerPosition);
 
-            return AbsoluteUniversePosition.FromRuntimePosition(contactPoint);
+            return TryResolveRuntimeAup(contactPoint, out AbsoluteUniversePosition contactAup)
+                ? contactAup
+                : default;
+        }
+
+        private static bool TryResolveXrCachedHeadAup(Vector3 runtimePosition, out AbsoluteUniversePosition headAup)
+        {
+            if (HectonXRRuntimeState.TryResolveCachedHeadAupFields(
+                    runtimePosition,
+                    out long gridX,
+                    out long gridY,
+                    out long gridZ,
+                    out float localX,
+                    out float localY,
+                    out float localZ))
+            {
+                headAup = new AbsoluteUniversePosition
+                {
+                    GridX = gridX,
+                    GridY = gridY,
+                    GridZ = gridZ,
+                    LocalX = localX,
+                    LocalY = localY,
+                    LocalZ = localZ
+                };
+                return true;
+            }
+
+            headAup = default;
+            return false;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(HectonFloatingOrigin.CurrentTotalOffsetDouble);
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)

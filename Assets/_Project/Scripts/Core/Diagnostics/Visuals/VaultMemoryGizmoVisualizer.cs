@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -23,10 +24,11 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private void OnDrawGizmos()
         {
+            IDataVault vault = GlobalRegistry.DataVault;
             if (!drawVaultMemoryGizmos ||
-                !GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault) ||
-                !vault.TryGetBuffer(BufferID.VaultAup64, out NativeArray<VaultAup64> aups) ||
-                !vault.TryGetBuffer(BufferID.VaultHotEntityData, out NativeArray<VaultHotEntityData> hotEntities) ||
+                vault == null ||
+                !TryReadBuffer(vault, BufferID.VaultAup64, out NativeArray<VaultAup64> aups) ||
+                !TryReadBuffer(vault, BufferID.VaultHotEntityData, out NativeArray<VaultHotEntityData> hotEntities) ||
                 !aups.IsCreated ||
                 !hotEntities.IsCreated)
             {
@@ -40,7 +42,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             uint frame = unchecked((uint)Time.frameCount);
             ReadOnlySpan<MemoryAddressShiftSignal> shifts = SignalBus<MemoryAddressShiftSignal>.GetFrameSnapshot();
             Vector3 size = new Vector3(wireSizeMeters, wireSizeMeters, wireSizeMeters);
-            DrawLastPointerFault(vault, aups, count, frame);
+            DrawLastPointerFault(vault as GlobalDataVault, aups, count, frame);
             for (int i = 0; i < count; i++)
             {
                 VaultHotEntityData hot = hotEntities[i];
@@ -61,7 +63,8 @@ namespace Hecton8.Core.Diagnostics.Visuals
             int count,
             uint frame)
         {
-            if (count <= 0 ||
+            if (vault == null ||
+                count <= 0 ||
                 !vault.TryGetVaultTelemetrySnapshot(0, out VaultTelemetrySnapshot telemetry) ||
                 telemetry.GenerationMismatchCount == 0u ||
                 telemetry.LastFaultBufferID <= 0)
@@ -88,6 +91,19 @@ namespace Hecton8.Core.Diagnostics.Visuals
             return math.all(math.isfinite(clamped))
                 ? new Vector3((float)clamped.x, (float)clamped.y, (float)clamped.z)
                 : Vector3.zero;
+        }
+
+        private static bool TryReadBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return
+                vault != null &&
+                vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                vault.TryReadHandle(in handle, out buffer) &&
+                buffer.IsCreated;
         }
 
         private static bool WasMovedBySwapPop(

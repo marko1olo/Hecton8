@@ -24,7 +24,7 @@ namespace Hecton8.Inventory
             public readonly float Weight;
             public readonly byte CategoryId;
             public readonly byte Rarity;
-            public readonly bool Stackable;
+            public readonly byte Stackable;
 
             public InventoryItemDescriptor(
                 int hashId,
@@ -43,10 +43,9 @@ namespace Hecton8.Inventory
                 Weight = weight;
                 CategoryId = categoryId;
                 Rarity = rarity;
-                Stackable = stackable;
+                Stackable = stackable ? (byte)1 : (byte)0;
             }
 
-            public bool IsValid => HashId != 0 && Width > 0 && Height > 0;
         }
 
         private readonly int _columns;
@@ -80,6 +79,11 @@ namespace Hecton8.Inventory
         public NativeArray<byte>.ReadOnly AnchorCategoryIds => _anchorCategoryIds.IsCreated ? _anchorCategoryIds.AsReadOnly() : default;
         public NativeArray<byte>.ReadOnly AnchorRarityIds => _anchorRarityIds.IsCreated ? _anchorRarityIds.AsReadOnly() : default;
         public NativeArray<byte>.ReadOnly AnchorFlags => _anchorFlags.IsCreated ? _anchorFlags.AsReadOnly() : default;
+
+        public static bool IsValidDescriptor(in InventoryItemDescriptor descriptor)
+        {
+            return descriptor.HashId != 0 && descriptor.Width > 0 && descriptor.Height > 0;
+        }
 
         public unsafe void* GetAnchorHashIdsUnsafeReadOnlyPtr(out int length)
         {
@@ -234,7 +238,7 @@ namespace Hecton8.Inventory
 
         public bool TryAddItem(in InventoryItemDescriptor descriptor, out int placedX, out int placedY)
         {
-            if (!descriptor.IsValid || !_cellAnchorIndices.IsCreated)
+            if (!IsValidDescriptor(in descriptor) || !_cellAnchorIndices.IsCreated)
             {
                 placedX = -1;
                 placedY = -1;
@@ -294,7 +298,7 @@ namespace Hecton8.Inventory
 
         public bool PlaceAt(in InventoryItemDescriptor descriptor, int x, int y)
         {
-            if (!descriptor.IsValid || !CheckFit(x, y, descriptor.Width, descriptor.Height))
+            if (!IsValidDescriptor(in descriptor) || !CheckFit(x, y, descriptor.Width, descriptor.Height))
                 return false;
 
             PlaceDescriptor(in descriptor, x, y);
@@ -546,7 +550,7 @@ namespace Hecton8.Inventory
             _anchorWeights[anchorIndex] = descriptor.Weight;
             _anchorCategoryIds[anchorIndex] = descriptor.CategoryId;
             _anchorRarityIds[anchorIndex] = descriptor.Rarity;
-            _anchorFlags[anchorIndex] = descriptor.Stackable ? (byte)0x01 : (byte)0x00;
+            _anchorFlags[anchorIndex] = descriptor.Stackable != 0 ? (byte)0x01 : (byte)0x00;
         }
 
         private void FillAnchorCells(int anchorIndex, int startX, int startY, int width, int height)

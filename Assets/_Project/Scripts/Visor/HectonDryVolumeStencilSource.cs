@@ -9,7 +9,7 @@ using UnityEditor;
 namespace Hecton8.Visor
 {
     /// <summary>
-    /// Marks renderers that should restore the dry scene color after Crest underwater fog has already run.
+    /// Marks renderers that should restore the dry scene color after the ocean underwater fog pass has already run.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HectonDryVolumeStencilSource : MonoBehaviour

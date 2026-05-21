@@ -2,7 +2,9 @@ using System;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Threading;
+using Hecton8.Core.Memory;
 using Unity.Collections;
+using Unity.Mathematics;
 
 namespace Hecton8.Thermodynamics
 {
@@ -20,8 +22,8 @@ namespace Hecton8.Thermodynamics
         private Thread _configWorkerThread;
         private string _binaryConstantsPath;
         private string _csvOverridePath;
-        private byte* _binaryConstantsWorkerPtr;
-        private byte* _csvWorkerPtr;
+        private byte[] _binaryConstantsWorkerBytes;
+        private byte[] _csvWorkerBytes;
         private int _configWorkerRun;
         private int _binaryRequestState;
         private int _csvRequestState;
@@ -34,13 +36,17 @@ namespace Hecton8.Thermodynamics
 
         private void StartConfigWorkerIfNeeded()
         {
-            if (_configWorkerThread != null || !_binaryConstantBytes.IsCreated || !_csvBytes.IsCreated)
+            if (_configWorkerThread != null || !HasHandle(in _binaryConstantBytes) || !HasHandle(in _csvBytes))
                 return;
 
             _binaryConstantsPath = Path.Combine(UnityEngine.Application.streamingAssetsPath, "thermodynamic_constants.h8bin");
-            _csvOverridePath = Path.Combine(UnityEngine.Application.streamingAssetsPath, "hazard_profiles.csv");
-            _binaryConstantsWorkerPtr = (byte*)ResolvePointer(ref _binaryConstantBytes);
-            _csvWorkerPtr = (byte*)ResolvePointer(ref _csvBytes);
+#if UNITY_EDITOR
+            _csvOverridePath = Path.Combine(UnityEngine.Application.dataPath, "_SourceData", "Thermodynamics", "hazard_profiles.csv");
+#else
+            _csvOverridePath = null;
+#endif
+            _binaryConstantsWorkerBytes ??= new byte[BinaryConstantsBytes]; // COLD ALLOC: byte[16] - config worker staging, copied into Vault lane on main thread - owner: ThermodynamicsHazardGridRuntime
+            _csvWorkerBytes ??= new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - CSV worker staging, copied into Vault lane on main thread - owner: ThermodynamicsHazardGridRuntime
             Volatile.Write(ref _configWorkerRun, 1);
 
             _configWorkerThread = new Thread(ConfigWorkerLoop)
@@ -62,8 +68,6 @@ namespace Hecton8.Thermodynamics
                 worker.Join(250);
 
             _configWorkerThread = null;
-            _binaryConstantsWorkerPtr = null;
-            _csvWorkerPtr = null;
         }
 
         private void RequestBinaryConstantsLoad()
@@ -73,7 +77,9 @@ namespace Hecton8.Thermodynamics
 
         private void RequestCsvOverrideLoad()
         {
+#if UNITY_EDITOR
             RequestConfigLoad(ref _csvRequestState);
+#endif
         }
 
         private static void RequestConfigLoad(ref int state)
@@ -85,47 +91,71 @@ namespace Hecton8.Thermodynamics
 
         private void ApplyPendingConfigLoads()
         {
-            if (_constants.IsCreated && Volatile.Read(ref _binaryRequestState) == ConfigWorkerReady)
+            if (HasHandle(in _constants) && Volatile.Read(ref _binaryRequestState) == ConfigWorkerReady)
             {
                 int read = Volatile.Read(ref _binaryWorkerReadCount);
                 if (read >= BinaryConstantsBytes)
                 {
-                    NativeArray<byte> bytes = ResolveArray(ref _binaryConstantBytes);
-                    float waterConductivity = ReadFloatLe(bytes, 0);
-                    float heatDiffusion = ReadFloatLe(bytes, 4);
-                    float radiationDiffusion = ReadFloatLe(bytes, 8);
-                    float decay = ReadFloatLe(bytes, 12);
-                    ref ThermodynamicsHazardConstants constants = ref _constants.GetElementAsRef(EnsureVault(), 0);
-                    constants = SanitizeConstants(new ThermodynamicsHazardConstants
+                    NativeArray<byte> bytes;
+                    if (TryCopyWorkerBytesToVault(in _binaryConstantBytes, _binaryConstantsWorkerBytes, read, BinaryConstantsBytes, out bytes))
                     {
-                        BaseWaterTempCelsius = waterConductivity,
-                        HeatDiffusionRate = heatDiffusion,
-                        RadiationDiffusionRate = radiationDiffusion,
-                        RadiationDecayCoefficient = decay,
-                        RockShieldingFactor = 0.05f,
-                        VerticalHeatBias = 1.25f,
-                        HeatDamageThresholdCelsius = 100f,
-                        RadiationDamageThreshold = 0.35f
-                    });
-                    Volatile.Write(ref _binaryAppliedWriteTicks, Volatile.Read(ref _binaryWorkerWriteTicks));
+                        try
+                        {
+                            float waterConductivity = ReadFloatLe(bytes, 0);
+                            float heatDiffusion = ReadFloatLe(bytes, 4);
+                            float radiationDiffusion = ReadFloatLe(bytes, 8);
+                            float decay = ReadFloatLe(bytes, 12);
+                            ThermodynamicsHazardConstants parsed = SanitizeConstants(new ThermodynamicsHazardConstants
+                            {
+                                BaseWaterTempCelsius = waterConductivity,
+                                HeatDiffusionRate = heatDiffusion,
+                                RadiationDiffusionRate = radiationDiffusion,
+                                RadiationDecayCoefficient = decay,
+                                RockShieldingFactor = 0.05f,
+                                VerticalHeatBias = 1.25f,
+                                HeatDamageThresholdCelsius = 100f,
+                                RadiationDamageThreshold = 0.35f
+                            });
+                            if (TryWriteConstantsWithOwner(in parsed, MemoryOwner))
+                                Volatile.Write(ref _binaryAppliedWriteTicks, Volatile.Read(ref _binaryWorkerWriteTicks));
+                        }
+                        finally
+                        {
+                            EnsureVault().ReleaseWriteLock(in _binaryConstantBytes, MemoryOwner);
+                        }
+                    }
                 }
 
                 Volatile.Write(ref _binaryRequestState, ConfigWorkerIdle);
             }
 
-            if (_constants.IsCreated && Volatile.Read(ref _csvRequestState) == ConfigWorkerReady)
+            if (HasHandle(in _constants) && Volatile.Read(ref _csvRequestState) == ConfigWorkerReady)
             {
                 int read = Volatile.Read(ref _csvWorkerReadCount);
                 long ticks = Volatile.Read(ref _csvWorkerWriteTicks);
                 if (read > 0 && ticks != Volatile.Read(ref _csvAppliedWriteTicks))
                 {
-                    NativeArray<byte> bytes = ResolveArray(ref _csvBytes);
-                    ref ThermodynamicsHazardConstants constants = ref _constants.GetElementAsRef(EnsureVault(), 0);
-                    ThermodynamicsHazardConstants parsed = constants;
-                    ParseCsvConstants(bytes, read, ref parsed);
-                    constants = SanitizeConstants(parsed);
-                    Volatile.Write(ref _csvAppliedWriteTicks, ticks);
-                    _csvLastWriteUtc = new DateTime(ticks, DateTimeKind.Utc);
+                    NativeArray<byte> bytes;
+                    if (TryCopyWorkerBytesToVault(in _csvBytes, _csvWorkerBytes, read, CsvBufferBytes, out bytes))
+                    {
+                        try
+                        {
+                            ThermodynamicsHazardConstants parsed = TryReadConstants(out ThermodynamicsHazardConstants existing)
+                                ? existing
+                                : GenerateEmergencyMockConstants();
+                            ParseCsvConstants(bytes, read, ref parsed);
+                            parsed = SanitizeConstants(parsed);
+                            if (TryWriteConstantsWithOwner(in parsed, MemoryOwner))
+                            {
+                                Volatile.Write(ref _csvAppliedWriteTicks, ticks);
+                                _csvLastWriteUtc = new DateTime(ticks, DateTimeKind.Utc);
+                            }
+                        }
+                        finally
+                        {
+                            EnsureVault().ReleaseWriteLock(in _csvBytes, MemoryOwner);
+                        }
+                    }
                 }
 
                 Volatile.Write(ref _csvRequestState, ConfigWorkerIdle);
@@ -160,7 +190,7 @@ namespace Hecton8.Thermodynamics
             try
             {
                 long writeTicks;
-                int read = ReadConfigFile(_binaryConstantsPath, _binaryConstantsWorkerPtr, BinaryConstantsBytes, Volatile.Read(ref _binaryAppliedWriteTicks), out writeTicks);
+                int read = ReadConfigFile(_binaryConstantsPath, _binaryConstantsWorkerBytes, BinaryConstantsBytes, Volatile.Read(ref _binaryAppliedWriteTicks), out writeTicks);
                 if (read >= BinaryConstantsBytes)
                 {
                     Volatile.Write(ref _binaryWorkerReadCount, read);
@@ -183,7 +213,7 @@ namespace Hecton8.Thermodynamics
             try
             {
                 long writeTicks;
-                int read = ReadConfigFile(_csvOverridePath, _csvWorkerPtr, CsvBufferBytes, Volatile.Read(ref _csvAppliedWriteTicks), out writeTicks);
+                int read = ReadConfigFile(_csvOverridePath, _csvWorkerBytes, CsvBufferBytes, Volatile.Read(ref _csvAppliedWriteTicks), out writeTicks);
                 if (read > 0)
                 {
                     Volatile.Write(ref _csvWorkerReadCount, read);
@@ -200,16 +230,66 @@ namespace Hecton8.Thermodynamics
             Volatile.Write(ref _csvRequestState, nextState);
         }
 
-        private static int ReadConfigFile(string path, byte* destination, int capacity, long skipWriteTicks, out long writeTicks)
+        private bool TryCopyWorkerBytesToVault(
+            in VaultGenerationHandle<byte> handle,
+            byte[] source,
+            int sourceCount,
+            int requiredCapacity,
+            out NativeArray<byte> bytes)
+        {
+            bytes = default;
+            if (!HasHandle(in handle) ||
+                source == null ||
+                sourceCount <= 0 ||
+                requiredCapacity <= 0)
+            {
+                return false;
+            }
+
+            IDataVault vault = EnsureVault();
+            if (!vault.TryAcquireWriteLock(in handle, MemoryOwner, out bytes) ||
+                !bytes.IsCreated ||
+                bytes.Length < requiredCapacity)
+            {
+                if (bytes.IsCreated)
+                    vault.ReleaseWriteLock(in handle, MemoryOwner);
+                bytes = default;
+                return false;
+            }
+
+            int copyCount = math.min(math.min(sourceCount, requiredCapacity), math.min(source.Length, bytes.Length));
+            if (copyCount <= 0)
+            {
+                vault.ReleaseWriteLock(in handle, MemoryOwner);
+                bytes = default;
+                return false;
+            }
+
+            for (int i = 0; i < copyCount; i++)
+                bytes[i] = source[i];
+
+            return true;
+        }
+
+        private static int ReadConfigFile(string path, byte[] destination, int capacity, long skipWriteTicks, out long writeTicks)
         {
             writeTicks = 0L;
-            if (destination == null || capacity <= 0 || string.IsNullOrEmpty(path) || !File.Exists(path))
+            if (destination == null || capacity <= 0 || destination.Length == 0 || string.IsNullOrEmpty(path) || !File.Exists(path))
                 return 0;
 
             writeTicks = File.GetLastWriteTimeUtc(path).Ticks;
             if (writeTicks == skipWriteTicks)
                 return 0;
 
+            int safeCapacity = Math.Min(capacity, destination.Length);
+            fixed (byte* destinationPtr = destination)
+            {
+                return ReadConfigFilePinned(path, destinationPtr, safeCapacity);
+            }
+        }
+
+        private static int ReadConfigFilePinned(string path, byte* destination, int capacity)
+        {
             try
             {
                 return ReadConfigFileMapped(path, destination, capacity);

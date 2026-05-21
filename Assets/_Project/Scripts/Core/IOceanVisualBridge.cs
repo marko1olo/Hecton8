@@ -6,23 +6,25 @@ namespace Hecton8.Core
     {
         Material OceanMaterial { get; }
 
+        int CameraColorTextureId { get; }
+
         bool HasUnderwaterInstance { get; }
 
-        bool HasUnderwaterRenderer(Camera camera);
+        bool HasUnderwaterPass(Camera camera);
 
-        Component TryGetUnderwaterRenderer(Camera camera);
+        Component TryGetUnderwaterPass(Camera camera);
 
-        Component EnsureUnderwaterRenderer(Camera camera);
+        Component EnsureUnderwaterPass(Camera camera);
 
-        bool IsUnderwaterRendererEnabled(Component renderer);
+        bool IsUnderwaterPassEnabled(Component underwaterPass);
 
-        void SetUnderwaterRendererEnabled(Component renderer, bool enabled);
+        void SetUnderwaterPassEnabled(Component underwaterPass, bool enabled);
 
-        bool IsUnderwaterRendererActive(Component renderer);
+        bool IsUnderwaterPassActive(Component underwaterPass);
 
-        void SetCopyOceanMaterialParamsEachFrame(Component renderer, bool enabled);
+        void SetCopyOceanMaterialParamsEachFrame(Component underwaterPass, bool enabled);
 
-        void CopyUnderwaterRendererSettings(Component source, Component target);
+        void CopyUnderwaterPassSettings(Component source, Component target);
 
         bool IsOceanCameraOwnedBy(Camera camera);
 

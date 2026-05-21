@@ -1,7 +1,7 @@
 # Save Binary Header
 Date: 2026-05-14
 Owner: SAVE_HASH_CRYPTOGRAPHER
-Status: INTEGRITY SECURED / PYTHON_REFERENCE_FUZZ PASSED / PENDING UNITY VERIFICATION
+Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -63,7 +63,7 @@ The next ABI-compatible extension must keep the first `56` bytes intact and appe
 | 56 | 8 | `MasterStateHashLo` | little-endian `ulong` |
 | 64 | 8 | `MasterStateHashHi` | little-endian `ulong` |
 
-`CurrentHeaderSizeV10 = 72`. This v10 master-hash header is staged/helper context only: the active `SaveBinaryStorage` writer is already `CurrentVersion = 0x000B` with a 56-byte current header and `AlignedSectionHeaderVersion = 0x000B`. Any future active writer integration of this 72-byte hash header must reconcile with current `0x000B` rather than bumping from `0x0009` to `0x000A`.
+`CurrentHeaderSizeV10 = 72`. This v10 master-hash header is staged/helper context only: the active `SaveBinaryStorage` writer is already `CurrentVersion = 0x000B` with a 56-byte current header and `AlignedSectionHeaderVersion = 0x000B`. Any future active writer integration of this 72-byte hash header must reconcile with current `0x000B`.
 
 `MasterStateHash` storage order is exactly `lo64` then `hi64`; the canonical byte dump is `BitConverter.GetBytes(lo64)` followed by `BitConverter.GetBytes(hi64)` on a little-endian writer. A Burst C# writer must not use platform-native struct dumps for this field unless the struct has explicit layout and the byte order is separately tested.
 

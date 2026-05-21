@@ -254,34 +254,23 @@ namespace Hecton8.Animation.IK
             if (!VRPhysicalHandPresenceLayout.Validate())
                 return false;
 
-            inputs = vault.GetBuffer<VRHandPresenceInput>(
-                BufferID.HandPresenceInput,
-                VRPhysicalHandPresenceConstants.HandCount,
-                SystemID.GameplayPlayer);
-            outputs = vault.GetBuffer<VRHandPresenceOutput>(
-                BufferID.HandPresenceOutput,
-                VRPhysicalHandPresenceConstants.HandCount,
-                SystemID.GameplayPlayer);
-            handTargetAup = vault.GetBuffer<VRHandAupPose>(
-                BufferID.HandTargetAUP,
-                VRPhysicalHandPresenceConstants.HandCount,
-                SystemID.GameplayPlayer);
-            handActualAup = vault.GetBuffer<VRHandAupPose>(
-                BufferID.HandActualAUP,
-                VRPhysicalHandPresenceConstants.HandCount,
-                SystemID.GameplayPlayer);
-            grabStates = vault.GetBuffer<VRHandGrabState>(
-                BufferID.HandGrabState,
-                VRPhysicalHandPresenceConstants.HandCount,
-                SystemID.GameplayPlayer);
-            telemetryRing = vault.GetBuffer<VRHandIkTelemetryEntry>(
-                BufferID.HandIkTelemetryRing,
-                VRPhysicalHandPresenceConstants.TelemetryCapacity,
-                SystemID.GameplayPlayer);
-            telemetryCursor = vault.GetBuffer<int>(
-                BufferID.HandIkTelemetryCursor,
-                1,
-                SystemID.GameplayPlayer);
+            if (!TryResolveLane(vault, BufferID.HandPresenceInput, VRPhysicalHandPresenceConstants.HandCount, out inputs) ||
+                !TryResolveLane(vault, BufferID.HandPresenceOutput, VRPhysicalHandPresenceConstants.HandCount, out outputs) ||
+                !TryResolveLane(vault, BufferID.HandTargetAUP, VRPhysicalHandPresenceConstants.HandCount, out handTargetAup) ||
+                !TryResolveLane(vault, BufferID.HandActualAUP, VRPhysicalHandPresenceConstants.HandCount, out handActualAup) ||
+                !TryResolveLane(vault, BufferID.HandGrabState, VRPhysicalHandPresenceConstants.HandCount, out grabStates) ||
+                !TryResolveLane(vault, BufferID.HandIkTelemetryRing, VRPhysicalHandPresenceConstants.TelemetryCapacity, out telemetryRing) ||
+                !TryResolveLane(vault, BufferID.HandIkTelemetryCursor, 1, out telemetryCursor))
+            {
+                inputs = default;
+                outputs = default;
+                handTargetAup = default;
+                handActualAup = default;
+                grabStates = default;
+                telemetryRing = default;
+                telemetryCursor = default;
+                return false;
+            }
 
             return inputs.IsCreated &&
                    outputs.IsCreated &&
@@ -297,6 +286,23 @@ namespace Hecton8.Animation.IK
                    grabStates.Length >= VRPhysicalHandPresenceConstants.HandCount &&
                    telemetryRing.Length >= VRPhysicalHandPresenceConstants.TelemetryCapacity &&
                    telemetryCursor.Length >= 1;
+        }
+
+        private static bool TryResolveLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GameplayPlayer);
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
     }
 

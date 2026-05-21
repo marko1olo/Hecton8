@@ -6,10 +6,8 @@ using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -81,7 +79,7 @@ namespace Hecton8.Core
     public sealed unsafe class GlobalShaderDispatcher : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int RequiredShaderGlobalSlots = HectonShaderGlobalDataVaultBridge.SlotCount;
-        private const int ShaderGlobalsDtoSlot = 8;
+        private const int ShaderGlobalsDtoSlot = HectonShaderGlobalDataVaultBridge.ShaderGlobalsDtoSlot;
         private const int MockWeatherSlot = 12;
         private const int AmbientSlot = 13;
         private const int CausticRuntimeSlot = 14;
@@ -89,13 +87,10 @@ namespace Hecton8.Core
         private const int AupOffsetSlot = 16;
         private const int ResolutionSlot = 17;
         private const int HazardSlot = 18;
-        private const int CausticProjectionSlot = 20;
-        private const int ThermalPackedSlotStart = 32;
-        private const int ThermalAnomalyCapacity = 8;
-        private const int DynamicWakeCapacity = 16;
-        private const int DynamicWakeLowTierCapacity = 4;
-        private const int TelemetrySlotStart = 64;
-        private const int TelemetryCapacity = 300;
+        private const int ThermalPackedSlotStart = HectonShaderGlobalDataVaultBridge.ThermalPackedSlotStart;
+        private const int ThermalAnomalyCapacity = HectonShaderGlobalDataVaultBridge.ThermalPackedSlotCount;
+        private const int TelemetrySlotStart = HectonShaderGlobalDataVaultBridge.TelemetrySlotStart;
+        private const int TelemetryCapacity = HectonShaderGlobalDataVaultBridge.TelemetrySlotCount;
         private const int CsvScratchBytes = 4096;
         private const double ShaderTimeModuloSeconds = 3600.0;
         private static readonly double s_stopwatchTicksToMicroseconds = 1000000.0 / Stopwatch.Frequency;
@@ -123,14 +118,11 @@ namespace Hecton8.Core
         private static readonly int _OpticalExtinctionLutId = Shader.PropertyToID("_Optical_Extinction_LUT");
         private static readonly int _ExtinctionLutId = Shader.PropertyToID("_ExtinctionLUT");
         private static readonly int _ExtinctionCoefficientsId = Shader.PropertyToID("_H8ExtinctionCoefficients");
-        private static readonly int _CausticProjectionMatrixId = Shader.PropertyToID("_H8CausticProjectionMatrix");
-        private static readonly int _CausticRuntimeId = Shader.PropertyToID("_H8CausticRuntime");
         private static readonly int _HazardPulseIntensityId = Shader.PropertyToID("_HazardPulseIntensity");
         private static readonly int _HazardPulseParamsId = Shader.PropertyToID("_H8HazardPulseParams");
         private static readonly int _HardwareTierParamsId = Shader.PropertyToID("_H8HardwareTierParams");
         private static readonly int _BiomePaletteId = Shader.PropertyToID("_H8BiomePalette");
         private static readonly int _BiolumMasterPhaseId = Shader.PropertyToID("_BiolumMasterPhase");
-        private static readonly int _GlobalBiolumPhaseId = Shader.PropertyToID("_GlobalBiolumPhase");
         private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
         private static readonly int _AupShiftOffsetId = Shader.PropertyToID("_AupShiftOffset");
         private static readonly int _AupJitterMaskId = Shader.PropertyToID("_AupJitterMask");
@@ -142,12 +134,16 @@ namespace Hecton8.Core
         private static readonly int _HectonPowerBrownoutParamsId = Shader.PropertyToID("_HectonPowerBrownoutParams");
         private static readonly int _HectonRespawnDearLieParamsId = Shader.PropertyToID("_HectonRespawnDearLieParams");
         private static readonly int _HectonDeathFadeIntensityId = Shader.PropertyToID("_HectonDeathFadeIntensity");
+        private static readonly int _HectonDcsPhysiologyParamsId = Shader.PropertyToID("_HectonDcsPhysiologyParams");
+        private static readonly int _HectonGasToxicityParamsId = Shader.PropertyToID("_HectonGasToxicityParams");
+        private static readonly int _HectonSupersaturationScalarId = Shader.PropertyToID("_HectonSupersaturationScalar");
+        private static readonly int _HectonNarcosisScalarId = Shader.PropertyToID("_HectonNarcosisScalar");
+        private static readonly int _HypoxiaSignalId = Shader.PropertyToID("_HypoxiaSignal");
 
         private static GlobalShaderDispatcher s_instance;
         private static CommandBuffer s_commandBuffer;
         private static IDataVault s_cachedVault;
-        private static uint s_cachedVaultGeneration;
-        private static VaultBufferHandle<float4> s_shaderSlotsHandle;
+        private static VaultGenerationHandle<float4> s_shaderSlotsHandle;
         private static string s_csvPath;
         private static byte[] s_csvScratch;
         private static long s_csvLastWriteTicks;
@@ -158,8 +154,6 @@ namespace Hecton8.Core
         private static float4 s_csvFogColorDensity;
         private static float4 s_csvCausticFlow;
 
-        private GraphicsBuffer _wakeBuffer;
-        private GraphicsBuffer _wakeVectorBuffer;
         private GraphicsBuffer _thermalAnomalyBuffer;
         private GraphicsBuffer _emptyFloat4Buffer;
         private IDataVault _vault;
@@ -189,7 +183,6 @@ namespace Hecton8.Core
             }
 
             s_cachedVault = null;
-            s_cachedVaultGeneration = 0u;
             s_shaderSlotsHandle = default;
             s_csvPath = null;
             s_csvScratch = null;
@@ -257,8 +250,6 @@ namespace Hecton8.Core
             }
 
             TryUnregisterHotSwapListener();
-            ReleaseGraphicsBuffer(ref _wakeBuffer);
-            ReleaseGraphicsBuffer(ref _wakeVectorBuffer);
             ReleaseGraphicsBuffer(ref _thermalAnomalyBuffer);
             ReleaseGraphicsBuffer(ref _emptyFloat4Buffer);
             _vault = null;
@@ -296,9 +287,6 @@ namespace Hecton8.Core
 
         public void LateFrameTick()
         {
-            if (!_registeredLateFrame)
-                TryRegisterLateFrameTickable();
-
             long startTicks = Stopwatch.GetTimestamp();
             EnsureCommandBuffer();
             if (!ValidateLayouts())
@@ -327,12 +315,10 @@ namespace Hecton8.Core
 
             ShaderGlobalsDTO dto;
             Vector4 ambient;
-            Vector4 causticRuntime;
             Vector4 extinction;
             Vector4 aupOffset;
             Vector4 resolution;
             Vector4 hazard;
-            Matrix4x4 causticProjection;
             Vector4 biomePalette;
             int thermalCount;
             Vector4 thermalParams;
@@ -345,30 +331,29 @@ namespace Hecton8.Core
             Vector4 uberNoirRuntime;
             Vector4 powerBrownout;
             Vector4 respawnDearLie;
+            Vector4 physiologyDecompression;
+            Vector4 physiologyGasToxicity;
             float uberNoirFeatureMask;
             try
             {
                 if (!TryResolveShaderGlobalSlotsLocked(vault, out NativeArray<float4> slots))
                     return;
 
-                RunMockGlobalDataJob(slots, lowTierWeight01, (float)_shaderTime, ResolveSectorPhase());
+                RunMockGlobalDataKernel(slots, lowTierWeight01, (float)_shaderTime, ResolveSectorPhase());
 
                 ref ShaderGlobalsDTO dtoRef = ref ResolveShaderGlobalsRef(slots);
                 aupOffset = ResolveAupOffset();
                 resolution = ResolveResolutionState();
                 hazard = ResolveHazardPulse((float)_shaderTime);
-                causticProjection = ResolveCausticProjectionMatrix();
                 thermalCount = UpdateThermalPackedSlots(vault, slots, (float)_shaderTime);
                 thermalParams = UploadThermalBuffer(slots, thermalCount);
 
                 slots[AupOffsetSlot] = ToFloat4(aupOffset);
                 slots[ResolutionSlot] = ToFloat4(resolution);
                 slots[HazardSlot] = ToFloat4(hazard);
-                WriteMatrixSlots(slots, CausticProjectionSlot, causticProjection);
 
                 dto = dtoRef;
                 ambient = ToVector4(slots[AmbientSlot]);
-                causticRuntime = ToVector4(slots[CausticRuntimeSlot]);
                 extinction = ToVector4(slots[ExtinctionCoefficientsSlot]);
                 biomePalette = new Vector4(dto.FogColor.x, dto.FogColor.y, dto.FogColor.z, slots[MockWeatherSlot].w);
                 biolumMasterPhase = ToVector4(slots[HectonShaderGlobalDataVaultBridge.BiolumMasterPhaseSlot]);
@@ -383,6 +368,11 @@ namespace Hecton8.Core
                     ToVector4(slots[HectonShaderGlobalDataVaultBridge.PowerBrownoutSlot]),
                     globalQualityWeight01);
                 respawnDearLie = ToVector4(slots[HectonShaderGlobalDataVaultBridge.RespawnDearLieSlot]);
+                ResolvePhysiologyVisualPayloads(
+                    slots,
+                    globalQualityWeight01,
+                    out physiologyDecompression,
+                    out physiologyGasToxicity);
                 uberNoirFeatureMask = math.clamp(slots[HectonShaderGlobalDataVaultBridge.UberNoirFeatureMaskSlot].x, 0f, 16777215f);
             }
             finally
@@ -390,16 +380,14 @@ namespace Hecton8.Core
                 vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability);
             }
 
-            Vector4 wakeParams = UploadDynamicWakeBuffers(vault, lowTierWeight01);
+            Vector4 wakeParams = UploadDynamicWakeBuffers(lowTierWeight01);
             ExecuteGlobalDispatch(
                 in dto,
                 ambient,
-                causticRuntime,
                 extinction,
                 aupOffset,
                 resolution,
                 hazard,
-                causticProjection,
                 biomePalette,
                 wakeParams,
                 thermalParams,
@@ -412,6 +400,8 @@ namespace Hecton8.Core
                 uberNoirRuntime,
                 powerBrownout,
                 respawnDearLie,
+                physiologyDecompression,
+                physiologyGasToxicity,
                 uberNoirFeatureMask,
                 globalQualityWeight01,
                 lowTierWeight01);
@@ -425,30 +415,17 @@ namespace Hecton8.Core
         public static bool TryReadEditorTuning(out UberNoirGlobalTuning tuning)
         {
             tuning = default;
-            if (!EnsureShaderGlobalSlots(out IDataVault vault))
+            if (!TryResolveCachedShaderGlobalSlots(out NativeArray<float4> slots))
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
-                return false;
-
-            try
-            {
-                if (!TryResolveShaderGlobalSlotsLocked(vault, out NativeArray<float4> slots))
-                    return false;
-
-                ref readonly ShaderGlobalsDTO dto = ref ResolveShaderGlobalsReadonlyRef(slots);
-                float4 caustic = slots[CausticRuntimeSlot];
-                tuning.FogColor = ToVector4(dto.FogColor);
-                tuning.FlowVector = new Vector3(dto.FlowVector.x, dto.FlowVector.y, dto.FlowVector.z);
-                tuning.FogDensity = dto.FogColor.w;
-                tuning.CausticSpeed = caustic.x;
-                tuning.FlowMagnitude = dto.FlowMagnitude;
-                return true;
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability);
-            }
+            ref readonly ShaderGlobalsDTO dto = ref ResolveShaderGlobalsReadonlyRef(slots);
+            float4 caustic = slots[CausticRuntimeSlot];
+            tuning.FogColor = ToVector4(dto.FogColor);
+            tuning.FlowVector = new Vector3(dto.FlowVector.x, dto.FlowVector.y, dto.FlowVector.z);
+            tuning.FogDensity = dto.FogColor.w;
+            tuning.CausticSpeed = caustic.x;
+            tuning.FlowMagnitude = dto.FlowMagnitude;
+            return true;
         }
 
         public static bool TryWriteEditorTuning(in UberNoirGlobalTuning tuning)
@@ -498,75 +475,24 @@ namespace Hecton8.Core
         public static bool TryGetEditorGlobalFlow(out Vector4 flow)
         {
             flow = Vector4.zero;
-            if (!EnsureShaderGlobalSlots(out IDataVault vault))
+            if (!TryResolveCachedShaderGlobalSlots(out NativeArray<float4> slots))
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
-                return false;
-
-            try
-            {
-                if (!TryResolveShaderGlobalSlotsLocked(vault, out NativeArray<float4> slots))
-                    return false;
-
-                ref readonly ShaderGlobalsDTO dto = ref ResolveShaderGlobalsReadonlyRef(slots);
-                flow = new Vector4(dto.FlowVector.x, dto.FlowVector.y, dto.FlowVector.z, dto.FlowMagnitude);
-                return true;
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability);
-            }
+            ref readonly ShaderGlobalsDTO dto = ref ResolveShaderGlobalsReadonlyRef(slots);
+            flow = new Vector4(dto.FlowVector.x, dto.FlowVector.y, dto.FlowVector.z, dto.FlowMagnitude);
+            return true;
         }
 
         public static bool TryGetGizmoWake(int index, out Vector4 wake, out Vector4 vector)
         {
             wake = Vector4.zero;
             vector = Vector4.zero;
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null ||
-                index < 0 ||
-                !vault.TryGetBufferHandle(BufferID.WakeGlobalBuffer, out VaultBufferHandle<float4> wakesHandle) ||
-                !vault.TryGetBufferHandle(BufferID.WakeVectorBuffer, out VaultBufferHandle<float4> vectorsHandle))
-            {
-                return false;
-            }
-
-            bool wakeLocked = false;
-            bool vectorLocked = false;
-            try
-            {
-                wakeLocked = vault.TryLockBuffer(BufferID.WakeGlobalBuffer, SystemID.GraphicsScalability);
-                if (!wakeLocked)
-                    return false;
-
-                vectorLocked = vault.TryLockBuffer(BufferID.WakeVectorBuffer, SystemID.GraphicsScalability);
-                if (!vectorLocked)
-                    return false;
-
-                NativeArray<float4> wakes = wakesHandle.Resolve(vault);
-                NativeArray<float4> vectors = vectorsHandle.Resolve(vault);
-                if (!wakes.IsCreated || !vectors.IsCreated || index >= wakes.Length || index >= vectors.Length)
-                    return false;
-
-                float4 wakeValue = wakes[index];
-                float4 vectorValue = vectors[index];
-                wake = ToVector4(wakeValue);
-                vector = ToVector4(vectorValue);
-                return math.any(math.abs(wakeValue) > new float4(0.0001f));
-            }
-            finally
-            {
-                if (vectorLocked)
-                    vault.TryUnlockBuffer(BufferID.WakeVectorBuffer, SystemID.GraphicsScalability);
-                if (wakeLocked)
-                    vault.TryUnlockBuffer(BufferID.WakeGlobalBuffer, SystemID.GraphicsScalability);
-            }
+            return false;
         }
 
         private void TryRegisterLateFrameTickable()
         {
-            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -618,34 +544,39 @@ namespace Hecton8.Core
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            uint generation = vault.VaultGenerationID;
-            if (!ReferenceEquals(vault, s_cachedVault) ||
-                s_cachedVaultGeneration != generation ||
-                !s_shaderSlotsHandle.IsCreated ||
-                s_shaderSlotsHandle.Length < RequiredShaderGlobalSlots)
+            if (ReferenceEquals(vault, s_cachedVault) &&
+                TryResolveShaderSlotsHandle(vault, in s_shaderSlotsHandle, out _))
             {
-                if (vault.IsAllocationLocked)
-                    return false;
-
-                s_shaderSlotsHandle = vault.GetBufferHandle<float4>(
-                    BufferID.ShaderGlobalState,
-                    RequiredShaderGlobalSlots,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.ClearMemory);
-                s_cachedVault = vault;
-                s_cachedVaultGeneration = vault.VaultGenerationID;
+                return true;
             }
 
-            if (!s_shaderSlotsHandle.IsCreated || s_shaderSlotsHandle.Length < RequiredShaderGlobalSlots)
+            if (vault.TryGetGenerationHandle<float4>(BufferID.ShaderGlobalState, out VaultGenerationHandle<float4> existing) &&
+                TryResolveShaderSlotsHandle(vault, in existing, out _))
+            {
+                s_shaderSlotsHandle = existing;
+                s_cachedVault = vault;
+                return true;
+            }
+
+            if (vault.IsAllocationLocked)
                 return false;
 
+            VaultGenerationHandle<float4> allocated = vault.GetGenerationHandle<float4>(
+                BufferID.ShaderGlobalState,
+                RequiredShaderGlobalSlots,
+                SystemID.GraphicsScalability,
+                NativeArrayOptions.ClearMemory);
+            if (!TryResolveShaderSlotsHandle(vault, in allocated, out _))
+                return false;
+
+            s_shaderSlotsHandle = allocated;
+            s_cachedVault = vault;
             return true;
         }
 
         private static void InvalidateShaderGlobalSlotCache()
         {
             s_cachedVault = null;
-            s_cachedVaultGeneration = 0u;
             s_shaderSlotsHandle = default;
         }
 
@@ -653,16 +584,37 @@ namespace Hecton8.Core
         {
             slots = default;
             if (vault == null ||
-                !ReferenceEquals(vault, s_cachedVault) ||
-                vault.VaultGenerationID != s_cachedVaultGeneration ||
-                !s_shaderSlotsHandle.IsCreated ||
-                s_shaderSlotsHandle.Length < RequiredShaderGlobalSlots)
+                vault.IsCompactionFenceActive ||
+                !ReferenceEquals(vault, s_cachedVault))
             {
                 return false;
             }
 
-            slots = s_shaderSlotsHandle.Resolve(vault);
-            return slots.IsCreated && slots.Length >= RequiredShaderGlobalSlots;
+            return TryResolveShaderSlotsHandle(vault, in s_shaderSlotsHandle, out slots);
+        }
+
+        private static bool TryResolveCachedShaderGlobalSlots(out NativeArray<float4> slots)
+        {
+            slots = default;
+            IDataVault vault = s_cachedVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   TryResolveShaderSlotsHandle(vault, in s_shaderSlotsHandle, out slots);
+        }
+
+        private static bool TryResolveShaderSlotsHandle(
+            IDataVault vault,
+            in VaultGenerationHandle<float4> handle,
+            out NativeArray<float4> slots)
+        {
+            slots = default;
+            return vault != null &&
+                   handle.BufferID == (uint)BufferID.ShaderGlobalState &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.GraphicsScalability &&
+                   vault.TryResolveHandle(in handle, out slots) &&
+                   slots.IsCreated &&
+                   slots.Length >= RequiredShaderGlobalSlots;
         }
 
         private static void EnsureCommandBuffer()
@@ -680,16 +632,10 @@ namespace Hecton8.Core
         {
             if (_emptyFloat4Buffer == null || !_emptyFloat4Buffer.IsValid())
                 _emptyFloat4Buffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(1); // COLD ALLOC: GraphicsBuffer[1] - empty global buffer sentinel - owner: GlobalShaderDispatcher
-            if (_wakeBuffer == null || !_wakeBuffer.IsValid())
-                _wakeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(DynamicWakeCapacity); // COLD ALLOC: GraphicsBuffer[16] - dynamic wake positions - owner: GlobalShaderDispatcher
-            if (_wakeVectorBuffer == null || !_wakeVectorBuffer.IsValid())
-                _wakeVectorBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(DynamicWakeCapacity); // COLD ALLOC: GraphicsBuffer[16] - dynamic wake vectors - owner: GlobalShaderDispatcher
             if (_thermalAnomalyBuffer == null || !_thermalAnomalyBuffer.IsValid())
                 _thermalAnomalyBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(ThermalAnomalyCapacity); // COLD ALLOC: GraphicsBuffer[8] - thermal anomaly payload - owner: GlobalShaderDispatcher
 
             return _emptyFloat4Buffer != null && _emptyFloat4Buffer.IsValid() &&
-                   _wakeBuffer != null && _wakeBuffer.IsValid() &&
-                   _wakeVectorBuffer != null && _wakeVectorBuffer.IsValid() &&
                    _thermalAnomalyBuffer != null && _thermalAnomalyBuffer.IsValid();
         }
 
@@ -732,7 +678,7 @@ namespace Hecton8.Core
 
         private static bool TryFindLegacyShaderConstants()
         {
-            string projectRoot = ResolveProjectRoot();
+            string projectRoot = BuildProjectRootPathCold();
             if (string.IsNullOrEmpty(projectRoot))
                 return false;
 
@@ -760,9 +706,9 @@ namespace Hecton8.Core
             slots[ExtinctionCoefficientsSlot] = new float4(0.624f, 0.0434f, 0.0106f, 0.024f);
         }
 
-        private void RunMockGlobalDataJob(NativeArray<float4> slots, float lowTierWeight01, float shaderTime, float sectorPhase)
+        private void RunMockGlobalDataKernel(NativeArray<float4> slots, float lowTierWeight01, float shaderTime, float sectorPhase)
         {
-            MockGlobalShaderDataJob job = new MockGlobalShaderDataJob
+            MockGlobalShaderDataKernel kernel = new MockGlobalShaderDataKernel
             {
                 Slots = slots,
                 ShaderTime = shaderTime,
@@ -776,8 +722,8 @@ namespace Hecton8.Core
                 CsvFogColorDensity = s_csvFogColorDensity,
                 CsvCausticFlow = s_csvCausticFlow
             };
-            // Shader global mock data is consumed in this method; direct Execute removes synchronous job-runner overhead without changing publish timing.
-            job.Execute();
+            // Tiny shader-slot kernel runs inline to avoid a same-frame schedule/readback loop.
+            kernel.ExecuteInline();
         }
 
         private static bool ValidateLayouts()
@@ -785,98 +731,35 @@ namespace Hecton8.Core
             return UnsafeUtility.SizeOf<ShaderGlobalsDTO>() == ShaderGlobalsDTO.SizeBytes &&
                    UnsafeUtility.SizeOf<MockWeatherState>() == MockWeatherState.SizeBytes &&
                    UnsafeUtility.SizeOf<UberNoirGlobalTuning>() == UberNoirGlobalTuning.SizeBytes &&
+                   ShaderGlobalsDTO.SizeBytes == HectonShaderGlobalDataVaultBridge.ShaderGlobalsDtoSlotCount * UnsafeUtility.SizeOf<float4>() &&
                    ShaderGlobalsDtoSlot % 1 == 0 &&
                    (ShaderGlobalsDtoSlot * UnsafeUtility.SizeOf<float4>()) % 16 == 0 &&
+                   MockWeatherSlot == HectonShaderGlobalDataVaultBridge.DispatcherRuntimeSlotStart &&
+                   HazardSlot == HectonShaderGlobalDataVaultBridge.DispatcherRuntimeSlotStart + HectonShaderGlobalDataVaultBridge.DispatcherRuntimeSlotCount - 1 &&
+                   HectonShaderGlobalDataVaultBridge.ValidateSharedSlotMap() &&
                    HectonShaderGlobalDataVaultBridge.PowerBrownoutSlot < TelemetrySlotStart &&
                    HectonShaderGlobalDataVaultBridge.RespawnDearLieSlot < TelemetrySlotStart &&
                    TelemetrySlotStart + TelemetryCapacity <= RequiredShaderGlobalSlots;
         }
 
-        private Vector4 UploadDynamicWakeBuffers(IDataVault vault, float lowTierWeight01)
+        private Vector4 UploadDynamicWakeBuffers(float lowTierWeight01)
         {
             lowTierWeight01 = math.saturate(lowTierWeight01);
             Vector4 fallbackParams = new Vector4(0f, lowTierWeight01, 0f, 0f);
-            if (!EnsureGpuBuffers() ||
-                vault == null ||
-                !vault.TryGetBufferHandle(BufferID.WakeGlobalBuffer, out VaultBufferHandle<float4> wakeHandle) ||
-                !vault.TryGetBufferHandle(BufferID.WakeVectorBuffer, out VaultBufferHandle<float4> vectorHandle))
-            {
-                _lastWakeParams = fallbackParams;
-                return _lastWakeParams;
-            }
-
-            bool wakeLocked = false;
-            bool vectorLocked = false;
-            try
-            {
-                wakeLocked = vault.TryLockBuffer(BufferID.WakeGlobalBuffer, SystemID.GraphicsScalability);
-                if (!wakeLocked)
-                {
-                    _lastWakeParams = fallbackParams;
-                    return _lastWakeParams;
-                }
-
-                vectorLocked = vault.TryLockBuffer(BufferID.WakeVectorBuffer, SystemID.GraphicsScalability);
-                if (!vectorLocked)
-                {
-                    _lastWakeParams = fallbackParams;
-                    return _lastWakeParams;
-                }
-
-                NativeArray<float4> wakes = wakeHandle.Resolve(vault);
-                NativeArray<float4> vectors = vectorHandle.Resolve(vault);
-                if (!wakes.IsCreated || !vectors.IsCreated)
-                {
-                    _lastWakeParams = fallbackParams;
-                    return _lastWakeParams;
-                }
-
-                int uploadCount = math.min(DynamicWakeCapacity, math.min(wakes.Length, vectors.Length));
-                if (uploadCount <= 0)
-                {
-                    _lastWakeParams = fallbackParams;
-                    return _lastWakeParams;
-                }
-
-                int lowLimit = math.min(DynamicWakeLowTierCapacity, uploadCount);
-                int slotLimit = (int)math.ceil(math.lerp(uploadCount, lowLimit, lowTierWeight01));
-                if (slotLimit < lowLimit)
-                    slotLimit = lowLimit;
-                if (slotLimit > uploadCount)
-                    slotLimit = uploadCount;
-
-                GraphicsBufferUploadUtility.UploadNativeArray(_wakeBuffer, wakes, slotLimit);
-                GraphicsBufferUploadUtility.UploadNativeArray(_wakeVectorBuffer, vectors, slotLimit);
-
-                int activeCount = 0;
-                for (int i = 0; i < slotLimit; i++)
-                {
-                    if (math.any(math.abs(wakes[i]) > new float4(0.0001f)) ||
-                        math.any(math.abs(vectors[i]) > new float4(0.0001f)))
-                    {
-                        activeCount++;
-                    }
-                }
-
-                _lastWakeParams = new Vector4(slotLimit, lowTierWeight01, math.min(activeCount, slotLimit), 1f);
-                return _lastWakeParams;
-            }
-            finally
-            {
-                if (vectorLocked)
-                    vault.TryUnlockBuffer(BufferID.WakeVectorBuffer, SystemID.GraphicsScalability);
-                if (wakeLocked)
-                    vault.TryUnlockBuffer(BufferID.WakeGlobalBuffer, SystemID.GraphicsScalability);
-            }
+            _lastWakeParams = fallbackParams;
+            return _lastWakeParams;
         }
 
         private int UpdateThermalPackedSlots(IDataVault vault, NativeArray<float4> slots, float shaderTime)
         {
             if (vault == null ||
                 !slots.IsCreated ||
-                !vault.TryGetBufferHandle(BufferID.SubmarineFluidExteriorThermalCenters, out VaultBufferHandle<float3> centersHandle) ||
-                !vault.TryGetBufferHandle(BufferID.SubmarineFluidExteriorThermalTemperatures, out VaultBufferHandle<float> temperaturesHandle) ||
-                !vault.TryGetBufferHandle(BufferID.SubmarineFluidExteriorThermalLifetimes, out VaultBufferHandle<float> lifetimesHandle))
+                !vault.TryGetGenerationHandle<float3>(BufferID.SubmarineFluidExteriorThermalCenters, out VaultGenerationHandle<float3> centersHandle) ||
+                !IsThermalSourceHandleOwned(in centersHandle, BufferID.SubmarineFluidExteriorThermalCenters) ||
+                !vault.TryGetGenerationHandle<float>(BufferID.SubmarineFluidExteriorThermalTemperatures, out VaultGenerationHandle<float> temperaturesHandle) ||
+                !IsThermalSourceHandleOwned(in temperaturesHandle, BufferID.SubmarineFluidExteriorThermalTemperatures) ||
+                !vault.TryGetGenerationHandle<float>(BufferID.SubmarineFluidExteriorThermalLifetimes, out VaultGenerationHandle<float> lifetimesHandle) ||
+                !IsThermalSourceHandleOwned(in lifetimesHandle, BufferID.SubmarineFluidExteriorThermalLifetimes))
             {
                 return WriteMockThermalPackedSlot(slots, shaderTime);
             }
@@ -898,11 +781,15 @@ namespace Hecton8.Core
                 if (!lifetimesLocked)
                     return WriteMockThermalPackedSlot(slots, shaderTime);
 
-                NativeArray<float3> centers = centersHandle.Resolve(vault);
-                NativeArray<float> temperatures = temperaturesHandle.Resolve(vault);
-                NativeArray<float> lifetimes = lifetimesHandle.Resolve(vault);
-                if (!centers.IsCreated || !temperatures.IsCreated || !lifetimes.IsCreated)
+                if (!vault.TryResolveHandle(in centersHandle, out NativeArray<float3> centers) ||
+                    !vault.TryResolveHandle(in temperaturesHandle, out NativeArray<float> temperatures) ||
+                    !vault.TryResolveHandle(in lifetimesHandle, out NativeArray<float> lifetimes) ||
+                    !centers.IsCreated ||
+                    !temperatures.IsCreated ||
+                    !lifetimes.IsCreated)
+                {
                     return WriteMockThermalPackedSlot(slots, shaderTime);
+                }
 
                 int count = math.min(ThermalAnomalyCapacity, math.min(centers.Length, math.min(temperatures.Length, lifetimes.Length)));
                 int active = 0;
@@ -931,6 +818,15 @@ namespace Hecton8.Core
                 if (centersLocked)
                     vault.TryUnlockBuffer(BufferID.SubmarineFluidExteriorThermalCenters, SystemID.GraphicsScalability);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsThermalSourceHandleOwned<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.VehiclesPhysics;
         }
 
         private static int WriteMockThermalPackedSlot(NativeArray<float4> slots, float shaderTime)
@@ -983,12 +879,10 @@ namespace Hecton8.Core
         private void ExecuteGlobalDispatch(
             in ShaderGlobalsDTO dto,
             Vector4 ambient,
-            Vector4 causticRuntime,
             Vector4 extinction,
             Vector4 aupOffset,
             Vector4 resolution,
             Vector4 hazard,
-            Matrix4x4 causticProjection,
             Vector4 biomePalette,
             Vector4 wakeParams,
             Vector4 thermalParams,
@@ -1001,6 +895,8 @@ namespace Hecton8.Core
             Vector4 uberNoirRuntime,
             Vector4 powerBrownout,
             Vector4 respawnDearLie,
+            Vector4 physiologyDecompression,
+            Vector4 physiologyGasToxicity,
             float uberNoirFeatureMask,
             float globalQualityWeight01,
             float lowTierWeight01)
@@ -1029,8 +925,6 @@ namespace Hecton8.Core
             cmd.SetGlobalVector(_ExtinctionLutParamsId, extinctionLutParams);
             cmd.SetGlobalVector(_ExtinctionLutRuntimeId, extinctionLutRuntime);
             cmd.SetGlobalVector(_ExtinctionLutWeatherParamsId, extinctionLutWeather);
-            cmd.SetGlobalMatrix(_CausticProjectionMatrixId, causticProjection);
-            cmd.SetGlobalVector(_CausticRuntimeId, causticRuntime);
             cmd.SetGlobalVector(_BiomePaletteId, biomePalette);
             cmd.SetGlobalVector(_HardwareTierParamsId, new Vector4(
                 math.saturate(globalQualityWeight01),
@@ -1038,17 +932,21 @@ namespace Hecton8.Core
                 _generatedEmergencyGlobals ? 1f : 0f,
                 _activeKeywordCount));
             cmd.SetGlobalVector(_BiolumMasterPhaseId, biolumMasterPhase);
-            cmd.SetGlobalFloat(_GlobalBiolumPhaseId, biolumMasterPhase.x);
             cmd.SetGlobalVector(_HectonUberNoirRuntimeParamsId, uberNoirRuntime);
             cmd.SetGlobalFloat(_HectonActiveShaderFeatureMaskId, uberNoirFeatureMask);
             cmd.SetGlobalVector(_HectonPowerBrownoutParamsId, powerBrownout);
             cmd.SetGlobalVector(_HectonRespawnDearLieParamsId, respawnDearLie);
             cmd.SetGlobalFloat(_HectonDeathFadeIntensityId, math.saturate(respawnDearLie.x));
+            cmd.SetGlobalVector(_HectonDcsPhysiologyParamsId, physiologyDecompression);
+            cmd.SetGlobalFloat(_HectonSupersaturationScalarId, math.saturate(physiologyDecompression.x));
+            cmd.SetGlobalFloat(_HectonNarcosisScalarId, math.saturate(physiologyDecompression.y));
+            cmd.SetGlobalVector(_HectonGasToxicityParamsId, physiologyGasToxicity);
+            cmd.SetGlobalFloat(_HypoxiaSignalId, math.saturate(physiologyGasToxicity.x));
             cmd.SetGlobalVector(_DynamicWakeParamsId, wakeParams);
             cmd.SetGlobalVector(_ThermalAnomalyParamsId, thermalParams);
 
-            GraphicsBuffer wakeBuffer = wakeParams.z > 0.5f ? _wakeBuffer : _emptyFloat4Buffer;
-            GraphicsBuffer wakeVectorBuffer = wakeParams.z > 0.5f ? _wakeVectorBuffer : _emptyFloat4Buffer;
+            GraphicsBuffer wakeBuffer = _emptyFloat4Buffer;
+            GraphicsBuffer wakeVectorBuffer = _emptyFloat4Buffer;
             if (wakeBuffer != null && wakeBuffer.IsValid())
                 cmd.SetGlobalBuffer(_DynamicWakesId, wakeBuffer);
             if (wakeVectorBuffer != null && wakeVectorBuffer.IsValid())
@@ -1158,20 +1056,6 @@ namespace Hecton8.Core
             return exposure;
         }
 
-        private Matrix4x4 ResolveCausticProjectionMatrix()
-        {
-            Vector3 lightDirection = NormalizeVector3OrDefault(new Vector3(-0.31f, -0.91f, -0.27f), Vector3.down);
-            Light sun = RenderSettings.sun;
-            if (sun != null)
-                lightDirection = NormalizeVector3OrDefault(-sun.transform.forward, lightDirection);
-
-            Vector3 up = math.abs(Vector3.Dot(lightDirection, Vector3.up)) > 0.95f ? Vector3.forward : Vector3.up;
-            Quaternion rotation = Quaternion.LookRotation(lightDirection, up);
-            Matrix4x4 view = Matrix4x4.TRS(Vector3.zero, rotation, Vector3.one).inverse;
-            Matrix4x4 scale = Matrix4x4.Scale(new Vector3(0.018f, 0.018f, 1f));
-            return scale * view;
-        }
-
         private float ResolveSectorPhase()
         {
             double3 offset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
@@ -1238,7 +1122,7 @@ namespace Hecton8.Core
                 return;
 
             _dumpedOverBudget = true;
-            string projectRoot = ResolveProjectRoot();
+            string projectRoot = BuildProjectRootPathCold();
             if (string.IsNullOrEmpty(projectRoot))
                 return;
 
@@ -1304,7 +1188,7 @@ namespace Hecton8.Core
         {
             if (string.IsNullOrEmpty(s_csvPath))
             {
-                string root = ResolveProjectRoot();
+                string root = BuildProjectRootPathCold();
                 s_csvPath = string.IsNullOrEmpty(root) ? CsvOverrideFileName : Path.Combine(root, CsvOverrideFileName);
             }
 
@@ -1321,7 +1205,7 @@ namespace Hecton8.Core
                     return;
 
                 s_csvLastWriteTicks = ticks;
-                byte[] scratch = GetCsvScratch();
+                byte[] scratch = AcquireCsvScratchCold();
                 using FileStream stream = new FileStream(s_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 int length = stream.Read(scratch, 0, scratch.Length);
                 if (TryParseCsvOverride(scratch, length, out float4 fogColorDensity, out float4 causticFlow))
@@ -1338,7 +1222,7 @@ namespace Hecton8.Core
             }
         }
 
-        private static byte[] GetCsvScratch()
+        private static byte[] AcquireCsvScratchCold()
         {
             if (s_csvScratch == null)
                 s_csvScratch = new byte[CsvScratchBytes]; // COLD ALLOC: byte[4096] - CSV override read window - owner: GlobalShaderDispatcher
@@ -1453,7 +1337,7 @@ namespace Hecton8.Core
             return value >= (byte)'0' && value <= (byte)'9';
         }
 
-        private static string ResolveProjectRoot()
+        private static string BuildProjectRootPathCold()
         {
             string dataPath = Application.dataPath;
             return string.IsNullOrEmpty(dataPath) ? null : Path.GetFullPath(Path.Combine(dataPath, ".."));
@@ -1482,6 +1366,76 @@ namespace Hecton8.Core
             return ref UnsafeUtility.AsRef<ShaderGlobalsDTO>((byte*)basePtr + (ShaderGlobalsDtoSlot * UnsafeUtility.SizeOf<float4>()));
         }
 
+        private static void ResolvePhysiologyVisualPayloads(
+            NativeArray<float4> slots,
+            float globalQualityWeight01,
+            out Vector4 decompression,
+            out Vector4 gasToxicity)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight01) ? globalQualityWeight01 : 1f);
+            float4 decompressionPayload = slots[HectonShaderGlobalDataVaultBridge.PhysiologyDecompressionSlot];
+            float4 gasPayload = slots[HectonShaderGlobalDataVaultBridge.PhysiologyGasToxicitySlot];
+
+            SanitizePhysiologyVisualPayloads(ref decompressionPayload, ref gasPayload, quality);
+
+            ReadOnlySpan<PhysiologyStateSignal> signals = SignalBus<PhysiologyStateSignal>.GetFrameSnapshot();
+            if (signals.Length > 0)
+            {
+                for (int i = 0; i < signals.Length; i++)
+                {
+                    PhysiologyStateSignal signal = signals[i];
+                    ApplyPhysiologyVisualSignal(in signal, quality, ref decompressionPayload, ref gasPayload);
+                }
+            }
+
+            if (GlobalSignals.TryGetLatestPhysiologyStateSignal(out PhysiologyStateSignal latest, out int sequence) && sequence > 0)
+                ApplyPhysiologyVisualSignal(in latest, quality, ref decompressionPayload, ref gasPayload);
+
+            decompressionPayload.w = quality;
+            gasPayload.w = quality;
+            slots[HectonShaderGlobalDataVaultBridge.PhysiologyDecompressionSlot] = decompressionPayload;
+            slots[HectonShaderGlobalDataVaultBridge.PhysiologyGasToxicitySlot] = gasPayload;
+            decompression = ToVector4(decompressionPayload);
+            gasToxicity = ToVector4(gasPayload);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ApplyPhysiologyVisualSignal(
+            in PhysiologyStateSignal signal,
+            float quality,
+            ref float4 decompressionPayload,
+            ref float4 gasPayload)
+        {
+            if (signal.Cause == PhysiologyStateSignal.CauseDecompression)
+            {
+                decompressionPayload.x = math.saturate(signal.Supersaturation01);
+                decompressionPayload.y = math.saturate(signal.Narcosis01);
+                decompressionPayload.z = math.max(0f, math.isfinite(signal.AmbientPressureAtm) ? signal.AmbientPressureAtm : 0f);
+                decompressionPayload.w = quality;
+            }
+            else if (signal.SourceHash == PhysiologyStateSignal.SourceShinobuPhysiology &&
+                     signal.Cause == PhysiologyStateSignal.CauseGasToxicity)
+            {
+                gasPayload.x = math.saturate(signal.Supersaturation01);
+                gasPayload.y = signal.GasCnsSeverity * (1f / 255f);
+                gasPayload.z = signal.GasCarbonDioxideSeverity * (1f / 255f);
+                gasPayload.w = quality;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SanitizePhysiologyVisualPayloads(ref float4 decompressionPayload, ref float4 gasPayload, float quality)
+        {
+            decompressionPayload.x = math.saturate(math.isfinite(decompressionPayload.x) ? decompressionPayload.x : 0f);
+            decompressionPayload.y = math.saturate(math.isfinite(decompressionPayload.y) ? decompressionPayload.y : 0f);
+            decompressionPayload.z = math.max(0f, math.isfinite(decompressionPayload.z) ? decompressionPayload.z : 0f);
+            decompressionPayload.w = math.saturate(math.isfinite(decompressionPayload.w) ? decompressionPayload.w : quality);
+            gasPayload.x = math.saturate(math.isfinite(gasPayload.x) ? gasPayload.x : 0f);
+            gasPayload.y = math.saturate(math.isfinite(gasPayload.y) ? gasPayload.y : 0f);
+            gasPayload.z = math.saturate(math.isfinite(gasPayload.z) ? gasPayload.z : 0f);
+            gasPayload.w = math.saturate(math.isfinite(gasPayload.w) ? gasPayload.w : quality);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector4 ToVector4(float4 value)
         {
@@ -1491,12 +1445,31 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector4 SanitizePowerBrownoutVector(Vector4 value, float fallbackQuality01)
         {
+            float fallbackQuality = math.saturate(math.isfinite(fallbackQuality01) ? fallbackQuality01 : 1f);
+            bool uninitialized =
+                math.isfinite(value.x) &&
+                math.isfinite(value.y) &&
+                math.isfinite(value.z) &&
+                math.isfinite(value.w) &&
+                math.abs(value.x) + math.abs(value.y) + math.abs(value.z) + math.abs(value.w) <= 0.0001f;
+            if (uninitialized)
+            {
+                Vector4 fallback = default;
+                fallback.x = 1f;
+                fallback.w = fallbackQuality;
+                return fallback;
+            }
+
             float supply = math.saturate(math.isfinite(value.x) ? value.x : 1f);
             float severity = math.saturate(math.isfinite(value.y) ? value.y : 0f);
             float phase = math.max(0f, math.isfinite(value.z) ? value.z : 0f);
-            float fallbackQuality = math.saturate(math.isfinite(fallbackQuality01) ? fallbackQuality01 : 1f);
             float quality = math.saturate(math.isfinite(value.w) ? value.w : fallbackQuality);
-            return new Vector4(supply, severity, phase, quality);
+            Vector4 result = default;
+            result.x = supply;
+            result.y = severity;
+            result.z = phase;
+            result.w = quality;
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1523,16 +1496,6 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static Vector3 NormalizeVector3OrDefault(Vector3 value, Vector3 fallback)
-        {
-            float lengthSq = value.sqrMagnitude;
-            if (float.IsNaN(lengthSq) || float.IsInfinity(lengthSq) || lengthSq <= 0.0001f)
-                return fallback;
-
-            return value * (1f / Mathf.Sqrt(Mathf.Max(lengthSq, 0.0001f)));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float SafeFloat(double value)
         {
             if (double.IsNaN(value) || double.IsInfinity(value))
@@ -1540,18 +1503,8 @@ namespace Hecton8.Core
             return (float)math.clamp(value, -1000000.0, 1000000.0);
         }
 
-        private static void WriteMatrixSlots(NativeArray<float4> slots, int startSlot, Matrix4x4 matrix)
+        private struct MockGlobalShaderDataKernel
         {
-            slots[startSlot] = new float4(matrix.m00, matrix.m01, matrix.m02, matrix.m03);
-            slots[startSlot + 1] = new float4(matrix.m10, matrix.m11, matrix.m12, matrix.m13);
-            slots[startSlot + 2] = new float4(matrix.m20, matrix.m21, matrix.m22, matrix.m23);
-            slots[startSlot + 3] = new float4(matrix.m30, matrix.m31, matrix.m32, matrix.m33);
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct MockGlobalShaderDataJob : IJob
-        {
-            [NoAlias]
             public NativeArray<float4> Slots;
             public float ShaderTime;
             public float SectorPhase;
@@ -1564,7 +1517,7 @@ namespace Hecton8.Core
             public float4 CsvFogColorDensity;
             public float4 CsvCausticFlow;
 
-            public void Execute()
+            public void ExecuteInline()
             {
                 float storm = 0.5f + (0.5f * math.sin((ShaderTime * 0.071f) + SectorPhase));
                 float turbidity = math.saturate(0.28f + (storm * 0.44f));

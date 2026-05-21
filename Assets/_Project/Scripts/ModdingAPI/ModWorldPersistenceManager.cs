@@ -175,6 +175,9 @@ namespace Hecton8.Modding
                 return null;
             }
 
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition aup))
+                return null;
+
             GameObject instance = pool.Spawn(prefab, position, rotation);
             if (instance == null)
                 return null;
@@ -183,7 +186,6 @@ namespace Hecton8.Modding
             string spawnId = BuildSpawnId(modId);
             uint spawnHash = ModCommandDispatcher.ComputeModHash(spawnId);
             uint sceneHash = ModCommandDispatcher.ComputeModHash(sceneName);
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(position);
 
             ModWorldSpawnRecord record = new ModWorldSpawnRecord
             {
@@ -384,9 +386,11 @@ namespace Hecton8.Modding
 
                 Transform cachedTransform = marker.transform;
                 Vector3 runtimePosition = cachedTransform.position;
+                if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition aup))
+                    continue;
+
                 ModWorldSpawnRecord record = _records[index];
                 record.Position = runtimePosition;
-                AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
                 record.GridX = aup.GridX;
                 record.GridY = aup.GridY;
                 record.GridZ = aup.GridZ;
@@ -469,7 +473,9 @@ namespace Hecton8.Modding
                 return;
             }
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(record.Position);
+            if (!TryResolveAupFromRuntimeOrigin(record.Position, out AbsoluteUniversePosition aup))
+                return;
+
             record.GridX = aup.GridX;
             record.GridY = aup.GridY;
             record.GridZ = aup.GridZ;
@@ -492,6 +498,22 @@ namespace Hecton8.Modding
 
             float3 runtime = aup.ToRuntimeFloat3();
             return new Vector3(runtime.x, runtime.y, runtime.z);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!MathGuard.IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in aup);
         }
 
         private void TryRegisterWithSaveManager()

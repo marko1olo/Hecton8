@@ -87,23 +87,38 @@ namespace Hecton8.Power
         private bool _gasSeedPending;
         private bool _faultDumped;
 
-        [StructLayout(LayoutKind.Sequential, Size = TelemetryEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]
         private struct WfcOutpostPowerBootTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint GridHandle;
+            [FieldOffset(8)]
             public ulong SectorHash;
+            [FieldOffset(16)]
             public int NodeCount;
+            [FieldOffset(20)]
             public int DirectedEdgeCount;
+            [FieldOffset(24)]
             public int DoorCount;
+            [FieldOffset(28)]
             public int RoomCount;
+            [FieldOffset(32)]
             public int GeneratorNodeIndex;
+            [FieldOffset(36)]
             public float ReactorOutput01;
+            [FieldOffset(40)]
             public float SupplyRatio;
+            [FieldOffset(44)]
             public float BrownoutSeverity01;
+            [FieldOffset(48)]
             public uint Flags;
+            [FieldOffset(52)]
             public uint GraphHash;
+            [FieldOffset(56)]
             public uint Reserved0;
+            [FieldOffset(60)]
             public uint Reserved1;
         }
 

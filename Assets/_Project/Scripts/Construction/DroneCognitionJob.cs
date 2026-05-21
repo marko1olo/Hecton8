@@ -54,59 +54,119 @@ namespace Hecton8.Construction
         Hostile = 2
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 448)]
+    [StructLayout(LayoutKind.Explicit, Size = 448)]
     internal struct HeadlessDroneState
     {
+        [FieldOffset(0)]
         public int DroneId;
+        [FieldOffset(4)]
         public int HubGridId;
+        [FieldOffset(8)]
         public int HubSlot;
+        [FieldOffset(12)]
         public int TargetTaskIndex;
+        [FieldOffset(16)]
         public int TargetModuleId;
+        [FieldOffset(20)]
         public int SolderUnits;
+        [FieldOffset(24)]
         public int LoadedSolderCapacity;
+        [FieldOffset(28)]
         public byte State;
+        [FieldOffset(29)]
         public byte FactionBit;
+        [FieldOffset(30)]
         public byte CorridorTight;
+        [FieldOffset(31)]
         public byte Reserved0;
+        [FieldOffset(32)]
         public float BatteryPercent;
+        [FieldOffset(36)]
         public float RepairAccumulator;
+        [FieldOffset(40)]
         public float DockingElapsed;
+        [FieldOffset(44)]
         public float RebootElapsed;
+        [FieldOffset(48)]
         public float AvoidanceHysteresisSeconds;
+        [FieldOffset(52)]
         public float TransactionProgress;
+        [FieldOffset(56)]
         public float ServiceRadius;
+        [FieldOffset(60)]
         public float MaxSpeed;
+        [FieldOffset(64)]
         public float BatteryDrainPerSecond;
+        [FieldOffset(68)]
         public float RepairRatePerSecond;
+        [FieldOffset(72)]
         public float WeldPowerNormalized;
+        [FieldOffset(76)]
         public float WeldRangeMeters;
+        [FieldOffset(80)]
         public float3 Position;
+        [FieldOffset(92)]
         public float3 Velocity;
+        [FieldOffset(104)]
         public float3 HomePosition;
+        [FieldOffset(116)]
         public float3 TargetPosition;
+        [FieldOffset(128)]
         public float3 SupplyPosition;
+        [FieldOffset(140)]
         public float3 DockStartPosition;
+        [FieldOffset(152)]
         public quaternion Rotation;
+        [FieldOffset(168)]
         public quaternion HomeRotation;
+        [FieldOffset(184)]
         public quaternion DockStartRotation;
+        [FieldOffset(200)]
         public float DockingPathLengthMeters;
+        [FieldOffset(204)]
         public uint DockingRequestId;
+        [FieldOffset(208)]
         public byte DockingFlags;
+        [FieldOffset(209)]
         public byte DockingReserved0;
+        [FieldOffset(210)]
         public byte DockingReserved1;
+        [FieldOffset(211)]
         public byte DockingReserved2;
+        [FieldOffset(212)]
+        private uint _dockControlPad0;
+        [FieldOffset(216)]
         public double3 DockControlP0;
+        [FieldOffset(240)]
         public double3 DockControlP1;
+        [FieldOffset(264)]
         public double3 DockControlP2;
+        [FieldOffset(288)]
         public double3 DockControlP3;
+        [FieldOffset(312)]
         public double3 PositionAup;
+        [FieldOffset(336)]
         public double3 HomeAup;
+        [FieldOffset(360)]
         public double3 TargetAup;
+        [FieldOffset(384)]
         public double3 SupplyAup;
+        [FieldOffset(408)]
         public uint ReservedTail0;
+        [FieldOffset(412)]
         public uint ReservedTail1;
+        [FieldOffset(416)]
         public uint ReservedTail2;
+        [FieldOffset(420)]
         public uint ReservedTail3;
+        [FieldOffset(424)]
+        private uint _tailPad0;
+        [FieldOffset(428)]
+        private uint _tailPad1;
+        [FieldOffset(432)]
+        private ulong _tailPad2;
+        [FieldOffset(440)]
+        private ulong _tailPad3;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]

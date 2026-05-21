@@ -43,7 +43,7 @@
 - `AtlasSignalEvents` — NativeQueue-backed event lane
 - `Atlas6Events` — NativeQueue-backed event lane
 
-**Shader globals:** `_AtlasSignalStrength`, `_BiolumPulseTime`
+**Shader globals:** `_AtlasSignalStrength`
 
 **Kak ispolzovat:**
 1. `AtlasSignalSystem` — naznachit `atlasCorePosWorld` (pozitsiya yadra na -5000m)
@@ -124,7 +124,7 @@
 
 - `HectonBiolumController` — singleton: reagiruet na glubinu, zatmenie, signal Atlas-6
 
-**Shader globals:** `_BiolumIntensity`, `_BiolumPulseTime`
+**Shader globals:** none. Runtime biolum shader globals are owned by `BiolumPulseSyncRuntime`.
 
 ---
 

@@ -59,7 +59,7 @@ namespace Hecton8.Atmosphere
         [SerializeField] private Transform cameraTransform;
         [Tooltip("Registers this runtime as the active ocean kinematics provider through the Core OceanKinematicsRuntimeService.")]
         [SerializeField] private bool registerAsOceanAuthority = true;
-        [Tooltip("Loads weather_profiles.csv once through the native byte parser when the runtime is active.")]
+        [Tooltip("Editor-only source-data hydration for weather_profiles.csv; player runtime must use baked binary/default rows.")]
         [SerializeField] private bool loadWeatherProfilesCsv = true;
         [Tooltip("Forces narrative storm surge without waiting for the quest/global-state signal.")]
         [SerializeField] private bool forceStormSurge;
@@ -74,19 +74,19 @@ namespace Hecton8.Atmosphere
         [SerializeField, Range(0f, 1f)] private float qualityStepLimitMax = 1f;
 
         private IDataVault _vault;
-        private VaultBufferHandle<WaveParametersDTO> _waveHandle;
-        private VaultBufferHandle<AtmosphereDTO> _atmosphereHandle;
-        private VaultBufferHandle<WeatherStateDTO> _weatherHandle;
-        private VaultBufferHandle<OceanSurfaceTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<byte> _dumpScratchHandle;
-        private VaultBufferHandle<OceanSurfaceLodDTO> _lodHandle;
-        private VaultBufferHandle<float4> _readbackQueryHandle;
-        private VaultBufferHandle<float4> _readbackResultHandle;
-        private VaultBufferHandle<float4> _readbackCompletedQueryHandle;
-        private VaultBufferHandle<float4> _readbackRingQueryHandle;
-        private VaultBufferHandle<BeaufortProfileDTO> _beaufortProfileHandle;
-        private VaultBufferHandle<float4> _surfaceSwellHandle;
+        private VaultGenerationHandle<WaveParametersDTO> _waveHandle;
+        private VaultGenerationHandle<AtmosphereDTO> _atmosphereHandle;
+        private VaultGenerationHandle<WeatherStateDTO> _weatherHandle;
+        private VaultGenerationHandle<OceanSurfaceTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<byte> _dumpScratchHandle;
+        private VaultGenerationHandle<OceanSurfaceLodDTO> _lodHandle;
+        private VaultGenerationHandle<float4> _readbackQueryHandle;
+        private VaultGenerationHandle<float4> _readbackResultHandle;
+        private VaultGenerationHandle<float4> _readbackCompletedQueryHandle;
+        private VaultGenerationHandle<float4> _readbackRingQueryHandle;
+        private VaultGenerationHandle<BeaufortProfileDTO> _beaufortProfileHandle;
+        private VaultGenerationHandle<float4> _surfaceSwellHandle;
         private GraphicsBuffer _waveGraphicsBufferA;
         private GraphicsBuffer _waveGraphicsBufferB;
         private GraphicsBuffer _activeWaveGraphicsBuffer;
@@ -541,12 +541,12 @@ namespace Hecton8.Atmosphere
             waves = default;
             weather = default;
             atmosphere = default;
-            if (!TryResolveVault(out IDataVault vault))
+            if (!TryResolveRegisteredVault(out IDataVault vault))
                 return false;
 
-            bool hasWaves = vault.TryGetBuffer(BufferID.ShinobuOceanWaveParameters, out waves) && waves.IsCreated;
-            bool hasWeather = vault.TryGetBuffer(BufferID.ShinobuOceanWeatherState, out weather) && weather.IsCreated;
-            bool hasAtmosphere = vault.TryGetBuffer(BufferID.ShinobuOceanAtmosphere, out atmosphere) && atmosphere.IsCreated;
+            bool hasWaves = TryReadExistingVaultView(vault, BufferID.ShinobuOceanWaveParameters, out waves);
+            bool hasWeather = TryReadExistingVaultView(vault, BufferID.ShinobuOceanWeatherState, out weather);
+            bool hasAtmosphere = TryReadExistingVaultView(vault, BufferID.ShinobuOceanAtmosphere, out atmosphere);
             return hasWaves && hasWeather && hasAtmosphere;
         }
 
@@ -558,12 +558,12 @@ namespace Hecton8.Atmosphere
             completedQueries = default;
             completedResults = default;
             telemetry = default;
-            if (!TryResolveVault(out IDataVault vault))
+            if (!TryResolveDiagnosticVault(out IDataVault vault))
                 return false;
 
-            bool hasQueries = vault.TryGetBuffer(BufferID.ShinobuOceanWaveReadbackCompletedQueries, out completedQueries) && completedQueries.IsCreated;
-            bool hasResults = vault.TryGetBuffer(BufferID.ShinobuOceanWaveReadbackResults, out completedResults) && completedResults.IsCreated;
-            bool hasTelemetry = vault.TryGetBuffer(BufferID.ShinobuOceanTelemetryRing, out telemetry) && telemetry.IsCreated;
+            bool hasQueries = TryReadExistingVaultView(vault, BufferID.ShinobuOceanWaveReadbackCompletedQueries, out completedQueries);
+            bool hasResults = TryReadExistingVaultView(vault, BufferID.ShinobuOceanWaveReadbackResults, out completedResults);
+            bool hasTelemetry = TryReadExistingVaultView(vault, BufferID.ShinobuOceanTelemetryRing, out telemetry);
             return hasQueries && hasResults && hasTelemetry;
         }
 
@@ -572,69 +572,145 @@ namespace Hecton8.Atmosphere
             if (IsWaveParameterMutationLocked)
                 return false;
 
-            if (!TryResolveVault(out IDataVault vault) ||
-                !vault.TryGetBuffer(BufferID.ShinobuOceanWaveParameters, out NativeArray<WaveParametersDTO> waves) ||
-                !vault.TryGetBuffer(BufferID.ShinobuOceanWeatherState, out NativeArray<WeatherStateDTO> weather) ||
-                !vault.TryGetBuffer(BufferID.ShinobuOceanAtmosphere, out NativeArray<AtmosphereDTO> atmosphere))
-            {
+            if (!TryResolveRegisteredVault(out IDataVault vault) ||
+                !TryAcquireTunerWriteView(vault, BufferID.ShinobuOceanWaveParameters, OceanSurfaceAtmosphereConstants.WaveCapacity, out VaultGenerationHandle<WaveParametersDTO> wavesHandle, out NativeArray<WaveParametersDTO> waves))
                 return false;
-            }
 
-            for (int i = 0; i < waves.Length; i++)
+            bool weatherLocked = false;
+            bool atmosphereLocked = false;
+            bool profilesLocked = false;
+            VaultGenerationHandle<WeatherStateDTO> weatherHandle = default;
+            VaultGenerationHandle<AtmosphereDTO> atmosphereHandle = default;
+            VaultGenerationHandle<BeaufortProfileDTO> profilesHandle = default;
+            try
             {
-                WaveParametersDTO wave = waves[i];
-                for (int laneIndex = 0; laneIndex < OceanSurfaceAtmosphereConstants.WavesPerParameters; laneIndex++)
+                if (!TryAcquireTunerWriteView(vault, BufferID.ShinobuOceanWeatherState, 1, out weatherHandle, out NativeArray<WeatherStateDTO> weather))
+                    return false;
+                weatherLocked = true;
+
+                if (!TryAcquireTunerWriteView(vault, BufferID.ShinobuOceanAtmosphere, 1, out atmosphereHandle, out NativeArray<AtmosphereDTO> atmosphere))
+                    return false;
+                atmosphereLocked = true;
+
+                for (int i = 0; i < waves.Length; i++)
                 {
-                    float4 lane = HectonOceanSurfaceMath.GetWaveLane(wave, laneIndex);
-                    lane.y = math.saturate(waveSteepness);
-                    HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
+                    WaveParametersDTO wave = waves[i];
+                    for (int laneIndex = 0; laneIndex < OceanSurfaceAtmosphereConstants.WavesPerParameters; laneIndex++)
+                    {
+                        float4 lane = HectonOceanSurfaceMath.GetWaveLane(wave, laneIndex);
+                        lane.y = math.saturate(waveSteepness);
+                        HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
+                    }
+
+                    waves[i] = HectonOceanSurfaceMath.SanitizeWave(wave);
                 }
 
-                waves[i] = HectonOceanSurfaceMath.SanitizeWave(wave);
+                WeatherStateDTO state = weather[0];
+                state.WindDirectionSpeedStorm.z = math.max(0f, windSpeed);
+                state.SurfaceScalars.z = math.saturate(foamThreshold);
+                weather[0] = state;
+
+                AtmosphereDTO dto = atmosphere[0];
+                dto.ScatteringParams.y = math.max(0f, gasGiantGlow);
+                atmosphere[0] = dto;
+
+                if (TryAcquireTunerWriteView(vault, BufferID.ShinobuOceanBeaufortProfiles, OceanSurfaceAtmosphereConstants.BeaufortProfileCapacity, out profilesHandle, out NativeArray<BeaufortProfileDTO> profiles))
+                {
+                    profilesLocked = true;
+                    if (profiles.Length > 0)
+                    {
+                        BeaufortProfileDTO tuning = profiles[0];
+                        tuning.StateHash = QualityStepTuningHash;
+                        tuning.BaseSteepness = math.saturate(qualityMin);
+                        tuning.StormIntensity = math.saturate(waveSteepness);
+                        tuning.FoamThreshold = math.saturate(foamThreshold);
+                        tuning.FrequencyScale = math.saturate(qualityMax);
+                        tuning.Flags = 1u;
+                        profiles[0] = tuning;
+                    }
+                }
+
+                unchecked
+                {
+                    s_wavePayloadMutationVersion++;
+                }
+
+                return true;
             }
-
-            WeatherStateDTO state = weather[0];
-            state.WindDirectionSpeedStorm.z = math.max(0f, windSpeed);
-            state.SurfaceScalars.z = math.saturate(foamThreshold);
-            weather[0] = state;
-
-            AtmosphereDTO dto = atmosphere[0];
-            dto.ScatteringParams.y = math.max(0f, gasGiantGlow);
-            atmosphere[0] = dto;
-
-            if (vault.TryGetBuffer(BufferID.ShinobuOceanBeaufortProfiles, out NativeArray<BeaufortProfileDTO> profiles) &&
-                profiles.IsCreated &&
-                profiles.Length > 0)
+            finally
             {
-                BeaufortProfileDTO tuning = profiles[0];
-                tuning.StateHash = QualityStepTuningHash;
-                tuning.BaseSteepness = math.saturate(qualityMin);
-                tuning.StormIntensity = math.saturate(waveSteepness);
-                tuning.FoamThreshold = math.saturate(foamThreshold);
-                tuning.FrequencyScale = math.saturate(qualityMax);
-                tuning.Flags = 1u;
-                profiles[0] = tuning;
+                if (profilesLocked)
+                    vault.ReleaseWriteLock(in profilesHandle, SystemID.CoreDiagnostics);
+                if (atmosphereLocked)
+                    vault.ReleaseWriteLock(in atmosphereHandle, SystemID.CoreDiagnostics);
+                if (weatherLocked)
+                    vault.ReleaseWriteLock(in weatherHandle, SystemID.CoreDiagnostics);
+                vault.ReleaseWriteLock(in wavesHandle, SystemID.CoreDiagnostics);
             }
-
-            unchecked
-            {
-                s_wavePayloadMutationVersion++;
-            }
-            return true;
         }
 
-        private static bool TryResolveVault(out IDataVault vault)
+        private static bool TryResolveRegisteredVault(out IDataVault vault)
         {
             vault = GlobalRegistry.DataVault;
-            if (vault != null)
-                return true;
+            return vault != null;
+        }
 
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
+        private static bool TryResolveDiagnosticVault(out IDataVault vault)
+        {
+            return TryResolveRegisteredVault(out vault);
+        }
+
+        private static bool TryReadExistingVaultView<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool TryAcquireTunerWriteView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            handle = default;
+            buffer = default;
+            int required = math.max(1, requiredLength);
+            if (vault == null)
+                return false;
+
+            if (vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing) &&
+                vault.TryReadHandle(in existing, out NativeArray<T> existingBuffer) &&
+                existingBuffer.IsCreated &&
+                existingBuffer.Length >= required)
             {
-                vault = latest;
-                return true;
+                handle = existing;
+            }
+            else
+            {
+                if (vault.IsAllocationLocked)
+                    return false;
+
+                handle = vault.GetGenerationHandle<T>(
+                    bufferId,
+                    required,
+                    SystemID.HabitatAtmosphere,
+                    NativeArrayOptions.UninitializedMemory);
             }
 
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
+                return false;
+
+            if (buffer.IsCreated && buffer.Length >= required)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            buffer = default;
             return false;
         }
 
@@ -654,36 +730,36 @@ namespace Hecton8.Atmosphere
                 return true;
 
             IDataVault vault = _vault;
-            if (vault == null && !TryResolveVault(out vault))
+            if (vault == null && !TryResolveRegisteredVault(out vault))
                 return false;
 
             _vault = vault;
-            if (!_waveHandle.IsCreated)
-                _waveHandle = vault.GetBufferHandle<WaveParametersDTO>(BufferID.ShinobuOceanWaveParameters, OceanSurfaceAtmosphereConstants.WaveCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_atmosphereHandle.IsCreated)
-                _atmosphereHandle = vault.GetBufferHandle<AtmosphereDTO>(BufferID.ShinobuOceanAtmosphere, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_weatherHandle.IsCreated)
-                _weatherHandle = vault.GetBufferHandle<WeatherStateDTO>(BufferID.ShinobuOceanWeatherState, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_telemetryHandle.IsCreated)
-                _telemetryHandle = vault.GetBufferHandle<OceanSurfaceTelemetryEntry>(BufferID.ShinobuOceanTelemetryRing, OceanSurfaceAtmosphereConstants.TelemetryFrameCount, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_csvScratchHandle.IsCreated)
-                _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuOceanCsvScratch, CsvScratchBytes, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_dumpScratchHandle.IsCreated)
-                _dumpScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuOceanDumpScratch, DumpScratchBytes, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_lodHandle.IsCreated)
-                _lodHandle = vault.GetBufferHandle<OceanSurfaceLodDTO>(BufferID.ShinobuOceanLodState, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_readbackQueryHandle.IsCreated)
-                _readbackQueryHandle = vault.GetBufferHandle<float4>(BufferID.ShinobuOceanWaveReadbackQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_readbackResultHandle.IsCreated)
-                _readbackResultHandle = vault.GetBufferHandle<float4>(BufferID.ShinobuOceanWaveReadbackResults, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_readbackCompletedQueryHandle.IsCreated)
-                _readbackCompletedQueryHandle = vault.GetBufferHandle<float4>(BufferID.ShinobuOceanWaveReadbackCompletedQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_readbackRingQueryHandle.IsCreated)
-                _readbackRingQueryHandle = vault.GetBufferHandle<float4>(BufferID.ShinobuOceanWaveReadbackRingQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity * OceanSurfaceAtmosphereConstants.WaveReadbackRingSize, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_beaufortProfileHandle.IsCreated)
-                _beaufortProfileHandle = vault.GetBufferHandle<BeaufortProfileDTO>(BufferID.ShinobuOceanBeaufortProfiles, OceanSurfaceAtmosphereConstants.BeaufortProfileCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_surfaceSwellHandle.IsCreated)
-                _surfaceSwellHandle = vault.GetBufferHandle<float4>(BufferID.ShinobuOceanSurfaceSwell, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _waveHandle))
+                _waveHandle = vault.GetGenerationHandle<WaveParametersDTO>(BufferID.ShinobuOceanWaveParameters, OceanSurfaceAtmosphereConstants.WaveCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _atmosphereHandle))
+                _atmosphereHandle = vault.GetGenerationHandle<AtmosphereDTO>(BufferID.ShinobuOceanAtmosphere, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _weatherHandle))
+                _weatherHandle = vault.GetGenerationHandle<WeatherStateDTO>(BufferID.ShinobuOceanWeatherState, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _telemetryHandle))
+                _telemetryHandle = vault.GetGenerationHandle<OceanSurfaceTelemetryEntry>(BufferID.ShinobuOceanTelemetryRing, OceanSurfaceAtmosphereConstants.TelemetryFrameCount, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _csvScratchHandle))
+                _csvScratchHandle = vault.GetGenerationHandle<byte>(BufferID.ShinobuOceanCsvScratch, CsvScratchBytes, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _dumpScratchHandle))
+                _dumpScratchHandle = vault.GetGenerationHandle<byte>(BufferID.ShinobuOceanDumpScratch, DumpScratchBytes, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _lodHandle))
+                _lodHandle = vault.GetGenerationHandle<OceanSurfaceLodDTO>(BufferID.ShinobuOceanLodState, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _readbackQueryHandle))
+                _readbackQueryHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _readbackResultHandle))
+                _readbackResultHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackResults, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _readbackCompletedQueryHandle))
+                _readbackCompletedQueryHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackCompletedQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _readbackRingQueryHandle))
+                _readbackRingQueryHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuOceanWaveReadbackRingQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity * OceanSurfaceAtmosphereConstants.WaveReadbackRingSize, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _beaufortProfileHandle))
+                _beaufortProfileHandle = vault.GetGenerationHandle<BeaufortProfileDTO>(BufferID.ShinobuOceanBeaufortProfiles, OceanSurfaceAtmosphereConstants.BeaufortProfileCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!IsHandleValid(in _surfaceSwellHandle))
+                _surfaceSwellHandle = vault.GetGenerationHandle<float4>(BufferID.ShinobuOceanSurfaceSwell, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
 
             _vaultBuffersReady = ResolveWaveBuffer(out _) && ResolveWeatherArray(out _) && ResolveAtmosphereArray(out _);
             return _vaultBuffersReady;
@@ -833,6 +909,9 @@ namespace Hecton8.Atmosphere
 
         private bool TryLoadWeatherProfilesCsv()
         {
+#if !UNITY_EDITOR
+            return true;
+#else
             if (!ResolveCsvScratch(out NativeArray<byte> scratch) ||
                 !ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves) ||
                 !ResolveWeatherArray(out NativeArray<WeatherStateDTO> weather) ||
@@ -845,9 +924,7 @@ namespace Hecton8.Atmosphere
             if (string.IsNullOrEmpty(root))
                 return false;
 
-            string path = Path.Combine(root, "Assets/StreamingAssets/weather_profiles.csv");
-            if (!File.Exists(path))
-                path = Path.Combine(root, "StreamingAssets/weather_profiles.csv");
+            string path = Path.Combine(root, "Assets/_SourceData/Atmosphere/weather_profiles.csv");
             if (!File.Exists(path))
                 path = Path.Combine(root, "Data/Precomputed/weather_profiles.csv");
             if (!File.Exists(path))
@@ -875,6 +952,7 @@ namespace Hecton8.Atmosphere
             {
                 return false;
             }
+#endif
         }
 
         private bool TryLoadBeaufortProfilesCsv(string root, NativeArray<byte> scratch)
@@ -886,9 +964,7 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            string path = Path.Combine(root, "Assets/StreamingAssets/beaufort_scale_profiles.csv");
-            if (!File.Exists(path))
-                path = Path.Combine(root, "StreamingAssets/beaufort_scale_profiles.csv");
+            string path = Path.Combine(root, "Assets/_SourceData/Atmosphere/beaufort_scale_profiles.csv");
             if (!File.Exists(path))
                 path = Path.Combine(root, "Data/Precomputed/beaufort_scale_profiles.csv");
             if (!File.Exists(path))
@@ -1431,7 +1507,9 @@ namespace Hecton8.Atmosphere
                 return;
 
             Vector3 runtime = cam.position;
-            double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtime);
+            if (!TryResolveAbsoluteFromRuntimeOrigin(runtime, out double3 aup))
+                return;
+
             long start = Stopwatch.GetTimestamp();
             QueueWaveHeightSample(new float3(runtime.x, runtime.y, runtime.z));
             bool hasCompleted = TryResolveCompletedWaveSample(new float3(runtime.x, runtime.y, runtime.z), 6f, out float relativeHeight, out float3 normal);
@@ -1516,7 +1594,7 @@ namespace Hecton8.Atmosphere
 
         private bool HasSeedShipQuestMask()
         {
-            if (_vault == null || !_vault.TryGetBuffer<ulong>(BufferID.QuestDagGlobalStateMasks, out NativeArray<ulong> masks) || !masks.IsCreated)
+            if (_vault == null || !TryReadExistingVaultView(_vault, BufferID.QuestDagGlobalStateMasks, out NativeArray<ulong> masks))
                 return false;
 
             for (int i = 0; i < masks.Length; i++)
@@ -1685,7 +1763,7 @@ namespace Hecton8.Atmosphere
             if (player != null)
             {
                 if (player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                    MathGuard.IsFinite(in snapshot.Aup))
+                    snapshot.Aup.IsFinite())
                 {
                     return snapshot.Aup.ToAbsoluteDouble3();
                 }
@@ -1694,12 +1772,30 @@ namespace Hecton8.Atmosphere
                 if (playerMovement != null)
                 {
                     AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                    if (MathGuard.IsFinite(in currentAup))
+                    if (currentAup.IsFinite())
                         return currentAup.ToAbsoluteDouble3();
                 }
             }
 
-            return HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return originAup.IsFinite() ? originAup.ToAbsoluteDouble3() : double3.zero;
+        }
+
+        private static bool TryResolveAbsoluteFromRuntimeOrigin(Vector3 runtimePosition, out double3 absolutePosition)
+        {
+            absolutePosition = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            absolutePosition = Hecton8.World.AbsoluteUniversePosition.OffsetAbsoluteMeters(
+                in originAup,
+                new double3(localRuntime.x, localRuntime.y, localRuntime.z));
+            return math.all(math.isfinite(absolutePosition));
         }
 
         private void UploadWaveBufferToGpu(bool allowColdCreate)
@@ -1810,73 +1906,127 @@ namespace Hecton8.Atmosphere
         private bool ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves)
         {
             waves = default;
-            return _vault != null && _waveHandle.IsCreated && (waves = _waveHandle.Resolve(_vault)).IsCreated;
+            return _vault != null &&
+                   IsHandleValid(in _waveHandle) &&
+                   _vault.TryResolveHandle(in _waveHandle, out waves) &&
+                   waves.IsCreated;
         }
 
         private bool ResolveWeatherArray(out NativeArray<WeatherStateDTO> weather)
         {
             weather = default;
-            return _vault != null && _weatherHandle.IsCreated && (weather = _weatherHandle.Resolve(_vault)).IsCreated && weather.Length > 0;
+            return _vault != null &&
+                   IsHandleValid(in _weatherHandle) &&
+                   _vault.TryResolveHandle(in _weatherHandle, out weather) &&
+                   weather.IsCreated &&
+                   weather.Length > 0;
         }
 
         private bool ResolveAtmosphereArray(out NativeArray<AtmosphereDTO> atmosphere)
         {
             atmosphere = default;
-            return _vault != null && _atmosphereHandle.IsCreated && (atmosphere = _atmosphereHandle.Resolve(_vault)).IsCreated && atmosphere.Length > 0;
+            return _vault != null &&
+                   IsHandleValid(in _atmosphereHandle) &&
+                   _vault.TryResolveHandle(in _atmosphereHandle, out atmosphere) &&
+                   atmosphere.IsCreated &&
+                   atmosphere.Length > 0;
         }
 
         private bool ResolveTelemetry(out NativeArray<OceanSurfaceTelemetryEntry> telemetry)
         {
             telemetry = default;
-            return _vault != null && _telemetryHandle.IsCreated && (telemetry = _telemetryHandle.Resolve(_vault)).IsCreated && telemetry.Length > 0;
+            return _vault != null &&
+                   IsHandleValid(in _telemetryHandle) &&
+                   _vault.TryResolveHandle(in _telemetryHandle, out telemetry) &&
+                   telemetry.IsCreated &&
+                   telemetry.Length > 0;
         }
 
         private bool ResolveCsvScratch(out NativeArray<byte> scratch)
         {
             scratch = default;
-            return _vault != null && _csvScratchHandle.IsCreated && (scratch = _csvScratchHandle.Resolve(_vault)).IsCreated && scratch.Length > 0;
+            return _vault != null &&
+                   IsHandleValid(in _csvScratchHandle) &&
+                   _vault.TryResolveHandle(in _csvScratchHandle, out scratch) &&
+                   scratch.IsCreated &&
+                   scratch.Length > 0;
         }
 
         private bool ResolveLodArray(out NativeArray<OceanSurfaceLodDTO> lod)
         {
             lod = default;
-            return _vault != null && _lodHandle.IsCreated && (lod = _lodHandle.Resolve(_vault)).IsCreated && lod.Length > 0;
+            return _vault != null &&
+                   IsHandleValid(in _lodHandle) &&
+                   _vault.TryResolveHandle(in _lodHandle, out lod) &&
+                   lod.IsCreated &&
+                   lod.Length > 0;
         }
 
         private bool ResolveReadbackQueries(out NativeArray<float4> queries)
         {
             queries = default;
-            return _vault != null && _readbackQueryHandle.IsCreated && (queries = _readbackQueryHandle.Resolve(_vault)).IsCreated && queries.Length > 0;
+            return _vault != null &&
+                   IsHandleValid(in _readbackQueryHandle) &&
+                   _vault.TryResolveHandle(in _readbackQueryHandle, out queries) &&
+                   queries.IsCreated &&
+                   queries.Length > 0;
         }
 
         private bool ResolveReadbackResults(out NativeArray<float4> results)
         {
             results = default;
-            return _vault != null && _readbackResultHandle.IsCreated && (results = _readbackResultHandle.Resolve(_vault)).IsCreated && results.Length > 0;
+            return _vault != null &&
+                   IsHandleValid(in _readbackResultHandle) &&
+                   _vault.TryResolveHandle(in _readbackResultHandle, out results) &&
+                   results.IsCreated &&
+                   results.Length > 0;
         }
 
         private bool ResolveReadbackCompletedQueries(out NativeArray<float4> queries)
         {
             queries = default;
-            return _vault != null && _readbackCompletedQueryHandle.IsCreated && (queries = _readbackCompletedQueryHandle.Resolve(_vault)).IsCreated && queries.Length > 0;
+            return _vault != null &&
+                   IsHandleValid(in _readbackCompletedQueryHandle) &&
+                   _vault.TryResolveHandle(in _readbackCompletedQueryHandle, out queries) &&
+                   queries.IsCreated &&
+                   queries.Length > 0;
         }
 
         private bool ResolveReadbackRingQueries(out NativeArray<float4> queries)
         {
             queries = default;
-            return _vault != null && _readbackRingQueryHandle.IsCreated && (queries = _readbackRingQueryHandle.Resolve(_vault)).IsCreated && queries.Length >= OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity * OceanSurfaceAtmosphereConstants.WaveReadbackRingSize;
+            return _vault != null &&
+                   IsHandleValid(in _readbackRingQueryHandle) &&
+                   _vault.TryResolveHandle(in _readbackRingQueryHandle, out queries) &&
+                   queries.IsCreated &&
+                   queries.Length >= OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity * OceanSurfaceAtmosphereConstants.WaveReadbackRingSize;
         }
 
         private bool ResolveBeaufortProfiles(out NativeArray<BeaufortProfileDTO> profiles)
         {
             profiles = default;
-            return _vault != null && _beaufortProfileHandle.IsCreated && (profiles = _beaufortProfileHandle.Resolve(_vault)).IsCreated && profiles.Length > 0;
+            return _vault != null &&
+                   IsHandleValid(in _beaufortProfileHandle) &&
+                   _vault.TryResolveHandle(in _beaufortProfileHandle, out profiles) &&
+                   profiles.IsCreated &&
+                   profiles.Length > 0;
         }
 
         private bool ResolveSurfaceSwellArray(out NativeArray<float4> swell)
         {
             swell = default;
-            return _vault != null && _surfaceSwellHandle.IsCreated && (swell = _surfaceSwellHandle.Resolve(_vault)).IsCreated && swell.Length > 0;
+            return _vault != null &&
+                   IsHandleValid(in _surfaceSwellHandle) &&
+                   _vault.TryResolveHandle(in _surfaceSwellHandle, out swell) &&
+                   swell.IsCreated &&
+                   swell.Length > 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsHandleValid<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u;
         }
 
         private bool ResolveWeather(out WeatherStateDTO weather)

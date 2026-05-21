@@ -1,9 +1,11 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.AI.Sensory;
 using Hecton8.Ecosystem;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -92,8 +94,9 @@ namespace Hecton8.AI
         public void SetSpawnPoint(Vector3 spawnPoint)
         {
             _spawnPoint = spawnPoint;
-            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPoint);
-            ApplyAupPresentationPosition(in spawnAup);
+            if (TryResolveAupFromRuntimeOrigin(spawnPoint, out AbsoluteUniversePosition spawnAup))
+                ApplyAupPresentationPosition(in spawnAup);
+
             _utilityBrain.SetSpawnAnchor(spawnPoint);
         }
 
@@ -121,8 +124,24 @@ namespace Hecton8.AI
     /// Immutable sensory snapshot consumed by <see cref="CreatureUtilityBrain"/>.
     /// This is the managed-to-native bridge payload for all fauna roles.
     /// </summary>
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 256)]
     public readonly struct CreatureUtilityContext
     {
+        private const ushort CanFleeMask = 1 << 0;
+        private const ushort HasVisualContactMask = 1 << 1;
+        private const ushort HasPlayerTargetMask = 1 << 2;
+        private const ushort HasThreatTargetMask = 1 << 3;
+        private const ushort HasApexRivalTargetMask = 1 << 4;
+        private const ushort HasPreyTargetMask = 1 << 5;
+        private const ushort HasScavengeTargetMask = 1 << 6;
+        private const ushort UseHomeTerritoryMask = 1 << 7;
+        private const ushort IsFlockingMask = 1 << 8;
+        private const ushort HasScatterDirectionMask = 1 << 9;
+        private const ushort IsAggressiveMask = 1 << 10;
+        private const ushort IsApexPredatorMask = 1 << 11;
+        private const ushort UseAlphaLeviathanCognitionMask = 1 << 12;
+
         public CreatureUtilityContext(
             Vector3 selfPosition,
             Vector3 selfVelocity,
@@ -198,71 +217,126 @@ namespace Hecton8.AI
             PlayerLightExposure01 = math.saturate(playerLightExposure01);
             FoveatedImportanceScore = foveatedImportanceScore;
             FlockCount = flockCount;
-            CanFlee = canFlee;
-            HasVisualContact = hasVisualContact;
-            HasPlayerTarget = hasPlayerTarget;
-            HasThreatTarget = hasThreatTarget;
-            HasApexRivalTarget = hasApexRivalTarget;
-            HasPreyTarget = hasPreyTarget;
-            HasScavengeTarget = hasScavengeTarget;
-            UseHomeTerritory = useHomeTerritory;
-            IsFlocking = isFlocking;
-            HasScatterDirection = hasScatterDirection;
-            IsAggressive = isAggressive;
-            IsApexPredator = isApexPredator;
-            UseAlphaLeviathanCognition = useAlphaLeviathanCognition;
+            Flags = PackFlags(
+                canFlee,
+                hasVisualContact,
+                hasPlayerTarget,
+                hasThreatTarget,
+                hasApexRivalTarget,
+                hasPreyTarget,
+                hasScavengeTarget,
+                useHomeTerritory,
+                isFlocking,
+                hasScatterDirection,
+                isAggressive,
+                isApexPredator,
+                useAlphaLeviathanCognition);
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0;
+            _pad3 = 0;
         }
 
-        public Vector3 SelfPosition { get; }
-        public Vector3 SelfVelocity { get; }
-        public Vector3 SelfForward { get; }
-        public Vector3 PlayerPosition { get; }
-        public Vector3 PlayerForward { get; }
-        public Vector3 PlayerVelocity { get; }
-        public Vector3 ThreatPosition { get; }
-        public Vector3 ApexRivalPosition { get; }
-        public Vector3 PreyPosition { get; }
-        public Vector3 ScavengePosition { get; }
-        public Vector3 FlockCenter { get; }
-        public Vector3 FlockDirection { get; }
-        public Vector3 FlockAvoidance { get; }
-        public Vector3 ScatterDirection { get; }
-        public float HealthNormalized { get; }
-        public float DistanceToPlayerSqr { get; }
-        public float AttackRange { get; }
-        public float FogEndDistanceMeters { get; }
-        public float BaseMaxSpeedMetersPerSecond { get; }
-        public float FearPressure01 { get; }
-        public float FleeHealthThreshold { get; }
-        public float EscapeDistance { get; }
-        public float EscapeSafeDistance { get; }
-        public float WanderRadius { get; }
-        public float PatrolRadius { get; }
-        public float ApexTerritoryRadius { get; }
-        public float ApexAggressionMultiplier { get; }
-        public float PlayerLightExposure01 { get; }
-        public float FoveatedImportanceScore { get; }
-        public int FlockCount { get; }
-        public bool CanFlee { get; }
-        public bool HasVisualContact { get; }
-        public bool HasPlayerTarget { get; }
-        public bool HasThreatTarget { get; }
-        public bool HasApexRivalTarget { get; }
-        public bool HasPreyTarget { get; }
-        public bool HasScavengeTarget { get; }
-        public bool UseHomeTerritory { get; }
-        public bool IsFlocking { get; }
-        public bool HasScatterDirection { get; }
-        public bool IsAggressive { get; }
-        public bool IsApexPredator { get; }
-        public bool UseAlphaLeviathanCognition { get; }
+        [FieldOffset(0)] public readonly Vector3 SelfPosition;
+        [FieldOffset(12)] public readonly Vector3 SelfVelocity;
+        [FieldOffset(24)] public readonly Vector3 SelfForward;
+        [FieldOffset(36)] public readonly Vector3 PlayerPosition;
+        [FieldOffset(48)] public readonly Vector3 PlayerForward;
+        [FieldOffset(60)] public readonly Vector3 PlayerVelocity;
+        [FieldOffset(72)] public readonly Vector3 ThreatPosition;
+        [FieldOffset(84)] public readonly Vector3 ApexRivalPosition;
+        [FieldOffset(96)] public readonly Vector3 PreyPosition;
+        [FieldOffset(108)] public readonly Vector3 ScavengePosition;
+        [FieldOffset(120)] public readonly Vector3 FlockCenter;
+        [FieldOffset(132)] public readonly Vector3 FlockDirection;
+        [FieldOffset(144)] public readonly Vector3 FlockAvoidance;
+        [FieldOffset(156)] public readonly Vector3 ScatterDirection;
+        [FieldOffset(168)] public readonly float HealthNormalized;
+        [FieldOffset(172)] public readonly float DistanceToPlayerSqr;
+        [FieldOffset(176)] public readonly float AttackRange;
+        [FieldOffset(180)] public readonly float FogEndDistanceMeters;
+        [FieldOffset(184)] public readonly float BaseMaxSpeedMetersPerSecond;
+        [FieldOffset(188)] public readonly float FearPressure01;
+        [FieldOffset(192)] public readonly float FleeHealthThreshold;
+        [FieldOffset(196)] public readonly float EscapeDistance;
+        [FieldOffset(200)] public readonly float EscapeSafeDistance;
+        [FieldOffset(204)] public readonly float WanderRadius;
+        [FieldOffset(208)] public readonly float PatrolRadius;
+        [FieldOffset(212)] public readonly float ApexTerritoryRadius;
+        [FieldOffset(216)] public readonly float ApexAggressionMultiplier;
+        [FieldOffset(220)] public readonly float PlayerLightExposure01;
+        [FieldOffset(224)] public readonly float FoveatedImportanceScore;
+        [FieldOffset(228)] public readonly int FlockCount;
+        [FieldOffset(232)] public readonly ushort Flags;
+        [FieldOffset(234)] private readonly ushort _pad0;
+        [FieldOffset(236)] private readonly uint _pad1;
+        [FieldOffset(240)] private readonly ulong _pad2;
+        [FieldOffset(248)] private readonly ulong _pad3;
+
+        public static bool CanFlee(in CreatureUtilityContext context) => HasFlag(in context, CanFleeMask);
+        public static bool HasVisualContact(in CreatureUtilityContext context) => HasFlag(in context, HasVisualContactMask);
+        public static bool HasPlayerTarget(in CreatureUtilityContext context) => HasFlag(in context, HasPlayerTargetMask);
+        public static bool HasThreatTarget(in CreatureUtilityContext context) => HasFlag(in context, HasThreatTargetMask);
+        public static bool HasApexRivalTarget(in CreatureUtilityContext context) => HasFlag(in context, HasApexRivalTargetMask);
+        public static bool HasPreyTarget(in CreatureUtilityContext context) => HasFlag(in context, HasPreyTargetMask);
+        public static bool HasScavengeTarget(in CreatureUtilityContext context) => HasFlag(in context, HasScavengeTargetMask);
+        public static bool UseHomeTerritory(in CreatureUtilityContext context) => HasFlag(in context, UseHomeTerritoryMask);
+        public static bool IsFlocking(in CreatureUtilityContext context) => HasFlag(in context, IsFlockingMask);
+        public static bool HasScatterDirection(in CreatureUtilityContext context) => HasFlag(in context, HasScatterDirectionMask);
+        public static bool IsAggressive(in CreatureUtilityContext context) => HasFlag(in context, IsAggressiveMask);
+        public static bool IsApexPredator(in CreatureUtilityContext context) => HasFlag(in context, IsApexPredatorMask);
+        public static bool UseAlphaLeviathanCognition(in CreatureUtilityContext context) => HasFlag(in context, UseAlphaLeviathanCognitionMask);
+
+        private static bool HasFlag(in CreatureUtilityContext context, ushort mask)
+        {
+            return (context.Flags & mask) != 0;
+        }
+
+        private static ushort PackFlags(
+            bool canFlee,
+            bool hasVisualContact,
+            bool hasPlayerTarget,
+            bool hasThreatTarget,
+            bool hasApexRivalTarget,
+            bool hasPreyTarget,
+            bool hasScavengeTarget,
+            bool useHomeTerritory,
+            bool isFlocking,
+            bool hasScatterDirection,
+            bool isAggressive,
+            bool isApexPredator,
+            bool useAlphaLeviathanCognition)
+        {
+            ushort flags = 0;
+            flags |= canFlee ? CanFleeMask : (ushort)0;
+            flags |= hasVisualContact ? HasVisualContactMask : (ushort)0;
+            flags |= hasPlayerTarget ? HasPlayerTargetMask : (ushort)0;
+            flags |= hasThreatTarget ? HasThreatTargetMask : (ushort)0;
+            flags |= hasApexRivalTarget ? HasApexRivalTargetMask : (ushort)0;
+            flags |= hasPreyTarget ? HasPreyTargetMask : (ushort)0;
+            flags |= hasScavengeTarget ? HasScavengeTargetMask : (ushort)0;
+            flags |= useHomeTerritory ? UseHomeTerritoryMask : (ushort)0;
+            flags |= isFlocking ? IsFlockingMask : (ushort)0;
+            flags |= hasScatterDirection ? HasScatterDirectionMask : (ushort)0;
+            flags |= isAggressive ? IsAggressiveMask : (ushort)0;
+            flags |= isApexPredator ? IsApexPredatorMask : (ushort)0;
+            flags |= useAlphaLeviathanCognition ? UseAlphaLeviathanCognitionMask : (ushort)0;
+            return flags;
+        }
     }
 
     /// <summary>
     /// Value-type utility evaluation result used by the fauna brain tick loop.
     /// </summary>
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public readonly struct CreatureUtilityEvaluation
     {
+        private const ushort ShouldAttackMask = 1 << 0;
+        private const ushort EmitThreatPulseMask = 1 << 1;
+        private const ushort FlankingManeuverDetectedMask = 1 << 2;
+        private const ushort HasAcousticHeadLookMask = 1 << 3;
+
         public CreatureUtilityEvaluation(
             Vector3 desiredDirection,
             PredatorUtilityState stateMask,
@@ -290,31 +364,55 @@ namespace Hecton8.AI
             ForceMultiplier = forceMultiplier;
             SpeedMultiplier = speedMultiplier;
             TurnMultiplier = turnMultiplier;
-            ShouldAttack = shouldAttack;
-            EmitThreatPulse = emitThreatPulse;
             PackRoleCode = packRoleCode;
-            FlankingManeuverDetected = flankingManeuverDetected;
-            HasAcousticHeadLook = hasAcousticHeadLook;
             AcousticHeadLookTarget = acousticHeadLookTarget;
             AcousticHeadLookWeight = acousticHeadLookWeight;
+            Flags = PackFlags(shouldAttack, emitThreatPulse, flankingManeuverDetected, hasAcousticHeadLook);
+            _padByte = 0;
+            _pad0 = 0;
+            _pad1 = 0;
         }
 
-        public Vector3 DesiredDirection { get; }
-        public PredatorUtilityState StateMask { get; }
-        public FaunaBrain.AIState LegacyState { get; }
-        public float HungerScore { get; }
-        public float AggressionScore { get; }
-        public float FearScore { get; }
-        public float ForceMultiplier { get; }
-        public float SpeedMultiplier { get; }
-        public float TurnMultiplier { get; }
-        public bool ShouldAttack { get; }
-        public bool EmitThreatPulse { get; }
-        public int PackRoleCode { get; }
-        public bool FlankingManeuverDetected { get; }
-        public bool HasAcousticHeadLook { get; }
-        public Vector3 AcousticHeadLookTarget { get; }
-        public float AcousticHeadLookWeight { get; }
+        [FieldOffset(0)] public readonly Vector3 DesiredDirection;
+        [FieldOffset(12)] public readonly Vector3 AcousticHeadLookTarget;
+        [FieldOffset(24)] public readonly float HungerScore;
+        [FieldOffset(28)] public readonly float AggressionScore;
+        [FieldOffset(32)] public readonly float FearScore;
+        [FieldOffset(36)] public readonly float ForceMultiplier;
+        [FieldOffset(40)] public readonly float SpeedMultiplier;
+        [FieldOffset(44)] public readonly float TurnMultiplier;
+        [FieldOffset(48)] public readonly float AcousticHeadLookWeight;
+        [FieldOffset(52)] public readonly int PackRoleCode;
+        [FieldOffset(56)] public readonly FaunaBrain.AIState LegacyState;
+        [FieldOffset(60)] public readonly ushort Flags;
+        [FieldOffset(62)] public readonly PredatorUtilityState StateMask;
+        [FieldOffset(63)] private readonly byte _padByte;
+        [FieldOffset(64)] private readonly ulong _pad0;
+        [FieldOffset(72)] private readonly ulong _pad1;
+
+        public static bool ShouldAttack(in CreatureUtilityEvaluation evaluation) => HasFlag(in evaluation, ShouldAttackMask);
+        public static bool EmitThreatPulse(in CreatureUtilityEvaluation evaluation) => HasFlag(in evaluation, EmitThreatPulseMask);
+        public static bool FlankingManeuverDetected(in CreatureUtilityEvaluation evaluation) => HasFlag(in evaluation, FlankingManeuverDetectedMask);
+        public static bool HasAcousticHeadLook(in CreatureUtilityEvaluation evaluation) => HasFlag(in evaluation, HasAcousticHeadLookMask);
+
+        private static bool HasFlag(in CreatureUtilityEvaluation evaluation, ushort mask)
+        {
+            return (evaluation.Flags & mask) != 0;
+        }
+
+        private static ushort PackFlags(
+            bool shouldAttack,
+            bool emitThreatPulse,
+            bool flankingManeuverDetected,
+            bool hasAcousticHeadLook)
+        {
+            ushort flags = 0;
+            flags |= shouldAttack ? ShouldAttackMask : (ushort)0;
+            flags |= emitThreatPulse ? EmitThreatPulseMask : (ushort)0;
+            flags |= flankingManeuverDetected ? FlankingManeuverDetectedMask : (ushort)0;
+            flags |= hasAcousticHeadLook ? HasAcousticHeadLookMask : (ushort)0;
+            return flags;
+        }
     }
 
     /// <summary>
@@ -328,38 +426,43 @@ namespace Hecton8.AI
             PredatorAcousticSightRadiusMeters * PredatorAcousticSightRadiusMeters;
         private const float PredatorAcousticSightThreshold01 = 0.12f;
         private const float PlayerNoiseReferenceSpeedSqr = 72.25f;
-        private const uint HighTierApexCognitionSteeringMask =
-            (1u << (int)HectonQualityTier.High) |
-            (1u << (int)HectonQualityTier.Ultra);
-
         private CreatureArchetypeData _archetype;
         private FaunaSpeciesProfile _speciesProfile;
         private FaunaDataTemplate _dataTemplate;
         private int _slot;
-        private bool _initialized;
+        private byte _initialized;
         private float _metabolicTickAccumulator;
         private int _lastConsumedAcousticPingSignalSequence;
 
-        public PredatorUtilityState CurrentStateMask { get; private set; }
-        public bool UsesPredatorRole => IsPredatorArchetype(_archetype, _speciesProfile);
-        public bool IsActivePredator => UsesPredatorRole;
-        public float HungerScore { get; private set; }
-        public float AggressionScore { get; private set; }
-        public float FearScore { get; private set; }
-        public bool IsRegistered => _initialized && _slot >= 0;
-        public int Slot => _initialized ? _slot : -1;
-        public float CurrentHunger01 => _initialized ? PredatorCognitionDomain.GetHunger01(_slot) : HungerScore;
+        public PredatorUtilityState CurrentStateMask;
+        public byte UsesPredatorRole;
+        public byte IsActivePredator;
+        public float HungerScore;
+        public float AggressionScore;
+        public float FearScore;
+        public byte IsRegistered;
+
+        public static int ResolveSlot(in CreatureUtilityBrain brain)
+        {
+            return brain._initialized != 0 ? brain._slot : -1;
+        }
+
+        public static float ResolveCurrentHunger01(in CreatureUtilityBrain brain)
+        {
+            return brain._initialized != 0 ? PredatorCognitionDomain.GetHunger01(brain._slot) : brain.HungerScore;
+        }
 
         public void Initialize(Vector3 spawnAnchor, FaunaSpeciesProfile speciesProfile, CreatureArchetypeData archetype, FaunaDataTemplate dataTemplate)
         {
             _speciesProfile = speciesProfile;
             _archetype = archetype;
             _dataTemplate = dataTemplate;
-            if (!_initialized)
+            if (_initialized == 0)
                 _slot = PredatorCognitionDomain.Register();
 
-            _initialized = _slot >= 0;
-            if (_initialized)
+            _initialized = _slot >= 0 ? (byte)1 : (byte)0;
+            RefreshCachedFlags();
+            if (_initialized != 0)
             {
                 RegisterSpeciesTuning();
                 PredatorCognitionDomain.ResetSlot(_slot, spawnAnchor, ResolveSpeciesId());
@@ -371,18 +474,19 @@ namespace Hecton8.AI
             _speciesProfile = speciesProfile;
             _archetype = archetype;
             _dataTemplate = dataTemplate;
+            RefreshCachedFlags();
             RegisterSpeciesTuning();
         }
 
         public void SetSpawnAnchor(Vector3 spawnAnchor)
         {
-            if (_initialized)
+            if (_initialized != 0)
                 PredatorCognitionDomain.SetSpawnAnchor(_slot, spawnAnchor);
         }
 
         public void SetRuntimeActive(bool active)
         {
-            if (_initialized)
+            if (_initialized != 0)
                 PredatorCognitionDomain.SetSlotActive(_slot, active);
         }
 
@@ -394,7 +498,7 @@ namespace Hecton8.AI
             FearScore = 0f;
             _metabolicTickAccumulator = 0f;
             _lastConsumedAcousticPingSignalSequence = 0;
-            if (_initialized)
+            if (_initialized != 0)
             {
                 RegisterSpeciesTuning();
                 PredatorCognitionDomain.ResetSlot(_slot, spawnAnchor, ResolveSpeciesId());
@@ -403,13 +507,13 @@ namespace Hecton8.AI
 
         public void RecordAuditoryStimulus(Vector3 worldPosition, float timeStamp)
         {
-            if (_initialized)
+            if (_initialized != 0)
                 PredatorCognitionDomain.RecordStimulus(_slot, worldPosition, timeStamp, 1f, CognitionStimulusType.Acoustic);
         }
 
         public void ApplyExternalState(FaunaBrain.AIState state, float currentTime)
         {
-            if (!_initialized)
+            if (_initialized == 0)
                 return;
 
             switch (state)
@@ -434,19 +538,19 @@ namespace Hecton8.AI
 
         public void ForceRetreat(Vector3 threatPosition, float currentTime, float duration)
         {
-            if (_initialized)
+            if (_initialized != 0)
                 PredatorCognitionDomain.ForceRetreat(_slot, threatPosition, currentTime, duration);
         }
 
         public void ForceSated(float currentTime, float duration)
         {
-            if (_initialized)
+            if (_initialized != 0)
                 PredatorCognitionDomain.ForceSated(_slot, currentTime, duration);
         }
 
         public void ApplyFatigueRelief(float amount)
         {
-            if (_initialized)
+            if (_initialized != 0)
                 PredatorCognitionDomain.ReduceFatigue(_slot, amount);
         }
 
@@ -454,19 +558,19 @@ namespace Hecton8.AI
         {
             float clampedHunger = math.saturate(hunger01);
             HungerScore = clampedHunger;
-            if (_initialized)
+            if (_initialized != 0)
                 PredatorCognitionDomain.SetHunger01(_slot, clampedHunger);
         }
 
         public void NotifyAttackPerformed(float currentTime, float cooldownSeconds)
         {
-            if (_initialized)
+            if (_initialized != 0)
                 PredatorCognitionDomain.NotifyAttackPerformed(_slot, currentTime, cooldownSeconds);
         }
 
         public CreatureUtilityEvaluation Evaluate(int frameId, float dt, float currentTime, in CreatureUtilityContext context)
         {
-            if (!_initialized)
+            if (_initialized == 0)
                 Initialize(context.SelfPosition, _speciesProfile, _archetype, _dataTemplate);
 
             float dispatcherDeltaTime = math.max(0f, dt);
@@ -479,7 +583,7 @@ namespace Hecton8.AI
             }
 
             float3 fallbackForward = (float3)context.SelfForward;
-            double3 floatingOriginOffset = Hecton8.Core.HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            double3 floatingOriginOffset = ResolveCurrentRuntimeOriginOffset();
             float acousticPingStrength01 = 0f;
             float acousticTransmission01 = 0f;
             bool hasNoisePlayerTarget = false;
@@ -493,10 +597,10 @@ namespace Hecton8.AI
                 float movement01 = math.saturate(math.max(0f, playerNoise.MovementSpeedSqr) / PlayerNoiseReferenceSpeedSqr);
                 float tool01 = math.saturate(playerNoise.ToolUseNoise01);
                 float transport01 = math.saturate(playerNoise.TransportBoost01 * math.max(1f, playerNoise.TransportSignature));
-                float flashlight01 = playerNoise.FlashlightOn ? 0.2f : 0f;
+                float flashlight01 = NoiseSystem.PlayerNoiseSignal.IsFlashlightOn(in playerNoise) ? 0.2f : 0f;
                 acousticPingStrength01 = math.saturate(math.max(movement01, math.max(tool01, transport01)) + flashlight01);
                 acousticTransmission01 = math.saturate(playerNoise.AcousticTransmission01);
-                if (!UsesPredatorRole)
+                if (UsesPredatorRole == 0)
                 {
                     noisePlayerPosition = playerNoise.Position;
                     noisePlayerAup = playerNoise.PositionAup;
@@ -504,10 +608,10 @@ namespace Hecton8.AI
                 }
             }
 
-            if (UsesPredatorRole)
+            if (UsesPredatorRole != 0)
             {
-                AbsoluteUniversePosition predatorAup = AbsoluteUniversePosition.FromRuntimePosition(context.SelfPosition);
-                if (AcousticEchoLocationRuntime.TryResolvePredatorEcho(
+                if (TryResolveRuntimeAup(context.SelfPosition, out AbsoluteUniversePosition predatorAup) &&
+                    AcousticEchoLocationRuntime.TryUpdatePredatorEcho(
                         frameId,
                         in predatorAup,
                         currentTime,
@@ -526,31 +630,57 @@ namespace Hecton8.AI
                 }
             }
 
-            Vector3 resolvedPlayerPosition = context.HasPlayerTarget ? context.PlayerPosition : noisePlayerPosition;
-            bool hasAnyPlayerTarget = context.HasPlayerTarget || hasNoisePlayerTarget;
+            bool contextHasPlayerTarget = CreatureUtilityContext.HasPlayerTarget(in context);
+            Vector3 resolvedPlayerPosition = contextHasPlayerTarget ? context.PlayerPosition : noisePlayerPosition;
+            bool hasAnyPlayerTarget = contextHasPlayerTarget || hasNoisePlayerTarget;
             AbsoluteUniversePositionBlit128 playerTargetAup = default;
+            bool hasPlayerTargetAup = false;
             if (hasAnyPlayerTarget)
             {
-                playerTargetAup = !context.HasPlayerTarget && hasNoisePlayerAup
-                    ? noisePlayerAup.ToAlignedBlit()
-                    : AbsoluteUniversePosition.FromRuntimePosition(resolvedPlayerPosition).ToAlignedBlit();
+                if (!contextHasPlayerTarget && hasNoisePlayerAup)
+                {
+                    playerTargetAup = noisePlayerAup.ToAlignedBlit();
+                    hasPlayerTargetAup = true;
+                }
+                else if (TryResolveRuntimeAup(resolvedPlayerPosition, out AbsoluteUniversePosition resolvedPlayerAup))
+                {
+                    playerTargetAup = resolvedPlayerAup.ToAlignedBlit();
+                    hasPlayerTargetAup = true;
+                }
+
+                hasAnyPlayerTarget &= hasPlayerTargetAup;
             }
 
-            bool hasPackTarget = _archetype != null && _archetype.usePackHunt && (hasAnyPlayerTarget || context.HasPreyTarget);
+            bool contextHasPreyTarget = CreatureUtilityContext.HasPreyTarget(in context);
+            bool contextHasScavengeTarget = CreatureUtilityContext.HasScavengeTarget(in context);
+            bool contextHasVisualContact = CreatureUtilityContext.HasVisualContact(in context);
+            bool contextIsApexPredator = CreatureUtilityContext.IsApexPredator(in context);
+            bool hasPackTarget = _archetype != null && _archetype.usePackHunt && ((hasAnyPlayerTarget && hasPlayerTargetAup) || contextHasPreyTarget);
             Vector3 resolvedPackTargetPosition = hasAnyPlayerTarget
                 ? resolvedPlayerPosition
                 : context.PreyPosition;
             Vector3 resolvedPackTargetVelocity = hasAnyPlayerTarget
                 ? context.PlayerVelocity
                 : Vector3.zero;
-            AbsoluteUniversePositionBlit128 packTargetAup = hasPackTarget
-                ? !context.HasPlayerTarget && hasNoisePlayerAup && hasAnyPlayerTarget
-                    ? noisePlayerAup.ToAlignedBlit()
-                    : AbsoluteUniversePosition.FromRuntimePosition(resolvedPackTargetPosition).ToAlignedBlit()
-                : default;
+            AbsoluteUniversePositionBlit128 packTargetAup = default;
+            if (hasPackTarget)
+            {
+                if (!contextHasPlayerTarget && hasNoisePlayerAup && hasAnyPlayerTarget)
+                {
+                    packTargetAup = noisePlayerAup.ToAlignedBlit();
+                }
+                else if (TryResolveRuntimeAup(resolvedPackTargetPosition, out AbsoluteUniversePosition resolvedPackAup))
+                {
+                    packTargetAup = resolvedPackAup.ToAlignedBlit();
+                }
+                else
+                {
+                    hasPackTarget = false;
+                }
+            }
 
             float chemicalSignal01 = 0f;
-            if (context.HasScavengeTarget)
+            if (contextHasScavengeTarget)
             {
                 float scavengeDistanceSq = math.lengthsq((float3)(context.ScavengePosition - context.SelfPosition));
                 chemicalSignal01 = math.saturate(1f / (1f + (scavengeDistanceSq / (28f * 28f))));
@@ -641,35 +771,35 @@ namespace Hecton8.AI
             input.ClaimedBoidIndex = -1;
             input.FlockCount = math.max(0, context.FlockCount);
             input.Flags = (int)CognitionInputFlags.Active;
-            if (UsesPredatorRole)
+            if (UsesPredatorRole != 0)
                 input.Flags |= (int)CognitionInputFlags.PredatorRole;
-            if (context.CanFlee)
+            if (CreatureUtilityContext.CanFlee(in context))
                 input.Flags |= (int)CognitionInputFlags.CanFlee;
             if (hasAnyPlayerTarget)
                 input.Flags |= (int)CognitionInputFlags.HasPlayerTarget;
-            if (context.HasThreatTarget)
+            if (CreatureUtilityContext.HasThreatTarget(in context))
                 input.Flags |= (int)CognitionInputFlags.HasThreatTarget;
-            if (context.HasApexRivalTarget)
+            if (CreatureUtilityContext.HasApexRivalTarget(in context))
                 input.Flags |= (int)CognitionInputFlags.HasApexRivalTarget;
-            if (context.HasPreyTarget)
+            if (contextHasPreyTarget)
                 input.Flags |= (int)CognitionInputFlags.HasPreyTarget;
-            if (context.HasScavengeTarget)
+            if (contextHasScavengeTarget)
                 input.Flags |= (int)CognitionInputFlags.HasScavengeTarget;
-            if (context.UseHomeTerritory)
+            if (CreatureUtilityContext.UseHomeTerritory(in context))
                 input.Flags |= (int)CognitionInputFlags.UseHomeTerritory;
-            if (context.IsFlocking)
+            if (CreatureUtilityContext.IsFlocking(in context))
                 input.Flags |= (int)CognitionInputFlags.IsFlocking;
-            if (context.HasScatterDirection)
+            if (CreatureUtilityContext.HasScatterDirection(in context))
                 input.Flags |= (int)CognitionInputFlags.HasScatterDirection;
-            if (context.IsAggressive)
+            if (CreatureUtilityContext.IsAggressive(in context))
                 input.Flags |= (int)CognitionInputFlags.IsAggressive;
-            if (context.HasVisualContact)
+            if (contextHasVisualContact)
                 input.Flags |= (int)CognitionInputFlags.HasVisualPlayerHint;
-            if (context.IsApexPredator)
+            if (contextIsApexPredator)
                 input.Flags |= (int)CognitionInputFlags.IsApexPredator;
-            if (context.UseAlphaLeviathanCognition)
+            if (CreatureUtilityContext.UseAlphaLeviathanCognition(in context))
                 input.Flags |= (int)CognitionInputFlags.UseAlphaLeviathanCognition;
-            if (UsesHighTierApexCognitionSteering(context.IsApexPredator))
+            if (UsesApexCognitionSteering(contextIsApexPredator))
                 input.Flags |= (int)CognitionInputFlags.HighTierSmoothSteering;
             if ((_speciesProfile != null && _speciesProfile.isAmbusher) ||
                 (_dataTemplate != null && _dataTemplate.CanBurrowAmbush))
@@ -679,7 +809,7 @@ namespace Hecton8.AI
             if (hasPackTarget)
                 input.Flags |= (int)CognitionInputFlags.HasPackTarget;
 
-            if (hasAnyPlayerTarget && context.HasVisualContact)
+            if (hasAnyPlayerTarget && contextHasVisualContact)
             {
                 PredatorCognitionDomain.RecordStimulus(
                     _slot,
@@ -699,7 +829,7 @@ namespace Hecton8.AI
                     CognitionStimulusType.Acoustic);
             }
 
-            if (context.HasScavengeTarget && chemicalSignal01 > 0.01f)
+            if (contextHasScavengeTarget && chemicalSignal01 > 0.01f)
             {
                 PredatorCognitionDomain.RecordStimulus(
                     _slot,
@@ -715,7 +845,7 @@ namespace Hecton8.AI
             ResolveAcousticHeadSweepTarget(
                 in context,
                 in acousticEchoHunt,
-                hasAcousticEchoBreadcrumb && !context.HasPlayerTarget,
+                hasAcousticEchoBreadcrumb && !contextHasPlayerTarget,
                 out bool hasAcousticHeadLook,
                 out Vector3 acousticHeadLookTarget,
                 out float acousticHeadLookWeight);
@@ -736,6 +866,34 @@ namespace Hecton8.AI
                 hasAcousticHeadLook,
                 acousticHeadLookTarget,
                 acousticHeadLookWeight);
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
+        }
+
+        private static double3 ResolveCurrentRuntimeOriginOffset()
+        {
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return double3.zero;
+
+            double3 absoluteOrigin = originAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteOrigin)) ? absoluteOrigin : double3.zero;
         }
 
         private static void ResolveAcousticHeadSweepTarget(
@@ -774,26 +932,29 @@ namespace Hecton8.AI
             hasHeadLook = weight > 0.01f;
         }
 
-        private static bool UsesHighTierApexCognitionSteering(bool isApexPredator)
+        private static bool UsesApexCognitionSteering(bool isApexPredator)
         {
-            if (!isApexPredator)
-                return false;
-
-            uint tierBit = 1u << (int)GlobalRegistry.ScalabilityTier;
-            return (HighTierApexCognitionSteeringMask & tierBit) != 0u &&
-                   GlobalRegistry.TargetMathPrecision == MathPrecisionLevel.High;
+            return isApexPredator;
         }
 
         public void Dispose()
         {
-            if (_initialized)
+            if (_initialized != 0)
             {
                 PredatorCognitionDomain.Unregister(_slot);
                 _slot = -1;
             }
 
             _lastConsumedAcousticPingSignalSequence = 0;
-            _initialized = false;
+            _initialized = 0;
+            RefreshCachedFlags();
+        }
+
+        private void RefreshCachedFlags()
+        {
+            UsesPredatorRole = IsPredatorArchetype(_archetype, _speciesProfile) ? (byte)1 : (byte)0;
+            IsActivePredator = UsesPredatorRole;
+            IsRegistered = _initialized != 0 && _slot >= 0 ? (byte)1 : (byte)0;
         }
 
         private static bool IsPredatorArchetype(CreatureArchetypeData archetype, FaunaSpeciesProfile speciesProfile)

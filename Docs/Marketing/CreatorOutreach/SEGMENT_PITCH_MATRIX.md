@@ -27,7 +27,7 @@ Rule: customize before sending
 | Russian/CIS | atmosphere, horror, survival, strong identity | mrachnoe podvodnoe vyzhivanie, davlenie, tekhnika | localized one-sheet | machine translation | kooperativ |
 | German | survival systems, long-form LP, simulation | pressure/base/machinery planning | long-form demo | overhype | direct clone bait |
 | Polish | indie discovery, survival/horror | industrial ocean dread and exploration | demo + one-sheet | limited localization | fake Polish translation |
-| French | atmosphere, survival, curiosity | deep-sea noir and machine failure | polished screenshots | very competitive top creators | co-op tease |
+| French | atmosphere, survival, curiosity | deep-sea noir and machine failure | polished screenshots | very competitive top creators | co-op tease, unsupported multiplayer scope |
 | Spanish | horror/survival reactions | fear of depth, sonar, salvage | clips + demo | broad variety mismatch | competitor superiority claim |
 | Portuguese/Brazil | survival, horror, strong thumbnails | black-water survival and pressure | clips + screenshots | localization quality | unverified Portuguese copy |
 
@@ -143,7 +143,7 @@ Every pitch must include:
 
 Template:
 
-> I am reaching out because your [specific series/video/content type] audience already responds to [survival/horror/machinery/underwater exploration]. HECTON-8 is a single-player-first underwater survival game focused on [one angle], with public scope kept inside what the current build can show. The useful asset is [link]. If it fits your future coverage, I can send [demo/press kit] when ready.
+> I am reaching out because your [specific series/video/content type] audience already responds to [survival/horror/machinery/underwater exploration]. HECTON-8 is a single-player-first underwater survival game focused on [one angle], with public scope kept inside what the current build can show. HOLD_USEFUL_ASSET_LINK - insert one exact asset ID/link only after asset metadata claim checks, QA, creator utility, `creator_send_gate`, route class, and public/private route gates pass. HOLD_DEMO_PRESSKIT_ROUTE - mention demo or press kit only after the exact public CTA, private access, or presskit gate passes.
 
 ## Competitor Mention Gate
 
@@ -153,7 +153,7 @@ Allowed in internal notes:
 
 - `recent underwater-survival coverage`;
 - `direct Subnautica history`;
-- `2026-05-18/19 SN2-active recorded signal` as internal CRM evidence only; never as current-send proof.
+- dated SN2/Subnautica activity as audience-fit evidence only; never as current-send proof, competitor weakness proof, co-op bait, or public pain framing.
 
 Allowed in final sends:
 
@@ -166,6 +166,8 @@ Forbidden in final sends:
 - direct comparison unless the creator explicitly asks.
 
 Before send, check the matching asset metadata fields `public_comparison_gate`, `pain_freshness_source`, `pain_freshness_checked_at`, `creator_utility_score`, `creator_send_gate`, `agency_decision_proof_gate`, `agency_decision_notes`, `capture_handoff_packet_id`, `capture_verdict`, and `viewer_named_decision`, plus AB-009/KPI `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` when the pitch claims gameplay/pressure/route-risk proof. If public comparison is not `PRIVATE_ONLY_NO_COMPETITOR_COPY` or stricter, if pain freshness is still `PENDING_SAME_DAY_REFRESH` for a pain-backed angle, if the creator-facing gate is not open for that recipient segment, if `capture_verdict` is held/killed/pending, or if a gameplay/pressure/route-risk pitch lacks one factual `AGENCY_PROOF_CANDIDATE` with metadata viewer decision and decision-read evidence, do not send.
+
+SN2-derived pain or audience-fit rows require V6 or a newer same-day monitoring row in `pain_freshness_source` before they influence asset priority. They cannot justify subject lines, creator hooks, co-op teasers, performance claims, EULA commentary, or "we fixed their problem" copy.
 
 ## Rejection / Non-Response Handling
 

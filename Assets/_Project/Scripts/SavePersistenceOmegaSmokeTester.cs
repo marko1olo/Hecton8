@@ -113,7 +113,7 @@ namespace Hecton8.Dev
                 }.Schedule(probes.Length, 4);
                 JobHandle.ScheduleBatchedJobs();
                 // COLD SYNC JOB: editor-only smoke waits for a deterministic artifact; runtime save paths must not Complete here.
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
 
                 for (int i = 0; i < results.Length; i++)
                 {

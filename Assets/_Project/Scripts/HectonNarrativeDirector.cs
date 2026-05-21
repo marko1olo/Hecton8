@@ -29,11 +29,17 @@ namespace Hecton8.Gameplay
     [DefaultExecutionOrder(-150)]
     public sealed class HectonNarrativeDirector : MonoBehaviour, ISaveable, ISlowTickable, INarrativeEventListener, INarrativePointOfInterestListener, IDirectorAIEventListener, ISpatialTriggerSystem, IOriginShiftListener, IDisposable
     {
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct NarrativeNode
         {
+            [FieldOffset(0)]
             public uint DiscoveryHash;
+            [FieldOffset(4)]
             public ushort Reserved0;
+            [FieldOffset(6)]
             public ushort Reserved1;
+            [FieldOffset(8)]
+            private ulong _pad0;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 80)]
@@ -76,8 +82,8 @@ namespace Hecton8.Gameplay
             [NoAlias, ReadOnly] public NativeArray<long> PoiGridX;
             [NoAlias, ReadOnly] public NativeArray<long> PoiGridZ;
             [NoAlias] public NativeArray<byte> PoiState;
-            [NoAlias] public NativeArray<int> TriggeredIndices;
-            [NoAlias] public NativeArray<uint> TriggeredHashes;
+            [NoAlias, WriteOnly] public NativeArray<int> TriggeredIndices;
+            [NoAlias, WriteOnly] public NativeArray<uint> TriggeredHashes;
             [NoAlias] public NativeArray<int> TriggeredCount;
             [NoAlias] public NativeArray<int> FaultCount;
             public float3 PlayerRuntime;
@@ -152,9 +158,8 @@ namespace Hecton8.Gameplay
         [SerializeField, Sirenix.OdinInspector.ReadOnly] private ulong narrativeAupTriggeredMask;
 
         private const float SlowTickDeltaSeconds = 0.5f;
-        private const float HighTierAupScanIntervalSeconds = 0.5f;
-        private const float DefaultAupScanIntervalSeconds = 1f;
-        private const float LowTierAupScanIntervalSeconds = 1f;
+        private const float VisualOverkillAupScanIntervalSeconds = 0.5f;
+        private const float SurvivalAupScanIntervalSeconds = 1f;
         private const int NativePoiCapacity = 64;
         private const int BlackBoxCapacity = 300;
         private const int BlackBoxDumpCooldownFrames = 120;
@@ -203,7 +208,7 @@ namespace Hecton8.Gameplay
         private bool _registeredNarrativeRuntime;
         private bool _registeredSpatialTriggerRuntime;
         private bool _registeredSlowTick;
-        private float _aupScanAccumulator = LowTierAupScanIntervalSeconds;
+        private float _aupScanAccumulator = SurvivalAupScanIntervalSeconds;
         private bool _aupScannerDisabledForCurrentPoiSet;
         private bool _scanJobScheduled;
         private int _poiCount;
@@ -261,7 +266,7 @@ namespace Hecton8.Gameplay
             currentDepthTier = data.narrativeDepthTier;
             narrativeAupTriggeredMask = data.narrativeAupTriggeredMask;
             _aupScannerDisabledForCurrentPoiSet = false;
-            _aupScanAccumulator = LowTierAupScanIntervalSeconds;
+            _aupScanAccumulator = ResolveAupScanIntervalSeconds();
             discoveredIds.Clear();
 
             if (data.narrativeDiscoveryIds != null)
@@ -386,7 +391,9 @@ namespace Hecton8.Gameplay
         public NarrativeDiscovery GetNearestUndiscoveredPOI(Vector3 center, float maxDistance)
         {
             NarrativeDiscovery nearest = null;
-            AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(center);
+            if (!TryResolveRuntimeAup(center, out AbsoluteUniversePosition centerAup))
+                return null;
+
             double minSqrDist = (double)maxDistance * maxDistance;
 
             for (int i = 0; i < _activePOIs.Count; i++)
@@ -427,7 +434,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolveRuntimeAup(playerPosition, out AbsoluteUniversePosition playerAup))
+            {
+                DumpBlackBoxToDisk();
+                GlobalTelemetryBus.PublishPerformanceWarning(_blackBoxFaultWarningHash, _blackBoxFaultContextHash, 1f);
+                return;
+            }
+
             CompleteSpatialJobIfReady(in playerAup, playerRuntime);
 
             if (ShouldScanAupNarrativeTriggers() && !_scanJobScheduled)
@@ -658,16 +671,10 @@ namespace Hecton8.Gameplay
                 PlayerRuntime = playerRuntime,
                 PlayerGridX = playerAup.GridX,
                 PlayerGridZ = playerAup.GridZ,
-                UseDominantAxisPreCull = ShouldUseDominantAxisPreCull() ? (byte)1 : (byte)0,
+                UseDominantAxisPreCull = 1,
                 PoiCount = _poiCount
             }.Schedule();
             _scanJobScheduled = true;
-        }
-
-        private static bool ShouldUseDominantAxisPreCull()
-        {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
         }
 
         private void CompleteSpatialJobIfReady(in AbsoluteUniversePosition playerAup, float3 playerRuntime)
@@ -914,7 +921,9 @@ namespace Hecton8.Gameplay
         private AbsoluteUniversePosition CreateAupFromPoiSlot(int poiIndex)
         {
             float3 runtime = _poiAups[poiIndex];
-            return AbsoluteUniversePosition.FromRuntimePosition(new Vector3(runtime.x, runtime.y, runtime.z));
+            return TryResolveRuntimeAup(new Vector3(runtime.x, runtime.y, runtime.z), out AbsoluteUniversePosition poiAup)
+                ? poiAup
+                : default;
         }
 
         private void WriteBlackBoxSample(int poiIndex, uint poiHash, in AbsoluteUniversePosition playerAup, float3 playerRuntime)
@@ -1062,7 +1071,7 @@ namespace Hecton8.Gameplay
             {
                 _activePOIs.Add(poi);
                 _aupScannerDisabledForCurrentPoiSet = false;
-                _aupScanAccumulator = LowTierAupScanIntervalSeconds;
+                _aupScanAccumulator = ResolveAupScanIntervalSeconds();
             }
 
             RegisterNarrativeNode(poi.DiscoveryId);
@@ -1096,19 +1105,10 @@ namespace Hecton8.Gameplay
 
         private static float ResolveAupScanIntervalSeconds()
         {
-            switch (GlobalRegistry.ScalabilityTier)
-            {
-                case HectonQualityTier.High:
-                case HectonQualityTier.Ultra:
-                    return HighTierAupScanIntervalSeconds;
-
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                    return LowTierAupScanIntervalSeconds;
-
-                default:
-                    return DefaultAupScanIntervalSeconds;
-            }
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.saturate(math.select(0f, quality, math.isfinite(quality)));
+            float smooth = quality * quality * (3f - 2f * quality);
+            return math.lerp(SurvivalAupScanIntervalSeconds, VisualOverkillAupScanIntervalSeconds, smooth);
         }
 
         private int CalculateDepthTier(float depth)
@@ -1135,6 +1135,24 @@ namespace Hecton8.Gameplay
             double3 origin = a.ToAbsoluteDouble3();
             double3 target = b.ToAbsoluteDouble3();
             return AupPrecisionMath.DistanceSqSafeDouble(target, origin);
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private void HandleDiscovery(uint discoveryHash)

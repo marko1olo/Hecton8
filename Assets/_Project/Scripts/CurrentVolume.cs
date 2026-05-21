@@ -101,6 +101,7 @@ namespace Hecton8.Physics
         private Vector3 _cachedDirectionalFlow = Vector3.forward;
         private Matrix4x4 _cachedWorldToLocalMatrix = Matrix4x4.identity;
         private AbsoluteUniversePosition _cachedAup;
+        private bool _cachedAupValid;
         private float _cachedSampleTime;
         private float _cachedInfluenceRadiusSq = 64f;
         private uint _sampleCacheShiftSequence;
@@ -277,9 +278,14 @@ namespace Hecton8.Physics
             RefreshSampleCache();
             if (_cachedInfluenceRadiusSq > LargeVolumeAupCullThresholdSq)
             {
+                if (!_cachedAupValid)
+                    return false;
+
                 if (!sampleAupValid)
                 {
-                    sampleAup = AbsoluteUniversePosition.FromRuntimePosition(worldPos);
+                    if (!TryResolveAupFromRuntimeOrigin(worldPos, out sampleAup))
+                        return false;
+
                     sampleAupValid = true;
                 }
 
@@ -401,10 +407,38 @@ namespace Hecton8.Physics
             float influenceRadius = GetApproximateInfluenceRadius();
             _cachedInfluenceRadiusSq = influenceRadius * influenceRadius;
             if (_cachedInfluenceRadiusSq > LargeVolumeAupCullThresholdSq)
-                _cachedAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedPosition);
+            {
+                _cachedAupValid = TryResolveAupFromRuntimeOrigin(_cachedPosition, out _cachedAup);
+            }
+            else
+            {
+                _cachedAup = default;
+                _cachedAupValid = false;
+            }
+
             _cachedSampleTime = ResolveFrameSampleTime();
             _sampleCacheFrame = frame;
             _sampleCacheShiftSequence = shiftSequence;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static float ResolveFrameSampleTime()

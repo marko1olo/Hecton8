@@ -63,11 +63,11 @@ namespace Hecton8.Visor
                 VrComfortMotion = vrComfortMotion;
             }
 
-            public float BrownoutIntensity { get; }
-            public float WorldFocusBlur { get; }
-            public float NearCollisionIntensity { get; }
-            public Vector4 VrComfortSignals { get; }
-            public Vector4 VrComfortMotion { get; }
+            public readonly float BrownoutIntensity;
+            public readonly float WorldFocusBlur;
+            public readonly float NearCollisionIntensity;
+            public readonly Vector4 VrComfortSignals;
+            public readonly Vector4 VrComfortMotion;
         }
 
         private sealed class BrownoutPass : ScriptableRenderPass
@@ -226,12 +226,19 @@ namespace Hecton8.Visor
                        math.abs(left.w - right.w) <= GlobalsFloatEpsilon;
             }
 
-            [StructLayout(LayoutKind.Sequential, Size = VRBrownoutGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Explicit, Size = VRBrownoutGlobalsStrideBytes)]
             private struct BrownoutGlobalsDTO
             {
+                [FieldOffset(0)]
                 public Vector4 Params0;
+
+                [FieldOffset(16)]
                 public Vector4 Params1;
+
+                [FieldOffset(32)]
                 public Vector4 VrComfortSignals;
+
+                [FieldOffset(48)]
                 public Vector4 VrComfortMotion;
 
                 public BrownoutGlobalsDTO(

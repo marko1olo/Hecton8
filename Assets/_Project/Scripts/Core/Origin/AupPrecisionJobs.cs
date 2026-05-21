@@ -220,18 +220,25 @@ namespace Hecton8.Core
         public static bool TryDumpFaultTelemetry(IDataVault vault)
         {
             if (vault == null ||
-                !vault.TryGetBuffer<AupPrecisionTelemetryEntry>(TelemetryRingBuffer, out NativeArray<AupPrecisionTelemetryEntry> ring) ||
-                !ring.IsCreated ||
-                !vault.TryGetBuffer<AupPrecisionRuntimeStateDTO>(RuntimeStateBuffer, out NativeArray<AupPrecisionRuntimeStateDTO> runtimeState) ||
-                !runtimeState.IsCreated ||
-                runtimeState.Length <= 0)
+                !TryOpenExistingLane(
+                    vault,
+                    TelemetryRingBuffer,
+                    AupPrecisionMath.TelemetryCapacity,
+                    out NativeArray<AupPrecisionTelemetryEntry> ring) ||
+                !TryOpenExistingLane(
+                    vault,
+                    RuntimeStateBuffer,
+                    1,
+                    out NativeArray<AupPrecisionRuntimeStateDTO> runtimeState))
             {
                 return false;
             }
 
-            if (vault.TryGetBuffer<AupPrecisionFaultCounter64>(FaultCounterBuffer, out NativeArray<AupPrecisionFaultCounter64> counters) &&
-                counters.IsCreated &&
-                counters.Length > 0)
+            if (TryOpenExistingLane(
+                    vault,
+                    FaultCounterBuffer,
+                    1,
+                    out NativeArray<AupPrecisionFaultCounter64> counters))
             {
                 AupPrecisionFaultCounter64 counter = counters[0];
                 if (counter.NonFiniteCount <= 0 && counter.ClampedCount <= 0)
@@ -244,30 +251,48 @@ namespace Hecton8.Core
         private static bool TryResolveExisting(IDataVault vault, int capacity, out AupPrecisionVaultViews views)
         {
             views = default;
-            if (!vault.TryGetGenerationHandle<double3>(TargetAupsBuffer, out VaultGenerationHandle<double3> targetAups) ||
-                !vault.TryGetGenerationHandle<AupPrecisionRuntimeStateDTO>(RuntimeStateBuffer, out VaultGenerationHandle<AupPrecisionRuntimeStateDTO> runtimeState) ||
-                !vault.TryGetGenerationHandle<float3>(LocalOffsetsBuffer, out VaultGenerationHandle<float3> localOffsets) ||
-                !vault.TryGetGenerationHandle<uint>(ResultFlagsBuffer, out VaultGenerationHandle<uint> resultFlags) ||
-                !vault.TryGetGenerationHandle<AupPrecisionTelemetryEntry>(TelemetryRingBuffer, out VaultGenerationHandle<AupPrecisionTelemetryEntry> telemetryRing) ||
-                !vault.TryGetGenerationHandle<AupToleranceProfileDTO>(ToleranceProfilesBuffer, out VaultGenerationHandle<AupToleranceProfileDTO> toleranceProfiles) ||
-                !vault.TryGetGenerationHandle<byte>(CsvScratchBuffer, out VaultGenerationHandle<byte> csvScratch) ||
-                !vault.TryGetGenerationHandle<double3>(MockExtremeAupsBuffer, out VaultGenerationHandle<double3> mockExtremeAups) ||
-                !vault.TryGetGenerationHandle<AupPrecisionFaultCounter64>(FaultCounterBuffer, out VaultGenerationHandle<AupPrecisionFaultCounter64> faultCounters) ||
-                !vault.TryResolveHandle(in targetAups, out views.TargetAups) ||
-                !vault.TryResolveHandle(in runtimeState, out views.RuntimeState) ||
-                !vault.TryResolveHandle(in localOffsets, out views.LocalOffsets) ||
-                !vault.TryResolveHandle(in resultFlags, out views.ResultFlags) ||
-                !vault.TryResolveHandle(in telemetryRing, out views.TelemetryRing) ||
-                !vault.TryResolveHandle(in toleranceProfiles, out views.ToleranceProfiles) ||
-                !vault.TryResolveHandle(in csvScratch, out views.CsvScratch) ||
-                !vault.TryResolveHandle(in mockExtremeAups, out views.MockExtremeAups) ||
-                !vault.TryResolveHandle(in faultCounters, out views.FaultCounters))
+            if (!TryOpenExistingLane(vault, TargetAupsBuffer, capacity, out views.TargetAups) ||
+                !TryOpenExistingLane(vault, RuntimeStateBuffer, 1, out views.RuntimeState) ||
+                !TryOpenExistingLane(vault, LocalOffsetsBuffer, capacity, out views.LocalOffsets) ||
+                !TryOpenExistingLane(vault, ResultFlagsBuffer, capacity, out views.ResultFlags) ||
+                !TryOpenExistingLane(vault, TelemetryRingBuffer, AupPrecisionMath.TelemetryCapacity, out views.TelemetryRing) ||
+                !TryOpenExistingLane(vault, ToleranceProfilesBuffer, ToleranceProfileCapacity, out views.ToleranceProfiles) ||
+                !TryOpenExistingLane(vault, CsvScratchBuffer, CsvScratchBytes, out views.CsvScratch) ||
+                !TryOpenExistingLane(vault, MockExtremeAupsBuffer, capacity, out views.MockExtremeAups) ||
+                !TryOpenExistingLane(vault, FaultCounterBuffer, 1, out views.FaultCounters))
             {
                 views = default;
                 return false;
             }
 
             return views.IsValidForCapacity(capacity);
+        }
+
+        private static bool TryOpenExistingLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                handle.BufferID != unchecked((uint)(int)bufferId) ||
+                handle.Generation == 0u)
+            {
+                return false;
+            }
+
+            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -3,7 +3,8 @@
     "rootNamespace": "Hecton8.Environment.Fluids",
     "references": [
         "Unity.Mathematics",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.Jobs"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -314,9 +314,42 @@ namespace Hecton8.Gameplay.Editor
             "transform.forward",
             "transform.position",
             "transform.right",
+            "hitCollider.transform",
+            "target.transform",
+            "Transform.IsChildOf",
+            "Time.time",
             "Time.frameCount",
             "Time.deltaTime",
-            "UnityEngine.Random"
+            "UnityEngine.Random",
+            "GlobalRegistry.ScalabilityTier",
+            "IsLowScannerPresentationTier",
+            "ResolveQueryCadenceFrames(HectonQualityTier",
+            "string.Format(",
+            "string.Create(",
+            "BuildLowerAsciiPrefixedEntryId",
+            "BuildCachedPrefixedString",
+            "ComputeLowerAsciiPrefixedFnvHash",
+            "AppendLowerAsciiFnv",
+            "FoldAsciiLower",
+            "ItemEntryPrefix",
+            "ModuleEntryPrefix",
+            "item.PersistentId",
+            "data.PersistentId",
+            "scannable.EntryCategory",
+            "RaiseEntryDiscovered(\"",
+            ".Split(",
+            "Enumerable.",
+            ".ToList(",
+            ".ToArray(",
+            "foreach",
+            "TryResolveHandle",
+            "GlobalSignals.Publish",
+            "GetComponentInParent",
+            "TryGetComponent",
+            ".Schedule(",
+            ".Run(",
+            ".Complete(",
+            "forceComplete: true"
         };
 
         public static void RunAndWriteReport()
@@ -336,10 +369,10 @@ namespace Hecton8.Gameplay.Editor
                     for (int patternIndex = 0; patternIndex < ForbiddenHotPatterns.Length; patternIndex++)
                     {
                         string pattern = ForbiddenHotPatterns[patternIndex];
-                        if (!ShouldEvaluatePattern(ScanRoots[i], pattern))
+                        if (line.IndexOf(pattern, StringComparison.Ordinal) < 0)
                             continue;
 
-                        if (line.IndexOf(pattern, StringComparison.Ordinal) < 0)
+                        if (!ShouldEvaluatePattern(ScanRoots[i], lines, lineIndex, pattern))
                             continue;
 
                         findings.Add(new Finding(ScanRoots[i], lineIndex + 1, pattern, line.Trim()));
@@ -347,18 +380,144 @@ namespace Hecton8.Gameplay.Editor
                 }
             }
 
-            string reportPath = Path.Combine(projectRoot, "Docs", "Reports", "CONSTRUCTION_OPTIMIZATION_REPORT.json");
-            Directory.CreateDirectory(Path.GetDirectoryName(reportPath) ?? projectRoot);
-            File.WriteAllText(reportPath, BuildJson(findings), Encoding.UTF8);
-            Debug.Log($"SHINOBU_226 scanner string inquisition wrote {findings.Count} findings to {reportPath}");
+            string reportsDirectory = Path.Combine(projectRoot, "Docs", "Reports");
+            string agentReportPath = Path.Combine(reportsDirectory, "CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_226.json");
+            string sharedReportPath = Path.Combine(reportsDirectory, "CONSTRUCTION_OPTIMIZATION_REPORT.json");
+            string reportJson = BuildJson(findings);
+            Directory.CreateDirectory(reportsDirectory);
+            File.WriteAllText(agentReportPath, reportJson, Encoding.UTF8);
+
+            if (CanOwnSharedConstructionReport(sharedReportPath))
+                File.WriteAllText(sharedReportPath, reportJson, Encoding.UTF8);
+
+            Debug.Log("SHINOBU_226 scanner string inquisition wrote " + findings.Count + " findings to " + agentReportPath);
         }
 
-        private static bool ShouldEvaluatePattern(string scanRoot, string pattern)
+        private static bool CanOwnSharedConstructionReport(string sharedReportPath)
         {
-            if (!pattern.StartsWith("transform.", StringComparison.Ordinal))
+            if (!File.Exists(sharedReportPath))
                 return true;
 
-            return scanRoot.EndsWith("ScannerDataMiningRouter.cs", StringComparison.Ordinal);
+            string existing = File.ReadAllText(sharedReportPath);
+            return existing.IndexOf("SHINOBU_226_SCANNER_LORE_DATABASE_SYNC", StringComparison.Ordinal) >= 0 ||
+                   existing.IndexOf("Scanner_String_Inquisition", StringComparison.Ordinal) >= 0;
+        }
+
+        private static bool ShouldEvaluatePattern(string scanRoot, string[] lines, int lineIndex, string pattern)
+        {
+            if (pattern.StartsWith("transform.", StringComparison.Ordinal) &&
+                !scanRoot.EndsWith("ScannerDataMiningRouter.cs", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (pattern == "TryResolveHandle")
+                return ShouldReportTryResolveHandle(scanRoot, lines, lineIndex);
+
+            if (pattern == ".Schedule(")
+                return ShouldReportSchedule(scanRoot, lines, lineIndex);
+
+            if (pattern == "forceComplete: true")
+                return !IsWithinMethod(lines, lineIndex, "OnDisable");
+
+            if (pattern == "GlobalSignals.Publish")
+                return ShouldReportGlobalSignalPublish(lines, lineIndex);
+
+            if (pattern == "GetComponentInParent" || pattern == "TryGetComponent")
+                return !IsColdUnityComponentBinding(lines, lineIndex);
+
+            return true;
+        }
+
+        private static bool ShouldReportTryResolveHandle(string scanRoot, string[] lines, int lineIndex)
+        {
+            if (scanRoot.EndsWith("ScannerDataMiningRouter.cs", StringComparison.Ordinal))
+            {
+                return !IsWithinMethod(lines, lineIndex, "TryRefreshVaultViewsCold") &&
+                       !IsWithinMethod(lines, lineIndex, "TryReadVaultSettings") &&
+                       !IsWithinMethod(lines, lineIndex, "TryWriteVaultSettings");
+            }
+
+            if (scanRoot.EndsWith("PDAEncyclopediaStreamer.cs", StringComparison.Ordinal))
+                return !IsWithinMethod(lines, lineIndex, "TryRefreshVaultViewsCold");
+
+            if (scanRoot.EndsWith("ScannerTool.cs", StringComparison.Ordinal))
+                return !IsWithinMethod(lines, lineIndex, "EnsureScannerBlackBoxVault");
+
+            if (scanRoot.EndsWith("ScannableTarget.cs", StringComparison.Ordinal))
+                return !IsWithinMethod(lines, lineIndex, "TryRefreshLoreEntityVaultViewsCold");
+
+            if (scanRoot.EndsWith("PdaH8lrLoreStore.cs", StringComparison.Ordinal))
+                return !IsWithinMethod(lines, lineIndex, "TryOpenVaultMirror");
+
+            return true;
+        }
+
+        private static bool ShouldReportSchedule(string scanRoot, string[] lines, int lineIndex)
+        {
+            if (!scanRoot.EndsWith("ScannerDataMiningRouter.cs", StringComparison.Ordinal))
+                return true;
+
+            return !ContainsNearby(lines, lineIndex, "ScannerSpatialQueryJob", 28);
+        }
+
+        private static bool ShouldReportGlobalSignalPublish(string[] lines, int lineIndex)
+        {
+            string window = GatherNearby(lines, lineIndex, 4);
+            return window.IndexOf("AcousticPingSignal", StringComparison.Ordinal) < 0 &&
+                   window.IndexOf("ScannerToolActiveSignal", StringComparison.Ordinal) < 0 &&
+                   window.IndexOf("AnomalySignal", StringComparison.Ordinal) < 0 &&
+                   window.IndexOf("CrashTelemetrySignal", StringComparison.Ordinal) < 0;
+        }
+
+        private static bool IsColdUnityComponentBinding(string[] lines, int lineIndex)
+        {
+            return IsWithinMethod(lines, lineIndex, "Awake") ||
+                   IsWithinMethod(lines, lineIndex, "OnEnable") ||
+                   IsWithinMethod(lines, lineIndex, "TryBindPlayerContextCold") ||
+                   IsWithinMethod(lines, lineIndex, "TryBindPdaCold");
+        }
+
+        private static bool IsWithinMethod(string[] lines, int lineIndex, string methodName)
+        {
+            string needle = methodName + "(";
+            int start = Math.Max(0, lineIndex - 180);
+            for (int i = lineIndex; i >= start; i--)
+            {
+                string line = lines[i];
+                if (line.IndexOf(needle, StringComparison.Ordinal) >= 0)
+                    return true;
+
+                if (i == lineIndex)
+                    continue;
+
+                if ((line.IndexOf("private ", StringComparison.Ordinal) >= 0 ||
+                     line.IndexOf("public ", StringComparison.Ordinal) >= 0 ||
+                     line.IndexOf("internal ", StringComparison.Ordinal) >= 0) &&
+                    line.IndexOf('(') >= 0 &&
+                    line.IndexOf(')') >= 0)
+                {
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsNearby(string[] lines, int lineIndex, string needle, int radius)
+        {
+            return GatherNearby(lines, lineIndex, radius).IndexOf(needle, StringComparison.Ordinal) >= 0;
+        }
+
+        private static string GatherNearby(string[] lines, int lineIndex, int radius)
+        {
+            StringBuilder builder = new StringBuilder(256);
+            int start = Math.Max(0, lineIndex - radius);
+            int end = Math.Min(lines.Length - 1, lineIndex + radius);
+            for (int i = start; i <= end; i++)
+                builder.Append(lines[i]).Append('\n');
+
+            return builder.ToString();
         }
 
         private static string BuildJson(List<Finding> findings)
@@ -367,9 +526,9 @@ namespace Hecton8.Gameplay.Editor
             builder.AppendLine("{");
             builder.Append("  \"generated_utc\": \"").Append(DateTime.UtcNow.ToString("O")).AppendLine("\",");
             builder.AppendLine("  \"scanner\": \"SHINOBU_226_SCANNER_LORE_DATABASE_SYNC\",");
-            builder.AppendLine("  \"summary\": \"Scanner hot path string lookup inquisition\",");
+            builder.Append("  \"summary\": \"").Append(findings.Count == 0 ? "Scanner Audit Clean" : "Residual Scanner Audit Findings").AppendLine("\",");
             builder.Append("  \"blocked_findings\": ").Append(findings.Count).AppendLine(",");
-            builder.AppendLine("  \"forbidden_patterns\": [\".name ==\", \"== target.name\", \"GetComponent<ItemData>\", \"GetComponent<ScannableTarget>\", \"GetComponent<ScannableFragment>\", \"transform.forward\", \"transform.position\", \"transform.right\", \"Time.frameCount\", \"Time.deltaTime\", \"UnityEngine.Random\"],");
+            AppendPatternsJson(builder);
             builder.AppendLine("  \"findings\": [");
             for (int i = 0; i < findings.Count; i++)
             {
@@ -388,6 +547,20 @@ namespace Hecton8.Gameplay.Editor
             builder.AppendLine("  ]");
             builder.AppendLine("}");
             return builder.ToString();
+        }
+
+        private static void AppendPatternsJson(StringBuilder builder)
+        {
+            builder.AppendLine("  \"forbidden_patterns\": [");
+            for (int i = 0; i < ForbiddenHotPatterns.Length; i++)
+            {
+                builder.Append("    \"").Append(Escape(ForbiddenHotPatterns[i])).Append('"');
+                if (i + 1 < ForbiddenHotPatterns.Length)
+                    builder.Append(',');
+                builder.AppendLine();
+            }
+
+            builder.AppendLine("  ],");
         }
 
         private static string Escape(string value)

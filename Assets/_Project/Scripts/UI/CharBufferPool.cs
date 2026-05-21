@@ -35,7 +35,7 @@ namespace Hecton8.UI
         private static readonly ulong[] s_freeMasks = CreateFreeMasks();
         private static ulong s_encyclopediaFreeMask = CreateEncyclopediaFreeMask();
         private static IDataVault s_babelArenaVault;
-        private static VaultBufferHandle<char> s_babelArenaHandle;
+        private static VaultGenerationHandle<char> s_babelArenaHandle;
         private static bool s_babelArenaVaultBacked;
         private static int s_activeLeaseCount;
 
@@ -98,7 +98,7 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            ClearBabelArenaHandle();
+            ReleaseBabelArenaHandle();
             ResetFreeMasks();
             ResetEncyclopediaFreeMask();
             EnsureBabelArena();
@@ -414,26 +414,20 @@ namespace Hecton8.UI
         private static bool TryResolveCurrentVaultArena(out NativeArray<char> arena)
         {
             arena = default;
-            if (!s_babelArenaVaultBacked || s_babelArenaVault == null)
+            if (!s_babelArenaVaultBacked ||
+                s_babelArenaVault == null ||
+                !IsVaultHandleCreated(in s_babelArenaHandle))
                 return false;
 
-            arena = s_babelArenaHandle.Resolve(s_babelArenaVault);
-            return arena.IsCreated && arena.Length >= BabelArenaLength;
+            return s_babelArenaVault.TryResolveHandle(in s_babelArenaHandle, out arena) &&
+                   arena.IsCreated &&
+                   arena.Length >= BabelArenaLength;
         }
 
         private static bool TryResolveBabelVault(out IDataVault vault)
         {
             vault = GlobalRegistry.DataVault;
-            if (vault != null)
-                return true;
-
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-            {
-                vault = latest;
-                return true;
-            }
-
-            return false;
+            return vault != null;
         }
 
         private static bool TryAcquireVaultBabelArena(IDataVault vault)
@@ -441,21 +435,44 @@ namespace Hecton8.UI
             if (vault == null)
                 return false;
 
-            s_babelArenaHandle = vault.GetBufferHandle<char>(
+            VaultGenerationHandle<char> acquired = vault.GetGenerationHandle<char>(
                 BabelArenaBufferId,
                 BabelArenaLength,
                 SystemID.UI,
                 NativeArrayOptions.UninitializedMemory);
-            NativeArray<char> resolved = s_babelArenaHandle.Resolve(vault);
-            if (!resolved.IsCreated || resolved.Length < BabelArenaLength)
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out NativeArray<char> resolved) ||
+                !resolved.IsCreated ||
+                resolved.Length < BabelArenaLength)
             {
-                s_babelArenaHandle = default;
                 return false;
             }
 
+            s_babelArenaHandle = acquired;
             s_babelArenaVault = vault;
             s_babelArenaVaultBacked = true;
             return true;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static void ReleaseBabelArenaHandle()
+        {
+            ReleaseVaultBuffer(s_babelArenaVault, ref s_babelArenaHandle);
+            s_babelArenaVault = null;
+            s_babelArenaVaultBacked = false;
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static void ClearBabelArenaHandle()

@@ -62,6 +62,7 @@ namespace Hecton8.Core.Data
         private VaultGenerationHandle<int> _btreeTelemetryCursorHandle;
         private VaultGenerationHandle<BTreeTelemetryAccumulatorDTO> _btreeTelemetryAccumulatorHandle;
         private VaultGenerationHandle<byte> _errorSliceHandle;
+        private VaultGenerationHandle<byte> _mappedBytesHandle;
         private JobHandle _activeLoreReadHandle;
         private int _lastTelemetryFrame = -1;
         private uint _frameLookupCount;
@@ -90,6 +91,9 @@ namespace Hecton8.Core.Data
         {
             if (ReferenceEquals(_dataVault, dataVault))
                 return;
+
+            if (_ownedFallbackPointer != null)
+                CloseFile();
 
             _dataVault = dataVault;
             _blackBoxHandle = default;
@@ -164,7 +168,7 @@ namespace Hecton8.Core.Data
                     return false;
                 }
 
-                if (!ReadFileIntoPaddedBuffer(path, _ownedFallbackPointer, info.Length))
+                if (!LoadFileIntoPaddedBufferCold(path, _ownedFallbackPointer, info.Length))
                 {
                     Dispose();
                     return false;
@@ -220,25 +224,47 @@ namespace Hecton8.Core.Data
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ReadOnlySpan<byte> GetUtf8(uint hash)
+        public ReadOnlySpan<byte> FetchUtf8(uint hash)
         {
-            return GetUtf8(hash, default);
+            if (!TryFindIndex(hash, out BabelIndexDTO entry, out _, out byte* basePointer, out long mappedBytes))
+                return ReadOnlySpan<byte>.Empty;
+
+            if (entry.ByteLength > int.MaxValue || entry.ByteOffset > mappedBytes - entry.ByteLength)
+                return ReadOnlySpan<byte>.Empty;
+
+            return new ReadOnlySpan<byte>(basePointer + entry.ByteOffset, (int)entry.ByteLength);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ReadOnlySpan<byte> GetUtf8(uint hash, NativeArray<uint> linkedAudioHashes)
+        public ReadOnlySpan<byte> FetchUtf8(uint hash, NativeArray<uint> linkedAudioHashes)
+        {
+            return FetchUtf8(hash);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> TrackUtf8Lookup(uint hash)
+        {
+            return TrackUtf8Lookup(hash, default);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ReadOnlySpan<byte> TrackUtf8Lookup(uint hash, NativeArray<uint> linkedAudioHashes)
         {
             RefreshFrameLookupCounters();
             _frameLookupCount++;
 
             long start = System.Diagnostics.Stopwatch.GetTimestamp();
-            bool found = TryFindIndex(hash, out BabelIndexDTO entry, out int entryIndex);
+            bool found = TryFindIndex(
+                hash,
+                out BabelIndexDTO entry,
+                out int entryIndex,
+                out uint depth,
+                out uint keysProcessed,
+                out uint prefetchTouchCount,
+                out byte* basePointer,
+                out long mappedBytes);
             long elapsedNs = ToNanoseconds(System.Diagnostics.Stopwatch.GetTimestamp() - start);
-            _lastSearchComputeTimeNs = elapsedNs <= 0L
-                ? 0u
-                : elapsedNs >= uint.MaxValue
-                    ? uint.MaxValue
-                    : (uint)elapsedNs;
+            CaptureLookupStats(depth, keysProcessed, prefetchTouchCount, elapsedNs);
 
             if (elapsedNs > SlowLookupDumpThresholdNs)
                 DumpBlackBox();
@@ -252,7 +278,7 @@ namespace Hecton8.Core.Data
                 return ErrorSpan();
             }
 
-            if (entry.ByteLength > int.MaxValue || entry.ByteOffset > _mappedBytes - entry.ByteLength)
+            if (entry.ByteLength > int.MaxValue || entry.ByteOffset > mappedBytes - entry.ByteLength)
             {
                 RecordTelemetry(StateErrorHash, ErrorBoundsHash, hash, entry.ByteOffset);
                 return ErrorSpan();
@@ -260,7 +286,7 @@ namespace Hecton8.Core.Data
 
             TryPublishLinkedAudio(hash, linkedAudioHashes, entryIndex);
             RecordTelemetry(StateOpenHash, 0u, hash, entry.ByteOffset);
-            return new ReadOnlySpan<byte>(_basePointer + entry.ByteOffset, (int)entry.ByteLength);
+            return new ReadOnlySpan<byte>(basePointer + entry.ByteOffset, (int)entry.ByteLength);
         }
 
         /// <summary>
@@ -293,13 +319,17 @@ namespace Hecton8.Core.Data
             }
 
             long start = System.Diagnostics.Stopwatch.GetTimestamp();
-            bool found = TryFindIndex(hash, out BabelIndexDTO entry, out _);
+            bool found = TryFindIndex(
+                hash,
+                out BabelIndexDTO entry,
+                out _,
+                out uint depth,
+                out uint keysProcessed,
+                out uint prefetchTouchCount,
+                out byte* basePointer,
+                out long mappedBytes);
             long elapsedNs = ToNanoseconds(System.Diagnostics.Stopwatch.GetTimestamp() - start);
-            _lastSearchComputeTimeNs = elapsedNs <= 0L
-                ? 0u
-                : elapsedNs >= uint.MaxValue
-                    ? uint.MaxValue
-                    : (uint)elapsedNs;
+            CaptureLookupStats(depth, keysProcessed, prefetchTouchCount, elapsedNs);
             if (_lastSearchComputeTimeNs > H8CacheBTree.BTreeSlowBatchThresholdNs)
                 DumpBTreeTelemetry();
 
@@ -312,7 +342,7 @@ namespace Hecton8.Core.Data
 
             if (entry.ByteLength > int.MaxValue ||
                 entry.ByteLength > outputBytes.Length ||
-                entry.ByteOffset > _mappedBytes - entry.ByteLength)
+                entry.ByteOffset > mappedBytes - entry.ByteLength)
             {
                 RecordTelemetry(StateErrorHash, ErrorBoundsHash, hash, entry.ByteOffset);
                 return false;
@@ -324,18 +354,40 @@ namespace Hecton8.Core.Data
                 return true;
             }
 
-            BabelLoreXorDecryptPointerJob job = new BabelLoreXorDecryptPointerJob
-            {
-                SourceBytes = _basePointer,
-                SourceByteLength = _mappedBytes,
-                DecryptionMask = decryptionMask,
-                OutputBytes = outputBytes,
-                SourceOffset = entry.ByteOffset,
-                ByteLength = entry.ByteLength
-            };
-
             byteLength = entry.ByteLength;
-            handle = job.Schedule((int)entry.ByteLength, 64, dependency);
+            if (_ownedFallbackPointer != null)
+            {
+                if (!TryResolveMappedBytesView(out NativeArray<byte> sourceBytes) ||
+                    sourceBytes.Length < mappedBytes)
+                {
+                    RecordTelemetry(StateErrorHash, ErrorBoundsHash, hash, entry.ByteOffset);
+                    return false;
+                }
+
+                BabelLoreXorDecryptJob job = new BabelLoreXorDecryptJob
+                {
+                    SourceBytes = sourceBytes,
+                    DecryptionMask = decryptionMask,
+                    OutputBytes = outputBytes,
+                    SourceOffset = entry.ByteOffset,
+                    ByteLength = entry.ByteLength
+                };
+                handle = job.Schedule((int)entry.ByteLength, 64, dependency);
+            }
+            else
+            {
+                BabelLoreXorDecryptPointerJob job = new BabelLoreXorDecryptPointerJob
+                {
+                    SourceBytes = basePointer,
+                    SourceByteLength = mappedBytes,
+                    DecryptionMask = decryptionMask,
+                    OutputBytes = outputBytes,
+                    SourceOffset = entry.ByteOffset,
+                    ByteLength = entry.ByteLength
+                };
+                handle = job.Schedule((int)entry.ByteLength, 64, dependency);
+            }
+
             RegisterLoreReadHandle(handle);
             RecordTelemetry(StateOpenHash, 0u, hash, entry.ByteOffset);
             return true;
@@ -381,8 +433,7 @@ namespace Hecton8.Core.Data
 
         public void DumpBlackBox(string path = null)
         {
-            if (!EnsureBlackBox() ||
-                !TryResolveBlackBox(out NativeArray<H8StaticDataTelemetryEntry> ring, out NativeArray<int> cursor))
+            if (!TryResolveBlackBox(out NativeArray<H8StaticDataTelemetryEntry> ring, out NativeArray<int> cursor))
             {
                 return;
             }
@@ -401,8 +452,7 @@ namespace Hecton8.Core.Data
 
         public void DumpBTreeTelemetry(string path = null)
         {
-            if (!EnsureBTreeTelemetry() ||
-                !TryResolveBTreeTelemetry(
+            if (!TryResolveBTreeTelemetry(
                     out NativeArray<BTreeTelemetryEntry> ring,
                     out NativeArray<int> cursor,
                     out _))
@@ -449,7 +499,7 @@ namespace Hecton8.Core.Data
             return (long)ns;
         }
 
-        private bool ReadFileIntoPaddedBuffer(string path, byte* destination, long sourceLength)
+        private bool LoadFileIntoPaddedBufferCold(string path, byte* destination, long sourceLength)
         {
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.SequentialScan))
             {
@@ -481,13 +531,22 @@ namespace Hecton8.Core.Data
             if (vault == null)
                 return false;
 
-            NativeArray<byte> paddedBytes = vault.GetBuffer<byte>(
+            _mappedBytesHandle = vault.GetGenerationHandle<byte>(
                 BufferID.BabelDictionaryMappedBytes,
                 (int)paddedLength,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.UninitializedMemory);
+
+            if (!vault.TryResolveHandle(in _mappedBytesHandle, out NativeArray<byte> paddedBytes))
+            {
+                _mappedBytesHandle = default;
+                _ownedFallbackPointer = null;
+                return false;
+            }
+
             if (!paddedBytes.IsCreated || paddedBytes.Length < paddedLength)
             {
+                _mappedBytesHandle = default;
                 _ownedFallbackPointer = null;
                 return false;
             }
@@ -497,9 +556,72 @@ namespace Hecton8.Core.Data
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryResolveMappedBytes(out byte* basePointer, out long mappedBytes)
+        {
+            basePointer = _basePointer;
+            mappedBytes = _mappedBytes;
+
+            if (_ownedFallbackPointer == null)
+                return basePointer != null && mappedBytes >= UnsafeUtility.SizeOf<H8BabelDictionaryHeader>();
+
+            IDataVault vault = _dataVault;
+            if (vault == null || _mappedBytesHandle.BufferID == 0u)
+            {
+                basePointer = null;
+                mappedBytes = 0L;
+                return false;
+            }
+
+            if (!vault.TryResolveHandle(in _mappedBytesHandle, out NativeArray<byte> mappedBytesView) ||
+                !mappedBytesView.IsCreated ||
+                mappedBytesView.Length < _mappedBytes)
+            {
+                basePointer = null;
+                mappedBytes = 0L;
+                return false;
+            }
+
+            basePointer = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(mappedBytesView);
+            mappedBytes = _mappedBytes;
+            return basePointer != null && mappedBytes >= UnsafeUtility.SizeOf<H8BabelDictionaryHeader>();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryResolveMappedBytesView(out NativeArray<byte> mappedBytesView)
+        {
+            mappedBytesView = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _mappedBytesHandle.BufferID != 0u &&
+                   vault.TryResolveHandle(in _mappedBytesHandle, out mappedBytesView) &&
+                   mappedBytesView.IsCreated &&
+                   mappedBytesView.Length >= _mappedBytes;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryResolveReadableView(out byte* basePointer, out BabelIndexDTO* indexPointer, out long mappedBytes)
+        {
+            indexPointer = null;
+            if (!TryResolveMappedBytes(out basePointer, out mappedBytes) ||
+                _header.EntryCount == 0u ||
+                _header.IndexOffset > mappedBytes)
+            {
+                basePointer = null;
+                mappedBytes = 0L;
+                return false;
+            }
+
+            indexPointer = (BabelIndexDTO*)(basePointer + _header.IndexOffset);
+            return indexPointer != null;
+        }
+
         private bool ValidateHeaderAndChecksum()
         {
-            _header = UnsafeUtility.ReadArrayElement<H8BabelDictionaryHeader>(_basePointer, 0);
+            if (!TryResolveMappedBytes(out byte* basePointer, out long mappedBytes))
+                return false;
+
+            _header = UnsafeUtility.ReadArrayElement<H8BabelDictionaryHeader>(basePointer, 0);
             if (_header.Magic == ReverseUInt32(H8StaticDataFormat.BabelMagic))
                 ReverseHeaderInPlace(ref _header);
 
@@ -507,8 +629,8 @@ namespace Hecton8.Core.Data
             if (_header.Magic != H8StaticDataFormat.BabelMagic ||
                 _header.FormatVersion != H8StaticDataFormat.FormatVersion ||
                 _header.HeaderSizeBytes != UnsafeUtility.SizeOf<H8BabelDictionaryHeader>() ||
-                (logicalFileBytes != _sourceFileBytes && logicalFileBytes != _mappedBytes) ||
-                logicalFileBytes > _mappedBytes ||
+                (logicalFileBytes != _sourceFileBytes && logicalFileBytes != mappedBytes) ||
+                logicalFileBytes > mappedBytes ||
                 (_header.Flags & H8StaticDataFormat.LittleEndianFlag) == 0u)
             {
                 RecordTelemetry(StateErrorHash, ErrorHeaderHash, 0u, 0L);
@@ -529,7 +651,7 @@ namespace Hecton8.Core.Data
                 return false;
             }
 
-            uint crc = H8Crc32.Compute(_basePointer + _header.HeaderSizeBytes, (int)(logicalFileBytes - _header.HeaderSizeBytes));
+            uint crc = H8Crc32.Compute(basePointer + _header.HeaderSizeBytes, (int)(logicalFileBytes - _header.HeaderSizeBytes));
             if (crc != _header.PayloadCrc32)
             {
                 RecordTelemetry(StateErrorHash, ErrorCrcHash, 0u, 0L);
@@ -589,28 +711,64 @@ namespace Hecton8.Core.Data
 
         private bool TryFindIndex(uint hash, out BabelIndexDTO entry, out int entryIndex)
         {
-            if (!_btreeAvailable || _basePointer == null || _indexPointer == null)
+            return TryFindIndex(hash, out entry, out entryIndex, out _, out _, out _);
+        }
+
+        private bool TryFindIndex(
+            uint hash,
+            out BabelIndexDTO entry,
+            out int entryIndex,
+            out byte* basePointer,
+            out long mappedBytes)
+        {
+            return TryFindIndex(hash, out entry, out entryIndex, out _, out _, out _, out basePointer, out mappedBytes);
+        }
+
+        private bool TryFindIndex(
+            uint hash,
+            out BabelIndexDTO entry,
+            out int entryIndex,
+            out uint depth,
+            out uint keysProcessed,
+            out uint prefetchTouchCount)
+        {
+            return TryFindIndex(hash, out entry, out entryIndex, out depth, out keysProcessed, out prefetchTouchCount, out _, out _);
+        }
+
+        private bool TryFindIndex(
+            uint hash,
+            out BabelIndexDTO entry,
+            out int entryIndex,
+            out uint depth,
+            out uint keysProcessed,
+            out uint prefetchTouchCount,
+            out byte* basePointer,
+            out long mappedBytes)
+        {
+            if (!_btreeAvailable || !TryResolveReadableView(out basePointer, out BabelIndexDTO* indexPointer, out mappedBytes))
             {
                 entry = default;
                 entryIndex = -1;
+                depth = 0u;
+                keysProcessed = 0u;
+                prefetchTouchCount = 0u;
+                basePointer = null;
+                mappedBytes = 0L;
                 return false;
             }
 
             bool found = H8CacheBTree.TryFindValue(
-                _basePointer,
+                basePointer,
                 _btreeOffset,
                 _btreeRootOffset,
                 _btreeEndOffset,
                 hash,
                 ResolveGlobalQualityWeight(),
                 out uint value,
-                out uint depth,
-                out uint keysProcessed,
-                out uint prefetchTouchCount);
+                out depth,
+                out keysProcessed,
+                out prefetchTouchCount);
 
-            _lastTreeDepth = depth;
-            _lastTreeKeysProcessed = keysProcessed;
-            _lastPrefetchTouchCount = prefetchTouchCount;
             if (!found || value >= _header.EntryCount)
             {
                 entry = default;
@@ -619,19 +777,32 @@ namespace Hecton8.Core.Data
             }
 
             entryIndex = (int)value;
-            entry = UnsafeUtility.ReadArrayElement<BabelIndexDTO>(_indexPointer, entryIndex);
+            entry = UnsafeUtility.ReadArrayElement<BabelIndexDTO>(indexPointer, entryIndex);
             return entry.StringHash == hash;
+        }
+
+        private void CaptureLookupStats(uint depth, uint keysProcessed, uint prefetchTouchCount, long elapsedNs)
+        {
+            _lastSearchComputeTimeNs = elapsedNs <= 0L
+                ? 0u
+                : elapsedNs >= uint.MaxValue
+                    ? uint.MaxValue
+                    : (uint)elapsedNs;
+            _lastTreeDepth = depth;
+            _lastTreeKeysProcessed = keysProcessed;
+            _lastPrefetchTouchCount = prefetchTouchCount;
         }
 
         private bool ValidateBTreeEdge(int entriesCount)
         {
-            if (entriesCount <= 0)
+            if (entriesCount <= 0 ||
+                !TryResolveReadableView(out byte* basePointer, out BabelIndexDTO* indexPointer, out _))
                 return false;
 
-            BabelIndexDTO first = UnsafeUtility.ReadArrayElement<BabelIndexDTO>(_indexPointer, 0);
-            BabelIndexDTO last = UnsafeUtility.ReadArrayElement<BabelIndexDTO>(_indexPointer, entriesCount - 1);
+            BabelIndexDTO first = UnsafeUtility.ReadArrayElement<BabelIndexDTO>(indexPointer, 0);
+            BabelIndexDTO last = UnsafeUtility.ReadArrayElement<BabelIndexDTO>(indexPointer, entriesCount - 1);
             return H8CacheBTree.TryFindValue(
-                    _basePointer,
+                    basePointer,
                     _btreeOffset,
                     _btreeRootOffset,
                     _btreeEndOffset,
@@ -643,7 +814,7 @@ namespace Hecton8.Core.Data
                     out _) &&
                 firstIndex == 0u &&
                 H8CacheBTree.TryFindValue(
-                    _basePointer,
+                    basePointer,
                     _btreeOffset,
                     _btreeRootOffset,
                     _btreeEndOffset,
@@ -746,7 +917,7 @@ namespace Hecton8.Core.Data
         private bool TryResolveErrorSlice(out NativeArray<byte> errorBytes)
         {
             errorBytes = default;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             return vault != null &&
                    _errorSliceHandle.BufferID != 0u &&
                    vault.TryResolveHandle(in _errorSliceHandle, out errorBytes) &&
@@ -805,6 +976,8 @@ namespace Hecton8.Core.Data
             {
                 _ownedFallbackPointer = null;
             }
+
+            _mappedBytesHandle = default;
 
             if (_errorPointer != null)
             {
@@ -1020,8 +1193,7 @@ namespace Hecton8.Core.Data
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void RecordTelemetry(uint stateHash, uint errorHash, uint requestedHash, long offset)
         {
-            if (!EnsureBlackBox() ||
-                !TryResolveBlackBox(out NativeArray<H8StaticDataTelemetryEntry> ring, out NativeArray<int> cursor))
+            if (!TryResolveBlackBox(out NativeArray<H8StaticDataTelemetryEntry> ring, out NativeArray<int> cursor))
             {
                 return;
             }
@@ -1055,8 +1227,7 @@ namespace Hecton8.Core.Data
 
         private void RecordBTreeTelemetry(bool found, uint errorHash, uint requestedHash, long offset)
         {
-            if (!EnsureBTreeTelemetry() ||
-                !TryResolveBTreeTelemetry(
+            if (!TryResolveBTreeTelemetry(
                     out NativeArray<BTreeTelemetryEntry> ring,
                     out NativeArray<int> cursor,
                     out NativeArray<BTreeTelemetryAccumulatorDTO> accumulatorBuffer))
@@ -1092,7 +1263,7 @@ namespace Hecton8.Core.Data
             cursor[0] = (index + 1) % H8StaticDataFormat.TelemetryFrameCount;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public unsafe struct BabelBTreeSearchKernel : IJobParallelFor
         {
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
@@ -1251,9 +1422,8 @@ namespace Hecton8.Core.Data
         public unsafe struct BabelLoreXorDecryptPointerJob : IJobParallelFor
         {
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
-            // SourceBytes points at a read-only MMF or Vault-padded Babel byte blob. Unity safety handles
-            // cannot represent this pointer, but SourceByteLength and SourceOffset/ByteLength bound every
-            // byte read before XOR output is written.
+            // SourceBytes points at a read-only MMF-backed Babel byte blob. Vault mirrors use
+            // BabelLoreXorDecryptJob so Unity safety handles carry the NativeArray source view.
             // SAFETY_JUSTIFICATION_PARAGRAPH_2:
             // Copying lore source bytes into another NativeArray before decrypting was rejected because it
             // doubles bandwidth and defeats the MMF path. Decrypting to string/byte[] was rejected because

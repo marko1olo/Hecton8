@@ -16,17 +16,6 @@ using Unity.Mathematics;
 namespace Hecton8.Inventory
 {
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct InventorySlotDTO
-    {
-        [FieldOffset(0)] public uint ItemHashID;
-        [FieldOffset(4)] public uint Quantity;
-        [FieldOffset(8)] public ulong ContainerAUPHash;
-        [FieldOffset(16)] public uint ConditionFlags;
-        [FieldOffset(20)] public uint ReservedLock;
-        [FieldOffset(24)] private ulong _pad0;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct InventoryQueryResultDTO
     {
         [FieldOffset(0)] public uint ItemHashID;
@@ -149,21 +138,28 @@ namespace Hecton8.Inventory
         [FieldOffset(56)] public ulong Reserved0;
     }
 
+    public struct InventoryRoutingVaultLane<T> where T : struct
+    {
+        public VaultGenerationHandle<T> Handle;
+        public uint ExpectedBufferID;
+        public int Length;
+    }
+
     public struct InventoryRoutingBufferHandles
     {
-        public VaultBufferHandle<InventorySlotDTO> Slots;
-        public VaultBufferHandle<int> ActiveSlotCount;
-        public VaultBufferHandle<InventoryQueryResultDTO> QueryResults;
-        public VaultBufferHandle<InventoryAtomicCounter64> QueryCounters;
-        public VaultBufferHandle<InventoryRoutingTelemetryEntry> TelemetryRing;
-        public VaultBufferHandle<int> TelemetryCursor;
-        public VaultBufferHandle<InventoryRoutingTuningDTO> Tuning;
-        public VaultBufferHandle<InventorySlotDTO> UiSnapshotA;
-        public VaultBufferHandle<InventorySlotDTO> UiSnapshotB;
-        public VaultBufferHandle<InventoryStackLimitDTO> StackLimits;
-        public VaultBufferHandle<InventoryContainerRangeDTO> ContainerRanges;
-        public VaultBufferHandle<int> ContainerRangeCount;
-        public VaultBufferHandle<InventoryContainerRangeDTO> ContainerSyncResult;
+        public InventoryRoutingVaultLane<InventorySlotDTO> Slots;
+        public InventoryRoutingVaultLane<int> ActiveSlotCount;
+        public InventoryRoutingVaultLane<InventoryQueryResultDTO> QueryResults;
+        public InventoryRoutingVaultLane<InventoryAtomicCounter64> QueryCounters;
+        public InventoryRoutingVaultLane<InventoryRoutingTelemetryEntry> TelemetryRing;
+        public InventoryRoutingVaultLane<int> TelemetryCursor;
+        public InventoryRoutingVaultLane<InventoryRoutingTuningDTO> Tuning;
+        public InventoryRoutingVaultLane<InventorySlotDTO> UiSnapshotA;
+        public InventoryRoutingVaultLane<InventorySlotDTO> UiSnapshotB;
+        public InventoryRoutingVaultLane<InventoryStackLimitDTO> StackLimits;
+        public InventoryRoutingVaultLane<InventoryContainerRangeDTO> ContainerRanges;
+        public InventoryRoutingVaultLane<int> ContainerRangeCount;
+        public InventoryRoutingVaultLane<InventoryContainerRangeDTO> ContainerSyncResult;
     }
 
     public struct InventoryRoutingBuffers
@@ -302,67 +298,80 @@ namespace Hecton8.Inventory
             stackLimitCapacity = math.max(1, stackLimitCapacity);
             containerRangeCapacity = math.max(1, containerRangeCapacity);
 
-            handles.Slots = vault.GetBufferHandle<InventorySlotDTO>(
+            handles.Slots = AcquireLane<InventorySlotDTO>(
+                vault,
                 BufferID.ShinobuInventorySlots,
                 slotCapacity,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.UninitializedMemory);
-            handles.ActiveSlotCount = vault.GetBufferHandle<int>(
+            handles.ActiveSlotCount = AcquireLane<int>(
+                vault,
                 BufferID.ShinobuInventoryActiveSlotCount,
                 1,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.ClearMemory);
-            handles.QueryResults = vault.GetBufferHandle<InventoryQueryResultDTO>(
+            handles.QueryResults = AcquireLane<InventoryQueryResultDTO>(
+                vault,
                 BufferID.ShinobuInventoryQueryResults,
                 queryCapacity,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.ClearMemory);
-            handles.QueryCounters = vault.GetBufferHandle<InventoryAtomicCounter64>(
+            handles.QueryCounters = AcquireLane<InventoryAtomicCounter64>(
+                vault,
                 BufferID.ShinobuInventoryQueryCounters,
                 queryCapacity,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryRing = vault.GetBufferHandle<InventoryRoutingTelemetryEntry>(
+            handles.TelemetryRing = AcquireLane<InventoryRoutingTelemetryEntry>(
+                vault,
                 BufferID.ShinobuInventoryRoutingTelemetry,
                 TelemetryCapacity,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetBufferHandle<int>(
+            handles.TelemetryCursor = AcquireLane<int>(
+                vault,
                 BufferID.ShinobuInventoryRoutingTelemetryCursor,
                 1,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.ClearMemory);
-            handles.Tuning = vault.GetBufferHandle<InventoryRoutingTuningDTO>(
+            handles.Tuning = AcquireLane<InventoryRoutingTuningDTO>(
+                vault,
                 BufferID.ShinobuInventoryRoutingTuning,
                 1,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.ClearMemory);
-            handles.UiSnapshotA = vault.GetBufferHandle<InventorySlotDTO>(
+            handles.UiSnapshotA = AcquireLane<InventorySlotDTO>(
+                vault,
                 BufferID.ShinobuInventoryUiSnapshotA,
                 slotCapacity,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.UninitializedMemory);
-            handles.UiSnapshotB = vault.GetBufferHandle<InventorySlotDTO>(
+            handles.UiSnapshotB = AcquireLane<InventorySlotDTO>(
+                vault,
                 BufferID.ShinobuInventoryUiSnapshotB,
                 slotCapacity,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.UninitializedMemory);
-            handles.StackLimits = vault.GetBufferHandle<InventoryStackLimitDTO>(
+            handles.StackLimits = AcquireLane<InventoryStackLimitDTO>(
+                vault,
                 BufferID.ShinobuInventoryStackLimits,
                 stackLimitCapacity,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.ClearMemory);
-            handles.ContainerRanges = vault.GetBufferHandle<InventoryContainerRangeDTO>(
+            handles.ContainerRanges = AcquireLane<InventoryContainerRangeDTO>(
+                vault,
                 BufferID.ShinobuInventoryContainerRanges,
                 containerRangeCapacity,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.ClearMemory);
-            handles.ContainerRangeCount = vault.GetBufferHandle<int>(
+            handles.ContainerRangeCount = AcquireLane<int>(
+                vault,
                 BufferID.ShinobuInventoryContainerRangeCount,
                 1,
                 SystemID.GameplayPlayer,
                 NativeArrayOptions.ClearMemory);
-            handles.ContainerSyncResult = vault.GetBufferHandle<InventoryContainerRangeDTO>(
+            handles.ContainerSyncResult = AcquireLane<InventoryContainerRangeDTO>(
+                vault,
                 BufferID.ShinobuInventoryContainerSyncResult,
                 1,
                 SystemID.GameplayPlayer,
@@ -381,19 +390,19 @@ namespace Hecton8.Inventory
             if (vault == null)
                 return false;
 
-            buffers.Slots = handles.Slots.Resolve(vault);
-            buffers.ActiveSlotCount = handles.ActiveSlotCount.Resolve(vault);
-            buffers.QueryResults = handles.QueryResults.Resolve(vault);
-            buffers.QueryCounters = handles.QueryCounters.Resolve(vault);
-            buffers.TelemetryRing = handles.TelemetryRing.Resolve(vault);
-            buffers.TelemetryCursor = handles.TelemetryCursor.Resolve(vault);
-            buffers.Tuning = handles.Tuning.Resolve(vault);
-            buffers.UiSnapshotA = handles.UiSnapshotA.Resolve(vault);
-            buffers.UiSnapshotB = handles.UiSnapshotB.Resolve(vault);
-            buffers.StackLimits = handles.StackLimits.Resolve(vault);
-            buffers.ContainerRanges = handles.ContainerRanges.Resolve(vault);
-            buffers.ContainerRangeCount = handles.ContainerRangeCount.Resolve(vault);
-            buffers.ContainerSyncResult = handles.ContainerSyncResult.Resolve(vault);
+            buffers.Slots = OpenLane(vault, in handles.Slots);
+            buffers.ActiveSlotCount = OpenLane(vault, in handles.ActiveSlotCount);
+            buffers.QueryResults = OpenLane(vault, in handles.QueryResults);
+            buffers.QueryCounters = OpenLane(vault, in handles.QueryCounters);
+            buffers.TelemetryRing = OpenLane(vault, in handles.TelemetryRing);
+            buffers.TelemetryCursor = OpenLane(vault, in handles.TelemetryCursor);
+            buffers.Tuning = OpenLane(vault, in handles.Tuning);
+            buffers.UiSnapshotA = OpenLane(vault, in handles.UiSnapshotA);
+            buffers.UiSnapshotB = OpenLane(vault, in handles.UiSnapshotB);
+            buffers.StackLimits = OpenLane(vault, in handles.StackLimits);
+            buffers.ContainerRanges = OpenLane(vault, in handles.ContainerRanges);
+            buffers.ContainerRangeCount = OpenLane(vault, in handles.ContainerRangeCount);
+            buffers.ContainerSyncResult = OpenLane(vault, in handles.ContainerSyncResult);
 
             return buffers.Slots.IsCreated &&
                    buffers.ActiveSlotCount.IsCreated &&
@@ -408,6 +417,52 @@ namespace Hecton8.Inventory
                    buffers.ContainerRanges.IsCreated &&
                    buffers.ContainerRangeCount.IsCreated &&
                    buffers.ContainerSyncResult.IsCreated;
+        }
+
+        private static InventoryRoutingVaultLane<T> AcquireLane<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            SystemID owner,
+            NativeArrayOptions options) where T : struct
+        {
+            if (vault == null || requiredLength <= 0)
+                return default;
+
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                owner,
+                options);
+            uint expectedBufferId = unchecked((uint)(int)bufferId);
+            if (handle.BufferID != expectedBufferId || handle.Generation == 0u)
+                return default;
+
+            return new InventoryRoutingVaultLane<T>
+            {
+                Handle = handle,
+                ExpectedBufferID = expectedBufferId,
+                Length = requiredLength
+            };
+        }
+
+        private static NativeArray<T> OpenLane<T>(
+            IDataVault vault,
+            in InventoryRoutingVaultLane<T> lane) where T : struct
+        {
+            if (vault == null ||
+                lane.ExpectedBufferID == 0u ||
+                lane.Handle.BufferID != lane.ExpectedBufferID ||
+                lane.Handle.Generation == 0u ||
+                lane.Length <= 0 ||
+                !vault.TryResolveHandle(in lane.Handle, out NativeArray<T> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < lane.Length)
+            {
+                return default;
+            }
+
+            return buffer;
         }
 
         public static void EnsureSignalLane()

@@ -794,7 +794,7 @@ namespace Hecton8.Core
             if (canvas == null || !canvas.enabled)
                 return;
 
-            Canvas.ForceUpdateCanvases();
+            // Canvas rebuild recovery is retired for the visor HUD path; the watchdog only reports the stale heartbeat.
         }
 
         private void ResetRegistryHeartbeatGuard(double now)

@@ -21,7 +21,7 @@ namespace Hecton8.UI
     /// Temporary runtime overlay that surfaces the core Subnautica-gap systems during play mode.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class SubnauticaSystemsDebugUI : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
+    public sealed class SubnauticaSystemsDebugUI : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         // COLD ALLOC: List<SuitHUDV4CanvasOverlay>(4) â€” overlay canvas resolution buffer â€” owner: SubnauticaSystemsDebugUI
         private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
@@ -149,6 +149,8 @@ namespace Hecton8.UI
         private TextMeshProUGUI _stressValue;
         private bool _registered;
         private bool _slowTickRegistered;
+        private bool _hotSwapListenerRegistered;
+        private bool _diagnosticsRefreshPending;
         private bool _stressApplied;
         private float _refreshTimer;
         private float _nextManagerResolveAttemptTime = float.NegativeInfinity;
@@ -244,6 +246,7 @@ namespace Hecton8.UI
                 Debug.Log($"[SubnauticaSystemsDebugUI] OnEnable '{name}' id={EntityId.ToULong(GetEntityId())}.", this);
 #endif
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
+            TryRegisterHotSwapListener();
             if (!_registered || !_slowTickRegistered)
                 TryRegister();
             QueueRuntimeBootstrap(forceManagerResolve: true);
@@ -253,6 +256,7 @@ namespace Hecton8.UI
         {
             SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
             ClearStressHarness();
+            TryUnregisterHotSwapListener();
             TryUnregister();
             SetVisible(false);
 
@@ -268,14 +272,21 @@ namespace Hecton8.UI
 #endif
             if (s_activeRuntimeInstance == this)
                 s_activeRuntimeInstance = null;
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+                TryRegister();
         }
 
         private void TryRegister()
         {
             if (!Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registered)
@@ -309,15 +320,12 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            if (!_registered || !_slowTickRegistered)
-                TryRegister();
-
             _refreshTimer += dt;
             if (_refreshTimer < refreshInterval)
                 return;
 
             _refreshTimer = 0f;
-            RefreshDiagnostics();
+            _diagnosticsRefreshPending = true;
         }
 
         public void SlowTick()
@@ -325,9 +333,13 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            TryRegister();
             ProcessPendingBootstrap();
             ResolveManagers(force: false);
+            if (_diagnosticsRefreshPending)
+            {
+                _diagnosticsRefreshPending = false;
+                RefreshDiagnostics();
+            }
             ApplyStressHarness();
         }
 
@@ -343,6 +355,7 @@ namespace Hecton8.UI
         private void QueueRuntimeBootstrap(bool forceManagerResolve)
         {
             _bootstrapPending = true;
+            _diagnosticsRefreshPending = true;
             _nextBootstrapAttemptTime = float.NegativeInfinity;
             if (forceManagerResolve)
                 _forceManagerResolveOnBootstrap = true;
@@ -447,6 +460,23 @@ namespace Hecton8.UI
                 _root.SetAsLastSibling();
 
             SetVisible(_root != null);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void BuildVisualTree()

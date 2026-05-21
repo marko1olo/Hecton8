@@ -16,9 +16,9 @@
 //   Biomes can NO LONGER break depth stratification.
 //
 //   KEPT in biome control (COLOR ONLY + turbidity hint):
-//     ✓ scatterColorBase     — Crest deep water color
-//     ✓ scatterColorShallow  — Crest shallow water color
-//     ✓ depthFogDensity      — Crest per-channel fog (RGB)
+//     ✓ scatterColorBase     — ocean shader deep water color
+//     ✓ scatterColorShallow  — ocean shader shallow water color
+//     ✓ depthFogDensity      — ocean shader per-channel fog (RGB)
 //     ✓ fogColor             — URP RenderSettings.fogColor
 //     ✓ turbidityMultiplier  — gentle fog density multiplier [0.5..2.0]
 //
@@ -53,21 +53,21 @@ namespace Hecton8.Environment
                  "Tolko dlya Inspector i Debug. NE ispolzuetsya v runtime.")]
         public string biomeName = "Unnamed Biome";
 
-        [Header("═══ CREST — Scatter Colors ═══")]
-        [Tooltip("Tsvet glubokoy vody (Crest _ScatterColourBase).\n" +
+        [Header("═══ OCEAN SHADER — Scatter Colors ═══")]
+        [Tooltip("Tsvet glubokoy vody (ocean _ScatterColourBase).\n" +
                  "Opredelyaet ottenok vody pri vzglyade vglub.")]
         [ColorUsage(false, true)]
         public Color scatterColorBase = new Color(0.0f, 0.03f, 0.07f, 1f);
 
-        [Tooltip("Tsvet melkovodya (Crest _ScatterColourShallow).\n" +
+        [Tooltip("Tsvet melkovodya (ocean _ScatterColourShallow).\n" +
                  "Opredelyaet ottenok vody u poverhnosti.")]
         [ColorUsage(false, true)]
         public Color scatterColorShallow = new Color(0.0f, 0.15f, 0.12f, 1f);
 
-        [Header("═══ CREST — Depth Fog ═══")]
-        [Tooltip("Plotnost podvodnogo tumana Crest (XYZ = RGB channels).\n" +
+        [Header("═══ OCEAN SHADER — Depth Fog ═══")]
+        [Tooltip("Plotnost podvodnogo tumana ocean shader (XYZ = RGB channels).\n" +
                  "Krasnyy pogloschaetsya pervym → uvelichte X dlya glubiny.\n" +
-                 "Vliyaet TOLKO na sheyder Crest Ocean, ne na URP fog.")]
+                 "Vliyaet TOLKO na active ocean shader, ne na URP fog.")]
         public Vector3 depthFogDensity = new Vector3(0.5f, 0.25f, 0.15f);
 
         [Header("═══ URP — Fog Color ═══")]

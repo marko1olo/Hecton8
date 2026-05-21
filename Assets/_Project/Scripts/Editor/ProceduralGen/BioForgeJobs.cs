@@ -30,7 +30,7 @@ namespace Hecton8.Editor.ProceduralGen
         public float4 Color;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BioForgeSdfBuildJob : IJobParallelFor
     {
         public const int ModeFlagRock = 1 << 0;
@@ -240,7 +240,7 @@ namespace Hecton8.Editor.ProceduralGen
 
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BioForgeMarchingCubesJob : IJob
     {
         [ReadOnly] public NativeArray<float> Density;
@@ -382,7 +382,7 @@ namespace Hecton8.Editor.ProceduralGen
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BioForgeVertexBakeJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<BioForgeRawVertex> RawVertices;
@@ -452,7 +452,7 @@ namespace Hecton8.Editor.ProceduralGen
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BioForgeEdgeCollapseDecimationJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<BioForgeMeshVertex> SourceVertices;

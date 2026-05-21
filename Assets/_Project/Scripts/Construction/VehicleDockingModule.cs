@@ -32,7 +32,6 @@ namespace Hecton8.Construction
         private const float DefaultDockingDurationSeconds = 1.5f;
         private const float DefaultUndockEjectSpeedMetersPerSecond = 4.5f;
         private const float DefaultDockingImpactSpeedMetersPerSecond = 6.5f;
-        private const float LowTierSplineSampleIntervalSeconds = 0.1f;
         private const float DockingDeviationAbortMeters = 5f;
         private const float DockingWakeSignalIntervalSeconds = 0.1f;
         private const float DockingCompleteSignalProgress01 = 0.95f;
@@ -189,25 +188,20 @@ namespace Hecton8.Construction
         private uint _dockingSplineOwnerHash;
         private uint _dockingSplineRequestId;
         private MountablePlayerTransport _mountedTransportLockOwner;
-        private Vector3 _lowTierSplineFromPosition;
-        private Vector3 _lowTierSplineTargetPosition;
-        private Quaternion _lowTierSplineTargetRotation = Quaternion.identity;
         private Vector3 _lastDockingSplineTargetPosition;
         private Quaternion _lastDockingSplineRotation = Quaternion.identity;
         private Vector3 _lastDockingCommandVelocity;
         private float3 _lastDockingFlowVelocity;
-        private float _lowTierSplineBlendSeconds;
         private float _dockingWakeElapsedSeconds;
         private float _lastSplineDeviationError;
-        private bool _hasLowTierSplineSample;
         private bool _dockingCompletionSignalPublished;
         private ulong _lastRejectedDockColliderId;
         private int _transportLookupCount;
         private int _transportLookupWriteCursor;
         private bool _hasDockedRelativeAup;
         private IDataVault _dataVault;
-        private VaultBufferHandle<DockTelemetryEntry> _dockTelemetryHandle;
-        private VaultBufferHandle<int> _dockTelemetryCursorHandle;
+        private VaultGenerationHandle<DockTelemetryEntry> _dockTelemetryHandle;
+        private VaultGenerationHandle<int> _dockTelemetryCursorHandle;
         private int _lastDockTelemetryDumpFrame = -DockTelemetryDumpCooldownFrames;
         private bool _hotSwapRegistered;
 
@@ -253,6 +247,7 @@ namespace Hecton8.Construction
             _powerNode = GetComponent<PowerNode>();
             _owningModule = GetComponentInParent<BaseModule>();
             _dockingSplineOwnerHash = ResolveDockingSplineOwnerHash();
+            CacheDockTelemetryVaultCold();
             EnsureDockTelemetry();
         }
 
@@ -263,6 +258,7 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            CacheDockTelemetryVaultCold();
             EnsureDockTelemetry();
             TryRegisterHotSwapListener();
             ClearTransportLookupCache();
@@ -305,6 +301,7 @@ namespace Hecton8.Construction
             ResetDockingRuntimeCaches();
             _lastRejectedDockColliderId = 0UL;
             ClearTransportLookupCache();
+            CacheDockTelemetryVaultCold();
             EnsureDockTelemetry();
             TryRegisterHotSwapListener();
             CacheDockingAutopilotService();
@@ -388,9 +385,8 @@ namespace Hecton8.Construction
             if (ReferenceEquals(_dataVault, currentService))
                 return;
 
+            ClearDockTelemetryDescriptor();
             _dataVault = currentService as IDataVault;
-            _dockTelemetryHandle = default;
-            _dockTelemetryCursorHandle = default;
             EnsureDockTelemetry();
         }
 
@@ -688,8 +684,14 @@ namespace Hecton8.Construction
 
             _dockingStartPosition = startPosition;
             _dockingStartRotation = startRotation;
-            _dockingStartAup = AbsoluteUniversePosition.FromRuntimePosition(startPosition);
-            _dockingTargetAup = anchor != null
+            if (!TryResolveAupFromRuntimeOrigin(startPosition, out _dockingStartAup))
+            {
+                _activeDockingSpline = default;
+                _activeDockingSplineSlot = -1;
+                return;
+            }
+
+            _dockingTargetAup = anchor != null && IsFiniteVector(anchor.position)
                 ? OffsetAupByRuntimeDelta(in _dockingStartAup, startPosition, anchor.position)
                 : _dockingStartAup;
             float duration = ResolveSafeDockingDurationSeconds();
@@ -712,7 +714,7 @@ namespace Hecton8.Construction
                     _dockingSplineOwnerHash,
                     _dockingSplineRequestId,
                     duration,
-                    ResolveDockingMathLodByte(),
+                    DockingAutopilotMath.AuthoritativeMathLod,
                     out _activeDockingSpline))
             {
                 _activeDockingSpline = default;
@@ -733,9 +735,6 @@ namespace Hecton8.Construction
                 _activeDockingSplineSlot = splineSlot;
             }
 
-            _lowTierSplineFromPosition = startPosition;
-            _lowTierSplineTargetPosition = startPosition;
-            _lowTierSplineTargetRotation = startRotation;
             _lastDockingSplineTargetPosition = startPosition;
             _lastDockingSplineRotation = startRotation;
             RefreshDockedRelativeAup(anchor != null ? anchor.position : startPosition);
@@ -784,9 +783,7 @@ namespace Hecton8.Construction
             _dockingTargetAup = OffsetAupByRuntimeDelta(in _dockingStartAup, _dockingStartPosition, anchorPosition);
             RefreshDockedRelativeAup(anchorPosition);
             float normalizedTime = math.saturate(_dockingElapsedSeconds * math.rcp(duration));
-            float systemStress01 = ResolveSystemStress01();
-            byte mathLod = _activeDockingSpline.MathLod;
-            float splineProgress = DockingAutopilotMath.ResolveDockingProgress01(normalizedTime, mathLod, systemStress01);
+            float splineProgress = DockingAutopilotMath.ResolveDockingProgress01(normalizedTime);
             Vector3 actualPosition = ResolveTelemetryPosition();
             if (!IsFiniteVector(actualPosition))
             {
@@ -796,8 +793,6 @@ namespace Hecton8.Construction
 
             if (!TryEvaluateDockingSplinePose(
                     splineProgress,
-                    safeFixedDeltaTime,
-                    IsLowDockingMathTier(mathLod),
                     anchorPosition,
                     anchorRotation,
                     out Vector3 evaluatedPosition,
@@ -940,7 +935,12 @@ namespace Hecton8.Construction
 
         private void RefreshDockedRelativeAup(Vector3 dockRuntimePosition)
         {
-            AbsoluteUniversePosition dockWorldAup = AbsoluteUniversePosition.FromRuntimePosition(dockRuntimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(dockRuntimePosition, out AbsoluteUniversePosition dockWorldAup))
+            {
+                _hasDockedRelativeAup = false;
+                return;
+            }
+
             _habitatReferenceAup = ResolveHabitatReferenceAup(in dockWorldAup, dockRuntimePosition);
             _dockedRelativeAup = ResolveRelativeToHabitatAup(dockWorldAup, _habitatReferenceAup);
             _hasDockedRelativeAup = true;
@@ -1025,48 +1025,81 @@ namespace Hecton8.Construction
 
         private void EnsureDockTelemetry()
         {
-            bool hasRing = _dockTelemetryHandle.IsCreated &&
-                           _dataVault != null &&
-                           _dataVault.ResolveBuffer(ref _dockTelemetryHandle);
-            bool hasCursor = _dockTelemetryCursorHandle.IsCreated &&
-                             _dataVault != null &&
-                             _dataVault.ResolveBuffer(ref _dockTelemetryCursorHandle);
-            if (hasRing && hasCursor)
-                return;
-
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
-            if (_dataVault == null)
-                return;
-
-            if (!hasRing)
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
             {
-                _dockTelemetryHandle = _dataVault.GetBufferHandle<DockTelemetryEntry>(
+                ClearDockTelemetryDescriptor();
+                return;
+            }
+
+            if (TryValidateDockTelemetryHandles(
+                    vault,
+                    in _dockTelemetryHandle,
+                    in _dockTelemetryCursorHandle,
+                    out _,
+                    out _))
+            {
+                return;
+            }
+
+            if (vault.TryGetGenerationHandle<DockTelemetryEntry>(
                     BufferID.VehicleDockingTelemetryRing,
-                    DockTelemetryCapacity,
-                    SystemID.VehiclesPhysics,
-                    NativeArrayOptions.ClearMemory);
+                    out VaultGenerationHandle<DockTelemetryEntry> borrowedRing) &&
+                vault.TryGetGenerationHandle<int>(
+                    BufferID.VehicleDockingTelemetryCursor,
+                    out VaultGenerationHandle<int> borrowedCursor) &&
+                TryValidateDockTelemetryHandles(vault, in borrowedRing, in borrowedCursor, out _, out _))
+            {
+                _dockTelemetryHandle = borrowedRing;
+                _dockTelemetryCursorHandle = borrowedCursor;
+                return;
             }
 
-            if (!hasCursor)
+            if (vault.IsAllocationLocked)
             {
-                _dockTelemetryCursorHandle = _dataVault.GetBufferHandle<int>(
-                    BufferID.VehicleDockingTelemetryCursor,
-                    1,
-                    SystemID.VehiclesPhysics,
-                    NativeArrayOptions.ClearMemory);
+                ClearDockTelemetryDescriptor();
+                return;
             }
+
+            VaultGenerationHandle<DockTelemetryEntry> acquiredRing = vault.GetGenerationHandle<DockTelemetryEntry>(
+                BufferID.VehicleDockingTelemetryRing,
+                DockTelemetryCapacity,
+                SystemID.VehiclesPhysics,
+                NativeArrayOptions.ClearMemory);
+            VaultGenerationHandle<int> acquiredCursor = vault.GetGenerationHandle<int>(
+                BufferID.VehicleDockingTelemetryCursor,
+                1,
+                SystemID.VehiclesPhysics,
+                NativeArrayOptions.ClearMemory);
+
+            if (!TryValidateDockTelemetryHandles(vault, in acquiredRing, in acquiredCursor, out _, out _))
+            {
+                ClearDockTelemetryDescriptor();
+                return;
+            }
+
+            _dockTelemetryHandle = acquiredRing;
+            _dockTelemetryCursorHandle = acquiredCursor;
+        }
+
+        private void CacheDockTelemetryVaultCold()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            ClearDockTelemetryDescriptor();
+            _dataVault = vault;
         }
 
         private void DisposeDockTelemetry()
         {
-            _dockTelemetryHandle = default;
-            _dockTelemetryCursorHandle = default;
+            ClearDockTelemetryDescriptor();
         }
 
-        private unsafe void RecordDockTelemetry()
+        private void RecordDockTelemetry()
         {
-            if (!TryResolveDockTelemetry(out DockTelemetryEntry* telemetry, out int telemetryLength, out int* cursorPtr))
+            if (!TryResolveDockTelemetry(out NativeArray<DockTelemetryEntry> telemetry, out int telemetryLength, out NativeArray<int> cursorBuffer))
                 return;
 
             Vector3 position = ResolveTelemetryPosition();
@@ -1077,7 +1110,12 @@ namespace Hecton8.Construction
                 return;
             }
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition aup))
+            {
+                DumpDockTelemetry();
+                return;
+            }
+
             Transform anchor = ResolveDockAnchor();
             float distanceSq = 0f;
             float alignmentDot = 0f;
@@ -1091,7 +1129,7 @@ namespace Hecton8.Construction
                     : 0f;
             }
 
-            int cursor = SanitizeDockTelemetryCursor(*cursorPtr, telemetryLength);
+            int cursor = SanitizeDockTelemetryCursor(cursorBuffer[0], telemetryLength);
             telemetry[cursor] = new DockTelemetryEntry
             {
                 Frame = Time.frameCount,
@@ -1119,7 +1157,7 @@ namespace Hecton8.Construction
             cursor++;
             if (cursor >= telemetryLength)
                 cursor = 0;
-            *cursorPtr = cursor;
+            cursorBuffer[0] = cursor;
         }
 
         private Vector3 ResolveTelemetryPosition()
@@ -1140,9 +1178,9 @@ namespace Hecton8.Construction
             return _cachedTransform != null ? _cachedTransform.rotation : Quaternion.identity;
         }
 
-        private unsafe void DumpDockTelemetry()
+        private void DumpDockTelemetry()
         {
-            if (!TryResolveDockTelemetry(out DockTelemetryEntry* telemetry, out int telemetryLength, out int* cursorPtr))
+            if (!TryResolveDockTelemetry(out NativeArray<DockTelemetryEntry> telemetry, out int telemetryLength, out NativeArray<int> cursorBuffer))
                 return;
 
             int frame = Time.frameCount;
@@ -1159,8 +1197,8 @@ namespace Hecton8.Construction
             string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
             Directory.CreateDirectory(directory);
             string path = Path.Combine(directory, "Dump_DOCKING_AUTOPILOT_SPLINE.bin");
-            int cursor = SanitizeDockTelemetryCursor(*cursorPtr, telemetryLength);
-            *cursorPtr = cursor;
+            int cursor = SanitizeDockTelemetryCursor(cursorBuffer[0], telemetryLength);
+            cursorBuffer[0] = cursor;
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
@@ -1212,29 +1250,61 @@ namespace Hecton8.Construction
             }
         }
 
-        private unsafe bool TryResolveDockTelemetry(out DockTelemetryEntry* telemetry, out int telemetryLength, out int* cursor)
+        private bool TryResolveDockTelemetry(out NativeArray<DockTelemetryEntry> telemetry, out int telemetryLength, out NativeArray<int> cursor)
         {
-            telemetry = null;
+            telemetry = default;
             telemetryLength = 0;
-            cursor = null;
-            if (!_dockTelemetryHandle.IsCreated || !_dockTelemetryCursorHandle.IsCreated || _dataVault == null)
+            cursor = default;
+            EnsureDockTelemetry();
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !TryValidateDockTelemetryHandles(
+                    vault,
+                    in _dockTelemetryHandle,
+                    in _dockTelemetryCursorHandle,
+                    out telemetry,
+                    out cursor))
+            {
+                ClearDockTelemetryDescriptor();
                 return false;
+            }
 
-            void* ptr = _dockTelemetryHandle.ResolvePointer(_dataVault);
-            if (ptr == null || _dockTelemetryHandle.Length <= 0)
-                return false;
-
-            void* cursorPtr = _dockTelemetryCursorHandle.ResolvePointer(_dataVault);
-            if (cursorPtr == null || _dockTelemetryCursorHandle.Length <= 0)
-                return false;
-
-            telemetry = (DockTelemetryEntry*)ptr;
-            telemetryLength = _dockTelemetryHandle.Length;
-            cursor = (int*)cursorPtr;
-            int sanitizedCursor = SanitizeDockTelemetryCursor(*cursor, telemetryLength);
-            if (*cursor != sanitizedCursor)
-                *cursor = sanitizedCursor;
+            telemetryLength = telemetry.Length;
+            int sanitizedCursor = SanitizeDockTelemetryCursor(cursor[0], telemetryLength);
+            if (cursor[0] != sanitizedCursor)
+                cursor[0] = sanitizedCursor;
             return true;
+        }
+
+        private static bool TryValidateDockTelemetryHandles(
+            IDataVault vault,
+            in VaultGenerationHandle<DockTelemetryEntry> ringHandle,
+            in VaultGenerationHandle<int> cursorHandle,
+            out NativeArray<DockTelemetryEntry> telemetry,
+            out NativeArray<int> cursor)
+        {
+            telemetry = default;
+            cursor = default;
+            return vault != null &&
+                   IsVaultHandleCreated(in ringHandle) &&
+                   IsVaultHandleCreated(in cursorHandle) &&
+                   vault.TryResolveHandle(in ringHandle, out telemetry) &&
+                   telemetry.IsCreated &&
+                   telemetry.Length >= DockTelemetryCapacity &&
+                   vault.TryResolveHandle(in cursorHandle, out cursor) &&
+                   cursor.IsCreated &&
+                   cursor.Length >= 1;
+        }
+
+        private void ClearDockTelemetryDescriptor()
+        {
+            _dockTelemetryHandle = default;
+            _dockTelemetryCursorHandle = default;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private static int SanitizeDockTelemetryCursor(int cursor, int telemetryLength)
@@ -1314,55 +1384,17 @@ namespace Hecton8.Construction
 
         private bool TryEvaluateDockingSplinePose(
             float progress01,
-            float fixedDeltaTime,
-            bool lowTierMath,
             Vector3 fallbackPosition,
             Quaternion fallbackRotation,
             out Vector3 evaluatedPosition,
             out Quaternion evaluatedRotation)
         {
-            if (!lowTierMath)
-            {
-                _hasLowTierSplineSample = false;
-                _lowTierSplineBlendSeconds = 0f;
-                return TryEvaluateDockingSplinePoseRaw(
-                    progress01,
-                    fallbackPosition,
-                    fallbackRotation,
-                    out evaluatedPosition,
-                    out evaluatedRotation);
-            }
-
-            if (!_hasLowTierSplineSample || _lowTierSplineBlendSeconds >= LowTierSplineSampleIntervalSeconds)
-            {
-                Vector3 sourcePosition = ResolveTelemetryPosition();
-                if (!IsFiniteVector(sourcePosition))
-                    sourcePosition = fallbackPosition;
-
-                if (!TryEvaluateDockingSplinePoseRaw(
-                        progress01,
-                        fallbackPosition,
-                        fallbackRotation,
-                        out Vector3 targetPosition,
-                        out Quaternion targetRotation))
-                {
-                    evaluatedPosition = fallbackPosition;
-                    evaluatedRotation = fallbackRotation;
-                    return false;
-                }
-
-                _lowTierSplineFromPosition = sourcePosition;
-                _lowTierSplineTargetPosition = targetPosition;
-                _lowTierSplineTargetRotation = targetRotation;
-                _lowTierSplineBlendSeconds = 0f;
-                _hasLowTierSplineSample = true;
-            }
-
-            float alpha = math.saturate(_lowTierSplineBlendSeconds * math.rcp(LowTierSplineSampleIntervalSeconds));
-            evaluatedPosition = LinearInterpolate(_lowTierSplineFromPosition, _lowTierSplineTargetPosition, alpha);
-            evaluatedRotation = _lowTierSplineTargetRotation;
-            _lowTierSplineBlendSeconds += math.max(0f, fixedDeltaTime);
-            return IsFiniteVector(evaluatedPosition) && IsFiniteQuaternion(evaluatedRotation);
+            return TryEvaluateDockingSplinePoseRaw(
+                progress01,
+                fallbackPosition,
+                fallbackRotation,
+                out evaluatedPosition,
+                out evaluatedRotation);
         }
 
         private bool TryEvaluateDockingSplinePoseRaw(
@@ -1450,7 +1482,9 @@ namespace Hecton8.Construction
             if (!math.isfinite(speedSq) || speedSq < 0.25f)
                 return;
 
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
+                return;
+
             float3 velocity = ToFloat3(commandVelocity);
             WakeGeneratedSignal wakeSignal = new WakeGeneratedSignal
             {
@@ -1484,7 +1518,9 @@ namespace Hecton8.Construction
                 return;
             }
 
-            AbsoluteUniversePosition dockAup = AbsoluteUniversePosition.FromRuntimePosition(dockPosition);
+            if (!TryResolveAupFromRuntimeOrigin(dockPosition, out AbsoluteUniversePosition dockAup))
+                return;
+
             DockingCompleteSignal signal = new DockingCompleteSignal
             {
                 DroneId = unchecked((int)_dockingSplineOwnerHash),
@@ -1515,7 +1551,9 @@ namespace Hecton8.Construction
             if (!IsFiniteVector(failureVector))
                 failureVector = Vector3.zero;
 
-            AbsoluteUniversePosition lastAup = AbsoluteUniversePosition.FromRuntimePosition(actualPosition);
+            if (!TryResolveAupFromRuntimeOrigin(actualPosition, out AbsoluteUniversePosition lastAup))
+                return;
+
             DockingFailedSignal signal = new DockingFailedSignal
             {
                 DroneId = unchecked((int)_dockingSplineOwnerHash),
@@ -1554,50 +1592,20 @@ namespace Hecton8.Construction
             return hash != 0u ? hash : 1u;
         }
 
-        private static byte ResolveDockingMathLodByte()
-        {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            switch (tier)
-            {
-                case HectonQualityTier.High:
-                case HectonQualityTier.Ultra:
-                    return 2;
-                case HectonQualityTier.Mid:
-                    return 1;
-                default:
-                    return 0;
-            }
-        }
-
         private int ResolveDockingHubGridId()
         {
             return _owningModule != null ? _owningModule.GetInstanceID() : GetInstanceID();
         }
 
-        private static bool IsLowDockingMathTier(byte mathLod)
-        {
-            return mathLod == 0;
-        }
-
-        private static float ResolveSystemStress01()
-        {
-            return math.saturate(SignalBusRegistry.SystemStress01);
-        }
-
         private void ResetDockingRuntimeCaches()
         {
-            _hasLowTierSplineSample = false;
             _dockingCompletionSignalPublished = false;
-            _lowTierSplineBlendSeconds = 0f;
             _dockingWakeElapsedSeconds = 0f;
             _lastSplineDeviationError = 0f;
             _lastDockingFlowVelocity = float3.zero;
             _lastDockingCommandVelocity = Vector3.zero;
             _lastDockingSplineTargetPosition = Vector3.zero;
             _lastDockingSplineRotation = Quaternion.identity;
-            _lowTierSplineFromPosition = Vector3.zero;
-            _lowTierSplineTargetPosition = Vector3.zero;
-            _lowTierSplineTargetRotation = Quaternion.identity;
         }
 
         private Vector3 ResolveDockingCommandAngularVelocity(Quaternion evaluatedRotation, float fixedDeltaTime)
@@ -1653,12 +1661,6 @@ namespace Hecton8.Construction
             return math.clamp((spring + damping) * 0.25f, 0.5f, MaxDockingAngularVelocityRadians);
         }
 
-        private static Vector3 LinearInterpolate(Vector3 from, Vector3 to, float alpha)
-        {
-            float t = math.saturate(alpha);
-            return from + ((to - from) * t);
-        }
-
         private static float FastMagnitudeFromSq(float magnitudeSq)
         {
             if (!math.isfinite(magnitudeSq) || magnitudeSq <= 0f)
@@ -1673,6 +1675,34 @@ namespace Hecton8.Construction
             double dy = (double)a.y - b.y;
             double dz = (double)a.z - b.z;
             return (dx * dx) + (dy * dy) + (dz * dz);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private static bool TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup)
+        {
+            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return IsFiniteAup(in originAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteVector(runtimePosition) ||
+                !TryResolveCurrentRuntimeOriginAup(out AbsoluteUniversePosition originAup))
+            {
+                return false;
+            }
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
         }
 
         private static AbsoluteUniversePosition OffsetAupByRuntimeDelta(

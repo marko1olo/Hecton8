@@ -19,7 +19,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/HUD Notification")]
-    public sealed class HUDNotification : MonoBehaviour, ITickable, IUpdatable, INotificationEventListener, IInventoryEventListener
+    public sealed class HUDNotification : MonoBehaviour, ITickable, IUpdatable, INotificationEventListener, IInventoryEventListener, IGlobalRegistryHotSwapListener
     {
         private enum NotificationSeverity
         {
@@ -44,7 +44,7 @@ namespace Hecton8.UI
         {
             public uint MessageHash;
             public int Length;
-            public bool IsValid;
+            public byte IsValid;
         }
 
         [Header("â”€â”€ Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
@@ -87,6 +87,9 @@ namespace Hecton8.UI
         private float _lastEnqueueTime = -999f;
         private int _fixedBufferMessageCacheCursor;
         private bool _registeredToTickManager;
+        private bool _registeredHotSwapListener;
+        private bool _tickDormant = true;
+        private LocalizationManager _localizationManager;
         private int _lastStressCorruptionBucket = int.MinValue;
         private static HUDNotification _activeRuntime;
 
@@ -130,6 +133,8 @@ namespace Hecton8.UI
             _activeRuntime = this;
             if (font == null) font = TMP_Settings.defaultFontAsset;
 
+            RefreshColdRegistryReferences();
+            TryRegisterHotSwapListener();
             InventoryEvents.Register(this);
             NotificationEvents.Register(this);
 
@@ -143,6 +148,7 @@ namespace Hecton8.UI
                 _activeRuntime = null;
 
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             InventoryEvents.Unregister(this);
             NotificationEvents.Unregister(this);
             _queueCount = 0;
@@ -164,6 +170,7 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            if (_tickDormant) return;
             if (_notifRoot == null) return;
 
             if (_timer > 0f)
@@ -187,7 +194,7 @@ namespace Hecton8.UI
                     }
                     else
                     {
-                        UnregisterFromTickManager();
+                        _tickDormant = true;
                     }
                 }
             }
@@ -204,11 +211,7 @@ namespace Hecton8.UI
             if (_registeredToTickManager || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -218,6 +221,47 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _localizationManager = GlobalRegistry.Localization;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationManager = currentService as LocalizationManager;
+                    _lastStressCorruptionBucket = int.MinValue;
+                    if (_isShowing)
+                        ApplyNotificationText(_currentMessageHash);
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    RegisterToTickManager();
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         public void ShowWarning(string message)
@@ -347,6 +391,7 @@ namespace Hecton8.UI
 
         private void ShowImmediate(uint messageHash, NotificationSeverity severity)
         {
+            _tickDormant = false;
             RegisterToTickManager();
             ApplyVisuals(messageHash, severity);
             _timer = displayDuration;
@@ -408,7 +453,7 @@ namespace Hecton8.UI
 
         private void RefreshStressCorruptionIfNeeded()
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localizationManager;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             if (stressBucket == _lastStressCorruptionBucket)
                 return;
@@ -459,7 +504,7 @@ namespace Hecton8.UI
             for (int i = 0; i < _fixedBufferMessageCache.Length; i++)
             {
                 FixedBufferMessageCacheEntry entry = _fixedBufferMessageCache[i];
-                if (!entry.IsValid || entry.MessageHash != messageHash || entry.Length <= 0)
+                if (entry.IsValid == 0 || entry.MessageHash != messageHash || entry.Length <= 0)
                     continue;
 
                 int sourceOffset = i * FixedBufferMessageCharCapacity;
@@ -470,13 +515,13 @@ namespace Hecton8.UI
             return false;
         }
 
-        private static bool TryWriteDisplaySpan(ReadOnlySpan<char> message, char[] target, out int length)
+        private bool TryWriteDisplaySpan(ReadOnlySpan<char> message, char[] target, out int length)
         {
             length = 0;
             if (message.Length <= 0 || target == null || target.Length == 0)
                 return false;
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _localizationManager;
             if (manager != null)
                 return manager.TryApplyHullStressCorruptionIfNeeded(message, target, out length) && length > 0;
 
@@ -541,7 +586,7 @@ namespace Hecton8.UI
             {
                 MessageHash = messageHash,
                 Length = storedLength,
-                IsValid = true
+                IsValid = 1
             };
 
             return messageHash;
@@ -553,7 +598,7 @@ namespace Hecton8.UI
                 return false;
 
             FixedBufferMessageCacheEntry entry = _fixedBufferMessageCache[cacheIndex];
-            if (!entry.IsValid || entry.MessageHash != messageHash || entry.Length != storedLength)
+            if (entry.IsValid == 0 || entry.MessageHash != messageHash || entry.Length != storedLength)
                 return false;
 
             int sourceOffset = cacheIndex * FixedBufferMessageCharCapacity;

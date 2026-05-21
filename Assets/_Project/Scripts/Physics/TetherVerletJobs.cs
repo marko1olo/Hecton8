@@ -235,7 +235,7 @@ namespace Hecton8.Physics
                         continue;
                     }
 
-                    float invLength = math.rsqrt(lenSq);
+                    float invLength = math.rsqrt(math.max(lenSq, 0.0001f));
                     float distance = lenSq * invLength;
                     if (!math.isfinite(distance))
                     {

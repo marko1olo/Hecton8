@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.World;
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
@@ -116,7 +117,9 @@ namespace Hecton8.Lighting.Shafts
                 return false;
 
             Vector3 sourcePosition = _cachedTransform.position;
-            double3 sourceAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(sourcePosition);
+            if (!TryResolveRuntimeAup(sourcePosition, out double3 sourceAup))
+                return false;
+
             double3 aupDelta = sourceAup - cameraAup;
             float aupDistance = (float)math.sqrt(math.max(0.0, math.lengthsq(aupDelta)));
             Vector3 viewport = renderCamera.WorldToViewportPoint(sourcePosition);
@@ -185,6 +188,27 @@ namespace Hecton8.Lighting.Shafts
                 _nextRuntimeSourceId = 1u;
 
             return id != 0u ? id : 1u;
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            float3 runtime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!sourceAup.IsFinite())
+                return false;
+
+            absoluteAup = sourceAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
         }
 
         private static void RegisterSource(ScreenSpaceLightShaftSource source)

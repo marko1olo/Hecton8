@@ -36,7 +36,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVisorUberPostFeature
   m_Active: 1
   settings:
-    shader: {fileID: 4800000, guid: 6a291e321bfc47340ae08d76a1fee749, type: 3}
+    shader: {fileID: 4800000, guid: 2b2a9f18d90f4b35b8b4f9d1a8e23501, type: 3}
     reconstructionShader: {fileID: 4800000, guid: b104c09d7a4e49d69f0e8467bb15a104, type: 3}
     crackTexture: {fileID: 0}
     lensDirtTexture: {fileID: 0}
@@ -378,13 +378,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e26e06fe59eb56b4eae04f2fd7fdae2a, type: 3}
-  m_Name: HectonDynamicDeferredDecalFeature
+  m_Name: HectonVisorWoundFeature
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.DeferredDecalPass
   m_Active: 1
   settings:
-    deferredDecalShader: {fileID: 4800000, guid: f131ac2c33bf6964b924e6c8253c598e, type: 3}
+    deferredDecalShader: {fileID: 4800000, guid: 0a2df57d7a4e4d44a95b1b4c4bfb2750, type: 3}
     decalAtlas: {fileID: 0}
-    maxDecals: 1024
+    maxDecals: 128
     baseFadeTimeSeconds: 7.5
     atlasSlices: 16
     decalTint: {r: 0.72, g: 0.44, b: 0.32, a: 1}

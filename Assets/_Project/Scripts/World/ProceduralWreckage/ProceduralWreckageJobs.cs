@@ -201,6 +201,7 @@ namespace Hecton8.World.ProceduralWreckage
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MockSectorTriggerJob : IJob
     {
+        [WriteOnly]
         [NoAlias]
         public NativeArray<WreckageSectorTriggerDTO> SectorTriggers;
 
@@ -309,6 +310,7 @@ namespace Hecton8.World.ProceduralWreckage
         [NoAlias]
         public NativeArray<WreckageTuningDTO> Tuning;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<WreckageNodeDTO> Nodes;
 
@@ -318,6 +320,7 @@ namespace Hecton8.World.ProceduralWreckage
         [NoAlias]
         public NativeArray<WreckagePaddedCounterDTO> Counters;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<WreckageGenerationTelemetryEntry> TelemetryRing;
 
@@ -721,6 +724,7 @@ namespace Hecton8.World.ProceduralWreckage
         [NoAlias]
         public NativeArray<WreckageTuningDTO> Tuning;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<WreckageNodeDTO> DebrisNodes;
 
@@ -837,12 +841,15 @@ namespace Hecton8.World.ProceduralWreckage
         [NoAlias]
         public NativeArray<WreckageHzbTileDTO> HzbTiles;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<float4x4> RenderMatrices;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<WreckageIndirectArgsDTO> IndirectArgs;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<WreckageGpuScalarDTO> GpuScalars;
 
@@ -975,6 +982,7 @@ namespace Hecton8.World.ProceduralWreckage
         [NoAlias]
         public NativeArray<WreckageNodeDTO> Nodes;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<LootSpawnRequestDTO> LootRequests;
 
@@ -1025,6 +1033,7 @@ namespace Hecton8.World.ProceduralWreckage
         [NoAlias]
         public NativeArray<WreckageNodeDTO> Nodes;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<WreckageBoxColliderDTO> CollisionProxies;
 
@@ -1076,6 +1085,7 @@ namespace Hecton8.World.ProceduralWreckage
         [NoAlias]
         public NativeArray<WreckagePaddedCounterDTO> Counters;
 
+        [WriteOnly]
         [NoAlias]
         public NativeArray<WreckageSelfAuditResultDTO> Results;
 

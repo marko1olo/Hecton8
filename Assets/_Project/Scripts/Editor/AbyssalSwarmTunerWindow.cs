@@ -73,14 +73,12 @@ namespace Hecton8.Editor
                 return;
             }
 
-            if (!vault.TryGetBufferHandle(BufferID.ShinobuEcosystemTuning, out VaultBufferHandle<ShinobuEcosystemTuning> tuningHandle) ||
-                !tuningHandle.IsCreated)
+            if (!TryReadFirst(vault, BufferID.ShinobuEcosystemTuning, out ShinobuEcosystemTuning tuning))
             {
                 EditorGUILayout.HelpBox("SHINOBU tuning buffer is not registered.", MessageType.Warning);
                 return;
             }
 
-            ref ShinobuEcosystemTuning tuning = ref tuningHandle.GetElementAsRef(vault, 0);
             ShinobuEcosystemTuning next = tuning;
             EditorGUI.BeginChangeCheck();
             next.SeparationWeight = EditorGUILayout.Slider("Separation Weight", next.SeparationWeight, 0.05f, 8f);
@@ -110,9 +108,11 @@ namespace Hecton8.Editor
 
             if (EditorGUI.EndChangeCheck())
             {
-                tuning = ShinobuEcosystemTuning.Sanitize(next);
-                Repaint();
-                SceneView.RepaintAll();
+                if (TryWriteFirst(vault, BufferID.ShinobuEcosystemTuning, ShinobuEcosystemTuning.Sanitize(next)))
+                {
+                    Repaint();
+                    SceneView.RepaintAll();
+                }
             }
 
             EditorGUILayout.Space(8f);
@@ -169,10 +169,10 @@ namespace Hecton8.Editor
             int speciesRows = 0;
             if (vault != null)
             {
-                if (vault.TryGetBuffer<ShinobuEcosystemTuning>(BufferID.ShinobuEcosystemTuning, out var tuning) && tuning.IsCreated)
+                if (TryReadExistingVaultView(vault, BufferID.ShinobuEcosystemTuning, out NativeArray<ShinobuEcosystemTuning> tuning))
                     tuningRows = tuning.Length;
 
-                if (vault.TryGetBuffer<SwarmSpeciesProfileDTO>(BufferID.ShinobuSwarmSpeciesProfiles, out var profiles) && profiles.IsCreated)
+                if (TryReadExistingVaultView(vault, BufferID.ShinobuSwarmSpeciesProfiles, out NativeArray<SwarmSpeciesProfileDTO> profiles))
                 {
                     for (int i = 0; i < profiles.Length; i++)
                     {
@@ -287,7 +287,7 @@ namespace Hecton8.Editor
 
         private static void DrawCounters(IDataVault vault)
         {
-            if (!vault.TryGetBuffer<int>(BufferID.ShinobuEcosystemCounters, out var counters) || !counters.IsCreated)
+            if (!TryReadExistingVaultView(vault, BufferID.ShinobuEcosystemCounters, out NativeArray<int> counters))
                 return;
 
             EditorGUILayout.LabelField("Active", ReadCounter(counters, CounterActive).ToString());
@@ -300,8 +300,7 @@ namespace Hecton8.Editor
 
         private static void DrawTelemetry(IDataVault vault)
         {
-            if (!vault.TryGetBuffer<ShinobuTelemetryEntry>(BufferID.ShinobuEcosystemTelemetryRing, out NativeArray<ShinobuTelemetryEntry> ring) ||
-                !ring.IsCreated ||
+            if (!TryReadExistingVaultView(vault, BufferID.ShinobuEcosystemTelemetryRing, out NativeArray<ShinobuTelemetryEntry> ring) ||
                 ring.Length <= 0)
             {
                 return;
@@ -349,14 +348,12 @@ namespace Hecton8.Editor
             if (!Application.isPlaying || vault == null)
                 return;
 
-            if (!vault.TryGetBuffer<ShinobuEcosystemTuning>(BufferID.ShinobuEcosystemTuning, out var tuningArray) ||
-                !tuningArray.IsCreated ||
-                tuningArray.Length <= 0)
+            if (!TryReadFirst(vault, BufferID.ShinobuEcosystemTuning, out ShinobuEcosystemTuning tuning))
             {
                 return;
             }
 
-            uint flags = tuningArray[0].Flags;
+            uint flags = tuning.Flags;
             if ((flags & ShinobuEcosystemBalancer.TuningFlagEditorDebugGrid) != 0u)
                 DrawHashGrid(vault);
 
@@ -366,10 +363,8 @@ namespace Hecton8.Editor
 
         private static void DrawHashGrid(IDataVault vault)
         {
-            if (!vault.TryGetBuffer<ShinobuSpatialHashDebugCell>(BufferID.ShinobuSpatialHashDebugCells, out var cells) ||
-                !cells.IsCreated ||
-                !vault.TryGetBuffer<int>(BufferID.ShinobuEcosystemCounters, out var counters) ||
-                !counters.IsCreated)
+            if (!TryReadExistingVaultView(vault, BufferID.ShinobuSpatialHashDebugCells, out NativeArray<ShinobuSpatialHashDebugCell> cells) ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuEcosystemCounters, out NativeArray<int> counters))
             {
                 return;
             }
@@ -412,10 +407,8 @@ namespace Hecton8.Editor
                 }
             }
 
-            if (!vault.TryGetBuffer<AmbientEntityDTO>(BufferID.ShinobuAmbientEntities, out var entities) ||
-                !vault.TryGetBuffer<AmbientEntityAupDTO>(BufferID.ShinobuAmbientAups, out var aups) ||
-                !entities.IsCreated ||
-                !aups.IsCreated)
+            if (!TryReadExistingVaultView(vault, BufferID.ShinobuAmbientEntities, out NativeArray<AmbientEntityDTO> entities) ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuAmbientAups, out NativeArray<AmbientEntityAupDTO> aups))
             {
                 return;
             }
@@ -440,6 +433,51 @@ namespace Hecton8.Editor
                 Vector3 end = start + new Vector3(direction.x, direction.y, direction.z) * 2.5f;
                 Handles.DrawLine(start, end, 2f);
             }
+        }
+
+        private static bool TryReadFirst<T>(IDataVault vault, BufferID bufferId, out T value)
+            where T : struct
+        {
+            value = default;
+            if (!TryReadExistingVaultView(vault, bufferId, out NativeArray<T> buffer) || buffer.Length <= 0)
+                return false;
+
+            value = buffer[0];
+            return true;
+        }
+
+        private static bool TryWriteFirst<T>(IDataVault vault, BufferID bufferId, in T value)
+            where T : struct
+        {
+            if (vault == null ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out NativeArray<T> buffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!buffer.IsCreated || buffer.Length <= 0)
+                    return false;
+
+                buffer[0] = value;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
+        }
+
+        private static bool TryReadExistingVaultView<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
     }
 }

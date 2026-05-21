@@ -12,6 +12,8 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
@@ -52,7 +54,7 @@ namespace Hecton8.Caves
         public byte Hit;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct VoxelSdfRaymarchJob : IJob
     {
         [ReadOnly] public NativeArray<byte> EncodedSdf;
@@ -174,7 +176,7 @@ namespace Hecton8.Caves
     /// Provides a way to identify and manage cave volumes in the scene.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonVoxelVolume : MonoBehaviour
+    public sealed class HectonVoxelVolume : MonoBehaviour, IVoxelSonarSdfSampleSource, IVoxelRepairWeldTarget, IVoxelPlasmaCutTarget
     {
         private const string CaveDressingRootName = "_CaveDressing";
         private const string EntranceQualityRootName = "_EntranceQualityZone";
@@ -432,6 +434,31 @@ namespace Hecton8.Caves
             out float sdfRange,
             out int version)
         {
+            return TryReadClosestPublishedSonarSdfPayload(
+                runtimeOrigin,
+                out encodedSdf,
+                out audioMaterialIds,
+                out gridDimensions,
+                out volumeOrigin,
+                out voxelCellSize,
+                out sdfRange,
+                out version);
+        }
+
+        /// <summary>
+        /// Reads the nearest published sonar SDF payload without mutating the active-volume registry.
+        /// Stale-volume cleanup belongs to publish/unpublish owner phases, not validation reads.
+        /// </summary>
+        internal static bool TryReadClosestPublishedSonarSdfPayload(
+            Vector3 runtimeOrigin,
+            out NativeArray<byte> encodedSdf,
+            out NativeArray<byte> audioMaterialIds,
+            out Vector3Int gridDimensions,
+            out Vector3 volumeOrigin,
+            out Vector3 voxelCellSize,
+            out float sdfRange,
+            out int version)
+        {
             encodedSdf = default;
             audioMaterialIds = default;
             gridDimensions = default;
@@ -442,14 +469,12 @@ namespace Hecton8.Caves
 
             float bestDistanceSq = float.MaxValue;
             bool resolved = false;
-            for (int i = s_activePublishedVolumes.Count - 1; i >= 0; i--)
+            int count = s_activePublishedVolumes.Count;
+            for (int i = count - 1; i >= 0; i--)
             {
                 HectonVoxelVolume candidate = s_activePublishedVolumes[i];
                 if (candidate == null || !candidate._runtimeDataReady)
-                {
-                    s_activePublishedVolumes.RemoveAt(i);
                     continue;
-                }
 
                 if (!candidate.TryGetPublishedSonarSdfPayload(
                         out NativeArray<byte> candidateSdf,
@@ -579,6 +604,30 @@ namespace Hecton8.Caves
             return false;
         }
 
+        /// <summary>
+        /// Reads published SDF density without mutating the active-volume registry.
+        /// Stale-volume cleanup belongs to publish/unpublish owner phases, not validation reads.
+        /// </summary>
+        public static bool TryReadRuntimeSdfDensity(Vector3 runtimePosition, out float density)
+        {
+            density = 0f;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            int count = s_activePublishedVolumes.Count;
+            for (int i = count - 1; i >= 0; i--)
+            {
+                HectonVoxelVolume candidate = s_activePublishedVolumes[i];
+                if (candidate == null || !candidate._runtimeDataReady)
+                    continue;
+
+                if (candidate.TrySampleDensity(runtimePosition, out density))
+                    return true;
+            }
+
+            return false;
+        }
+
         private static void RegisterPublishedVolume(HectonVoxelVolume volume)
         {
             if (volume == null)
@@ -652,6 +701,20 @@ namespace Hecton8.Caves
         public bool TrySampleDensity(Vector3 worldPosition, out float density)
         {
             return TrySampleDensity(worldPosition, out density, out _);
+        }
+
+        public bool TrySampleSonarSdf(
+            float3 runtimePosition,
+            out float density,
+            out float density01)
+        {
+            density = 0f;
+            density01 = 0f;
+            if (!math.all(math.isfinite(runtimePosition)))
+                return false;
+
+            Vector3 worldPosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            return TrySampleDensity(worldPosition, out density, out density01);
         }
 
         /// <summary>
@@ -1530,6 +1593,117 @@ namespace Hecton8.Caves
             }
 
             _publishedSonarVersion++;
+            TryPublishSonarSdfVaultPayload(
+                totalPointCount,
+                gridDimensions,
+                volumeOrigin,
+                voxelCellSize,
+                _publishedSonarSdfRange,
+                _publishedSonarVersion);
+        }
+
+        private void TryPublishSonarSdfVaultPayload(
+            int totalPointCount,
+            Vector3Int gridDimensions,
+            Vector3 volumeOrigin,
+            Vector3 voxelCellSize,
+            float sdfRange,
+            int version)
+        {
+            if (totalPointCount <= 0 ||
+                !_publishedSonarSdf.IsCreated ||
+                _publishedSonarSdf.Length < totalPointCount)
+            {
+                return;
+            }
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return;
+
+            if (!TryResolvePublishedSonarDescriptorOrigin(volumeOrigin, out Vector3 descriptorOrigin))
+            {
+                TryClearSonarSdfVaultDescriptor();
+                return;
+            }
+
+            VaultGenerationHandle<VoxelSdfPayloadDescriptorDTO> descriptorHandle = vault.GetGenerationHandle<VoxelSdfPayloadDescriptorDTO>(
+                BufferID.VoxelSdfPayloadDescriptor,
+                1,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            if (!vault.TryAcquireWriteLock(in descriptorHandle, SystemID.WorldStreaming, out NativeArray<VoxelSdfPayloadDescriptorDTO> descriptors))
+                return;
+
+            VaultGenerationHandle<byte> sdfHandle = vault.GetGenerationHandle<byte>(
+                BufferID.VoxelSdfTexture3D,
+                totalPointCount,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            if (!vault.TryAcquireWriteLock(in sdfHandle, SystemID.WorldStreaming, out NativeArray<byte> vaultSdf))
+            {
+                vault.ReleaseWriteLock(in descriptorHandle, SystemID.WorldStreaming);
+                return;
+            }
+
+            bool wroteSdf = false;
+            if (vaultSdf.IsCreated && vaultSdf.Length >= totalPointCount)
+            {
+                for (int i = 0; i < totalPointCount; i++)
+                    vaultSdf[i] = _publishedSonarSdf[i];
+                wroteSdf = true;
+            }
+
+            vault.ReleaseWriteLock(in sdfHandle, SystemID.WorldStreaming);
+            uint sdfGeneration = sdfHandle.Generation;
+            if (!wroteSdf || sdfGeneration == 0u)
+            {
+                vault.ReleaseWriteLock(in descriptorHandle, SystemID.WorldStreaming);
+                return;
+            }
+
+            if (descriptors.IsCreated && descriptors.Length > 0)
+            {
+                VoxelSdfPayloadDescriptorDTO descriptor = default;
+                descriptor.VolumeOrigin = new float3(descriptorOrigin.x, descriptorOrigin.y, descriptorOrigin.z);
+                descriptor.GridDimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z);
+                descriptor.VoxelCellSize = new float3(
+                    math.max(0.0001f, math.abs(voxelCellSize.x)),
+                    math.max(0.0001f, math.abs(voxelCellSize.y)),
+                    math.max(0.0001f, math.abs(voxelCellSize.z)));
+                descriptor.SdfRangeMeters = math.max(0.0001f, math.isfinite(sdfRange) ? sdfRange : 0f);
+                descriptor.ByteCount = totalPointCount;
+                descriptor.BufferId = unchecked((uint)(int)BufferID.VoxelSdfTexture3D);
+                descriptor.BufferGeneration = sdfGeneration;
+                descriptor.SdfVersion = unchecked((uint)math.max(0, version));
+                descriptor.OwnerSystemId = (uint)SystemID.WorldStreaming;
+                descriptor.Flags = VoxelSdfPayloadDescriptorDTO.FlagValid;
+                descriptors[0] = descriptor;
+            }
+
+            vault.ReleaseWriteLock(in descriptorHandle, SystemID.WorldStreaming);
+        }
+
+        private bool TryResolvePublishedSonarDescriptorOrigin(Vector3 capturedRuntimeOrigin, out Vector3 runtimeOrigin)
+        {
+            runtimeOrigin = default;
+            if (!IsFinite(capturedRuntimeOrigin) ||
+                !IsFinite(generationPosition) ||
+                !math.all(math.isfinite(_generationAbsoluteUniversePositionDouble)) ||
+                !TryResolveCurrentRuntimeOriginAbsolute(out double3 currentOriginAbsolute))
+            {
+                return false;
+            }
+
+            double3 capturedOffset = _generationAbsoluteUniversePositionDouble -
+                                     new double3(generationPosition.x, generationPosition.y, generationPosition.z);
+            double3 absoluteOrigin = new double3(capturedRuntimeOrigin.x, capturedRuntimeOrigin.y, capturedRuntimeOrigin.z) + capturedOffset;
+            double3 rebased = absoluteOrigin - currentOriginAbsolute;
+            if (!math.all(math.isfinite(rebased)))
+                return false;
+
+            runtimeOrigin = ToVector3(rebased);
+            return IsFinite(runtimeOrigin);
         }
 
         internal bool TryGetPublishedSonarSdfPayload(
@@ -1601,7 +1775,9 @@ namespace Hecton8.Caves
                 return;
             }
 
-            Vector3 absolutePosition = ToVector3(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(pos));
+            if (!TryResolveRuntimeAbsoluteVector(pos, out Vector3 absolutePosition))
+                return;
+
             AppendCraterStamp(absolutePosition, radius, true);
         }
 
@@ -1631,7 +1807,9 @@ namespace Hecton8.Caves
             if (runtimeBounds.SqrDistance(runtimeCenter) > safeRadius * safeRadius)
                 return false;
 
-            double3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeCenter);
+            if (!TryResolveRuntimeAbsoluteDouble(runtimeCenter, out double3 absoluteCenter))
+                return false;
+
             SetBakeState(VoxelBakeState.Pending);
             if (additive)
                 _deltaProcessor.ApplyImmediateAbsoluteWeld(this, absoluteCenter, safeRadius, safeRadius, DefaultDeltaMaterialId);
@@ -1649,8 +1827,10 @@ namespace Hecton8.Caves
             if (!_runtimeDataReady || radius <= 0f || strength <= 0f || _deltaProcessor == null)
                 return;
 
+            if (!TryResolveRuntimeAbsoluteDouble(pos, out double3 absolutePosition))
+                return;
+
             SetBakeState(VoxelBakeState.Pending);
-            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(pos);
             float resolvedRadius = ResolveOrganicRootMoundWeldRadius(pos, radius);
             _deltaProcessor.ApplyImmediateAbsoluteWeld(this, absolutePosition, resolvedRadius, strength, DefaultDeltaMaterialId);
         }
@@ -1691,7 +1871,9 @@ namespace Hecton8.Caves
             if (!_runtimeDataReady || radius <= 0f)
                 return;
 
-            Vector3 absolutePosition = ToVector3(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(pos));
+            if (!TryResolveRuntimeAbsoluteVector(pos, out Vector3 absolutePosition))
+                return;
+
             CarveCrater(pos, radius);
             TryTriggerResourceCraterClusterCollapse(absolutePosition, radius);
         }
@@ -1711,7 +1893,9 @@ namespace Hecton8.Caves
             if (safeHalfExtents.sqrMagnitude <= 0.0001f)
                 return false;
 
-            double3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeCenter);
+            if (!TryResolveRuntimeAbsoluteDouble(runtimeCenter, out double3 absoluteCenter))
+                return false;
+
             SetBakeState(VoxelBakeState.Pending);
             _deltaProcessor.ApplyImmediateAbsoluteBoxCrater(this, absoluteCenter, safeHalfExtents, DefaultDeltaMaterialId);
 
@@ -1732,7 +1916,9 @@ namespace Hecton8.Caves
             if (!_runtimeDataReady || radius <= 0f)
                 return;
 
-            Vector3 absolutePosition = ToVector3(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(pos));
+            if (!TryResolveRuntimeAbsoluteVector(pos, out Vector3 absolutePosition))
+                return;
+
             if (_deltaProcessor != null)
             {
                 SetBakeState(VoxelBakeState.Pending);
@@ -1811,8 +1997,12 @@ namespace Hecton8.Caves
                 if (!segmentBounds.Intersects(runtimeVolumeBounds))
                     continue;
 
-                double3 absoluteStart = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(start);
-                double3 absoluteEnd = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(end);
+                if (!TryResolveRuntimeAbsoluteDouble(start, out double3 absoluteStart) ||
+                    !TryResolveRuntimeAbsoluteDouble(end, out double3 absoluteEnd))
+                {
+                    continue;
+                }
+
                 _deltaProcessor.ApplyImmediateAbsoluteCapsuleWeld(
                     this,
                     absoluteStart,
@@ -1930,82 +2120,15 @@ namespace Hecton8.Caves
         {
             appliedStampCount = 0;
             displacedVolumeCubicMeters = 0f;
-            if (!_runtimeDataReady || _bakeState != VoxelBakeState.Complete || _gridDimension <= 0 || _voxelSize <= 0f)
-                return false;
-
-            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
-                return false;
-
-            Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(absoluteStart);
-            Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(absoluteEnd);
-            Vector3 runtimeEpicenter = HectonFloatingOrigin.ToRuntimePosition(absoluteEpicenter);
-            Vector3 line = runtimeEnd - runtimeStart;
-            float lineLengthSq = line.sqrMagnitude;
-            if (lineLengthSq <= 0.000001f)
-                return false;
-
-            Transform cachedTransform = transform;
-            float lineLength = ApproxMagnitude(line);
-            Vector3 forward = line / Mathf.Max(lineLength, 0.0001f);
-            Vector3 right = Vector3.Cross(Vector3.up, forward);
-            float rightLengthSq = right.sqrMagnitude;
-            if (rightLengthSq <= 0.0001f)
-                right = Vector3.right;
-            else
-                right = NormalizeApprox(right, Vector3.right);
-
-            float clampedDepth = Mathf.Max(_voxelSize, trenchDepth);
-            float clampedSlope = Mathf.Max(0.05f, trenchSlope);
-            float influenceRadius = clampedDepth / clampedSlope;
-            float longitudinalStep = Mathf.Max(_voxelSize, sampleSpacing);
-            float lateralStep = Mathf.Max(_voxelSize * 0.85f, longitudinalStep * 0.5f);
-            int longitudinalCount = Mathf.Clamp(Mathf.CeilToInt(lineLength / longitudinalStep) + 1, 2, 64);
-            float epicenterFadeDistance = Mathf.Max(_voxelSize, lineLength * 0.5f + influenceRadius);
-            float epicenterFadeDistanceSq = epicenterFadeDistance * epicenterFadeDistance;
-            Vector3 runtimeStep = line / (longitudinalCount - 1);
-            Vector3 runtimeCenter = runtimeStart;
-
-            for (int sampleIndex = 0; sampleIndex < longitudinalCount; sampleIndex++)
-            {
-                for (float lateral = -influenceRadius; lateral <= influenceRadius + 0.001f; lateral += lateralStep)
-                {
-                    Vector3 runtimeColumn = runtimeCenter + right * lateral;
-                    float epicenterDistanceSq = (runtimeColumn - runtimeEpicenter).sqrMagnitude;
-                    float epicenterDepth = clampedDepth * (1f - math.saturate(epicenterDistanceSq / epicenterFadeDistanceSq));
-                    float cutDepth = Mathf.Max(0f, epicenterDepth - Mathf.Abs(lateral) * clampedSlope);
-                    if (cutDepth <= 0.0001f)
-                        continue;
-
-                    Vector3 localColumn = cachedTransform.InverseTransformPoint(runtimeColumn);
-                    if (localColumn.x < localBounds.min.x ||
-                        localColumn.x > localBounds.max.x ||
-                        localColumn.z < localBounds.min.z ||
-                        localColumn.z > localBounds.max.z)
-                    {
-                        continue;
-                    }
-
-                    float craterRadius = Mathf.Max(_voxelSize * 0.85f, cutDepth * 0.55f);
-                    if (!TryResolveTopSolidAnchor(
-                            cachedTransform,
-                            localBounds,
-                            localColumn.x,
-                            localColumn.z,
-                            cutDepth,
-                            out Vector3 localAnchor))
-                    {
-                        continue;
-                    }
-
-                    CarveCrater(cachedTransform.TransformPoint(localAnchor), craterRadius);
-                    displacedVolumeCubicMeters += EstimateSeismicCraterDisplacedVolume(craterRadius, cutDepth);
-                    appliedStampCount++;
-                }
-
-                runtimeCenter += runtimeStep;
-            }
-
-            return appliedStampCount > 0;
+            _ = absoluteEpicenter;
+            _ = absoluteStart;
+            _ = absoluteEnd;
+            _ = trenchDepth;
+            _ = trenchSlope;
+            _ = sampleSpacing;
+            // SHINOBU_241: macroscopic trench CSG is baked offline and loaded as immutable voxel data.
+            // Runtime seismic events must not synthesize line-sampled canyon stamps.
+            return false;
         }
 
         private static float EstimateSeismicCraterDisplacedVolume(float craterRadius, float cutDepth)
@@ -2107,7 +2230,9 @@ namespace Hecton8.Caves
             float maxTravel = math.max(_voxelSize, math.min(maxDistance, _voxelSize * MaxPlasmaCutSteps));
             float remainingPower = clampedPower;
             float stampRadius = math.max(_voxelSize * 0.6f, _voxelSize * math.lerp(0.75f, 1.1f, clampedPower));
-            double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!TryResolveCurrentRuntimeOriginAbsolute(out double3 committedOffset))
+                return false;
+
             bool modified = false;
 
             if (_deltaProcessor != null)
@@ -2240,7 +2365,9 @@ namespace Hecton8.Caves
             float remainingPower = clampedPower;
             float stampRadius = math.max(_voxelSize * 0.55f, _voxelSize * math.lerp(0.65f, 1f, clampedPower));
             float stampStrength = math.max(_voxelSize, stampRadius * 0.45f);
-            double3 committedOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!TryResolveCurrentRuntimeOriginAbsolute(out double3 committedOffset))
+                return false;
+
             bool modified = false;
 
             SetBakeState(VoxelBakeState.Pending);
@@ -2290,6 +2417,24 @@ namespace Hecton8.Caves
             }
 
             return modified;
+        }
+
+        bool IVoxelRepairWeldTarget.TryApplyRepairWeldDda(
+            double3 absoluteHitPoint,
+            Vector3 direction,
+            float normalizedPower,
+            float maxDistance)
+        {
+            return ApplyRepairWeldDda(absoluteHitPoint, direction, normalizedPower, maxDistance);
+        }
+
+        bool IVoxelPlasmaCutTarget.TryApplyPlasmaCutDda(
+            double3 absoluteHitPoint,
+            Vector3 direction,
+            float normalizedPower,
+            float maxDistance)
+        {
+            return ApplyPlasmaCutDda(absoluteHitPoint, direction, normalizedPower, maxDistance);
         }
 
         /// <summary>
@@ -2637,6 +2782,27 @@ namespace Hecton8.Caves
             _publishedSonarCellSize = Vector3.zero;
             _publishedSonarSdfRange = 0f;
             _publishedSonarVersion = 0;
+            TryClearSonarSdfVaultDescriptor();
+        }
+
+        private static void TryClearSonarSdfVaultDescriptor()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return;
+
+            if (!vault.TryGetGenerationHandle<VoxelSdfPayloadDescriptorDTO>(
+                    BufferID.VoxelSdfPayloadDescriptor,
+                    out VaultGenerationHandle<VoxelSdfPayloadDescriptorDTO> descriptorHandle) ||
+                !vault.TryAcquireWriteLock(in descriptorHandle, SystemID.WorldStreaming, out NativeArray<VoxelSdfPayloadDescriptorDTO> descriptors))
+            {
+                return;
+            }
+
+            if (descriptors.IsCreated && descriptors.Length > 0)
+                descriptors[0] = default;
+
+            vault.ReleaseWriteLock(in descriptorHandle, SystemID.WorldStreaming);
         }
 
         private static void DestroyOwnedObject(UnityEngine.Object obj)
@@ -2814,15 +2980,11 @@ namespace Hecton8.Caves
             float impulseMagnitude = Mathf.Clamp(clusterCount * 3f + halfExtents.y * 2f, 12f, 48f);
             ApplyCollapseImpulse(runtimeCenter, halfExtents, impulseRadius, impulseMagnitude);
 
-            Vector3 trenchDirection = ResolveCollapseTrenchDirection(absoluteCenter);
-            float halfTrenchLength = Mathf.Max(2f, impulseRadius * 0.5f);
             SeismicShockwaveEvent shockwaveEvent = new SeismicShockwaveEvent(
                 runtimeCenter,
                 impulseRadius,
                 impulseMagnitude,
-                clusterCount,
-                absoluteCenter - trenchDirection * halfTrenchLength,
-                absoluteCenter + trenchDirection * halfTrenchLength);
+                clusterCount);
             RandomEventEvents.RaiseSeismicShockwave(in shockwaveEvent);
         }
 
@@ -2854,6 +3016,54 @@ namespace Hecton8.Caves
         private static double3 ToDouble3(Vector3 value)
         {
             return new double3(value.x, value.y, value.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private static bool TryResolveCurrentRuntimeOriginAbsolute(out double3 originAbsolute)
+        {
+            originAbsolute = default;
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            originAbsolute = originAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(originAbsolute));
+        }
+
+        private static bool TryResolveRuntimeAbsoluteDouble(Vector3 runtimePosition, out double3 absolutePosition)
+        {
+            absolutePosition = default;
+            if (!IsFinite(runtimePosition) || !TryResolveCurrentRuntimeOriginAbsolute(out double3 originAbsolute))
+                return false;
+
+            absolutePosition = originAbsolute + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            return math.all(math.isfinite(absolutePosition));
+        }
+
+        private static bool TryResolveRuntimeAbsoluteVector(Vector3 runtimePosition, out Vector3 absolutePosition)
+        {
+            absolutePosition = default;
+            if (!TryResolveRuntimeAbsoluteDouble(runtimePosition, out double3 absoluteDouble))
+                return false;
+
+            if (absoluteDouble.x > float.MaxValue ||
+                absoluteDouble.y > float.MaxValue ||
+                absoluteDouble.z > float.MaxValue ||
+                absoluteDouble.x < -float.MaxValue ||
+                absoluteDouble.y < -float.MaxValue ||
+                absoluteDouble.z < -float.MaxValue)
+            {
+                return false;
+            }
+
+            absolutePosition = ToVector3(absoluteDouble);
+            return IsFinite(absolutePosition);
         }
 
         private void ApplyCollapseImpulse(Vector3 runtimeCenter, Vector3 halfExtents, float impulseRadius, float impulseMagnitude)

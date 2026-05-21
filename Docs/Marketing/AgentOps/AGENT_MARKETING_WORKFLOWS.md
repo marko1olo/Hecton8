@@ -18,7 +18,7 @@ Status: operational playbook for future agents
 | Lead Verifier | recent activity, fit, contact route, language | prepare send-review packet; cannot override asset/send gates |
 | Pitch Writer | tailored pitch variants | approve exact copy |
 | Steam Copy Tester | short/long description variants | cold-reader test |
-| Sentiment Scout | SN2/survival pain points | evidence classification |
+| Sentiment Scout | SN2/survival pain points | evidence classification; public-attack filter; pain-to-asset proof route |
 | Clip Hook Writer | 15-20s hook variants | match to real footage |
 | Reddit Drafter | critique post drafts | subreddit rule check |
 | Compliance Checker | scope-safe copy, no fake claims, disclosure rules | mandatory |
@@ -39,7 +39,21 @@ Current override: CRM already has 100 staged rows and 0 raw rows. Before screens
 8. Update source ledger/risk register only when evidence changes a gate.
 9. Open raw lead mining only by explicit source-backed sprint after first assets reveal a real audience gap.
 
-After any changed file, run `Operations/DAILY_AGENT_TASK_LOOP.md` End-Of-Change Validation Cut V0.
+After any changed file, run `Operations/DAILY_AGENT_TASK_LOOP.md` End-Of-Change Validation Cut V1, including the Backtick Path Audit and rationale-order audit when entry, backlog, source-ledger, campaign, presskit, operation, status, or rationale files changed.
+
+## AgentOps Script Safety Gates
+
+- `scrape_letsplayindex_public_leads.ps1` is hold-by-default. Run it only with `-ForceRefresh` after a source-backed raw-lead sprint is opened, output overwrite is intentional, and source-ledger/status/rationale trace is ready.
+- `generate_priority50_messages.ps1` is hold-by-default when `CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md` already exists. Run it with `-ForceRegenerate` only after preserving hand-curated gates and recording the regeneration decision.
+- No AgentOps script output is outreach permission. Raw rows remain raw, generated drafts remain non-send-ready, and current CRM/asset/route gates still own send readiness.
+
+## Verification Batch Safety Gate
+
+- `AgentOps/VerificationBatches_2026-05-19/VERIFY_BATCH_*.md` files are parked raw-sprint scratchpads, not live CRM, not a send queue, and not outreach permission.
+- `TODO`, `Custom opener`, `Required asset`, checked verification boxes, contact-route notes, public-index metrics, and `RAW_PUBLIC_INDEX_NOT_CONTACT_READY` inside a batch are local scratch values only.
+- Open a verification batch only after first HECTON assets prove a segment gap the live CRM cannot cover and a source-backed raw sprint is explicitly opened.
+- Promotion into `Data/CREATOR_VERIFICATION_TEMPLATE.csv` must use the live schema fields, including `asset_ids_sent`, `creator_utility_score`, `paid_creator_permission_gate`, `send_route_class`, `reply_consent_provenance`, and the current asset metadata gates where creator-facing copy depends on asset proof.
+- If the exact matching asset is missing, keep the batch row parked. Do not convert `Required asset: TODO` or `Custom opener: TODO` into `NEEDS_ASSET`, `VERIFY_BEFORE_CONTACT`, or send-ready CRM state without the current CRM/asset/source-ledger trace.
 
 ## Weekly Competitive Report
 
@@ -57,6 +71,8 @@ Evidence rules:
 
 - link every claim;
 - label source class;
+- state whether the competitor read is strong, mixed, or weak before extracting pain;
+- treat SN2 pain buckets as private capture-priority hints only unless a newer public-response owner doc explicitly allows otherwise;
 - do not infer mechanics from vibes;
 - no fake top comments;
 - no "players hate X" unless there is recurring signal.
@@ -136,7 +152,7 @@ Check this marketing copy for forbidden claims: multiplayer-scope promises, comp
 
 ### Sentiment Scout Prompt
 
-Monitor current SN2, Subnautica, survival crafting, and underwater horror discussions. Extract recurring player pain themes with source links and evidence labels. Do not use isolated rants as truth. Do not fabricate YouTube comment ranking.
+Monitor current SN2, Subnautica, survival crafting, and underwater horror discussions. Start by checking whether the competitor read is strong, mixed, or weak from official platform/source data. Extract recurring player pain themes with source links and evidence labels, then translate each usable theme into a HECTON asset-proof requirement. Do not use isolated rants as truth. Do not fabricate YouTube comment ranking. Do not write competitor-attack copy, EULA moralizing, co-op superiority, performance superiority, or "players are disappointed" framing. If a pain bucket will affect capture priority, require a same-day monitoring row plus `pain_freshness_source`, `pain_freshness_checked_at`, `viewer_named_decision`, and `capture_verdict` before any public route, creator send, Steam movement, or spend gate can move.
 
 ## Human-Only Decisions
 

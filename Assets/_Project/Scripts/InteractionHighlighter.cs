@@ -132,6 +132,8 @@ namespace Hecton8.Interaction
         /// </summary>
         private bool _isTicking;
 
+        private bool _tickDormant;
+
         /// <summary>
         /// Kesh originalnyh tsvetov rendererov (dlya BaseColorTint mode).
         /// Zapolnyaetsya odin raz v Awake. Razmer = targetRenderers.Length.
@@ -162,6 +164,7 @@ namespace Hecton8.Interaction
             _lerpProgress  = 1f; // Fade zavershen (nechego interpolirovat)
             _highlighted   = false;
             _isTicking     = false;
+            _tickDormant   = false;
         }
 
         /// <summary>
@@ -257,10 +260,13 @@ namespace Hecton8.Interaction
         /// </summary>
         public void Tick(float deltaTime)
         {
+            if (_tickDormant)
+                return;
+
             // ── Inkrement progressa ──
             // fadeDuration garantirovanno > 0 (BeginFade ne vyzyvaetsya inache).
             // Zaschita ot division by zero cherez max(fadeDuration, epsilon).
-            _lerpProgress += deltaTime / fadeDuration;
+            _lerpProgress += deltaTime / math.max(fadeDuration, 0.0001f);
 
             if (_lerpProgress >= 1f)
             {
@@ -269,8 +275,8 @@ namespace Hecton8.Interaction
                 _currentValue = _fadeToColor;
                 ApplyImmediate(_currentValue);
 
-                // Otpisyvaemsya — bolshe ne tikaemsya do sleduyuschego SetHighlight
-                StopTicking();
+                // Hot Tick only parks. Physical unregister stays in lifecycle/non-Tick paths.
+                _tickDormant = true;
             }
             else
             {
@@ -309,6 +315,7 @@ namespace Hecton8.Interaction
             _fadeFromColor = from;
             _fadeToColor   = to;
             _lerpProgress  = 0f;
+            _tickDormant   = false;
 
             StartTicking();
         }
@@ -326,11 +333,9 @@ namespace Hecton8.Interaction
             if (_isTicking || !Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _isTicking = GlobalRegistry.Updatables.Contains(this);
+            _isTicking = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (_isTicking)
+                _tickDormant = false;
         }
 
         /// <summary>
@@ -344,6 +349,7 @@ namespace Hecton8.Interaction
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _isTicking = false;
+            _tickDormant = false;
         }
 
         // ══════════════════════════════════════════════════════════

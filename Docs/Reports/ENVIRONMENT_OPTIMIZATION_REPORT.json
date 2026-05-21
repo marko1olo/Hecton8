@@ -1,0 +1,30 @@
+{
+  "agent": "SHINOBU_234",
+  "summary": "SHINOBU Storm Propagation Isolated; Legacy WeatherEvents Bridge Active",
+  "status": "STATIC_SOURCE_ONLY_TASK01_BLOCKED_LEGACY_BRIDGE",
+  "scanRoots": [
+    "Assets/_Project/Scripts/Environment",
+    "Assets/_Project/Scripts/AI"
+  ],
+  "excludedColdBridges": [
+    "Assets/_Project/Scripts/Environment/WeatherEvents.cs",
+    "*/Editor/*"
+  ],
+  "weatherListenerHits": 0,
+  "weatherBridgeHits": 1,
+  "knownExternalBridgeHits": 4,
+  "deepWaterForceHits": 0,
+  "physicsReferenceHits": 0,
+  "policy": "SHINOBU_234 storm propagation consumes an optional DataVault weather row or its SHINOBU-owned emergency mock hurricane row, then publishes SHINOBU-owned storm scalar buffers. Legacy WeatherEvents fan-out remains active for Celestial/GI until those consumers migrate.",
+  "task01": "BLOCKED_LEGACY_BRIDGE_RESTORED_FOR_ACTIVE_CELESTIAL_GI_CONSUMERS",
+  "replacementRoute": "Optional ShinobuOceanWeatherState or MockHurricaneStateDTO -> CalculateStormAttenuationJob -> StormPropagationDTO -> SHINOBU-owned fog/flow/biolum/audio scalar buffers",
+  "knownExternalBridgeFindings": [
+    { "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs", "line": 1434, "category": "known_external_legacy_bridge", "pattern": "WeatherEvents.Register" },
+    { "path": "Assets/_Project/Scripts/Lighting/HectonGIRelaySystem.cs", "line": 147, "category": "known_external_legacy_bridge", "pattern": "WeatherEvents.Register" },
+    { "path": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs", "line": 830, "category": "known_external_legacy_bridge", "pattern": "WeatherEvents.RaiseLightning" },
+    { "path": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs", "line": 1107, "category": "known_external_legacy_bridge", "pattern": "WeatherEvents.RaiseLightning" }
+  ],
+  "findings": [
+    { "path": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs", "line": 687, "category": "weather_listener_or_bridge", "pattern": "WeatherEvents.RaiseSnapshotUpdated" }
+  ]
+}

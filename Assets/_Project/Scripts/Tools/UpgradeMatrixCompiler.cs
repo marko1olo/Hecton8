@@ -21,9 +21,15 @@ namespace Hecton8.Tools
         public const int MockMaskCount = 10000;
         public const int TelemetryFrameCount = 300;
         public const int DefaultLutEntryCount = 4096;
+        public const int DefaultLutCompressedBitCount = 12;
         public const int DefaultInventorySlotsPerEntity = 8;
+        public const int ToolModuleSlotsPerEquipment = 4;
+        public const int ToolModuleLutEntriesPerEquipment = 16;
         public const uint LayoutMagic = 0x55323331u; // U231
         public const float FaultCostThresholdMicroseconds = 100f;
+        public const uint FaultLutUnavailable = 1u << 1;
+        public const uint FaultThermalGridUnavailable = 1u << 2;
+        public const uint FaultLutIndexClamped = 1u << 3;
         public const ulong ThermalReactorBit = 1UL << 10;
         public const ulong VisualFlagMask = 0xFFFF000000000000UL;
         public const BufferID UpgradeMasksBuffer = (BufferID)71380;
@@ -35,7 +41,10 @@ namespace Hecton8.Tools
         public const BufferID UpgradeTelemetryCursorBuffer = (BufferID)71386;
         public const BufferID UpgradeInventorySlotsBuffer = (BufferID)71387;
         public const BufferID UpgradeItemMapBuffer = (BufferID)71388;
-        public const BufferID UpgradeVisualFlagsBuffer = (BufferID)71389;
+        public const BufferID UpgradeVisualStateBuffer = (BufferID)71389;
+        public const BufferID UpgradeVisualFlagsBuffer = UpgradeVisualStateBuffer;
+        public const BufferID UpgradeToolModuleRulesBuffer = (BufferID)71410;
+        public const BufferID UpgradeToolProfilesBuffer = (BufferID)71412;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_231.bin";
     }
 
@@ -49,6 +58,8 @@ namespace Hecton8.Tools
         public VaultGenerationHandle<UpgradeStatVectorDTO> CompiledStats;
         public VaultGenerationHandle<UpgradeLutEntryDTO> Lut;
         public VaultGenerationHandle<UpgradeBitRuleDTO> Rules;
+        public VaultGenerationHandle<ToolUpgradeModuleRuleDTO> ToolModuleRules;
+        public VaultGenerationHandle<ToolRuntimeProfile> ToolProfiles;
         public VaultGenerationHandle<UpgradeTelemetryEntry> TelemetryRing;
         public VaultGenerationHandle<int> TelemetryCursor;
         public VaultGenerationHandle<InventoryUpgradeSlotDTO> InventorySlots;
@@ -66,6 +77,8 @@ namespace Hecton8.Tools
         public NativeArray<UpgradeStatVectorDTO> CompiledStats;
         public NativeArray<UpgradeLutEntryDTO> Lut;
         public NativeArray<UpgradeBitRuleDTO> Rules;
+        public NativeArray<ToolUpgradeModuleRuleDTO> ToolModuleRules;
+        public NativeArray<ToolRuntimeProfile> ToolProfiles;
         public NativeArray<UpgradeTelemetryEntry> TelemetryRing;
         public NativeArray<int> TelemetryCursor;
         public NativeArray<InventoryUpgradeSlotDTO> InventorySlots;
@@ -84,13 +97,17 @@ namespace Hecton8.Tools
             int lutEntryCapacity,
             int ruleCapacity,
             int inventorySlotCapacity,
-            int itemMapCapacity)
+            int itemMapCapacity,
+            int toolModuleRuleCapacity = 0)
         {
             int safeEquipmentCapacity = math.max(1, equipmentCapacity);
             int safeLutCapacity = math.max(1, lutEntryCapacity);
             int safeRuleCapacity = math.max(1, ruleCapacity);
             int safeSlotCapacity = math.max(1, inventorySlotCapacity);
             int safeItemMapCapacity = math.max(1, itemMapCapacity);
+            int safeToolRuleCapacity = math.max(
+                UpgradeMatrixConstants.ToolModuleSlotsPerEquipment,
+                toolModuleRuleCapacity);
             return new UpgradeMatrixVaultHandles
             {
                 Masks = vault.GetGenerationHandle<UpgradeMaskDTO>(
@@ -116,6 +133,16 @@ namespace Hecton8.Tools
                 Rules = vault.GetGenerationHandle<UpgradeBitRuleDTO>(
                     UpgradeMatrixConstants.UpgradeRulesBuffer,
                     safeRuleCapacity,
+                    SystemID.GameplayTools,
+                    NativeArrayOptions.UninitializedMemory),
+                ToolModuleRules = vault.GetGenerationHandle<ToolUpgradeModuleRuleDTO>(
+                    UpgradeMatrixConstants.UpgradeToolModuleRulesBuffer,
+                    safeToolRuleCapacity,
+                    SystemID.GameplayTools,
+                    NativeArrayOptions.UninitializedMemory),
+                ToolProfiles = vault.GetGenerationHandle<ToolRuntimeProfile>(
+                    UpgradeMatrixConstants.UpgradeToolProfilesBuffer,
+                    safeEquipmentCapacity,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
                 TelemetryRing = vault.GetGenerationHandle<UpgradeTelemetryEntry>(
@@ -154,11 +181,273 @@ namespace Hecton8.Tools
                    vault.TryResolveHandle(in handles.CompiledStats, out views.CompiledStats) &&
                    vault.TryResolveHandle(in handles.Lut, out views.Lut) &&
                    vault.TryResolveHandle(in handles.Rules, out views.Rules) &&
+                   vault.TryResolveHandle(in handles.ToolModuleRules, out views.ToolModuleRules) &&
+                   vault.TryResolveHandle(in handles.ToolProfiles, out views.ToolProfiles) &&
                    vault.TryResolveHandle(in handles.TelemetryRing, out views.TelemetryRing) &&
                    vault.TryResolveHandle(in handles.TelemetryCursor, out views.TelemetryCursor) &&
                    vault.TryResolveHandle(in handles.InventorySlots, out views.InventorySlots) &&
                    vault.TryResolveHandle(in handles.ItemMap, out views.ItemMap) &&
                    vault.TryResolveHandle(in handles.VisualStates, out views.VisualStates);
+        }
+    }
+
+    public struct UpgradeMatrixJobChain
+    {
+        public JobHandle BuildLut;
+        public JobHandle Evaluate;
+        public JobHandle CompileStats;
+        public JobHandle VisualSync;
+        public JobHandle Telemetry;
+        public JobHandle Final;
+    }
+
+    public static class UpgradeMatrixScheduler
+    {
+        public static UpgradeMatrixJobChain ScheduleToolModuleMatrix(
+            NativeArray<ToolUpgradeModuleRuleDTO> moduleRules,
+            NativeArray<UpgradeMaskDTO> masks,
+            NativeArray<UpgradeStatVectorDTO> baseStats,
+            NativeArray<UpgradeLutEntryDTO> toolLut,
+            NativeArray<UpgradeStatVectorDTO> compiledStats,
+            NativeArray<ToolRuntimeProfile> profiles,
+            NativeArray<ToolRuntimeStats> toolStats,
+            float globalQualityWeight,
+            int equipmentCount,
+            JobHandle inputDeps)
+        {
+            if (!moduleRules.IsCreated ||
+                !masks.IsCreated ||
+                !baseStats.IsCreated ||
+                !toolLut.IsCreated ||
+                !compiledStats.IsCreated ||
+                !profiles.IsCreated ||
+                !toolStats.IsCreated)
+                return PassThrough(inputDeps);
+
+            int count = math.max(0, equipmentCount);
+            count = math.min(count, masks.Length);
+            count = math.min(count, baseStats.Length);
+            count = math.min(count, compiledStats.Length);
+            count = math.min(count, profiles.Length);
+            count = math.min(count, toolStats.Length);
+            count = math.min(count, moduleRules.Length / UpgradeMatrixConstants.ToolModuleSlotsPerEquipment);
+            count = math.min(count, toolLut.Length / UpgradeMatrixConstants.ToolModuleLutEntriesPerEquipment);
+            if (count <= 0)
+            {
+                return PassThrough(inputDeps);
+            }
+
+            JobHandle buildLut = new BuildToolModuleLUTJob
+            {
+                ModuleRules = moduleRules,
+                ToolLut = toolLut
+            }.Schedule(count, 32, inputDeps);
+
+            JobHandle evaluate = new EvaluateToolModuleLUTJob
+            {
+                Masks = masks,
+                BaseStats = baseStats,
+                ToolLut = toolLut,
+                CompiledStats = compiledStats,
+                LutIndexMask = (1UL << UpgradeMatrixConstants.ToolModuleSlotsPerEquipment) - 1UL,
+                LutIndexShift = 0,
+                GlobalQualityWeight = globalQualityWeight
+            }.Schedule(count, 32, buildLut);
+
+            JobHandle compileStats = new CompileToolRuntimeStatsJob
+            {
+                Profiles = profiles,
+                CompiledStats = compiledStats,
+                ToolStats = toolStats
+            }.Schedule(count, 32, evaluate);
+
+            return new UpgradeMatrixJobChain
+            {
+                BuildLut = buildLut,
+                Evaluate = evaluate,
+                CompileStats = compileStats,
+                VisualSync = inputDeps,
+                Telemetry = inputDeps,
+                Final = compileStats
+            };
+        }
+
+        public static unsafe UpgradeMatrixJobChain ScheduleUpgradeMaskEvaluation(
+            NativeArray<UpgradeMaskDTO> masks,
+            NativeArray<UpgradeStatVectorDTO> baseStats,
+            NativeArray<UpgradeLutEntryDTO> lut,
+            NativeArray<double3> entityAups,
+            NativeArray<float> thermalGridCelsius,
+            NativeArray<UpgradeStatVectorDTO> compiledStats,
+            ulong lutIndexMask,
+            int lutIndexShift,
+            int thermalWidth,
+            int thermalHeight,
+            int thermalDepth,
+            float thermalCellSizeMeters,
+            double3 thermalGridOriginAup,
+            float ambientFallbackCelsius,
+            float thermalReactorGain,
+            float globalQualityWeight,
+            int equipmentCount,
+            JobHandle inputDeps)
+        {
+            if (!masks.IsCreated ||
+                !baseStats.IsCreated ||
+                !lut.IsCreated ||
+                !entityAups.IsCreated ||
+                !thermalGridCelsius.IsCreated ||
+                !compiledStats.IsCreated)
+                return PassThrough(inputDeps);
+
+            int count = math.max(0, equipmentCount);
+            count = math.min(count, masks.Length);
+            count = math.min(count, baseStats.Length);
+            count = math.min(count, entityAups.Length);
+            count = math.min(count, compiledStats.Length);
+            if (count <= 0 || lut.Length <= 0 || thermalGridCelsius.Length <= 0)
+            {
+                return PassThrough(inputDeps);
+            }
+
+            JobHandle evaluate = new EvaluateUpgradeMasksJob
+            {
+                MasksSafety = masks,
+                BaseStatsSafety = baseStats,
+                LutSafety = lut,
+                EntityAupsSafety = entityAups,
+                ThermalGridSafety = thermalGridCelsius,
+                CompiledStatsSafety = compiledStats,
+                Masks = (UpgradeMaskDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(masks),
+                BaseStats = (UpgradeStatVectorDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(baseStats),
+                Lut = (UpgradeLutEntryDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(lut),
+                EntityAups = (double3*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(entityAups),
+                ThermalGridCelsius = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(thermalGridCelsius),
+                CompiledStats = (UpgradeStatVectorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(compiledStats),
+                LutIndexMask = lutIndexMask,
+                LutLength = lut.Length,
+                LutIndexShift = lutIndexShift,
+                ThermalWidth = thermalWidth,
+                ThermalHeight = thermalHeight,
+                ThermalDepth = thermalDepth,
+                ThermalGridLength = thermalGridCelsius.Length,
+                ThermalCellSizeMeters = thermalCellSizeMeters,
+                ThermalGridOriginAup = thermalGridOriginAup,
+                AmbientFallbackCelsius = ambientFallbackCelsius,
+                ThermalReactorGain = thermalReactorGain,
+                GlobalQualityWeight = globalQualityWeight,
+                ThermalReactorBit = UpgradeMatrixConstants.ThermalReactorBit
+            }.Schedule(count, 32, inputDeps);
+
+            return new UpgradeMatrixJobChain
+            {
+                BuildLut = inputDeps,
+                Evaluate = evaluate,
+                CompileStats = inputDeps,
+                VisualSync = inputDeps,
+                Telemetry = inputDeps,
+                Final = evaluate
+            };
+        }
+
+        public static UpgradeMatrixJobChain ScheduleVisualSync(
+            NativeArray<UpgradeMaskDTO> masks,
+            NativeArray<UpgradeStatVectorDTO> compiledStats,
+            NativeArray<UpgradeVisualStateDTO> visualStates,
+            float globalQualityWeight,
+            int equipmentCount,
+            JobHandle inputDeps)
+        {
+            if (!masks.IsCreated ||
+                !compiledStats.IsCreated ||
+                !visualStates.IsCreated)
+                return PassThrough(inputDeps);
+
+            int count = math.max(0, equipmentCount);
+            count = math.min(count, masks.Length);
+            count = math.min(count, compiledStats.Length);
+            count = math.min(count, visualStates.Length);
+            if (count <= 0)
+            {
+                return PassThrough(inputDeps);
+            }
+
+            JobHandle visualSync = new PublishUpgradeVisualStateJob
+            {
+                Masks = masks,
+                CompiledStats = compiledStats,
+                VisualStates = visualStates,
+                GlobalQualityWeight = globalQualityWeight
+            }.Schedule(count, 32, inputDeps);
+
+            return new UpgradeMatrixJobChain
+            {
+                BuildLut = inputDeps,
+                Evaluate = inputDeps,
+                CompileStats = inputDeps,
+                VisualSync = visualSync,
+                Telemetry = inputDeps,
+                Final = visualSync
+            };
+        }
+
+        public static UpgradeMatrixJobChain ScheduleTelemetry(
+            NativeArray<UpgradeMaskDTO> masks,
+            NativeArray<UpgradeStatVectorDTO> compiledStats,
+            NativeArray<UpgradeTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryCursor,
+            uint frame,
+            float burstMicroseconds,
+            int equipmentCount,
+            JobHandle inputDeps)
+        {
+            if (!masks.IsCreated ||
+                !compiledStats.IsCreated ||
+                !telemetryRing.IsCreated ||
+                !telemetryCursor.IsCreated)
+                return PassThrough(inputDeps);
+
+            int count = math.max(0, equipmentCount);
+            count = math.min(count, masks.Length);
+            count = math.min(count, compiledStats.Length);
+            if (count <= 0 || telemetryRing.Length <= 0 || telemetryCursor.Length <= 0)
+            {
+                return PassThrough(inputDeps);
+            }
+
+            JobHandle telemetry = new RecordUpgradeTelemetryJob
+            {
+                Masks = masks,
+                CompiledStats = compiledStats,
+                TelemetryRing = telemetryRing,
+                TelemetryCursor = telemetryCursor,
+                EvaluatedMaskCount = count,
+                Frame = frame,
+                BurstMicroseconds = burstMicroseconds
+            }.Schedule(inputDeps);
+
+            return new UpgradeMatrixJobChain
+            {
+                BuildLut = inputDeps,
+                Evaluate = inputDeps,
+                CompileStats = inputDeps,
+                VisualSync = inputDeps,
+                Telemetry = telemetry,
+                Final = telemetry
+            };
+        }
+
+        private static UpgradeMatrixJobChain PassThrough(JobHandle inputDeps)
+        {
+            return new UpgradeMatrixJobChain
+            {
+                BuildLut = inputDeps,
+                Evaluate = inputDeps,
+                CompileStats = inputDeps,
+                VisualSync = inputDeps,
+                Telemetry = inputDeps,
+                Final = inputDeps
+            };
         }
     }
 
@@ -295,6 +584,36 @@ namespace Hecton8.Tools
     }
 
     /// <summary>
+    /// One authored tool module rule packed for per-equipment 4-slot LUT baking. Size: 96 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    public struct ToolUpgradeModuleRuleDTO
+    {
+        [FieldOffset(0)] public ulong UpgradeBit;
+        [FieldOffset(8)] public ulong StateHash;
+        [FieldOffset(16)] public uint EntityHashID;
+        [FieldOffset(20)] public uint EquipmentHashID;
+        [FieldOffset(24)] public uint CompressedBit;
+        [FieldOffset(28)] public uint VisualFlags;
+        [FieldOffset(32)] public float RangeMultiplier;
+        [FieldOffset(36)] public float PowerMultiplier;
+        [FieldOffset(40)] public float EfficiencyMultiplier;
+        [FieldOffset(44)] public float SpeedMultiplier;
+        [FieldOffset(48)] public float HeatGenerationMultiplier;
+        [FieldOffset(52)] public float CooldownMultiplier;
+        [FieldOffset(56)] public float BatteryCapacityMultiplier;
+        [FieldOffset(60)] public float BatteryDrainMultiplier;
+        [FieldOffset(64)] public float DurabilityDrainMultiplier;
+        [FieldOffset(68)] public float RecoilMultiplier;
+        [FieldOffset(72)] public byte Occupied;
+        [FieldOffset(73)] public byte SlotIndex;
+        [FieldOffset(74)] private ushort _pad0;
+        [FieldOffset(76)] private uint _pad1;
+        [FieldOffset(80)] private ulong _pad2;
+        [FieldOffset(88)] private ulong _pad3;
+    }
+
+    /// <summary>
     /// Vehicle stat publication target used when Agent 113 has no concrete DTO in this branch. Size: 64 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -349,6 +668,8 @@ namespace Hecton8.Tools
         public const uint FaultTelemetrySize = 1u << 5;
         public const uint FaultVisualStateSize = 1u << 6;
         public const uint FaultVisualStateOffset = 1u << 7;
+        public const uint FaultToolRuleSize = 1u << 8;
+        public const uint FaultToolRuleOffset = 1u << 9;
 
         public static bool Validate(out uint faultFlags)
         {
@@ -370,6 +691,12 @@ namespace Hecton8.Tools
             if (OffsetOf<UpgradeVisualStateDTO>(nameof(UpgradeVisualStateDTO.StateHash)) != 8 ||
                 OffsetOf<UpgradeVisualStateDTO>(nameof(UpgradeVisualStateDTO.VisualFlags)) != 24)
                 faultFlags |= FaultVisualStateOffset;
+            if (UnsafeUtility.SizeOf<ToolUpgradeModuleRuleDTO>() != 96)
+                faultFlags |= FaultToolRuleSize;
+            if (OffsetOf<ToolUpgradeModuleRuleDTO>(nameof(ToolUpgradeModuleRuleDTO.CompressedBit)) != 24 ||
+                OffsetOf<ToolUpgradeModuleRuleDTO>(nameof(ToolUpgradeModuleRuleDTO.RangeMultiplier)) != 32 ||
+                OffsetOf<ToolUpgradeModuleRuleDTO>(nameof(ToolUpgradeModuleRuleDTO.Occupied)) != 72)
+                faultFlags |= FaultToolRuleOffset;
             return faultFlags == 0u;
         }
 
@@ -417,6 +744,68 @@ namespace Hecton8.Tools
             result.FaultFlags = baseline.FaultFlags;
             result.StateHash = Mix(Mix(lut.StateHash, baseline.StateHash), baseline.VisualFlags);
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static UpgradeLutEntryDTO CreateIdentityLutEntry(uint seed)
+        {
+            UpgradeLutEntryDTO entry = default;
+            entry.Mult0 = 1f;
+            entry.Mult1 = 1f;
+            entry.Mult2 = 1f;
+            entry.Mult3 = 1f;
+            entry.Mult4 = 1f;
+            entry.Mult5 = 1f;
+            entry.Mult6 = 1f;
+            entry.Mult7 = 1f;
+            entry.Mult8 = 1f;
+            entry.Mult9 = 1f;
+            entry.Mult10 = 1f;
+            entry.Mult11 = 1f;
+            entry.StateHash = seed;
+            return entry;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ApplyToolModuleRule(
+            ref UpgradeLutEntryDTO entry,
+            in ToolUpgradeModuleRuleDTO rule,
+            uint lutIndex,
+            ref float coolingSinkBonus)
+        {
+            uint occupiedBit = (uint)math.select(0, 1, rule.Occupied != 0);
+            uint selectedBit = (uint)math.select(0, 1, (lutIndex & rule.CompressedBit) != 0u);
+            uint enabledBit = selectedBit & occupiedBit;
+            uint coolingSinkBit = (uint)math.select(0, 1, (rule.UpgradeBit & (ulong)ToolUpgradeBits.CoolingSink) != 0UL);
+            uint normalCooldownBit = enabledBit & (1u - coolingSinkBit);
+            float enabled = enabledBit;
+            float normalCooldownEnabled = normalCooldownBit;
+            uint enabledMask = 0u - enabledBit;
+            ulong enabledWideMask = 0UL - (ulong)enabledBit;
+
+            entry.Mult0 *= SelectMultiplier(rule.RangeMultiplier, enabled);
+            entry.Mult1 *= SelectMultiplier(rule.PowerMultiplier, enabled);
+            entry.Mult2 *= SelectMultiplier(rule.EfficiencyMultiplier, enabled);
+            entry.Mult3 *= SelectMultiplier(rule.SpeedMultiplier, enabled);
+            entry.Mult4 *= SelectMultiplier(rule.HeatGenerationMultiplier, enabled);
+            entry.Mult5 *= SelectMultiplier(rule.CooldownMultiplier, normalCooldownEnabled);
+            entry.Mult6 *= SelectMultiplier(rule.BatteryCapacityMultiplier, enabled);
+            entry.Mult7 *= SelectMultiplier(rule.BatteryDrainMultiplier, enabled);
+            entry.Mult8 *= SelectMultiplier(rule.DurabilityDrainMultiplier, enabled);
+            entry.Mult9 *= SelectMultiplier(rule.RecoilMultiplier, enabled);
+            coolingSinkBonus = math.max(
+                coolingSinkBonus,
+                math.max(0f, rule.CooldownMultiplier - 1f) * (enabledBit & coolingSinkBit));
+            entry.VisualFlags |= rule.VisualFlags & enabledMask;
+            entry.LookupCount += enabledBit;
+            entry.StateHash = Mix(entry.StateHash, rule.UpgradeBit & enabledWideMask);
+            entry.StateHash = Mix(entry.StateHash, rule.StateHash & enabledWideMask);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SelectMultiplier(float value, float enabled)
+        {
+            return 1f + ((math.max(0.0001f, value) - 1f) * enabled);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -505,13 +894,14 @@ namespace Hecton8.Tools
             for (int i = 0; i < Rules.Length; i++)
             {
                 UpgradeBitRuleDTO rule = Rules[i];
-                float enabled = math.select(0f, 1f, ((uint)index & rule.CompressedBit) != 0u);
-                uint enabledMask = 0u - (uint)math.select(0, 1, enabled > 0f);
+                uint enabledBit = (uint)math.select(0, 1, ((uint)index & rule.CompressedBit) != 0u);
+                float enabled = enabledBit;
+                uint enabledMask = 0u - enabledBit;
                 float multiplier = 1f + ((math.max(0.0001f, rule.Multiplier) - 1f) * enabled);
                 float additive = rule.Additive * enabled;
                 entry.VisualFlags |= rule.VisualFlags & enabledMask;
-                entry.LookupCount += (uint)math.select(0, 1, enabled > 0f);
-                entry.StateHash = UpgradeMatrixCompiler.Mix(entry.StateHash, rule.OriginalBit & (0UL - (ulong)math.select(0, 1, enabled > 0f)));
+                entry.LookupCount += enabledBit;
+                entry.StateHash = UpgradeMatrixCompiler.Mix(entry.StateHash, rule.OriginalBit & (0UL - (ulong)enabledBit));
                 ApplyRule(ref entry, rule.StatLane, multiplier, additive);
             }
 
@@ -560,8 +950,74 @@ namespace Hecton8.Tools
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct BuildToolModuleLUTJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<ToolUpgradeModuleRuleDTO> ModuleRules;
+        [NoAlias] public NativeArray<UpgradeLutEntryDTO> ToolLut;
+
+        public void Execute(int equipmentIndex)
+        {
+            int rulesPerEquipment = UpgradeMatrixConstants.ToolModuleSlotsPerEquipment;
+            int entriesPerEquipment = UpgradeMatrixConstants.ToolModuleLutEntriesPerEquipment;
+            int ruleBase = equipmentIndex * rulesPerEquipment;
+            int lutBase = equipmentIndex * entriesPerEquipment;
+            for (int lutIndex = 0; lutIndex < entriesPerEquipment; lutIndex++)
+            {
+                UpgradeLutEntryDTO entry = UpgradeMatrixCompiler.CreateIdentityLutEntry((uint)lutIndex);
+                uint localIndex = (uint)lutIndex;
+                float coolingSinkBonus = 0f;
+                for (int slot = 0; slot < rulesPerEquipment; slot++)
+                {
+                    ToolUpgradeModuleRuleDTO rule = ModuleRules[ruleBase + slot];
+                    UpgradeMatrixCompiler.ApplyToolModuleRule(ref entry, in rule, localIndex, ref coolingSinkBonus);
+                }
+
+                entry.Mult5 *= 1f + coolingSinkBonus;
+                ToolLut[lutBase + lutIndex] = entry;
+            }
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct EvaluateToolModuleLUTJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<UpgradeMaskDTO> Masks;
+        [ReadOnly, NoAlias] public NativeArray<UpgradeStatVectorDTO> BaseStats;
+        [ReadOnly, NoAlias] public NativeArray<UpgradeLutEntryDTO> ToolLut;
+        [NoAlias] public NativeArray<UpgradeStatVectorDTO> CompiledStats;
+        public ulong LutIndexMask;
+        public int LutIndexShift;
+        public float GlobalQualityWeight;
+
+        public void Execute(int index)
+        {
+            UpgradeMaskDTO mask = Masks[index];
+            UpgradeStatVectorDTO baseline = BaseStats[index];
+            int entriesPerEquipment = UpgradeMatrixConstants.ToolModuleLutEntriesPerEquipment;
+            int localIndex = (int)((mask.ActiveUpgradesMask & LutIndexMask) >> LutIndexShift);
+            localIndex = math.min(entriesPerEquipment - 1, localIndex);
+            int lutIndex = (index * entriesPerEquipment) + localIndex;
+            UpgradeLutEntryDTO lut = ToolLut[lutIndex];
+            UpgradeStatVectorDTO compiled = UpgradeMatrixCompiler.ApplyLut(in baseline, in lut);
+            compiled.Stat11 = UpgradeMatrixCompiler.ResolveVisualQuality(GlobalQualityWeight);
+            compiled.VisualFlags |= (uint)((mask.ActiveUpgradesMask & UpgradeMatrixConstants.VisualFlagMask) >> 48);
+            compiled.StateHash = UpgradeMatrixCompiler.Mix(
+                UpgradeMatrixCompiler.HashMask(mask.ActiveUpgradesMask, mask.EntityHashID, mask.EquipmentHashID),
+                lut.StateHash);
+            CompiledStats[index] = compiled;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct EvaluateUpgradeMasksJob : IJobParallelFor
     {
+        // Safety shadow lanes let Unity track NativeArray lifetime/dependencies while the kernel uses raw pointers.
+        [ReadOnly, NoAlias] public NativeArray<UpgradeMaskDTO> MasksSafety;
+        [ReadOnly, NoAlias] public NativeArray<UpgradeStatVectorDTO> BaseStatsSafety;
+        [ReadOnly, NoAlias] public NativeArray<UpgradeLutEntryDTO> LutSafety;
+        [ReadOnly, NoAlias] public NativeArray<double3> EntityAupsSafety;
+        [ReadOnly, NoAlias] public NativeArray<float> ThermalGridSafety;
+        [NoAlias] public NativeArray<UpgradeStatVectorDTO> CompiledStatsSafety;
         [NoAlias, NativeDisableUnsafePtrRestriction] public UpgradeMaskDTO* Masks;
         [NoAlias, NativeDisableUnsafePtrRestriction] public UpgradeStatVectorDTO* BaseStats;
         [NoAlias, NativeDisableUnsafePtrRestriction] public UpgradeLutEntryDTO* Lut;
@@ -569,6 +1025,7 @@ namespace Hecton8.Tools
         [NoAlias, NativeDisableUnsafePtrRestriction] public float* ThermalGridCelsius;
         [NoAlias, NativeDisableUnsafePtrRestriction] public UpgradeStatVectorDTO* CompiledStats;
         public ulong LutIndexMask;
+        public int LutLength;
         public int LutIndexShift;
         public int ThermalWidth;
         public int ThermalHeight;
@@ -585,14 +1042,21 @@ namespace Hecton8.Tools
         {
             ref UpgradeMaskDTO mask = ref UnsafeUtility.AsRef<UpgradeMaskDTO>(Masks + index);
             ref UpgradeStatVectorDTO baseline = ref UnsafeUtility.AsRef<UpgradeStatVectorDTO>(BaseStats + index);
-            int lutIndex = (int)((mask.ActiveUpgradesMask & LutIndexMask) >> LutIndexShift);
+            ulong rawLutIndex64 = (mask.ActiveUpgradesMask & LutIndexMask) >> LutIndexShift;
+            int lutLength = math.max(1, LutLength);
+            ulong maxLutIndex64 = (ulong)(lutLength - 1);
+            uint lutClampedBit = (uint)math.select(0, 1, rawLutIndex64 > maxLutIndex64);
+            ulong lutClampMask = 0UL - (ulong)lutClampedBit;
+            ulong lutIndex64 = (rawLutIndex64 & ~lutClampMask) | (maxLutIndex64 & lutClampMask);
+            int lutIndex = (int)lutIndex64;
             UpgradeLutEntryDTO lut = UnsafeUtility.AsRef<UpgradeLutEntryDTO>(Lut + lutIndex);
+
             UpgradeStatVectorDTO compiled = UpgradeMatrixCompiler.ApplyLut(in baseline, in lut);
+            compiled.FaultFlags |= UpgradeMatrixConstants.FaultLutIndexClamped & (0u - lutClampedBit);
 
             int width = math.max(1, ThermalWidth);
             int height = math.max(1, ThermalHeight);
             int depth = math.max(1, ThermalDepth);
-            int gridLength = math.max(1, ThermalGridLength);
             float cellSize = math.max(0.0001f, ThermalCellSizeMeters);
             double3 deltaAup = AupPrecisionMath.LocalDeltaDouble(
                 UnsafeUtility.AsRef<double3>(EntityAups + index),
@@ -603,6 +1067,7 @@ namespace Hecton8.Tools
             float3 gridPosition = local * math.rcp(cellSize);
             int3 cell = (int3)math.floor(gridPosition);
             cell = math.clamp(cell, int3.zero, new int3(width - 1, height - 1, depth - 1));
+            int gridLength = math.max(1, ThermalGridLength);
             int gridIndex = math.min(gridLength - 1, cell.x + (cell.y * width) + (cell.z * width * height));
             float ambient = UnsafeUtility.AsRef<float>(ThermalGridCelsius + gridIndex);
             float hasReactor = UpgradeMatrixCompiler.Bit01(mask.ActiveUpgradesMask, ThermalReactorBit);
@@ -708,8 +1173,8 @@ namespace Hecton8.Tools
         {
             ref ActiveEquipmentDTO equipment = ref UnsafeUtility.AsRef<ActiveEquipmentDTO>(ActiveEquipment + index);
             ref UpgradeStatVectorDTO stats = ref UnsafeUtility.AsRef<UpgradeStatVectorDTO>(CompiledStats + index);
-            equipment.PowerDrawRate *= math.max(0.0001f, stats.Stat7);
-            equipment.HeatGenerationRate *= math.max(0.0001f, stats.Stat4);
+            equipment.PowerDrawRate = math.max(0f, stats.Stat7);
+            equipment.HeatGenerationRate = math.max(0f, stats.Stat4);
             equipment.StateFlags |= stats.VisualFlags;
         }
     }
@@ -753,19 +1218,7 @@ namespace Hecton8.Tools
         {
             ToolRuntimeProfile profile = Profiles[index];
             UpgradeStatVectorDTO stats = CompiledStats[index];
-            ToolStats[index] = new ToolRuntimeStats
-            {
-                MaxRange = math.max(0.1f, profile.MaxRange) * math.max(0.0001f, stats.Stat0),
-                PowerScalar = math.max(0.1f, profile.PowerScalar) * math.max(0.0001f, stats.Stat1),
-                EfficiencyScalar = math.max(0.1f, profile.EfficiencyScalar) * math.max(0.0001f, stats.Stat2),
-                SpeedScalar = math.max(0.1f, profile.SpeedScalar) * math.max(0.0001f, stats.Stat3),
-                HeatGenerationRate = math.max(0f, profile.HeatGenerationRate) * math.max(0.0001f, stats.Stat4),
-                CooldownRate = math.max(0f, profile.CooldownRate) * math.max(0.0001f, stats.Stat5),
-                BatteryCapacity = math.max(0.1f, profile.BatteryCapacity) * math.max(0.0001f, stats.Stat6),
-                BatteryDrainPerSecond = math.max(0f, profile.BatteryDrainPerSecond) * math.max(0.0001f, stats.Stat7),
-                DurabilityDrainMultiplier = math.max(0.1f, profile.DurabilityDrainMultiplier) * math.max(0.0001f, stats.Stat8),
-                RecoilImpulse = math.max(0f, profile.RecoilImpulse) * math.max(0.0001f, stats.Stat9)
-            };
+            ToolStats[index] = ToolUpgradeSystem.CompileRuntimeStatsFromLut(in profile, in stats);
         }
     }
 
@@ -808,17 +1261,20 @@ namespace Hecton8.Tools
         [ReadOnly, NoAlias] public NativeArray<UpgradeStatVectorDTO> CompiledStats;
         [NoAlias] public NativeArray<UpgradeTelemetryEntry> TelemetryRing;
         [NoAlias] public NativeArray<int> TelemetryCursor;
+        public int EvaluatedMaskCount;
         public uint Frame;
         public float BurstMicroseconds;
 
         public void Execute()
         {
-            int cursor = TelemetryCursor[0];
-            int ringIndex = cursor % UpgradeMatrixConstants.TelemetryFrameCount;
+            int ringLength = math.min(TelemetryRing.Length, UpgradeMatrixConstants.TelemetryFrameCount);
+            uint cursor = (uint)TelemetryCursor[0];
+            int ringIndex = (int)(cursor % (uint)ringLength);
             uint activeBits = 0u;
             ulong stateHash = 1469598103934665603UL;
             UpgradeMaskDTO last = default;
-            for (int i = 0; i < Masks.Length; i++)
+            int count = math.max(0, math.min(EvaluatedMaskCount, math.min(Masks.Length, CompiledStats.Length)));
+            for (int i = 0; i < count; i++)
             {
                 last = Masks[i];
                 activeBits += (uint)UpgradeMatrixCompiler.PopCount64(last.ActiveUpgradesMask);
@@ -828,9 +1284,9 @@ namespace Hecton8.Tools
             TelemetryRing[ringIndex] = new UpgradeTelemetryEntry
             {
                 Frame = Frame,
-                EvaluatedMaskCount = (uint)Masks.Length,
+                EvaluatedMaskCount = (uint)count,
                 ActiveBitCount = activeBits,
-                LutLookupCount = (uint)Masks.Length,
+                LutLookupCount = (uint)count,
                 BurstMicroseconds = BurstMicroseconds,
                 FaultFlags = (uint)math.select(0, 1, BurstMicroseconds > UpgradeMatrixConstants.FaultCostThresholdMicroseconds),
                 LayoutMagic = UpgradeMatrixConstants.LayoutMagic,
@@ -840,7 +1296,7 @@ namespace Hecton8.Tools
                 Reserved0 = 0UL,
                 Reserved1 = 0UL
             };
-            TelemetryCursor[0] = cursor + 1;
+            TelemetryCursor[0] = (int)((cursor + 1u) % (uint)ringLength);
         }
     }
 
@@ -895,19 +1351,22 @@ namespace Hecton8.Tools
             float additive = ParseFloat(ReadCell(row, ref cursor), 0f);
             uint visualFlags = ParseUInt(ReadCell(row, ref cursor), 0u);
             ulong bit = 1UL << bitIndex;
+            uint lutBitValid = (uint)math.select(0, 1, bitIndex < UpgradeMatrixConstants.DefaultLutCompressedBitCount);
+            ulong validMask64 = 0UL - (ulong)lutBitValid;
+            uint validMask32 = 0u - lutBitValid;
             map = new UpgradeItemMapDTO
             {
                 ItemHashID = itemHash,
                 EquipmentHashID = equipmentHash,
-                UpgradeBit = bit
+                UpgradeBit = bit & validMask64
             };
             rule = new UpgradeBitRuleDTO
             {
-                OriginalBit = bit,
-                CompressedBit = 1u << math.min(31, bitIndex),
-                Multiplier = multiplier,
-                Additive = additive,
-                VisualFlags = visualFlags,
+                OriginalBit = bit & validMask64,
+                CompressedBit = (1u << math.min(31, bitIndex)) & validMask32,
+                Multiplier = math.select(1f, multiplier, lutBitValid != 0u),
+                Additive = additive * (float)lutBitValid,
+                VisualFlags = visualFlags & validMask32,
                 StatLane = statLane
             };
         }

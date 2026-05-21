@@ -25,14 +25,14 @@ namespace Hecton8.UI
     internal static class AcousticEcholocationBarkEvents
     {
         private const int ListenerCapacity = 4;
-        private static readonly IAcousticEcholocationBarkListener[] s_listeners = new IAcousticEcholocationBarkListener[ListenerCapacity]; // COLD ALLOC: IAcousticEcholocationBarkListener[4] - HUD bark listener registry - owner: AcousticEcholocationBarkEvents
+        private static readonly ListenerSlot[] s_listeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[4] - HUD bark listener registry - owner: AcousticEcholocationBarkEvents
         private static int s_listenerCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             for (int i = 0; i < ListenerCapacity; i++)
-                s_listeners[i] = null;
+                s_listeners[i].Clear();
 
             s_listenerCount = 0;
         }
@@ -44,14 +44,15 @@ namespace Hecton8.UI
 
             for (int i = 0; i < s_listenerCount; i++)
             {
-                if (ReferenceEquals(s_listeners[i], listener))
+                if (ReferenceEquals(s_listeners[i].Listener, listener))
                     return;
             }
 
             if (s_listenerCount >= ListenerCapacity)
                 return;
 
-            s_listeners[s_listenerCount++] = listener;
+            s_listeners[s_listenerCount].Listener = listener;
+            s_listenerCount++;
         }
 
         public static void Unregister(IAcousticEcholocationBarkListener listener)
@@ -61,12 +62,12 @@ namespace Hecton8.UI
 
             for (int i = 0; i < s_listenerCount; i++)
             {
-                if (!ReferenceEquals(s_listeners[i], listener))
+                if (!ReferenceEquals(s_listeners[i].Listener, listener))
                     continue;
 
                 int last = s_listenerCount - 1;
                 s_listeners[i] = s_listeners[last];
-                s_listeners[last] = null;
+                s_listeners[last].Clear();
                 s_listenerCount = last;
                 return;
             }
@@ -76,9 +77,19 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < s_listenerCount; i++)
             {
-                IAcousticEcholocationBarkListener listener = s_listeners[i];
+                IAcousticEcholocationBarkListener listener = s_listeners[i].Listener;
                 if (listener != null)
                     listener.OnStorageCapacityExceededBark();
+            }
+        }
+
+        private struct ListenerSlot
+        {
+            public IAcousticEcholocationBarkListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
             }
         }
     }
@@ -223,6 +234,7 @@ namespace Hecton8.UI
             TryRegisterHotSwapListener();
             ResolveAcousticOwners();
             EnsureUiBuilt();
+            RegisterToTickManager();
             RefreshLocalizedCache();
             LocalizationEvents.RegisterLanguageListener(this);
             SpectrumEvents.RegisterSonarPulseListener(this);
@@ -267,7 +279,6 @@ namespace Hecton8.UI
         {
             if (_group == null)
             {
-                UnregisterFromTickManager();
                 return;
             }
 
@@ -298,7 +309,6 @@ namespace Hecton8.UI
             _storageCapacityBarkActive = false;
             _lastRenderedClassification = ContactClassification.None;
             _lastRenderedDistanceMeters = int.MinValue;
-            UnregisterFromTickManager();
         }
 
         private void HandleSonarPulse(float radius)
@@ -376,13 +386,19 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
             {
-                _cachedLocalization = currentService as LocalizationManager ?? GlobalRegistry.Localization;
+                _cachedLocalization = currentService as LocalizationManager;
                 RefreshLocalizedCache();
                 return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
+            {
                 _cachedAtmosphere = currentService as HectonAtmosphereManager;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                RegisterToTickManager();
         }
 
 
@@ -489,7 +505,7 @@ namespace Hecton8.UI
         private bool TryResolveNearestLeviathan(SpatialSonarSnapshot snapshot, out int distanceMeters)
         {
             distanceMeters = 0;
-            if (!snapshot.HasNearestBioform)
+            if (!SpatialSonarSnapshot.HasNearestBioform(in snapshot))
                 return false;
 
             float searchRadius = math.clamp(snapshot.NearestBioformDistanceMeters + 12f, 18f, 180f);
@@ -520,9 +536,14 @@ namespace Hecton8.UI
                     continue;
 
                 nearestDistanceSqr = candidateDistanceSqr;
-                nearestAup = contact.HasAbsolutePosition
-                    ? contact.AbsolutePosition
-                    : AbsoluteUniversePosition.FromRuntimePosition(contact.Position);
+                if (contact.HasAbsolutePosition)
+                {
+                    nearestAup = contact.AbsolutePosition;
+                }
+                else if (!TryResolveAupFromRuntimeOrigin(contact.Position, out nearestAup))
+                {
+                    continue;
+                }
             }
 
             if (nearestDistanceSqr == float.MaxValue)
@@ -561,7 +582,9 @@ namespace Hecton8.UI
             double nearestDistanceMeters = double.MaxValue;
             for (int i = 0; i < limit; i++)
             {
-                AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchors[i]);
+                if (!TryResolveAupFromRuntimeOrigin(anchors[i], out AbsoluteUniversePosition anchorAup))
+                    continue;
+
                 double candidateDistanceMeters = ApproximateAupDistanceMeters(in anchorAup, in originAup);
                 if (candidateDistanceMeters > AnchorClassificationRadius ||
                     candidateDistanceMeters >= nearestDistanceMeters)
@@ -737,7 +760,9 @@ namespace Hecton8.UI
             if (!TryResolveClassificationOriginAup(out AbsoluteUniversePosition originAup))
                 return 0;
 
-            AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition targetAup))
+                return 0;
+
             return RoundApproximateAupDistanceMeters(in originAup, in targetAup);
         }
 
@@ -946,8 +971,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -1033,6 +1057,23 @@ namespace Hecton8.UI
             return UiChildSpanUtility.FindExistingChild(parent, childName);
         }
 
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
+                return false;
+
+            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!math.all(math.isfinite(origin)))
+                return false;
+
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in positionAup);
+        }
+
         private static void ClearChildren(Transform parent)
         {
             UiChildSpanUtility.DestroyChildren(parent);
@@ -1105,6 +1146,7 @@ namespace Hecton8.UI
             font = LocalizedFontResolver.ResolveReadableFont(font);
             ResolveTerminalOwners();
             EnsureUiBuilt();
+            RegisterToTickManager();
             SpectrumEvents.RegisterSonarPingListener(this);
         }
 
@@ -1153,7 +1195,6 @@ namespace Hecton8.UI
                     if (_overlayGroup.alpha <= HiddenAlphaCutoff)
                     {
                         HideOverlay();
-                        UnregisterFromTickManager();
                     }
                     break;
             }
@@ -1378,8 +1419,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -1488,8 +1528,8 @@ namespace Hecton8.UI
             public float3 Right;
             public float3 Up;
             public float3 Forward;
-            public bool HasView;
-            public bool HasOriginAup;
+            public byte HasView;
+            public byte HasOriginAup;
         }
 
         [Header("── Font ──────────────────")]
@@ -1513,6 +1553,7 @@ namespace Hecton8.UI
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             EnsureUiBuilt(allowComponentFallback: true);
+            RegisterToTickManager();
             AudioCaptionEvents.Register(this);
         }
 
@@ -1541,7 +1582,11 @@ namespace Hecton8.UI
             object currentService)
         {
             if (serviceSlot != GlobalRegistryServiceSlot.Player)
+            {
+                if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
+                    RegisterToTickManager();
                 return;
+            }
 
             _cachedPlayerContext = currentService as IPlayerRuntimeContext;
             _viewCamera = null;
@@ -1552,7 +1597,6 @@ namespace Hecton8.UI
         {
             if (!_uiBuilt)
             {
-                UnregisterFromTickManager();
                 return;
             }
 
@@ -1582,7 +1626,7 @@ namespace Hecton8.UI
             }
 
             if (activeCount <= 0)
-                UnregisterFromTickManager();
+                return;
         }
 
         /// <summary>
@@ -1838,18 +1882,18 @@ namespace Hecton8.UI
                 Right = (float3)(viewRotation * Vector3.right),
                 Up = (float3)(viewRotation * Vector3.up),
                 Forward = (float3)(viewRotation * Vector3.forward),
-                HasView = true,
-                HasOriginAup = hasOriginAup
+                HasView = 1,
+                HasOriginAup = hasOriginAup ? (byte)1 : (byte)0
             };
         }
 
         private static Vector2 ResolveScreenDirection(in CaptionSlot slot, in CaptionViewFrame viewFrame)
         {
-            if (!viewFrame.HasView)
+            if (viewFrame.HasView == 0)
                 return Vector2.up;
 
             float3 delta;
-            if (viewFrame.HasOriginAup && slot.HasWorldAup)
+            if (viewFrame.HasOriginAup != 0 && slot.HasWorldAup)
             {
                 delta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in slot.WorldAup, in viewFrame.OriginAup);
             }
@@ -1945,6 +1989,22 @@ namespace Hecton8.UI
                 local -= cellSize;
                 grid++;
             }
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) || !math.isfinite(runtimePosition.y) || !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in positionAup);
         }
 
         private void HideAllSlots()
@@ -2052,8 +2112,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()

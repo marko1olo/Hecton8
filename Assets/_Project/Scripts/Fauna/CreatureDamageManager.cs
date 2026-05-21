@@ -38,6 +38,7 @@ namespace Hecton8.AI
         private FaunaBrain _faunaBrain;
         private Bounds _localBounds = new Bounds(Vector3.zero, Vector3.one * 4f);
         private bool _registeredTick;
+        private bool _tickSleeping;
         private int _woundCount;
         private int _nextWoundIndex;
         private bool _woundsDirty;
@@ -60,6 +61,7 @@ namespace Hecton8.AI
             {
                 s_activeOwner = this;
                 _woundsDirty = true;
+                _tickSleeping = false;
                 PublishShaderGlobals();
                 TryRegisterTick();
             }
@@ -67,11 +69,7 @@ namespace Hecton8.AI
 
         private void OnDisable()
         {
-            if (_registeredTick)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = false;
-            }
+            TryUnregisterTick();
 
             if (ReferenceEquals(s_activeOwner, this))
             {
@@ -119,15 +117,19 @@ namespace Hecton8.AI
 
             _woundsDirty = true;
             s_activeOwner = this;
+            _tickSleeping = false;
             PublishShaderGlobals();
             TryRegisterTick();
         }
 
         public void Tick(float deltaTime)
         {
+            if (_tickSleeping)
+                return;
+
             if (!ReferenceEquals(s_activeOwner, this) || _woundCount <= 0 || !IsLeviathanPresentationOwner())
             {
-                TryUnregisterTick();
+                _tickSleeping = true;
                 return;
             }
 
@@ -143,7 +145,7 @@ namespace Hecton8.AI
 
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredTick || !Application.isPlaying)
                 return;
 
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
@@ -156,6 +158,7 @@ namespace Hecton8.AI
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registeredTick = false;
+            _tickSleeping = false;
         }
 
         private void RefreshBounds()

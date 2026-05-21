@@ -62,6 +62,14 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ExecuteStep(float fixedDeltaTime)
         {
+            ExecuteStep(fixedDeltaTime, true);
+        }
+
+        /// <summary>
+        /// Executes the authoritative environment pass and optionally suppresses direct motor writes.
+        /// </summary>
+        public void ExecuteStep(float fixedDeltaTime, bool applyToMotor)
+        {
             if (_owner == null || _motorForces == null)
                 return;
 
@@ -71,11 +79,11 @@ namespace Hecton8.Gameplay
             _owner.ExecuteEnvironmentForcePhase(fixedDeltaTime, activeTransportPreset);
 
             Vector3 bufferedAcceleration = ConsumeExternalAcceleration();
-            if (bufferedAcceleration.sqrMagnitude > 0.000001f)
+            if (applyToMotor && bufferedAcceleration.sqrMagnitude > 0.000001f)
                 _motorForces.AddExternalAcceleration(bufferedAcceleration);
 
             Vector3 bufferedVelocityChange = ConsumeVelocityChange();
-            if (bufferedVelocityChange.sqrMagnitude > 0.000001f)
+            if (applyToMotor && bufferedVelocityChange.sqrMagnitude > 0.000001f)
                 _motorForces.AddExternalVelocityChange(bufferedVelocityChange);
 
             float bufferedHullStress = ConsumeHullStress();

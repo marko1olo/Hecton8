@@ -45,7 +45,7 @@ namespace Hecton8.AI.Pathfinding
         {
             get
             {
-                if (!TryResolveRuntimeState(out NativeArray<PathFunnelRuntimeState> runtimeState))
+                if (!TryReadRuntimeState(out NativeArray<PathFunnelRuntimeState> runtimeState))
                     return 0u;
 
                 return runtimeState[0].PathInvalidationCount;
@@ -57,8 +57,8 @@ namespace Hecton8.AI.Pathfinding
             if (!Application.isPlaying)
                 return;
 
-            if (_dataVault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                _dataVault = latestVault;
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
             EnsureVaultBuffers();
             _registeredFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Environment);
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -93,7 +93,7 @@ namespace Hecton8.AI.Pathfinding
         /// <inheritdoc />
         public void FastTick(float deltaTime)
         {
-            if (!TryResolveMutationViews(
+            if (!EnsureMutationViews(
                     out NativeArray<PathFunnelActivePath> activePaths,
                     out NativeArray<ulong> activePathCellMasks,
                     out NativeArray<PathFunnelInvalidation> invalidations,
@@ -125,7 +125,7 @@ namespace Hecton8.AI.Pathfinding
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (!TryResolveTelemetryViews(
+            if (!EnsureTelemetryViews(
                     out NativeArray<PathFunnelTelemetryEntry> telemetry,
                     out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
             {
@@ -188,7 +188,7 @@ namespace Hecton8.AI.Pathfinding
             if (pathId == 0u ||
                 sectorHash == 0UL ||
                 corridorCellCount < 0 ||
-                !TryResolveActivePathMutationViews(
+                !EnsureActivePathMutationViews(
                     out NativeArray<PathFunnelActivePath> activePaths,
                     out NativeArray<ulong> activePathCellMasks,
                     out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
@@ -244,7 +244,7 @@ namespace Hecton8.AI.Pathfinding
         /// <param name="pathId">Stable path identifier.</param>
         public void UnregisterActivePath(uint pathId)
         {
-            if (!TryResolveActivePathMutationViews(
+            if (!EnsureActivePathMutationViews(
                     out NativeArray<PathFunnelActivePath> activePaths,
                     out NativeArray<ulong> activePathCellMasks,
                     out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
@@ -279,7 +279,7 @@ namespace Hecton8.AI.Pathfinding
         /// <returns>True when invalidated.</returns>
         public bool IsPathInvalidated(uint pathId)
         {
-            if (!TryResolveActivePathViews(
+            if (!TryReadActivePathViews(
                     out NativeArray<PathFunnelActivePath> activePaths,
                     out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
             {
@@ -296,10 +296,10 @@ namespace Hecton8.AI.Pathfinding
         /// </summary>
         /// <param name="invalidation">Copied invalidation payload.</param>
         /// <returns>True when one payload was available.</returns>
-        public bool TryReadInvalidation(out PathFunnelInvalidation invalidation)
+        public bool TryDequeueInvalidation(out PathFunnelInvalidation invalidation)
         {
             invalidation = default;
-            if (!TryResolveInvalidationViews(
+            if (!EnsureInvalidationViews(
                     out NativeArray<PathFunnelInvalidation> invalidations,
                     out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
             {
@@ -323,7 +323,7 @@ namespace Hecton8.AI.Pathfinding
         /// </summary>
         public void RequestBlackBoxDump()
         {
-            if (!TryResolveRuntimeState(out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
+            if (!EnsureRuntimeState(out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
                 return;
 
             PathFunnelRuntimeState runtimeState = runtimeStateBuffer[0];
@@ -341,31 +341,31 @@ namespace Hecton8.AI.Pathfinding
             int cellMaskCapacity = activePathCapacity * PathFunnelConstants.WfcCellMaskWordCount;
             int invalidationCapacity = ResolveInvalidationCapacity();
 
-            return TryResolveOrAcquireVaultBuffer(
+            return EnsureVaultBuffer(
                        vault,
                        BufferID.PathFunnelActivePaths,
                        activePathCapacity,
                        ref _activePathsHandle,
                        out _) &&
-                   TryResolveOrAcquireVaultBuffer(
+                   EnsureVaultBuffer(
                        vault,
                        BufferID.PathFunnelCellMasks,
                        cellMaskCapacity,
                        ref _activePathCellMasksHandle,
                        out _) &&
-                   TryResolveOrAcquireVaultBuffer(
+                   EnsureVaultBuffer(
                        vault,
                        BufferID.PathFunnelInvalidations,
                        invalidationCapacity,
                        ref _invalidationsHandle,
                        out _) &&
-                   TryResolveOrAcquireVaultBuffer(
+                   EnsureVaultBuffer(
                        vault,
                        BufferID.PathFunnelTelemetryRing,
                        PathFunnelConstants.TelemetryFrames,
                        ref _telemetryHandle,
                        out _) &&
-                   TryResolveOrAcquireVaultBuffer(
+                   EnsureVaultBuffer(
                        vault,
                        BufferID.PathFunnelRuntimeState,
                        1,
@@ -425,7 +425,7 @@ namespace Hecton8.AI.Pathfinding
                    buffer.Length >= requiredLength;
         }
 
-        private static bool TryResolveOrAcquireVaultBuffer<T>(
+        private static bool EnsureVaultBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
@@ -482,7 +482,7 @@ namespace Hecton8.AI.Pathfinding
             handle = default;
         }
 
-        private bool TryResolveMutationViews(
+        private bool EnsureMutationViews(
             out NativeArray<PathFunnelActivePath> activePaths,
             out NativeArray<ulong> activePathCellMasks,
             out NativeArray<PathFunnelInvalidation> invalidations,
@@ -513,7 +513,7 @@ namespace Hecton8.AI.Pathfinding
             return true;
         }
 
-        private bool TryResolveActivePathMutationViews(
+        private bool EnsureActivePathMutationViews(
             out NativeArray<PathFunnelActivePath> activePaths,
             out NativeArray<ulong> activePathCellMasks,
             out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer)
@@ -540,7 +540,13 @@ namespace Hecton8.AI.Pathfinding
             return true;
         }
 
-        private bool TryResolveRuntimeState(out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer)
+        private bool TryReadRuntimeState(out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer)
+        {
+            runtimeStateBuffer = default;
+            return TryResolveVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer);
+        }
+
+        private bool EnsureRuntimeState(out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer)
         {
             runtimeStateBuffer = default;
             if (!EnsureVaultBuffers())
@@ -553,7 +559,7 @@ namespace Hecton8.AI.Pathfinding
             return true;
         }
 
-        private bool TryResolveTelemetryViews(
+        private bool EnsureTelemetryViews(
             out NativeArray<PathFunnelTelemetryEntry> telemetry,
             out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer)
         {
@@ -572,24 +578,19 @@ namespace Hecton8.AI.Pathfinding
             return true;
         }
 
-        private bool TryResolveActivePathViews(
+        private bool TryReadActivePathViews(
             out NativeArray<PathFunnelActivePath> activePaths,
             out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer)
         {
             activePaths = default;
             runtimeStateBuffer = default;
-            if (!EnsureVaultBuffers())
-                return false;
-
             if (!TryResolveVaultBuffer(in _activePathsHandle, ResolveActivePathCapacity(), out activePaths) ||
                 !TryResolveVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer))
                 return false;
-
-            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames, activePaths.Length, ResolveInvalidationLengthForState());
             return true;
         }
 
-        private bool TryResolveInvalidationViews(
+        private bool EnsureInvalidationViews(
             out NativeArray<PathFunnelInvalidation> invalidations,
             out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer)
         {

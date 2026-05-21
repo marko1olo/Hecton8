@@ -25,7 +25,7 @@ namespace Hecton8.EditorValidation
     /// </summary>
     public static unsafe class H8DataMonolithCompiler
     {
-        internal const string SourceFolder = "Assets/_SourceData";
+        internal const string SourceFolder = "Assets/_SourceData/DataMonolith";
         internal const string BalanceSourceFolder = "Data/Balance";
         internal const string OutputAssetPath = "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin";
         private const string MenuPath = "Hecton8/Data Monolith/Bake Static Data";
@@ -72,6 +72,21 @@ namespace Hecton8.EditorValidation
             BakeAll(logSummary: true);
         }
 
+        public static void BakeFromCommandLine()
+        {
+            bool baked = BakeAll(logSummary: true);
+            bool valid = baked && TryValidateOutputBlob(out string validationError);
+            if (!valid && string.IsNullOrEmpty(LastError))
+                LastError = validationError;
+
+            int exitCode = valid ? 0 : 1;
+            if (!valid)
+                Debug.LogError("[H8DataMonolithCompiler] Batch bake failed: " + LastError);
+
+            if (Application.isBatchMode)
+                EditorApplication.Exit(exitCode);
+        }
+
         internal static bool BakeAll(bool logSummary)
         {
             LastError = string.Empty;
@@ -89,21 +104,10 @@ namespace Hecton8.EditorValidation
                 Directory.CreateDirectory(BalanceSourceFolder);
                 Directory.CreateDirectory(Path.GetDirectoryName(OutputAssetPath));
 
-                DataSet dataSet = new DataSet();
                 LocalizationPool localizationPool = new LocalizationPool();
-
-                string[] csvFiles = CollectSourceFiles("*.csv");
-                Array.Sort(csvFiles, StringComparer.OrdinalIgnoreCase);
-                CsvFileRows[] csvSources = ReadCsvSourcesParallel(csvFiles);
-                for (int i = 0; i < csvSources.Length; i++)
-                    ParseCsv(csvSources[i], dataSet, localizationPool);
-
-                string[] jsonFiles = CollectSourceFiles("*.json");
-                Array.Sort(jsonFiles, StringComparer.OrdinalIgnoreCase);
-                for (int i = 0; i < jsonFiles.Length; i++)
-                    ParseJson(jsonFiles[i], dataSet, localizationPool);
-
+                DataSet dataSet = BuildDataSetFromSources(localizationPool, out _, out _);
                 FinalizeGeneratedTables(dataSet);
+                ValidateProductionSectionCoverage(dataSet);
                 ValidateCrossReferences(dataSet);
 
                 byte[] blob = BuildBlob(dataSet, localizationPool);
@@ -145,6 +149,46 @@ namespace Hecton8.EditorValidation
                 Debug.LogException(ex);
                 return false;
             }
+        }
+
+        internal static bool TryAnalyzeProductionCoverage(out string report, out int missingCount)
+        {
+            try
+            {
+                LocalizationPool localizationPool = new LocalizationPool();
+                DataSet dataSet = BuildDataSetFromSources(localizationPool, out int csvFileCount, out int jsonFileCount);
+                FinalizeGeneratedTables(dataSet);
+                ValidateCrossReferences(dataSet);
+                string coverageError = BuildProductionCoverageError(dataSet, out missingCount);
+                report = BuildProductionCoverageReport(dataSet, csvFileCount, jsonFileCount, missingCount, coverageError);
+                return missingCount == 0;
+            }
+            catch (Exception ex)
+            {
+                missingCount = -1;
+                report = "coverage-analysis-failed: " + ex.Message;
+                return false;
+            }
+        }
+
+        private static DataSet BuildDataSetFromSources(LocalizationPool localizationPool, out int csvFileCount, out int jsonFileCount)
+        {
+            DataSet dataSet = new DataSet();
+
+            string[] csvFiles = CollectSourceFiles("*.csv");
+            Array.Sort(csvFiles, StringComparer.OrdinalIgnoreCase);
+            csvFileCount = csvFiles.Length;
+            CsvFileRows[] csvSources = ReadCsvSourcesParallel(csvFiles);
+            for (int i = 0; i < csvSources.Length; i++)
+                ParseCsv(csvSources[i], dataSet, localizationPool);
+
+            string[] jsonFiles = CollectSourceFiles("*.json");
+            Array.Sort(jsonFiles, StringComparer.OrdinalIgnoreCase);
+            jsonFileCount = jsonFiles.Length;
+            for (int i = 0; i < jsonFiles.Length; i++)
+                ParseJson(jsonFiles[i], dataSet, localizationPool);
+
+            return dataSet;
         }
 
         internal static bool IsSourcePath(string assetPath)
@@ -703,9 +747,33 @@ namespace Hecton8.EditorValidation
 
         private static void ValidateCrossReferences(DataSet dataSet)
         {
+            ValidateRequiredRecordIdentities(dataSet);
+            ValidateUniqueProductionHashes(dataSet);
+            ValidateProductionNumericRanges(dataSet);
+
             HashSet<uint> itemHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[item count] - editor-only cross-reference validation - owner: H8DataMonolithCompiler
             for (int i = 0; i < dataSet.Items.Count; i++)
                 itemHashes.Add(dataSet.Items[i].HashId);
+
+            HashSet<uint> creatureHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[creature count] - editor-only semantic validation - owner: H8DataMonolithCompiler
+            for (int i = 0; i < dataSet.Creatures.Count; i++)
+                creatureHashes.Add(dataSet.Creatures[i].SpeciesHash);
+
+            HashSet<uint> biomeHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[biome count] - editor-only semantic validation - owner: H8DataMonolithCompiler
+            for (int i = 0; i < dataSet.Biomes.Count; i++)
+                biomeHashes.Add(dataSet.Biomes[i].BiomeHash);
+
+            HashSet<uint> recipeOutputHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[recipe count] - editor-only semantic validation - owner: H8DataMonolithCompiler
+            for (int i = 0; i < dataSet.Recipes.Count; i++)
+                recipeOutputHashes.Add(dataSet.Recipes[i].OutputHash);
+
+            HashSet<uint> voxelMaterialHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[voxel material count] - editor-only semantic validation - owner: H8DataMonolithCompiler
+            for (int i = 0; i < dataSet.VoxelMaterials.Count; i++)
+                voxelMaterialHashes.Add(dataSet.VoxelMaterials[i].VoxelHash);
+
+            HashSet<uint> physicsSurfaceHashes = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[physics material count] - editor-only semantic validation - owner: H8DataMonolithCompiler
+            for (int i = 0; i < dataSet.PhysicsMaterials.Count; i++)
+                physicsSurfaceHashes.Add(dataSet.PhysicsMaterials[i].SurfaceHash);
 
             for (int i = 0; i < dataSet.RawItemRows.Count; i++)
                 ValidatePackedItemReferences(dataSet.RawItemRows[i], "item.recipe", "recipe", Get(dataSet.RawItemRows[i], "recipe", string.Empty), itemHashes);
@@ -721,6 +789,566 @@ namespace Hecton8.EditorValidation
 
             for (int i = 0; i < dataSet.RawEconomyRows.Count; i++)
                 ValidateEconomyItemReferences(dataSet.RawEconomyRows[i], itemHashes);
+
+            ValidateSemanticRecordReferences(dataSet, itemHashes, creatureHashes, biomeHashes, recipeOutputHashes, voxelMaterialHashes, physicsSurfaceHashes);
+        }
+
+        private static void ValidateRequiredRecordIdentities(DataSet dataSet)
+        {
+            for (int i = 0; i < dataSet.Items.Count; i++)
+                RequireNonZeroRecordValue(dataSet.Items[i].HashId, "Items", i, "HashId");
+
+            for (int i = 0; i < dataSet.Creatures.Count; i++)
+                RequireNonZeroRecordValue(dataSet.Creatures[i].SpeciesHash, "Creatures", i, "SpeciesHash");
+
+            for (int i = 0; i < dataSet.Biomes.Count; i++)
+            {
+                RequireNonZeroRecordValue(dataSet.Biomes[i].BiomeHash, "Biomes", i, "BiomeHash");
+                RequireNonZeroRecordValue(dataSet.Biomes[i].SurfaceId, "Biomes", i, "SurfaceId");
+            }
+
+            for (int i = 0; i < dataSet.Recipes.Count; i++)
+            {
+                RequireNonZeroRecordValue(dataSet.Recipes[i].OutputHash, "Recipes", i, "OutputHash");
+                RequireNonZeroRecordValue(dataSet.Recipes[i].IngredientCount, "Recipes", i, "IngredientCount");
+            }
+
+            for (int i = 0; i < dataSet.LootCdf.Count; i++)
+            {
+                RequireNonZeroRecordValue(dataSet.LootCdf[i].TableHash, "LootCdf", i, "TableHash");
+                RequireNonZeroRecordValue(dataSet.LootCdf[i].ItemHash, "LootCdf", i, "ItemHash");
+                RequireNonZeroRecordValue(dataSet.LootCdf[i].CumulativeWeight, "LootCdf", i, "CumulativeWeight");
+                RequireNonZeroRecordValue(dataSet.LootCdf[i].TotalWeight, "LootCdf", i, "TotalWeight");
+            }
+
+            for (int i = 0; i < dataSet.VoxelMaterials.Count; i++)
+            {
+                RequireNonZeroRecordValue(dataSet.VoxelMaterials[i].VoxelHash, "VoxelMaterials", i, "VoxelHash");
+                RequireNonZeroRecordValue(dataSet.VoxelMaterials[i].YieldHash, "VoxelMaterials", i, "YieldHash");
+                RequireNonZeroRecordValue(dataSet.VoxelMaterials[i].SurfaceId, "VoxelMaterials", i, "SurfaceId");
+            }
+
+            for (int i = 0; i < dataSet.AudioClips.Count; i++)
+            {
+                RequireNonZeroRecordValue(dataSet.AudioClips[i].EventHash, "AudioClipRegistry", i, "EventHash");
+                RequireNonZeroRecordValue(dataSet.AudioClips[i].AddressableKeyUtf8ByteLength, "AudioClipRegistry", i, "AddressableKeyUtf8ByteLength");
+            }
+
+            for (int i = 0; i < dataSet.VfxScalars.Count; i++)
+                RequireNonZeroRecordValue(dataSet.VfxScalars[i].EffectHash, "VfxScalars", i, "EffectHash");
+
+            for (int i = 0; i < dataSet.ToolHeat.Count; i++)
+                RequireNonZeroRecordValue(dataSet.ToolHeat[i].ToolHash, "ToolHeatCapacity", i, "ToolHash");
+
+            for (int i = 0; i < dataSet.HullConstants.Count; i++)
+                RequireNonZeroRecordValue(dataSet.HullConstants[i].PartHash, "SubmarineHullConstants", i, "PartHash");
+
+            for (int i = 0; i < dataSet.PhysicsMaterials.Count; i++)
+                RequireNonZeroRecordValue(dataSet.PhysicsMaterials[i].SurfaceHash, "PhysicsMaterials", i, "SurfaceHash");
+
+            for (int i = 0; i < dataSet.GhostModules.Count; i++)
+            {
+                RequireNonZeroRecordValue(dataSet.GhostModules[i].ModuleHash, "GhostModules", i, "ModuleHash");
+                RequireNonZeroRecordValue(dataSet.GhostModules[i].RecipeHash, "GhostModules", i, "RecipeHash");
+            }
+
+            for (int i = 0; i < dataSet.SpawnCredits.Count; i++)
+                RequireNonZeroRecordValue(dataSet.SpawnCredits[i].EntityHash, "SpawnCreditCosts", i, "EntityHash");
+
+            for (int i = 0; i < dataSet.SopErrors.Count; i++)
+            {
+                RequireNonZeroRecordValue(dataSet.SopErrors[i].ErrorHash, "SopErrors", i, "ErrorHash");
+                RequireNonZeroRecordValue(dataSet.SopErrors[i].MessageUtf8ByteLength, "SopErrors", i, "MessageUtf8ByteLength");
+            }
+
+            for (int i = 0; i < dataSet.HudLayouts.Count; i++)
+                RequireNonZeroRecordValue(dataSet.HudLayouts[i].ElementHash, "HudLayouts", i, "ElementHash");
+
+            for (int i = 0; i < dataSet.SectorPages.Count; i++)
+            {
+                RequireNonZeroRecordValue(dataSet.SectorPages[i].SectorHash, "SectorPageDirectory", i, "SectorHash");
+                RequireNonZeroRecordValue(dataSet.SectorPages[i].BiomeHash, "SectorPageDirectory", i, "BiomeHash");
+            }
+
+            for (int i = 0; i < dataSet.Economy.Count; i++)
+                RequireNonZeroRecordValue(dataSet.Economy[i].HashId, "Economy", i, "HashId");
+
+            for (int i = 0; i < dataSet.PhysicsConstants.Count; i++)
+                RequireNonZeroRecordValue(dataSet.PhysicsConstants[i].HashId, "PhysicsConstants", i, "HashId");
+        }
+
+        private static void ValidateUniqueProductionHashes(DataSet dataSet)
+        {
+            HashSet<uint> seen = new HashSet<uint>(); // COLD ALLOC: HashSet<uint>[section max row count] - editor-only duplicate validation - owner: H8DataMonolithCompiler
+            for (int i = 0; i < dataSet.VoxelMaterials.Count; i++)
+                RequireUniqueHash(seen, dataSet.VoxelMaterials[i].VoxelHash, "VoxelMaterials", i, "VoxelHash");
+
+            seen.Clear();
+            for (int i = 0; i < dataSet.AudioClips.Count; i++)
+                RequireUniqueHash(seen, dataSet.AudioClips[i].EventHash, "AudioClipRegistry", i, "EventHash");
+
+            seen.Clear();
+            for (int i = 0; i < dataSet.VfxScalars.Count; i++)
+                RequireUniqueHash(seen, dataSet.VfxScalars[i].EffectHash, "VfxScalars", i, "EffectHash");
+
+            seen.Clear();
+            for (int i = 0; i < dataSet.ToolHeat.Count; i++)
+                RequireUniqueHash(seen, dataSet.ToolHeat[i].ToolHash, "ToolHeatCapacity", i, "ToolHash");
+
+            seen.Clear();
+            for (int i = 0; i < dataSet.HullConstants.Count; i++)
+                RequireUniqueHash(seen, dataSet.HullConstants[i].PartHash, "SubmarineHullConstants", i, "PartHash");
+
+            seen.Clear();
+            for (int i = 0; i < dataSet.PhysicsMaterials.Count; i++)
+                RequireUniqueHash(seen, dataSet.PhysicsMaterials[i].SurfaceHash, "PhysicsMaterials", i, "SurfaceHash");
+
+            seen.Clear();
+            for (int i = 0; i < dataSet.GhostModules.Count; i++)
+                RequireUniqueHash(seen, dataSet.GhostModules[i].ModuleHash, "GhostModules", i, "ModuleHash");
+
+            seen.Clear();
+            for (int i = 0; i < dataSet.SpawnCredits.Count; i++)
+                RequireUniqueHash(seen, dataSet.SpawnCredits[i].EntityHash, "SpawnCreditCosts", i, "EntityHash");
+
+            seen.Clear();
+            for (int i = 0; i < dataSet.SopErrors.Count; i++)
+                RequireUniqueHash(seen, dataSet.SopErrors[i].ErrorHash, "SopErrors", i, "ErrorHash");
+
+            seen.Clear();
+            for (int i = 0; i < dataSet.HudLayouts.Count; i++)
+                RequireUniqueHash(seen, dataSet.HudLayouts[i].ElementHash, "HudLayouts", i, "ElementHash");
+
+            seen.Clear();
+            for (int i = 0; i < dataSet.SectorPages.Count; i++)
+                RequireUniqueHash(seen, dataSet.SectorPages[i].SectorHash, "SectorPageDirectory", i, "SectorHash");
+        }
+
+        private static void ValidateProductionNumericRanges(DataSet dataSet)
+        {
+            for (int i = 0; i < dataSet.Items.Count; i++)
+            {
+                H8ItemRecord item = dataSet.Items[i];
+                RequireNonZeroRecordValue(item.MaxStack, "Items", i, "MaxStack");
+                RequirePositiveRecordValue(item.MassKg, "Items", i, "MassKg");
+                RequirePositiveRecordValue(item.VolumeM3, "Items", i, "VolumeM3");
+                RequirePositiveRecordValue(item.BaseQuality, "Items", i, "BaseQuality");
+                RequireNonNegativeRecordValue(item.HeatCapacity, "Items", i, "HeatCapacity");
+                RequireNonNegativeRecordValue(item.AccessFrequency, "Items", i, "AccessFrequency");
+            }
+
+            for (int i = 0; i < dataSet.Creatures.Count; i++)
+            {
+                H8CreatureGenomeTraitBlock genome = dataSet.Creatures[i].Genome;
+                RequireNonNegativeRecordValue(genome.Aggression, "Creatures", i, "Genome.Aggression");
+                RequirePositiveRecordValue(genome.Metabolism, "Creatures", i, "Genome.Metabolism");
+                RequirePositiveRecordValue(genome.MaxHealth, "Creatures", i, "Genome.MaxHealth");
+                RequirePositiveRecordValue(genome.CruiseSpeed, "Creatures", i, "Genome.CruiseSpeed");
+                RequirePositiveRecordValue(genome.BurstSpeed, "Creatures", i, "Genome.BurstSpeed");
+                RequirePositiveRecordValue(genome.SpawnCreditCost, "Creatures", i, "Genome.SpawnCreditCost");
+                RequireDepthRange(genome.PressureMinMeters, genome.PressureMaxMeters, "Creatures", i, "Genome.PressureRange");
+            }
+
+            for (int i = 0; i < dataSet.Biomes.Count; i++)
+            {
+                H8BiomeRecord biome = dataSet.Biomes[i];
+                RequireDepthRange(biome.MinDepthMeters, biome.MaxDepthMeters, "Biomes", i, "DepthRange");
+                RequireFiniteRecordValue(biome.TemperatureCelsius, "Biomes", i, "TemperatureCelsius");
+                RequirePositiveRecordValue(biome.PressureScalar, "Biomes", i, "PressureScalar");
+                RequireNonNegativeRecordValue(biome.FogDensity, "Biomes", i, "FogDensity");
+                RequireNonNegativeRecordValue(biome.LightScatterR, "Biomes", i, "LightScatterR");
+                RequireNonNegativeRecordValue(biome.LightScatterG, "Biomes", i, "LightScatterG");
+                RequireNonNegativeRecordValue(biome.LightScatterB, "Biomes", i, "LightScatterB");
+            }
+
+            for (int i = 0; i < dataSet.Recipes.Count; i++)
+            {
+                RequirePositiveRecordValue(dataSet.Recipes[i].CraftSeconds, "Recipes", i, "CraftSeconds");
+                RequireNonZeroRecordValue(dataSet.Recipes[i].OutputCount, "Recipes", i, "OutputCount");
+            }
+
+            for (int i = 0; i < dataSet.VoxelMaterials.Count; i++)
+            {
+                RequirePositiveRecordValue(dataSet.VoxelMaterials[i].Hardness, "VoxelMaterials", i, "Hardness");
+                RequirePositiveRecordValue(dataSet.VoxelMaterials[i].MeltingPointCelsius, "VoxelMaterials", i, "MeltingPointCelsius");
+                RequirePositiveRecordValue(dataSet.VoxelMaterials[i].Density, "VoxelMaterials", i, "Density");
+            }
+
+            for (int i = 0; i < dataSet.AudioClips.Count; i++)
+                RequireNonZeroRecordValue(dataSet.AudioClips[i].BankHash, "AudioClipRegistry", i, "BankHash");
+
+            for (int i = 0; i < dataSet.VfxScalars.Count; i++)
+            {
+                H8VfxScalarRecord vfx = dataSet.VfxScalars[i];
+                RequireNonNegativeRecordValue(vfx.EmissionRate, "VfxScalars", i, "EmissionRate");
+                RequireNonNegativeRecordValue(vfx.ColorR, "VfxScalars", i, "ColorR");
+                RequireNonNegativeRecordValue(vfx.ColorG, "VfxScalars", i, "ColorG");
+                RequireNonNegativeRecordValue(vfx.ColorB, "VfxScalars", i, "ColorB");
+                RequireNonNegativeRecordValue(vfx.ColorA, "VfxScalars", i, "ColorA");
+                RequireNonNegativeRecordValue(vfx.Intensity, "VfxScalars", i, "Intensity");
+            }
+
+            for (int i = 0; i < dataSet.ToolHeat.Count; i++)
+            {
+                RequirePositiveRecordValue(dataSet.ToolHeat[i].HeatCapacity, "ToolHeatCapacity", i, "HeatCapacity");
+                RequirePositiveRecordValue(dataSet.ToolHeat[i].MaxSafeTemperature, "ToolHeatCapacity", i, "MaxSafeTemperature");
+            }
+
+            for (int i = 0; i < dataSet.HullConstants.Count; i++)
+            {
+                H8SubmarineHullConstantRecord hull = dataSet.HullConstants[i];
+                RequirePositiveRecordValue(hull.MassKg, "SubmarineHullConstants", i, "MassKg");
+                RequireNonNegativeRecordValue(hull.DragScalar, "SubmarineHullConstants", i, "DragScalar");
+                RequireFiniteRecordValue(hull.BuoyancyScalar, "SubmarineHullConstants", i, "BuoyancyScalar");
+                RequirePositiveRecordValue(hull.CrushDepthMeters, "SubmarineHullConstants", i, "CrushDepthMeters");
+                RequirePositiveRecordValue(hull.IntegrityCap, "SubmarineHullConstants", i, "IntegrityCap");
+            }
+
+            for (int i = 0; i < dataSet.PhysicsMaterials.Count; i++)
+            {
+                RequireNonNegativeRecordValue(dataSet.PhysicsMaterials[i].Friction, "PhysicsMaterials", i, "Friction");
+                RequireNonNegativeRecordValue(dataSet.PhysicsMaterials[i].Restitution, "PhysicsMaterials", i, "Restitution");
+            }
+
+            for (int i = 0; i < dataSet.GhostModules.Count; i++)
+            {
+                H8GhostModuleRecord module = dataSet.GhostModules[i];
+                RequireFiniteRecordValue(module.SnapOffsetX, "GhostModules", i, "SnapOffsetX");
+                RequireFiniteRecordValue(module.SnapOffsetY, "GhostModules", i, "SnapOffsetY");
+                RequireFiniteRecordValue(module.SnapOffsetZ, "GhostModules", i, "SnapOffsetZ");
+                RequireNonNegativeRecordValue(module.PowerRequirement, "GhostModules", i, "PowerRequirement");
+                RequirePositiveRecordValue(module.BuildCostScalar, "GhostModules", i, "BuildCostScalar");
+            }
+
+            for (int i = 0; i < dataSet.SpawnCredits.Count; i++)
+                RequirePositiveRecordValue(dataSet.SpawnCredits[i].CreditCost, "SpawnCreditCosts", i, "CreditCost");
+
+            for (int i = 0; i < dataSet.HudLayouts.Count; i++)
+            {
+                H8HudLayoutRecord hud = dataSet.HudLayouts[i];
+                RequireFiniteRecordValue(hud.M00, "HudLayouts", i, "M00");
+                RequireFiniteRecordValue(hud.M01, "HudLayouts", i, "M01");
+                RequireFiniteRecordValue(hud.M02, "HudLayouts", i, "M02");
+                RequireFiniteRecordValue(hud.M03, "HudLayouts", i, "M03");
+                RequireFiniteRecordValue(hud.M10, "HudLayouts", i, "M10");
+                RequireFiniteRecordValue(hud.M11, "HudLayouts", i, "M11");
+                RequireFiniteRecordValue(hud.M12, "HudLayouts", i, "M12");
+                RequireFiniteRecordValue(hud.M13, "HudLayouts", i, "M13");
+                RequireFiniteRecordValue(hud.M20, "HudLayouts", i, "M20");
+                RequireFiniteRecordValue(hud.M21, "HudLayouts", i, "M21");
+                RequireFiniteRecordValue(hud.M22, "HudLayouts", i, "M22");
+                RequireFiniteRecordValue(hud.M23, "HudLayouts", i, "M23");
+                RequireFiniteRecordValue(hud.M30, "HudLayouts", i, "M30");
+                RequireFiniteRecordValue(hud.M31, "HudLayouts", i, "M31");
+            }
+
+            for (int i = 0; i < dataSet.SectorPages.Count; i++)
+            {
+                RequireAupRecordValue(dataSet.SectorPages[i].AupX, "SectorPageDirectory", i, "AupX");
+                RequireAupRecordValue(dataSet.SectorPages[i].AupZ, "SectorPageDirectory", i, "AupZ");
+            }
+
+            for (int i = 0; i < dataSet.Economy.Count; i++)
+            {
+                H8EconomyRecord economy = dataSet.Economy[i];
+                RequireNonNegativeRecordValue(economy.BasePrice, "Economy", i, "BasePrice");
+                RequireNonNegativeRecordValue(economy.Scarcity01, "Economy", i, "Scarcity01");
+                RequireNonNegativeRecordValue(economy.Demand01, "Economy", i, "Demand01");
+                RequireNonNegativeRecordValue(economy.SupplyRefreshSeconds, "Economy", i, "SupplyRefreshSeconds");
+                RequireNonNegativeRecordValue(economy.AccessFrequency, "Economy", i, "AccessFrequency");
+            }
+
+            for (int i = 0; i < dataSet.PhysicsConstants.Count; i++)
+            {
+                H8PhysicsConstantsRecord physics = dataSet.PhysicsConstants[i];
+                RequirePositiveRecordValue(physics.MassKg, "PhysicsConstants", i, "MassKg");
+                RequireNonNegativeRecordValue(physics.AddedMass, "PhysicsConstants", i, "AddedMass");
+                RequireNonNegativeRecordValue(physics.LinearDrag, "PhysicsConstants", i, "LinearDrag");
+                RequireFiniteRecordValue(physics.Buoyancy, "PhysicsConstants", i, "Buoyancy");
+                RequirePositiveRecordValue(physics.CrushDepthM, "PhysicsConstants", i, "CrushDepthM");
+                RequirePositiveRecordValue(physics.AupSectorSizeMeters, "PhysicsConstants", i, "AupSectorSizeMeters");
+                RequirePositiveRecordValue(physics.MaxWorldBoundsMeters, "PhysicsConstants", i, "MaxWorldBoundsMeters");
+                RequireNonNegativeRecordValue(physics.AccessFrequency, "PhysicsConstants", i, "AccessFrequency");
+            }
+        }
+
+        private static void ValidateSemanticRecordReferences(
+            DataSet dataSet,
+            HashSet<uint> itemHashes,
+            HashSet<uint> creatureHashes,
+            HashSet<uint> biomeHashes,
+            HashSet<uint> recipeOutputHashes,
+            HashSet<uint> voxelMaterialHashes,
+            HashSet<uint> physicsSurfaceHashes)
+        {
+            for (int i = 0; i < dataSet.Biomes.Count; i++)
+                RequireHashReference(dataSet.Biomes[i].SurfaceId, voxelMaterialHashes, "Biomes", i, "SurfaceId", "VoxelMaterials.VoxelHash");
+
+            for (int i = 0; i < dataSet.BiomeHeatmap.Count; i++)
+                RequireHashReference(dataSet.BiomeHeatmap[i].BiomeHash, biomeHashes, "BiomeHeatmap", i, "BiomeHash", "Biomes.BiomeHash");
+
+            for (int i = 0; i < dataSet.VoxelMaterials.Count; i++)
+            {
+                RequireHashReference(dataSet.VoxelMaterials[i].YieldHash, itemHashes, "VoxelMaterials", i, "YieldHash", "Items.HashId");
+                RequireHashReference(dataSet.VoxelMaterials[i].SurfaceId, physicsSurfaceHashes, "VoxelMaterials", i, "SurfaceId", "PhysicsMaterials.SurfaceHash");
+            }
+
+            for (int i = 0; i < dataSet.GhostModules.Count; i++)
+                RequireHashReference(dataSet.GhostModules[i].RecipeHash, recipeOutputHashes, "GhostModules", i, "RecipeHash", "Recipes.OutputHash");
+
+            for (int i = 0; i < dataSet.SpawnCredits.Count; i++)
+                RequireHashReference(dataSet.SpawnCredits[i].EntityHash, creatureHashes, "SpawnCreditCosts", i, "EntityHash", "Creatures.SpeciesHash");
+
+            for (int i = 0; i < dataSet.SectorPages.Count; i++)
+                RequireHashReference(dataSet.SectorPages[i].BiomeHash, biomeHashes, "SectorPageDirectory", i, "BiomeHash", "Biomes.BiomeHash");
+        }
+
+        private static void RequireNonZeroRecordValue(uint value, string sectionName, int recordIndex, string fieldName)
+        {
+            if (value != 0u)
+                return;
+
+            throw new InvalidOperationException(
+                "[H8DataMonolithCompiler] Invalid production static-data row: section=" +
+                sectionName +
+                ", record_index=" +
+                recordIndex +
+                ", field=" +
+                fieldName +
+                " resolved to zero. Authored IDs and required references must be non-empty.");
+        }
+
+        private static void RequireHashReference(uint hash, HashSet<uint> allowedHashes, string sectionName, int recordIndex, string fieldName, string targetSection)
+        {
+            if (allowedHashes.Contains(hash))
+                return;
+
+            throw new InvalidOperationException(
+                "[H8DataMonolithCompiler] Broken production static-data reference: section=" +
+                sectionName +
+                ", record_index=" +
+                recordIndex +
+                ", field=" +
+                fieldName +
+                ", hash=0x" +
+                hash.ToString("X8") +
+                ", target=" +
+                targetSection);
+        }
+
+        private static void RequireUniqueHash(HashSet<uint> seen, uint hash, string sectionName, int recordIndex, string fieldName)
+        {
+            if (seen.Add(hash))
+                return;
+
+            throw new InvalidOperationException(
+                "[H8DataMonolithCompiler] Duplicate production static-data hash: section=" +
+                sectionName +
+                ", record_index=" +
+                recordIndex +
+                ", field=" +
+                fieldName +
+                ", hash=0x" +
+                hash.ToString("X8"));
+        }
+
+        private static void RequireFiniteRecordValue(float value, string sectionName, int recordIndex, string fieldName)
+        {
+            if (!float.IsNaN(value) && !float.IsInfinity(value))
+                return;
+
+            throw new InvalidOperationException(
+                "[H8DataMonolithCompiler] Non-finite production static-data value: section=" +
+                sectionName +
+                ", record_index=" +
+                recordIndex +
+                ", field=" +
+                fieldName +
+                ", value=" +
+                value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static void RequirePositiveRecordValue(float value, string sectionName, int recordIndex, string fieldName)
+        {
+            RequireFiniteRecordValue(value, sectionName, recordIndex, fieldName);
+            if (value > 0f)
+                return;
+
+            throw new InvalidOperationException(
+                "[H8DataMonolithCompiler] Non-positive production static-data value: section=" +
+                sectionName +
+                ", record_index=" +
+                recordIndex +
+                ", field=" +
+                fieldName +
+                ", value=" +
+                value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static void RequireNonNegativeRecordValue(float value, string sectionName, int recordIndex, string fieldName)
+        {
+            RequireFiniteRecordValue(value, sectionName, recordIndex, fieldName);
+            if (value >= 0f)
+                return;
+
+            throw new InvalidOperationException(
+                "[H8DataMonolithCompiler] Negative production static-data value: section=" +
+                sectionName +
+                ", record_index=" +
+                recordIndex +
+                ", field=" +
+                fieldName +
+                ", value=" +
+                value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static void RequireDepthRange(float minDepth, float maxDepth, string sectionName, int recordIndex, string fieldName)
+        {
+            RequireFiniteRecordValue(minDepth, sectionName, recordIndex, fieldName + ".Min");
+            RequireFiniteRecordValue(maxDepth, sectionName, recordIndex, fieldName + ".Max");
+            if (maxDepth >= minDepth)
+                return;
+
+            throw new InvalidOperationException(
+                "[H8DataMonolithCompiler] Invalid depth range: section=" +
+                sectionName +
+                ", record_index=" +
+                recordIndex +
+                ", field=" +
+                fieldName +
+                ", min=" +
+                minDepth.ToString(CultureInfo.InvariantCulture) +
+                ", max=" +
+                maxDepth.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static void RequireAupRecordValue(long value, string sectionName, int recordIndex, string fieldName)
+        {
+            if (value >= -100000L && value <= 100000L)
+                return;
+
+            throw new InvalidOperationException(
+                "[H8DataMonolithCompiler] AUP coordinate outside 100km bounds: section=" +
+                sectionName +
+                ", record_index=" +
+                recordIndex +
+                ", field=" +
+                fieldName +
+                ", value=" +
+                value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static void ValidateProductionSectionCoverage(DataSet dataSet)
+        {
+            string coverageError = BuildProductionCoverageError(dataSet, out int missingCount);
+            if (missingCount == 0)
+                return;
+
+            throw new InvalidOperationException("[H8DataMonolithCompiler] Production static-data coverage gate failed. " + coverageError);
+        }
+
+        private static string BuildProductionCoverageError(DataSet dataSet, out int missingCount)
+        {
+            StringBuilder missing = new StringBuilder(256); // COLD ALLOC: StringBuilder[coverage failure text] - editor-only production gate - owner: H8DataMonolithCompiler
+            missingCount = 0;
+
+            AppendMissingSection(missing, ref missingCount, "Items", dataSet.Items.Count);
+            AppendMissingSection(missing, ref missingCount, "Creatures", dataSet.Creatures.Count);
+            AppendMissingSection(missing, ref missingCount, "Biomes", dataSet.Biomes.Count);
+            AppendMissingSection(missing, ref missingCount, "Recipes", dataSet.Recipes.Count);
+            AppendMissingSection(missing, ref missingCount, "LootCdf", dataSet.LootCdf.Count);
+            AppendMissingSection(missing, ref missingCount, "VoxelMaterials", dataSet.VoxelMaterials.Count);
+            AppendMissingSection(missing, ref missingCount, "AudioClipRegistry", dataSet.AudioClips.Count);
+            AppendMissingSection(missing, ref missingCount, "VfxScalars", dataSet.VfxScalars.Count);
+            AppendMissingSection(missing, ref missingCount, "DepthPressureCurve", dataSet.DepthPressureCurve.Count);
+            AppendMissingSection(missing, ref missingCount, "ToolHeatCapacity", dataSet.ToolHeat.Count);
+            AppendMissingSection(missing, ref missingCount, "SubmarineHullConstants", dataSet.HullConstants.Count);
+            AppendMissingSection(missing, ref missingCount, "PhysicsMaterials", dataSet.PhysicsMaterials.Count);
+            AppendMissingSection(missing, ref missingCount, "GhostModules", dataSet.GhostModules.Count);
+            AppendMissingSection(missing, ref missingCount, "SpawnCreditCosts", dataSet.SpawnCredits.Count);
+            AppendMissingSection(missing, ref missingCount, "LightAttenuationCurve", dataSet.LightAttenuationCurve.Count);
+            AppendMissingSection(missing, ref missingCount, "SopErrors", dataSet.SopErrors.Count);
+            AppendMissingSection(missing, ref missingCount, "HudLayouts", dataSet.HudLayouts.Count);
+            AppendMissingSection(missing, ref missingCount, "SectorPageDirectory", dataSet.SectorPages.Count);
+            AppendMissingSection(missing, ref missingCount, "Economy", dataSet.Economy.Count);
+            AppendMissingSection(missing, ref missingCount, "PhysicsConstants", dataSet.PhysicsConstants.Count);
+
+            AppendMissingExactCountSection(missing, ref missingCount, "BiomeHeatmap", dataSet.BiomeHeatmap.Count, 256 * 256);
+
+            if (missingCount == 0)
+                return string.Empty;
+
+            return
+                "Missing required sections: " +
+                missing +
+                ". A structurally valid sparse static_data.h8bin is not production payload proof.";
+        }
+
+        private static string BuildProductionCoverageReport(DataSet dataSet, int csvFileCount, int jsonFileCount, int missingCount, string coverageError)
+        {
+            StringBuilder builder = new StringBuilder(1024); // COLD ALLOC: StringBuilder[coverage report] - editor-only facade - owner: H8DataMonolithCompiler
+            builder.Append("source-csv-files=").Append(csvFileCount).AppendLine();
+            builder.Append("source-json-files=").Append(jsonFileCount).AppendLine();
+            AppendCoverageCount(builder, "Items", dataSet.Items.Count);
+            AppendCoverageCount(builder, "Creatures", dataSet.Creatures.Count);
+            AppendCoverageCount(builder, "Biomes", dataSet.Biomes.Count);
+            AppendCoverageCount(builder, "Recipes", dataSet.Recipes.Count);
+            AppendCoverageCount(builder, "BiomeHeatmap", dataSet.BiomeHeatmap.Count);
+            AppendCoverageCount(builder, "LootCdf", dataSet.LootCdf.Count);
+            AppendCoverageCount(builder, "VoxelMaterials", dataSet.VoxelMaterials.Count);
+            AppendCoverageCount(builder, "AudioClipRegistry", dataSet.AudioClips.Count);
+            AppendCoverageCount(builder, "VfxScalars", dataSet.VfxScalars.Count);
+            AppendCoverageCount(builder, "DepthPressureCurve", dataSet.DepthPressureCurve.Count);
+            AppendCoverageCount(builder, "ToolHeatCapacity", dataSet.ToolHeat.Count);
+            AppendCoverageCount(builder, "SubmarineHullConstants", dataSet.HullConstants.Count);
+            AppendCoverageCount(builder, "PhysicsMaterials", dataSet.PhysicsMaterials.Count);
+            AppendCoverageCount(builder, "GhostModules", dataSet.GhostModules.Count);
+            AppendCoverageCount(builder, "SpawnCreditCosts", dataSet.SpawnCredits.Count);
+            AppendCoverageCount(builder, "LightAttenuationCurve", dataSet.LightAttenuationCurve.Count);
+            AppendCoverageCount(builder, "SopErrors", dataSet.SopErrors.Count);
+            AppendCoverageCount(builder, "HudLayouts", dataSet.HudLayouts.Count);
+            AppendCoverageCount(builder, "SectorPageDirectory", dataSet.SectorPages.Count);
+            AppendCoverageCount(builder, "Economy", dataSet.Economy.Count);
+            AppendCoverageCount(builder, "PhysicsConstants", dataSet.PhysicsConstants.Count);
+            builder.Append("production-coverage=").Append(missingCount == 0 ? "PASS" : "FAIL").Append(" missing=").Append(missingCount).AppendLine();
+            if (!string.IsNullOrEmpty(coverageError))
+                builder.Append("coverage-error=").Append(coverageError).AppendLine();
+
+            return builder.ToString();
+        }
+
+        private static void AppendCoverageCount(StringBuilder builder, string sectionName, int rowCount)
+        {
+            builder.Append(sectionName).Append('=').Append(rowCount).AppendLine();
+        }
+
+        private static void AppendMissingSection(StringBuilder builder, ref int missingCount, string sectionName, int rowCount)
+        {
+            if (rowCount > 0)
+                return;
+
+            if (missingCount > 0)
+                builder.Append(", ");
+
+            builder.Append(sectionName);
+            missingCount++;
+        }
+
+        private static void AppendMissingExactCountSection(StringBuilder builder, ref int missingCount, string sectionName, int rowCount, int expectedCount)
+        {
+            if (rowCount == expectedCount)
+                return;
+
+            if (missingCount > 0)
+                builder.Append(", ");
+
+            builder.Append(sectionName);
+            builder.Append("[expected=");
+            builder.Append(expectedCount);
+            builder.Append(", actual=");
+            builder.Append(rowCount);
+            builder.Append(']');
+            missingCount++;
         }
 
         private static void ValidateRecipeItemReferences(CsvRow row, HashSet<uint> itemHashes)
@@ -815,10 +1443,100 @@ namespace Hecton8.EditorValidation
         private static void ParseCsv(CsvFileRows source, DataSet dataSet, LocalizationPool localizationPool)
         {
             string tableName = Path.GetFileNameWithoutExtension(source.AbsolutePath).ToLowerInvariant();
+            if (!IsRecognizedCsvTable(tableName))
+            {
+                if (IsAllowedExternalBalanceCsv(source.AbsolutePath, tableName))
+                    return;
+
+                throw new InvalidOperationException(
+                    "[H8DataMonolithCompiler] Unknown static-data CSV table '" +
+                    tableName +
+                    "' at " +
+                    source.AbsolutePath +
+                    ". Move non-monolith source data outside the Data Monolith source roots or add an explicit parser route.");
+            }
+
             for (int i = 0; i < source.Rows.Count; i++)
             {
                 ValidateCsvRowHashes(source.AbsolutePath, source.Rows[i].LineNumber, source.Rows[i], requireHashPairs: false);
                 ParseRow(tableName, source.Rows[i], dataSet, localizationPool);
+            }
+        }
+
+        private static bool IsRecognizedCsvTable(string tableName)
+        {
+            switch (tableName)
+            {
+                case "items":
+                case "item":
+                case "fauna":
+                case "creatures":
+                case "creature_traits":
+                case "genome":
+                case "economy":
+                case "physics":
+                case "physics_constants":
+                case "biomes":
+                case "recipes":
+                case "biome_heatmap":
+                case "biomeheatmap":
+                case "quest_nodes":
+                case "questnodes":
+                case "quest_edges":
+                case "questedges":
+                case "loot":
+                case "loot_cdf":
+                case "lootcdf":
+                case "voxel_materials":
+                case "voxelmaterials":
+                case "audio":
+                case "audio_registry":
+                case "audioregistry":
+                case "vfx":
+                case "vfx_scalars":
+                case "vfxscalars":
+                case "tool_heat":
+                case "toolheat":
+                case "hull":
+                case "submarine_hull":
+                case "submarinehull":
+                case "narrative_triggers":
+                case "narrativetriggers":
+                case "physics_materials":
+                case "physicsmaterials":
+                case "ghost_modules":
+                case "ghostmodules":
+                case "radiation":
+                case "radiation_map":
+                case "radiationmap":
+                case "spawn_credits":
+                case "spawncredits":
+                case "spawn_credit_costs":
+                case "spawncreditcosts":
+                case "sop_errors":
+                case "soperrors":
+                case "hud_layout":
+                case "hudlayout":
+                case "sector_pages":
+                case "sectorpages":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsAllowedExternalBalanceCsv(string absolutePath, string tableName)
+        {
+            if (!IsUnderAbsoluteRoot(absolutePath, BalanceSourceFolder))
+                return false;
+
+            switch (tableName)
+            {
+                case "armor_penetration_matrix":
+                case "btree_tuning_profiles":
+                    return true;
+                default:
+                    return false;
             }
         }
 
@@ -889,59 +1607,78 @@ namespace Hecton8.EditorValidation
                     dataSet.Recipes.Add(ParseRecipe(row));
                     break;
                 case "biome_heatmap":
+                case "biomeheatmap":
                     dataSet.BiomeHeatmap.Add(ParseBiomeHeatmapCell(row));
                     break;
                 case "quest_nodes":
+                case "questnodes":
                     dataSet.QuestNodes.Add(ParseQuestNode(row));
                     break;
                 case "quest_edges":
+                case "questedges":
                     dataSet.QuestEdges.Add(ParseQuestEdge(row));
                     break;
                 case "loot":
                 case "loot_cdf":
+                case "lootcdf":
                     dataSet.RawLootRows.Add(row);
                     break;
                 case "voxel_materials":
+                case "voxelmaterials":
                     dataSet.VoxelMaterials.Add(ParseVoxelMaterial(row));
                     break;
                 case "audio":
                 case "audio_registry":
+                case "audioregistry":
                     dataSet.AudioClips.Add(ParseAudio(row, localizationPool));
                     break;
                 case "vfx":
                 case "vfx_scalars":
+                case "vfxscalars":
                     dataSet.VfxScalars.Add(ParseVfx(row));
                     break;
                 case "tool_heat":
+                case "toolheat":
                     dataSet.ToolHeat.Add(ParseToolHeat(row));
                     break;
                 case "hull":
                 case "submarine_hull":
+                case "submarinehull":
                     dataSet.HullConstants.Add(ParseHull(row));
                     break;
                 case "narrative_triggers":
+                case "narrativetriggers":
                     dataSet.NarrativeTriggers.Add(ParseNarrativeTrigger(row));
                     break;
                 case "physics_materials":
+                case "physicsmaterials":
                     dataSet.PhysicsMaterials.Add(ParsePhysicsMaterial(row));
                     break;
                 case "ghost_modules":
+                case "ghostmodules":
                     dataSet.GhostModules.Add(ParseGhostModule(row, localizationPool));
                     break;
                 case "radiation":
                 case "radiation_map":
+                case "radiationmap":
                     dataSet.RadiationCells.Add(ParseRadiation(row));
                     break;
                 case "spawn_credits":
+                case "spawncredits":
+                case "spawn_credit_costs":
+                case "spawncreditcosts":
                     dataSet.SpawnCredits.Add(ParseSpawnCredit(row));
                     break;
                 case "sop_errors":
+                case "soperrors":
                     dataSet.SopErrors.Add(ParseSopError(row, localizationPool));
                     break;
                 case "hud_layout":
+                case "hudlayout":
                     dataSet.HudLayouts.Add(ParseHudLayout(row));
                     break;
                 case "sector_pages":
+                case "sectorpages":
                     dataSet.SectorPages.Add(ParseSectorPage(row));
                     break;
             }
@@ -1638,8 +2375,20 @@ namespace Hecton8.EditorValidation
 
                 string[] values = SplitCsvLine(lines[i]);
                 CsvRow row = new CsvRow(absolutePath, i + 1, -1);
-                int count = Mathf.Min(headers.Length, values.Length);
-                for (int j = 0; j < count; j++)
+                if (values.Length != headers.Length)
+                {
+                    throw new InvalidOperationException(
+                        "[H8DataMonolithCompiler] CSV column count mismatch: file=" +
+                        absolutePath +
+                        ", line=" +
+                        (i + 1).ToString(CultureInfo.InvariantCulture) +
+                        ", headers=" +
+                        headers.Length.ToString(CultureInfo.InvariantCulture) +
+                        ", values=" +
+                        values.Length.ToString(CultureInfo.InvariantCulture));
+                }
+
+                for (int j = 0; j < headers.Length; j++)
                     row.Fields[headers[j].Trim()] = values[j].Trim();
                 rows.Add(row);
             }
@@ -2337,7 +3086,7 @@ namespace Hecton8.EditorValidation
         private static void StartWatcher()
         {
             StopWatcher();
-            _sourceWatcher = StartWatcherFor(Path.GetFullPath("Assets/_SourceData"));
+            _sourceWatcher = StartWatcherFor(Path.GetFullPath(H8DataMonolithCompiler.SourceFolder));
             _balanceWatcher = StartWatcherFor(Path.GetFullPath("Data/Balance"));
         }
 

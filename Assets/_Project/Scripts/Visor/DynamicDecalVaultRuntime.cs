@@ -34,6 +34,8 @@ namespace Hecton8.Visor
         public const uint Blood = 1u;
         public const uint Acid = 2u;
         public const uint HullDent = 3u;
+        public const uint GlassCrack = 4u;
+        public const uint Burn = 5u;
     }
 
     public static class DynamicDecalFlags
@@ -43,16 +45,17 @@ namespace Hecton8.Visor
         public const uint Ballistic = 1u << 1;
         public const uint HullImpact = 1u << 2;
         public const uint Mock = 1u << 3;
+        public const uint PersistentGlass = 1u << 4;
         public const uint NonFinite = 1u << 31;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 80)]
-    public struct DecalInstanceDTO
+    public struct VisorDecalDTO
     {
         [FieldOffset(0)] public float4x4 LocalToWorld;
-        [FieldOffset(64)] public uint MaterialHash;
+        [FieldOffset(64)] public uint DecalTypeHash;
         [FieldOffset(68)] public float Opacity01;
-        [FieldOffset(72)] public float LifetimeSeconds;
+        [FieldOffset(72)] public float BirthTime;
         [FieldOffset(76)] public uint Flags;
     }
 
@@ -88,7 +91,7 @@ namespace Hecton8.Visor
         [FieldOffset(48)] public float UploadMicroseconds;
         [FieldOffset(52)] public uint Flags;
         [FieldOffset(56)] public uint LastBallisticFrame;
-        [FieldOffset(60)] public uint _pad0;
+        [FieldOffset(60)] public float NormalRefractionIntensity;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -96,7 +99,7 @@ namespace Hecton8.Visor
     {
         [FieldOffset(0)] public float BaseFadeTimeSeconds;
         [FieldOffset(4)] public float MaximumOverkillCapacity;
-        [FieldOffset(8)] public float AtlasMipmapBias;
+        [FieldOffset(8)] public float NormalRefractionIntensity;
         [FieldOffset(12)] public float ProjectionDepthMeters;
         [FieldOffset(16)] public float LowTierCapacity;
         [FieldOffset(20)] public float BaseRadiusMeters;
@@ -105,7 +108,7 @@ namespace Hecton8.Visor
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct DecalTelemetryEntry
+    public struct VisorWoundTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public uint ActiveDecals;
@@ -138,7 +141,7 @@ namespace Hecton8.Visor
 
     public struct DynamicDecalFrameStats
     {
-        public NativeArray<DecalInstanceDTO> UploadBuffer;
+        public NativeArray<VisorDecalDTO> UploadBuffer;
         public int UploadCount;
         public int ActiveCount;
         public int NewCount;
@@ -147,15 +150,24 @@ namespace Hecton8.Visor
         public float UploadMicroseconds;
         public float GlobalQualityWeight;
         public float ThermalPressure01;
+        public float NormalRefractionIntensity;
     }
 
     public static unsafe class DynamicDecalVaultRuntime
     {
-        public const int MaxCapacity = 1024;
-        public const int LowCapacity = 128;
+        public const int MaxCapacity = 128;
+        public const int LowCapacity = 8;
         public const int TelemetryCapacity = 300;
         public const int RequestQueuePrewarmCapacity = 1024;
         public const int AtlasSliceCount = 16;
+        public const uint DecalTypePayloadMask = 0xFFu;
+        public const uint DecalTypePackedMask = 0x0Fu;
+        public const int DecalAtlasPackedShift = 4;
+        public const uint DecalAtlasPackedMask = 0x0Fu;
+        public const uint DecalMaterialPayloadPackedFlag = 1u << 31;
+        public const int DecalLifetimePackedShift = 8;
+        public const uint DecalLifetimePackedMask = 0xFFFFu;
+        public const float DecalLifetimePackedScale = 100f;
         public const int MaxMaterialProfiles = 256;
         public const int CsvScratchBytes = 16384;
 
@@ -164,18 +176,21 @@ namespace Hecton8.Visor
         private const uint RuntimeNonFiniteFaultFlag = 1u << 2;
         private const uint RuntimeUploadStallFlag = 1u << 3;
         private const uint DumpMagic = 0x4445434Cu; // DECL
-        private const string DumpFileName = "Dump_DECAL_PROJECTOR.bin";
-        private const string LogOwner = nameof(DynamicDecalVaultRuntime);
+        private const string DumpFileName = "Dump_SHINOBU_275.bin";
+        private const string LogOwner = "SHINOBU_275";
+        private const Allocator DataVaultExemptDecalRequestLaneAllocator = Allocator.Persistent;
         private const SystemID OwnerSystem = SystemID.Vfx;
 
-        private static readonly ProfilerMarker _visualSyncMarker = new ProfilerMarker("H8.Decal.VisualSync");
-        private static readonly ProfilerMarker _enqueueMarker = new ProfilerMarker("H8.Decal.Enqueue");
+        private static readonly ProfilerMarker _visualSyncMarker = new ProfilerMarker("H8.VisorWounds.VisualSync");
+        private static readonly ProfilerMarker _enqueueMarker = new ProfilerMarker("H8.VisorWounds.Enqueue");
 
         private static IDataVault _vault;
-        private static VaultBufferHandle<DecalInstanceDTO> _instancesHandle;
-        private static VaultBufferHandle<DecalInstanceDTO> _uploadHandle;
+        private static IPlayerRuntimeContext _cachedPlayerContext;
+        private static bool _coldRoutesCached;
+        private static VaultBufferHandle<VisorDecalDTO> _instancesHandle;
+        private static VaultBufferHandle<VisorDecalDTO> _uploadHandle;
         private static VaultBufferHandle<DecalRuntimeStateDTO> _stateHandle;
-        private static VaultBufferHandle<DecalTelemetryEntry> _telemetryHandle;
+        private static VaultBufferHandle<VisorWoundTelemetryEntry> _telemetryHandle;
         private static VaultBufferHandle<DecalTuningDTO> _tuningHandle;
         private static VaultBufferHandle<DecalMaterialProfileDTO> _materialProfileHandle;
         private static VaultBufferHandle<byte> _csvScratchHandle;
@@ -187,7 +202,8 @@ namespace Hecton8.Visor
         private static bool _hasIngestedCombatDamageFrame;
         private static int _telemetryCursor;
         private static int _materialProfileCount;
-        private static int _lastSignalSnapshotUnityFrame;
+        private static uint _lastSignalSnapshotFrameId;
+        private static uint _fallbackVisualFrameId;
         private static int _droppedIngressThisFrame;
         private static bool _queueRegistered;
         private static bool _dumpedFault;
@@ -202,10 +218,22 @@ namespace Hecton8.Visor
         private static int _pendingVisualSyncMaxActive;
         private static DynamicDecalFrameStats _lastCompletedStats;
         private static bool _hasLastCompletedStats;
+        private static DecalTuningDTO _lastTuningSnapshot;
+        private static DecalRuntimeStateDTO _lastRuntimeStateSnapshot;
+        private static VisorWoundTelemetryEntry _lastTelemetrySnapshot;
+        private static bool _hasTuningSnapshot;
+        private static bool _hasRuntimeStateSnapshot;
+        private static bool _hasTelemetrySnapshot;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            if (_pendingVisualSyncActive)
+            {
+                DispatcherJobFence.TryComplete(ref _pendingVisualSyncHandle, forceComplete: true);
+                UnlockRuntimeBuffers();
+            }
+
             if (_requests.IsCreated)
             {
                 if (_queueRegistered)
@@ -213,13 +241,9 @@ namespace Hecton8.Visor
                 _requests.Dispose();
             }
 
-            if (_pendingVisualSyncActive)
-            {
-                DispatcherJobFence.TryComplete(ref _pendingVisualSyncHandle, forceComplete: true);
-                UnlockRuntimeBuffers();
-            }
-
             _vault = null;
+            _cachedPlayerContext = null;
+            _coldRoutesCached = false;
             _instancesHandle = default;
             _uploadHandle = default;
             _stateHandle = default;
@@ -234,7 +258,8 @@ namespace Hecton8.Visor
             _hasIngestedCombatDamageFrame = false;
             _telemetryCursor = 0;
             _materialProfileCount = 0;
-            _lastSignalSnapshotUnityFrame = -1;
+            _lastSignalSnapshotFrameId = 0u;
+            _fallbackVisualFrameId = 0u;
             _droppedIngressThisFrame = 0;
             _queueRegistered = false;
             _dumpedFault = false;
@@ -249,6 +274,84 @@ namespace Hecton8.Visor
             _pendingVisualSyncMaxActive = 0;
             _lastCompletedStats = default;
             _hasLastCompletedStats = false;
+            _lastTuningSnapshot = default;
+            _lastRuntimeStateSnapshot = default;
+            _lastTelemetrySnapshot = default;
+            _hasTuningSnapshot = false;
+            _hasRuntimeStateSnapshot = false;
+            _hasTelemetrySnapshot = false;
+        }
+
+        public static bool WarmupColdGlobalRoutes()
+        {
+            if (_coldRoutesCached && _vault != null)
+                return true;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            _vault = vault;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _coldRoutesCached = true;
+            return true;
+        }
+
+        public static bool TryInitializeColdStorage()
+        {
+            return EnsureInitialized();
+        }
+
+        public static bool IsColdStorageReady()
+        {
+            return IsInitializedForRead();
+        }
+
+        public static void RefreshColdPlayerContext()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        public static void ResetColdStorageForRebind()
+        {
+            ForceCompletePendingVisualSync(out _);
+            if (_requests.IsCreated)
+            {
+                while (_requests.TryDequeue(out _))
+                {
+                }
+            }
+
+            _vault = null;
+            _cachedPlayerContext = null;
+            _coldRoutesCached = false;
+            _instancesHandle = default;
+            _uploadHandle = default;
+            _stateHandle = default;
+            _telemetryHandle = default;
+            _tuningHandle = default;
+            _materialProfileHandle = default;
+            _csvScratchHandle = default;
+            _telemetryCursor = 0;
+            _materialProfileCount = 0;
+            _lastSignalSnapshotFrameId = 0u;
+            _fallbackVisualFrameId = 0u;
+            _droppedIngressThisFrame = 0;
+            _lastCameraWorldPosition = Vector3.zero;
+            _pendingVisualSyncHandle = default;
+            _pendingVisualSyncActive = false;
+            _pendingVisualSyncStartTicks = 0L;
+            _pendingVisualSyncQuality = 0f;
+            _pendingVisualSyncThermalPressure = 0f;
+            _pendingVisualSyncMaxActive = 0;
+            _lastCompletedStats = default;
+            _hasLastCompletedStats = false;
+            _lastTuningSnapshot = default;
+            _lastRuntimeStateSnapshot = default;
+            _lastTelemetrySnapshot = default;
+            _hasTuningSnapshot = false;
+            _hasRuntimeStateSnapshot = false;
+            _hasTelemetrySnapshot = false;
         }
 
         public static bool ValidateDecalInstanceLayout()
@@ -256,17 +359,36 @@ namespace Hecton8.Visor
             if (_layoutValidated)
                 return _layoutValid;
 
-            _layoutValid = UnsafeUtility.SizeOf<DecalInstanceDTO>() == 80;
+            _layoutValid = UnsafeUtility.SizeOf<VisorDecalDTO>() == 80;
 #if UNITY_EDITOR
             _layoutValid = _layoutValid &&
-                           OffsetOf<DecalInstanceDTO>(nameof(DecalInstanceDTO.LocalToWorld)) == 0 &&
-                           OffsetOf<DecalInstanceDTO>(nameof(DecalInstanceDTO.MaterialHash)) == 64 &&
-                           OffsetOf<DecalInstanceDTO>(nameof(DecalInstanceDTO.Opacity01)) == 68 &&
-                           OffsetOf<DecalInstanceDTO>(nameof(DecalInstanceDTO.LifetimeSeconds)) == 72 &&
-                           OffsetOf<DecalInstanceDTO>(nameof(DecalInstanceDTO.Flags)) == 76;
+                           OffsetOf<VisorDecalDTO>(nameof(VisorDecalDTO.LocalToWorld)) == 0 &&
+                           OffsetOf<VisorDecalDTO>(nameof(VisorDecalDTO.DecalTypeHash)) == 64 &&
+                           OffsetOf<VisorDecalDTO>(nameof(VisorDecalDTO.Opacity01)) == 68 &&
+                           OffsetOf<VisorDecalDTO>(nameof(VisorDecalDTO.BirthTime)) == 72 &&
+                           OffsetOf<VisorDecalDTO>(nameof(VisorDecalDTO.Flags)) == 76;
 #endif
             _layoutValidated = true;
             return _layoutValid;
+        }
+
+        public static bool ValidateVisorDecalLayout()
+        {
+            return ValidateDecalInstanceLayout();
+        }
+
+        private static bool IsInitializedForRead()
+        {
+            return _coldRoutesCached &&
+                   _vault != null &&
+                   _instancesHandle.IsCreated &&
+                   _uploadHandle.IsCreated &&
+                   _stateHandle.IsCreated &&
+                   _telemetryHandle.IsCreated &&
+                   _tuningHandle.IsCreated &&
+                   _materialProfileHandle.IsCreated &&
+                   _csvScratchHandle.IsCreated &&
+                   _requests.IsCreated;
         }
 
         public static bool TryEnqueueRuntimeImpact(
@@ -279,14 +401,16 @@ namespace Hecton8.Visor
         {
             using (_enqueueMarker.Auto())
             {
-                if (!EnsureInitialized())
+                if (!IsInitializedForRead())
                     return false;
 
                 if (!IsFinite(runtimePosition))
                     return false;
 
+                if (!TryResolveRuntimeAup(runtimePosition, out double3 aup))
+                    return false;
+
                 DecalTuningDTO tuning = ResolveLiveTuning();
-                double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
                 float3 normal = new float3(surfaceNormal.x, surfaceNormal.y, surfaceNormal.z);
                 uint seed = Mix(HashFloat3(runtimePosition) ^ materialHash);
                 return TryEnqueueAupImpact(
@@ -298,7 +422,7 @@ namespace Hecton8.Visor
                     lifetimeSeconds,
                     flags,
                     seed,
-                    (uint)math.max(0, Time.frameCount));
+                    ResolveVisualFrameId());
             }
         }
 
@@ -315,7 +439,7 @@ namespace Hecton8.Visor
         {
             using (_enqueueMarker.Auto())
             {
-                if (!EnsureInitialized())
+                if (!IsInitializedForRead())
                     return false;
 
                 if (!math.all(math.isfinite(impactAup)))
@@ -328,7 +452,7 @@ namespace Hecton8.Visor
                 request.RadiusMeters = math.clamp(math.isfinite(radiusMeters) ? radiusMeters : defaults.BaseRadiusMeters, 0.025f, 8f);
                 request.ProjectionDepthMeters = math.clamp(math.isfinite(projectionDepthMeters) ? projectionDepthMeters : defaults.ProjectionDepthMeters, 0.025f, 2f);
                 request.LifetimeSeconds = math.clamp(math.isfinite(lifetimeSeconds) ? lifetimeSeconds : defaults.BaseFadeTimeSeconds, 0.1f, 60f);
-                request.MaterialHash = materialHash;
+                request.MaterialHash = PackRequestMaterialPayload(ResolveDecalTypeFromMaterial(materialHash), ResolveAtlasSliceFromMaterial(materialHash));
                 request.Flags = flags | DynamicDecalFlags.Active;
                 request.StableSeed = stableSeed != 0u
                     ? stableSeed
@@ -340,8 +464,19 @@ namespace Hecton8.Visor
 
         public static bool GenerateMockDecals(int count)
         {
+            return GenerateMockVisorWounds(count);
+        }
+
+        public static bool GenerateMockVisorWounds(int count)
+        {
             if (!EnsureInitialized() || count <= 0)
                 return false;
+
+            if (_pendingVisualSyncActive)
+            {
+                AccumulateDroppedIngress(count);
+                return false;
+            }
 
             int headroom = RequestQueuePrewarmCapacity - _requests.Count;
             if (headroom <= 0)
@@ -352,12 +487,12 @@ namespace Hecton8.Visor
 
             int safeCount = math.clamp(count, 1, math.min(MaxCapacity, headroom));
             AccumulateDroppedIngress(count - safeCount);
-            GenerateMockDecalRequestsJob job = new GenerateMockDecalRequestsJob
+            GenerateMockVisorWoundsJob job = new GenerateMockVisorWoundsJob
             {
                 Requests = _requests.AsParallelWriter(),
                 Count = safeCount,
-                Frame = (uint)math.max(0, Time.frameCount),
-                OriginAup = HectonFloatingOrigin.CurrentTotalOffsetDouble
+                Frame = ResolveVisualFrameId(),
+                OriginAup = ResolveCurrentRuntimeOriginAup()
             };
 
             JobHandle handle = job.Schedule(safeCount, 64);
@@ -377,11 +512,11 @@ namespace Hecton8.Visor
             stats = default;
             using (_visualSyncMarker.Auto())
             {
-                if (!EnsureInitialized())
+                if (!IsInitializedForRead())
                     return false;
 
-                if (!TryFinalizePendingVisualSync(out stats))
-                    return _hasLastCompletedStats && stats.UploadCount > 0;
+                if (_pendingVisualSyncActive)
+                    return TryFinalizePendingVisualSync(out stats) && stats.UploadCount > 0;
 
                 if (!ValidateDecalInstanceLayout())
                 {
@@ -402,23 +537,26 @@ namespace Hecton8.Visor
                     int ingressDroppedBeforeJob = math.max(0, _droppedIngressThisFrame);
                     _droppedIngressThisFrame = 0;
 
-                    NativeArray<DecalInstanceDTO> instances = _instancesHandle.Resolve(_vault);
-                    NativeArray<DecalInstanceDTO> upload = _uploadHandle.Resolve(_vault);
+                    NativeArray<VisorDecalDTO> instances = _instancesHandle.Resolve(_vault);
+                    NativeArray<VisorDecalDTO> upload = _uploadHandle.Resolve(_vault);
                     NativeArray<DecalRuntimeStateDTO> stateArray = _stateHandle.Resolve(_vault);
-                    NativeArray<DecalTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
+                    NativeArray<VisorWoundTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
                     NativeArray<DecalTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
                     if (!instances.IsCreated || !upload.IsCreated || !stateArray.IsCreated || stateArray.Length <= 0 || !telemetry.IsCreated || !tuningArray.IsCreated)
                         return false;
 
                     DecalTuningDTO tuning = SanitizeTuning(tuningArray[0], baseFadeSeconds, requestedCapacity);
                     tuningArray[0] = tuning;
+                    _lastTuningSnapshot = tuning;
+                    _hasTuningSnapshot = true;
                     ref DecalRuntimeStateDTO state = ref _stateHandle.GetElementAsRef(_vault, 0);
+                    state.NormalRefractionIntensity = tuning.NormalRefractionIntensity;
                     bool hadRuntimeState = (state.Flags & RuntimeInitializedFlag) != 0u;
                     if (!hadRuntimeState)
                     {
                         ClearDecalsJob clearJob = new ClearDecalsJob
                         {
-                            Decals = (DecalInstanceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(instances),
+                            Decals = (VisorDecalDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(instances),
                             Capacity = math.min(instances.Length, MaxCapacity)
                         };
                         int clearCount = math.min(instances.Length, MaxCapacity);
@@ -437,10 +575,10 @@ namespace Hecton8.Visor
                     double3 cameraAup = ResolveCameraAup(camera);
                     _lastCameraWorldPosition = camera != null ? camera.transform.position : Vector3.zero;
 
-                    GenerateDecalMatricesJob generateJob = new GenerateDecalMatricesJob
+                    GenerateVisorDecalMatricesJob generateJob = new GenerateVisorDecalMatricesJob
                     {
                         Requests = _requests,
-                        Decals = (DecalInstanceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(instances),
+                        Decals = (VisorDecalDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(instances),
                         State = (DecalRuntimeStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(stateArray),
                         CameraAup = cameraAup,
                         Capacity = math.min(instances.Length, MaxCapacity),
@@ -451,9 +589,9 @@ namespace Hecton8.Visor
                         IngressDroppedBeforeJob = ingressDroppedBeforeJob
                     };
                     JobHandle handle = generateJob.Schedule();
-                    DecayDecalOpacityJob decayJob = new DecayDecalOpacityJob
+                    DecayVisorDecalOpacityJob decayJob = new DecayVisorDecalOpacityJob
                     {
-                        Decals = (DecalInstanceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(instances),
+                        Decals = (VisorDecalDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(instances),
                         State = (DecalRuntimeStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(stateArray),
                         DeltaTime = math.max(0f, math.isfinite(deltaTime) ? deltaTime : 0f),
                         DecayRate = decayRate,
@@ -463,8 +601,8 @@ namespace Hecton8.Visor
                     handle = decayJob.Schedule(handle);
                     BuildDecalUploadBufferJob uploadJob = new BuildDecalUploadBufferJob
                     {
-                        Decals = (DecalInstanceDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(instances),
-                        Upload = (DecalInstanceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(upload),
+                        Decals = (VisorDecalDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(instances),
+                        Upload = (VisorDecalDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(upload),
                         State = (DecalRuntimeStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(stateArray),
                         Capacity = math.min(instances.Length, MaxCapacity),
                         UploadCapacity = math.min(upload.Length, MaxCapacity),
@@ -483,7 +621,7 @@ namespace Hecton8.Visor
                         _pendingVisualSyncMaxActive = maxActive;
                         releaseRuntimeLocks = false;
                         stats = _lastCompletedStats;
-                        return _hasLastCompletedStats && stats.UploadCount > 0;
+                        return false;
                     }
 
                     FinalizeCompletedVisualSync(
@@ -510,6 +648,22 @@ namespace Hecton8.Visor
             }
         }
 
+        public static bool TryDrainPendingVisualSync(out DynamicDecalFrameStats stats)
+        {
+            stats = default;
+            return _pendingVisualSyncActive && TryFinalizePendingVisualSync(out stats);
+        }
+
+        public static bool ForceCompletePendingVisualSync(out DynamicDecalFrameStats stats)
+        {
+            stats = default;
+            if (!_pendingVisualSyncActive)
+                return false;
+
+            DispatcherJobFence.TryComplete(ref _pendingVisualSyncHandle, forceComplete: true);
+            return TryFinalizePendingVisualSync(out stats);
+        }
+
         private static bool TryFinalizePendingVisualSync(out DynamicDecalFrameStats stats)
         {
             stats = default;
@@ -525,9 +679,17 @@ namespace Hecton8.Visor
             uint faultFlags = 0u;
             try
             {
+                if (_vault == null ||
+                    !_stateHandle.IsCreated ||
+                    !_uploadHandle.IsCreated ||
+                    !_telemetryHandle.IsCreated)
+                {
+                    return false;
+                }
+
                 NativeArray<DecalRuntimeStateDTO> stateArray = _stateHandle.Resolve(_vault);
-                NativeArray<DecalInstanceDTO> upload = _uploadHandle.Resolve(_vault);
-                NativeArray<DecalTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
+                NativeArray<VisorDecalDTO> upload = _uploadHandle.Resolve(_vault);
+                NativeArray<VisorWoundTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
                 if (!stateArray.IsCreated || stateArray.Length <= 0 || !upload.IsCreated || !telemetry.IsCreated)
                     return false;
 
@@ -560,8 +722,8 @@ namespace Hecton8.Visor
 
         private static void FinalizeCompletedVisualSync(
             NativeArray<DecalRuntimeStateDTO> stateArray,
-            NativeArray<DecalInstanceDTO> upload,
-            NativeArray<DecalTelemetryEntry> telemetry,
+            NativeArray<VisorDecalDTO> upload,
+            NativeArray<VisorWoundTelemetryEntry> telemetry,
             long startTicks,
             float quality,
             float thermalPressure,
@@ -570,7 +732,7 @@ namespace Hecton8.Visor
             ref uint faultFlags)
         {
             DecalRuntimeStateDTO state = stateArray[0];
-            state.Frame = (uint)math.max(0, Time.frameCount);
+            state.Frame = ResolveVisualFrameId();
             state.GlobalQualityWeight = quality;
             state.ThermalPressure01 = thermalPressure;
             state.MaxActiveThisFrame = maxActive;
@@ -583,6 +745,8 @@ namespace Hecton8.Visor
                            System.Diagnostics.Stopwatch.Frequency;
             state.CpuMicroseconds = (float)math.max(0.0d, cpuUs);
             stateArray[0] = state;
+            _lastRuntimeStateSnapshot = state;
+            _hasRuntimeStateSnapshot = true;
 
             PushTelemetry(telemetry, in state, quality, thermalPressure);
             stats.UploadBuffer = upload;
@@ -594,13 +758,14 @@ namespace Hecton8.Visor
             stats.UploadMicroseconds = state.UploadMicroseconds;
             stats.GlobalQualityWeight = quality;
             stats.ThermalPressure01 = thermalPressure;
+            stats.NormalRefractionIntensity = math.max(0f, math.isfinite(state.NormalRefractionIntensity) ? state.NormalRefractionIntensity : 1f);
             _lastCompletedStats = stats;
             _hasLastCompletedStats = true;
         }
 
         public static void RecordGpuUploadMicroseconds(float uploadMicroseconds)
         {
-            if (!EnsureInitialized())
+            if (!IsInitializedForRead())
                 return;
 
             if (!TryLockUploadTelemetryBuffers())
@@ -620,8 +785,10 @@ namespace Hecton8.Visor
                 if (uploadStall)
                     state.Flags |= RuntimeUploadStallFlag;
                 stateArray[0] = state;
+                _lastRuntimeStateSnapshot = state;
+                _hasRuntimeStateSnapshot = true;
 
-                NativeArray<DecalTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
+                NativeArray<VisorWoundTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
                 int count = telemetry.IsCreated ? math.min(telemetry.Length, TelemetryCapacity) : 0;
                 if (count > 0)
                 {
@@ -629,10 +796,12 @@ namespace Hecton8.Visor
                     if (index < 0)
                         index = count - 1;
 
-                    DecalTelemetryEntry entry = telemetry[index];
+                    VisorWoundTelemetryEntry entry = telemetry[index];
                     entry.GpuUploadMicroseconds = safe;
                     entry.Flags = state.Flags;
                     telemetry[index] = entry;
+                    _lastTelemetrySnapshot = entry;
+                    _hasTelemetrySnapshot = true;
                 }
             }
             finally
@@ -646,26 +815,8 @@ namespace Hecton8.Visor
 
         public static bool TryGetTuning(out DecalTuningDTO tuning)
         {
-            tuning = default;
-            if (!EnsureInitialized())
-                return false;
-
-            if (!TryLockTuningBuffer())
-                return false;
-
-            try
-            {
-                NativeArray<DecalTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
-                if (!tuningArray.IsCreated || tuningArray.Length <= 0)
-                    return false;
-
-                tuning = tuningArray[0];
-                return true;
-            }
-            finally
-            {
-                UnlockTuningBuffer();
-            }
+            tuning = _lastTuningSnapshot;
+            return _hasTuningSnapshot;
         }
 
         public static bool WriteTuning(in DecalTuningDTO tuning)
@@ -686,8 +837,10 @@ namespace Hecton8.Visor
                     ? math.clamp(tuning.MaximumOverkillCapacity, LowCapacity, MaxCapacity)
                     : MaxCapacity;
                 DecalTuningDTO sanitized = SanitizeTuning(tuning, tuning.BaseFadeTimeSeconds, (int)math.round(fallbackCapacityFloat));
-                sanitized.Revision = tuning.Revision + 1u;
+                sanitized.Revision = tuning.Revision == uint.MaxValue ? 1u : tuning.Revision + 1u;
                 tuningArray[0] = sanitized;
+                _lastTuningSnapshot = sanitized;
+                _hasTuningSnapshot = true;
                 return true;
             }
             finally
@@ -698,66 +851,26 @@ namespace Hecton8.Visor
 
         public static bool TryGetRuntimeState(out DecalRuntimeStateDTO state)
         {
-            state = default;
-            if (!EnsureInitialized())
-                return false;
-
-            if (!TryLockStateBuffer())
-                return false;
-
-            try
-            {
-                NativeArray<DecalRuntimeStateDTO> stateArray = _stateHandle.Resolve(_vault);
-                if (!stateArray.IsCreated || stateArray.Length <= 0)
-                    return false;
-
-                state = stateArray[0];
-                return true;
-            }
-            finally
-            {
-                UnlockStateBuffer();
-            }
+            state = _lastRuntimeStateSnapshot;
+            return _hasRuntimeStateSnapshot;
         }
 
-        public static bool TryGetLatestTelemetry(out DecalTelemetryEntry entry)
+        public static bool TryGetLatestTelemetry(out VisorWoundTelemetryEntry entry)
         {
-            entry = default;
-            if (!EnsureInitialized())
-                return false;
-
-            if (!TryLockTelemetryBuffer())
-                return false;
-
-            try
-            {
-                NativeArray<DecalTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
-                int count = telemetry.IsCreated ? math.min(telemetry.Length, TelemetryCapacity) : 0;
-                if (count <= 0)
-                    return false;
-
-                int index = _telemetryCursor - 1;
-                if (index < 0)
-                    index = count - 1;
-
-                entry = telemetry[index];
-                return entry.Frame != 0u || entry.TotalWritten != 0u || entry.ActiveDecals != 0u;
-            }
-            finally
-            {
-                UnlockTelemetryBuffer();
-            }
+            entry = _lastTelemetrySnapshot;
+            return _hasTelemetrySnapshot;
         }
 
+#if UNITY_EDITOR
         public static bool TryAcquireDecalBufferRead(
-            out NativeArray<DecalInstanceDTO> decals,
+            out NativeArray<VisorDecalDTO> decals,
             out int activeCount,
             out Vector3 cameraWorldPosition)
         {
             decals = default;
             activeCount = 0;
             cameraWorldPosition = _lastCameraWorldPosition;
-            if (!EnsureInitialized())
+            if (!IsInitializedForRead())
                 return false;
 
             if (!TryLockDecalReadBuffers())
@@ -787,6 +900,7 @@ namespace Hecton8.Visor
         {
             UnlockDecalReadBuffers();
         }
+#endif
 
         public static unsafe bool TryLoadMaterialProfilesCsv(string csvPath, out int profilesWritten)
         {
@@ -921,13 +1035,16 @@ namespace Hecton8.Visor
 
         private static bool EnsureInitialized()
         {
-            IDataVault resolvedVault = _vault ?? GlobalRegistry.DataVault;
+            if (!_coldRoutesCached && !WarmupColdGlobalRoutes())
+                return false;
+
+            IDataVault resolvedVault = _vault;
             if (resolvedVault == null)
                 return false;
 
             if (!_requests.IsCreated)
             {
-                _requests = new NativeQueue<DecalRequestSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DecalRequestSignal>[1024 prewarm] - presentation-only decal request lane - owner: SHINOBU_149
+                _requests = new NativeQueue<DecalRequestSignal>(DataVaultExemptDecalRequestLaneAllocator); // COLD ALLOC: NativeQueue<DecalRequestSignal>[128 hot cap / 1024 ingress prewarm] - presentation-only visor wound request lane - owner: SHINOBU_275
                 NativeMemorySentinel.RegisterNativeQueue(
                     _requests,
                     RequestQueuePrewarmCapacity,
@@ -951,12 +1068,12 @@ namespace Hecton8.Visor
             }
 
             _vault = resolvedVault;
-            _instancesHandle = _vault.GetBufferHandle<DecalInstanceDTO>(
+            _instancesHandle = _vault.GetBufferHandle<VisorDecalDTO>(
                 DynamicDecalVaultBufferIds.Instances,
                 MaxCapacity,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-            _uploadHandle = _vault.GetBufferHandle<DecalInstanceDTO>(
+            _uploadHandle = _vault.GetBufferHandle<VisorDecalDTO>(
                 DynamicDecalVaultBufferIds.UploadScratch,
                 MaxCapacity,
                 OwnerSystem,
@@ -966,7 +1083,7 @@ namespace Hecton8.Visor
                 1,
                 OwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            _telemetryHandle = _vault.GetBufferHandle<DecalTelemetryEntry>(
+            _telemetryHandle = _vault.GetBufferHandle<VisorWoundTelemetryEntry>(
                 DynamicDecalVaultBufferIds.TelemetryRing,
                 TelemetryCapacity,
                 OwnerSystem,
@@ -1004,17 +1121,23 @@ namespace Hecton8.Visor
 
             DecalTuningDTO tuning = tuningArray[0];
             if (tuning.Revision != 0u)
+            {
+                _lastTuningSnapshot = SanitizeTuning(tuning, ResolveDefaultTuning().BaseFadeTimeSeconds, MaxCapacity);
+                _hasTuningSnapshot = true;
                 return;
+            }
 
             tuning.BaseFadeTimeSeconds = 7.5f;
             tuning.MaximumOverkillCapacity = MaxCapacity;
-            tuning.AtlasMipmapBias = 0f;
+            tuning.NormalRefractionIntensity = 1f;
             tuning.ProjectionDepthMeters = 0.18f;
             tuning.LowTierCapacity = LowCapacity;
             tuning.BaseRadiusMeters = 0.55f;
             tuning.Revision = 1u;
             tuning.Flags = 0u;
             tuningArray[0] = tuning;
+            _lastTuningSnapshot = tuning;
+            _hasTuningSnapshot = true;
         }
 
         private static DecalTuningDTO ResolveDefaultTuning()
@@ -1022,6 +1145,7 @@ namespace Hecton8.Visor
             DecalTuningDTO tuning = default;
             tuning.BaseFadeTimeSeconds = 7.5f;
             tuning.MaximumOverkillCapacity = MaxCapacity;
+            tuning.NormalRefractionIntensity = 1f;
             tuning.ProjectionDepthMeters = 0.18f;
             tuning.LowTierCapacity = LowCapacity;
             tuning.BaseRadiusMeters = 0.55f;
@@ -1030,22 +1154,7 @@ namespace Hecton8.Visor
 
         private static DecalTuningDTO ResolveLiveTuning()
         {
-            DecalTuningDTO defaults = ResolveDefaultTuning();
-            if (_vault == null || !_tuningHandle.IsCreated || !TryLockTuningBuffer())
-                return defaults;
-
-            try
-            {
-                NativeArray<DecalTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
-                if (!tuningArray.IsCreated || tuningArray.Length <= 0)
-                    return defaults;
-
-                return SanitizeTuning(tuningArray[0], defaults.BaseFadeTimeSeconds, MaxCapacity);
-            }
-            finally
-            {
-                UnlockTuningBuffer();
-            }
+            return _hasTuningSnapshot ? _lastTuningSnapshot : ResolveDefaultTuning();
         }
 
         private static DecalTuningDTO SanitizeTuning(DecalTuningDTO tuning, float fallbackFadeSeconds, int fallbackCapacity)
@@ -1065,7 +1174,10 @@ namespace Hecton8.Visor
                 desiredMaxCapacity,
                 LowCapacity,
                 requestedMaxCapacity);
-            tuning.AtlasMipmapBias = math.clamp(math.isfinite(tuning.AtlasMipmapBias) ? tuning.AtlasMipmapBias : 0f, -2f, 4f);
+            tuning.NormalRefractionIntensity = math.clamp(
+                math.isfinite(tuning.NormalRefractionIntensity) ? tuning.NormalRefractionIntensity : defaults.NormalRefractionIntensity,
+                0f,
+                2.5f);
             tuning.ProjectionDepthMeters = math.clamp(
                 math.isfinite(tuning.ProjectionDepthMeters) && tuning.ProjectionDepthMeters > 0f ? tuning.ProjectionDepthMeters : defaults.ProjectionDepthMeters,
                 0.025f,
@@ -1258,11 +1370,11 @@ namespace Hecton8.Visor
 
         private static void TryIngestGlobalImpactSignals()
         {
-            int unityFrame = Time.frameCount;
-            if (_lastSignalSnapshotUnityFrame == unityFrame)
+            uint frameId = ResolveVisualFrameId();
+            if (_lastSignalSnapshotFrameId == frameId)
                 return;
 
-            _lastSignalSnapshotUnityFrame = unityFrame;
+            _lastSignalSnapshotFrameId = frameId;
             uint maxHighSpeedFrame = _lastIngestedHighSpeedFrame;
             uint maxCombatDamageFrame = _lastIngestedCombatDamageFrame;
             bool highSpeedAccepted = false;
@@ -1313,6 +1425,8 @@ namespace Hecton8.Visor
                 uint flags = materialHash == DynamicDecalMaterialHashes.HullDent
                     ? DynamicDecalFlags.HullImpact
                     : DynamicDecalFlags.Ballistic;
+                if (materialHash == DynamicDecalMaterialHashes.GlassCrack)
+                    flags |= DynamicDecalFlags.PersistentGlass;
                 EnqueueSignalImpact(
                     signal.ImpactAup,
                     normal,
@@ -1360,17 +1474,19 @@ namespace Hecton8.Visor
                 request.RadiusMeters = profile.RadiusMeters;
                 request.ProjectionDepthMeters = profile.ProjectionDepthMeters;
                 request.LifetimeSeconds = profile.LifetimeSeconds;
-                request.MaterialHash = profile.AtlasSlice;
+                request.MaterialHash = PackRequestMaterialPayload(ResolveDecalTypeFromMaterial(materialHash), profile.AtlasSlice);
             }
             else
             {
                 request.RadiusMeters = ResolveBallisticRadius(damage, velocity, tuning);
                 request.ProjectionDepthMeters = tuning.ProjectionDepthMeters;
                 request.LifetimeSeconds = ResolveBallisticLifetime(materialHash, damage, tuning);
-                request.MaterialHash = materialHash;
+                request.MaterialHash = PackRequestMaterialPayload(ResolveDecalTypeFromMaterial(materialHash), ResolveAtlasSliceFromMaterial(materialHash));
             }
 
             request.Flags = DynamicDecalFlags.Active | flags;
+            if (ResolveDecalTypeFromMaterial(materialHash) == DynamicDecalMaterialHashes.GlassCrack)
+                request.Flags |= DynamicDecalFlags.PersistentGlass;
             request.StableSeed = Mix(materialHash ^ profileHash ^ frame);
             request.SourceFrame = frame;
             TryEnqueueRequest(in request);
@@ -1380,6 +1496,12 @@ namespace Hecton8.Visor
         {
             if (!_requests.IsCreated)
                 return false;
+
+            if (_pendingVisualSyncActive)
+            {
+                AccumulateDroppedIngress(1);
+                return false;
+            }
 
             if (_requests.Count >= RequestQueuePrewarmCapacity)
             {
@@ -1475,11 +1597,30 @@ namespace Hecton8.Visor
 
         private static double3 ResolveCameraAup(Camera camera)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (camera != null)
+            {
+                Vector3 position = camera.transform.position;
+                if (IsFinite(position))
+                {
+                    var originAup = GlobalSignals.CurrentRuntimeOriginAup();
+                    if (originAup.IsFinite())
+                    {
+                        var cameraAup = originAup;
+                        if (GlobalSignals.TryRuntimePositionToAup(position, ref cameraAup) && cameraAup.IsFinite())
+                        {
+                            double3 absolute = cameraAup.ToAbsoluteDouble3();
+                            if (math.all(math.isfinite(absolute)))
+                                return absolute;
+                        }
+                    }
+                }
+            }
+
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null)
             {
                 if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                    MathGuard.IsFinite(in snapshot.Aup))
+                    snapshot.Aup.IsFinite())
                 {
                     return snapshot.Aup.ToAbsoluteDouble3();
                 }
@@ -1487,13 +1628,37 @@ namespace Hecton8.Visor
                 var playerMovement = playerContext.PlayerMovement;
                 if (playerMovement != null)
                 {
-                    AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-                    if (MathGuard.IsFinite(in currentAup))
+                    var currentAup = playerMovement.CurrentAup;
+                    if (currentAup.IsFinite())
                         return currentAup.ToAbsoluteDouble3();
                 }
             }
 
-            return HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            return ResolveCurrentRuntimeOriginAup();
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 absolutePosition)
+        {
+            absolutePosition = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            var positionAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!GlobalSignals.TryRuntimePositionToAup(runtimePosition, ref positionAup) || !positionAup.IsFinite())
+                return false;
+
+            absolutePosition = positionAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absolutePosition));
+        }
+
+        private static double3 ResolveCurrentRuntimeOriginAup()
+        {
+            var originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return double3.zero;
+
+            double3 absoluteOrigin = originAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteOrigin)) ? absoluteOrigin : double3.zero;
         }
 
         private static float ResolveBallisticRadius(float damage, float velocity, DecalTuningDTO tuning)
@@ -1548,7 +1713,7 @@ namespace Hecton8.Visor
         }
 
         private static void PushTelemetry(
-            NativeArray<DecalTelemetryEntry> telemetry,
+            NativeArray<VisorWoundTelemetryEntry> telemetry,
             in DecalRuntimeStateDTO state,
             float quality,
             float thermalPressure)
@@ -1561,7 +1726,7 @@ namespace Hecton8.Visor
             if (_telemetryCursor >= math.min(telemetry.Length, TelemetryCapacity))
                 _telemetryCursor = 0;
 
-            DecalTelemetryEntry entry = default;
+            VisorWoundTelemetryEntry entry = default;
             entry.Frame = state.Frame;
             entry.ActiveDecals = (uint)math.max(0, state.ActiveCount);
             entry.NewDecals = (uint)math.max(0, state.NewThisFrame);
@@ -1577,6 +1742,8 @@ namespace Hecton8.Visor
             entry.MaxActiveThisFrame = (uint)math.max(0, state.MaxActiveThisFrame);
             entry.LastBallisticFrame = state.LastBallisticFrame;
             telemetry[index] = entry;
+            _lastTelemetrySnapshot = entry;
+            _hasTelemetrySnapshot = true;
         }
 
         private static void MarkFault(uint flags)
@@ -1596,6 +1763,8 @@ namespace Hecton8.Visor
                 DecalRuntimeStateDTO state = stateArray[0];
                 state.Flags |= flags;
                 stateArray[0] = state;
+                _lastRuntimeStateSnapshot = state;
+                _hasRuntimeStateSnapshot = true;
             }
             finally
             {
@@ -1613,7 +1782,7 @@ namespace Hecton8.Visor
 
             try
             {
-                NativeArray<DecalTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
+                NativeArray<VisorWoundTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
                 if (!telemetry.IsCreated)
                     return;
 
@@ -1635,7 +1804,7 @@ namespace Hecton8.Visor
                     if (index >= count)
                         index -= count;
 
-                    DecalTelemetryEntry entry = telemetry[index];
+                    VisorWoundTelemetryEntry entry = telemetry[index];
                     writer.Write(entry.Frame);
                     writer.Write(entry.ActiveDecals);
                     writer.Write(entry.NewDecals);
@@ -1848,6 +2017,21 @@ namespace Hecton8.Visor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ResolveVisualFrameId()
+        {
+            uint dispatcherFrame = TimeSliceScheduler.CurrentFrameId;
+            if (dispatcherFrame != 0u)
+                return dispatcherFrame;
+
+            uint next = _fallbackVisualFrameId + 1u;
+            if (next == 0u)
+                next = 1u;
+
+            _fallbackVisualFrameId = next;
+            return next;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsFinite(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
@@ -1891,6 +2075,92 @@ namespace Hecton8.Visor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint ResolveDecalTypeFromMaterial(uint materialHash)
+        {
+            uint materialType = materialHash & DecalTypePackedMask;
+            return materialHash < AtlasSliceCount && materialType <= DynamicDecalMaterialHashes.Burn
+                ? materialType
+                : DynamicDecalMaterialHashes.Scorch;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint ResolveAtlasSliceFromMaterial(uint materialHash)
+        {
+            return materialHash < AtlasSliceCount
+                ? materialHash & DecalAtlasPackedMask
+                : Mix(materialHash) & DecalAtlasPackedMask;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint PackDecalPayload(uint decalType, uint atlasSlice)
+        {
+            return (decalType & DecalTypePackedMask) |
+                   ((atlasSlice & DecalAtlasPackedMask) << DecalAtlasPackedShift);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint PackRequestMaterialPayload(uint decalType, uint atlasSlice)
+        {
+            return DecalMaterialPayloadPackedFlag | PackDecalPayload(decalType, atlasSlice);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint ResolveRequestDecalType(uint materialPayload)
+        {
+            return (materialPayload & DecalMaterialPayloadPackedFlag) != 0u
+                ? materialPayload & DecalTypePackedMask
+                : ResolveDecalTypeFromMaterial(materialPayload);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint ResolveRequestAtlasSlice(uint materialPayload)
+        {
+            return (materialPayload & DecalMaterialPayloadPackedFlag) != 0u
+                ? (materialPayload >> DecalAtlasPackedShift) & DecalAtlasPackedMask
+                : ResolveAtlasSliceFromMaterial(materialPayload);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint ResolveRequestDecalPayload(uint materialPayload)
+        {
+            return PackDecalPayload(ResolveRequestDecalType(materialPayload), ResolveRequestAtlasSlice(materialPayload));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint PackDecalTypeAndLifetime(uint decalPayload, float lifetimeSeconds)
+        {
+            float safeLifetime = math.clamp(math.isfinite(lifetimeSeconds) ? lifetimeSeconds : 0.1f, 0.1f, 60f);
+            uint lifetimeCentiseconds = (uint)math.clamp(
+                math.round(safeLifetime * DecalLifetimePackedScale),
+                10f,
+                (float)DecalLifetimePackedMask);
+            return (decalPayload & DecalTypePayloadMask) |
+                   ((lifetimeCentiseconds & DecalLifetimePackedMask) << DecalLifetimePackedShift);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint UnpackDecalType(uint packedDecalTypeHash)
+        {
+            return packedDecalTypeHash & DecalTypePackedMask;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint UnpackDecalAtlasSlice(uint packedDecalTypeHash)
+        {
+            return (packedDecalTypeHash >> DecalAtlasPackedShift) & DecalAtlasPackedMask;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float UnpackDecalLifetimeSeconds(uint packedDecalTypeHash, float fallbackSeconds)
+        {
+            uint lifetimeCentiseconds = (packedDecalTypeHash >> DecalLifetimePackedShift) & DecalLifetimePackedMask;
+            float fallback = math.max(0.1f, math.isfinite(fallbackSeconds) ? fallbackSeconds : 7.5f);
+            return lifetimeCentiseconds > 0u
+                ? math.max(0.1f, lifetimeCentiseconds / DecalLifetimePackedScale)
+                : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint RotateLeft(uint value, int shift)
         {
             return (value << shift) | (value >> (32 - shift));
@@ -1908,7 +2178,7 @@ namespace Hecton8.Visor
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct ClearDecalsJob : IJobParallelFor
     {
-        [NoAlias, NativeDisableUnsafePtrRestriction] public DecalInstanceDTO* Decals;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public VisorDecalDTO* Decals;
         public int Capacity;
 
         public void Execute(int index)
@@ -1916,14 +2186,14 @@ namespace Hecton8.Visor
             if ((uint)index >= (uint)Capacity)
                 return;
 
-            ref DecalInstanceDTO decal = ref UnsafeUtility.AsRef<DecalInstanceDTO>(Decals + index);
+            ref VisorDecalDTO decal = ref UnsafeUtility.AsRef<VisorDecalDTO>(Decals + index);
             decal.Opacity01 = 0f;
             decal.Flags = 0u;
         }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct GenerateMockDecalRequestsJob : IJobParallelFor
+    internal struct GenerateMockVisorWoundsJob : IJobParallelFor
     {
         public NativeQueue<DecalRequestSignal>.ParallelWriter Requests;
         public int Count;
@@ -1938,15 +2208,26 @@ namespace Hecton8.Visor
             uint seed = DynamicDecalVaultRuntime.Mix((uint)(index + 1) * 0x9E3779B9u);
             float angle = (seed & 1023u) * (6.28318530718f / 1024f);
             float radius = 2.0f + ((seed >> 10) & 31u) * 0.22f;
-            float3 normal = math.normalize(new float3(math.sin(angle) * 0.35f, 1f, math.cos(angle) * 0.35f));
+            float3 rawNormal = new float3(math.sin(angle) * 0.35f, 1f, math.cos(angle) * 0.35f);
+            float normalLengthSq = math.max(math.lengthsq(rawNormal), 0.0001f);
+            float3 normal = math.all(math.isfinite(rawNormal))
+                ? rawNormal * math.rsqrt(normalLengthSq)
+                : new float3(0f, 1f, 0f);
             DecalRequestSignal request = default;
             request.ImpactAup = OriginAup + new double3(math.cos(angle) * radius, ((index & 15) - 8) * 0.12f, math.sin(angle) * radius);
             request.Normal = normal;
             request.RadiusMeters = 0.22f + ((seed >> 16) & 15u) * 0.035f;
             request.ProjectionDepthMeters = 0.18f;
             request.LifetimeSeconds = 4.0f + ((seed >> 21) & 7u) * 0.5f;
-            request.MaterialHash = seed % DynamicDecalVaultRuntime.AtlasSliceCount;
+            uint pattern = (uint)(index % 5);
+            request.MaterialHash = pattern == 0u ? DynamicDecalMaterialHashes.Blood :
+                pattern == 1u ? DynamicDecalMaterialHashes.GlassCrack :
+                pattern == 2u ? DynamicDecalMaterialHashes.Burn :
+                pattern == 3u ? DynamicDecalMaterialHashes.Acid :
+                DynamicDecalMaterialHashes.Scorch;
             request.Flags = DynamicDecalFlags.Active | DynamicDecalFlags.Mock;
+            if (request.MaterialHash == DynamicDecalMaterialHashes.GlassCrack)
+                request.Flags |= DynamicDecalFlags.PersistentGlass;
             request.StableSeed = seed;
             request.SourceFrame = Frame;
             Requests.Enqueue(request);
@@ -1954,10 +2235,10 @@ namespace Hecton8.Visor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal unsafe struct GenerateDecalMatricesJob : IJob
+    internal unsafe struct GenerateVisorDecalMatricesJob : IJob
     {
         public NativeQueue<DecalRequestSignal> Requests;
-        [NoAlias, NativeDisableUnsafePtrRestriction] public DecalInstanceDTO* Decals;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public VisorDecalDTO* Decals;
         [NoAlias, NativeDisableUnsafePtrRestriction] public DecalRuntimeStateDTO* State;
         public double3 CameraAup;
         public int Capacity;
@@ -1978,22 +2259,21 @@ namespace Hecton8.Visor
             while (processed < maxRequests && Requests.TryDequeue(out DecalRequestSignal request))
             {
                 processed++;
-                if (!TryBuildMatrix(in request, out float4x4 matrix, out uint materialIndex))
+                if (!TryBuildMatrix(in request, out float4x4 matrix, out uint decalPayload))
                 {
                     state.Flags |= DynamicDecalFlags.NonFinite;
                     state.DroppedThisFrame++;
                     continue;
                 }
 
-                int index = state.CurrentWriteIndex;
-                if ((uint)index >= (uint)capacity)
-                    index = 0;
+                int index = (int)(state.TotalWritten % (uint)capacity);
 
-                ref DecalInstanceDTO decal = ref UnsafeUtility.AsRef<DecalInstanceDTO>(Decals + index);
+                ref VisorDecalDTO decal = ref UnsafeUtility.AsRef<VisorDecalDTO>(Decals + index);
+                float lifetime = math.max(0.1f, math.isfinite(request.LifetimeSeconds) && request.LifetimeSeconds > 0f ? request.LifetimeSeconds : DefaultLifetimeSeconds);
                 decal.LocalToWorld = matrix;
-                decal.MaterialHash = materialIndex;
+                decal.DecalTypeHash = DynamicDecalVaultRuntime.PackDecalTypeAndLifetime(decalPayload, lifetime);
                 decal.Opacity01 = 1f;
-                decal.LifetimeSeconds = math.max(0.1f, math.isfinite(request.LifetimeSeconds) && request.LifetimeSeconds > 0f ? request.LifetimeSeconds : DefaultLifetimeSeconds);
+                decal.BirthTime = (float)(request.SourceFrame != 0u ? request.SourceFrame : state.Frame);
                 decal.Flags = (request.Flags | DynamicDecalFlags.Active) & ~DynamicDecalFlags.NonFinite;
 
                 index++;
@@ -2007,10 +2287,10 @@ namespace Hecton8.Visor
             }
         }
 
-        private bool TryBuildMatrix(in DecalRequestSignal request, out float4x4 matrix, out uint materialIndex)
+        private bool TryBuildMatrix(in DecalRequestSignal request, out float4x4 matrix, out uint decalPayload)
         {
             matrix = float4x4.identity;
-            materialIndex = ResolveAtlasIndex(request.MaterialHash);
+            decalPayload = DynamicDecalVaultRuntime.ResolveRequestDecalPayload(request.MaterialHash);
             double3 local = request.ImpactAup - CameraAup;
             if (!math.all(math.isfinite(local)))
                 return false;
@@ -2027,7 +2307,7 @@ namespace Hecton8.Visor
 
             uint seed = request.StableSeed != 0u
                 ? request.StableSeed
-                : DynamicDecalVaultRuntime.Mix(math.asuint(position.x) ^ math.asuint(position.y) ^ math.asuint(position.z) ^ request.MaterialHash);
+                : DynamicDecalVaultRuntime.Mix(math.asuint(position.x) ^ math.asuint(position.y) ^ math.asuint(position.z) ^ decalPayload);
             float roll = (seed & 65535u) * (6.28318530718f / 65535f);
             math.sincos(roll, out float sinRoll, out float cosRoll);
             float3 rolledX = (xAxis * cosRoll) + (yAxis * sinRoll);
@@ -2046,15 +2326,6 @@ namespace Hecton8.Visor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint ResolveAtlasIndex(uint materialHash)
-        {
-            if (materialHash < DynamicDecalVaultRuntime.AtlasSliceCount)
-                return materialHash;
-
-            return DynamicDecalVaultRuntime.Mix(materialHash) & (DynamicDecalVaultRuntime.AtlasSliceCount - 1u);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 NormalizeOrDefault(float3 value, float3 fallback)
         {
             float lengthSq = math.lengthsq(value);
@@ -2065,9 +2336,9 @@ namespace Hecton8.Visor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal unsafe struct DecayDecalOpacityJob : IJob
+    internal unsafe struct DecayVisorDecalOpacityJob : IJob
     {
-        [NoAlias, NativeDisableUnsafePtrRestriction] public DecalInstanceDTO* Decals;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public VisorDecalDTO* Decals;
         [NoAlias, NativeDisableUnsafePtrRestriction] public DecalRuntimeStateDTO* State;
         public float DeltaTime;
         public float DecayRate;
@@ -2082,7 +2353,7 @@ namespace Hecton8.Visor
             float decay = math.max(0f, DecayRate) * math.max(0f, DeltaTime);
             for (int i = 0; i < capacity; i++)
             {
-                ref DecalInstanceDTO decal = ref UnsafeUtility.AsRef<DecalInstanceDTO>(Decals + i);
+                ref VisorDecalDTO decal = ref UnsafeUtility.AsRef<VisorDecalDTO>(Decals + i);
                 if ((decal.Flags & DynamicDecalFlags.Active) == 0u)
                     continue;
 
@@ -2096,9 +2367,19 @@ namespace Hecton8.Visor
                     continue;
                 }
 
-                float lifetime = math.max(0.1f, math.isfinite(decal.LifetimeSeconds) && decal.LifetimeSeconds > 0f ? decal.LifetimeSeconds : baseLifetime);
-                float lifetimeScale = baseLifetime * math.rcp(math.max(lifetime, 0.1f));
-                opacity = math.max(0f, opacity - (decay * lifetimeScale));
+                uint decalType = DynamicDecalVaultRuntime.UnpackDecalType(decal.DecalTypeHash);
+                bool persistentGlass = decalType == DynamicDecalMaterialHashes.GlassCrack ||
+                                       (decal.Flags & DynamicDecalFlags.PersistentGlass) != 0u;
+                float materialScale = persistentGlass ? 0.035f :
+                    decalType == DynamicDecalMaterialHashes.Blood ? 1.15f :
+                    decalType == DynamicDecalMaterialHashes.Burn ? 0.85f :
+                    decalType == DynamicDecalMaterialHashes.Acid ? 1.35f :
+                    1.0f;
+                float lifetime = DynamicDecalVaultRuntime.UnpackDecalLifetimeSeconds(decal.DecalTypeHash, baseLifetime);
+                float lifetimeScale = materialScale * baseLifetime * math.rcp(math.max(lifetime, 0.1f));
+                opacity = persistentGlass
+                    ? math.max(0.08f, opacity - (decay * lifetimeScale))
+                    : math.max(0f, opacity - (decay * lifetimeScale));
                 decal.Opacity01 = opacity;
                 if (opacity <= 0.0001f)
                 {
@@ -2117,8 +2398,8 @@ namespace Hecton8.Visor
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct BuildDecalUploadBufferJob : IJob
     {
-        [ReadOnly, NoAlias, NativeDisableUnsafePtrRestriction] public DecalInstanceDTO* Decals;
-        [NoAlias, NativeDisableUnsafePtrRestriction] public DecalInstanceDTO* Upload;
+        [ReadOnly, NoAlias, NativeDisableUnsafePtrRestriction] public VisorDecalDTO* Decals;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public VisorDecalDTO* Upload;
         [NoAlias, NativeDisableUnsafePtrRestriction] public DecalRuntimeStateDTO* State;
         public int Capacity;
         public int UploadCapacity;
@@ -2136,10 +2417,10 @@ namespace Hecton8.Visor
 
             for (int visited = 0; visited < capacity && write < limit; visited++)
             {
-                ref readonly DecalInstanceDTO decal = ref UnsafeUtility.AsRef<DecalInstanceDTO>(Decals + cursor);
+                ref readonly VisorDecalDTO decal = ref UnsafeUtility.AsRef<VisorDecalDTO>(Decals + cursor);
                 if ((decal.Flags & DynamicDecalFlags.Active) != 0u && decal.Opacity01 > 0.0001f)
                 {
-                    ref DecalInstanceDTO destination = ref UnsafeUtility.AsRef<DecalInstanceDTO>(Upload + write);
+                    ref VisorDecalDTO destination = ref UnsafeUtility.AsRef<VisorDecalDTO>(Upload + write);
                     destination = decal;
                     write++;
                 }
@@ -2154,10 +2435,10 @@ namespace Hecton8.Visor
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct DynamicDecalMappedUploadJob : IJob
+    public unsafe struct VisorWoundMappedUploadJob : IJob
     {
-        [ReadOnly, NoAlias] public NativeArray<DecalInstanceDTO> Source;
-        [NoAlias, NativeDisableUnsafePtrRestriction] public DecalInstanceDTO* Destination;
+        [ReadOnly, NoAlias] public NativeArray<VisorDecalDTO> Source;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public VisorDecalDTO* Destination;
         public int Count;
 
         public void Execute()
@@ -2167,7 +2448,7 @@ namespace Hecton8.Visor
                 return;
 
             void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Source);
-            UnsafeUtility.MemCpy(Destination, sourcePtr, (long)UnsafeUtility.SizeOf<DecalInstanceDTO>() * safeCount);
+            UnsafeUtility.MemCpy(Destination, sourcePtr, (long)UnsafeUtility.SizeOf<VisorDecalDTO>() * safeCount);
         }
     }
 
@@ -2178,16 +2459,16 @@ namespace Hecton8.Visor
         private static void ValidateOnLoad()
         {
             if (!DynamicDecalVaultRuntime.ValidateDecalInstanceLayout())
-                Debug.LogError("SHINOBU_149 decal DTO layout mismatch: expected 80B with matrix[0], material[64], opacity[68], lifetime[72], flags[76].");
+                Debug.LogError("SHINOBU_275 visor wound DTO layout mismatch: expected 80B with matrix[0], type[64], opacity[68], birth[72], flags[76].");
         }
 
-        [UnityEditor.MenuItem("HECTON-8/Rendering/Validate Dynamic Decal Layout")]
+        [UnityEditor.MenuItem("HECTON-8/Rendering/Validate Visor Wound Layout")]
         private static void ValidateMenu()
         {
             if (DynamicDecalVaultRuntime.ValidateDecalInstanceLayout())
-                Debug.Log("SHINOBU_149 decal DTO layout valid: 80B explicit struct matches shader ABI.");
+                Debug.Log("SHINOBU_275 visor wound DTO layout valid: 80B explicit struct matches shader ABI.");
             else
-                Debug.LogError("SHINOBU_149 decal DTO layout mismatch: shader ABI is unsafe.");
+                Debug.LogError("SHINOBU_275 visor wound DTO layout mismatch: shader ABI is unsafe.");
         }
     }
 #endif

@@ -9,7 +9,7 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Construction/VR Construction Weld Target")]
-    public sealed class VRConstructionWeldTarget : MonoBehaviour, IInteractionSignalConsumer, IOriginShiftListener, IUpdatable
+    public sealed class VRConstructionWeldTarget : MonoBehaviour, IInteractionSignalConsumer, IOriginShiftListener, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const int CornerCount = 4;
         private const float DefaultInteractionStepSeconds = 0.02f;
@@ -62,8 +62,11 @@ namespace Hecton8.Construction
         private byte _completedMask;
         private bool _complete;
         private bool _registeredOriginShift;
+        private bool _registeredHotSwap;
         private bool _weldGlowProxyRegistered;
         private bool _weldGlowTickRegistered;
+        private bool _weldGlowTickSleeping;
+        private ConstructionManager _constructionManagerRuntime;
 
         public bool IsComplete => _complete;
         public byte CompletedMask => _completedMask;
@@ -73,24 +76,29 @@ namespace Hecton8.Construction
             _weldGlowProxyKey = unchecked((int)EntityId.ToULong(GetEntityId()) ^ 0x56525744);
             BindCorners();
             CacheCornerRuntimePositions();
+            CacheConstructionRuntimeCold();
         }
 
         private void OnEnable()
         {
             BindCorners();
             CacheCornerRuntimePositions();
+            CacheConstructionRuntimeCold();
+            TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
         }
 
         private void OnDisable()
         {
             TryUnregisterOriginShiftListener();
+            TryUnregisterHotSwapListener();
             UnregisterWeldGlowProxy();
             TryUnregisterWeldGlowTick();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             UnregisterWeldGlowProxy();
             TryUnregisterWeldGlowTick();
         }
@@ -182,6 +190,9 @@ namespace Hecton8.Construction
 
         public void Tick(float deltaTime)
         {
+            if (_weldGlowTickSleeping)
+                return;
+
             float dt = ResolveSafeDeltaSeconds(deltaTime);
             _weldGlowClockSeconds = math.max(0f, _weldGlowClockSeconds + dt);
             UpdateWeldHeatCooling(dt);
@@ -195,7 +206,7 @@ namespace Hecton8.Construction
 
             UnregisterWeldGlowProxy();
             if (!HasWeldCoolingWork())
-                TryUnregisterWeldGlowTick();
+                _weldGlowTickSleeping = true;
         }
 
         private bool TryFindCorner(Vector3 runtimeHitPoint, out int cornerIndex)
@@ -231,6 +242,7 @@ namespace Hecton8.Construction
             _complete = true;
             _weldGlowRemainingSeconds = 0f;
             _weldHeatHoldRemainingSeconds = 0f;
+            _weldGlowTickSleeping = false;
             UnregisterWeldGlowProxy();
             TryUnregisterWeldGlowTick();
             RegisterCompletedPanel();
@@ -242,6 +254,7 @@ namespace Hecton8.Construction
                 return;
 
             _weldHeatHoldRemainingSeconds = 0f;
+            _weldGlowTickSleeping = false;
             TryRegisterWeldGlowTick();
         }
 
@@ -290,7 +303,7 @@ namespace Hecton8.Construction
 
             ConstructionManager manager = constructionManager != null
                 ? constructionManager
-                : GlobalRegistry.ConstructionRuntime;
+                : _constructionManagerRuntime;
             if (manager == null)
                 return;
 
@@ -338,6 +351,7 @@ namespace Hecton8.Construction
 
             _weldGlowRuntimePosition = runtimePosition;
             _weldGlowRemainingSeconds = math.max(_weldGlowRemainingSeconds, ResolveSafeWeldGlowDurationSeconds());
+            _weldGlowTickSleeping = false;
             UpdateWeldGlowProxyRegistration();
             TryRegisterWeldGlowTick();
         }
@@ -361,7 +375,12 @@ namespace Hecton8.Construction
                 return;
             }
 
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
+            {
+                UnregisterWeldGlowProxy();
+                return;
+            }
+
             ProxyLightData lightData = ProxyLightData.CreateTransientPoint(
                 positionAup,
                 runtimePosition,
@@ -412,7 +431,7 @@ namespace Hecton8.Construction
 
         private void TryRegisterWeldGlowTick()
         {
-            if (_weldGlowTickRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_weldGlowTickRegistered || !Application.isPlaying)
                 return;
 
             _weldGlowTickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
@@ -425,11 +444,62 @@ namespace Hecton8.Construction
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _weldGlowTickRegistered = false;
+            _weldGlowTickSleeping = false;
+        }
+
+        private void CacheConstructionRuntimeCold()
+        {
+            _constructionManagerRuntime = GlobalRegistry.ConstructionRuntime;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Logistics)
+                return;
+
+            _constructionManagerRuntime = currentService as ConstructionManager;
         }
 
         private static bool IsFiniteVector(Vector3 value)
         {
             return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(localRuntime.x, localRuntime.y, localRuntime.z));
+            return positionAup.IsFinite();
         }
 
         private static float ResolveSafeDeltaSeconds(float value)

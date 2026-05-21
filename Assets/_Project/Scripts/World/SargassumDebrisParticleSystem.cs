@@ -314,7 +314,7 @@ namespace Hecton8.World
                 return;
             }
 
-            Vector3 sampleCenterWS = _playerTransform.position + ambientOffset;
+            Vector3 sampleCenterWS = ResolvePlayerRuntimePosition() + ambientOffset;
             bool hasSample = dragManager.SampleDetailedInfluence(
                 sampleCenterWS,
                 ambientSampleRadius,
@@ -354,6 +354,11 @@ namespace Hecton8.World
             }
 
             _debugAmbientSpawnBudget = _ambientSpawnAccumulator;
+        }
+
+        private Vector3 ResolvePlayerRuntimePosition()
+        {
+            return _playerTransform != null ? _playerTransform.position : Vector3.zero;
         }
 
         private void ResolveDependencies()

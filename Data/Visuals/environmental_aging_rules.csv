@@ -1,4 +1,9 @@
-# SHINOBU_219 cold-path shader aging tuning.
+# SHINOBU_219 cold-path visual pressure aging tuning.
+# schema_version,1
+# owner_system_hash,0x53323139
+# schema_hash_status,static_source_pending_bake
+# row_count,8
+# checksum_status,static_source_pending_runtime_bake
 # key,value
 rust_stress,0.78
 corrosion_pressure,0.62
@@ -6,4 +11,5 @@ salt_depth,0.58
 biomass_temperature,0.42
 glass_threshold,0.68
 temperature_boost,0.018
+scorch_intensity,1.0
 quality_noise,1.0

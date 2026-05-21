@@ -1,0 +1,38 @@
+{
+  "agent": "SHINOBU_274",
+  "domain": "Radiation Scrubber",
+  "scanner": "RadiationTriggerDebtScanner",
+  "status": "PENDING_VERIFICATION",
+  "verdict": "Legacy trigger/physics debt found outside SHINOBU_274 authority",
+  "dedicated_report": "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_274.json",
+  "shared_report": "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json",
+  "required_summary": "Unmanaged Radiation Triggers Purged",
+  "scanned_root": "Assets/_Project/Scripts",
+  "scanned_file_count": 1666,
+  "ignored_editor_file_count": 532,
+  "candidate_file_count": 220,
+  "finding_count": 3,
+  "broad_static_finding_count": 78,
+  "finding_list_policy": "deterministic alphabetical scan, editor folder ignored, comments and string literals masked, first three generic trigger/physics findings emitted",
+  "accepted_runtime_route": "RadiationHazardGrid -> DataVault RadiationStateDTO -> CalculateRadiationExposureJob -> HectonPlayerHealth/CombatDamageSignal",
+  "finding_scope_note": "Broad static scanner includes generic hazard/toxicity/reactor files; SHINOBU_274 runtime authority is the DataVault/Burst route, not these legacy generic collider users.",
+  "dispatcher_route": "SystemDispatcher Simulation schedules CalculateRadiationExposureJob; PostSimulation consumes completed Vault state; VisualSync uploads shader globals.",
+  "vault_buffers": "72740 states, 72741 sources, 72742 source count, 72743 telemetry, 72744 telemetry cursor, 72745 profiles, 72746 csv scratch, 72747 tuning, 72748 damage signal, 72749 grid read, 72750 grid write, 72751 grid source",
+  "shader_warmup": "Assets/_Project/Art/Shaders/Variants/Hecton8_UberNoir_RadiationWarmup.shadervariants",
+  "owner_route_correction": "Solar flare, radioactive clarity trauma, meteorite radiation, EnvironmentalHazard radiation, HectonHazardManager radiation, and HazardZoneManager radiation registrations route into RadiationHazardGrid via SignalBus source/dose lanes; no non-grid caller mutates HectonPlayerHealth radiation fatigue.",
+  "grid_swap_cadence_correction": "Diffusion read/write parity survives Vault view refresh through _gridBuffersSwapped; radiation forced ticks integrate actual accumulated seconds instead of clamping dt to the quality interval.",
+  "exact_external_dose_correction": "External RadiationDoseSignal rads are accumulated in _pendingExternalDoseRad and included once as ExternalDoseDelta; external intensity drives current exposure and visuals only, preventing rate*dt double counting.",
+  "concurrency_guard": "Radiation source/dose drains are preserved or deferred while a previous radiation job is active; source grid rebuild and diffusion scheduling are skipped while diffusion owns the grid buffers.",
+  "active_job_signal_preservation": "When a previous radiation job is active, source signals are requeued, exact dose is accumulated, iodine treatment is deferred as pending dose reduction, and compatibility reads sample only the stable read grid; no force-complete is added.",
+  "live_load_hotswap_fence": "LoadFromSaveData and DataVault hot-swap are deferred until PostSimulation observes no active radiation/diffusion job; force-complete remains teardown-only.",
+  "trigger_debt_findings": [
+    { "file": "Assets/_Project/Scripts/BaseModule.cs", "token": "OnTriggerEnter", "line": 1353, "decision": "legacy generic hazard trigger; not used as SHINOBU_274 radiation authority" },
+    { "file": "Assets/_Project/Scripts/BaseModule.cs", "token": "OnTriggerExit", "line": 1371, "decision": "legacy generic hazard trigger; not used as SHINOBU_274 radiation authority" },
+    { "file": "Assets/_Project/Scripts/BaseModule.cs", "token": "BoxCollider", "line": 474, "decision": "legacy collider component path; not used as SHINOBU_274 radiation authority" }
+  ],
+  "microseconds_saved_estimate": {
+    "removed_trigger_callback_cost_per_player_overlap_us": 3.0,
+    "removed_managed_inverse_square_loop_cost_us": 4.0,
+    "new_burst_kernel_target_us": 5.0
+  }
+}

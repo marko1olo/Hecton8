@@ -134,7 +134,7 @@ namespace Hecton8.World
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4028)]
-    public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable, ITickable, IUpdatable, IRandomEventListener
+    public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable, ITickable, IUpdatable, IRandomEventListener, IGlobalRegistryHotSwapListener
     {
         private const string NativeMemoryOwner = nameof(WorldGenerativeGeologyVoxelBridgeDirector);
         private const string EmptyNodesLabel = "emptyCaveNodes";
@@ -241,51 +241,21 @@ namespace Hecton8.World
         private CancellationTokenSource _lifetimeCancellation;
         private bool _randomEventHooksRegistered;
         private bool _runtimeRegistered;
+        private bool _registeredHotSwap;
+        private bool _runtimeDispatcherReady;
 
         private void OnEnable()
         {
             ResolveReferences();
-            if (!CanUseRuntimeDispatcher())
-                return;
-
-            TryRegisterRuntimeService();
-            EnsureLifetimeCancellation();
-            RegisterRandomEventHooks();
-            QueueStartupReconcile();
-            if (!_registeredToFrameTickManager)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredToFrameTickManager = GlobalRegistry.Updatables.Contains(this);
-            }
-
-            if (!_registeredToSlowTickManager)
-            {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
-            }
+            RefreshColdRegistryDependencies();
+            TryRegisterRuntimeCallbacks();
         }
 
         private void Start()
         {
             ResolveReferences();
-            if (!CanUseRuntimeDispatcher())
-                return;
-
-            TryRegisterRuntimeService();
-            EnsureLifetimeCancellation();
-            RegisterRandomEventHooks();
-            QueueStartupReconcile();
-            if (!_registeredToFrameTickManager)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredToFrameTickManager = GlobalRegistry.Updatables.Contains(this);
-            }
-
-            if (!_registeredToSlowTickManager)
-            {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
-            }
+            RefreshColdRegistryDependencies();
+            TryRegisterRuntimeCallbacks();
         }
 
         private void OnDisable()
@@ -308,11 +278,71 @@ namespace Hecton8.World
             ClearAllVolumes();
 
             TryUnregisterRuntimeService();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             TryUnregisterRuntimeService();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher &&
+                serviceSlot != GlobalRegistryServiceSlot.TickManager)
+            {
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+                _runtimeDispatcherReady = currentService != null;
+            else if (currentService != null)
+                _runtimeDispatcherReady = true;
+
+            TryRegisterRuntimeCallbacks();
+        }
+
+        private void RefreshColdRegistryDependencies()
+        {
+            _runtimeDispatcherReady = GlobalRegistry.Dispatcher != null;
+            TryRegisterHotSwapListener();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (!Application.isPlaying || _registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        private void TryRegisterRuntimeCallbacks()
+        {
+            if (!CanUseRuntimeDispatcher())
+                return;
+
+            TryRegisterRuntimeService();
+            EnsureLifetimeCancellation();
+            RegisterRandomEventHooks();
+            QueueStartupReconcile();
+            if (!_registeredToFrameTickManager)
+                _registeredToFrameTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+
+            if (!_registeredToSlowTickManager)
+                _registeredToSlowTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         public void Tick(float deltaTime)
@@ -396,232 +426,38 @@ namespace Hecton8.World
 
         private void HandleSeismicShockwave(in SeismicShockwaveEvent payload)
         {
-            ResolveReferences();
-            TryApplySeismicTrench(in payload);
+            _ = payload;
+            _ = seismicTrenchLengthMin;
+            _ = seismicTrenchLengthMax;
+            _ = seismicTrenchDepthScale;
+            _ = seismicTrenchDepthBias;
+            _ = seismicTrenchSlope;
+            _ = seismicTrenchSampleSpacing;
+            _ = seismicRockDebrisProfile;
+            _ = seismicMaxDebrisBursts;
+            // SHINOBU_241: macroscopic trench CSG is offline-only. Runtime seismic events may shake or emit local debris,
+            // but they must not register terrain trenches or stamp voxel trench lines during gameplay.
         }
 
-        private void TryApplySeismicTrench(in SeismicShockwaveEvent payload)
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
         {
-            if (voxelEngine == null)
-                return;
+            aup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
 
-            WorldGenerativeGeologyTerrainSeamApplier terrainApplier = WorldGenerativeGeologyTerrainSeamApplier.ActiveRuntimeInstance;
-            double3 epicenterAbsoluteDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(payload.EpicenterWS);
-            Vector3 epicenterAbsolute = ToVector3(epicenterAbsoluteDouble);
-            float trenchLength = Mathf.Clamp(
-                payload.ImpulseRadiusMeters * 1.35f,
-                Mathf.Max(4f, seismicTrenchLengthMin),
-                Mathf.Max(seismicTrenchLengthMin, seismicTrenchLengthMax));
-            float trenchDepth = Mathf.Max(
-                2f,
-                payload.ImpulseMagnitude * Mathf.Max(0.1f, seismicTrenchDepthScale) + Mathf.Max(0f, seismicTrenchDepthBias));
-            float trenchSlope = Mathf.Max(0.05f, seismicTrenchSlope);
-            float trenchRadius = trenchDepth / trenchSlope;
-            float halfLength = trenchLength * 0.5f;
-            Vector3 trenchDirection = ResolveSeismicTrenchDirection(epicenterAbsoluteDouble);
-            double3 trenchDirectionDouble = new double3(trenchDirection.x, trenchDirection.y, trenchDirection.z);
-            bool hasAupLineSegment = payload.HasAupLineSegment != 0;
-            double3 absoluteStartDouble = hasAupLineSegment
-                ? payload.AupStartDouble
-                : epicenterAbsoluteDouble - trenchDirectionDouble * halfLength;
-            double3 absoluteEndDouble = hasAupLineSegment
-                ? payload.AupEndDouble
-                : epicenterAbsoluteDouble + trenchDirectionDouble * halfLength;
-            Vector3 absoluteStart = ToVector3(absoluteStartDouble);
-            Vector3 absoluteEnd = ToVector3(absoluteEndDouble);
-            if (hasAupLineSegment)
-            {
-                double segmentLengthSq = math.lengthsq(absoluteEndDouble - absoluteStartDouble);
-                trenchLength = Mathf.Max(0.001f, segmentLengthSq > 0d ? (float)(segmentLengthSq * math.rsqrt(segmentLengthSq)) : 0f);
-                trenchRadius = trenchDepth / trenchSlope;
-            }
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
 
-            long trenchId = BuildSeismicTrenchId(epicenterAbsoluteDouble, trenchLength, trenchDepth);
-
-            if (terrainApplier != null)
-            {
-                terrainApplier.RegisterSeismicTrench(
-                    trenchId,
-                    absoluteStart,
-                    absoluteEnd,
-                    trenchDepth,
-                    trenchSlope,
-                    trenchRadius);
-                terrainApplier.ReconcileTerrainSeams();
-            }
-
-            float displacedVolumeCubicMeters = 0f;
-            int appliedStampCount = 0;
-            Dictionary<long, GameObject>.Enumerator volumeEnumerator = _activeVolumes.GetEnumerator();
-            while (volumeEnumerator.MoveNext())
-            {
-                GameObject activeVolume = volumeEnumerator.Current.Value;
-                if (activeVolume == null ||
-                    !activeVolume.TryGetComponent(out HectonVoxelVolume volume) ||
-                    volume == null)
-                {
-                    continue;
-                }
-
-                if (!volume.TryApplySeismicTrench(
-                    epicenterAbsolute,
-                    absoluteStart,
-                    absoluteEnd,
-                    trenchDepth,
-                    trenchSlope,
-                    Mathf.Max(1f, seismicTrenchSampleSpacing),
-                    out int volumeStampCount,
-                    out float volumeDisplacedVolume))
-                {
-                    continue;
-                }
-
-                appliedStampCount += volumeStampCount;
-                displacedVolumeCubicMeters += volumeDisplacedVolume;
-            }
-
-            DispatchSeismicRockDebris(
-                displacedVolumeCubicMeters,
-                appliedStampCount,
-                epicenterAbsolute,
-                absoluteStart,
-                absoluteEnd,
-                trenchDepth,
-                trenchId);
-        }
-
-        private void DispatchSeismicRockDebris(
-            float displacedVolumeCubicMeters,
-            int appliedStampCount,
-            Vector3 epicenterAbsolute,
-            Vector3 absoluteStart,
-            Vector3 absoluteEnd,
-            float trenchDepth,
-            long trenchId)
-        {
-            if (!math.isfinite(displacedVolumeCubicMeters) ||
-                !math.isfinite(trenchDepth) ||
-                !IsFinite(epicenterAbsolute) ||
-                !IsFinite(absoluteStart) ||
-                !IsFinite(absoluteEnd) ||
-                displacedVolumeCubicMeters < 10f ||
-                appliedStampCount <= 0 ||
-                seismicRockDebrisProfile == null ||
-                !seismicRockDebrisProfile.IsValid ||
-                seismicMaxDebrisBursts <= 0)
-            {
-                return;
-            }
-
-            int burstCount = Mathf.Clamp(Mathf.FloorToInt(displacedVolumeCubicMeters / 10f), 0, seismicMaxDebrisBursts);
-            if (burstCount <= 0)
-                return;
-
-            Vector3 line = absoluteEnd - absoluteStart;
-            float ceilingOffset = Mathf.Max(2f, trenchDepth * 0.65f);
-            float power01 = Mathf.Clamp01(displacedVolumeCubicMeters / Mathf.Max(10f, burstCount * 18f));
-            uint seedBase = unchecked((uint)trenchId);
-            for (int i = 0; i < burstCount; i++)
-            {
-                uint seed = seedBase + (uint)(i * 747796405u) + 1u;
-                float t = (i + 0.5f) / burstCount;
-                float jitter = (HashToFloat01(seed, (uint)appliedStampCount, 0xA53C91E7u) - 0.5f) * (1f / Mathf.Max(1, burstCount));
-                Vector3 absoluteAnchor = absoluteStart + line * Mathf.Clamp01(t + jitter);
-                float radialJitter = (HashToFloat01(seed, (uint)(i + 1), 0x7F4A7C15u) - 0.5f) * Mathf.Max(1f, trenchDepth * 0.25f);
-                Vector3 lateral = Vector3.Cross(Vector3.up, line.sqrMagnitude > 0.0001f ? line.normalized : Vector3.forward);
-                if (lateral.sqrMagnitude <= 0.0001f)
-                    lateral = Vector3.right;
-                absoluteAnchor += lateral.normalized * radialJitter;
-                Vector3 runtimeDebrisPosition = HectonFloatingOrigin.ToRuntimePosition(absoluteAnchor + Vector3.up * Mathf.Max(0.5f, ceilingOffset * 0.65f));
-                if (!IsFinite(runtimeDebrisPosition))
-                    continue;
-
-                DebrisSpawnSignal signal = new DebrisSpawnSignal
-                {
-                    PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeDebrisPosition),
-                    SpeciesHash = 0x53454953u,
-                    SourceEntityId = seed,
-                    Intensity01 = power01,
-                    DebrisKind = DebrisSpawnSignal.DebrisKindRockShard,
-                    Flags = DebrisSpawnSignal.FlagComputeShard,
-                    Quantity = 0
-                };
-                SignalBus<DebrisSpawnSignal>.Push(in signal);
-            }
-
-            AbyssalFluidDecalManager fluidDecalManager = GlobalRegistry.AbyssalFluidDecals;
-            if (fluidDecalManager != null)
-            {
-                Vector3 dustRuntimePosition = HectonFloatingOrigin.ToRuntimePosition((absoluteStart + absoluteEnd) * 0.5f + Vector3.up * ceilingOffset);
-                fluidDecalManager.RegisterSeismicDust(dustRuntimePosition, Mathf.Clamp(displacedVolumeCubicMeters / 120f, 0.5f, 3f));
-            }
-        }
-
-        private Vector3 ResolveSeismicTrenchDirection(double3 absoluteEpicenter)
-        {
-            uint seedA = FoldLongToUInt(FastRoundToLong(absoluteEpicenter.x * 0.25d));
-            uint seedB = FoldLongToUInt(FastRoundToLong(absoluteEpicenter.z * 0.25d));
-            float angle = HashToFloat01(seedA, seedB, 0x93D765A1u) * Mathf.PI * 2f;
-            Vector3 direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-            if (direction.sqrMagnitude <= 0.0001f)
-                direction = Vector3.forward;
-
-            return direction.normalized;
-        }
-
-        private static long BuildSeismicTrenchId(double3 absoluteEpicenter, float trenchLength, float trenchDepth)
-        {
-            long x = FastRoundToLong(absoluteEpicenter.x * 10d);
-            long z = FastRoundToLong(absoluteEpicenter.z * 10d);
-            long length = Mathf.RoundToInt(trenchLength * 10f);
-            long depth = Mathf.RoundToInt(trenchDepth * 10f);
-            return unchecked((x << 32) ^ (z << 8) ^ length ^ (depth << 40));
-        }
-
-        private static Vector3 ToVector3(double3 value)
-        {
-            return new Vector3((float)value.x, (float)value.y, (float)value.z);
-        }
-
-        private static uint FoldLongToUInt(long value)
-        {
-            unchecked
-            {
-                ulong bits = (ulong)value;
-                return (uint)bits ^ (uint)(bits >> 32);
-            }
-        }
-
-        private static long FastRoundToLong(double value)
-        {
-            if (!math.isfinite(value))
-                return 0L;
-
-            if (value >= long.MaxValue)
-                return long.MaxValue;
-
-            if (value <= long.MinValue)
-                return long.MinValue;
-
-            return value >= 0d
-                ? (long)(value + 0.5d)
-                : (long)(value - 0.5d);
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in aup);
         }
 
         private static bool IsFinite(Vector3 value)
         {
             return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
-        }
-
-        private static float HashToFloat01(uint a, uint b, uint salt)
-        {
-            uint state = a * 747796405u + b * 2891336453u + salt;
-            state ^= state >> 16;
-            state *= 2246822519u;
-            state ^= state >> 13;
-            state *= 3266489917u;
-            state ^= state >> 16;
-            return (state & 0x00FFFFFFu) / 16777215f;
         }
 
         private void QueueStartupReconcile()
@@ -1394,10 +1230,10 @@ namespace Hecton8.World
         private static NativeArray<T> AllocateTrackedNativeArray<T>(
             int length,
             string label,
-            NativeArrayOptions options)
+            NativeArrayOptions allocationNativeArrayOptions)
             where T : struct
         {
-            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, allocationNativeArrayOptions);
             RegisterTrackedNativeArray(array, label);
             return array;
         }
@@ -1477,7 +1313,9 @@ namespace Hecton8.World
             ResourceDistributionDirector resourceDirector = ResourceDistributionDirector.ActiveRuntimeInstance;
             if (resourceDirector != null)
             {
-                AbsoluteUniversePosition ventAup = AbsoluteUniversePosition.FromRuntimePosition(ventPosition);
+                if (!TryResolveAupFromRuntimeOrigin(ventPosition, out AbsoluteUniversePosition ventAup))
+                    return;
+
                 resourceDirector.TrySpawnDeepMantleGeodeAtAup(
                     ventAup,
                     radius,
@@ -2057,9 +1895,9 @@ namespace Hecton8.World
             _lifetimeCancellation = null;
         }
 
-        private static bool CanUseRuntimeDispatcher()
+        private bool CanUseRuntimeDispatcher()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || !_runtimeDispatcherReady)
                 return false;
 
 #if UNITY_EDITOR

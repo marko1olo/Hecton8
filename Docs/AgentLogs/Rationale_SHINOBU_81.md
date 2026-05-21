@@ -1275,3 +1275,279 @@ Rejected Alternatives: Editing every remaining AB-009 mention was rejected becau
 Scalability potential: Low budget public prep now has one asset-proof route before traffic. Middle/High/Ultra campaign execution can scale public surfaces without humans reconciling whether AB proof or asset metadata is authoritative.
 
 Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No capture, asset approval, site publish, devlog/news post, community post, demo outreach, curator send, account/browser action, runtime action, or build action occurred.
+
+## Decision 252 - Access And Spend Gates Cannot Stay AB-Only
+
+Problem: After public-route propagation, several high-risk execution docs still used AB-009/KPI evidence without explicitly requiring the structured asset metadata handoff. The risky surfaces were not historical source-ledger lines; they were places that can open tester recruitment, paid microtests, regional sends, Discord/community routes, preview access, demo/Playtest access copy, wishlist/page iteration, spend approval, paid creator briefs, post-bank creator context, and Steam/news reuse.
+
+Solution: Updated the affected route-opening docs so gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency claims require both sides of proof: non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI decision-read fields. Added backlog/source-ledger trace as row 223.
+
+Rejected Alternatives: Editing every remaining AB-009 mention was rejected because many are historical addenda, schema definitions, or non-route analysis. Leaving spend/access/regional docs unchanged was rejected because those surfaces can cause real money, access, public community, or creator-route movement. Browser/account action was rejected because no project email/password-manager/2FA custody gate is available.
+
+Scalability potential: Low budget execution stays frozen until real asset proof exists. Middle/High/Ultra campaigns can later scale spend, access, regional outreach, community, demo, wishlist, and paid creator routes from the same proof route instead of reconciling AB rows against pending or held metadata by hand.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No capture, asset approval, tester recruitment, spend, regional send, Discord/community action, preview access, demo access, paid creator deal, creator send, devlog/news post, account/browser action, runtime action, or build action occurred.
+
+## Decision 253 - Candidate Handles Are Not Account Permission
+
+Problem: The social playbook had a strong account preflight, but two nearby operator-facing lines still created ambiguity: quiet handle reservation language and the forced first-post fallback. A future agent could read those as permission to use the owner's browser or create an account because chat permission exists, even though project email, vault, 2FA, recovery, and post-registration custody are still missing.
+
+Solution: Changed the social account playbook so candidate handles are notes only until `account_registration_permission_gate = ALLOW_ACCOUNT_REGISTRATION_VERIFIED`. Forced first-post fallback now aborts when custody/post gates are held, and any allowed forced placeholder uses `route_class = forced_reservation_no_link`. First public social posts also require metadata `viewer_named_decision`/`capture_verdict` plus AB-009/KPI proof where agency claims are used. RISK-060 and RISK-063 now cover quiet-reservation and social agency-proof bypass.
+
+Rejected Alternatives: Logging into the user's personal browser was rejected because personal sessions, cookies, remembered passwords, and chat permission are not custody proof. Leaving the bottom-line "reserve handles now" text was rejected because future agents act from summaries and final decision lines. Creating a new account runbook was rejected because the social playbook already owns the route.
+
+Scalability potential: Low budget work can keep candidate handles and profile copy ready without creating orphaned public surfaces. Middle/High/Ultra public rollout can later register and post from the same playbook once custody and asset proof gates are explicit.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No account creation, browser login, cookie/session inspection, public post, CTA, follow/comment/DM, asset approval, runtime action, or build action occurred.
+
+## Decision 254 - Quiet Pre-Asset Posts Still Need Exact Post Permission
+
+Problem: The social playbook was tightened, but the post-bank quiet pre-asset section still said "official handles are owner-controlled" and PRE-007/PRE-008 used handle/account existence as their use condition. That is weaker than the account and public-post gates and could turn a reserved/candidate account into a public post surface.
+
+Solution: Updated the post bank so quiet pre-asset rows require `account_registration_permission_gate = ALLOW_ACCOUNT_REGISTRATION_VERIFIED`, a filled post-registration custody row, and exact `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`. PRE-007/PRE-008 now require project-custody registration and exact quiet-row post gates, not handle existence. The asset-to-post queue also now names metadata `viewer_named_decision`/`capture_verdict` plus AB-009/KPI fields for agency-proof posts. RISK-063 now names quiet pre-asset posts.
+
+Rejected Alternatives: Leaving the file header to carry the rule was rejected because operators paste from the specific post bank rows. Deleting the quiet-post pack was rejected because a custody-proven account may still need low-frequency no-link identity posts later. Browser/account action was rejected because the registration gate is still held.
+
+Scalability potential: Low budget pre-asset work can prepare copy without leaking it through candidate accounts. Middle/High/Ultra rollout can later use the same rows only after custody, post permission, and asset-proof gates are explicit.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No account creation, browser login, public post, CTA, follow/comment/DM, asset approval, runtime action, or build action occurred.
+
+## Decision 255 - SN2 Pain Is A Private Proof Input, Not A Public Strategy
+
+Problem: The active ask was to keep analyzing SN2 pain points, but the latest same-day evidence does not support a competitor-weakness strategy. Steam API counts on 2026-05-21 still show `Very Positive` all-language and English review summaries, and appdetails recommendations increased. Public launch coverage also shows massive sales/concurrency. If the marketing system treats isolated pain buckets as campaign copy, HECTON will look opportunistic and derivative.
+
+Solution: Added a 2026-05-21 V6 refresh to `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` with official Steam API/appdetails counts, public Steam page context, PC Gamer/Gematsu launch-scale context, PC Gamer co-op read, Notebookcheck EULA/privacy context, and fresh recent-negative term-hit samples. Updated brand, agent workflow, FAQ, and Campaign 01 so SN2 pain buckets are private capture-priority hints only. Any pain-backed capture priority now requires same-day freshness plus `pain_freshness_source`, `pain_freshness_checked_at`, non-pending `viewer_named_decision`, and valid non-held `capture_verdict`.
+
+Rejected Alternatives: Browser/account action was rejected because project inbox/vault/2FA/account registration custody gates are still held. Publicly attacking SN2 pain was rejected because the evidence says the competitor is strong. Treating EULA/privacy, co-op limitations, performance anecdotes, or weapon/base complaints as creator pitch copy was rejected because it creates legal/brand risk and lacks HECTON proof. Creating a new competitor memo was rejected because the monitoring file is the owner route.
+
+Scalability potential: Low-budget execution can keep capture work focused on proof assets instead of chasing public discourse. Middle/High/Ultra marketing can later use the same monitoring row to choose assets, QA questions, creator fit, and public FAQ boundaries without rewriting competitor claims.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC/STATIC_DATA only. No public competitor copy, outreach, account/browser action, asset approval, runtime action, or build action occurred.
+
+## Decision 256 - Currentness Must Reach The Capture Sheet And Control Tower
+
+Problem: Monitoring held the V6 same-day SN2 refresh, but the first capture call sheet and control tower still named V5. That creates a handoff split: a capture operator could prioritize assets from yesterday's summary while the owner monitoring document had newer counts and stricter proof routing.
+
+Solution: Updated `Content/SCREENSHOT_AND_CLIP_SHOTLIST.md` to use V6 counts and V6 agency/defensive-choice wording. Updated `MARKETING_CONTROL_TOWER.md` external reality/current operating state to V6/2026-05-21 and made monitoring's next valid action require same-day pain freshness plus `pain_freshness_source`, `pain_freshness_checked_at`, `viewer_named_decision`, and `capture_verdict`.
+
+Rejected Alternatives: Leaving the stale V5 language was rejected because control tower and shotlist are first-read execution surfaces. Updating historical V4/V5 source-ledger entries was rejected because they are evidence-time records and should not be rewritten. Filling asset metadata rows with V6 was rejected because no capture happened and planned rows must stay pending.
+
+Scalability potential: Low-budget capture avoids wasting a session on stale sentiment. Middle/High/Ultra campaign execution can use the control tower and shotlist as the fast entry without opening every monitoring addendum.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No capture, asset metadata row fill, public copy, outreach, account/browser action, runtime action, or build action occurred.
+
+## Decision 257 - Active V5 Gate Examples Must Not Survive After V6
+
+Problem: After V6 reached monitoring/control/shotlist, grep still found active execution surfaces pointing to stale V4/V5 SN2 gates: risk register RISK-046, asset intake example text, creator pain-fit rules, priority-50 microbatch gate, monitoring's current decision, backlog current execution cut, and older backlog rows 165/171/196/197/198/207 still marked in a way that could be read as active. Those were not source-ledger history; they were live task index instructions.
+
+Solution: Updated the active surfaces to reference V6 or a newer same-day row. RISK-046 now carries V6 counts. Asset intake examples use `Monitoring SN2 Steam API / Public-Source Refresh V6`. Creator send rules and priority drafts require V6/current same-day rows. Monitoring's current decision states V4/V5 are historical context only. Backlog current cut moved to 2026-05-21/V6, and dated rows 165/171/196/197/198/207 now point readers to rows 226-229 for active currentness.
+
+Rejected Alternatives: Rewriting V4/V5 source-ledger history was rejected because dated source addenda are evidence records. Leaving active V5 examples was rejected because future operators paste examples from live rules. Filling current asset metadata with V6 was rejected because no asset has been captured or scored.
+
+Scalability potential: Low-budget capture and creator prep can use one current monitoring route without opening every source addendum. Middle/High/Ultra campaign work can later update only the current owner row and active execution surfaces while preserving historical evidence.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No creator send, asset metadata row fill, public copy, outreach, account/browser action, runtime action, or build action occurred.
+
+## Decision 258 - Daily Loop Must Not Lag The Control Tower
+
+Problem: The control tower and backlog current cut moved to 2026-05-21/V6, but the daily agent task loop still labeled the active cut and loop as 2026-05-20. Since future agents often start from the daily loop, that stale label could route work through yesterday's SN2 pain freshness state.
+
+Solution: Updated `Operations/DAILY_AGENT_TASK_LOOP.md` to label the current cut and loop as 2026-05-21/V6. Added an explicit SN2 currentness rule: any SN2-derived pain bucket used for asset priority must name V6 or a newer same-day monitoring row in `pain_freshness_source`, fill `pain_freshness_checked_at`, and still require `viewer_named_decision` plus valid `capture_verdict` before Campaign 01, creator sends, Steam movement, spend, or public routes can move.
+
+Rejected Alternatives: Leaving daily loop stale was rejected because it is an execution entrypoint. Updating only the title without the gating fields was rejected because the date label alone does not prevent stale pain reuse. Filling asset metadata was rejected because no capture happened.
+
+Scalability potential: Low-budget daily work stays focused on proof assets instead of stale monitoring. Middle/High/Ultra campaign operation can use the daily loop as a compact execution start without opening the full control tower every time.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No asset metadata row fill, creator send, public copy, outreach, account/browser action, runtime action, or build action occurred.
+
+## Decision 259 - KPI And Outreach Surfaces Must Not Soften SN2 Currentness
+
+Problem: After V6 currentness reached monitoring, control tower, and daily loop, two execution surfaces still allowed leakage. KPI capture intake said `same-day/current-week`, which is weaker than the SN2-derived same-day rule. The regional pitch matrix also had a `co-op tease` note, which is incompatible with single-player-first public positioning and can turn SN2 co-op discourse into bait.
+
+Solution: Tightened KPI to same-day-only for SN2-derived pain buckets. Updated the segment pitch matrix so SN2/Subnautica activity is audience-fit evidence only and cannot justify co-op teasing, unsupported multiplayer scope, competitor-pain hooks, performance claims, EULA commentary, or "we fixed their problem" copy. Updated raw lead expansion so SN2/Subnautica seeds cannot restart raw-volume work unless first HECTON assets prove a live CRM coverage gap. Updated README and prep directions so first-read entrypoints carry the same audience/identity-only boundary. Marked older backlog rows 5, 58, 61, 91, 113, 127, and 128 historical/superseded or active-gate-only for SN2 currentness so launch-week/V1/V2/V3 task rows cannot override the V6/rows-230-231 route.
+
+Rejected Alternatives: Leaving the wording because other files were stricter was rejected; operators use README, prep directions, KPI, pitch matrix, and backlog rows as execution surfaces. Expanding raw leads from SN2 discourse was rejected because the active bottleneck is asset proof, not lead volume. Browser/account work remained rejected because custody gates are still held.
+
+Scalability potential: Low-budget execution avoids wasting labor on competitor-driven lead volume and false co-op expectations. Middle/High/Ultra marketing can later scale segmented outreach from HECTON-native assets, same-day monitoring, and CRM coverage gaps without public competitor-war copy.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No lead expansion, creator send, public copy, account/browser action, runtime action, or build action occurred.
+
+## Decision 260 - Validation Commands Must Be Runnable, Not Remembered
+
+Problem: `Operations/DAILY_AGENT_TASK_LOOP.md` named the Backtick Path Audit as mandatory for entry, backlog, source-ledger, campaign, presskit, and operation docs, but did not contain the actual command. Future agents could report `BACKTICK_PATH_AUDIT_OK` from memory, skip the check, or run a noisy audit that treats copy snippets as missing paths.
+
+Solution: Upgraded the End-Of-Change Validation Cut to V1 and added exact PowerShell for the Marketing Backtick Path Audit and rationale-order audit. The path audit scans Markdown outside fenced code blocks, checks only file-like code spans, resolves current-file, Marketing-root, repo-root, `Docs/`, and `Hecton8/` paths, supports wildcard file references, and returns `BACKTICK_PATH_AUDIT_OK` only when every file-like backtick path resolves. The rationale audit verifies sequential `Decision N` headings and prints the last decision id plus count.
+
+Rejected Alternatives: Leaving the command in agent memory was rejected because context compaction loses it. Adding a separate script file was rejected because the marketing file count is intentionally frozen at 100 and this is an operator command, not a reusable runtime tool. Running browser/account actions was rejected because project email, password-manager vault, recovery, 2FA, backup-code custody, and account-registration permission remain absent. Running `dotnet build` was rejected because this is docs/static-data work.
+
+Scalability potential: Low-budget operators can run the exact proof pack without inventing checks. Middle/High/Ultra campaign operations can keep source-ledger, backlog, and entry docs navigable while asset, CRM, and public-route gates scale.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No new files, browser/account action, public route, outreach, runtime action, or build action occurred.
+
+## Decision 261 - AgentOps Must Not Point To A Retired Validation Cut
+
+Problem: After the daily loop moved to End-Of-Change Validation Cut V1, `AgentOps/AGENT_MARKETING_WORKFLOWS.md` still told agents to run V0. That is an active entrypoint, not historical evidence. A future agent starting from AgentOps would skip the newly explicit Backtick Path Audit and rationale-order audit.
+
+Solution: Updated AgentOps to require `Operations/DAILY_AGENT_TASK_LOOP.md` End-Of-Change Validation Cut V1 after changed files, and to name Backtick Path Audit plus rationale-order audit when entry, backlog, source-ledger, campaign, presskit, operation, status, or rationale files changed. Added backlog/source-ledger trace as row 233.
+
+Rejected Alternatives: Leaving V0 in AgentOps was rejected because it is a prompt/workflow surface, not archive. Rewriting old source-ledger V0 addenda was rejected because they are dated evidence. Browser/account action and `dotnet build` were rejected because this is static docs work and custody/build need is absent.
+
+Scalability potential: Low-budget agents get the right validation route without opening multiple docs. Middle/High/Ultra operations keep trace and proof checks consistent as campaign surfaces expand.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No new files, browser/account action, public route, outreach, runtime action, or build action occurred.
+
+## Decision 262 - Asset QA Cannot Keep A Softer SN2 Freshness Rule
+
+Problem: KPI, control tower, and daily loop required same-day freshness for SN2-derived first-pack pain priority, but `QA/MARKETING_ASSET_QA_CHECKLIST.md` still accepted a same-day or current-week pain entry. Since QA is the owner gate for asset scoring, that softer line could prioritize a first-pack asset from stale SN2 discourse even when the dashboard would reject it.
+
+Solution: Tightened the QA fresh-pain score row. Any SN2-derived first-pack priority now requires a same-day monitoring row and `pain_freshness_checked_at`. Current-week trend triage remains allowed only for non-SN2 background monitoring and cannot move first-pack priority. Added backlog/source-ledger trace as row 234.
+
+Rejected Alternatives: Leaving QA looser because KPI was stricter was rejected; asset scoring happens before KPI reporting and can steer capture time. Rewriting non-SN2 trend triage into same-day-only was rejected because broader monitoring can remain background context when it does not move first-pack priority. Browser/account action and `dotnet build` were rejected because this is static docs work.
+
+Scalability potential: Low-budget capture avoids spending a session on stale competitor noise. Middle/High/Ultra campaign operations can still use broader trend monitoring as background while first-pack SN2-derived work remains same-day proof-gated.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No asset metadata row fill, public copy, outreach, browser/account action, runtime action, or build action occurred.
+
+## Decision 263 - Metadata Intake Must Match The QA Freshness Gate
+
+Problem: After QA was tightened, `Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` still allowed same-day/current-week source proof for first-pack pain priority and rejected only older-than-current-week checks. That file owns planned-to-raw metadata intake, so it could promote a planned asset on a weaker freshness rule than QA/KPI/control.
+
+Solution: Updated the planned capture workflow and `pain_freshness_checked_at` reject rule. SN2-derived first-pack priority now requires same-day source proof at metadata intake. Current-week trend context remains background-only for non-SN2 triage and cannot promote a planned asset. Added backlog/source-ledger trace as row 235.
+
+Rejected Alternatives: Leaving metadata looser because QA was fixed was rejected; metadata is the source row that downstream QA/KPI consume. Rewriting historical source-ledger same-day/current-week rows was rejected because they are dated evidence. Browser/account action and `dotnet build` were rejected because this is static docs work.
+
+Scalability potential: Low-budget capture intake cannot accidentally promote assets from stale SN2 discourse. Middle/High/Ultra campaign pipelines keep planned-to-raw metadata, QA scoring, KPI reporting, and control tower gates on one currentness rule.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No asset metadata row fill, public copy, outreach, browser/account action, runtime action, or build action occurred.
+
+## Decision 264 - First-Read Entry Points Must Name Validation V1
+
+Problem: The daily loop and AgentOps now required End-Of-Change Validation Cut V1, but the main README and control tower only linked daily work generally. A future agent starting from the primary entrypoints could edit marketing docs and skip the V1 validation pack.
+
+Solution: Added the V1 validation requirement to `README.md` hard rules and `MARKETING_CONTROL_TOWER.md` execution rules. Both now require End-Of-Change Validation Cut V1 after any Marketing docs/data edit, with Backtick Path Audit and rationale-order audit for trace-sensitive files. Added backlog/source-ledger trace as row 236.
+
+Rejected Alternatives: Leaving validation only inside the daily loop was rejected because README/control tower are first-read documents. Adding another standalone validation doc was rejected because the folder must not grow. Browser/account action and `dotnet build` were rejected because this is static docs work.
+
+Scalability potential: Low-budget agents can start from README/control and still finish with the right proof checks. Middle/High/Ultra marketing operations get consistent trace hygiene as more campaign surfaces become active.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No new files, browser/account action, public route, outreach, runtime action, or build action occurred.
+
+## Decision 265 - Creator Drafts Must Not Carry Pasteable TBD Assets
+
+Problem: `CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md` had many pasteable email bodies with `Asset: [Steam/screens/clip/demo - TBD]` style lines, and `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` still used a generic `Assets: [Steam/screens/clip/demo]` template line. The hard rules above the drafts were correct, but copied email bodies could bypass them.
+
+Solution: Replaced the draft-body asset placeholder lines with `HOLD_PLACEHOLDER_ASSET` hard stops that require exact approved asset IDs/links only after metadata claim checks, creator utility 3/4+, open `creator_send_gate`, route gate pass, and CRM send-log readiness. Updated `AgentOps/generate_priority50_messages.ps1` so regenerated priority-50 drafts keep the same hard stop. Added backlog/source-ledger trace as row 237.
+
+Rejected Alternatives: Leaving the placeholders because the section says "not send-ready" was rejected because operators paste from the email body, not only from the header. Deleting the drafts was rejected because they still preserve useful fit/copy work for later. Browser/account action and `dotnet build` were rejected because this is static docs/data work and custody/build need is absent.
+
+Scalability potential: Low-budget outreach can keep draft value without accidentally sending dead Steam/demo placeholders. Middle/High/Ultra creator operations can later replace the hard-stop line with exact routed assets after proof gates, without rewriting every draft.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC/STATIC_SCRIPT only. No creator send, CRM send-log fill, public link, browser/account action, runtime action, or build action occurred.
+
+## Decision 266 - Draft Generator Must Not Destroy Curated Gates By Default
+
+Problem: After the priority-50 draft file accumulated hand-curated gates, SN2 currentness corrections, microbatch sections, and hard-stop placeholder lines, `AgentOps/generate_priority50_messages.ps1` still defaulted to overwriting `CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md`. A future convenience run could erase the curated proof gates and recreate a weaker draft surface.
+
+Solution: Added a `-ForceRegenerate` switch and a default no-overwrite guard. If the output file already exists and the switch is absent, the script exits with `HOLD_EXISTING_PRIORITY50_DRAFT`. A no-force execution was tested with before/after SHA256 hashing; the draft file did not change. Added backlog/source-ledger trace as row 238.
+
+Rejected Alternatives: Relying on operator discipline was rejected because the script name looks like a safe generation helper. Writing a separate regenerated file by default was rejected because the Marketing file count is intentionally frozen and unmanaged generated files create sprawl. Browser/account action and `dotnet build` were rejected because this is static AgentOps script work.
+
+Scalability potential: Low-budget agents can inspect or run the helper without destroying current gates. Middle/High/Ultra outreach operations can still force regeneration deliberately, but only as a traceable destructive action that must preserve gates or reapply them.
+
+Hardware Impact: 0us measured runtime impact. STATIC_SCRIPT only. No draft regeneration, creator send, CRM send-log fill, browser/account action, runtime action, or build action occurred.
+
+## Decision 267 - Raw Lead Scraper Must Be Hold-By-Default During Asset-Proof Gate
+
+Problem: `AgentOps/scrape_letsplayindex_public_leads.ps1` defaulted to network scraping and overwriting raw lead CSV/summary outputs. The active operating state says CRM-100 has 0 raw rows and the bottleneck is asset proof, not lead volume. A casual script run would restart raw expansion and churn dated outputs without a source-backed sprint.
+
+Solution: Added a `-ForceRefresh` switch and a default hold. Without the switch, the script exits with `HOLD_RAW_LEAD_REFRESH` before directory creation, network access, or output writes. Verified no-force behavior by hashing the raw, unique, fetch-log, and summary outputs before/after. Updated `AgentOps/AGENT_MARKETING_WORKFLOWS.md` to name both AgentOps script safety gates. Added backlog/source-ledger trace as row 239.
+
+Rejected Alternatives: Relying on the daily loop's "do not default to lead volume" wording was rejected because scripts are action surfaces. Deleting the scraper was rejected because it may be useful after first assets prove a real CRM coverage gap. Running a live refresh was rejected because no raw-lead sprint is open.
+
+Scalability potential: Low-budget work stays on asset proof instead of re-mining public indices. Middle/High/Ultra outreach can still refresh raw data deliberately when a proven asset/route gap exists, with explicit overwrite trace.
+
+Hardware Impact: 0us measured runtime impact. STATIC_SCRIPT only. No raw refresh, lead expansion, creator send, CRM send-log fill, browser/account action, runtime action, or build action occurred.
+
+## Decision 268 - Verification Batch TODO Fields Are Scratch, Not Readiness
+
+Problem: `AgentOps/VerificationBatches_2026-05-19/VERIFY_BATCH_*.md` files are parked behind explicit raw sprints, but each row still contains operational-looking fields such as `Custom opener: TODO`, `Required asset: TODO`, verification checkboxes, contact-route notes, public-index metrics, and `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`. Without a workflow-level rule, a future agent could treat manually completed batch scratch fields as live CRM promotion or send readiness.
+
+Solution: Added a Verification Batch Safety Gate to `AgentOps/AGENT_MARKETING_WORKFLOWS.md` and propagated the same boundary into `README.md` plus `Operations/DAILY_AGENT_TASK_LOOP.md`. Batch values are now scratch-only. Opening a batch requires first HECTON assets proving a live CRM segment gap and an explicit source-backed raw sprint. Promotion must use live CRM schema fields and current asset gates: `asset_ids_sent`, `creator_utility_score`, `paid_creator_permission_gate`, `send_route_class`, `reply_consent_provenance`, asset metadata proof, source-ledger trace, and current send gates.
+
+Rejected Alternatives: Editing all 10 batch files was rejected because the owner workflow can close the action surface with less churn and the batch files already declare parked/non-contact status. Promoting useful batch rows to CRM was rejected because no new asset proof exists and no raw sprint is open. Browser/account action was rejected because custody gates remain held.
+
+Scalability potential: Low-budget work avoids wasting verification labor before first assets. Middle/High/Ultra outreach can later open only the exact raw sprint needed for a proven asset/segment gap, while preserving the live CRM as the single owner of send readiness.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No verification batch opened, no CRM row promoted, no creator send, no browser/account action, runtime action, or build action occurred.
+
+## Decision 269 - Paste-Adjacent Link And Date Placeholders Must Become HOLD Fields
+
+Problem: A grep sweep outside parked verification batches found residual paste-adjacent placeholders in active templates: website factsheet `TBD` fields, inbox custody `TBD`, paid creator `Link: [Steam/demo]`, localized one-pager `Assets: [Steam/screens/trailer/demo]`, Campaign 01 `Screens: [link]`, and devlog bare asset/source placeholders. These were not sends by themselves, but they looked copyable enough to bypass current CTA, inbox, access, presskit, localization, and asset proof gates.
+
+Solution: Replaced the risky placeholders with explicit HOLD fields in `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md`, `Partnerships/CREATOR_CONTRACT_TERMS_AND_RATE_CARD.md`, `Localization/LOCALIZATION_AND_REGIONAL_ASSET_PIPELINE.md`, `Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md`, and `Content/DEVLOG_AND_STEAM_NEWS_PIPELINE.md`. The templates now name the specific gate or proof source required before a Steam/demo/presskit/contact/screenshot/devlog/localized/paid-creator route can be filled.
+
+Rejected Alternatives: Leaving `TBD`/bracket placeholders was rejected because operators paste from templates under time pressure. Deleting the templates was rejected because they still define useful structure for later. Browser/account action was rejected because project inbox, vault, 2FA, and account-registration custody gates remain held. Sending screenshot feedback was rejected because no approved asset packet exists.
+
+Scalability potential: Low-budget execution can safely keep templates ready without opening routes. Middle/High/Ultra campaign operations can later replace HOLD fields with exact asset IDs, route classes, access logs, permission gates, and source-ledger evidence instead of rewriting templates from scratch.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No site publish, presskit link, paid creator brief send, localized route, screenshot feedback send, devlog/news post, browser/account action, runtime action, or build action occurred.
+
+## Decision 270 - Live-Route Bracket Copy Needs Explicit Permission Gates
+
+Problem: The second placeholder sweep found three remaining active live-route templates that still looked pasteable: owned-audience demo alert copy said `The HECTON-8 [demo/playtest] is now available`, Campaign 02 said `The Steam page is now live: [link]`, and the segment pitch template said `The useful asset is [link]` plus `I can send [demo/press kit]`. These are stronger than generic planning placeholders because they imply availability, publication, or a sendable route.
+
+Solution: Replaced the route-opening bracket copy with HOLD fields in `Audience/OWNED_AUDIENCE_EMAIL_AND_NEWSLETTER_PLAN.md`, `Campaigns/CAMPAIGN_02_STEAM_PAGE_LAUNCH.md`, and `CreatorOutreach/SEGMENT_PITCH_MATRIX.md`. The owned-audience template now requires public demo/Playtest, owned-audience, CTA, and build/known-issues proof before saying demo/playtest is available. Campaign 02 now requires Steam page publication plus public CTA permission before saying the page is live or inserting a link. Segment pitch now requires exact asset metadata, QA, creator utility, `creator_send_gate`, route class, and public/private route gates before inserting an asset link, demo route, or presskit route.
+
+Rejected Alternatives: Leaving the bracket text because surrounding docs have gates was rejected; these lines are inside message bodies and are likely to be copied. Removing the templates was rejected because they are still useful once gates pass. Browser/account work was rejected because ownership/custody gates remain held. Sending owned-audience, Steam, or creator messages was rejected because no route gate is open.
+
+Scalability potential: Low-budget prep can keep launch and outreach drafts without accidentally implying live destinations. Middle/High/Ultra launch work can later replace HOLD lines with exact destination URLs, build scope, asset IDs, and permission proof without rebuilding copy from zero.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No email send, Steam page publish, creator send, demo route, presskit route, browser/account action, runtime action, or build action occurred.
+
+## Decision 271 - Steam-Page-Live Prose Is A Route Signal
+
+Problem: After bracket placeholders were gated, plain prose still implied an open Steam route in active message bodies: post bank Steam/news copy, post-bank creator intro, outreach calendar feedback ask, Campaign 02 subject, and Campaign 02 Steam announcement title/body. These lines did not always contain `[link]`, but "Steam page is live" and "now on Steam" are route/publication signals and must not be pasted before the Steam page, public CTA, and announcement gates pass.
+
+Solution: Replaced live-route prose with HOLD fields in `Content/POST_BANK_AND_HOOK_LIBRARY.md`, `OUTREACH_CALENDAR_AND_BATCH_PLAN.md`, and `Campaigns/CAMPAIGN_02_STEAM_PAGE_LAUNCH.md`. Steam/news surfaces now require `steam_page_publish_permission_gate`, destination-specific `public_cta_permission_gate`, and `steam_announcement_permission_gate` where a Steam announcement/news surface is used. Creator/outreach copy now keeps the idea but requires the same route proof before saying the page is live.
+
+Rejected Alternatives: Keeping the live prose because gated URL lines followed it was rejected; the claim itself is a route signal even without a URL. Removing the launch templates was rejected because they are useful once publication is real. Publishing or checking Steam was rejected because no app/page custody or publish gate is recorded.
+
+Scalability potential: Low-budget execution can keep launch copy ready without accidentally claiming a public page. Middle/High/Ultra launch operations can later swap HOLD lines to live copy only after Steamworks custody, public CTA, announcement, UTM, and source-ledger evidence exist.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No Steam page publish, Steam announcement, creator send, outreach send, public CTA, browser/account action, runtime action, or build action occurred.
+
+## Decision 272 - Future Send Offers Need Access Gates Before They Enter Copy Bodies
+
+Problem: After live-link and Steam-page-live wording was gated, active creator/audience templates still contained future-route offers such as "I can send the demo", "I can send a short press kit or demo", "I can send the Steam page or demo later", and "demo/playtest is open". These lines are not links, but they promise or imply a future access route. In pasteable creator bodies, that can bypass `private_access_permission_gate`, public demo/CTA gates, presskit gates, and CRM send-log readiness.
+
+Solution: Replaced the future-send offer lines with `HOLD_FUTURE_ROUTE_OFFER` in the creator workflow template, pitch bank, A-tier template, post bank, Campaign 02, and priority-50 generator. Mechanically rewrote 63 existing `I can send` lines in `CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md` to the same hold text. Owned-audience demo/playtest subject now uses a demo-open HOLD subject line. The hold line requires exact public CTA, presskit, demo/public access, or recipient/batch private access gates plus CRM send-log fields before any demo, press kit, build, preview, slice, Steam page, or material offer can be mentioned.
+
+Rejected Alternatives: Leaving "when ready" wording was rejected because it still implies a route offer. Deleting the drafts was rejected because their fit work is still useful. Sending or preparing actual demo/access routes was rejected because the required custody, asset, and route gates remain held.
+
+Scalability potential: Low-budget prep can keep creator copy scaffolding without promising access. Middle/High/Ultra outreach can later replace the HOLD line with the exact route offer once access logs, CRM fields, asset IDs, route class, permission gates, and disclosure proof exist.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC/STATIC_SCRIPT only. No creator send, owned-audience send, demo route, presskit route, Steam route, private access, browser/account action, runtime action, or build action occurred.
+
+## Decision 273 - Press And Social Custody Placeholders Must Not Look Fillable
+
+Problem: A filtered placeholder scan still found press and social surfaces with `TBD`, `[Yes/No/TBD]`, `[owner-controlled email]`, and `accounts@...` placeholders. These were dangerous because they sit in factsheet, press email, presskit, and post-registration custody tables. A future agent could treat them as fields to fill from personal/browser state instead of waiting for official inbox, platform, demo, Steam, presskit, account-registration, and vault gates.
+
+Solution: Updated `Press/PRESS_RELEASE_AND_EMAIL_TEMPLATES.md`, `Press/PRESS_KIT_AND_MEDIA_PLAN.md`, and `Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md`. Press factsheet fields now use HOLD states for legal name, platform list, release window, demo access, contact, Steam, and presskit. Press first-reveal email uses `HOLD_FUTURE_ROUTE_OFFER` for preview build/asset pack. Presskit factsheet fields now use HOLD states for contact, website, Steam, and press assets. Social custody rows now use `UNRESERVED_NOT_CREATED`, `UNRECORDED_NOT_CREATED`, `HOLD_OFFICIAL_INBOX_CUSTODY`, and first-post gate holds instead of `TBD` or `accounts@...`.
+
+Rejected Alternatives: Leaving `TBD` as a normal planning marker was rejected because these rows are close to public/account surfaces. Creating accounts or an inbox was rejected because custody gates remain held. Deleting the custody table was rejected because it is the correct place to record real post-registration facts later.
+
+Scalability potential: Low-budget work avoids orphaned official surfaces and fake press facts. Middle/High/Ultra launch work can later replace HOLD/UNRECORDED states with real owner-controlled inbox, vault, account, Steam, demo, and presskit proof without changing the schema.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No press release, press email, presskit publish, social account creation, official inbox use, public post, browser/account action, runtime action, or build action occurred.
+
+## Decision 274 - Social And Regional Route Copy Must Not Pre-Claim Access
+
+Problem: After press/social placeholder cleanup, active social and regional surfaces still contained pasteable route copy. `Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md` had a social post body saying HECTON-8 now has an official Steam page, plus Steam/presskit/Discord URL slots inside profile and pinned post templates. `Campaigns/CAMPAIGN_05_REGIONAL_PUSH.md` had RU/CIS lines offering Steam/screens/clip/demo materials and future demo/press-kit discussion. Nearby gates were present, but the copy itself could still be pasted before the Steam page, public CTA, public post, presskit, Discord, localization, private access, and send-log gates pass.
+
+Solution: Replaced the remaining pasteable route copy with HOLD fields in the social playbook and regional campaign. Social profile/pinned/link slots now use `HOLD_SOCIAL_STEAM_URL`, `HOLD_SOCIAL_PRESSKIT_URL`, and `HOLD_SOCIAL_DISCORD_URL`; the Steam-page-live social post now uses `HOLD_SOCIAL_STEAM_PAGE_LIVE_COPY` and `HOLD_SOCIAL_STEAM_LINK`. The RU/CIS regional pitch now uses `HOLD_REGIONAL_MATERIAL_ROUTE` and `HOLD_REGIONAL_FUTURE_ROUTE_OFFER`. Added backlog/source-ledger trace as row 246.
+
+Rejected Alternatives: Leaving gated bracket text was rejected because it still looked like a field to paste into public profiles or regional messages. Removing social and regional templates was rejected because they preserve useful structure for later. Browser/account registration, social posting, and regional sending were rejected because custody, route, localization, asset, and send-log gates remain held.
+
+Scalability potential: Low-budget work can keep social/regional templates ready without implying live URLs or access. Middle/High/Ultra launch operations can later replace HOLD fields with exact owner-controlled URLs, localized proof, route class, consent provenance, asset IDs, and permission evidence.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No social post, Steam page announcement, regional send, demo route, presskit route, account/browser action, runtime action, or build action occurred.

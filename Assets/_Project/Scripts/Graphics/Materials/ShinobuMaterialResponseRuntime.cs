@@ -169,7 +169,7 @@ namespace Hecton8.Graphics.Materials
         public float PowerMean;
     }
 
-    public sealed unsafe class ShinobuMaterialResponseRuntime
+    public sealed unsafe class ShinobuMaterialResponseRuntime : IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystemId = SystemID.GraphicsMaterials;
         private const uint SystemHash = 0x53483433u; // SH43
@@ -210,17 +210,17 @@ namespace Hecton8.Graphics.Materials
         private static uint s_pendingDebugMode;
 
         private IDataVault _vault;
-        private VaultBufferHandle<InstanceMaterialDTO> _statesHandle;
-        private VaultBufferHandle<MaterialPowerDTO> _powersHandle;
-        private VaultBufferHandle<uint> _visibleIndicesHandle;
-        private VaultBufferHandle<MaterialVisibleDTO> _visiblePayloadHandle;
-        private VaultBufferHandle<GlobalShaderConstantsDTO> _constantsHandle;
-        private VaultBufferHandle<MaterialResponseTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<TextureSetMappingDTO> _mappingHandle;
-        private VaultBufferHandle<MockBiomassDensitySignal> _mockBiomassHandle;
-        private VaultBufferHandle<WearRateDTO> _wearRateHandle;
-        private VaultBufferHandle<MaterialRuntimeScalarsDTO> _scalarsHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<InstanceMaterialDTO> _statesHandle;
+        private VaultGenerationHandle<MaterialPowerDTO> _powersHandle;
+        private VaultGenerationHandle<uint> _visibleIndicesHandle;
+        private VaultGenerationHandle<MaterialVisibleDTO> _visiblePayloadHandle;
+        private VaultGenerationHandle<GlobalShaderConstantsDTO> _constantsHandle;
+        private VaultGenerationHandle<MaterialResponseTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<TextureSetMappingDTO> _mappingHandle;
+        private VaultGenerationHandle<MockBiomassDensitySignal> _mockBiomassHandle;
+        private VaultGenerationHandle<WearRateDTO> _wearRateHandle;
+        private VaultGenerationHandle<MaterialRuntimeScalarsDTO> _scalarsHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
 
         private PreSimulationPhaseSystem _preSimulationPhase;
         private SimulationPhaseSystem _simulationPhase;
@@ -253,6 +253,7 @@ namespace Hecton8.Graphics.Materials
         private bool _registeredSimulation;
         private bool _registeredPostSimulation;
         private bool _registeredVisualSync;
+        private bool _registeredHotSwapListener;
         private bool _vaultInitialized;
         private bool _defaultsInitialized;
         private bool _simulationScheduled;
@@ -343,7 +344,7 @@ namespace Hecton8.Graphics.Materials
             if (vault == null || !active.EnsureVaultState(vault))
                 return false;
 
-            NativeArray<GlobalShaderConstantsDTO> constants = active._constantsHandle.Resolve(vault);
+            active.TryOpenVaultBuffer(vault, ref active._constantsHandle, BufferID.ShinobuMaterialConstants, ConstantsCount, out NativeArray<GlobalShaderConstantsDTO> constants);
             if (constants.IsCreated && constants.Length > 0)
             {
                 GlobalShaderConstantsDTO dto = constants[0];
@@ -354,7 +355,7 @@ namespace Hecton8.Graphics.Materials
                 debugMode = dto._pad0;
             }
 
-            NativeArray<MaterialResponseTelemetryEntry> telemetry = active._telemetryHandle.Resolve(vault);
+            active.TryOpenVaultBuffer(vault, ref active._telemetryHandle, BufferID.ShinobuMaterialTelemetryRing, TelemetryFrameCount, out NativeArray<MaterialResponseTelemetryEntry> telemetry);
             if (telemetry.IsCreated && telemetry.Length > 0)
             {
                 int index = active._telemetryCursor - 1;
@@ -385,6 +386,7 @@ namespace Hecton8.Graphics.Materials
         {
             _shutdown = false;
             _vault = GlobalRegistry.DataVault;
+            TryRegisterHotSwapListener();
             EnsureGraphicsBuffers();
             RegisterDispatcherPhases();
             Application.quitting -= ShutdownActive;
@@ -400,7 +402,9 @@ namespace Hecton8.Graphics.Materials
             Application.quitting -= ShutdownActive;
             UnlockJobBuffers();
             UnregisterDispatcherPhases();
+            TryUnregisterHotSwapListener();
             ReleaseGraphicsBuffers();
+            ResetVaultHandles();
             _vault = null;
             _vaultInitialized = false;
             _simulationScheduled = false;
@@ -444,15 +448,118 @@ namespace Hecton8.Graphics.Materials
             }
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            IDataVault previousVault = previousService as IDataVault ?? _vault;
+            UnlockJobBuffers(previousVault);
+            _vault = currentService as IDataVault;
+            ResetVaultHandles();
+            _vaultInitialized = false;
+            _defaultsInitialized = false;
+            _simulationScheduled = false;
+            _visiblePayloadDirty = true;
+            _constantsDirty = true;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
         private IDataVault ResolveVault()
         {
-            IDataVault vault = _vault;
-            if (vault != null)
-                return vault;
+            return _vault;
+        }
 
-            vault = GlobalRegistry.DataVault;
-            _vault = vault;
-            return vault;
+        private bool OpenOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null)
+            {
+                buffer = default;
+                return false;
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                OwnerSystemId,
+                options);
+            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            handle = default;
+            buffer = default;
+            return false;
+        }
+
+        private bool TryOpenVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsMatchingVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u;
+        }
+
+        private void ResetVaultHandles()
+        {
+            _statesHandle = default;
+            _powersHandle = default;
+            _visibleIndicesHandle = default;
+            _visiblePayloadHandle = default;
+            _constantsHandle = default;
+            _telemetryHandle = default;
+            _mappingHandle = default;
+            _mockBiomassHandle = default;
+            _wearRateHandle = default;
+            _scalarsHandle = default;
+            _csvScratchHandle = default;
         }
 
         private void PreSimulationTick(in DispatcherTimingDTO timing)
@@ -480,8 +587,7 @@ namespace Hecton8.Graphics.Materials
                 return dependsOn;
 
             _lastDispatcherFrame = context.Frame;
-            NativeArray<MaterialRuntimeScalarsDTO> scalars = _scalarsHandle.Resolve(vault);
-            if (!scalars.IsCreated || scalars.Length == 0)
+            if (!TryOpenVaultBuffer(vault, ref _scalarsHandle, BufferID.ShinobuMaterialBiomassScalar, ScalarCount, out NativeArray<MaterialRuntimeScalarsDTO> scalars))
                 return dependsOn;
 
             float quality = math.saturate(scalars[0].GlobalQualityWeight);
@@ -565,12 +671,13 @@ namespace Hecton8.Graphics.Materials
             if (vault == null || !EnsureVaultState(vault) || !EnsureGraphicsBuffers())
                 return;
 
-            NativeArray<MaterialVisibleDTO> visiblePayload = _visiblePayloadHandle.Resolve(vault);
-            NativeArray<GlobalShaderConstantsDTO> constants = _constantsHandle.Resolve(vault);
-            NativeArray<MaterialRuntimeScalarsDTO> scalars = _scalarsHandle.Resolve(vault);
-            NativeArray<MaterialResponseTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            if (!visiblePayload.IsCreated || !constants.IsCreated || !scalars.IsCreated || !telemetry.IsCreated)
+            if (!TryOpenVaultBuffer(vault, ref _visiblePayloadHandle, BufferID.ShinobuMaterialVisiblePayload, math.max(1, _materialCapacity), out NativeArray<MaterialVisibleDTO> visiblePayload) ||
+                !TryOpenVaultBuffer(vault, ref _constantsHandle, BufferID.ShinobuMaterialConstants, ConstantsCount, out NativeArray<GlobalShaderConstantsDTO> constants) ||
+                !TryOpenVaultBuffer(vault, ref _scalarsHandle, BufferID.ShinobuMaterialBiomassScalar, ScalarCount, out NativeArray<MaterialRuntimeScalarsDTO> scalars) ||
+                !TryOpenVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuMaterialTelemetryRing, TelemetryFrameCount, out NativeArray<MaterialResponseTelemetryEntry> telemetry))
+            {
                 return;
+            }
 
             GraphicsBuffer materialReadBuffer = SelectMaterialStateBuffer(_materialStateReadIndex);
             GraphicsBuffer globalsReadBuffer = SelectMaterialGlobalsBuffer(_materialGlobalsReadIndex);
@@ -628,28 +735,17 @@ namespace Hecton8.Graphics.Materials
                 return false;
 
             int capacity = math.max(1, _materialCapacity);
-            _statesHandle = vault.GetBufferHandle<InstanceMaterialDTO>(BufferID.ShinobuMaterialStates, capacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _powersHandle = vault.GetBufferHandle<MaterialPowerDTO>(BufferID.ShinobuMaterialPowers, capacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _visibleIndicesHandle = vault.GetBufferHandle<uint>(BufferID.ShinobuMaterialVisibleIndices, capacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _visiblePayloadHandle = vault.GetBufferHandle<MaterialVisibleDTO>(BufferID.ShinobuMaterialVisiblePayload, capacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _constantsHandle = vault.GetBufferHandle<GlobalShaderConstantsDTO>(BufferID.ShinobuMaterialConstants, ConstantsCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = vault.GetBufferHandle<MaterialResponseTelemetryEntry>(BufferID.ShinobuMaterialTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _mappingHandle = vault.GetBufferHandle<TextureSetMappingDTO>(BufferID.ShinobuMaterialTextureMappings, TextureMappingCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _mockBiomassHandle = vault.GetBufferHandle<MockBiomassDensitySignal>(BufferID.ShinobuMaterialMockBiomassSignals, MockSignalCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _wearRateHandle = vault.GetBufferHandle<WearRateDTO>(BufferID.ShinobuMaterialWearRates, WearRateCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _scalarsHandle = vault.GetBufferHandle<MaterialRuntimeScalarsDTO>(BufferID.ShinobuMaterialBiomassScalar, ScalarCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuMaterialCsvScratch, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _vaultInitialized = _statesHandle.IsCreated &&
-                _powersHandle.IsCreated &&
-                _visibleIndicesHandle.IsCreated &&
-                _visiblePayloadHandle.IsCreated &&
-                _constantsHandle.IsCreated &&
-                _telemetryHandle.IsCreated &&
-                _mappingHandle.IsCreated &&
-                _mockBiomassHandle.IsCreated &&
-                _wearRateHandle.IsCreated &&
-                _scalarsHandle.IsCreated &&
-                _csvScratchHandle.IsCreated;
+            _vaultInitialized = OpenOrAcquireVaultBuffer(vault, ref _statesHandle, BufferID.ShinobuMaterialStates, capacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireVaultBuffer(vault, ref _powersHandle, BufferID.ShinobuMaterialPowers, capacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireVaultBuffer(vault, ref _visibleIndicesHandle, BufferID.ShinobuMaterialVisibleIndices, capacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireVaultBuffer(vault, ref _visiblePayloadHandle, BufferID.ShinobuMaterialVisiblePayload, capacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireVaultBuffer(vault, ref _constantsHandle, BufferID.ShinobuMaterialConstants, ConstantsCount, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquireVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuMaterialTelemetryRing, TelemetryFrameCount, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquireVaultBuffer(vault, ref _mappingHandle, BufferID.ShinobuMaterialTextureMappings, TextureMappingCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireVaultBuffer(vault, ref _mockBiomassHandle, BufferID.ShinobuMaterialMockBiomassSignals, MockSignalCount, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquireVaultBuffer(vault, ref _wearRateHandle, BufferID.ShinobuMaterialWearRates, WearRateCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquireVaultBuffer(vault, ref _scalarsHandle, BufferID.ShinobuMaterialBiomassScalar, ScalarCount, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquireVaultBuffer(vault, ref _csvScratchHandle, BufferID.ShinobuMaterialCsvScratch, CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out _);
 
             if (!_vaultInitialized)
                 return false;
@@ -662,17 +758,16 @@ namespace Hecton8.Graphics.Materials
 
         private void GenerateEmergencyMockWearRates(IDataVault vault)
         {
-            NativeArray<InstanceMaterialDTO> states = _statesHandle.Resolve(vault);
-            NativeArray<MaterialPowerDTO> powers = _powersHandle.Resolve(vault);
-            NativeArray<uint> visibleIndices = _visibleIndicesHandle.Resolve(vault);
-            NativeArray<MaterialVisibleDTO> visiblePayload = _visiblePayloadHandle.Resolve(vault);
-            NativeArray<GlobalShaderConstantsDTO> constants = _constantsHandle.Resolve(vault);
-            NativeArray<TextureSetMappingDTO> mappings = _mappingHandle.Resolve(vault);
-            NativeArray<WearRateDTO> wearRates = _wearRateHandle.Resolve(vault);
-            NativeArray<MaterialRuntimeScalarsDTO> scalars = _scalarsHandle.Resolve(vault);
-            NativeArray<MockBiomassDensitySignal> biomass = _mockBiomassHandle.Resolve(vault);
-            if (!states.IsCreated || !powers.IsCreated || !visibleIndices.IsCreated || !visiblePayload.IsCreated ||
-                !constants.IsCreated || !mappings.IsCreated || !wearRates.IsCreated || !scalars.IsCreated || !biomass.IsCreated)
+            int capacity = math.max(1, _materialCapacity);
+            if (!TryOpenVaultBuffer(vault, ref _statesHandle, BufferID.ShinobuMaterialStates, capacity, out NativeArray<InstanceMaterialDTO> states) ||
+                !TryOpenVaultBuffer(vault, ref _powersHandle, BufferID.ShinobuMaterialPowers, capacity, out NativeArray<MaterialPowerDTO> powers) ||
+                !TryOpenVaultBuffer(vault, ref _visibleIndicesHandle, BufferID.ShinobuMaterialVisibleIndices, capacity, out NativeArray<uint> visibleIndices) ||
+                !TryOpenVaultBuffer(vault, ref _visiblePayloadHandle, BufferID.ShinobuMaterialVisiblePayload, capacity, out NativeArray<MaterialVisibleDTO> visiblePayload) ||
+                !TryOpenVaultBuffer(vault, ref _constantsHandle, BufferID.ShinobuMaterialConstants, ConstantsCount, out NativeArray<GlobalShaderConstantsDTO> constants) ||
+                !TryOpenVaultBuffer(vault, ref _mappingHandle, BufferID.ShinobuMaterialTextureMappings, TextureMappingCapacity, out NativeArray<TextureSetMappingDTO> mappings) ||
+                !TryOpenVaultBuffer(vault, ref _wearRateHandle, BufferID.ShinobuMaterialWearRates, WearRateCount, out NativeArray<WearRateDTO> wearRates) ||
+                !TryOpenVaultBuffer(vault, ref _scalarsHandle, BufferID.ShinobuMaterialBiomassScalar, ScalarCount, out NativeArray<MaterialRuntimeScalarsDTO> scalars) ||
+                !TryOpenVaultBuffer(vault, ref _mockBiomassHandle, BufferID.ShinobuMaterialMockBiomassSignals, MockSignalCount, out NativeArray<MockBiomassDensitySignal> biomass))
             {
                 return;
             }
@@ -753,10 +848,11 @@ namespace Hecton8.Graphics.Materials
 
         private void ApplyQualityAndEditorTuning(IDataVault vault, float frameDeltaSeconds)
         {
-            NativeArray<GlobalShaderConstantsDTO> constants = _constantsHandle.Resolve(vault);
-            NativeArray<MaterialRuntimeScalarsDTO> scalars = _scalarsHandle.Resolve(vault);
-            if (!constants.IsCreated || constants.Length == 0 || !scalars.IsCreated || scalars.Length == 0)
+            if (!TryOpenVaultBuffer(vault, ref _constantsHandle, BufferID.ShinobuMaterialConstants, ConstantsCount, out NativeArray<GlobalShaderConstantsDTO> constants) ||
+                !TryOpenVaultBuffer(vault, ref _scalarsHandle, BufferID.ShinobuMaterialBiomassScalar, ScalarCount, out NativeArray<MaterialRuntimeScalarsDTO> scalars))
+            {
                 return;
+            }
 
             float quality = ResolveGlobalQualityWeight();
             float shaderQuality = ResolvePublishedShaderQualityWeight(quality, frameDeltaSeconds);
@@ -785,7 +881,7 @@ namespace Hecton8.Graphics.Materials
             scalar.GlobalQualityWeight = quality;
             scalar.CsvGeneration = _csvGeneration;
             if (scalar.VisibleCount == 0u)
-                scalar.VisibleCount = (uint)math.min(_materialCapacity, _statesHandle.Length);
+                scalar.VisibleCount = (uint)math.max(1, _materialCapacity);
             scalars[0] = scalar;
         }
 
@@ -809,27 +905,14 @@ namespace Hecton8.Graphics.Materials
             out NativeArray<MockBiomassDensitySignal> biomassSignals,
             out NativeArray<WearRateDTO> wearRates)
         {
-            states = _statesHandle.Resolve(vault);
-            powers = _powersHandle.Resolve(vault);
-            visibleIndices = _visibleIndicesHandle.Resolve(vault);
-            visiblePayload = _visiblePayloadHandle.Resolve(vault);
-            constants = _constantsHandle.Resolve(vault);
-            biomassSignals = _mockBiomassHandle.Resolve(vault);
-            wearRates = _wearRateHandle.Resolve(vault);
-            return states.IsCreated &&
-                powers.IsCreated &&
-                visibleIndices.IsCreated &&
-                visiblePayload.IsCreated &&
-                constants.IsCreated &&
-                biomassSignals.IsCreated &&
-                wearRates.IsCreated &&
-                states.Length > 0 &&
-                powers.Length > 0 &&
-                visibleIndices.Length > 0 &&
-                visiblePayload.Length > 0 &&
-                constants.Length > 0 &&
-                biomassSignals.Length > 0 &&
-                wearRates.Length > 0;
+            int capacity = math.max(1, _materialCapacity);
+            return TryOpenVaultBuffer(vault, ref _statesHandle, BufferID.ShinobuMaterialStates, capacity, out states) &&
+                TryOpenVaultBuffer(vault, ref _powersHandle, BufferID.ShinobuMaterialPowers, capacity, out powers) &&
+                TryOpenVaultBuffer(vault, ref _visibleIndicesHandle, BufferID.ShinobuMaterialVisibleIndices, capacity, out visibleIndices) &&
+                TryOpenVaultBuffer(vault, ref _visiblePayloadHandle, BufferID.ShinobuMaterialVisiblePayload, capacity, out visiblePayload) &&
+                TryOpenVaultBuffer(vault, ref _constantsHandle, BufferID.ShinobuMaterialConstants, ConstantsCount, out constants) &&
+                TryOpenVaultBuffer(vault, ref _mockBiomassHandle, BufferID.ShinobuMaterialMockBiomassSignals, MockSignalCount, out biomassSignals) &&
+                TryOpenVaultBuffer(vault, ref _wearRateHandle, BufferID.ShinobuMaterialWearRates, WearRateCount, out wearRates);
         }
 
         private bool TryLockJobBuffers(IDataVault vault)
@@ -860,7 +943,11 @@ namespace Hecton8.Graphics.Materials
 
         private void UnlockJobBuffers()
         {
-            IDataVault vault = _vault;
+            UnlockJobBuffers(_vault);
+        }
+
+        private void UnlockJobBuffers(IDataVault vault)
+        {
             if (vault == null || _lockedBufferMask == 0)
             {
                 _lockedBufferMask = 0;
@@ -1006,13 +1093,15 @@ namespace Hecton8.Graphics.Materials
             if (ticks == _csvLastWriteTicks)
                 return;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(vault);
-            NativeArray<TextureSetMappingDTO> mappings = _mappingHandle.Resolve(vault);
-            NativeArray<InstanceMaterialDTO> states = _statesHandle.Resolve(vault);
-            NativeArray<GlobalShaderConstantsDTO> constants = _constantsHandle.Resolve(vault);
-            NativeArray<MaterialRuntimeScalarsDTO> scalars = _scalarsHandle.Resolve(vault);
-            if (!scratch.IsCreated || !mappings.IsCreated || !states.IsCreated || !constants.IsCreated || !scalars.IsCreated)
+            int capacity = math.max(1, _materialCapacity);
+            if (!TryOpenVaultBuffer(vault, ref _csvScratchHandle, BufferID.ShinobuMaterialCsvScratch, CsvScratchBytes, out NativeArray<byte> scratch) ||
+                !TryOpenVaultBuffer(vault, ref _mappingHandle, BufferID.ShinobuMaterialTextureMappings, TextureMappingCapacity, out NativeArray<TextureSetMappingDTO> mappings) ||
+                !TryOpenVaultBuffer(vault, ref _statesHandle, BufferID.ShinobuMaterialStates, capacity, out NativeArray<InstanceMaterialDTO> states) ||
+                !TryOpenVaultBuffer(vault, ref _constantsHandle, BufferID.ShinobuMaterialConstants, ConstantsCount, out NativeArray<GlobalShaderConstantsDTO> constants) ||
+                !TryOpenVaultBuffer(vault, ref _scalarsHandle, BufferID.ShinobuMaterialBiomassScalar, ScalarCount, out NativeArray<MaterialRuntimeScalarsDTO> scalars))
+            {
                 return;
+            }
 
             int bytesRead = ReadFileIntoScratch(_csvPath, scratch);
             if (bytesRead <= 0)
@@ -1203,8 +1292,8 @@ namespace Hecton8.Graphics.Materials
             if (!telemetry.IsCreated || telemetry.Length == 0)
                 return;
 
-            NativeArray<MaterialVisibleDTO> visiblePayload = _visiblePayloadHandle.Resolve(vault);
-            NativeArray<MaterialRuntimeScalarsDTO> scalars = _scalarsHandle.Resolve(vault);
+            TryOpenVaultBuffer(vault, ref _visiblePayloadHandle, BufferID.ShinobuMaterialVisiblePayload, math.max(1, _materialCapacity), out NativeArray<MaterialVisibleDTO> visiblePayload);
+            TryOpenVaultBuffer(vault, ref _scalarsHandle, BufferID.ShinobuMaterialBiomassScalar, ScalarCount, out NativeArray<MaterialRuntimeScalarsDTO> scalars);
             float quality = scalars.IsCreated && scalars.Length > 0 ? scalars[0].GlobalQualityWeight : ResolveGlobalQualityWeight();
             float wearMean = 0.0f;
             float saltMean = 0.0f;

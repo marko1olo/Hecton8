@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Physics.Vehicles;
 using Unity.Collections;
@@ -111,27 +112,21 @@ namespace Hecton8.Editor
         private void RefreshSnapshots(bool repaint)
         {
             _hasVault = false;
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
                 return;
 
-            if (vault.TryGetBufferHandle(BufferID.SubmarineKinematicStates, out VaultBufferHandle<SubmarineKinematicState> stateHandle) &&
-                stateHandle.IsCreated)
-            {
-                _state = stateHandle.GetElementAsReadOnlyRef(vault, 0);
-            }
+            if (TryReadFirst(vault, BufferID.SubmarineKinematicStates, out SubmarineKinematicState state))
+                _state = state;
 
-            if (vault.TryGetBufferHandle(BufferID.SubmarineKinematicConfig, out VaultBufferHandle<SubmarineKinematicConfig> configHandle) &&
-                configHandle.IsCreated)
+            if (TryReadFirst(vault, BufferID.SubmarineKinematicConfig, out SubmarineKinematicConfig config))
             {
-                _config = configHandle.GetElementAsReadOnlyRef(vault, 0);
+                _config = config;
                 _hasVault = true;
             }
 
-            if (vault.TryGetBufferHandle(BufferID.SubmarineKinematicForces, out VaultBufferHandle<SubmarineForceAccumulator> forceHandle) &&
-                forceHandle.IsCreated)
-            {
-                _force = forceHandle.GetElementAsReadOnlyRef(vault, 0);
-            }
+            if (TryReadFirst(vault, BufferID.SubmarineKinematicForces, out SubmarineForceAccumulator force))
+                _force = force;
 
             if (repaint)
                 Repaint();
@@ -139,18 +134,41 @@ namespace Hecton8.Editor
 
         private static void WriteConfigToVault(in SubmarineKinematicConfig config)
         {
-            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
                 return;
 
-            if (!vault.TryGetBufferHandle(BufferID.SubmarineKinematicConfig, out VaultBufferHandle<SubmarineKinematicConfig> configHandle) ||
-                !configHandle.IsCreated)
+            if (!vault.TryGetGenerationHandle(BufferID.SubmarineKinematicConfig, out VaultGenerationHandle<SubmarineKinematicConfig> configHandle))
             {
                 return;
             }
 
-            NativeArray<SubmarineKinematicConfig> configs = configHandle.Resolve(vault);
-            if (configs.IsCreated && configs.Length > 0)
-                configs[0] = config;
+            if (!vault.TryAcquireWriteLock(in configHandle, SystemID.CoreDiagnostics, out NativeArray<SubmarineKinematicConfig> configs))
+                return;
+
+            try
+            {
+                if (configs.IsCreated && configs.Length > 0)
+                    configs[0] = config;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in configHandle, SystemID.CoreDiagnostics);
+            }
+        }
+
+        private static bool TryReadFirst<T>(IDataVault vault, BufferID bufferId, out T value)
+            where T : struct
+        {
+            value = default;
+            if (!vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
+                return false;
+
+            if (!vault.TryReadHandle(in handle, out NativeArray<T> buffer) || !buffer.IsCreated || buffer.Length <= 0)
+                return false;
+
+            value = buffer[0];
+            return true;
         }
 
         private static Vector3 ToVector3(float3 value)

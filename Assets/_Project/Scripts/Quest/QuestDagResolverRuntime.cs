@@ -581,7 +581,7 @@ namespace Hecton8.Quest
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct BuildQuestDagSpatialHashJob : IJob
     {
         [ReadOnly] public NativeArray<TriggerVolumeDTO> TriggerVolumes;
@@ -628,7 +628,7 @@ namespace Hecton8.Quest
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct GraphResolverJob : IJob
     {
         public NativeArray<ulong> GlobalStateMasks;

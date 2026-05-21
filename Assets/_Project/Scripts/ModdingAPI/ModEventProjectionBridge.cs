@@ -24,6 +24,7 @@ namespace Hecton8.Modding
         private const int LowTierProjectionCap = 10;
         private const float LowProjectionQualityFlagThreshold01 = 0.3f;
         private const int BlackboxCapacity = 300;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const long PerFrameManagedAllocationLimitBytes = 1L * 1024L * 1024L;
         private const string TimeoutCullMessage = "[MOD CULLED: TIMEOUT]";
         private const string GcCullMessage = "[MOD CULLED: GC]";
@@ -138,7 +139,7 @@ namespace Hecton8.Modding
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _projectedEvents = new NativeQueue<ModEventDto>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModEventDto>[50] - projected public signal metadata for managed mods - owner: ModEventProjectionBridge
+            _projectedEvents = new NativeQueue<ModEventDto>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<ModEventDto>[50] - projected public signal metadata for managed mods - owner: ModEventProjectionBridge
             NativeMemorySentinel.RegisterNativeQueue(_projectedEvents, HighTierProjectionCap, NativeMemoryOwner, nameof(_projectedEvents), NativeAllocationLifetime.Session);
             _cullTelemetry = new NativeArray<ModCullTelemetryEntry>(BlackboxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ModCullTelemetryEntry>[300] - culled mod hash blackbox ring - owner: ModEventProjectionBridge
             NativeMemorySentinel.RegisterNativeArray(_cullTelemetry, NativeMemoryOwner, nameof(_cullTelemetry), NativeAllocationLifetime.Session);
@@ -229,8 +230,9 @@ namespace Hecton8.Modding
                 return;
 
             float3 playerRuntimePosition = ResolvePlayerRuntimePosition();
-            double3 playerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(
-                new Vector3(playerRuntimePosition.x, playerRuntimePosition.y, playerRuntimePosition.z));
+            if (!TryResolveRuntimeAup(playerRuntimePosition, out double3 playerAbsolutePosition))
+                return;
+
             float projectionQualityWeight01 = ResolveProjectionQualityWeight01();
             JobHandle handle = default;
             if (damageCount > 0)
@@ -470,6 +472,26 @@ namespace Hecton8.Modding
             }
 
             return float3.zero;
+        }
+
+        private static bool TryResolveRuntimeAup(float3 runtimePosition, out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            if (!math.all(math.isfinite(runtimePosition)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            if (!positionAup.IsFinite())
+                return false;
+
+            absoluteAup = positionAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(absoluteAup));
         }
 
         private bool AccountFrameAllocation(ref SubscriptionEntry entry, long allocatedBytes)

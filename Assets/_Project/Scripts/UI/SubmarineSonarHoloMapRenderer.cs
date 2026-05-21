@@ -151,7 +151,7 @@ namespace Hecton8.UI
                 return;
 
             Transform anchor = ResolveMapAnchor();
-            Matrix4x4 matrix = Matrix4x4.TRS(anchor.position, anchor.rotation, Vector3.one);
+            Matrix4x4 matrix = Matrix4x4.TRS(ResolveAnchorRuntimePosition(anchor), anchor.rotation, Vector3.one);
             if (_hasPreviousSample && _interpolationBlendWeight > 0.0001f)
                 UploadInterpolatedVertices();
 
@@ -168,6 +168,11 @@ namespace Hecton8.UI
                 null,
                 LightProbeUsage.Off,
                 null);
+        }
+
+        private static Vector3 ResolveAnchorRuntimePosition(Transform anchor)
+        {
+            return anchor != null ? anchor.position : Vector3.zero;
         }
 
         private void RefreshMapSample(int gridCells)

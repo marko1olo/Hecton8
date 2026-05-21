@@ -1,0 +1,93 @@
+{
+  "schema": "hecton8.rendering_optimization_report.shinobu_237.v1",
+  "agent": "SHINOBU_237",
+  "domain": "Rendering/SiltAndPropwashGpu",
+  "scanner": "Particle_System_Scanner",
+  "status": "PASS_STATIC_BUILD_GATED",
+  "sharedReportCollision": {
+    "path": "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json",
+    "currentTopAgent": "SHINOBU_235",
+    "shinobu237PreservedAsPreviousReport": true,
+    "policy": "Do not overwrite another agent's current shared report during parallel batch execution."
+  },
+  "scopes": [
+    "Assets/_Project/Prefabs/Vehicles",
+    "Assets/_Project/Scripts/VFX"
+  ],
+  "vehiclePrefabPathStatus": "MISSING_NO_PREFABS_TO_PURGE",
+  "vfxParticleSystemTextHits": 15,
+  "vfxEmitCallHits": 0,
+  "vfxCollisionModuleHits": 0,
+  "vfxRaycastHits": 0,
+  "forbiddenWakeParticleHits": 0,
+  "forbiddenCpuParticlesEradicated": true,
+  "allowedNonDomainParticleHits": [
+    "Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs :: camera-local cinematic speed-line ParticleSystem, not silt/propwash/wake authority"
+  ],
+  "replacement": {
+    "cpuAuthority": "PropwashEventDTO ring in GlobalDataVault",
+    "gpuAuthority": "Hecton_MarineSnow.compute _PropwashEvents plus SDF/depth proximity kernels",
+    "drawPath": "GPU-written indirect args consumed by Graphics.DrawProceduralIndirect"
+  },
+  "hotResizeFence": {
+    "runtimeGraphicsBufferResize": false,
+    "runtimeQualityScalingRoute": "GlobalQualityWeight changes active dispatch count, event sample count, and collision cadence; allocated particle buffers remain cold and stable.",
+    "designTimeResizeRoute": "ResizeParticleBuffers is fenced behind non-playing editor tuning."
+  },
+  "flowFieldUploadFence": {
+    "runtimeGraphicsBufferResize": false,
+    "coldCapacityRows": "flowFieldUploadCapacity clamped to 40401..262144 float2 rows",
+    "payloadValidation": "upload count must match gridResolution * gridResolution before shader metadata is published",
+    "runtimeOversizeFallback": "clear flow-field sampling metadata and rely on zero-flow plus curl/radial fake paths instead of reallocating"
+  },
+  "runtimeRenderTextureResizeFence": {
+    "sonarGlowRuntimeResize": false,
+    "fogDensityRuntimeResize": false,
+    "runtimeMismatchBehavior": "keep existing allocated texture in play; editor-only resize remains for tuning",
+    "metadataSafety": "texel-size globals are derived from allocated texture dimensions"
+  },
+  "hotVaultLeaseFence": {
+    "runtimeHandlePollingAfterReady": false,
+    "readyRoute": "EnsureNativeState returns from cached ready lease while DataVault exists and no compaction fence is active.",
+    "snapshotPurity": "CaptureSiltTuningSnapshot no longer writes fallback defaults into Vault; owner-phase initialization owns default publication."
+  },
+  "optionalWakeSourcesProbe": {
+    "requiredHandlePollingAfterReady": false,
+    "optionalWakeSourcesProbeCadenceFrames": 30,
+    "stopsAfterAcquisition": true,
+    "dataVaultRebindClearsAllCachedHandles": true
+  },
+  "vaultCompactionHandleFence": {
+    "compactionClearsAllCachedHandles": true,
+    "singleInvalidationRoute": "ClearVaultHandleCache is used by DataVault rebind, compaction-fence invalidation, and native lease teardown.",
+    "deadSelfCompareBranchRemoved": true,
+    "registryPollingFallback": false
+  },
+  "wakeProximityParticleAliasFence": {
+    "csharpDispatchCap": "math.min(_activeParticleCount, ComputePropwashEventSampleBudget(...))",
+    "hlslDispatchCap": "sampleBudget = min(sampleBudget, particleCount)",
+    "moduloAliasRisk": false,
+    "atomicsAdded": false
+  },
+  "propwashFlowSampleFence": {
+    "hlslFlowCap": "ComputePropwashEventFlow clamps sampleBudget by _MarineSnowMetaParams.x before the event loop.",
+    "cpuPrefilterAdded": false,
+    "shaderKeywordAdded": false
+  },
+  "staggerCadenceDither": {
+    "bitmaskCadenceRemoved": true,
+    "csharpLane": "_MarineSnowScalabilityParams.y = flowQuality",
+    "hlslRoute": "ShouldRunStaggeredRate -> ShouldRunQualityLane deterministic dither",
+    "shaderKeywordAdded": false
+  },
+  "aupOriginRoute": {
+    "legacyGlobalSignalsOriginRead": false,
+    "runtimeOriginOwner": "HectonFloatingOrigin.CurrentTotalOffsetDouble",
+    "precisionRule": "double origin plus runtime double offset, then camera-local float downcast only"
+  },
+  "verification": {
+    "commandSummary": "rg ParticleSystem/.Emit/CollisionModule/Physics.Raycast over Assets/_Project/Scripts/VFX plus hot resize, flow-field upload resize, runtime RenderTexture resize, hot Vault lease, optional WakeSources probe, Vault compaction handle cache, AUP bridge, read-name, and missing vehicle prefab path checks",
+    "dotnetBuild": "NOT_RUN_LOOP63_CPU_GATE_100_GT_50",
+    "activeCompilerProcesses": "none observed"
+  }
+}

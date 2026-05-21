@@ -47,13 +47,12 @@ namespace Hecton8.Thermodynamics
                 return;
             }
 
-            if (!runtime.TryGetGlobalDataVaultConstantsPointer(out ThermodynamicsHazardConstants* constants) || constants == null)
+            if (!runtime.TryReadConstants(out ThermodynamicsHazardConstants value))
             {
                 EditorGUILayout.HelpBox("GlobalDataVault thermodynamics constants are unavailable in Play Mode.", MessageType.Warning);
                 return;
             }
 
-            ThermodynamicsHazardConstants value = *constants;
             EditorGUI.BeginChangeCheck();
             value.BaseWaterTempCelsius = EditorGUILayout.Slider("Base Water Temp", value.BaseWaterTempCelsius, -8f, 40f);
             value.HeatDiffusionRate = EditorGUILayout.Slider("Heat Diffusion Rate", value.HeatDiffusionRate, 0f, 1f);
@@ -66,7 +65,7 @@ namespace Hecton8.Thermodynamics
             _radiationThreshold = EditorGUILayout.Slider("Radiation Gizmo Threshold", _radiationThreshold, 0f, 2f);
 
             if (EditorGUI.EndChangeCheck())
-                *constants = value;
+                runtime.TryWriteConstants(in value);
         }
 
         private void OnSceneGui(SceneView sceneView)
@@ -81,6 +80,7 @@ namespace Hecton8.Thermodynamics
 
             ThermodynamicsHazardGridRuntime runtime = ThermodynamicsHazardGridRuntime.ActiveRuntimeInstance;
             if (runtime == null ||
+                !runtime.PrepareVaultGridReadback() ||
                 !runtime.TryGetVaultGridReadback(out NativeArray<float> temperature, out NativeArray<float> radiation, out int resolution, out _, out float cellSize, out _))
             {
                 return;

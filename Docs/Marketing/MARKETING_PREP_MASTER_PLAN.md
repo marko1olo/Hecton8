@@ -143,7 +143,7 @@ Minimum screenshot set:
 5. Base under stress: readable risk, not abstract damage.
 6. Threat silhouette: not fully revealed.
 7. Seed Ship/anomaly hint: instrument corruption, not lore dump.
-8. Low-tier proof frame: same scene readable without ultra effects.
+8. Minimum-budget proof frame: same scene readable without ultra effects.
 
 Asset rule:
 

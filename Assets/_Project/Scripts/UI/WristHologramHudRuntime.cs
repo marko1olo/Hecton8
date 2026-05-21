@@ -239,6 +239,7 @@ namespace Hecton8.UI
         private const int MaxDrawMeshInstancedBatch = 1023;
         private const int DefaultAcousticCapacity = 128;
         private const int CsvOverrideMaxBytes = 8192;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const float AttentionDotThreshold = 0.70710678f;
         private const float JobWarningMicroseconds = 200f;
         private const string DefaultShaderName = "Hecton8/UI/WristHudSDF";
@@ -306,12 +307,12 @@ namespace Hecton8.UI
 
         private IDataVault _vault;
         private IDataVault _cachedDataVault;
-        private VaultBufferHandle<WristHudStateDTO> _stateHandle;
-        private VaultBufferHandle<WristHudQuadTransformDTO> _quadHandle;
-        private VaultBufferHandle<WristHudFontGlyphDTO> _fontAtlasHandle;
-        private VaultBufferHandle<WristHudTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<uint> _counterHandle;
-        private VaultBufferHandle<AcousticEchoTap> _acousticTapHandle;
+        private VaultGenerationHandle<WristHudStateDTO> _stateHandle;
+        private VaultGenerationHandle<WristHudQuadTransformDTO> _quadHandle;
+        private VaultGenerationHandle<WristHudFontGlyphDTO> _fontAtlasHandle;
+        private VaultGenerationHandle<WristHudTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<uint> _counterHandle;
+        private VaultGenerationHandle<AcousticEchoTap> _acousticTapHandle;
         private NativeQueue<PlayerVitalsSignal> _vitalsQueue;
         private NativeQueue<PdaOpenedSignal> _pdaQueue;
 
@@ -329,6 +330,7 @@ namespace Hecton8.UI
         private int _lastUploadCount = -1;
         private int _lastUploadedFrameIndex = -1;
         private int _frontQuadCount;
+        private int _quadBufferCapacity;
         private float _cachedQualityWeight01 = 1f;
         private PlayerVitalsSignal _latestVitals;
         private PdaOpenedSignal _latestPdaSignal;
@@ -353,20 +355,15 @@ namespace Hecton8.UI
 
         public bool TryResolveQuadBuffer(out NativeArray<WristHudQuadTransformDTO> quads)
         {
-            quads = default;
-            if (_vault == null || !_quadHandle.IsCreated)
-                return false;
-
-            quads = _quadHandle.Resolve(_vault);
-            return quads.IsCreated;
+            return TryResolveVaultBuffer(in _quadHandle, BufferID.WristHudQuads, 1, out quads);
         }
 
         public ref WristHudStateDTO GetHudStateAsRef(int index)
         {
-            if (_vault == null || !_stateHandle.IsCreated || (uint)index >= (uint)_stateHandle.Length)
+            if (!TryResolveState(out NativeArray<WristHudStateDTO> state) || (uint)index >= (uint)state.Length)
                 return ref s_dummyState;
 
-            return ref _stateHandle.GetElementAsRef(_vault, index);
+            return ref ResolveElementRef(state, index);
         }
 
         public bool TryGetPdaGridGizmo(out Matrix4x4 matrix, out Vector3 size)
@@ -560,16 +557,23 @@ namespace Hecton8.UI
             }
 
             int safeQuadCapacity = math.clamp(quadCapacity, 64, MaxDrawMeshInstancedBatch);
-            _stateHandle = vault.GetBufferHandle<WristHudStateDTO>(BufferID.WristHudState, StateCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _quadHandle = vault.GetBufferHandle<WristHudQuadTransformDTO>(BufferID.WristHudQuads, safeQuadCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _fontAtlasHandle = vault.GetBufferHandle<WristHudFontGlyphDTO>(BufferID.WristHudFontAtlas, GlyphCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = vault.GetBufferHandle<WristHudTelemetryEntry>(BufferID.WristHudTelemetryRing, TelemetryCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _counterHandle = vault.GetBufferHandle<uint>(BufferID.WristHudCounters, CounterCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _acousticTapHandle = vault.GetBufferHandle<AcousticEchoTap>(BufferID.WristHudAcousticTaps, DefaultAcousticCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _stateHandle = vault.GetGenerationHandle<WristHudStateDTO>(BufferID.WristHudState, StateCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _quadHandle = vault.GetGenerationHandle<WristHudQuadTransformDTO>(BufferID.WristHudQuads, safeQuadCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _fontAtlasHandle = vault.GetGenerationHandle<WristHudFontGlyphDTO>(BufferID.WristHudFontAtlas, GlyphCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _telemetryHandle = vault.GetGenerationHandle<WristHudTelemetryEntry>(BufferID.WristHudTelemetryRing, TelemetryCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _counterHandle = vault.GetGenerationHandle<uint>(BufferID.WristHudCounters, CounterCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _acousticTapHandle = vault.GetGenerationHandle<AcousticEchoTap>(BufferID.WristHudAcousticTaps, DefaultAcousticCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
 
-            if (!HasRequiredVaultHandles())
+            if (!TryResolveHudBuffers(
+                    out _,
+                    out NativeArray<WristHudQuadTransformDTO> quads,
+                    out _,
+                    out _,
+                    out _,
+                    out _))
                 return false;
 
+            _quadBufferCapacity = quads.Length;
             if (!_fontAtlasGenerated)
             {
                 GenerateMockFontAtlas();
@@ -579,8 +583,8 @@ namespace Hecton8.UI
 #endif
             }
 
-            if (_drawMatrices == null || _drawMatrices.Length != _quadHandle.Length)
-                _drawMatrices = new Matrix4x4[_quadHandle.Length]; // COLD ALLOC: Matrix4x4[quadCapacity] - DrawMeshInstanced retained payload - owner: WristHologramHudRuntime
+            if (_drawMatrices == null || _drawMatrices.Length != _quadBufferCapacity)
+                _drawMatrices = new Matrix4x4[_quadBufferCapacity]; // COLD ALLOC: Matrix4x4[quadCapacity] - DrawMeshInstanced retained payload - owner: WristHologramHudRuntime
 
             return true;
         }
@@ -589,13 +593,13 @@ namespace Hecton8.UI
         {
             if (!_vitalsQueue.IsCreated)
             {
-                _vitalsQueue = new NativeQueue<PlayerVitalsSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PlayerVitalsSignal> - blind mock input lane - owner: SHINOBU_07
+                _vitalsQueue = new NativeQueue<PlayerVitalsSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PlayerVitalsSignal> - blind mock input lane - owner: SHINOBU_07
                 NativeMemorySentinel.RegisterNativeQueue(_vitalsQueue, 64, nameof(WristHologramHudRuntime), nameof(_vitalsQueue), NativeAllocationLifetime.Scene);
             }
 
             if (!_pdaQueue.IsCreated)
             {
-                _pdaQueue = new NativeQueue<PdaOpenedSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PdaOpenedSignal> - PDA mock input lane - owner: SHINOBU_07
+                _pdaQueue = new NativeQueue<PdaOpenedSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PdaOpenedSignal> - PDA mock input lane - owner: SHINOBU_07
                 NativeMemorySentinel.RegisterNativeQueue(_pdaQueue, 16, nameof(WristHologramHudRuntime), nameof(_pdaQueue), NativeAllocationLifetime.Scene);
             }
         }
@@ -614,6 +618,7 @@ namespace Hecton8.UI
             _telemetryHandle = default;
             _counterHandle = default;
             _acousticTapHandle = default;
+            _quadBufferCapacity = 0;
             _vault = null;
         }
 
@@ -638,22 +643,17 @@ namespace Hecton8.UI
         private bool HasRequiredVaultHandles()
         {
             return _vault != null &&
-                   _stateHandle.IsCreated &&
-                   _quadHandle.IsCreated &&
-                   _fontAtlasHandle.IsCreated &&
-                   _telemetryHandle.IsCreated &&
-                   _counterHandle.IsCreated &&
-                   _acousticTapHandle.IsCreated;
+                   IsExactVaultHandle(in _stateHandle, BufferID.WristHudState) &&
+                   IsExactVaultHandle(in _quadHandle, BufferID.WristHudQuads) &&
+                   IsExactVaultHandle(in _fontAtlasHandle, BufferID.WristHudFontAtlas) &&
+                   IsExactVaultHandle(in _telemetryHandle, BufferID.WristHudTelemetryRing) &&
+                   IsExactVaultHandle(in _counterHandle, BufferID.WristHudCounters) &&
+                   IsExactVaultHandle(in _acousticTapHandle, BufferID.WristHudAcousticTaps);
         }
 
         private bool TryResolveState(out NativeArray<WristHudStateDTO> state)
         {
-            state = default;
-            if (_vault == null || !_stateHandle.IsCreated)
-                return false;
-
-            state = _stateHandle.Resolve(_vault);
-            return state.IsCreated && state.Length >= StateCapacity;
+            return TryResolveVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out state);
         }
 
         private bool TryResolveHudBuffers(
@@ -673,37 +673,45 @@ namespace Hecton8.UI
             if (!HasRequiredVaultHandles())
                 return false;
 
-            states = _stateHandle.Resolve(_vault);
-            quads = _quadHandle.Resolve(_vault);
-            fontAtlas = _fontAtlasHandle.Resolve(_vault);
-            telemetry = _telemetryHandle.Resolve(_vault);
-            counters = _counterHandle.Resolve(_vault);
-            acousticTaps = _acousticTapHandle.Resolve(_vault);
-
-            return states.IsCreated &&
-                   quads.IsCreated &&
-                   fontAtlas.IsCreated &&
-                   telemetry.IsCreated &&
-                   counters.IsCreated &&
-                   acousticTaps.IsCreated &&
-                   states.Length >= StateCapacity &&
-                   quads.Length > 0 &&
-                   fontAtlas.Length >= GlyphCapacity &&
-                   telemetry.Length >= TelemetryCapacity &&
-                   counters.Length >= CounterCapacity &&
-                   acousticTaps.Length > 0;
+            return TryResolveVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out states) &&
+                   TryResolveVaultBuffer(in _quadHandle, BufferID.WristHudQuads, 1, out quads) &&
+                   TryResolveVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out fontAtlas) &&
+                   TryResolveVaultBuffer(in _telemetryHandle, BufferID.WristHudTelemetryRing, TelemetryCapacity, out telemetry) &&
+                   TryResolveVaultBuffer(in _counterHandle, BufferID.WristHudCounters, CounterCapacity, out counters) &&
+                   TryResolveVaultBuffer(in _acousticTapHandle, BufferID.WristHudAcousticTaps, 1, out acousticTaps);
         }
 
         private bool TryResolveAcousticBuffers(out NativeArray<AcousticEchoTap> acousticTaps, out NativeArray<uint> counters)
         {
             acousticTaps = default;
             counters = default;
-            if (_vault == null || !_acousticTapHandle.IsCreated || !_counterHandle.IsCreated)
-                return false;
+            return TryResolveVaultBuffer(in _acousticTapHandle, BufferID.WristHudAcousticTaps, 1, out acousticTaps) &&
+                   TryResolveVaultBuffer(in _counterHandle, BufferID.WristHudCounters, 3, out counters);
+        }
 
-            acousticTaps = _acousticTapHandle.Resolve(_vault);
-            counters = _counterHandle.Resolve(_vault);
-            return acousticTaps.IsCreated && counters.IsCreated && counters.Length > 2;
+        private bool TryResolveVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return _vault != null &&
+                   IsExactVaultHandle(in handle, expectedBufferId) &&
+                   _vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
+        }
+
+        private static ref T ResolveElementRef<T>(NativeArray<T> buffer, int index) where T : struct
+        {
+            void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
+            return ref UnsafeUtility.AsRef<T>((byte*)basePtr + (index * UnsafeUtility.SizeOf<T>()));
         }
 
         private void EnsureGraphicsResources()
@@ -724,7 +732,7 @@ namespace Hecton8.UI
                 }; // COLD ALLOC: Material[1] - wrist HUD SDF runtime material - owner: SHINOBU_07
             }
 
-            int quadCount = math.max(1, _quadHandle.IsCreated ? _quadHandle.Length : math.clamp(quadCapacity, 64, MaxDrawMeshInstancedBatch));
+            int quadCount = math.max(1, _quadBufferCapacity > 0 ? _quadBufferCapacity : math.clamp(quadCapacity, 64, MaxDrawMeshInstancedBatch));
             EnsureGraphicsBuffer(ref _quadGpuBufferA, quadCount);
             EnsureGraphicsBuffer(ref _quadGpuBufferB, quadCount);
             if (_activeQuadGpuBuffer == null || !_activeQuadGpuBuffer.IsValid())
@@ -1115,13 +1123,10 @@ namespace Hecton8.UI
 
         private void PatchLatestTelemetryJobCost(uint elapsedQ16)
         {
-            if (!TryResolveState(out NativeArray<WristHudStateDTO> states) ||
-                _vault == null ||
-                !_telemetryHandle.IsCreated)
+            if (!TryResolveState(out NativeArray<WristHudStateDTO> states))
                 return;
 
-            NativeArray<WristHudTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
-            if (!telemetry.IsCreated)
+            if (!TryResolveVaultBuffer(in _telemetryHandle, BufferID.WristHudTelemetryRing, TelemetryCapacity, out NativeArray<WristHudTelemetryEntry> telemetry))
                 return;
 
             WristHudStateDTO state = states[0];
@@ -1254,11 +1259,7 @@ namespace Hecton8.UI
 
         private void GenerateMockFontAtlas()
         {
-            if (_vault == null || !_fontAtlasHandle.IsCreated)
-                return;
-
-            NativeArray<WristHudFontGlyphDTO> fontAtlas = _fontAtlasHandle.Resolve(_vault);
-            if (!fontAtlas.IsCreated)
+            if (!TryResolveVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out NativeArray<WristHudFontGlyphDTO> fontAtlas))
                 return;
 
             const float columns = 16f;
@@ -1329,11 +1330,10 @@ namespace Hecton8.UI
         {
             byte[] bytes = File.ReadAllBytes(path);
             const int recordSize = 24;
-            if (bytes.Length < recordSize || _vault == null || !_fontAtlasHandle.IsCreated)
+            if (bytes.Length < recordSize)
                 return false;
 
-            NativeArray<WristHudFontGlyphDTO> fontAtlas = _fontAtlasHandle.Resolve(_vault);
-            if (!fontAtlas.IsCreated)
+            if (!TryResolveVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out NativeArray<WristHudFontGlyphDTO> fontAtlas))
                 return false;
 
             int count = math.min(bytes.Length / recordSize, fontAtlas.Length);
@@ -1388,11 +1388,10 @@ namespace Hecton8.UI
 
         private bool TryParseFontMetricsCsv(string path)
         {
-            if (!File.Exists(path) || _vault == null || !_fontAtlasHandle.IsCreated)
+            if (!File.Exists(path))
                 return false;
 
-            NativeArray<WristHudFontGlyphDTO> fontAtlas = _fontAtlasHandle.Resolve(_vault);
-            if (!fontAtlas.IsCreated)
+            if (!TryResolveVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out NativeArray<WristHudFontGlyphDTO> fontAtlas))
                 return false;
 
             int byteCount = TryReadCsvBytes(path, _csvReadBuffer);
@@ -1604,15 +1603,12 @@ namespace Hecton8.UI
         private void DumpBlackBoxOnce()
         {
             if (_blackBoxDumped ||
-                !TryResolveState(out NativeArray<WristHudStateDTO> states) ||
-                _vault == null ||
-                !_telemetryHandle.IsCreated)
+                !TryResolveState(out NativeArray<WristHudStateDTO> states))
             {
                 return;
             }
 
-            NativeArray<WristHudTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
-            if (!telemetry.IsCreated)
+            if (!TryResolveVaultBuffer(in _telemetryHandle, BufferID.WristHudTelemetryRing, TelemetryCapacity, out NativeArray<WristHudTelemetryEntry> telemetry))
                 return;
 
             WristHudStateDTO state = states[0];

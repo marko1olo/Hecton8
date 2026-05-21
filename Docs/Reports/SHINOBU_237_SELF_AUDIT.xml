@@ -1,0 +1,146 @@
+<SELF_AUDIT agent="SHINOBU_237" status="STATIC_PATCHED_BUILD_GATED">
+  <domain>Rendering/SiltAndPropwashGpu</domain>
+  <taskCount>20</taskCount>
+  <taskReconciliation>
+    <task id="01" status="PASS">Wake/silt CPU ParticleSystem authority scan has 0 forbidden emit/collision paths; CameraJuice speed lines are out of domain.</task>
+    <task id="02" status="PASS">Wake terrain proximity moved to compute SDF/height sampling; scoped scan has 0 propwash raycasts.</task>
+    <task id="03" status="PASS">Hot DTOs use raw fields; Burst harvest uses UnsafeUtility.AsRef and NoAlias NativeArrays.</task>
+    <task id="04" status="PASS">Editor validator asserts PropwashEventDTO 32B offsets and PropwashWakeProfileDTO 64B offsets.</task>
+    <task id="05" status="PASS">GenerateMockPropwashEventsJob injects 500 deterministic events into Vault ring capacity 512.</task>
+    <task id="06" status="PASS">HarvestKinematicWakeJob remains the unmanaged kinematic kernel; active runtime bridge uses existing VFX WakeSources through HarvestWakeSourcePropwashJob, subtracts camera AUP in double precision, and emits local float3 events without a Physics/KCC sibling dependency.</task>
+    <task id="07" status="PASS">CS_EvaluateWakeProximity samples SDF/terrain height and spawns near-floor silt without CPU terrain truth.</task>
+    <task id="08" status="PASS">CSMain integrates propwash advection; CS_IntegrateSiltParticles remains a dedicated propwash integration kernel.</task>
+    <task id="09" status="PASS">Graphics.DrawProceduralIndirect consumes GPU-written indirect args; CPU never reads visible count.</task>
+    <task id="10" status="PASS">Particle budget and event sample count are continuous GlobalQualityWeight curves, 4 samples to active count.</task>
+    <task id="11" status="PASS">Biome tint is Vault-backed tuning, compute tags propwash silt with flag bit 3, and the material shader consumes flag 8 to tint visible RGB.</task>
+    <task id="12" status="PASS">AUP shift is applied by `DispatchAupRebaseIfNeeded` through `CS_RebaseParticles` on the current read buffer before `CSMain`; `_AupShiftOffset` is zeroed before simulation to prevent double rebase, while all vehicle events remain camera-AUP-local before GPU upload.</task>
+    <task id="13" status="PASS">PropwashGpu buffers are documented presentation-only and excluded from rollback/Merkle state.</task>
+    <task id="14" status="PASS">Particle buffers are cold GraphicsBuffer allocations; InitializeParticles performs GPU-side dead-state initialization. Runtime quality/pressure changes now alter active dispatch count, not allocated GraphicsBuffer size.</task>
+    <task id="15" status="PASS">PropwashTelemetryEntry 300-frame Vault ring dumps raw bytes to Docs/AgentLogs/Dump_SHINOBU_237.bin.</task>
+    <task id="16" status="PASS">UI Toolkit tuner mutates Vault tuning and draws direct telemetry waterfall for budget and GPU microseconds.</task>
+    <task id="17" status="PASS">Editor/source-data vehicle_wake_profiles.csv parses through ReadOnlySpan byte slicing into 64B Vault wake-profile rows; player builds keep deterministic defaults until h8bin/Monolith hydration exists.</task>
+    <task id="18" status="PASS">Scene gizmo reads an already-created propwash Vault handle only and draws event vectors editor-side.</task>
+    <task id="19" status="PASS">Particle_System_Scanner report path exists; forbidden wake ParticleSystem/raycast residue remains 0 in scoped scans.</task>
+    <task id="20" status="PASS">Static self-audit, docs, status, and rationale updated; build remains gated by CPU policy.</task>
+  </taskReconciliation>
+  <structLayoutVerification>
+    <layout name="PropwashEventDTO" sizeBytes="32" alignment="4-byte fields, 32-byte GPU stride">
+      <field name="LocalPosition" offset="0" sizeBytes="12" type="float3" />
+      <field name="ThrustVector" offset="12" sizeBytes="12" type="float3" />
+      <field name="Intensity" offset="24" sizeBytes="4" type="float" />
+      <field name="Radius" offset="28" sizeBytes="4" type="float" />
+      <math>12+12+4+4=32; 32 mod 16=0; no bool/string/property lanes.</math>
+    </layout>
+    <layout name="PropwashWakeProfileDTO" sizeBytes="64" alignment="one L1 cache line cold table row">
+      <field name="EngineHash" offset="0" sizeBytes="4" type="uint" />
+      <field name="Version" offset="4" sizeBytes="4" type="uint" />
+      <field name="EmissionRate" offset="8" sizeBytes="4" type="float" />
+      <field name="ParticleLifetime" offset="12" sizeBytes="4" type="float" />
+      <field name="TurbulenceMultiplier" offset="16" sizeBytes="4" type="float" />
+      <field name="RadiusMultiplier" offset="20" sizeBytes="4" type="float" />
+      <field name="IntensityMultiplier" offset="24" sizeBytes="4" type="float" />
+      <field name="SiltLift" offset="28" sizeBytes="4" type="float" />
+      <field name="BiomeTintR" offset="32" sizeBytes="4" type="float" />
+      <field name="BiomeTintG" offset="36" sizeBytes="4" type="float" />
+      <field name="BiomeTintB" offset="40" sizeBytes="4" type="float" />
+      <field name="CurlFrequency" offset="44" sizeBytes="4" type="float" />
+      <field name="SpawnJitter" offset="48" sizeBytes="4" type="float" />
+      <field name="Reserved0" offset="52" sizeBytes="4" type="uint" />
+      <field name="Reserved1" offset="56" sizeBytes="4" type="uint" />
+      <field name="Reserved2" offset="60" sizeBytes="4" type="uint" />
+      <math>16 lanes x 4B=64; 64 mod 64=0; cold table rows cannot false-share in hot parallel writes because hot jobs do not mutate them.</math>
+    </layout>
+    <layout name="WakeSource" sizeBytes="128" ownership="Hecton8.VFX.Wakes existing source row">
+      <field name="PositionAup" offset="0" sizeBytes="48" type="AbsoluteUniversePosition" />
+      <field name="PositionWS" offset="48" sizeBytes="12" type="float3" />
+      <field name="TargetWS" offset="60" sizeBytes="12" type="float3" />
+      <field name="VelocityWS" offset="72" sizeBytes="12" type="float3" />
+      <field name="Radius" offset="84" sizeBytes="4" type="float" />
+      <field name="Intensity" offset="88" sizeBytes="4" type="float" />
+      <field name="AgeSeconds" offset="92" sizeBytes="4" type="float" />
+      <field name="SourceFlags" offset="96" sizeBytes="4" type="uint" />
+      <field name="FrameStamp" offset="100" sizeBytes="4" type="uint" />
+      <field name="SourceKind" offset="104" sizeBytes="1" type="byte" />
+      <field name="Active" offset="105" sizeBytes="1" type="byte" />
+      <field name="Flags" offset="106" sizeBytes="2" type="ushort" />
+      <field name="Padding0" offset="108" sizeBytes="4" type="uint" />
+      <field name="Padding1" offset="112" sizeBytes="4" type="uint" />
+      <field name="Padding2" offset="116" sizeBytes="4" type="uint" />
+      <field name="Padding3" offset="120" sizeBytes="4" type="uint" />
+      <field name="Padding4" offset="124" sizeBytes="4" type="uint" />
+      <math>48+12+12+12+4+4+4+4+4+1+1+2+20 padding=128; 128 mod 64=0. SHINOBU_237 reads this source row by ref readonly through WakeSourceStrideBytes and does not mutate it.</math>
+    </layout>
+    <layout name="PropwashTelemetryEntry" sizeBytes="64" capacity="300" />
+    <layout name="KinematicWakeSourceDTO" sizeBytes="80" />
+    <layout name="PropwashRingCursorDTO" sizeBytes="32" />
+    <layout name="PropwashGpuTuningDTO" sizeBytes="32" />
+  </structLayoutVerification>
+  <scalabilityCurve>
+    <summary>GlobalQualityWeight drives ResolveParticleBudget, C# wake-proximity dispatch count, dynamic wake low-tier weight, marine-snow flow quality, active particle dispatch capacity, SDF/depth collision dither cadence, and HLSL curvedQuality. Below 0.3, propwash event flow and proximity SDF samples collapse toward the minimum event lane, dynamic wake slots lerp toward 4, marine snow flow/collision lanes thin through deterministic dither, radial/lift fake dominates, and active particle count remains near the low catalog while allocated GraphicsBuffers stay cold and stable. Middle weights smoothly increase event samples, dynamic wake slots, flow cadence, collision cadence, and active dispatch count. Ultra consumes the active event ring and spends saved CPU/GPU budget on particle density, curl fake, turbulence, and bubble depth refinement without reallocating. No DTO layout, rollback truth, save identity, or authority route changes with quality.</summary>
+  </scalabilityCurve>
+  <vaultStatus privatePersistentNativeArrays="0">
+    <buffer id="71492" name="PropwashGpuEventRing" capacity="512" strideBytes="32" owner="SystemID.Vfx" />
+    <buffer id="71493" name="PropwashGpuRingCursor" capacity="1" strideBytes="32" owner="SystemID.Vfx" />
+    <buffer id="71494" name="PropwashGpuTelemetryRing" capacity="300" strideBytes="64" owner="SystemID.Vfx" />
+    <buffer id="71495" name="PropwashGpuTuning" capacity="1" strideBytes="32" owner="SystemID.Vfx" />
+    <buffer id="71496" name="PropwashGpuWakeProfiles" capacity="64" strideBytes="64" owner="SystemID.Vfx" />
+    <source name="vehicle_wake_profiles.csv" path="Assets/_SourceData/VFX/Propwash/vehicle_wake_profiles.csv" playerStreamingAssets="false" />
+    <csvParser status="PASS">`PropwashGpuProfileCsvParser.TryParseFloat` consumes the full numeric token and rejects trailing bytes; wake-profile optional fields allow absent/empty columns but reject malformed present columns.</csvParser>
+    <renderTint status="PASS">`_PropwashBiomeTint` is published to both compute and material. `Hecton_MarineSnow.shader` lerps flag-8 propwash silt RGB to the biome tint without changing particle stride.</renderTint>
+    <uploadCursor status="PASS">`UploadPropwashEventGpuBuffer` consumes `PropwashRingCursorDTO`, computes the wrapped oldest event slot from `WriteCursor - EventCount`, and uploads a contiguous GPU snapshot without mutating the Vault ring.</uploadCursor>
+    <mockRingCursor status="PASS">`GenerateMockPropwashEventsJob` starts from `WrapIndex(cursor.WriteCursor, capacity)` and advances the same cursor used by real vehicle commits; emergency mock stress no longer overwrites slots 0..499 as a separate indexing mode.</mockRingCursor>
+    <wakeSourcesBridge status="PASS">`BufferID.WakeSources` is optional and cached only if another VFX owner has already created it. `HarvestWakeSourcePropwashJob` consumes vehicle/apex WakeSource rows by `UnsafeUtility.AsRef&lt;WakeSource&gt;` with `WakeSourceStrideBytes=128`, subtracts camera AUP, scales write count/force/radius continuously with `GlobalQualityWeight`, and writes `PropwashGpuEventRing` without private native allocations or direct KCC DTO references.</wakeSourcesBridge>
+    <gizmoCursor status="PASS">`OnDrawGizmosSelected` consumes `PropwashRingCursorDTO`, computes the same wrapped oldest-to-newest window as GPU upload, and no longer renders stale `events[0..count]` after ring wrap.</gizmoCursor>
+    <proceduralIndirectArgs status="PASS">Indirect args buffer is 16 bytes for non-indexed `Graphics.DrawProceduralIndirect`: vertexCount, instanceCount, startVertex, startInstance. Compute clear writes offsets 0/4/8/12 only.</proceduralIndirectArgs>
+    <proximityBudget status="PASS">Wake proximity dispatch and `CS_EvaluateWakeProximity` both use the continuous propwash event sample budget derived from `GlobalQualityWeight`.</proximityBudget>
+    <wakeProximityParticleAliasFence status="PASS">C# proximity dispatch is capped by `_activeParticleCount`, and HLSL clamps `sampleBudget` by `particleCount` before modulo particle writes, preventing same-dispatch slot aliasing when active capacity is below event sample budget.</wakeProximityParticleAliasFence>
+    <propwashFlowSampleFence status="PASS">`ComputePropwashEventFlow` clamps event sample budget by `_MarineSnowMetaParams.x` before looping events, so stress-reduced active capacity also reduces per-particle propwash flow ALU in `CSMain` and `CS_IntegrateSiltParticles`.</propwashFlowSampleFence>
+    <assetMeta status="PASS">New propwash C# runtime/editor files have deterministic MonoImporter `.meta` files; each added GUID occurs exactly once under `Assets`.</assetMeta>
+    <scannerReport status="PASS">Dedicated `Docs/Reports/RENDERING_OPTIMIZATION_REPORT_SHINOBU_237.json` is valid JSON and records 0 emit, 0 collision, 0 VFX raycast, 0 forbidden wake ParticleSystem hits without overwriting another agent's shared top-level report.</scannerReport>
+    <binaryLedger status="PASS">Active `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` contains current-format SHINOBU_237 range `71492..71496` and a propwash GPU payload boundary row. Older historical ledger body was not restored.</binaryLedger>
+    <overflowDump status="PASS">`RecordPropwashTelemetry` records `PropwashRingCursorDTO.DroppedCount` as `OverflowCount` and triggers `DumpBlackBoxOnce()` on overflow or estimated GPU time over 1500 us.</overflowDump>
+    <rawBlackboxDump status="PASS">Silt and propwash telemetry dumps write raw native memory spans from `NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr`; touched dump paths contain 0 `BinaryWriter`, 0 `writer.Write`, and 0 per-entry `UnsafeUtility.AddressOf(ref entry)` serialization sites.</rawBlackboxDump>
+    <telemetryScalars status="PASS">`UploadPropwashEventGpuBuffer` records the strongest sanitized uploaded event; `PropwashTelemetryEntry.MaxIntensity` and `StrongestLocalPosition` no longer use placeholders.</telemetryScalars>
+    <aupRebaseDispatch status="PASS">`DispatchAupRebaseIfNeeded` binds the current read buffers through `ParticlesWrite`/`ParticleMetaWrite`, dispatches `CS_RebaseParticles`, and zeros `_AupShiftOffset` before `CSMain`; HLSL load routes are `CSMain=LoadSiltParticle`, `AccumulateSonarGlow/CS_IntegrateSiltParticles/CS_RebaseParticles=LoadWrittenSiltParticle`.</aupRebaseDispatch>
+    <shaderVariantStrip status="PASS">`_MATH_LOD_LOW` multi_compile keyword and compile-time branch were removed from marine snow compute/material shaders. Low-tier behavior remains continuous through runtime quality params; Unity instancing/stereo variants remain pending Frame Debugger proof before any further strip.</shaderVariantStrip>
+    <dynamicWakeContinuum status="PASS">Dynamic wake low-tier state is a saturated continuous weight. C# writes `ResolveDynamicWakeLowTierWeight` into both structured wake params and mock DTO wake params, sanitizes capacity through `math.lerp(16,4,lowTier)`, and HLSL uses `saturate`/`lerp` instead of `_DynamicWakeParams.y > 0.5` or `step(0.5, _DynamicWake...)` gates.</dynamicWakeContinuum>
+    <marineSnowScalabilityContinuum status="PASS">`_MarineSnowScalabilityParams` is now built from continuous `GlobalQualityWeight` lanes. C# no longer selects Low/Mid/High/Ultra scalability rows, and HLSL no longer uses `_MarineSnowScalabilityParams.x` hard thresholds for flow/curl/turbulence/collision; stagger, SDF, and depth collision cadence use deterministic dither weights.</marineSnowScalabilityContinuum>
+    <staggerCadenceDither status="PASS">`ShouldRunStaggeredRate` no longer casts a float cadence lane to a uint bitmask. It consumes `_MarineSnowScalabilityParams.y` as a normalized continuous dither weight through `ShouldRunQualityLane`.</staggerCadenceDither>
+    <stressCapacityContinuum status="PASS">`ResolveActiveParticleCount` no longer snaps at `ResolveSystemStress01() > 0.8f`; it uses `math.smoothstep(0.65,0.95,stress)` and lerps toward the low-row capacity for the active fluid type.</stressCapacityContinuum>
+    <hotResizeFence status="PASS">`EnsureParticleBudget` no longer reaches `ResizeParticleBuffers` during player runtime. It refreshes scalability only; non-playing editor resize remains for design-time tuning. Cold allocation capacity is tuning/max bounded, and active dispatch count is clamped by `_resolvedParticleCapacity` so quality scales work without hot GPU memory churn.</hotResizeFence>
+    <flowFieldUploadFence status="PASS">`RefreshFlowFieldUpload` no longer releases/recreates `_flowFieldBuffer` in player runtime. The ecosystem flow-field upload buffer is allocated cold from designer-tunable `flowFieldUploadCapacity` clamped to `40401..262144`; incoming payload length is validated against `gridResolution * gridResolution`, and oversized runtime payloads clear flow sampling metadata instead of reallocating GPU memory.</flowFieldUploadFence>
+    <runtimeRenderTextureResizeFence status="PASS">`EnsureSonarGlowTexture` and `EnsureFogDensityTexture` keep existing textures during play when requested dimensions change. Resize remains non-playing editor only, preventing runtime `RenderTexture.Release/new/Create` churn while preserving shader metadata from allocated dimensions.</runtimeRenderTextureResizeFence>
+    <hotVaultLeaseFence status="PASS">`EnsureNativeState` returns from the cached ready lease while the DataVault exists and no compaction fence is active, preventing per-tick handle lookup/default initialization. `CaptureSiltTuningSnapshot` replaced the read-like `ResolveSiltTuningSnapshot` name and no longer writes fallback defaults into Vault; default publication remains in owner-phase initialization.</hotVaultLeaseFence>
+    <optionalWakeSourcesProbe status="PASS">Required Vault handles remain cached after readiness. Optional `BufferID.WakeSources` is probed once per 30 frames until acquired, then no longer polled; `BindDataVault` clears every SHINOBU cached handle on DataVault service rebind to prevent stale handle identity.</optionalWakeSourcesProbe>
+    <vaultCompactionHandleFence status="PASS">`RefreshDataVaultBinding` now uses `ClearVaultHandleCache()` when `IDataVault.IsCompactionFenceActive`, matching the DataVault service-rebind and native lease teardown routes. The old `_dataVault` self-compare branch was removed; rebind ownership remains lifecycle/hot-swap, not hot `GlobalRegistry` polling.</vaultCompactionHandleFence>
+    <aupOriginRoute status="PASS">SHINOBU no longer calls `GlobalSignals.CurrentRuntimeOriginAup` or any `GlobalSignals.` member. Runtime origin reads come directly from `HectonFloatingOrigin.CurrentTotalOffsetDouble`, are finite-guarded in double precision, and only camera-local deltas are downcast to float.</aupOriginRoute>
+    <compactionFence status="PASS">All `TryAcquireReadyPropwash*` helpers reject `_dataVault.IsCompactionFenceActive` before resolving Vault handles.</compactionFence>
+    <editorFence status="PASS">`PropwashGpuTunerWindow` rejects `IDataVault.IsCompactionFenceActive` before live tuning writes and telemetry resolves; apply success status is a constant string, not a dynamic version concatenation.</editorFence>
+    <gizmoFence status="PASS">`OnDrawGizmosSelected` uses `TryAcquireReadyPropwashEvents`; `_propwashEventHandle.Resolve` is centralized in the fenced accessor.</gizmoFence>
+  </vaultStatus>
+  <dependencyGraph>
+    <job name="BuildVehicleWakeSignalJob" input="Shader wake globals, command throttle" output="VehicleWakeJobResult" burst="FastStandardSynchronous" noAlias="Result" execution="IJob.Run immediate Burst route; no direct managed Execute" />
+    <job name="CommitVehicleWakePropwashEventJob" input="VehicleWakeJobResult converted to camera-local AUP delta, tuning quality" output="PropwashGpuEventRing, PropwashGpuRingCursor" burst="FastStandardSynchronous" noAlias="Events,Cursor" execution="IJob.Run cooldown-gated real vehicle bridge; no direct vehicle runtime dependency" />
+    <job name="HarvestWakeSourcePropwashJob" input="VFX WakeSources, CameraAup, quality, cursor" output="PropwashGpuEventRing, PropwashGpuRingCursor" burst="FastStandardSynchronous" noAlias="WakeSources,Events,Cursor" execution="IJob.Run optional existing-Vault bridge; WakeSource rows read by ref readonly UnsafeUtility.AsRef; no direct Physics/KCC sibling dependency" />
+    <job name="BuildMockFlowFieldJob" input="Camera local state, time, curl tuning" output="MarineSnowMockFlowField" burst="FastStandardSynchronous" noAlias="FlowField" execution="IJob.Run immediate Burst route; no direct managed Execute" />
+    <job name="GenerateMockPropwashEventsJob" input="Simulation tick/time, quality, Vault cursor" output="PropwashGpuEventRing, PropwashGpuRingCursor" burst="FastStandardSynchronous" noAlias="Events,Cursor" execution="IJob.Run immediate Burst route for emergency mock; no direct managed Execute" />
+    <job name="BuildMockWakeSignalJob" input="Camera vectors, time, active count" output="MarineSnowDynamicWakes" burst="FastStandardSynchronous" noAlias="Wakes" execution="IJob.Run immediate Burst route; no direct managed Execute" />
+    <job name="HarvestKinematicWakeJob" input="KinematicWakeSourceDTO NativeArray, CameraAup" output="PropwashGpuEventRing" burst="FastStandardSynchronous" noAlias="Sources,Events" guard="SourceCount is clamped to event ring capacity before parallel wrapped writes." />
+    <job name="CommitPropwashRingWriteJob" input="written count/frame/profile hash" output="PropwashGpuRingCursor" burst="FastStandardSynchronous" noAlias="Cursor" />
+    <gpu name="CS_EvaluateWakeProximity" input="_PropwashEvents, SDF, terrain height" output="particle write buffers" />
+    <gpu name="CS_RebaseParticles" input="_AupShiftOffset, current particle buffers bound as write" output="rebased camera-local particle buffers" />
+    <gpu name="CSMain" input="particle read buffers, propwash events, flow fields" output="particle write buffers, indirect args" />
+  </dependencyGraph>
+  <compileGuard>
+    <statement>No new sibling-runtime asmdef reference was added. Propwash runtime files remain under the existing Core/VFX compilation surface and communicate through existing DataVault BufferID slots plus shader buffers.</statement>
+    <finiteGuard status="PASS">Touched SHINOBU renderer/contracts/editor files contain 0 `float.IsFinite` or `double.IsFinite` hits; finite checks use `math.isfinite` or AUP `IsFinite`.</finiteGuard>
+    <readNameGuard status="PASS">Touched C#/HLSL files contain 0 `TryResolvePropwash` or `ResolvePropwash` hits; shader flow helper is named `ComputePropwashEventFlow`.</readNameGuard>
+    <burstRunGuard status="PASS">Fresh strict scan after repatch shows local wake jobs use `Run()` call-sites only; direct `IJob.Execute()` call-sites are absent from touched SHINOBU renderer/contracts files.</burstRunGuard>
+    <build status="NOT_RUN" reason="Loop 63 CPU gate was 100.00 > 50 after continuous stagger cadence dither; dotnet/csc process scan returned no compiler process, but no dotnet/csc build was launched by policy." />
+  </compileGuard>
+  <dearLie>
+    <before>CPU ParticleSystem plus per-vehicle Physics.Raycast path is O(vehicles + particles + broadphase sync + transparent sorting).</before>
+    <after>CPU path is O(events upload) with bounded 512 x 32B writes; terrain proximity, silt spawn, advection, compaction, and draw count are GPU compute/indirect.</after>
+    <fake>Near-floor silt is an SDF/height/depth visual fake plus curl/radial thrust field, not Navier-Stokes and not CPU collision.</fake>
+  </dearLie>
+</SELF_AUDIT>

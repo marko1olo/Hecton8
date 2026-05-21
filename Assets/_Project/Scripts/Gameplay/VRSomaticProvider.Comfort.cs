@@ -716,7 +716,10 @@ namespace Hecton8.Gameplay
             {
                 NativeArray<SomaticKinematicHistoryDTO> history = _somaticHistory.Resolve();
                 if (history.IsCreated && history.Length > 0)
-                    aupHash = ResolveAupHash(in history[0].PreviousAup);
+                {
+                    SomaticKinematicHistoryDTO historyRow = history[0];
+                    aupHash = ResolveAupHash(in historyRow.PreviousAup);
+                }
             }
 
             int index = PositiveModuloSomatic(_somaticTelemetryCursor, telemetry.Length);

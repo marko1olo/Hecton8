@@ -28,6 +28,7 @@ namespace Hecton8.World
         private Dictionary<long, ProceduralGeologySeamStateDTO> _recordsByRuntimeKey;
         private Dictionary<long, ProceduralGeologyCaveEntranceDTO> _caveEntrancesByRuntimeKey;
         private NativeParallelHashMap<int2, float2> _seamHeightsByChunk;
+        private const Allocator DataVaultExemptSeamHeightIndexAllocator = Allocator.Persistent;
 
         internal static SeamRegistry ActiveRuntimeInstance { get; private set; }
 
@@ -49,7 +50,7 @@ namespace Hecton8.World
             // COLD ALLOC: Dictionary<long, ProceduralGeologyCaveEntranceDTO>[capacity] - deterministic cave-mouth persistence keyed by runtime key - owner: SeamRegistry
             _caveEntrancesByRuntimeKey = new Dictionary<long, ProceduralGeologyCaveEntranceDTO>(capacity);
             // COLD ALLOC: NativeParallelHashMap<int2, float2>[capacity] - terrain chunk seam min/max bounds lookup in AUP frame - owner: SeamRegistry
-            _seamHeightsByChunk = new NativeParallelHashMap<int2, float2>(capacity, Allocator.Persistent);
+            _seamHeightsByChunk = new NativeParallelHashMap<int2, float2>(capacity, DataVaultExemptSeamHeightIndexAllocator);
             NativeMemorySentinel.RegisterNativeParallelHashMap(_seamHeightsByChunk, nameof(SeamRegistry), nameof(_seamHeightsByChunk), NativeAllocationLifetime.Scene);
             UpdateDiagnostics(0L, 0f, 0f);
             EnsureGapDitherRenderer();

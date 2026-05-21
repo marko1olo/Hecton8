@@ -42,6 +42,9 @@ namespace Hecton8.Gameplay
         private const float RadiationAdvisoryStageOneExposure01 = 0.30f;
         private const float RadiationAdvisoryStageTwoExposure01 = 0.70f;
         private const float LeviathanTraumaDamageThreshold01 = 0.40f;
+        private const uint ShinobuPhysiologySourceHash = PhysiologyStateSignal.SourceShinobuPhysiology;
+        private const byte ShinobuGasToxicitySignalCause = PhysiologyStateSignal.CauseGasToxicity;
+        private const uint ShinobuGasStatusMask = PhysiologyStateSignal.GasStatusMask;
         private const string RadiationFatigueDiscoveryId = "radiation_fatigue_advisory_30";
         private const string RadiationCriticalDiscoveryId = "radiation_critical_advisory";
         private const string LeviathanTraumaDiscoveryId = "leviathan_trauma_voice_log";
@@ -137,11 +140,12 @@ namespace Hecton8.Gameplay
                 float healthStress = Mathf.Clamp01(1f - HealthPercent);
                 float radiationStress = Mathf.Clamp01(_radiationExposureSeconds / Mathf.Max(1f, CriticalRadiationAdvisoryThresholdSeconds));
                 float toxicityStress = Mathf.Clamp01(_nutritionalToxicitySeverity01);
+                float gasStress = Mathf.Clamp01(_gasPhysiologyStress01);
                 float pressureStress = _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.PressureExposureSeverity01) : 0f;
                 float thermalStress = _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.ThermalStressSeverity01) : 0f;
                 return Mathf.Clamp01(Mathf.Max(
                     healthStress,
-                    Mathf.Max(radiationStress, Mathf.Max(toxicityStress, Mathf.Max(pressureStress, thermalStress)))));
+                    Mathf.Max(radiationStress, Mathf.Max(toxicityStress, Mathf.Max(gasStress, Mathf.Max(pressureStress, thermalStress))))));
             }
         }
 
@@ -171,7 +175,10 @@ namespace Hecton8.Gameplay
         /// <summary>Runtime natural HP regeneration multiplier after food toxicity suppression.</summary>
         public float NaturalHealthRegenerationMultiplier => ResolveNaturalHealthRegenerationMultiplier(BloodToxicity01);
         /// <summary>Composite blood toxicity scalar used by medical item effects.</summary>
-        public float BloodToxicity01 => Mathf.Clamp01(Mathf.Max(_nutritionalToxicitySeverity01, RadiationExposure));
+        public float BloodToxicity01 => Mathf.Clamp01(Mathf.Max(Mathf.Max(_nutritionalToxicitySeverity01, RadiationExposure), _gasPhysiologyToxicity01));
+
+        /// <summary>Latest gas physiology stress scalar received from the physiology signal lane.</summary>
+        public float GasPhysiologyStress01 => Mathf.Clamp01(_gasPhysiologyStress01);
 
         /// <summary>True when mutation state removes the practical need for a flashlight.</summary>
         public bool FlashlightBypassActive => HasMutation(HazardMutationProfile.BioluminescentSkinBit);
@@ -356,6 +363,9 @@ namespace Hecton8.Gameplay
         private float _radiationExposureSeconds;
         private float _nutritionalToxicityTimer;
         private float _nutritionalToxicitySeverity01;
+        private float _gasPhysiologyStress01;
+        private float _gasPhysiologyToxicity01;
+        private int _lastGasPhysiologySequence;
         private uint _mutationFlags;
         private bool _radiationFatigueAdvisoryIssued;
         private bool _radiationCriticalAdvisoryIssued;
@@ -433,6 +443,7 @@ namespace Hecton8.Gameplay
             }
 
             UpdateNutritionalToxicity(deltaTime);
+            UpdateGasPhysiologyBridge(deltaTime);
         }
 
         /// <summary>Applies damage to the player.</summary>
@@ -603,6 +614,63 @@ namespace Hecton8.Gameplay
                 return;
 
             _nutritionalToxicitySeverity01 = 0f;
+        }
+
+        private void UpdateGasPhysiologyBridge(float deltaTime)
+        {
+            float stress01 = 0f;
+            float toxicity01 = 0f;
+            bool anyGasSignal = false;
+            int sequence = SignalBus<PhysiologyStateSignal>.SnapshotGeneration;
+            var signals = SignalBus<PhysiologyStateSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PhysiologyStateSignal signal = signals[i];
+                if (signal.SourceHash != ShinobuPhysiologySourceHash)
+                    continue;
+
+                bool gasSignal = signal.Cause == ShinobuGasToxicitySignalCause ||
+                                 (signal.StatusFlags & ShinobuGasStatusMask) != 0u;
+                if (!gasSignal)
+                {
+                    stress01 = Mathf.Max(stress01, Mathf.Clamp01(signal.PlayerStress01));
+                    continue;
+                }
+
+                anyGasSignal = true;
+                stress01 = Mathf.Max(stress01, Mathf.Clamp01(Mathf.Max(signal.PlayerStress01, signal.Narcosis01)));
+                toxicity01 = Mathf.Max(toxicity01, Mathf.Clamp01(signal.PlayerStress01));
+            }
+
+            if (GlobalSignals.TryGetLatestPhysiologyStateSignal(out PhysiologyStateSignal latest, out int latestSequence) &&
+                latest.SourceHash == ShinobuPhysiologySourceHash)
+            {
+                sequence = latestSequence > sequence ? latestSequence : sequence;
+                bool gasSignal = latest.Cause == ShinobuGasToxicitySignalCause ||
+                                 (latest.StatusFlags & ShinobuGasStatusMask) != 0u;
+                if (gasSignal)
+                {
+                    anyGasSignal = true;
+                    stress01 = Mathf.Max(stress01, Mathf.Clamp01(Mathf.Max(latest.PlayerStress01, latest.Narcosis01)));
+                    toxicity01 = Mathf.Max(toxicity01, Mathf.Clamp01(latest.PlayerStress01));
+                }
+            }
+
+            if (anyGasSignal)
+            {
+                _gasPhysiologyStress01 = stress01;
+                _gasPhysiologyToxicity01 = toxicity01;
+                _lastGasPhysiologySequence = sequence;
+                return;
+            }
+
+            if (_lastGasPhysiologySequence == sequence)
+                return;
+
+            float decay = Mathf.Max(0f, deltaTime) * 0.5f;
+            _gasPhysiologyStress01 = Mathf.MoveTowards(_gasPhysiologyStress01, 0f, decay);
+            _gasPhysiologyToxicity01 = Mathf.MoveTowards(_gasPhysiologyToxicity01, 0f, decay);
+            _lastGasPhysiologySequence = sequence;
         }
 
         private void PlaySurvivalGraceHeartbeatPulse()

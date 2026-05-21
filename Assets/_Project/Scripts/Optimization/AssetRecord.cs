@@ -73,7 +73,7 @@ namespace Hecton8.Optimization
         public int RequestId;
         public uint AssetKey;
         public AssetPriorityTier Priority;
-        public bool IsDistantHlod;
+        public byte IsDistantHlod;
     }
 
     internal struct AssetDispatchRequest
@@ -81,7 +81,7 @@ namespace Hecton8.Optimization
         public int RequestId;
         public uint AssetKey;
         public AssetPriorityTier Priority;
-        public bool IsDistantHlod;
+        public byte IsDistantHlod;
         public int AgeFrames;
     }
 

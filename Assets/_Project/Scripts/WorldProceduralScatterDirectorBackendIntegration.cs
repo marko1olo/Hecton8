@@ -147,7 +147,7 @@ namespace Hecton8.World
             _debugScatterBackendExecutionMode = status.ResolvedExecutionModeLabel;
             _debugScatterBackendKind = status.ActiveBackendKindLabel;
             _debugScatterBackendResolutionReason = status.ResolutionReason;
-            _debugScatterBackendShadowPending = status.HasFacade && status.IsJobActive;
+            _debugScatterBackendShadowPending = status.HasFacade != 0 && status.IsJobActive != 0;
         }
 
         private void ApplyScatterBackendShadowCompletion(in ScatterBackendShadowCompletion completion)
@@ -160,11 +160,11 @@ namespace Hecton8.World
             _debugScatterBackendShadowLastClusterDelta = completion.ClusterDelta;
             _debugScatterBackendShadowLastStructureDelta = completion.StructureDelta;
             _debugScatterBackendShadowLastSpawnDelta = completion.SpawnDelta;
-            _debugScatterBackendShadowLastChecksumMatch = completion.CandidateChecksumMatch;
-            _debugScatterBackendShadowLastParityStatus = completion.ParityStatusLabel;
-            if (!completion.HasParityMatch)
+            _debugScatterBackendShadowLastChecksumMatch = ScatterBackendShadowCompletion.CandidateChecksumMatches(in completion);
+            _debugScatterBackendShadowLastParityStatus = ScatterBackendShadowCompletion.GetParityStatusLabel(completion.ParityStatusCode);
+            if (!ScatterBackendShadowCompletion.HasParityMatch(in completion))
                 _debugScatterBackendShadowParityMismatchCount++;
-            _debugScatterBackendShadowPending = completion.IsJobActive;
+            _debugScatterBackendShadowPending = ScatterBackendShadowCompletion.IsJobActive(in completion);
         }
 
         private void ResetScatterBackendDebugStatus()

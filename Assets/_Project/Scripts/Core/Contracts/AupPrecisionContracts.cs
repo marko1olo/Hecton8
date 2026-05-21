@@ -6,6 +6,26 @@ using Unity.Mathematics;
 namespace Hecton8.Core.Contracts
 {
     /// <summary>
+    /// Signed 64-bit integer vector for quantized AUP millimeter hashes.
+    /// Unity.Mathematics in this project does not provide long3.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    public struct long3
+    {
+        [FieldOffset(0)] public long x;
+        [FieldOffset(8)] public long y;
+        [FieldOffset(16)] public long z;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public long3(long x, long y, long z)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+    }
+
+    /// <summary>
     /// Shared AUP precision constants and Burst-safe double-to-local helpers.
     /// </summary>
     public static class AupPrecisionMath

@@ -12,7 +12,7 @@ namespace Hecton8.UI
     /// Hash-bound PDA label for scanner archaeology names. Writes TMP text from pooled char buffers only.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PDADataArchaeologyDecryptLabel : MonoBehaviour, ILateFrameTickable, IScalabilityChangedEventListener
+    public sealed class PDADataArchaeologyDecryptLabel : MonoBehaviour, ILateFrameTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
     {
         private const int RevealBucketCount = 64;
         private const float ScrambleSpeed = 37f;
@@ -28,6 +28,7 @@ namespace Hecton8.UI
         private int _lastHash;
         private int _lastProgressBucket = -1;
         private bool _registered;
+        private bool _hotSwapRegistered;
         private bool _registeredScalabilityListener;
         private bool _dirty;
         private float _scrambleIntensity01 = 1f;
@@ -50,7 +51,6 @@ namespace Hecton8.UI
             _entityHash = entityHash;
             _progress01 = clampedProgress;
             _dirty = true;
-            TryRegister();
         }
 
         private void Awake()
@@ -65,6 +65,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             RefreshCachedQualityWeight();
+            TryRegisterHotSwapListener();
             TryRegisterScalabilityListener();
             TryRegister();
             _dirty = true;
@@ -73,6 +74,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             Unregister();
         }
 
@@ -80,10 +82,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (targetText == null || _entityHash == 0u)
-            {
-                Unregister();
                 return;
-            }
 
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             float scrambleIntensity01 = ShouldScramble(_progress01) ? _scrambleIntensity01 : 0f;
@@ -104,8 +103,8 @@ namespace Hecton8.UI
             _lastProgressBucket = progressBucket;
             _dirty = false;
 
-            if (!scramble && _progress01 >= 0.999f)
-                Unregister();
+            if (!scrambleAnimating && _progress01 >= 0.999f)
+                _dirty = false;
         }
 
         private bool RenderHash(int hash, float scrambleIntensity01)
@@ -162,6 +161,15 @@ namespace Hecton8.UI
             RefreshCachedQualityWeight();
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
+                TryRegister();
+        }
+
         private void RefreshCachedQualityWeight()
         {
             float quality = HomeostasisBrain.GlobalQualityWeight;
@@ -202,7 +210,7 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || _entityHash == 0u)
+            if (_registered || !Application.isPlaying)
                 return;
 
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
@@ -229,8 +237,23 @@ namespace Hecton8.UI
 
             if (targetText != null)
                 targetText.SetCharArray(EmptyText, 0, 0);
+        }
 
-            Unregister();
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
     }
 }

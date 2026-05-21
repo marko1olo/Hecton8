@@ -1,30 +1,296 @@
 {
-  "schema": "hecton8.rendering_optimization_report.v1",
-  "agent": "SHINOBU_214",
-  "scanner": "HectonMaterialChannelPackValidator",
-  "status": "SCRIPT_INSTALLED_STATIC_POLISH_ISOLATED_ASMDEF_BLACKBOX_STRUCT_REQUEST_FIX_AXIS_DIMENSION_FIX_QUALITY_CURVE_CSV_PROFILE_AUTHORITY_PROPERTY_PURGE_BATCH_FAULT_ADVANCE_APPLIED_PENDING_UNITY_MENU_RUN",
-  "applyImporterFixes": false,
-  "rollbackNetcodeExcluded": true,
-  "merkleStateExcluded": true,
-  "stateRingBufferExcluded": true,
-  "scannedMaterials": 0,
-  "targetMaterials": 0,
-  "analysedMasks": 0,
-  "fixedImporters": 0,
-  "looseSamplerStackCount": 0,
-  "packedMaskViolationCount": 0,
-  "quarantineCandidateCount": 0,
-  "looseSamplerStacks": [],
-  "packedMaskViolations": [],
-  "fixedImportersList": [],
-  "quarantineCandidates": [],
-  "previousReport": {
-    "agent": "SHINOBU_212",
-    "scanner": "LOD_Distance_Scanner",
-    "status": "SCRIPT_INSTALLED_PENDING_UNITY_MENU_RUN",
-    "threshold_meters": 500,
-    "output_menu": "HECTON-8/Rendering/HLOD Impostor/Scan LOD Distances",
-    "unoptimized_horizons_detected": "PENDING_UNITY_ASSETDATABASE_SCAN",
-    "note": "Preserved by SHINOBU_214 while installing ARM material scanner."
+  "agent": "SHINOBU_270",
+  "domain": "ECHELON 8 Presentation & UX / Visor AR (HUD)",
+  "takeoverPath": "HectonVisorARStencilRendererFeature + Hecton_VisorAR.shader",
+  "runtimeForceUpdateCanvasesCalls": 0,
+  "runtimeGraphicRaycasterTokenCount": 48,
+  "hudCanvasRuntimeOwner": "suppressed by HectonVisorARStencilRendererFeature only after successful Game/Base RenderGraph frame prep",
+  "arWaypointRuntimeOwner": "ARWaypointOverlay data source only; Canvas slots hidden in stencil mode",
+  "managedHudElementsPurged": false,
+  "notes": "Runtime stencil takeover is renderer-owned and fail-open: Canvas suppression is released if feature/material/Vault/upload prep fails. Legacy GraphicRaycaster tokens still exist in disabled/editor/legacy UI source, so HUDCanvasInquisition keeps the purge verdict false instead of reporting a false full purge.",
+  "shinobu270Polish": {
+    "dateLocal": "2026-05-21",
+    "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "bufferIds": "73180..73186",
+    "collisionRepair": "Rejected initial 70680..70686 range after collision with H8Memory.ShinobuExosuit lanes.",
+    "renderGraphFix": "One resolve pass now copies camera color before stencil-equal visor overlay, preventing undefined pixels outside the mask.",
+    "renderGraphResourcePolish": "AR resolve no longer declares active depth as both a sampled texture and depth/stencil attachment; stencil equality uses the attachment only.",
+    "renderGraphStencilPolish": "AR resolve binds depth/stencil read-only, shader read mask now mirrors the configured stencil write mask, and the ColorMask 0 stencil mask shader uses Cull Off so the cold fallback visor mesh cannot self-cull.",
+    "renderGraphBufferAbi": "AR resolve PassData now stores imported BufferHandles, not duplicate raw GraphicsBuffer references, matching existing Noir/Ocean RenderGraph binding patterns.",
+    "forbiddenTokenScan": "Targeted visor/UI scan returned no Shader.SetGlobalVector/Float, Canvas.ForceUpdateCanvases, TryGetLatestCreated, BurstCompile/IJob tiny wrappers, runtime Persistent NativeArray, or GlobalSignals reads in HectonVisorARStencilRendererFeature.",
+    "authorityPolish": "Removed legacy stress/origin bridge fallback from the RenderGraph prep path; missing player AUP clears visual AR targets and records telemetry instead of fabricating world projection.",
+    "uiSuppressionPolish": "SuitHUDV4CanvasOverlay scene-load bootstrap now returns immediately while renderer-owned stencil mode is active; ARWaypointOverlay no longer polls vegetation bridge from Tick/SlowTick and receives MapMagicVegetationRuntime through cold registry cache or hot-swap.",
+    "blackBoxDumpPolish": "Dump_SHINOBU_270.bin now writes a fixed 32-byte little-endian header followed by raw 64-byte VisorTelemetryEntry rows through ReadOnlySpan<byte>; BinaryWriter was removed.",
+    "legacyCanvasBufferPolish": "Legacy SuitHUDV4CanvasOverlay char staging no longer grows arrays during play; long templates are bounded/truncated into fixed buffers and stencil mode disables the legacy proxy-light AUP bridge.",
+    "reportFacadePolish": "HUDCanvasInquisition now upserts a shinobu_270_visor_ar_stencil section into this shared report instead of overwriting neighboring report objects.",
+    "subagentP0Closure": "RasterCommandBuffer.SetGlobalConstantBuffer binding now uses GraphicsBuffer-first overload order; HUDCanvasInquisition removed direct UnityEngine.UI asmdef dependency by counting GraphicRaycaster via component type name.",
+    "failOpenSuppressionPolish": "ARWaypointOverlay and SuitHUDV4CanvasOverlay stencil flags now reset false; SuitHUDPresentationController no longer owns runtime suppression. HectonVisorARStencilRendererFeature enables suppression only after successful frame prep and clears it on feature/vault/material/upload failure.",
+    "editorAupGizmoPolish": "HectonVisorStencilPreviewGizmo no longer uses FromRuntimePosition; camera AUP is derived from HectonFloatingOrigin.CurrentTotalOffsetDouble plus local runtime camera position in double precision.",
+    "editorPreviewAllocationPolish": "HectonVisorStencilPreviewGizmo no longer allocates a Temp NativeArray; editor preview uses a fixed stackalloc Span and ARWaypointOverlay exposes a Span overload for the latest stencil target snapshot.",
+    "cameraOwnershipPolish": "HectonVisorARStencilRendererFeature now accepts only the cached player runtime camera reference for runtime stencil takeover; unrelated Game/Base cameras cannot suppress the HUD Canvas fallback.",
+    "renderGraphAbortFailOpen": "Stencil and AR RecordRenderGraph early exits for backbuffer or invalid source/depth resources clear renderer-owned stencil suppression instead of leaving Canvas fallback hidden after a previous good frame.",
+    "stencilLanePolish": "Stencil read/write defaults now reserve bit 0 only. Legacy serialized 255 writer masks are coerced to lane 1 until a wider stencil-lane reservation is documented.",
+    "shaderWarmupPolish": "Added Assets/_Project/Art/Shaders/Variants/Hecton_VisorAR_Stencil.shadervariants and cold Create() warmup loading for the AR resolve and stencil mask shaders; no runtime variant creation is claimed.",
+    "compileStatus": "Blocked by latest build gate: no compiler process output was returned, but CPU stayed 100% by CIM and 98.84%, 99.81%, 100% by counter samples; SHINOBU_270 did not launch dotnet build."
+  },
+  "jacobianFoam": {
+    "agentId": "SHINOBU_266",
+    "scanner": "CPU_Foam_Scanner",
+    "timestampUtc": "2026-05-21T12:34:00Z",
+    "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "output": "Superfluous CPU Particles Eradicated",
+    "scannedPaths": [
+      "Assets/_Project/Scripts/Environment",
+      "Assets/_Project/Prefabs/Vehicles"
+    ],
+    "missingPaths": [
+      "Assets/_Project/Prefabs/Vehicles"
+    ],
+    "particle_component_hits": 0,
+    "particle_emit_call_hits": 0,
+    "texture_readback_hits": 0,
+    "activeViolationCount": 0,
+    "gpuFoamRoute": "Hecton_CalculateFoam.compute -> HectonJacobianFoamRenderFeature -> _H8JacobianFoamTexture",
+    "dtoProof": {
+      "FoamComputeParamsDTO": 32,
+      "FoamWakeImpactDTO": 32,
+      "FoamTuningDTO": 64,
+      "FoamRenderTelemetryEntry": 64,
+      "FoamAestheticProfileDTO": 64
+    },
+    "latestHardening": [
+      "shader finite clamps",
+      "reversed-Z depth shoreline guard",
+      "continuous ocean foam quality gate",
+      "cold-only Vault buffer creation",
+      "deferred telemetry dump",
+      "two-pass RenderGraph UAV barrier",
+      "transient RenderGraph generation texture",
+      "dispatcher-frame visual clock",
+      "2D depth texture ABI for XR fallback",
+      "finite wake/hash integer casts",
+      "RenderTargetInfo depth sizing",
+      "Burst NoAlias wake upload",
+      "GPU foam format fail-closed",
+      "GlobalRenderContext camera cache without Camera.main",
+      "mapped buffer validity guards",
+      "single-dispatch cap at 1024",
+      "RenderGraph-acknowledged foam history swap",
+      "black fallback global foam texture",
+      "read-only published foam texture accessor"
+    ],
+    "notes": "Object preserved beside neighboring report objects. Unity compile/import/profiler proof remains pending under CPU guard."
+  },
+  "shinobu_267_flora_ambient_sway": {
+    "agentId": "SHINOBU_267",
+    "scanner": "Flora_Animation_Scanner",
+    "timestampUtc": "2026-05-21T12:22:12Z",
+    "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "scannedPaths": [
+      "Assets/_Project/Scripts/Environment/Flora",
+      "Assets/_Project/Prefabs/Nature/Flora"
+    ],
+    "missingPaths": [
+      "Assets/_Project/Scripts/Environment/Flora"
+    ],
+    "scannedFloraPrefabTreeFileCount": 1131,
+    "forbiddenCpuSwayScriptFindings": 0,
+    "skinnedMeshRendererFindings": 0,
+    "animatorFindings": 0,
+    "activeViolationCount": 0,
+    "oopFloraAnimationsEradicated": true,
+    "findings": [],
+    "notes": "Targeted CLI scan found no active flora CPU sway scripts, SkinnedMeshRenderer, or Animator violations. One README policy-token hit under Prefabs/Nature/Flora/Baked is documentation text, not an active prefab or scene component."
+  },
+  "shinobu_278_coop_input_prediction": {
+    "agentId": "SHINOBU_278",
+    "scanner": "Input_Queue_Inquisition",
+    "summary": "Managed Input Queues Purged",
+    "reportSchema": 1,
+    "timestampLocal": "2026-05-21T22:41:00+04:00",
+    "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "scannedScope": "Assets/_Project/Scripts/**/*.cs",
+    "scannedFiles": 2191,
+    "managedInputQueueViolations": 0,
+    "forbiddenPatterns": [
+      "Queue<InputState*",
+      "List<InputState*",
+      "Queue<PredictedInput*",
+      "List<PredictedInput*",
+      "Queue < InputState*",
+      "List < InputState*"
+    ],
+    "vaultBuffers": {
+      "predictedInput": 75000,
+      "targetAup": 75001,
+      "telemetry": 75002
+    },
+    "bufferIds": [
+      75000,
+      75001,
+      75002
+    ],
+    "ownerRoute": "InputDispatcher owns predicted input truth lanes 75000/75001; rollback consumes generation-checked descriptors and does not create or mock-write those lanes.",
+    "mockSeedingRoute": "GenerateMockInputHistoryJob call sites are owner-side only through InputDispatcher.GenerateMockInputHistory(...). Rollback emergency mock seeds only rollback-owned runtime/tuning/jitter/remote buffers.",
+    "deterministicRng": "Mock input and haptic jitter paths use Unity.Mathematics.Random with math.hash-derived nonzero seeds; no UnityEngine.Random/System.Random/manual LCG constants remain in SHINOBU runtime scope.",
+    "compileGuard": "2026-05-21T22:44:41+04:00 CPU samples 100,100,100 percent; csc.exe=0; dotnet.exe=0; build not launched after editor capacity facade patch.",
+    "ownerPointerPatch": "InputDispatcher.ActiveRuntimeInstance is a raw internal static field, not an auto-property; public service/editor properties are left as API surfaces outside unmanaged DTO hot paths.",
+    "editorReadoutPatch": "Cooperative Input Tuner live telemetry now uses RollbackTelemetryStripElement/Painter2D scalar drawing; numeric Label.text annotations are dirty-gated to 0.25s, packet-label self-concat was removed, and scalar bars sanitize non-finite floats before draw.",
+    "editorCapacityReadPatch": "Cooperative Input Tuner reads physical ring capacity through HectonRollbackNetcodeRuntime.TryGetPredictedInputCapacity(out int); the default editor path no longer requests a mutable NativeArray<PredictedInputDTO> for a scalar label, and the unused public TryGetPredictedInputs facade was removed after source consumer inventory.",
+    "status": "PASS",
+    "notes": "Managed input prediction queues are absent from whitespace-aware generic scan. Runtime route uses dispatcher-owned Vault PredictedInputDTO rings, rollback descriptor reads, and Dear Lie extrapolation without rollback-side predicted-ring mock writes."
+  },
+  "shinobu_275_screen_space_wound_decal_compressor": {
+    "agentId": "SHINOBU_275",
+    "scanner": "Decal_Projector_Inquisition",
+    "timestampUtc": "2026-05-21T18:52:59Z",
+    "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "scannedAssetCount": 5825,
+    "candidateAssetCount": 336,
+    "skippedLargeAssetCount": 32,
+    "decalProjectorTokenHits": 3,
+    "activeGameObjectDecalViolations": 0,
+    "activeDecalRendererFeatureViolations": 0,
+    "inactiveUrpDecalRendererFeatures": 2,
+    "oopDecalsPurged": true,
+    "status": "PASS",
+    "tokenHits": [
+      {
+        "path": "Assets/_Project/Editor/ShorelineFoamGraftEditorTools.cs",
+        "line": 102,
+        "text": "internal static class ShorelineFoamDecalProjectorInquisition"
+      },
+      {
+        "path": "Assets/_Project/Editor/ShorelineFoamGraftEditorTools.cs",
+        "line": 138,
+        "text": "decalProjectorHits += Contains(text, \"DecalProjector\");"
+      },
+      {
+        "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+        "line": 617,
+        "text": "RequireNotContains(delta, \"DecalProjector\", \"Voxel laser burn path must not depend on DecalProjector.\") &&"
+      }
+    ],
+    "activeViolations": [],
+    "activeRendererFeatures": [],
+    "notes": "Inactive URP DecalRendererFeature assets are reported but not counted as active GameObject decal routes. Runtime visor wounds use _GlobalVisorWounds via RenderGraph fullscreen pass."
+  },
+  "shinobu_273_frequency_tuning": {
+    "agent": "SHINOBU_273",
+    "domain": "FREQUENCY_TUNING_DECRYPTION_KERNEL",
+    "summary": "Targeted Terminal Canvas Tokens Absent",
+    "timestampLocal": "2026-05-21T21:50:33+04:00",
+    "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "claimScope": "Targeted scan only; not a project-wide scene/prefab purge claim.",
+    "scannedScope": [
+      "Assets/_Project/Scripts/UI/TerminalOS",
+      "Assets/_Project/Scripts/UI/Terminals"
+    ],
+    "scannedFiles": 2,
+    "legacyTerminalsFolderExists": false,
+    "canvasForceUpdateCalls": 0,
+    "canvasTokenCount": 0,
+    "graphicRaycasterTokenCount": 0,
+    "lineRendererTokenCount": 0,
+    "targetedManagedPuzzleCanvasTokensAbsent": true,
+    "takeoverPath": "TerminalOsRuntime unmanaged DTOs + SignalBus<TerminalUnlockedSignal> + Hecton_DiegeticTerminal StructuredBuffer oscilloscope",
+    "shaderPath": "Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader",
+    "routeCard": "Docs/ARCHITECTURE/SHINOBU_273_FREQUENCY_TUNING_DECRYPTION_ROUTE_CARD.md",
+    "vaultBuffers": [
+      71376,
+      71377,
+      71378,
+      71379
+    ],
+    "determinismPatch": "Decryption input uses HectonPhysicsContract.FixedDeltaTimeSeconds and SystemDispatcher.CurrentFrameId; Time.unscaledDeltaTime is not used by the solver.",
+    "falseSharingPatch": "Three parallel puzzle mutation jobs were replaced with one fused deterministic Burst IJob, preserving the required 32-byte puzzle DTO without adjacent-row parallel writes.",
+    "faultExportPatch": "Decryption fault export writes fixed 64-byte telemetry rows through a background DecryptionBlackBoxDumpWriter raw span writer; owner frame does not call FileStream/BinaryWriter.",
+    "editorFacadePatch": "Oscilloscope tuner exposes Base Frequency, Snap Tolerance, Noise Density, and GlobalQualityWeight Override, with numeric UI Toolkit fields instead of StringBuilder/ToString readout assembly.",
+    "coldRegistryBackoffPatch": "Unavailable Vault/dispatcher bootstrap retries are gated by a continuous GlobalQualityWeight-derived 30..120 frame stride; decryption jobs and read accessors do not poll GlobalRegistry.",
+    "subagentAuditPatch": "TryDequeueCommand fails closed while click resolution is scheduled; TerminalStateDTO dirty byte is documented/validated as packed BackgroundColor alpha; scanner claim scope is targeted only.",
+    "ciMathGatePatch": "Terminal interaction distance and plane sizing no longer use math.sqrt/math.length tokens; guarded dot+rsqrt helpers keep CI_MATH_VIOLATIONS gate clean while preserving finite fallback behavior.",
+    "pureReadAccessorPatch": "Public TryGet* copy accessors use GlobalDataVault.TryReadHandle via TryReadVaultBuffer, leaving TryResolveHandle only on owner/write scheduling paths.",
+    "ownerMutationSurfacePatch": "OpenTerminalStateRefForOwner, ForceDirty, and ForceAllDirty are private owner helpers; public mutable-ref/dirty-flag escape hatches are not exposed.",
+    "shaderVariantPatch": "Hecton_DiegeticTerminal uses a material scalar _HectonTerminalInstancedMode instead of shader_feature_local/keyword toggles, avoiding a runtime variant warmup hitch.",
+    "status": "STATIC_PASS_COMPILE_BLOCKED_BY_CPU_GATE",
+    "notes": "Terminal hacking now routes through Vault DTOs and shader buffer overlay. DataMonolith static_data.h8bin is missing, so CSV/mock data is fallback only. dotnet build remains gated by CPU/compiler policy."
+  },
+  "shinobu_277_crest_shoreline_foam_graft": {
+    "agentId": "SHINOBU_277",
+    "scanner": "Decal_Projector_Inquisition",
+    "timestampLocal": "2026-05-21T16:45:00+04:00",
+    "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "runtimeRoute": "OceanSinglePassRuntime.VisualSync -> ShorelineFoamGraftRuntime -> HectonSinglePassOceanFeature RenderGraph -> Hidden/Hecton8/OceanDepthFoam",
+    "structuredBuffer": "_GlobalShorelineFoam",
+    "dtoProof": {
+      "ShorelineFoamParamsDTO": 32,
+      "FoamIntensityAndFalloffOffset": 0,
+      "QualityAndLimitsOffset": 16,
+      "RuntimeState": 64,
+      "Telemetry": 64
+    },
+    "scannedPaths": [
+      "Assets/_Project/Scripts/Rendering/OceanSinglePass",
+      "Assets/_Project/Scripts/VFX/JacobianFoam",
+      "Assets/_Project/Scripts/Plugins/Crest",
+      "Assets/_Project/Art/Shaders",
+      "Assets/_Project/Prefabs/Ocean_Crest.prefab"
+    ],
+    "cameraRenderHits": 0,
+    "decalProjectorHits": 0,
+    "particleSystemHits": 0,
+    "activeViolationCount": 0,
+    "crestVendorEdit": false,
+    "rollbackAuthority": "presentation-only; no StateRingBuffer/Merkle route",
+    "notes": "Focused static scan found no Camera.Render, DecalProjector, ParticleSystem, AddComponent<Camera>, active Crest foam sim, or active Crest depth cache route in the SHINOBU_277 scope. Compile/profiler proof remains blocked by CPU guard."
+  },
+  "shinobu_265_water_optics": {
+    "agentId": "SHINOBU_265",
+    "scanner": "PostProcess_Fog_Scanner",
+    "timestampLocal": "2026-05-21T20:24:53+04:00",
+    "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "runtimeRoute": "WaterOpticsRuntime authored scene/bootstrap owner + PRE_SIMULATION direct Vault-row mock optics generation + VISUAL_SYNC _GlobalWaterOptics CBUFFER",
+    "shaderRoute": [
+      "Hecton_WaterExtinction.hlsl",
+      "Hecton8_UberNoir.hlsl",
+      "Hecton_VolumetricFog.compute",
+      "Hecton_VolumetricFog_DearLie.shader"
+    ],
+    "vaultBuffers": [
+      71129,
+      71135,
+      71136,
+      71137,
+      71138,
+      71139
+    ],
+    "dtoProof": {
+      "WaterOpticsDTO": 64,
+      "WaterOpticsTuningDTO": 64,
+      "WaterOpticsProfileDTO": 64,
+      "WaterOpticsTelemetryEntry": 64,
+      "WaterOpticsDumpHeader": 32
+    },
+    "cbufferAbi": "WaterOpticsLayoutValidator checks _GlobalWaterOptics lane order in Hecton_WaterExtinction.hlsl, Hecton_VolumetricFog.compute, and Hecton_VolumetricFog_DearLie.shader: absorption, scattering, directional light, quality/depth.",
+    "genericFogScan": {
+      "mFogEnabledTokens": 0,
+      "genericVolumeOrProfileTokens": 3,
+      "status": "BLOCKED_BY_SCENE_PROFILE_OWNER_REVIEW"
+    },
+    "continuousQuality": "Water extinction, legacy LUT influence, UberNoir light-probe richness, and screen refraction are controlled by runtime GlobalQualityWeight/material gates, not local binary variants.",
+    "uploadPolicy": "Changed WaterOpticsDTO rows use one 64-byte LockBufferForWrite memcpy and one Shader.SetGlobalConstantBuffer bind. Unchanged rows skip mapped write and bind via exact four-float4 DTO comparison while still recording telemetry.",
+    "renderGraphOwnerRoute": "HectonWaterOpticsTelemetryFeature emits a marker-only raster pass without calling WaterOpticsRuntime, GlobalRegistry, or any static owner mutator from RecordRenderGraph; public TryGetRuntimeInstance is editor-only for the tuner facade.",
+    "profileLane": "CSV profile ingestion and profile hash application use direct pointer row reads/writes with WaterOpticsNativeLayout.ProfileSizeBytes; no WaterOpticsRuntime profile NativeArray indexer route remains.",
+    "ownerBootstrap": "Runtime owner must be authored or explicitly bootstrapped; WaterOpticsRuntime source has no runtime-load self-spawn or scene-load GameObject creation route. WaterOpticsRuntimeOwnerInstaller exposes the manual menu route Hecton8/Rendering/Water Optics/Install Runtime Owner In Bootstrap Scene to attach the owner to the existing [BOOTSTRAPPER] root without shell YAML mutation. Editor/build guard fails if no owner is serialized in _Project scenes/prefabs, and current static GUID scan found no owner placement.",
+    "jobPolicy": "The 64-byte fallback/mock optics row is written directly in PRE_SIMULATION; ScheduleSimulation returns its input dependency and no one-row mock job is scheduled.",
+    "shaderSafetyPatch": "Dear Lie waterline tint/opacity require camera-underwater state; extinction LUT sampling matches the 768x256 RHalf depth/turbidity/rgb matrix behind _ExtinctionLUT_TexelSize guards; custom light-probe and UberNoir instance-buffer sampling fail-closes without published capacity proof.",
+    "binaryVariantPatch": {
+      "uberNoirMathLodLowRemoved": true,
+      "uberNoirScreenRefractionKeywordRemoved": true,
+      "uberNoirWarmupMathLodLowRemoved": true
+    },
+    "telemetry": "300 fixed 64-byte Vault rows plus 32-byte dump header to Docs/AgentLogs/Dump_SHINOBU_265.bin; VisualSync raises fault dump requests and PostSimulation/shutdown flushes them from the owner phase.",
+    "rollbackAuthority": "presentation-only; no StateRingBuffer/Merkle/save route",
+    "notes": "Static source proof only. Unity import, shader import, Frame Debugger CBUFFER proof, profiler GC proof, and measured GPU timing remain pending under no-premature-rebuild guard."
   }
 }

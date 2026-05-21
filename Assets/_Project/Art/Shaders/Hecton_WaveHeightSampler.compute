@@ -1,4 +1,5 @@
 #pragma kernel SampleWaveHeights
+#pragma kernel SampleBuoyancyReadbackRequests
 
 #define H8_WAVE_THREADS_PER_GROUP 64
 #define H8_OCEAN_TWO_PI 6.28318530718
@@ -14,6 +15,17 @@ struct H8WaveParametersDTO
 StructuredBuffer<H8WaveParametersDTO> _H8OceanWaveParameters;
 StructuredBuffer<float4> _H8WaveSamplePositions;
 RWStructuredBuffer<float4> _H8WaveSampleResults;
+Texture2D<float4> _H8OceanWakeDisplacement;
+SamplerState sampler_H8OceanWakeDisplacement;
+
+struct ReadbackRequestDTO
+{
+    float2 LocalXZ;
+    float ResultHeight;
+    uint EntityHash;
+};
+
+RWStructuredBuffer<ReadbackRequestDTO> _H8BuoyancyReadbackRequests;
 
 cbuffer HectonWaveHeightSamplerConstants
 {
@@ -27,6 +39,7 @@ cbuffer HectonWaveHeightSamplerConstants
     float4 _H8OceanWavePhaseBase0;
     float4 _H8OceanWavePhaseBase1;
     float4 _H8WaveSampleLod;
+    float4 _H8OceanShorelineDepthParams;
 };
 
 float H8WaveFiniteOr(float value, float fallbackValue)
@@ -111,10 +124,64 @@ float H8WaveAmplitude(float4 lane)
     return min(wavelength * 0.125, H8WaveSteepness(lane) / max(waveNumber, 0.000001));
 }
 
+float2 H8WaveWakeUv(float2 projectedAupXZ)
+{
+    float worldSize = max(H8WaveFiniteOr(_H8OceanShorelineDepthParams.z, 512.0), 1.0);
+    return frac(projectedAupXZ / worldSize + 0.5);
+}
+
+float2 H8ResolveWakeProjectedAupXZ(float2 localXz)
+{
+    float2 cameraProjection = _H8OceanCameraAupLocalProjection.xy;
+    bool finiteProjection = all(cameraProjection == cameraProjection) && all(abs(cameraProjection) < 1.0e20);
+    return localXz + (finiteProjection ? cameraProjection : float2(0.0, 0.0));
+}
+
+float H8ResolveWakeHeightLocal(float2 localXz)
+{
+    float wakeStrength = max(H8WaveFiniteOr(_H8OceanShorelineDepthParams.w, 0.0), 0.0);
+    if (wakeStrength <= 0.0001)
+        return 0.0;
+
+    float2 wakeProjectedAupXZ = H8ResolveWakeProjectedAupXZ(localXz);
+    float4 wake = _H8OceanWakeDisplacement.SampleLevel(sampler_H8OceanWakeDisplacement, H8WaveWakeUv(wakeProjectedAupXZ), 0);
+    bool finiteWake = all(wake == wake) && all(abs(wake) < 1.0e20);
+    return finiteWake ? wake.z * 0.18 * wakeStrength : 0.0;
+}
+
 float3 H8WaveNormalize3(float3 value, float3 fallbackValue)
 {
     float lenSq = dot(value, value);
     return lenSq > 1e-6 ? value * rsqrt(lenSq) : fallbackValue;
+}
+
+float H8ResolveWaveHeightLocal(float2 projectedAupXZ)
+{
+    float height = 0.0;
+
+    [loop]
+    for (int i = 0; i < 6; i++)
+    {
+        float contribution = H8WaveContribution(i);
+        if (contribution <= 0.0001 || i >= _H8OceanActiveWaveCount + 1)
+            continue;
+
+        H8WaveParametersDTO dto = _H8OceanWaveParameters[i / 3];
+        int laneIndex = i - (i / 3) * 3;
+        float4 lane = H8GetWaveLane(dto, laneIndex);
+        float2 direction = H8WaveDirection(lane);
+        float wavelength = H8WaveWavelength(lane);
+        float waveNumber = H8_OCEAN_TWO_PI / wavelength;
+        float projected = dot(projectedAupXZ, direction);
+        float phaseOffset = (float)(i + 1) * 0.754877666;
+        float phase = H8WaveWrapPhase(H8GetWavePhaseBase(i) + projected * waveNumber + phaseOffset + H8WaveSpeed(lane) * _H8OceanSurfaceTime);
+        float sine;
+        float cosine;
+        sincos(phase, sine, cosine);
+        height += H8WaveAmplitude(lane) * contribution * sine;
+    }
+
+    return H8WaveFiniteOr(height + H8ResolveWakeHeightLocal(projectedAupXZ) + _H8WaveSeaLevel, 0.0);
 }
 
 [numthreads(H8_WAVE_THREADS_PER_GROUP, 1, 1)]
@@ -161,4 +228,19 @@ void SampleWaveHeights(uint3 dispatchThreadId : SV_DispatchThreadID)
     float4 result = float4(height, normal.x, normal.z, 1.0);
     bool finiteResult = all(result == result) && all(abs(result) < 1.0e20);
     _H8WaveSampleResults[index] = finiteResult ? result : float4(0.0, 0.0, 0.0, 0.0);
+}
+
+[numthreads(H8_WAVE_THREADS_PER_GROUP, 1, 1)]
+void SampleBuoyancyReadbackRequests(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint index = dispatchThreadId.x;
+    if (index >= (uint)_H8WaveSampleCount)
+        return;
+
+    ReadbackRequestDTO request = _H8BuoyancyReadbackRequests[index];
+    float2 projectedAupXZ = request.LocalXZ;
+    float height = H8ResolveWaveHeightLocal(projectedAupXZ);
+    bool finiteHeight = (height == height) && abs(height) < 1.0e20;
+    request.ResultHeight = finiteHeight ? height : 0.0;
+    _H8BuoyancyReadbackRequests[index] = request;
 }

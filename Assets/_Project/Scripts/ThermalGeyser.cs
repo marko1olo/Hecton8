@@ -239,7 +239,7 @@ namespace Hecton8.Caves
             aup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return MathGuard.IsFinite(in aup);
+            return aup.IsFinite();
         }
 
         private void TryRegister()

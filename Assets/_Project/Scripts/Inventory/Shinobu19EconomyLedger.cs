@@ -399,21 +399,30 @@ namespace Hecton8.Inventory
             if (vault == null || capacity <= 0)
                 return false;
 
-            hashes = vault.GetBuffer<uint>(
+            if (!OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuInventoryHashes,
                 capacity,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.UninitializedMemory);
-            quantities = vault.GetBuffer<int>(
+                NativeArrayOptions.UninitializedMemory,
+                vault,
+                out hashes) ||
+                !OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuInventoryQuantities,
                 capacity,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.UninitializedMemory);
-            durabilities = vault.GetBuffer<float>(
+                NativeArrayOptions.UninitializedMemory,
+                vault,
+                out quantities) ||
+                !OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuInventoryDurabilities,
                 capacity,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.UninitializedMemory);
+                NativeArrayOptions.UninitializedMemory,
+                vault,
+                out durabilities))
+            {
+                hashes = default;
+                quantities = default;
+                durabilities = default;
+                return false;
+            }
 
             resolvedCapacity = hashes.IsCreated && quantities.IsCreated && durabilities.IsCreated
                 ? math.min(hashes.Length, math.min(quantities.Length, durabilities.Length))
@@ -432,16 +441,23 @@ namespace Hecton8.Inventory
             if (vault == null || recipeCapacity <= 0)
                 return false;
 
-            recipes = vault.GetBuffer<CraftingRecipeDTO>(
+            if (!OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuRecipeDtos,
                 recipeCapacity,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.UninitializedMemory);
-            masks = vault.GetBuffer<CraftingRecipeMaskDTO>(
+                NativeArrayOptions.UninitializedMemory,
+                vault,
+                out recipes) ||
+                !OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuRecipeMasks,
                 recipeCapacity,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.UninitializedMemory);
+                NativeArrayOptions.UninitializedMemory,
+                vault,
+                out masks))
+            {
+                recipes = default;
+                masks = default;
+                return false;
+            }
 
             return recipes.IsCreated && masks.IsCreated && recipes.Length >= recipeCapacity && masks.Length >= recipeCapacity;
         }
@@ -455,12 +471,12 @@ namespace Hecton8.Inventory
             if (vault == null || ingredientCapacity <= 0)
                 return false;
 
-            ingredients = vault.GetBuffer<CraftingIngredientDTO>(
+            return OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuRecipeIngredients,
                 ingredientCapacity,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.UninitializedMemory);
-            return ingredients.IsCreated && ingredients.Length >= ingredientCapacity;
+                NativeArrayOptions.UninitializedMemory,
+                vault,
+                out ingredients);
         }
 
         public static bool TryResolvePhysicalConstants(
@@ -472,12 +488,12 @@ namespace Hecton8.Inventory
             if (vault == null || itemCapacity <= 0)
                 return false;
 
-            constants = vault.GetBuffer<ItemPhysicalConstantsDTO>(
+            return OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuPhysicalConstants,
                 itemCapacity,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.UninitializedMemory);
-            return constants.IsCreated && constants.Length >= itemCapacity;
+                NativeArrayOptions.UninitializedMemory,
+                vault,
+                out constants);
         }
 
         public static bool TryResolveCarryTotals(IDataVault vault, out NativeArray<ShinobuCarryTotalsDTO> totals)
@@ -486,12 +502,12 @@ namespace Hecton8.Inventory
             if (vault == null)
                 return false;
 
-            totals = vault.GetBuffer<ShinobuCarryTotalsDTO>(
+            return OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuInventoryCarryTotals,
                 1,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.ClearMemory);
-            return totals.IsCreated && totals.Length > 0;
+                NativeArrayOptions.ClearMemory,
+                vault,
+                out totals);
         }
 
         public static bool TryResolveHotbarRoutes(IDataVault vault, int hotbarCapacity, out NativeArray<int> hotbarIndices)
@@ -500,12 +516,12 @@ namespace Hecton8.Inventory
             if (vault == null || hotbarCapacity <= 0)
                 return false;
 
-            hotbarIndices = vault.GetBuffer<int>(
+            return OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuHotbarRoutes,
                 hotbarCapacity,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.UninitializedMemory);
-            return hotbarIndices.IsCreated && hotbarIndices.Length >= hotbarCapacity;
+                NativeArrayOptions.UninitializedMemory,
+                vault,
+                out hotbarIndices);
         }
 
         public static bool TryResolveTelemetry(IDataVault vault, out NativeArray<EconomyTelemetryEntry> telemetry)
@@ -514,12 +530,71 @@ namespace Hecton8.Inventory
             if (vault == null)
                 return false;
 
-            telemetry = vault.GetBuffer<EconomyTelemetryEntry>(
+            return OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuEconomyTelemetryRing,
                 BlackBoxCapacity,
+                NativeArrayOptions.ClearMemory,
+                vault,
+                out telemetry);
+        }
+
+        private static bool OpenOrAcquireEconomyVaultBuffer<T>(
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            IDataVault vault,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            VaultGenerationHandle<T> handle;
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                    return false;
+
+                return TryOpenEconomyVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
                 SystemID.GameplayPlayer,
-                NativeArrayOptions.ClearMemory);
-            return telemetry.IsCreated && telemetry.Length >= BlackBoxCapacity;
+                options);
+            return TryOpenEconomyVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenEconomyVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsEconomyVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsEconomyVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.GameplayPlayer &&
+                   handle.Generation != 0u;
         }
 
         public static int GenerateEmergencyMockRecipes(
@@ -1203,11 +1278,16 @@ namespace Hecton8.Inventory
             if (vault == null || byteCapacity <= 0)
                 return ShinobuTransactionStatus.InvalidInput;
 
-            destination = vault.GetBuffer<byte>(
+            if (!OpenOrAcquireEconomyVaultBuffer(
                 BufferID.ShinobuRleScratch,
                 byteCapacity,
-                SystemID.GameplayPlayer,
-                NativeArrayOptions.UninitializedMemory);
+                NativeArrayOptions.UninitializedMemory,
+                vault,
+                out destination))
+            {
+                return ShinobuTransactionStatus.DestinationTooSmall;
+            }
+
             return ExportRle(hashes, quantities, durabilities, destination, out bytesWritten);
         }
 
@@ -1994,12 +2074,12 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuIndexOfJob : IJob
     {
-        [ReadOnly] public NativeArray<uint> Hashes;
-        [ReadOnly] public NativeArray<int> Quantities;
-        public NativeArray<int> Result;
+        [ReadOnly, NoAlias] public NativeArray<uint> Hashes;
+        [ReadOnly, NoAlias] public NativeArray<int> Quantities;
+        [WriteOnly, NoAlias] public NativeArray<int> Result;
         public uint ItemHash;
 
         public void Execute()
@@ -2009,13 +2089,13 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuGhostSlotScrubJob : IJob
     {
-        [NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
-        [NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
-        public NativeArray<int> Result;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
+        [WriteOnly, NoAlias] public NativeArray<int> Result;
 
         public void Execute()
         {
@@ -2025,12 +2105,12 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct ShinobuZeroMemClearJob : IJob
     {
-        [NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
-        [NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
 
         public void Execute()
         {
@@ -2043,13 +2123,13 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuLedgerTransactionJob : IJob
     {
-        [NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
-        [NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
-        public NativeArray<int> Result;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
+        [WriteOnly, NoAlias] public NativeArray<int> Result;
         public uint ItemHash;
         public int DeltaQuantity;
         public float DefaultDurability01;
@@ -2073,13 +2153,13 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuMockConsumeSignalJob : IJob
     {
-        [NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
-        [NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
-        [NativeDisableParallelForRestriction] public NativeArray<MockConsumeSignal> Signals;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
+        [WriteOnly, NoAlias, NativeDisableParallelForRestriction] public NativeArray<MockConsumeSignal> Signals;
         public uint Seed;
         public uint ActorHash;
         public uint FrameIndex;
@@ -2118,16 +2198,16 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuCraftTransactionJob : IJob
     {
-        [NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
-        [NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
-        [ReadOnly] public NativeArray<CraftingRecipeDTO> Recipes;
-        [ReadOnly] public NativeArray<CraftingRecipeMaskDTO> RecipeMasks;
-        [ReadOnly] public NativeArray<CraftingIngredientDTO> RecipeIngredients;
-        public NativeArray<int> Result;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
+        [ReadOnly, NoAlias] public NativeArray<CraftingRecipeDTO> Recipes;
+        [ReadOnly, NoAlias] public NativeArray<CraftingRecipeMaskDTO> RecipeMasks;
+        [ReadOnly, NoAlias] public NativeArray<CraftingIngredientDTO> RecipeIngredients;
+        [WriteOnly, NoAlias] public NativeArray<int> Result;
         public int RecipeIndex;
         public ulong InventoryMask;
 
@@ -2170,13 +2250,13 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuCraftingDagClosureJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<CraftingRecipeDTO> Recipes;
-        [ReadOnly] public NativeArray<CraftingRecipeMaskDTO> RecipeMasks;
-        [ReadOnly] public NativeArray<byte> DirectCraftable;
-        [NativeDisableParallelForRestriction] public NativeArray<byte> DagCraftable;
+        [ReadOnly, NoAlias] public NativeArray<CraftingRecipeDTO> Recipes;
+        [ReadOnly, NoAlias] public NativeArray<CraftingRecipeMaskDTO> RecipeMasks;
+        [ReadOnly, NoAlias] public NativeArray<byte> DirectCraftable;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<byte> DagCraftable;
         public int IterationCount;
 
         public void Execute(int index)
@@ -2218,15 +2298,15 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuRecipeFastFailJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<CraftingRecipeDTO> Recipes;
-        [ReadOnly] public NativeArray<CraftingRecipeMaskDTO> RecipeMasks;
-        [ReadOnly] public NativeArray<CraftingIngredientDTO> RecipeIngredients;
-        [ReadOnly] public NativeArray<uint> Hashes;
-        [ReadOnly] public NativeArray<int> Quantities;
-        [NativeDisableParallelForRestriction] public NativeArray<byte> Craftable;
+        [ReadOnly, NoAlias] public NativeArray<CraftingRecipeDTO> Recipes;
+        [ReadOnly, NoAlias] public NativeArray<CraftingRecipeMaskDTO> RecipeMasks;
+        [ReadOnly, NoAlias] public NativeArray<CraftingIngredientDTO> RecipeIngredients;
+        [ReadOnly, NoAlias] public NativeArray<uint> Hashes;
+        [ReadOnly, NoAlias] public NativeArray<int> Quantities;
+        [WriteOnly, NoAlias, NativeDisableParallelForRestriction] public NativeArray<byte> Craftable;
         public ulong InventoryMask;
 
         public void Execute(int index)
@@ -2274,10 +2354,10 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuEconomyTelemetryJob : IJob
     {
-        [NativeDisableParallelForRestriction] public NativeArray<EconomyTelemetryEntry> Telemetry;
+        [WriteOnly, NoAlias, NativeDisableParallelForRestriction] public NativeArray<EconomyTelemetryEntry> Telemetry;
         public EconomyTelemetryEntry Entry;
         public int Cursor;
         public float SpikeThresholdMs;
@@ -2292,13 +2372,13 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuDurabilityDegradationJob : IJobParallelFor
     {
-        [NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
-        [NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
-        [NativeDisableParallelForRestriction] public NativeArray<ToolBrokenSignal> BrokenSignals;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
+        [WriteOnly, NoAlias, NativeDisableParallelForRestriction] public NativeArray<ToolBrokenSignal> BrokenSignals;
         public float WearDelta01;
         public uint FrameIndex;
 
@@ -2336,16 +2416,16 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuContainerTransferJob : IJob
     {
-        [NativeDisableParallelForRestriction] public NativeArray<uint> SourceHashes;
-        [NativeDisableParallelForRestriction] public NativeArray<int> SourceQuantities;
-        [NativeDisableParallelForRestriction] public NativeArray<float> SourceDurabilities;
-        [NativeDisableParallelForRestriction] public NativeArray<uint> TargetHashes;
-        [NativeDisableParallelForRestriction] public NativeArray<int> TargetQuantities;
-        [NativeDisableParallelForRestriction] public NativeArray<float> TargetDurabilities;
-        public NativeArray<int> Result;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<uint> SourceHashes;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> SourceQuantities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> SourceDurabilities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<uint> TargetHashes;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> TargetQuantities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> TargetDurabilities;
+        [WriteOnly, NoAlias] public NativeArray<int> Result;
         public int SourceStartIndex;
         public int SlotCount;
 
@@ -2386,14 +2466,14 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuEncumbranceResolveJob : IJob
     {
-        [ReadOnly] public NativeArray<uint> Hashes;
-        [ReadOnly] public NativeArray<int> Quantities;
-        [ReadOnly] public NativeArray<ItemPhysicalConstantsDTO> PhysicalConstants;
-        public NativeArray<EncumbranceSignal> Result;
-        [NativeDisableParallelForRestriction] public NativeArray<ShinobuCarryTotalsDTO> CarryTotals;
+        [ReadOnly, NoAlias] public NativeArray<uint> Hashes;
+        [ReadOnly, NoAlias] public NativeArray<int> Quantities;
+        [ReadOnly, NoAlias] public NativeArray<ItemPhysicalConstantsDTO> PhysicalConstants;
+        [WriteOnly, NoAlias] public NativeArray<EncumbranceSignal> Result;
+        [WriteOnly, NoAlias, NativeDisableParallelForRestriction] public NativeArray<ShinobuCarryTotalsDTO> CarryTotals;
         public float MaxMassKg;
         public float MaxVolumeLiters;
         public uint FrameIndex;
@@ -2474,15 +2554,15 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuLootMagnetSpatialQueryJob : IJob
     {
-        [ReadOnly] public NativeParallelMultiHashMap<int, DebrisSpatialEntry> SpatialHash;
-        [NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
-        [NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
-        [NativeDisableParallelForRestriction] public NativeArray<DebrisDestroyedSignal> DestroyedSignals;
-        public NativeArray<int> DestroyedCount;
+        [ReadOnly, NoAlias] public NativeParallelMultiHashMap<int, DebrisSpatialEntry> SpatialHash;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
+        [WriteOnly, NoAlias, NativeDisableParallelForRestriction] public NativeArray<DebrisDestroyedSignal> DestroyedSignals;
+        [WriteOnly, NoAlias] public NativeArray<int> DestroyedCount;
         public double3 PlayerAup;
         public double3 SectorOriginAup;
         public float RadiusMeters;
@@ -2565,12 +2645,12 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuHotbarRouteJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<int> HotbarSlotToInventorySlot;
-        [ReadOnly] public NativeArray<uint> Hashes;
-        [NativeDisableParallelForRestriction] public NativeArray<EquipItemSignal> EquipSignals;
+        [ReadOnly, NoAlias] public NativeArray<int> HotbarSlotToInventorySlot;
+        [ReadOnly, NoAlias] public NativeArray<uint> Hashes;
+        [WriteOnly, NoAlias, NativeDisableParallelForRestriction] public NativeArray<EquipItemSignal> EquipSignals;
         public uint FrameIndex;
 
         public void Execute(int hotbarSlot)
@@ -2594,14 +2674,14 @@ namespace Hecton8.Inventory
         }
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ShinobuLootMagnetInsertJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<DebrisDestroyedSignal> DebrisSignals;
-        [NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
-        [NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
-        [NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
-        [NativeDisableParallelForRestriction] public NativeArray<byte> Accepted;
+        [ReadOnly, NoAlias] public NativeArray<DebrisDestroyedSignal> DebrisSignals;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<uint> Hashes;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> Quantities;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<float> Durabilities;
+        [WriteOnly, NoAlias, NativeDisableParallelForRestriction] public NativeArray<byte> Accepted;
 
         public void Execute(int index)
         {

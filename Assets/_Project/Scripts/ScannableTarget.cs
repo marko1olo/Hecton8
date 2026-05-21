@@ -21,8 +21,9 @@ namespace Hecton8.Gameplay
             "Passive scan profile has been captured. Manual classification pending.";
         private const int MaxLoreEntityCount = 1024;
         private static readonly ScannableTarget[] s_loreEntityTargets = new ScannableTarget[MaxLoreEntityCount]; // COLD ALLOC: ScannableTarget[1024] - lore scanner owner mirror - owner: ScannableTarget
-        private static NativeArray<AbsoluteUniversePosition> s_loreEntityAups;
-        private static NativeArray<uint> s_loreEntityHashes;
+        private static IDataVault s_loreEntityVault;
+        private static VaultGenerationHandle<AbsoluteUniversePosition> s_loreEntityAupsHandle;
+        private static VaultGenerationHandle<uint> s_loreEntityHashesHandle;
         private static int s_loreEntityCount;
         private static int s_loreEntitySyncFrame = int.MinValue;
         private static uint s_loreTitleLookupHash;
@@ -34,7 +35,9 @@ namespace Hecton8.Gameplay
         private string _resolvedEntryTitle;
         private string _resolvedEntryCategory;
         private string _resolvedEntrySummary;
+        private ScannableCategoryUtility.CategoryKind _resolvedCategoryKind;
         private uint _entityHash;
+        private int _runtimeObjectId;
 
         private static int ResolveScannerFrameInt()
         {
@@ -78,7 +81,16 @@ namespace Hecton8.Gameplay
             }
         }
 
+        public ScannableCategoryUtility.CategoryKind CachedCategoryKind => _resolvedCategoryKind;
+
+        public uint CachedEntityHash => _entityHash;
+
         public static int LoreTitleLookupVersion => s_loreTitleLookupVersion;
+
+        public int ReadRuntimeObjectId()
+        {
+            return _runtimeObjectId;
+        }
 
         /// <summary>Stable FNV-1a entity hash used by zero-GC scanner paths.</summary>
         public uint EntityHash
@@ -113,11 +125,13 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            CacheRuntimeObjectId();
             RefreshResolvedStrings();
         }
 
         private void OnEnable()
         {
+            CacheRuntimeObjectId();
             EnsureResolvedStrings();
             if (_spatialHandle == 0)
                 _spatialHandle = WorldSpatialHashGrid.RegisterScannable(this);
@@ -189,20 +203,32 @@ namespace Hecton8.Gameplay
             _resolvedEntrySummary = string.IsNullOrWhiteSpace(entrySummary)
                 ? "Passive scan profile has been captured."
                 : entrySummary.Trim();
+            _resolvedCategoryKind = ScannableCategoryUtility.Classify(_resolvedEntryCategory);
             _entityHash = H8DataHash.ComputeFnv1A32(_resolvedEntryId);
             InvalidateLoreTitleLookupCache();
         }
 
-        public static bool TryGetLoreEntityBuffers(
+        private void CacheRuntimeObjectId()
+        {
+            GameObject targetObject = gameObject;
+            _runtimeObjectId = targetObject != null ? targetObject.GetInstanceID() : 0;
+        }
+
+        public static void PublishLoreEntitySnapshotsFromOwnerPhase()
+        {
+            SyncLoreEntityVaultAups();
+        }
+
+        public static bool TryReadLoreEntityBuffers(
             out NativeArray<AbsoluteUniversePosition> loreEntityAups,
             out NativeArray<uint> loreEntityHashes,
             out int count)
         {
-            SyncLoreEntityVaultAups();
-            loreEntityAups = s_loreEntityAups;
-            loreEntityHashes = s_loreEntityHashes;
+            loreEntityAups = default;
+            loreEntityHashes = default;
             count = s_loreEntityCount;
             return count > 0 &&
+                   TryReadLoreEntityVaultBuffers(out loreEntityAups, out loreEntityHashes) &&
                    loreEntityAups.IsCreated &&
                    loreEntityHashes.IsCreated &&
                    loreEntityAups.Length >= count &&
@@ -218,7 +244,7 @@ namespace Hecton8.Gameplay
             if (target == null)
                 return null;
 
-            return hash == 0u || target.EntityHash == hash ? target : null;
+            return hash == 0u || target._entityHash == hash ? target : null;
         }
 
         public static bool TryWriteLoreEntityTitle(uint hash, Span<char> destination, out int written)
@@ -298,6 +324,7 @@ namespace Hecton8.Gameplay
             s_loreEntityTargets[index] = target;
             WriteLoreEntitySlot(index, target);
             InvalidateLoreTitleLookupCache();
+            PublishLoreEntitySnapshotsFromOwnerPhase();
             return index;
         }
 
@@ -334,6 +361,7 @@ namespace Hecton8.Gameplay
             ClearLoreEntitySlot(lastIndex);
             target._loreRegistryIndex = -1;
             InvalidateLoreTitleLookupCache();
+            PublishLoreEntitySnapshotsFromOwnerPhase();
         }
 
         private static int FindLoreEntityIndex(ScannableTarget target)
@@ -364,79 +392,139 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < s_loreEntityCount; i++)
             {
                 ScannableTarget target = s_loreEntityTargets[i];
-                if (target == null || target.transform == null)
+                if (target == null)
                 {
                     ClearLoreEntitySlot(i);
                     continue;
                 }
 
+                WorldSpatialHashGrid.Refresh(target._spatialHandle);
                 WriteLoreEntitySlot(i, target);
             }
         }
 
         private static void WriteLoreEntitySlot(int index, ScannableTarget target)
         {
-            if ((uint)index >= MaxLoreEntityCount || target == null || !EnsureLoreEntityVaultBuffers())
+            if ((uint)index >= MaxLoreEntityCount ||
+                target == null ||
+                !EnsureLoreEntityVaultBuffers() ||
+                !TryReadLoreEntityVaultBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<uint> hashes))
+            {
                 return;
+            }
+
+            if (!target.TryReadLoreEntityAupFromSpatialOwner(out AbsoluteUniversePosition entityAup))
+            {
+                aups[index] = default;
+                hashes[index] = 0u;
+                return;
+            }
 
             target.EnsureResolvedStrings();
-            s_loreEntityAups[index] = target.TryResolveLoreEntityAup(out AbsoluteUniversePosition entityAup)
-                ? entityAup
-                : GlobalSignals.CurrentRuntimeOriginAup();
-            s_loreEntityHashes[index] = target.EntityHash;
+            aups[index] = entityAup;
+            hashes[index] = target._entityHash;
         }
 
-        private bool TryResolveLoreEntityAup(out AbsoluteUniversePosition entityAup)
+        private bool TryReadLoreEntityAupFromSpatialOwner(out AbsoluteUniversePosition entityAup)
         {
             entityAup = default;
-            Transform cachedTransform = transform;
-            if (cachedTransform == null)
-                return false;
-
-            Vector3 runtimePosition = cachedTransform.position;
-            if (!math.isfinite(runtimePosition.x) ||
-                !math.isfinite(runtimePosition.y) ||
-                !math.isfinite(runtimePosition.z))
+            if (_spatialHandle <= 0 ||
+                !WorldSpatialHashGrid.TryGetAbsolutePosition(_spatialHandle, out entityAup) ||
+                !entityAup.IsFinite())
             {
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            entityAup = AbsoluteUniversePosition.OffsetMeters(
-                in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return MathGuard.IsFinite(in entityAup);
+            return true;
         }
 
         private static void ClearLoreEntitySlot(int index)
         {
-            if ((uint)index >= MaxLoreEntityCount || !EnsureLoreEntityVaultBuffers())
+            if ((uint)index >= MaxLoreEntityCount ||
+                !EnsureLoreEntityVaultBuffers() ||
+                !TryReadLoreEntityVaultBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<uint> hashes))
+            {
                 return;
+            }
 
-            s_loreEntityAups[index] = default;
-            s_loreEntityHashes[index] = 0u;
+            aups[index] = default;
+            hashes[index] = 0u;
         }
 
         private static bool EnsureLoreEntityVaultBuffers()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = s_loreEntityVault;
+            IDataVault activeVault = GlobalRegistry.DataVault;
+            if (vault != null && activeVault != null && !ReferenceEquals(vault, activeVault))
+            {
+                InvalidateLoreEntityVaultViews(resetHandles: true);
+                vault = null;
+            }
+
+            if (vault != null &&
+                TryReadLoreEntityVaultBuffers(out NativeArray<AbsoluteUniversePosition> existingAups, out NativeArray<uint> existingHashes))
+            {
+                return existingAups.Length >= MaxLoreEntityCount &&
+                       existingHashes.Length >= MaxLoreEntityCount;
+            }
+
+            vault = activeVault;
             if (vault == null)
                 return false;
 
-            s_loreEntityAups = vault.GetBuffer<AbsoluteUniversePosition>(
+            s_loreEntityVault = vault;
+            InvalidateLoreEntityVaultViews(resetHandles: false);
+            s_loreEntityAupsHandle = vault.GetGenerationHandle<AbsoluteUniversePosition>(
                 BufferID.LoreEntityAUPs,
                 MaxLoreEntityCount,
                 SystemID.UI,
                 NativeArrayOptions.ClearMemory);
-            s_loreEntityHashes = vault.GetBuffer<uint>(
+            s_loreEntityHashesHandle = vault.GetGenerationHandle<uint>(
                 BufferID.LoreEntityHashes,
                 MaxLoreEntityCount,
                 SystemID.UI,
                 NativeArrayOptions.ClearMemory);
-            return s_loreEntityAups.IsCreated &&
-                   s_loreEntityHashes.IsCreated &&
-                   s_loreEntityAups.Length >= MaxLoreEntityCount &&
-                   s_loreEntityHashes.Length >= MaxLoreEntityCount;
+            return TryReadLoreEntityVaultBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<uint> hashes) &&
+                   aups.Length >= MaxLoreEntityCount &&
+                   hashes.Length >= MaxLoreEntityCount;
+        }
+
+        private static bool TryReadLoreEntityVaultBuffers(
+            out NativeArray<AbsoluteUniversePosition> aups,
+            out NativeArray<uint> hashes)
+        {
+            aups = default;
+            hashes = default;
+            IDataVault vault = s_loreEntityVault;
+            if (vault == null ||
+                !IsLoreEntityHandleCreated(in s_loreEntityAupsHandle) ||
+                !IsLoreEntityHandleCreated(in s_loreEntityHashesHandle) ||
+                !vault.TryResolveHandle(in s_loreEntityAupsHandle, out aups) ||
+                !vault.TryResolveHandle(in s_loreEntityHashesHandle, out hashes) ||
+                !aups.IsCreated ||
+                !hashes.IsCreated)
+            {
+                InvalidateLoreEntityVaultViews(resetHandles: false);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void InvalidateLoreEntityVaultViews(bool resetHandles)
+        {
+            if (!resetHandles)
+                return;
+
+            s_loreEntityVault = null;
+            s_loreEntityAupsHandle = default;
+            s_loreEntityHashesHandle = default;
+        }
+
+        private static bool IsLoreEntityHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private static string CachedToUpperInvariant(string input)

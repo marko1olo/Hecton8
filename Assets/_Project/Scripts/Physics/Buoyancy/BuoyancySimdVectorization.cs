@@ -49,8 +49,8 @@ namespace Hecton8.Physics
         [FieldOffset(36)] public uint LastStateHash;
         [FieldOffset(40)] public float MaxError;
         [FieldOffset(44)] public float MaxSpeedSq;
-        [FieldOffset(48)] public ulong _pad0;
-        [FieldOffset(56)] public ulong _pad1;
+        [FieldOffset(48)] private ulong _pad0;
+        [FieldOffset(56)] private ulong _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -69,7 +69,7 @@ namespace Hecton8.Physics
         [FieldOffset(48)] public float ApproximationQualityWeight;
         [FieldOffset(52)] public float MaxApproximationError;
         [FieldOffset(56)] public int SinPolynomialDegree;
-        [FieldOffset(60)] public uint _pad0;
+        [FieldOffset(60)] private uint _pad0;
     }
 
     public static class SimdVectorizationConstants
@@ -139,8 +139,8 @@ namespace Hecton8.Physics
                    OffsetOf<SimdTelemetryEntry>(nameof(SimdTelemetryEntry.LastStateHash)) == 36 &&
                    OffsetOf<SimdTelemetryEntry>(nameof(SimdTelemetryEntry.MaxError)) == 40 &&
                    OffsetOf<SimdTelemetryEntry>(nameof(SimdTelemetryEntry.MaxSpeedSq)) == 44 &&
-                   OffsetOf<SimdTelemetryEntry>(nameof(SimdTelemetryEntry._pad0)) == 48 &&
-                   OffsetOf<SimdTelemetryEntry>(nameof(SimdTelemetryEntry._pad1)) == 56;
+                   OffsetOf<SimdTelemetryEntry>("_pad0") == 48 &&
+                   OffsetOf<SimdTelemetryEntry>("_pad1") == 56;
         }
 
         private static bool ValidateHydrodynamicTuningOffsets()
@@ -158,7 +158,7 @@ namespace Hecton8.Physics
                    OffsetOf<SimdHydrodynamicTuningDTO>(nameof(SimdHydrodynamicTuningDTO.ApproximationQualityWeight)) == 48 &&
                    OffsetOf<SimdHydrodynamicTuningDTO>(nameof(SimdHydrodynamicTuningDTO.MaxApproximationError)) == 52 &&
                    OffsetOf<SimdHydrodynamicTuningDTO>(nameof(SimdHydrodynamicTuningDTO.SinPolynomialDegree)) == 56 &&
-                   OffsetOf<SimdHydrodynamicTuningDTO>(nameof(SimdHydrodynamicTuningDTO._pad0)) == 60;
+                   OffsetOf<SimdHydrodynamicTuningDTO>("_pad0") == 60;
         }
 
         public static int OffsetOf<T>(string fieldName) where T : struct
@@ -209,8 +209,8 @@ namespace Hecton8.Physics
             if (fieldName == nameof(SimdTelemetryEntry.LastStateHash)) return 36;
             if (fieldName == nameof(SimdTelemetryEntry.MaxError)) return 40;
             if (fieldName == nameof(SimdTelemetryEntry.MaxSpeedSq)) return 44;
-            if (fieldName == nameof(SimdTelemetryEntry._pad0)) return 48;
-            if (fieldName == nameof(SimdTelemetryEntry._pad1)) return 56;
+            if (fieldName == "_pad0") return 48;
+            if (fieldName == "_pad1") return 56;
             return -1;
         }
 
@@ -229,7 +229,7 @@ namespace Hecton8.Physics
             if (fieldName == nameof(SimdHydrodynamicTuningDTO.ApproximationQualityWeight)) return 48;
             if (fieldName == nameof(SimdHydrodynamicTuningDTO.MaxApproximationError)) return 52;
             if (fieldName == nameof(SimdHydrodynamicTuningDTO.SinPolynomialDegree)) return 56;
-            if (fieldName == nameof(SimdHydrodynamicTuningDTO._pad0)) return 60;
+            if (fieldName == "_pad0") return 60;
             return -1;
         }
     }
@@ -778,7 +778,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VectorizedFrustumCullJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<SimdFloat3Padded> Centers;
@@ -836,7 +836,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VectorizedFrustumCullLane8Job : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<SimdFloat3Padded> Centers;
@@ -1071,7 +1071,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct CompactVisibleIndicesJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<int> VisibleIndexMask;

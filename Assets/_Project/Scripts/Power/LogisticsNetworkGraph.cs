@@ -110,18 +110,29 @@ namespace Hecton8.Power
     /// </summary>
     public sealed class LogisticsNetworkGraph : IDisposable
     {
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct LogisticsNode
         {
+            [FieldOffset(0)]
             public uint Id;
+            [FieldOffset(4)]
             public float Capacity;
+            [FieldOffset(8)]
             public float Resistance;
+            [FieldOffset(12)]
             public float CurrentLoad;
+            [FieldOffset(16)]
             public float Potential;
+            [FieldOffset(20)]
             public byte Priority;
+            [FieldOffset(21)]
             public LogisticsNodeFlags Flags;
+            [FieldOffset(22)]
             public byte NetworkId;
+            [FieldOffset(23)]
             public byte Reserved;
+            [FieldOffset(24)]
+            private ulong _pad0;
         }
 
         public struct TopologySummary
@@ -144,7 +155,7 @@ namespace Hecton8.Power
             public float UnservedDemand;
             public int PoweredCount;
             public int DisabledCount;
-            public bool HasDeficit;
+            public byte HasDeficit;
             public LogisticsBrownoutTier BrownoutTier;
         }
 
@@ -209,11 +220,12 @@ namespace Hecton8.Power
 
                 NativeArray<float> input = PowerPotentials;
                 NativeArray<float> output = NextPowerPotentials;
-                float qualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+                float qualityWeight = PowerSolverConvergenceMath.AuthoritativeQualityWeight;
                 int iterationBudget = math.clamp(PowerSolverConvergenceMath.ResolvePropagationIterations(qualityWeight), 1, FixedIterationCount);
                 float targetTolerance = PowerSolverConvergenceMath.ResolveSolverTargetTolerance(0.001f, qualityWeight);
                 float omega = PowerSolverConvergenceMath.ResolveSolverOmega(qualityWeight);
                 float previousResidual = float.MaxValue;
+                int residualGrowthCount = 0;
                 for (int iteration = 0; iteration < iterationBudget; iteration++)
                 {
                     float maxResidual = 0f;
@@ -277,7 +289,26 @@ namespace Hecton8.Power
 
                     bool residualGrew = previousResidual < float.MaxValue * 0.5f &&
                                         maxResidual > math.max(previousResidual + targetTolerance * 0.25f, previousResidual * 1.08f);
-                    omega = residualGrew ? math.max(0.55f, omega * 0.86f) : omega;
+                    if (residualGrew)
+                    {
+                        residualGrowthCount++;
+                        omega = math.max(0.55f, omega * 0.86f);
+                        if (residualGrowthCount >= 3)
+                        {
+                            for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+                            {
+                                input[nodeIndex] = ClampPotential(output[nodeIndex], PowerCapacities[nodeIndex]);
+                                NodeFlags[nodeIndex] = (byte)(NodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Divergent);
+                            }
+
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        residualGrowthCount = 0;
+                    }
+
                     previousResidual = maxResidual;
                 }
 
@@ -575,7 +606,7 @@ namespace Hecton8.Power
                 summary.SupplyRatio = summary.TotalConsumption > Epsilon
                     ? math.saturate(summary.TotalGeneration * math.rcp(summary.TotalConsumption))
                     : 1f;
-                summary.HasDeficit = summary.TotalGeneration + Epsilon < summary.TotalConsumption;
+                summary.HasDeficit = summary.TotalGeneration + Epsilon < summary.TotalConsumption ? (byte)1 : (byte)0;
                 summary.BrownoutTier = ResolveBrownoutTier(summary.SupplyRatio);
 
                 ResetConsumerStates();
@@ -584,8 +615,8 @@ namespace Hecton8.Power
                 AllocateServedDemand(ref summary);
                 BuildNodeInjection();
                 summary.UnservedDemand = math.max(0f, summary.TotalConsumption - summary.ServedDemand);
-                summary.HasDeficit = summary.UnservedDemand > Epsilon;
-                summary.BrownoutTier = summary.HasDeficit
+                summary.HasDeficit = summary.UnservedDemand > Epsilon ? (byte)1 : (byte)0;
+                summary.BrownoutTier = summary.HasDeficit != 0
                     ? LogisticsBrownoutTier.EmergencyOnly
                     : LogisticsBrownoutTier.None;
                 ApplyBinaryNodeLoads();
@@ -881,11 +912,12 @@ namespace Hecton8.Power
 
                 NativeArray<float> input = PotentialFront;
                 NativeArray<float> output = PotentialBack;
-                float qualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+                float qualityWeight = PowerSolverConvergenceMath.AuthoritativeQualityWeight;
                 int iterationBudget = PowerSolverConvergenceMath.ResolvePropagationIterations(qualityWeight);
                 float targetTolerance = PowerSolverConvergenceMath.ResolveSolverTargetTolerance(0.001f, qualityWeight);
                 float omega = PowerSolverConvergenceMath.ResolveSolverOmega(qualityWeight);
                 float previousResidual = float.MaxValue;
+                int residualGrowthCount = 0;
                 for (int iteration = 0; iteration < iterationBudget; iteration++)
                 {
                     float maxResidual = 0f;
@@ -961,7 +993,27 @@ namespace Hecton8.Power
 
                     bool residualGrew = previousResidual < float.MaxValue * 0.5f &&
                                         maxResidual > math.max(previousResidual + targetTolerance * 0.25f, previousResidual * 1.08f);
-                    omega = residualGrew ? math.max(0.55f, omega * 0.86f) : omega;
+                    if (residualGrew)
+                    {
+                        residualGrowthCount++;
+                        omega = math.max(0.55f, omega * 0.86f);
+                        if (residualGrowthCount >= 3)
+                        {
+                            for (int nodeIndex = solveStartNode; nodeIndex < solveEndNode; nodeIndex++)
+                            {
+                                input[nodeIndex] = math.saturate(math.isfinite(output[nodeIndex]) ? output[nodeIndex] : input[nodeIndex]);
+                                if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
+                                    PowerNodeFlags[nodeIndex] = (byte)(PowerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Divergent);
+                            }
+
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        residualGrowthCount = 0;
+                    }
+
                     previousResidual = maxResidual;
                 }
 
@@ -1391,6 +1443,9 @@ namespace Hecton8.Power
         private const string PowerBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_223.bin";
         private const string NativeMemoryOwner = nameof(LogisticsNetworkGraph);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const Allocator DataVaultExemptGraphStateAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptOwnerIndexAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
 
         private LogisticsNetworkType _networkType;
         private int _nodeCount;
@@ -1514,21 +1569,21 @@ namespace Hecton8.Power
             _runtimeConductiveEdgeCount = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[1] - runtime conductive edge count after ruptures - owner: LogisticsNetworkGraph
             RegisterNativeArray(_runtimeConductiveEdgeCount, nameof(_runtimeConductiveEdgeCount));
             // COLD ALLOC: TopologyEdgeRecord[edgeCapacity] — topology mutation source — owner: LogisticsNetworkGraph
-            _topologyEdgeList = new NativeList<TopologyEdgeRecord>(safeEdgeCapacity, Allocator.Persistent);
+            _topologyEdgeList = new NativeList<TopologyEdgeRecord>(safeEdgeCapacity, DataVaultExemptGraphStateAllocator);
             RegisterNativeList(_topologyEdgeList, nameof(_topologyEdgeList));
             // COLD ALLOC: ProducerRecord[nodeCapacity] — producer seed list — owner: LogisticsNetworkGraph
-            _producers = new NativeList<ProducerRecord>(safeNodeCapacity, Allocator.Persistent);
+            _producers = new NativeList<ProducerRecord>(safeNodeCapacity, DataVaultExemptGraphStateAllocator);
             RegisterNativeList(_producers, nameof(_producers));
             // COLD ALLOC: ConsumerRecord[consumerCapacity] — consumer demand list — owner: LogisticsNetworkGraph
-            _consumers = new NativeList<ConsumerRecord>(safeConsumerCapacity, Allocator.Persistent);
+            _consumers = new NativeList<ConsumerRecord>(safeConsumerCapacity, DataVaultExemptGraphStateAllocator);
             RegisterNativeList(_consumers, nameof(_consumers));
             // COLD ALLOC: NativeParallelHashMap<int,float>[nodeCapacity] — producer aggregation map — owner: LogisticsNetworkGraph
-            _producerMap = new NativeParallelHashMap<int, float>(safeNodeCapacity, Allocator.Persistent);
+            _producerMap = new NativeParallelHashMap<int, float>(safeNodeCapacity, DataVaultExemptOwnerIndexAllocator);
             RegisterNativeParallelHashMap(_producerMap, nameof(_producerMap));
             // COLD ALLOC: NativeParallelHashMap<int,float>[nodeCapacity] — consumer aggregation map — owner: LogisticsNetworkGraph
-            _consumerMap = new NativeParallelHashMap<int, float>(safeNodeCapacity, Allocator.Persistent);
+            _consumerMap = new NativeParallelHashMap<int, float>(safeNodeCapacity, DataVaultExemptOwnerIndexAllocator);
             RegisterNativeParallelHashMap(_consumerMap, nameof(_consumerMap));
-            _powerConnections = new NativeParallelMultiHashMap<int, int>(safeEdgeCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[edgeCapacity] - directed power adjacency fanout - owner: LogisticsNetworkGraph
+            _powerConnections = new NativeParallelMultiHashMap<int, int>(safeEdgeCapacity, DataVaultExemptGraphStateAllocator); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[edgeCapacity] - directed power adjacency fanout - owner: LogisticsNetworkGraph
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_powerConnections, NativeMemoryOwner, nameof(_powerConnections), NativeMemoryLifetime);
             // COLD ALLOC: NativeArray<ushort>[nodeCapacity] — published node-state bitmasks — owner: LogisticsNetworkGraph
             _publishedNodeStates = new NativeArray<ushort>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -1537,13 +1592,13 @@ namespace Hecton8.Power
             _publishedNodeStatesBack = new NativeArray<ushort>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeArray(_publishedNodeStatesBack, nameof(_publishedNodeStatesBack));
             // COLD ALLOC: NativeParallelHashMap<uint,ushort>[nodeCapacity] — published node-state lookup by stable node id — owner: LogisticsNetworkGraph
-            _publishedNodeStateMap = new NativeParallelHashMap<uint, ushort>(safeNodeCapacity, Allocator.Persistent);
+            _publishedNodeStateMap = new NativeParallelHashMap<uint, ushort>(safeNodeCapacity, DataVaultExemptOwnerIndexAllocator);
             RegisterNativeParallelHashMap(_publishedNodeStateMap, nameof(_publishedNodeStateMap));
             // COLD ALLOC: NativeParallelHashMap<uint,ushort>[nodeCapacity] — back-buffer node-state lookup for async publish — owner: LogisticsNetworkGraph
-            _publishedNodeStateBackMap = new NativeParallelHashMap<uint, ushort>(safeNodeCapacity, Allocator.Persistent);
+            _publishedNodeStateBackMap = new NativeParallelHashMap<uint, ushort>(safeNodeCapacity, DataVaultExemptOwnerIndexAllocator);
             RegisterNativeParallelHashMap(_publishedNodeStateBackMap, nameof(_publishedNodeStateBackMap));
             // COLD ALLOC: NativeQueue<int>[nodeCapacity] — iterative BFS frontier — owner: LogisticsNetworkGraph
-            _bfsQueue = new NativeQueue<int>(Allocator.Persistent);
+            _bfsQueue = new NativeQueue<int>(DataVaultExemptSceneScratchAllocator);
             NativeMemorySentinel.RegisterNativeQueue(
                 _bfsQueue,
                 safeNodeCapacity,
@@ -1909,7 +1964,7 @@ namespace Hecton8.Power
             int safeLength = math.max(1, requiredLength);
             if (!list.IsCreated)
             {
-                list = new NativeList<T>(safeLength, Allocator.Persistent);
+                list = new NativeList<T>(safeLength, DataVaultExemptGraphStateAllocator);
                 RegisterNativeList(list, label);
                 return;
             }
@@ -2261,7 +2316,7 @@ namespace Hecton8.Power
             summary.SupplyRatio = summary.TotalConsumption > Epsilon
                 ? math.saturate(summary.TotalGeneration * math.rcp(summary.TotalConsumption))
                 : 1f;
-            summary.HasDeficit = summary.TotalGeneration + Epsilon < summary.TotalConsumption;
+            summary.HasDeficit = summary.TotalGeneration + Epsilon < summary.TotalConsumption ? (byte)1 : (byte)0;
             summary.BrownoutTier = ResolveBrownoutTier(summary.SupplyRatio);
 
             if (_nodeCount <= 0)
@@ -2274,8 +2329,8 @@ namespace Hecton8.Power
             AllocateServedDemand(ref summary);
             BuildNodeInjection();
             summary.UnservedDemand = math.max(0f, summary.TotalConsumption - summary.ServedDemand);
-            summary.HasDeficit = summary.UnservedDemand > Epsilon;
-            summary.BrownoutTier = summary.HasDeficit
+            summary.HasDeficit = summary.UnservedDemand > Epsilon ? (byte)1 : (byte)0;
+            summary.BrownoutTier = summary.HasDeficit != 0
                 ? LogisticsBrownoutTier.EmergencyOnly
                 : LogisticsBrownoutTier.None;
             ApplyBinaryNodeLoads();
@@ -2411,7 +2466,7 @@ namespace Hecton8.Power
                 SolveNodeCount = solveNodeCount,
                 BaseAwakeIndex = _baseAwakeIndex,
                 RelaxationSliceOnly = relaxationSliceOnly ? (byte)1 : (byte)0,
-                GlobalQualityWeight = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 0f),
+                GlobalQualityWeight = PowerSolverConvergenceMath.AuthoritativeQualityWeight,
                 Nodes = _nodeBuffer,
                 EdgeOffsets = _edgeOffsets,
                 EdgeDestinations = _edgeDestinations,
@@ -2478,7 +2533,7 @@ namespace Hecton8.Power
             if (_adaptiveSolveRemainingNodes <= 0 || _adaptiveSolveRemainingNodes > _nodeCount)
                 _adaptiveSolveRemainingNodes = _nodeCount;
 
-            int solveBudget = ResolveAdaptiveSolveNodesPerFrame(HomeostasisBrain.GlobalQualityWeight);
+            int solveBudget = ResolveAdaptiveSolveNodesPerFrame(PowerSolverConvergenceMath.AuthoritativeQualityWeight);
             int contiguousNodeCount = _nodeCount - _adaptiveSolveCursor;
             solveStartNode = _adaptiveSolveCursor;
             solveNodeCount = math.min(
@@ -2496,15 +2551,7 @@ namespace Hecton8.Power
 
         private static int ResolveAdaptiveSolveNodesPerFrame(float globalQualityWeight)
         {
-            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
-            float lowToMx350 = math.lerp(LowAdaptiveSolveNodesPerFrame, Mx350AdaptiveSolveNodesPerFrame, math.smoothstep(0f, 0.25f, q));
-            float mx350ToMid = math.lerp(Mx350AdaptiveSolveNodesPerFrame, MidAdaptiveSolveNodesPerFrame, math.smoothstep(0.15f, 0.5f, q));
-            float midToHigh = math.lerp(MidAdaptiveSolveNodesPerFrame, HighAdaptiveSolveNodesPerFrame, math.smoothstep(0.4f, 0.75f, q));
-            float highToUltra = math.lerp(HighAdaptiveSolveNodesPerFrame, UltraAdaptiveSolveNodesPerFrame, math.smoothstep(0.7f, 1f, q));
-            float lowBand = math.lerp(lowToMx350, mx350ToMid, math.smoothstep(0.1f, 0.45f, q));
-            float highBand = math.lerp(midToHigh, highToUltra, math.smoothstep(0.55f, 0.9f, q));
-            float budget = math.lerp(lowBand, highBand, math.smoothstep(0.35f, 0.7f, q));
-            return math.clamp((int)math.round(budget), LowAdaptiveSolveNodesPerFrame, UltraAdaptiveSolveNodesPerFrame);
+            return UltraAdaptiveSolveNodesPerFrame;
         }
 
         private void CommitNoEdgeEvaluation()
@@ -2534,7 +2581,7 @@ namespace Hecton8.Power
                 SupplyRatio = totalConsumption > Epsilon ? 0f : 1f,
                 UnservedDemand = totalConsumption,
                 DisabledCount = ConsumerCount,
-                HasDeficit = totalConsumption > Epsilon,
+                HasDeficit = totalConsumption > Epsilon ? (byte)1 : (byte)0,
                 BrownoutTier = totalConsumption > Epsilon
                     ? LogisticsBrownoutTier.EmergencyOnly
                     : LogisticsBrownoutTier.None
@@ -3773,7 +3820,7 @@ namespace Hecton8.Power
 
             DisposeNativeParallelHashMapImmediate(ref map, label);
 
-            map = new NativeParallelHashMap<int, float>(safeLength, Allocator.Persistent);
+            map = new NativeParallelHashMap<int, float>(safeLength, DataVaultExemptOwnerIndexAllocator);
             RegisterNativeParallelHashMap(map, label);
         }
 
@@ -3789,7 +3836,7 @@ namespace Hecton8.Power
                 _powerConnections.Dispose();
             }
 
-            _powerConnections = new NativeParallelMultiHashMap<int, int>(safeLength, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[safeLength] - resized power adjacency fanout - owner: LogisticsNetworkGraph
+            _powerConnections = new NativeParallelMultiHashMap<int, int>(safeLength, DataVaultExemptGraphStateAllocator); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[safeLength] - resized power adjacency fanout - owner: LogisticsNetworkGraph
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_powerConnections, NativeMemoryOwner, nameof(_powerConnections), NativeMemoryLifetime);
         }
 
@@ -3801,7 +3848,7 @@ namespace Hecton8.Power
 
             DisposeNativeParallelHashMapImmediate(ref map, label);
 
-            map = new NativeParallelHashMap<uint, ushort>(safeLength, Allocator.Persistent);
+            map = new NativeParallelHashMap<uint, ushort>(safeLength, DataVaultExemptOwnerIndexAllocator);
             RegisterNativeParallelHashMap(map, label);
         }
 

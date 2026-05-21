@@ -1,17 +1,18 @@
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.World
 {
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct WorldProceduralTerrainSlopeCavitySplatmapJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float> Heights01;
-        [ReadOnly] public NativeArray<float> Sediment01;
-        [WriteOnly] public NativeArray<float4> Weights;
-        [WriteOnly] public NativeArray<float> SlopeWeights01;
+        [ReadOnly, NoAlias] public NativeArray<float> Heights01;
+        [ReadOnly, NoAlias] public NativeArray<float> Sediment01;
+        [WriteOnly, NoAlias] public NativeArray<float4> Weights;
+        [WriteOnly, NoAlias] public NativeArray<float> SlopeWeights01;
 
         public int Width;
         public int Height;

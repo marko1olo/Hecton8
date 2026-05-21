@@ -3,20 +3,18 @@
 Status: partial enforcement pass. Last recorded static scan text reported zero `StructLayout(...Pack=...)` parameters under `Assets/_Project/Scripts`; rerun and link an artifact path, command/tool, timestamp, environment, and output before treating that count as current proof. Core DTO explicit-layout coverage was expanded for Bridge, input, black-box, foveated telemetry, simulation-bucketing records, weather current metadata, queue payloads, content authority Vault records, global telemetry events, dispatcher telemetry/state records, Core runtime snapshots for brine/power/UI/player context, acoustic AUP, object-batch render payloads, spatial intrinsics, native bitmask, logistics spline descriptor, native-memory snapshot source, arena allocation metadata, input dispatch records, scheduling black-box records, GlobalSignals transform records, GlobalTelemetryBus black-box jobs/editor frame, and every `StructLayout` record inside `GlobalRegistryContracts.cs`; full non-Pack Sequential layout conversion remains open outside the owner-safe Core set.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
-- Docs/README.md
-- Docs/DOC_GOVERNANCE.md
-- Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; runtime proof remains absent.
-
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 
@@ -33,7 +31,7 @@ Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTA
 - Editor window: Hecton8/Diagnostics/Memory Alignment X-Ray.
 - Strict CLI entry: Hecton8.Editor.Arm64MemoryAlignmentXRayWindow.RunArm64MemoryAlignmentCli.
 - Mock proof entry: Hecton8.Editor.Arm64MemoryAlignmentXRayWindow.GenerateMockLayoutStressTest.
-- Source fixer/report entry: Hecton8.Editor.Arm64LayoutSourceFixer.RunCli.
+- Source fixer/report entry: Hecton8.Editor.Arm64LayoutSourceFixer.RunCli. It parses Core/Physics with Roslyn AST, prints Roslyn assembly provenance, mechanically removes explicit `Pack` arguments with per-attribute rewrite bookkeeping, and hard-fails Sequential DTO candidates or parser binding failures as `[BLOCKED] AST` / `[BLOCKED] AST_BINDING` until owner layout proof exists. Latest strict target-root scans report 0 Sequential attributes and 0 Pack attributes under Core/Physics.
 - Signal payload cold fence: SignalBus<T>.EnsureInitialized rejects invalid 16/32/64/128/192-byte strides using UnsafeUtility.SizeOf<T>() and no reflection.
 - Report path: Docs/Reports/ARM64_ALIGNMENT_XRAY_REPORT.txt.
 - Source fixer report path: Docs/Reports/ARM64_LAYOUT_SOURCE_FIXER_REPORT.txt.
@@ -53,8 +51,9 @@ Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTA
 - BufferID.Arm64AlignmentTelemetryRing = 642.
 - BufferID.Arm64AlignmentTelemetryCursor = 643.
 - AlignmentTelemetryEntry is 64 bytes and records the last 300 alignment faults through Arm64AlignmentTelemetry.
-- Fault dump path: Docs/AgentLogs/Dump_SHINOBU_204.bin.
-- Optional scene diagnostic: Arm64AlignmentFaultGizmo draws a red wire cube from the newest fault entry.
+- The telemetry ring and cursor request `NativeArrayOptions.UninitializedMemory`; the 19,200-byte ring is cleared once with `UnsafeUtility.MemClear`, and the one-int cursor is explicitly assigned 0. A scheduled Burst clear job is intentionally not used for this tiny diagnostic buffer to avoid a same-frame schedule/readback loop.
+- Fault dump path: Docs/AgentLogs/Dump_SHINOBU_204.bin. The dump writer is compiled only under `UNITY_EDITOR || DEVELOPMENT_BUILD`; release players return `false` and perform no file I/O. In editor/development builds `TryRecordFault` attempts the dump immediately after the ring write and cursor update, and `DumpFaultHistory` exposes the same writer for manual export. The dump emits a 20-byte little-endian header (`magic`, `version`, `count`, `rowBytes`) followed by raw `AlignmentTelemetryEntry` row bytes in circular oldest-to-newest order.
+- Optional scene diagnostic: Arm64AlignmentFaultGizmo is `UNITY_EDITOR` fenced, reads the newest fault entry through the diagnostic latest-vault route, subtracts `HectonFloatingOrigin.CurrentTotalOffsetDouble` in double precision, clamps the local scene delta, and draws a red wire cube.
 
 ## Current Debt
 

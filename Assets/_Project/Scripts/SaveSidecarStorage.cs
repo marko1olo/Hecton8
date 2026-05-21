@@ -409,7 +409,7 @@ namespace Hecton8.SaveSystem
                 Error = string.Empty;
             }
 
-            public string Error { get; private set; }
+            public string Error;
 
             public bool WriteBool(bool value)
             {
@@ -509,7 +509,7 @@ namespace Hecton8.SaveSystem
 
             public int BytesRead => _cursor;
             public int TotalLength => _length;
-            public string Error { get; private set; }
+            public string Error;
 
             public bool ReadBool(out bool value)
             {

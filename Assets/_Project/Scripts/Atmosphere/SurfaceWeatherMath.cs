@@ -188,7 +188,7 @@ namespace Hecton8.Atmosphere
         public byte shouldPlayThunder;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct SurfaceWeatherMathJob : IJob
     {
         private const byte SurfaceExecutionModeSurfaceActive = 0;

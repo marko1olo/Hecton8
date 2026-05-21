@@ -1406,12 +1406,12 @@ namespace Hecton8.SaveSystem
             int requiredLength,
             NativeArrayOptions options) where T : struct
         {
-            VaultBufferHandle<T> handle = vault.GetBufferHandle<T>(
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.SavePersistence,
                 options);
-            return handle.Resolve(vault);
+            return vault.TryResolveHandle(in handle, out NativeArray<T> buffer) ? buffer : default;
         }
 
         private static bool VerifyCompressedPayloadChecksum(byte* ptr, int count, in EntityDeltaHeaderDTO header)

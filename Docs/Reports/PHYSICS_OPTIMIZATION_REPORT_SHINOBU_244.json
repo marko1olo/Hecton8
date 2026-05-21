@@ -1,0 +1,24 @@
+{
+  "agent": "SHINOBU_244",
+  "status": "PENDING_COMPILE_VERIFICATION",
+  "summary": "Method-context static scan. SHINOBU_244 owns the offline static cave SDF bake route; cross-domain PhysX/MeshCollider proximity findings are reported for owning agents and were not edited.",
+  "sharedReportPreserved": "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json belongs to another agent in this workspace and was not overwritten.",
+  "scannerImplementation": "Physics_Proximity_Scanner walks .cs files, tracks Update/FixedUpdate/Tick/FixedTick/IJob.Execute method context, and reports forbidden proximity symbols with file and line.",
+  "scanIncomplete": false,
+  "diagnostics": [],
+  "findingCount": 12,
+  "findings": [
+    { "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs", "line": 604, "methodStartLine": 547, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" },
+    { "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs", "line": 606, "methodStartLine": 547, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" },
+    { "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs", "line": 607, "methodStartLine": 547, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" },
+    { "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs", "line": 608, "methodStartLine": 547, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" },
+    { "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs", "line": 615, "methodStartLine": 547, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" },
+    { "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs", "line": 616, "methodStartLine": 547, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" },
+    { "file": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs", "line": 1836, "methodStartLine": 1763, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" },
+    { "file": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs", "line": 1838, "methodStartLine": 1763, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" },
+    { "file": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs", "line": 1839, "methodStartLine": 1763, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" },
+    { "file": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs", "line": 1840, "methodStartLine": 1763, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" },
+    { "file": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs", "line": 1852, "methodStartLine": 1763, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" },
+    { "file": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs", "line": 1853, "methodStartLine": 1763, "context": "IJob.Execute", "severity": "CROSS_DOMAIN_REPORTED", "pattern": "MeshCollider" }
+  ]
+}

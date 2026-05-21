@@ -182,6 +182,27 @@ namespace Hecton8.Physics
         private bool _physicsCullingTuningInitialized;
         private bool _physicsSpatialHashDirty = true;
 
+        private void BindShinobu37PhysicsCullingDataVault(IDataVault dataVault)
+        {
+            _physicsCullingDtos.BindDataVault(dataVault);
+            _physicsFrozenVelocities.BindDataVault(dataVault);
+            _physicsCullingStateAges.BindDataVault(dataVault);
+            _physicsCullingSpatialCandidates.BindDataVault(dataVault);
+            _physicsCullingSpatialCandidateMask.BindDataVault(dataVault);
+            _physicsCullingFrameTelemetry.BindDataVault(dataVault);
+            _physicsCullingTuning.BindDataVault(dataVault);
+            _physicsMockSeismicSignals.BindDataVault(dataVault);
+            _physicsWakeRequestMirror.BindDataVault(dataVault);
+            _physicsSpatialBucketHeads.BindDataVault(dataVault);
+            _physicsSpatialNext.BindDataVault(dataVault);
+            _physicsSpatialCellHashes.BindDataVault(dataVault);
+            _physicsStateChangedIndices.BindDataVault(dataVault);
+            _physicsStateChangedCount.BindDataVault(dataVault);
+            _physicsTargetWakeRequestCount.BindDataVault(dataVault);
+            _physicsCullingCsvScratch.BindDataVault(dataVault);
+            _physicsCullingLegacyRadiiScratch.BindDataVault(dataVault);
+        }
+
         private void EnsureShinobu37PhysicsCullingState()
         {
             if (!_physicsCullingDtos.IsCreated)
@@ -561,7 +582,7 @@ namespace Hecton8.Physics
             if ((uint)bodyIndex >= (uint)MaxTrackedBodies || !_physicsCullingDtos.IsCreated)
                 return;
 
-            AbsoluteUniversePosition bodyAup = bodyState.HasLastValidAup
+            AbsoluteUniversePosition bodyAup = bodyState.HasLastValidAup != 0
                 ? bodyState.LastValidAup
                 : body != null && TryResolveAupFromRuntimeOrigin(body.position, out AbsoluteUniversePosition resolvedBodyAup)
                     ? resolvedBodyAup
@@ -586,7 +607,7 @@ namespace Hecton8.Physics
                 AUP = bodyAup.ToAbsoluteDouble3(),
                 InstanceId = body != null ? body.GetInstanceID() : 0,
                 ActivationRadiusSq = ResolvePhysicsCullingActivationRadiusSq(body, in bodyState),
-                IsAsleep = bodyState.DistanceSleepActive ? (byte)1 : (byte)0,
+                IsAsleep = bodyState.DistanceSleepActive != 0 ? (byte)1 : (byte)0,
                 CullingFlags = flags
             };
         }
@@ -843,8 +864,11 @@ namespace Hecton8.Physics
 
         private AbsoluteUniversePosition ResolvePhysicsCullingCameraAup(in AbsoluteUniversePosition playerAup, ref float3 cameraForward)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Camera camera = playerContext != null ? playerContext.PlayerCamera : null;
+            Camera camera = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null &&
+                runtimeContext.IsBound
+                    ? runtimeContext.PlayerCamera
+                    : null;
             if (camera == null)
                 return playerAup;
 
@@ -854,7 +878,9 @@ namespace Hecton8.Physics
             if (IsFinite(forward))
                 cameraForward = NormalizeWithRsqrtGuard(new float3(forward.x, forward.y, forward.z), cameraForward);
 
-            return IsFinite(position) ? AbsoluteUniversePosition.FromRuntimePosition(position) : playerAup;
+            return IsFinite(position) && TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition cameraAup)
+                ? cameraAup
+                : playerAup;
         }
 
         private bool TryResolvePhysicsCullingFrustumPlanes(
@@ -867,8 +893,11 @@ namespace Hecton8.Physics
             out float4 plane5)
         {
             plane0 = plane1 = plane2 = plane3 = plane4 = plane5 = default;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Camera camera = playerContext != null ? playerContext.PlayerCamera : null;
+            Camera camera = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null &&
+                runtimeContext.IsBound
+                    ? runtimeContext.PlayerCamera
+                    : null;
             if (camera == null)
                 return false;
 
@@ -911,19 +940,7 @@ namespace Hecton8.Physics
         private static float ResolvePhysicsCullingGlobalQualityWeight()
         {
             float weight = HomeostasisBrain.GlobalQualityWeight;
-            if (math.isfinite(weight))
-                return math.saturate(weight);
-
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == HectonQualityTier.Low)
-                return 0.1f;
-            if (tier == HectonQualityTier.Mx350)
-                return 0.25f;
-            if (tier == HectonQualityTier.High)
-                return 0.75f;
-            if (tier == HectonQualityTier.Ultra)
-                return 1f;
-            return 0.5f;
+            return math.saturate(math.select(0.5f, weight, math.isfinite(weight)));
         }
 
         private float ResolvePhysicsCullingHysteresisSeconds()
@@ -947,12 +964,12 @@ namespace Hecton8.Physics
             for (int i = 0; i < _trackedBodyCount; i++)
             {
                 RigidbodyState bodyState = _bodyStates[i];
-                bool isCulled = bodyState.DistanceSleepActive ||
-                    bodyState.DistanceKinematicSleepActive ||
-                    bodyState.MeshColliderStripActive;
+                bool isCulled = bodyState.DistanceSleepActive != 0 ||
+                    bodyState.DistanceKinematicSleepActive != 0 ||
+                    bodyState.MeshColliderStripActive != 0;
                 if (isCulled)
                     culled++;
-                if (bodyState.DistanceSleepActive)
+                if (bodyState.DistanceSleepActive != 0)
                     asleep++;
                 else
                     active++;
@@ -1022,7 +1039,7 @@ namespace Hecton8.Physics
 
         private void DisableSleepColliders(int bodyIndex, ref RigidbodyState bodyState)
         {
-            if (bodyState.SleepColliderCount == 0 || bodyState.CollidersDisabledByDistanceSleep)
+            if (bodyState.SleepColliderCount == 0 || bodyState.CollidersDisabledByDistanceSleep != 0)
                 return;
 
             int baseIndex = bodyIndex * MaxSleepCollidersPerBody;
@@ -1041,12 +1058,12 @@ namespace Hecton8.Physics
                 collider.enabled = false;
             }
 
-            bodyState.CollidersDisabledByDistanceSleep = true;
+            bodyState.CollidersDisabledByDistanceSleep = 1;
         }
 
         private void RestoreSleepColliders(int bodyIndex, ref RigidbodyState bodyState)
         {
-            if (!bodyState.CollidersDisabledByDistanceSleep)
+            if (bodyState.CollidersDisabledByDistanceSleep == 0)
                 return;
 
             int baseIndex = bodyIndex * MaxSleepCollidersPerBody;
@@ -1060,7 +1077,7 @@ namespace Hecton8.Physics
                 _trackedSleepColliderEnabledBeforeSleep[slot] = 0;
             }
 
-            bodyState.CollidersDisabledByDistanceSleep = false;
+            bodyState.CollidersDisabledByDistanceSleep = 0;
         }
 
         private void MoveSleepColliderRefs(int fromIndex, int toIndex)
@@ -1124,7 +1141,6 @@ namespace Hecton8.Physics
 
         public bool TryGetPhysicsCullingTuning(out PhysicsCullingTuningDTO tuning)
         {
-            EnsureNativeState();
             if (_physicsCullingTuning.IsCreated)
             {
                 tuning = ResolvePhysicsCullingTuning();
@@ -1660,6 +1676,20 @@ namespace Hecton8.Physics
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct CompactPhysicsChangedIndicesJob : IJob
         {
+            // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+            // ChangedIndices is first written as an index-addressed sparse marker lane by the distance culling
+            // or shockwave jobs, then compacted in this single follow-up IJob after their returned JobHandle
+            // dependency completes. Unity cannot infer that phase split from the NativeArray field alone.
+            //
+            // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+            // A second temporary compact buffer was rejected because it would double memory bandwidth and add
+            // another Vault lane for the same fact. In-place compaction preserves the one owner, one route,
+            // one proof artifact rule while keeping the memory walk linear.
+            //
+            // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+            // Invariant: no parallel writer touches ChangedIndices while this IJob executes, and the valid
+            // prefix is exported only through ChangedCount after compaction. The lane is not read by consumers
+            // until the dispatcher observes this job's output handle.
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> ChangedIndices;
             [WriteOnly, NoAlias] public NativeArray<PhysicsCullingCounter64> ChangedCount;
             public int Count;
@@ -1689,6 +1719,20 @@ namespace Hecton8.Physics
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct MockSeismicShockwaveWakeJob : IJobParallelFor
         {
+            // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+            // Each Execute index owns exactly one DTO row and matching result rows after the length guards.
+            // The job mutates those rows through pointer/ref access so Burst avoids 40-byte DTO defensive
+            // copies; Unity's safety layer cannot prove the one-index-to-one-row relation.
+            //
+            // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+            // A main-thread shockwave pass or GameObject wake broadcast was rejected because it would serialize
+            // thousands of culling rows and reintroduce scene authority into the data lane. Keeping wake results
+            // in the same parallel pass preserves deterministic batch ownership.
+            //
+            // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+            // Invariant: Dtos, AwakeResults, CommandResults, StateAges, and ChangedIndices are disjoint Vault
+            // lanes scheduled only by the physics culling owner. ChangedIndices is sparse and later compacted by
+            // CompactPhysicsChangedIndicesJob after this job's handle.
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<PhysicsCullingDTO> Dtos;
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> AwakeResults;
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> CommandResults;
@@ -1733,6 +1777,20 @@ namespace Hecton8.Physics
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct PhysicsDistanceCullingJobShinobu37 : IJobParallelFor
         {
+            // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+            // CandidateIndices maps each scheduled lane to one authoritative DTO/result row; the owner builds
+            // the candidate list without duplicates before scheduling. Unity safety cannot express that indirect
+            // uniqueness proof, so it sees potential parallel writes to the result lanes.
+            //
+            // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+            // Splitting DTO mutation, command output, age update, and changed-index marking into separate jobs
+            // was rejected because it would add repeated AUP/frustum math and extra memory passes. One fused
+            // job keeps culling data-local and returns a single dependency to the dispatcher.
+            //
+            // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+            // Invariant: Dtos, AwakeResults, CommandResults, DistanceSqResults, StateAges, and ChangedIndices
+            // are separate buffers owned by GlobalPhysicsStateManager. Consumers observe them only after the
+            // returned JobHandle and the subsequent compaction handle complete.
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<PhysicsCullingDTO> Dtos;
             [ReadOnly, NoAlias] public NativeArray<byte> CurrentStates;
             [ReadOnly, NoAlias] public NativeArray<int> CandidateIndices;

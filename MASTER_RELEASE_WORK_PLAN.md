@@ -6,8 +6,9 @@ Primary Target: `NVIDIA MX350 2 GB VRAM / 12 GB RAM / i5-1135G7`
 Direction: `NASA-Punk + Deep Sea Noir`
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
-This roadmap is active only where it agrees with:
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
+
+This document is active only where it agrees with:
 
 - `Docs/README.md`
 - `Docs/DOC_GOVERNANCE.md`
@@ -15,12 +16,13 @@ This roadmap is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-R47 root/architecture authority-spine/runtime-wording/counter-drift correction is the latest local static DOC_GLOBAL boundary for architecture/root documentation: `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
-## 2026-05-20 Current-State Boundary
+## 2026-05-21 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`, and `Docs/Reports/2026-05-19_DOCUMENTATION_R34_ROOT_ARCHITECTURE_SOURCE_COUNTER_REFRESH_LOCAL.md` before using this roadmap for current root/architecture/source-counter/proof-wording truth. This roadmap is subordinate to current source and fresh verification artifacts.
+- Read `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md`, then `Docs/Reports/2026-05-21_DOCUMENTATION_R50_ROOT_ARCHITECTURE_ATLAS_REGEN_R48_INTERIOR_DUMPTARGET_AND_COUNTER_DRIFT_LOCAL.md`, then `Docs/Reports/2026-05-21_DOCUMENTATION_R49_ROOT_ARCHITECTURE_ATLASCHECK_BOUNDARY_ROUTE_FIELDS_AND_COUNTER_DRIFT_LOCAL.md`, then `Docs/Reports/2026-05-21_DOCUMENTATION_R48_ROOT_ARCHITECTURE_DATE_ROLLOVER_ATLASCHECK_AND_COUNTER_REFRESH_LOCAL.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`, then R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 before using this roadmap for current root/architecture/source-counter/proof-wording truth. This roadmap is subordinate to current source and fresh verification artifacts.
 - Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using this roadmap as current project truth. May 11 reports remain historical where the May 13 DOC_AUDIT override conflicts.
 - This file is a product roadmap and historical working ledger, not a runtime proof document.
 - Dated rows that say compile/pass/returned `0` without a fresh artifact path, command, timestamp, environment, and output are capture-time report text only; they are not current Unity import, Play Mode, profiler, GCMonitor, player build, save/load, platform, analytics, or visual proof.
@@ -389,10 +391,10 @@ P0 rules:
     3. Add SceneGuard to 01_MAIN_MENU scene (as root GameObject)
     4. Add SceneGuard to 02_HECTON_WORLD scene (as root GameObject)
     5. Verify Build Settings: 00_BOOTSTRAP scene is index 0, 01_MAIN_MENU is 1, 02_HECTON_WORLD is 2
-    6. Test: Run 00_BOOTSTRAP Ã¢â€ â€™ verify all managers are initialized in log
-    7. Test: Force load 01_MAIN_MENU directly Ã¢â€ â€™ verify SceneGuard reloads 00_BOOTSTRAP instead
+    6. Test: Run 00_BOOTSTRAP → verify all managers are initialized in log
+    7. Test: Force load 01_MAIN_MENU directly → verify SceneGuard reloads 00_BOOTSTRAP instead
 - [~] Bring `01_MAIN_MENU` to the role of production shell
-  - **CODE COMPLETE:**
+  - **Implementation patch list; build/runtime/user proof pending:**
     - MainMenuController.cs with full UI flow (new game / load / settings / quit)
     - Panel transitions with CanvasGroup alpha fade (no SetActive churn)
     - Save slot generation and load dialog
@@ -417,10 +419,10 @@ P0 rules:
   - **VALIDATION:**
     1. Open 01_MAIN_MENU scene in editor
     2. Run Window > HECTON-8 > Validate Main Menu
-    3. Fix any Ã¢Å“â€” missing references shown in report
-    4. Test: New Game button Ã¢â€ â€™ should show confirmation dialog
-    5. Test: Load Game button Ã¢â€ â€™ should show save slots
-    6. Test: Try loading scene directly (run 01_MAIN_MENU without 00_BOOTSTRAP) Ã¢â€ â€™ SceneGuard should reload bootstrap
+    3. Fix any ✗ missing references shown in report
+    4. Test: New Game button → should show confirmation dialog
+    5. Test: Load Game button → should show save slots
+    6. Test: Try loading scene directly (run 01_MAIN_MENU without 00_BOOTSTRAP) → SceneGuard should reload bootstrap
 - [c] Raise `GameStartContext` and remove dependence on a single `TargetSaveSlot`
   - code addendum: `GameStartContextHolder` now owns the cold scene-handoff persistence itself instead of scattering `TargetSaveSlot` writes/reads across menu and bootstrap. `MainMenuController.StartGame()` writes through `GameStartContextHolder.SetCurrent(...)`, `SceneBootstrap.LoadOrNewGameAsync()` restores through `TryGetCurrentOrRestore(...)`, and the persisted handoff is cleared immediately after bootstrap consumes it so stale slot state does not keep poisoning future world loads. Legacy `MainMenuController.TargetSaveSlot` remains only as a compatibility mirror, not as the runtime source of truth.
   - code addendum: gameplay -> menu shell now clears session handoff ownership too. `PauseMenuController.ExitToMainMenu()` calls `GameStartContextHolder.Reset()` before loading `01_MAIN_MENU`, so stale `LoadGame/Resume` context does not leak back into the shell after leaving an active world session.
@@ -859,7 +861,7 @@ P0 rules:
     `WorldCaveDirector` had drifted onto a dead `MapMagicBridge.SampleHeight` call; restored live contract through `TryGetHeight` fail-safe, reconnected `caveSpawnProbability` as the intended biome-evaluation gate, and removed duplicate `using` noise from `HectonVoxelEngine`
   - scene wiring truth from `02_HECTON_WORLD`: live scene already contains `MapMagicBridge`, `WorldCaveDirector`, `WorldGenerativeGeologyIntegrationDirector`, `WorldGenerativeGeologySeamExecutionDirector`, `WorldGenerativeGeologyVoxelBridgeDirector`, and a separate active `[VOXEL_ENGINE]` with `HectonVoxelEngine`
   - runtime hardening addendum: `WorldGenerativeGeologyTerrainSeamApplier` no longer creates fresh terrain plan buckets and fresh `float[,]` height patches every `SlowTick`; per-terrain plan buckets and patch buffers are now reused, terrain lookup now follows `MapMagicBridge` tile-backed terrain truth before falling back to `Terrain.activeTerrains`, baseline height snapshots are refreshed fail-safe when streamed `TerrainData` owners or heightmap resolutions change, untouched restore paths now drop stale state instead of writing into a swapped terrain-data owner, and terrain diagnostics no longer pull `terrain.name` strings in the live reconcile path
-  - runtime hardening addendum: `WorldCaveDirector` now owns cave spawn lifecycle instead of firing duplicate `async void` launches for the same runtime key; pending cave builds are tracked, cancelled on teardown, stale cave registry entries are purged, and the live cave path no longer relies on Ã¢â‚¬Å“active only after await returnsÃ¢â‚¬Â semantics
+  - runtime hardening addendum: `WorldCaveDirector` now owns cave spawn lifecycle instead of firing duplicate `async void` launches for the same runtime key; pending cave builds are tracked, cancelled on teardown, stale cave registry entries are purged, and the live cave path no longer relies on "active only after await returns" semantics
   - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` no longer uses dictionary/hashset `foreach` inside live reconcile/cancel/clear paths; active volume, pending runtime, and pending request scans now use explicit enumerators so the bridge no longer violates the project hot-path iteration rule in `SlowTick`
   - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` now caches active `WorldGenerativeGeologyVoxelRuntime` owners by `runtimeKey`, so reconcile/detail-band hysteresis no longer does per-request `TryGetComponent`, and debug top-volume tracking no longer depends on the `"None"` sentinel string in the live owner
   - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` no longer builds runtime-diagnostics trace strings directly inside `ReconcileVoxelRequests()`, `Tick()` launch flush, or request completion/cancel/fault bodies; trace formatting is now isolated behind development/editor-only helper methods so release hot paths do not carry string interpolation debt just because diagnostics support exists
@@ -992,7 +994,7 @@ P0 rules:
   - Need Build Check: yes
   - Need In-World Swim Check: yes
   - Why: the world already needed a real life-layer owner path, not more abstract flora intent
-  - Evidence: fresh Unity verification on `2026-04-07` confirmed live runtime placement plus editor-owned flora-final pipeline
+  - Evidence: capture-time Unity/editor readback text on `2026-04-07` reported live placement plus editor-owned flora-final pipeline, but this roadmap does not link a fresh artifact tuple for current runtime proof
   - Problems: all 7 flora families still rely on generated starter finals only; no authored photoreal finals exist yet; no build swim proof or GC baseline/proof exists for this transfer path
   - Short Comment: transfer is real in runtime placement and authoring ownership, but art-quality and build-truth are still open
   - Next Step: replace `GEN_` starters family-by-family with authored finals, then run build swim/readability verification
@@ -1442,7 +1444,7 @@ P0 rules:
 - Silence matters as much as saturation
 - This document is the integrated master version and should be used as the live production roadmap
 
-## Flora Wave 5 Addendum Ã¢â‚¬â€ 2026-04-08 Coral Geometry Ownership
+## Flora Wave 5 Addendum — 2026-04-08 Coral Geometry Ownership
 
 - Capture-time architecture step:
   - coral starter geometry now has its own editor-only owner `WorldProceduralCoralMeshBuilder`
@@ -1686,7 +1688,7 @@ P0 rules:
     - bulb nodes are now attached closer to the blade/stipe contact instead of reading as floating berries
     - giant-frond kelp specs gained denser bulb/node coverage
   - capture-time reported facts:
-    - Unity automation request `flora-verify-20260408-6` completed successfully
+    - Unity automation request `flora-verify-20260408-6` reported success at capture time; artifact path absent from this row, so this is not current Unity/compile/runtime proof
     - fresh report + PNG captures were produced
     - fresh report deltas:
       - `family.kelp.tall` max budget `3514 -> 4760`
@@ -1960,7 +1962,7 @@ P0 rules:
     - hidden/local `AGENTS.md` files were synchronized so smooth LOD transitions, organic continuity, seeded runtime variety, and cheap current-coupled motion are enforced everywhere, not only in root docs
   - why it matters:
     - flora form work is no longer blind; contact-sheet previews are good enough to keep iterating on silhouette and continuity without pretending final beauty proof is done
-    - `kelp_tall` remains safely under its family cap while moving away from the old Ã¢â‚¬Å“few blades on a poleÃ¢â‚¬Â read
+    - `kelp_tall` remains safely under its family cap while moving away from the old "few blades on a pole" read
   - capture-time reported facts:
     - automation request `flora-verify-20260408-tallpass-5` completed with `success=true`
     - latest flora report:
@@ -2018,7 +2020,7 @@ P0 rules:
     - this establishes the cheap rendering side of deep glowing flora first, which is the correct prerequisite before any zone-driven runtime coupling is added
     - current shallow starter families remain visually stable because emissive strength stays at `0`
   - capture-time reported facts:
-    - Unity material-apply pass completed successfully with `TouchedMaterials=7`
+    - Unity material-apply pass reported success at capture time with `TouchedMaterials=7`; artifact path absent from this row, so this is not current Unity/compile/runtime proof
     - proxy material assets now contain the new biolum properties
   - remaining truth:
     - this does not yet bind flora materials to `HectonBiolumZone` at runtime
@@ -2037,7 +2039,7 @@ P0 rules:
     - deep glowing flora is no longer only a shader-ready idea; the first abyssal flora/coral families now exist as real linked prefabs in the current pipeline
     - this is the correct owner-layer path for expanding depth bands without inventing a second flora runtime architecture
   - capture-time reported facts:
-    - `Build Procedural Fill Foundations` completed successfully
+    - `Build Procedural Fill Foundations` reported success at capture time; artifact path absent from this row, so this is not current Unity/compile/runtime proof
     - `Generate Procedural Flora Textures` completed with `TouchedTextures=36`
     - `Apply Procedural Flora Materials` completed with `TouchedMaterials=9`
     - `Generate Procedural Flora Baked Starters` completed with `Prefabs=39, MeshesUpdated=126, RemovedAssets=0, Failures=0`
@@ -2063,7 +2065,7 @@ P0 rules:
     - this stays cheap for MX350 because it avoids per-instance responder scripts on every flora object
   - capture-time reported facts:
     - Unity compile was reported without new flora/biolum compile errors; no current artifact is linked in this line
-    - `Rebuild World Runtime Stack` completed successfully
+    - `Rebuild World Runtime Stack` reported success at capture time; artifact path absent from this row, so this is not current Unity/compile/runtime proof
     - scene readback confirms `HectonBiolumManager` now exists on `[MANAGERS]`
   - remaining truth:
     - the active world scene still has no `OceanBiolumZone` or `FloorBiolumZone` instances, so the new global bridge currently resolves to zero influence
@@ -2085,7 +2087,7 @@ P0 rules:
     - deep glowing flora now has a real world-owned source of ocean/floor influence without inventing a second subsystem
   - capture-time reported facts:
     - Unity compile was reported without new flora/biolum errors; no current artifact is linked in this line
-    - `Rebuild World Runtime Stack` completed successfully
+    - `Rebuild World Runtime Stack` reported success at capture time; artifact path absent from this row, so this is not current Unity/compile/runtime proof
     - scene-instance readback confirms:
       - `--- WORLD ---/Biolum_Deep`
       - `Ocean_DeepVeil` at `1237.3 / 4450 / 1229.1`
@@ -2268,34 +2270,34 @@ P0 rules:
 - 2026-04-09 - Vertical runtime ownership now reaches a real consumer instead of stopping at depth state publication:
   - `HectonUnderwaterVisuals` now listens to `BiomeMatrixDirector.OnMatrixBiomeChanged`
   - matrix biomes can supply an explicit `runtimeVisualProfile` override for underwater visuals
-  - if no matrix visual override is authored, `HectonUnderwaterVisuals` stays on the existing `MapMagicBridge` Ã¢â€ â€™ `HectonOceanPalette` path
+  - if no matrix visual override is authored, `HectonUnderwaterVisuals` stays on the existing `MapMagicBridge` → `HectonOceanPalette` path
   - this keeps shallow-water behavior on the old cheap path while giving deep matrix-owned zones a first-class visual handoff
   - measured proof absent; latest Unity console readback is still pending because the MCP Unity session did not return after domain reload
 - 2026-04-09 - Vertical runtime ownership now also reaches surface atmosphere without disturbing underwater contracts:
   - `HectonAtmosphereManager` now listens to `BiomeMatrixDirector.OnMatrixBiomeChanged`
   - `HectonBiomeFamilyProfile.atmosphereProfile` is no longer dead data for runtime surface atmosphere
   - matrix family atmosphere overrides win only for surface states; underwater still uses `_profileUnderwater`, and old `MapMagicBridge` biome overrides remain the fallback when no family atmosphere is authored
-  - Unity compile/readback for this atmosphere pass returned `0` warning/error entries in the console, but measured perf proof is still absent
+  - capture-time Unity console/readback text for this atmosphere pass reported `0` warning/error entries, but no linked current artifact tuple is attached here and measured perf proof is still absent
 - 2026-04-09 - Vertical runtime ownership now also reaches the audio transition consumer:
   - `AcousticZoneController` no longer polls `HectonAtmosphereManager.CurrentState` every tick for the exterior branch
   - it now caches surface vs underwater from `HectonAtmosphereManager.OnStateChanged`
   - per-frame work remains only for dry-zone / interior detection, which still needs immediate edge handling
   - fallback to direct player-depth evaluation remains when atmosphere state is unavailable
-  - Unity compile/readback for this acoustic pass returned `0` warning/error entries in the console; measured perf proof is still absent
+  - capture-time Unity console/readback text for this acoustic pass reported `0` warning/error entries, but no linked current artifact tuple is attached here; measured perf proof is still absent
 - 2026-04-09 - Vertical runtime ownership now also reaches the visor telemetry consumer:
   - `HectonSuitHUD_v4` no longer reads depth back through `HectonUnderwaterVisuals.CurrentDepth` for temperature estimation
   - the HUD now stays on its own cached `_depthMeters` owner path, which is already fed by survival depth and refreshed from `HectonPlayerMovement.CurrentDepth` when survival is absent
   - this keeps depth/pressure/temperature telemetry on one cheap vertical signal instead of cross-polling another visual owner
-  - Unity compile/readback for this HUD pass returned `0` warning/error entries in the console; measured perf proof is still absent
+  - capture-time Unity console/readback text for this HUD pass reported `0` warning/error entries, but no linked current artifact tuple is attached here; measured perf proof is still absent
 - 2026-04-09 - Vertical runtime ownership now also reaches the canvas-overlay HUD consumer:
   - `SuitHUDV4CanvasOverlay` no longer resolves depth inline from `survival.Depth` on every runtime tick
   - it now caches depth from `HectonSurvivalSystem.OnDepthChanged` and only falls back to `HectonPlayerMovement.CurrentDepth` when survival is unavailable
   - this keeps the overlay depth/temperature/status path on the same cheap owner signal spine as the rest of the vertical runtime chain
-  - Unity compile/readback for this overlay pass returned `0` warning/error entries in the console; measured perf proof is still absent
+  - capture-time Unity console/readback text for this overlay pass reported `0` warning/error entries, but no linked current artifact tuple is attached here; measured perf proof is still absent
 - 2026-04-09 - Scatter cluster rescue still had one more duplicate-work tail in the same window:
   - preferred-cluster rescue, service-cluster rescue, and landmark-corridor cluster rescue each rebuilt `_occupiedCellBuffer` at wrapper entry even though they run back-to-back on the same live cluster state
   - `WorldProceduralScatterDirector` now rebuilds cluster occupancy once before that early rescue chain and lets the three wrappers reuse the same live buffer while successful injects keep it current
-  - Unity compile/readback for this cluster-occupancy pass returned `0` warning/error entries in the console; measured perf proof is still absent
+  - capture-time Unity console/readback text for this cluster-occupancy pass reported `0` warning/error entries, but no linked current artifact tuple is attached here; measured perf proof is still absent
 - 2026-04-09 - Seaweed variety growth now has a second real structural lane beyond laminar sheets
   - added `BladeProfile.PaddleLobed` to the editor-owned kelp generator
   - used it to seed four new variants across the active kelp families:

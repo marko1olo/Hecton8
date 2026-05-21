@@ -15,12 +15,10 @@
 // ============================================================================
 
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace Hecton8.Physics
 {
-    [StructLayout(LayoutKind.Sequential)]
     public struct CachedQueryResult
     {
         public QueryResult result;

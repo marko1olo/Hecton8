@@ -638,11 +638,11 @@ namespace Hecton8.World
         private float _nextScatterLifecycleLogTime;
 
         public int ActivePlacementCount => _activeInstances.Count + _activeGpuiFloraPlacements;
-        public bool HasPendingStartupPlacements => _reconcileRuntimeState.HasPendingStartupPlacements;
+        public bool HasPendingStartupPlacements => _reconcileRuntimeState.HasPendingStartupPlacements != 0;
         internal bool HasBootstrapPrimeWork =>
             _isSamplingJobRunning ||
             _scatterState != ScatterState.Idle ||
-            _reconcileRuntimeState.HasPendingStartupPlacements;
+            _reconcileRuntimeState.HasPendingStartupPlacements != 0;
 
         internal IReadOnlyDictionary<long, List<ScatterPlacement>> GetGridPlacements()
         {
@@ -728,10 +728,10 @@ namespace Hecton8.World
             if (Application.isPlaying)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (!_lifecycleRuntimeState.LoggedRuntimeStartState && enableScatterRebuildProfiling)
-                    _lifecycleRuntimeState.LoggedRuntimeStartState = true;
+                if (_lifecycleRuntimeState.LoggedRuntimeStartState == 0 && enableScatterRebuildProfiling)
+                    _lifecycleRuntimeState.LoggedRuntimeStartState = 1;
 #endif
-                _startupRuntimeState.StabilizationPending = true;
+                _startupRuntimeState.StabilizationPending = 1;
                 _startupRuntimeState.StartTime = Time.unscaledTime;
                 InvalidateScatterRefreshSample("startup");
                 return;
@@ -754,13 +754,13 @@ namespace Hecton8.World
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
 
-            if (_lifecycleRuntimeState.RegisteredToTickManager)
+            if (_lifecycleRuntimeState.RegisteredToTickManager != 0)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
 
-                _lifecycleRuntimeState.RegisteredToTickManager = false;
+                _lifecycleRuntimeState.RegisteredToTickManager = 0;
             }
 #if UNITY_EDITOR
             ReleaseAssemblyReloadHook();
@@ -778,12 +778,12 @@ namespace Hecton8.World
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
 
-            if (_lifecycleRuntimeState.RegisteredToTickManager)
+            if (_lifecycleRuntimeState.RegisteredToTickManager != 0)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lifecycleRuntimeState.RegisteredToTickManager = false;
+                _lifecycleRuntimeState.RegisteredToTickManager = 0;
             }
 
             DisposeCellSamplingArrays();
@@ -867,13 +867,13 @@ namespace Hecton8.World
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
             DisposeCellSamplingArrays();
-            if (_lifecycleRuntimeState.RegisteredToTickManager)
+            if (_lifecycleRuntimeState.RegisteredToTickManager != 0)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             }
-            _lifecycleRuntimeState.RegisteredToTickManager = false;
+            _lifecycleRuntimeState.RegisteredToTickManager = 0;
         }
 
         private void EnsureCellSamplingArrayCapacity(int requiredCapacity)
@@ -929,9 +929,9 @@ namespace Hecton8.World
         public void SlowTick()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Application.isPlaying && !_lifecycleRuntimeState.LoggedFirstSlowTick && ShouldLogScatterLifecycleDiagnostics())
+            if (Application.isPlaying && _lifecycleRuntimeState.LoggedFirstSlowTick == 0 && ShouldLogScatterLifecycleDiagnostics())
             {
-                _lifecycleRuntimeState.LoggedFirstSlowTick = true;
+                _lifecycleRuntimeState.LoggedFirstSlowTick = 1;
                 _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
                 LogFirstSlowTick(this);
             }
@@ -1041,7 +1041,7 @@ namespace Hecton8.World
                     if (TryRunScatterSamplingSynchronously())
                         return;
                 }
-                else if (_bootstrapRuntimeState.AllowPrimePass)
+                else if (_bootstrapRuntimeState.AllowPrimePass != 0)
                 {
                     if (HandleScatterStateMachine())
                         return;
@@ -1101,8 +1101,8 @@ namespace Hecton8.World
             if (!CanPrimeBootstrapScatterFromCurrentTerrainSource())
                 return false;
 
-            bool previousAllowBootstrapPrimePass = _bootstrapRuntimeState.AllowPrimePass;
-            _bootstrapRuntimeState.AllowPrimePass = true;
+            byte previousAllowBootstrapPrimePass = _bootstrapRuntimeState.AllowPrimePass;
+            _bootstrapRuntimeState.AllowPrimePass = 1;
 
             try
             {
@@ -1139,7 +1139,7 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return false;
 
-            if (_bootstrapRuntimeState.SamplingPipelinePrewarmed)
+            if (_bootstrapRuntimeState.SamplingPipelinePrewarmed != 0)
                 return true;
 
             ResolveReferences();
@@ -1148,20 +1148,20 @@ namespace Hecton8.World
 
             bool warmed = fieldSampler.TryPrewarmSamplingJob();
             if (warmed)
-                _bootstrapRuntimeState.SamplingPipelinePrewarmed = true;
+                _bootstrapRuntimeState.SamplingPipelinePrewarmed = 1;
 
             return warmed;
         }
 
         private bool ShouldDeferUntilBootstrapReady()
         {
-            if (_bootstrapRuntimeState.AllowPrimePass)
+            if (_bootstrapRuntimeState.AllowPrimePass != 0)
                 return false;
 
             if (!Application.isPlaying || !waitForGameBootstrapper || BootstrapState.IsGameReady)
                 return false;
 
-            if (_bootstrapRuntimeState.Failed)
+            if (_bootstrapRuntimeState.Failed != 0)
                 return false;
 
             return ResolveGameBootstrapperPresence();
@@ -1169,9 +1169,9 @@ namespace Hecton8.World
 
         private void HandleGameBootstrapperReady()
         {
-            _bootstrapRuntimeState.PresenceResolved = true;
-            _bootstrapRuntimeState.Present = true;
-            _bootstrapRuntimeState.Failed = false;
+            _bootstrapRuntimeState.PresenceResolved = 1;
+            _bootstrapRuntimeState.Present = 1;
+            _bootstrapRuntimeState.Failed = 0;
             TryEnsureTickRegistration();
             RefreshRuntimeStreamingSettings();
             RequestScatterRefresh("scene-bootstrap");
@@ -1180,7 +1180,7 @@ namespace Hecton8.World
             {
                 _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
                 UnityEngine.Debug.Log(
-                        $"[WorldScatterRuntime] bootstrap-ready registered={_lifecycleRuntimeState.RegisteredToTickManager} dilation={GlobalSignals.TimeDilationScalar:0.###}",
+                        $"[WorldScatterRuntime] bootstrap-ready registered={_lifecycleRuntimeState.RegisteredToTickManager != 0} dilation={GlobalSignals.TimeDilationScalar:0.###}",
                     this);
             }
 #endif
@@ -1211,9 +1211,9 @@ namespace Hecton8.World
 
         private void HandleGameBootstrapperFailed(string reason)
         {
-            _bootstrapRuntimeState.PresenceResolved = true;
-            _bootstrapRuntimeState.Present = true;
-            _bootstrapRuntimeState.Failed = true;
+            _bootstrapRuntimeState.PresenceResolved = 1;
+            _bootstrapRuntimeState.Present = 1;
+            _bootstrapRuntimeState.Failed = 1;
             TryEnsureTickRegistration();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1232,7 +1232,7 @@ namespace Hecton8.World
             {
                 _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
                 UnityEngine.Debug.Log(
-                        $"[WorldScatterRuntime] bootstrap-failed registered={_lifecycleRuntimeState.RegisteredToTickManager} dilation={GlobalSignals.TimeDilationScalar:0.###}",
+                        $"[WorldScatterRuntime] bootstrap-failed registered={_lifecycleRuntimeState.RegisteredToTickManager != 0} dilation={GlobalSignals.TimeDilationScalar:0.###}",
                     this);
             }
 #endif
@@ -1244,25 +1244,25 @@ namespace Hecton8.World
         {
             if (BootstrapState.HasActiveInstance)
             {
-                _bootstrapRuntimeState.PresenceResolved = true;
-                _bootstrapRuntimeState.Present = true;
+                _bootstrapRuntimeState.PresenceResolved = 1;
+                _bootstrapRuntimeState.Present = 1;
                 return true;
             }
 
-            if (_bootstrapRuntimeState.PresenceResolved)
-                return _bootstrapRuntimeState.Present;
+            if (_bootstrapRuntimeState.PresenceResolved != 0)
+                return _bootstrapRuntimeState.Present != 0;
 
             GameBootstrapper bootstrap = GameBootstrapper.ActiveInstance;
-            _bootstrapRuntimeState.PresenceResolved = true;
+            _bootstrapRuntimeState.PresenceResolved = 1;
             _bootstrapRuntimeState.Present = bootstrap != null
                 && bootstrap.isActiveAndEnabled
-                && bootstrap.gameObject.activeInHierarchy;
-            return _bootstrapRuntimeState.Present;
+                && bootstrap.gameObject.activeInHierarchy ? (byte)1 : (byte)0;
+            return _bootstrapRuntimeState.Present != 0;
         }
 
         private bool ShouldSkipScatterRefresh()
         {
-            if (!_scatterRefreshSampleState.HasSample || !TryGetObserverAbsolutePosition(out Vector3 observerAbsolutePosition))
+            if (_scatterRefreshSampleState.HasSample == 0 || !TryGetObserverAbsolutePosition(out Vector3 observerAbsolutePosition))
             {
                 _debugLastScatterRefreshReason = ShouldCollectScatterDetailedDiagnostics() ? _debugLastScatterInvalidationReason : "dirty";
                 return false;
@@ -1276,7 +1276,7 @@ namespace Hecton8.World
             }
 
             Vector3 observerRuntimePosition = ToRuntimeScatterPosition(observerAbsolutePosition);
-            if (_scatterRefreshSampleState.UsedFallbackOnly &&
+            if (_scatterRefreshSampleState.UsedFallbackOnly != 0 &&
                 fieldSampler != null &&
                 fieldSampler.TryResolveSeafloorSource(observerRuntimePosition, out WorldProceduralFieldSampler.SeafloorSource upgradedSource) &&
                 upgradedSource == WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight)
@@ -1285,11 +1285,11 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (_startupRuntimeState.StabilizationPending &&
+            if (_startupRuntimeState.StabilizationPending != 0 &&
                 Application.isPlaying &&
                 Time.unscaledTime - _startupRuntimeState.StartTime >= StartupScatterStabilizationDelaySeconds)
             {
-                _startupRuntimeState.StabilizationPending = false;
+                _startupRuntimeState.StabilizationPending = 0;
                 _debugLastScatterRefreshReason = "startup-settle";
                 return false;
             }
@@ -1340,13 +1340,13 @@ namespace Hecton8.World
 
         private bool HasPendingScatterReconcileWork()
         {
-            return _reconcileRuntimeState.HasPendingStartupPlacements || _reconcileRuntimeState.HasPendingRuntimePlacements;
+            return _reconcileRuntimeState.HasPendingStartupPlacements != 0 || _reconcileRuntimeState.HasPendingRuntimePlacements != 0;
         }
 
         private int ResolveActiveScatterSamplingRadiusCells(int runtimeRadiusCells)
         {
             int resolvedRadiusCells = math.max(2, runtimeRadiusCells);
-            if (Application.isPlaying && _bootstrapRuntimeState.AllowPrimePass)
+            if (Application.isPlaying && _bootstrapRuntimeState.AllowPrimePass != 0)
                 resolvedRadiusCells = math.min(resolvedRadiusCells, math.max(2, bootstrapPrimeRadiusCells));
 
             return resolvedRadiusCells;
@@ -1356,17 +1356,17 @@ namespace Hecton8.World
         {
             if (_desiredPlacements.Count == 0)
             {
-                _reconcileRuntimeState.HasPendingStartupPlacements = false;
-                _reconcileRuntimeState.HasPendingRuntimePlacements = false;
+                _reconcileRuntimeState.HasPendingStartupPlacements = 0;
+                _reconcileRuntimeState.HasPendingRuntimePlacements = 0;
                 return;
             }
 
             using (_scatterPendingReconcileProfilerMarker.Auto())
             {
                 ReconcileInstances(enableScatterRebuildProfiling);
-                _debugLastScatterRefreshReason = _reconcileRuntimeState.HasPendingStartupPlacements
+                _debugLastScatterRefreshReason = _reconcileRuntimeState.HasPendingStartupPlacements != 0
                     ? "pending-startup-batch"
-                    : (_reconcileRuntimeState.HasPendingRuntimePlacements ? "pending-runtime-budget" : "pending-complete");
+                    : (_reconcileRuntimeState.HasPendingRuntimePlacements != 0 ? "pending-runtime-budget" : "pending-complete");
             }
         }
 
@@ -1507,7 +1507,7 @@ namespace Hecton8.World
             if (!TryGetObserverAbsolutePosition(out Vector3 observerAbsolutePosition))
                 return;
 
-            _scatterRefreshSampleState.HasSample = true;
+            _scatterRefreshSampleState.HasSample = 1;
             _scatterRefreshSampleState.AbsolutePosition = observerAbsolutePosition;
             _scatterRefreshSampleState.Time = Application.isPlaying ? Time.unscaledTime : 0f;
             _scatterRefreshSampleState.RadiusCells = ResolveActiveScatterSamplingRadiusCells(_runtimeStreamingState.RadiusCells);
@@ -1522,8 +1522,8 @@ namespace Hecton8.World
 
         private void InvalidateScatterRefreshSample(string reason = "manual")
         {
-            _scatterRefreshSampleState.HasSample = false;
-            _scatterRefreshSampleState.UsedFallbackOnly = false;
+            _scatterRefreshSampleState.HasSample = 0;
+            _scatterRefreshSampleState.UsedFallbackOnly = 0;
             _scatterRefreshSampleState.RadiusCells = 0;
             _scatterRefreshSampleState.Time = float.NegativeInfinity;
             _debugLastScatterInvalidationReason = string.IsNullOrWhiteSpace(reason) ? "manual" : reason;
@@ -1544,7 +1544,7 @@ namespace Hecton8.World
 
         private void TryEnsureTickRegistration()
         {
-            if (_lifecycleRuntimeState.RegisteredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_lifecycleRuntimeState.RegisteredToTickManager != 0 || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -1553,7 +1553,7 @@ namespace Hecton8.World
             _lifecycleRuntimeState.RegisteredToTickManager =
                 GlobalRegistry.Updatables.Contains(this) &&
                 GlobalRegistry.SlowTickables.Contains(this) &&
-                SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+                SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this) ? (byte)1 : (byte)0;
         }
 
         private bool TryGetScatterCenterCell(out int centerCellX, out int centerCellZ)
@@ -1572,6 +1572,11 @@ namespace Hecton8.World
         private static int WorldToScatterCellIndex(float coordinate, float size)
         {
             return (int)math.floor(coordinate / size);
+        }
+
+        private static int WorldToScatterCellIndex(double coordinate, float size)
+        {
+            return (int)math.floor(coordinate / math.max(0.001d, (double)size));
         }
 
         private void ClearScatterWorkingBuffers()
@@ -1954,20 +1959,20 @@ namespace Hecton8.World
 
         private void SubscribeToBootstrap()
         {
-            if (_lifecycleRuntimeState.SubscribedToBootstrap)
+            if (_lifecycleRuntimeState.SubscribedToBootstrap != 0)
                 return;
 
             GameBootstrapper.Register(this);
-            _lifecycleRuntimeState.SubscribedToBootstrap = true;
+            _lifecycleRuntimeState.SubscribedToBootstrap = 1;
         }
 
         private void UnsubscribeFromBootstrap()
         {
-            if (!_lifecycleRuntimeState.SubscribedToBootstrap)
+            if (_lifecycleRuntimeState.SubscribedToBootstrap == 0)
                 return;
 
             GameBootstrapper.Unregister(this);
-            _lifecycleRuntimeState.SubscribedToBootstrap = false;
+            _lifecycleRuntimeState.SubscribedToBootstrap = 0;
         }
 
         public void ClearScatterPreview()
@@ -2453,14 +2458,14 @@ namespace Hecton8.World
                     ClearRootChildren(root);
 
                 bool initialWarmupPass = Application.isPlaying &&
-                                         (_activeInstances.Count == 0 || _reconcileRuntimeState.HasPendingStartupPlacements);
+                                         (_activeInstances.Count == 0 || _reconcileRuntimeState.HasPendingStartupPlacements != 0);
                 int remainingInitialCreateBudget = initialWarmupPass
                     ? (spreadInitialScatterWarmupAcrossTicks
                         ? math.max(1, maxInitialScatterCreatesPerRebuild)
                         : int.MaxValue)
                     : int.MaxValue;
-                _reconcileRuntimeState.HasPendingStartupPlacements = false;
-                _reconcileRuntimeState.HasPendingRuntimePlacements = false;
+                _reconcileRuntimeState.HasPendingStartupPlacements = 0;
+                _reconcileRuntimeState.HasPendingRuntimePlacements = 0;
                 ResetFloraGpuiAggregation();
 
                 ScatterReconcileCleanupContext cleanupContext = new ScatterReconcileCleanupContext(
@@ -2474,11 +2479,11 @@ namespace Hecton8.World
 
                 long cleanupEndTimestamp = captureProfiling ? Stopwatch.GetTimestamp() : reconcileStartTimestamp;
                 if (!hasObserverPosition ||
-                    !_reconcileRuntimeState.HasObserverSample ||
+                    _reconcileRuntimeState.HasObserverSample == 0 ||
                     _reconcileRuntimeState.LastObserverPosition != observerPosition)
                 {
                     InvalidateResolvedPlacementVariantCache();
-                    _reconcileRuntimeState.HasObserverSample = hasObserverPosition;
+                    _reconcileRuntimeState.HasObserverSample = hasObserverPosition ? (byte)1 : (byte)0;
                     _reconcileRuntimeState.LastObserverPosition = observerPosition;
                 }
                 _reconcileRuntimeState.PlanVersion = _reconcileRuntimeState.PlanVersion == int.MaxValue ? 1 : _reconcileRuntimeState.PlanVersion + 1;
@@ -2630,7 +2635,7 @@ namespace Hecton8.World
             if (plan.Instance == null)
                 return false;
 
-            if (plan.RequiresSpawn)
+            if (plan.RequiresSpawn != 0)
             {
                 if (!TryReserveScatterCreate(plan.RuntimeVariant, reconcileContext.InitialWarmupPass))
                 {
@@ -2643,7 +2648,7 @@ namespace Hecton8.World
                     reconcileContext.Root,
                     placement,
                     plan.RuntimeVariant,
-                    plan.FinalVariantActive,
+                    plan.FinalVariantActive != 0,
                     out WorldProceduralProxyInstance rebuiltMetadata);
                 if (rebuilt == null)
                 {
@@ -2657,7 +2662,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            if (plan.Instance.IsScatterSyncCurrent(plan.SyncSignature, plan.ShouldApplyGeneratedGeology))
+            if (plan.Instance.IsScatterSyncCurrent(plan.SyncSignature, plan.ShouldApplyGeneratedGeology != 0))
             {
                 reconcileContext.ReusedCount++;
                 return true;
@@ -2674,12 +2679,12 @@ namespace Hecton8.World
             ScatterPlacementReconcilePlan plan,
             ref ScatterReconcileExecutionContext reconcileContext)
         {
-            if (reconcileContext.InitialWarmupPass && !plan.AllowInitialWarmupCreate)
+            if (reconcileContext.InitialWarmupPass && plan.AllowInitialWarmupCreate == 0)
                 return true;
 
             if (reconcileContext.InitialWarmupPass && reconcileContext.RemainingInitialCreateBudget <= 0)
             {
-                _reconcileRuntimeState.HasPendingStartupPlacements = true;
+                _reconcileRuntimeState.HasPendingStartupPlacements = 1;
                 return false;
             }
 
@@ -2717,7 +2722,7 @@ namespace Hecton8.World
                 reconcileContext.Root,
                 placement,
                 plan.RuntimeVariant,
-                plan.FinalVariantActive,
+                    plan.FinalVariantActive != 0,
                 out metadata);
             if (go == null)
             {
@@ -2736,24 +2741,24 @@ namespace Hecton8.World
             ScatterPlacementReconcilePlan plan,
             ref ScatterReconcileExecutionContext reconcileContext)
         {
-            ApplyPlacement(instance, placement, plan.RuntimeVariant, plan.FinalVariantActive);
+            ApplyPlacement(instance, placement, plan.RuntimeVariant, plan.FinalVariantActive != 0);
             ApplyGeneratedGeology(
                 instance,
                 placement,
-                plan.FinalVariantActive,
-                plan.ShouldApplyGeneratedGeology,
+                plan.FinalVariantActive != 0,
+                plan.ShouldApplyGeneratedGeology != 0,
                 reconcileContext.CachedGeologyService,
                 reconcileContext.ObserverPosition,
                 reconcileContext.HasObserverPosition);
-            instance.MarkScatterSync(plan.SyncSignature, plan.ShouldApplyGeneratedGeology);
+            instance.MarkScatterSync(plan.SyncSignature, plan.ShouldApplyGeneratedGeology != 0);
         }
 
         private void MarkPendingScatterReconcile(bool initialWarmupPass)
         {
             if (initialWarmupPass)
-                _reconcileRuntimeState.HasPendingStartupPlacements = true;
+                _reconcileRuntimeState.HasPendingStartupPlacements = 1;
             else
-                _reconcileRuntimeState.HasPendingRuntimePlacements = true;
+                _reconcileRuntimeState.HasPendingRuntimePlacements = 1;
         }
 
         private void PublishFaunaRegistrySnapshot()
@@ -2818,7 +2823,7 @@ namespace Hecton8.World
             anchor = new WorldFaunaSpawnRegistry.Anchor
             {
                 runtimeKey = placement.Key,
-                position = placement.RuntimePosition,
+                position = placement.ReadRuntimePosition(),
                 positionAup = anchorAup,
                 hasPositionAup = hasAnchorAup,
                 radius = placement.FaunaAnchorRadius,
@@ -2934,14 +2939,14 @@ namespace Hecton8.World
                     warmupContext.ObserverPosition,
                     warmupContext.HasObserverPosition);
 
-                if (warmupContext.InitialWarmupPass && !plan.AllowInitialWarmupCreate)
+                if (warmupContext.InitialWarmupPass && plan.AllowInitialWarmupCreate == 0)
                     continue;
 
                 if (ShouldUseFloraGpuiPath(placement, plan.RuntimeVariant, out _))
                     continue;
 
                 GameObject prefab = plan.RuntimeVariant != null ? plan.RuntimeVariant.prefab : null;
-                if (prefab == null || !plan.RequiresSpawn)
+                if (prefab == null || plan.RequiresSpawn == 0)
                     continue;
 
                 int familyHash = placement.Family != null ? placement.Family.FamilyHash : 0;
@@ -3310,7 +3315,7 @@ namespace Hecton8.World
                 placement.Rule != null &&
                 EnsureEnvironmentalVegetationBridgeResolved() &&
                 environmentalVegetationBridge.TrySnapScatterPlacement(
-                    placement.RuntimePosition,
+                    placement.ReadRuntimePosition(),
                     surfaceYOffset,
                     floraFamily ? math.min(placement.Rule.maxTiltAngleDegrees, FloraScatterMaxTiltAngleDegrees) : placement.Rule.maxTiltAngleDegrees,
                     yawDegrees,
@@ -7402,7 +7407,7 @@ namespace Hecton8.World
             if (family == null)
                 return false;
 
-            if (sample.isPreviewOverride)
+            if (sample.isPreviewOverride != 0)
                 return true;
 
             if (sample.seafloorSource != WorldProceduralFieldSampler.SeafloorSource.FallbackSynthetic)
@@ -7661,7 +7666,7 @@ namespace Hecton8.World
         {
             bool supportsFinalVariant = ResolvePlacementSupportsFinalVariant(placement);
             Transform transform = metadata.transform;
-            transform.SetPositionAndRotation(placement.RuntimePosition, placement.Rotation);
+            transform.SetPositionAndRotation(placement.ReadRuntimePosition(), placement.Rotation);
             transform.localScale = Vector3.one * placement.Scale;
             metadata.ConfigureScatter(
                 placement.Family,
@@ -7741,7 +7746,7 @@ namespace Hecton8.World
             GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
             GameObject instance = null;
             metadata = null;
-            Vector3 runtimePosition = placement.RuntimePosition;
+            Vector3 runtimePosition = placement.ReadRuntimePosition();
             bool poolManaged = false;
             ObjectPoolManager pool = null;
 
@@ -8315,7 +8320,7 @@ namespace Hecton8.World
             in ScatterPatternScoreContext patternScoreContext)
         {
             WorldPrefabFamilyProfile family = runtimeRule.Family;
-            if (!biomeScoreContext.HasBiomeProfile || family == null)
+            if (biomeScoreContext.HasBiomeProfile == 0 || family == null)
                 return 0f;
 
             float bonus = runtimeRule.ProceduralDomain switch
@@ -8541,7 +8546,7 @@ namespace Hecton8.World
             in ScatterRuntimeRuleEntry runtimeRule,
             in ScatterBiomeScoreContext biomeScoreContext)
         {
-            if (!biomeScoreContext.HasBiomeProfile || runtimeRule.ClusterAccentRole == WorldPrefabFamilyProfile.ClusterAccentRole.None)
+            if (biomeScoreContext.HasBiomeProfile == 0 || runtimeRule.ClusterAccentRole == WorldPrefabFamilyProfile.ClusterAccentRole.None)
                 return 0f;
 
             float bonus = 0f;
@@ -8578,7 +8583,7 @@ namespace Hecton8.World
             in ScatterRuntimeRuleEntry runtimeRule,
             in ScatterBiomeScoreContext biomeScoreContext)
         {
-            if (!biomeScoreContext.HasBiomeProfile || runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.None)
+            if (biomeScoreContext.HasBiomeProfile == 0 || runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.None)
                 return 0f;
 
             float bonus = 0f;
@@ -8719,7 +8724,7 @@ namespace Hecton8.World
             int preferredFamilyIndex,
             in ScatterPatternScoreContext patternScoreContext)
         {
-            if (!patternScoreContext.IsIndustrialSignature)
+            if (patternScoreContext.IsIndustrialSignature == 0)
             {
                 return 0f;
             }
@@ -8829,7 +8834,7 @@ namespace Hecton8.World
             int preferredFamilyIndex,
             in ScatterPatternScoreContext patternScoreContext)
         {
-            if (patternScoreContext.IsSoftWater)
+            if (patternScoreContext.IsSoftWater != 0)
             {
                 return runtimeRule.ScatterLayer switch
                 {
@@ -8840,7 +8845,7 @@ namespace Hecton8.World
                 };
             }
 
-            if (patternScoreContext.IsServiceLike)
+            if (patternScoreContext.IsServiceLike != 0)
             {
                 return runtimeRule.ScatterLayer switch
                 {
@@ -8851,7 +8856,7 @@ namespace Hecton8.World
                 };
             }
 
-            if (patternScoreContext.IsSedimentResources)
+            if (patternScoreContext.IsSedimentResources != 0)
             {
                 return runtimeRule.ScatterLayer switch
                 {
@@ -8906,10 +8911,10 @@ namespace Hecton8.World
             int preferredFamilyIndex,
             in ScatterPatternScoreContext patternScoreContext)
         {
-            if (!biomeScoreContext.HasBiomeProfile ||
+            if (biomeScoreContext.HasBiomeProfile == 0 ||
                 runtimeRule.Family == null ||
                 runtimeRule.ScatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure ||
-                !patternScoreContext.IsSoftWater)
+                patternScoreContext.IsSoftWater == 0)
             {
                 return 0f;
             }
@@ -8947,8 +8952,8 @@ namespace Hecton8.World
             int preferredFamilyIndex,
             in ScatterPatternScoreContext patternScoreContext)
         {
-            if (!patternScoreContext.IsLandmarkCorridor ||
-                !biomeScoreContext.HasBiomeProfile ||
+            if (patternScoreContext.IsLandmarkCorridor == 0 ||
+                biomeScoreContext.HasBiomeProfile == 0 ||
                 runtimeRule.Family == null ||
                 runtimeRule.ScatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Structure)
             {
@@ -9010,7 +9015,7 @@ namespace Hecton8.World
             in ScatterBiomeScoreContext biomeScoreContext,
             in ScatterPatternScoreContext patternScoreContext)
         {
-            if (!patternScoreContext.IsLandmarkCorridor || !biomeScoreContext.HasBiomeProfile)
+            if (patternScoreContext.IsLandmarkCorridor == 0 || biomeScoreContext.HasBiomeProfile == 0)
                 return 1f;
 
             if (biomeScoreContext.PreferredStructureRole != WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette)
@@ -11509,7 +11514,7 @@ namespace Hecton8.World
         {
             public ScatterBiomeScoreContext(HectonBiomeMatrixProfile biomeProfile)
             {
-                HasBiomeProfile = biomeProfile != null;
+                HasBiomeProfile = biomeProfile != null ? (byte)1 : (byte)0;
                 ResourceSignal = GetMatrixResourceSignal(biomeProfile);
                 SalvageSignal = GetMatrixSalvageSignal(biomeProfile);
                 LandmarkSignal = GetMatrixLandmarkSignal(biomeProfile);
@@ -11530,17 +11535,17 @@ namespace Hecton8.World
                 PreferredStructureRole = GetPrimaryPreferredStructureAccentRole(biomeProfile);
             }
 
-            public bool HasBiomeProfile { get; }
-            public float ResourceSignal { get; }
-            public float SalvageSignal { get; }
-            public float LandmarkSignal { get; }
-            public float SurvivalSignal { get; }
-            public float PressureSignal { get; }
-            public WorldPrefabFamilyProfile.ClusterAccentRole PrimaryClusterFocusRole { get; }
-            public WorldPrefabFamilyProfile.ClusterAccentRole SecondaryClusterFocusRole { get; }
-            public WorldPrefabFamilyProfile.StructureAccentRole PrimaryStructureFocusRole { get; }
-            public WorldPrefabFamilyProfile.StructureAccentRole SecondaryStructureFocusRole { get; }
-            public WorldPrefabFamilyProfile.StructureAccentRole PreferredStructureRole { get; }
+            public readonly byte HasBiomeProfile;
+            public readonly float ResourceSignal;
+            public readonly float SalvageSignal;
+            public readonly float LandmarkSignal;
+            public readonly float SurvivalSignal;
+            public readonly float PressureSignal;
+            public readonly WorldPrefabFamilyProfile.ClusterAccentRole PrimaryClusterFocusRole;
+            public readonly WorldPrefabFamilyProfile.ClusterAccentRole SecondaryClusterFocusRole;
+            public readonly WorldPrefabFamilyProfile.StructureAccentRole PrimaryStructureFocusRole;
+            public readonly WorldPrefabFamilyProfile.StructureAccentRole SecondaryStructureFocusRole;
+            public readonly WorldPrefabFamilyProfile.StructureAccentRole PreferredStructureRole;
         }
 
         private readonly struct ScatterPatternScoreContext
@@ -11548,19 +11553,19 @@ namespace Hecton8.World
             public ScatterPatternScoreContext(WorldProceduralPattern pattern)
             {
                 Pattern = pattern;
-                IsSoftWater = IsSoftWaterPattern(pattern);
-                IsServiceLike = IsServiceLikePattern(pattern);
-                IsLandmarkCorridor = pattern == WorldProceduralPattern.LandmarkCorridor;
-                IsIndustrialSignature = pattern == WorldProceduralPattern.IndustrialService || pattern == WorldProceduralPattern.BrineToxic;
-                IsSedimentResources = pattern == WorldProceduralPattern.SedimentResources;
+                IsSoftWater = IsSoftWaterPattern(pattern) ? (byte)1 : (byte)0;
+                IsServiceLike = IsServiceLikePattern(pattern) ? (byte)1 : (byte)0;
+                IsLandmarkCorridor = pattern == WorldProceduralPattern.LandmarkCorridor ? (byte)1 : (byte)0;
+                IsIndustrialSignature = pattern == WorldProceduralPattern.IndustrialService || pattern == WorldProceduralPattern.BrineToxic ? (byte)1 : (byte)0;
+                IsSedimentResources = pattern == WorldProceduralPattern.SedimentResources ? (byte)1 : (byte)0;
             }
 
-            public WorldProceduralPattern Pattern { get; }
-            public bool IsSoftWater { get; }
-            public bool IsServiceLike { get; }
-            public bool IsLandmarkCorridor { get; }
-            public bool IsIndustrialSignature { get; }
-            public bool IsSedimentResources { get; }
+            public readonly WorldProceduralPattern Pattern;
+            public readonly byte IsSoftWater;
+            public readonly byte IsServiceLike;
+            public readonly byte IsLandmarkCorridor;
+            public readonly byte IsIndustrialSignature;
+            public readonly byte IsSedimentResources;
         }
 
         private struct GeologyBonusCache
@@ -11698,45 +11703,45 @@ namespace Hecton8.World
                 PreferredSocketKinds = rule != null ? rule.preferredSocketKinds : null;
             }
 
-            public WorldProceduralPlacementRule Rule { get; }
-            public WorldPrefabFamilyProfile Family { get; }
-            public WorldPrefabFamilyProfile.PlacementMode PlacementMode { get; }
-            public WorldPrefabFamilyProfile.ScatterLayer ScatterLayer { get; }
-            public WorldPrefabFamilyProfile.ProceduralDomain ProceduralDomain { get; }
-            public WorldContentSocket.ContentKind ScatterKind { get; }
-            public int RuleIdHash { get; }
-            public string HeatmapChannel { get; }
-            public int HeatmapChannelIndex { get; }
-            public float ScoreBaseBonus { get; }
-            public WorldStreamingLayer StreamingLayer { get; }
-            public WorldGenerativeGeologyProfile GeologyProfile { get; }
-            public bool HasMacroZone { get; }
-            public bool SupportsFinalVariant { get; }
-            public WorldPrefabFamilyProfile.ClusterAccentRole ClusterAccentRole { get; }
-            public WorldPrefabFamilyProfile.StructureAccentRole StructureAccentRole { get; }
-            public bool PassiveSpawnFamily { get; }
-            public bool PredatorSpawnFamily { get; }
-            public WorldProceduralPattern PrimaryPattern { get; }
-            public WorldProceduralPattern SecondaryPattern { get; }
-            public float BiomeAffinityWeight { get; }
-            public float ZoneAffinityWeight { get; }
-            public float AcceptedFamilyAffinityBonus { get; }
-            public float PatternAffinityWeight { get; }
-            public float PatternMismatchScale { get; }
-            public float GeologyScoreScale { get; }
-            public float DensityScaleFactor { get; }
-            public float MinDepthMeters { get; }
-            public float MaxDepthMeters { get; }
-            public float MinSlopeDegrees { get; }
-            public float MaxSlopeDegrees { get; }
-            public WorldProceduralPlacementRule.FloraSubstrateMask RequiredSubstrate { get; }
-            public float MaxTiltAngleDegrees { get; }
-            public float ClusterNoiseScale { get; }
-            public float ClusterNoiseThreshold { get; }
-            public bool StrictEnvelopeMapping { get; }
-            public HectonBiomeFamilyProfile[] PreferredBiomeFamilies { get; }
-            public WorldZoneAnchor.ZoneKind[] PreferredZoneKinds { get; }
-            public WorldContentSocket.ContentKind[] PreferredSocketKinds { get; }
+            public readonly WorldProceduralPlacementRule Rule;
+            public readonly WorldPrefabFamilyProfile Family;
+            public readonly WorldPrefabFamilyProfile.PlacementMode PlacementMode;
+            public readonly WorldPrefabFamilyProfile.ScatterLayer ScatterLayer;
+            public readonly WorldPrefabFamilyProfile.ProceduralDomain ProceduralDomain;
+            public readonly WorldContentSocket.ContentKind ScatterKind;
+            public readonly int RuleIdHash;
+            public readonly string HeatmapChannel;
+            public readonly int HeatmapChannelIndex;
+            public readonly float ScoreBaseBonus;
+            public readonly WorldStreamingLayer StreamingLayer;
+            public readonly WorldGenerativeGeologyProfile GeologyProfile;
+            public readonly bool HasMacroZone;
+            public readonly bool SupportsFinalVariant;
+            public readonly WorldPrefabFamilyProfile.ClusterAccentRole ClusterAccentRole;
+            public readonly WorldPrefabFamilyProfile.StructureAccentRole StructureAccentRole;
+            public readonly bool PassiveSpawnFamily;
+            public readonly bool PredatorSpawnFamily;
+            public readonly WorldProceduralPattern PrimaryPattern;
+            public readonly WorldProceduralPattern SecondaryPattern;
+            public readonly float BiomeAffinityWeight;
+            public readonly float ZoneAffinityWeight;
+            public readonly float AcceptedFamilyAffinityBonus;
+            public readonly float PatternAffinityWeight;
+            public readonly float PatternMismatchScale;
+            public readonly float GeologyScoreScale;
+            public readonly float DensityScaleFactor;
+            public readonly float MinDepthMeters;
+            public readonly float MaxDepthMeters;
+            public readonly float MinSlopeDegrees;
+            public readonly float MaxSlopeDegrees;
+            public readonly WorldProceduralPlacementRule.FloraSubstrateMask RequiredSubstrate;
+            public readonly float MaxTiltAngleDegrees;
+            public readonly float ClusterNoiseScale;
+            public readonly float ClusterNoiseThreshold;
+            public readonly bool StrictEnvelopeMapping;
+            public readonly HectonBiomeFamilyProfile[] PreferredBiomeFamilies;
+            public readonly WorldZoneAnchor.ZoneKind[] PreferredZoneKinds;
+            public readonly WorldContentSocket.ContentKind[] PreferredSocketKinds;
         }
 
         private readonly struct ScatterCandidatePreview
@@ -11755,11 +11760,11 @@ namespace Hecton8.World
                 CellZ = cellZ;
             }
 
-            public int StableHash { get; }
-            public Vector3 Position { get; }
-            public int HeightLayerIndex { get; }
-            public int CellX { get; }
-            public int CellZ { get; }
+            public readonly int StableHash;
+            public readonly Vector3 Position;
+            public readonly int HeightLayerIndex;
+            public readonly int CellX;
+            public readonly int CellZ;
         }
 
         /// <summary>
@@ -11785,13 +11790,13 @@ namespace Hecton8.World
                 MaxTiltAngleDegrees = maxTiltAngleDegrees;
             }
 
-            public Vector3 Position { get; }
-            public float SpacingRadius { get; }
-            public float DepthMeters { get; }
-            public float SlopeDegrees { get; }
-            public WorldPrefabFamilyProfile.ScatterLayer ScatterLayer { get; }
-            public WorldProceduralPlacementRule.FloraSubstrateMask Substrate { get; }
-            public float MaxTiltAngleDegrees { get; }
+            public readonly Vector3 Position;
+            public readonly float SpacingRadius;
+            public readonly float DepthMeters;
+            public readonly float SlopeDegrees;
+            public readonly WorldPrefabFamilyProfile.ScatterLayer ScatterLayer;
+            public readonly WorldProceduralPlacementRule.FloraSubstrateMask Substrate;
+            public readonly float MaxTiltAngleDegrees;
         }
 
         internal readonly struct ScatterCandidate : IComparable<ScatterCandidate>
@@ -11812,12 +11817,12 @@ namespace Hecton8.World
                 Score = score;
             }
 
-            internal ScatterPlacement Placement { get; }
-            public WorldPrefabFamilyProfile Family { get; }
-            public WorldProceduralPlacementRule Rule { get; }
-            public string HeatmapChannel { get; }
-            public float Heat { get; }
-            public float Score { get; }
+            internal readonly ScatterPlacement Placement;
+            public readonly WorldPrefabFamilyProfile Family;
+            public readonly WorldProceduralPlacementRule Rule;
+            public readonly string HeatmapChannel;
+            public readonly float Heat;
+            public readonly float Score;
 
             public int CompareTo(ScatterCandidate other)
             {

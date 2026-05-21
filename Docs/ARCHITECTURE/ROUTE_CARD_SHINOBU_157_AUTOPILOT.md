@@ -15,6 +15,8 @@ Review disposition: YELLOW - static source route only; guarded dotnet compile is
 | Consumer phase | `POST_SIMULATION` force-command publication plus `VISUAL_SYNC` debug/gizmo readback when enabled |
 | Cadence | Fixed simulation cadence for command truth; visual/debug consumers are quality-gated and must not force runtime completion |
 | Capacity | Vault-backed command/state/telemetry lanes; telemetry ring fixed at 300 entries; debug readback bounded by authoring tool cadence |
+| Producer/consumer phase | `SIMULATION` autopilot command solve and budgeted attitude/depth correction -> `POST_SIMULATION` force-command publication plus `VISUAL_SYNC` debug/gizmo readback when enabled |
+| Cadence/capacity | Fixed simulation cadence for command truth; visual/debug consumers are quality-gated and bounded by authoring cadence; Vault-backed command/state/telemetry lanes with fixed 300-entry telemetry ring |
 | Overflow/failure | Invalid or saturated inputs publish bounded safe command output and telemetry; route stays YELLOW until compile/runtime/profiler proof exists |
 | Shutdown/disposal | Owner completes/drains owned scheduled handles before clearing command state; Vault/SignalBus owners retain buffer and queue disposal authority |
 | Fault dump target | `Docs/AgentLogs/Dump_SHINOBU_157.bin` and `Docs/AgentLogs/Dump_NAVIGATION_SURGEON.bin` are planned/generated on fault; no existing artifact is implied unless a timestamped runtime trigger and output are linked |
@@ -29,11 +31,30 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. These anchors prove only that the ci
 - `Assets/_Project/Scripts/Physics/Vehicles/Automation/Editor/SubmarineAutopilotTunerWindow.cs`
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R47 Root/Architecture Actuality Boundary
-This route card is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) (R46 prior interior-authority/route-field/proof-language correction; R45 prior R43/R44 residue/proof-artifact/source-counter correction); R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R37 remains the prior artifact-path/proof-wording/source-counter correction; R36 remains the prior authority-spine/domain-map correction; R35 remains the prior R4/counter-residue correction, and R34 remains the prior source-counter and physical-line refresh, R33 remains the prior R32-residue/source-anchor correction, R32 remains the prior R4/proof-wording correction, R31 remains the prior current-boundary propagation correction, R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, and R28 remains the prior interior-boundary correction. Current static gates: AtlasCheck fails `ATLAS_CHECK_FAIL references=6781 missing=61` (one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, missing HectonMaskChannelPacker/HectonMaterialChannelPackValidator editor source refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only.
+## 2026-05-21 R51 Root/Architecture Actuality Boundary
 
-No Unity import, Unity Console, Play Mode, Burst Inspector, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, route soak, save/load route, vehicle scene wiring, or visual proof is implied unless this route card links a fresh evidence artifact. `YELLOW` remains the only valid runtime disposition until evidence is attached.
+This document is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/Reports/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+## R48 Exact Route Field Normalization
+
+Route ID: ROUTE_CARD_SHINOBU_157_AUTOPILOT
+Owner: Echelon 6 Habitat & Vehicles / Autonomous Submarine Navigation
+Instrument: documented route instrument in this file; no new route is accepted from this normalization block alone.
+Producer/consumer phase: producer and consumer phases documented below; hot GlobalRegistry polling is forbidden.
+Cadence/capacity: bounded cadence/capacity documented below; no hot dynamic allocation or unbounded queue growth is implied.
+Overflow/failure: fail closed, clamp/drop/coalesce as documented below, and treat dump paths as planned/generated-on-fault until a timestamped artifact exists.
+Shutdown/disposal: owner/Vault/SignalBus lifecycle documented below; visual/debug consumers do not own native memory.
+Proof required before GREEN: fresh compile/import, Play Mode route, profiler/GC, platform/player proof where runtime-facing, and linked artifact path with command, timestamp, environment, and output.
+Review disposition: YELLOW / STATIC_SOURCE_ONLY.
 
 ## Vault Buffers
 Owner-local IDs are declared in `SubmarineAutopilotVaultRoute` to avoid widening the global `BufferID` enum and to preserve compile-wall isolation.

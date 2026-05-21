@@ -23,6 +23,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -52,7 +53,7 @@ namespace Hecton8.Gameplay
     /// Implements ICuttable for knife/laser cutter integration.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HarvestablePlant : MonoBehaviour, ICuttable, ITickable, IUpdatable
+    public sealed class HarvestablePlant : MonoBehaviour, ICuttable, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float OneOver127 = 1f / 127f;
 
@@ -130,8 +131,12 @@ namespace Hecton8.Gameplay
         private Transform _transform;
         private float[] _regrowTimers;
         private bool _isRegistered;
+        private bool _tickDormant;
+        private bool _hotSwapListenerRegistered;
         private bool _poolMissingLogged;
         private uint _lootScatterSeed;
+        private IAudioService _audioService;
+        private ObjectPoolManager _objectPool;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -162,6 +167,7 @@ namespace Hecton8.Gameplay
         {
             _transform = transform;
             _lootScatterSeed = MixLootHash(2166136261u, (uint)EntityId.ToULong(gameObject.GetEntityId()));
+            CacheRegistryServicesCold();
 
             // Initialize regrow timers
             _regrowTimers = new float[segments.Length];
@@ -173,12 +179,22 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+
             // Register for tick if any segments are regrowing
             CheckRegistration();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
+            UnregisterFromTick();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
             UnregisterFromTick();
         }
 
@@ -194,6 +210,7 @@ namespace Hecton8.Gameplay
         public void Tick(float deltaTime)
         {
             if (!autoRegrow) return;
+            if (_tickDormant) return;
 
             bool anyRegrowing = false;
 
@@ -217,7 +234,7 @@ namespace Hecton8.Gameplay
             // Unregister if no more segments regrowing
             if (!anyRegrowing)
             {
-                UnregisterFromTick();
+                _tickDormant = true;
             }
         }
 
@@ -291,7 +308,8 @@ namespace Hecton8.Gameplay
             }
 
             // Play cut sound
-            if (cutSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
+            IAudioService audio = _audioService;
+            if (cutSound != null && audio != null)
             {
                 audio.PlayAtPoint(cutSound, hitPoint, cutVolume);
             }
@@ -315,7 +333,7 @@ namespace Hecton8.Gameplay
 
             ResolveDeterministicLootPose(segment, segmentIndex, hitPoint, out Vector3 spawnPos, out Quaternion spawnRotation);
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
             {
                 if (!_poolMissingLogged)
@@ -347,22 +365,49 @@ namespace Hecton8.Gameplay
             out Quaternion spawnRotation)
         {
             Vector3 anchor = segment.meshRenderer != null ? segment.meshRenderer.transform.position : hitPoint;
-            AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchor);
 
             uint hash = _lootScatterSeed;
             hash = MixLootHash(hash, (uint)segmentIndex);
-            hash = MixLootHash(hash, (uint)anchorAup.GridX);
-            hash = MixLootHash(hash, (uint)((ulong)anchorAup.GridX >> 32));
-            hash = MixLootHash(hash, (uint)anchorAup.GridY);
-            hash = MixLootHash(hash, (uint)((ulong)anchorAup.GridY >> 32));
-            hash = MixLootHash(hash, (uint)anchorAup.GridZ);
-            hash = MixLootHash(hash, (uint)((ulong)anchorAup.GridZ >> 32));
+            if (TryResolveRuntimeAup(anchor, out AbsoluteUniversePosition anchorAup))
+            {
+                hash = MixLootHash(hash, (uint)anchorAup.GridX);
+                hash = MixLootHash(hash, (uint)((ulong)anchorAup.GridX >> 32));
+                hash = MixLootHash(hash, (uint)anchorAup.GridY);
+                hash = MixLootHash(hash, (uint)((ulong)anchorAup.GridY >> 32));
+                hash = MixLootHash(hash, (uint)anchorAup.GridZ);
+                hash = MixLootHash(hash, (uint)((ulong)anchorAup.GridZ >> 32));
+            }
+            else
+            {
+                hash = MixLootHash(hash, math.asuint(anchor.x));
+                hash = MixLootHash(hash, math.asuint(anchor.y));
+                hash = MixLootHash(hash, math.asuint(anchor.z));
+            }
+
             hash = FinalizeLootHash(hash);
 
             float offsetX = SignedUnitFromByte((byte)hash) * lootScatterRadius;
             float offsetZ = SignedUnitFromByte((byte)(hash >> 8)) * lootScatterRadius;
             spawnPosition = hitPoint + new Vector3(offsetX, 0.1f, offsetZ);
             spawnRotation = CardinalYRotation((hash >> 16) & 3u);
+        }
+
+        private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return positionAup.IsFinite();
         }
 
         private static float SignedUnitFromByte(byte value)
@@ -474,8 +519,9 @@ namespace Hecton8.Gameplay
 
         private void RegisterToTick()
         {
+            _tickDormant = false;
             if (_isRegistered) return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
+            if (!Application.isPlaying) return;
 
             _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
@@ -486,6 +532,46 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = false;
+            _tickDormant = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _audioService = GlobalRegistry.Audio;
+            _objectPool = GlobalRegistry.ObjectPool;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPool = currentService as ObjectPoolManager;
+                    break;
+            }
         }
 
         // ══════════════════════════════════════════════════════════

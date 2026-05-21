@@ -1,26 +1,19 @@
 using System;
 using System.IO;
-using Hecton8.AtlasSignal;
 using Hecton8.Core;
-using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
-using Hecton8.Audio;
-using Hecton8.AI;
-using Hecton8.Bootstrap;
-using Hecton8.Building;
 using Hecton8.Construction;
-using Hecton8.Caves;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Equipment.Auxiliary;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Scavenging;
 using Hecton8.Tools;
 using Hecton8.World;
-using Hecton8.Narrative;
 using Hecton.Localization;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -30,7 +23,9 @@ using UnityEditor;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class ScannerTool : PlayerTool, IBatteryTool, IDispatcherRaycastReceiver, IFastTickable, ISlowTickable, ILateFrameTickable, IScalabilityChangedEventListener, IAtlasSignalEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    [RequireComponent(typeof(HectonScanMarkerSystem))]
+    [RequireComponent(typeof(DataArchaeologyRuntime))]
+    public sealed class ScannerTool : PlayerTool, IBatteryTool, IDispatcherRaycastReceiver, IFastTickable, ISlowTickable, ILateFrameTickable, IScalabilityChangedEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         internal const string ScannerMarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const int AtlasDetectionRevealStage = 2;
@@ -44,13 +39,11 @@ namespace Hecton8.Gameplay
         private const float ScientificAttractantTraceThreshold01 = 0.1f;
         private const float BearingDeadzoneTanSq = 0.031091204f; // tan(10 degrees)^2
         private const int OperationalStringCacheHz = 10;
-        private const int PrefixedScannerStringCacheSize = 128;
         private const int ScientificRaycastRequestSalt = 0x5DA70000;
         private const int ScannerBlackBoxCapacity = 300;
         private const int ScannerBlackBoxInvalidStateHash = unchecked((int)0x53434E21); // SCN!
         private const uint ScannerBlackBoxMagic = 0x53434242u; // SCBB
-        private const float ScannerQualityTierHysteresisSeconds = 2f;
-        private const float SurvivalResolveRetrySeconds = 0.5f;
+        private const float ScannerQualityWeightEpsilon = 1f / 255f;
         private const ushort ScannerBlackBoxFlagEquipped = 1 << 0;
         private const ushort ScannerBlackBoxFlagHeld = 1 << 1;
         private const ushort ScannerBlackBoxFlagSnapshotActive = 1 << 2;
@@ -60,36 +53,7 @@ namespace Hecton8.Gameplay
         private const ushort ScannerBlackBoxFlagInvalidState = 1 << 15;
         private const uint ScannerToolTuningHash = 0x53434E52u; // SCNR
         private const uint FallbackScannerBlueprintHash = 0x534F5648u; // SOVH
-        private const string ScannerBlackBoxFileName = "Dump_DIEGETIC_LORE_SCANNER.bin";
-        private const string ItemEntryPrefix = "item.";
-        private const string ModuleEntryPrefix = "module.";
-        private const string ConstructionCategoryPrefix = "Construction/";
-        private const string WearMarginPrefix = "Structural wear margin: recoverable hull ";
-        private const string WearMarginSuffix = ". No authored service-cycle cap is currently limiting repairs.";
-        private const string WearCriticalPrefix = "Structural wear critical: recoverable hull capped at ";
-        private const string WearCriticalSuffix = ". Catastrophic failure now requires rebuild, not another field-service loop.";
-        private const string WearRemainingPrefix = "Structural wear: ";
-        private const string WearRemainingMiddle = " integrity permanently lost. Estimated catastrophic repair cycles remaining before rebuild: ";
-        private const string WearRemainingSuffix = ".";
-        private const string ServiceOxygenLeakSummary = "Service module is venting breathable reserves. Stabilize seals and restore compartment safety before reuse.";
-        private const string ServiceFireSummary = "Service module is in active fire state. Hull repair and immediate compartment suppression take priority.";
-        private const string ServiceShortCircuitSummary = "Service module is shorted and power-locked. Restore hull integrity and electrical service before restart.";
-        private const string ServiceStaleAirSummary = "Service module is holding stale breathable reserve. Restore scrubber margin before treating this compartment as safe shelter.";
-        private const string ServiceDamagedSummary = "Service module is damaged and should be prioritized for hull repair before deeper field work.";
-        private const string ServiceFloodedSummary = "Service module is flooded or venting and now reads as an emergency recovery target.";
-        private const string BaseModuleArchivedPrefix = "Base module archived. Power role: ";
-        private const string BaseModuleArchivedSuffix = ".";
-        // COLD ALLOC: string[128] - scanner prefixed-string cache prefixes for repeated discovery ids/categories - owner: ScannerTool
-        private static readonly string[] s_prefixedScannerStringPrefixCache = new string[PrefixedScannerStringCacheSize];
-        // COLD ALLOC: string[128] - scanner prefixed-string cache source ids/categories - owner: ScannerTool
-        private static readonly string[] s_prefixedScannerStringSourceCache = new string[PrefixedScannerStringCacheSize];
-        // COLD ALLOC: string[128] - scanner prefixed-string cache values for repeated discovery ids/categories - owner: ScannerTool
-        private static readonly string[] s_prefixedScannerStringValueCache = new string[PrefixedScannerStringCacheSize];
-        // COLD ALLOC: uint[128] - scanner prefixed-string cache hashes - owner: ScannerTool
-        private static readonly uint[] s_prefixedScannerStringHashCache = new uint[PrefixedScannerStringCacheSize];
-        // COLD ALLOC: byte[128] - scanner prefixed-string cache mode flags - owner: ScannerTool
-        private static readonly byte[] s_prefixedScannerStringFlagsCache = new byte[PrefixedScannerStringCacheSize];
-
+        private const string ScannerBlackBoxFileName = "Dump_SHINOBU_224_ScannerTool.bin";
         private static uint ResolveScannerFrame()
         {
             return TimeSliceScheduler.CurrentFrameId;
@@ -100,6 +64,70 @@ namespace Hecton8.Gameplay
             uint frame = ResolveScannerFrame();
             return frame > int.MaxValue ? int.MaxValue : (int)frame;
         }
+
+        private static float ResolveScannerTimeSeconds()
+        {
+            double seconds = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (!math.isfinite(seconds) || seconds < 0d)
+                return 0f;
+
+            return seconds > float.MaxValue ? float.MaxValue : (float)seconds;
+        }
+
+        private static IBabelLocalization s_cachedScannerBabelLocalization;
+        private static ushort s_cachedScannerLocalizationLanguageId = ushort.MaxValue;
+        private static string s_scannerBearingDown;
+        private static string s_scannerBearingLeft;
+        private static string s_scannerBearingRight;
+        private static string s_scannerCategory;
+        private static string s_scannerDirectiveRecharging;
+        private static string s_scannerHudClear;
+        private static string s_scannerHudContacts;
+        private static string s_scannerHudContactsWithFlora;
+        private static string s_scannerHudNoResource;
+        private static string s_scannerHudNoStructure;
+        private static string s_scannerHudRecharging;
+        private static string s_scannerHudResourceContacts;
+        private static string s_scannerHudStructureContacts;
+        private static string s_scannerLogExpeditionSweepComplete;
+        private static string s_scannerLogResourceSweepComplete;
+        private static string s_scannerLogStructureSweepComplete;
+        private static string s_scannerModeExpedition;
+        private static string s_scannerModeHudExpedition;
+        private static string s_scannerModeHudResource;
+        private static string s_scannerModeHudStructure;
+        private static string s_scannerModeLogExpedition;
+        private static string s_scannerModeLogResource;
+        private static string s_scannerModeLogStructure;
+        private static string s_scannerModeResource;
+        private static string s_scannerModeStructure;
+        private static string s_scannerModeSummaryExpedition;
+        private static string s_scannerModeSummaryResource;
+        private static string s_scannerModeSummaryStructure;
+        private static string s_scannerRecommendAdvanceScout;
+        private static string s_scannerRecommendBioformPresent;
+        private static string s_scannerRecommendCachedPickupsOnly;
+        private static string s_scannerRecommendCargoPresent;
+        private static string s_scannerRecommendDatabankOnly;
+        private static string s_scannerRecommendDenseSector;
+        private static string s_scannerRecommendExpeditionWaypoint;
+        private static string s_scannerRecommendFloraPresent;
+        private static string s_scannerRecommendHazardProbe;
+        private static string s_scannerRecommendHoldRoute;
+        private static string s_scannerRecommendMarkRichestLane;
+        private static string s_scannerRecommendResourcePocket;
+        private static string s_scannerRecommendRouteMarkers;
+        private static string s_scannerRecommendShiftLane;
+        private static string s_scannerRecommendSparseField;
+        private static string s_scannerRecommendStructuralWaypoint;
+        private static string s_scannerRecommendWidenSearch;
+        private static string s_scannerSummaryContacts;
+        private static string s_scannerSummaryContactsWithFlora;
+        private static string s_scannerSummaryNoContacts;
+        private static string s_scannerSummaryNoResource;
+        private static string s_scannerSummaryNoStructure;
+        private static string s_scannerSummaryResourceContacts;
+        private static string s_scannerSummaryStructureContacts;
 
         private enum ScanMode
         {
@@ -143,12 +171,12 @@ namespace Hecton8.Gameplay
                 Vector3 scentDirection,
                 ScientificAttractantChannel attractantChannel,
                 float depthMeters,
-                FaunaBrain faunaBrain,
+                bool hasFaunaContact,
                 uint threatPredictionLoreHash,
                 bool threatPredictionUnlocked,
                 bool flankingManeuverDetected)
             {
-                IsActive = isActive;
+                IsActive = isActive ? (byte)1 : (byte)0;
                 Progress01 = progress01;
                 Density = density;
                 Density01 = density01;
@@ -165,38 +193,40 @@ namespace Hecton8.Gameplay
                 ScentDirection = scentDirection;
                 AttractantChannel = attractantChannel;
                 DepthMeters = depthMeters;
-                FaunaBrain = faunaBrain;
                 ThreatPredictionLoreHash = threatPredictionLoreHash;
-                ThreatPredictionUnlocked = threatPredictionUnlocked;
-                FlankingManeuverDetected = flankingManeuverDetected;
+                ThreatPredictionUnlocked = threatPredictionUnlocked ? (byte)1 : (byte)0;
+                FlankingManeuverDetected = flankingManeuverDetected ? (byte)1 : (byte)0;
+                HasFaunaContact = hasFaunaContact ? (byte)1 : (byte)0;
+                HasAttractantTrace =
+                    attractantChannel != ScientificAttractantChannel.None &&
+                    attractantScent01 > ScientificAttractantTraceThreshold01 &&
+                    scentDirection.sqrMagnitude > 0.0001f
+                        ? (byte)1
+                        : (byte)0;
             }
 
-            public bool IsActive { get; }
-            public float Progress01 { get; }
-            public float Density { get; }
-            public float Density01 { get; }
-            public float Purity01 { get; }
-            public ScientificMaterialClass MaterialClass { get; }
-            public ScannableFragment Fragment { get; }
-            public int ProxyMeshIndex { get; }
-            public float TemperatureC { get; }
-            public float SalinityPpt { get; }
-            public float Toxicity01 { get; }
-            public float ChemicalLoad01 { get; }
-            public float OrganicBlood01 { get; }
-            public float AttractantScent01 { get; }
-            public Vector3 ScentDirection { get; }
-            public ScientificAttractantChannel AttractantChannel { get; }
-            public float DepthMeters { get; }
-            public FaunaBrain FaunaBrain { get; }
-            public uint ThreatPredictionLoreHash { get; }
-            public bool ThreatPredictionUnlocked { get; }
-            public bool FlankingManeuverDetected { get; }
-            public bool HasFaunaContact => FaunaBrain != null;
-            public bool HasAttractantTrace =>
-                AttractantChannel != ScientificAttractantChannel.None &&
-                AttractantScent01 > ScientificAttractantTraceThreshold01 &&
-                ScentDirection.sqrMagnitude > 0.0001f;
+            public readonly byte IsActive;
+            public readonly float Progress01;
+            public readonly float Density;
+            public readonly float Density01;
+            public readonly float Purity01;
+            public readonly ScientificMaterialClass MaterialClass;
+            public readonly ScannableFragment Fragment;
+            public readonly int ProxyMeshIndex;
+            public readonly float TemperatureC;
+            public readonly float SalinityPpt;
+            public readonly float Toxicity01;
+            public readonly float ChemicalLoad01;
+            public readonly float OrganicBlood01;
+            public readonly float AttractantScent01;
+            public readonly Vector3 ScentDirection;
+            public readonly ScientificAttractantChannel AttractantChannel;
+            public readonly float DepthMeters;
+            public readonly uint ThreatPredictionLoreHash;
+            public readonly byte ThreatPredictionUnlocked;
+            public readonly byte FlankingManeuverDetected;
+            public readonly byte HasFaunaContact;
+            public readonly byte HasAttractantTrace;
         }
 
         private struct ScanResultSummary
@@ -221,9 +251,9 @@ namespace Hecton8.Gameplay
                 {
                     return AppendText(ref buffer, mode switch
                     {
-                        ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_HUD_NO_RESOURCE, "SCANNER - NO RESOURCE SIGNATURES | Sweep another extraction lane."),
-                        ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_HUD_NO_STRUCTURE, "SCANNER - NO STRUCTURAL CONTACTS | No buildable or databank return in this sector."),
-                        _ => ResolveLocalized(LocalizationKeys.SCANNER_HUD_CLEAR, "SCANNER - CLEAR | No meaningful contacts in the active sweep.")
+                        ScanMode.Resource => ResolveLocalized(H8LocHashes.SCANNER_HUD_NO_RESOURCE, "SCANNER - NO RESOURCE SIGNATURES | Sweep another extraction lane."),
+                        ScanMode.Structure => ResolveLocalized(H8LocHashes.SCANNER_HUD_NO_STRUCTURE, "SCANNER - NO STRUCTURAL CONTACTS | No buildable or databank return in this sector."),
+                        _ => ResolveLocalized(H8LocHashes.SCANNER_HUD_CLEAR, "SCANNER - CLEAR | No meaningful contacts in the active sweep.")
                     });
                 }
 
@@ -233,7 +263,7 @@ namespace Hecton8.Gameplay
                     case ScanMode.Resource:
                         return TryAppendScanHudTemplate(
                             ref buffer,
-                            ResolveLocalized(LocalizationKeys.SCANNER_HUD_RESOURCE_CONTACTS, "SCANNER - RESOURCES {0} // PICKUPS {1} | {2}"),
+                            ResolveLocalized(H8LocHashes.SCANNER_HUD_RESOURCE_CONTACTS, "SCANNER - RESOURCES {0} // PICKUPS {1} | {2}"),
                             resourceContacts,
                             pickupContacts,
                             0,
@@ -242,7 +272,7 @@ namespace Hecton8.Gameplay
                     case ScanMode.Structure:
                         return TryAppendScanHudTemplate(
                             ref buffer,
-                            ResolveLocalized(LocalizationKeys.SCANNER_HUD_STRUCTURE_CONTACTS, "SCANNER - STRUCTURES {0} // ROUTE {1} | {2}"),
+                            ResolveLocalized(H8LocHashes.SCANNER_HUD_STRUCTURE_CONTACTS, "SCANNER - STRUCTURES {0} // ROUTE {1} | {2}"),
                             structureContacts,
                             routeContacts,
                             0,
@@ -253,7 +283,7 @@ namespace Hecton8.Gameplay
                         {
                             return TryAppendScanHudTemplate(
                                 ref buffer,
-                                ResolveLocalized(LocalizationKeys.SCANNER_HUD_CONTACTS_WITH_FLORA, "SCANNER - CONTACTS {0} // BIO {1} // FLORA {2} | {3}"),
+                                ResolveLocalized(H8LocHashes.SCANNER_HUD_CONTACTS_WITH_FLORA, "SCANNER - CONTACTS {0} // BIO {1} // FLORA {2} | {3}"),
                                 totalContacts,
                                 bioformContacts,
                                 floraContacts,
@@ -263,7 +293,7 @@ namespace Hecton8.Gameplay
 
                         return TryAppendScanHudTemplate(
                             ref buffer,
-                            ResolveLocalized(LocalizationKeys.SCANNER_HUD_CONTACTS, "SCANNER - CONTACTS {0} // BIO {1} | {2}"),
+                            ResolveLocalized(H8LocHashes.SCANNER_HUD_CONTACTS, "SCANNER - CONTACTS {0} // BIO {1} | {2}"),
                             totalContacts,
                             bioformContacts,
                             0,
@@ -276,63 +306,11 @@ namespace Hecton8.Gameplay
             {
                 return mode switch
                 {
-                    ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_LOG_RESOURCE_SWEEP_COMPLETE, "RESOURCE SWEEP COMPLETE"),
-                    ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_LOG_STRUCTURE_SWEEP_COMPLETE, "STRUCTURE SWEEP COMPLETE"),
-                    _ => ResolveLocalized(LocalizationKeys.SCANNER_LOG_EXPEDITION_SWEEP_COMPLETE, "HYDROACOUSTIC CONTACTS ARCHIVED")
+                    ScanMode.Resource => ResolveLocalized(H8LocHashes.SCANNER_LOG_RESOURCE_SWEEP_COMPLETE, "RESOURCE SWEEP COMPLETE"),
+                    ScanMode.Structure => ResolveLocalized(H8LocHashes.SCANNER_LOG_STRUCTURE_SWEEP_COMPLETE, "STRUCTURE SWEEP COMPLETE"),
+                    _ => ResolveLocalized(H8LocHashes.SCANNER_LOG_EXPEDITION_SWEEP_COMPLETE, "HYDROACOUSTIC CONTACTS ARCHIVED")
                 };
             }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            public string BuildOperationSummary(ScanMode mode, float radius)
-            {
-                if (totalContacts <= 0)
-                {
-                    return mode switch
-                    {
-                        ScanMode.Resource => string.Format(
-                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_RESOURCE, "No harvestable or cached resource signatures were resolved inside the {0:0}m sweep. Recommendation: Shift to another extraction lane."),
-                            radius),
-                        ScanMode.Structure => string.Format(
-                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_STRUCTURE, "No modules, markers, or authored intel contacts were resolved inside the {0:0}m sweep. Recommendation: Continue transit or widen the structural search area."),
-                            radius),
-                        _ => string.Format(
-                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_CONTACTS, "No meaningful contacts were resolved in the last {0:0}m hydroacoustic sweep. Recommendation: Advance to the next scouting point."),
-                            radius)
-                    };
-                }
-
-                return mode switch
-                {
-                    ScanMode.Resource => string.Format(
-                        ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_RESOURCE_CONTACTS, "{0} resource signatures and {1} cached pickups resolved inside {2:0}m. Recommendation: {3}"),
-                        resourceContacts,
-                        pickupContacts,
-                        radius,
-                        BuildRecommendation(mode)),
-                    ScanMode.Structure => string.Format(
-                        ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_STRUCTURE_CONTACTS, "{0} structural contacts, {1} route markers, and {2} databank contacts resolved inside {3:0}m. Recommendation: {4}"),
-                        structureContacts,
-                        routeContacts,
-                        scannableContacts,
-                        radius,
-                        BuildRecommendation(mode)),
-                    _ => floraContacts > 0
-                        ? string.Format(
-                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_CONTACTS_WITH_FLORA, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts and {3} flora signatures. Recommendation: {4}"),
-                            totalContacts,
-                            radius,
-                            bioformContacts,
-                            floraContacts,
-                            BuildRecommendation(mode))
-                        : string.Format(
-                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_CONTACTS, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts. Recommendation: {3}"),
-                            totalContacts,
-                            radius,
-                            bioformContacts,
-                            BuildRecommendation(mode))
-                };
-            }
-#endif
 
             public bool TryWriteOperationTitle(ScanMode mode, ref FixedCharBuffer buffer)
             {
@@ -348,7 +326,7 @@ namespace Hecton8.Gameplay
                     {
                         ScanMode.Resource => TryAppendScanTemplate(
                             ref buffer,
-                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_RESOURCE, "No harvestable or cached resource signatures were resolved inside the {0:0}m sweep. Recommendation: Shift to another extraction lane."),
+                            ResolveLocalized(H8LocHashes.SCANNER_SUMMARY_NO_RESOURCE, "No harvestable or cached resource signatures were resolved inside the {0:0}m sweep. Recommendation: Shift to another extraction lane."),
                             radiusMeters,
                             0,
                             0,
@@ -357,7 +335,7 @@ namespace Hecton8.Gameplay
                             '\0'),
                         ScanMode.Structure => TryAppendScanTemplate(
                             ref buffer,
-                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_STRUCTURE, "No modules, markers, or authored intel contacts were resolved inside the {0:0}m sweep. Recommendation: Continue transit or widen the structural search area."),
+                            ResolveLocalized(H8LocHashes.SCANNER_SUMMARY_NO_STRUCTURE, "No modules, markers, or authored intel contacts were resolved inside the {0:0}m sweep. Recommendation: Continue transit or widen the structural search area."),
                             radiusMeters,
                             0,
                             0,
@@ -366,7 +344,7 @@ namespace Hecton8.Gameplay
                             '\0'),
                         _ => TryAppendScanTemplate(
                             ref buffer,
-                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_CONTACTS, "No meaningful contacts were resolved in the last {0:0}m hydroacoustic sweep. Recommendation: Advance to the next scouting point."),
+                            ResolveLocalized(H8LocHashes.SCANNER_SUMMARY_NO_CONTACTS, "No meaningful contacts were resolved in the last {0:0}m hydroacoustic sweep. Recommendation: Advance to the next scouting point."),
                             radiusMeters,
                             0,
                             0,
@@ -381,7 +359,7 @@ namespace Hecton8.Gameplay
                 {
                     ScanMode.Resource => TryAppendScanTemplate(
                         ref buffer,
-                        ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_RESOURCE_CONTACTS, "{0} resource signatures and {1} cached pickups resolved inside {2:0}m. Recommendation: {3}"),
+                        ResolveLocalized(H8LocHashes.SCANNER_SUMMARY_RESOURCE_CONTACTS, "{0} resource signatures and {1} cached pickups resolved inside {2:0}m. Recommendation: {3}"),
                         resourceContacts,
                         pickupContacts,
                         radiusMeters,
@@ -390,7 +368,7 @@ namespace Hecton8.Gameplay
                         '3'),
                     ScanMode.Structure => TryAppendScanTemplate(
                         ref buffer,
-                        ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_STRUCTURE_CONTACTS, "{0} structural contacts, {1} route markers, and {2} databank contacts resolved inside {3:0}m. Recommendation: {4}"),
+                        ResolveLocalized(H8LocHashes.SCANNER_SUMMARY_STRUCTURE_CONTACTS, "{0} structural contacts, {1} route markers, and {2} databank contacts resolved inside {3:0}m. Recommendation: {4}"),
                         structureContacts,
                         routeContacts,
                         scannableContacts,
@@ -400,7 +378,7 @@ namespace Hecton8.Gameplay
                     _ => floraContacts > 0
                         ? TryAppendScanTemplate(
                             ref buffer,
-                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_CONTACTS_WITH_FLORA, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts and {3} flora signatures. Recommendation: {4}"),
+                            ResolveLocalized(H8LocHashes.SCANNER_SUMMARY_CONTACTS_WITH_FLORA, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts and {3} flora signatures. Recommendation: {4}"),
                             totalContacts,
                             radiusMeters,
                             bioformContacts,
@@ -409,7 +387,7 @@ namespace Hecton8.Gameplay
                             '4')
                         : TryAppendScanTemplate(
                             ref buffer,
-                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_CONTACTS, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts. Recommendation: {3}"),
+                            ResolveLocalized(H8LocHashes.SCANNER_SUMMARY_CONTACTS, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts. Recommendation: {3}"),
                             totalContacts,
                             radiusMeters,
                             bioformContacts,
@@ -425,39 +403,39 @@ namespace Hecton8.Gameplay
                 {
                     return mode switch
                     {
-                        ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_SHIFT_LANE, "Shift to another extraction lane."),
-                        ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_WIDEN_SEARCH, "Widen the search or continue transit."),
-                        _ => ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_ADVANCE_SCOUT, "Advance to the next scouting point.")
+                        ScanMode.Resource => ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_SHIFT_LANE, "Shift to another extraction lane."),
+                        ScanMode.Structure => ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_WIDEN_SEARCH, "Widen the search or continue transit."),
+                        _ => ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_ADVANCE_SCOUT, "Advance to the next scouting point.")
                     };
                 }
 
                 return mode switch
                 {
                     ScanMode.Resource => resourcePoiContacts > 0
-                        ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_RESOURCE_POCKET, "A resource pocket is authored in this lane. Sweep it, then recover in sequence.")
+                        ? ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_RESOURCE_POCKET, "A resource pocket is authored in this lane. Sweep it, then recover in sequence.")
                         : resourceContacts > 0
-                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_MARK_RICHEST_LANE, "Mark the richest lane and recover in sequence.")
-                            : ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_CACHED_PICKUPS_ONLY, "Cached pickups exist, but no live resource node is leading this lane."),
+                            ? ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_MARK_RICHEST_LANE, "Mark the richest lane and recover in sequence.")
+                            : ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_CACHED_PICKUPS_ONLY, "Cached pickups exist, but no live resource node is leading this lane."),
                     ScanMode.Structure => hazardContacts > 0
-                        ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_HAZARD_PROBE, "Hazard probe resolved. Switch to cautious approach and inspect with focus tools.")
+                        ? ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_HAZARD_PROBE, "Hazard probe resolved. Switch to cautious approach and inspect with focus tools.")
                         : routeContacts > 0
-                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_ROUTE_MARKERS, "Route markers are live in this sector. Hold the lane readable and stage beacon relays.")
+                            ? ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_ROUTE_MARKERS, "Route markers are live in this sector. Hold the lane readable and stage beacon relays.")
                         : structurePoiContacts > 0
-                                ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_STRUCTURAL_WAYPOINT, "Structural waypoint resolved. Hold this route for navigation or service work.")
+                                ? ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_STRUCTURAL_WAYPOINT, "Structural waypoint resolved. Hold this route for navigation or service work.")
                                 : structureContacts > 0
-                                    ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_HOLD_ROUTE, "Hold this route for construction, salvage, or return navigation.")
-                                    : ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_DATABANK_ONLY, "Databank signal only. Sweep closer before committing tools."),
+                                    ? ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_HOLD_ROUTE, "Hold this route for construction, salvage, or return navigation.")
+                                    : ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_DATABANK_ONLY, "Databank signal only. Sweep closer before committing tools."),
                     _ => totalContacts >= 4
-                        ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_DENSE_SECTOR, "Sector is dense with contacts. Slow down and classify before pushing deeper.")
+                        ? ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_DENSE_SECTOR, "Sector is dense with contacts. Slow down and classify before pushing deeper.")
                         : floraContacts > 0
-                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_FLORA_PRESENT, "Flora signatures are present. Log the contact and inspect shelter, cover, or harvest value before moving on.")
+                            ? ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_FLORA_PRESENT, "Flora signatures are present. Log the contact and inspect shelter, cover, or harvest value before moving on.")
                         : bioformContacts > 0
-                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_BIOFORM_PRESENT, "Bioform signatures are present. Confirm posture before closing distance.")
+                            ? ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_BIOFORM_PRESENT, "Bioform signatures are present. Confirm posture before closing distance.")
                         : cargoContacts > 0
-                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_CARGO_PRESENT, "Cargo signatures are present. Prepare propulsion or harpoon handling before transit.")
+                            ? ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_CARGO_PRESENT, "Cargo signatures are present. Prepare propulsion or harpoon handling before transit.")
                         : expeditionContacts > 0
-                            ? ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_EXPEDITION_WAYPOINT, "Expedition waypoint resolved. Use it as a checkpoint before pushing deeper.")
-                            : ResolveLocalized(LocalizationKeys.SCANNER_RECOMMEND_SPARSE_FIELD, "Sparse contact field. Safe to keep moving with periodic sweeps.")
+                            ? ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_EXPEDITION_WAYPOINT, "Expedition waypoint resolved. Use it as a checkpoint before pushing deeper.")
+                            : ResolveLocalized(H8LocHashes.SCANNER_RECOMMEND_SPARSE_FIELD, "Sparse contact field. Safe to keep moving with periodic sweeps.")
                 };
             }
         }
@@ -467,11 +445,11 @@ namespace Hecton8.Gameplay
             public Transform transform;
             public Vector3 position;
             public ScannableTarget scannable;
-            public PickupItem pickup;
+            public IInventoryPickupPreviewSource pickup;
             public ModuleMarker module;
             public FieldTargetDescriptor descriptor;
             public ResourceNode resourceNode;
-            public bool hasBioformContact;
+            public byte hasBioformContact;
         }
 
         private struct LoreCandidateResult
@@ -484,82 +462,71 @@ namespace Hecton8.Gameplay
             public byte Found;
         }
 
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 128)]
         private struct ScannerBlackBoxEntry
         {
+            [System.Runtime.InteropServices.FieldOffset(0)]
             public uint Frame;
+
+            [System.Runtime.InteropServices.FieldOffset(4)]
             public uint ToolHash;
+
+            [System.Runtime.InteropServices.FieldOffset(8)]
             public uint ArtifactHash;
+
+            [System.Runtime.InteropServices.FieldOffset(12)]
             public uint BlueprintHash;
+
+            [System.Runtime.InteropServices.FieldOffset(16)]
             public uint ActiveEntityHash;
+
+            [System.Runtime.InteropServices.FieldOffset(20)]
             public uint PendingEntityHash;
+
+            [System.Runtime.InteropServices.FieldOffset(24)]
             public float Progress01;
+
+            [System.Runtime.InteropServices.FieldOffset(28)]
             public float Battery01;
+
+            [System.Runtime.InteropServices.FieldOffset(32)]
             public float DeltaTime;
+
+            [System.Runtime.InteropServices.FieldOffset(36)]
             public float LastContactAge;
+
+            [System.Runtime.InteropServices.FieldOffset(40)]
             public float PendingDistance;
+
+            [System.Runtime.InteropServices.FieldOffset(44)]
             public float3 ToolPosition;
+
+            [System.Runtime.InteropServices.FieldOffset(56)]
             public float3 ToolForward;
+
+            [System.Runtime.InteropServices.FieldOffset(68)]
             public float3 ActiveProbePosition;
+
+            [System.Runtime.InteropServices.FieldOffset(80)]
             public float3 PendingOcclusionPosition;
+
+            [System.Runtime.InteropServices.FieldOffset(92)]
             public ushort Flags;
-            public ushort QualityTier;
-        }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct LoreCandidateDotProductJob : IJob
-        {
-            [ReadOnly] public NativeArray<AbsoluteUniversePosition> LoreEntityAUPs;
-            [ReadOnly] public NativeArray<uint> LoreEntityHashes;
-            public NativeArray<LoreCandidateResult> Result;
-            public AbsoluteUniversePosition CameraAup;
-            public float3 CameraForward;
-            public int Count;
-            public float RangeSq;
-            public float MinDot;
+            [System.Runtime.InteropServices.FieldOffset(94)]
+            public ushort QualityWeightByte;
 
-            public void Execute()
-            {
-                LoreCandidateResult best = default;
-                best.Index = -1;
-                best.Dot = MinDot;
-                best.DistanceSq = RangeSq;
-                int safeCount = math.min(Count, math.min(LoreEntityAUPs.Length, LoreEntityHashes.Length));
-                float3 forward = math.normalizesafe(CameraForward, new float3(0f, 0f, 1f));
+            [System.Runtime.InteropServices.FieldOffset(96)]
+            private ulong _pad0;
 
-                for (int i = 0; i < safeCount; i++)
-                {
-                    uint hash = LoreEntityHashes[i];
-                    if (hash == 0u)
-                        continue;
+            [System.Runtime.InteropServices.FieldOffset(104)]
+            private ulong _pad1;
 
-                    AbsoluteUniversePosition loreEntityAup = LoreEntityAUPs[i];
-                    float3 cameraRelative = AbsoluteUniversePosition.ToCameraRelativeFloat3(in loreEntityAup, in CameraAup);
-                    float distanceSq = math.lengthsq(cameraRelative);
-                    if (distanceSq <= 0.000001f || distanceSq >= RangeSq)
-                        continue;
+            [System.Runtime.InteropServices.FieldOffset(112)]
+            private ulong _pad2;
 
-                    float invDistance = math.rsqrt(distanceSq);
-                    float dot = math.dot(cameraRelative * invDistance, forward);
-                    if (dot < MinDot)
-                        continue;
-
-                    if (best.Found != 0 &&
-                        (dot < best.Dot || (math.abs(dot - best.Dot) <= 0.0001f && distanceSq >= best.DistanceSq)))
-                    {
-                        continue;
-                    }
-
-                    best.Index = i;
-                    best.Hash = hash;
-                    best.Dot = dot;
-                    best.DistanceSq = distanceSq;
-                    best.RuntimePosition = cameraRelative;
-                    best.Found = 1;
-                }
-
-                Result[0] = best;
-            }
+            [System.Runtime.InteropServices.FieldOffset(120)]
+            private ulong _pad3;
         }
 
         [Header("Scan Parameters")]
@@ -577,11 +544,9 @@ namespace Hecton8.Gameplay
         [Header("Auxiliary Ping Route")]
         [SerializeField] private float pulseDuration = 1.5f;
 
-        [Header("Audio")]
-        [SerializeField] private AudioClip pingClip;
+        [Header("Acoustic Signal")]
         [Range(0f, 1f)]
         [SerializeField] private float pingVolume = 0.7f;
-        [SerializeField] private AudioClip cooldownClip;
 
         [Header("Feedback")]
         [SerializeField] private float cooldownFeedbackInterval = 0.75f;
@@ -607,7 +572,6 @@ namespace Hecton8.Gameplay
         private float _nextResultFeedbackAt;
         private float _nextModeFeedbackAt;
         private float _nextBloodWaypointWarningAt;
-        private Transform _cachedTransform;
         private ScanMode _scanMode = ScanMode.Expedition;
         private ScanResultSummary _lastResult;
         private float _lastResultTime = -999f;
@@ -629,14 +593,18 @@ namespace Hecton8.Gameplay
         private string _currentModeHudMessage;
         private string _currentModeOperationTitle;
         private ScannableFragment _activeScientificFragment;
-        private HectonVoxelVolume _activeScientificVoxelVolume;
         private ScientificScanSnapshot _scientificSnapshot;
         private DataArchaeologyRuntime _dataArchaeology;
-        private HectonSurvivalSystem _cachedSurvivalSystem;
+        private IPlayerSurvivalEnvironmentReadModel _cachedSurvivalEnvironment;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private AtlasSignalSystem _cachedAtlasSignal;
-        private LoreDatabaseManager _cachedLoreDatabase;
-        private float _nextSurvivalResolveAt;
+        private Hecton8.Core.Contracts.IVoxelSonarSdfReadModel _cachedVoxelSdfReadModel;
+        private IEnvironmentRuntimeContext _cachedEnvironmentContext;
+        private IHazardZoneReadModel _cachedHazardZoneRuntime;
+        private IHazardZoneReadModel _cachedHazardZones;
+        private IChemicalInfluenceReadModel _cachedChemicalInfluence;
+        private IBabelLocalization _cachedBabelLocalization;
+        private IAtlasSignalReadModel _cachedAtlasSignal;
+        private ILoreUnlockReadModel _cachedLoreDatabase;
         private float _scientificNextResampleAt;
         private float _scientificLastContactTime = float.NegativeInfinity;
         private float3 _activeScientificProbePosition;
@@ -648,21 +616,15 @@ namespace Hecton8.Gameplay
         private float3 _pendingScientificOcclusionPosition;
         private uint _pendingScientificOcclusionHash;
         private float _pendingScientificOcclusionDistance;
-        private NativeArray<LoreCandidateResult> _scientificLoreCandidateResult;
-        private NativeArray<ScannerBlackBoxEntry> _scannerBlackBox;
-        private uint _lastPublishedTuningToolHash;
-        private uint _lastPublishedTuningArtifactHash;
-        private uint _lastPublishedTuningBlueprintHash;
-        private bool _lastPublishedTuningActive;
-        private int _lastPublishedTuningProgressBucket = int.MinValue;
+        private IDataVault _scannerBlackBoxVault;
+        private VaultGenerationHandle<ScannerBlackBoxEntry> _scannerBlackBoxHandle;
         private int _scannerBlackBoxCursor;
         private int _scannerBlackBoxRecordedCount;
-        private ushort _scannerBlackBoxQualityTier;
-        private HectonQualityTier _scannerQualityTier = HectonQualityTier.Unknown;
-        private HectonQualityTier _scannerQualityTierCandidate = HectonQualityTier.Unknown;
-        private float _scannerQualityTierCandidateSince;
-        private bool _scannerQualityTierInitialized;
+        private ushort _scannerBlackBoxQualityWeightByte;
+        private float _scannerQualityWeight01 = 1f;
+        private bool _scannerQualityWeightInitialized;
         private bool _scannerBlackBoxDumped;
+        private bool _scannerBlackBoxDumpPending;
         private bool _applicationQuitting;
         private int _scientificRaycastRequestSequence;
         private int _scientificRaycastPendingRequestId;
@@ -673,7 +635,6 @@ namespace Hecton8.Gameplay
         private bool _registeredScientificSlowTick;
         private bool _registeredScientificLateFrame;
         private bool _registeredScalabilityListener;
-        private bool _registeredAtlasSignalListener;
         private bool _registeredLocalizationListener;
         private bool _registeredHotSwapListener;
         private float _cachedFocusedConeAngleDegrees = -1f;
@@ -798,10 +759,9 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: ScannerTool
-            _cachedTransform = transform;
             EnsureScientificNativeState();
-            InitializeScannerQualityTierCold();
-            ResolveCachedPlayerContextCold();
+            InitializeScannerQualityWeightCold();
+            BindCachedRuntimeServicesCold();
             InvalidateFocusedConeCache();
             RefreshModeStrings();
             #if UNITY_EDITOR
@@ -810,13 +770,15 @@ namespace Hecton8.Gameplay
 
             #endif
 
-            if (!TryGetComponent(out HectonScanMarkerSystem markerSystem))
+            HectonScanMarkerSystem markerSystem = GetComponent<HectonScanMarkerSystem>();
+            if (markerSystem == null)
                 markerSystem = gameObject.AddComponent<HectonScanMarkerSystem>(); // COLD ALLOC: HectonScanMarkerSystem[1] — scanner marker owner — owner: ScannerTool
 
             if (markerSystem != null)
                 markerSystem.Initialize(scannerMarkerShader);
 
-            if (!TryGetComponent(out _dataArchaeology))
+            _dataArchaeology = GetComponent<DataArchaeologyRuntime>();
+            if (_dataArchaeology == null)
                 _dataArchaeology = gameObject.AddComponent<DataArchaeologyRuntime>(); // COLD ALLOC: DataArchaeologyRuntime[1] - scanner archaeology owner - owner: ScannerTool
         }
 
@@ -824,7 +786,7 @@ namespace Hecton8.Gameplay
         {
             base.OnEquip();
             ClearCachedRuntimeServicesCold();
-            ResolveCachedPlayerContextCold();
+            BindCachedRuntimeServicesCold();
             RefreshModeStrings();
             TryRegisterScientificLanes();
             InvalidateOperationalStringCache();
@@ -850,14 +812,14 @@ namespace Hecton8.Gameplay
             if (deltaTime > _heldPrimaryDeltaTime)
                 _heldPrimaryDeltaTime = deltaTime;
 
-            float now = Time.time;
+            float now = ResolveScannerTimeSeconds();
             float effectiveCooldown = ResolveEffectiveScanCooldown();
             float effectiveScanRadius = ResolveEffectiveScanRadius();
             if (now - _lastScanTime < effectiveCooldown)
             {
                 if (now >= _nextCooldownFeedbackAt)
                 {
-                    PublishScanWarning(ResolveLocalized(LocalizationKeys.SCANNER_HUD_RECHARGING, "SCANNER - RECHARGING"));
+                    PublishScanWarning(ResolveLocalized(H8LocHashes.SCANNER_HUD_RECHARGING, "SCANNER - RECHARGING"));
                     _nextCooldownFeedbackAt = now + cooldownFeedbackInterval;
                 }
                 return;
@@ -865,27 +827,15 @@ namespace Hecton8.Gameplay
 
             _lastScanTime = now;
 
-            Transform scannerTransform = _cachedTransform;
-            Vector3 scanPosition = scannerTransform.position;
-            Vector3 scanForward = scannerTransform.forward;
-            Vector3 scanUp = scannerTransform.up;
+            if (!TryResolveScannerPoseSnapshot(out PlayerRuntimePoseSnapshot poseSnapshot, out float3 scannerForward))
+                return;
+
+            Vector3 scanPosition = ToVector3(poseSnapshot.RuntimePosition);
             Unity.Mathematics.float3 origin = scanPosition;
             ScanResultSummary result = PerformScan(origin, _scanMode, effectiveScanRadius);
 
             AuxiliaryEquipmentRouterRuntime.TryDeploySensorPing(scanPosition, math.max(0.01f, pulseDuration), effectiveScanRadius);
-            HectonScannerProjectionState.Publish(
-                scanPosition,
-                scanForward,
-                scanUp,
-                effectiveScanRadius,
-                Mathf.Min(1.25f, effectiveCooldown),
-                1f);
-
-            IAudioService audioService = pingClip != null ? Hecton8.Core.GlobalRegistry.Audio : null;
-            if (audioService != null)
-            {
-                audioService.PlayAtPoint(pingClip, scanPosition, pingVolume, 1f, audioService.InterfaceGroup);
-            }
+            PublishScannerAcousticPing(scanPosition, effectiveScanRadius, pingVolume, in poseSnapshot);
 
             ScanEvents.RaiseScanTriggered(origin, effectiveScanRadius);
             TryShowBloodWaypointWarning(scanPosition, now);
@@ -904,7 +854,7 @@ namespace Hecton8.Gameplay
                 result.TryWriteOperationSummary(_scanMode, effectiveScanRadius, ref _scanLogSummaryBuffer))
             {
                 FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(LocalizationKeys.SCANNER_CATEGORY, "SCAN"),
+                    ResolveLocalized(H8LocHashes.SCANNER_CATEGORY, "SCAN"),
                     in _scanLogTitleBuffer,
                     in _scanLogSummaryBuffer,
                     "INFO");
@@ -916,7 +866,7 @@ namespace Hecton8.Gameplay
                 AppendText(ref _scanLogTitleBuffer, "SCAN SWEEP ARCHIVED");
                 AppendText(ref _scanLogSummaryBuffer, "Scanner operation-log buffer overflowed; fixed-buffer HUD payload was not serialized.");
                 FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(LocalizationKeys.SCANNER_CATEGORY, "SCAN"),
+                    ResolveLocalized(H8LocHashes.SCANNER_CATEGORY, "SCAN"),
                     in _scanLogTitleBuffer,
                     in _scanLogSummaryBuffer,
                     "WARN");
@@ -928,12 +878,59 @@ namespace Hecton8.Gameplay
             InvalidateOperationalStringCache();
         }
 
+        private static void PublishScannerAcousticPing(
+            Vector3 scanPosition,
+            float radiusMeters,
+            float intensity01,
+            in PlayerRuntimePoseSnapshot poseSnapshot)
+        {
+            float3 runtimePosition = new float3(scanPosition.x, scanPosition.y, scanPosition.z);
+            if (!math.all(math.isfinite(runtimePosition)))
+                return;
+
+            AcousticPingSignal signal = default;
+            if (!TryResolveRuntimeAup(scanPosition, in poseSnapshot, out signal.PositionAup))
+                return;
+
+            signal.RadiusMeters = math.max(0.01f, math.isfinite(radiusMeters) ? radiusMeters : 0.01f);
+            signal.Intensity01 = math.saturate(math.isfinite(intensity01) ? intensity01 : 0f);
+            signal.SourceId = ScannerToolTuningHash;
+            signal.Channel = AcousticPingSignal.ChannelActiveSonar;
+            signal.Flags = AcousticPingSignal.FlagActiveSonar;
+            SignalBus<AcousticPingSignal>.TryPush(in signal);
+        }
+
+        private static bool TryResolveRuntimeAup(
+            Vector3 runtimePosition,
+            in PlayerRuntimePoseSnapshot poseSnapshot,
+            out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.isfinite(runtimePosition.x) ||
+                !math.isfinite(runtimePosition.y) ||
+                !math.isfinite(runtimePosition.z))
+                return false;
+
+            if (!poseSnapshot.Aup.IsFinite() ||
+                !math.all(math.isfinite(poseSnapshot.RuntimePosition)))
+                return false;
+
+            double3 deltaMeters = new double3(
+                (double)runtimePosition.x - poseSnapshot.RuntimePosition.x,
+                (double)runtimePosition.y - poseSnapshot.RuntimePosition.y,
+                (double)runtimePosition.z - poseSnapshot.RuntimePosition.z);
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in poseSnapshot.Aup,
+                deltaMeters);
+            return AbsoluteUniversePosition.IsFinite(in positionAup);
+        }
+
         public override void UseSecondary(float deltaTime)
         {
             if (!IsEquipped)
                 return;
 
-            float now = Time.time;
+            float now = ResolveScannerTimeSeconds();
             if (now < _nextModeFeedbackAt)
                 return;
 
@@ -943,7 +940,7 @@ namespace Hecton8.Gameplay
 
             PublishScanInfo(_currentModeHudMessage);
             FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(LocalizationKeys.SCANNER_CATEGORY, "SCAN"),
+                ResolveLocalized(H8LocHashes.SCANNER_CATEGORY, "SCAN"),
                 _currentModeOperationTitle,
                 _currentModeSummary,
                 "INFO");
@@ -963,7 +960,7 @@ namespace Hecton8.Gameplay
                 deltaTime = 0f;
 
             bool heldForBlackBox = _heldPrimaryThisFrame;
-            float now = Time.time;
+            float now = ResolveScannerTimeSeconds();
             int frame = ResolveScannerFrameInt();
             UpdateScientificScanning(deltaTime, now);
             WriteScannerBlackBox(deltaTime, heldForBlackBox, now, frame);
@@ -971,7 +968,7 @@ namespace Hecton8.Gameplay
 
         public void SlowTick()
         {
-            QueueScannerQualityTierCandidate(GlobalRegistry.ScalabilityTier);
+            // Quality changes enter through OnScalabilityChanged; this lane stays free of hot registry polling.
         }
 
         public void LateFrameTick()
@@ -981,16 +978,14 @@ namespace Hecton8.Gameplay
 
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            QueueScannerQualityTierCandidate(payload.CurrentQualityTier);
-        }
-
-        public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
-        {
-            InvalidateOperationalStringCache();
+            RefreshScannerQualityWeight(ResolveScannerTimeSeconds());
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
         {
+            if (_cachedBabelLocalization == null)
+                _cachedBabelLocalization = GlobalRegistry.BabelLocalization;
+            ApplyScannerLocalizationCache(_cachedBabelLocalization);
             RefreshModeStrings();
             InvalidateOperationalStringCache();
         }
@@ -1004,18 +999,45 @@ namespace Hecton8.Gameplay
             {
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
-                    _cachedSurvivalSystem = null;
+                    _cachedSurvivalEnvironment = SelectSurvivalEnvironmentReadModelCold(_cachedPlayerContext);
+                    break;
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    _cachedVoxelSdfReadModel = currentService as Hecton8.Core.Contracts.IVoxelSonarSdfReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.Environment:
+                    _cachedEnvironmentContext = currentService as IEnvironmentRuntimeContext;
+                    _cachedHazardZones = SelectHazardZoneReadModelCold(_cachedEnvironmentContext, _cachedHazardZoneRuntime);
+                    break;
+                case GlobalRegistryServiceSlot.HazardZoneRuntime:
+                    _cachedHazardZoneRuntime = currentService as IHazardZoneReadModel;
+                    _cachedHazardZones = SelectHazardZoneReadModelCold(_cachedEnvironmentContext, _cachedHazardZoneRuntime);
+                    break;
+                case GlobalRegistryServiceSlot.ChemicalInfluenceRuntime:
+                    _cachedChemicalInfluence = currentService as IChemicalInfluenceReadModel;
                     break;
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
-                    _cachedAtlasSignal = currentService as AtlasSignalSystem;
+                    _cachedAtlasSignal = currentService as IAtlasSignalReadModel;
                     InvalidateOperationalStringCache();
                     break;
                 case GlobalRegistryServiceSlot.LoreDatabaseRuntime:
-                    _cachedLoreDatabase = currentService as LoreDatabaseManager;
+                    _cachedLoreDatabase = currentService as ILoreUnlockReadModel;
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _cachedBabelLocalization = currentService as IBabelLocalization;
+                    if (_cachedBabelLocalization == null)
+                        _cachedBabelLocalization = GlobalRegistry.BabelLocalization;
+                    ApplyScannerLocalizationCache(_cachedBabelLocalization);
                     RefreshModeStrings();
                     InvalidateOperationalStringCache();
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    _scannerBlackBoxVault = currentService as IDataVault;
+                    _scannerBlackBoxHandle = default;
+                    _scannerBlackBoxCursor = 0;
+                    _scannerBlackBoxRecordedCount = 0;
+                    _scannerBlackBoxDumped = false;
+                    _scannerBlackBoxDumpPending = false;
+                    EnsureScientificNativeState();
                     break;
             }
         }
@@ -1027,43 +1049,28 @@ namespace Hecton8.Gameplay
                           IsEquipped &&
                           BatteryCharge > 0f &&
                           artifactHash != 0u &&
-                          (_scientificSnapshot.IsActive || _activeScientificFragment != null || _activeScientificEntityHash != 0u);
+                          (_scientificSnapshot.IsActive != 0 || _activeScientificFragment != null || _activeScientificEntityHash != 0u);
             float safeProgress01 = SafeSaturate01(progress01);
             float safeBattery01 = SafeSaturate01(BatteryCharge);
-            int progressBucket = math.clamp((int)math.round(safeProgress01 * 1000f), 0, 1000);
             uint signalToolHash = RuntimeToolId != 0u ? RuntimeToolId : ScannerToolTuningHash;
-            float now = Time.time;
+            float now = ResolveScannerTimeSeconds();
             int frame = ResolveScannerFrameInt();
-            HectonQualityTier signalTier = ResolveScannerQualityTier(now);
-            _scannerBlackBoxQualityTier = (ushort)signalTier;
+            float signalQualityWeight = RefreshScannerQualityWeight(now);
+            byte signalQualityByte = EncodeScannerQualityWeightByte(signalQualityWeight);
+            _scannerBlackBoxQualityWeightByte = signalQualityByte;
 
-            if (active == _lastPublishedTuningActive &&
-                signalToolHash == _lastPublishedTuningToolHash &&
-                artifactHash == _lastPublishedTuningArtifactHash &&
-                blueprintHash == _lastPublishedTuningBlueprintHash &&
-                progressBucket == _lastPublishedTuningProgressBucket)
-            {
-                return;
-            }
-
-            _lastPublishedTuningActive = active;
-            _lastPublishedTuningToolHash = signalToolHash;
-            _lastPublishedTuningArtifactHash = artifactHash;
-            _lastPublishedTuningBlueprintHash = blueprintHash;
-            _lastPublishedTuningProgressBucket = progressBucket;
-            GlobalSignals.Publish(new ScannerToolActiveSignal
-            {
-                ToolHash = signalToolHash,
-                ArtifactHash = artifactHash,
-                BlueprintHash = blueprintHash != 0u ? blueprintHash : FallbackScannerBlueprintHash,
-                Frame = unchecked((uint)frame),
-                Progress01 = safeProgress01,
-                Battery01 = safeBattery01,
-                Active = active ? (byte)1 : (byte)0,
-                Stage = 0,
-                Flags = _activeScientificFragment != null ? (byte)1 : (byte)0,
-                QualityTier = (byte)signalTier
-            });
+            ScannerToolActiveSignal signal = default;
+            signal.ToolHash = signalToolHash;
+            signal.ArtifactHash = artifactHash;
+            signal.BlueprintHash = blueprintHash != 0u ? blueprintHash : FallbackScannerBlueprintHash;
+            signal.Frame = unchecked((uint)frame);
+            signal.Progress01 = safeProgress01;
+            signal.Battery01 = safeBattery01;
+            signal.Active = active ? (byte)1 : (byte)0;
+            signal.Stage = 0;
+            signal.Flags = _activeScientificFragment != null ? (byte)1 : (byte)0;
+            signal.QualityTier = signalQualityByte;
+            SignalBus<ScannerToolActiveSignal>.Push(in signal);
         }
 
         private void PublishInactiveScannerTuningSignal()
@@ -1077,7 +1084,7 @@ namespace Hecton8.Gameplay
         private void ResolveScannerTuningHashes(out uint artifactHash, out uint blueprintHash, out float progress01)
         {
             ScannableFragment fragment = _activeScientificFragment;
-            if (fragment == null && _scientificSnapshot.IsActive)
+            if (fragment == null && _scientificSnapshot.IsActive != 0)
                 fragment = _scientificSnapshot.Fragment;
 
             if (fragment != null)
@@ -1097,8 +1104,7 @@ namespace Hecton8.Gameplay
         {
             base.OnSpawn();
             ClearCachedRuntimeServicesCold();
-            ResolveCachedSurvivalSystem();
-            ResolveCachedPlayerContextCold();
+            BindCachedRuntimeServicesCold();
             ResetScientificFocus();
         }
 
@@ -1119,11 +1125,13 @@ namespace Hecton8.Gameplay
 
         private void OnApplicationQuit()
         {
+            FlushPendingScannerBlackBoxDump();
             _applicationQuitting = true;
         }
 
         private void OnDestroy()
         {
+            FlushPendingScannerBlackBoxDump();
             if (Application.isPlaying && !_applicationQuitting)
             {
                 ResetScientificFocus();
@@ -1137,63 +1145,83 @@ namespace Hecton8.Gameplay
 
         private void EnsureScientificNativeState()
         {
-            if (!_scientificLoreCandidateResult.IsCreated)
+            bool firstBind = _scannerBlackBoxVault != null &&
+                             !IsScannerBlackBoxHandleCreated(in _scannerBlackBoxHandle);
+            if (EnsureScannerBlackBoxVault(createIfMissing: true) && firstBind)
             {
-                _scientificLoreCandidateResult = new NativeArray<LoreCandidateResult>(
-                    1,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<LoreCandidateResult>[1] - Burst scanner target result slot - owner: ScannerTool
-                NativeMemorySentinel.RegisterNativeArray(
-                    _scientificLoreCandidateResult,
-                    nameof(ScannerTool),
-                    nameof(_scientificLoreCandidateResult),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_scannerBlackBox.IsCreated)
-            {
-                _scannerBlackBox = new NativeArray<ScannerBlackBoxEntry>(
-                    ScannerBlackBoxCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ScannerBlackBoxEntry>[300] - scanner acquisition black box - owner: ScannerTool
-                NativeMemorySentinel.RegisterNativeArray(
-                    _scannerBlackBox,
-                    nameof(ScannerTool),
-                    nameof(_scannerBlackBox),
-                    NativeAllocationLifetime.Scene);
                 _scannerBlackBoxCursor = 0;
                 _scannerBlackBoxRecordedCount = 0;
                 _scannerBlackBoxDumped = false;
+                _scannerBlackBoxDumpPending = false;
             }
         }
 
         private void DisposeScientificNativeState()
         {
-            if (_scientificLoreCandidateResult.IsCreated)
+            _scannerBlackBoxVault = null;
+            _scannerBlackBoxHandle = default;
+            _scannerBlackBoxCursor = 0;
+            _scannerBlackBoxRecordedCount = 0;
+            _scannerBlackBoxDumpPending = false;
+        }
+
+        private bool EnsureScannerBlackBoxVault(bool createIfMissing)
+        {
+            IDataVault vault = _scannerBlackBoxVault;
+            if (vault == null)
+                return false;
+
+            if (IsScannerBlackBoxHandleCreated(in _scannerBlackBoxHandle) &&
+                vault.TryResolveHandle(in _scannerBlackBoxHandle, out NativeArray<ScannerBlackBoxEntry> existing) &&
+                existing.IsCreated &&
+                existing.Length >= ScannerBlackBoxCapacity)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_scientificLoreCandidateResult);
-                _scientificLoreCandidateResult.Dispose();
-                _scientificLoreCandidateResult = default;
+                return true;
             }
 
-            if (_scannerBlackBox.IsCreated)
+            if (!createIfMissing)
+                return false;
+
+            _scannerBlackBoxHandle = vault.GetGenerationHandle<ScannerBlackBoxEntry>(
+                BufferID.ShinobuScannerToolBlackBox,
+                ScannerBlackBoxCapacity,
+                SystemID.UI,
+                NativeArrayOptions.ClearMemory);
+
+            if (!vault.TryResolveHandle(in _scannerBlackBoxHandle, out NativeArray<ScannerBlackBoxEntry> ring) ||
+                !ring.IsCreated ||
+                ring.Length < ScannerBlackBoxCapacity)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_scannerBlackBox);
-                _scannerBlackBox.Dispose();
-                _scannerBlackBox = default;
-                _scannerBlackBoxCursor = 0;
-                _scannerBlackBoxRecordedCount = 0;
+                return false;
             }
+
+            return true;
+        }
+
+        private bool TryReadScannerBlackBoxRing(out NativeArray<ScannerBlackBoxEntry> ring)
+        {
+            ring = default;
+            IDataVault vault = _scannerBlackBoxVault;
+            return vault != null &&
+                   IsScannerBlackBoxHandleCreated(in _scannerBlackBoxHandle) &&
+                   vault.TryResolveHandle(in _scannerBlackBoxHandle, out ring) &&
+                   ring.IsCreated &&
+                   ring.Length > 0;
+        }
+
+        private static bool IsScannerBlackBoxHandleCreated(in VaultGenerationHandle<ScannerBlackBoxEntry> handle)
+        {
+            return handle.BufferID != 0u;
         }
 
         private void WriteScannerBlackBox(float deltaTime, bool heldThisFrame, float now, int frame)
         {
-            if (!_scannerBlackBox.IsCreated)
+            if (!TryReadScannerBlackBoxRing(out NativeArray<ScannerBlackBoxEntry> scannerBlackBox))
                 return;
 
-            Transform scannerTransform = _cachedTransform;
-            float3 toolPosition = scannerTransform != null ? (float3)scannerTransform.position : float3.zero;
-            float3 toolForward = scannerTransform != null ? (float3)scannerTransform.forward : new float3(0f, 0f, 1f);
+            bool hasPose = TryResolveScannerPoseSnapshot(out PlayerRuntimePoseSnapshot poseSnapshot, out float3 scannerForward);
+            float3 toolPosition = hasPose ? poseSnapshot.RuntimePosition : float3.zero;
+            float3 toolForward = hasPose ? scannerForward : new float3(0f, 0f, 1f);
             float3 activeProbe = _activeScientificEntityHash != 0u
                 ? _activeScientificEntityProbePosition
                 : _activeScientificProbePosition;
@@ -1234,7 +1262,7 @@ namespace Hecton8.Gameplay
                 flags |= ScannerBlackBoxFlagEquipped;
             if (heldThisFrame)
                 flags |= ScannerBlackBoxFlagHeld;
-            if (_scientificSnapshot.IsActive)
+            if (_scientificSnapshot.IsActive != 0)
                 flags |= ScannerBlackBoxFlagSnapshotActive;
             if (_activeScientificFragment != null)
                 flags |= ScannerBlackBoxFlagFragmentActive;
@@ -1246,7 +1274,7 @@ namespace Hecton8.Gameplay
                 flags |= ScannerBlackBoxFlagInvalidState;
 
             ResolveScannerTuningHashes(out uint artifactHash, out uint blueprintHash, out _);
-            _scannerBlackBox[_scannerBlackBoxCursor] = new ScannerBlackBoxEntry
+            scannerBlackBox[_scannerBlackBoxCursor] = new ScannerBlackBoxEntry
             {
                 Frame = unchecked((uint)frame),
                 ToolHash = RuntimeToolId != 0u ? RuntimeToolId : ScannerToolTuningHash,
@@ -1264,29 +1292,39 @@ namespace Hecton8.Gameplay
                 ActiveProbePosition = activeProbe,
                 PendingOcclusionPosition = pendingPosition,
                 Flags = flags,
-                QualityTier = _scannerBlackBoxQualityTier
+                QualityWeightByte = _scannerBlackBoxQualityWeightByte
             };
 
-            if (_scannerBlackBoxRecordedCount < _scannerBlackBox.Length)
+            if (_scannerBlackBoxRecordedCount < scannerBlackBox.Length)
                 _scannerBlackBoxRecordedCount++;
 
             _scannerBlackBoxCursor++;
-            if (_scannerBlackBoxCursor >= _scannerBlackBox.Length)
+            if (_scannerBlackBoxCursor >= scannerBlackBox.Length)
                 _scannerBlackBoxCursor = 0;
 
-            if (invalidState && !_scannerBlackBoxDumped)
+            if (invalidState && !_scannerBlackBoxDumped && !_scannerBlackBoxDumpPending)
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(ScannerBlackBoxInvalidStateHash);
-                DumpScannerBlackBoxOnce();
+                _scannerBlackBoxDumpPending = true;
             }
         }
 
-        private void DumpScannerBlackBoxOnce()
+        private void FlushPendingScannerBlackBoxDump()
         {
-            if (_scannerBlackBoxDumped || !_scannerBlackBox.IsCreated)
+            if (!_scannerBlackBoxDumpPending)
                 return;
 
-            _scannerBlackBoxDumped = true;
+            if (DumpScannerBlackBoxOnce())
+                _scannerBlackBoxDumpPending = false;
+        }
+
+        private bool DumpScannerBlackBoxOnce()
+        {
+            if (_scannerBlackBoxDumped)
+                return true;
+            if (!TryReadScannerBlackBoxRing(out NativeArray<ScannerBlackBoxEntry> scannerBlackBox))
+                return false;
+
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -1300,7 +1338,7 @@ namespace Hecton8.Gameplay
                     writer.Write(1);
                     writer.Write(ScannerBlackBoxCapacity);
                     writer.Write(_scannerBlackBoxCursor);
-                    int entryCount = _scannerBlackBox.Length;
+                    int entryCount = scannerBlackBox.Length;
                     int validCount = math.clamp(_scannerBlackBoxRecordedCount, 0, entryCount);
                     int startIndex = validCount >= entryCount ? _scannerBlackBoxCursor : 0;
                     for (int i = 0; i < entryCount; i++)
@@ -1308,7 +1346,7 @@ namespace Hecton8.Gameplay
                         int sourceIndex = startIndex + i;
                         if (sourceIndex >= entryCount)
                             sourceIndex -= entryCount;
-                        ScannerBlackBoxEntry entry = _scannerBlackBox[sourceIndex];
+                        ScannerBlackBoxEntry entry = scannerBlackBox[sourceIndex];
                         writer.Write(entry.Frame);
                         writer.Write(entry.ToolHash);
                         writer.Write(entry.ArtifactHash);
@@ -1333,13 +1371,17 @@ namespace Hecton8.Gameplay
                         writer.Write(entry.PendingOcclusionPosition.y);
                         writer.Write(entry.PendingOcclusionPosition.z);
                         writer.Write(entry.Flags);
-                        writer.Write(entry.QualityTier);
+                        writer.Write(entry.QualityWeightByte);
                     }
                 }
+
+                _scannerBlackBoxDumped = true;
+                return true;
             }
             catch (Exception)
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+                return false;
             }
         }
 
@@ -1349,7 +1391,6 @@ namespace Hecton8.Gameplay
                 return;
 
             TryRegisterScalabilityListener();
-            TryRegisterAtlasSignalListener();
             TryRegisterLocalizationListener();
             TryRegisterHotSwapListener();
             if (!_registeredScientificFastTick)
@@ -1381,7 +1422,6 @@ namespace Hecton8.Gameplay
             }
 
             TryUnregisterScalabilityListener();
-            TryUnregisterAtlasSignalListener();
             TryUnregisterLocalizationListener();
             TryUnregisterHotSwapListener();
         }
@@ -1391,7 +1431,7 @@ namespace Hecton8.Gameplay
             if (_registeredScalabilityListener || !Application.isPlaying)
                 return;
 
-            InitializeScannerQualityTierCold();
+            InitializeScannerQualityWeightCold();
             ScalabilityEvents.Register(this);
             _registeredScalabilityListener = true;
         }
@@ -1403,24 +1443,6 @@ namespace Hecton8.Gameplay
 
             ScalabilityEvents.Unregister(this);
             _registeredScalabilityListener = false;
-        }
-
-        private void TryRegisterAtlasSignalListener()
-        {
-            if (_registeredAtlasSignalListener || !Application.isPlaying)
-                return;
-
-            AtlasSignalEvents.Register(this);
-            _registeredAtlasSignalListener = AtlasSignalEvents.IsRegistered(this);
-        }
-
-        private void TryUnregisterAtlasSignalListener()
-        {
-            if (!_registeredAtlasSignalListener)
-                return;
-
-            AtlasSignalEvents.Unregister(this);
-            _registeredAtlasSignalListener = false;
         }
 
         private void TryRegisterLocalizationListener()
@@ -1458,9 +1480,9 @@ namespace Hecton8.Gameplay
             _registeredHotSwapListener = false;
         }
 
-        public override string GetOperationalSummary()
+        public override string BuildLegacyOperationalSummaryString()
         {
-            float now = Time.time;
+            float now = ResolveScannerTimeSeconds();
             int cacheBucket = ResolveOperationalStringCacheBucket(now);
             if (_summaryStringCacheBucket == cacheBucket)
                 return _cachedOperationalSummaryString;
@@ -1468,7 +1490,7 @@ namespace Hecton8.Gameplay
             int frame = ResolveScannerFrameInt();
             _scanHudBuffer.Clear();
             WriteOperationalSummaryInternal(ref _scanHudBuffer, now, frame);
-            return ResolveCachedOperationalString(
+            return BuildCachedOperationalString(
                 ref _summaryStringCacheBucket,
                 ref _summaryStringCacheLength,
                 ref _summaryStringCacheHash,
@@ -1476,88 +1498,16 @@ namespace Hecton8.Gameplay
                 cacheBucket);
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private string GetOperationalSummaryLegacy()
+        public override string BuildLegacyOperationalDirectiveString()
         {
-            if (_scientificSnapshot.IsActive)
-            {
-                int progressPercent = Mathf.Clamp(Mathf.RoundToInt(_scientificSnapshot.Progress01 * 100f), 0, 100);
-                int temperatureRounded = Mathf.RoundToInt(_scientificSnapshot.TemperatureC);
-                int salinityRounded = Mathf.RoundToInt(_scientificSnapshot.SalinityPpt);
-                int toxicityPercent = Mathf.Clamp(Mathf.RoundToInt(_scientificSnapshot.Toxicity01 * 100f), 0, 100);
-                string summary = string.Format(
-                    ResolveLocalized(LocalizationKeys.SCANNER_HUD_CONTACTS, "SCANNER // {0} // {1:0}% // TEMP {2}C // SAL {3} // TOX {4}%"),
-                    DescribeScientificTarget(_scientificSnapshot),
-                    progressPercent,
-                    temperatureRounded,
-                    salinityRounded,
-                    toxicityPercent);
-                if (_scientificSnapshot.HasAttractantTrace)
-                    return ConcatCold(summary, BuildScientificScentVectorSuffix(_scientificSnapshot));
-
-                return _scientificSnapshot.OrganicBlood01 > ScientificAttractantTraceThreshold01
-                    ? ConcatCold(summary, " // TRACES OF ORGANIC BLOOD DETECTED")
-                    : summary;
-            }
-
-            float now = Time.time;
-            float effectiveCooldown = ResolveEffectiveScanCooldown();
-            float effectiveScanRadius = ResolveEffectiveScanRadius();
-            float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + effectiveCooldown) - now);
-
-            // Signal Atlas-6 — pokazyvaem silu esli obnaruzhen
-            AtlasSignalSystem signal = ResolveCachedAtlasSignalCold();
-            if (signal != null && signal.CurrentRevealStage >= AtlasDetectionRevealStage)
-            {
-                float strength = signal.CurrentStrength;
-                string strengthBar = strength > 0.66f ? "███" : strength > 0.33f ? "██░" : "█░░";
-                if (signal.CurrentRevealStage < AtlasNavigationRevealStage)
-                {
-                    return cooldownRemaining > 0.01f
-                        ? string.Format("SCANNER // SIGNAL [{0}] // PATTERN HOLD", strengthBar)
-                        : string.Format("SCANNER // SIGNAL [{0}] // CONTACT", strengthBar);
-                }
-
-                if (cooldownRemaining > 0.01f)
-                    return string.Format(
-                        ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_SIGNAL_RECHARGING, "SCANNER // SIGNAL [{0}] {1:0}% // RECHARGING"),
-                        strengthBar,
-                        strength * 100f);
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_SIGNAL_READY, "SCANNER // SIGNAL [{0}] {1:0}% // READY"),
-                    strengthBar,
-                    strength * 100f);
-            }
-
-            if (cooldownRemaining > 0.01f)
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_MODE_RECHARGING, "SCANNER // {0} // RECHARGING {1:0.0}S"),
-                    _currentModeLabel,
-                    cooldownRemaining);
-
-            if (_hasLastResult && now - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_LAST_CONTACTS, "SCANNER // {0} // LAST {1} CONTACTS"),
-                    _currentModeLabel,
-                    _lastResult.totalContacts);
-
-            return string.Format(
-                ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_READY, "SCANNER // {0} // READY {1:0}M"),
-                _currentModeLabel,
-                effectiveScanRadius);
-        }
-#endif
-
-        public override string GetOperationalDirective()
-        {
-            float now = Time.time;
+            float now = ResolveScannerTimeSeconds();
             int cacheBucket = ResolveOperationalStringCacheBucket(now);
             if (_directiveStringCacheBucket == cacheBucket)
                 return _cachedOperationalDirectiveString;
 
             _scanHudBuffer.Clear();
             WriteOperationalDirectiveInternal(ref _scanHudBuffer, now);
-            return ResolveCachedOperationalString(
+            return BuildCachedOperationalString(
                 ref _directiveStringCacheBucket,
                 ref _directiveStringCacheLength,
                 ref _directiveStringCacheHash,
@@ -1567,26 +1517,27 @@ namespace Hecton8.Gameplay
 
         public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
         {
-            WriteOperationalDirectiveInternal(ref buffer, Time.time);
+            WriteOperationalDirectiveInternal(ref buffer, ResolveScannerTimeSeconds());
         }
 
         private void WriteOperationalDirectiveInternal(ref FixedCharBuffer buffer, float now)
         {
-            AtlasSignalSystem signal = ResolveCachedAtlasSignalCold();
+            IAtlasSignalReadModel signal = _cachedAtlasSignal;
             if (signal != null &&
-                signal.CurrentRevealStage >= AtlasNavigationRevealStage &&
-                _cachedTransform != null)
+                TryResolveScannerPoseSnapshot(out PlayerRuntimePoseSnapshot poseSnapshot, out float3 scannerForward) &&
+                signal.TryReadAtlasSignalSnapshot(in poseSnapshot.Aup, out AtlasSignalReadSnapshot atlasSignal) &&
+                atlasSignal.RevealStage >= AtlasNavigationRevealStage)
             {
-                Vector3 dir = signal.DirectionToCore;
-                int bearing = ResolveHorizontalBearingBucket(_cachedTransform.forward, dir, out int approximateDegrees);
+                Vector3 dir = ToVector3(atlasSignal.DirectionToCore);
+                int bearing = ResolveHorizontalBearingBucket(ToVector3(scannerForward), dir, out int approximateDegrees);
                 buffer.Append("ATLAS-6 RETURN HOLDS. DRIFT: ");
                 AppendText(
                     ref buffer,
                     bearing > 0
-                        ? ResolveLocalized(LocalizationKeys.SCANNER_BEARING_RIGHT, "RIGHT")
+                        ? ResolveLocalized(H8LocHashes.SCANNER_BEARING_RIGHT, "RIGHT")
                         : bearing < 0
-                            ? ResolveLocalized(LocalizationKeys.SCANNER_BEARING_LEFT, "LEFT")
-                            : ResolveLocalized(LocalizationKeys.SCANNER_BEARING_DOWN, "DIRECTLY BELOW"));
+                            ? ResolveLocalized(H8LocHashes.SCANNER_BEARING_LEFT, "LEFT")
+                            : ResolveLocalized(H8LocHashes.SCANNER_BEARING_DOWN, "DIRECTLY BELOW"));
                 buffer.Append(" (");
                 buffer.AppendInt(approximateDegrees);
                 buffer.Append(" DEG). STRONGER RETURN BELOW.");
@@ -1613,7 +1564,7 @@ namespace Hecton8.Gameplay
                 AppendText(
                     ref buffer,
                     ResolveLocalized(
-                        LocalizationKeys.SCANNER_DIRECTIVE_RECHARGING,
+                        H8LocHashes.SCANNER_DIRECTIVE_RECHARGING,
                         "Scanner lattice is drifting under corrosion. Expect shorter returns and slower recycle."));
                 return;
             }
@@ -1623,7 +1574,7 @@ namespace Hecton8.Gameplay
 
         public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
         {
-            WriteOperationalSummaryInternal(ref buffer, Time.time, ResolveScannerFrameInt());
+            WriteOperationalSummaryInternal(ref buffer, ResolveScannerTimeSeconds(), ResolveScannerFrameInt());
         }
 
         private void WriteOperationalSummaryInternal(ref FixedCharBuffer buffer, float now, int frame)
@@ -1634,7 +1585,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (_scientificSnapshot.IsActive)
+            if (_scientificSnapshot.IsActive != 0)
             {
                 buffer.Append("SCANNER // ");
                 buffer.Append(DescribeScientificTarget(_scientificSnapshot));
@@ -1647,7 +1598,7 @@ namespace Hecton8.Gameplay
                 buffer.Append(" // TOX ");
                 buffer.AppendInt(Mathf.Clamp(Mathf.RoundToInt(_scientificSnapshot.Toxicity01 * 100f), 0, 100));
                 buffer.Append("%");
-                if (_scientificSnapshot.HasAttractantTrace)
+                if (_scientificSnapshot.HasAttractantTrace != 0)
                 {
                     AppendScientificScentVector(ref buffer, _scientificSnapshot);
                 }
@@ -1662,14 +1613,17 @@ namespace Hecton8.Gameplay
             float effectiveScanRadius = ResolveEffectiveScanRadius();
             float cooldownRemaining = math.max(0f, (_lastScanTime + effectiveCooldown) - now);
 
-            AtlasSignalSystem signal = ResolveCachedAtlasSignalCold();
-            if (signal != null && signal.CurrentRevealStage >= AtlasDetectionRevealStage)
+            IAtlasSignalReadModel signal = _cachedAtlasSignal;
+            if (signal != null &&
+                TryResolveScannerPoseSnapshot(out PlayerRuntimePoseSnapshot poseSnapshot, out _) &&
+                signal.TryReadAtlasSignalSnapshot(in poseSnapshot.Aup, out AtlasSignalReadSnapshot atlasSignal) &&
+                atlasSignal.RevealStage >= AtlasDetectionRevealStage)
             {
-                float strength = signal.CurrentStrength;
+                float strength = atlasSignal.Strength01;
                 buffer.Append("SCANNER // SIGNAL [");
                 AppendAtlasStrengthBar(ref buffer, strength);
                 buffer.Append("]");
-                if (signal.CurrentRevealStage < AtlasNavigationRevealStage)
+                if (atlasSignal.RevealStage < AtlasNavigationRevealStage)
                 {
                     buffer.Append(cooldownRemaining > 0.01f ? " // PATTERN HOLD" : " // CONTACT");
                     return;
@@ -1711,7 +1665,21 @@ namespace Hecton8.Gameplay
             int progressPercent = math.clamp((int)math.round(progress01 * 100f), 0, 100);
             buffer.Append("SCANNER // ");
 
-            if (IsLowScannerPresentationTier(now))
+            float presentationDetail01 = ResolveScannerPresentationDetail01();
+            Span<char> titleBuffer = stackalloc char[48];
+            int titleLength;
+            if (!ScannableTarget.TryWriteLoreEntityTitle(_activeScientificEntityHash, titleBuffer, out titleLength) ||
+                titleLength <= 0)
+            {
+                "LORE FRAGMENT".AsSpan().CopyTo(titleBuffer);
+                titleLength = 13;
+            }
+
+            int visibleTitleLength = math.clamp(
+                (int)math.round(math.lerp(4f, titleLength, presentationDetail01)),
+                0,
+                titleLength);
+            if (visibleTitleLength <= 0)
             {
                 buffer.Append("DECRYPT ");
                 buffer.AppendInt(progressPercent);
@@ -1719,17 +1687,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Span<char> titleBuffer = stackalloc char[48];
-            if (!ScannableTarget.TryWriteLoreEntityTitle(_activeScientificEntityHash, titleBuffer, out int titleLength) ||
-                titleLength <= 0)
-            {
-                "LORE FRAGMENT".AsSpan().CopyTo(titleBuffer);
-                titleLength = 13;
-            }
-
-            Span<char> visibleTitle = titleBuffer.Slice(0, titleLength);
+            Span<char> visibleTitle = titleBuffer.Slice(0, visibleTitleLength);
             if (progress01 < 1f)
-                ScrambleDecryptionSpan(visibleTitle, _activeScientificEntityHash, frame, progress01);
+                ScrambleDecryptionSpan(visibleTitle, _activeScientificEntityHash, frame, progress01, presentationDetail01);
 
             buffer.Append(visibleTitle);
             buffer.Append(" // ");
@@ -1737,9 +1697,10 @@ namespace Hecton8.Gameplay
             buffer.Append("%");
         }
 
-        private static void ScrambleDecryptionSpan(Span<char> span, uint hash, int frame, float progress01)
+        private static void ScrambleDecryptionSpan(Span<char> span, uint hash, int frame, float progress01, float presentationDetail01)
         {
-            int revealed = math.clamp((int)math.floor(SafeSaturate01(progress01) * span.Length), 0, span.Length);
+            float revealWeight = math.lerp(0.55f, 1f, SafeSaturate01(presentationDetail01));
+            int revealed = math.clamp((int)math.floor(SafeSaturate01(progress01) * revealWeight * span.Length), 0, span.Length);
             uint seed = hash ^ unchecked((uint)frame * 747796405u) ^ 0x9E3779B9u;
             for (int i = revealed; i < span.Length; i++)
             {
@@ -1752,12 +1713,10 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private bool IsLowScannerPresentationTier(float now)
+        private static float ResolveScannerPresentationDetail01()
         {
-            HectonQualityTier tier = ResolveScannerQualityTier(now);
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            float quality = ResolveScannerPresentationQuality01();
+            return math.smoothstep(0.08f, 0.82f, quality);
         }
 
         private static void AppendAtlasStrengthBar(ref FixedCharBuffer buffer, float strength)
@@ -1896,7 +1855,7 @@ namespace Hecton8.Gameplay
             _directiveStringCacheBucket = int.MinValue;
         }
 
-        private string ResolveCachedOperationalString(
+        private string BuildCachedOperationalString(
             ref int cacheBucket,
             ref int cachedLength,
             ref uint cachedHash,
@@ -1975,12 +1934,9 @@ namespace Hecton8.Gameplay
             if (now < _nextBloodWaypointWarningAt || bloodWaypointWarningRadius <= 0f)
                 return;
 
-            if (!ChemicalInfluenceGrid.TryFindNearestScentWaypoint(
-                    scannerPosition,
-                    ChemicalInfluenceGrid.ChemicalChannel.Blood,
-                    out _,
-                    out float distanceMeters,
-                    out float intensity01))
+            IChemicalInfluenceReadModel chemicalInfluence = _cachedChemicalInfluence;
+            if (chemicalInfluence == null ||
+                !chemicalInfluence.TryFindNearestBloodWaypoint(scannerPosition, out float distanceMeters, out float intensity01))
             {
                 return;
             }
@@ -2016,7 +1972,6 @@ namespace Hecton8.Gameplay
             Vector3 scanOrigin = new Vector3(origin.x, origin.y, origin.z);
             int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(scanOrigin, effectiveScanRadius, s_ScannerSpatialKinds, s_SpatialHitBuffer);
             ScanResultSummary result = default;
-            bool genericResourceLogged = false;
             int aggregateCount = 0;
 
             for (int i = 0; i < hitCount; i++)
@@ -2058,7 +2013,7 @@ namespace Hecton8.Gameplay
                 }
                 else if ((hit.Kind & SpatialTargetKind.Pickup) != 0)
                 {
-                    aggregate.pickup = hit.Owner as PickupItem;
+                    aggregate.pickup = hit.Owner as IInventoryPickupPreviewSource;
                 }
                 else if ((hit.Kind & SpatialTargetKind.Module) != 0)
                 {
@@ -2074,7 +2029,7 @@ namespace Hecton8.Gameplay
                 }
                 else if ((hit.Kind & SpatialTargetKind.Bioform) != 0)
                 {
-                    aggregate.hasBioformContact = true;
+                    aggregate.hasBioformContact = 1;
                 }
 
                 s_ScanAggregateBuffer[aggregateIndex] = aggregate;
@@ -2096,12 +2051,9 @@ namespace Hecton8.Gameplay
 
                 if (aggregate.scannable != null)
                 {
-                    ScanEvents.RaiseEntryDiscovered(
-                        aggregate.scannable.EntryId,
-                        aggregate.scannable.EntryTitle,
-                        aggregate.scannable.EntryCategory,
-                        aggregate.scannable.EntrySummary,
-                        ScanEntryKind.Scannable);
+                    uint scannableHash = aggregate.scannable.CachedEntityHash;
+                    if (scannableHash != 0u)
+                        ScanEvents.RaiseEntryDiscovered(scannableHash, 0u, 0u, 0u, ScanEntryKind.Scannable);
                     meaningfulContact = true;
                     scannableContact = true;
                     CategorizeScannable(aggregate.scannable, ref result);
@@ -2112,7 +2064,8 @@ namespace Hecton8.Gameplay
                     {
                         meaningfulContact = true;
                         pickupContact = true;
-                        resourceContact = IsResourcePickup(aggregate.pickup.ItemData);
+                        resourceContact = TryPeekPickupItemData(aggregate.pickup, out ItemData pickupItemData) &&
+                                          IsResourcePickup(pickupItemData);
                     }
 
                     if (aggregate.module != null && TryDiscoverModuleEntry(aggregate.module))
@@ -2142,22 +2095,12 @@ namespace Hecton8.Gameplay
                         aggregate.position.y,
                         aggregate.position.z);
                     ScanEvents.RaiseNodeFound(nodePos);
-                    if (!genericResourceLogged)
-                    {
-                        ScanEvents.RaiseEntryDiscovered(
-                            "scan.resource_node",
-                            ResolveLocalized(LocalizationKeys.SCANNER_ENTRY_RESOURCE_DEPOSIT_TITLE, "RESOURCE DEPOSIT"),
-                            ResolveLocalized(LocalizationKeys.SCANNER_ENTRY_RESOURCE_DEPOSIT_CATEGORY, "Resource"),
-                            ResolveLocalized(LocalizationKeys.SCANNER_ENTRY_RESOURCE_DEPOSIT_SUMMARY, "Hydroacoustic pulse returned a mineral-density signature. Mark for salvage or extraction."),
-                            ScanEntryKind.ResourceNode);
-                        genericResourceLogged = true;
-                    }
 
                     meaningfulContact = true;
                     resourceContact = true;
                 }
 
-                if (aggregate.hasBioformContact)
+                if (aggregate.hasBioformContact != 0)
                 {
                     meaningfulContact = true;
                     bioformContact = true;
@@ -2197,9 +2140,7 @@ namespace Hecton8.Gameplay
             float scanRadius,
             ScanMode mode)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Scanner] Pulse at {origin}: {totalContacts} contacts found ({spatialContactCount} spatial contacts checked, radius {scanRadius}m, mode {DescribeMode(mode)})");
-#endif
+            // Intentionally blank: dynamic scanner pulse logs allocate in editor/development builds.
         }
 
         private static void CategorizeScannable(ScannableTarget scannable, ref ScanResultSummary result)
@@ -2207,7 +2148,7 @@ namespace Hecton8.Gameplay
             if (scannable == null)
                 return;
 
-            switch (ScannableCategoryUtility.Classify(scannable.EntryCategory))
+            switch (scannable.CachedCategoryKind)
             {
                 case ScannableCategoryUtility.CategoryKind.Hazard:
                     result.hazardContacts++;
@@ -2297,330 +2238,44 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static bool TryDiscoverPickupEntry(PickupItem pickup)
+        private static bool TryDiscoverPickupEntry(IInventoryPickupPreviewSource pickup)
         {
-            if (pickup == null)
+            if (!TryPeekPickupItemData(pickup, out ItemData item))
                 return false;
 
-            ItemData item = pickup.ItemData;
-            if (item == null)
+            uint entryHash = unchecked((uint)item.PersistentHashId);
+            if (entryHash == 0u)
                 return false;
 
-            string itemId = item.PersistentId;
-            if (string.IsNullOrWhiteSpace(itemId))
-                return false;
-
-            string title = string.IsNullOrWhiteSpace(item.itemName)
-                ? ResolveLocalized(LocalizationKeys.SCANNER_TITLE_UNIDENTIFIED_PICKUP, "UNIDENTIFIED PICKUP")
-                : ZeroGCStringCache.CachedToUpperInvariant(item.itemName);
-            string category = DescribeItemCategory(item.category);
-            string summary = BuildPickupSummary(item, pickup.Quantity);
-            ScanEvents.RaiseEntryDiscovered(BuildLowerAsciiPrefixedEntryId(ItemEntryPrefix, itemId), title, category, summary, ScanEntryKind.Item);
+            ScanEvents.RaiseEntryDiscovered(entryHash, 0u, 0u, 0u, ScanEntryKind.Item);
             return true;
+        }
+
+        private static bool TryPeekPickupItemData(IInventoryPickupPreviewSource pickup, out ItemData item)
+        {
+            item = null;
+            if (pickup == null ||
+                !pickup.TryPeekInventoryPickup(out item, out int quantity) ||
+                quantity <= 0)
+            {
+                item = null;
+                return false;
+            }
+
+            return item != null;
         }
 
         private static bool TryDiscoverModuleEntry(ModuleMarker marker)
         {
-            if (marker == null || marker.Data == null)
+            if (marker == null)
                 return false;
 
-            BuildableData data = marker.Data;
-            string moduleId = data.PersistentId;
-            if (string.IsNullOrWhiteSpace(moduleId))
+            uint entryHash = marker.ScannerEntryHash;
+            if (entryHash == 0u)
                 return false;
 
-            string title = string.IsNullOrWhiteSpace(data.moduleName)
-                ? ResolveLocalized(LocalizationKeys.SCANNER_TITLE_UNIDENTIFIED_MODULE, "UNIDENTIFIED MODULE")
-                : ZeroGCStringCache.CachedToUpperInvariant(data.moduleName);
-            string category = BuildConstructionCategory(data.FamilyLabel);
-            string summary = BuildModuleSummary(marker, data);
-            ScanEvents.RaiseEntryDiscovered(BuildLowerAsciiPrefixedEntryId(ModuleEntryPrefix, moduleId), title, category, summary, ScanEntryKind.Module);
+            ScanEvents.RaiseEntryDiscovered(entryHash, 0u, 0u, 0u, ScanEntryKind.Module);
             return true;
-        }
-
-        private static string BuildLowerAsciiPrefixedEntryId(string prefix, string id)
-        {
-            return BuildCachedPrefixedString(prefix, id, foldAsciiLower: true);
-        }
-
-        private static string BuildConstructionCategory(string familyLabel)
-        {
-            if (string.IsNullOrEmpty(familyLabel))
-                return ConstructionCategoryPrefix;
-
-            return BuildCachedPrefixedString(ConstructionCategoryPrefix, familyLabel, foldAsciiLower: false);
-        }
-
-        private static string BuildCachedPrefixedString(string prefix, string source, bool foldAsciiLower)
-        {
-            string safePrefix = prefix ?? string.Empty;
-            string safeSource = source ?? string.Empty;
-            uint hash = ComputePrefixedStringCacheHash(safePrefix, safeSource, foldAsciiLower);
-            int cacheIndex = (int)(hash & (PrefixedScannerStringCacheSize - 1));
-            byte mode = foldAsciiLower ? (byte)1 : (byte)0;
-
-            if (s_prefixedScannerStringHashCache[cacheIndex] == hash &&
-                s_prefixedScannerStringFlagsCache[cacheIndex] == mode &&
-                string.Equals(s_prefixedScannerStringPrefixCache[cacheIndex], safePrefix, StringComparison.Ordinal) &&
-                string.Equals(s_prefixedScannerStringSourceCache[cacheIndex], safeSource, StringComparison.Ordinal))
-            {
-                string cachedValue = s_prefixedScannerStringValueCache[cacheIndex];
-                if (cachedValue != null)
-                    return cachedValue;
-            }
-
-            string builtValue = string.Create(safePrefix.Length + safeSource.Length, (safePrefix, safeSource, foldAsciiLower), (buffer, state) =>
-            {
-                string prefixValue = state.Item1;
-                string sourceValue = state.Item2;
-                bool lower = state.Item3;
-                int write = 0;
-                for (int i = 0; i < prefixValue.Length; i++)
-                    buffer[write++] = lower ? FoldAsciiLower(prefixValue[i]) : prefixValue[i];
-                for (int i = 0; i < sourceValue.Length; i++)
-                    buffer[write++] = lower ? FoldAsciiLower(sourceValue[i]) : sourceValue[i];
-            });
-
-            s_prefixedScannerStringPrefixCache[cacheIndex] = safePrefix;
-            s_prefixedScannerStringSourceCache[cacheIndex] = safeSource;
-            s_prefixedScannerStringValueCache[cacheIndex] = builtValue;
-            s_prefixedScannerStringHashCache[cacheIndex] = hash;
-            s_prefixedScannerStringFlagsCache[cacheIndex] = mode;
-            return builtValue;
-        }
-
-        private static uint ComputePrefixedStringCacheHash(string prefix, string source, bool foldAsciiLower)
-        {
-            const uint FnvaOffsetBasis = 2166136261u;
-            const uint FnvaPrime = 16777619u;
-            unchecked
-            {
-                uint hash = FnvaOffsetBasis;
-                hash = AppendStringHash(hash, prefix, foldAsciiLower);
-                hash ^= 0xFFu;
-                hash *= FnvaPrime;
-                hash = AppendStringHash(hash, source, foldAsciiLower);
-                hash ^= foldAsciiLower ? 1u : 0u;
-                hash *= FnvaPrime;
-                return hash == 0u ? 1u : hash;
-            }
-        }
-
-        private static uint AppendStringHash(uint hash, string source, bool foldAsciiLower)
-        {
-            const uint FnvaPrime = 16777619u;
-            unchecked
-            {
-                for (int i = 0; i < source.Length; i++)
-                {
-                    char value = foldAsciiLower ? FoldAsciiLower(source[i]) : source[i];
-                    hash ^= value;
-                    hash *= FnvaPrime;
-                }
-
-                return hash;
-            }
-        }
-
-        private static char FoldAsciiLower(char value)
-        {
-            return (uint)(value - 'A') <= 'Z' - 'A'
-                ? (char)(value + ('a' - 'A'))
-                : value;
-        }
-
-        private static string BuildModuleSummary(ModuleMarker marker, BuildableData data)
-        {
-            BaseModule baseModule = null;
-            string wearSummary = string.Empty;
-            if (marker != null)
-            {
-                if (marker.TryGetComponent(out baseModule))
-                {
-                    wearSummary = BuildModuleWearSummary(baseModule);
-                    switch (baseModule.CurrentFailureMode)
-                    {
-                        case BaseModuleFailureMode.OxygenLeak:
-                            return JoinWithSpace(ServiceOxygenLeakSummary, wearSummary);
-                        case BaseModuleFailureMode.Fire:
-                            return JoinWithSpace(ServiceFireSummary, wearSummary);
-                        case BaseModuleFailureMode.ShortCircuit:
-                            return JoinWithSpace(ServiceShortCircuitSummary, wearSummary);
-                    }
-
-                    if (baseModule.IsAirQualityLow)
-                        return JoinWithSpace(ServiceStaleAirSummary, wearSummary);
-                }
-
-                switch (marker.SpatialRole)
-                {
-                    case FieldTargetRole.ServiceDamaged:
-                        return JoinWithSpace(ServiceDamagedSummary, wearSummary);
-                    case FieldTargetRole.ServiceFlooded:
-                        return JoinWithSpace(ServiceFloodedSummary, wearSummary);
-                }
-            }
-
-            string baseSummary = string.IsNullOrWhiteSpace(data.description)
-                ? FormatBaseModuleArchivedSummary(DescribePowerRole(data))
-                : TrimOrOriginal(data.description);
-
-            string wearAppendix = wearSummary;
-            return string.IsNullOrWhiteSpace(wearAppendix)
-                ? baseSummary
-                : JoinWithSpace(baseSummary, wearAppendix);
-        }
-
-        private static string BuildModuleWearSummary(BaseModule baseModule)
-        {
-            if (baseModule == null)
-                return string.Empty;
-
-            float recoverableIntegrity = Mathf.Max(0f, baseModule.MaxRecoverableIntegrity);
-            float originalIntegrity = Mathf.Max(1f, baseModule.MaxIntegrity);
-            float permanentlyLostIntegrity = Mathf.Max(0f, originalIntegrity - recoverableIntegrity);
-            int recoverableIntegrityRounded = Mathf.RoundToInt(recoverableIntegrity);
-            int originalIntegrityRounded = Mathf.RoundToInt(originalIntegrity);
-            int permanentlyLostIntegrityRounded = Mathf.RoundToInt(permanentlyLostIntegrity);
-            int remainingCycles = baseModule.RemainingRepairCycles;
-
-            if (remainingCycles < 0)
-                return FormatIntegrityPair(WearMarginPrefix, recoverableIntegrityRounded, originalIntegrityRounded, WearMarginSuffix);
-
-            if (remainingCycles <= 0)
-                return FormatIntegrityPair(WearCriticalPrefix, recoverableIntegrityRounded, originalIntegrityRounded, WearCriticalSuffix);
-
-            return FormatIntegrityWithCycles(permanentlyLostIntegrityRounded, remainingCycles);
-        }
-
-        private static string JoinWithSpace(string left, string right)
-        {
-            if (string.IsNullOrEmpty(left))
-                return right ?? string.Empty;
-            if (string.IsNullOrEmpty(right))
-                return left;
-
-            return string.Create(left.Length + 1 + right.Length, (left, right), (buffer, state) =>
-            {
-                string leftValue = state.Item1;
-                string rightValue = state.Item2;
-                leftValue.AsSpan().CopyTo(buffer);
-                buffer[leftValue.Length] = ' ';
-                rightValue.AsSpan().CopyTo(buffer.Slice(leftValue.Length + 1));
-            });
-        }
-
-        private static string FormatIntegrityPair(string prefix, int current, int max, string suffix)
-        {
-            int length = prefix.Length + CountDecimalDigits(current) + 1 + CountDecimalDigits(max) + suffix.Length;
-            return string.Create(length, (prefix, current, max, suffix), (buffer, state) =>
-            {
-                int write = 0;
-                AppendSpan(buffer, ref write, state.Item1);
-                AppendInt(buffer, ref write, state.Item2);
-                buffer[write++] = '/';
-                AppendInt(buffer, ref write, state.Item3);
-                AppendSpan(buffer, ref write, state.Item4);
-            });
-        }
-
-        private static string FormatIntegrityWithCycles(int lostIntegrity, int remainingCycles)
-        {
-            int length = WearRemainingPrefix.Length +
-                         CountDecimalDigits(lostIntegrity) +
-                         WearRemainingMiddle.Length +
-                         CountDecimalDigits(remainingCycles) +
-                         WearRemainingSuffix.Length;
-
-            return string.Create(length, (lostIntegrity, remainingCycles), (buffer, state) =>
-            {
-                int write = 0;
-                AppendSpan(buffer, ref write, WearRemainingPrefix);
-                AppendInt(buffer, ref write, state.Item1);
-                AppendSpan(buffer, ref write, WearRemainingMiddle);
-                AppendInt(buffer, ref write, state.Item2);
-                AppendSpan(buffer, ref write, WearRemainingSuffix);
-            });
-        }
-
-        private static string FormatBaseModuleArchivedSummary(string powerRole)
-        {
-            string safePowerRole = powerRole ?? string.Empty;
-            return string.Create(
-                BaseModuleArchivedPrefix.Length + safePowerRole.Length + BaseModuleArchivedSuffix.Length,
-                safePowerRole,
-                (buffer, source) =>
-                {
-                    int write = 0;
-                    AppendSpan(buffer, ref write, BaseModuleArchivedPrefix);
-                    AppendSpan(buffer, ref write, source);
-                    AppendSpan(buffer, ref write, BaseModuleArchivedSuffix);
-                });
-        }
-
-        private static string TrimOrOriginal(string value)
-        {
-            if (string.IsNullOrEmpty(value))
-                return string.Empty;
-
-            int start = 0;
-            int end = value.Length - 1;
-            while (start <= end && char.IsWhiteSpace(value[start]))
-                start++;
-            while (end >= start && char.IsWhiteSpace(value[end]))
-                end--;
-
-            if (start > end)
-                return string.Empty;
-            if (start == 0 && end == value.Length - 1)
-                return value;
-
-            int length = end - start + 1;
-            return string.Create(length, (value, start), (buffer, state) =>
-            {
-                state.Item1.AsSpan(state.Item2, buffer.Length).CopyTo(buffer);
-            });
-        }
-
-        private static void AppendSpan(Span<char> destination, ref int write, string source)
-        {
-            source.AsSpan().CopyTo(destination.Slice(write));
-            write += source.Length;
-        }
-
-        private static void AppendInt(Span<char> destination, ref int write, int value)
-        {
-            if (value.TryFormat(destination.Slice(write), out int written))
-                write += written;
-        }
-
-        private static int CountDecimalDigits(int value)
-        {
-            if (value == int.MinValue)
-                return 11;
-            if (value < 0)
-                return 1 + CountDecimalDigits(-value);
-
-            if (value < 10)
-                return 1;
-            if (value < 100)
-                return 2;
-            if (value < 1000)
-                return 3;
-            if (value < 10000)
-                return 4;
-            if (value < 100000)
-                return 5;
-            if (value < 1000000)
-                return 6;
-            if (value < 10000000)
-                return 7;
-            if (value < 100000000)
-                return 8;
-            if (value < 1000000000)
-                return 9;
-
-            return 10;
         }
 
         private static bool MatchesMode(
@@ -2666,9 +2321,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_MODE_RESOURCE, "RESOURCE"),
-                ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_MODE_STRUCTURE, "STRUCTURE"),
-                _ => ResolveLocalized(LocalizationKeys.SCANNER_MODE_EXPEDITION, "EXPEDITION")
+                ScanMode.Resource => ResolveLocalized(H8LocHashes.SCANNER_MODE_RESOURCE, "RESOURCE"),
+                ScanMode.Structure => ResolveLocalized(H8LocHashes.SCANNER_MODE_STRUCTURE, "STRUCTURE"),
+                _ => ResolveLocalized(H8LocHashes.SCANNER_MODE_EXPEDITION, "EXPEDITION")
             };
         }
 
@@ -2684,9 +2339,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_MODE_HUD_RESOURCE, "SCANNER MODE - RESOURCE"),
-                ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_MODE_HUD_STRUCTURE, "SCANNER MODE - STRUCTURE"),
-                _ => ResolveLocalized(LocalizationKeys.SCANNER_MODE_HUD_EXPEDITION, "SCANNER MODE - EXPEDITION")
+                ScanMode.Resource => ResolveLocalized(H8LocHashes.SCANNER_MODE_HUD_RESOURCE, "SCANNER MODE - RESOURCE"),
+                ScanMode.Structure => ResolveLocalized(H8LocHashes.SCANNER_MODE_HUD_STRUCTURE, "SCANNER MODE - STRUCTURE"),
+                _ => ResolveLocalized(H8LocHashes.SCANNER_MODE_HUD_EXPEDITION, "SCANNER MODE - EXPEDITION")
             };
         }
 
@@ -2694,9 +2349,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_MODE_LOG_RESOURCE, "SCAN MODE - RESOURCE"),
-                ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_MODE_LOG_STRUCTURE, "SCAN MODE - STRUCTURE"),
-                _ => ResolveLocalized(LocalizationKeys.SCANNER_MODE_LOG_EXPEDITION, "SCAN MODE - EXPEDITION")
+                ScanMode.Resource => ResolveLocalized(H8LocHashes.SCANNER_MODE_LOG_RESOURCE, "SCAN MODE - RESOURCE"),
+                ScanMode.Structure => ResolveLocalized(H8LocHashes.SCANNER_MODE_LOG_STRUCTURE, "SCAN MODE - STRUCTURE"),
+                _ => ResolveLocalized(H8LocHashes.SCANNER_MODE_LOG_EXPEDITION, "SCAN MODE - EXPEDITION")
             };
         }
 
@@ -2704,9 +2359,9 @@ namespace Hecton8.Gameplay
         {
             return mode switch
             {
-                ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_MODE_SUMMARY_RESOURCE, "Scanner now prioritizes mineral, salvage, and cached pickup signatures."),
-                ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_MODE_SUMMARY_STRUCTURE, "Scanner now prioritizes authored intel contacts, module markers, and structural returns."),
-                _ => ResolveLocalized(LocalizationKeys.SCANNER_MODE_SUMMARY_EXPEDITION, "Scanner now runs full-spectrum expedition sweeps across all supported contact classes.")
+                ScanMode.Resource => ResolveLocalized(H8LocHashes.SCANNER_MODE_SUMMARY_RESOURCE, "Scanner now prioritizes mineral, salvage, and cached pickup signatures."),
+                ScanMode.Structure => ResolveLocalized(H8LocHashes.SCANNER_MODE_SUMMARY_STRUCTURE, "Scanner now prioritizes authored intel contacts, module markers, and structural returns."),
+                _ => ResolveLocalized(H8LocHashes.SCANNER_MODE_SUMMARY_EXPEDITION, "Scanner now runs full-spectrum expedition sweeps across all supported contact classes.")
             };
         }
 
@@ -2752,88 +2407,72 @@ namespace Hecton8.Gameplay
             return 90;
         }
 
-        private static string DescribeItemCategory(ItemCategory category)
+        private static string ResolveLocalized(uint keyHash, string fallback)
         {
-            switch (category)
+            string cached = keyHash switch
             {
-                case ItemCategory.Tool: return "Tool";
-                case ItemCategory.Equipment: return "Equipment";
-                case ItemCategory.Consumable: return "Consumable";
-                case ItemCategory.Material: return "Material";
-                case ItemCategory.Component: return "Component";
-                default: return "Misc";
-            }
-        }
+                H8LocHashes.SCANNER_BEARING_DOWN => s_scannerBearingDown,
+                H8LocHashes.SCANNER_BEARING_LEFT => s_scannerBearingLeft,
+                H8LocHashes.SCANNER_BEARING_RIGHT => s_scannerBearingRight,
+                H8LocHashes.SCANNER_CATEGORY => s_scannerCategory,
+                H8LocHashes.SCANNER_DIRECTIVE_RECHARGING => s_scannerDirectiveRecharging,
+                H8LocHashes.SCANNER_HUD_CLEAR => s_scannerHudClear,
+                H8LocHashes.SCANNER_HUD_CONTACTS => s_scannerHudContacts,
+                H8LocHashes.SCANNER_HUD_CONTACTS_WITH_FLORA => s_scannerHudContactsWithFlora,
+                H8LocHashes.SCANNER_HUD_NO_RESOURCE => s_scannerHudNoResource,
+                H8LocHashes.SCANNER_HUD_NO_STRUCTURE => s_scannerHudNoStructure,
+                H8LocHashes.SCANNER_HUD_RECHARGING => s_scannerHudRecharging,
+                H8LocHashes.SCANNER_HUD_RESOURCE_CONTACTS => s_scannerHudResourceContacts,
+                H8LocHashes.SCANNER_HUD_STRUCTURE_CONTACTS => s_scannerHudStructureContacts,
+                H8LocHashes.SCANNER_LOG_EXPEDITION_SWEEP_COMPLETE => s_scannerLogExpeditionSweepComplete,
+                H8LocHashes.SCANNER_LOG_RESOURCE_SWEEP_COMPLETE => s_scannerLogResourceSweepComplete,
+                H8LocHashes.SCANNER_LOG_STRUCTURE_SWEEP_COMPLETE => s_scannerLogStructureSweepComplete,
+                H8LocHashes.SCANNER_MODE_EXPEDITION => s_scannerModeExpedition,
+                H8LocHashes.SCANNER_MODE_HUD_EXPEDITION => s_scannerModeHudExpedition,
+                H8LocHashes.SCANNER_MODE_HUD_RESOURCE => s_scannerModeHudResource,
+                H8LocHashes.SCANNER_MODE_HUD_STRUCTURE => s_scannerModeHudStructure,
+                H8LocHashes.SCANNER_MODE_LOG_EXPEDITION => s_scannerModeLogExpedition,
+                H8LocHashes.SCANNER_MODE_LOG_RESOURCE => s_scannerModeLogResource,
+                H8LocHashes.SCANNER_MODE_LOG_STRUCTURE => s_scannerModeLogStructure,
+                H8LocHashes.SCANNER_MODE_RESOURCE => s_scannerModeResource,
+                H8LocHashes.SCANNER_MODE_STRUCTURE => s_scannerModeStructure,
+                H8LocHashes.SCANNER_MODE_SUMMARY_EXPEDITION => s_scannerModeSummaryExpedition,
+                H8LocHashes.SCANNER_MODE_SUMMARY_RESOURCE => s_scannerModeSummaryResource,
+                H8LocHashes.SCANNER_MODE_SUMMARY_STRUCTURE => s_scannerModeSummaryStructure,
+                H8LocHashes.SCANNER_RECOMMEND_ADVANCE_SCOUT => s_scannerRecommendAdvanceScout,
+                H8LocHashes.SCANNER_RECOMMEND_BIOFORM_PRESENT => s_scannerRecommendBioformPresent,
+                H8LocHashes.SCANNER_RECOMMEND_CACHED_PICKUPS_ONLY => s_scannerRecommendCachedPickupsOnly,
+                H8LocHashes.SCANNER_RECOMMEND_CARGO_PRESENT => s_scannerRecommendCargoPresent,
+                H8LocHashes.SCANNER_RECOMMEND_DATABANK_ONLY => s_scannerRecommendDatabankOnly,
+                H8LocHashes.SCANNER_RECOMMEND_DENSE_SECTOR => s_scannerRecommendDenseSector,
+                H8LocHashes.SCANNER_RECOMMEND_EXPEDITION_WAYPOINT => s_scannerRecommendExpeditionWaypoint,
+                H8LocHashes.SCANNER_RECOMMEND_FLORA_PRESENT => s_scannerRecommendFloraPresent,
+                H8LocHashes.SCANNER_RECOMMEND_HAZARD_PROBE => s_scannerRecommendHazardProbe,
+                H8LocHashes.SCANNER_RECOMMEND_HOLD_ROUTE => s_scannerRecommendHoldRoute,
+                H8LocHashes.SCANNER_RECOMMEND_MARK_RICHEST_LANE => s_scannerRecommendMarkRichestLane,
+                H8LocHashes.SCANNER_RECOMMEND_RESOURCE_POCKET => s_scannerRecommendResourcePocket,
+                H8LocHashes.SCANNER_RECOMMEND_ROUTE_MARKERS => s_scannerRecommendRouteMarkers,
+                H8LocHashes.SCANNER_RECOMMEND_SHIFT_LANE => s_scannerRecommendShiftLane,
+                H8LocHashes.SCANNER_RECOMMEND_SPARSE_FIELD => s_scannerRecommendSparseField,
+                H8LocHashes.SCANNER_RECOMMEND_STRUCTURAL_WAYPOINT => s_scannerRecommendStructuralWaypoint,
+                H8LocHashes.SCANNER_RECOMMEND_WIDEN_SEARCH => s_scannerRecommendWidenSearch,
+                H8LocHashes.SCANNER_SUMMARY_CONTACTS => s_scannerSummaryContacts,
+                H8LocHashes.SCANNER_SUMMARY_CONTACTS_WITH_FLORA => s_scannerSummaryContactsWithFlora,
+                H8LocHashes.SCANNER_SUMMARY_NO_CONTACTS => s_scannerSummaryNoContacts,
+                H8LocHashes.SCANNER_SUMMARY_NO_RESOURCE => s_scannerSummaryNoResource,
+                H8LocHashes.SCANNER_SUMMARY_NO_STRUCTURE => s_scannerSummaryNoStructure,
+                H8LocHashes.SCANNER_SUMMARY_RESOURCE_CONTACTS => s_scannerSummaryResourceContacts,
+                H8LocHashes.SCANNER_SUMMARY_STRUCTURE_CONTACTS => s_scannerSummaryStructureContacts,
+                _ => null
+            };
 
-        private static string BuildPickupSummary(ItemData item, int quantity)
-        {
-            string description = string.IsNullOrWhiteSpace(item.description)
-                ? ResolveLocalized(LocalizationKeys.ITEM_SCANNER_SUMMARY_FALLBACK, "Portable field asset archived for suit databank reference.")
-                : TrimOrOriginal(item.description);
-
-            if (quantity > 1)
-                return FormatPickupQuantitySummary(description, quantity);
-
-            return description;
-        }
-
-        private const string PickupQuantitySummaryPrefix = " Cached pickup quantity: ";
-
-        private static string FormatPickupQuantitySummary(string description, int quantity)
-        {
-            int digitCount = CountPositiveIntegerDigits(quantity);
-            return string.Create(
-                description.Length + PickupQuantitySummaryPrefix.Length + digitCount + 1,
-                (description, quantity),
-                (buffer, state) =>
-                {
-                    int write = 0;
-                    AppendSpan(buffer, ref write, state.Item1);
-                    AppendSpan(buffer, ref write, PickupQuantitySummaryPrefix);
-                    state.Item2.TryFormat(buffer.Slice(write), out int written);
-                    write += written;
-                    buffer[write] = '.';
-                });
-        }
-
-        private static int CountPositiveIntegerDigits(int value)
-        {
-            int digits = 1;
-            while (value >= 10)
-            {
-                value /= 10;
-                digits++;
-            }
-
-            return digits;
-        }
-
-        private static string DescribePowerRole(BuildableData data)
-        {
-            if (data == null)
-                return "Unknown";
-
-            if (data.IsGenerator)
-                return "Generator";
-
-            if (data.IsConsumer)
-                return "Consumer";
-
-            return "Passive";
-        }
-
-        private static string ResolveLocalized(string key, string fallback)
-        {
-            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
-            return localization != null
-                ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback)
-                : fallback;
+            return cached ?? fallback ?? string.Empty;
         }
 
         internal bool TryGetScientificScanSnapshot(out ScientificScanSnapshot snapshot)
         {
             snapshot = _scientificSnapshot;
-            return snapshot.IsActive;
+            return snapshot.IsActive != 0;
         }
 
         private void UpdateScientificScanning(float deltaTime, float now)
@@ -2853,7 +2492,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float effectiveResampleInterval = ResolveFocusedScanResampleInterval(now);
+            float effectiveResampleInterval = RefreshFocusedScanResampleInterval(now);
             float holdTimeout = math.max(effectiveResampleInterval * ScientificScanHoldGraceMultiplier, 0.1f);
             if (_activeScientificFragment != null &&
                 now - _scientificLastContactTime <= holdTimeout &&
@@ -2914,7 +2553,7 @@ namespace Hecton8.Gameplay
 
         private void ScheduleScientificConeBatch(float now)
         {
-            if (!TryResolveScientificAcquisitionPose(out Vector3 origin, out Vector3 forward))
+            if (!TryResolveScientificAcquisitionPose(out Vector3 origin, out Vector3 forward, out AbsoluteUniversePosition originAup))
                 return;
 
             float range = math.max(1f, focusedScanRange);
@@ -2923,11 +2562,12 @@ namespace Hecton8.Gameplay
                 return;
             float coneTanSq = ResolveFocusedConeTanSq(coneAngle);
 
-            float resampleInterval = ResolveFocusedScanResampleInterval(now);
+            float resampleInterval = RefreshFocusedScanResampleInterval(now);
             float loreRange = math.min(15f, range);
             if (TryResolveScientificLoreCandidate(
                     origin,
                     forward,
+                    in originAup,
                     loreRange,
                     coneAngle,
                     out ScannableTarget loreTarget,
@@ -2939,15 +2579,29 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (HectonVoxelVolume.TryRaymarchAnyPublishedSdf(
-                    origin,
-                    forward,
+            Hecton8.Core.Contracts.IVoxelSonarSdfReadModel voxelSdfReadModel = _cachedVoxelSdfReadModel;
+            if (voxelSdfReadModel != null &&
+                voxelSdfReadModel.TryRaymarchNearestSonarSdf(
+                    new float3(origin.x, origin.y, origin.z),
+                    new float3(forward.x, forward.y, forward.z),
                     range,
                     math.max(0.1f, focusedScanSurfaceInset * 2f),
-                    out HectonVoxelVolume sdfVolume,
-                    out VoxelSdfRaycastHit sdfHit))
+                    out VoxelSonarSdfRaycastHit sdfHit,
+                    out NativeArray<byte> encodedSdf,
+                    out int3 sdfGridDimensions,
+                    out float3 sdfVolumeOrigin,
+                    out float3 sdfCellSize,
+                    out float sdfRange) &&
+                (sdfHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) != 0u)
             {
-                ConsumeScientificVoxelHit(sdfVolume, sdfHit, now);
+                ConsumeScientificVoxelHit(
+                    in sdfHit,
+                    encodedSdf,
+                    sdfGridDimensions,
+                    sdfVolumeOrigin,
+                    sdfCellSize,
+                    sdfRange,
+                    now);
             }
             else if (TryResolveScientificSpatialContact(origin, forward, range, coneTanSq, out SpatialQueryHit hit))
             {
@@ -2957,108 +2611,100 @@ namespace Hecton8.Gameplay
             _scientificNextResampleAt = now + resampleInterval;
         }
 
-        private bool TryResolveScientificAcquisitionPose(out Vector3 origin, out Vector3 forward)
+        private bool TryResolveScientificAcquisitionPose(
+            out Vector3 origin,
+            out Vector3 forward,
+            out AbsoluteUniversePosition originAup)
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
-            Transform viewTransform = playerCamera != null ? playerCamera.transform : null;
-            if (viewTransform == null)
-                viewTransform = _cachedTransform;
-
-            if (viewTransform == null)
+            if (!TryResolveScannerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot, out float3 scannerForward))
             {
                 origin = Vector3.zero;
                 forward = Vector3.forward;
+                originAup = default;
                 return false;
             }
 
-            origin = viewTransform.position;
-            Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
-            forward = ResolveSafeDirection(viewTransform.forward, fallbackForward);
+            origin = ToVector3(snapshot.RuntimePosition);
+            forward = ToVector3(scannerForward);
+            originAup = snapshot.Aup;
             return true;
         }
 
-        private float ResolveFocusedScanResampleInterval(float now)
+        private bool TryResolveScannerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot, out float3 forward)
+        {
+            snapshot = default;
+            forward = new float3(0f, 0f, 1f);
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null ||
+                !playerContext.TryGetPlayerPoseSnapshot(out snapshot) ||
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
+                !math.all(math.isfinite(snapshot.RuntimePosition)) ||
+                !snapshot.Aup.IsFinite())
+            {
+                snapshot = default;
+                return false;
+            }
+
+            forward = ResolveSafeDirection(snapshot.Forward);
+            if (math.lengthsq(forward) <= 0.000001f)
+            {
+                forward = new float3(0f, 0f, 1f);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static Vector3 ToVector3(float3 value)
+        {
+            return new Vector3(value.x, value.y, value.z);
+        }
+
+        private float RefreshFocusedScanResampleInterval(float now)
         {
             float configured = math.max(0.05f, focusedScanResampleInterval);
-            HectonQualityTier tier = ResolveScannerQualityTier(now);
-            _scannerBlackBoxQualityTier = (ushort)tier;
-            if (tier == HectonQualityTier.Unknown ||
-                tier == HectonQualityTier.Low ||
-                tier == HectonQualityTier.Mx350)
-            {
-                return math.max(configured, 0.18f);
-            }
-
-            if (tier == HectonQualityTier.Ultra)
-                return math.min(configured, 0.06f);
-
-            if (tier == HectonQualityTier.High)
-                return math.min(configured, 0.09f);
-
-            return configured;
+            RefreshScannerQualityWeight(now);
+            float detail01 = ResolveScannerPresentationDetail01();
+            float survivalInterval = math.max(configured, 0.18f);
+            float overkillInterval = math.min(configured, 0.06f);
+            return math.max(0.05f, math.lerp(survivalInterval, overkillInterval, detail01));
         }
 
-        private HectonQualityTier ResolveScannerQualityTier(float now)
+        private float RefreshScannerQualityWeight(float now)
         {
-            if (!_scannerQualityTierInitialized)
-                InitializeScannerQualityTier(HectonQualityTier.Unknown, now);
-
-            if (_scannerQualityTierCandidate == _scannerQualityTier)
+            float quality = ResolveScannerPresentationQuality01();
+            if (!_scannerQualityWeightInitialized)
             {
-                _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
-                return _scannerQualityTier;
+                InitializeScannerQualityWeight(quality, now);
+                return _scannerQualityWeight01;
             }
 
-            float candidateAge = now - _scannerQualityTierCandidateSince;
-            if (!math.isfinite(candidateAge) || candidateAge < ScannerQualityTierHysteresisSeconds)
+            if (math.abs(quality - _scannerQualityWeight01) > ScannerQualityWeightEpsilon)
             {
-                _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
-                return _scannerQualityTier;
+                _scannerQualityWeight01 = quality;
+                InvalidateOperationalStringCache();
             }
 
-            _scannerQualityTier = _scannerQualityTierCandidate;
-            _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
-            InvalidateOperationalStringCache();
-            return _scannerQualityTier;
+            _scannerBlackBoxQualityWeightByte = EncodeScannerQualityWeightByte(_scannerQualityWeight01);
+            return _scannerQualityWeight01;
         }
 
-        private void InitializeScannerQualityTierCold()
+        private void InitializeScannerQualityWeightCold()
         {
-            InitializeScannerQualityTier(GlobalRegistry.ScalabilityTier, Time.time);
+            InitializeScannerQualityWeight(ResolveScannerPresentationQuality01(), ResolveScannerTimeSeconds());
         }
 
-        private void InitializeScannerQualityTier(HectonQualityTier tier, float now)
+        private void InitializeScannerQualityWeight(float qualityWeight01, float now)
         {
-            _scannerQualityTier = tier;
-            _scannerQualityTierCandidate = tier;
-            _scannerQualityTierCandidateSince = now;
-            _scannerQualityTierInitialized = true;
-            _scannerBlackBoxQualityTier = (ushort)tier;
+            _scannerQualityWeight01 = SafeSaturate01(qualityWeight01);
+            _scannerQualityWeightInitialized = true;
+            _scannerBlackBoxQualityWeightByte = EncodeScannerQualityWeightByte(_scannerQualityWeight01);
         }
 
-        private void QueueScannerQualityTierCandidate(HectonQualityTier observedTier)
+        private static byte EncodeScannerQualityWeightByte(float qualityWeight01)
         {
-            float now = Time.time;
-            if (!_scannerQualityTierInitialized)
-            {
-                InitializeScannerQualityTier(observedTier, now);
-                return;
-            }
-
-            if (observedTier == _scannerQualityTier)
-            {
-                _scannerQualityTierCandidate = observedTier;
-                _scannerQualityTierCandidateSince = now;
-                _scannerBlackBoxQualityTier = (ushort)_scannerQualityTier;
-                return;
-            }
-
-            if (observedTier != _scannerQualityTierCandidate)
-            {
-                _scannerQualityTierCandidate = observedTier;
-                _scannerQualityTierCandidateSince = now;
-            }
+            float quality = SafeSaturate01(qualityWeight01);
+            return (byte)math.clamp((int)math.round(quality * 255f), 0, 255);
         }
 
         private void QueueScientificOcclusionRaycast(
@@ -3109,7 +2755,7 @@ namespace Hecton8.Gameplay
 
             _scientificRaycastPending = false;
             _scientificRaycastPendingRequestId = 0;
-            ConsumeScientificOcclusionHit(in hit, Time.time);
+            ConsumeScientificOcclusionHit(in hit, ResolveScannerTimeSeconds());
         }
 
         private void ConsumeScientificOcclusionHit(in RaycastHit hit, float now)
@@ -3142,14 +2788,20 @@ namespace Hecton8.Gameplay
             if (hitCollider == null || target == null)
                 return false;
 
-            Transform hitTransform = hitCollider.transform;
-            Transform targetTransform = target.transform;
-            if (hitTransform == null || targetTransform == null)
+            int targetObjectId = target.ReadRuntimeObjectId();
+            if (targetObjectId == 0)
                 return false;
 
-            return hitTransform == targetTransform ||
-                   hitTransform.IsChildOf(targetTransform) ||
-                   targetTransform.IsChildOf(hitTransform);
+            GameObject hitObject = hitCollider.gameObject;
+            if (hitObject != null && hitObject.GetInstanceID() == targetObjectId)
+                return true;
+
+            Rigidbody attachedBody = hitCollider.attachedRigidbody;
+            if (attachedBody == null)
+                return false;
+
+            GameObject bodyObject = attachedBody.gameObject;
+            return bodyObject != null && bodyObject.GetInstanceID() == targetObjectId;
         }
 
         private void ConsumeScientificLoreTarget(ScannableTarget scannable, float3 probePosition, uint entityHash, float now)
@@ -3193,6 +2845,7 @@ namespace Hecton8.Gameplay
         private bool TryResolveScientificLoreCandidate(
             Vector3 origin,
             Vector3 forward,
+            in AbsoluteUniversePosition cameraAup,
             float range,
             float coneAngleDegrees,
             out ScannableTarget target,
@@ -3202,11 +2855,7 @@ namespace Hecton8.Gameplay
             target = null;
             targetPosition = float3.zero;
             entityHash = 0u;
-            EnsureScientificNativeState();
-            if (!_scientificLoreCandidateResult.IsCreated)
-                return false;
-
-            if (!ScannableTarget.TryGetLoreEntityBuffers(
+            if (!ScannableTarget.TryReadLoreEntityBuffers(
                     out NativeArray<AbsoluteUniversePosition> loreEntityAups,
                     out NativeArray<uint> loreEntityHashes,
                     out int loreEntityCount))
@@ -3216,21 +2865,14 @@ namespace Hecton8.Gameplay
 
             float safeRange = math.max(0.5f, math.min(15f, range));
             float minDot = math.cos(math.clamp(coneAngleDegrees, 0.1f, 45f) * DegreesToRadians);
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
-            LoreCandidateDotProductJob job = new LoreCandidateDotProductJob
-            {
-                LoreEntityAUPs = loreEntityAups,
-                LoreEntityHashes = loreEntityHashes,
-                Result = _scientificLoreCandidateResult,
-                CameraAup = cameraAup,
-                CameraForward = (float3)ResolveSafeDirection(forward, Vector3.forward),
-                Count = loreEntityCount,
-                RangeSq = safeRange * safeRange,
-                MinDot = minDot
-            };
-            job.Execute();
-
-            LoreCandidateResult result = _scientificLoreCandidateResult[0];
+            LoreCandidateResult result = EvaluateLoreCandidateScalar(
+                loreEntityAups,
+                loreEntityHashes,
+                in cameraAup,
+                (float3)ResolveSafeDirection(forward, Vector3.forward),
+                loreEntityCount,
+                safeRange * safeRange,
+                minDot);
             if (result.Found == 0 || result.Hash == 0u)
                 return false;
 
@@ -3241,6 +2883,56 @@ namespace Hecton8.Gameplay
             entityHash = result.Hash;
             targetPosition = (float3)origin + result.RuntimePosition;
             return true;
+        }
+
+        private static LoreCandidateResult EvaluateLoreCandidateScalar(
+            NativeArray<AbsoluteUniversePosition> loreEntityAups,
+            NativeArray<uint> loreEntityHashes,
+            in AbsoluteUniversePosition cameraAup,
+            float3 cameraForward,
+            int count,
+            float rangeSq,
+            float minDot)
+        {
+            LoreCandidateResult best = default;
+            best.Index = -1;
+            best.Dot = minDot;
+            best.DistanceSq = rangeSq;
+            int safeCount = math.min(count, math.min(loreEntityAups.Length, loreEntityHashes.Length));
+            float3 forward = math.normalizesafe(cameraForward, new float3(0f, 0f, 1f));
+
+            for (int i = 0; i < safeCount; i++)
+            {
+                uint hash = loreEntityHashes[i];
+                if (hash == 0u)
+                    continue;
+
+                AbsoluteUniversePosition loreEntityAup = loreEntityAups[i];
+                float3 cameraRelative = AbsoluteUniversePosition.ToCameraRelativeFloat3(in loreEntityAup, in cameraAup);
+                float distanceSq = math.lengthsq(cameraRelative);
+                if (distanceSq <= 0.000001f || distanceSq >= rangeSq)
+                    continue;
+
+                float invDistance = math.rsqrt(math.max(distanceSq, 0.000001f));
+                float dot = math.dot(cameraRelative * invDistance, forward);
+                if (dot < minDot)
+                    continue;
+
+                if (best.Found != 0 &&
+                    (dot < best.Dot || (math.abs(dot - best.Dot) <= 0.0001f && distanceSq >= best.DistanceSq)))
+                {
+                    continue;
+                }
+
+                best.Index = i;
+                best.Hash = hash;
+                best.Dot = dot;
+                best.DistanceSq = distanceSq;
+                best.RuntimePosition = cameraRelative;
+                best.Found = 1;
+            }
+
+            return best;
         }
 
         private bool TryResolveScientificSpatialContact(
@@ -3292,16 +2984,32 @@ namespace Hecton8.Gameplay
             return found;
         }
 
-        private void ConsumeScientificVoxelHit(HectonVoxelVolume volume, in VoxelSdfRaycastHit sdfHit, float now)
+        private void ConsumeScientificVoxelHit(
+            in VoxelSonarSdfRaycastHit sdfHit,
+            NativeArray<byte> encodedSdf,
+            int3 gridDimensions,
+            float3 volumeOrigin,
+            float3 voxelCellSize,
+            float sdfRange,
+            float now)
         {
-            if (volume == null || sdfHit.Hit == 0)
+            if ((sdfHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u)
                 return;
 
             StopScientificFragmentScan();
-            _activeScientificVoxelVolume = volume;
 
-            Vector3 sampleWorldPosition = sdfHit.Point - sdfHit.Normal * math.max(0.01f, focusedScanSurfaceInset);
-            if (!TrySampleScientificDensity(volume, sampleWorldPosition, out float density, out float density01))
+            Vector3 hitPoint = ToVector3(sdfHit.Point);
+            Vector3 hitNormal = ToVector3(sdfHit.Normal);
+            Vector3 sampleWorldPosition = hitPoint - hitNormal * math.max(0.01f, focusedScanSurfaceInset);
+            if (!TrySampleScientificDensity(
+                    encodedSdf,
+                    gridDimensions,
+                    volumeOrigin,
+                    voxelCellSize,
+                    sdfRange,
+                    sampleWorldPosition,
+                    out float density,
+                    out float density01))
             {
                 ClearScientificSnapshot();
                 return;
@@ -3310,7 +3018,7 @@ namespace Hecton8.Gameplay
             float chemicalLoad01 = 0f;
             float organicBloodPeak01 = 0f;
             float exhaustPeak01 = 0f;
-            if (TrySampleScientificChemicalSignal(sdfHit.Point, out float4 chemicalSignal))
+            if (TrySampleScientificChemicalSignal(hitPoint, out float4 chemicalSignal))
             {
                 chemicalLoad01 = math.saturate(math.cmax(math.abs(chemicalSignal)));
                 organicBloodPeak01 = math.saturate(chemicalSignal.x);
@@ -3321,7 +3029,7 @@ namespace Hecton8.Gameplay
             float bloodGradientWeight = 0f;
             float exhaustGradientWeight = 0f;
             if (TrySampleScientificAttractantGradient(
-                    sdfHit.Point,
+                    hitPoint,
                     now,
                     out float bloodSignal01,
                     out float exhaustSignal01,
@@ -3354,7 +3062,7 @@ namespace Hecton8.Gameplay
                 out Vector3 scentDirection,
                 out ScientificAttractantChannel attractantChannel);
             ResolveScientificWaterMetrics(
-                sdfHit.Point,
+                hitPoint,
                 chemicalLoad01,
                 out float temperatureC,
                 out float salinityPpt,
@@ -3383,7 +3091,7 @@ namespace Hecton8.Gameplay
                 scentDirection,
                 attractantChannel,
                 depthMeters,
-                null,
+                false,
                 0u,
                 false,
                 false);
@@ -3391,12 +3099,12 @@ namespace Hecton8.Gameplay
 
         private void ConsumeScientificSpatialHit(in SpatialQueryHit hit, float now)
         {
-            ResolveCachedSurvivalSystem();
             ResolveScientificSpatialComponents(
                 in hit,
                 out ScannableFragment resolvedFragment,
-                out HectonVoxelVolume resolvedVolume,
-                out FaunaBrain resolvedFauna);
+                out IVoxelSonarSdfSampleSource resolvedSdfSampleSource,
+                out bool hasBioformContact,
+                out ScannerFaunaScientificContact faunaContact);
             Vector3 probePosition = hit.Position;
             float density = 0f;
             float density01 = 0f;
@@ -3409,8 +3117,7 @@ namespace Hecton8.Gameplay
             float bloodGradientWeight = 0f;
             float exhaustGradientWeight = 0f;
 
-            if (resolvedVolume != null &&
-                TrySampleScientificDensity(resolvedVolume, probePosition, out float sampledDensity, out float sampledDensity01))
+            if (TrySampleScientificDensity(resolvedSdfSampleSource, probePosition, out float sampledDensity, out float sampledDensity01))
             {
                 density = sampledDensity;
                 density01 = sampledDensity01;
@@ -3465,17 +3172,17 @@ namespace Hecton8.Gameplay
                 out float toxicity01,
                 out float depthMeters);
 
-            uint threatPredictionLoreHash = resolvedFauna != null ? resolvedFauna.ThreatPredictionLoreHash : 0u;
-            LoreDatabaseManager loreDatabase = threatPredictionLoreHash != 0u ? ResolveCachedLoreDatabaseCold() : null;
+            uint threatPredictionLoreHash = hasBioformContact ? faunaContact.ThreatPredictionLoreHash : 0u;
+            ILoreUnlockReadModel loreDatabase = threatPredictionLoreHash != 0u ? _cachedLoreDatabase : null;
             bool threatPredictionUnlocked = threatPredictionLoreHash != 0u &&
                                             loreDatabase != null &&
-                                            loreDatabase.IsUnlocked(threatPredictionLoreHash);
-            bool flankingManeuverDetected = resolvedFauna != null &&
-                                            resolvedFauna.IsFlankingManeuverDetected &&
-                                            threatPredictionUnlocked;
+                                            loreDatabase.IsLoreUnlocked(threatPredictionLoreHash);
+            bool flankingManeuverDetected =
+                threatPredictionUnlocked &&
+                (faunaContact.Flags & ScannerFaunaScientificContact.FlagFlankingManeuver) != 0;
 
             if (resolvedFragment == null &&
-                resolvedFauna == null &&
+                !hasBioformContact &&
                 densitySampleCount <= 0 &&
                 chemicalLoad01 <= 0.0001f &&
                 toxicity01 <= 0.0001f)
@@ -3494,7 +3201,6 @@ namespace Hecton8.Gameplay
                     _dataArchaeology.TryApplyPersistedProgress(_activeScientificFragment);
             }
 
-            _activeScientificVoxelVolume = resolvedVolume;
             _activeScientificProbePosition = probePosition;
             ScientificMaterialClass materialClass = ClassifyScientificMaterial(density01);
             _scientificLastContactTime = now;
@@ -3522,7 +3228,7 @@ namespace Hecton8.Gameplay
                 scentDirection,
                 attractantChannel,
                 depthMeters,
-                resolvedFauna,
+                hasBioformContact,
                 threatPredictionLoreHash,
                 threatPredictionUnlocked,
                 flankingManeuverDetected);
@@ -3555,22 +3261,34 @@ namespace Hecton8.Gameplay
         private static void ResolveScientificSpatialComponents(
             in SpatialQueryHit hit,
             out ScannableFragment fragment,
-            out HectonVoxelVolume volume,
-            out FaunaBrain fauna)
+            out IVoxelSonarSdfSampleSource sdfSampleSource,
+            out bool hasBioformContact,
+            out ScannerFaunaScientificContact faunaContact)
         {
             fragment = hit.Owner as ScannableFragment;
-            volume = hit.Owner as HectonVoxelVolume;
-            fauna = hit.Owner as FaunaBrain;
-            Transform targetTransform = hit.Transform;
-            if (targetTransform == null)
-                return;
+            sdfSampleSource = hit.Owner as IVoxelSonarSdfSampleSource;
+            faunaContact = default;
 
-            if (fragment == null)
-                targetTransform.TryGetComponent(out fragment);
-            if (volume == null)
-                targetTransform.TryGetComponent(out volume);
-            if (fauna == null)
-                targetTransform.TryGetComponent(out fauna);
+            if (hit.Owner is IScannerFaunaScientificContact scientificContact &&
+                scientificContact.TryReadScannerFaunaScientificContact(out faunaContact))
+            {
+                hasBioformContact = (faunaContact.Flags & ScannerFaunaScientificContact.FlagContact) != 0;
+                if (hasBioformContact)
+                    return;
+            }
+
+            FieldTargetRole bioformRole = hit.SignalRole;
+            if (!FieldTargetSemantics.IsBioformRole(bioformRole) &&
+                hit.Owner is FieldTargetDescriptor descriptor)
+            {
+                bioformRole = descriptor.Role;
+            }
+
+            hasBioformContact =
+                (hit.Kind & SpatialTargetKind.Bioform) != 0 ||
+                FieldTargetSemantics.IsBioformRole(bioformRole);
+            if (hasBioformContact)
+                faunaContact.Flags = ScannerFaunaScientificContact.FlagContact;
         }
 
         private void InvalidateFocusedConeCache()
@@ -3593,7 +3311,7 @@ namespace Hecton8.Gameplay
             Vector3 scentDirection,
             ScientificAttractantChannel attractantChannel,
             float depthMeters,
-            FaunaBrain faunaBrain,
+            bool hasFaunaContact,
             uint threatPredictionLoreHash,
             bool threatPredictionUnlocked,
             bool flankingManeuverDetected)
@@ -3617,7 +3335,7 @@ namespace Hecton8.Gameplay
                 ResolveSafeDirection(scentDirection, Vector3.zero),
                 attractantChannel,
                 SafeNonNegative(depthMeters),
-                faunaBrain,
+                hasFaunaContact,
                 threatPredictionLoreHash,
                 threatPredictionUnlocked,
                 flankingManeuverDetected);
@@ -3625,7 +3343,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshScientificSnapshotProgress()
         {
-            if (!_scientificSnapshot.IsActive)
+            if (_scientificSnapshot.IsActive == 0)
                 return;
 
             ScannableFragment fragment = _scientificSnapshot.Fragment;
@@ -3633,7 +3351,7 @@ namespace Hecton8.Gameplay
                 ? SafeSaturate01(fragment.ProgressNormalized)
                 : SafeSaturate01(_scientificSnapshot.Progress01);
             _scientificSnapshot = new ScientificScanSnapshot(
-                _scientificSnapshot.IsActive,
+                _scientificSnapshot.IsActive != 0,
                 progress01,
                 _scientificSnapshot.Density,
                 _scientificSnapshot.Density01,
@@ -3650,10 +3368,10 @@ namespace Hecton8.Gameplay
                 _scientificSnapshot.ScentDirection,
                 _scientificSnapshot.AttractantChannel,
                 _scientificSnapshot.DepthMeters,
-                _scientificSnapshot.FaunaBrain,
+                _scientificSnapshot.HasFaunaContact != 0,
                 _scientificSnapshot.ThreatPredictionLoreHash,
-                _scientificSnapshot.ThreatPredictionUnlocked,
-                _scientificSnapshot.FlankingManeuverDetected);
+                _scientificSnapshot.ThreatPredictionUnlocked != 0,
+                _scientificSnapshot.FlankingManeuverDetected != 0);
         }
 
         private void StopScientificFragmentScan()
@@ -3690,7 +3408,6 @@ namespace Hecton8.Gameplay
         {
             StopScientificFragmentScan();
             StopScientificRaycastTargetScan();
-            _activeScientificVoxelVolume = null;
             _heldPrimaryThisFrame = false;
             _heldPrimaryDeltaTime = 0f;
             _activeScientificProbePosition = float3.zero;
@@ -3754,37 +3471,13 @@ namespace Hecton8.Gameplay
 
         private static string DescribeScientificTarget(ScientificScanSnapshot snapshot)
         {
-            if (snapshot.HasFaunaContact)
+            if (snapshot.HasFaunaContact != 0)
                 return "BIOFORM";
 
             return snapshot.MaterialClass != ScientificMaterialClass.None
                 ? DescribeScientificMaterial(snapshot.MaterialClass)
                 : "WATER";
         }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static string ConcatCold(string left, string right)
-        {
-            left ??= string.Empty;
-            right ??= string.Empty;
-            return string.Create(left.Length + right.Length, (left, right), (span, state) =>
-            {
-                state.left.AsSpan().CopyTo(span);
-                state.right.AsSpan().CopyTo(span.Slice(state.left.Length));
-            });
-        }
-
-        private static string BuildScientificScentVectorSuffix(ScientificScanSnapshot snapshot)
-        {
-            Vector3 direction = snapshot.ScentDirection;
-            return string.Format(
-                " // {0} VEC {1:+0;-0;+0},{2:+0;-0;+0},{3:+0;-0;+0}",
-                DescribeScientificAttractantChannel(snapshot.AttractantChannel),
-                Mathf.RoundToInt(direction.x * 100f),
-                Mathf.RoundToInt(direction.y * 100f),
-                Mathf.RoundToInt(direction.z * 100f));
-        }
-#endif
 
         private static void AppendScientificScentVector(ref FixedCharBuffer buffer, ScientificScanSnapshot snapshot)
         {
@@ -3806,58 +3499,121 @@ namespace Hecton8.Gameplay
             buffer.AppendInt(value);
         }
 
-        private void ResolveCachedSurvivalSystem()
-        {
-            if (_cachedSurvivalSystem != null)
-                return;
-
-            float now = Time.time;
-            if (now < _nextSurvivalResolveAt)
-                return;
-
-            _nextSurvivalResolveAt = now + SurvivalResolveRetrySeconds;
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform.TryGetComponent(out HectonSurvivalSystem survivalSystem))
-            {
-                _cachedSurvivalSystem = survivalSystem;
-                _nextSurvivalResolveAt = 0f;
-            }
-        }
-
-        private void ResolveCachedPlayerContextCold()
+        private void BindCachedRuntimeServicesCold()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedSurvivalEnvironment = SelectSurvivalEnvironmentReadModelCold(_cachedPlayerContext);
+            _cachedVoxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
+            _cachedEnvironmentContext = GlobalRegistry.Environment;
+            _cachedHazardZoneRuntime = GlobalRegistry.HazardZoneReadModel;
+            _cachedHazardZones = SelectHazardZoneReadModelCold(_cachedEnvironmentContext, _cachedHazardZoneRuntime);
+            _cachedChemicalInfluence = GlobalRegistry.ChemicalInfluence;
+            CacheScannerLocalizationCold();
+            _cachedAtlasSignal = GlobalRegistry.AtlasSignalReadModel;
+            _cachedLoreDatabase = GlobalRegistry.LoreUnlockReadModel;
+            _scannerBlackBoxVault = GlobalRegistry.DataVault;
+            EnsureScientificNativeState();
+        }
+
+        private void CacheScannerLocalizationCold()
+        {
+            _cachedBabelLocalization = GlobalRegistry.BabelLocalization;
+            ApplyScannerLocalizationCache(_cachedBabelLocalization);
+        }
+
+        private static void ApplyScannerLocalizationCache(IBabelLocalization localization)
+        {
+            ushort languageId = localization != null ? localization.ActiveLanguageId : ushort.MaxValue;
+            if (ReferenceEquals(s_cachedScannerBabelLocalization, localization) &&
+                s_cachedScannerLocalizationLanguageId == languageId)
+            {
+                return;
+            }
+
+            s_cachedScannerBabelLocalization = localization;
+            s_cachedScannerLocalizationLanguageId = languageId;
+            RefreshScannerLocalizationCache(localization);
+        }
+
+        private static void RefreshScannerLocalizationCache(IBabelLocalization localization)
+        {
+            s_scannerBearingDown = ResolveBabelString(localization, H8LocHashes.SCANNER_BEARING_DOWN, "DIRECTLY BELOW");
+            s_scannerBearingLeft = ResolveBabelString(localization, H8LocHashes.SCANNER_BEARING_LEFT, "LEFT");
+            s_scannerBearingRight = ResolveBabelString(localization, H8LocHashes.SCANNER_BEARING_RIGHT, "RIGHT");
+            s_scannerCategory = ResolveBabelString(localization, H8LocHashes.SCANNER_CATEGORY, "SCAN");
+            s_scannerDirectiveRecharging = ResolveBabelString(localization, H8LocHashes.SCANNER_DIRECTIVE_RECHARGING, "Scanner lattice is drifting under corrosion. Expect shorter returns and slower recycle.");
+            s_scannerHudClear = ResolveBabelString(localization, H8LocHashes.SCANNER_HUD_CLEAR, "SCANNER - CLEAR | No meaningful contacts in the active sweep.");
+            s_scannerHudContacts = ResolveBabelString(localization, H8LocHashes.SCANNER_HUD_CONTACTS, "SCANNER - CONTACTS {0} // BIO {1} | {2}");
+            s_scannerHudContactsWithFlora = ResolveBabelString(localization, H8LocHashes.SCANNER_HUD_CONTACTS_WITH_FLORA, "SCANNER - CONTACTS {0} // BIO {1} // FLORA {2} | {3}");
+            s_scannerHudNoResource = ResolveBabelString(localization, H8LocHashes.SCANNER_HUD_NO_RESOURCE, "SCANNER - NO RESOURCE SIGNATURES | Sweep another extraction lane.");
+            s_scannerHudNoStructure = ResolveBabelString(localization, H8LocHashes.SCANNER_HUD_NO_STRUCTURE, "SCANNER - NO STRUCTURAL CONTACTS | No buildable or databank return in this sector.");
+            s_scannerHudRecharging = ResolveBabelString(localization, H8LocHashes.SCANNER_HUD_RECHARGING, "SCANNER - RECHARGING");
+            s_scannerHudResourceContacts = ResolveBabelString(localization, H8LocHashes.SCANNER_HUD_RESOURCE_CONTACTS, "SCANNER - RESOURCES {0} // PICKUPS {1} | {2}");
+            s_scannerHudStructureContacts = ResolveBabelString(localization, H8LocHashes.SCANNER_HUD_STRUCTURE_CONTACTS, "SCANNER - STRUCTURES {0} // ROUTE {1} | {2}");
+            s_scannerLogExpeditionSweepComplete = ResolveBabelString(localization, H8LocHashes.SCANNER_LOG_EXPEDITION_SWEEP_COMPLETE, "HYDROACOUSTIC CONTACTS ARCHIVED");
+            s_scannerLogResourceSweepComplete = ResolveBabelString(localization, H8LocHashes.SCANNER_LOG_RESOURCE_SWEEP_COMPLETE, "RESOURCE SWEEP COMPLETE");
+            s_scannerLogStructureSweepComplete = ResolveBabelString(localization, H8LocHashes.SCANNER_LOG_STRUCTURE_SWEEP_COMPLETE, "STRUCTURE SWEEP COMPLETE");
+            s_scannerModeExpedition = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_EXPEDITION, "EXPEDITION");
+            s_scannerModeHudExpedition = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_HUD_EXPEDITION, "SCANNER MODE - EXPEDITION");
+            s_scannerModeHudResource = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_HUD_RESOURCE, "SCANNER MODE - RESOURCE");
+            s_scannerModeHudStructure = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_HUD_STRUCTURE, "SCANNER MODE - STRUCTURE");
+            s_scannerModeLogExpedition = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_LOG_EXPEDITION, "SCAN MODE - EXPEDITION");
+            s_scannerModeLogResource = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_LOG_RESOURCE, "SCAN MODE - RESOURCE");
+            s_scannerModeLogStructure = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_LOG_STRUCTURE, "SCAN MODE - STRUCTURE");
+            s_scannerModeResource = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_RESOURCE, "RESOURCE");
+            s_scannerModeStructure = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_STRUCTURE, "STRUCTURE");
+            s_scannerModeSummaryExpedition = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_SUMMARY_EXPEDITION, "Scanner now runs full-spectrum expedition sweeps across all supported contact classes.");
+            s_scannerModeSummaryResource = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_SUMMARY_RESOURCE, "Scanner now prioritizes mineral, salvage, and cached pickup signatures.");
+            s_scannerModeSummaryStructure = ResolveBabelString(localization, H8LocHashes.SCANNER_MODE_SUMMARY_STRUCTURE, "Scanner now prioritizes authored intel contacts, module markers, and structural returns.");
+            s_scannerRecommendAdvanceScout = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_ADVANCE_SCOUT, "Advance to the next scouting point.");
+            s_scannerRecommendBioformPresent = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_BIOFORM_PRESENT, "Bioform signatures are present. Confirm posture before closing distance.");
+            s_scannerRecommendCachedPickupsOnly = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_CACHED_PICKUPS_ONLY, "Cached pickups exist, but no live resource node is leading this lane.");
+            s_scannerRecommendCargoPresent = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_CARGO_PRESENT, "Cargo signatures are present. Prepare propulsion or harpoon handling before transit.");
+            s_scannerRecommendDatabankOnly = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_DATABANK_ONLY, "Databank signal only. Sweep closer before committing tools.");
+            s_scannerRecommendDenseSector = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_DENSE_SECTOR, "Sector is dense with contacts. Slow down and classify before pushing deeper.");
+            s_scannerRecommendExpeditionWaypoint = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_EXPEDITION_WAYPOINT, "Expedition waypoint resolved. Use it as a checkpoint before pushing deeper.");
+            s_scannerRecommendFloraPresent = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_FLORA_PRESENT, "Flora signatures are present. Log the contact and inspect shelter, cover, or harvest value before moving on.");
+            s_scannerRecommendHazardProbe = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_HAZARD_PROBE, "Hazard probe resolved. Switch to cautious approach and inspect with focus tools.");
+            s_scannerRecommendHoldRoute = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_HOLD_ROUTE, "Hold this route for construction, salvage, or return navigation.");
+            s_scannerRecommendMarkRichestLane = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_MARK_RICHEST_LANE, "Mark the richest lane and recover in sequence.");
+            s_scannerRecommendResourcePocket = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_RESOURCE_POCKET, "A resource pocket is authored in this lane. Sweep it, then recover in sequence.");
+            s_scannerRecommendRouteMarkers = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_ROUTE_MARKERS, "Route markers are live in this sector. Hold the lane readable and stage beacon relays.");
+            s_scannerRecommendShiftLane = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_SHIFT_LANE, "Shift to another extraction lane.");
+            s_scannerRecommendSparseField = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_SPARSE_FIELD, "Sparse contact field. Safe to keep moving with periodic sweeps.");
+            s_scannerRecommendStructuralWaypoint = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_STRUCTURAL_WAYPOINT, "Structural waypoint resolved. Hold this route for navigation or service work.");
+            s_scannerRecommendWidenSearch = ResolveBabelString(localization, H8LocHashes.SCANNER_RECOMMEND_WIDEN_SEARCH, "Widen the search or continue transit.");
+            s_scannerSummaryContacts = ResolveBabelString(localization, H8LocHashes.SCANNER_SUMMARY_CONTACTS, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts. Recommendation: {3}");
+            s_scannerSummaryContactsWithFlora = ResolveBabelString(localization, H8LocHashes.SCANNER_SUMMARY_CONTACTS_WITH_FLORA, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts and {3} flora signatures. Recommendation: {4}");
+            s_scannerSummaryNoContacts = ResolveBabelString(localization, H8LocHashes.SCANNER_SUMMARY_NO_CONTACTS, "No meaningful contacts were resolved in the last {0:0}m hydroacoustic sweep. Recommendation: Advance to the next scouting point.");
+            s_scannerSummaryNoResource = ResolveBabelString(localization, H8LocHashes.SCANNER_SUMMARY_NO_RESOURCE, "No harvestable or cached resource signatures were resolved inside the {0:0}m sweep. Recommendation: Shift to another extraction lane.");
+            s_scannerSummaryNoStructure = ResolveBabelString(localization, H8LocHashes.SCANNER_SUMMARY_NO_STRUCTURE, "No modules, markers, or authored intel contacts were resolved inside the {0:0}m sweep. Recommendation: Continue transit or widen the structural search area.");
+            s_scannerSummaryResourceContacts = ResolveBabelString(localization, H8LocHashes.SCANNER_SUMMARY_RESOURCE_CONTACTS, "{0} resource signatures and {1} cached pickups resolved inside {2:0}m. Recommendation: {3}");
+            s_scannerSummaryStructureContacts = ResolveBabelString(localization, H8LocHashes.SCANNER_SUMMARY_STRUCTURE_CONTACTS, "{0} structural contacts, {1} route markers, and {2} databank contacts resolved inside {3:0}m. Recommendation: {4}");
+        }
+
+        private static string ResolveBabelString(IBabelLocalization localization, uint keyHash, string fallback)
+        {
+            return localization != null &&
+                   localization.TryGetLocalizedBuffer(keyHash, out char[] buffer, out int length) &&
+                   buffer != null &&
+                   length > 0
+                ? new string(buffer, 0, length)
+                : (fallback ?? string.Empty);
         }
 
         private void ClearCachedRuntimeServicesCold()
         {
-            _cachedSurvivalSystem = null;
+            _cachedSurvivalEnvironment = null;
             _cachedPlayerContext = null;
+            _cachedVoxelSdfReadModel = null;
+            _cachedEnvironmentContext = null;
+            _cachedHazardZoneRuntime = null;
+            _cachedHazardZones = null;
+            _cachedChemicalInfluence = null;
+            _cachedBabelLocalization = null;
+            ApplyScannerLocalizationCache(null);
             _cachedAtlasSignal = null;
             _cachedLoreDatabase = null;
-            _nextSurvivalResolveAt = 0f;
-        }
-
-        private AtlasSignalSystem ResolveCachedAtlasSignalCold()
-        {
-            AtlasSignalSystem signal = _cachedAtlasSignal;
-            if (signal != null)
-                return signal;
-
-            signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
-            _cachedAtlasSignal = signal;
-            return signal;
-        }
-
-        private LoreDatabaseManager ResolveCachedLoreDatabaseCold()
-        {
-            LoreDatabaseManager database = _cachedLoreDatabase;
-            if (database != null)
-                return database;
-
-            database = Hecton8.Core.GlobalRegistry.LoreDatabase;
-            _cachedLoreDatabase = database;
-            return database;
         }
 
         private void ResolveScientificWaterMetrics(
@@ -3868,11 +3624,12 @@ namespace Hecton8.Gameplay
             out float toxicity01,
             out float depthMeters)
         {
-            ResolveCachedSurvivalSystem();
-            if (_cachedSurvivalSystem != null)
+            if (TryReadSurvivalWaterSnapshot(out PlayerSurvivalEnvironmentSnapshot survivalEnvironment))
             {
-                temperatureC = _cachedSurvivalSystem.EnvironmentTemperature;
-                depthMeters = Mathf.Max(0f, _cachedSurvivalSystem.Depth);
+                temperatureC = math.isfinite(survivalEnvironment.EnvironmentTemperatureCelsius)
+                    ? survivalEnvironment.EnvironmentTemperatureCelsius
+                    : ScientificDefaultTemperatureC;
+                depthMeters = SafeNonNegative(survivalEnvironment.DepthMeters);
             }
             else
             {
@@ -3880,21 +3637,86 @@ namespace Hecton8.Gameplay
                 depthMeters = 0f;
             }
 
-            toxicity01 = math.saturate(HectonHazardManager.GetHazardIntensity(worldPosition, HazardType.Toxicity));
+            toxicity01 = SampleScientificToxicity01(worldPosition);
             float haloclineT = math.saturate(depthMeters * InvScientificSalinityDepthRangeMeters);
             salinityPpt = math.lerp(ScientificSurfaceSalinityPpt, ScientificDeepSalinityPpt, haloclineT) +
                           (chemicalLoad01 * 0.35f) +
                           (toxicity01 * 0.25f);
         }
 
-        private static bool TrySampleScientificChemicalSignal(Vector3 worldPosition, out float4 chemicalSignal)
+        private static IPlayerSurvivalEnvironmentReadModel SelectSurvivalEnvironmentReadModelCold(IPlayerRuntimeContext playerContext)
+        {
+            return playerContext as IPlayerSurvivalEnvironmentReadModel;
+        }
+
+        private bool TryReadSurvivalWaterSnapshot(out PlayerSurvivalEnvironmentSnapshot survivalEnvironment)
+        {
+            IPlayerSurvivalEnvironmentReadModel survivalReadModel = _cachedSurvivalEnvironment;
+            if (survivalReadModel != null &&
+                survivalReadModel.TryGetSurvivalEnvironmentSnapshot(out survivalEnvironment))
+            {
+                return true;
+            }
+
+            survivalEnvironment = default;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null ||
+                !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
+            {
+                return false;
+            }
+
+            survivalEnvironment.EnvironmentTemperatureCelsius = ScientificDefaultTemperatureC;
+            survivalEnvironment.DepthMeters = SafeNonNegative(movementState.DepthMeters);
+            survivalEnvironment.Flags = movementState.Flags;
+            return true;
+        }
+
+        private static IHazardZoneReadModel SelectHazardZoneReadModelCold(
+            IEnvironmentRuntimeContext environmentContext,
+            IHazardZoneReadModel fallbackHazardZones)
+        {
+            IHazardZoneReadModel hazardZones = environmentContext as IHazardZoneReadModel;
+            return hazardZones ?? fallbackHazardZones;
+        }
+
+        private float SampleScientificToxicity01(Vector3 runtimePosition)
+        {
+            IHazardZoneReadModel hazardZones = _cachedHazardZones;
+            if (hazardZones == null ||
+                !TryResolveScientificRuntimeAup(runtimePosition, out AbsoluteUniversePosition pointAup))
+            {
+                return 0f;
+            }
+
+            return math.saturate(hazardZones.GetToxicityIntensity(in pointAup));
+        }
+
+        private bool TryResolveScientificRuntimeAup(
+            Vector3 runtimePosition,
+            out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot poseSnapshot))
+            {
+                return false;
+            }
+
+            return TryResolveRuntimeAup(runtimePosition, in poseSnapshot, out positionAup);
+        }
+
+        private bool TrySampleScientificChemicalSignal(Vector3 worldPosition, out float4 chemicalSignal)
         {
             chemicalSignal = float4.zero;
-            return ChemicalInfluenceGrid.TrySampleNormalizedChannels(worldPosition, out chemicalSignal) &&
+            IChemicalInfluenceReadModel chemicalInfluence = _cachedChemicalInfluence;
+            return chemicalInfluence != null &&
+                chemicalInfluence.TryReadNormalizedChannels(worldPosition, out chemicalSignal) &&
                 math.cmax(math.abs(chemicalSignal)) > 0.0001f;
         }
 
-        private static bool TrySampleScientificAttractantGradient(
+        private bool TrySampleScientificAttractantGradient(
             Vector3 worldPosition,
             float now,
             out float bloodSignal01,
@@ -3906,64 +3728,15 @@ namespace Hecton8.Gameplay
             exhaustSignal01 = 0f;
             bloodGradient = float3.zero;
             exhaustGradient = float3.zero;
-            if (!ChemicalInfluenceGrid.TryGetPublishedBreadcrumbs(
-                    out NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> breadcrumbs,
-                    out int breadcrumbCount,
-                    out _))
-            {
-                return false;
-            }
-
-            float3 center = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
-            int safeCount = math.min(breadcrumbCount, breadcrumbs.Length);
-            float3 bloodGradientWeighted = float3.zero;
-            float3 exhaustGradientWeighted = float3.zero;
-            float bloodWeight = 0f;
-            float exhaustWeight = 0f;
-            for (int i = 0; i < safeCount; i++)
-            {
-                ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint waypoint = breadcrumbs[i];
-                if (waypoint.ExpiresAt <= now || waypoint.RadiusMeters <= 0f)
-                    continue;
-
-                float radius = math.max(1f, waypoint.RadiusMeters);
-                float3 delta = waypoint.RuntimePosition - center;
-                float distanceSq = math.lengthsq(delta);
-                float radiusSq = radius * radius;
-                if (distanceSq > radiusSq)
-                    continue;
-
-                float falloff = SmoothStep01(1f - math.saturate(distanceSq * math.rcp(radiusSq)));
-                float blood = math.saturate(waypoint.Channels.x * falloff);
-                float exhaust = math.saturate(waypoint.Channels.y * falloff);
-                float3 direction = distanceSq > 0.000001f ? delta * math.rsqrt(distanceSq) : float3.zero;
-                bloodSignal01 = math.max(bloodSignal01, blood);
-                exhaustSignal01 = math.max(exhaustSignal01, exhaust);
-                if (blood > 0.0001f)
-                {
-                    bloodGradientWeighted += direction * blood;
-                    bloodWeight += blood;
-                }
-
-                if (exhaust > 0.0001f)
-                {
-                    exhaustGradientWeighted += direction * exhaust;
-                    exhaustWeight += exhaust;
-                }
-            }
-
-            if (bloodWeight > 0f)
-                bloodGradient = ResolveSafeDirection(bloodGradientWeighted * math.rcp(bloodWeight));
-            if (exhaustWeight > 0f)
-                exhaustGradient = ResolveSafeDirection(exhaustGradientWeighted * math.rcp(exhaustWeight));
-
-            return bloodSignal01 > 0.0001f || exhaustSignal01 > 0.0001f;
-        }
-
-        private static float SmoothStep01(float value)
-        {
-            float t = math.saturate(value);
-            return t * t * (3f - 2f * t);
+            IChemicalInfluenceReadModel chemicalInfluence = _cachedChemicalInfluence;
+            return chemicalInfluence != null &&
+                chemicalInfluence.TryReadAttractantGradient(
+                    worldPosition,
+                    now,
+                    out bloodSignal01,
+                    out exhaustSignal01,
+                    out bloodGradient,
+                    out exhaustGradient);
         }
 
         private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
@@ -3981,6 +3754,12 @@ namespace Hecton8.Gameplay
         private static float SafeSaturate01(float value)
         {
             return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float ResolveScannerPresentationQuality01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(quality) ? math.saturate(quality) : 1f;
         }
 
         private static float SafeNonNegative(float value)
@@ -4031,31 +3810,67 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static bool TrySampleScientificDensity(
-            HectonVoxelVolume volume,
+        private bool TrySampleScientificDensity(
+            IVoxelSonarSdfSampleSource sampleSource,
             Vector3 worldPosition,
             out float density,
             out float density01)
         {
             density = 0f;
             density01 = 0f;
-            if (volume == null ||
-                !volume.TryGetPublishedSonarSdfPayload(
-                    out NativeArray<byte> encodedSdf,
-                    out Vector3Int gridDimensions,
-                    out Vector3 volumeOrigin,
-                    out Vector3 voxelCellSize,
-                    out float sdfRange,
-                    out _))
+            float3 runtimePosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
+            if (!math.all(math.isfinite(runtimePosition)))
             {
                 return false;
             }
 
+            if (sampleSource != null &&
+                sampleSource.TrySampleSonarSdf(runtimePosition, out float sourceDensity, out float sourceDensity01) &&
+                math.isfinite(sourceDensity) &&
+                math.isfinite(sourceDensity01))
+            {
+                density = sourceDensity;
+                density01 = SafeSaturate01(sourceDensity01);
+                return true;
+            }
+
+            Hecton8.Core.Contracts.IVoxelSonarSdfReadModel readModel = _cachedVoxelSdfReadModel;
+            if (readModel == null ||
+                !readModel.TrySampleNearestSonarSdf(runtimePosition, out float modelDensity, out float modelDensity01) ||
+                !math.isfinite(modelDensity) ||
+                !math.isfinite(modelDensity01))
+            {
+                return false;
+            }
+
+            density = modelDensity;
+            density01 = SafeSaturate01(modelDensity01);
+            return true;
+        }
+
+        private static bool TrySampleScientificDensity(
+            NativeArray<byte> encodedSdf,
+            int3 gridDimensions,
+            float3 volumeOrigin,
+            float3 voxelCellSize,
+            float sdfRange,
+            Vector3 worldPosition,
+            out float density,
+            out float density01)
+        {
+            density = 0f;
+            density01 = 0f;
             if (!encodedSdf.IsCreated ||
                 gridDimensions.x <= 1 ||
                 gridDimensions.y <= 1 ||
                 gridDimensions.z <= 1 ||
-                sdfRange <= 0f)
+                !math.all(math.isfinite(volumeOrigin)) ||
+                !math.all(math.isfinite(voxelCellSize)) ||
+                !math.isfinite(sdfRange) ||
+                sdfRange <= 0f ||
+                !math.isfinite(worldPosition.x) ||
+                !math.isfinite(worldPosition.y) ||
+                !math.isfinite(worldPosition.z))
             {
                 return false;
             }
@@ -4068,13 +3883,13 @@ namespace Hecton8.Gameplay
             float sampleZ = math.clamp((worldPosition.z - volumeOrigin.z) * invCellSizeZ, 0f, gridDimensions.z - 1.001f);
 
             density = DecodeScientificDensity(encodedSdf, gridDimensions, sdfRange, sampleX, sampleY, sampleZ);
-            density01 = math.saturate(math.max(0f, density) * math.rcp(sdfRange));
+            density01 = math.saturate(math.max(0f, density) * math.rcp(math.max(0.0001f, sdfRange)));
             return true;
         }
 
         private static float DecodeScientificDensity(
             NativeArray<byte> encodedSdf,
-            Vector3Int gridDimensions,
+            int3 gridDimensions,
             float sdfRange,
             float sampleX,
             float sampleY,
@@ -4110,7 +3925,7 @@ namespace Hecton8.Gameplay
 
         private static float DecodeScientificDensityAt(
             NativeArray<byte> encodedSdf,
-            Vector3Int gridDimensions,
+            int3 gridDimensions,
             float sdfRange,
             int x,
             int y,

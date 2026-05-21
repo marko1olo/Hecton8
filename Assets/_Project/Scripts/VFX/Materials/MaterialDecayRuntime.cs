@@ -57,7 +57,7 @@ namespace Hecton8.VFX.Materials
         private float rustAcousticIntensity = 0.38f;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<MaterialDecayState> _blackBoxHandle;
+        private VaultGenerationHandle<MaterialDecayState> _blackBoxHandle;
         private ITickDispatcher _tickDispatcher;
         private Texture2D _runtimeFallbackAtlas;
         private Vector4 _lastRuntimeVector = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
@@ -149,6 +149,7 @@ namespace Hecton8.VFX.Materials
             _tickDispatcher = null;
             _dispatcherReady = false;
             UploadZeroState();
+            ReleaseBlackBoxBuffer();
         }
 
         private void OnDestroy()
@@ -159,7 +160,7 @@ namespace Hecton8.VFX.Materials
             if (ReferenceEquals(s_runtimeInstance, this))
                 s_runtimeInstance = null;
 
-            ClearBlackBoxLease();
+            ReleaseBlackBoxBuffer();
 
             if (_runtimeFallbackAtlas != null)
             {
@@ -448,8 +449,8 @@ namespace Hecton8.VFX.Materials
             if (ReferenceEquals(_dataVault, vault))
                 return;
 
+            ReleaseBlackBoxBuffer();
             _dataVault = vault;
-            _blackBoxHandle = default;
             _blackBoxReady = false;
         }
 
@@ -457,40 +458,64 @@ namespace Hecton8.VFX.Materials
         {
             if (!ValidateNativeLayout())
             {
-                ClearBlackBoxLease();
+                ReleaseBlackBoxBuffer();
                 return false;
             }
 
             IDataVault vault = _dataVault;
             if (vault == null)
             {
-                ClearBlackBoxLease();
+                ClearBlackBoxDescriptor();
                 return false;
             }
             if (vault.IsCompactionFenceActive)
             {
-                _blackBoxHandle = default;
-                _blackBoxReady = false;
+                ClearBlackBoxDescriptor();
                 return false;
             }
 
-            if (!ReferenceEquals(_dataVault, vault))
+            if (IsVaultHandleCreated(in _blackBoxHandle) &&
+                vault.TryResolveHandle(in _blackBoxHandle, out NativeArray<MaterialDecayState> currentBlackBox) &&
+                currentBlackBox.IsCreated &&
+                currentBlackBox.Length >= TelemetryCapacity)
             {
-                BindDataVault(vault);
+                _blackBoxReady = true;
+                return true;
             }
 
-            if (!vault.TryGetBufferHandle(BufferID.MaterialDecayBlackBox, out _blackBoxHandle) ||
-                !_blackBoxHandle.IsCreated)
-            {
-                _blackBoxHandle = vault.GetBufferHandle<MaterialDecayState>(
+            ClearBlackBoxDescriptor();
+            if (vault.TryGetGenerationHandle(
                     BufferID.MaterialDecayBlackBox,
-                    TelemetryCapacity,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
+                    out VaultGenerationHandle<MaterialDecayState> existing) &&
+                vault.TryResolveHandle(in existing, out NativeArray<MaterialDecayState> existingBlackBox) &&
+                existingBlackBox.IsCreated &&
+                existingBlackBox.Length >= TelemetryCapacity)
+            {
+                _blackBoxHandle = existing;
+                _blackBoxReady = true;
+                return true;
             }
 
-            _blackBoxReady = _blackBoxHandle.IsCreated && _blackBoxHandle.Length >= TelemetryCapacity;
-            return _blackBoxReady;
+            if (vault.IsAllocationLocked)
+                return false;
+
+            VaultGenerationHandle<MaterialDecayState> acquired = vault.GetGenerationHandle<MaterialDecayState>(
+                BufferID.MaterialDecayBlackBox,
+                TelemetryCapacity,
+                SystemID.Vfx,
+                NativeArrayOptions.ClearMemory);
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out NativeArray<MaterialDecayState> acquiredBlackBox) ||
+                !acquiredBlackBox.IsCreated ||
+                acquiredBlackBox.Length < TelemetryCapacity)
+            {
+                ClearBlackBoxDescriptor();
+                return false;
+            }
+
+            _blackBoxHandle = acquired;
+            _blackBoxReady = true;
+            return true;
         }
 
         private bool TryResolveBlackBox(out NativeArray<MaterialDecayState> blackBox)
@@ -499,27 +524,46 @@ namespace Hecton8.VFX.Materials
             if (!EnsureBlackBox())
                 return false;
 
-            if (!_dataVault.TryGetBufferHandle(BufferID.MaterialDecayBlackBox, out _blackBoxHandle) ||
-                !_blackBoxHandle.IsCreated)
+            if (_dataVault == null ||
+                !_dataVault.TryResolveHandle(in _blackBoxHandle, out blackBox) ||
+                !blackBox.IsCreated ||
+                blackBox.Length < TelemetryCapacity)
             {
-                ClearBlackBoxLease();
+                ClearBlackBoxDescriptor();
                 return false;
             }
 
-            blackBox = _blackBoxHandle.Resolve(_dataVault);
-            return blackBox.IsCreated && blackBox.Length >= TelemetryCapacity;
+            return true;
         }
 
-        private void ClearBlackBoxLease()
+        private void ClearBlackBoxDescriptor()
         {
-            _dataVault = null;
             _blackBoxHandle = default;
+            _blackBoxReady = false;
+        }
+
+        private void ReleaseBlackBoxBuffer()
+        {
+            ReleaseVaultBuffer(_dataVault, ref _blackBoxHandle);
             _blackBoxReady = false;
         }
 
         private static bool ValidateNativeLayout()
         {
             return UnsafeUtility.SizeOf<MaterialDecayState>() == MaterialDecayStateSizeBytes;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void PushBlackBox()

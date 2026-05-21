@@ -160,7 +160,7 @@ namespace Hecton8.Construction
             AbsoluteUniversePosition dockAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(dockPosition.x, dockPosition.y, dockPosition.z));
-            return MathGuard.IsFinite(in dockAup) ? dockAup : originAup;
+            return dockAup.IsFinite() ? dockAup : originAup;
         }
 
         internal static RepairDroneHub GetActiveHubAt(int index)
@@ -451,7 +451,7 @@ namespace Hecton8.Construction
                 return;
 
             PowerGrid grid = _powerNode.Grid;
-            if (!task.IsValid || grid.HasPowerDeficit)
+            if (!task.IsValid() || grid.HasPowerDeficit)
                 return;
 
             int requiredSupplyUnits = ResolveMissionSupplyUnits(in task);

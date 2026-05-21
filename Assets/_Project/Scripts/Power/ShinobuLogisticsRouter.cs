@@ -182,31 +182,31 @@ namespace Hecton8.Power
         }
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<LogisticsNodeDTO> _nodesHandle;
-        private VaultBufferHandle<LogisticsEdgeDTO> _edgesHandle;
-        private VaultBufferHandle<ulong> _stateFlagsHandle;
-        private VaultBufferHandle<float> _oxygenFrontHandle;
-        private VaultBufferHandle<float> _oxygenBackHandle;
-        private VaultBufferHandle<float> _internalPressureHandle;
-        private VaultBufferHandle<float> _externalPressureHandle;
-        private VaultBufferHandle<float> _yieldThresholdHandle;
-        private VaultBufferHandle<float> _reinforcementHandle;
-        private VaultBufferHandle<double3> _nodeAupHandle;
-        private VaultBufferHandle<float3> _localPositionsHandle;
-        private VaultBufferHandle<byte> _priorityTierHandle;
-        private VaultBufferHandle<byte> _visitedHandle;
-        private VaultBufferHandle<int> _cellToNodeHandle;
-        private VaultBufferHandle<int> _countersHandle;
-        private VaultBufferHandle<LogisticsTuningDTO> _tuningHandle;
-        private VaultBufferHandle<LogisticsGraphTelemetryEntry> _blackBoxHandle;
-        private VaultBufferHandle<int> _componentIdsHandle;
-        private VaultBufferHandle<float> _pressureFrontHandle;
-        private VaultBufferHandle<float> _pressureBackHandle;
-        private VaultBufferHandle<float> _edgeRemainderMilliHandle;
-        private VaultBufferHandle<float> _csrEdgeCapacitiesHandle;
-        private VaultBufferHandle<float> _csrEdgeFlow01Handle;
-        private VaultBufferHandle<LogisticsComponentSpecDTO> _componentSpecsHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<LogisticsNodeDTO> _nodesHandle;
+        private VaultGenerationHandle<LogisticsEdgeDTO> _edgesHandle;
+        private VaultGenerationHandle<ulong> _stateFlagsHandle;
+        private VaultGenerationHandle<float> _oxygenFrontHandle;
+        private VaultGenerationHandle<float> _oxygenBackHandle;
+        private VaultGenerationHandle<float> _internalPressureHandle;
+        private VaultGenerationHandle<float> _externalPressureHandle;
+        private VaultGenerationHandle<float> _yieldThresholdHandle;
+        private VaultGenerationHandle<float> _reinforcementHandle;
+        private VaultGenerationHandle<double3> _nodeAupHandle;
+        private VaultGenerationHandle<float3> _localPositionsHandle;
+        private VaultGenerationHandle<byte> _priorityTierHandle;
+        private VaultGenerationHandle<byte> _visitedHandle;
+        private VaultGenerationHandle<int> _cellToNodeHandle;
+        private VaultGenerationHandle<int> _countersHandle;
+        private VaultGenerationHandle<LogisticsTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<LogisticsGraphTelemetryEntry> _blackBoxHandle;
+        private VaultGenerationHandle<int> _componentIdsHandle;
+        private VaultGenerationHandle<float> _pressureFrontHandle;
+        private VaultGenerationHandle<float> _pressureBackHandle;
+        private VaultGenerationHandle<float> _edgeRemainderMilliHandle;
+        private VaultGenerationHandle<float> _csrEdgeCapacitiesHandle;
+        private VaultGenerationHandle<float> _csrEdgeFlow01Handle;
+        private VaultGenerationHandle<LogisticsComponentSpecDTO> _componentSpecsHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
 
         internal NativeArray<LogisticsNodeDTO> _nodes;
         internal NativeArray<LogisticsEdgeDTO> _edges;
@@ -361,7 +361,7 @@ namespace Hecton8.Power
             _initialized = true;
             _missingVaultWarned = false;
             _active = this;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             _csvPath = ResolveCsvPath();
 #endif
         }
@@ -380,7 +380,7 @@ namespace Hecton8.Power
             TryConsumeStateSignals();
             TryConsumeDockingSignals();
             RefreshHardwareCadence();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             TryReloadCsvOverrides();
 #endif
 
@@ -722,7 +722,7 @@ namespace Hecton8.Power
 
         private static bool ResolveVaultBuffer<T>(
             IDataVault vault,
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
@@ -731,18 +731,27 @@ namespace Hecton8.Power
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (vault.IsAllocationLocked)
+            if (IsHandleValid(in handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
             {
-                if (!handle.IsCreated && !vault.TryGetBufferHandle<T>(bufferId, out handle))
-                    return false;
-
-                buffer = handle.Resolve(vault);
-                return buffer.IsCreated && buffer.Length >= requiredLength;
+                return true;
             }
 
-            handle = vault.GetBufferHandle<T>(bufferId, requiredLength, SystemID.Power, NativeArrayOptions.UninitializedMemory);
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated && buffer.Length >= requiredLength;
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle<T>(bufferId, out handle))
+                    return false;
+            }
+            else
+            {
+                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.Power, NativeArrayOptions.UninitializedMemory);
+            }
+
+            return vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
 
         private bool RefreshVaultAliases()
@@ -780,16 +789,23 @@ namespace Hecton8.Power
 
         private static bool RefreshVaultBuffer<T>(
             IDataVault vault,
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            if (vault == null || !handle.IsCreated)
+            if (vault == null || !IsHandleValid(in handle))
                 return false;
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated && buffer.Length >= requiredLength;
+            return vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsHandleValid<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u;
         }
 
         public static bool TryGetTuning(out LogisticsTuningDTO tuning)
@@ -820,7 +836,25 @@ namespace Hecton8.Power
                 return;
             }
 
-            active._tuning[0] = sanitized;
+            IDataVault vault = active._dataVault;
+            if (vault == null || !IsHandleValid(in active._tuningHandle))
+                return;
+
+            if (!vault.TryAcquireWriteLock(in active._tuningHandle, SystemID.Power, out NativeArray<LogisticsTuningDTO> tuningView))
+                return;
+
+            try
+            {
+                if (!tuningView.IsCreated || tuningView.Length == 0)
+                    return;
+
+                tuningView[0] = sanitized;
+                active._tuning = tuningView;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in active._tuningHandle, SystemID.Power);
+            }
         }
 
         public static bool TryGetDebugEdge(
@@ -1683,13 +1717,8 @@ namespace Hecton8.Power
 
         private string ResolveCsvPath()
         {
-            string streamingPath = Path.Combine(Application.streamingAssetsPath, "logistics_components.csv");
-            if (File.Exists(streamingPath))
-                return streamingPath;
-
             string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-            string rootStreamingPath = Path.Combine(root, "StreamingAssets", "logistics_components.csv");
-            return File.Exists(rootStreamingPath) ? rootStreamingPath : streamingPath;
+            return Path.Combine(root, "Assets", "_SourceData", "Power", "logistics_components.csv");
         }
 
         private void ParseCsv(int length)

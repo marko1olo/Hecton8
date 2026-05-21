@@ -220,9 +220,10 @@ namespace Hecton8.Gameplay
         private const int PendingStartedCapacity = 16;
         private const int PendingEndedCapacity = 16;
         private const int PendingSeismicShockwaveCapacity = 8;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<IRandomEventListener>[16] - deferred random event listeners - owner: RandomEventEvents
-        private static readonly RegistryBucket<IRandomEventListener> _listeners = new RegistryBucket<IRandomEventListener>(ListenerCapacity);
+        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - deferred random event listeners - owner: RandomEventEvents
+        private static int _listenerCount;
         private static NativeQueue<RandomEventStartedPayload> _pendingStarted;
         private static NativeQueue<RandomEventStartedPayload> _nextFrameStarted;
         private static NativeQueue<RandomEventType> _pendingEnded;
@@ -302,7 +303,9 @@ namespace Hecton8.Gameplay
             _pendingSeismicShockwaveCount = 0;
             _nextFrameSeismicShockwaveCount = 0;
             _isDispatching = false;
-            _listeners.Clear();
+            for (int i = 0; i < _listenerCount; i++)
+                _listeners[i].Clear();
+            _listenerCount = 0;
         }
 
         public static void Register(IRandomEventListener listener)
@@ -311,8 +314,7 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            RegisterImmediate(listener);
         }
 
         public static void Unregister(IRandomEventListener listener)
@@ -320,8 +322,7 @@ namespace Hecton8.Gameplay
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            TryUnregisterImmediate(listener);
         }
 
         public static void FlushPending()
@@ -330,7 +331,7 @@ namespace Hecton8.Gameplay
             _isDispatching = true;
             try
             {
-                if (_listeners.Count <= 0)
+                if (_listenerCount <= 0)
                 {
                     completed = DrainWithoutDispatch();
                 }
@@ -373,7 +374,7 @@ namespace Hecton8.Gameplay
 
         public static void RaiseStarted(RandomEventType type, float intensity)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureInitialized();
@@ -400,7 +401,7 @@ namespace Hecton8.Gameplay
 
         public static void RaiseEnded(RandomEventType type)
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureInitialized();
@@ -429,7 +430,7 @@ namespace Hecton8.Gameplay
                 FieldTargetRole.HazardProbe,
                 0,
                 payload.ImpulseMagnitude * 1000f));
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureInitialized();
@@ -452,7 +453,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingStarted.IsCreated)
             {
-                _pendingStarted = new NativeQueue<RandomEventStartedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - deferred random-event starts - owner: RandomEventEvents
+                _pendingStarted = new NativeQueue<RandomEventStartedPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - deferred random-event starts - owner: RandomEventEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingStarted,
                     PendingStartedCapacity,
@@ -463,7 +464,7 @@ namespace Hecton8.Gameplay
             }
             if (!_nextFrameStarted.IsCreated)
             {
-                _nextFrameStarted = new NativeQueue<RandomEventStartedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - next-frame random-event starts - owner: RandomEventEvents
+                _nextFrameStarted = new NativeQueue<RandomEventStartedPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - next-frame random-event starts - owner: RandomEventEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameStarted,
                     PendingStartedCapacity,
@@ -474,7 +475,7 @@ namespace Hecton8.Gameplay
             }
             if (!_pendingEnded.IsCreated)
             {
-                _pendingEnded = new NativeQueue<RandomEventType>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RandomEventType>[16] - deferred random-event ends - owner: RandomEventEvents
+                _pendingEnded = new NativeQueue<RandomEventType>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventType>[16] - deferred random-event ends - owner: RandomEventEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEnded,
                     PendingEndedCapacity,
@@ -485,7 +486,7 @@ namespace Hecton8.Gameplay
             }
             if (!_nextFrameEnded.IsCreated)
             {
-                _nextFrameEnded = new NativeQueue<RandomEventType>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RandomEventType>[16] - next-frame random-event ends - owner: RandomEventEvents
+                _nextFrameEnded = new NativeQueue<RandomEventType>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RandomEventType>[16] - next-frame random-event ends - owner: RandomEventEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEnded,
                     PendingEndedCapacity,
@@ -496,7 +497,7 @@ namespace Hecton8.Gameplay
             }
             if (!_pendingSeismicShockwaves.IsCreated)
             {
-                _pendingSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - deferred seismic shockwaves - owner: RandomEventEvents
+                _pendingSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - deferred seismic shockwaves - owner: RandomEventEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingSeismicShockwaves,
                     PendingSeismicShockwaveCapacity,
@@ -507,7 +508,7 @@ namespace Hecton8.Gameplay
             }
             if (!_nextFrameSeismicShockwaves.IsCreated)
             {
-                _nextFrameSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - next-frame seismic shockwaves - owner: RandomEventEvents
+                _nextFrameSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - next-frame seismic shockwaves - owner: RandomEventEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameSeismicShockwaves,
                     PendingSeismicShockwaveCapacity,
@@ -548,11 +549,10 @@ namespace Hecton8.Gameplay
 
                 _pendingStartedCount--;
                 scanBudget--;
-                IRandomEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
+                int count = _listenerCount;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    IRandomEventListener listener = rawArray[i];
+                    IRandomEventListener listener = _listeners[i].Listener;
                     if (listener == null)
                         continue;
 
@@ -582,11 +582,10 @@ namespace Hecton8.Gameplay
 
                 _pendingEndedCount--;
                 scanBudget--;
-                IRandomEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
+                int count = _listenerCount;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    IRandomEventListener listener = rawArray[i];
+                    IRandomEventListener listener = _listeners[i].Listener;
                     if (listener == null)
                         continue;
 
@@ -616,11 +615,10 @@ namespace Hecton8.Gameplay
 
                 _pendingSeismicShockwaveCount--;
                 scanBudget--;
-                IRandomEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
+                int count = _listenerCount;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    IRandomEventListener listener = rawArray[i];
+                    IRandomEventListener listener = _listeners[i].Listener;
                     if (listener == null)
                         continue;
 
@@ -765,6 +763,53 @@ namespace Hecton8.Gameplay
                 }
             }
         }
+
+        private static void RegisterImmediate(IRandomEventListener listener)
+        {
+            if (ContainsImmediate(listener) || _listenerCount >= ListenerCapacity)
+                return;
+
+            _listeners[_listenerCount].Listener = listener;
+            _listenerCount++;
+        }
+
+        private static bool TryUnregisterImmediate(IRandomEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (!ReferenceEquals(_listeners[i].Listener, listener))
+                    continue;
+
+                int lastIndex = _listenerCount - 1;
+                _listeners[i] = _listeners[lastIndex];
+                _listeners[lastIndex].Clear();
+                _listenerCount = lastIndex;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsImmediate(IRandomEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private struct ListenerSlot
+        {
+            public IRandomEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
     }
 
     [DisallowMultipleComponent]
@@ -848,12 +893,14 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _cachedPlayerContext;
         private HectonVoxelEngine _cachedVoxelEngine;
         private SargassumGlobalDragManager _cachedSargassumDrag;
+        private double _cachedUniverseTimeSeconds;
         private uint _eventRandomState = 0xA341316Cu;
         private float _meteorSeed = 99173f;
         private int _meteorLastBoomIndex = -1;
         private const float MeteorWaterPlaneY = 0f;
         private const float MeteorThunderSoundSpeedMetersPerSecond = HectonPhysicsContract.SoundSpeedAirMetersPerSecondConst;
         private const float InvSqrtTwo = 0.70710678118f;
+        private const byte GlobalTimeSyncValidFlag = 1;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string MeteorSplashQuadVfxTypeName = "MeteorSplashQuadVfx";
         private static readonly List<MonoBehaviour> _meteorSplashValidationScratch = new List<MonoBehaviour>(8);
@@ -1294,20 +1341,19 @@ namespace Hecton8.Gameplay
 
         private void BeginMeteorShower()
         {
-            _meteorSeed = ResolveMeteorAupTimeSeed();
+            _meteorSeed = BuildMeteorAupTimeSeed();
             _meteorLastBoomIndex = -1;
             PublishMeteorShowerGlobals(0f, math.saturate(meteorShowerIntensity), 1f);
         }
 
-        private int ResolveMeteorAupTimeSeed()
+        private int BuildMeteorAupTimeSeed()
         {
             uint aupSeed = 0u;
             if (TryResolvePlayerEventFrame(out _, out AbsoluteUniversePosition observerAup))
                 aupSeed = ResolveAupSeed(in observerAup);
 
-            double universeTime = GlobalRegistry.AbsoluteUniverseTime;
-            if (!math.isfinite(universeTime) || universeTime < 0d)
-                universeTime = 0d;
+            RefreshUniverseTimeSignalCache();
+            double universeTime = ReadCachedUniverseTimeSeconds();
 
             uint timeSeed = unchecked((uint)(long)math.floor(universeTime * 0.25d) * 747796405u);
             uint state = NextMeteorLcg(timeSeed ^ aupSeed ^ 0x4D45544Fu);
@@ -1635,9 +1681,7 @@ namespace Hecton8.Gameplay
 
         private void ApplySolarFlareRadiation(float dt)
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            HectonPlayerHealth playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
-            if (playerHealth == null)
+            if (!TryResolvePlayerEventFrame(out _, out AbsoluteUniversePosition playerAup))
                 return;
 
             float exposureStep = math.max(0f, dt) *
@@ -1646,7 +1690,10 @@ namespace Hecton8.Gameplay
             if (exposureStep <= 0f)
                 return;
 
-            playerHealth.ApplyRadiationExposure(playerHealth.RadiationExposureSeconds + exposureStep);
+            RadiationHazardGrid.ReportExternalDose(
+                exposureStep,
+                math.saturate(solarFlareIntensity),
+                in playerAup);
         }
 
         private void ClearPendingMeteorWaterBoom()
@@ -1758,7 +1805,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             int stampCount = NextEventRandomRange(settings.stampCountMin, settings.stampCountMax + 1);
-            uint stableSeed = ResolveAupTimelineSeed(in playerAup, targetVolume.RuntimeStamp);
+            uint stableSeed = BuildAupTimelineSeed(in playerAup, targetVolume.RuntimeStamp);
             if (!targetVolume.TryApplySeismicShockwave(
                     playerPosition,
                     stampCount,
@@ -1777,24 +1824,18 @@ namespace Hecton8.Gameplay
                 return false;
 
             ApplySeismicImpulse(playerPosition, in playerAup, settings.impulseRadius, settings.impulseMagnitude);
-            Vector3 trenchDirection = ResolveSeismicEventLineDirection(epicenterAup, stableSeed);
-            float halfTrenchLength = math.max(2f, settings.impulseRadius * 0.5f);
-            double3 trenchDirectionDouble = new double3(trenchDirection.x, trenchDirection.y, trenchDirection.z);
             seismicEvent = new SeismicShockwaveEvent(
                 playerPosition,
                 settings.impulseRadius,
                 settings.impulseMagnitude,
-                appliedStampCount,
-                epicenterAup - trenchDirectionDouble * halfTrenchLength,
-                epicenterAup + trenchDirectionDouble * halfTrenchLength);
+                appliedStampCount);
             return true;
         }
 
-        private static uint ResolveAupTimelineSeed(in AbsoluteUniversePosition aup, int runtimeStamp)
+        private uint BuildAupTimelineSeed(in AbsoluteUniversePosition aup, int runtimeStamp)
         {
-            double universeTime = GlobalRegistry.AbsoluteUniverseTime;
-            if (!math.isfinite(universeTime) || universeTime < 0d)
-                universeTime = 0d;
+            RefreshUniverseTimeSignalCache();
+            double universeTime = ReadCachedUniverseTimeSeconds();
 
             long timelineSlot = (long)math.floor(universeTime * 2d);
             unchecked
@@ -1813,6 +1854,24 @@ namespace Hecton8.Gameplay
                 state ^= state >> 16;
                 return state != 0u ? state : 0x9E3779B9u;
             }
+        }
+
+        private void RefreshUniverseTimeSignalCache()
+        {
+            System.ReadOnlySpan<GlobalTimeSyncSignal> signals = SignalBus<GlobalTimeSyncSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                GlobalTimeSyncSignal signal = signals[i];
+                double worldSeconds = signal.WorldSeconds;
+                if ((signal.Flags & GlobalTimeSyncValidFlag) != 0 && math.isfinite(worldSeconds) && worldSeconds >= 0d)
+                    _cachedUniverseTimeSeconds = worldSeconds;
+            }
+        }
+
+        private double ReadCachedUniverseTimeSeconds()
+        {
+            double universeTime = _cachedUniverseTimeSeconds;
+            return math.isfinite(universeTime) && universeTime >= 0d ? universeTime : 0d;
         }
 
         private static Vector3 ResolveSeismicEventLineDirection(double3 absoluteEpicenter, uint stableSeed)

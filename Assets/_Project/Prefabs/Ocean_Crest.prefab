@@ -350,7 +350,6 @@ GameObject:
   - component: {fileID: 8503459892740325226}
   - component: {fileID: 631104235710018481}
   - component: {fileID: 631104235710018482}
-  - component: {fileID: 4153056372701123456}
   - component: {fileID: 7666709485588549063}
   - component: {fileID: 1182089648734552001}
   - component: {fileID: 1954067716359082144}
@@ -417,9 +416,9 @@ MonoBehaviour:
   _extentsSizeMultiplier: 100
   _renderingLayerMask: 255
   _simSettingsAnimatedWaves: {fileID: 11400000, guid: 2e2bf04fba9811b438fd3258d5625fe9, type: 2}
-  _createSeaFloorDepthData: 1
+  _createSeaFloorDepthData: 0
   _simSettingsSeaFloorDepth: {fileID: 11400000, guid: 1e737699687b26a46b81eb44cb8c13c4, type: 2}
-  _createFoamSim: 1
+  _createFoamSim: 0
   _simSettingsFoam: {fileID: 11400000, guid: 831063101a0b3db46b6f855a3dcf4e61, type: 2}
   _createDynamicWaveSim: 0
   _simSettingsDynamicWaves: {fileID: 0}
@@ -626,20 +625,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Physics.Crest4KinematicsAdapter
   crestOceanRenderer: {fileID: 0}
   sceneSearchRetryInterval: 1
---- !u!114 &4153056372701123456
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5513631557248329811}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 51fcb9de0aa92b842be404fec8bf21d4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Physics.Crest5KinematicsAdapter
-  crestWaterRenderer: {fileID: 0}
-  sceneSearchRetryInterval: 1
 --- !u!114 &1182089648734552001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -647,7 +632,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5513631557248329811}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c8f54dfc1dc54c4da9a83c91f1c4b27a, type: 3}
   m_Name: 
@@ -705,7 +690,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1182089648734552003
 Transform:
   m_ObjectHideFlags: 0
@@ -728,7 +713,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1182089648734552002}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5be4155a909a5ef47bdaaf1422602735, type: 3}
   m_Name: 

@@ -3,19 +3,20 @@ using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton8.Physics.Vehicles
 {
     public sealed class SubmarineDynamicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, ISlowTickable, IVehicleCommandSignalListener
     {
         private const int MockSignalCapacity = 64;
-        private const int LowTierMockSignalCapacity = 8;
+        private const int SurvivalMockSignalCapacity = 8;
         private const long MaxCsvOverrideBytes = 4096L;
         private const uint HashBaseMassKg = 0xA5F7F6FCu;
         private const uint HashDragScale = 0x681E390Eu;
@@ -23,12 +24,17 @@ namespace Hecton8.Physics.Vehicles
         private const uint HashPidI = 0x946F62EAu;
         private const uint HashPidD = 0x896F5199u;
         private const uint HashGyroStrength = 0x3FE75EBEu;
+        private const uint HashHullVolumeM3 = 0xB0DE050Eu;
+        private const uint HashHullLengthM = 0x88BFE97Bu;
+        private const uint HashHullRadiusM = 0x379DD5DDu;
+        private const uint HashAddedMassMultiplier = 0x0EA616D0u;
+        private const uint HashFloodVolumeScalar = 0xE0BF9C4Fu;
         private const uint HashTargetDepthM = 0xA4492116u;
         private const uint HashMaxThrustN = 0x6DDC6935u;
         private const uint HashBallastLiftN = 0xDBC90E8Du;
         private const uint HashSloshSpring = 0x3466D6C8u;
         private const uint HashSloshDamping = 0x96934799u;
-        private const uint CavitationSourceId = 0x534B3131u; // SK11
+        private const uint CavitationSourceId = SubmarineDynamicsConstants.SourceHashAddedMass; // AM25
 
         [Header("Vault Lane")]
         [SerializeField, Range(1, SubmarineDynamicsConstants.MaxVehicles)] private int vehicleCapacity = 1;
@@ -60,15 +66,19 @@ namespace Hecton8.Physics.Vehicles
         [SerializeField, Min(0f)] private float sloshDamping = 2.5f;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<SubmarineKinematicState> _stateHandle;
-        private VaultBufferHandle<SubmarineKinematicControl> _controlHandle;
-        private VaultBufferHandle<SubmarinePidState> _pidHandle;
-        private VaultBufferHandle<SubmarineMassProperties> _massHandle;
-        private VaultBufferHandle<SubmarineForceAccumulator> _forceHandle;
-        private VaultBufferHandle<SubmarineKinematicTelemetry> _telemetryHandle;
-        private VaultBufferHandle<SubmarineKinematicConfig> _configHandle;
-        private VaultBufferHandle<float> _dragLutHandle;
-        private VaultBufferHandle<VehicleDamageStateDTO> _vehicleDamageStateReadHandle;
+        private VaultGenerationHandle<SubmarineKinematicState> _stateHandle;
+        private VaultGenerationHandle<SubmarineKinematicControl> _controlHandle;
+        private VaultGenerationHandle<SubmarinePidState> _pidHandle;
+        private VaultGenerationHandle<SubmarineMassProperties> _massHandle;
+        private VaultGenerationHandle<SubmarineForceAccumulator> _forceHandle;
+        private VaultGenerationHandle<SubmarineKinematicTelemetry> _telemetryHandle;
+        private VaultGenerationHandle<AddedMassProfileDTO> _addedMassHandle;
+        private VaultGenerationHandle<SubmarineHydrodynamicsTelemetry> _hydrodynamicsTelemetryHandle;
+        private VaultGenerationHandle<SubmarineHullProfileDTO> _hullProfileHandle;
+        private VaultGenerationHandle<SubmarineAddedMassTuningDTO> _addedMassTuningHandle;
+        private VaultGenerationHandle<SubmarineKinematicConfig> _configHandle;
+        private VaultGenerationHandle<float> _dragLutHandle;
+        private VaultGenerationHandle<VehicleDamageStateDTO> _vehicleDamageStateReadHandle;
         private JobHandle _integratorHandle;
         private bool _integratorPending;
         private bool _buffersLocked;
@@ -80,23 +90,35 @@ namespace Hecton8.Physics.Vehicles
         private bool _dumpWritten;
         private bool _hasPendingVehicleCommand;
         private uint _frameCounter;
+        private long _hydrodynamicsScheduleTicks;
         private int _commandTargetInstanceId;
         private int _visualCommandTargetInstanceId;
-        private int _fluidDensitySignalSequence;
         private float _fluidDensityMultiplier = 1f;
         private VehicleCommandSignal _pendingVehicleCommand;
         private long _csvLastWriteTicks;
+        private long _hullProfilesCsvLastWriteTicks;
         private string _projectRoot;
         private string _csvPath;
+        private string _hullProfilesCsvPath;
+
+        public static bool TryGetLatest(out SubmarineDynamicsRuntime runtime)
+        {
+            runtime = _latest;
+            return runtime != null && runtime._buffersReady;
+        }
+
+        private static SubmarineDynamicsRuntime _latest;
 
         private void OnEnable()
         {
+            _latest = this;
             _projectRoot = ResolveProjectRoot();
             _csvPath = Path.Combine(_projectRoot, "sub_physics_overrides.csv");
+            _hullProfilesCsvPath = Path.Combine(_projectRoot, "Data", "Physics", "vehicle_hull_profiles.csv");
             EnsureSignalLanes();
             RefreshCommandTargetIds();
             VehicleCommandSignalBus.Register(this);
-            ResolveDataVault();
+            EnsureDataVault();
             EnsureVaultBuffers();
 
             _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
@@ -128,6 +150,8 @@ namespace Hecton8.Physics.Vehicles
             _registeredPostFixed = false;
             _registeredLateFrame = false;
             _registeredSlow = false;
+            if (ReferenceEquals(_latest, this))
+                _latest = null;
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -148,6 +172,10 @@ namespace Hecton8.Physics.Vehicles
                     out NativeArray<SubmarineMassProperties> masses,
                     out NativeArray<SubmarineForceAccumulator> forces,
                     out NativeArray<SubmarineKinematicTelemetry> telemetry,
+                    out NativeArray<AddedMassProfileDTO> addedMassProfiles,
+                    out NativeArray<SubmarineHydrodynamicsTelemetry> hydrodynamicsTelemetry,
+                    out NativeArray<SubmarineHullProfileDTO> hullProfiles,
+                    out NativeArray<SubmarineAddedMassTuningDTO> addedMassTuning,
                     out NativeArray<SubmarineKinematicConfig> configs,
                     out NativeArray<float> dragLut))
             {
@@ -160,20 +188,25 @@ namespace Hecton8.Physics.Vehicles
             ConsumeSignals(controls, masses, forces, configs);
 
             uint frame = ++_frameCounter;
-            JobHandle seedHandle = default;
+            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            _hydrodynamicsScheduleTicks = Stopwatch.GetTimestamp();
             if (enableMockSignals)
-            {
-                MockFloodSignalSeederJob mockFloodJob = new MockFloodSignalSeederJob
-                {
-                    FloodWriter = SignalBus<MockFloodSignal>.ParallelWriter,
-                    Frame = frame,
-                    Seed = 0x5EED110Bu,
-                    LocalCompartment = ToFloat3(mockFloodLocal),
-                    MassKg = 1200f
-                };
+                TryPushMockFloodSignal(frame, quality);
 
-                seedHandle = mockFloodJob.Schedule();
-            }
+            CalculateAddedMassTensorJob addedMassJob = new CalculateAddedMassTensorJob
+            {
+                States = states,
+                MassProperties = masses,
+                Configs = configs,
+                HullProfiles = hullProfiles,
+                Tuning = addedMassTuning,
+                AddedMassProfiles = addedMassProfiles,
+                HydrodynamicsTelemetry = hydrodynamicsTelemetry,
+                GlobalQualityWeight = quality,
+                Frame = frame,
+                VehicleCount = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles)
+            };
+            JobHandle addedMassHandle = addedMassJob.Schedule(addedMassJob.VehicleCount, SubmarineDynamicsConstants.IntegratorBatchSize);
 
             Submarine6DIntegratorJob integratorJob = new Submarine6DIntegratorJob
             {
@@ -183,27 +216,38 @@ namespace Hecton8.Physics.Vehicles
                 MassProperties = masses,
                 Forces = forces,
                 Telemetry = telemetry,
+                AddedMassProfiles = addedMassProfiles,
+                Tuning = addedMassTuning,
                 Configs = configs,
                 DragLut = dragLut,
                 CavitationWriter = SignalBus<CavitationAcousticSignal>.ParallelWriter,
                 FixedDeltaTime = fixedDeltaTime,
-                GlobalQualityWeight = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f),
+                GlobalQualityWeight = quality,
                 Frame = frame,
                 VehicleCount = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles)
             };
 
-            _integratorHandle = integratorJob.Schedule(integratorJob.VehicleCount, SubmarineDynamicsConstants.IntegratorBatchSize, seedHandle);
-            _integratorHandle = VolcanicUpdraftVault.ScheduleSubmarineInjection(
-                _dataVault,
-                states,
-                forces,
-                configs,
-                _integratorHandle,
-                fixedDeltaTime,
-                frame,
-                integratorJob.VehicleCount);
+            _integratorHandle = integratorJob.Schedule(integratorJob.VehicleCount, SubmarineDynamicsConstants.IntegratorBatchSize, addedMassHandle);
             H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, _integratorHandle);
             _integratorPending = true;
+        }
+
+        private void TryPushMockFloodSignal(uint frame, float globalQualityWeight)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float curved = quality * quality * (3f - (2f * quality));
+            float probability = math.lerp(1f / 96f, 1f / 16f, curved);
+            uint hash = MixFrameHash(0x5EED110Bu, frame);
+            if (Hash01(hash) > probability)
+                return;
+
+            MockFloodSignal signal = default;
+            signal.LocalCompartment = ToFloat3(mockFloodLocal);
+            signal.WaterMassKg = 1200f;
+            signal.FillRatio01 = math.saturate(signal.WaterMassKg / 4000f);
+            signal.Frame = frame;
+            signal.Flags = 1;
+            SignalBus<MockFloodSignal>.TryPush(in signal);
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -215,6 +259,7 @@ namespace Hecton8.Physics.Vehicles
                 return;
 
             _integratorPending = false;
+            PatchHydrodynamicsElapsedMicros(ResolveElapsedMicros(_hydrodynamicsScheduleTicks));
             UnlockSimulationBuffers();
             DrainCavitationSignals();
             bool faulted = DumpBlackBoxIfFaulted();
@@ -227,22 +272,99 @@ namespace Hecton8.Physics.Vehicles
             if (_integratorPending || !_buffersReady || _dataVault == null)
                 return;
 
-            if (!_dataVault.ResolveBuffer(ref _stateHandle) || !_stateHandle.IsCreated)
+            if (!TryReadVaultHandle(in _stateHandle, out NativeArray<SubmarineKinematicState> states) || states.Length == 0)
                 return;
 
-            SubmarineKinematicState state = _stateHandle.GetElementAsReadOnlyRef(_dataVault, 0);
+            SubmarineKinematicState state = states[0];
             Transform target = visualRoot != null ? visualRoot : transform;
             Quaternion rotation = new Quaternion(state.Rotation.value.x, state.Rotation.value.y, state.Rotation.value.z, state.Rotation.value.w);
             target.SetPositionAndRotation(new Vector3(state.LocalPosition.x, state.LocalPosition.y, state.LocalPosition.z), rotation);
         }
 
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            Transform target = visualRoot != null ? visualRoot : transform;
+            float3 axisScale = ResolveEditorTensorAxisScale();
+            Vector3 origin = target.position;
+            Quaternion rotation = target.rotation;
+            TryResolveEditorKinematicPose(ref origin, ref rotation);
+            Vector3 forward = rotation * (Vector3.forward * axisScale.z);
+            Vector3 right = rotation * (Vector3.right * axisScale.x);
+            Vector3 up = rotation * (Vector3.up * axisScale.y);
+
+            Gizmos.color = new Color(0.15f, 0.55f, 1f, 0.85f);
+            Gizmos.DrawLine(origin - forward, origin + forward);
+            Gizmos.color = new Color(0.95f, 0.95f, 0.25f, 0.85f);
+            Gizmos.DrawLine(origin - right, origin + right);
+            Gizmos.color = new Color(0.25f, 1f, 0.65f, 0.85f);
+            Gizmos.DrawLine(origin - up, origin + up);
+            Gizmos.color = new Color(0.15f, 0.55f, 1f, 0.18f);
+            Matrix4x4 previousMatrix = Gizmos.matrix;
+            Gizmos.matrix = Matrix4x4.TRS(origin, rotation, new Vector3(axisScale.x, axisScale.y, axisScale.z));
+            Gizmos.DrawWireSphere(Vector3.zero, 1f);
+            Gizmos.matrix = previousMatrix;
+        }
+
+        private bool TryResolveEditorKinematicPose(ref Vector3 origin, ref Quaternion rotation)
+        {
+            if (!_buffersReady || _integratorPending || _buffersLocked || _dataVault == null)
+                return false;
+
+            if (!TryReadVaultHandle(in _stateHandle, out NativeArray<SubmarineKinematicState> states) || states.Length == 0)
+                return false;
+
+            SubmarineKinematicState state = states[0];
+            if (!math.all(math.isfinite(state.LocalPosition)) || !math.all(math.isfinite(state.Rotation.value)))
+                return false;
+
+            origin = new Vector3(state.LocalPosition.x, state.LocalPosition.y, state.LocalPosition.z);
+            quaternion safeRotation = SubmarineAddedMassMath.NormalizeSafe(state.Rotation);
+            rotation = new Quaternion(safeRotation.value.x, safeRotation.value.y, safeRotation.value.z, safeRotation.value.w);
+            return true;
+        }
+
+        private float3 ResolveEditorTensorAxisScale()
+        {
+            float fallbackLength;
+            float fallbackRadius;
+            if (!_buffersReady || _integratorPending || _buffersLocked || _dataVault == null)
+            {
+                SubmarineAddedMassMath.ResolveHullAxes(math.max(1f, hullVolumeM3), out fallbackLength, out fallbackRadius);
+                return new float3(fallbackRadius, fallbackRadius, fallbackLength * 0.5f);
+            }
+
+            if (!TryReadVaultHandle(in _addedMassHandle, out NativeArray<AddedMassProfileDTO> profiles) || profiles.Length == 0)
+            {
+                SubmarineAddedMassMath.ResolveHullAxes(math.max(1f, hullVolumeM3), out fallbackLength, out fallbackRadius);
+                return new float3(fallbackRadius, fallbackRadius, fallbackLength * 0.5f);
+            }
+
+            AddedMassProfileDTO profile = profiles[0];
+            float3 diag = SubmarineAddedMassMath.ExtractDiagonal(in profile.LinearAddedMass);
+            if (!math.all(math.isfinite(diag)) || math.any(diag <= 0.0001f))
+            {
+                SubmarineAddedMassMath.ResolveHullAxes(math.max(1f, hullVolumeM3), out fallbackLength, out fallbackRadius);
+                return new float3(fallbackRadius, fallbackRadius, fallbackLength * 0.5f);
+            }
+
+            float maxDiag = math.max(diag.x, math.max(diag.y, diag.z));
+            float3 normalizedSq = diag * math.rcp(math.max(maxDiag, 0.0001f));
+            float3 normalized = normalizedSq * math.rsqrt(math.max(normalizedSq, new float3(0.0001f)));
+            SubmarineAddedMassMath.ResolveHullAxes(math.max(1f, hullVolumeM3), out fallbackLength, out fallbackRadius);
+            float baseScale = math.clamp(math.max(fallbackRadius, fallbackLength * 0.5f), 1f, 24f);
+            return math.max(new float3(0.25f), normalized * baseScale);
+        }
+#endif
+
         public void SlowTick()
         {
-            ResolveDataVault();
+            EnsureDataVault();
             if (!_integratorPending && !_buffersLocked)
                 EnsureVaultBuffers();
             RefreshCommandTargetIds();
             TryApplyCsvOverrides();
+            TryApplyHullProfilesCsv();
         }
 
         public void OnVehicleCommandSignal(in VehicleCommandSignal signal)
@@ -262,58 +384,195 @@ namespace Hecton8.Physics.Vehicles
             _hasPendingVehicleCommand = true;
         }
 
-        private bool ResolveDataVault()
+        private bool EnsureDataVault()
         {
             if (_dataVault != null)
                 return true;
 
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                _dataVault = latest;
+            _dataVault = GlobalRegistry.DataVault;
 
             return _dataVault != null;
         }
 
+        private bool TryResolveVaultHandle<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return _dataVault != null && IsGenerationHandleCreated(in handle) && _dataVault.TryResolveHandle(in handle, out buffer);
+        }
+
+        private bool TryReadVaultHandle<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return _dataVault != null && IsGenerationHandleCreated(in handle) && _dataVault.TryReadHandle(in handle, out buffer);
+        }
+
+        private bool TryAcquireVaultWriteLock<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (_dataVault == null ||
+                !IsGenerationHandleCreated(in handle) ||
+                !_dataVault.TryAcquireWriteLock(in handle, SystemID.VehiclesPhysics, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated)
+                return true;
+
+            _dataVault.ReleaseWriteLock(in handle, SystemID.VehiclesPhysics);
+            buffer = default;
+            return false;
+        }
+
+        private void ReleaseVaultWriteLock<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (_dataVault != null && IsGenerationHandleCreated(in handle))
+                _dataVault.ReleaseWriteLock(in handle, SystemID.VehiclesPhysics);
+        }
+
+        private static bool IsGenerationHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
         private bool EnsureVaultBuffers()
         {
-            if (!ResolveDataVault())
+            if (!EnsureDataVault())
                 return false;
 
             int capacity = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles);
-            _stateHandle = _dataVault.GetBufferHandle<SubmarineKinematicState>(BufferID.SubmarineKinematicStates, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _controlHandle = _dataVault.GetBufferHandle<SubmarineKinematicControl>(BufferID.SubmarineKinematicControls, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _pidHandle = _dataVault.GetBufferHandle<SubmarinePidState>(BufferID.SubmarineKinematicPidStates, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _massHandle = _dataVault.GetBufferHandle<SubmarineMassProperties>(BufferID.SubmarineKinematicMassProperties, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _forceHandle = _dataVault.GetBufferHandle<SubmarineForceAccumulator>(BufferID.SubmarineKinematicForces, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = _dataVault.GetBufferHandle<SubmarineKinematicTelemetry>(BufferID.SubmarineKinematicTelemetry, capacity * SubmarineDynamicsConstants.BlackBoxFrames, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _configHandle = _dataVault.GetBufferHandle<SubmarineKinematicConfig>(BufferID.SubmarineKinematicConfig, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-            _dragLutHandle = _dataVault.GetBufferHandle<float>(BufferID.SubmarineKinematicDragLut, SubmarineDynamicsConstants.DragLutSamples, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _stateHandle = _dataVault.GetGenerationHandle<SubmarineKinematicState>(BufferID.SubmarineKinematicStates, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _controlHandle = _dataVault.GetGenerationHandle<SubmarineKinematicControl>(BufferID.SubmarineKinematicControls, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _pidHandle = _dataVault.GetGenerationHandle<SubmarinePidState>(BufferID.SubmarineKinematicPidStates, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _massHandle = _dataVault.GetGenerationHandle<SubmarineMassProperties>(BufferID.SubmarineKinematicMassProperties, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _forceHandle = _dataVault.GetGenerationHandle<SubmarineForceAccumulator>(BufferID.SubmarineKinematicForces, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _telemetryHandle = _dataVault.GetGenerationHandle<SubmarineKinematicTelemetry>(BufferID.SubmarineKinematicTelemetry, capacity * SubmarineDynamicsConstants.BlackBoxFrames, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _addedMassHandle = _dataVault.GetGenerationHandle<AddedMassProfileDTO>(BufferID.Shinobu251AddedMassProfiles, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
+            _hydrodynamicsTelemetryHandle = _dataVault.GetGenerationHandle<SubmarineHydrodynamicsTelemetry>(BufferID.Shinobu251HydrodynamicsTelemetry, capacity * SubmarineDynamicsConstants.BlackBoxFrames, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
+            _hullProfileHandle = _dataVault.GetGenerationHandle<SubmarineHullProfileDTO>(BufferID.Shinobu251HullProfiles, capacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _addedMassTuningHandle = _dataVault.GetGenerationHandle<SubmarineAddedMassTuningDTO>(BufferID.Shinobu251AddedMassTuning, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _configHandle = _dataVault.GetGenerationHandle<SubmarineKinematicConfig>(BufferID.SubmarineKinematicConfig, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+            _dragLutHandle = _dataVault.GetGenerationHandle<float>(BufferID.SubmarineKinematicDragLut, SubmarineDynamicsConstants.DragLutSamples, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
 
-            if (!_stateHandle.IsCreated || !_controlHandle.IsCreated || !_pidHandle.IsCreated ||
-                !_massHandle.IsCreated || !_forceHandle.IsCreated || !_telemetryHandle.IsCreated ||
-                !_configHandle.IsCreated || !_dragLutHandle.IsCreated)
+            if (!IsGenerationHandleCreated(in _stateHandle) || !IsGenerationHandleCreated(in _controlHandle) || !IsGenerationHandleCreated(in _pidHandle) ||
+                !IsGenerationHandleCreated(in _massHandle) || !IsGenerationHandleCreated(in _forceHandle) || !IsGenerationHandleCreated(in _telemetryHandle) ||
+                !IsGenerationHandleCreated(in _addedMassHandle) || !IsGenerationHandleCreated(in _hydrodynamicsTelemetryHandle) || !IsGenerationHandleCreated(in _hullProfileHandle) ||
+                !IsGenerationHandleCreated(in _addedMassTuningHandle) ||
+                !IsGenerationHandleCreated(in _configHandle) || !IsGenerationHandleCreated(in _dragLutHandle))
             {
                 _buffersReady = false;
                 return false;
             }
 
-            NativeArray<SubmarineKinematicConfig> configs = _configHandle.Resolve(_dataVault);
-            NativeArray<float> dragLut = _dragLutHandle.Resolve(_dataVault);
-            NativeArray<SubmarineKinematicState> states = _stateHandle.Resolve(_dataVault);
-            NativeArray<SubmarineKinematicControl> controls = _controlHandle.Resolve(_dataVault);
-            NativeArray<SubmarineMassProperties> masses = _massHandle.Resolve(_dataVault);
-            if (!configs.IsCreated || !dragLut.IsCreated || !states.IsCreated || !controls.IsCreated || !masses.IsCreated)
+            if (!TryReadVaultHandle(in _configHandle, out NativeArray<SubmarineKinematicConfig> configRead) ||
+                !TryReadVaultHandle(in _addedMassTuningHandle, out NativeArray<SubmarineAddedMassTuningDTO> tuningRead) ||
+                configRead.Length == 0 ||
+                tuningRead.Length == 0)
+            {
+                return false;
+            }
+
+            if (tuningRead[0].SourceHash == 0u && !TryInitializeAddedMassTuning())
                 return false;
 
-            if (configs[0].SourceHash == 0u)
+            if (configRead[0].SourceHash == 0u && !TryInitializeBootProfiles())
             {
-                if (!TryLoadLegacyProfiles(configs, dragLut))
-                    GenerateEmergencyMockProfiles(configs, dragLut);
-
-                InitializeVehicleDefaults(states, controls, masses, configs[0]);
+                return false;
             }
 
             _buffersReady = true;
             return true;
+        }
+
+        private bool TryInitializeAddedMassTuning()
+        {
+            if (!TryAcquireVaultWriteLock(in _addedMassTuningHandle, out NativeArray<SubmarineAddedMassTuningDTO> addedMassTuning))
+                return false;
+
+            try
+            {
+                if (addedMassTuning.Length == 0)
+                    return false;
+
+                if (addedMassTuning[0].SourceHash == 0u)
+                    addedMassTuning[0] = SubmarineAddedMassMath.DefaultTuning();
+
+                return true;
+            }
+            finally
+            {
+                ReleaseVaultWriteLock(in _addedMassTuningHandle);
+            }
+        }
+
+        private bool TryInitializeBootProfiles()
+        {
+            bool configLocked = false;
+            bool dragLocked = false;
+            bool stateLocked = false;
+            bool controlLocked = false;
+            bool massLocked = false;
+            bool hullLocked = false;
+
+            try
+            {
+                if (!TryAcquireVaultWriteLock(in _configHandle, out NativeArray<SubmarineKinematicConfig> configs))
+                    return false;
+                configLocked = true;
+
+                if (!TryAcquireVaultWriteLock(in _dragLutHandle, out NativeArray<float> dragLut))
+                    return false;
+                dragLocked = true;
+
+                if (!TryAcquireVaultWriteLock(in _stateHandle, out NativeArray<SubmarineKinematicState> states))
+                    return false;
+                stateLocked = true;
+
+                if (!TryAcquireVaultWriteLock(in _controlHandle, out NativeArray<SubmarineKinematicControl> controls))
+                    return false;
+                controlLocked = true;
+
+                if (!TryAcquireVaultWriteLock(in _massHandle, out NativeArray<SubmarineMassProperties> masses))
+                    return false;
+                massLocked = true;
+
+                if (!TryAcquireVaultWriteLock(in _hullProfileHandle, out NativeArray<SubmarineHullProfileDTO> hullProfiles))
+                    return false;
+                hullLocked = true;
+
+                if (configs.Length == 0 || dragLut.Length == 0 || states.Length == 0 || controls.Length == 0 || masses.Length == 0 || hullProfiles.Length == 0)
+                    return false;
+
+                if (configs[0].SourceHash == 0u)
+                {
+                    if (!TryLoadLegacyProfiles(configs, dragLut))
+                        GenerateEmergencyMockProfiles(configs, dragLut);
+
+                    InitializeVehicleDefaults(states, controls, masses, hullProfiles, configs[0]);
+                }
+
+                return true;
+            }
+            finally
+            {
+                if (hullLocked)
+                    ReleaseVaultWriteLock(in _hullProfileHandle);
+                if (massLocked)
+                    ReleaseVaultWriteLock(in _massHandle);
+                if (controlLocked)
+                    ReleaseVaultWriteLock(in _controlHandle);
+                if (stateLocked)
+                    ReleaseVaultWriteLock(in _stateHandle);
+                if (dragLocked)
+                    ReleaseVaultWriteLock(in _dragLutHandle);
+                if (configLocked)
+                    ReleaseVaultWriteLock(in _configHandle);
+            }
         }
 
         private bool TryResolveArrays(
@@ -323,19 +582,96 @@ namespace Hecton8.Physics.Vehicles
             out NativeArray<SubmarineMassProperties> masses,
             out NativeArray<SubmarineForceAccumulator> forces,
             out NativeArray<SubmarineKinematicTelemetry> telemetry,
+            out NativeArray<AddedMassProfileDTO> addedMassProfiles,
+            out NativeArray<SubmarineHydrodynamicsTelemetry> hydrodynamicsTelemetry,
+            out NativeArray<SubmarineHullProfileDTO> hullProfiles,
+            out NativeArray<SubmarineAddedMassTuningDTO> addedMassTuning,
             out NativeArray<SubmarineKinematicConfig> configs,
             out NativeArray<float> dragLut)
         {
-            states = _stateHandle.Resolve(_dataVault);
-            controls = _controlHandle.Resolve(_dataVault);
-            pidStates = _pidHandle.Resolve(_dataVault);
-            masses = _massHandle.Resolve(_dataVault);
-            forces = _forceHandle.Resolve(_dataVault);
-            telemetry = _telemetryHandle.Resolve(_dataVault);
-            configs = _configHandle.Resolve(_dataVault);
-            dragLut = _dragLutHandle.Resolve(_dataVault);
-            return states.IsCreated && controls.IsCreated && pidStates.IsCreated && masses.IsCreated &&
-                   forces.IsCreated && telemetry.IsCreated && configs.IsCreated && dragLut.IsCreated;
+            states = default;
+            controls = default;
+            pidStates = default;
+            masses = default;
+            forces = default;
+            telemetry = default;
+            addedMassProfiles = default;
+            hydrodynamicsTelemetry = default;
+            hullProfiles = default;
+            addedMassTuning = default;
+            configs = default;
+            dragLut = default;
+
+            return TryResolveVaultHandle(in _stateHandle, out states) &&
+                   TryResolveVaultHandle(in _controlHandle, out controls) &&
+                   TryResolveVaultHandle(in _pidHandle, out pidStates) &&
+                   TryResolveVaultHandle(in _massHandle, out masses) &&
+                   TryResolveVaultHandle(in _forceHandle, out forces) &&
+                   TryResolveVaultHandle(in _telemetryHandle, out telemetry) &&
+                   TryResolveVaultHandle(in _addedMassHandle, out addedMassProfiles) &&
+                   TryResolveVaultHandle(in _hydrodynamicsTelemetryHandle, out hydrodynamicsTelemetry) &&
+                   TryResolveVaultHandle(in _hullProfileHandle, out hullProfiles) &&
+                   TryResolveVaultHandle(in _addedMassTuningHandle, out addedMassTuning) &&
+                   TryResolveVaultHandle(in _configHandle, out configs) &&
+                   TryResolveVaultHandle(in _dragLutHandle, out dragLut);
+        }
+
+        public bool TryReadAddedMassTuning(out SubmarineAddedMassTuningDTO tuning)
+        {
+            tuning = default;
+            if (!_buffersReady || _buffersLocked || _integratorPending || _dataVault == null)
+                return false;
+
+            if (!TryReadVaultHandle(in _addedMassTuningHandle, out NativeArray<SubmarineAddedMassTuningDTO> tuningRows) ||
+                tuningRows.Length == 0)
+            {
+                return false;
+            }
+
+            tuning = SubmarineAddedMassMath.SanitizeTuning(tuningRows[0]);
+            return true;
+        }
+
+        public bool TryWriteAddedMassTuning(in SubmarineAddedMassTuningDTO tuning)
+        {
+            if (!_buffersReady || _buffersLocked || _integratorPending || _dataVault == null)
+                return false;
+
+            if (!TryAcquireVaultWriteLock(in _addedMassTuningHandle, out NativeArray<SubmarineAddedMassTuningDTO> tuningRows))
+                return false;
+
+            try
+            {
+                if (tuningRows.Length == 0)
+                {
+                    return false;
+                }
+
+                tuningRows[0] = SubmarineAddedMassMath.SanitizeTuning(in tuning);
+                return true;
+            }
+            finally
+            {
+                ReleaseVaultWriteLock(in _addedMassTuningHandle);
+            }
+        }
+
+        public bool TryReadLatestHydrodynamicsTelemetry(out SubmarineHydrodynamicsTelemetry telemetry)
+        {
+            telemetry = default;
+            if (!_buffersReady || _buffersLocked || _integratorPending || _dataVault == null)
+                return false;
+
+            int capacity = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles);
+            if (!TryReadVaultHandle(in _hydrodynamicsTelemetryHandle, out NativeArray<SubmarineHydrodynamicsTelemetry> telemetryRows) ||
+                telemetryRows.Length < capacity * SubmarineDynamicsConstants.BlackBoxFrames)
+            {
+                return false;
+            }
+
+            int latest = (int)(_frameCounter % SubmarineDynamicsConstants.BlackBoxFrames);
+            telemetry = telemetryRows[latest];
+            return telemetry.Frame != 0u;
         }
 
         private void ConsumeSignals(
@@ -391,10 +727,11 @@ namespace Hecton8.Physics.Vehicles
 
             config.Flags = flags;
 
-            if (GlobalSignals.TryGetLatestFluidDensityChangedSignal(out FluidDensityChangedSignal densitySignal, out int densitySequence) &&
-                densitySequence != _fluidDensitySignalSequence)
+            ReadOnlySpan<FluidDensityChangedSignal> densitySignals = SignalBus<FluidDensityChangedSignal>.GetFrameSnapshot();
+            int densityCount = math.min(densitySignals.Length, MockSignalCapacity);
+            for (int i = 0; i < densityCount; i++)
             {
-                _fluidDensitySignalSequence = densitySequence;
+                FluidDensityChangedSignal densitySignal = densitySignals[i];
                 _fluidDensityMultiplier = math.isfinite(densitySignal.DensityMultiplier)
                     ? math.clamp(densitySignal.DensityMultiplier, 0.75f, 1.35f)
                     : 1f;
@@ -460,20 +797,19 @@ namespace Hecton8.Physics.Vehicles
             if (_dataVault == null)
                 return;
 
-            if (!_vehicleDamageStateReadHandle.IsCreated &&
-                !_dataVault.TryGetBufferHandle(VehicleDamageConstants.StateReadBuffer, out _vehicleDamageStateReadHandle))
+            if (!IsGenerationHandleCreated(in _vehicleDamageStateReadHandle) &&
+                !_dataVault.TryGetGenerationHandle(VehicleDamageConstants.StateReadBuffer, out _vehicleDamageStateReadHandle))
             {
                 return;
             }
 
-            if (!_dataVault.ResolveBuffer(ref _vehicleDamageStateReadHandle) ||
-                !_vehicleDamageStateReadHandle.IsCreated ||
-                _vehicleDamageStateReadHandle.Length <= 0)
+            if (!TryReadVaultHandle(in _vehicleDamageStateReadHandle, out NativeArray<VehicleDamageStateDTO> damageStates) ||
+                damageStates.Length <= 0)
             {
                 return;
             }
 
-            VehicleDamageStateDTO state = _vehicleDamageStateReadHandle.GetElementAsReadOnlyRef(_dataVault, 0);
+            VehicleDamageStateDTO state = damageStates[0];
             if ((state.Flags & VehicleDamageConstants.StateFlagInitialized) == 0u)
                 return;
 
@@ -500,7 +836,7 @@ namespace Hecton8.Physics.Vehicles
             if (safeMagnitude >= force.ImpactMagnitude)
             {
                 force.ImpactPointLocal = localPoint;
-                force.ImpactNormalWorld = math.normalizesafe(normalWorld, new float3(0f, 0f, -1f));
+                force.ImpactNormalWorld = SubmarineDynamicsSimdMath.NormalizeOrFallback(normalWorld, new float3(0f, 0f, -1f));
                 if (normalIsLocal)
                     force.Flags |= SubmarineDynamicsConstants.ForceFlagImpactNormalLocal;
                 else
@@ -529,7 +865,7 @@ namespace Hecton8.Physics.Vehicles
         private static float3 ResolveFallbackImpactNormalLocal(float3 localPoint)
         {
             float3 safePoint = math.all(math.isfinite(localPoint)) ? localPoint : new float3(0f, 0f, 1f);
-            return math.normalizesafe(-safePoint, new float3(0f, 0f, -1f));
+            return SubmarineDynamicsSimdMath.NormalizeOrFallback(-safePoint, new float3(0f, 0f, -1f));
         }
 
         private bool LockSimulationBuffers()
@@ -537,19 +873,18 @@ namespace Hecton8.Physics.Vehicles
             if (_buffersLocked || _dataVault == null)
                 return _buffersLocked;
 
-            if (!_dataVault.TryLockBuffer(BufferID.SubmarineKinematicStates, SystemID.VehiclesPhysics))
-                return false;
-            if (!_dataVault.TryLockBuffer(BufferID.SubmarineKinematicControls, SystemID.VehiclesPhysics))
-            {
-                _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicStates, SystemID.VehiclesPhysics);
-                return false;
-            }
-            if (!_dataVault.TryLockBuffer(BufferID.SubmarineKinematicPidStates, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(BufferID.SubmarineKinematicMassProperties, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(BufferID.SubmarineKinematicForces, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(BufferID.SubmarineKinematicTelemetry, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(BufferID.SubmarineKinematicConfig, SystemID.VehiclesPhysics) ||
-                !_dataVault.TryLockBuffer(BufferID.SubmarineKinematicDragLut, SystemID.VehiclesPhysics))
+            if (!TryAcquireVaultWriteLock(in _stateHandle, out _) ||
+                !TryAcquireVaultWriteLock(in _controlHandle, out _) ||
+                !TryAcquireVaultWriteLock(in _pidHandle, out _) ||
+                !TryAcquireVaultWriteLock(in _massHandle, out _) ||
+                !TryAcquireVaultWriteLock(in _forceHandle, out _) ||
+                !TryAcquireVaultWriteLock(in _telemetryHandle, out _) ||
+                !TryAcquireVaultWriteLock(in _addedMassHandle, out _) ||
+                !TryAcquireVaultWriteLock(in _hydrodynamicsTelemetryHandle, out _) ||
+                !TryAcquireVaultWriteLock(in _hullProfileHandle, out _) ||
+                !TryAcquireVaultWriteLock(in _addedMassTuningHandle, out _) ||
+                !TryAcquireVaultWriteLock(in _configHandle, out _) ||
+                !TryAcquireVaultWriteLock(in _dragLutHandle, out _))
             {
                 _buffersLocked = true;
                 UnlockSimulationBuffers();
@@ -565,14 +900,18 @@ namespace Hecton8.Physics.Vehicles
             if (!_buffersLocked || _dataVault == null)
                 return;
 
-            _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicStates, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicControls, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicPidStates, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicMassProperties, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicForces, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicTelemetry, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicConfig, SystemID.VehiclesPhysics);
-            _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicDragLut, SystemID.VehiclesPhysics);
+            ReleaseVaultWriteLock(in _stateHandle);
+            ReleaseVaultWriteLock(in _controlHandle);
+            ReleaseVaultWriteLock(in _pidHandle);
+            ReleaseVaultWriteLock(in _massHandle);
+            ReleaseVaultWriteLock(in _forceHandle);
+            ReleaseVaultWriteLock(in _telemetryHandle);
+            ReleaseVaultWriteLock(in _addedMassHandle);
+            ReleaseVaultWriteLock(in _hydrodynamicsTelemetryHandle);
+            ReleaseVaultWriteLock(in _hullProfileHandle);
+            ReleaseVaultWriteLock(in _addedMassTuningHandle);
+            ReleaseVaultWriteLock(in _configHandle);
+            ReleaseVaultWriteLock(in _dragLutHandle);
             _buffersLocked = false;
         }
 
@@ -703,7 +1042,6 @@ namespace Hecton8.Physics.Vehicles
             config.CargoForwardMeters = 2.8f;
             config.TickDilationPressure01 = 0.72f;
             config.SourceHash = SubmarineDynamicsConstants.SourceHashMock;
-            config.HardwareTier = 1;
             config.MockFloodLocal = ToFloat3(mockFloodLocal);
             return config;
         }
@@ -712,6 +1050,7 @@ namespace Hecton8.Physics.Vehicles
             NativeArray<SubmarineKinematicState> states,
             NativeArray<SubmarineKinematicControl> controls,
             NativeArray<SubmarineMassProperties> masses,
+            NativeArray<SubmarineHullProfileDTO> hullProfiles,
             in SubmarineKinematicConfig config)
         {
             int capacity = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles);
@@ -742,6 +1081,22 @@ namespace Hecton8.Physics.Vehicles
                 mass.CenterOfBuoyancyLocal = ToFloat3(centerOfBuoyancyLocal);
                 mass.BaseMassKg = config.BaseMassKg;
                 masses[i] = mass;
+
+                if ((uint)i < (uint)hullProfiles.Length)
+                {
+                    SubmarineAddedMassMath.ResolveHullAxes(config.HullVolumeM3, out float lengthMeters, out float radiusMeters);
+                    SubmarineHullProfileDTO hull = default;
+                    hull.ProfileHash = SubmarineDynamicsConstants.SourceHashAddedMass ^ (uint)i;
+                    hull.BaseMassKg = config.BaseMassKg;
+                    hull.HullVolumeM3 = config.HullVolumeM3;
+                    hull.LengthMeters = lengthMeters;
+                    hull.RadiusMeters = radiusMeters;
+                    hull.AddedMassMultiplier = 1f;
+                    hull.CenterOfBuoyancyLocal = mass.CenterOfBuoyancyLocal;
+                    hull.CenterOfMassLocal = mass.CenterOfMassLocal;
+                    hull.FloodVolumeScalar = 1f;
+                    hullProfiles[i] = hull;
+                }
             }
         }
 
@@ -781,37 +1136,58 @@ namespace Hecton8.Physics.Vehicles
 
             bool controlsLocked = false;
             bool configLocked = false;
+            bool hullLocked = false;
 
             try
             {
-                if (!_dataVault.TryLockBuffer(BufferID.SubmarineKinematicControls, SystemID.VehiclesPhysics))
+                if (!TryAcquireVaultWriteLock(in _controlHandle, out NativeArray<SubmarineKinematicControl> controls))
                     return false;
                 controlsLocked = true;
 
-                if (!_dataVault.TryLockBuffer(BufferID.SubmarineKinematicConfig, SystemID.VehiclesPhysics))
+                if (!TryAcquireVaultWriteLock(in _configHandle, out NativeArray<SubmarineKinematicConfig> configs))
                     return false;
                 configLocked = true;
 
-                NativeArray<SubmarineKinematicConfig> configs = _configHandle.Resolve(_dataVault);
-                NativeArray<SubmarineKinematicControl> controls = _controlHandle.Resolve(_dataVault);
-                if (!configs.IsCreated || !controls.IsCreated)
+                if (!TryAcquireVaultWriteLock(in _hullProfileHandle, out NativeArray<SubmarineHullProfileDTO> hullProfiles))
                     return false;
+                hullLocked = true;
+
+                if (configs.Length == 0 || controls.Length == 0 || hullProfiles.Length == 0)
+                {
+                    return false;
+                }
 
                 SubmarineKinematicConfig config = configs[0];
                 SubmarineKinematicControl control = controls[0];
+                SubmarineHullProfileDTO hull = hullProfiles[0];
+                if (hull.ProfileHash == 0u)
+                {
+                    SubmarineAddedMassMath.ResolveHullAxes(config.HullVolumeM3, out float lengthMeters, out float radiusMeters);
+                    hull.ProfileHash = SubmarineDynamicsConstants.SourceHashAddedMass;
+                    hull.BaseMassKg = config.BaseMassKg;
+                    hull.HullVolumeM3 = config.HullVolumeM3;
+                    hull.LengthMeters = lengthMeters;
+                    hull.RadiusMeters = radiusMeters;
+                    hull.AddedMassMultiplier = 1f;
+                    hull.FloodVolumeScalar = 1f;
+                }
 
                 using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))
                 {
                     if (stream.Length <= 0L || stream.Length > MaxCsvOverrideBytes)
                         return false;
 
-                    ParseOverrideStream(stream, ref config, ref control);
+                    ParseOverrideStream(stream, ref config, ref control, ref hull);
                 }
 
                 config.SourceHash = SubmarineDynamicsConstants.SourceHashCsv;
                 config.Flags |= SubmarineDynamicsConstants.ConfigFlagCsvOverride;
+                hull.BaseMassKg = config.BaseMassKg;
+                hull.HullVolumeM3 = config.HullVolumeM3;
+                hull.ProfileHash = SubmarineDynamicsConstants.SourceHashCsv;
                 configs[0] = config;
                 controls[0] = control;
+                hullProfiles[0] = hull;
                 _csvLastWriteTicks = ticks;
                 return true;
             }
@@ -825,14 +1201,297 @@ namespace Hecton8.Physics.Vehicles
             }
             finally
             {
+                if (hullLocked)
+                    ReleaseVaultWriteLock(in _hullProfileHandle);
                 if (configLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicConfig, SystemID.VehiclesPhysics);
+                    ReleaseVaultWriteLock(in _configHandle);
                 if (controlsLocked)
-                    _dataVault.TryUnlockBuffer(BufferID.SubmarineKinematicControls, SystemID.VehiclesPhysics);
+                    ReleaseVaultWriteLock(in _controlHandle);
             }
         }
 
-        private void ParseOverrideStream(FileStream stream, ref SubmarineKinematicConfig config, ref SubmarineKinematicControl control)
+        private bool TryApplyHullProfilesCsv()
+        {
+            if (!_buffersReady || _dataVault == null || _integratorPending || _buffersLocked)
+                return false;
+
+            if (string.IsNullOrEmpty(_hullProfilesCsvPath) || !File.Exists(_hullProfilesCsvPath))
+                return false;
+
+            FileInfo info;
+            try
+            {
+                info = new FileInfo(_hullProfilesCsvPath);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            if (info.Length <= 0L || info.Length > MaxCsvOverrideBytes || info.LastWriteTimeUtc.Ticks == _hullProfilesCsvLastWriteTicks)
+                return false;
+
+            bool configLocked = false;
+            bool hullLocked = false;
+            try
+            {
+                if (!TryAcquireVaultWriteLock(in _configHandle, out NativeArray<SubmarineKinematicConfig> configs))
+                    return false;
+                configLocked = true;
+
+                if (!TryAcquireVaultWriteLock(in _hullProfileHandle, out NativeArray<SubmarineHullProfileDTO> hullProfiles))
+                    return false;
+                hullLocked = true;
+
+                if (configs.Length == 0 || hullProfiles.Length == 0)
+                {
+                    return false;
+                }
+
+                SubmarineKinematicConfig config = configs[0];
+                using (FileStream stream = new FileStream(_hullProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))
+                {
+                    int length = (int)stream.Length;
+                    if (length <= 0 || length > MaxCsvOverrideBytes)
+                        return false;
+
+                    Span<byte> scratch = stackalloc byte[length];
+                    int read = stream.Read(scratch);
+                    if (read <= 0)
+                        return false;
+
+                    int rows = ParseHullProfilesCsv(scratch.Slice(0, read), hullProfiles, ref config);
+                    if (rows <= 0)
+                        return false;
+                }
+
+                config.SourceHash = SubmarineDynamicsConstants.SourceHashCsv;
+                config.Flags |= SubmarineDynamicsConstants.ConfigFlagCsvOverride;
+                configs[0] = config;
+                _hullProfilesCsvLastWriteTicks = info.LastWriteTimeUtc.Ticks;
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            finally
+            {
+                if (hullLocked)
+                    ReleaseVaultWriteLock(in _hullProfileHandle);
+                if (configLocked)
+                    ReleaseVaultWriteLock(in _configHandle);
+            }
+        }
+
+        private static int ParseHullProfilesCsv(
+            ReadOnlySpan<byte> bytes,
+            NativeArray<SubmarineHullProfileDTO> hullProfiles,
+            ref SubmarineKinematicConfig config)
+        {
+            int cursor = 0;
+            int count = 0;
+            while (count < hullProfiles.Length && TryReadCsvLine(bytes, ref cursor, out ReadOnlySpan<byte> line))
+            {
+                line = TrimAscii(line);
+                if (line.Length == 0 || line[0] == (byte)'#')
+                    continue;
+
+                if (!TryParseHullProfileLine(line, out SubmarineHullProfileDTO hull))
+                    continue;
+
+                hullProfiles[count] = hull;
+                if (count == 0)
+                {
+                    config.BaseMassKg = SubmarineAddedMassMath.SafePositive(hull.BaseMassKg, config.BaseMassKg);
+                    config.HullVolumeM3 = SubmarineAddedMassMath.SafePositive(hull.HullVolumeM3, config.HullVolumeM3);
+                }
+
+                count++;
+            }
+
+            return count;
+        }
+
+        private static bool TryParseHullProfileLine(ReadOnlySpan<byte> line, out SubmarineHullProfileDTO hull)
+        {
+            hull = default;
+            int cursor = 0;
+            ReadOnlySpan<byte> name = TrimAscii(ReadCsvField(line, ref cursor));
+            if (name.Length == 0 || TokenEqualsAsciiLower(name, "name") || TokenEqualsAsciiLower(name, "profile"))
+                return false;
+
+            float baseMass = ReadCsvFloat(line, ref cursor, 0f);
+            float volume = ReadCsvFloat(line, ref cursor, 0f);
+            float length = ReadCsvFloat(line, ref cursor, 0f);
+            float radius = ReadCsvFloat(line, ref cursor, 0f);
+            float multiplier = ReadCsvFloat(line, ref cursor, 1f);
+            float floodScalar = ReadCsvFloat(line, ref cursor, 1f);
+            if (!math.isfinite(volume) || volume <= 0.0001f)
+                return false;
+
+            SubmarineAddedMassMath.ResolveHullAxes(volume, out float fallbackLength, out float fallbackRadius);
+            hull.ProfileHash = HashAsciiLower(name);
+            hull.BaseMassKg = SubmarineAddedMassMath.SafePositive(baseMass, volume * 780f);
+            hull.HullVolumeM3 = SubmarineAddedMassMath.SafePositive(volume, 1f);
+            hull.LengthMeters = SubmarineAddedMassMath.SafePositive(length, fallbackLength);
+            hull.RadiusMeters = SubmarineAddedMassMath.SafePositive(radius, fallbackRadius);
+            hull.AddedMassMultiplier = math.clamp(SubmarineAddedMassMath.SafePositive(multiplier, 1f), 0.25f, 3f);
+            hull.CenterOfBuoyancyLocal = new float3(0f, 0.7f, 0f);
+            hull.CenterOfMassLocal = float3.zero;
+            hull.Flags = SubmarineDynamicsConstants.ConfigFlagCsvOverride;
+            hull.FloodVolumeScalar = math.clamp(math.isfinite(floodScalar) ? floodScalar : 1f, 0f, 2f);
+            return hull.ProfileHash != 0u;
+        }
+
+        private static bool TryReadCsvLine(ReadOnlySpan<byte> bytes, ref int cursor, out ReadOnlySpan<byte> line)
+        {
+            if (cursor >= bytes.Length)
+            {
+                line = ReadOnlySpan<byte>.Empty;
+                return false;
+            }
+
+            int start = cursor;
+            while (cursor < bytes.Length && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                cursor++;
+
+            int end = cursor;
+            while (cursor < bytes.Length && (bytes[cursor] == (byte)'\n' || bytes[cursor] == (byte)'\r'))
+                cursor++;
+
+            line = bytes.Slice(start, end - start);
+            return true;
+        }
+
+        private static ReadOnlySpan<byte> ReadCsvField(ReadOnlySpan<byte> line, ref int cursor)
+        {
+            int start = cursor;
+            while (cursor < line.Length && line[cursor] != (byte)',')
+                cursor++;
+
+            int end = cursor;
+            if (cursor < line.Length && line[cursor] == (byte)',')
+                cursor++;
+
+            return TrimAscii(line.Slice(start, end - start));
+        }
+
+        private static float ReadCsvFloat(ReadOnlySpan<byte> line, ref int cursor, float fallback)
+        {
+            ReadOnlySpan<byte> field = ReadCsvField(line, ref cursor);
+            return TryParseAsciiFloat(field, out float value) ? value : fallback;
+        }
+
+        private static ReadOnlySpan<byte> TrimAscii(ReadOnlySpan<byte> value)
+        {
+            int start = 0;
+            int end = value.Length - 1;
+            while (start <= end && (value[start] == (byte)' ' || value[start] == (byte)'\t'))
+                start++;
+            while (end >= start && (value[end] == (byte)' ' || value[end] == (byte)'\t'))
+                end--;
+
+            return start <= end ? value.Slice(start, end - start + 1) : ReadOnlySpan<byte>.Empty;
+        }
+
+        private static bool TryParseAsciiFloat(ReadOnlySpan<byte> value, out float parsed)
+        {
+            parsed = 0f;
+            if (value.Length == 0)
+                return false;
+
+            bool negative = false;
+            bool fractional = false;
+            bool digit = false;
+            float fractionScale = 0.1f;
+            int index = 0;
+            if (value[0] == (byte)'-')
+            {
+                negative = true;
+                index = 1;
+            }
+
+            for (; index < value.Length; index++)
+            {
+                byte c = value[index];
+                if (c == (byte)'.')
+                {
+                    if (fractional)
+                        return false;
+
+                    fractional = true;
+                    continue;
+                }
+
+                if (c < (byte)'0' || c > (byte)'9')
+                    return false;
+
+                digit = true;
+                float n = c - (byte)'0';
+                if (fractional)
+                {
+                    parsed += n * fractionScale;
+                    fractionScale *= 0.1f;
+                }
+                else
+                {
+                    parsed = (parsed * 10f) + n;
+                }
+            }
+
+            if (!digit)
+                return false;
+
+            parsed = negative ? -parsed : parsed;
+            return math.isfinite(parsed);
+        }
+
+        private static uint HashAsciiLower(ReadOnlySpan<byte> value)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < value.Length; i++)
+            {
+                byte c = value[i];
+                if (c >= (byte)'A' && c <= (byte)'Z')
+                    c = (byte)(c + 32);
+                hash ^= c;
+                hash *= 16777619u;
+            }
+
+            return hash;
+        }
+
+        private static bool TokenEqualsAsciiLower(ReadOnlySpan<byte> value, string literal)
+        {
+            if (value.Length != literal.Length)
+                return false;
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                byte c = value[i];
+                if (c >= (byte)'A' && c <= (byte)'Z')
+                    c = (byte)(c + 32);
+                if (c != (byte)literal[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private void ParseOverrideStream(
+            FileStream stream,
+            ref SubmarineKinematicConfig config,
+            ref SubmarineKinematicControl control,
+            ref SubmarineHullProfileDTO hull)
         {
             uint keyHash = 2166136261u;
             bool keyActive = false;
@@ -857,7 +1516,7 @@ namespace Hecton8.Physics.Vehicles
                 if (lineEnd || end)
                 {
                     if (keyActive && readingValue)
-                        ApplyOverride(keyHash, negative ? -value : value, ref config, ref control);
+                        ApplyOverride(keyHash, negative ? -value : value, ref config, ref control, ref hull);
 
                     keyHash = 2166136261u;
                     keyActive = false;
@@ -913,13 +1572,42 @@ namespace Hecton8.Physics.Vehicles
             }
         }
 
-        private void ApplyOverride(uint keyHash, float value, ref SubmarineKinematicConfig config, ref SubmarineKinematicControl control)
+        private void ApplyOverride(
+            uint keyHash,
+            float value,
+            ref SubmarineKinematicConfig config,
+            ref SubmarineKinematicControl control,
+            ref SubmarineHullProfileDTO hull)
         {
             switch (keyHash)
             {
                 case HashBaseMassKg:
                     config.BaseMassKg = math.max(1f, value);
+                    hull.BaseMassKg = config.BaseMassKg;
                     baseMassKg = config.BaseMassKg;
+                    break;
+                case HashHullVolumeM3:
+                    config.HullVolumeM3 = math.max(1f, value);
+                    hull.HullVolumeM3 = config.HullVolumeM3;
+                    if (hull.LengthMeters <= 0f || hull.RadiusMeters <= 0f)
+                    {
+                        SubmarineAddedMassMath.ResolveHullAxes(hull.HullVolumeM3, out float resolvedLength, out float resolvedRadius);
+                        hull.LengthMeters = resolvedLength;
+                        hull.RadiusMeters = resolvedRadius;
+                    }
+                    hullVolumeM3 = config.HullVolumeM3;
+                    break;
+                case HashHullLengthM:
+                    hull.LengthMeters = math.max(0.25f, value);
+                    break;
+                case HashHullRadiusM:
+                    hull.RadiusMeters = math.max(0.05f, value);
+                    break;
+                case HashAddedMassMultiplier:
+                    hull.AddedMassMultiplier = math.clamp(value, 0.25f, 3f);
+                    break;
+                case HashFloodVolumeScalar:
+                    hull.FloodVolumeScalar = math.clamp(value, 0f, 2f);
                     break;
                 case HashDragScale:
                     config.DragScale = math.max(0.01f, value);
@@ -966,11 +1654,10 @@ namespace Hecton8.Physics.Vehicles
 
         private bool DumpBlackBoxIfFaulted()
         {
-            if (_dumpWritten || _dataVault == null || !_stateHandle.IsCreated)
+            if (_dumpWritten || _dataVault == null || !IsGenerationHandleCreated(in _stateHandle))
                 return false;
 
-            NativeArray<SubmarineKinematicState> states = _stateHandle.Resolve(_dataVault);
-            if (!states.IsCreated || states.Length == 0)
+            if (!TryReadVaultHandle(in _stateHandle, out NativeArray<SubmarineKinematicState> states) || states.Length == 0)
                 return false;
 
             bool fatal = false;
@@ -990,8 +1677,7 @@ namespace Hecton8.Physics.Vehicles
             RecordVaultSovereigntyTelemetry(VaultSovereigntyTelemetry.FaultFlag);
             VaultSovereigntyTelemetry.TryDump(_dataVault, _projectRoot);
 
-            NativeArray<SubmarineKinematicTelemetry> telemetry = _telemetryHandle.Resolve(_dataVault);
-            if (!telemetry.IsCreated)
+            if (!TryReadVaultHandle(in _hydrodynamicsTelemetryHandle, out NativeArray<SubmarineHydrodynamicsTelemetry> hydroTelemetry))
                 return true;
 
             string logRoot = Path.Combine(_projectRoot, "Docs", "AgentLogs");
@@ -1008,12 +1694,8 @@ namespace Hecton8.Physics.Vehicles
                 return true;
             }
 
-            string h8DumpPath = Path.Combine(logRoot, "Dump_SHINOBU_11.h8dump");
-            string legacyBinPath = Path.Combine(logRoot, "Dump_SUB_KINEMATICS.bin");
-            if (!TryWriteBlackBoxDump(h8DumpPath, telemetry))
-                return true;
-
-            TryWriteBlackBoxDump(legacyBinPath, telemetry);
+            string addedMassBinPath = Path.Combine(logRoot, "Dump_SHINOBU_251.bin");
+            TryWriteHydrodynamicsBlackBoxDump(addedMassBinPath, hydroTelemetry);
             _dumpWritten = true;
             return true;
         }
@@ -1032,41 +1714,96 @@ namespace Hecton8.Physics.Vehicles
                 flags: flags);
         }
 
-        private static int ResolveVaultTelemetryStride(float globalQualityWeight)
+        private int ResolveVaultTelemetryStride(float globalQualityWeight)
         {
             float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            float inverse = 1f - quality;
-            return math.clamp(1 + (int)math.floor(inverse * 3.333334f), 1, 4);
+            float curved = quality * quality * (3f - (2f * quality));
+            float target = math.lerp(4f, 1f, curved);
+            int lower = math.clamp((int)math.floor(target), 1, 4);
+            int upper = math.clamp(lower + 1, 1, 4);
+            if (lower == upper)
+                return lower;
+
+            float fraction = target - lower;
+            uint hash = MixFrameHash(0x56544C4Du, _frameCounter);
+            return Hash01(hash) < fraction ? upper : lower;
         }
 
-        private static bool TryWriteBlackBoxDump(string path, NativeArray<SubmarineKinematicTelemetry> telemetry)
+        private static uint MixFrameHash(uint seed, uint frame)
         {
+            uint hash = seed ^ (frame * 747796405u);
+            hash = (hash ^ (hash >> 16)) * 2246822519u;
+            hash = (hash ^ (hash >> 13)) * 3266489917u;
+            return hash ^ (hash >> 16);
+        }
+
+        private static float Hash01(uint hash)
+        {
+            return (hash & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private void PatchHydrodynamicsElapsedMicros(float elapsedMicros)
+        {
+            if (elapsedMicros <= 0f || !math.isfinite(elapsedMicros))
+                return;
+
+            if (!TryResolveVaultHandle(in _hydrodynamicsTelemetryHandle, out NativeArray<SubmarineHydrodynamicsTelemetry> telemetry))
+                return;
+
+            int vehicleCount = math.min(math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles), math.max(0, telemetry.Length / SubmarineDynamicsConstants.BlackBoxFrames));
+            int local = (int)(_frameCounter % SubmarineDynamicsConstants.BlackBoxFrames);
+            for (int i = 0; i < vehicleCount; i++)
+            {
+                int index = (i * SubmarineDynamicsConstants.BlackBoxFrames) + local;
+                if ((uint)index >= (uint)telemetry.Length)
+                    continue;
+
+                SubmarineHydrodynamicsTelemetry entry = telemetry[index];
+                entry.BurstElapsedUs = elapsedMicros;
+                telemetry[index] = entry;
+            }
+        }
+
+        private static float ResolveElapsedMicros(long startTicks)
+        {
+            if (startTicks <= 0L || Stopwatch.Frequency <= 0L)
+                return 0f;
+
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
+            if (elapsedTicks <= 0L)
+                return 0f;
+
+            double elapsedMicros = elapsedTicks * 1000000.0d / Stopwatch.Frequency;
+            if (double.IsNaN(elapsedMicros) || double.IsInfinity(elapsedMicros) || elapsedMicros <= 0.0d)
+                return 0f;
+
+            return (float)Math.Min(elapsedMicros, 16777216.0d);
+        }
+
+        private static unsafe bool TryWriteHydrodynamicsBlackBoxDump(string path, NativeArray<SubmarineHydrodynamicsTelemetry> telemetry)
+        {
+            if (!telemetry.IsCreated || telemetry.Length == 0)
+                return false;
+
+            int entrySize = UnsafeUtility.SizeOf<SubmarineHydrodynamicsTelemetry>();
+            long payloadBytes64 = (long)telemetry.Length * entrySize;
+            if (entrySize <= 0 || payloadBytes64 <= 0L || payloadBytes64 > int.MaxValue)
+                return false;
+
+            int payloadBytes = (int)payloadBytes64;
             try
             {
-                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                uint* header = stackalloc uint[4];
+                header[0] = 0x35324D41u; // AM25
+                header[1] = (uint)telemetry.Length;
+                header[2] = (uint)SubmarineDynamicsConstants.BlackBoxFrames;
+                header[3] = (uint)entrySize;
+
+                void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    writer.Write(0x4B425553u);
-                    writer.Write(telemetry.Length);
-                    writer.Write(SubmarineDynamicsConstants.BlackBoxFrames);
-                    for (int i = 0; i < telemetry.Length; i++)
-                    {
-                        SubmarineKinematicTelemetry entry = telemetry[i];
-                        writer.Write(entry.Aup.x);
-                        writer.Write(entry.Aup.y);
-                        writer.Write(entry.Aup.z);
-                        writer.Write(entry.LinearVelocity.x);
-                        writer.Write(entry.LinearVelocity.y);
-                        writer.Write(entry.LinearVelocity.z);
-                        writer.Write(entry.AngularVelocity.x);
-                        writer.Write(entry.AngularVelocity.y);
-                        writer.Write(entry.AngularVelocity.z);
-                        writer.Write(entry.CenterOfMassLocal.x);
-                        writer.Write(entry.CenterOfMassLocal.y);
-                        writer.Write(entry.CenterOfMassLocal.z);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.StateHash);
-                    }
+                    stream.Write(new ReadOnlySpan<byte>(header, 16));
+                    stream.Write(new ReadOnlySpan<byte>(telemetryPtr, payloadBytes));
                 }
 
                 return true;
@@ -1083,12 +1820,14 @@ namespace Hecton8.Physics.Vehicles
 
         private static void EnsureSignalLanes()
         {
-            SignalBus<MockFloodSignal>.Configure(MockSignalCapacity, MockSignalCapacity, LowTierMockSignalCapacity, 0x4D464C44u);
-            SignalBus<MockImpactSignal>.Configure(MockSignalCapacity, MockSignalCapacity, LowTierMockSignalCapacity, 0x4D494D50u);
-            SignalBus<CavitationAcousticSignal>.Configure(MockSignalCapacity, MockSignalCapacity, LowTierMockSignalCapacity, 0x43564156u);
+            SignalBus<MockFloodSignal>.Configure(MockSignalCapacity, MockSignalCapacity, SurvivalMockSignalCapacity, 0x4D464C44u);
+            SignalBus<MockImpactSignal>.Configure(MockSignalCapacity, MockSignalCapacity, SurvivalMockSignalCapacity, 0x4D494D50u);
+            SignalBus<CavitationAcousticSignal>.Configure(MockSignalCapacity, MockSignalCapacity, SurvivalMockSignalCapacity, 0x43564156u);
+            SignalBus<FluidDensityChangedSignal>.Configure(MockSignalCapacity, MockSignalCapacity, SurvivalMockSignalCapacity, 0x46444E53u);
             SignalBus<MockFloodSignal>.EnsureInitialized();
             SignalBus<MockImpactSignal>.EnsureInitialized();
             SignalBus<CavitationAcousticSignal>.EnsureInitialized();
+            SignalBus<FluidDensityChangedSignal>.EnsureInitialized();
         }
 
         private void DrainCavitationSignals()
@@ -1112,7 +1851,7 @@ namespace Hecton8.Physics.Vehicles
                 ping.SourceId = CavitationSourceId;
                 ping.Channel = AcousticPingSignal.ChannelMetalStress;
                 ping.Flags = 0;
-                GlobalSignals.Publish(in ping);
+                SignalBus<AcousticPingSignal>.TryPush(in ping);
             }
         }
 
@@ -1121,14 +1860,13 @@ namespace Hecton8.Physics.Vehicles
             config = default;
             if (_dataVault == null ||
                 !_buffersReady ||
-                !_dataVault.ResolveBuffer(ref _configHandle) ||
-                !_configHandle.IsCreated ||
-                _configHandle.Length <= 0)
+                !TryReadVaultHandle(in _configHandle, out NativeArray<SubmarineKinematicConfig> configs) ||
+                configs.Length <= 0)
             {
                 return false;
             }
 
-            config = _configHandle.GetElementAsReadOnlyRef(_dataVault, 0);
+            config = configs[0];
             return true;
         }
 

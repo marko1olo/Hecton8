@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -7,6 +8,7 @@ using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
 using Hecton8.Scavenging;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -23,7 +25,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4042)]
-    public sealed class ResourceDistributionDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable, IRandomEventListener
+    public sealed class ResourceDistributionDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable, IRandomEventListener, IBrineFluidDensityReadModel, IGlobalRegistryHotSwapListener
     {
         private const int DefaultSectorSizeMeters = 128;
         private const int DefaultMaxPendingSpawnRequests = 1024;
@@ -76,8 +78,8 @@ namespace Hecton8.World
 
         private struct BrinePoolState
         {
-            public bool IsValid;
-            public bool HazardRegistered;
+            public byte IsValid;
+            public byte HazardRegistered;
             public int HazardZoneId;
             public uint StableSeed;
             public Vector3 Center;
@@ -118,25 +120,41 @@ namespace Hecton8.World
             public byte RequiresGhostProxySnap;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct PressureMetamorphismInput
         {
+            [FieldOffset(0)]
             public float DepthMeters;
+            [FieldOffset(4)]
             public float ProgressSeconds;
+            [FieldOffset(8)]
             public int TemplateHashId;
+            [FieldOffset(12)]
             public byte Active;
+            [FieldOffset(13)]
+            public byte _pad0;
+            [FieldOffset(14)]
+            public ushort _pad1;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         private struct PressureMetamorphismResult
         {
+            [FieldOffset(0)]
             public float ProgressSeconds;
+            [FieldOffset(4)]
             public byte TransformToDiamond;
+            [FieldOffset(5)]
+            public byte _pad0;
+            [FieldOffset(6)]
+            public ushort _pad1;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct PressureMetamorphismJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<PressureMetamorphismInput> Inputs;
-            public NativeArray<PressureMetamorphismResult> Results;
+            [ReadOnly, NoAlias] public NativeArray<PressureMetamorphismInput> Inputs;
+            [NoAlias] public NativeArray<PressureMetamorphismResult> Results;
             public float DeltaSeconds;
             public float DepthThresholdMeters;
             public float RequiredSeconds;
@@ -375,6 +393,10 @@ namespace Hecton8.World
         private List<ResourceNodeTombstoneRecord> _resourceTombstoneScratch;
         // COLD ALLOC: List<ResourceNode>[InitialMetamorphismCapacity] — pressure-metamorphism job node mapping — owner: ResourceDistributionDirector
         private List<ResourceNode> _metamorphismNodeScratch;
+        private ObjectPoolManager _objectPool;
+        private PersistentWorldRegistry _persistentWorldRegistry;
+        private ITickDispatcher _dispatcher;
+        private bool _registeredHotSwapListener;
 
         private void Awake()
         {
@@ -414,6 +436,7 @@ namespace Hecton8.World
             _metamorphismNodeScratch = new List<ResourceNode>(InitialMetamorphismCapacity);
             EnsureGhostProxySnapBuffers();
 
+            CacheRegistryServicesCold();
             EnsureRuntimePrefab();
             UpdateDiagnostics(default);
         }
@@ -424,19 +447,12 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterResourceDistribution(this);
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             EnsureGhostProxySnapBuffers();
 
-            if (!_slowTickRegistered && GlobalRegistry.Dispatcher != null)
-            {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
-            }
-
-            if (!_lateFrameRegistered && GlobalRegistry.Dispatcher != null)
-            {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
-            }
+            TryRegisterSlowTick();
+            TryRegisterLateFrameTick();
 
             if (!_seismicHookRegistered)
             {
@@ -472,6 +488,8 @@ namespace Hecton8.World
             _pendingSpawns?.Clear();
             _pendingGhostProxySnaps?.Clear();
             _runtimePoolReady = false;
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 GlobalRegistry.UnregisterResourceDistribution(this);
             UpdateDiagnostics(default);
@@ -483,8 +501,88 @@ namespace Hecton8.World
             CancelGhostProxySnapJobForTeardown();
             DisposeMetamorphismBuffers();
             DisposeGhostProxySnapBuffers();
+            TryUnregisterHotSwapListener();
+            ClearCachedRegistryServices();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 GlobalRegistry.UnregisterResourceDistribution(this);
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            if (_objectPool == null)
+                _objectPool = GlobalRegistry.ObjectPool;
+
+            if (_persistentWorldRegistry == null)
+                _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+
+            if (_dispatcher == null)
+                _dispatcher = GlobalRegistry.Dispatcher;
+        }
+
+        private void ClearCachedRegistryServices()
+        {
+            _objectPool = null;
+            _persistentWorldRegistry = null;
+            _dispatcher = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPool = currentService as ObjectPoolManager;
+                    break;
+                case GlobalRegistryServiceSlot.PersistentWorldRegistry:
+                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _dispatcher = currentService as ITickDispatcher;
+                    if (isActiveAndEnabled)
+                    {
+                        TryRegisterSlowTick();
+                        TryRegisterLateFrameTick();
+                    }
+                    break;
+            }
+        }
+
+        private void TryRegisterSlowTick()
+        {
+            if (_slowTickRegistered || !Application.isPlaying || _dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying || _dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         /// <summary>
@@ -549,14 +647,14 @@ namespace Hecton8.World
                 return false;
             }
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return false;
 
             float safeRadius = math.max(0.25f, crystallizationRadiusMeters);
             Vector3 spawnPosition = ResolveThermalDiamondVoxelFacePosition(runtimePosition, safeRadius, template);
             ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(spawnPosition);
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
@@ -612,7 +710,7 @@ namespace Hecton8.World
                 math.max(0.25f, sourceRadiusMeters),
                 template);
             ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(spawnPosition);
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
@@ -625,7 +723,7 @@ namespace Hecton8.World
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return false;
 
@@ -732,7 +830,7 @@ namespace Hecton8.World
                 math.max(0.25f, sourceRadiusMeters),
                 template);
             ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(spawnPosition);
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
@@ -745,7 +843,7 @@ namespace Hecton8.World
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return false;
 
@@ -819,7 +917,7 @@ namespace Hecton8.World
             float3 surfaceNormalAup,
             ResourceNodeTemplate template)
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null || template == null)
                 return false;
 
@@ -829,7 +927,7 @@ namespace Hecton8.World
             float spawnOffset = math.max(template.SpawnOffsetMeters, math.max(0.25f, sourceRadiusMeters) * 0.08f);
             Vector3 spawnPosition = runtimePosition + surfaceNormal * spawnOffset;
             ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(spawnPosition);
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
@@ -939,7 +1037,7 @@ namespace Hecton8.World
                 return false;
 
             ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(runtimePosition);
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
@@ -952,7 +1050,7 @@ namespace Hecton8.World
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return false;
 
@@ -993,22 +1091,12 @@ namespace Hecton8.World
             if (meteoriteRadiationIntensity <= 0f || meteoriteRadiationRadiusMeters <= 0f)
                 return;
 
-            HazardZoneManager hazardManager = HazardZoneManager.EnsureRuntimeInstance();
-            if (hazardManager == null)
-                return;
-
             int zoneId = ResolveMeteorRadiationHazardZoneId(stableSeed);
-            if (!hazardManager.RegisterZone(
-                    zoneId,
-                    runtimePosition,
-                    meteoriteRadiationIntensity,
-                    meteoriteRadiationRadiusMeters,
-                    HazardType.Radiation,
-                    meteoriteRadiationVisorBias))
-            {
-                return;
-            }
-
+            RadiationHazardGrid.RegisterSource(
+                zoneId,
+                runtimePosition,
+                meteoriteRadiationIntensity,
+                meteoriteRadiationRadiusMeters);
             _debugLastMeteorHazardZoneId = zoneId;
         }
 
@@ -1044,7 +1132,7 @@ namespace Hecton8.World
             if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 playerAup = snapshot.Aup;
-                return MathGuard.IsFinite(in playerAup);
+                return playerAup.IsFinite();
             }
 
             var playerMovement = playerContext.PlayerMovement;
@@ -1052,7 +1140,7 @@ namespace Hecton8.World
                 return false;
 
             playerAup = playerMovement.CurrentAup;
-            return MathGuard.IsFinite(in playerAup);
+            return playerAup.IsFinite();
         }
 
         private void EnsureRuntimePrefab()
@@ -1109,7 +1197,7 @@ namespace Hecton8.World
             if (_runtimePoolReady || _runtimePrefab == null)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return;
 
@@ -1259,7 +1347,7 @@ namespace Hecton8.World
             Vector3 surfaceAnchorPosition;
             if (template.RequiresBrinePool)
             {
-                if (!brinePool.IsValid)
+                if (brinePool.IsValid == 0)
                     return false;
 
                 float2 brineDirection = ResolveOctantDirection((int)(Next01(ref state) * 7.999f));
@@ -1282,7 +1370,7 @@ namespace Hecton8.World
                     return false;
 
                 surfaceAnchorPosition = new Vector3(runtimeProbe.x, seabedHeight, runtimeProbe.z);
-                if (brinePool.IsValid && IsInsideBrinePool(in brinePool, surfaceAnchorPosition))
+                if (brinePool.IsValid != 0 && IsInsideBrinePool(in brinePool, surfaceAnchorPosition))
                     return false;
             }
 
@@ -1310,7 +1398,7 @@ namespace Hecton8.World
                 return false;
 
             ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(runtimePosition);
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
@@ -1413,7 +1501,7 @@ namespace Hecton8.World
                 }
 
                 request.RequiresGhostProxySnap = 0;
-                PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+                PersistentWorldRegistry registry = _persistentWorldRegistry;
                 if (registry != null && registry.IsResourceNodeTombstoned(request.TombstoneId))
                     continue;
 
@@ -1430,7 +1518,7 @@ namespace Hecton8.World
             if (!_runtimePoolReady || _runtimePrefab == null || _pendingSpawns.Count == 0)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return;
 
@@ -1594,7 +1682,7 @@ namespace Hecton8.World
                 return;
             }
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             int count = math.min(_scheduledMetamorphismCount, _metamorphismNodeScratch.Count);
             for (int i = 0; i < count; i++)
             {
@@ -1776,7 +1864,7 @@ namespace Hecton8.World
 
         private ResourceNodeTemplate ResolveMetamorphosedTemplateOverride(ulong tombstoneId, ResourceNodeTemplate fallback)
         {
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null || !registry.IsResourceNodeMetamorphosed(tombstoneId))
                 return fallback;
 
@@ -1878,7 +1966,7 @@ namespace Hecton8.World
             return state;
         }
 
-        internal bool TrySampleBrineFluidDensity(Vector3 runtimePosition, out float fluidDensityKgPerCubicMeter)
+        public bool TrySampleBrineFluidDensity(Vector3 runtimePosition, out float fluidDensityKgPerCubicMeter)
         {
             fluidDensityKgPerCubicMeter = 0f;
             if (_residentSectors == null || _residentSectors.Count == 0 || !IsFiniteRuntimePosition(runtimePosition))
@@ -1897,7 +1985,7 @@ namespace Hecton8.World
                         continue;
 
                     BrinePoolState brinePool = state.BrinePool;
-                    if (!brinePool.IsValid || !IsInsideBrinePool(in brinePool, runtimePosition))
+                    if (brinePool.IsValid == 0 || !IsInsideBrinePool(in brinePool, runtimePosition))
                         continue;
 
                     fluidDensityKgPerCubicMeter = brinePool.FluidDensityKgPerCubicMeter;
@@ -1929,7 +2017,7 @@ namespace Hecton8.World
                         continue;
 
                     BrinePoolState brinePool = state.BrinePool;
-                    if (!brinePool.IsValid || !IsInsideBrinePool(in brinePool, runtimePosition))
+                    if (brinePool.IsValid == 0 || !IsInsideBrinePool(in brinePool, runtimePosition))
                         continue;
 
                     float absoluteHeightY = (float)(absoluteRuntime.y + ((double)brinePool.SurfaceHeight - runtimePosition.y));
@@ -1976,7 +2064,7 @@ namespace Hecton8.World
             if (!Application.isPlaying || tectonicUpwellingRespawnRate <= 0f)
                 return;
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null || _resourceTombstoneScratch == null)
                 return;
 
@@ -2067,7 +2155,7 @@ namespace Hecton8.World
             if (!math.isfinite(surfaceHeight) || surfaceHeight <= bowlFloorHeight + 0.1f)
                 return brinePool;
 
-            brinePool.IsValid = true;
+            brinePool.IsValid = 1;
             brinePool.StableSeed = stableSeed;
             brinePool.Center = new Vector3(runtimeProbe.x, (bowlFloorHeight + surfaceHeight) * 0.5f, runtimeProbe.z);
             brinePool.RadiusMeters = radiusMeters;
@@ -2122,12 +2210,12 @@ namespace Hecton8.World
             }
 
             state.BrinePool.HazardZoneId = zoneId;
-            state.BrinePool.HazardRegistered = true;
+            state.BrinePool.HazardRegistered = 1;
         }
 
         private void UnregisterBrineHazard(ref BrinePoolState brinePool)
         {
-            if (!brinePool.HazardRegistered)
+            if (brinePool.HazardRegistered == 0)
                 return;
 
             HazardZoneManager manager = Hecton8.Core.GlobalRegistry.HazardZones;
@@ -2135,7 +2223,7 @@ namespace Hecton8.World
                 manager.UnregisterZone(brinePool.HazardZoneId);
             HectonBrineToxicMudGrid.UnregisterCell(brinePool.HazardZoneId);
 
-            brinePool.HazardRegistered = false;
+            brinePool.HazardRegistered = 0;
             brinePool.HazardZoneId = 0;
         }
 
@@ -2179,7 +2267,7 @@ namespace Hecton8.World
 
         private static bool IsValidBrinePoolState(in BrinePoolState brinePool)
         {
-            return brinePool.IsValid &&
+            return brinePool.IsValid != 0 &&
                    IsFiniteRuntimePosition(brinePool.Center) &&
                    math.isfinite(brinePool.RadiusMeters) &&
                    math.isfinite(brinePool.BottomHeight) &&
@@ -2299,7 +2387,7 @@ namespace Hecton8.World
             if (_magmaVentPrefab == null)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return;
 
@@ -2360,7 +2448,7 @@ namespace Hecton8.World
                 return;
 
             UnregisterBrineHazard(ref state.BrinePool);
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             List<ResourceNode> nodes = state.ActiveNodes;
             for (int i = 0; i < nodes.Count; i++)
             {
@@ -2752,7 +2840,7 @@ namespace Hecton8.World
                 while (enumerator.MoveNext())
                 {
                     activeNodeCount += enumerator.Current.Value.ActiveNodes.Count;
-                    if (enumerator.Current.Value.BrinePool.IsValid)
+                    if (enumerator.Current.Value.BrinePool.IsValid != 0)
                         activeBrinePoolCount++;
                 }
                 enumerator.Dispose();

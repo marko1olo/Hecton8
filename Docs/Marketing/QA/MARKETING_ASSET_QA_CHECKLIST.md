@@ -78,7 +78,7 @@ Score 0-1 each:
 
 | Proof check | Pass condition |
 |---|---|
-| Fresh pain signal | The monitoring file has a same-day or current-week entry showing the bucket is still active, not only historical launch-week noise. |
+| Fresh pain signal | For any SN2-derived first-pack priority, the monitoring file has a same-day row and `pain_freshness_checked_at`; current-week is allowed only for non-SN2 background trend triage and cannot move first-pack priority. |
 | Answers one real audience fear | The asset clearly addresses one private bucket from `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md`: thin loop, trust, no player verb, base friction, defensive agency, performance proof boundary, save/recovery fairness, or clone risk. |
 | Keeps HECTON identity primary | The frame still reads as pressure, machinery, salvage, corrosion, black water, Seed Ship signal, or base-as-machine before it reads as "response to competitor complaint." |
 | Does not quote competitor pain | Caption, pitch, and metadata do not mention SN2 bugs, EULA, multiplayer-scope issues, poor performance, or "we do it better." |

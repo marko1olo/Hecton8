@@ -22,11 +22,13 @@ namespace Hecton8.Physiology
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
         private const int CsvMaxBytes = 8192;
         private const int CsvOverrideCapacity = 32;
-        private const int LockBufferCount = 14;
-        private const float CsvPollIntervalSeconds = 1f;
+        private const int LockBufferCount = 18;
         private const float KilopascalsPerAtmosphere = 101.325f;
+        private const float AuthoritativeQualityWeight = 1f;
+        private const float AuthoritativeUpdateIntervalSeconds = 0.016f;
         private const string CsvRelativePath = "tissue_halftime_profiles.csv";
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_PHYSIOLOGY_SURGEON.bin";
+        private const string GasCsvRelativePath = "physiological_gas_profiles.csv";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_272.bin";
         private const string LegacyMetabolismFile = "metabolism_rates.h8bin";
         private const string LegacyMValueFile = "haldane_m-values.bin";
         private const ulong DumpMagic = 0x5348494E4F425532UL; // SHINOBU2
@@ -39,6 +41,20 @@ namespace Hecton8.Physiology
         private static readonly uint _MValueStrictnessHash = HashLowerAsciiString("m_value_strictness");
         private static readonly uint _OffGassingMultiplierHash = HashLowerAsciiString("offgassing_multiplier");
         private static readonly uint _NarcosisThresholdHash = HashLowerAsciiString("narcosis_threshold");
+        private static readonly uint _OxygenFractionHash = HashLowerAsciiString("oxygen_fraction");
+        private static readonly uint _NitrogenFractionHash = HashLowerAsciiString("nitrogen_fraction");
+        private static readonly uint _CarbonDioxideFractionHash = HashLowerAsciiString("carbon_dioxide_fraction");
+        private static readonly uint _Fo2Hash = HashLowerAsciiString("fo2");
+        private static readonly uint _Fn2Hash = HashLowerAsciiString("fn2");
+        private static readonly uint _Fco2Hash = HashLowerAsciiString("fco2");
+        private static readonly uint _CnsToxicityRateHash = HashLowerAsciiString("cns_toxicity_rate");
+        private static readonly uint _CnsExtremeRateHash = HashLowerAsciiString("cns_extreme_rate");
+        private static readonly uint _HypoxiaLimitHash = HashLowerAsciiString("hypoxia_limit");
+        private static readonly uint _HypoxiaPpo2Hash = HashLowerAsciiString("hypoxia_ppo2");
+        private static readonly uint _AnoxiaLimitHash = HashLowerAsciiString("anoxia_limit");
+        private static readonly uint _AnoxiaPpo2Hash = HashLowerAsciiString("anoxia_ppo2");
+        private static readonly uint _Co2ToxicityStartHash = HashLowerAsciiString("co2_toxicity_start");
+        private static readonly uint _Co2ToxicityFullHash = HashLowerAsciiString("co2_toxicity_full");
 
         [Header("Runtime Capacity")]
         [Tooltip("Maximum player or humanoid rows simulated by the physiology jobs.")]
@@ -54,37 +70,41 @@ namespace Hecton8.Physiology
         [Tooltip("Fallback thermal environment used by the mock pressure lane.")]
         [SerializeField] private float mockAmbientTemperatureCelsius = 2f;
 
-        private VaultBufferHandle<PhysiologyDTO> _vitalsHandle;
-        private VaultBufferHandle<DecompressionStateDTO> _decompressionHandle;
-        private VaultBufferHandle<TissueCompartmentDTO> _tissueHandle;
-        private VaultBufferHandle<HaldaneTissueCoefficientDTO> _coefficientHandle;
-        private VaultBufferHandle<MockEnvironmentVitalsSignal> _environmentHandle;
-        private VaultBufferHandle<PhysiologyScalarsDTO> _scalarHandle;
-        private VaultBufferHandle<VitalsExportDTO> _exportHandle;
-        private VaultBufferHandle<PhysiologyTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<CardiacPulseStateDTO> _pulseHandle;
-        private VaultBufferHandle<MockToxemiaSignal> _toxemiaHandle;
-        private VaultBufferHandle<MockPressureSignal> _pressureHandle;
-        private VaultBufferHandle<MockCombatDamageSignal> _combatHandle;
-        private VaultBufferHandle<MockPredatorAggroSignal> _predatorHandle;
-        private VaultBufferHandle<MockMedicalItemUsedSignal> _medicalHandle;
-        private VaultBufferHandle<PhysiologyTuningDTO> _tuningHandle;
-        private VaultBufferHandle<BiologyConstantOverrideDTO> _csvOverrideHandle;
-        private VaultBufferHandle<DiveProfileSampleDTO> _mockDiveProfileHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<PhysiologyDTO> _vitalsHandle;
+        private VaultGenerationHandle<DecompressionStateDTO> _decompressionHandle;
+        private VaultGenerationHandle<TissueCompartmentDTO> _tissueHandle;
+        private VaultGenerationHandle<HaldaneTissueCoefficientDTO> _coefficientHandle;
+        private VaultGenerationHandle<MockEnvironmentVitalsSignal> _environmentHandle;
+        private VaultGenerationHandle<PhysiologyScalarsDTO> _scalarHandle;
+        private VaultGenerationHandle<GasPhysiologyStateDTO> _gasStateHandle;
+        private VaultGenerationHandle<BreathingGasFractionsDTO> _breathingGasHandle;
+        private VaultGenerationHandle<GasPhysiologyTuningDTO> _gasTuningHandle;
+        private VaultGenerationHandle<VitalsExportDTO> _exportHandle;
+        private VaultGenerationHandle<PhysiologyTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<CardiacPulseStateDTO> _pulseHandle;
+        private VaultGenerationHandle<MockToxemiaSignal> _toxemiaHandle;
+        private VaultGenerationHandle<MockPressureSignal> _pressureHandle;
+        private VaultGenerationHandle<MockCombatDamageSignal> _combatHandle;
+        private VaultGenerationHandle<MockPredatorAggroSignal> _predatorHandle;
+        private VaultGenerationHandle<MockMedicalItemUsedSignal> _medicalHandle;
+        private VaultGenerationHandle<PhysiologyTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<BiologyConstantOverrideDTO> _csvOverrideHandle;
+        private VaultGenerationHandle<DiveProfileSampleDTO> _mockDiveProfileHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
 
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerContext;
         private IGasDynamicsSolver _gasDynamics;
         private JobHandle _activeJobHandle;
         private string _csvPath;
+        private string _gasCsvPath;
         private string _dumpPath;
         private int _telemetryCursor;
         private int _scheduledCount;
         private uint _simulationFrameCounter;
         private long _jobScheduleTimestamp;
         private long _csvLastWriteTicks;
-        private float _csvPollTimer;
+        private long _gasCsvLastWriteTicks;
         private float _simulationAccumulator;
         private float _smoothedGlobalQualityWeight = 1f;
         private bool _registeredUpdate;
@@ -97,13 +117,17 @@ namespace Hecton8.Physiology
         private bool _playerDepthValid;
         private bool _previousDepthValid;
         private bool _insideHabitat;
+        private bool _gasCsvOverrideActive;
         private int _activeHabitatRoomId = -1;
         private float _previousDepthMeters;
+        private uint _playerDamageTargetHash;
+        private BreathingGasFractionsDTO _gasCsvOverride;
 
         private void Awake()
         {
             entityCapacity = math.max(1, entityCapacity);
             _csvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", CsvRelativePath));
+            _gasCsvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", GasCsvRelativePath));
             _dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
         }
 
@@ -172,22 +196,24 @@ namespace Hecton8.Physiology
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault == null || !EnsureVaultState())
+            if (vault == null || !_defaultsInitialized || !HandlesReady())
                 return;
 
             float sourceDt = math.clamp(deltaTime, 0.0001f, ShinobuPhysiologyConstants.MaxSimulationStepSeconds);
-            float globalQualityWeight = ResolveSmoothedGlobalQualityWeight(sourceDt);
-            MonitorCsvOverrides(sourceDt, vault);
+            UpdateSmoothedGlobalQualityWeight(sourceDt);
 
             _simulationAccumulator = math.min(
                 _simulationAccumulator + sourceDt,
                 ShinobuPhysiologyConstants.MaxSimulationStepSeconds);
-            float updateInterval = ResolvePhysiologyUpdateIntervalSeconds(globalQualityWeight);
+            float updateInterval = ResolvePhysiologyUpdateIntervalSeconds(AuthoritativeQualityWeight);
             if (_simulationAccumulator < updateInterval)
                 return;
 
             float dt = math.clamp(_simulationAccumulator, 0.0001f, ShinobuPhysiologyConstants.MaxSimulationStepSeconds);
             uint frame = ++_simulationFrameCounter;
+            if (!TryLockJobBuffers(vault))
+                return;
+
             WriteEnvironmentSeed(vault, dt, frame);
 
             if (!TryResolveBuffers(
@@ -198,6 +224,9 @@ namespace Hecton8.Physiology
                     out NativeArray<HaldaneTissueCoefficientDTO> coefficients,
                     out NativeArray<MockEnvironmentVitalsSignal> environment,
                     out NativeArray<PhysiologyScalarsDTO> scalars,
+                    out NativeArray<GasPhysiologyStateDTO> gasStates,
+                    out NativeArray<BreathingGasFractionsDTO> breathingGas,
+                    out NativeArray<GasPhysiologyTuningDTO> gasTuningArray,
                     out NativeArray<VitalsExportDTO> exports,
                     out NativeArray<PhysiologyTelemetryEntry> telemetry,
                     out NativeArray<CardiacPulseStateDTO> pulses,
@@ -209,6 +238,7 @@ namespace Hecton8.Physiology
                     out NativeArray<PhysiologyTuningDTO> tuningArray,
                     out NativeArray<DiveProfileSampleDTO> mockDiveProfile))
             {
+                UnlockJobBuffers();
                 return;
             }
 
@@ -220,18 +250,23 @@ namespace Hecton8.Physiology
             count = math.min(count, tissues.Length / ShinobuPhysiologyConstants.TissueCompartmentCount);
             count = math.min(count, environment.Length);
             count = math.min(count, scalars.Length);
+            count = math.min(count, gasStates.Length);
+            count = math.min(count, breathingGas.Length);
             count = math.min(count, exports.Length);
             count = math.min(count, pulses.Length);
             if (count <= 0)
+            {
+                UnlockJobBuffers();
                 return;
-
-            if (!TryLockJobBuffers(vault))
-                return;
+            }
 
             PhysiologyTuningDTO tuning = ShinobuPhysiologyJobMath.SanitizeTuning(tuningArray[0]);
             tuningArray[0] = tuning;
+            GasPhysiologyTuningDTO gasTuning = ShinobuPhysiologyJobMath.SanitizeGasTuning(gasTuningArray[0]);
+            gasTuningArray[0] = gasTuning;
 
             long scheduleTimestamp = Stopwatch.GetTimestamp();
+            uint playerTargetHash = RefreshPlayerCombatTargetHash();
             JobHandle handle = new MockEnvironmentDropJob
             {
                 Environment = environment,
@@ -242,6 +277,23 @@ namespace Hecton8.Physiology
                 Count = count,
                 UseMockDepth = _playerDepthValid ? (byte)0 : (byte)1
             }.Schedule(count, ShinobuPhysiologyConstants.FrameJobBatchSize);
+
+            handle = new GenerateMockBreathingGasJob
+            {
+                Environment = environment,
+                BreathingGas = breathingGas,
+                OverrideGas = _gasCsvOverride,
+                Count = count,
+                UseOverrideGas = _gasCsvOverrideActive ? (byte)1 : (byte)0
+            }.Schedule(count, ShinobuPhysiologyConstants.FrameJobBatchSize, handle);
+
+            handle = new CalculatePartialPressuresJob
+            {
+                Environment = environment,
+                BreathingGas = breathingGas,
+                GasStates = gasStates,
+                Count = count
+            }.Schedule(count, ShinobuPhysiologyConstants.FrameJobBatchSize, handle);
 
             handle = new PhysiologySignalIngestJob
             {
@@ -254,19 +306,36 @@ namespace Hecton8.Physiology
                 Count = count
             }.Schedule(count, ShinobuPhysiologyConstants.FrameJobBatchSize, handle);
 
-            handle = new TissueSaturationJob
+            handle = new IntegrateBloodGasTensionsJob
             {
                 Vitals = vitals,
                 TissueCompartments = tissues,
                 DecompressionStates = decompression,
                 Environment = environment,
+                GasStates = gasStates,
                 Scalars = scalars,
                 PhysiologyWriter = SignalBus<PhysiologyStateSignal>.ParallelWriter,
                 Tuning = tuning,
                 DeltaSeconds = dt,
-                GlobalQualityWeight = globalQualityWeight,
+                GlobalQualityWeight = AuthoritativeQualityWeight,
                 Count = count,
                 EmitPhysiologySignal = 1
+            }.Schedule(count, ShinobuPhysiologyConstants.FrameJobBatchSize, handle);
+
+            handle = new CalculateCnsToxicityJob
+            {
+                GasStates = gasStates,
+                Scalars = scalars,
+                Environment = environment,
+                PhysiologyWriter = SignalBus<PhysiologyStateSignal>.ParallelWriter,
+                DamageWriter = SignalBus<CombatDamageSignal>.ParallelWriter,
+                GasTuning = gasTuning,
+                DeltaSeconds = dt,
+                GlobalQualityWeight = AuthoritativeQualityWeight,
+                Frame = frame,
+                PlayerTargetHash = playerTargetHash,
+                Count = count,
+                EmitSignals = 1
             }.Schedule(count, ShinobuPhysiologyConstants.FrameJobBatchSize, handle);
 
             handle = new OxygenConsumptionJob
@@ -275,10 +344,12 @@ namespace Hecton8.Physiology
                 Scalars = scalars,
                 PulseStates = pulses,
                 Environment = environment,
+                GasStates = gasStates,
                 VitalsExport = exports,
                 Telemetry = telemetry,
                 CardiacPulseWriter = SignalBus<CardiacPulseSignal>.ParallelWriter,
                 Tuning = tuning,
+                GasTuning = gasTuning,
                 DeltaSeconds = dt,
                 Frame = frame,
                 TelemetryCursor = _telemetryCursor,
@@ -300,28 +371,14 @@ namespace Hecton8.Physiology
         }
 
         /// <summary>
-        /// Returns a mutable reference to a vault-owned vitals row without CS1612 struct copies.
-        /// </summary>
-        /// <param name="entityIndex">Entity row index.</param>
-        /// <returns>Reference to the exact vault element.</returns>
-        public ref PhysiologyDTO GetVitalsRef(int entityIndex)
-        {
-            IDataVault vault = _dataVault;
-            NativeArray<PhysiologyDTO> vitals = vault != null ? _vitalsHandle.Resolve(vault) : default;
-            if (!vitals.IsCreated || (uint)entityIndex >= (uint)vitals.Length)
-                FatalMemoryException.ThrowStaleVaultHandle();
-
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(vitals);
-            return ref UnsafeUtility.ArrayElementAsRef<PhysiologyDTO>(ptr, entityIndex);
-        }
-
-        /// <summary>
         /// Injects a mock pressure sample for isolated tests.
         /// </summary>
         public bool InjectMockPressure(int entityIndex, float depthMeters, float ascentRateMetersPerSecond)
         {
-            IDataVault vault = _dataVault;
-            NativeArray<MockPressureSignal> pressure = vault != null ? _pressureHandle.Resolve(vault) : default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<MockPressureSignal> pressure = OpenPhysiologyVaultArray(ref _pressureHandle, BufferID.ShinobuMockPressureSignals, entityCapacity);
             if (!pressure.IsCreated || (uint)entityIndex >= (uint)pressure.Length)
                 return false;
 
@@ -342,8 +399,10 @@ namespace Hecton8.Physiology
         /// </summary>
         public bool SetHyperbaricTreatmentState(int entityIndex, float ambientPressureAtm, uint stateMask)
         {
-            IDataVault vault = _dataVault;
-            NativeArray<MockPressureSignal> pressure = vault != null ? _pressureHandle.Resolve(vault) : default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<MockPressureSignal> pressure = OpenPhysiologyVaultArray(ref _pressureHandle, BufferID.ShinobuMockPressureSignals, entityCapacity);
             if (!pressure.IsCreated || (uint)entityIndex >= (uint)pressure.Length)
                 return false;
 
@@ -366,8 +425,10 @@ namespace Hecton8.Physiology
         /// </summary>
         public bool GenerateMockDiveProfile()
         {
-            IDataVault vault = _dataVault;
-            NativeArray<DiveProfileSampleDTO> samples = vault != null ? _mockDiveProfileHandle.Resolve(vault) : default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<DiveProfileSampleDTO> samples = OpenPhysiologyVaultArray(ref _mockDiveProfileHandle, BufferID.ShinobuMockDiveProfile, ShinobuPhysiologyConstants.TelemetryFrameCount);
             if (!samples.IsCreated || samples.Length <= 0)
                 return false;
 
@@ -386,12 +447,42 @@ namespace Hecton8.Physiology
         }
 
         /// <summary>
+        /// Generates deterministic breathing-gas rows into DataVault for isolated gas physiology tests.
+        /// </summary>
+        public bool GenerateMockBreathingGas()
+        {
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<MockEnvironmentVitalsSignal> environment = OpenPhysiologyVaultArray(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, entityCapacity);
+            NativeArray<BreathingGasFractionsDTO> breathingGas = OpenPhysiologyVaultArray(ref _breathingGasHandle, ShinobuPhysiologyConstants.BreathingGasFractionsBuffer, entityCapacity);
+            if (!environment.IsCreated || !breathingGas.IsCreated || breathingGas.Length <= 0)
+                return false;
+
+            GenerateMockBreathingGasJob job = new GenerateMockBreathingGasJob
+            {
+                Environment = environment,
+                BreathingGas = breathingGas,
+                OverrideGas = _gasCsvOverride,
+                Count = math.min(environment.Length, breathingGas.Length),
+                UseOverrideGas = _gasCsvOverrideActive ? (byte)1 : (byte)0
+            };
+            // COLD SYNC JOB: explicit gas-profile generation for test tooling, not a frame simulation dependency.
+            for (int i = 0; i < job.Count; i++)
+                job.Execute(i);
+
+            return true;
+        }
+
+        /// <summary>
         /// Injects a mock trauma bit.
         /// </summary>
         public bool InjectMockCombatDamage(int entityIndex, int traumaType, float severity01)
         {
-            IDataVault vault = _dataVault;
-            NativeArray<MockCombatDamageSignal> combat = vault != null ? _combatHandle.Resolve(vault) : default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<MockCombatDamageSignal> combat = OpenPhysiologyVaultArray(ref _combatHandle, BufferID.ShinobuMockCombatDamageSignals, entityCapacity);
             if (!combat.IsCreated || (uint)entityIndex >= (uint)combat.Length)
                 return false;
 
@@ -411,8 +502,10 @@ namespace Hecton8.Physiology
         /// </summary>
         public bool InjectMockPredatorAggro(int entityIndex, float aggro01)
         {
-            IDataVault vault = _dataVault;
-            NativeArray<MockPredatorAggroSignal> predator = vault != null ? _predatorHandle.Resolve(vault) : default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<MockPredatorAggroSignal> predator = OpenPhysiologyVaultArray(ref _predatorHandle, BufferID.ShinobuMockPredatorAggroSignals, entityCapacity);
             if (!predator.IsCreated || (uint)entityIndex >= (uint)predator.Length)
                 return false;
 
@@ -431,8 +524,10 @@ namespace Hecton8.Physiology
         /// </summary>
         public bool InjectMockToxemia(int entityIndex, float value01, bool absolute)
         {
-            IDataVault vault = _dataVault;
-            NativeArray<MockToxemiaSignal> toxemia = vault != null ? _toxemiaHandle.Resolve(vault) : default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<MockToxemiaSignal> toxemia = OpenPhysiologyVaultArray(ref _toxemiaHandle, BufferID.ShinobuMockToxemiaSignals, entityCapacity);
             if (!toxemia.IsCreated || (uint)entityIndex >= (uint)toxemia.Length)
                 return false;
 
@@ -451,8 +546,10 @@ namespace Hecton8.Physiology
         /// </summary>
         public bool InjectMockMedicalItem(int entityIndex, float purgeStrength01)
         {
-            IDataVault vault = _dataVault;
-            NativeArray<MockMedicalItemUsedSignal> medical = vault != null ? _medicalHandle.Resolve(vault) : default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<MockMedicalItemUsedSignal> medical = OpenPhysiologyVaultArray(ref _medicalHandle, BufferID.ShinobuMockMedicalItemSignals, entityCapacity);
             if (!medical.IsCreated || (uint)entityIndex >= (uint)medical.Length)
                 return false;
 
@@ -472,8 +569,10 @@ namespace Hecton8.Physiology
         public bool TryGetTuning(out PhysiologyTuningDTO tuning)
         {
             tuning = default;
-            IDataVault vault = _dataVault;
-            NativeArray<PhysiologyTuningDTO> tuningArray = vault != null ? _tuningHandle.Resolve(vault) : default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<PhysiologyTuningDTO> tuningArray = OpenPhysiologyVaultArray(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1);
             if (!tuningArray.IsCreated || tuningArray.Length <= 0)
                 return false;
 
@@ -486,12 +585,47 @@ namespace Hecton8.Physiology
         /// </summary>
         public bool SetEditorTuning(PhysiologyTuningDTO tuning)
         {
-            IDataVault vault = _dataVault;
-            NativeArray<PhysiologyTuningDTO> tuningArray = vault != null ? _tuningHandle.Resolve(vault) : default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<PhysiologyTuningDTO> tuningArray = OpenPhysiologyVaultArray(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1);
             if (!tuningArray.IsCreated || tuningArray.Length <= 0)
                 return false;
 
             tuningArray[0] = ShinobuPhysiologyJobMath.SanitizeTuning(tuning);
+            return true;
+        }
+
+        /// <summary>
+        /// Reads the vault-backed gas toxicity tuning row for editor tools.
+        /// </summary>
+        public bool TryGetGasTuning(out GasPhysiologyTuningDTO tuning)
+        {
+            tuning = default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<GasPhysiologyTuningDTO> tuningArray = OpenPhysiologyVaultArray(ref _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1);
+            if (!tuningArray.IsCreated || tuningArray.Length <= 0)
+                return false;
+
+            tuning = ShinobuPhysiologyJobMath.SanitizeGasTuning(tuningArray[0]);
+            return true;
+        }
+
+        /// <summary>
+        /// Applies editor-authored gas toxicity tuning directly to vault memory.
+        /// </summary>
+        public bool SetEditorGasTuning(GasPhysiologyTuningDTO tuning)
+        {
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<GasPhysiologyTuningDTO> tuningArray = OpenPhysiologyVaultArray(ref _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1);
+            if (!tuningArray.IsCreated || tuningArray.Length <= 0)
+                return false;
+
+            tuningArray[0] = ShinobuPhysiologyJobMath.SanitizeGasTuning(tuning);
             return true;
         }
 
@@ -502,9 +636,11 @@ namespace Hecton8.Physiology
         {
             tension = 0f;
             mValue = 0f;
-            IDataVault vault = _dataVault;
-            NativeArray<TissueCompartmentDTO> tissues = vault != null ? _tissueHandle.Resolve(vault) : default;
-            NativeArray<MockEnvironmentVitalsSignal> environment = vault != null ? _environmentHandle.Resolve(vault) : default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<TissueCompartmentDTO> tissues = OpenPhysiologyVaultArray(ref _tissueHandle, BufferID.ShinobuTissueCompartments, entityCapacity * ShinobuPhysiologyConstants.TissueCompartmentCount);
+            NativeArray<MockEnvironmentVitalsSignal> environment = OpenPhysiologyVaultArray(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, entityCapacity);
             int compartmentIndex = entityIndex * ShinobuPhysiologyConstants.TissueCompartmentCount + tissueIndex;
             if (!tissues.IsCreated ||
                 (uint)tissueIndex >= ShinobuPhysiologyConstants.TissueCompartmentCount ||
@@ -528,12 +664,51 @@ namespace Hecton8.Physiology
         public bool TryGetVitalsExport(out VitalsExportDTO export)
         {
             export = default;
-            IDataVault vault = _dataVault;
-            NativeArray<VitalsExportDTO> exports = vault != null ? _exportHandle.Resolve(vault) : default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<VitalsExportDTO> exports = OpenPhysiologyVaultArray(ref _exportHandle, BufferID.ShinobuVitalsExport, entityCapacity);
             if (!exports.IsCreated || exports.Length <= 0)
                 return false;
 
             export = exports[0];
+            return true;
+        }
+
+        /// <summary>
+        /// Reads the latest completed black-box telemetry row for editor diagnostics.
+        /// </summary>
+        public bool TryGetLatestTelemetry(out PhysiologyTelemetryEntry entry)
+        {
+            entry = default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<PhysiologyTelemetryEntry> telemetry = OpenPhysiologyVaultArray(ref _telemetryHandle, BufferID.ShinobuPhysiologyTelemetryRing, ShinobuPhysiologyConstants.TelemetryFrameCount);
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return false;
+
+            int index = _telemetryCursor - 1;
+            if (index < 0)
+                index += telemetry.Length;
+            entry = telemetry[index % telemetry.Length];
+            return entry.Frame != 0u;
+        }
+
+        /// <summary>
+        /// Reads one gas physiology row for editor and debug visualizers.
+        /// </summary>
+        public bool TryGetGasPhysiologyState(int entityIndex, out GasPhysiologyStateDTO state)
+        {
+            state = default;
+            if (_jobScheduled)
+                return false;
+
+            NativeArray<GasPhysiologyStateDTO> gasStates = OpenPhysiologyVaultArray(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, entityCapacity);
+            if (!gasStates.IsCreated || (uint)entityIndex >= (uint)gasStates.Length)
+                return false;
+
+            state = gasStates[entityIndex];
             return true;
         }
 
@@ -553,29 +728,32 @@ namespace Hecton8.Physiology
             entityCapacity = math.max(1, entityCapacity);
             if (HandlesReady())
                 return true;
-            if (!ShinobuPhysiologyLayoutGuards.ValidateTissueCompartmentLayout())
+            if (!ShinobuPhysiologyLayoutGuards.ValidatePhysiologyLayouts())
                 return false;
 
-            _vitalsHandle = vault.GetBufferHandle<PhysiologyDTO>(BufferID.ShinobuPhysiologyVitals, entityCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _decompressionHandle = vault.GetBufferHandle<DecompressionStateDTO>(BufferID.ShinobuDecompressionStates, entityCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _tissueHandle = vault.GetBufferHandle<TissueCompartmentDTO>(BufferID.ShinobuTissueCompartments, entityCapacity * ShinobuPhysiologyConstants.TissueCompartmentCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _coefficientHandle = vault.GetBufferHandle<HaldaneTissueCoefficientDTO>(BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _environmentHandle = vault.GetBufferHandle<MockEnvironmentVitalsSignal>(BufferID.ShinobuEnvironmentVitals, entityCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _scalarHandle = vault.GetBufferHandle<PhysiologyScalarsDTO>(BufferID.ShinobuPhysiologyScalars, entityCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _exportHandle = vault.GetBufferHandle<VitalsExportDTO>(BufferID.ShinobuVitalsExport, entityCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _telemetryHandle = vault.GetBufferHandle<PhysiologyTelemetryEntry>(BufferID.ShinobuPhysiologyTelemetryRing, ShinobuPhysiologyConstants.TelemetryFrameCount, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _pulseHandle = vault.GetBufferHandle<CardiacPulseStateDTO>(BufferID.ShinobuCardiacPulseStates, entityCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _toxemiaHandle = vault.GetBufferHandle<MockToxemiaSignal>(BufferID.ShinobuMockToxemiaSignals, entityCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _pressureHandle = vault.GetBufferHandle<MockPressureSignal>(BufferID.ShinobuMockPressureSignals, entityCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _combatHandle = vault.GetBufferHandle<MockCombatDamageSignal>(BufferID.ShinobuMockCombatDamageSignals, entityCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _predatorHandle = vault.GetBufferHandle<MockPredatorAggroSignal>(BufferID.ShinobuMockPredatorAggroSignals, entityCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _medicalHandle = vault.GetBufferHandle<MockMedicalItemUsedSignal>(BufferID.ShinobuMockMedicalItemSignals, entityCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _tuningHandle = vault.GetBufferHandle<PhysiologyTuningDTO>(BufferID.ShinobuPhysiologyTuning, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csvOverrideHandle = vault.GetBufferHandle<BiologyConstantOverrideDTO>(BufferID.ShinobuBiologyCsvOverrides, CsvOverrideCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _mockDiveProfileHandle = vault.GetBufferHandle<DiveProfileSampleDTO>(BufferID.ShinobuMockDiveProfile, ShinobuPhysiologyConstants.TelemetryFrameCount, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuTissueCsvScratch, CsvMaxBytes, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-
-            if (!HandlesReady())
+            bool created =
+                OpenOrAcquirePhysiologyVaultBuffer(ref _vitalsHandle, BufferID.ShinobuPhysiologyVitals, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _decompressionHandle, BufferID.ShinobuDecompressionStates, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _tissueHandle, BufferID.ShinobuTissueCompartments, entityCapacity * ShinobuPhysiologyConstants.TissueCompartmentCount, NativeArrayOptions.UninitializedMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _scalarHandle, BufferID.ShinobuPhysiologyScalars, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _breathingGasHandle, ShinobuPhysiologyConstants.BreathingGasFractionsBuffer, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _exportHandle, BufferID.ShinobuVitalsExport, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _telemetryHandle, BufferID.ShinobuPhysiologyTelemetryRing, ShinobuPhysiologyConstants.TelemetryFrameCount, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _pulseHandle, BufferID.ShinobuCardiacPulseStates, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _toxemiaHandle, BufferID.ShinobuMockToxemiaSignals, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _pressureHandle, BufferID.ShinobuMockPressureSignals, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _combatHandle, BufferID.ShinobuMockCombatDamageSignals, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _predatorHandle, BufferID.ShinobuMockPredatorAggroSignals, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _medicalHandle, BufferID.ShinobuMockMedicalItemSignals, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _csvOverrideHandle, BufferID.ShinobuBiologyCsvOverrides, CsvOverrideCapacity, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _mockDiveProfileHandle, BufferID.ShinobuMockDiveProfile, ShinobuPhysiologyConstants.TelemetryFrameCount, NativeArrayOptions.ClearMemory, out _) &&
+                OpenOrAcquirePhysiologyVaultBuffer(ref _csvScratchHandle, BufferID.ShinobuTissueCsvScratch, CsvMaxBytes, NativeArrayOptions.UninitializedMemory, out _);
+            if (!created || !HandlesReady())
                 return false;
 
             InitializeDefaults(vault);
@@ -584,24 +762,113 @@ namespace Hecton8.Physiology
 
         private bool HandlesReady()
         {
-            return _vitalsHandle.IsCreated &&
-                   _decompressionHandle.IsCreated &&
-                   _tissueHandle.IsCreated &&
-                   _coefficientHandle.IsCreated &&
-                   _environmentHandle.IsCreated &&
-                   _scalarHandle.IsCreated &&
-                   _exportHandle.IsCreated &&
-                   _telemetryHandle.IsCreated &&
-                   _pulseHandle.IsCreated &&
-                   _toxemiaHandle.IsCreated &&
-                   _pressureHandle.IsCreated &&
-                   _combatHandle.IsCreated &&
-                   _predatorHandle.IsCreated &&
-                   _medicalHandle.IsCreated &&
-                   _tuningHandle.IsCreated &&
-                   _csvOverrideHandle.IsCreated &&
-                   _mockDiveProfileHandle.IsCreated &&
-                   _csvScratchHandle.IsCreated;
+            return OpenPhysiologyVaultBuffer(ref _vitalsHandle, BufferID.ShinobuPhysiologyVitals, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _decompressionHandle, BufferID.ShinobuDecompressionStates, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _tissueHandle, BufferID.ShinobuTissueCompartments, entityCapacity * ShinobuPhysiologyConstants.TissueCompartmentCount, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _scalarHandle, BufferID.ShinobuPhysiologyScalars, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _breathingGasHandle, ShinobuPhysiologyConstants.BreathingGasFractionsBuffer, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _exportHandle, BufferID.ShinobuVitalsExport, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _telemetryHandle, BufferID.ShinobuPhysiologyTelemetryRing, ShinobuPhysiologyConstants.TelemetryFrameCount, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _pulseHandle, BufferID.ShinobuCardiacPulseStates, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _toxemiaHandle, BufferID.ShinobuMockToxemiaSignals, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _pressureHandle, BufferID.ShinobuMockPressureSignals, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _combatHandle, BufferID.ShinobuMockCombatDamageSignals, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _predatorHandle, BufferID.ShinobuMockPredatorAggroSignals, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _medicalHandle, BufferID.ShinobuMockMedicalItemSignals, entityCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _csvOverrideHandle, BufferID.ShinobuBiologyCsvOverrides, CsvOverrideCapacity, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _mockDiveProfileHandle, BufferID.ShinobuMockDiveProfile, ShinobuPhysiologyConstants.TelemetryFrameCount, out _) &&
+                   OpenPhysiologyVaultBuffer(ref _csvScratchHandle, BufferID.ShinobuTissueCsvScratch, CsvMaxBytes, out _);
+        }
+
+        private bool OpenOrAcquirePhysiologyVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (OpenPhysiologyVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault == null || requiredLength <= 0)
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                if (!vault.TryGetGenerationHandle(bufferId, out handle))
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                return OpenPhysiologyVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                OwnerSystem,
+                options);
+            return OpenPhysiologyVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private NativeArray<T> OpenPhysiologyVaultArray<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return OpenPhysiologyVaultBuffer(_dataVault, ref handle, bufferId, requiredLength, out NativeArray<T> buffer)
+                ? buffer
+                : default;
+        }
+
+        private bool OpenPhysiologyVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            return OpenPhysiologyVaultBuffer(_dataVault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool OpenPhysiologyVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsPhysiologyVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsPhysiologyVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)OwnerSystem &&
+                   handle.Generation != 0u;
         }
 
         private void InitializeDefaults(IDataVault vault)
@@ -609,28 +876,38 @@ namespace Hecton8.Physiology
             if (_defaultsInitialized)
                 return;
 
-            NativeArray<PhysiologyTuningDTO> tuning = _tuningHandle.Resolve(vault);
+            NativeArray<PhysiologyTuningDTO> tuning = OpenPhysiologyVaultArray(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1);
             if (tuning.IsCreated && tuning.Length > 0)
                 tuning[0] = ShinobuPhysiologyJobMath.SanitizeTuning(tuning[0]);
+            NativeArray<GasPhysiologyTuningDTO> gasTuning = OpenPhysiologyVaultArray(ref _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1);
+            if (gasTuning.IsCreated && gasTuning.Length > 0)
+                gasTuning[0] = ShinobuPhysiologyJobMath.SanitizeGasTuning(gasTuning[0]);
 
             if (!TryLoadLegacyMetabolismTables(vault))
                 GenerateEmergencyMockMetabolism(vault);
+            LoadCsvOverridesFromDisk(vault);
 
-            NativeArray<PhysiologyDTO> vitals = _vitalsHandle.Resolve(vault);
-            NativeArray<DecompressionStateDTO> states = _decompressionHandle.Resolve(vault);
-            NativeArray<TissueCompartmentDTO> tissues = _tissueHandle.Resolve(vault);
-            NativeArray<HaldaneTissueCoefficientDTO> coefficients = _coefficientHandle.Resolve(vault);
-            NativeArray<PhysiologyScalarsDTO> scalars = _scalarHandle.Resolve(vault);
-            NativeArray<CardiacPulseStateDTO> pulses = _pulseHandle.Resolve(vault);
+            NativeArray<PhysiologyDTO> vitals = OpenPhysiologyVaultArray(ref _vitalsHandle, BufferID.ShinobuPhysiologyVitals, entityCapacity);
+            NativeArray<DecompressionStateDTO> states = OpenPhysiologyVaultArray(ref _decompressionHandle, BufferID.ShinobuDecompressionStates, entityCapacity);
+            NativeArray<TissueCompartmentDTO> tissues = OpenPhysiologyVaultArray(ref _tissueHandle, BufferID.ShinobuTissueCompartments, entityCapacity * ShinobuPhysiologyConstants.TissueCompartmentCount);
+            NativeArray<HaldaneTissueCoefficientDTO> coefficients = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
+            NativeArray<PhysiologyScalarsDTO> scalars = OpenPhysiologyVaultArray(ref _scalarHandle, BufferID.ShinobuPhysiologyScalars, entityCapacity);
+            NativeArray<GasPhysiologyStateDTO> gasStates = OpenPhysiologyVaultArray(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, entityCapacity);
+            NativeArray<BreathingGasFractionsDTO> breathingGas = OpenPhysiologyVaultArray(ref _breathingGasHandle, ShinobuPhysiologyConstants.BreathingGasFractionsBuffer, entityCapacity);
+            NativeArray<CardiacPulseStateDTO> pulses = OpenPhysiologyVaultArray(ref _pulseHandle, BufferID.ShinobuCardiacPulseStates, entityCapacity);
             int count = math.min(entityCapacity, math.min(vitals.Length, states.Length));
             if (tissues.IsCreated)
                 count = math.min(count, tissues.Length / ShinobuPhysiologyConstants.TissueCompartmentCount);
+            if (gasStates.IsCreated)
+                count = math.min(count, gasStates.Length);
+            if (breathingGas.IsCreated)
+                count = math.min(count, breathingGas.Length);
             for (int i = 0; i < count; i++)
             {
                 vitals[i] = new PhysiologyDTO
                 {
                     BloodOxygen = 1f,
-                    TissueNitrogen = ShinobuPhysiologyConstants.AtmosphericPressureAtSurfaceAtm,
+                    TissueNitrogen = ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm,
                     CoreTemperature = 37f,
                     ActiveTraumaMask = 0u,
                     HeartRate = 62f,
@@ -642,12 +919,32 @@ namespace Hecton8.Physiology
                 float* stateTissues = state.TissueTensions;
                 {
                     for (int tissue = 0; tissue < ShinobuPhysiologyConstants.TissueCompartmentCount; tissue++)
-                        stateTissues[tissue] = ShinobuPhysiologyConstants.AtmosphericPressureAtSurfaceAtm;
+                        stateTissues[tissue] = ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm;
                 }
 
                 states[i] = state;
                 if (scalars.IsCreated && i < scalars.Length)
                     scalars[i] = new PhysiologyScalarsDTO { FatigueMultiplier = 1f };
+                if (breathingGas.IsCreated && i < breathingGas.Length)
+                {
+                    breathingGas[i] = ShinobuPhysiologyJobMath.SanitizeBreathingGas(new BreathingGasFractionsDTO
+                    {
+                        OxygenFraction = ShinobuPhysiologyConstants.OxygenFraction,
+                        NitrogenFraction = ShinobuPhysiologyConstants.NitrogenFraction,
+                        CarbonDioxideFraction = ShinobuPhysiologyConstants.CarbonDioxideFraction,
+                        GasHash = 0x41495231u
+                    });
+                }
+                if (gasStates.IsCreated && i < gasStates.Length)
+                {
+                    gasStates[i] = new GasPhysiologyStateDTO
+                    {
+                        OxygenPartialPressure = ShinobuPhysiologyConstants.SurfaceOxygenPartialPressureAtm,
+                        NitrogenPartialPressure = ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm,
+                        CarbonDioxidePartialPressure = ShinobuPhysiologyConstants.CarbonDioxideFraction,
+                        StaminaDrainRate = 1f
+                    };
+                }
                 if (pulses.IsCreated && i < pulses.Length)
                     pulses[i] = default;
             }
@@ -676,6 +973,9 @@ namespace Hecton8.Physiology
             out NativeArray<HaldaneTissueCoefficientDTO> coefficients,
             out NativeArray<MockEnvironmentVitalsSignal> environment,
             out NativeArray<PhysiologyScalarsDTO> scalars,
+            out NativeArray<GasPhysiologyStateDTO> gasStates,
+            out NativeArray<BreathingGasFractionsDTO> breathingGas,
+            out NativeArray<GasPhysiologyTuningDTO> gasTuning,
             out NativeArray<VitalsExportDTO> exports,
             out NativeArray<PhysiologyTelemetryEntry> telemetry,
             out NativeArray<CardiacPulseStateDTO> pulses,
@@ -687,28 +987,35 @@ namespace Hecton8.Physiology
             out NativeArray<PhysiologyTuningDTO> tuning,
             out NativeArray<DiveProfileSampleDTO> mockDiveProfile)
         {
-            vitals = _vitalsHandle.Resolve(vault);
-            decompression = _decompressionHandle.Resolve(vault);
-            tissues = _tissueHandle.Resolve(vault);
-            coefficients = _coefficientHandle.Resolve(vault);
-            environment = _environmentHandle.Resolve(vault);
-            scalars = _scalarHandle.Resolve(vault);
-            exports = _exportHandle.Resolve(vault);
-            telemetry = _telemetryHandle.Resolve(vault);
-            pulses = _pulseHandle.Resolve(vault);
-            toxemia = _toxemiaHandle.Resolve(vault);
-            pressure = _pressureHandle.Resolve(vault);
-            combat = _combatHandle.Resolve(vault);
-            predator = _predatorHandle.Resolve(vault);
-            medical = _medicalHandle.Resolve(vault);
-            tuning = _tuningHandle.Resolve(vault);
-            mockDiveProfile = _mockDiveProfileHandle.Resolve(vault);
+            vitals = OpenPhysiologyVaultArray(ref _vitalsHandle, BufferID.ShinobuPhysiologyVitals, entityCapacity);
+            decompression = OpenPhysiologyVaultArray(ref _decompressionHandle, BufferID.ShinobuDecompressionStates, entityCapacity);
+            tissues = OpenPhysiologyVaultArray(ref _tissueHandle, BufferID.ShinobuTissueCompartments, entityCapacity * ShinobuPhysiologyConstants.TissueCompartmentCount);
+            coefficients = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
+            environment = OpenPhysiologyVaultArray(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, entityCapacity);
+            scalars = OpenPhysiologyVaultArray(ref _scalarHandle, BufferID.ShinobuPhysiologyScalars, entityCapacity);
+            gasStates = OpenPhysiologyVaultArray(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, entityCapacity);
+            breathingGas = OpenPhysiologyVaultArray(ref _breathingGasHandle, ShinobuPhysiologyConstants.BreathingGasFractionsBuffer, entityCapacity);
+            gasTuning = OpenPhysiologyVaultArray(ref _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1);
+            exports = OpenPhysiologyVaultArray(ref _exportHandle, BufferID.ShinobuVitalsExport, entityCapacity);
+            telemetry = OpenPhysiologyVaultArray(ref _telemetryHandle, BufferID.ShinobuPhysiologyTelemetryRing, ShinobuPhysiologyConstants.TelemetryFrameCount);
+            pulses = OpenPhysiologyVaultArray(ref _pulseHandle, BufferID.ShinobuCardiacPulseStates, entityCapacity);
+            toxemia = OpenPhysiologyVaultArray(ref _toxemiaHandle, BufferID.ShinobuMockToxemiaSignals, entityCapacity);
+            pressure = OpenPhysiologyVaultArray(ref _pressureHandle, BufferID.ShinobuMockPressureSignals, entityCapacity);
+            combat = OpenPhysiologyVaultArray(ref _combatHandle, BufferID.ShinobuMockCombatDamageSignals, entityCapacity);
+            predator = OpenPhysiologyVaultArray(ref _predatorHandle, BufferID.ShinobuMockPredatorAggroSignals, entityCapacity);
+            medical = OpenPhysiologyVaultArray(ref _medicalHandle, BufferID.ShinobuMockMedicalItemSignals, entityCapacity);
+            tuning = OpenPhysiologyVaultArray(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1);
+            mockDiveProfile = OpenPhysiologyVaultArray(ref _mockDiveProfileHandle, BufferID.ShinobuMockDiveProfile, ShinobuPhysiologyConstants.TelemetryFrameCount);
             return vitals.IsCreated &&
                    decompression.IsCreated &&
                    tissues.IsCreated &&
                    coefficients.IsCreated &&
                    environment.IsCreated &&
                    scalars.IsCreated &&
+                   gasStates.IsCreated &&
+                   breathingGas.IsCreated &&
+                   gasTuning.IsCreated &&
+                   gasTuning.Length > 0 &&
                    exports.IsCreated &&
                    telemetry.IsCreated &&
                    pulses.IsCreated &&
@@ -724,13 +1031,13 @@ namespace Hecton8.Physiology
 
         private bool TryResolveCsvScratch(IDataVault vault, out NativeArray<byte> scratch)
         {
-            scratch = _csvScratchHandle.Resolve(vault);
+            scratch = OpenPhysiologyVaultArray(ref _csvScratchHandle, BufferID.ShinobuTissueCsvScratch, CsvMaxBytes);
             return scratch.IsCreated && scratch.Length >= CsvMaxBytes;
         }
 
         private void WriteEnvironmentSeed(IDataVault vault, float deltaTime, uint frame)
         {
-            NativeArray<MockEnvironmentVitalsSignal> environment = _environmentHandle.Resolve(vault);
+            NativeArray<MockEnvironmentVitalsSignal> environment = OpenPhysiologyVaultArray(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, entityCapacity);
             if (!environment.IsCreated || environment.Length <= 0)
                 return;
 
@@ -795,6 +1102,22 @@ namespace Hecton8.Physiology
             };
         }
 
+        private uint RefreshPlayerCombatTargetHash()
+        {
+            IPlayerRuntimeContext player = _playerContext;
+            GameObject playerObject = player != null ? player.PlayerObject : null;
+            if (playerObject != null)
+            {
+                uint entityHash = unchecked((uint)EntityId.ToULong(playerObject.GetEntityId()));
+                if (entityHash != 0u)
+                    _playerDamageTargetHash = entityHash;
+            }
+
+            return _playerDamageTargetHash != 0u
+                ? _playerDamageTargetHash
+                : ShinobuPhysiologyConstants.PlayerTargetHash;
+        }
+
         private void UpdateHabitatRoomState()
         {
             ReadOnlySpan<PlayerBaseExitSignal> exits = SignalBus<PlayerBaseExitSignal>.GetFrameSnapshot();
@@ -850,7 +1173,7 @@ namespace Hecton8.Physiology
             return math.saturate(math.isfinite(weight) ? weight : 1f);
         }
 
-        private float ResolveSmoothedGlobalQualityWeight(float deltaTime)
+        private float UpdateSmoothedGlobalQualityWeight(float deltaTime)
         {
             float target = ResolveGlobalQualityWeight();
             float response = target < _smoothedGlobalQualityWeight ? 4f : 1f;
@@ -863,8 +1186,7 @@ namespace Hecton8.Physiology
 
         private static float ResolvePhysiologyUpdateIntervalSeconds(float globalQualityWeight)
         {
-            float curve = math.smoothstep(0f, 1f, math.saturate(globalQualityWeight));
-            return math.lerp(0.2f, 0.0001f, curve);
+            return AuthoritativeUpdateIntervalSeconds;
         }
 
         private static float ResolveSystemHealthIndex01()
@@ -900,24 +1222,24 @@ namespace Hecton8.Physiology
         private void FinishFrameJobCompletion()
         {
             float elapsedMicroseconds = ResolveElapsedMicroseconds(_jobScheduleTimestamp, Stopwatch.GetTimestamp());
-            _jobScheduled = false;
-            UnlockJobBuffers();
 
             IDataVault vault = _dataVault;
             if (vault != null)
+            {
                 PatchLatestTelemetryExecutionTime(vault, elapsedMicroseconds);
+                PublishLatestGasPhysiologyState(vault);
+                PublishSurvivalVitals(vault);
+                PublishVisualSyncScalars(vault);
+                TryDumpAutopsyIfFatal(vault);
+            }
+
+            UnlockJobBuffers();
 
             _telemetryCursor++;
             if (_telemetryCursor >= ShinobuPhysiologyConstants.TelemetryFrameCount)
                 _telemetryCursor %= ShinobuPhysiologyConstants.TelemetryFrameCount;
             _scheduledCount = 0;
-
-            if (vault == null)
-                return;
-
-            PublishSurvivalVitals(vault);
-            PublishVisualSyncScalars(vault);
-            TryDumpAutopsyIfFatal(vault);
+            _jobScheduled = false;
         }
 
         private static float ResolveElapsedMicroseconds(long startTimestamp, long endTimestamp)
@@ -930,7 +1252,7 @@ namespace Hecton8.Physiology
 
         private void PatchLatestTelemetryExecutionTime(IDataVault vault, float elapsedMicroseconds)
         {
-            NativeArray<PhysiologyTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
+            NativeArray<PhysiologyTelemetryEntry> telemetry = OpenPhysiologyVaultArray(ref _telemetryHandle, BufferID.ShinobuPhysiologyTelemetryRing, ShinobuPhysiologyConstants.TelemetryFrameCount);
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
@@ -942,7 +1264,7 @@ namespace Hecton8.Physiology
 
         private void PublishSurvivalVitals(IDataVault vault)
         {
-            NativeArray<VitalsExportDTO> exports = _exportHandle.Resolve(vault);
+            NativeArray<VitalsExportDTO> exports = OpenPhysiologyVaultArray(ref _exportHandle, BufferID.ShinobuVitalsExport, entityCapacity);
             if (!exports.IsCreated || exports.Length <= 0)
                 return;
 
@@ -953,9 +1275,13 @@ namespace Hecton8.Physiology
                          SurvivalVitalsChangedSignalFlags.Pressure;
             if ((export.StatusMask & ShinobuPhysiologyFlags.OxygenCritical) != 0u)
                 flags |= SurvivalVitalsChangedSignalFlags.OxygenCritical;
-            if ((export.StatusMask & (ShinobuPhysiologyFlags.Bends | ShinobuPhysiologyFlags.Hypothermia)) != 0u)
+            if ((export.StatusMask & (ShinobuPhysiologyFlags.Bends |
+                                      ShinobuPhysiologyFlags.Hypothermia |
+                                      ShinobuPhysiologyFlags.CarbonDioxideToxicity |
+                                      ShinobuPhysiologyFlags.CnsOxygenToxicity |
+                                      ShinobuPhysiologyFlags.Hypoxia)) != 0u)
                 flags |= SurvivalVitalsChangedSignalFlags.Injury | SurvivalVitalsChangedSignalFlags.Thermal;
-            if ((export.StatusMask & ShinobuPhysiologyFlags.FatalOxygen) != 0u)
+            if ((export.StatusMask & (ShinobuPhysiologyFlags.FatalOxygen | ShinobuPhysiologyFlags.FatalGasToxicity)) != 0u)
                 flags |= SurvivalVitalsChangedSignalFlags.Death;
 
             SurvivalVitalsChangedSignal signal = default;
@@ -966,28 +1292,67 @@ namespace Hecton8.Physiology
             signal.Oxygen01 = math.saturate(export.BloodOxygen);
             signal.Energy01 = 1f;
             signal.Integrity01 = (export.StatusMask & ShinobuPhysiologyFlags.Bends) != 0u ? 0.65f : 1f;
-            signal.DeathCause = (byte)(((export.StatusMask & ShinobuPhysiologyFlags.FatalOxygen) != 0u) ? 1 : 0);
+            signal.DeathCause = (byte)(((export.StatusMask & (ShinobuPhysiologyFlags.FatalOxygen | ShinobuPhysiologyFlags.FatalGasToxicity)) != 0u) ? 1 : 0);
+            GlobalSignals.Publish(in signal);
+        }
+
+        private void PublishLatestGasPhysiologyState(IDataVault vault)
+        {
+            NativeArray<GasPhysiologyStateDTO> gasStates = OpenPhysiologyVaultArray(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, entityCapacity);
+            NativeArray<PhysiologyScalarsDTO> scalars = OpenPhysiologyVaultArray(ref _scalarHandle, BufferID.ShinobuPhysiologyScalars, entityCapacity);
+            NativeArray<MockEnvironmentVitalsSignal> environment = OpenPhysiologyVaultArray(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, entityCapacity);
+            if (!gasStates.IsCreated || gasStates.Length <= 0 || !scalars.IsCreated || scalars.Length <= 0)
+                return;
+
+            GasPhysiologyStateDTO gas = gasStates[0];
+            PhysiologyScalarsDTO scalar = scalars[0];
+            MockEnvironmentVitalsSignal env = environment.IsCreated && environment.Length > 0 ? environment[0] : default;
+            float hypoxia01 = ShinobuPhysiologyJobMath.ResolveHypoxiaTunnel01(gas.OxygenPartialPressure);
+            float co2Toxicity01 = ShinobuPhysiologyJobMath.ResolveCarbonDioxideToxicity01(gas.CarbonDioxidePartialPressure);
+            float gasStress01 = math.saturate(math.max(math.max(hypoxia01, co2Toxicity01), math.max(gas.CnsToxicity01, gas.NarcosisLevel01)));
+
+            PhysiologyStateSignal signal = default;
+            signal.PlayerStress01 = gasStress01;
+            signal.O2DrainMultiplier = math.max(1f, gas.StaminaDrainRate);
+            signal.Recovery01 = 1f - gasStress01;
+            signal.Frame = _simulationFrameCounter;
+            signal.Cause = ShinobuPhysiologyConstants.GasToxicitySignalCause;
+            signal.Flags = (byte)(gasStress01 > 0f ? 1 : 0);
+            signal.GasCnsSeverity = (byte)math.round(math.saturate(gas.CnsToxicity01) * 255f);
+            signal.GasCarbonDioxideSeverity = (byte)math.round(ShinobuPhysiologyJobMath.ResolveCarbonDioxideToxicity01(gas.CarbonDioxidePartialPressure) * 255f);
+            signal.Supersaturation01 = hypoxia01;
+            signal.Narcosis01 = math.saturate(gas.NarcosisLevel01);
+            signal.AmbientPressureAtm = math.max(0f, env.AmbientPressureAtm);
+            signal.NitrogenLoadAtm = math.max(0f, gas.NitrogenPartialPressure);
+            signal.AscentRateMetersPerSecond = math.max(0f, env.AscentRateMetersPerSecond);
+            signal.TissueOverMValueMask = scalar.TissueOverMValueMask;
+            signal.SourceHash = ShinobuPhysiologyConstants.SourceHash;
+            signal.EntityIndex = 0;
+            signal.ActiveCompartments = (byte)ShinobuPhysiologyJobMath.ResolveActiveCompartmentCount(AuthoritativeQualityWeight);
+            signal.FatalSeverity = (byte)math.round(gasStress01 * 255f);
+            signal.StatusFlags = scalar.StatusFlags;
             GlobalSignals.Publish(in signal);
         }
 
         private void PublishVisualSyncScalars(IDataVault vault)
         {
-            NativeArray<PhysiologyScalarsDTO> scalars = _scalarHandle.Resolve(vault);
-            NativeArray<MockEnvironmentVitalsSignal> environment = _environmentHandle.Resolve(vault);
-            if (!scalars.IsCreated || scalars.Length <= 0)
+            NativeArray<GasPhysiologyStateDTO> gasStates = OpenPhysiologyVaultArray(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, entityCapacity);
+            if (!gasStates.IsCreated || gasStates.Length <= 0)
                 return;
 
-            PhysiologyScalarsDTO scalar = scalars[0];
-            float ambient = 1f;
-            if (environment.IsCreated && environment.Length > 0)
-                ambient = math.max(0f, environment[0].AmbientPressureAtm);
-
-            Vector4 payload = default;
-            payload.x = math.saturate(scalar.BendsRisk);
-            payload.y = math.saturate(scalar.NarcosisSeverity);
-            payload.z = ambient;
-            payload.w = ResolveGlobalQualityWeight();
-            HectonShaderGlobalDataVaultBridge.PublishPhysiologyDecompression(payload);
+            GasPhysiologyStateDTO gas = gasStates[0];
+            float hypoxia01 = ShinobuPhysiologyJobMath.ResolveHypoxiaTunnel01(gas.OxygenPartialPressure);
+            if (hypoxia01 > 0f)
+            {
+                HypoxiaSignal signal = default;
+                signal.Oxygen01 = ShinobuPhysiologyJobMath.ResolveOxygenAvailability01(gas.OxygenPartialPressure);
+                signal.SecondsRemaining = math.rcp(math.max(0.001f, hypoxia01));
+                signal.SourceId = ShinobuPhysiologyConstants.SourceHash;
+                signal.Frame = _simulationFrameCounter;
+                signal.Severity = (byte)math.round(math.saturate(hypoxia01) * 255f);
+                signal.Flags = 1;
+                GlobalSignals.Publish(in signal);
+            }
         }
 
         private void TryDumpAutopsyIfFatal(IDataVault vault)
@@ -995,8 +1360,8 @@ namespace Hecton8.Physiology
             if (_autopsyDumped)
                 return;
 
-            NativeArray<PhysiologyDTO> vitals = _vitalsHandle.Resolve(vault);
-            NativeArray<PhysiologyTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
+            NativeArray<PhysiologyDTO> vitals = OpenPhysiologyVaultArray(ref _vitalsHandle, BufferID.ShinobuPhysiologyVitals, entityCapacity);
+            NativeArray<PhysiologyTelemetryEntry> telemetry = OpenPhysiologyVaultArray(ref _telemetryHandle, BufferID.ShinobuPhysiologyTelemetryRing, ShinobuPhysiologyConstants.TelemetryFrameCount);
             if (!vitals.IsCreated || vitals.Length <= 0 || !telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
@@ -1005,7 +1370,10 @@ namespace Hecton8.Physiology
             {
                 int latestIndex = (_telemetryCursor + telemetry.Length - 1) % telemetry.Length;
                 fatal = (telemetry[latestIndex].FatalFlags &
-                         (ShinobuPhysiologyFlags.FatalOxygen | ShinobuPhysiologyFlags.InvalidMath | ShinobuPhysiologyFlags.FatalBends)) != 0u;
+                         (ShinobuPhysiologyFlags.FatalOxygen |
+                          ShinobuPhysiologyFlags.InvalidMath |
+                          ShinobuPhysiologyFlags.FatalBends |
+                          ShinobuPhysiologyFlags.FatalGasToxicity)) != 0u;
             }
 
             if (!fatal)
@@ -1054,7 +1422,7 @@ namespace Hecton8.Physiology
 
         private bool TryLoadLegacyMetabolismTables(IDataVault vault)
         {
-            NativeArray<HaldaneTissueCoefficientDTO> coefficients = _coefficientHandle.Resolve(vault);
+            NativeArray<HaldaneTissueCoefficientDTO> coefficients = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
             if (!coefficients.IsCreated || coefficients.Length < ShinobuPhysiologyConstants.TissueCompartmentCount)
                 return false;
 
@@ -1143,7 +1511,7 @@ namespace Hecton8.Physiology
 
         private void GenerateEmergencyMockMetabolism(IDataVault vault)
         {
-            NativeArray<HaldaneTissueCoefficientDTO> coefficients = _coefficientHandle.Resolve(vault);
+            NativeArray<HaldaneTissueCoefficientDTO> coefficients = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
             if (!coefficients.IsCreated)
                 return;
 
@@ -1160,7 +1528,7 @@ namespace Hecton8.Physiology
                 };
             }
 
-            NativeArray<PhysiologyTuningDTO> tuning = _tuningHandle.Resolve(vault);
+            NativeArray<PhysiologyTuningDTO> tuning = OpenPhysiologyVaultArray(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1);
             if (tuning.IsCreated && tuning.Length > 0)
             {
                 PhysiologyTuningDTO row = ShinobuPhysiologyJobMath.SanitizeTuning(tuning[0]);
@@ -1197,13 +1565,9 @@ namespace Hecton8.Physiology
             return math.max(1.08f, 1.58f - index * 0.028f);
         }
 
-        private void MonitorCsvOverrides(float deltaTime, IDataVault vault)
+        private void LoadCsvOverridesFromDisk(IDataVault vault)
         {
-            _csvPollTimer -= deltaTime;
-            if (_csvPollTimer > 0f)
-                return;
-
-            _csvPollTimer = CsvPollIntervalSeconds;
+            LoadGasCsvOverridesFromDisk(vault);
             if (string.IsNullOrEmpty(_csvPath) || !File.Exists(_csvPath))
                 return;
 
@@ -1238,12 +1602,139 @@ namespace Hecton8.Physiology
             }
         }
 
+        private void LoadGasCsvOverridesFromDisk(IDataVault vault)
+        {
+            if (string.IsNullOrEmpty(_gasCsvPath) || !File.Exists(_gasCsvPath))
+                return;
+
+            DateTime stamp = File.GetLastWriteTimeUtc(_gasCsvPath);
+            if (stamp.Ticks == 0L || stamp.Ticks == _gasCsvLastWriteTicks)
+                return;
+
+            _gasCsvLastWriteTicks = stamp.Ticks;
+            try
+            {
+                if (!TryResolveCsvScratch(vault, out NativeArray<byte> scratch))
+                    return;
+
+                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
+                Span<byte> buffer = new Span<byte>(scratchPtr, math.min(scratch.Length, CsvMaxBytes));
+                using (FileStream stream = new FileStream(_gasCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    int byteCount = math.min((int)stream.Length, buffer.Length);
+                    if (byteCount <= 0)
+                        return;
+
+                    int read = stream.Read(buffer.Slice(0, byteCount));
+                    if (read > 0)
+                        ParseGasProfilesCsv(vault, buffer.Slice(0, read));
+                }
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        private void ParseGasProfilesCsv(IDataVault vault, ReadOnlySpan<byte> bytes)
+        {
+            BreathingGasFractionsDTO gas = _gasCsvOverrideActive
+                ? _gasCsvOverride
+                : new BreathingGasFractionsDTO
+                {
+                    OxygenFraction = ShinobuPhysiologyConstants.OxygenFraction,
+                    NitrogenFraction = ShinobuPhysiologyConstants.NitrogenFraction,
+                    CarbonDioxideFraction = ShinobuPhysiologyConstants.CarbonDioxideFraction,
+                    GasHash = 0x43535631u,
+                    Flags = ShinobuPhysiologyFlags.CsvOverride
+                };
+            NativeArray<GasPhysiologyTuningDTO> tuningArray = OpenPhysiologyVaultArray(ref _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1);
+            GasPhysiologyTuningDTO gasTuning = tuningArray.IsCreated && tuningArray.Length > 0
+                ? ShinobuPhysiologyJobMath.SanitizeGasTuning(tuningArray[0])
+                : ShinobuPhysiologyJobMath.BuildDefaultGasTuning();
+
+            int cursor = 0;
+            while (cursor < bytes.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < bytes.Length && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                    cursor++;
+
+                int lineEnd = cursor;
+                while (cursor < bytes.Length && (bytes[cursor] == (byte)'\n' || bytes[cursor] == (byte)'\r'))
+                    cursor++;
+
+                ParseGasCsvLine(bytes.Slice(lineStart, lineEnd - lineStart), ref gas, ref gasTuning);
+            }
+
+            gas.Flags |= ShinobuPhysiologyFlags.CsvOverride;
+            _gasCsvOverride = ShinobuPhysiologyJobMath.SanitizeBreathingGas(gas);
+            _gasCsvOverrideActive = true;
+            if (tuningArray.IsCreated && tuningArray.Length > 0)
+                tuningArray[0] = ShinobuPhysiologyJobMath.SanitizeGasTuning(gasTuning);
+        }
+
+        private static void ParseGasCsvLine(ReadOnlySpan<byte> line, ref BreathingGasFractionsDTO gas, ref GasPhysiologyTuningDTO gasTuning)
+        {
+            int keyStart = 0;
+            while (keyStart < line.Length && IsCsvSpace(line[keyStart]))
+                keyStart++;
+            if (keyStart >= line.Length || line[keyStart] == (byte)'#')
+                return;
+
+            int separator = keyStart;
+            while (separator < line.Length && line[separator] != (byte)',' && line[separator] != (byte)'=')
+                separator++;
+            if (separator >= line.Length)
+                return;
+
+            int keyEnd = separator - 1;
+            while (keyEnd >= keyStart && IsCsvSpace(line[keyEnd]))
+                keyEnd--;
+            if (keyEnd < keyStart)
+                return;
+
+            int valueStart = separator + 1;
+            while (valueStart < line.Length && IsCsvSpace(line[valueStart]))
+                valueStart++;
+
+            int valueEnd = valueStart;
+            while (valueEnd < line.Length && line[valueEnd] != (byte)',')
+                valueEnd++;
+            if (!TryParseAsciiFloat(line.Slice(valueStart, valueEnd - valueStart), out float value))
+                return;
+
+            uint keyHash = HashLowerAscii(line.Slice(keyStart, keyEnd - keyStart + 1));
+            if (keyHash == _OxygenFractionHash || keyHash == _Fo2Hash)
+                gas.OxygenFraction = value;
+            else if (keyHash == _NitrogenFractionHash || keyHash == _Fn2Hash)
+                gas.NitrogenFraction = value;
+            else if (keyHash == _CarbonDioxideFractionHash || keyHash == _Fco2Hash)
+                gas.CarbonDioxideFraction = value;
+            else if (keyHash == _CnsToxicityRateHash)
+                gasTuning.CnsAccumulationRate = value;
+            else if (keyHash == _CnsExtremeRateHash)
+                gasTuning.CnsExtremeRate = value;
+            else if (keyHash == _NarcosisThresholdHash)
+                gasTuning.NarcosisStartAtm = value;
+            else if (keyHash == _HypoxiaLimitHash || keyHash == _HypoxiaPpo2Hash)
+                gasTuning.HypoxiaPartialPressureAtm = value;
+            else if (keyHash == _AnoxiaLimitHash || keyHash == _AnoxiaPpo2Hash)
+                gasTuning.AnoxiaPartialPressureAtm = value;
+            else if (keyHash == _Co2ToxicityStartHash)
+                gasTuning.CarbonDioxideToxicityStartAtm = value;
+            else if (keyHash == _Co2ToxicityFullHash)
+                gasTuning.CarbonDioxideToxicityFullAtm = value;
+        }
+
         private void ParseBiologyConstantsCsv(IDataVault vault, ReadOnlySpan<byte> bytes)
         {
-            NativeArray<PhysiologyTuningDTO> tuningArray = _tuningHandle.Resolve(vault);
-            NativeArray<BiologyConstantOverrideDTO> overrides = _csvOverrideHandle.Resolve(vault);
-            NativeArray<HaldaneTissueCoefficientDTO> coefficients = _coefficientHandle.Resolve(vault);
-            NativeArray<TissueCompartmentDTO> tissues = _tissueHandle.Resolve(vault);
+            NativeArray<PhysiologyTuningDTO> tuningArray = OpenPhysiologyVaultArray(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1);
+            NativeArray<BiologyConstantOverrideDTO> overrides = OpenPhysiologyVaultArray(ref _csvOverrideHandle, BufferID.ShinobuBiologyCsvOverrides, CsvOverrideCapacity);
+            NativeArray<HaldaneTissueCoefficientDTO> coefficients = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
+            NativeArray<TissueCompartmentDTO> tissues = OpenPhysiologyVaultArray(ref _tissueHandle, BufferID.ShinobuTissueCompartments, entityCapacity * ShinobuPhysiologyConstants.TissueCompartmentCount);
             if (!tuningArray.IsCreated || tuningArray.Length <= 0)
                 return;
 
@@ -1440,6 +1931,12 @@ namespace Hecton8.Physiology
             locked++;
             if (!vault.TryLockBuffer(BufferID.ShinobuPhysiologyScalars, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
             locked++;
+            if (!vault.TryLockBuffer(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuPhysiologyConstants.BreathingGasFractionsBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!vault.TryLockBuffer(ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
             if (!vault.TryLockBuffer(BufferID.ShinobuVitalsExport, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
             locked++;
             if (!vault.TryLockBuffer(BufferID.ShinobuPhysiologyTelemetryRing, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
@@ -1455,6 +1952,9 @@ namespace Hecton8.Physiology
             if (!vault.TryLockBuffer(BufferID.ShinobuMockPredatorAggroSignals, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
             locked++;
             if (!vault.TryLockBuffer(BufferID.ShinobuMockMedicalItemSignals, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
+            if (!vault.TryLockBuffer(BufferID.ShinobuPhysiologyTuning, OwnerSystem)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            locked++;
 
             _jobLocksHeld = true;
             return true;
@@ -1473,14 +1973,18 @@ namespace Hecton8.Physiology
 
         private static void UnlockLockedJobBuffers(IDataVault vault, int lockedCount)
         {
-            if (lockedCount >= 14) vault.TryUnlockBuffer(BufferID.ShinobuMockMedicalItemSignals, OwnerSystem);
-            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.ShinobuMockPredatorAggroSignals, OwnerSystem);
-            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.ShinobuMockCombatDamageSignals, OwnerSystem);
-            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.ShinobuMockPressureSignals, OwnerSystem);
-            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.ShinobuMockToxemiaSignals, OwnerSystem);
-            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.ShinobuCardiacPulseStates, OwnerSystem);
-            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyTelemetryRing, OwnerSystem);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.ShinobuVitalsExport, OwnerSystem);
+            if (lockedCount >= 18) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyTuning, OwnerSystem);
+            if (lockedCount >= 17) vault.TryUnlockBuffer(BufferID.ShinobuMockMedicalItemSignals, OwnerSystem);
+            if (lockedCount >= 16) vault.TryUnlockBuffer(BufferID.ShinobuMockPredatorAggroSignals, OwnerSystem);
+            if (lockedCount >= 15) vault.TryUnlockBuffer(BufferID.ShinobuMockCombatDamageSignals, OwnerSystem);
+            if (lockedCount >= 14) vault.TryUnlockBuffer(BufferID.ShinobuMockPressureSignals, OwnerSystem);
+            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.ShinobuMockToxemiaSignals, OwnerSystem);
+            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.ShinobuCardiacPulseStates, OwnerSystem);
+            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyTelemetryRing, OwnerSystem);
+            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.ShinobuVitalsExport, OwnerSystem);
+            if (lockedCount >= 9) vault.TryUnlockBuffer(ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, OwnerSystem);
+            if (lockedCount >= 8) vault.TryUnlockBuffer(ShinobuPhysiologyConstants.BreathingGasFractionsBuffer, OwnerSystem);
+            if (lockedCount >= 7) vault.TryUnlockBuffer(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, OwnerSystem);
             if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyScalars, OwnerSystem);
             if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.ShinobuEnvironmentVitals, OwnerSystem);
             if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.ShinobuHaldaneCoefficients, OwnerSystem);
@@ -1540,6 +2044,9 @@ namespace Hecton8.Physiology
             _coefficientHandle = default;
             _environmentHandle = default;
             _scalarHandle = default;
+            _gasStateHandle = default;
+            _breathingGasHandle = default;
+            _gasTuningHandle = default;
             _exportHandle = default;
             _telemetryHandle = default;
             _pulseHandle = default;

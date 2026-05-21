@@ -22,6 +22,8 @@ namespace Hecton8.World
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_HLODUnlitFog.shader";
 #endif
         private const int BrgMetadataPlaceholderCount = 1;
+        private const Allocator DataVaultExemptHlodBrgAllocator = Allocator.Persistent;
+        private const Allocator DataVaultExemptHlodUploadAllocator = Allocator.Persistent;
 
         private static readonly int InstanceMatricesId = Shader.PropertyToID("_HectonHLODInstanceMatrices");
         private static readonly int InstanceFadeId = Shader.PropertyToID("_HectonHLODInstanceFade");
@@ -233,7 +235,7 @@ namespace Hecton8.World
                     userContext = IntPtr.Zero
                 });
 
-                _batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for HLOD renderer - owner: HectonHLODRenderer
+                _batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, DataVaultExemptHlodBrgAllocator); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for HLOD renderer - owner: HectonHLODRenderer
                 NativeMemorySentinel.RegisterNativeArray(_batchMetadata, nameof(HectonHLODRenderer), nameof(_batchMetadata), NativeAllocationLifetime.Session);
                 _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for HLOD renderer - owner: HectonHLODRenderer
                 _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
@@ -334,8 +336,8 @@ namespace Hecton8.World
                 _uploadedFadeBuffer = null;
             }
 
-            _uploadedMatrices = new NativeArray<Matrix4x4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[NextPowerOfTwo(requiredCount)] - HLOD matrix upload cache - owner: HectonHLODRenderer
-            _uploadedFade = new NativeArray<Vector4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Vector4>[NextPowerOfTwo(requiredCount)] - HLOD fade upload cache - owner: HectonHLODRenderer
+            _uploadedMatrices = new NativeArray<Matrix4x4>(nextCapacity, DataVaultExemptHlodUploadAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[NextPowerOfTwo(requiredCount)] - HLOD matrix upload cache - owner: HectonHLODRenderer
+            _uploadedFade = new NativeArray<Vector4>(nextCapacity, DataVaultExemptHlodUploadAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Vector4>[NextPowerOfTwo(requiredCount)] - HLOD fade upload cache - owner: HectonHLODRenderer
             NativeMemorySentinel.RegisterNativeArray(_uploadedMatrices, nameof(HectonHLODRenderer), nameof(_uploadedMatrices), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_uploadedFade, nameof(HectonHLODRenderer), nameof(_uploadedFade), NativeAllocationLifetime.Session);
             _uploadedMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD matrix buffer - owner: HectonHLODRenderer

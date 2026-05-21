@@ -19,15 +19,15 @@ namespace Hecton8.EditorTools
         private Slider _scatter;
         private Slider _extinction;
         private Slider _anisotropy;
-        private Slider _flowStrength;
+        private Slider _siltTurbulence;
         private Slider _quality;
         private Label _status;
         private VisualElement _telemetryGraph;
 
-        [MenuItem("Hecton8/VFX/Abyssal Atmosphere Tuner")]
+        [MenuItem("Hecton8/VFX/Volumetric Atmosphere Tuner")]
         private static void Open()
         {
-            GetWindow<AbyssalAtmosphereTunerWindow>("Abyssal Atmosphere");
+            GetWindow<AbyssalAtmosphereTunerWindow>("Volumetric Atmosphere");
         }
 
         public void CreateGUI()
@@ -41,12 +41,12 @@ namespace Hecton8.EditorTools
             _status = new Label("Vault not sampled.");
             root.Add(_status);
 
-            _density = CreateSlider("Density", 0f, 0.3f);
-            _scatter = CreateSlider("Scatter", 0f, 4f);
+            _density = CreateSlider("Base Density", 0f, 0.3f);
+            _scatter = CreateSlider("Scattering Coefficient", 0f, 4f);
             _extinction = CreateSlider("Extinction", 0.001f, 2f);
-            _anisotropy = CreateSlider("Anisotropy", -0.95f, 0.95f);
-            _flowStrength = CreateSlider("Flow", 0f, 8f);
-            _quality = CreateSlider("Quality", 0f, 1f);
+            _anisotropy = CreateSlider("Scattering Anisotropy", -0.95f, 0.95f);
+            _siltTurbulence = CreateSlider("Silt Turbulence Multiplier", 0f, 8f);
+            _quality = CreateSlider("Visual Overkill Step Limits", 0f, 1f);
             _telemetryGraph = new VisualElement();
             _telemetryGraph.style.height = 96;
             _telemetryGraph.style.marginTop = 6;
@@ -57,7 +57,7 @@ namespace Hecton8.EditorTools
             root.Add(_scatter);
             root.Add(_extinction);
             root.Add(_anisotropy);
-            root.Add(_flowStrength);
+            root.Add(_siltTurbulence);
             root.Add(_quality);
 
             Button refreshButton = new Button(RefreshFromVault) { text = "Refresh" };
@@ -85,35 +85,43 @@ namespace Hecton8.EditorTools
             _scatter.RegisterValueChangedCallback(evt => ApplyScatter(evt.newValue));
             _extinction.RegisterValueChangedCallback(evt => ApplyExtinction(evt.newValue));
             _anisotropy.RegisterValueChangedCallback(evt => ApplyAnisotropy(evt.newValue));
-            _flowStrength.RegisterValueChangedCallback(evt => ApplyFlow(evt.newValue));
+            _siltTurbulence.RegisterValueChangedCallback(evt => ApplyFlow(evt.newValue));
             _quality.RegisterValueChangedCallback(evt => ApplyQuality(evt.newValue));
         }
 
         private void RefreshFromVault()
         {
-            if (!TryResolveParams(out NativeArray<VolumetricFogParamsDTO> parameters))
+            if (!VolumetricFogNativeLayout.Validate())
+            {
+                _status.text = "FogConstantsDTO layout invalid.";
+                return;
+            }
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!TryAcquireParamsWriteView(vault, out VaultGenerationHandle<FogConstantsDTO> handle, out NativeArray<FogConstantsDTO> parameters))
             {
                 _status.text = "GlobalDataVault unavailable.";
                 return;
             }
 
-            if (!VolumetricFogNativeLayout.Validate())
+            try
             {
-                _status.text = "VolumetricFogParamsDTO layout invalid.";
-                return;
+                ref FogConstantsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+                EnsureUsableParams(ref dto);
+
+                SetSliderWithoutNotify(_density, dto.FogColorAndDensity.w);
+                SetSliderWithoutNotify(_scatter, dto.ScatteringParams.x);
+                SetSliderWithoutNotify(_extinction, dto.ScatteringParams.y);
+                SetSliderWithoutNotify(_anisotropy, dto.ScatteringParams.z);
+                SetSliderWithoutNotify(_siltTurbulence, dto.FlowAdvection.w);
+                SetSliderWithoutNotify(_quality, dto.QualityAndLimits.x);
+                _status.text = "Vault sampled. DTO layout 64B explicit.";
+                _telemetryGraph?.MarkDirtyRepaint();
             }
-
-            ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            EnsureUsableParams(ref dto);
-
-            SetSliderWithoutNotify(_density, dto.FogColorAndDensity.w);
-            SetSliderWithoutNotify(_scatter, dto.ScatteringParams.x);
-            SetSliderWithoutNotify(_extinction, dto.ScatteringParams.y);
-            SetSliderWithoutNotify(_anisotropy, dto.ScatteringParams.z);
-            SetSliderWithoutNotify(_flowStrength, dto.FlowAdvection.w);
-            SetSliderWithoutNotify(_quality, dto.QualityAndLimits.x);
-            _status.text = "Vault sampled. DTO layout 64B explicit.";
-            _telemetryGraph?.MarkDirtyRepaint();
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
         }
 
         private static void SetSliderWithoutNotify(Slider slider, float value)
@@ -127,7 +135,7 @@ namespace Hecton8.EditorTools
             return math.isfinite(value) ? math.clamp(value, min, max) : fallback;
         }
 
-        private static void EnsureUsableParams(ref VolumetricFogParamsDTO dto)
+        private static void EnsureUsableParams(ref FogConstantsDTO dto)
         {
             if (VolumetricFogParamsAccess.IsUsableParams(in dto))
                 return;
@@ -138,81 +146,129 @@ namespace Hecton8.EditorTools
 
         private void ApplyDensity(float value)
         {
-            if (!TryResolveParams(out NativeArray<VolumetricFogParamsDTO> parameters))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!TryAcquireParamsWriteView(vault, out VaultGenerationHandle<FogConstantsDTO> handle, out NativeArray<FogConstantsDTO> parameters))
                 return;
 
-            ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            EnsureUsableParams(ref dto);
-            dto.FogColorAndDensity.w = ClampFinite(value, 0f, 0.3f, 0.045f);
+            try
+            {
+                ref FogConstantsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+                EnsureUsableParams(ref dto);
+                dto.FogColorAndDensity.w = ClampFinite(value, 0f, 0.3f, 0.045f);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
         }
 
         private void ApplyScatter(float value)
         {
-            if (!TryResolveParams(out NativeArray<VolumetricFogParamsDTO> parameters))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!TryAcquireParamsWriteView(vault, out VaultGenerationHandle<FogConstantsDTO> handle, out NativeArray<FogConstantsDTO> parameters))
                 return;
 
-            ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            EnsureUsableParams(ref dto);
-            dto.ScatteringParams.x = ClampFinite(value, 0f, 4f, 0.85f);
+            try
+            {
+                ref FogConstantsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+                EnsureUsableParams(ref dto);
+                dto.ScatteringParams.x = ClampFinite(value, 0f, 4f, 0.85f);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
         }
 
         private void ApplyExtinction(float value)
         {
-            if (!TryResolveParams(out NativeArray<VolumetricFogParamsDTO> parameters))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!TryAcquireParamsWriteView(vault, out VaultGenerationHandle<FogConstantsDTO> handle, out NativeArray<FogConstantsDTO> parameters))
                 return;
 
-            ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            EnsureUsableParams(ref dto);
-            dto.ScatteringParams.y = ClampFinite(value, 0.001f, 2f, 0.12f);
+            try
+            {
+                ref FogConstantsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+                EnsureUsableParams(ref dto);
+                dto.ScatteringParams.y = ClampFinite(value, 0.001f, 2f, 0.12f);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
         }
 
         private void ApplyAnisotropy(float value)
         {
-            if (!TryResolveParams(out NativeArray<VolumetricFogParamsDTO> parameters))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!TryAcquireParamsWriteView(vault, out VaultGenerationHandle<FogConstantsDTO> handle, out NativeArray<FogConstantsDTO> parameters))
                 return;
 
-            ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            EnsureUsableParams(ref dto);
-            dto.ScatteringParams.z = ClampFinite(value, -0.95f, 0.95f, 0.42f);
+            try
+            {
+                ref FogConstantsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+                EnsureUsableParams(ref dto);
+                dto.ScatteringParams.z = ClampFinite(value, -0.95f, 0.95f, 0.42f);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
         }
 
         private void ApplyFlow(float value)
         {
-            if (!TryResolveParams(out NativeArray<VolumetricFogParamsDTO> parameters))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!TryAcquireParamsWriteView(vault, out VaultGenerationHandle<FogConstantsDTO> handle, out NativeArray<FogConstantsDTO> parameters))
                 return;
 
-            ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            EnsureUsableParams(ref dto);
-            dto.FlowAdvection.w = ClampFinite(value, 0f, 8f, 2.25f);
+            try
+            {
+                ref FogConstantsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+                EnsureUsableParams(ref dto);
+                dto.FlowAdvection.w = ClampFinite(value, 0f, 8f, 2.25f);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
         }
 
         private void ApplyQuality(float value)
         {
             float quality = ClampFinite(value, 0f, 1f, 0f);
             HomeostasisBrain.SetForcedGlobalQualityWeightForTuner(quality, true);
-            if (!TryResolveParams(out NativeArray<VolumetricFogParamsDTO> parameters))
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!TryAcquireParamsWriteView(vault, out VaultGenerationHandle<FogConstantsDTO> handle, out NativeArray<FogConstantsDTO> parameters))
                 return;
 
-            ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            EnsureUsableParams(ref dto);
-            dto.QualityAndLimits.x = quality;
-            dto.QualityAndLimits.y = VolumetricFogParamsAccess.ResolveRayStepsForQuality(quality);
-            dto.QualityAndLimits.w = VolumetricFogParamsAccess.ResolveProxyBlendForQuality(quality);
+            try
+            {
+                ref FogConstantsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+                EnsureUsableParams(ref dto);
+                dto.QualityAndLimits.x = quality;
+                dto.QualityAndLimits.y = VolumetricFogParamsAccess.ResolveRayStepsForQuality(quality);
+                dto.QualityAndLimits.w = VolumetricFogParamsAccess.ResolveProxyBlendForQuality(quality);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
         }
 
-        private static bool TryResolveParams(out NativeArray<VolumetricFogParamsDTO> parameters)
+        private static bool TryAcquireParamsWriteView(
+            IDataVault vault,
+            out VaultGenerationHandle<FogConstantsDTO> handle,
+            out NativeArray<FogConstantsDTO> parameters)
         {
-            parameters = default;
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            parameters = vault.GetBuffer<VolumetricFogParamsDTO>(
+            return TryAcquireEditorWriteView(
+                vault,
                 BufferID.ShinobuVolumetricFogParams,
                 1,
                 SystemID.Vfx,
-                NativeArrayOptions.ClearMemory);
-            return parameters.IsCreated && parameters.Length > 0;
+                NativeArrayOptions.ClearMemory,
+                out handle,
+                out parameters);
         }
 
         private void LoadExtinctionCsv()
@@ -231,46 +287,64 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            NativeArray<WaterExtinctionProfileDTO> profiles = vault.GetBuffer<WaterExtinctionProfileDTO>(
-                BufferID.ShinobuVolumetricFogExtinctionProfiles,
-                VolumetricFogConstants.ExtinctionProfileCapacity,
-                SystemID.Vfx,
-                NativeArrayOptions.ClearMemory);
-            if (!profiles.IsCreated || profiles.Length <= 0)
-            {
-                _status.text = "Extinction profile buffer unavailable.";
-                return;
-            }
-
-            NativeArray<byte> scratch = vault.GetBuffer<byte>(
+            if (!TryAcquireEditorWriteView(
+                    vault,
                     BufferID.ShinobuVolumetricFogCsvScratch,
                     VolumetricFogConstants.ExtinctionCsvScratchBytes,
                     SystemID.Vfx,
-                    NativeArrayOptions.UninitializedMemory);
-            if (!scratch.IsCreated || scratch.Length <= 0)
+                    NativeArrayOptions.UninitializedMemory,
+                    out VaultGenerationHandle<byte> scratchHandle,
+                    out NativeArray<byte> scratch))
             {
                 _status.text = "CSV scratch buffer unavailable.";
                 return;
             }
 
-            int byteCount = ReadFileIntoScratch(path, scratch);
-            if (byteCount <= 0)
+            try
             {
-                _status.text = byteCount < 0 ? "Extinction CSV exceeds scratch capacity." : "Extinction CSV empty.";
-                return;
-            }
-
-            unsafe
-            {
-                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-                ReadOnlySpan<byte> csvBytes = new ReadOnlySpan<byte>(source, byteCount);
-                if (!VolumetricFogExtinctionCsvParser.TryParseInto(csvBytes, profiles, out int profileCount, out uint fileHash))
+                int byteCount = ReadFileIntoScratch(path, scratch);
+                if (byteCount <= 0)
                 {
-                    _status.text = "Extinction CSV parse produced no profiles.";
+                    _status.text = byteCount < 0 ? "Extinction CSV exceeds scratch capacity." : "Extinction CSV empty.";
                     return;
                 }
 
-                _status.text = "Extinction CSV loaded. Hash 0x" + fileHash.ToString("X8") + " Profiles " + profileCount;
+                if (!TryAcquireEditorWriteView(
+                        vault,
+                        BufferID.ShinobuVolumetricFogExtinctionProfiles,
+                        VolumetricFogConstants.ExtinctionProfileCapacity,
+                        SystemID.Vfx,
+                        NativeArrayOptions.ClearMemory,
+                        out VaultGenerationHandle<WaterExtinctionProfileDTO> profileHandle,
+                        out NativeArray<WaterExtinctionProfileDTO> profiles))
+                {
+                    _status.text = "Extinction profile buffer unavailable.";
+                    return;
+                }
+
+                try
+                {
+                    unsafe
+                    {
+                        void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
+                        ReadOnlySpan<byte> csvBytes = new ReadOnlySpan<byte>(source, byteCount);
+                        if (!VolumetricFogExtinctionCsvParser.TryParseInto(csvBytes, profiles, out _, out _))
+                        {
+                            _status.text = "Extinction CSV parse produced no profiles.";
+                            return;
+                        }
+
+                        _status.text = "Extinction CSV loaded into Vault profile buffer.";
+                    }
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in profileHandle, SystemID.CoreDiagnostics);
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in scratchHandle, SystemID.CoreDiagnostics);
             }
         }
 
@@ -308,8 +382,7 @@ namespace Hecton8.EditorTools
             DrawRect(painter, rect, new Color(0.015f, 0.025f, 0.03f, 1f));
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !vault.TryGetBuffer<VolumetricFogTelemetryEntry>(BufferID.ShinobuVolumetricFogTelemetryRing, out NativeArray<VolumetricFogTelemetryEntry> telemetry) ||
-                !telemetry.IsCreated ||
+                !TryReadExistingVaultView(vault, BufferID.ShinobuVolumetricFogTelemetryRing, out NativeArray<VolumetricFogTelemetryEntry> telemetry) ||
                 telemetry.Length <= 1)
             {
                 return;
@@ -363,6 +436,62 @@ namespace Hecton8.EditorTools
             painter.LineTo(new Vector2(rect.xMin, rect.yMax));
             painter.ClosePath();
             painter.Fill();
+        }
+
+        private static bool TryReadExistingVaultView<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool TryAcquireEditorWriteView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            SystemID owner,
+            NativeArrayOptions options,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            handle = default;
+            buffer = default;
+            int required = math.max(1, requiredLength);
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing) &&
+                vault.TryReadHandle(in existing, out NativeArray<T> existingBuffer) &&
+                existingBuffer.IsCreated &&
+                existingBuffer.Length >= required)
+            {
+                handle = existing;
+            }
+            else
+            {
+                if (vault.IsAllocationLocked)
+                    return false;
+
+                handle = vault.GetGenerationHandle<T>(
+                    bufferId,
+                    required,
+                    owner,
+                    options);
+            }
+
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
+                return false;
+
+            if (buffer.IsCreated && buffer.Length >= required)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            buffer = default;
+            return false;
         }
     }
 }

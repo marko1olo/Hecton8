@@ -1,4 +1,5 @@
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Determinism;
 using Unity.Burst;
@@ -81,7 +82,7 @@ namespace Hecton8.Physiology
         [NativeDisableUnsafePtrRestriction, NoAlias] public PhysiologyScalarsDTO* Scalars;
         [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicStateDTO* Metabolism;
         [NativeDisableUnsafePtrRestriction, NoAlias] public LockstepPlayerKinematicState* PlayerKinematic;
-        public NativeQueue<InventoryCommandSignal>.ParallelWriter InventoryCommands;
+        [WriteOnly, NoAlias] public NativeQueue<InventoryCommandSignal>.ParallelWriter InventoryCommands;
         public int MedicalBayCount;
         public int TissueCount;
         public int PenaltyCapacity;
@@ -140,14 +141,14 @@ namespace Hecton8.Physiology
                         continue;
                     }
 
-                    float distanceSq = math.lengthsq(AupDeltaToFloat3(delta));
+                    double distanceSq = math.lengthsq(delta);
                     if (!math.isfinite(distanceSq))
                     {
                         rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
                     }
 
-                    if ((double)distanceSq > maxSearchSq)
+                    if (distanceSq > maxSearchSq)
                     {
                         rejectedCandidateFlags |= ShinobuRespawnFlags.InvalidTargetAup;
                         continue;
@@ -206,7 +207,7 @@ namespace Hecton8.Physiology
             {
                 PhysiologyDTO vitals = default;
                 vitals.BloodOxygen = 1f;
-                vitals.TissueNitrogen = ShinobuPhysiologyConstants.AtmosphericPressureAtSurfaceAtm;
+                vitals.TissueNitrogen = ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm;
                 vitals.CoreTemperature = 37f;
                 vitals.ActiveTraumaMask = 0u;
                 vitals.HeartRate = 72f;
@@ -218,7 +219,7 @@ namespace Hecton8.Physiology
             {
                 DecompressionStateDTO state = default;
                 for (int i = 0; i < ShinobuPhysiologyConstants.TissueCompartmentCount; i++)
-                    state.TissueTensions[i] = ShinobuPhysiologyConstants.AtmosphericPressureAtSurfaceAtm;
+                    state.TissueTensions[i] = ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm;
                 state.AmbientPressure = ShinobuPhysiologyConstants.AtmosphericPressureAtSurfaceAtm;
                 state.AscentRate = 0f;
                 *Decompression = state;
@@ -230,7 +231,7 @@ namespace Hecton8.Physiology
                 for (int i = 0; i < count; i++)
                 {
                     TissueCompartmentDTO tissue = Tissues[i];
-                    tissue.NitrogenTension = ShinobuPhysiologyConstants.AtmosphericPressureAtSurfaceAtm;
+                    tissue.NitrogenTension = ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm;
                     tissue.Halftime = math.isfinite(tissue.Halftime) && tissue.Halftime > 0f ? tissue.Halftime : 5f + (i * 3f);
                     tissue.MValue = math.isfinite(tissue.MValue) && tissue.MValue > 0f ? tissue.MValue : 1.58f;
                     tissue.Flags = 0u;

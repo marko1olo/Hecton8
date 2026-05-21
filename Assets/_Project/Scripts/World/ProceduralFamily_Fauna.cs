@@ -36,16 +36,24 @@ namespace Hecton8.World
             public Vector4 phaseOffsetScale;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Size = 56)]
         public struct RuntimeDescriptor
         {
+            [FieldOffset(0)]
             public int FamilyHashId;
+            [FieldOffset(4)]
             public float MinimumScale;
+            [FieldOffset(8)]
             public float MaximumScale;
+            [FieldOffset(12)]
             public float VatPlaybackSpeed;
+            [FieldOffset(16)]
             public float4 VatPhaseOffsetScale;
+            [FieldOffset(32)]
             public float4 VatPositionScaleBias;
+            [FieldOffset(48)]
             public int ThreatClass;
+            [FieldOffset(52)]
             public int Reserved0;
         }
 

@@ -14,6 +14,7 @@ using UnityEditor;
 
 namespace Hecton8.Core.Data
 {
+#if UNITY_EDITOR
     /// <summary>
     /// Cold-path CSV validator and binary compiler for static balance data.
     /// </summary>
@@ -1335,5 +1336,6 @@ namespace Hecton8.Core.Data
             _dirtyAt = EditorApplication.timeSinceStartup;
         }
     }
+#endif
 #endif
 }

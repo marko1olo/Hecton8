@@ -35,39 +35,45 @@ namespace Hecton8.AI.Cognition
     /// </summary>
     public struct ApexBrainVaultHandles
     {
-        public VaultBufferHandle<ApexStateDTO> States;
-        public VaultBufferHandle<MockPlayerAUP> MockTargets;
-        public VaultBufferHandle<ApexBrainAcousticEchoTap> AcousticTaps;
-        public VaultBufferHandle<ApexBrainTuning> Tuning;
-        public VaultBufferHandle<ApexEmergencyStats> EmergencyStats;
-        public VaultBufferHandle<MockWorldSampler> WorldSampler;
-        public VaultBufferHandle<ApexBrainOutputDTO> Outputs;
-        public VaultBufferHandle<ApexProximitySignal> ProximitySignals;
-        public VaultBufferHandle<MockCombatDamageSignal> CombatDamageSignals;
-        public VaultBufferHandle<ApexPanicSignal> PanicSignals;
-        public VaultBufferHandle<ApexInfluenceNode> InfluenceNodes;
-        public VaultBufferHandle<float3> AmbushNodeScratch;
-        public VaultBufferHandle<ApexTelemetryEntry> TelemetryRing;
-        public VaultBufferHandle<int> TelemetryCursor;
-        public VaultBufferHandle<byte> CsvScratch;
+        public VaultGenerationHandle<ApexStateDTO> States;
+        public VaultGenerationHandle<MockPlayerAUP> MockTargets;
+        public VaultGenerationHandle<ApexBrainAcousticEchoTap> AcousticTaps;
+        public VaultGenerationHandle<ApexBrainTuning> Tuning;
+        public VaultGenerationHandle<ApexEmergencyStats> EmergencyStats;
+        public VaultGenerationHandle<MockWorldSampler> WorldSampler;
+        public VaultGenerationHandle<ApexBrainOutputDTO> Outputs;
+        public VaultGenerationHandle<ApexProximitySignal> ProximitySignals;
+        public VaultGenerationHandle<MockCombatDamageSignal> CombatDamageSignals;
+        public VaultGenerationHandle<ApexPanicSignal> PanicSignals;
+        public VaultGenerationHandle<ApexInfluenceNode> InfluenceNodes;
+        public VaultGenerationHandle<float3> AmbushNodeScratch;
+        public VaultGenerationHandle<ApexTelemetryEntry> TelemetryRing;
+        public VaultGenerationHandle<int> TelemetryCursor;
+        public VaultGenerationHandle<byte> CsvScratch;
 
         public bool IsCreated()
         {
-            return States.IsCreated &&
-                   MockTargets.IsCreated &&
-                   AcousticTaps.IsCreated &&
-                   Tuning.IsCreated &&
-                   EmergencyStats.IsCreated &&
-                   WorldSampler.IsCreated &&
-                   Outputs.IsCreated &&
-                   ProximitySignals.IsCreated &&
-                   CombatDamageSignals.IsCreated &&
-                   PanicSignals.IsCreated &&
-                   InfluenceNodes.IsCreated &&
-                   AmbushNodeScratch.IsCreated &&
-                   TelemetryRing.IsCreated &&
-                   TelemetryCursor.IsCreated &&
-                   CsvScratch.IsCreated;
+            return IsHandleCreated(in States) &&
+                   IsHandleCreated(in MockTargets) &&
+                   IsHandleCreated(in AcousticTaps) &&
+                   IsHandleCreated(in Tuning) &&
+                   IsHandleCreated(in EmergencyStats) &&
+                   IsHandleCreated(in WorldSampler) &&
+                   IsHandleCreated(in Outputs) &&
+                   IsHandleCreated(in ProximitySignals) &&
+                   IsHandleCreated(in CombatDamageSignals) &&
+                   IsHandleCreated(in PanicSignals) &&
+                   IsHandleCreated(in InfluenceNodes) &&
+                   IsHandleCreated(in AmbushNodeScratch) &&
+                   IsHandleCreated(in TelemetryRing) &&
+                   IsHandleCreated(in TelemetryCursor) &&
+                   IsHandleCreated(in CsvScratch);
+        }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
     }
 
@@ -147,9 +153,9 @@ namespace Hecton8.AI.Cognition
         private static readonly uint _globalQualityHash = HashAscii("global_quality_weight");
 
         /// <summary>
-        /// Resolves or creates all SHINOBU_61 vault handles.
+        /// Acquires or recovers all SHINOBU_61 vault handles.
         /// </summary>
-        public static bool TryResolve(IDataVault vault, out ApexBrainVaultHandles handles)
+        public static bool TryAcquireHandles(IDataVault vault, out ApexBrainVaultHandles handles)
         {
             handles = default;
             if (vault == null)
@@ -157,97 +163,96 @@ namespace Hecton8.AI.Cognition
 
             if (vault.IsAllocationLocked)
             {
-                if (!TryResolveExisting(vault, out handles))
+                if (!TryReadExistingHandles(vault, out handles))
                     return false;
 
-                if (TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers lockedBuffers))
-                    GenerateEmergencyMockApexStats(lockedBuffers);
+                if (!TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers lockedBuffers))
+                    return false;
 
-                return handles.IsCreated();
+                GenerateEmergencyMockApexStats(lockedBuffers);
+                return true;
             }
 
-            handles.States = vault.GetBufferHandle<ApexStateDTO>(
+            handles.States = vault.GetGenerationHandle<ApexStateDTO>(
                 ApexBrainVaultBufferIds.ApexState,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.MockTargets = vault.GetBufferHandle<MockPlayerAUP>(
+            handles.MockTargets = vault.GetGenerationHandle<MockPlayerAUP>(
                 ApexBrainVaultBufferIds.MockPlayerAup,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.AcousticTaps = vault.GetBufferHandle<ApexBrainAcousticEchoTap>(
+            handles.AcousticTaps = vault.GetGenerationHandle<ApexBrainAcousticEchoTap>(
                 ApexBrainVaultBufferIds.AcousticEchoTap,
                 ApexBrainConstants.MaxAcousticTaps,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.Tuning = vault.GetBufferHandle<ApexBrainTuning>(
+            handles.Tuning = vault.GetGenerationHandle<ApexBrainTuning>(
                 ApexBrainVaultBufferIds.Tuning,
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.EmergencyStats = vault.GetBufferHandle<ApexEmergencyStats>(
+            handles.EmergencyStats = vault.GetGenerationHandle<ApexEmergencyStats>(
                 ApexBrainVaultBufferIds.EmergencyStats,
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.WorldSampler = vault.GetBufferHandle<MockWorldSampler>(
+            handles.WorldSampler = vault.GetGenerationHandle<MockWorldSampler>(
                 ApexBrainVaultBufferIds.MockWorldSampler,
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.Outputs = vault.GetBufferHandle<ApexBrainOutputDTO>(
+            handles.Outputs = vault.GetGenerationHandle<ApexBrainOutputDTO>(
                 ApexBrainVaultBufferIds.Output,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.ProximitySignals = vault.GetBufferHandle<ApexProximitySignal>(
+            handles.ProximitySignals = vault.GetGenerationHandle<ApexProximitySignal>(
                 ApexBrainVaultBufferIds.ProximitySignal,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.CombatDamageSignals = vault.GetBufferHandle<MockCombatDamageSignal>(
+            handles.CombatDamageSignals = vault.GetGenerationHandle<MockCombatDamageSignal>(
                 ApexBrainVaultBufferIds.CombatDamageSignal,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.PanicSignals = vault.GetBufferHandle<ApexPanicSignal>(
+            handles.PanicSignals = vault.GetGenerationHandle<ApexPanicSignal>(
                 ApexBrainVaultBufferIds.PanicSignal,
                 ApexBrainConstants.MaxLeviathans,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.InfluenceNodes = vault.GetBufferHandle<ApexInfluenceNode>(
+            handles.InfluenceNodes = vault.GetGenerationHandle<ApexInfluenceNode>(
                 ApexBrainVaultBufferIds.InfluenceNodes,
                 ApexBrainConstants.InfluenceNodeCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.AmbushNodeScratch = vault.GetBufferHandle<float3>(
+            handles.AmbushNodeScratch = vault.GetGenerationHandle<float3>(
                 ApexBrainVaultBufferIds.AmbushNodeScratch,
                 ApexBrainConstants.InfluenceNodeCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.TelemetryRing = vault.GetBufferHandle<ApexTelemetryEntry>(
+            handles.TelemetryRing = vault.GetGenerationHandle<ApexTelemetryEntry>(
                 ApexBrainVaultBufferIds.TelemetryRing,
                 ApexBrainConstants.TelemetryCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetBufferHandle<int>(
+            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
                 ApexBrainVaultBufferIds.TelemetryCursor,
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.GetBufferHandle<byte>(
+            handles.CsvScratch = vault.GetGenerationHandle<byte>(
                 ApexBrainVaultBufferIds.CsvScratch,
                 ApexBrainConstants.CsvScratchBytes,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
 
-            if (!handles.IsCreated())
+            if (!TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers buffers))
                 return false;
 
-            if (TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers buffers))
-                GenerateEmergencyMockApexStats(buffers);
-
+            GenerateEmergencyMockApexStats(buffers);
             return true;
         }
 
@@ -260,30 +265,58 @@ namespace Hecton8.AI.Cognition
             if (vault == null || !handles.IsCreated())
                 return false;
 
-            buffers.States = handles.States.Resolve(vault);
-            buffers.MockTargets = handles.MockTargets.Resolve(vault);
-            buffers.AcousticTaps = handles.AcousticTaps.Resolve(vault);
-            buffers.Tuning = handles.Tuning.Resolve(vault);
-            buffers.EmergencyStats = handles.EmergencyStats.Resolve(vault);
-            buffers.WorldSampler = handles.WorldSampler.Resolve(vault);
-            buffers.Outputs = handles.Outputs.Resolve(vault);
-            buffers.ProximitySignals = handles.ProximitySignals.Resolve(vault);
-            buffers.CombatDamageSignals = handles.CombatDamageSignals.Resolve(vault);
-            buffers.PanicSignals = handles.PanicSignals.Resolve(vault);
-            buffers.InfluenceNodes = handles.InfluenceNodes.Resolve(vault);
-            buffers.AmbushNodeScratch = handles.AmbushNodeScratch.Resolve(vault);
-            buffers.TelemetryRing = handles.TelemetryRing.Resolve(vault);
-            buffers.TelemetryCursor = handles.TelemetryCursor.Resolve(vault);
-            buffers.CsvScratch = handles.CsvScratch.Resolve(vault);
+            if (!TryOpenVaultView(vault, in handles.States, ApexBrainConstants.MaxLeviathans, out buffers.States) ||
+                !TryOpenVaultView(vault, in handles.MockTargets, ApexBrainConstants.MaxLeviathans, out buffers.MockTargets) ||
+                !TryOpenVaultView(vault, in handles.AcousticTaps, ApexBrainConstants.MaxAcousticTaps, out buffers.AcousticTaps) ||
+                !TryOpenVaultView(vault, in handles.Tuning, 1, out buffers.Tuning) ||
+                !TryOpenVaultView(vault, in handles.EmergencyStats, 1, out buffers.EmergencyStats) ||
+                !TryOpenVaultView(vault, in handles.WorldSampler, 1, out buffers.WorldSampler) ||
+                !TryOpenVaultView(vault, in handles.Outputs, ApexBrainConstants.MaxLeviathans, out buffers.Outputs) ||
+                !TryOpenVaultView(vault, in handles.ProximitySignals, ApexBrainConstants.MaxLeviathans, out buffers.ProximitySignals) ||
+                !TryOpenVaultView(vault, in handles.CombatDamageSignals, ApexBrainConstants.MaxLeviathans, out buffers.CombatDamageSignals) ||
+                !TryOpenVaultView(vault, in handles.PanicSignals, ApexBrainConstants.MaxLeviathans, out buffers.PanicSignals) ||
+                !TryOpenVaultView(vault, in handles.InfluenceNodes, ApexBrainConstants.InfluenceNodeCapacity, out buffers.InfluenceNodes) ||
+                !TryOpenVaultView(vault, in handles.AmbushNodeScratch, ApexBrainConstants.InfluenceNodeCapacity, out buffers.AmbushNodeScratch) ||
+                !TryOpenVaultView(vault, in handles.TelemetryRing, ApexBrainConstants.TelemetryCapacity, out buffers.TelemetryRing) ||
+                !TryOpenVaultView(vault, in handles.TelemetryCursor, 1, out buffers.TelemetryCursor) ||
+                !TryOpenVaultView(vault, in handles.CsvScratch, ApexBrainConstants.CsvScratchBytes, out buffers.CsvScratch))
+            {
+                buffers = default;
+                return false;
+            }
+
             return buffers.IsCreated();
         }
 
         /// <summary>
-        /// Returns a mutable ref to ApexStateDTO in vault memory.
+        /// Reads one ApexStateDTO from a phase-local vault view.
         /// </summary>
-        public static ref ApexStateDTO GetStateAsRef(IDataVault vault, ref ApexBrainVaultHandles handles, int index)
+        public static bool TryReadState(IDataVault vault, ref ApexBrainVaultHandles handles, int index, out ApexStateDTO state)
         {
-            return ref handles.States.GetElementAsRef(vault, index);
+            state = default;
+            if (!TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers buffers) ||
+                (uint)index >= (uint)buffers.States.Length)
+            {
+                return false;
+            }
+
+            state = buffers.States[index];
+            return true;
+        }
+
+        /// <summary>
+        /// Writes one ApexStateDTO through a phase-local vault view.
+        /// </summary>
+        public static bool TryWriteState(IDataVault vault, ref ApexBrainVaultHandles handles, int index, in ApexStateDTO state)
+        {
+            if (!TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers buffers) ||
+                (uint)index >= (uint)buffers.States.Length)
+            {
+                return false;
+            }
+
+            buffers.States[index] = state;
+            return true;
         }
 
         /// <summary>
@@ -385,7 +418,7 @@ namespace Hecton8.AI.Cognition
             if (buffers.Tuning.IsCreated && buffers.Tuning.Length > 0)
                 quality = ResolveSchedulingQuality(buffers.Tuning[0].GlobalQualityWeight);
 
-            float qualityCurve = Smooth01(math.saturate((quality - ApexBrainConstants.LowQualityNodeHold) * math.rcp(1f - ApexBrainConstants.LowQualityNodeHold)));
+            float qualityCurve = Smooth01(math.saturate((quality - ApexBrainConstants.MinimumQualityNodeHold) * math.rcp(1f - ApexBrainConstants.MinimumQualityNodeHold)));
             float updateHz = math.lerp(5f, 60f, qualityCurve);
             uint evaluationsPerWindow = (uint)math.clamp((int)math.round(updateHz), 5, 60);
             uint phase = (frame * evaluationsPerWindow) % 60u;
@@ -641,24 +674,75 @@ namespace Hecton8.AI.Cognition
             return ApexBrainDefaults.BuildEmergencyMockWorldSampler();
         }
 
-        private static bool TryResolveExisting(IDataVault vault, out ApexBrainVaultHandles handles)
+        private static bool TryReadExistingHandles(IDataVault vault, out ApexBrainVaultHandles handles)
         {
             handles = default;
-            return vault.TryGetBufferHandle(ApexBrainVaultBufferIds.ApexState, out handles.States) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.MockPlayerAup, out handles.MockTargets) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.AcousticEchoTap, out handles.AcousticTaps) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.Tuning, out handles.Tuning) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.EmergencyStats, out handles.EmergencyStats) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.MockWorldSampler, out handles.WorldSampler) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.Output, out handles.Outputs) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.ProximitySignal, out handles.ProximitySignals) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.CombatDamageSignal, out handles.CombatDamageSignals) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.PanicSignal, out handles.PanicSignals) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.InfluenceNodes, out handles.InfluenceNodes) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.AmbushNodeScratch, out handles.AmbushNodeScratch) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
-                   vault.TryGetBufferHandle(ApexBrainVaultBufferIds.CsvScratch, out handles.CsvScratch);
+            return vault.TryGetGenerationHandle<ApexStateDTO>(ApexBrainVaultBufferIds.ApexState, out handles.States) &&
+                   vault.TryGetGenerationHandle<MockPlayerAUP>(ApexBrainVaultBufferIds.MockPlayerAup, out handles.MockTargets) &&
+                   vault.TryGetGenerationHandle<ApexBrainAcousticEchoTap>(ApexBrainVaultBufferIds.AcousticEchoTap, out handles.AcousticTaps) &&
+                   vault.TryGetGenerationHandle<ApexBrainTuning>(ApexBrainVaultBufferIds.Tuning, out handles.Tuning) &&
+                   vault.TryGetGenerationHandle<ApexEmergencyStats>(ApexBrainVaultBufferIds.EmergencyStats, out handles.EmergencyStats) &&
+                   vault.TryGetGenerationHandle<MockWorldSampler>(ApexBrainVaultBufferIds.MockWorldSampler, out handles.WorldSampler) &&
+                   vault.TryGetGenerationHandle<ApexBrainOutputDTO>(ApexBrainVaultBufferIds.Output, out handles.Outputs) &&
+                   vault.TryGetGenerationHandle<ApexProximitySignal>(ApexBrainVaultBufferIds.ProximitySignal, out handles.ProximitySignals) &&
+                   vault.TryGetGenerationHandle<MockCombatDamageSignal>(ApexBrainVaultBufferIds.CombatDamageSignal, out handles.CombatDamageSignals) &&
+                   vault.TryGetGenerationHandle<ApexPanicSignal>(ApexBrainVaultBufferIds.PanicSignal, out handles.PanicSignals) &&
+                   vault.TryGetGenerationHandle<ApexInfluenceNode>(ApexBrainVaultBufferIds.InfluenceNodes, out handles.InfluenceNodes) &&
+                   vault.TryGetGenerationHandle<float3>(ApexBrainVaultBufferIds.AmbushNodeScratch, out handles.AmbushNodeScratch) &&
+                   vault.TryGetGenerationHandle<ApexTelemetryEntry>(ApexBrainVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
+                   vault.TryGetGenerationHandle<int>(ApexBrainVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
+                   vault.TryGetGenerationHandle<byte>(ApexBrainVaultBufferIds.CsvScratch, out handles.CsvScratch);
+        }
+
+        public static void ReleaseOwnedHandles(IDataVault vault, ref ApexBrainVaultHandles handles)
+        {
+            if (vault == null)
+            {
+                handles = default;
+                return;
+            }
+
+            ReleaseVaultHandle(vault, ref handles.States);
+            ReleaseVaultHandle(vault, ref handles.MockTargets);
+            ReleaseVaultHandle(vault, ref handles.AcousticTaps);
+            ReleaseVaultHandle(vault, ref handles.Tuning);
+            ReleaseVaultHandle(vault, ref handles.EmergencyStats);
+            ReleaseVaultHandle(vault, ref handles.WorldSampler);
+            ReleaseVaultHandle(vault, ref handles.Outputs);
+            ReleaseVaultHandle(vault, ref handles.ProximitySignals);
+            ReleaseVaultHandle(vault, ref handles.CombatDamageSignals);
+            ReleaseVaultHandle(vault, ref handles.PanicSignals);
+            ReleaseVaultHandle(vault, ref handles.InfluenceNodes);
+            ReleaseVaultHandle(vault, ref handles.AmbushNodeScratch);
+            ReleaseVaultHandle(vault, ref handles.TelemetryRing);
+            ReleaseVaultHandle(vault, ref handles.TelemetryCursor);
+            ReleaseVaultHandle(vault, ref handles.CsvScratch);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool TryOpenVaultView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   requiredLength >= 0 &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
 
         private static int GetScheduleLength(in ApexBrainVaultBuffers buffers)
@@ -811,16 +895,21 @@ namespace Hecton8.AI.Cognition
 
         private static string ResolveCsvPath(string projectRoot)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-            string rootPath = Path.Combine(root, CsvFileName);
-            if (File.Exists(rootPath))
-                return rootPath;
+            string sourceDataPath = Path.Combine(root, "Assets", "_SourceData", "AI", CsvFileName);
+            if (File.Exists(sourceDataPath))
+                return sourceDataPath;
 
             string dataPath = Path.Combine(root, "Data", "AI", CsvFileName);
             if (File.Exists(dataPath))
                 return dataPath;
 
-            return Path.Combine(root, "Assets", "StreamingAssets", CsvFileName);
+            string rootPath = Path.Combine(root, CsvFileName);
+            if (File.Exists(rootPath))
+                return rootPath;
+#endif
+            return null;
         }
 
         private static int ReadFileIntoNativeScratch(string path, NativeArray<byte> scratch)

@@ -99,11 +99,85 @@ namespace Hecton8.Gameplay
         private const uint ListenerExceptionWarningHash = 0x454E4558u;
         private const uint EventContextHash = 0x454E4556u;
         private const uint ListenerContextHash = 0x454E4C53u;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
-        // COLD ALLOC: RegistryBucket<IEndingEventListener>[8] - ending listeners drained by SystemDispatcher LateUpdate - owner: EndingEvents
-        private static readonly RegistryBucket<IEndingEventListener> _listeners = new RegistryBucket<IEndingEventListener>(ListenerCapacity);
-        private static readonly IEndingEventListener[] _deferredRegisterListeners = new IEndingEventListener[ListenerCapacity];
-        private static readonly IEndingEventListener[] _deferredUnregisterListeners = new IEndingEventListener[ListenerCapacity];
+        private struct ListenerSlot
+        {
+            public IEndingEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct EndingListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public EndingListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IEndingEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IEndingEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public bool TryUnregister(IEndingEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return true;
+                }
+
+                return false;
+            }
+
+            public IEndingEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[8] - ending listeners drained by SystemDispatcher LateUpdate - owner: EndingEvents
+        private static EndingListenerRegistry _listeners = new EndingListenerRegistry(ListenerCapacity);
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         private static NativeQueue<EndingEventPayload> _pendingEvents;
         private static NativeQueue<EndingEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
@@ -237,14 +311,13 @@ namespace Hecton8.Gameplay
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IEndingEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IEndingEventListener listener = rawArray[i];
+                        IEndingEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -299,7 +372,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<EndingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — deferred ending lane flushed by SystemDispatcher LateUpdate — owner: EndingEvents
+                _pendingEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — deferred ending lane flushed by SystemDispatcher LateUpdate — owner: EndingEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -311,7 +384,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<EndingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — next-frame ending lane prevents same-frame reentrant dispatch — owner: EndingEvents
+                _nextFrameEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — next-frame ending lane prevents same-frame reentrant dispatch — owner: EndingEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -375,7 +448,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IEndingEventListener listener)
@@ -392,19 +465,19 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IEndingEventListener listener)
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredRegisterCount--;
                 _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
                 return true;
             }
 
@@ -415,12 +488,12 @@ namespace Hecton8.Gameplay
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     continue;
 
                 _deferredUnregisterCount--;
                 _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
                 return;
             }
         }
@@ -429,7 +502,7 @@ namespace Hecton8.Gameplay
         {
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -440,7 +513,7 @@ namespace Hecton8.Gameplay
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
                     return true;
             }
 
@@ -451,8 +524,8 @@ namespace Hecton8.Gameplay
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IEndingEventListener listener = _deferredUnregisterListeners[i];
-                _deferredUnregisterListeners[i] = null;
+                IEndingEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
@@ -461,8 +534,8 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IEndingEventListener listener = _deferredRegisterListeners[i];
-                _deferredRegisterListeners[i] = null;
+                IEndingEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
                 if (listener != null)
                     RegisterImmediate(listener);
             }

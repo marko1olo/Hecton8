@@ -1,7 +1,6 @@
 namespace Hecton8.Tools
 {
     using System.Runtime.CompilerServices;
-    using System.Runtime.InteropServices;
     using Hecton8.Core.Contracts;
     using Unity.Burst;
     using Unity.Burst.CompilerServices;
@@ -12,7 +11,6 @@ namespace Hecton8.Tools
     using UnityEngine;
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     public struct GenerateMockCutterTriggersJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
@@ -85,7 +83,6 @@ namespace Hecton8.Tools
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     public struct ManageCutterCooldownJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
@@ -130,7 +127,6 @@ namespace Hecton8.Tools
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     public struct BuildCutterRaycastsJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
@@ -184,7 +180,6 @@ namespace Hecton8.Tools
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential)]
     public struct EvaluateCutterRaycastHitsJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
@@ -195,6 +190,8 @@ namespace Hecton8.Tools
         [WriteOnly, NoAlias] public NativeArray<LaserCutBatteryDrainRequest> BatteryDrainRequests;
         [WriteOnly, NoAlias] public NativeArray<LaserCutGlowDecalRequestDTO> GlowDecalRequests;
         [WriteOnly, NoAlias] public NativeArray<LaserCutImpactVfxDTO> ImpactVfxRequests;
+        // TelemetryRing is a separate Vault lane. The modulo index is unique while
+        // scheduled count <= ring length, so parallel writes do not alias.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<LaserCutTelemetryEntry> TelemetryRing;
         public double3 PresentationOriginAUP;
         public uint TelemetryCursorBase;
@@ -242,7 +239,8 @@ namespace Hecton8.Tools
                          LaserCutterDodConstants.ResultFlagBatteryDrainQueued |
                          LaserCutterDodConstants.ResultFlagDecalQueued;
 
-            float carve01 = hasHit ? EstimateSdfCarve01(in request, hitAup, distance, qualityCurve, power) : 0f;
+            const float authoritativeCarveCurve = 1f;
+            float carve01 = hasHit ? EstimateSdfCarve01(in request, hitAup, distance, authoritativeCarveCurve, power) : 0f;
             float sparkCountFloat = math.lerp(lowSparkCount, ultraSparkCount, qualityCurve);
             uint sparkCount = hasHit ? (uint)math.clamp((int)math.round(sparkCountFloat * math.saturate(0.25f + power * 0.75f) * sparkScale), 0, sparkCap) : 0u;
             float batteryWatts = hasHit ? wattsAtPowerOne * power : 0f;
@@ -378,9 +376,11 @@ namespace Hecton8.Tools
         private static uint HashMaterial(in LaserCutRequestDTO request, double3 hitAup)
         {
             uint hash = request.ToolHashID ^ 2166136261u;
-            hash = (hash ^ (uint)math.asint((float)hitAup.x)) * 16777619u;
-            hash = (hash ^ (uint)math.asint((float)hitAup.y)) * 16777619u;
-            hash = (hash ^ (uint)math.asint((float)hitAup.z)) * 16777619u;
+            hash = (hash ^ request.ParentEntityID) * 16777619u;
+            double3 localDelta = AupPrecisionMath.LocalDeltaDouble(hitAup, request.RayOriginAUP);
+            hash = MixDoubleToUInt(hash, localDelta.x);
+            hash = MixDoubleToUInt(hash, localDelta.y);
+            hash = MixDoubleToUInt(hash, localDelta.z);
             return hash == 0u ? LaserCutterDodConstants.LaserCutterHash : hash;
         }
 
@@ -391,14 +391,32 @@ namespace Hecton8.Tools
             hash = Mix(hash, request.ParentEntityID);
             hash = Mix(hash, meta.RequestSequence);
             hash = Mix(hash, meta.Frame);
-            hash = Mix(hash, (uint)math.asint((float)hitAup.x));
-            hash = Mix(hash, (uint)math.asint((float)hitAup.y));
-            hash = Mix(hash, (uint)math.asint((float)hitAup.z));
+            hash = MixDouble(hash, request.RayOriginAUP.x);
+            hash = MixDouble(hash, request.RayOriginAUP.y);
+            hash = MixDouble(hash, request.RayOriginAUP.z);
+            double3 localDelta = AupPrecisionMath.LocalDeltaDouble(hitAup, request.RayOriginAUP);
+            hash = MixDouble(hash, localDelta.x);
+            hash = MixDouble(hash, localDelta.y);
+            hash = MixDouble(hash, localDelta.z);
             hash = Mix(hash, (uint)math.asint(normal.x));
             hash = Mix(hash, (uint)math.asint(normal.y));
             hash = Mix(hash, (uint)math.asint(normal.z));
             hash = Mix(hash, flags);
             return hash;
+        }
+
+        private static uint MixDoubleToUInt(uint hash, double value)
+        {
+            ulong bits = unchecked((ulong)math.aslong(math.isfinite(value) ? value : 0d));
+            hash = (hash ^ (uint)bits) * 16777619u;
+            return (hash ^ (uint)(bits >> 32)) * 16777619u;
+        }
+
+        private static ulong MixDouble(ulong hash, double value)
+        {
+            ulong bits = unchecked((ulong)math.aslong(math.isfinite(value) ? value : 0d));
+            hash = Mix(hash, (uint)bits);
+            return Mix(hash, (uint)(bits >> 32));
         }
 
         private static ulong Mix(ulong hash, uint value)

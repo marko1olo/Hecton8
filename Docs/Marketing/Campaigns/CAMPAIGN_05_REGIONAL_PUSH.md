@@ -55,9 +55,9 @@ HECTON-8 - odinochnoe podvodnoe vyzhivanie pro davlenie, tekhniku, poisk resurso
 
 Kryuchok dlya zritelei: baza kak mashina, glubina kak ugroza, Seed Ship kak anomalya, kotoraya portit pribory, marshruty i oshchushchenie bezopasnosti.
 
-Materialy: [Steam/skrinshoty/klip/demo tolko posle exact destination gate plus `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` dlya public-linkov ili recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` s `verified_contact_route`, `access_route_class`, `reply_consent_provenance` dlya private-route]
+Materialy: HOLD_REGIONAL_MATERIAL_ROUTE - dobavit Steam/skrinshoty/klip/demo tolko posle exact destination gate plus `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` dlya public-linkov ili recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` s `verified_contact_route`, `access_route_class`, `reply_consent_provenance` dlya private-route.
 
-Esli format podoidet, mozhno obsudit demo ili press-kit, kogda build, dostup, `verified_contact_route`, `access_route_class` i `reply_consent_provenance` budut gotovy.
+HOLD_REGIONAL_FUTURE_ROUTE_OFFER - obsuzhdat demo ili press-kit tolko posle build/source, access gate, `verified_contact_route`, `access_route_class`, `reply_consent_provenance`, localization approval, and send-log readiness.
 
 ## German Pitch
 

@@ -1,0 +1,16 @@
+{
+    "name": "Hecton8.World.VoxelTerrainSeamBinder",
+    "rootNamespace": "Hecton8.World.VoxelTerrainSeamBinder",
+    "references": [
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,5 +1,7 @@
 using System;
-using Hecton8.Gameplay;
+using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Equipment.Auxiliary;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -35,12 +37,41 @@ namespace Hecton8.Visor
             [Min(0.001f)] public float projectionDepthMeters = 38f;
         }
 
+        private readonly struct ProjectionRuntimeState
+        {
+            public readonly float3 Origin;
+            public readonly float3 Right;
+            public readonly float3 Up;
+            public readonly float3 Forward;
+            public readonly float Radius;
+            public readonly float Age01;
+            public readonly float Intensity;
+
+            public ProjectionRuntimeState(
+                float3 origin,
+                float3 right,
+                float3 up,
+                float3 forward,
+                float radius,
+                float age01,
+                float intensity)
+            {
+                Origin = origin;
+                Right = right;
+                Up = up;
+                Forward = forward;
+                Radius = radius;
+                Age01 = age01;
+                Intensity = intensity;
+            }
+        }
+
         private sealed class ProjectionPass : ScriptableRenderPass
         {
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Scanner Projection");
             private FeatureSettings _settings;
             private Material _material;
-            private HectonScannerProjectionState.RuntimeState _state;
+            private ProjectionRuntimeState _state;
             private Vector4 _appliedOriginRadius;
             private Vector4 _appliedRightDepth;
             private Vector4 _appliedUpAge;
@@ -49,7 +80,6 @@ namespace Hecton8.Visor
             private float _appliedGridScale = -1f;
             private float _appliedDitherCutoff = -1f;
             private float _appliedFlickerSpeed = -1f;
-            private float _now;
             private bool _materialDirty = true;
 
             public ProjectionPass()
@@ -58,7 +88,7 @@ namespace Hecton8.Visor
                 requiresIntermediateTexture = true;
             }
 
-            public void Setup(FeatureSettings settings, Material material, in HectonScannerProjectionState.RuntimeState state, float now)
+            public void Setup(FeatureSettings settings, Material material, in ProjectionRuntimeState state)
             {
                 if (!ReferenceEquals(_material, material))
                     _materialDirty = true;
@@ -66,7 +96,6 @@ namespace Hecton8.Visor
                 _settings = settings;
                 _material = material;
                 _state = state;
-                _now = now;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Color | ScriptableRenderPassInput.Depth);
                 requiresIntermediateTexture = true;
@@ -100,7 +129,7 @@ namespace Hecton8.Visor
                 destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
-                UpdateMaterialIfNeeded(_material, _settings, _state, _now);
+                UpdateMaterialIfNeeded(_material, _settings, _state);
 
                 using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
                            new RenderGraphUtils.BlitMaterialParameters(sourceTexture, destinationTexture, _material, 0),
@@ -113,9 +142,9 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private void UpdateMaterialIfNeeded(Material material, FeatureSettings settings, in HectonScannerProjectionState.RuntimeState state, float now)
+            private void UpdateMaterialIfNeeded(Material material, FeatureSettings settings, in ProjectionRuntimeState state)
             {
-                float age01 = math.saturate((now - state.StartTime) / math.max(0.001f, state.Duration));
+                float age01 = math.saturate(state.Age01);
                 Vector4 originRadius = new Vector4(state.Origin.x, state.Origin.y, state.Origin.z, state.Radius);
                 Vector4 rightDepth = new Vector4(state.Right.x, state.Right.y, state.Right.z, math.max(0.001f, settings.projectionDepthMeters));
                 Vector4 upAge = new Vector4(state.Up.x, state.Up.y, state.Up.z, age01);
@@ -235,11 +264,10 @@ namespace Hecton8.Visor
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
                 return;
 
-            float now = Time.time;
-            if (!HectonScannerProjectionState.TryGetState(now, out HectonScannerProjectionState.RuntimeState state))
+            if (!TryResolveLatestAuxiliarySignalState(renderingData.cameraData.camera, out ProjectionRuntimeState state))
                 return;
 
-            _pass.Setup(settings, _material, in state, now);
+            _pass.Setup(settings, _material, in state);
             renderer.EnqueuePass(_pass);
         }
 
@@ -263,6 +291,73 @@ namespace Hecton8.Visor
 
             CoreUtils.Destroy(material);
             material = CoreUtils.CreateEngineMaterial(shader);
+        }
+
+        private static bool TryResolveLatestAuxiliarySignalState(
+            Camera camera,
+            out ProjectionRuntimeState state)
+        {
+            state = default;
+            ReadOnlySpan<AuxiliarySonarRequestSignal> signals = SignalBus<AuxiliarySonarRequestSignal>.GetSignals();
+            for (int i = signals.Length - 1; i >= 0; i--)
+            {
+                AuxiliarySonarRequestSignal signal = signals[i];
+                if ((signal.Flags & AuxiliaryEquipmentFlags.SensorPing) == 0u ||
+                    !math.all(math.isfinite(signal.AUP_Position)) ||
+                    !math.isfinite(signal.CurrentRadius) ||
+                    !math.isfinite(signal.ExpansionRate) ||
+                    !math.isfinite(signal.MaxRadius) ||
+                    !math.isfinite(signal.Intensity))
+                {
+                    continue;
+                }
+
+                float3 origin = DowncastLocalAupForShader(signal.AUP_Position);
+                if (!math.all(math.isfinite(origin)))
+                    continue;
+
+                float3 forward = camera != null
+                    ? NormalizeVectorRsqrt((float3)camera.transform.forward, new float3(0f, 0f, 1f))
+                    : new float3(0f, 0f, 1f);
+                float3 upSeed = camera != null
+                    ? NormalizeVectorRsqrt((float3)camera.transform.up, new float3(0f, 1f, 0f))
+                    : new float3(0f, 1f, 0f);
+                if (math.abs(math.dot(upSeed, forward)) > 0.94f)
+                    upSeed = math.abs(forward.y) < 0.94f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f);
+
+                float3 right = NormalizeVectorRsqrt(math.cross(upSeed, forward), new float3(1f, 0f, 0f));
+                float3 up = NormalizeVectorRsqrt(math.cross(forward, right), new float3(0f, 1f, 0f));
+                float maxRadius = math.max(0.1f, signal.MaxRadius);
+                float radius = math.clamp(signal.CurrentRadius, 0.1f, maxRadius);
+                float age01 = math.saturate(radius * math.rcp(maxRadius));
+                state = new ProjectionRuntimeState(
+                    origin,
+                    right,
+                    up,
+                    forward,
+                    radius,
+                    age01,
+                    math.saturate(signal.Intensity));
+                return true;
+            }
+
+            return false;
+        }
+
+        private static float3 DowncastLocalAupForShader(double3 aup)
+        {
+            double3 local = aup - HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            return new float3((float)local.x, (float)local.y, (float)local.z);
+        }
+
+        private static float3 NormalizeVectorRsqrt(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                return fallback;
+
+            float3 normalized = value * math.rsqrt(lengthSq);
+            return math.all(math.isfinite(normalized)) ? normalized : fallback;
         }
     }
 }

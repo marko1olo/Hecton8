@@ -1,13 +1,11 @@
 using System;
 using System.IO;
-using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
-using Hecton8.Gameplay;
 using Hecton8.World;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -20,28 +18,35 @@ namespace Hecton8.Rendering
     {
         private const SystemID OwnerSystemId = SystemID.GraphicsScalability;
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_232.bin";
+        private const float CausticsMinimumWavelength = 0.25f;
 
         private static AbyssalDeferredCausticsRuntime s_runtimeInstance;
+        private static AbyssalDeferredCausticsRuntime s_publishedRuntime;
+        private static GraphicsBuffer s_publishedConstantBuffer;
+        private static uint s_publishedConstantBufferFrameIndex;
+        private static FunctionPointer<GenerateMockCausticLightingKernelDelegate> s_generateMockKernel;
+        private static FunctionPointer<CalculateCausticParametersKernelDelegate> s_calculateKernel;
 
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerRuntimeContext;
+        private IWeatherService _weatherService;
         private VaultGenerationHandle<CausticsParametersDTO> _parametersHandle;
         private VaultGenerationHandle<CausticsTuningDTO> _tuningHandle;
         private VaultGenerationHandle<CausticsTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private VaultGenerationHandle<CausticsLightingProfileDTO> _profilesHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
-        private VaultGenerationHandle<WeatherStateDTO> _weatherInputHandle;
-        private VaultGenerationHandle<WaveParametersDTO> _waveInputHandle;
         private VaultGenerationHandle<float4> _surfaceSwellInputHandle;
         private GraphicsBuffer _constantBufferA;
         private GraphicsBuffer _constantBufferB;
         private GraphicsBuffer _activeConstantBuffer;
-        private Vector4 _legacyCausticsAup;
+        private string _blackBoxDumpPath;
+        private string _blackBoxDumpDirectory;
         private float _presentationTimeSeconds;
         private int _activeConstantBufferIndex;
         private int _tickCount;
         private uint _presentationFrameIndex;
+        private uint _activeConstantBufferFrameIndex;
         private uint _lastFaultFlags;
         private bool _isInitialized;
         private bool _ownsRegistrySlot;
@@ -52,13 +57,11 @@ namespace Hecton8.Rendering
         private bool _pendingGpuUpload;
         private bool _tuningSeeded;
         private bool _profilesSeeded;
+        private bool _telemetrySeeded;
         private bool _telemetryCursorSeeded;
         private bool _vaultStateReady;
         private bool _faultDumped;
 
-        public bool IsComputeActive => _activeConstantBuffer != null && _activeConstantBuffer.IsValid();
-        public RenderTexture CausticsMap => null;
-        public Vector4 CausticsAup => _legacyCausticsAup;
         public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => _isInitialized;
         public int TickCount => _tickCount;
@@ -67,12 +70,20 @@ namespace Hecton8.Rendering
         private static void ResetStaticState()
         {
             s_runtimeInstance = null;
+            s_publishedRuntime = null;
+            s_publishedConstantBuffer = null;
+            s_publishedConstantBufferFrameIndex = 0u;
+            s_generateMockKernel = default;
+            s_calculateKernel = default;
         }
 
         public static AbyssalDeferredCausticsRuntime EnsureRuntimeInstance()
         {
             if (GlobalRegistry.Caustics is AbyssalDeferredCausticsRuntime runtime)
                 return runtime;
+
+            if (s_publishedRuntime != null)
+                return s_publishedRuntime;
 
             if (s_runtimeInstance != null)
                 return s_runtimeInstance;
@@ -86,33 +97,39 @@ namespace Hecton8.Rendering
             if (!EnsureSingletonOwnership())
                 return;
 
+            EnsureBlackBoxDumpPathCold();
             CacheRegistryServicesCold(forceRefresh: true);
             TryRegisterHotSwap();
             EnsureVaultState();
             EnsureCsvScratch();
-            TryRegisterUpdate();
-            TryRegisterLateFrame();
-            TryRegisterOriginShift();
-            _isInitialized = CausticsParametersLayoutValidator.Validate();
+
+            bool layoutValid = CausticsParametersLayoutValidator.Validate();
+            bool constantBuffersReady = layoutValid && EnsureConstantBuffers();
+            _isInitialized = layoutValid && constantBuffersReady;
             if (!_isInitialized)
             {
-                _lastFaultFlags = AbyssalCausticsConstants.FaultLayout;
+                _lastFaultFlags = layoutValid
+                    ? AbyssalCausticsConstants.FaultConstantBufferUnavailable
+                    : AbyssalCausticsConstants.FaultLayout;
+                TryUnregisterUpdate();
+                TryUnregisterLateFrame();
+                TryUnregisterOriginShift();
                 DumpBlackBox();
                 return;
             }
 
+            EnsureBurstKernelsCold();
+            TryRegisterUpdate();
+            TryRegisterLateFrame();
+            TryRegisterOriginShift();
             RunMockLightingKernel();
         }
 
         public void Tick(float deltaTime)
         {
             _tickCount++;
-            if (!_isInitialized)
-            {
-                InitializeService();
-                if (!_isInitialized || !_ownsRegistrySlot)
-                    return;
-            }
+            if (!_isInitialized || !_ownsRegistrySlot)
+                return;
 
             float safeDeltaTime = math.select(deltaTime, 0f, !math.isfinite(deltaTime) || deltaTime < 0f);
             _presentationTimeSeconds += math.min(safeDeltaTime, 0.25f);
@@ -120,6 +137,7 @@ namespace Hecton8.Rendering
 
             if (!_vaultStateReady)
                 return;
+
             if (!TryResolveVaultBuffer(in _parametersHandle, AbyssalCausticsConstants.ParameterCapacity, out NativeArray<CausticsParametersDTO> parameters))
             {
                 _vaultStateReady = false;
@@ -128,50 +146,49 @@ namespace Hecton8.Rendering
 
             double3 cameraAupLocal = ResolveCameraAupLocalOffset();
             float quality = ResolveGlobalQualityWeight01();
-            NativeArray<WeatherStateDTO> weather = default;
-            NativeArray<WaveParametersDTO> waveParameters = default;
             NativeArray<float4> surfaceSwell = default;
             bool hasTuning = TryResolveVaultBuffer(in _tuningHandle, 1, out NativeArray<CausticsTuningDTO> tuning);
             bool hasTelemetry = TryResolveVaultBuffer(in _telemetryHandle, AbyssalCausticsConstants.TelemetryCapacity, out NativeArray<CausticsTelemetryEntry> telemetry);
             bool hasTelemetryCursor = TryResolveVaultBuffer(in _telemetryCursorHandle, 1, out NativeArray<int> telemetryCursor);
             bool hasProfiles = TryResolveVaultBuffer(in _profilesHandle, AbyssalCausticsConstants.ProfileCapacity, out NativeArray<CausticsLightingProfileDTO> profiles);
             if (!hasTuning || !hasTelemetry || !hasTelemetryCursor || !hasProfiles)
+            {
                 _vaultStateReady = false;
-            TryResolveVaultBuffer(in _weatherInputHandle, 1, out weather);
-            TryResolveVaultBuffer(in _waveInputHandle, 1, out waveParameters);
+                return;
+            }
+
+            bool hasWeatherSnapshot = TryResolveWeatherSnapshot(out WeatherRuntimeSnapshot weatherSnapshot);
             TryResolveVaultBuffer(in _surfaceSwellInputHandle, 1, out surfaceSwell);
 
             CausticsInputSnapshotDTO inputSnapshot = CaptureCausticsInputSnapshot(
                 tuning,
-                weather,
-                waveParameters,
+                hasWeatherSnapshot,
+                weatherSnapshot,
                 surfaceSwell,
                 profiles,
                 quality,
                 _presentationTimeSeconds);
 
             CalculateCausticParametersJob job = default;
-            job.Parameters = parameters;
-            job.Telemetry = telemetry;
-            job.TelemetryCursor = telemetryCursor;
+            job.Parameters = (CausticsParametersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(parameters);
+            job.ParameterLength = parameters.Length;
+            job.Telemetry = (CausticsTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry);
+            job.TelemetryLength = telemetry.Length;
+            job.TelemetryCursor = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetryCursor);
+            job.TelemetryCursorLength = telemetryCursor.Length;
             job.InputSnapshot = inputSnapshot;
             job.CameraAupLocalOffset = cameraAupLocal;
             job.TimeSeconds = _presentationTimeSeconds;
             job.GlobalQualityWeight = inputSnapshot.WeatherStormWindPhaseQuality.w;
             job.FrameIndex = _presentationFrameIndex;
             job.OutputIndex = AbyssalCausticsConstants.PendingParameterIndex;
-            job.Run();
-            PublishPendingCausticsParameters();
+            RunPendingCausticsKernel(job);
         }
 
         public void LateFrameTick()
         {
-            if (!_isInitialized)
-            {
-                InitializeService();
-                if (!_isInitialized || !_ownsRegistrySlot)
-                    return;
-            }
+            if (!_isInitialized || !_ownsRegistrySlot)
+                return;
 
             if (!_pendingGpuUpload)
                 return;
@@ -182,8 +199,7 @@ namespace Hecton8.Rendering
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            _legacyCausticsAup.x -= shiftData.ShiftOffset.x;
-            _legacyCausticsAup.y -= shiftData.ShiftOffset.z;
+            // Deferred caustics reconstructs from camera depth and AUP-local shader payloads.
         }
 
         public void OnServiceShutdown()
@@ -201,6 +217,7 @@ namespace Hecton8.Rendering
                     _dataVault = currentService as IDataVault;
                     _tuningSeeded = false;
                     _profilesSeeded = false;
+                    _telemetrySeeded = false;
                     _telemetryCursorSeeded = false;
                     _vaultStateReady = false;
                     EnsureVaultState();
@@ -208,28 +225,48 @@ namespace Hecton8.Rendering
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     break;
+                case GlobalRegistryServiceSlot.Weather:
+                    _weatherService = currentService as IWeatherService;
+                    break;
                 case GlobalRegistryServiceSlot.CausticsRuntime:
                     _ownsRegistrySlot = ReferenceEquals(currentService, this);
+                    if (_ownsRegistrySlot)
+                    {
+                        s_publishedRuntime = this;
+                        if (_activeConstantBuffer != null && _activeConstantBuffer.IsValid())
+                        {
+                            s_publishedConstantBuffer = _activeConstantBuffer;
+                            s_publishedConstantBufferFrameIndex = _activeConstantBufferFrameIndex;
+                        }
+                    }
+                    else if (ReferenceEquals(s_publishedRuntime, this))
+                    {
+                        s_publishedRuntime = null;
+                        ClearPublishedConstantBufferIfOwnedByThis();
+                    }
+
                     break;
             }
         }
 
-        public static bool TryGetActiveConstantBuffer(out GraphicsBuffer constantBuffer)
+        public static bool TryGetActiveConstantBuffer(out GraphicsBuffer constantBuffer, out uint frameIndex)
         {
-            AbyssalDeferredCausticsRuntime runtime = s_runtimeInstance;
-            if (runtime != null && runtime._activeConstantBuffer != null && runtime._activeConstantBuffer.IsValid())
+            GraphicsBuffer buffer = s_publishedConstantBuffer;
+            if (buffer != null && buffer.IsValid())
             {
-                constantBuffer = runtime._activeConstantBuffer;
+                constantBuffer = buffer;
+                frameIndex = s_publishedConstantBufferFrameIndex;
                 return true;
             }
 
             constantBuffer = null;
+            frameIndex = 0u;
             return false;
         }
 
         public static bool TryGetActiveParameters(out CausticsParametersDTO parameters)
         {
-            AbyssalDeferredCausticsRuntime runtime = s_runtimeInstance;
+            AbyssalDeferredCausticsRuntime runtime = s_publishedRuntime;
             if (runtime != null &&
                 runtime.TryResolveVaultBuffer(in runtime._parametersHandle, AbyssalCausticsConstants.ParameterCapacity, out NativeArray<CausticsParametersDTO> parametersArray))
             {
@@ -243,7 +280,7 @@ namespace Hecton8.Rendering
 
         public static bool TryGetTuning(out CausticsTuningDTO tuning)
         {
-            AbyssalDeferredCausticsRuntime runtime = s_runtimeInstance;
+            AbyssalDeferredCausticsRuntime runtime = s_publishedRuntime;
             if (runtime != null &&
                 runtime.TryResolveVaultBuffer(in runtime._tuningHandle, 1, out NativeArray<CausticsTuningDTO> tuningArray))
             {
@@ -257,7 +294,7 @@ namespace Hecton8.Rendering
 
         public static bool TrySetEditorTuning(float chromaticDispersion, float noiseScale, float flowSpeedMultiplier, float maxDepthMeters)
         {
-            AbyssalDeferredCausticsRuntime runtime = s_runtimeInstance;
+            AbyssalDeferredCausticsRuntime runtime = s_publishedRuntime;
             if (runtime == null)
                 return false;
 
@@ -266,7 +303,7 @@ namespace Hecton8.Rendering
 
         public static bool TryLoadLightingProfilesCsv(string projectRelativePath)
         {
-            AbyssalDeferredCausticsRuntime runtime = s_runtimeInstance;
+            AbyssalDeferredCausticsRuntime runtime = s_publishedRuntime;
             return runtime != null && runtime.LoadLightingProfilesCsv(projectRelativePath);
         }
 
@@ -304,9 +341,11 @@ namespace Hecton8.Rendering
             }
 
             s_runtimeInstance = this;
+            EnsureBlackBoxDumpPathCold();
             CacheRegistryServicesCold(forceRefresh: true);
             TryRegisterHotSwap();
-            EnsureSingletonOwnership();
+            if (EnsureSingletonOwnership() && CausticsParametersLayoutValidator.Validate())
+                EnsureConstantBuffers();
         }
 
         private void OnEnable()
@@ -318,9 +357,11 @@ namespace Hecton8.Rendering
             }
 
             s_runtimeInstance = this;
+            EnsureBlackBoxDumpPathCold();
             CacheRegistryServicesCold(forceRefresh: false);
             TryRegisterHotSwap();
-            EnsureSingletonOwnership();
+            if (EnsureSingletonOwnership() && CausticsParametersLayoutValidator.Validate())
+                EnsureConstantBuffers();
             if (_isInitialized)
             {
                 TryRegisterUpdate();
@@ -340,7 +381,11 @@ namespace Hecton8.Rendering
             _ownsRegistrySlot = false;
             if (ReferenceEquals(s_runtimeInstance, this))
                 s_runtimeInstance = null;
+            if (ReferenceEquals(s_publishedRuntime, this))
+                s_publishedRuntime = null;
+            ClearPublishedConstantBufferIfOwnedByThis();
             _activeConstantBuffer = null;
+            _activeConstantBufferFrameIndex = 0u;
         }
 
         private void OnDestroy()
@@ -387,12 +432,17 @@ namespace Hecton8.Rendering
             if (registered != null && !ReferenceEquals(registered, this))
             {
                 _ownsRegistrySlot = false;
+                if (ReferenceEquals(s_publishedRuntime, this))
+                    s_publishedRuntime = null;
+                ClearPublishedConstantBufferIfOwnedByThis();
+
                 return false;
             }
 
             if (!ReferenceEquals(registered, this))
                 GlobalRegistry.RegisterCausticsService(this);
             _ownsRegistrySlot = true;
+            s_publishedRuntime = this;
             return true;
         }
 
@@ -421,7 +471,7 @@ namespace Hecton8.Rendering
                 AbyssalCausticsConstants.TelemetryCapacity,
                 NativeArrayOptions.UninitializedMemory,
                 ref _telemetryHandle,
-                out NativeArray<CausticsTelemetryEntry> _);
+                out NativeArray<CausticsTelemetryEntry> telemetry);
             bool hasTelemetryCursor = AcquireOrRefreshOwnedVaultBuffer(
                 BufferID.ShinobuCausticsTelemetryCursor,
                 1,
@@ -441,6 +491,7 @@ namespace Hecton8.Rendering
                 _telemetryCursorSeeded = true;
             }
 
+            SeedTelemetryIfNeeded(telemetry);
             SeedTuningIfNeeded(tuning);
             SeedProfilesIfNeeded(profiles);
             RefreshExternalInputHandles();
@@ -450,6 +501,7 @@ namespace Hecton8.Rendering
                                hasTelemetryCursor &&
                                hasProfiles &&
                                _telemetryCursorSeeded &&
+                               _telemetrySeeded &&
                                _tuningSeeded &&
                                _profilesSeeded;
         }
@@ -470,6 +522,16 @@ namespace Hecton8.Rendering
 
             tuning[0] = GenerateMockCausticLightingJob.DefaultTuning();
             _tuningSeeded = true;
+        }
+
+        private void SeedTelemetryIfNeeded(NativeArray<CausticsTelemetryEntry> telemetry)
+        {
+            if (_telemetrySeeded || !telemetry.IsCreated)
+                return;
+
+            for (int i = 0; i < telemetry.Length; i++)
+                telemetry[i] = default;
+            _telemetrySeeded = true;
         }
 
         private void SeedProfilesIfNeeded(NativeArray<CausticsLightingProfileDTO> profiles)
@@ -522,9 +584,15 @@ namespace Hecton8.Rendering
                    _constantBufferB != null && _constantBufferB.IsValid();
         }
 
+        private bool HasConstantBuffers()
+        {
+            return _constantBufferA != null && _constantBufferA.IsValid() &&
+                   _constantBufferB != null && _constantBufferB.IsValid();
+        }
+
         private bool UploadParametersToGpu()
         {
-            if (!TryResolveVaultBuffer(in _parametersHandle, AbyssalCausticsConstants.ParameterCapacity, out NativeArray<CausticsParametersDTO> parameters) || !EnsureConstantBuffers())
+            if (!TryResolveVaultBuffer(in _parametersHandle, AbyssalCausticsConstants.ParameterCapacity, out NativeArray<CausticsParametersDTO> parameters) || !HasConstantBuffers())
                 return false;
 
             GraphicsBuffer target = _activeConstantBufferIndex == 0 ? _constantBufferA : _constantBufferB;
@@ -542,7 +610,24 @@ namespace Hecton8.Rendering
             }
 
             _activeConstantBuffer = target;
+            _activeConstantBufferFrameIndex = _presentationFrameIndex;
+            if (_ownsRegistrySlot)
+            {
+                s_publishedConstantBuffer = target;
+                s_publishedConstantBufferFrameIndex = _activeConstantBufferFrameIndex;
+            }
+
             return true;
+        }
+
+        private void ClearPublishedConstantBufferIfOwnedByThis()
+        {
+            if (ReferenceEquals(s_publishedConstantBuffer, _constantBufferA) ||
+                ReferenceEquals(s_publishedConstantBuffer, _constantBufferB))
+            {
+                s_publishedConstantBuffer = null;
+                s_publishedConstantBufferFrameIndex = 0u;
+            }
         }
 
         private void RunMockLightingKernel()
@@ -551,29 +636,27 @@ namespace Hecton8.Rendering
                 return;
 
             TryResolveVaultBuffer(in _tuningHandle, 1, out NativeArray<CausticsTuningDTO> tuning);
-            NativeArray<WeatherStateDTO> emptyWeather = default;
-            NativeArray<WaveParametersDTO> emptyWaveParameters = default;
             NativeArray<float4> emptySurfaceSwell = default;
             NativeArray<CausticsLightingProfileDTO> emptyProfiles = default;
             CausticsInputSnapshotDTO inputSnapshot = CaptureCausticsInputSnapshot(
                 tuning,
-                emptyWeather,
-                emptyWaveParameters,
+                false,
+                default,
                 emptySurfaceSwell,
                 emptyProfiles,
                 ResolveGlobalQualityWeight01(),
                 _presentationTimeSeconds);
 
             GenerateMockCausticLightingJob job = default;
-            job.Parameters = parameters;
+            job.Parameters = (CausticsParametersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(parameters);
+            job.ParameterLength = parameters.Length;
             job.InputSnapshot = inputSnapshot;
             job.CameraAupLocalOffset = ResolveCameraAupLocalOffset();
             job.TimeSeconds = _presentationTimeSeconds;
             job.GlobalQualityWeight = inputSnapshot.WeatherStormWindPhaseQuality.w;
             job.FrameIndex = _presentationFrameIndex;
             job.OutputIndex = AbyssalCausticsConstants.PendingParameterIndex;
-            job.Run();
-            PublishPendingCausticsParameters();
+            RunPendingCausticsKernel(job);
         }
 
         private bool TrySetTuningInternal(float chromaticDispersion, float noiseScale, float flowSpeedMultiplier, float maxDepthMeters)
@@ -589,7 +672,7 @@ namespace Hecton8.Rendering
             tuning.DispersionSdfTileProfile.x = math.saturate(chromaticDispersion);
             tuningArray[0] = tuning;
             _pendingGpuUpload = false;
-            ScheduleMockLightingJob();
+            RunMockLightingKernel();
             return true;
         }
 
@@ -599,34 +682,29 @@ namespace Hecton8.Rendering
             return math.saturate(math.select(quality, 1f, !math.isfinite(quality)));
         }
 
+        private bool TryResolveWeatherSnapshot(out WeatherRuntimeSnapshot snapshot)
+        {
+            snapshot = default;
+            IWeatherService weather = _weatherService;
+            if (weather == null || !weather.IsInitialized)
+                return false;
+
+            snapshot = weather.GetRuntimeSnapshot();
+            return true;
+        }
+
         private double3 ResolveCameraAupLocalOffset()
         {
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null &&
                 playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-                MathGuard.IsFinite(in snapshot.Aup))
+                snapshot.Aup.IsFinite())
             {
                 AbsoluteUniversePosition aup = snapshot.Aup;
                 return new double3(aup.LocalX, aup.LocalY, aup.LocalZ);
             }
 
-            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (movement != null)
-            {
-                AbsoluteUniversePosition aup = movement.CurrentAup;
-                return new double3(aup.LocalX, aup.LocalY, aup.LocalZ);
-            }
-
             return default;
-        }
-
-        private void UpdateLegacyCausticsAup(in CausticsParametersDTO parameters)
-        {
-            _legacyCausticsAup = new Vector4(
-                parameters.NoiseAnimationSpeed.x,
-                parameters.NoiseAnimationSpeed.y,
-                parameters.ProjectionVectorAndScale.w,
-                IsComputeActive ? 1f : 0f);
         }
 
         private void CheckFaultsAndDump(in CausticsParametersDTO parameters)
@@ -657,16 +735,65 @@ namespace Hecton8.Rendering
 
             parameters[AbyssalCausticsConstants.ActiveParameterIndex] = parameters[AbyssalCausticsConstants.PendingParameterIndex];
             CausticsParametersDTO activeParameters = parameters[AbyssalCausticsConstants.ActiveParameterIndex];
-            UpdateLegacyCausticsAup(in activeParameters);
             CheckFaultsAndDump(in activeParameters);
             _pendingGpuUpload = true;
             return true;
         }
 
+        private static void EnsureBurstKernelsCold()
+        {
+            if (!s_generateMockKernel.IsCreated)
+            {
+                s_generateMockKernel = BurstCompiler.CompileFunctionPointer<GenerateMockCausticLightingKernelDelegate>(
+                    AbyssalCausticsBurstKernelEntrypoints.GenerateMockCausticLighting);
+            }
+
+            if (!s_calculateKernel.IsCreated)
+            {
+                s_calculateKernel = BurstCompiler.CompileFunctionPointer<CalculateCausticParametersKernelDelegate>(
+                    AbyssalCausticsBurstKernelEntrypoints.CalculateCausticParameters);
+            }
+        }
+
+        private bool RunPendingCausticsKernel(GenerateMockCausticLightingJob job)
+        {
+            if (!s_generateMockKernel.IsCreated)
+            {
+                MarkBurstKernelUnavailable();
+                return false;
+            }
+
+            s_generateMockKernel.Invoke(&job);
+            return PublishPendingCausticsParameters();
+        }
+
+        private bool RunPendingCausticsKernel(CalculateCausticParametersJob job)
+        {
+            if (!s_calculateKernel.IsCreated)
+            {
+                MarkBurstKernelUnavailable();
+                return false;
+            }
+
+            s_calculateKernel.Invoke(&job);
+            return PublishPendingCausticsParameters();
+        }
+
+        private void MarkBurstKernelUnavailable()
+        {
+            _pendingGpuUpload = false;
+            _lastFaultFlags = AbyssalCausticsConstants.FaultBurstKernelUnavailable;
+            if (!_faultDumped)
+            {
+                DumpBlackBox();
+                _faultDumped = true;
+            }
+        }
+
         private static CausticsInputSnapshotDTO CaptureCausticsInputSnapshot(
             NativeArray<CausticsTuningDTO> tuningArray,
-            NativeArray<WeatherStateDTO> weatherArray,
-            NativeArray<WaveParametersDTO> waveParametersArray,
+            bool hasWeatherSnapshot,
+            WeatherRuntimeSnapshot weatherSnapshot,
             NativeArray<float4> surfaceSwellArray,
             NativeArray<CausticsLightingProfileDTO> profilesArray,
             float fallbackQuality,
@@ -685,28 +812,17 @@ namespace Hecton8.Rendering
             uint weatherStateMask = 0u;
             uint flags = AbyssalCausticsConstants.FlagInputSnapshot;
 
-            if (weatherArray.IsCreated && weatherArray.Length > 0)
+            if (hasWeatherSnapshot)
             {
-                WeatherStateDTO weather = weatherArray[0];
-                storm = Sanitize01(weather.WindDirectionSpeedStorm.w, 0f);
-                windSpeed = SanitizeNonNegative(weather.WindDirectionSpeedStorm.z, 0f);
-                if (math.isfinite(weather.GlobalQualityWeight))
-                    quality = math.min(quality, math.saturate(weather.GlobalQualityWeight));
-                if (math.isfinite(weather.MaxWaveAmplitude))
-                    waveHeight = math.max(waveHeight, math.max(0f, weather.MaxWaveAmplitude));
-                weatherStateMask = weather.StateMask;
-                flags |= AbyssalCausticsConstants.FlagWeatherVaultBound;
-            }
-
-            if (waveParametersArray.IsCreated && waveParametersArray.Length > 0)
-            {
-                WaveParametersDTO waveParameters = HectonOceanSurfaceMath.SanitizeWave(waveParametersArray[0]);
-                float4 lane = waveParameters.Wave1;
-                waveHeight = math.max(waveHeight, HectonOceanSurfaceMath.WaveLaneAmplitude(lane));
-                float wavelength = HectonOceanSurfaceMath.WaveLaneWavelength(lane);
-                waveFrequency = math.max(waveFrequency, math.rcp(math.max(wavelength, 0.0001f)));
-                wavePhase += HectonOceanSurfaceMath.WaveLaneSpeed(lane) * timeSeconds;
-                flags |= AbyssalCausticsConstants.FlagWaveVaultBound;
+                storm = Sanitize01(weatherSnapshot.WeatherIntensity, 0f);
+                windSpeed = math.length(math.select(float3.zero, weatherSnapshot.GlobalWindVector, math.isfinite(weatherSnapshot.GlobalWindVector)));
+                weatherStateMask = (uint)weatherSnapshot.StateMask;
+                float waveTime = math.select(timeSeconds, weatherSnapshot.CurrentMeta.TimeAccumulator, math.isfinite(weatherSnapshot.CurrentMeta.TimeAccumulator));
+                ApplyGerstnerCausticWave(weatherSnapshot.Wave0, waveTime, ref waveHeight, ref waveFrequency, ref wavePhase);
+                ApplyGerstnerCausticWave(weatherSnapshot.Wave1, waveTime, ref waveHeight, ref waveFrequency, ref wavePhase);
+                ApplyGerstnerCausticWave(weatherSnapshot.Wave2, waveTime, ref waveHeight, ref waveFrequency, ref wavePhase);
+                flags |= AbyssalCausticsConstants.FlagWeatherSnapshotBound;
+                flags |= AbyssalCausticsConstants.FlagWaveInputBound;
             }
 
             if (surfaceSwellArray.IsCreated && surfaceSwellArray.Length > 0)
@@ -715,7 +831,7 @@ namespace Hecton8.Rendering
                 waveHeight = math.max(waveHeight, math.abs(swell.x));
                 waveFrequency = math.max(waveFrequency, math.abs(swell.y));
                 wavePhase = math.select(wavePhase, swell.z, math.isfinite(swell.z));
-                flags |= AbyssalCausticsConstants.FlagWaveVaultBound;
+                flags |= AbyssalCausticsConstants.FlagWaveInputBound;
             }
 
             float profileIntensity = 1f;
@@ -761,6 +877,22 @@ namespace Hecton8.Rendering
             return snapshot;
         }
 
+        private static void ApplyGerstnerCausticWave(
+            GerstnerWaveComponent wave,
+            float timeSeconds,
+            ref float waveHeight,
+            ref float waveFrequency,
+            ref float wavePhase)
+        {
+            float amplitude = SanitizeNonNegative(wave.Amplitude, 0f);
+            float wavelength = math.max(CausticsMinimumWavelength, SanitizeNonNegative(wave.Wavelength, 24f));
+            float speed = math.select(wave.SpeedMultiplier, 0f, !math.isfinite(wave.SpeedMultiplier));
+            float phaseOffset = math.select(wave.PhaseOffset, 0f, !math.isfinite(wave.PhaseOffset));
+            waveHeight = math.max(waveHeight, amplitude);
+            waveFrequency = math.max(waveFrequency, math.rcp(math.max(wavelength, 0.0001f)));
+            wavePhase += (speed * timeSeconds + phaseOffset) * math.saturate(amplitude);
+        }
+
         private static CausticsTuningDTO SanitizeTuning(CausticsTuningDTO tuning)
         {
             CausticsTuningDTO fallback = GenerateMockCausticLightingJob.DefaultTuning();
@@ -798,24 +930,35 @@ namespace Hecton8.Rendering
             int capacity = csvScratch.Length;
             int total = 0;
             Span<byte> block = stackalloc byte[512];
-            using (FileStream stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            try
             {
-                while (total < capacity)
+                using (FileStream stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
-                    int read = stream.Read(block);
-                    if (read <= 0)
-                        break;
-
-                    int copy = math.min(read, capacity - total);
-                    fixed (byte* src = block)
+                    while (total < capacity)
                     {
-                        UnsafeUtility.MemCpy(dst + total, src, copy);
-                    }
+                        int read = stream.Read(block);
+                        if (read <= 0)
+                            break;
 
-                    total += copy;
-                    if (copy < read)
-                        break;
+                        int copy = math.min(read, capacity - total);
+                        fixed (byte* src = block)
+                        {
+                            UnsafeUtility.MemCpy(dst + total, src, copy);
+                        }
+
+                        total += copy;
+                        if (copy < read)
+                            break;
+                    }
                 }
+            }
+            catch (IOException)
+            {
+                return 0;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return 0;
             }
 
             return total;
@@ -1148,6 +1291,8 @@ namespace Hecton8.Rendering
                 _dataVault = GlobalRegistry.DataVault;
             if (forceRefresh || _playerRuntimeContext == null)
                 _playerRuntimeContext = GlobalRegistry.Player;
+            if (forceRefresh || _weatherService == null)
+                _weatherService = GlobalRegistry.Weather;
         }
 
         private bool TryResolveVaultBuffer<T>(
@@ -1167,8 +1312,6 @@ namespace Hecton8.Rendering
 
         private void RefreshExternalInputHandles()
         {
-            RefreshExternalInputHandle(BufferID.ShinobuOceanWeatherState, 1, ref _weatherInputHandle);
-            RefreshExternalInputHandle(BufferID.ShinobuOceanWaveParameters, 1, ref _waveInputHandle);
             RefreshExternalInputHandle(BufferID.ShinobuOceanSurfaceSwell, 1, ref _surfaceSwellInputHandle);
         }
 
@@ -1260,12 +1403,16 @@ namespace Hecton8.Rendering
             _ownsRegistrySlot = false;
             if (ReferenceEquals(s_runtimeInstance, this))
                 s_runtimeInstance = null;
+            if (ReferenceEquals(s_publishedRuntime, this))
+                s_publishedRuntime = null;
+            ClearPublishedConstantBufferIfOwnedByThis();
 
             _constantBufferA?.Release();
             _constantBufferB?.Release();
             _constantBufferA = null;
             _constantBufferB = null;
             _activeConstantBuffer = null;
+            _activeConstantBufferFrameIndex = 0u;
 
             ReleaseAllVaultHandles(_dataVault);
 
@@ -1273,6 +1420,7 @@ namespace Hecton8.Rendering
             _pendingGpuUpload = false;
             _tuningSeeded = false;
             _profilesSeeded = false;
+            _telemetrySeeded = false;
             _telemetryCursorSeeded = false;
             _vaultStateReady = false;
             ClearExternalInputHandles();
@@ -1287,6 +1435,7 @@ namespace Hecton8.Rendering
             ReleaseVaultHandle(vault, ref _profilesHandle);
             ReleaseVaultHandle(vault, ref _csvScratchHandle);
             _vaultStateReady = false;
+            _telemetrySeeded = false;
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
@@ -1299,9 +1448,35 @@ namespace Hecton8.Rendering
 
         private void ClearExternalInputHandles()
         {
-            _weatherInputHandle = default;
-            _waveInputHandle = default;
             _surfaceSwellInputHandle = default;
+        }
+
+        private void EnsureBlackBoxDumpPathCold()
+        {
+            if (!string.IsNullOrEmpty(_blackBoxDumpPath))
+                return;
+
+            string root = Directory.GetParent(Application.dataPath)?.FullName;
+            if (string.IsNullOrEmpty(root))
+                return;
+
+            _blackBoxDumpPath = Path.Combine(root, DumpPath);
+            _blackBoxDumpDirectory = Path.GetDirectoryName(_blackBoxDumpPath);
+            if (string.IsNullOrEmpty(_blackBoxDumpDirectory))
+            {
+                _blackBoxDumpPath = null;
+                return;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(_blackBoxDumpDirectory);
+            }
+            catch (Exception)
+            {
+                _blackBoxDumpPath = null;
+                _blackBoxDumpDirectory = null;
+            }
         }
 
         private void DumpBlackBox()
@@ -1310,44 +1485,64 @@ namespace Hecton8.Rendering
                 return;
 
             TryResolveVaultBuffer(in _telemetryCursorHandle, 1, out NativeArray<int> telemetryCursor);
-            string root = Directory.GetParent(Application.dataPath)?.FullName;
-            if (string.IsNullOrEmpty(root))
+            string path = _blackBoxDumpPath;
+            string directory = _blackBoxDumpDirectory;
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
                 return;
 
-            string path = Path.Combine(root, DumpPath);
-            string directory = Path.GetDirectoryName(path);
-            if (string.IsNullOrEmpty(directory))
-                return;
-
-            Directory.CreateDirectory(directory);
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            try
             {
-                writer.Write(0x32334353u); // SC32
-                writer.Write(AbyssalCausticsConstants.TelemetryCapacity);
-                writer.Write(telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : 0);
-                writer.Write(_lastFaultFlags);
-                writer.Write(UnsafeUtility.SizeOf<CausticsTelemetryEntry>());
-                for (int i = 0; i < telemetry.Length; i++)
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    CausticsTelemetryEntry entry = telemetry[i];
-                    writer.Write(entry.FrameIndex);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.ActiveNoiseOctavesX1000);
-                    writer.Write(entry.SunIntensity);
-                    writer.Write(entry.ActiveNoiseOctaves);
-                    writer.Write(entry.MaxDepthMeters);
-                    writer.Write(entry.EstimatedGpuMicros);
-                    writer.Write(entry.ProjectionVectorAndScale.x);
-                    writer.Write(entry.ProjectionVectorAndScale.y);
-                    writer.Write(entry.ProjectionVectorAndScale.z);
-                    writer.Write(entry.ProjectionVectorAndScale.w);
-                    writer.Write(entry.NoiseAnimationSpeed.x);
-                    writer.Write(entry.NoiseAnimationSpeed.y);
-                    writer.Write(entry.NoiseAnimationSpeed.z);
-                    writer.Write(entry.NoiseAnimationSpeed.w);
+                    int entryCount = math.min(telemetry.Length, AbyssalCausticsConstants.TelemetryCapacity);
+                    int telemetryWriteCursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : 0;
+                    int wrappedCursor = 0;
+                    if (entryCount > 0)
+                    {
+                        wrappedCursor = telemetryWriteCursor % entryCount;
+                        if (wrappedCursor < 0)
+                            wrappedCursor += entryCount;
+                    }
+
+                    writer.Write(0x32334353u); // SC32
+                    writer.Write(entryCount);
+                    writer.Write(telemetryWriteCursor);
+                    writer.Write(_lastFaultFlags);
+                    writer.Write(UnsafeUtility.SizeOf<CausticsTelemetryEntry>());
+                    for (int i = 0; i < entryCount; i++)
+                    {
+                        int index = wrappedCursor + i;
+                        if (index >= entryCount)
+                            index -= entryCount;
+
+                        CausticsTelemetryEntry entry = telemetry[index];
+                        writer.Write(entry.FrameIndex);
+                        writer.Write(entry.StateHash);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.ActiveNoiseOctavesX1000);
+                        writer.Write(entry.SunIntensity);
+                        writer.Write(entry.ActiveNoiseOctaves);
+                        writer.Write(entry.MaxDepthMeters);
+                        writer.Write(entry.EstimatedGpuMicros);
+                        writer.Write(entry.ProjectionVectorAndScale.x);
+                        writer.Write(entry.ProjectionVectorAndScale.y);
+                        writer.Write(entry.ProjectionVectorAndScale.z);
+                        writer.Write(entry.ProjectionVectorAndScale.w);
+                        writer.Write(entry.NoiseAnimationSpeed.x);
+                        writer.Write(entry.NoiseAnimationSpeed.y);
+                        writer.Write(entry.NoiseAnimationSpeed.z);
+                        writer.Write(entry.NoiseAnimationSpeed.w);
+                    }
                 }
+            }
+            catch (IOException)
+            {
+                _lastFaultFlags |= AbyssalCausticsConstants.FaultDumpIo;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _lastFaultFlags |= AbyssalCausticsConstants.FaultDumpIo;
             }
         }
     }
@@ -1355,7 +1550,7 @@ namespace Hecton8.Rendering
     public static class AbyssalCausticsShaderIds
     {
         public static readonly int ConstantBufferId = Shader.PropertyToID("HectonAbyssalCaustics");
-        public static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
-        public static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
+        public static readonly int SourceTextureId = Shader.PropertyToID("_HectonDeferredCausticsSource");
+        public static readonly int DepthTextureId = Shader.PropertyToID("_HectonDeferredCausticsDepth");
     }
 }

@@ -6,7 +6,7 @@ namespace Hecton8.Inventory.Corrosion
     using Unity.Jobs;
     using Unity.Mathematics;
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct ItemSalinityCorrosionJob : IJob
     {
         [ReadOnly] public NativeArray<uint>.ReadOnly ItemHashes;

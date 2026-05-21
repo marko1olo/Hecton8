@@ -3,8 +3,8 @@ using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -26,15 +26,21 @@ namespace Hecton8.Physics
         private const int LockVisualStates = 1 << 8;
         private const int LockAudioSignals = 1 << 9;
         private const int LockCavitationSignals = 1 << 10;
-        private const byte ToolAcousticStateSeaglidePropeller = 2;
         private const float MinimumSignalIntensity = 0.01f;
+        private const byte ToolAcousticStateSeaglidePropeller = 4;
+        private const int PropulsionRequestExpectedSignals = 8;
+        private const int PropulsionRequestMaxFrameSignals = 16;
+        private const int PropulsionRequestMinimumQualityFrameSignals = 4;
+        private const int ToolAcousticExpectedSignals = 128;
+        private const int ToolAcousticMaxFrameSignals = 128;
+        private const int ToolAcousticMinimumQualityFrameSignals = 32;
+        private const int BubbleSpawnExpectedSignals = 64;
 
         private static SeaglideHydrodynamicsRuntime s_activeRuntimeInstance;
 
-        [SerializeField]
-        private bool _seedEmergencyMockRequests;
-
         private IDataVault _dataVault;
+        private PhysicsApplySystem _physicsApplySystem;
+        private GlobalPhysicsStateManager _bodyResolver;
         private VaultGenerationHandle<SeaglideStateDTO> _statesHandle;
         private VaultGenerationHandle<SeaglidePropulsionRequestDTO> _requestsHandle;
         private VaultGenerationHandle<SeaglideForcePacketDTO> _forcePacketsHandle;
@@ -63,6 +69,7 @@ namespace Hecton8.Physics
         private bool _coldBootCompleted;
         private bool _dumpedFault;
         private bool _forcePacketsReadyToDrain;
+        private bool _mockRequestsActive;
 
         public static bool IsRuntimeAvailable => s_activeRuntimeInstance != null;
 
@@ -70,12 +77,6 @@ namespace Hecton8.Physics
         {
             runtime = s_activeRuntimeInstance;
             return runtime != null;
-        }
-
-        public static bool TrySubmitPlayerRequest(in SeaglidePropulsionRequestDTO request, in SeaglideStateDTO state)
-        {
-            SeaglideHydrodynamicsRuntime runtime = EnsureRuntimeInstance();
-            return runtime != null && runtime.TrySubmitRequest(0, in request, in state);
         }
 
         public static SeaglideHydrodynamicsRuntime EnsureRuntimeInstance()
@@ -86,13 +87,11 @@ namespace Hecton8.Physics
             if (!Application.isPlaying)
                 return null;
 
-            PhysicsApplySystem physics = PhysicsApplySystem.EnsureRuntimeInstance();
+            PhysicsApplySystem physics = PhysicsApplySystem.Instance;
             if (physics == null)
                 return null;
 
-            if (!physics.TryGetComponent(out SeaglideHydrodynamicsRuntime runtime))
-                runtime = physics.gameObject.AddComponent<SeaglideHydrodynamicsRuntime>(); // COLD ALLOC: SeaglideHydrodynamicsRuntime[1] - attached to physics authority root - owner: SHINOBU_227
-            return runtime;
+            return physics.TryGetComponent(out SeaglideHydrodynamicsRuntime runtime) ? runtime : null;
         }
 
         public bool TryResolveEditorViews(
@@ -110,10 +109,16 @@ namespace Hecton8.Physics
             audio = default;
             cavitation = default;
             IDataVault vault = _dataVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                vault = latestVault;
-            if (vault == null || !EnsureVaultBuffers())
+            if (vault == null ||
+                !HasHandle(in _tuningHandle) ||
+                !HasHandle(in _countersHandle) ||
+                !HasHandle(in _telemetryRingHandle) ||
+                !HasHandle(in _telemetryCursorHandle) ||
+                !HasHandle(in _audioSignalsHandle) ||
+                !HasHandle(in _cavitationSignalsHandle))
+            {
                 return false;
+            }
 
             tuning = ResolveVaultBuffer(vault, in _tuningHandle);
             counters = ResolveVaultBuffer(vault, in _countersHandle);
@@ -131,9 +136,7 @@ namespace Hecton8.Physics
         {
             forcePackets = default;
             IDataVault vault = _dataVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                vault = latestVault;
-            if (vault == null || !EnsureVaultBuffers())
+            if (vault == null || !HasHandle(in _forcePacketsHandle))
                 return false;
 
             forcePackets = ResolveVaultBuffer(vault, in _forcePacketsHandle);
@@ -172,6 +175,8 @@ namespace Hecton8.Physics
             TryUnregister();
             CompletePendingSolverForTeardown();
             _forcePacketsReadyToDrain = false;
+            _activeRequestCount = 0;
+            _mockRequestsActive = false;
         }
 
         private void OnDestroy()
@@ -186,12 +191,39 @@ namespace Hecton8.Physics
 
         public void FixedTick(float fixedDeltaTime)
         {
-            if (!Application.isPlaying || _jobScheduled || _forcePacketsReadyToDrain || !math.isfinite(fixedDeltaTime) || fixedDeltaTime <= 0f)
+            if (!Application.isPlaying || _jobScheduled)
                 return;
+
+            if (_forcePacketsReadyToDrain)
+            {
+                TryWriteTelemetryHeartbeatFromCachedVault(
+                    _activeRequestCount,
+                    1f,
+                    SeaglideHydrodynamicsConstants.FlagTelemetryHeartbeat | SeaglideHydrodynamicsConstants.FlagForceQueued,
+                    preserveCounters: true);
+                return;
+            }
+
+            if (!math.isfinite(fixedDeltaTime) || fixedDeltaTime <= 0f)
+            {
+                ClearActiveRequestWindow();
+                TryWriteTelemetryHeartbeatFromCachedVault(
+                    0,
+                    1f,
+                    SeaglideHydrodynamicsConstants.FlagTelemetryHeartbeat | SeaglideHydrodynamicsConstants.FlagNonFinite);
+                return;
+            }
 
             float safeDelta = math.clamp(fixedDeltaTime, 0.0001f, 0.2f);
             if (!TryPrepareRuntimeVault(out IDataVault vault))
+            {
+                ClearActiveRequestWindow();
+                TryWriteTelemetryHeartbeatFromCachedVault(
+                    0,
+                    1f,
+                    SeaglideHydrodynamicsConstants.FlagTelemetryHeartbeat | SeaglideHydrodynamicsConstants.FlagBudgetExceeded);
                 return;
+            }
 
             if (!TryResolveRuntimeBuffers(
                     vault,
@@ -207,29 +239,51 @@ namespace Hecton8.Physics
                     out NativeArray<SeaglideAudioSignalDTO> audioSignals,
                     out NativeArray<SeaglideCavitationVfxSignalDTO> cavitationSignals))
             {
+                ClearActiveRequestWindow();
+                TryWriteTelemetryHeartbeatFromCachedVault(
+                    0,
+                    1f,
+                    SeaglideHydrodynamicsConstants.FlagTelemetryHeartbeat | SeaglideHydrodynamicsConstants.FlagBudgetExceeded);
                 return;
             }
 
-            if (_seedEmergencyMockRequests && _activeRequestCount <= 0)
-                GenerateMockPropulsionRequests();
-
+            IngestPropulsionRequestSignals(states, requests);
+            SeaglideTuningDTO tuningDto = tuning[0];
+            float quality = ApplyResolvedGlobalQualityWeight(ref tuningDto);
+            tuning[0] = tuningDto;
             int activeCount = math.clamp(_activeRequestCount, 0, math.min(states.Length, requests.Length));
             if (activeCount <= 0)
             {
                 _thrustCadenceAccumulator = 0f;
+                WriteTelemetryHeartbeat(
+                    telemetry,
+                    telemetryCursor,
+                    counters,
+                    activeCount,
+                    quality,
+                    SeaglideHydrodynamicsConstants.FlagTelemetryHeartbeat);
+                _simulationFrame++;
                 return;
             }
 
-            SeaglideTuningDTO tuningDto = tuning[0];
-            float quality = ResolveGlobalQualityWeight(ref tuningDto);
             _thrustCadenceAccumulator = math.min(_thrustCadenceAccumulator + safeDelta, 0.2f);
             float thrustCadenceSeconds = ResolveThrustCadenceSeconds(safeDelta, quality);
             if (_thrustCadenceAccumulator + 0.00001f < thrustCadenceSeconds)
+            {
+                WriteTelemetryHeartbeat(
+                    telemetry,
+                    telemetryCursor,
+                    counters,
+                    activeCount,
+                    quality,
+                    SeaglideHydrodynamicsConstants.FlagTelemetryHeartbeat | SeaglideHydrodynamicsConstants.FlagCadenceSkipped);
+                _simulationFrame++;
                 return;
+            }
 
             float solverDelta = _thrustCadenceAccumulator;
             _thrustCadenceAccumulator = 0f;
-            tuningDto.SectorAUP = ResolveSectorAUP();
+            tuningDto.SectorAUP = requests[0].CurrentAUP;
             tuningDto.ResolvedQualityWeight = quality;
             tuningDto.GlobalQualityWeight = quality;
             tuningDto.SimulationTickDelta = solverDelta;
@@ -238,15 +292,33 @@ namespace Hecton8.Physics
             tuning[0] = tuningDto;
 
             if (!TryLockJobBuffers(vault))
+            {
+                WriteTelemetryHeartbeat(
+                    telemetry,
+                    telemetryCursor,
+                    counters,
+                    activeCount,
+                    quality,
+                    SeaglideHydrodynamicsConstants.FlagTelemetryHeartbeat | SeaglideHydrodynamicsConstants.FlagBudgetExceeded);
+                _simulationFrame++;
                 return;
+            }
 
             if (!PhysicsApplySystem.TryPrepareSeaglideForcePackets(forcePackets, counters))
             {
                 UnlockJobBuffers();
+                WriteTelemetryHeartbeat(
+                    telemetry,
+                    telemetryCursor,
+                    counters,
+                    activeCount,
+                    quality,
+                    SeaglideHydrodynamicsConstants.FlagTelemetryHeartbeat | SeaglideHydrodynamicsConstants.FlagBudgetExceeded);
+                _simulationFrame++;
                 return;
             }
 
-            int metabolismEnabled = ResolveMetabolismTickEnabled(solverDelta, quality, tuningDto);
+            int metabolismEnabled = AdvanceMetabolismCadence(solverDelta, quality, tuningDto);
             _scheduleTimestamp = Stopwatch.GetTimestamp();
             CalculateSeaglideThrustJob thrustJob = new CalculateSeaglideThrustJob
             {
@@ -300,6 +372,7 @@ namespace Hecton8.Physics
                 MetabolismEnabled = metabolismEnabled
             };
             _pendingHandle = reduceJob.Schedule(reduceDependency);
+            H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, _pendingHandle);
             _jobScheduled = true;
         }
 
@@ -326,12 +399,15 @@ namespace Hecton8.Physics
             NativeArray<SeaglideCounterDTO> counters = ResolveVaultBuffer(vault, in _countersHandle);
             NativeArray<SeaglideBodyBindingDTO> bodyBindings = ResolveVaultBuffer(vault, in _bodyBindingsHandle);
             PhysicsApplySystem.DrainSeaglideForcePackets(
+                _physicsApplySystem,
+                _bodyResolver,
                 forcePackets,
                 counters,
                 bodyBindings,
                 SeaglideHydrodynamicsConstants.ForceQueueSoftCapacity,
-                out _,
-                out _);
+                out int accepted,
+                out int unresolved);
+            RecordForceDrainResult(accepted, unresolved);
             _forcePacketsReadyToDrain = false;
         }
 
@@ -346,6 +422,13 @@ namespace Hecton8.Physics
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics ||
+                serviceSlot == GlobalRegistryServiceSlot.PhysicsStateManager)
+            {
+                RefreshColdDependencies();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -360,6 +443,7 @@ namespace Hecton8.Physics
                 EnsureColdBooted();
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         public bool GenerateMockPropulsionRequests()
         {
             IDataVault vault = _dataVault;
@@ -392,38 +476,103 @@ namespace Hecton8.Physics
             tuningDto.MockRequestCount = mockCount;
             tuning[0] = tuningDto;
             _activeRequestCount = mockCount;
+            _mockRequestsActive = true;
             return true;
         }
+#endif
 
-        private bool TrySubmitRequest(int index, in SeaglidePropulsionRequestDTO requestInput, in SeaglideStateDTO stateInput)
+        private void IngestPropulsionRequestSignals(
+            NativeArray<SeaglideStateDTO> states,
+            NativeArray<SeaglidePropulsionRequestDTO> requests)
         {
-            if (!Application.isPlaying || _jobScheduled || _forcePacketsReadyToDrain || index < 0)
-                return false;
+            ReadOnlySpan<SeaglidePropulsionRequestSignal> signals = SignalBus<SeaglidePropulsionRequestSignal>.GetFrameSnapshot();
+            if (!states.IsCreated || !requests.IsCreated)
+            {
+                ClearActiveRequestWindow();
+                return;
+            }
 
-            if (_dataVault == null)
-                RefreshColdDependencies();
-            EnsureColdBooted();
-            IDataVault vault = _dataVault;
-            if (vault == null || !EnsureVaultBuffers())
-                return false;
+            if (signals.Length <= 0)
+            {
+                if (_mockRequestsActive && _activeRequestCount > 0)
+                    return;
 
-            NativeArray<SeaglideStateDTO> states = ResolveVaultBuffer(vault, in _statesHandle);
-            NativeArray<SeaglidePropulsionRequestDTO> requests = ResolveVaultBuffer(vault, in _requestsHandle);
-            if (!states.IsCreated || !requests.IsCreated || (uint)index >= (uint)states.Length || (uint)index >= (uint)requests.Length)
-                return false;
+                ClearActiveRequestWindow();
+                return;
+            }
 
-            SeaglidePropulsionRequestDTO request = requestInput;
-            SeaglideStateDTO state = stateInput;
-            request.TargetEntityHash = request.TargetEntityHash != 0u ? request.TargetEntityHash : SeaglideHydrodynamicsConstants.PlayerBodyTargetHash;
+            int limit = math.min(signals.Length, math.min(states.Length, requests.Length));
+            int accepted = 0;
+            for (int i = 0; i < limit; i++)
+            {
+                if (!TryBuildPropulsionRequestFromSignal(
+                        in signals[i],
+                        accepted,
+                        out SeaglidePropulsionRequestDTO request,
+                        out SeaglideStateDTO state))
+                {
+                    continue;
+                }
+
+                requests[accepted] = request;
+                states[accepted] = state;
+                accepted++;
+            }
+
+            _activeRequestCount = accepted;
+            _mockRequestsActive = false;
+        }
+
+        private void ClearActiveRequestWindow()
+        {
+            _activeRequestCount = 0;
+            _mockRequestsActive = false;
+        }
+
+        private bool TryBuildPropulsionRequestFromSignal(
+            in SeaglidePropulsionRequestSignal signal,
+            int stateIndex,
+            out SeaglidePropulsionRequestDTO request,
+            out SeaglideStateDTO state)
+        {
+            request = signal.Request;
+            state = default;
+            uint targetHash = signal.TargetEntityHash != 0u ? signal.TargetEntityHash : request.TargetEntityHash;
+            uint flags = request.Flags | signal.Flags | SeaglideHydrodynamicsConstants.FlagActive;
+            if (stateIndex < 0 ||
+                targetHash == 0u ||
+                !math.all(math.isfinite(request.CurrentAUP)) ||
+                !math.all(math.isfinite(request.PreviousAUP)) ||
+                !math.all(math.isfinite(request.InputVector)) ||
+                !math.all(math.isfinite(request.ForwardVector)) ||
+                !math.all(math.isfinite(request.SurfaceNormal)) ||
+                !math.all(math.isfinite(signal.Velocity)) ||
+                !math.isfinite(request.Throttle01) ||
+                !math.isfinite(request.DeltaTime) ||
+                request.DeltaTime <= 0f ||
+                (!math.isfinite(request.BatteryLevel) && !math.isfinite(signal.BatteryLevel)))
+            {
+                request = default;
+                return false;
+            }
+
+            float batteryLevel = math.select(request.BatteryLevel, signal.BatteryLevel, math.isfinite(signal.BatteryLevel));
+            float massKg = math.select(SeaglideHydrodynamicsConstants.DefaultBaseMassKg, signal.MassKg, math.isfinite(signal.MassKg) && signal.MassKg > 0f);
+            float addedMassKg = math.select(SeaglideHydrodynamicsConstants.DefaultAddedMassKg, signal.AddedMassKg, math.isfinite(signal.AddedMassKg) && signal.AddedMassKg >= 0f);
+            request.TargetEntityHash = targetHash;
             request.RequestHash = request.RequestHash != 0u ? request.RequestHash : SeaglideHydrodynamicsConstants.SourceHash;
             request.FrameIndex = _simulationFrame;
-            request.Flags |= SeaglideHydrodynamicsConstants.FlagActive;
-            state.TargetEntityHash = request.TargetEntityHash;
-            state.FrameIndex = _simulationFrame;
+            request.Flags = flags;
+            request.BatteryLevel = math.saturate(batteryLevel);
+
+            state.CurrentAUP = request.CurrentAUP;
+            state.Velocity = signal.Velocity;
+            state.BatteryLevel = request.BatteryLevel;
             state.ActiveFlags = request.Flags;
-            requests[index] = request;
-            states[index] = state;
-            _activeRequestCount = math.max(_activeRequestCount, index + 1);
+            state.TargetEntityHash = targetHash;
+            state.MassKg = math.max(1f, massKg);
+            state.AddedMassKg = math.max(0f, addedMassKg);
+            state.FrameIndex = _simulationFrame;
             return true;
         }
 
@@ -463,6 +612,8 @@ namespace Hecton8.Physics
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
             EnsureSeaglideSignalLanes();
             SeedDefaultTuningIfNeeded();
+            TryLoadVehicleProfileCsvCold();
+            TryBindPlayerBodyCold();
             _coldBootCompleted = true;
             return true;
         }
@@ -470,27 +621,58 @@ namespace Hecton8.Physics
         private bool TryPrepareRuntimeVault(out IDataVault vault)
         {
             vault = _dataVault;
-            if (vault == null)
-            {
-                RefreshColdDependencies();
-                vault = _dataVault;
-            }
-
-            if (vault == null)
+            if (!_coldBootCompleted || vault == null)
                 return false;
 
-            if (!EnsureVaultBuffers())
-                return false;
-
-            vault = _dataVault;
-            return vault != null;
+            return true;
         }
 
         private void RefreshColdDependencies()
         {
             _dataVault = GlobalRegistry.DataVault;
-            if (_dataVault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                _dataVault = latest;
+            _physicsApplySystem = GlobalRegistry.Physics as PhysicsApplySystem;
+            _bodyResolver = GlobalRegistry.PhysicsStateManager;
+            if (_coldBootCompleted)
+                TryBindPlayerBodyCold();
+        }
+
+        private bool TryBindPlayerBodyCold()
+        {
+            IDataVault vault = _dataVault;
+            GlobalPhysicsStateManager bodyResolver = _bodyResolver;
+            if (vault == null ||
+                bodyResolver == null ||
+                !HasHandle(in _bodyBindingsHandle))
+            {
+                return false;
+            }
+
+            NativeArray<SeaglideBodyBindingDTO> bodyBindings = ResolveVaultBuffer(vault, in _bodyBindingsHandle);
+            if (!bodyBindings.IsCreated || bodyBindings.Length <= 0)
+                return false;
+
+            if (!GlobalPhysicsStateManager.TryFindTrackedBodyByFoldedEntityHash(
+                    bodyResolver,
+                    SeaglideHydrodynamicsConstants.PlayerBodyTargetHash,
+                    out _,
+                    out int bodyIndex))
+            {
+                return false;
+            }
+
+            SeaglideBodyBindingDTO binding = default;
+            binding.TargetEntityHash = SeaglideHydrodynamicsConstants.PlayerBodyTargetHash;
+            binding.RigidbodyIndex = bodyIndex;
+            binding.Flags = SeaglideHydrodynamicsConstants.FlagActive;
+
+            int bindingCount = math.min(bodyBindings.Length, SeaglideHydrodynamicsConstants.StateCapacity);
+            for (int i = 0; i < bindingCount; i++)
+            {
+                binding.StateIndex = i;
+                bodyBindings[i] = binding;
+            }
+
+            return bindingCount > 0;
         }
 
         private bool EnsureVaultBuffers()
@@ -622,6 +804,7 @@ namespace Hecton8.Physics
         private bool FinishPendingSolverCompletion()
         {
             _jobScheduled = false;
+            H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, default);
             UnlockJobBuffers();
             float micros = ResolveElapsedMicros(_scheduleTimestamp);
             WriteCompletedComputeMicros(micros);
@@ -633,15 +816,99 @@ namespace Hecton8.Physics
             }
 
             _simulationFrame++;
-            _activeRequestCount = 0;
+            ClearActiveRequestWindow();
             _forcePacketsReadyToDrain = true;
             return true;
         }
 
         private static void EnsureSeaglideSignalLanes()
         {
+            SignalBus<SeaglidePropulsionRequestSignal>.Configure(
+                PropulsionRequestExpectedSignals,
+                PropulsionRequestMaxFrameSignals,
+                PropulsionRequestMinimumQualityFrameSignals,
+                ComputeStableSignalLaneHash(nameof(SeaglidePropulsionRequestSignal)));
+            SignalBus<SeaglidePropulsionRequestSignal>.EnsureInitialized();
+            SignalBus<ToolAcousticSignal>.Configure(
+                ToolAcousticExpectedSignals,
+                ToolAcousticMaxFrameSignals,
+                ToolAcousticMinimumQualityFrameSignals,
+                ComputeStableSignalLaneHash(nameof(ToolAcousticSignal)));
             SignalBus<ToolAcousticSignal>.EnsureInitialized();
+            SignalBus<BubbleSpawnSignal>.Configure(
+                BubbleSpawnExpectedSignals,
+                laneHash: ComputeStableSignalLaneHash(nameof(BubbleSpawnSignal)));
             SignalBus<BubbleSpawnSignal>.EnsureInitialized();
+        }
+
+        private static uint ComputeStableSignalLaneHash(string label)
+        {
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            uint hash = fnvOffset;
+            if (!string.IsNullOrEmpty(label))
+            {
+                for (int i = 0; i < label.Length; i++)
+                {
+                    hash ^= label[i];
+                    hash *= fnvPrime;
+                }
+            }
+
+            return hash != 0u ? hash : 1u;
+        }
+
+        private bool TryWriteTelemetryHeartbeatFromCachedVault(int activeCount, float quality, uint flags, bool preserveCounters = false)
+        {
+            IDataVault vault = _dataVault;
+            if (!_coldBootCompleted || vault == null || _jobScheduled)
+                return false;
+
+            NativeArray<SeaglideTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryRingHandle);
+            NativeArray<int> telemetryCursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+            NativeArray<SeaglideCounterDTO> counters = preserveCounters ? default : ResolveVaultBuffer(vault, in _countersHandle);
+            if (!telemetry.IsCreated || telemetry.Length <= 0 || !telemetryCursor.IsCreated || telemetryCursor.Length <= 0)
+                return false;
+
+            WriteTelemetryHeartbeat(telemetry, telemetryCursor, counters, activeCount, quality, flags);
+            _simulationFrame++;
+            return true;
+        }
+
+        private void WriteTelemetryHeartbeat(
+            NativeArray<SeaglideTelemetryEntry> telemetry,
+            NativeArray<int> telemetryCursor,
+            NativeArray<SeaglideCounterDTO> counters,
+            int activeCount,
+            float quality,
+            uint flags)
+        {
+            if (!telemetry.IsCreated ||
+                telemetry.Length <= 0 ||
+                !telemetryCursor.IsCreated ||
+                telemetryCursor.Length <= 0)
+            {
+                return;
+            }
+
+            int writeIndex = math.clamp(telemetryCursor[0], 0, telemetry.Length - 1);
+            float safeQuality = math.saturate(math.select(1f, quality, math.isfinite(quality)));
+            SeaglideTelemetryEntry entry = default;
+            entry.FrameIndex = _simulationFrame;
+            entry.EvaluatedRequests = math.max(0, activeCount);
+            entry.GlobalQualityWeight = safeQuality;
+            entry.Flags = flags;
+            telemetry[writeIndex] = entry;
+            telemetryCursor[0] = (writeIndex + 1) % telemetry.Length;
+
+            if (!counters.IsCreated || counters.Length <= 0)
+                return;
+
+            SeaglideCounterDTO counter = default;
+            counter.EvaluatedRequests = entry.EvaluatedRequests;
+            counter.GlobalQualityWeight = safeQuality;
+            counter.Flags = flags;
+            counters[0] = counter;
         }
 
         private void PublishCompletedPresentationSignals()
@@ -667,10 +934,17 @@ namespace Hecton8.Physics
                 return;
 
             int publishBudget = ResolvePresentationSignalBudget(counter.GlobalQualityWeight, packetCount);
-            for (int i = 0; i < publishBudget; i++)
+            int scanWindow = math.clamp(counter.EvaluatedRequests, 0, math.min(audioSignals.Length, cavitationSignals.Length));
+            if (scanWindow <= 0)
+                scanWindow = packetCount;
+
+            int published = 0;
+            for (int i = 0; i < scanWindow && published < publishBudget; i++)
             {
-                PublishAudioSignal(in audioSignals[i]);
-                PublishBubbleSignal(in cavitationSignals[i], counter.GlobalQualityWeight);
+                bool emitted = PublishAudioSignal(in audioSignals[i]);
+                emitted |= PublishBubbleSignal(in cavitationSignals[i], counter.GlobalQualityWeight);
+                if (emitted)
+                    published++;
             }
         }
 
@@ -682,7 +956,7 @@ namespace Hecton8.Physics
             return math.clamp(maxBudget, 1, math.max(1, packetCount));
         }
 
-        private static void PublishAudioSignal(in SeaglideAudioSignalDTO source)
+        private static bool PublishAudioSignal(in SeaglideAudioSignalDTO source)
         {
             if (source.SourceHash == 0u ||
                 source.TargetEntityHash == 0u ||
@@ -690,7 +964,7 @@ namespace Hecton8.Physics
                 !math.isfinite(source.VolumeScalar) ||
                 source.VolumeScalar <= MinimumSignalIntensity)
             {
-                return;
+                return false;
             }
 
             ToolAcousticSignal signal = default;
@@ -702,10 +976,10 @@ namespace Hecton8.Physics
             signal.Frame = source.FrameIndex;
             signal.State = ToolAcousticStateSeaglidePropeller;
             signal.Flags = ToolAcousticSignal.FlagLooping;
-            SignalBus<ToolAcousticSignal>.TryPush(in signal);
+            return SignalBus<ToolAcousticSignal>.TryPush(in signal);
         }
 
-        private static void PublishBubbleSignal(in SeaglideCavitationVfxSignalDTO source, float quality)
+        private static bool PublishBubbleSignal(in SeaglideCavitationVfxSignalDTO source, float quality)
         {
             float intensity = math.saturate(source.Intensity01 * math.lerp(0.25f, 1f, math.saturate(quality)));
             if (source.SourceHash == 0u ||
@@ -714,24 +988,65 @@ namespace Hecton8.Physics
                 !math.all(math.isfinite(source.Direction)) ||
                 !math.isfinite(source.RadiusMeters))
             {
-                return;
+                return false;
             }
 
             BubbleSpawnSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(source.CurrentAUP);
+            signal.PositionAup = Hecton8.World.AbsoluteUniversePosition.FromAbsolutePosition(source.CurrentAUP);
             signal.Direction = SafeSignalDirection(source.Direction);
             signal.Intensity01 = intensity;
             signal.RadiusMeters = math.clamp(source.RadiusMeters, 0.05f, 8f);
             signal.Frame = source.FrameIndex;
             signal.SourceHash = source.SourceHash;
             signal.Flags = BubbleSpawnSignal.FlagEngineVent;
-            SignalBus<BubbleSpawnSignal>.TryPush(in signal);
+            return SignalBus<BubbleSpawnSignal>.TryPush(in signal);
         }
 
         private static float3 SafeSignalDirection(float3 direction)
         {
             float lengthSq = math.lengthsq(direction);
             return math.select(new float3(0f, 0f, 1f), direction * math.rsqrt(math.max(lengthSq, 0.000001f)), math.isfinite(lengthSq) && lengthSq > 0.000001f);
+        }
+
+        private void RecordForceDrainResult(int accepted, int unresolved)
+        {
+            if (unresolved <= 0)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            NativeArray<SeaglideCounterDTO> counters = ResolveVaultBuffer(vault, in _countersHandle);
+            if (counters.IsCreated && counters.Length > 0)
+            {
+                SeaglideCounterDTO counter = counters[0];
+                counter.Flags |= SeaglideHydrodynamicsConstants.FlagBodyBindingUnresolved;
+                counter.EvaluatedRequests = math.max(counter.EvaluatedRequests, accepted + unresolved);
+                counters[0] = counter;
+            }
+
+            NativeArray<SeaglideTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryRingHandle);
+            NativeArray<int> cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+            if (telemetry.IsCreated && telemetry.Length > 0 && cursor.IsCreated && cursor.Length > 0)
+            {
+                int lastIndex = cursor[0] - 1;
+                if (lastIndex < 0)
+                    lastIndex += telemetry.Length;
+                if ((uint)lastIndex < (uint)telemetry.Length)
+                {
+                    SeaglideTelemetryEntry entry = telemetry[lastIndex];
+                    entry.Flags |= SeaglideHydrodynamicsConstants.FlagBodyBindingUnresolved;
+                    entry.EvaluatedRequests = math.max(entry.EvaluatedRequests, accepted + unresolved);
+                    telemetry[lastIndex] = entry;
+                }
+            }
+
+            if (!_dumpedFault)
+            {
+                DumpBlackBoxOnce();
+                _dumpedFault = true;
+            }
         }
 
         private void WriteCompletedComputeMicros(float micros)
@@ -775,7 +1090,7 @@ namespace Hecton8.Physics
             NativeArray<SeaglideCounterDTO> counters = ResolveVaultBuffer(vault, in _countersHandle);
             return counters.IsCreated &&
                    counters.Length > 0 &&
-                   ((counters[0].Flags & (SeaglideHydrodynamicsConstants.FlagNonFinite | SeaglideHydrodynamicsConstants.FlagBudgetExceeded)) != 0u ||
+                   ((counters[0].Flags & (SeaglideHydrodynamicsConstants.FlagNonFinite | SeaglideHydrodynamicsConstants.FlagBudgetExceeded | SeaglideHydrodynamicsConstants.FlagBodyBindingUnresolved)) != 0u ||
                     counters[0].NonFiniteCount > 0);
         }
 
@@ -844,12 +1159,58 @@ namespace Hecton8.Physics
                 value = SeaglideTuningDTO.Default();
             }
 
-            value.GlobalQualityWeight = ResolveGlobalQualityWeight(ref value);
+            value.GlobalQualityWeight = ApplyResolvedGlobalQualityWeight(ref value);
             value.ResolvedQualityWeight = value.GlobalQualityWeight;
             tuning[0] = value;
         }
 
-        private int ResolveMetabolismTickEnabled(float deltaTime, float quality, SeaglideTuningDTO tuning)
+        private unsafe bool TryLoadVehicleProfileCsvCold()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            NativeArray<SeaglideTuningDTO> tuning = ResolveVaultBuffer(vault, in _tuningHandle);
+            NativeArray<byte> scratch = ResolveVaultBuffer(vault, in _csvScratchHandle);
+            if (!tuning.IsCreated || tuning.Length <= 0 || !scratch.IsCreated || scratch.Length <= 0)
+                return false;
+
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            if (string.IsNullOrEmpty(projectRoot))
+                return false;
+
+            string csvPath = ResolveVehicleProfileCsvPath(projectRoot);
+            if (string.IsNullOrEmpty(csvPath))
+                return false;
+
+            using (FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                if (stream.Length <= 0L || stream.Length > scratch.Length)
+                    return false;
+
+                int length = (int)stream.Length;
+                for (int i = 0; i < length; i++)
+                {
+                    int next = stream.ReadByte();
+                    if (next < 0)
+                        return false;
+
+                    scratch[i] = (byte)next;
+                }
+
+                SeaglideTuningDTO value = tuning[0];
+                ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(scratch.GetUnsafeReadOnlyPtr(), length);
+                if (!SeaglideVehicleProfileCsv.TryApplyFirstProfile(bytes, ref value))
+                    return false;
+
+                value.GlobalQualityWeight = ApplyResolvedGlobalQualityWeight(ref value);
+                value.ResolvedQualityWeight = value.GlobalQualityWeight;
+                tuning[0] = value;
+                return true;
+            }
+        }
+
+        private int AdvanceMetabolismCadence(float deltaTime, float quality, SeaglideTuningDTO tuning)
         {
             float minCadence = math.max(0.02f, tuning.MinimumCadenceSeconds);
             float maxCadence = math.max(minCadence, tuning.MaximumCadenceSeconds);
@@ -862,30 +1223,30 @@ namespace Hecton8.Physics
             return 1;
         }
 
+        private static string ResolveVehicleProfileCsvPath(string projectRoot)
+        {
+            if (string.IsNullOrEmpty(projectRoot))
+                return null;
+
+            string primary = Path.Combine(projectRoot, SeaglideHydrodynamicsConstants.CsvRelativePath);
+            if (File.Exists(primary))
+                return primary;
+
+            string legacy = Path.Combine(projectRoot, SeaglideHydrodynamicsConstants.LegacyCsvRelativePath);
+            return File.Exists(legacy) ? legacy : null;
+        }
+
         private static float ResolveThrustCadenceSeconds(float fixedDeltaTime, float quality)
         {
             float safeFixedDelta = math.clamp(fixedDeltaTime, 0.0001f, 0.05f);
-            float lowCadence = 0.05f;
-            float highCadence = safeFixedDelta;
-            float smoothQuality = math.saturate(quality);
-            smoothQuality = smoothQuality * smoothQuality * (3f - (2f * smoothQuality));
-            return math.lerp(lowCadence, highCadence, smoothQuality);
+            return safeFixedDelta;
         }
 
-        private static float ResolveGlobalQualityWeight(ref SeaglideTuningDTO tuning)
+        private static float ApplyResolvedGlobalQualityWeight(ref SeaglideTuningDTO tuning)
         {
-            float quality = HomeostasisBrain.GlobalQualityWeight;
-            quality = math.saturate(math.select(1f, quality, math.isfinite(quality)));
+            float quality = SeaglideSimdMath.AuthoritativeQualityWeight;
             tuning.GlobalQualityWeight = quality;
             return quality;
-        }
-
-        private static double3 ResolveSectorAUP()
-        {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-                return runtimeContext.MovementState.PredictedAup.ToAbsoluteDouble3();
-
-            return double3.zero;
         }
 
         private bool TryLockJobBuffers(IDataVault vault)
@@ -992,6 +1353,8 @@ namespace Hecton8.Physics
 
         private void ReleaseVaultHandles(IDataVault vault)
         {
+            ClearActiveRequestWindow();
+            _forcePacketsReadyToDrain = false;
             if (vault == null)
                 return;
 

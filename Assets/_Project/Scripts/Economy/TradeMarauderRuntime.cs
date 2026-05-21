@@ -1849,29 +1849,29 @@ namespace Hecton8.Economy
         private bool _hasExternalPlayerAup;
 
         private IDataVault _vault;
-        private VaultBufferHandle<MarauderStateDTO> _statesHandle;
-        private VaultBufferHandle<MarauderInventorySlotDTO> _inventoryHandle;
-        private VaultBufferHandle<MarauderEconomyWeightDTO> _weightsHandle;
-        private VaultBufferHandle<MarauderSectorEconomyDTO> _sectorsHandle;
-        private VaultBufferHandle<MarauderRouteNodeDTO> _routesHandle;
-        private VaultBufferHandle<byte> _routeCountsHandle;
-        private VaultBufferHandle<MarauderNativeMinHeapNode> _openHeapHandle;
-        private VaultBufferHandle<float> _gCostsHandle;
-        private VaultBufferHandle<int> _cameFromHandle;
-        private VaultBufferHandle<int> _nodeStatesHandle;
-        private VaultBufferHandle<MarauderTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<MarauderTradeTuningDTO> _tuningHandle;
-        private VaultBufferHandle<float> _factionStandingHandle;
-        private VaultBufferHandle<uint> _mockInventoryHashesHandle;
-        private VaultBufferHandle<int> _mockInventoryQuantitiesHandle;
-        private VaultBufferHandle<MockInventoryTransactionSignal> _transactionScratchHandle;
-        private VaultBufferHandle<MarauderAcousticSignatureDTO> _acousticScratchHandle;
-        private VaultBufferHandle<MarauderLootNodeDTO> _lootHandle;
-        private VaultBufferHandle<MarauderSectorHashEntryDTO> _sectorHashHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<MarauderPaddedCounterDTO> _countersHandle;
-        private VaultBufferHandle<MarauderRoutePlanDTO> _routePlansHandle;
-        private VaultBufferHandle<MarauderVisualProxyDTO> _visualProxyHandle;
+        private VaultGenerationHandle<MarauderStateDTO> _statesHandle;
+        private VaultGenerationHandle<MarauderInventorySlotDTO> _inventoryHandle;
+        private VaultGenerationHandle<MarauderEconomyWeightDTO> _weightsHandle;
+        private VaultGenerationHandle<MarauderSectorEconomyDTO> _sectorsHandle;
+        private VaultGenerationHandle<MarauderRouteNodeDTO> _routesHandle;
+        private VaultGenerationHandle<byte> _routeCountsHandle;
+        private VaultGenerationHandle<MarauderNativeMinHeapNode> _openHeapHandle;
+        private VaultGenerationHandle<float> _gCostsHandle;
+        private VaultGenerationHandle<int> _cameFromHandle;
+        private VaultGenerationHandle<int> _nodeStatesHandle;
+        private VaultGenerationHandle<MarauderTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<MarauderTradeTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<float> _factionStandingHandle;
+        private VaultGenerationHandle<uint> _mockInventoryHashesHandle;
+        private VaultGenerationHandle<int> _mockInventoryQuantitiesHandle;
+        private VaultGenerationHandle<MockInventoryTransactionSignal> _transactionScratchHandle;
+        private VaultGenerationHandle<MarauderAcousticSignatureDTO> _acousticScratchHandle;
+        private VaultGenerationHandle<MarauderLootNodeDTO> _lootHandle;
+        private VaultGenerationHandle<MarauderSectorHashEntryDTO> _sectorHashHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<MarauderPaddedCounterDTO> _countersHandle;
+        private VaultGenerationHandle<MarauderRoutePlanDTO> _routePlansHandle;
+        private VaultGenerationHandle<MarauderVisualProxyDTO> _visualProxyHandle;
         private JobHandle _activeJobHandle;
         private bool _jobScheduled;
         private bool _registeredSlowTick;
@@ -1925,6 +1925,7 @@ namespace Hecton8.Economy
             if (deferHandleClear)
                 return;
 
+            ReleaseOwnedVaultHandles(_vault);
             ClearHandles();
             _vault = null;
         }
@@ -2105,8 +2106,7 @@ namespace Hecton8.Economy
             if (!EnsureVaultBuffers() || _vault == null)
                 return false;
 
-            NativeArray<float> standings = _factionStandingHandle.Resolve(_vault);
-            if (!standings.IsCreated || standings.Length == 0)
+            if (!TryOpenVaultView(_vault, in _factionStandingHandle, TradeMarauderConstants.FactionCapacity, out NativeArray<float> standings))
                 return false;
 
             int index = (int)(factionHash % (uint)standings.Length);
@@ -2117,11 +2117,10 @@ namespace Hecton8.Economy
         public bool TryGetTuningForEditor(out MarauderTradeTuningDTO tuning)
         {
             tuning = default;
-            if (!EnsureVaultBuffers() || _vault == null || !_tuningHandle.IsCreated)
+            if (!EnsureVaultBuffers() || _vault == null)
                 return false;
 
-            NativeArray<MarauderTradeTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
-            if (!tuningArray.IsCreated || tuningArray.Length == 0)
+            if (!TryOpenVaultView(_vault, in _tuningHandle, 1, out NativeArray<MarauderTradeTuningDTO> tuningArray))
                 return false;
 
             tuning = tuningArray[0];
@@ -2135,11 +2134,10 @@ namespace Hecton8.Economy
             _theftProbability = math.saturate(theftProbability);
             _aggressionScale = math.saturate(aggressionScale);
 
-            if (!EnsureVaultBuffers() || _vault == null || !_tuningHandle.IsCreated)
+            if (!EnsureVaultBuffers() || _vault == null)
                 return false;
 
-            NativeArray<MarauderTradeTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
-            if (!tuningArray.IsCreated || tuningArray.Length == 0)
+            if (!TryOpenVaultView(_vault, in _tuningHandle, 1, out NativeArray<MarauderTradeTuningDTO> tuningArray))
                 return false;
 
             tuningArray[0] = BuildTuning(tuningArray);
@@ -2157,10 +2155,9 @@ namespace Hecton8.Economy
             if (!EnsureVaultBuffers() || _vault == null)
                 return false;
 
-            states = _statesHandle.Resolve(_vault);
-            routes = _routesHandle.Resolve(_vault);
-            routeCounts = _routeCountsHandle.Resolve(_vault);
-            return states.IsCreated && routes.IsCreated && routeCounts.IsCreated;
+            return TryOpenVaultView(_vault, in _statesHandle, TradeMarauderConstants.MaxMarauders, out states) &&
+                   TryOpenVaultView(_vault, in _routesHandle, TradeMarauderConstants.MaxMarauders * TradeMarauderConstants.RouteNodeStride, out routes) &&
+                   TryOpenVaultView(_vault, in _routeCountsHandle, TradeMarauderConstants.MaxMarauders, out routeCounts);
         }
 
         public bool TryApplyCsvOverride(ReadOnlySpan<byte> csvBytes, out int acceptedRows, out int rejectedRows)
@@ -2170,13 +2167,12 @@ namespace Hecton8.Economy
             if (!EnsureVaultBuffers() || _vault == null)
                 return false;
 
-            NativeArray<MarauderEconomyWeightDTO> weights = _weightsHandle.Resolve(_vault);
-            if (!weights.IsCreated)
+            if (!TryOpenVaultView(_vault, in _weightsHandle, TradeMarauderConstants.MaxEconomyItems, out NativeArray<MarauderEconomyWeightDTO> weights))
                 return false;
 
             bool parsed = MarauderEconomyCsvParser.TryParse(csvBytes, weights, out acceptedRows, out rejectedRows);
-            NativeArray<MarauderPaddedCounterDTO> counters = _countersHandle.Resolve(_vault);
-            if (counters.IsCreated && counters.Length > (int)MarauderCounterIndex.CsvRowsRejected)
+            if (TryOpenVaultView(_vault, in _countersHandle, TradeMarauderConstants.CounterCapacity, out NativeArray<MarauderPaddedCounterDTO> counters) &&
+                counters.Length > (int)MarauderCounterIndex.CsvRowsRejected)
             {
                 MarauderCounterUtility.Write(counters, MarauderCounterIndex.CsvRowsAccepted, acceptedRows);
                 MarauderCounterUtility.Write(counters, MarauderCounterIndex.CsvRowsRejected, rejectedRows);
@@ -2205,6 +2201,7 @@ namespace Hecton8.Economy
 
             if (!ReferenceEquals(_vault, vault))
             {
+                ReleaseOwnedVaultHandles(_vault);
                 _vault = vault;
                 ClearHandles();
                 _defaultsInitialized = false;
@@ -2262,24 +2259,56 @@ namespace Hecton8.Economy
                 _defaultsInitialized = true;
             }
 
-            return _statesHandle.IsCreated &&
-                   _inventoryHandle.IsCreated &&
-                   _weightsHandle.IsCreated &&
-                   _sectorsHandle.IsCreated &&
-                   _routePlansHandle.IsCreated &&
-                   _visualProxyHandle.IsCreated;
+            return IsHandleCreated(in _statesHandle) &&
+                   IsHandleCreated(in _inventoryHandle) &&
+                   IsHandleCreated(in _weightsHandle) &&
+                   IsHandleCreated(in _sectorsHandle) &&
+                   IsHandleCreated(in _routesHandle) &&
+                   IsHandleCreated(in _routeCountsHandle) &&
+                   IsHandleCreated(in _openHeapHandle) &&
+                   IsHandleCreated(in _gCostsHandle) &&
+                   IsHandleCreated(in _cameFromHandle) &&
+                   IsHandleCreated(in _nodeStatesHandle) &&
+                   IsHandleCreated(in _telemetryHandle) &&
+                   IsHandleCreated(in _tuningHandle) &&
+                   IsHandleCreated(in _factionStandingHandle) &&
+                   IsHandleCreated(in _mockInventoryHashesHandle) &&
+                   IsHandleCreated(in _mockInventoryQuantitiesHandle) &&
+                   IsHandleCreated(in _transactionScratchHandle) &&
+                   IsHandleCreated(in _acousticScratchHandle) &&
+                   IsHandleCreated(in _lootHandle) &&
+                   IsHandleCreated(in _sectorHashHandle) &&
+                   IsHandleCreated(in _csvScratchHandle) &&
+                   IsHandleCreated(in _countersHandle) &&
+                   IsHandleCreated(in _routePlansHandle) &&
+                   IsHandleCreated(in _visualProxyHandle);
         }
 
-        private VaultBufferHandle<T> EnsureHandle<T>(
-            VaultBufferHandle<T> handle,
+        private VaultGenerationHandle<T> EnsureHandle<T>(
+            VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int length,
             NativeArrayOptions options) where T : struct
         {
-            if (handle.IsCreated && handle.Length >= length)
+            if (_vault == null || length <= 0)
+                return default;
+
+            if (TryOpenVaultView(_vault, in handle, length, out NativeArray<T> _))
                 return handle;
 
-            return _vault.GetBufferHandle<T>(bufferId, length, SystemID.TradeMarauders, options);
+            if (_vault.TryGetGenerationHandle<T>(bufferId, out handle) &&
+                TryOpenVaultView(_vault, in handle, length, out NativeArray<T> _))
+            {
+                return handle;
+            }
+
+            if (_vault.IsAllocationLocked)
+                return default;
+
+            handle = _vault.GetGenerationHandle<T>(bufferId, length, SystemID.TradeMarauders, options);
+            return TryOpenVaultView(_vault, in handle, length, out NativeArray<T> _)
+                ? handle
+                : default;
         }
 
         private bool TryResolveAllViews(
@@ -2306,51 +2335,73 @@ namespace Hecton8.Economy
             out NativeArray<MarauderRoutePlanDTO> routePlans,
             out NativeArray<MarauderVisualProxyDTO> visualProxies)
         {
-            states = _statesHandle.Resolve(_vault);
-            inventories = _inventoryHandle.Resolve(_vault);
-            weights = _weightsHandle.Resolve(_vault);
-            sectors = _sectorsHandle.Resolve(_vault);
-            routes = _routesHandle.Resolve(_vault);
-            routeCounts = _routeCountsHandle.Resolve(_vault);
-            openHeap = _openHeapHandle.Resolve(_vault);
-            gCosts = _gCostsHandle.Resolve(_vault);
-            cameFrom = _cameFromHandle.Resolve(_vault);
-            nodeStates = _nodeStatesHandle.Resolve(_vault);
-            telemetry = _telemetryHandle.Resolve(_vault);
-            tuning = _tuningHandle.Resolve(_vault);
-            factionStanding = _factionStandingHandle.Resolve(_vault);
-            mockInventoryHashes = _mockInventoryHashesHandle.Resolve(_vault);
-            mockInventoryQuantities = _mockInventoryQuantitiesHandle.Resolve(_vault);
-            transactionScratch = _transactionScratchHandle.Resolve(_vault);
-            acousticScratch = _acousticScratchHandle.Resolve(_vault);
-            lootNodes = _lootHandle.Resolve(_vault);
-            sectorHash = _sectorHashHandle.Resolve(_vault);
-            counters = _countersHandle.Resolve(_vault);
-            routePlans = _routePlansHandle.Resolve(_vault);
-            visualProxies = _visualProxyHandle.Resolve(_vault);
+            states = default;
+            inventories = default;
+            weights = default;
+            sectors = default;
+            routes = default;
+            routeCounts = default;
+            openHeap = default;
+            gCosts = default;
+            cameFrom = default;
+            nodeStates = default;
+            telemetry = default;
+            tuning = default;
+            factionStanding = default;
+            mockInventoryHashes = default;
+            mockInventoryQuantities = default;
+            transactionScratch = default;
+            acousticScratch = default;
+            lootNodes = default;
+            sectorHash = default;
+            counters = default;
+            routePlans = default;
+            visualProxies = default;
 
-            return states.IsCreated &&
-                   inventories.IsCreated &&
-                   weights.IsCreated &&
-                   sectors.IsCreated &&
-                   routes.IsCreated &&
-                   routeCounts.IsCreated &&
-                   openHeap.IsCreated &&
-                   gCosts.IsCreated &&
-                   cameFrom.IsCreated &&
-                   nodeStates.IsCreated &&
-                   telemetry.IsCreated &&
-                   tuning.IsCreated &&
-                   factionStanding.IsCreated &&
-                   mockInventoryHashes.IsCreated &&
-                   mockInventoryQuantities.IsCreated &&
-                   transactionScratch.IsCreated &&
-                   acousticScratch.IsCreated &&
-                   lootNodes.IsCreated &&
-                   sectorHash.IsCreated &&
-                   counters.IsCreated &&
-                   routePlans.IsCreated &&
-                   visualProxies.IsCreated;
+            return TryOpenVaultView(_vault, in _statesHandle, TradeMarauderConstants.MaxMarauders, out states) &&
+                   TryOpenVaultView(_vault, in _inventoryHandle, TradeMarauderConstants.MaxMarauders * TradeMarauderConstants.MaxInventorySlotsPerMarauder, out inventories) &&
+                   TryOpenVaultView(_vault, in _weightsHandle, TradeMarauderConstants.MaxEconomyItems, out weights) &&
+                   TryOpenVaultView(_vault, in _sectorsHandle, TradeMarauderConstants.SectorNodeCapacity, out sectors) &&
+                   TryOpenVaultView(_vault, in _routesHandle, TradeMarauderConstants.MaxMarauders * TradeMarauderConstants.RouteNodeStride, out routes) &&
+                   TryOpenVaultView(_vault, in _routeCountsHandle, TradeMarauderConstants.MaxMarauders, out routeCounts) &&
+                   TryOpenVaultView(_vault, in _openHeapHandle, TradeMarauderConstants.SectorNodeCapacity, out openHeap) &&
+                   TryOpenVaultView(_vault, in _gCostsHandle, TradeMarauderConstants.SectorNodeCapacity, out gCosts) &&
+                   TryOpenVaultView(_vault, in _cameFromHandle, TradeMarauderConstants.SectorNodeCapacity, out cameFrom) &&
+                   TryOpenVaultView(_vault, in _nodeStatesHandle, TradeMarauderConstants.SectorNodeCapacity, out nodeStates) &&
+                   TryOpenVaultView(_vault, in _telemetryHandle, TradeMarauderConstants.TelemetryFrameCount, out telemetry) &&
+                   TryOpenVaultView(_vault, in _tuningHandle, 1, out tuning) &&
+                   TryOpenVaultView(_vault, in _factionStandingHandle, TradeMarauderConstants.FactionCapacity, out factionStanding) &&
+                   TryOpenVaultView(_vault, in _mockInventoryHashesHandle, TradeMarauderConstants.MaxEconomyItems, out mockInventoryHashes) &&
+                   TryOpenVaultView(_vault, in _mockInventoryQuantitiesHandle, TradeMarauderConstants.MaxEconomyItems, out mockInventoryQuantities) &&
+                   TryOpenVaultView(_vault, in _transactionScratchHandle, TradeMarauderConstants.SignalScratchCapacity, out transactionScratch) &&
+                   TryOpenVaultView(_vault, in _acousticScratchHandle, TradeMarauderConstants.SignalScratchCapacity, out acousticScratch) &&
+                   TryOpenVaultView(_vault, in _lootHandle, TradeMarauderConstants.LootNodeCapacity, out lootNodes) &&
+                   TryOpenVaultView(_vault, in _sectorHashHandle, TradeMarauderConstants.SectorNodeCapacity, out sectorHash) &&
+                   TryOpenVaultView(_vault, in _countersHandle, TradeMarauderConstants.CounterCapacity, out counters) &&
+                   TryOpenVaultView(_vault, in _routePlansHandle, TradeMarauderConstants.MaxMarauders, out routePlans) &&
+                   TryOpenVaultView(_vault, in _visualProxyHandle, TradeMarauderConstants.VisualProxyCapacity, out visualProxies);
+        }
+
+        private static bool TryOpenVaultView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   requiredLength >= 0 &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private MarauderTradeTuningDTO BuildTuning(NativeArray<MarauderTradeTuningDTO> tuningArray)
@@ -2409,14 +2460,13 @@ namespace Hecton8.Economy
             if (_vault == null)
                 return;
 
-            NativeArray<MarauderPaddedCounterDTO> counters = _countersHandle.Resolve(_vault);
-            NativeArray<MockInventoryTransactionSignal> transactions = _transactionScratchHandle.Resolve(_vault);
-            NativeArray<MarauderAcousticSignatureDTO> acoustic = _acousticScratchHandle.Resolve(_vault);
-            if (!counters.IsCreated)
+            if (!TryOpenVaultView(_vault, in _countersHandle, TradeMarauderConstants.CounterCapacity, out NativeArray<MarauderPaddedCounterDTO> counters))
                 return;
 
+            bool hasTransactions = TryOpenVaultView(_vault, in _transactionScratchHandle, TradeMarauderConstants.SignalScratchCapacity, out NativeArray<MockInventoryTransactionSignal> transactions);
+            bool hasAcoustic = TryOpenVaultView(_vault, in _acousticScratchHandle, TradeMarauderConstants.SignalScratchCapacity, out NativeArray<MarauderAcousticSignatureDTO> acoustic);
             int transactionCount = ReadCounter(counters, MarauderCounterIndex.TransactionSignalCount);
-            for (int i = 0; i < transactionCount && transactions.IsCreated && i < transactions.Length; i++)
+            for (int i = 0; hasTransactions && i < transactionCount && i < transactions.Length; i++)
             {
                 MockInventoryTransactionSignal signal = transactions[i];
                 SignalBus<MockInventoryTransactionSignal>.Push(in signal);
@@ -2433,7 +2483,7 @@ namespace Hecton8.Economy
             }
 
             int acousticCount = ReadCounter(counters, MarauderCounterIndex.AcousticSignalCount);
-            for (int i = 0; i < acousticCount && acoustic.IsCreated && i < acoustic.Length; i++)
+            for (int i = 0; hasAcoustic && i < acousticCount && i < acoustic.Length; i++)
             {
                 MarauderAcousticSignatureDTO signature = acoustic[i];
                 AcousticPingSignal signal = new AcousticPingSignal
@@ -2450,9 +2500,11 @@ namespace Hecton8.Economy
 
             if (ReadCounter(counters, MarauderCounterIndex.FaultFlags) != 0)
             {
-                NativeArray<MarauderTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
-                if (!TryDumpBlackBox(telemetry))
+                if (!TryOpenVaultView(_vault, in _telemetryHandle, TradeMarauderConstants.TelemetryFrameCount, out NativeArray<MarauderTelemetryEntry> telemetry) ||
+                    !TryDumpBlackBox(telemetry))
+                {
                     Debug.LogError("[TradeMarauderDirector] blackbox dump failed.");
+                }
             }
 
             MarauderCounterUtility.Write(counters, MarauderCounterIndex.TransactionSignalCount, 0);
@@ -2696,6 +2748,45 @@ namespace Hecton8.Economy
             _countersHandle = default;
             _routePlansHandle = default;
             _visualProxyHandle = default;
+        }
+
+        private void ReleaseOwnedVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _statesHandle);
+            ReleaseVaultHandle(vault, ref _inventoryHandle);
+            ReleaseVaultHandle(vault, ref _weightsHandle);
+            ReleaseVaultHandle(vault, ref _sectorsHandle);
+            ReleaseVaultHandle(vault, ref _routesHandle);
+            ReleaseVaultHandle(vault, ref _routeCountsHandle);
+            ReleaseVaultHandle(vault, ref _openHeapHandle);
+            ReleaseVaultHandle(vault, ref _gCostsHandle);
+            ReleaseVaultHandle(vault, ref _cameFromHandle);
+            ReleaseVaultHandle(vault, ref _nodeStatesHandle);
+            ReleaseVaultHandle(vault, ref _telemetryHandle);
+            ReleaseVaultHandle(vault, ref _tuningHandle);
+            ReleaseVaultHandle(vault, ref _factionStandingHandle);
+            ReleaseVaultHandle(vault, ref _mockInventoryHashesHandle);
+            ReleaseVaultHandle(vault, ref _mockInventoryQuantitiesHandle);
+            ReleaseVaultHandle(vault, ref _transactionScratchHandle);
+            ReleaseVaultHandle(vault, ref _acousticScratchHandle);
+            ReleaseVaultHandle(vault, ref _lootHandle);
+            ReleaseVaultHandle(vault, ref _sectorHashHandle);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseVaultHandle(vault, ref _countersHandle);
+            ReleaseVaultHandle(vault, ref _routePlansHandle);
+            ReleaseVaultHandle(vault, ref _visualProxyHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
     }
 }

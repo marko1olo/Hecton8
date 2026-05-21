@@ -57,6 +57,26 @@ LINE_PATTERNS: dict[str, re.Pattern[str]] = {
 BURST_ATTR_RE = re.compile(r"\[BurstCompile(?P<body>[^\]]*)\]", re.MULTILINE | re.DOTALL)
 STRUCT_DECL_RE = re.compile(r"\b(?:public|private|internal|protected)?\s*(?:readonly\s+)?(?:partial\s+)?struct\s+\w+")
 AUTO_PROPERTY_RE = re.compile(r"\{\s*get\s*;\s*(?:private\s+)?set\s*;")
+BINARY_HARDWARE_CONTROL_RE = re.compile(r"^\s*(?:if|else\s+if|switch|case|return|while|for)\b|[?:]")
+BINARY_HARDWARE_EXPLICIT_TOKEN_RE = re.compile(
+    r"\b(?:isLowEnd|IsLowEnd|LowEnd|HighEnd|UltraTier|DeviceTier|StandaloneQuest|QuestOnly|PcOnly)\b"
+)
+BINARY_HARDWARE_TIER_TOKEN_RE = re.compile(r"\b(?:QualityTier|HardwareTier)\b")
+BINARY_HARDWARE_TIER_COMPARISON_RE = re.compile(
+    r"\b(?:QualityTier|HardwareTier)\b\s*(?<![=>])(?:==|!=|<=|>=|<|>)(?![=>])|"
+    r"(?<![=>])(?:==|!=|<=|>=|<|>)(?![=>])\s*(?:\w+\.)*\b(?:QualityTier|HardwareTier)\b"
+)
+BINARY_HARDWARE_SWITCH_RE = re.compile(r"^\s*(?:switch|case)\b")
+STRING_LITERAL_RE = re.compile(
+    r"""
+    (?:
+        (?:\$?@|@\$)"(?:""|[^"])*"
+        |
+        \$?"(?:\\.|[^"\\])*"
+    )
+    """,
+    re.VERBOSE,
+)
 
 
 @dataclass(frozen=True)
@@ -87,6 +107,25 @@ def iter_cs_files(source_root: Path) -> list[Path]:
 
 def strip_line_comment(line: str) -> str:
     return line.split("//", 1)[0]
+
+
+def strip_string_literals(line: str) -> str:
+    return STRING_LITERAL_RE.sub('""', line)
+
+
+def is_binary_hardware_switch_line(scan_code: str) -> bool:
+    if LINE_PATTERNS["binaryHardwareSwitch"].search(scan_code) is None:
+        return False
+    if BINARY_HARDWARE_SWITCH_RE.search(scan_code) is not None:
+        return True
+    if BINARY_HARDWARE_EXPLICIT_TOKEN_RE.search(scan_code) is not None:
+        return BINARY_HARDWARE_CONTROL_RE.search(scan_code) is not None
+    if BINARY_HARDWARE_TIER_TOKEN_RE.search(scan_code) is not None:
+        return (
+            BINARY_HARDWARE_CONTROL_RE.search(scan_code) is not None
+            and BINARY_HARDWARE_TIER_COMPARISON_RE.search(scan_code) is not None
+        )
+    return False
 
 
 def empty_results() -> dict[str, list[Finding]]:
@@ -126,6 +165,7 @@ def record_line_patterns(
     raw_line: str,
     code: str,
 ) -> None:
+    scan_code = strip_string_literals(code)
     checks = (
         ("packOne", "Pack"),
         ("privateNativeCollectionField", "Native"),
@@ -138,20 +178,10 @@ def record_line_patterns(
         ("noAlias", "[NoAlias]"),
     )
     for key, token in checks:
-        if token in code and LINE_PATTERNS[key].search(code):
+        if token in scan_code and LINE_PATTERNS[key].search(scan_code):
             results[key].append(Finding(rel, line_number, raw_line.strip()))
 
-    if (
-        "LowEnd" in code
-        or "lowEnd" in code
-        or "HighEnd" in code
-        or "UltraTier" in code
-        or "QualityTier" in code
-        or "HardwareTier" in code
-        or "DeviceTier" in code
-        or "Quest" in code
-        or "PcOnly" in code
-    ) and LINE_PATTERNS["binaryHardwareSwitch"].search(code):
+    if is_binary_hardware_switch_line(scan_code):
         results["binaryHardwareSwitch"].append(Finding(rel, line_number, raw_line.strip()))
 
 
@@ -167,27 +197,28 @@ def scan_all(files: Iterable[Path]) -> dict[str, list[Finding]]:
         while line_number <= line_count:
             raw_line = lines[line_number - 1]
             code = strip_line_comment(raw_line)
+            scan_code = strip_string_literals(code)
 
             record_line_patterns(results, rel, line_number, raw_line, code)
 
-            if "[BurstCompile" in code:
-                attr_parts = [code.strip()]
+            if "[BurstCompile" in scan_code:
+                attr_parts = [scan_code.strip()]
                 cursor = line_number
                 while "]" not in attr_parts[-1] and cursor < line_count and cursor < line_number + 8:
                     cursor += 1
-                    attr_parts.append(strip_line_comment(lines[cursor - 1]).strip())
+                    attr_parts.append(strip_string_literals(strip_line_comment(lines[cursor - 1])).strip())
                 record_burst_attribute(results, rel, line_number, " ".join(attr_parts))
 
-            if not in_struct and STRUCT_DECL_RE.search(code):
+            if not in_struct and STRUCT_DECL_RE.search(scan_code):
                 in_struct = True
                 depth = 0
 
-            if in_struct and AUTO_PROPERTY_RE.search(code):
+            if in_struct and AUTO_PROPERTY_RE.search(scan_code):
                 results["structAutoProperties"].append(Finding(rel, line_number, raw_line.strip()))
 
             if in_struct:
-                depth += code.count("{") - code.count("}")
-                if depth <= 0 and "}" in code:
+                depth += scan_code.count("{") - scan_code.count("}")
+                if depth <= 0 and "}" in scan_code:
                     in_struct = False
                     depth = 0
 
@@ -394,4 +425,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(

@@ -99,6 +99,7 @@ namespace Hecton8.Gameplay
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 32;
         private const int ReferenceSlotCapacity = 32;
+        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
 
         private struct AirlockReferenceSlot
         {
@@ -112,8 +113,79 @@ namespace Hecton8.Gameplay
             }
         }
 
-        // COLD ALLOC: RegistryBucket<IBaseAirlockEventListener>[16] - airlock listeners drained by SystemDispatcher LateUpdate - owner: BaseAirlockEvents
-        private static readonly RegistryBucket<IBaseAirlockEventListener> _listeners = new RegistryBucket<IBaseAirlockEventListener>(ListenerCapacity);
+        private struct ListenerSlot
+        {
+            public IBaseAirlockEventListener Listener;
+
+            public void Clear()
+            {
+                Listener = null;
+            }
+        }
+
+        private struct BaseAirlockListenerRegistry
+        {
+            private readonly ListenerSlot[] _slots;
+            private int _count;
+
+            public BaseAirlockListenerRegistry(int capacity)
+            {
+                _slots = new ListenerSlot[capacity];
+                _count = 0;
+            }
+
+            public int Count => _count;
+
+            public void Clear()
+            {
+                for (int i = 0; i < _count; i++)
+                    _slots[i].Clear();
+
+                _count = 0;
+            }
+
+            public bool Contains(IBaseAirlockEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                        return true;
+                }
+
+                return false;
+            }
+
+            public bool TryRegister(IBaseAirlockEventListener listener)
+            {
+                if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                _slots[_count++].Listener = listener;
+                return true;
+            }
+
+            public void Unregister(IBaseAirlockEventListener listener)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                        continue;
+
+                    _count--;
+                    _slots[i] = _slots[_count];
+                    _slots[_count].Clear();
+                    return;
+                }
+            }
+
+            public IBaseAirlockEventListener GetAt(int index)
+            {
+                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+            }
+        }
+
+        // COLD ALLOC: ListenerSlot[16] - airlock listeners drained by SystemDispatcher LateUpdate - owner: BaseAirlockEvents
+        private static BaseAirlockListenerRegistry _listeners = new BaseAirlockListenerRegistry(ListenerCapacity);
         // COLD ALLOC: AirlockReferenceSlot[32] - managed airlock/interactor sidecar for unmanaged payloads - owner: BaseAirlockEvents
         private static readonly AirlockReferenceSlot[] _referenceSlots = new AirlockReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[32] - sidecar occupancy map prevents wrap overwrite before deferred dispatch - owner: BaseAirlockEvents
@@ -179,7 +251,7 @@ namespace Hecton8.Gameplay
 
             EnsureInitialized();
             if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+                _listeners.TryRegister(listener);
         }
 
         /// <summary>
@@ -285,14 +357,13 @@ namespace Hecton8.Gameplay
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                IBaseAirlockEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
                     {
-                        IBaseAirlockEventListener listener = rawArray[i];
+                        IBaseAirlockEventListener listener = _listeners.GetAt(i);
                         if (listener != null)
                             listener.OnBaseAirlockEvent(in payload);
                     }
@@ -392,7 +463,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<BaseAirlockEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseAirlockEventPayload>[32] - deferred airlock event lane flushed by SystemDispatcher LateUpdate - owner: BaseAirlockEvents
+                _pendingEvents = new NativeQueue<BaseAirlockEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BaseAirlockEventPayload>[32] - deferred airlock event lane flushed by SystemDispatcher LateUpdate - owner: BaseAirlockEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -403,7 +474,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<BaseAirlockEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseAirlockEventPayload>[32] - next-frame airlock event lane prevents same-frame reentrant dispatch - owner: BaseAirlockEvents
+                _nextFrameEvents = new NativeQueue<BaseAirlockEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BaseAirlockEventPayload>[32] - next-frame airlock event lane prevents same-frame reentrant dispatch - owner: BaseAirlockEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,

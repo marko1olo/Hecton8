@@ -1,0 +1,15 @@
+{
+  "schema": "hecton8.ai_texture_pipeline_report.v1",
+  "agent": "SHINOBU_269",
+  "modelsProcessed": 0,
+  "resolution": 0,
+  "passesCompleted": 0,
+  "renderMilliseconds": "0.000",
+  "encodeMilliseconds": "0.000",
+  "writeMilliseconds": "0.000",
+  "compressionStandalone": "BC7 color/ARM, BC5 normal",
+  "compressionAndroid": "ASTC_6x6",
+  "criticalWarnings": 0,
+  "status": "PENDING_UNITY_BAKE_EXECUTION",
+  "reason": "Static source route exists, but no Unity Editor bake was executed in this pass because build/import execution is gated."
+}

@@ -6,7 +6,6 @@
 
 namespace Hecton8.Gameplay
 {
-    using Hecton8.Bootstrap;
     using Hecton8.Core;
     using Hecton8.Input;
     using Hecton8.Interaction;
@@ -20,8 +19,6 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Tools/Flashlight Tool")]
     public sealed class FlashlightTool : PlayerTool, IBatteryTool
     {
-        private const int ContextComponentResolveDepth = 16;
-
         private readonly struct LampAssessment
         {
             public readonly string Headline;
@@ -191,13 +188,14 @@ namespace Hecton8.Gameplay
         private bool _primaryLatched;
         private bool _secondaryLatched;
         private bool _missingFlashlightWarned;
-        private int _cachedSnapshotFrame = -1;
+        private uint _snapshotEvaluationStamp;
+        private uint _cachedSnapshotStamp = uint.MaxValue;
         private string _cachedOperationalSummary;
         private string _cachedOperationalRecommendation;
-        private int _cachedContextDirectiveFrame = -1;
+        private uint _contextDirectiveEvaluationStamp;
+        private uint _cachedContextDirectiveStamp = uint.MaxValue;
         private bool _cachedHasContextDirective;
         private string _cachedContextDirective;
-        private Transform _cachedTransform;
         private Hecton8.Physics.QueryCacheContext _playerLookQueryCache;
         private FixedCharBuffer _assessmentHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — flashlight assessment HUD staging buffer — owner: FlashlightTool
 
@@ -207,7 +205,6 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            _cachedTransform = transform;
             _playerLookQueryCache = Hecton8.Physics.GlobalQueryCacheManager.PlayerLook;
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: FlashlightTool
         }
@@ -220,6 +217,7 @@ namespace Hecton8.Gameplay
             _stateBeforeEquip = _flashlight != null && _flashlight.IsOn;
             _primaryLatched = false;
             _secondaryLatched = false;
+            AdvanceEvaluationStamps();
             UpdatePowerIndicator();
             InvalidateSnapshotCache();
         }
@@ -234,7 +232,7 @@ namespace Hecton8.Gameplay
             profile.MaxRange = math.max(0.1f, contextProbeRange);
             profile.PowerScalar = 1f;
             profile.BatteryCapacity = 1f;
-            profile.BatteryDrainPerSecond = Metadata != null ? math.max(0f, Metadata.GetTotalEnergyConsumption()) : 0.02f;
+            profile.BatteryDrainPerSecond = Metadata != null ? math.max(0f, Metadata.energyConsumptionRate) : 0.02f;
         }
 
         public override void OnUnequip()
@@ -260,6 +258,8 @@ namespace Hecton8.Gameplay
             if (_flashlight != null)
                 _flashlight.UnbindExternalBatteryTool(this);
 
+            _flashlight = null;
+            AdvanceEvaluationStamps();
             base.OnDespawn();
         }
 
@@ -353,8 +353,7 @@ namespace Hecton8.Gameplay
         {
             UpdatePowerIndicator();
 
-            IInputService inputService = GlobalRegistry.Input;
-            PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+            PlayerInputState inputState = TryGetInputService(out IInputService inputService) && inputService.IsPlayerInputEnabled
                 ? inputService.GetState()
                 : default;
 
@@ -373,6 +372,7 @@ namespace Hecton8.Gameplay
             {
                 _flashlight.TurnOff();
                 UpdatePowerIndicator();
+                AdvanceEvaluationStamps();
                 InvalidateSnapshotCache();
                 return;
             }
@@ -396,6 +396,17 @@ namespace Hecton8.Gameplay
             else
             {
                 MarkFlashlightInactiveForCentralSolver();
+            }
+
+            AdvanceEvaluationStamps();
+        }
+
+        private void AdvanceEvaluationStamps()
+        {
+            unchecked
+            {
+                _snapshotEvaluationStamp++;
+                _contextDirectiveEvaluationStamp++;
             }
         }
 
@@ -439,24 +450,10 @@ namespace Hecton8.Gameplay
 
         private void ResolveRuntimeReferences()
         {
-            if (_flashlight == null)
-                TryResolveTransformHierarchyComponent(_cachedTransform, out _flashlight);
-
-            if (_flashlight == null)
+            if (_flashlight == null &&
+                TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext))
             {
-                if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                    playerTransform != null)
-                {
-                    if (TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) &&
-                        playerContext.Flashlight != null)
-                    {
-                        _flashlight = playerContext.Flashlight;
-                    }
-                    else
-                    {
-                        playerTransform.TryGetComponent(out _flashlight);
-                    }
-                }
+                _flashlight = playerContext.Flashlight;
             }
 
             if (_flashlight != null)
@@ -484,7 +481,7 @@ namespace Hecton8.Gameplay
             return false;
         }
 
-        public override string GetOperationalSummary()
+        public override string BuildLegacyOperationalSummaryString()
         {
             if (!TryResolveFlashlight())
                 return "DIVE LAMP // LINK OFFLINE";
@@ -506,7 +503,7 @@ namespace Hecton8.Gameplay
             _flashlight.WriteOperationalSummary(ref buffer);
         }
 
-        public override string GetOperationalDirective()
+        public override string BuildLegacyOperationalDirectiveString()
         {
             if (!TryResolveFlashlight())
                 return "Restore the lamp link before field deployment.";
@@ -533,7 +530,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (_cachedContextDirectiveFrame == Time.frameCount &&
+            if (_cachedContextDirectiveStamp == _contextDirectiveEvaluationStamp &&
                 _cachedHasContextDirective &&
                 !string.IsNullOrEmpty(_cachedContextDirective))
             {
@@ -632,8 +629,8 @@ namespace Hecton8.Gameplay
             if (_flashlight == null)
                 return false;
 
-            int currentFrame = Time.frameCount;
-            if (_cachedSnapshotFrame == currentFrame)
+            uint currentStamp = _snapshotEvaluationStamp;
+            if (_cachedSnapshotStamp == currentStamp)
             {
                 summary = _cachedOperationalSummary;
                 recommendation = _cachedOperationalRecommendation;
@@ -642,7 +639,7 @@ namespace Hecton8.Gameplay
 
             summary = _flashlight.BuildOperationalSummary();
             recommendation = _flashlight.BuildOperationalRecommendation();
-            _cachedSnapshotFrame = currentFrame;
+            _cachedSnapshotStamp = currentStamp;
             _cachedOperationalSummary = summary;
             _cachedOperationalRecommendation = recommendation;
             return true;
@@ -655,15 +652,15 @@ namespace Hecton8.Gameplay
             if (_flashlight == null)
                 return false;
 
-            int currentFrame = Time.frameCount;
-            if (_cachedContextDirectiveFrame == currentFrame)
+            uint currentStamp = _contextDirectiveEvaluationStamp;
+            if (_cachedContextDirectiveStamp == currentStamp)
             {
                 contextDirective = _cachedContextDirective;
                 return _cachedHasContextDirective;
             }
 
             bool hasDirective = TryGetForwardContextDirective(out contextDirective);
-            _cachedContextDirectiveFrame = currentFrame;
+            _cachedContextDirectiveStamp = currentStamp;
             _cachedHasContextDirective = hasDirective;
             _cachedContextDirective = contextDirective;
             return hasDirective;
@@ -671,10 +668,10 @@ namespace Hecton8.Gameplay
 
         private void InvalidateSnapshotCache()
         {
-            _cachedSnapshotFrame = -1;
+            _cachedSnapshotStamp = uint.MaxValue;
             _cachedOperationalSummary = null;
             _cachedOperationalRecommendation = null;
-            _cachedContextDirectiveFrame = -1;
+            _cachedContextDirectiveStamp = uint.MaxValue;
             _cachedHasContextDirective = false;
             _cachedContextDirective = null;
         }
@@ -683,19 +680,19 @@ namespace Hecton8.Gameplay
         {
             directive = null;
 
-            Transform probeOrigin = _cachedTransform;
-            if (_flashlight == null || probeOrigin == null)
+            if (_flashlight == null ||
+                !TryResolveContextRay(out Vector3 origin, out Vector3 direction))
                 return false;
 
             Hecton8.Physics.QueryCacheContext cache =
                 _playerLookQueryCache ?? Hecton8.Physics.GlobalQueryCacheManager.PlayerLook;
             _playerLookQueryCache = cache;
-            Ray ray = new Ray(probeOrigin.position, probeOrigin.forward);
+            Ray ray = new Ray(origin, direction);
             
             const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Collide;
             if (!cache.TryGet(ray, contextProbeRange, contextMask, triggerMode, out Hecton8.Physics.QueryResult qResult))
             {
-                if (!TryResolveQueuedRaycast(ray.origin, ray.direction, contextProbeRange, contextMask.value, triggerMode, out RaycastHit hit))
+                if (!TryQueuePrimaryRaycast(ray.origin, ray.direction, contextProbeRange, contextMask.value, triggerMode, out RaycastHit hit))
                     return false;
                 qResult = new Hecton8.Physics.QueryResult { hasHit = true, hit = hit };
                 cache.Set(ray, contextProbeRange, contextMask, triggerMode, qResult);
@@ -725,22 +722,34 @@ namespace Hecton8.Gameplay
             return TryBuildDistanceContextDirective(finalHit.distance, out directive);
         }
 
-        private static bool TryResolveTransformHierarchyComponent<T>(Transform start, out T component)
-            where T : Component
+        private bool TryResolveContextRay(out Vector3 origin, out Vector3 direction)
         {
-            component = null;
-            Transform current = start;
-            int depth = 0;
-            while (current != null && depth < ContextComponentResolveDepth)
+            origin = default;
+            direction = default;
+            if (!TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) ||
+                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
-                if (current.TryGetComponent(out component))
-                    return component != null;
-
-                current = current.parent;
-                depth++;
+                return false;
             }
 
-            return false;
+            float3 runtimePosition = snapshot.RuntimePosition;
+            float3 forward = snapshot.Forward;
+            float forwardLengthSq = math.lengthsq(forward);
+            if (!math.all(math.isfinite(runtimePosition)) ||
+                !math.all(math.isfinite(forward)) ||
+                !math.isfinite(forwardLengthSq) ||
+                forwardLengthSq <= 0.0001f)
+            {
+                return false;
+            }
+
+            float invForwardLength = math.rsqrt(math.max(forwardLengthSq, 0.0001f));
+            origin = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            direction = new Vector3(
+                forward.x * invForwardLength,
+                forward.y * invForwardLength,
+                forward.z * invForwardLength);
+            return true;
         }
 
         private static bool TryBuildCachedContextDirective(in InteractableRegistry.TargetInfo targetInfo, float distance, out string directive)

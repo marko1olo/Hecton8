@@ -91,16 +91,16 @@ namespace Hecton8.Atmosphere
         [SerializeField, Range(0f, 4f)] private float sunScatterMultiplier = 1f;
 
         [Header("── Ocean Response ──────────────────")]
-        [Tooltip("Target Crest global wind speed in km/h.")]
+        [Tooltip("Target ocean bridge wind speed in km/h.")]
         [SerializeField, Range(0f, 150f)] private float oceanWindSpeedKmh = 18f;
 
-        [Tooltip("Multiplier for Crest foam strength when the ocean material exposes the property.")]
+        [Tooltip("Multiplier for ocean foam strength when the active ocean material exposes the property.")]
         [SerializeField, Range(0f, 3f)] private float oceanFoamStrength = 1f;
 
-        [Tooltip("Multiplier for Crest foam coverage when the ocean material exposes the property.")]
+        [Tooltip("Multiplier for ocean foam coverage when the active ocean material exposes the property.")]
         [SerializeField, Range(0f, 3f)] private float oceanFoamCoverage = 1f;
 
-        [Tooltip("Multiplier for Crest foam scale when the ocean material exposes the property.")]
+        [Tooltip("Multiplier for ocean foam scale when the active ocean material exposes the property.")]
         [SerializeField, Range(0.2f, 3f)] private float oceanFoamScale = 1f;
 
         [Header("── Precipitation & Storm ──────────────────")]
@@ -286,22 +286,22 @@ namespace Hecton8.Atmosphere
         public float SunScatterMultiplier => sunScatterMultiplier;
 
         /// <summary>
-        /// Target Crest wind speed in km/h.
+        /// Target ocean bridge wind speed in km/h.
         /// </summary>
         public float OceanWindSpeedKmh => oceanWindSpeedKmh;
 
         /// <summary>
-        /// Crest foam strength multiplier.
+        /// Ocean foam strength multiplier.
         /// </summary>
         public float OceanFoamStrength => oceanFoamStrength;
 
         /// <summary>
-        /// Crest foam coverage multiplier.
+        /// Ocean foam coverage multiplier.
         /// </summary>
         public float OceanFoamCoverage => oceanFoamCoverage;
 
         /// <summary>
-        /// Crest foam scale multiplier.
+        /// Ocean foam scale multiplier.
         /// </summary>
         public float OceanFoamScale => oceanFoamScale;
 

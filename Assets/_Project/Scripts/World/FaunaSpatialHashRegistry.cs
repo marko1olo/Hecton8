@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -16,7 +15,6 @@ namespace Hecton8.World
     /// </summary>
     internal static class FaunaSpatialHashRegistry
     {
-        [StructLayout(LayoutKind.Sequential)]
         private struct Entry
         {
             public AbsoluteUniversePosition PositionAup;
@@ -45,6 +43,7 @@ namespace Hecton8.World
         private const float AdjacentQueryCompleteRadiusSqr = AdjacentQueryCompleteRadiusMeters * AdjacentQueryCompleteRadiusMeters;
         private const string NativeMemoryOwner = nameof(FaunaSpatialHashRegistry);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const Allocator DataVaultExemptFaunaSpatialQueryAllocator = Allocator.Persistent;
 
         // COLD ALLOC: Dictionary<int,Entry>[1024] - fauna-only AUP spatial metadata registry layered over HectonSpatialHash - owner: FaunaSpatialHashRegistry
         private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(MaxEntryCapacity);
@@ -264,7 +263,9 @@ namespace Hecton8.World
             if (!IsFiniteRuntimePosition(origin) || !math.isfinite(radius) || radius <= 0f)
                 return false;
 
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                return false;
+
             int handleCount = CollectCandidateHandles(in originAup, radius, SpatialTargetKind.Bioform);
             bool found = false;
             double bestDistanceSqr = (double)radius * radius;
@@ -508,7 +509,9 @@ namespace Hecton8.World
             if (results == null || results.Length == 0 || kindMask == SpatialTargetKind.None || !IsFiniteRuntimePosition(origin) || !math.isfinite(radius) || radius <= 0f)
                 return 0;
 
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                return 0;
+
             int handleCount = CollectCandidateHandles(in originAup, radius, kindMask);
             int count = 0;
             double maxDistanceSqr = (double)radius * radius;
@@ -646,7 +649,7 @@ namespace Hecton8.World
             if (!_queryHandles.IsCreated)
             {
                 // COLD ALLOC: NativeList<int>[DefaultQueryCapacity] - fauna AUP query handle scratch buffer - owner: FaunaSpatialHashRegistry
-                _queryHandles = new NativeList<int>(DefaultQueryCapacity, Allocator.Persistent);
+                _queryHandles = new NativeList<int>(DefaultQueryCapacity, DataVaultExemptFaunaSpatialQueryAllocator);
                 NativeMemorySentinel.RegisterNativeList(_queryHandles, NativeMemoryOwner, nameof(_queryHandles), NativeMemoryLifetime);
             }
         }
@@ -782,8 +785,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-            return true;
+            return TryResolveAupFromRuntimeOrigin(runtimePosition, out positionAup);
         }
 
         private static int CollectCandidateHandles(in AbsoluteUniversePosition originAup, float radius, SpatialTargetKind kindMask)
@@ -839,6 +841,22 @@ namespace Hecton8.World
         private static bool IsFiniteAup(in AbsoluteUniversePosition position)
         {
             return math.all(math.isfinite(new float3(position.LocalX, position.LocalY, position.LocalZ)));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in aup);
         }
 
         private static ulong ResolveEntityFlags(SpatialTargetKind kind)

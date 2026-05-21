@@ -50,19 +50,19 @@ namespace Hecton8.World.SeedShipAnomaly
         [SerializeField, Min(1)] private int mockLeviathanCapacity = SeedShipAnomalyConstants.DefaultMockLeviathanCapacity;
         [SerializeField, Range(0f, 1f)] private float defaultGlobalQualityWeight = 1f;
 
-        private VaultBufferHandle<AnomalyFieldDTO> _fieldHandle;
-        private VaultBufferHandle<AnomalyTuningDTO> _tuningHandle;
-        private VaultBufferHandle<AnomalyGlobalScalarsDTO> _globalsHandle;
-        private VaultBufferHandle<GlitchCommandDTO> _glitchHandle;
-        private VaultBufferHandle<MockHudSignal> _hudHandle;
-        private VaultBufferHandle<MockLeviathanState> _leviathanHandle;
-        private VaultBufferHandle<MockAupRebaseSignal> _rebaseHandle;
-        private VaultBufferHandle<AnomalyThermoSourceDTO> _thermoHandle;
-        private VaultBufferHandle<AnomalyTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<AnomalyCsvOverrideDTO> _csvOverrideHandle;
-        private VaultBufferHandle<byte> _ioScratchHandle;
-        private VaultBufferHandle<byte> _dumpScratchHandle;
-        private VaultBufferHandle<ScalabilityStateDTO> _scalabilityHandle;
+        private VaultGenerationHandle<AnomalyFieldDTO> _fieldHandle;
+        private VaultGenerationHandle<AnomalyTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<AnomalyGlobalScalarsDTO> _globalsHandle;
+        private VaultGenerationHandle<GlitchCommandDTO> _glitchHandle;
+        private VaultGenerationHandle<MockHudSignal> _hudHandle;
+        private VaultGenerationHandle<MockLeviathanState> _leviathanHandle;
+        private VaultGenerationHandle<MockAupRebaseSignal> _rebaseHandle;
+        private VaultGenerationHandle<AnomalyThermoSourceDTO> _thermoHandle;
+        private VaultGenerationHandle<AnomalyTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<AnomalyCsvOverrideDTO> _csvOverrideHandle;
+        private VaultGenerationHandle<byte> _ioScratchHandle;
+        private VaultGenerationHandle<byte> _dumpScratchHandle;
+        private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityHandle;
 
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerContext;
@@ -124,7 +124,10 @@ namespace Hecton8.World.SeedShipAnomaly
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
             UnlockJobBuffers();
+            ReleaseSeedShipVaultHandles(_dataVault);
             ClearCachedHandles();
+            _defaultsInitialized = false;
+            _legacyReconComplete = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
@@ -133,6 +136,7 @@ namespace Hecton8.World.SeedShipAnomaly
             {
                 CompleteFrameJobForTeardown();
                 UnlockJobBuffers();
+                ReleaseSeedShipVaultHandles(_dataVault ?? previousService as IDataVault);
                 _dataVault = currentService as IDataVault;
                 ClearCachedHandles();
                 _defaultsInitialized = false;
@@ -258,8 +262,7 @@ namespace Hecton8.World.SeedShipAnomaly
         public ref AnomalyFieldDTO GetAnomalyFieldRef()
         {
             IDataVault vault = _dataVault;
-            NativeArray<AnomalyFieldDTO> field = vault != null ? _fieldHandle.Resolve(vault) : default;
-            if (!field.IsCreated || field.Length == 0)
+            if (!TryReadSeedShipVaultBuffer(vault, in _fieldHandle, BufferID.ShinobuSeedShipAnomalyField, 1, out NativeArray<AnomalyFieldDTO> field))
                 FatalMemoryException.ThrowStaleVaultHandle();
 
             void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(field);
@@ -270,8 +273,7 @@ namespace Hecton8.World.SeedShipAnomaly
         {
             field = default;
             IDataVault vault = _dataVault;
-            NativeArray<AnomalyFieldDTO> array = vault != null ? _fieldHandle.Resolve(vault) : default;
-            if (!array.IsCreated || array.Length == 0)
+            if (!TryReadSeedShipVaultBuffer(vault, in _fieldHandle, BufferID.ShinobuSeedShipAnomalyField, 1, out NativeArray<AnomalyFieldDTO> array))
                 return false;
 
             field = array[0];
@@ -282,8 +284,7 @@ namespace Hecton8.World.SeedShipAnomaly
         {
             globals = default;
             IDataVault vault = _dataVault;
-            NativeArray<AnomalyGlobalScalarsDTO> array = vault != null ? _globalsHandle.Resolve(vault) : default;
-            if (!array.IsCreated || array.Length == 0)
+            if (!TryReadSeedShipVaultBuffer(vault, in _globalsHandle, BufferID.ShinobuSeedShipAnomalyGlobals, 1, out NativeArray<AnomalyGlobalScalarsDTO> array))
                 return false;
 
             globals = array[0];
@@ -294,8 +295,7 @@ namespace Hecton8.World.SeedShipAnomaly
         {
             tuning = default;
             IDataVault vault = _dataVault;
-            NativeArray<AnomalyTuningDTO> array = vault != null ? _tuningHandle.Resolve(vault) : default;
-            if (!array.IsCreated || array.Length == 0)
+            if (!TryReadSeedShipVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSeedShipAnomalyTuning, 1, out NativeArray<AnomalyTuningDTO> array))
                 return false;
 
             tuning = array[0];
@@ -305,9 +305,11 @@ namespace Hecton8.World.SeedShipAnomaly
         public bool SetEditorTuning(AnomalyTuningDTO tuning)
         {
             IDataVault vault = _dataVault;
-            NativeArray<AnomalyTuningDTO> array = vault != null ? _tuningHandle.Resolve(vault) : default;
-            if (!array.IsCreated || array.Length == 0)
+            if (!EnsureVaultState() ||
+                !TryResolveSeedShipVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuSeedShipAnomalyTuning, 1, out NativeArray<AnomalyTuningDTO> array))
+            {
                 return false;
+            }
 
             array[0] = SeedShipAnomalyMath.SanitizeTuning(tuning);
             return true;
@@ -316,9 +318,11 @@ namespace Hecton8.World.SeedShipAnomaly
         public bool SetEditorField(AnomalyFieldDTO field)
         {
             IDataVault vault = _dataVault;
-            NativeArray<AnomalyFieldDTO> array = vault != null ? _fieldHandle.Resolve(vault) : default;
-            if (!array.IsCreated || array.Length == 0)
+            if (!EnsureVaultState() ||
+                !TryResolveSeedShipVaultBuffer(vault, ref _fieldHandle, BufferID.ShinobuSeedShipAnomalyField, 1, out NativeArray<AnomalyFieldDTO> array))
+            {
                 return false;
+            }
 
             field.Radius = math.max(0f, field.Radius);
             field.CorruptionLevel = math.saturate(field.CorruptionLevel);
@@ -341,56 +345,65 @@ namespace Hecton8.World.SeedShipAnomaly
 
         private void RebindColdServices()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            IDataVault currentVault = GlobalRegistry.DataVault;
+            if (_dataVault != null && !ReferenceEquals(_dataVault, currentVault))
+            {
+                CompleteFrameJobForTeardown();
+                UnlockJobBuffers();
+                ReleaseSeedShipVaultHandles(_dataVault);
+                ClearCachedHandles();
+                _defaultsInitialized = false;
+                _legacyReconComplete = false;
+            }
+
+            _dataVault = currentVault;
             _playerContext = GlobalRegistry.Player;
         }
 
         private bool EnsureVaultState()
         {
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
             mockLeviathanCapacity = math.max(1, mockLeviathanCapacity);
-            if (HandlesReady())
+            if (HandlesReady(vault))
                 return true;
 
-            _fieldHandle = vault.GetBufferHandle<AnomalyFieldDTO>(BufferID.ShinobuSeedShipAnomalyField, 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = vault.GetBufferHandle<AnomalyTuningDTO>(BufferID.ShinobuSeedShipAnomalyTuning, 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _globalsHandle = vault.GetBufferHandle<AnomalyGlobalScalarsDTO>(BufferID.ShinobuSeedShipAnomalyGlobals, 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _glitchHandle = vault.GetBufferHandle<GlitchCommandDTO>(BufferID.ShinobuSeedShipAnomalyGlitchCommand, 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _hudHandle = vault.GetBufferHandle<MockHudSignal>(BufferID.ShinobuSeedShipAnomalyMockHudSignals, 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _leviathanHandle = vault.GetBufferHandle<MockLeviathanState>(BufferID.ShinobuSeedShipAnomalyMockLeviathans, mockLeviathanCapacity, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _rebaseHandle = vault.GetBufferHandle<MockAupRebaseSignal>(BufferID.ShinobuSeedShipAnomalyMockAupRebase, 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _thermoHandle = vault.GetBufferHandle<AnomalyThermoSourceDTO>(BufferID.ShinobuSeedShipAnomalyThermoSource, 1, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = vault.GetBufferHandle<AnomalyTelemetryEntry>(BufferID.ShinobuSeedShipAnomalyTelemetryRing, SeedShipAnomalyConstants.TelemetryFrameCount, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _csvOverrideHandle = vault.GetBufferHandle<AnomalyCsvOverrideDTO>(BufferID.ShinobuSeedShipAnomalyCsvOverrides, SeedShipAnomalyConstants.CsvOverrideCapacity, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _ioScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuSeedShipAnomalyIoScratch, CsvMaxBytes, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _dumpScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuSeedShipAnomalyDumpScratch, DumpScratchBytes, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            if (vault.TryGetBufferHandle(BufferID.ShinobuScalabilityState, out VaultBufferHandle<ScalabilityStateDTO> scalability))
-                _scalabilityHandle = scalability;
-
-            if (!HandlesReady())
+            if (!EnsureSeedShipVaultBuffer(vault, ref _fieldHandle, BufferID.ShinobuSeedShipAnomalyField, 1, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureSeedShipVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuSeedShipAnomalyTuning, 1, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureSeedShipVaultBuffer(vault, ref _globalsHandle, BufferID.ShinobuSeedShipAnomalyGlobals, 1, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureSeedShipVaultBuffer(vault, ref _glitchHandle, BufferID.ShinobuSeedShipAnomalyGlitchCommand, 1, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureSeedShipVaultBuffer(vault, ref _hudHandle, BufferID.ShinobuSeedShipAnomalyMockHudSignals, 1, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureSeedShipVaultBuffer(vault, ref _leviathanHandle, BufferID.ShinobuSeedShipAnomalyMockLeviathans, mockLeviathanCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureSeedShipVaultBuffer(vault, ref _rebaseHandle, BufferID.ShinobuSeedShipAnomalyMockAupRebase, 1, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureSeedShipVaultBuffer(vault, ref _thermoHandle, BufferID.ShinobuSeedShipAnomalyThermoSource, 1, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureSeedShipVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuSeedShipAnomalyTelemetryRing, SeedShipAnomalyConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureSeedShipVaultBuffer(vault, ref _csvOverrideHandle, BufferID.ShinobuSeedShipAnomalyCsvOverrides, SeedShipAnomalyConstants.CsvOverrideCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureSeedShipVaultBuffer(vault, ref _ioScratchHandle, BufferID.ShinobuSeedShipAnomalyIoScratch, CsvMaxBytes, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureSeedShipVaultBuffer(vault, ref _dumpScratchHandle, BufferID.ShinobuSeedShipAnomalyDumpScratch, DumpScratchBytes, NativeArrayOptions.UninitializedMemory, out _))
+            {
                 return false;
+            }
 
             InitializeDefaults(vault);
             return true;
         }
 
-        private bool HandlesReady()
+        private bool HandlesReady(IDataVault vault)
         {
-            return _fieldHandle.IsCreated &&
-                   _tuningHandle.IsCreated &&
-                   _globalsHandle.IsCreated &&
-                   _glitchHandle.IsCreated &&
-                   _hudHandle.IsCreated &&
-                   _leviathanHandle.IsCreated &&
-                   _rebaseHandle.IsCreated &&
-                   _thermoHandle.IsCreated &&
-                   _telemetryHandle.IsCreated &&
-                   _csvOverrideHandle.IsCreated &&
-                   _ioScratchHandle.IsCreated &&
-                   _dumpScratchHandle.IsCreated;
+            return HasSeedShipVaultBuffer(vault, in _fieldHandle, BufferID.ShinobuSeedShipAnomalyField, 1) &&
+                   HasSeedShipVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSeedShipAnomalyTuning, 1) &&
+                   HasSeedShipVaultBuffer(vault, in _globalsHandle, BufferID.ShinobuSeedShipAnomalyGlobals, 1) &&
+                   HasSeedShipVaultBuffer(vault, in _glitchHandle, BufferID.ShinobuSeedShipAnomalyGlitchCommand, 1) &&
+                   HasSeedShipVaultBuffer(vault, in _hudHandle, BufferID.ShinobuSeedShipAnomalyMockHudSignals, 1) &&
+                   HasSeedShipVaultBuffer(vault, in _leviathanHandle, BufferID.ShinobuSeedShipAnomalyMockLeviathans, mockLeviathanCapacity) &&
+                   HasSeedShipVaultBuffer(vault, in _rebaseHandle, BufferID.ShinobuSeedShipAnomalyMockAupRebase, 1) &&
+                   HasSeedShipVaultBuffer(vault, in _thermoHandle, BufferID.ShinobuSeedShipAnomalyThermoSource, 1) &&
+                   HasSeedShipVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuSeedShipAnomalyTelemetryRing, SeedShipAnomalyConstants.TelemetryFrameCount) &&
+                   HasSeedShipVaultBuffer(vault, in _csvOverrideHandle, BufferID.ShinobuSeedShipAnomalyCsvOverrides, SeedShipAnomalyConstants.CsvOverrideCapacity) &&
+                   HasSeedShipVaultBuffer(vault, in _ioScratchHandle, BufferID.ShinobuSeedShipAnomalyIoScratch, CsvMaxBytes) &&
+                   HasSeedShipVaultBuffer(vault, in _dumpScratchHandle, BufferID.ShinobuSeedShipAnomalyDumpScratch, DumpScratchBytes);
         }
 
         private void InitializeDefaults(IDataVault vault)
@@ -413,7 +426,16 @@ namespace Hecton8.World.SeedShipAnomaly
                 return;
             }
 
-            NativeArray<AnomalyCsvOverrideDTO> csvOverrides = _csvOverrideHandle.Resolve(vault);
+            if (!TryResolveSeedShipVaultBuffer(
+                    vault,
+                    ref _csvOverrideHandle,
+                    BufferID.ShinobuSeedShipAnomalyCsvOverrides,
+                    SeedShipAnomalyConstants.CsvOverrideCapacity,
+                    out NativeArray<AnomalyCsvOverrideDTO> csvOverrides))
+            {
+                return;
+            }
+
             GenerateEmergencyMockAnomalies(field, tuning, globals, glitch, hud, leviathans, rebase, thermo, telemetry, csvOverrides);
             TryLoadLegacyAnomalyTables(vault, field, tuning);
             _defaultsInitialized = true;
@@ -622,9 +644,15 @@ namespace Hecton8.World.SeedShipAnomaly
 
         private bool TryLockIoScratch(IDataVault vault, out NativeArray<byte> scratch)
         {
-            scratch = _ioScratchHandle.Resolve(vault);
-            if (!scratch.IsCreated || scratch.Length == 0)
+            if (!TryResolveSeedShipVaultBuffer(
+                    vault,
+                    ref _ioScratchHandle,
+                    BufferID.ShinobuSeedShipAnomalyIoScratch,
+                    CsvMaxBytes,
+                    out scratch))
+            {
                 return false;
+            }
 
             return vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyIoScratch, OwnerSystem);
         }
@@ -653,24 +681,25 @@ namespace Hecton8.World.SeedShipAnomaly
             out NativeArray<AnomalyThermoSourceDTO> thermo,
             out NativeArray<AnomalyTelemetryEntry> telemetry)
         {
-            field = _fieldHandle.Resolve(vault);
-            tuning = _tuningHandle.Resolve(vault);
-            globals = _globalsHandle.Resolve(vault);
-            glitch = _glitchHandle.Resolve(vault);
-            hud = _hudHandle.Resolve(vault);
-            leviathans = _leviathanHandle.Resolve(vault);
-            rebase = _rebaseHandle.Resolve(vault);
-            thermo = _thermoHandle.Resolve(vault);
-            telemetry = _telemetryHandle.Resolve(vault);
-            return field.IsCreated &&
-                   tuning.IsCreated &&
-                   globals.IsCreated &&
-                   glitch.IsCreated &&
-                   hud.IsCreated &&
-                   leviathans.IsCreated &&
-                   rebase.IsCreated &&
-                   thermo.IsCreated &&
-                   telemetry.IsCreated;
+            field = default;
+            tuning = default;
+            globals = default;
+            glitch = default;
+            hud = default;
+            leviathans = default;
+            rebase = default;
+            thermo = default;
+            telemetry = default;
+
+            return TryResolveSeedShipVaultBuffer(vault, ref _fieldHandle, BufferID.ShinobuSeedShipAnomalyField, 1, out field) &&
+                   TryResolveSeedShipVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuSeedShipAnomalyTuning, 1, out tuning) &&
+                   TryResolveSeedShipVaultBuffer(vault, ref _globalsHandle, BufferID.ShinobuSeedShipAnomalyGlobals, 1, out globals) &&
+                   TryResolveSeedShipVaultBuffer(vault, ref _glitchHandle, BufferID.ShinobuSeedShipAnomalyGlitchCommand, 1, out glitch) &&
+                   TryResolveSeedShipVaultBuffer(vault, ref _hudHandle, BufferID.ShinobuSeedShipAnomalyMockHudSignals, 1, out hud) &&
+                   TryResolveSeedShipVaultBuffer(vault, ref _leviathanHandle, BufferID.ShinobuSeedShipAnomalyMockLeviathans, mockLeviathanCapacity, out leviathans) &&
+                   TryResolveSeedShipVaultBuffer(vault, ref _rebaseHandle, BufferID.ShinobuSeedShipAnomalyMockAupRebase, 1, out rebase) &&
+                   TryResolveSeedShipVaultBuffer(vault, ref _thermoHandle, BufferID.ShinobuSeedShipAnomalyThermoSource, 1, out thermo) &&
+                   TryResolveSeedShipVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuSeedShipAnomalyTelemetryRing, SeedShipAnomalyConstants.TelemetryFrameCount, out telemetry);
         }
 
         private bool TryLockJobBuffers(IDataVault vault)
@@ -873,9 +902,15 @@ namespace Hecton8.World.SeedShipAnomaly
             if (_dumpedBudgetBreach || !telemetry.IsCreated || telemetry.Length == 0)
                 return;
 
-            NativeArray<byte> dumpScratch = _dumpScratchHandle.Resolve(vault);
-            if (!dumpScratch.IsCreated || dumpScratch.Length < 32)
+            if (!TryResolveSeedShipVaultBuffer(
+                    vault,
+                    ref _dumpScratchHandle,
+                    BufferID.ShinobuSeedShipAnomalyDumpScratch,
+                    DumpScratchBytes,
+                    out NativeArray<byte> dumpScratch))
+            {
                 return;
+            }
 
             if (!vault.TryLockBuffer(BufferID.ShinobuSeedShipAnomalyDumpScratch, OwnerSystem))
                 return;
@@ -958,15 +993,11 @@ namespace Hecton8.World.SeedShipAnomaly
 
         private float ResolveGlobalQualityWeight(IDataVault vault, float fallback)
         {
-            if (!_scalabilityHandle.IsCreated &&
-                vault.TryGetBufferHandle(BufferID.ShinobuScalabilityState, out VaultBufferHandle<ScalabilityStateDTO> scalability))
+            if (TryResolveBorrowedScalabilityState(vault, out NativeArray<ScalabilityStateDTO> state) &&
+                math.isfinite(state[0].GlobalQualityWeight))
             {
-                _scalabilityHandle = scalability;
-            }
-
-            NativeArray<ScalabilityStateDTO> state = _scalabilityHandle.IsCreated ? _scalabilityHandle.Resolve(vault) : default;
-            if (state.IsCreated && state.Length > 0 && math.isfinite(state[0].GlobalQualityWeight))
                 return math.saturate(state[0].GlobalQualityWeight);
+            }
 
             return math.saturate(math.isfinite(fallback) ? fallback : defaultGlobalQualityWeight);
         }
@@ -1008,12 +1039,9 @@ namespace Hecton8.World.SeedShipAnomaly
 
         private void ParseCsvOverrides(IDataVault vault, ReadOnlySpan<byte> bytes)
         {
-            NativeArray<AnomalyTuningDTO> tuningArray = _tuningHandle.Resolve(vault);
-            NativeArray<AnomalyFieldDTO> fieldArray = _fieldHandle.Resolve(vault);
-            NativeArray<AnomalyCsvOverrideDTO> overrides = _csvOverrideHandle.Resolve(vault);
-            if (!tuningArray.IsCreated || tuningArray.Length == 0 ||
-                !fieldArray.IsCreated || fieldArray.Length == 0 ||
-                !overrides.IsCreated)
+            if (!TryResolveSeedShipVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuSeedShipAnomalyTuning, 1, out NativeArray<AnomalyTuningDTO> tuningArray) ||
+                !TryResolveSeedShipVaultBuffer(vault, ref _fieldHandle, BufferID.ShinobuSeedShipAnomalyField, 1, out NativeArray<AnomalyFieldDTO> fieldArray) ||
+                !TryResolveSeedShipVaultBuffer(vault, ref _csvOverrideHandle, BufferID.ShinobuSeedShipAnomalyCsvOverrides, SeedShipAnomalyConstants.CsvOverrideCapacity, out NativeArray<AnomalyCsvOverrideDTO> overrides))
             {
                 return;
             }
@@ -1174,6 +1202,172 @@ namespace Hecton8.World.SeedShipAnomaly
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
+        }
+
+        private bool EnsureSeedShipVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (TryResolveSeedShipVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
+            return TryResolveSeedShipVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool TryResolveSeedShipVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (IsSeedShipVaultHandle(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !IsSeedShipVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool HasSeedShipVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsSeedShipVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadSeedShipVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                requiredLength <= 0 ||
+                !IsSeedShipVaultHandle(in handle, bufferId) ||
+                !vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsSeedShipVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)OwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
+        private bool TryResolveBorrowedScalabilityState(IDataVault vault, out NativeArray<ScalabilityStateDTO> state)
+        {
+            state = default;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (IsBorrowedScalabilityHandle(in _scalabilityHandle) &&
+                vault.TryReadHandle(in _scalabilityHandle, out state) &&
+                state.IsCreated &&
+                state.Length > 0)
+            {
+                return true;
+            }
+
+            if (!vault.TryGetGenerationHandle<ScalabilityStateDTO>(BufferID.ShinobuScalabilityState, out _scalabilityHandle) ||
+                !IsBorrowedScalabilityHandle(in _scalabilityHandle) ||
+                !vault.TryReadHandle(in _scalabilityHandle, out state) ||
+                !state.IsCreated ||
+                state.Length <= 0)
+            {
+                _scalabilityHandle = default;
+                state = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsBorrowedScalabilityHandle(
+            in VaultGenerationHandle<ScalabilityStateDTO> handle)
+        {
+            return handle.BufferID == unchecked((uint)(int)BufferID.ShinobuScalabilityState) &&
+                   handle.SystemID == (uint)SystemID.GraphicsScalability &&
+                   handle.Generation != 0u;
+        }
+
+        private void ReleaseSeedShipVaultHandles(IDataVault vault)
+        {
+            ReleaseSeedShipVaultHandle(vault, ref _fieldHandle);
+            ReleaseSeedShipVaultHandle(vault, ref _tuningHandle);
+            ReleaseSeedShipVaultHandle(vault, ref _globalsHandle);
+            ReleaseSeedShipVaultHandle(vault, ref _glitchHandle);
+            ReleaseSeedShipVaultHandle(vault, ref _hudHandle);
+            ReleaseSeedShipVaultHandle(vault, ref _leviathanHandle);
+            ReleaseSeedShipVaultHandle(vault, ref _rebaseHandle);
+            ReleaseSeedShipVaultHandle(vault, ref _thermoHandle);
+            ReleaseSeedShipVaultHandle(vault, ref _telemetryHandle);
+            ReleaseSeedShipVaultHandle(vault, ref _csvOverrideHandle);
+            ReleaseSeedShipVaultHandle(vault, ref _ioScratchHandle);
+            ReleaseSeedShipVaultHandle(vault, ref _dumpScratchHandle);
+        }
+
+        private static void ReleaseSeedShipVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null &&
+                handle.SystemID == (uint)OwnerSystem &&
+                handle.BufferID != 0u &&
+                handle.Generation != 0u)
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+
+            handle = default;
         }
 
         private void ClearCachedHandles()

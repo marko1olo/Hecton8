@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Determinism;
 using Hecton8.Core.Memory;
@@ -23,6 +24,7 @@ namespace Hecton8.Physiology
     {
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
         private const uint SystemHash = ShinobuRespawnConstants.SourceHash;
+        private const int JobBufferLockCount = 15;
         private const uint DefaultPlayerHash = 0x504C5952u; // PLYR
         private const ulong DumpMagic = 0x5253504E53524745ul; // RSPNSRGE
         private const uint DumpVersion = 1u;
@@ -69,7 +71,9 @@ namespace Hecton8.Physiology
         private bool _registeredPostSimulation;
         private bool _registeredVisualSync;
         private bool _defaultsInitialized;
+        private bool _penaltyCsvInitialized;
         private bool _jobScheduled;
+        private bool _jobBuffersLocked;
         private bool _dumpedFault;
         private bool _respawnDearLieVisualActive;
 
@@ -99,7 +103,7 @@ namespace Hecton8.Physiology
             }
 
             s_active = this;
-            string root = ResolveProjectRoot();
+            string root = BuildProjectRootPathCold();
             _csvPath = Path.GetFullPath(Path.Combine(root, CsvRelativePath));
             _dumpPath = Path.GetFullPath(Path.Combine(root, DumpRelativePath));
             _legacyDumpPath = Path.GetFullPath(Path.Combine(root, LegacyDumpRelativePath));
@@ -125,14 +129,11 @@ namespace Hecton8.Physiology
             s_active = this;
             ConfigureSignalLanes();
             TryRegisterHotSwap();
-            _dataVault = ResolveVaultCold();
-            if (EnsureVaultState(_dataVault))
+            _dataVault = BindVaultCold();
+            if (EnsureVaultState(_dataVault) && HydrateColdDefaultsAndPenaltyRules())
             {
-                InitializeDefaultVaultContents();
-                TryLoadPenaltyCsv();
+                RegisterDispatcherPhases();
             }
-
-            RegisterDispatcherPhases();
         }
 
         private void Start()
@@ -140,9 +141,11 @@ namespace Hecton8.Physiology
             if (!Application.isPlaying)
                 return;
 
-            _dataVault = ResolveVaultCold();
-            if (EnsureVaultState(_dataVault))
+            _dataVault = BindVaultCold();
+            if (EnsureVaultState(_dataVault) && HydrateColdDefaultsAndPenaltyRules())
+            {
                 RegisterDispatcherPhases();
+            }
         }
 
         private void OnDisable()
@@ -164,6 +167,7 @@ namespace Hecton8.Physiology
 
             CompleteActiveJobForTeardown();
             ClearRespawnDearLieVisualIfNeeded();
+            UnregisterDispatcherPhases();
             IDataVault previousVault = previousService as IDataVault;
             if (previousVault == null)
                 previousVault = _dataVault;
@@ -172,8 +176,10 @@ namespace Hecton8.Physiology
             ClearCachedHandles();
             _defaultsInitialized = false;
             _dumpedFault = false;
-            if (_dataVault != null && EnsureVaultState(_dataVault))
-                InitializeDefaultVaultContents();
+            if (_dataVault != null && EnsureVaultState(_dataVault) && HydrateColdDefaultsAndPenaltyRules())
+            {
+                RegisterDispatcherPhases();
+            }
         }
 
         private void PreSimulationTick(in DispatcherTimingDTO timing)
@@ -187,7 +193,8 @@ namespace Hecton8.Physiology
                 if (!_activeHandle.IsCompleted)
                     return;
 
-                TryFinalizeActiveJobNoWait();
+                if (!TryFinalizeActiveJobNoWait())
+                    return;
             }
 
             _lastQualityWeight = ResolveQualityWeight();
@@ -220,16 +227,27 @@ namespace Hecton8.Physiology
                 if (!_activeHandle.IsCompleted)
                     return JobHandle.CombineDependencies(dependsOn, _activeHandle);
 
-                TryFinalizeActiveJobNoWait();
+                if (!TryFinalizeActiveJobNoWait())
+                    return JobHandle.CombineDependencies(dependsOn, _activeHandle);
             }
 
-            if (!TryResolveJobPointers(vault, out JobPointers pointers))
+            if (!HasPendingRespawnWork(vault))
                 return dependsOn;
+
+            if (!TryLockJobBuffers(vault))
+                return dependsOn;
+
+            if (!TryResolveJobPointers(vault, out JobPointers pointers))
+            {
+                UnlockJobBuffers();
+                return dependsOn;
+            }
 
             if ((pointers.Request->Flags & ShinobuRespawnFlags.PendingRequest) == 0u &&
                 (pointers.State->Flags & ShinobuRespawnFlags.RespawnActive) == 0u &&
                 pointers.Fade->DeathFadeIntensity <= 0.0001f)
             {
+                UnlockJobBuffers();
                 return dependsOn;
             }
 
@@ -237,46 +255,56 @@ namespace Hecton8.Physiology
             _lastQualityWeight = ResolveQualityWeight();
             long start = Stopwatch.GetTimestamp();
 
-            ResetPlayerPhysiologyJob resetJob = default;
-            resetJob.RespawnState = pointers.State;
-            resetJob.RespawnRequest = pointers.Request;
-            resetJob.MedicalBays = pointers.MedicalBays;
-            resetJob.RespawnFade = pointers.Fade;
-            resetJob.TelemetryRing = pointers.Telemetry;
-            resetJob.TelemetryCursor = pointers.TelemetryCursor;
-            resetJob.Tuning = pointers.Tuning;
-            resetJob.PenaltyRules = pointers.PenaltyRules;
-            resetJob.PenaltyRuleCount = pointers.PenaltyRuleCount;
-            resetJob.Vitals = pointers.Vitals;
-            resetJob.Decompression = pointers.Decompression;
-            resetJob.Tissues = pointers.Tissues;
-            resetJob.Scalars = pointers.Scalars;
-            resetJob.Metabolism = pointers.Metabolism;
-            resetJob.PlayerKinematic = pointers.PlayerKinematic;
-            resetJob.InventoryCommands = SignalBus<InventoryCommandSignal>.ParallelWriter;
-            resetJob.MedicalBayCount = pointers.MedicalBayCount;
-            resetJob.TissueCount = pointers.TissueCount;
-            resetJob.PenaltyCapacity = pointers.PenaltyCapacity;
-            resetJob.Frame = context.Frame;
-            resetJob.GlobalQualityWeight = _lastQualityWeight;
-            resetJob.ScheduleMicroseconds = _lastScheduleMicroseconds;
-            JobHandle resetHandle = resetJob.Schedule(dependsOn);
+            try
+            {
+                ResetPlayerPhysiologyJob resetJob = default;
+                resetJob.RespawnState = pointers.State;
+                resetJob.RespawnRequest = pointers.Request;
+                resetJob.MedicalBays = pointers.MedicalBays;
+                resetJob.RespawnFade = pointers.Fade;
+                resetJob.TelemetryRing = pointers.Telemetry;
+                resetJob.TelemetryCursor = pointers.TelemetryCursor;
+                resetJob.Tuning = pointers.Tuning;
+                resetJob.PenaltyRules = pointers.PenaltyRules;
+                resetJob.PenaltyRuleCount = pointers.PenaltyRuleCount;
+                resetJob.Vitals = pointers.Vitals;
+                resetJob.Decompression = pointers.Decompression;
+                resetJob.Tissues = pointers.Tissues;
+                resetJob.Scalars = pointers.Scalars;
+                resetJob.Metabolism = pointers.Metabolism;
+                resetJob.PlayerKinematic = pointers.PlayerKinematic;
+                resetJob.InventoryCommands = SignalBus<InventoryCommandSignal>.ParallelWriter;
+                resetJob.MedicalBayCount = pointers.MedicalBayCount;
+                resetJob.TissueCount = pointers.TissueCount;
+                resetJob.PenaltyCapacity = pointers.PenaltyCapacity;
+                resetJob.Frame = context.Frame;
+                resetJob.GlobalQualityWeight = _lastQualityWeight;
+                resetJob.ScheduleMicroseconds = _lastScheduleMicroseconds;
+                JobHandle resetHandle = resetJob.Schedule(dependsOn);
+                _activeHandle = resetHandle;
+                _jobScheduled = true;
+                H8Memory.RegisterActiveJob(OwnerSystem, _activeHandle);
 
-            float dt = ResolveSimulationDelta(in timing);
-            UpdateRespawnFadeJob fadeJob = default;
-            fadeJob.RespawnState = pointers.State;
-            fadeJob.RespawnFade = pointers.Fade;
-            fadeJob.Tuning = pointers.Tuning;
-            fadeJob.DeltaSeconds = dt;
-            fadeJob.GlobalQualityWeight = _lastQualityWeight;
-            fadeJob.Frame = context.Frame;
-            JobHandle fadeHandle = fadeJob.Schedule(resetHandle);
+                float dt = ResolveSimulationDelta(in timing);
+                UpdateRespawnFadeJob fadeJob = default;
+                fadeJob.RespawnState = pointers.State;
+                fadeJob.RespawnFade = pointers.Fade;
+                fadeJob.Tuning = pointers.Tuning;
+                fadeJob.DeltaSeconds = dt;
+                fadeJob.GlobalQualityWeight = _lastQualityWeight;
+                fadeJob.Frame = context.Frame;
+                JobHandle fadeHandle = fadeJob.Schedule(resetHandle);
 
-            _activeHandle = fadeHandle;
-            _jobScheduled = true;
-            _lastScheduleMicroseconds = (float)((Stopwatch.GetTimestamp() - start) * s_ticksToMicroseconds);
-            H8Memory.RegisterActiveJob(OwnerSystem, _activeHandle);
-            return _activeHandle;
+                _activeHandle = fadeHandle;
+                _lastScheduleMicroseconds = (float)((Stopwatch.GetTimestamp() - start) * s_ticksToMicroseconds);
+                H8Memory.RegisterActiveJob(OwnerSystem, _activeHandle);
+                return _activeHandle;
+            }
+            finally
+            {
+                if (!_jobScheduled)
+                    UnlockJobBuffers();
+            }
         }
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
@@ -295,7 +323,8 @@ namespace Hecton8.Physiology
                 if (!_activeHandle.IsCompleted)
                     return;
 
-                TryFinalizeActiveJobNoWait();
+                if (!TryFinalizeActiveJobNoWait())
+                    return;
             }
 
             IDataVault vault = _dataVault;
@@ -447,7 +476,7 @@ namespace Hecton8.Physiology
 
         private bool EnsureVaultState()
         {
-            IDataVault vault = ResolveVaultCold();
+            IDataVault vault = BindVaultCold();
             return vault != null && EnsureVaultState(vault);
         }
 
@@ -478,12 +507,12 @@ namespace Hecton8.Physiology
                 TryAcquireOwnedVaultDescriptor(vault, ShinobuRespawnConstants.RespawnPenaltyRulesBuffer, ShinobuRespawnConstants.PenaltyRuleCapacity, NativeArrayOptions.UninitializedMemory, out _penaltyRulesHandle) &&
                 TryAcquireOwnedVaultDescriptor(vault, ShinobuRespawnConstants.RespawnPenaltyRuleCountBuffer, 1, NativeArrayOptions.UninitializedMemory, out _penaltyRuleCountHandle) &&
                 TryAcquireOwnedVaultDescriptor(vault, ShinobuRespawnConstants.RespawnCsvScratchBuffer, ShinobuRespawnConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out _csvScratchHandle) &&
-                TryGetExistingVaultDescriptor(vault, BufferID.ShinobuPhysiologyVitals, 1, out _vitalsHandle) &&
-                TryGetExistingVaultDescriptor(vault, BufferID.ShinobuDecompressionStates, 1, out _decompressionHandle) &&
-                TryGetExistingVaultDescriptor(vault, BufferID.ShinobuTissueCompartments, 1, out _tissueHandle) &&
-                TryGetExistingVaultDescriptor(vault, BufferID.ShinobuPhysiologyScalars, 1, out _scalarHandle) &&
-                TryGetExistingVaultDescriptor(vault, ShinobuMetabolismConstants.MetabolismStatesBuffer, 1, out _metabolismHandle) &&
-                TryGetExistingVaultDescriptor(vault, BufferID.PlayerKinematicState, 1, out _playerKinematicHandle);
+                TryGetExistingVaultDescriptor(vault, BufferID.ShinobuPhysiologyVitals, OwnerSystem, 1, out _vitalsHandle) &&
+                TryGetExistingVaultDescriptor(vault, BufferID.ShinobuDecompressionStates, OwnerSystem, 1, out _decompressionHandle) &&
+                TryGetExistingVaultDescriptor(vault, BufferID.ShinobuTissueCompartments, OwnerSystem, 1, out _tissueHandle) &&
+                TryGetExistingVaultDescriptor(vault, BufferID.ShinobuPhysiologyScalars, OwnerSystem, 1, out _scalarHandle) &&
+                TryGetExistingVaultDescriptor(vault, ShinobuMetabolismConstants.MetabolismStatesBuffer, OwnerSystem, 1, out _metabolismHandle) &&
+                TryGetExistingVaultDescriptor(vault, BufferID.PlayerKinematicState, OwnerSystem, 1, out _playerKinematicHandle);
             if (!created)
             {
                 ReleaseOwnedVaultDescriptors(vault);
@@ -495,42 +524,52 @@ namespace Hecton8.Physiology
 
         private bool AreVaultHandlesCreated()
         {
-            return IsVaultDescriptorCreated(in _stateHandle) &&
-                   IsVaultDescriptorCreated(in _requestHandle) &&
-                   IsVaultDescriptorCreated(in _medicalBayHandle) &&
-                   IsVaultDescriptorCreated(in _fadeHandle) &&
-                   IsVaultDescriptorCreated(in _telemetryHandle) &&
-                   IsVaultDescriptorCreated(in _telemetryCursorHandle) &&
-                   IsVaultDescriptorCreated(in _tuningHandle) &&
-                   IsVaultDescriptorCreated(in _penaltyRulesHandle) &&
-                   IsVaultDescriptorCreated(in _penaltyRuleCountHandle) &&
-                   IsVaultDescriptorCreated(in _csvScratchHandle) &&
-                   IsVaultDescriptorCreated(in _vitalsHandle) &&
-                   IsVaultDescriptorCreated(in _decompressionHandle) &&
-                   IsVaultDescriptorCreated(in _tissueHandle) &&
-                   IsVaultDescriptorCreated(in _scalarHandle) &&
-                   IsVaultDescriptorCreated(in _metabolismHandle) &&
-                   IsVaultDescriptorCreated(in _playerKinematicHandle);
+            return AreOwnedVaultHandlesCreated() &&
+                   IsVaultDescriptorOwnedBy(in _vitalsHandle, OwnerSystem) &&
+                   IsVaultDescriptorOwnedBy(in _decompressionHandle, OwnerSystem) &&
+                   IsVaultDescriptorOwnedBy(in _tissueHandle, OwnerSystem) &&
+                   IsVaultDescriptorOwnedBy(in _scalarHandle, OwnerSystem) &&
+                   IsVaultDescriptorOwnedBy(in _metabolismHandle, OwnerSystem) &&
+                   IsVaultDescriptorOwnedBy(in _playerKinematicHandle, OwnerSystem);
+        }
+
+        private bool AreOwnedVaultHandlesCreated()
+        {
+            return IsOwnedVaultDescriptor(in _stateHandle) &&
+                   IsOwnedVaultDescriptor(in _requestHandle) &&
+                   IsOwnedVaultDescriptor(in _medicalBayHandle) &&
+                   IsOwnedVaultDescriptor(in _fadeHandle) &&
+                   IsOwnedVaultDescriptor(in _telemetryHandle) &&
+                   IsOwnedVaultDescriptor(in _telemetryCursorHandle) &&
+                   IsOwnedVaultDescriptor(in _tuningHandle) &&
+                   IsOwnedVaultDescriptor(in _penaltyRulesHandle) &&
+                   IsOwnedVaultDescriptor(in _penaltyRuleCountHandle) &&
+                   IsOwnedVaultDescriptor(in _csvScratchHandle);
         }
 
         private bool AreVaultHandlesResolvable(IDataVault vault)
         {
-            return IsVaultDescriptorResolvable(vault, in _stateHandle, 1) &&
-                   IsVaultDescriptorResolvable(vault, in _requestHandle, 1) &&
-                   IsVaultDescriptorResolvable(vault, in _medicalBayHandle, ShinobuRespawnConstants.MockMedicalBayCapacity) &&
-                   IsVaultDescriptorResolvable(vault, in _fadeHandle, 1) &&
-                   IsVaultDescriptorResolvable(vault, in _telemetryHandle, ShinobuRespawnConstants.TelemetryFrameCount) &&
-                   IsVaultDescriptorResolvable(vault, in _telemetryCursorHandle, 1) &&
-                   IsVaultDescriptorResolvable(vault, in _tuningHandle, 1) &&
-                   IsVaultDescriptorResolvable(vault, in _penaltyRulesHandle, ShinobuRespawnConstants.PenaltyRuleCapacity) &&
-                   IsVaultDescriptorResolvable(vault, in _penaltyRuleCountHandle, 1) &&
-                   IsVaultDescriptorResolvable(vault, in _csvScratchHandle, ShinobuRespawnConstants.CsvScratchBytes) &&
-                   IsVaultDescriptorResolvable(vault, in _vitalsHandle, 1) &&
-                   IsVaultDescriptorResolvable(vault, in _decompressionHandle, 1) &&
-                   IsVaultDescriptorResolvable(vault, in _tissueHandle, 1) &&
-                   IsVaultDescriptorResolvable(vault, in _scalarHandle, 1) &&
-                   IsVaultDescriptorResolvable(vault, in _metabolismHandle, 1) &&
-                   IsVaultDescriptorResolvable(vault, in _playerKinematicHandle, 1);
+            return AreOwnedVaultHandlesResolvable(vault) &&
+                   IsVaultDescriptorResolvableByOwner(vault, in _vitalsHandle, OwnerSystem, 1) &&
+                   IsVaultDescriptorResolvableByOwner(vault, in _decompressionHandle, OwnerSystem, 1) &&
+                   IsVaultDescriptorResolvableByOwner(vault, in _tissueHandle, OwnerSystem, 1) &&
+                   IsVaultDescriptorResolvableByOwner(vault, in _scalarHandle, OwnerSystem, 1) &&
+                   IsVaultDescriptorResolvableByOwner(vault, in _metabolismHandle, OwnerSystem, 1) &&
+                   IsVaultDescriptorResolvableByOwner(vault, in _playerKinematicHandle, OwnerSystem, 1);
+        }
+
+        private bool AreOwnedVaultHandlesResolvable(IDataVault vault)
+        {
+            return IsOwnedVaultDescriptorResolvable(vault, in _stateHandle, 1) &&
+                   IsOwnedVaultDescriptorResolvable(vault, in _requestHandle, 1) &&
+                   IsOwnedVaultDescriptorResolvable(vault, in _medicalBayHandle, ShinobuRespawnConstants.MockMedicalBayCapacity) &&
+                   IsOwnedVaultDescriptorResolvable(vault, in _fadeHandle, 1) &&
+                   IsOwnedVaultDescriptorResolvable(vault, in _telemetryHandle, ShinobuRespawnConstants.TelemetryFrameCount) &&
+                   IsOwnedVaultDescriptorResolvable(vault, in _telemetryCursorHandle, 1) &&
+                   IsOwnedVaultDescriptorResolvable(vault, in _tuningHandle, 1) &&
+                   IsOwnedVaultDescriptorResolvable(vault, in _penaltyRulesHandle, ShinobuRespawnConstants.PenaltyRuleCapacity) &&
+                   IsOwnedVaultDescriptorResolvable(vault, in _penaltyRuleCountHandle, 1) &&
+                   IsOwnedVaultDescriptorResolvable(vault, in _csvScratchHandle, ShinobuRespawnConstants.CsvScratchBytes);
         }
 
         private bool HasHotVaultState(IDataVault vault)
@@ -543,22 +582,27 @@ namespace Hecton8.Physiology
 
         private bool AreVaultGenerationsCurrent(IDataVault vault)
         {
-            return IsVaultGenerationCurrent(vault, in _stateHandle) &&
-                   IsVaultGenerationCurrent(vault, in _requestHandle) &&
-                   IsVaultGenerationCurrent(vault, in _medicalBayHandle) &&
-                   IsVaultGenerationCurrent(vault, in _fadeHandle) &&
-                   IsVaultGenerationCurrent(vault, in _telemetryHandle) &&
-                   IsVaultGenerationCurrent(vault, in _telemetryCursorHandle) &&
-                   IsVaultGenerationCurrent(vault, in _tuningHandle) &&
-                   IsVaultGenerationCurrent(vault, in _penaltyRulesHandle) &&
-                   IsVaultGenerationCurrent(vault, in _penaltyRuleCountHandle) &&
-                   IsVaultGenerationCurrent(vault, in _csvScratchHandle) &&
-                   IsVaultGenerationCurrent(vault, in _vitalsHandle) &&
-                   IsVaultGenerationCurrent(vault, in _decompressionHandle) &&
-                   IsVaultGenerationCurrent(vault, in _tissueHandle) &&
-                   IsVaultGenerationCurrent(vault, in _scalarHandle) &&
-                   IsVaultGenerationCurrent(vault, in _metabolismHandle) &&
-                   IsVaultGenerationCurrent(vault, in _playerKinematicHandle);
+            return AreOwnedVaultGenerationsCurrent(vault) &&
+                   IsVaultGenerationCurrentByOwner(vault, in _vitalsHandle, OwnerSystem) &&
+                   IsVaultGenerationCurrentByOwner(vault, in _decompressionHandle, OwnerSystem) &&
+                   IsVaultGenerationCurrentByOwner(vault, in _tissueHandle, OwnerSystem) &&
+                   IsVaultGenerationCurrentByOwner(vault, in _scalarHandle, OwnerSystem) &&
+                   IsVaultGenerationCurrentByOwner(vault, in _metabolismHandle, OwnerSystem) &&
+                   IsVaultGenerationCurrentByOwner(vault, in _playerKinematicHandle, OwnerSystem);
+        }
+
+        private bool AreOwnedVaultGenerationsCurrent(IDataVault vault)
+        {
+            return IsOwnedVaultGenerationCurrent(vault, in _stateHandle) &&
+                   IsOwnedVaultGenerationCurrent(vault, in _requestHandle) &&
+                   IsOwnedVaultGenerationCurrent(vault, in _medicalBayHandle) &&
+                   IsOwnedVaultGenerationCurrent(vault, in _fadeHandle) &&
+                   IsOwnedVaultGenerationCurrent(vault, in _telemetryHandle) &&
+                   IsOwnedVaultGenerationCurrent(vault, in _telemetryCursorHandle) &&
+                   IsOwnedVaultGenerationCurrent(vault, in _tuningHandle) &&
+                   IsOwnedVaultGenerationCurrent(vault, in _penaltyRulesHandle) &&
+                   IsOwnedVaultGenerationCurrent(vault, in _penaltyRuleCountHandle) &&
+                   IsOwnedVaultGenerationCurrent(vault, in _csvScratchHandle);
         }
 
         private static bool IsVaultDescriptorCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
@@ -566,12 +610,35 @@ namespace Hecton8.Physiology
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
+        private static bool IsOwnedVaultDescriptor<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return IsVaultDescriptorOwnedBy(in handle, OwnerSystem);
+        }
+
+        private static bool IsVaultDescriptorOwnedBy<T>(in VaultGenerationHandle<T> handle, SystemID owner) where T : struct
+        {
+            return IsVaultDescriptorCreated(in handle) && handle.SystemID == (uint)owner;
+        }
+
         private static bool IsVaultGenerationCurrent<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
         {
-            BufferID bufferId = unchecked((BufferID)(int)handle.BufferID);
             return IsVaultDescriptorCreated(in handle) &&
-                   vault.TryGetBufferGeneration(bufferId, out uint generation) &&
-                   generation == handle.Generation;
+                   TryResolveVaultBuffer(vault, in handle, out NativeArray<T> buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static bool IsOwnedVaultGenerationCurrent<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return IsOwnedVaultDescriptor(in handle) && IsVaultGenerationCurrent(vault, in handle);
+        }
+
+        private static bool IsVaultGenerationCurrentByOwner<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            SystemID owner) where T : struct
+        {
+            return IsVaultDescriptorOwnedBy(in handle, owner) &&
+                   IsVaultGenerationCurrent(vault, in handle);
         }
 
         private static bool IsVaultDescriptorResolvable<T>(
@@ -582,6 +649,25 @@ namespace Hecton8.Physiology
             return TryResolveVaultBuffer(vault, in handle, out NativeArray<T> buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
+        }
+
+        private static bool IsOwnedVaultDescriptorResolvable<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength) where T : struct
+        {
+            return IsOwnedVaultDescriptor(in handle) &&
+                   IsVaultDescriptorResolvable(vault, in handle, requiredLength);
+        }
+
+        private static bool IsVaultDescriptorResolvableByOwner<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            SystemID owner,
+            int requiredLength) where T : struct
+        {
+            return IsVaultDescriptorOwnedBy(in handle, owner) &&
+                   IsVaultDescriptorResolvable(vault, in handle, requiredLength);
         }
 
         private static bool HasRequiredLength<T>(NativeArray<T> buffer, int requiredLength) where T : struct
@@ -600,12 +686,20 @@ namespace Hecton8.Physiology
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (vault.TryGetGenerationHandle<T>(bufferId, out handle) &&
-                TryResolveVaultBuffer(vault, in handle, out NativeArray<T> existing) &&
-                existing.IsCreated &&
-                existing.Length >= requiredLength)
+            if (vault.TryGetGenerationHandle<T>(bufferId, out handle))
             {
-                return true;
+                if (!IsOwnedVaultDescriptor(in handle))
+                {
+                    handle = default;
+                    return false;
+                }
+
+                if (TryResolveVaultBuffer(vault, in handle, out NativeArray<T> existing) &&
+                    existing.IsCreated &&
+                    existing.Length >= requiredLength)
+                {
+                    return true;
+                }
             }
 
             handle = default;
@@ -613,7 +707,8 @@ namespace Hecton8.Physiology
                 return false;
 
             handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
-            return TryResolveVaultBuffer(vault, in handle, out NativeArray<T> created) &&
+            return IsOwnedVaultDescriptor(in handle) &&
+                   TryResolveVaultBuffer(vault, in handle, out NativeArray<T> created) &&
                    created.IsCreated &&
                    created.Length >= requiredLength;
         }
@@ -621,6 +716,7 @@ namespace Hecton8.Physiology
         private static bool TryGetExistingVaultDescriptor<T>(
             IDataVault vault,
             BufferID bufferId,
+            SystemID expectedOwner,
             int requiredLength,
             out VaultGenerationHandle<T> handle) where T : struct
         {
@@ -629,6 +725,7 @@ namespace Hecton8.Physiology
                 return false;
 
             return vault.TryGetGenerationHandle<T>(bufferId, out handle) &&
+                   IsVaultDescriptorOwnedBy(in handle, expectedOwner) &&
                    TryResolveVaultBuffer(vault, in handle, out NativeArray<T> existing) &&
                    existing.IsCreated &&
                    existing.Length >= requiredLength;
@@ -666,7 +763,7 @@ namespace Hecton8.Physiology
 
         private static void ReleaseVaultDescriptor<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
         {
-            if (IsVaultDescriptorCreated(in handle))
+            if (IsOwnedVaultDescriptor(in handle))
                 vault.ReleaseBuffer(in handle);
         }
 
@@ -711,12 +808,25 @@ namespace Hecton8.Physiology
             mockJob.MedicalBays = bays;
             mockJob.FallbackLifepodAUP = defaultTuning.FallbackLifepodAUP;
             mockJob.ValidationClearanceMeters = defaultTuning.ValidationClearanceMeters;
-            JobHandle mockHandle = mockJob.Schedule(bays.Length, 1);
-            H8Memory.RegisterActiveJob(OwnerSystem, mockHandle);
-            // COLD SYNC JOB: default med-bay rows must exist before dispatcher phase registration consumes them.
-            DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
+            mockJob.Run(bays.Length);
 
             _defaultsInitialized = true;
+        }
+
+        private bool HydrateColdDefaultsAndPenaltyRules()
+        {
+            if (!_defaultsInitialized)
+                InitializeDefaultVaultContents();
+
+            if (!_defaultsInitialized)
+                return false;
+
+            if (_defaultsInitialized && !_penaltyCsvInitialized)
+            {
+                _penaltyCsvInitialized = TryLoadPenaltyCsv();
+            }
+
+            return true;
         }
 
         private bool TryResolveJobPointers(IDataVault vault, out JobPointers pointers)
@@ -776,6 +886,91 @@ namespace Hecton8.Physiology
             pointers.TissueCount = tissues.Length;
             pointers.PenaltyCapacity = penalty.Length;
             return true;
+        }
+
+        private bool HasPendingRespawnWork(IDataVault vault)
+        {
+            NativeArray<RespawnRequestDTO> request = ResolveVaultBuffer(vault, in _requestHandle);
+            NativeArray<RespawnStateDTO> state = ResolveVaultBuffer(vault, in _stateHandle);
+            NativeArray<RespawnFadeDTO> fade = ResolveVaultBuffer(vault, in _fadeHandle);
+            if (!HasRequiredLength(request, 1) ||
+                !HasRequiredLength(state, 1) ||
+                !HasRequiredLength(fade, 1))
+            {
+                return false;
+            }
+
+            return (request[0].Flags & ShinobuRespawnFlags.PendingRequest) != 0u ||
+                   (state[0].Flags & ShinobuRespawnFlags.RespawnActive) != 0u ||
+                   fade[0].DeathFadeIntensity > 0.0001f;
+        }
+
+        private bool TryLockJobBuffers(IDataVault vault)
+        {
+            if (vault == null || _jobBuffersLocked)
+                return false;
+
+            int locked = 0;
+            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnStateBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnRequestBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.MedicalBayRespawnPointsBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnFadeBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnTelemetryRingBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnTuningBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnPenaltyRulesBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, ShinobuRespawnConstants.RespawnPenaltyRuleCountBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, BufferID.ShinobuPhysiologyVitals, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, BufferID.ShinobuDecompressionStates, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, BufferID.ShinobuTissueCompartments, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, BufferID.ShinobuPhysiologyScalars, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, ShinobuMetabolismConstants.MetabolismStatesBuffer, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+            if (!TryLockJobBuffer(vault, BufferID.PlayerKinematicState, ref locked)) { UnlockLockedJobBuffers(vault, locked); return false; }
+
+            _jobBuffersLocked = true;
+            return true;
+        }
+
+        private static bool TryLockJobBuffer(IDataVault vault, BufferID bufferId, ref int locked)
+        {
+            if (!vault.TryLockBuffer(bufferId, OwnerSystem))
+                return false;
+
+            locked++;
+            return true;
+        }
+
+        private void UnlockJobBuffers()
+        {
+            if (!_jobBuffersLocked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                UnlockLockedJobBuffers(vault, JobBufferLockCount);
+            _jobBuffersLocked = false;
+        }
+
+        private static void UnlockLockedJobBuffers(IDataVault vault, int lockedCount)
+        {
+            if (vault == null)
+                return;
+
+            if (lockedCount >= 15) vault.TryUnlockBuffer(BufferID.PlayerKinematicState, OwnerSystem);
+            if (lockedCount >= 14) vault.TryUnlockBuffer(ShinobuMetabolismConstants.MetabolismStatesBuffer, OwnerSystem);
+            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyScalars, OwnerSystem);
+            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.ShinobuTissueCompartments, OwnerSystem);
+            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.ShinobuDecompressionStates, OwnerSystem);
+            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.ShinobuPhysiologyVitals, OwnerSystem);
+            if (lockedCount >= 9) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnPenaltyRuleCountBuffer, OwnerSystem);
+            if (lockedCount >= 8) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnPenaltyRulesBuffer, OwnerSystem);
+            if (lockedCount >= 7) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTuningBuffer, OwnerSystem);
+            if (lockedCount >= 6) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer, OwnerSystem);
+            if (lockedCount >= 5) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnTelemetryRingBuffer, OwnerSystem);
+            if (lockedCount >= 4) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnFadeBuffer, OwnerSystem);
+            if (lockedCount >= 3) vault.TryUnlockBuffer(ShinobuRespawnConstants.MedicalBayRespawnPointsBuffer, OwnerSystem);
+            if (lockedCount >= 2) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnRequestBuffer, OwnerSystem);
+            if (lockedCount >= 1) vault.TryUnlockBuffer(ShinobuRespawnConstants.RespawnStateBuffer, OwnerSystem);
         }
 
         private bool TryLoadPenaltyCsv()
@@ -932,10 +1127,13 @@ namespace Hecton8.Physiology
             fade = default;
             tuning = default;
             ShinobuRespawnReconciliationRuntime runtime = s_active;
-            if (runtime == null || !runtime.EnsureVaultState() || !runtime.TryPrepareEditorVaultAccess())
+            if (runtime == null)
                 return false;
 
-            IDataVault vault = runtime.ResolveVaultCold();
+            IDataVault vault = runtime._dataVault;
+            if (!runtime.HasHotVaultState(vault) || runtime._jobScheduled)
+                return false;
+
             NativeArray<RespawnFadeDTO> fadeArray = ResolveVaultBuffer(vault, in runtime._fadeHandle);
             NativeArray<RespawnTuningDTO> tuningArray = ResolveVaultBuffer(vault, in runtime._tuningHandle);
             if (!HasRequiredLength(fadeArray, 1) || !HasRequiredLength(tuningArray, 1))
@@ -949,10 +1147,10 @@ namespace Hecton8.Physiology
         public static bool TryWriteEditorTuning(in RespawnTuningDTO tuning)
         {
             ShinobuRespawnReconciliationRuntime runtime = s_active;
-            if (runtime == null || !runtime.EnsureVaultState() || !runtime.TryPrepareEditorVaultAccess())
+            if (runtime == null || !runtime.EnsureVaultState() || !runtime.FinalizeCompletedEditorFenceForMutation())
                 return false;
 
-            IDataVault vault = runtime.ResolveVaultCold();
+            IDataVault vault = runtime._dataVault;
             NativeArray<RespawnTuningDTO> tuningArray = ResolveVaultBuffer(vault, in runtime._tuningHandle);
             if (!HasRequiredLength(tuningArray, 1))
                 return false;
@@ -966,10 +1164,14 @@ namespace Hecton8.Physiology
         public static bool TryReloadPenaltyCsvFromEditor()
         {
             ShinobuRespawnReconciliationRuntime runtime = s_active;
-            return runtime != null &&
-                   runtime.EnsureVaultState() &&
-                   runtime.TryPrepareEditorVaultAccess() &&
-                   runtime.TryLoadPenaltyCsv();
+            if (runtime == null ||
+                !runtime.EnsureVaultState() ||
+                !runtime.FinalizeCompletedEditorFenceForMutation())
+                return false;
+
+            bool loaded = runtime.TryLoadPenaltyCsv();
+            runtime._penaltyCsvInitialized = loaded;
+            return loaded;
         }
 
         public static bool TryDumpBlackBoxForEditor()
@@ -977,7 +1179,7 @@ namespace Hecton8.Physiology
             ShinobuRespawnReconciliationRuntime runtime = s_active;
             return runtime != null &&
                    runtime.EnsureVaultState() &&
-                   runtime.TryPrepareEditorVaultAccess() &&
+                   runtime.FinalizeCompletedEditorFenceForMutation() &&
                    runtime.TryDumpTelemetry(runtime._dumpPath, 0u) &&
                    runtime.TryDumpTelemetry(runtime._legacyDumpPath, 0u);
         }
@@ -985,7 +1187,7 @@ namespace Hecton8.Physiology
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
-            IDataVault vault = _dataVault != null ? _dataVault : ResolveVaultCold();
+            IDataVault vault = _dataVault;
             if (vault == null || !IsVaultDescriptorCreated(in _medicalBayHandle))
                 return;
 
@@ -1031,6 +1233,7 @@ namespace Hecton8.Physiology
                 return false;
 
             _jobScheduled = false;
+            UnlockJobBuffers();
             return true;
         }
 
@@ -1043,9 +1246,10 @@ namespace Hecton8.Physiology
                 return;
 
             _jobScheduled = false;
+            UnlockJobBuffers();
         }
 
-        private bool TryPrepareEditorVaultAccess()
+        private bool FinalizeCompletedEditorFenceForMutation()
         {
             TryFinalizeActiveJobNoWait();
             return !_jobScheduled;
@@ -1117,14 +1321,12 @@ namespace Hecton8.Physiology
             _registeredHotSwap = false;
         }
 
-        private IDataVault ResolveVaultCold()
+        private IDataVault BindVaultCold()
         {
             if (_dataVault != null)
                 return _dataVault;
 
             _dataVault = GlobalRegistry.DataVault;
-            if (_dataVault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
-                _dataVault = latestVault;
             return _dataVault;
         }
 
@@ -1147,6 +1349,7 @@ namespace Hecton8.Physiology
             _metabolismHandle = default;
             _playerKinematicHandle = default;
             _defaultsInitialized = false;
+            _penaltyCsvInitialized = false;
             _respawnDearLieVisualActive = false;
         }
 
@@ -1420,7 +1623,7 @@ namespace Hecton8.Physiology
             return true;
         }
 
-        private static string ResolveProjectRoot()
+        private static string BuildProjectRootPathCold()
         {
             string dataPath = Application.dataPath;
             return string.IsNullOrEmpty(dataPath) ? "." : Path.GetFullPath(Path.Combine(dataPath, ".."));

@@ -25,6 +25,7 @@ using Hecton8.Core;
 using Hecton8.World;
 using Unity.Jobs;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Profiling;
@@ -265,7 +266,7 @@ public static class HectonNoise
 // ════════════════════════════════════════════════════════════════════════════════
 #region Jobs
 
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct HectonVertexJob : IJobParallelFor
 {
     public int resX, resZ;
@@ -292,13 +293,13 @@ public struct HectonVertexJob : IJobParallelFor
     public float caveThresh, caveMinY;
     public NoiseData caveNoise;
 
-    [ReadOnly] public NativeArray<float> westLUT, eastLUT, biomeLUT;
+    [ReadOnly, NoAlias] public NativeArray<float> westLUT, eastLUT, biomeLUT;
 
-    [WriteOnly] public NativeArray<Vector3> outVerts;
-    [WriteOnly] public NativeArray<Vector2> outUVs;
-    [WriteOnly] public NativeArray<float>   outCave;
-    [WriteOnly] public NativeArray<byte>    outIsCave;
-    [WriteOnly] public NativeArray<float>   outBiome;
+    [WriteOnly, NoAlias] public NativeArray<Vector3> outVerts;
+    [WriteOnly, NoAlias] public NativeArray<Vector2> outUVs;
+    [WriteOnly, NoAlias] public NativeArray<float>   outCave;
+    [WriteOnly, NoAlias] public NativeArray<byte>    outIsCave;
+    [WriteOnly, NoAlias] public NativeArray<float>   outBiome;
 
     public void Execute(int idx)
     {
@@ -389,12 +390,12 @@ public struct HectonVertexJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct HectonNormalJob : IJobParallelFor
 {
     public int resX, resZ;
-    [ReadOnly]  public NativeArray<Vector3> vertices;
-    [WriteOnly] public NativeArray<Vector3> normals;
+    [ReadOnly, NoAlias]  public NativeArray<Vector3> vertices;
+    [WriteOnly, NoAlias] public NativeArray<Vector3> normals;
 
     public void Execute(int idx)
     {
@@ -413,18 +414,18 @@ public struct HectonNormalJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct HectonColorJob : IJobParallelFor
 {
     public float maxDepth, caveThresh, caveEdge;
 
-    [ReadOnly] public NativeArray<Vector3> verts;
-    [ReadOnly] public NativeArray<Vector3> norms;
-    [ReadOnly] public NativeArray<float>   cave;
-    [ReadOnly] public NativeArray<byte>    isCave;
-    [ReadOnly] public NativeArray<float>   biome;
+    [ReadOnly, NoAlias] public NativeArray<Vector3> verts;
+    [ReadOnly, NoAlias] public NativeArray<Vector3> norms;
+    [ReadOnly, NoAlias] public NativeArray<float>   cave;
+    [ReadOnly, NoAlias] public NativeArray<byte>    isCave;
+    [ReadOnly, NoAlias] public NativeArray<float>   biome;
 
-    [WriteOnly] public NativeArray<Color> colors;
+    [WriteOnly, NoAlias] public NativeArray<Color> colors;
 
     public void Execute(int idx)
     {
@@ -449,7 +450,7 @@ public struct HectonColorJob : IJobParallelFor
 // ════════════════════════════════════════════════════════════════════════════════
 #region HectonWorldGenerator
 
-public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IWorldSeedProvider
+public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IWorldSeedProvider, IGlobalRegistryHotSwapListener
 {
     private const int WorldGenerationAlgorithmVersionId = 1;
     private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.WorldGenerator.Tick");
@@ -510,7 +511,6 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         }
     }
 
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     struct PendingPhysicsBake
     {
         public Mesh Mesh;
@@ -523,7 +523,6 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         public byte State;
     }
 
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     private struct DeferredPhysicsBakeTeardown
     {
         public Mesh Mesh;
@@ -551,8 +550,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         public float SumZ;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     struct TerrainColliderBakeJob : IJob
     {
         public EntityId MeshEntityId;
@@ -652,6 +650,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     private const string NativeMemoryOwner = nameof(HectonWorldGenerator);
     private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+    private const Allocator DataVaultExemptWorldGenerationLutAllocator = Allocator.Persistent;
     const int WorldStreamingQueueMaxCapacity = 512;
     const int PendingChunkMaxCapacity = 64;
     const int PendingPhysicsBakeMaxCapacity = 2048;
@@ -672,7 +671,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         public NativeArray<byte>    caveB;
         public NativeArray<float>   biomeV;
         public JobHandle combinedHandle;
-        public bool cancelRequested;
+        public byte cancelRequested;
 
         public void RegisterArrays()
         {
@@ -759,6 +758,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     bool _registeredToTickManager;
     bool _registeredToLateFrame;
     bool _registeredWorldSeedProvider;
+    bool _registeredHotSwapListener;
+    IPlayerRuntimeContext _playerRuntimeContext;
 
     [HideInInspector] public GameObject previewObj;
 
@@ -817,6 +818,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         if (!Application.isPlaying)
             return;
 
+        RefreshColdRegistryReferences();
+        TryRegisterHotSwapListener();
         GlobalRegistry.RegisterWorldSeedProvider(this);
         _registeredWorldSeedProvider = ReferenceEquals(GlobalRegistry.WorldSeedProvider, this);
         StartStreaming();
@@ -829,6 +832,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         _registeredWorldSeedProvider = false;
 
         UnregisterFromTickManager();
+        TryUnregisterHotSwapListener();
 
         if (Application.isPlaying || _streaming || _pendingChunks.Count > 0 || _lutsReady)
             StopStreaming();
@@ -875,28 +879,14 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     void RegisterToTickManager()
     {
-        if (_registeredToTickManager)
-        {
-            if (!_registeredToLateFrame && Application.isPlaying && GlobalRegistry.Dispatcher != null)
-            {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredToLateFrame = SystemDispatcher
-                    .GetLateFrameLane(PriorityLayer.Environment)
-                    .Contains(this);
-            }
-
-            return;
-        }
-
-        if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+        if (!Application.isPlaying)
             return;
 
-        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-        GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-        _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
-        _registeredToLateFrame = SystemDispatcher
-            .GetLateFrameLane(PriorityLayer.Environment)
-            .Contains(this);
+        if (!_registeredToTickManager)
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+
+        if (!_registeredToLateFrame)
+            _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
     }
 
     void UnregisterFromTickManager()
@@ -912,6 +902,45 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
         }
+    }
+
+    void RefreshColdRegistryReferences()
+    {
+        _playerRuntimeContext = GlobalRegistry.Player;
+    }
+
+    public void OnGlobalRegistryServiceReplaced(
+        GlobalRegistryServiceSlot serviceSlot,
+        object previousService,
+        object currentService)
+    {
+        switch (serviceSlot)
+        {
+            case GlobalRegistryServiceSlot.Player:
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                break;
+            case GlobalRegistryServiceSlot.Dispatcher:
+                RegisterToTickManager();
+                EnsureDeferredPhysicsBakeTeardownRegistered();
+                break;
+        }
+    }
+
+    void TryRegisterHotSwapListener()
+    {
+        if (_registeredHotSwapListener || !Application.isPlaying)
+            return;
+
+        _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+    }
+
+    void TryUnregisterHotSwapListener()
+    {
+        if (!_registeredHotSwapListener)
+            return;
+
+        GlobalRegistry.TryUnregisterHotSwapListener(this);
+        _registeredHotSwapListener = false;
     }
 
     void StartStreaming()
@@ -961,7 +990,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             var pc = _pendingChunks[i];
             if (!pc.combinedHandle.IsCompleted)
             {
-                pc.cancelRequested = true;
+                pc.cancelRequested = 1;
                 _pendingChunks[i] = pc;
                 continue;
             }
@@ -979,7 +1008,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         for (int i = _pendingChunks.Count - 1; i >= 0; i--)
         {
             PendingChunk pc = _pendingChunks[i];
-            pc.cancelRequested = true;
+            pc.cancelRequested = 1;
             JobHandle disposalHandle = pc.DisposeArrays(pc.combinedHandle);
             pendingChunkDependency = hasPendingDependency
                 ? JobHandle.CombineDependencies(pendingChunkDependency, disposalHandle)
@@ -1039,7 +1068,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     NativeArray<float> BakeLUT(AnimationCurve curve)
     {
-        var lut = new NativeArray<float>(LUT_RES, Allocator.Persistent);
+        var lut = new NativeArray<float>(LUT_RES, DataVaultExemptWorldGenerationLutAllocator);
         for (int i = 0; i < LUT_RES; i++)
         {
             float t = (float)i / (LUT_RES - 1);
@@ -1106,10 +1135,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     bool TryResolveViewerAup(out AbsoluteUniversePosition viewerAup)
     {
-        IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+        IPlayerRuntimeContext playerContext = _playerRuntimeContext;
         if (playerContext != null &&
             playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
-            MathGuard.IsFinite(in snapshot.Aup))
+            snapshot.Aup.IsFinite())
         {
             viewerAup = snapshot.Aup;
             return true;
@@ -1119,7 +1148,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         if (playerMovement != null)
         {
             AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
-            if (MathGuard.IsFinite(in currentAup))
+            if (currentAup.IsFinite())
             {
                 viewerAup = currentAup;
                 return true;
@@ -1141,10 +1170,11 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     float2 ChunkOrigin(int2 c)
     {
         double safeChunkSize = math.max(1d, (double)chunkSize);
-        Vector3 runtimeOrigin = HectonFloatingOrigin.ToRuntimePosition(new Vector3(
-            (float)(c.x * safeChunkSize),
-            0f,
-            (float)(c.y * safeChunkSize)));
+        double3 chunkOriginAup = new double3(
+            (double)c.x * safeChunkSize,
+            0d,
+            (double)c.y * safeChunkSize);
+        Vector3 runtimeOrigin = HectonFloatingOrigin.ToRuntimePosition(chunkOriginAup);
         return new float2(runtimeOrigin.x, runtimeOrigin.z);
     }
 
@@ -1278,12 +1308,12 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             var pc = _pendingChunks[i];
             if (!_desiredChunks.TryGetValue(pc.coord, out int wantLod) || wantLod != pc.lod)
             {
-                pc.cancelRequested = true;
+                pc.cancelRequested = 1;
                 _pendingChunks[i] = pc;
                 continue;
             }
 
-            pc.cancelRequested = false;
+            pc.cancelRequested = 0;
             _pendingChunks[i] = pc;
         }
 
@@ -1367,7 +1397,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
             DispatcherJobSwap.TryFinalizeCompleted(ref pc.combinedHandle);
 
-            var cd = pc.cancelRequested ? null : FinalizeChunk(pc);
+            var cd = pc.cancelRequested != 0 ? null : FinalizeChunk(pc);
             if (cd != null)
             {
                 if (_active.ContainsKey(pc.coord) || _active.Count < WorldStreamingQueueMaxCapacity)
@@ -1375,7 +1405,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                 else
                     DestroyChunk(cd, allowDeferredRetirement: false);
             }
-            else if (pc.cancelRequested)
+            else if (pc.cancelRequested != 0)
                 pc.DisposeArrays();
 
             _pendingChunks.RemoveAt(i);
@@ -1450,7 +1480,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             caveB          = caveB,
             biomeV         = biomeV,
             combinedHandle = h3,
-            cancelRequested = false
+            cancelRequested = 0
         };
 
         pc.RegisterArrays();
@@ -2155,14 +2185,12 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     private static void EnsureDeferredPhysicsBakeTeardownRegistered()
     {
         if (_deferredPhysicsBakeTeardownRegistered ||
-            !Application.isPlaying ||
-            GlobalRegistry.Dispatcher == null)
+            !Application.isPlaying)
             return;
 
-        GlobalRegistry.RegisterLateFrameTickable(_deferredPhysicsBakeTeardownDriver, PriorityLayer.Environment);
-        _deferredPhysicsBakeTeardownRegistered = SystemDispatcher
-            .GetLateFrameLane(PriorityLayer.Environment)
-            .Contains(_deferredPhysicsBakeTeardownDriver);
+        _deferredPhysicsBakeTeardownRegistered = GlobalRegistry.TryRegisterLateFrameTickable(
+            _deferredPhysicsBakeTeardownDriver,
+            PriorityLayer.Environment);
     }
 
     private static void DrainDeferredPhysicsBakeTeardowns()
@@ -2906,6 +2934,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     {
         GlobalRegistry.UnregisterWorldSeedProvider(this);
         _registeredWorldSeedProvider = false;
+        TryUnregisterHotSwapListener();
 
         if (!Application.isPlaying && !_streaming && _pendingChunks.Count == 0 && !_lutsReady)
         {

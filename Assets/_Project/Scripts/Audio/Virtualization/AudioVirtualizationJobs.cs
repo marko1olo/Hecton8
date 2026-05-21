@@ -16,8 +16,8 @@ namespace Hecton8.Audio.Virtualization
     {
         [NoAlias] public NativeArray<VirtualVoice> Voices;
         [NoAlias] public NativeArray<VirtualVoiceSortKey> SortKeys;
-        [NoAlias] public NativeArray<VirtualVoiceSelection> Selections;
-        [NoAlias] public NativeArray<VirtualVoiceStatistics> Statistics;
+        [WriteOnly, NoAlias] public NativeArray<VirtualVoiceSelection> Selections;
+        [WriteOnly, NoAlias] public NativeArray<VirtualVoiceStatistics> Statistics;
         public AcousticAup ListenerAup;
         public float3 ListenerVelocityMetersPerSecond;
         public MockSDFSampler SdfSampler;
@@ -409,8 +409,8 @@ namespace Hecton8.Audio.Virtualization
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MockAcousticEmitterJob : IJobParallelFor
     {
-        [NoAlias] public NativeArray<AcousticSourceDTO> Sources;
-        [NoAlias] public NativeArray<double3> PreviousSourceAup;
+        [WriteOnly, NoAlias] public NativeArray<AcousticSourceDTO> Sources;
+        [WriteOnly, NoAlias] public NativeArray<double3> PreviousSourceAup;
         public double3 CenterAup;
         public uint SectorHash;
         public uint SimulationFrame;
@@ -448,7 +448,7 @@ namespace Hecton8.Audio.Virtualization
     public struct AcousticOcclusionJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<AcousticSourceDTO> Sources;
-        [NoAlias] public NativeArray<AcousticDspOutputDTO> Outputs;
+        [WriteOnly, NoAlias] public NativeArray<AcousticDspOutputDTO> Outputs;
         [ReadOnly, NoAlias] public NativeArray<double3> PreviousSourceAup;
         [ReadOnly, NoAlias] public NativeArray<byte> SdfVoxels;
         [ReadOnly, NoAlias] public NativeArray<AcousticMaterialCoefficientDTO> Materials;

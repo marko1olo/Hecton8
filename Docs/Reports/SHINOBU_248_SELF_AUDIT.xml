@@ -1,0 +1,125 @@
+<SELF_AUDIT agent="SHINOBU_248" role="SHOCKWAVE_NAN_AUDITOR_AND_LINK" domain="Explosive shockwave physics / cavitation VFX integration" evidence="STATIC_SOURCE" date="2026-05-21" status="STATIC_PASS_EIGHTH_POLISH_COMPILE_BLOCKED_CPU_GATE">
+  <PROMPT source="Docs/Tasks/CURRENT_BATCH.md" taskCount="20" extractedByCli="true" extraction="attribute-aware tag regex" />
+  <TASK_RECONCILIATION>
+    <TASK id="01" name="NAN_PROPAGATION_INQUISITION" status="[PASS]">Division_By_Zero_Scanner scans Physics plus Gameplay/Combat; legacy Assets/_Project/Scripts/Combat is absent and recorded as missing root. Cavitation unsafe inverse-square hits are zero.</TASK>
+    <TASK id="02" name="RIGIDBODY_IMPLOSION_PURGE" status="[PASS]">Burst evaluation writes ForcePacketDTO and ShockwaveForcePacketDTO only. Unity Rigidbody calls are confined to PhysicsApplySystem drain after jobs. NativeQueue was rejected in favor of indexed Vault transport rows because current SignalBus doctrine marks direct MPSC queues as legacy debt; candidate count is the authoritative active window.</TASK>
+    <TASK id="03" name="CS1612_METADATA_STATE_ANNIHILATION" status="[PASS]">Shockwave DTOs and new tuning/force DTO fields are raw public fields. Focused scan found no get/set properties in Cavitation contracts/runtime.</TASK>
+    <TASK id="04" name="ARM64_FORCE_LAYOUT_VALIDATION" status="[PASS]">AbyssalCavitationLayout validates ForcePacketDTO size 32 and offsets 0/12/16/20/24.</TASK>
+    <TASK id="05" name="EMERGENCY_MOCK_SINGULARITY_TEST" status="[PASS]">GenerateMockSingularityExplosionJob writes one shockwave and one receiver at identical AUP, forcing distanceSq into the epsilon clamp path.</TASK>
+    <TASK id="06" name="BURST_NAN_VACCINATED_KERNEL" status="[PASS]">EvaluateSanitizedShockwaveJob uses FloatMode.Deterministic, NoAlias arrays, finite select, math.max(distanceSq, EpsilonClampValue), math.rcp guarded by that value, and deterministic fallback direction when the denominator is epsilon-clamped.</TASK>
+    <TASK id="07" name="KINEMATIC_MASS_NORMALIZATION" status="[PASS]">Force uses sanitized EffectiveArea and InverseMass before transport write.</TASK>
+    <TASK id="08" name="THE_DEAR_LIE_SHADER_CAVITATION" status="[PASS]">UpdateCavityShaderParamsJob writes CavitationVisualSphereDTO rows for Hecton8_UberNoir shader buffer; CPU performs no particles or fluid simulation.</TASK>
+    <TASK id="09" name="ACOUSTIC_PUNCH_THROUGH_LINK" status="[PASS]">AcousticDeafeningSignal derives peak pressure and is bridged into existing AcousticPingSignal. New audio mixer control and managed event paths were rejected.</TASK>
+    <TASK id="10" name="CONTINUOUS_SCALABILITY_CULL_RADIUS" status="[PASS]">GlobalQualityWeight drives non-critical effective radius from 50 percent to 100 percent using math.lerp plus math.select, preserving critical targets.</TASK>
+    <TASK id="11" name="SDF_OCCLUSION_RAYMARCH_APPROXIMATION" status="[PASS]">Low quality uses one midpoint SDF lookup. Higher quality blends to three-point p25/p50/p75 dampening; no Physics.Raycast route exists.</TASK>
+    <TASK id="12" name="AUP_PRECISION_VECTOR_MATH" status="[PASS]">All blast deltas subtract double3 AUP first, then downcast localized deltas to float3. Direction uses delta multiplied by guarded math.rsqrt(math.max(distanceSq, epsilon)); exact-overlap singularities use a deterministic hash-derived unit vector.</TASK>
+    <TASK id="13" name="ROLLBACK_NETCODE_STATE_FENCE" status="[PASS]">All shockwave jobs use FloatMode.Deterministic and frame-indexed DTOs. No UnityEngine.Random is present in the Cavitation scope.</TASK>
+    <TASK id="14" name="ZERO_INIT_OVERHEAD_BYPASS" status="[PASS]">Vault buffers are requested with NativeArrayOptions.UninitializedMemory. Jobs clear only owned active rows; no UnsafeUtility.MemClear hot path exists.</TASK>
+    <TASK id="15" name="TELEMETRY_SINGULARITY_RECORDER" status="[PASS]">300-entry ShockwaveTelemetryEntry ring records active shockwaves, affected entities, peak force, and EpsilonClampCount. Non-finite recovery and editor/development log faults trigger Dump_SHINOBU_248.bin when no writer job is active.</TASK>
+    <TASK id="16" name="EXPLOSIVE_PHYSICS_TUNER_WINDOW" status="[PASS]">UI Toolkit tuner exposes InverseSquareMultiplier, EpsilonClampValue, SdfOcclusionDampening, singularity injection, shader sync, and a 16-bin telemetry histogram with epsilon-trigger coloring.</TASK>
+    <TASK id="17" name="CSV_ORDNANCE_PROFILES_INGESTOR" status="[PASS]">ordnance_blast_profiles.csv is the primary cold-boot source. Parser uses ReadOnlySpan byte slicing, deterministic hash, and custom float parse; no string.Split or float.Parse route.</TASK>
+    <TASK id="18" name="LIVE_FORCE_DEBUG_GIZMO" status="[PASS]">OnDrawGizmos reads ForcePacketDTO transport rows and entity AUPs to draw red force arrows from receiver positions. Shockwave radius spheres remain secondary context.</TASK>
+    <TASK id="19" name="ARCHITECTURAL_METRIC_VALIDATOR" status="[PASS]">Tools/Division_By_Zero_Scanner.py writes PHYSICS_OPTIMIZATION_REPORT.json with summary Unsafe Mathematics Purged; latest strict run: errors 0, warnings 68, info 62, Cavitation runtime errors 0.</TASK>
+    <TASK id="20" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" status="[PASS]">This XML, Status_SHINOBU_248.md, Rationale_SHINOBU_248.md, LOG_SHINOBU_248.md, and the route/ledger entries carry proof boundaries. Compile/runtime proof remains explicitly absent.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <DTO name="ForcePacketDTO" sizeBytes="32" alignment="32-byte half cache line">
+      <FIELD name="ForceVector" type="float3" offset="0" size="12" />
+      <FIELD name="TorqueScalar" type="float" offset="12" size="4" />
+      <FIELD name="TargetEntityHash" type="uint" offset="16" size="4" />
+      <FIELD name="ApplicationFlags" type="uint" offset="20" size="4" />
+      <FIELD name="_pad0" type="ulong" offset="24" size="8" />
+      <MATH>12 + 4 + 4 + 4 + 8 = 32 bytes. All 4-byte fields are 4-byte aligned; _pad0 is 8-byte aligned at offset 24.</MATH>
+      <FALSE_SHARING>Not an atomic counter and not independently written by multiple workers to adjacent contested scalar fields. Each job index writes one row; row stride is explicitly 32 bytes for transport density.</FALSE_SHARING>
+    </DTO>
+    <DTO name="AbyssalCavitationTuningDTO" sizeBytes="64" alignment="one cache line">
+      <FIELD name="GlobalQualityWeight" offset="0" size="4" />
+      <FIELD name="ForceScale" offset="4" size="4" />
+      <FIELD name="MinPressure" offset="8" size="4" />
+      <FIELD name="SdfHardDampening" offset="12" size="4" />
+      <FIELD name="SdfSoftnessMeters" offset="16" size="4" />
+      <FIELD name="VisualIntensityScale" offset="20" size="4" />
+      <FIELD name="MockSeafloorY" offset="24" size="4" />
+      <FIELD name="MaxForceNewton" offset="28" size="4" />
+      <FIELD name="SimulationTickDelta" offset="32" size="4" />
+      <FIELD name="CavitationShellMeters" offset="36" size="4" />
+      <FIELD name="SectorHash" offset="40" size="4" />
+      <FIELD name="Flags" offset="44" size="4" />
+      <FIELD name="InverseSquareMultiplier" offset="48" size="4" />
+      <FIELD name="EpsilonClampValue" offset="52" size="4" />
+      <FIELD name="SdfOcclusionDampening" offset="56" size="4" />
+      <FIELD name="_pad0" offset="60" size="4" />
+      <MATH>Sixteen 4-byte lanes = 64 bytes. New tuner fields occupy prior padding; DTO size and BufferID identity do not change.</MATH>
+    </DTO>
+    <DTO name="ShockwaveTelemetryEntry" sizeBytes="80" note="300-row black-box ring; affected entities and epsilon clamp counts at offsets 56 and 60." />
+    <DTO name="AcousticDeafeningSignal" sizeBytes="64" note="local derived pressure DTO bridged to AcousticPingSignal." />
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION>
+    <LOW weight="below 0.3">Non-critical effective blast radius trends to 50 percent; candidate acceptance is reduced; SDF occlusion collapses to one midpoint lookup; shader upload count and intensity drop continuously. Critical targets still receive authoritative force.</LOW>
+    <MID weight="0.4-0.7">Radius, acceptance, shell width, and visual count interpolate upward. SDF occlusion blends from midpoint toward 3-point sampling without a gameplay route change.</MID>
+    <HIGH weight="0.8-1.0">Full non-critical radius, high shader sphere budget, stronger cavitation distortion, and multi-point SDF dampening. Gameplay truth ownership, DTO layout, save identity, and authority route remain fixed.</HIGH>
+  </SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS privateNativeArrays="0" persistentPrivateNativeCollections="0" persistentHandleType="VaultGenerationHandle" pointerBearingVaultBufferHandles="0">
+    <DESCRIPTOR_RULE>Runtime persists 16-byte VaultGenerationHandle descriptors only. Method-local views are opened through IDataVault.TryResolveHandle. Focused scan found no VaultBufferHandle, GetBufferHandle, TryGetBufferHandle, .Resolve(...), .ptr, ResolvePointer, GetElementAsRef, or standalone GenerationID residue in Cavitation/editor scope.</DESCRIPTOR_RULE>
+    <BUFFER id="71560" name="ShockwaveEvents" owner="VehiclesPhysics" options="UninitializedMemory" />
+    <BUFFER id="71561" name="ShockwaveCounters" owner="VehiclesPhysics" options="UninitializedMemory" />
+    <BUFFER id="71562" name="EntitySnapshots" owner="VehiclesPhysics" options="UninitializedMemory" />
+    <BUFFER id="71563" name="ForcePackets" owner="VehiclesPhysics" options="UninitializedMemory" />
+    <BUFFER id="71571" name="ForceTransportPackets" owner="VehiclesPhysics" options="UninitializedMemory" />
+    <BUFFER id="71564" name="VisualSpheres" owner="VehiclesPhysics" options="UninitializedMemory" />
+    <BUFFER id="71565" name="TelemetryRing" owner="VehiclesPhysics" capacity="300" options="UninitializedMemory" />
+    <BUFFER id="71566" name="OrdnanceProfiles" owner="VehiclesPhysics" options="UninitializedMemory" />
+    <BUFFER id="71567" name="CsvScratch" owner="VehiclesPhysics" options="UninitializedMemory" />
+    <BUFFER id="71568" name="Tuning" owner="VehiclesPhysics" options="UninitializedMemory" />
+    <BUFFER id="71569" name="SdfDescriptor" owner="VehiclesPhysics" options="UninitializedMemory" />
+    <BUFFER id="71570" name="SdfVoxels" owner="VehiclesPhysics" options="UninitializedMemory" />
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <JOB name="PropagateShockwavesJob" consumes="inputDependency" outputs="propagateHandle" noAlias="Shockwaves" />
+    <JOB name="CompactShockwavesJob" consumes="propagateHandle" outputs="compactHandle" noAlias="Shockwaves,Counters" />
+    <JOB name="EvaluateSanitizedShockwaveJob" consumes="compactHandle" outputs="pressureHandle" noAlias="Shockwaves,Counters,Entities,ForcePackets,TransportPackets,SdfVoxels" />
+    <JOB name="UpdateCavityShaderParamsJob" consumes="compactHandle" outputs="visualHandle" noAlias="Shockwaves,Counters,Visuals" />
+    <JOB name="RecordShockwaveTelemetryJob" consumes="CombineDependencies(pressureHandle,visualHandle)" outputs="scheduledHandle" noAlias="Shockwaves,Counters,ForcePackets,Telemetry" />
+    <DISPATCHER>ScheduleSimulation returns scheduledHandle and registers it with H8Memory. Runtime Finalize path only completes when IsCompleted or teardown explicitly requests forceComplete. Hot entry uses IsRuntimeReady and does not cold-poll GlobalRegistry.DataVault.</DISPATCHER>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <FAULT_AND_DUMP_ROUTE>
+    <HOOK>Editor/development builds register Application.logMessageReceived during cold initialization. Exception, error, and assert events attempt one reentrancy-guarded black-box dump.</HOOK>
+    <DUMP>TryDumpBlackBox resolves the Unity project root from Application.dataPath, writes Dump_SHINOBU_248.bin.tmp, then replaces or moves the final artifact. It fails closed while a scheduled writer job is active.</DUMP>
+    <TEARDOWN>AbyssalCavitationRuntimeHost.OnDisable completes scheduled work, unregisters tickables, releases cavitation GraphicsBuffers, and unregisters the fault hook.</TEARDOWN>
+  </FAULT_AND_DUMP_ROUTE>
+  <SUBAGENT_AUDIT_CLOSURE>
+    <OWNER>Runtime OwnerSystem is SystemID.VehiclesPhysics; self-audit buffer owners and route card now match executable registration.</OWNER>
+    <SUPERSESSION>Docs/ARCHITECTURE/SHINOBU_156_ABYSSAL_CAVITATION_ROUTE_CARD.md is marked historical/superseded for the live SHINOBU_248 shockwave NaN and cavitation route.</SUPERSESSION>
+    <MOCK_FENCE>Mock detonation and singularity forced-complete harnesses compile to release-safe false returns outside UNITY_EDITOR or DEVELOPMENT_BUILD; injectMockOnEnable is editor/development only.</MOCK_FENCE>
+    <HOT_READS>SlowTick fails closed unless runtime is ready; gizmos borrow the cached runtime Vault and do not read GlobalRegistry.DataVault.</HOT_READS>
+    <SCANNER>Scanner no longer accepts generic safe text as proof; reciprocal/division findings require denominator math.max or epsilon evidence.</SCANNER>
+  </SUBAGENT_AUDIT_CLOSURE>
+  <HOT_WRITER_FAIL_CLOSED_CLOSURE>
+    <PUBLIC_WRITERS>TryApplyTuning, TryWriteSdfVolume, and TryClearSdfVolume use IsRuntimeReady and fail closed. They no longer cold-bootstrap Vault ownership through EnsureInitialized.</PUBLIC_WRITERS>
+    <EDITOR_READOUT>RefreshTelemetryReadout calls TrySampleLatestTelemetry directly and remains a read-only editor polling path.</EDITOR_READOUT>
+    <RESIDUAL_COLD_INIT>Remaining EnsureInitialized hits are owner lifecycle, cold CSV load, editor refresh/mutator, or editor/development mock harness surfaces. Live simulation, force flush, shader sync, runtime detonation, tuning write, and SDF write/clear entry points do not cold-poll GlobalRegistry.DataVault.</RESIDUAL_COLD_INIT>
+  </HOT_WRITER_FAIL_CLOSED_CLOSURE>
+  <FORCE_DRAIN_ROUTE>
+    <RESOLVER>DrainCavitationForcePackets resolves GlobalPhysicsStateManager once per drain, tries RigidbodySlot first, and falls back to folded target hash only when the slot is stale or absent.</RESOLVER>
+    <DEBT>PhysicsApplySystem.EnsureRuntimeInstance remains a same-drain static sink lookup; removing it requires an owner-phase force sink injection API outside SHINOBU_248 scope.</DEBT>
+  </FORCE_DRAIN_ROUTE>
+  <FINITE_STATE_HARDENING>
+    <NON_FINITE_FORCE>EvaluateSanitizedShockwaveJob clears accumulatedForce and forceSq before the active-packet gate when forceSq is non-finite, preventing zero-force active packets with stale NaN comparison state.</NON_FINITE_FORCE>
+    <DIRECTION_COST>ResolveShockDirection returns radial direction before computing the deterministic hash fallback. Hash fallback runs only for epsilon-clamped singularities.</DIRECTION_COST>
+    <ACTIVE_WAVE_GATE>All shockwave IsActive helpers require finite CurrentRadius, MaxRadius, PeakPressure, ExpansionSpeed, and EpicenterAUP.</ACTIVE_WAVE_GATE>
+  </FINITE_STATE_HARDENING>
+  <COMPILE_GUARD>
+    <ASSEMBLY_BOUNDARY>No new asmdef was created. Cavitation remains in the existing project assembly surface; communications use GlobalDataVault rows, typed SignalBus AcousticPingSignal/WakeRequestSignal, and existing PhysicsApplySystem drain. No direct sibling runtime asmdef reference was added by SHINOBU_248.</ASSEMBLY_BOUNDARY>
+    <BUILD status="NOT_RUN" reason="Latest CPU gate sampled 99 percent with no active dotnet/csc process; project rule forbids dotnet build above 50 percent CPU." />
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    <BEFORE>Naive visual route would be O(activeShockwaves * particles) CPU simulation or particle GameObject/prefab churn.</BEFORE>
+    <AFTER>Current route is O(activeShockwaves) CPU writes to CavitationVisualSphereDTO plus O(screen/shader samples) GPU distortion in UberNoir. The CPU never simulates bubbles; it publishes pressure/radius scalars.</AFTER>
+    <TRICK>Screen-space/spherical refraction and chromatic cavitation are visual lies driven by physical pressure, not fluid truth.</TRICK>
+  </DEAR_LIE_CONFIRMATION>
+  <STATIC_PROOF>
+    <REPORT path="Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json" summary="Unsafe Mathematics Purged" errors="0" warnings="68" info="62" cavitationRuntimeErrors="0" />
+    <SCANNER path="Tools/Division_By_Zero_Scanner.py" />
+    <GREP residue="PASS">No VaultBufferHandle, GetBufferHandle, TryGetBufferHandle, .Resolve(...), pointer resolve, TryGetLatestCreated, raw .normalized, math.normalize, Rigidbody.AddForce, Physics.OverlapSphere, Mathf.Max, or get/set DTO properties remain in Cavitation/editor scope. Residual EnsureInitialized calls are cold owner/editor/CSV/mock harness surfaces, not live writer/simulation/force/shader routes.</GREP>
+  </STATIC_PROOF>
+</SELF_AUDIT>

@@ -47,10 +47,10 @@ namespace Hecton8.World
                 InfluenceRadius = influenceRadius;
             }
 
-            public Vector3 SurfacePosition { get; }
-            public Vector3 InteriorPosition { get; }
-            public float EntranceRadius { get; }
-            public float InfluenceRadius { get; }
+            public readonly Vector3 SurfacePosition;
+            public readonly Vector3 InteriorPosition;
+            public readonly float EntranceRadius;
+            public readonly float InfluenceRadius;
         }
 
         private enum CaveBiomePresetKind : byte
@@ -206,7 +206,7 @@ namespace Hecton8.World
             public Vector3 position;
             public CavePreset preset;
             public HectonVoxelVolume volume; // Reference to generated volume
-            public bool isActive;
+            public byte isActive;
         }
 
         private void Awake()
@@ -440,7 +440,7 @@ namespace Hecton8.World
                     position = position,
                     preset = preset,
                     volume = voxelVolume,
-                    isActive = true
+                    isActive = 1
                 };
 
                 instance.volume.caveKey = caveKey;
@@ -768,7 +768,7 @@ namespace Hecton8.World
             {
                 KeyValuePair<long, CaveInstance> pair = enumerator.Current;
                 CaveInstance instance = pair.Value;
-                if (!instance.isActive || !IsTrackedVolumeAlive(pair.Key, instance.volume))
+                if (instance.isActive == 0 || !IsTrackedVolumeAlive(pair.Key, instance.volume))
                     continue;
 
                 buffer.Add(instance.volume);

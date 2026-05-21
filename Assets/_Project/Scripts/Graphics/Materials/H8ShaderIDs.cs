@@ -17,8 +17,6 @@ namespace Hecton8.Graphics.Materials
         public static readonly int RustDetailMap = Shader.PropertyToID("_RustDetailMap");
         /// <summary>Blue-noise dither texture.</summary>
         public static readonly int BlueNoiseTex = Shader.PropertyToID("_BlueNoiseTex");
-        /// <summary>Analytical caustics render texture.</summary>
-        public static readonly int HectonCausticsMap = Shader.PropertyToID("_HectonCausticsMap");
         /// <summary>SRP batcher base-map scale/offset.</summary>
         public static readonly int BaseMapSt = Shader.PropertyToID("_BaseMap_ST");
         /// <summary>Rust detail atlas scale/offset.</summary>
@@ -39,9 +37,7 @@ namespace Hecton8.Graphics.Materials
         public static readonly int NoirAbyssFloorColor = Shader.PropertyToID("_NoirAbyssFloorColor");
         /// <summary>Noir fog floor color.</summary>
         public static readonly int NoirFogColor = Shader.PropertyToID("_NoirFogColor");
-        /// <summary>Material caustic tint contribution.</summary>
-        public static readonly int UberNoirCausticColor = Shader.PropertyToID("_UberNoirCausticColor");
-        /// <summary>Feature enable vector for POM, caustics, bending, and dither.</summary>
+        /// <summary>Feature enable vector for POM, reserved, bending, and dither.</summary>
         public static readonly int UberNoirFeatureFlags = Shader.PropertyToID("_UberNoirFeatureFlags");
         /// <summary>GraphicsBuffer instance offset/count/use/seed settings.</summary>
         public static readonly int UberNoirInstanceParams = Shader.PropertyToID("_UberNoirInstanceParams");
@@ -51,8 +47,6 @@ namespace Hecton8.Graphics.Materials
         public static readonly int UberNoirRustParams = Shader.PropertyToID("_UberNoirRustParams");
         /// <summary>Hull and habitat bending settings.</summary>
         public static readonly int UberNoirBendParams = Shader.PropertyToID("_UberNoirBendParams");
-        /// <summary>Analytical caustic settings.</summary>
-        public static readonly int UberNoirCausticParams = Shader.PropertyToID("_UberNoirCausticParams");
         /// <summary>Bioluminescent pulse settings.</summary>
         public static readonly int UberNoirBiolumParams = Shader.PropertyToID("_UberNoirBiolumParams");
         /// <summary>Dithered transparency settings.</summary>
@@ -87,20 +81,6 @@ namespace Hecton8.Graphics.Materials
         public static readonly int BiolumMasterPhase = Shader.PropertyToID("_BiolumMasterPhase");
         /// <summary>Global base power brownout vector: supply, severity, phase, quality.</summary>
         public static readonly int HectonPowerBrownoutParams = Shader.PropertyToID("_HectonPowerBrownoutParams");
-        /// <summary>Projected caustics world rectangle.</summary>
-        public static readonly int HectonProjectedCausticsWorldRect = Shader.PropertyToID("_HectonProjectedCausticsWorldRect");
-        /// <summary>Projected caustics scalar parameters.</summary>
-        public static readonly int HectonProjectedCausticsParams = Shader.PropertyToID("_HectonProjectedCausticsParams");
-        /// <summary>Projected caustics color.</summary>
-        public static readonly int HectonProjectedCausticsColor = Shader.PropertyToID("_HectonProjectedCausticsColor");
-        /// <summary>Caustics runtime state parameters.</summary>
-        public static readonly int HectonCausticsRuntimeParams = Shader.PropertyToID("_HectonCausticsRuntimeParams");
-        /// <summary>Caustics simulation vector A.</summary>
-        public static readonly int HectonCausticsSimulationParamsA = Shader.PropertyToID("_HectonCausticsSimulationParamsA");
-        /// <summary>Caustics simulation vector B.</summary>
-        public static readonly int HectonCausticsSimulationParamsB = Shader.PropertyToID("_HectonCausticsSimulationParamsB");
-        /// <summary>Caustics simulation vector C.</summary>
-        public static readonly int HectonCausticsSimulationParamsC = Shader.PropertyToID("_HectonCausticsSimulationParamsC");
         /// <summary>Submarine crush center/radius vector.</summary>
         public static readonly int HectonSubmarineCrushCenterRadius = Shader.PropertyToID("_HectonSubmarineCrushCenterRadius");
         /// <summary>Submarine crush depth parameters.</summary>

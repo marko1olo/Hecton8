@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Environment;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -11,29 +12,38 @@ namespace Hecton8.World
     /// <summary>
     /// Configuration for closed basin detection on a 2D heightmap.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct AnomalyBasinDetectionSettings
     {
         /// <summary>Heightmap width in samples.</summary>
+        [FieldOffset(0)]
         public int Width;
 
         /// <summary>Heightmap height in samples.</summary>
+        [FieldOffset(4)]
         public int Height;
 
         /// <summary>Heightmap cell size in meters.</summary>
+        [FieldOffset(8)]
         public float CellSizeMeters;
 
         /// <summary>Minimum basin depth required before a basin is accepted.</summary>
+        [FieldOffset(12)]
         public float MinimumDepthMeters;
 
         /// <summary>Maximum number of cells a candidate flood may visit.</summary>
+        [FieldOffset(16)]
         public int MaxFloodCells;
 
         /// <summary>Height epsilon used for plateau and lip comparisons.</summary>
+        [FieldOffset(20)]
         public float EqualHeightEpsilon;
 
         /// <summary>Maximum heap/neighbor operations allowed in one interruptible flood-fill slice.</summary>
+        [FieldOffset(24)]
         public int MaxFloodFillOperationsPerSlice;
+        [FieldOffset(28)]
+        private uint _pad0;
 
         /// <summary>Returns a bounded copy of the settings.</summary>
         public AnomalyBasinDetectionSettings Sanitized()
@@ -64,68 +74,104 @@ namespace Hecton8.World
     /// <summary>
     /// Closed basin record emitted by the anomaly detector.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 56)]
     public struct AnomalyBasinRecord
     {
         /// <summary>One-based basin identifier. Zero means no valid basin.</summary>
+        [FieldOffset(0)]
         public int BasinId;
 
         /// <summary>Flat heightmap index of the deepest point.</summary>
+        [FieldOffset(4)]
         public int DeepestIndex;
 
         /// <summary>Deepest point X sample.</summary>
+        [FieldOffset(8)]
         public int DeepestX;
 
         /// <summary>Deepest point Z sample.</summary>
+        [FieldOffset(12)]
         public int DeepestZ;
 
         /// <summary>Inclusive minimum X sample in the basin mask.</summary>
+        [FieldOffset(16)]
         public int MinX;
 
         /// <summary>Inclusive minimum Z sample in the basin mask.</summary>
+        [FieldOffset(20)]
         public int MinZ;
 
         /// <summary>Inclusive maximum X sample in the basin mask.</summary>
+        [FieldOffset(24)]
         public int MaxX;
 
         /// <summary>Inclusive maximum Z sample in the basin mask.</summary>
+        [FieldOffset(28)]
         public int MaxZ;
 
         /// <summary>Number of masked cells in the basin.</summary>
+        [FieldOffset(32)]
         public int CellCount;
 
         /// <summary>Height at the deepest point in meters.</summary>
+        [FieldOffset(36)]
         public float DeepestHeight;
 
         /// <summary>Spill lip height in meters.</summary>
+        [FieldOffset(40)]
         public float LipHeight;
 
         /// <summary>Approximate basin area in square meters.</summary>
+        [FieldOffset(44)]
         public float AreaMetersSq;
 
         /// <summary>One when the record is valid.</summary>
+        [FieldOffset(48)]
         public byte Valid;
+        [FieldOffset(49)]
+        private byte _pad0;
+        [FieldOffset(50)]
+        private ushort _pad1;
+        [FieldOffset(52)]
+        private uint _pad2;
     }
 
     /// <summary>
     /// Serializable continuation state for the interruptible closed-basin flood fill.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct AnomalyBasinFloodFillState
     {
+        [FieldOffset(0)]
         public int CandidateIndex;
+        [FieldOffset(4)]
         public int Stamp;
+        [FieldOffset(8)]
         public int BasinId;
+        [FieldOffset(12)]
         public int SeedIndex;
+        [FieldOffset(16)]
         public int HeapCount;
+        [FieldOffset(20)]
         public int AcceptedCount;
+        [FieldOffset(24)]
         public int ClearIndex;
+        [FieldOffset(28)]
         public int Phase;
+        [FieldOffset(32)]
         public float LipHeight;
+        [FieldOffset(36)]
         public float DeepestHeight;
+        [FieldOffset(40)]
         public byte FoundSpill;
+        [FieldOffset(41)]
         public byte OpenBoundary;
+        [FieldOffset(42)]
         public byte Initialized;
+        [FieldOffset(43)]
+        private byte _pad0;
+        [FieldOffset(44)]
+        private uint _pad1;
     }
 
     /// <summary>
@@ -742,19 +788,22 @@ namespace Hecton8.World
     /// <summary>
     /// Burst parallel kernel that scans the heightmap, clears outputs, and marks local minimum candidates.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Deterministic)]
     public struct ClosedBasinDetectionJob : IJobParallelFor
     {
         /// <summary>Input heightmap in meters.</summary>
-        [ReadOnly] public NativeArray<float> Heightmap;
+        [ReadOnly, NoAlias] public NativeArray<float> Heightmap;
 
         /// <summary>Candidate minima mask. One means the cell is a flood-fill seed.</summary>
+        [NoAlias]
         public NativeArray<byte> CandidateMask;
 
         /// <summary>Basin extent mask. One means the cell belongs to an accepted basin.</summary>
+        [NoAlias]
         public NativeArray<byte> BasinMask;
 
         /// <summary>Record array indexed by candidate cell.</summary>
+        [NoAlias]
         public NativeArray<AnomalyBasinRecord> BasinRecords;
 
         /// <summary>Detection settings.</summary>
@@ -813,29 +862,35 @@ namespace Hecton8.World
     /// <summary>
     /// Burst flood-fill kernel that expands candidate minima to their spill lip and writes basin extents.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Deterministic)]
     public struct ClosedBasinFloodFillJob : IJob
     {
         /// <summary>Input heightmap in meters.</summary>
-        [ReadOnly]
+        [ReadOnly, NoAlias]
         public NativeArray<float> Heightmap;
 
         /// <summary>Candidate minima mask.</summary>
+        [NoAlias]
         public NativeArray<byte> CandidateMask;
 
         /// <summary>Output basin mask.</summary>
+        [NoAlias]
         public NativeArray<byte> BasinMask;
 
         /// <summary>Output records indexed by candidate cell.</summary>
+        [NoAlias]
         public NativeArray<AnomalyBasinRecord> BasinRecords;
 
         /// <summary>Binary min-heap scratch. Caller owns storage.</summary>
+        [NoAlias]
         public NativeArray<int> FloodHeap;
 
         /// <summary>Visited stamp scratch. Caller owns storage.</summary>
+        [NoAlias]
         public NativeArray<int> VisitedStamp;
 
         /// <summary>Accepted cell scratch. Caller owns storage.</summary>
+        [NoAlias]
         public NativeArray<int> AcceptedCells;
 
         /// <summary>Detection settings.</summary>
@@ -1199,22 +1254,23 @@ namespace Hecton8.World
     /// <summary>
     /// Burst flood-fill slice that defers active basin state instead of monopolizing a worker on huge basins.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    [BurstCompile(CompileSynchronously = true, FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Deterministic)]
     public struct ClosedBasinFloodFillSliceJob : IJob
     {
         private const int PhaseScanCandidate = 0;
         private const int PhaseFlood = 1;
         private const int PhaseClearVisitedStamp = 2;
 
-        [ReadOnly] public NativeArray<float> Heightmap;
-        public NativeArray<byte> CandidateMask;
-        public NativeArray<byte> BasinMask;
-        public NativeArray<AnomalyBasinRecord> BasinRecords;
-        public NativeArray<int> FloodHeap;
-        public NativeArray<int> VisitedStamp;
-        public NativeArray<int> AcceptedCells;
+        [ReadOnly, NoAlias] public NativeArray<float> Heightmap;
+        [NoAlias] public NativeArray<byte> CandidateMask;
+        [NoAlias] public NativeArray<byte> BasinMask;
+        [NoAlias] public NativeArray<AnomalyBasinRecord> BasinRecords;
+        [NoAlias] public NativeArray<int> FloodHeap;
+        [NoAlias] public NativeArray<int> VisitedStamp;
+        [NoAlias] public NativeArray<int> AcceptedCells;
         public NativeQueue<AnomalyBasinFloodFillState> PendingStates;
         public NativeQueue<AnomalyBasinFloodFillState> DeferredStates;
+        [NoAlias]
         public NativeArray<int> SliceStatus;
         public AnomalyBasinDetectionSettings Settings;
 

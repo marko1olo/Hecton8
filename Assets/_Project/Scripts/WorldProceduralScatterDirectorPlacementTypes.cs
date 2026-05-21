@@ -246,63 +246,67 @@ namespace Hecton8.World
                 return true;
             }
 
-            public long Key { get; private set; }
-            public int StableHash { get; private set; }
-            public WorldPrefabFamilyProfile Family { get; private set; }
-            public WorldProceduralPlacementRule Rule { get; private set; }
-            public WorldZoneAnchor Zone { get; private set; }
-            public HectonBiomeFamilyProfile BiomeFamily { get; private set; }
-            public HectonBiomeMatrixProfile BiomeProfile { get; private set; }
-            public WorldProceduralPattern Pattern { get; private set; }
-            public string BiomeContextLabel { get; private set; }
-            public string CachedBiomeProfileLabel { get; private set; }
-            public string CachedBiomeFamilyLabel { get; private set; }
-            public string CachedPatternLabel { get; private set; }
-            public bool IsTectonicSpineBiome { get; private set; }
-            public WorldStreamingLayer StreamingLayer { get; private set; }
-            public WorldGenerativeGeologyProfile GeologyProfile { get; private set; }
-            public WorldPrefabFamilyProfile.VariantEntry Variant { get; private set; }
-            public bool SupportsFinalVariant { get; private set; }
-            public float EffectiveSpacing { get; private set; }
-            public bool IsFaunaAnchor { get; private set; }
-            public bool IsLargeThreatZone { get; private set; }
-            public float FaunaAnchorRadius { get; private set; }
-            public string HeatmapChannel { get; private set; }
-            public float Heat { get; private set; }
-            public WorldProceduralFieldSampler.SeafloorSource FieldSource { get; private set; }
-            public float SeafloorHeight { get; private set; }
-            public float DepthMeters { get; private set; }
-            public float SlopeDegrees { get; private set; }
-            public float Curvature { get; private set; }
-            public float CaveProximity { get; private set; }
-            public float RidgeSignal { get; private set; }
-            public float CanyonSignal { get; private set; }
-            public float CompositionPotential { get; private set; }
-            public int HeightLayerIndex { get; private set; }
-            public int CellX { get; private set; }
-            public int CellZ { get; private set; }
-            public WorldChunkCoordinate ChunkCoord { get; private set; }
-            public bool HasMacroZone { get; private set; }
-            public WorldMacroZoneCoordinate MacroZoneCoord { get; private set; }
-            public Vector3 Position { get; private set; }
-            public Vector3 RuntimePosition => ToRuntimeScatterPosition(Position);
-            public Quaternion Rotation { get; private set; }
-            public float Scale { get; private set; }
-            public bool HasRuntimeStateResolved { get; private set; }
-            public WorldPrefabFamilyProfile.VariantEntry CachedResolvedVariant { get; private set; }
-            public bool CachedFinalVariantActive { get; private set; }
-            public bool CachedSupportsFinalVariant { get; private set; }
-            public bool HasResolvedVariantState { get; private set; }
-            public int CachedReconcilePlanVersion { get; private set; }
-            public WorldProceduralProxyInstance CachedReconcileInstance { get; private set; }
-            public WorldPrefabFamilyProfile.VariantEntry CachedReconcileVariant { get; private set; }
-            public bool CachedReconcileFinalVariantActive { get; private set; }
-            public bool CachedReconcileRequiresSpawn { get; private set; }
-            public bool CachedReconcileShouldApplyGeneratedGeology { get; private set; }
-            public int CachedReconcileSyncSignature { get; private set; }
-            public bool CachedReconcileAllowInitialWarmupCreate { get; private set; }
-            public int ReferenceCount { get; set; }
-            public bool IsPooled { get; set; }
+            public long Key;
+            public int StableHash;
+            public WorldPrefabFamilyProfile Family;
+            public WorldProceduralPlacementRule Rule;
+            public WorldZoneAnchor Zone;
+            public HectonBiomeFamilyProfile BiomeFamily;
+            public HectonBiomeMatrixProfile BiomeProfile;
+            public WorldProceduralPattern Pattern;
+            public string BiomeContextLabel;
+            public string CachedBiomeProfileLabel;
+            public string CachedBiomeFamilyLabel;
+            public string CachedPatternLabel;
+            public bool IsTectonicSpineBiome;
+            public WorldStreamingLayer StreamingLayer;
+            public WorldGenerativeGeologyProfile GeologyProfile;
+            public WorldPrefabFamilyProfile.VariantEntry Variant;
+            public bool SupportsFinalVariant;
+            public float EffectiveSpacing;
+            public bool IsFaunaAnchor;
+            public bool IsLargeThreatZone;
+            public float FaunaAnchorRadius;
+            public string HeatmapChannel;
+            public float Heat;
+            public WorldProceduralFieldSampler.SeafloorSource FieldSource;
+            public float SeafloorHeight;
+            public float DepthMeters;
+            public float SlopeDegrees;
+            public float Curvature;
+            public float CaveProximity;
+            public float RidgeSignal;
+            public float CanyonSignal;
+            public float CompositionPotential;
+            public int HeightLayerIndex;
+            public int CellX;
+            public int CellZ;
+            public WorldChunkCoordinate ChunkCoord;
+            public bool HasMacroZone;
+            public WorldMacroZoneCoordinate MacroZoneCoord;
+            public Vector3 Position;
+            public Quaternion Rotation;
+            public float Scale;
+            public bool HasRuntimeStateResolved;
+            public WorldPrefabFamilyProfile.VariantEntry CachedResolvedVariant;
+            public bool CachedFinalVariantActive;
+            public bool CachedSupportsFinalVariant;
+            public bool HasResolvedVariantState;
+            public int CachedReconcilePlanVersion;
+            public WorldProceduralProxyInstance CachedReconcileInstance;
+            public WorldPrefabFamilyProfile.VariantEntry CachedReconcileVariant;
+            public bool CachedReconcileFinalVariantActive;
+            public bool CachedReconcileRequiresSpawn;
+            public bool CachedReconcileShouldApplyGeneratedGeology;
+            public int CachedReconcileSyncSignature;
+            public bool CachedReconcileAllowInitialWarmupCreate;
+            public int ReferenceCount;
+            public bool IsPooled;
+
+            public Vector3 ReadRuntimePosition()
+            {
+                return ToRuntimeScatterPosition(Position);
+            }
         }
     }
 }

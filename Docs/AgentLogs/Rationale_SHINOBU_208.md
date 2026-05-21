@@ -1,7 +1,7 @@
 # SHINOBU_208 Rationale - OFFLINE_GEOLOGY_MESH_BAKER
 
 Date: 2026-05-20
-Status: SCANNER_DISCOVERY_SLICED / UNITY PROJECT REGEN REQUIRED / RUNTIME ERADICATION VERDICT FALSE
+Status: CARVER_AUDIT_PATCHES_STATIC / UNITY PROJECT REGEN REQUIRED / RUNTIME ERADICATION VERDICT FALSE
 
 ## Decision 001 - Domain Boundary
 Problem: Runtime mesh generation scan found broad mesh builders, including live cave voxel MC and vegetation/wreck/outpost helpers. Editing all of them would cross unrelated domains.
@@ -338,3 +338,192 @@ Solution: Replaced the CSV literal with `GeologyForgeConstants.MaximumVariations
 Rejected Alternatives: Leaving the literal rejected because it silently reintroduces split-authority tuning. Adding a separate CSV-specific ceiling rejected because profile import is not a separate gameplay truth owner.
 Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring tiers now clamp imported variation counts through the same continuous-quality bake lane and the same high-volume batch ceiling.
 Hardware Impact: Runtime cost remains 0 us. Editor cost is unchanged; this removes a maintenance drift risk rather than a measurable hot-path cost.
+
+## Decision 049 - Remove Return-Allocated CSV Loader
+Problem: After adding the caller-owned CSV loader, the old internal `LoadProfiles()` method still existed and allocated a fresh `List<GeologyBakeProfile>` before delegating. No owned source called it, but leaving it in the editor assembly preserved an allocation-shaped escape hatch for future menu/window code.
+Solution: Removed the return-value loader and made `LoadProfiles(List<GeologyBakeProfile>)` the only CSV ingestion API inside `GeologyProfileCsv`.
+Rejected Alternatives: Keeping the wrapper for convenience rejected because the whole facade direction is caller-owned storage. Marking it obsolete rejected because this is an internal editor-only class and no compatibility boundary requires the method.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring remains deterministic and caller-owned; future reload/menu paths cannot accidentally revive the transient-list copy route.
+Hardware Impact: Runtime cost remains 0 us. Editor cost removes no active measured path after the previous patch, but it deletes the stale API that could reintroduce one `List<T>` allocation plus copy loop per reload or bake launch.
+
+## Decision 050 - Validator-Owned Vertex Layout Application
+Problem: `GeologyVertexLayoutValidator.GetLayout()` returned a fresh four-element `VertexAttributeDescriptor[]` copy for every mesh upload. The copy protected the static layout from external mutation, but it still allocated a managed array inside the active async bake path for every LOD mesh.
+Solution: Replaced `GetLayout()` with `ApplyVertexBufferParams(Mesh,int)`, keeping `_GeologyLayout` private and letting the validator apply the static descriptor array directly to the mesh.
+Rejected Alternatives: Returning the static array rejected because same-assembly callers could mutate the vertex layout contract. Keeping per-upload copies rejected because the async bake loop creates LOD0/1/2 meshes per variation and should not allocate descriptor arrays on that path.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring batches at high/ultra variation counts avoid one managed descriptor-array allocation per generated LOD mesh while preserving the 32-byte stream contract.
+Hardware Impact: Runtime cost remains 0 us. Editor path removes a small but deterministic managed allocation from each mesh upload call; exact Unity Profiler allocation proof remains pending.
+
+## Decision 051 - Deferred Preview Hook Subscription
+Problem: `GeologyForgePreview.Build()` subscribed to `SceneView.duringSceneGui` before allocating preview density, running the preview SDF kernel, and filling the point buffer. A fault before point population could leave the SceneView callback registered until window disable.
+Solution: Moved `EnsureSubscribed()` to the successful end of point generation, after `_pointCount` has been written from a populated fixed buffer.
+Rejected Alternatives: Keeping early subscription rejected because callback lifetime should follow valid preview state. Adding a broad catch-only unsubscribe rejected because the simpler ownership rule is to subscribe only after success.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Editor preview still uses the same bounded 24^3 SDF point-cloud fake and continuous `GlobalQualityWeight`; callback lifetime now matches valid preview data.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is unchanged for successful previews; fault paths no longer retain a dead SceneView callback after failed preview generation.
+
+## Decision 052 - Reusable Runtime Scanner Async Buffers
+Problem: `RuntimeMeshGenerationScanner` still allocated fresh `List<string>` and `List<Finding>` containers every time a non-batch scan started, then used null state as the scan-active sentinel. That preserved allocation churn inside an editor proof tool that can be invoked repeatedly during geology authoring.
+Solution: Converted the non-batch scanner queues/findings to static readonly reusable lists, added `_asyncScanActive` as the explicit lifecycle sentinel, and centralized cancel/finish/start reset through `ClearAsyncScanState()`. `FinishAsyncScan()` now writes the report before clearing buffers and clears state in `finally`.
+Rejected Alternatives: Keeping nullable lists rejected because ownership/lifecycle was encoded through allocation state. Moving scanner results into a persistent native container rejected because this is cold Editor source inspection, not runtime data truth or rollback state.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring responsiveness improves across repeated scan runs while the scanner continues to time-slice directory discovery and file scanning under the 4 ms editor-update budget.
+Hardware Impact: Runtime cost remains 0 us. Editor path removes three list-container allocations per non-batch scanner launch after static initialization; exact Unity Profiler allocation proof remains pending.
+
+## Decision 053 - CSV Row And Numeric Cell Fail-Closed Parsing
+Problem: `GeologyProfileCsv` validated the header, but row cells still used fallback-return numeric readers. A malformed value such as an empty seed, truncated float, or stray character could silently substitute a default and bake the wrong static payload.
+Solution: Added row column-count validation and strict byte-level `ReadInt`, `ReadUInt`, and `ReadFloat` paths that throw `InvalidDataException` with row, column, and field context on malformed input. Positive-only physical fields now fail closed instead of reverting to fallback defaults.
+Rejected Alternatives: Keeping fallback defaults rejected because it hides authoring corruption. Full arbitrary header remapping was still rejected because SHINOBU_208 owns one exact CSV schema with optional `iso_level`, and widening the parser would create more route ambiguity.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged for valid CSVs. Invalid high/ultra bake recipes now stop before they can generate hundreds of corrupt mesh records or misleading BRG manifest entries.
+Hardware Impact: Runtime cost remains 0 us. Editor parse cost adds one row comma-count scan and strict terminator checks per numeric cell; this is negligible compared with SDF extraction and prevents expensive rebakes from poisoned authoring data.
+
+## Decision 054 - CSV Integer Overflow Fail-Closed Parsing
+Problem: Strict CSV integer parsing still saturated oversized signed and unsigned cells to `int.MaxValue`, `int.MinValue`, or `uint.MaxValue`. That preserved a corruption path where an authored overflow could silently become a valid seed, LOD budget, resolution, or variation count.
+Solution: `ReadInt` and `ReadUInt` now track overflow during byte-digit accumulation and throw the same row/column/field `InvalidDataException` used by malformed cells. The exact `-2147483648` signed minimum remains valid; values outside the target integer domain are rejected.
+Rejected Alternatives: Keeping saturation rejected because fail-closed CSV validation must not turn invalid authoring data into plausible bake truth. Post-clamp detection at profile hydration rejected because it would lose the field-level parser boundary and blur malformed input with legitimate clamp rules.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged for valid CSVs. Invalid high/ultra authoring rows stop before they can trigger runaway bake counts or produce wrong deterministic seeds.
+Hardware Impact: Runtime cost remains 0 us. Editor parse cost adds one boolean overflow check per integer digit; this is negligible compared with SDF extraction and prevents expensive rebakes from poisoned integer cells.
+
+## Decision 055 - CSV Numeric Error Codes
+Problem: The CSV bridge reported row, column, and field names, but did not include numeric error codes. `TOOL_Designer_Facades_CSV_Binary_Bridge` requires import errors to carry row, column, field id, and numeric error code so CI/editor tools can classify failures without parsing prose.
+Solution: Added stable CSV error codes for malformed cells, integer overflow, non-finite floats, non-positive physical values, invalid terminators, row column-count mismatch, and header schema mismatch. Cell errors now include `Geology profile CSV error <code>` while preserving row/column/field context.
+Rejected Alternatives: Leaving prose-only exceptions rejected because automated import gates need stable numeric classification. Creating managed exception subclasses rejected because this editor-only parser already throws `InvalidDataException`, and subclass proliferation adds no useful payload without Unity execution proof.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring scales better because large CSV bake batches can be rejected and grouped by deterministic error code before any SDF/AO mesh work starts.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is one integer constant embedded in exceptional strings only on failure paths; successful parsing is unaffected except for constant definitions.
+
+## Decision 056 - CSV Header Schema Diagnostics
+Problem: Header validation still returned a boolean and collapsed reordered, missing, or extra columns into one generic header mismatch. That weakened the row/column/field evidence required by the designer bridge mandate.
+Solution: Replaced `HeaderMatchesExpectedSchema` with `ValidateHeaderSchema`, which throws at the exact row-1 column that mismatches expected schema tokens and throws a header column-count diagnostic when column totals differ.
+Rejected Alternatives: Keeping the boolean and adding a generic error code rejected because it still forces operators to inspect the CSV manually. Building a dynamic header map rejected because SHINOBU_208 owns one exact schema with optional `iso_level`, and arbitrary reordering would expand the route surface.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring failures in large profile batches now stop with precise schema facts before expensive high/ultra mesh generation starts.
+Hardware Impact: Runtime cost remains 0 us. Editor successful-parse cost is unchanged in class; failure paths produce a more precise exception string only when the header is corrupt.
+
+## Decision 057 - CSV Existing File Size Fail-Closed
+Problem: Missing CSV files intentionally fall back to a default mock profile, but existing empty or oversized CSV files also fell back to `DefaultProfile()`. That hid corrupt authoring payloads and could bake fallback rocks when a designer expected authored profiles.
+Solution: Added `CsvErrorFileSize=1008` and made existing zero-byte or larger-than-`int.MaxValue` CSV files throw `InvalidDataException`. Missing files still use the mock default profile route for CI/editor bootstrap.
+Rejected Alternatives: Removing the missing-file fallback rejected because SHINOBU_208 still needs an emergency mock authoring route when the CSV is absent. Keeping fallback for empty files rejected because an existing empty file is explicit corrupt source data, not an absent optional bridge.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring failure now stops before high/ultra batch generation can produce a library from unintended fallback values.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is one file-length branch before native scratch allocation; failed imports avoid all downstream SDF, LOD, AO, mesh upload, and manifest work.
+
+## Decision 058 - Profile Scalar Finite Vaccination
+Problem: CSV parsing rejects non-finite numeric cells, but `BakeProfilesAsync` and direct `BakeSingle` can still receive profiles from UI/editor code. `SanitizeProfile` clamped ranges without first replacing NaN/Infinity, so poisoned radius, quality, iso, AUP, or weight fields could propagate into SDF, AUP hash, AO, or LOD math.
+Solution: Added `FiniteOr` helpers and routed scalar shape/noise/quality fields, `IsoLevel`, and every `SectorAup` lane through finite fallbacks before clamp/hash/job setup.
+Rejected Alternatives: Trusting CSV validation rejected because profile DTOs can enter through non-CSV editor paths. Letting downstream Burst kernels absorb NaNs rejected because topology extraction and deterministic AUP seeding must be vaccinated before job scheduling.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged for valid profiles. Invalid editor profiles collapse to safe finite authoring defaults instead of consuming high/ultra bake time on poisoned math.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is a fixed set of `math.isfinite` checks per profile before bake; this prevents non-finite profile data from wasting SDF/AO/mesh serialization work or poisoning black-box telemetry.
+
+## Decision 059 - CSV Stable Read And AUP Lane Canonicalization
+Problem: CSV import used `FileShare.ReadWrite` and parsed the byte count actually read without proving it matched the initial file length. Sector lanes also parsed through `ReadFloat`, storing float-derived values in `double3`, and `-0` could hash differently from `0`.
+Solution: CSV import now uses `FileShare.Read`, rejects short/unstable reads with `CsvErrorFileSize=1008`, parses sector lanes through a strict `ReadDouble`, and canonicalizes zero before profile storage and AUP seed hashing.
+Rejected Alternatives: Full manifest conversion to `int64x3` sector truth was rejected for this pass because it would break the existing 128-byte `.h8geom` ABI and require runtime importer ownership proof outside SHINOBU_208. Keeping float-derived sector lanes rejected because deterministic seed identity must not depend on float truncation.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior and payload layout remain unchanged. Authoring imports now fail before any quality-tier SDF/AO/LOD work if the CSV source mutates mid-read, while valid high/ultra sector values keep double precision in editor bake identity.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is one length equality check and double parser path for three sector cells; failed unstable imports avoid all downstream mesh extraction and asset serialization work.
+
+## Decision 060 - Atomic Async Runner State Assignment
+Problem: `BakeProfilesAsync` assigned `_asyncProfiles` before profile copy/list allocation and result-list setup were fully guarded. An allocation or setup fault could leave `_asyncProfiles` non-null without an update runner, blocking later bakes.
+Solution: Profile snapshot, total-count calculation, metric-list allocation, and manifest-list allocation now happen in locals first. Static runner fields are assigned only inside the guarded start block; any fault after assignment routes through `FinishAsyncBake(true)`.
+Rejected Alternatives: Keeping partially assigned static state rejected because lifecycle ownership was split across allocation progress. Adding a second boolean state flag rejected because the existing `_asyncProfiles != null` active sentinel is sufficient once assignment is atomic.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Large editor batches either start with a coherent state snapshot or fail without latching the authoring tool.
+Hardware Impact: Runtime cost remains 0 us. Editor success cost is unchanged; fault paths avoid a manual domain reload or editor restart after an interrupted batch setup.
+
+## Decision 061 - Transient LOD Mesh Ownership Cleanup
+Problem: LOD construction used an object initializer, so a failure after LOD0 creation could orphan earlier transient meshes. Save-path failures could also leave unsaved transient meshes because normal cleanup only ran for non-asset probes.
+Solution: LOD meshes are now built sequentially into a local `MeshLodSet` and destroyed on construction failure. Asset save now tracks per-LOD ownership transfer; failed save paths destroy only meshes that have not been handed to `AssetDatabase`.
+Rejected Alternatives: Relying on Unity editor cleanup rejected because native mesh objects can survive failed upload/save paths. Destroying all LOD references on failure rejected because some references may already be persistent assets loaded from `AssetDatabase`.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. High/ultra authoring batches no longer leak native mesh objects when one LOD or asset path fails.
+Hardware Impact: Runtime cost remains 0 us. Editor failure paths reclaim up to three transient mesh native objects per failed variation; success path adds only three boolean ownership flags.
+
+## Decision 062 - Manifest AUP Audit Guard
+Problem: The self-audit manifest validator checked bounds and mesh GUIDs but allowed non-finite `SectorAup` lanes in `.h8geom` records.
+Solution: `ValidateManifestRecord` now rejects records where `math.isfinite(record.SectorAup)` is not true for all three lanes.
+Rejected Alternatives: Trusting generator-side finite vaccination rejected because layout audit must catch stale or externally corrupted payloads. Rewriting manifest schema to integer sectors rejected for this pass because the ABI/importer route is not owned here.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Corrupt static payloads fail the editor audit before any runtime BRG consumer can classify them as immutable truth.
+Hardware Impact: Runtime cost remains 0 us. Audit cost is one `double3` finite check per manifest record; failed payloads avoid runtime importer investigation work.
+
+## Decision 063 - Manifest Audit Stable Read
+Problem: The manifest layout self-audit still opened `.h8geom` with `FileShare.ReadWrite`, so an external writer could theoretically mutate the payload while the audit was validating it.
+Solution: The self-audit now opens the manifest with `FileShare.Read` and rejects a length change after record validation with `UNSTABLE_FILE_LENGTH`.
+Rejected Alternatives: Relying only on generator-side `.tmp` replacement rejected because the audit is the trust boundary for stale or externally modified payloads. Loading the full manifest into a managed byte array rejected because the current stack-span exact reader is sufficient and smaller.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. High-volume authoring audits now validate a stable static payload view before any runtime consumer can accept it as BRG-ready.
+Hardware Impact: Runtime cost remains 0 us. Audit cost is one final file-length check; failed unstable reads avoid false-positive manifest proof.
+
+## Decision 064 - Asset Editing Scope Truth Patch
+Problem: The documentation claimed asset editing was scoped to the save tranche, but `TickAsyncBake` still opened `AssetDatabase.StartAssetEditing()` before `BakeSingle`, so SDF generation, extraction, AO, LOD, and mesh packing ran while the AssetDatabase edit scope was open.
+Solution: Removed AssetDatabase edit-scope ownership from `TickAsyncBake`. `SaveMeshesAndManifest` now opens `StartAssetEditing()` immediately before the three `SaveMeshAsset` calls, closes it in `finally`, then reads GUIDs and appends the manifest record after the edit scope is closed.
+Rejected Alternatives: Keeping the tick-level scope rejected because it made static proof false and widened the failure window across CPU jobs. Wrapping only each individual LOD save rejected because three imports belong to one authoring transaction and batching them reduces editor import churn.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring on low-end CPUs avoids holding the asset database lock across heavy SDF/AO work; high/ultra batches still amortize three LOD imports per variation.
+Hardware Impact: Runtime cost remains 0 us. Editor save path adds one local `finally`; failure containment improves by reducing edit-scope wall time from full variation bake to only three asset writes.
+
+## Decision 065 - CSV Row Terminator Ownership
+Problem: `TryReadProfile` called `SkipLine` after parsing `sector_z`, but `ReadDouble` already consumes the column terminator or row terminator. The extra skip advanced over the next authored profile row.
+Solution: Removed the post-`sector_z` `SkipLine`. Each cell parser owns exactly one terminator, and the caller loop advances by the cursor state returned from `ReadDouble`.
+Rejected Alternatives: Re-parsing rows through managed `String.Split` rejected due to allocation and weaker malformed-cell diagnostics. Leaving the skip and compensating `rowIndex` rejected because it still discards authoring data.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring batches now bake all intended low/mid/high/ultra geology profiles instead of silently dropping every next row.
+Hardware Impact: Runtime cost remains 0 us. Editor import removes one redundant line scan per profile and prevents a full missing-profile bake/report mismatch.
+
+## Decision 066 - Existing CSV Empty File Fail-Closed
+Problem: A missing CSV legitimately needs fallback mock data, but an existing header-only or blank data file is corrupt authoring truth and previously fell back to `DefaultProfile`.
+Solution: Kept fallback only in the `!File.Exists` branch. Existing files with zero parsed rows now throw `CsvErrorNoProfiles=1009`.
+Rejected Alternatives: Silent default fallback rejected because it hides broken source data in CI and can bake the wrong static payload. Auto-creating a profile row rejected because designers own authoring truth.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. CI now fails before wasting SDF/AO/asset bake time on unintended fallback geometry.
+Hardware Impact: Runtime cost remains 0 us. Editor failure path saves a full bake batch when the profile file is empty.
+
+## Decision 067 - Empty Manifest Write Guard
+Problem: Empty-surface bakes produce metrics but no manifest records; writing `.h8geom` in that state can replace a prior valid manifest with a zero-record file.
+Solution: Public single-bake and async finish paths now write `.h8geom` and call `AssetDatabase.SaveAssets()` only when manifest records exist. Metrics-only reports still write when metrics exist.
+Rejected Alternatives: Writing zero-record manifests rejected because it erases the BRG handoff artifact. Suppressing metrics rejected because empty-surface evidence is needed for authoring diagnostics.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Bad low-quality or malformed profiles now preserve last valid geometry while still reporting the failure.
+Hardware Impact: Runtime cost remains 0 us. Editor empty-surface path skips one manifest file write and one `SaveAssets` call.
+
+## Decision 068 - Black-Box Dump Exception Isolation
+Problem: `DumpBlackBox` was called inside failure paths directly; dump IO failure could replace the original bake exception and destroy root-cause evidence.
+Solution: Added `TryDumpBlackBox`, which logs dump exceptions through `Debug.LogException` and never masks the bake failure. Non-finite warning dump paths also use the wrapper.
+Rejected Alternatives: Swallowing dump exceptions silently rejected because dump IO failure is still diagnostic evidence. Letting dump exceptions propagate rejected because the original bake failure owns the causal route.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Endurance-style editor failures now preserve the first exception even if the dump path is locked or unwritable.
+Hardware Impact: Runtime cost remains 0 us. Success path has no additional cost; warning/failure path adds one try/catch boundary.
+
+## Decision 069 - BRG Manifest Positive Geometry Audit
+Problem: Manifest audit rejected negative triangle counts but accepted zero-triangle BRG-ready records and finite-but-zero bounds extents.
+Solution: `ValidateManifestRecord` now requires all LOD triangle counts to be positive and all bounds extents to be finite and greater than zero.
+Rejected Alternatives: Accepting zero as a legal empty mesh rejected because BRG-ready records must represent draw-capable geometry. Deferring to runtime consumers rejected because this editor audit is the payload trust boundary.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Invalid static artifacts fail before any runtime render owner imports them.
+Hardware Impact: Runtime cost remains 0 us. Audit cost adds three integer comparisons and one `float3` positive check per record.
+
+## Decision 070 - Ledger Source Truth Correction
+Problem: `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` still described the old async-tick asset-edit scope and zero-output manifest behavior after source patches moved asset editing into `SaveMeshesAndManifest` and gated manifest writes on record count.
+Solution: Updated the SHINOBU_208 ledger row to state the current source truth: asset editing wraps only LOD asset writes, `.h8geom`/`SaveAssets` require manifest records, metrics-only reports remain allowed, `CsvErrorNoProfiles=1009` owns existing-empty CSV failure, manifest self-audit rejects zero geometry, and layout upload uses `ApplyVertexBufferParams` rather than the removed `GetLayout` copy accessor.
+Rejected Alternatives: Leaving stale prose rejected because architecture docs are used as objective memory after context compression. Adding a second contradictory addendum rejected because the primary SHINOBU_208 row must be readable without conflict.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. The correction prevents future agents from widening editor asset-lock windows or reintroducing zero-record manifest writes based on stale documentation.
+Hardware Impact: Runtime cost remains 0 us. Documentation-only patch; indirect editor risk reduction comes from preserving the smaller asset-edit lock and fail-closed manifest behavior.
+
+## Decision 071 - Async Finish Exception Isolation
+Problem: `BakeProfilesAsync` setup catch and `TickAsyncBake` update catch called `FinishAsyncBake(true)` directly. If cleanup, report IO, or a progress callback threw during that finish call, the finish exception could replace the original setup/bake failure.
+Solution: Added `TryFinishAsyncBake(bool)` for exception paths only. It logs finish failures via `Debug.LogException` and lets the original exception continue through the existing throw/log route. Normal successful finish and explicit cancel still call `FinishAsyncBake` directly so their own failures remain visible.
+Rejected Alternatives: Swallowing all finish failures rejected because report/cleanup failure is diagnostic evidence. Wrapping normal finish rejected because a direct user cancel or final artifact write failure should still surface as the active operation failure.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Large high/ultra editor batches now preserve the first causal exception even when secondary cleanup/report work fails under IO pressure.
+Hardware Impact: Runtime cost remains 0 us. Editor failure paths add one try/catch wrapper; success paths are unchanged.
+
+## Decision 072 - Mill Static Audit Hardening
+Problem: The layout audit could pass with no output, manifest GUID pairs were not proven against live mesh assets, partial newly created LOD assets could remain after a save-tranche failure, CSV size validation allowed huge files up to `int.MaxValue`, UTF-8 BOM headers failed exact schema validation, and unsafe Burst suppression fields lacked local invariants.
+Solution: Layout pass now requires `meshCount > 0`, `manifestValid`, and `manifestRecords > 0`; manifest records resolve all three GUID pairs back to `Mesh` assets and validate their 32B layout; `ResolveGuid128` throws on missing, non-32-char, or non-hex GUIDs; `SaveMeshesAndManifest` deletes newly created partial assets after the edit scope closes on failure and logs cleanup faults without replacing the original save exception; CSV import rejects files above `MaximumCsvBytes=4194304` and skips an optional UTF-8 BOM before header validation; all GeologyForgeJobs unsafe suppression fields now carry explicit disjoint-write/dependency invariants.
+Rejected Alternatives: Keeping no-output audits as pass rejected because an empty checkout is not BRG-ready proof. Accepting nonzero GUID integers rejected because stale GUID payloads must fail before runtime import. Full transactional replacement of existing Unity assets was rejected for this static pass because AssetDatabase does not provide an atomic three-file transaction and generated asset references must not be rewritten without Unity execution proof; the implemented cleanup covers newly created partial files without claiming rollback of pre-existing asset mutation. Raising CSV size to `int.MaxValue` rejected because it can allocate pathological Temp memory before schema failure. Stripping BOM in managed strings rejected because the parser remains byte-pointer based.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring now fails before high/ultra bakes spend SDF/AO/LOD time on oversized CSVs, stale manifest GUIDs, or empty output proof; continuous `GlobalQualityWeight` math remains untouched.
+Hardware Impact: Runtime cost remains 0 us. Editor audit adds three GUID-to-mesh resolves per manifest record; CSV success path adds one BOM branch and a 4 MiB file-size cap before native allocation; failure paths avoid partial new assets and impossible audit passes.
+
+## Decision 073 - Pauli Static Defect Integration
+Problem: Subagent audit found the scanner still scoped the eradication verdict to World/Environment roots, asset save cleanup stopped before GUID/manifest append, self-audit accepted foreign/orphan output meshes, and raw padding names did not match the project padding convention.
+Solution: `RuntimeMeshGenerationScanner` now scans `Assets/_Project/Scripts` excluding `Editor` folders and the JSON artifact was refreshed project-wide. `SaveMeshesAndManifest` backs up pre-existing LOD assets under `_H8Backups`, restores them on save/GUID/manifest-record failure, deletes newly created partial assets on the same outer failure path, and removes any appended manifest tail on failure. `GeologyForgeSelfAudit` now requires manifest GUIDs to resolve under the geology output folder, rejects duplicate GUIDs, rejects top-level output meshes not referenced by the manifest, and reports exact mesh-set proof. `GeologyRawVertex.Padding0` was renamed `_pad0`; manifest record padding is not named because `BoundsExtents` owns bytes 60..71 and GUID lanes already start aligned at byte 72.
+Rejected Alternatives: Leaving the scanner root-scoped was rejected because Task 19 is project-runtime proof, not just Task 01 archaeology. Claiming full AssetDatabase transactionality was rejected; the implemented backup/restore route is explicit editor failure containment without pretending Unity provides atomic multi-asset replacement. Accepting any GUID-resolved Mesh was rejected because manifest truth must point to this lane's output folder, not a foreign mesh.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Project-wide report routing gives other owners exact remaining topology/material-clone sites while this lane keeps runtime geology cost at static mesh/manifest import only.
+Hardware Impact: Runtime cost remains 0 us. Editor failure paths add backup copy/delete work only when overwriting existing baked assets; in return they avoid corrupting the static payload set after a failed high/ultra bake.
+
+## Decision 074 - Manifest Orphan Count Correction
+Problem: The layout self-audit already failed missing or invalid manifests, but top-level mesh assets were counted as unmanifested only after at least one manifest GUID had been collected. An empty or missing manifest could therefore fail while reporting `unmanifestedMeshCount=0`, weakening the forensic artifact.
+Solution: `ValidateGeneratedMeshes` now checks every top-level mesh path directly against the manifest GUID set. If the set is empty, every top-level mesh is counted and reported as `UNMANIFESTED_MESH_ASSET`.
+Rejected Alternatives: Relying only on `manifestValid=false` was rejected because the audit report must explain the orphan mesh population, not just fail generally. Deleting orphan meshes during audit was rejected because the self-audit is proof tooling and must not mutate the payload folder.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. The correction prevents invalid editor output from being accepted or under-reported before any runtime BRG owner imports static geology.
+Hardware Impact: Runtime cost remains 0 us. Editor audit cost is one existing `HashSet<string>.Contains` lookup per top-level mesh, even in missing-manifest cases.
+
+## Decision 075 - Kepler LUT And Manifest Layout Correction
+Problem: Subagent static audit proved two hard self-audit blockers: complement tetra cases `14`, `13`, `11`, and `8` did not reverse their inverse-case edge order, and the manifest `_pad0` field at byte 68 overlapped `BoundsExtents.z` bytes 68..71.
+Solution: Reversed the four complement edge sequences so `ValidateComplementWinding()` passes for every 1..14 pair. Removed `GeologyMeshManifestRecord._pad0` and its offset validation; `BoundsExtents` now explicitly owns bytes 60..71 and `Lod0GuidHigh` starts aligned at byte 72.
+Rejected Alternatives: Keeping the pad name for audit aesthetics was rejected because explicit-layout overlap corrupts payload truth. Removing `ValidateComplementWinding()` was rejected because the LUT must fail closed before bake/audit work.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. The correction preserves the editor-only Dear Lie extraction route while preventing backface/inverted tetra output and corrupted manifest bounds from entering static payload proof.
+Hardware Impact: Runtime cost remains 0 us. Editor validation cost is unchanged: the existing 14-case LUT check and manifest offset checks now validate correct data rather than rejecting or blessing corruption.

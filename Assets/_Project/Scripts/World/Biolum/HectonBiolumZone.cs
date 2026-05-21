@@ -282,8 +282,16 @@ namespace Hecton8.Biolum
                 (runtimePosition - _cachedZoneRuntimePosition).sqrMagnitude > AupRefreshDistanceSqr)
             {
                 _cachedZoneRuntimePosition = runtimePosition;
-                _cachedZoneAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-                _cachedZoneAupValid = true;
+                if (TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition zoneAup))
+                {
+                    _cachedZoneAup = zoneAup;
+                    _cachedZoneAupValid = true;
+                }
+                else
+                {
+                    _cachedZoneAupValid = false;
+                    ReportInvalidZoneInput();
+                }
             }
 
             return _cachedZoneAup;
@@ -525,8 +533,9 @@ namespace Hecton8.Biolum
         private void RefreshCachedAup()
         {
             _cachedZoneRuntimePosition = GetZonePosition();
-            _cachedZoneAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedZoneRuntimePosition);
-            _cachedZoneAupValid = true;
+            _cachedZoneAupValid = TryResolveAupFromRuntimeOrigin(_cachedZoneRuntimePosition, out _cachedZoneAup);
+            if (!_cachedZoneAupValid)
+                ReportInvalidZoneInput();
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -543,8 +552,10 @@ namespace Hecton8.Biolum
             HectonBiolumManager manager = GlobalRegistry.BiolumManager;
             AbsoluteUniversePosition cameraAup = manager != null
                 ? manager.GetCameraAup()
-                : AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
+                : GlobalSignals.CurrentRuntimeOriginAup();
             AbsoluteUniversePosition zoneAup = GetZoneAup();
+            if (!AbsoluteUniversePosition.IsFinite(in cameraAup) || !AbsoluteUniversePosition.IsFinite(in zoneAup))
+                return false;
 
             float lodThreshold = 5f + (500f - 5f) * Mathf.Clamp01(_lodDistanceScale);
             double lodThresholdSq = (double)lodThreshold * lodThreshold;
@@ -563,6 +574,22 @@ namespace Hecton8.Biolum
 
         private static bool Approximately(float a, float b, float epsilon = 0.001f) =>
             Mathf.Abs(a - b) < epsilon;
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!MathGuard.IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!AbsoluteUniversePosition.IsFinite(in originAup))
+                return false;
+
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return AbsoluteUniversePosition.IsFinite(in aup);
+        }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // EDITOR

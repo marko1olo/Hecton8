@@ -5,6 +5,7 @@ using Hecton8.Modding;
 using Hecton8.Meta;
 using Hecton8.SaveSystem;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Ecosystem
@@ -194,19 +195,46 @@ namespace Hecton8.Ecosystem
         {
             unchecked
             {
-                Hecton8.World.AbsoluteUniversePosition spawnAup =
-                    Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
+                bool hasAupProof = TryResolveAupFromRuntimeOrigin(spawnPosition, out Hecton8.World.AbsoluteUniversePosition spawnAup);
                 uint hash = Mix((uint)_worldSeed);
                 hash = Mix(hash ^ (uint)biomeIndex * 0x85EBCA6Bu);
-                hash = Mix(hash ^ FoldInt64(spawnAup.GridX));
-                hash = Mix(hash ^ FoldInt64(spawnAup.GridY));
-                hash = Mix(hash ^ FoldInt64(spawnAup.GridZ));
-                hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalX));
-                hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalY));
-                hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalZ));
+                if (hasAupProof)
+                {
+                    hash = Mix(hash ^ FoldInt64(spawnAup.GridX));
+                    hash = Mix(hash ^ FoldInt64(spawnAup.GridY));
+                    hash = Mix(hash ^ FoldInt64(spawnAup.GridZ));
+                    hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalX));
+                    hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalY));
+                    hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalZ));
+                }
+                else
+                {
+                    float3 safeSpawn = new float3(spawnPosition.x, spawnPosition.y, spawnPosition.z);
+                    hash = Mix(hash ^ math.asuint(math.select(0f, safeSpawn.x, math.isfinite(safeSpawn.x))));
+                    hash = Mix(hash ^ math.asuint(math.select(0f, safeSpawn.y, math.isfinite(safeSpawn.y))));
+                    hash = Mix(hash ^ math.asuint(math.select(0f, safeSpawn.z, math.isfinite(safeSpawn.z))));
+                }
+
                 hash = Mix(hash ^ HashString(archetype != null ? archetype.creatureId : string.Empty));
                 return hash;
             }
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out Hecton8.World.AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(localRuntime)))
+                return false;
+
+            Hecton8.World.AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!originAup.IsFinite())
+                return false;
+
+            positionAup = Hecton8.World.AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(localRuntime.x, localRuntime.y, localRuntime.z));
+            return positionAup.IsFinite();
         }
 
         private static uint FoldInt64(long value)

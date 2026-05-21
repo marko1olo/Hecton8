@@ -1,5 +1,6 @@
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton.Localization;
 using Hecton8.Physics;
 using System.Runtime.InteropServices;
@@ -145,6 +146,9 @@ namespace Hecton8.Gameplay
 
         /// <inheritdoc />
         public SubmarineFluidDynamics FluidDynamics => fluidDynamics;
+
+        /// <inheritdoc />
+        public IWaterHeatInjectionService WaterHeatInjectionService => fluidDynamics;
 
         /// <inheritdoc />
         public SubmarineAtmosphereSystem AtmosphereSystem => atmosphereSystem;
@@ -547,11 +551,11 @@ namespace Hecton8.Gameplay
                    float.IsFinite(value.z);
         }
 
-        private uint ComposeInstalledUpgradeMask()
+        private ulong ComposeInstalledUpgradeMask()
         {
             EnsureUpgradeSlots();
 
-            uint mask = 0u;
+            ulong mask = 0UL;
             for (int i = 0; i < UpgradeSlotCount; i++)
             {
                 int itemHashId = installedUpgradeItemHashIds[i];
@@ -567,10 +571,10 @@ namespace Hecton8.Gameplay
             return mask;
         }
 
-        private static uint SelectVehicleBit(int itemHashId, int expectedHashId, VehicleUpgradeBits bit)
+        private static ulong SelectVehicleBit(int itemHashId, int expectedHashId, VehicleUpgradeBits bit)
         {
-            uint selected = (uint)math.select(0, 1, itemHashId == expectedHashId);
-            return (uint)bit & (0u - selected);
+            ulong selected = (ulong)math.select(0, 1, itemHashId == expectedHashId);
+            return (ulong)bit & (0UL - selected);
         }
 
         private static float SelectUpgradeMultiplier(float multiplier, float enabled01)

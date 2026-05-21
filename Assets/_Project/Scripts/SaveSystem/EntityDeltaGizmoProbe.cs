@@ -26,12 +26,12 @@ namespace Hecton8.SaveSystem
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.SaveEntityDeltaSectorStats, out VaultBufferHandle<EntityDeltaSectorStatsDTO> handle))
+                !vault.TryGetGenerationHandle(BufferID.SaveEntityDeltaSectorStats, out VaultGenerationHandle<EntityDeltaSectorStatsDTO> handle) ||
+                !vault.TryResolveHandle(in handle, out NativeArray<EntityDeltaSectorStatsDTO> stats))
             {
                 return;
             }
 
-            NativeArray<EntityDeltaSectorStatsDTO> stats = handle.Resolve(vault);
             if (!stats.IsCreated)
                 return;
 

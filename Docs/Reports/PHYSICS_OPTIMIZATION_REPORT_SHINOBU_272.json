@@ -1,0 +1,10 @@
+﻿{
+    "agent":  "SHINOBU_272",
+    "scanner":  "Physiology_OOP_Scanner.StaticMirror",
+    "summary":  "OOP Physiology Triggers Purged",
+    "findingCount":  0,
+    "generatedWithoutUnity":  true,
+    "findings":  [
+
+                 ]
+}

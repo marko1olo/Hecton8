@@ -1,0 +1,4 @@
+output,station,ingredients,craft_seconds,output_count,flags
+pressure_gasket,fabricator_mk1,scrap_metal,12,1,1
+oxygen_cell,fabricator_mk1,scrap_metal;pressure_gasket,24,1,1
+sonar_crystal,fabricator_mk1,scrap_metal;pressure_gasket,36,1,1

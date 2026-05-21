@@ -1,0 +1,18 @@
+{
+  "agent": "SHINOBU_241",
+  "scanner": "Manual_Trench_Scanner",
+  "status": "STATIC_SCAN",
+  "environmentPrefabFolderExists": false,
+  "forbiddenStrictManualGeometryCount": 0,
+  "patterns": [
+    "trench*.fbx",
+    "trench*.prefab",
+    "canyon*.fbx",
+    "canyon*.prefab",
+    "fault*.fbx",
+    "fault*.prefab",
+    "chasm*.fbx",
+    "chasm*.prefab"
+  ],
+  "sharedReportNote": "Docs/Reports/WORLD_OPTIMIZATION_REPORT.json is a shared path and may be overwritten by other agents; this per-agent report preserves SHINOBU_241 evidence."
+}

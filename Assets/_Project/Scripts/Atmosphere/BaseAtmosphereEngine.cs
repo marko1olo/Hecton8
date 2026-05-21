@@ -88,15 +88,16 @@ namespace Hecton8.Atmosphere
         [SerializeField] private float suitRuptureDrainPerSecond = DefaultSuitRuptureDrainPerSecond;
         [SerializeField] private bool seedDefaultAtmosphereOnEnable = true;
 
-        private NativeArray<CompartmentState> _front;
-        private NativeArray<CompartmentState> _back;
-        private NativeArray<byte> _carbonDioxideByteLane;
-        private NativeArray<BaseAtmosphereTelemetryEntry> _blackBox;
-        private VaultBufferHandle<CompartmentState> _frontHandle;
-        private VaultBufferHandle<CompartmentState> _backHandle;
-        private VaultBufferHandle<byte> _carbonDioxideByteLaneHandle;
-        private VaultBufferHandle<BaseAtmosphereTelemetryEntry> _blackBoxHandle;
+        private VaultGenerationHandle<CompartmentState> _frontHandle;
+        private VaultGenerationHandle<CompartmentState> _backHandle;
+        private VaultGenerationHandle<byte> _carbonDioxideByteLaneHandle;
+        private VaultGenerationHandle<BaseAtmosphereTelemetryEntry> _blackBoxHandle;
+        private VaultGenerationHandle<CompartmentState> _pendingReleaseFrontHandle;
+        private VaultGenerationHandle<CompartmentState> _pendingReleaseBackHandle;
+        private VaultGenerationHandle<byte> _pendingReleaseCarbonDioxideByteLaneHandle;
+        private VaultGenerationHandle<BaseAtmosphereTelemetryEntry> _pendingReleaseBlackBoxHandle;
         private IDataVault _dataVault;
+        private IDataVault _pendingReleaseVault;
         private IPowerGridService _powerGrid;
         private JobHandle _coldTickHandle;
         private JobHandle _disposeHandle;
@@ -104,6 +105,7 @@ namespace Hecton8.Atmosphere
         private bool _registered;
         private bool _registeredHotSwap;
         private bool _pendingVaultRebind;
+        private bool _pendingNativeStateRelease;
         private bool _seededDefaultAtmosphere;
         private bool _activeOxygenTextDirty = true;
         private bool _oxygenDepletedTelemetryPublished;
@@ -118,7 +120,7 @@ namespace Hecton8.Atmosphere
         private float _activeStaminaRecoveryMultiplier = 1f;
         private BaseAtmosphereSolveMode _lastSolveMode = BaseAtmosphereSolveMode.ActiveCompartment1Hz;
 
-        public int CompartmentCount => _front.IsCreated ? _front.Length : 0;
+        public int CompartmentCount => TryReadFront(out NativeArray<CompartmentState> front) ? front.Length : 0;
         public int ActiveCompartmentIndex => _activeCompartmentIndex;
         public bool IsColdTickRunning => _coldTickRunning;
         public float LastResolvedTickIntervalSeconds => _lastResolvedTickIntervalSeconds;
@@ -178,7 +180,7 @@ namespace Hecton8.Atmosphere
 
             EnsureNativeState();
             SeedDefaultAtmosphereIfNeeded();
-            if (!_front.IsCreated || _coldTickRunning)
+            if (_coldTickRunning || !TryReadFront(out NativeArray<CompartmentState> front))
             {
                 _tickAccumulator += math.max(0f, fixedDeltaTime);
                 return;
@@ -187,8 +189,8 @@ namespace Hecton8.Atmosphere
             float qualityWeight01 = ResolveGlobalQualityWeight01();
             _lastQualityWeight01 = qualityWeight01;
             _lastResolvedTickIntervalSeconds = BaseAtmosphereMath.ResolveColdTickIntervalSeconds(qualityWeight01);
-            _lastSolveBudget = BaseAtmosphereMath.ResolveCompartmentSolveBudget(_front.Length, qualityWeight01);
-            _lastSolveMode = BaseAtmosphereMath.ResolveSolveMode(qualityWeight01, _lastSolveBudget, _front.Length);
+            _lastSolveBudget = BaseAtmosphereMath.ResolveCompartmentSolveBudget(front.Length, qualityWeight01);
+            _lastSolveMode = BaseAtmosphereMath.ResolveSolveMode(qualityWeight01, _lastSolveBudget, front.Length);
             _tickAccumulator += math.max(0f, fixedDeltaTime);
             if (_tickAccumulator + 0.0001f < _lastResolvedTickIntervalSeconds)
                 return;
@@ -205,7 +207,9 @@ namespace Hecton8.Atmosphere
 
         public bool TrySetActiveCompartmentIndex(int compartmentIndex)
         {
-            if (!_front.IsCreated || compartmentIndex < 0 || compartmentIndex >= _front.Length)
+            if (!TryReadFront(out NativeArray<CompartmentState> front) ||
+                compartmentIndex < 0 ||
+                compartmentIndex >= front.Length)
                 return false;
 
             _activeCompartmentIndex = compartmentIndex;
@@ -216,16 +220,21 @@ namespace Hecton8.Atmosphere
         public bool TryGetCompartmentState(int compartmentIndex, out CompartmentState state)
         {
             state = default;
-            if (!_front.IsCreated || compartmentIndex < 0 || compartmentIndex >= _front.Length)
+            if (!TryReadFront(out NativeArray<CompartmentState> front) ||
+                compartmentIndex < 0 ||
+                compartmentIndex >= front.Length)
                 return false;
 
-            state = _front[compartmentIndex];
+            state = front[compartmentIndex];
             return true;
         }
 
         public bool TrySetCompartmentState(int compartmentIndex, CompartmentState state)
         {
-            if (_coldTickRunning || !_front.IsCreated || compartmentIndex < 0 || compartmentIndex >= _front.Length)
+            if (_coldTickRunning ||
+                !TryOpenCompartmentViews(out NativeArray<CompartmentState> front, out NativeArray<CompartmentState> back, out _) ||
+                compartmentIndex < 0 ||
+                compartmentIndex >= front.Length)
                 return false;
 
             state.TotalPressureKPa = BaseAtmosphereMath.ResolveDaltonPressureFake(
@@ -235,8 +244,8 @@ namespace Hecton8.Atmosphere
             if (state.InvMaxPressureKPa <= 0f)
                 state.InvMaxPressureKPa = math.rcp(math.max(0.0001f, maxPressureKPa));
 
-            _front[compartmentIndex] = state;
-            _back[compartmentIndex] = state;
+            front[compartmentIndex] = state;
+            back[compartmentIndex] = state;
             if (compartmentIndex == _activeCompartmentIndex)
                 _activeOxygenTextDirty = true;
             return true;
@@ -406,6 +415,7 @@ namespace Hecton8.Atmosphere
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
+                    ReleaseNativeStateAliases(previousService as IDataVault ?? _dataVault, resetSeed: true);
                     _dataVault = currentService as IDataVault;
                     _pendingVaultRebind = true;
                     if (!_coldTickRunning && TryFinalizeDeferredNativeDisposal())
@@ -419,7 +429,7 @@ namespace Hecton8.Atmosphere
 
         private void EnsureNativeState()
         {
-            if (_front.IsCreated || !TryFinalizeDeferredNativeDisposal())
+            if (!TryFinalizeDeferredNativeDisposal())
                 return;
 
             IDataVault vault = _dataVault;
@@ -427,33 +437,34 @@ namespace Hecton8.Atmosphere
                 return;
 
             int capacity = math.clamp(compartmentCapacity, 1, MaxCompartmentCapacity);
-            _frontHandle = vault.GetBufferHandle<CompartmentState>(
+            if (TryOpenCompartmentViews(capacity, out _, out _, out _))
+            {
+                EnsureBlackBoxState(vault);
+                return;
+            }
+
+            if (vault.IsAllocationLocked)
+                return;
+
+            _frontHandle = vault.GetGenerationHandle<CompartmentState>(
                 FrontBufferId,
                 capacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _backHandle = vault.GetBufferHandle<CompartmentState>(
+            _backHandle = vault.GetGenerationHandle<CompartmentState>(
                 BackBufferId,
                 capacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _carbonDioxideByteLaneHandle = vault.GetBufferHandle<byte>(
+            _carbonDioxideByteLaneHandle = vault.GetGenerationHandle<byte>(
                 CarbonDioxideByteLaneBufferId,
                 capacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
 
-            _front = _frontHandle.Resolve(vault);
-            _back = _backHandle.Resolve(vault);
-            _carbonDioxideByteLane = _carbonDioxideByteLaneHandle.Resolve(vault);
-            if (!_front.IsCreated ||
-                !_back.IsCreated ||
-                !_carbonDioxideByteLane.IsCreated ||
-                _front.Length < capacity ||
-                _back.Length < capacity ||
-                _carbonDioxideByteLane.Length < capacity)
+            if (!TryOpenCompartmentViews(capacity, out _, out _, out _))
             {
-                ReleaseNativeStateAliases(resetSeed: true);
+                ReleaseNativeStateAliases(vault, resetSeed: true);
                 return;
             }
 
@@ -469,20 +480,24 @@ namespace Hecton8.Atmosphere
 
         private void EnsureBlackBoxState(IDataVault vault)
         {
-            if (_blackBox.IsCreated || vault == null)
+            if (TryOpenBlackBox(out _) || vault == null || vault.IsAllocationLocked)
                 return;
 
-            _blackBoxHandle = vault.GetBufferHandle<BaseAtmosphereTelemetryEntry>(
+            _blackBoxHandle = vault.GetGenerationHandle<BaseAtmosphereTelemetryEntry>(
                 BlackBoxBufferId,
                 BlackBoxCapacity,
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
-            _blackBox = _blackBoxHandle.Resolve(vault);
+
+            if (!TryOpenBlackBox(out _))
+                ReleaseVaultHandle(vault, ref _blackBoxHandle);
         }
 
         private void SeedDefaultAtmosphereIfNeeded()
         {
-            if (_seededDefaultAtmosphere || !seedDefaultAtmosphereOnEnable || !_front.IsCreated)
+            if (_seededDefaultAtmosphere ||
+                !seedDefaultAtmosphereOnEnable ||
+                !TryOpenCompartmentViews(out NativeArray<CompartmentState> front, out NativeArray<CompartmentState> back, out NativeArray<byte> carbonDioxideByteLane))
                 return;
 
             CompartmentState defaultState = BaseAtmosphereMath.CreateDefaultCompartment(
@@ -491,11 +506,11 @@ namespace Hecton8.Atmosphere
             defaultState.OxygenBaseConsumptionKPaPerSecond = DefaultOxygenConsumptionKPaPerSecond;
             defaultState.CarbonDioxideGenerationKPaPerSecond = DefaultCarbonDioxideGenerationKPaPerSecond;
 
-            for (int i = 0; i < _front.Length; i++)
+            for (int i = 0; i < front.Length; i++)
             {
-                _front[i] = defaultState;
-                _back[i] = defaultState;
-                _carbonDioxideByteLane[i] = BaseAtmosphereMath.EncodeCarbonDioxideByte(
+                front[i] = defaultState;
+                back[i] = defaultState;
+                carbonDioxideByteLane[i] = BaseAtmosphereMath.EncodeCarbonDioxideByte(
                     defaultState.CarbonDioxideKPa,
                     defaultState.TotalPressureKPa);
             }
@@ -506,17 +521,18 @@ namespace Hecton8.Atmosphere
 
         private void ScheduleColdTick(float deltaTime, float qualityWeight01, int solveBudget)
         {
-            if (_coldTickRunning || !_front.IsCreated)
+            if (_coldTickRunning ||
+                !TryOpenCompartmentViews(out NativeArray<CompartmentState> front, out NativeArray<CompartmentState> back, out NativeArray<byte> carbonDioxideByteLane))
                 return;
 
             BaseAtmosphereColdTickJob job = new BaseAtmosphereColdTickJob
             {
-                Input = _front,
-                Output = _back,
-                CarbonDioxideByteLane = _carbonDioxideByteLane,
-                CompartmentCount = _front.Length,
+                Input = front,
+                Output = back,
+                CarbonDioxideByteLane = carbonDioxideByteLane,
+                CompartmentCount = front.Length,
                 ActiveCompartmentIndex = _activeCompartmentIndex,
-                CompartmentSolveCount = math.clamp(solveBudget, 1, _front.Length),
+                CompartmentSolveCount = math.clamp(solveBudget, 1, front.Length),
                 DeltaTime = math.max(0f, deltaTime),
                 PlayerStressMultiplier = math.max(1f, playerStressMultiplier),
                 LogisticsPowerWatts = ResolveLogisticsPowerWatts(),
@@ -541,7 +557,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             _coldTickRunning = false;
-            Swap(ref _front, ref _back);
+            Swap(ref _frontHandle, ref _backHandle);
             CommitActiveCompartmentSideEffects();
         }
 
@@ -584,7 +600,8 @@ namespace Hecton8.Atmosphere
         private void RecordBlackBox(in CompartmentState state)
         {
             EnsureBlackBoxState();
-            if (!_blackBox.IsCreated || _blackBox.Length < BlackBoxCapacity)
+            if (!TryOpenBlackBox(out NativeArray<BaseAtmosphereTelemetryEntry> blackBox) ||
+                !TryReadFront(out NativeArray<CompartmentState> front))
                 return;
 
             int index = _blackBoxCursor;
@@ -594,7 +611,7 @@ namespace Hecton8.Atmosphere
             entry.FrameIndex = _fixedFrameIndex;
             entry.StateHash = ResolveStateHash(in state);
             entry.ActiveCompartmentIndex = _activeCompartmentIndex;
-            entry.CompartmentCount = _front.IsCreated ? _front.Length : 0;
+            entry.CompartmentCount = front.Length;
             entry.OxygenKPa = state.OxygenKPa;
             entry.CarbonDioxideKPa = state.CarbonDioxideKPa;
             entry.NitrogenKPa = state.NitrogenKPa;
@@ -608,7 +625,7 @@ namespace Hecton8.Atmosphere
             entry.QualityWeightByte = EncodeQualityWeightByte(_lastQualityWeight01);
             entry._pad0 = 0u;
             entry._pad1 = 0ul;
-            _blackBox[index] = entry;
+            blackBox[index] = entry;
         }
 
         private float ResolveLogisticsPowerWatts()
@@ -654,37 +671,116 @@ namespace Hecton8.Atmosphere
             return hash * 16777619u;
         }
 
+        private bool TryOpenCompartmentViews(
+            out NativeArray<CompartmentState> front,
+            out NativeArray<CompartmentState> back,
+            out NativeArray<byte> carbonDioxideByteLane)
+        {
+            return TryOpenCompartmentViews(1, out front, out back, out carbonDioxideByteLane);
+        }
+
+        private bool TryOpenCompartmentViews(
+            int requiredLength,
+            out NativeArray<CompartmentState> front,
+            out NativeArray<CompartmentState> back,
+            out NativeArray<byte> carbonDioxideByteLane)
+        {
+            IDataVault vault = _dataVault;
+            return TryOpenVaultView(vault, in _frontHandle, requiredLength, out front) &&
+                   TryOpenVaultView(vault, in _backHandle, requiredLength, out back) &&
+                   TryOpenVaultView(vault, in _carbonDioxideByteLaneHandle, requiredLength, out carbonDioxideByteLane) &&
+                   back.Length >= front.Length &&
+                   carbonDioxideByteLane.Length >= front.Length;
+        }
+
+        private bool TryReadFront(out NativeArray<CompartmentState> front)
+        {
+            return TryReadVaultView(_dataVault, in _frontHandle, 1, out front);
+        }
+
+        private bool TryOpenBlackBox(out NativeArray<BaseAtmosphereTelemetryEntry> blackBox)
+        {
+            return TryOpenVaultView(_dataVault, in _blackBoxHandle, BlackBoxCapacity, out blackBox);
+        }
+
+        private static bool TryOpenVaultView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   IsHandleCreated(in handle) &&
+                   requiredLength >= 0 &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadVaultView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   IsHandleCreated(in handle) &&
+                   requiredLength >= 0 &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
         private bool TryFinalizeDeferredNativeDisposal()
         {
-            return DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
+            if (!DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle))
+                return false;
+
+            if (_pendingNativeStateRelease)
+                ReleasePendingNativeState();
+
+            return true;
         }
 
         private void DisposeNativeStateDeferred()
         {
-            ReleaseNativeStateAliases(resetSeed: true);
+            ReleaseNativeStateAliases(_dataVault, resetSeed: true);
         }
 
         private void RebindNativeStateAfterVaultReplacement()
         {
-            ReleaseNativeStateAliases(resetSeed: true);
+            if (!TryFinalizeDeferredNativeDisposal())
+                return;
+
             _pendingVaultRebind = false;
             EnsureNativeState();
             SeedDefaultAtmosphereIfNeeded();
         }
 
-        private void ReleaseNativeStateAliases(bool resetSeed)
+        private void ReleaseNativeStateAliases(IDataVault vault, bool resetSeed)
         {
             if (_coldTickRunning)
             {
                 _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, _coldTickHandle);
                 _coldTickHandle = default;
                 _coldTickRunning = false;
+                CapturePendingNativeStateRelease(vault);
+            }
+            else
+            {
+                ReleaseVaultHandles(vault);
             }
 
-            _front = default;
-            _back = default;
-            _carbonDioxideByteLane = default;
-            _blackBox = default;
             _frontHandle = default;
             _backHandle = default;
             _carbonDioxideByteLaneHandle = default;
@@ -699,10 +795,73 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void Swap(ref NativeArray<CompartmentState> first, ref NativeArray<CompartmentState> second)
+        private void CapturePendingNativeStateRelease(IDataVault vault)
         {
-            NativeArray<CompartmentState> temp = first;
+            if (_pendingNativeStateRelease)
+                return;
+
+            _pendingReleaseVault = vault;
+            _pendingReleaseFrontHandle = _frontHandle;
+            _pendingReleaseBackHandle = _backHandle;
+            _pendingReleaseCarbonDioxideByteLaneHandle = _carbonDioxideByteLaneHandle;
+            _pendingReleaseBlackBoxHandle = _blackBoxHandle;
+            _pendingNativeStateRelease =
+                vault != null &&
+                (IsHandleCreated(in _pendingReleaseFrontHandle) ||
+                 IsHandleCreated(in _pendingReleaseBackHandle) ||
+                 IsHandleCreated(in _pendingReleaseCarbonDioxideByteLaneHandle) ||
+                 IsHandleCreated(in _pendingReleaseBlackBoxHandle));
+        }
+
+        private void ReleasePendingNativeState()
+        {
+            IDataVault vault = _pendingReleaseVault;
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _pendingReleaseFrontHandle);
+                ReleaseVaultHandle(vault, ref _pendingReleaseBackHandle);
+                ReleaseVaultHandle(vault, ref _pendingReleaseCarbonDioxideByteLaneHandle);
+                ReleaseVaultHandle(vault, ref _pendingReleaseBlackBoxHandle);
+            }
+
+            _pendingReleaseFrontHandle = default;
+            _pendingReleaseBackHandle = default;
+            _pendingReleaseCarbonDioxideByteLaneHandle = default;
+            _pendingReleaseBlackBoxHandle = default;
+            _pendingReleaseVault = null;
+            _pendingNativeStateRelease = false;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _frontHandle);
+                ReleaseVaultHandle(vault, ref _backHandle);
+                ReleaseVaultHandle(vault, ref _carbonDioxideByteLaneHandle);
+                ReleaseVaultHandle(vault, ref _blackBoxHandle);
+                return;
+            }
+
+            _frontHandle = default;
+            _backHandle = default;
+            _carbonDioxideByteLaneHandle = default;
+            _blackBoxHandle = default;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (IsHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void Swap(ref VaultGenerationHandle<CompartmentState> first, ref VaultGenerationHandle<CompartmentState> second)
+        {
+            VaultGenerationHandle<CompartmentState> temp = first;
             first = second;
             second = temp;
         }

@@ -1,0 +1,46 @@
+{
+  "agent": "SHINOBU_271",
+  "scanner": "VR_Physics_Inquisition static shell fallback",
+  "verdict": "PASS_STATIC_UNITY_EXECUTION_PENDING",
+  "summary": "Physics-Based VR Hands Purged by default kinematic SDF bridge; legacy ArticulationBody/Rigidbody hand proxy remains behind explicit useKinematicSdfHandBridge=false fallback only.",
+  "generatedWithoutUnity": true,
+  "unityMenuRoute": "HECTON-8/VR/Run Physics Inquisition",
+  "sharedReportKey": "shinobu271VRKinematicBridgeScanner",
+  "routeCard": "Docs/ARCHITECTURE/SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE_ROUTE_CARD.md",
+  "binaryLedger": "Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md#2026-05-21-shinobu_271-vr-interaction-kinematic-bridge-payload-boundary",
+  "runtimeSpringJointHits": 0,
+  "runtimeConfigurableJointHits": 0,
+  "runtimeFixedJointHits": 0,
+  "physicalHandAddComponentArticulationHits": 2,
+  "physicalHandAddComponentRigidbodyHits": 1,
+  "physicalHandMovePositionHits": 0,
+  "legacyProxyGuard": "PhysicalHandController creates ArticulationBody and Rigidbody shell only when useKinematicSdfHandBridge is false.",
+  "dtoSizeBytes": 64,
+  "dtoOffsets": {
+    "RawControllerAUP": 0,
+    "ResolvedHandAUP": 24,
+    "Velocity": 48,
+    "InteractionFlags": 60
+  },
+  "vaultBufferIds": {
+    "HandStates": 73680,
+    "PreviousHandStates": 73681,
+    "ControllerMatrixInputs": 73682,
+    "InteractionSockets": 73683,
+    "Tuning": 73684,
+    "TelemetryRing": 73685,
+    "TelemetryCursor": 73686,
+    "ResolvedHandMatrices": 73687
+  },
+  "sdfRoute": "IVoxelSonarSdfReadModel.TryReadNearestSonarSdf -> VRHandStateDTO -> ResolvedHandMatrices -> transform-only runtime target",
+  "hotPathAmendments": [
+    "Fixed-step fallback uses cached IDataVault plus TryResolveExisting only; no hot GlobalRegistry polling or Vault lane creation.",
+    "Live controller pose is written into VRControllerMatrixDTO before shared ingestion math creates VRHandStateDTO.",
+    "Socket scan reads all active rows to keep interaction truth independent of GlobalQualityWeight.",
+    "Over-budget frames are telemetry-flagged only; non-finite state dumps immediately through the fault-only black box."
+  ],
+  "blackBoxDump": "Docs/AgentLogs/Dump_SHINOBU_271.bin",
+  "telemetryEntries": 600,
+  "continuousQuality": "GlobalQualityWeight maps continuously to a 2..8 presentation/telemetry iteration hint; authoritative SDF truth uses the deterministic 8-step fence so rollback state, DTO layout, and authority route remain invariant.",
+  "verificationLimit": "Narrow dotnet restore of Hecton8.Core.csproj succeeded. A later narrow dotnet build was launched only after CPU sampled 35.2 percent and csc/dotnet were absent. It reached CSC and failed on external missing source Assets/_Project/Scripts/IBuildPlacementRule.cs referenced by Hecton8.Core.csproj; no file by that name exists in the repo scan, and the compiler did not reach SHINOBU_271 source."
+}

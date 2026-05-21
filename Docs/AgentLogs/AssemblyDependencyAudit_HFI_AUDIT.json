@@ -11,11 +11,11 @@
     "firstPartyReferenceCount": 8,
     "path": "Assets/_Project/Scripts/Hecton8.Core.asmdef",
     "present": true,
-    "referenceCount": 20
+    "referenceCount": 21
   },
   "cycleCount": 0,
   "cycles": [],
-  "runtimeConcreteSiblingReferenceCount": 77,
+  "runtimeConcreteSiblingReferenceCount": 96,
   "runtimeConcreteSiblingReferences": [
     {
       "assembly": "Hecton8.AI.Ambient",
@@ -58,6 +58,16 @@
       "reference": "Hecton8.Core.Memory"
     },
     {
+      "assembly": "Hecton8.Atmosphere.StormPropagation.Runtime",
+      "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/Hecton8.Atmosphere.StormPropagation.Runtime.asmdef",
+      "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.Atmosphere.StormPropagation.Runtime",
+      "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/Hecton8.Atmosphere.StormPropagation.Runtime.asmdef",
+      "reference": "Hecton8.Core.Memory"
+    },
+    {
       "assembly": "Hecton8.Audio.Prologue",
       "path": "Assets/_Project/Scripts/Audio/Prologue/Hecton8.Audio.Prologue.asmdef",
       "reference": "Hecton8.Core"
@@ -86,6 +96,11 @@
       "assembly": "Hecton8.Dev.SpaceEngine098",
       "path": "Assets/_Project/Scripts/Dev/SpaceEngine098/Hecton8.Dev.SpaceEngine098.asmdef",
       "reference": "Hecton8.SpaceEngine098Terrain"
+    },
+    {
+      "assembly": "Hecton8.Environment.Fluids",
+      "path": "Assets/_Project/Scripts/Environment/Fluids/Hecton8.Environment.Fluids.asmdef",
+      "reference": "Hecton8.Core.Memory"
     },
     {
       "assembly": "Hecton8.Gameplay.Loot.Contracts",
@@ -193,6 +208,16 @@
       "reference": "Hecton8.Core"
     },
     {
+      "assembly": "Hecton8.Physics.Buoyancy.Runtime",
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/Hecton8.Physics.Buoyancy.Runtime.asmdef",
+      "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.Physics.Buoyancy.Runtime",
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/Hecton8.Physics.Buoyancy.Runtime.asmdef",
+      "reference": "Hecton8.Core.Memory"
+    },
+    {
       "assembly": "Hecton8.Physiology",
       "path": "Assets/_Project/Scripts/Physiology/Hecton8.Physiology.asmdef",
       "reference": "Hecton8.Core"
@@ -200,6 +225,16 @@
     {
       "assembly": "Hecton8.Physiology",
       "path": "Assets/_Project/Scripts/Physiology/Hecton8.Physiology.asmdef",
+      "reference": "Hecton8.Core.Memory"
+    },
+    {
+      "assembly": "Hecton8.Crest.Bridge",
+      "path": "Assets/_Project/Scripts/Plugins/Crest/Hecton8.Crest.Bridge.asmdef",
+      "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.Crest.Bridge",
+      "path": "Assets/_Project/Scripts/Plugins/Crest/Hecton8.Crest.Bridge.asmdef",
       "reference": "Hecton8.Core.Memory"
     },
     {
@@ -211,6 +246,16 @@
       "assembly": "Hecton8.Plugins",
       "path": "Assets/_Project/Scripts/Plugins/Hecton8.Plugins.asmdef",
       "reference": "Hecton8.SpaceEngine098Terrain"
+    },
+    {
+      "assembly": "Hecton8.Power.BatteryChargerLogistics.Runtime",
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/Hecton8.Power.BatteryChargerLogistics.Runtime.asmdef",
+      "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.Power.BatteryChargerLogistics.Runtime",
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/Hecton8.Power.BatteryChargerLogistics.Runtime.asmdef",
+      "reference": "Hecton8.Core.Memory"
     },
     {
       "assembly": "Hecton8.Power.Generators",
@@ -246,6 +291,36 @@
       "assembly": "Hecton8.QA",
       "path": "Assets/_Project/Scripts/QA/Hecton8.QA.asmdef",
       "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.Rendering.BilateralDrs",
+      "path": "Assets/_Project/Scripts/Rendering/BilateralDrs/Hecton8.Rendering.BilateralDrs.asmdef",
+      "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.Rendering.BilateralDrs",
+      "path": "Assets/_Project/Scripts/Rendering/BilateralDrs/Hecton8.Rendering.BilateralDrs.asmdef",
+      "reference": "Hecton8.Core.Memory"
+    },
+    {
+      "assembly": "Hecton8.Rendering.OceanSinglePass",
+      "path": "Assets/_Project/Scripts/Rendering/OceanSinglePass/Hecton8.Rendering.OceanSinglePass.asmdef",
+      "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.Rendering.OceanSinglePass",
+      "path": "Assets/_Project/Scripts/Rendering/OceanSinglePass/Hecton8.Rendering.OceanSinglePass.asmdef",
+      "reference": "Hecton8.Core.Memory"
+    },
+    {
+      "assembly": "Hecton8.Rendering.WaterOptics",
+      "path": "Assets/_Project/Scripts/Rendering/WaterOptics/Hecton8.Rendering.WaterOptics.asmdef",
+      "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.Rendering.WaterOptics",
+      "path": "Assets/_Project/Scripts/Rendering/WaterOptics/Hecton8.Rendering.WaterOptics.asmdef",
+      "reference": "Hecton8.Core.Memory"
     },
     {
       "assembly": "Hecton8.Thermodynamics",
@@ -328,6 +403,16 @@
       "reference": "Hecton8.Core.Memory"
     },
     {
+      "assembly": "Hecton8.VFX.JacobianFoam.Runtime",
+      "path": "Assets/_Project/Scripts/VFX/JacobianFoam/Hecton8.VFX.JacobianFoam.Runtime.asmdef",
+      "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.VFX.JacobianFoam.Runtime",
+      "path": "Assets/_Project/Scripts/VFX/JacobianFoam/Hecton8.VFX.JacobianFoam.Runtime.asmdef",
+      "reference": "Hecton8.Core.Memory"
+    },
+    {
       "assembly": "Hecton8.VFX.Materials",
       "path": "Assets/_Project/Scripts/VFX/Materials/Hecton8.VFX.Materials.asmdef",
       "reference": "Hecton8.Core"
@@ -345,6 +430,16 @@
     {
       "assembly": "Hecton8.VFX.PlasmaBeam.Runtime",
       "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/Hecton8.VFX.PlasmaBeam.Runtime.asmdef",
+      "reference": "Hecton8.Core.Memory"
+    },
+    {
+      "assembly": "Hecton8.World.FloraAmbientSway",
+      "path": "Assets/_Project/Scripts/World/FloraAmbientSway/Hecton8.World.FloraAmbientSway.asmdef",
+      "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.World.FloraAmbientSway",
+      "path": "Assets/_Project/Scripts/World/FloraAmbientSway/Hecton8.World.FloraAmbientSway.asmdef",
       "reference": "Hecton8.Core.Memory"
     },
     {
@@ -406,30 +501,36 @@
   "schema": "hecton8.assembly_dependency_audit.v1",
   "sourceRoot": "Assets/_Project/Scripts",
   "summary": {
-    "assemblyCount": 137,
-    "autoReferencedFalseCount": 134,
-    "editorFirstPartyAssemblyCount": 35,
-    "firstPartyAssemblyCount": 137,
+    "assemblyCount": 167,
+    "autoReferencedFalseCount": 164,
+    "editorFirstPartyAssemblyCount": 53,
+    "firstPartyAssemblyCount": 167,
     "noEngineReferencesCount": 6,
-    "runtimeFirstPartyAssemblyCount": 102,
+    "runtimeFirstPartyAssemblyCount": 114,
     "topReferenceCounts": [
       {
+        "assembly": "Hecton8.Crest.Bridge.Editor",
+        "firstPartyReferences": 9,
+        "path": "Assets/_Project/Scripts/Plugins/Crest/Editor/Hecton8.Crest.Bridge.Editor.asmdef",
+        "references": 31
+      },
+      {
         "assembly": "Hecton8.Editor",
-        "firstPartyReferences": 7,
+        "firstPartyReferences": 8,
         "path": "Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef",
-        "references": 28
+        "references": 29
       },
       {
         "assembly": "Hecton8.Core",
         "firstPartyReferences": 8,
         "path": "Assets/_Project/Scripts/Hecton8.Core.asmdef",
-        "references": 20
+        "references": 21
       },
       {
-        "assembly": "Hecton8.Plugins",
-        "firstPartyReferences": 3,
-        "path": "Assets/_Project/Scripts/Plugins/Hecton8.Plugins.asmdef",
-        "references": 11
+        "assembly": "Hecton8.Crest.Bridge",
+        "firstPartyReferences": 5,
+        "path": "Assets/_Project/Scripts/Plugins/Crest/Hecton8.Crest.Bridge.asmdef",
+        "references": 12
       },
       {
         "assembly": "Hecton8.Graphics.Scalability",
@@ -444,9 +545,33 @@
         "references": 10
       },
       {
+        "assembly": "Hecton8.Rendering.OceanSinglePass",
+        "firstPartyReferences": 4,
+        "path": "Assets/_Project/Scripts/Rendering/OceanSinglePass/Hecton8.Rendering.OceanSinglePass.asmdef",
+        "references": 10
+      },
+      {
+        "assembly": "Hecton8.VFX.JacobianFoam.Editor",
+        "firstPartyReferences": 4,
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/Editor/Hecton8.VFX.JacobianFoam.Editor.asmdef",
+        "references": 10
+      },
+      {
         "assembly": "Hecton8.Gameplay.Mining",
         "firstPartyReferences": 4,
         "path": "Assets/_Project/Scripts/Gameplay/Mining/Hecton8.Gameplay.Mining.asmdef",
+        "references": 9
+      },
+      {
+        "assembly": "Hecton8.Rendering.BilateralDrs",
+        "firstPartyReferences": 3,
+        "path": "Assets/_Project/Scripts/Rendering/BilateralDrs/Hecton8.Rendering.BilateralDrs.asmdef",
+        "references": 9
+      },
+      {
+        "assembly": "Hecton8.VFX.JacobianFoam.Runtime",
+        "firstPartyReferences": 3,
+        "path": "Assets/_Project/Scripts/VFX/JacobianFoam/Hecton8.VFX.JacobianFoam.Runtime.asmdef",
         "references": 9
       },
       {
@@ -480,9 +605,21 @@
         "references": 8
       },
       {
+        "assembly": "Hecton8.Plugins",
+        "firstPartyReferences": 3,
+        "path": "Assets/_Project/Scripts/Plugins/Hecton8.Plugins.asmdef",
+        "references": 8
+      },
+      {
         "assembly": "Hecton8.Power.Generators",
         "firstPartyReferences": 4,
         "path": "Assets/_Project/Scripts/Power/Generators/Hecton8.Power.Generators.asmdef",
+        "references": 8
+      },
+      {
+        "assembly": "Hecton8.Rendering.WaterOptics",
+        "firstPartyReferences": 2,
+        "path": "Assets/_Project/Scripts/Rendering/WaterOptics/Hecton8.Rendering.WaterOptics.asmdef",
         "references": 8
       },
       {
@@ -490,48 +627,6 @@
         "firstPartyReferences": 4,
         "path": "Assets/_Project/Scripts/Tools/ToolKinematics/Hecton8.Tools.ToolKinematics.asmdef",
         "references": 8
-      },
-      {
-        "assembly": "Hecton8.UI.Navigation",
-        "firstPartyReferences": 3,
-        "path": "Assets/_Project/Scripts/UI/Navigation/Hecton8.UI.Navigation.asmdef",
-        "references": 8
-      },
-      {
-        "assembly": "Hecton8.UI.VR",
-        "firstPartyReferences": 5,
-        "path": "Assets/_Project/Scripts/UI/VR/Hecton8.UI.VR.asmdef",
-        "references": 8
-      },
-      {
-        "assembly": "Hecton8.VFX.Bioluminescence.Runtime",
-        "firstPartyReferences": 3,
-        "path": "Assets/_Project/Scripts/VFX/Bioluminescence/Hecton8.VFX.Bioluminescence.Runtime.asmdef",
-        "references": 8
-      },
-      {
-        "assembly": "Hecton8.VFX.Debris",
-        "firstPartyReferences": 4,
-        "path": "Assets/_Project/Scripts/VFX/Debris/Hecton8.VFX.Debris.asmdef",
-        "references": 8
-      },
-      {
-        "assembly": "Hecton8.VFX.PlasmaBeam.Runtime",
-        "firstPartyReferences": 3,
-        "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/Hecton8.VFX.PlasmaBeam.Runtime.asmdef",
-        "references": 8
-      },
-      {
-        "assembly": "Hecton8.World.Outposts",
-        "firstPartyReferences": 4,
-        "path": "Assets/_Project/Scripts/World/Outposts/Hecton8.World.Outposts.asmdef",
-        "references": 8
-      },
-      {
-        "assembly": "Hecton8.AI.Ambient",
-        "firstPartyReferences": 3,
-        "path": "Assets/_Project/Scripts/AI/Ambient/Hecton8.AI.Ambient.asmdef",
-        "references": 7
       }
     ]
   }

@@ -133,7 +133,7 @@ namespace Hecton8.Editor.OfflineGeometry
             settings.GlobalQualityWeight = _qualityWeight != null ? math.saturate(_qualityWeight.value) : settings.GlobalQualityWeight;
             settings.DepthMeters = _depthMeters != null ? math.max(0f, _depthMeters.value) : settings.DepthMeters;
             settings.Lod0HardBudget = _lod0Budget != null ? math.max(256, _lod0Budget.value) : settings.Lod0HardBudget;
-            settings.ConvexHullVertexLimit = _hullLimit != null ? math.clamp(_hullLimit.value, 8, OfflineGeometryBakerConstants.MaxHullVertexCount) : settings.ConvexHullVertexLimit;
+            settings.ConvexHullVertexLimit = _hullLimit != null ? math.clamp(_hullLimit.value, OfflineGeometryBakerConstants.MinHullVertexCount, OfflineGeometryBakerConstants.MaxHullVertexCount) : settings.ConvexHullVertexLimit;
             return settings;
         }
 

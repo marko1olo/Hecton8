@@ -11,7 +11,7 @@ namespace Hecton8.Environment
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Environment/Global Weather Director")]
     [DefaultExecutionOrder(-4550)]
-    public sealed class GlobalWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IFrostTickable, IWeatherService
+    public sealed class GlobalWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IFrostTickable, IWeatherService, IGlobalRegistryHotSwapListener
     {
         private const float ExponentialBlendCompletion = 0.99f;
         private const float ExponentialBlendRateScale = 4.6051702f;
@@ -250,6 +250,7 @@ namespace Hecton8.Environment
 
         private bool _registeredToTickManager;
         private bool _registeredToFrostTickManager;
+        private bool _hotSwapRegistered;
         private bool _initialized;
         private bool _transitioning;
         private float _phaseHoldTimer;
@@ -320,6 +321,7 @@ namespace Hecton8.Environment
         private void OnEnable()
         {
             TryRegisterTickManager();
+            TryRegisterHotSwapListener();
             ResolveDependencies();
             InitializeRuntimeStateIfNeeded();
             UpdateBiomeLutState(transitionDurationSeconds, true);
@@ -335,6 +337,7 @@ namespace Hecton8.Environment
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterTickManager();
             if (ReferenceEquals(GlobalRegistry.Weather, this))
                 GlobalRegistry.UnregisterWeatherService(this);
@@ -356,10 +359,23 @@ namespace Hecton8.Environment
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterTickManager();
             if (ReferenceEquals(GlobalRegistry.Weather, this))
                 GlobalRegistry.UnregisterWeatherService(this);
             ReleaseNoirFogLutResources();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.FluidRuntime)
+                return;
+
+            if (fluidEngine == null || ReferenceEquals(previousService, fluidEngine))
+                fluidEngine = currentService as HectonFluidEngine;
         }
 
         /// <summary>
@@ -368,8 +384,6 @@ namespace Hecton8.Environment
         /// <param name="deltaTime">Shared tick delta.</param>
         public void Tick(float deltaTime)
         {
-            TryRegisterTickManager();
-            ResolveDependencies();
             InitializeRuntimeStateIfNeeded();
 
             if (!_initialized)
@@ -454,40 +468,47 @@ namespace Hecton8.Environment
             if (!Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
             if (!_registeredToTickManager)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredToTickManager = GlobalRegistry.Updatables.Contains(this) ||
-                                           GlobalRegistry.SlowTickables.Contains(this);
+                bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+                bool slowRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToTickManager = updateRegistered || slowRegistered;
             }
 
             if (!_registeredToFrostTickManager)
-            {
-                GlobalRegistry.RegisterFrostTickable(this, PriorityLayer.Environment);
-                _registeredToFrostTickManager = GlobalRegistry.FrostTickables.Contains(this);
-            }
+                _registeredToFrostTickManager = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTickManager()
         {
             if (_registeredToTickManager)
             {
-                if (GlobalRegistry.Updatables.Contains(this))
-                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-
-                if (GlobalRegistry.SlowTickables.Contains(this))
-                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             }
 
-            if (_registeredToFrostTickManager && GlobalRegistry.FrostTickables.Contains(this))
+            if (_registeredToFrostTickManager)
                 GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
             _registeredToFrostTickManager = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void ResolveDependencies()
@@ -885,7 +906,7 @@ namespace Hecton8.Environment
             float waveHeightMeters = ResolvePublishedWaveHeightMeters(in _runtimeSnapshot);
             float waveHeight01 = math.saturate(waveHeightMeters * math.rcp(math.max(AtmosphericBridgeWaveReferenceEpsilon, godRayWaveReferenceMeters)));
             float moonPhase01 = math.saturate(math.max(celestialSnapshot.Moon0Phase01, celestialSnapshot.Moon1Phase01));
-            float cloudTriangle = math.lerp(0.55f, 1f, ResolveTriangleWave01(ResolveAtmosphericBridgeTimePhase(weatherIntensity01)));
+            float cloudTriangle = math.lerp(0.55f, 1f, ResolveTriangleWave01(ResolveAtmosphericBridgeTimePhase(weatherIntensity01, in celestialSnapshot)));
             float cloudOcclusion = math.lerp(1f, cloudTriangle, math.saturate(godRayCloudFlickerStrength) * weatherIntensity01);
             float godRayIntensity = math.max(0f, baseGodRayIntensity) *
                                     math.lerp(0.35f, 1f, moonPhase01) *
@@ -968,10 +989,14 @@ namespace Hecton8.Environment
             return authoredMultiplier > 0f ? authoredMultiplier : 1f;
         }
 
-        private static float ResolveAtmosphericBridgeTimePhase(float weatherIntensity01)
+        private static float ResolveAtmosphericBridgeTimePhase(
+            float weatherIntensity01,
+            in CelestialRuntimeSnapshot celestialSnapshot)
         {
-            double universeTime = GlobalRegistry.AbsoluteUniverseTime;
-            if (!math.isfinite(universeTime))
+            double universeTime = (celestialSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u
+                ? celestialSnapshot.AbsoluteUniverseTime
+                : 0d;
+            if (!math.isfinite(universeTime) || universeTime < 0d)
                 return weatherIntensity01 * 0.37f;
 
             double wrappedTime = universeTime - math.floor(universeTime * 0.000244140625d) * 4096d;
@@ -1068,7 +1093,7 @@ namespace Hecton8.Environment
             float2 direction = new float2(authoring.directionXZ.x, authoring.directionXZ.y);
             direction = NormalizeSafe(direction, new float2(1f, 0f));
 
-            GerstnerWaveComponent component;
+            GerstnerWaveComponent component = default;
             component.DirectionXZ = direction;
             component.Amplitude = math.max(0f, authoring.amplitude * amplitudeScale);
             component.Wavelength = math.max(0.01f, authoring.wavelength);

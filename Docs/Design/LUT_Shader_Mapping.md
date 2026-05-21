@@ -69,7 +69,7 @@ layered on top of pure water.
 
 | Variant | File | Shape | Bytes | Purpose |
 |---|---|---:|---:|---|
-| `toaster_i3` | `Water_Extinction_Matrix_Toaster.bin` | `64 x 64 x 3` | `24576` | stripped-down Celeron/i3 lookup |
+| `minimum_i3` | `Water_Extinction_Matrix_Minimum.bin` | `64 x 64 x 3` | `24576` | stripped-down Celeron/i3 lookup |
 | `main_mx350` | `Water_Extinction_Matrix.bin` | `256 x 256 x 3` | `393216` | required LOW/MX350 contract |
 | `rtx_overkill` | `Water_Extinction_Matrix_Overkill.bin` | `512 x 512 x 3` | `1572864` | high-end dense blend path |
 
@@ -134,7 +134,7 @@ Texture states:
 
 ## Scalability
 
-Toaster/Low: `64x64x3` or `256x256x3`, one RGB/RGBA 2D texture sample. No
+Minimum-quality: `64x64x3` or `256x256x3`, one RGB/RGBA 2D texture sample. No
 runtime exponentials.
 
 Middle: same LUT family, smoother biome/weather turbidity blending at slow cadence.

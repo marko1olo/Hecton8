@@ -825,7 +825,7 @@ namespace Hecton8.Gameplay
 
         public void OnToolEffectApplied(in ToolEffectSignal signal)
         {
-            if (signal.EffectType != EffectType.Weld || _baseModule == null || !ReferenceEquals(signal.Module, _baseModule))
+            if (signal.EffectType != EffectType.Weld || _baseModule == null || !ReferenceEquals(signal.ModuleTarget, _baseModule))
                 return;
 
             float restoreAmount = signal.Magnitude * WeldCapRestoreScale;
@@ -923,13 +923,13 @@ namespace Hecton8.Gameplay
             }
 
             AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
-            if (!MathGuard.IsFinite(in originAup))
+            if (!originAup.IsFinite())
                 return false;
 
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return MathGuard.IsFinite(in positionAup);
+            return positionAup.IsFinite();
         }
 
         private static float ResolvePressureDelta(float depthMeters)

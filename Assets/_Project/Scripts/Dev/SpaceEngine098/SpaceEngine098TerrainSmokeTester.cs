@@ -40,7 +40,7 @@ namespace Hecton8.Dev
                 int nativeAllocationDelta,
                 long nativeByteDelta)
             {
-                Passed = passed;
+                Passed = passed ? (byte)1 : (byte)0;
                 SampleCount = sampleCount;
                 ElapsedMs = elapsedMs;
                 MinHeight = minHeight;
@@ -52,34 +52,35 @@ namespace Hecton8.Dev
                 CraterMs = craterMs;
                 RilleMs = rilleMs;
                 MetricsMs = metricsMs;
+                NodeBudgetPassed = ridgedMs <= 2f && craterMs <= 2f && rilleMs <= 2f ? (byte)1 : (byte)0;
                 Checksum = checksum;
                 NativeAllocationDelta = nativeAllocationDelta;
                 NativeByteDelta = nativeByteDelta;
             }
 
-            public bool Passed { get; }
-            public int SampleCount { get; }
-            public float ElapsedMs { get; }
-            public float MinHeight { get; }
-            public float MaxHeight { get; }
-            public float RidgedDelta { get; }
-            public float CraterDelta { get; }
-            public float RilleDelta { get; }
-            public float RidgedMs { get; }
-            public float CraterMs { get; }
-            public float RilleMs { get; }
-            public float MetricsMs { get; }
-            public bool NodeBudgetPassed => RidgedMs <= 2f && CraterMs <= 2f && RilleMs <= 2f;
-            public int Checksum { get; }
-            public int NativeAllocationDelta { get; }
-            public long NativeByteDelta { get; }
+            public readonly byte Passed;
+            public readonly int SampleCount;
+            public readonly float ElapsedMs;
+            public readonly float MinHeight;
+            public readonly float MaxHeight;
+            public readonly float RidgedDelta;
+            public readonly float CraterDelta;
+            public readonly float RilleDelta;
+            public readonly float RidgedMs;
+            public readonly float CraterMs;
+            public readonly float RilleMs;
+            public readonly float MetricsMs;
+            public readonly byte NodeBudgetPassed;
+            public readonly int Checksum;
+            public readonly int NativeAllocationDelta;
+            public readonly long NativeByteDelta;
         }
 
         public static bool Run(out string json)
         {
             PipelineResult warmup = RunPipeline(WarmupWidth, measureElapsed: false);
             PipelineResult timed = RunPipeline(TimedWidth, measureElapsed: true);
-            bool passed = warmup.Passed && timed.Passed;
+            bool passed = warmup.Passed != 0 && timed.Passed != 0;
             json = "{"
                 + "\"tester\":\"SpaceEngine098TerrainSmokeTester\","
                 + "\"status\":\"" + (passed ? "PASS" : "FAIL") + "\","
@@ -95,7 +96,7 @@ namespace Hecton8.Dev
                 + "\"craterMsX1000\":" + Milli(timed.CraterMs) + ","
                 + "\"rilleMsX1000\":" + Milli(timed.RilleMs) + ","
                 + "\"metricsMsX1000\":" + Milli(timed.MetricsMs) + ","
-                + "\"nodeBudgetPassed\":" + (timed.NodeBudgetPassed ? "true" : "false") + ","
+                + "\"nodeBudgetPassed\":" + (timed.NodeBudgetPassed != 0 ? "true" : "false") + ","
                 + "\"checksum\":" + timed.Checksum + ","
                 + "\"nativeAllocationDelta\":" + timed.NativeAllocationDelta + ","
                 + "\"nativeByteDelta\":" + timed.NativeByteDelta + "}";

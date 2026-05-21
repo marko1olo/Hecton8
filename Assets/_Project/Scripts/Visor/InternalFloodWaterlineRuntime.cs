@@ -37,20 +37,32 @@ namespace Hecton8.Visor
         private static readonly int InternalWaterlineRuntimeId = Shader.PropertyToID("_InternalWaterlineRuntime");
         private static readonly int InternalWaterlineDistortionId = Shader.PropertyToID("_InternalWaterlineDistortion");
 
-        [StructLayout(LayoutKind.Sequential, Size = TelemetryEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]
         private struct WaterlineTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint Sequence;
+            [FieldOffset(8)]
             public int RoomId;
+            [FieldOffset(12)]
             public float Fill01;
+            [FieldOffset(16)]
             public float CurrentWaterlineY;
+            [FieldOffset(20)]
             public float TargetWaterlineY;
+            [FieldOffset(24)]
             public float CameraY;
+            [FieldOffset(28)]
             public float Droplets01;
+            [FieldOffset(32)]
             public byte Flags;
+            [FieldOffset(33)]
             public byte Reserved0;
+            [FieldOffset(34)]
             public ushort Reserved1;
+            [FieldOffset(36)]
             public uint StateHash;
         }
 
@@ -89,6 +101,7 @@ namespace Hecton8.Visor
         private bool _isInitialized;
         private bool _blackBoxDumped;
         private bool _shaderGlobalsDirty = true;
+        private bool _lastCameraAupValid;
         private int _tickCount;
 
         public bool IsInitialized => _isInitialized && _telemetry.IsCreated;
@@ -188,9 +201,16 @@ namespace Hecton8.Visor
             }
 
             Vector3 cameraRuntimePosition = ResolveCameraRuntimePosition(runtimeContext, in poseSnapshot);
-            _lastCameraAup = IsFiniteAup(in poseSnapshot.Aup)
-                ? poseSnapshot.Aup
-                : AbsoluteUniversePosition.FromRuntimePosition(cameraRuntimePosition);
+            if (IsFiniteAup(in poseSnapshot.Aup))
+            {
+                _lastCameraAup = poseSnapshot.Aup;
+                _lastCameraAupValid = true;
+            }
+            else
+            {
+                _lastCameraAupValid = TryResolveAupFromRuntimeOrigin(cameraRuntimePosition, out _lastCameraAup);
+            }
+
             float targetY = snapshot.SurfaceY;
             if (!math.isfinite(targetY))
             {
@@ -326,7 +346,7 @@ namespace Hecton8.Visor
 
         private void HandlePlayerExhale()
         {
-            if (!_cameraSubmerged || !_hasWaterline)
+            if (!_cameraSubmerged || !_hasWaterline || !_lastCameraAupValid || !IsFiniteAup(in _lastCameraAup))
                 return;
 
             DebrisSpawnSignal signal = new DebrisSpawnSignal
@@ -362,6 +382,7 @@ namespace Hecton8.Visor
 
                 float duration = math.max(0.05f, signal.DurationSeconds);
                 _lastCameraAup = signal.PositionAup;
+                _lastCameraAupValid = IsFiniteAup(in _lastCameraAup);
                 _dropletSecondsRemaining = math.max(_dropletSecondsRemaining, duration * intensity01);
                 PublishShaderGlobals(_hasWaterline ? _currentFill01 : 0f);
             }
@@ -412,9 +433,12 @@ namespace Hecton8.Visor
             if (wasSubmerged && !_cameraSubmerged)
                 _dropletSecondsRemaining = DropletDurationSeconds;
 
+            if (!TryResolveAupFromRuntimeOrigin(cameraRuntimePosition, out AbsoluteUniversePosition cameraAup))
+                return;
+
             AcousticPingSignal ping = new AcousticPingSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(cameraRuntimePosition),
+                PositionAup = cameraAup,
                 RadiusMeters = 7.5f,
                 Intensity01 = 0.42f,
                 SourceId = WaterSplashSourceHash,
@@ -468,6 +492,7 @@ namespace Hecton8.Visor
             _cachedRoomId = -1;
             _currentRoomId = -1;
             _currentFill01 = 0f;
+            _lastCameraAupValid = false;
             _currentWaterlineY = InternalWaterlineInvalidY;
             _targetWaterlineY = InternalWaterlineInvalidY;
             if (hasDroplets)
@@ -613,6 +638,22 @@ namespace Hecton8.Visor
             return math.isfinite(position.LocalX) &&
                    math.isfinite(position.LocalY) &&
                    math.isfinite(position.LocalZ);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition absoluteAup)
+        {
+            absoluteAup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            absoluteAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in absoluteAup);
         }
 
         private static uint ResolveTelemetryHash(int roomId, float fill01, float waterlineY, float cameraY, float droplets01)
